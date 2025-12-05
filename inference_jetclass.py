@@ -32,8 +32,10 @@ scalar_keys = [
 pf_keys = particle_keys + scalar_keys
 
 root_dir = "../data/JetClass/val_5M"
-root_files = ["HToCC_120.root", "HToCC_121.root", 
-              "HToCC_122.root", "HToCC_123.root", "HToCC_124.root"]
+root_files = [
+    "HToCC_120.root", "HToCC_121.root",
+    "HToCC_122.root", "HToCC_123.root", "HToCC_124.root"
+]
 
 # dummy config for model
 class DummyDataConfig:
@@ -55,9 +57,11 @@ with open(output_csv_path, mode="w", newline="") as csvfile:
     writer = csv.writer(csvfile)
 
     # deleted probs columns, only keep embedding
-    base_header = (["file", "event_index"] +
-                   ["truth_label", "label_name",
-                    "jet_sdmass", "jet_mass", "jet_pt", "jet_eta", "jet_phi"])
+    base_header = (
+        ["file", "event_index"] +
+        ["truth_label", "label_name",
+         "jet_sdmass", "jet_mass", "jet_pt", "jet_eta", "jet_phi"]
+    )
     emb_header = [f"emb_{j}" for j in range(128)]
     writer.writerow(base_header + emb_header)
 
@@ -67,6 +71,7 @@ with open(output_csv_path, mode="w", newline="") as csvfile:
         with uproot.open(file_path) as f:
             tree = f["tree"]
             arrays = tree.arrays(pf_keys, library="np")
+
         max_part = 128
         total_events = len(arrays["part_px"])
 
@@ -80,7 +85,7 @@ with open(output_csv_path, mode="w", newline="") as csvfile:
                 particle_feats = [arrays[k][i] for k in particle_keys]
                 scalar_feats = [np.full(n_part, arrays[k][i]) for k in scalar_keys]
                 all_feats = particle_feats + scalar_feats
-                pf_features = np.stack(all_feats, axis=1)
+                pf_features = np.stack(all_feats, axis=1).astype(np.float32)
 
                 padded = np.zeros((max_part, pf_features.shape[1]), dtype=np.float32)
                 padded[:n_part, :] = pf_features
@@ -92,8 +97,15 @@ with open(output_csv_path, mode="w", newline="") as csvfile:
                 points = None
 
                 with torch.no_grad():
-                    logits, embedding = model(points, features, lorentz_vectors, mask)
-                    embedding = embedding.squeeze(0).cpu().numpy()
+                    out = model(points, features, lorentz_vectors, mask)
+
+                # fix to support both (logits, embedding) and embedding-only
+                if isinstance(out, tuple):
+                    logits, embedding = out
+                else:
+                    logits, embedding = None, out
+
+                embedding = embedding.squeeze(0).detach().cpu().numpy()
 
                 # truth labels
                 label_array = np.array([arrays[k][i] for k in [
