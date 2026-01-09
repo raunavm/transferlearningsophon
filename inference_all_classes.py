@@ -79,8 +79,8 @@ particle_keys = [
     'part_isChargedHadron', 'part_isNeutralHadron',
     'part_isPhoton', 'part_isElectron', 'part_isMuon'
 ]
-# NOTE: Labels removed from model input to prevent data leakage!
-# They are still read for get_truth_label() but NOT fed to the model
+#Labels removed from model input to prevent data leakage
+# still read for get_truth_label() but not fed to the model
 scalar_keys_for_model = [
     'jet_pt','jet_eta','jet_phi',
     'jet_energy','jet_nparticles','jet_sdmass','jet_tau1',
