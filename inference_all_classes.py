@@ -21,7 +21,7 @@ TARGET_EVENTS_PER_CLASS = 100_000  # Events to process per class (set to None fo
 MAX_PART = 128
 STEP_SIZE = 5000
 TREE_NAME = "tree"
-ROOT_DIR = "data/JetClass/val_5M"
+ROOT_DIR = "val_5M"
 OUTPUT_DIR = "embeddings"  # Output directory for CSVs
 
 # Skip if output file already exists
@@ -79,15 +79,22 @@ particle_keys = [
     'part_isChargedHadron', 'part_isNeutralHadron',
     'part_isPhoton', 'part_isElectron', 'part_isMuon'
 ]
-scalar_keys = [
-    'label_QCD','label_Hbb','label_Hcc','label_Hgg',
-    'label_H4q','label_Hqql','label_Zqq','label_Wqq',
-    'label_Tbqq','label_Tbl','jet_pt','jet_eta','jet_phi',
+# NOTE: Labels removed from model input to prevent data leakage!
+# They are still read for get_truth_label() but NOT fed to the model
+scalar_keys_for_model = [
+    'jet_pt','jet_eta','jet_phi',
     'jet_energy','jet_nparticles','jet_sdmass','jet_tau1',
     'jet_tau2','jet_tau3','jet_tau4','aux_genpart_eta',
     'aux_genpart_phi','aux_genpart_pid','aux_genpart_pt',
     'aux_truth_match'
 ]
+# Labels needed for ground truth extraction (not fed to model)
+label_keys = [
+    'label_QCD','label_Hbb','label_Hcc','label_Hgg',
+    'label_H4q','label_Hqql','label_Zqq','label_Wqq',
+    'label_Tbqq','label_Tbl'
+]
+scalar_keys = label_keys + scalar_keys_for_model
 pf_keys = particle_keys + scalar_keys
 
 label_names = ["QCD","Hbb","Hcc","Hgg","Htoww4q","Hqql","Zqq","Wqq","Htoww2q1L","Tbqq", "Tbl"]
@@ -117,7 +124,8 @@ def build_pf_tensor(arrays, i):
     if n_part > MAX_PART:
         return None
     particle_feats = [arrays[k][i] for k in particle_keys]
-    scalar_feats = [np.full(n_part, arrays[k][i]) for k in scalar_keys]
+    # Use scalar_keys_for_model (NOT scalar_keys) to exclude labels from model input
+    scalar_feats = [np.full(n_part, arrays[k][i]) for k in scalar_keys_for_model]
     all_feats = particle_feats + scalar_feats
     pf_features = np.stack(all_feats, axis=1).astype(np.float32)
     padded = np.zeros((MAX_PART, pf_features.shape[1]), dtype=np.float32)
