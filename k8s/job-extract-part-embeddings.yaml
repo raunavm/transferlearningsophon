@@ -40,8 +40,8 @@ spec:
             --emb-dir /data/embeddings_part_full_test \
             --output-dir /data/results/main_plots
         resources:
-          requests: { memory: "32Gi", cpu: "4", nvidia.com/gpu: "1" }
-          limits:   { memory: "64Gi", cpu: "6", nvidia.com/gpu: "1" }
+          requests: { memory: "12Gi", cpu: "2", nvidia.com/gpu: "1" }
+          limits:   { memory: "16Gi", cpu: "4", nvidia.com/gpu: "1" }
         volumeMounts:
         - { name: pvc, mountPath: /data }
       affinity:
@@ -56,8 +56,12 @@ spec:
                 - NVIDIA-A100-PCIE-40GB
                 - NVIDIA-A40
                 - NVIDIA-RTX-A6000
+                - NVIDIA-RTX-A5000
                 - NVIDIA-L40
                 - NVIDIA-L40S
+                - NVIDIA-L4
+                - NVIDIA-A10
+                - NVIDIA-GeForce-RTX-3090
                 - NVIDIA-GeForce-RTX-4090
       volumes:
       - name: pvc

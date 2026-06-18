@@ -1,0 +1,37 @@
+{
+  "n_per_class": 3000,
+  "seed": 42,
+  "total_jets_subsampled": 30000,
+  "silhouette_128d": 0.265433,
+  "umap": {
+    "silhouette_2d": 0.305416,
+    "wall_seconds": 122.4,
+    "n_neighbors": 30,
+    "min_dist": 0.3,
+    "metric": "cosine"
+  },
+  "tsne": {
+    "silhouette_2d": 0.243295,
+    "wall_seconds": 61.7,
+    "n_per_class_used": 3000,
+    "fell_back": false,
+    "perplexity": 30,
+    "init": "pca",
+    "max_iter": 1000,
+    "prepca_dim": 50
+  },
+  "pca": {
+    "silhouette_2d": -0.009725,
+    "wall_seconds": 0.1,
+    "explained_variance_ratio": [
+      0.352454,
+      0.133159
+    ],
+    "standardized_inputs": true
+  },
+  "trustworthiness": {
+    "umap": 0.9732481985386747,
+    "pca": 0.7956051902242378,
+    "tsne": 0.9873415721844293
+  }
+}

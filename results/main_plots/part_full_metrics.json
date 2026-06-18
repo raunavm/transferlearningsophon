@@ -1,0 +1,31 @@
+{
+  "n_jets": 100000,
+  "accuracy": 0.85963,
+  "macro_auc_ovr": 0.987605,
+  "per_class_auc": {
+    "QCD": 0.978263,
+    "Hbb": 0.996933,
+    "Hcc": 0.987255,
+    "Hgg": 0.97942,
+    "H4q": 0.988693,
+    "Hqql": 0.999595,
+    "Zqq": 0.967419,
+    "Wqq": 0.980023,
+    "Tbqq": 0.998555,
+    "Tbl": 0.999894
+  },
+  "per_class_counts": {
+    "QCD": 10000,
+    "Hbb": 10000,
+    "Hcc": 10000,
+    "Hgg": 10000,
+    "H4q": 10000,
+    "Hqql": 10000,
+    "Zqq": 10000,
+    "Wqq": 10000,
+    "Tbqq": 10000,
+    "Tbl": 10000
+  },
+  "expected_part_full_macro_auc": 0.988,
+  "sanity_passed": true
+}

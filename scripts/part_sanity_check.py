@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Sanity-check ParT extraction: accuracy, macro AUC, per-class AUC, confusion matrix.
+"""Sanity-check ParT extraction: accuracy, macro AUC, per-class AUC.
 
 Reads {ClassName}_logits.npy and {ClassName}_labels.npy from --emb-dir, computes
 the metrics on the entire extracted subset, and writes:
 
   results/main_plots/part_full_metrics.json
-  results/main_plots/part_confusion_matrix.{pdf,png}
 
 If macro AUC < 0.98 it prints a clear warning so plotting can refuse to proceed.
 """
@@ -57,7 +56,7 @@ def main():
     emb_dir = Path(args.emb_dir)
     out_dir = Path(args.output_dir); out_dir.mkdir(parents=True, exist_ok=True)
 
-    from sklearn.metrics import roc_auc_score, accuracy_score, confusion_matrix
+    from sklearn.metrics import roc_auc_score, accuracy_score
 
     print(f"Loading logits + labels from {emb_dir}")
     logits, labels = load_subset(emb_dir)
@@ -73,9 +72,6 @@ def main():
         if y_bin.sum() == 0:
             continue
         per_class_auc[SHORT[k]] = float(roc_auc_score(y_bin, probs[:, k]))
-
-    cm = confusion_matrix(labels, preds, labels=list(range(10)))
-    cm_norm = cm / np.clip(cm.sum(axis=1, keepdims=True), 1, None)
 
     metrics = {
         "n_jets":            int(len(labels)),
@@ -102,36 +98,6 @@ def main():
         print("Likely a preprocessing or checkpoint bug. Investigate before plotting.")
     else:
         print("\nSanity check PASSED.")
-
-    # Confusion matrix figure
-    try:
-        import matplotlib
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
-        from plots.style import apply_style, save_fig
-        apply_style()
-
-        fig, ax = plt.subplots(figsize=(6.5, 5.5))
-        im = ax.imshow(cm_norm, cmap="Blues", vmin=0, vmax=1)
-        for i in range(10):
-            for j in range(10):
-                v = cm_norm[i, j]
-                if v > 0.01:
-                    color = "white" if v > 0.5 else "black"
-                    ax.text(j, i, f"{v:.2f}", ha="center", va="center",
-                            fontsize=7, color=color)
-        ax.set_xticks(range(10)); ax.set_yticks(range(10))
-        ax.set_xticklabels(SHORT, rotation=45, ha="right", fontsize=9)
-        ax.set_yticklabels(SHORT, fontsize=9)
-        ax.set_xlabel("Predicted class")
-        ax.set_ylabel("True class")
-        ax.set_title(f"ParT-full confusion matrix\n"
-                     f"acc = {acc:.3f}, macro AUC = {macro_auc:.3f}", pad=8)
-        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-        save_fig(fig, str(out_dir / "part_confusion_matrix"))
-        print(f"Saved: {out_dir / 'part_confusion_matrix'}.{{pdf,png}}")
-    except Exception as e:
-        print(f"(confusion-matrix plot skipped: {e})")
 
     print(f"\nWrote {out_dir / 'part_full_metrics.json'}")
 

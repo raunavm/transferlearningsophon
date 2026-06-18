@@ -2,18 +2,14 @@
 """Visualize ParT-full's 128-d JetClass latent space with UMAP, t-SNE, and PCA.
 
 Reads the embeddings written by extract_part_embeddings.py and produces:
-  results/main_plots/part_umap.{pdf,png}
-  results/main_plots/part_tsne.{pdf,png}
-  results/main_plots/part_pca.{pdf,png}
-  results/main_plots/part_reductions_3panel.{pdf,png}   (the headline figure)
+  results/main_plots/part_reductions_3panel.{pdf,png}   (headline figure)
   results/main_plots/part_reduction_metrics.json
-  results/main_plots/part_reduction_sample.npz
 
 Refuses to render unless results/main_plots/part_full_metrics.json reports
 macro AUC >= 0.98 (override with --force).
 
 Optional Sophon comparison: if --sophon-dir and --sophon-ft-dir are passed and
-the embedding files exist, also produce part_vs_sophon_umap.{pdf,png}.
+the embedding files exist, also produce umap_sophon_vs_part.{pdf,png}.
 """
 from __future__ import annotations
 
@@ -190,11 +186,6 @@ def main():
     lab = lab_all[idx]
     print(f"  subsampled: {len(lab):,} jets (target {args.n_per_class}/class)")
 
-    # NOTE: coords are appended below after each reduction so re-rendering
-    # the 3-panel is fast (no UMAP/t-SNE recompute).
-    sample_payload = {"indices": idx, "labels": lab,
-                      "n_per_class": args.n_per_class, "seed": args.seed}
-
     # 128-d silhouette (in original space) — one number for the whole subset
     sil_128 = silhouette(emb, lab, max_n=10000, metric="euclidean", seed=args.seed)
     print(f"Silhouette (128-d Euclidean): {sil_128:.4f}")
@@ -266,30 +257,7 @@ def main():
     except Exception as e:
         print(f"(trustworthiness skipped: {e})")
 
-    # Single-panel figures
     import matplotlib.pyplot as plt
-
-    def single(coords, lab_use, title, fname, subtitle):
-        fig, ax = plt.subplots(figsize=(6.0, 5.4))
-        panel(ax, coords, lab_use, title, subtitle=subtitle, show_legend=True)
-        ax.set_xlabel("Component 1"); ax.set_ylabel("Component 2")
-        fig.subplots_adjust(left=0.05, right=0.98, top=0.92, bottom=0.05)
-        save_fig(fig, str(out_dir / fname))
-        plt.close(fig)
-        print(f"Saved: {out_dir / fname}.{{pdf,png}}")
-
-    single(umap_coords, lab,
-           "ParT-full JetClass latent space: UMAP",
-           "part_umap",
-           f"silhouette = {sil_umap:.3f}")
-    single(tsne_coords, lab_for_tsne,
-           "ParT-full JetClass latent space: t-SNE",
-           "part_tsne",
-           f"silhouette = {sil_tsne:.3f}")
-    single(pca_coords, lab,
-           "ParT-full JetClass latent space: PCA",
-           "part_pca",
-           f"silhouette = {sil_pca:.3f}")
 
     # 3-panel headline
     fig, axes = plt.subplots(1, 3, figsize=(16.0, 5.8),
@@ -307,17 +275,6 @@ def main():
     save_fig(fig, str(out_dir / "part_reductions_3panel"))
     plt.close(fig)
     print(f"Saved: {out_dir / 'part_reductions_3panel'}.{{pdf,png}}")
-
-    # Save coords + labels alongside indices so a future render-only script
-    # can recreate the figure in seconds.
-    sample_payload.update({
-        "umap_coords":      umap_coords,
-        "pca_coords":       pca_coords,
-        "tsne_coords":      tsne_coords,
-        "labels_for_tsne":  lab_for_tsne,
-        "explained_var":    np.asarray(explained, dtype=np.float64),
-    })
-    np.savez(out_dir / "part_reduction_sample.npz", **sample_payload)
 
     # Metrics JSON
     metrics = {

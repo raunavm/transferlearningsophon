@@ -63,16 +63,37 @@ python3 scripts/plot_roc_3strategies.py \
   --embeddings-dir embeddings_pretrained_full
 ```
 
+## ParT comparison
+
+The public supervised Particle Transformer is included as a reference. Extracts the 128-d CLS latent on JetClass test jets, sanity-checks against the published 0.988 macro AUC, and renders a UMAP / t-SNE / PCA 3-panel plus a 3-way UMAP comparison vs Sophon.
+
+```sh
+curl -fSL -o models/ParT/ParT_full.pt \
+  "https://github.com/jet-universe/particle_transformer/raw/main/models/ParT_full.pt"
+
+python3 scripts/extract_part_embeddings.py \
+  --checkpoint models/ParT/ParT_full.pt \
+  --root-dir /data/JetClass/Pythia/test_20M \
+  --events-per-class 10000 \
+  --output-dir embeddings_part_full_test
+
+python3 scripts/part_sanity_check.py --emb-dir embeddings_part_full_test
+python3 scripts/plot_part_reductions.py --emb-dir embeddings_part_full_test \
+  --sophon-dir embeddings_test_20M \
+  --sophon-ft-dir embeddings_ft_full_10M_seed42_test100k
+```
+
 ## Layout
 
 ```
-inference_all_classes.py        Step-1 embedding extraction
-src/{data,models,utils}/        package code
+inference_all_classes.py        Sophon step-1 embedding extraction
+src/{data,models,utils}/        package code (incl. Sophon + ParT wrappers)
 plots/style.py                  figure style
-scripts/                        training sweeps + figure renderers
+scripts/                        training sweeps, ParT pipeline, figure renderers
 k8s/                            kubernetes job templates
 networks/                       reference Sophon ParT definition
-results/sweep_results.csv       9 sizes × 3 strategies × seeds
+results/sweep_results.csv       9 sizes x 3 strategies x seeds
+results/main_plots/             poster figures (committed)
 ```
 
 
