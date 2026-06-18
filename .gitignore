@@ -13,6 +13,9 @@ results/**/*.pdf
 results/**/*.png
 results/**/*.npz
 results/**/*.pptx
+# Keep the poster figures committed
+!results/main_plots/*.pdf
+!results/main_plots/*.png
 results_data/
 mlp_results/
 
