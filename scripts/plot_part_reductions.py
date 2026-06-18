@@ -190,8 +190,10 @@ def main():
     lab = lab_all[idx]
     print(f"  subsampled: {len(lab):,} jets (target {args.n_per_class}/class)")
 
-    np.savez(out_dir / "part_reduction_sample.npz",
-             indices=idx, labels=lab, n_per_class=args.n_per_class, seed=args.seed)
+    # NOTE: coords are appended below after each reduction so re-rendering
+    # the 3-panel is fast (no UMAP/t-SNE recompute).
+    sample_payload = {"indices": idx, "labels": lab,
+                      "n_per_class": args.n_per_class, "seed": args.seed}
 
     # 128-d silhouette (in original space) — one number for the whole subset
     sil_128 = silhouette(emb, lab, max_n=10000, metric="euclidean", seed=args.seed)
@@ -291,7 +293,7 @@ def main():
            f"silhouette = {sil_pca:.3f}")
 
     # 3-panel headline
-    fig, axes = plt.subplots(1, 3, figsize=(16.0, 5.4),
+    fig, axes = plt.subplots(1, 3, figsize=(16.0, 5.6),
                              gridspec_kw=dict(wspace=0.04))
     panel(axes[0], umap_coords, lab, "UMAP",
           subtitle=f"silhouette = {sil_umap:.3f}")
@@ -302,11 +304,23 @@ def main():
           subtitle=f"explained = {explained[0]:.2f} / {explained[1]:.2f}\n"
                    f"silhouette = {sil_pca:.3f}",
           show_legend=True)
-    fig.suptitle("ParT-full representations on JetClass test jets", y=0.99)
-    fig.subplots_adjust(left=0.02, right=0.99, top=0.92, bottom=0.04)
+    fig.suptitle("ParT-full representations on JetClass test jets",
+                 y=0.98, fontsize=14)
+    fig.subplots_adjust(left=0.02, right=0.99, top=0.88, bottom=0.04)
     save_fig(fig, str(out_dir / "part_reductions_3panel"))
     plt.close(fig)
     print(f"Saved: {out_dir / 'part_reductions_3panel'}.{{pdf,png}}")
+
+    # Save coords + labels alongside indices so a future render-only script
+    # can recreate the figure in seconds.
+    sample_payload.update({
+        "umap_coords":      umap_coords,
+        "pca_coords":       pca_coords,
+        "tsne_coords":      tsne_coords,
+        "labels_for_tsne":  lab_for_tsne,
+        "explained_var":    np.asarray(explained, dtype=np.float64),
+    })
+    np.savez(out_dir / "part_reduction_sample.npz", **sample_payload)
 
     # Metrics JSON
     metrics = {
