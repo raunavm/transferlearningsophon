@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: part-plot-reductions-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: plot
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+
+          pip install umap-learn scikit-learn matplotlib
+
+          mkdir -p /data/results/main_plots
+
+          # Read embeddings + the sanity JSON written by the extraction job.
+          # Refuses to plot if macro AUC < 0.98 (override below if needed).
+          PYTHONUNBUFFERED=1 python3 scripts/plot_part_reductions.py \
+            --emb-dir /data/embeddings_part_full_test \
+            --metrics-json /data/results/main_plots/part_full_metrics.json \
+            --n-per-class 3000 \
+            --seed 42 \
+            --output-dir /data/results/main_plots \
+            --sophon-dir /data/embeddings_pretrained_full \
+            --sophon-ft-dir /data/embeddings_ft_full_10M_seed42_test100k
+        resources:
+          requests: { memory: "16Gi", cpu: "4" }
+          limits:   { memory: "32Gi", cpu: "8" }
+        volumeMounts:
+        - { name: pvc, mountPath: /data }
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: part-extract-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: extract
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+
+          pip install uproot awkward numpy scikit-learn
+
+          mkdir -p models/ParT
+          curl -fSL -o models/ParT/ParT_full.pt \
+            "https://github.com/jet-universe/particle_transformer/raw/main/models/ParT_full.pt"
+
+          mkdir -p /data/results/part
+
+          # 1. Extract ParT embeddings + logits + labels
+          PYTHONUNBUFFERED=1 python3 scripts/extract_part_embeddings.py \
+            --checkpoint models/ParT/ParT_full.pt \
+            --root-dir /data/JetClass/Pythia/test_20M \
+            --events-per-class 10000 \
+            --output-dir /data/embeddings_part_full_test \
+            --batch-size 512 \
+            --skip-existing
+
+          # 2. Sanity check: writes part_full_metrics.json + confusion matrix
+          PYTHONUNBUFFERED=1 python3 scripts/part_sanity_check.py \
+            --emb-dir /data/embeddings_part_full_test \
+            --output-dir /data/results/main_plots
+        resources:
+          requests: { memory: "32Gi", cpu: "4", nvidia.com/gpu: "1" }
+          limits:   { memory: "64Gi", cpu: "6", nvidia.com/gpu: "1" }
+        volumeMounts:
+        - { name: pvc, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-A100-SXM4-80GB
+                - NVIDIA-A100-PCIE-40GB
+                - NVIDIA-A40
+                - NVIDIA-RTX-A6000
+                - NVIDIA-L40
+                - NVIDIA-L40S
+                - NVIDIA-GeForce-RTX-4090
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
