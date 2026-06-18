@@ -285,28 +285,25 @@ def main():
     single(tsne_coords, lab_for_tsne,
            "ParT-full JetClass latent space: t-SNE",
            "part_tsne",
-           f"silhouette = {sil_tsne:.3f}  (n={tsne_n_per_class}/class)")
+           f"silhouette = {sil_tsne:.3f}")
     single(pca_coords, lab,
            "ParT-full JetClass latent space: PCA",
            "part_pca",
-           f"explained var = {explained[0]:.2f} / {explained[1]:.2f}\n"
            f"silhouette = {sil_pca:.3f}")
 
     # 3-panel headline
-    fig, axes = plt.subplots(1, 3, figsize=(16.0, 5.6),
+    fig, axes = plt.subplots(1, 3, figsize=(16.0, 5.8),
                              gridspec_kw=dict(wspace=0.04))
     panel(axes[0], umap_coords, lab, "UMAP",
           subtitle=f"silhouette = {sil_umap:.3f}")
     panel(axes[1], tsne_coords, lab_for_tsne, "t-SNE",
-          subtitle=f"silhouette = {sil_tsne:.3f}\n"
-                   f"n = {tsne_n_per_class}/class")
+          subtitle=f"silhouette = {sil_tsne:.3f}")
     panel(axes[2], pca_coords, lab, "PCA",
-          subtitle=f"explained = {explained[0]:.2f} / {explained[1]:.2f}\n"
-                   f"silhouette = {sil_pca:.3f}",
+          subtitle=f"silhouette = {sil_pca:.3f}",
           show_legend=True)
     fig.suptitle("ParT-full representations on JetClass test jets",
-                 y=0.98, fontsize=14)
-    fig.subplots_adjust(left=0.02, right=0.99, top=0.88, bottom=0.04)
+                 y=0.99, fontsize=15)
+    fig.subplots_adjust(left=0.02, right=0.99, top=0.84, bottom=0.04)
     save_fig(fig, str(out_dir / "part_reductions_3panel"))
     plt.close(fig)
     print(f"Saved: {out_dir / 'part_reductions_3panel'}.{{pdf,png}}")
@@ -377,15 +374,15 @@ def main():
                 pre_c = fit_umap(pre_emb[pi].astype(np.float32), args.seed)
                 ft_c  = fit_umap(ft_emb[fi].astype(np.float32),  args.seed)
 
-                fig, axes = plt.subplots(1, 3, figsize=(16.0, 5.4),
+                fig, axes = plt.subplots(1, 3, figsize=(16.0, 5.8),
                                          gridspec_kw=dict(wspace=0.04))
                 panel(axes[0], pre_c, pre_lab[pi], "Sophon pretrained")
-                panel(axes[1], ft_c,  ft_lab[fi],  "Sophon full-FT")
-                panel(axes[2], umap_coords, lab, "ParT-full",
+                panel(axes[1], ft_c,  ft_lab[fi],  "Sophon full-FT (10M, seed 42)")
+                panel(axes[2], umap_coords, lab,   "ParT-full",
                       show_legend=True)
-                fig.suptitle("Jet latent spaces — UMAP comparison "
-                             "(class-balanced; samples are NOT matched)", y=0.99)
-                fig.subplots_adjust(left=0.02, right=0.99, top=0.92, bottom=0.04)
+                fig.suptitle("Jet latent spaces: UMAP comparison",
+                             y=0.99, fontsize=15)
+                fig.subplots_adjust(left=0.02, right=0.99, top=0.84, bottom=0.04)
                 save_fig(fig, str(out_dir / "umap_sophon_vs_part"))
                 plt.close(fig)
                 print(f"Saved: {out_dir / 'umap_sophon_vs_part'}.{{pdf,png}}")

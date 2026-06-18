@@ -30,7 +30,7 @@ spec:
             --n-per-class 3000 \
             --seed 42 \
             --output-dir /data/results/main_plots \
-            --sophon-dir /data/embeddings_pretrained_full \
+            --sophon-dir /data/embeddings_test_20M \
             --sophon-ft-dir /data/embeddings_ft_full_10M_seed42_test100k
         resources:
           requests: { memory: "16Gi", cpu: "4" }
