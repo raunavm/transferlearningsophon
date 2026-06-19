@@ -37,8 +37,105 @@ from src.utils.reproducibility import seed_everything
 
 LABEL_NAMES = ["QCD", "Hbb", "Hcc", "Hgg", "H4q", "Hqql", "Zqq", "Wqq", "Tbqq", "Tbl"]
 
+CHECKPOINT_GLOB = "checkpoint_ep*.pt"
 
 torch.backends.cudnn.benchmark = True
+
+
+def _rng_snapshot() -> dict:
+    """Capture all RNG states for byte-stable resumes."""
+    import random
+    snap = {
+        "python": random.getstate(),
+        "numpy": np.random.get_state(),
+        "torch": torch.get_rng_state(),
+    }
+    if torch.cuda.is_available():
+        snap["cuda"] = torch.cuda.get_rng_state_all()
+    return snap
+
+
+def _rng_restore(snap: dict) -> None:
+    import random
+    if "python" in snap:
+        random.setstate(snap["python"])
+    if "numpy" in snap:
+        np.random.set_state(snap["numpy"])
+    if "torch" in snap:
+        torch.set_rng_state(snap["torch"])
+    if "cuda" in snap and torch.cuda.is_available():
+        torch.cuda.set_rng_state_all(snap["cuda"])
+
+
+def find_latest_checkpoint(out_dir: Path):
+    """Return the highest-epoch checkpoint path, or None."""
+    candidates = sorted(Path(out_dir).glob(CHECKPOINT_GLOB))
+    return candidates[-1] if candidates else None
+
+
+def save_checkpoint(out_dir: Path, *, epoch: int,
+                    model, optimizer, scheduler_step_count: int,
+                    best_val_loss: float, best_val_acc: float, best_val_auc: float,
+                    best_state, patience_counter: int,
+                    history: dict, training_recipe: dict) -> Path:
+    """Atomically save a mid-training checkpoint.
+
+    Writes to a `.tmp` first and renames so a kill during save cannot
+    corrupt an existing checkpoint. The scheduler is NOT saved via its
+    state_dict (LambdaLR pickling round-trip is fragile); instead we
+    persist the step count and rebuild+fast-forward on resume.
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ckpt_path = out_dir / f"checkpoint_ep{epoch+1:03d}.pt"
+    tmp_path = out_dir / f"checkpoint_ep{epoch+1:03d}.pt.tmp"
+
+    state = {
+        "version": 1,
+        "epoch": epoch + 1,  # completed-epoch count (0-based loop -> 1-based)
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "scheduler_step_count": scheduler_step_count,
+        "best_val_loss": best_val_loss,
+        "best_val_acc": best_val_acc,
+        "best_val_auc": best_val_auc,
+        "best_state": best_state,
+        "patience_counter": patience_counter,
+        "history": history,
+        "training_recipe": training_recipe,
+        "rng": _rng_snapshot(),
+    }
+    torch.save(state, tmp_path)
+    os.replace(tmp_path, ckpt_path)
+    return ckpt_path
+
+
+def load_checkpoint(ckpt_path: Path, *, model, optimizer, scheduler,
+                    map_location="cpu") -> dict:
+    """Restore model + optimizer + scheduler from a checkpoint.
+
+    Returns the loaded state dict (with epoch, best_*, history, patience
+    counter, training_recipe) so the caller can continue the training
+    loop. The scheduler is fast-forwarded by calling step() N times
+    inside a warnings-suppressed block (PyTorch nags about step-before-
+    optimizer.step; that's expected behavior during fast-forward).
+    """
+    import warnings
+    ckpt = torch.load(str(ckpt_path), map_location=map_location,
+                      weights_only=False)
+    model.load_state_dict(ckpt["model_state_dict"])
+    optimizer.load_state_dict(ckpt["optimizer_state_dict"])
+
+    fast_fwd = int(ckpt.get("scheduler_step_count", 0))
+    if fast_fwd > 0:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            for _ in range(fast_fwd):
+                scheduler.step()
+
+    if "rng" in ckpt:
+        _rng_restore(ckpt["rng"])
+    return ckpt
 
 SIZES = [10000, 30000, 100000, 300000, 1000000, 3000000, 10000000, 30000000, 100000000]
 SEEDS = [42, 123, 456]
@@ -393,7 +490,8 @@ def run_single(train_dir,
                optimizer_name="adamw",
                scheduler_name="warmup-cosine",
                weight_decay=0.01,
-               decay_final_lr=1e-5):
+               decay_final_lr=1e-5,
+               checkpoint_every=0):
     seed_everything(seed)
 
     # Load only enough training data for this run.
@@ -432,22 +530,45 @@ def run_single(train_dir,
     )
     print(f"    optimizer={training_recipe['optimizer']['name']}  "
           f"scheduler={training_recipe['scheduler']['name']}  "
-          f"lr={lr}  weight_decay={weight_decay}")
+          f"lr={lr}  weight_decay={weight_decay}  "
+          f"checkpoint_every={checkpoint_every}")
 
     start = time.time()
     best_val_loss = float("inf")
     best_val_acc = best_val_auc = 0.0
     best_state = None
     patience_counter = 0
+    start_epoch = 0
 
-    # Training history
     history = {"epoch": [], "train_loss": [], "train_acc": [],
                "val_loss": [], "val_acc": [], "val_auc": []}
 
-    for epoch in range(epochs):
+    # Resume from latest mid-training checkpoint in the run's output dir if one
+    # exists. This is the fault-tolerance path for multi-day runs that get
+    # evicted: we just relaunch the same Job and pick up where we left off.
+    out = Path(output_dir) / f"{strategy}_{train_size}_{seed}"
+    latest_ckpt = find_latest_checkpoint(out)
+    if latest_ckpt is not None:
+        print(f"    RESUME from {latest_ckpt.name}")
+        ckpt = load_checkpoint(latest_ckpt, model=model, optimizer=optimizer,
+                               scheduler=scheduler, map_location=device)
+        start_epoch = int(ckpt["epoch"])
+        best_val_loss = float(ckpt["best_val_loss"])
+        best_val_acc = float(ckpt["best_val_acc"])
+        best_val_auc = float(ckpt["best_val_auc"])
+        best_state = ckpt["best_state"]
+        patience_counter = int(ckpt["patience_counter"])
+        history = ckpt["history"]
+        print(f"    resumed at epoch={start_epoch}  best_val_auc={best_val_auc:.4f}  "
+              f"patience_counter={patience_counter}")
+
+    scheduler_step_count = start_epoch  # one sched.step() per completed epoch
+
+    for epoch in range(start_epoch, epochs):
         train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, device)
         val_loss, val_acc, val_auc = evaluate(model, val_loader, device)
         scheduler.step()
+        scheduler_step_count += 1
 
         history["epoch"].append(epoch + 1)
         history["train_loss"].append(train_loss)
@@ -467,6 +588,22 @@ def run_single(train_dir,
 
         if (epoch + 1) % 10 == 0:
             print(f"    epoch {epoch+1}: train_acc={train_acc:.4f} val_acc={val_acc:.4f} val_auc={val_auc:.4f}")
+
+        # Mid-training checkpoint for fault tolerance on long runs.
+        if checkpoint_every > 0 and (epoch + 1) % checkpoint_every == 0:
+            ckpt_path = save_checkpoint(
+                out, epoch=epoch, model=model, optimizer=optimizer,
+                scheduler_step_count=scheduler_step_count,
+                best_val_loss=best_val_loss, best_val_acc=best_val_acc,
+                best_val_auc=best_val_auc, best_state=best_state,
+                patience_counter=patience_counter, history=history,
+                training_recipe=training_recipe,
+            )
+            # Rolling retention: keep the 2 most recent checkpoints.
+            keep = 2
+            for stale in sorted(out.glob(CHECKPOINT_GLOB))[:-keep]:
+                stale.unlink(missing_ok=True)
+            print(f"    checkpoint saved: {ckpt_path.name}")
 
         if patience_counter >= patience:
             print(f"    early stopping at epoch {epoch+1}")
@@ -507,8 +644,7 @@ def run_single(train_dir,
 
     elapsed = time.time() - start
 
-    # === Save everything ===
-    out = Path(output_dir) / f"{strategy}_{train_size}_{seed}"
+    # === Save everything === (out was already set earlier for checkpoint resume)
     out.mkdir(parents=True, exist_ok=True)
 
     # 1. Results JSON
@@ -622,6 +758,11 @@ def run_single(train_dir,
     fig.savefig(out / "confusion_matrix.png", dpi=150)
     plt.close()
 
+    # Drop any leftover mid-training checkpoints — the run is complete and
+    # best_model.pt is what we keep going forward.
+    for stale in out.glob(CHECKPOINT_GLOB):
+        stale.unlink(missing_ok=True)
+
     print(f"    Saved: results.json, training_history.csv, best_model.pt, "
           f"loss_curves.png, roc_curves.png, confusion_matrix.png")
 
@@ -668,6 +809,11 @@ def main():
     parser.add_argument("--weight-decay", type=float, default=0.01,
                         help="Optimizer weight decay. Use 0 for the paper-faithful "
                              "ParT/Sophon Ranger recipe.")
+    parser.add_argument("--checkpoint-every", type=int, default=0,
+                        help="Save mid-training checkpoint every N epochs (atomic "
+                             "write, rolling retention of last 2). 0 disables. "
+                             "On restart, --skip-existing auto-resumes from the "
+                             "latest checkpoint if results.json doesn't yet exist.")
     args = parser.parse_args()
 
     if args.sizes:
@@ -730,6 +876,7 @@ def main():
                 scheduler_name=args.scheduler,
                 weight_decay=args.weight_decay,
                 decay_final_lr=args.decay_final_lr,
+                checkpoint_every=args.checkpoint_every,
             )
 
             print(f"  acc={results['test_acc']:.4f} auc={results['test_auc_macro']:.4f} "

@@ -31,6 +31,10 @@ spec:
           #                exponential decay to 1e-5 at the final epoch).
           #   lr=1e-3, batch 512, epochs 50, weight_decay 0.
           #   patience set high so the schedule runs the full 50 epochs.
+          # --checkpoint-every 1 saves a mid-training checkpoint each epoch
+          # (atomic write, rolling retention of last 2 = ~70 MB peak on disk).
+          # On pod eviction, relaunching with the same YAML auto-resumes from
+          # the latest checkpoint via --skip-existing semantics.
           PYTHONUNBUFFERED=1 python3 scripts/train_finetune_sweep.py \
             --train-dir /data/features/train_100M \
             --val-dir   /data/features/val_5M \
@@ -41,6 +45,7 @@ spec:
             --scheduler flat-decay \
             --decay-final-lr 1e-5 \
             --weight-decay 0 \
+            --checkpoint-every 1 \
             --sizes SIZE \
             --seeds SEED \
             --lr 1e-3 \
@@ -50,7 +55,6 @@ spec:
             --batch-size 512 \
             --val-size 100000 \
             --test-size 500000 \
-            --materialize-train \
             --skip-existing
         resources:
           # From-scratch trains the full ~2.2M-param ParT backbone end to end
