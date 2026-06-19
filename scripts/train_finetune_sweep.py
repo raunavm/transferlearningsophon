@@ -259,13 +259,141 @@ def evaluate(model, loader, device):
     return (total_loss.item() / total), (correct.item() / total), auc
 
 
+def build_optimizer_and_scheduler(
+    model,
+    strategy: str,
+    optimizer_name: str,
+    lr: float,
+    backbone_lr: float,
+    weight_decay: float,
+    scheduler_name: str,
+    epochs: int,
+    decay_final_lr: float,
+):
+    """Build optimizer + scheduler per CLI choice. Returns (optimizer, scheduler, recipe_dict).
+
+    Optimizer choices:
+      - "adamw":  torch.optim.AdamW, default betas (0.9, 0.999), eps 1e-8.
+                  Backward-compatible with the original Sophon FT recipe.
+      - "ranger": weaver.utils.nn.optimizer.ranger.Ranger (Lookahead + RAdam).
+                  Paper-faithful ParT defaults: betas (0.95, 0.999), eps 1e-5,
+                  Lookahead k=6, alpha=0.5. Use with strategy=from_scratch +
+                  scheduler=flat-decay + lr=1e-3 + epochs=50 to reproduce the
+                  exact ParT JetClass-I recipe (Qu, Li, Qian 2022).
+
+    Scheduler choices:
+      - "warmup-cosine": 5-epoch linear warmup (start_factor=0.05) then
+                         CosineAnnealingLR to eta_min=1e-6 over the rest.
+                         Original Sophon FT recipe.
+      - "flat-decay":    LR constant for the first 70% of `epochs`, then
+                         per-epoch exponential decay so that LR reaches
+                         `decay_final_lr` exactly at the last epoch. Matches
+                         the ParT/weaver `flat+decay` schedule.
+
+    For full_ft / partial_ft we keep the backbone-LR split (param_groups);
+    for frozen / from_scratch we use a single param group at `lr`. The
+    optimizer choice composes orthogonally with this.
+
+    `recipe_dict` captures every hyperparameter so results.json is a
+    complete, reproducible record of how the run was trained.
+    """
+    if strategy in ("full_ft", "partial_ft"):
+        param_groups = model.get_param_groups(backbone_lr, lr)
+        has_backbone_split = True
+    else:
+        trainable = [p for p in model.parameters() if p.requires_grad]
+        param_groups = [{"params": trainable, "lr": lr}]
+        has_backbone_split = False
+
+    if optimizer_name == "adamw":
+        optimizer = torch.optim.AdamW(param_groups, weight_decay=weight_decay)
+        optimizer_config = {
+            "name": "adamw",
+            "betas": [0.9, 0.999],
+            "eps": 1e-8,
+            "weight_decay": weight_decay,
+        }
+    elif optimizer_name == "ranger":
+        from weaver.utils.nn.optimizer.ranger import Ranger
+        ranger_kwargs = dict(betas=(0.95, 0.999), eps=1e-5, alpha=0.5, k=6)
+        optimizer = Ranger(param_groups, lr=lr, weight_decay=weight_decay,
+                           **ranger_kwargs)
+        optimizer_config = {
+            "name": "ranger",
+            "betas": [0.95, 0.999],
+            "eps": 1e-5,
+            "alpha": 0.5,
+            "k": 6,
+            "weight_decay": weight_decay,
+        }
+    else:
+        raise ValueError(f"Unknown optimizer: {optimizer_name!r} "
+                         f"(choose adamw or ranger)")
+
+    if scheduler_name == "warmup-cosine":
+        warmup_epochs = min(5, max(1, epochs // 10))
+        warmup = torch.optim.lr_scheduler.LinearLR(
+            optimizer, start_factor=0.05, end_factor=1.0, total_iters=warmup_epochs)
+        cosine = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=max(1, epochs - warmup_epochs), eta_min=1e-6)
+        scheduler = torch.optim.lr_scheduler.SequentialLR(
+            optimizer, schedulers=[warmup, cosine], milestones=[warmup_epochs])
+        scheduler_config = {
+            "name": "warmup-cosine",
+            "warmup_epochs": warmup_epochs,
+            "warmup_start_factor": 0.05,
+            "cosine_eta_min": 1e-6,
+        }
+    elif scheduler_name == "flat-decay":
+        flat_epochs = int(0.7 * epochs)
+        decay_epochs = max(1, epochs - flat_epochs)
+        decay_ratio = decay_final_lr / lr  # e.g. 1e-5 / 1e-3 = 1e-2
+        per_step_factor = decay_ratio ** (1 / decay_epochs)
+
+        def lr_lambda(epoch_idx: int) -> float:
+            # epoch_idx is 0-based; PyTorch calls this with the step count
+            # AFTER the upcoming step. We want LR to be `lr` for the first
+            # `flat_epochs` calls, then geometric decay so that at the last
+            # epoch the LR multiplier equals `decay_ratio`.
+            if epoch_idx < flat_epochs:
+                return 1.0
+            step_in_decay = (epoch_idx - flat_epochs) + 1
+            return float(decay_ratio ** (step_in_decay / decay_epochs))
+
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_lambda)
+        scheduler_config = {
+            "name": "flat-decay",
+            "flat_epochs": flat_epochs,
+            "decay_epochs": decay_epochs,
+            "decay_final_lr": decay_final_lr,
+            "per_step_decay_factor": per_step_factor,
+        }
+    else:
+        raise ValueError(f"Unknown scheduler: {scheduler_name!r} "
+                         f"(choose warmup-cosine or flat-decay)")
+
+    recipe = {
+        "lr": lr,
+        "backbone_lr": backbone_lr if has_backbone_split else lr,
+        "has_backbone_lr_split": has_backbone_split,
+        "epochs_cap": epochs,
+        "optimizer": optimizer_config,
+        "scheduler": scheduler_config,
+    }
+    return optimizer, scheduler, recipe
+
+
 def run_single(train_dir,
                val_loader, test_loader,
                strategy, checkpoint, train_size, seed, device, output_dir,
                frozen_layers=4, lr=1e-3, backbone_lr=1e-4,
                epochs=100, patience=10, batch_size=256,
                materialize_train=False,
-               head_type="mlp"):
+               head_type="mlp",
+               optimizer_name="adamw",
+               scheduler_name="warmup-cosine",
+               weight_decay=0.01,
+               decay_final_lr=1e-5):
     seed_everything(seed)
 
     # Load only enough training data for this run.
@@ -295,22 +423,16 @@ def run_single(train_dir,
     print(f"    head_type={head_type}  total_params={total_params}  "
           f"trainable_params={trainable_params}")
 
-    # Optimizer — differential LR for any pretrained strategy
-    if strategy in ("full_ft", "partial_ft"):
-        param_groups = model.get_param_groups(backbone_lr, lr)
-        optimizer = torch.optim.AdamW(param_groups, weight_decay=0.01)
-    else:
-        trainable = [p for p in model.parameters() if p.requires_grad]
-        optimizer = torch.optim.AdamW(trainable, lr=lr, weight_decay=0.01)
-
-    # 5-epoch linear warmup then cosine — mitigates LR confound from larger batch.
-    warmup_epochs = min(5, max(1, epochs // 10))
-    warmup = torch.optim.lr_scheduler.LinearLR(
-        optimizer, start_factor=0.05, end_factor=1.0, total_iters=warmup_epochs)
-    cosine = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=max(1, epochs - warmup_epochs), eta_min=1e-6)
-    scheduler = torch.optim.lr_scheduler.SequentialLR(
-        optimizer, schedulers=[warmup, cosine], milestones=[warmup_epochs])
+    optimizer, scheduler, training_recipe = build_optimizer_and_scheduler(
+        model, strategy,
+        optimizer_name=optimizer_name, lr=lr, backbone_lr=backbone_lr,
+        weight_decay=weight_decay,
+        scheduler_name=scheduler_name, epochs=epochs,
+        decay_final_lr=decay_final_lr,
+    )
+    print(f"    optimizer={training_recipe['optimizer']['name']}  "
+          f"scheduler={training_recipe['scheduler']['name']}  "
+          f"lr={lr}  weight_decay={weight_decay}")
 
     start = time.time()
     best_val_loss = float("inf")
@@ -409,10 +531,11 @@ def run_single(train_dir,
         "total_params": total_params, "trainable_params": trainable_params,
         "num_epochs": epoch + 1, "wall_clock_seconds": elapsed,
         "lr": lr, "backbone_lr": backbone_lr,
-        "weight_decay": 0.01, "batch_size": batch_size,
+        "weight_decay": weight_decay, "batch_size": batch_size,
         "epochs_cap": epochs, "patience": patience,
         "frozen_layers": frozen_layers,
         "checkpoint": str(checkpoint) if checkpoint is not None else None,
+        "training_recipe": training_recipe,
         "output_dir": str(out),
     }
     with open(out / "results.json", "w") as f_out:
@@ -531,6 +654,20 @@ def main():
                         help="Classification head on top of the ParT backbone. "
                              "'linear' is a single nn.Linear(128, 10), no activation. "
                              "For from_scratch primary control, use --head-type linear.")
+    parser.add_argument("--optimizer", choices=("adamw", "ranger"), default="adamw",
+                        help="Optimizer. 'ranger' = Lookahead+RAdam (paper-faithful "
+                             "ParT recipe; weaver-core implementation, betas=(0.95,0.999), "
+                             "eps=1e-5, k=6, alpha=0.5). Use with from_scratch.")
+    parser.add_argument("--scheduler", choices=("warmup-cosine", "flat-decay"),
+                        default="warmup-cosine",
+                        help="LR scheduler. 'flat-decay' = ParT recipe (constant for "
+                             "first 70%% of epochs, exponential decay to --decay-final-lr "
+                             "over the remaining 30%%).")
+    parser.add_argument("--decay-final-lr", type=float, default=1e-5,
+                        help="Target LR at the final epoch for --scheduler flat-decay.")
+    parser.add_argument("--weight-decay", type=float, default=0.01,
+                        help="Optimizer weight decay. Use 0 for the paper-faithful "
+                             "ParT/Sophon Ranger recipe.")
     args = parser.parse_args()
 
     if args.sizes:
@@ -589,6 +726,10 @@ def main():
                 batch_size=args.batch_size,
                 materialize_train=args.materialize_train,
                 head_type=args.head_type,
+                optimizer_name=args.optimizer,
+                scheduler_name=args.scheduler,
+                weight_decay=args.weight_decay,
+                decay_final_lr=args.decay_final_lr,
             )
 
             print(f"  acc={results['test_acc']:.4f} auc={results['test_auc_macro']:.4f} "

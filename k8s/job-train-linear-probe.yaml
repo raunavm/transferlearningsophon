@@ -26,7 +26,7 @@ spec:
           # 50-epoch default for the MLP sweep, so we pass --epochs 500 and
           # rely on patience-10 early stopping for cost.
           PYTHONUNBUFFERED=1 python3 scripts/train_frozen_sweep.py \
-            --train-dir /data/embeddings_pretrained_full \
+            --train-dir /data/embeddings_pretrained_full_02_174909_100M \
             --val-dir   /data/embeddings_val_5M \
             --test-dir  /data/embeddings_test_20M \
             --output-dir /data/results/linear_probe \
@@ -41,7 +41,7 @@ spec:
           # 100M embeddings @ 128 dim × float16 ≈ 25.6 GB raw; concat peaks
           # ~51 GB. 128Gi covers up to the full sweep with headroom.
           requests: { memory: "128Gi", cpu: "4", nvidia.com/gpu: "1" }
-          limits:   { memory: "128Gi", cpu: "6", nvidia.com/gpu: "1" }
+          limits:   { memory: "128Gi", cpu: "4", nvidia.com/gpu: "1" }
         volumeMounts:
         - { name: pvc,  mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }

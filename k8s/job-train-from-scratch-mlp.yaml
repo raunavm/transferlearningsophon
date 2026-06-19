@@ -21,20 +21,26 @@ spec:
           git clone https://github.com/raunavm/transferlearningsophon.git
           cd transferlearningsophon
 
-          # Secondary ablation: from-scratch with MLP head (128->256->10, dropout 0.1).
-          # Same training recipe as the linear variant; only the head changes.
+          # Secondary ablation: from-scratch with MLP head (128->256->10,
+          # dropout 0.1). Same paper-faithful ParT recipe as the linear
+          # variant (Ranger + flat-decay, lr=1e-3, batch 512, 50 epochs,
+          # weight_decay 0). Only the head changes.
           PYTHONUNBUFFERED=1 python3 scripts/train_finetune_sweep.py \
             --train-dir /data/features/train_100M \
             --val-dir   /data/features/val_5M \
             --test-dir  /data/features/test_20M \
             --strategy from_scratch \
             --head-type mlp \
+            --optimizer ranger \
+            --scheduler flat-decay \
+            --decay-final-lr 1e-5 \
+            --weight-decay 0 \
             --sizes SIZE \
             --seeds SEED \
             --lr 1e-3 \
             --output-dir /data/results/from_scratch_mlp \
-            --epochs 100 \
-            --patience 10 \
+            --epochs 50 \
+            --patience 50 \
             --batch-size 512 \
             --val-size 100000 \
             --test-size 500000 \
@@ -42,7 +48,7 @@ spec:
             --skip-existing
         resources:
           requests: { memory: "256Gi", cpu: "6", nvidia.com/gpu: "1" }
-          limits:   { memory: "256Gi", cpu: "8", nvidia.com/gpu: "1" }
+          limits:   { memory: "256Gi", cpu: "6", nvidia.com/gpu: "1" }
         volumeMounts:
         - { name: pvc,  mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }

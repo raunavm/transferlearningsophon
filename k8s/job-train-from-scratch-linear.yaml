@@ -23,19 +23,30 @@ spec:
           # Sophon-architecture ParticleTransformer trained from random init
           # on JetClass-10. PRIMARY CONTROL: linear head (LinearHead(128, 10),
           # no activation). No --checkpoint passed — backbone is random init.
-          # All trainable parameters at lr=1e-3 (no separate backbone_lr).
+          #
+          # Training recipe: paper-faithful to ParT (Qu, Li, Qian 2022).
+          #   optimizer  = Ranger (Lookahead k=6, alpha=0.5 + RAdam betas
+          #                (0.95, 0.999), eps=1e-5)  — weaver-core impl.
+          #   scheduler  = flat-decay (constant for first 70% of epochs,
+          #                exponential decay to 1e-5 at the final epoch).
+          #   lr=1e-3, batch 512, epochs 50, weight_decay 0.
+          #   patience set high so the schedule runs the full 50 epochs.
           PYTHONUNBUFFERED=1 python3 scripts/train_finetune_sweep.py \
             --train-dir /data/features/train_100M \
             --val-dir   /data/features/val_5M \
             --test-dir  /data/features/test_20M \
             --strategy from_scratch \
             --head-type linear \
+            --optimizer ranger \
+            --scheduler flat-decay \
+            --decay-final-lr 1e-5 \
+            --weight-decay 0 \
             --sizes SIZE \
             --seeds SEED \
             --lr 1e-3 \
             --output-dir /data/results/from_scratch_linear \
-            --epochs 100 \
-            --patience 10 \
+            --epochs 50 \
+            --patience 50 \
             --batch-size 512 \
             --val-size 100000 \
             --test-size 500000 \
@@ -46,7 +57,7 @@ spec:
           # on raw features (large mmap'd arrays). Match the existing
           # full_ft job-train-sweep.yaml sizing.
           requests: { memory: "256Gi", cpu: "6", nvidia.com/gpu: "1" }
-          limits:   { memory: "256Gi", cpu: "8", nvidia.com/gpu: "1" }
+          limits:   { memory: "256Gi", cpu: "6", nvidia.com/gpu: "1" }
         volumeMounts:
         - { name: pvc,  mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
