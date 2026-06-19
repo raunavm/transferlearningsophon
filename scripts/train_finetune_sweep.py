@@ -31,7 +31,11 @@ from sklearn.metrics import roc_auc_score
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.models.sophon_wrapper import create_model, SophonTransferModel
+from src.utils.metrics import compute_classification_metrics
 from src.utils.reproducibility import seed_everything
+
+
+LABEL_NAMES = ["QCD", "Hbb", "Hcc", "Hgg", "H4q", "Hqql", "Zqq", "Wqq", "Tbqq", "Tbl"]
 
 
 torch.backends.cudnn.benchmark = True
@@ -260,7 +264,8 @@ def run_single(train_dir,
                strategy, checkpoint, train_size, seed, device, output_dir,
                frozen_layers=4, lr=1e-3, backbone_lr=1e-4,
                epochs=100, patience=10, batch_size=256,
-               materialize_train=False):
+               materialize_train=False,
+               head_type="mlp"):
     seed_everything(seed)
 
     # Load only enough training data for this run.
@@ -283,9 +288,12 @@ def run_single(train_dir,
     )
 
     # Create fresh model for each run
-    model = create_model(strategy, checkpoint, num_classes=10, frozen_layers=frozen_layers)
+    model = create_model(strategy, checkpoint, num_classes=10,
+                         head_type=head_type, frozen_layers=frozen_layers)
     model = model.to(device)
     total_params, trainable_params = SophonTransferModel.count_params(model)
+    print(f"    head_type={head_type}  total_params={total_params}  "
+          f"trainable_params={trainable_params}")
 
     # Optimizer — differential LR for any pretrained strategy
     if strategy in ("full_ft", "partial_ft"):
@@ -371,24 +379,9 @@ def run_single(train_dir,
     all_labels_test = torch.cat(all_labels_test).numpy()
     test_loss = test_loss_total.item() / test_total
     test_acc = test_correct.item() / test_total
-    try:
-        test_auc = roc_auc_score(all_labels_test, all_probs, multi_class="ovr", average="macro")
-    except ValueError:
-        test_auc = 0.0
 
-    # Per-class AUC
-    per_class_auc = {}
-    label_names = ["QCD", "Hbb", "Hcc", "Hgg", "H4q", "Hqql", "Zqq", "Wqq", "Tbqq", "Tbl"]
-    for cls_idx in range(10):
-        binary = (all_labels_test == cls_idx).astype(int)
-        if binary.sum() == 0 or binary.sum() == len(binary):
-            per_class_auc[label_names[cls_idx]] = 0.0
-            continue
-        try:
-            per_class_auc[label_names[cls_idx]] = float(
-                roc_auc_score(binary, all_probs[:, cls_idx]))
-        except ValueError:
-            per_class_auc[label_names[cls_idx]] = 0.0
+    label_names = LABEL_NAMES
+    metrics = compute_classification_metrics(all_labels_test, all_probs, label_names)
 
     elapsed = time.time() - start
 
@@ -398,15 +391,29 @@ def run_single(train_dir,
 
     # 1. Results JSON
     results = {
-        "strategy": strategy, "train_size": train_size, "seed": seed,
+        "strategy": strategy,
+        "head_type": head_type,
+        "train_size": train_size, "seed": seed,
         "num_classes": 10,
         "best_val_loss": best_val_loss, "best_val_acc": best_val_acc,
         "val_auc_macro": best_val_auc,
         "test_loss": test_loss, "test_acc": test_acc,
-        "test_auc_macro": test_auc,
-        "per_class_auc": per_class_auc,
+        "test_auc_macro": metrics["macro_auc_ovr"],
+        "per_class_auc": metrics["per_class_auc"],
+        "tpr_at_fpr": metrics["tpr_at_fpr"],
+        "macro_tpr_at_fpr_1e-1": metrics["macro_tpr_at_fpr_1e-1"],
+        "macro_tpr_at_fpr_1e-2": metrics["macro_tpr_at_fpr_1e-2"],
+        "macro_tpr_at_fpr_1e-3": metrics["macro_tpr_at_fpr_1e-3"],
+        "confusion_matrix": metrics["confusion_matrix"],
+        "normalized_confusion_matrix": metrics["normalized_confusion_matrix"],
         "total_params": total_params, "trainable_params": trainable_params,
         "num_epochs": epoch + 1, "wall_clock_seconds": elapsed,
+        "lr": lr, "backbone_lr": backbone_lr,
+        "weight_decay": 0.01, "batch_size": batch_size,
+        "epochs_cap": epochs, "patience": patience,
+        "frozen_layers": frozen_layers,
+        "checkpoint": str(checkpoint) if checkpoint is not None else None,
+        "output_dir": str(out),
     }
     with open(out / "results.json", "w") as f_out:
         json.dump(results, f_out, indent=2)
@@ -470,11 +477,8 @@ def run_single(train_dir,
     fig.savefig(out / "roc_curves.png", dpi=150)
     plt.close()
 
-    # 6. Confusion matrix
-    from sklearn.metrics import confusion_matrix
-    preds = all_probs.argmax(axis=1)
-    cm = confusion_matrix(all_labels_test, preds, labels=list(range(10)))
-    cm_norm = cm.astype(float) / cm.sum(axis=1, keepdims=True)
+    # 6. Confusion matrix (reuse normalized matrix from metrics utility)
+    cm_norm = np.asarray(metrics["normalized_confusion_matrix"])
 
     fig, ax = plt.subplots(figsize=(8, 7))
     im = ax.imshow(cm_norm, cmap="Blues", vmin=0, vmax=1)
@@ -523,6 +527,10 @@ def main():
     parser.add_argument("--batch-size", type=int, default=1024)
     parser.add_argument("--val-size", type=int, default=100000)
     parser.add_argument("--test-size", type=int, default=500000)
+    parser.add_argument("--head-type", choices=("mlp", "linear"), default="mlp",
+                        help="Classification head on top of the ParT backbone. "
+                             "'linear' is a single nn.Linear(128, 10), no activation. "
+                             "For from_scratch primary control, use --head-type linear.")
     args = parser.parse_args()
 
     if args.sizes:
@@ -580,9 +588,11 @@ def main():
                 epochs=args.epochs, patience=args.patience,
                 batch_size=args.batch_size,
                 materialize_train=args.materialize_train,
+                head_type=args.head_type,
             )
 
             print(f"  acc={results['test_acc']:.4f} auc={results['test_auc_macro']:.4f} "
+                  f"tpr@1e-3={results['macro_tpr_at_fpr_1e-3']:.4f} "
                   f"time={results['wall_clock_seconds']:.1f}s epochs={results['num_epochs']}")
 
             # Free model + GPU cache between runs to avoid fragmentation OOM

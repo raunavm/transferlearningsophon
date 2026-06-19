@@ -1,16 +1,29 @@
 #!/usr/bin/env python3
-"""Run frozen MLP sweep — base architecture [256] only.
+"""Frozen-embedding sweep — linear probe or MLP head, controlled via --head-type.
 
-Loads data once, runs 27 configs (9 sizes × 3 seeds).
-Uses larger batch sizes for bigger datasets to reduce steps per epoch.
+Loads pre-extracted Sophon embeddings once per run, trains a small head on top
+(linear or MLP), reports accuracy/AUC/per-class-AUC/TPR@FPR/confusion matrix.
+
+Defaults preserve the previous behavior:
+    --head-type mlp  --hidden-dims 256  --dropout 0.1  --run-prefix frozen_base
+
+Linear-probe protocol (per request):
+    --head-type linear      → LinearHead(128, 10), no hidden, no ReLU/GELU,
+                              no dropout, no activation before cross-entropy.
+                              Softmax used only for metrics/AUC/ROC.
+                              Run dir: linear_probe_{size}_{seed}.
+
+For a fair linear-probe convergence comparison, cluster job passes --epochs 500
+(the linear head converges far past the 50-epoch default; patience-10 early
+stopping cuts the actual cost).
 """
 from __future__ import annotations
 
 import argparse
 import json
-import time
 import os
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -22,14 +35,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.data.embedding_dataset import _load_dir
 from src.data.subsampler import stratified_subsample
-from src.models.heads import MLPHead
+from src.models.heads import LinearHead, MLPHead
+from src.utils.metrics import compute_classification_metrics
 from src.utils.reproducibility import seed_everything
 
 
 SIZES = [10000, 30000, 100000, 300000, 1000000, 3000000, 10000000, 30000000, 100000000]
 SEEDS = [42, 123, 456]
 
-# Embedding file class name -> label index
+LABEL_NAMES = ["QCD", "Hbb", "Hcc", "Hgg", "H4q", "Hqql", "Zqq", "Wqq", "Tbqq", "Tbl"]
+
 EMB_CLASS_MAP = {
     "HToBB": 1, "HToCC": 2, "HToGG": 3, "HToWW4Q": 4, "HToWW2Q1L": 5,
     "TTBar": 8, "TTBarLep": 9, "WToQQ": 7, "ZToQQ": 6, "ZJetsToNuNu": 0,
@@ -42,7 +57,6 @@ def _load_embeddings_subset(emb_dir, target_size, seed):
     d = P(emb_dir)
     emb_files = sorted(d.glob("*_embeddings.npy"))
 
-    # Group by class
     files_by_class = {}
     for f in emb_files:
         cls = f.stem.replace("_embeddings", "")
@@ -67,17 +81,13 @@ def _load_embeddings_subset(emb_dir, target_size, seed):
         else:
             chunk = np.array(emb)
 
-        # Keep as float16 for large sizes to avoid OOM; convert per-batch in __getitem__
         all_emb.append(chunk)
         all_lab.append(np.full(len(chunk), label, dtype=np.int64))
 
     total = sum(len(e) for e in all_emb)
     if total <= 200_000_000:
-        # Concatenate path — fast vectorized indexing. 100M peaks ~51GB during concat (safe at 96GB pod limit).
         return np.concatenate(all_emb), np.concatenate(all_lab)
-    else:
-        # Multi-array fallback for >200M (avoids OOM on smaller-memory pods).
-        return all_emb, all_lab
+    return all_emb, all_lab
 
 
 class ArrayDataset(Dataset):
@@ -92,8 +102,7 @@ class ArrayDataset(Dataset):
 
 
 class MultiArrayDataset(Dataset):
-    """Dataset from multiple per-class arrays without concatenating.
-    Avoids the 50GB peak memory from np.concatenate on 100M embeddings."""
+    """Multi-array dataset — avoids concat OOM at 100M embeddings."""
     def __init__(self, emb_list, lab_list):
         self.emb_list = emb_list
         self.lab_list = lab_list
@@ -108,7 +117,6 @@ class MultiArrayDataset(Dataset):
         return self._total
 
     def __getitem__(self, idx):
-        # Find which array this index belongs to
         for i, cum in enumerate(self.cum_sizes):
             if idx < cum:
                 local = idx - (self.cum_sizes[i-1] if i > 0 else 0)
@@ -116,6 +124,21 @@ class MultiArrayDataset(Dataset):
                 label = int(self.lab_list[i][local])
                 return {"embeddings": emb, "label": label}
         raise IndexError(f"Index {idx} out of range")
+
+
+def make_head(head_type: str, input_dim: int, num_classes: int,
+              hidden_dims: list[int], dropout: float) -> torch.nn.Module:
+    """Factory: build a classification head per --head-type.
+
+    head_type='linear': pure linear, no activation. Logits go straight to
+        cross-entropy. Trainable param count = input_dim*num_classes + num_classes.
+    head_type='mlp': existing MLPHead with hidden layers, ReLU, Dropout.
+    """
+    if head_type == "linear":
+        return LinearHead(input_dim, num_classes)
+    if head_type == "mlp":
+        return MLPHead(input_dim, num_classes, hidden_dims, dropout=dropout)
+    raise ValueError(f"Unknown head_type: {head_type!r}")
 
 
 def train_one_epoch(model, loader, optimizer, device):
@@ -154,7 +177,8 @@ def evaluate(model, loader, device):
     all_labels = torch.cat(all_labels)
     from sklearn.metrics import roc_auc_score
     try:
-        auc = roc_auc_score(all_labels.numpy(), all_probs.numpy(), multi_class="ovr", average="macro")
+        auc = roc_auc_score(all_labels.numpy(), all_probs.numpy(),
+                            multi_class="ovr", average="macro")
     except ValueError:
         auc = float("nan")
     return total_loss / total, correct / total, auc
@@ -162,12 +186,11 @@ def evaluate(model, loader, device):
 
 def run_single(train_emb, train_lab, val_loader, test_loader,
                train_size, seed, device, output_dir,
-               epochs=50, patience=10, lr=1e-3):
+               head_type, hidden_dims, dropout, run_prefix,
+               epochs, patience, lr, weight_decay):
     seed_everything(seed)
 
-    # Handle both concatenated arrays and list-of-arrays (for large datasets)
     if isinstance(train_emb, list):
-        # Multi-array mode — use MultiArrayDataset directly, no concatenation
         emb_list = train_emb
         lab_list = train_lab
         is_multi = True
@@ -183,7 +206,6 @@ def run_single(train_emb, train_lab, val_loader, test_loader,
             emb = np.asarray(train_emb)
             lab = train_lab
 
-    # Scale batch size with dataset — ensure at least ~50 steps per epoch
     if train_size >= 10_000_000:
         bs = 16384
     elif train_size >= 1_000_000:
@@ -199,12 +221,19 @@ def run_single(train_emb, train_lab, val_loader, test_loader,
         train_ds = MultiArrayDataset(emb_list, lab_list)
     else:
         train_ds = ArrayDataset(emb, lab)
-    train_loader = DataLoader(train_ds, batch_size=bs, shuffle=True, num_workers=0, drop_last=True)
+    train_loader = DataLoader(train_ds, batch_size=bs, shuffle=True,
+                              num_workers=0, drop_last=True)
 
-    model = MLPHead(128, 10, [256], dropout=0.1).to(device)
-    param_count = sum(p.numel() for p in model.parameters())
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
+    model = make_head(head_type, 128, 10, hidden_dims, dropout).to(device)
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"    head_type={head_type}  total_params={total_params}  "
+          f"trainable_params={trainable_params}")
+
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr,
+                                  weight_decay=weight_decay)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=epochs, eta_min=1e-6)
 
     start = time.time()
     best_val_loss = float("inf")
@@ -237,10 +266,7 @@ def run_single(train_emb, train_lab, val_loader, test_loader,
         if patience_counter >= patience:
             break
 
-    # Load best model for final test
     model.load_state_dict(best_state)
-
-    # Final test — collect per-sample predictions
     model.eval()
     all_probs, all_labels_test = [], []
     test_loss_total = test_correct = test_total = 0
@@ -260,48 +286,55 @@ def run_single(train_emb, train_lab, val_loader, test_loader,
     all_labels_test = torch.cat(all_labels_test).numpy()
     test_loss = test_loss_total / test_total
     test_acc = test_correct / test_total
-    from sklearn.metrics import roc_auc_score
-    try:
-        test_auc = roc_auc_score(all_labels_test, all_probs, multi_class="ovr", average="macro")
-    except ValueError:
-        test_auc = 0.0
 
-    # Per-class AUC
-    label_names = ["QCD", "Hbb", "Hcc", "Hgg", "H4q", "Hqql", "Zqq", "Wqq", "Tbqq", "Tbl"]
-    per_class_auc = {}
-    for cls_idx in range(10):
-        binary = (all_labels_test == cls_idx).astype(int)
-        if binary.sum() == 0 or binary.sum() == len(binary):
-            per_class_auc[label_names[cls_idx]] = 0.0
-            continue
-        try:
-            per_class_auc[label_names[cls_idx]] = float(
-                roc_auc_score(binary, all_probs[:, cls_idx]))
-        except ValueError:
-            per_class_auc[label_names[cls_idx]] = 0.0
-
+    metrics = compute_classification_metrics(all_labels_test, all_probs, LABEL_NAMES)
     elapsed = time.time() - start
 
-    # === Save everything ===
-    out = Path(output_dir) / f"frozen_base_{train_size}_{seed}"
+    strategy_tag = "linear_probe" if head_type == "linear" else "frozen_mlp"
+    out = Path(output_dir) / f"{run_prefix}_{train_size}_{seed}"
     out.mkdir(parents=True, exist_ok=True)
 
-    # 1. Results JSON
     results = {
-        "strategy": "frozen", "architecture": "base", "hidden_dims": [256],
-        "train_size": train_size, "seed": seed, "num_classes": 10,
-        "best_val_loss": best_val_loss, "best_val_acc": best_val_acc,
+        "strategy": strategy_tag,
+        "head_type": head_type,
+        "architecture": "linear" if head_type == "linear" else "mlp",
+        "hidden_dims": [] if head_type == "linear" else list(hidden_dims),
+        "dropout": 0.0 if head_type == "linear" else dropout,
+        "train_size": train_size,
+        "seed": seed,
+        "num_classes": 10,
+
+        "best_val_loss": best_val_loss,
+        "best_val_acc": best_val_acc,
         "val_auc_macro": best_val_auc,
-        "test_loss": test_loss, "test_acc": test_acc, "test_auc_macro": test_auc,
-        "per_class_auc": per_class_auc,
-        "total_params": param_count, "trainable_params": param_count,
-        "num_epochs": epoch + 1, "wall_clock_seconds": elapsed,
-        "lr": lr, "dropout": 0.1, "batch_size": bs,
+
+        "test_loss": test_loss,
+        "test_acc": test_acc,
+        "test_auc_macro": metrics["macro_auc_ovr"],
+        "per_class_auc": metrics["per_class_auc"],
+        "tpr_at_fpr": metrics["tpr_at_fpr"],
+        "macro_tpr_at_fpr_1e-1": metrics["macro_tpr_at_fpr_1e-1"],
+        "macro_tpr_at_fpr_1e-2": metrics["macro_tpr_at_fpr_1e-2"],
+        "macro_tpr_at_fpr_1e-3": metrics["macro_tpr_at_fpr_1e-3"],
+        "confusion_matrix": metrics["confusion_matrix"],
+        "normalized_confusion_matrix": metrics["normalized_confusion_matrix"],
+
+        "total_params": total_params,
+        "trainable_params": trainable_params,
+        "num_epochs": epoch + 1,
+        "wall_clock_seconds": elapsed,
+
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "batch_size": bs,
+        "epochs_cap": epochs,
+        "patience": patience,
+        "run_prefix": run_prefix,
+        "output_dir": str(out),
     }
     with open(out / "results.json", "w") as f:
         json.dump(results, f, indent=2)
 
-    # 2. Training history CSV
     import csv
     with open(out / "training_history.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=history.keys())
@@ -309,10 +342,8 @@ def run_single(train_emb, train_lab, val_loader, test_loader,
         for i in range(len(history["epoch"])):
             w.writerow({k: history[k][i] for k in history})
 
-    # 3. Model checkpoint
     torch.save(best_state, out / "best_model.pt")
 
-    # 4. Loss curves plot
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -322,19 +353,18 @@ def run_single(train_emb, train_lab, val_loader, test_loader,
     ax1.plot(eps, history["train_loss"], label="Train", color="#4477AA")
     ax1.plot(eps, history["val_loss"], label="Val", color="#EE6677")
     ax1.set_xlabel("Epoch"); ax1.set_ylabel("Loss")
-    ax1.set_title(f"Frozen {train_size:,} s{seed} — Loss")
+    ax1.set_title(f"{strategy_tag} {train_size:,} s{seed} — Loss")
     ax1.legend(); ax1.grid(True, alpha=0.3)
 
     ax2.plot(eps, history["train_acc"], label="Train Acc", color="#4477AA")
     ax2.plot(eps, history["val_acc"], label="Val Acc", color="#EE6677")
     ax2.plot(eps, history["val_auc"], label="Val AUC", color="#228833", linestyle="--")
     ax2.set_xlabel("Epoch"); ax2.set_ylabel("Metric")
-    ax2.set_title(f"Frozen {train_size:,} s{seed} — Accuracy & AUC")
+    ax2.set_title(f"{strategy_tag} {train_size:,} s{seed} — Accuracy & AUC")
     ax2.legend(); ax2.grid(True, alpha=0.3)
     fig.tight_layout()
     fig.savefig(out / "loss_curves.png", dpi=150); plt.close()
 
-    # 5. ROC curves per class
     from sklearn.metrics import roc_curve, auc as sk_auc
     fig, ax = plt.subplots(figsize=(7, 6))
     for cls_idx in range(10):
@@ -342,34 +372,30 @@ def run_single(train_emb, train_lab, val_loader, test_loader,
         if binary.sum() == 0: continue
         fpr, tpr, _ = roc_curve(binary, all_probs[:, cls_idx])
         area = sk_auc(fpr, tpr)
-        ax.plot(fpr, tpr, label=f"{label_names[cls_idx]} (AUC={area:.3f})", linewidth=1)
+        ax.plot(fpr, tpr, label=f"{LABEL_NAMES[cls_idx]} (AUC={area:.3f})", linewidth=1)
     ax.plot([0, 1], [0, 1], "k--", alpha=0.3)
     ax.set_xlabel("FPR"); ax.set_ylabel("TPR")
-    ax.set_title(f"ROC — Frozen {train_size:,} s{seed}")
+    ax.set_title(f"ROC — {strategy_tag} {train_size:,} s{seed}")
     ax.legend(fontsize=7, loc="lower right"); ax.grid(True, alpha=0.3)
     fig.tight_layout()
     fig.savefig(out / "roc_curves.png", dpi=150); plt.close()
 
-    # 6. Confusion matrix
-    from sklearn.metrics import confusion_matrix
-    preds = all_probs.argmax(axis=1)
-    cm = confusion_matrix(all_labels_test, preds, labels=list(range(10)))
-    cm_norm = cm.astype(float) / cm.sum(axis=1, keepdims=True)
+    cm_norm = np.asarray(metrics["normalized_confusion_matrix"])
     fig, ax = plt.subplots(figsize=(8, 7))
     im = ax.imshow(cm_norm, cmap="Blues", vmin=0, vmax=1)
-    ax.set_xticks(range(10)); ax.set_xticklabels(label_names, fontsize=7, rotation=45, ha="right")
-    ax.set_yticks(range(10)); ax.set_yticklabels(label_names, fontsize=7)
+    ax.set_xticks(range(10)); ax.set_xticklabels(LABEL_NAMES, fontsize=7, rotation=45, ha="right")
+    ax.set_yticks(range(10)); ax.set_yticklabels(LABEL_NAMES, fontsize=7)
     for i in range(10):
         for j in range(10):
             color = "white" if cm_norm[i,j] > 0.5 else "black"
             ax.text(j, i, f"{cm_norm[i,j]:.2f}", ha="center", va="center", fontsize=6, color=color)
     plt.colorbar(im, ax=ax, shrink=0.8)
     ax.set_xlabel("Predicted"); ax.set_ylabel("True")
-    ax.set_title(f"Confusion — Frozen {train_size:,} s{seed}")
+    ax.set_title(f"Confusion — {strategy_tag} {train_size:,} s{seed}")
     fig.tight_layout()
     fig.savefig(out / "confusion_matrix.png", dpi=150); plt.close()
 
-    print(f"    Saved: results.json, training_history.csv, best_model.pt, "
+    print(f"    Saved to {out}: results.json, training_history.csv, best_model.pt, "
           f"loss_curves.png, roc_curves.png, confusion_matrix.png")
     return results
 
@@ -381,13 +407,27 @@ def main():
     parser.add_argument("--test-dir", required=True)
     parser.add_argument("--output-dir", default="/data/results/frozen_base")
     parser.add_argument("--sizes", default=None,
-                        help="Comma-separated list of train sizes (default: all 9)")
+                        help="Comma-separated list of train sizes")
     parser.add_argument("--seeds", default=None,
-                        help="Comma-separated list of seeds (default: 42,123,456)")
-    parser.add_argument("--skip-existing", action="store_true",
-                        help="Skip runs where results.json + best_model.pt already exist")
-    parser.add_argument("--epochs", type=int, default=50)
+                        help="Comma-separated list of seeds")
+    parser.add_argument("--skip-existing", action="store_true")
+    parser.add_argument("--epochs", type=int, default=50,
+                        help="Cap on epochs. Linear probe should pass --epochs 500.")
     parser.add_argument("--patience", type=int, default=10)
+    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--weight-decay", type=float, default=0.01)
+
+    parser.add_argument("--head-type", choices=("mlp", "linear"), default="mlp",
+                        help="'mlp' (default, backward-compat) or 'linear' (no activation).")
+    parser.add_argument("--hidden-dims", default="256",
+                        help="MLP hidden dims, comma-sep (e.g. '256' or '512,128'). "
+                             "Ignored when --head-type=linear.")
+    parser.add_argument("--dropout", type=float, default=0.1,
+                        help="MLP dropout. Ignored when --head-type=linear.")
+    parser.add_argument("--run-prefix", default=None,
+                        help="Override output dir prefix. Default: 'frozen_base' for mlp "
+                             "(backward-compat with existing /data/results/frozen_base) or "
+                             "'linear_probe' for linear.")
     args = parser.parse_args()
 
     if args.sizes:
@@ -397,57 +437,60 @@ def main():
         global SEEDS
         SEEDS = [int(s) for s in args.seeds.split(",")]
 
+    hidden_dims = [int(s) for s in args.hidden_dims.split(",") if s.strip()]
+    run_prefix = args.run_prefix
+    if run_prefix is None:
+        run_prefix = "linear_probe" if args.head_type == "linear" else "frozen_base"
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
+    print(f"head_type={args.head_type}  hidden_dims={hidden_dims}  "
+          f"dropout={args.dropout}  run_prefix={run_prefix}")
 
-    # Load val once (small, 100K subset)
     print("\nLoading validation embeddings...")
     val_emb, val_lab = _load_dir(args.val_dir)
     VAL_SUBSET = 100_000
     if len(val_lab) > VAL_SUBSET:
         val_idx = stratified_subsample(val_lab, VAL_SUBSET, seed=0)
-        val_ds = ArrayDataset(np.ascontiguousarray(val_emb[val_idx]).astype(np.float32), val_lab[val_idx])
+        val_ds = ArrayDataset(np.ascontiguousarray(val_emb[val_idx]).astype(np.float32),
+                              val_lab[val_idx])
         print(f"Val: {VAL_SUBSET:,} subset for early stopping")
     else:
         val_ds = ArrayDataset(np.ascontiguousarray(val_emb).astype(np.float32), val_lab)
     val_loader = DataLoader(val_ds, batch_size=8192, shuffle=False, num_workers=0)
-    del val_emb, val_lab  # free memory
+    del val_emb, val_lab
 
-    # Load test once (500K subset to avoid OOM on sklearn AUC)
     print("\nLoading test embeddings...")
     test_emb, test_lab = _load_dir(args.test_dir)
     TEST_SUBSET = 500_000
     if len(test_lab) > TEST_SUBSET:
         test_idx = stratified_subsample(test_lab, TEST_SUBSET, seed=0)
-        test_ds = ArrayDataset(np.ascontiguousarray(test_emb[test_idx]).astype(np.float32), test_lab[test_idx])
+        test_ds = ArrayDataset(np.ascontiguousarray(test_emb[test_idx]).astype(np.float32),
+                               test_lab[test_idx])
         print(f"Test: {TEST_SUBSET:,} subset")
     else:
         test_ds = ArrayDataset(np.ascontiguousarray(test_emb).astype(np.float32), test_lab)
     test_loader = DataLoader(test_ds, batch_size=8192, shuffle=False, num_workers=0)
     print(f"Test: {len(test_ds):,} jets")
-    del test_emb, test_lab  # free memory
+    del test_emb, test_lab
 
-    # Training embeddings loaded per-run to avoid 25GB+ in memory
-    # Just scan the dir to know what's available
     from pathlib import Path as P
     train_files = sorted(P(args.train_dir).glob("*_embeddings.npy"))
     print(f"\nTrain dir: {len(train_files)} embedding files")
 
-    # Run configs
     total = len(SIZES) * len(SEEDS)
     idx = 0
     for size in SIZES:
         for seed in SEEDS:
             idx += 1
-            print(f"\n[{idx}/{total}] size={size:,} seed={seed}")
+            print(f"\n[{idx}/{total}] size={size:,} seed={seed} head_type={args.head_type}")
 
             if args.skip_existing:
-                run_dir = Path(args.output_dir) / f"frozen_base_{size}_{seed}"
+                run_dir = Path(args.output_dir) / f"{run_prefix}_{size}_{seed}"
                 if (run_dir / "results.json").exists() and (run_dir / "best_model.pt").exists():
                     print(f"    SKIP — already complete at {run_dir}")
                     continue
 
-            # Load only what we need for this run (class-balanced)
             print(f"    Loading {size:,} training embeddings...")
             train_emb_run, train_lab_run = _load_embeddings_subset(
                 args.train_dir, size, seed)
@@ -460,18 +503,21 @@ def main():
                 print(f"    Train labels: {dict(sorted(label_counts.items()))}")
                 print(f"    Train shape: ({total_n}, {train_emb_run[0].shape[1]}), "
                       f"dtype: {train_emb_run[0].dtype} (multi-array)")
-                print(f"    Train range: [{min(e.min() for e in train_emb_run):.4f}, "
-                      f"{max(e.max() for e in train_emb_run):.4f}]")
             else:
                 print(f"    Train labels: {dict(sorted(Counter(train_lab_run.tolist()).items()))}")
                 print(f"    Train shape: {train_emb_run.shape}, dtype: {train_emb_run.dtype}")
-                print(f"    Train range: [{train_emb_run.min():.4f}, {train_emb_run.max():.4f}]")
 
-            results = run_single(train_emb_run, train_lab_run, val_loader, test_loader,
-                                 size, seed, device, args.output_dir,
-                                 epochs=args.epochs, patience=args.patience)
+            results = run_single(
+                train_emb_run, train_lab_run, val_loader, test_loader,
+                size, seed, device, args.output_dir,
+                head_type=args.head_type, hidden_dims=hidden_dims,
+                dropout=args.dropout, run_prefix=run_prefix,
+                epochs=args.epochs, patience=args.patience,
+                lr=args.lr, weight_decay=args.weight_decay)
             print(f"  acc={results['test_acc']:.4f} auc={results['test_auc_macro']:.4f} "
-                  f"time={results['wall_clock_seconds']:.1f}s epochs={results['num_epochs']}")
+                  f"tpr@1e-3={results['macro_tpr_at_fpr_1e-3']:.4f} "
+                  f"time={results['wall_clock_seconds']:.1f}s "
+                  f"epochs={results['num_epochs']}")
 
     print(f"\nALL DONE — {idx} runs in {args.output_dir}")
 

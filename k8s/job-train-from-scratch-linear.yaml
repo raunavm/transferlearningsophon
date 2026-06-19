@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Customize the suffix to identify the run.
+  # Always keep "raunav" in the name (cluster-safety rule).
+  name: from-scratch-linear-SIZE-sSEED-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: train
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+
+          # Sophon-architecture ParticleTransformer trained from random init
+          # on JetClass-10. PRIMARY CONTROL: linear head (LinearHead(128, 10),
+          # no activation). No --checkpoint passed — backbone is random init.
+          # All trainable parameters at lr=1e-3 (no separate backbone_lr).
+          PYTHONUNBUFFERED=1 python3 scripts/train_finetune_sweep.py \
+            --train-dir /data/features/train_100M \
+            --val-dir   /data/features/val_5M \
+            --test-dir  /data/features/test_20M \
+            --strategy from_scratch \
+            --head-type linear \
+            --sizes SIZE \
+            --seeds SEED \
+            --lr 1e-3 \
+            --output-dir /data/results/from_scratch_linear \
+            --epochs 100 \
+            --patience 10 \
+            --batch-size 512 \
+            --val-size 100000 \
+            --test-size 500000 \
+            --materialize-train \
+            --skip-existing
+        resources:
+          # From-scratch trains the full ~2.2M-param ParT backbone end to end
+          # on raw features (large mmap'd arrays). Match the existing
+          # full_ft job-train-sweep.yaml sizing.
+          requests: { memory: "256Gi", cpu: "6", nvidia.com/gpu: "1" }
+          limits:   { memory: "256Gi", cpu: "8", nvidia.com/gpu: "1" }
+        volumeMounts:
+        - { name: pvc,  mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-A100-SXM4-80GB
+                - NVIDIA-A100-PCIE-40GB
+                - NVIDIA-A40
+                - NVIDIA-RTX-A6000
+                - NVIDIA-L40
+                - NVIDIA-L40S
+                - NVIDIA-GeForce-RTX-4090
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "32Gi" }

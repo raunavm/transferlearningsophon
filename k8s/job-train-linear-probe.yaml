@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Customize the suffix to identify the run, e.g. -10k-s42-raunav
+  # Always keep "raunav" in the name (cluster-safety rule).
+  name: linear-probe-SIZE-sSEED-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: train
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+
+          # Frozen Sophon linear probe: LinearHead(128, 10), no activation,
+          # no dropout. Reads pre-extracted Sophon embeddings (no backbone
+          # forward pass at train time). Linear converges far past the
+          # 50-epoch default for the MLP sweep, so we pass --epochs 500 and
+          # rely on patience-10 early stopping for cost.
+          PYTHONUNBUFFERED=1 python3 scripts/train_frozen_sweep.py \
+            --train-dir /data/embeddings_pretrained_full \
+            --val-dir   /data/embeddings_val_5M \
+            --test-dir  /data/embeddings_test_20M \
+            --output-dir /data/results/linear_probe \
+            --head-type linear \
+            --sizes SIZE \
+            --seeds SEED \
+            --epochs 500 \
+            --patience 10 \
+            --skip-existing
+        resources:
+          # Linear head is 1290 params; the cost is loading embeddings.
+          # 100M embeddings @ 128 dim × float16 ≈ 25.6 GB raw; concat peaks
+          # ~51 GB. 128Gi covers up to the full sweep with headroom.
+          requests: { memory: "128Gi", cpu: "4", nvidia.com/gpu: "1" }
+          limits:   { memory: "128Gi", cpu: "6", nvidia.com/gpu: "1" }
+        volumeMounts:
+        - { name: pvc,  mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-A100-SXM4-80GB
+                - NVIDIA-A100-PCIE-40GB
+                - NVIDIA-A40
+                - NVIDIA-RTX-A6000
+                - NVIDIA-RTX-A5000
+                - NVIDIA-L40
+                - NVIDIA-L40S
+                - NVIDIA-L4
+                - NVIDIA-A10
+                - NVIDIA-GeForce-RTX-4090
+                - NVIDIA-GeForce-RTX-3090
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "16Gi" }
