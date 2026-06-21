@@ -77,7 +77,8 @@ def save_checkpoint(out_dir: Path, *, epoch: int,
                     model, optimizer, scheduler_step_count: int,
                     best_val_loss: float, best_val_acc: float, best_val_auc: float,
                     best_state, patience_counter: int,
-                    history: dict, training_recipe: dict) -> Path:
+                    history: dict, training_recipe: dict,
+                    scaler=None) -> Path:
     """Atomically save a mid-training checkpoint.
 
     Writes to a `.tmp` first and renames so a kill during save cannot
@@ -96,6 +97,7 @@ def save_checkpoint(out_dir: Path, *, epoch: int,
         "model_state_dict": model.state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
         "scheduler_step_count": scheduler_step_count,
+        "scaler_state_dict": scaler.state_dict() if scaler is not None else None,
         "best_val_loss": best_val_loss,
         "best_val_acc": best_val_acc,
         "best_val_auc": best_val_auc,
@@ -111,7 +113,7 @@ def save_checkpoint(out_dir: Path, *, epoch: int,
 
 
 def load_checkpoint(ckpt_path: Path, *, model, optimizer, scheduler,
-                    map_location="cpu") -> dict:
+                    scaler=None, map_location="cpu") -> dict:
     """Restore model + optimizer + scheduler from a checkpoint.
 
     Returns the loaded state dict (with epoch, best_*, history, patience
@@ -133,6 +135,9 @@ def load_checkpoint(ckpt_path: Path, *, model, optimizer, scheduler,
             for _ in range(fast_fwd):
                 scheduler.step()
 
+    if scaler is not None and ckpt.get("scaler_state_dict") is not None:
+        scaler.load_state_dict(ckpt["scaler_state_dict"])
+
     if "rng" in ckpt:
         _rng_restore(ckpt["rng"])
     return ckpt
@@ -142,10 +147,38 @@ SEEDS = [42, 123, 456]
 
 
 def _amp_dtype(device: torch.device) -> torch.dtype:
-    """Return bfloat16 if supported, else float32 (no autocast effect)."""
+    """Legacy auto-resolver: bfloat16 if supported, else float32.
+
+    Kept for backwards compatibility; new code should use
+    `_resolve_amp_dtype(device, choice)` to honor an explicit CLI choice.
+    """
     if device.type == "cuda" and torch.cuda.is_bf16_supported():
         return torch.bfloat16
     return torch.float32
+
+
+def _resolve_amp_dtype(device: torch.device, choice: str) -> torch.dtype:
+    """Resolve the --amp-dtype CLI string to a torch dtype.
+
+    Choices:
+      'auto' = bf16 if CUDA bf16 is supported else fp32 (legacy behavior).
+      'bf16' = torch.bfloat16  (assert CUDA bf16 support).
+      'fp16' = torch.float16   (assert CUDA available; requires GradScaler).
+      'fp32' = torch.float32   (disables autocast).
+    """
+    if choice == "auto":
+        return _amp_dtype(device)
+    if choice == "bf16":
+        if device.type != "cuda" or not torch.cuda.is_bf16_supported():
+            raise RuntimeError("--amp-dtype bf16 requires CUDA with bf16 support")
+        return torch.bfloat16
+    if choice == "fp16":
+        if device.type != "cuda":
+            raise RuntimeError("--amp-dtype fp16 requires CUDA")
+        return torch.float16
+    if choice == "fp32":
+        return torch.float32
+    raise ValueError(f"Unknown --amp-dtype: {choice!r}")
 
 
 class FeatureDataset(Dataset):
@@ -298,9 +331,19 @@ def load_npy_features(data_dir, max_jets=None, return_list=False, materialize=Fa
     return features, lorentz, masks, labels
 
 
-def train_one_epoch(model, loader, optimizer, device):
+def train_one_epoch(model, loader, optimizer, device, amp_dtype=None, scaler=None):
+    """Train one epoch.
+
+    Args:
+        amp_dtype: torch.dtype for autocast. If None, falls back to
+            `_amp_dtype(device)` (legacy auto-resolve).
+        scaler: torch.amp.GradScaler when using fp16 autocast (required for
+            fp16 stability); None for bf16/fp32 (no gradient scaling needed).
+    """
     model.train()
-    amp_dtype = _amp_dtype(device)
+    if amp_dtype is None:
+        amp_dtype = _amp_dtype(device)
+    use_amp = amp_dtype != torch.float32
     total_loss = torch.zeros(1, device=device)
     correct = torch.zeros(1, device=device, dtype=torch.long)
     total = 0
@@ -310,12 +353,19 @@ def train_one_epoch(model, loader, optimizer, device):
         m = batch["mask"].to(device, non_blocking=True)
         lab = batch["label"].to(device, non_blocking=True)
 
-        with torch.amp.autocast(device_type="cuda", dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
+        with torch.amp.autocast(device_type="cuda", dtype=amp_dtype, enabled=use_amp):
             logits, _ = model(f, lv, m)
             loss = F.cross_entropy(logits, lab)
         optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        if scaler is not None:
+            # fp16 path: scale loss to avoid grad underflow, then unscale +
+            # step + update the scale factor. Skips optimizer.step if inf/nan.
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            optimizer.step()
 
         total_loss += loss.detach() * lab.size(0)
         correct += (logits.argmax(-1) == lab).sum()
@@ -323,9 +373,11 @@ def train_one_epoch(model, loader, optimizer, device):
     return (total_loss.item() / total), (correct.item() / total)
 
 
-def evaluate(model, loader, device):
+def evaluate(model, loader, device, amp_dtype=None):
     model.eval()
-    amp_dtype = _amp_dtype(device)
+    if amp_dtype is None:
+        amp_dtype = _amp_dtype(device)
+    use_amp = amp_dtype != torch.float32
     total_loss = torch.zeros(1, device=device)
     correct = torch.zeros(1, device=device, dtype=torch.long)
     total = 0
@@ -337,13 +389,13 @@ def evaluate(model, loader, device):
             m = batch["mask"].to(device, non_blocking=True)
             lab = batch["label"].to(device, non_blocking=True)
 
-            with torch.amp.autocast(device_type="cuda", dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
+            with torch.amp.autocast(device_type="cuda", dtype=amp_dtype, enabled=use_amp):
                 logits, _ = model(f, lv, m)
                 loss = F.cross_entropy(logits, lab)
             total_loss += loss.detach() * lab.size(0)
             correct += (logits.argmax(-1) == lab).sum()
             total += lab.size(0)
-            # softmax in fp32 for AUC precision; bf16 softmax loses 4th-decimal AUC
+            # softmax in fp32 for AUC precision; mixed-precision softmax loses 4th-decimal AUC
             all_probs.append(F.softmax(logits.float(), -1).cpu())
             all_labels.append(lab.cpu())
 
@@ -492,7 +544,8 @@ def run_single(train_dir,
                weight_decay=0.01,
                decay_final_lr=1e-5,
                checkpoint_every=0,
-               checkpoint_metric="val_loss"):
+               checkpoint_metric="val_loss",
+               amp_dtype_choice="auto"):
     seed_everything(seed)
 
     # Load only enough training data for this run.
@@ -529,11 +582,20 @@ def run_single(train_dir,
         scheduler_name=scheduler_name, epochs=epochs,
         decay_final_lr=decay_final_lr,
     )
+
+    amp_dtype = _resolve_amp_dtype(device, amp_dtype_choice)
+    scaler = torch.amp.GradScaler("cuda") if amp_dtype == torch.float16 else None
+    amp_label = {torch.bfloat16: "bf16", torch.float16: "fp16",
+                 torch.float32: "fp32"}.get(amp_dtype, str(amp_dtype))
+    training_recipe["amp_dtype"] = amp_label
+    training_recipe["uses_grad_scaler"] = scaler is not None
+
     print(f"    optimizer={training_recipe['optimizer']['name']}  "
           f"scheduler={training_recipe['scheduler']['name']}  "
           f"lr={lr}  weight_decay={weight_decay}  "
           f"checkpoint_every={checkpoint_every}  "
-          f"checkpoint_metric={checkpoint_metric}")
+          f"checkpoint_metric={checkpoint_metric}  "
+          f"amp={amp_label}{'+scaler' if scaler is not None else ''}")
 
     start = time.time()
     best_val_loss = float("inf")
@@ -553,7 +615,8 @@ def run_single(train_dir,
     if latest_ckpt is not None:
         print(f"    RESUME from {latest_ckpt.name}")
         ckpt = load_checkpoint(latest_ckpt, model=model, optimizer=optimizer,
-                               scheduler=scheduler, map_location=device)
+                               scheduler=scheduler, scaler=scaler,
+                               map_location=device)
         start_epoch = int(ckpt["epoch"])
         best_val_loss = float(ckpt["best_val_loss"])
         best_val_acc = float(ckpt["best_val_acc"])
@@ -567,8 +630,11 @@ def run_single(train_dir,
     scheduler_step_count = start_epoch  # one sched.step() per completed epoch
 
     for epoch in range(start_epoch, epochs):
-        train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, device)
-        val_loss, val_acc, val_auc = evaluate(model, val_loader, device)
+        train_loss, train_acc = train_one_epoch(
+            model, train_loader, optimizer, device,
+            amp_dtype=amp_dtype, scaler=scaler)
+        val_loss, val_acc, val_auc = evaluate(
+            model, val_loader, device, amp_dtype=amp_dtype)
         scheduler.step()
         scheduler_step_count += 1
 
@@ -608,6 +674,7 @@ def run_single(train_dir,
                 best_val_auc=best_val_auc, best_state=best_state,
                 patience_counter=patience_counter, history=history,
                 training_recipe=training_recipe,
+                scaler=scaler,
             )
             # Rolling retention: keep the 2 most recent checkpoints.
             keep = 2
@@ -624,7 +691,6 @@ def run_single(train_dir,
 
     # Final test — collect per-sample predictions for ROC curves
     model.eval()
-    amp_dtype = _amp_dtype(device)
     all_probs, all_labels_test = [], []
     test_loss_total = torch.zeros(1, device=device)
     test_correct = torch.zeros(1, device=device, dtype=torch.long)
@@ -831,6 +897,13 @@ def main():
                              "and the patience counter. 'val_loss' (default) matches "
                              "the original Sophon FT-sweep behavior. 'val_acc' "
                              "matches the published ParT JetClass recipe.")
+    parser.add_argument("--amp-dtype", choices=("auto", "bf16", "fp16", "fp32"),
+                        default="auto",
+                        help="Mixed-precision dtype. 'auto' (default) = bf16 if "
+                             "supported else fp32 (backwards-compatible). "
+                             "'fp16' enables torch.amp.GradScaler for stability "
+                             "(matches the official ParT JetClass recipe). "
+                             "'bf16' forces bfloat16 on Ampere/Ada+ GPUs.")
     args = parser.parse_args()
 
     if args.sizes:
@@ -895,6 +968,7 @@ def main():
                 decay_final_lr=args.decay_final_lr,
                 checkpoint_every=args.checkpoint_every,
                 checkpoint_metric=args.checkpoint_metric,
+                amp_dtype_choice=args.amp_dtype,
             )
 
             print(f"  acc={results['test_acc']:.4f} auc={results['test_auc_macro']:.4f} "
