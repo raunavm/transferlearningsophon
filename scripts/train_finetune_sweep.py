@@ -491,7 +491,8 @@ def run_single(train_dir,
                scheduler_name="warmup-cosine",
                weight_decay=0.01,
                decay_final_lr=1e-5,
-               checkpoint_every=0):
+               checkpoint_every=0,
+               checkpoint_metric="val_loss"):
     seed_everything(seed)
 
     # Load only enough training data for this run.
@@ -531,7 +532,8 @@ def run_single(train_dir,
     print(f"    optimizer={training_recipe['optimizer']['name']}  "
           f"scheduler={training_recipe['scheduler']['name']}  "
           f"lr={lr}  weight_decay={weight_decay}  "
-          f"checkpoint_every={checkpoint_every}")
+          f"checkpoint_every={checkpoint_every}  "
+          f"checkpoint_metric={checkpoint_metric}")
 
     start = time.time()
     best_val_loss = float("inf")
@@ -577,7 +579,15 @@ def run_single(train_dir,
         history["val_acc"].append(val_acc)
         history["val_auc"].append(val_auc)
 
-        if val_loss < best_val_loss:
+        # Checkpoint-selection metric. Default 'val_loss' preserves the
+        # original Sophon FT-sweep semantics. 'val_acc' matches the published
+        # ParT JetClass recipe (Qu, Li, Qian 2022): "checkpoint with best
+        # validation accuracy."
+        if checkpoint_metric == "val_acc":
+            improved = val_acc > best_val_acc
+        else:
+            improved = val_loss < best_val_loss
+        if improved:
             best_val_loss = val_loss
             best_val_acc = val_acc
             best_val_auc = val_auc
@@ -672,6 +682,7 @@ def run_single(train_dir,
         "frozen_layers": frozen_layers,
         "checkpoint": str(checkpoint) if checkpoint is not None else None,
         "training_recipe": training_recipe,
+        "checkpoint_metric": checkpoint_metric,
         "output_dir": str(out),
     }
     with open(out / "results.json", "w") as f_out:
@@ -814,6 +825,12 @@ def main():
                              "write, rolling retention of last 2). 0 disables. "
                              "On restart, --skip-existing auto-resumes from the "
                              "latest checkpoint if results.json doesn't yet exist.")
+    parser.add_argument("--checkpoint-metric", choices=("val_loss", "val_acc"),
+                        default="val_loss",
+                        help="Which metric decides 'best epoch' for best_model.pt "
+                             "and the patience counter. 'val_loss' (default) matches "
+                             "the original Sophon FT-sweep behavior. 'val_acc' "
+                             "matches the published ParT JetClass recipe.")
     args = parser.parse_args()
 
     if args.sizes:
@@ -877,6 +894,7 @@ def main():
                 weight_decay=args.weight_decay,
                 decay_final_lr=args.decay_final_lr,
                 checkpoint_every=args.checkpoint_every,
+                checkpoint_metric=args.checkpoint_metric,
             )
 
             print(f"  acc={results['test_acc']:.4f} auc={results['test_auc_macro']:.4f} "

@@ -46,12 +46,13 @@ spec:
             --decay-final-lr 1e-5 \
             --weight-decay 0 \
             --checkpoint-every 1 \
+            --checkpoint-metric val_acc \
             --sizes SIZE \
             --seeds SEED \
             --lr 1e-3 \
             --output-dir /data/results/from_scratch_linear \
-            --epochs 50 \
-            --patience 50 \
+            --epochs 51 \
+            --patience 51 \
             --batch-size 512 \
             --val-size 100000 \
             --test-size 500000 \
