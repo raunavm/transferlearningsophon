@@ -56,15 +56,29 @@ def _rng_snapshot() -> dict:
 
 
 def _rng_restore(snap: dict) -> None:
-    import random
-    if "python" in snap:
-        random.setstate(snap["python"])
-    if "numpy" in snap:
-        np.random.set_state(snap["numpy"])
-    if "torch" in snap:
-        torch.set_rng_state(snap["torch"])
-    if "cuda" in snap and torch.cuda.is_available():
-        torch.cuda.set_rng_state_all(snap["cuda"])
+    """Best-effort RNG restore.
+
+    Each backend is wrapped in try/except so a single corrupted/wrong-type
+    field cannot crash the whole resume. If a particular RNG state can't be
+    loaded, we warn and continue — training is still correct, just with a
+    fresh random sequence post-resume (different sampling order, same
+    statistical behavior; model weights + optimizer state are unaffected).
+    """
+    import random as _rand
+    fields = (
+        ("python", lambda v: _rand.setstate(v)),
+        ("numpy",  lambda v: np.random.set_state(v)),
+        ("torch",  lambda v: torch.set_rng_state(v if isinstance(v, torch.Tensor)
+                                                 else torch.tensor(v, dtype=torch.uint8))),
+        ("cuda",   lambda v: torch.cuda.set_rng_state_all(v) if torch.cuda.is_available() else None),
+    )
+    for key, setter in fields:
+        if key not in snap or snap[key] is None:
+            continue
+        try:
+            setter(snap[key])
+        except Exception as exc:
+            print(f"    [warn] could not restore RNG ({key}): {type(exc).__name__}: {exc}")
 
 
 def find_latest_checkpoint(out_dir: Path):
