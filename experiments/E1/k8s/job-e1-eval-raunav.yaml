@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # EVAL: predict both frozen best checkpoints on the official test_20M, then metrics + tax.
+  # Run ONLY after both training jobs finished and best_epoch checkpoints exist.
+  name: e1-eval-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: eval
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          OUT=/data/results/e1; mkdir -p "$OUT/eval"
+
+          TEST=""
+          for C in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do
+            TEST="$TEST ${C}:/data/JetClass/Pythia/test_20M/${C}_*.root"
+          done
+          NET="experiments/E1/ParT_sophon_arch_10c.py -o num_classes 10 -o fc_params [(512,0.1)]"
+
+          for ARM in arm_p arm_s; do
+            CKPT="$OUT/${ARM}/net_best_epoch_state.pt"
+            [ -f "$CKPT" ] || { echo "MISSING $CKPT — train $ARM first"; exit 1; }
+            echo "===== predict $ARM on test_20M ====="
+            weaver --predict --data-test $TEST \
+              --data-config experiments/E1/data_${ARM}.yaml \
+              --network-config $NET --gpus 0 --batch-size 512 --num-workers 2 --fetch-step 0.01 \
+              --model-prefix "$CKPT" \
+              --predict-output "$OUT/${ARM}/pred.root" 2>&1 | tail -30
+          done
+
+          echo "===== metrics + preprocessing tax ====="
+          PYTHONUNBUFFERED=1 python3 experiments/E1/eval_e1.py \
+            --arm-p "$OUT/arm_p/pred.root" --arm-s "$OUT/arm_s/pred.root" \
+            --n-boot 500 --out-dir "$OUT/eval" | tee "$OUT/eval/summary.txt"
+          echo "===== EVAL DONE -> $OUT/eval/ ====="
+        resources:
+          requests: { memory: "64Gi", cpu: "8", nvidia.com/gpu: "1" }
+          limits:   { memory: "64Gi", cpu: "8", nvidia.com/gpu: "1" }
+        volumeMounts:
+        - { name: pvc,  mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-A100-SXM4-80GB
+                - NVIDIA-A100-PCIE-40GB
+                - NVIDIA-A40
+                - NVIDIA-RTX-A6000
+                - NVIDIA-L40
+                - NVIDIA-L40S
+                - NVIDIA-GeForce-RTX-4090
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "32Gi" }

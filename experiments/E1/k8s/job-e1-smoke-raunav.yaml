@@ -1,0 +1,86 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Dry run: 3 short epochs/arm on 1 file/class. Confirms loss decreases, no AMP NaN,
+  # Arm S make_weight, resume, throughput -> projected wall time. Produces a tiny
+  # pred.root to lock eval_e1.py's branch schema. NOT the real run.
+  name: e1-smoke-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: smoke
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          OUT=/data/results/e1/smoke; mkdir -p "$OUT"
+
+          # first ROOT file per class (robust to zero-padding in filenames)
+          DT=""
+          for C in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do
+            F=$(ls /data/JetClass/Pythia/train_100M/${C}_*.root | head -1)
+            DT="$DT ${C}:${F}"
+          done
+          VAL=$(ls /data/JetClass/Pythia/val_5M/*.root | head -10)
+          NET="experiments/E1/ParT_sophon_arch_10c.py -o num_classes 10 -o fc_params [(512,0.1)]"
+          COMMON="--network-config $NET --use-amp --batch-size 512 --start-lr 1e-3 \
+                  --samples-per-epoch 200000 --samples-per-epoch-val 50000 --num-epochs 3 \
+                  --optimizer ranger --num-workers 2 --fetch-step 0.1 --gpus 0"
+
+          for ARM in arm_p arm_s; do
+            echo "===== SMOKE $ARM (3 epochs) ====="
+            weaver --data-train $DT --data-val $VAL \
+              --data-config experiments/E1/data_${ARM}.yaml $COMMON \
+              --model-prefix "$OUT/${ARM}/net" \
+              --log "$OUT/${ARM}/train.log" 2>&1 | tee "$OUT/${ARM}/stdout.txt"
+          done
+
+          echo "===== RESUME check (Arm P from epoch 1) ====="
+          weaver --data-train $DT --data-val $VAL \
+            --data-config experiments/E1/data_arm_p.yaml $COMMON \
+            --model-prefix "$OUT/arm_p/net" --load-epoch 1 \
+            --log "$OUT/arm_p/resume.log" 2>&1 | tail -20 || echo "RESUME check failed — inspect resume.log"
+
+          echo "===== tiny predict (Arm P) to expose pred.root schema ====="
+          TEST=$(ls /data/JetClass/Pythia/test_20M/*.root | head -10)
+          weaver --predict --data-test $TEST \
+            --data-config experiments/E1/data_arm_p.yaml \
+            --network-config $NET --gpus 0 --batch-size 512 --num-workers 2 \
+            --model-prefix "$OUT/arm_p/net_best_epoch_state.pt" \
+            --predict-output "$OUT/arm_p/pred_smoke.root" 2>&1 | tail -20
+          echo "Inspect $OUT/arm_p/pred_smoke.root branch names, then confirm eval_e1.py score/label keys."
+          echo "===== SMOKE DONE ====="
+        resources:
+          requests: { memory: "64Gi", cpu: "8", nvidia.com/gpu: "1" }
+          limits:   { memory: "64Gi", cpu: "8", nvidia.com/gpu: "1" }
+        volumeMounts:
+        - { name: pvc,  mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-A100-SXM4-80GB
+                - NVIDIA-A100-PCIE-40GB
+                - NVIDIA-A40
+                - NVIDIA-RTX-A6000
+                - NVIDIA-L40
+                - NVIDIA-L40S
+                - NVIDIA-GeForce-RTX-4090
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "32Gi" }

@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Read-only inspection: weaver version, config parse, data integrity, Arm S bin design.
+  name: e1-probe-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: probe
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          OUT=/data/results/e1/probe
+          mkdir -p "$OUT"
+
+          echo "===== weaver version / CLI (D6) ====="
+          pip show weaver-core 2>/dev/null | grep -i -E "version|location" | tee "$OUT/weaver_version.txt" || true
+          weaver -h > "$OUT/weaver_help.txt" 2>&1 || echo "WARN: 'weaver' CLI not found — see D6 in ground truth" | tee -a "$OUT/weaver_version.txt"
+
+          # 10-class train glob (one class:path per line), 1 file/class is enough for --print
+          DT=""
+          for C in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do
+            DT="$DT ${C}:/data/JetClass/Pythia/train_100M/${C}_*.root"
+          done
+
+          echo "===== weaver --print: Arm P config + network load ====="
+          weaver --print \
+            --data-train $DT \
+            --data-config experiments/E1/data_arm_p.yaml \
+            --network-config experiments/E1/ParT_sophon_arch_10c.py -o num_classes 10 -o fc_params '[(512,0.1)]' \
+            --model-prefix "$OUT/tmp_armp/net" --batch-size 512 --num-workers 1 --fetch-step 0.01 --gpus '' \
+            > "$OUT/print_arm_p.log" 2>&1 && echo "Arm P --print OK" || echo "Arm P --print FAILED (see print_arm_p.log)"
+
+          echo "===== weaver --print: Arm S config + network load ====="
+          weaver --print \
+            --data-train $DT \
+            --data-config experiments/E1/data_arm_s.yaml \
+            --network-config experiments/E1/ParT_sophon_arch_10c.py -o num_classes 10 -o fc_params '[(512,0.1)]' \
+            --model-prefix "$OUT/tmp_arms/net" --batch-size 512 --num-workers 1 --fetch-step 0.01 --gpus '' \
+            > "$OUT/print_arm_s.log" 2>&1 && echo "Arm S --print OK" || echo "Arm S --print FAILED (see print_arm_s.log)"
+
+          echo "===== data integrity + (jet_pt, jet_sdmass) inspection for Arm S bins ====="
+          PYTHONUNBUFFERED=1 python3 experiments/E1/probe_jetclass1.py \
+            --root-dir /data/JetClass/Pythia/train_100M \
+            --files-per-class 2 \
+            --out "$OUT/probe_report.json" | tee "$OUT/probe_stdout.txt"
+
+          echo "===== DONE. Review $OUT/probe_report.json and finalize data_arm_s.yaml bins ====="
+        resources:
+          requests: { memory: "32Gi", cpu: "4" }
+          limits:   { memory: "64Gi", cpu: "4" }
+        volumeMounts:
+        - { name: pvc, mountPath: /data }
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

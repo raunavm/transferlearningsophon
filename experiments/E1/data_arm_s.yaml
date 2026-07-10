@@ -1,0 +1,105 @@
+# E1 Arm S — Sophon preprocessing ported to JetClass-1.
+# Differs from data_arm_p.yaml in EXACTLY four places (see EXTRACTED_GROUND_TRUTH.md §4):
+#   (1) pT-scaled kinematics  (2) pf_vectors use *_scale  (3) flat (jet_pt,jet_sdmass) reweighting
+#   (4) selection stays EMPTY (design decision D4 — do NOT port Sophon's pT/mSD cut).
+# Formulas copied from sophon/data/JetClassII/JetClassII_full.yaml @ commit 9dd6dd6.
+selection:
+   ### D4: intentionally empty. Porting Sophon's (200<pt<2500)&(20<msd<500) cut to
+   ### JetClass-1 would change the evaluated population and contaminate the tax.
+
+new_variables:
+   part_mask: ak.ones_like(part_energy)
+
+   ## scaled vectors (jet rescaled so pT = 500 GeV) — Sophon yaml:12-20
+   part_px_scale: part_px / jet_pt * 500
+   part_py_scale: part_py / jet_pt * 500
+   part_pz_scale: part_pz / jet_pt * 500
+   part_energy_scale: part_energy / jet_pt * 500
+
+   part_pt: np.hypot(part_px, part_py)
+   part_pt_scale: np.hypot(part_px_scale, part_py_scale)
+   part_pt_scale_log: np.log(part_pt_scale)
+   part_e_scale_log: np.log(part_energy_scale)
+   part_logptrel: np.log(part_pt/jet_pt)          # scale-invariant — unchanged vs Arm P
+   part_logerel: np.log(part_energy/jet_energy)    # scale-invariant — unchanged vs Arm P
+   part_deltaR: np.hypot(part_deta, part_dphi)
+   part_d0: np.tanh(part_d0val)
+   part_dz: np.tanh(part_dzval)
+
+preprocess:
+  method: manual
+  data_fraction: 0.5
+
+inputs:
+   pf_points:
+      length: 128
+      pad_mode: wrap
+      vars:
+         - [part_deta, null]
+         - [part_dphi, null]
+   pf_features:
+      length: 128
+      pad_mode: wrap
+      vars:
+         - [part_pt_scale_log, 1.7, 0.7]     # replaces part_pt_log (same standardization)
+         - [part_e_scale_log, 2.0, 0.7]      # replaces part_e_log  (same standardization)
+         - [part_logptrel, -4.7, 0.7]
+         - [part_logerel, -4.7, 0.7]
+         - [part_deltaR, 0.2, 4.0]
+         - [part_charge, null]
+         - [part_isChargedHadron, null]
+         - [part_isNeutralHadron, null]
+         - [part_isPhoton, null]
+         - [part_isElectron, null]
+         - [part_isMuon, null]
+         - [part_d0, null]
+         - [part_d0err, 0, 1, 0, 1]
+         - [part_dz, null]
+         - [part_dzerr, 0, 1, 0, 1]
+         - [part_deta, null]
+         - [part_dphi, null]
+   pf_vectors:
+      length: 128
+      pad_mode: wrap
+      vars:
+         - [part_px_scale, null]
+         - [part_py_scale, null]
+         - [part_pz_scale, null]
+         - [part_energy_scale, null]
+   pf_mask:
+      length: 128
+      pad_mode: constant
+      vars:
+         - [part_mask, null]
+
+labels:
+   type: simple
+   value: [label_QCD, label_Hbb, label_Hcc, label_Hgg, label_H4q, label_Hqql, label_Zqq, label_Wqq, label_Tbqq, label_Tbl]
+
+observers:
+   - jet_pt
+   - jet_eta
+   - jet_phi
+   - jet_energy
+   - jet_nparticles
+   - jet_sdmass
+   - jet_tau1
+   - jet_tau2
+   - jet_tau3
+   - jet_tau4
+
+weights:
+   ### flat (jet_pt, jet_sdmass) reweighting — Sophon-style, ported to JetClass-1's 10 classes (D2).
+   use_precomputed_weights: false
+   reweight_method: flat
+   ### PROVISIONAL bin edges — TO BE CONFIRMED BY THE PROBE JOB (D3).
+   ### JetClass-1 jet_pt is generated in ~[500,1000] GeV; jet_sdmass spans ~0 (QCD) to ~200+ (top).
+   ### The probe job reports the real min/max/quantiles so <0.5% of jets fall outside these edges.
+   reweight_vars:
+      jet_pt: [500, 560, 625, 700, 785, 880, 1000]
+      jet_sdmass: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 220, 240, 260]
+   reweight_classes:
+      [label_QCD, label_Hbb, label_Hcc, label_Hgg, label_H4q, label_Hqql, label_Zqq, label_Wqq, label_Tbqq, label_Tbl]
+   class_weights:
+      [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+   reweight_hists:
