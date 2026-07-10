@@ -1,10 +1,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  # FULL TRAIN, single arm. Duplicate this file for the two arms:
-  #   Arm P -> name: e1-train-armp-raunav , ARM=arm_p
-  #   Arm S -> name: e1-train-arms-raunav , ARM=arm_s
-  # (Repeat each once more, e.g. -r2, for seed spread — weaver has no --seed, D1.)
+  # FULL TRAIN Arm P (ParT preprocessing). Single GPU, official 50-epoch recipe.
+  # Auto-resumes from the latest epoch checkpoint on the PVC if the pod is evicted.
   name: e1-train-armp-raunav
   namespace: cms-ml
 spec:
@@ -19,39 +17,38 @@ spec:
         args:
         - |
           set -e
-          ARM=arm_p          # <-- set to arm_s for the Arm S job
+          ARM=arm_p
           git clone https://github.com/raunavm/transferlearningsophon.git
           cd transferlearningsophon
           OUT=/data/results/e1/${ARM}; mkdir -p "$OUT"
 
-          # full per-class train glob + full val
           DT=""
           for C in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do
             DT="$DT ${C}:/data/JetClass/Pythia/train_100M/${C}_*.root"
           done
-          VAL="/data/JetClass/Pythia/val_5M/*.root"
 
-          # Official single-GPU ParT-on-JetClass recipe (train_JetClass.sh). Only the
-          # --data-config differs between arms. flat+decay is weaver's default (do not pass it).
-          # best_epoch = highest val accuracy. NO --data-test (eval is a separate step).
-          # Resume after eviction: relaunch same YAML with --load-epoch <last completed>.
+          # auto-resume from the latest saved epoch if a prior pod was evicted
+          LOAD=""
+          LAST=$(ls "$OUT"/net_epoch-*_state.pt 2>/dev/null | sed 's/.*_epoch-\([0-9]*\)_state.pt/\1/' | sort -n | tail -1)
+          [ -n "$LAST" ] && { LOAD="--load-epoch $LAST"; echo "RESUME from epoch $LAST"; }
+
+          # Official single-GPU ParT-on-JetClass recipe. flat+decay is the default (do not pass it).
+          # best_epoch = highest val accuracy. weaver 0.4.17 keeps all per-epoch checkpoints
+          # (~1.35 GB/arm; no --auto-clean in this version). NO --data-test (eval is separate).
           PYTHONUNBUFFERED=1 weaver \
             --data-train $DT \
-            --data-val "$VAL" \
+            --data-val "/data/JetClass/Pythia/val_5M/*.root" \
             --data-config experiments/E1/data_${ARM}.yaml \
             --network-config experiments/E1/ParT_sophon_arch_10c.py -o num_classes 10 -o fc_params '[(512,0.1)]' \
-            --use-amp \
-            --batch-size 512 --start-lr 1e-3 \
+            --use-amp --batch-size 512 --start-lr 1e-3 \
             --samples-per-epoch 10240000 --samples-per-epoch-val 1280000 \
             --num-epochs 50 --optimizer ranger \
-            --num-workers 2 --fetch-step 0.01 --gpus 0 \
-            --model-prefix "$OUT/net" \
-            --log "$OUT/train.log" \
-            --tensorboard "e1_${ARM}"
-          echo "===== TRAIN $ARM DONE. best -> $OUT/net_best_epoch_state.pt ====="
+            --num-workers 2 --fetch-step 0.01 --gpus 0 $LOAD \
+            --model-prefix "$OUT/net" --log "$OUT/train.log" --tensorboard "e1_${ARM}"
+          echo "===== TRAIN $ARM DONE -> $OUT/net_best_epoch_state.pt ====="
         resources:
-          requests: { memory: "64Gi", cpu: "8", nvidia.com/gpu: "1" }
-          limits:   { memory: "64Gi", cpu: "8", nvidia.com/gpu: "1" }
+          requests: { memory: "32Gi", cpu: "4", nvidia.com/gpu: "1" }
+          limits:   { memory: "32Gi", cpu: "4", nvidia.com/gpu: "1" }
         volumeMounts:
         - { name: pvc,  mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
@@ -60,16 +57,21 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
+              # broad set — run is I/O-bound (~1800/s on any datacenter GPU), so widen to schedule
               - key: nvidia.com/gpu.product
                 operator: In
                 values:
                 - NVIDIA-A100-SXM4-80GB
                 - NVIDIA-A100-PCIE-40GB
+                - NVIDIA-A100-SXM4-40GB
                 - NVIDIA-A40
+                - NVIDIA-A10
                 - NVIDIA-RTX-A6000
+                - NVIDIA-RTX-A5000
                 - NVIDIA-L40
                 - NVIDIA-L40S
                 - NVIDIA-GeForce-RTX-4090
+                - NVIDIA-GeForce-RTX-3090
       volumes:
       - name: pvc
         persistentVolumeClaim:

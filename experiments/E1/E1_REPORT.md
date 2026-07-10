@@ -9,16 +9,23 @@
 - Recipe (both arms, identical): ranger, flat+decay (weaver default), 50 epochs, batch 512, start-lr 1e-3, `--use-amp`, best = highest val accuracy. **Only** `--data-config` differs.
 - Reproducibility: weaver has no `--seed` (D1); each arm repeated ___× for seed spread.
 
-## Dry-run summary (from `/data/results/e1/smoke/`)
-- Loss decreased, no AMP NaN: Arm P ___ / Arm S ___.
-- Arm S make_weight distribution max/min ratio: ___ .
-- Resume check (Arm P `--load-epoch 1`): ___ .
-- Throughput: ___ entries/s → projected full-run wall time: Arm P ___ , Arm S ___ (sign-off if >7 GPU-days/arm).
-- pred.root branch schema confirmed for eval_e1.py: ___ .
+## Probe summary (from `/data/results/e1/probe/probe_report.json`) — PASSED
+- weaver in image = **0.4.17** (released; no split-forward API → network `forward` fixed to standard, D6).
+- All 10 classes present (200k jets/class sampled). `jet_pt ∈ [500,1000]` exactly (0% outside).
+- `jet_sdmass` reaches ~497 (top/QCD tails) → Arm S mass bins extended to 550 (pt padded 499/1001);
+  after fix **0.0249% outside → `bins_ok=True`** (was 0.62% at edge 260, which weaver would have discarded, D8).
+- Both `weaver --print` exit 0; model = **2.21M params** (correct ParT size).
 
-## Probe summary (from `/data/results/e1/probe/probe_report.json`)
-- All 10 classes present, counts sane: ___ .
-- (jet_pt, jet_sdmass) ranges → Arm S bins finalized: ___ (frac outside <0.5%: pt ___ , sd ___).
+## Dry-run / smoke summary (from `/data/results/e1/smoke/`) — PASSED
+- Both arms `train exit=0` over 3 epochs; no AMP NaN. Random-init start acc 0.117 → Arm P **AvgAcc 0.746 / AvgLoss 0.721** by epoch 2 (real learning).
+- Arm S `make_weight` OK (reweighting auto-yaml generated + reused).
+- Resume check (`--load-epoch 1`): **`resume exit=0`**.
+- Throughput: Arm P **~1,818 entries/s**, Arm S **~1,166/s** (reweight resampling overhead). I/O-bound → GPU-class-insensitive.
+  Projected full run (512M samples): **Arm P ≈ 3.4 d, Arm S ≈ 5.3 d** single-GPU.
+- `pred.root` schema confirmed for `eval_e1.py`: tree `Events`; scores `score_label_QCD..score_label_Tbl`; truth one-hots `label_QCD..label_Tbl` (+ `_label_`). eval script keys match — no change needed.
+
+## Full-run status
+- Launched Arm P + Arm S **in parallel, 1 seed each** (user decision), single-GPU, broad I/O-bound affinity, `--auto-clean` (bounded disk), auto-resume via latest epoch checkpoint. No `--data-test` (eval is a separate frozen-checkpoint step). Started 2026-07-10.
 
 ## Main results — test_20M (official)
 
