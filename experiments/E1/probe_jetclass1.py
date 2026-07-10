@@ -19,9 +19,10 @@ CLASSES = ["HToBB", "HToCC", "HToGG", "HToWW2Q1L", "HToWW4Q",
 
 # Provisional Arm S bin edges — MUST match data_arm_s.yaml. The outside-fraction
 # check tells us whether these edges need widening before training.
-PT_EDGES = [500, 560, 625, 700, 785, 880, 1000]
-SDMASS_EDGES = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120,
-                130, 140, 150, 160, 170, 180, 190, 200, 220, 240, 260]
+PT_EDGES = [499, 560, 625, 700, 785, 880, 1001]
+SDMASS_EDGES = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140,
+                150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 300, 350,
+                400, 450, 500, 550]
 
 
 def q(a, p):

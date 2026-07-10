@@ -92,12 +92,13 @@ weights:
    ### flat (jet_pt, jet_sdmass) reweighting — Sophon-style, ported to JetClass-1's 10 classes (D2).
    use_precomputed_weights: false
    reweight_method: flat
-   ### PROVISIONAL bin edges — TO BE CONFIRMED BY THE PROBE JOB (D3).
-   ### JetClass-1 jet_pt is generated in ~[500,1000] GeV; jet_sdmass spans ~0 (QCD) to ~200+ (top).
-   ### The probe job reports the real min/max/quantiles so <0.5% of jets fall outside these edges.
+   ### Bin edges CONFIRMED by the probe job (2 files/class, 2M jets): jet_pt in [500,1000]
+   ### exactly (edges padded to 499/1001 so boundary jets aren't overflow-discarded);
+   ### jet_sdmass reaches ~497 (top/QCD tails) -> upper edge 550 so weaver's default
+   ### reweight_discard_under_overflow:True discards ~0% (probe: 0.62% would be lost at 260).
    reweight_vars:
-      jet_pt: [500, 560, 625, 700, 785, 880, 1000]
-      jet_sdmass: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 220, 240, 260]
+      jet_pt: [499, 560, 625, 700, 785, 880, 1001]
+      jet_sdmass: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 300, 350, 400, 450, 500, 550]
    reweight_classes:
       [label_QCD, label_Hbb, label_Hcc, label_Hgg, label_H4q, label_Hqql, label_Zqq, label_Wqq, label_Tbqq, label_Tbl]
    class_weights:
