@@ -6,7 +6,7 @@ metadata:
   name: e1-train-armp-raunav
   namespace: cms-ml
 spec:
-  backoffLimit: 1
+  backoffLimit: 6
   template:
     spec:
       restartPolicy: Never
@@ -47,8 +47,10 @@ spec:
             --model-prefix "$OUT/net" --log "$OUT/train.log" --tensorboard "e1_${ARM}"
           echo "===== TRAIN $ARM DONE -> $OUT/net_best_epoch_state.pt ====="
         resources:
-          requests: { memory: "32Gi", cpu: "4", nvidia.com/gpu: "1" }
-          limits:   { memory: "32Gi", cpu: "4", nvidia.com/gpu: "1" }
+          # official low-memory dataloading (2 workers, fetch-step 0.01); us-west I/O is fast so
+          # no aggressive fetch needed. 64Gi fits suncave RTX-3090 nodes (~94Gi RAM), the big us-west pool.
+          requests: { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1" }
+          limits:   { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1" }
         volumeMounts:
         - { name: pvc,  mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
@@ -72,9 +74,15 @@ spec:
                 - NVIDIA-L40S
                 - NVIDIA-GeForce-RTX-4090
                 - NVIDIA-GeForce-RTX-3090
+              # pin to us-west = near the CephFS PVC (SDSC/UCSD/Fullerton). us-east
+              # (MGHPCC/AMNH) reads the PVC far too slowly and stalls on I/O.
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
       volumes:
       - name: pvc
         persistentVolumeClaim:
           claimName: transfer-learning-vol
       - name: dshm
-        emptyDir: { medium: Memory, sizeLimit: "32Gi" }
+        emptyDir: { medium: Memory, sizeLimit: "16Gi" }

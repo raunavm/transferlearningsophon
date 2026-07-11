@@ -25,7 +25,8 @@
 - `pred.root` schema confirmed for `eval_e1.py`: tree `Events`; scores `score_label_QCD..score_label_Tbl`; truth one-hots `label_QCD..label_Tbl` (+ `_label_`). eval script keys match — no change needed.
 
 ## Full-run status
-- Launched Arm P + Arm S **in parallel, 1 seed each** (user decision), single-GPU, broad I/O-bound affinity, `--auto-clean` (bounded disk), auto-resume via latest epoch checkpoint. No `--data-test` (eval is a separate frozen-checkpoint step). Started 2026-07-10.
+- Launched Arm P + Arm S **in parallel, 1 seed each** (user decision), single-GPU, broad I/O-bound affinity, auto-resume via latest epoch checkpoint, all per-epoch checkpoints kept (~1.35 GB/arm; `--auto-clean` not in weaver 0.4.17, D9). No `--data-test` (eval is a separate frozen-checkpoint step). Started 2026-07-10.
+- **Both training as of 2026-07-10 ~21:16 UTC.** Arm P on AMNH `nrp-fiona-001` (Epoch #0, loss 2.30→1.77, acc 0.12→0.37 in first ~90 iters). Arm S on `suncave-2`: `make_weight` completed over all 1000 files with the configured bins (`[499..1001] × [0..550]`, 10 classes, discard-overflow), then Epoch #0. Throughput after ~21-min cold start ≈ 1.5–1.8k jets/s. ETA ~3.4 d (P) / ~5.3 d (S).
 
 ## Main results — test_20M (official)
 
