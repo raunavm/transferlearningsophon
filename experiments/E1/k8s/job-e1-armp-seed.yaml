@@ -1,0 +1,89 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # SEEDED Arm P (ParT preprocessing) — one job per seed. Launch via:
+  #   for S in 1 2 3; do sed "s/__SEED__/$S/g" job-e1-armp-seed.yaml | kubectl apply -f - ; sleep 75; done
+  # Labeled + reproducible-on-same-GPU via seed_weaver.py. Writes run_provenance.json at the end.
+  name: e1-armp-s__SEED__-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: train
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        env:
+        - { name: PYTHONHASHSEED, value: "__SEED__" }
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          OUT=/data/results/e1/arm_p_s__SEED__; mkdir -p "$OUT"
+
+          DT=""
+          for C in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do
+            DT="$DT ${C}:/data/JetClass/Pythia/train_100M/${C}_*.root"
+          done
+          LOAD=""
+          LAST=$(ls "$OUT"/net_epoch-*_state.pt 2>/dev/null | sed 's/.*_epoch-\([0-9]*\)_state.pt/\1/' | sort -n | tail -1 || true)
+          [ -n "$LAST" ] && { LOAD="--load-epoch $LAST"; echo "RESUME from epoch $LAST"; }
+
+          # seed_weaver seeds python/numpy/torch/cuda before weaver builds the model
+          PYTHONUNBUFFERED=1 python3 experiments/E1/seed_weaver.py --seed __SEED__ \
+            --data-train $DT \
+            --data-val "/data/JetClass/Pythia/val_5M/*.root" \
+            --data-config experiments/E1/data_arm_p.yaml \
+            --network-config experiments/E1/ParT_sophon_arch_10c.py -o num_classes 10 -o fc_params '[(512,0.1)]' \
+            --use-amp --batch-size 512 --start-lr 1e-3 \
+            --samples-per-epoch 10240000 --samples-per-epoch-val 1280000 \
+            --num-epochs 50 --optimizer ranger \
+            --num-workers 2 --fetch-step 0.01 --gpus 0 $LOAD \
+            --model-prefix "$OUT/net" --log "$OUT/train.log" --tensorboard "e1_arm_p_s__SEED__"
+          echo "===== TRAIN arm_p seed __SEED__ DONE ====="
+
+          GPU=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1 | sed 's/ /-/g')
+          python3 scripts/collect_provenance.py --run-dir "$OUT" --arm "arm_p" --seed __SEED__ \
+            --gpu "$GPU" --gpu-count 1 --node "${NODE_NAME:-?}" \
+            --git-commit "$(git rev-parse --short HEAD)" --image-digest "sha256:db235b515a278198" \
+            --net-config experiments/E1/ParT_sophon_arch_10c.py --num-classes 10 || echo "provenance step failed (non-fatal)"
+        resources:
+          requests: { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1" }
+          limits:   { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1" }
+        volumeMounts:
+        - { name: pvc,  mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-A100-SXM4-80GB
+                - NVIDIA-A100-PCIE-40GB
+                - NVIDIA-A100-SXM4-40GB
+                - NVIDIA-A40
+                - NVIDIA-A10
+                - NVIDIA-RTX-A6000
+                - NVIDIA-RTX-A5000
+                - NVIDIA-L40
+                - NVIDIA-L40S
+                - NVIDIA-GeForce-RTX-4090
+                - NVIDIA-GeForce-RTX-3090
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "16Gi" }

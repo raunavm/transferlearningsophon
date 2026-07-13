@@ -1,0 +1,129 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # SEEDED Arm S (Sophon preprocessing: pT-scale + flat (pt,mSD) reweight) — one job per seed.
+  #   for S in 1 2 3; do sed "s/__SEED__/$S/g" job-e1-arms-seed.yaml | kubectl apply -f - ; sleep 75; done
+  # seed_weaver makes the reweight rejection-sampling + init reproducible. Auto-provenance at end.
+  name: e1-arms-s__SEED__-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 12
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: train
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        env:
+        - { name: PYTHONHASHSEED, value: "__SEED__" }
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          OUT=/data/results/e1/arm_s_s__SEED__; mkdir -p "$OUT"
+
+          echo "=== GPU smoke test ==="
+          timeout 150 python3 -c "import torch; assert torch.cuda.is_available(); x=torch.randn(4096,4096,device='cuda'); [ (x@x).sum().item() for _ in range(20) ]; torch.cuda.synchronize(); print('GPU OK:', torch.cuda.get_device_name(0))" \
+            || { echo 'GPU SMOKE FAILED -> exit'; exit 1; }
+
+          echo "=== staging train_100M + val_5M to local scratch ==="
+          mkdir -p /scratch/train /scratch/val; T0=$(date +%s)
+          timeout 3600 bash -c 'ls /data/JetClass/Pythia/train_100M/*.root | xargs -P8 -I{} cp {} /scratch/train/' \
+            || { echo "TRAIN STAGING TIMEOUT -> exit"; exit 1; }
+          timeout 600  bash -c 'ls /data/JetClass/Pythia/val_5M/*.root     | xargs -P8 -I{} cp {} /scratch/val/' \
+            || { echo "VAL STAGING TIMEOUT -> exit"; exit 1; }
+          NT=$(ls /scratch/train/*.root | wc -l); NV=$(ls /scratch/val/*.root | wc -l)
+          [ "$NT" -eq 1000 ] && [ "$NV" -eq 50 ] || { echo "STAGING INCOMPLETE: $NT/1000 $NV/50"; exit 1; }
+          echo "=== staged $NT+$NV in $(( $(date +%s) - T0 ))s ==="
+
+          DT=""
+          for C in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do
+            DT="$DT ${C}:/scratch/train/${C}_*.root"
+          done
+          LOAD=""
+          LAST=$(ls "$OUT"/net_epoch-*_state.pt 2>/dev/null | sed 's/.*_epoch-\([0-9]*\)_state.pt/\1/' | sort -n | tail -1 || true)
+          [ -n "$LAST" ] && { LOAD="--load-epoch $LAST"; echo "RESUME from epoch $LAST"; }
+
+          # shared reweight-histogram cache (depends only on data-config, not seed)
+          CACHE=/data/results/e1/arm_s_reweight_cache; mkdir -p "$CACHE"
+          NOREMAKE=""
+          if ls "$CACHE"/data_arm_s.*.auto.yaml >/dev/null 2>&1; then
+            cp "$CACHE"/data_arm_s.*.auto.yaml experiments/E1/ && NOREMAKE="--no-remake-weights" \
+              && echo "RESTORED cached reweight yaml"
+          else
+            ( for k in $(seq 1 300); do
+                if ls experiments/E1/data_arm_s.*.auto.yaml >/dev/null 2>&1; then
+                  cp experiments/E1/data_arm_s.*.auto.yaml "$CACHE"/ 2>/dev/null && echo "CACHED reweight yaml"; break
+                fi; sleep 20
+              done ) &
+          fi
+
+          PYTHONUNBUFFERED=1 python3 experiments/E1/seed_weaver.py --seed __SEED__ \
+            --data-train $DT \
+            --data-val "/scratch/val/*.root" \
+            --data-config experiments/E1/data_arm_s.yaml \
+            --network-config experiments/E1/ParT_sophon_arch_10c.py -o num_classes 10 -o fc_params '[(512,0.1)]' \
+            --use-amp --batch-size 512 --start-lr 1e-3 \
+            --samples-per-epoch 10240000 --samples-per-epoch-val 1280000 \
+            --num-epochs 50 --optimizer ranger \
+            --num-workers 6 --fetch-step 0.01 --gpus 0 $NOREMAKE $LOAD \
+            --model-prefix "$OUT/net" --log "$OUT/train.log" --tensorboard "e1_arm_s_s__SEED__"
+          echo "===== TRAIN arm_s seed __SEED__ DONE ====="
+
+          GPU=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1 | sed 's/ /-/g')
+          python3 scripts/collect_provenance.py --run-dir "$OUT" --arm "arm_s" --seed __SEED__ \
+            --gpu "$GPU" --gpu-count 1 --node "${NODE_NAME:-?}" \
+            --git-commit "$(git rev-parse --short HEAD)" --image-digest "sha256:db235b515a278198" \
+            --net-config experiments/E1/ParT_sophon_arch_10c.py --num-classes 10 || echo "provenance step failed (non-fatal)"
+        resources:
+          requests: { memory: "96Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "200Gi" }
+          limits:   { memory: "96Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "200Gi" }
+        volumeMounts:
+        - { name: pvc,     mountPath: /data }
+        - { name: dshm,    mountPath: /dev/shm }
+        - { name: scratch, mountPath: /scratch }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-A100-SXM4-80GB
+                - NVIDIA-A100-PCIE-40GB
+                - NVIDIA-A100-SXM4-40GB
+                - NVIDIA-A40
+                - NVIDIA-A10
+                - NVIDIA-RTX-A6000
+                - NVIDIA-RTX-A5000
+                - NVIDIA-L40
+                - NVIDIA-L40S
+                - NVIDIA-GeForce-RTX-4090
+                - NVIDIA-A100-80GB-PCIe
+                - NVIDIA-TITAN-RTX
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: [us-west, us-central]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: [ry-gpu-01.sdsc.optiputer.net]
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: [us-west]
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "24Gi" }
+      - name: scratch
+        emptyDir: {}
