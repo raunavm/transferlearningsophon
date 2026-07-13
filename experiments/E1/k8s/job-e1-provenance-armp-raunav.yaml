@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Retro-collect provenance for the UNSEEDED Arm P gate run (CPU-only, no rerun).
+  name: e1-provenance-armp-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: prov
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          python3 scripts/collect_provenance.py \
+            --run-dir /data/results/e1/arm_p \
+            --arm "arm_p (UNSEEDED gate run)" \
+            --seed "UNSEEDED (weaver 0.4.17 pre-seed_weaver)" \
+            --gpu NVIDIA-L40 --gpu-count 1 --node rci-tide-gpu-04.sdsu.edu \
+            --git-commit 688b78d --image-digest "sha256:db235b515a278198" \
+            --net-config experiments/E1/ParT_sophon_arch_10c.py --num-classes 10
+          echo "===== PROVENANCE DONE -> /data/results/e1/arm_p/run_provenance.json ====="
+        resources:
+          requests: { memory: "8Gi", cpu: "2" }
+          limits:   { memory: "8Gi", cpu: "2" }
+        volumeMounts:
+        - { name: pvc, mountPath: /data }
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

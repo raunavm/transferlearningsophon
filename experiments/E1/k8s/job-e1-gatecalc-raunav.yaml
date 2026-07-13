@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # GATE CALC (CPU-only): weaver wrote 10 per-class pred files (pred_HToBB.root ...).
+  # Concatenate all 10 -> full 20M test set -> macro AUC (OvR) vs published ParT 0.9877.
+  # Salvages the completed 3h prediction without re-running it. No GPU needed.
+  name: e1-gatecalc-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: gatecalc
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          python3 -u -c "
+          import glob, json, numpy as np, uproot
+          from sklearn.metrics import roc_auc_score
+          PUBLISHED=0.9877
+          SC=['score_label_QCD','score_label_Hbb','score_label_Hcc','score_label_Hgg','score_label_H4q','score_label_Hqql','score_label_Zqq','score_label_Wqq','score_label_Tbqq','score_label_Tbl']
+          LB=['label_QCD','label_Hbb','label_Hcc','label_Hgg','label_H4q','label_Hqql','label_Zqq','label_Wqq','label_Tbqq','label_Tbl']
+          fs=sorted(glob.glob('/data/results/e1/arm_p/pred_*.root'))
+          print('files:',len(fs))
+          P=[]; T=[]
+          for f in fs:
+              t=uproot.open(f)['Events']
+              a=t.arrays(SC+LB, library='np')
+              P.append(np.stack([a[s] for s in SC],axis=1))
+              T.append(np.stack([a[l] for l in LB],axis=1).argmax(1))
+          P=np.concatenate(P); T=np.concatenate(T)
+          print('total jets:',len(T),'| per-class counts:',np.bincount(T,minlength=10).tolist())
+          auc=float(roc_auc_score(T,P,multi_class='ovr',average='macro'))
+          acc=float((P.argmax(1)==T).mean())
+          gap=auc-PUBLISHED; gate=bool(abs(gap)<=0.002)
+          res={'macro_auc_ovr':auc,'accuracy':acc,'published_part_auc':PUBLISHED,'auc_gap_to_published':gap,'gate_pass':gate,'n_jets':int(len(T))}
+          json.dump(res, open('/data/results/e1/eval/metrics_arm_p_gate.json','w'), indent=2)
+          print('======================================')
+          print(f'Arm P macro AUC (OvR) = {auc:.4f}   (published ParT {PUBLISHED}, gap {gap:+.4f})')
+          print(f'Arm P test accuracy   = {acc:.4f}   (published ParT 0.861)')
+          print(f'GATE  {\"PASS\" if gate else \"FAIL\"}  (|gap| {\"<=\" if gate else \">\"} 0.002)')
+          print('======================================')
+          " | tee /data/results/e1/eval/gate_summary.txt
+          echo "===== GATE CALC DONE ====="
+        resources:
+          requests: { memory: "24Gi", cpu: "4" }
+          limits:   { memory: "24Gi", cpu: "4" }
+        volumeMounts:
+        - { name: pvc, mountPath: /data }
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

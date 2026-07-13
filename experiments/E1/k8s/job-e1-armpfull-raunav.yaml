@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # FULL Arm P metrics (CPU): concat the 10 frozen pred_*.root -> eval_e1.full_metrics
+  # (per-class AUC, 1/FPR rejection @ eff 0.5/0.3, TPR@FPR 1e-3/1e-4). No re-prediction.
+  name: e1-armpfull-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: armpfull
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          python3 -u -c "
+          import sys, glob, json, numpy as np
+          sys.path.insert(0,'experiments/E1')
+          from eval_e1 import load, full_metrics, PUBLISHED_PART_AUC
+          fs=sorted(glob.glob('/data/results/e1/arm_p/pred_*.root'))
+          Ps=[];Ts=[]
+          for f in fs:
+              p,t=load(f); Ps.append(p); Ts.append(t)
+          P=np.concatenate(Ps); T=np.concatenate(Ts)
+          print('jets:',len(T),'per-class:',np.bincount(T,minlength=10).tolist())
+          m=full_metrics(P,T)
+          m['macro_auc_gap_to_published']=float(m['macro_auc_ovr']-PUBLISHED_PART_AUC)
+          json.dump(m, open('/data/results/e1/eval/metrics_arm_p_full.json','w'), indent=2)
+          print(json.dumps(m, indent=2))
+          " | tee /data/results/e1/eval/arm_p_full.txt
+          echo "===== ARM P FULL METRICS DONE ====="
+        resources:
+          requests: { memory: "24Gi", cpu: "4" }
+          limits:   { memory: "24Gi", cpu: "4" }
+        volumeMounts:
+        - { name: pvc, mountPath: /data }
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

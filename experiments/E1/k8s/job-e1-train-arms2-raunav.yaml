@@ -1,10 +1,10 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  # FULL TRAIN Arm S (Sophon preprocessing: pT-scaled + flat (pt,mSD) reweighting).
-  # weaver computes the reweight histograms at startup (~minutes; smoke did 40 files in ~7s),
-  # writing an auto.yaml it reuses within the run. Single GPU, official 50-epoch recipe.
-  name: e1-train-arms-raunav
+  # FULL TRAIN Arm S — RUN 2 (independent realization; weaver 0.4.17 has no --seed, so a second
+  # run IS the second seed). Bit-identical recipe + data config to run 1; separate output dir.
+  # FAST-GPU-ONLY pool (L40/A100/A40/A6000/4090/H100-class) to try to beat run 1's ~3-day A10 ETA.
+  name: e1-train-arms2-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 12   # raised: fail-fast GPU smoke test makes bad-node retries cheap (~2min each)
@@ -23,7 +23,8 @@ spec:
           ARM=arm_s
           git clone https://github.com/raunavm/transferlearningsophon.git
           cd transferlearningsophon
-          OUT=/data/results/e1/${ARM}; mkdir -p "$OUT"
+          # RUN 2: separate output dir (no checkpoint collision with run 1); same data config.
+          OUT=/data/results/e1/arm_s_run2; mkdir -p "$OUT"
 
           # ---- fail-fast GPU smoke test. Some nodes (ry-gpu-01, k8s-haosu-24) accept the pod but
           # their GPU HANGS weaver silently for hours -> backoffLimit burns with no output. A bounded
@@ -81,17 +82,15 @@ spec:
             --use-amp --batch-size 512 --start-lr 1e-3 \
             --samples-per-epoch 10240000 --samples-per-epoch-val 1280000 \
             --num-epochs 50 --optimizer ranger \
-            --num-workers 6 --fetch-step 0.01 --gpus 0 $NOREMAKE $LOAD \
-            --model-prefix "$OUT/net" --log "$OUT/train.log" --tensorboard "e1_${ARM}"
+            --num-workers 8 --fetch-step 0.01 --gpus 0 $NOREMAKE $LOAD \
+            --model-prefix "$OUT/net" --log "$OUT/train.log" --tensorboard "e1_arm_s_run2"
           echo "===== TRAIN $ARM DONE -> $OUT/net_best_epoch_state.pt ====="
         resources:
-          # 96Gi + 8 cpu: headroom for num-workers 6 (job is I/O-bound — more parallel readers hide
-          # PVC latency AND the reweighting rejection-sampling read amplification). Also excludes the
-          # ~94Gi suncave pool. Fits SDSC A100-80GB (881Gi), SDSU L40 (503Gi), Fullerton A100 (754Gi).
-          # ephemeral-storage 200Gi = 149G staged data + container layer + headroom; the
-          # request also auto-filters to nodes with enough free local disk.
-          requests: { memory: "96Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "200Gi" }
-          limits:   { memory: "96Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "200Gi" }
+          # RUN 2: 10 cpu + 8 workers — a faster GPU (L40/A100 ~6+ it/s) needs ~260k raw jets/s
+          # decompressed at the 80x rejection amplification; run 1 proved 6w/8cpu feeds ~165k/s
+          # (A10 86% util), so scale readers with the card. 96Gi RAM held 6 workers with headroom.
+          requests: { memory: "96Gi", cpu: "10", nvidia.com/gpu: "1", ephemeral-storage: "200Gi" }
+          limits:   { memory: "96Gi", cpu: "10", nvidia.com/gpu: "1", ephemeral-storage: "200Gi" }
         volumeMounts:
         - { name: pvc,     mountPath: /data }
         - { name: dshm,    mountPath: /dev/shm }
@@ -102,26 +101,27 @@ spec:
             nodeSelectorTerms:
             - matchExpressions:
               # broad set — run is I/O-bound (~1800/s on any datacenter GPU), so widen to schedule
+              # FAST CARDS ONLY (run 2's purpose is speed; run 1 on the A10 is the safety net).
+              # Dropped vs run 1: A10 (run 1 has it, ~4 it/s), A5000/TITAN-RTX/3090 (slow tier).
+              # H100/H200 labels included speculatively (sm_90, cu121-torch compatible; usually
+              # reservation-tainted -> scheduler skips; harmless if absent). NO Blackwell
+              # (RTX-PRO-6000): cu121 torch lacks sm_120 kernels. >=24GB VRAM still mandatory.
               - key: nvidia.com/gpu.product
                 operator: In
                 values:
                 - NVIDIA-A100-SXM4-80GB
                 - NVIDIA-A100-PCIE-40GB
                 - NVIDIA-A100-SXM4-40GB
+                - NVIDIA-A100-80GB-PCIe          # Fullerton A100
                 - NVIDIA-A40
-                - NVIDIA-A10
                 - NVIDIA-RTX-A6000
-                - NVIDIA-RTX-A5000
                 - NVIDIA-L40
                 - NVIDIA-L40S
                 - NVIDIA-GeForce-RTX-4090
-                # 3090 REMOVED: suncave-6 (3090) had a slow PVC path -> reweighting rejection-sampling
-                # I/O-starved Arm S to ~0.44 it/s (~26 days/50ep). Restrict to A100/L40/A6000-class.
-                - NVIDIA-A100-80GB-PCIe          # Fullerton A100 (fast: 1818/s in smoke)
-                - NVIDIA-TITAN-RTX               # 24GB, fits batch 512 (k8s-haosu-24 failures were
-                                                 # the pipefail bug, NOT a bad node — smoke test guards it)
-                # NOTE: batch 512 + ParT attention needs >=24GB VRAM. Do NOT add
-                # 2080-Ti (11GB) or A4000 (16GB) — they OOM on the GPU.
+                - NVIDIA-H100-80GB-HBM3
+                - NVIDIA-H100-PCIe
+                - NVIDIA-H100-NVL
+                - NVIDIA-H200-NVL
               # us-west (PVC-local) OR us-central (26 nodes — doubles capacity). The old hard
               # us-west pin was because weaver STREAMED ROOT from the CephFS PVC; now we STAGE to
               # local NVMe once, so region only affects the one-time staging copy, not training.
@@ -137,29 +137,6 @@ spec:
                 operator: NotIn
                 values:
                 - ry-gpu-01.sdsc.optiputer.net
-            # 2nd term (OR'd): storage-local SDSC 3090s — AT SDSC, near the CephFS PVC, so fast I/O
-            # (unlike suncave 3090s at UCSD). 24GB VRAM fits batch 512; job is I/O-bound so the
-            # 3090's slower compute is irrelevant. suncave + bad ry-gpu-01 excluded by omission.
-            - matchExpressions:
-              - key: nvidia.com/gpu.product
-                operator: In
-                values:
-                - NVIDIA-GeForce-RTX-3090
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - ry-gpu-02.sdsc.optiputer.net
-                - ry-gpu-03.sdsc.optiputer.net
-                - ry-gpu-04.sdsc.optiputer.net
-                - ry-gpu-05.sdsc.optiputer.net
-                - ry-gpu-06.sdsc.optiputer.net
-                - ry-gpu-07.sdsc.optiputer.net
-                - ry-gpu-08.sdsc.optiputer.net
-                - ry-gpu-09.sdsc.optiputer.net
-                - ry-gpu-11.sdsc.optiputer.net
-                - ry-gpu-12.sdsc.optiputer.net
-                - ry-gpu-13.sdsc.optiputer.net
-                - ry-gpu-14.sdsc.optiputer.net
           # soft-prefer us-west so its fast PVC-local staging (~283s) is chosen first;
           # spill to us-central (slower one-time WAN copy) only when us-west is full.
           preferredDuringSchedulingIgnoredDuringExecution:

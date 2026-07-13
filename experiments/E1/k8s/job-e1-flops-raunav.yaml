@@ -1,0 +1,77 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Forward FLOPs/jet for the Sophon-ParT model (ParT Table-4-comparable, fvcore MAC convention).
+  # CPU-only (FLOP counting traces one forward pass); ~2 min.
+  name: e1-flops-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: flops
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          pip install --quiet fvcore 2>/dev/null || pip install fvcore
+          python3 -u -c "
+          import importlib.util, json, torch
+          try:
+              from weaver.utils.data.config import DataConfig
+          except Exception:
+              from weaver.utils.dataset import DataConfig
+
+          dc = DataConfig.load('experiments/E1/data_arm_p.yaml', load_observers=False)
+          spec = importlib.util.spec_from_file_location('net','experiments/E1/ParT_sophon_arch_10c.py')
+          net = importlib.util.module_from_spec(spec); spec.loader.exec_module(net)
+          model, info = net.get_model(dc, num_classes=10, fc_params=[(512,0.1)])
+          model.eval()
+          nparams = sum(p.numel() for p in model.parameters())
+          print('params:', nparams, '(%.2f M)' % (nparams/1e6))
+          print('input_names:', dc.input_names)
+          print('input_shapes:', {k: dc.input_shapes[k] for k in dc.input_names})
+
+          N = 128
+          def mk(shp):
+              c = shp[-2] if len(shp) >= 2 else shp[0]
+              return c, N
+          ins = []
+          for n in dc.input_names:
+              c, npart = mk(list(dc.input_shapes[n]))
+              t = torch.ones(1, c, npart) if 'mask' in n else torch.zeros(1, c, npart)
+              ins.append(t)
+          ins = tuple(ins)
+          with torch.no_grad():
+              _ = model(*ins)  # shape check
+          print('forward OK; counting FLOPs at N=%d ...' % N)
+
+          from fvcore.nn import FlopCountAnalysis
+          fa = FlopCountAnalysis(model, ins)
+          fa.unsupported_ops_warnings(False); fa.uncalled_modules_warnings(False)
+          macs = int(fa.total())
+          res = {'params': nparams, 'N_particles': N,
+                 'macs_per_jet_fwd': macs, 'flops_per_jet_fwd_2xmac': 2 * macs,
+                 'convention': 'fvcore MACs (ParT Table 4 convention); flops_2xmac = 2xMAC',
+                 'part_reference_macs': 340_000_000}
+          print('=======================================')
+          print('MACs/jet (fwd)  = %.1f M   (ParT Table 4 ref: 340 M)' % (macs/1e6))
+          print('FLOPs/jet (2xMAC) = %.1f M' % (2*macs/1e6))
+          print('=======================================')
+          json.dump(res, open('/data/results/e1/eval/flops.json','w'), indent=2)
+          " | tee /data/results/e1/eval/flops.txt
+          echo "===== FLOPS DONE -> /data/results/e1/eval/flops.json ====="
+        resources:
+          requests: { memory: "16Gi", cpu: "4" }
+          limits:   { memory: "16Gi", cpu: "4" }
+        volumeMounts:
+        - { name: pvc, mountPath: /data }
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

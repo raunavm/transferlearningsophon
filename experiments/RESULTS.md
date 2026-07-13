@@ -40,6 +40,7 @@ Arm P macro AUC within 0.002 of published ParT 0.9877. Tax = Arm P − Arm S
 | Macro AUC (OvR) | **0.9877** | 0.9877 | +0.0000 |
 | Accuracy | 0.8605 | 0.861 | −0.0005 |
 | Params | 2.21 M | ~2.14 M | +71 k (Sophon fc head `[(512,0.1)]`) |
+| MACs/jet (fwd) | 326.6 M | 340 M | −4% (fvcore, N=128; ParT Table 4 convention) |
 
 Evaluated on full 20 M test set (2 M/class). Verdict computed by combining the 10
 per-class `pred_*.root` files. **Caveat**: Arm P here is the Sophon architecture (ParT
@@ -49,9 +50,9 @@ published 0.9877 is a **reference line**, not a same-network same-seed compariso
 ### arm_p — UNSEEDED gate run (provenance)
 - **Result**: best val metric 0.86116 @ epoch 48 → macro AUC 0.9877 / acc 0.8605 on test_20M
 - **Hardware**: NVIDIA-L40 ×1 (rci-tide-gpu-04.sdsu.edu, us-west)
-- **Compute**: 2.21 M params · 50 epochs · 512,000,000 jets seen · 47.55 h wall (57.1 min/ep) · 47.55 GPU-h
+- **Compute**: 2.21 M params · 50 epochs · 512,000,000 jets seen · 47.55 h wall (57.1 min/ep) · 47.55 GPU-h · 2991 jets/s
 - **Energy**: ~14.3 kWh / ~5.3 kg CO₂e [TDP estimate, 300 W]
-- **FLOPs**: pending (in-image collection — see note below)
+- **FLOPs**: 326.6 M MACs/jet fwd (fvcore, N=128; ParT ref 340 M) · 653 M FLOPs/jet (2×MAC) · ~1.0×10¹⁸ (~1.0 EFLOP) total training FLOPs
 - **Config**: ranger + flat+decay, lr 1e-3, batch 512, AMP, data `data_arm_p.yaml`
 - **Versions**: weaver 0.4.17, torch/CUDA per cu121 image · **image** `db235b515a278198`
 - **Seed**: UNSEEDED (pre-`seed_weaver`) — not reproducible; published 0.9877 is a reference line.

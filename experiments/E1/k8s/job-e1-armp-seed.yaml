@@ -51,6 +51,8 @@ spec:
           python3 scripts/collect_provenance.py --run-dir "$OUT" --arm "arm_p" --seed __SEED__ \
             --gpu "$GPU" --gpu-count 1 --node "${NODE_NAME:-?}" \
             --git-commit "$(git rev-parse --short HEAD)" --image-digest "sha256:db235b515a278198" \
+            --flops-json /data/results/e1/eval/flops.json \
+            --driver "$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1)" \
             --net-config experiments/E1/ParT_sophon_arch_10c.py --num-classes 10 || echo "provenance step failed (non-fatal)"
         resources:
           requests: { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1" }

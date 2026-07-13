@@ -60,41 +60,37 @@ def parse_log(path):
     return args, params_m, epochs, first_ts, last_ts
 
 
-def flops_per_jet(net_config, num_classes):
-    try:
-        import importlib.util
-        import torch
-        from fvcore.nn import FlopCountAnalysis
-        spec = importlib.util.spec_from_file_location("netcfg", net_config)
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        model, _ = mod.get_model({"num_classes": num_classes, "fc_params": [(512, 0.1)]})
-        model.eval()
-        N = 128  # padded particles
-        pts = torch.zeros(1, 2, N)
-        fts = torch.zeros(1, 17, N)
-        lvs = torch.zeros(1, 4, N)
-        msk = torch.ones(1, 1, N, dtype=torch.bool)
-        return float(FlopCountAnalysis(model, (pts, fts, lvs, msk)).total())
-    except Exception as e:  # fvcore missing / signature mismatch — honest null
-        print(f"[provenance] FLOPs not computed: {e}", file=sys.stderr)
-        return None
-
-
 def versions():
-    v = {}
+    import platform
+    v = {"python": platform.python_version()}
     try:
         import torch
         v.update(torch=torch.__version__, cuda=torch.version.cuda,
                  cudnn=torch.backends.cudnn.version())
     except Exception:
         pass
-    for m in ("weaver", "numpy"):
+    for m in ("weaver", "numpy", "uproot", "awkward", "sklearn"):
         try:
             v[m] = __import__(m).__version__
         except Exception:
             pass
     return v
+
+
+def checkpoints(run_dir):
+    ck = sorted(Path(run_dir).glob("net_epoch-*_state.pt"))
+    size_gb = round(sum(p.stat().st_size for p in Path(run_dir).glob("net*.pt")) / 1e9, 2)
+    return {"n_epoch_checkpoints": len(ck), "total_ckpt_size_gb": size_gb,
+            "best_ckpt": str(Path(run_dir) / "net_best_epoch_state.pt")}
+
+
+def driver_version():
+    try:
+        out = subprocess.run(["nvidia-smi", "--query-gpu=driver_version",
+                              "--format=csv,noheader"], capture_output=True, text=True)
+        return out.stdout.strip().splitlines()[0] if out.stdout.strip() else None
+    except Exception:
+        return None
 
 
 def main():
@@ -105,11 +101,13 @@ def main():
     ap.add_argument("--gpu", required=True)
     ap.add_argument("--gpu-count", type=int, default=1)
     ap.add_argument("--node", default="")
+    ap.add_argument("--driver", default="")
     ap.add_argument("--avg-power-w", type=float, default=None)
     ap.add_argument("--git-commit", default="")
     ap.add_argument("--image-digest", default="")
     ap.add_argument("--net-config", default="")
     ap.add_argument("--num-classes", type=int, default=10)
+    ap.add_argument("--flops-json", default="", help="path to flops.json (macs_per_jet_fwd)")
     ap.add_argument("--results-md", default="")
     args = ap.parse_args()
 
@@ -122,8 +120,11 @@ def main():
     per_ep_min = round(wall_s / max(n_done, 1) / 60, 1) if wall_s else None
     gpu_h = round((wall_s / 3600) * args.gpu_count, 2) if wall_s else None
     samples_seen = n_done * spe
-    fpj = flops_per_jet(args.net_config, args.num_classes) if args.net_config else None
-    total_flops = (fpj * samples_seen * 3) if fpj else None  # fwd+bwd ≈ 3x fwd
+    throughput = round(samples_seen / wall_s, 1) if wall_s else None
+    macs = None
+    if args.flops_json and Path(args.flops_json).exists():
+        macs = json.loads(Path(args.flops_json).read_text()).get("macs_per_jet_fwd")
+    total_train_flops = (macs * 2 * samples_seen * 3) if macs else None  # 2xMAC, fwd+bwd≈3x
     pwr_kw = (args.avg_power_w or TDP_W.get(args.gpu, 300)) / 1000.0
     energy_kwh = round(gpu_h * pwr_kw, 2) if gpu_h else None
     best = max(epochs, key=lambda e: e["best"]) if epochs else {}
@@ -132,21 +133,29 @@ def main():
         "arm": args.arm, "seed": args.seed, "run_dir": args.run_dir,
         "git_commit": args.git_commit, "image_digest": args.image_digest,
         "versions": versions(),
-        "hardware": {"gpu": args.gpu, "gpu_count": args.gpu_count, "node": args.node},
+        "hardware": {"gpu": args.gpu, "gpu_count": args.gpu_count, "node": args.node,
+                     "driver": args.driver or driver_version()},
         "compute": {
-            "params_M": params_m, "epochs_completed": n_done,
-            "samples_per_epoch": spe, "samples_seen": samples_seen,
+            "params": int(params_m * 1e6) if params_m else None, "params_M": params_m,
+            "macs_per_jet_fwd": macs, "flops_per_jet_2xmac": (2 * macs) if macs else None,
+            "part_reference_macs": 340_000_000,
+            "epochs_completed": n_done, "samples_per_epoch": spe, "samples_seen": samples_seen,
+            "throughput_jets_per_s": throughput,
             "wall_clock_h": round(wall_s / 3600, 2) if wall_s else None,
             "per_epoch_min": per_ep_min, "gpu_hours": gpu_h,
-            "flops_per_jet_fwd": fpj, "total_training_flops_approx": total_flops,
+            "total_training_flops_approx": total_train_flops,
+            "flops_convention": "MACs=fvcore (ParT-comparable); total=2xMAC x samples x 3 (fwd+bwd)",
             "energy_kwh_est": energy_kwh,
             "co2e_kg_est": round(energy_kwh * GRID_KG_PER_KWH, 2) if energy_kwh else None,
             "energy_method": "measured avg power" if args.avg_power_w else f"TDP estimate ({TDP_W.get(args.gpu,300)}W)",
+            "grid_factor_kg_per_kwh": GRID_KG_PER_KWH,
         },
         "hyperparameters": {k: hp.get(k) for k in (
-            "optimizer", "lr_scheduler", "start_lr", "batch_size", "num_epochs",
-            "samples_per_epoch", "samples_per_epoch_val", "num_workers",
-            "fetch_step", "use_amp", "data_config", "network_config")},
+            "optimizer", "optimizer_option", "lr_scheduler", "start_lr", "batch_size",
+            "num_epochs", "samples_per_epoch", "samples_per_epoch_val", "num_workers",
+            "fetch_step", "use_amp", "load_epoch", "network_option", "data_config", "network_config")},
+        "full_weaver_args": hp,   # everything weaver was invoked with (extra, for our reference)
+        "checkpoints": checkpoints(args.run_dir),
         "selection": {"best_epoch": best.get("epoch"), "best_val_metric": best.get("best")},
         "val_curve": [{"epoch": e["epoch"], "val": e["val"]} for e in epochs],
     }
@@ -155,6 +164,8 @@ def main():
     print(f"[provenance] wrote {out}")
 
     c, hpx = rec["compute"], rec["hyperparameters"]
+    tf = c["total_training_flops_approx"]
+    tf_str = f"{tf:.2e} (~{tf/1e18:.1f} EFLOP)" if tf else "n/a"
     md = (f"\n### {args.arm}  (seed={args.seed})\n"
           f"- **Result**: best val metric {rec['selection']['best_val_metric']} "
           f"@ epoch {rec['selection']['best_epoch']}\n"
@@ -162,9 +173,10 @@ def main():
           + (f" ({args.node})" if args.node else "") + "\n"
           f"- **Compute**: {c['params_M']} M params · {c['epochs_completed']} epochs · "
           f"{c['samples_seen']:,} jets seen · {c['wall_clock_h']} h wall "
-          f"({c['per_epoch_min']} min/ep) · {c['gpu_hours']} GPU-h\n"
-          f"- **FLOPs**: {c['flops_per_jet_fwd']} /jet fwd · "
-          f"{c['total_training_flops_approx']} total (approx, fwd+bwd)\n"
+          f"({c['per_epoch_min']} min/ep) · {c['gpu_hours']} GPU-h · "
+          f"{c['throughput_jets_per_s']} jets/s\n"
+          f"- **FLOPs**: {round((c['macs_per_jet_fwd'] or 0)/1e6,1)} M MACs/jet fwd "
+          f"(ParT ref 340 M) · {tf_str} total training FLOPs (approx)\n"
           f"- **Energy**: ~{c['energy_kwh_est']} kWh / ~{c['co2e_kg_est']} kg CO2e "
           f"[{c['energy_method']}]\n"
           f"- **Config**: {hpx['optimizer']} + {hpx['lr_scheduler']}, lr {hpx['start_lr']}, "
