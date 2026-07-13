@@ -46,5 +46,20 @@ per-class `pred_*.root` files. **Caveat**: Arm P here is the Sophon architecture
 backbone + Sophon head), not a bit-identical ParT clone; and this run is UNSEEDED —
 published 0.9877 is a **reference line**, not a same-network same-seed comparison.
 
-## Seeded E1 runs (rerun campaign — provenance blocks appended below)
-<!-- collect_provenance.py appends here -->
+### arm_p — UNSEEDED gate run (provenance)
+- **Result**: best val metric 0.86116 @ epoch 48 → macro AUC 0.9877 / acc 0.8605 on test_20M
+- **Hardware**: NVIDIA-L40 ×1 (rci-tide-gpu-04.sdsu.edu, us-west)
+- **Compute**: 2.21 M params · 50 epochs · 512,000,000 jets seen · 47.55 h wall (57.1 min/ep) · 47.55 GPU-h
+- **Energy**: ~14.3 kWh / ~5.3 kg CO₂e [TDP estimate, 300 W]
+- **FLOPs**: pending (in-image collection — see note below)
+- **Config**: ranger + flat+decay, lr 1e-3, batch 512, AMP, data `data_arm_p.yaml`
+- **Versions**: weaver 0.4.17, torch/CUDA per cu121 image · **image** `db235b515a278198`
+- **Seed**: UNSEEDED (pre-`seed_weaver`) — not reproducible; published 0.9877 is a reference line.
+
+## Seeded E1 rerun campaign (launched 2026-07-13 ~15:15 UTC)
+6 runs, 3 seeds/arm via `seed_weaver`: **arm_p** seeds 1/2/3, **arm_s** seeds 1/2/3.
+seed_weaver verified working (`[seed_weaver] seed=1 applied … 2.21 M params … Epoch #0`).
+Launched 5 (≤5 cap); arm_p seed 3 held for a free slot. Each auto-writes
+`run_provenance.json`; blocks appended below on completion.
+
+<!-- collect_provenance.py output appended here as runs finish -->
