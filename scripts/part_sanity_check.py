@@ -4,7 +4,7 @@
 Reads {ClassName}_logits.npy and {ClassName}_labels.npy from --emb-dir, computes
 the metrics on the entire extracted subset, and writes:
 
-  results/main_plots/part_full_metrics.json
+  figures/part_full_metrics.json
 
 If macro AUC < 0.98 it prints a clear warning so plotting can refuse to proceed.
 """
@@ -50,7 +50,7 @@ def softmax(x):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--emb-dir", default="embeddings_part_full_test")
-    p.add_argument("--output-dir", default="results/main_plots")
+    p.add_argument("--output-dir", default="figures")
     args = p.parse_args()
 
     emb_dir = Path(args.emb_dir)

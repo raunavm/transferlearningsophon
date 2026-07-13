@@ -93,7 +93,7 @@ scripts/                        training sweeps, ParT pipeline, figure renderers
 k8s/                            kubernetes job templates
 networks/                       reference Sophon ParT definition
 results/sweep_results.csv       9 sizes x 3 strategies x seeds
-results/main_plots/             poster figures (committed)
+figures/             poster figures (committed)
 ```
 
 

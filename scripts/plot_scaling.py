@@ -8,7 +8,7 @@ Reads:
     results/sweep_results.csv
 
 Outputs:
-    results/main_plots/scaling.{pdf,png}
+    figures/scaling.{pdf,png}
 """
 from __future__ import annotations
 
@@ -140,9 +140,9 @@ def main():
     ax.legend(loc="lower right")
     ax.grid(True, which="major", alpha=1.0)
 
-    os.makedirs("results/main_plots", exist_ok=True)
-    save_fig(fig, "results/main_plots/scaling")
-    print("Saved: results/main_plots/scaling.{pdf,png}")
+    os.makedirs("figures", exist_ok=True)
+    save_fig(fig, "figures/scaling")
+    print("Saved: figures/scaling.{pdf,png}")
     if fits:
         print("\nFitted power-law parameters (AUC_inf, A, alpha):")
         for s, (a_inf, A, al) in fits.items():

@@ -2,10 +2,10 @@
 """Visualize ParT-full's 128-d JetClass latent space with UMAP, t-SNE, and PCA.
 
 Reads the embeddings written by extract_part_embeddings.py and produces:
-  results/main_plots/part_reductions_3panel.{pdf,png}   (headline figure)
-  results/main_plots/part_reduction_metrics.json
+  figures/part_reductions_3panel.{pdf,png}   (headline figure)
+  figures/part_reduction_metrics.json
 
-Refuses to render unless results/main_plots/part_full_metrics.json reports
+Refuses to render unless figures/part_full_metrics.json reports
 macro AUC >= 0.98 (override with --force).
 
 Optional Sophon comparison: if --sophon-dir and --sophon-ft-dir are passed and
@@ -134,9 +134,9 @@ def main():
     p.add_argument("--emb-dir", default="embeddings_part_full_test")
     p.add_argument("--n-per-class", type=int, default=3000)
     p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--output-dir", default="results/main_plots")
+    p.add_argument("--output-dir", default="figures")
     p.add_argument("--metrics-json",
-                   default="results/main_plots/part_full_metrics.json")
+                   default="figures/part_full_metrics.json")
     p.add_argument("--force", action="store_true",
                    help="Render even if sanity-check AUC is below 0.98.")
     p.add_argument("--tsne-fallback-n-per-class", type=int, default=1500,

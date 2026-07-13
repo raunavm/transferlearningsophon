@@ -8,14 +8,11 @@ embeddings_*/
 substructure_*.npz
 
 # Generated outputs (regenerable from scripts)
-figures/
+# figures/ IS tracked — it's the single curated figures folder.
 results/**/*.pdf
 results/**/*.png
 results/**/*.npz
 results/**/*.pptx
-# Keep the poster figures committed
-!results/main_plots/*.pdf
-!results/main_plots/*.png
 results_data/
 mlp_results/
 
