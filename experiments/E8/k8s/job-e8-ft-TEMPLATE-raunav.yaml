@@ -27,7 +27,18 @@ spec:
           git clone https://github.com/raunavm/transferlearningsophon.git
           cd transferlearningsophon
           FEAT=/data/results/e8/__FEATDIR__
-          [ -d "$FEAT/train" ] || { echo "MISSING features $FEAT/train — run e8-ft-prep first"; exit 1; }
+          # Launched in parallel with e8-ft-prep to grab the GPU early (A100s can be
+          # scarce). Hold it and WAIT for prep to finish writing this preprocessing's
+          # features — prep writes <split>/prep_meta.json LAST per split, so all three
+          # markers present => features complete. Poll up to ~3h, then give up.
+          echo "=== waiting for features under $FEAT (train/val/test) ==="
+          for i in $(seq 1 360); do
+            if [ -f "$FEAT/train/prep_meta.json" ] && [ -f "$FEAT/val/prep_meta.json" ] && [ -f "$FEAT/test/prep_meta.json" ]; then
+              echo "features ready after ~$((i*30))s"; break
+            fi
+            sleep 30
+          done
+          [ -f "$FEAT/test/prep_meta.json" ] || { echo "features never appeared under $FEAT after ~3h — is e8-ft-prep running/complete?"; exit 1; }
 
           CKPT="__CKPT__"
           if [ "$CKPT" = "DOWNLOAD" ]; then
