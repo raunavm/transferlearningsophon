@@ -4,7 +4,8 @@
   "designation": {
     "confirmatory_eval": "test",
     "selection_only": "val",
-    "rationale": "v5.1 audit recommendation: release-test as the confirmatory population, release-val reserved for all selection (cleaner P2 hygiene). PI sign-off: PENDING \u2014 recorded as the working designation until countersigned."
+    "rationale": "v5.1 audit recommendation: release-test as the confirmatory population, release-val reserved for all selection (cleaner P2 hygiene).",
+    "sign_off": "APPROVED \u2014 R. Mendiratta, 2026-07-19 (in-session directive: 'go ahead with your recommendation'). Decision basis: (1) verified vs jet-universe/sophon@9dd6dd6 train_sophon.sh + arXiv:2405.12972 \u2014 Sophon selects best-epoch AND reports on the val partition; the test partition appears nowhere in its pipeline; (2) blind 3-agent panel (neutral framing, no repo access) voted 3/3 TEST \u2014 key argument: best-epoch selection optimism can be granularity-dependent, so scoring on the selection set could bias the very comparison under study; (3) val retained as a clearly-labeled secondary, non-confirmatory number for Sophon-protocol continuity."
   },
   "split_rule": "canonical 4:1:1 by file index per family",
   "family_index_ranges": {

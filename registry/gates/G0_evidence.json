@@ -1,7 +1,7 @@
 {
   "gate": "G0 — blocks any training-config freeze (PLAN v5.1 §5)",
   "assembled": "2026-07-19",
-  "status": "EVIDENCE-COMPLETE — awaiting PI sign-off on the eval-split designation (the one human item)",
+  "status": "CLOSED 2026-07-19 — all criteria met; eval-split designation signed off (see eval_split_frozen)",
   "criteria": {
     "inventory_checksums": {
       "verdict": "PASS",
@@ -12,9 +12,9 @@
       "evidence": "Phase A: 16 part_* + jet-level + genpart/aux truth; branch whitelist frozen in loaders; pyarrow absent from image (jobs pip-install)"
     },
     "eval_split_frozen": {
-      "verdict": "FROZEN — PI SIGN-OFF PENDING",
-      "designation": "release TEST partition (335 files) = confirmatory; release VAL = all selection",
-      "evidence": "manifests/release_eval_split.json; PVC-verified file lists + sha256 by phasea-stats-raunav"
+      "verdict": "PASS — SIGNED OFF 2026-07-19 (R. Mendiratta, in-session)",
+      "designation": "release TEST partition (335 files) = confirmatory; release VAL = all selection + secondary non-confirmatory reporting (Sophon continuity)",
+      "evidence": "manifests/release_eval_split.json (sign-off recorded with decision basis: sophon code+paper verification; blind 3-agent panel 3/3 TEST); PVC-verified file lists + sha256 by phasea-stats-raunav"
     },
     "read_throughput": {
       "verdict": "PASS",

@@ -13,7 +13,7 @@ meta:
   bound_phase_a_verdicts:
     kish_gate: "eval(test) QCD cell N_eff = 826,758 < 4e6 -> FPR 1e-4 NOT reportable; primary WP = 1e-3 (kish_table.parquet, 2026-07-19)"
     weight_agreement: "95th pct |log(w_global/w_30)| = 1.94 >= 0.05 -> NOT equivalent; global weights primary; contingency C1 ARMED (weight_agreement.json)"
-    eval_split: "release TEST partition = confirmatory population; release VAL = all selection (manifests/release_eval_split.json; PI sign-off folded into this signature)"
+    eval_split: "release TEST partition = confirmatory population; release VAL = all selection. SIGNED OFF 2026-07-19 (manifests/release_eval_split.json): verified vs sophon@9dd6dd6 code + arXiv:2405.12972 (Sophon selects AND reports on val; test untouched by its pipeline); blind 3-agent panel 3/3 for TEST (selection optimism can be granularity-dependent -> would bias the comparison under study). VAL numbers are additionally reported as clearly-labeled SECONDARY, non-confirmatory (Sophon-protocol continuity; flagged as selection-set-optimistic). Test is opened exactly once, post-G3; its numbers never feed back into any choice."
     test_floor: "sigma_test_delta from reports/test_floor.json (Phase A A.5b; refreshed on the real pair post-unblinding per §16.4)"
 
 primary:
@@ -23,7 +23,7 @@ primary:
   cell: QCD_background_vs_signal_agg           # signal_agg = g10sem groups 0-8; QCD = group 9
   working_point: "eps_S=0.50; FPR_grid: [1e-4, 1e-3]"
   wp_rule: "tightest grid point whose cell passes the Kish gate (§16.2) per the Phase-A table"
-  wp_bound: 1e-3                               # BOUND by Phase A: 1e-4 fails Kish (N_eff 826,758 < 4e6)
+  wp_bound: 1.0e-3                             # BOUND by Phase A: 1e-4 fails Kish (N_eff 826,758 < 4e6)
   transform: log_rejection                     # R = 1/FPR(eps_S)
   contrast: "mean_s[ d_s ],  d_s = logR(k188,s) - logR(k10sem,s)"
   sidedness: two-sided
