@@ -68,16 +68,9 @@ runs/
 
 # Claude Code and AI workflow artifacts
 .claude/
-CLAUDE.md
-AGENTS.md
-PLAN.md
-TODO.md
-NOTES.md
-SCRATCH.md
-BRAINSTORM.md
-*_plan.md
-*_notes.md
-*_scratchpad.md
-sprint_*.md
-meeting_*.md
-journal_*.md
+
+# ALL markdown is local-only — never commit/push any .md (per PI, 2026-07-17).
+# Every doc (PLAN.md, AGENT.md, CHANGELOG.md, all READMEs, reports, grouping
+# notes) stays on disk but is never tracked. Already-committed ones must be
+# untracked once with `git rm --cached <file>` (they remain on disk).
+*.md
