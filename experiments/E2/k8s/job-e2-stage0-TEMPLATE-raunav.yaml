@@ -1,0 +1,101 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # E2 STAGE-0 TUNING (GPU) — one job per (arm x LR). PLAN §9.2: LR grid
+  # {5e-4, 2.5e-4}, one tuning seed per arm (s_tune = 900 + arm_index, arms
+  # ordered [g2, g10sem, g10rand, g30, g188] -> 900..904). All Stage-0 runs are
+  # QUARANTINED (stage: tune, prohibition P1 — never in inferential samples).
+  # LR selection metric (frozen): the arm's own FINAL-checkpoint val loss.
+  # Depends on e2-makeweight-raunav (config cache). Launch via sed:
+  #   __GRAN__  g2|g10sem|g10rand|g30|g188
+  #   __SEED__  900|901|902|903|904          (match the arm!)
+  #   __LR__    5e-4|2.5e-4
+  #   __LRTAG__ hi|lo                        (hi=5e-4, lo=2.5e-4; dir + job name)
+  name: e2-s0-__GRAN__-__LRTAG__-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: train
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        env:
+        - { name: PYTHONHASHSEED, value: "__SEED__" }
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        args:
+        - |
+          set -e
+          pip install -q pyarrow || { echo "pyarrow install FAILED"; exit 1; }
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          mkdir -p /ds && ln -sfn /jc2/jet_data /ds/Pythia
+
+          CACHE=/data/results/e2/config_cache
+          cp "$CACHE"/JetClassII_g*.*.auto.yaml experiments/E2/data/ 2>/dev/null \
+            || { echo "config cache empty — run e2-makeweight-raunav first"; exit 1; }
+          python3 - <<'EOF'
+          import hashlib, sys
+          from pathlib import Path
+          cfg = Path("experiments/E2/data/JetClassII___GRAN__.yaml")
+          md5 = hashlib.md5(cfg.read_bytes()).hexdigest()
+          expect = cfg.with_name(f"JetClassII___GRAN__.{md5}.auto.yaml")
+          if not expect.exists():
+              print(f"FATAL: {expect.name} missing — cache stale vs this commit's config md5")
+              sys.exit(1)
+          print(f"auto config OK: {expect.name}")
+          EOF
+
+          OUTBASE=/data/results/e2/stage0___LRTAG__
+          RUN="$OUTBASE/__GRAN___s__SEED__"
+          mkdir -p "$RUN"
+          printf '{"stage": "tune", "quarantine": "P1 — excluded from every inferential sample",\n "arm": "__GRAN__", "seed": __SEED__, "start_lr": "__LR__",\n "selection_metric": "final-checkpoint val loss (frozen, §9.2)"}\n' \
+            > "$RUN/stage0_meta.json"
+
+          LOAD=""
+          LAST=$(ls "$RUN"/net_epoch-*_state.pt 2>/dev/null | sed 's/.*_epoch-\([0-9]*\)_state.pt/\1/' | sort -n | tail -1 || true)
+          [ -n "$LAST" ] && { LOAD="--load-epoch $LAST"; echo "RESUME from epoch $LAST"; }
+
+          echo "=== GPU smoke ==="
+          python3 -c "import torch; assert torch.cuda.is_available(); print('GPU', torch.cuda.get_device_name(0))"
+
+          echo "=== E2 Stage-0: __GRAN__ seed __SEED__ lr __LR__ ==="
+          PYTHONUNBUFFERED=1 GRAN=__GRAN__ SEED=__SEED__ DATADIR=/ds OUTDIR="$OUTBASE" \
+            ./experiments/E2/train_e2.sh train --start-lr __LR__ $LOAD
+          echo "===== E2 S0 __GRAN__ __LRTAG__ DONE ====="
+
+          GPU=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1 | sed 's/ /-/g')
+          python3 scripts/collect_provenance.py --run-dir "$RUN" --arm "e2_s0___GRAN__" --seed __SEED__ \
+            --gpu "$GPU" --gpu-count 1 --node "${NODE_NAME:-?}" \
+            --git-commit "$(git rev-parse --short HEAD)" --image-digest "sha256:db235b515a278198" \
+            --driver "$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1)" \
+            --net-config experiments/E2/networks/example_ParticleTransformer_sophon.py \
+            --num-classes 0 || echo "provenance step failed (non-fatal)"
+        resources:
+          requests: { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-A100-SXM4-80GB, NVIDIA-A100-PCIE-40GB, NVIDIA-A100-SXM4-40GB, NVIDIA-A40, NVIDIA-A10, NVIDIA-RTX-A6000, NVIDIA-RTX-A5000, NVIDIA-L40, NVIDIA-L40S, NVIDIA-GeForce-RTX-4090, NVIDIA-GeForce-RTX-3090]
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: [us-west]
+      volumes:
+      - name: data
+        persistentVolumeClaim: { claimName: transfer-learning-vol }
+      - name: jc2
+        persistentVolumeClaim: { claimName: tn-pvc-base-jetclass2 }
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "16Gi" }
