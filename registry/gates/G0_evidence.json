@@ -1,0 +1,47 @@
+{
+  "gate": "G0 — blocks any training-config freeze (PLAN v5.1 §5)",
+  "assembled": "2026-07-19",
+  "status": "EVIDENCE-COMPLETE — awaiting PI sign-off on the eval-split designation (the one human item)",
+  "criteria": {
+    "inventory_checksums": {
+      "verdict": "PASS",
+      "evidence": "reports/phase_a_inventory_2026-07-17.md (local); 2010/2010 release files present, 0 missing vs HF filelist; re-verified by phasea-stats-raunav: hash_match {train,val,test} all True"
+    },
+    "schema_diff": {
+      "verdict": "PASS",
+      "evidence": "Phase A: 16 part_* + jet-level + genpart/aux truth; branch whitelist frozen in loaders; pyarrow absent from image (jobs pip-install)"
+    },
+    "eval_split_frozen": {
+      "verdict": "FROZEN — PI SIGN-OFF PENDING",
+      "designation": "release TEST partition (335 files) = confirmatory; release VAL = all selection",
+      "evidence": "manifests/release_eval_split.json; PVC-verified file lists + sha256 by phasea-stats-raunav"
+    },
+    "read_throughput": {
+      "verdict": "PASS",
+      "evidence": "Phase A: /base 129 MB/s, /many 124 MB/s sustained"
+    },
+    "kish_table": {
+      "verdict": "PRODUCED",
+      "headline": "eval(test) QCD cell N_eff = 826,758 < 4e6 -> FPR 1e-4 NOT reportable; primary WP = 1e-3; contingency C2 armed",
+      "artifact": "/data/results/phase_a/kish_table.parquet (+ .csv, count_cube.npz, weights_global.npz; clipped jet fraction 0.016%)"
+    },
+    "test_floor": {
+      "verdict": "PRODUCED",
+      "headline": "sigma_test_delta(R@epsS=0.5) = 0.0112 on the 1.4M-jet eval subset (400k QCD); projected 0.0023 on the full partition; TPR@FPR: sigma(1e-3)=0.0108, sigma(1e-4)=0.0365 (3.4x noisier — corroborates the Kish demotion)",
+      "primary_proxy_pair": "arms_s1 x arms_s2 (d=+0.0347); robustness pairs recorded",
+      "artifact": "/data/results/phase_a/test_floor.json (+ test_floor.md)",
+      "note": "proxy-pair seed spread of OOD transfer d ~ 0.03-0.13 log-rejection >> test floor -> seed term will dominate the E2 MDE; refresh on the real pair post-unblinding (§16.4)"
+    },
+    "weight_agreement": {
+      "verdict": "PRODUCED",
+      "headline": "95th pct |log(w_global/w_30)| = 1.94 >= 0.05 -> NOT equivalent; global primary; contingency C1 ARMED (line 12 claimed; C3 now needs PI escalation)",
+      "artifact": "/data/results/phase_a/weight_agreement.json"
+    },
+    "step_freeze": {
+      "verdict": "FROZEN",
+      "config_hash": "ce915b819e37daad1616f1c4621e2e4d7bce48b09e905da51070357658d6881f",
+      "artifact": "registry/gates/step_freeze.json (N_steps_full=1,600,000; batch 512; eta0=5e-4; ranger flat+decay; AMP)"
+    }
+  },
+  "unblocks_on_signoff": "E2 base-config freeze -> Stage 0 tuning launch (5 arms x 2 LR, 760 GPU-h)"
+}

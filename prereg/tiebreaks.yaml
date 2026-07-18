@@ -1,0 +1,23 @@
+# prereg/tiebreaks.yaml — pre-registered tie-break rules (PLAN v5.1 §9.6)
+# Committed at G3. The primary estimand is the FINAL checkpoint (fixed-budget
+# performance under the frozen Sophon recipe). Sensitivities are pre-registered
+# views and are never substituted into primary bars.
+meta:
+  version: 1
+  drafted: 2026-07-19
+  pi_signature: null           # co-signed with estimand_sheet_v1
+
+primary_estimand: "final checkpoint (step fraction 1.0)"
+checkpoint_grid: [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0]   # + best-val (descriptive)
+sensitivities:               # reported views, never promoted
+  - "fixed-step trajectories"
+  - "plateau average over {0.75, 0.875, 1.0}"
+  - "probe learning-curve area"
+  - "best-val (descriptive)"
+
+tie_break:
+  condition: "final-checkpoint and plateau-average orderings disagree on the key pair (k188 vs k10sem)"
+  action: |
+    Both orderings are reported with equal standing; the claim is restricted to
+    their intersection; the result is labeled schedule-dependent. No third view
+    may be introduced as arbiter.

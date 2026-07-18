@@ -1,0 +1,70 @@
+# prereg/estimand_sheet_v1.yaml — G3 pre-registration (PLAN v5.1 §12)
+# STATUS: DRAFT v1 — awaiting PI signature (G3 closes on signature + tag + hash
+# recorded in registry/gates/). No E2 confirmatory number may be unblinded (P3)
+# before that. Every hypothesis freezes: population, mixture, working_point,
+# class_aggregation, transform, contrast, sidedness, seed_unit, checkpoint,
+# statistic, decision_rule.
+meta:
+  version: 1
+  drafted: 2026-07-19
+  plan_version: v5.1
+  config_hash: ce915b819e37daad1616f1c4621e2e4d7bce48b09e905da51070357658d6881f  # registry/gates/step_freeze.json
+  pi_signature: null            # PI signs here (name + date) -> then tag prereg-v1
+  bound_phase_a_verdicts:
+    kish_gate: "eval(test) QCD cell N_eff = 826,758 < 4e6 -> FPR 1e-4 NOT reportable; primary WP = 1e-3 (kish_table.parquet, 2026-07-19)"
+    weight_agreement: "95th pct |log(w_global/w_30)| = 1.94 >= 0.05 -> NOT equivalent; global weights primary; contingency C1 ARMED (weight_agreement.json)"
+    eval_split: "release TEST partition = confirmatory population; release VAL = all selection (manifests/release_eval_split.json; PI sign-off folded into this signature)"
+    test_floor: "sigma_test_delta from reports/test_floor.json (Phase A A.5b; refreshed on the real pair post-unblinding per §16.4)"
+
+primary:
+  id: P0
+  population: frozen_release_eval_split        # release TEST partition, §4
+  mixture: release composition after frozen training selection
+  cell: QCD_background_vs_signal_agg           # signal_agg = g10sem groups 0-8; QCD = group 9
+  working_point: "eps_S=0.50; FPR_grid: [1e-4, 1e-3]"
+  wp_rule: "tightest grid point whose cell passes the Kish gate (§16.2) per the Phase-A table"
+  wp_bound: 1e-3                               # BOUND by Phase A: 1e-4 fails Kish (N_eff 826,758 < 4e6)
+  transform: log_rejection                     # R = 1/FPR(eps_S)
+  contrast: "mean_s[ d_s ],  d_s = logR(k188,s) - logR(k10sem,s)"
+  sidedness: two-sided
+  probe: "linear (§11.3): standardized L2 logistic on the pre-training-task labels, trained on release-train embeddings, C selected on release-val"
+  checkpoint: "final (fraction 1.0) — fixed-budget estimand under the frozen recipe"
+  seed_unit: "paired seed s in {101..105}, n=5 (fixed; Stage 1 = {101,102,103}, Stage 2 extends to 105)"
+  statistic: paired seed mean of d_s
+  decision_rule:
+    superiority: "two-sided paired t, alpha=0.05"
+    equivalence: "TOST alpha=0.05  <=>  90% CI within +/- log(1.1) = +/- 0.09531"
+    otherwise: "'inconclusive at the pre-registered MEI'; MDE printed per §16.4"
+  mei: "10% relative rejection (~10% luminosity-equivalent, ~4.9% significance) — stated as physics"
+
+secondaries:      # Holm at family alpha=0.05 over EXACTLY these eight scalars (§16.3)
+  S1: {scalar: "k30 vs k10sem",              frozen: "P0 construction, pair swapped"}
+  S2: {scalar: "k188 vs k2 (ladder span)",   frozen: "P0 construction"}
+  S3: {scalar: "E4 fixed-rung: k188 vs k10sem after JC1 adaptation",
+       frozen: "matched per-class size rung (§13), n=3 adaptation seeds"}
+  S4: {scalar: "E7-1 headline: paired mu=0->50 log-rejection shift, k188 backbone",
+       frozen: "frozen linear probe on 10sem task trained at PU50 release-train; threshold recomputed per mu; tightest WP passing Kish at BOTH mu; fixed-threshold drift = companion descriptive panel"}
+  S5: {scalar: "granularity x pileup interaction slope",
+       frozen: "WLS of gap(mu)=logR_k188(mu)-logR_k10sem(mu) vs mu at uniform FPR 1e-3; weights = inverse joint-bootstrap variances; covariance from joint bootstrap; >=3 mu points else formally withdrawn"}
+  S6: {scalar: "E3/E4 ordering concordance",
+       frozen: "Kendall tau between within-domain (E3, P0 construction) and cross-domain (E4 T3 fixed rung) 5-arm orderings; paired-bootstrap CI over (seeds x events)"}
+  S7: {scalar: "recoverability",
+       frozen: "[adapt@50->test@50 - frozen@50] for k188 minus same for k10sem; E7-T, n=3 adaptation seeds"}
+  S8: {scalar: "scale interaction",
+       frozen: "gap(10% data) - gap(100% data), E2-S (frozen 10% event-UID-hash subsample, salt 'e2s-v5', paired seeds {201,202,203})"}
+
+exploratory:      # labeled, never Holm
+  - "k10sem vs k10rand (matched compute; matched progress)"
+  - "best-val views"
+  - "all remaining grid cells"
+  - "LP-FT appendix numbers"
+
+statistics:
+  bootstrap: "event bootstrap §16.1, B=2000, seed 7777, per-analysis stream ids recorded"
+  event_unit_release: "jet (release carries no event UIDs — ntupler defines none); G corpus uses true UIDs via L5 stamp"
+  mde: "MDE_total = sqrt([ (t_{0.975,n-1}+t_{0.80,n-1}) * sigma_d / sqrt(n) ]^2 + sigma_test_delta^2); seed-term multiplier 3.10 (n=3), 1.66 (n=5)"
+  weights: "global label-blind 1/rho(pT,mSD) per configs/weights/global_pt_msd.yaml; 30-group construction = contingency C1 only"
+
+contingencies_armed:
+  C1: "ARMED 2026-07-19 (weight non-equivalence): key-pair rerun under Sophon 30-group weights, 2x76=152 GPU-h, budget line 12. C3 now requires PI escalation (shared line, first-armed wins)."
+  C2: "ARMED 2026-07-19 (Kish 1e-4 failure): QCD enlargement to 15M via G campaign (+3-5k CPU-h) MAY recover 1e-4; waivable per CPU drop order (accept 1e-3 demotion). Decision at G-campaign scoping."

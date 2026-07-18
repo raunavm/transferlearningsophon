@@ -1,0 +1,26 @@
+# prereg/drop_orders.yaml — outcome-blind resource drop orders (PLAN v5.1 §17.3)
+# Committed at G3 alongside the estimand sheet. These orders are fixed BEFORE
+# any confirmatory result is seen; deviations require a plan amendment (§19).
+meta:
+  version: 1
+  drafted: 2026-07-19
+  pi_signature: null           # co-signed with estimand_sheet_v1
+
+gpu_pressure:                  # applied strictly in order; stop when budget fits
+  - "stretch pool unfunded (E8/E5/E7-c/E10/E6 idle-only work stops first)"
+  - "budget line 12 unspent (armed contingency C1 forgone — reported as such)"
+  - "E4 mid-ladder rungs dropped (keep endpoints + the S3 fixed rung)"
+  - "LP-FT beyond the key pair dropped"
+  - "NN probe + mid-checkpoint grid dropped"
+  never:
+  - "key-pair seeds"
+  - "closure work (G2 / V-envelope)"
+  - "V analysis"
+  - "the matching estimand"
+
+cpu_pressure:                  # G-campaign lane
+  - "drop mu=25"
+  - "drop mu=80"
+  - "reduce mu=140 to >=10% size (never zero; if <3 mu points survive, S5 is formally WITHDRAWN, not repointed)"
+  - "waive C2 (accept the FPR 1e-3 demotion — already the bound primary WP)"
+  - "reduce V to one variant (never zero while any off-50 quantitative claim stands)"

@@ -1,0 +1,16 @@
+# configs/g/split.yaml — L5 split stamp (PLAN v5.1 §7.3)  ⟨frozen⟩
+# Every hard-scatter event is tagged ONCE at generation; the tag is written into
+# every ntuple at every mu. Loaders refuse files without the stamp.
+#   h = SHA256(f"{dsid}:{run_number}:{event_number}:{SALT}")
+#   b = int(h[:8], 16) mod 100
+#   b in [0,32) -> train ; [32,40) -> val ; [40,100) -> test
+salt: "sophon-granularity-v5"
+bins:
+  train: [0, 32]
+  val: [32, 40]
+  test: [40, 100]
+consequences: >
+  Adaptation hyperparameters, stopping, and thresholds use val only; test is
+  touched only post-G3; cross-mu twin leakage is impossible by construction
+  (identical UID -> identical bin at every mu).
+implementation: experiments/G/split_stamp.py
