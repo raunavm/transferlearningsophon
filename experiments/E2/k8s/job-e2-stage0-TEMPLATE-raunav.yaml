@@ -73,7 +73,10 @@ spec:
             --git-commit "$(git rev-parse --short HEAD)" --image-digest "sha256:db235b515a278198" \
             --driver "$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1)" \
             --net-config experiments/E2/networks/example_ParticleTransformer_sophon.py \
+            --flops-json /data/results/e1/eval/flops.json \
             --num-classes 0 || echo "provenance step failed (non-fatal)"
+          # (MACs/jet from the E1 fvcore measurement of the SAME Sophon arch; the
+          #  per-granularity head delta is <0.05% of backbone MACs — noted in paper.)
         resources:
           requests: { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
           limits:   { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
