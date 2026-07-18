@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # E8 Phase-2 FINE-TUNING (GPU), one job per backbone. Launch via sed:
+  #   part: __NAME__=part __BACKBONE__=part __ARCH__=part   __FEATDIR__=features_part   __CKPT__=DOWNLOAD
+  #   armp: __NAME__=armp __BACKBONE__=armp __ARCH__=sophon __FEATDIR__=features_part   __CKPT__=/data/results/e1/arm_p_s1/net_best_epoch_state.pt
+  #   arms: __NAME__=arms __BACKBONE__=arms __ARCH__=sophon __FEATDIR__=features_sophon __CKPT__=/data/results/e1/arm_s_s1/net_best_epoch_state.pt
+  # Runs {partial_ft, full_ft} x sizes x 3 seeds; saves best_model.pt weights +
+  # results.json + FLOPs/provenance per run. Depends on e8-ft-prep-raunav (features).
+  name: e8-ft-__NAME__-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: ft
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          FEAT=/data/results/e8/__FEATDIR__
+          [ -d "$FEAT/train" ] || { echo "MISSING features $FEAT/train — run e8-ft-prep first"; exit 1; }
+
+          CKPT="__CKPT__"
+          if [ "$CKPT" = "DOWNLOAD" ]; then
+            mkdir -p models/ParT
+            curl -sL -o models/ParT/ParT_full.pt \
+              https://github.com/jet-universe/particle_transformer/raw/main/models/ParT_full.pt
+            CKPT=models/ParT/ParT_full.pt
+          fi
+          [ -f "$CKPT" ] || { echo "MISSING checkpoint $CKPT"; exit 1; }
+
+          echo "=== GPU smoke ==="
+          python3 -c "import torch; assert torch.cuda.is_available(); print('GPU', torch.cuda.get_device_name(0))"
+
+          echo "=== fine-tune __BACKBONE__ (arch=__ARCH__) partial+full x sizes x seeds ==="
+          python3 experiments/E8/finetune_jc2.py --backbone __BACKBONE__ --arch __ARCH__ \
+            --feat-dir "$FEAT" --checkpoint "$CKPT" \
+            --strategies partial_ft full_ft \
+            --sizes 10000 30000 100000 300000 1000000 --seeds 42 123 456 \
+            --epochs 50 --batch-size 256 --output-dir /data/results/e8/ft
+          echo "===== E8 FT __NAME__ DONE ====="
+          cat /data/results/e8/ft/__BACKBONE__/ft_provenance.json 2>/dev/null | head -40
+        resources:
+          requests: { memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-A100-SXM4-80GB, NVIDIA-A100-PCIE-40GB, NVIDIA-A100-SXM4-40GB, NVIDIA-A40, NVIDIA-A10, NVIDIA-RTX-A6000, NVIDIA-RTX-A5000, NVIDIA-L40, NVIDIA-L40S, NVIDIA-GeForce-RTX-4090, NVIDIA-GeForce-RTX-3090]
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: [us-west]
+      volumes:
+      - name: data
+        persistentVolumeClaim: { claimName: transfer-learning-vol }
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "16Gi" }

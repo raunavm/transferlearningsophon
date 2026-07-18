@@ -72,10 +72,13 @@ def compute_features(px, py, pz, energy, deta, dphi, d0val, d0err, dzval, dzerr,
     sophon=True  -> Sophon preprocessing (data_arm_s.yaml): pt/E logs and the
                     four-vectors are scaled by 500/jet_pt; logptrel/logerel stay
                     scale-invariant; all other features unchanged.
-    Returns (feats[n,17] float32, lorentz[n,4] float32).
+
+    Broadcasting: particle arrays are (..., P); jet_pt / jet_energy must
+    broadcast against them ((N, 1) for batched (N, P) inputs, scalar for (P,)).
+    Returns (feats (..., P, 17) float32, lorentz (..., P, 4) float32).
     """
-    jet_pt_safe = max(float(jet_pt), EPS)
-    jet_e_safe = max(float(jet_energy), EPS)
+    jet_pt_safe = np.maximum(np.asarray(jet_pt, np.float64), EPS)
+    jet_e_safe = np.maximum(np.asarray(jet_energy, np.float64), EPS)
     scale = (500.0 / jet_pt_safe) if sophon else 1.0
 
     pt = np.sqrt(px ** 2 + py ** 2)                       # unscaled constituent pT
@@ -92,9 +95,56 @@ def compute_features(px, py, pz, energy, deta, dphi, d0val, d0err, dzval, dzerr,
 
     feats = np.stack([pt_log, e_log, logptrel, logerel, deltaR,
                       charge, isCH, isNH, isPh, isE, isMu,
-                      d0, d0err_c, dz, dzerr_c, deta, dphi], axis=1).astype(np.float32)
-    lorentz = (np.stack([px, py, pz, energy], axis=1) * scale).astype(np.float32)
+                      d0, d0err_c, dz, dzerr_c, deta, dphi], axis=-1).astype(np.float32)
+    lorentz = np.stack([px, py, pz, energy], axis=-1)
+    if sophon:
+        lorentz = lorentz * np.asarray(scale)[..., None]
+    lorentz = lorentz.astype(np.float32)
     return feats, lorentz
+
+
+def _process_arrays(arr, want_sophon):
+    """Vectorized core: pT-sort desc, truncate/pad to MAX_PART, both preprocessings.
+
+    Padded slots are zeroed (identical to the mask-authoritative weaver layout;
+    the model never reads them). Row order = input order (NOT shuffled), so it
+    is identical for every backbone.
+    """
+    jet_pt = np.asarray(arr["jet_pt"], np.float32)
+    jet_e = np.asarray(arr["jet_energy"], np.float32)
+    label = np.asarray(arr["jet_label"], np.int16)
+
+    pt_jag = np.sqrt(arr["part_px"] ** 2 + arr["part_py"] ** 2)
+    order = ak.argsort(pt_jag, axis=1, ascending=False)   # leading-pT first
+
+    def grid(name):
+        x = ak.pad_none(arr[name][order], MAX_PART, axis=1, clip=True)
+        return np.asarray(ak.fill_none(x, 0.0), np.float64)   # (n, MAX_PART)
+
+    cols = {k: grid(k) for k in PART_KEYS}
+    counts = np.minimum(np.asarray(ak.num(arr["part_px"], axis=1)), MAX_PART)
+    masks = np.arange(MAX_PART)[None, :] < counts[:, None]   # (n, MAX_PART) bool
+    mk = masks[:, :, None]
+
+    kw = dict(px=cols["part_px"], py=cols["part_py"], pz=cols["part_pz"],
+              energy=cols["part_energy"], deta=cols["part_deta"],
+              dphi=cols["part_dphi"], d0val=cols["part_d0val"],
+              d0err=cols["part_d0err"], dzval=cols["part_dzval"],
+              dzerr=cols["part_dzerr"], charge=cols["part_charge"],
+              isCH=cols["part_isChargedHadron"], isNH=cols["part_isNeutralHadron"],
+              isPh=cols["part_isPhoton"], isE=cols["part_isElectron"],
+              isMu=cols["part_isMuon"],
+              jet_pt=jet_pt[:, None].astype(np.float64),
+              jet_energy=jet_e[:, None].astype(np.float64))
+    pf, plv = compute_features(**kw, sophon=False)
+    pf *= mk
+    plv *= mk
+    sf = slv = None
+    if want_sophon:
+        sf, slv = compute_features(**kw, sophon=True)
+        sf *= mk
+        slv *= mk
+    return pf, plv, sf, slv, masks, label, jet_pt
 
 
 def process_file(fpath, want_sophon):
@@ -102,49 +152,10 @@ def process_file(fpath, want_sophon):
     masks, label188, jet_pt) with jets padded/truncated to MAX_PART, pT-sorted.
 
     The Sophon arrays are only built if want_sophon (skips work when no arm-S
-    backbone is requested). Row order is the file's native order (NOT shuffled),
-    so it is identical for every backbone.
+    backbone is requested).
     """
     arr = ak.from_parquet(fpath, columns=PART_KEYS + SCALAR_KEYS)
-    n = len(arr["jet_pt"])
-    pf = np.zeros((n, MAX_PART, 17), np.float32)
-    plv = np.zeros((n, MAX_PART, 4), np.float32)
-    sf = np.zeros((n, MAX_PART, 17), np.float32) if want_sophon else None
-    slv = np.zeros((n, MAX_PART, 4), np.float32) if want_sophon else None
-    masks = np.zeros((n, MAX_PART), bool)
-    jet_pt = np.asarray(arr["jet_pt"], np.float32)
-    jet_e = np.asarray(arr["jet_energy"], np.float32)
-    label = np.asarray(arr["jet_label"], np.int16)
-
-    for i in range(n):
-        px = np.asarray(arr["part_px"][i], np.float64)
-        py = np.asarray(arr["part_py"][i], np.float64)
-        pz = np.asarray(arr["part_pz"][i], np.float64)
-        e = np.asarray(arr["part_energy"][i], np.float64)
-        m = min(len(px), MAX_PART)
-        order = np.argsort(np.sqrt(px ** 2 + py ** 2))[::-1][:m]  # leading-pT first
-        sl = order
-
-        def col(name):
-            return np.asarray(arr[name][i], np.float64)[sl]
-
-        args = dict(px=px[sl], py=py[sl], pz=pz[sl], energy=e[sl],
-                    deta=col("part_deta"), dphi=col("part_dphi"),
-                    d0val=col("part_d0val"), d0err=col("part_d0err"),
-                    dzval=col("part_dzval"), dzerr=col("part_dzerr"),
-                    charge=col("part_charge"), isCH=col("part_isChargedHadron"),
-                    isNH=col("part_isNeutralHadron"), isPh=col("part_isPhoton"),
-                    isE=col("part_isElectron"), isMu=col("part_isMuon"),
-                    jet_pt=jet_pt[i], jet_energy=jet_e[i])
-        f, v = compute_features(**args, sophon=False)
-        pf[i, :m] = f
-        plv[i, :m] = v
-        if want_sophon:
-            fs, vs = compute_features(**args, sophon=True)
-            sf[i, :m] = fs
-            slv[i, :m] = vs
-        masks[i, :m] = True
-    return pf, plv, sf, slv, masks, label, jet_pt
+    return _process_arrays(arr, want_sophon)
 
 
 @torch.no_grad()
@@ -173,6 +184,19 @@ def load_backbones(spec, device):
                                     head_type="linear", export_embed=True)
         models[name] = m.to(device).eval()
     return models
+
+
+def count_macs(model, device):
+    """Best-effort forward MACs/jet via fvcore (E1 anchor ~326.6M). None if fvcore absent."""
+    try:
+        from fvcore.nn import FlopCountAnalysis
+        f = torch.zeros(1, 17, MAX_PART, device=device)
+        v = torch.zeros(1, 4, MAX_PART, device=device)
+        mk = torch.ones(1, 1, MAX_PART, dtype=torch.bool, device=device)
+        return int(FlopCountAnalysis(model, (f, v, mk)).total())
+    except Exception as e:  # noqa
+        print(f"  [flops] fvcore unavailable/failed: {type(e).__name__}")
+        return None
 
 
 def main():
@@ -238,11 +262,14 @@ def main():
         np.save(out / f"{name}_{args.split}_emb.npy", e)
         print(f"  saved {name}_{args.split}_emb.npy {e.shape}")
 
+    macs = {n: count_macs(models[n], device) for n, _, _ in spec}
+    total_infer_flops = sum(2 * m * len(label188) for m in macs.values() if m)  # 2*MAC = FLOP
     meta = {"split": args.split, "n_jets": int(len(label188)),
             "n_files": len(args.files), "files": [Path(f).name for f in args.files],
-            "backbones": {n: {"kind": k, "ckpt": c} for n, k, c in spec},
+            "backbones": {n: {"kind": k, "ckpt": c, "macs_per_jet": macs[n]} for n, k, c in spec},
             "max_particles": MAX_PART, "batch_size": args.batch_size,
             "wall_s": round(time.time() - t0, 1),
+            "total_inference_flops": total_infer_flops,
             "preprocessing": "part=data_arm_p.yaml, sophon=data_arm_s.yaml (scaled)",
             "note": "row order = native file order, identical across backbones (paired)"}
     (out / f"metadata_{args.split}.json").write_text(json.dumps(meta, indent=2))

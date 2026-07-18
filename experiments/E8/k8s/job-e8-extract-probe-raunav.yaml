@@ -19,6 +19,9 @@ spec:
       containers:
       - name: e8
         image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
         command: ["/bin/bash", "-c"]
         args:
         - |
@@ -37,20 +40,27 @@ spec:
           OUT=/data/results/e8/emb; mkdir -p "$OUT"
           JD=/jc2/jet_data
 
-          # backbone checkpoints (auto-include whatever seeds have converged)
-          ARMP=$(ls /data/results/e1/arm_p_s*/net_best_epoch_state.pt 2>/dev/null | tr '\n' ' ')
-          ARMS=$(ls /data/results/e1/arm_s_s*/net_best_epoch_state.pt 2>/dev/null | tr '\n' ' ')
-          echo "Arm P ckpts: $ARMP"
-          echo "Arm S ckpts: $ARMS"
-          [ -n "$ARMS" ] || { echo "no Arm S checkpoints found"; exit 1; }
+          # Backbone checkpoints — EXPLICIT list (frozen for provenance + restart
+          # safety; a glob could change between a restart's extract and probe).
+          # Arm P s2 is still training; add it via a follow-up extract when it lands.
+          E1=/data/results/e1
+          ARMP="$E1/arm_p_s1/net_best_epoch_state.pt $E1/arm_p_s3/net_best_epoch_state.pt"
+          ARMS="$E1/arm_s_s1/net_best_epoch_state.pt $E1/arm_s_s2/net_best_epoch_state.pt $E1/arm_s_s3/net_best_epoch_state.pt"
+          for c in $ARMP $ARMS; do [ -f "$c" ] || { echo "MISSING checkpoint $c"; exit 1; }; done
 
-          # JetClass-II file splits (E2 file-index convention: no train/val/test leakage)
+          # JetClass-II file splits (canonical 4:1:1 file-index regions -> no leakage:
+          # Res2P train 0000-0199/val 0200-0249/test 0250-0299; Res34P 0000-0859/
+          # 0860-1074/1075-1289; QCD 0000-0279/0280-0349/0350-0419).
+          # Train sized so the rarest g10 classes (class 1 = 1/15 of Res2P ~6.7k/file,
+          # class 8 = 6/146 of Res34P ~4.1k/file) reach >=100k -> the 1M ladder rung
+          # is class-balanced, matching the Phase-2 FT ladder.
           files() { local fam=$1; shift; for i in "$@"; do printf "%s/${fam}_%s.parquet " "$JD" "$i"; done; }
-          TRAIN="$(files QCD 0000 0001 0002 0003) $(files Res2P 0000 0001 0002 0003) $(files Res34P 0000 0001 0002 0003 0004 0005)"
-          VAL="$(files QCD 0280 0281) $(files Res2P 0200 0201) $(files Res34P 0860 0861)"
+          TRAIN="$(files QCD 0000 0001 0002 0003) $(files Res2P $(seq -f "%04g" 0 15)) $(files Res34P $(seq -f "%04g" 0 26))"
+          VAL="$(files QCD 0280 0281) $(files Res2P 0200 0201 0202) $(files Res34P 0860 0861 0862 0863 0864)"
           TEST="$(files QCD 0350 0351 0352 0353) $(files Res2P 0250 0251 0252 0253) $(files Res34P 1075 1076 1077 1078 1079 1080)"
 
           for SPLIT in train val test; do
+            if [ -f "$OUT/metadata_${SPLIT}.json" ]; then echo "skip $SPLIT (already extracted)"; continue; fi
             case $SPLIT in train) FL="$TRAIN";; val) FL="$VAL";; test) FL="$TEST";; esac
             echo "=== extract $SPLIT ==="
             python3 experiments/E8/extract_jc2_embeddings.py --split $SPLIT --out "$OUT" \
@@ -60,8 +70,30 @@ spec:
           echo "=== probe (g10sem) ==="
           python3 experiments/E8/probe_transfer.py --emb-dir "$OUT" \
             --out /data/results/e8/probe_g10sem --mlp-seeds 0 1 2 \
-            --armp $(for c in $ARMP; do basename $(dirname $c) | sed 's/arm_p_/armp_/'; done) \
-            --arms $(for c in $ARMS; do basename $(dirname $c) | sed 's/arm_s_/arms_/'; done)
+            --armp armp_s1 armp_s3 \
+            --arms arms_s1 arms_s2 arms_s3
+
+          echo "=== provenance + FLOPs ==="
+          GPU=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1)
+          DRV=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1)
+          GC=$(git rev-parse --short HEAD)
+          python3 -c "
+          import json, glob, os
+          meta={}
+          for f in sorted(glob.glob('/data/results/e8/emb/metadata_*.json')):
+              d=json.load(open(f)); meta[d['split']]={'n_jets':d['n_jets'],'wall_s':d['wall_s'],
+                  'total_inference_flops':d.get('total_inference_flops'),
+                  'macs_per_jet':{k:v.get('macs_per_jet') for k,v in d['backbones'].items()}}
+          prov={'experiment':'E8 JC1->JC2 transfer panel','git_commit':'$GC',
+                'image_digest':'sha256:db235b515a278198','gpu':'$GPU','driver':'$DRV',
+                'node':os.environ.get('NODE_NAME','?'),'splits':meta,
+                'total_inference_flops':sum((m['total_inference_flops'] or 0) for m in meta.values()),
+                'artifacts':['/data/results/e8/emb/*_emb.npy (128-d embeddings)',
+                             '/data/results/e8/probe_g10sem/models/*_linear.npz + *_mlp.pt (probe heads)',
+                             '/data/results/e8/probe_g10sem/transfer_results.json + transfer_table.md']}
+          json.dump(prov,open('/data/results/e8/e8_provenance.json','w'),indent=2)
+          print(json.dumps(prov,indent=2))
+          "
           echo "===== E8 DONE ====="
           cat /data/results/e8/probe_g10sem/transfer_table.md
         resources:

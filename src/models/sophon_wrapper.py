@@ -30,6 +30,27 @@ SOPHON_KWARGS = dict(
     for_inference=False,
 )
 
+# Official ParT architecture (matches part_wrapper.PART_KWARGS / data/JetClass ParT):
+# identical backbone EXCEPT use_pre_activation_pair=False and ParT-default cls-block
+# dropout (no cls_block_params override). Enables fine-tuning official ParT_full.pt
+# through the same SophonTransferModel path (head replacement + freeze + forward).
+PART_KWARGS = dict(
+    input_dim=17,
+    pair_input_dim=4,
+    use_pre_activation_pair=False,
+    embed_dims=[128, 512, 128],
+    pair_embed_dims=[64, 64, 64],
+    num_heads=8,
+    num_layers=8,
+    num_cls_layers=2,
+    fc_params=[],
+    activation="gelu",
+    trim=True,
+    for_inference=False,
+)
+
+ARCH_KWARGS = {"sophon": SOPHON_KWARGS, "part": PART_KWARGS}
+
 EMBED_DIM = 128  # last element of embed_dims
 
 
@@ -67,11 +88,15 @@ class SophonTransferModel(nn.Module):
         num_classes: int = 10,
         head_type: str = "mlp",
         export_embed: bool = True,
+        arch: str = "sophon",
     ) -> None:
         super().__init__()
         self.num_classes = num_classes
         self.export_embed = export_embed
         self.embed_dim = EMBED_DIM
+        if arch not in ARCH_KWARGS:
+            raise ValueError(f"arch must be one of {list(ARCH_KWARGS)}, got {arch!r}")
+        self.arch = arch
 
         # --- Determine pretrained num_classes and load checkpoint ---
         checkpoint_state: dict[str, torch.Tensor] | None = None
@@ -86,7 +111,7 @@ class SophonTransferModel(nn.Module):
                 print(f"Detected pretrained num_classes={pretrained_nc} from checkpoint")
 
         # --- Create ParticleTransformer with pretrained num_classes ---
-        self.mod = ParticleTransformer(num_classes=pretrained_nc, **SOPHON_KWARGS)
+        self.mod = ParticleTransformer(num_classes=pretrained_nc, **ARCH_KWARGS[arch])
 
         # --- Load pretrained weights ---
         if checkpoint_state is not None:
@@ -271,19 +296,22 @@ def create_model(
     num_classes: int = 10,
     head_type: str = "mlp",
     frozen_layers: int = 4,
+    arch: str = "sophon",
 ) -> SophonTransferModel:
     """Factory: create a SophonTransferModel configured for the given strategy.
 
     Args:
         strategy: 'frozen', 'partial_ft', 'full_ft', or 'from_scratch'.
-        checkpoint_path: path to Sophon .pt file. None for from_scratch.
+        checkpoint_path: path to the backbone .pt file. None for from_scratch.
         num_classes: output classes for the new head.
         head_type: 'mlp' or 'linear'.
         frozen_layers: how many encoder blocks to freeze (for partial_ft).
+        arch: 'sophon' (Sophon-arch backbones: Arm P/S, official Sophon) or
+              'part' (official ParT_full.pt). Selects the ParticleTransformer kwargs.
     """
     if strategy == "from_scratch":
         model = SophonTransferModel(
-            checkpoint_path=None, num_classes=num_classes, head_type=head_type
+            checkpoint_path=None, num_classes=num_classes, head_type=head_type, arch=arch
         )
         print(f"Strategy: from_scratch — random init, all params trainable")
         return model
@@ -292,7 +320,7 @@ def create_model(
         raise ValueError(f"Strategy {strategy!r} requires a checkpoint_path")
 
     model = SophonTransferModel(
-        checkpoint_path=checkpoint_path, num_classes=num_classes, head_type=head_type
+        checkpoint_path=checkpoint_path, num_classes=num_classes, head_type=head_type, arch=arch
     )
 
     if strategy == "frozen":

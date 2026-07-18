@@ -559,7 +559,8 @@ def run_single(train_dir,
                decay_final_lr=1e-5,
                checkpoint_every=0,
                checkpoint_metric="val_loss",
-               amp_dtype_choice="auto"):
+               amp_dtype_choice="auto",
+               arch="sophon"):
     seed_everything(seed)
 
     # Load only enough training data for this run.
@@ -583,7 +584,7 @@ def run_single(train_dir,
 
     # Create fresh model for each run
     model = create_model(strategy, checkpoint, num_classes=10,
-                         head_type=head_type, frozen_layers=frozen_layers)
+                         head_type=head_type, frozen_layers=frozen_layers, arch=arch)
     model = model.to(device)
     total_params, trainable_params = SophonTransferModel.count_params(model)
     print(f"    head_type={head_type}  total_params={total_params}  "

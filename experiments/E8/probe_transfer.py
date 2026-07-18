@@ -10,7 +10,8 @@ embeddings of each backbone, ACROSS A DATA-SIZE SCALING LADDER:
                         scaling curve; 3 probe-init seeds -> mean ± std.
   - knn    (tertiary): cosine k=20 (reference capped for tractability).
 
-Every probe is refit at each adaptation-set size {10k,30k,100k,300k,1M,full}.
+Every probe is refit at each adaptation-set size {10k,30k,100k,300k,1M}
+(+ the true-full rung only when train size is within 2x of the top rung).
 All probes are evaluated on ONE fixed test subsample (N_EVAL, seed 777) that is
 identical across backbones (row-aligned embeddings) -> the Arm P vs Arm S gap is
 paired jet-for-jet and carries (a) backbone-seed spread and (b) an event-level
@@ -40,9 +41,11 @@ C_GRID = [0.01, 0.1, 1.0, 10.0, 100.0]
 KNN_K = 20
 KNN_REF_CAP = 300_000            # cap kNN reference set for tractability (noted in output)
 N_EVAL = 100_000                 # fixed shared test-eval subsample (per backbone-identical)
+N_VAL_SEL = 100_000              # balanced val subsample for model selection
 SIZES = [10_000, 30_000, 100_000, 300_000, 1_000_000]  # adaptation-set scaling ladder
 TEST_SEED = 777
 TRAIN_SEED = 1234
+VAL_SEED = 555
 
 
 def subsample(y, size, n_classes, rng):
@@ -69,11 +72,18 @@ def load_split(emb_dir, backbone, split, remap):
 
 
 def macro_auc(y, prob):
-    present = np.unique(y)
-    if len(present) < prob.shape[1]:  # a class absent in this (bootstrap/subsample)
-        return roc_auc_score(y, prob[:, present], multi_class="ovr",
-                             average="macro", labels=present)
-    return roc_auc_score(y, prob, multi_class="ovr", average="macro")
+    """Macro one-vs-rest AUC = unweighted mean of per-class binary AUCs.
+
+    Identical to sklearn's multi_class='ovr', average='macro' when every class
+    is present, but robust to classes absent from y (skipped) — sklearn's
+    multiclass path would reject a column-subset prob matrix (rows no longer
+    sum to 1), which a bootstrap replica or small subsample could trigger."""
+    aucs = []
+    for c in range(prob.shape[1]):
+        pos = y == c
+        if pos.any() and not pos.all():
+            aucs.append(roc_auc_score(pos, prob[:, c]))
+    return float(np.mean(aucs)) if aucs else float("nan")
 
 
 def sig_vs_qcd_rej(y, prob, qcd_class=9, eff=0.5):
@@ -164,9 +174,23 @@ def evaluate_backbone(emb_dir, backbone, remap, n_classes, sizes, mlp_seeds, wan
               if N_EVAL < len(yte) else np.arange(len(yte)))
     Xe, ye = Xte[te_idx], yte[te_idx]
 
-    ladder = sorted(s for s in sizes if s < len(ytr)) + [len(ytr)]
+    # Balanced val subsample for model selection (C grid, MLP early stop):
+    # the raw val split is class-imbalanced, and accuracy-based selection on it
+    # would bias toward majority classes. Deterministic + identical across
+    # backbones (fixed seed, y identical).
+    if len(yva) > N_VAL_SEL:
+        va_idx = subsample(yva, N_VAL_SEL, n_classes, np.random.default_rng(VAL_SEED))
+        Xva, yva = Xva[va_idx], yva[va_idx]
+
+    # Requested rungs below n_train; the true-'full' rung is appended only when
+    # train is close to the top requested size (else it adds hours of fitting
+    # for a redundant point and desyncs the x-axis from the Phase-2 FT ladder).
+    ladder = sorted(s for s in sizes if s < len(ytr))
+    if len(ytr) <= 2 * max(sizes):
+        ladder.append(len(ytr))
     curves = {"linear": [], "knn": [], "mlp": []}
     full = {}
+    heads = {}                       # full-data fitted heads (weights) for saving
     tr_rng = np.random.default_rng(TRAIN_SEED)
     for size in ladder:
         idx = (subsample(ytr, size, n_classes, tr_rng) if size < len(ytr)
@@ -180,6 +204,7 @@ def evaluate_backbone(emb_dir, backbone, remap, n_classes, sizes, mlp_seeds, wan
                                  "macro_auc": macro_auc(ye, pl),
                                  "rej_sig_vs_qcd": sig_vs_qcd_rej(ye, pl)})
         full["linear"] = pl
+        heads["linear"] = (sc, clf)  # overwritten each rung; last (full) wins
 
         kref = idx if len(idx) <= KNN_REF_CAP else tr_rng.choice(idx, KNN_REF_CAP, replace=False)
         ksc = StandardScaler().fit(Xtr[kref])
@@ -203,6 +228,10 @@ def evaluate_backbone(emb_dir, backbone, remap, n_classes, sizes, mlp_seeds, wan
                                   "macro_auc_mean": float(np.mean(aucs)),
                                   "macro_auc_std": float(np.std(aucs)), "seeds": list(mlp_seeds)})
             full["mlp"] = np.mean(ps, axis=0)
+            heads["mlp"] = {"state_dict": {k: v.cpu() for k, v in net.state_dict().items()},
+                            "scaler_mean": msc.mean_, "scaler_scale": msc.scale_,
+                            "hidden_dims": [256], "dropout": 0.1, "n_classes": n_classes,
+                            "note": "last mlp seed at top rung (representative head)"}
         print(f"     size={size:>8}: lin_auc={curves['linear'][-1]['macro_auc']:.4f} "
               f"knn_auc={curves['knn'][-1]['macro_auc']:.4f}"
               + (f" mlp_auc={curves['mlp'][-1]['macro_auc_mean']:.4f}" if want_mlp else ""))
@@ -210,7 +239,7 @@ def evaluate_backbone(emb_dir, backbone, remap, n_classes, sizes, mlp_seeds, wan
     res = {"n_train": len(ytr), "n_eval": len(ye), "curves": curves,
            "linear": curves["linear"][-1], "knn": curves["knn"][-1],
            "mlp": curves["mlp"][-1] if want_mlp else None}
-    return res, full, ye
+    return res, full, ye, heads
 
 
 def _scaling_table(results, backbones, probe, key):
@@ -242,21 +271,23 @@ def main():
     want_mlp = not args.no_mlp
     backbones = ["part"] + args.armp + args.arms
 
-    results, lin_probs, yeval = {}, {}, None
+    results, lin_probs, full_heads, yeval = {}, {}, {}, None
     for b in backbones:
         print(f"== probing {b} ==")
-        res, full, ye = evaluate_backbone(args.emb_dir, b, remap, n_classes,
-                                          args.sizes, args.mlp_seeds, want_mlp)
+        res, full, ye, hd = evaluate_backbone(args.emb_dir, b, remap, n_classes,
+                                              args.sizes, args.mlp_seeds, want_mlp)
         results[b] = res
         lin_probs[b] = full["linear"]
+        full_heads[b] = hd
         yeval = ye
 
-    # headline: Arm P vs Arm S at full data, paired on the linear probe
+    # headline: Arm P vs Arm S at the top ladder rung, paired on the linear probe
     seed_gaps = []
     for pp, ss in itertools.zip_longest(args.armp, args.arms):
         if pp and ss:
             seed_gaps.append(results[pp]["linear"]["macro_auc"] - results[ss]["linear"]["macro_auc"])
-    head = {"metric": "linear macro_auc @ full data",
+    top_rung = int(results[backbones[0]]["linear"]["size"])  # same ladder for all backbones
+    head = {"metric": f"linear macro_auc @ top rung ({top_rung:,} jets)",
             "arm_p_minus_arm_s_per_seed": seed_gaps,
             "gap_mean": float(np.mean(seed_gaps)), "gap_std": float(np.std(seed_gaps)),
             "arm_p_mean": float(np.mean([results[p]["linear"]["macro_auc"] for p in args.armp])),
@@ -277,7 +308,23 @@ def main():
     (out / "transfer_results.json").write_text(json.dumps(
         {"granularity": args.granularity, "n_classes": n_classes, "n_eval": len(yeval),
          "knn_ref_cap": KNN_REF_CAP, "backbones": results,
-         "headline_armP_vs_armS": head}, indent=2))
+         "headline_armP_vs_armS": head,
+         "saved": "full-data linear (npz: coef/intercept/scaler) + MLP (pt) heads per "
+                  "backbone in models/; embeddings, per-split metadata + FLOPs, and the "
+                  "job provenance are on the PVC under /data/results/e8/"}, indent=2))
+
+    # save the full-data probe heads per backbone (weights, for reproducibility)
+    mdir = out / "models"
+    mdir.mkdir(exist_ok=True)
+    for b in backbones:
+        fp = full_heads.get(b, {})
+        if "linear" in fp:
+            sc, clf = fp["linear"]
+            np.savez(mdir / f"{b}_linear.npz", coef=clf.coef_, intercept=clf.intercept_,
+                     classes=clf.classes_, scaler_mean=sc.mean_, scaler_scale=sc.scale_)
+        if "mlp" in fp:
+            import torch
+            torch.save(fp["mlp"], mdir / f"{b}_mlp.pt")
 
     lines = [f"# JC1->JC2 transfer panel ({args.granularity}, {n_classes} classes)", "",
              f"Eval on a fixed {len(yeval):,}-jet test subset (identical across backbones). "
@@ -296,8 +343,8 @@ def main():
     if want_mlp:
         lines += _scaling_table(results, backbones, "mlp", "macro_auc_mean")
     lines += ["## Headline — Arm P vs Arm S (does the E1 preprocessing tax invert out-of-domain?)",
-              f"- Arm P mean linear AUC (full data): **{head['arm_p_mean']:.4f}**",
-              f"- Arm S mean linear AUC (full data): **{head['arm_s_mean']:.4f}**",
+              f"- Arm P mean linear AUC (top rung): **{head['arm_p_mean']:.4f}**",
+              f"- Arm S mean linear AUC (top rung): **{head['arm_s_mean']:.4f}**",
               f"- Gap (P − S): **{head['gap_mean']:+.4f} ± {head['gap_std']:.4f}** (seed spread), "
               f"paired-bootstrap 95% CI [{head['bootstrap_gap_ci95'][0]:+.4f}, "
               f"{head['bootstrap_gap_ci95'][1]:+.4f}]", "",

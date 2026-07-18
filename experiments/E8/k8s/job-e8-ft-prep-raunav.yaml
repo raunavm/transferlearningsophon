@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # E8 Phase-2 FEATURE PREP (CPU): JetClass-II parquet -> per-g10-class preprocessed
+  # feature arrays for fine-tuning. Writes BOTH preprocessings from the same jets:
+  #   /data/results/e8/features_part/<split>/g10c{0..9}_{features,lorentz,masks,labels}.npy
+  #   /data/results/e8/features_sophon/<split>/...
+  # Consumed by finetune_jc2.py (part+armp use features_part, arms uses features_sophon).
+  # No GPU — feature computation is numpy. Reuses the extractor's process_file.
+  name: e8-ft-prep-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: prep
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          pip install -q pyarrow || { echo "pyarrow install FAILED"; exit 1; }
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          JD=/jc2/jet_data
+          OP=/data/results/e8/features_part; OS=/data/results/e8/features_sophon
+          # File names are 4-digit: QCD_0000.parquet (Phase-A inventory).
+          files() { local fam=$1; shift; for i in "$@"; do printf "%s/${fam}_%s.parquet " "$JD" "$i"; done; }
+          # Train file counts sized to the per-class caps: rarest g10 classes are
+          # class 1 (X_2P_gg = 1/15 of Res2P, ~6.7k/file) and class 8
+          # (X_YY_QQ_tauhv = 6/146 of Res34P, ~4.1k/file). 20 Res2P -> ~133k,
+          # 32 Res34P -> ~131k: both clear the 120k/class train cap.
+          TRAIN_R2=$(files Res2P $(seq -f "%04g" 0 19))
+          TRAIN_R34=$(files Res34P $(seq -f "%04g" 0 31))
+          TRAIN_Q=$(files QCD $(seq -f "%04g" 0 4))
+          # Val/test similarly sized so classes 1 and 8 reach ~20k each.
+          VAL="$(files Res2P 0200 0201 0202) $(files Res34P 0860 0861 0862 0863 0864) $(files QCD 0280)"
+          TEST="$(files Res2P 0250 0251 0252) $(files Res34P 1075 1076 1077 1078 1079) $(files QCD 0350 0351)"
+
+          prep_done() { [ -f "$OP/$1/prep_meta.json" ] && [ -f "$OS/$1/prep_meta.json" ]; }
+          if prep_done train; then echo "train already prepped — skip"; else
+            echo "=== prep TRAIN (cap 120k/class) ==="
+            python3 experiments/E8/prep_jc2_features.py --split train \
+              --files $TRAIN_R2 $TRAIN_R34 $TRAIN_Q --out-part $OP --out-sophon $OS --cap-per-class 120000
+          fi
+          if prep_done val; then echo "val already prepped — skip"; else
+            echo "=== prep VAL (cap 25k/class) ==="
+            python3 experiments/E8/prep_jc2_features.py --split val \
+              --files $VAL --out-part $OP --out-sophon $OS --cap-per-class 25000
+          fi
+          if prep_done test; then echo "test already prepped — skip"; else
+            echo "=== prep TEST (cap 60k/class) ==="
+            python3 experiments/E8/prep_jc2_features.py --split test \
+              --files $TEST --out-part $OP --out-sophon $OS --cap-per-class 60000
+          fi
+          echo "=== disk ==="; du -sh $OP $OS
+          echo "===== E8 FT-PREP DONE ====="
+        resources:
+          requests: { memory: "64Gi", cpu: "8", ephemeral-storage: "20Gi" }
+          limits:   { memory: "64Gi", cpu: "8", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: [us-west]
+      volumes:
+      - name: data
+        persistentVolumeClaim: { claimName: transfer-learning-vol }
+      - name: jc2
+        persistentVolumeClaim: { claimName: tn-pvc-base-jetclass2 }
