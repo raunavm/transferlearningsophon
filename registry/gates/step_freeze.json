@@ -1,0 +1,32 @@
+{
+  "artifact": "PLAN v5.1 \u00a76-A.5(d) step freeze  \u27e8BIND:G0\u27e9",
+  "frozen_on": "2026-07-18",
+  "upstream_pin": "jet-universe/sophon@9dd6dd6 (train_sophon.sh recipe)",
+  "N_steps_full": 1600000,
+  "batch_size": 512,
+  "jets_per_epoch": 10240000,
+  "num_epochs": 80,
+  "epoch_definition": "PLAN 'epoch' == N_steps_full/80 == 20,000 steps",
+  "optimizer": {
+    "name": "ranger (weaver)",
+    "start_lr": 0.0005,
+    "schedule": "weaver default flat+decay",
+    "amp": true
+  },
+  "head": "fc_params [(512, 0.1)]",
+  "loader": {
+    "num_workers": 5,
+    "fetch_step": 1.0,
+    "data_split_num": 200,
+    "single_gpu_only": "seed_weaver.py wraps weaver.train in-process"
+  },
+  "train_e2_sh_epochs_var": 80,
+  "samples_per_epoch_expr": "10000 * 1024",
+  "file_hashes_sha256": {
+    "experiments/E2/train_e2.sh": "ce802422fd61fe4b7698517962be663d60befbd1fde387ec9dc14f71c0d51f1f",
+    "experiments/E2/data/JetClassII_full_base.yaml": "df45b6b9dd0f3e0726ea18132fef7d8525dc9d7e750ecd82ee5fa60cb441e625"
+  },
+  "config_hash": "ce915b819e37daad1616f1c4621e2e4d7bce48b09e905da51070357658d6881f",
+  "git_commit_at_freeze": "566392c3910735c1f0b68699cafc07177e08cd1f",
+  "note": "Stage-0 LR grid per \u00a79.2 = {5e-4, 2.5e-4}. Any change to the frozen files invalidates config_hash and re-opens G0."
+}

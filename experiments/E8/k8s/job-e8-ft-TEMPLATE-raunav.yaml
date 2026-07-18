@@ -1,13 +1,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  # E8 Phase-2 FINE-TUNING (GPU), one job per backbone. Launch via sed:
+  # E8 Phase-2 FINE-TUNING (GPU), one job per (backbone x seed) — seeds run in
+  # parallel. Launch via sed over backbone {part,armp,arms} x __SEED__ {42,123,456}:
   #   part: __NAME__=part __BACKBONE__=part __ARCH__=part   __FEATDIR__=features_part   __CKPT__=DOWNLOAD
   #   armp: __NAME__=armp __BACKBONE__=armp __ARCH__=sophon __FEATDIR__=features_part   __CKPT__=/data/results/e1/arm_p_s1/net_best_epoch_state.pt
   #   arms: __NAME__=arms __BACKBONE__=arms __ARCH__=sophon __FEATDIR__=features_sophon __CKPT__=/data/results/e1/arm_s_s1/net_best_epoch_state.pt
-  # Runs {partial_ft, full_ft} x sizes x 3 seeds; saves best_model.pt weights +
-  # results.json + FLOPs/provenance per run. Depends on e8-ft-prep-raunav (features).
-  name: e8-ft-__NAME__-raunav
+  # Each job runs {partial_ft, full_ft} x sizes for ONE seed; --output-dir is
+  # per-seed (.../ft/s__SEED__) so the 3 seed-pods of a backbone never collide.
+  # Saves best_model.pt + results.json + FLOPs/provenance per run. Waits for
+  # e8-ft-prep-raunav features (launched in parallel; grabs GPU early).
+  name: e8-ft-__NAME__-s__SEED__-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 2
@@ -56,10 +59,10 @@ spec:
           python3 experiments/E8/finetune_jc2.py --backbone __BACKBONE__ --arch __ARCH__ \
             --feat-dir "$FEAT" --checkpoint "$CKPT" \
             --strategies partial_ft full_ft \
-            --sizes 10000 30000 100000 300000 1000000 --seeds 42 123 456 \
-            --epochs 50 --batch-size 256 --output-dir /data/results/e8/ft
-          echo "===== E8 FT __NAME__ DONE ====="
-          cat /data/results/e8/ft/__BACKBONE__/ft_provenance.json 2>/dev/null | head -40
+            --sizes 10000 30000 100000 300000 1000000 --seeds __SEED__ \
+            --epochs 50 --batch-size 256 --output-dir /data/results/e8/ft/s__SEED__
+          echo "===== E8 FT __NAME__ s__SEED__ DONE ====="
+          cat /data/results/e8/ft/s__SEED__/__BACKBONE__/ft_provenance.json 2>/dev/null | head -40
         resources:
           requests: { memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
           limits:   { memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }

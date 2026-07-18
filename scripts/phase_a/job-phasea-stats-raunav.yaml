@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Phase A §6-A.5 (a)+(c): Kish table + weight-agreement (CPU, one columnar
+  # pass over all 2,010 JC2 files reading 3 jet-level columns). Also verifies
+  # the frozen eval-split manifest against the PVC. Output:
+  #   /data/results/phase_a/{kish_table.parquet,csv, weight_agreement.json,
+  #                          weights_global.npz, count_cube.npz,
+  #                          phase_a_stats_report.md}
+  name: phasea-stats-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: stats
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          pip install -q pyarrow || { echo "pyarrow install FAILED"; exit 1; }
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          python3 scripts/phase_a/stats_preflight.py \
+            --jc2-dir /jc2/jet_data --out /data/results/phase_a --threads 8
+          echo "===== PHASE-A STATS PREFLIGHT DONE ====="
+        resources:
+          requests: { memory: "16Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "16Gi", cpu: "8", ephemeral-storage: "10Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: [us-west]
+      volumes:
+      - name: data
+        persistentVolumeClaim: { claimName: transfer-learning-vol }
+      - name: jc2
+        persistentVolumeClaim: { claimName: tn-pvc-base-jetclass2 }

@@ -31,13 +31,21 @@ def event_bootstrap(event_ids, statistic, b=B_DEFAULT, seed=SEED_DEFAULT):
     drawn with replacement; all rows of a drawn event are included together.
     Deterministic for a fixed seed.
     """
-    groups = _event_groups(event_ids)
-    n_ev = len(groups)
+    ids = np.asarray(event_ids)
+    singleton = len(np.unique(ids)) == len(ids)
+    groups = None if singleton else _event_groups(ids)
+    n_ev = len(ids) if singleton else len(groups)
     rng = np.random.default_rng(seed)
     out = np.empty(b, dtype=float)
     for i in range(b):
         pick = rng.integers(0, n_ev, n_ev)
-        rows = np.concatenate([groups[k] for k in pick])
+        if singleton:
+            # every event is one row: groups would be singletons in sorted-id
+            # order, so concatenating groups[pick] IS pick (identical draws,
+            # identical statistic) — skip the per-replica list concat.
+            rows = pick
+        else:
+            rows = np.concatenate([groups[k] for k in pick])
         out[i] = statistic(rows)
     return out
 

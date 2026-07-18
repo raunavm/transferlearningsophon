@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Phase A §6-A.5(b): test floor σ_test,Δ from the E1 proxy pair (CPU).
+  # Consumes the cached E8 embeddings — waits (poll 5 min, up to ~14 h) for
+  # e8-extract-probe-raunav to finish writing all three splits, then fits the
+  # P0-construction linear probes and event-bootstraps the paired
+  # log-rejection difference. Output:
+  #   /data/results/phase_a/{test_floor.json, test_floor.md}
+  name: phasea-testfloor-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: testfloor
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          EMB=/data/results/e8/emb
+          echo "=== waiting for E8 embeddings (train/val/test metadata) ==="
+          for i in $(seq 1 168); do
+            if [ -f "$EMB/metadata_train.json" ] && [ -f "$EMB/metadata_val.json" ] && [ -f "$EMB/metadata_test.json" ]; then
+              echo "embeddings ready after ~$((i*5)) min"; break
+            fi
+            sleep 300
+          done
+          [ -f "$EMB/metadata_test.json" ] || { echo "embeddings never appeared after ~14h — check e8-extract-probe-raunav"; exit 1; }
+          python3 scripts/phase_a/test_floor.py --emb-dir "$EMB" --out /data/results/phase_a
+          echo "===== PHASE-A TEST FLOOR DONE ====="
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: [us-west]
+      volumes:
+      - name: data
+        persistentVolumeClaim: { claimName: transfer-learning-vol }

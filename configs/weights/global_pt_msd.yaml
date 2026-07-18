@@ -1,0 +1,31 @@
+# PLAN v5.1 §9.4 — global label-independent per-jet weights  ⟨BIND:G0⟩
+# w(jet) ∝ 1 / ρ̂(jet_pt, jet_sdmass), label-blind, identical across E2 arms.
+#
+# Bin edges are ADOPTED VERBATIM from the frozen E2 base config's reweighting
+# grid (experiments/E2/data/JetClassII_full_base.yaml, ported from
+# jet-universe/sophon@9dd6dd6 JetClassII_full.yaml) so the global construction
+# and Sophon's 30-group construction are compared on the same grid (§6-A.5c).
+#
+# Selection (applied BEFORE the density estimate, matching the training
+# selection): (jet_pt > 200) & (jet_pt < 2500) & (jet_sdmass > 20) & (jet_sdmass < 500)
+#
+# ρ̂ = 2-D histogram of (jet_pt, jet_sdmass) over the FULL training partition
+# (1,340 files), label-blind. Weights are normalized to mean 1 over the
+# selected training corpus, then clipped to [w_min, w_max]; the realized
+# clipped fraction is reported by scripts/phase_a/stats_preflight.py and must
+# be quoted next to any Kish number.
+frozen_on: 2026-07-18
+selection: "(jet_pt > 200) & (jet_pt < 2500) & (jet_sdmass > 20) & (jet_sdmass < 500)"
+bin_edges:
+  jet_pt: [200, 240, 287, 344, 412, 493, 590, 707, 847, 1014, 1215, 1455, 1743, 2087, 2500]
+  jet_sdmass: [20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160,
+               170, 180, 190, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300,
+               310, 320, 330, 340, 350, 360, 370, 380, 390, 400, 410, 420, 430, 440,
+               450, 460, 470, 480, 490, 500]
+normalization: mean-1 over the selected training corpus
+clip:
+  w_min: 0.01   # 100x under-weight floor
+  w_max: 100.0  # 100x over-weight cap
+provenance:
+  grid_source: experiments/E2/data/JetClassII_full_base.yaml (sophon@9dd6dd6)
+  contingency: sophon_30group construction retained as spec for C1 only (§9.4)
