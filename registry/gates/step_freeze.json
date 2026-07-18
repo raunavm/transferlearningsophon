@@ -25,9 +25,10 @@
   "file_hashes_sha256": {
     "experiments/E2/train_e2.sh": "3cd5fb230d2b9ba38e44141bbf1f7217aa1b6f2106ddf5deabff3961b1731fe6",
     "experiments/E2/data/JetClassII_full_base.yaml": "df45b6b9dd0f3e0726ea18132fef7d8525dc9d7e750ecd82ee5fa60cb441e625",
-    "experiments/E2/networks/example_ParticleTransformer_sophon.py": "d87c2c7b8cdb510719b6213d48691c00f1544d5bedea6ab7450eab1dfba6786d"
+    "experiments/E2/networks/example_ParticleTransformer_sophon.py": "4be87b9976dfcdb5ffc07844f294d314bd77dc2ce39f9e40bc61ac7c3ec28f84",
+    "experiments/E2/seed_weaver.py": "7775bab916fc3d6af7831ab02c174be04d990994ce0bbb8011f47ee64634cfab"
   },
-  "config_hash": "349b3eb5abf4a382503c2d660201bc163da79dcaa6a82626f07b2d0e25962fd6",
-  "git_commit_at_freeze": "451d88b2e7ac11c15c991b18794399f4eb72362c",
+  "config_hash": "11931c79db8375bc50c602abf3e6f867f16ed61e0100f261e224601638386a10",
+  "git_commit_at_freeze": "7238d02e8c893c88b6b4f26e9b111e996ac415be",
   "note": "Stage-0 LR grid per \u00a79.2 = {5e-4, 2.5e-4}. Any change to the frozen files invalidates config_hash and re-opens G0."
 }

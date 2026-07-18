@@ -26,6 +26,11 @@ FROZEN_FILES = [  # the files that DEFINE the recipe, in hash order
     # recipe-critical and belongs in the freeze — gap exposed when its
     # weaver-0.4.17-incompatible forward crashed model_setup.
     "experiments/E2/networks/example_ParticleTransformer_sophon.py",
+    # added 2026-07-19 (determinism amendment): the seed wrapper owns the RNG
+    # seeds, the cuDNN determinism policy (§3), and the DataLoader base-seed pin
+    # that makes the §9.3 batch stream identical across arms — recipe-critical;
+    # gap exposed by the cross-arm batch-stream-desync audit.
+    "experiments/E2/seed_weaver.py",
 ]
 
 

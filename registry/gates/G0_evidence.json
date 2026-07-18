@@ -39,9 +39,9 @@
     },
     "step_freeze": {
       "verdict": "FROZEN",
-      "config_hash": "349b3eb5abf4a382503c2d660201bc163da79dcaa6a82626f07b2d0e25962fd6",
+      "config_hash": "11931c79db8375bc50c602abf3e6f867f16ed61e0100f261e224601638386a10",
       "artifact": "registry/gates/step_freeze.json (N_steps_full=1,600,000; batch 512; eta0=5e-4; ranger flat+decay; AMP)",
-      "amendment": "2026-07-19 (x2): train_e2.sh weaver-0.4.17 flags; network forward fixed to the 0.4.17 API and the network file added to the frozen set (freeze gap exposed by the make_weight model_setup crash). Prior hashes superseded."
+      "amendment": "2026-07-19 (x3): (1) train_e2.sh weaver-0.4.17 flags; (2) network forward fixed to the 0.4.17 API + network file added to the frozen set (make_weight model_setup crash); (3) seed_weaver.py added to the frozen set with the §9.3 DataLoader base-seed pin (cross-arm batch-stream desync audit), the §3 cuDNN determinism policy, and batch_stream_sha; network eval fn now logs 'Eval AvgLoss' for the §9.2 LR selection. Prior hashes (incl. 349b3eb5...) superseded."
     }
   },
   "unblocks_on_signoff": "E2 base-config freeze -> Stage 0 tuning launch (5 arms x 2 LR, 760 GPU-h)"

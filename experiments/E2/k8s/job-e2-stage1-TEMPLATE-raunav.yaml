@@ -1,20 +1,26 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  # E2 STAGE-0 TUNING (GPU) — one job per (arm x LR). PLAN §9.2: LR grid
-  # {5e-4, 2.5e-4}, one tuning seed per arm (s_tune = 900 + arm_index, arms
-  # ordered [g2, g10sem, g10rand, g30, g188] -> 900..904). All Stage-0 runs are
-  # QUARANTINED (stage: tune, prohibition P1 — never in inferential samples).
-  # LR selection metric (frozen): the arm's own FINAL-checkpoint val loss.
-  # Depends on e2-makeweight-raunav (config cache). Launch via sed:
+  # E2 STAGE-1 CONFIRMATORY (GPU) — one job per (arm x seed). PLAN §9.3: fresh
+  # paired seeds S1 = {101, 102, 103} SHARED across arms (backbone init + batch
+  # stream derive from the seed; per-K head differs in shape — see §9.3 twin
+  # design). NOT quarantined: these runs ENTER the inferential sample (contrast
+  # Stage-0's stage:tune / P1). Start-LR per arm is CHOSEN by Stage-0's own
+  # final-checkpoint val loss (§9.2) — filled from stage0_lr_selection.json.
+  # Key pair (k188 vs k10sem) is scheduled first (§9.3).
+  #
+  # Determinism (§3): confirmatory E2 is L40-ONLY (gpu:l40) so paired seeds are
+  # comparable within one GPU model; ~20-30% queue penalty accepted by design.
+  #
+  # Rendered by render_stage1.py (fills __GRAN__/__SEED__/__LR__). Depends on
+  # e2-makeweight-raunav (label-independent auto configs; §9.4) already cached.
   #   __GRAN__  g2|g10sem|g10rand|g30|g188
-  #   __SEED__  900|901|902|903|904          (match the arm!)
-  #   __LR__    5e-4|2.5e-4
-  #   __LRTAG__ hi|lo                        (hi=5e-4, lo=2.5e-4; dir + job name)
-  name: e2-s0-__GRAN__-__LRTAG__-raunav
+  #   __SEED__  101|102|103
+  #   __LR__    <arm's Stage-0-selected start-lr, e.g. 5e-4 or 2.5e-4>
+  name: e2-s1-__GRAN__-s__SEED__-raunav
   namespace: cms-ml
 spec:
-  backoffLimit: 6
+  backoffLimit: 6            # weaver ROOT-streaming is I/O-bound; transient reruns
   template:
     spec:
       restartPolicy: Never
@@ -49,26 +55,26 @@ spec:
           print(f"auto config OK: {expect.name}")
           EOF
 
-          OUTBASE=/data/results/e2/stage0___LRTAG__
+          OUTBASE=/data/results/e2/stage1
           RUN="$OUTBASE/__GRAN___s__SEED__"
           mkdir -p "$RUN"
-          printf '{"stage": "tune", "quarantine": "P1 — excluded from every inferential sample",\n "arm": "__GRAN__", "seed": __SEED__, "start_lr": "__LR__",\n "selection_metric": "final-checkpoint val loss (frozen, §9.2)"}\n' \
-            > "$RUN/stage0_meta.json"
+          printf '{"stage": "confirmatory", "inferential_sample": true,\n "arm": "__GRAN__", "seed": __SEED__, "start_lr": "__LR__",\n "lr_source": "Stage-0 own final-checkpoint val loss (§9.2); see stage0_lr_selection.json",\n "primary_estimand": "final checkpoint = fixed-budget performance under the frozen Sophon recipe (§9.6)",\n "twin_design": "seeds {101,102,103} shared across arms; backbone+batch-stream from seed; head per-K (§9.3)"}\n' \
+            > "$RUN/stage1_meta.json"
 
           LOAD=""
           LAST=$(ls "$RUN"/net_epoch-*_state.pt 2>/dev/null | sed 's/.*_epoch-\([0-9]*\)_state.pt/\1/' | sort -n | tail -1 || true)
           [ -n "$LAST" ] && { LOAD="--load-epoch $LAST"; echo "RESUME from epoch $LAST"; }
 
-          echo "=== GPU smoke ==="
+          echo "=== GPU smoke (must be L40 per §3) ==="
           python3 -c "import torch; assert torch.cuda.is_available(); print('GPU', torch.cuda.get_device_name(0))"
 
-          echo "=== E2 Stage-0: __GRAN__ seed __SEED__ lr __LR__ ==="
+          echo "=== E2 Stage-1 CONFIRMATORY: __GRAN__ seed __SEED__ lr __LR__ ==="
           PYTHONUNBUFFERED=1 GRAN=__GRAN__ SEED=__SEED__ DATADIR=/ds OUTDIR="$OUTBASE" \
             ./experiments/E2/train_e2.sh train --start-lr __LR__ $LOAD
-          echo "===== E2 S0 __GRAN__ __LRTAG__ DONE ====="
+          echo "===== E2 S1 __GRAN__ s__SEED__ DONE ====="
 
           GPU=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1 | sed 's/ /-/g')
-          python3 scripts/collect_provenance.py --run-dir "$RUN" --arm "e2_s0___GRAN__" --seed __SEED__ \
+          python3 scripts/collect_provenance.py --run-dir "$RUN" --arm "e2_s1___GRAN__" --seed __SEED__ \
             --gpu "$GPU" --gpu-count 1 --node "${NODE_NAME:-?}" \
             --git-commit "$(git rev-parse --short HEAD)" --image-digest "sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7" \
             --driver "$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1)" \
@@ -89,9 +95,11 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
+              # §3 L40-ONLY: confirmatory pairing is valid only within one GPU
+              # model. L40S is a DIFFERENT product and is deliberately excluded.
               - key: nvidia.com/gpu.product
                 operator: In
-                values: [NVIDIA-A100-SXM4-80GB, NVIDIA-A100-PCIE-40GB, NVIDIA-A100-SXM4-40GB, NVIDIA-A40, NVIDIA-A10, NVIDIA-RTX-A6000, NVIDIA-RTX-A5000, NVIDIA-L40, NVIDIA-L40S, NVIDIA-GeForce-RTX-4090, NVIDIA-GeForce-RTX-3090]
+                values: [NVIDIA-L40]
               - key: topology.kubernetes.io/region
                 operator: In
                 values: [us-west]
