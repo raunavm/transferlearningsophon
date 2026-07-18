@@ -1,14 +1,14 @@
 line,item,gpu_h_allocated,gpu_h_spent,status,notes
-1,E2 Stage 0 tuning (5 arms x 2 LR),760,0,blocked-G0,
-2,E2 Stage 1 fresh seeds (5 arms x 3 seeds),1140,0,blocked-G0,key pair (k188 vs k10sem) first
-3,E2 Stage 2 key-pair extension (n=5),304,0,blocked-G0,
-4,E2-S scale panel (10% subsample),46,0,blocked-G0,
+1,E2 Stage 0 tuning (5 arms x 2 LR),760,0,active,G0 closed 2026-07-19; make_weight running; key-pair (g188+g10sem x 2LR) auto-launches then remaining 6
+2,E2 Stage 1 fresh seeds (5 arms x 3 seeds),1140,0,queued-stage0,key pair (k188 vs k10sem) first
+3,E2 Stage 2 key-pair extension (n=5),304,0,queued-stage1,
+4,E2-S scale panel (10% subsample),46,0,queued-stage1,
 5,E3 family + panels,100,0,blocked-E2,
 6,E4 JC1 ladder (trimmed),250,0,blocked-E2,
 7,E4 T2 rung (T1 merged into line 9),45,0,blocked-G2,
 8,E7-1 scoring,90,0,blocked-G2,
 9,E7-T (incl. seeds + mu_a=140 key pair),160,0,blocked-G2,
-10,E1 completion + tax,95,10,active,post-adoption only; ~300 GPU-h pre-adoption E1 spend grandfathered (RESULTS.md); remaining: arm_p_s2 finish (~25) + paired bootstrap CI + tax analysis
-11,Determinism replay,15,0,blocked-G0,
-12,Contingency (C1 weights 152 OR C3 T-RAND draws 152; first-armed wins),155,0,unarmed,
-13,Stretch pool (idle only; E8 -> E5 -> E7-c -> E10 -> E6),330,0,idle-only,not part of the 3160 cap
+10,E1 completion + tax,95,27,active,arm_p_s2 trained (~17 GPU-h; eval in flight) -> symmetric 3x3; paired bootstrap CI remaining
+11,Determinism replay,15,0,ready-idle-slot,
+12,Contingency (C1 weights 152 OR C3 T-RAND draws 152; first-armed wins),155,0,ARMED-C1,C1 armed 2026-07-19 by weight non-equivalence (95th pct |log ratio| 1.94); C3 now needs PI escalation
+13,Stretch pool (idle only; E8 -> E5 -> E7-c -> E10 -> E6),330,10,active,E8 phase1 complete (extract+probe 10.4 GPU-h; headline +0.0130); FT fleet ~95 GPU-h in flight (9 jobs); s2 extract in flight
