@@ -1,0 +1,91 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # E8 JC1->JC2 transfer panel: extract frozen 128-d embeddings on JetClass-II for
+  # ParT + Arm P + Arm S (each fed its own training preprocessing, same jets/order),
+  # then run the linear/MLP/kNN probe at g10sem. GPU (extraction + MLP).
+  #   - JC2 parquet: tn-pvc-base-jetclass2 (read-only) at /jc2
+  #   - Arm P/S checkpoints + E8 output: transfer-learning-vol at /data
+  #   - ParT_full.pt: in the repo (models/ParT/)
+  # pyarrow is pip-installed at start (Phase A: absent from the image; weaver/awkward
+  # need it to read parquet). Fails fast if it can't.
+  name: e8-extract-probe-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: e8
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          pip install -q pyarrow || { echo "pyarrow install FAILED"; exit 1; }
+          python3 -c "import pyarrow, awkward; print('pyarrow', pyarrow.__version__)"
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          # ParT_full.pt is gitignored (*.pt); fetch the public official checkpoint.
+          mkdir -p models/ParT
+          [ -f models/ParT/ParT_full.pt ] || \
+            curl -sL -o models/ParT/ParT_full.pt \
+              https://github.com/jet-universe/particle_transformer/raw/main/models/ParT_full.pt
+          [ -f models/ParT/ParT_full.pt ] || { echo "ParT_full.pt fetch FAILED"; exit 1; }
+
+          OUT=/data/results/e8/emb; mkdir -p "$OUT"
+          JD=/jc2/jet_data
+
+          # backbone checkpoints (auto-include whatever seeds have converged)
+          ARMP=$(ls /data/results/e1/arm_p_s*/net_best_epoch_state.pt 2>/dev/null | tr '\n' ' ')
+          ARMS=$(ls /data/results/e1/arm_s_s*/net_best_epoch_state.pt 2>/dev/null | tr '\n' ' ')
+          echo "Arm P ckpts: $ARMP"
+          echo "Arm S ckpts: $ARMS"
+          [ -n "$ARMS" ] || { echo "no Arm S checkpoints found"; exit 1; }
+
+          # JetClass-II file splits (E2 file-index convention: no train/val/test leakage)
+          files() { local fam=$1; shift; for i in "$@"; do printf "%s/${fam}_%s.parquet " "$JD" "$i"; done; }
+          TRAIN="$(files QCD 0000 0001 0002 0003) $(files Res2P 0000 0001 0002 0003) $(files Res34P 0000 0001 0002 0003 0004 0005)"
+          VAL="$(files QCD 0280 0281) $(files Res2P 0200 0201) $(files Res34P 0860 0861)"
+          TEST="$(files QCD 0350 0351 0352 0353) $(files Res2P 0250 0251 0252 0253) $(files Res34P 1075 1076 1077 1078 1079 1080)"
+
+          for SPLIT in train val test; do
+            case $SPLIT in train) FL="$TRAIN";; val) FL="$VAL";; test) FL="$TEST";; esac
+            echo "=== extract $SPLIT ==="
+            python3 experiments/E8/extract_jc2_embeddings.py --split $SPLIT --out "$OUT" \
+              --files $FL --armp-ckpts $ARMP --arms-ckpts $ARMS --batch-size 512
+          done
+
+          echo "=== probe (g10sem) ==="
+          python3 experiments/E8/probe_transfer.py --emb-dir "$OUT" \
+            --out /data/results/e8/probe_g10sem --mlp-seeds 0 1 2 \
+            --armp $(for c in $ARMP; do basename $(dirname $c) | sed 's/arm_p_/armp_/'; done) \
+            --arms $(for c in $ARMS; do basename $(dirname $c) | sed 's/arm_s_/arms_/'; done)
+          echo "===== E8 DONE ====="
+          cat /data/results/e8/probe_g10sem/transfer_table.md
+        resources:
+          requests: { memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-A100-SXM4-80GB, NVIDIA-A100-PCIE-40GB, NVIDIA-A100-SXM4-40GB, NVIDIA-A40, NVIDIA-A10, NVIDIA-RTX-A6000, NVIDIA-RTX-A5000, NVIDIA-L40, NVIDIA-L40S, NVIDIA-GeForce-RTX-4090, NVIDIA-GeForce-RTX-3090]
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: [us-west]
+      volumes:
+      - name: data
+        persistentVolumeClaim: { claimName: transfer-learning-vol }
+      - name: jc2
+        persistentVolumeClaim: { claimName: tn-pvc-base-jetclass2 }
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "16Gi" }

@@ -1,0 +1,207 @@
+# k10_random_draw1 — 10-class label map for JetClass-II (188 -> 10).
+# random partition, group sizes matched to g10sem (C6), numpy default_rng seed 20260714, FROZEN
+# Generated verbatim from label_maps.json (sha256 1e8631609b6fe5ef…);
+# the JSON is the source of truth. Do not hand-edit.
+name: k10_random_draw1
+num_classes: 10
+class_names:
+  - "rand10_0"
+  - "rand10_1"
+  - "rand10_2"
+  - "rand10_3"
+  - "rand10_4"
+  - "rand10_5"
+  - "rand10_6"
+  - "rand10_7"
+  - "rand10_8"
+  - "rand10_9"
+# map[i] = merged class index for native jet_label i (i = 0..187)
+map:
+  - 9   # label_X_bb
+  - 1   # label_X_cc
+  - 6   # label_X_ss
+  - 9   # label_X_qq
+  - 5   # label_X_bc
+  - 9   # label_X_cs
+  - 6   # label_X_bq
+  - 3   # label_X_cq
+  - 5   # label_X_sq
+  - 6   # label_X_gg
+  - 4   # label_X_ee
+  - 5   # label_X_mm
+  - 7   # label_X_tauhtaue
+  - 4   # label_X_tauhtaum
+  - 3   # label_X_tauhtauh
+  - 4   # label_X_YY_bbbb
+  - 6   # label_X_YY_bbcc
+  - 9   # label_X_YY_bbss
+  - 5   # label_X_YY_bbqq
+  - 6   # label_X_YY_bbgg
+  - 6   # label_X_YY_bbee
+  - 6   # label_X_YY_bbmm
+  - 4   # label_X_YY_bbtauhtaue
+  - 6   # label_X_YY_bbtauhtaum
+  - 6   # label_X_YY_bbtauhtauh
+  - 9   # label_X_YY_bbb
+  - 4   # label_X_YY_bbc
+  - 9   # label_X_YY_bbs
+  - 7   # label_X_YY_bbq
+  - 9   # label_X_YY_bbg
+  - 5   # label_X_YY_bbe
+  - 5   # label_X_YY_bbm
+  - 3   # label_X_YY_cccc
+  - 4   # label_X_YY_ccss
+  - 3   # label_X_YY_ccqq
+  - 7   # label_X_YY_ccgg
+  - 3   # label_X_YY_ccee
+  - 4   # label_X_YY_ccmm
+  - 6   # label_X_YY_cctauhtaue
+  - 3   # label_X_YY_cctauhtaum
+  - 6   # label_X_YY_cctauhtauh
+  - 3   # label_X_YY_ccb
+  - 6   # label_X_YY_ccc
+  - 0   # label_X_YY_ccs
+  - 0   # label_X_YY_ccq
+  - 6   # label_X_YY_ccg
+  - 6   # label_X_YY_cce
+  - 3   # label_X_YY_ccm
+  - 4   # label_X_YY_ssss
+  - 7   # label_X_YY_ssqq
+  - 8   # label_X_YY_ssgg
+  - 4   # label_X_YY_ssee
+  - 9   # label_X_YY_ssmm
+  - 9   # label_X_YY_sstauhtaue
+  - 5   # label_X_YY_sstauhtaum
+  - 9   # label_X_YY_sstauhtauh
+  - 3   # label_X_YY_ssb
+  - 5   # label_X_YY_ssc
+  - 9   # label_X_YY_sss
+  - 5   # label_X_YY_ssq
+  - 5   # label_X_YY_ssg
+  - 5   # label_X_YY_sse
+  - 5   # label_X_YY_ssm
+  - 4   # label_X_YY_qqqq
+  - 6   # label_X_YY_qqgg
+  - 6   # label_X_YY_qqee
+  - 9   # label_X_YY_qqmm
+  - 3   # label_X_YY_qqtauhtaue
+  - 0   # label_X_YY_qqtauhtaum
+  - 7   # label_X_YY_qqtauhtauh
+  - 7   # label_X_YY_qqb
+  - 5   # label_X_YY_qqc
+  - 5   # label_X_YY_qqs
+  - 2   # label_X_YY_qqq
+  - 9   # label_X_YY_qqg
+  - 3   # label_X_YY_qqe
+  - 9   # label_X_YY_qqm
+  - 9   # label_X_YY_gggg
+  - 4   # label_X_YY_ggee
+  - 4   # label_X_YY_ggmm
+  - 6   # label_X_YY_ggtauhtaue
+  - 9   # label_X_YY_ggtauhtaum
+  - 5   # label_X_YY_ggtauhtauh
+  - 4   # label_X_YY_ggb
+  - 6   # label_X_YY_ggc
+  - 3   # label_X_YY_ggs
+  - 5   # label_X_YY_ggq
+  - 7   # label_X_YY_ggg
+  - 3   # label_X_YY_gge
+  - 3   # label_X_YY_ggm
+  - 0   # label_X_YY_bee
+  - 7   # label_X_YY_cee
+  - 3   # label_X_YY_see
+  - 3   # label_X_YY_qee
+  - 9   # label_X_YY_gee
+  - 4   # label_X_YY_bmm
+  - 5   # label_X_YY_cmm
+  - 5   # label_X_YY_smm
+  - 7   # label_X_YY_qmm
+  - 5   # label_X_YY_gmm
+  - 0   # label_X_YY_btauhtaue
+  - 7   # label_X_YY_ctauhtaue
+  - 0   # label_X_YY_stauhtaue
+  - 7   # label_X_YY_qtauhtaue
+  - 7   # label_X_YY_gtauhtaue
+  - 3   # label_X_YY_btauhtaum
+  - 6   # label_X_YY_ctauhtaum
+  - 5   # label_X_YY_stauhtaum
+  - 5   # label_X_YY_qtauhtaum
+  - 0   # label_X_YY_gtauhtaum
+  - 8   # label_X_YY_btauhtauh
+  - 5   # label_X_YY_ctauhtauh
+  - 9   # label_X_YY_stauhtauh
+  - 7   # label_X_YY_qtauhtauh
+  - 9   # label_X_YY_gtauhtauh
+  - 4   # label_X_YY_qqqb
+  - 9   # label_X_YY_qqqc
+  - 7   # label_X_YY_qqqs
+  - 4   # label_X_YY_bbcq
+  - 4   # label_X_YY_ccbs
+  - 8   # label_X_YY_ccbq
+  - 0   # label_X_YY_ccsq
+  - 9   # label_X_YY_sscq
+  - 9   # label_X_YY_qqbc
+  - 3   # label_X_YY_qqbs
+  - 4   # label_X_YY_qqcs
+  - 7   # label_X_YY_bcsq
+  - 4   # label_X_YY_bcs
+  - 6   # label_X_YY_bcq
+  - 7   # label_X_YY_bsq
+  - 6   # label_X_YY_csq
+  - 4   # label_X_YY_bcev
+  - 6   # label_X_YY_csev
+  - 7   # label_X_YY_bqev
+  - 5   # label_X_YY_cqev
+  - 3   # label_X_YY_sqev
+  - 4   # label_X_YY_qqev
+  - 3   # label_X_YY_bcmv
+  - 9   # label_X_YY_csmv
+  - 3   # label_X_YY_bqmv
+  - 3   # label_X_YY_cqmv
+  - 9   # label_X_YY_sqmv
+  - 5   # label_X_YY_qqmv
+  - 5   # label_X_YY_bctauev
+  - 5   # label_X_YY_cstauev
+  - 7   # label_X_YY_bqtauev
+  - 6   # label_X_YY_cqtauev
+  - 7   # label_X_YY_sqtauev
+  - 2   # label_X_YY_qqtauev
+  - 6   # label_X_YY_bctaumv
+  - 9   # label_X_YY_cstaumv
+  - 2   # label_X_YY_bqtaumv
+  - 4   # label_X_YY_cqtaumv
+  - 9   # label_X_YY_sqtaumv
+  - 4   # label_X_YY_qqtaumv
+  - 3   # label_X_YY_bctauhv
+  - 8   # label_X_YY_cstauhv
+  - 8   # label_X_YY_bqtauhv
+  - 5   # label_X_YY_cqtauhv
+  - 3   # label_X_YY_sqtauhv
+  - 7   # label_X_YY_qqtauhv
+  - 5   # label_QCD_bbccss
+  - 4   # label_QCD_bbccs
+  - 9   # label_QCD_bbcc
+  - 3   # label_QCD_bbcss
+  - 7   # label_QCD_bbcs
+  - 7   # label_QCD_bbc
+  - 6   # label_QCD_bbss
+  - 7   # label_QCD_bbs
+  - 6   # label_QCD_bb
+  - 3   # label_QCD_bccss
+  - 4   # label_QCD_bccs
+  - 6   # label_QCD_bcc
+  - 0   # label_QCD_bcss
+  - 4   # label_QCD_bcs
+  - 6   # label_QCD_bc
+  - 6   # label_QCD_bss
+  - 8   # label_QCD_bs
+  - 5   # label_QCD_b
+  - 2   # label_QCD_ccss
+  - 2   # label_QCD_ccs
+  - 3   # label_QCD_cc
+  - 5   # label_QCD_css
+  - 7   # label_QCD_cs
+  - 4   # label_QCD_c
+  - 6   # label_QCD_ss
+  - 4   # label_QCD_s
+  - 4   # label_QCD_light

@@ -1,0 +1,113 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # PHASE A.1-A.4 (PLAN.md v5.1 §6): read-only inventory of both JetClass-II
+  # PVCs. v2: NO `set -e` (an optional step must never abort the inventory),
+  # and A.2 probes the parquet-reading stack directly — because the weaver
+  # image is ROOT-native and JetClass-II is parquet, "can this image read a
+  # JC2 parquet at all" is itself a G0/E2 readability finding (v1 died here:
+  # system python3 has no pyarrow). NO writes to either PVC (readOnly mounts).
+  name: phasea-inventory-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: inventory
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          echo "===== A.1 file inventory ====="
+          for V in base many; do
+            echo "--- /$V ---"
+            df -h /$V | tail -1
+            find /$V -type f 2>/dev/null | sort > /tmp/files_$V.txt
+            wc -l < /tmp/files_$V.txt | xargs echo "total files:"
+            echo "parquet by family (jet_data):"
+            find /$V/jet_data -type f -name '*.parquet' 2>/dev/null | sed 's|.*/||; s|_[0-9]*\.parquet||' | sort | uniq -c
+            echo "parquet bytes (jet_data):"; find /$V/jet_data -type f -name '*.parquet' -exec stat -c %s {} + 2>/dev/null | awk '{s+=$1} END {printf "%.1f GB over %d files\n", s/1e9, NR}'
+            for D in /$V/*/; do echo "  $D: $(find "$D" -type f 2>/dev/null | wc -l) files"; done
+          done
+
+          echo "===== A.1b base-vs-many overlap (jet_data only) ====="
+          sed 's|^/base/||' /tmp/files_base.txt | grep '^jet_data/' | sort > /tmp/jd_base.txt
+          sed 's|^/many/||' /tmp/files_many.txt | grep '^jet_data/' | sort > /tmp/jd_many.txt
+          echo "jet_data shared: $(comm -12 /tmp/jd_base.txt /tmp/jd_many.txt | wc -l)  only-base: $(comm -23 /tmp/jd_base.txt /tmp/jd_many.txt | wc -l)  only-many: $(comm -13 /tmp/jd_base.txt /tmp/jd_many.txt | wc -l)"
+
+          echo "===== A.1c compare vs HF release filelist ====="
+          if curl -sL --max-time 60 https://huggingface.co/datasets/jet-universe/jetclass2/raw/main/filelist.txt -o /tmp/hf.txt; then
+            grep -o '[A-Za-z0-9_]*_[0-9]*\.parquet' /tmp/hf.txt | sort -u > /tmp/hf_names.txt
+            cat /tmp/files_base.txt /tmp/files_many.txt | grep -o '[A-Za-z0-9_]*_[0-9]*\.parquet' | sort -u > /tmp/local_names.txt
+            echo "HF names: $(wc -l < /tmp/hf_names.txt)  local: $(wc -l < /tmp/local_names.txt)  missing-locally: $(comm -23 /tmp/hf_names.txt /tmp/local_names.txt | wc -l)"
+          else
+            echo "WARN: HF filelist fetch failed"
+          fi
+
+          echo "===== A.2 parquet-reading stack + schema (E2 readability) ====="
+          python3 - <<'EOF' || echo "WARN: A.2 python block failed"
+          import glob, os
+          # which readers exist in the image's default python3?
+          for mod in ["pyarrow","awkward","pandas","fastparquet","uproot"]:
+              try:
+                  m = __import__(mod); print(f"  HAVE {mod} {getattr(m,'__version__','?')}")
+              except Exception:
+                  print(f"  MISSING {mod}")
+          # can we pip-install pyarrow into the image (⇒ trivial E2 image fix)?
+          try:
+              import pyarrow  # noqa
+          except Exception:
+              print("  pyarrow absent → trying pip install (ephemeral)…")
+              os.system("pip install -q pyarrow >/tmp/pip.log 2>&1")
+          paths = {}
+          for fam in ("QCD","Res2P","Res34P"):
+              fs = sorted(glob.glob(f"/base/jet_data/{fam}_*.parquet")) or sorted(glob.glob(f"/many/jet_data/{fam}_*.parquet"))
+              if fs: paths[fam] = fs[0]
+          try:
+              import pyarrow.parquet as pq
+              for fam,p in paths.items():
+                  m = pq.ParquetFile(p)
+                  print(f"--- {fam}: {os.path.basename(p)} rows={m.metadata.num_rows} cols={m.metadata.num_columns} rowgroups={m.metadata.num_row_groups}")
+                  for f in m.schema_arrow:
+                      print(f"   {f.name}: {f.type}")
+          except Exception as e:
+              print("  pyarrow schema read failed:", repr(e))
+          EOF
+
+          echo "===== A.1d md5 anchors ====="
+          for fam in QCD Res2P Res34P; do
+            F=$(find /base/jet_data /many/jet_data -name "${fam}_0000.parquet" 2>/dev/null | head -1)
+            [ -n "$F" ] && md5sum "$F" || echo "  no ${fam}_0000"
+          done
+
+          echo "===== A.4 read throughput (10 parquet per volume) ====="
+          for V in base many; do
+            FILES=$(find /$V/jet_data -name '*.parquet' 2>/dev/null | head -10 | tr '\n' ' ')
+            if [ -n "$FILES" ]; then
+              B=$(stat -c %s $FILES | awk '{s+=$1} END {print s}')
+              T0=$(date +%s.%N); cat $FILES > /dev/null 2>&1; T1=$(date +%s.%N)
+              echo "/$V: $B bytes in $(echo "$T1 $T0" | awk '{printf "%.1f", $1-$2}')s = $(echo "$B $T1 $T0" | awk '{printf "%.0f MB/s", $1/1e6/($2-$3)}')"
+            fi
+          done
+          echo "===== PHASE A INVENTORY DONE ====="
+        resources:
+          requests: { memory: "8Gi", cpu: "4" }
+          limits:   { memory: "8Gi", cpu: "4" }
+        volumeMounts:
+        - { name: base, mountPath: /base, readOnly: true }
+        - { name: many, mountPath: /many, readOnly: true }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: [us-west]
+      volumes:
+      - name: base
+        persistentVolumeClaim: { claimName: tn-pvc-base-jetclass2, readOnly: true }
+      - name: many
+        persistentVolumeClaim: { claimName: tn-pvc-many-jetclass2, readOnly: true }

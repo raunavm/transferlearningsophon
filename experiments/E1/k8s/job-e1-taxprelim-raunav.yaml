@@ -1,0 +1,100 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # PRELIMINARY preprocessing tax: predict the best-so-far Arm S checkpoint (arm_s_s2, ~epoch 8,
+  # NOT converged) on test_20M, then tax = ArmP(0.9877) - ArmS. Heavily caveated — Arm S is ~16%
+  # trained, so this OVERSTATES the tax (non-convergence dominates, not preprocessing).
+  name: e1-taxprelim-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: taxprelim
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          OUT=/data/results/e1/arm_s_s2; mkdir -p /data/results/e1/eval
+
+          echo "=== GPU smoke test ==="
+          timeout 150 python3 -c "import torch; assert torch.cuda.is_available(); x=torch.randn(4096,4096,device='cuda'); [ (x@x).sum().item() for _ in range(20) ]; torch.cuda.synchronize(); print('GPU OK:', torch.cuda.get_device_name(0))" \
+            || { echo 'GPU SMOKE FAILED'; exit 1; }
+
+          CKPT="$OUT/net_best_epoch_state.pt"
+          [ -f "$CKPT" ] || { echo "MISSING $CKPT"; exit 1; }
+
+          echo "=== staging test_20M (29G) to local scratch ==="
+          mkdir -p /scratch/test
+          timeout 1800 bash -c 'ls /data/JetClass/Pythia/test_20M/*.root | xargs -P8 -I{} cp {} /scratch/test/' \
+            || { echo "STAGING TIMEOUT"; exit 1; }
+          [ "$(ls /scratch/test/*.root | wc -l)" -eq 200 ] || { echo "STAGING INCOMPLETE"; exit 1; }
+
+          TEST=""
+          for C in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do
+            TEST="$TEST ${C}:/scratch/test/${C}_*.root"
+          done
+          NET="experiments/E1/ParT_sophon_arch_10c.py -o num_classes 10 -o fc_params [(512,0.1)]"
+
+          echo "=== predict arm_s_s2 (Sophon preprocessing) on test_20M ==="
+          weaver --predict --data-test $TEST \
+            --data-config experiments/E1/data_arm_s.yaml \
+            --network-config $NET --gpus 0 --batch-size 512 --num-workers 4 --fetch-step 0.01 \
+            --model-prefix "$CKPT" --predict-output "$OUT/pred.root" 2>&1 | tail -15
+
+          echo "=== PRELIMINARY TAX ==="
+          python3 -u -c "
+          import glob, json, numpy as np, uproot
+          from sklearn.metrics import roc_auc_score
+          SC=['score_label_QCD','score_label_Hbb','score_label_Hcc','score_label_Hgg','score_label_H4q','score_label_Hqql','score_label_Zqq','score_label_Wqq','score_label_Tbqq','score_label_Tbl']
+          LB=['label_QCD','label_Hbb','label_Hcc','label_Hgg','label_H4q','label_Hqql','label_Zqq','label_Wqq','label_Tbqq','label_Tbl']
+          def auc(d):
+              fs=sorted(glob.glob(d+'/pred_*.root'))
+              P=[];T=[]
+              for f in fs:
+                  a=uproot.open(f)['Events'].arrays(SC+LB,library='np')
+                  P.append(np.stack([a[s] for s in SC],1)); T.append(np.stack([a[l] for l in LB],1).argmax(1))
+              P=np.concatenate(P);T=np.concatenate(T)
+              return float(roc_auc_score(T,P,multi_class='ovr',average='macro')), int(len(T))
+          ap,n=auc('/data/results/e1/arm_p')
+          asv,ns=auc('/data/results/e1/arm_s_s2')
+          res={'arm_p_macro_auc':ap,'arm_s_prelim_macro_auc':asv,'tax_prelim':ap-asv,
+               'arm_s_epoch':'~8 (NOT converged)','n_test':n,'caveat':'preliminary; overstates tax (non-convergence dominates)'}
+          json.dump(res,open('/data/results/e1/eval/tax_prelim.json','w'),indent=2)
+          print('=====================================')
+          print(f'Arm P (converged)      macro AUC = {ap:.4f}')
+          print(f'Arm S (~epoch 8, PRELIM) macro AUC = {asv:.4f}')
+          print(f'PRELIMINARY tax (P-S)  = {ap-asv:+.4f}   <-- overstated, Arm S not converged')
+          print('=====================================')
+          " | tee /data/results/e1/eval/tax_prelim.txt
+          echo "===== TAX PRELIM DONE ====="
+        resources:
+          requests: { memory: "64Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "60Gi" }
+          limits:   { memory: "64Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "60Gi" }
+        volumeMounts:
+        - { name: pvc,     mountPath: /data }
+        - { name: dshm,    mountPath: /dev/shm }
+        - { name: scratch, mountPath: /scratch }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-A100-SXM4-80GB, NVIDIA-A100-PCIE-40GB, NVIDIA-A100-SXM4-40GB, NVIDIA-A100-80GB-PCIe, NVIDIA-A40, NVIDIA-RTX-A6000, NVIDIA-RTX-A5000, NVIDIA-L40, NVIDIA-L40S, NVIDIA-GeForce-RTX-4090, NVIDIA-GeForce-RTX-3090, NVIDIA-A10, NVIDIA-TITAN-RTX]
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: [us-west, us-central]
+      volumes:
+      - name: pvc
+        persistentVolumeClaim: { claimName: transfer-learning-vol }
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "16Gi" }
+      - name: scratch
+        emptyDir: {}

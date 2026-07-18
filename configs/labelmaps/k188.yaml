@@ -1,0 +1,385 @@
+# k188 — 188-class label map for JetClass-II (188 -> 188).
+# identity (native JetClass-II labels)
+# Generated verbatim from label_maps.json (sha256 1e8631609b6fe5ef…);
+# the JSON is the source of truth. Do not hand-edit.
+name: k188
+num_classes: 188
+class_names:
+  - "label_X_bb"
+  - "label_X_cc"
+  - "label_X_ss"
+  - "label_X_qq"
+  - "label_X_bc"
+  - "label_X_cs"
+  - "label_X_bq"
+  - "label_X_cq"
+  - "label_X_sq"
+  - "label_X_gg"
+  - "label_X_ee"
+  - "label_X_mm"
+  - "label_X_tauhtaue"
+  - "label_X_tauhtaum"
+  - "label_X_tauhtauh"
+  - "label_X_YY_bbbb"
+  - "label_X_YY_bbcc"
+  - "label_X_YY_bbss"
+  - "label_X_YY_bbqq"
+  - "label_X_YY_bbgg"
+  - "label_X_YY_bbee"
+  - "label_X_YY_bbmm"
+  - "label_X_YY_bbtauhtaue"
+  - "label_X_YY_bbtauhtaum"
+  - "label_X_YY_bbtauhtauh"
+  - "label_X_YY_bbb"
+  - "label_X_YY_bbc"
+  - "label_X_YY_bbs"
+  - "label_X_YY_bbq"
+  - "label_X_YY_bbg"
+  - "label_X_YY_bbe"
+  - "label_X_YY_bbm"
+  - "label_X_YY_cccc"
+  - "label_X_YY_ccss"
+  - "label_X_YY_ccqq"
+  - "label_X_YY_ccgg"
+  - "label_X_YY_ccee"
+  - "label_X_YY_ccmm"
+  - "label_X_YY_cctauhtaue"
+  - "label_X_YY_cctauhtaum"
+  - "label_X_YY_cctauhtauh"
+  - "label_X_YY_ccb"
+  - "label_X_YY_ccc"
+  - "label_X_YY_ccs"
+  - "label_X_YY_ccq"
+  - "label_X_YY_ccg"
+  - "label_X_YY_cce"
+  - "label_X_YY_ccm"
+  - "label_X_YY_ssss"
+  - "label_X_YY_ssqq"
+  - "label_X_YY_ssgg"
+  - "label_X_YY_ssee"
+  - "label_X_YY_ssmm"
+  - "label_X_YY_sstauhtaue"
+  - "label_X_YY_sstauhtaum"
+  - "label_X_YY_sstauhtauh"
+  - "label_X_YY_ssb"
+  - "label_X_YY_ssc"
+  - "label_X_YY_sss"
+  - "label_X_YY_ssq"
+  - "label_X_YY_ssg"
+  - "label_X_YY_sse"
+  - "label_X_YY_ssm"
+  - "label_X_YY_qqqq"
+  - "label_X_YY_qqgg"
+  - "label_X_YY_qqee"
+  - "label_X_YY_qqmm"
+  - "label_X_YY_qqtauhtaue"
+  - "label_X_YY_qqtauhtaum"
+  - "label_X_YY_qqtauhtauh"
+  - "label_X_YY_qqb"
+  - "label_X_YY_qqc"
+  - "label_X_YY_qqs"
+  - "label_X_YY_qqq"
+  - "label_X_YY_qqg"
+  - "label_X_YY_qqe"
+  - "label_X_YY_qqm"
+  - "label_X_YY_gggg"
+  - "label_X_YY_ggee"
+  - "label_X_YY_ggmm"
+  - "label_X_YY_ggtauhtaue"
+  - "label_X_YY_ggtauhtaum"
+  - "label_X_YY_ggtauhtauh"
+  - "label_X_YY_ggb"
+  - "label_X_YY_ggc"
+  - "label_X_YY_ggs"
+  - "label_X_YY_ggq"
+  - "label_X_YY_ggg"
+  - "label_X_YY_gge"
+  - "label_X_YY_ggm"
+  - "label_X_YY_bee"
+  - "label_X_YY_cee"
+  - "label_X_YY_see"
+  - "label_X_YY_qee"
+  - "label_X_YY_gee"
+  - "label_X_YY_bmm"
+  - "label_X_YY_cmm"
+  - "label_X_YY_smm"
+  - "label_X_YY_qmm"
+  - "label_X_YY_gmm"
+  - "label_X_YY_btauhtaue"
+  - "label_X_YY_ctauhtaue"
+  - "label_X_YY_stauhtaue"
+  - "label_X_YY_qtauhtaue"
+  - "label_X_YY_gtauhtaue"
+  - "label_X_YY_btauhtaum"
+  - "label_X_YY_ctauhtaum"
+  - "label_X_YY_stauhtaum"
+  - "label_X_YY_qtauhtaum"
+  - "label_X_YY_gtauhtaum"
+  - "label_X_YY_btauhtauh"
+  - "label_X_YY_ctauhtauh"
+  - "label_X_YY_stauhtauh"
+  - "label_X_YY_qtauhtauh"
+  - "label_X_YY_gtauhtauh"
+  - "label_X_YY_qqqb"
+  - "label_X_YY_qqqc"
+  - "label_X_YY_qqqs"
+  - "label_X_YY_bbcq"
+  - "label_X_YY_ccbs"
+  - "label_X_YY_ccbq"
+  - "label_X_YY_ccsq"
+  - "label_X_YY_sscq"
+  - "label_X_YY_qqbc"
+  - "label_X_YY_qqbs"
+  - "label_X_YY_qqcs"
+  - "label_X_YY_bcsq"
+  - "label_X_YY_bcs"
+  - "label_X_YY_bcq"
+  - "label_X_YY_bsq"
+  - "label_X_YY_csq"
+  - "label_X_YY_bcev"
+  - "label_X_YY_csev"
+  - "label_X_YY_bqev"
+  - "label_X_YY_cqev"
+  - "label_X_YY_sqev"
+  - "label_X_YY_qqev"
+  - "label_X_YY_bcmv"
+  - "label_X_YY_csmv"
+  - "label_X_YY_bqmv"
+  - "label_X_YY_cqmv"
+  - "label_X_YY_sqmv"
+  - "label_X_YY_qqmv"
+  - "label_X_YY_bctauev"
+  - "label_X_YY_cstauev"
+  - "label_X_YY_bqtauev"
+  - "label_X_YY_cqtauev"
+  - "label_X_YY_sqtauev"
+  - "label_X_YY_qqtauev"
+  - "label_X_YY_bctaumv"
+  - "label_X_YY_cstaumv"
+  - "label_X_YY_bqtaumv"
+  - "label_X_YY_cqtaumv"
+  - "label_X_YY_sqtaumv"
+  - "label_X_YY_qqtaumv"
+  - "label_X_YY_bctauhv"
+  - "label_X_YY_cstauhv"
+  - "label_X_YY_bqtauhv"
+  - "label_X_YY_cqtauhv"
+  - "label_X_YY_sqtauhv"
+  - "label_X_YY_qqtauhv"
+  - "label_QCD_bbccss"
+  - "label_QCD_bbccs"
+  - "label_QCD_bbcc"
+  - "label_QCD_bbcss"
+  - "label_QCD_bbcs"
+  - "label_QCD_bbc"
+  - "label_QCD_bbss"
+  - "label_QCD_bbs"
+  - "label_QCD_bb"
+  - "label_QCD_bccss"
+  - "label_QCD_bccs"
+  - "label_QCD_bcc"
+  - "label_QCD_bcss"
+  - "label_QCD_bcs"
+  - "label_QCD_bc"
+  - "label_QCD_bss"
+  - "label_QCD_bs"
+  - "label_QCD_b"
+  - "label_QCD_ccss"
+  - "label_QCD_ccs"
+  - "label_QCD_cc"
+  - "label_QCD_css"
+  - "label_QCD_cs"
+  - "label_QCD_c"
+  - "label_QCD_ss"
+  - "label_QCD_s"
+  - "label_QCD_light"
+# map[i] = merged class index for native jet_label i (i = 0..187)
+map:
+  - 0   # label_X_bb
+  - 1   # label_X_cc
+  - 2   # label_X_ss
+  - 3   # label_X_qq
+  - 4   # label_X_bc
+  - 5   # label_X_cs
+  - 6   # label_X_bq
+  - 7   # label_X_cq
+  - 8   # label_X_sq
+  - 9   # label_X_gg
+  - 10   # label_X_ee
+  - 11   # label_X_mm
+  - 12   # label_X_tauhtaue
+  - 13   # label_X_tauhtaum
+  - 14   # label_X_tauhtauh
+  - 15   # label_X_YY_bbbb
+  - 16   # label_X_YY_bbcc
+  - 17   # label_X_YY_bbss
+  - 18   # label_X_YY_bbqq
+  - 19   # label_X_YY_bbgg
+  - 20   # label_X_YY_bbee
+  - 21   # label_X_YY_bbmm
+  - 22   # label_X_YY_bbtauhtaue
+  - 23   # label_X_YY_bbtauhtaum
+  - 24   # label_X_YY_bbtauhtauh
+  - 25   # label_X_YY_bbb
+  - 26   # label_X_YY_bbc
+  - 27   # label_X_YY_bbs
+  - 28   # label_X_YY_bbq
+  - 29   # label_X_YY_bbg
+  - 30   # label_X_YY_bbe
+  - 31   # label_X_YY_bbm
+  - 32   # label_X_YY_cccc
+  - 33   # label_X_YY_ccss
+  - 34   # label_X_YY_ccqq
+  - 35   # label_X_YY_ccgg
+  - 36   # label_X_YY_ccee
+  - 37   # label_X_YY_ccmm
+  - 38   # label_X_YY_cctauhtaue
+  - 39   # label_X_YY_cctauhtaum
+  - 40   # label_X_YY_cctauhtauh
+  - 41   # label_X_YY_ccb
+  - 42   # label_X_YY_ccc
+  - 43   # label_X_YY_ccs
+  - 44   # label_X_YY_ccq
+  - 45   # label_X_YY_ccg
+  - 46   # label_X_YY_cce
+  - 47   # label_X_YY_ccm
+  - 48   # label_X_YY_ssss
+  - 49   # label_X_YY_ssqq
+  - 50   # label_X_YY_ssgg
+  - 51   # label_X_YY_ssee
+  - 52   # label_X_YY_ssmm
+  - 53   # label_X_YY_sstauhtaue
+  - 54   # label_X_YY_sstauhtaum
+  - 55   # label_X_YY_sstauhtauh
+  - 56   # label_X_YY_ssb
+  - 57   # label_X_YY_ssc
+  - 58   # label_X_YY_sss
+  - 59   # label_X_YY_ssq
+  - 60   # label_X_YY_ssg
+  - 61   # label_X_YY_sse
+  - 62   # label_X_YY_ssm
+  - 63   # label_X_YY_qqqq
+  - 64   # label_X_YY_qqgg
+  - 65   # label_X_YY_qqee
+  - 66   # label_X_YY_qqmm
+  - 67   # label_X_YY_qqtauhtaue
+  - 68   # label_X_YY_qqtauhtaum
+  - 69   # label_X_YY_qqtauhtauh
+  - 70   # label_X_YY_qqb
+  - 71   # label_X_YY_qqc
+  - 72   # label_X_YY_qqs
+  - 73   # label_X_YY_qqq
+  - 74   # label_X_YY_qqg
+  - 75   # label_X_YY_qqe
+  - 76   # label_X_YY_qqm
+  - 77   # label_X_YY_gggg
+  - 78   # label_X_YY_ggee
+  - 79   # label_X_YY_ggmm
+  - 80   # label_X_YY_ggtauhtaue
+  - 81   # label_X_YY_ggtauhtaum
+  - 82   # label_X_YY_ggtauhtauh
+  - 83   # label_X_YY_ggb
+  - 84   # label_X_YY_ggc
+  - 85   # label_X_YY_ggs
+  - 86   # label_X_YY_ggq
+  - 87   # label_X_YY_ggg
+  - 88   # label_X_YY_gge
+  - 89   # label_X_YY_ggm
+  - 90   # label_X_YY_bee
+  - 91   # label_X_YY_cee
+  - 92   # label_X_YY_see
+  - 93   # label_X_YY_qee
+  - 94   # label_X_YY_gee
+  - 95   # label_X_YY_bmm
+  - 96   # label_X_YY_cmm
+  - 97   # label_X_YY_smm
+  - 98   # label_X_YY_qmm
+  - 99   # label_X_YY_gmm
+  - 100   # label_X_YY_btauhtaue
+  - 101   # label_X_YY_ctauhtaue
+  - 102   # label_X_YY_stauhtaue
+  - 103   # label_X_YY_qtauhtaue
+  - 104   # label_X_YY_gtauhtaue
+  - 105   # label_X_YY_btauhtaum
+  - 106   # label_X_YY_ctauhtaum
+  - 107   # label_X_YY_stauhtaum
+  - 108   # label_X_YY_qtauhtaum
+  - 109   # label_X_YY_gtauhtaum
+  - 110   # label_X_YY_btauhtauh
+  - 111   # label_X_YY_ctauhtauh
+  - 112   # label_X_YY_stauhtauh
+  - 113   # label_X_YY_qtauhtauh
+  - 114   # label_X_YY_gtauhtauh
+  - 115   # label_X_YY_qqqb
+  - 116   # label_X_YY_qqqc
+  - 117   # label_X_YY_qqqs
+  - 118   # label_X_YY_bbcq
+  - 119   # label_X_YY_ccbs
+  - 120   # label_X_YY_ccbq
+  - 121   # label_X_YY_ccsq
+  - 122   # label_X_YY_sscq
+  - 123   # label_X_YY_qqbc
+  - 124   # label_X_YY_qqbs
+  - 125   # label_X_YY_qqcs
+  - 126   # label_X_YY_bcsq
+  - 127   # label_X_YY_bcs
+  - 128   # label_X_YY_bcq
+  - 129   # label_X_YY_bsq
+  - 130   # label_X_YY_csq
+  - 131   # label_X_YY_bcev
+  - 132   # label_X_YY_csev
+  - 133   # label_X_YY_bqev
+  - 134   # label_X_YY_cqev
+  - 135   # label_X_YY_sqev
+  - 136   # label_X_YY_qqev
+  - 137   # label_X_YY_bcmv
+  - 138   # label_X_YY_csmv
+  - 139   # label_X_YY_bqmv
+  - 140   # label_X_YY_cqmv
+  - 141   # label_X_YY_sqmv
+  - 142   # label_X_YY_qqmv
+  - 143   # label_X_YY_bctauev
+  - 144   # label_X_YY_cstauev
+  - 145   # label_X_YY_bqtauev
+  - 146   # label_X_YY_cqtauev
+  - 147   # label_X_YY_sqtauev
+  - 148   # label_X_YY_qqtauev
+  - 149   # label_X_YY_bctaumv
+  - 150   # label_X_YY_cstaumv
+  - 151   # label_X_YY_bqtaumv
+  - 152   # label_X_YY_cqtaumv
+  - 153   # label_X_YY_sqtaumv
+  - 154   # label_X_YY_qqtaumv
+  - 155   # label_X_YY_bctauhv
+  - 156   # label_X_YY_cstauhv
+  - 157   # label_X_YY_bqtauhv
+  - 158   # label_X_YY_cqtauhv
+  - 159   # label_X_YY_sqtauhv
+  - 160   # label_X_YY_qqtauhv
+  - 161   # label_QCD_bbccss
+  - 162   # label_QCD_bbccs
+  - 163   # label_QCD_bbcc
+  - 164   # label_QCD_bbcss
+  - 165   # label_QCD_bbcs
+  - 166   # label_QCD_bbc
+  - 167   # label_QCD_bbss
+  - 168   # label_QCD_bbs
+  - 169   # label_QCD_bb
+  - 170   # label_QCD_bccss
+  - 171   # label_QCD_bccs
+  - 172   # label_QCD_bcc
+  - 173   # label_QCD_bcss
+  - 174   # label_QCD_bcs
+  - 175   # label_QCD_bc
+  - 176   # label_QCD_bss
+  - 177   # label_QCD_bs
+  - 178   # label_QCD_b
+  - 179   # label_QCD_ccss
+  - 180   # label_QCD_ccs
+  - 181   # label_QCD_cc
+  - 182   # label_QCD_css
+  - 183   # label_QCD_cs
+  - 184   # label_QCD_c
+  - 185   # label_QCD_ss
+  - 186   # label_QCD_s
+  - 187   # label_QCD_light

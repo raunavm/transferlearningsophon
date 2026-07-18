@@ -1,0 +1,27 @@
+{
+  "source": "experiments/E2/labels/label_maps.json",
+  "source_sha256": "1e8631609b6fe5ef57bead5eec2d8368e828869976ab6527e563adad37447904",
+  "generator": "configs/labelmaps/generate.py",
+  "files": {
+    "k2.yaml": {
+      "num_classes": 2,
+      "sha256": "fc13dc48702a1a1e480373c1b8f471319559bce7379406055200a717e0c2b524"
+    },
+    "k10_semantic.yaml": {
+      "num_classes": 10,
+      "sha256": "de41c449ed70cb443270b2098097e8cd49798e2c13eb7058d8dae0e85ab13d35"
+    },
+    "k10_random_draw1.yaml": {
+      "num_classes": 10,
+      "sha256": "1d307f046cba4593b8a5b90574217c2f661ba6b718fe76dd22135a023a7753b9"
+    },
+    "k30.yaml": {
+      "num_classes": 30,
+      "sha256": "ff1e7d66617a0b25847728e1f5713c5cfa76b2ecca60426cd543fb49eafb357f"
+    },
+    "k188.yaml": {
+      "num_classes": 188,
+      "sha256": "35342a9bcf5ba4f5490f73db3482f569d3a72754069450e82b22e50b7f1e1bf1"
+    }
+  }
+}

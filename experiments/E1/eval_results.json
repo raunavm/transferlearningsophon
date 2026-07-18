@@ -1,0 +1,14 @@
+{
+  "description": "E1 converged test-set evals on the full shared test_20M (n=20M each). Mirrors /data/results/e1/eval/<run>_eval.json on PVC transfer-learning-vol; eval jobs e1-eval-{armp-s1,armp-s3,arms-s1,arms-s2,arms-s3}-raunav. Checkpoint = net_best_epoch_state.pt; scores from the 10 concatenated per-class pred_*.root.",
+  "test_set": "JetClass-I test_20M (2M/class), identical files and events for every run",
+  "metric_defs": {"macro_auc_ovr": "sklearn roc_auc_score multi_class=ovr average=macro", "accuracy": "argmax accuracy"},
+  "runs": [
+    {"run": "arm_p_s1", "arm": "arm_p", "seed": 1, "macro_auc_ovr": 0.9878, "accuracy": 0.8607, "n_test": 20000000, "eval_job": "e1-eval-armp-s1-raunav", "eval_date": "2026-07-15"},
+    {"run": "arm_p_s3", "arm": "arm_p", "seed": 3, "macro_auc_ovr": 0.9877, "accuracy": 0.8605, "n_test": 20000000, "eval_job": "e1-eval-armp-s3-raunav", "eval_date": "2026-07-18"},
+    {"run": "arm_s_s1", "arm": "arm_s", "seed": 1, "macro_auc_ovr": 0.9797, "accuracy": 0.8180, "n_test": 20000000, "eval_job": "e1-eval-arms-s1-raunav", "eval_date": "2026-07-18"},
+    {"run": "arm_s_s2", "arm": "arm_s", "seed": 2, "macro_auc_ovr": 0.9793, "accuracy": 0.8164, "n_test": 20000000, "eval_job": "e1-eval-arms-s2-raunav", "eval_date": "2026-07-18"},
+    {"run": "arm_s_s3", "arm": "arm_s", "seed": 3, "macro_auc_ovr": 0.9794, "accuracy": 0.8166, "n_test": 20000000, "eval_job": "e1-eval-arms-s3-raunav", "eval_date": "2026-07-18"}
+  ],
+  "pending": ["arm_p_s2 (training resumed 2026-07-17; completes the symmetric 3x3)", "event-level paired bootstrap CI on shared test events"],
+  "reference_lines": {"published_ParT_2202.03772": {"macro_auc_ovr": 0.9877, "accuracy": 0.861, "note": "reference line only, never a competitor (internal-comparisons-only rule)"}}
+}
