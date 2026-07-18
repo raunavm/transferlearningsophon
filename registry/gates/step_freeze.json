@@ -23,10 +23,10 @@
   "train_e2_sh_epochs_var": 80,
   "samples_per_epoch_expr": "10000 * 1024",
   "file_hashes_sha256": {
-    "experiments/E2/train_e2.sh": "ce802422fd61fe4b7698517962be663d60befbd1fde387ec9dc14f71c0d51f1f",
+    "experiments/E2/train_e2.sh": "3cd5fb230d2b9ba38e44141bbf1f7217aa1b6f2106ddf5deabff3961b1731fe6",
     "experiments/E2/data/JetClassII_full_base.yaml": "df45b6b9dd0f3e0726ea18132fef7d8525dc9d7e750ecd82ee5fa60cb441e625"
   },
-  "config_hash": "ce915b819e37daad1616f1c4621e2e4d7bce48b09e905da51070357658d6881f",
-  "git_commit_at_freeze": "566392c3910735c1f0b68699cafc07177e08cd1f",
+  "config_hash": "a7a5b3878936dcb2f9ed370c31959ce471b091ff7f51dd9ee5c580b94c011d4a",
+  "git_commit_at_freeze": "6d2c1187329058c59e627d60b562f8e2a7fea12d",
   "note": "Stage-0 LR grid per \u00a79.2 = {5e-4, 2.5e-4}. Any change to the frozen files invalidates config_hash and re-opens G0."
 }

@@ -3,7 +3,11 @@
 # Derived from jet-universe/sophon@9dd6dd6 train_sophon.sh. Recipe kept verbatim:
 # 80 epochs x 10.24M jets, batch 512, start-lr 5e-4, ranger (weaver default
 # flat+decay schedule), AMP, fc_params [(512,0.1)], num-workers 5,
-# fetch-step 1.0, data-split-num 200, identical train/val file lists.
+# fetch-step 1.0, identical train/val file lists.
+# AMENDMENT 2026-07-19: the image's weaver 0.4.17 lacks --data-split-num
+# (newer-weaver loading-schedule knob; dropped) and names --log-file as
+# --log. Loading-schedule/log-path only — optimizer math untouched, applied
+# identically to all five arms, so the E2 invariant holds. Re-hashed at G0.
 #
 # Deliberate deltas from upstream (each is an E2 design requirement):
 #   1. --data-config experiments/E2/data/JetClassII_<GRAN>.yaml — differs from
@@ -49,7 +53,7 @@ samples_per_epoch=$((10000 * 1024))
 samples_per_epoch_val=$((2500 * 1024))
 dataconfig="experiments/E2/data/JetClassII_${GRAN:-g188}.yaml"
 modelopts="experiments/E2/networks/example_ParticleTransformer_sophon.py --use-amp -o num_classes $NUMCLS -o fc_params [(512,0.1)]"
-dataopts="--num-workers 5 --fetch-step 1.0 --data-split-num 200"
+dataopts="--num-workers 5 --fetch-step 1.0"
 batchopts="--batch-size 512 --start-lr 5e-4"
 
 # train: {Res2P: 0000-0199, Res34P: 0000-0859, QCD: 0000-0279}
@@ -77,7 +81,7 @@ if [[ $MODE == "make_weight" ]]; then
         $dataopts $batchopts \
         --samples-per-epoch ${samples_per_epoch} --samples-per-epoch-val ${samples_per_epoch_val} \
         --num-epochs $epochs --optimizer ranger --gpus "" \
-        --log-file "${OUTDIR}/make_weight.log" \
+        --log "${OUTDIR}/make_weight.log" \
         "${@:2}"
 
 elif [[ $MODE == "train" ]]; then
@@ -93,7 +97,7 @@ elif [[ $MODE == "train" ]]; then
         $dataopts $batchopts \
         --samples-per-epoch ${samples_per_epoch} --samples-per-epoch-val ${samples_per_epoch_val} \
         --num-epochs $epochs --optimizer ranger --gpus 0 \
-        --log-file "${RUN}/train.log" \
+        --log "${RUN}/train.log" \
         "${@:2}"
 
 else

@@ -1,0 +1,88 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # E8 follow-up: extract JC2 embeddings for the newly-converged arm_p_s2 ONLY
+  # (same splits/files as the main extract job), then re-run the probe with the
+  # full Arm P n=3 panel. The main run's 6-backbone metadata files are backed up
+  # and restored (the extractor rewrites metadata_<split>.json per invocation);
+  # the s2 run's metadata is kept under metadata_<split>_armp_s2.json.
+  name: e8-extract-s2-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: e8s2
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          pip install -q pyarrow || { echo "pyarrow install FAILED"; exit 1; }
+          git clone https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon
+          mkdir -p models/ParT
+          curl -sL -o models/ParT/ParT_full.pt \
+            https://github.com/jet-universe/particle_transformer/raw/main/models/ParT_full.pt
+          OUT=/data/results/e8/emb
+          JD=/jc2/jet_data
+          CKPT=/data/results/e1/arm_p_s2/net_best_epoch_state.pt
+          [ -f "$CKPT" ] || { echo "MISSING $CKPT"; exit 1; }
+          [ -f "$OUT/metadata_test.json" ] || { echo "main extract output missing"; exit 1; }
+
+          # same frozen file lists as the main extract job
+          files() { local fam=$1; shift; for i in "$@"; do printf "%s/${fam}_%s.parquet " "$JD" "$i"; done; }
+          TRAIN="$(files QCD 0000 0001 0002 0003) $(files Res2P $(seq -f "%04g" 0 15)) $(files Res34P $(seq -f "%04g" 0 26))"
+          VAL="$(files QCD 0280 0281) $(files Res2P 0200 0201 0202) $(files Res34P 0860 0861 0862 0863 0864)"
+          TEST="$(files QCD 0350 0351 0352 0353) $(files Res2P 0250 0251 0252 0253) $(files Res34P 1075 1076 1077 1078 1079 1080)"
+
+          for SPLIT in train val test; do
+            if [ -f "$OUT/armp_s2_${SPLIT}_emb.npy" ] && [ -f "$OUT/metadata_${SPLIT}_armp_s2.json" ]; then
+              echo "skip $SPLIT (s2 already extracted)"; continue
+            fi
+            case $SPLIT in train) FL="$TRAIN";; val) FL="$VAL";; test) FL="$TEST";; esac
+            cp "$OUT/metadata_${SPLIT}.json" "/tmp/metadata_${SPLIT}.orig.json"
+            echo "=== extract $SPLIT (armp_s2 only) ==="
+            python3 experiments/E8/extract_jc2_embeddings.py --split $SPLIT --out "$OUT" \
+              --files $FL --armp-ckpts "$CKPT" --batch-size 512
+            mv "$OUT/metadata_${SPLIT}.json" "$OUT/metadata_${SPLIT}_armp_s2.json"
+            cp "/tmp/metadata_${SPLIT}.orig.json" "$OUT/metadata_${SPLIT}.json"
+          done
+
+          echo "=== re-probe with Arm P n=3 ==="
+          python3 experiments/E8/probe_transfer.py --emb-dir "$OUT" \
+            --out /data/results/e8/probe_g10sem_n3 --mlp-seeds 0 1 2 \
+            --armp armp_s1 armp_s2 armp_s3 \
+            --arms arms_s1 arms_s2 arms_s3
+          echo "===== E8 S2 FOLLOW-UP DONE ====="
+          cat /data/results/e8/probe_g10sem_n3/transfer_table.md
+        resources:
+          requests: { memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-A100-SXM4-80GB, NVIDIA-A100-PCIE-40GB, NVIDIA-A100-SXM4-40GB, NVIDIA-A40, NVIDIA-A10, NVIDIA-RTX-A6000, NVIDIA-RTX-A5000, NVIDIA-L40, NVIDIA-L40S, NVIDIA-GeForce-RTX-4090, NVIDIA-GeForce-RTX-3090]
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: [us-west]
+      volumes:
+      - name: data
+        persistentVolumeClaim: { claimName: transfer-learning-vol }
+      - name: jc2
+        persistentVolumeClaim: { claimName: tn-pvc-base-jetclass2 }
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "16Gi" }

@@ -8,7 +8,8 @@ meta:
   version: 1
   drafted: 2026-07-19
   plan_version: v5.1
-  config_hash: ce915b819e37daad1616f1c4621e2e4d7bce48b09e905da51070357658d6881f  # registry/gates/step_freeze.json
+  config_hash: a7a5b3878936dcb2f9ed370c31959ce471b091ff7f51dd9ee5c580b94c011d4a  # registry/gates/step_freeze.json
+  config_hash_amendment: "2026-07-19: re-hash after weaver-0.4.17 compatibility fix in train_e2.sh (dropped --data-split-num, --log-file -> --log; loading-schedule/log-path only, identical across arms; prior hash ce915b81...)"
   pi_signature: null            # PI signs here (name + date) -> then tag prereg-v1
   bound_phase_a_verdicts:
     kish_gate: "eval(test) QCD cell N_eff = 826,758 < 4e6 -> FPR 1e-4 NOT reportable; primary WP = 1e-3 (kish_table.parquet, 2026-07-19)"
@@ -58,6 +59,11 @@ exploratory:      # labeled, never Holm
   - "best-val views"
   - "all remaining grid cells"
   - "LP-FT appendix numbers"
+  - "CONDITIONAL recipe-interaction check (stretch pool, ~152 GPU-h): k188 + k10sem
+     re-trained once each with ParT preprocessing (no pT rescale), triggered ONLY if
+    the primary key-pair result clears the MEI; compares the granularity gap across
+    recipes. Motivated by E1 (+0.0083) and E8 (+0.0130 OOD) preprocessing effects;
+    pre-declared here so it is planned-in-advance, not post hoc."
 
 statistics:
   bootstrap: "event bootstrap §16.1, B=2000, seed 7777, per-analysis stream ids recorded"
