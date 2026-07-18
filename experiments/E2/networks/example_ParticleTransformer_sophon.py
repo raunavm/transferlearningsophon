@@ -35,22 +35,16 @@ class ParticleTransformerSophonWrapper(torch.nn.Module):
         return {'mod.cls_token', }
 
     def forward(self, points, features, lorentz_vectors, mask):
-        # return self.mod(features, v=lorentz_vectors, mask=mask) # not using the default foward implementation. Should add emport_embed flag
-
-        x, padding_mask = self.mod._forward_encoder(features, v=lorentz_vectors, mask=mask)
-
-        with torch.cuda.amp.autocast(enabled=self.mod.use_amp):
-            x_cls = self.mod._forward_aggregator(x, padding_mask)
-            if self.mod.fc is None:
-                return x_cls
-            # fc
-            output = self.mod.fc(x_cls)
-            if self.mod.for_inference:
-                output = torch.softmax(output, dim=1)
-            if self.export_embed:
-                return torch.cat([output, x_cls], dim=1)
-            else:
-                return output
+        # The image's weaver-core 0.4.17 ParticleTransformer has NO
+        # _forward_encoder/_forward_aggregator split API (same finding as E1's
+        # network file, proven on this image). Training needs logits only; the
+        # standard forward computes the identical ParT output. Embedding
+        # extraction for E3 goes through src/models/sophon_wrapper.py, not here.
+        if self.export_embed:
+            raise NotImplementedError(
+                "export_embed needs the split-forward weaver API; use "
+                "src/models/sophon_wrapper.SophonTransferModel for embeddings")
+        return self.mod(features, v=lorentz_vectors, mask=mask)
 
 
 def get_model(data_config, **kwargs):

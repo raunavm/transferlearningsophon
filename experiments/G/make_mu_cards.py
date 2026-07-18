@@ -4,9 +4,13 @@
 From the RELEASE production card (delphes_card_CMS_JetClassII.tcl in the
 jetclass2_generation repo):
 
-  mu50    : byte-identical COPY of the release card (sha256 hash-compared and
-            recorded — §7.1 requires identity, so nothing may be edited, not
-            even a RandomSeed line).
+  mu50    : PHYSICS-IDENTICAL to the release card (amendment A1,
+            registry/gates/plan_amendments.json): the identity hash is computed
+            over the card with the TreeWriter output block EXCLUDED. All cards
+            (mu50 included) receive two output-only TreeWriter branch additions
+            (configs/g/branch_schema.yaml card_requirements) that persist the
+            pre-PUPPI EFlow collection and the pileup gen record — without them
+            truth references dangle and pu_fraction is uncomputable (§7.7c).
   mu0,25,80,140 : differ from the release card ONLY in the `set MeanPileUp`
             line (the stored diff is exactly that one line). mu0 == §7.5
             config (ii): PUPPI runs with zero overlay.
@@ -63,6 +67,26 @@ def make_nopu(text: str) -> str:
     return t
 
 
+OUTPUT_BRANCHES = (
+    "  add Branch EFlowMerger/eflow EFlowCandidate ParticleFlowCandidate\n"
+    "  add Branch PileUpMerger/stableParticles PileupStableParticle GenParticle\n")
+ANCHOR = "  add Branch RunPUPPI/PuppiParticles ParticleFlowCandidate ParticleFlowCandidate\n"
+
+
+def add_output_branches(text: str) -> str:
+    """Insert the two schema-required TreeWriter branches (output-only)."""
+    assert text.count(ANCHOR) == 1, "TreeWriter anchor line not found exactly once"
+    return text.replace(ANCHOR, ANCHOR + OUTPUT_BRANCHES)
+
+
+def physics_section(text: str) -> str:
+    """Card text with the TreeWriter module block removed (amendment A1)."""
+    out, n = re.subn(r"^module TreeWriter TreeWriter \{.*?^\}", "",
+                     text, flags=re.M | re.S)
+    assert n == 1, f"expected exactly one TreeWriter block, found {n}"
+    return out
+
+
 def sha(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
@@ -83,27 +107,43 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
 
     manifest = {"release_card_sha256": sha(release),
-                "release_card_source": str(args.release_card), "cards": {}}
+                "release_physics_sha256": sha(physics_section(release)),
+                "release_card_source": str(args.release_card),
+                "amendment": "A1: identity = physics-section hash (TreeWriter excluded); "
+                             "output-only branch additions applied to ALL cards",
+                "cards": {}}
 
     def emit(tag, text):
+        text = add_output_branches(text)
         p = out / f"delphes_card_CMS_JetClassII_mu{tag}.tcl"
         p.write_text(text)
         d = udiff(release, text, p.name)
+        phys_ok = sha(physics_section(text)) == manifest["release_physics_sha256"]
         manifest["cards"][p.name] = {
-            "sha256": sha(text), "byte_identical_to_release": text == release,
+            "sha256": sha(text),
+            "physics_identical_to_release": phys_ok,
             "diff_lines": sum(1 for l in d.splitlines()
                               if l[:1] in "+-" and l[:3] not in ("+++", "---")),
             "diff": d}
-        print(f"  {p.name}: {'IDENTICAL to release' if text == release else str(manifest['cards'][p.name]['diff_lines']) + ' changed lines'}")
+        print(f"  {p.name}: physics_identical={phys_ok}  "
+              f"{manifest['cards'][p.name]['diff_lines']} diff lines vs release")
 
     emit("50", release)                      # byte-identical, hash-compared
     for mu in MUS:
         emit(str(mu), set_mean_pileup(release, mu))
     emit("0_nopu", make_nopu(release))
 
-    assert manifest["cards"]["delphes_card_CMS_JetClassII_mu50.tcl"]["byte_identical_to_release"]
+    # mu50: physics-identical to release (A1), diff = exactly the 2 added output lines
+    m50 = manifest["cards"]["delphes_card_CMS_JetClassII_mu50.tcl"]
+    assert m50["physics_identical_to_release"] and m50["diff_lines"] == 2
+    # mu variants: physics differs ONLY via MeanPileUp; diff = 2 added + MeanPileUp -/+
     for mu in MUS:
-        assert manifest["cards"][f"delphes_card_CMS_JetClassII_mu{mu}.tcl"]["diff_lines"] == 2  # -old +new
+        c = manifest["cards"][f"delphes_card_CMS_JetClassII_mu{mu}.tcl"]
+        assert not c["physics_identical_to_release"] and c["diff_lines"] == 4
+        card_text = (out / f"delphes_card_CMS_JetClassII_mu{mu}.tcl").read_text()
+        assert sha(physics_section(card_text)) == sha(physics_section(set_mean_pileup(release, mu)))
+    # nopu: the 4-substitution functional removal + 2 added output lines
+    assert manifest["cards"]["delphes_card_CMS_JetClassII_mu0_nopu.tcl"]["diff_lines"] == 10
     (out / "card_manifest.json").write_text(json.dumps(manifest, indent=2))
     print(f"wrote {out}/card_manifest.json  (release sha {manifest['release_card_sha256'][:16]}…)")
 

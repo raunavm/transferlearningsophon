@@ -1,0 +1,14 @@
+{
+  "amendments": [
+    {
+      "id": "A1",
+      "date": "2026-07-19",
+      "section": "PLAN §7.1 (mu=50 card byte-identity)",
+      "status": "PROPOSED — needs PI ack",
+      "was": "The mu=50 card is byte-identical to the release production card (hash-compared).",
+      "becomes": "The mu=50 card is PHYSICS-IDENTICAL to the release card: the identity hash is computed over the card with the TreeWriter output block excluded. Output-only TreeWriter additions (the two branches in configs/g/branch_schema.yaml card_requirements) are permitted and their diff is stored in the card manifest.",
+      "reason": "The ntuple extension requires persisting EFlowMerger/eflow (pre-PUPPI candidates) and PileUpMerger/stableParticles (pileup gen record). Without the latter, reconstructed candidates' truth references into pileup GenParticles DANGLE on serialization — pu_fraction is uncomputable and §7.7(c) truth-survival fails by construction. TreeWriter branches change which collections are WRITTEN, not any physics module, seed, or algorithm: the simulated event content is bit-identical.",
+      "verification": "make_mu_cards.py asserts physics-section hash equality between the mu50 variant and the release card, and stores the full TreeWriter diff; the G2 closure test (schema + distributions + frozen-checkpoint scoring vs the public release) remains the end-to-end guarantee."
+    }
+  ]
+}

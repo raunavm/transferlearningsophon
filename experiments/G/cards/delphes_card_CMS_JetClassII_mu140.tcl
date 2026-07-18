@@ -1451,6 +1451,8 @@ module TreeWriter TreeWriter {
 
   # add Branch EFlowMergerCHS/eflow ParticleFlowCandidateCHS ParticleFlowCandidate
   add Branch RunPUPPI/PuppiParticles ParticleFlowCandidate ParticleFlowCandidate
+  add Branch EFlowMerger/eflow EFlowCandidate ParticleFlowCandidate
+  add Branch PileUpMerger/stableParticles PileupStableParticle GenParticle
 
   add Branch GenJetFinder/jets GenJet Jet
   add Branch GenJetFinderAK8/jets GenJetAK8 Jet

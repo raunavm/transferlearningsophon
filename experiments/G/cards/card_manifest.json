@@ -1,42 +1,44 @@
 {
   "release_card_sha256": "af3bf394168335906f1ee710913dac9fc5b728ea54417b0d54e06558e5fd7b25",
+  "release_physics_sha256": "74bdfda93200ea862d966243e6651dad20d166a6d6ca8521dc6cb799a71ea2d5",
   "release_card_source": "/Users/raunavmendiratta/Desktop/jetclass2_generation/delphes_cards/delphes_card_CMS_JetClassII.tcl",
+  "amendment": "A1: identity = physics-section hash (TreeWriter excluded); output-only branch additions applied to ALL cards",
   "cards": {
     "delphes_card_CMS_JetClassII_mu50.tcl": {
-      "sha256": "af3bf394168335906f1ee710913dac9fc5b728ea54417b0d54e06558e5fd7b25",
-      "byte_identical_to_release": true,
-      "diff_lines": 0,
-      "diff": ""
+      "sha256": "460d17c812c5cd1365d0cf3682fdf0672df5ad3c14e61abe9ae450a819b9a97a",
+      "physics_identical_to_release": true,
+      "diff_lines": 2,
+      "diff": "--- release\n+++ delphes_card_CMS_JetClassII_mu50.tcl\n@@ -1451,6 +1451,8 @@\n \n   # add Branch EFlowMergerCHS/eflow ParticleFlowCandidateCHS ParticleFlowCandidate\n   add Branch RunPUPPI/PuppiParticles ParticleFlowCandidate ParticleFlowCandidate\n+  add Branch EFlowMerger/eflow EFlowCandidate ParticleFlowCandidate\n+  add Branch PileUpMerger/stableParticles PileupStableParticle GenParticle\n \n   add Branch GenJetFinder/jets GenJet Jet\n   add Branch GenJetFinderAK8/jets GenJetAK8 Jet\n"
     },
     "delphes_card_CMS_JetClassII_mu0.tcl": {
-      "sha256": "8e9ea21b2c91f9e66c24b2a6aafa1aa056fdf7e65261caf473c6b9b7e6701b2f",
-      "byte_identical_to_release": false,
-      "diff_lines": 2,
-      "diff": "--- release\n+++ delphes_card_CMS_JetClassII_mu0.tcl\n@@ -99,7 +99,7 @@\n   set PileUpFile MinBias_100k.pileup\n \n   # average expected pile up\n-  set MeanPileUp 50\n+  set MeanPileUp 0\n \n    # maximum spread in the beam direction in m\n   set ZVertexSpread 0.25\n"
+      "sha256": "0ec39ad4702cffeb48f10e5253ad40d91ebb1d5060d6b42c43fc7271f2a7ece5",
+      "physics_identical_to_release": false,
+      "diff_lines": 4,
+      "diff": "--- release\n+++ delphes_card_CMS_JetClassII_mu0.tcl\n@@ -99,7 +99,7 @@\n   set PileUpFile MinBias_100k.pileup\n \n   # average expected pile up\n-  set MeanPileUp 50\n+  set MeanPileUp 0\n \n    # maximum spread in the beam direction in m\n   set ZVertexSpread 0.25\n@@ -1451,6 +1451,8 @@\n \n   # add Branch EFlowMergerCHS/eflow ParticleFlowCandidateCHS ParticleFlowCandidate\n   add Branch RunPUPPI/PuppiParticles ParticleFlowCandidate ParticleFlowCandidate\n+  add Branch EFlowMerger/eflow EFlowCandidate ParticleFlowCandidate\n+  add Branch PileUpMerger/stableParticles PileupStableParticle GenParticle\n \n   add Branch GenJetFinder/jets GenJet Jet\n   add Branch GenJetFinderAK8/jets GenJetAK8 Jet\n"
     },
     "delphes_card_CMS_JetClassII_mu25.tcl": {
-      "sha256": "7780758eb9400de738da9a618d0d339ce20ff3b58821ba6f51cca4ce5548a86a",
-      "byte_identical_to_release": false,
-      "diff_lines": 2,
-      "diff": "--- release\n+++ delphes_card_CMS_JetClassII_mu25.tcl\n@@ -99,7 +99,7 @@\n   set PileUpFile MinBias_100k.pileup\n \n   # average expected pile up\n-  set MeanPileUp 50\n+  set MeanPileUp 25\n \n    # maximum spread in the beam direction in m\n   set ZVertexSpread 0.25\n"
+      "sha256": "00012c0f6880e89ffcea50153d5f2343434f97aa5cbe40f4be8351474c01e922",
+      "physics_identical_to_release": false,
+      "diff_lines": 4,
+      "diff": "--- release\n+++ delphes_card_CMS_JetClassII_mu25.tcl\n@@ -99,7 +99,7 @@\n   set PileUpFile MinBias_100k.pileup\n \n   # average expected pile up\n-  set MeanPileUp 50\n+  set MeanPileUp 25\n \n    # maximum spread in the beam direction in m\n   set ZVertexSpread 0.25\n@@ -1451,6 +1451,8 @@\n \n   # add Branch EFlowMergerCHS/eflow ParticleFlowCandidateCHS ParticleFlowCandidate\n   add Branch RunPUPPI/PuppiParticles ParticleFlowCandidate ParticleFlowCandidate\n+  add Branch EFlowMerger/eflow EFlowCandidate ParticleFlowCandidate\n+  add Branch PileUpMerger/stableParticles PileupStableParticle GenParticle\n \n   add Branch GenJetFinder/jets GenJet Jet\n   add Branch GenJetFinderAK8/jets GenJetAK8 Jet\n"
     },
     "delphes_card_CMS_JetClassII_mu80.tcl": {
-      "sha256": "c7e1bb9f500f0f80849f441399469899fe948f43b67bd9503d255d716c7783aa",
-      "byte_identical_to_release": false,
-      "diff_lines": 2,
-      "diff": "--- release\n+++ delphes_card_CMS_JetClassII_mu80.tcl\n@@ -99,7 +99,7 @@\n   set PileUpFile MinBias_100k.pileup\n \n   # average expected pile up\n-  set MeanPileUp 50\n+  set MeanPileUp 80\n \n    # maximum spread in the beam direction in m\n   set ZVertexSpread 0.25\n"
+      "sha256": "5711d91be914fa185ad7bfe58dd5dffbcd4aa568727cc63220f001d700a2bd6d",
+      "physics_identical_to_release": false,
+      "diff_lines": 4,
+      "diff": "--- release\n+++ delphes_card_CMS_JetClassII_mu80.tcl\n@@ -99,7 +99,7 @@\n   set PileUpFile MinBias_100k.pileup\n \n   # average expected pile up\n-  set MeanPileUp 50\n+  set MeanPileUp 80\n \n    # maximum spread in the beam direction in m\n   set ZVertexSpread 0.25\n@@ -1451,6 +1451,8 @@\n \n   # add Branch EFlowMergerCHS/eflow ParticleFlowCandidateCHS ParticleFlowCandidate\n   add Branch RunPUPPI/PuppiParticles ParticleFlowCandidate ParticleFlowCandidate\n+  add Branch EFlowMerger/eflow EFlowCandidate ParticleFlowCandidate\n+  add Branch PileUpMerger/stableParticles PileupStableParticle GenParticle\n \n   add Branch GenJetFinder/jets GenJet Jet\n   add Branch GenJetFinderAK8/jets GenJetAK8 Jet\n"
     },
     "delphes_card_CMS_JetClassII_mu140.tcl": {
-      "sha256": "046281cd3cfa47ee256a71d2a57d6d8569a3a77df1c9f390c85e939b1fe48e3b",
-      "byte_identical_to_release": false,
-      "diff_lines": 2,
-      "diff": "--- release\n+++ delphes_card_CMS_JetClassII_mu140.tcl\n@@ -99,7 +99,7 @@\n   set PileUpFile MinBias_100k.pileup\n \n   # average expected pile up\n-  set MeanPileUp 50\n+  set MeanPileUp 140\n \n    # maximum spread in the beam direction in m\n   set ZVertexSpread 0.25\n"
+      "sha256": "eef0aa511827cb9dc238e1571de086a2030d786e7d617e2a8b554cc3654a7133",
+      "physics_identical_to_release": false,
+      "diff_lines": 4,
+      "diff": "--- release\n+++ delphes_card_CMS_JetClassII_mu140.tcl\n@@ -99,7 +99,7 @@\n   set PileUpFile MinBias_100k.pileup\n \n   # average expected pile up\n-  set MeanPileUp 50\n+  set MeanPileUp 140\n \n    # maximum spread in the beam direction in m\n   set ZVertexSpread 0.25\n@@ -1451,6 +1451,8 @@\n \n   # add Branch EFlowMergerCHS/eflow ParticleFlowCandidateCHS ParticleFlowCandidate\n   add Branch RunPUPPI/PuppiParticles ParticleFlowCandidate ParticleFlowCandidate\n+  add Branch EFlowMerger/eflow EFlowCandidate ParticleFlowCandidate\n+  add Branch PileUpMerger/stableParticles PileupStableParticle GenParticle\n \n   add Branch GenJetFinder/jets GenJet Jet\n   add Branch GenJetFinderAK8/jets GenJetAK8 Jet\n"
     },
     "delphes_card_CMS_JetClassII_mu0_nopu.tcl": {
-      "sha256": "2f244d77fe15293ce5192f8732535a9d9d1248e4078ba76b352a2086b809bf3a",
-      "byte_identical_to_release": false,
-      "diff_lines": 8,
-      "diff": "--- release\n+++ delphes_card_CMS_JetClassII_mu0_nopu.tcl\n@@ -99,16 +99,16 @@\n   set PileUpFile MinBias_100k.pileup\n \n   # average expected pile up\n-  set MeanPileUp 50\n+  set MeanPileUp 0\n \n    # maximum spread in the beam direction in m\n-  set ZVertexSpread 0.25\n+  set ZVertexSpread 0.0\n \n   # maximum spread in time in s\n-  set TVertexSpread 800E-12\n+  set TVertexSpread 0.0\n \n   # vertex smearing formula f(z,t) (z,t need to be respectively given in m,s)\n-  set VertexDistributionFormula {exp(-(t^2/160e-12^2/2))*exp(-(z^2/0.053^2/2))}\n+  set VertexDistributionFormula {1.0}\n \n \n }\n"
+      "sha256": "157ce2af08b9a88d7620592ba0494c9ca329161839d6b8f344926c77af70a753",
+      "physics_identical_to_release": false,
+      "diff_lines": 10,
+      "diff": "--- release\n+++ delphes_card_CMS_JetClassII_mu0_nopu.tcl\n@@ -99,16 +99,16 @@\n   set PileUpFile MinBias_100k.pileup\n \n   # average expected pile up\n-  set MeanPileUp 50\n+  set MeanPileUp 0\n \n    # maximum spread in the beam direction in m\n-  set ZVertexSpread 0.25\n+  set ZVertexSpread 0.0\n \n   # maximum spread in time in s\n-  set TVertexSpread 800E-12\n+  set TVertexSpread 0.0\n \n   # vertex smearing formula f(z,t) (z,t need to be respectively given in m,s)\n-  set VertexDistributionFormula {exp(-(t^2/160e-12^2/2))*exp(-(z^2/0.053^2/2))}\n+  set VertexDistributionFormula {1.0}\n \n \n }\n@@ -1451,6 +1451,8 @@\n \n   # add Branch EFlowMergerCHS/eflow ParticleFlowCandidateCHS ParticleFlowCandidate\n   add Branch RunPUPPI/PuppiParticles ParticleFlowCandidate ParticleFlowCandidate\n+  add Branch EFlowMerger/eflow EFlowCandidate ParticleFlowCandidate\n+  add Branch PileUpMerger/stableParticles PileupStableParticle GenParticle\n \n   add Branch GenJetFinder/jets GenJet Jet\n   add Branch GenJetFinderAK8/jets GenJetAK8 Jet\n"
     }
   }
 }

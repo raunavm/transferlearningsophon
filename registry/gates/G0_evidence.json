@@ -39,9 +39,9 @@
     },
     "step_freeze": {
       "verdict": "FROZEN",
-      "config_hash": "a7a5b3878936dcb2f9ed370c31959ce471b091ff7f51dd9ee5c580b94c011d4a",
+      "config_hash": "349b3eb5abf4a382503c2d660201bc163da79dcaa6a82626f07b2d0e25962fd6",
       "artifact": "registry/gates/step_freeze.json (N_steps_full=1,600,000; batch 512; eta0=5e-4; ranger flat+decay; AMP)",
-      "amendment": "2026-07-19: train_e2.sh weaver-0.4.17 compatibility fix (dropped --data-split-num; --log-file -> --log). Loading-schedule/log-path only; identical across arms; prior hash ce915b81... superseded."
+      "amendment": "2026-07-19 (x2): train_e2.sh weaver-0.4.17 flags; network forward fixed to the 0.4.17 API and the network file added to the frozen set (freeze gap exposed by the make_weight model_setup crash). Prior hashes superseded."
     }
   },
   "unblocks_on_signoff": "E2 base-config freeze -> Stage 0 tuning launch (5 arms x 2 LR, 760 GPU-h)"

@@ -22,6 +22,10 @@ REPO = Path(__file__).resolve().parents[2]
 FROZEN_FILES = [  # the files that DEFINE the recipe, in hash order
     "experiments/E2/train_e2.sh",
     "experiments/E2/data/JetClassII_full_base.yaml",
+    # added 2026-07-19 (amendment): the network/architecture file is
+    # recipe-critical and belongs in the freeze — gap exposed when its
+    # weaver-0.4.17-incompatible forward crashed model_setup.
+    "experiments/E2/networks/example_ParticleTransformer_sophon.py",
 ]
 
 

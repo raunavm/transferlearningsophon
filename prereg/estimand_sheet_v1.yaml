@@ -8,8 +8,8 @@ meta:
   version: 1
   drafted: 2026-07-19
   plan_version: v5.1
-  config_hash: a7a5b3878936dcb2f9ed370c31959ce471b091ff7f51dd9ee5c580b94c011d4a  # registry/gates/step_freeze.json
-  config_hash_amendment: "2026-07-19: re-hash after weaver-0.4.17 compatibility fix in train_e2.sh (dropped --data-split-num, --log-file -> --log; loading-schedule/log-path only, identical across arms; prior hash ce915b81...)"
+  config_hash: 349b3eb5abf4a382503c2d660201bc163da79dcaa6a82626f07b2d0e25962fd6  # registry/gates/step_freeze.json
+  config_hash_amendment: "2026-07-19 (x2): (1) weaver-0.4.17 flag fix in train_e2.sh; (2) network forward fixed to the 0.4.17 API (no split-forward) + the network file ADDED to the frozen-file set (freeze gap). Prior hashes ce915b81..., a7a5b387... superseded."
   pi_signature: null            # PI signs here (name + date) -> then tag prereg-v1
   bound_phase_a_verdicts:
     kish_gate: "eval(test) QCD cell N_eff = 826,758 < 4e6 -> FPR 1e-4 NOT reportable; primary WP = 1e-3 (kish_table.parquet, 2026-07-19)"
