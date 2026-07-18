@@ -4,10 +4,11 @@
 # Add new processes with new ids only. run_number = the generation batch SEED.
 version: 1
 dsids:
-  # pilot processes (gen_configs/<name> in jetclass2_generation)
-  qcd:        100001
-  # signal genpacks — extend as the pilot's class-group list is drawn up;
-  # one dsid per gen_configs process directory, appended, never reused.
+  # the four release genpacks (gen_configs/jetclass2/<name>; fork README):
+  jetclass2/train_qcd:      100001   # QCD          (release: 240 jobs x 100k)
+  jetclass2/train_higgs2p:  100002   # Res2P, neutral X   (192 jobs x 100k)
+  jetclass2/train_higgspm2p: 100003  # Res2P, charged X   (144 jobs x 100k)
+  jetclass2/train_higgs4p:  100004   # Res34P (X->YY)     (1440 jobs x 100k)
 policy:
   - "one dsid per genpack process directory"
   - "append-only; renumbering forbidden after any event is generated"
