@@ -64,13 +64,19 @@ for MU in $MUS; do
   echo "  mu$MU done: $(echo "$T1 - $T0" | bc)s, $SZ bytes"
 done
 
-echo "=== ntupler per mu (requires §7.1.3 extension: NPU, isPU, raw EFlow) ==="
-if [ -n "${NTUPLER_CMD:-}" ]; then
+echo "=== ntupler per mu (extended makeNtuples: UID/split, NPU, pu-truth, raw EFlow) ==="
+# DSID from the frozen registry (configs/g/dsid_map.yaml in the analysis repo);
+# run_number := the generation SEED. Both are part of the immutable L5 UID.
+DSID=${DSID:?set DSID (from configs/g/dsid_map.yaml for PROC=$PROC)}
+NTUPLER_DIR=${NTUPLER_DIR:-$(dirname "$GENCFG_PATH")/delphes_analyzers}
+if [ -f "$NTUPLER_DIR/makeNtuples.C" ]; then
   for MU in $MUS; do
-    $NTUPLER_CMD delphes_mu${MU}.root ntuple_mu${MU}.root
+    MUVAL=${MU%b}; MUVAL=${MUVAL#0_nopu}; [ -z "$MUVAL" ] && MUVAL=0   # 50b->50, 0_nopu->0
+    ( cd "$NTUPLER_DIR" && root -b -q -l \
+        "makeNtuples.C++(\"$WORK/delphes_mu${MU}.root\",\"$WORK/ntuple_mu${MU}.root\",\"JetPUPPIAK8\",\"GenJetAK8\",false,false,${DSID},${SEED},${MUVAL})" )
   done
 else
-  echo "  NTUPLER_CMD unset — SKIPPED (extension not yet built); analyze_pilot"
+  echo "  makeNtuples.C not found under $NTUPLER_DIR — SKIPPED; analyze_pilot"
   echo "  runs (b),(f),(g) from the Delphes files/timing and defers the rest."
 fi
 

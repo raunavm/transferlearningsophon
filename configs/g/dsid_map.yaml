@@ -1,0 +1,14 @@
+# configs/g/dsid_map.yaml — immutable process id registry (L5 UID component)
+# dsid enters the split stamp SHA256(dsid:run:event:SALT) — NEVER renumber an
+# existing entry (it would silently re-split every event of that process).
+# Add new processes with new ids only. run_number = the generation batch SEED.
+version: 1
+dsids:
+  # pilot processes (gen_configs/<name> in jetclass2_generation)
+  qcd:        100001
+  # signal genpacks — extend as the pilot's class-group list is drawn up;
+  # one dsid per gen_configs process directory, appended, never reused.
+policy:
+  - "one dsid per genpack process directory"
+  - "append-only; renumbering forbidden after any event is generated"
+  - "run_pilot.sh refuses to run a process missing from this map"
