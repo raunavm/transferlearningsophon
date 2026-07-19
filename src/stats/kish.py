@@ -46,7 +46,8 @@ def kish_gate(weights, fpr_grid=(1e-4, 1e-3), event_ids=None,
     ne = n_eff_clustered(weights, event_ids) if event_ids is not None else n_eff(weights)
     eligible_1em4 = ne >= threshold
     grid = sorted(fpr_grid)  # tightest = smallest FPR first
-    reported = grid[0] if eligible_1em4 else next((f for f in grid if f >= 1e-3), grid[-1])
+    reported = (next((f for f in grid if f >= 1e-4), grid[-1]) if eligible_1em4
+                else next((f for f in grid if f >= 1e-3), grid[-1]))
     # relative binomial error at the reported WP: 1/sqrt(N_eff * p)
     rel_err = float("inf") if ne * reported == 0 else 1.0 / np.sqrt(ne * reported)
     return {

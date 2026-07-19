@@ -53,7 +53,7 @@ samples_per_epoch=$((10000 * 1024))
 samples_per_epoch_val=$((2500 * 1024))
 dataconfig="experiments/E2/data/JetClassII_${GRAN:-g188}.yaml"
 modelopts="experiments/E2/networks/example_ParticleTransformer_sophon.py --use-amp -o num_classes $NUMCLS -o fc_params [(512,0.1)]"
-dataopts="--num-workers 5 --fetch-step 1.0"
+dataopts="--num-workers 2 --fetch-step 1.0"   # 5->2 (amendment A3): 5 whole-file worker buffers OOM'd at BOTH 64Gi and 80Gi; loading-only knob, result-neutral, applied to all arms
 batchopts="--batch-size 512 --start-lr 5e-4"
 
 # train: {Res2P: 0000-0199, Res34P: 0000-0859, QCD: 0000-0279}

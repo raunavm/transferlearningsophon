@@ -34,7 +34,7 @@ REQUIRED_TRUTH_BRANCHES = [   # §7.1.3 ntupler extension — validated by (c)
     "event_npu",              # per-event number of pileup interactions
     "part_isPU",              # per-particle pileup-truth flag
     "rawpart_px", "rawpart_py", "rawpart_pz", "rawpart_energy",  # pre-PUPPI EFlow
-    "part_puppiw",            # per-particle PUPPI weight (needed for §7.8)
+    "part_puppi_weight",      # per-particle PUPPI weight (needed for §7.8)
 ]
 
 

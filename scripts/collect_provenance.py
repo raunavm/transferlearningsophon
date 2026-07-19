@@ -127,7 +127,11 @@ def main():
     total_train_flops = (macs * 2 * samples_seen * 3) if macs else None  # 2xMAC, fwd+bwd≈3x
     pwr_kw = (args.avg_power_w or TDP_W.get(args.gpu, 300)) / 1000.0
     energy_kwh = round(gpu_h * pwr_kw, 2) if gpu_h else None
-    best = max(epochs, key=lambda e: e["best"]) if epochs else {}
+    # weaver's running "best" is monotonic in the monitor direction, so the
+    # final epoch's value is the overall extremum whether higher- or lower-is-
+    # better; the best epoch is the first one that reached it (direction-agnostic).
+    _final_best = epochs[-1]["best"] if epochs else None
+    best = next((e for e in epochs if e["best"] == _final_best), {}) if epochs else {}
 
     rec = {
         "arm": args.arm, "seed": args.seed, "run_dir": args.run_dir,

@@ -74,7 +74,7 @@ def main():
         "optimizer": {"name": "ranger (weaver)", "start_lr": 5e-4,
                       "schedule": "weaver default flat+decay", "amp": True},
         "head": "fc_params [(512, 0.1)]",
-        "loader": {"num_workers": 5, "fetch_step": 1.0, "data_split_num": 200,
+        "loader": {"num_workers": 2, "fetch_step": 1.0,
                    "single_gpu_only": "seed_weaver.py wraps weaver.train in-process"},
         "train_e2_sh_epochs_var": epochs,
         "samples_per_epoch_expr": spe.group(1) if spe else None,

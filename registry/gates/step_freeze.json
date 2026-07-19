@@ -15,20 +15,19 @@
   },
   "head": "fc_params [(512, 0.1)]",
   "loader": {
-    "num_workers": 5,
+    "num_workers": 2,
     "fetch_step": 1.0,
-    "data_split_num": 200,
     "single_gpu_only": "seed_weaver.py wraps weaver.train in-process"
   },
   "train_e2_sh_epochs_var": 80,
   "samples_per_epoch_expr": "10000 * 1024",
   "file_hashes_sha256": {
-    "experiments/E2/train_e2.sh": "3cd5fb230d2b9ba38e44141bbf1f7217aa1b6f2106ddf5deabff3961b1731fe6",
+    "experiments/E2/train_e2.sh": "230f7700bc3baa66eb86db9d1adad42a79e5ee65c84b29d6d7c8fbc5d1d01e3f",
     "experiments/E2/data/JetClassII_full_base.yaml": "df45b6b9dd0f3e0726ea18132fef7d8525dc9d7e750ecd82ee5fa60cb441e625",
     "experiments/E2/networks/example_ParticleTransformer_sophon.py": "4be87b9976dfcdb5ffc07844f294d314bd77dc2ce39f9e40bc61ac7c3ec28f84",
     "experiments/E2/seed_weaver.py": "7775bab916fc3d6af7831ab02c174be04d990994ce0bbb8011f47ee64634cfab"
   },
-  "config_hash": "11931c79db8375bc50c602abf3e6f867f16ed61e0100f261e224601638386a10",
-  "git_commit_at_freeze": "7238d02e8c893c88b6b4f26e9b111e996ac415be",
+  "config_hash": "9106183d19606fbafa30feae6b06802cb192ff084913da9aeddc4c32e291a763",
+  "git_commit_at_freeze": "bbf711b59a313d096a386e702b580efab233baa4",
   "note": "Stage-0 LR grid per \u00a79.2 = {5e-4, 2.5e-4}. Any change to the frozen files invalidates config_hash and re-opens G0."
 }

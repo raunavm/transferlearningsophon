@@ -8,8 +8,8 @@ meta:
   version: 1
   drafted: 2026-07-19
   plan_version: v5.1
-  config_hash: 11931c79db8375bc50c602abf3e6f867f16ed61e0100f261e224601638386a10  # registry/gates/step_freeze.json
-  config_hash_amendment: "2026-07-19 (x3): (1) weaver-0.4.17 flag fix in train_e2.sh; (2) network forward fixed to the 0.4.17 API + network file ADDED to the frozen set; (3) seed_weaver.py ADDED to the frozen set — §9.3 DataLoader base-seed pin (cross-arm batch-stream desync fix), §3 cuDNN determinism, batch_stream_sha; network eval fn logs 'Eval AvgLoss' (§9.2 selection metric); head-seed sha256(K:seed) superseded (see plan_amendments A2). Prior hashes 349b3eb5..., ce915b81..., a7a5b387... superseded."
+  config_hash: 9106183d19606fbafa30feae6b06802cb192ff084913da9aeddc4c32e291a763  # registry/gates/step_freeze.json
+  config_hash_amendment: "2026-07-19 (x4): (1) weaver-0.4.17 flag fix in train_e2.sh; (2) network forward fixed to the 0.4.17 API + network file ADDED to the frozen set; (3) seed_weaver.py ADDED to the frozen set — §9.3 DataLoader base-seed pin (cross-arm batch-stream desync fix), §3 cuDNN determinism, batch_stream_sha; network eval fn logs 'Eval AvgLoss' (§9.2 selection metric); head-seed sha256(K:seed) superseded (see plan_amendments A2); (4) num_workers 5->2 in train_e2.sh (memory: 5 whole-file buffers OOM'd at 64 AND 80Gi; loading-only, result-neutral; A3). Prior hashes 11931c79..., 349b3eb5..., ce915b81..., a7a5b387... superseded."
   pi_signature: null            # PI signs here (name + date) -> then tag prereg-v1
   bound_phase_a_verdicts:
     kish_gate: "eval(test) QCD cell N_eff = 826,758 < 4e6 -> FPR 1e-4 NOT reportable; primary WP = 1e-3 (kish_table.parquet, 2026-07-19)"

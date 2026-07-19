@@ -7,6 +7,7 @@ meta:
   pi_signature: null           # co-signed with estimand_sheet_v1
 
 gpu_pressure:                  # applied strictly in order; stop when budget fits
+  order:
   - "stretch pool unfunded (E8/E5/E7-c/E10/E6 idle-only work stops first)"
   - "budget line 12 unspent (armed contingency C1 forgone — reported as such)"
   - "E4 mid-ladder rungs dropped (keep endpoints + the S3 fixed rung)"
