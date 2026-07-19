@@ -29,6 +29,16 @@
       "becomes": "train_e2.sh dataopts --num-workers 2 (config_hash re-hashed 11931c79->9106183d). num_workers is a loading-parallelism knob only (no optimizer / data-order / label effect), applied identically to all five arms, so the E2 same-sampled-jet-stream invariant is preserved. Also resolves the 5-workers-on-4-CPU oversubscription weaver warned about.",
       "reason": "Stage-0 could not complete an epoch at 64Gi OR 80Gi: the buffered-read + worker-buffer footprint expands to fill available RAM and the anonymous worker buffers still spike past the cgroup limit (empirically pinned at the 80Gi ceiling during epoch-0 training; one arm OOM-killed at 30 min, before validation). Raising memory does not help; reducing concurrent whole-file worker buffers is the root-cause fix. Seeding/determinism untouched (seed_weaver unchanged) so the A2 pairing proof still holds.",
       "verification": "freeze_steps.py recomputes config_hash=9106183d over the 4 frozen files; py_compile clean; relaunched Stage-0 is monitored through epoch-0 validation to confirm it completes without OOM before the remaining arms launch."
+    },
+    {
+      "id": "A4",
+      "date": "2026-07-19",
+      "section": "PLAN §9.4 loader config + step-freeze set",
+      "status": "PROPOSED — needs PI ack",
+      "was": "train_e2.sh dataopts --num-workers 2 --fetch-step 1.0; config_hash 9106183d.",
+      "becomes": "train_e2.sh dataopts --num-workers 2 --fetch-by-files --fetch-step 5 (config_hash re-hashed 9106183d->85fc9887). Diagnosis (cgroup anon/cache instrumentation): weaver 0.4.17's default event-fraction loader (fetch-by-files OFF, --fetch-step as an event fraction) RETAINS ~all loaded jets — anon climbs linearly and OOM-kills at ~5% of one epoch (74GB = 5% of the dataset), independent of num_workers (5 or 2) and fetch-step size (1.0 or 0.01). --fetch-by-files streams a few whole files per fetch and frees between fetches: memory becomes bounded (measured anon band 35-58GB, oscillating, no climb, over a 25-min CPU run vs OOM at 12 min for the event-fraction mode). This restores the chunked streaming the original Sophon recipe's --data-split-num 200 provided before weaver 0.4.17 removed that flag; loading knob applied identically to all arms, so the E2 same-sampled-jet-stream invariant holds.",
+      "reason": "E2 pre-training could not complete even one epoch at 64Gi or 80Gi. Raising memory and cutting num_workers/fetch-step did not help because the failure is retention (anon accumulation), not buffer size — proven by the cgroup anon-vs-cache trajectory. --fetch-by-files is weaver 0.4.17's supported streaming mode and the closest equivalent to the recipe's original --data-split-num.",
+      "verification": "CPU diagnostic (g188, cgroup anon/cache sampler): fetch-by-files ran 25 min with anon bounded 35-58GB and no climb, vs the event-fraction mode which OOM'd at 12 min with anon climbing 5->81GB. freeze_steps recomputes config_hash=85fc9887. Seeding/determinism untouched (seed_weaver unchanged) so the A2 pairing proof holds. Relaunched Stage-0 is monitored through a full epoch + validation to confirm."
     }
   ]
 }

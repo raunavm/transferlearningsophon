@@ -1,6 +1,6 @@
 {
   "artifact": "PLAN v5.1 \u00a76-A.5(d) step freeze  \u27e8BIND:G0\u27e9",
-  "frozen_on": "2026-07-18",
+  "frozen_on": "2026-07-19",
   "upstream_pin": "jet-universe/sophon@9dd6dd6 (train_sophon.sh recipe)",
   "N_steps_full": 1600000,
   "batch_size": 512,
@@ -16,18 +16,19 @@
   "head": "fc_params [(512, 0.1)]",
   "loader": {
     "num_workers": 2,
-    "fetch_step": 1.0,
+    "fetch_by_files": true,
+    "fetch_step": 5,
     "single_gpu_only": "seed_weaver.py wraps weaver.train in-process"
   },
   "train_e2_sh_epochs_var": 80,
   "samples_per_epoch_expr": "10000 * 1024",
   "file_hashes_sha256": {
-    "experiments/E2/train_e2.sh": "230f7700bc3baa66eb86db9d1adad42a79e5ee65c84b29d6d7c8fbc5d1d01e3f",
+    "experiments/E2/train_e2.sh": "88c1c2255d3d4ef65665ba3fe7fc7381617748b0a715f3f003edea20d7f58c70",
     "experiments/E2/data/JetClassII_full_base.yaml": "df45b6b9dd0f3e0726ea18132fef7d8525dc9d7e750ecd82ee5fa60cb441e625",
     "experiments/E2/networks/example_ParticleTransformer_sophon.py": "4be87b9976dfcdb5ffc07844f294d314bd77dc2ce39f9e40bc61ac7c3ec28f84",
     "experiments/E2/seed_weaver.py": "7775bab916fc3d6af7831ab02c174be04d990994ce0bbb8011f47ee64634cfab"
   },
-  "config_hash": "9106183d19606fbafa30feae6b06802cb192ff084913da9aeddc4c32e291a763",
-  "git_commit_at_freeze": "bbf711b59a313d096a386e702b580efab233baa4",
+  "config_hash": "85fc9887ec70efd5ad6fdc8cd456bc5f8194efcbc47a6e424d36b3b3958293e7",
+  "git_commit_at_freeze": "2416075ed57581abf135ffc2f51fc1942a9cad69",
   "note": "Stage-0 LR grid per \u00a79.2 = {5e-4, 2.5e-4}. Any change to the frozen files invalidates config_hash and re-opens G0."
 }

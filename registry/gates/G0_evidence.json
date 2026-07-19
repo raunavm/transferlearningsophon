@@ -39,9 +39,9 @@
     },
     "step_freeze": {
       "verdict": "FROZEN",
-      "config_hash": "9106183d19606fbafa30feae6b06802cb192ff084913da9aeddc4c32e291a763",
+      "config_hash": "85fc9887ec70efd5ad6fdc8cd456bc5f8194efcbc47a6e424d36b3b3958293e7",
       "artifact": "registry/gates/step_freeze.json (N_steps_full=1,600,000; batch 512; eta0=5e-4; ranger flat+decay; AMP)",
-      "amendment": "2026-07-19 (x4): (1) train_e2.sh weaver-0.4.17 flags; (2) network forward fixed to the 0.4.17 API + network file added to the frozen set (make_weight model_setup crash); (3) seed_weaver.py added to the frozen set with the §9.3 DataLoader base-seed pin (cross-arm batch-stream desync audit), the §3 cuDNN determinism policy, and batch_stream_sha; network eval fn now logs 'Eval AvgLoss' for the §9.2 LR selection; (4) num_workers 5->2 in train_e2.sh (memory OOM fix; loading-only, result-neutral; A3). Prior hashes (incl. 11931c79..., 349b3eb5...) superseded."
+      "amendment": "2026-07-19 (x5): (1) train_e2.sh weaver-0.4.17 flags; (2) network forward fixed to the 0.4.17 API + network file added to the frozen set (make_weight model_setup crash); (3) seed_weaver.py added to the frozen set with the §9.3 DataLoader base-seed pin (cross-arm batch-stream desync audit), the §3 cuDNN determinism policy, and batch_stream_sha; network eval fn now logs 'Eval AvgLoss' for the §9.2 LR selection; (4) num_workers 5->2 (A3); (5) --fetch-by-files --fetch-step 5 — the real OOM fix (0.4.17 event-fraction loader retained ~all loaded jets; restores --data-split-num chunked streaming; A4). Prior hashes (incl. 9106183d..., 11931c79..., 349b3eb5...) superseded."
     }
   },
   "unblocks_on_signoff": "E2 base-config freeze -> Stage 0 tuning launch (5 arms x 2 LR, 760 GPU-h)"
