@@ -195,6 +195,16 @@ def evaluate_classification_sophon(model, test_loader, dev, epoch, for_training=
     labels = defaultdict(list)
     labels_counts = []
     observers = defaultdict(list)
+    # A5: per-jet scores/labels are consumed ONLY by the tb_helper block below and by the
+    # `not for_training` (test) branch, so under training-validation without --tensorboard
+    # they are built and discarded. The cost is not the per-batch append (~376 KiB D2H) but
+    # the post-loop np.concatenate of ~5000 fragments into a contiguous N_val x num_classes
+    # array (1.83 GiB at 188 classes): allocating that while the loader holds ~50 GB inside
+    # an 80Gi cgroup drives sustained reclaim. Measured wall-clock between the eval loop's
+    # last log and the metric log: 126 min (g188) vs 13.8 min (g30) vs ~8.7 min eval loop
+    # itself. Skipping leaves total_correct/count and total_loss — the only values the
+    # training path returns or logs — bit-identical.
+    accumulate = (not for_training) or (tb_helper is not None)
     start_time = time.time()
     with torch.no_grad():
         with tqdm.tqdm(test_loader) as tq:
@@ -205,10 +215,10 @@ def evaluate_classification_sophon(model, test_loader, dev, epoch, for_training=
                 entry_count += label.shape[0]
                 model_output = model(*inputs)
                 logits, label, _ = _flatten_preds(model_output, label=label, mask=None)
-                scores.append(torch.softmax(logits.float(), dim=1).numpy(force=True))
-
-                for k, v in y.items():
-                    labels[k].append(_flatten_label(v, None).numpy(force=True))
+                if accumulate:
+                    scores.append(torch.softmax(logits.float(), dim=1).numpy(force=True))
+                    for k, v in y.items():
+                        labels[k].append(_flatten_label(v, None).numpy(force=True))
                 if not for_training:
                     for k, v in Z.items():
                         observers[k].append(v)
@@ -246,8 +256,9 @@ def evaluate_classification_sophon(model, test_loader, dev, epoch, for_training=
             ("Acc/%s (epoch)" % tb_mode, total_correct / count, epoch),
         ])
 
-    scores = np.concatenate(scores)
-    labels = {k: _concat(v) for k, v in labels.items()}
+    if accumulate:
+        scores = np.concatenate(scores)
+        labels = {k: _concat(v) for k, v in labels.items()}
 
     # customized evaluation: making ROC curves for tensorboard monitoring
     if tb_helper:
