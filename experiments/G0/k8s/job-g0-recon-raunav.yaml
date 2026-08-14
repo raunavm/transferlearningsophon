@@ -1,0 +1,106 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # G-0 RECON v2 — read-only, CPU-only.
+  #
+  # v1 finding: /jc2/jet_data holds exactly 2010 parquet files (matches the
+  # Phase A inventory), /jc2/shuffled_jet_data is EMPTY, and the
+  # transfer-learning:cu121 image has NO pyarrow — so that image cannot read
+  # parquet at all and is the wrong base for every G-0 job.
+  #
+  # v2 uses python:3.11-slim (pulls in seconds, not minutes) and installs
+  # pyarrow. Purpose is unchanged: learn the exact column names before writing
+  # the real audit, so the audit is a sure thing rather than a guess.
+  #
+  # Reads directory listings + ONE file's schema/metadata. Writes nothing.
+  name: g0-recon-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: recon
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -uo pipefail
+          pip install --quiet --no-cache-dir pyarrow numpy 2>&1 | tail -2
+          echo "===== jet_data listing (first 12) ====="
+          ls /jc2/jet_data | head -12
+          echo "  ... total: $(ls /jc2/jet_data | wc -l)"
+          echo
+          echo "===== filename families ====="
+          ls /jc2/jet_data | sed -E 's/[0-9]+//g' | sort | uniq -c | sort -rn | head -20
+          echo
+          python3 - <<'PY'
+          import glob, os, sys
+          import pyarrow.parquet as pq
+
+          files = sorted(glob.glob('/jc2/jet_data/*.parquet'))
+          print(f"===== {len(files)} parquet files =====")
+          if not files:
+              sys.exit(0)
+
+          p = files[0]
+          f = pq.ParquetFile(p)
+          md = f.metadata
+          print(f"\nexemplar: {os.path.basename(p)}")
+          print(f"  rows={md.num_rows}  row_groups={md.num_row_groups}  cols={md.num_columns}")
+          print(f"  file_bytes={os.path.getsize(p):,}")
+
+          sch = f.schema_arrow
+          print(f"\n  --- all {len(sch.names)} columns ---")
+          for name, typ in zip(sch.names, sch.types):
+              print(f"    {name:<32} {typ}")
+
+          need = ["jet_label", "jet_pt", "jet_sdmass", "genjet_sdmass",
+                  "part_d0val", "part_d0err", "part_dzval", "part_dzerr",
+                  "part_charge", "part_isChargedHadron", "part_isNeutralHadron",
+                  "part_isPhoton", "part_isElectron", "part_isMuon"]
+          have = set(sch.names)
+          print("\n  --- G-0 required columns ---")
+          for n in need:
+              print(f"    {'OK     ' if n in have else 'MISSING'}  {n}")
+
+          print("\n  --- fuzzy match on key substrings ---")
+          for key in ("sdmass", "genjet", "d0", "dz", "charge", "label", "_pt", "energy"):
+              hits = [c for c in sch.names if key.lower() in c.lower()]
+              print(f"    {key:<9} -> {hits}")
+
+          # cost model for the real audit: how big are the scalar columns we need?
+          print("\n  --- per-column compressed size in this file (scalar cols only) ---")
+          rg = md.row_group(0)
+          tot = 0
+          for i in range(rg.num_columns):
+              c = rg.column(i)
+              nm = c.path_in_schema
+              if any(k in nm for k in ("jet_label", "jet_pt", "jet_sdmass", "genjet")):
+                  print(f"    {nm:<32} {c.total_compressed_size:>12,} bytes (row group 0)")
+                  tot += c.total_compressed_size
+          print(f"    {'SUM of needed scalars':<32} {tot:>12,} bytes per row group")
+          print(f"    row groups per file: {md.num_row_groups}")
+          print(f"    -> approx per-file read for the audit: {tot*md.num_row_groups:,} bytes")
+          print(f"    -> approx TOTAL over {len(files)} files: "
+                f"{tot*md.num_row_groups*len(files)/1e9:.2f} GB")
+          PY
+        resources:
+          requests: { memory: "4Gi", cpu: "1", ephemeral-storage: "4Gi" }
+          limits:   { memory: "4Gi", cpu: "1", ephemeral-storage: "4Gi" }
+        volumeMounts:
+        - { name: jc2, mountPath: /jc2, readOnly: true }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true

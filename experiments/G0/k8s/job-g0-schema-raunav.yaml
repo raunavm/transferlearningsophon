@@ -1,0 +1,90 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # SCHEMA PROBE — lists the actual columns of ONE JetClass-II parquet file.
+  #
+  # WHY: D2 specifies a multiplicative mass correction on the UNGROOMED jet
+  # mass, against a generator-level target, masked on genjet_sdmass > 0. But:
+  #   * `genjet_sdmass` appears nowhere in any data config in this repo
+  #   * an ungroomed jet mass branch appears NOWHERE in this repo at all
+  #   * the base JetClass-II config's observers carry only `jet_sdmass`
+  # and job-g0-audit-raunav.yaml already reads `genjet_sdmass` on the
+  # ASSUMPTION that it exists. That assumption has never been tested.
+  #
+  # This matters because the failure is silent. weaver registers `observers`
+  # with to='test' only (config.py:203), so a mass head wired through observers
+  # trains on NOTHING -- no error, no NaN, just a regression number that means
+  # nothing for the whole run.
+  #
+  # COST: opens one file's FOOTER only. No column data is read. Seconds, CPU,
+  # read-only on /jc2, writes nothing anywhere.
+  name: g0-schema-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: schema
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          pip install --quiet --no-cache-dir pyarrow 2>&1 | tail -1
+          python3 - <<'PY'
+          import glob
+          import pyarrow.parquet as pq
+
+          files = sorted(glob.glob("/jc2/jet_data/*.parquet"))
+          print(f"files visible: {len(files)}", flush=True)
+          if not files:
+              raise SystemExit("FATAL: no parquet files at /jc2/jet_data/")
+
+          # Footer only -- no column data is read off disk.
+          schema = pq.ParquetFile(files[0]).schema_arrow
+          names = list(schema.names)
+          print(f"probe file : {files[0]}")
+          print(f"n_columns  : {len(names)}\n")
+
+          print("=== every JET-LEVEL column (particle-level arrays excluded) ===")
+          for n in names:
+              t = str(schema.field(n).type)
+              if "list" not in t:
+                  print(f"  {n:34s} {t}")
+
+          print("\n=== the branches D2 needs ===")
+          WANT = {
+              "genjet_sdmass":  "D2 regression target; mask is genjet_sdmass > 0",
+              "jet_sdmass":     "groomed reco mass (in the config today)",
+              "jet_mass":       "UNGROOMED reco mass -- D2's stated denominator",
+              "jet_energy":     "for an ungroomed mass fallback via 4-vector",
+              "jet_pt":         "head conditioning",
+          }
+          for b, why in WANT.items():
+              print(f"  {'PRESENT' if b in names else 'ABSENT ':8s} {b:18s} {why}")
+
+          print("\n=== anything else that looks like a mass ===")
+          for n in names:
+              if "mass" in n.lower() and n not in WANT:
+                  print(f"  {n:34s} {schema.field(n).type}")
+          PY
+        resources:
+          requests: { memory: "2Gi", cpu: "1", ephemeral-storage: "4Gi" }
+          limits:   { memory: "2Gi", cpu: "1", ephemeral-storage: "4Gi" }
+        volumeMounts:
+        - { name: jc2, mountPath: /jc2, readOnly: true }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true

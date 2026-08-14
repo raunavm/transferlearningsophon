@@ -74,3 +74,15 @@ runs/
 # notes) stays on disk but is never tracked. Already-committed ones must be
 # untracked once with `git rm --cached <file>` (they remain on disk).
 *.md
+
+# Research vault — local-only, and LARGE. research/raw/ alone is ~335 MB of
+# fetched PDFs and .hyperresearch/hyperresearch.db is ~41 MB. The notes are
+# .md and already covered above; these rules catch the rest.
+#
+# This is not only repo hygiene: every training pod CLONES this repo, so
+# anything tracked here is re-downloaded on every launch, for every arm.
+research/
+.hyperresearch/
+
+# TREE_REVIEW.txt is a review document that happens not to end in .md.
+docs/

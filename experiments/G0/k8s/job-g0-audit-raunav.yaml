@@ -1,0 +1,204 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # G-0 PER-CLASS AUDIT — read-only on /jc2, CPU-only, no GPU.
+  #
+  # Measures, per NATIVE jet_label (0..187), over ALL 2010 files:
+  #   1. raw stored count and SELECTED count under 200<pt<2500 & 20<sdmass<500
+  #      -> fills the empty measured columns of stream_share_audit.v1.csv
+  #   2. generator-match fraction (genjet_sdmass > 0) and its pT dependence
+  #   3. log(genjet_sdmass / jet_sdmass) profile  [gates the D2 mass target]
+  #   4. m/pT distribution                        [gates the q/g tier]
+  #
+  # COST: the 4 scalar columns are ~1.15 MB/file compressed (measured by recon),
+  # so ~2.3 GB total. At the in-region ~129 MB/s that is ~18 s of I/O. This is a
+  # FULL audit over all 2010 files, which removes the sample-and-scale inference
+  # in the previous per-class numbers.
+  #
+  # Aggregation to R42_Q1 / R16_Q1 groups happens LOCALLY, not here: the label
+  # map is not on GitHub, and per-native-label output is the right interface
+  # anyway.
+  #
+  # Writes ONE json to /data/results/g0/. Reads /jc2 read-only.
+  name: g0-audit-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: audit
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          pip install --quiet --no-cache-dir pyarrow numpy 2>&1 | tail -1
+          mkdir -p /data/results/g0
+          python3 - <<'PY'
+          import glob, json, os, time
+          import numpy as np
+          import pyarrow.parquet as pq
+
+          # jet_energy + jet_eta are here to RECONSTRUCT the ungroomed mass:
+          # job-g0-schema-raunav confirmed there is NO stored `jet_mass` branch,
+          # only `jet_sdmass`. D2 specifies an UNGROOMED denominator, so the
+          # denominator has to be derived from the 4-vector or D2 has to change.
+          # We measure the log-ratio against BOTH denominators and let the RED
+          # mass-target decision be made on data instead of in advance.
+          COLS = ["jet_label", "jet_pt", "jet_eta", "jet_energy",
+                  "jet_sdmass", "genjet_sdmass"]
+          PT_LO, PT_HI = 200.0, 2500.0
+          SD_LO, SD_HI = 20.0, 500.0
+          NLAB = 188
+
+          files = sorted(glob.glob("/jc2/jet_data/*.parquet"))
+          print(f"{len(files)} files", flush=True)
+
+          raw    = np.zeros(NLAB, dtype=np.int64)   # stored rows per label
+          sel    = np.zeros(NLAB, dtype=np.int64)   # rows passing selection
+          matched= np.zeros(NLAB, dtype=np.int64)   # selected AND genjet_sdmass>0
+          # log-ratio accumulators (selected & matched only)
+          lr_n   = np.zeros(NLAB, dtype=np.int64)      # vs GROOMED jet_sdmass
+          lr_sum = np.zeros(NLAB, dtype=np.float64)
+          lr_sq  = np.zeros(NLAB, dtype=np.float64)
+          lru_n   = np.zeros(NLAB, dtype=np.int64)     # vs UNGROOMED 4-vector mass
+          lru_sum = np.zeros(NLAB, dtype=np.float64)
+          lru_sq  = np.zeros(NLAB, dtype=np.float64)
+          # pT-binned match fraction: 6 bins over [200,2500]
+          PT_EDGES = np.array([200, 400, 600, 900, 1300, 1800, 2500], dtype=np.float64)
+          NPT = len(PT_EDGES) - 1
+          pt_sel     = np.zeros((NLAB, NPT), dtype=np.int64)
+          pt_matched = np.zeros((NLAB, NPT), dtype=np.int64)
+          # m/pT histogram, 60 bins over [0, 0.6]
+          MPT_EDGES = np.linspace(0.0, 0.6, 61)
+          mpt_hist = np.zeros((NLAB, 60), dtype=np.int64)
+          # per-family file tallies, so train/val/test can be split locally
+          per_file = {}
+
+          t0 = time.time()
+          for i, p in enumerate(files):
+              t = pq.read_table(p, columns=COLS)
+              lab = t["jet_label"].to_numpy(zero_copy_only=False).astype(np.int64)
+              pt  = t["jet_pt"].to_numpy(zero_copy_only=False).astype(np.float64)
+              sd  = t["jet_sdmass"].to_numpy(zero_copy_only=False).astype(np.float64)
+              gsd = t["genjet_sdmass"].to_numpy(zero_copy_only=False).astype(np.float64)
+              eta = t["jet_eta"].to_numpy(zero_copy_only=False).astype(np.float64)
+              en  = t["jet_energy"].to_numpy(zero_copy_only=False).astype(np.float64)
+
+              # Ungroomed mass from the 4-vector: |p| = pt*cosh(eta), m^2 = E^2 - |p|^2.
+              # E^2 - |p|^2 goes slightly NEGATIVE from float32 rounding for
+              # near-massless jets, so clamp at zero before the sqrt rather than
+              # propagating NaN into the accumulators.
+              ung = np.sqrt(np.maximum(en * en - (pt * np.cosh(eta)) ** 2, 0.0))
+
+              np.add.at(raw, lab, 1)
+              m = (pt > PT_LO) & (pt < PT_HI) & (sd > SD_LO) & (sd < SD_HI)
+              ls = lab[m]
+              np.add.at(sel, ls, 1)
+
+              gm = m & (gsd > 0.0)
+              np.add.at(matched, lab[gm], 1)
+
+              # log ratio on selected+matched, guarding sd>0 (selection already gives sd>20)
+              lg = np.log(gsd[gm] / sd[gm])
+              np.add.at(lr_n,   lab[gm], 1)
+              np.add.at(lr_sum, lab[gm], lg)
+              np.add.at(lr_sq,  lab[gm], lg * lg)
+
+              # same ratio against the UNGROOMED denominator, on the subset where
+              # the reconstructed mass is strictly positive
+              um = gm & (ung > 0.0)
+              lgu = np.log(gsd[um] / ung[um])
+              np.add.at(lru_n,   lab[um], 1)
+              np.add.at(lru_sum, lab[um], lgu)
+              np.add.at(lru_sq,  lab[um], lgu * lgu)
+
+              b = np.clip(np.digitize(pt[m], PT_EDGES) - 1, 0, NPT - 1)
+              np.add.at(pt_sel, (ls, b), 1)
+              bg = np.clip(np.digitize(pt[gm], PT_EDGES) - 1, 0, NPT - 1)
+              np.add.at(pt_matched, (lab[gm], bg), 1)
+
+              r = np.clip(np.digitize(sd[m] / pt[m], MPT_EDGES) - 1, 0, 59)
+              np.add.at(mpt_hist, (ls, r), 1)
+
+              per_file[os.path.basename(p)] = {
+                  "rows": int(len(lab)), "selected": int(m.sum()),
+                  "labels_present": sorted(set(int(x) for x in np.unique(lab))),
+              }
+              if (i + 1) % 200 == 0:
+                  el = time.time() - t0
+                  print(f"  {i+1}/{len(files)}  {el:.0f}s  ({(i+1)/el:.1f} files/s)", flush=True)
+
+          tot_raw, tot_sel = int(raw.sum()), int(sel.sum())
+          print(f"\nTOTAL raw={tot_raw:,}  selected={tot_sel:,}  "
+                f"eff={tot_sel/tot_raw*100:.2f}%  in {time.time()-t0:.0f}s")
+
+          with np.errstate(invalid="ignore", divide="ignore"):
+              lr_mean = np.where(lr_n > 0, lr_sum / np.maximum(lr_n, 1), np.nan)
+              lr_var  = np.where(lr_n > 1,
+                                 (lr_sq - lr_n * lr_mean**2) / np.maximum(lr_n - 1, 1), np.nan)
+              lru_mean = np.where(lru_n > 0, lru_sum / np.maximum(lru_n, 1), np.nan)
+              lru_var  = np.where(lru_n > 1,
+                                  (lru_sq - lru_n * lru_mean**2) / np.maximum(lru_n - 1, 1), np.nan)
+
+          out = {
+              "n_files": len(files),
+              "selection": {"pt": [PT_LO, PT_HI], "sdmass": [SD_LO, SD_HI]},
+              "total_raw": tot_raw, "total_selected": tot_sel,
+              "pt_edges": PT_EDGES.tolist(),
+              "mpt_edges": MPT_EDGES.tolist(),
+              "per_label": {
+                  str(k): {
+                      "raw": int(raw[k]), "selected": int(sel[k]),
+                      "selected_and_matched": int(matched[k]),
+                      "match_fraction": (float(matched[k]) / sel[k]) if sel[k] else None,
+                      "log_ratio_ungroomed_n": int(lru_n[k]),
+                      "log_ratio_ungroomed_mean": (None if not np.isfinite(lru_mean[k])
+                                                   else float(lru_mean[k])),
+                      "log_ratio_ungroomed_std": (None if not np.isfinite(lru_var[k])
+                                                  else float(np.sqrt(max(lru_var[k], 0.0)))),
+                      "log_ratio_n": int(lr_n[k]),
+                      "log_ratio_mean": (None if not np.isfinite(lr_mean[k]) else float(lr_mean[k])),
+                      "log_ratio_std": (None if not np.isfinite(lr_var[k]) or lr_var[k] < 0
+                                        else float(np.sqrt(lr_var[k]))),
+                      "pt_selected": pt_sel[k].tolist(),
+                      "pt_matched": pt_matched[k].tolist(),
+                      "mpt_hist": mpt_hist[k].tolist(),
+                  } for k in range(NLAB)
+              },
+              "per_file": per_file,
+          }
+          dest = "/data/results/g0/g0_audit.json"
+          with open(dest, "w") as fh:
+              json.dump(out, fh)
+          print(f"wrote {dest} ({os.path.getsize(dest)/1e6:.1f} MB)")
+
+          nz = int((raw > 0).sum())
+          print(f"labels with rows: {nz}/188")
+          print(f"overall match fraction (selected): "
+                f"{matched.sum()/max(tot_sel,1)*100:.3f}%")
+          PY
+        resources:
+          requests: { memory: "16Gi", cpu: "4", ephemeral-storage: "8Gi" }
+          limits:   { memory: "16Gi", cpu: "4", ephemeral-storage: "8Gi" }
+        volumeMounts:
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

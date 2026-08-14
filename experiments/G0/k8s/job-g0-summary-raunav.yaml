@@ -1,0 +1,152 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # G-0 SUMMARY — reduce /data/results/g0/g0_audit.json to the numbers that gate
+  # a decision, and print them. The JSON is 1.2 MB; only aggregates are needed
+  # locally, so this prints rather than copies.
+  #
+  # Gates addressed:
+  #   D2 mass target   log(genjet_sdmass / X) per family, for X = jet_sdmass
+  #                    (groomed) AND X = the 4-vector ungroomed mass. The
+  #                    schema probe established there is no stored jet_mass, so
+  #                    the ungroomed denominator is reconstructed, and BOTH are
+  #                    measured so the RED call is made on data.
+  #   masking rule     per-family generator-match fraction and its pT slope.
+  #   q/g tier         m/pT overlap between the light-quark and gluon classes.
+  #
+  # CAVEAT the output must carry: the audit scanned all 2,010 files, so these
+  # profiles include the val and TEST splits. For a generator-level kinematic
+  # ratio the leakage is negligible, but it IS peeking, and per_file holds only
+  # counts, so a train-only profile cannot be reconstructed from this JSON. A
+  # train-restricted re-run is a one-line change and 644 s.
+  name: g0-summary-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: summary
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          pip install --quiet --no-cache-dir numpy 2>&1 | tail -1
+          python3 - <<'PY'
+          import json
+          import numpy as np
+
+          d = json.load(open("/data/results/g0/g0_audit.json"))
+          P = d["per_label"]
+          pt_edges = np.array(d["pt_edges"], dtype=float)
+          mpt_edges = np.array(d["mpt_edges"], dtype=float)
+
+          # Native blocks: 0-14 Res2P, 15-160 Res34P, 161-187 QCD.
+          BLOCKS = {"Res2P": range(0, 15), "Res34P": range(15, 161), "QCD": range(161, 188)}
+
+          def pooled(labels, nkey, mkey, skey):
+              """Pool per-label mean/std into one mean/std without the raw events."""
+              n = np.array([P[str(k)][nkey] or 0 for k in labels], dtype=float)
+              mu = np.array([P[str(k)][mkey] or 0.0 for k in labels], dtype=float)
+              sd = np.array([P[str(k)][skey] or 0.0 for k in labels], dtype=float)
+              N = n.sum()
+              if N == 0:
+                  return 0, None, None
+              m = float((n * mu).sum() / N)
+              # within + between decomposition
+              var = float((n * (sd ** 2 + (mu - m) ** 2)).sum() / N)
+              return int(N), m, float(np.sqrt(max(var, 0.0)))
+
+          print("=" * 78)
+          print("D2 MASS TARGET -- log(genjet_sdmass / denominator), pooled per family")
+          print("=" * 78)
+          print(f"{'family':8s} {'denominator':11s} {'n':>14s} {'mean':>9s} {'std':>8s} "
+                f"{'exp(mean)':>10s}")
+          for fam, labs in BLOCKS.items():
+              for tag, keys in (("groomed", ("log_ratio_n", "log_ratio_mean", "log_ratio_std")),
+                                ("ungroomed", ("log_ratio_ungroomed_n",
+                                               "log_ratio_ungroomed_mean",
+                                               "log_ratio_ungroomed_std"))):
+                  N, m, s = pooled(labs, *keys)
+                  if N == 0:
+                      print(f"{fam:8s} {tag:11s} {N:14,d}  (no matched jets)")
+                      continue
+                  print(f"{fam:8s} {tag:11s} {N:14,d} {m:9.4f} {s:8.4f} {np.exp(m):10.4f}")
+
+          print()
+          print("READ: mean is the mean log-ratio, so exp(mean) is the multiplicative")
+          print("scale factor the head must learn on average. std is the spread the head")
+          print("has to resolve -- a LARGER std means more for the auxiliary to do, and is")
+          print("what decides which denominator gives a usable dynamic range.")
+
+          print()
+          print("=" * 78)
+          print("MASKING RULE -- generator-match fraction (genjet_sdmass > 0), selected jets")
+          print("=" * 78)
+          for fam, labs in BLOCKS.items():
+              sel = sum(P[str(k)]["selected"] for k in labs)
+              mat = sum(P[str(k)]["selected_and_matched"] for k in labs)
+              print(f"{fam:8s} selected={sel:14,d}  matched={mat:14,d}  "
+                    f"frac={100.0 * mat / sel if sel else float('nan'):7.3f}%")
+          worst = sorted(((P[str(k)]["match_fraction"] or 1.0, k) for k in range(188)))[:8]
+          print("\nworst 8 native labels by match fraction:")
+          for f, k in worst:
+              print(f"  label {k:3d}  {100 * f:7.3f}%  (selected {P[str(k)]['selected']:,})")
+
+          print()
+          print("pT dependence of the match fraction, pooled over all resonant labels:")
+          ptsel = np.zeros(len(pt_edges) - 1)
+          ptmat = np.zeros(len(pt_edges) - 1)
+          for k in range(0, 161):
+              ptsel += np.array(P[str(k)]["pt_selected"], dtype=float)
+              ptmat += np.array(P[str(k)]["pt_matched"], dtype=float)
+          for i in range(len(ptsel)):
+              f = 100.0 * ptmat[i] / ptsel[i] if ptsel[i] else float("nan")
+              print(f"  pT [{pt_edges[i]:6.0f},{pt_edges[i+1]:6.0f})  "
+                    f"selected={ptsel[i]:12,.0f}  match={f:7.3f}%")
+
+          print()
+          print("=" * 78)
+          print("q/g TIER -- m/pT distribution overlap")
+          print("=" * 78)
+          # label_X_qq = 3, label_X_gg = 9 (2-prong light-quark vs gluon pair)
+          for name, k in (("label_X_qq (3)", 3), ("label_X_gg (9)", 9)):
+              h = np.array(P[str(k)]["mpt_hist"], dtype=float)
+              if h.sum() == 0:
+                  print(f"{name:16s} empty")
+                  continue
+              p = h / h.sum()
+              c = 0.5 * (mpt_edges[:-1] + mpt_edges[1:])
+              mean = float((p * c).sum())
+              med = float(c[np.searchsorted(np.cumsum(p), 0.5)])
+              print(f"{name:16s} n={h.sum():12,.0f}  mean m/pT={mean:.4f}  median={med:.4f}")
+          h3 = np.array(P["3"]["mpt_hist"], dtype=float)
+          h9 = np.array(P["9"]["mpt_hist"], dtype=float)
+          if h3.sum() and h9.sum():
+              p3, p9 = h3 / h3.sum(), h9 / h9.sum()
+              overlap = float(np.minimum(p3, p9).sum())
+              tv = 0.5 * float(np.abs(p3 - p9).sum())
+              print(f"\nhistogram overlap (sum of min) = {overlap:.4f}")
+              print(f"total-variation distance       = {tv:.4f}")
+              print("READ: overlap near 1 means m/pT cannot separate q from g, so a q/g")
+              print("probe built on this corpus is measuring substructure, not kinematics.")
+          PY
+        resources:
+          requests: { memory: "4Gi", cpu: "1", ephemeral-storage: "4Gi" }
+          limits:   { memory: "4Gi", cpu: "1", ephemeral-storage: "4Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

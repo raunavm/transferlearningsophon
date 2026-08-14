@@ -1,0 +1,29 @@
+kind,name,path_or_ref,value,bytes,byte_reproducible,note
+artefact,00_README.md,hierarchy/00_README.md,bbe15791259ab60d05769151b4626fc07e7b779a98d483ef73b73b3ed115928e,26803,yes,
+artefact,01_class_master.csv,hierarchy/01_class_master.csv,c81d1a6a48143748d682a7ea34d4c2f85cf0a7f2be74328c36391be6e574d114,146517,yes,
+artefact,02_rung_R161_groups.csv,hierarchy/02_rung_R161_groups.csv,8d6c7d4519c5b5fb8d0da5674ac46d38d6f80cce574aa58d7eb1d5fdaa7a3b53,31637,yes,
+artefact,02_rung_L187_groups.csv,hierarchy/02_rung_L187_groups.csv,8d1ab5b0621c023e1be0abc35f2e24ff43c070cf9ba66ca79f9b59825a787b97,73983,yes,
+artefact,02_rung_R45_groups.csv,hierarchy/02_rung_R45_groups.csv,785660a270457f2218eabdd2b9d3665f38d07af138fe5f29e651c809e834317f,18850,yes,
+artefact,02_rung_R29_groups.csv,hierarchy/02_rung_R29_groups.csv,ac1b0a56ff93fa8ef8b959445635640f569ffc79dd02f3d5b42d7a31504c146c,14732,yes,
+artefact,02_rung_R15_groups.csv,hierarchy/02_rung_R15_groups.csv,78d13699fa846e0a09497c2021c18a08518dc98013021d165edb3e8186fe7a68,9297,yes,
+artefact,02_rung_R9_groups.csv,hierarchy/02_rung_R9_groups.csv,883a616e590d5a73c73d3d6de70d03ba9035992c7de1f2b3ef6dabc579556bf0,7578,yes,
+artefact,02_rung_Q27_groups.csv,hierarchy/02_rung_Q27_groups.csv,221dd5e90deeb47988a0986ac34cbc3bc2eddf6e5737286cc63bf72500c7380c,8461,yes,
+artefact,02_rung_Q1_groups.csv,hierarchy/02_rung_Q1_groups.csv,4caf91275d8ee516075b65f5e9a4f2405e387695e78acafa549c9319fafac25f,959,yes,
+artefact,02_rung_L43res_groups.csv,hierarchy/02_rung_L43res_groups.csv,8c983521634853fc453d3ccd214774eee606d9f48e45a8e132b0da16179b5937,6578,yes,
+artefact,02_rung_rand42_d1_groups.csv,hierarchy/02_rung_rand42_d1_groups.csv,90976ca0eece5f9cf0a11bc75fe778fe1284d9049e47b8980627255cd188b8da,9615,yes,
+artefact,02_rung_rand42_d2_groups.csv,hierarchy/02_rung_rand42_d2_groups.csv,c2f826c067a0ac9877028d9681cc4f56aad47367005deec1d9e3cfd9787befcc,9694,yes,
+artefact,02_rung_rand42_d3_groups.csv,hierarchy/02_rung_rand42_d3_groups.csv,fe20bb147e68d85df848cb6c3737a75d948964415f3e9695c9bca21e89db52d0,9750,yes,
+artefact,03_rung_summary.csv,hierarchy/03_rung_summary.csv,ab555690725ee79dd56015929177449a98dcb98a3e832c56f0edb0adbe99e171,4556,yes,
+artefact,03b_trend_se_factors.csv,hierarchy/03b_trend_se_factors.csv,4a0d4e575fb40f0e10541db2e9c8f6ec992850b61edc057761c39b9243150ebb,2946,yes,
+artefact,04_refinement_assertions.csv,hierarchy/04_refinement_assertions.csv,a8df105d994eba95eebceb595853c33975b04aebf287ed6e03e1dcb4d0aea9be,241873,yes,
+artefact,05_bs_mechanism.csv,hierarchy/05_bs_mechanism.csv,64b0229ad0dd9bc32f646d0257876b73ac0571712921302f43051bdbcb59f1d3,5470,yes,
+generator,build_hierarchy.py,scripts/build_hierarchy.py,b3a8e03842235d59aa92641605e593eb137c22ac33a927fa0d9559a2542e86d0,101822,yes,the only thing that produced these files
+input,JetClassII_full.yaml,sophon@9dd6dd6:data/JetClassII/JetClassII_full.yaml,df45b6b9dd0f3e0726ea18132fef7d8525dc9d7e750ecd82ee5fa60cb441e625,10817,yes,"every class name, reweighting group and class weight is parsed from this file"
+commit,sophon,/Users/raunavmendiratta/dev/sophon,9dd6dd6a261aa6d5fd2e56f015068127b36854f9,,n/a,pinned analysis repo
+commit,sophon clone ~/sophon,/Users/raunavmendiratta/sophon,9dd6dd6a261aa6d5fd2e56f015068127b36854f9,,n/a,agrees with pin
+commit,sophon clone ~/dev/sophon,/Users/raunavmendiratta/dev/sophon,9dd6dd6a261aa6d5fd2e56f015068127b36854f9,,n/a,agrees with pin
+commit,sophon clone ~/e1_refs/sophon,/Users/raunavmendiratta/e1_refs/sophon,9dd6dd6a261aa6d5fd2e56f015068127b36854f9,,n/a,agrees with pin
+commit,weaver-core (local clone),/Users/raunavmendiratta/e1_refs/weaver-core,c97de3c83d2bc74d2b444d5afa24d4696e8be860,,n/a,branch dev/custom_train_eval; train_sophon.sh does NOT pin a commit -- see handoff/pins.md
+checkpoint,Sophon released model.pt,models/JetClassII_Sophon/model.pt,cc7c33b522e796b5bbf0aa9bb5b01361c964f4ef3acebdd9682d7519c095b824,9304246,n/a,downloaded from huggingface.co/jet-universe/sophon/resolve/main/models/JetClassII_Sophon/model.pt
+note,self-exclusion,hierarchy/06_hashes.csv,,,yes,06_hashes.csv cannot contain its own hash. The workbook's 06 tab is written before the workbook exists and therefore lacks the workbook row that this CSV has.
+artefact,hierarchy_artefact.xlsx,hierarchy/hierarchy_artefact.xlsx,a84d822047e1c9ce728a0a2aa89a03e087fca36011a6ec5ae209539b865c6cc5,195151,yes,"Excel rendering of the CSVs, one tab per file; zip member timestamps normalised to 1980-01-01 so the workbook is byte-reproducible for a fixed zlib version."

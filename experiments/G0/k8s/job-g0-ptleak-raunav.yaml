@@ -1,0 +1,172 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # G-0 MEASUREMENT 3 -- the pT-LEAK REGRESSION. This carries G-0's KILL CRITERION.
+  #
+  # THE QUESTION: D1 keeps Sophon preprocessing and restores kinematics at the
+  # HEAD, on the premise that the trunk "never sees an absolute momentum". That
+  # premise is known to be false in kind: four of the seventeen pf_features
+  # (part_d0val, part_d0err, part_dzval, part_dzerr) are detector-unit lengths in
+  # millimetres that the 500 GeV rescaling does not touch, and d0err/dzerr are
+  # readouts of a Delphes resolution table indexed by absolute track pT and |eta|
+  # (audit/feature_scale_audit.csv). Only the MAGNITUDE is unknown.
+  #
+  # KILL CRITERION (docs/GATES.md): if absolute pT is strongly recoverable from
+  # these features, D1's premise fails and the preprocessing decision reopens --
+  # which would retro-void any ladder trained under it.
+  #
+  # WHAT THIS IS AND IS NOT:
+  # This is the DATA-ONLY upper bound: how much absolute scale is present in the
+  # inputs at all. It needs no trained model and costs no GPU.
+  # audit/pt_recoverability_probe_spec.md specifies a SECOND, different probe --
+  # regression from the frozen 128-d trunk latent -- which measures how much of
+  # that leak the trunk actually PROPAGATES. That one requires a checkpoint and
+  # cannot run yet. Do not conflate them: this bounds the leak, that measures it.
+  #
+  # Targets, per the spec:
+  #   ln jet_pt      primary        -- the scale-invariance claim
+  #   |jet_eta|      secondary      -- tests the resolution-table |eta| pathway
+  #   jet_eta signed NEGATIVE CONTROL -- MUST fail. part_deta is sign-flipped by
+  #                                   sign(jet_eta) (makeNtuples.C:408) and no
+  #                                   other feature carries the sign. If signed
+  #                                   eta IS recoverable, the probe itself is
+  #                                   wrong and every other number here is suspect.
+  #
+  # ln jet_pt rather than jet_pt: the reweighting is flat over log-spaced pT bins,
+  # so ln pT is ~uniform on the training distribution, which makes R^2 readable
+  # against a defined prior. RMSE in ln pT IS the fractional pT resolution.
+  name: g0-ptleak-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: ptleak
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          pip install --quiet --no-cache-dir pyarrow numpy scikit-learn 2>&1 | tail -1
+          python3 - <<'PY'
+          import glob, json
+          import numpy as np
+          import pyarrow.parquet as pq
+          from sklearn.linear_model import Ridge
+          from sklearn.ensemble import HistGradientBoostingRegressor
+          from sklearn.model_selection import train_test_split
+          from sklearn.metrics import r2_score, mean_squared_error
+
+          # TRAIN-SPLIT SHARDS ONLY. The kill criterion must not be evaluated on
+          # data the arms will be tested on.
+          files = ([f"/jc2/jet_data/Res2P_{i:04d}.parquet" for i in range(0, 3)] +
+                   [f"/jc2/jet_data/Res34P_{i:04d}.parquet" for i in range(0, 3)] +
+                   [f"/jc2/jet_data/QCD_{i:04d}.parquet" for i in range(0, 3)])
+          files = [f for f in files if glob.glob(f)]
+          print(f"shards: {len(files)}", flush=True)
+
+          schema = pq.ParquetFile(files[0]).schema_arrow
+          part_cols = [n for n in schema.names if n.startswith("part_")]
+          print("particle-level columns available:")
+          for n in part_cols:
+              print(f"   {n}")
+
+          # The leak features named in docs/GATES.md, restricted to those present.
+          WANT = ["part_d0val", "part_d0err", "part_dzval", "part_dzerr",
+                  "part_charge", "part_isChargedHadron", "part_isNeutralHadron",
+                  "part_isPhoton", "part_isElectron", "part_isMuon"]
+          use = [c for c in WANT if c in part_cols]
+          print(f"\nusing {len(use)} of {len(WANT)} named leak features: {use}")
+          missing = [c for c in WANT if c not in part_cols]
+          if missing:
+              print(f"ABSENT (recorded, not silently dropped): {missing}")
+
+          cols = use + ["jet_pt", "jet_eta", "jet_sdmass"]
+          X, y_pt, y_eta = [], [], []
+          for p in files:
+              t = pq.read_table(p, columns=cols)
+              jpt = t["jet_pt"].to_numpy(zero_copy_only=False).astype(np.float64)
+              jeta = t["jet_eta"].to_numpy(zero_copy_only=False).astype(np.float64)
+              jsd = t["jet_sdmass"].to_numpy(zero_copy_only=False).astype(np.float64)
+              sel = (jpt > 200) & (jpt < 2500) & (jsd > 20) & (jsd < 500)
+
+              feats = []
+              for c in use:
+                  arr = t[c].to_pylist()
+                  # Per-jet summary statistics of each constituent-level feature.
+                  # The leak, if it exists, lives in the SCALE of d0err/dzerr, so
+                  # location and spread statistics are the right summaries.
+                  m = np.zeros((len(arr), 5), dtype=np.float64)
+                  for i, v in enumerate(arr):
+                      a = np.asarray(v, dtype=np.float64)
+                      if a.size == 0:
+                          continue
+                      m[i] = (a.mean(), a.std(), np.median(a), a.min(), a.max())
+                  feats.append(m)
+              n_part = np.array([len(v) for v in t[use[0]].to_pylist()], dtype=np.float64)
+              F = np.hstack(feats + [n_part[:, None]])
+              X.append(F[sel]); y_pt.append(jpt[sel]); y_eta.append(jeta[sel])
+              print(f"  {p.split('/')[-1]}  kept {sel.sum():,}", flush=True)
+
+          X = np.vstack(X)
+          y_pt = np.concatenate(y_pt); y_eta = np.concatenate(y_eta)
+          X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+          print(f"\ndesign matrix: {X.shape}")
+
+          TARGETS = {
+              "ln_jet_pt   (PRIMARY)":      np.log(y_pt),
+              "abs_jet_eta (SECONDARY)":    np.abs(y_eta),
+              "jet_eta     (NEG CONTROL)":  y_eta,
+          }
+          out = {}
+          print(f"\n{'target':26s} {'model':8s} {'R^2':>8s} {'RMSE':>9s}")
+          print("-" * 56)
+          for name, y in TARGETS.items():
+              Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.3, random_state=0)
+              for label, mdl in (("ridge", Ridge(alpha=1.0)),
+                                 ("gbdt", HistGradientBoostingRegressor(
+                                     max_iter=200, random_state=0))):
+                  mdl.fit(Xtr, ytr)
+                  pred = mdl.predict(Xte)
+                  r2 = r2_score(yte, pred)
+                  rmse = float(np.sqrt(mean_squared_error(yte, pred)))
+                  out[f"{name}|{label}"] = {"r2": float(r2), "rmse": rmse}
+                  print(f"{name:26s} {label:8s} {r2:8.4f} {rmse:9.4f}")
+
+          print()
+          print("HOW TO READ THIS")
+          print("  ln_jet_pt R^2 near 0  -> the trunk CANNOT reconstruct absolute pT")
+          print("                           from these features. D1's premise survives.")
+          print("  ln_jet_pt R^2 large   -> KILL. D1 reopens; the preprocessing fork")
+          print("                           returns to the run matrix BEFORE any arm runs.")
+          print("  RMSE in ln pT is the fractional pT resolution directly.")
+          print("  If the NEGATIVE CONTROL (signed eta) is also recoverable, the probe")
+          print("  is broken and no number above may be used.")
+
+          json.dump(out, open("/data/results/g0/g0_ptleak.json", "w"), indent=2)
+          print("\nwrote /data/results/g0/g0_ptleak.json")
+          PY
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "20Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
