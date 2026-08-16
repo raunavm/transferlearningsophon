@@ -67,9 +67,16 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 https://github.com/raunavm/transferlearningsophon.git \
+          # SAME TAG as the training jobs, and that is load-bearing, not tidiness.
+          # The sidecar filename embeds md5(configs/arms/<ARM>.yaml). If this job
+          # and the training jobs resolve to different commits, the arm configs
+          # differ, the md5s differ, and every training job fails its sidecar
+          # guard -- loudly, but only after this whole pass has been paid for.
+          git clone --depth 1 --branch arms-s1 \
+            https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
+          git rev-parse HEAD
           pip install --no-cache-dir -q pyarrow || exit 1
 
           OUT=/data/results/mtx/makeweight

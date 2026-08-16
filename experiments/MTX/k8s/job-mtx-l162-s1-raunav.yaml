@@ -56,7 +56,7 @@ spec:
         # Pin all three arms to ONE ref. A branch name here means three arms
         # launched at different times can run different code.
         - name: REPO_REF
-          value: "arms-s1"
+          value: "mtx-s1"
         args:
         - |
           set -euo pipefail
@@ -166,7 +166,7 @@ spec:
             --data-test /jc2/jet_data/Res2P_{0250..0299}.parquet /jc2/jet_data/Res34P_{1075..1289}.parquet /jc2/jet_data/QCD_{0350..0419}.parquet \
             --data-config configs/arms/L162.yaml \
             --no-remake-weights \
-            --network-config experiments/E1/ParT_sophon_arch_10c.py \
+            --network-config experiments/MTX/ParT_sophon_arch_mtx.py \
             -o num_classes 162 -o fc_params '[(512,0.1)]' \
             --use-amp --batch-size 512 --start-lr 5e-4 \
             --num-workers 2 --fetch-by-files --fetch-step 5 \
@@ -197,12 +197,22 @@ spec:
           # 20Gi ephemeral, not 200Gi: nothing is staged locally, the corpus is
           # streamed. A 200Gi request narrows an already narrow node pool for
           # storage that is never used.
-          requests: { memory: "64Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
-          limits:   { memory: "64Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          requests: { memory: "64Gi", cpu: "8", nvidia.com/a100: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "64Gi", cpu: "8", nvidia.com/a100: "1", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: jc2,  mountPath: /jc2, readOnly: true }
         - { name: data, mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
+      # The us-west A100 nodes (node-{1-1..2-4}.sdsc.optiputer.net) advertise
+      # `nvidia.com/a100: 8` and `nvidia.com/gpu: 0` -- the generic name is NOT
+      # served there. A request for nvidia.com/gpu on these nodes is not an
+      # error; it is unschedulable forever, which looks exactly like a busy
+      # queue. They also carry an `nvidia.com/gpu` taint. Its effect is
+      # PreferNoSchedule (soft), so this toleration is not strictly required,
+      # but it stops the scheduler deprioritising us against pods that do set
+      # it -- which every other GPU job on these nodes does.
+      tolerations:
+      - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

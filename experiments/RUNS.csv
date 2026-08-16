@@ -1,0 +1,20 @@
+run_id,launched_utc,status,reason,manifest_path
+# Ledger per docs/RECORD.md section 4. Killed and crashed runs belong here too:
+# a ledger of only successful runs is a selection effect, and reported seed
+# variance conditioned on convergence understates the spread.
+#
+# BACKFILLED 2026-08-15. Rows below E1 were reconstructed from
+# experiments/E1/eval_results.json and experiments/E1/E1_REPORT.md, which record
+# EVAL dates, not launch timestamps. launched_utc is marked unknown where the
+# launch time is not recoverable from a committed artifact rather than guessed.
+# Runs from this date forward are written at launch, not at completion.
+e1-armp-s1,2026-07-10T00:00:00Z,complete,macro_auc_ovr 0.9878 acc 0.8607 on test_20M; gate PASS vs published 0.9877,experiments/E1/eval_results.json
+e1-armp-s2,unknown,superseded,training resumed 2026-07-17; never appears in eval_results.json runs[] - 3x3 matrix is asymmetric,
+e1-armp-s3,unknown,complete,macro_auc_ovr 0.9877 acc 0.8605 on test_20M,experiments/E1/eval_results.json
+e1-arms-s1,2026-07-10T00:00:00Z,complete,macro_auc_ovr 0.9797 acc 0.8180 on test_20M,experiments/E1/eval_results.json
+e1-arms-s2,unknown,complete,macro_auc_ovr 0.9793 acc 0.8164 on test_20M,experiments/E1/eval_results.json
+e1-arms-s3,unknown,complete,macro_auc_ovr 0.9794 acc 0.8166 on test_20M,experiments/E1/eval_results.json
+g0-ptleak,unknown,complete,G-0 KILL CRITERION FIRED: GBDT R2 0.582 on ln jet_pt and 0.823 on abs eta from impact-parameter features; D1 premise measured false,/data/results/g0/g0_ptleak.json
+g0-audit,unknown,complete,mass-target denominator profiles over 164M matched jets; computed over all 2010 files so includes val+test - train-only rerun still owed,/data/results/g0/g0_audit.json
+w0-pilot,unknown,complete,preprocessing verified: g188 49.22 pct top-1 on 188 classes (92.5x chance) strict load of 237 tensors,
+w0-rank,unknown,unknown,effective-rank sweep across E2 stage0_hi rungs; NO OUTPUT RECORDED IN REPO - result exists on PVC or nowhere,
