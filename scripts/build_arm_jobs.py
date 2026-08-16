@@ -101,7 +101,7 @@ DATA_DIR = "/jc2/jet_data"
 # I7b: both arms of a seed pair must land on the SAME GPU model, or the pairing
 # gain the seed budget assumes is silently lost. One product string, no
 # allow-list, so a pair cannot straddle two models.
-GPU_PRODUCT = "NVIDIA-A100-SXM4-80GB"
+GPU_PRODUCT = "NVIDIA-GeForce-RTX-3090"
 
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 
@@ -128,11 +128,11 @@ metadata:
   # BUDGET: {spe:,} samples/epoch x {epochs} epochs = {total:,} examples seen
   #         (~6.1 effective passes over 110,087,593 selected training jets).
   #
-  # backoffLimit is 1 ON PURPOSE. Raising it only helps if the run can resume
-  # from a checkpoint; without verified resume a retry restarts from scratch and
-  # burns the budget again. E1 used 12, but E1 staged a much smaller corpus and
-  # had a fail-fast GPU smoke test in front of it. Raise this only after
-  # checkpoint-resume is demonstrated.
+  # backoffLimit is 0 ON PURPOSE, not 1. A retry does not resume -- no
+  # --load-epoch is wired -- so it restarts at epoch 0 in the SAME ${{OUT}} and
+  # overwrites net_best_epoch_state.pt with a worse model. That is destroying a
+  # checkpoint (CLAUDE.md section 8) on top of burning a second full budget on
+  # an identical failure. Relaunch by hand after reading the logs.
   #
   # Region is pinned because weaver STREAMS from the CephFS PVC at SDSC and is
   # I/O-bound, not GPU-bound: a cross-region pod does not run slowly, it runs at
@@ -141,7 +141,7 @@ metadata:
   name: mtx-{arm_lc}-s{seed}-raunav
   namespace: cms-ml
 spec:
-  backoffLimit: 1
+  backoffLimit: 0
   template:
     spec:
       restartPolicy: Never
@@ -279,10 +279,9 @@ spec:
             --seed {seed} \\
             --data-train {train_files} \\
             --data-val {val_files} \\
-            --data-test {test_files_plain} \\
             --data-config configs/arms/{arm}.yaml \\
             --no-remake-weights \\
-            --network-config experiments/E1/ParT_sophon_arch_10c.py \\
+            --network-config experiments/MTX/ParT_sophon_arch_mtx.py \\
             -o num_classes {k} -o fc_params '[(512,0.1)]' \\
             --use-amp --batch-size {batch} --start-lr {lr} \\
             {data_opts} \\
@@ -290,35 +289,50 @@ spec:
             --num-epochs {epochs} --optimizer ranger \\
             --model-prefix ${{OUT}}/net \\
             --log ${{OUT}}/train.log \\
-            --predict-output ${{OUT}}/pred.root \\
             --tensorboard mtx_{arm}_s{seed}
 
-          # pred.root is not optional: docs/GATES.md makes a run without cached
-          # ROC arrays a FAILED run even if its AUC is right.
+          # NO in-pod test evaluation here. This is deliberate.
           #
-          # --data-test is passed WITHOUT the Res2P:/Res34P:/QCD: prefixes that
-          # --data-train carries. On --data-train the prefix is how weaver groups
-          # files for reweighting. On --data-test it names an evaluation GROUP,
-          # and weaver then renames the output per group -- pred_Res2P.root,
-          # pred_Res34P.root, pred_QCD.root -- and never writes pred.root at all
-          # (train.py:985-989, group name from train.py:322-333). This guard
-          # would then fire after a full GPU-week, marking the run failed and
-          # skipping the tensorboard copy below. Unprefixed gives one combined
-          # test evaluation over all 335 files, which is what the ROC analysis
-          # wants anyway. E1 never hit this: its training job passed no
-          # --data-test at all and evaluated in a separate job.
-          [ -s ${{OUT}}/pred.root ] || {{ echo "FATAL: no pred.root written"; exit 1; }}
+          # weaver accumulates EVERY test score in RAM and then concatenates
+          # (utils/nn/tools.py: per-batch append, then np.concatenate). Over the
+          # 27,448,839 selected test jets that is K-dependent and large:
+          #     K=162  17.8 GB of scores, ~35.6 GB peak at the concatenate
+          #     K=43    4.7 GB                9.4 GB
+          #     K=17    1.9 GB                3.7 GB
+          # on top of a training process whose measured anon band is 35-58 GB.
+          # L162 would OOM at roughly day 8 -- AFTER the whole budget was spent
+          # and BEFORE any output guard could fire.
+          #
+          # It is also an I1 problem: failure probability would be ~8x higher
+          # for L162 than R16_Q1, so the arms would not face equal risk, and the
+          # asymmetry runs along the studied variable.
+          #
+          # E1 reached the same conclusion and evaluated from the frozen
+          # checkpoint in a separate job. docs/GATES.md's requirement to cache
+          # full ROC arrays is met by that eval job reading
+          # net_best_epoch_state.pt -- not by doing it inside the training pod.
           cp -r ./runs ${{OUT}}/tb 2>/dev/null || true
         resources:
           # 20Gi ephemeral, not 200Gi: nothing is staged locally, the corpus is
           # streamed. A 200Gi request narrows an already narrow node pool for
           # storage that is never used.
-          requests: {{ memory: "64Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
-          limits:   {{ memory: "64Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
+          requests: {{ memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
+          limits:   {{ memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
         volumeMounts:
         - {{ name: jc2,  mountPath: /jc2, readOnly: true }}
         - {{ name: data, mountPath: /data }}
         - {{ name: dshm, mountPath: /dev/shm }}
+      # Every GPU node in this pool carries an `nvidia.com/gpu` taint. Its effect
+      # is PreferNoSchedule (soft), so this is not strictly required, but without
+      # it the scheduler deprioritises us against every other GPU job, all of
+      # which do set it.
+      #
+      # Deliberately NOT tolerated: `nautilus.io/hardware` and
+      # `nautilus.io/reservation:*`. The first is stripped by an admission
+      # webhook anyway (the Job template keeps it, the Pod does not), and the
+      # second marks nodes belonging to other groups.
+      tolerations:
+      - {{ key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -341,7 +355,7 @@ spec:
       # DataLoader workers pass tensors through shared memory; the container
       # default /dev/shm is 64 MB, which stalls or crashes multi-worker loading.
       - name: dshm
-        emptyDir: {{ medium: Memory, sizeLimit: "16Gi" }}
+        emptyDir: {{ medium: Memory, sizeLimit: "8Gi" }}
 """
 
 
@@ -438,7 +452,15 @@ def main() -> int:
     def canon(t: str) -> str:
         # Blank out ONLY the four fields a job is allowed to vary in. Anything
         # else that differs is a confound, and this is the check that catches it.
-        t = re.sub(r"|".join(ARMS), "ARM", t, flags=re.I)
+        # Both spellings of every arm name: the config form (`R16_Q1`) and the
+        # RFC-1123 form used in metadata.name / RUN_ID (`r16q1`, underscore
+        # stripped because Kubernetes rejects it). Longest-first so `R16_Q1` is
+        # consumed before a shorter alternative can match a prefix of it.
+        # Missing the underscore-free form made this check fail closed: it is
+        # what alerted me that arm_lc had changed shape.
+        names = sorted({a for a in ARMS} | {a.replace("_", "") for a in ARMS},
+                       key=len, reverse=True)
+        t = re.sub("|".join(names), "ARM", t, flags=re.I)
         # Two spellings reach the same value: weaver takes `-o num_classes K`,
         # the manifest writer takes `--num-classes K`. Both are allowed to vary.
         t = re.sub(r"num[_-]classes \d+", "num_classes K", t)
