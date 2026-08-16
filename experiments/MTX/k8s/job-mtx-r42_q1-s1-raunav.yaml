@@ -28,7 +28,12 @@ metadata:
   name: mtx-r42_q1-s1-raunav
   namespace: cms-ml
 spec:
-  backoffLimit: 1
+  # 0, not 1. There is no --load-epoch resume wired here, so a retry does
+  # not continue -- it restarts at epoch 0 in the SAME ${OUT} and
+  # overwrites net_best_epoch_state.pt with a worse model. That is
+  # destroying a checkpoint (CLAUDE.md section 8), on top of burning a
+  # second 8-day A100 budget on an identical failure. Relaunch by hand.
+  backoffLimit: 0
   template:
     spec:
       restartPolicy: Never
@@ -56,7 +61,7 @@ spec:
         # Pin all three arms to ONE ref. A branch name here means three arms
         # launched at different times can run different code.
         - name: REPO_REF
-          value: "mtx-s1"
+          value: "mtx-s1.1"
         args:
         - |
           set -euo pipefail
@@ -163,7 +168,6 @@ spec:
             --seed 1 \
             --data-train Res2P:/jc2/jet_data/Res2P_{0000..0199}.parquet Res34P:/jc2/jet_data/Res34P_{0000..0859}.parquet QCD:/jc2/jet_data/QCD_{0000..0279}.parquet \
             --data-val /jc2/jet_data/Res2P_{0200..0249}.parquet /jc2/jet_data/Res34P_{0860..1074}.parquet /jc2/jet_data/QCD_{0280..0349}.parquet \
-            --data-test /jc2/jet_data/Res2P_{0250..0299}.parquet /jc2/jet_data/Res34P_{1075..1289}.parquet /jc2/jet_data/QCD_{0350..0419}.parquet \
             --data-config configs/arms/R42_Q1.yaml \
             --no-remake-weights \
             --network-config experiments/MTX/ParT_sophon_arch_mtx.py \
@@ -174,24 +178,30 @@ spec:
             --num-epochs 80 --optimizer ranger \
             --model-prefix ${OUT}/net \
             --log ${OUT}/train.log \
-            --predict-output ${OUT}/pred.root \
             --tensorboard mtx_R42_Q1_s1
 
-          # pred.root is not optional: docs/GATES.md makes a run without cached
-          # ROC arrays a FAILED run even if its AUC is right.
+          # NO in-pod test evaluation here. This is deliberate.
           #
-          # --data-test is passed WITHOUT the Res2P:/Res34P:/QCD: prefixes that
-          # --data-train carries. On --data-train the prefix is how weaver groups
-          # files for reweighting. On --data-test it names an evaluation GROUP,
-          # and weaver then renames the output per group -- pred_Res2P.root,
-          # pred_Res34P.root, pred_QCD.root -- and never writes pred.root at all
-          # (train.py:985-989, group name from train.py:322-333). This guard
-          # would then fire after a full GPU-week, marking the run failed and
-          # skipping the tensorboard copy below. Unprefixed gives one combined
-          # test evaluation over all 335 files, which is what the ROC analysis
-          # wants anyway. E1 never hit this: its training job passed no
-          # --data-test at all and evaluated in a separate job.
-          [ -s ${OUT}/pred.root ] || { echo "FATAL: no pred.root written"; exit 1; }
+          # weaver accumulates EVERY test score in RAM and then concatenates
+          # (utils/nn/tools.py: per-batch append, then np.concatenate). Over the
+          # 27,448,839 selected test jets that is K-dependent and large:
+          #     K=162  17.8 GB of scores, ~35.6 GB peak at the concatenate
+          #     K=43    4.7 GB                9.4 GB
+          #     K=17    1.9 GB                3.7 GB
+          # against this pod's 64Gi, on a process whose training-only band was
+          # measured at 35-58 GB, with dshm counting against the same limit.
+          # L162 would OOM at roughly day 8 -- AFTER the whole 80-epoch budget
+          # was spent, and BEFORE any output guard could fire. backoffLimit
+          # would then buy a second identical 8-day failure.
+          #
+          # It is also an I1 problem in its own right: failure probability would
+          # be ~8x higher for L162 than for R16_Q1, so the arms would not face
+          # equal risk, and the asymmetry runs along the studied variable.
+          #
+          # E1 reached the same conclusion the same way and evaluated from the
+          # frozen checkpoint in a separate job. docs/GATES.md's requirement to
+          # cache full ROC arrays is met by that eval job reading
+          # net_best_epoch_state.pt -- not by doing it inside the training pod.
           cp -r ./runs ${OUT}/tb 2>/dev/null || true
         resources:
           # 20Gi ephemeral, not 200Gi: nothing is staged locally, the corpus is

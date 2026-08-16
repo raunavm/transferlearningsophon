@@ -73,24 +73,60 @@ def _derive_seeds(master: int) -> dict[str, int] | None:
 
 
 def _torch_env() -> dict:
-    """GPU and framework provenance. Never guessed -- null if torch is absent."""
+    """GPU and framework provenance. Never guessed -- null if torch is absent.
+
+    The cudnn flags here are a PRE-TRAINING snapshot and are named to say so.
+    This script runs BEFORE seed_weaver.py, deliberately: a run that dies must
+    still leave a manifest. But seed_weaver sets `cudnn.deterministic = True`
+    and `cudnn.benchmark = False` in its own process, after this one has exited.
+    An earlier version recorded these as plain `cudnn_deterministic` and so
+    reported `false` for every deterministic run -- the exact opposite of the
+    truth, in a field `docs/RECORD.md` treats as evidence.
+
+    So: `*_at_manifest_write` is what this process observed (torch defaults),
+    and `*_intended` is what seed_weaver will set. The authoritative record of
+    the realised value is seed_weaver's own stdout in train.log.
+    """
     out = {"torch_version": None, "cuda_version": None, "cudnn_version": None,
            "gpu_device_name": None, "n_gpu": None,
-           "cudnn_deterministic": None, "cudnn_benchmark": None}
+           "cudnn_deterministic_at_manifest_write": None,
+           "cudnn_benchmark_at_manifest_write": None,
+           "cudnn_deterministic_intended": True,
+           "cudnn_benchmark_intended": False}
     try:
         import torch
         out["torch_version"] = torch.__version__
         out["cuda_version"] = torch.version.cuda
         out["cudnn_version"] = (torch.backends.cudnn.version()
                                 if torch.backends.cudnn.is_available() else None)
-        out["cudnn_deterministic"] = bool(torch.backends.cudnn.deterministic)
-        out["cudnn_benchmark"] = bool(torch.backends.cudnn.benchmark)
+        out["cudnn_deterministic_at_manifest_write"] = bool(
+            torch.backends.cudnn.deterministic)
+        out["cudnn_benchmark_at_manifest_write"] = bool(
+            torch.backends.cudnn.benchmark)
         if torch.cuda.is_available():
             out["n_gpu"] = torch.cuda.device_count()
             out["gpu_device_name"] = torch.cuda.get_device_name(0)
     except Exception:
         pass
     return out
+
+
+def _weaver_installed() -> str | None:
+    """The weaver actually importable in this image.
+
+    CLAUDE.md and this file previously declared the pin `c97de3c`
+    (hqucms/weaver-core, dev/custom_train_eval). The image ships RELEASED
+    weaver 0.4.17, and the two are not interchangeable: under `c97de3c`,
+    `--fetch-step` is `type=float`, so the `--fetch-step 5` these jobs pass
+    becomes `5.0` and raises TypeError in the DataLoader worker on the first
+    training batch. The jobs work only because the image does NOT contain the
+    commit that was claimed. Record what is installed, not what we believe.
+    """
+    try:
+        import weaver
+        return getattr(weaver, "__version__", None)
+    except Exception:
+        return None
 
 
 def main() -> int:
@@ -120,9 +156,21 @@ def main() -> int:
 
         "provenance": {
             "repo_commit": _git("rev-parse", "HEAD"),
-            "repo_dirty": bool(_git("status", "--porcelain")),
+            # Ignore the reweighting sidecar the job copies in before this runs.
+            # Counting it made `repo_dirty` true on EVERY run, which makes the
+            # field useless precisely when it would matter.
+            "repo_dirty": bool(_git("status", "--porcelain",
+                                    ":(exclude)configs/arms/*.auto.yaml")),
+            "repo_dirty_detail": _git("status", "--porcelain",
+                                      ":(exclude)configs/arms/*.auto.yaml"),
+            # What is ACTUALLY importable, measured. See _weaver_installed.
+            "weaver_version_installed": _weaver_installed(),
             # Expected pins, recorded so a mismatch is visible after the fact.
-            "weaver_commit_expected": "c97de3c",
+            # NOT c97de3c: that pin is wrong for this image and would break
+            # --fetch-step. Kept as a separate field so the discrepancy between
+            # what docs claim and what runs stays visible rather than papered
+            # over. Reconcile in CLAUDE.md section 4 before quoting either.
+            "weaver_pin_claimed_in_docs": "c97de3c",
             "sophon_commit_expected": "9dd6dd6",
             # Tags move; digests do not. Injected by the job spec if available.
             "image_digest": os.environ.get("IMAGE_DIGEST"),
@@ -145,8 +193,38 @@ def main() -> int:
             "master_seed": a.seed,
             "seeds": _derive_seeds(a.seed),
             "stream_names": list(STREAMS),
-            "cudnn_deterministic": env["cudnn_deterministic"],
-            "cudnn_benchmark": env["cudnn_benchmark"],
+            # Which of those four actually govern anything, measured against
+            # seed_weaver.py's real execution order rather than its intent.
+            #
+            # Runtime order is: trunk_init -> data_sampling -> main() -> [inside
+            # model_setup] head_init -> build model -> dropout -> DataLoader
+            # draws its base_seed. weaver builds trunk AND head in one
+            # model_setup call, so:
+            #   trunk_init     overwritten by data_sampling before anything is
+            #                  built                                    -> INERT
+            #   data_sampling  overwritten by head_init/dropout before the
+            #                  DataLoader ever draws                    -> INERT
+            #   head_init      seeds ALL weight init, trunk included   -> ACTIVE
+            #   dropout        seeds data order AND dropout masks      -> ACTIVE
+            #
+            # I7's actual guarantee is intact, and that is the part that matters:
+            # `dropout` is seeded AFTER model construction, so data order is a
+            # function of (master_seed, "dropout") alone and CANNOT be offset by
+            # head size. All three arms therefore see the same stream order
+            # despite K differing. The four-stream scheme is what is recorded
+            # above; this field records what is realised, so the manifest does
+            # not document a mechanism the run does not implement.
+            "effective_streams": {
+                "all_weight_init": "head_init",
+                "data_order_and_dropout": "dropout",
+                "inert": ["trunk_init", "data_sampling"],
+            },
+            "cudnn_deterministic_at_manifest_write":
+                env["cudnn_deterministic_at_manifest_write"],
+            "cudnn_benchmark_at_manifest_write":
+                env["cudnn_benchmark_at_manifest_write"],
+            "cudnn_deterministic_intended": env["cudnn_deterministic_intended"],
+            "cudnn_benchmark_intended": env["cudnn_benchmark_intended"],
         },
 
         "hardware": {
