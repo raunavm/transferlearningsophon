@@ -1,6 +1,29 @@
 #!/usr/bin/env python3
 """Emit experiments/MTX/k8s/job-mtx-<arm>-s<seed>-raunav.yaml -- one per run.
 
+!! STALE AS OF 2026-08-15 -- DO NOT REGENERATE WITHOUT READING THIS !!
+The three committed seed-1 YAMLs are AHEAD of this TEMPLATE. Running this script
+now would silently revert five launch-blocking fixes made against the live
+cluster and the weaver source:
+
+  1. nvidia.com/a100, not nvidia.com/gpu. The us-west SDSC A100 nodes advertise
+     `nvidia.com/a100: 8` and `nvidia.com/gpu: 0`. The old request was not an
+     error -- it was unschedulable forever, which reads as a busy queue.
+  2. toleration for nautilus.io/hardware=large-gpu (NoSchedule). Without it the
+     usable pool is four nodes, and all four were saturated at launch.
+  3. --network-config experiments/MTX/ParT_sophon_arch_mtx.py, which drops
+     weaver's O(K^2) roc_auc_score_matrix at VALIDATION only. Measured 13.5 h
+     per 80-epoch run at K=162 against 0.2 h at K=17.
+  4. no in-pod --data-test / --predict-output. L162 peaks ~35.6 GB at the score
+     concatenate against a 64Gi limit and would OOM at ~day 8, after the whole
+     budget. Evaluation is a separate frozen-checkpoint job.
+  5. backoffLimit 0, not 1. No resume is wired, so a retry restarts at epoch 0
+     in the same ${OUT} and overwrites net_best_epoch_state.pt with a worse
+     model -- destroying a checkpoint, which CLAUDE.md section 8 forbids.
+
+Port all five into TEMPLATE before this script is used for seeds 2+. Until then
+the YAMLs are the source of truth and this file is not.
+
 Generated rather than hand-written for the same reason the arm configs are:
 every line that is not the arm name or the label map must be IDENTICAL across
 arms, and three hand-edited copies of a 90-line spec drift. Invariant I1 is a
@@ -390,8 +413,15 @@ def main() -> int:
     specs = {}
     for arm in ARMS:
         for seed in SEEDS:
+            # arm_lc drops the underscore; the FILENAME keeps it.
+            # metadata.name and RUN_ID must be RFC 1123 subdomains -- lowercase
+            # alphanumeric, '-' and '.' only. `R16_Q1`.lower() is `r16_q1`, and
+            # the API server rejects the Job outright:
+            #   metadata.name: Invalid value: "mtx-r16_q1-s1-raunav"
+            # This bit L162 not at all and both _Q1 arms every time. It also
+            # matches CLAUDE.md section 6, whose own example is `g1-r16q1-s3`.
             specs[f"job-mtx-{arm.lower()}-s{seed}-raunav.yaml"] = TEMPLATE.format(
-                arm=arm, arm_lc=arm.lower(), k=k_of[arm], seed=seed,
+                arm=arm, arm_lc=arm.lower().replace("_", ""), k=k_of[arm], seed=seed,
                 spe=SAMPLES_PER_EPOCH, spev=SAMPLES_PER_EPOCH_VAL,
                 epochs=NUM_EPOCHS, total=total, batch=BATCH_SIZE,
                 lr=START_LR, gpu=GPU_PRODUCT, image=IMAGE,
