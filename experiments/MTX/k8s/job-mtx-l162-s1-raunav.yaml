@@ -207,8 +207,8 @@ spec:
           # 20Gi ephemeral, not 200Gi: nothing is staged locally, the corpus is
           # streamed. A 200Gi request narrows an already narrow node pool for
           # storage that is never used.
-          requests: { memory: "120Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
-          limits:   { memory: "120Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          requests: { memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: jc2,  mountPath: /jc2, readOnly: true }
         - { name: data, mountPath: /data }
@@ -259,4 +259,4 @@ spec:
       # DataLoader workers pass tensors through shared memory; the container
       # default /dev/shm is 64 MB, which stalls or crashes multi-worker loading.
       - name: dshm
-        emptyDir: { medium: Memory, sizeLimit: "16Gi" }
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }
