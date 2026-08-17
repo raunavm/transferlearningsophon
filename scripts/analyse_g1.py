@@ -49,6 +49,16 @@ import sys
 RATES = {"25e5": 2.5e-4, "5e4": 5e-4, "1e3": 1e-3}
 ARMS = ["l162", "r16q1"]
 
+# Below this gap in validation accuracy, an arm's argmax is not resolved.
+# HEURISTIC, not a measured sigma `[I]`. Two anchors: binomial SE on accuracy
+# ~0.72 over the 1,280,000 validation jets is ~0.0004, and E1's three Arm P
+# seeds land within 0.0002 of each other on test accuracy at FULL budget.
+# Run-to-run spread at 20% budget is larger than either, and G1 has one seed
+# per point so it cannot measure it. 0.005 is deliberately an order above the
+# statistical floor: it flags "too close to call" rather than pretending the
+# argmax resolved something.
+TIE_MARGIN = 0.005
+
 EPOCH_RE = re.compile(
     r"Epoch #(\d+): Current validation metric: ([0-9.]+) \(best: ([0-9.]+)\)")
 
@@ -59,7 +69,16 @@ def read_run(log: pathlib.Path) -> dict | None:
     rows = EPOCH_RE.findall(log.read_text(errors="replace"))
     if not rows:
         return None
-    epochs = [(int(e), float(cur), float(best)) for e, cur, best in rows]
+    # weaver writes each validation line to train.log TWICE (verified on
+    # g1-r16q1-lr5e4: 6 epochs -> 12 matching lines). Keying by epoch number
+    # collapses that, and also does the right thing for a RESUMED run, where
+    # an epoch legitimately recurs and the later value is the live one.
+    # Without this, n_epochs reports 32 for a 16-epoch run. `best` is a max so
+    # the verdict itself was never affected -- the epoch count was.
+    by_epoch: dict[int, tuple[float, float]] = {}
+    for e, cur, best in rows:
+        by_epoch[int(e)] = (float(cur), float(best))
+    epochs = [(e, c, b) for e, (c, b) in sorted(by_epoch.items())]
     return {
         "n_epochs": len(epochs),
         "last_epoch": epochs[-1][0],
@@ -114,9 +133,22 @@ def main() -> int:
         print("VERDICT: incomplete — cannot decide until all six runs finish.")
         return 0
 
+    # How resolved is each arm's argmax? The verdict is a comparison of two
+    # argmaxes, so if either arm's top two rates are separated by less than the
+    # run-to-run noise, the argmax is arbitrary and the PASS/KILL flips on
+    # nothing. G1 runs ONE seed per point, so it cannot estimate that noise
+    # from itself -- report the margin and refuse to call it resolved.
+    margins = {}
+    for arm, tag in argmax.items():
+        ranked = sorted((results[arm][t]["best"] for t in results[arm]), reverse=True)
+        margins[arm] = ranked[0] - ranked[1]
+
     same = len(set(argmax.values())) == 1
     for arm, tag in argmax.items():
-        print(f"{arm.upper():7s} optimum: lr={RATES[tag]:.1e}")
+        print(f"{arm.upper():7s} optimum: lr={RATES[tag]:.1e}  "
+              f"(margin over 2nd best: {margins[arm]:.5f})")
+
+    unresolved = {a: m for a, m in margins.items() if m < TIE_MARGIN}
 
     if same:
         tag = next(iter(argmax.values()))
@@ -129,6 +161,14 @@ def main() -> int:
         print("  Per docs/GATES.md this needs a per-arm LR sweep, which changes")
         print("  the compute model materially. YELLOW: surface to the PI, do not")
         print("  proceed to the full-budget arms on one rate.")
+
+    if unresolved:
+        print(f"\nUNRESOLVED: {', '.join(unresolved)} — top two rates differ by "
+              f"less than {TIE_MARGIN} validation accuracy, so that arm's "
+              f"optimum is not distinguishable from a tie and the verdict "
+              f"above turns on a difference this sweep cannot measure. "
+              f"G1 runs one seed per point and cannot estimate its own noise; "
+              f"resolving it needs a second seed at the top two rates.")
 
     # A grid-edge optimum means the sweep did not bracket the true best.
     edges = {a: t for a, t in argmax.items() if RATES[t] in (min(RATES.values()),
