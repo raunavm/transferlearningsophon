@@ -25,7 +25,8 @@ expose the expected symbol, the wrapper FAILS LOUDLY rather than continuing
 with a partial guarantee — a silently-partial fix here is worse than no fix,
 because the run would look seeded and not be.
 
-Usage:  python seed_weaver.py --seed S [--allow-partial-streams] <weaver args>
+Usage:  python seed_weaver.py --seed S [--allow-partial-streams]
+                             [--lean-val-metrics] <weaver args>
 
 Reproducibility: a run is reproducible on the SAME GPU model. Cross-GPU is
 statistically — not bit — identical (different CUDA kernels and reduction
@@ -55,6 +56,7 @@ if seed_raw is None:
     raise SystemExit("seed_weaver: --seed S is required")
 seed = int(seed_raw)
 allow_partial, rest = _pop(rest, "--allow-partial-streams", has_value=False)
+lean_val, rest = _pop(rest, "--lean-val-metrics", has_value=False)
 
 os.environ["PYTHONHASHSEED"] = str(seed)
 
@@ -105,6 +107,52 @@ if _hooked is None:
     if not allow_partial:
         raise SystemExit(msg)
     print("[seed_weaver] WARNING (--allow-partial-streams):\n" + msg, flush=True)
+
+# Drop the O(K^2) validation metric, if asked.
+#
+# weaver 0.4.17 REMOVED the get_train_fn/get_evaluate_fn hook that a network
+# config could use to choose eval_metrics: 0.4.16 has it (train.py:659, "Using
+# custom train/evaluate functions"), 0.4.17 has ZERO occurrences of
+# get_train_fn and logs "Running in classification mode" unconditionally at
+# train.py:728. So experiments/MTX/ParT_sophon_arch_mtx.py cannot restrict the
+# metrics and its get_evaluate_fn is dead code. Patch the function instead.
+#
+# train.py:843 runs validation WITHOUT for_training and WITHOUT eval_metrics,
+# so weaver's default applies, and it contains roc_auc_score_matrix: a full
+# K(K-1)/2 pairwise AUC matrix — 13,041 pairs at K=162 against 136 at K=17.
+# Measured on g1-l162-lr25e5 epoch 0: 26.7 min PER EPOCH, i.e. 35.6 h over the
+# 80-epoch budget, for a matrix that is recomputed offline from pred.root.
+#
+# The test pass (train.py:893) passes for_training=False and is left alone —
+# that is the path the frozen-checkpoint eval job uses.
+if lean_val:
+    import inspect  # noqa: E402
+
+    import weaver.utils.nn.tools as _tools  # noqa: E402
+
+    _stock_eval = getattr(_tools, "evaluate_classification", None)
+    _params = inspect.signature(_stock_eval).parameters if callable(_stock_eval) else {}
+    if "eval_metrics" not in _params:
+        raise SystemExit(
+            "seed_weaver: --lean-val-metrics requested but this weaver's "
+            "evaluate_classification has no eval_metrics parameter. Refusing "
+            "to run rather than silently training with the O(K^2) validation "
+            "metric enabled.")
+    _STOCK_METRICS = list(_params["eval_metrics"].default)
+
+    def _lean_eval(*a, __stock=_stock_eval, **kw):
+        # for_training is 5th positional; absent means the default, True.
+        for_training = kw["for_training"] if "for_training" in kw else (
+            a[4] if len(a) > 4 else True)
+        if for_training:
+            metrics = kw.get("eval_metrics", _STOCK_METRICS)
+            kw["eval_metrics"] = [m for m in metrics if m != "roc_auc_score_matrix"]
+        return __stock(*a, **kw)
+
+    _tools.evaluate_classification = _lean_eval
+    print("[seed_weaver] --lean-val-metrics: training-time validation metrics "
+          f"{[m for m in _STOCK_METRICS if m != 'roc_auc_score_matrix']} "
+          "(dropped roc_auc_score_matrix; test pass unchanged)", flush=True)
 
 # Phase 4 - data sampling. Seeded last so the sampler state is a function of
 # (master_seed, "data_sampling") alone, independent of anything drawn above.
