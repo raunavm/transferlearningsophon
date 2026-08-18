@@ -41,6 +41,7 @@ containing train.log -- i.e. exactly what /data/results/g1/ looks like.
 """
 from __future__ import annotations
 
+import itertools
 import pathlib
 import re
 import sys
@@ -189,6 +190,42 @@ def main() -> int:
               f"above turns on a difference this sweep cannot measure. "
               f"G1 runs one seed per point and cannot estimate its own noise; "
               f"resolving it needs a second seed at the top two rates.")
+
+    # PAIRWISE REVERSAL -- stronger than comparing argmaxes.
+    #
+    # The gate asks whether the optimum moves with K. Comparing argmaxes is
+    # fragile: if an arm's top two rates sit within noise, its argmax is
+    # arbitrary and so is the comparison. A REVERSAL does not have that
+    # weakness. If L162 prefers r1 over r2 while R16_Q1 prefers r2 over r1, and
+    # BOTH gaps clear TIE_MARGIN, then no single rate can serve both arms --
+    # regardless of where either argmax actually sits, and regardless of
+    # whether either arm's own top two are resolved.
+    #
+    # A reversal is therefore sufficient for KILL even when the argmax
+    # comparison is not trustworthy.
+    reversals = []
+    for t1, t2 in itertools.combinations(sorted(RATES, key=lambda t: RATES[t]), 2):
+        d = {a: results[a][t1]["best"] - results[a][t2]["best"] for a in ARMS}
+        if all(abs(v) >= TIE_MARGIN for v in d.values()) and \
+                len({v > 0 for v in d.values()}) > 1:
+            reversals.append((t1, t2, dict(d)))
+
+    if reversals:
+        print("\nRESOLVED REVERSALS (each arm's preference flips, both gaps > "
+              f"{TIE_MARGIN}):")
+        for t1, t2, d in reversals:
+            for a in ARMS:
+                pref, other = (t1, t2) if d[a] > 0 else (t2, t1)
+                print(f"  {a.upper():7s} prefers {RATES[pref]:.1e} over "
+                      f"{RATES[other]:.1e} by {abs(d[a]):.5f}")
+        print("  => no single rate serves both arms. This holds even if an "
+              "arm's own argmax is unresolved,\n     so it is the stronger "
+              "basis for KILL than the argmax comparison above.")
+    elif not same:
+        print("\nNOTE: the argmaxes differ but NO rate pair reverses with both "
+              "gaps above the threshold.\n  The KILL therefore rests on the "
+              "argmax comparison alone, which is weak if either arm\n  is "
+              "flagged UNRESOLVED above.")
 
     # A grid-edge optimum means the sweep did not bracket the true best.
     edges = {a: t for a, t in argmax.items() if RATES[t] in (min(RATES.values()),
