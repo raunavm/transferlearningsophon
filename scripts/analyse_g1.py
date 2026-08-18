@@ -59,6 +59,14 @@ ARMS = ["l162", "r16q1"]
 # argmax resolved something.
 TIE_MARGIN = 0.005
 
+# Budget per point, from scripts/build_g1_jobs.py EPOCHS. A run short of this
+# has not finished, and its `best` is a LOWER BOUND -- the completed runs show
+# the decay phase (epochs 12-15) producing the single largest gains, so a run
+# stopped before it is systematically understated. Issuing a verdict on a mixed
+# set of finished and unfinished runs is the easiest way to get a confident
+# wrong answer out of this script.
+EXPECTED_EPOCHS = 16
+
 EPOCH_RE = re.compile(
     r"Epoch #(\d+): Current validation metric: ([0-9.]+) \(best: ([0-9.]+)\)")
 
@@ -132,6 +140,18 @@ def main() -> int:
     if len(argmax) < len(ARMS):
         print("VERDICT: incomplete — cannot decide until all six runs finish.")
         return 0
+
+    incomplete = {f"g1-{arm}-lr{tag}": r["n_epochs"]
+                  for arm in ARMS for tag, r in results[arm].items()
+                  if r["n_epochs"] < EXPECTED_EPOCHS}
+    if incomplete:
+        print(f"*** PROVISIONAL — {len(incomplete)} of {len(ARMS) * len(RATES)} "
+              f"runs have not finished: "
+              f"{', '.join(f'{k} ({v}/{EXPECTED_EPOCHS})' for k, v in incomplete.items())}")
+        print("    Their `best` is a LOWER BOUND. The decay phase (epochs 12-15) "
+              "produces the largest\n    single gains, so an unfinished run is "
+              "understated by more than the margins below.\n    Do NOT act on the "
+              "verdict until every run reads 16/16.\n")
 
     # How resolved is each arm's argmax? The verdict is a comparison of two
     # argmaxes, so if either arm's top two rates are separated by less than the
