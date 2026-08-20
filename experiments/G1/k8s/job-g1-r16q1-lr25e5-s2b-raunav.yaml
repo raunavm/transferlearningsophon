@@ -25,11 +25,17 @@ metadata:
   # BUDGET: 10,240,000 samples/epoch x 80 epochs = 819,200,000 examples seen
   #         (~6.1 effective passes over 110,087,593 selected training jets).
   #
-  # backoffLimit is 0 ON PURPOSE, not 1. A retry does not resume -- no
-  # --load-epoch is wired -- so it restarts at epoch 0 in the SAME ${OUT} and
-  # overwrites net_best_epoch_state.pt with a worse model. That is destroying a
-  # checkpoint (CLAUDE.md section 8) on top of burning a second full budget on
-  # an identical failure. Relaunch by hand after reading the logs.
+  # backoffLimit was 0, on the reasoning that a retry does not resume and would
+  # restart at epoch 0 in the SAME ${OUT}, overwriting net_best_epoch_state.pt
+  # with a worse model. That reasoning was correct while nothing wired
+  # --load-epoch. It is now obsolete: the AUTO-RESUME block below detects the
+  # last epoch with BOTH a state and an optimizer file and resumes from it, so
+  # a retry cannot silently restart from scratch.
+  #
+  # Raised to 3 because backoffLimit 0 was itself losing runs. Four R16_Q1
+  # seed-2 attempts failed WITHOUT EVER RUNNING -- reaped while Pending in the
+  # GPU queue, nothing written, and backoffLimit 0 made that permanent. See
+  # scripts/add_autoresume.py.
   #
   # Region is pinned because weaver STREAMS from the CephFS PVC at SDSC and is
   # I/O-bound, not GPU-bound: a cross-region pod does not run slowly, it runs at
@@ -38,7 +44,7 @@ metadata:
   name: g1-r16q1-lr25e5-s2b-raunav
   namespace: cms-ml
 spec:
-  backoffLimit: 0
+  backoffLimit: 3
   template:
     spec:
       restartPolicy: Never
@@ -165,6 +171,26 @@ spec:
             --batch-size 512 \
             --out ${OUT}/run_manifest.json
 
+          # AUTO-RESUME. See scripts/add_autoresume.py for why this exists.
+          # Requires BOTH the state and optimizer file for an epoch: weaver
+          # writes them separately, and resuming from a state file whose
+          # optimizer is missing only WARNS and then trains on with a fresh
+          # optimizer -- silent corruption of a momentum-based run.
+          RESUME=""
+          LAST_EP=-1
+          for f in ${OUT}/net_epoch-*_state.pt; do
+            [ -e "$f" ] || continue
+            n=$(basename "$f" | sed 's/net_epoch-\([0-9]*\)_state\.pt/\1/')
+            [ -f "${OUT}/net_epoch-${n}_optimizer.pt" ] || continue
+            [ "$n" -gt "$LAST_EP" ] && LAST_EP=$n
+          done
+          if [ "$LAST_EP" -ge 0 ]; then
+            RESUME="--load-epoch ${LAST_EP}"
+            echo "AUTO-RESUME: found complete checkpoint for epoch ${LAST_EP}; resuming."
+          else
+            echo "AUTO-RESUME: no complete checkpoint; starting from scratch."
+          fi
+
           # seed_weaver derives four independent RNG streams and REFUSES to run
           # if it cannot hook weaver's model-construction boundary -- a
           # silently-partial seeding is worse than none, because the run looks
@@ -181,7 +207,7 @@ spec:
             --use-amp --batch-size 512 --start-lr 2.5e-4 \
             --num-workers 2 --fetch-by-files --fetch-step 5 \
             --samples-per-epoch 10240000 --samples-per-epoch-val 1280000 \
-            --num-epochs 16 --optimizer ranger \
+            --num-epochs 16 ${RESUME} --optimizer ranger \
             --model-prefix ${OUT}/net \
             --log ${OUT}/train.log \
             --tensorboard g1-r16q1-lr25e5-s2b
