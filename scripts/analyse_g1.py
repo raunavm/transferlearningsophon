@@ -51,14 +51,21 @@ RATES = {"25e5": 2.5e-4, "5e4": 5e-4, "1e3": 1e-3}
 ARMS = ["l162", "r16q1"]
 
 # Below this gap in validation accuracy, an arm's argmax is not resolved.
-# HEURISTIC, not a measured sigma `[I]`. Two anchors: binomial SE on accuracy
-# ~0.72 over the 1,280,000 validation jets is ~0.0004, and E1's three Arm P
-# seeds land within 0.0002 of each other on test accuracy at FULL budget.
-# Run-to-run spread at 20% budget is larger than either, and G1 has one seed
-# per point so it cannot measure it. 0.005 is deliberately an order above the
-# statistical floor: it flags "too close to call" rather than pretending the
-# argmax resolved something.
-TIE_MARGIN = 0.005
+#
+# NOW MEASURED, not guessed `[V]`. R16_Q1 at lr=5e-4 was run at two seeds under
+# an otherwise identical recipe:
+#     seed 1  best 0.78277
+#     seed 2  best 0.76697
+#     spread  0.01580
+# The previous value here was 0.005, a heuristic anchored on the binomial SE
+# (~0.0004) and on E1's full-budget seed spread (~0.0002). Both were far too
+# small: run-to-run spread at 20% budget is 3x the old threshold.
+#
+# ONE PAIR IS A CRUDE ESTIMATE. A single difference gives no distribution, and
+# the true spread could be larger. Treat 0.0158 as a FLOOR on what counts as
+# resolved, not as a sigma. Resolving anything closer than this needs more
+# seeds, not more rates.
+TIE_MARGIN = 0.0158
 
 # Budget per point, from scripts/build_g1_jobs.py EPOCHS. A run short of this
 # has not finished, and its `best` is a LOWER BOUND -- the completed runs show
