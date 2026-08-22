@@ -78,6 +78,25 @@ POINTS = [
     # 3. R16_Q1 second seed at its unresolved top two
     ("R16_Q1", 17, "2.5e-4", "25e5", 2),
     ("R16_Q1", 17, "5e-4", "5e4", 2),
+    # 4. R42_Q1 BRACKET (added 2026-08-22). Of the three points above, only
+    #    2.5e-4 trained: 5e-4 and 1e-3 both went nan at iteration 2 and then hit
+    #    a CUDA device-side assert. So 2.5e-4 is the top of the arm's TRAINABLE
+    #    range, and nothing has been run below it -- the arm has no bracket at
+    #    all, and "R42_Q1's optimum is 2.5e-4" is not a measurement, it is the
+    #    only survivor. Two points fix that, and both are cheap next to the
+    #    ~6 GPU-days an 80-epoch run at the wrong rate would waste:
+    #
+    #      1.25e-4  the missing lower side. If it scores worse, 2.5e-4 is
+    #               bracketed (below by this, above by the divergence) and the
+    #               arm can launch. If it scores BETTER, the optimum is lower
+    #               still and the standard grid never contained it.
+    #      5e-4 s2  is the divergence DETERMINISTIC? Both neighbouring arms
+    #               train fine at 1e-3, so a K=43-specific failure at half that
+    #               rate is odd. A second seed costs ~2 minutes if it reproduces
+    #               (nan arrives at iteration 2) and settles whether the arm has
+    #               a genuine stability ceiling or hit one bad initialisation.
+    ("R42_Q1", 43, "1.25e-4", "125e6", 1),
+    ("R42_Q1", 43, "5e-4", "5e4", 2),
 ]
 
 
@@ -137,12 +156,19 @@ def build(arm: str, k: int, rate: str, tag: str, seed: int) -> tuple[str, str]:
 def main() -> int:
     if not SRC.exists():
         sys.exit(f"FATAL: {SRC} not found")
-    written = []
+    written, skipped = [], []
     for arm, k, rate, tag, seed in POINTS:
         cfg = ROOT / f"configs/arms/{arm}.yaml"
         if not cfg.exists():
             sys.exit(f"FATAL: {cfg} does not exist; cannot sweep {arm}")
         fname, text = build(arm, k, rate, tag, seed)
+        # A spec that already exists describes a run that already happened, and
+        # may have been patched after generation (scripts/add_autoresume.py).
+        # Regenerating it would silently revert that patch and rewrite the
+        # record of what was actually launched.
+        if (OUT_DIR / fname).exists():
+            skipped.append(fname)
+            continue
         d = yaml.safe_load(text)
         name = d["metadata"]["name"]
         if not re.fullmatch(r"[a-z0-9]([-a-z0-9.]*[a-z0-9])?", name):
@@ -166,6 +192,9 @@ def main() -> int:
             sys.exit(f"FATAL: {fname} backoffLimit must stay 0")
         (OUT_DIR / fname).write_text(text)
         written.append((name, arm, k, rate, seed))
+    if skipped:
+        print(f"skipped {len(skipped)} spec(s) that already exist (not regenerated): "
+              f"{', '.join(sorted(skipped))}")
     print(f"wrote {len(written)} sweep specs to {OUT_DIR.relative_to(ROOT)}/  (pin {PIN})")
     for name, arm, k, rate, seed in written:
         print(f"  {name:26s} arm={arm:7s} K={k:<4d} lr={rate:<7s} seed={seed}")
