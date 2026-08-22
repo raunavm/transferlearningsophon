@@ -52,19 +52,23 @@ ARMS = ["l162", "r16q1"]
 
 # Below this gap in validation accuracy, an arm's argmax is not resolved.
 #
-# NOW MEASURED, not guessed `[V]`. R16_Q1 at lr=5e-4 was run at two seeds under
-# an otherwise identical recipe:
-#     seed 1  best 0.78277
-#     seed 2  best 0.76697
-#     spread  0.01580
-# The previous value here was 0.005, a heuristic anchored on the binomial SE
-# (~0.0004) and on E1's full-budget seed spread (~0.0002). Both were far too
-# small: run-to-run spread at 20% budget is 3x the old threshold.
+# NOW MEASURED TWICE, not guessed `[V]`. R16_Q1 was run at two seeds under an
+# otherwise identical recipe, at each of its top two rates:
 #
-# ONE PAIR IS A CRUDE ESTIMATE. A single difference gives no distribution, and
-# the true spread could be larger. Treat 0.0158 as a FLOOR on what counts as
-# resolved, not as a sigma. Resolving anything closer than this needs more
-# seeds, not more rates.
+#     lr=2.5e-4   seed 1 0.77917   seed 2 0.76598   spread 0.01319
+#     lr=5e-4     seed 1 0.78277   seed 2 0.76697   spread 0.01580
+#
+# Two independent estimates that agree: mean 0.01449, max 0.01580. The value
+# here was 0.005 until 2026-08-21, a heuristic anchored on the binomial SE
+# (~0.0004) and E1's FULL-budget seed spread (~0.0002). Both were an order of
+# magnitude too small for a 20% budget.
+#
+# READ THIS BEFORE USING IT AS A SIGNIFICANCE TEST. This is an UNPAIRED spread
+# (different seeds), while the comparisons it gates are WITHIN-seed and
+# therefore paired -- two rates at one seed share initialisation and data
+# order. Judging a paired difference against an unpaired floor is
+# conservative: it understates significance by an unknown factor. Quantifying
+# that needs the same rate pair replicated at a second seed, not a wider grid.
 TIE_MARGIN = 0.0158
 
 # Budget per point, from scripts/build_g1_jobs.py EPOCHS. A run short of this
