@@ -38,13 +38,28 @@ OUT_DIR = ROOT / "configs" / "arms"
 
 # The arms to emit. NOT every rung on the ladder -- the ladder is the frozen
 # hierarchy, the run matrix is a separate compute-gated decision
-# (docs/RUN_MATRIX.md). These three span the widest clean range:
-#   L162    fine anchor. NOT L188: L188 differs from L162 only in QCD
-#           granularity, which is a separate axis, and using it as the fine end
-#           would fold the QCD-vocabulary question into the headline contrast.
+# (docs/RUN_MATRIX.md).
+#
+# The HEADLINE CONTRAST is L162 vs R16_Q1, and its fine end is L162, NOT L188:
+# L188 differs from L162 only in QCD granularity, which is a separate axis, and
+# using it as the fine end would fold the QCD-vocabulary question into the
+# headline contrast.
+#
+#   L188    QCD-granularity ablation; the only arm that keeps QCD b-vs-c.
+#           Emitted since 2026-08-22. It is the IDENTITY rung -- resonant and
+#           qcd both `identity` in the contraction tree -- so unlike every
+#           coarser arm its label map does not depend on the R42_Q1 / R16_Q1
+#           group membership that is still unsigned.
+#   L162    fine anchor for the headline contrast.
 #   R42_Q1  the only interior point. Never cut.
 #   R16_Q1  coarse end; flavour erased by construction.
-ARMS = ["L162", "R42_Q1", "R16_Q1"]
+#
+# ORDER IS LOAD-BEARING FOR NOTHING, but the FILE BYTES ARE: each arm's
+# reweighting sidecar on the PVC is named for its config's md5, so a config
+# that changes silently orphans its sidecar and the run guard fails at launch.
+# Adding an arm must leave the others byte-identical; tests/test_arm_configs.py
+# and the md5 check in the build log are what confirm it did.
+ARMS = ["L188", "L162", "R42_Q1", "R16_Q1"]
 
 N_NATIVE = 188
 
