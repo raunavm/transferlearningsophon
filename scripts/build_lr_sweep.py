@@ -119,6 +119,24 @@ POINTS = [
     ("L188", 188, "5e-4", "5e4", 1),
     ("L188", 188, "1e-3", "1e3", 1),
     ("L188", 188, "1.4e-3", "14e4", 1),
+    # 6. BRACKET REPAIR (added 2026-08-22, after the divergence was shown to be
+    #    stochastic). g1-r42q1-lr5e4-s2 cleared 16,000 iterations clean at a
+    #    rate whose seed-1 run went nan at iteration 2, so a diverged point does
+    #    NOT establish that a rate is untrainable and cannot close a bracket.
+    #    Two arms were relying on exactly that and are actually open:
+    #
+    #      L162 @ 1.4e-3   its argmax is 1e-3 and NOTHING above it has ever
+    #                      trained -- 2e-3 diverged at seed 1 and that is all.
+    #                      mtx-l162-s1 is already running 80 epochs at 1e-3, so
+    #                      this is a ~1-day check on a ~7-day run: if 1.4e-3
+    #                      beats 1e-3 by more than the 0.0158 floor the full
+    #                      run is at the wrong rate, and if it does not, the
+    #                      bracket closes and the run stands.
+    #      R42_Q1 @ 1e-3   seed 2, because seed 1 is the one that diverged
+    #                      there. With 2.5e-4 trained and 5e-4 now training at
+    #                      seed 2, this is the upper side the arm needs.
+    ("L162", 162, "1.4e-3", "14e4", 1),
+    ("R42_Q1", 43, "1e-3", "1e3", 2),
 ]
 
 

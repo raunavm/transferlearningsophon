@@ -19,10 +19,24 @@ tried, with the true best possibly outside. Because the study compares arms AT
 their optima, an unbracketed rate is a rate we do not know, and training an
 80-epoch arm against one risks the whole budget on an untested guess.
 
-An arm is BRACKETED when a point on each side of its argmax scored worse. A
-DIVERGENCE brackets from above just as well as a low score does: if the rate
-above the argmax cannot be trained at all, the optimum is below it. That is how
-L162 is bracketed despite its argmax sitting at the top of the grid.
+An arm is BRACKETED when a point on each side of its argmax TRAINED and scored
+worse.
+
+A DIVERGENCE DOES NOT BRACKET. This script said the opposite until 2026-08-22,
+on the reasoning that a rate which cannot be trained puts a ceiling on the
+optimum. That reasoning assumed divergence was a property of the rate. It is
+not. g1-r42q1-lr5e4 went nan at iteration 2 at seed 1; g1-r42q1-lr5e4-s2, the
+same arm at the same rate at seed 2, cleared 16,000 iterations clean with
+AvgAcc 0.638. Every divergence on record -- R42_Q1 at 5e-4, R42_Q1 at 1e-3,
+L162 at 2e-3 -- is a SEED 1 run, and the only one retried at another seed
+trained.
+
+So divergence is stochastic and a single-seed failure says nothing definite
+about the rate. Treating it as a ceiling silently converted "we got unlucky
+once" into "this rate is unusable", which is how L162 came to look bracketed
+above when nothing above its argmax has ever been shown to be worse. A diverged
+rate is reported here as UNSTABLE, with the seed count, and does not close a
+bracket.
 
 TIES
 ----
@@ -98,45 +112,54 @@ def collect(root: pathlib.Path) -> dict[str, dict[str, list[dict]]]:
 
 
 def verdict(points: dict[str, list[dict]]) -> tuple[str, str]:
-    """(status, explanation) for one arm."""
-    # Score each rate by its BEST seed that actually trained.
-    scored, diverged = {}, set()
+    """(status, explanation) for one arm.
+
+    Only TRAINED points can close a bracket. Diverged points are recorded and
+    reported, because a rate that failed at one seed and worked at another is a
+    real fact about stability, but they carry no information about ordering.
+    """
+    scored, unstable = {}, {}
     for tag, runs in points.items():
         ok = [r for r in runs if r["status"] in ("complete", "partial")]
+        bad = [r for r in runs if r["status"] == "diverged"]
         if ok:
             scored[tag] = max(r["best"] for r in ok)
-        elif any(r["status"] == "diverged" for r in runs):
-            diverged.add(tag)
+        if bad:
+            unstable[tag] = (len(bad), len(ok) + len(bad))
     if not scored:
         return "NO DATA", "no rate produced a validation number"
 
     order = sorted(TAGS, key=lambda t: TAGS[t])
     best_tag = max(scored, key=lambda t: scored[t])
     i = order.index(best_tag)
-    lower = [t for t in order[:i] if t in scored or t in diverged]
-    upper = [t for t in order[i + 1:] if t in scored or t in diverged]
+    lower = [t for t in order[:i] if t in scored]
+    upper = [t for t in order[i + 1:] if t in scored]
 
-    def margin(t):
-        return None if t in diverged else scored[best_tag] - scored[t]
+    note = ""
+    if unstable:
+        note = ("; unstable at " + ", ".join(
+            f"{TAGS[t]:.2e} ({n} of {m} seeds nan)"
+            for t, (n, m) in sorted(unstable.items(), key=lambda kv: TAGS[kv[0]])))
 
     if not lower and not upper:
-        return "UNBRACKETED (single point)", f"only {TAGS[best_tag]:.2e} was tried"
+        return "UNBRACKETED (single point)", f"only {TAGS[best_tag]:.2e} ever trained{note}"
     if not lower:
         return ("UNBRACKETED BELOW",
-                f"nothing was run below {TAGS[best_tag]:.2e}; the optimum may be lower")
+                f"no TRAINED point below {TAGS[best_tag]:.2e}{note}")
     if not upper:
         return ("UNBRACKETED ABOVE",
-                f"nothing was run above {TAGS[best_tag]:.2e}; the optimum may be higher")
+                f"no TRAINED point above {TAGS[best_tag]:.2e}; the optimum may be "
+                f"higher and a divergence there would not prove otherwise{note}")
 
     lo, up = lower[-1], upper[0]
-    ml, mu = margin(lo), margin(up)
-    soft = [f"{TAGS[t]:.2e} by {m:.5f}" for t, m in ((lo, ml), (up, mu))
-            if m is not None and m < TIE_MARGIN]
-    detail = (f"beats {TAGS[lo]:.2e} " + (f"by {ml:.5f}" if ml is not None else "(diverged)")
-              + f" and {TAGS[up]:.2e} " + (f"by {mu:.5f}" if mu is not None else "(diverged)"))
+    ml = scored[best_tag] - scored[lo]
+    mu = scored[best_tag] - scored[up]
+    detail = (f"beats {TAGS[lo]:.2e} by {ml:.5f} and {TAGS[up]:.2e} by {mu:.5f}")
+    soft = [f"{TAGS[t]:.2e}" for t, m in ((lo, ml), (up, mu)) if m < TIE_MARGIN]
     if soft:
-        return "SOFT BRACKET", detail + f"; inside the {TIE_MARGIN} noise floor vs " + ", ".join(soft)
-    return "BRACKETED", detail
+        return "SOFT BRACKET", (detail + f"; inside the {TIE_MARGIN} noise floor vs "
+                                + ", ".join(soft) + note)
+    return "BRACKETED", detail + note
 
 
 def main() -> int:
@@ -150,7 +173,8 @@ def main() -> int:
         sys.exit(f"no recognisable run directories under {root}")
 
     print(f"Per-arm learning-rate sweep. Tie margin {TIE_MARGIN} (measured).")
-    print("A rate that DIVERGED brackets from above exactly as a low score does.\n")
+    print("A rate that DIVERGED does NOT bracket: divergence is stochastic "
+          "(same arm+rate, seed 1 nan / seed 2 clean).\n")
 
     for arm in [a for a in ARMS if a in data] + [a for a in data if a not in ARMS]:
         pts = data[arm]
