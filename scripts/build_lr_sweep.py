@@ -63,7 +63,14 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = ROOT / "experiments/G1/k8s/job-g1-l162-lr25e5-raunav.yaml"
 OUT_DIR = ROOT / "experiments/G1/k8s"
-PIN = "mtx-s1.2"
+# mtx-s1.3, not mtx-s1.2. L188's arm config does not exist in s1.2, so specs
+# for that arm cannot resolve against it. s1.3 is a verified SUPERSET: every
+# file a training pod executes -- seed_weaver.py, ParT_sophon_arch_mtx.py,
+# write_run_manifest.py, and the L162/R42_Q1/R16_Q1 arm configs -- is
+# byte-identical between the two tags, so moving the pin changes what is
+# AVAILABLE to a run and nothing about what a run DOES. Specs already on disk
+# are never regenerated (see main), so runs already launched keep their own pin.
+PIN = "mtx-s1.3"
 
 # (arm, K, rate, tag, seed). Tag convention matches build_g1_jobs.py: mantissa
 # then exponent, minus sign dropped, so 2.5e-4 -> 25e5 and 2e-3 -> 2e3.
@@ -97,6 +104,21 @@ POINTS = [
     #               a genuine stability ceiling or hit one bad initialisation.
     ("R42_Q1", 43, "1.25e-4", "125e6", 1),
     ("R42_Q1", 43, "5e-4", "5e4", 2),
+    # 5. L188 (added 2026-08-22). The QCD-granularity arm, and the widest
+    #    vocabulary on the ladder. Its grid is shifted UP relative to the
+    #    standard one because L162 -- the nearest arm at K=162 -- put 2.5e-4
+    #    far last (0.52183 against 0.55548 at 1e-3, a gap of 0.034 = 2.1x the
+    #    noise floor). Spending a point there would buy a near-certain loser.
+    #    1.4e-3 is the upper side: L162 diverged at 2e-3, so the trainable
+    #    ceiling for a wide vocabulary sits between 1e-3 and 2e-3 and this
+    #    probes inside that gap rather than repeating a known divergence.
+    #
+    #    ORDERING: these REQUIRE job-mtx-makeweight-l188-raunav to have run
+    #    first. Each spec guards on a reweighting sidecar named for the arm
+    #    config's md5, and L188 has no sidecar until that job writes one.
+    ("L188", 188, "5e-4", "5e4", 1),
+    ("L188", 188, "1e-3", "1e3", 1),
+    ("L188", 188, "1.4e-3", "14e4", 1),
 ]
 
 
