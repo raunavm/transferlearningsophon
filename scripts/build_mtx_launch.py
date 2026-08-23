@@ -78,12 +78,19 @@ OLD_LR = "5e-4"
 # not actually know. All figures are best-over-16-epochs validation accuracy at
 # 20% budget; the measured seed spread is 0.0158, so gaps below that are ties.
 RATES = {
-    "L162": (162, "1e-3", True,
-             "2.5e-4 0.52183 < 5e-4 0.55232 < 1e-3 0.55548, and 2e-3 diverged "
-             "to nan at iteration 2. Bracketed below by 5e-4 and above by the "
-             "divergence. The 1e-3 vs 5e-4 gap is 0.00316 = 0.2x the noise "
-             "floor, so the two are tied and 1e-3 is the point estimate, not a "
-             "resolved winner."),
+    # NOT bracketed. This said True until 2026-08-22, on the reasoning that
+    # 2e-3 diverging put a ceiling on the optimum. g1-r42q1-lr5e4-s2 then
+    # cleared 16k iterations clean at a rate whose seed-1 run went nan at
+    # iteration 2, so divergence is STOCHASTIC and bounds nothing. Every
+    # divergence on record is a seed-1 run. mtx-l162-s1 is already training at
+    # 1e-3 and stays; what this flag now blocks is queueing MORE seeds at a
+    # rate g1-l162-lr14e4 has not yet confirmed -- turning one run at a
+    # possibly-wrong rate into five.
+    "L162": (162, "1e-3", False,
+             "2.5e-4 0.52183 < 5e-4 0.55232 < 1e-3 0.55548, so bracketed BELOW "
+             "only. Nothing above 1e-3 has ever trained: 2e-3 diverged at seed "
+             "1 and that is not evidence the rate is untrainable. "
+             "g1-l162-lr14e4 (1.4e-3) closes this."),
     "R16_Q1": (17, "5e-4", True,
                "2.5e-4 0.77917 < 5e-4 0.78277 > 1e-3 0.75986 at seed 1, and "
                "2.5e-4 0.76598 < 5e-4 0.76697 at seed 2 -- same ordering at "
@@ -98,6 +105,16 @@ RATES = {
 }
 
 SEEDS = [1]
+
+# Seeds beyond 1 are DERIVED from the already-launch-ready seed-1 spec rather
+# than rebuilt, so they inherit its rate, pin, lean-val flag and auto-resume by
+# construction and cannot drift from it. Only four things carry the seed: the
+# job name, RUN_ID (OUT derives from it), the two --seed flags (manifest writer
+# and seed_weaver), and the tensorboard tag.
+#
+# ONLY FOR ARMS WHOSE RATE IS SETTLED. A spec's learning rate is fixed when it
+# is written, so queueing seeds for an arm whose sweep is still open converts
+# one run at a possibly-wrong rate into N of them.
 
 
 def _autoresume():
@@ -192,11 +209,78 @@ def patch(path: pathlib.Path, arm: str, k: int, rate: str) -> str:
             tmp.unlink()
 
 
+def derive_seed(arm: str, base_seed: int, seed: int) -> str:
+    """Write job-mtx-<arm>-s<seed>-raunav.yaml from the seed-<base_seed> spec."""
+    arm_lc = arm.lower()
+    src = K8S / f"job-mtx-{arm_lc}-s{base_seed}-raunav.yaml"
+    dst = K8S / f"job-mtx-{arm_lc}-s{seed}-raunav.yaml"
+    if not src.exists():
+        return f"FAILED: {src.name} not found"
+    if dst.exists():
+        return "exists, not regenerated"
+    text = src.read_text()
+
+    run_lc = arm.lower().replace("_", "")
+    subs = [
+        (f"name: mtx-{run_lc}-s{base_seed}-raunav", f"name: mtx-{run_lc}-s{seed}-raunav"),
+        (f"RUN_ID=mtx-{run_lc}-s{base_seed}", f"RUN_ID=mtx-{run_lc}-s{seed}"),
+        (f"--tensorboard mtx_{arm}_s{base_seed}", f"--tensorboard mtx_{arm}_s{seed}"),
+    ]
+    for old, new in subs:
+        if text.count(old) != 1:
+            return f"FAILED: expected 1 {old!r}, found {text.count(old)}"
+        text = text.replace(old, new)
+    n = text.count(f"--seed {base_seed}")
+    if n != 2:
+        return f"FAILED: expected 2 '--seed {base_seed}', found {n}"
+    text = text.replace(f"--seed {base_seed}", f"--seed {seed}")
+
+    d = yaml.safe_load(text)
+    args = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    code = "\n".join(ln for ln in args.splitlines() if not ln.lstrip().startswith("#"))
+    if d["metadata"]["name"] != f"mtx-{run_lc}-s{seed}-raunav":
+        return "FAILED: name not rewritten"
+    if f"RUN_ID=mtx-{run_lc}-s{seed}" not in code:
+        return "FAILED: RUN_ID not rewritten"
+    if re.search(rf"--seed (?!{seed}\b)\d+", code):
+        return f"FAILED: a --seed other than {seed} survived"
+    if f"--start-lr {RATES[arm][1]}" not in code:
+        return f"FAILED: rate is not {RATES[arm][1]}"
+    if "${RESUME}" not in code or d["spec"]["backoffLimit"] != 3:
+        return "FAILED: did not inherit auto-resume"
+    dst.write_text(text)
+    return f"derived from s{base_seed} (lr={RATES[arm][1]}, seed={seed})"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--allow-unbracketed", action="store_true",
                     help="emit arms whose LR is not bracketed on both sides")
+    ap.add_argument("--derive-seeds", nargs="+", default=[],
+                    help="ARM:seed,seed,... derive extra seeds from that arm's "
+                         "seed-1 spec. Refused for arms whose rate is not "
+                         "bracketed, because the rate is baked in at write time.")
     args = ap.parse_args()
+
+    if args.derive_seeds:
+        rc = 0
+        for spec in args.derive_seeds:
+            arm, _, seeds = spec.partition(":")
+            if arm not in RATES:
+                print(f"{arm}: FAILED: unknown arm")
+                rc = 1
+                continue
+            if not RATES[arm][2] and not args.allow_unbracketed:
+                print(f"{arm}: REFUSED -- rate not bracketed, so every derived "
+                      f"seed would bake in a rate the sweep has not confirmed. "
+                      f"{RATES[arm][3]}")
+                rc = 1
+                continue
+            for sd in [int(x) for x in seeds.split(",") if x]:
+                r = derive_seed(arm, 1, sd)
+                print(f"job-mtx-{arm.lower()}-s{sd}-raunav.yaml   {r}")
+                rc |= r.startswith("FAILED")
+        return rc
 
     rc = 0
     for arm, (k, rate, bracketed, why) in RATES.items():
