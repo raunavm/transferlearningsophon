@@ -1,0 +1,82 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # FROZEN-FEATURE EXTRACTION -- g1-r16q1-lr5e4 (R16_Q1, K=17)
+  #
+  # Reads the 128-d representation the classifier head sees, for the frozen
+  # probes in docs/DOWNSTREAM_SUITE.md. NOT the same as the K-way scores that
+  # scripts/build_eval_jobs.py caches: a probe fitted on scores measures the
+  # head that this arm's own vocabulary trained, which is the variable under
+  # study. See experiments/EVAL/extract_features.py.
+  #
+  # CPU-ONLY ON PURPOSE. Extraction is a forward pass, so a GPU buys speed and
+  # not correctness -- and the GPU queue has not scheduled anything in 3.5 days
+  # while CPU is uncontended.
+  name: extract-g1-r16q1-lr5e4-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 50
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: extract
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.3" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          pip install --no-cache-dir -q pyarrow || exit 1
+
+          CKPT=/data/results/g1/g1-r16q1-lr5e4/net_best_epoch_state.pt
+          # weaver writes net_best_epoch_state.pt from ITS OWN best-epoch rule.
+          # If it is absent the run did not finish, and extracting from the last
+          # epoch instead would silently probe a different model than the one
+          # every other number refers to.
+          [ -f "${CKPT}" ] || { echo "FATAL: no ${CKPT}. Run unfinished?"; ls -la /data/results/g1/g1-r16q1-lr5e4 | head -20; exit 1; }
+
+          OUT=/data/results/eval/g1-r16q1-lr5e4/features
+          mkdir -p ${OUT}
+
+          PYTHONUNBUFFERED=1 python3 experiments/EVAL/extract_features.py \
+            --checkpoint "${CKPT}" \
+            --num-classes 17 \
+            --arm R16_Q1 \
+            --data-config configs/data/JetClassII_base.yaml \
+            --data-test /jc2/jet_data/Res2P_{0250..0299}.parquet /jc2/jet_data/Res34P_{1075..1289}.parquet /jc2/jet_data/QCD_{0350..0419}.parquet \
+            --out ${OUT} \
+            --batch-size 512 --num-workers 2 \
+            --max-jets 400000
+
+          echo "=== manifest ==="
+          cat ${OUT}/extract_manifest.json
+        volumeMounts:
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "20Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "20Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }
