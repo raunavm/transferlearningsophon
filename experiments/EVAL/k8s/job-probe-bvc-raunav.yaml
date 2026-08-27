@@ -1,0 +1,85 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # FROZEN-PROBE READOUT -- L162 vs R16_Q1, b-vs-c resonant.
+  #
+  # Fits the linear AND nonlinear MLP probes of docs/DOWNSTREAM_SUITE.md on the
+  # 128-d representations extracted by job-extract-g1-*-raunav.yaml. D6 makes the
+  # MLP mandatory wherever a claim rests on a null, so probe.py always runs both
+  # and has no flag to skip either.
+  #
+  # WHAT THIS CAN AND CANNOT ANSWER, measured 2026-08-27:
+  #   bvc_resonant (label_X_bb 0 vs label_X_cc 1)  30,151 / 30,414 jets  USABLE
+  #   bvc_qcd      (label_QCD_bb 169 vs _cc 181)        0 /      0 jets  SKIPPED
+  # The extraction reads its 335 test files in strict family order with
+  # shuffle=False, so --max-jets 400000 stops inside the ~5th Res2P file and no
+  # QCD jet is ever reached. See DECISIONS_PENDING.md item 11. bvc_qcd is
+  # collapsed at BOTH L162 and R16_Q1 anyway, so for this pair it was a
+  # null-vs-null control; the defect binds when L188 features exist.
+  #
+  # READ THE OUTPUT WITH ITS DENOMINATOR. probe.py's paired bootstrap resamples
+  # JETS on one checkpoint per arm and carries no pretraining-seed component, so
+  # its excludes_zero marker is not a seed-aware significance test. The measured
+  # sigma_pretrain is 0.003704 in log10(1-AUC) (RUNS.csv e1-sigma-refit), giving
+  # a 2.05% minimum detectable effect in (1-AUC) at n=5 paired. Any gap here is
+  # conditioned on n=1 pretraining seed per arm.
+  #
+  # CPU-ONLY. Two 205 MB feature arrays plus a 3-seed MLP; the GPU queue has not
+  # scheduled anything in 3.5 days and this does not need one.
+  name: probe-bvc-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 50
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: probe
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.6" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+
+          L162=/data/results/eval/g1-l162-lr1e3/features
+          R16=/data/results/eval/g1-r16q1-lr5e4/features
+
+          # Both arms must exist AND be row-aligned. probe.py hard-fails on a
+          # label188 sha mismatch, but failing here names which arm is missing.
+          for d in "${L162}" "${R16}"; do
+            [ -f "${d}/features.npy" ] || { echo "FATAL: no ${d}/features.npy"; exit 1; }
+            [ -f "${d}/label188.npy" ] || { echo "FATAL: no ${d}/label188.npy"; exit 1; }
+          done
+
+          OUT=/data/results/eval/probe_bvc_v1
+          mkdir -p ${OUT}
+
+          PYTHONUNBUFFERED=1 python3 experiments/EVAL/probe.py \
+            --features L162=${L162} R16_Q1=${R16} \
+            --out ${OUT} \
+            --bootstrap 2000
+
+          echo "=== results ==="
+          cat ${OUT}/*.json
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "16Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "16Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
