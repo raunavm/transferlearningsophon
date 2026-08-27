@@ -36,12 +36,12 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s"
-# mtx-s1.4. NOT s1.3: that tag is at 4fcd165, which PREDATES
+# mtx-s1.5 (was s1.4, was s1.3). s1.3 is at 4fcd165, which PREDATES
 # experiments/EVAL/extract_features.py, so both extraction jobs cloned it,
 # found no such file, and crash-looped. s1.4 is the first tag carrying the
 # downstream code, and every file a TRAINING pod executes is byte-identical
 # between s1.2 and s1.4, so nothing already running is affected.
-PIN = "mtx-s1.4"
+PIN = "mtx-s1.5"
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 
 # (run_id, arm, K, checkpoint dir). The G1 rows are the SMOKE TEST described
