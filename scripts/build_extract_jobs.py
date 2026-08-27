@@ -101,7 +101,7 @@ spec:
             --data-config configs/data/JetClassII_base.yaml \\
             --data-test /jc2/jet_data/Res2P_{{0250..0299}}.parquet /jc2/jet_data/Res34P_{{1075..1289}}.parquet /jc2/jet_data/QCD_{{0350..0419}}.parquet \\
             --out ${{OUT}} \\
-            --batch-size 512 --num-workers 2{max_jets}
+            --batch-size 512 --num-workers 1 --fetch-step 1{max_jets}
 
           echo "=== manifest ==="
           cat ${{OUT}}/extract_manifest.json
@@ -149,7 +149,13 @@ def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int) -> tuple[str, str]
                      "queue has not scheduled anything in 3.5 days\n  # while "
                      "CPU is uncontended."),
         max_jets=(f" \\\n            --max-jets {max_jets}" if max_jets else ""),
-        mem="32Gi" if not gpu else "76Gi",
+        # 48Gi, not 32Gi. The loader dominates, not the model: 32Gi
+        # produced 13 OOMKilled pods before a single jet was written. Training
+        # measures 35-58 GB at fetch_step=5; extraction runs fetch_step=1 with
+        # one worker, roughly a tenth of that file buffering, and 48Gi leaves
+        # generous room over the estimate while staying far below the 76Gi that
+        # has not scheduled in hours.
+        mem="48Gi" if not gpu else "76Gi",
         cpu="8" if not gpu else "4",
         gpu_req=', nvidia.com/gpu: "1"' if gpu else "",
         gpu_aff=GPU_AFF if gpu else "")

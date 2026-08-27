@@ -259,7 +259,16 @@ def main() -> int:
                          "on row alignment. Overridable only for testing.")
     ap.add_argument("--batch-size", type=int, default=512)
     ap.add_argument("--max-jets", type=int, default=0, help="0 = all")
-    ap.add_argument("--num-workers", type=int, default=2)
+    ap.add_argument("--num-workers", type=int, default=1,
+                    help="1, not 2. Each worker holds its own file buffer, so "
+                         "workers multiply the dominant memory cost, and a "
+                         "single worker also makes the emission order trivially "
+                         "deterministic -- which is what row alignment across "
+                         "arms rests on.")
+    ap.add_argument("--fetch-step", type=int, default=1,
+                    help="FILES loaded per fetch (fetch_by_files stays True). "
+                         "Training uses 5 for throughput; extraction has no "
+                         "reweighting to balance and is memory-bound, so 1.")
     ap.add_argument("--self-check-only", action="store_true",
                     help="build the model, run both guards, write nothing")
     args = ap.parse_args()
@@ -289,6 +298,20 @@ def main() -> int:
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
+    # MEMORY. The model is irrelevant here -- 2.2M parameters is ~9 MB and the
+    # accumulated features are 128 floats per jet. What costs memory is the
+    # LOADER: fetch_by_files with fetch_step=5 holds five whole JetClass-II
+    # files in RAM per worker, which is why training's measured anon band is
+    # 35-58 GB. Sizing this job at 32Gi on the theory that "extraction is
+    # lighter than training" was wrong in exactly that way, and produced 13
+    # OOMKilled pods. fetch_step=1 with one worker cuts the dominant term by
+    # roughly ten.
+    #
+    # fetch_by_files STAYS True. CLAUDE.md is explicit that weaver 0.4.17's
+    # event-fraction loader retains ~all loaded jets and climbs without bound;
+    # lowering fetch_step within file mode is a different thing entirely and is
+    # safe.
+    #
     # for_training=False is load-bearing twice over: it disables the flat
     # (pT, m_SD) resampling used in training -- the probe must see the natural
     # test distribution -- AND it is what makes weaver load the observer
@@ -304,8 +327,8 @@ def main() -> int:
     # which is what extraction wants.
     import inspect  # noqa: E402
     _params = inspect.signature(SimpleIterDataset.__init__).parameters
-    _kw = dict(for_training=False, fetch_by_files=True, fetch_step=5,
-               name="extract")
+    _kw = dict(for_training=False, fetch_by_files=True,
+               fetch_step=args.fetch_step, name="extract")
     _unknown = [k for k in _kw if k not in _params]
     if _unknown:
         raise SystemExit(
