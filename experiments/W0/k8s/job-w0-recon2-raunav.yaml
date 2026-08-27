@@ -1,0 +1,115 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # W0 step 0b -- RECON ONLY, no GPU, read-only inspection of /data.
+  #
+  # Recon 1 found /data/results/e8/features_sophon and several /data/embeddings_*
+  # directories. If any of them already holds 128-d Sophon latents for
+  # JetClass-II WITH jet_label coverage across all 188 classes, the entire
+  # effective-rank sweep runs on cached arrays at zero GPU cost.
+  #
+  # The thing that decides it is LABEL COVERAGE, not file size: E8 was a
+  # transfer-tax study and may have extracted only a handful of classes, which
+  # would be useless for a 188-class-mean spectrum. So this job counts distinct
+  # jet_label values, not just rows.
+  #
+  # Also locates the released Sophon checkpoint, which is gitignored and so
+  # cannot be cloned from GitHub.
+  name: w0-recon2-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: recon2
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - { name: PYTHONUNBUFFERED, value: "1" }
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set +e
+          echo "===== A. released Sophon checkpoint ====="
+          for P in /data/transferlearningsophon/models/JetClassII_Sophon/model.pt \
+                   /data/models/JetClassII_Sophon/model.pt; do
+            [ -f "$P" ] && echo "FOUND $P ($(stat -c%s "$P") bytes)"
+          done
+          echo "-- repo copy on /data --"
+          ls -la /data/transferlearningsophon/ 2>&1 | head -20
+          find /data/transferlearningsophon -name "*.pt" 2>/dev/null | head
+
+          echo
+          echo "===== B. e8 features_sophon ====="
+          ls -la /data/results/e8/ 2>&1 | head -20
+          echo "-- features_sophon --"
+          ls -la /data/results/e8/features_sophon 2>&1 | head -30
+          du -sh /data/results/e8/features_sophon 2>/dev/null
+
+          echo
+          echo "===== C. embeddings_* dirs (names + sizes) ====="
+          for D in /data/embeddings_*; do
+            echo "--- $D ---"; ls "$D" 2>/dev/null | head -6; du -sh "$D" 2>/dev/null
+          done
+
+          echo
+          echo "===== D. inspect any candidate arrays: shape, dtype, LABEL COVERAGE ====="
+          python3 - <<'PY' 2>&1
+          import glob, os, numpy as np
+          cands = []
+          for pat in ['/data/results/e8/features_sophon/*',
+                      '/data/embeddings_pretrained_full*/*',
+                      '/data/features/*/*']:
+              cands += sorted(glob.glob(pat))
+          cands = [c for c in cands if os.path.isfile(c)][:40]
+          print('n candidate files:', len(cands))
+          for c in cands:
+              sz = os.path.getsize(c)
+              print(f'\n--- {c}  ({sz/1e6:.1f} MB) ---')
+              try:
+                  if c.endswith('.npy'):
+                      a = np.load(c, mmap_mode='r'); print('  npy shape', a.shape, a.dtype)
+                  elif c.endswith('.npz'):
+                      z = np.load(c, mmap_mode='r')
+                      for k in list(z.keys())[:12]:
+                          print(f'  npz  {k:24s} {z[k].shape} {z[k].dtype}')
+                          if 'label' in k.lower():
+                              v = np.asarray(z[k]).ravel()
+                              u = np.unique(v)
+                              print(f'       -> {len(u)} distinct labels, min={u.min()} max={u.max()}')
+                  elif c.endswith(('.pt','.pth')):
+                      import torch
+                      o = torch.load(c, map_location='cpu', weights_only=False)
+                      if isinstance(o, dict):
+                          for k in list(o.keys())[:12]:
+                              v = o[k]
+                              sh = tuple(v.shape) if hasattr(v,'shape') else type(v).__name__
+                              print(f'  pt   {k:24s} {sh}')
+                              if 'label' in str(k).lower() and hasattr(v,'shape'):
+                                  u = np.unique(np.asarray(v).ravel())
+                                  print(f'       -> {len(u)} distinct labels, min={u.min()} max={u.max()}')
+                  else:
+                      print('  (unrecognised extension, skipped)')
+              except Exception as e:
+                  print('  ERR', type(e).__name__, e)
+          PY
+          echo
+          echo "===== RECON2 DONE ====="
+        resources:
+          requests: { memory: "12Gi", cpu: "2", ephemeral-storage: "8Gi" }
+          limits:   { memory: "12Gi", cpu: "2", ephemeral-storage: "8Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

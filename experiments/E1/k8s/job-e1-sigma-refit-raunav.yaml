@@ -1,0 +1,144 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # SIGMA_PRETRAIN REFIT v2 — zero GPU, read-mostly.
+  #
+  # v1 BUG (caught in its own logs, job killed before it wrote):
+  #   pred.root is ONE FILE PER TEST CLASS, not one per run:
+  #     /data/results/e1/<run>/pred_HToBB.root, pred_HToCC.root, ... (10 classes)
+  #   v1 computed macro AUC per FILE, so every call saw a single truth class and
+  #   sklearn returned undefined. v2 concatenates the 10 class files within each
+  #   run directory, then computes ONE macro AUC per run.
+  #
+  # WHY: eval_results.json stores metrics to 4 decimal places. The in-house
+  # sigma_pretrain estimate from E1's three from-scratch Arm S seeds is
+  # sigma(log10(1-AUC)) = 0.0044, which at 1e-4 quantization is barely one
+  # significant figure. pred.root holds raw per-jet scores -> full precision.
+  #
+  # WHY IT MATTERS: G3 is budgeted at ~400 GPU-h to measure sigma_pretrain from
+  # fresh pretraining runs. A tighter estimate may cut the number of runs needed,
+  # or show the effect is undetectable — either way, before the spend.
+  #
+  # Runs present: arm_p, arm_p_s1/s2/s3, arm_s_s1/s2/s3, smoke.
+  # No training, no GPU, writes exactly one small JSON.
+  name: e1-sigma-refit-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: refit
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/raunavm/transferlearningsophon.git
+          cd transferlearningsophon/experiments/E1
+
+          python3 - <<'PY'
+          import glob, json, math, os, re
+          from collections import defaultdict
+          import numpy as np
+          import eval_e1 as E
+
+          OUT = "/data/results/e1"
+          paths = sorted(glob.glob(os.path.join(OUT, "**", "pred_*.root"), recursive=True))
+
+          # group by run directory - each dir holds one file per test class
+          runs = defaultdict(list)
+          for p in paths:
+              runs[os.path.dirname(p)].append(p)
+
+          print(f"===== {len(paths)} files across {len(runs)} run directories =====")
+          for r in sorted(runs):
+              print(f"  {r:<44} {len(runs[r])} class files")
+          print()
+
+          print("===== macro AUC per run, full precision =====")
+          per_run = {}
+          for r in sorted(runs):
+              fs = sorted(runs[r])
+              if len(fs) < 2:
+                  print(f"  SKIP {r}: only {len(fs)} file(s) - cannot form a multi-class set")
+                  continue
+              P, T = [], []
+              bad = []
+              for f in fs:
+                  try:
+                      pr, tr = E.load(f)
+                      P.append(pr); T.append(tr)
+                  except Exception as e:
+                      bad.append((os.path.basename(f), f"{type(e).__name__}: {e}"))
+              if not P:
+                  print(f"  SKIP {r}: no readable files ({bad})"); continue
+              probs = np.concatenate(P, axis=0)
+              truth = np.concatenate(T, axis=0)
+              ncls = len(np.unique(truth))
+              if ncls < 2:
+                  print(f"  SKIP {r}: concatenated set still has {ncls} class(es)"); continue
+              auc = E.macro_auc(probs, truth)
+              l10 = math.log10(1.0 - auc)
+              per_run[r] = {"macro_auc": auc, "log10_one_minus_auc": l10,
+                            "n_jets": int(len(truth)), "n_classes": int(ncls),
+                            "n_files": len(P), "unreadable": bad}
+              print(f"  {os.path.basename(r):<12} AUC={auc!r}")
+              print(f"  {'':<12} log10(1-AUC)={l10!r}  n={len(truth)}  classes={ncls}"
+                    + (f"  UNREADABLE={bad}" if bad else ""))
+
+          # sigma WITHIN each arm (arm_s_* are the from-scratch pretraining seeds)
+          print("\n===== sigma within each arm =====")
+          arms = defaultdict(dict)
+          for r, v in per_run.items():
+              b = os.path.basename(r)
+              m = re.match(r"(arm_[ps])(?:_s(\d+))?$", b)
+              if m:
+                  arms[m.group(1)][b] = v["log10_one_minus_auc"]
+
+          summary = {}
+          for arm in sorted(arms):
+              vals = np.array(list(arms[arm].values()), dtype=np.float64)
+              d = {"runs": {k: float(v) for k, v in sorted(arms[arm].items())},
+                   "n": int(len(vals)),
+                   "mean_log10_one_minus_auc": float(vals.mean())}
+              if len(vals) >= 2:
+                  d["sigma_log10_one_minus_auc_ddof1"] = float(vals.std(ddof=1))
+                  d["min"], d["max"] = float(vals.min()), float(vals.max())
+              summary[arm] = d
+              print(f"\n  {arm}  n={d['n']}")
+              for k, v in d["runs"].items():
+                  print(f"      {k:<12} log10(1-AUC) = {v!r}")
+              if "sigma_log10_one_minus_auc_ddof1" in d:
+                  print(f"      sigma (ddof=1) = {d['sigma_log10_one_minus_auc_ddof1']!r}")
+
+          print("\n===== COMPARISON =====")
+          print("  eval_results.json 4-dp estimate (arm_s, 3 seeds): sigma = 0.0044")
+          s = summary.get("arm_s", {}).get("sigma_log10_one_minus_auc_ddof1")
+          print(f"  full-precision refit (arm_s)                   : sigma = {s!r}")
+          if s:
+              print(f"  ratio full/4dp = {s/0.0044:.4f}")
+
+          dest = os.path.join(OUT, "sigma_refit.json")
+          with open(dest, "w") as fh:
+              json.dump({"per_run": per_run, "per_arm": summary}, fh, indent=2)
+          print(f"\nwrote {dest}")
+          PY
+        resources:
+          requests: { memory: "32Gi", cpu: "4", ephemeral-storage: "8Gi" }
+          limits:   { memory: "32Gi", cpu: "4", ephemeral-storage: "8Gi" }
+        volumeMounts:
+        - { name: pvc, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

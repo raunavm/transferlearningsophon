@@ -1,0 +1,209 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # W0 step 1a -- PILOT for the effective-rank sweep. GPU, ~5-10 min, read-only
+  # except a small JSON under /data.
+  #
+  # WHY A PILOT AND NOT THE FULL SWEEP:
+  # the rank sweep needs 128-d latents, and there is no usable cache (E8's
+  # arrays are model INPUTS (N,128,17) with 128 = particles, labelled in the
+  # retired 10-class grouping; /data/embeddings_* are JetClass-1). So latents
+  # must be re-extracted, which means replicating weaver's preprocessing by
+  # hand. Get that wrong and the embeddings are silently meaningless -- every
+  # rank number downstream would be garbage that still looks plausible.
+  #
+  # THE SELF-CHECK: g188 is a 188-way classifier. Run it on jets whose
+  # jet_label we know and measure top-1 accuracy. Chance is 1/188 = 0.53%.
+  # If preprocessing is correct, accuracy must be FAR above chance. This job
+  # refuses to declare success below 20%, so a preprocessing bug fails loudly
+  # here instead of quietly poisoning the full run.
+  #
+  # Preprocessing replicated from experiments/E2/data/JetClassII_g188.yaml
+  # (git HEAD), method: manual -- so the standardisation constants are explicit
+  # in the config rather than data-derived.
+  name: w0-pilot-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: pilot
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - { name: PYTHONUNBUFFERED, value: "1" }
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          pip install --no-cache-dir -q pyarrow 2>&1 | tail -2
+          OUT=/data/results/w0; mkdir -p "$OUT"
+          python3 - <<'PY' 2>&1
+          import glob, json, time
+          import numpy as np, torch
+          import pyarrow.parquet as pq
+          import awkward as ak
+          from weaver.nn.model.ParticleTransformer import ParticleTransformer
+
+          dev = 'cuda' if torch.cuda.is_available() else 'cpu'
+          print('device:', dev, '|', torch.cuda.get_device_name(0) if dev=='cuda' else '')
+
+          SOPHON = dict(input_dim=17, pair_input_dim=4, use_pre_activation_pair=True,
+                        embed_dims=[128,512,128], pair_embed_dims=[64,64,64],
+                        num_heads=8, num_layers=8, num_cls_layers=2, block_params=None,
+                        cls_block_params={"dropout":0,"attn_dropout":0,"activation_dropout":0},
+                        # fc_params=[(512,...)] builds Sophon's TWO-layer head:
+                        #   fc.0.0 = Linear(128,512) + ReLU + Dropout,  fc.1 = Linear(512,C)
+                        # fc_params=[] would build a single Linear(128,C) whose keys
+                        # (fc.0.weight) do not match the checkpoint -- the head would
+                        # silently stay randomly initialised.
+                        fc_params=[(512, 0.0)], activation='gelu', trim=False,
+                        for_inference=False)
+
+          def build(C, ckpt):
+              m = ParticleTransformer(num_classes=C, **SOPHON)
+              sd = torch.load(ckpt, map_location='cpu', weights_only=True)
+              sd = { (k[4:] if k.startswith('mod.') else k): v for k,v in sd.items() }
+              # strict=True: a shape/name mismatch must abort, not silently leave
+              # part of the network at its random initialisation.
+              m.load_state_dict(sd, strict=True)
+              print(f'  load: strict OK ({len(sd)} tensors)')
+              return m.to(dev).eval()
+
+          # --- preprocessing, transcribed from the E2 data config -------------
+          L = 128
+          def prep(t):
+              """table -> (features[N,17,L], vectors[N,4,L], mask[N,1,L], labels[N])"""
+              d = {c: ak.from_arrow(t[c]) for c in t.column_names}
+              jet_pt, jet_e = np.asarray(d['jet_pt']), np.asarray(d['jet_energy'])
+              sel = ((jet_pt>200)&(jet_pt<2500)&
+                     (np.asarray(d['jet_sdmass'])>20)&(np.asarray(d['jet_sdmass'])<500))
+              idx = np.flatnonzero(sel)
+              if idx.size == 0: return None
+              jpt = jet_pt[idx][:,None]; jen = jet_e[idx][:,None]
+
+              def col(name):
+                  a = d[name][idx]
+                  a = ak.fill_none(ak.pad_none(a, L, clip=True), 0.0)
+                  return np.asarray(ak.to_numpy(a), dtype=np.float32)
+
+              px,py,pz,en = (col('part_'+k) for k in ('px','py','pz','energy'))
+              deta, dphi  = col('part_deta'), col('part_dphi')
+              nreal = np.asarray(ak.to_numpy(ak.num(d['part_px'][idx])))
+              nreal = np.minimum(nreal, L)
+              ar = np.arange(L)[None,:]
+              mask = (ar < nreal[:,None]).astype(np.float32)
+
+              # pad_mode: wrap -- repeat real constituents to fill the slots
+              wrap = np.where(nreal[:,None] > 0, ar % np.maximum(nreal[:,None],1), 0)
+              def wr(a): return np.take_along_axis(a, wrap, axis=1)
+              px,py,pz,en,deta,dphi = map(wr, (px,py,pz,en,deta,dphi))
+              for nm in ('charge','isChargedHadron','isNeutralHadron','isPhoton',
+                         'isElectron','isMuon','d0val','d0err','dzval','dzerr'):
+                  d['_'+nm] = wr(col('part_'+nm))
+
+              s   = 500.0/jpt
+              pxs,pys,pzs,ens = px*s, py*s, pz*s, en*s
+              pt  = np.hypot(px,py); pts = np.hypot(pxs,pys)
+              eps = 1e-12
+              def tr(x, sub, mul, lo=-5.0, hi=5.0):
+                  return np.clip((x-sub)*mul, lo, hi)
+              f = [
+                tr(np.log(pts+eps), 1.7, 0.7),
+                tr(np.log(ens+eps), 2.0, 0.7),
+                tr(np.log(pt/jpt+eps), -4.7, 0.7),
+                tr(np.log(en/jen+eps), -4.7, 0.7),
+                tr(np.hypot(deta,dphi), 0.2, 4.0),
+                d['_charge'], d['_isChargedHadron'], d['_isNeutralHadron'],
+                d['_isPhoton'], d['_isElectron'], d['_isMuon'],
+                np.tanh(d['_d0val']),
+                tr(d['_d0err'], 0.0, 1.0, 0.0, 1.0),
+                np.tanh(d['_dzval']),
+                tr(d['_dzerr'], 0.0, 1.0, 0.0, 1.0),
+                deta, dphi,
+              ]
+              feats = np.stack(f, axis=1).astype(np.float32)          # N,17,L
+              vecs  = np.stack([pxs,pys,pzs,ens], axis=1).astype(np.float32)
+              m     = mask[:,None,:].astype(np.float32)
+              # NOTE: do NOT zero the wrapped slots. pad_mode=wrap means every
+              # slot carries a real constituent's values (repeated); validity is
+              # carried by `mask` alone. weaver embeds first and masks after, and
+              # pair_embed consumes the vectors at every position to build the
+              # attention bias -- zeroing here would change that bias relative to
+              # training.
+              return feats, vecs, m, np.asarray(d['jet_label'])[idx].astype(np.int64)
+
+          COLS = ['jet_pt','jet_energy','jet_sdmass','jet_label',
+                  'part_px','part_py','part_pz','part_energy','part_deta','part_dphi',
+                  'part_charge','part_isChargedHadron','part_isNeutralHadron',
+                  'part_isPhoton','part_isElectron','part_isMuon',
+                  'part_d0val','part_d0err','part_dzval','part_dzerr']
+
+          # sample across all three generation blocks so many labels appear
+          files = []
+          for pat in ('Res2P','Res34P','QCD'):
+              g = sorted(glob.glob(f'/jc2/jet_data/{pat}*.parquet'))
+              files += g[:3]
+          print('pilot files:', [f.split("/")[-1] for f in files])
+
+          model = build(188, '/data/results/e2/stage0_hi/g188_s904/net_best_epoch_state.pt')
+
+          Y, P = [], []
+          t0 = time.time()
+          with torch.no_grad():
+              for fp in files:
+                  tab = pq.ParquetFile(fp)
+                  for batch in tab.iter_batches(batch_size=20000, columns=COLS):
+                      out = prep(batch)
+                      if out is None: continue
+                      fe, ve, mk, yy = out
+                      for i in range(0, len(yy), 512):
+                          xf = torch.from_numpy(fe[i:i+512]).to(dev)
+                          xv = torch.from_numpy(ve[i:i+512]).to(dev)
+                          xm = torch.from_numpy(mk[i:i+512]).to(dev).bool()
+                          logits = model(xf, v=xv, mask=xm)
+                          P.append(logits.float().argmax(1).cpu().numpy())
+                      Y.append(yy)
+                      break   # one batch per file is plenty for the pilot
+          dt = time.time()-t0
+          y = np.concatenate(Y); p = np.concatenate(P)
+          n = min(len(y), len(p)); y, p = y[:n], p[:n]
+          acc = float((y==p).mean())
+          print()
+          print('==================== PILOT RESULT ====================')
+          print(f'jets evaluated     : {n}')
+          print(f'wall seconds       : {dt:.1f}   ({n/max(dt,1e-9):.0f} jets/s)')
+          print(f'distinct labels    : {len(np.unique(y))}')
+          print(f'top-1 accuracy     : {acc*100:.2f} %')
+          print(f'chance (1/188)     : 0.53 %')
+          print(f'ratio to chance    : {acc/(1/188):.1f}x')
+          ok = acc > 0.20
+          print(f'PREPROCESSING {"OK" if ok else "*** SUSPECT ***"} (threshold 20%)')
+          print('======================================================')
+          json.dump({'n': int(n), 'acc': acc, 'jets_per_s': n/max(dt,1e-9),
+                     'distinct_labels': int(len(np.unique(y))), 'ok': bool(ok)},
+                    open('/data/results/w0/pilot.json','w'), indent=1)
+          PY
+          echo "===== PILOT DONE ====="
+        resources:
+          requests: { memory: "24Gi", cpu: "4", "nvidia.com/gpu": "1" }
+          limits:   { memory: "24Gi", cpu: "4", "nvidia.com/gpu": "1" }
+        volumeMounts:
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

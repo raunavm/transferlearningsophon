@@ -1,0 +1,87 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # LATENT SCALE PROBE -- does the TRUNK carry absolute momentum, or only its
+  # inputs? DECISIONS_PENDING.md item 2 makes this a BLOCKING precondition: no
+  # number describing trunk-carried scale may appear in a draft, pre-registration
+  # or talk until it has run.
+  #
+  # G-0 measured R^2 = 0.582 for ln p_T from the trunk's INPUTS. That is a LOWER
+  # bound on input content, not an upper bound on what the representation
+  # carries: the GBDT saw 51 per-jet summary statistics and no relative-p_T
+  # feature, so it could not form the per-track join the mechanism predicts, and
+  # an attention trunk can. A latent R^2 above 0.582 is therefore not a
+  # contradiction, and reading 0.582 as a ceiling is the one move here a referee
+  # could break.
+  #
+  # THIS ALSO CLOSES A GAP G-0 LEFT OPEN. audit/pt_recoverability_probe_spec.md
+  # lines 170-172 require |eta| to clear R^2_shuf by >= 0.05 to count as
+  # affirmative evidence for the Delphes-resolution-table pathway, and require
+  # signed eta -- the negative control -- to stay WITHIN 0.05 of R^2_shuf. G-0
+  # reported 0.107 for signed eta and never computed R^2_shuf at all, so "the
+  # negative control behaves correctly" was never established on the spec's own
+  # terms. This job computes the permutation null.
+  #
+  # PRE-REGISTERED BRANCH, so the result cannot be read after the fact: if the
+  # LATENT probe returns R^2 >= 0.94 on ln p_T, or lands in MATERIAL with the
+  # spec's attribution statistic A >= 0.5, then the fixed-decoder claim in spec
+  # section 8 is falsified and option B (the preprocessing fork) returns to the
+  # run matrix for the mass-head arms only.
+  #
+  # CPU-ONLY. Ridge plus a 3-seed 128->256->1 MLP on two 205 MB arrays.
+  name: latent-scale-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 50
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: probe
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.7" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+
+          L162=/data/results/eval/g1-l162-lr1e3/features
+          R16=/data/results/eval/g1-r16q1-lr5e4/features
+
+          # observers.npz must carry jet_pt and jet_eta. The script fails loudly
+          # if not, but naming the arm here makes the failure readable.
+          for d in "${L162}" "${R16}"; do
+            [ -f "${d}/features.npy" ]   || { echo "FATAL: no ${d}/features.npy"; exit 1; }
+            [ -f "${d}/observers.npz" ]  || { echo "FATAL: no ${d}/observers.npz"; exit 1; }
+          done
+
+          OUT=/data/results/eval/latent_scale_v1
+          mkdir -p ${OUT}
+
+          PYTHONUNBUFFERED=1 python3 experiments/EVAL/latent_scale_probe.py \
+            --features L162=${L162} R16_Q1=${R16} \
+            --out ${OUT}
+
+          echo "=== results ==="
+          cat ${OUT}/latent_scale_results.json
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "16Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "16Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

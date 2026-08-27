@@ -1,0 +1,120 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # W0 step 0 -- RECON ONLY, no GPU, read-only.
+  #
+  # Purpose: establish the four environment facts the effective-rank job depends
+  # on, BEFORE allocating a GPU. This project has twice lost a run to an
+  # unchecked environment assumption (pyarrow absent from cu121; pred.root being
+  # one file per class), so these are measured rather than assumed:
+  #
+  #   1. is pyarrow importable in transfer-learning:cu121?  (it was NOT, for the
+  #      G-0 audit -- that job had to move to python:3.11-slim, which has no torch)
+  #   2. where is the released Sophon checkpoint on /data?  (models/*.pt is
+  #      gitignored, so the job cannot clone it from GitHub)
+  #   3. does the parquet carry the 17 trunk input columns, and under what names?
+  #   4. do torch + weaver import, and is ParticleTransformer constructible?
+  #
+  # Nothing here writes to /jc2. The only write is a small JSON under /data.
+  name: w0-recon-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: recon
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - { name: PYTHONUNBUFFERED, value: "1" }
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set +e
+          OUT=/data/results/w0; mkdir -p "$OUT"
+
+          echo "===== 1. pyarrow / pandas in cu121 ====="
+          python3 -c "import pyarrow; print('pyarrow OK', pyarrow.__version__)" 2>&1
+          echo "-- if the above failed, try pip --"
+          python3 -c "import pyarrow" 2>/dev/null || pip install --no-cache-dir pyarrow 2>&1 | tail -5
+          python3 -c "import pyarrow; print('pyarrow AFTER PIP', pyarrow.__version__)" 2>&1
+
+          echo
+          echo "===== 2. torch / weaver / GPU visibility ====="
+          python3 -c "
+          import torch; print('torch', torch.__version__, 'cuda_avail', torch.cuda.is_available())
+          import weaver; print('weaver', getattr(weaver,'__version__','?'))
+          from weaver.nn.model.ParticleTransformer import ParticleTransformer
+          print('ParticleTransformer import OK')
+          " 2>&1
+
+          echo
+          echo "===== 3. locate released Sophon checkpoint on /data ====="
+          echo "-- top level of /data --"
+          ls -la /data 2>&1 | head -30
+          echo "-- any *.pt under /data (max depth 4, size>1MB) --"
+          find /data -maxdepth 4 -name "*.pt" -size +1M 2>/dev/null | head -30
+          echo "-- anything named like sophon --"
+          find /data -maxdepth 4 -iname "*sophon*" 2>/dev/null | head -20
+
+          echo
+          echo "===== 4. /jc2 layout + parquet schema (trunk input columns) ====="
+          ls /jc2 2>&1 | head
+          echo "-- file count in jet_data --"
+          ls /jc2/jet_data 2>/dev/null | wc -l
+          python3 - <<'PY' 2>&1
+          import glob, json, os
+          fs = sorted(glob.glob('/jc2/jet_data/*.parquet'))
+          print('n_parquet =', len(fs))
+          if not fs:
+              print('NO PARQUET FOUND'); raise SystemExit(0)
+          import pyarrow.parquet as pq
+          f = pq.ParquetFile(fs[0])
+          names = f.schema_arrow.names
+          print('example file :', os.path.basename(fs[0]))
+          print('n_rows       :', f.metadata.num_rows)
+          print('n_columns    :', len(names))
+          # the 17 trunk inputs, per Sophon/ParT JetClass schema
+          want = ['part_px','part_py','part_pz','part_energy','part_deta','part_dphi',
+                  'part_d0val','part_d0err','part_dzval','part_dzerr','part_charge',
+                  'part_isChargedHadron','part_isNeutralHadron','part_isPhoton',
+                  'part_isElectron','part_isMuon']
+          print()
+          print('--- trunk input column presence ---')
+          for w in want:
+              print(f'  {w:24s} {"OK" if w in names else "*** MISSING ***"}')
+          for extra in ['jet_label','jet_pt','jet_sdmass','jet_energy','jet_eta','jet_phi']:
+              print(f'  {extra:24s} {"OK" if extra in names else "*** MISSING ***"}')
+          print()
+          print('--- all columns ---')
+          print(names)
+          json.dump({'n_parquet': len(fs), 'columns': names,
+                     'n_rows_first': f.metadata.num_rows},
+                    open('/data/results/w0/recon.json','w'), indent=1)
+          print('wrote /data/results/w0/recon.json')
+          PY
+
+          echo
+          echo "===== RECON DONE ====="
+        resources:
+          requests: { memory: "8Gi", cpu: "2", ephemeral-storage: "8Gi" }
+          limits:   { memory: "8Gi", cpu: "2", ephemeral-storage: "8Gi" }
+        volumeMounts:
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

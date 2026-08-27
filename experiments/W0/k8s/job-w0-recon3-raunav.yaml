@@ -1,0 +1,102 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # W0 step 0c -- RECON ONLY, no GPU. Decides GPU vs no-GPU for the rank sweep.
+  #
+  # Recon 2 showed /data/results/e8/features_sophon is 11 GB under train/val/test
+  # subdirs, which my one-level glob skipped. Two things decide whether it is
+  # usable and BOTH must hold:
+  #
+  #   (a) PROVENANCE -- the embeddings must come from the RELEASED PRETRAINED
+  #       Sophon, not from a fine-tuned or probe-adapted variant. E8 was a
+  #       transfer-tax study, so fine-tuned variants are present in the same
+  #       tree (`ft/`), and a fine-tuned latent answers a different question.
+  #   (b) LABEL RESOLUTION -- labels must be native 188-way jet_label. The
+  #       sibling `probe_g10sem/` implies E8 worked in the RETIRED 10-class
+  #       semantic grouping; if the stored labels are g10 groups, the 188
+  #       class means are unrecoverable and the cache is useless to us.
+  #
+  # e8_provenance.json should answer (a) outright.
+  name: w0-recon3-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: recon3
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - { name: PYTHONUNBUFFERED, value: "1" }
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set +e
+          echo "===== A. e8 provenance (which checkpoint produced these?) ====="
+          cat /data/results/e8/e8_provenance.json 2>&1
+
+          echo
+          echo "===== B. tree under features_sophon ====="
+          for S in train val test; do
+            echo "--- features_sophon/$S ---"
+            ls /data/results/e8/features_sophon/$S 2>/dev/null | head -8
+            echo "    (n files: $(ls /data/results/e8/features_sophon/$S 2>/dev/null | wc -l))"
+          done
+          echo "--- e8/emb ---"
+          ls /data/results/e8/emb 2>/dev/null | head -12
+
+          echo
+          echo "===== C. shapes + LABEL COVERAGE (the deciding number) ====="
+          python3 - <<'PY' 2>&1
+          import glob, os, numpy as np
+          pats = ['/data/results/e8/features_sophon/*/*',
+                  '/data/results/e8/emb/*']
+          files = []
+          for p in pats:
+              files += sorted(glob.glob(p))
+          files = [f for f in files if os.path.isfile(f)]
+          print('n files found:', len(files))
+          for f in files[:24]:
+              print(f'\n--- {f}  ({os.path.getsize(f)/1e6:.1f} MB) ---')
+              try:
+                  if f.endswith('.npy'):
+                      a = np.load(f, mmap_mode='r')
+                      print('  shape', a.shape, a.dtype)
+                      # if it looks like a label vector, report coverage
+                      if a.ndim == 1 and a.dtype.kind in 'iu':
+                          u = np.unique(np.asarray(a))
+                          print(f'  -> {len(u)} DISTINCT LABELS  min={u.min()} max={u.max()}')
+                          print(f'  -> first 30: {u[:30]}')
+                  elif f.endswith('.npz'):
+                      z = np.load(f)
+                      for k in list(z.keys())[:14]:
+                          arr = z[k]
+                          print(f'  {k:22s} {arr.shape} {arr.dtype}')
+                          if arr.ndim == 1 and arr.dtype.kind in 'iu':
+                              u = np.unique(arr)
+                              print(f'     -> {len(u)} DISTINCT LABELS min={u.min()} max={u.max()}')
+                  else:
+                      print('  (skipped)')
+              except Exception as e:
+                  print('  ERR', type(e).__name__, e)
+          PY
+          echo
+          echo "===== RECON3 DONE ====="
+        resources:
+          requests: { memory: "12Gi", cpu: "2", ephemeral-storage: "8Gi" }
+          limits:   { memory: "12Gi", cpu: "2", ephemeral-storage: "8Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

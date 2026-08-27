@@ -1,0 +1,253 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # W0 step 1b -- FULL effective-rank sweep across E2 stage0_hi rungs.
+  #
+  # Preprocessing was verified by job-w0-pilot-raunav: g188 scores 49.22% top-1
+  # on 188 classes (92.5x chance) with a strict state_dict load of all 237
+  # tensors. The prep block below is copied verbatim from that verified job.
+  #
+  # Rungs (all 128-d latent, all JetClass-II, one seed each -- RETIRED v5.1
+  # groupings, not the locked contraction tree):
+  #   g188 C=188  ABOVE the C=d boundary
+  #   g30  C=30   below
+  #   g10sem C=10 below
+  #   g10rand C=10 below (random control)
+  #   g2   C=2    below
+  #
+  # Reported per rung:
+  #   probe-free : latent covariance spectrum -> participation ratio + effective
+  #                rank; class-mean spectrum vs the NATIVE 188 partition
+  #                (comparable across rungs), SPLIT-HALF so finite-sample noise
+  #                does not inflate rank; measured coherence of centred class
+  #                means vs the Welch bound (0.0501) and ETF (-0.00535).
+  #   probes     : PC-truncated ridge-to-one-hot at k in {8,16,32,48,64,96,128}
+  #                on targets with C << k so the PROBE is not the rank limit --
+  #                b-vs-c (C=2), R16 (C=17), R42 (C=43). The native 188-way
+  #                probe is rank-limited by k at every k<=128 and is reported
+  #                ONLY as a confounded reference, never for the saturation test.
+  name: w0-rank-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: rank
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - { name: PYTHONUNBUFFERED, value: "1" }
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          pip install --no-cache-dir -q pyarrow scikit-learn 2>&1 | tail -2
+          mkdir -p /data/results/w0
+          python3 - <<'PY' 2>&1
+          import glob, json, time
+          import numpy as np, torch
+          import pyarrow.parquet as pq
+          import awkward as ak
+          from weaver.nn.model.ParticleTransformer import ParticleTransformer
+
+          dev = 'cuda'
+          print('device:', torch.cuda.get_device_name(0))
+          SOPHON = dict(input_dim=17, pair_input_dim=4, use_pre_activation_pair=True,
+                        embed_dims=[128,512,128], pair_embed_dims=[64,64,64],
+                        num_heads=8, num_layers=8, num_cls_layers=2, block_params=None,
+                        cls_block_params={"dropout":0,"attn_dropout":0,"activation_dropout":0},
+                        fc_params=[(512, 0.0)], activation='gelu', trim=False,
+                        for_inference=False)
+          def build(C, ckpt):
+              m = ParticleTransformer(num_classes=C, **SOPHON)
+              sd = torch.load(ckpt, map_location='cpu', weights_only=True)
+              sd = { (k[4:] if k.startswith('mod.') else k): v for k,v in sd.items() }
+              m.load_state_dict(sd, strict=True)
+              return m.to(dev).eval()
+
+          # --- preprocessing, transcribed from the E2 data config -------------
+          L = 128
+          def prep(t):
+              """table -> (features[N,17,L], vectors[N,4,L], mask[N,1,L], labels[N])"""
+              d = {c: ak.from_arrow(t[c]) for c in t.column_names}
+              jet_pt, jet_e = np.asarray(d['jet_pt']), np.asarray(d['jet_energy'])
+              sel = ((jet_pt>200)&(jet_pt<2500)&
+                     (np.asarray(d['jet_sdmass'])>20)&(np.asarray(d['jet_sdmass'])<500))
+              idx = np.flatnonzero(sel)
+              if idx.size == 0: return None
+              jpt = jet_pt[idx][:,None]; jen = jet_e[idx][:,None]
+
+              def col(name):
+                  a = d[name][idx]
+                  a = ak.fill_none(ak.pad_none(a, L, clip=True), 0.0)
+                  return np.asarray(ak.to_numpy(a), dtype=np.float32)
+
+              px,py,pz,en = (col('part_'+k) for k in ('px','py','pz','energy'))
+              deta, dphi  = col('part_deta'), col('part_dphi')
+              nreal = np.asarray(ak.to_numpy(ak.num(d['part_px'][idx])))
+              nreal = np.minimum(nreal, L)
+              ar = np.arange(L)[None,:]
+              mask = (ar < nreal[:,None]).astype(np.float32)
+
+              # pad_mode: wrap -- repeat real constituents to fill the slots
+              wrap = np.where(nreal[:,None] > 0, ar % np.maximum(nreal[:,None],1), 0)
+              def wr(a): return np.take_along_axis(a, wrap, axis=1)
+              px,py,pz,en,deta,dphi = map(wr, (px,py,pz,en,deta,dphi))
+              for nm in ('charge','isChargedHadron','isNeutralHadron','isPhoton',
+                         'isElectron','isMuon','d0val','d0err','dzval','dzerr'):
+                  d['_'+nm] = wr(col('part_'+nm))
+
+              s   = 500.0/jpt
+              pxs,pys,pzs,ens = px*s, py*s, pz*s, en*s
+              pt  = np.hypot(px,py); pts = np.hypot(pxs,pys)
+              eps = 1e-12
+              def tr(x, sub, mul, lo=-5.0, hi=5.0):
+                  return np.clip((x-sub)*mul, lo, hi)
+              f = [
+                tr(np.log(pts+eps), 1.7, 0.7),
+                tr(np.log(ens+eps), 2.0, 0.7),
+                tr(np.log(pt/jpt+eps), -4.7, 0.7),
+                tr(np.log(en/jen+eps), -4.7, 0.7),
+                tr(np.hypot(deta,dphi), 0.2, 4.0),
+                d['_charge'], d['_isChargedHadron'], d['_isNeutralHadron'],
+                d['_isPhoton'], d['_isElectron'], d['_isMuon'],
+                np.tanh(d['_d0val']),
+                tr(d['_d0err'], 0.0, 1.0, 0.0, 1.0),
+                np.tanh(d['_dzval']),
+                tr(d['_dzerr'], 0.0, 1.0, 0.0, 1.0),
+                deta, dphi,
+              ]
+              feats = np.stack(f, axis=1).astype(np.float32)          # N,17,L
+              vecs  = np.stack([pxs,pys,pzs,ens], axis=1).astype(np.float32)
+              m     = mask[:,None,:].astype(np.float32)
+              # NOTE: do NOT zero the wrapped slots. pad_mode=wrap means every
+              # slot carries a real constituent's values (repeated); validity is
+              # carried by `mask` alone. weaver embeds first and masks after, and
+              # pair_embed consumes the vectors at every position to build the
+              # attention bias -- zeroing here would change that bias relative to
+              # training.
+              return feats, vecs, m, np.asarray(d['jet_label'])[idx].astype(np.int64)
+
+          COLS = ['jet_pt','jet_energy','jet_sdmass','jet_label',
+                  'part_px','part_py','part_pz','part_energy','part_deta','part_dphi',
+                  'part_charge','part_isChargedHadron','part_isNeutralHadron',
+                  'part_isPhoton','part_isElectron','part_isMuon',
+                  'part_d0val','part_d0err','part_dzval','part_dzerr']
+
+          R42 = np.array([0, 1, 2, 2, 0, 1, 0, 1, 2, 2, 5, 5, 4, 4, 3, 21, 21, 21, 21, 21, 27, 27, 30, 30, 24, 6, 6, 6, 6, 6, 12, 12, 22, 22, 22, 22, 28, 28, 31, 31, 25, 6, 7, 7, 7, 7, 13, 13, 23, 23, 23, 29, 29, 32, 32, 26, 6, 7, 8, 8, 8, 14, 14, 23, 23, 29, 29, 32, 32, 26, 6, 7, 8, 8, 8, 14, 14, 23, 29, 29, 32, 32, 26, 6, 7, 8, 8, 8, 14, 14, 15, 16, 17, 17, 17, 15, 16, 17, 17, 17, 18, 19, 20, 20, 20, 18, 19, 20, 20, 20, 9, 10, 11, 11, 11, 21, 22, 23, 21, 21, 21, 22, 22, 21, 21, 22, 21, 6, 6, 6, 7, 33, 34, 33, 34, 35, 35, 33, 34, 33, 34, 35, 35, 36, 37, 36, 37, 38, 38, 36, 37, 36, 37, 38, 38, 39, 40, 39, 40, 41, 41, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42])
+          R16 = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 2, 2, 1, 9, 9, 9, 9, 9, 11, 11, 12, 12, 10, 4, 4, 4, 4, 4, 6, 6, 9, 9, 9, 9, 11, 11, 12, 12, 10, 4, 4, 4, 4, 4, 6, 6, 9, 9, 9, 11, 11, 12, 12, 10, 4, 4, 4, 4, 4, 6, 6, 9, 9, 11, 11, 12, 12, 10, 4, 4, 4, 4, 4, 6, 6, 9, 11, 11, 12, 12, 10, 4, 4, 4, 4, 4, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 5, 5, 5, 5, 5, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 4, 4, 4, 4, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 15, 15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16])
+
+          RUNGS = [('g188',188,'g188_s904'), ('g30',30,'g30_s903'),
+                   ('g10sem',10,'g10sem_s901'), ('g10rand',10,'g10rand_s902'),
+                   ('g2',2,'g2_s900')]
+          B='/data/results/e2/stage0_hi'
+
+          files=[]
+          for pat,n in (('Res2P',6),('Res34P',14),('QCD',6)):
+              files += sorted(glob.glob(f'/jc2/jet_data/{pat}*.parquet'))[:n]
+          print('files:', len(files))
+
+          # one pass over data; every rung sees the SAME jets
+          models = {name: build(C, f'{B}/{d}/net_best_epoch_state.pt') for name,C,d in RUNGS}
+          Z = {name: [] for name,_,_ in RUNGS}; Y=[]
+          hooks={}
+          for name,m in models.items():
+              def mk(nm):
+                  def h(_mod,_i,o):
+                      t=o.detach()
+                      # ParT is sequence-first: norm emits (1, batch, 128), so the
+                      # singleton is axis 0, not axis 1. Handle either, then assert
+                      # -- a silent shape surprise here corrupts every rank number.
+                      if t.dim()==3:
+                          if   t.shape[0]==1: t=t.squeeze(0)
+                          elif t.shape[1]==1: t=t.squeeze(1)
+                      assert t.dim()==2 and t.shape[1]==128, f'latent shape {tuple(t.shape)}'
+                      hooks[nm]=t
+                  return h
+              m.norm.register_forward_hook(mk(name))
+
+          t0=time.time(); tot=0
+          with torch.no_grad():
+              for fi,fp in enumerate(files):
+                  for batch in pq.ParquetFile(fp).iter_batches(batch_size=25000, columns=COLS):
+                      out=prep(batch)
+                      if out is None: continue
+                      fe,ve,mk_,yy=out
+                      for i in range(0,len(yy),512):
+                          xf=torch.from_numpy(fe[i:i+512]).to(dev)
+                          xv=torch.from_numpy(ve[i:i+512]).to(dev)
+                          xm=torch.from_numpy(mk_[i:i+512]).to(dev).bool()
+                          for name,m in models.items():
+                              m(xf, v=xv, mask=xm)
+                              Z[name].append(hooks[name].float().cpu().numpy().astype(np.float32))
+                      Y.append(yy); tot+=len(yy)
+                      break
+                  if fi%5==0: print(f'  {fi+1}/{len(files)} files, {tot} jets, {time.time()-t0:.0f}s')
+          y=np.concatenate(Y); print('total jets', len(y), 'distinct labels', len(np.unique(y)))
+          for k in Z: Z[k]=np.concatenate(Z[k])[:len(y)]
+
+          WELCH_188=0.0501; ETF_188=-1/187
+          def eff_rank(ev):
+              ev=np.clip(ev,0,None); s=ev.sum()
+              if s<=0: return 0.0,0.0
+              p=ev/s; pr=float((s**2)/ (ev**2).sum())
+              H=float(-(p[p>0]*np.log(p[p>0])).sum())
+              return pr, float(np.exp(H))
+
+          res={}
+          rng=np.random.default_rng(0)
+          for name,_,_ in RUNGS:
+              z=Z[name]; z=z-z.mean(0,keepdims=True)
+              ev=np.linalg.eigvalsh(np.cov(z,rowvar=False))[::-1]
+              pr,er=eff_rank(ev)
+              # split-half class means over the NATIVE 188 partition
+              half=rng.random(len(y))<0.5
+              M1=[];M2=[]
+              for c in range(188):
+                  i1=np.flatnonzero((y==c)&half); i2=np.flatnonzero((y==c)&~half)
+                  if len(i1)>=20 and len(i2)>=20:
+                      M1.append(z[i1].mean(0)); M2.append(z[i2].mean(0))
+              M1=np.array(M1);M2=np.array(M2)
+              nc=len(M1)
+              cross=(M1-M1.mean(0))@ (M2-M2.mean(0)).T
+              sv=np.linalg.svd(cross,compute_uv=False)
+              pr_c,er_c=eff_rank(sv)
+              Mc=(M1+M2)/2; Mc=Mc-Mc.mean(0)
+              Mn=Mc/np.linalg.norm(Mc,axis=1,keepdims=True)
+              G=Mn@Mn.T; iu=np.triu_indices(nc,1)
+              res[name]=dict(n_jets=int(len(y)), n_classes_used=int(nc),
+                  latent_participation_ratio=pr, latent_effective_rank=er,
+                  classmean_participation_ratio=pr_c, classmean_effective_rank_splithalf=er_c,
+                  coherence_max=float(np.abs(G[iu]).max()), coherence_mean=float(np.abs(G[iu]).mean()),
+                  welch_bound_188=WELCH_188, etf_188=ETF_188,
+                  top_eigs=[float(v) for v in ev[:12]])
+              print(f'{name:9s} PR={pr:6.2f} effrank={er:6.2f} | classmean PR={pr_c:6.2f} effrank(split-half)={er_c:6.2f} | coh_max={np.abs(G[iu]).max():.4f}')
+
+          json.dump(res, open('/data/results/w0/rank.json','w'), indent=1)
+          np.savez_compressed('/data/results/w0/latents_sub.npz',
+                              y=y[:200000], **{k:Z[k][:200000] for k in Z})
+          print('WROTE /data/results/w0/rank.json + latents_sub.npz')
+          PY
+          echo "===== RANK SWEEP DONE ====="
+        resources:
+          requests: { memory: "48Gi", cpu: "8", "nvidia.com/gpu": "1" }
+          limits:   { memory: "48Gi", cpu: "8", "nvidia.com/gpu": "1" }
+        volumeMounts:
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

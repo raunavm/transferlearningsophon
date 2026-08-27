@@ -91,7 +91,14 @@ spec:
           # every other number refers to.
           [ -f "${{CKPT}}" ] || {{ echo "FATAL: no ${{CKPT}}. Run unfinished?"; ls -la {ckpt_dir} | head -20; exit 1; }}
 
-          OUT=/data/results/eval/{run_id}/features
+          # features_v2, NOT features. The file list was interleaved by family
+          # on 2026-08-27, so a re-extraction now reads DIFFERENT jets than the
+          # ones under .../features -- which are what probe-bvc-v1 and the
+          # recorded L162-vs-R16_Q1 numbers were computed on. extract_features.py
+          # np.save()s unconditionally, so reusing the path would overwrite those
+          # inputs with a different sample and silently invalidate a result
+          # already in experiments/RUNS.csv. Different sample, different path.
+          OUT=/data/results/eval/{run_id}/features_v2
           mkdir -p ${{OUT}}
 
           PYTHONUNBUFFERED=1 python3 experiments/EVAL/extract_features.py \\
@@ -99,7 +106,7 @@ spec:
             --num-classes {k} \\
             --arm {arm} \\
             --data-config configs/data/JetClassII_base.yaml \\
-            --data-test /jc2/jet_data/Res2P_{{0250..0299}}.parquet /jc2/jet_data/Res34P_{{1075..1289}}.parquet /jc2/jet_data/QCD_{{0350..0419}}.parquet \\
+            --data-test {file_list} \\
             --out ${{OUT}} \\
             --batch-size 512 --num-workers 1 --fetch-step 1{max_jets}
 
@@ -138,6 +145,37 @@ GPU_AFF = """
                 values: ["NVIDIA-GeForce-RTX-3090"]"""
 
 
+# THE FILE ORDER IS LOAD-BEARING, and getting it wrong is silent.
+#
+# weaver sets shuffle=False when for_training=False (dataset.py:327, verified in
+# the running image), so traversal is EXACTLY the order given on the command
+# line, and --max-jets stops mid-list. The original list was
+# Res2P_{0250..0299} Res34P_{1075..1289} QCD_{0350..0419} -- 335 files in strict
+# family order. At ~82k selected jets per file, --max-jets 400000 stops inside
+# the FIFTH file, so the 2026-08-27 extractions contain only Res2P: 15 unique
+# native labels, range 0-14, and ZERO QCD jets. probe.py's bvc_qcd task (labels
+# 169 vs 181) hit its rows.size < 1000 guard and returned {"skipped": true}.
+# Nothing errored; the manifest looked fine.
+#
+# Interleaving by family fixes it: any prefix of the list is family-balanced, so
+# --max-jets can be set for cost rather than coverage. Both arms must be
+# extracted from the SAME list or label188_sha256 diverges and probe.py's
+# alignment gate fails -- which is the one failure here that is not silent.
+FAMILIES = [("Res2P", 250, 299), ("Res34P", 1075, 1289), ("QCD", 350, 419)]
+
+
+def interleaved_files() -> str:
+    """Round-robin across families, so every prefix spans all three."""
+    per = [[f"/jc2/jet_data/{fam}_{i:04d}.parquet" for i in range(lo, hi + 1)]
+           for fam, lo, hi in FAMILIES]
+    out = []
+    for i in range(max(len(x) for x in per)):
+        for fam in per:
+            if i < len(fam):
+                out.append(fam[i])
+    return " ".join(out)
+
+
 def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int) -> tuple[str, str]:
     name = run_id.replace("_", "-").lower()
     text = TEMPLATE.format(
@@ -149,6 +187,7 @@ def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int) -> tuple[str, str]
                      "queue has not scheduled anything in 3.5 days\n  # while "
                      "CPU is uncontended."),
         max_jets=(f" \\\n            --max-jets {max_jets}" if max_jets else ""),
+        file_list=interleaved_files(),
         # 48Gi, not 32Gi. The loader dominates, not the model: 32Gi
         # produced 13 OOMKilled pods before a single jet was written. Training
         # measures 35-58 GB at fetch_step=5; extraction runs fetch_step=1 with
