@@ -35,10 +35,21 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 SPEC_DIR = ROOT / "experiments" / "MTX" / "k8s"
 
-# job-mtx-<armslug>-s<N>-raunav.yaml  ->  the armslug, lowercased with
-# underscores, as the filenames actually spell it (r16_q1, not r16q1).
-SPEC_RE = re.compile(r"^job-mtx-([a-z0-9_]+)-s(\d+)-raunav\.yaml$")
+# job-mtx-<armslug>-s<N>[suffix]-raunav.yaml  ->  the armslug, lowercased with
+# underscores, as the filenames actually spell it (r16_q1, not r16q1). The
+# optional letter suffix carries a re-run of the same seed at a different rate
+# (mtx-l162-s1b); it must be matched, or the one spec written specifically to
+# repair a rate would be the one spec the rate tests never look at.
+SPEC_RE = re.compile(r"^job-mtx-([a-z0-9_]+)-s(\d+[a-z]?)-raunav\.yaml$")
 LR_RE = re.compile(r"--start-lr\s+([0-9.eE+-]+)")
+
+# A spec may opt out of the rate assertions by carrying this marker with a
+# reason. That is for a run ALREADY LAUNCHED at a rate the project has since
+# moved off: its spec is a historical record of what is on the cluster, and
+# rewriting it would make the repo disagree with the running pod. The marker
+# does not hide the difference -- test_exceptions_are_explained prints every one
+# -- it only distinguishes a declared exception from silent drift.
+EXCEPT_RE = re.compile(r"^\s*#\s*RATE-EXCEPTION:\s*(\S.*)$", re.M)
 
 
 def declared_rates() -> dict[str, str]:
@@ -61,10 +72,19 @@ def arm_specs() -> dict[str, list[pathlib.Path]]:
 
 
 def start_lr(path: pathlib.Path) -> str:
-    hits = LR_RE.findall(path.read_text())
+    text = path.read_text()
+    # Comments in these specs quote historical rates at length; only the live
+    # command line counts.
+    live = re.sub(r"^\s*#.*$", "", text, flags=re.M)
+    hits = LR_RE.findall(live)
     assert hits, f"{path.name} has no --start-lr; the rate is not recorded anywhere"
     assert len(set(hits)) == 1, f"{path.name} passes --start-lr more than once: {hits}"
     return hits[0]
+
+
+def rate_exception(path: pathlib.Path) -> str | None:
+    m = EXCEPT_RE.search(path.read_text())
+    return m.group(1).strip() if m else None
 
 
 @pytest.fixture(scope="module")
@@ -89,7 +109,7 @@ def test_seeds_of_one_arm_share_a_rate(specs):
     siblings."""
     offenders = []
     for arm, paths in sorted(specs.items()):
-        rates = {p.name: start_lr(p) for p in paths}
+        rates = {p.name: start_lr(p) for p in paths if not rate_exception(p)}
         if len(set(rates.values())) > 1:
             offenders.append(f"{arm}: {rates}")
     assert not offenders, (
@@ -112,12 +132,28 @@ def test_spec_rate_matches_the_declared_rate(specs):
             offenders.append(f"{arm}: no entry in build_mtx_launch.RATES")
             continue
         for p in paths:
+            if rate_exception(p):
+                continue
             got = start_lr(p)
             if float(got) != float(want):
                 offenders.append(f"{p.name}: spec {got} != declared {want}")
     assert not offenders, (
         "launch specs disagree with the declared per-arm rates:\n  " +
         "\n  ".join(offenders))
+
+
+def test_exceptions_are_explained(specs):
+    """Every RATE-EXCEPTION must carry a reason, and they are printed on every
+    run so an exception cannot quietly become permanent."""
+    for arm, paths in sorted(specs.items()):
+        for p in paths:
+            why = rate_exception(p)
+            if why is None:
+                continue
+            assert len(why) > 20, (
+                f"{p.name}: RATE-EXCEPTION needs a real reason, got {why!r}")
+            print(f"RATE-EXCEPTION {p.name} (lr={start_lr(p)}, "
+                  f"declared={declared_rates().get(arm)}): {why}")
 
 
 def test_a_rate_split_across_arms_is_declared_not_accidental(specs):
@@ -128,7 +164,11 @@ def test_a_rate_split_across_arms_is_declared_not_accidental(specs):
     that exists only in a job spec. Every distinct rate must trace to a RATES
     entry, so the confound is visible to anyone reading one file."""
     declared = declared_rates()
-    used = {arm: start_lr(paths[0]) for arm, paths in specs.items()}
+    used = {}
+    for arm, paths in specs.items():
+        live = [p for p in paths if not rate_exception(p)]
+        if live:
+            used[arm] = start_lr(live[0])
     if len(set(used.values())) == 1:
         return  # single shared rate: I1 holds at the launch layer trivially
     undeclared = {arm: r for arm, r in used.items()

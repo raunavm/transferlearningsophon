@@ -25,6 +25,21 @@ metadata:
   # I/O-bound, not GPU-bound: a cross-region pod does not run slowly, it runs at
   # near-zero GPU utilisation. GPU model is pinned separately, for I7b. Both
   # constraints are required and they are not the same constraint.
+  # RATE CORRECTED 5e-4 -> 2.5e-4 on 2026-08-27. The spec had drifted from
+  # scripts/build_mtx_launch.py RATES, which declares 2.5e-4 for this arm and is
+  # right: 2.5e-4 (0.70721) is the ONLY R42_Q1 point that ever trained, while
+  # 5e-4 and 1e-3 both went nan at iteration 2 at seed 1. Divergence is
+  # stochastic -- g1-r42q1-lr5e4-s2 cleared 16 epochs clean at 5e-4 -- so this is
+  # not evidence 5e-4 is untrainable, and 0.70123 (5e-4, seed 2) vs 0.70721
+  # (2.5e-4, seed 1) is a tie inside the 0.0158 floor AND confounded by seed.
+  # But a nan at iteration 2 lands BEFORE the first checkpoint, so auto-resume
+  # cannot recover it and the job would crash-loop through all 50 retries. Of two
+  # tied rates, take the one with a seed-1 run that finished.
+  #
+  # This arm therefore differs in rate from L162 and R16_Q1 (both 5e-4). That
+  # difference is DECLARED in RATES and asserted by tests/test_launch_specs.py;
+  # it is not the silent drift that broke the headline pair. Any contrast
+  # involving R42_Q1 varies rate as well as vocabulary and must say so.
   name: mtx-r42q1-s1-raunav
   namespace: cms-ml
 spec:
@@ -167,7 +182,7 @@ spec:
             --no-remake-weights \
             --network-config experiments/MTX/ParT_sophon_arch_mtx.py \
             -o num_classes 43 -o fc_params '[(512,0.1)]' \
-            --use-amp --batch-size 512 --start-lr 5e-4 \
+            --use-amp --batch-size 512 --start-lr 2.5e-4 \
             --num-workers 2 --fetch-by-files --fetch-step 5 \
             --samples-per-epoch 10240000 --samples-per-epoch-val 1280000 \
             --num-epochs 80 --optimizer ranger \

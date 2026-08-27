@@ -5,7 +5,7 @@
 schema_version: "contraction-tree/1.0.0"
 family: sophon-label-granularity
 frozen: true
-frozen_on: "PENDING_SIGNOFF"   # stamped at sign-off, not at build time
+frozen_on: "2026-08-27"        # PI sign-off, DECISIONS_PENDING items 1 + 4
 
 provenance:
   native_labels:
@@ -17,7 +17,9 @@ provenance:
     class_master_sha256: c81d1a6a48143748d682a7ea34d4c2f85cf0a7f2be74328c36391be6e574d114
   weights_block:                     # invariant I2 - NEVER edited
     class_weights_sum: 1.73175
-    sha256: PENDING                  # computed by CI across all arm configs
+    sha256: 51a31ba239e3cfe553efbafbd88b2e02536e86cbd442efc544d12d328711d20b
+                                     # verified 2026-08-27 byte-identical across
+                                     # all four configs/arms/*.yaml AND the base
 
 rules:                               # the ONLY rules used to build the tree
   R16_Q1: |
@@ -45,6 +47,15 @@ rules:                               # the ONLY rules used to build the tree
     _NU_ groups are exactly where the two conventions differ.
   R1_Q1: |
     native 0-160 -> RESONANT_ALL; 161-187 -> QCD_ALL.
+  rung_numeral_convention: |
+    R-RUNG NUMERALS COUNT RESONANT GROUPS ONLY; QCD_ALL is always one further
+    group on top. So the head width is the numeral PLUS ONE:
+      R63_Q1 -> 64    R42_Q1 -> 43    R29_Q1 -> 30    R16_Q1 -> 17
+      R3_VIS ->  4    R1_Q1  ->  2
+    L-rung numerals count TOTAL groups: L188 -> 188, L162 -> 162.
+    configs/arms/*.yaml already set num_classes correctly (43, 17, ...), but a
+    42-way head on R42_Q1 is a silent misindex rather than a crash, so the
+    convention is stated here rather than left to be inferred from the name.
   group_id_order: |
     Primary keys, SEMANTIC and not derivable from native label indices:
     prong class ascending, then hadronic -> semileptonic -> leptonic

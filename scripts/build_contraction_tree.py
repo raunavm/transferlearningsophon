@@ -97,6 +97,12 @@ _TOKENS = ("tauhtauh", "tauhtaul", "tauhv", "taulv", "tauh", "taul",
            "ll", "lv", "l", "v")
 
 
+# I2's weights-block digest, stamped into the artifact at sign-off rather than
+# left as PENDING. Recomputed and asserted by
+# tests/test_arm_configs.py::test_weights_block_is_byte_identical_and_matches_base;
+# if that test goes red this constant is stale and the artifact is lying.
+WEIGHTS_BLOCK_SHA256 = "51a31ba239e3cfe553efbafbd88b2e02536e86cbd442efc544d12d328711d20b"
+
 def canonical_topology(code: str) -> str:
     """Map a native topology code to its R16 canonical form.
 
@@ -540,7 +546,7 @@ def write_yaml(built: dict, shares: dict[int, Fraction]) -> None:
     a('schema_version: "contraction-tree/1.0.0"')
     a("family: sophon-label-granularity")
     a("frozen: true")
-    a('frozen_on: "PENDING_SIGNOFF"   # stamped at sign-off, not at build time')
+    a('frozen_on: "2026-08-27"        # PI sign-off, DECISIONS_PENDING items 1 + 4')
     a("")
     a("provenance:")
     a("  native_labels:")
@@ -552,7 +558,9 @@ def write_yaml(built: dict, shares: dict[int, Fraction]) -> None:
     a(f"    class_master_sha256: {_sha256_of(MASTER)}")
     a("  weights_block:                     # invariant I2 - NEVER edited")
     a("    class_weights_sum: 1.73175")
-    a("    sha256: PENDING                  # computed by CI across all arm configs")
+    a("    sha256: " + WEIGHTS_BLOCK_SHA256)
+    a("                                     # verified 2026-08-27 byte-identical across")
+    a("                                     # all four configs/arms/*.yaml AND the base")
     a("")
     # Every rule value is a LITERAL BLOCK SCALAR. These are free prose and
     # contain ': ', trailing colons and quotes; as plain scalars they make the
@@ -584,6 +592,15 @@ def write_yaml(built: dict, shares: dict[int, Fraction]) -> None:
     a("    _NU_ groups are exactly where the two conventions differ.")
     a("  R1_Q1: |")
     a("    native 0-160 -> RESONANT_ALL; 161-187 -> QCD_ALL.")
+    a("  rung_numeral_convention: |")
+    a("    R-RUNG NUMERALS COUNT RESONANT GROUPS ONLY; QCD_ALL is always one further")
+    a("    group on top. So the head width is the numeral PLUS ONE:")
+    a("      R63_Q1 -> 64    R42_Q1 -> 43    R29_Q1 -> 30    R16_Q1 -> 17")
+    a("      R3_VIS ->  4    R1_Q1  ->  2")
+    a("    L-rung numerals count TOTAL groups: L188 -> 188, L162 -> 162.")
+    a("    configs/arms/*.yaml already set num_classes correctly (43, 17, ...), but a")
+    a("    42-way head on R42_Q1 is a silent misindex rather than a crash, so the")
+    a("    convention is stated here rather than left to be inferred from the name.")
     a("  group_id_order: |")
     a("    Primary keys, SEMANTIC and not derivable from native label indices:")
     a("    prong class ascending, then hadronic -> semileptonic -> leptonic")

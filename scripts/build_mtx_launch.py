@@ -86,11 +86,31 @@ RATES = {
     # 1e-3 and stays; what this flag now blocks is queueing MORE seeds at a
     # rate g1-l162-lr14e4 has not yet confirmed -- turning one run at a
     # possibly-wrong rate into five.
-    "L162": (162, "1e-3", False,
-             "2.5e-4 0.52183 < 5e-4 0.55232 < 1e-3 0.55548, so bracketed BELOW "
-             "only. Nothing above 1e-3 has ever trained: 2e-3 diverged at seed "
-             "1 and that is not evidence the rate is untrainable. "
-             "g1-l162-lr14e4 (1.4e-3) closes this."),
+    # RATE CHANGED 1e-3 -> 5e-4 on 2026-08-27, and this is the I1 repair.
+    # mtx-l162-s1 launched at 1e-3 while every mtx-r16q1 seed runs at 5e-4, so
+    # the headline pair varied vocabulary AND learning rate -- invisible to
+    # tests/test_arm_configs.py, which only reads configs/arms/*.yaml, and those
+    # carry no lr key. Re-deriving analyse_g1.py's own reversal test, exactly one
+    # of three rate pairs is a KILL-grade reversal and it EXCLUDES 5e-4:
+    #   2.5e-4 vs 5e-4  L162 +0.03049 clears  R16_Q1 +0.00360 TIE     no
+    #   2.5e-4 vs 1e-3  L162 +0.03365 clears  R16_Q1 -0.01931 clears  REVERSAL
+    #   5e-4   vs 1e-3  L162 +0.00316 TIE     R16_Q1 -0.02291 clears  no
+    # 5e-4 is R16_Q1's outright argmax and ties L162's (0.55232 vs 0.55548, gap
+    # 0.00316, a fifth of the margin), so a single rate DOES serve both arms --
+    # docs/GATES.md G1's PASS condition. "Compare arms at their own optima"
+    # appears in docs/GATES.md ZERO times; it was invented here and in
+    # build_lr_sweep.py and back-attributed to the gate document.
+    # Bracketed stays False: nothing above 1e-3 has trained and g1-l162-lr14e4
+    # has never scheduled. That flag gates queueing MORE seeds, and it should.
+    "L162": (162, "5e-4", False,
+             "2.5e-4 0.52183 < 5e-4 0.55232 ~ 1e-3 0.55548. The 5e-4/1e-3 gap is "
+             "0.00316, a fifth of the 0.0158 floor, so the two are TIED and 5e-4 "
+             "is chosen because it is also R16_Q1's argmax, which makes the "
+             "headline pair single-rate. weaver's flat+decay scales with "
+             "num_epochs (train.py:509-521), so the 16-epoch sweep decays from "
+             "epoch 12 and the 80-epoch run from epoch 56: the sweep gives a "
+             "too-hot rate only 12 flat epochs to misbehave and is biased HIGH. "
+             "Of two tied rates at 20% budget, the lower is safer at 100%."),
     "R16_Q1": (17, "5e-4", True,
                "2.5e-4 0.77917 < 5e-4 0.78277 > 1e-3 0.75986 at seed 1, and "
                "2.5e-4 0.76598 < 5e-4 0.76697 at seed 2 -- same ordering at "

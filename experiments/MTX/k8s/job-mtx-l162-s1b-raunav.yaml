@@ -31,15 +31,51 @@ metadata:
   # I/O-bound, not GPU-bound: a cross-region pod does not run slowly, it runs at
   # near-zero GPU utilisation. GPU model is pinned separately, for I7b. Both
   # constraints are required and they are not the same constraint.
-  # RATE-EXCEPTION: launched 2026-08-22 at 1e-3, superseded 2026-08-27 by
-  # job-mtx-l162-s1b-raunav.yaml at 5e-4. This spec is left at 1e-3 on purpose --
-  # it is the record of what is RUNNING on the cluster, and editing it would make
-  # the repo disagree with the live pod and with the RECIPE stamp in its own
-  # output directory. Do not delete this job until s1b is actually Running: a
-  # 1-GPU probe could not schedule anywhere in us-west at any memory size or
-  # priority (2026-08-27), so killing first surrenders the only GPU we hold.
-  # Retire this spec, and this marker, once the switchover is done.
-  name: mtx-l162-s1-raunav
+  # L162 SEED 1 AT 5e-4 -- the I1 repair for the headline pair.
+  #
+  # WHY THIS EXISTS. mtx-l162-s1 trains at --start-lr 1e-3 while every
+  # mtx-r16q1 seed trains at 5e-4, so the headline contrast varies vocabulary
+  # AND learning rate. tests/test_arm_configs.py cannot see it: the rate lives
+  # here, not in configs/arms/*.yaml, which carry no lr key at all.
+  #
+  # THE SPLIT WAS NEVER FORCED BY THE DATA. Re-deriving analyse_g1.py's own
+  # reversal test -- both arms' gaps must clear TIE_MARGIN 0.0158 with opposite
+  # signs -- exactly one of three rate pairs qualifies, and it is the pair that
+  # EXCLUDES 5e-4:
+  #     2.5e-4 vs 5e-4   L162 +0.03049 clears   R16_Q1 +0.00360 TIE     no
+  #     2.5e-4 vs 1e-3   L162 +0.03365 clears   R16_Q1 -0.01931 clears  REVERSAL
+  #     5e-4   vs 1e-3   L162 +0.00316 TIE      R16_Q1 -0.02291 clears  no
+  # 5e-4 is R16_Q1's outright argmax (0.78277) and ties L162's argmax
+  # (0.55232 vs 0.55548, gap 0.00316 -- a fifth of the margin). A single rate
+  # DOES serve both arms, which is docs/GATES.md G1's PASS condition verbatim:
+  # "the LR optimum is the same for both arms, so a single LR is defensible
+  # across the ladder."
+  #
+  # AND THE 20%-BUDGET SWEEP IS BIASED HIGH. weaver's flat+decay scales with
+  # num_epochs (train.py:509-521): the 16-epoch sweep decays from epoch 12 at
+  # gamma 0.316, the 80-epoch run from epoch 56 at 0.825. The sweep gives a
+  # too-hot rate only 12 flat epochs to misbehave; the real run gives it 56. If
+  # the sweep is biased high, 5e-4 is the safer of two tied rates at full budget,
+  # not merely the equal one.
+  #
+  # DO NOT KILL mtx-l162-s1 UNTIL THIS POD IS Running. A 1-GPU probe pod could
+  # not schedule anywhere in us-west at any memory size or priority (five probes,
+  # 2026-08-27), and nothing of ours has scheduled in 3d16h. Deleting the running
+  # job first would surrender the only GPU we hold to a queue we have not won a
+  # slot from in four days. Queue this, wait, then switch.
+  #
+  # 76Gi not 88Gi: memory is not the scheduling constraint (GPU supply is), but
+  # 76Gi still leaves 10 GB over the 66 GB measured peak (58 GB band + 8Gi dshm)
+  # and takes a 94Gi node from 94% to 81% occupied, so it cannot hurt.
+  #
+  # Seed 1 on purpose: paired with mtx-l162-s1 it isolates the RATE effect, and
+  # paired with mtx-r16q1-s1 it is the clean single-variable headline contrast.
+  #
+  # RUN_ID is s1b, so OUT is a fresh directory: the RECIPE guard in the
+  # auto-resume block refuses to resume a directory stamped with another recipe,
+  # and that stamp is updated to lr=5e-4 here. Reusing mtx-l162-s1's OUT would
+  # have been caught by the guard, not silently blended.
+  name: mtx-l162-s1b-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 50
@@ -90,7 +126,7 @@ spec:
           # image does not ship. Fail loudly rather than at first fetch.
           pip install --no-cache-dir -q pyarrow || exit 1
 
-          RUN_ID=mtx-l162-s1
+          RUN_ID=mtx-l162-s1b
           OUT=/data/results/mtx/${RUN_ID}
           mkdir -p ${OUT}
 
@@ -174,7 +210,7 @@ spec:
           # writes them separately, and resuming from a state file whose
           # optimizer is missing only WARNS and then trains on with a fresh
           # optimizer -- silent corruption of a momentum-based run.
-          RECIPE='lr=1e-3 epochs=80'
+          RECIPE='lr=5e-4 epochs=80'
           RESUME=""
           LAST_EP=-1
           for f in ${OUT}/net_epoch-*_state.pt; do
@@ -221,13 +257,13 @@ spec:
             --no-remake-weights \
             --network-config experiments/MTX/ParT_sophon_arch_mtx.py \
             -o num_classes 162 -o fc_params '[(512,0.1)]' \
-            --use-amp --batch-size 512 --start-lr 1e-3 \
+            --use-amp --batch-size 512 --start-lr 5e-4 \
             --num-workers 2 --fetch-by-files --fetch-step 5 \
             --samples-per-epoch 10240000 --samples-per-epoch-val 1280000 \
             --num-epochs 80 ${RESUME} --optimizer ranger \
             --model-prefix ${OUT}/net \
             --log ${OUT}/train.log \
-            --tensorboard mtx_L162_s1
+            --tensorboard mtx_L162_s1b
 
           # NO in-pod test evaluation here. This is deliberate.
           #
@@ -254,8 +290,8 @@ spec:
           # 20Gi ephemeral, not 200Gi: nothing is staged locally, the corpus is
           # streamed. A 200Gi request narrows an already narrow node pool for
           # storage that is never used.
-          requests: { memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
-          limits:   { memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          requests: { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: jc2,  mountPath: /jc2, readOnly: true }
         - { name: data, mountPath: /data }
