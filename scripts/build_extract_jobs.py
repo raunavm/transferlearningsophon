@@ -36,7 +36,12 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s"
-PIN = "mtx-s1.3"
+# mtx-s1.4. NOT s1.3: that tag is at 4fcd165, which PREDATES
+# experiments/EVAL/extract_features.py, so both extraction jobs cloned it,
+# found no such file, and crash-looped. s1.4 is the first tag carrying the
+# downstream code, and every file a TRAINING pod executes is byte-identical
+# between s1.2 and s1.4, so nothing already running is affected.
+PIN = "mtx-s1.4"
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 
 # (run_id, arm, K, checkpoint dir). The G1 rows are the SMOKE TEST described
@@ -156,6 +161,25 @@ def main() -> int:
     ap.add_argument("--gpu", action="store_true")
     ap.add_argument("--max-jets", type=int, default=0)
     args = ap.parse_args()
+    # The pod clones a TAG, not the working tree, so a script that exists here
+    # can be absent there. That is exactly how the first attempt failed: the pin
+    # predated the extractor and both jobs crash-looped on
+    # "No such file or directory" after paying for a clone and a pip install.
+    # Verified at BUILD time now, where it costs nothing.
+    import subprocess
+    needed = ["experiments/EVAL/extract_features.py",
+              "configs/data/JetClassII_base.yaml",
+              "experiments/MTX/ParT_sophon_arch_mtx.py",
+              "experiments/E1/ParT_sophon_arch_10c.py"]
+    for path in needed:
+        r = subprocess.run(["git", "cat-file", "-e", f"{PIN}:{path}"],
+                           cwd=ROOT, capture_output=True)
+        if r.returncode != 0:
+            sys.exit(f"FATAL: tag {PIN} does not contain {path}. The pod clones "
+                     f"the TAG, so this job would fail after cloning. Tag a "
+                     f"commit that has it, or fix PIN.")
+    print(f"pin {PIN} verified to contain all {len(needed)} files the job runs")
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for run_id, arm, k, ckpt in RUNS:
         fname, text = build(run_id, arm, k, ckpt, args.gpu, args.max_jets)
