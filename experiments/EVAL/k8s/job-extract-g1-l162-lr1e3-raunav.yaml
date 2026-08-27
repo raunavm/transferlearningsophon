@@ -26,7 +26,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s1.5" \
+          git clone --depth 1 --branch "mtx-s1.6" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -50,7 +50,7 @@ spec:
             --data-config configs/data/JetClassII_base.yaml \
             --data-test /jc2/jet_data/Res2P_{0250..0299}.parquet /jc2/jet_data/Res34P_{1075..1289}.parquet /jc2/jet_data/QCD_{0350..0419}.parquet \
             --out ${OUT} \
-            --batch-size 512 --num-workers 2 \
+            --batch-size 512 --num-workers 1 --fetch-step 1 \
             --max-jets 400000
 
           echo "=== manifest ==="
@@ -60,8 +60,8 @@ spec:
         - { name: data, mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
         resources:
-          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "20Gi" }
-          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "20Gi" }
+          requests: { memory: "48Gi", cpu: "8", ephemeral-storage: "20Gi" }
+          limits:   { memory: "48Gi", cpu: "8", ephemeral-storage: "20Gi" }
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
