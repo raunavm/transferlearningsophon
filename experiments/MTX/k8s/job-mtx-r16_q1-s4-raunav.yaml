@@ -34,7 +34,7 @@ metadata:
   name: mtx-r16q1-s4-raunav
   namespace: cms-ml
 spec:
-  backoffLimit: 3
+  backoffLimit: 50
   template:
     spec:
       restartPolicy: Never

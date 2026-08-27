@@ -44,7 +44,7 @@ metadata:
   name: g1-r16q1-lr5e4-s2b-raunav
   namespace: cms-ml
 spec:
-  backoffLimit: 3
+  backoffLimit: 50
   template:
     spec:
       restartPolicy: Never

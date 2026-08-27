@@ -38,7 +38,7 @@ metadata:
   name: g1-r42q1-lr125e6-raunav
   namespace: cms-ml
 spec:
-  backoffLimit: 3
+  backoffLimit: 50
   template:
     spec:
       restartPolicy: Never

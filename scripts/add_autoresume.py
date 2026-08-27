@@ -74,7 +74,22 @@ import sys
 
 import yaml
 
-BACKOFF = 3
+# 50, not 3. Raised 2026-08-26 after MEASURING what the queue actually does:
+# seven jobs sat Pending and were reaped by Nautilus three times each WITHOUT
+# EVER RUNNING A STEP, arriving simultaneously at failed=3 against
+# backoffLimit=3. One more reap would have killed all seven permanently, and
+# they were saved only by live-patching the limit.
+#
+# The original 3 assumed retries were spent on real failures. They are not --
+# they are spent on a queue that reaps pods for waiting, which is unbounded and
+# has nothing to do with the run's health. The limit therefore has to outlast
+# the queue, not the failure.
+#
+# The cost of a high limit is bounded by what a genuine crash-loop costs: a run
+# that goes nan at iteration 2 burns ~3 min per attempt, so 50 attempts is about
+# 2.5 h before the job gives up. That is an acceptable price for not losing an
+# 8-day run to a scheduler.
+BACKOFF = 50
 
 # `{recipe}` is filled from the spec's OWN --start-lr and --num-epochs, so the
 # stamp can never drift from what the job actually runs.

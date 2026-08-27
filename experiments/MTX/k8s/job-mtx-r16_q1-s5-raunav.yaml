@@ -34,7 +34,7 @@ metadata:
   name: mtx-r16q1-s5-raunav
   namespace: cms-ml
 spec:
-  backoffLimit: 3
+  backoffLimit: 50
   template:
     spec:
       restartPolicy: Never
@@ -246,8 +246,36 @@ spec:
           # 20Gi ephemeral, not 200Gi: nothing is staged locally, the corpus is
           # streamed. A 200Gi request narrows an already narrow node pool for
           # storage that is never used.
-          requests: { memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
-          limits:   { memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          # MEMORY 88Gi -> 76Gi (2026-08-26). YELLOW: this is a deliberate
+          # deviation from the sizing CLAUDE.md fixed after an OOM, taken
+          # because 88Gi went 3 days 15 hours without scheduling ONCE.
+          #
+          # The arithmetic. Measured training anon band is 35-58 GB, and the
+          # 8Gi memory-backed /dev/shm counts against the same limit, so peak
+          # demand is 58 + 8 = 66 GB. 76Gi leaves 10 GB of headroom; 88Gi left
+          # 22 GB.
+          #
+          # Why this is not a repeat of the 64Gi failure. That one was 58 + 16
+          # (dshm was 16Gi then) = 74 GB against a 64 GB limit -- it was over
+          # the limit before it started, not short on margin. dshm is 8Gi now.
+          #
+          # Why the downside is bounded in a way it was not then. Auto-resume
+          # plus the RECIPE guard plus backoffLimit 50 mean an OOM costs ONE
+          # epoch (~2.6 h) and resumes from the last complete checkpoint,
+          # rather than losing the run.
+          #
+          # What it buys. On a 94Gi suncave node, 88Gi is 94% of the machine --
+          # nothing else fits and we cannot land if anything is already there.
+          # 76Gi is 81%, leaving 18Gi. It unlocks no NEW nodes (the 63Gi
+          # suncaves need <=63 GB total and peak demand is 66) but makes the
+          # nine 94Gi nodes actually reachable.
+          #
+          # THIS IS A TEST ON ONE JOB. Seed 5 is the least critical of the five
+          # and has never run, so nothing is at risk. If it schedules, the other
+          # pending jobs follow; if it does not, memory was not the constraint
+          # and the change is reverted rather than spread.
+          requests: { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: jc2,  mountPath: /jc2, readOnly: true }
         - { name: data, mountPath: /data }

@@ -42,11 +42,35 @@ LR_RE = re.compile(r"lr=([0-9.e+-]+)")
 ACC_RE = re.compile(r"AvgAcc=([0-9.]+)")
 
 
-def sh(*a) -> str:
+class ClusterUnreachable(RuntimeError):
+    """The API did not answer. NOT the same as 'nothing is running'."""
+
+
+def sh(*a, required: bool = True) -> str:
+    """Run a kubectl query, distinguishing FAILURE from an EMPTY RESULT.
+
+    This returned "" on any exception until 2026-08-26, which made an
+    unresponsive API indistinguishable from an idle cluster -- the tool
+    cheerfully printed "no raunav pods" while nine jobs were queued, because
+    `kubectl get pods` had timed out. A monitor whose failure mode is a
+    confident all-clear is worse than no monitor, and this is the second time
+    that shape of bug has appeared here (the first was a watcher that reported
+    no verdict for eight hours because its regex never matched).
+    """
     try:
-        return subprocess.run(a, capture_output=True, text=True, timeout=60).stdout
-    except Exception:
+        r = subprocess.run(a, capture_output=True, text=True, timeout=120)
+    except subprocess.TimeoutExpired:
+        if required:
+            raise ClusterUnreachable(f"timed out after 120s: {' '.join(a)}")
         return ""
+    except Exception as e:
+        if required:
+            raise ClusterUnreachable(f"{type(e).__name__}: {e}")
+        return ""
+    if r.returncode != 0 and required:
+        raise ClusterUnreachable(
+            f"exit {r.returncode}: {' '.join(a)}\n{r.stderr.strip()[:300]}")
+    return r.stdout
 
 
 def pods() -> list[tuple[str, str, str]]:
@@ -60,7 +84,7 @@ def pods() -> list[tuple[str, str, str]]:
 
 
 def status(pod: str) -> dict:
-    log = sh("kubectl", "logs", pod, "--tail=4000")
+    log = sh("kubectl", "logs", pod, "--tail=4000", required=False)
     d: dict = {}
     if not log:
         return d
@@ -92,9 +116,15 @@ def main() -> int:
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
 
-    rows = pods()
+    try:
+        rows = pods()
+    except ClusterUnreachable as e:
+        print(f"CLUSTER UNREACHABLE -- status unknown, NOT idle:\n  {e}",
+              file=sys.stderr)
+        return 3
     if not rows:
-        print("no raunav mtx-/g1- pods")
+        print("kubectl answered and listed no raunav mtx-/g1- pods "
+              "(this is a real empty result, not a failed query)")
         return 0
     out = {}
     for pod, phase, age in rows:
