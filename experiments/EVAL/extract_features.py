@@ -289,10 +289,30 @@ def main() -> int:
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
+    # for_training=False is load-bearing twice over: it disables the flat
+    # (pT, m_SD) resampling used in training -- the probe must see the natural
+    # test distribution -- AND it is what makes weaver load the observer
+    # variables at all.
+    #
+    # The kwargs are CHECKED against the installed signature rather than
+    # assumed. An earlier version passed `load_range_range`, which does not
+    # exist in any weaver; the job cloned, pip-installed, loaded the checkpoint,
+    # passed both guards and only then died on a TypeError. weaver's dataset API
+    # has already shifted under this project once (0.4.16 -> 0.4.17 removed the
+    # train/eval hooks and the encoder/aggregator split), so the signature is
+    # verified, not trusted. Omitting load_range_and_fraction loads every event,
+    # which is what extraction wants.
+    import inspect  # noqa: E402
+    _params = inspect.signature(SimpleIterDataset.__init__).parameters
+    _kw = dict(for_training=False, fetch_by_files=True, fetch_step=5,
+               name="extract")
+    _unknown = [k for k in _kw if k not in _params]
+    if _unknown:
+        raise SystemExit(
+            f"FATAL: this weaver's SimpleIterDataset has no {_unknown}. "
+            f"Accepted: {sorted(k for k in _params if k != 'self')}")
     files = {"_": list(args.data_test)}
-    ds = SimpleIterDataset(files, args.data_config, for_training=False,
-                           load_range_range=(0, 1), fetch_by_files=True,
-                           fetch_step=5, name="extract")
+    ds = SimpleIterDataset(files, args.data_config, **_kw)
     loader = torch.utils.data.DataLoader(
         ds, batch_size=args.batch_size, drop_last=False,
         num_workers=args.num_workers, pin_memory=True, persistent_workers=False)
