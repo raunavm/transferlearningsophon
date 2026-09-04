@@ -32,9 +32,14 @@ def test_order_key_falls_back_to_name_without_a_trailing_integer():
     assert got[1:] == ["score_Hbb", "score_QCD"]
 
 
+def _norm(p):
+    """metrics() consumes load_pred()'s output, which is row-normalised."""
+    return p / p.sum(axis=1, keepdims=True)
+
+
 def test_macro_auc_is_one_for_a_perfect_classifier():
     truth = np.array([0, 0, 1, 1, 2, 2])
-    probs = np.eye(3)[truth] * 0.9 + 0.05
+    probs = _norm(np.eye(3)[truth] * 0.9 + 0.05)
     m = ea.metrics(probs, truth, 3, qcd=2)
     assert m["macro_auc_ovr"] == pytest.approx(1.0)
     assert m["accuracy"] == pytest.approx(1.0)
@@ -80,3 +85,11 @@ def test_bad_pred_spec_is_rejected(tmp_path, monkeypatch):
                          "--k", "2", "--arm", "X", "--out", str(tmp_path)])
     with pytest.raises(SystemExit):
         ea.main()
+
+
+def test_metrics_rejects_unnormalised_scores():
+    """Raw scores reach sklearn as a message naming nothing; catch them here."""
+    truth = np.array([0, 0, 1, 1])
+    probs = np.full((4, 2), 3.0)
+    with pytest.raises(SystemExit):
+        ea.metrics(probs, truth, 2, qcd=1)

@@ -78,8 +78,12 @@ def load_pred(path: pathlib.Path, k: int):
         truth_cands = [b for b in keys if b in
                        ("truth_label", "_label_", "label", "y_true")]
         arr = tree.arrays(score + truth_cands, library="np")
-    probs = np.stack([arr[b] for b in score], axis=1).astype(np.float64)
-    probs = np.clip(probs, 1e-12, None)
+    # float32, not float64. The test set is 27.4M jets, so at K=162 the score
+    # matrix alone is 17.8 GB in float64 against 8.9 GB in float32, and every
+    # metric below is rank-based -- neither AUC nor a quantile threshold can
+    # tell the two apart at this precision. In-place ops keep it to one copy.
+    probs = np.stack([arr[b] for b in score], axis=1).astype(np.float32)
+    np.clip(probs, 1e-12, None, out=probs)
     probs /= probs.sum(axis=1, keepdims=True)
     if not truth_cands:
         raise SystemExit(f"FATAL: no truth branch in {path}; saw {keys}")
@@ -102,8 +106,20 @@ def metrics(probs, truth, k, qcd):
     # class is present and this is a no-op; it only bites on a subsample, which
     # is exactly where it would otherwise raise. per_class_auc below uses the
     # RAW columns and is the more primitive number of the two.
-    sub = probs[:, present]
-    sub = sub / sub.sum(axis=1, keepdims=True)
+    if present.size == probs.shape[1]:
+        # The normal case on a full test set: every class occurs, the slice
+        # would be an identity copy, and at 27.4M x 162 that copy is 8.9 GB.
+        # load_pred already normalised, so check that rather than redo it --
+        # but CHECK it, because passing raw scores here would otherwise reach
+        # sklearn as a bare "scores must sum to 1" error naming nothing.
+        head = probs[: min(1000, probs.shape[0])]
+        if not np.allclose(head.sum(axis=1), 1.0, atol=1e-3):
+            raise SystemExit("FATAL: probs rows do not sum to 1 -- metrics() "
+                             "expects load_pred()'s normalised output")
+        sub = probs
+    else:
+        sub = probs[:, present]
+        sub = sub / sub.sum(axis=1, keepdims=True)
     if present.size == 2:
         # sklearn's multiclass path rejects a 2-column score array; binary
         # wants the positive class's column alone.

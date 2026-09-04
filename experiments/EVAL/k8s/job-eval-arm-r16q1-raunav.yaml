@@ -1,0 +1,84 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # SCORE THE R16_Q1 SEEDS AND MEASURE THIS ARM'S PRETRAINING-SEED SPREAD.
+  #
+  # This is the job that DECISIONS_PENDING item 13 turns on. The only
+  # sigma_pretrain the project has (0.003704 in log10(1-AUC), RUNS.csv
+  # e1-sigma-refit) was measured on E1's Arm S -- a different arm, a different
+  # dataset, a different K -- and item 13 asks whether L162's single completed
+  # seed can be reported against R16_Q1's spread. Borrowing a variance to answer
+  # that is exactly the move a referee rejects. This measures it on the arm.
+  #
+  # It also discharges docs/GATES.md's cached-ROC-arrays requirement for these
+  # runs: "a run without cached ROC arrays is a failed run even if its AUC is
+  # right."
+  #
+  # WHAT THIS OUTPUT MAY NOT BE USED FOR. Nothing here is comparable ACROSS
+  # arms. L162 emits 162 scores and R16_Q1 emits 17 over different partitions
+  # of the same 188 native labels, so their accuracies are on different scales
+  # and their macro AUCs average over different class counts. The controlled
+  # cross-arm endpoint is the frozen probe (job-probe-bvc-v2-raunav.yaml),
+  # which is defined on NATIVE labels and is therefore identical for every arm.
+  #
+  # CPU-ONLY. Reading and ranking cached scores; no model is built.
+  name: eval-arm-r16q1-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: evalarm
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "analysis-v1" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+
+          # Only the seeds whose eval has actually completed. A missing
+          # pred.root must stop the job rather than silently shrink n, because
+          # n is the whole point of this run.
+          S2=/data/results/mtx/mtx-r16q1-s2/eval/pred.root
+          S3=/data/results/mtx/mtx-r16q1-s3/eval/pred.root
+          for f in "${S2}" "${S3}"; do
+            [ -f "${f}" ] || { echo "FATAL: no ${f}"; exit 1; }
+            echo "$(stat -c%s "${f}") bytes  ${f}"
+          done
+
+          OUT=/data/results/eval/arm_r16q1
+          mkdir -p ${OUT}
+
+          PYTHONUNBUFFERED=1 python3 experiments/EVAL/eval_arm.py \
+            --arm R16_Q1 --k 17 \
+            --pred s2=${S2} s3=${S3} \
+            --out ${OUT}
+
+          echo "=== eval_results.json ==="
+          cat ${OUT}/eval_results.json
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          # 27.4M jets x 17 scores in float32 = 1.9 GB per seed, read one at a
+          # time, plus uproot's own buffers and the ranking sorts. 32Gi is
+          # generous against that and small enough to schedule.
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
