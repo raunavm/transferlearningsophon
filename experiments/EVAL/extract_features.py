@@ -262,6 +262,15 @@ def main() -> int:
     # mass-regression target, so a missing observer is fatal rather than absent.
     ap.add_argument("--observers", nargs="+", default=list(OBSERVERS),
                     help="observer branches to cache alongside the features")
+    # OFF by default, and deliberately so. The granularity arms have different
+    # K, so their logits are not comparable to each other and caching them would
+    # be K x N floats of nothing. The mass-regression work is the opposite case:
+    # its discriminant is built FROM the 188 class probabilities, so without
+    # this the extraction produces features that cannot make the control figure
+    # -- after paying the full streaming cost. The head output is already
+    # computed in the loop below and currently discarded, so this is free.
+    ap.add_argument("--save-logits", action="store_true",
+                    help="also cache the K-way head output (logits.npy)")
     ap.add_argument("--data-test", nargs="+", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--data-config",
@@ -353,13 +362,16 @@ def main() -> int:
 
     observers = list(args.observers)
     feats, labels, obs = [], [], {k: [] for k in observers}
+    logits = []
     n, t0 = 0, time.time()
     with torch.no_grad():
         for X, y, Z in loader:
             inputs = [X[k].to(device, non_blocking=True)
                       for k in data_config.input_names]
-            model(*inputs)
+            head_out = model(*inputs)
             feats.append(tap.buf.float().cpu().numpy().astype(np.float32))
+            if args.save_logits:
+                logits.append(head_out.float().cpu().numpy().astype(np.float32))
             labels.append(y["truth_label"].cpu().numpy().astype(np.int16))
             for k in observers:
                 if k in Z:
@@ -375,6 +387,14 @@ def main() -> int:
     L = np.concatenate(labels)[: args.max_jets or None]
     np.save(out / "features.npy", F)
     np.save(out / "label188.npy", L)
+    if args.save_logits:
+        G = np.concatenate(logits)[: args.max_jets or None]
+        # Raw logits, NOT softmaxed. The consumer decides the normalisation, and
+        # storing probabilities would throw away the ability to recompute them.
+        assert G.shape == (F.shape[0], args.num_classes), (
+            f"logits {G.shape} do not match {F.shape[0]} jets x "
+            f"{args.num_classes} classes")
+        np.save(out / "logits.npy", G)
     saved_obs = {}
     for k, v in obs.items():
         if v:
@@ -401,6 +421,7 @@ def main() -> int:
         "n_test_files": len(args.data_test),
         "label188_sha256": hashlib.sha256(L.tobytes()).hexdigest(),
         "observers": sorted(saved_obs),
+        "has_logits": bool(args.save_logits),
         **prov,
     }
     (out / "extract_manifest.json").write_text(json.dumps(manifest, indent=2))

@@ -30,6 +30,17 @@ metadata:
   # ~6,650 jets in the 0.5% tail, which is a histogram. At 2M it would be
   # ~3,300 and the tail bins would be noise.
   #
+  #   4. --save-logits. E1 builds GloParT's own discriminant,
+  #      Sum(alpha_i p_i) / (Sum(alpha_i p_i) + Sum_QCD p_i), which is a
+  #      function of the 188 CLASS PROBABILITIES -- not of the 128-d
+  #      representation everything else here probes. The head output is already
+  #      computed in the extraction loop and was being discarded, so without
+  #      this flag the job would stream 4M jets and still not produce the input
+  #      the control figure needs.
+  #
+  # DISK: ~5.2 GB. features 4M x 128 x f32 = 2.05 GB, logits 4M x 188 x f32 =
+  # 3.01 GB, six observers = 96 MB.
+  #
   # CPU-ONLY. Forward pass only; the 3090 pool has 0 free and CPU is uncontended.
   name: massreg-e0b-extract-raunav
   namespace: cms-ml
@@ -45,7 +56,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "massreg-e0b" \
+          git clone --depth 1 --branch "massreg-e0b.1" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -80,6 +91,7 @@ spec:
             --data-config configs/data/JetClassII_massreg.yaml \
             --data-test ${FILES} \
             --observers jet_pt jet_sdmass jet_eta jet_nparticles jet_energy genjet_sdmass \
+            --save-logits \
             --out ${OUT} \
             --batch-size 512 --num-workers 1 --fetch-step 1 \
             --max-jets 4000000
