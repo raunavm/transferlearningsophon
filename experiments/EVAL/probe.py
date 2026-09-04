@@ -63,10 +63,36 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
 # native label -> the two binary tasks. Arm-independent by construction.
+# THE THREE TASKS FORM A 2x2, AND THE THIRD IS WHY THE FIRST MEANS ANYTHING.
+#
+# bvc_resonant on its own cannot support the paper's claim. If R16_Q1 scores
+# worse there, the obvious rival explanation is that 17-way pretraining simply
+# yields a weaker representation than 162-way and everything is worse. The
+# claim needs a distinction R16_Q1 KEEPS, measured the same way:
+#
+#                     topology    flavour    R16_Q1 does
+#   bvc_resonant      FIXED       differs    collapse it
+#   retained_topology differs     FIXED      keep it
+#   bvc_qcd           --          --         collapse it, and so does L162
+#
+# bvc_resonant and retained_topology are complements: each holds fixed what the
+# other varies, so together they separate "this axis was erased" from "this arm
+# is worse at everything". bvc_qcd is the null-vs-null leg -- both arms collapse
+# it, so neither should win, and a gap there would indict the method.
+#
+# retained_topology holds FLAVOUR fixed (both endpoints are all-b) and varies
+# prong count, which is the axis every rung of the contraction tree is built
+# on. Difficulty is NOT matched to bvc_resonant and cannot be -- R16_Q1 groups
+# by topology, so any distinction it retains is topological. Read the arms
+# against each other within a task, never across tasks, and read it in
+# log(1-AUC), which stays sensitive near the ceiling where raw AUC does not.
 TASKS = {
     "bvc_resonant": {"signal": [0], "background": [1],
                      "names": ["label_X_bb", "label_X_cc"],
                      "collapsed_at": ["R16_Q1"]},
+    "retained_topology": {"signal": [0], "background": [15],
+                          "names": ["label_X_bb", "label_X_YY_bbbb"],
+                          "collapsed_at": []},
     "bvc_qcd": {"signal": [169], "background": [181],
                 "names": ["label_QCD_bb", "label_QCD_cc"],
                 "collapsed_at": ["L162", "R42_Q1", "R16_Q1"]},
