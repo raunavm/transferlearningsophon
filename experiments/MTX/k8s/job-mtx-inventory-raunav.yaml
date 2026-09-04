@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # RUN INVENTORY -- what has each MTX run actually PRODUCED?
+  #
+  # WHY NOW: on 2026-08-31 the jobs mtx-r16q1-s2, mtx-r16q1-s3 and
+  # g1-l162-lr14e4 were absent from `kubectl get jobs` after having been Running
+  # the day before, and the k8s event window had already aged out, so the reason
+  # is unrecoverable from the cluster. The scientific question is not why the Job
+  # object vanished but whether its CHECKPOINTS SURVIVED on the PVC -- a run with
+  # checkpoints can be resumed, a run without them is lost.
+  #
+  # Also reports epoch reached per run, so partial progress is a number rather
+  # than a guess, and flags the final artifacts RECORD.md requires.
+  #
+  # Read-only: ls/du/stat only. Writes nothing.
+  name: mtx-inventory-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: inv
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          for d in /data/results/mtx/*/ /data/results/g1/*/; do
+            [ -d "$d" ] || continue
+            n=$(basename "$d")
+            ck=$(ls "$d"/net_epoch-*_state.pt 2>/dev/null | wc -l)
+            last=$(ls "$d"/net_epoch-*_state.pt 2>/dev/null \
+                   | sed -n 's/.*net_epoch-\([0-9]*\)_state.pt/\1/p' | sort -n | tail -1)
+            best=$([ -f "$d/net_best_epoch_state.pt" ] && echo yes || echo no)
+            pred=$([ -f "$d/pred.root" ] && du -h "$d/pred.root" | cut -f1 || echo "-")
+            ev=$([ -f "$d/eval_results.json" ] && echo yes || echo no)
+            mf=$([ -f "$d/run_manifest.json" ] && echo yes || echo no)
+            sz=$(du -sh "$d" 2>/dev/null | cut -f1)
+            printf '%-22s size=%-7s ckpts=%-4s last_epoch=%-5s best=%-4s pred.root=%-7s eval=%-4s manifest=%s\n' \
+                   "$n" "$sz" "$ck" "${last:--}" "$best" "$pred" "$ev" "$mf"
+          done
+          echo
+          echo "=== /data/results total ==="; du -sh /data/results 2>/dev/null
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "1Gi", cpu: "1", ephemeral-storage: "1Gi" }
+          limits:   { memory: "1Gi", cpu: "1", ephemeral-storage: "1Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

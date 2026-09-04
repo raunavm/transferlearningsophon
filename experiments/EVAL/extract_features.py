@@ -81,6 +81,10 @@ import torch
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 EMBED_DIM = 128
+# The DEFAULT set, for the granularity arms. The mass-regression work needs
+# more than this (genjet_sdmass is its regression TRUTH, not a nice-to-have),
+# so the list is a flag -- see --observers. Anything requested must actually
+# arrive; see the hard-fail after the loop.
 OBSERVERS = ["jet_pt", "jet_sdmass", "jet_eta", "jet_nparticles"]
 
 
@@ -251,6 +255,13 @@ def main() -> int:
     ap.add_argument("--checkpoint", required=True)
     ap.add_argument("--num-classes", type=int, required=True)
     ap.add_argument("--arm", required=True)
+    # Every name here must ALSO be in the data config's `observers:` block --
+    # weaver only materialises what that block lists, and the collection loop
+    # below skips anything absent from the batch. Silently. That is fine for a
+    # decorative kinematic, and not fine for genjet_sdmass, which is the
+    # mass-regression target, so a missing observer is fatal rather than absent.
+    ap.add_argument("--observers", nargs="+", default=list(OBSERVERS),
+                    help="observer branches to cache alongside the features")
     ap.add_argument("--data-test", nargs="+", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--data-config",
@@ -340,7 +351,8 @@ def main() -> int:
         ds, batch_size=args.batch_size, drop_last=False,
         num_workers=args.num_workers, pin_memory=True, persistent_workers=False)
 
-    feats, labels, obs = [], [], {k: [] for k in OBSERVERS}
+    observers = list(args.observers)
+    feats, labels, obs = [], [], {k: [] for k in observers}
     n, t0 = 0, time.time()
     with torch.no_grad():
         for X, y, Z in loader:
@@ -349,7 +361,7 @@ def main() -> int:
             model(*inputs)
             feats.append(tap.buf.float().cpu().numpy().astype(np.float32))
             labels.append(y["truth_label"].cpu().numpy().astype(np.int16))
-            for k in OBSERVERS:
+            for k in observers:
                 if k in Z:
                     obs[k].append(np.asarray(Z[k]).astype(np.float32))
             n += feats[-1].shape[0]
@@ -367,6 +379,16 @@ def main() -> int:
     for k, v in obs.items():
         if v:
             saved_obs[k] = np.concatenate(v)[: args.max_jets or None]
+    # A requested observer that never arrived means the data config does not
+    # list it. Downstream that reads as "the branch is all zeros" or as a
+    # KeyError hours later; here it is one sentence naming the branch.
+    absent = [k for k in observers if k not in saved_obs]
+    if absent:
+        print(f"FATAL: requested observer(s) {absent} never appeared in any "
+              f"batch. Add them to the `observers:` block of "
+              f"{args.data_config} -- weaver materialises only what it lists.",
+              file=sys.stderr)
+        raise SystemExit(4)
     if saved_obs:
         np.savez(out / "observers.npz", **saved_obs)
 

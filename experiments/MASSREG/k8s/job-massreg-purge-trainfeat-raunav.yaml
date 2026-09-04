@@ -1,0 +1,92 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # PURGE /data/features/train_100M -- 514 GB. DECISIONS_PENDING item 12, RED.
+  #
+  # WHAT IS DELETED: 4,000+ .npy files named HToBB_000_features.npy / _labels /
+  # _lorentz / _masks. JetClass-I preprocessed MODEL INPUTS from the E1 era,
+  # mtime 2026-04-18. Regenerable from /data/JetClass (177 GB, still present),
+  # though regenerating costs preprocessing compute.
+  #
+  # WHAT IS NOT TOUCHED, and the job asserts each of these still exists after:
+  #   /data/results          all checkpoints, eval_results.json, pred.root
+  #   /data/features/test_20M   103 GB, kept
+  #   /data/features/val_5M      26 GB, kept
+  #   /data/JetClass            the ROOT source
+  #   /data/JetClass2           the current dataset
+  # E1's record lives in /data/results and is unaffected.
+  #
+  # Takes the volume from 97% (41 GB free) to roughly 46%.
+  #
+  # THIS IS A RED ACTION. It is written, reviewed and left UNAPPLIED on purpose.
+  # Applying it is a PI decision, not an inference from a general go-ahead.
+  name: massreg-purge-trainfeat-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: purge
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          TARGET=/data/features/train_100M
+
+          # Refuse rather than silently succeed on an already-deleted or
+          # mistyped path -- a no-op that reports success is how the wrong
+          # thing gets deleted next time.
+          [ -d "${TARGET}" ] || { echo "FATAL: ${TARGET} is not a directory. Nothing done."; exit 1; }
+
+          echo "=== BEFORE ==="
+          df -h /data
+          du -sh "${TARGET}"
+          echo "file count: $(find ${TARGET} -type f | wc -l)"
+          echo "sample of what is being removed:"
+          # `|| true` is load-bearing: head exits after 5 lines, find takes
+          # SIGPIPE, and under `set -o pipefail` that aborts the script BEFORE
+          # the rm. The first run of this job died exactly there. Failing safe
+          # was the right outcome, but it must not happen again.
+          find "${TARGET}" -type f | head -5 || true
+
+          echo
+          echo "=== DELETING ${TARGET} ==="
+          rm -rf "${TARGET}"
+
+          echo
+          echo "=== AFTER ==="
+          df -h /data
+
+          echo
+          echo "=== ASSERTING THE KEEPERS SURVIVED ==="
+          rc=0
+          for p in /data/results /data/features/test_20M /data/features/val_5M \
+                   /data/JetClass /data/JetClass2; do
+            if [ -d "$p" ]; then
+              echo "  OK      $p  $(du -sh $p 2>/dev/null | cut -f1)"
+            else
+              echo "  MISSING $p"; rc=1
+            fi
+          done
+          [ -d "${TARGET}" ] && { echo "  FATAL: ${TARGET} still present"; rc=1; }
+          exit $rc
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "2Gi", cpu: "2", ephemeral-storage: "2Gi" }
+          limits:   { memory: "2Gi", cpu: "2", ephemeral-storage: "2Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

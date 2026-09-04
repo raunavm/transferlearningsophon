@@ -41,7 +41,11 @@ OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s"
 # found no such file, and crash-looped. s1.4 is the first tag carrying the
 # downstream code, and every file a TRAINING pod executes is byte-identical
 # between s1.2 and s1.4, so nothing already running is affected.
-PIN = "mtx-s1.6"
+# mtx-s1.7, so extraction and evaluation carry ONE provenance tag. Safe to
+# move: `git diff mtx-s1.6 mtx-s1.7` over the four files this pod actually
+# executes (extract_features.py, JetClassII_base.yaml, the two arch files)
+# is EMPTY, so the pin change cannot alter what runs.
+PIN = "mtx-s1.7"
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 
 # (run_id, arm, K, checkpoint dir). The G1 rows are the SMOKE TEST described
@@ -49,6 +53,15 @@ IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 RUNS = [
     ("g1-l162-lr1e3",   "L162",   162, "/data/results/g1/g1-l162-lr1e3"),
     ("g1-r16q1-lr5e4",  "R16_Q1",  17, "/data/results/g1/g1-r16q1-lr5e4"),
+    # THE REAL THING. Full budget, 80 epochs, and -- unlike the pair above --
+    # all five run at the SAME rate (5e-4), which is what the mtx-l162-s1b row
+    # in experiments/RUNS.csv exists to establish. So vocabulary is the only
+    # variable between L162 and R16_Q1 here, which the G1 smoke pair cannot say.
+    ("mtx-l162-s1b",    "L162",   162, "/data/results/mtx/mtx-l162-s1b"),
+    ("mtx-r16q1-s2",    "R16_Q1",  17, "/data/results/mtx/mtx-r16q1-s2"),
+    ("mtx-r16q1-s3",    "R16_Q1",  17, "/data/results/mtx/mtx-r16q1-s3"),
+    ("mtx-r16q1-s4",    "R16_Q1",  17, "/data/results/mtx/mtx-r16q1-s4"),
+    ("mtx-r16q1-s5",    "R16_Q1",  17, "/data/results/mtx/mtx-r16q1-s5"),
 ]
 
 TEMPLATE = """apiVersion: batch/v1
@@ -205,7 +218,21 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gpu", action="store_true")
     ap.add_argument("--max-jets", type=int, default=0)
+    # Build a subset. The concurrency cap in CLAUDE.md is 5 running jobs, and
+    # RUNS is longer than that, so emitting all of them at once would either
+    # breach the cap or leave un-launched YAML lying around that looks launched.
+    ap.add_argument("--only", nargs="*", default=None, metavar="RUN_ID",
+                    help="restrict to these run_ids (default: all of RUNS)")
     args = ap.parse_args()
+
+    runs = RUNS
+    if args.only:
+        known = {r[0] for r in RUNS}
+        unknown = set(args.only) - known
+        if unknown:
+            sys.exit(f"FATAL: unknown run_id(s) {sorted(unknown)}. "
+                     f"Known: {sorted(known)}")
+        runs = [r for r in RUNS if r[0] in set(args.only)]
     # The pod clones a TAG, not the working tree, so a script that exists here
     # can be absent there. That is exactly how the first attempt failed: the pin
     # predated the extractor and both jobs crash-looped on
@@ -226,7 +253,7 @@ def main() -> int:
     print(f"pin {PIN} verified to contain all {len(needed)} files the job runs")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    for run_id, arm, k, ckpt in RUNS:
+    for run_id, arm, k, ckpt in runs:
         fname, text = build(run_id, arm, k, ckpt, args.gpu, args.max_jets)
         d = yaml.safe_load(text)
         body = d["spec"]["template"]["spec"]["containers"][0]["args"][0]

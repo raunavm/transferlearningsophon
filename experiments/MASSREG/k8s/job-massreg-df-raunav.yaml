@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # DISK HEADROOM CHECK -- run BEFORE any feature extraction.
+  #
+  # WHY: DECISIONS_PENDING item 12 records 642 GB of regenerable cache against
+  # 54 GB free. A Sophon feature extraction writes O(200-400 MB) per arm, which
+  # is small, but the margin is not, and CLAUDE.md requires free space to be
+  # measured before a write rather than assumed. It also tells us whether item
+  # 12 (the RED 514 GB deletion) has become urgent.
+  #
+  # Read-only in effect: df and du only, writes nothing.
+  name: massreg-df-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: df
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          echo "=== /data filesystem ==="
+          df -h /data
+          echo
+          echo "=== top-level usage ==="
+          du -sh /data/* 2>/dev/null | sort -h | tail -12
+          echo
+          echo "=== /data/results/eval ==="
+          du -sh /data/results/eval/* 2>/dev/null | sort -h | tail -10
+          echo
+          echo "=== /data/features (item 12 candidate) ==="
+          du -sh /data/features/* 2>/dev/null | sort -h | tail -10
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "1Gi", cpu: "1", ephemeral-storage: "1Gi" }
+          limits:   { memory: "1Gi", cpu: "1", ephemeral-storage: "1Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

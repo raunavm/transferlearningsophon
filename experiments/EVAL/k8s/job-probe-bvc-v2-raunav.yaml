@@ -1,0 +1,107 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # FROZEN-PROBE READOUT v2 -- THE PAPER'S HEADLINE ENDPOINT.
+  #
+  # Supersedes job-probe-bvc-raunav.yaml (probe_bvc_v1) on three counts, each of
+  # which was a stated limitation of that run rather than a bug in it:
+  #
+  #   1. FULL BUDGET, NOT 20%. v1 probed G1 sweep checkpoints -- 16 epochs, one
+  #      seed, and the two arms trained at DIFFERENT rates (L162 1e-3 vs R16_Q1
+  #      5e-4), so its gap confounded vocabulary with learning rate. Every
+  #      checkpoint here is 80/80 epochs at 5e-4, so vocabulary is the only
+  #      intended difference. That is the whole point of mtx-l162-s1b.
+  #
+  #   2. bvc_qcd IS NOW REACHABLE. v1 returned {"skipped": true} on it because
+  #      extraction read 335 test files in strict family order with
+  #      shuffle=False, so --max-jets 400000 stopped inside the ~5th Res2P file
+  #      and never reached a QCD jet (DECISIONS_PENDING item 11). The file list
+  #      is interleaved by family now, so any prefix spans all three. For THIS
+  #      arm pair bvc_qcd is collapsed on BOTH sides and is therefore a
+  #      null-vs-null CONTROL -- it should show no gap, and a gap there would
+  #      indict the method, not the vocabulary.
+  #
+  #   3. 2,000,000 JETS, NOT 400,000. Rejection at fixed signal efficiency is
+  #      the headline metric (D7) and is capped at 1/N_bkg, so the background
+  #      count sets what is even resolvable. v1's ~30k jets per bvc_resonant
+  #      class capped it near 30k; 5x the jets moves the cap accordingly.
+  #      probe.py reports anything past the cap as a BOUND, never a value.
+  #
+  # WHAT THIS STILL CANNOT SAY -- read every number against this.
+  # L162 has exactly ONE completed seed (mtx-l162-s1b). probe.py's paired
+  # bootstrap resamples JETS on one checkpoint per arm; it carries NO
+  # pretraining-seed component. R16_Q1's own seed spread is large and measured:
+  # test metric 0.63836 (s2) vs 0.66330 (s3). So the three R16_Q1 arms below are
+  # here to EXPOSE that spread next to the single L162 arm, not to hide it.
+  # sigma_pretrain = 0.003704 in log10(1-AUC) (RUNS.csv e1-sigma-refit) => a
+  # 2.05% minimum detectable effect in (1-AUC) at n=5 paired, which we do not
+  # have. See DECISIONS_PENDING.md item 13; that decision governs how this
+  # output may be reported.
+  #
+  # CPU-ONLY. Four 1.02 GB feature arrays plus a 3-seed MLP per arm per task.
+  name: probe-bvc-v2-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 50
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: probe
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.7" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+
+          # features_v2, NOT features. The v1 arrays under .../features are a
+          # DIFFERENT sample (400k jets, strict family order) and mixing the two
+          # would fail probe.py's label188 alignment gate -- loudly, which is the
+          # one failure mode here that is not silent.
+          L162=/data/results/eval/mtx-l162-s1b/features_v2
+          R16S2=/data/results/eval/mtx-r16q1-s2/features_v2
+          R16S3=/data/results/eval/mtx-r16q1-s3/features_v2
+          R16S4=/data/results/eval/mtx-r16q1-s4/features_v2
+
+          for d in "${L162}" "${R16S2}" "${R16S3}" "${R16S4}"; do
+            [ -f "${d}/features.npy" ] || { echo "FATAL: no ${d}/features.npy"; exit 1; }
+            [ -f "${d}/label188.npy" ] || { echo "FATAL: no ${d}/label188.npy"; exit 1; }
+          done
+
+          OUT=/data/results/eval/probe_bvc_v2
+          mkdir -p ${OUT}
+
+          PYTHONUNBUFFERED=1 python3 experiments/EVAL/probe.py \
+            --features L162_s1b=${L162} \
+                       R16_Q1_s2=${R16S2} \
+                       R16_Q1_s3=${R16S3} \
+                       R16_Q1_s4=${R16S4} \
+            --out ${OUT} \
+            --bootstrap 2000
+
+          echo "=== results ==="
+          cat ${OUT}/*.json
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          # 32Gi, not v1's 16Gi: four arms at 2M jets is 4.1 GB of float32
+          # features resident at once, against v1's two arms at 400k = 0.4 GB.
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

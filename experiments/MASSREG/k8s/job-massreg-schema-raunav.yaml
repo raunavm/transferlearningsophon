@@ -1,0 +1,99 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # TRUTH-MASS SCHEMA PROBE -- can JetClass-II support GloParT's TWO-BRANCH
+  # regression target at all?
+  #
+  # WHY. CMS-DP-2026-104 p.43 defines the target as a ratio
+  #     theta^a_true = m^a_true / m_jet ,  a in {vis, res}
+  # with m_jet "the invariant mass computed from all PF candidates" (ungroomed),
+  # and the numerator BRANCHING ON TRUTH CLASS:
+  #     signal -> invariant mass of the non-neutrino resonance daughters
+  #     QCD    -> gen soft-drop mass
+  # Li's thesis Fig. 11.17 plots both numerators ("GEN res. mass", "GEN
+  # vis-part. mass") for CMS samples.
+  #
+  # We have genjet_sdmass, so the QCD branch is available. NOTHING IN THIS REPO
+  # RECORDS whether JetClass-II carries a truth resonance mass or a visible-
+  # daughter mass. Without one, the signal branch cannot be built on this
+  # dataset and the whole plan of reproducing the estimator on public data
+  # changes shape. That is why this runs BEFORE any head is written.
+  #
+  # This is a footer read. No column data is touched, /jc2 is mounted read-only,
+  # nothing is written anywhere. Seconds, CPU, one file.
+  name: massreg-schema-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: schema
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          pip install --quiet --no-cache-dir pyarrow 2>&1 | tail -1
+          python3 - <<'PY'
+          import glob, re
+          import pyarrow.parquet as pq
+
+          files = sorted(glob.glob("/jc2/jet_data/*.parquet"))
+          print(f"files visible: {len(files)}", flush=True)
+          if not files:
+              raise SystemExit("FATAL: no parquet files at /jc2/jet_data/")
+
+          schema = pq.ParquetFile(files[0]).schema_arrow
+          names  = list(schema.names)
+          print(f"probe file : {files[0]}")
+          print(f"n_columns  : {len(names)}\n")
+
+          # 1. The two branches, named explicitly so the answer is unambiguous.
+          print("=== BRANCH 1 (QCD): gen soft-drop mass ===")
+          for b in ("genjet_sdmass",):
+              print(f"  {'PRESENT' if b in names else 'ABSENT ':8s} {b}")
+
+          print("\n=== BRANCH 2 (signal): a truth resonance / visible-daughter mass ===")
+          # No name is assumed. Anything gen-level carrying a mass is a candidate.
+          cand = [n for n in names
+                  if re.search(r"(gen|truth|part|res|aux).*mass|mass.*(gen|truth|res)", n, re.I)]
+          if cand:
+              for n in sorted(cand):
+                  print(f"  CANDIDATE  {n:34s} {schema.field(n).type}")
+          else:
+              print("  NONE -- the signal branch cannot be built from a stored column.")
+
+          # 2. Full jet-level inventory, so this never has to be guessed again.
+          print("\n=== every JET-LEVEL column (particle-level arrays excluded) ===")
+          for n in names:
+              t = str(schema.field(n).type)
+              if "list" not in t:
+                  print(f"  {n:34s} {t}")
+
+          # 3. Everything gen-level, arrays included -- a per-particle gen block
+          #    would let the visible-daughter mass be BUILT rather than read.
+          print("\n=== every column matching gen/truth/aux (arrays INCLUDED) ===")
+          for n in names:
+              if re.search(r"gen|truth|aux", n, re.I):
+                  print(f"  {n:34s} {schema.field(n).type}")
+          PY
+        resources:
+          requests: { memory: "2Gi", cpu: "1", ephemeral-storage: "4Gi" }
+          limits:   { memory: "2Gi", cpu: "1", ephemeral-storage: "4Gi" }
+        volumeMounts:
+        - { name: jc2, mountPath: /jc2, readOnly: true }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
