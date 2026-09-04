@@ -1,0 +1,222 @@
+\documentclass{article}
+% ML4PS 2026 (NeurIPS workshop). 4 pages excluding references.
+% Deadline 12 September 2026, 23:59 AoE.
+% Build: the neurips_2026.sty file is not vendored here -- fetch it from the
+% workshop site and drop it beside this file, or build on Overleaf.
+\usepackage[final]{neurips_2026}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{siunitx}
+
+\input{results}
+
+\title{What must a pretraining vocabulary preserve?\\
+       A controlled label-granularity ladder for jet foundation models}
+
+\author{%
+  Raunav Mendiratta\thanks{Correspondence: \texttt{raunav.mendiratta@gmail.com}} \\
+  % TODO: full author list and affiliations before submission
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Jet foundation models are pretrained on simulated collision data with labels
+whose granularity is chosen by convention rather than measured. Two axes of
+pretraining design have recently been ablated in controlled fashion --- the
+training objective and the composition of the pretraining data --- but the
+label space itself has not. We pretrain Particle Transformers on JetClass-II
+under a nested contraction of its \Nnative{} native labels, holding the data
+stream bit-identical across arms so that the label vocabulary is the only
+variable. We report two findings. First, collapsing a physical distinction out
+of the pretraining vocabulary degrades that distinction in the frozen
+representation, and a nonlinear probe does not recover it --- the information is
+destroyed rather than merely rendered nonlinear. Second, and independently of
+the first, cross-entropy is not comparable across label spaces, so
+loss-to-downstream scaling laws for particle-physics foundation models are
+silently conditioned on a fixed vocabulary. We state what the study does not
+yet establish, and pre-register the control that would separate \emph{how many}
+distinctions a vocabulary keeps from \emph{which} ones.
+\end{abstract}
+
+\section{Introduction}
+
+Foundation models for jet physics are now trained at a scale where the
+pretraining recipe, not the architecture, is the object of study. Two design
+axes have recently been ablated under controlled conditions. \citet{objectives}
+compare pretraining \emph{objectives} --- supervised classification,
+flow-matching generation, and masked particle modelling --- and find that pure
+classifier pretraining is optimal when downstream labels and model capacity are
+plentiful. \citet{datacomp} vary the \emph{composition} of the pretraining
+data, showing that scaling behaviour can be engineered by making the
+pretraining corpus more diverse and better aligned with the downstream task.
+
+A third axis has not been ablated: the \emph{label space}. If supervised
+classification is the best pretraining objective, then the vocabulary of that
+classification is the design choice that matters most, and it is currently set
+by convention. Production taggers have grown from tens to hundreds of classes
+without a controlled measurement of what that buys. The question is not
+academic, because the vision literature disagrees with itself about the answer:
+\citet{huh} found that \emph{coarsening} ImageNet helped transfer to few-class
+targets, \citet{hong} found finer labels monotonically better on ImageNet21k
+but U-shaped on iNaturalist, and \citet{mehta} report representations
+saturating at roughly eight categories.
+
+We contribute a controlled instrument for that question in jet physics. Our
+ladder holds the training stream bit-identical across arms, so the vocabulary
+is the only variable --- a control that none of the vision studies above could
+apply, because coarsening an image taxonomy changes which images are sampled.
+
+\section{A controlled granularity ladder}
+
+\paragraph{Data and vocabulary.} JetClass-II labels each jet with one of
+\Nnative{} native classes: \Nresonant{} resonant decay signatures and \Nqcd{}
+QCD categories. We define a nested contraction tree over these labels and study
+two rungs of it here: \textbf{L162}, which merges only the QCD block
+($K=162$), and \textbf{R16\_Q1}, which merges the resonant signatures into
+16 topological groups plus one QCD node ($K=17$). The map is materialised, not
+regenerated from a seed, so every arm sees an identical label array.
+
+\paragraph{What is held fixed.} All arms use the same Particle Transformer
+\citep{part} with \Nparams{} trainable parameters, the same
+$\Nexamples$ examples seen over \Nepochs{} epochs, and the same learning rate
+$\LR$. Crucially, the flat $(p_T, m_\mathrm{SD})$ reweighting histograms that
+determine \emph{which jets are drawn and in what order} are verified
+byte-identical across arms, so the arms differ in their loss function and in
+nothing else. Selection retains \Ntrainjets{} training and \Ntestjets{} test
+jets.
+
+\paragraph{One learning rate is defensible.} A separate rate per arm would
+confound granularity with tuning. We swept three rates per arm at 20\% budget.
+The seed spread at a fixed rate is \tiemargin{} in validation accuracy, which
+sets the resolution. At $\LR$, R16\_Q1 attains its outright optimum
+(\RsixteenLRb) and L162 is \lrgap{} below its own (\LsixtwoLRb{} against
+\LsixtwoLRc{}) --- one fifth of the noise floor, i.e.\ a tie. A single rate
+therefore serves both arms.
+
+\paragraph{Endpoint.} Arms with different $K$ emit incommensurable logits, so
+the comparison is made on the frozen 128-dimensional representation the
+classifier head reads, probed on a task defined on the \emph{native} labels and
+therefore identical for every arm. We fit both a linear and a nonlinear (MLP)
+probe. The linear probe lower-bounds the mutual information, so a linear null
+alone cannot distinguish an absent distinction from a present but nonlinearly
+encoded one; we therefore never report one without the other.
+
+\section{Results}
+
+\subsection{A collapsed distinction is destroyed, not merely hidden}
+
+We probe $X\!\to\!b\bar b$ against $X\!\to\!c\bar c$ --- an axis L162 resolves
+and R16\_Q1 collapses by construction. Table~\ref{tab:probe} reports the frozen
+probe on \vbNjets{} jets, with arms scored on identical jets in identical order
+so the bootstrap is paired jet-for-jet.
+
+\begin{table}[h]
+\centering
+\caption{Frozen-probe AUC on the collapsed axis, full-budget arms.
+Inference is on $\log(1-\mathrm{AUC})$, whose seed noise is far below that of
+rejection at fixed efficiency.}
+\label{tab:probe}
+\begin{tabular}{lcc}
+\toprule
+Arm & Linear AUC & MLP AUC \\
+\midrule
+L162 \quad ($K=162$, axis resolved)   & \vbLsixtwoLin  & \vbLsixtwoMlp \\
+R16\_Q1 \ ($K=17$, axis collapsed)    & \vbRsixteenLin & \vbRsixteenMlp \\
+\midrule
+$\Delta\log(1-\mathrm{AUC})$ & \vbDlogLin\ \vbDlogLinCI & \vbDlogMlp\ \vbDlogMlpCI \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The direction is expected; the magnitude and the \emph{nonlinear} result are
+not. If the collapsed distinction were merely absent from the linear readout,
+an MLP probe should recover it: $b$ and $c$ information is present in the
+inputs and remains useful to classes the coarse vocabulary retains. It does not
+recover it. We therefore read the effect as degradation of the represented
+information rather than a change of coordinates.
+
+\subsection{Cross-entropy is not comparable across label spaces}
+
+\citet{scaling} fit a joint model-and-data scaling law for collider-jet
+transformers and connect it downstream, reporting that lower pretraining loss
+yields systematically lower fine-tuning loss and higher background rejection.
+That mapping is established within a fixed vocabulary. Our ladder shows the
+condition is load-bearing and unstated.
+
+\begin{table}[h]
+\centering
+\caption{Pretraining loss is measured against a different reference in each arm.
+Chance-level cross-entropy is $\ln K$.}
+\label{tab:loss}
+\begin{tabular}{lccc}
+\toprule
+Arm & Training loss & $\ln K$ & Loss $/\ln K$ \\
+\midrule
+L162   & \LossLsixtwo  & \ChanceLsixtwo  & \NormLsixtwo \\
+R16\_Q1 & \LossRsixteen & \ChanceRsixteen & \NormRsixteen \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Cross-entropy over 17 classes and over 162 classes are not the same quantity, so
+a loss-to-downstream forecast is silently conditioned on a fixed label space.
+The empirical ordering makes the point concrete and survives the obvious
+remedy: R16\_Q1 has the lower loss under both the raw comparison and entropy
+normalisation (Table~\ref{tab:loss}), while transferring worse on the axis it
+erased (Table~\ref{tab:probe}). No monotone rescaling of the loss axis recovers
+the ordering. We read this as a constraint on the domain of validity of
+loss-based compute allocation, not as a refutation of it.
+
+\paragraph{Pipeline validation.} Under an identical recipe on JetClass-I our
+pretrained arm reaches macro AUC \ePartOurs{} against the published \ePartPub{}
+for the same architecture \citep{part}, so the comparison above is not an
+artefact of the training path.
+
+\section{What this does not show}
+
+\paragraph{One pretraining seed on the fine arm.} The paired bootstrap
+resamples jets, not runs, and carries no pretraining-seed component. Our
+measured seed variance is $\sigma=\sigmapretrain$ in $\log_{10}(1-\mathrm{AUC})$
+on a from-scratch arm, and the coarse arm's own spread across seeds is
+\vbSeedSpread. Interval statements here are conditional on a single fine-arm
+pretraining run.
+
+\paragraph{How many, or which?} The central limitation. Our coarse arm reduces
+$K$ from 162 to 17 \emph{and} erases specific physical distinctions, and the
+present design cannot separate the two. The discriminating experiment is a
+semantics-matched random control: a pretraining arm at matched $K=17$ whose
+partition of the \Nnative{} native labels is random rather than physical. If it
+degrades the probed axis as much as the physical contraction does, then only
+capacity matters; if the physical contraction is worse, then \emph{which}
+distinctions a vocabulary keeps matters beyond \emph{how many}. We pre-register
+this arm and the prediction that the physical contraction will be worse. We
+note that \citet{chen} randomise the target while holding auxiliary labels
+fixed, which is the inverse manipulation.
+
+\paragraph{Two rungs, not a curve.} \citet{mehta} report saturation near eight
+categories; a ladder whose coarse endpoint is $K=17$ cannot observe that knee.
+
+\section{Conclusion}
+
+Holding the pretraining data stream bit-identical and varying only the label
+vocabulary, we find that a physical distinction collapsed out of the
+pretraining vocabulary is degraded in the frozen representation beyond what a
+nonlinear probe can recover, and that pretraining loss is not a vocabulary-
+independent quantity, which bounds where loss-based scaling laws may be applied.
+The label space is a third axis of pretraining design alongside the objective
+and the data, and it is the one currently set by convention.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}

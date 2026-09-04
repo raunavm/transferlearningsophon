@@ -1,0 +1,75 @@
+% ============================================================================
+% SINGLE SOURCE OF TRUTH FOR EVERY NUMBER IN THE PAPER.
+%
+% Nothing in main.tex may hardcode a result. Each macro below carries the
+% run_id it came from, so any figure in the text can be traced to a row of
+% experiments/RUNS.csv without opening another file.
+%
+% \pending{} renders in red. A compiled draft with red in it is not submittable
+% -- that is the point. Every \pending must be resolved before 12 Sep.
+% ============================================================================
+\newcommand{\pending}[1]{\textcolor{red}{\textbf{[#1]}}}
+
+% ---- dataset and model (docs/GROUND_TRUTH.md) ----
+\newcommand{\Nnative}{188}
+\newcommand{\Nresonant}{161}
+\newcommand{\Nqcd}{27}
+\newcommand{\Ntrainjets}{110{,}087{,}593}
+\newcommand{\Ntestjets}{27{,}448{,}839}
+\newcommand{\Nparams}{2{,}304{,}688}
+\newcommand{\Nexamples}{8.192\times10^{8}}
+\newcommand{\LR}{5\times10^{-4}}
+\newcommand{\Nepochs}{80}
+
+% ---- G1 learning-rate sweep (run_id g1-*) ----
+\newcommand{\tiemargin}{0.0158}
+\newcommand{\LsixtwoLRa}{0.52183}   % 2.5e-4
+\newcommand{\LsixtwoLRb}{0.55232}   % 5e-4
+\newcommand{\LsixtwoLRc}{0.55548}   % 1e-3
+\newcommand{\RsixteenLRa}{0.77917}
+\newcommand{\RsixteenLRb}{0.78277}
+\newcommand{\RsixteenLRc}{0.75986}
+\newcommand{\lrgap}{0.00316}        % L162: 1e-3 minus 5e-4
+
+% ---- pretraining loss, training logs 2026-09-03 ----
+% BOTH AT EPOCH 79 OF A COMPLETED RUN. The first draft of this table took
+% R16_Q1 from mtx-r16q1-s1, which is at epoch 29 and still running -- an
+% unfair comparison against L162 at epoch 79. Sources are now
+% mtx-l162-s1b (80/80) and mtx-r16q1-s5 (80/80).
+\newcommand{\LossLsixtwo}{1.599}    % mtx-l162-s1b, epoch 79
+\newcommand{\LossRsixteen}{0.633}   % mtx-r16q1-s5, epoch 79
+\newcommand{\ChanceLsixtwo}{5.088}  % ln 162
+\newcommand{\ChanceRsixteen}{2.833} % ln 17
+\newcommand{\NormLsixtwo}{0.314}
+\newcommand{\NormRsixteen}{0.223}
+
+% ---- frozen probe. v1 = 20% budget, CONFOUNDED. v2 = full budget. ----
+% v1 (run_id probe-bvc-v1) -- reported only as the preliminary in the appendix,
+% never as the headline: its arms ran at different learning rates.
+\newcommand{\vaLsixtwoLin}{0.99689}
+\newcommand{\vaLsixtwoMlp}{0.99698}
+\newcommand{\vaRsixteenLin}{0.98813}
+\newcommand{\vaRsixteenMlp}{0.98881}
+\newcommand{\vaDlogLin}{-1.3405}
+\newcommand{\vaDlogLinCI}{[-1.5585,\,-1.1438]}
+\newcommand{\vaDlogMlp}{-1.3111}
+\newcommand{\vaDlogMlpCI}{[-1.5192,\,-1.1247]}
+\newcommand{\vaNjets}{60{,}565}
+
+% v2 (run_id probe-bvc-v2) -- THE HEADLINE. Fill from
+% /data/results/eval/probe_bvc_v2/probe_results.json when the job returns.
+\newcommand{\vbLsixtwoLin}{\pending{v2 L162 linear}}
+\newcommand{\vbLsixtwoMlp}{\pending{v2 L162 mlp}}
+\newcommand{\vbRsixteenLin}{\pending{v2 R16 linear}}
+\newcommand{\vbRsixteenMlp}{\pending{v2 R16 mlp}}
+\newcommand{\vbDlogLin}{\pending{v2 dlog linear}}
+\newcommand{\vbDlogLinCI}{\pending{v2 CI}}
+\newcommand{\vbDlogMlp}{\pending{v2 dlog mlp}}
+\newcommand{\vbDlogMlpCI}{\pending{v2 CI}}
+\newcommand{\vbNjets}{\pending{v2 n}}
+\newcommand{\vbSeedSpread}{\pending{R16 seed spread}}
+
+% ---- pipeline validation ----
+\newcommand{\ePartOurs}{0.9878}
+\newcommand{\ePartPub}{0.9877}
+\newcommand{\sigmapretrain}{0.003704}
