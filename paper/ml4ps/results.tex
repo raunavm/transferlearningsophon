@@ -69,6 +69,24 @@
 \newcommand{\vbNjets}{\pending{v2 n}}
 \newcommand{\vbSeedSpread}{\pending{R16 seed spread}}
 
+% retained_topology -- the CONTROL leg. Both arms keep this axis, so the
+% L162-minus-R16 gap here should be ~0 while the gap on bvc_resonant is large.
+% That difference-in-differences is what separates "this axis was erased" from
+% "this arm is worse at everything".
+\newcommand{\rtLsixtwoLin}{\pending{retained L162 linear}}
+\newcommand{\rtLsixtwoMlp}{\pending{retained L162 mlp}}
+\newcommand{\rtRsixteenLin}{\pending{retained R16 linear}}
+\newcommand{\rtRsixteenMlp}{\pending{retained R16 mlp}}
+\newcommand{\rtDlogLin}{\pending{retained dlog}}
+\newcommand{\rtDlogLinCI}{\pending{retained CI}}
+
+% bvc_qcd -- the NULL-vs-NULL leg. BOTH arms collapse it, so neither should
+% win. A gap here would indict the method, not the vocabulary.
+\newcommand{\qqLsixtwoLin}{\pending{qcd L162 linear}}
+\newcommand{\qqRsixteenLin}{\pending{qcd R16 linear}}
+\newcommand{\qqDlogLin}{\pending{qcd dlog}}
+\newcommand{\qqDlogLinCI}{\pending{qcd CI}}
+
 % ---- pipeline validation ----
 \newcommand{\ePartOurs}{0.9878}
 \newcommand{\ePartPub}{0.9877}

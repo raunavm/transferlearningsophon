@@ -105,7 +105,7 @@ therefore serves both arms.
 
 \paragraph{Endpoint.} Arms with different $K$ emit incommensurable logits, so
 the comparison is made on the frozen 128-dimensional representation the
-classifier head reads, probed on a task defined on the \emph{native} labels and
+classifier head reads, probed on tasks defined on the \emph{native} labels and
 therefore identical for every arm. We fit both a linear and a nonlinear (MLP)
 probe. The linear probe lower-bounds the mutual information, so a linear null
 alone cannot distinguish an absent distinction from a present but nonlinearly
@@ -115,35 +115,59 @@ encoded one; we therefore never report one without the other.
 
 \subsection{A collapsed distinction is destroyed, not merely hidden}
 
-We probe $X\!\to\!b\bar b$ against $X\!\to\!c\bar c$ --- an axis L162 resolves
-and R16\_Q1 collapses by construction. Table~\ref{tab:probe} reports the frozen
-probe on \vbNjets{} jets, with arms scored on identical jets in identical order
-so the bootstrap is paired jet-for-jet.
+A single contrast on a collapsed axis cannot support the claim, because a
+coarser vocabulary might simply yield a weaker representation of everything. We
+therefore probe three axes chosen to form a $2\times2$, and read the arms
+against each other \emph{within} an axis rather than across them.
+
+\textbf{bvc\_resonant} holds topology fixed and varies flavour:
+$X\!\to\!b\bar b$ against $X\!\to\!c\bar c$, both two-prong hadronic. L162
+resolves it; R16\_Q1 collapses it. \textbf{retained\_topology} is its
+complement --- it holds flavour fixed (both endpoints all-$b$) and varies prong
+count: $X\!\to\!b\bar b$ against $X\!\to\!YY\!\to\!b\bar bb\bar b$. Both arms
+resolve it. \textbf{bvc\_qcd} is the null-versus-null leg, collapsed by both
+arms, where neither should win.
 
 \begin{table}[h]
 \centering
-\caption{Frozen-probe AUC on the collapsed axis, full-budget arms.
-Inference is on $\log(1-\mathrm{AUC})$, whose seed noise is far below that of
-rejection at fixed efficiency.}
+\caption{Frozen-probe AUC, full-budget arms scored on identical jets in
+identical order. Inference is on $\log(1-\mathrm{AUC})$, whose seed noise is
+far below that of rejection at fixed efficiency, and which stays sensitive near
+the ceiling where raw AUC does not.}
 \label{tab:probe}
-\begin{tabular}{lcc}
+\begin{tabular}{llccc}
 \toprule
-Arm & Linear AUC & MLP AUC \\
+Axis & R16\_Q1 & L162 & R16\_Q1 & $\Delta\log(1-\mathrm{AUC})$ \\
+     & does     & lin / MLP & lin / MLP & \\
 \midrule
-L162 \quad ($K=162$, axis resolved)   & \vbLsixtwoLin  & \vbLsixtwoMlp \\
-R16\_Q1 \ ($K=17$, axis collapsed)    & \vbRsixteenLin & \vbRsixteenMlp \\
-\midrule
-$\Delta\log(1-\mathrm{AUC})$ & \vbDlogLin\ \vbDlogLinCI & \vbDlogMlp\ \vbDlogMlpCI \\
+flavour, topology fixed & collapses
+  & \vbLsixtwoLin\ / \vbLsixtwoMlp & \vbRsixteenLin\ / \vbRsixteenMlp
+  & \vbDlogLin\ \vbDlogLinCI \\
+topology, flavour fixed & \emph{keeps}
+  & \rtLsixtwoLin\ / \rtLsixtwoMlp & \rtRsixteenLin\ / \rtRsixteenMlp
+  & \rtDlogLin\ \rtDlogLinCI \\
+QCD flavour & collapses (both)
+  & \qqLsixtwoLin\ / --- & \qqRsixteenLin\ / ---
+  & \qqDlogLin\ \qqDlogLinCI \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The direction is expected; the magnitude and the \emph{nonlinear} result are
-not. If the collapsed distinction were merely absent from the linear readout,
-an MLP probe should recover it: $b$ and $c$ information is present in the
-inputs and remains useful to classes the coarse vocabulary retains. It does not
-recover it. We therefore read the effect as degradation of the represented
-information rather than a change of coordinates.
+The design turns a single comparison into a difference-in-differences. A gap
+confined to the axis R16\_Q1 uniquely collapses, with the retained axis and the
+null-versus-null leg both at parity, is not explicable by a globally weaker
+representation. Difficulty is not matched across the three axes and cannot be:
+R16\_Q1 groups by topology, so every distinction it retains is topological.
+This is why the arms are compared only within an axis.
+
+The direction on the collapsed axis is expected; the magnitude and the
+\emph{nonlinear} result are not. If the collapsed distinction were merely
+absent from the linear readout, an MLP probe should recover it --- $b$ and $c$
+information is present in the inputs and remains useful to classes the coarse
+vocabulary retains. It does not recover it. We therefore read the effect as
+degradation of the represented information rather than a change of coordinates.
+A linear probe lower-bounds the mutual information, so this distinction between
+``absent'' and ``present but nonlinear'' is exactly what the second probe buys.
 
 \subsection{Cross-entropy is not comparable across label spaces}
 
