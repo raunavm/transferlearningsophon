@@ -44,10 +44,21 @@
 % mtx-l162-s1b (80/80) and mtx-r16q1-s5 (80/80).
 \newcommand{\LossLsixtwo}{1.599}    % mtx-l162-s1b, epoch 79
 \newcommand{\LossRsixteen}{0.633}   % mtx-r16q1-s5, epoch 79
-\newcommand{\ChanceLsixtwo}{5.088}  % ln 162
-\newcommand{\ChanceRsixteen}{2.833} % ln 17
-\newcommand{\NormLsixtwo}{0.314}
-\newcommand{\NormRsixteen}{0.223}
+% ln K is NOT chance level here: the stream is flat per REWEIGHTING CATEGORY,
+% not per class (30 categories, class_weights summing 1.73175). Marginal entropy
+% computed from configs/data/JetClassII_base.yaml + rung_label_maps.v1.csv:
+% the 30 categories partition all 188 labels exactly once, and every R16_Q1 group
+% is a union of whole categories, so R16_Q1's H(Y) is EXACT. L162 refines the
+% category partition, so its H(Y) is bracketed by H(categories)=2.460 below and
+% the uniform-within-category value 4.230 above.
+\newcommand{\HyRsixteen}{2.13}
+\newcommand{\HyLsixtwoLo}{2.46}
+\newcommand{\HyLsixtwoHi}{4.23}
+% Information captured about the label, H(Y) - loss, in nats. L162's interval
+% STRADDLES R16_Q1's, so this normalisation does not decide the ordering either.
+\newcommand{\InfoRsixteen}{1.50}
+\newcommand{\InfoLsixtwoLo}{0.86}
+\newcommand{\InfoLsixtwoHi}{2.63}
 
 % ---- frozen probe. v1 = 20% budget, CONFOUNDED. v2 = full budget. ----
 % v1 (run_id probe-bvc-v1) -- reported only as the preliminary in the appendix,
