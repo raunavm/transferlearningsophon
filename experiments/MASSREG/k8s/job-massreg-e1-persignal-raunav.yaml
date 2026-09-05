@@ -1,0 +1,88 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # E1 -- THE MASS-REGRESSION PAPER'S CONTROL FIGURE.
+  #
+  # Before we can claim the class-gated mass ESTIMATOR sculpts the QCD
+  # spectrum, we have to show our pipeline reproduces the behaviour GloParT
+  # already publishes for its DISCRIMINANT: cutting harder on D_S does NOT
+  # sculpt QCD m_SD, because the discriminant is mass-decorrelated by
+  # construction. That is CMS-DP-2026-104 Fig. 7 / thesis Fig. 11.16.
+  #
+  # This is a GATE, not a result. Ratio flat within uncertainty => PASS.
+  # Not flat => the disagreement is in OUR pipeline and every downstream
+  # number is worthless, so stop and diagnose rather than proceed to E2.
+  #
+  # Runs on the PUBLIC Sophon checkpoint's features (job-massreg-e0b-*), so
+  # an external reader can reproduce it without CMS access. Reads logits.npy
+  # -- the 188 class probabilities -- because D_S is a function of those and
+  # not of the 128-d representation everything else in this repo probes.
+  #
+  # SIGNAL SET: the ten 2P_HAD_2PARTON native labels (0-9), i.e. X->qq
+  # two-prong hadronic, which is the classic resonance-search signature and
+  # the regime GloParT's Xbb/Xcc/Xqq nodes serve. alpha is uniform over them.
+  #
+  # CPU-ONLY, minutes. Reads three cached arrays and histograms them.
+  name: massreg-e1-persignal-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: e1
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "massreg-e1.1" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+
+          F=/data/results/eval/sophon-public/features_massreg
+          for f in logits.npy label188.npy observers.npz; do
+            [ -f "${F}/${f}" ] || { echo "FATAL: no ${F}/${f}"; exit 1; }
+          done
+          echo "=== extraction manifest this figure rests on ==="
+          cat ${F}/extract_manifest.json
+
+          # Sophon's published discriminant is ONE signal node against the undivided
+          # QCD sum (arXiv:2405.12972 Sec. III: X->bb vs QCD, Neyman-Pearson). The
+          # ten-label uniform sum used before reproduces nothing they published.
+          for cfg in "xbb 0" "xcc 1" "xqq 3"; do
+            set -- $cfg; NAME=$1; SIG=$2
+            OUT=/data/results/massreg/e1_persignal/${NAME}
+            mkdir -p ${OUT}
+            echo "############ signal=${NAME} (native label ${SIG}) ############"
+            PYTHONUNBUFFERED=1 python3 experiments/MASSREG/e1_control.py \
+              --features ${F} \
+              --signal ${SIG} \
+              --mass-branch jet_sdmass \
+              --pt-edges 200 400 600 1000 1500 2500 \
+              --out ${OUT}
+          done
+
+          echo "=== done ==="
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          # logits 4M x 188 x f32 = 3.01 GB, promoted to f64 in softmax = 6.02 GB,
+          # plus the source array still resident. 32Gi is comfortable over that.
+          requests: { memory: "32Gi", cpu: "4", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "4", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
