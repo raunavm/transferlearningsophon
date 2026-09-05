@@ -116,10 +116,10 @@
 \newcommand{\didA}{0.774}
 \newcommand{\didB}{0.889}
 \newcommand{\didC}{0.846}
-\newcommand{\didMean}{0.836}
+\newcommand{\didMean}{0.837}
 \newcommand{\didFactor}{2.31}
-\newcommand{\didMlpMean}{0.664}
-\newcommand{\didMlpFactor}{1.94}
+\newcommand{\didMlpMean}{0.666}
+\newcommand{\didMlpFactor}{1.95}
 \newcommand{\didRange}{0.116}
 \newcommand{\rawRange}{0.361}
 \newcommand{\genFactor}{1.59}
@@ -160,7 +160,7 @@
 \newcommand{\facRes}{3.66}
 \newcommand{\facQcd}{2.65}
 \newcommand{\facTop}{1.59}
-\newcommand{\didRes}{0.836}
+\newcommand{\didRes}{0.837}
 \newcommand{\didQcd}{0.513}
 
 % ---- pipeline validation ----
@@ -223,3 +223,18 @@
 \newcommand{\xferQcdToRes}{0.99519}
 % Resonant-fitted direction applied unchanged to QCD (the weaker direction).
 \newcommand{\xferResToQcd}{0.96254}
+
+% ---- MLP leg, all three axes (probe-bvc-v2, from probe_results.json).
+% D6 and CLAUDE.md require the MLP beside the linear probe; it RAN on all three
+% axes and only the merged axis had reached results.tex. Ordering and both
+% excesses survive under the nonlinear probe.
+\newcommand{\meanResMlp}{1.106}
+\newcommand{\meanQcdMlp}{0.858}
+\newcommand{\meanTopMlp}{0.439}
+\newcommand{\facResMlp}{3.02}
+\newcommand{\facQcdMlp}{2.36}
+\newcommand{\facTopMlp}{1.55}
+\newcommand{\didMlpQcd}{0.418}
+\newcommand{\didMlpQcdFactor}{1.52}
+% fractional reduction in (1-AUC), linear -> MLP. QCD axis: 14.2/14.7/17.2 vs 4.9.
+\newcommand{\mlpRecoveryQcd}{14--17\%}
