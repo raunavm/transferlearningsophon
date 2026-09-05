@@ -79,9 +79,10 @@ but U-shaped on iNaturalist, and \citet{mehta} report representations
 saturating at roughly eight categories.
 
 We contribute a controlled instrument for that question in jet physics. Our
-ladder holds the training stream bit-identical across arms, so the vocabulary
-is the only variable --- a control that none of the vision studies above could
-apply, because coarsening an image taxonomy changes which images are sampled.
+ladder draws every arm from an identical training distribution, so the
+vocabulary is the only deliberate variable --- a control that none of the vision
+studies above could apply, because coarsening an image taxonomy changes which
+images are sampled.
 
 \section{A controlled granularity ladder}
 
@@ -329,8 +330,8 @@ same way.
 
 \section{Conclusion}
 
-Holding the pretraining data stream bit-identical and varying only the label
-vocabulary, we find two effects: a general degradation from coarsening,
+Drawing every arm from an identical pretraining distribution and varying only
+the label vocabulary, we find two effects: a general degradation from coarsening,
 and, on top of it, the loss of an erased feature --- measured both where the fine
 vocabulary labels that feature and, substantially, on an axis neither vocabulary
 ever labels, which the fine arm nonetheless resolves. We also
