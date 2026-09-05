@@ -41,10 +41,10 @@ Probing the frozen representation on three axes that differ in how the
 vocabulary touches them, we find a clean ordering. Coarsening degrades the
 representation generally, by a factor $\facTop\times$ in $1-\mathrm{AUC}$ even
 on an axis both arms resolve. A distinction the coarse arm merges degrades a
-further $\facRes\times$. And --- the result we did not predict --- an axis that
-\emph{neither} arm labels degrades by $\facQcd\times$: the fine arm decodes QCD
-flavour having never received a QCD flavour label, so that information reached
-QCD jets through the resonant labels. What a vocabulary erases is not confined to
+further $\facRes\times$. And an axis that \emph{neither} arm labels degrades by
+$\facQcd\times$: the fine arm decodes QCD flavour having never received a QCD
+flavour label, and a single fitted direction serves both flavour axes, so this is
+the same erased feature read on jets whose labels never carried it. What a vocabulary erases is not confined to
 the jets whose labels it merged. Whether the coarse arm loses it because those
 labels were merged, or because $K=17$ compresses every axis interior to a group,
 is what our pre-registered random-partition control separates. Separately, cross-entropy is not comparable
@@ -163,10 +163,13 @@ factor in $1-\mathrm{AUC}$ & $\facRes\times$ & $\facQcd\times$ & $\facTop\times$
 \end{tabular}
 \end{table}
 
-\paragraph{Three effects, cleanly ordered.} The coarse arm is worse even on the
+\paragraph{Two effects, cleanly ordered.} The coarse arm is worse even on the
 axis it \emph{keeps} --- a factor $\facTop\times$. Coarsening degrades the
 representation generally, and a study without that column would have charged
-this cost to the erased distinction. The axis R16\_Q1 collapses loses a further
+this cost to the erased distinction. Because the retained axis is one the coarse
+arm still labels, $\facTop\times$ is a \emph{floor} on general degradation, and
+the excesses below are correspondingly upper bounds on the vocabulary-specific
+component. The axis R16\_Q1 collapses loses a further
 $\didRes$ in $\log(1-\mathrm{AUC})$ on top of it. For every seed the three
 intervals are mutually disjoint, so the ordering holds within each checkpoint
 without a bootstrap of the differences. Reading the excess as a subtraction
@@ -177,11 +180,25 @@ the unlabelled axis. Both excesses stay clearly positive under either model and
 they move in opposite directions, so the ordering is robust and the magnitudes
 are model-dependent.
 
-\paragraph{The damage reaches an axis the vocabulary never labelled.} The middle
-column is the result we did not predict. \emph{Neither} arm receives a QCD
-flavour label: both merge all 27 QCD classes into one node. We designed this
-column as a null-versus-null control and expected parity. Instead L162 is better
-by $\facQcd\times$, an excess of $\didQcd$ over the retained axis. One
+\paragraph{The damage reaches an axis the vocabulary never labelled.}
+\emph{Neither} arm receives a QCD flavour label: both merge all 27 QCD classes
+into one node, so the loss is flavour-invariant on QCD jets in both arms. We
+designed this column as a null-versus-null control and expected parity; that
+prior was wrong, and in hindsight it cut against the routine transfer of flavour
+taggers across jet populations. L162 is better by $\facQcd\times$, an excess of
+$\didQcd$ over the retained axis.
+
+The two flavour axes are one feature, not two. A single linear direction fitted
+on both axes jointly reaches essentially in-domain AUC on each
+($\poolLsixtwoRes$ and $\poolLsixtwoQcd$ for L162, against $\inLsixtwoRes$ and
+$\inLsixtwoQcd$ in-domain; likewise for every R16\_Q1 seed), and the direction
+fitted on QCD jets alone --- jets that carried no flavour label in either arm ---
+separates resonant $b$ from resonant $c$ at AUC $\xferQcdToRes$ in L162. The
+converse transfer is weaker ($\xferResToQcd$), as expected when the near-separable
+resonant axis under-determines its own fit. So the QCD column is not a third
+effect of a different kind: it is the erased feature read on jets whose labels
+never carried it. That is what makes the merged-axis result more than
+memorisation of a head-adjacent split between two training labels. One
 explanation consistent with all three columns is that flavour discrimination
 learned from the \emph{resonant} labels transfers to QCD jets, and that
 collapsing resonant flavour destroys it. A second is generic: at $K=17$ the
@@ -307,11 +324,10 @@ same way.
 \section{Conclusion}
 
 Holding the pretraining data stream bit-identical and varying only the label
-vocabulary, we find three effects of different size and different kind: a
-general degradation from coarsening, a larger one on the axis actually merged,
-and --- unexpectedly --- a substantial one on an axis neither vocabulary ever
-labelled, which the fine arm resolves without ever having been given a label for
-it. We also
+vocabulary, we find two effects: a general degradation from coarsening,
+and, on top of it, the loss of an erased feature --- measured both where the fine
+vocabulary labels that feature and, substantially, on an axis neither vocabulary
+ever labels, which the fine arm nonetheless resolves. We also
 find that pretraining loss is not a vocabulary-independent quantity, which
 bounds where loss-based scaling laws may be applied. The label space is a third
 axis of pretraining design alongside the objective and the data, it is the one

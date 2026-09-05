@@ -191,3 +191,18 @@
 \newcommand{\nTestRes}{23{,}537}
 \newcommand{\nTestQcd}{7{,}859}
 \newcommand{\nTestTop}{12{,}852}
+
+% ---- cross-domain probe (run_id xdomain-v1) ----
+% Fitted on the SAME cached 2M-jet features_v2 the main probe uses, same
+% SPLIT_SEED 20260822, same C grid. Reproduces the Table 1 in-domain AUCs and
+% per-seed contrasts to 4-5 decimals from raw features, so it is also an
+% independent re-derivation of the headline table (CLAUDE.md section 7).
+% "pooled" = one direction fitted on the union of both axes, domain-balanced.
+\newcommand{\poolLsixtwoRes}{0.99700}
+\newcommand{\poolLsixtwoQcd}{0.98319}
+\newcommand{\inLsixtwoRes}{0.99755}
+\newcommand{\inLsixtwoQcd}{0.98335}
+% QCD-fitted direction applied unchanged to the resonant axis.
+\newcommand{\xferQcdToRes}{0.99519}
+% Resonant-fitted direction applied unchanged to QCD (the weaker direction).
+\newcommand{\xferResToQcd}{0.96254}
