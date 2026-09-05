@@ -90,3 +90,81 @@ def test_discriminant_ignores_classes_in_neither_set():
     p = np.array([[0.2, 0.0, 0.2, 0.6]])  # index 3 is neither
     d = e1.discriminant(p, np.array([0]), np.array([2]))
     np.testing.assert_allclose(d, [0.2 / (0.2 + 0.2)])
+
+
+# ---------------------------------------------------------------------------
+# p_T binning. The 2026-09-05 inclusive figure failed with chi2/ndf 99. The
+# diagnosis was that integrating over p_T reintroduces mass dependence when
+# the discriminant is decorrelated only at FIXED p_T. These tests encode that
+# diagnosis as a synthetic that must sculpt inclusively and be flat per bin.
+# ---------------------------------------------------------------------------
+MASS_EDGES = np.linspace(20.0, 500.0, 51)
+
+
+def _two_populations(n=400_000, seed=0):
+    """Low-p_T jets are low-mass, high-p_T jets are high-mass. D depends on p_T
+    only, so at fixed p_T it is independent of mass -- the decorrelated case."""
+    rng = np.random.default_rng(seed)
+    half = n // 2
+    pt = np.concatenate([rng.uniform(200, 600, half), rng.uniform(600, 2500, half)])
+    m = np.concatenate([rng.uniform(20, 200, half), rng.uniform(100, 500, half)])
+    D = pt / 2500.0 + 1e-3 * rng.standard_normal(n)
+    return m, D, pt
+
+
+def _worst_chi2(wp):
+    return max(v["chi2_per_ndf"] for v in wp["working_points"].values() if not v["thin"])
+
+
+def test_independent_discriminant_is_flat():
+    rng = np.random.default_rng(1)
+    m = rng.uniform(20, 500, 300_000)
+    D = rng.uniform(0, 1, m.size)
+    assert _worst_chi2(e1.spectrum(m, D, MASS_EDGES)) < 1.6
+
+
+def test_mass_correlated_discriminant_sculpts():
+    rng = np.random.default_rng(2)
+    m = rng.uniform(20, 500, 300_000)
+    D = m / 500.0 + 0.05 * rng.standard_normal(m.size)
+    assert _worst_chi2(e1.spectrum(m, D, MASS_EDGES)) > 20
+
+
+def test_integrating_over_pt_sculpts_when_each_pt_bin_is_flat():
+    """THE diagnosis. Same jets, same discriminant: inclusive fails, binned passes."""
+    m, D, pt = _two_populations()
+    inclusive = _worst_chi2(e1.spectrum(m, D, MASS_EDGES))
+    assert inclusive > 20, f"inclusive should sculpt, chi2/ndf={inclusive:.2f}"
+    for lo, hi in [(200, 600), (600, 2500)]:
+        b = (pt >= lo) & (pt < hi)
+        per_bin = _worst_chi2(e1.spectrum(m[b], D[b], MASS_EDGES))
+        assert per_bin < 1.6, f"bin [{lo},{hi}) should be flat, chi2/ndf={per_bin:.2f}"
+
+
+def test_flatness_is_invariant_to_monotone_rescaling_of_the_discriminant():
+    """Thresholds are quantiles and ratios are normalised within the set, so
+    the working points depend on D only through its ordering."""
+    m, D, _ = _two_populations(n=100_000, seed=3)
+    a = e1.spectrum(m, D, MASS_EDGES)
+    b = e1.spectrum(m, 3.0 * D + 1.0, MASS_EDGES)
+    for k in a["working_points"]:
+        assert a["working_points"][k]["counts"] == b["working_points"][k]["counts"]
+        np.testing.assert_allclose(a["working_points"][k]["chi2_vs_flat"],
+                                   b["working_points"][k]["chi2_vs_flat"])
+
+
+def test_thin_working_point_is_flagged_and_a_fat_one_is_not():
+    rng = np.random.default_rng(4)
+    m = rng.uniform(20, 500, 20_000)          # 0.5% of 20k = 100 selected: thin
+    D = rng.uniform(0, 1, m.size)
+    wp = e1.spectrum(m, D, MASS_EDGES)["working_points"]
+    assert wp["eps_B=0.005"]["thin"] and wp["eps_B=0.005"]["n_selected"] < e1.MIN_SELECTED
+    assert not wp["eps_B=0.05"]["thin"] and wp["eps_B=0.05"]["n_selected"] >= e1.MIN_SELECTED
+
+
+def test_default_pt_edges_contain_the_two_published_bins():
+    """DP-2026-104 Fig. 7 shows 400-600 and 1000-1500 GeV; both must be exact bins."""
+    e = e1.PT_EDGES
+    assert [400.0, 600.0] == [x for x in e if x in (400.0, 600.0)]
+    assert [1000.0, 1500.0] == [x for x in e if x in (1000.0, 1500.0)]
+    assert e[0] == 200.0 and e[-1] == 2500.0, "must span the study's own selection"
