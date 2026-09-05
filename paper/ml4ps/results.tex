@@ -16,7 +16,13 @@
 \newcommand{\Nqcd}{27}
 \newcommand{\Ntrainjets}{110{,}087{,}593}
 \newcommand{\Ntestjets}{27{,}448{,}839}
+% 2,304,688 is the RELEASED 188-CLASS checkpoint's trainable count
+% (docs/GROUND_TRUTH.md: mod.fc.1 = (188,512)). The arms have K=162 and K=17
+% output layers, so their totals differ from it and from each other. Quote the
+% shared trunk+hidden part, and the totals to 3 s.f. so the bias term is moot.
 \newcommand{\Nparams}{2{,}304{,}688}
+\newcommand{\NparamsLsixtwo}{2.29\,\mathrm{M}}
+\newcommand{\NparamsRsixteen}{2.22\,\mathrm{M}}
 \newcommand{\Nexamples}{8.192\times10^{8}}
 \newcommand{\LR}{5\times10^{-4}}
 \newcommand{\Nepochs}{80}

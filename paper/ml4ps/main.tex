@@ -36,7 +36,8 @@ pretraining design have recently been ablated in controlled fashion --- the
 training objective and the composition of the pretraining data --- but the
 label space itself has not. We pretrain Particle Transformers on JetClass-II
 under a nested contraction of its \Nnative{} native labels, holding the data
-stream bit-identical across arms so that the vocabulary is the only variable.
+stream's sampling distribution byte-identical across arms so that the
+vocabulary is the only deliberate variable.
 Probing the frozen representation on three axes that differ in how the
 vocabulary touches them, we find a clean ordering. Coarsening degrades the
 representation generally, by a factor $\facTop\times$ in $1-\mathrm{AUC}$ even
@@ -93,12 +94,17 @@ two rungs of it here: \textbf{L162}, which merges only the QCD block
 regenerated from a seed, so every arm sees an identical label array.
 
 \paragraph{What is held fixed.} All arms use the same Particle Transformer
-\citep{part} with \Nparams{} trainable parameters, the same
-$\Nexamples$ examples seen over \Nepochs{} epochs, and the same learning rate
-$\LR$. Crucially, the flat $(p_T, m_\mathrm{SD})$ reweighting histograms that
-determine \emph{which jets are drawn and in what order} are verified
-byte-identical across arms, so the arms differ in their loss function and in
-nothing else. Selection retains \Ntrainjets{} training and \Ntestjets{} test
+trunk \citep{part}; only the output layer's width follows $K$, giving
+$\NparamsLsixtwo$ trainable parameters for L162 against $\NparamsRsixteen$ for
+R16\_Q1. Every arm sees the same $\Nexamples$ examples over \Nepochs{} epochs at
+the same learning rate $\LR$. Crucially, the flat $(p_T, m_\mathrm{SD})$
+reweighting histograms that determine \emph{which jets are drawn} are verified
+byte-identical across arms, so the sampling distribution, the selection and the
+file list are common to both. What is not common is the seed: our L162 run uses
+seed 1 and our R16\_Q1 runs seeds 2--4, so the realised draw order, the trunk
+initialisation and the dropout masks differ between the arms as well as between
+the R16\_Q1 seeds. The comparison is therefore one seed against three, not a
+matched pair, and the seed-level tests of Section~3.1 are what carry it. Selection retains \Ntrainjets{} training and \Ntestjets{} test
 jets.
 
 \paragraph{One learning rate is defensible.} A separate rate per arm would
