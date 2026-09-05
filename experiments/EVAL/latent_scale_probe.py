@@ -70,7 +70,16 @@ def targets(obs: dict) -> dict:
     """
     pt, eta = obs["jet_pt"].astype(np.float64), obs["jet_eta"].astype(np.float64)
     assert (pt > 0).all(), "jet_pt has non-positive entries; ln is undefined"
-    return {"ln_jet_pt": np.log(pt), "abs_jet_eta": np.abs(eta), "jet_eta_signed": eta}
+    t = {"ln_jet_pt": np.log(pt), "abs_jet_eta": np.abs(eta), "jet_eta_signed": eta}
+    # m_SD / p_T -- the DIMENSIONLESS quantity the trunk is fed (constituents are
+    # scaled to jet p_T = 500), and the protected attribute of a post-hoc
+    # concept-erasure projection (future/DIRECTION_2.md, D2-A). Its early-kill
+    # test is this R^2: near zero means the flat reweighting already removed
+    # linearly-decodable m/p_T and there is nothing to erase. Only present when
+    # the extraction carried jet_sdmass, so older feature sets still run.
+    if "jet_sdmass" in obs:
+        t["m_sd_over_pt"] = obs["jet_sdmass"].astype(np.float64) / pt
+    return t
 
 
 def r2(y_true: np.ndarray, y_pred: np.ndarray) -> float:

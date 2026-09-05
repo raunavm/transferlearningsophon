@@ -41,12 +41,25 @@ def test_split_is_deterministic_and_partitions_every_row():
 
 
 def test_targets_are_the_three_the_spec_names():
+    """Without jet_sdmass the target set is exactly the spec's three, so every
+    feature set extracted before the mass observer existed still runs."""
     obs = {"jet_pt": np.array([200.0, 2500.0]), "jet_eta": np.array([-2.0, 1.5])}
     t = lsp.targets(obs)
     assert set(t) == {"ln_jet_pt", "abs_jet_eta", "jet_eta_signed"}
     assert np.allclose(t["ln_jet_pt"], np.log([200.0, 2500.0]))
     assert np.allclose(t["abs_jet_eta"], [2.0, 1.5])
     assert np.allclose(t["jet_eta_signed"], [-2.0, 1.5])
+
+
+def test_mass_over_pt_target_appears_only_with_the_mass_observer():
+    """m_SD/p_T is dimensionless and is the D2-A early-kill quantity; it must be
+    the ratio, not the mass, and must not change the other three."""
+    obs = {"jet_pt": np.array([200.0, 2500.0]), "jet_eta": np.array([-2.0, 1.5]),
+           "jet_sdmass": np.array([50.0, 500.0])}
+    t = lsp.targets(obs)
+    assert set(t) == {"ln_jet_pt", "abs_jet_eta", "jet_eta_signed", "m_sd_over_pt"}
+    assert np.allclose(t["m_sd_over_pt"], [0.25, 0.2])
+    assert np.allclose(t["ln_jet_pt"], np.log([200.0, 2500.0]))
 
 
 def test_signed_eta_is_not_the_same_target_as_abs_eta():
