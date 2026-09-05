@@ -69,24 +69,47 @@ def load_pred(path: pathlib.Path, k: int):
     with uproot.open(str(path)) as f:
         tree = f[f.keys()[0].split(";")[0]]
         keys = [b.split(";")[0] for b in tree.keys()]
-        score = sorted([b for b in keys if b.startswith("score_")], key=_order_key)
-        if len(score) != k:
-            raise SystemExit(
-                f"FATAL: {path} has {len(score)} score_* branches, expected k={k}.\n"
-                f"  score branches: {score}\n"
-                f"  ALL branches:   {keys}")
         truth_cands = [b for b in keys if b in
                        ("truth_label", "_label_", "label", "y_true")]
-        arr = tree.arrays(score + truth_cands, library="np")
-    # float32, not float64. The test set is 27.4M jets, so at K=162 the score
-    # matrix alone is 17.8 GB in float64 against 8.9 GB in float32, and every
-    # metric below is rank-based -- neither AUC nor a quantile threshold can
-    # tell the two apart at this precision. In-place ops keep it to one copy.
-    probs = np.stack([arr[b] for b in score], axis=1).astype(np.float32)
+        if not truth_cands:
+            raise SystemExit(f"FATAL: no truth branch in {path}; saw {keys}")
+
+        # TWO LAYOUTS, AND weaver 0.4.17 WRITES THE SECOND ONE.
+        # Per-class `score_<name>` branches are what E1's JetClass-I files look
+        # like. What this project's eval jobs actually produce is ONE branch
+        # called `output` holding an (N, K) array -- which is why a K=17
+        # pred.root has 12 branches (output + truth_label + 10 observers) and
+        # not the 27 a per-class layout would give.
+        score = sorted([b for b in keys if b.startswith("score_")], key=_order_key)
+        if score:
+            if len(score) != k:
+                raise SystemExit(
+                    f"FATAL: {path} has {len(score)} score_* branches, "
+                    f"expected k={k}.\n  score branches: {score}\n"
+                    f"  ALL branches:   {keys}")
+            arr = tree.arrays(score + truth_cands, library="np")
+            # float32, not float64. At K=162 over 27.4M jets the score matrix is
+            # 17.8 GB in float64 against 8.9 GB in float32, and every metric here
+            # is rank-based, so the precision cannot move a number.
+            probs = np.stack([arr[b] for b in score], axis=1).astype(np.float32)
+        elif "output" in keys:
+            arr = tree.arrays(["output"] + truth_cands, library="np")
+            probs = np.asarray(arr["output"])
+            if probs.ndim != 2:
+                raise SystemExit(f"FATAL: {path} branch 'output' has shape "
+                                 f"{probs.shape}; expected (N, {k})")
+            if probs.shape[1] != k:
+                # The trunk is K-independent, so a mismatched K would yield
+                # valid-looking metrics attributed to the wrong arm.
+                raise SystemExit(
+                    f"FATAL: {path} branch 'output' is (N, {probs.shape[1]}) "
+                    f"but --k says {k}; refusing.")
+            probs = probs.astype(np.float32)
+        else:
+            raise SystemExit(f"FATAL: {path} has neither score_* branches nor "
+                             f"an 'output' branch.\n  ALL branches: {keys}")
     np.clip(probs, 1e-12, None, out=probs)
     probs /= probs.sum(axis=1, keepdims=True)
-    if not truth_cands:
-        raise SystemExit(f"FATAL: no truth branch in {path}; saw {keys}")
     truth = np.asarray(arr[truth_cands[0]]).astype(np.int64).ravel()
     if truth.shape[0] != probs.shape[0]:
         raise SystemExit(f"FATAL: {path} truth {truth.shape} vs probs {probs.shape}")
