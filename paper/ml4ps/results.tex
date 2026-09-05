@@ -149,4 +149,45 @@
 % ---- pipeline validation ----
 \newcommand{\ePartOurs}{0.9878}
 \newcommand{\ePartPub}{0.9877}
-\newcommand{\sigmapretrain}{0.003704}
+% Per-axis pretraining-seed SD of the probe contrast, across the three R16_Q1
+% seeds, ddof=1, in ln(1-AUC). This is the right noise scale for Table 1: it is
+% measured on this study's arms, on this study's endpoint, in this paper's units.
+% The E1 sigma (0.003704 log10, from-scratch JetClass-I 10-class) is NOT used
+% anywhere in this paper -- different arm, dataset, K, endpoint and log base.
+\newcommand{\seedSDres}{0.181}
+\newcommand{\seedSDqcd}{0.172}
+\newcommand{\seedSDtop}{0.123}
+
+% Seed-level tests: the three R16_Q1 seeds as the sampling unit, 2 d.o.f.,
+% SE = s*sqrt(1+1/3). Two-sided p from the df=2 t distribution.
+% The two EXCESSES are seed-resolved; the general degradation is not.
+\newcommand{\tRes}{6.2}
+\newcommand{\pRes}{0.025}
+\newcommand{\tQcd}{4.9}
+\newcommand{\pQcd}{0.039}
+\newcommand{\tTop}{3.25}
+\newcommand{\pTop}{0.08}
+\newcommand{\tDidRes}{12.4}
+\newcommand{\pDidRes}{0.006}
+\newcommand{\tDidQcd}{9.0}
+\newcommand{\pDidQcd}{0.012}
+
+% The DiD under the alternative metric model: a uniform d' loss calibrated on
+% the retained axis (d' ratio 0.934) instead of an additive shift in log(1-AUC).
+% Both excesses stay clearly positive; the magnitudes move in OPPOSITE directions.
+\newcommand{\didResDprime}{0.73}
+\newcommand{\didQcdDprime}{0.63}
+
+% MLP recovery as a fractional reduction in (1-AUC), per seed 15.6/22.0/24.4 vs 3.7.
+\newcommand{\mlpRecovery}{16--24\%}
+\newcommand{\mlpRecoveryL}{4\%}
+
+% Vocabulary effect against the LARGEST within-R16_Q1 seed contrast (0.3614):
+% 1.1108/0.3614 = 3.1 and 1.4722/0.3614 = 4.1. (7.3x was against the SMALLEST.)
+\newcommand{\seedFactorLo}{3.1}
+\newcommand{\seedFactorHi}{4.1}
+
+% Held-out probe test splits (20%% of each task).
+\newcommand{\nTestRes}{23{,}537}
+\newcommand{\nTestQcd}{7{,}859}
+\newcommand{\nTestTop}{12{,}852}

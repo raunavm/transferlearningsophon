@@ -42,10 +42,12 @@ vocabulary touches them, we find a clean ordering. Coarsening degrades the
 representation generally, by a factor $\facTop\times$ in $1-\mathrm{AUC}$ even
 on an axis both arms resolve. A distinction the coarse arm merges degrades a
 further $\facRes\times$. And --- the result we did not predict --- an axis that
-\emph{neither} arm labels degrades by $\facQcd\times$: flavour learned from
-resonant labels transfers to QCD jets, and collapsing it destroys that transfer
-in a domain never supervised for it. What a vocabulary erases is not confined to
-the jets whose labels it merged. Separately, cross-entropy is not comparable
+\emph{neither} arm labels degrades by $\facQcd\times$: the fine arm decodes QCD
+flavour having never received a QCD flavour label, so that information reached
+QCD jets through the resonant labels. What a vocabulary erases is not confined to
+the jets whose labels it merged. Whether the coarse arm loses it because those
+labels were merged, or because $K=17$ compresses every axis interior to a group,
+is what our pre-registered random-partition control separates. Separately, cross-entropy is not comparable
 across label spaces, so loss-to-downstream scaling laws for particle-physics
 foundation models are silently conditioned on a fixed vocabulary. We state what
 the study does not establish and pre-register the control that would separate
@@ -140,7 +142,11 @@ one L162 seed.
 \caption{$\Delta\log(1-\mathrm{AUC})$ of each R16\_Q1 seed against L162, frozen
 linear probe, 95\% paired-bootstrap CI. Arms are scored on identical jets in
 identical order. Negative means L162 is better. The three columns are ordered
-by how directly the vocabulary touches the axis.}
+by how directly the vocabulary touches the axis. Intervals resample the jets of
+the held-out probe split ($n=\nTestRes/\nTestQcd/\nTestTop$, 2000 resamples)
+conditional on one checkpoint per arm and one probe fit; they carry no
+pretraining-seed and no probe-training component. The mean and factor rows are
+point estimates; their seed-level uncertainty is given in the text.}
 \label{tab:probe}
 \begin{tabular}{lccc}
 \toprule
@@ -162,30 +168,50 @@ axis it \emph{keeps} --- a factor $\facTop\times$. Coarsening degrades the
 representation generally, and a study without that column would have charged
 this cost to the erased distinction. The axis R16\_Q1 collapses loses a further
 $\didRes$ in $\log(1-\mathrm{AUC})$ on top of it. For every seed the three
-intervals are mutually disjoint, so the ordering does not rest on a bootstrap of
-the differences themselves.
+intervals are mutually disjoint, so the ordering holds within each checkpoint
+without a bootstrap of the differences. Reading the excess as a subtraction
+assumes general degradation is additive in $\log(1-\mathrm{AUC})$ across axes of
+different difficulty. It is not the only model: calibrating a uniform $d'$ loss
+on the retained axis instead gives $\didResDprime$ here and $\didQcdDprime$ on
+the unlabelled axis. Both excesses stay clearly positive under either model and
+they move in opposite directions, so the ordering is robust and the magnitudes
+are model-dependent.
 
 \paragraph{The damage reaches an axis the vocabulary never labelled.} The middle
 column is the result we did not predict. \emph{Neither} arm receives a QCD
 flavour label: both merge all 27 QCD classes into one node. We designed this
 column as a null-versus-null control and expected parity. Instead L162 is better
-by $\facQcd\times$, an excess of $\didQcd$ over the retained axis. The
+by $\facQcd\times$, an excess of $\didQcd$ over the retained axis. One
 explanation consistent with all three columns is that flavour discrimination
 learned from the \emph{resonant} labels transfers to QCD jets, and that
-collapsing resonant flavour destroys it in a domain where no arm was ever
-supervised for it. What a pretraining vocabulary erases is therefore not
-confined to the jets whose labels it merged.
+collapsing resonant flavour destroys it. A second is generic: at $K=17$ the
+representation may compress \emph{any} axis interior to a group, flavour or not,
+in which case the excess measures ``unlabelled versus labelled'' and not anything
+about flavour. Axes A and B both lie interior to an R16\_Q1 group and axis C does
+not, so these three columns cannot separate the two accounts; the control in
+Section~4 can. The observation is not in doubt either way: L162 decodes QCD
+flavour with no QCD flavour label anywhere in its vocabulary, so what a
+pretraining vocabulary erases is not confined to the jets whose labels it
+merged.
 
 \paragraph{The specific component is the better-determined one.} Across seeds
 the difference-in-differences on the directly-labelled axis spans only
 \didRange{} while the raw effect spans \rawRange. What varies with the
 pretraining seed is the general degradation; the vocabulary-specific excess is
-stable.
+stable. Taking the three coarse-arm seeds as the sampling unit (2 d.o.f.), the
+two excesses are the seed-resolved quantities --- $t=\tDidRes$, $p=\pDidRes$ on
+the merged axis and $t=\tDidQcd$, $p=\pDidQcd$ on the unlabelled one --- whereas
+the general degradation of the retained axis is not ($t=\tTop$, $p=\pTop$). We
+therefore report $\facTop\times$ as a point estimate whose sign is consistent
+across all three seeds rather than as a resolved effect, and rest the paper's
+claims on the excesses.
 
 \paragraph{A nonlinear probe recovers part of it, not most of it.} On the
-directly-labelled axis the MLP reduces R16\_Q1's deficit by 16--22\% against
-4\% for L162, so some of the lost information is present but nonlinearly
-encoded. It does not close the gap: the difference-in-differences falls from
+directly-labelled axis the MLP reduces R16\_Q1's $1-\mathrm{AUC}$ by \mlpRecovery{}
+against \mlpRecoveryL{} for L162 --- and L162's gain is
+$\Delta\mathrm{AUC}=9\times10^{-5}$, within its own AUC noise and of the opposite
+sign on the topology axis --- so some of the lost information is present but
+nonlinearly encoded. It does not close the gap: the difference-in-differences falls from
 \didMean{} to \didMlpMean{}, still $\didMlpFactor\times$. A linear probe only
 lower-bounds the mutual information, so separating ``absent'' from ``present but
 nonlinear'' is exactly what the second probe buys, and the residual says the
@@ -195,9 +221,9 @@ effect is degradation rather than a change of coordinates.
 interval here carries a pretraining-seed component. The three R16\_Q1 runs do
 supply a scale: the largest seed-to-seed contrast \emph{within} R16\_Q1 on the
 directly-labelled axis is $\seedAB$ \seedABCI, against vocabulary contrasts of
-$\vbDlogA$ to $\vbDlogB$. The effect is three to seven times the largest seed
-effect we can measure, and every R16\_Q1 seed is worse than the single L162 seed
-on all three axes. This bounds the concern rather than removing it: the bound is
+$\vbDlogA$ to $\vbDlogB$. The effect is $\seedFactorLo$ to $\seedFactorHi$ times that
+largest seed effect, and every R16\_Q1 seed is worse than the single L162 seed on
+all three axes. This bounds the concern rather than removing it: the bound is
 measured on the coarse arm and assumed to transfer to the fine one.
 
 \subsection{Cross-entropy is not comparable across label spaces}
@@ -241,9 +267,12 @@ artefact of the training path.
 
 \paragraph{One seed on the fine arm.} Quantified in Section~3.1: the effect is
 three to seven times the largest seed-to-seed contrast we can measure, but that
-bound is measured on the coarse arm and assumed to transfer. Our measured
-pretraining-seed variance on a from-scratch arm is
-$\sigma=\sigmapretrain$ in $\log_{10}(1-\mathrm{AUC})$.
+bound is measured on the coarse arm and assumed to transfer. The
+pretraining-seed standard deviation of the probe contrast itself, across the
+three coarse-arm seeds, is \seedSDres{}, \seedSDqcd{} and \seedSDtop{} in
+$\log(1-\mathrm{AUC})$ on the three axes of Table~\ref{tab:main}. That, not a
+variance imported from a different arm and label space, is the scale against
+which a single fine-arm seed has to be read.
 
 \paragraph{How many, or which?} The central limitation. Our coarse arm reduces
 $K$ from 162 to 17 \emph{and} erases specific physical distinctions, and the
@@ -252,8 +281,12 @@ semantics-matched random control: a pretraining arm at matched $K=17$ whose
 partition of the \Nnative{} native labels is random rather than physical. If it
 degrades the probed axis as much as the physical contraction does, then only
 capacity matters; if the physical contraction is worse, then \emph{which}
-distinctions a vocabulary keeps matters beyond \emph{how many}. We pre-register
-this arm and the prediction that the physical contraction will be worse. We
+distinctions a vocabulary keeps matters beyond \emph{how many}. This ambiguity
+bears hardest on the unlabelled axis: our two flavour axes both lie interior to
+an R16\_Q1 group and our retained axis does not, so nothing we measure separates
+``resonant flavour was merged'' from ``every within-group axis is compressed''.
+We pre-register this arm and the prediction that the physical contraction will
+be worse. We
 note that \citet{chen} randomise the target while holding auxiliary labels
 fixed, which is the inverse manipulation.
 
@@ -277,7 +310,8 @@ Holding the pretraining data stream bit-identical and varying only the label
 vocabulary, we find three effects of different size and different kind: a
 general degradation from coarsening, a larger one on the axis actually merged,
 and --- unexpectedly --- a substantial one on an axis neither vocabulary ever
-labelled, reached through transfer from the labels that were merged. We also
+labelled, which the fine arm resolves without ever having been given a label for
+it. We also
 find that pretraining loss is not a vocabulary-independent quantity, which
 bounds where loss-based scaling laws may be applied. The label space is a third
 axis of pretraining design alongside the objective and the data, it is the one
