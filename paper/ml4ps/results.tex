@@ -56,36 +56,95 @@
 \newcommand{\vaDlogMlpCI}{[-1.5192,\,-1.1247]}
 \newcommand{\vaNjets}{60{,}565}
 
-% v2 (run_id probe-bvc-v2) -- THE HEADLINE. Fill from
-% /data/results/eval/probe_bvc_v2/probe_results.json when the job returns.
-\newcommand{\vbLsixtwoLin}{\pending{v2 L162 linear}}
-\newcommand{\vbLsixtwoMlp}{\pending{v2 L162 mlp}}
-\newcommand{\vbRsixteenLin}{\pending{v2 R16 linear}}
-\newcommand{\vbRsixteenMlp}{\pending{v2 R16 mlp}}
-\newcommand{\vbDlogLin}{\pending{v2 dlog linear}}
-\newcommand{\vbDlogLinCI}{\pending{v2 CI}}
-\newcommand{\vbDlogMlp}{\pending{v2 dlog mlp}}
-\newcommand{\vbDlogMlpCI}{\pending{v2 CI}}
-\newcommand{\vbNjets}{\pending{v2 n}}
-\newcommand{\vbSeedSpread}{\pending{R16 seed spread}}
+% v2 (run_id probe-bvc-v2) -- THE HEADLINE. Full budget, both arms at 5e-4,
+% 2,000,000 jets, 4 arms row-aligned (label188 sha a9449fd420c473f6).
+% bvc_resonant: 117,682 jets (58,840 signal). retained_topology: 64,256.
+\newcommand{\vbNjets}{117{,}682}
+\newcommand{\rtNjets}{64{,}256}
 
-% retained_topology -- the CONTROL leg. Both arms keep this axis, so the
-% L162-minus-R16 gap here should be ~0 while the gap on bvc_resonant is large.
-% That difference-in-differences is what separates "this axis was erased" from
-% "this arm is worse at everything".
-\newcommand{\rtLsixtwoLin}{\pending{retained L162 linear}}
-\newcommand{\rtLsixtwoMlp}{\pending{retained L162 mlp}}
-\newcommand{\rtRsixteenLin}{\pending{retained R16 linear}}
-\newcommand{\rtRsixteenMlp}{\pending{retained R16 mlp}}
-\newcommand{\rtDlogLin}{\pending{retained dlog}}
-\newcommand{\rtDlogLinCI}{\pending{retained CI}}
+% --- COLLAPSED axis (bvc_resonant): linear AUC ---
+\newcommand{\vbLsixtwoLin}{0.99759}
+\newcommand{\vbLsixtwoMlp}{0.99768}
+\newcommand{\vbRsixteenLinA}{0.99268}   % s2
+\newcommand{\vbRsixteenLinB}{0.98950}   % s3
+\newcommand{\vbRsixteenLinC}{0.99105}   % s4
+\newcommand{\vbRsixteenMlpA}{0.99382}
+\newcommand{\vbRsixteenMlpB}{0.99181}
+\newcommand{\vbRsixteenMlpC}{0.99323}
+% dlog(1-AUC), L162 minus R16 seed, linear. Negative = L162 better.
+\newcommand{\vbDlogA}{-1.1108}
+\newcommand{\vbDlogACI}{[-1.2585,\,-0.9749]}
+\newcommand{\vbDlogB}{-1.4722}
+\newcommand{\vbDlogBCI}{[-1.6275,\,-1.3274]}
+\newcommand{\vbDlogC}{-1.3122}
+\newcommand{\vbDlogCCI}{[-1.4633,\,-1.1709]}
 
-% bvc_qcd -- the NULL-vs-NULL leg. BOTH arms collapse it, so neither should
-% win. A gap here would indict the method, not the vocabulary.
-\newcommand{\qqLsixtwoLin}{\pending{qcd L162 linear}}
-\newcommand{\qqRsixteenLin}{\pending{qcd R16 linear}}
-\newcommand{\qqDlogLin}{\pending{qcd dlog}}
-\newcommand{\qqDlogLinCI}{\pending{qcd CI}}
+% --- RETAINED axis (retained_topology): the control ---
+\newcommand{\rtLsixtwoLin}{0.99417}
+\newcommand{\rtLsixtwoMlp}{0.99406}
+\newcommand{\rtRsixteenLinA}{0.99183}
+\newcommand{\rtRsixteenLinB}{0.98956}
+\newcommand{\rtRsixteenLinC}{0.99071}
+\newcommand{\rtRsixteenMlpA}{0.99147}
+\newcommand{\rtRsixteenMlpB}{0.99008}
+\newcommand{\rtRsixteenMlpC}{0.99072}
+\newcommand{\rtDlogA}{-0.3370}
+\newcommand{\rtDlogACI}{[-0.4629,\,-0.2222]}
+\newcommand{\rtDlogB}{-0.5828}
+\newcommand{\rtDlogBCI}{[-0.7103,\,-0.4689]}
+\newcommand{\rtDlogC}{-0.4653}
+\newcommand{\rtDlogCCI}{[-0.6074,\,-0.3398]}
+
+% --- the difference-in-differences: collapsed minus retained, per seed ---
+\newcommand{\didA}{0.774}
+\newcommand{\didB}{0.889}
+\newcommand{\didC}{0.846}
+\newcommand{\didMean}{0.836}
+\newcommand{\didFactor}{2.31}
+\newcommand{\didMlpMean}{0.664}
+\newcommand{\didMlpFactor}{1.94}
+\newcommand{\didRange}{0.116}
+\newcommand{\rawRange}{0.361}
+\newcommand{\genFactor}{1.59}
+
+% --- seed-to-seed, WITHIN R16_Q1, on the collapsed axis. The n=1 answer:
+% the vocabulary effect must be read against this, not against nothing. ---
+\newcommand{\seedAB}{-0.3614}
+\newcommand{\seedABCI}{[-0.4578,\,-0.2623]}
+\newcommand{\seedAC}{-0.2014}
+\newcommand{\seedACCI}{[-0.2987,\,-0.1014]}
+\newcommand{\seedBC}{+0.1600}
+\newcommand{\seedBCCI}{[+0.0654,\,+0.2530]}
+\newcommand{\seedMax}{0.36}
+
+% --- bvc_qcd. I PREDICTED PARITY HERE AND WAS WRONG.
+% Both arms merge all 27 QCD classes into ONE node, so neither has direct
+% supervision for QCD b-vs-c, and the leg was designed as a null-vs-null
+% control. L162 nonetheless wins by 2.65x. The reason is that L162's RESONANT
+% vocabulary separates X_bb from X_cc, and that flavour axis transfers to QCD
+% jets; R16_Q1 collapsed it and lost it in a domain it was never labelled for.
+% This is now the paper's strongest leg, not its control.
+\newcommand{\qqNjets}{39{,}295}
+\newcommand{\qqLsixtwoLin}{0.98349}
+\newcommand{\qqRsixteenLinA}{0.96319}
+\newcommand{\qqRsixteenLinB}{0.94804}
+\newcommand{\qqRsixteenLinC}{0.95617}
+\newcommand{\qqDlogA}{-0.8019}
+\newcommand{\qqDlogACI}{[-0.9443,\,-0.6705]}
+\newcommand{\qqDlogB}{-1.1465}
+\newcommand{\qqDlogBCI}{[-1.3092,\,-1.0029]}
+\newcommand{\qqDlogC}{-0.9764}
+\newcommand{\qqDlogCCI}{[-1.1190,\,-0.8447]}
+
+% mean dlog per axis, and the factor in (1-AUC)
+\newcommand{\meanRes}{1.298}
+\newcommand{\meanQcd}{0.975}
+\newcommand{\meanTop}{0.462}
+\newcommand{\facRes}{3.66}
+\newcommand{\facQcd}{2.65}
+\newcommand{\facTop}{1.59}
+\newcommand{\didRes}{0.836}
+\newcommand{\didQcd}{0.513}
 
 % ---- pipeline validation ----
 \newcommand{\ePartOurs}{0.9878}
