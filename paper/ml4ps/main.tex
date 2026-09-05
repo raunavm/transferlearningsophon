@@ -32,9 +32,8 @@
 \begin{abstract}
 Jet foundation models are pretrained on simulated collision data with labels
 whose granularity is chosen by convention rather than measured. Two axes of
-pretraining design have recently been ablated in controlled fashion --- the
-training objective and the composition of the pretraining data --- but the
-label space itself has not. We pretrain Particle Transformers on JetClass-II
+pretraining design have recently been ablated --- the training objective and the
+composition of the pretraining data --- but not the label space. We pretrain Particle Transformers on JetClass-II
 under a nested contraction of its \Nnative{} native labels, holding the data
 stream's sampling distribution byte-identical across arms so that the
 vocabulary is the only deliberate variable.
@@ -45,14 +44,13 @@ on an axis both arms resolve. A distinction the coarse arm merges degrades a
 further $\facRes\times$. And an axis that \emph{neither} arm labels degrades by
 $\facQcd\times$: the fine arm decodes QCD flavour having never received a QCD
 flavour label, and a single fitted direction serves both flavour axes, so this is
-the same erased feature read on jets whose labels never carried it. What a vocabulary erases is not confined to
-the jets whose labels it merged. Whether the coarse arm loses it because those
-labels were merged, or because $K=17$ compresses every axis interior to a group,
-is what our pre-registered random-partition control separates. Separately, pretraining loss is defined relative to a
-label space: our two arms' losses are not the same quantity, and which arm
-learned more cannot be settled from them without knowing the label marginal. We state what
-the study does not establish and pre-register the control that would separate
-\emph{how many} distinctions a vocabulary keeps from \emph{which} ones.
+the same erased feature read on jets whose labels never carried it. What a
+vocabulary erases is not confined to the jets whose labels it merged. Whether the
+coarse arm loses it because those labels were merged or because $K=17$ compresses
+every axis interior to a group is what our pre-registered random-partition
+control separates. Pretraining loss, separately, is defined relative to a label
+space: our arms' losses are not the same quantity, and which arm learned more is
+not decidable from them.
 \end{abstract}
 
 \section{Introduction}
@@ -60,29 +58,27 @@ the study does not establish and pre-register the control that would separate
 Foundation models for jet physics are now trained at a scale where the
 pretraining recipe, not the architecture, is the object of study. Two design
 axes have recently been ablated under controlled conditions. \citet{objectives}
-compare pretraining \emph{objectives} --- supervised classification,
-flow-matching generation, and masked particle modelling --- and find that pure
-classifier pretraining is optimal when downstream labels and model capacity are
-plentiful. \citet{datacomp} vary the \emph{composition} of the pretraining
-data, showing that scaling behaviour can be engineered by making the
-pretraining corpus more diverse and better aligned with the downstream task.
+compare pretraining \emph{objectives} and find pure classifier pretraining
+optimal when downstream labels and capacity are plentiful; \citet{datacomp} vary
+the \emph{composition} of the pretraining data and show that scaling behaviour
+can be engineered by making the corpus more diverse and better aligned with the
+downstream task.
 
 A third axis has not been ablated: the \emph{label space}. If supervised
 classification is the best pretraining objective, then the vocabulary of that
 classification is the design choice that matters most, and it is currently set
 by convention. Production taggers have grown from tens to hundreds of classes
-without a controlled measurement of what that buys. The question is not
-academic, because the vision literature disagrees with itself about the answer:
-\citet{huh} found that \emph{coarsening} ImageNet helped transfer to few-class
-targets, \citet{hong} found finer labels monotonically better on ImageNet21k
-but U-shaped on iNaturalist, and \citet{mehta} report representations
-saturating at roughly eight categories.
+without a controlled measurement of what that buys, and the vision literature
+disagrees with itself about the answer: \citet{huh} found \emph{coarsening}
+ImageNet helped transfer to few-class targets, \citet{hong} found finer labels
+monotonically better on ImageNet21k but U-shaped on iNaturalist, and
+\citet{mehta} report saturation at roughly eight categories.
 
-We contribute a controlled instrument for that question in jet physics. Our
+We contribute a controlled instrument for that question in jet physics: our
 ladder draws every arm from an identical training distribution, so the
-vocabulary is the only deliberate variable --- a control that none of the vision
-studies above could apply, because coarsening an image taxonomy changes which
-images are sampled.
+vocabulary is the only deliberate variable --- a control none of those studies
+could apply, since coarsening an image taxonomy changes which images are
+sampled.
 
 \section{A controlled granularity ladder}
 
@@ -97,32 +93,28 @@ regenerated from a seed, so every arm sees an identical label array.
 \paragraph{What is held fixed.} All arms use the same Particle Transformer
 trunk \citep{part}; only the output layer's width follows $K$, giving
 $\NparamsLsixtwo$ trainable parameters for L162 against $\NparamsRsixteen$ for
-R16\_Q1. Every arm sees the same $\Nexamples$ examples over \Nepochs{} epochs at
-the same learning rate $\LR$. Crucially, the flat $(p_T, m_\mathrm{SD})$
-reweighting histograms that determine \emph{which jets are drawn} are verified
-byte-identical across arms, so the sampling distribution, the selection and the
-file list are common to both. What is not common is the seed: our L162 run uses
-seed 1 and our R16\_Q1 runs seeds 2--4, so the realised draw order, the trunk
-initialisation and the dropout masks differ between the arms as well as between
-the R16\_Q1 seeds. The comparison is therefore one seed against three, not a
-matched pair, and the seed-level tests of Section~3.1 are what carry it. Selection retains \Ntrainjets{} training and \Ntestjets{} test
-jets.
+R16\_Q1. Every arm sees the same $\Nexamples$ examples over \Nepochs{} epochs at the
+same learning rate $\LR$, and selection retains \Ntrainjets{} training and
+\Ntestjets{} test jets. Crucially, the flat $(p_T, m_\mathrm{SD})$ reweighting
+histograms that determine \emph{which jets are drawn} are verified byte-identical
+across arms, so the sampling distribution, selection and file list are common to
+both. The seed is not: L162 runs at seed 1 and R16\_Q1 at seeds 2--4, so draw
+order, trunk initialisation and dropout masks differ between arms as well as
+between seeds. This is one seed against three rather than a matched pair, and the
+seed-level tests of Section~3.1 are what carry it.
 
 \paragraph{One learning rate is defensible.} A separate rate per arm would
-confound granularity with tuning. We swept three rates per arm at 20\% budget.
-The seed spread at a fixed rate is \tiemargin{} in validation accuracy, which
-sets the resolution. At $\LR$, R16\_Q1 attains its outright optimum
-(\RsixteenLRb) and L162 is \lrgap{} below its own (\LsixtwoLRb{} against
-\LsixtwoLRc{}) --- one fifth of the noise floor, i.e.\ a tie. A single rate
-therefore serves both arms.
+confound granularity with tuning. Sweeping three rates per arm at 20\% budget,
+the seed spread at fixed rate is \tiemargin{} in validation accuracy, which sets
+the resolution. At $\LR$ R16\_Q1 attains its outright optimum (\RsixteenLRb) and
+L162 sits \lrgap{} below its own (\LsixtwoLRb{} against \LsixtwoLRc{}) --- one
+fifth of the noise floor, i.e.\ a tie.
 
 \paragraph{Endpoint.} Arms with different $K$ emit incommensurable logits, so
-the comparison is made on the frozen 128-dimensional representation the
-classifier head reads, probed on tasks defined on the \emph{native} labels and
-therefore identical for every arm. We fit both a linear and a nonlinear (MLP)
-probe. The linear probe lower-bounds the mutual information, so a linear null
-alone cannot distinguish an absent distinction from a present but nonlinearly
-encoded one; we therefore never report one without the other.
+we compare the frozen 128-dimensional representation the classifier head reads,
+probed on tasks defined over the \emph{native} labels and therefore identical for
+every arm. We fit both a linear and a nonlinear (MLP) probe, and never report one
+without the other.
 
 \section{Results}
 
@@ -203,16 +195,15 @@ $b$ from $c$ at AUC $\xferQcdToRes$ in L162. So the QCD column is not a third
 effect of a different kind but the erased feature read on jets whose labels never
 carried it, which is what makes the merged-axis result more than memorisation of
 a split between two training labels. One
-explanation consistent with all three columns is that flavour discrimination
-learned from the \emph{resonant} labels transfers to QCD jets, and that
-collapsing resonant flavour destroys it. A second is generic: at $K=17$ the
-representation may compress \emph{any} axis interior to a group, flavour or not,
-in which case the excess measures ``unlabelled versus labelled'' and not anything
-about flavour. Axes A and B both lie interior to an R16\_Q1 group and axis C does
-not, so these three columns cannot separate the two accounts; the control in
-Section~4 can. The observation is not in doubt either way: L162 decodes QCD
-flavour with no QCD flavour label anywhere in its vocabulary, so what a
-pretraining vocabulary erases is not confined to the jets whose labels it
+explanation is that flavour discrimination learned from the \emph{resonant}
+labels transfers to QCD jets, and that collapsing resonant flavour destroys it.
+A second is generic: at $K=17$ the representation may compress \emph{any} axis
+interior to a group, in which case the excess measures ``unlabelled versus
+labelled'' and nothing about flavour. Both flavour axes lie interior to an
+R16\_Q1 group and the topology axis does not, so these columns cannot separate
+the accounts; the control in Section~4 can. Either way the observation stands:
+L162 decodes QCD flavour with no QCD flavour label anywhere in its vocabulary, so
+what a pretraining vocabulary erases is not confined to the jets whose labels it
 merged.
 
 \paragraph{The specific component is the better-determined one.} Across seeds
@@ -244,86 +235,62 @@ R16\_Q1 seed is worse than the single L162 seed on all three axes. That bounds
 the concern rather than removing it, since the bound is measured on the coarse
 arm and assumed to transfer.
 
-\subsection{Pretraining loss is defined relative to a label space}
+\paragraph{A note on loss.} Cross-entropy over $K$ classes is a statement about
+one partition of the data, so our arms' losses (\LossLsixtwo{} for L162,
+\LossRsixteen{} for R16\_Q1) are not the same quantity, and their ordering
+follows by construction from R16\_Q1's label being a function of L162's.
+Normalising does not repair it: against the stream's label marginal
+(\HyRsixteen{} nats for R16\_Q1, \HyLsixtwoLo{}--\HyLsixtwoHi{} for L162)
+R16\_Q1 still has the lower loss, whereas against information captured its
+\InfoRsixteen{} nats sit \emph{inside} L162's
+\InfoLsixtwoLo{}--\InfoLsixtwoHi{} interval. Which arm learned more is not
+decidable from one loss per arm. Scaling laws mapping pretraining loss to
+downstream performance \citep{scaling} are fitted at a fixed vocabulary; the
+hazard is on the reading side, when losses from different label spaces are
+placed on one axis.
 
-Cross-entropy over $K$ classes is a statement about one partition of the data,
-so arms with different vocabularies do not report the same quantity. Ours end at
-\LossLsixtwo{} (L162) and \LossRsixteen{} (R16\_Q1), and nothing follows from
-that ordering on its own: R16\_Q1's label is a deterministic function of L162's,
-so its conditional entropy, and hence its achievable loss, is lower by
-construction. The scaling law of \citet{scaling} is fitted at a fixed vocabulary
-and claims nothing beyond one; the hazard is on the reading side, when losses
-from different label spaces are placed on a single axis.
-
-Normalising does not repair the comparison, because the choice of normaliser
-decides it. Chance level is not $\ln K$ here: the stream is flat per reweighting
-category rather than per class, so the label marginal has entropy \HyRsixteen{}
-nats for R16\_Q1 --- exact, since every group is a union of whole categories ---
-against between \HyLsixtwoLo{} and \HyLsixtwoHi{} for L162. Measured against
-that reference R16\_Q1 still has the lower loss. Measured against information
-captured, $H(Y)-\mathcal{L}$, it is \InfoRsixteen{} nats for R16\_Q1 against
-\InfoLsixtwoLo{}--\InfoLsixtwoHi{} for L162, an interval that straddles it. So
-the ordering is undetermined without measuring the stream's within-category
-label distribution, which we have not done. That is the caution in its sharpest
-form: from one loss value per arm, a question as basic as which arm learned more
-cannot be settled without knowing the label space in detail. We draw no
-conclusion here about scaling laws themselves, whose downstream endpoint is
-performance after fine-tuning rather than the frozen probe we measure.
-
-\paragraph{Pipeline validation.} Under an identical recipe on JetClass-I our
+\paragraph{Pipeline validation.} On JetClass-I under an identical recipe our
 pretrained arm reaches macro AUC \ePartOurs{} against the published \ePartPub{}
-for the same architecture \citep{part}, so the comparison above is not an
-artefact of the training path.
+\citep{part}, so the comparison is not an artefact of the training path.
 
 \section{What this does not show}
 
-\paragraph{One seed on the fine arm.} Quantified in Section~3.1: the effect is
-three to seven times the largest seed-to-seed contrast we can measure, but that
-bound is measured on the coarse arm and assumed to transfer. The
-pretraining-seed standard deviation of the probe contrast itself, across the
-three coarse-arm seeds, is \seedSDres{}, \seedSDqcd{} and \seedSDtop{} in
-$\log(1-\mathrm{AUC})$ on the three axes of Table~\ref{tab:probe}. That, not a
-variance imported from a different arm and label space, is the scale against
-which a single fine-arm seed has to be read.
+\paragraph{Only one fine-arm seed.} Section~3.1 bounds this against the coarse
+arm's seed spread, but that bound is measured there and assumed to transfer. The
+pretraining-seed SD of the probe contrast across the three coarse-arm seeds is
+\seedSDres{}, \seedSDqcd{} and \seedSDtop{} in $\log(1-\mathrm{AUC})$ on the
+three axes --- that, not a variance imported from another arm, is the scale.
 
 \paragraph{How many, or which?} The central limitation. Our coarse arm reduces
-$K$ from 162 to 17 \emph{and} erases specific physical distinctions, and the
-present design cannot separate the two. The discriminating experiment is a
-semantics-matched random control: a pretraining arm at matched $K=17$ whose
-partition of the \Nnative{} native labels is random rather than physical. If it
-degrades the probed axis as much as the physical contraction does, then only
-capacity matters; if the physical contraction is worse, then \emph{which}
-distinctions a vocabulary keeps matters beyond \emph{how many}. We pre-register
-this arm and the prediction that the physical contraction will be worse. We
-note that \citet{chen} randomise the target while holding auxiliary labels
-fixed, which is the inverse manipulation.
+$K$ from 162 to 17 \emph{and} erases specific physical distinctions, and this
+design cannot separate the two. The discriminating experiment is a
+semantics-matched random control: an arm at matched $K=17$ whose partition of the
+\Nnative{} labels is random rather than physical. If it degrades the probed axis
+as much, only capacity matters; if the physical contraction is worse,
+\emph{which} distinctions a vocabulary keeps matters beyond \emph{how many}. We
+pre-register it, and the prediction that the physical contraction will be worse.
+\citet{chen} randomise the target while holding auxiliary labels fixed --- the
+inverse manipulation.
 
-\paragraph{Two rungs, not a curve.} \citet{mehta} report that an extremely
-coarse feedback signal suffices for human-aligned visual representations, with
-saturation setting in near eight categories. A ladder whose coarse endpoint is
-$K=17$ sits above that knee and cannot observe it. Our result is not in
-conflict with theirs --- they ask whether coarse supervision is \emph{sufficient}
-for a target the coarse labels span, we ask what it \emph{destroys} on axes they
-do not --- but a full curve is needed to say where the two regimes meet.
+\paragraph{Two rungs, not a curve.} \citet{mehta} report coarse feedback
+sufficing for human-aligned visual representations, saturating near eight
+categories; our coarse endpoint $K=17$ sits above that knee. The results do not
+conflict --- they ask whether coarse supervision \emph{suffices} for a target the
+coarse labels span, we ask what it \emph{destroys} elsewhere --- but a full curve
+is needed to locate the boundary.
 
-\paragraph{One transfer axis, one direction.} The QCD result rests on a single
-pair of native labels and a single flavour axis. We have not shown that the
-effect generalises to other unlabelled distinctions, nor measured whether it is
-symmetric --- whether a vocabulary that merges topology damages flavour in the
-same way.
+\paragraph{One transfer axis.} The QCD result rests on a single pair of native
+labels. We have not shown the effect generalises to other unlabelled
+distinctions, nor whether it is symmetric --- whether a vocabulary that merges
+topology damages flavour the same way.
 
 \section{Conclusion}
 
-Drawing every arm from an identical pretraining distribution and varying only
-the label vocabulary, we find two effects: a general degradation from coarsening,
-and, on top of it, the loss of an erased feature --- measured both where the fine
-vocabulary labels that feature and, substantially, on an axis neither vocabulary
-ever labels, which the fine arm nonetheless resolves. We also note that
-pretraining loss is not a vocabulary-independent quantity, so a loss axis is
-only meaningful once the label space is held fixed. The label space is a third
-axis of pretraining design alongside the objective and the data, it is the one
-currently set by convention, and its effects do not stay where the labels
-changed.
+Varying only the label vocabulary, we find two effects: a general degradation
+from coarsening, and on top of it the loss of an erased feature --- seen both
+where the fine vocabulary labels it and where neither does. The label space is a
+third axis of pretraining design, still set by convention, whose effects do not
+stay where the labels changed.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
