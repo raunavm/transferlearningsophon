@@ -61,6 +61,26 @@ OUT_DIR = ROOT / "configs" / "arms"
 # and the md5 check in the build log are what confirm it did.
 ARMS = ["L188", "L162", "R42_Q1", "R16_Q1"]
 
+# The mass-auxiliary twins (the 2x2 at the ends of the ladder, DECISIONS_PENDING
+# item 14 addendum 2). <ARM>_MASS is <ARM> plus two labels the hybrid loop reads
+# (experiments/MTX/hybrid_mass.py): the log mass-ratio target and its validity
+# mask. Same truth_label, same K, same weights: block -- a mass arm and its twin
+# differ in the loss term alone. genjet_sdmass is referenced from the labels,
+# never listed under observers: tests/test_plumbing.py binds on that.
+MASS_ARMS = ["L162", "R16_Q1"]
+MASS_LABEL_LINES = [
+    "",
+    "      ### Mass-auxiliary target (D2 as amended by DECISIONS_PENDING item 3):",
+    "      ### log(genjet_sdmass / jet_sdmass), the groomed log mass-ratio, zero",
+    "      ### where the jet is unmatched. genjet_sdmass is a hard 0.0f when",
+    "      ### unmatched (docs/GROUND_TRUTH.md), so the ratio is guarded and the",
+    "      ### loss is masked on mass_valid. Trained by hybrid_mass.py; the",
+    "      ### classification head is the SAME K as the twin arm (the arch adds",
+    "      ### the mass node itself).",
+    "      mass_target: np.log(np.maximum(genjet_sdmass, 1e-6) / jet_sdmass) * (genjet_sdmass > 0)",
+    "      mass_valid: (genjet_sdmass > 0)",
+]
+
 N_NATIVE = 188
 
 
@@ -122,7 +142,8 @@ def evaluate(expr: str) -> dict[int, int]:
     return {int(n): int(v) for n, v in enumerate(np.asarray(got))}
 
 
-def labels_block(arm: str, mapping: dict[int, int], names: dict[int, str]) -> str:
+def labels_block(arm: str, mapping: dict[int, int], names: dict[int, str],
+                 mass: bool = False) -> str:
     n_groups = len(set(mapping.values()))
     lines = [
         "labels:",
@@ -136,6 +157,7 @@ def labels_block(arm: str, mapping: dict[int, int], names: dict[int, str]) -> st
         "   type: custom",
         "   value:",
         f"      truth_label: {truth_label_expr(mapping)}",
+        *(MASS_LABEL_LINES if mass else []),
         "",
         "   ### group_id -> group_name, for readers:",
     ]
@@ -148,7 +170,7 @@ def labels_block(arm: str, mapping: dict[int, int], names: dict[int, str]) -> st
 
 
 def build_one(base_text: str, arm: str, mapping: dict[int, int],
-              names: dict[int, str]) -> str:
+              names: dict[int, str], mass: bool = False) -> str:
     m_lab = re.search(r"^labels:", base_text, re.M)
     m_obs = re.search(r"^observers:", base_text, re.M)
     if not m_lab or not m_obs or m_obs.start() < m_lab.start():
@@ -164,7 +186,7 @@ def build_one(base_text: str, arm: str, mapping: dict[int, int],
         f"#\n"
     )
     return (header + base_text[:m_lab.start()]
-            + labels_block(arm, mapping, names)
+            + labels_block(arm, mapping, names, mass=mass)
             + base_text[m_obs.start():])
 
 
@@ -199,15 +221,18 @@ def main() -> int:
 
     base_sha = weights_sha256(base_text)
     built, failed = {}, 0
-    for arm in ARMS:
-        text = build_one(base_text, arm, maps[arm], group_names[arm])
+    # (output name, map arm, mass?) -- the MASS twins reuse their twin's map.
+    todo = [(arm, arm, False) for arm in ARMS] + \
+           [(f"{arm}_MASS", arm, True) for arm in MASS_ARMS]
+    for arm, src, mass in todo:
+        text = build_one(base_text, arm, maps[src], group_names[src], mass=mass)
         built[arm] = text
 
         expr = re.search(r"truth_label: (.*)", text).group(1)
         got = evaluate(expr)
-        ok_map = got == maps[arm]
+        ok_map = got == maps[src]
         ok_wts = weights_sha256(text) == base_sha
-        n_groups = len(set(maps[arm].values()))
+        n_groups = len(set(maps[src].values()))
         ok_dense = set(got.values()) == set(range(n_groups))
 
         for label, ok in (("expression_reproduces_label_map", ok_map),

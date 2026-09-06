@@ -219,8 +219,10 @@ def test_each_arm_expression_reproduces_the_committed_label_map(arms):
     rows = list(csv.DictReader(MAPS.open()))
     jet_label = np.arange(188)
     for arm, text in arms.items():
-        assert arm in rows[0], f"no column {arm!r} in the committed label map"
-        expected = {int(r["jet_label"]): int(r[arm]) for r in rows}
+        # a mass twin (<ARM>_MASS) carries its arm's map under its arm's column
+        col = arm[:-len("_MASS")] if arm.endswith("_MASS") else arm
+        assert col in rows[0], f"no column {col!r} in the committed label map"
+        expected = {int(r["jet_label"]): int(r[col]) for r in rows}
         expr = re.search(r"truth_label:\s*(.*)", text).group(1)
         got = eval(expr, {"__builtins__": {}}, {"jet_label": jet_label})
         got = {int(n): int(v) for n, v in enumerate(np.asarray(got))}

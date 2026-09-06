@@ -122,6 +122,19 @@ RATES = {
                "both went nan at iteration 2 then hit a CUDA device-side "
                "assert. Nothing was run BELOW 2.5e-4, so this is an upper "
                "bound on the trainable range, not a located optimum."),
+    # The mass-auxiliary twins (DECISIONS_PENDING item 14, addendum 2). A twin
+    # MUST share its arm's rate: the 2x2 varies one output node and the loss
+    # term that trains it, and a separately-swept rate would put a second
+    # variable on the mass axis (I1). Not swept; the bracketing flag is the
+    # twin's. scripts/build_mass_jobs.py asserts K and rate against the twin.
+    "L162_MASS": (162, "5e-4", False,
+                  "the rate is L162's, by construction -- the mass twin differs "
+                  "from L162 in the head and the loss term only; a rate of its "
+                  "own would confound the mass axis with tuning."),
+    "R16_Q1_MASS": (17, "5e-4", True,
+                    "the rate is R16_Q1's, by construction -- see L162_MASS; "
+                    "R16_Q1's 5e-4 is bracketed on both sides, so the twin "
+                    "inherits a bracketed rate."),
 }
 
 SEEDS = [1]

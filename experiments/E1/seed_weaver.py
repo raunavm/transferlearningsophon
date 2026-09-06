@@ -26,7 +26,11 @@ with a partial guarantee — a silently-partial fix here is worse than no fix,
 because the run would look seeded and not be.
 
 Usage:  python seed_weaver.py --seed S [--allow-partial-streams]
-                             [--lean-val-metrics] <weaver args>
+                             [--lean-val-metrics] [--mass-lambda L] <weaver args>
+
+--mass-lambda L installs the class+mass hybrid loop (experiments/MTX/hybrid_mass.py)
+with regression weight L. Use with --network-config ParT_sophon_arch_mass.py and
+a *_MASS arm config; the arch refuses to build without the loop installed.
 
 Reproducibility: a run is reproducible on the SAME GPU model. Cross-GPU is
 statistically — not bit — identical (different CUDA kernels and reduction
@@ -57,6 +61,7 @@ if seed_raw is None:
 seed = int(seed_raw)
 allow_partial, rest = _pop(rest, "--allow-partial-streams", has_value=False)
 lean_val, rest = _pop(rest, "--lean-val-metrics", has_value=False)
+mass_lambda, rest = _pop(rest, "--mass-lambda")
 
 os.environ["PYTHONHASHSEED"] = str(seed)
 
@@ -107,6 +112,22 @@ if _hooked is None:
     if not allow_partial:
         raise SystemExit(msg)
     print("[seed_weaver] WARNING (--allow-partial-streams):\n" + msg, flush=True)
+
+# Class + mass-regression hybrid loop, if asked. Installed BEFORE the lean-val
+# patch below, so that patch wraps the hybrid evaluate rather than the stock
+# one -- both replace weaver.utils.nn.tools attributes that train.py imports
+# only inside _main().
+if mass_lambda is not None:
+    import importlib.util as _ilu  # noqa: E402
+
+    _hspec = _ilu.spec_from_file_location(
+        "hybrid_mass", REPO / "experiments" / "MTX" / "hybrid_mass.py")
+    _hm = _ilu.module_from_spec(_hspec)
+    _hspec.loader.exec_module(_hm)
+    _hm.install(float(mass_lambda))
+    print(f"[seed_weaver] --mass-lambda {float(mass_lambda)}: hybrid class+mass "
+          "loop installed (train_classification / evaluate_classification "
+          "replaced)", flush=True)
 
 # Drop the O(K^2) validation metric, if asked.
 #
