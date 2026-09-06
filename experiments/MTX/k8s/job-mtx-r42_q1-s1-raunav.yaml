@@ -3,6 +3,11 @@ kind: Job
 metadata:
   # CORE-MATRIX GRANULARITY ARM -- R42_Q1 (K = 43), seed 1
   #
+  # RELAUNCH WAVE 2026-09-05 (scripts/build_mass_jobs.py): pin -> mtx-s1.10,
+  # --lean-val-metrics and auto-resume added, exactly the deltas
+  # scripts/build_mtx_launch.py applied to the other arms. Rate UNCHANGED
+  # at 2.5e-4, the declared RATES value (see RATE CORRECTED below).
+  #
   # RELAUNCH WAVE 2026-09-05 (scripts/build_mass_jobs.py): pin -> mtx-s1.9,
   # --lean-val-metrics and auto-resume added, exactly the deltas
   # scripts/build_mtx_launch.py applied to the other arms. Rate UNCHANGED
@@ -81,7 +86,7 @@ spec:
         # Pin all three arms to ONE ref. A branch name here means three arms
         # launched at different times can run different code.
         - name: REPO_REF
-          value: "mtx-s1.9"
+          value: "mtx-s1.10"
         args:
         - |
           set -euo pipefail

@@ -133,7 +133,8 @@ def build_jc2(train_files, val_files, out: pathlib.Path, sizes, seeds,
         subs = nested_prefixes(pool, sizes, rng)
         for n, t in subs.items():
             pq.write_table(t, out / f"train_N{n}_s{seed}.parquet")
-        manifest["per_seed"][str(seed)] = {"files": files, "pool_rows": pool.num_rows,
+        manifest["per_seed"][str(seed)] = {"files": files, "n_files_used": len(files),
+                                           "pool_rows": pool.num_rows,
                                            "pool_rows_per_family": per_family}
         print(f"seed {seed}: pool {pool.num_rows:,} rows {per_family}", flush=True)
 

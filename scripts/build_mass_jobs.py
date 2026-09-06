@@ -54,7 +54,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 K8S = ROOT / "experiments" / "MTX" / "k8s"
 TEMPLATE = K8S / "job-mtx-r16_q1-s1-raunav.yaml"
 R42 = K8S / "job-mtx-r42_q1-s1-raunav.yaml"
-PIN = "mtx-s1.9"
+PIN = "mtx-s1.10"
 LAMBDA = "5.0"
 
 # arm -> (K, rate). The rate is the twin's, from build_mtx_launch.RATES.

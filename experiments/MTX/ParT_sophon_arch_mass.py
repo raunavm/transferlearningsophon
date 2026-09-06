@@ -35,6 +35,7 @@ Train with:    experiments/E1/seed_weaver.py --mass-lambda 5.0 ...
 """
 import importlib.util
 import os
+import sys
 
 _MTX_ARCH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                          "ParT_sophon_arch_mtx.py")
@@ -48,6 +49,15 @@ ENV_FLAG = "HYBRID_MASS_INSTALLED"
 
 def get_model(data_config, **kwargs):
     allow = bool(kwargs.pop("allow_without_hybrid", False))
+    if allow and any(a in ("--predict", "--data-test") for a in sys.argv):
+        raise RuntimeError(
+            "ParT_sophon_arch_mass: allow_without_hybrid is for checkpoint "
+            "inspection only, and this is a --predict/--data-test run. weaver's "
+            "stock evaluate would softmax and argmax over all K+1 outputs, so "
+            "the mass node would be scored as a class. Predict through "
+            "experiments/E1/seed_weaver.py --mass-lambda L (which installs the "
+            "loop, and its evaluate exposes the K class outputs), or read the "
+            "checkpoint with experiments/EVAL/extract_features.py --num-classes K+1.")
     if not allow and os.environ.get(ENV_FLAG) != "1":
         raise RuntimeError(
             "ParT_sophon_arch_mass: the hybrid class+mass loop is not installed "

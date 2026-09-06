@@ -22,7 +22,7 @@ spec:
         - name: POD_NAME
           valueFrom: { fieldRef: { fieldPath: metadata.name } }
         - name: REPO_REF
-          value: "mtx-s1.9"
+          value: "mtx-s1.10"
         args:
         - |
           set -euo pipefail
@@ -50,7 +50,9 @@ spec:
           echo "free on /data: ${FREE_G}G"
           [ "${FREE_G}" -ge 100 ] || { echo "FATAL: ${FREE_G}G free on /data, need 100G"; exit 1; }
 
-          # 60 train files per seed (9 Res2P / 39 Res34P / 12 QCD, proportional),
+          # 61 train files per seed (9 Res2P / 39 Res34P / 13 QCD): choose_files
+          # rounds each family separately, so --n-files 60 reads 61 (and 12 val
+          # files reads 13). manifest.json records the realised n_files_used.
           # 30% of each file's SELECTED rows -> a ~1.5M-row pool per seed, of which
           # the nested 1e4 / 1e5 / 1e6 subsets are prefixes of one shuffle.
           python3 experiments/FT/make_subsets.py jc2 \

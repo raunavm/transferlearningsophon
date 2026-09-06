@@ -69,7 +69,7 @@ spec:
         # Pin all three arms to ONE ref. A branch name here means three arms
         # launched at different times can run different code.
         - name: REPO_REF
-          value: "mtx-s1.9"
+          value: "mtx-s1.10"
         args:
         - |
           set -euo pipefail

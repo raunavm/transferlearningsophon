@@ -19,7 +19,14 @@ inits    r16q1-s2 / s3 / s4 (coarse, three pretraining seeds), l162-s1b (fine),
 N        1e4, 1e5, 1e6 jets, nested, from experiments/FT/make_subsets.py
 seeds    3 fine-tuning seeds per (init, N) -- the field's 2026 standard
          (2606.14870 §III.B: 3; 2606.19781: 5; 2607.23377: 5)
-epochs   50 / 30 / 10 at N = 1e4 / 1e5 / 1e6 (5e5, 3e6, 1e7 examples); weaver
+epochs   50 / 30 / 10 at N = 1e4 / 1e5 / 1e6. weaver floors steps at
+         samples_per_epoch // batch_size and drops the last partial batch, so
+         the budget is 486,400 / 2,995,200 / 9,999,360 optimizer examples, not
+         5e5 / 3e6 / 1e7; batch_size and steps_per_epoch go in each manifest.
+         Validation stays at 200k every epoch even at N=1e4, where that is ~20x
+         the training compute (~1 GPU-day over the wave): best-epoch selection
+         is noisiest exactly at the smallest N, which is the headline cell.
+         weaver
          keeps the best-validation epoch; every epoch checkpoint is kept
 rate     1e-4 for a pretrained trunk, 5e-4 (the pretraining rate) from scratch
 head     re-initialised: --exclude-model-weights 'mod\\.fc\\..*'
@@ -53,7 +60,7 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "FT" / "k8s"
 EXTRACT_SPEC = ROOT / "experiments" / "EVAL" / "k8s" / "job-extract-mtx-r16q1-s2-raunav.yaml"
-PIN = "mtx-s1.9"
+PIN = "mtx-s1.10"
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 LAMBDA = "5.0"
 # E0b's pinned sha256 of the released Sophon checkpoint (job-massreg-e0b-extract).
@@ -127,7 +134,9 @@ SUBSETS_JC2 = PREAMBLE + """
           OUT=/data/finetune/jc2
           [ -f ${OUT}/DONE ] && { echo "already built:"; head -40 ${OUT}/manifest.json; exit 0; }
 """ + SPLIT_GUARD + SPACE_GUARD + """
-          # 60 train files per seed (9 Res2P / 39 Res34P / 12 QCD, proportional),
+          # 61 train files per seed (9 Res2P / 39 Res34P / 13 QCD): choose_files
+          # rounds each family separately, so --n-files 60 reads 61 (and 12 val
+          # files reads 13). manifest.json records the realised n_files_used.
           # 30% of each file's SELECTED rows -> a ~1.5M-row pool per seed, of which
           # the nested 1e4 / 1e5 / 1e6 subsets are prefixes of one shuffle.
           python3 experiments/FT/make_subsets.py jc2 \\
@@ -262,6 +271,14 @@ LEGS = PREAMBLE + """
           # over the wave. CLAUDE.md: no write > 1 GB past 85% without the PI.
           space_ok () { local p=$(df --output=pcent /data | tail -1 | tr -dc 0-9); local g=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9); echo "/data ${p}% used, ${g}G free"; [ "$p" -lt 85 ] && [ "$g" -ge 50 ] || { echo "FATAL: /data at ${p}% used, ${g}G free: stop and ask the PI"; exit 1; }; }
 
+          # A fine-tune that fails deterministically (OOM, a failed check) would
+          # otherwise be re-run by all 50 retries, each one moving the previous
+          # attempt aside: 50 x hours of a held GPU and ~200 GB of .partial dirs.
+          # Two attempts, then the marker stops every later pod at the top.
+          FAIL_MARK=${ROOT_OUT}/FAILED
+          [ -f ${FAIL_MARK} ] && { echo "FATAL: an earlier attempt failed twice: $(cat ${FAIL_MARK}). Fix it, then remove ${FAIL_MARK}"; exit 1; }
+          attempt_ok () { local o=$1; local n=$(ls -d ${o}.partial.* 2>/dev/null | wc -l); [ "$n" -ge 2 ] && { echo "${o} failed ${n} times" | tee ${FAIL_MARK}; exit 1; }; return 0; }
+
 """ + FETCH_SOPHON + """
 
           # init:checkpoint:K -- K is the CHECKPOINT's head width, checked before
@@ -273,6 +290,14 @@ LEGS = PREAMBLE + """
             [ -f "${ckpt}" ] || { echo "FATAL: ${name}: no ${ckpt}"; exit 1; }
             python3 experiments/EVAL/extract_features.py --checkpoint ${ckpt} --num-classes ${k} --arm ${name} \\
               --data-test /jc2/jet_data/Res2P_0250.parquet --out ${ROOT_OUT}/selfcheck --self-check-only
+          done
+
+          # Leg-2 preconditions, checked HERE rather than days later after leg 1.
+          for S in 1 2 3; do
+            [ -f /data/results/e1/arm_s_s${S}/net_best_epoch_state.pt ] || { echo "FATAL: no E1 arm S seed ${S} checkpoint"; exit 1; }
+          done
+          for C in __JC1_CLASSES__; do
+            [ "$(find /data/JetClass/Pythia/test_20M -maxdepth 1 -name "${C}_*.root" | wc -l)" -ge 2 ] || { echo "FATAL: ${C}: fewer than 2 JetClass-I test files"; exit 1; }
           done
 
           epochs_for () { case $1 in 10000) echo __E1__;; 100000) echo __E2__;; 1000000) echo __E3__;; *) echo "FATAL: no epoch budget for N=$1" >&2; exit 1;; esac; }
@@ -289,11 +314,12 @@ LEGS = PREAMBLE + """
                 OUT=${ROOT_OUT}/leg1/${name}/N${N}/s${S}
                 [ -f ${OUT}/DONE ] && { echo "skip ${OUT} (DONE)"; continue; }
                 space_ok
+                attempt_ok ${OUT}
                 [ -d ${OUT} ] && mv ${OUT} ${OUT}.partial.$(date -u +%s)
                 mkdir -p ${OUT}
                 if [ -n "${ckpt}" ]; then LOAD="--load-model-weights ${ckpt} --exclude-model-weights mod\\.fc\\..*"; LR=__LR_PRE__; else LOAD=""; LR=__LR_SCRATCH__; fi
                 EP=$(epochs_for ${N})
-                python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json leg=1 init=${name} checkpoint=${ckpt} n_train=${N} ft_seed=${S} lr=${LR} epochs=${EP} subset=${SUB2}/train_N${N}_s${S}.parquet data_config=configs/finetune/JetClassII_L162_noweight.yaml num_classes=162
+                python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json leg=1 init=${name} checkpoint=${ckpt} n_train=${N} ft_seed=${S} lr=${LR} epochs=${EP} subset=${SUB2}/train_N${N}_s${S}.parquet data_config=configs/finetune/JetClassII_L162_noweight.yaml num_classes=162 batch_size=512 steps_per_epoch=$((N/512))
                 python3 experiments/E1/seed_weaver.py --seed ${S} --lean-val-metrics \\
                   --data-train ${SUB2}/train_N${N}_s${S}.parquet --data-val ${SUB2}/val.parquet \\
                   --data-config configs/finetune/JetClassII_L162_noweight.yaml \\
@@ -327,7 +353,9 @@ LEGS = PREAMBLE + """
             CK=/data/results/e1/arm_s_s${S}/net_best_epoch_state.pt
             [ -f "${CK}" ] || { echo "FATAL: no ${CK}"; exit 1; }
             mkdir -p ${OUT}
-            weaver --predict --data-test ${TEST1} ${PRED} -o fc_params '[(512,0.1)]' --model-prefix ${CK} --predict-output ${OUT}/pred.root 2>&1 | tail -3
+            weaver --predict --data-test ${TEST1} ${PRED} -o fc_params '[(512,0.1)]' --model-prefix ${CK} --predict-output ${OUT}/pred.root 2>&1 | tee ${OUT}/predict.log | tail -3
+            # weaver's save_root catches its own write errors and still exits 0.
+            [ -f ${OUT}/pred.root ] || { echo "FATAL: no pred.root in ${OUT}"; exit 1; }
             touch ${OUT}/DONE
           done
 
@@ -338,11 +366,12 @@ LEGS = PREAMBLE + """
                 OUT=${ROOT_OUT}/leg2/${name}/N${N}/s${S}
                 [ -f ${OUT}/DONE ] && { echo "skip ${OUT} (DONE)"; continue; }
                 space_ok
+                attempt_ok ${OUT}
                 [ -d ${OUT} ] && mv ${OUT} ${OUT}.partial.$(date -u +%s)
                 mkdir -p ${OUT}
                 if [ -n "${ckpt}" ]; then LOAD="--load-model-weights ${ckpt} --exclude-model-weights mod\\.fc\\..*"; LR=__LR_PRE__; else LOAD=""; LR=__LR_SCRATCH__; fi
                 EP=$(epochs_for ${N})
-                python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json leg=2 init=${name} checkpoint=${ckpt} n_train=${N} ft_seed=${S} lr=${LR} epochs=${EP} subset=${SUB1}/train_N${N}_s${S}.parquet data_config=configs/finetune/JetClassI_sophon_noweight.yaml num_classes=10
+                python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json leg=2 init=${name} checkpoint=${ckpt} n_train=${N} ft_seed=${S} lr=${LR} epochs=${EP} subset=${SUB1}/train_N${N}_s${S}.parquet data_config=configs/finetune/JetClassI_sophon_noweight.yaml num_classes=10 batch_size=512 steps_per_epoch=$((N/512))
                 python3 experiments/E1/seed_weaver.py --seed ${S} --lean-val-metrics \\
                   --data-train ${SUB1}/train_N${N}_s${S}.parquet --data-val ${SUB1}/val.parquet \\
                   --data-config configs/finetune/JetClassI_sophon_noweight.yaml \\
@@ -350,7 +379,7 @@ LEGS = PREAMBLE + """
                   ${COMMON} --start-lr ${LR} --samples-per-epoch ${N} --samples-per-epoch-val 200000 --num-epochs ${EP} \\
                   ${LOAD} --model-prefix ${OUT}/net --log ${OUT}/train.log 2>&1 | tee ${OUT}/stdout.log
                 [ -z "${ckpt}" ] || python3 experiments/FT/smoke_checks.py load-log --log ${OUT}/stdout.log
-                weaver --predict --data-test ${TEST1} ${PRED} -o fc_params '[(512,0.1)]' --model-prefix ${OUT}/net --predict-output ${OUT}/pred.root 2>&1 | tail -3
+                weaver --predict --data-test ${TEST1} ${PRED} -o fc_params '[(512,0.1)]' --model-prefix ${OUT}/net --predict-output ${OUT}/pred.root 2>&1 | tee ${OUT}/predict.log | tail -3
                 [ -f ${OUT}/pred.root ] || { echo "FATAL: no pred.root in ${OUT}"; exit 1; }
                 touch ${OUT}/DONE
               done
@@ -464,15 +493,18 @@ def build(pin: str) -> dict[str, str]:
                        "  # (load + head exclusion + readout), the subset writers, and the\n"
                        "  # released checkpoint, all on a few thousand jets. Prints SMOKE PASS.\n"),
         "job-ft-legs-raunav.yaml": job(
-            "ft-legs-raunav", _fill(LEGS, pin), gpu=True, cpu="4", memory="64Gi",
+            "ft-legs-raunav", _fill(LEGS, pin), gpu=True, cpu="4", memory="88Gi",
             shm="8Gi", backoff=50, pin=pin,
             header=h + "  # THE FINE-TUNING LEGS (DECISIONS_PENDING item 14): every (init, N,\n"
                        "  # seed) of leg 1 then leg 2 in ONE pod on ONE GPU, sequential and\n"
                        "  # resumable per fine-tune. backoffLimit 50 for the same reason the\n"
                        "  # training jobs carry it: the queue reaps Pending pods.\n"
-                       "  # Memory: extraction's measured need is fetch_step 1 / 1 worker\n"
-                       "  # (experiments/EVAL/extract_features.py); training on a 1e6-jet file\n"
-                       "  # holds one file per worker. 64Gi covers both with margin.\n"
+                       "  # Memory 88Gi, as the MTX training arms: at N=1e6 the subset is\n"
+                       "  # ONE file, so weaver caps the train loader at one worker and its\n"
+                       "  # async prefetch holds a second copy of the same 1e6 jets. CLAUDE.md\n"
+                       "  # section 8's measured band is 35-58 GB for ~1.6M jets in flight and\n"
+                       "  # records 64Gi OOM-killing g1-r16q1-lr5e4; this is ~2.2M in flight.\n"
+                       "  # 31 of 37 us-west 3090 nodes allocate >= 88Gi (measured 2026-09-05).\n"
                        "  # Storage: ~250 GB on /data over the wave; space_ok guards every\n"
                        "  # fine-tune at CLAUDE.md's 85% line.\n"),
     }

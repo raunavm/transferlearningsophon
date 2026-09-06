@@ -82,3 +82,30 @@ def test_mass_twin_differs_from_its_arm_in_the_two_labels_alone(mass_path, twin_
     assert "genjet_sdmass" not in obs
     for name in ("mass_target", "mass_valid"):
         assert name in mass and name not in twin
+
+
+def test_the_committed_configs_are_what_the_generator_produces_today():
+    """Generator/artifact drift is invisible until someone regenerates, at which
+    point a changed labels block changes the config md5, hence the reweighting
+    sidecar's name, hence a required new make_weight pass. A mutation to
+    MASS_LABEL_LINES (e.g. mass_valid always True) passed the whole suite
+    because every other test reads only the committed YAML.
+    """
+    import csv as _csv
+    import importlib.util
+    import pathlib as _pathlib
+    import sys as _sys
+
+    root = _pathlib.Path(__file__).resolve().parent.parent
+    _sys.path.insert(0, str(root / "scripts"))
+    import build_arm_configs as b
+
+    maps = b.load_maps()
+    rows = list(_csv.DictReader(b.MAPS.open()))
+    names = {arm: {int(r[arm]): r[f"{arm}_name"] for r in rows} for arm in b.ARMS}
+    base = b.BASE.read_text()
+    todo = [(a, a, False) for a in b.ARMS] + [(f"{a}_MASS", a, True) for a in b.MASS_ARMS]
+    for arm, src, mass in todo:
+        want = (b.OUT_DIR / f"{arm}.yaml").read_text()
+        got = b.build_one(base, arm, maps[src], names[src], mass=mass)
+        assert got == want, f"configs/arms/{arm}.yaml is stale: regenerate it"

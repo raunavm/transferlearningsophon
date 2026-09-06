@@ -7,9 +7,12 @@ metadata:
   # seed) of leg 1 then leg 2 in ONE pod on ONE GPU, sequential and
   # resumable per fine-tune. backoffLimit 50 for the same reason the
   # training jobs carry it: the queue reaps Pending pods.
-  # Memory: extraction's measured need is fetch_step 1 / 1 worker
-  # (experiments/EVAL/extract_features.py); training on a 1e6-jet file
-  # holds one file per worker. 64Gi covers both with margin.
+  # Memory 88Gi, as the MTX training arms: at N=1e6 the subset is
+  # ONE file, so weaver caps the train loader at one worker and its
+  # async prefetch holds a second copy of the same 1e6 jets. CLAUDE.md
+  # section 8's measured band is 35-58 GB for ~1.6M jets in flight and
+  # records 64Gi OOM-killing g1-r16q1-lr5e4; this is ~2.2M in flight.
+  # 31 of 37 us-west 3090 nodes allocate >= 88Gi (measured 2026-09-05).
   # Storage: ~250 GB on /data over the wave; space_ok guards every
   # fine-tune at CLAUDE.md's 85% line.
   name: ft-legs-raunav
@@ -31,7 +34,7 @@ spec:
         - name: POD_NAME
           valueFrom: { fieldRef: { fieldPath: metadata.name } }
         - name: REPO_REF
-          value: "mtx-s1.9"
+          value: "mtx-s1.10"
         args:
         - |
           set -euo pipefail
@@ -71,6 +74,14 @@ spec:
           # over the wave. CLAUDE.md: no write > 1 GB past 85% without the PI.
           space_ok () { local p=$(df --output=pcent /data | tail -1 | tr -dc 0-9); local g=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9); echo "/data ${p}% used, ${g}G free"; [ "$p" -lt 85 ] && [ "$g" -ge 50 ] || { echo "FATAL: /data at ${p}% used, ${g}G free: stop and ask the PI"; exit 1; }; }
 
+          # A fine-tune that fails deterministically (OOM, a failed check) would
+          # otherwise be re-run by all 50 retries, each one moving the previous
+          # attempt aside: 50 x hours of a held GPU and ~200 GB of .partial dirs.
+          # Two attempts, then the marker stops every later pod at the top.
+          FAIL_MARK=${ROOT_OUT}/FAILED
+          [ -f ${FAIL_MARK} ] && { echo "FATAL: an earlier attempt failed twice: $(cat ${FAIL_MARK}). Fix it, then remove ${FAIL_MARK}"; exit 1; }
+          attempt_ok () { local o=$1; local n=$(ls -d ${o}.partial.* 2>/dev/null | wc -l); [ "$n" -ge 2 ] && { echo "${o} failed ${n} times" | tee ${FAIL_MARK}; exit 1; }; return 0; }
+
           # The released checkpoint is gitignored, so it is never in the clone, and
           # it is not on the PVC. Fetch it as E0b did and pin it to E0b's sha256.
           SOPHON=/workspace/sophon_public.pt
@@ -90,6 +101,14 @@ spec:
               --data-test /jc2/jet_data/Res2P_0250.parquet --out ${ROOT_OUT}/selfcheck --self-check-only
           done
 
+          # Leg-2 preconditions, checked HERE rather than days later after leg 1.
+          for S in 1 2 3; do
+            [ -f /data/results/e1/arm_s_s${S}/net_best_epoch_state.pt ] || { echo "FATAL: no E1 arm S seed ${S} checkpoint"; exit 1; }
+          done
+          for C in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do
+            [ "$(find /data/JetClass/Pythia/test_20M -maxdepth 1 -name "${C}_*.root" | wc -l)" -ge 2 ] || { echo "FATAL: ${C}: fewer than 2 JetClass-I test files"; exit 1; }
+          done
+
           epochs_for () { case $1 in 10000) echo 50;; 100000) echo 30;; 1000000) echo 10;; *) echo "FATAL: no epoch budget for N=$1" >&2; exit 1;; esac; }
           COMMON="--use-amp --batch-size 512 --num-workers 2 --fetch-by-files --fetch-step 1 --optimizer ranger"
 
@@ -104,11 +123,12 @@ spec:
                 OUT=${ROOT_OUT}/leg1/${name}/N${N}/s${S}
                 [ -f ${OUT}/DONE ] && { echo "skip ${OUT} (DONE)"; continue; }
                 space_ok
+                attempt_ok ${OUT}
                 [ -d ${OUT} ] && mv ${OUT} ${OUT}.partial.$(date -u +%s)
                 mkdir -p ${OUT}
                 if [ -n "${ckpt}" ]; then LOAD="--load-model-weights ${ckpt} --exclude-model-weights mod\.fc\..*"; LR=1e-4; else LOAD=""; LR=5e-4; fi
                 EP=$(epochs_for ${N})
-                python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json leg=1 init=${name} checkpoint=${ckpt} n_train=${N} ft_seed=${S} lr=${LR} epochs=${EP} subset=${SUB2}/train_N${N}_s${S}.parquet data_config=configs/finetune/JetClassII_L162_noweight.yaml num_classes=162
+                python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json leg=1 init=${name} checkpoint=${ckpt} n_train=${N} ft_seed=${S} lr=${LR} epochs=${EP} subset=${SUB2}/train_N${N}_s${S}.parquet data_config=configs/finetune/JetClassII_L162_noweight.yaml num_classes=162 batch_size=512 steps_per_epoch=$((N/512))
                 python3 experiments/E1/seed_weaver.py --seed ${S} --lean-val-metrics \
                   --data-train ${SUB2}/train_N${N}_s${S}.parquet --data-val ${SUB2}/val.parquet \
                   --data-config configs/finetune/JetClassII_L162_noweight.yaml \
@@ -142,7 +162,9 @@ spec:
             CK=/data/results/e1/arm_s_s${S}/net_best_epoch_state.pt
             [ -f "${CK}" ] || { echo "FATAL: no ${CK}"; exit 1; }
             mkdir -p ${OUT}
-            weaver --predict --data-test ${TEST1} ${PRED} -o fc_params '[(512,0.1)]' --model-prefix ${CK} --predict-output ${OUT}/pred.root 2>&1 | tail -3
+            weaver --predict --data-test ${TEST1} ${PRED} -o fc_params '[(512,0.1)]' --model-prefix ${CK} --predict-output ${OUT}/pred.root 2>&1 | tee ${OUT}/predict.log | tail -3
+            # weaver's save_root catches its own write errors and still exits 0.
+            [ -f ${OUT}/pred.root ] || { echo "FATAL: no pred.root in ${OUT}"; exit 1; }
             touch ${OUT}/DONE
           done
 
@@ -153,11 +175,12 @@ spec:
                 OUT=${ROOT_OUT}/leg2/${name}/N${N}/s${S}
                 [ -f ${OUT}/DONE ] && { echo "skip ${OUT} (DONE)"; continue; }
                 space_ok
+                attempt_ok ${OUT}
                 [ -d ${OUT} ] && mv ${OUT} ${OUT}.partial.$(date -u +%s)
                 mkdir -p ${OUT}
                 if [ -n "${ckpt}" ]; then LOAD="--load-model-weights ${ckpt} --exclude-model-weights mod\.fc\..*"; LR=1e-4; else LOAD=""; LR=5e-4; fi
                 EP=$(epochs_for ${N})
-                python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json leg=2 init=${name} checkpoint=${ckpt} n_train=${N} ft_seed=${S} lr=${LR} epochs=${EP} subset=${SUB1}/train_N${N}_s${S}.parquet data_config=configs/finetune/JetClassI_sophon_noweight.yaml num_classes=10
+                python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json leg=2 init=${name} checkpoint=${ckpt} n_train=${N} ft_seed=${S} lr=${LR} epochs=${EP} subset=${SUB1}/train_N${N}_s${S}.parquet data_config=configs/finetune/JetClassI_sophon_noweight.yaml num_classes=10 batch_size=512 steps_per_epoch=$((N/512))
                 python3 experiments/E1/seed_weaver.py --seed ${S} --lean-val-metrics \
                   --data-train ${SUB1}/train_N${N}_s${S}.parquet --data-val ${SUB1}/val.parquet \
                   --data-config configs/finetune/JetClassI_sophon_noweight.yaml \
@@ -165,7 +188,7 @@ spec:
                   ${COMMON} --start-lr ${LR} --samples-per-epoch ${N} --samples-per-epoch-val 200000 --num-epochs ${EP} \
                   ${LOAD} --model-prefix ${OUT}/net --log ${OUT}/train.log 2>&1 | tee ${OUT}/stdout.log
                 [ -z "${ckpt}" ] || python3 experiments/FT/smoke_checks.py load-log --log ${OUT}/stdout.log
-                weaver --predict --data-test ${TEST1} ${PRED} -o fc_params '[(512,0.1)]' --model-prefix ${OUT}/net --predict-output ${OUT}/pred.root 2>&1 | tail -3
+                weaver --predict --data-test ${TEST1} ${PRED} -o fc_params '[(512,0.1)]' --model-prefix ${OUT}/net --predict-output ${OUT}/pred.root 2>&1 | tee ${OUT}/predict.log | tail -3
                 [ -f ${OUT}/pred.root ] || { echo "FATAL: no pred.root in ${OUT}"; exit 1; }
                 touch ${OUT}/DONE
               done
@@ -173,8 +196,8 @@ spec:
           done
           echo "FT LEGS COMPLETE"
         resources:
-          requests: { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
-          limits:   { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          requests: { memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: jc2,  mountPath: /jc2, readOnly: true }
         - { name: data, mountPath: /data }

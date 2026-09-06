@@ -70,6 +70,28 @@ def test_split_output_refuses_a_plain_k_wide_head(hm):
         hm.split_output(torch.zeros(4, 17), 17)
     logits, pred = hm.split_output(torch.zeros(4, 18), 17)
     assert logits.shape == (4, 17) and pred.shape == (4,)
+    # WHICH column is the mass node, not just the shapes: GloParT regresses on
+    # the LAST nodes (tools.py: logits = out[:, :-n_reg]; preds = out[:, -n_reg:]).
+    # Every downstream reader takes logits[:, :K], so this convention is load-bearing.
+    logits, pred = hm.split_output(torch.arange(18.0)[None], 17)
+    assert pred.item() == 17.0 and logits[0].tolist() == list(range(17))
+
+
+def test_lambda_scales_only_the_mass_term(hm):
+    torch.manual_seed(0)
+    k = 5
+    out = torch.randn(8, k + 1)
+    y = {"truth_label": torch.randint(0, k, (8,)),
+         "mass_target": torch.randn(8),
+         "mass_valid": torch.tensor([1, 1, 1, 1, 0, 1, 0, 1], dtype=torch.bool)}
+    ce = torch.nn.CrossEntropyLoss()
+    dev = torch.device("cpu")
+    a_tot, a_cls, a_reg, _, _ = hm.hybrid_loss(ce, out, y, k, 1.0, dev)
+    b_tot, b_cls, b_reg, _, _ = hm.hybrid_loss(ce, out, y, k, 5.0, dev)
+    assert torch.allclose(a_cls, b_cls) and torch.allclose(a_reg, b_reg)
+    assert torch.allclose(a_tot, a_cls + 1.0 * a_reg, atol=1e-6)
+    assert torch.allclose(b_tot, b_cls + 5.0 * b_reg, atol=1e-6)
+    assert not torch.allclose(a_tot, b_tot)
 
 
 def test_num_cls_refuses_a_model_without_the_attribute(hm):

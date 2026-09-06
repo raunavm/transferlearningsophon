@@ -46,6 +46,15 @@ def test_every_ft_job_is_mine_pinned_and_in_region(name):
     assert "set -euo pipefail" in code
 
 
+def test_the_legs_job_is_sized_off_the_measured_band_not_below_it():
+    """CLAUDE.md section 8: size memory off the measured 35-58 GB band. 64Gi is
+    6 GB above its top and OOM-killed a training job; at N=1e6 the subset is one
+    file, so weaver's single train worker double-buffers 1e6 jets."""
+    _, c, _ = _spec(FT / "job-ft-legs-raunav.yaml")
+    assert c["resources"]["requests"]["memory"] == "88Gi"
+    assert c["resources"]["limits"]["memory"] == "88Gi"
+
+
 def test_only_the_legs_job_asks_for_a_gpu_and_it_is_pinned():
     for name in ALL:
         d, c, code = _spec(FT / name)
@@ -67,8 +76,7 @@ def test_all_wave_jobs_share_one_pin():
     for p in list(FT.glob("job-ft-*-raunav.yaml")) + [
             MTX / "job-mtx-l162_mass-s1-raunav.yaml", MTX / "job-mtx-r16_q1_mass-s1-raunav.yaml",
             MTX / "job-mtx-r42_q1-s1-raunav.yaml", MTX / "job-mtx-makeweight-mass-raunav.yaml"]:
-        if not p.exists():
-            pytest.skip(f"{p.name} not generated")
+        assert p.exists(), f"{p.name} is not generated: the wave is incomplete"
         d, c, code = _spec(p)                       # executed lines only, not comments
         m = re.search(r'--branch (?:"\$\{REPO_REF\}"|(\S+))', code)
         assert m, f"{p.name}: no git clone --branch in the executed code"
@@ -96,10 +104,14 @@ def test_legs_design_matches_item_14():
     assert {n for n, _, _ in INITS} == {"r16q1-s2", "r16q1-s3", "r16q1-s4", "l162-s1b", "sophon-public", "scratch"}
     assert SIZES == [10_000, 100_000, 1_000_000] and FT_SEEDS == [1, 2, 3]
     assert EPOCHS == {10_000: 50, 100_000: 30, 1_000_000: 10}
-    assert f"LR={LR_PRETRAINED}" in code and f"LR={LR_SCRATCH}" in code
-    # the head is re-initialised for every pretrained init, never for scratch
-    assert "--exclude-model-weights mod\\.fc\\..*" in code
-    assert 'if [ -n "${ckpt}" ]; then LOAD="--load-model-weights' in code
+    # The WHOLE branch, once per leg: pretrained gets the load, the head
+    # exclusion and LR_PRETRAINED; scratch gets no load and LR_SCRATCH. Asserting
+    # only that both rates appear somewhere lets a swap pass.
+    load_line = ('if [ -n "${ckpt}" ]; then LOAD="--load-model-weights ${ckpt} '
+                 '--exclude-model-weights mod\\.fc\\..*"; LR=%s; else LOAD=""; LR=%s; fi'
+                 % (LR_PRETRAINED, LR_SCRATCH))
+    assert code.count(load_line) == 2, "one identical load/rate branch per leg"
+    assert code.count("--exclude-model-weights mod\\.fc\\..*") == 2
     # both legs, both configs, no reweighting
     assert "configs/finetune/JetClassII_L162_noweight.yaml" in code
     assert "configs/finetune/JetClassI_sophon_noweight.yaml" in code
@@ -118,6 +130,15 @@ def test_legs_design_matches_item_14():
     # waits on the subset builders, bounded, with a marker so retries fail fast
     assert "wait_for ${SUB2}/DONE" in code and "wait_for ${SUB1}/DONE" in code
     assert "-ge 7200" in code and "86400" not in code and "WAIT_MARK" in code
+    # a fine-tune that fails deterministically must not be retried 50 times
+    assert "FAIL_MARK" in code and len(re.findall(r"^\s*attempt_ok \$\{OUT\}$", code, re.M)) == 2
+    # weaver's save_root swallows write errors and exits 0, so DONE needs the file
+    assert code.count('[ -f ${OUT}/pred.root ] || { echo "FATAL: no pred.root in ${OUT}"; exit 1; }') == 2
+    assert code.count("tee ${OUT}/predict.log") == 2
+    # leg-2 preconditions are checked before leg 1 runs for days, not after
+    assert code.index("no E1 arm S seed") < code.index("leg-2 test subset")
+    # the manifest records the epoch budget in optimizer steps, not just N
+    assert code.count("batch_size=512 steps_per_epoch=$((N/512))") == 2
     # storage: the 100G guard at start and the 85% guard before every fine-tune
     assert "need 100G" in code and len(re.findall(r"^\s*space_ok$", code, re.M)) == 2
 
