@@ -24,7 +24,7 @@ spec:
         - name: POD_NAME
           valueFrom: { fieldRef: { fieldPath: metadata.name } }
         - name: REPO_REF
-          value: "mtx-s1.8"
+          value: "mtx-s1.9"
         args:
         - |
           set -euo pipefail
@@ -82,8 +82,15 @@ spec:
             --load-model-weights ${CKPT} --exclude-model-weights 'mod\.fc\..*' \
             --model-prefix ${S}/leg1/net --log ${S}/leg1/train.log 2>&1 | tee ${S}/leg1/stdout.log
           python3 experiments/FT/smoke_checks.py load-log --log ${S}/leg1/stdout.log
-          python3 experiments/FT/smoke_checks.py head-width --checkpoint ${S}/leg1/net_best_epoch_state.pt --expect 162
-          python3 experiments/EVAL/extract_features.py --checkpoint ${S}/leg1/net_best_epoch_state.pt --num-classes 162 --arm FT_SMOKE \
+          # weaver writes net_best_epoch_state.pt only when validation accuracy
+          # beats its initial best of 0 (train.py:820,847); two tiny epochs at 162
+          # classes can stay at exactly 0.0 (attempt 1 did). Fall back to the last
+          # epoch here only: the production legs train 10-50 epochs and use the
+          # best-epoch file unconditionally. Step [1/5] exercises the best-epoch path.
+          BEST1=${S}/leg1/net_best_epoch_state.pt
+          [ -f ${BEST1} ] || { echo "no best-epoch file (validation accuracy stayed at 0); using the last epoch"; BEST1=$(ls ${S}/leg1/net_epoch-*_state.pt | sort -V | tail -1); }
+          python3 experiments/FT/smoke_checks.py head-width --checkpoint ${BEST1} --expect 162
+          python3 experiments/EVAL/extract_features.py --checkpoint ${BEST1} --num-classes 162 --arm FT_SMOKE \
             --data-config configs/data/JetClassII_base.yaml \
             --data-test /jc2/jet_data/Res2P_0250.parquet /jc2/jet_data/Res34P_1075.parquet /jc2/jet_data/QCD_0350.parquet \
             --out ${S}/leg1/features_v2 --batch-size 256 --num-workers 1 --fetch-step 1 --max-jets 3000 --save-logits
@@ -99,11 +106,13 @@ spec:
             --load-model-weights ${CKPT} --exclude-model-weights 'mod\.fc\..*' \
             --model-prefix ${S}/leg2/net --log ${S}/leg2/train.log 2>&1 | tee ${S}/leg2/stdout.log
           python3 experiments/FT/smoke_checks.py load-log --log ${S}/leg2/stdout.log
+          BEST2=${S}/leg2/net_best_epoch_state.pt
+          [ -f ${BEST2} ] || { echo "no best-epoch file (validation accuracy stayed at 0); using the last epoch"; BEST2=$(ls ${S}/leg2/net_epoch-*_state.pt | sort -V | tail -1); }
           T1=$(ls /data/JetClass/Pythia/test_20M/HToBB_*.root | sort | head -1)
           weaver --predict --gpus "" --data-test ${S}/sub1/val.parquet ${T1} \
             --data-config configs/finetune/JetClassI_sophon_noweight.yaml \
             --network-config experiments/E1/ParT_sophon_arch_10c.py -o num_classes 10 -o fc_params '[(512,0.1)]' \
-            --model-prefix ${S}/leg2/net --predict-output ${S}/leg2/pred.root \
+            --model-prefix ${BEST2} --predict-output ${S}/leg2/pred.root \
             --batch-size 256 --num-workers 1 --fetch-by-files --fetch-step 1 2>&1 | tail -5
           python3 -c "import uproot,sys; f=uproot.open('${S}/leg2/pred.root'); t=f[[k for k in f.keys() if not k.startswith('_')][0]]; n=t.num_entries; s=[b for b in t.keys() if b.startswith('score_')]; print('pred entries', n, 'score branches', len(s)); sys.exit(0 if len(s)==10 and n>500 else 1)"
 

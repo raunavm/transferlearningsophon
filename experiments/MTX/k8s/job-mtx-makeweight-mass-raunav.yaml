@@ -78,7 +78,7 @@ spec:
           # and the training jobs resolve to different commits, the arm configs
           # differ, the md5s differ, and every training job fails its sidecar
           # guard -- loudly, but only after this whole pass has been paid for.
-          git clone --depth 1 --branch mtx-s1.8 \
+          git clone --depth 1 --branch mtx-s1.9 \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon

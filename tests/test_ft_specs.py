@@ -132,7 +132,9 @@ def test_smoke_exercises_every_path_on_cpu():
                  "--exclude-model-weights 'mod\\.fc\\..*'", "smoke_checks.py load-log",
                  "--expect 162", "features --dir ${S}/leg1/features_v2 --n 3000 --k 162",
                  "weaver --predict", "--num-classes 188 --arm SOPHON_PUBLIC", "SMOKE PASS",
-                 'curl -fsSL -o "${SOPHON}"', "--checkpoint ${SOPHON}"):
+                 'curl -fsSL -o "${SOPHON}"', "--checkpoint ${SOPHON}",
+                 "BEST1=${S}/leg1/net_best_epoch_state.pt", "--checkpoint ${BEST1} --expect 162",
+                 "--model-prefix ${BEST2} --predict-output"):
         assert must in code, must
 
 
