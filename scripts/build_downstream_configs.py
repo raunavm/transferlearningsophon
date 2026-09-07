@@ -94,8 +94,9 @@ DISPLACEMENT = ["part_d0", "part_d0err", "part_dz", "part_dzerr"]
 FILLS = {
     "TopReference": dict(
         missing=PID + DISPLACEMENT,                       # 10 of 17
-        label="label",
-        n_classes=2,
+        # `is_signal_new` in the released file: 1 = top, 0 = QCD. Signal LAST so
+        # class index 1 is the signal, which is what R50/R30 are quoted against.
+        classes={"label_QCD": "label == 0", "label_Top": "label == 1"},
         source="Top Quark Tagging Reference set, Zenodo 2603256",
         why=("the released arrays carry only the constituent four-vectors "
              "(E, px, py, pz) and the binary label -- no particle type, no "
@@ -103,8 +104,9 @@ FILLS = {
     ),
     "EnergyFlowQG": dict(
         missing=list(DISPLACEMENT),                       # 4 of 17
-        label="label",
-        n_classes=2,
+        # EnergyFlow's `y`: 1 = quark, 0 = gluon. Quark is the signal, so it is
+        # index 1 for the same reason.
+        classes={"label_gluon": "label == 0", "label_quark": "label == 1"},
         source="EnergyFlow quark/gluon, Zenodo 3164691 (Pythia)",
         why=("constituents carry (pt, y, phi, pdgid), so type and charge are "
              "recoverable in the 'exp' scenario, but the sample is generator "
@@ -224,11 +226,20 @@ def downstream(name: str, spec: dict) -> str:
            "   ### Intentionally empty: the downstream sample is evaluated at its own\n"
            "   ### natural population. Porting Sophon's (200<pt<2500)&(20<msd<500) cut\n"
            "   ### would change what the benchmark row means.\n")
+    cls = spec["classes"]
+    # weaver's `type: simple` is a list of INDICATOR branches reduced with
+    # np.argmax (weaver/utils/data/config.py:105-110), NOT a single integer
+    # label. A one-element list would argmax over a width-1 axis and hand every
+    # jet class 0 -- the loss would collapse, accuracy would read 1.0, and the
+    # benchmark row would be meaningless without anything erroring. So the
+    # integer label is expanded into one indicator per class here.
+    ind = "".join(f"   {k}: {v}\n" for k, v in cls.items())
     return (head + "\n" + sel
             + NEW_VARIABLES_COMMON.format(zero=ZERO_VAR)
+            + "\n   ## class indicators (weaver argmaxes over these)\n" + ind
             + "\npreprocess:\n  method: manual\n  data_fraction: 0.5\n"
             + _inputs_block(missing)
-            + f"\nlabels:\n   type: simple\n   value: [{spec['label']}]\n"
+            + f"\nlabels:\n   type: simple\n   value: [{', '.join(cls)}]\n"
             + "\nobservers:\n   - jet_pt\n   - jet_energy\n")
 
 

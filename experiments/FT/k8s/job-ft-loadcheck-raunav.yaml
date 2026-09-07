@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Run WEAVER'S OWN loader over the staged benchmark sets before any generator
+  # or GPU leg is built on top of them.
+  #
+  # scripts/stage_downstream.py validated the CONVERSION (jet counts, angular
+  # conventions, the R=0.4 vs R=0.8 signature). What it cannot validate is the
+  # thing that actually feeds the model: whether weaver, reading
+  # configs/finetune/*.yaml, produces the tensor we think it does. Everything
+  # below has a silent failure mode:
+  #
+  #   1. LABELS. weaver's `type: simple` argmaxes over the listed indicator
+  #      branches (utils/data/config.py:105-110). This asserts both classes are
+  #      actually populated -- a config that handed every jet class 0 would
+  #      train to 100 % accuracy and produce a meaningless benchmark row.
+  #   2. THE ZERO-FILL. The filled columns must be EXACTLY 0 after weaver's
+  #      standardization, not merely small. A non-zero `subtract_by` on a filled
+  #      slot would turn the fill into an undocumented constant offset.
+  #   3. THE UNFILLED COLUMNS must be finite. log(pt) and log(E) are taken on
+  #      reconstructed quantities; one zero-energy constituent surviving the
+  #      mask gives -inf and poisons the batch.
+  #   4. THE MASKING CONTROL must differ from the plain JetClass-II config in
+  #      exactly the filled columns and nowhere else -- checked by loading BOTH
+  #      over the SAME jets and diffing the tensors column by column. That is
+  #      the property the whole control rests on, and it is asserted on real
+  #      data here rather than on the YAML.
+  #   5. A PRETRAINED TRUNK must load into a 2-class model with the head
+  #      excluded, and a forward pass must run on a real batch.
+  #
+  # CPU ONLY. ~5 min. Uses the finished R16_Q1 seed-2 checkpoint.
+  name: ft-loadcheck-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 172800
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: loadcheck
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - name: REPO_REF
+          value: "ft-stage.3"
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "${REPO_REF}" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          pip install --no-cache-dir -q pyarrow || exit 1
+          mkdir -p /data/results/ft/loadcheck
+          PYTHONUNBUFFERED=1 python3 experiments/FT/loadcheck.py \
+            --out /data/results/ft/loadcheck/loadcheck.json 2>&1 \
+            | tee /data/results/ft/loadcheck/loadcheck.txt
+          echo "===== LOADCHECK DONE ====="
+        resources:
+          requests: { memory: "24Gi", cpu: "4" }
+          limits:   { memory: "24Gi", cpu: "4" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

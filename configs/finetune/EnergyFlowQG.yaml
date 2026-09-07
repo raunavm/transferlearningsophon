@@ -42,6 +42,10 @@ new_variables:
    part_logerel: np.log(part_energy/jet_energy)
    part_deltaR: np.hypot(part_deta, part_dphi)
 
+   ## class indicators (weaver argmaxes over these)
+   label_gluon: label == 0
+   label_quark: label == 1
+
 preprocess:
   method: manual
   data_fraction: 0.5
@@ -90,7 +94,7 @@ inputs:
 
 labels:
    type: simple
-   value: [label]
+   value: [label_gluon, label_quark]
 
 observers:
    - jet_pt

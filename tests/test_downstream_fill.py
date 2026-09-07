@@ -131,3 +131,33 @@ def test_committed_configs_are_what_the_generator_emits():
     r = subprocess.run([sys.executable, str(GEN), "--check-only"],
                        capture_output=True, text=True, timeout=120)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+@pytest.mark.parametrize("name", sorted(bdc.FILLS))
+def test_simple_labels_have_at_least_two_indicator_branches(name):
+    """weaver's `type: simple` argmaxes over the listed branches.
+
+    weaver/utils/data/config.py:105-110 builds the label as
+    `np.argmax(np.stack([...], axis=1), axis=1)` over `labels.value`. A
+    one-element list argmaxes over a width-1 axis and returns 0 for EVERY jet:
+    the loss collapses, accuracy reads 1.0, and the benchmark row is meaningless
+    with nothing having errored. An integer label branch must therefore be
+    expanded into one indicator per class.
+    """
+    d = yaml.safe_load((FT / f"{name}.yaml").read_text())
+    val = d["labels"]["value"]
+    assert d["labels"]["type"] == "simple"
+    assert isinstance(val, list) and len(val) >= 2, \
+        f"{name}: labels.value = {val!r} would give every jet class 0"
+    nv = d.get("new_variables", {})
+    for v in val:
+        assert v in nv, f"{name}: label branch {v} is not defined in new_variables"
+
+
+@pytest.mark.parametrize("name", sorted(bdc.FILLS))
+def test_signal_class_is_last(name):
+    """R50/R30 are background rejection at a SIGNAL efficiency, so the signal
+    must be the high index: top for the top set, quark for q/g."""
+    val = yaml.safe_load((FT / f"{name}.yaml").read_text())["labels"]["value"]
+    signal = {"TopReference": "label_Top", "EnergyFlowQG": "label_quark"}[name]
+    assert val[-1] == signal, f"{name}: signal {signal} must be the last class, got {val}"
