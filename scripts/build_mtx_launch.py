@@ -242,10 +242,17 @@ def patch(path: pathlib.Path, arm: str, k: int, rate: str) -> str:
             tmp.unlink()
 
 
-def derive_seed(arm: str, base_seed: int, seed: int) -> str:
-    """Write job-mtx-<arm>-s<seed>-raunav.yaml from the seed-<base_seed> spec."""
+def derive_seed(arm: str, base_seed: int, seed: int, base_tag: str | None = None) -> str:
+    """Write job-mtx-<arm>-s<seed>-raunav.yaml from the seed-<base_seed> spec.
+
+    base_tag names the SOURCE FILE when it is not simply s<base_seed> -- L162's
+    launch-ready arm is `s1b`, the 5e-4 repair of the 1e-3 `s1`. The --seed VALUE
+    inside it is still base_seed; only the filename and the name/RUN_ID/tensorboard
+    strings carry the tag.
+    """
     arm_lc = arm.lower()
-    src = K8S / f"job-mtx-{arm_lc}-s{base_seed}-raunav.yaml"
+    tag = base_tag if base_tag else f"{base_seed}"
+    src = K8S / f"job-mtx-{arm_lc}-s{tag}-raunav.yaml"
     dst = K8S / f"job-mtx-{arm_lc}-s{seed}-raunav.yaml"
     if not src.exists():
         return f"FAILED: {src.name} not found"
@@ -255,9 +262,9 @@ def derive_seed(arm: str, base_seed: int, seed: int) -> str:
 
     run_lc = arm.lower().replace("_", "")
     subs = [
-        (f"name: mtx-{run_lc}-s{base_seed}-raunav", f"name: mtx-{run_lc}-s{seed}-raunav"),
-        (f"RUN_ID=mtx-{run_lc}-s{base_seed}", f"RUN_ID=mtx-{run_lc}-s{seed}"),
-        (f"--tensorboard mtx_{arm}_s{base_seed}", f"--tensorboard mtx_{arm}_s{seed}"),
+        (f"name: mtx-{run_lc}-s{tag}-raunav", f"name: mtx-{run_lc}-s{seed}-raunav"),
+        (f"RUN_ID=mtx-{run_lc}-s{tag}", f"RUN_ID=mtx-{run_lc}-s{seed}"),
+        (f"--tensorboard mtx_{arm}_s{tag}", f"--tensorboard mtx_{arm}_s{seed}"),
     ]
     for old, new in subs:
         if text.count(old) != 1:
@@ -279,7 +286,7 @@ def derive_seed(arm: str, base_seed: int, seed: int) -> str:
         return f"FAILED: a --seed other than {seed} survived"
     if f"--start-lr {RATES[arm][1]}" not in code:
         return f"FAILED: rate is not {RATES[arm][1]}"
-    if "${RESUME}" not in code or d["spec"]["backoffLimit"] != 3:
+    if "${RESUME}" not in code or d["spec"]["backoffLimit"] not in (3, 50):
         return "FAILED: did not inherit auto-resume"
     dst.write_text(text)
     return f"derived from s{base_seed} (lr={RATES[arm][1]}, seed={seed})"
@@ -309,8 +316,9 @@ def main() -> int:
                       f"{RATES[arm][3]}")
                 rc = 1
                 continue
+            seeds, _, base_tag = seeds.partition(":")
             for sd in [int(x) for x in seeds.split(",") if x]:
-                r = derive_seed(arm, 1, sd)
+                r = derive_seed(arm, 1, sd, base_tag or None)
                 print(f"job-mtx-{arm.lower()}-s{sd}-raunav.yaml   {r}")
                 rc |= r.startswith("FAILED")
         return rc
