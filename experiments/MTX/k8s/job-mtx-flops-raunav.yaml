@@ -1,0 +1,165 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Per-arm model size and forward cost for the paper's compute table
+  # (docs/RECORD.md 2.1, 2.3). Closes the open item "weaver --print counter per arm".
+  #
+  # Reports THREE numbers per arm, because the literature conflates them:
+  #   * trainable params and state_dict elements  -- ParT Table 4 says "trainable"
+  #   * weaver/ptflops MACs                       -- the number ParT Table 4's "340 M" IS
+  #   * fvcore MACs                               -- graph-traced, catches attention matmuls
+  #     that ptflops' module hooks miss
+  # Both counters run at N = 128 particles, which is what every arm config declares
+  # (`length: 128`), so the two are directly comparable and the gap is purely coverage.
+  #
+  # Also re-derives each number from the K = 10 anchor (params + (K-10)*513,
+  # MACs + (K-10)*512) and records whether the measurement agrees, so the derived
+  # per-arm table in RECORD.md stops being an inference.
+  #
+  # CPU ONLY -- takes no GPU from the training queue. ~5 min.
+  name: mtx-flops-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      containers:
+      - name: flops
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - name: REPO_REF
+          value: "mtx-s1.11"
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "${REPO_REF}" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          pip install --quiet fvcore 2>/dev/null || pip install fvcore
+          OUT=/data/results/mtx/flops
+          mkdir -p ${OUT}
+          python3 - <<'PYEOF' 2>&1 | tee ${OUT}/flops_by_arm.txt
+          import copy, importlib.util, json, os, subprocess, sys
+          import torch
+
+          try:
+              from weaver.utils.data.config import DataConfig
+          except Exception:
+              from weaver.utils.dataset import DataConfig
+          from weaver.utils.flops_counter import (get_model_complexity_info,
+                                                  flops_to_string, params_to_string)
+          from fvcore.nn import FlopCountAnalysis
+
+          # K = 10 anchor, measured by experiments/E1/k8s/job-e1-flops-raunav.yaml
+          # and stored at /data/results/e1/eval/flops.json.
+          MACS_ANCHOR_K10, PARAMS_ANCHOR_K10 = 326_638_704, 2_213_374
+
+          ARMS = [
+              ("L188",        "configs/arms/L188.yaml",        "mtx",  188),
+              ("L162",        "configs/arms/L162.yaml",        "mtx",  162),
+              ("R42_Q1",      "configs/arms/R42_Q1.yaml",      "mtx",   43),
+              ("R16_Q1",      "configs/arms/R16_Q1.yaml",      "mtx",   17),
+              ("L162_MASS",   "configs/arms/L162_MASS.yaml",   "mass", 162),
+              ("R16_Q1_MASS", "configs/arms/R16_Q1_MASS.yaml", "mass",  17),
+          ]
+
+          def load_arch(kind):
+              path = ("experiments/MTX/ParT_sophon_arch_mtx.py" if kind == "mtx"
+                      else "experiments/MTX/ParT_sophon_arch_mass.py")
+              spec = importlib.util.spec_from_file_location("arch_" + kind, path)
+              mod = importlib.util.module_from_spec(spec)
+              spec.loader.exec_module(mod)
+              return mod
+
+          rows = []
+          for arm, cfg, kind, k_arg in ARMS:
+              dc = DataConfig.load(cfg, load_observers=False)
+              arch = load_arch(kind)
+              kw = dict(num_classes=k_arg, fc_params=[(512, 0.1)])
+              if kind == "mass":
+                  # documented escape hatch: inspection only, never --predict
+                  kw["allow_without_hybrid"] = True
+              model, info = arch.get_model(dc, **kw)
+              model.eval()
+
+              k_out = k_arg + (1 if kind == "mass" else 0)
+              trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+              sd_elems = sum(v.numel() for v in model.state_dict().values())
+
+              shapes = info["input_shapes"]
+              names = info["input_names"]
+              n_particles = shapes[names[0]][-1]
+
+              # fvcore FIRST, on the pristine model, matching the K=10 anchor job's
+              # input convention (zeros except the mask).
+              f_ins = tuple((torch.ones(shapes[n]) if "mask" in n else torch.zeros(shapes[n]))
+                            for n in names)
+              fa = FlopCountAnalysis(model, f_ins)
+              fa.unsupported_ops_warnings(False); fa.uncalled_modules_warnings(False)
+              f_macs = int(fa.total())
+
+              # weaver's own convention, verbatim from weaver/train.py::flops -- including
+              # its deepcopy, because ptflops monkeypatches counting methods onto the model.
+              # One call only: as_strings=True is just these two formatters.
+              w_ins = tuple(torch.ones(shapes[n], dtype=torch.float32) for n in names)
+              w_macs, w_params = get_model_complexity_info(
+                  copy.deepcopy(model), w_ins, as_strings=False,
+                  print_per_layer_stat=False, verbose=False)
+              w_macs_s, w_params_s = flops_to_string(w_macs), params_to_string(w_params)
+
+              d_macs = MACS_ANCHOR_K10 + (k_out - 10) * 512
+              d_params = PARAMS_ANCHOR_K10 + (k_out - 10) * 513
+
+              rows.append(dict(
+                  arm=arm, arch=kind, num_classes_arg=k_arg, output_nodes=k_out,
+                  n_particles=int(n_particles),
+                  trainable_params=trainable, state_dict_elements=sd_elems,
+                  weaver_ptflops_macs=int(w_macs), weaver_ptflops_params=int(w_params),
+                  weaver_ptflops_macs_str=w_macs_s, weaver_ptflops_params_str=w_params_s,
+                  fvcore_macs=f_macs, fvcore_flops_2xmac=2 * f_macs,
+                  derived_fvcore_macs=d_macs, derived_trainable_params=d_params,
+                  fvcore_matches_derived=(f_macs == d_macs),
+                  params_match_derived=(trainable == d_params),
+              ))
+              print(f"{arm:<12} K_out={k_out:<4} trainable={trainable:>9,}  "
+                    f"weaver={w_macs_s:<12} fvcore={f_macs/1e6:7.1f} MMac  "
+                    f"derived_ok={f_macs == d_macs and trainable == d_params}", flush=True)
+
+          commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
+          out = dict(
+              repo_ref=os.environ.get("REPO_REF"), repo_commit=commit,
+              torch=torch.__version__,
+              anchor=dict(macs_k10=MACS_ANCHOR_K10, params_k10=PARAMS_ANCHOR_K10,
+                          source="/data/results/e1/eval/flops.json"),
+              convention=("weaver_ptflops_* is weaver/train.py::flops verbatim (ptflops MAC "
+                          "count, all-ones inputs) and is the quantity ParT Table 4 reports "
+                          "as FLOPs; fvcore_* is graph-traced and includes the attention "
+                          "matmuls ptflops' module hooks miss. Both at N=128. "
+                          "FLOPs = 2 x MAC."),
+              arms=rows)
+          json.dump(out, open("/data/results/mtx/flops/flops_by_arm.json", "w"), indent=2)
+          print("\nall arms agree with the K=10 derivation:",
+                all(r["fvcore_matches_derived"] and r["params_match_derived"] for r in rows))
+          PYEOF
+          echo "===== FLOPS BY ARM DONE -> /data/results/mtx/flops/flops_by_arm.json ====="
+        resources:
+          requests: { memory: "16Gi", cpu: "4" }
+          limits:   { memory: "16Gi", cpu: "4" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
