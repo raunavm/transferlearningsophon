@@ -42,7 +42,7 @@ spec:
         image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
         env:
         - name: REPO_REF
-          value: "ft-stage.5"
+          value: "ft-stage.6"
         command: ["/bin/bash", "-c"]
         args:
         - |

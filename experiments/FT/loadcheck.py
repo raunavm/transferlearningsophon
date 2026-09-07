@@ -75,6 +75,17 @@ def one_batch(config: str, files: list, batch: int = 512):
     return dc, X, y
 
 
+def label_of(dc, y):
+    """weaver names the label differently per label type.
+
+    `type: simple` registers a single `_label_` (config.py:107); `type: custom`
+    registers the keys of `labels.value`, so the JetClass-II arm configs expose
+    `truth_label`. Reading `_label_` unconditionally works on the benchmark
+    configs and KeyErrors on the control, which is how this was found.
+    """
+    return y[dc.label_names[0]].numpy()
+
+
 def filled_indices(dc):
     return [i for i, v in enumerate(dc.input_dicts["pf_features"]) if v.startswith(ZERO_PREFIX)]
 
@@ -95,7 +106,7 @@ def main() -> int:
         dc, X, y = one_batch(c["config"], files)
         feats = X["pf_features"].numpy()          # (N, C, P)
         mask = X["pf_mask"].numpy().astype(bool)  # (N, 1, P)
-        lab = y["_label_"].numpy()
+        lab = label_of(dc, y)
         idx = filled_indices(dc)
         real = np.broadcast_to(mask, feats.shape)
 
@@ -143,7 +154,7 @@ def main() -> int:
             got = Xm["pf_features"].numpy()
             if base.shape != got.shape:
                 fail.append(f"control {name}: shape {got.shape} != plain {base.shape}"); continue
-            same_jets = bool((yp["_label_"].numpy() == ym["_label_"].numpy()).all())
+            same_jets = bool((label_of(dcp, yp) == label_of(dcm, ym)).all())
             idx = filled_indices(dcm)
             differs = sorted({int(i) for i in np.where(
                 np.abs(base - got).max(axis=(0, 2)) > 0)[0]})
