@@ -1,0 +1,75 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # THE PUBLISHED-ANCHOR CALIBRATION -- docs/PRD_PLAN.md 6.3 and 8.1.
+  #
+  # Before any arm-wise rejection number is quoted, the PUBLIC Sophon checkpoint
+  # must reproduce the numbers its own authors published, using OUR discriminant
+  # construction, OUR selection and OUR ROC code:
+  #
+  #   arXiv:2503.00118 Table A1 (Sophon column), QCD rejection 1/eps_B
+  #     X->bb vs QCD   eps_S = 60 %    300        eps_S = 40 %    810
+  #     X->cc vs QCD   eps_S = 60 %    110        eps_S = 40 %    320
+  #
+  # WHY IT MATTERS THAT THIS RUNS FIRST. A bias in the evaluation code would be
+  # invisible internally: every arm would carry the same bias, so the ORDERING
+  # across arms -- which is the paper's claim -- could still look entirely sane
+  # while every absolute rejection was wrong. The published anchors are the only
+  # external reference that can catch it.
+  #
+  # Table A1 quotes two significant figures and its numbers come from the
+  # authors' own Delphes sample and selection, so agreement is judged on a 25 %
+  # relative tolerance. This asks "is our evaluation code right", not "is our
+  # test set theirs": a 2x miss is a bug, a 10 % miss is not.
+  #
+  # CPU-ONLY, ZERO GPU. Reads cached logits written by the E0b extraction; the
+  # 3 GB logits array is mmapped and consumed in 500k-row chunks.
+  name: eval-anchors-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: anchors
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.13" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+
+          FEAT=/data/results/eval/sophon-public/features_massreg
+          for f in logits.npy label188.npy observers.npz; do
+            [ -f "${FEAT}/${f}" ] || { echo "FATAL: no ${FEAT}/${f}"; exit 1; }
+          done
+
+          OUT=/data/results/eval/sophon-public
+          PYTHONUNBUFFERED=1 python3 experiments/EVAL/anchors.py \
+            --features ${FEAT} \
+            --out ${OUT}/anchors.json
+
+          echo "=== anchors.json ==="
+          cat ${OUT}/anchors.json
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "16Gi", cpu: "4", ephemeral-storage: "10Gi" }
+          limits:   { memory: "16Gi", cpu: "4", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
