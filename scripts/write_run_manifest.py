@@ -140,6 +140,9 @@ def main() -> int:
     ap.add_argument("--num-epochs", type=int, required=True)
     ap.add_argument("--batch-size", type=int, required=True)
     ap.add_argument("--lambda-mass", type=float, default=None)
+    ap.add_argument("--mpm-mask-rate", type=float, default=None,
+                    help="MPMv2 mask rate. Present only on the self-supervised arm; "
+                         "its --num-classes is 0 because it has no classification head.")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
 
@@ -258,6 +261,12 @@ def main() -> int:
             "amp_enabled": True,
             "lambda_mass": a.lambda_mass,
             "mass_head": a.lambda_mass is not None,
+            # What this run actually minimises. Without it an MPM manifest reads
+            # as a classification arm that somehow has K = 0.
+            "pretraining_objective": (
+                "mpm_v2_regression_plus_id" if a.mpm_mask_rate is not None
+                else "cross_entropy" + ("_plus_logcosh_mass" if a.lambda_mass is not None else "")),
+            "mpm_mask_rate": a.mpm_mask_rate,
         },
 
         "compute": {
@@ -279,7 +288,8 @@ def main() -> int:
 
     p = manifest["provenance"]
     print(f"manifest -> {out}")
-    print(f"  arm={a.arm} K={a.num_classes} seed={a.seed}")
+    print(f"  arm={a.arm} K={a.num_classes} seed={a.seed}"
+          + (f" mpm_mask_rate={a.mpm_mask_rate}" if a.mpm_mask_rate is not None else ""))
     print(f"  weights_block_sha256={(p['weights_block_sha256'] or 'NONE')[:16]}")
     print(f"  gpu={manifest['hardware']['gpu_device_name']} "
           f"nodelabel={manifest['hardware']['gpu_product_nodelabel']}")

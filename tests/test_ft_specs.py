@@ -230,7 +230,9 @@ def test_every_live_spec_records_each_attempt():
     live = [p for p in MTX.glob("job-mtx-*-raunav.yaml")
             if p.name not in frozen
             and not any(tok in p.name for tok in NON_TRAINING)]
-    assert len(live) == 24, sorted(p.name for p in live)
+    # 24 matrix arms + the MPM self-supervised arm (item 17), which is a real
+    # training run and so must carry the same attempt records as the rest.
+    assert len(live) == 25, sorted(p.name for p in live)
     for p in live:
         _, _, code = _spec(p)
         for token in ("attempts.log", "ln -s ${OUT}/tb ./runs", ".prev.json"):

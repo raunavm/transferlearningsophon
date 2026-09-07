@@ -155,6 +155,24 @@ RATES = {
                     "the rate is R16_Q1's, by construction -- see L162_MASS; "
                     "R16_Q1's 5e-4 is bracketed on both sides, so the twin "
                     "inherits a bracketed rate."),
+    # K = 0: the self-supervised arm builds no classification head at all.
+    # Not swept, and deliberately so. The G1 sweep bracketed 5e-4 for a
+    # CROSS-ENTROPY objective; MPM minimises L1 + CE over masked particles, so
+    # that evidence does not transfer and this rate is inherited, not measured.
+    # It is inherited anyway because the arm's job is to be a DENOMINATOR: it
+    # must be matched to the supervised arms on unique jets, optimizer steps and
+    # tuning budget, and giving the SSL arm a swept rate while the supervised
+    # arms carry an inherited one would hand it an advantage the comparison then
+    # could not separate from self-supervision. If it FAILS the pre-registered
+    # bar (item 17: macro AUC >= 0.95 and Rej_bb >= 100), the documented tuning
+    # budget is spent BEFORE the failure is reported, because an untuned SSL run
+    # landing in the known collapse regime is evidence about our implementation
+    # and not about self-supervision.
+    "MPM": (0, "5e-4", False,
+            "inherited from the supervised arms, not swept: matching the "
+            "denominator to the arms on tuning budget matters more than "
+            "optimising it, and G1's bracket was measured on a cross-entropy "
+            "objective this arm does not use."),
 }
 
 SEEDS = [1]
