@@ -372,7 +372,12 @@ def main() -> int:
             feats.append(tap.buf.float().cpu().numpy().astype(np.float32))
             if args.save_logits:
                 logits.append(head_out.float().cpu().numpy().astype(np.float32))
-            labels.append(y["truth_label"].cpu().numpy().astype(np.int16))
+            # weaver names the label per label type: `custom` registers the keys of
+            # labels.value (the arms' truth_label), `simple` registers a single
+            # `_label_` (utils/data/config.py:107). Hardcoding truth_label KeyErrors
+            # on the benchmark configs, which are `simple` -- the same defect
+            # experiments/FT/loadcheck.py hit on the masking control.
+            labels.append(y[data_config.label_names[0]].cpu().numpy().astype(np.int16))
             for k in observers:
                 if k in Z:
                     obs[k].append(np.asarray(Z[k]).astype(np.float32))
