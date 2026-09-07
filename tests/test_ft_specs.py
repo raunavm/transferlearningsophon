@@ -30,6 +30,7 @@ def _spec(path: pathlib.Path):
 
 
 ALL = ["job-ft-subsets-jc2-raunav.yaml", "job-ft-subsets-jc1-raunav.yaml",
+       "job-ft-subsets-bench-raunav.yaml",
        "job-ft-smoke-raunav.yaml", "job-ft-legs-raunav.yaml"]
 
 

@@ -146,6 +146,32 @@ SUBSETS_JC2 = PREAMBLE + """
           ls -la ${OUT}; du -sh ${OUT}
 """
 
+SUBSETS_BENCH = PREAMBLE + """
+          # The two published benchmarks (legs 3 and 4), staged by
+          # scripts/stage_downstream.py into /data/finetune/{top,qg}.
+          for D in top qg; do
+            [ -d /data/finetune/${D} ] || { echo "FATAL: /data/finetune/${D} not staged"; exit 1; }
+          done
+""" + SPACE_GUARD + """
+          # top ships train/val/test. qg ships 20 chunks of 100,000 with no split;
+          # make_subsets splits them 16/2/2, which is the 1.6M/200k/200k that
+          # ParticleNet (1902.08570) calls the recommended splitting.
+          #
+          # The shuffle inside make_subsets is load-bearing here, not hygiene:
+          # top_train stores its rows in blocks of 10 sharing a label, so a
+          # contiguous window's class fraction is sqrt(10) times noisier than an
+          # iid draw (MEASURED 3.01x at N=1e3, 3.12x at N=1e4), and the first
+          # 1,000 rows of the file are 46.0% top. Cutting the small-N points off
+          # the front would bias the headline cell of the scaling curve, with
+          # nothing erroring. tests/test_bench_subsets.py binds this.
+          for D in top qg; do
+            python3 experiments/FT/make_subsets.py bench --dataset ${D} \\
+              --src /data/finetune/${D} --out /data/finetune/${D}_sub \\
+              --sizes 10000 100000 1000000 --seeds 1 2 3 --val-size 200000
+            ls -la /data/finetune/${D}_sub; du -sh /data/finetune/${D}_sub
+          done
+"""
+
 SUBSETS_JC1 = PREAMBLE + """
           OUT=/data/finetune/jc1
           [ -f ${OUT}/DONE ] && { echo "already built:"; head -40 ${OUT}/manifest.json; exit 0; }
@@ -485,6 +511,12 @@ def build(pin: str) -> dict[str, str]:
             "ft-subsets-jc1-raunav", _fill(SUBSETS_JC1, pin), gpu=False, cpu="4",
             memory="32Gi", shm="4Gi", backoff=1, pin=pin,
             header=h + "  # Nested fine-tuning subsets from JetClass-I (leg 2). CPU.\n"),
+        "job-ft-subsets-bench-raunav.yaml": job(
+            "ft-subsets-bench-raunav", _fill(SUBSETS_BENCH, pin), gpu=False, cpu="4",
+            memory="48Gi", shm="4Gi", backoff=1, pin=pin,
+            header=h + "  # Nested subsets for the two published benchmarks, top and q/g\n"
+                       "  # (legs 3 and 4). CPU. A ~1.2M-row pool is held in memory and\n"
+                       "  # shuffled, hence 48Gi, as the JetClass-II subset job.\n"),
         "job-ft-smoke-raunav.yaml": job(
             "ft-smoke-raunav", _fill(SMOKE, pin), gpu=False, cpu="4", memory="32Gi",
             shm="4Gi", backoff=0, pin=pin,
@@ -525,8 +557,22 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--pin", default=PIN)
     ap.add_argument("--check-only", action="store_true")
+    # A spec on disk can carry edits this generator does not know about: the node
+    # exclusions scripts/exclude_node.py appends, a raised attempt_ok threshold, a
+    # provenance note, a pin moved past the generator's default. Regenerating the
+    # whole set silently reverts them -- it did, to job-ft-legs on 2026-09-07,
+    # dropping REPO_REF from mtx-s1.11 to mtx-s1.10 while that job was running.
+    # Name what to write when only one spec is meant to change.
+    ap.add_argument("--only", nargs="+", metavar="NAME",
+                    help="write only these spec files (substring match on the name)")
     args = ap.parse_args()
     specs = build(args.pin)
+    if args.only:
+        keep = {n: t for n, t in specs.items() if any(k in n for k in args.only)}
+        missing = [k for k in args.only if not any(k in n for n in specs)]
+        if missing:
+            sys.exit(f"FATAL: --only matched nothing for {missing}; have {sorted(specs)}")
+        specs = keep
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for name, text in specs.items():
         if not args.check_only:

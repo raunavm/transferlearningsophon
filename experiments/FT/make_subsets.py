@@ -58,6 +58,19 @@ SEEDS = [1, 2, 3]
 VAL_SEED = 0
 DATE_SALT = 20260905
 
+# --- the two published benchmarks (legs 3 and 4) -----------------------------
+# top ships its own train/val/test parquet (1,211,000 / 403,000 / 404,000).
+# qg (EnergyFlow) ships 20 chunks of 100,000 with NO split. ParticleNet
+# (1902.08570, "Quark-gluon tagging"): "This dataset consists of 2 million jets
+# in total, half signal and half background. We follow the recommended
+# splitting of 1.6M/200k/200k for training, validation and testing." -- exactly
+# 16/2/2 chunks. Every chunk is 50.00% quark (measured on 0,1,9,18,19), so the
+# chunk-aligned split is unbiased and needs no re-sharding.
+QG_TRAIN_CHUNKS = list(range(16))
+QG_VAL_CHUNKS = [16, 17]
+QG_TEST_CHUNKS = [18, 19]
+QG_CHUNK_ROWS = 100_000
+
 
 def rng_for(seed: int, purpose: str) -> np.random.Generator:
     """One generator per (seed, purpose); the salt keeps it distinct from every
@@ -211,6 +224,73 @@ def build_jc1(train_dir: str, val_dir: str, out: pathlib.Path, sizes, seeds,
     return manifest
 
 
+def qg_chunk(src: pathlib.Path, i: int) -> str:
+    return str(src / f"qg_chunk{i}.parquet")
+
+
+def bench_test_files(dataset: str, src: str) -> list[str]:
+    """The held-out test files of a benchmark, as the legs must read them."""
+    p = pathlib.Path(src)
+    if dataset == "top":
+        return [str(p / "top_test.parquet")]
+    return [qg_chunk(p, i) for i in QG_TEST_CHUNKS]
+
+
+def build_bench(dataset: str, src: str, out: pathlib.Path, sizes: list[int],
+                seeds: list[int], val_size: int) -> dict:
+    """Nested subsets for a published benchmark (legs 3 and 4).
+
+    THE SHUFFLE IS LOAD-BEARING, not hygiene. The top reference dataset stores
+    its rows in blocks of 10 that share a label (longest run 180; measured on
+    top_train.parquet), so a prefix of the file is class-skewed: 46.0% top over
+    the first 1,000 rows against 50.0% over the file. nested_prefixes shuffles
+    once per seed and cuts prefixes of that one shuffle, so every N is an
+    unbiased draw and the nesting still holds. The recorded label_frac per
+    subset is the evidence that it worked.
+    """
+    srcp = pathlib.Path(src)
+    out.mkdir(parents=True, exist_ok=True)
+    manifest = {"mode": "bench", "dataset": dataset, "sizes": sizes, "seeds": seeds,
+                "test_files": bench_test_files(dataset, src), "per_seed": {}, "val": {}}
+    need = max(sizes)
+    for seed in seeds:
+        rng = rng_for(seed, "train")
+        if dataset == "top":
+            files = [str(srcp / "top_train.parquet")]
+        else:
+            # Read enough chunks to cover N_max with one chunk of margin, so the
+            # seeds do not all draw from an identical pool.
+            k = min(len(QG_TRAIN_CHUNKS), -(-need // QG_CHUNK_ROWS) + 1)
+            files = [qg_chunk(srcp, i) for i in
+                     sorted(rng.choice(QG_TRAIN_CHUNKS, size=k, replace=False))]
+        pool = pa.concat_tables([pq.read_table(f) for f in files])
+        if pool.num_rows < need:
+            sys.exit(f"FATAL: {dataset} seed {seed}: pool {pool.num_rows:,} < N_max {need:,}")
+        fracs = {}
+        for n, tbl in nested_prefixes(pool, sizes, rng).items():
+            pq.write_table(tbl, out / f"train_N{n}_s{seed}.parquet")
+            f = float(pc.mean(tbl.column("label")).as_py())
+            if abs(f - 0.5) > 0.05:
+                sys.exit(f"FATAL: {dataset} N={n} s={seed}: signal fraction {f:.4f}, "
+                         f"expected ~0.50 -- the pool was not shuffled")
+            fracs[str(n)] = round(f, 4)
+        manifest["per_seed"][str(seed)] = {"files": files, "pool_rows": pool.num_rows,
+                                           "label_frac": fracs}
+        print(f"seed {seed}: pool {pool.num_rows:,} rows from {len(files)} file(s), "
+              f"label_frac {fracs}", flush=True)
+
+    rng = rng_for(VAL_SEED, "val")
+    vfiles = ([str(srcp / "top_val.parquet")] if dataset == "top"
+              else [qg_chunk(srcp, i) for i in QG_VAL_CHUNKS])
+    vpool = pa.concat_tables([pq.read_table(f) for f in vfiles])
+    k = min(val_size, vpool.num_rows)
+    val = nested_prefixes(vpool, [k], rng)[k]
+    pq.write_table(val, out / "val.parquet")
+    manifest["val"] = {"files": vfiles, "pool_rows": vpool.num_rows, "rows": val.num_rows,
+                       "label_frac": round(float(pc.mean(val.column("label")).as_py()), 4)}
+    return manifest
+
+
 def finish(out: pathlib.Path, manifest: dict) -> None:
     manifest["written_utc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     manifest["outputs"] = {p.name: pq.read_metadata(p).num_rows
@@ -237,7 +317,12 @@ def main(argv=None) -> int:
     b.add_argument("--val-dir", required=True)
     b.add_argument("--files-per-class", type=int, default=2)
     b.add_argument("--val-per-class", type=int, default=20_000)
-    for p in (a, b):
+    c = sub.add_parser("bench")
+    c.add_argument("--dataset", choices=["top", "qg"], required=True)
+    c.add_argument("--src", required=True,
+                   help="staged directory written by scripts/stage_downstream.py")
+    c.add_argument("--val-size", type=int, default=200_000)
+    for p in (a, b, c):
         p.add_argument("--out", required=True)
         p.add_argument("--sizes", type=int, nargs="+", default=SIZES)
         p.add_argument("--seeds", type=int, nargs="+", default=SEEDS)
@@ -251,9 +336,11 @@ def main(argv=None) -> int:
     if args.mode == "jc2":
         m = build_jc2(args.train_files, args.val_files, out, sizes, args.seeds,
                       args.n_files, args.take_fraction, args.val_size, args.n_val_files)
-    else:
+    elif args.mode == "jc1":
         m = build_jc1(args.train_dir, args.val_dir, out, sizes, args.seeds,
                       args.files_per_class, args.val_per_class)
+    else:
+        m = build_bench(args.dataset, args.src, out, sizes, args.seeds, args.val_size)
     finish(out, m)
     return 0
 
