@@ -97,11 +97,16 @@ spec:
           git rev-parse HEAD
           pip install --no-cache-dir -q pyarrow || exit 1
 
-          CKPT={ckpt_dir}/net_best_epoch_state.pt
-          # weaver writes net_best_epoch_state.pt from ITS OWN best-epoch rule.
-          # If it is absent the run did not finish, and extracting from the last
-          # epoch instead would silently probe a different model than the one
-          # every other number refers to.
+          CKPT={ckpt_dir}/{ckpt_file}
+          # CHECKPOINT RULE (DECISIONS_PENDING item 18, decided 2026-09-07).
+          # For the mtx arms this is net_epoch-79_state.pt -- the LAST epoch --
+          # not weaver's net_best_epoch_state.pt. weaver's best marker is the
+          # argmax over ~80 validation scores that each read a DIFFERENT slice
+          # of the validation split: per-epoch SD is 0.047-0.075 with 4-11
+          # epochs tied inside 0.02 of the maximum, so the epoch it lands on
+          # (78, 74, 64, 76, 58 across the five R16_Q1 seeds) is slice luck.
+          # Using it would make TRAINING DURATION an uncontrolled variable
+          # across seeds. If the file is absent the run did not finish.
           [ -f "${{CKPT}}" ] || {{ echo "FATAL: no ${{CKPT}}. Run unfinished?"; ls -la {ckpt_dir} | head -20; exit 1; }}
 
           # features_v2, NOT features. The file list was interleaved by family
@@ -189,10 +194,13 @@ def interleaved_files() -> str:
     return " ".join(out)
 
 
-def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int) -> tuple[str, str]:
+def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
+          ckpt_epoch: int | None = 79) -> tuple[str, str]:
     name = run_id.replace("_", "-").lower()
     text = TEMPLATE.format(
         run_id=run_id, arm=arm, k=k, ckpt_dir=ckpt_dir, image=IMAGE, pin=PIN,
+        ckpt_file=(f"net_epoch-{ckpt_epoch}_state.pt" if ckpt_epoch is not None
+                   else "net_best_epoch_state.pt"),
         name=name + ("-gpu" if gpu else ""),
         device_note=("GPU build." if gpu else
                      "CPU-ONLY ON PURPOSE. Extraction is a forward pass, so a "
@@ -218,6 +226,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gpu", action="store_true")
     ap.add_argument("--max-jets", type=int, default=0)
+    # item 18: the paper checkpoint is the last epoch. Pass --ckpt-epoch '' to
+    # restore the best-epoch file for a gate whose numbers are already published.
+    ap.add_argument("--ckpt-epoch", type=int, default=79)
     # Build a subset. The concurrency cap in CLAUDE.md is 5 running jobs, and
     # RUNS is longer than that, so emitting all of them at once would either
     # breach the cap or leave un-launched YAML lying around that looks launched.
@@ -254,12 +265,14 @@ def main() -> int:
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for run_id, arm, k, ckpt in runs:
-        fname, text = build(run_id, arm, k, ckpt, args.gpu, args.max_jets)
+        fname, text = build(run_id, arm, k, ckpt, args.gpu, args.max_jets,
+                            args.ckpt_epoch)
         d = yaml.safe_load(text)
         body = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
         for must in (f"--num-classes {k}", f"--arm {arm}",
                      "configs/data/JetClassII_base.yaml",
-                     "net_best_epoch_state.pt"):
+                     f"net_epoch-{args.ckpt_epoch}_state.pt"
+                     if args.ckpt_epoch is not None else "net_best_epoch_state.pt"):
             if must not in body:
                 sys.exit(f"FATAL: {fname} missing {must!r}")
         res = d["spec"]["template"]["spec"]["containers"][0]["resources"]

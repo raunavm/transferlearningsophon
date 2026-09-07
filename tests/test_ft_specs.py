@@ -102,9 +102,20 @@ def test_leg1_readout_uses_the_papers_exact_test_jets():
 
 def test_legs_design_matches_item_14():
     from build_ft_jobs import EPOCHS, FT_SEEDS, INITS, LR_PRETRAINED, LR_SCRATCH, SIZES
+    raw = (FT / "job-ft-legs-raunav.yaml").read_text()
     _, _, code = _spec(FT / "job-ft-legs-raunav.yaml")
+    # The running job predates item 18 and loads the best-epoch checkpoint; the
+    # generator now emits the last epoch. That divergence is DECLARED on the spec
+    # and must stay declared -- everything else about the design still has to match,
+    # so only the checkpoint FILENAME is allowed to differ.
+    lagging = "CKPT-EXCEPTION:" in raw
     for name, ckpt, k in INITS:
-        assert f"{name}:{ckpt}:{k}" in code
+        entry = f"{name}:{ckpt}:{k}"
+        if entry in code:
+            continue
+        assert lagging, f"{entry} missing and no CKPT-EXCEPTION declared"
+        legacy = entry.replace("net_epoch-79_state.pt", "net_best_epoch_state.pt")
+        assert legacy in code, f"neither {entry} nor its best-epoch form is in the spec"
     assert {n for n, _, _ in INITS} == {"r16q1-s2", "r16q1-s3", "r16q1-s4", "l162-s1b", "sophon-public", "scratch"}
     assert SIZES == [10_000, 100_000, 1_000_000] and FT_SEEDS == [1, 2, 3]
     assert EPOCHS == {10_000: 50, 100_000: 30, 1_000_000: 10}

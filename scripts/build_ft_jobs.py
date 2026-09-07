@@ -70,10 +70,10 @@ JC1_CLASSES = "HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJ
 
 # name : checkpoint : K of that checkpoint's head (0 = from scratch)
 INITS = [
-    ("r16q1-s2", "/data/results/mtx/mtx-r16q1-s2/net_best_epoch_state.pt", 17),
-    ("r16q1-s3", "/data/results/mtx/mtx-r16q1-s3/net_best_epoch_state.pt", 17),
-    ("r16q1-s4", "/data/results/mtx/mtx-r16q1-s4/net_best_epoch_state.pt", 17),
-    ("l162-s1b", "/data/results/mtx/mtx-l162-s1b/net_best_epoch_state.pt", 162),
+    ("r16q1-s2", "/data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt", 17),
+    ("r16q1-s3", "/data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt", 17),
+    ("r16q1-s4", "/data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt", 17),
+    ("l162-s1b", "/data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt", 162),
     ("sophon-public", "/workspace/sophon_public.pt", 188),
     ("scratch", "", 0),
 ]
@@ -169,7 +169,7 @@ SMOKE = PREAMBLE + """
           S=/data/results/ft/smoke/$(date -u +%Y%m%dT%H%M%SZ)
           mkdir -p ${S}
           python3 -c "import weaver, torch, awkward, uproot; print('weaver', getattr(weaver, '__version__', '?'), 'torch', torch.__version__, 'awkward', awkward.__version__, 'uproot', uproot.__version__)"
-          CKPT=/data/results/mtx/mtx-r16q1-s2/net_best_epoch_state.pt
+          CKPT=/data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt
           [ -f "${CKPT}" ] || { echo "FATAL: no ${CKPT}"; exit 1; }
           # --gpus "" on EVERY weaver call: it defaults to GPU 0 and model_setup does
           # model.to(device) before anything else (see job-mtx-makeweight-raunav).

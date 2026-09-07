@@ -68,7 +68,19 @@ OUT_DIR = ROOT / "experiments/EVAL/k8s"
 EVAL_MEMORY = "120Gi"
 
 
-def build(gate: str, run_id: str, arm: str, k: int, pin: str) -> tuple[str, str]:
+# CHECKPOINT RULE (DECISIONS_PENDING item 18, decided 2026-09-07). The
+# paper's pretraining checkpoint is the LAST epoch, not weaver's
+# net_best_epoch_state.pt. weaver's best marker is the argmax over ~80
+# validation scores that each read a different slice of the val split:
+# per-epoch SD is 0.047-0.075 with 4-11 epochs tied inside 0.02 of the
+# maximum, so the epoch it lands on (78, 74, 64, 76, 58 across the five
+# R16_Q1 seeds) is slice luck, and using it would make TRAINING DURATION
+# an uncontrolled variable across seeds. Finished gates (e1, g1) keep the
+# best-epoch path: their numbers are published and are not rewritten here.
+
+
+def build(gate: str, run_id: str, arm: str, k: int, pin: str,
+          ckpt_epoch: int | None = None) -> tuple[str, str]:
     text = SRC.read_text()
     name = f"eval-{run_id}"
 
@@ -97,7 +109,9 @@ def build(gate: str, run_id: str, arm: str, k: int, pin: str) -> tuple[str, str]
     test_files = ("/jc2/jet_data/Res2P_{0250..0299}.parquet "
                   "/jc2/jet_data/Res34P_{1075..1289}.parquet "
                   "/jc2/jet_data/QCD_{0350..0419}.parquet")
-    block = f"""          CKPT={ckpt}_best_epoch_state.pt
+    tail = (f"_epoch-{ckpt_epoch}_state.pt" if ckpt_epoch is not None
+            else "_best_epoch_state.pt")
+    block = f"""          CKPT={ckpt}{tail}
           [ -s "${{CKPT}}" ] || {{ echo "FATAL: no checkpoint at ${{CKPT}}"; exit 1; }}
           echo "evaluating ${{CKPT}}"
 
@@ -139,11 +153,17 @@ def main() -> int:
     ap.add_argument("arm")
     ap.add_argument("k", type=int)
     ap.add_argument("--pin", default="mtx-s1.1")
+    ap.add_argument("--ckpt-epoch", type=int, default=None,
+                    help="load net_epoch-N_state.pt instead of the best-epoch file")
     a = ap.parse_args()
 
     if not SRC.exists():
         sys.exit(f"FATAL: {SRC} not found")
-    fname, text = build(a.gate, a.run_id, a.arm, a.k, a.pin)
+    if a.gate == "mtx" and a.ckpt_epoch is None:
+        sys.exit("FATAL: --ckpt-epoch is required for the mtx gate "
+                 "(DECISIONS_PENDING item 18: the paper checkpoint is the last "
+                 "epoch, 79 for an 80-epoch arm, not weaver's best-epoch file).")
+    fname, text = build(a.gate, a.run_id, a.arm, a.k, a.pin, a.ckpt_epoch)
 
     d = yaml.safe_load(text)
     name = d["metadata"]["name"]
