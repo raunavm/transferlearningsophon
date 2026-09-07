@@ -38,7 +38,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s1.15" \
+          git clone --depth 1 --branch "mtx-s1.17" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
