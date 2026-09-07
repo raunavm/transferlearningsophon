@@ -40,7 +40,7 @@ import torch
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 ARCH = ROOT / "experiments" / "MTX" / "ParT_sophon_arch_mtx.py"
-ZERO = "part_zero"
+ZERO_PREFIX = "part_zero_"
 
 CASES = [
     dict(name="TopReference", config="configs/finetune/TopReference.yaml",
@@ -76,7 +76,7 @@ def one_batch(config: str, files: list, batch: int = 512):
 
 
 def filled_indices(dc):
-    return [i for i, v in enumerate(dc.input_dicts["pf_features"]) if v == ZERO]
+    return [i for i, v in enumerate(dc.input_dicts["pf_features"]) if v.startswith(ZERO_PREFIX)]
 
 
 def main() -> int:

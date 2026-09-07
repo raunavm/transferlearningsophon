@@ -42,7 +42,8 @@ def _slots(path):
 
 
 def _zero_indices(path):
-    return {i for i, (name, _) in enumerate(_slots(path)) if name == bdc.ZERO_VAR}
+    return {i for i, (name, _) in enumerate(_slots(path))
+            if name.startswith(bdc.ZERO_PREFIX)}
 
 
 @pytest.mark.parametrize("name", sorted(bdc.FILLS))
@@ -62,7 +63,7 @@ def test_control_differs_from_the_arm_only_in_the_masked_slots(name):
     masked = _zero_indices(FT / f"JetClassII_L162_mask{name}.yaml")
     for i, (a, c) in enumerate(zip(arm, ctrl)):
         if i in masked:
-            assert c[0] == bdc.ZERO_VAR
+            assert c[0].startswith(bdc.ZERO_PREFIX)
             assert c[1] == a[1], f"slot {i}: standardization changed by masking"
         else:
             assert a == c, f"slot {i} differs from the arm but is not declared masked"
@@ -87,7 +88,7 @@ def test_every_filled_slot_maps_raw_zero_to_network_zero(name):
     paper does not describe.
     """
     for i, (var, params) in enumerate(_slots(FT / f"{name}.yaml")):
-        if var != bdc.ZERO_VAR:
+        if not var.startswith(bdc.ZERO_PREFIX):
             continue
         if not params or params[0] is None:
             continue                                   # no transform -> 0
@@ -161,3 +162,40 @@ def test_signal_class_is_last(name):
     val = yaml.safe_load((FT / f"{name}.yaml").read_text())["labels"]["value"]
     signal = {"TopReference": "label_Top", "EnergyFlowQG": "label_quark"}[name]
     assert val[-1] == signal, f"{name}: signal {signal} must be the last class, got {val}"
+
+
+@pytest.mark.parametrize("path", sorted(FT.glob("*.yaml")), ids=lambda p: p.name)
+def test_no_variable_carries_two_different_standardizations(path):
+    """weaver keys standardization by variable NAME and refuses a name that
+    appears twice with different transforms:
+
+        RuntimeError: Incompatible info for variable part_zero, had:
+          {... 'center': None, 'scale': 1, 'min': -5, 'max': 5 ...}
+        now got:
+          {... 'center': 0, 'scale': 1, 'min': 0, 'max': 1 ...}
+
+    That is why the fill uses one zero variable PER REPLACED FEATURE rather than
+    a single shared `part_zero`: the PID slots are `null` and the d0err/dzerr
+    slots are `0, 1, 0, 1`. This ran on the cluster before it ran here; the test
+    exists so the next such collision fails locally in 0.1 s instead.
+    """
+    d = yaml.safe_load(path.read_text())
+    seen = {}
+    for group, blk in d.get("inputs", {}).items():
+        for v in blk.get("vars", []):
+            name, params = (v[0], tuple(v[1:])) if isinstance(v, list) else (v, ())
+            if name in seen and seen[name] != params:
+                pytest.fail(f"{path.name}: {name} appears as {seen[name]} and {params}; "
+                            "weaver will refuse to load this config")
+            seen[name] = params
+
+
+@pytest.mark.parametrize("name", sorted(bdc.FILLS))
+def test_every_zero_variable_is_defined_once_in_new_variables(name):
+    for p in (FT / f"{name}.yaml", FT / f"JetClassII_L162_mask{name}.yaml"):
+        d = yaml.safe_load(p.read_text())
+        nv = d.get("new_variables", {})
+        for var, _ in _slots(p):
+            if var.startswith(bdc.ZERO_PREFIX):
+                assert var in nv, f"{p.name}: {var} used but never defined"
+                assert "zeros_like" in nv[var], f"{p.name}: {var} is not a zero"

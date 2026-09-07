@@ -4,9 +4,12 @@
 # EnergyFlow quark/gluon, Zenodo 3164691 (Pythia)
 #
 # ZERO-FILL: 4 of the 17 per-particle features are absent from this
-# dataset, because constituents carry (pt, y, phi, pdgid), so type and charge are recoverable in the 'exp' scenario, but the sample is generator level with no tracking and therefore no impact parameters. Each absent slot reads `part_zero`
-# (= ak.zeros_like(part_energy)) while keeping the arms' standardization
-# parameters, under all of which a raw 0 maps to a network input of 0.
+# dataset, because constituents carry (pt, y, phi, pdgid), so type and charge are recoverable in the 'exp' scenario, but the sample is generator level with no tracking and therefore no impact parameters. Each absent slot reads its own
+# `part_zero_<feature>` (= ak.zeros_like(part_energy)) while keeping the arms'
+# standardization parameters, under all of which a raw 0 maps to a network input
+# of 0. One variable per feature and not one shared `part_zero`: weaver keys
+# standardization by variable name and rejects a name used with two different
+# transforms, and these slots carry two.
 #
 # Filled: part_d0, part_d0err, part_dz, part_dzerr
 #
@@ -24,7 +27,10 @@ selection:
    ### would change what the benchmark row means.
 
 new_variables:
-   part_zero: ak.zeros_like(part_energy)
+   part_zero_d0: ak.zeros_like(part_energy)
+   part_zero_d0err: ak.zeros_like(part_energy)
+   part_zero_dz: ak.zeros_like(part_energy)
+   part_zero_dzerr: ak.zeros_like(part_energy)
 
    part_mask: ak.ones_like(part_energy)
 
@@ -72,10 +78,10 @@ inputs:
          - [part_isPhoton, null]
          - [part_isElectron, null]
          - [part_isMuon, null]
-         - [part_zero, null]   # zero-filled: part_d0
-         - [part_zero, 0, 1, 0, 1]   # zero-filled: part_d0err
-         - [part_zero, null]   # zero-filled: part_dz
-         - [part_zero, 0, 1, 0, 1]   # zero-filled: part_dzerr
+         - [part_zero_d0, null]   # zero-filled: part_d0
+         - [part_zero_d0err, 0, 1, 0, 1]   # zero-filled: part_d0err
+         - [part_zero_dz, null]   # zero-filled: part_dz
+         - [part_zero_dzerr, 0, 1, 0, 1]   # zero-filled: part_dzerr
          - [part_deta, null]
          - [part_dphi, null]
    pf_vectors:

@@ -62,7 +62,25 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "configs" / "finetune"
 ARM_L162 = ROOT / "configs" / "arms" / "L162.yaml"
 
-ZERO_VAR = "part_zero"
+ZERO_PREFIX = "part_zero_"
+
+
+def zero_name(var: str) -> str:
+    """One zero variable per replaced feature, e.g. part_zero_d0err.
+
+    NOT one shared `part_zero`. weaver keys standardization by variable NAME and
+    refuses a name that appears with two different transforms
+    (weaver/utils/data/config.py:94, "Incompatible info for variable"). Our
+    filled slots carry two: the PID slots are `null` and the d0err/dzerr slots
+    are `0, 1, 0, 1`. A single shared name therefore fails to load -- caught by
+    experiments/FT/loadcheck.py before any GPU time.
+
+    Per-feature names are better than the alternative of collapsing every filled
+    slot onto one transform: each slot keeps the arms' own standardization, so
+    the fill stays numerically identical to the unfilled pipeline, and the
+    variable name records which feature it stands in for.
+    """
+    return ZERO_PREFIX + var.removeprefix("part_")
 
 # The 17 pf_features slots, in the arms' order, with the arms' standardization.
 # Re-derived from configs/arms/L162.yaml by tests/test_downstream_fill.py, which
@@ -120,9 +138,12 @@ HEADER = """# {name}
 # {source}
 #
 # ZERO-FILL: {n_missing} of the 17 per-particle features are absent from this
-# dataset, because {why}. Each absent slot reads `{zero}`
-# (= ak.zeros_like(part_energy)) while keeping the arms' standardization
-# parameters, under all of which a raw 0 maps to a network input of 0.
+# dataset, because {why}. Each absent slot reads its own
+# `part_zero_<feature>` (= ak.zeros_like(part_energy)) while keeping the arms'
+# standardization parameters, under all of which a raw 0 maps to a network input
+# of 0. One variable per feature and not one shared `part_zero`: weaver keys
+# standardization by variable name and rejects a name used with two different
+# transforms, and these slots carry two.
 #
 # Filled: {missing}
 #
@@ -156,8 +177,7 @@ CONTROL_HEADER = """# {name}
 
 NEW_VARIABLES_COMMON = """
 new_variables:
-   {zero}: ak.zeros_like(part_energy)
-
+{zeros}
    part_mask: ak.ones_like(part_energy)
 
    ## scaled vectors (jet rescaled so pT = 500 GeV) -- Sophon yaml:12-20
@@ -176,10 +196,14 @@ new_variables:
 """
 
 
+def _zero_defs(missing) -> str:
+    return "".join(f"   {zero_name(v)}: ak.zeros_like(part_energy)\n" for v in missing)
+
+
 def _feature_lines(missing) -> str:
     out = []
     for var, std in FEATURES:
-        name = ZERO_VAR if var in missing else var
+        name = zero_name(var) if var in missing else var
         tail = f"   # zero-filled: {var}" if var in missing else ""
         out.append(f"         - [{name}, {std}]{tail}")
     return "\n".join(out)
@@ -219,7 +243,7 @@ def downstream(name: str, spec: dict) -> str:
     missing = spec["missing"]
     head = HEADER.format(
         name=f"configs/finetune/{name}.yaml", source=spec["source"],
-        n_missing=len(missing), why=spec["why"], zero=ZERO_VAR,
+        n_missing=len(missing), why=spec["why"],
         missing=", ".join(missing),
         control=f"configs/finetune/JetClassII_L162_mask{name}.yaml")
     sel = ("selection:\n"
@@ -235,7 +259,7 @@ def downstream(name: str, spec: dict) -> str:
     # integer label is expanded into one indicator per class here.
     ind = "".join(f"   {k}: {v}\n" for k, v in cls.items())
     return (head + "\n" + sel
-            + NEW_VARIABLES_COMMON.format(zero=ZERO_VAR)
+            + NEW_VARIABLES_COMMON.format(zeros=_zero_defs(missing))
             + "\n   ## class indicators (weaver argmaxes over these)\n" + ind
             + "\npreprocess:\n  method: manual\n  data_fraction: 0.5\n"
             + _inputs_block(missing)
@@ -258,8 +282,7 @@ def control(name: str, spec: dict, arm_text: str) -> str:
         body = body[:i] + (body[j:] if j != -1 else "\n")
     # define the zero variable next to part_mask, which every config has
     body = body.replace("   part_mask: ak.ones_like(part_energy)",
-                        f"   {ZERO_VAR}: ak.zeros_like(part_energy)\n"
-                        "   part_mask: ak.ones_like(part_energy)", 1)
+                        _zero_defs(missing) + "\n   part_mask: ak.ones_like(part_energy)", 1)
     # mask exactly the declared slots, in place
     for var, std in FEATURES:
         if var not in missing:
@@ -268,7 +291,7 @@ def control(name: str, spec: dict, arm_text: str) -> str:
         if old not in body:
             raise SystemExit(f"build_downstream_configs: slot {old!r} not found in "
                              f"{ARM_L162} -- FEATURES has drifted from the arm config")
-        body = body.replace(old, f"         - [{ZERO_VAR}, {std}]   # masked: {var}", 1)
+        body = body.replace(old, f"         - [{zero_name(var)}, {std}]   # masked: {var}", 1)
     return head + "\n" + body
 
 

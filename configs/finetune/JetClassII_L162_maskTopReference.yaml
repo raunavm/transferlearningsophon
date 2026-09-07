@@ -32,7 +32,17 @@ selection:
 new_variables:
    ### [format] name: formula
    ### can use functions from `math`, `np` (numpy), and `awkward` in the expression
-   part_zero: ak.zeros_like(part_energy)
+   part_zero_charge: ak.zeros_like(part_energy)
+   part_zero_isChargedHadron: ak.zeros_like(part_energy)
+   part_zero_isNeutralHadron: ak.zeros_like(part_energy)
+   part_zero_isPhoton: ak.zeros_like(part_energy)
+   part_zero_isElectron: ak.zeros_like(part_energy)
+   part_zero_isMuon: ak.zeros_like(part_energy)
+   part_zero_d0: ak.zeros_like(part_energy)
+   part_zero_d0err: ak.zeros_like(part_energy)
+   part_zero_dz: ak.zeros_like(part_energy)
+   part_zero_dzerr: ak.zeros_like(part_energy)
+
    part_mask: ak.ones_like(part_energy)
 
    ## calculating scaled vectors
@@ -117,16 +127,16 @@ inputs:
          - [part_logptrel, -4.7, 0.7]
          - [part_logerel, -4.7, 0.7]
          - [part_deltaR, 0.2, 4.0]
-         - [part_zero, null]   # masked: part_charge
-         - [part_zero, null]   # masked: part_isChargedHadron
-         - [part_zero, null]   # masked: part_isNeutralHadron
-         - [part_zero, null]   # masked: part_isPhoton
-         - [part_zero, null]   # masked: part_isElectron
-         - [part_zero, null]   # masked: part_isMuon
-         - [part_zero, null]   # masked: part_d0
-         - [part_zero, 0, 1, 0, 1]   # masked: part_d0err
-         - [part_zero, null]   # masked: part_dz
-         - [part_zero, 0, 1, 0, 1]   # masked: part_dzerr
+         - [part_zero_charge, null]   # masked: part_charge
+         - [part_zero_isChargedHadron, null]   # masked: part_isChargedHadron
+         - [part_zero_isNeutralHadron, null]   # masked: part_isNeutralHadron
+         - [part_zero_isPhoton, null]   # masked: part_isPhoton
+         - [part_zero_isElectron, null]   # masked: part_isElectron
+         - [part_zero_isMuon, null]   # masked: part_isMuon
+         - [part_zero_d0, null]   # masked: part_d0
+         - [part_zero_d0err, 0, 1, 0, 1]   # masked: part_d0err
+         - [part_zero_dz, null]   # masked: part_dz
+         - [part_zero_dzerr, 0, 1, 0, 1]   # masked: part_dzerr
          - [part_deta, null]
          - [part_dphi, null]
    pf_vectors:
