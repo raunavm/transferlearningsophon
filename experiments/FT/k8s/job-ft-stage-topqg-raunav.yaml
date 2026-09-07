@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Hand-written 2026-09-07 (docs/PRD_PLAN.md section 8, action 7). NOT APPLIED.
+  #
+  # Stage the two community benchmarks the paper's top-tagging and q/g rows need,
+  # in the ParT-converted parquet layout (weaver-ready), from the tarballs that
+  # jet-universe/particle_transformer's get_datasets.py pins by md5:
+  #   TopLandscape.tar  4fca2e47afbf321b0f201da6b804c404  (Zenodo 2603256 converted)
+  #   QuarkGluon.tar    d8dd7f71a7aaaf9f1d2ee3cddef998f9  (Zenodo 3164691 converted)
+  # ~3 GB total, CPU only, writes /data/downstream/{TopLandscape,QuarkGluon}.
+  # The Herwig q/g companion (Zenodo 3066475) is not in the ParT tarball and is
+  # staged separately once the Pythia row exists.
+  name: ft-stage-topqg-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT=/data/downstream
+          mkdir -p "${OUT}"
+          [ -f "${OUT}/DONE" ] && { echo "already staged:"; cat "${OUT}/DONE"; exit 0; }
+          FREE_G=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9)
+          echo "free on /data: ${FREE_G}G"
+          [ "${FREE_G}" -ge 50 ] || { echo "FATAL: ${FREE_G}G free on /data, need 50G"; exit 1; }
+          fetch () {  # name url md5
+            local tar="${OUT}/$1.tar"
+            curl -fsSL --retry 5 -o "${tar}" "$2"
+            echo "$3  ${tar}" | md5sum -c - || { echo "FATAL: md5 mismatch for $1"; exit 1; }
+            mkdir -p "${OUT}/$1" && tar -xf "${tar}" -C "${OUT}/$1" && rm -f "${tar}"
+            echo "$1: $(find "${OUT}/$1" -type f | wc -l) files, $(du -sh "${OUT}/$1" | cut -f1)"
+          }
+          fetch TopLandscape https://hqu.web.cern.ch/datasets/TopLandscape/TopLandscape.tar 4fca2e47afbf321b0f201da6b804c404
+          fetch QuarkGluon   https://hqu.web.cern.ch/datasets/QuarkGluon/QuarkGluon.tar     d8dd7f71a7aaaf9f1d2ee3cddef998f9
+          find "${OUT}" -maxdepth 3 | sort | head -60
+          date -u +%FT%TZ > "${OUT}/DONE"
+        resources:
+          requests: { memory: "8Gi", cpu: "2", ephemeral-storage: "10Gi" }
+          limits:   { memory: "16Gi", cpu: "4", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      volumes:
+      - name: data
+        persistentVolumeClaim: { claimName: transfer-learning-vol }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - { key: topology.kubernetes.io/region, operator: In, values: ["us-west"] }
