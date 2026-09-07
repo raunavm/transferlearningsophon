@@ -1,0 +1,85 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Stage the two benchmark sets that are NOT yet on the PVC, into the branch
+  # schema the pretrained trunk's data configs read.
+  #
+  #   Top Quark Tagging Reference   Zenodo 2603256   1.74 GB   ~2.0 M jets
+  #   EnergyFlow q/g (Pythia)       Zenodo 3164691   2.13 GB   ~2.0 M jets
+  #
+  # Both file lists were verified against the Zenodo API on 2026-09-07, not
+  # recalled: the top record holds exactly train/val/test .h5, and the q/g record
+  # holds 40 files of which we take the 20 PLAIN ones (QG_jets.npz +
+  # QG_jets_1..19.npz) and not QG_jets_withbc_*.npz -- the plain sample excludes
+  # b/c-initiated jets and is what every result we are compared against reports.
+  #
+  # THE ONE THING THAT COULD SILENTLY RUIN THESE ROWS is the deta/dphi
+  # convention. part_deta and part_dphi are RAW branches in JetClass-I and -II,
+  # so a converter has to reproduce them; a wrong convention still trains and
+  # still shows a falling loss. Measured on 100,000 jets of QCD_0000.parquet:
+  #     part_deta = (part_eta - jet_eta) * sign(jet_eta)   agrees to 4.8e-07
+  #     part_dphi = wrap(part_phi - jet_phi)               agrees to 4.2e-07
+  # and the sign-flipped/unflipped alternatives are off by 6.44 and 2.18. The
+  # flip applies to eta and NOT to phi. scripts/stage_downstream.py encodes
+  # exactly that, refuses to write a sample that looks pre-centred on the jet
+  # axis (where the flip would mirror half the jets at random), and dumps
+  # per-feature summary statistics so a convention error shows as a shifted
+  # distribution before any GPU time is spent.
+  #
+  # CPU ONLY. ~4 GB downloaded, ~10 GB written, against 443 GB free at 57 % use.
+  name: ft-stage-downstream-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 172800
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: stage
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - name: REPO_REF
+          value: "ft-stage.1"
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "${REPO_REF}" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          python3 -c "import tables" 2>/dev/null || pip install --quiet tables
+
+          df -h /data | tail -1
+
+          for DS in top qg; do
+            echo "===== staging ${DS} ====="
+            python3 scripts/stage_downstream.py \
+              --dataset ${DS} \
+              --out /data/finetune/${DS} \
+              --raw /data/finetune/_raw
+          done
+
+          echo "===== staged ====="
+          # No inline python here on purpose: an embedded heredoc at column 0
+          # inside a YAML block scalar terminates the scalar early and the spec
+          # fails to parse. stage_downstream.py already prints per-split jet
+          # counts, median |jet_eta| and the feature summaries; this just shows
+          # what landed and leaves the JSON for the reader.
+          for DS in top qg; do
+            echo "--- ${DS}"
+            ls -la /data/finetune/${DS}/*.parquet | head -5
+            cat /data/finetune/${DS}/staging_stats.json | head -40
+          done
+          df -h /data | tail -1
+          echo "===== STAGE DOWNSTREAM DONE ====="
+        resources:
+          requests: { memory: "32Gi", cpu: "4" }
+          limits:   { memory: "32Gi", cpu: "4" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
