@@ -40,7 +40,7 @@ spec:
         image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
         env:
         - name: REPO_REF
-          value: "ft-stage.1"
+          value: "ft-stage.2"
         command: ["/bin/bash", "-c"]
         args:
         - |
@@ -49,7 +49,12 @@ spec:
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
-          python3 -c "import tables" 2>/dev/null || pip install --quiet tables
+          # pyarrow is NOT in the image -- every MTX training spec installs it
+          # explicitly for the same reason (job-mtx-l188-s1-raunav.yaml:71), and
+          # the first attempt at this job died on exactly that. `tables` is the
+          # HDF5 backend pandas needs for the top set's .h5 files.
+          pip install --no-cache-dir -q pyarrow || exit 1
+          pip install --no-cache-dir -q tables || exit 1
 
           df -h /data | tail -1
 
