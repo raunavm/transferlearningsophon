@@ -219,9 +219,10 @@ def test_every_live_spec_records_each_attempt():
               f"job-mtx-r16_q1-s{s}-raunav.yaml" for s in range(1, 6)}
     # Jobs in this directory that TRAIN NOTHING and so have no checkpoint, no
     # resume decision and no tensorboard to preserve: the reweighting builders,
-    # the scheduling/IO probes, the FLOPs counter and the inventory job. Matched
-    # by substring on purpose -- a new probe should not need a test edit.
-    NON_TRAINING = ("makeweight", "probe", "flops", "inventory")
+    # the scheduling/IO probes, the FLOPs counter, the inventory job, hardware
+    # benchmarks and the MPM forward/backward smoke test. Matched by substring on
+    # purpose -- a new probe should not need a test edit.
+    NON_TRAINING = ("makeweight", "probe", "flops", "inventory", "gpubench", "smoke")
     # ft-legs is not in this list: it writes one directory per leg, each with its
     # own ft_manifest.json (node, GPU, commit, checkpoint sha256) on the PVC as
     # the leg starts, and it renames an interrupted leg to .partial rather than

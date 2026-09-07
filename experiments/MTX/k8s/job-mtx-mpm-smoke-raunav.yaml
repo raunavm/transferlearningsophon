@@ -1,0 +1,200 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # MPM forward/backward smoke test in the TRAINING IMAGE, on synthetic inputs.
+  #
+  # tests/test_mpm.py covers the masking, the type+charge map and the p_T rank
+  # without weaver. What it cannot cover is everything that needs weaver's Block
+  # and the real trunk, which is where the objective can be silently wrong:
+  #
+  #   1. LEAKAGE. The whole of MPM is that the encoder must not see the dropped
+  #      particles. This job perturbs ONLY the dropped particles' features and
+  #      asserts the encoder output at the surviving positions is bit-identical.
+  #      If masking leaked, the model would still train and the loss would still
+  #      fall -- it would just be solving a much easier problem, and the arm would
+  #      understate the label-free floor, which is the one number it exists to set.
+  #   2. TRUNK IDENTITY (I5). The pretrained trunk must be the SAME module the
+  #      supervised arms use, or the SSL arm is not their denominator. Asserts the
+  #      trunk's parameter names and shapes are exactly a supervised arm's, minus
+  #      the classification head.
+  #   3. That it actually learns: 30 steps on ONE fixed batch must drive the loss
+  #      down. A masking bug that reconstructed padding would sit flat.
+  #
+  # CPU ONLY -- takes no GPU from the training queue. ~10 min.
+  name: mtx-mpm-smoke-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      containers:
+      - name: smoke
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - name: REPO_REF
+          value: "mtx-mpm.1"
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "${REPO_REF}" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          OUT=/data/results/mtx/mpm_smoke
+          mkdir -p ${OUT}
+          python3 - <<'PYEOF' 2>&1 | tee ${OUT}/smoke.txt
+          import importlib.util, json, os, subprocess
+          import torch
+
+          try:
+              from weaver.utils.data.config import DataConfig
+          except Exception:
+              from weaver.utils.dataset import DataConfig
+
+          def load(name, path):
+              spec = importlib.util.spec_from_file_location(name, path)
+              m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+              return m
+
+          mpm = load("mpm", "experiments/MTX/mpm.py")
+          mpm.install()                       # sets MPM_INSTALLED for the arch guard
+          arch_mpm = load("arch_mpm", "experiments/MTX/ParT_sophon_arch_mpm.py")
+          arch_sup = load("arch_sup", "experiments/MTX/ParT_sophon_arch_mtx.py")
+
+          CFG = "configs/arms/L188.yaml"
+          dc = DataConfig.load(CFG, load_observers=False)
+          torch.manual_seed(0)
+          model, info = arch_mpm.get_model(dc)
+          sup, _ = arch_sup.get_model(dc, num_classes=188, fc_params=[(512, 0.1)])
+          model.eval()
+
+          shapes = {n: info["input_shapes"][n] for n in info["input_names"]}
+          N, P = 8, shapes[info["input_names"][0]][-1]
+          def batch(seed):
+              g = torch.Generator().manual_seed(seed)
+              X = {}
+              for n in info["input_names"]:
+                  s = (N,) + tuple(shapes[n][1:])
+                  X[n] = torch.rand(s, generator=g) if "mask" not in n else torch.ones(s)
+              # a ragged, realistic jet: 20-60 real particles
+              nreal = torch.randint(20, 60, (N,), generator=g)
+              m = torch.zeros(N, 1, P)
+              for i, k in enumerate(nreal): m[i, 0, :k] = 1
+              X["pf_mask"] = m
+              # one-hot particle types + integer charge, as the released data has them
+              vs = list(dc.input_dicts['pf_features'])
+              ti = [vs.index(v) for v in mpm._TYPE_VARS]
+              f = X["pf_features"]
+              f[:, ti, :] = 0.0
+              pick = torch.randint(0, len(ti), (N, P), generator=g)
+              for b in range(N):
+                  for p in range(P): f[b, ti[pick[b, p]], p] = 1.0
+              f[:, vs.index("part_charge"), :] = torch.randint(
+                  -1, 2, (N, P), generator=g).float()
+              return X
+
+          X = batch(1)
+          ins = [X[n] for n in info["input_names"]]
+          res = {}
+
+          # ---- 1. LEAKAGE -------------------------------------------------------
+          # Freeze the draw so both passes drop the same particles, then perturb ONLY
+          # the dropped ones. A leak-free encoder gives bit-identical output.
+          torch.manual_seed(7)
+          with torch.no_grad():
+              mod = model.trunk.mod
+              mod.trimmer.enabled = False          # keep positions comparable
+              x, v, m, _ = mod.trimmer(ins[1], ins[2], ins[3], None)
+              d = mpm.draw_mask(m, model.mask_rate)
+              enc_mask = m & ~d.unsqueeze(1)
+              z0, _ = model.encode(x, v, enc_mask)
+              x2 = x.clone()
+              x2.permute(0, 2, 1)[d] += 5.0        # perturb ONLY dropped particles
+              z1, _ = model.encode(x2, v, enc_mask)
+              kept = (m.squeeze(1).bool() & ~d)
+              same = torch.equal(z0.permute(1, 0, 2)[kept], z1.permute(1, 0, 2)[kept])
+              maxdiff = (z0 - z1).abs().max().item()
+          res["encoder_blind_to_dropped"] = bool(same)
+          res["encoder_maxdiff_when_dropped_perturbed"] = maxdiff
+          print(f"[1] encoder blind to dropped particles: {same}  (max|dz| = {maxdiff:.3e})")
+          mod.trimmer.enabled = True
+
+          # ---- 2. TRUNK IDENTITY (I5) ------------------------------------------
+          mine = {k.replace("trunk.", "", 1): tuple(v.shape)
+                  for k, v in model.named_parameters() if k.startswith("trunk.")}
+          theirs = {k: tuple(v.shape) for k, v in sup.named_parameters()}
+          head = {k for k in theirs if k.startswith("mod.fc.")}
+          ok_trunk = mine == {k: v for k, v in theirs.items() if k not in head}
+          res["trunk_matches_supervised_arm"] = bool(ok_trunk)
+          res["trunk_params"] = sum(p.numel() for p in model.trunk.parameters())
+          res["decoder_params"] = sum(p.numel() for p in model.decoder.parameters())
+          res["supervised_head_params"] = sum(
+              p.numel() for k, p in sup.named_parameters() if k in head)
+          print(f"[2] trunk identical to the supervised arm (minus fc): {ok_trunk}")
+          print(f"    trunk {res['trunk_params']:,} | decoder {res['decoder_params']:,} "
+                f"| supervised fc head {res['supervised_head_params']:,}")
+          if not ok_trunk:
+              print("    only in MPM:", sorted(set(mine) - set(theirs))[:8])
+              print("    only in sup:", sorted(set(theirs) - set(mine) - head)[:8])
+
+          # ---- 3. IT LEARNS -----------------------------------------------------
+          model.train()
+          opt = torch.optim.AdamW(model.parameters(), lr=1e-3)
+          losses = []
+          for step in range(30):
+              opt.zero_grad()
+              pc, pi, tc, ti = model(*ins)
+              loss, l1, ce = model.loss(pc, pi, tc, ti)
+              loss.backward(); opt.step()
+              losses.append(loss.item())
+              if step % 10 == 0:
+                  print(f"    step {step:3d}  loss {loss.item():.4f}  "
+                        f"L1 {l1.item():.4f}  CE {ce.item():.4f}")
+          fell = losses[-1] < losses[0]
+          res["loss_first"], res["loss_last"] = losses[0], losses[-1]
+          res["loss_decreased"] = bool(fell)
+          print(f"[3] loss {losses[0]:.4f} -> {losses[-1]:.4f} over 30 steps: {fell}")
+
+          # ---- 4. the pretrained trunk loads into the supervised model ----------
+          sd = {k.replace("trunk.", "", 1): v for k, v in model.state_dict().items()
+                if k.startswith("trunk.")}
+          missing, unexpected = sup.load_state_dict(sd, strict=False)
+          ok_load = all(k.startswith("mod.fc.") for k in missing) and not unexpected
+          res["trunk_loads_into_supervised"] = bool(ok_load)
+          res["missing_on_load"] = list(missing)[:8]
+          res["unexpected_on_load"] = list(unexpected)[:8]
+          print(f"[4] trunk loads into the supervised arm (only fc missing): {ok_load}")
+
+          res["repo_commit"] = subprocess.check_output(
+              ["git", "rev-parse", "HEAD"]).decode().strip()
+          res["repo_ref"] = os.environ.get("REPO_REF")
+          res["mask_rate"] = model.mask_rate
+          res["torch"] = torch.__version__
+          json.dump(res, open("/data/results/mtx/mpm_smoke/smoke.json", "w"), indent=2)
+
+          bad = [k for k in ("encoder_blind_to_dropped", "trunk_matches_supervised_arm",
+                             "loss_decreased", "trunk_loads_into_supervised") if not res[k]]
+          print("\nALL CHECKS PASSED" if not bad else f"\nFAILED: {bad}")
+          raise SystemExit(1 if bad else 0)
+          PYEOF
+          echo "===== MPM SMOKE DONE -> /data/results/mtx/mpm_smoke/smoke.json ====="
+        resources:
+          requests: { memory: "16Gi", cpu: "4" }
+          limits:   { memory: "16Gi", cpu: "4" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
