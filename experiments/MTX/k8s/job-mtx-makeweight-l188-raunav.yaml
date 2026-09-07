@@ -83,7 +83,10 @@ spec:
           # and the training jobs resolve to different commits, the arm configs
           # differ, the md5s differ, and every training job fails its sidecar
           # guard -- loudly, but only after this whole pass has been paid for.
-          git clone --depth 1 --branch mtx-s1.3 \
+          # Repinned 2026-09-07 from mtx-s1.3 to the wave tag; configs/arms/L188.yaml
+          # is byte-identical at both (git diff mtx-s1.3 mtx-s1.10 -- configs/arms/L188.yaml is empty),
+          # so the sidecar md5 the training spec expects is unchanged.
+          git clone --depth 1 --branch mtx-s1.10 \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon

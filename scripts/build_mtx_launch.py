@@ -111,6 +111,16 @@ RATES = {
              "epoch 12 and the 80-epoch run from epoch 56: the sweep gives a "
              "too-hot rate only 12 flat epochs to misbehave and is biased HIGH. "
              "Of two tied rates at 20% budget, the lower is safer at 100%."),
+    # L188 differs from L162 only in the 27 QCD sub-labels: a pure loss change,
+    # zero sampling change (configs/labelmaps/contraction_tree.v1.yaml). It is
+    # the SAME head-size regime, so it takes L162's rate and L162's bracketing
+    # status; sweeping it separately would put a second variable on the
+    # 188-vs-162 step. Added 2026-09-07 when the PI asked for five controlled
+    # seeds at the released vocabulary rather than the public checkpoint alone.
+    "L188": (188, "5e-4", False,
+             "the rate is L162's, by construction: 188 and 162 differ by a pure "
+             "loss change on the background sub-labels and share the head-size "
+             "regime, so a rate of its own would confound the finest step."),
     "R16_Q1": (17, "5e-4", True,
                "2.5e-4 0.77917 < 5e-4 0.78277 > 1e-3 0.75986 at seed 1, and "
                "2.5e-4 0.76598 < 5e-4 0.76697 at seed 2 -- same ordering at "
