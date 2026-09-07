@@ -164,14 +164,21 @@ SUBSETS_BENCH = PREAMBLE + """
           # 1,000 rows of the file are 46.0% top. Cutting the small-N points off
           # the front would bias the headline cell of the scaling curve, with
           # nothing erroring. tests/test_bench_subsets.py binds this.
+          sizes_for () { case $1 in
+            top) echo "1000 10000 100000 1200000";;
+            qg)  echo "1000 10000 100000 1600000";;
+            *) echo "FATAL: no grid for $1" >&2; exit 1;; esac; }
           for D in top qg; do
-            # N=1e3 is in the grid by DECISIONS_PENDING item 16(e) ("add N = 1e3
-            # to every sweep"): it is the cell where a pretrained trunk should
-            # separate from scratch most sharply, and it is the cell the block
-            # structure would have hurt most.
+            # docs/PRD_PLAN.md 4.1: top {1e3, 1e4, 1e5, 1.2e6} (2606.14870's grid),
+            # q/g {1e3, 1e4, 1e5, 1.6e6}. N_max is each benchmark's OWN training
+            # split -- 1,211,000 for top and 16 x 100,000 for q/g -- so the two
+            # rows drop into the community tables rather than a size we invented.
+            # N=1e3 is in the grid because every N-sweep paper reaches it and the
+            # vocabulary effect is predicted largest there; it is also the cell the
+            # block structure would have damaged most (SD 0.048 unshuffled).
             python3 experiments/FT/make_subsets.py bench --dataset ${D} \\
               --src /data/finetune/${D} --out /data/finetune/${D}_sub \\
-              --sizes 1000 10000 100000 1000000 --seeds 1 2 3 --val-size 200000
+              --sizes $(sizes_for ${D}) --seeds 1 2 3 --val-size 200000
             ls -la /data/finetune/${D}_sub; du -sh /data/finetune/${D}_sub
           done
 """
@@ -517,10 +524,12 @@ def build(pin: str) -> dict[str, str]:
             header=h + "  # Nested fine-tuning subsets from JetClass-I (leg 2). CPU.\n"),
         "job-ft-subsets-bench-raunav.yaml": job(
             "ft-subsets-bench-raunav", _fill(SUBSETS_BENCH, pin), gpu=False, cpu="4",
-            memory="48Gi", shm="4Gi", backoff=1, pin=pin,
+            memory="64Gi", shm="4Gi", backoff=1, pin=pin,
             header=h + "  # Nested subsets for the two published benchmarks, top and q/g\n"
-                       "  # (legs 3 and 4). CPU. A ~1.2M-row pool is held in memory and\n"
-                       "  # shuffled, hence 48Gi, as the JetClass-II subset job.\n"),
+                       "  # (legs 3 and 4). CPU. q/g N_max is its whole 1.6M-jet training\n"
+                       "  # split, held in memory and then COPIED by the shuffle, so the\n"
+                       "  # peak is roughly twice the pool: 64Gi, not the 48Gi that sizes\n"
+                       "  # the 1.2M-row JetClass-II job.\n"),
         "job-ft-smoke-raunav.yaml": job(
             "ft-smoke-raunav", _fill(SMOKE, pin), gpu=False, cpu="4", memory="32Gi",
             shm="4Gi", backoff=0, pin=pin,

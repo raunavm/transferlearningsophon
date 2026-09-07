@@ -164,7 +164,13 @@ def test_the_emitted_job_builds_the_grid_item_16e_specifies():
         pytest.skip("bench subsets spec not generated")
     args = yaml.safe_load(spec.read_text())["spec"]["template"]["spec"][
         "containers"][0]["args"][0]
-    m = re.search(r"--sizes ([\d ]+?) --seeds", args)
-    assert m, "no --sizes in the emitted spec"
-    assert [int(x) for x in m.group(1).split()] == [1_000, 10_000, 100_000, 1_000_000]
+    # docs/PRD_PLAN.md 4.1 gives each benchmark its OWN N_max: top's is
+    # 2606.14870's 1.2e6 and q/g's is its whole 1.6M training split. A single
+    # shared grid would silently retire the top end of both community tables.
+    grids = dict(re.findall(r"(top|qg)\)\s+echo \"([\d ]+)\"", args))
+    assert [int(x) for x in grids["top"].split()] == [1_000, 10_000, 100_000, 1_200_000]
+    assert [int(x) for x in grids["qg"].split()] == [1_000, 10_000, 100_000, 1_600_000]
+    # q/g N_max must be exactly the chunk-aligned training split, not a round number.
+    assert int(grids["qg"].split()[-1]) == len(ms.QG_TRAIN_CHUNKS) * ms.QG_CHUNK_ROWS
+    assert "--sizes $(sizes_for ${D})" in args
     assert "--dataset ${D}" in args and "for D in top qg" in args
