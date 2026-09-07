@@ -205,7 +205,11 @@ def test_every_live_spec_records_each_attempt():
     # Frozen: the runs that are finished or superseded (their spec records the
     # tag their pod cloned) and the jobs that do not train.
     frozen = {"job-mtx-inventory-raunav.yaml", "job-mtx-l162-s1-raunav.yaml",
-              "job-mtx-l162-s1b-raunav.yaml", "job-mtx-probe-l40-raunav.yaml"} | {
+              "job-mtx-l162-s1b-raunav.yaml", "job-mtx-probe-l40-raunav.yaml",
+              # CPU-only, trains nothing: counts params and per-jet MACs for the
+              # six arm configs and exits (docs/RECORD.md 2.1). No checkpoints,
+              # so no resume decision and no tensorboard to preserve.
+              "job-mtx-flops-raunav.yaml"} | {
               f"job-mtx-r16_q1-s{s}-raunav.yaml" for s in range(1, 6)}
     # ft-legs is not in this list: it writes one directory per leg, each with its
     # own ft_manifest.json (node, GPU, commit, checkpoint sha256) on the PVC as

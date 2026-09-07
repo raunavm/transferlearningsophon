@@ -127,11 +127,21 @@ RATES = {
                "both seeds. Bracketed on both sides. The 1e-3 deficit "
                "(0.01931) is 1.22x the noise floor; the 2.5e-4 gap is inside "
                "it."),
-    "R42_Q1": (43, "2.5e-4", False,
-               "2.5e-4 0.70721 is the ONLY point that trained. 5e-4 and 1e-3 "
-               "both went nan at iteration 2 then hit a CUDA device-side "
-               "assert. Nothing was run BELOW 2.5e-4, so this is an upper "
-               "bound on the trainable range, not a located optimum."),
+    # RATE RE-CORRECTED 2.5e-4 -> 5e-4 on 2026-09-07 (PI go-ahead). The entry
+    # below used to read "2.5e-4 is the ONLY point that trained", which this
+    # file's own header already contradicts: g1-r42q1-lr5e4-s2 ran 16/16 clean
+    # at 5e-4. The tie is also wider than it looked -- the 0.0158 floor came
+    # from best-of-16 validation accuracy whose per-epoch SD measures 0.047-0.075
+    # (scripts/checkpoint_selection_noise.py), so this sweep could not separate
+    # rates within ~2x. With the rates indistinguishable, I1 decides: 5e-4 makes
+    # the entire ladder single-rate.
+    "R42_Q1": (43, "5e-4", False,
+               "5e-4 0.70123 (seed 2, 16/16 clean) vs 2.5e-4 0.70721 (seed 1): "
+               "a 0.006 gap, unresolvable against a per-epoch SD of 0.047-0.075, "
+               "and confounded by seed. Both rates are trainable; the seed-1 nan "
+               "at iteration 2 is stochastic and bounds nothing, as the RATES "
+               "header note says. Chosen to match every other arm so the "
+               "granularity contrast varies vocabulary ALONE (I1)."),
     # The mass-auxiliary twins (DECISIONS_PENDING item 14, addendum 2). A twin
     # MUST share its arm's rate: the 2x2 varies one output node and the loss
     # term that trains it, and a separately-swept rate would put a second

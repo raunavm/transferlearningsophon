@@ -51,6 +51,30 @@ metadata:
   # cannot recover it and the job would crash-loop through all 50 retries. Of two
   # tied rates, take the one with a seed-1 run that finished.
   #
+  #
+  # RATE RE-CORRECTED 2.5e-4 -> 5e-4 on 2026-09-07, on the PI's go-ahead, and this
+  # is the I1 repair for this rung. Two things changed since the block above.
+  # (1) The measurement that block calls a tie really is one, and by a wider
+  #     margin than it knew: the 0.0158 "floor" it compares against was derived
+  #     from best-of-16 validation accuracy, whose per-epoch SD is measured at
+  #     0.047-0.075 on six completed runs (scripts/checkpoint_selection_noise.py,
+  #     DECISIONS_PENDING item 18). The sweep could not separate rates within a
+  #     factor of about two, so "each arm at its own optimum" was never something
+  #     the data supported for this arm.
+  # (2) With the rates indistinguishable, the only remaining difference between
+  #     keeping and changing is I1: at 2.5e-4 this rung varies vocabulary AND
+  #     learning rate together, which is exactly the defect repaired for L162 on
+  #     2026-08-27. Every other arm -- L188, L162, R16_Q1 and both mass twins --
+  #     runs 5e-4, so this one change makes the whole ladder single-rate.
+  # The operational argument above stands and is accepted with eyes open: a nan
+  # at iteration 2 lands before the first checkpoint, so auto-resume cannot catch
+  # it. It is visible within minutes of a pod starting. If seed 1 diverges, stop
+  # and decide -- do NOT quietly return this one seed to 2.5e-4, because a
+  # single-seed rate exception inside an arm is worse than the arm-level one it
+  # would be replacing.
+  # Timing: four of the five seeds had never started when this was applied, so
+  # the change cost ~9 GPU-h (seed 1 at epoch 7 of 80) instead of the ~500 it
+  # would have cost once they were running.
   # This arm therefore differs in rate from L162 and R16_Q1 (both 5e-4). That
   # difference is DECLARED in RATES and asserted by tests/test_launch_specs.py;
   # it is not the silent drift that broke the headline pair. Any contrast
@@ -195,7 +219,7 @@ spec:
           # writes them separately, and resuming from a state file whose
           # optimizer is missing only WARNS and then trains on with a fresh
           # optimizer -- silent corruption of a momentum-based run.
-          RECIPE='lr=2.5e-4 epochs=80'
+          RECIPE='lr=5e-4 epochs=80'
           RESUME=""
           LAST_EP=-1
           for f in ${OUT}/net_epoch-*_state.pt; do
@@ -243,7 +267,7 @@ spec:
             --no-remake-weights \
             --network-config experiments/MTX/ParT_sophon_arch_mtx.py \
             -o num_classes 43 -o fc_params '[(512,0.1)]' \
-            --use-amp --batch-size 512 --start-lr 2.5e-4 \
+            --use-amp --batch-size 512 --start-lr 5e-4 \
             --num-workers 2 --fetch-by-files --fetch-step 5 \
             --samples-per-epoch 10240000 --samples-per-epoch-val 1280000 \
             --num-epochs 80 ${RESUME} --optimizer ranger \
