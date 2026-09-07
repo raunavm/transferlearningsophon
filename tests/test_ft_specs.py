@@ -72,10 +72,14 @@ def test_only_the_legs_job_asks_for_a_gpu_and_it_is_pinned():
 
 
 def test_all_wave_jobs_share_one_pin():
+    """The LIVE training wave clones one tag. Completed one-off jobs (smoke,
+    subsets) keep the pin they ran at, and the benchmark staging job clones
+    nothing, so the list is explicit rather than a glob (2026-09-07)."""
     pins = set()
-    for p in list(FT.glob("job-ft-*-raunav.yaml")) + [
-            MTX / "job-mtx-l162_mass-s1-raunav.yaml", MTX / "job-mtx-r16_q1_mass-s1-raunav.yaml",
-            MTX / "job-mtx-r42_q1-s1-raunav.yaml", MTX / "job-mtx-makeweight-mass-raunav.yaml"]:
+    for p in [FT / "job-ft-legs-raunav.yaml",
+              MTX / "job-mtx-l162_mass-s1-raunav.yaml", MTX / "job-mtx-r16_q1_mass-s1-raunav.yaml",
+              MTX / "job-mtx-r42_q1-s1-raunav.yaml", MTX / "job-mtx-l188-s1-raunav.yaml",
+              MTX / "job-mtx-l162-s2-raunav.yaml"]:
         assert p.exists(), f"{p.name} is not generated: the wave is incomplete"
         d, c, code = _spec(p)                       # executed lines only, not comments
         m = re.search(r'--branch (?:"\$\{REPO_REF\}"|(\S+))', code)
@@ -180,6 +184,43 @@ def test_jc1_subsets_file_count_survives_pipefail():
     assert "JetClass-I files missing on the PVC" in code
 
 
+# The attempt-records block (scripts/add_run_records.py, 2026-09-07) is a
+# mechanical edit applied to every spec whose job is still to run. Specs of
+# COMPLETED runs are deliberately left frozen, so they record the code and the
+# tag their run actually cloned. The arm contrast is therefore compared with
+# this block removed from both sides, and its presence is asserted separately,
+# on the live specs only.
+_RECORDS = ("ATTEMPT=", "run_manifest.${ATTEMPT}", "mkdir -p ${OUT}/tb",
+            "ln -s ${OUT}/tb ./runs", "attempts.log", "cp -r ./runs")
+
+
+def _strip_records(code: str) -> str:
+    return "\n".join(ln for ln in code.splitlines()
+                     if ln.strip() and not any(t in ln for t in _RECORDS))
+
+
+def test_every_live_spec_records_each_attempt():
+    """A pod eviction deletes the tensorboard files, the resume decision and the
+    attempt's node unless they are written to the PVC as they happen."""
+    # Frozen: the runs that are finished or superseded (their spec records the
+    # tag their pod cloned) and the jobs that do not train.
+    frozen = {"job-mtx-inventory-raunav.yaml", "job-mtx-l162-s1-raunav.yaml",
+              "job-mtx-l162-s1b-raunav.yaml", "job-mtx-probe-l40-raunav.yaml"} | {
+              f"job-mtx-r16_q1-s{s}-raunav.yaml" for s in range(1, 6)}
+    # ft-legs is not in this list: it writes one directory per leg, each with its
+    # own ft_manifest.json (node, GPU, commit, checkpoint sha256) on the PVC as
+    # the leg starts, and it renames an interrupted leg to .partial rather than
+    # resuming it. Its attempt record is per leg and already durable.
+    live = [p for p in MTX.glob("job-mtx-*-raunav.yaml")
+            if p.name not in frozen and "makeweight" not in p.name]
+    assert len(live) == 24, sorted(p.name for p in live)
+    for p in live:
+        _, _, code = _spec(p)
+        for token in ("attempts.log", "ln -s ${OUT}/tb ./runs", ".prev.json"):
+            assert token in code, f"{p.name}: no {token}"
+        assert "cp -r ./runs" not in code, f"{p.name}: end-of-run tensorboard copy still present"
+
+
 def test_mass_specs_differ_from_the_template_only_at_the_declared_sites():
     tmpl = (MTX / "job-mtx-r16_q1-s1-raunav.yaml")
     mass = MTX / "job-mtx-r16_q1_mass-s1-raunav.yaml"
@@ -187,6 +228,7 @@ def test_mass_specs_differ_from_the_template_only_at_the_declared_sites():
         pytest.skip("mass spec not generated")
     _, _, a = _spec(tmpl)
     _, _, b = _spec(mass)
+    a, b = _strip_records(a), _strip_records(b)
     import difflib
     changed = [ln for ln in difflib.unified_diff(a.splitlines(), b.splitlines(), lineterm="", n=0)
                if ln[:1] in "+-" and ln[:3] not in ("+++", "---")]

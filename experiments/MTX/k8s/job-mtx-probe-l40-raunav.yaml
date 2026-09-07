@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # SCHEDULING PROBE, 2026-09-07. NOT a training job. Written to answer one
+  # question the API will not answer for this account (node and cross-namespace
+  # pod reads are Forbidden): does a pod shaped like ours -- 1 GPU, 76Gi, the
+  # us-west PVCs -- get a NVIDIA-L40 within minutes, when the same pod pinned
+  # to RTX-3090 has sat Pending for hours? It mounts nothing but the PVCs,
+  # prints the GPU it landed on, sleeps 90 s, and exits 0. Delete after reading.
+  #
+  # If it schedules quickly, the option on the table is DECISIONS_PENDING
+  # item 18 (b): move seeds 2, 3 and 5 of every remaining arm to L40 and re-run
+  # R16_Q1 seeds 2, 3, 5 there too, so every seed pair stays on one GPU model.
+  name: mtx-probe-l40-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: probe
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          echo "node=${NODE_NAME} pod=${POD_NAME} $(date -u +%FT%TZ)"
+          nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+          python3 -c "import torch; print('torch sees', torch.cuda.get_device_name(0))"
+          ls /jc2/jet_data | head -2 && df -h /data | tail -1
+          sleep 90
+        env:
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        - name: POD_NAME
+          valueFrom: { fieldRef: { fieldPath: metadata.name } }
+        resources:
+          requests: { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: data, mountPath: /data }
+      tolerations:
+      - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: ["NVIDIA-L40"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

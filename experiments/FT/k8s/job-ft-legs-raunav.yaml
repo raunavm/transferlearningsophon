@@ -34,7 +34,7 @@ spec:
         - name: POD_NAME
           valueFrom: { fieldRef: { fieldPath: metadata.name } }
         - name: REPO_REF
-          value: "mtx-s1.10"
+          value: "mtx-s1.11"
         args:
         - |
           set -euo pipefail
@@ -80,7 +80,10 @@ spec:
           # Two attempts, then the marker stops every later pod at the top.
           FAIL_MARK=${ROOT_OUT}/FAILED
           [ -f ${FAIL_MARK} ] && { echo "FATAL: an earlier attempt failed twice: $(cat ${FAIL_MARK}). Fix it, then remove ${FAIL_MARK}"; exit 1; }
-          attempt_ok () { local o=$1; local n=$(ls -d ${o}.partial.* 2>/dev/null | wc -l); [ "$n" -ge 2 ] && { echo "${o} failed ${n} times" | tee ${FAIL_MARK}; exit 1; }; return 0; }
+          # 4, not 2 (2026-09-07): a taint eviction also leaves a .partial, and two
+          # evictions on one leg would otherwise hard-fail the whole job. A real
+          # crash still stops it, four attempts later instead of two.
+          attempt_ok () { local o=$1; local n=$(ls -d ${o}.partial.* 2>/dev/null | wc -l); [ "$n" -ge 4 ] && { echo "${o} failed ${n} times" | tee ${FAIL_MARK}; exit 1; }; return 0; }
 
           # The released checkpoint is gitignored, so it is never in the clone, and
           # it is not on the PVC. Fetch it as E0b did and pin it to E0b's sha256.

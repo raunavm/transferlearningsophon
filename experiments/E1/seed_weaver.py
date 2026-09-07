@@ -81,6 +81,16 @@ seed_stream(seed, "trunk_init")
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
+# Resume-safe LR schedule. weaver saves the optimizer AFTER stepping the
+# scheduler, then on --load-epoch N constructs MultiStepLR(last_epoch=N), whose
+# constructor steps once more: a resume from epoch 55..78 of an 80-epoch
+# flat+decay run trains the remainder at 0.8254x the recipe rate, silently.
+# src/utils/resume.py has the measurement; tests/test_resume_lr.py the proof.
+from src.utils.resume import install as _install_resume_safe_lr  # noqa: E402
+
+_install_resume_safe_lr()
+print("[seed_weaver] resume-safe MultiStepLR installed", flush=True)
+
 import weaver.train as weaver_train  # noqa: E402
 
 # Phase 2/3 - re-seed at the model-construction boundary so head size cannot

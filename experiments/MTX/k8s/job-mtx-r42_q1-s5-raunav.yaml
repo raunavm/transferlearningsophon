@@ -86,7 +86,7 @@ spec:
         # Pin all three arms to ONE ref. A branch name here means three arms
         # launched at different times can run different code.
         - name: REPO_REF
-          value: "mtx-s1.10"
+          value: "mtx-s1.11"
         args:
         - |
           set -euo pipefail
@@ -109,6 +109,11 @@ spec:
           RUN_ID=mtx-r42q1-s5
           OUT=/data/results/mtx/${RUN_ID}
           mkdir -p ${OUT}
+          # ATTEMPT RECORDS (scripts/add_run_records.py)
+          ATTEMPT=$(date -u +%Y%m%dT%H%M%SZ)
+          [ -f ${OUT}/run_manifest.json ] && cp ${OUT}/run_manifest.json ${OUT}/run_manifest.${ATTEMPT}.prev.json
+          mkdir -p ${OUT}/tb
+          [ -e ./runs ] || ln -s ${OUT}/tb ./runs
 
           # Provenance for the two things that can drift between arms launched
           # at different times. pyarrow is deliberately UNPINNED -- guessing a
@@ -223,6 +228,7 @@ spec:
             echo "AUTO-RESUME: no complete checkpoint; starting from scratch."
           fi
           printf '%s' "${RECIPE}" > ${OUT}/RECIPE
+          echo "${ATTEMPT} pod=${POD_NAME} node=${NODE_NAME} resume=[${RESUME:-fresh}]" >> ${OUT}/attempts.log
 
           # seed_weaver derives four independent RNG streams and REFUSES to run
           # if it cannot hook weaver's model-construction boundary -- a
@@ -265,7 +271,7 @@ spec:
           # checkpoint in a separate job. docs/GATES.md's requirement to cache
           # full ROC arrays is met by that eval job reading
           # net_best_epoch_state.pt -- not by doing it inside the training pod.
-          cp -r ./runs ${OUT}/tb 2>/dev/null || true
+          # tensorboard already on the PVC: ./runs -> ${OUT}/tb
         resources:
           # 20Gi ephemeral, not 200Gi: nothing is staged locally, the corpus is
           # streamed. A 200Gi request narrows an already narrow node pool for
