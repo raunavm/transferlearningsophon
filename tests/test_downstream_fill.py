@@ -199,3 +199,65 @@ def test_every_zero_variable_is_defined_once_in_new_variables(name):
             if var.startswith(bdc.ZERO_PREFIX):
                 assert var in nv, f"{p.name}: {var} used but never defined"
                 assert "zeros_like" in nv[var], f"{p.name}: {var} is not a zero"
+
+
+# --- the extraction-side control -------------------------------------------
+# docs/PRD_PLAN.md 4.5 needs the control run through BOTH the frozen probes and
+# one fine-tune per arm. Those read different configs, and the difference is a
+# silent-failure surface: extract_features.py runs with
+# configs/data/JetClassII_base.yaml, whose labels: block is the NATIVE 188-way
+# jet_label, while the L162 control carries 162-group labels under the same
+# array name. Extracting through the wrong one would still produce features,
+# still fit every probe, and silently measure a different task.
+
+@pytest.mark.parametrize("name", sorted(bdc.FILLS))
+def test_base_control_masks_exactly_what_the_downstream_config_fills(name):
+    down = _zero_indices(FT / f"{name}.yaml")
+    ctrl = _zero_indices(FT / f"JetClassII_base_mask{name}.yaml")
+    assert down == ctrl, (
+        f"{name}: downstream fills slots {sorted(down)} but its extraction "
+        f"control masks {sorted(ctrl)}")
+
+
+@pytest.mark.parametrize("name", sorted(bdc.FILLS))
+def test_base_control_keeps_the_native_188_label_block(name):
+    """The whole point: the probes must still see jet_label, not L162 groups."""
+    text = (FT / f"JetClassII_base_mask{name}.yaml").read_text()
+    base = pathlib.Path(bdc.BASE).read_text()
+    for cfg in (text, base):
+        assert re.search(r"^labels:", cfg, re.M)
+    def label_block(s):
+        m = re.search(r"^labels:\n(.*?)(?=^\w+:)", s, re.M | re.S)
+        return m.group(1) if m else None
+    assert label_block(text) == label_block(base), \
+        "the extraction control's label block drifted from JetClassII_base.yaml"
+    assert "truth_label: jet_label" in label_block(text)
+
+
+@pytest.mark.parametrize("name", sorted(bdc.FILLS))
+def test_base_control_differs_from_base_only_in_the_masked_slots(name):
+    base = _slots(pathlib.Path(bdc.BASE))
+    ctrl = _slots(FT / f"JetClassII_base_mask{name}.yaml")
+    assert len(base) == len(ctrl), "the control changed the number of input slots"
+    masked = _zero_indices(FT / f"JetClassII_base_mask{name}.yaml")
+    for i, (b, c) in enumerate(zip(base, ctrl)):
+        if i in masked:
+            assert c[1] == b[1], f"slot {i}: standardization changed by masking"
+        else:
+            assert b == c, f"slot {i} differs from the base but is not declared masked"
+
+
+@pytest.mark.parametrize("name", sorted(bdc.FILLS))
+def test_base_control_carries_no_weights_block(name):
+    p = FT / f"JetClassII_base_mask{name}.yaml"
+    assert not re.search(r"^weights:", p.read_text(), re.M), \
+        f"{p.name}: an extraction pass must not reweight"
+
+
+def test_the_two_controls_mask_the_same_slots():
+    """Fine-tune side and extraction side must agree, or the two halves of the
+    control measure different interventions."""
+    for name in bdc.FILLS:
+        a = _zero_indices(FT / f"JetClassII_L162_mask{name}.yaml")
+        b = _zero_indices(FT / f"JetClassII_base_mask{name}.yaml")
+        assert a == b, f"{name}: L162 control masks {sorted(a)}, base control {sorted(b)}"
