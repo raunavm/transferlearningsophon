@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # PVC READ-THROUGHPUT PROBE (inside us-west -- the baseline). The us-west pin exists because weaver
+  # streams JetClass-II from the CephFS PVC at SDSC, and the specs claim a distant
+  # pod "runs at near-zero GPU utilisation". That claim is doubtful now: we measure
+  # 90-100% GPU utilisation (GPU-bound), and a free 3090 was found outside us-west
+  # at hpc-nrp-g1.nmsu.edu while every in-region pod sat Pending. This measures the
+  # real read rate so the pin is kept or dropped on evidence. NO GPU REQUESTED --
+  # this is an I/O question, and asking for one would compete with training.
+  name: mtx-ioprobe-west-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: ["NVIDIA-GeForce-RTX-3090"]
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      containers:
+      - name: io
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -u
+          echo "IOPROBE west node=${NODE_NAME}"
+          FILES=$(ls /jc2/jet_data/Res2P_02*.parquet 2>/dev/null | head -5)
+          [ -n "${FILES}" ] || { echo "FATAL: no files visible at /jc2"; exit 1; }
+          BYTES=$(cat ${FILES} | wc -c)
+          T0=$(date +%s)
+          cat ${FILES} > /dev/null
+          T1=$(date +%s)
+          echo "${BYTES} ${T0} ${T1}" | awk '{
+            mb = $1/1e6; t = $3-$2; if (t < 1) t = 1;
+            rate = mb/t; jets = rate*1e6/2400;
+            printf "READ %.0f MB in %d s = %.1f MB/s\n", mb, t, rate;
+            printf "implied jets/s at 2.4 kB/jet = %.0f (training needs ~2275)\n", jets;
+            printf "VERDICT: %s\n", (jets > 6000 ? "AMPLE" : (jets > 2500 ? "OK" : "TOO SLOW"));
+          }'
+        env:
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        resources:
+          requests: { memory: "8Gi", cpu: "2" }
+          limits:   { memory: "8Gi", cpu: "2" }
+        volumeMounts:
+        - { name: jc2, mountPath: /jc2, readOnly: true }
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true

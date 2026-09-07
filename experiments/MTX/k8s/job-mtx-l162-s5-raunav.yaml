@@ -315,12 +315,18 @@ spec:
       - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
       affinity:
         nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          # Region was a REQUIRED term until 2026-09-07; see scripts/relax_region.py.
+          # Kept as a strong preference so nothing moves while SDSC has capacity.
+          - weight: 100
+            preference:
+              matchExpressions:
               - key: topology.kubernetes.io/region
                 operator: In
                 values: ["us-west"]
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
               - key: nvidia.com/gpu.product
                 operator: In
                 values: ["NVIDIA-GeForce-RTX-3090"]

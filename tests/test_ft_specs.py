@@ -215,19 +215,20 @@ def test_every_live_spec_records_each_attempt():
     attempt's node unless they are written to the PVC as they happen."""
     # Frozen: the runs that are finished or superseded (their spec records the
     # tag their pod cloned) and the jobs that do not train.
-    frozen = {"job-mtx-inventory-raunav.yaml", "job-mtx-l162-s1-raunav.yaml",
-              "job-mtx-l162-s1b-raunav.yaml", "job-mtx-probe-l40-raunav.yaml",
-              # CPU-only, trains nothing: counts params and per-jet MACs for the
-              # six arm configs and exits (docs/RECORD.md 2.1). No checkpoints,
-              # so no resume decision and no tensorboard to preserve.
-              "job-mtx-flops-raunav.yaml"} | {
+    frozen = {"job-mtx-l162-s1-raunav.yaml", "job-mtx-l162-s1b-raunav.yaml"} | {
               f"job-mtx-r16_q1-s{s}-raunav.yaml" for s in range(1, 6)}
+    # Jobs in this directory that TRAIN NOTHING and so have no checkpoint, no
+    # resume decision and no tensorboard to preserve: the reweighting builders,
+    # the scheduling/IO probes, the FLOPs counter and the inventory job. Matched
+    # by substring on purpose -- a new probe should not need a test edit.
+    NON_TRAINING = ("makeweight", "probe", "flops", "inventory")
     # ft-legs is not in this list: it writes one directory per leg, each with its
     # own ft_manifest.json (node, GPU, commit, checkpoint sha256) on the PVC as
     # the leg starts, and it renames an interrupted leg to .partial rather than
     # resuming it. Its attempt record is per leg and already durable.
     live = [p for p in MTX.glob("job-mtx-*-raunav.yaml")
-            if p.name not in frozen and "makeweight" not in p.name]
+            if p.name not in frozen
+            and not any(tok in p.name for tok in NON_TRAINING)]
     assert len(live) == 24, sorted(p.name for p in live)
     for p in live:
         _, _, code = _spec(p)
