@@ -1,0 +1,84 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # GPU-MODEL THROUGHPUT BENCHMARK -- Tesla-V100-SXM2-32GB.
+  #
+  # The reachable RTX-3090 pool is saturated: after relaxing the region pin the
+  # scheduler still reports 27 nodes passing our affinity with no free GPU. The
+  # only remaining lever is a SECOND GPU model, which costs invariant I7b (whole
+  # seeds must move together, forcing re-runs of the finished R16_Q1 seeds on the
+  # new model). That cost is only worth paying if the second model is actually
+  # fast enough, so measure before proposing.
+  #
+  # Runs the REAL training command (same arm config, batch size, workers, AMP,
+  # fetch mode) for ONE short epoch and reports jets/s. Baseline to beat: the
+  # measured 3090 rate of 2,270-2,560 jets/s. Writes to a throwaway directory --
+  # touches no run directory and no checkpoint.
+  name: mtx-gpubench-v100-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 7200
+  template:
+    spec:
+      restartPolicy: Never
+      tolerations:
+      - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: ["Tesla-V100-SXM2-32GB"]
+              # excluded 2026-09-07: device plugin rejects every pod (scripts/exclude_node.py)
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["nautilus-ext-gpu01.fullerton.edu"]
+      containers:
+      - name: bench
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -uo pipefail
+          echo "GPUBENCH v100 node=${NODE_NAME}"
+          nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+          git clone --depth 1 --branch mtx-s1.11 \
+            https://github.com/raunavm/transferlearningsophon.git /w/r 2>/dev/null \
+            || git clone --depth 1 --branch mtx-s1.11 https://github.com/raunavm/transferlearningsophon.git /w/r
+          cd /w/r
+          OUT=/tmp/gpubench && mkdir -p ${OUT}
+          PYTHONUNBUFFERED=1 python3 experiments/E1/seed_weaver.py \
+            --lean-val-metrics --seed 1 \
+            --data-train Res2P:/jc2/jet_data/Res2P_{0000..0019}.parquet Res34P:/jc2/jet_data/Res34P_{0000..0079}.parquet QCD:/jc2/jet_data/QCD_{0000..0029}.parquet \
+            --data-val /jc2/jet_data/Res2P_{0200..0204}.parquet \
+            --data-config configs/arms/R16_Q1.yaml --no-remake-weights \
+            --network-config experiments/MTX/ParT_sophon_arch_mtx.py \
+            -o num_classes 17 -o fc_params '[(512,0.1)]' \
+            --use-amp --batch-size 512 --start-lr 5e-4 \
+            --num-workers 2 --fetch-by-files --fetch-step 5 \
+            --samples-per-epoch 1024000 --samples-per-epoch-val 51200 \
+            --num-epochs 1 --optimizer ranger \
+            --model-prefix ${OUT}/net --log ${OUT}/train.log 2>&1 | tail -40
+          echo "=== THROUGHPUT (v100) ==="
+          grep -aoE '[0-9]+\.[0-9]+ it/s|[0-9]+ entries/s' ${OUT}/train.log | tail -5
+          grep -a 'Epoch #0' ${OUT}/train.log | head -4
+        resources:
+          requests: { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1" }
+          limits:   { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1" }
+        volumeMounts:
+        - { name: jc2, mountPath: /jc2, readOnly: true }
+        - { name: dshm, mountPath: /dev/shm }
+        - { name: work, mountPath: /w }
+      volumes:
+      - name: jc2
+        persistentVolumeClaim: { claimName: tn-pvc-base-jetclass2, readOnly: true }
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }
+      - name: work
+        emptyDir: {}

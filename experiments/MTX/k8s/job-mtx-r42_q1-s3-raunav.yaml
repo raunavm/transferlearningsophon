@@ -337,7 +337,7 @@ spec:
               # excluded 2026-09-07: device plugin rejects every pod (scripts/exclude_node.py)
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: ["ry-gpu-03.sdsc.optiputer.net"]
+                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu"]
       volumes:
       - name: jc2
         persistentVolumeClaim:

@@ -131,8 +131,16 @@ spec:
           done | tee ${OUT}/summary.txt
           echo "===== LR PROBE DONE -> ${OUT}/summary.txt ====="
         resources:
-          requests: { memory: "48Gi", cpu: "4", nvidia.com/gpu: "1" }
-          limits:   { memory: "48Gi", cpu: "4", nvidia.com/gpu: "1" }
+          # 76Gi, matching the production training specs. The first attempt asked
+          # for 48Gi and was OOMKilled on suncave-6. That was avoidable: CLAUDE.md
+          # records the MEASURED anon band for --fetch-by-files as 35-58 GB, and
+          # that 64Gi -- already 6 GB above the top of that band -- OOM-killed
+          # g1-r16q1-lr5e4 mid-training. 48Gi sits INSIDE the band, so it was
+          # never going to survive. Size off the measured band, not off an
+          # intuition that "a short probe is lighter": the loader dominates and
+          # it does not care how many epochs follow.
+          requests: { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: data, mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
@@ -161,4 +169,4 @@ spec:
                 values: ["NVIDIA-GeForce-RTX-3090"]
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: ["ry-gpu-03.sdsc.optiputer.net"]
+                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu"]
