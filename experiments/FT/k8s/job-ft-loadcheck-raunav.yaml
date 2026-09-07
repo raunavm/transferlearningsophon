@@ -42,7 +42,7 @@ spec:
         image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
         env:
         - name: REPO_REF
-          value: "ft-stage.4"
+          value: "ft-stage.5"
         command: ["/bin/bash", "-c"]
         args:
         - |
@@ -61,8 +61,17 @@ spec:
           requests: { memory: "24Gi", cpu: "4" }
           limits:   { memory: "24Gi", cpu: "4" }
         volumeMounts:
+        # /jc2 is REQUIRED here, not optional: check 4 loads the plain and the
+        # masked JetClass-II configs over the SAME jets and diffs the tensors,
+        # which is the property the whole zero-fill control rests on. The first
+        # run of this job mounted only /data and silently skipped that check.
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
         - { name: data, mountPath: /data }
       volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
       - name: data
         persistentVolumeClaim:
           claimName: transfer-learning-vol
