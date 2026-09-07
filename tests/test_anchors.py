@@ -101,11 +101,11 @@ def test_end_to_end_on_synthetic_cache(tmp_path):
     np.savez(tmp_path / "observers.npz",
              jet_pt=np.full(n, 500.0), jet_sdmass=np.full(n, 100.0))
     out = tmp_path / "anchors.json"
-    # Perfect separation cannot match 300/810/110/320, so a non-zero exit is
-    # the CORRECT outcome here; the point is that it ran and reported.
+    # A disagreement is a RESULT, not a job failure: main must still exit 0 so
+    # a cluster job does not burn its backoffLimit re-deriving the same numbers.
     rc = an.main(["--features", str(tmp_path), "--out", str(out)])
     d = json.loads(out.read_text())
-    assert rc == 1 and d["all_agree"] is False
+    assert rc == 0 and d["all_agree"] is False
     assert len(d["anchors"]) == 4
     assert d["n_selected"] == n
     for r in d["anchors"]:
@@ -149,3 +149,42 @@ def test_a_class_with_no_signal_jets_fails_loudly(tmp_path):
     with pytest.raises(SystemExit) as e:
         an.main(["--features", str(tmp_path), "--out", str(tmp_path / "a.json")])
     assert "cannot be defined" in str(e.value)
+
+
+def test_match_weights_makes_background_look_like_signal():
+    """The whole point of the reweighting: after it, the background's (m_SD, pT)
+    density must match the signal's. Measured mismatch on the real cache was
+    median m_SD 57 vs 141 GeV, which an unweighted ROC converts into free
+    separation that is not flavour tagging."""
+    rng = np.random.default_rng(0)
+    # signal heavy and hard; background light and soft -- the real situation
+    m_sig = rng.normal(141, 40, 200_000).clip(21, 499)
+    pt_sig = rng.normal(1059, 300, 200_000).clip(201, 2499)
+    m_bkg = rng.normal(57, 40, 400_000).clip(21, 499)
+    pt_bkg = rng.normal(854, 300, 400_000).clip(201, 2499)
+    w = an.match_weights(m_sig, pt_sig, m_bkg, pt_bkg)
+    assert (w > 0).any()
+    # weighted background mean mass must move to the signal's, not stay at its own
+    wm = np.average(m_bkg, weights=w)
+    assert abs(wm - m_sig.mean()) < 0.10 * m_sig.mean(), f"weighted mean {wm:.1f}"
+    assert abs(wm - m_bkg.mean()) > 0.20 * m_bkg.mean(), "weights did nothing"
+
+
+def test_match_weights_zero_where_background_is_empty():
+    """A cell with no background jets cannot supply a background estimate."""
+    m_sig = np.array([100.0, 400.0])
+    pt_sig = np.array([500.0, 500.0])
+    m_bkg = np.array([100.0, 100.0])
+    pt_bkg = np.array([500.0, 500.0])
+    w = an.match_weights(m_sig, pt_sig, m_bkg, pt_bkg)
+    assert np.all(np.isfinite(w)) and np.all(w >= 0)
+
+
+def test_weighted_rejection_differs_from_unweighted_when_kinematics_differ():
+    """Guard that the weights actually reach the rejection arithmetic."""
+    d_sig = np.linspace(0.0, 1.0, 10_001)
+    d_bkg = np.linspace(0.0, 1.0, 10_001)
+    w = np.linspace(0.0, 2.0, 10_001)          # up-weight the high-D background
+    plain, _, _ = an.rejection(d_sig, d_bkg, 0.60)
+    weighted, _, _ = an.rejection(d_sig, d_bkg, 0.60, w_bkg=w)
+    assert weighted < plain, "weighting the hard background up must lower rejection"

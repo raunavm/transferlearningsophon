@@ -22,12 +22,30 @@ metadata:
   # relative tolerance. This asks "is our evaluation code right", not "is our
   # test set theirs": a 2x miss is a bug, a 10 % miss is not.
   #
+  # FIRST RUN (2026-09-07, tag mtx-s1.13) MISSED BY 2.6-3.4x, ALL FOUR HIGH:
+  #   bb 60%  777.0 vs 300 | bb 40%  2554.2 vs 810
+  #   cc 60%  291.6 vs 110 | cc 40%  1088.7 vs 320
+  # Diagnosed, not guessed: in the raw test sample the signal and QCD kinematics
+  # differ grossly -- median m_SD 141 GeV (X_bb) and 143 (X_cc) against 57 for
+  # QCD, median pT 1059 against 854 -- so an UNWEIGHTED ROC lets the
+  # discriminant separate on jet mass, which is not flavour tagging.
+  # arXiv:2405.12972 App. B reweights (m_SD, pT) in two dimensions "to ensure
+  # consistent distributions", so anchors.py now matches the QCD density to the
+  # signal's on a 24 x 20 (m_SD, pT) grid and reports the unweighted number
+  # beside it. THIS IS EXACTLY WHAT THE ANCHOR CHECK EXISTS TO CATCH: quoting
+  # arm-wise rejections without it would have inflated every one of them ~3x
+  # while leaving the ARM ORDERING -- the paper's actual claim -- looking sane.
+  #
+  # backoffLimit 0: a disagreement is a RESULT and anchors.py now exits 0 with
+  # it recorded. The first run returned non-zero on mismatch and burned its
+  # whole backoff re-deriving the same four numbers.
+  #
   # CPU-ONLY, ZERO GPU. Reads cached logits written by the E0b extraction; the
   # 3 GB logits array is mmapped and consumed in 500k-row chunks.
   name: eval-anchors-raunav
   namespace: cms-ml
 spec:
-  backoffLimit: 2
+  backoffLimit: 0
   template:
     spec:
       restartPolicy: Never
@@ -38,7 +56,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s1.13" \
+          git clone --depth 1 --branch "mtx-s1.14" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon

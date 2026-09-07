@@ -81,7 +81,39 @@ def signal_index(class_name: str) -> int:
     raise SystemExit(f"FATAL: {class_name} not in the label map")
 
 
-def rejection(d_sig: np.ndarray, d_bkg: np.ndarray, eps_s: float) -> tuple[float, float, float]:
+# The (m_SD, pT) grid the background is reweighted on. Coarse enough that every
+# populated cell holds enough QCD jets to estimate a ratio, fine enough to
+# remove the gross mismatch (QCD median m_SD 57 GeV vs signal 141 GeV, measured).
+MSD_EDGES = np.linspace(MSD_LO, MSD_HI, 25)
+PT_EDGES = np.geomspace(PT_LO, PT_HI, 21)
+
+
+def match_weights(m_sig, pt_sig, m_bkg, pt_bkg):
+    """Per-jet background weights making QCD's (m_SD, pT) density match signal's.
+
+    WHY THIS IS NOT OPTIONAL. In the raw test sample the signal and QCD
+    kinematics are wildly different -- measured medians m_SD 141 vs 57 GeV and
+    pT 1059 vs 854 -- so an UNWEIGHTED ROC lets the discriminant separate on
+    jet mass, which is not flavour tagging. arXiv:2405.12972 App. B applies a
+    two-dimensional reweighting on (m_SD, pT) "to ensure consistent
+    distributions, hence reducing the dependence of the tagger response on jet
+    mass and p_T", so a number compared against Table A1 must do the same.
+
+    Cells with no background jets get zero weight: they cannot contribute a
+    background estimate, and pretending otherwise would divide by zero.
+    """
+    hs, _, _ = np.histogram2d(m_sig, pt_sig, bins=[MSD_EDGES, PT_EDGES])
+    hb, _, _ = np.histogram2d(m_bkg, pt_bkg, bins=[MSD_EDGES, PT_EDGES])
+    ratio = np.zeros_like(hs)
+    nz = hb > 0
+    ratio[nz] = (hs[nz] / hs.sum()) / (hb[nz] / hb.sum())
+    i = np.clip(np.digitize(m_bkg, MSD_EDGES) - 1, 0, len(MSD_EDGES) - 2)
+    j = np.clip(np.digitize(pt_bkg, PT_EDGES) - 1, 0, len(PT_EDGES) - 2)
+    return ratio[i, j]
+
+
+def rejection(d_sig: np.ndarray, d_bkg: np.ndarray, eps_s: float,
+              w_bkg: np.ndarray | None = None) -> tuple[float, float, float]:
     """1/eps_B at a threshold fixed by the SIGNAL efficiency.
 
     The threshold is the (1 - eps_s) quantile of the signal discriminant, so
@@ -90,9 +122,13 @@ def rejection(d_sig: np.ndarray, d_bkg: np.ndarray, eps_s: float) -> tuple[float
     the easiest way to quote a number that cannot be compared to Table A1.
     """
     thr = float(np.quantile(d_sig, 1.0 - eps_s))
-    n_b = int((d_bkg >= thr).sum())
-    eps_b = n_b / d_bkg.size
-    return (float("inf") if n_b == 0 else 1.0 / eps_b), thr, eps_b
+    passed = d_bkg >= thr
+    if w_bkg is None:
+        num, den = float(passed.sum()), float(d_bkg.size)
+    else:
+        num, den = float(w_bkg[passed].sum()), float(w_bkg.sum())
+    eps_b = num / den if den > 0 else 0.0
+    return (float("inf") if num == 0 else 1.0 / eps_b), thr, eps_b
 
 
 def main(argv=None) -> int:
@@ -142,25 +178,34 @@ def main(argv=None) -> int:
             raise SystemExit(f"FATAL: {class_name}: {d_sig.size} signal and "
                              f"{d_bkg.size} QCD jets pass the selection; "
                              f"a rejection cannot be defined")
+        msd, jpt = obs["jet_sdmass"][rows], obs["jet_pt"][rows]
+        w = match_weights(msd[is_sig], jpt[is_sig], msd[~is_sig], jpt[~is_sig])
+        print(f"  reweighted QCD: {int((w > 0).sum()):,} of {w.size:,} jets in populated cells",
+              flush=True)
         for eps_s in (0.60, 0.40):
-            rej, thr, eps_b = rejection(d_sig, d_bkg, eps_s)
+            rej, thr, eps_b = rejection(d_sig, d_bkg, eps_s, w_bkg=w)
+            raw, _, raw_eps = rejection(d_sig, d_bkg, eps_s)
             pub = PUBLISHED[(class_name, eps_s)]
             rel = abs(rej - pub) / pub
             agree = rel <= a.tolerance
             ok &= agree
             results.append(dict(signal=class_name, eps_s=eps_s, rejection=round(rej, 1),
+                                rejection_unweighted=round(raw, 1),
                                 published=pub, rel_diff=round(rel, 3), agrees=bool(agree),
                                 threshold=round(thr, 6), eps_b=eps_b,
                                 n_signal=int(d_sig.size), n_qcd=int(d_bkg.size)))
-            print(f"  eps_S={eps_s:.0%}: 1/eps_B = {rej:8.1f}  published {pub:6.0f}  "
-                  f"rel {rel:+.1%}  {'OK' if agree else 'MISMATCH'}", flush=True)
+            print(f"  eps_S={eps_s:.0%}: 1/eps_B = {rej:8.1f} (unweighted {raw:8.1f})  "
+                  f"published {pub:6.0f}  rel {rel:+.1%}  {'OK' if agree else 'MISMATCH'}",
+                  flush=True)
 
     out = dict(features=str(d), selection=dict(pt=[PT_LO, PT_HI], msd=[MSD_LO, MSD_HI]),
                n_jets_total=int(label.size), n_selected=int(sel.sum()),
                tolerance=a.tolerance, all_agree=bool(ok), anchors=results)
     pathlib.Path(a.out).write_text(json.dumps(out, indent=2))
     print(f"\nwrote {a.out}\nALL ANCHORS AGREE: {ok}", flush=True)
-    return 0 if ok else 1
+    # A disagreement is a RESULT, not a job failure. Returning non-zero made the
+    # first run burn its whole backoffLimit re-deriving the same numbers.
+    return 0
 
 
 if __name__ == "__main__":
