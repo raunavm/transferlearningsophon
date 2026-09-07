@@ -98,8 +98,8 @@ def test_end_to_end_on_synthetic_cache(tmp_path):
     logits[2_000:, e1_qcd[0]] += 20.0
     np.save(tmp_path / "logits.npy", logits)
     np.save(tmp_path / "label188.npy", label)
-    np.savez(tmp_path / "observers.npz",
-             jet_pt=np.full(n, 500.0), jet_sdmass=np.full(n, 100.0))
+    np.savez(tmp_path / "observers.npz", jet_pt=np.full(n, 500.0),
+             jet_sdmass=np.full(n, 100.0), jet_eta=np.zeros(n))
     out = tmp_path / "anchors.json"
     # A disagreement is a RESULT, not a job failure: main must still exit 0 so
     # a cluster job does not burn its backoffLimit re-deriving the same numbers.
@@ -129,8 +129,8 @@ def test_jets_that_are_neither_signal_nor_qcd_are_excluded(tmp_path):
     logits[2_000:, 3] = 20.0
     np.save(tmp_path / "logits.npy", logits)
     np.save(tmp_path / "label188.npy", label)
-    np.savez(tmp_path / "observers.npz",
-             jet_pt=np.full(n, 500.0), jet_sdmass=np.full(n, 100.0))
+    np.savez(tmp_path / "observers.npz", jet_pt=np.full(n, 500.0),
+             jet_sdmass=np.full(n, 100.0), jet_eta=np.zeros(n))
     out = tmp_path / "a.json"
     an.main(["--features", str(tmp_path), "--out", str(out)])
     bb = [r for r in json.loads(out.read_text())["anchors"] if r["signal"] == "label_X_bb"]
@@ -144,8 +144,8 @@ def test_a_class_with_no_signal_jets_fails_loudly(tmp_path):
     label = np.full(n, e1_qcd[0], dtype=np.int16)   # QCD only: no X_bb at all
     np.save(tmp_path / "logits.npy", np.zeros((n, K), dtype=np.float32))
     np.save(tmp_path / "label188.npy", label)
-    np.savez(tmp_path / "observers.npz",
-             jet_pt=np.full(n, 500.0), jet_sdmass=np.full(n, 100.0))
+    np.savez(tmp_path / "observers.npz", jet_pt=np.full(n, 500.0),
+             jet_sdmass=np.full(n, 100.0), jet_eta=np.zeros(n))
     with pytest.raises(SystemExit) as e:
         an.main(["--features", str(tmp_path), "--out", str(tmp_path / "a.json")])
     assert "cannot be defined" in str(e.value)
@@ -157,17 +157,19 @@ def test_match_weights_makes_background_look_like_signal():
     median m_SD 57 vs 141 GeV, which an unweighted ROC converts into free
     separation that is not flavour tagging."""
     rng = np.random.default_rng(0)
-    # signal heavy and hard; background light and soft -- the real situation
-    m_sig = rng.normal(141, 40, 200_000).clip(21, 499)
-    pt_sig = rng.normal(1059, 300, 200_000).clip(201, 2499)
-    m_bkg = rng.normal(57, 40, 400_000).clip(21, 499)
-    pt_bkg = rng.normal(854, 300, 400_000).clip(201, 2499)
+    # Inside the Table A1 window the reweighting grid spans 90-140 x 450-600,
+    # so the test distributions must live there too: signal skewed heavy,
+    # background skewed light, the residual mismatch the weights must remove.
+    m_sig = rng.normal(130, 12, 200_000).clip(91, 139)
+    pt_sig = rng.normal(540, 40, 200_000).clip(451, 599)
+    m_bkg = rng.normal(100, 12, 400_000).clip(91, 139)
+    pt_bkg = rng.normal(480, 40, 400_000).clip(451, 599)
     w = an.match_weights(m_sig, pt_sig, m_bkg, pt_bkg)
     assert (w > 0).any()
     # weighted background mean mass must move to the signal's, not stay at its own
     wm = np.average(m_bkg, weights=w)
-    assert abs(wm - m_sig.mean()) < 0.10 * m_sig.mean(), f"weighted mean {wm:.1f}"
-    assert abs(wm - m_bkg.mean()) > 0.20 * m_bkg.mean(), "weights did nothing"
+    assert abs(wm - m_sig.mean()) < 0.03 * m_sig.mean(), f"weighted mean {wm:.1f}"
+    assert abs(wm - m_bkg.mean()) > 0.10 * m_bkg.mean(), "weights did nothing"
 
 
 def test_match_weights_zero_where_background_is_empty():
@@ -188,3 +190,50 @@ def test_weighted_rejection_differs_from_unweighted_when_kinematics_differ():
     plain, _, _ = an.rejection(d_sig, d_bkg, 0.60)
     weighted, _, _ = an.rejection(d_sig, d_bkg, 0.60, w_bkg=w)
     assert weighted < plain, "weighting the hard background up must lower rejection"
+
+
+def test_window_is_the_one_table_a1_is_measured_in():
+    """arXiv:2503.00118 App. A: "The selected jet must satisfy 450 < p_T < 600,
+    |eta| < 2.4, and a soft-drop mass requirement of 90 < m_SD < 140."
+
+    NOT the study's own 200<pT<2500, 20<m_SD<500 -- that is the range the bb/cc
+    jets span in training, and evaluating there gave rejections 2.6-3.4x the
+    published values because the signal and QCD kinematics are grossly
+    different across it (median m_SD 141 vs 57 GeV, measured)."""
+    assert (an.PT_LO, an.PT_HI) == (450.0, 600.0)
+    assert (an.MSD_LO, an.MSD_HI) == (90.0, 140.0)
+    assert an.ETA_MAX == 2.4
+
+
+def test_eta_cut_is_actually_applied(tmp_path):
+    """|eta| < 2.4 is part of the window; dropping it silently adds jets."""
+    n, K = 400, 188
+    e1_qcd = an._e1_control().qcd_indices()
+    label = np.zeros(n, dtype=np.int16)
+    label[:100] = 0
+    label[100:200] = 1
+    label[200:] = e1_qcd[0]
+    logits = np.zeros((n, K), dtype=np.float32)
+    logits[np.arange(100), 0] = 20.0
+    logits[100:200, 1] = 20.0
+    logits[200:, e1_qcd[0]] = 20.0
+    eta = np.zeros(n)
+    eta[::2] = 3.0                                  # half the jets fail |eta|<2.4
+    np.save(tmp_path / "logits.npy", logits)
+    np.save(tmp_path / "label188.npy", label)
+    np.savez(tmp_path / "observers.npz", jet_pt=np.full(n, 500.0),
+             jet_sdmass=np.full(n, 100.0), jet_eta=eta)
+    out = tmp_path / "a.json"
+    an.main(["--features", str(tmp_path), "--out", str(out)])
+    assert json.loads(out.read_text())["n_selected"] == n // 2
+
+
+def test_unbounded_rejection_never_counts_as_agreement():
+    """With no background jets above threshold the rejection is unbounded. The
+    Poisson term is then infinite too, and "inf <= tolerance + inf" is True --
+    so without an explicit finiteness guard a perfectly separating (or simply
+    empty) background would AGREE with any published number."""
+    import json as _json
+    rel = float("inf"); stat = float("inf"); tol = 0.25
+    assert (rel <= tol + stat) is True, "the trap this guard exists for"
+    assert not (np.isfinite(float("inf")) and rel <= tol + stat)

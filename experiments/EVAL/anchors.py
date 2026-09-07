@@ -57,9 +57,17 @@ PUBLISHED = {
     ("label_X_cc", 0.60): 110.0,
     ("label_X_cc", 0.40): 320.0,
 }
-# The study's selection (docs/GROUND_TRUTH.md), which is also the range the
-# bb/cc jets span in 2503.00118 App. A: 200 < pT < 2500, 20 < m_SD < 500.
-PT_LO, PT_HI, MSD_LO, MSD_HI = 200.0, 2500.0, 20.0, 500.0
+# THE WINDOW TABLE A1 IS MEASURED IN -- arXiv:2503.00118 App. A, verbatim:
+# "The selected jet must satisfy 450 < p_T < 600, |eta| < 2.4, and a soft-drop
+# mass requirement of 90 < m_SD < 140. These sample settings and kinematic
+# selections are consistent with those used in the experiment."
+#
+# NOT the study's own 200 < pT < 2500, 20 < m_SD < 500. That wider range is
+# what the bb/cc jets SPAN in the training sample, and using it here was this
+# script's first error: it left the signal and QCD kinematics grossly different
+# (median m_SD 141 vs 57 GeV) and returned rejections 2.6-3.4x the published
+# ones. The window is the comparison; without it the number is not Table A1's.
+PT_LO, PT_HI, MSD_LO, MSD_HI, ETA_MAX = 450.0, 600.0, 90.0, 140.0, 2.4
 CHUNK = 500_000
 
 
@@ -84,8 +92,8 @@ def signal_index(class_name: str) -> int:
 # The (m_SD, pT) grid the background is reweighted on. Coarse enough that every
 # populated cell holds enough QCD jets to estimate a ratio, fine enough to
 # remove the gross mismatch (QCD median m_SD 57 GeV vs signal 141 GeV, measured).
-MSD_EDGES = np.linspace(MSD_LO, MSD_HI, 25)
-PT_EDGES = np.geomspace(PT_LO, PT_HI, 21)
+MSD_EDGES = np.linspace(MSD_LO, MSD_HI, 11)
+PT_EDGES = np.linspace(PT_LO, PT_HI, 11)
 
 
 def match_weights(m_sig, pt_sig, m_bkg, pt_bkg):
@@ -150,9 +158,10 @@ def main(argv=None) -> int:
         raise SystemExit(f"FATAL: expected 188 logit columns, got {logits.shape[1]}")
 
     sel = ((obs["jet_pt"] > PT_LO) & (obs["jet_pt"] < PT_HI)
-           & (obs["jet_sdmass"] > MSD_LO) & (obs["jet_sdmass"] < MSD_HI))
-    print(f"selection {PT_LO}<pT<{PT_HI}, {MSD_LO}<m_SD<{MSD_HI}: "
-          f"{sel.sum():,} of {sel.size:,} ({100*sel.mean():.2f}%)", flush=True)
+           & (obs["jet_sdmass"] > MSD_LO) & (obs["jet_sdmass"] < MSD_HI)
+           & (np.abs(obs["jet_eta"]) < ETA_MAX))
+    print(f"Table A1 window {PT_LO:.0f}<pT<{PT_HI:.0f}, {MSD_LO:.0f}<m_SD<{MSD_HI:.0f}, "
+          f"|eta|<{ETA_MAX}: {sel.sum():,} of {sel.size:,} ({100*sel.mean():.2f}%)", flush=True)
 
     results, ok = [], True
     for class_name in ("label_X_bb", "label_X_cc"):
@@ -187,16 +196,29 @@ def main(argv=None) -> int:
             raw, _, raw_eps = rejection(d_sig, d_bkg, eps_s)
             pub = PUBLISHED[(class_name, eps_s)]
             rel = abs(rej - pub) / pub
-            agree = rel <= a.tolerance
+            # The rejection is 1/eps_B and eps_B is estimated from the COUNT of
+            # background jets above threshold, so its relative Poisson error is
+            # 1/sqrt(n_pass). In this narrow window n_pass is tens, not
+            # thousands -- roughly 54 at a rejection of 300 and 20 at 810 -- so
+            # the statistical error is comparable to the tolerance and must be
+            # quoted, or a "mismatch" of 20 % would be read as a code defect.
+            n_pass = int((d_bkg >= thr).sum())
+            stat = 1.0 / np.sqrt(n_pass) if n_pass > 0 else float("inf")
+            # np.isfinite guard: with n_pass == 0 both rel and stat are inf and
+            # "inf <= tolerance + inf" is True, so an unbounded rejection would
+            # silently AGREE with any published value. An unbounded rejection is
+            # not a measurement of anything.
+            agree = bool(np.isfinite(rej) and np.isfinite(stat) and rel <= a.tolerance + stat)
             ok &= agree
             results.append(dict(signal=class_name, eps_s=eps_s, rejection=round(rej, 1),
                                 rejection_unweighted=round(raw, 1),
                                 published=pub, rel_diff=round(rel, 3), agrees=bool(agree),
+                                stat_rel_err=round(stat, 3), n_bkg_pass=n_pass,
                                 threshold=round(thr, 6), eps_b=eps_b,
                                 n_signal=int(d_sig.size), n_qcd=int(d_bkg.size)))
-            print(f"  eps_S={eps_s:.0%}: 1/eps_B = {rej:8.1f} (unweighted {raw:8.1f})  "
-                  f"published {pub:6.0f}  rel {rel:+.1%}  {'OK' if agree else 'MISMATCH'}",
-                  flush=True)
+            print(f"  eps_S={eps_s:.0%}: 1/eps_B = {rej:8.1f} +-{100*stat:.0f}% stat "
+                  f"(unweighted {raw:8.1f}, {n_pass} bkg jets)  published {pub:6.0f}  "
+                  f"rel {rel:+.1%}  {'OK' if agree else 'MISMATCH'}", flush=True)
 
     out = dict(features=str(d), selection=dict(pt=[PT_LO, PT_HI], msd=[MSD_LO, MSD_HI]),
                n_jets_total=int(label.size), n_selected=int(sel.sum()),
