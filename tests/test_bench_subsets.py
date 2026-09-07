@@ -17,10 +17,13 @@ first test cannot pass vacuously), and that the q/g chunk split reproduces the
 import importlib.util
 import pathlib
 
+import re
+
 import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
+import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -148,3 +151,20 @@ def test_build_bench_writes_nested_balanced_subsets(tmp_path):
     b = pq.read_table(out / "train_N1000_s2.parquet").column("jet_pt").to_numpy()
     assert not np.array_equal(a, b), "different fine-tuning seeds must draw different jets"
     assert m["val"]["rows"] == 4_000
+
+
+def test_the_emitted_job_builds_the_grid_item_16e_specifies():
+    """DECISIONS_PENDING item 16(e), RESOLVED 2026-09-07: "add N = 1e3 to every
+    sweep". N=1e3 is also the cell the block structure would have damaged most --
+    a contiguous window of 1,000 top jets has a class-fraction SD of 0.048
+    (measured), so nearly a 10-point imbalance swing was routine there.
+    """
+    spec = ROOT / "experiments" / "FT" / "k8s" / "job-ft-subsets-bench-raunav.yaml"
+    if not spec.exists():
+        pytest.skip("bench subsets spec not generated")
+    args = yaml.safe_load(spec.read_text())["spec"]["template"]["spec"][
+        "containers"][0]["args"][0]
+    m = re.search(r"--sizes ([\d ]+?) --seeds", args)
+    assert m, "no --sizes in the emitted spec"
+    assert [int(x) for x in m.group(1).split()] == [1_000, 10_000, 100_000, 1_000_000]
+    assert "--dataset ${D}" in args and "for D in top qg" in args

@@ -60,9 +60,13 @@ spec:
           # the front would bias the headline cell of the scaling curve, with
           # nothing erroring. tests/test_bench_subsets.py binds this.
           for D in top qg; do
+            # N=1e3 is in the grid by DECISIONS_PENDING item 16(e) ("add N = 1e3
+            # to every sweep"): it is the cell where a pretrained trunk should
+            # separate from scratch most sharply, and it is the cell the block
+            # structure would have hurt most.
             python3 experiments/FT/make_subsets.py bench --dataset ${D} \
               --src /data/finetune/${D} --out /data/finetune/${D}_sub \
-              --sizes 10000 100000 1000000 --seeds 1 2 3 --val-size 200000
+              --sizes 1000 10000 100000 1000000 --seeds 1 2 3 --val-size 200000
             ls -la /data/finetune/${D}_sub; du -sh /data/finetune/${D}_sub
           done
         resources:
