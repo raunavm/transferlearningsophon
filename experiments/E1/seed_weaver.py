@@ -26,11 +26,18 @@ with a partial guarantee — a silently-partial fix here is worse than no fix,
 because the run would look seeded and not be.
 
 Usage:  python seed_weaver.py --seed S [--allow-partial-streams]
-                             [--lean-val-metrics] [--mass-lambda L] <weaver args>
+                             [--lean-val-metrics] [--mass-lambda L]
+                             [--mpm [--mpm-mask-rate R]] <weaver args>
 
 --mass-lambda L installs the class+mass hybrid loop (experiments/MTX/hybrid_mass.py)
 with regression weight L. Use with --network-config ParT_sophon_arch_mass.py and
 a *_MASS arm config; the arch refuses to build without the loop installed.
+
+--mpm installs the MPMv2 self-supervised loop (experiments/MTX/mpm.py), optionally
+at mask rate R (default 0.40, the paper's tuned config). Use with --network-config
+ParT_sophon_arch_mpm.py and ANY arm config -- MPM never reads the label, so the
+SSL arm streams exactly what the supervised arms stream and I2/I3 hold unchanged.
+The arch refuses to build without the loop installed.
 
 Reproducibility: a run is reproducible on the SAME GPU model. Cross-GPU is
 statistically — not bit — identical (different CUDA kernels and reduction
@@ -62,6 +69,22 @@ seed = int(seed_raw)
 allow_partial, rest = _pop(rest, "--allow-partial-streams", has_value=False)
 lean_val, rest = _pop(rest, "--lean-val-metrics", has_value=False)
 mass_lambda, rest = _pop(rest, "--mass-lambda")
+mpm_on, rest = _pop(rest, "--mpm", has_value=False)
+mpm_rate, rest = _pop(rest, "--mpm-mask-rate")
+
+if mpm_on and mass_lambda is not None:
+    raise SystemExit(
+        "seed_weaver: --mpm and --mass-lambda both replace weaver's train and "
+        "evaluate loops; the second would silently win. Pick one.")
+if mpm_rate is not None and not mpm_on:
+    raise SystemExit("seed_weaver: --mpm-mask-rate given without --mpm")
+if mpm_on and lean_val:
+    raise SystemExit(
+        "seed_weaver: --mpm and --lean-val-metrics are incompatible. "
+        "--lean-val-metrics drops the O(K^2) roc_auc_score_matrix from weaver's "
+        "classification metrics, and MPM computes no classification metrics at "
+        "all -- its validation value is the negative reconstruction loss. Drop "
+        "the flag; there is nothing for it to trim.")
 
 os.environ["PYTHONHASHSEED"] = str(seed)
 
@@ -138,6 +161,24 @@ if mass_lambda is not None:
     print(f"[seed_weaver] --mass-lambda {float(mass_lambda)}: hybrid class+mass "
           "loop installed (train_classification / evaluate_classification "
           "replaced)", flush=True)
+
+# MPMv2 self-supervised loop, if asked. Same mechanism and same ordering
+# constraint as the hybrid block above: both replace weaver.utils.nn.tools
+# attributes that train.py imports only inside _main().
+if mpm_on:
+    import importlib.util as _ilu  # noqa: E402
+
+    _mspec = _ilu.spec_from_file_location(
+        "mpm", REPO / "experiments" / "MTX" / "mpm.py")
+    _mm = _ilu.module_from_spec(_mspec)
+    _mspec.loader.exec_module(_mm)
+    _rate = float(mpm_rate) if mpm_rate is not None else _mm.DEFAULT_MASK_RATE
+    if not 0.0 < _rate < 1.0:
+        raise SystemExit(f"seed_weaver: --mpm-mask-rate must be in (0, 1), got {_rate}")
+    _mm.install(_rate)
+    print(f"[seed_weaver] --mpm: MPMv2 loop installed at mask rate {_rate} "
+          "(train_classification / evaluate_classification replaced; the "
+          "validation metric is the NEGATIVE reconstruction loss)", flush=True)
 
 # Drop the O(K^2) validation metric, if asked.
 #

@@ -140,3 +140,47 @@ def test_drop_pt_rank_stays_inside_the_mask_token_bank():
 def test_mask_rate_default_is_the_papers_tuned_value_not_the_ablation_default():
     # 0.3 is 2409.12589's ablation rate; 0.4 is its final tuned config (Table 1).
     assert mpm.DEFAULT_MASK_RATE == 0.40
+
+
+# --- seed_weaver's --mpm flag guards -------------------------------------
+# These run seed_weaver as a subprocess. Every guard below fires BEFORE
+# `import torch`, so the checks work without weaver installed -- which is the
+# whole point: a bad flag combination must be refused on the login node, not
+# discovered forty minutes into a cluster job.
+
+import subprocess
+import sys as _sys
+
+_SEED_WEAVER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "experiments", "E1", "seed_weaver.py")
+
+
+def _run(*args):
+    return subprocess.run([_sys.executable, _SEED_WEAVER, *args],
+                          capture_output=True, text=True, timeout=120)
+
+
+def test_mpm_and_mass_lambda_are_refused_together():
+    r = _run("--seed", "1", "--mpm", "--mass-lambda", "5.0")
+    assert r.returncode != 0
+    assert "both replace weaver" in r.stderr + r.stdout
+
+
+def test_mpm_and_lean_val_metrics_are_refused_together():
+    r = _run("--seed", "1", "--mpm", "--lean-val-metrics")
+    assert r.returncode != 0
+    out = r.stderr + r.stdout
+    assert "incompatible" in out and "negative reconstruction loss" in out
+
+
+def test_mpm_mask_rate_without_mpm_is_refused():
+    r = _run("--seed", "1", "--mpm-mask-rate", "0.4")
+    assert r.returncode != 0
+    assert "without --mpm" in r.stderr + r.stdout
+
+
+def test_mpm_mask_rate_out_of_range_is_refused():
+    # 1.0 would mask every particle and leave the encoder an empty set.
+    r = _run("--seed", "1", "--mpm", "--mpm-mask-rate", "1.0")
+    assert r.returncode != 0
+    assert "must be in (0, 1)" in r.stderr + r.stdout
