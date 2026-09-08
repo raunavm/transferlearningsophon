@@ -36,9 +36,12 @@ import json
 import math
 import pathlib
 
+import warnings
+
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import balanced_accuracy_score
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 
@@ -60,6 +63,8 @@ MLP_SEEDS = (0, 1, 2)
 # this: two probes compared against a threshold 76 sigma above chance both read
 # as null.
 CHANCE_SIGMA = 5.0
+# Ceiling only; early stopping ends the fit long before this on converged cells.
+MLP_MAX_ITER = 1000
 
 
 def chance_margin(k: int, n_per_class) -> float:
@@ -102,14 +107,39 @@ def fit_pair(Xtr, ytr, Xte, yte, seed_offset=0):
     lin = LogisticRegression(max_iter=2000, n_jobs=-1)
     lin.fit(a, ytr)
     out = {"linear": float(balanced_accuracy_score(yte, lin.predict(b)))}
-    accs = []
+    # D6 MAKES THE MLP MANDATORY BESIDE ANY LINEAR NULL, because a linear probe
+    # only lower-bounds mutual information: a linear null cannot distinguish
+    # "absent" from "present but not linearly decodable". That argument needs a
+    # CONVERGED MLP. At max_iter=300 with no early stopping the first live run
+    # hit the cap on every cell -- sklearn raised ConvergenceWarning throughout
+    # and l162-s1b/L188 returned mlp 0.2813 BELOW linear 0.3454, which is
+    # impossible for a converged strictly-more-expressive model and is an
+    # optimisation failure, not a measurement.
+    #
+    # Nothing recorded that. An unconverged MLP silently reads as evidence of
+    # absent nonlinear structure, which is the exact inference D6 exists to
+    # prevent. So: early stopping on an internal validation split (the standard
+    # remedy, and it bounds wall clock too), a much higher ceiling, and the
+    # iteration count and convergence flag carried into the output so a reader
+    # can see it rather than infer it.
+    accs, iters, capped = [], [], []
     for s in MLP_SEEDS:
-        m = MLPClassifier(hidden_layer_sizes=(512,), max_iter=300,
+        m = MLPClassifier(hidden_layer_sizes=(512,), max_iter=MLP_MAX_ITER,
+                          early_stopping=True, n_iter_no_change=15,
                           random_state=s + seed_offset)
-        m.fit(a, ytr)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", ConvergenceWarning)
+            m.fit(a, ytr)
+            capped.append(any(issubclass(x.category, ConvergenceWarning) for x in w))
+        iters.append(int(m.n_iter_))
         accs.append(float(balanced_accuracy_score(yte, m.predict(b))))
     out["mlp"] = float(np.median(accs))
     out["mlp_spread"] = float(np.max(accs) - np.min(accs))
+    out["mlp_n_iter"] = iters
+    out["mlp_converged"] = not any(capped)
+    # An MLP below the linear probe cannot be read as "no nonlinear structure";
+    # the MLP's hypothesis class contains the linear one. Surface it.
+    out["mlp_below_linear"] = bool(out["mlp"] < out["linear"])
     return out
 
 

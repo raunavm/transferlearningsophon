@@ -27,14 +27,32 @@ def _mod():
 
 
 def _ckpt(tmp_path, k, embed=128, hidden=512, name="net.pt"):
-    """A checkpoint whose fc mirrors fc_params=[(512, 0.1)]: Linear, ReLU,
-    Dropout, Linear -- so fc.0 and fc.3 carry the parameters."""
+    """A checkpoint whose fc mirrors what weaver ACTUALLY builds.
+
+    This fixture used to emit a FLAT Sequential keyed `mod.fc.0` / `mod.fc.3`,
+    which is what I assumed the head looked like. weaver's ParT builds one
+    nested Sequential per fc_params entry:
+
+        fc = Sequential( Sequential(Linear(embed, hidden), ReLU, Dropout),
+                         Linear(hidden, k) )
+
+    so the real keys are `mod.fc.0.0.*` and `mod.fc.1.*` -- confirmed against
+    the live model summary in the mtx-makeweight-rand2 job log. The flat
+    fixture agreed with the code's single-level regex, so the pair was
+    self-consistent and wrong together, and eval-anomaly died on the real
+    checkpoint with "features are 128-d, the head expects 512": the regex had
+    matched only the second Linear, whose output width is k, so the
+    num-classes check still passed.
+    """
     torch.manual_seed(0)
-    fc = torch.nn.Sequential(
-        torch.nn.Linear(embed, hidden), torch.nn.ReLU(), torch.nn.Dropout(0.1),
-        torch.nn.Linear(hidden, k))
-    state = {f"mod.fc.{i}.{p}": getattr(fc[i], p).detach().clone()
-             for i in (0, 3) for p in ("weight", "bias")}
+    inner = torch.nn.Sequential(
+        torch.nn.Linear(embed, hidden), torch.nn.ReLU(), torch.nn.Dropout(0.1))
+    out = torch.nn.Linear(hidden, k)
+    fc = torch.nn.Sequential(inner, out)
+    state = {}
+    for pn in ("weight", "bias"):
+        state[f"mod.fc.0.0.{pn}"] = getattr(inner[0], pn).detach().clone()
+        state[f"mod.fc.1.{pn}"] = getattr(out, pn).detach().clone()
     state["mod.blocks.0.attn.in_proj_weight"] = torch.zeros(3 * embed, embed)
     p = tmp_path / name
     torch.save(state, p)
@@ -126,3 +144,22 @@ def test_a_sidecar_manifest_records_the_provenance(tmp_path):
     assert side["source"] == "logits_from_features.py"
     assert side["checkpoint_sha256"] == sha
     assert side["num_classes"] == 17 and side["n_jets"] == 100
+
+
+def test_both_linears_are_recovered_from_the_nested_head(tmp_path):
+    """The bug this file missed: a single-level `fc.<i>` pattern finds only the
+    OUTER Linear, and the resulting head is k-wide on the output so every other
+    guard still passes. Pin the shapes directly."""
+    lff = _mod()
+    ckpt, fc = _ckpt(tmp_path, k=17)
+    net, in_dim = lff.head_from_checkpoint(ckpt, 17)
+    lin = [m for m in net if isinstance(m, torch.nn.Linear)]
+    assert len(lin) == 2, f"recovered {len(lin)} Linear(s) from a two-Linear head"
+    assert in_dim == 128, f"head reports {in_dim}-d input, the trunk emits 128"
+    assert lin[0].weight.shape == (512, 128)
+    assert lin[1].weight.shape == (17, 512)
+    assert sum(isinstance(m, torch.nn.ReLU) for m in net) == 1, "ReLU, not GELU"
+
+    x = torch.randn(64, 128)
+    with torch.no_grad():
+        assert torch.allclose(net(x), fc.eval()(x), atol=1e-6)

@@ -56,21 +56,32 @@ def head_from_checkpoint(ckpt: pathlib.Path, declared_k: int):
     raw = torch.load(str(ckpt), map_location="cpu", weights_only=False)
     state = raw.get("model_state_dict", raw) if isinstance(raw, dict) else raw
 
+    # THE HEAD IS A NESTED Sequential, and matching only `fc.<i>.<weight|bias>`
+    # silently found half of it. fc_params=[(512, 0.1)] builds
+    #     fc = Sequential( Sequential(Linear(128,512), ReLU, Dropout),
+    #                      Linear(512, K) )
+    # so the state dict holds `mod.fc.0.0.weight` and `mod.fc.1.weight`. A
+    # single-level pattern matches only the SECOND Linear, which still yields a
+    # head whose output width is K -- so the num-classes check passes -- while
+    # the 128-d input layer is missing entirely. Capture the whole dotted path
+    # and order by it; (0,0) sorts before (1,) as required.
     lin = {}
     for k, v in state.items():
-        m = re.search(r"(?:^|\.)fc\.(\d+)\.(weight|bias)$", k)
+        m = re.search(r"(?:^|\.)fc\.((?:\d+\.)*\d+)\.(weight|bias)$", k)
         if m and getattr(v, "ndim", 0) in (1, 2):
-            lin.setdefault(int(m.group(1)), {})[m.group(2)] = v
+            path = tuple(int(x) for x in m.group(1).split("."))
+            lin.setdefault(path, {})[m.group(2)] = v
     idx = sorted(i for i, d in lin.items() if "weight" in d and d["weight"].ndim == 2)
     if not idx:
-        sys.exit(f"FATAL: no fc.<i>.weight in {ckpt}")
+        sys.exit(f"FATAL: no fc weight tensors in {ckpt}")
 
     layers, in_dim = [], None
     for i in idx:
         w = lin[i]["weight"]
         out_f, in_f = int(w.shape[0]), int(w.shape[1])
         if in_dim is not None and in_f != in_dim:
-            sys.exit(f"FATAL: fc.{i} expects {in_f} inputs, previous layer gives {in_dim}")
+            sys.exit(f"FATAL: fc.{'.'.join(map(str, i))} expects {in_f} inputs, "
+                     f"previous layer gives {in_dim}")
         layer = torch.nn.Linear(in_f, out_f)
         with torch.no_grad():
             layer.weight.copy_(w)

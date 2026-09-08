@@ -342,7 +342,15 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
             torch.nn.Dropout(0.1), torch.nn.Linear(256, 2))
         opt = torch.optim.AdamW(net.parameters(), lr=1e-3, weight_decay=1e-4)
         lossf = torch.nn.CrossEntropyLoss()
-        best_va, best_state, patience = -1.0, None, 0
+        # `stopped_early` distinguishes "the validation AUC plateaued" from
+        # "we ran out of epochs". Both end the loop and both restore the best
+        # state, so the returned number looks identical either way -- but only
+        # the first means the probe converged, and D6 leans on the MLP to tell
+        # "absent" apart from "present but not linearly decodable". That
+        # argument needs a converged fit. label_recovery.py's sklearn MLP hit
+        # its cap on every cell of the first live run and returned a value
+        # BELOW its own linear probe with nothing recording why.
+        best_va, best_state, patience, stopped_early = -1.0, None, 0, False
         for epoch in range(60):
             net.train()
             perm = torch.randperm(tr.shape[0])
@@ -361,15 +369,19 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
             else:
                 patience += 1
                 if patience >= 8:
+                    stopped_early = True
                     break
         net.load_state_dict(best_state)
         net.eval()
         with torch.no_grad():
             scores.append((net(te)[:, 1] - net(te)[:, 0]).numpy())
-        meta.append({"seed": sd, "val_auc": float(best_va)})
-    return np.mean(scores, axis=0), {"seeds": meta,
-                                     "val_auc_mean": float(np.mean([m["val_auc"] for m in meta])),
-                                     "val_auc_std": float(np.std([m["val_auc"] for m in meta]))}
+        meta.append({"seed": sd, "val_auc": float(best_va),
+                     "epochs_run": epoch + 1, "converged": stopped_early})
+    return np.mean(scores, axis=0), {
+        "seeds": meta,
+        "val_auc_mean": float(np.mean([m["val_auc"] for m in meta])),
+        "val_auc_std": float(np.std([m["val_auc"] for m in meta])),
+        "all_converged": all(m["converged"] for m in meta)}
 
 
 def main() -> int:

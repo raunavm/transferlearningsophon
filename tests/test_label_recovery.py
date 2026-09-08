@@ -157,3 +157,41 @@ def test_chance_margin_tightens_with_more_data():
     small = lr.chance_margin(17, [1_000] * 17)
     big = lr.chance_margin(17, [100_000] * 17)
     assert big < small, "more test jets must narrow the null band"
+
+
+def test_the_mlp_probe_reports_whether_it_converged():
+    """D6's argument needs a CONVERGED MLP, and the first live run had none.
+
+    A linear probe only lower-bounds mutual information, so D6 requires the
+    nonlinear probe beside any null. That reasoning collapses if the MLP simply
+    ran out of iterations: at max_iter=300 with no early stopping, the live
+    eval-labelrec job hit the cap on every cell and returned mlp 0.2813 against
+    linear 0.3454 for l162-s1b/L188 -- impossible for a converged model whose
+    hypothesis class CONTAINS the linear one. Nothing in the output said so, so
+    the number read as "no nonlinear structure". These three fields make the
+    failure visible instead.
+    """
+    import numpy as np
+    rng = np.random.default_rng(0)
+    n, d, k = 600, 12, 3
+    Xtr = rng.normal(size=(n, d)); ytr = rng.integers(0, k, n)
+    Xte = rng.normal(size=(200, d)); yte = rng.integers(0, k, 200)
+    out = lr.fit_pair(Xtr, ytr, Xte, yte)
+    for key in ("mlp_n_iter", "mlp_converged", "mlp_below_linear"):
+        assert key in out, f"fit_pair no longer reports {key}"
+    assert isinstance(out["mlp_converged"], bool)
+    assert all(i <= lr.MLP_MAX_ITER for i in out["mlp_n_iter"])
+    assert len(out["mlp_n_iter"]) == len(lr.MLP_SEEDS)
+
+
+def test_the_mlp_uses_early_stopping_not_a_bare_iteration_cap():
+    """The cap alone is what produced an unconverged probe; a raised cap with no
+    stopping rule would just be a slower way to hit it."""
+    src = (ROOT / "experiments" / "EVAL" / "label_recovery.py").read_text()
+    # Executable lines only. The comment above fit_pair quotes the old
+    # max_iter=300 to explain what went wrong, and a naive substring check on
+    # the whole file fails on that prose rather than on the code.
+    code = "\n".join(l for l in src.splitlines()
+                     if not l.lstrip().startswith("#"))
+    assert "early_stopping=True" in code
+    assert "max_iter=300" not in code, "the unconverged setting is back"
