@@ -82,6 +82,20 @@ EPOCHS = {10_000: 50, 100_000: 30, 1_000_000: 10}
 FT_SEEDS = [1, 2, 3]
 LR_PRETRAINED, LR_SCRATCH = "1e-4", "5e-4"
 
+# The published top / q-g recipe (docs/PRD_PLAN.md 4.1 `[V G]`). BENCH_HEAD_MULT
+# is what makes the trunk/head pair 1e-4 / 5e-3: weaver sets the matched
+# parameters to `start_lr * mult`, so writing 50 here fixes BOTH numbers from
+# LR_PRETRAINED and they cannot drift apart. NMAX_REPS is the benchmark's
+# convention of a median over 9 head re-initialisations, top only, at N_max
+# only, pretrained only.
+BENCH_EPOCHS = 20
+BENCH_HEAD_MULT = 50
+BENCH_SETS = ["top", "qg"]
+NMAX_REPS = list(range(1, 10))
+assert float(LR_PRETRAINED) * BENCH_HEAD_MULT == 5e-3, (
+    "the published head rate is 5e-3; trunk x mult must equal it")
+assert len(NMAX_REPS) == 9
+
 
 def test2m_list() -> str:
     """The 335-file --data-test list of the paper's feature extraction, verbatim."""
@@ -195,6 +209,138 @@ SUBSETS_BENCH = PREAMBLE + """
               --sizes $(sizes_for ${D}) --seeds 1 2 3 --val-size 200000
             ls -la ${O}; du -sh ${O}
           done
+"""
+
+
+# ---------------------------------------------------------------- legs 3 and 4
+# THE TWO PUBLISHED BENCHMARKS. These are the rows that drop into the community
+# tables, so the recipe is the benchmark's, not ours (docs/PRD_PLAN.md 4.1,
+# `[V G]`): 20 epochs, trunk 1e-4 with the head at 50x via weaver's lr_mult,
+# CONSTANT lr (--lr-scheduler none, not weaver's flat+decay default), weight
+# decay 0.01, and median + spread over head re-initialisations.
+#
+# The 50x is not a free parameter: 1e-4 x 50 = 5e-3 is exactly the published
+# 1e-4 trunk / 5e-3 head. weaver applies `args.start_lr * mult_factor` to every
+# parameter matching the pattern, so the ratio is set once and cannot drift
+# between the two numbers. Scratch takes a single 5e-4 and NO lr_mult -- there
+# is no pretrained trunk to hold back, and 5e-4 is the scratch rate, not 5e-3.
+#
+# q/g reads qg_v2_sub. The first staging inverted the electric charge of every
+# electron and muon constituent (PDG 11 and 13 are the NEGATIVE leptons) and
+# part_charge is an input feature here.
+LEGS_BENCH = PREAMBLE + """
+          ROOT_OUT=/data/results/ft
+          mkdir -p ${ROOT_OUT}
+          src_for () { case $1 in
+            top) echo "/data/finetune/top";;
+            qg)  echo "/data/finetune/qg_v2";;
+            *) echo "FATAL: no source for $1" >&2; exit 1;; esac; }
+          cfg_for () { case $1 in
+            top) echo "configs/finetune/TopReference.yaml";;
+            qg)  echo "configs/finetune/EnergyFlowQG.yaml";;
+            *) echo "FATAL: no config for $1" >&2; exit 1;; esac; }
+          sizes_for () { case $1 in
+            top) echo "1000 10000 100000 1200000";;
+            qg)  echo "1000 10000 100000 1600000";;
+            *) echo "FATAL: no grid for $1" >&2; exit 1;; esac; }
+          nmax_for () { case $1 in
+            top) echo 1200000;; qg) echo 1600000;;
+            *) echo "FATAL: no N_max for $1" >&2; exit 1;; esac; }
+          test_for () { case $1 in
+            top) echo "$(src_for top)/top_test.parquet";;
+            qg)  echo "$(src_for qg)/qg_chunk18.parquet $(src_for qg)/qg_chunk19.parquet";;
+            *) echo "FATAL: no test files for $1" >&2; exit 1;; esac; }
+
+          for D in __BENCH_SETS__; do
+            S=$(src_for ${D}); O=${S}_sub
+            [ -f ${O}/DONE ] || { echo "FATAL: ${O}/DONE absent -- run ft-subsets-bench first"; exit 1; }
+            for f in $(test_for ${D}); do
+              [ -f "${f}" ] || { echo "FATAL: ${D}: no test file ${f}"; exit 1; }
+            done
+            [ -f "$(cfg_for ${D})" ] || { echo "FATAL: ${D}: no $(cfg_for ${D})"; exit 1; }
+          done
+""" + SPACE_GUARD + """
+          space_ok () { local p=$(df --output=pcent /data | tail -1 | tr -dc 0-9); local g=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9); echo "/data ${p}% used, ${g}G free"; [ "$p" -lt 85 ] && [ "$g" -ge 50 ] || { echo "FATAL: /data at ${p}% used, ${g}G free: stop and ask the PI"; exit 1; }; }
+          FAIL_MARK=${ROOT_OUT}/FAILED_BENCH
+          [ -f ${FAIL_MARK} ] && { echo "FATAL: an earlier attempt failed twice: $(cat ${FAIL_MARK}). Fix it, then remove ${FAIL_MARK}"; exit 1; }
+          attempt_ok () { local o=$1; local n=$(ls -d ${o}.partial.* 2>/dev/null | wc -l); [ "$n" -ge 2 ] && { echo "${o} failed ${n} times" | tee ${FAIL_MARK}; exit 1; }; return 0; }
+
+""" + FETCH_SOPHON + """
+          INITS="__INITS__"
+          for spec in ${INITS}; do
+            name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}; k=${rest#*:}
+            [ "${name}" = "scratch" ] && continue
+            [ -f "${ckpt}" ] || { echo "FATAL: ${name}: no ${ckpt}"; exit 1; }
+          done
+
+          # The benchmark recipe, set in ONE place. --lr-scheduler none is the
+          # constant LR the published recipe specifies; weaver's default is
+          # flat+decay, which would silently anneal and make the row not
+          # comparable to the community table.
+          BENCH="--use-amp --batch-size 512 --num-workers 2 --fetch-by-files --fetch-step 1 \
+            --optimizer ranger --lr-scheduler none --num-epochs __BENCH_EPOCHS__ \
+            --optimizer-option weight_decay 0.01"
+          # An ARRAY, not a string. The value carries parentheses and single
+          # quotes; as a plain string it is re-split on expansion and the
+          # parens reach the shell as syntax.
+          HEAD_MULT=(--optimizer-option lr_mult "(r'mod\\.fc\\..*', __HEAD_MULT__)")
+
+          for D in __BENCH_SETS__; do
+            SUB=$(src_for ${D})_sub; CFG=$(cfg_for ${D}); TEST=$(test_for ${D})
+            NMAX=$(nmax_for ${D})
+            for spec in ${INITS}; do
+              name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}
+              for N in $(sizes_for ${D}); do
+                # 9 head re-inits at N_max, top only, pretrained arms only --
+                # the benchmark's convention for the headline cell
+                # (docs/PRD_PLAN.md 4.1). Everywhere else the three
+                # fine-tuning seeds are the spread.
+                REPS="__FT_SEEDS__"
+                if [ "${D}" = "top" ] && [ "${N}" = "${NMAX}" ] && [ -n "${ckpt}" ]; then
+                  REPS="__NMAX_REPS__"
+                fi
+                for S in ${REPS}; do
+                  OUT=${ROOT_OUT}/leg_${D}/${name}/N${N}/s${S}
+                  [ -f ${OUT}/DONE ] && { echo "skip ${OUT} (DONE)"; continue; }
+                  space_ok
+                  attempt_ok ${OUT}
+                  [ -d ${OUT} ] && mv ${OUT} ${OUT}.partial.$(date -u +%s)
+                  mkdir -p ${OUT}
+                  if [ -n "${ckpt}" ]; then
+                    LOAD=(--load-model-weights ${ckpt} --exclude-model-weights "mod\\.fc\\..*")
+                    LR=__LR_PRE__; MULT=("${HEAD_MULT[@]}")
+                  else
+                    LOAD=(); LR=__LR_SCRATCH__; MULT=()
+                  fi
+                  python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json \
+                    leg=${D} init=${name} checkpoint=${ckpt} n_train=${N} ft_seed=${S} \
+                    lr=${LR} head_lr_mult=__HEAD_MULT__ epochs=__BENCH_EPOCHS__ lr_schedule=constant \
+                    weight_decay=0.01 subset=${SUB}/train_N${N}_s${S}.parquet \
+                    data_config=${CFG} num_classes=2 batch_size=512 steps_per_epoch=$((N/512))
+                  python3 experiments/E1/seed_weaver.py --seed ${S} --lean-val-metrics \
+                    --data-train ${SUB}/train_N${N}_s${S}.parquet --data-val ${SUB}/val.parquet \
+                    --data-config ${CFG} \
+                    --network-config experiments/MTX/ParT_sophon_arch_mtx.py -o num_classes 2 -o fc_params '[(512,0.1)]' \
+                    ${BENCH} "${MULT[@]}" --start-lr ${LR} --samples-per-epoch ${N} --samples-per-epoch-val 200000 \
+                    "${LOAD[@]}" --model-prefix ${OUT}/net --log ${OUT}/train.log 2>&1 | tee ${OUT}/stdout.log
+                  [ -z "${ckpt}" ] || python3 experiments/FT/smoke_checks.py load-log --log ${OUT}/stdout.log
+                  # The 50x must appear in weaver's own log, or the row is not
+                  # the published recipe and nothing else would say so.
+                  if [ -n "${ckpt}" ]; then
+                    grep -q "Parameters with lr multiplied by __HEAD_MULT__" ${OUT}/stdout.log || {
+                      echo "FATAL: weaver did not apply the head lr multiplier; the trunk/head"
+                      echo "       ratio is not the published 1e-4/5e-3."; exit 1; }
+                  fi
+                  python3 experiments/EVAL/extract_features.py --checkpoint ${OUT}/net_best_epoch_state.pt \
+                    --num-classes 2 --arm FT_${D}_${name}_N${N}_s${S} \
+                    --data-config ${CFG} --data-test ${TEST} \
+                    --out ${OUT}/features --batch-size 512 --num-workers 1 --fetch-step 1 --save-logits
+                  touch ${OUT}/DONE
+                done
+              done
+            done
+          done
+          echo "FT BENCH LEGS COMPLETE"
 """
 
 SUBSETS_JC1 = PREAMBLE + """
@@ -521,6 +667,10 @@ def _fill(script: str, pin: str) -> str:
             .replace("__LR_SCRATCH__", LR_SCRATCH)
             .replace("__LAMBDA__", LAMBDA)
             .replace("__JC1_CLASSES__", JC1_CLASSES)
+            .replace("__BENCH_EPOCHS__", str(BENCH_EPOCHS))
+            .replace("__HEAD_MULT__", str(BENCH_HEAD_MULT))
+            .replace("__BENCH_SETS__", " ".join(BENCH_SETS))
+            .replace("__NMAX_REPS__", " ".join(str(r) for r in NMAX_REPS))
             .replace("__SOPHON_SHA256__", SOPHON_SHA256))
 
 
@@ -544,6 +694,16 @@ def build(pin: str) -> dict[str, str]:
                        "  # split, held in memory and then COPIED by the shuffle, so the\n"
                        "  # peak is roughly twice the pool: 64Gi, not the 48Gi that sizes\n"
                        "  # the 1.2M-row JetClass-II job.\n"),
+        "job-ft-legs-bench-raunav.yaml": job(
+            "ft-legs-bench-raunav", _fill(LEGS_BENCH, pin), gpu=True, cpu="4",
+            memory="88Gi", shm="8Gi", backoff=50, pin=pin,
+            header=h + "  # LEGS 3 AND 4 -- the two PUBLISHED benchmarks (top tagging and\n"
+                       "  # EnergyFlow quark/gluon). The recipe is the benchmark's, not ours\n"
+                       "  # (docs/PRD_PLAN.md 4.1): 20 epochs, trunk 1e-4 with the head at\n"
+                       "  # 50x = 5e-3, CONSTANT lr, weight decay 0.01. weaver's default\n"
+                       "  # scheduler is flat+decay, which would anneal and quietly make the\n"
+                       "  # row incomparable to the community table, so --lr-scheduler none\n"
+                       "  # is explicit. Top additionally takes 9 head re-inits at N_max.\n"),
         "job-ft-smoke-raunav.yaml": job(
             "ft-smoke-raunav", _fill(SMOKE, pin), gpu=False, cpu="4", memory="32Gi",
             shm="4Gi", backoff=0, pin=pin,
