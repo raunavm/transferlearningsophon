@@ -1,6 +1,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
+  # RERUN of eval-anchors-raunav, which COMPLETED at tag mtx-s1.15 --
+  # three commits before the unweighted-comparison fix, so it reported the
+  # pre-fix number. A new NAME rather than a delete+apply: the first job
+  # object stays as provenance, and a new OUTPUT PATH so no results file is
+  # overwritten. Compare anchors.json (old) against anchors_v2.json (fixed).
   # THE PUBLISHED-ANCHOR CALIBRATION -- docs/PRD_PLAN.md 6.3 and 8.1.
   #
   # Before any arm-wise rejection number is quoted, the PUBLIC Sophon checkpoint
@@ -42,7 +47,7 @@ metadata:
   #
   # CPU-ONLY, ZERO GPU. Reads cached logits written by the E0b extraction; the
   # 3 GB logits array is mmapped and consumed in 500k-row chunks.
-  name: eval-anchors-raunav
+  name: eval-anchors2-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 0
@@ -70,10 +75,10 @@ spec:
           OUT=/data/results/eval/sophon-public
           PYTHONUNBUFFERED=1 python3 experiments/EVAL/anchors.py \
             --features ${FEAT} \
-            --out ${OUT}/anchors.json
+            --out ${OUT}/anchors_v2.json
 
-          echo "=== anchors.json ==="
-          cat ${OUT}/anchors.json
+          echo "=== anchors_v2.json ==="
+          cat ${OUT}/anchors_v2.json
         volumeMounts:
         - { name: data, mountPath: /data }
         resources:
