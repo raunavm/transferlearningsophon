@@ -45,12 +45,22 @@ def test_sic_curve_never_uses_a_threshold_below_the_floor():
 
 
 def test_sic_is_one_when_the_score_is_pure_noise():
-    """The null. A score carrying no signal information has SIC ~ 1."""
-    rng = np.random.default_rng(1)
-    y = np.concatenate([np.ones(2000), np.zeros(20000)])
-    s = rng.normal(0, 1, y.size)          # independent of y
-    _, _, sic = an.sic_curve(y, s)
-    assert 0.7 < float(np.median(sic)) < 1.4
+    """The null. A score carrying no signal information has max SIC ~ 1.
+
+    The MEDIAN of a null SIC curve is not 1 -- it is sqrt(0.5) = 0.7071, and
+    bounding it by (0.7, 1.4) fails on ~30 % of seeds while passing on the
+    committed one. max SIC is the statistic that equals 1 under the null, and
+    it is also the statistic the module reports.
+    """
+    over = 0
+    for seed in range(20):
+        rng = np.random.default_rng(seed)
+        y = np.concatenate([np.ones(2000), np.zeros(20000)])
+        s = rng.normal(0, 1, y.size)          # independent of y
+        _, _, sic = an.sic_curve(y, s)
+        assert float(np.max(sic)) == pytest.approx(1.0, abs=0.05), seed
+        over += float(np.median(sic)) > 1.0
+    assert over == 0, "a null SIC curve's median sits below 1, at sqrt(0.5)"
 
 
 def test_sigma_min_inverts_max_sic_against_the_target():
@@ -82,11 +92,23 @@ def test_argos_matches_its_published_formula():
 def test_argos_is_signal_blind():
     """It must be computable from (data, template) alone -- no truth labels.
 
-    Checked by signature: passing only the two score arrays has to suffice.
+    Asserting `out is None or isinstance(out, tuple)` certifies nothing: argos
+    can only return those two things, so a stub that ignores both arguments
+    passes. The real content is that the OUTPUT DEPENDS ON THE INPUTS and on
+    nothing else -- identical inputs give identical output, and an injected
+    excess in the data moves it.
     """
     rng = np.random.default_rng(3)
-    out = an.argos(rng.normal(0, 1, 5000), rng.normal(0, 1, 5000))
-    assert out is None or isinstance(out, tuple)
+    tmpl = rng.normal(0, 1, 8000)
+    flat = rng.normal(0, 1, 8000)
+    a_null = an.argos(flat, tmpl)
+    assert a_null is not None
+    # deterministic in its arguments
+    assert an.argos(flat.copy(), tmpl.copy())[0] == pytest.approx(a_null[0], rel=1e-12)
+    # and it MOVES when the data develops an excess the template lacks
+    bumped = np.concatenate([flat[:7000], rng.normal(4, 1, 1000)])
+    a_sig = an.argos(bumped, tmpl)
+    assert a_sig[0] > a_null[0], "ARGOS must respond to a data/template excess"
 
 
 def test_node_roles_reproduce_every_arm_width():
@@ -187,6 +209,10 @@ def test_main_runs_end_to_end_and_writes_finite_metrics(tmp_path):
         assert np.isfinite(v["max_sic"]) and v["max_sic"] > 0
         assert np.isfinite(v["sigma_min"])
         assert "regret" in v and v["regret"] >= 1.0 - 1e-9, "regret is >= 1 by definition"
+        assert v.get("regret_n_arms") == 1, (
+            "this fixture has one arm, so regret is 1.0 trivially; the "
+            "cross-arm behaviour is covered by "
+            "test_regret_is_normalised_across_arms_not_within_one")
     # the null carries the signal-blind quantities and NO SIC -- there is no
     # eps_S to build one from, which is exactly why the guard reads ARGOS
     assert per_n["0"]["knn"].get("null") is True
@@ -216,7 +242,7 @@ def test_saturated_scores_are_flagged_not_reported_as_agreement(tmp_path):
              "--signals", "label_X_bb", "--n-sig", "400"])
     fams = _json.loads((out / "anomaly_results.json").read_text())
     v = fams["arms"]["a"]["signals"]["label_X_bb"]["400"]["knn"]
-    assert v["max_sic"] == pytest.approx(np.sqrt(1500 / an.MIN_BKG_PASS), rel=0.02)
+    assert v["max_sic"] == pytest.approx(np.sqrt(1500 / (an.MIN_BKG_PASS + 1)), rel=0.02)
     assert v["at_ceiling"] is True, "a clipped score must be flagged"
 
 
@@ -242,3 +268,39 @@ def test_class_sum_is_absent_without_logits_rather_than_crashing(tmp_path):
     fams = per_n["arms"]["a"]["signals"]["label_X_bb"]["300"]
     assert "class_sum" not in fams
     assert "knn" in fams and "max_sic" in fams["knn"]
+
+
+def test_regret_is_normalised_across_arms_not_within_one(tmp_path):
+    """The defect this replaces: `agg` was opened inside the arm loop, so the
+    minimum ranged over the score FAMILIES of one arm and every arm's best
+    family scored exactly 1.000. The cross-arm table then read "no regret from
+    coarsening the vocabulary" for every arm -- the null under test,
+    manufactured by the aggregation.
+
+    Two arms over the same jets, one with a separable signal and one without:
+    their regrets must differ, and the worse arm's must exceed 1.
+    """
+    import json as _json
+    rng = np.random.default_rng(21)
+    qcd = sorted(an._probe().qcd_indices())
+    n = 6000
+    lab = np.array(rng.choice(qcd, size=n))
+    sidx = np.arange(0, 900)
+    lab[sidx] = 0
+    good, bad = tmp_path / "good", tmp_path / "bad"
+    _cache(good, n, lab, rng, k=188, signal_boost=sidx)   # separable
+    _cache(bad, n, lab, rng, k=188, signal_boost=None)    # carries nothing
+    out = tmp_path / "ad"
+    an.main(["--features", f"good={good}", f"bad={bad}",
+             "--rungs", "good=L188", "bad=L188", "--out", str(out),
+             "--n-bkg", "1500", "--n-template", "1500", "--trainings", "1",
+             "--signals", "label_X_bb", "--n-sig", "400"])
+    res = _json.loads((out / "anomaly_results.json").read_text())
+    g = res["arms"]["good"]["signals"]["label_X_bb"]["400"]["knn"]
+    b = res["arms"]["bad"]["signals"]["label_X_bb"]["400"]["knn"]
+    assert g["regret_n_arms"] == 2 and b["regret_n_arms"] == 2
+    assert g["regret"] == pytest.approx(1.0), "the better arm sets the scale"
+    assert b["regret"] > 1.01, (
+        f"the worse arm must carry regret > 1, got {b['regret']:.4f}; "
+        f"a within-arm normalisation returns 1.000 for both")
+    assert "regret_within_arm" in g, "the within-arm ratio is still recorded"

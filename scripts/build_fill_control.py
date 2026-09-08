@@ -131,7 +131,17 @@ def script(pin: str) -> str:
             # the zero-fill penalty PLUS a checkpoint change, per arm, with
             # nothing erroring. Epoch 79 is the side that moves, because
             # DECISIONS_PENDING item 18 resolved to epoch 79 uniformly.
-            f"          [ -f ${{U}}/label188.npy ] || python3 experiments/EVAL/extract_features.py \\",
+            # NO `[ -f ... ] ||` SHORT-CIRCUIT HERE. ${U} is the identical path
+            # and resume key the superseded launch filled by TRUNCATING
+            # features_v2 (best epoch), and nothing clears ${ROOT_OUT}. With a
+            # resume guard the fixed job skips the extraction, silently reuses
+            # the stale best-epoch leg, and reports the exact confound this
+            # rebuild exists to remove -- exit 0, hashes matching. 400k jets is
+            # ~10 min; correctness is worth more than the resume.
+            f'          case "${{U}}" in ${{ROOT_OUT}}/*/unmasked) ;; *)'
+            f' echo "FATAL: refusing rm -rf ${{U}}"; exit 1;; esac',
+            f"          rm -rf ${{U}}",
+            f"          python3 experiments/EVAL/extract_features.py \\",
             f"            --checkpoint {ckpt} --num-classes {k} --arm {arm}_unmasked \\",
             f"            --data-config configs/data/JetClassII_base.yaml \\",
             f"            --data-test ${{TEST}} --out ${{U}} \\",
@@ -161,6 +171,23 @@ def script(pin: str) -> str:
         '                echo "FATAL: ${a}/${leg} labels differ from its own baseline;"',
         '                echo "       the legs are not the same jets, so the fill"',
         '                echo "       penalty would be a different-sample effect."; exit 1',
+        "              fi",
+        "            done",
+        # label188 is a property of the DATA, not the model: two extractions of
+        # the same jets at two different checkpoints produce the identical
+        # digest. So the diff above cannot see the confound it was added for.
+        # The checkpoint digest can.
+        "            cref=",
+        "            for leg in unmasked " + " ".join(MASKS) + "; do",
+        "              c=$(python3 -c \"import json,sys;"
+        "print(json.load(open(sys.argv[1]))['checkpoint_sha256'])\" \\",
+        "                    ${ROOT_OUT}/${a}/${leg}/extract_manifest.json)",
+        '              echo "  ${a}/${leg} ckpt ${c:0:16}"',
+        '              if [ -z "${cref}" ]; then cref="${c}"',
+        '              elif [ "${c}" != "${cref}" ]; then',
+        '                echo "FATAL: ${a}/${leg} was extracted at a DIFFERENT"',
+        '                echo "       checkpoint than its own baseline. The fill"',
+        '                echo "       penalty would include a checkpoint change."; exit 1',
         "              fi",
         "            done",
         "          done",

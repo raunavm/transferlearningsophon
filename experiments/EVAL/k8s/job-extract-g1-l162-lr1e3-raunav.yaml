@@ -33,7 +33,7 @@ spec:
           git rev-parse HEAD
           pip install --no-cache-dir -q pyarrow || exit 1
 
-          CKPT=/data/results/g1/g1-l162-lr1e3/net_epoch-79_state.pt
+          CKPT=/data/results/g1/g1-l162-lr1e3/net_best_epoch_state.pt
           # CHECKPOINT RULE (DECISIONS_PENDING item 18, decided 2026-09-07).
           # For the mtx arms this is net_epoch-79_state.pt -- the LAST epoch --
           # not weaver's net_best_epoch_state.pt. weaver's best marker is the
@@ -60,7 +60,7 @@ spec:
           # masked features against a best-epoch baseline. Different checkpoint,
           # different path -- and extract_features.py now also refuses to write
           # into a directory whose manifest names a different checkpoint.
-          OUT=/data/results/eval/g1-l162-lr1e3/features_e79
+          OUT=/data/results/eval/g1-l162-lr1e3/features_v2
           mkdir -p ${OUT}
 
           PYTHONUNBUFFERED=1 python3 experiments/EVAL/extract_features.py \

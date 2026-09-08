@@ -105,6 +105,27 @@ def build_model(data_config, num_classes: int):
     return model
 
 
+def refuse_foreign_checkpoint(manifest_path, ckpt_sha: str) -> None:
+    """Refuse to write into a cache built from a different checkpoint.
+
+    Must be called BEFORE the first np.save. Called after the writes it only
+    reported a mixture it had already created. `sha256` is the legacy key:
+    manifests written before `checkpoint_sha256` existed carry the identical
+    digest under that name, and without the fallback this guard is inert on
+    every cache that predates it.
+    """
+    if not manifest_path.exists():
+        return
+    prior = json.loads(manifest_path.read_text())
+    was = prior.get("checkpoint_sha256") or prior.get("sha256")
+    if was and was != ckpt_sha:
+        raise SystemExit(
+            f"FATAL: {manifest_path.parent} already holds features from a "
+            f"DIFFERENT checkpoint ({was[:16]}, now {ckpt_sha[:16]}). The cache "
+            f"path does not encode the checkpoint, so writing here would "
+            f"silently mix two models. Use a new --out.")
+
+
 def load_trunk_or_die(model, ckpt_path: pathlib.Path, declared_k: int) -> dict:
     """Load a checkpoint and REFUSE to continue on an incomplete or mislabelled one.
 
@@ -318,6 +339,18 @@ def main() -> int:
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
+    # CHECKPOINT GUARD -- BEFORE any np.save, not after. Placed at the end it
+    # raised only once the arrays it was protecting had already been replaced,
+    # leaving the directory strictly worse than with no guard at all: the new
+    # model's features under the old model's manifest, passing every integrity
+    # check in the repo. It also reads the legacy `sha256` key, because
+    # manifests written before `checkpoint_sha256` existed carry the identical
+    # digest under that name -- without the fallback the guard is inert on
+    # exactly the caches (features_v2, massreg) it was written to protect.
+    ckpt_sha = hashlib.sha256(pathlib.Path(args.checkpoint).read_bytes()).hexdigest()
+    prior_manifest = out / "extract_manifest.json"
+    refuse_foreign_checkpoint(prior_manifest, ckpt_sha)
+
     # MEMORY. The model is irrelevant here -- 2.2M parameters is ~9 MB and the
     # accumulated features are 128 floats per jet. What costs memory is the
     # LOADER: fetch_by_files with fetch_step=5 holds five whole JetClass-II
@@ -426,8 +459,7 @@ def main() -> int:
         # came to compare epoch-79 masked features against a best-epoch
         # baseline with nothing erroring.
         "checkpoint": str(args.checkpoint),
-        "checkpoint_sha256": hashlib.sha256(
-            pathlib.Path(args.checkpoint).read_bytes()).hexdigest(),
+        "checkpoint_sha256": ckpt_sha,
         "data_config": args.data_config,
         "data_config_sha256": hashlib.sha256(
             pathlib.Path(args.data_config).read_bytes()).hexdigest(),
@@ -437,16 +469,7 @@ def main() -> int:
         "has_logits": bool(args.save_logits),
         **prov,
     }
-    prior = out / "extract_manifest.json"
-    if prior.exists():
-        was = json.loads(prior.read_text()).get("checkpoint_sha256")
-        if was and was != manifest["checkpoint_sha256"]:
-            raise SystemExit(
-                f"FATAL: {out} already holds features from a DIFFERENT "
-                f"checkpoint ({was[:16]}, now {manifest['checkpoint_sha256'][:16]}). "
-                f"The cache path does not encode the checkpoint, so writing "
-                f"here would silently mix two models. Use a new --out.")
-    prior.write_text(json.dumps(manifest, indent=2))
+    prior_manifest.write_text(json.dumps(manifest, indent=2))
     print(f"\nwrote {F.shape[0]:,} x {F.shape[1]} features to {out}")
     print(f"label188 sha256 {manifest['label188_sha256'][:16]}  "
           f"(must match across arms -- that IS the row-alignment check)")

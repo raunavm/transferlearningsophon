@@ -33,6 +33,7 @@ import argparse
 import csv
 import importlib.util
 import json
+import math
 import pathlib
 
 import numpy as np
@@ -48,7 +49,29 @@ SPLIT_SEED = 20260822
 MLP_SEEDS = (0, 1, 2)
 # A null on the linear probe alone is uninterpretable (D6), so a cell is only
 # called "not recovered" when BOTH probes are at chance.
-CHANCE_MARGIN = 0.02
+#
+# "At chance" is a STATISTICAL statement, so the margin cannot be an absolute
+# constant. chance = 1/k runs from 0.0053 (L188, k=188) to 0.25 (R3_VIS, k=4);
+# a flat 0.02 is 3.8x chance at L188 and 0.08x at R3_VIS -- most permissive
+# exactly on the FINER cells this module calls the actual measurement, where it
+# would print "not recovered" for a probe running at 4.5x chance. The margin is
+# therefore NSIGMA standard deviations of balanced accuracy under the null,
+# which scales with both k and the per-class test counts. D6 does not repair
+# this: two probes compared against a threshold 76 sigma above chance both read
+# as null.
+CHANCE_SIGMA = 5.0
+
+
+def chance_margin(k: int, n_per_class) -> float:
+    """NSIGMA sd of balanced accuracy under random guessing among k groups.
+
+    Balanced accuracy is the mean of k per-class recalls; under the null each
+    recall is Binomial(n_c, 1/k)/n_c, independent across classes, so
+    Var = (1/k^2) * sum_c (1/k)(1-1/k)/n_c.
+    """
+    p = 1.0 / k
+    inv = sum(1.0 / n for n in n_per_class if n > 0)
+    return CHANCE_SIGMA * (1.0 / k) * math.sqrt(p * (1.0 - p) * inv)
 
 
 def _probe():
@@ -121,7 +144,7 @@ def main(argv=None) -> int:
 
     res = {"row_alignment_sha256": align, "n_used": int(take.size),
            "n_train": int(tr.size), "n_test": int(te.size),
-           "chance_margin": CHANCE_MARGIN, "arms": {}}
+           "chance_sigma": CHANCE_SIGMA, "arms": {}}
 
     for arm, d in sorted(arms.items()):
         F, L = d["F"], d["L"]
@@ -136,12 +159,15 @@ def main(argv=None) -> int:
             r = fit_pair(F[tr], ytr, F[te], yte)
             r["n_groups"] = k
             r["chance"] = 1.0 / k        # balanced accuracy chance level
+            _, counts = np.unique(yte, return_counts=True)
+            r["chance_margin"] = chance_margin(k, counts.tolist())
+            r["chance_sigma"] = CHANCE_SIGMA
             # An arm's OWN rung is the control: it must be recovered.
             r["is_own_rung"] = rung == own[arm]
             # Finer than the arm's own vocabulary = the actual measurement.
             r["is_finer_than_own"] = RUNGS.index(rung) < RUNGS.index(own[arm])
-            both_at_chance = (r["linear"] <= r["chance"] + CHANCE_MARGIN
-                              and r["mlp"] <= r["chance"] + CHANCE_MARGIN)
+            lim = r["chance"] + r["chance_margin"]
+            both_at_chance = r["linear"] <= lim and r["mlp"] <= lim
             r["not_recovered"] = bool(both_at_chance)
             res["arms"][arm]["rungs"][rung] = r
             flag = ("  <- OWN" if r["is_own_rung"]

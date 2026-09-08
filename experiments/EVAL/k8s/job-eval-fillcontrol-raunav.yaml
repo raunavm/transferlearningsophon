@@ -61,7 +61,9 @@ spec:
           # ---- r16q1-s2 (K=17)
           [ -f "/data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt" ] || { echo "FATAL: no /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt"; exit 1; }
           U=${ROOT_OUT}/r16q1-s2/unmasked
-          [ -f ${U}/label188.npy ] || python3 experiments/EVAL/extract_features.py \
+          case "${U}" in ${ROOT_OUT}/*/unmasked) ;; *) echo "FATAL: refusing rm -rf ${U}"; exit 1;; esac
+          rm -rf ${U}
+          python3 experiments/EVAL/extract_features.py \
             --checkpoint /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s2_unmasked \
             --data-config configs/data/JetClassII_base.yaml \
             --data-test ${TEST} --out ${U} \
@@ -80,7 +82,9 @@ spec:
           # ---- r16q1-s3 (K=17)
           [ -f "/data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt" ] || { echo "FATAL: no /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt"; exit 1; }
           U=${ROOT_OUT}/r16q1-s3/unmasked
-          [ -f ${U}/label188.npy ] || python3 experiments/EVAL/extract_features.py \
+          case "${U}" in ${ROOT_OUT}/*/unmasked) ;; *) echo "FATAL: refusing rm -rf ${U}"; exit 1;; esac
+          rm -rf ${U}
+          python3 experiments/EVAL/extract_features.py \
             --checkpoint /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s3_unmasked \
             --data-config configs/data/JetClassII_base.yaml \
             --data-test ${TEST} --out ${U} \
@@ -99,7 +103,9 @@ spec:
           # ---- r16q1-s4 (K=17)
           [ -f "/data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt" ] || { echo "FATAL: no /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt"; exit 1; }
           U=${ROOT_OUT}/r16q1-s4/unmasked
-          [ -f ${U}/label188.npy ] || python3 experiments/EVAL/extract_features.py \
+          case "${U}" in ${ROOT_OUT}/*/unmasked) ;; *) echo "FATAL: refusing rm -rf ${U}"; exit 1;; esac
+          rm -rf ${U}
+          python3 experiments/EVAL/extract_features.py \
             --checkpoint /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s4_unmasked \
             --data-config configs/data/JetClassII_base.yaml \
             --data-test ${TEST} --out ${U} \
@@ -118,7 +124,9 @@ spec:
           # ---- l162-s1b (K=162)
           [ -f "/data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt" ] || { echo "FATAL: no /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt"; exit 1; }
           U=${ROOT_OUT}/l162-s1b/unmasked
-          [ -f ${U}/label188.npy ] || python3 experiments/EVAL/extract_features.py \
+          case "${U}" in ${ROOT_OUT}/*/unmasked) ;; *) echo "FATAL: refusing rm -rf ${U}"; exit 1;; esac
+          rm -rf ${U}
+          python3 experiments/EVAL/extract_features.py \
             --checkpoint /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt --num-classes 162 --arm l162-s1b_unmasked \
             --data-config configs/data/JetClassII_base.yaml \
             --data-test ${TEST} --out ${U} \
@@ -146,6 +154,18 @@ spec:
                 echo "FATAL: ${a}/${leg} labels differ from its own baseline;"
                 echo "       the legs are not the same jets, so the fill"
                 echo "       penalty would be a different-sample effect."; exit 1
+              fi
+            done
+            cref=
+            for leg in unmasked TopReference EnergyFlowQG; do
+              c=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['checkpoint_sha256'])" \
+                    ${ROOT_OUT}/${a}/${leg}/extract_manifest.json)
+              echo "  ${a}/${leg} ckpt ${c:0:16}"
+              if [ -z "${cref}" ]; then cref="${c}"
+              elif [ "${c}" != "${cref}" ]; then
+                echo "FATAL: ${a}/${leg} was extracted at a DIFFERENT"
+                echo "       checkpoint than its own baseline. The fill"
+                echo "       penalty would include a checkpoint change."; exit 1
               fi
             done
           done

@@ -122,3 +122,56 @@ def test_spec_is_mine_and_will_not_retry_forever_into_a_wall():
     a = _args()
     assert "FAILED_BENCH" in a and "attempt_ok" in a
     assert "space_ok" in a
+
+
+# ---------------------------------------------------------------------------
+# Two defects that made 174/174 bench cells unreachable, and that a green test
+# suite did not see: the readout asked for observers the bench data configs do
+# not declare, and "9 head re-initialisations" was wired to 9 DATA SUBSETS of
+# which the builder writes 3.
+# ---------------------------------------------------------------------------
+
+K8S = pathlib.Path(__file__).resolve().parents[1] / "experiments" / "FT" / "k8s"
+CFGDIR = pathlib.Path(__file__).resolve().parents[1] / "configs" / "finetune"
+
+
+def _bench_script():
+    d = yaml.safe_load((K8S / "job-ft-legs-bench-raunav.yaml").read_text())
+    c = d["spec"]["template"]["spec"]["containers"][0]
+    return (c.get("args") or c["command"])[-1]
+
+
+def test_every_requested_observer_is_declared_by_its_data_config():
+    """extract_features hard-fails (exit 4) on an observer the config does not
+    declare -- correctly, and AFTER the fine-tune has been paid for."""
+    script = _bench_script()
+    for line in script.splitlines():
+        if "extract_features.py" not in line:
+            continue
+        assert "--observers" in line, \
+            "bench readout must name its observers; the 4-name default is absent " \
+            "from TopReference.yaml and EnergyFlowQG.yaml"
+    for cfg in ("TopReference.yaml", "EnergyFlowQG.yaml"):
+        declared = yaml.safe_load((CFGDIR / cfg).read_text())["observers"]
+        assert set(declared) >= {"jet_pt", "jet_energy"}
+        for line in script.splitlines():
+            if "--observers" in line:
+                got = line.split("--observers")[1].split("--")[0].split()
+                assert set(got) <= set(declared), (cfg, got, declared)
+
+
+def test_nmax_reps_do_not_demand_subsets_the_builder_never_writes():
+    """The bench subset builder writes seeds 1 2 3. Nine reps indexed to the
+    data subset would read train_N..._s{4..9}.parquet, and weaver dies in a
+    worker with a message naming no file."""
+    sub = yaml.safe_load((K8S / "job-ft-subsets-bench-raunav.yaml").read_text())
+    c = sub["spec"]["template"]["spec"]["containers"][0]
+    subscript = (c.get("args") or c["command"])[-1]
+    seeds = set(subscript.split("--seeds")[1].split("--")[0].split())
+    script = _bench_script()
+    assert "DSEED=1" in script, "the N_max reps must hold the data subset fixed"
+    assert "train_N${N}_s${DSEED}.parquet" in script
+    assert "train_N${N}_s${S}.parquet" not in script, \
+        "the data subset must not be indexed by the training seed"
+    assert seeds == {"1", "2", "3"}
+    assert "1" in seeds, "DSEED=1 must be a subset the builder writes"

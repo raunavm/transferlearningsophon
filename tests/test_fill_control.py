@@ -131,3 +131,29 @@ def test_the_legs_row_alignment_is_actually_checked():
     assert a.index("row alignment") < a.index("probe.py")
     for arm, _, _ in bfc.ARMS:
         assert arm in a.split("row alignment")[1].split("probe.py")[0]
+
+
+def test_unmasked_leg_has_no_resume_short_circuit():
+    """${U} is the same path the superseded launch filled by truncating
+    features_v2 (best epoch). A `[ -f ... ] ||` guard there silently reuses the
+    stale leg and reports masking-effect + checkpoint-change as the fill
+    penalty, exit 0."""
+    y = (pathlib.Path(__file__).resolve().parents[1] / "experiments" / "EVAL"
+         / "k8s" / "job-eval-fillcontrol-raunav.yaml").read_text()
+    for line in y.splitlines():
+        if "--arm" in line and "_unmasked" in line:
+            continue
+        assert not ("[ -f ${U}/label188.npy ]" in line), \
+            "the unmasked leg must be re-extracted, not resumed"
+    cleared = [l for l in y.splitlines() if l.strip() == "rm -rf ${U}"]
+    assert len(cleared) == 4, "each arm's unmasked leg must be cleared"
+
+
+def test_legs_are_diffed_on_the_checkpoint_not_only_the_labels():
+    """label188 is a property of the data: the same jets at two different
+    checkpoints hash identically, so the label diff cannot see a checkpoint
+    confound."""
+    y = (pathlib.Path(__file__).resolve().parents[1] / "experiments" / "EVAL"
+         / "k8s" / "job-eval-fillcontrol-raunav.yaml").read_text()
+    assert "checkpoint_sha256" in y
+    assert "extracted at a DIFFERENT" in y

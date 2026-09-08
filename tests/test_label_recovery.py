@@ -117,8 +117,8 @@ def test_a_null_needs_both_probes_at_chance(tmp_path):
     assert c["not_recovered"] is True, "pure noise features must read as not recovered"
     # and the flag is conjunctive: raising only the linear score must clear it
     assert c["not_recovered"] == bool(
-        c["linear"] <= c["chance"] + lr.CHANCE_MARGIN
-        and c["mlp"] <= c["chance"] + lr.CHANCE_MARGIN)
+        c["linear"] <= c["chance"] + c["chance_margin"]
+        and c["mlp"] <= c["chance"] + c["chance_margin"])
 
 
 def test_informative_features_are_not_called_a_null(tmp_path):
@@ -132,4 +132,28 @@ def test_informative_features_are_not_called_a_null(tmp_path):
              "--n", "3000", "--rungs", "R3_VIS"])
     c = json.loads((out / "label_recovery.json").read_text())["arms"]["a"]["rungs"]["R3_VIS"]
     assert c["not_recovered"] is False
-    assert max(c["linear"], c["mlp"]) > c["chance"] + lr.CHANCE_MARGIN
+    assert max(c["linear"], c["mlp"]) > c["chance"] + c["chance_margin"]
+
+
+def test_chance_margin_scales_with_k_and_n():
+    """A flat absolute margin is 3.8x chance at L188 and 0.08x at R3_VIS --
+    most permissive exactly on the finer cells the module calls the actual
+    measurement. The margin must be a statement about the null's width."""
+    lr = _load()
+    N = 400_000
+    frac = {}
+    for k in (188, 162, 64, 43, 30, 17, 4, 2):
+        m = lr.chance_margin(k, [N // k] * k)
+        frac[k] = m / (1.0 / k)
+        assert 0 < m < 1.0 / k, f"k={k}: margin must be well inside chance"
+    # never again more permissive on the fine end than on the coarse end
+    assert frac[188] < 0.25, "L188 margin must not approach chance itself"
+    assert max(frac.values()) / min(frac.values()) < 20, \
+        "margin/chance must not swing by orders of magnitude across rungs"
+
+
+def test_chance_margin_tightens_with_more_data():
+    lr = _load()
+    small = lr.chance_margin(17, [1_000] * 17)
+    big = lr.chance_margin(17, [100_000] * 17)
+    assert big < small, "more test jets must narrow the null band"

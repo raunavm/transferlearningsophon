@@ -50,6 +50,13 @@ IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 
 # (run_id, arm, K, checkpoint dir). The G1 rows are the SMOKE TEST described
 # above; the mtx rows are the real thing and only work once those runs finish.
+# The G1 sweep ran a 16-EPOCH budget and both rows finished 16/16
+# (experiments/RUNS.csv). item 18's "the paper checkpoint is epoch 79" is a
+# statement about the 80-epoch matrix and cannot apply to them: asking these
+# two for net_epoch-79_state.pt requests a file that was never written, and the
+# pod clones, pip-installs and exits 1 against backoffLimit 50.
+BEST_EPOCH_RUNS = {"g1-l162-lr1e3", "g1-r16q1-lr5e4"}
+
 RUNS = [
     ("g1-l162-lr1e3",   "L162",   162, "/data/results/g1/g1-l162-lr1e3"),
     ("g1-r16q1-lr5e4",  "R16_Q1",  17, "/data/results/g1/g1-r16q1-lr5e4"),
@@ -235,7 +242,12 @@ def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gpu", action="store_true")
-    ap.add_argument("--max-jets", type=int, default=0)
+    # DEFAULT 2,000,000, not 0. With default=0 the flag is omitted entirely and
+    # the extraction runs UNCAPPED over all 335 files -- days at the observed
+    # 64 jets/s, and it has already happened once (RUNS.csv "extract-e79-recap"),
+    # because regenerating the specs silently dropped a cap that had been added
+    # by hand. Pass --max-jets 0 to mean "no cap" explicitly.
+    ap.add_argument("--max-jets", type=int, default=2_000_000)
     # item 18: the paper checkpoint is the last epoch. Pass --ckpt-epoch '' to
     # restore the best-epoch file for a gate whose numbers are already published.
     ap.add_argument("--ckpt-epoch", type=int, default=79)
@@ -275,14 +287,16 @@ def main() -> int:
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for run_id, arm, k, ckpt in runs:
+        epoch = None if run_id in BEST_EPOCH_RUNS else args.ckpt_epoch
         fname, text = build(run_id, arm, k, ckpt, args.gpu, args.max_jets,
-                            args.ckpt_epoch)
+                            epoch)
         d = yaml.safe_load(text)
         body = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
         for must in (f"--num-classes {k}", f"--arm {arm}",
                      "configs/data/JetClassII_base.yaml",
-                     f"net_epoch-{args.ckpt_epoch}_state.pt"
-                     if args.ckpt_epoch is not None else "net_best_epoch_state.pt"):
+                     *( (f"--max-jets {args.max_jets}",) if args.max_jets else () ),
+                     f"net_epoch-{epoch}_state.pt"
+                     if epoch is not None else "net_best_epoch_state.pt"):
             if must not in body:
                 sys.exit(f"FATAL: {fname} missing {must!r}")
         res = d["spec"]["template"]["spec"]["containers"][0]["resources"]

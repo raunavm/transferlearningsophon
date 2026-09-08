@@ -300,6 +300,17 @@ LEGS_BENCH = PREAMBLE + """
                   REPS="__NMAX_REPS__"
                 fi
                 for S in ${REPS}; do
+                  # S is the TRAINING seed (head init, data order, dropout).
+                  # DSEED indexes the data subset and is a different thing.
+                  # Tying them together made "9 head re-initialisations" demand
+                  # 9 training subsets, but make_subsets writes 3 -- so reps
+                  # 4..9 read train_N..._s{4..9}.parquet, which do not exist,
+                  # and weaver dies in a worker with a message naming no file.
+                  # Holding the data fixed is also what the published
+                  # convention MEANS (docs/PRD_PLAN.md 4.1): the spread is over
+                  # re-initialisations, not over resampled training sets.
+                  DSEED=${S}
+                  [ "${REPS}" = "__NMAX_REPS__" ] && DSEED=1
                   OUT=${ROOT_OUT}/leg_${D}/${name}/N${N}/s${S}
                   [ -f ${OUT}/DONE ] && { echo "skip ${OUT} (DONE)"; continue; }
                   space_ok
@@ -315,14 +326,14 @@ LEGS_BENCH = PREAMBLE + """
                   python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json \
                     leg=${D} init=${name} checkpoint=${ckpt} n_train=${N} ft_seed=${S} \
                     lr=${LR} head_lr_mult=__HEAD_MULT__ epochs=__BENCH_EPOCHS__ lr_schedule=constant \
-                    weight_decay=0.01 subset=${SUB}/train_N${N}_s${S}.parquet \
+                    weight_decay=0.01 subset=${SUB}/train_N${N}_s${DSEED}.parquet \
                     data_config=${CFG} num_classes=2 batch_size=512 steps_per_epoch=$((N/512))
                   python3 experiments/E1/seed_weaver.py --seed ${S} --lean-val-metrics \
-                    --data-train ${SUB}/train_N${N}_s${S}.parquet --data-val ${SUB}/val.parquet \
+                    --data-train ${SUB}/train_N${N}_s${DSEED}.parquet --data-val ${SUB}/val.parquet \
                     --data-config ${CFG} \
                     --network-config experiments/MTX/ParT_sophon_arch_mtx.py -o num_classes 2 -o fc_params '[(512,0.1)]' \
-                    ${BENCH} "${MULT[@]}" --start-lr ${LR} --samples-per-epoch ${N} --samples-per-epoch-val 200000 \
-                    "${LOAD[@]}" --model-prefix ${OUT}/net --log ${OUT}/train.log 2>&1 | tee ${OUT}/stdout.log
+                    ${BENCH} ${MULT[@]+"${MULT[@]}"} --start-lr ${LR} --samples-per-epoch ${N} --samples-per-epoch-val 200000 \
+                    ${LOAD[@]+"${LOAD[@]}"} --model-prefix ${OUT}/net --log ${OUT}/train.log 2>&1 | tee ${OUT}/stdout.log
                   [ -z "${ckpt}" ] || python3 experiments/FT/smoke_checks.py load-log --log ${OUT}/stdout.log
                   # The 50x must appear in weaver's own log, or the row is not
                   # the published recipe and nothing else would say so.
@@ -333,7 +344,7 @@ LEGS_BENCH = PREAMBLE + """
                   fi
                   python3 experiments/EVAL/extract_features.py --checkpoint ${OUT}/net_best_epoch_state.pt \
                     --num-classes 2 --arm FT_${D}_${name}_N${N}_s${S} \
-                    --data-config ${CFG} --data-test ${TEST} \
+                    --data-config ${CFG} --data-test ${TEST} --observers jet_pt jet_energy \
                     --out ${OUT}/features --batch-size 512 --num-workers 1 --fetch-step 1 --save-logits
                   touch ${OUT}/DONE
                 done
@@ -752,6 +763,8 @@ def main() -> int:
     # Name what to write when only one spec is meant to change.
     ap.add_argument("--only", nargs="+", metavar="NAME",
                     help="write only these spec files (substring match on the name)")
+    ap.add_argument("--repin", action="store_true",
+                    help="allow moving REPO_REF on specs whose jobs may have run")
     args = ap.parse_args()
     specs = build(args.pin)
     if args.only:
@@ -761,6 +774,28 @@ def main() -> int:
             sys.exit(f"FATAL: --only matched nothing for {missing}; have {sorted(specs)}")
         specs = keep
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    # REPIN GUARD. A bare run of this script regenerates EVERY spec, including
+    # those of jobs that have already run or are running -- silently moving
+    # their REPO_REF to the current PIN, reverting hand-edits applied after
+    # generation, and (for the legs) swapping the checkpoints under 20 results
+    # already on disk. The spec is part of the provenance record
+    # (docs/RECORD.md), so rewriting it detaches a completed run from the code
+    # that produced it. Regenerating one spec is what --only is for.
+    if not args.check_only:
+        blocked = []
+        for name, text in specs.items():
+            p = OUT_DIR / name
+            if not p.exists():
+                continue
+            old = re.search(r'REPO_REF\n\s+value: "([^"]+)"', p.read_text())
+            new = re.search(r'REPO_REF\n\s+value: "([^"]+)"', text)
+            if old and new and old.group(1) != new.group(1):
+                blocked.append(f"  {name}: {old.group(1)} -> {new.group(1)}")
+        if blocked and not args.repin:
+            sys.exit("FATAL: this would move the pin on specs whose jobs may "
+                     "already have run:\n" + "\n".join(blocked) +
+                     "\nRegenerate just the spec you mean with --only <name>, "
+                     "or pass --repin if you really mean to move all of them.")
     for name, text in specs.items():
         if not args.check_only:
             (OUT_DIR / name).write_text(text)

@@ -45,6 +45,7 @@ from __future__ import annotations
 import argparse
 import csv
 import importlib.util
+import hashlib
 import json
 import pathlib
 
@@ -77,6 +78,13 @@ def _probe():
 def read_map() -> list[dict]:
     with MAP.open() as f:
         return list(csv.DictReader(f))
+
+
+def cell_seed(arm: str, sig: str, n_sig: int, t: int) -> int:
+    """A stable seed for one cell. blake2b, not hash(): hash() is salted per
+    interpreter, so the same cell drew a different partition on every run."""
+    key = f"{arm}|{sig}|{n_sig}|{t}".encode()
+    return int.from_bytes(hashlib.blake2b(key, digest_size=8).digest(), "big") % (2**32)
 
 
 def node_roles(rung: str) -> tuple[dict[int, str], set[int], set[int]]:
@@ -114,7 +122,7 @@ def sic_curve(y: np.ndarray, s: np.ndarray):
         return None
     tp = np.cumsum(ys)
     fp = np.cumsum(1 - ys)
-    ok = fp >= MIN_BKG_PASS            # relative stat error on eps_B < 20 %
+    ok = fp > MIN_BKG_PASS             # STRICT: 1/sqrt(25) == 0.20 is not < 0.20
     if not ok.any():
         return None
     eps_s = tp[ok] / n_s
@@ -134,7 +142,7 @@ def argos(s_data: np.ndarray, s_template: np.ndarray, n_points: int = 200):
     best = None
     for t in np.linspace(lo, hi, n_points):
         n_bt = int((s_template >= t).sum())
-        if n_bt < MIN_BKG_PASS:
+        if n_bt <= MIN_BKG_PASS:
             continue
         e_sr = float((s_data >= t).mean())
         e_bt = n_bt / s_template.size
@@ -292,12 +300,15 @@ def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
 
         eps_s, eps_b, sic = curve
         rec["max_sic"] = float(np.max(sic))
-        # max SIC cannot exceed sqrt(n_B / MIN_BKG_PASS): the 20 % cut floors
-        # eps_B. A score AT the ceiling has been clipped, not measured, and
-        # several scores landing on the same value is the signature. Reported so
-        # that is never mistaken for agreement between methods.
+        # max SIC cannot exceed sqrt(n_B / MIN_BKG_PASS_STRICT): the 20 % cut
+        # floors eps_B. The smallest count that PASSES is MIN_BKG_PASS + 1,
+        # because the cut is strict (1/sqrt(25) == 0.20 is not < 0.20), so the
+        # ceiling must use that same bound or a clipped score reads as unclipped.
+        # A score AT the ceiling has been clipped, not measured, and several
+        # scores landing on the same value is the signature. Reported so that is
+        # never mistaken for agreement between methods.
         n_b_tot = int((1 - y).sum())
-        rec["max_sic_ceiling"] = float(np.sqrt(n_b_tot / MIN_BKG_PASS))
+        rec["max_sic_ceiling"] = float(np.sqrt(n_b_tot / (MIN_BKG_PASS + 1)))
         rec["at_ceiling"] = bool(rec["max_sic"] >= 0.999 * rec["max_sic_ceiling"])
         j = int(np.argmin(np.abs(eps_s - 0.5)))
         rec["sic_at_eps_s_0p5"] = float(sic[j])
@@ -306,7 +317,7 @@ def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
         # would be selecting on the answer.
         if thr is not None:
             sel = s >= thr
-            if sel.sum() and (1 - y)[sel].sum() >= MIN_BKG_PASS:
+            if sel.sum() and (1 - y)[sel].sum() > MIN_BKG_PASS:
                 e_s = float(y[sel].sum() / max(y.sum(), 1))
                 e_b = float((1 - y)[sel].sum() / max(n_b_tot, 1))
                 rec["sic_at_argos_point"] = e_s / np.sqrt(e_b) if e_b > 0 else float("nan")
@@ -377,16 +388,26 @@ def main(argv=None) -> int:
             for n_sig in a.n_sig:
                 reps = []
                 for t in range(a.trainings):
-                    rng = np.random.default_rng(hash((arm, sig, n_sig, t)) % (2**32))
+                    # NOT hash(): Python salts it per interpreter (PYTHONHASHSEED
+                    # is unset in the job spec), so the QCD data/template split
+                    # and the signal subsample -- i.e. every number in the file
+                    # -- differ run to run and no field records the draw.
+                    seed = cell_seed(arm, sig, n_sig, t)
+                    rng = np.random.default_rng(seed)
                     r = run_one(arm, rung, F, L, logits, obs, lab, snode,
                                 n_sig, rng, a.n_bkg, a.n_template, seed=t)
                     if r:
+                        r["rng_seed"] = int(seed)
                         reps.append(r)
                 if not reps:
                     per_n[str(n_sig)] = {"skipped": "insufficient jets"}
                     continue
+                seeds_used = [r["rng_seed"] for r in reps if "rng_seed" in r]
                 agg = {}
-                for fam in {k for r in reps for k in r}:
+                # only the score-family dicts; a scalar bookkeeping key (e.g.
+                # rng_seed) is not a family and must not be aggregated as one
+                for fam in {k for r in reps for k, v in r.items()
+                            if isinstance(v, dict)}:
                     vals = [r[fam] for r in reps if fam in r and "max_sic" in r[fam]]
                     if not vals:
                         nulls = [r[fam] for r in reps if fam in r and r[fam].get("null")]
@@ -415,18 +436,49 @@ def main(argv=None) -> int:
                     agg[fam]["n_trainings"] = len(vals)
                     agg[fam]["max_sic_iqr"] = float(
                         np.subtract(*np.percentile([v["max_sic"] for v in vals], [75, 25])))
-                # regret is defined ACROSS families on the same signal and N_sig
+                # WITHIN-ARM regret: best family for this arm on this cell.
+                # This is NOT the number the vocabulary ablation wants -- see
+                # the cross-arm pass after every arm is built. Kept because it
+                # answers a different, real question (which score family to
+                # use given a fixed vocabulary), under a name that says so.
                 best = min((v.get("sigma_min", float("inf")) for v in agg.values()
                             if isinstance(v, dict)), default=float("inf"))
                 for v in agg.values():
                     if isinstance(v, dict) and "sigma_min" in v and np.isfinite(best) and best > 0:
-                        v["regret"] = v["sigma_min"] / best
+                        v["regret_within_arm"] = v["sigma_min"] / best
+                agg["rng_seeds"] = seeds_used
                 per_n[str(n_sig)] = agg
                 line = "  ".join(
                     f"{k}:maxSIC={v['max_sic']:.2f}" for k, v in sorted(agg.items())
                     if isinstance(v, dict) and "max_sic" in v)
                 print(f"  {arm:12s} {sig:18s} N_sig={n_sig:5d}  {line}", flush=True)
             results["arms"][arm]["signals"][sig] = per_n
+
+    # CROSS-ARM REGRET -- the number the vocabulary ablation is about, and the
+    # reason this pass exists at all. Normalising inside one arm (as the first
+    # pass does) makes every arm's best family score exactly 1.000, so the
+    # cross-arm table reads "no regret from coarsening the vocabulary" for
+    # every arm no matter how much worse the coarse one is: precisely the null
+    # under test, manufactured by the aggregation. The minimum is taken over
+    # ARMS at fixed (signal, N_sig, family), so families are never compared
+    # against each other here.
+    cells = {}
+    for arm, ad in results["arms"].items():
+        for sig, per_n in ad["signals"].items():
+            for n_sig, agg in per_n.items():
+                if not isinstance(agg, dict):
+                    continue
+                for fam, v in agg.items():
+                    if isinstance(v, dict) and "sigma_min" in v:
+                        cells.setdefault((sig, n_sig, fam), []).append(v)
+    for key, vs in cells.items():
+        best = min(v["sigma_min"] for v in vs)
+        for v in vs:
+            v["regret"] = v["sigma_min"] / best if best > 0 else float("nan")
+            v["regret_n_arms"] = len(vs)
+    results["regret_normalisation"] = (
+        "sigma_min / min over ARMS at fixed (signal, n_sig, family); "
+        "regret_within_arm is the same ratio taken over families inside one arm")
 
     out = pathlib.Path(a.out)
     out.mkdir(parents=True, exist_ok=True)

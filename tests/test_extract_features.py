@@ -20,6 +20,7 @@ changes, `fc(tapped) == model(...)` stops holding and this catches it.
 from __future__ import annotations
 
 import importlib.util
+import json
 import pathlib
 
 import pytest
@@ -116,3 +117,58 @@ def test_head_width_selector_picks_the_output_layer(ctx, ckpt43):
     model = ex.build_model(dc, 43)
     prov = ex.load_trunk_or_die(model, ckpt43, 43)
     assert prov["checkpoint_num_classes"] == 43, "selector picked the hidden layer"
+
+
+# ---------------------------------------------------------------------------
+# The checkpoint guard. Both halves of this were broken: the guard ran AFTER
+# every np.save (so it reported a mixture it had already created), and it read
+# only `checkpoint_sha256`, a key the guard itself introduced -- leaving it
+# inert on every cache written before it existed, i.e. exactly the caches it
+# was added to protect.
+# ---------------------------------------------------------------------------
+
+def _guard():
+    import importlib.util, pathlib as _p
+    spec = importlib.util.spec_from_file_location(
+        "_xf", _p.Path(__file__).resolve().parents[1]
+        / "experiments" / "EVAL" / "extract_features.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m.refuse_foreign_checkpoint
+
+
+def test_guard_passes_on_a_fresh_directory(tmp_path):
+    _guard()(tmp_path / "extract_manifest.json", "a" * 64)
+
+
+def test_guard_passes_on_the_same_checkpoint(tmp_path):
+    m = tmp_path / "extract_manifest.json"
+    m.write_text(json.dumps({"checkpoint_sha256": "a" * 64}))
+    _guard()(m, "a" * 64)
+
+
+def test_guard_refuses_a_different_checkpoint(tmp_path):
+    m = tmp_path / "extract_manifest.json"
+    m.write_text(json.dumps({"checkpoint_sha256": "a" * 64}))
+    with pytest.raises(SystemExit):
+        _guard()(m, "b" * 64)
+
+
+def test_guard_reads_the_legacy_sha256_key(tmp_path):
+    """Pre-fix manifests carry the digest under `sha256`, not
+    `checkpoint_sha256`. Without the fallback the guard silently passes and the
+    arrays are replaced."""
+    m = tmp_path / "extract_manifest.json"
+    m.write_text(json.dumps({"sha256": "a" * 64}))
+    with pytest.raises(SystemExit):
+        _guard()(m, "b" * 64)
+
+
+def test_guard_is_called_before_any_array_is_written():
+    """Ordering IS the fix. After the writes the guard leaves the directory
+    strictly worse than no guard: new features under the old manifest."""
+    src = (pathlib.Path(__file__).resolve().parents[1] / "experiments" / "EVAL"
+           / "extract_features.py").read_text()
+    call = src.index("refuse_foreign_checkpoint(prior_manifest")
+    first_save = min(src.index("np.save("), src.index("np.savez("))
+    assert call < first_save, "guard must precede the first array write"
