@@ -45,7 +45,7 @@ OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s"
 # move: `git diff mtx-s1.6 mtx-s1.7` over the four files this pod actually
 # executes (extract_features.py, JetClassII_base.yaml, the two arch files)
 # is EMPTY, so the pin change cannot alter what runs.
-PIN = "mtx-s1.7"
+PIN = "mtx-s1.20"
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 
 # (run_id, arm, K, checkpoint dir). The G1 rows are the SMOKE TEST described
@@ -116,7 +116,15 @@ spec:
           # np.save()s unconditionally, so reusing the path would overwrite those
           # inputs with a different sample and silently invalidate a result
           # already in experiments/RUNS.csv. Different sample, different path.
-          OUT=/data/results/eval/{run_id}/features_v2
+          # The path encodes the CHECKPOINT, not just the sample. features_v2
+          # was written from net_best_epoch_state.pt; item 18 then made epoch 79
+          # the paper checkpoint, and both would have landed in the same
+          # directory with nothing in the cache recording which model made it.
+          # That is exactly how the zero-fill control came to compare epoch-79
+          # masked features against a best-epoch baseline. Different checkpoint,
+          # different path -- and extract_features.py now also refuses to write
+          # into a directory whose manifest names a different checkpoint.
+          OUT=/data/results/eval/{run_id}/{out_name}
           mkdir -p ${{OUT}}
 
           PYTHONUNBUFFERED=1 python3 experiments/EVAL/extract_features.py \\
@@ -207,6 +215,8 @@ def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
                      "GPU buys speed and\n  # not correctness -- and the GPU "
                      "queue has not scheduled anything in 3.5 days\n  # while "
                      "CPU is uncontended."),
+        out_name=(f"features_e{ckpt_epoch}" if ckpt_epoch is not None
+                  else "features_v2"),
         max_jets=(f" \\\n            --max-jets {max_jets}" if max_jets else ""),
         file_list=interleaved_files(),
         # 48Gi, not 32Gi. The loader dominates, not the model: 32Gi
