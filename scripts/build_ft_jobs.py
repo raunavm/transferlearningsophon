@@ -60,7 +60,7 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "FT" / "k8s"
 EXTRACT_SPEC = ROOT / "experiments" / "EVAL" / "k8s" / "job-extract-mtx-r16q1-s2-raunav.yaml"
-PIN = "mtx-s1.19"
+PIN = "mtx-s1.21"
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 LAMBDA = "5.0"
 # E0b's pinned sha256 of the released Sophon checkpoint (job-massreg-e0b-extract).
