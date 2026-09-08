@@ -45,7 +45,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s1.23" \
+          git clone --depth 1 --branch "mtx-s1.28" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -71,7 +71,28 @@ spec:
             d=/data/results/eval/${a}/features_e79
             [ -f "${d}/features.npy" ] || { echo "FATAL: no ${d}/features.npy"; exit 1; }
             [ -f "${d}/observers.npz" ] || { echo "FATAL: no ${d}/observers.npz"; exit 1; }
-            [ -f "${d}/logits.npy" ] || echo "NOTE: ${a} has no logits.npy -- class_sum will be absent for it"
+            # BUILD the logits rather than skipping class_sum. No extraction in
+            # this project passes --save-logits, so the vocabulary-DEFINED score
+            # could never be constructed and the artefact simply had no
+            # class_sum for any cell. features.npy is fc's INPUT by
+            # construction (extract_features uses a forward PRE-hook on
+            # mod.fc), so fc(features) IS the logits exactly -- one matmul per
+            # jet on CPU, no re-extraction, and it cannot disagree with the
+            # cached features because it is applied to them.
+            case ${r} in
+              R16_Q1) k=17 ;;
+              L162)   k=162 ;;
+              R42_Q1) k=43 ;;
+              L188)   k=188 ;;
+              *) echo "FATAL: no K for rung ${r}"; exit 1 ;;
+            esac
+            if [ ! -f "${d}/logits.npy" ]; then
+              echo "building logits for ${a} (K=${k}) from its cached features"
+              python3 experiments/EVAL/logits_from_features.py \
+                --features ${d} --num-classes ${k} \
+                --checkpoint /data/results/mtx/${a}/net_epoch-79_state.pt
+            fi
+            [ -f "${d}/logits.npy" ] || { echo "FATAL: ${a} still has no logits.npy"; exit 1; }
             ARMS="${ARMS} ${a#mtx-}=${d}"
             RUNGS="${RUNGS} ${a#mtx-}=${r}"
           done
