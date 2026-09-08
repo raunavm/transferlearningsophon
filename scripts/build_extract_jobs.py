@@ -45,7 +45,7 @@ OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s"
 # move: `git diff mtx-s1.6 mtx-s1.7` over the four files this pod actually
 # executes (extract_features.py, JetClassII_base.yaml, the two arch files)
 # is EMPTY, so the pin change cannot alter what runs.
-PIN = "mtx-s1.20"
+PIN = "mtx-s1.23"
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 
 # (run_id, arm, K, checkpoint dir). The G1 rows are the SMOKE TEST described
