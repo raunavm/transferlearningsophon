@@ -65,6 +65,9 @@ MLP_SEEDS = (0, 1, 2)
 CHANCE_SIGMA = 5.0
 # Ceiling only; early stopping ends the fit long before this on converged cells.
 MLP_MAX_ITER = 1000
+# Held out for the MLP's stopping rule, and removed from the linear probe's
+# training set too so the two are compared at equal n.
+MLP_VAL_FRACTION = 0.1
 
 
 def chance_margin(k: int, n_per_class) -> float:
@@ -99,14 +102,33 @@ def rung_maps() -> dict[str, dict[int, int]]:
 
 
 def fit_pair(Xtr, ytr, Xte, yte, seed_offset=0):
-    """Linear and MLP probes on the same split. Both, always -- see D6."""
+    """Linear and MLP probes on MATCHED TRAINING SIZE. Both, always -- see D6.
+
+    THE COMPARISON IS ONLY MEANINGFUL IF BOTH PROBES SEE THE SAME AMOUNT OF
+    DATA. Turning on early_stopping to make the MLP converge also makes sklearn
+    carve `validation_fraction` off its training set internally, so the MLP
+    trained on 90 % of the rows while the linear probe still had 100 %. That is
+    a systematic handicap pointed at exactly the probe D6 relies on: the MLP is
+    there to rule out "present but not linearly decodable", and a handicapped
+    MLP that finds nothing extra is weaker evidence than a matched one.
+
+    So the linear probe is fit on the same FRACTION. The held-out rows are not
+    the identical rows sklearn picks -- MLPClassifier gives no way to hand it an
+    external validation set -- but n matches, which is the part that moves a
+    learning curve. Rows differ per seed, which averages over the split choice
+    rather than privileging one.
+    """
     sc = StandardScaler().fit(Xtr)
     a, b = sc.transform(Xtr), sc.transform(Xte)
+    n_fit = int(round(len(a) * (1.0 - MLP_VAL_FRACTION)))
+    rng = np.random.default_rng(1234 + seed_offset)
+    keep = rng.permutation(len(a))[:n_fit]
     # multi_class= is deprecated in sklearn 1.5 and removed in 1.8; the default
     # is already multinomial for a multi-class target.
     lin = LogisticRegression(max_iter=2000, n_jobs=-1)
-    lin.fit(a, ytr)
-    out = {"linear": float(balanced_accuracy_score(yte, lin.predict(b)))}
+    lin.fit(a[keep], ytr[keep])
+    out = {"linear": float(balanced_accuracy_score(yte, lin.predict(b))),
+           "n_fit": int(n_fit), "n_train_available": int(len(a))}
     # D6 MAKES THE MLP MANDATORY BESIDE ANY LINEAR NULL, because a linear probe
     # only lower-bounds mutual information: a linear null cannot distinguish
     # "absent" from "present but not linearly decodable". That argument needs a
@@ -126,6 +148,7 @@ def fit_pair(Xtr, ytr, Xte, yte, seed_offset=0):
     for s in MLP_SEEDS:
         m = MLPClassifier(hidden_layer_sizes=(512,), max_iter=MLP_MAX_ITER,
                           early_stopping=True, n_iter_no_change=15,
+                          validation_fraction=MLP_VAL_FRACTION,
                           random_state=s + seed_offset)
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always", ConvergenceWarning)

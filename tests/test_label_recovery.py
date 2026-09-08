@@ -195,3 +195,28 @@ def test_the_mlp_uses_early_stopping_not_a_bare_iteration_cap():
                      if not l.lstrip().startswith("#"))
     assert "early_stopping=True" in code
     assert "max_iter=300" not in code, "the unconverged setting is back"
+
+
+def test_both_probes_are_fit_at_the_same_training_size():
+    """D6's MLP must not be handicapped relative to the linear probe.
+
+    early_stopping=True is what made the MLP converge, but it also makes
+    sklearn hold `validation_fraction` out of the MLP's training set and
+    nothing else's -- so the MLP saw 90% of the rows while the linear probe saw
+    100%. The MLP exists to rule out "present but not linearly decodable"; a
+    handicapped MLP that finds nothing extra is weaker evidence than a matched
+    one, and the handicap points the wrong way.
+    """
+    import numpy as np
+    rng = np.random.default_rng(0)
+    n, d, k = 500, 8, 3
+    Xtr = rng.normal(size=(n, d)); ytr = rng.integers(0, k, n)
+    Xte = rng.normal(size=(120, d)); yte = rng.integers(0, k, 120)
+    out = lr.fit_pair(Xtr, ytr, Xte, yte)
+    assert out["n_train_available"] == n
+    assert out["n_fit"] == int(round(n * (1 - lr.MLP_VAL_FRACTION))), \
+        "the linear probe is not fit at the MLP's effective training size"
+    src = (ROOT / "experiments" / "EVAL" / "label_recovery.py").read_text()
+    code = "\n".join(l for l in src.splitlines() if not l.lstrip().startswith("#"))
+    assert "validation_fraction=MLP_VAL_FRACTION" in code, \
+        "the MLP's held-out fraction is no longer the one the linear probe drops"
