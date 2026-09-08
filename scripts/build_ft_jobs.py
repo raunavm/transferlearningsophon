@@ -60,7 +60,7 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "FT" / "k8s"
 EXTRACT_SPEC = ROOT / "experiments" / "EVAL" / "k8s" / "job-extract-mtx-r16q1-s2-raunav.yaml"
-PIN = "mtx-s1.10"
+PIN = "mtx-s1.19"
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 LAMBDA = "5.0"
 # E0b's pinned sha256 of the released Sophon checkpoint (job-massreg-e0b-extract).
@@ -148,9 +148,22 @@ SUBSETS_JC2 = PREAMBLE + """
 
 SUBSETS_BENCH = PREAMBLE + """
           # The two published benchmarks (legs 3 and 4), staged by
-          # scripts/stage_downstream.py into /data/finetune/{top,qg}.
+          # scripts/stage_downstream.py.
+          #
+          # q/g reads qg_v2, NOT qg. The first staging gave every electron and
+          # muon constituent the opposite electric charge -- sign(pdgid) is
+          # right for 211/321/2212 but PDG 11 and 13 are the NEGATIVE leptons
+          # -- and part_charge is an input feature of
+          # configs/finetune/EnergyFlowQG.yaml, so that was a defect in the
+          # training data. The wrong copy is left in place rather than
+          # overwritten; see DECISIONS_PENDING.
+          src_for () { case $1 in
+            top) echo "/data/finetune/top";;
+            qg)  echo "/data/finetune/qg_v2";;
+            *) echo "FATAL: no source for $1" >&2; exit 1;; esac; }
           for D in top qg; do
-            [ -d /data/finetune/${D} ] || { echo "FATAL: /data/finetune/${D} not staged"; exit 1; }
+            S=$(src_for ${D})
+            [ -d "${S}" ] || { echo "FATAL: ${S} not staged"; exit 1; }
           done
 """ + SPACE_GUARD + """
           # top ships train/val/test. qg ships 20 chunks of 100,000 with no split;
@@ -176,10 +189,11 @@ SUBSETS_BENCH = PREAMBLE + """
             # N=1e3 is in the grid because every N-sweep paper reaches it and the
             # vocabulary effect is predicted largest there; it is also the cell the
             # block structure would have damaged most (SD 0.048 unshuffled).
+            S=$(src_for ${D}); O=${S}_sub
             python3 experiments/FT/make_subsets.py bench --dataset ${D} \\
-              --src /data/finetune/${D} --out /data/finetune/${D}_sub \\
+              --src ${S} --out ${O} \\
               --sizes $(sizes_for ${D}) --seeds 1 2 3 --val-size 200000
-            ls -la /data/finetune/${D}_sub; du -sh /data/finetune/${D}_sub
+            ls -la ${O}; du -sh ${O}
           done
 """
 
