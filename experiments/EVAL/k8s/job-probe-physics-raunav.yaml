@@ -37,20 +37,23 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s1.19" \
+          git clone --depth 1 --branch "mtx-s1.20" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
           git rev-parse HEAD
           export PYTHONUNBUFFERED=1
 
-          # Every arm with a committed features_v2 baseline. The extraction
+          # features_e79, NOT features_v2. features_v2 was extracted from
+          # net_best_epoch_state.pt; DECISIONS_PENDING item 18 resolved the
+          # paper checkpoint to epoch 79 uniformly, so the published
+          # discriminants must be measured there. The extraction
           # saved observers.npz, which the windowed task needs; probe.py skips
           # a windowed task with a named message if they are absent rather than
           # silently computing it over the whole spectrum.
           ARMS=""
           for a in mtx-r16q1-s2 mtx-r16q1-s3 mtx-r16q1-s4 mtx-l162-s1b; do
-            d=/data/results/eval/${a}/features_v2
+            d=/data/results/eval/${a}/features_e79
             [ -f "${d}/features.npy" ] || { echo "FATAL: no ${d}/features.npy"; exit 1; }
             [ -f "${d}/observers.npz" ] || { echo "FATAL: no ${d}/observers.npz"; exit 1; }
             ARMS="${ARMS} ${a#mtx-}=${d}"
