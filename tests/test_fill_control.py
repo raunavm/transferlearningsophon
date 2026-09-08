@@ -178,3 +178,19 @@ def test_legs_are_diffed_on_the_checkpoint_not_only_the_labels():
     y = (pathlib.Path(__file__).resolve().parents[1] / "experiments" / "EVAL"
          / "k8s" / "job-eval-fillcontrol-raunav.yaml").read_text()
     assert "extracted at a DIFFERENT" in y
+
+
+def test_every_manifest_reader_uses_the_legacy_key_fallback():
+    """Both readers -- leg()'s resume check and the three-leg diff -- must accept
+    a manifest that predates `checkpoint_sha256` and carries the digest under
+    `sha256`. A bare ['checkpoint_sha256'] raises KeyError on exactly those
+    manifests, which is the defect the audit found in the writer guard; it was
+    reintroduced in the diff block and killed the job after all 12 legs had been
+    resolved."""
+    y = (pathlib.Path(__file__).resolve().parents[1] / "experiments" / "EVAL"
+         / "k8s" / "job-eval-fillcontrol-raunav.yaml").read_text()
+    assert "['checkpoint_sha256']" not in y, \
+        "a bare subscript raises KeyError on a legacy manifest"
+    # every place that reads the digest does so with the same fallback
+    n = y.count("d.get('checkpoint_sha256') or d.get('sha256')")
+    assert n == 2, f"expected both readers to use the fallback, found {n}"

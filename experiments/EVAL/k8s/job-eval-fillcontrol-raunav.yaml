@@ -128,7 +128,7 @@ spec:
             done
             cref=
             for leg in unmasked TopReference EnergyFlowQG; do
-              c=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['checkpoint_sha256'])" \
+              c=$(python3 -c "import json,sys;d=json.load(open(sys.argv[1]));print(d.get('checkpoint_sha256') or d.get('sha256') or '')" \
                     ${ROOT_OUT}/${a}/${leg}/extract_manifest.json)
               echo "  ${a}/${leg} ckpt ${c:0:16}"
               if [ -z "${cref}" ]; then cref="${c}"

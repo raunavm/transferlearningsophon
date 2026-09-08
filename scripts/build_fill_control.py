@@ -186,7 +186,10 @@ def script(pin: str) -> str:
         "            cref=",
         "            for leg in unmasked " + " ".join(MASKS) + "; do",
         "              c=$(python3 -c \"import json,sys;"
-        "print(json.load(open(sys.argv[1]))['checkpoint_sha256'])\" \\",
+        # SAME fallback as leg(). A bare ['checkpoint_sha256'] raises KeyError on
+        # any manifest written before that key existed -- which is exactly the
+        # defect the audit found in the original writer guard, reintroduced here.
+        "d=json.load(open(sys.argv[1]));print(d.get('checkpoint_sha256') or d.get('sha256') or '')\" \\",
         "                    ${ROOT_OUT}/${a}/${leg}/extract_manifest.json)",
         '              echo "  ${a}/${leg} ckpt ${c:0:16}"',
         '              if [ -z "${cref}" ]; then cref="${c}"',
