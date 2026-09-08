@@ -193,6 +193,17 @@ C_GRID = [0.01, 0.1, 1.0, 10.0, 100.0]
 EPS_S = 0.5           # signal efficiency at which rejection is quoted
 MIN_PER_CLASS = 1000  # per class, not on the union -- see the guard below
 MLP_SEEDS = (0, 1, 2)
+# PIN TORCH'S INTRA-OP THREADS. torch.manual_seed fixes the weights and the
+# dropout masks, but NOT the order in which a CPU matmul reduces partial sums --
+# that follows the thread count, which follows the pod's CPU allocation. Two
+# runs of the SAME job over the SAME cached features, differing only in
+# `cpu: 4` vs `cpu: 8`, gave 25 of 48 MLP cells different AUCs, max |delta|
+# 0.0009, while all 48 LINEAR cells were bit-identical. 0.0009 is larger than
+# label_recovery's 5-sigma chance margin at the finest rungs (0.00058 at L188),
+# so an unpinned thread count could flip a "not recovered" call between runs.
+# The value is recorded in the results so it is auditable, and 4 is what the
+# original spec allocated.
+MLP_THREADS = 4
 SPLIT_SEED = 20260822
 
 
@@ -306,6 +317,16 @@ def fit_linear(Xtr, ytr, Xva, yva, Xte):
 def fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
     """MLPHead([256], dropout 0.1). Mandatory beside every linear null (D6)."""
     import torch
+    prev_threads = torch.get_num_threads()
+    torch.set_num_threads(MLP_THREADS)
+    try:
+        return _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds)
+    finally:
+        torch.set_num_threads(prev_threads)
+
+
+def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
+    import torch
     from sklearn.metrics import roc_auc_score
     from sklearn.preprocessing import StandardScaler
     sc = StandardScaler().fit(Xtr)
@@ -391,6 +412,7 @@ def main() -> int:
                        or (v.get("manifest") or {}).get("sha256"))
                    for a, v in sorted(arms.items())},
                "min_per_class_test": MIN_PER_CLASS,
+               "mlp_threads": MLP_THREADS,
                "tasks": {}}
 
     for task in args.tasks:

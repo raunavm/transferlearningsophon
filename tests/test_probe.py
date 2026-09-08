@@ -166,3 +166,41 @@ def test_alignment_check_reads_the_legacy_digest_key(probe, capsys):
     }
     probe.check_alignment(arms)
     assert "record no checkpoint" not in capsys.readouterr().err
+
+
+def test_mlp_is_reproducible_across_thread_counts(probe):
+    """torch.manual_seed fixes the weights and dropout masks but NOT the order
+    in which a CPU matmul reduces partial sums -- that follows the thread count,
+    which follows the pod's CPU allocation. Two runs of the same job over the
+    same cached features, differing only in cpu 4 vs cpu 8, gave 25 of 48 MLP
+    cells different AUCs (max 0.0009) while all 48 linear cells were identical.
+    0.0009 exceeds label_recovery's 5-sigma chance margin at the finest rungs,
+    so an unpinned thread count could flip a null call between runs.
+    """
+    import torch
+    rng = np.random.default_rng(0)
+    n = 600
+    X = rng.normal(size=(n, 16)).astype(np.float32)
+    y = (X[:, 0] + 0.4 * rng.normal(size=n) > 0).astype(np.int64)
+    tr, va, te = probe.make_splits(n)
+
+    outs = []
+    for nt in (1, 4):
+        torch.set_num_threads(nt)
+        s, _ = probe.fit_mlp(X[tr], y[tr], X[va], y[va], X[te])
+        outs.append(np.asarray(s, dtype=np.float64))
+    # fit_mlp pins the count internally, so the caller's setting is irrelevant
+    np.testing.assert_allclose(outs[0], outs[1], rtol=0, atol=0)
+
+
+def test_mlp_thread_count_is_restored_and_recorded(probe):
+    import torch
+    torch.set_num_threads(3)
+    rng = np.random.default_rng(1)
+    n = 400
+    X = rng.normal(size=(n, 8)).astype(np.float32)
+    y = (X[:, 0] > 0).astype(np.int64)
+    tr, va, te = probe.make_splits(n)
+    probe.fit_mlp(X[tr], y[tr], X[va], y[va], X[te])
+    assert torch.get_num_threads() == 3, "the caller's thread setting must survive"
+    assert probe.MLP_THREADS == 4
