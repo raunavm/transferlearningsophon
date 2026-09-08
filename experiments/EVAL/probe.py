@@ -98,6 +98,57 @@ TASKS = {
                 "collapsed_at": ["L162", "R42_Q1", "R16_Q1"]},
 }
 
+# --- the two PUBLISHED physics discriminants (docs/PRD_PLAN.md 3.1b, 8.2) ----
+# These are not more probes of the same kind. The three above ask whether an
+# axis survived; these ask whether an arm can still build a discriminant a
+# PUBLISHED analysis depends on. That is the "use case survival" argument: a
+# coarse vocabulary does not merely score worse, it cannot construct the
+# quantity at all, because the nodes it would sum over no longer exist.
+#
+#   bc_vs_rest  arXiv:2503.00118 Eq. 1, the |V_cb| discriminant
+#               D_bc = g_bc / (g_bc + g_bq + g_cs + g_bqq + g_QCD)
+#               measured in that paper's window, 450 < pT < 600 and
+#               90 < m_SD < 140, and reported at eps_S = 60 % / 40 %.
+#               "bqq" is label_X_YY_qqb (native 70) -- the 3-prong q,q,b class.
+#   ee_vs_mm    the lepton-flavour split 2606.09458's background suppression
+#               uses.
+#
+# COLLAPSE RUNGS ARE DERIVED FROM configs/labelmaps/rung_label_maps.v1.csv, not
+# asserted. Doing so corrected docs/PRD_PLAN.md 3.1(b), which says the ee/mumu
+# split merges "from R42_Q1 down": it actually merges one rung EARLIER, at
+# R63_Q1, into 2P_LEP_LL|nb0_nc0.
+
+
+def qcd_indices() -> list[int]:
+    """The native labels that are QCD, from the committed map.
+
+    Read, never hardcoded as range(161, 188) -- the same reason
+    experiments/MASSREG/e1_control.py reads it: "161 resonant + 27 QCD" is a
+    fact about the map, and a hardcoded range silently survives a map change.
+    """
+    import csv
+    path = REPO / "configs" / "labelmaps" / "rung_label_maps.v1.csv"
+    with path.open() as f:
+        idx = [int(r["jet_label"]) for r in csv.DictReader(f)
+               if r["class_name"].startswith("label_QCD_")]
+    if not idx:
+        raise SystemExit(f"FATAL: no label_QCD_* rows in {path}")
+    return sorted(idx)
+
+
+PHYSICS_TASKS = {
+    "bc_vs_rest": {"signal": [4], "background": [6, 5, 70] + qcd_indices(),
+                   "names": ["label_X_bc", "{bq,cs,bqq,QCD}"],
+                   "collapsed_at": ["R42_Q1", "R29_Q1", "R16_Q1", "R3_VIS", "R1_Q1"],
+                   "window": {"jet_pt": [450.0, 600.0], "jet_sdmass": [90.0, 140.0]},
+                   "eps_s": [0.60, 0.40]},
+    "ee_vs_mm": {"signal": [10], "background": [11],
+                 "names": ["label_X_ee", "label_X_mm"],
+                 "collapsed_at": ["R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1",
+                                  "R3_VIS", "R1_Q1"]},
+}
+TASKS.update(PHYSICS_TASKS)
+
 C_GRID = [0.01, 0.1, 1.0, 10.0, 100.0]
 EPS_S = 0.5           # signal efficiency at which rejection is quoted
 MLP_SEEDS = (0, 1, 2)
@@ -110,7 +161,15 @@ def load_arm(d: pathlib.Path) -> dict:
     man = json.loads((d / "extract_manifest.json").read_text())
     if F.shape[0] != L.shape[0]:
         raise SystemExit(f"FATAL: {d} has {F.shape[0]} features and {L.shape[0]} labels")
-    return {"F": F, "L": L, "manifest": man,
+    obs = {}
+    if (d / "observers.npz").exists():
+        z = np.load(d / "observers.npz")
+        obs = {k: z[k] for k in z.files}
+        for k, v in obs.items():
+            if v.shape[0] != L.shape[0]:
+                raise SystemExit(f"FATAL: {d} observer {k} has {v.shape[0]} rows, "
+                                 f"not {L.shape[0]}")
+    return {"F": F, "L": L, "manifest": man, "obs": obs,
             "label_sha": hashlib.sha256(L.tobytes()).hexdigest()}
 
 
@@ -261,7 +320,21 @@ def main() -> int:
         spec = TASKS[task]
         sig = np.isin(L, spec["signal"])
         bkg = np.isin(L, spec["background"])
-        rows = np.where(sig | bkg)[0]
+        keep = sig | bkg
+        # A task may be defined only inside a published kinematic window; the
+        # number is not comparable to that paper's outside it.
+        win = spec.get("window")
+        if win:
+            obs = next(iter(arms.values()))["obs"]
+            missing = [k for k in win if k not in obs]
+            if missing:
+                print(f"\n=== {task} === SKIPPED: needs observers {missing}, which "
+                      f"this extraction did not save")
+                results["tasks"][task] = {"skipped": True, "missing_observers": missing}
+                continue
+            for k, (lo, hi) in win.items():
+                keep &= (obs[k] > lo) & (obs[k] < hi)
+        rows = np.where(keep)[0]
         if rows.size < 1000:
             print(f"\n=== {task} === SKIPPED: only {rows.size} jets match "
                   f"{spec['names']}")
@@ -281,17 +354,26 @@ def main() -> int:
         for arm, d in sorted(arms.items()):
             X = d["F"][rows]
             entry = {}
+            eps_list = spec.get("eps_s", [EPS_S])
             for kind, fn in (("linear", fit_linear), ("mlp", fit_mlp)):
                 s, meta = fn(X[tr], y[tr], X[va], y[va], X[te])
                 auc = float(roc_auc_score(y[te], s))
-                rej, eps_b, bound = rejection_at(y[te], s)
+                rejs = {}
+                for e in eps_list:
+                    r, eb, bd = rejection_at(y[te], s, e)
+                    rejs[f"{e:.2f}"] = {"rejection": r, "eps_b": eb,
+                                        "rejection_is_bound": bd}
+                first = rejs[f"{eps_list[0]:.2f}"]
                 entry[kind] = {"auc": auc, "log1m_auc": float(np.log(max(1 - auc, 1e-12))),
-                               "rejection": rej, "eps_b": eps_b,
-                               "rejection_is_bound": bound, "selection": meta}
+                               "rejection": first["rejection"], "eps_b": first["eps_b"],
+                               "rejection_is_bound": first["rejection_is_bound"],
+                               "rejection_at": rejs, "selection": meta}
                 te_scores.setdefault(kind, {})[arm] = s
-                flag = " (BOUND)" if bound else ""
-                print(f"  {arm:8s} {kind:6s} AUC {auc:.5f}   "
-                      f"1/eps_B @ eps_S={EPS_S} = {rej:.1f}{flag}")
+                txt = "  ".join(
+                    f"1/eps_B@{float(e):.0%}={rejs[e]['rejection']:.1f}"
+                    f"{' (BOUND)' if rejs[e]['rejection_is_bound'] else ''}"
+                    for e in rejs)
+                print(f"  {arm:8s} {kind:6s} AUC {auc:.5f}   {txt}")
             tr_res["arms"][arm] = entry
 
         # paired arm differences on log(1-AUC) -- D7's inferential metric

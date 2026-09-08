@@ -45,17 +45,26 @@ def test_collapse_claims_match_the_label_map(probe, rungs):
     at every other rung. This is the paper's rung argument, checked."""
     all_arms = ["L188", "L162", "R42_Q1", "R16_Q1"]
     for task, spec in probe.TASKS.items():
-        sig, bkg = spec["signal"][0], spec["background"][0]
-        assert rungs[sig]["class_name"] == spec["names"][0]
-        assert rungs[bkg]["class_name"] == spec["names"][1]
+        sig_ids, bkg_ids = spec["signal"], spec["background"]
+        assert rungs[sig_ids[0]]["class_name"] == spec["names"][0]
+        # A one-class background names itself; a multi-class background (the
+        # published discriminants have several) names the SET, so only the
+        # single-class case can be checked against the map by name.
+        if len(bkg_ids) == 1:
+            assert rungs[bkg_ids[0]]["class_name"] == spec["names"][1]
         for arm in all_arms:
-            collapsed = rungs[sig][arm] == rungs[bkg][arm]
+            # Collapsed at a rung iff the signal shares its group with ANY
+            # background class: that is exactly when the arm can no longer
+            # separate the two sides, whatever the background's size.
+            sg = {rungs[i][arm] for i in sig_ids}
+            bg = {rungs[i][arm] for i in bkg_ids}
+            collapsed = bool(sg & bg)
             claimed = arm in spec["collapsed_at"]
             assert collapsed == claimed, (
-                f"{task}: at {arm} the two classes are "
+                f"{task}: at {arm} the sides are "
                 f"{'collapsed' if collapsed else 'distinct'} "
-                f"({rungs[sig][arm]} vs {rungs[bkg][arm]}) but the task claims "
-                f"{'collapsed' if claimed else 'distinct'}")
+                f"(signal groups {sorted(sg)} vs background {sorted(bg)}) but "
+                f"the task claims {'collapsed' if claimed else 'distinct'}")
 
 
 def test_tasks_are_arm_independent(probe):
