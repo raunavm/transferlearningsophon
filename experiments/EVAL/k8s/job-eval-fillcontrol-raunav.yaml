@@ -16,12 +16,12 @@ metadata:
   # through the L162 control would hand them 162-GROUP labels under the same
   # array name: every probe would still run and silently measure another task.
   #
-  # 400,000 jets, not the baseline's 2,000,000, because probe.py refuses any pair
-  # whose label188 sha256 differs -- which fixes the length too -- and the
-  # primary b-vs-c resonant probe already has 12,866 vs 13,218 jets there
-  # (measured). The baseline is truncated to match; probe.py's sha check is what
-  # proves the truncated prefix is the same jets, so a wrong assumption fails
-  # loudly instead of quietly comparing different jets.
+  # 400,000 jets: the primary b-vs-c resonant probe already has 12,866 vs 13,218
+  # jets there (measured). Every leg is extracted here at the same checkpoint
+  # over the same file list, and the script diffs the three legs' label188
+  # sha256 per arm before probing -- probe.py's own sha refusal cannot do it,
+  # because it only compares arms WITHIN one invocation and the legs are
+  # separate invocations.
   #
   # GPU: 4 arms x 2 masks x 400k forward passes, then CPU probes in the same pod.
   name: eval-fillcontrol-raunav
@@ -38,7 +38,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s1.19" \
+          git clone --depth 1 --branch "mtx-s1.22" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -133,6 +133,22 @@ spec:
             --data-config configs/finetune/JetClassII_base_maskEnergyFlowQG.yaml \
             --data-test ${TEST} --out ${ROOT_OUT}/l162-s1b/EnergyFlowQG \
             --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
+
+          echo "===== row alignment: label188 sha256 per arm ====="
+          for a in r16q1-s2 r16q1-s3 r16q1-s4 l162-s1b; do
+            ref=
+            for leg in unmasked TopReference EnergyFlowQG; do
+              h=$(python3 -c "import hashlib,numpy,sys;print(hashlib.sha256(numpy.load(sys.argv[1]).tobytes()).hexdigest())" \
+                    ${ROOT_OUT}/${a}/${leg}/label188.npy)
+              echo "  ${a}/${leg} ${h}"
+              if [ -z "${ref}" ]; then ref="${h}"
+              elif [ "${h}" != "${ref}" ]; then
+                echo "FATAL: ${a}/${leg} labels differ from its own baseline;"
+                echo "       the legs are not the same jets, so the fill"
+                echo "       penalty would be a different-sample effect."; exit 1
+              fi
+            done
+          done
 
           echo "===== probes: unmasked ====="
           python3 experiments/EVAL/probe.py \

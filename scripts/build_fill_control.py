@@ -43,7 +43,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "experiments" / "EVAL" / "k8s" / "job-eval-fillcontrol-raunav.yaml"
 EXTRACT_SPEC = ROOT / "experiments" / "EVAL" / "k8s" / "job-extract-mtx-r16q1-s2-raunav.yaml"
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
-PIN = "mtx-s1.19"
+PIN = "mtx-s1.22"
 N_JETS = 400_000
 
 # arm : checkpoint : K. Only arms with BOTH a finished checkpoint and a
