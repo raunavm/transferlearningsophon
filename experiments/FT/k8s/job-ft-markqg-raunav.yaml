@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # DECISIONS_PENDING item 20, resolved option B: KEEP the superseded q/g
+  # staging, RENAME it so nobody trains on it by accident.
+  #
+  # stage_downstream.py built part_charge as sign(pdgid) over the five charged
+  # species. Correct for 211/321/2212, INVERTED for PDG 11 (electron, charge -1)
+  # and 13 (mu-, charge -1). part_charge is an input feature of
+  # configs/finetune/EnergyFlowQG.yaml, so this is a defect in TRAINING DATA.
+  # qg_v2 / qg_v2_sub are the corrected copies and are what every live spec
+  # already reads (grep: job-ft-legs-bench, job-ft-subsets-bench,
+  # build_ft_jobs.py all name qg_v2).
+  #
+  # WHY RENAME RATHER THAN DELETE. Deleting reclaims 15 GB on a 1 Ti volume with
+  # 413 GB free -- not binding. Keeping preserves a controlled A/B on how much
+  # the inverted lepton charge actually moved the q/g numbers, which is exactly
+  # the question a referee asks and which cannot be answered after deletion.
+  # Renaming removes the whole hazard deletion was meant to remove.
+  #
+  # THIS JOB DELETES NOTHING. mv only, with refusals on every ambiguous case.
+  name: ft-markqg-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: mark
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          cd /data/finetune
+          echo "=== before ==="; ls -la
+          # The corrected copies must exist, or renaming the old ones leaves
+          # nothing usable behind.
+          for need in qg_v2 qg_v2_sub; do
+            [ -d "${need}" ] || { echo "FATAL: ${need} missing; refusing to rename the superseded copy"; exit 1; }
+          done
+          mark () {
+            local src=$1 dst=${1}_WRONGCHARGE
+            [ -d "${src}" ] || { echo "  skip ${src}: not present (already renamed?)"; return 0; }
+            [ -e "${dst}" ] && { echo "FATAL: ${dst} already exists; refusing to overwrite"; exit 1; }
+            mv -v "${src}" "${dst}"
+            cat > "${dst}/DO_NOT_TRAIN_ON_THIS.txt" <<'EOF'
+          Superseded 2026-09-08. part_charge is INVERTED for electrons (PDG 11)
+          and muons (PDG 13): stage_downstream.py used sign(pdgid), which is
+          right for 211/321/2212 and wrong for the leptons, whose positive PDG
+          id carries negative charge. part_charge is an INPUT FEATURE of
+          configs/finetune/EnergyFlowQG.yaml, so this is defective training data,
+          not a defective summary.
+
+          Use qg_v2 / qg_v2_sub instead. Kept only as the A/B control for
+          quantifying the effect of the error. See DECISIONS_PENDING item 20 and
+          tests/test_qg_charge.py.
+          EOF
+          }
+          mark qg
+          mark qg_sub
+          echo "=== after ==="; ls -la
+          echo "NOTHING WAS DELETED"
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "2Gi", cpu: "1", ephemeral-storage: "1Gi" }
+          limits:   { memory: "2Gi", cpu: "1", ephemeral-storage: "1Gi" }
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
