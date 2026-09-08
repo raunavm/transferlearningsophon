@@ -217,12 +217,18 @@ def test_each_arm_expression_reproduces_the_committed_label_map(arms):
     import csv
     import numpy as np
     rows = list(csv.DictReader(MAPS.open()))
+    # The D8 random control is NOT a rung of the signed contraction tree, so its
+    # map lives in its own file rather than as extra columns on the frozen one.
+    rand_path = MAPS.parent / "rand_label_map.v1.csv"
+    rand_rows = list(csv.DictReader(rand_path.open())) if rand_path.exists() else []
     jet_label = np.arange(188)
     for arm, text in arms.items():
         # a mass twin (<ARM>_MASS) carries its arm's map under its arm's column
         col = arm[:-len("_MASS")] if arm.endswith("_MASS") else arm
-        assert col in rows[0], f"no column {col!r} in the committed label map"
-        expected = {int(r["jet_label"]): int(r[col]) for r in rows}
+        src = rand_rows if col.startswith("RAND_d") else rows
+        assert src, f"{arm}: no label map source on disk"
+        assert col in src[0], f"no column {col!r} in the label map for {arm}"
+        expected = {int(r["jet_label"]): int(r[col]) for r in src}
         expr = re.search(r"truth_label:\s*(.*)", text).group(1)
         got = eval(expr, {"__builtins__": {}}, {"jet_label": jet_label})
         got = {int(n): int(v) for n, v in enumerate(np.asarray(got))}

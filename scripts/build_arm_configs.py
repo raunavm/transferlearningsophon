@@ -84,6 +84,28 @@ MASS_LABEL_LINES = [
 N_NATIVE = 188
 
 
+RAND_MAPS = MAPS.parent / "rand_label_map.v1.csv"
+
+
+def load_rand() -> tuple[dict[str, dict[int, int]], dict[str, dict[int, str]]]:
+    """The D8 random-control draws, if they have been generated.
+
+    Kept in a SEPARATE file from rung_label_maps.v1.csv on purpose: that file is
+    the signed contraction tree (DECISIONS_PENDING item 1, frozen 2026-08-27) and
+    the control is not a rung of it. Adding columns there would edit a signed
+    artifact to hold something that is not part of the tree.
+    """
+    if not RAND_MAPS.exists():
+        return {}, {}
+    rows = list(csv.DictReader(RAND_MAPS.open()))
+    if len(rows) != N_NATIVE:
+        sys.exit(f"FATAL: {RAND_MAPS} has {len(rows)} rows, expected {N_NATIVE}")
+    arms = [c for c in rows[0] if c.startswith("RAND_d") and not c.endswith("_name")]
+    maps = {a: {int(r["jet_label"]): int(r[a]) for r in rows} for a in arms}
+    names = {a: {int(r[a]): r[f"{a}_name"] for r in rows} for a in arms}
+    return maps, names
+
+
 def load_maps() -> dict[str, dict[int, int]]:
     rows = list(csv.DictReader(MAPS.open()))
     if len(rows) != N_NATIVE:
@@ -222,8 +244,12 @@ def main() -> int:
     base_sha = weights_sha256(base_text)
     built, failed = {}, 0
     # (output name, map arm, mass?) -- the MASS twins reuse their twin's map.
+    rand_maps, rand_names = load_rand()
+    maps.update(rand_maps)
+    group_names.update(rand_names)
     todo = [(arm, arm, False) for arm in ARMS] + \
-           [(f"{arm}_MASS", arm, True) for arm in MASS_ARMS]
+           [(f"{arm}_MASS", arm, True) for arm in MASS_ARMS] + \
+           [(arm, arm, False) for arm in sorted(rand_maps)]
     for arm, src, mass in todo:
         text = build_one(base_text, arm, maps[src], group_names[src], mass=mass)
         built[arm] = text

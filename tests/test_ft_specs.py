@@ -231,9 +231,15 @@ def test_every_live_spec_records_each_attempt():
     live = [p for p in MTX.glob("job-mtx-*-raunav.yaml")
             if p.name not in frozen
             and not any(tok in p.name for tok in NON_TRAINING)]
-    # 24 matrix arms + the MPM self-supervised arm (item 17), which is a real
-    # training run and so must carry the same attempt records as the rest.
-    assert len(live) == 25, sorted(p.name for p in live)
+    # 24 matrix arms + the MPM self-supervised arm (item 17) + the D8 random
+    # control (RAND_d1). All are real training runs and so must carry the same
+    # attempt records as the rest. The control is counted SEPARATELY rather
+    # than folded into the matrix total, because it is deliberately not a rung
+    # of the contraction tree and the tree's size is itself an invariant.
+    control = [p for p in live if "rand" in p.name]
+    matrix = [p for p in live if "rand" not in p.name]
+    assert len(matrix) == 25, sorted(p.name for p in matrix)
+    assert len(control) <= 3, sorted(p.name for p in control)
     for p in live:
         _, _, code = _spec(p)
         for token in ("attempts.log", "ln -s ${OUT}/tb ./runs", ".prev.json"):
