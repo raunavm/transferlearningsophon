@@ -1,0 +1,182 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # FINE-TUNING LR PROBE -- does the optimum move with the pretraining vocabulary?
+  #
+  # THE QUESTION. docs/GATES.md G1 settled this for PRETRAINING by measuring the
+  # two ladder endpoints: 5e-4 is R16_Q1's outright argmax and ties L162's (gap
+  # 0.00316, a fifth of the margin), so one rate serves both. Its kill condition
+  # is explicit -- "if the optimum moves with K, a single LR confounds
+  # granularity with tuning, and every arm needs its own LR sweep". NOTHING
+  # EQUIVALENT HAS EVER BEEN MEASURED AT FINE-TUNING. The legs use 1e-4 because
+  # that is ParT's published value, inherited, not checked. If a coarse arm needs
+  # a different rate than a fine one, the handicap is CORRELATED WITH THE
+  # QUANTITY UNDER STUDY -- we would read "coarse vocabulary transfers worse"
+  # when part of it is "coarse vocabulary needs more adaptation". That is bias in
+  # the direction of our own hypothesis, which is the kind worth paying to rule
+  # out.
+  #
+  # WHAT THE LITERATURE DOES, both sides:
+  #   * Ranking Neural Checkpoints (CVPR 2021) -- the canonical checkpoint-
+  #     comparison paper -- sweeps hyper-parameters PER checkpoint-task pair and
+  #     keeps the best. Their goal is the best achievable per checkpoint.
+  #   * LP-FT (Kumar et al., ICLR 2022) sweeps 3 learning rates and states it
+  #     "checked that the best learning rate was not at the boundary of the grid
+  #     search". That boundary check is adopted here verbatim.
+  #   * HEP practice (ParT, MIParT) reports ONE rate and does not sweep per
+  #     variant.
+  # We take the matched protocol as the headline because I1 requires arms to
+  # differ in one thing, and report each arm at its own optimum beside it ONLY
+  # if this probe shows the optimum actually moves.
+  #
+  # DESIGN. 3 rates x 2 arms x 1 seed = 6 runs at N = 10,240 on the top-tagging
+  # set. Endpoints only (R16_Q1 K=17, L162 K=162), which is G1's own structure
+  # and the only arms whose 80-epoch checkpoints exist today. Rates 3e-5, 1e-4,
+  # 3e-4 -- a half-decade grid bracketing ParT's 1e-4 symmetrically in log space,
+  # so "not at the boundary" is a meaningful statement. Top tagging on purpose:
+  # it is the most out-of-distribution row (10 of 17 features zero-filled) and
+  # LP-FT's whole result is that fine-tuning distortion shows up OOD.
+  #
+  # THE RECIPE IS ParT'S, AND WEAVER SUPPORTS IT NATIVELY. 20 epochs, weight
+  # decay 0.01, and a 50x head rate via `--optimizer-option lr_mult`
+  # ("('mod\.fc\..*', 50)", weaver/train.py:445-470) -- so trunk 1e-4 with head
+  # 5e-3, exactly docs/PRD_PLAN.md's row. There is no --lr-finetune-factor flag
+  # in weaver 0.4.17 and its absence makes the recipe look unimplementable; the
+  # mechanism is the optimizer-option, not a flag.
+  #
+  # ~1.5 GPU-h total, i.e. 0.06 % of the ~2,300 GPU-h of pretraining still to
+  # run, to retire a confound that would otherwise sit under every FT row.
+  name: ft-lrprobe2-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  ttlSecondsAfterFinished: 172800
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: probe
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - name: GPU_PRODUCT
+          value: "NVIDIA-GeForce-RTX-3090"
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        - name: REPO_REF
+          value: "ft-stage.7"
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "${REPO_REF}" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          pip install --no-cache-dir -q pyarrow || exit 1
+          nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+          OUT=/data/results/ft/lrprobe2
+          mkdir -p ${OUT}
+
+          # (name, checkpoint, K) -- the two ladder ENDPOINTS, the only arms with
+          # finished 80-epoch checkpoints today. K is the PRETRAINING head width,
+          # which is dropped: mod.fc.* is excluded and re-initialised at 2 classes.
+          ARMS="r16q1-s2:/data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt \
+                l162-s1b:/data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt"
+          # EXTENSION. The first probe's grid {3e-5, 1e-4, 3e-4} put its best value at
+          # the TOP EDGE on BOTH arms (r16q1-s2 0.91576, l162-s1b 0.91703), so the
+          # optimum was never bracketed -- only "better than 1e-4" was shown, and the
+          # legs are running at 1e-4. This grid goes up until the metric turns over.
+          #
+          # 3e-4 IS REPEATED ON PURPOSE. It is the overlap anchor: same arms, same
+          # seed, same data as the first probe. Without a repeated point the
+          # 0.001-0.002 arm gaps cannot be read at all, because nothing measures
+          # run-to-run variance. If 3e-4 does not reproduce ~0.91576/0.91703 here,
+          # the first probe's arm ordering is noise and must not be quoted.
+          RATES="3e-4 1e-3 3e-3"
+
+          for A in ${ARMS}; do
+            NAME="${A%%:*}"; CKPT="${A##*:}"
+            [ -f "${CKPT}" ] || { echo "FATAL: no checkpoint ${CKPT}"; exit 1; }
+            for LR in ${RATES}; do
+              RUN="${NAME}_lr${LR}"
+              D="${OUT}/${RUN}"
+              if [ -f "${D}/DONE" ]; then echo "skip ${RUN} (done)"; continue; fi
+              rm -rf "${D}"; mkdir -p "${D}"
+              echo "===== ${RUN} ====="
+              PYTHONUNBUFFERED=1 python3 experiments/E1/seed_weaver.py \
+                --seed 1 \
+                --data-train /data/finetune/top/top_train.parquet \
+                --data-val /data/finetune/top/top_val.parquet \
+                --data-config configs/finetune/TopReference.yaml \
+                --network-config experiments/MTX/ParT_sophon_arch_mtx.py \
+                -o num_classes 2 -o fc_params '[(512,0.1)]' \
+                --load-model-weights "${CKPT}" \
+                --exclude-model-weights 'mod\.fc\..*' \
+                --optimizer ranger --start-lr ${LR} \
+                --optimizer-option weight_decay 0.01 \
+                --optimizer-option lr_mult "('mod\.fc\..*', 50)" \
+                --use-amp --batch-size 512 \
+                --num-workers 2 --fetch-by-files --fetch-step 1 \
+                --samples-per-epoch 10240 --samples-per-epoch-val 51200 \
+                --num-epochs 20 \
+                --model-prefix ${D}/net \
+                --log ${D}/train.log \
+                --tensorboard ft_lrprobe_${RUN} 2>&1 | tail -25
+              grep -oE "Epoch #[0-9]+: Current validation metric: [0-9.]+" ${D}/train.log \
+                > ${D}/val_metrics.txt || true
+              touch "${D}/DONE"
+              echo "--- ${RUN} best validation:"
+              sort -t: -k3 -g ${D}/val_metrics.txt | tail -1
+            done
+          done
+
+          echo "===== SUMMARY (best validation metric per arm x rate) ====="
+          for A in ${ARMS}; do
+            NAME="${A%%:*}"
+            for LR in ${RATES}; do
+              B=$(sort -t: -k3 -g ${OUT}/${NAME}_lr${LR}/val_metrics.txt 2>/dev/null | tail -1 \
+                  | grep -oE "[0-9.]+$" || echo NA)
+              printf "%-12s %-8s %s\n" "${NAME}" "${LR}" "${B}"
+            done
+          done | tee ${OUT}/summary.txt
+          echo "===== LR PROBE DONE -> ${OUT}/summary.txt ====="
+        resources:
+          # 76Gi, matching the production training specs. The first attempt asked
+          # for 48Gi and was OOMKilled on suncave-6. That was avoidable: CLAUDE.md
+          # records the MEASURED anon band for --fetch-by-files as 35-58 GB, and
+          # that 64Gi -- already 6 GB above the top of that band -- OOM-killed
+          # g1-r16q1-lr5e4 mid-training. 48Gi sits INSIDE the band, so it was
+          # never going to survive. Size off the measured band, not off an
+          # intuition that "a short probe is lighter": the loader dominates and
+          # it does not care how many epochs follow.
+          requests: { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }
+      tolerations:
+      - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: ["NVIDIA-GeForce-RTX-3090"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu"]
