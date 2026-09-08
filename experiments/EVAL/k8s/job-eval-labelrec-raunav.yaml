@@ -62,7 +62,13 @@ spec:
             a=${spec%%:*}; r=${spec##*:}
             d=/data/results/eval/${a}/features_e79
             [ -f "${d}/features.npy" ] || { echo "FATAL: no ${d}/features.npy"; exit 1; }
-            [ -f "${d}/observers.npz" ] || { echo "FATAL: no ${d}/observers.npz"; exit 1; }
+            # label188.npy, NOT observers.npz. This precondition was copied from
+            # job-probe-physics-raunav.yaml, which needs observers for its
+            # kinematic window; label_recovery.py never opens observers.npz
+            # (grep: 0 hits) and loads label188.npy unconditionally. As copied
+            # it hard-failed on a file it does not use while not checking the
+            # one it does.
+            [ -f "${d}/label188.npy" ] || { echo "FATAL: no ${d}/label188.npy"; exit 1; }
             [ -f "${d}/logits.npy" ] || echo "NOTE: ${a} has no logits.npy -- class_sum will be absent for it"
             ARMS="${ARMS} ${a#mtx-}=${d}"
             RUNGS="${RUNGS} ${a#mtx-}=${r}"

@@ -63,13 +63,54 @@ def test_sic_is_one_when_the_score_is_pure_noise():
     assert over == 0, "a null SIC curve's median sits below 1, at sqrt(0.5)"
 
 
-def test_sigma_min_inverts_max_sic_against_the_target():
-    """sigma_min = sigma_t / max SIC, from max(S)(sigma_min) = sigma_t."""
+def test_gaussian_sigma_min_inverts_max_sic_against_the_target():
+    """The DIAGNOSTIC estimator: sigma_min = sigma_t / max SIC."""
     eps_s = np.array([0.5, 0.4, 0.3])
     eps_b = np.array([0.25, 0.16, 0.09])   # SIC = 1.0, 1.0, 1.0
-    assert an.sigma_min(eps_s, eps_b, 1000) == pytest.approx(an.SIGMA_T / 1.0)
-    eps_b2 = eps_b / 4                      # SIC doubles
-    assert an.sigma_min(eps_s, eps_b2, 1000) == pytest.approx(an.SIGMA_T / 2.0)
+    assert an.sigma_min_gaussian(eps_s, eps_b) == pytest.approx(an.SIGMA_T / 1.0)
+
+
+def test_asimov_sigma_min_actually_reaches_the_target():
+    """The PAPER's estimator (arXiv:2604.20965 eq.3 + eq.4). The defining
+    property is that at the returned sigma_0 the best achievable Asimov Z
+    equals sigma_t -- which is checkable directly, unlike the Gaussian ratio."""
+    eps_s = np.array([0.0725]); eps_b = np.array([1.25e-4]); B = 200_000
+    s0 = an.sigma_min_asimov(eps_s, eps_b, B)
+    z = an.asimov(s0 * np.sqrt(B) * eps_s[0], B * eps_b[0])
+    assert z == pytest.approx(an.SIGMA_T, rel=1e-3)
+
+
+def test_the_gaussian_estimator_overstates_the_reach():
+    """Why the paper refuses it: at the cut the argmax picks, s and b are
+    comparable, so S/sqrt(B) is optimistic. The Gaussian sigma_min must fall
+    SHORT of sigma_t when evaluated with the Asimov formula."""
+    eps_s = np.array([0.0725]); eps_b = np.array([1.25e-4]); B = 200_000
+    g = an.sigma_min_gaussian(eps_s, eps_b)
+    z = an.asimov(g * np.sqrt(B) * eps_s[0], B * eps_b[0])
+    assert z < an.SIGMA_T, "the Gaussian form should be optimistic, not exact"
+    assert g < an.sigma_min_asimov(eps_s, eps_b, B)
+
+
+def test_knn_template_excludes_its_own_self_match():
+    """sklearn's kneighbors(X) on the fitted set includes the zero self
+    distance, so the template would be scored on the (k-1)-th neighbour while
+    the data gets the k-th -- a template/data difference that is not there,
+    concentrated in the tail where ARGOS picks the operating point."""
+    rng = np.random.default_rng(0)
+    Xd = rng.normal(size=(4000, 16))
+    Xt = rng.normal(size=(4000, 16))        # SAME distribution: true ARGOS = 0
+    sd = an.score_knn(Xd, Xt)
+    biased = an.score_knn(Xt, Xt)
+    clean = an.score_knn_selfless(Xt)
+    assert np.median(clean) > np.median(biased), "self-match biases the template low"
+    assert abs(np.median(clean) - np.median(sd)) < abs(np.median(biased) - np.median(sd))
+    assert abs(an.argos(sd, clean)[0]) < abs(an.argos(sd, biased)[0])
+
+
+def test_gaussian_sigma_min_scales_inversely_with_sic():
+    eps_s = np.array([0.5, 0.4, 0.3])
+    eps_b = np.array([0.25, 0.16, 0.09]) / 4      # SIC doubles
+    assert an.sigma_min_gaussian(eps_s, eps_b) == pytest.approx(an.SIGMA_T / 2.0)
 
 
 def test_argos_matches_its_published_formula():
@@ -304,3 +345,46 @@ def test_regret_is_normalised_across_arms_not_within_one(tmp_path):
         f"the worse arm must carry regret > 1, got {b['regret']:.4f}; "
         f"a within-arm normalisation returns 1.000 for both")
     assert "regret_within_arm" in g, "the within-arm ratio is still recorded"
+
+
+def test_an_all_skipped_run_is_a_failure_not_a_result(tmp_path):
+    """The job asks 400,000 QCD from a cache holding ~414,568 -- a 3.5 %
+    margin. A shortfall made every cell {"skipped": "insufficient jets"} while
+    the process exited 0 and the Job reported Complete."""
+    import json as _json
+    rng = np.random.default_rng(5)
+    qcd = sorted(an._probe().qcd_indices())
+    n = 800
+    lab = np.array(rng.choice(qcd, size=n))
+    lab[:100] = 0
+    d = tmp_path / "arm"
+    _cache(d, n, lab, rng, k=188, signal_boost=np.arange(100))
+    out = tmp_path / "ad"
+    rc = an.main(["--features", f"a={d}", "--rungs", "a=L188", "--out", str(out),
+                  # ask for far more QCD than the cache holds
+                  "--n-bkg", "100000", "--n-template", "100000", "--trainings", "1",
+                  "--signals", "label_X_bb", "--n-sig", "50"])
+    assert rc == 3, "an all-skipped run must not exit 0"
+    res = _json.loads((out / "anomaly_results.json").read_text())
+    assert res, "partial results must still be written"
+
+
+def test_absent_argos_is_reported_unmeasured_not_passed(tmp_path):
+    """`.get("argos", 0)` scored iad_hgb's null as 0 -- i.e. clean -- when
+    nothing had been measured at all."""
+    import json as _json
+    rng = np.random.default_rng(6)
+    qcd = sorted(an._probe().qcd_indices())
+    n = 6000
+    lab = np.array(rng.choice(qcd, size=n))
+    lab[:900] = 0
+    d = tmp_path / "arm"
+    _cache(d, n, lab, rng, k=188, signal_boost=np.arange(900))
+    out = tmp_path / "ad"
+    an.main(["--features", f"a={d}", "--rungs", "a=L188", "--out", str(out),
+             "--n-bkg", "1500", "--n-template", "1500", "--trainings", "1",
+             "--signals", "label_X_bb", "--n-sig", "0"])
+    res = _json.loads((out / "anomaly_results.json").read_text())
+    assert "null_unmeasured" in res
+    assert any("iad_hgb" in u for u in res["null_unmeasured"]), \
+        "iad_hgb has no ARGOS, so its null is unmeasured -- not passed"

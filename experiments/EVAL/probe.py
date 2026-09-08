@@ -54,6 +54,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import pathlib
 import sys
 
@@ -228,6 +229,22 @@ def check_alignment(arms: dict[str, dict]) -> str:
               "order. Without that, a paired comparison is comparing different "
               "jets.", file=sys.stderr)
         raise SystemExit(2)
+
+    # label188 is a property of the DATA, so the check above passes for two
+    # caches built from DIFFERENT CHECKPOINTS of the same arm -- features_v2
+    # (best epoch) and features_e79 share a file list and therefore a label
+    # sha. Mixing them reports an epoch difference as a vocabulary effect and
+    # nothing errors. The checkpoint is recorded per arm and surfaced here.
+    ckpts = {a: (v.get("manifest") or {}).get("checkpoint_sha256")
+                or (v.get("manifest") or {}).get("sha256")
+             for a, v in arms.items()}
+    named = {a: c for a, c in ckpts.items() if c}
+    if len(named) != len(arms):
+        print(f"  WARNING: {sorted(set(arms) - set(named))} record no checkpoint "
+              f"digest; their manifests predate the field, so a cross-checkpoint "
+              f"comparison cannot be ruled out here.", file=sys.stderr)
+    for a, c in sorted(named.items()):
+        print(f"  {a:12s} checkpoint {c[:16]}")
     return next(iter(shas.values()))
 
 
@@ -244,11 +261,18 @@ def make_splits(n: int, rng_seed: int = SPLIT_SEED):
 
 
 def rejection_at(y: np.ndarray, s: np.ndarray, eps_s: float = EPS_S):
-    """(rejection, eps_B, is_bound) at fixed signal efficiency.
+    """(rejection, eps_B, is_bound, n_bkg_pass, rel_stat) at fixed signal eff.
 
     Linear interpolation on the ROC between adjacent thresholds bracketing
     eps_s, per docs/STATISTICS.md. Past the resolvable cap 1/N_bkg the value is
     an artefact of sample size and is flagged as a bound.
+
+    n_bkg_pass and rel_stat are returned because the rejection is 1/eps_B and
+    eps_B is estimated from a COUNT: with a handful of surviving background
+    jets the estimator takes only a few distinct values and its spread is
+    enormous, while the reported number looks as precise as any other. Poisson
+    on the surviving count is the honest band, and anchors.py already reports
+    exactly this for the same quantity.
     """
     from sklearn.metrics import roc_curve
     fpr, tpr, _ = roc_curve(y, s)
@@ -256,9 +280,11 @@ def rejection_at(y: np.ndarray, s: np.ndarray, eps_s: float = EPS_S):
     n_bkg = int((y == 0).sum())
     cap = float(n_bkg)
     if eps_b <= 0:
-        return cap, 0.0, True
+        return cap, 0.0, True, 0, float("inf")
+    n_pass = eps_b * n_bkg
+    rel = float("inf") if n_pass <= 0 else 1.0 / math.sqrt(n_pass)
     r = 1.0 / eps_b
-    return (min(r, cap), eps_b, r >= cap)
+    return (min(r, cap), eps_b, r >= cap, int(round(n_pass)), rel)
 
 
 def fit_linear(Xtr, ytr, Xva, yva, Xte):
@@ -354,7 +380,18 @@ def main() -> int:
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     results = {"n_jets_total": int(L.shape[0]), "row_alignment_sha256": align_sha,
-               "eps_s_default": EPS_S, "tasks": {}}
+               "eps_s_default": EPS_S,
+               # Which checkpoint each arm's features came from. Without this
+               # the artefact cannot be audited after the fact: label188 is
+               # identical across checkpoints of one arm, so a best-epoch cache
+               # and an epoch-79 cache are indistinguishable in every other
+               # field, and the contrast would read as a vocabulary effect.
+               "arm_checkpoints": {
+                   a: ((v.get("manifest") or {}).get("checkpoint_sha256")
+                       or (v.get("manifest") or {}).get("sha256"))
+                   for a, v in sorted(arms.items())},
+               "min_per_class_test": MIN_PER_CLASS,
+               "tasks": {}}
 
     for task in args.tasks:
         spec = TASKS[task]
@@ -381,15 +418,27 @@ def main() -> int:
         # union is entirely background-driven: it cleared 1,000 at 12,499 jets
         # while carrying only 1,370 signal. A union guard cannot see that.
         n_sig, n_bkg = int(y.sum()), int(y.size - y.sum())
-        if min(n_sig, n_bkg) < MIN_PER_CLASS:
-            print(f"\n=== {task} === SKIPPED: {n_sig:,} signal / {n_bkg:,} "
-                  f"background match {spec['names']}; need "
-                  f"{MIN_PER_CLASS:,} of each")
+        # SPLIT FIRST, then guard on the TEST split. Every reported number --
+        # AUC and rejection alike -- is computed on the test split, which is
+        # 20 % of the sample, so guarding the full in-window count passes tasks
+        # whose test split holds a few hundred of a class. A rejection of 810
+        # on 2,223 test-background jets means ~2.7 jets survive the cut: the
+        # estimator can then take only a handful of distinct values and its
+        # 16-84 % spread runs from roughly half the true value to the cap,
+        # while the reported number looks as precise as any other.
+        tr, va, te = make_splits(rows.size)
+        te_sig, te_bkg = int(y[te].sum()), int(y[te].size - y[te].sum())
+        if min(te_sig, te_bkg) < MIN_PER_CLASS:
+            print(f"\n=== {task} === SKIPPED: test split has {te_sig:,} signal / "
+                  f"{te_bkg:,} background ({n_sig:,}/{n_bkg:,} in window) "
+                  f"matching {spec['names']}; need {MIN_PER_CLASS:,} of each "
+                  f"IN THE TEST SPLIT")
             results["tasks"][task] = {"skipped": True, "n": int(rows.size),
                                       "n_signal": n_sig,
-                                      "n_background": n_bkg}
+                                      "n_background": n_bkg,
+                                      "n_signal_test": te_sig,
+                                      "n_background_test": te_bkg}
             continue
-        tr, va, te = make_splits(rows.size)
         print(f"\n=== {task} ===  {spec['names'][0]} vs {spec['names'][1]}")
         print(f"  {rows.size:,} jets ({y.sum():,} signal), "
               f"split {tr.size:,}/{va.size:,}/{te.size:,}; "
@@ -409,9 +458,11 @@ def main() -> int:
                 auc = float(roc_auc_score(y[te], s))
                 rejs = {}
                 for e in eps_list:
-                    r, eb, bd = rejection_at(y[te], s, e)
+                    r, eb, bd, npass, rel = rejection_at(y[te], s, e)
                     rejs[f"{e:.2f}"] = {"rejection": r, "eps_b": eb,
-                                        "rejection_is_bound": bd}
+                                        "rejection_is_bound": bd,
+                                        "n_bkg_pass": npass,
+                                        "rel_stat_err": rel}
                 first = rejs[f"{eps_list[0]:.2f}"]
                 entry[kind] = {"auc": auc, "log1m_auc": float(np.log(max(1 - auc, 1e-12))),
                                # The flat fields mirror eps_list[0], which is
@@ -420,6 +471,8 @@ def main() -> int:
                                # with them.
                                "rejection": first["rejection"], "eps_b": first["eps_b"],
                                "rejection_is_bound": first["rejection_is_bound"],
+                               "n_bkg_pass": first["n_bkg_pass"],
+                               "rel_stat_err": first["rel_stat_err"],
                                "rejection_eps_s": float(eps_list[0]),
                                "rejection_at": rejs, "selection": meta}
                 te_scores.setdefault(kind, {})[arm] = s

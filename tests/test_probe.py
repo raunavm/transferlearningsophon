@@ -9,6 +9,7 @@ configs/labelmaps/rung_label_maps.v1.csv rather than believed.
 from __future__ import annotations
 
 import csv
+import hashlib
 import importlib.util
 import pathlib
 
@@ -93,11 +94,28 @@ def test_rejection_past_the_cap_is_flagged_a_bound(probe):
     """Beyond 1/N_bkg the value is an artefact of sample size, never a value."""
     y = np.r_[np.ones(500, int), np.zeros(500, int)]
     perfect = np.r_[np.ones(500), np.zeros(500)] * 1.0
-    r, eps_b, bound = probe.rejection_at(y, perfect)
+    r, eps_b, bound, npass, rel = probe.rejection_at(y, perfect)
     assert bound is True and r <= 500.0
     rng = np.random.default_rng(0)
-    r2, _, bound2 = probe.rejection_at(y, rng.random(1000))
+    r2, _, bound2, npass2, rel2 = probe.rejection_at(y, rng.random(1000))
     assert bound2 is False and r2 < 10
+    # the rejection is 1/eps_B and eps_B comes from a COUNT, so the surviving
+    # count and its Poisson band travel with the number
+    assert npass2 > 0 and rel2 == pytest.approx(1.0 / np.sqrt(npass2), rel=0.05)
+
+
+def test_rejection_carries_its_poisson_band(probe):
+    """A rejection resting on a handful of surviving background jets is not as
+    precise as it looks; anchors.py bands the same quantity."""
+    y = np.r_[np.ones(2000, int), np.zeros(2000, int)]
+    rng = np.random.default_rng(1)
+    s = np.r_[rng.normal(1.5, 1, 2000), rng.normal(0, 1, 2000)]
+    r, eps_b, bound, npass, rel = probe.rejection_at(y, s, 0.5)
+    assert npass == pytest.approx(eps_b * 2000, abs=1)
+    assert rel == pytest.approx(1.0 / np.sqrt(npass), rel=1e-6)
+    # tighter working point -> fewer survivors -> wider band
+    _, _, _, npass_t, rel_t = probe.rejection_at(y, s, 0.2)
+    assert npass_t < npass and rel_t > rel
 
 
 def test_splits_are_deterministic_and_partition(probe):
@@ -108,3 +126,43 @@ def test_splits_are_deterministic_and_partition(probe):
     assert np.array_equal(tr, tr2) and np.array_equal(va, va2) and np.array_equal(te, te2)
     allidx = np.concatenate([tr, va, te])
     assert np.array_equal(np.sort(allidx), np.arange(1000)), "splits must partition"
+
+
+def test_alignment_check_surfaces_the_checkpoint(probe, capsys):
+    """label188 is a property of the DATA, so two caches of the SAME arm at
+    different checkpoints share a label sha and pass the row-alignment check.
+    Mixing features_v2 (best epoch) with features_e79 would then report an
+    epoch difference as a vocabulary effect, with nothing erroring."""
+    L = np.arange(100, dtype=np.int16)
+    sha = hashlib.sha256(L.tobytes()).hexdigest()
+    arms = {
+        "A": {"L": L, "label_sha": sha, "manifest": {"checkpoint_sha256": "a" * 64}},
+        "B": {"L": L, "label_sha": sha, "manifest": {"checkpoint_sha256": "b" * 64}},
+    }
+    assert probe.check_alignment(arms) == sha
+    out = capsys.readouterr().out
+    assert "aaaaaaaaaaaaaaaa" in out and "bbbbbbbbbbbbbbbb" in out, \
+        "each arm's checkpoint must be printed so the confound is auditable"
+
+
+def test_alignment_check_warns_when_a_manifest_predates_the_field(probe, capsys):
+    L = np.arange(100, dtype=np.int16)
+    sha = hashlib.sha256(L.tobytes()).hexdigest()
+    arms = {
+        "A": {"L": L, "label_sha": sha, "manifest": {"checkpoint_sha256": "a" * 64}},
+        "B": {"L": L, "label_sha": sha, "manifest": {}},
+    }
+    probe.check_alignment(arms)
+    err = capsys.readouterr().err
+    assert "record no checkpoint" in err
+
+
+def test_alignment_check_reads_the_legacy_digest_key(probe, capsys):
+    L = np.arange(100, dtype=np.int16)
+    sha = hashlib.sha256(L.tobytes()).hexdigest()
+    arms = {
+        "A": {"L": L, "label_sha": sha, "manifest": {"sha256": "c" * 64}},
+        "B": {"L": L, "label_sha": sha, "manifest": {"sha256": "c" * 64}},
+    }
+    probe.check_alignment(arms)
+    assert "record no checkpoint" not in capsys.readouterr().err

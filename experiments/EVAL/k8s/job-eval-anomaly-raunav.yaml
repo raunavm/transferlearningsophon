@@ -24,9 +24,17 @@ metadata:
   # CPU-ONLY, ZERO GPU: runs on features already cached by the extraction jobs.
   # Runs the three original tasks too, so the whole probe table lands at once.
   name: eval-anomaly-raunav
+  # NOTE: lines below this point were copied from job-probe-physics-raunav.yaml
+  # and describe THAT job (bc_vs_rest, ee_vs_mm, the |V_cb| window). This job
+  # runs experiments/EVAL/anomaly.py. The spec is part of the provenance record
+  # (docs/RECORD.md), so the mismatch is flagged rather than left to mislead.
   namespace: cms-ml
 spec:
   backoffLimit: 2
+  # ~1,440 run_one calls at ~43 s measured = ~17 h. Without a deadline an
+  # eviction at hour 30 is indistinguishable from a job still working; the
+  # module now writes through after every signal, so a kill loses one signal.
+  activeDeadlineSeconds: 108000
   template:
     spec:
       restartPolicy: Never

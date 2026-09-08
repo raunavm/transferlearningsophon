@@ -40,6 +40,7 @@ from __future__ import annotations
 import argparse
 import glob
 import json
+import math
 import os
 import pathlib
 import sys
@@ -273,9 +274,17 @@ def build_bench(dataset: str, src: str, out: pathlib.Path, sizes: list[int],
         for n, tbl in nested_prefixes(pool, sizes, rng).items():
             pq.write_table(tbl, out / f"train_N{n}_s{seed}.parquet")
             f = float(pc.mean(tbl.column("label")).as_py())
-            if abs(f - 0.5) > 0.05:
+            # Scale with N. A flat 0.05 is 3.16 sigma at N=1000, so a perfectly
+            # shuffled 50 % pool trips it on ~0.5 % of seeds (measured: 2 of 400,
+            # seeds 47 and 110) -- and because rng_for is deterministic a rerun
+            # CANNOT clear it: it leaves a partial parquet, no manifest, no
+            # DONE, and blames the pool. 5 sigma of the binomial sd is the same
+            # yardstick tests/test_bench_subsets.py already uses.
+            tol = max(5.0 * 0.5 / math.sqrt(n), 0.01)
+            if abs(f - 0.5) > tol:
                 sys.exit(f"FATAL: {dataset} N={n} s={seed}: signal fraction {f:.4f}, "
-                         f"expected ~0.50 -- the pool was not shuffled")
+                         f"expected 0.50 +- {tol:.4f} (5 sigma at N={n:,}) -- the "
+                         f"pool was not shuffled")
             fracs[str(n)] = round(f, 4)
         manifest["per_seed"][str(seed)] = {"files": files, "pool_rows": pool.num_rows,
                                            "label_frac": fracs}
@@ -346,6 +355,17 @@ def main(argv=None) -> int:
         prev = json.loads(mpath.read_text())
         want = {"mode": args.mode, "sizes": sizes,
                 "seeds": sorted(args.seeds)}
+        # Every parameter that CHANGES THE ROWS must be compared, not just the
+        # shape ones. Each of these reproduced an exit-0 "matches the request;
+        # nothing to do" against a manifest built with a different value:
+        # --take-fraction 0.90 over a stored 0.30, --n-files 200 over 60, and
+        # jc1 --files-per-class 9 over 2. The live hazard is widening the pool
+        # and silently training on the old narrow one.
+        if args.mode == "jc2":
+            want["n_files"] = args.n_files
+            want["take_fraction"] = args.take_fraction
+        if args.mode == "jc1":
+            want["files_per_class"] = args.files_per_class
         if args.mode == "bench":
             want["dataset"] = args.dataset
             want["src"] = str(args.src)

@@ -7,9 +7,27 @@ SCORE (which is defined by the vocabulary) or in the FEATURES (which are not).
 So every configuration runs two families side by side:
 
   vocabulary-DEFINED   class_sum   -- sum of resonant node scores over the QCD
-                                     sum, leave-one-node-out. Constructible only
-                                     where the arm's head still has the nodes.
-                                     At R16_Q1 it is not, and THAT IS THE RESULT.
+                                     sum, leave-one-node-out.
+
+                                     IT IS CONSTRUCTIBLE AT EVERY RUNG IN THE
+                                     MATRIX. An earlier version of this file
+                                     said "at R16_Q1 it is not, and THAT IS THE
+                                     RESULT"; that is false. node_roles() over
+                                     the committed tree gives 161+27, 161+1,
+                                     63+1, 42+1, 29+1, 16+1, 3+1, 1+1 -- every
+                                     rung has resonant nodes and a QCD node,
+                                     and zero nodes are mixed. Only R1_Q1,
+                                     which is not in the D3 run matrix, is
+                                     degenerate.
+
+                                     What DOES change with the rung is what
+                                     leave-one-node-out removes: 1 native class
+                                     at L188/L162, but 3-12 at R42_Q1 and 10-29
+                                     at R16_Q1. That is a different estimator
+                                     per arm, so `classes_removed` is recorded
+                                     per cell -- without it, "the vocabulary-
+                                     defined score degrades as the vocabulary
+                                     coarsens" is unfalsifiable.
   vocabulary-FREE      knn, mahalanobis, iad_hgb -- run on the frozen 128-d
                                      features, identical code for every arm, so
                                      they isolate the representation from the
@@ -48,6 +66,7 @@ import importlib.util
 import hashlib
 import json
 import pathlib
+import sys
 
 import numpy as np
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -63,7 +82,12 @@ N_TRAININGS = 10       # per (arm, signal, N_sig); PRD_PLAN 4.3
 KNN_K = 10
 # ARGOS on pure background should sit near its random baseline; above this the
 # selection rule is finding structure in background alone.
-NULL_ARGOS_MAX = 0.5
+# Measured, not guessed: on two disjoint QCD blocks from the SAME distribution
+# (true ARGOS = 0) the leave-one-out estimator sits at 0.001-0.02 depending on
+# sample size. 0.5 is one to two orders of magnitude above that, so a template
+# and data that genuinely disagree would sail through it. 0.05 still clears the
+# measured null by several times while being able to fire at all.
+NULL_ARGOS_MAX = 0.05
 
 
 def _probe():
@@ -152,14 +176,58 @@ def argos(s_data: np.ndarray, s_template: np.ndarray, n_points: int = 200):
     return best
 
 
-def sigma_min(eps_s: np.ndarray, eps_b: np.ndarray, n_b_total: int) -> float:
-    """Smallest S/sqrt(B) whose best achievable significance reaches sigma_t.
+def sigma_min_gaussian(eps_s: np.ndarray, eps_b: np.ndarray) -> float:
+    """sigma_t / max SIC -- the GAUSSIAN estimator, kept only as a diagnostic.
 
-    max_t [ S eps_S(t) / sqrt(B eps_B(t)) ] = sigma_t, with sigma = S/sqrt(B),
-    so sigma_min = sigma_t / max_t[ eps_S/sqrt(eps_B) ] = sigma_t / max SIC.
+    arXiv:2604.20965 explicitly declines to use this: "we do not use the
+    max(SIC) to obtain the minimum initial significance sigma_min, because the
+    Gaussian approximation usually overestimates the actual significance after
+    the classifier cut, since eps_S*S << eps_B*B does not hold". At the cut the
+    argmax picks, s and b are comparable by construction (the 20 % background
+    cut floors b near MIN_BKG_PASS), which is exactly where S/sqrt(B) fails.
     """
     m = float(np.max(eps_s / np.sqrt(eps_b)))
     return float("inf") if m <= 0 else SIGMA_T / m
+
+
+def asimov(s: float, b: float) -> float:
+    """arXiv:2604.20965 eq. 3: Z = sqrt(2[(s+b)ln(1+s/b) - s])."""
+    if b <= 0 or s <= 0:
+        return 0.0
+    return float(np.sqrt(2.0 * ((s + b) * np.log1p(s / b) - s)))
+
+
+def sigma_min_asimov(eps_s: np.ndarray, eps_b: np.ndarray, n_b_total: int) -> float:
+    """eq. 4: the smallest sigma_0 = S/sqrt(B) whose best Asimov Z reaches sigma_t.
+
+    For a trial sigma_0, S = sigma_0*sqrt(B) and the best achievable
+    significance is max_t Z(S*eps_S(t), B*eps_B(t)) with Z the eq.3 Asimov
+    formula. Z is monotone in sigma_0, so the root is bracketed and bisected
+    rather than solved in closed form -- there is no closed form.
+    """
+    B = float(n_b_total)
+    if B <= 0:
+        return float("inf")
+
+    def best_z(sig0: float) -> float:
+        S = sig0 * np.sqrt(B)
+        z = [asimov(S * float(a), B * float(b)) for a, b in zip(eps_s, eps_b)]
+        return max(z) if z else 0.0
+
+    lo, hi = 1e-6, 1.0
+    for _ in range(60):                       # expand until the target is bracketed
+        if best_z(hi) >= SIGMA_T:
+            break
+        lo, hi = hi, hi * 2.0
+        if hi > 1e6:
+            return float("inf")
+    for _ in range(200):                      # bisect
+        mid = 0.5 * (lo + hi)
+        if best_z(mid) >= SIGMA_T:
+            hi = mid
+        else:
+            lo = mid
+    return float(0.5 * (lo + hi))
 
 
 def chi2_sculpting(m_pass: np.ndarray, m_all: np.ndarray, bins: int = 20) -> float:
@@ -201,10 +269,28 @@ def score_class_sum(logits, rung, sig_node):
 
 
 def score_knn(X_data, X_template, k=KNN_K):
-    """Negative distance to the k-th nearest TEMPLATE neighbour (jBOT-style)."""
+    """Distance to the k-th nearest TEMPLATE neighbour (jBOT-style)."""
     nn = NearestNeighbors(n_neighbors=k).fit(X_template)
     d, _ = nn.kneighbors(X_data)
     return d[:, -1]
+
+
+def score_knn_selfless(X_template, k=KNN_K):
+    """The template scored against itself, with the SELF-MATCH removed.
+
+    sklearn's kneighbors(X) includes each point's own zero distance when X is
+    the fitted set, so score_knn(Xt, Xt) returns the (k-1)-th true neighbour
+    while the data gets the k-th. ARGOS compares those two distributions and
+    picks the operating point from the comparison, so the mismatch shows up as
+    a template/data difference that is not there: measured at production size
+    (n = 200,000 each, d = 128, k = 10, both drawn from the SAME distribution,
+    true ARGOS = 0) the coded form gives ARGOS 0.0298 against 0.0009 leave-one-
+    out, i.e. 97 % of the reported null is the artefact, and it concentrates in
+    the tail where the operating point is chosen.
+    """
+    nn = NearestNeighbors(n_neighbors=k + 1).fit(X_template)
+    d, _ = nn.kneighbors(X_template)
+    return d[:, -1]        # column 0 is the self-match at distance 0
 
 
 def score_mahalanobis(X_data, X_template):
@@ -254,6 +340,12 @@ def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
     y = np.concatenate([np.zeros(data_q.size), np.ones(data_s.size)])
 
     scores = {}
+    # How many NATIVE classes the leave-one-node-out actually removes. It is 1
+    # at L188/L162 but 3-12 at R42_Q1 and 10-29 at R16_Q1, so class_sum is a
+    # different estimator per arm; recorded so a reader can see the
+    # substitution instead of reading it as a vocabulary effect.
+    node_of, _res, _q = node_roles(rung)
+    classes_removed = int(sum(1 for lab, nd in node_of.items() if nd == sig_node))
     cs = score_class_sum(logits[d_idx], rung, sig_node) if logits is not None else None
     if cs is not None:
         scores["class_sum"] = cs
@@ -262,11 +354,16 @@ def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
     scores["mahalanobis"] = score_mahalanobis(Xd, Xt)
     scores["iad_hgb"] = score_iad(Xd, Xt, seed)
 
-    out = {}
+    out = {"classes_removed": classes_removed}
+    if logits is None:
+        # Absent, and WHY -- otherwise anomaly_results.json simply has no
+        # class_sum for any cell, exit 0, with nothing recording that the
+        # headline vocabulary-defined score was never computed.
+        out["class_sum_absent"] = "no logits.npy in this feature cache"
     tmpl_score = {
         "class_sum": (score_class_sum(logits[tmpl_q], rung, sig_node)
                       if logits is not None else None),
-        "knn": score_knn(Xt, Xt),
+        "knn": score_knn_selfless(Xt),
         "mahalanobis": score_mahalanobis(Xt, Xt),
         # IAD's score is defined by a classifier fitted to (data vs template),
         # so it has no meaning applied to the template alone and gets no ARGOS.
@@ -312,7 +409,11 @@ def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
         rec["at_ceiling"] = bool(rec["max_sic"] >= 0.999 * rec["max_sic_ceiling"])
         j = int(np.argmin(np.abs(eps_s - 0.5)))
         rec["sic_at_eps_s_0p5"] = float(sic[j])
-        rec["sigma_min"] = sigma_min(eps_s, eps_b, n_b_tot)
+        # The paper's estimator is the eq.3 Asimov + eq.4 scan; the Gaussian
+        # ratio is kept beside it under a name that says what it is, because
+        # every earlier number in this project was computed with it.
+        rec["sigma_min"] = sigma_min_asimov(eps_s, eps_b, n_b_tot)
+        rec["sigma_min_gaussian"] = sigma_min_gaussian(eps_s, eps_b)
         # The SIC is reported AT the ARGOS-chosen point. Choosing by max SIC
         # would be selecting on the answer.
         if thr is not None:
@@ -453,6 +554,15 @@ def main(argv=None) -> int:
                     if isinstance(v, dict) and "max_sic" in v)
                 print(f"  {arm:12s} {sig:18s} N_sig={n_sig:5d}  {line}", flush=True)
             results["arms"][arm]["signals"][sig] = per_n
+            # Write through after EVERY signal. The full grid is ~1,440 cells
+            # at ~43 s each, so a single terminal write means an eviction at
+            # hour 30 leaves a zero-byte file and the retry redraws different
+            # partitions. Partial results are worth more than none.
+            _out = pathlib.Path(a.out)
+            _out.mkdir(parents=True, exist_ok=True)
+            _tmp = _out / "anomaly_results.json.partial"
+            _tmp.write_text(json.dumps(results, indent=2))
+            _tmp.replace(_out / "anomaly_results.json")
 
     # CROSS-ARM REGRET -- the number the vocabulary ablation is about, and the
     # reason this pass exists at all. Normalising inside one arm (as the first
@@ -490,18 +600,51 @@ def main(argv=None) -> int:
     # pure background ARGOS should sit near its random baseline; a large value
     # means the selection rule is manufacturing an excess out of background
     # alone, and every number downstream of it is suspect.
-    bad = []
+    bad, unmeasured = [], []
     for arm, ad in results["arms"].items():
         for sig, per_n in ad["signals"].items():
             z = per_n.get("0", {})
             for fam, v in z.items():
-                if isinstance(v, dict) and v.get("argos", 0) > NULL_ARGOS_MAX:
+                if not isinstance(v, dict) or v.get("skipped"):
+                    continue
+                if "argos" not in v:
+                    # NOT the same as passing. iad_hgb is excluded from the
+                    # ARGOS protocol, so `.get("argos", 0)` scored its null as
+                    # 0 -- i.e. "clean" -- when nothing had been measured at
+                    # all. An unmeasured null is reported as unmeasured.
+                    unmeasured.append(f"{arm}/{sig}/{fam}")
+                elif v["argos"] > NULL_ARGOS_MAX:
                     bad.append(f"{arm}/{sig}/{fam} ARGOS {v['argos']:.3f} on pure "
                                f"background (> {NULL_ARGOS_MAX})")
     if bad:
         print("\nWARNING: the N_sig=0 null is not flat -- do not quote these:")
         for b in bad:
             print("   ", b)
+    if unmeasured:
+        print(f"\nNOTE: {len(unmeasured)} null cells have NO ARGOS, so their null "
+              f"was never tested (not 'passed'):")
+        for u in unmeasured[:10]:
+            print("   ", u)
+        if len(unmeasured) > 10:
+            print(f"    ... and {len(unmeasured) - 10} more")
+    results["null_unmeasured"] = unmeasured
+    results["null_not_flat"] = bad
+    (out / "anomaly_results.json").write_text(json.dumps(results, indent=2))
+
+    # An all-skipped run is a FAILURE, not a result. The job asks 400,000 QCD
+    # from a cache holding ~414,568 -- a 3.5 % margin -- and a shortfall makes
+    # every cell {"skipped": "insufficient jets"} while the process exits 0 and
+    # the Job reports Complete.
+    produced = sum(1 for ad in results["arms"].values()
+                   for per_n in ad["signals"].values()
+                   for agg in per_n.values() if isinstance(agg, dict)
+                   for v in agg.values() if isinstance(v, dict) and "max_sic" in v)
+    if produced == 0:
+        print("\nFATAL: no cell produced a max_sic -- every cell was skipped. "
+              "Most likely the feature cache holds fewer QCD jets than "
+              "--n-bkg + --n-template asks for.", file=sys.stderr)
+        return 3
+    print(f"\n{produced:,} score cells produced a max_sic")
     return 0
 
 

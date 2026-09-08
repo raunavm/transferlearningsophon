@@ -148,3 +148,39 @@ def test_jc1_subsets_are_balanced_nested_and_parquet_round_trips(ms, tmp_path):
     assert len(ak.from_parquet(out / "val.parquet")) == 150
     man = json.loads((out / "manifest.json").read_text())
     assert man["per_class_rows"] == 100 and man["outputs"]["val.parquet"] == 150
+
+
+def test_done_shortcircuit_compares_every_row_changing_parameter():
+    """The stored manifest carries n_files / take_fraction / files_per_class,
+    but `want` did not, so a rebuild with a WIDER pool printed "matches the
+    request; nothing to do" and the caller silently trained on the old narrow
+    one."""
+    src = (pathlib.Path(__file__).resolve().parents[1] / "experiments" / "FT"
+           / "make_subsets.py").read_text()
+    block = src[src.index('want = {"mode": args.mode'):src.index("unchecked = [")]
+    for field in ("n_files", "take_fraction", "files_per_class"):
+        assert field in block, f"{field} changes the rows and must be compared"
+    # and each is gated on the mode whose manifest actually stores it
+    assert 'args.mode == "jc2"' in block and 'args.mode == "jc1"' in block
+
+
+def test_signal_fraction_tolerance_scales_with_n():
+    """A flat 0.05 is 3.16 sigma at N=1000 -- a perfectly shuffled pool trips it
+    on ~0.5 % of seeds, and rng_for is deterministic so a rerun cannot clear
+    it. At N=1.2e6 the same constant is 110 sigma and would miss a real fault."""
+    import math
+    src = (pathlib.Path(__file__).resolve().parents[1] / "experiments" / "FT"
+           / "make_subsets.py").read_text()
+    assert "abs(f - 0.5) > 0.05" not in src, "the flat tolerance must be gone"
+    assert "5.0 * 0.5 / math.sqrt(n)" in src
+    tol = lambda n: max(5.0 * 0.5 / math.sqrt(n), 0.01)
+    assert tol(1_000) > 0.05, "must be LOOSER where the flat value was 3.2 sigma"
+    assert tol(1_200_000) < 0.05, "must be TIGHTER where it was 110 sigma"
+    # 5 sigma until the 0.01 floor takes over, which happens at N = 62,500.
+    # The floor is deliberate: the source pool is not exactly 50/50, so a
+    # tolerance shrinking as 1/sqrt(N) forever would eventually flag the pool's
+    # own composition rather than a shuffling fault.
+    for n in (1_000, 10_000):
+        assert tol(n) == pytest.approx(5.0 * 0.5 / math.sqrt(n))
+    for n in (100_000, 1_200_000):
+        assert tol(n) == 0.01
