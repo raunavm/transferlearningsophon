@@ -1,0 +1,99 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # THE TWO PUBLISHED PHYSICS DISCRIMINANTS -- docs/PRD_PLAN.md 3.1(b), 8.2.
+  #
+  #   bc_vs_rest   arXiv:2503.00118 Eq. 1, the |V_cb| discriminant:
+  #                bc vs {bq, cs, bqq, QCD}, in that paper's window
+  #                450 < pT < 600 and 90 < m_SD < 140, at eps_S = 60 % / 40 %.
+  #                "bqq" is label_X_YY_qqb, the 3-prong q,q,b class.
+  #   ee_vs_mm     the lepton-flavour split 2606.09458's background
+  #                suppression uses.
+  #
+  # WHY THESE TWO AND NOT MORE PROBES OF THE SAME KIND. The existing three ask
+  # whether an AXIS survived. These ask whether an arm can still construct a
+  # discriminant a PUBLISHED analysis depends on -- the use-case-survival
+  # argument. A coarse vocabulary does not merely score worse on these; the
+  # nodes it would sum over no longer exist.
+  #
+  # Collapse rungs are DERIVED from configs/labelmaps/rung_label_maps.v1.csv by
+  # tests/test_physics_probes.py at all eight rungs. Doing so CORRECTED
+  # docs/PRD_PLAN.md 3.1(b): the ee/mumu split merges one rung earlier than the
+  # prose says, at R63_Q1 into 2P_LEP_LL|nb0_nc0, not at R42_Q1.
+  #
+  # CPU-ONLY, ZERO GPU: runs on features already cached by the extraction jobs.
+  # Runs the three original tasks too, so the whole probe table lands at once.
+  name: eval-labelrec-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: probe
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.25" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          # features_e79, NOT features_v2 -- item 18 fixed the paper checkpoint
+          # to epoch 79 and features_v2 came from net_best_epoch_state.pt.
+          #
+          # LOGITS ARE REQUIRED HERE, unlike the probes. The vocabulary-DEFINED
+          # score (class_sum) is built from the head's own node scores, so an
+          # arm whose cache has no logits.npy can only contribute the
+          # vocabulary-FREE scores. That asymmetry is the measurement, so it is
+          # reported as an absence rather than silently dropped -- but the
+          # extraction is run with --save-logits precisely so it does not happen.
+          #
+          # --own-rung maps each arm to the vocabulary it was PRETRAINED on, which
+          # is what decides its node roles. It cannot be inferred from the arm
+          # name without a convention nothing enforces, so it is explicit.
+          ARMS=""; RUNGS=""
+          for spec in mtx-r16q1-s2:R16_Q1 mtx-r16q1-s3:R16_Q1 mtx-r16q1-s4:R16_Q1 mtx-l162-s1b:L162; do
+            a=${spec%%:*}; r=${spec##*:}
+            d=/data/results/eval/${a}/features_e79
+            [ -f "${d}/features.npy" ] || { echo "FATAL: no ${d}/features.npy"; exit 1; }
+            [ -f "${d}/observers.npz" ] || { echo "FATAL: no ${d}/observers.npz"; exit 1; }
+            [ -f "${d}/logits.npy" ] || echo "NOTE: ${a} has no logits.npy -- class_sum will be absent for it"
+            ARMS="${ARMS} ${a#mtx-}=${d}"
+            RUNGS="${RUNGS} ${a#mtx-}=${r}"
+          done
+          echo "arms:${ARMS}"
+          echo "rungs:${RUNGS}"
+
+          OUT=/data/results/eval/label_recovery
+          mkdir -p ${OUT}
+          python3 experiments/EVAL/label_recovery.py \
+            --features ${ARMS} \
+            --own-rung ${RUNGS} \
+            --out ${OUT} \
+            --n 200000
+
+          echo "=== results ==="
+          cat ${OUT}/label_recovery.json
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
