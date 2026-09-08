@@ -64,7 +64,7 @@ metadata:
   # writing the sidecars but BEFORE copying them out, and set -e discards them.
   # DERIVED from job-mtx-makeweight-raunav.yaml on 2026-08-22, changing four
   # things: the name, the clone ref (arms-s1 no longer exists on the remote;
-  # mtx-s1.24 is the tag that first carries configs/arms/RAND_d1.yaml), the arm
+  # mtx-s1.29 is the tag carrying the SHARE-matched configs/arms/RAND_d1.yaml), the arm
   # list (RAND_d1 only -- the tree arms' sidecars exist, are in use by running
   # jobs, and recomputing them risks loss for no gain), and the final check.
   #
@@ -73,7 +73,7 @@ metadata:
   # compared against the shared hash the first three arms recorded in
   # hist_hashes.json. That is invariant I2 tested directly: reweighting keys
   # on NATIVE categories, so it must not move when the vocabulary does.
-  name: mtx-makeweight-rand-raunav
+  name: mtx-makeweight-rand2-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 1
@@ -92,10 +92,13 @@ spec:
           # and the training jobs resolve to different commits, the arm configs
           # differ, the md5s differ, and every training job fails its sidecar
           # guard -- loudly, but only after this whole pass has been paid for.
-          # Pinned to mtx-s1.24, the first tag carrying configs/arms/RAND_d1.yaml
-          # and configs/labelmaps/rand_label_map.v1.csv that produced it.
-          # so the sidecar md5 the training spec expects is unchanged.
-          git clone --depth 1 --branch mtx-s1.24 \
+          # Pinned to mtx-s1.29, the tag carrying the SHARE-matched control
+          # (DECISIONS_PENDING item 24, resolved 2026-09-08). The earlier
+          # mtx-s1.24 sidecar was built from the COUNT-matched RAND_d1.yaml and
+          # is keyed on md5 07e850fb; the arm is now 3e293063, so that sidecar
+          # is orphaned rather than wrong -- it is left in place, and this pass
+          # writes the one the training spec's guard will look for.
+          git clone --depth 1 --branch mtx-s1.29 \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon

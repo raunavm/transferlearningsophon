@@ -5,9 +5,19 @@ metadata:
   # contraction tree.
   #
   # The semantics-matched, learnability-preserving random control: the SAME
-  # group count and group-size profile as R16_Q1, with membership permuted
-  # WITHIN prong strata so topology and the QCD block survive and only the
-  # flavour semantics is scrambled (scripts/build_rand_control.py).
+  # group count and the SAME per-group STREAM SHARE as R16_Q1, with membership
+  # scrambled within prong strata so topology and the QCD block survive and
+  # only the flavour semantics moves (scripts/build_rand_control.py).
+  #
+  # SHARE, NOT CLASS COUNT (DECISIONS_PENDING item 24, resolved 2026-09-08).
+  # An earlier draw of this control copied the per-group NATIVE-CLASS count.
+  # The network never sees a native class -- it sees a group label -- so class
+  # count is invisible to the loss while stream share sets the per-group
+  # imbalance the loss actually experiences, and natives are 222.2:1 imbalanced
+  # in share. That control came out at 23.78:1 against R16_Q1's 200.00:1: an
+  # EASIER task than the arm it controls, which biases the falsification rule
+  # below toward firing on an artefact. This one reproduces 200.00:1 and
+  # exp(H) 8.43 exactly, and lets class counts float instead.
   #
   # WHAT IT DECIDES. The standing objection to this study is a tautology --
   # "you merged X_bb and X_cc, then showed b-vs-c is harder". If RAND_d1
@@ -93,7 +103,7 @@ spec:
         # Pin all three arms to ONE ref. A branch name here means three arms
         # launched at different times can run different code.
         - name: REPO_REF
-          value: "mtx-s1.24"
+          value: "mtx-s1.29"
         args:
         - |
           set -euo pipefail
