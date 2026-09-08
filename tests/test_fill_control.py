@@ -73,12 +73,16 @@ def test_the_file_list_is_not_reconstructible_by_brace_expansion():
 def test_every_arm_has_a_checkpoint_and_a_baseline_declared():
     a = _args()
     for arm, ckpt, k in bfc.ARMS:
-        assert ckpt in a and f"--num-classes {k}" in a
+        # every leg now goes through the `leg` helper, so the checkpoint and K
+        # appear as its arguments rather than after literal flags
+        assert f"leg ${{ROOT_OUT}}/{arm}/unmasked {ckpt} {k} " in a
+        for mask in bfc.MASKS:
+            assert f"leg ${{ROOT_OUT}}/{arm}/{mask} {ckpt} {k} " in a
         # The unmasked leg is EXTRACTED at the same checkpoint as the masked
         # legs, not truncated out of features_v2 (which came from
         # net_best_epoch_state.pt). Two legs from different checkpoints make
         # the control measure a checkpoint change as well as the mask.
-        assert f"--arm {arm}_unmasked" in a
+            assert f"{arm}_unmasked" in a
         assert "features_v2" not in a, (
             "features_v2 is a best-epoch cache; the control must not mix it "
             "with epoch-79 masked features")
@@ -87,10 +91,13 @@ def test_every_arm_has_a_checkpoint_and_a_baseline_declared():
 def test_masked_and_unmasked_use_the_same_jet_count():
     a = _args()
     assert f"N={bfc.N_JETS}" in a
-    # one unmasked leg + one per mask, per arm
-    assert a.count("--max-jets ${N}") == len(bfc.ARMS) * (len(bfc.MASKS) + 1)
-    # (the truncation leg is gone: every leg is now an extraction
-    # capped by --max-jets, counted above)
+    # one unmasked leg + one per mask, per arm -- all routed through the single
+    # `leg` helper, which is where --max-jets is applied, so the count is of
+    # CALLS rather than of repeated flags
+    import re as _re
+    calls = [m for m in _re.findall(r"^\s*leg (\S+) ", a, _re.M) if m != "()"]
+    assert len(calls) == len(bfc.ARMS) * (len(bfc.MASKS) + 1)
+    assert a.count("--max-jets ${N}") == 1, "one helper, one cap"
 
 
 def test_probes_run_on_unmasked_and_on_every_mask():
@@ -133,20 +140,35 @@ def test_the_legs_row_alignment_is_actually_checked():
         assert arm in a.split("row alignment")[1].split("probe.py")[0]
 
 
-def test_unmasked_leg_has_no_resume_short_circuit():
-    """${U} is the same path the superseded launch filled by truncating
-    features_v2 (best epoch). A `[ -f ... ] ||` guard there silently reuses the
-    stale leg and reports masking-effect + checkpoint-change as the fill
-    penalty, exit 0."""
+def test_resume_is_keyed_on_the_checkpoint_not_on_a_file_existing():
+    """The observed run re-extracted 9 of 12 legs and silently reused
+    r16q1-s2's unmasked AND TopReference, left by the superseded truncation
+    build at the best epoch -- so that one arm compared two checkpoints against
+    itself while the other three did not, and the label188 diff (a property of
+    the DATA) exited 0 on three matching hashes."""
     y = (pathlib.Path(__file__).resolve().parents[1] / "experiments" / "EVAL"
          / "k8s" / "job-eval-fillcontrol-raunav.yaml").read_text()
-    for line in y.splitlines():
-        if "--arm" in line and "_unmasked" in line:
-            continue
-        assert not ("[ -f ${U}/label188.npy ]" in line), \
-            "the unmasked leg must be re-extracted, not resumed"
-    cleared = [l for l in y.splitlines() if l.strip() == "rm -rf ${U}"]
-    assert len(cleared) == 4, "each arm's unmasked leg must be cleared"
+    assert "label188.npy ] ||" not in y, \
+        "a bare [ -f ... ] resume reuses a leg built from another checkpoint"
+    assert "truncate_features.py" not in y
+    assert "checkpoint_sha256" in y and "REBUILD" in y
+    # legacy manifests carry the digest under `sha256`; reusing them is correct
+    assert "d.get('sha256')" in y
+
+
+def test_every_leg_of_an_arm_is_built_from_one_checkpoint():
+    import re as _re
+    y = (pathlib.Path(__file__).resolve().parents[1] / "experiments" / "EVAL"
+         / "k8s" / "job-eval-fillcontrol-raunav.yaml").read_text()
+    calls = [c for c in _re.findall(r"^\s*leg (\S+) (\S+) ", y, _re.M) if c[0] != "()"]
+    assert len(calls) == 12, f"4 arms x (1 unmasked + 2 masks), got {len(calls)}"
+    per_arm = {}
+    for d, ckpt in calls:
+        per_arm.setdefault(d.rsplit("/", 2)[-2], set()).add(ckpt)
+    assert len(per_arm) == 4
+    for arm, ckpts in per_arm.items():
+        assert len(ckpts) == 1, f"{arm} legs span {ckpts}"
+        assert "net_epoch-79_state.pt" in next(iter(ckpts))
 
 
 def test_legs_are_diffed_on_the_checkpoint_not_only_the_labels():
@@ -155,5 +177,4 @@ def test_legs_are_diffed_on_the_checkpoint_not_only_the_labels():
     confound."""
     y = (pathlib.Path(__file__).resolve().parents[1] / "experiments" / "EVAL"
          / "k8s" / "job-eval-fillcontrol-raunav.yaml").read_text()
-    assert "checkpoint_sha256" in y
     assert "extracted at a DIFFERENT" in y

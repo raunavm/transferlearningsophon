@@ -118,43 +118,49 @@ def script(pin: str) -> str:
         "          done",
         "",
     ]
+    # ONE resume rule for EVERY leg, keyed on the CHECKPOINT rather than on the
+    # mere existence of a file. `[ -f .../label188.npy ] ||` reuses whatever is
+    # on the PVC: the superseded launch filled these same paths by TRUNCATING
+    # features_v2 (best epoch 74/64/76/78) while the masked legs load epoch 79,
+    # and the observed run proves it -- of 12 legs it re-extracted 9 and
+    # silently reused r16q1-s2's unmasked AND TopReference, so that one arm
+    # mixes two checkpoints against itself while the other three do not. The
+    # label188 diff cannot see this (label188 is a property of the data), so it
+    # exits 0 with three matching hashes. Comparing the stored checkpoint digest
+    # keeps the resume where it is valid and rebuilds exactly where it is not.
+    lines += [
+        "          leg () {   # leg <dir> <ckpt> <k> <arm-tag> <data-config>",
+        "            local d=$1 ckpt=$2 k=$3 tag=$4 cfg=$5",
+        "            case \"${d}\" in ${ROOT_OUT}/*/*) ;; *)"
+        " echo \"FATAL: refusing to touch ${d}\"; exit 1;; esac",
+        "            local want=$(sha256sum ${ckpt} | cut -d' ' -f1) got=",
+        "            [ -f ${d}/extract_manifest.json ] && got=$(python3 -c \"import json,sys;"
+        "d=json.load(open(sys.argv[1]));print(d.get('checkpoint_sha256') or d.get('sha256') or '')\" \\",
+        "                  ${d}/extract_manifest.json)",
+        "            if [ -n \"${got}\" ] && [ \"${got}\" = \"${want}\" ]; then",
+        '              echo "  reuse ${d} (checkpoint ${got:0:16} matches)"; return 0',
+        "            fi",
+        '            [ -n "${got}" ] && echo "  REBUILD ${d}: holds ${got:0:16}, want ${want:0:16}"',
+        "            rm -rf ${d}",
+        "            python3 experiments/EVAL/extract_features.py \\",
+        "              --checkpoint ${ckpt} --num-classes ${k} --arm ${tag} \\",
+        "              --data-config ${cfg} \\",
+        "              --data-test ${TEST} --out ${d} \\",
+        "              --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}",
+        "          }",
+        "",
+    ]
     for arm, ckpt, k in ARMS:
         lines += [
             f"          # ---- {arm} (K={k})",
             f'          [ -f "{ckpt}" ] || {{ echo "FATAL: no {ckpt}"; exit 1; }}',
-            f"          U={{ROOT_OUT}}/{arm}/unmasked".replace("{ROOT_OUT}", "${ROOT_OUT}"),
-            # The unmasked leg is EXTRACTED at the same checkpoint as the
-            # masked legs, not truncated out of features_v2. features_v2 was
-            # written from net_best_epoch_state.pt (epochs 74/64/76/78 for
-            # r16q1-s2/s3/s4/l162-s1b); the masked legs load epoch 79. A
-            # control whose two legs come from different checkpoints measures
-            # the zero-fill penalty PLUS a checkpoint change, per arm, with
-            # nothing erroring. Epoch 79 is the side that moves, because
-            # DECISIONS_PENDING item 18 resolved to epoch 79 uniformly.
-            # NO `[ -f ... ] ||` SHORT-CIRCUIT HERE. ${U} is the identical path
-            # and resume key the superseded launch filled by TRUNCATING
-            # features_v2 (best epoch), and nothing clears ${ROOT_OUT}. With a
-            # resume guard the fixed job skips the extraction, silently reuses
-            # the stale best-epoch leg, and reports the exact confound this
-            # rebuild exists to remove -- exit 0, hashes matching. 400k jets is
-            # ~10 min; correctness is worth more than the resume.
-            f'          case "${{U}}" in ${{ROOT_OUT}}/*/unmasked) ;; *)'
-            f' echo "FATAL: refusing rm -rf ${{U}}"; exit 1;; esac',
-            f"          rm -rf ${{U}}",
-            f"          python3 experiments/EVAL/extract_features.py \\",
-            f"            --checkpoint {ckpt} --num-classes {k} --arm {arm}_unmasked \\",
-            f"            --data-config configs/data/JetClassII_base.yaml \\",
-            f"            --data-test ${{TEST}} --out ${{U}} \\",
-            f"            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${{N}}",
+            f"          leg ${{ROOT_OUT}}/{arm}/unmasked {ckpt} {k} {arm}_unmasked \\",
+            f"              configs/data/JetClassII_base.yaml",
         ]
         for mask in MASKS:
-            d = f"${{ROOT_OUT}}/{arm}/{mask}"
             lines += [
-                f"          [ -f {d}/label188.npy ] || python3 experiments/EVAL/extract_features.py \\",
-                f"            --checkpoint {ckpt} --num-classes {k} --arm {arm}_{mask} \\",
-                f"            --data-config configs/finetune/JetClassII_base_mask{mask}.yaml \\",
-                f"            --data-test ${{TEST}} --out {d} \\",
-                f"            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${{N}}",
+                f"          leg ${{ROOT_OUT}}/{arm}/{mask} {ckpt} {k} {arm}_{mask} \\",
+                f"              configs/finetune/JetClassII_base_mask{mask}.yaml",
             ]
         lines.append("")
     lines += [
@@ -252,12 +258,26 @@ def main() -> int:
     args = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
     for tok in ("TopReference", "EnergyFlowQG", "probe.py"):
         assert tok in args, f"{tok} missing from the emitted script"
-    # Every extract_features call -- masked and unmasked alike -- must load the
-    # SAME checkpoint, or the control measures a checkpoint change too.
-    ckpts = set(re.findall(r"--checkpoint (\S+)", args))
+    # Every leg of an arm -- masked and unmasked alike -- must be built from the
+    # SAME checkpoint, or the control measures a checkpoint change too. The
+    # extraction now runs through the `leg` helper, so the checkpoint appears as
+    # its 2nd argument rather than after a literal --checkpoint.
+    calls = re.findall(r"^\s*leg (\S+) (\S+) (\S+) (\S+)", args, re.M)
+    assert len(calls) == len(ARMS) * (1 + len(MASKS)), (
+        f"expected {len(ARMS) * (1 + len(MASKS))} legs, emitted {len(calls)}")
+    per_arm = {}
+    for d_, ckpt, _k, _tag in calls:
+        per_arm.setdefault(d_.rsplit("/", 2)[-2], set()).add(ckpt)
     for arm, ckpt, _ in ARMS:
-        assert ckpt in ckpts, f"{arm}: {ckpt} never extracted"
-    assert ckpts == {c for _, c, _ in ARMS}, f"unexpected checkpoints: {ckpts}"
+        assert per_arm.get(arm) == {ckpt}, (
+            f"{arm}: legs span checkpoints {per_arm.get(arm)}, want {{{ckpt}}}")
+    assert {c for v in per_arm.values() for c in v} == {c for _, c, _ in ARMS}
+    # the resume must be keyed on the checkpoint, not on a file existing
+    assert "checkpoint_sha256" in args and "REBUILD" in args, (
+        "the per-leg resume must compare the stored checkpoint digest")
+    assert "label188.npy ] ||" not in args, (
+        "a bare [ -f ... ] resume reuses whatever is on the PVC, including a "
+        "leg written from a different checkpoint")
     assert "truncate_features.py" not in args, (
         "the unmasked leg must be extracted at the masked legs' checkpoint, "
         "not truncated out of a best-epoch cache")

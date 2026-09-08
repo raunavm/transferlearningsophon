@@ -58,89 +58,59 @@ spec:
             [ -f "${c}" ] || { echo "FATAL: no ${c}"; exit 1; }
           done
 
+          leg () {   # leg <dir> <ckpt> <k> <arm-tag> <data-config>
+            local d=$1 ckpt=$2 k=$3 tag=$4 cfg=$5
+            case "${d}" in ${ROOT_OUT}/*/*) ;; *) echo "FATAL: refusing to touch ${d}"; exit 1;; esac
+            local want=$(sha256sum ${ckpt} | cut -d' ' -f1) got=
+            [ -f ${d}/extract_manifest.json ] && got=$(python3 -c "import json,sys;d=json.load(open(sys.argv[1]));print(d.get('checkpoint_sha256') or d.get('sha256') or '')" \
+                  ${d}/extract_manifest.json)
+            if [ -n "${got}" ] && [ "${got}" = "${want}" ]; then
+              echo "  reuse ${d} (checkpoint ${got:0:16} matches)"; return 0
+            fi
+            [ -n "${got}" ] && echo "  REBUILD ${d}: holds ${got:0:16}, want ${want:0:16}"
+            rm -rf ${d}
+            python3 experiments/EVAL/extract_features.py \
+              --checkpoint ${ckpt} --num-classes ${k} --arm ${tag} \
+              --data-config ${cfg} \
+              --data-test ${TEST} --out ${d} \
+              --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
+          }
+
           # ---- r16q1-s2 (K=17)
           [ -f "/data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt" ] || { echo "FATAL: no /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt"; exit 1; }
-          U=${ROOT_OUT}/r16q1-s2/unmasked
-          case "${U}" in ${ROOT_OUT}/*/unmasked) ;; *) echo "FATAL: refusing rm -rf ${U}"; exit 1;; esac
-          rm -rf ${U}
-          python3 experiments/EVAL/extract_features.py \
-            --checkpoint /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s2_unmasked \
-            --data-config configs/data/JetClassII_base.yaml \
-            --data-test ${TEST} --out ${U} \
-            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
-          [ -f ${ROOT_OUT}/r16q1-s2/TopReference/label188.npy ] || python3 experiments/EVAL/extract_features.py \
-            --checkpoint /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s2_TopReference \
-            --data-config configs/finetune/JetClassII_base_maskTopReference.yaml \
-            --data-test ${TEST} --out ${ROOT_OUT}/r16q1-s2/TopReference \
-            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
-          [ -f ${ROOT_OUT}/r16q1-s2/EnergyFlowQG/label188.npy ] || python3 experiments/EVAL/extract_features.py \
-            --checkpoint /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s2_EnergyFlowQG \
-            --data-config configs/finetune/JetClassII_base_maskEnergyFlowQG.yaml \
-            --data-test ${TEST} --out ${ROOT_OUT}/r16q1-s2/EnergyFlowQG \
-            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
+          leg ${ROOT_OUT}/r16q1-s2/unmasked /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt 17 r16q1-s2_unmasked \
+              configs/data/JetClassII_base.yaml
+          leg ${ROOT_OUT}/r16q1-s2/TopReference /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt 17 r16q1-s2_TopReference \
+              configs/finetune/JetClassII_base_maskTopReference.yaml
+          leg ${ROOT_OUT}/r16q1-s2/EnergyFlowQG /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt 17 r16q1-s2_EnergyFlowQG \
+              configs/finetune/JetClassII_base_maskEnergyFlowQG.yaml
 
           # ---- r16q1-s3 (K=17)
           [ -f "/data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt" ] || { echo "FATAL: no /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt"; exit 1; }
-          U=${ROOT_OUT}/r16q1-s3/unmasked
-          case "${U}" in ${ROOT_OUT}/*/unmasked) ;; *) echo "FATAL: refusing rm -rf ${U}"; exit 1;; esac
-          rm -rf ${U}
-          python3 experiments/EVAL/extract_features.py \
-            --checkpoint /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s3_unmasked \
-            --data-config configs/data/JetClassII_base.yaml \
-            --data-test ${TEST} --out ${U} \
-            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
-          [ -f ${ROOT_OUT}/r16q1-s3/TopReference/label188.npy ] || python3 experiments/EVAL/extract_features.py \
-            --checkpoint /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s3_TopReference \
-            --data-config configs/finetune/JetClassII_base_maskTopReference.yaml \
-            --data-test ${TEST} --out ${ROOT_OUT}/r16q1-s3/TopReference \
-            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
-          [ -f ${ROOT_OUT}/r16q1-s3/EnergyFlowQG/label188.npy ] || python3 experiments/EVAL/extract_features.py \
-            --checkpoint /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s3_EnergyFlowQG \
-            --data-config configs/finetune/JetClassII_base_maskEnergyFlowQG.yaml \
-            --data-test ${TEST} --out ${ROOT_OUT}/r16q1-s3/EnergyFlowQG \
-            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
+          leg ${ROOT_OUT}/r16q1-s3/unmasked /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt 17 r16q1-s3_unmasked \
+              configs/data/JetClassII_base.yaml
+          leg ${ROOT_OUT}/r16q1-s3/TopReference /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt 17 r16q1-s3_TopReference \
+              configs/finetune/JetClassII_base_maskTopReference.yaml
+          leg ${ROOT_OUT}/r16q1-s3/EnergyFlowQG /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt 17 r16q1-s3_EnergyFlowQG \
+              configs/finetune/JetClassII_base_maskEnergyFlowQG.yaml
 
           # ---- r16q1-s4 (K=17)
           [ -f "/data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt" ] || { echo "FATAL: no /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt"; exit 1; }
-          U=${ROOT_OUT}/r16q1-s4/unmasked
-          case "${U}" in ${ROOT_OUT}/*/unmasked) ;; *) echo "FATAL: refusing rm -rf ${U}"; exit 1;; esac
-          rm -rf ${U}
-          python3 experiments/EVAL/extract_features.py \
-            --checkpoint /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s4_unmasked \
-            --data-config configs/data/JetClassII_base.yaml \
-            --data-test ${TEST} --out ${U} \
-            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
-          [ -f ${ROOT_OUT}/r16q1-s4/TopReference/label188.npy ] || python3 experiments/EVAL/extract_features.py \
-            --checkpoint /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s4_TopReference \
-            --data-config configs/finetune/JetClassII_base_maskTopReference.yaml \
-            --data-test ${TEST} --out ${ROOT_OUT}/r16q1-s4/TopReference \
-            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
-          [ -f ${ROOT_OUT}/r16q1-s4/EnergyFlowQG/label188.npy ] || python3 experiments/EVAL/extract_features.py \
-            --checkpoint /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s4_EnergyFlowQG \
-            --data-config configs/finetune/JetClassII_base_maskEnergyFlowQG.yaml \
-            --data-test ${TEST} --out ${ROOT_OUT}/r16q1-s4/EnergyFlowQG \
-            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
+          leg ${ROOT_OUT}/r16q1-s4/unmasked /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt 17 r16q1-s4_unmasked \
+              configs/data/JetClassII_base.yaml
+          leg ${ROOT_OUT}/r16q1-s4/TopReference /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt 17 r16q1-s4_TopReference \
+              configs/finetune/JetClassII_base_maskTopReference.yaml
+          leg ${ROOT_OUT}/r16q1-s4/EnergyFlowQG /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt 17 r16q1-s4_EnergyFlowQG \
+              configs/finetune/JetClassII_base_maskEnergyFlowQG.yaml
 
           # ---- l162-s1b (K=162)
           [ -f "/data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt" ] || { echo "FATAL: no /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt"; exit 1; }
-          U=${ROOT_OUT}/l162-s1b/unmasked
-          case "${U}" in ${ROOT_OUT}/*/unmasked) ;; *) echo "FATAL: refusing rm -rf ${U}"; exit 1;; esac
-          rm -rf ${U}
-          python3 experiments/EVAL/extract_features.py \
-            --checkpoint /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt --num-classes 162 --arm l162-s1b_unmasked \
-            --data-config configs/data/JetClassII_base.yaml \
-            --data-test ${TEST} --out ${U} \
-            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
-          [ -f ${ROOT_OUT}/l162-s1b/TopReference/label188.npy ] || python3 experiments/EVAL/extract_features.py \
-            --checkpoint /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt --num-classes 162 --arm l162-s1b_TopReference \
-            --data-config configs/finetune/JetClassII_base_maskTopReference.yaml \
-            --data-test ${TEST} --out ${ROOT_OUT}/l162-s1b/TopReference \
-            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
-          [ -f ${ROOT_OUT}/l162-s1b/EnergyFlowQG/label188.npy ] || python3 experiments/EVAL/extract_features.py \
-            --checkpoint /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt --num-classes 162 --arm l162-s1b_EnergyFlowQG \
-            --data-config configs/finetune/JetClassII_base_maskEnergyFlowQG.yaml \
-            --data-test ${TEST} --out ${ROOT_OUT}/l162-s1b/EnergyFlowQG \
-            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
+          leg ${ROOT_OUT}/l162-s1b/unmasked /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt 162 l162-s1b_unmasked \
+              configs/data/JetClassII_base.yaml
+          leg ${ROOT_OUT}/l162-s1b/TopReference /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt 162 l162-s1b_TopReference \
+              configs/finetune/JetClassII_base_maskTopReference.yaml
+          leg ${ROOT_OUT}/l162-s1b/EnergyFlowQG /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt 162 l162-s1b_EnergyFlowQG \
+              configs/finetune/JetClassII_base_maskEnergyFlowQG.yaml
 
           echo "===== row alignment: label188 sha256 per arm ====="
           for a in r16q1-s2 r16q1-s3 r16q1-s4 l162-s1b; do
