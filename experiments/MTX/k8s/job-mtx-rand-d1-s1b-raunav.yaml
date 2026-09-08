@@ -1,21 +1,6 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  # SUPERSEDED 2026-09-08 -- DO NOT APPLY. The live control is
-  # job-mtx-rand-d1-s1b-raunav.yaml. This file is kept because
-  # experiments/RUNS.csv cites it as the manifest path of the run that
-  # trained the COUNT-matched vocabulary (DECISIONS_PENDING item 24), and
-  # applying it now would write into /data/results/mtx/mtx-rand-d1-s1,
-  # which still holds that run's epoch-0 checkpoint.
-  #
-  # Its `--num-classes 162` has been corrected to 17 rather than left as
-  # found: the value was copied from the L162 spec this one was derived
-  # from and never matched the `-o num_classes 17` weaver actually ran, so
-  # the superseded run's manifest records K=162 for a K=17 model. That is
-  # a fact about that run, recorded in the ledger; leaving the trap in a
-  # file anyone can apply is not worth preserving it here, and the
-  # as-launched bytes are at tag mtx-s1.24.
-  #
   # D8 NOVELTY CONTROL -- RAND_d1 (K = 17), seed 1. NOT a rung of the
   # contraction tree.
   #
@@ -87,7 +72,7 @@ metadata:
   # Everything else in this spec -- budget, file lists, guards, node
   # constraints, seeding, the auto-resume RECIPE stamp -- is inherited
   # byte-identical from the tree arms, which is invariant I1 at the run level.
-  name: mtx-rand-d1-s1-raunav
+  name: mtx-rand-d1-s1b-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 50
@@ -118,7 +103,7 @@ spec:
         # Pin all three arms to ONE ref. A branch name here means three arms
         # launched at different times can run different code.
         - name: REPO_REF
-          value: "mtx-s1.29"
+          value: "mtx-s1.30"
         args:
         - |
           set -euo pipefail
@@ -138,7 +123,7 @@ spec:
           # image does not ship. Fail loudly rather than at first fetch.
           pip install --no-cache-dir -q pyarrow || exit 1
 
-          RUN_ID=mtx-rand-d1-s1
+          RUN_ID=mtx-rand-d1-s1b
           OUT=/data/results/mtx/${RUN_ID}
           mkdir -p ${OUT}
           # ATTEMPT RECORDS (scripts/add_run_records.py)
@@ -227,7 +212,16 @@ spec:
           # writes them separately, and resuming from a state file whose
           # optimizer is missing only WARNS and then trains on with a fresh
           # optimizer -- silent corruption of a momentum-based run.
-          RECIPE='lr=5e-4 epochs=80'
+          # THE STAMP CARRIES THE ARM CONFIG'S md5, NOT JUST THE RATE.
+          # job-mtx-l162-s1b exists because a rate change made the guard fire.
+          # Item 24 changed the VOCABULARY and left lr=5e-4 epochs=80 untouched,
+          # so the guard would have seen a matching stamp and resumed
+          # mtx-rand-d1-s1's epoch-0 checkpoint -- weights trained on the
+          # count-matched labels. Both vocabularies are K=17, so the head shape
+          # matches and torch would have loaded it WITHOUT ERROR. The md5 closes
+          # that: any change to configs/arms/RAND_d1.yaml now invalidates the
+          # stamp. (MD5 is computed above, from the config this pod cloned.)
+          RECIPE="lr=5e-4 epochs=80 arm=${MD5}"
           RESUME=""
           LAST_EP=-1
           for f in ${OUT}/net_epoch-*_state.pt; do
@@ -281,7 +275,7 @@ spec:
             --num-epochs 80 ${RESUME} --optimizer ranger \
             --model-prefix ${OUT}/net \
             --log ${OUT}/train.log \
-            --tensorboard mtx_RAND_d1_s1
+            --tensorboard mtx_RAND_d1_s1b
 
           # NO in-pod test evaluation here. This is deliberate.
           #

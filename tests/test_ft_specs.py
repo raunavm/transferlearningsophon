@@ -265,3 +265,24 @@ def test_mass_specs_differ_from_the_template_only_at_the_declared_sites():
     stray = [ln for ln in changed if not any(tok in ln for tok in allowed)]
     assert not stray, "the mass spec changed lines outside the declared edit sites:\n" + "\n".join(stray)
     assert "--mass-lambda 5.0" in b and "ParT_sophon_arch_mass.py" in b and "-o num_classes 17" in b
+
+
+def test_manifest_k_equals_the_k_weaver_actually_trains():
+    """The run manifest is the provenance record, so a spec that RECORDS one
+    vocabulary size while TRAINING another misattributes the run.
+
+    This is the spec-copy hazard already in the ledger (2026-09-08T03:15Z):
+    job-mtx-rand-d1-s1 was derived from the L162 spec and kept its
+    `--num-classes 162` beside `-o num_classes 17`. Nothing errors -- weaver
+    never reads the manifest -- so only a comparison catches it.
+    """
+    bad = []
+    for p in sorted(MTX.glob("job-mtx-*-raunav.yaml")):
+        _, _, code = _spec(p)                       # executed lines only
+        mani = re.search(r"--num-classes (\d+)", code)
+        weav = re.search(r"-o num_classes (\d+)", code)
+        if not (mani and weav):
+            continue                                # not a training spec
+        if mani.group(1) != weav.group(1):
+            bad.append(f"{p.name}: manifest {mani.group(1)} vs weaver {weav.group(1)}")
+    assert not bad, "specs record a K they do not train:\n" + "\n".join(bad)

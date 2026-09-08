@@ -17,6 +17,7 @@ share profile in their place.
 import csv
 import importlib.util
 import pathlib
+import re
 
 import pytest
 
@@ -321,6 +322,11 @@ def test_a_mixed_qcd_resonant_target_is_refused():
 
 
 K8S = ROOT / "experiments" / "MTX" / "k8s"
+# The spec that is actually launched. job-mtx-rand-d1-s1 is kept as the record
+# of the SUPERSEDED count-matched run (experiments/RUNS.csv points at it); s1b
+# is the share-matched relaunch, and it needs a fresh RUN_ID because its
+# predecessor left epoch-0 checkpoints in the s1 output directory.
+LIVE_CONTROL_SPEC = "job-mtx-rand-d1-s1b-raunav.yaml"
 
 
 def _args(name):
@@ -357,7 +363,7 @@ def test_the_control_shares_the_frozen_weights_block(request):
 
 
 def test_training_spec_points_at_the_control_and_nothing_else():
-    d, a = _args("job-mtx-rand-d1-s1-raunav.yaml")
+    d, a = _args(LIVE_CONTROL_SPEC)
     assert "raunav" in d["metadata"]["name"]
     assert "configs/arms/RAND_d1.yaml" in a
     # R16_Q1 appears in the prose (it is what the control is matched to). What
@@ -379,6 +385,33 @@ def test_the_control_has_its_own_reweighting_sidecar_job():
 def test_training_waits_for_its_own_sidecar_not_a_neighbours():
     """Pasting another arm's sidecar onto this md5 would train it with that
     arm's labels block, silently and with no error."""
-    _, a = _args("job-mtx-rand-d1-s1-raunav.yaml")
+    _, a = _args(LIVE_CONTROL_SPEC)
     assert "configs/arms/RAND_d1.${MD5}.auto.yaml" in a
     assert "FATAL: no reweighting sidecar" in a
+
+
+def test_the_relaunch_cannot_resume_the_superseded_vocabularys_weights():
+    """The resume guard keyed on the RATE, and item 24 did not change the rate.
+
+    mtx-rand-d1-s1 reached epoch 0 on the count-matched labels, so its output
+    directory holds net_epoch-0_state.pt with a matching optimizer and a RECIPE
+    stamp reading `lr=5e-4 epochs=80`. The share-matched relaunch trains at the
+    same rate for the same number of epochs, so a stamp comparison would have
+    MATCHED and the run would have resumed from those weights. Both vocabularies
+    are K=17, so the head shape agrees and torch loads it without complaint --
+    the failure is entirely silent.
+
+    Two independent things stop it, and both are asserted: the relaunch writes
+    to a different RUN_ID, and its stamp carries the arm config's md5.
+    """
+    d, code = _args(LIVE_CONTROL_SPEC)
+    assert d["metadata"]["name"] == "mtx-rand-d1-s1b-raunav"
+    run_id = re.search(r"RUN_ID=(\S+)", code).group(1)
+    assert run_id == "mtx-rand-d1-s1b", f"RUN_ID {run_id} would reuse the old output dir"
+
+    old = _args("job-mtx-rand-d1-s1-raunav.yaml")[1]
+    assert re.search(r"RUN_ID=(\S+)", old).group(1) != run_id
+
+    stamp = re.search(r"RECIPE=(.+)", code).group(1)
+    assert "${MD5}" in stamp, f"RECIPE stamp {stamp} cannot see a vocabulary change"
+    assert code.index("MD5=") < code.index("RECIPE="), "MD5 is used before it is set"
