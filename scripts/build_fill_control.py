@@ -14,14 +14,19 @@ interleaved across families (Res2P_0250, Res34P_1075, QCD_0350, ...), which is
 why all 188 classes appear within the first 400,000 rows. The list is therefore
 copied verbatim out of the committed extraction spec.
 
-WHY 400,000 AND NOT THE BASELINE'S 2,000,000. probe.py refuses any pair of
-directories whose label188 sha256 differs, which also fixes their length, so
-masked and unmasked must be the same size. Re-extracting masked at 2 M would
-cost 5x the GPU for statistics the control does not need: the primary
-b-vs-c resonant probe already has 12,866 vs 13,218 jets in the first 400,000
-(measured), and the QCD b-vs-c task 1,584 vs 3,458. The baseline is truncated
-to match by experiments/EVAL/truncate_features.py, and probe.py's sha check is
-what proves the truncated prefix really is the same jets.
+WHY 400,000. Re-extracting at 2 M would cost 5x the GPU for statistics the
+control does not need: the primary b-vs-c resonant probe already has 12,866 vs
+13,218 jets in the first 400,000 (measured), and the QCD b-vs-c task 1,584 vs
+3,458. All three legs of an arm -- unmasked and both masks -- are extracted
+here, at the same checkpoint over the same file list with the same --max-jets,
+so they are the same jets by construction.
+
+THAT ALIGNMENT IS CHECKED EXPLICITLY, and this file used to claim a check that
+did not exist. probe.py's label188 sha256 refusal only fires between the arms
+passed to ONE invocation, and the control runs unmasked and each mask as
+SEPARATE invocations -- so nothing ever compared a masked leg against its own
+baseline. The emitted script now diffs the three legs' label188 sha256 per arm
+before any probe runs.
 
 Run:  python3 scripts/build_fill_control.py [--pin TAG]
 """
@@ -78,12 +83,12 @@ HEADER = """  # THE ZERO-FILL CONTROL -- docs/PRD_PLAN.md 4.5, DECISIONS_PENDING
   # through the L162 control would hand them 162-GROUP labels under the same
   # array name: every probe would still run and silently measure another task.
   #
-  # 400,000 jets, not the baseline's 2,000,000, because probe.py refuses any pair
-  # whose label188 sha256 differs -- which fixes the length too -- and the
-  # primary b-vs-c resonant probe already has 12,866 vs 13,218 jets there
-  # (measured). The baseline is truncated to match; probe.py's sha check is what
-  # proves the truncated prefix is the same jets, so a wrong assumption fails
-  # loudly instead of quietly comparing different jets.
+  # 400,000 jets: the primary b-vs-c resonant probe already has 12,866 vs 13,218
+  # jets there (measured). Every leg is extracted here at the same checkpoint
+  # over the same file list, and the script diffs the three legs' label188
+  # sha256 per arm before probing -- probe.py's own sha refusal cannot do it,
+  # because it only compares arms WITHIN one invocation and the legs are
+  # separate invocations.
   #
   # GPU: 4 arms x 2 masks x 400k forward passes, then CPU probes in the same pod.
 """
@@ -142,6 +147,25 @@ def script(pin: str) -> str:
                 f"            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${{N}}",
             ]
         lines.append("")
+    lines += [
+        '          echo "===== row alignment: label188 sha256 per arm ====="',
+        "          for a in " + " ".join(a for a, _, _ in ARMS) + "; do",
+        "            ref=",
+        "            for leg in unmasked " + " ".join(MASKS) + "; do",
+        "              h=$(python3 -c \"import hashlib,numpy,sys;"
+        "print(hashlib.sha256(numpy.load(sys.argv[1]).tobytes()).hexdigest())\" \\",
+        "                    ${ROOT_OUT}/${a}/${leg}/label188.npy)",
+        '              echo "  ${a}/${leg} ${h}"',
+        '              if [ -z "${ref}" ]; then ref="${h}"',
+        '              elif [ "${h}" != "${ref}" ]; then',
+        '                echo "FATAL: ${a}/${leg} labels differ from its own baseline;"',
+        '                echo "       the legs are not the same jets, so the fill"',
+        '                echo "       penalty would be a different-sample effect."; exit 1',
+        "              fi",
+        "            done",
+        "          done",
+        "",
+    ]
     for tag, sub in [("unmasked", "unmasked")] + [(m, m) for m in MASKS]:
         feats = " ".join(f"{a}=${{ROOT_OUT}}/{a}/{sub}" for a, _, _ in ARMS)
         lines += [

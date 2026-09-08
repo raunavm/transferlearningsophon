@@ -113,3 +113,21 @@ def test_spec_is_mine_gpu_and_avoids_the_broken_nodes():
 def test_committed_spec_is_what_the_generator_emits():
     assert SPEC.read_text() == bfc.build(bfc.PIN), \
         "re-run scripts/build_fill_control.py"
+
+
+def test_the_legs_row_alignment_is_actually_checked():
+    """This file used to CLAIM a check that never ran.
+
+    probe.py refuses arms whose label188 sha256 differs, but only among the
+    arms passed to ONE invocation -- and the control runs unmasked and each
+    mask as separate invocations, so nothing ever compared a masked leg
+    against its own baseline. The emitted script must diff the legs itself.
+    """
+    a = _args()
+    assert "row alignment" in a
+    assert "label188.npy" in a
+    # the comparison must run BEFORE the first probe, or a mismatch is only
+    # discovered after the numbers have already been produced
+    assert a.index("row alignment") < a.index("probe.py")
+    for arm, _, _ in bfc.ARMS:
+        assert arm in a.split("row alignment")[1].split("probe.py")[0]
