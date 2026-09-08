@@ -251,6 +251,9 @@ def build_bench(dataset: str, src: str, out: pathlib.Path, sizes: list[int],
     srcp = pathlib.Path(src)
     out.mkdir(parents=True, exist_ok=True)
     manifest = {"mode": "bench", "dataset": dataset, "sizes": sizes, "seeds": seeds,
+                # src is recorded so the DONE short-circuit in main() can refuse
+                # to reuse subsets built from a superseded staging.
+                "src": str(src),
                 "test_files": bench_test_files(dataset, src), "per_seed": {}, "val": {}}
     need = max(sizes)
     for seed in seeds:
@@ -331,7 +334,30 @@ def main(argv=None) -> int:
     sizes = sorted(args.sizes)
     out = pathlib.Path(args.out)
     if (out / "DONE").exists():
-        print(f"{out}/DONE exists; nothing to do")
+        # A bare DONE check makes a re-stage or a grid change a SILENT no-op:
+        # the request that produced the existing subsets is never compared
+        # against the request being made now. Compare the parameters that
+        # decide the contents, and fail loudly on a mismatch rather than
+        # reusing subsets built from a superseded staging or grid.
+        mpath = out / "manifest.json"
+        if not mpath.exists():
+            raise SystemExit(f"FATAL: {out}/DONE exists but manifest.json does "
+                             f"not; the directory is in an unknown state")
+        prev = json.loads(mpath.read_text())
+        want = {"mode": args.mode, "sizes": sizes,
+                "seeds": sorted(args.seeds)}
+        if args.mode == "bench":
+            want["dataset"] = args.dataset
+            want["src"] = str(args.src)
+        got = {k: (sorted(prev[k]) if k == "seeds" else prev.get(k))
+               for k in want}
+        if got != want:
+            diff = {k: (got.get(k), want[k]) for k in want if got.get(k) != want[k]}
+            raise SystemExit(
+                f"FATAL: {out} was built with different parameters; refusing to "
+                f"reuse it. was -> now: {diff}. Delete {out} and rebuild, or "
+                f"point --out somewhere else.")
+        print(f"{out}/DONE exists and matches the request; nothing to do")
         return 0
     if args.mode == "jc2":
         m = build_jc2(args.train_files, args.val_files, out, sizes, args.seeds,

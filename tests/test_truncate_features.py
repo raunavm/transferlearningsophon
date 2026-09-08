@@ -7,6 +7,7 @@ a shorter array than asked for -- the control would either fail confusingly or,
 worse, compare mismatched rows within one directory.
 """
 import importlib.util
+import json
 import pathlib
 
 import numpy as np
@@ -80,3 +81,24 @@ def test_empty_source_fails_rather_than_writing_nothing(tmp_path):
     with pytest.raises(SystemExit) as e:
         tf.main(["--src", str(src), "--out", str(out), "--n", "10"])
     assert "no .npy arrays" in str(e.value)
+
+
+def test_refuses_to_write_into_its_own_source(tmp_path):
+    """--out == --src zeroed the cache in place and exited 0.
+
+    Each array is opened mmap_mode="r" and np.save then reopens the same path
+    for writing while the mapping is live, so the destination is truncated
+    before the mapped data is read. The run reported the requested row count
+    and left an all-zero cache behind.
+    """
+    src = tmp_path / "c"
+    src.mkdir()
+    np.save(src / "features.npy", np.arange(2000, dtype=np.float32).reshape(1000, 2))
+    np.save(src / "label188.npy", np.zeros(1000, dtype=np.int16))
+    (src / "extract_manifest.json").write_text(json.dumps({"n_jets": 1000}))
+    with pytest.raises(SystemExit) as e:
+        tf.main(["--src", str(src), "--out", str(src), "--n", "400"])
+    assert "equals --src" in str(e.value)
+    # and the source is untouched
+    arr = np.load(src / "features.npy")
+    assert arr.shape == (1000, 2) and arr[0].tolist() == [0.0, 1.0]

@@ -175,7 +175,14 @@ def load_qg(path: pathlib.Path):
     pz, e = pt * np.sinh(rap), pt * np.cosh(rap)   # massless constituents
     apid = np.abs(pid).astype(np.int64)
     species = np.vectorize(lambda p: _PID.get(int(p), 1))(apid)   # unknown -> NH
-    charge = np.sign(pid) * np.isin(apid, [211, 321, 2212, 11, 13])
+    # PDG sign convention is NOT uniform across these five species. For 211
+    # (pi+), 321 (K+) and 2212 (p) the positive id carries positive charge, so
+    # sign(pdgid) is right. For the leptons it is inverted: PDG 11 is the
+    # ELECTRON (charge -1) and PDG 13 the mu- (charge -1). Plain sign(pdgid)
+    # therefore gave every electron and muon constituent the opposite charge.
+    lepton = np.isin(apid, [11, 13])
+    charged = np.isin(apid, [211, 321, 2212, 11, 13])
+    charge = np.sign(pid) * np.where(lepton, -1.0, 1.0) * charged
     flags = {f"part_is{n}": to((species == i).astype(np.float32))
              for i, n in enumerate(["ChargedHadron", "NeutralHadron", "Photon",
                                     "Electron", "Muon"])}

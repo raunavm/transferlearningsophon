@@ -37,6 +37,15 @@ def main(argv=None) -> int:
     src, out = pathlib.Path(a.src), pathlib.Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     n_ref = None
+    # Refuse --out == --src. Each array is opened with mmap_mode="r" and then
+    # np.save reopens the SAME path for writing while that mapping is live, so
+    # the destination is truncated before the mapped data is read: the cache
+    # silently becomes all zeros and the run exits 0 claiming it wrote N rows.
+    if out.resolve() == src.resolve():
+        raise SystemExit(
+            f"FATAL: --out equals --src ({src}); this would zero the source "
+            f"cache in place. Write to a new directory.")
+
     for f in sorted(src.glob("*.npy")):
         arr = np.load(f, mmap_mode="r")
         if arr.shape[0] < a.n:

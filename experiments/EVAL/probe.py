@@ -88,14 +88,11 @@ sys.path.insert(0, str(REPO))
 # log(1-AUC), which stays sensitive near the ceiling where raw AUC does not.
 TASKS = {
     "bvc_resonant": {"signal": [0], "background": [1],
-                     "names": ["label_X_bb", "label_X_cc"],
-                     "collapsed_at": ["R16_Q1"]},
+                     "names": ["label_X_bb", "label_X_cc"]},
     "retained_topology": {"signal": [0], "background": [15],
-                          "names": ["label_X_bb", "label_X_YY_bbbb"],
-                          "collapsed_at": []},
+                          "names": ["label_X_bb", "label_X_YY_bbbb"]},
     "bvc_qcd": {"signal": [169], "background": [181],
-                "names": ["label_QCD_bb", "label_QCD_cc"],
-                "collapsed_at": ["L162", "R42_Q1", "R16_Q1"]},
+                "names": ["label_QCD_bb", "label_QCD_cc"]},
 }
 
 # --- the two PUBLISHED physics discriminants (docs/PRD_PLAN.md 3.1b, 8.2) ----
@@ -136,21 +133,64 @@ def qcd_indices() -> list[int]:
     return sorted(idx)
 
 
+RUNGS = ["L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1", "R3_VIS",
+         "R1_Q1"]
+
+
+def derive_collapsed_at(signal: list[int], background: list[int]) -> list[str]:
+    """Rungs where the task is unmeasurable, DERIVED from the committed map.
+
+    A task is collapsed at a rung when any signal class shares that rung's
+    group with any background class -- the multi-class form, because
+    bc_vs_rest's background is 30 classes.
+
+    Derived over ALL EIGHT rungs, not just the four-arm run matrix. Before
+    this, the three original tasks enumerated the run matrix and the two
+    published discriminants enumerated all eight, and both were written to the
+    same JSON key, so the record said bvc_resonant collapses at exactly one
+    rung when the map says four.
+    """
+    import csv
+    path = REPO / "configs" / "labelmaps" / "rung_label_maps.v1.csv"
+    with path.open() as f:
+        rows = {int(r["jet_label"]): r for r in csv.DictReader(f)}
+    out = []
+    for rung in RUNGS:
+        if rung not in next(iter(rows.values())):
+            raise SystemExit(f"FATAL: rung {rung} missing from {path}")
+        sg = {rows[i][rung] for i in signal if i in rows}
+        bg = {rows[i][rung] for i in background if i in rows}
+        if sg & bg:
+            out.append(rung)
+    return out
+
+
 PHYSICS_TASKS = {
     "bc_vs_rest": {"signal": [4], "background": [6, 5, 70] + qcd_indices(),
                    "names": ["label_X_bc", "{bq,cs,bqq,QCD}"],
-                   "collapsed_at": ["R42_Q1", "R29_Q1", "R16_Q1", "R3_VIS", "R1_Q1"],
-                   "window": {"jet_pt": [450.0, 600.0], "jet_sdmass": [90.0, 140.0]},
+                   # The published selection is THREE cuts, not two
+                   # (arXiv:2503.00118 App. A): "450 < p_T < 600, |eta| < 2.4,
+                   # and a soft-drop mass requirement of 90 < m_SD < 140".
+                   # |eta| < 2.4 is written as the equivalent two-sided bound so
+                   # it goes through the same machinery as the other two.
+                   # It is an ACTIVE cut: JetClass-II is generated to |eta| <
+                   # 2.5 and configs/data/JetClassII_base.yaml imposes no eta
+                   # cut, so 2.4-2.5 is populated in the cache.
+                   "window": {"jet_pt": [450.0, 600.0],
+                              "jet_sdmass": [90.0, 140.0],
+                              "jet_eta": [-2.4, 2.4]},
                    "eps_s": [0.60, 0.40]},
     "ee_vs_mm": {"signal": [10], "background": [11],
-                 "names": ["label_X_ee", "label_X_mm"],
-                 "collapsed_at": ["R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1",
-                                  "R3_VIS", "R1_Q1"]},
+                 "names": ["label_X_ee", "label_X_mm"]},
 }
 TASKS.update(PHYSICS_TASKS)
 
+for _name, _spec in TASKS.items():
+    _spec["collapsed_at"] = derive_collapsed_at(_spec["signal"], _spec["background"])
+
 C_GRID = [0.01, 0.1, 1.0, 10.0, 100.0]
 EPS_S = 0.5           # signal efficiency at which rejection is quoted
+MIN_PER_CLASS = 1000  # per class, not on the union -- see the guard below
 MLP_SEEDS = (0, 1, 2)
 SPLIT_SEED = 20260822
 
@@ -314,7 +354,7 @@ def main() -> int:
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     results = {"n_jets_total": int(L.shape[0]), "row_alignment_sha256": align_sha,
-               "eps_s": EPS_S, "tasks": {}}
+               "eps_s_default": EPS_S, "tasks": {}}
 
     for task in args.tasks:
         spec = TASKS[task]
@@ -335,19 +375,28 @@ def main() -> int:
             for k, (lo, hi) in win.items():
                 keep &= (obs[k] > lo) & (obs[k] < hi)
         rows = np.where(keep)[0]
-        if rows.size < 1000:
-            print(f"\n=== {task} === SKIPPED: only {rows.size} jets match "
-                  f"{spec['names']}")
-            results["tasks"][task] = {"skipped": True, "n": int(rows.size)}
-            continue
         y = sig[rows].astype(np.int64)
+        # Guard EACH class, not the union. bc_vs_rest is one native class
+        # against 30 (27 of them QCD) inside a narrow published window, so the
+        # union is entirely background-driven: it cleared 1,000 at 12,499 jets
+        # while carrying only 1,370 signal. A union guard cannot see that.
+        n_sig, n_bkg = int(y.sum()), int(y.size - y.sum())
+        if min(n_sig, n_bkg) < MIN_PER_CLASS:
+            print(f"\n=== {task} === SKIPPED: {n_sig:,} signal / {n_bkg:,} "
+                  f"background match {spec['names']}; need "
+                  f"{MIN_PER_CLASS:,} of each")
+            results["tasks"][task] = {"skipped": True, "n": int(rows.size),
+                                      "n_signal": n_sig,
+                                      "n_background": n_bkg}
+            continue
         tr, va, te = make_splits(rows.size)
         print(f"\n=== {task} ===  {spec['names'][0]} vs {spec['names'][1]}")
         print(f"  {rows.size:,} jets ({y.sum():,} signal), "
               f"split {tr.size:,}/{va.size:,}/{te.size:,}; "
               f"collapsed at: {', '.join(spec['collapsed_at'])}")
 
-        tr_res = {"n": int(rows.size), "n_signal": int(y.sum()),
+        tr_res = {"eps_s": [float(e) for e in spec.get("eps_s", [EPS_S])],
+                  "n": int(rows.size), "n_signal": int(y.sum()),
                   "names": spec["names"], "collapsed_at": spec["collapsed_at"],
                   "arms": {}}
         te_scores = {}
@@ -365,8 +414,13 @@ def main() -> int:
                                         "rejection_is_bound": bd}
                 first = rejs[f"{eps_list[0]:.2f}"]
                 entry[kind] = {"auc": auc, "log1m_auc": float(np.log(max(1 - auc, 1e-12))),
+                               # The flat fields mirror eps_list[0], which is
+                               # NOT the global default for every task, so the
+                               # working point they were measured at travels
+                               # with them.
                                "rejection": first["rejection"], "eps_b": first["eps_b"],
                                "rejection_is_bound": first["rejection_is_bound"],
+                               "rejection_eps_s": float(eps_list[0]),
                                "rejection_at": rejs, "selection": meta}
                 te_scores.setdefault(kind, {})[arm] = s
                 txt = "  ".join(

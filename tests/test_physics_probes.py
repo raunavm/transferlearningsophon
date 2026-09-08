@@ -16,6 +16,7 @@ import importlib.util
 import json
 import pathlib
 
+import sys
 import numpy as np
 import pytest
 
@@ -60,10 +61,15 @@ def test_bc_window_is_the_published_one():
     w = probe.TASKS["bc_vs_rest"]["window"]
     assert w["jet_pt"] == [450.0, 600.0]
     assert w["jet_sdmass"] == [90.0, 140.0]
+    # arXiv:2503.00118 App. A states THREE cuts. The eta cut was missing and a
+    # test pinned the two-cut window as "the published one"; JetClass-II runs
+    # to |eta| < 2.5, so the band it drops is populated.
+    assert w["jet_eta"] == [-2.4, 2.4], "the published |eta| < 2.4 cut"
+    assert set(w) == {"jet_pt", "jet_sdmass", "jet_eta"}
     assert probe.TASKS["bc_vs_rest"]["eps_s"] == [0.60, 0.40]
 
 
-@pytest.mark.parametrize("task", ["bc_vs_rest", "ee_vs_mm"])
+@pytest.mark.parametrize("task", sorted(probe.TASKS))
 def test_collapse_rungs_derived_at_all_eight_rungs(task):
     spec = probe.TASKS[task]
     derived = []
@@ -85,11 +91,12 @@ def test_ee_mm_merges_at_r63_not_r42():
     assert "R63_Q1" in probe.TASKS["ee_vs_mm"]["collapsed_at"]
 
 
-def _cache(d, n, labels, pt, msd, rng):
+def _cache(d, n, labels, pt, msd, rng, eta=None):
     d.mkdir(parents=True, exist_ok=True)
     np.save(d / "features.npy", rng.normal(size=(n, 8)).astype(np.float32))
     np.save(d / "label188.npy", labels.astype(np.int16))
-    np.savez(d / "observers.npz", jet_pt=pt, jet_sdmass=msd)
+    np.savez(d / "observers.npz", jet_pt=pt, jet_sdmass=msd,
+             jet_eta=np.zeros(n, dtype=np.float32) if eta is None else eta)
     (d / "extract_manifest.json").write_text(json.dumps({"arm": d.name}))
 
 
@@ -102,13 +109,57 @@ def test_window_actually_filters(tmp_path):
     msd = np.full(n, 100.0)                                  # all inside 90-140
     d = tmp_path / "arm"
     _cache(d, n, lab, pt, msd, rng)
-    arm = probe.load_arm(d)
-    assert set(arm["obs"]) == {"jet_pt", "jet_sdmass"}
-    spec = probe.TASKS["bc_vs_rest"]
-    keep = np.isin(arm["L"], spec["signal"]) | np.isin(arm["L"], spec["background"])
-    for k, (lo, hi) in spec["window"].items():
-        keep &= (arm["obs"][k] > lo) & (arm["obs"][k] < hi)
-    assert keep.sum() == n // 2, "the window must drop the out-of-window half"
+    # Drive probe.main() rather than re-deriving the cut here. Re-implementing
+    # the window in the test means deleting it from probe.py would fail
+    # nothing -- the test would keep passing on its own copy of the logic.
+    res = _run_probe(tmp_path, {"arm": d}, ["bc_vs_rest"])["tasks"]["bc_vs_rest"]
+    assert res.get("n") == n // 2, (
+        f"the window must drop the out-of-window half: got {res.get('n')} "
+        f"of {n}")
+
+
+def _run_probe(tmp_path, arms, tasks):
+    """Run probe.main() end to end on synthetic caches and return its JSON."""
+    out = tmp_path / "probe_out"
+    argv = ["probe.py", "--features"] + [f"{k}={v}" for k, v in arms.items()] + \
+           ["--out", str(out), "--tasks"] + tasks + ["--bootstrap", "50"]
+    old = sys.argv
+    try:
+        sys.argv = argv
+        probe.main()
+    finally:
+        sys.argv = old
+    return json.loads(next(out.glob("*.json")).read_text())
+
+
+def test_eta_cut_is_applied_by_probe_not_just_declared(tmp_path):
+    """Jets in the 2.4-2.5 band that JetClass-II populates must be dropped."""
+    rng = np.random.default_rng(0)
+    n = 4000
+    lab = np.where(np.arange(n) % 2 == 0, by_name["label_X_bc"], by_name["label_X_bq"])
+    pt = np.full(n, 500.0)
+    msd = np.full(n, 100.0)
+    eta = np.where(np.arange(n) < n // 2, 0.5, 2.45)   # half in the forward band
+    d = tmp_path / "arm"
+    _cache(d, n, lab, pt, msd, rng, eta=eta)
+    res = _run_probe(tmp_path, {"arm": d}, ["bc_vs_rest"])["tasks"]["bc_vs_rest"]
+    assert res.get("n") == n // 2, (
+        f"|eta| < 2.4 must drop the forward half: got {res.get('n')} of {n}")
+
+
+def test_guard_is_per_class_not_on_the_union(tmp_path):
+    """A huge background with a tiny signal must SKIP, not report a number."""
+    rng = np.random.default_rng(0)
+    n = 40_000
+    lab = np.full(n, by_name["label_X_bq"])       # all background ...
+    lab[:50] = by_name["label_X_bc"]              # ... except 50 signal jets
+    d = tmp_path / "arm"
+    _cache(d, n, lab, np.full(n, 500.0), np.full(n, 100.0), rng)
+    res = _run_probe(tmp_path, {"arm": d}, ["bc_vs_rest"])["tasks"]["bc_vs_rest"]
+    assert res.get("skipped") is True, (
+        "the union clears the floor while the signal count does not; a union "
+        "guard cannot see that")
+    assert res["n_signal"] == 50
 
 
 def test_load_arm_rejects_observers_of_the_wrong_length(tmp_path):

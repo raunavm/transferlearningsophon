@@ -420,6 +420,14 @@ def main() -> int:
     manifest = {
         "arm": args.arm, "num_classes": args.num_classes,
         "n_jets": int(F.shape[0]), "embed_dim": int(F.shape[1]),
+        # WHICH CHECKPOINT. Without this a cache carries no record of the model
+        # that produced it, and two caches from different epochs are
+        # indistinguishable after the fact -- which is how a zero-fill control
+        # came to compare epoch-79 masked features against a best-epoch
+        # baseline with nothing erroring.
+        "checkpoint": str(args.checkpoint),
+        "checkpoint_sha256": hashlib.sha256(
+            pathlib.Path(args.checkpoint).read_bytes()).hexdigest(),
         "data_config": args.data_config,
         "data_config_sha256": hashlib.sha256(
             pathlib.Path(args.data_config).read_bytes()).hexdigest(),
@@ -429,7 +437,16 @@ def main() -> int:
         "has_logits": bool(args.save_logits),
         **prov,
     }
-    (out / "extract_manifest.json").write_text(json.dumps(manifest, indent=2))
+    prior = out / "extract_manifest.json"
+    if prior.exists():
+        was = json.loads(prior.read_text()).get("checkpoint_sha256")
+        if was and was != manifest["checkpoint_sha256"]:
+            raise SystemExit(
+                f"FATAL: {out} already holds features from a DIFFERENT "
+                f"checkpoint ({was[:16]}, now {manifest['checkpoint_sha256'][:16]}). "
+                f"The cache path does not encode the checkpoint, so writing "
+                f"here would silently mix two models. Use a new --out.")
+    prior.write_text(json.dumps(manifest, indent=2))
     print(f"\nwrote {F.shape[0]:,} x {F.shape[1]} features to {out}")
     print(f"label188 sha256 {manifest['label188_sha256'][:16]}  "
           f"(must match across arms -- that IS the row-alignment check)")

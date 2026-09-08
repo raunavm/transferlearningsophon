@@ -42,7 +42,7 @@ PIN = "mtx-s1.17"
 N_JETS = 400_000
 
 # arm : checkpoint : K. Only arms with BOTH a finished checkpoint and a
-# committed features_v2 baseline can enter; r16q1-s1 has the checkpoint but no
+# committed downstream baseline can enter; r16q1-s1 has the checkpoint but no
 # baseline, so it is deliberately absent.
 ARMS = [
     ("r16q1-s2", "/data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt", 17),
@@ -105,10 +105,11 @@ def script(pin: str) -> str:
         f"          N={N_JETS}",
         "          mkdir -p ${ROOT_OUT}",
         "",
-        "          # Every baseline must exist before a single GPU minute is spent.",
-        "          for a in " + " ".join(a for a, _, _ in ARMS) + "; do",
-        "            b=/data/results/eval/mtx-${a}/features_v2",
-        '            [ -f "${b}/features.npy" ] || { echo "FATAL: no ${b}/features.npy"; exit 1; }',
+        "          # Every checkpoint must exist before a single GPU minute is",
+        "          # spent. The baseline is no longer a pre-existing cache: both",
+        "          # legs are extracted here, from this checkpoint.",
+        "          for c in " + " ".join(c for _, c, _ in ARMS) + "; do",
+        '            [ -f "${c}" ] || { echo "FATAL: no ${c}"; exit 1; }',
         "          done",
         "",
     ]
@@ -117,8 +118,19 @@ def script(pin: str) -> str:
             f"          # ---- {arm} (K={k})",
             f'          [ -f "{ckpt}" ] || {{ echo "FATAL: no {ckpt}"; exit 1; }}',
             f"          U={{ROOT_OUT}}/{arm}/unmasked".replace("{ROOT_OUT}", "${ROOT_OUT}"),
-            f"          [ -f ${{U}}/label188.npy ] || python3 experiments/EVAL/truncate_features.py \\",
-            f"            --src /data/results/eval/mtx-{arm}/features_v2 --out ${{U}} --n ${{N}}",
+            # The unmasked leg is EXTRACTED at the same checkpoint as the
+            # masked legs, not truncated out of features_v2. features_v2 was
+            # written from net_best_epoch_state.pt (epochs 74/64/76/78 for
+            # r16q1-s2/s3/s4/l162-s1b); the masked legs load epoch 79. A
+            # control whose two legs come from different checkpoints measures
+            # the zero-fill penalty PLUS a checkpoint change, per arm, with
+            # nothing erroring. Epoch 79 is the side that moves, because
+            # DECISIONS_PENDING item 18 resolved to epoch 79 uniformly.
+            f"          [ -f ${{U}}/label188.npy ] || python3 experiments/EVAL/extract_features.py \\",
+            f"            --checkpoint {ckpt} --num-classes {k} --arm {arm}_unmasked \\",
+            f"            --data-config configs/data/JetClassII_base.yaml \\",
+            f"            --data-test ${{TEST}} --out ${{U}} \\",
+            f"            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${{N}}",
         ]
         for mask in MASKS:
             d = f"${{ROOT_OUT}}/{arm}/{mask}"
@@ -172,11 +184,11 @@ def build(pin: str) -> str:
         '                operator: In\n                values: ["us-west"]\n'
         "              - key: kubernetes.io/hostname\n"
         '                operator: NotIn\n'
-        '                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu"]\n'
+        '                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu"]\n'
         "      volumes:\n      - name: data\n        persistentVolumeClaim:\n"
         "          claimName: transfer-learning-vol\n"
         "      - name: jc2\n        persistentVolumeClaim:\n"
-        "          claimName: jetclass2-vol\n")
+        "          claimName: tn-pvc-base-jetclass2\n          readOnly: true\n")
 
 
 def main() -> int:
@@ -187,8 +199,17 @@ def main() -> int:
     d = yaml.safe_load(text)
     assert d["metadata"]["name"].endswith("-raunav")
     args = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
-    for tok in ("TopReference", "EnergyFlowQG", "truncate_features.py", "probe.py"):
+    for tok in ("TopReference", "EnergyFlowQG", "probe.py"):
         assert tok in args, f"{tok} missing from the emitted script"
+    # Every extract_features call -- masked and unmasked alike -- must load the
+    # SAME checkpoint, or the control measures a checkpoint change too.
+    ckpts = set(re.findall(r"--checkpoint (\S+)", args))
+    for arm, ckpt, _ in ARMS:
+        assert ckpt in ckpts, f"{arm}: {ckpt} never extracted"
+    assert ckpts == {c for _, c, _ in ARMS}, f"unexpected checkpoints: {ckpts}"
+    assert "truncate_features.py" not in args, (
+        "the unmasked leg must be extracted at the masked legs' checkpoint, "
+        "not truncated out of a best-epoch cache")
     OUT.write_text(text)
     print(f"{OUT.name} written (pin {a.pin}, {len(ARMS)} arms x {len(MASKS)} masks, N={N_JETS:,})")
     return 0

@@ -99,13 +99,21 @@ PT_EDGES = np.linspace(PT_LO, PT_HI, 11)
 def match_weights(m_sig, pt_sig, m_bkg, pt_bkg):
     """Per-jet background weights making QCD's (m_SD, pT) density match signal's.
 
-    WHY THIS IS NOT OPTIONAL. In the raw test sample the signal and QCD
-    kinematics are wildly different -- measured medians m_SD 141 vs 57 GeV and
-    pT 1059 vs 854 -- so an UNWEIGHTED ROC lets the discriminant separate on
-    jet mass, which is not flavour tagging. arXiv:2405.12972 App. B applies a
-    two-dimensional reweighting on (m_SD, pT) "to ensure consistent
-    distributions, hence reducing the dependence of the tagger response on jet
-    mass and p_T", so a number compared against Table A1 must do the same.
+    DIAGNOSTIC ONLY -- NOT the number compared to Table A1. See the comparison
+    in main() for why.
+
+    The two-dimensional (m_SD, pT) reweighting in arXiv:2503.00118 and
+    arXiv:2405.12972 App. B is a TRAINING-time sampling reweighting: "During
+    training, sampling-based reweighting is performed on the three jet classes
+    and the QCD jets (as background)". Table A1's evaluation applies the
+    kinematic window and jet-quark matching and nothing else. Reweighting the
+    ROC at evaluation time is therefore a second correction for an error the
+    window already fixes, and it estimates a quantity nothing else in the repo
+    computes -- probe.py's arm-wise rejections, in this same window at these
+    same working points, are plain unweighted ROC.
+
+    Kept because the spread between weighted and unweighted is a real
+    diagnostic of residual mass dependence, and reported as such.
 
     Cells with no background jets get zero weight: they cannot contribute a
     background estimate, and pretending otherwise would divide by zero.
@@ -192,8 +200,17 @@ def main(argv=None) -> int:
         print(f"  reweighted QCD: {int((w > 0).sum()):,} of {w.size:,} jets in populated cells",
               flush=True)
         for eps_s in (0.60, 0.40):
-            rej, thr, eps_b = rejection(d_sig, d_bkg, eps_s, w_bkg=w)
-            raw, _, raw_eps = rejection(d_sig, d_bkg, eps_s)
+            # COMPARE THE UNWEIGHTED NUMBER. Table A1's selection is the window
+            # plus jet-quark matching; the paper's (m_SD, pT) reweighting is
+            # applied during TRAINING, not to the evaluation ROC. The weighted
+            # number entered this file as the fix for a 2.6-3.4x excess whose
+            # actual cause -- evaluating in 200<pT<2500, 20<m_SD<500 instead of
+            # the published window -- was found and fixed one commit later, and
+            # it was never withdrawn. Comparing the weighted number corrects
+            # once for an error already corrected, and certifies an estimator
+            # that no arm-wise number in the repo uses.
+            rej, thr, eps_b = rejection(d_sig, d_bkg, eps_s)
+            wtd, _, wtd_eps = rejection(d_sig, d_bkg, eps_s, w_bkg=w)
             pub = PUBLISHED[(class_name, eps_s)]
             rel = abs(rej - pub) / pub
             # The rejection is 1/eps_B and eps_B is estimated from the COUNT of
@@ -211,13 +228,13 @@ def main(argv=None) -> int:
             agree = bool(np.isfinite(rej) and np.isfinite(stat) and rel <= a.tolerance + stat)
             ok &= agree
             results.append(dict(signal=class_name, eps_s=eps_s, rejection=round(rej, 1),
-                                rejection_unweighted=round(raw, 1),
+                                rejection_reweighted_diagnostic=round(wtd, 1),
                                 published=pub, rel_diff=round(rel, 3), agrees=bool(agree),
                                 stat_rel_err=round(stat, 3), n_bkg_pass=n_pass,
                                 threshold=round(thr, 6), eps_b=eps_b,
                                 n_signal=int(d_sig.size), n_qcd=int(d_bkg.size)))
             print(f"  eps_S={eps_s:.0%}: 1/eps_B = {rej:8.1f} +-{100*stat:.0f}% stat "
-                  f"(unweighted {raw:8.1f}, {n_pass} bkg jets)  published {pub:6.0f}  "
+                  f"(reweighted diag {wtd:8.1f}, {n_pass} bkg jets)  published {pub:6.0f}  "
                   f"rel {rel:+.1%}  {'OK' if agree else 'MISMATCH'}", flush=True)
 
     out = dict(features=str(d), selection=dict(pt=[PT_LO, PT_HI], msd=[MSD_LO, MSD_HI]),

@@ -265,6 +265,10 @@ spec:
               - key: nvidia.com/gpu.product
                 operator: In
                 values: ["NVIDIA-GeForce-RTX-3090"]
+              # excluded 2026-09-07: device plugin rejects every pod (scripts/exclude_node.py)
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["hcc-chase-shor-c4705.unl.edu"]
       volumes:
       - name: jc2
         persistentVolumeClaim:

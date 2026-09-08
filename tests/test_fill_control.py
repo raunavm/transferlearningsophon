@@ -74,14 +74,23 @@ def test_every_arm_has_a_checkpoint_and_a_baseline_declared():
     a = _args()
     for arm, ckpt, k in bfc.ARMS:
         assert ckpt in a and f"--num-classes {k}" in a
-        assert f"/data/results/eval/mtx-{arm}/features_v2" in a
+        # The unmasked leg is EXTRACTED at the same checkpoint as the masked
+        # legs, not truncated out of features_v2 (which came from
+        # net_best_epoch_state.pt). Two legs from different checkpoints make
+        # the control measure a checkpoint change as well as the mask.
+        assert f"--arm {arm}_unmasked" in a
+        assert "features_v2" not in a, (
+            "features_v2 is a best-epoch cache; the control must not mix it "
+            "with epoch-79 masked features")
 
 
 def test_masked_and_unmasked_use_the_same_jet_count():
     a = _args()
     assert f"N={bfc.N_JETS}" in a
-    assert a.count("--max-jets ${N}") == len(bfc.ARMS) * len(bfc.MASKS)
-    assert a.count("--n ${N}") == len(bfc.ARMS)
+    # one unmasked leg + one per mask, per arm
+    assert a.count("--max-jets ${N}") == len(bfc.ARMS) * (len(bfc.MASKS) + 1)
+    # (the truncation leg is gone: every leg is now an extraction
+    # capped by --max-jets, counted above)
 
 
 def test_probes_run_on_unmasked_and_on_every_mask():

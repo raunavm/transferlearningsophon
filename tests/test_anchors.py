@@ -237,3 +237,66 @@ def test_unbounded_rejection_never_counts_as_agreement():
     rel = float("inf"); stat = float("inf"); tol = 0.25
     assert (rel <= tol + stat) is True, "the trap this guard exists for"
     assert not (np.isfinite(float("inf")) and rel <= tol + stat)
+
+
+def _anchor_cache(d, n_sig=4000, n_qcd=20000, seed=0):
+    """A cache separable enough to give a finite rejection at both eps_S."""
+    rng = np.random.default_rng(seed)
+    bb, cc, qcd_lab = 0, 1, 161          # label_X_bb, label_X_cc, a QCD node
+    n = 2 * n_sig + n_qcd
+    label = np.concatenate([np.full(n_sig, bb), np.full(n_sig, cc),
+                            np.full(n_qcd, qcd_lab)])
+    logits = rng.normal(0, 1, size=(n, 188)).astype(np.float32)
+    # A modest edge on each signal's own node: strong enough that 1/eps_B is
+    # finite, weak enough that tens of background jets pass, which is the
+    # regime the real anchors sit in (29-123 jets).
+    logits[:n_sig, bb] += 2.0
+    logits[n_sig:2 * n_sig, cc] += 2.0
+    d.mkdir(parents=True, exist_ok=True)
+    np.save(d / "logits.npy", logits)
+    np.save(d / "label188.npy", label.astype(np.int16))
+    # in-window kinematics, with the QCD mass shifted so the reweighting is
+    # NOT a no-op and the two estimators are distinguishable
+    msd = np.concatenate([rng.uniform(90, 140, 2 * n_sig),
+                          np.full(n_qcd, 95.0)])
+    np.savez(d / "observers.npz",
+             jet_pt=np.full(n, 500.0), jet_sdmass=msd, jet_eta=np.zeros(n))
+    return d
+
+
+def test_main_reaches_a_finite_rejection_and_compares_the_unweighted_one(tmp_path):
+    """End-to-end: nothing previously drove main() to a finite rejection, so
+    the comparison and the stat band were never exercised at all.
+
+    The compared number must be the UNWEIGHTED rejection -- Table A1's
+    procedure is the kinematic window plus jet-quark matching and nothing
+    else, and probe.py's arm-wise numbers are plain unweighted ROC. The
+    reweighted number is kept only as a diagnostic.
+    """
+    d = _anchor_cache(tmp_path / "cache")
+    out = tmp_path / "a.json"
+    an.main(["--features", str(d), "--out", str(out), "--tolerance", "1e9"])
+    res = json.loads(out.read_text())
+    rows = [r for r in res["anchors"] if r["signal"] == "label_X_bb"]
+    assert rows, "label_X_bb must produce anchor rows"
+    for r in rows:
+        assert np.isfinite(r["rejection"]), "the run must reach a finite rejection"
+        assert r["n_bkg_pass"] > 0
+        assert "rejection_reweighted_diagnostic" in r, (
+            "the reweighted number is kept, but as a diagnostic")
+        # the compared field is the unweighted estimator: rel_diff must be
+        # consistent with `rejection`, not with the diagnostic
+        exp = abs(r["rejection"] - r["published"]) / r["published"]
+        assert abs(exp - r["rel_diff"]) < 1e-2, (
+            f"rel_diff {r['rel_diff']} was computed on a different number "
+            f"than the reported rejection {r['rejection']}")
+
+
+def test_stat_band_belongs_to_the_compared_estimator(tmp_path):
+    """The Poisson term is 1/sqrt(n_bkg_pass) at the compared threshold."""
+    d = _anchor_cache(tmp_path / "cache", seed=3)
+    out = tmp_path / "a.json"
+    an.main(["--features", str(d), "--out", str(out), "--tolerance", "1e9"])
+    for r in json.loads(out.read_text())["anchors"]:
+        if r["n_bkg_pass"] > 0:
+            assert abs(r["stat_rel_err"] - 1 / np.sqrt(r["n_bkg_pass"])) < 1e-3

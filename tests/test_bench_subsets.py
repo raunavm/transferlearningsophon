@@ -15,6 +15,7 @@ first test cannot pass vacuously), and that the q/g chunk split reproduces the
 1.6M/200k/200k that ParticleNet (1902.08570) calls the recommended splitting.
 """
 import importlib.util
+import json
 import pathlib
 
 import re
@@ -174,3 +175,60 @@ def test_the_emitted_job_builds_the_grid_item_16e_specifies():
     assert int(grids["qg"].split()[-1]) == len(ms.QG_TRAIN_CHUNKS) * ms.QG_CHUNK_ROWS
     assert "--sizes $(sizes_for ${D})" in args
     assert "--dataset ${D}" in args and "for D in top qg" in args
+
+
+def _tiny_qg(src, n_chunks=2, rows=200):
+    """A miniature EnergyFlow-shaped source: chunked parquet, 50/50 labels."""
+    src.mkdir(parents=True, exist_ok=True)
+    for c in range(n_chunks):
+        lab = np.tile([1, 0], rows // 2)
+        t = pa.table({"label": pa.array(lab, pa.int64()),
+                      "x": pa.array(np.arange(rows, dtype=np.float32))})
+        pq.write_table(t, src / f"qg_chunk{c}.parquet")
+    return src
+
+
+def test_done_refuses_to_reuse_subsets_built_for_a_different_grid(tmp_path):
+    """A bare DONE check made a grid change a silent no-op.
+
+    The failure this closes is not hypothetical: the q/g source has to be
+    re-staged (the lepton charge sign was inverted), and without this the
+    rebuild would reuse the subsets built from the superseded staging and
+    report success.
+    """
+    out = tmp_path / "sub"
+    out.mkdir()
+    (out / "manifest.json").write_text(json.dumps(
+        {"mode": "bench", "dataset": "qg", "sizes": [1000, 10000],
+         "seeds": [1, 2, 3], "src": "/data/finetune/qg"}))
+    (out / "DONE").write_text("2026-09-07T00:00:00Z\n")
+
+    # same request -> no-op, exit 0
+    assert ms.main(["bench", "--dataset", "qg", "--src", "/data/finetune/qg",
+                    "--out", str(out), "--sizes", "1000", "10000",
+                    "--seeds", "1", "2", "3", "--val-size", "10"]) == 0
+
+    # different grid -> refuse
+    with pytest.raises(SystemExit) as e:
+        ms.main(["bench", "--dataset", "qg", "--src", "/data/finetune/qg",
+                 "--out", str(out), "--sizes", "1000", "10000", "100000",
+                 "--seeds", "1", "2", "3", "--val-size", "10"])
+    assert "different parameters" in str(e.value)
+
+    # different source (the re-stage case) -> refuse
+    with pytest.raises(SystemExit) as e:
+        ms.main(["bench", "--dataset", "qg", "--src", "/data/finetune/qg_v2",
+                 "--out", str(out), "--sizes", "1000", "10000",
+                 "--seeds", "1", "2", "3", "--val-size", "10"])
+    assert "different parameters" in str(e.value)
+
+
+def test_done_without_a_manifest_is_an_error(tmp_path):
+    out = tmp_path / "sub"
+    out.mkdir()
+    (out / "DONE").write_text("x\n")
+    with pytest.raises(SystemExit) as e:
+        ms.main(["bench", "--dataset", "qg", "--src", "/data/finetune/qg",
+                 "--out", str(out), "--sizes", "1000", "--seeds", "1",
+                 "--val-size", "10"])
+    assert "unknown state" in str(e.value)

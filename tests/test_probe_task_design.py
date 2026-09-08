@@ -43,7 +43,14 @@ def test_retained_topology_is_kept_by_both_arms():
     sig, bkg = t["signal"][0], t["background"][0]
     assert not _collapses(rows, "R16_Q1", sig, bkg), "R16_Q1 must KEEP the control axis"
     assert not _collapses(rows, "L162", sig, bkg), "L162 must keep the control axis"
-    assert t["collapsed_at"] == [], "control axis is collapsed at no studied rung"
+    # collapsed_at is now derived over ALL EIGHT rungs, so the trivial
+    # single-group rung R1_Q1 appears for every task by construction. The
+    # claim being pinned is about the four-arm RUN MATRIX.
+    RUN_MATRIX = ["L188", "L162", "R42_Q1", "R16_Q1"]
+    assert [g for g in t["collapsed_at"] if g in RUN_MATRIX] == [], \
+        "control axis is collapsed at no studied rung"
+    assert t["collapsed_at"] == ["R1_Q1"], \
+        "and at nothing above the trivial one-group rung"
 
 
 def test_retained_topology_holds_flavour_fixed():

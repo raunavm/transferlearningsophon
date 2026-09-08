@@ -51,17 +51,21 @@ spec:
           N=400000
           mkdir -p ${ROOT_OUT}
 
-          # Every baseline must exist before a single GPU minute is spent.
-          for a in r16q1-s2 r16q1-s3 r16q1-s4 l162-s1b; do
-            b=/data/results/eval/mtx-${a}/features_v2
-            [ -f "${b}/features.npy" ] || { echo "FATAL: no ${b}/features.npy"; exit 1; }
+          # Every checkpoint must exist before a single GPU minute is
+          # spent. The baseline is no longer a pre-existing cache: both
+          # legs are extracted here, from this checkpoint.
+          for c in /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt; do
+            [ -f "${c}" ] || { echo "FATAL: no ${c}"; exit 1; }
           done
 
           # ---- r16q1-s2 (K=17)
           [ -f "/data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt" ] || { echo "FATAL: no /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt"; exit 1; }
           U=${ROOT_OUT}/r16q1-s2/unmasked
-          [ -f ${U}/label188.npy ] || python3 experiments/EVAL/truncate_features.py \
-            --src /data/results/eval/mtx-r16q1-s2/features_v2 --out ${U} --n ${N}
+          [ -f ${U}/label188.npy ] || python3 experiments/EVAL/extract_features.py \
+            --checkpoint /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s2_unmasked \
+            --data-config configs/data/JetClassII_base.yaml \
+            --data-test ${TEST} --out ${U} \
+            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
           [ -f ${ROOT_OUT}/r16q1-s2/TopReference/label188.npy ] || python3 experiments/EVAL/extract_features.py \
             --checkpoint /data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s2_TopReference \
             --data-config configs/finetune/JetClassII_base_maskTopReference.yaml \
@@ -76,8 +80,11 @@ spec:
           # ---- r16q1-s3 (K=17)
           [ -f "/data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt" ] || { echo "FATAL: no /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt"; exit 1; }
           U=${ROOT_OUT}/r16q1-s3/unmasked
-          [ -f ${U}/label188.npy ] || python3 experiments/EVAL/truncate_features.py \
-            --src /data/results/eval/mtx-r16q1-s3/features_v2 --out ${U} --n ${N}
+          [ -f ${U}/label188.npy ] || python3 experiments/EVAL/extract_features.py \
+            --checkpoint /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s3_unmasked \
+            --data-config configs/data/JetClassII_base.yaml \
+            --data-test ${TEST} --out ${U} \
+            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
           [ -f ${ROOT_OUT}/r16q1-s3/TopReference/label188.npy ] || python3 experiments/EVAL/extract_features.py \
             --checkpoint /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s3_TopReference \
             --data-config configs/finetune/JetClassII_base_maskTopReference.yaml \
@@ -92,8 +99,11 @@ spec:
           # ---- r16q1-s4 (K=17)
           [ -f "/data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt" ] || { echo "FATAL: no /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt"; exit 1; }
           U=${ROOT_OUT}/r16q1-s4/unmasked
-          [ -f ${U}/label188.npy ] || python3 experiments/EVAL/truncate_features.py \
-            --src /data/results/eval/mtx-r16q1-s4/features_v2 --out ${U} --n ${N}
+          [ -f ${U}/label188.npy ] || python3 experiments/EVAL/extract_features.py \
+            --checkpoint /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s4_unmasked \
+            --data-config configs/data/JetClassII_base.yaml \
+            --data-test ${TEST} --out ${U} \
+            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
           [ -f ${ROOT_OUT}/r16q1-s4/TopReference/label188.npy ] || python3 experiments/EVAL/extract_features.py \
             --checkpoint /data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt --num-classes 17 --arm r16q1-s4_TopReference \
             --data-config configs/finetune/JetClassII_base_maskTopReference.yaml \
@@ -108,8 +118,11 @@ spec:
           # ---- l162-s1b (K=162)
           [ -f "/data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt" ] || { echo "FATAL: no /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt"; exit 1; }
           U=${ROOT_OUT}/l162-s1b/unmasked
-          [ -f ${U}/label188.npy ] || python3 experiments/EVAL/truncate_features.py \
-            --src /data/results/eval/mtx-l162-s1b/features_v2 --out ${U} --n ${N}
+          [ -f ${U}/label188.npy ] || python3 experiments/EVAL/extract_features.py \
+            --checkpoint /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt --num-classes 162 --arm l162-s1b_unmasked \
+            --data-config configs/data/JetClassII_base.yaml \
+            --data-test ${TEST} --out ${U} \
+            --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets ${N}
           [ -f ${ROOT_OUT}/l162-s1b/TopReference/label188.npy ] || python3 experiments/EVAL/extract_features.py \
             --checkpoint /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt --num-classes 162 --arm l162-s1b_TopReference \
             --data-config configs/finetune/JetClassII_base_maskTopReference.yaml \
@@ -157,11 +170,12 @@ spec:
                 values: ["us-west"]
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu"]
+                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu"]
       volumes:
       - name: data
         persistentVolumeClaim:
           claimName: transfer-learning-vol
       - name: jc2
         persistentVolumeClaim:
-          claimName: jetclass2-vol
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
