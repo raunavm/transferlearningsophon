@@ -349,14 +349,24 @@ def main(argv=None) -> int:
         if args.mode == "bench":
             want["dataset"] = args.dataset
             want["src"] = str(args.src)
-        got = {k: (sorted(prev[k]) if k == "seeds" else prev.get(k))
-               for k in want}
-        if got != want:
-            diff = {k: (got.get(k), want[k]) for k in want if got.get(k) != want[k]}
+        # Compare only the fields the stored manifest actually carries. "src"
+        # postdates the manifests already on the PVC, and treating its absence
+        # as a mismatch would condemn every subset dir built before it -- a
+        # false alarm that trains the reader to ignore this check. Say plainly
+        # which fields could not be checked instead.
+        unchecked = [k for k in want if k not in prev]
+        got = {k: (sorted(prev[k]) if k == "seeds" else prev[k])
+               for k in want if k in prev}
+        diff = {k: (got[k], want[k]) for k in got if got[k] != want[k]}
+        if diff:
             raise SystemExit(
                 f"FATAL: {out} was built with different parameters; refusing to "
                 f"reuse it. was -> now: {diff}. Delete {out} and rebuild, or "
                 f"point --out somewhere else.")
+        if unchecked:
+            print(f"WARNING: {out}/manifest.json predates {unchecked}; that "
+                  f"provenance could not be checked. If the source data has "
+                  f"been re-staged, delete {out} rather than trusting this.")
         print(f"{out}/DONE exists and matches the request; nothing to do")
         return 0
     if args.mode == "jc2":

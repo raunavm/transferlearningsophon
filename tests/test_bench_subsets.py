@@ -232,3 +232,30 @@ def test_done_without_a_manifest_is_an_error(tmp_path):
                  "--out", str(out), "--sizes", "1000", "--seeds", "1",
                  "--val-size", "10"])
     assert "unknown state" in str(e.value)
+
+
+def test_legacy_manifest_without_src_warns_but_does_not_falsely_refuse(tmp_path, capsys):
+    """`src` postdates the manifests on the PVC.
+
+    Treating its absence as a mismatch would condemn every subset directory
+    built before the field existed -- a false alarm that teaches the reader to
+    ignore the check. The unverifiable field is named instead.
+    """
+    out = tmp_path / "sub"
+    out.mkdir()
+    (out / "manifest.json").write_text(json.dumps(
+        {"mode": "bench", "dataset": "top", "sizes": [1000], "seeds": [1]}))
+    (out / "DONE").write_text("x\n")
+    assert ms.main(["bench", "--dataset", "top", "--src", "/data/finetune/top",
+                    "--out", str(out), "--sizes", "1000", "--seeds", "1",
+                    "--val-size", "10"]) == 0
+    assert "could not be checked" in capsys.readouterr().out
+
+    # a field that IS present and differs still refuses
+    (out / "manifest.json").write_text(json.dumps(
+        {"mode": "bench", "dataset": "top", "sizes": [1000, 10000], "seeds": [1]}))
+    with pytest.raises(SystemExit) as e:
+        ms.main(["bench", "--dataset", "top", "--src", "/data/finetune/top",
+                 "--out", str(out), "--sizes", "1000", "--seeds", "1",
+                 "--val-size", "10"])
+    assert "different parameters" in str(e.value)
