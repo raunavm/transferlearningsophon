@@ -244,7 +244,7 @@ def build(pin: str) -> str:
         '                operator: In\n                values: ["us-west"]\n'
         "              - key: kubernetes.io/hostname\n"
         '                operator: NotIn\n'
-        '                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu"]\n'
+        '                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu"]\n'
         "      volumes:\n      - name: data\n        persistentVolumeClaim:\n"
         "          claimName: transfer-learning-vol\n"
         "      - name: jc2\n        persistentVolumeClaim:\n"
