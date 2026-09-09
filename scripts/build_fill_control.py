@@ -243,8 +243,13 @@ def build(pin: str) -> str:
         "              - key: topology.kubernetes.io/region\n"
         '                operator: In\n                values: ["us-west"]\n'
         "              - key: kubernetes.io/hostname\n"
+        # This NotIn list is DUPLICATED: scripts/exclude_node.py edits the
+        # committed specs, and this generator holds its own copy. A new bad node
+        # must be added in both or test_committed_spec_is_what_the_generator_emits
+        # fires -- which is how k8s-chase-ci-07 was caught on 2026-09-09.
+
         '                operator: NotIn\n'
-        '                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu"]\n'
+        '                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net"]\n'
         "      volumes:\n      - name: data\n        persistentVolumeClaim:\n"
         "          claimName: transfer-learning-vol\n"
         "      - name: jc2\n        persistentVolumeClaim:\n"
