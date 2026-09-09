@@ -204,3 +204,67 @@ def test_mlp_thread_count_is_restored_and_recorded(probe):
     probe.fit_mlp(X[tr], y[tr], X[va], y[va], X[te])
     assert torch.get_num_threads() == 3, "the caller's thread setting must survive"
     assert probe.MLP_THREADS == 4
+
+
+def test_perfect_separation_is_floored_at_the_samples_resolution():
+    """AUC == 1.0 is censored, not a measurement of 1 - AUC == 0.
+
+    The floor must be one discordant pair out of n_sig * n_bkg -- what the
+    sample can actually express -- not a constant chosen for convenience.
+    """
+    import numpy as np
+    p = _probe()
+    y = np.array([0] * 40 + [1] * 60)
+    s = np.array([0.0] * 40 + [1.0] * 60)          # perfectly separated
+    value, censored, auc = p.log1m_auc(y, s)
+    assert auc == 1.0
+    assert censored is True
+    assert value == pytest.approx(np.log(1.0 / (60 * 40)))
+
+
+def test_an_ordinary_auc_is_left_alone():
+    """Below the ceiling the floor must not touch the number."""
+    import numpy as np
+    p = _probe()
+    rng = np.random.default_rng(0)
+    y = np.array([0] * 500 + [1] * 500)
+    s = np.concatenate([rng.normal(0, 1, 500), rng.normal(1, 1, 500)])
+    value, censored, auc = p.log1m_auc(y, s)
+    assert censored is False
+    assert 0.5 < auc < 1.0
+    assert value == pytest.approx(np.log(1 - auc))
+
+
+def test_the_old_epsilon_floor_overstated_the_separation():
+    """Regression pin for the ee_vs_mm defect measured 2026-09-08.
+
+    l162-s1b reached AUC = 1.0 on the ee-vs-mumu probe. The retired 1e-12 floor
+    reported log(1-AUC) = -27.63 and a contrast of about -24 whose CI excluded
+    zero by a margin the epsilon invented. The honest floor is ~4.3e-8 here, so
+    the corrected number is far closer to zero. Anything that moves it back
+    toward -27 is reintroducing the bug.
+    """
+    import numpy as np
+    p = _probe()
+    n_sig, n_bkg = 4933, 4693                      # the measured test split
+    y = np.array([0] * n_bkg + [1] * n_sig)
+    s = np.array([0.0] * n_bkg + [1.0] * n_sig)
+    value, censored, _ = p.log1m_auc(y, s)
+    assert censored is True
+    assert value == pytest.approx(np.log(1.0 / (n_sig * n_bkg)), rel=1e-9)
+    assert -18.0 < value < -16.0, value
+    assert value > np.log(1e-12), "the floor must not sink below the resolution"
+
+
+def test_a_contrast_touching_a_censored_arm_is_flagged_as_a_bound():
+    """The magnitude is a lower bound, so the code must say so in the JSON."""
+    import ast
+    src = (REPO / "experiments" / "EVAL" / "probe.py").read_text()
+    assert '"delta_is_bound"' in src
+    assert "log1m_auc_censored" in src
+    # Walk the AST rather than the text: the docstring explains the retired
+    # epsilon on purpose, and a text search cannot tell that from a live one.
+    floors = [n.value for n in ast.walk(ast.parse(src))
+              if isinstance(n, ast.Constant) and isinstance(n.value, float)
+              and 0 < n.value <= 1e-9]
+    assert not floors, f"a sub-resolution epsilon floor is live in the code: {floors}"

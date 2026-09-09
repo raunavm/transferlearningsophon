@@ -271,6 +271,39 @@ def make_splits(n: int, rng_seed: int = SPLIT_SEED):
     return perm[:a], perm[a:b], perm[b:]
 
 
+def log1m_auc(y: np.ndarray, s: np.ndarray):
+    """log(1 - AUC), floored at the SAMPLE'S RESOLUTION rather than a fixed epsilon.
+
+    AUC == 1.0 is a CENSORED observation. It does not say 1 - AUC is zero; it
+    says the sample held no discordant pair. The smallest non-zero 1 - AUC a
+    sample can express is one such pair out of n_sig * n_bkg, so that is the
+    floor the data supports.
+
+    The old floor was a flat 1e-12, and it was not merely arbitrary -- it was
+    anti-conservative. Measured on ee_vs_mm 2026-09-08: l162-s1b reached
+    AUC = 1.0 on ~9.6 k test jets, where the resolution floor is
+    1/(4933*4693) ~ 4.3e-8, i.e. log = -16.96. The 1e-12 floor returned -27.63
+    instead, and the l162-vs-r16q1 contrast came out at -24.0 with a 95 % CI of
+    [-23.2, -22.9] that excluded zero -- an interval whose width and position
+    were set by the epsilon, not by the data. At the honest floor the same
+    contrast is about -13.4. D7 makes log(1 - AUC) the inferential metric in
+    narrow cells, so this is exactly the regime the metric exists for and
+    exactly where an invented floor does the most damage.
+
+    Returns (value, censored, auc). A censored value is a BOUND: the true
+    log(1 - AUC) is at most this, so a negative delta computed from it
+    understates the true magnitude.
+    """
+    from sklearn.metrics import roc_auc_score   # deferred, as elsewhere here
+
+    auc = float(roc_auc_score(y, s))
+    n_sig = int((np.asarray(y) == 1).sum())
+    n_bkg = int(np.asarray(y).size - n_sig)
+    resolution = 1.0 / max(n_sig * n_bkg, 1)
+    gap = 1.0 - auc
+    return float(np.log(max(gap, resolution))), bool(gap < resolution), auc
+
+
 def rejection_at(y: np.ndarray, s: np.ndarray, eps_s: float = EPS_S):
     """(rejection, eps_B, is_bound, n_bkg_pass, rel_stat) at fixed signal eff.
 
@@ -489,7 +522,7 @@ def main() -> int:
             eps_list = spec.get("eps_s", [EPS_S])
             for kind, fn in (("linear", fit_linear), ("mlp", fit_mlp)):
                 s, meta = fn(X[tr], y[tr], X[va], y[va], X[te])
-                auc = float(roc_auc_score(y[te], s))
+                l1m, censored, auc = log1m_auc(y[te], s)
                 rejs = {}
                 for e in eps_list:
                     r, eb, bd, npass, rel = rejection_at(y[te], s, e)
@@ -498,7 +531,8 @@ def main() -> int:
                                         "n_bkg_pass": npass,
                                         "rel_stat_err": rel}
                 first = rejs[f"{eps_list[0]:.2f}"]
-                entry[kind] = {"auc": auc, "log1m_auc": float(np.log(max(1 - auc, 1e-12))),
+                entry[kind] = {"auc": auc, "log1m_auc": l1m,
+                               "log1m_auc_censored": censored,
                                # The flat fields mirror eps_list[0], which is
                                # NOT the global default for every task, so the
                                # working point they were measured at travels
@@ -528,21 +562,30 @@ def main() -> int:
                     ids = np.arange(te.size)          # one jet per event
 
                     def stat(r, sa=sa, sb=sb, yy=y[te]):
-                        return (np.log(max(1 - roc_auc_score(yy[r], sa[r]), 1e-12))
-                                - np.log(max(1 - roc_auc_score(yy[r], sb[r]), 1e-12)))
+                        # Resolution is recomputed per resample: a bootstrap
+                        # draw has its own n_sig * n_bkg and therefore its own
+                        # floor.
+                        return log1m_auc(yy[r], sa[r])[0] - log1m_auc(yy[r], sb[r])[0]
 
                     from src.stats.bootstrap import event_bootstrap
                     point = stat(np.arange(te.size))
                     dist = event_bootstrap(ids, stat, b=args.bootstrap)
                     lo, hi = ci(dist)
+                    bounded = (tr_res["arms"][a][kind]["log1m_auc_censored"]
+                               or tr_res["arms"][b][kind]["log1m_auc_censored"])
                     tr_res["contrasts"][f"{kind}:{a}-{b}"] = {
                         "delta_log1m_auc": float(point),
                         "ci95": [lo, hi],
                         "excludes_zero": bool(lo > 0 or hi < 0),
+                        # One side hit AUC == 1.0, so the magnitude is a BOUND:
+                        # the true separation is at least this large. Quote it
+                        # with the inequality, never as a point estimate.
+                        "delta_is_bound": bool(bounded),
                     }
                     print(f"  [{kind}] {a} - {b}: dlog(1-AUC) = {point:+.4f} "
                           f"CI95 [{lo:+.4f}, {hi:+.4f}]"
-                          f"{'  *' if (lo > 0 or hi < 0) else ''}")
+                          f"{'  *' if (lo > 0 or hi < 0) else ''}"
+                          f"{'  [BOUND: an arm reached AUC=1.0]' if bounded else ''}")
         results["tasks"][task] = tr_res
 
     (out / "probe_results.json").write_text(json.dumps(results, indent=2))
