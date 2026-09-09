@@ -21,38 +21,33 @@ metadata:
   # docs/PRD_PLAN.md 3.1(b): the ee/mumu split merges one rung earlier than the
   # prose says, at R63_Q1 into 2P_LEP_LL|nb0_nc0, not at R42_Q1.
   #
-  # ===================================================================
-  # SUPERSEDED 2026-09-08 -- DO NOT APPLY. Use job-probe-physics-v2-raunav.yaml.
-  # ===================================================================
+  # RERUN OF probe-physics-raunav AT CODE THAT CARRIES BOTH GUARDS.
   #
-  # This job COMPLETED on the cluster at 2026-09-08T01:16:50Z, in 18 minutes,
-  # and its results are on the PVC at /data/results/eval/probe_physics. It is
-  # kept because those results exist and something must describe them.
-  #
-  # THE JOB RAN AT mtx-s1.18. THIS FILE SAYS mtx-s1.20. Both are stale, and the
-  # gap between them is the point: the spec was repinned s1.18 -> s1.20 during
-  # the audit wave (experiments/RUNS.csv, audit-2-anchors) and then never
-  # re-applied, so the repin changed the FILE and not the RESULTS. Reading the
-  # file would tell you the numbers came from s1.20 code. They came from s1.18.
-  #
-  # WHAT THE s1.18 RESULTS ARE MISSING. Two probe.py fixes land after it:
-  #   - MIN_PER_CLASS is now counted on the IN-WINDOW test rows. bc_vs_rest
-  #     applies a three-cut kinematic window, so the pre-fix count could pass on
-  #     the full cache while the windowed cell held far too few jets to support
-  #     a rejection at eps_S = 40 %.
+  # The v1 job Completed 2026-09-08T01:16:50Z at mtx-s1.18 -- twelve tags before
+  # the two probe.py fixes its output depends on:
+  #   - MIN_PER_CLASS is now counted on the IN-WINDOW test rows. bc_vs_rest cuts
+  #     450 < pT < 600, 90 < m_SD < 140 and |eta| < 2.4, so at s1.18 the count
+  #     could pass on the full cache while the windowed cell held far too few
+  #     jets to support a rejection quoted at eps_S = 40 %.
   #   - the MLP probe now records `converged` / `epochs_run` per seed and
-  #     `all_converged`. D6 makes the MLP mandatory beside any null, and an
-  #     unconverged MLP is an optimisation failure rather than a measurement --
-  #     which is exactly what the first eval-labelrec run turned out to be.
-  # Neither guard was active, so the s1.18 numbers cannot be quoted.
+  #     `all_converged` in the meta. D6 makes the MLP mandatory beside any null
+  #     precisely so a linear null cannot be read as "absent" when it is only
+  #     "not linearly decodable" -- and that reading needs a CONVERGED MLP. The
+  #     first eval-labelrec run showed what an unconverged one looks like: an
+  #     MLP scoring BELOW its own linear probe, which is impossible at optimum.
   #
-  # Re-applying under this name is also impossible without deleting a Complete
-  # job, and would overwrite OUT (RED). Hence a v2 file, a v2 job name, and a
-  # v2 output directory.
+  # ITS PIN WAS NEVER THE FILE'S PIN. job-probe-physics-raunav.yaml said s1.20
+  # while the job ran s1.18, because the audit-wave repin edited the spec and
+  # nobody re-applied it. Repinning a spec does not repin a result. That is the
+  # third instance of this defect (anchors at s1.15, labelrec at s1.31) and
+  # tests/test_spec_pins.py now guards the class.
+  #
+  # Output goes to probe_physics_v2, never over probe_physics: overwriting a
+  # results file is RED, and the two runs together are the evidence.
   #
   # CPU-ONLY, ZERO GPU: runs on features already cached by the extraction jobs.
   # Runs the three original tasks too, so the whole probe table lands at once.
-  name: probe-physics-raunav
+  name: probe-physics-v2-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 2
@@ -66,7 +61,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s1.20" \
+          git clone --depth 1 --branch "mtx-s1.33" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -89,7 +84,7 @@ spec:
           done
           echo "arms:${ARMS}"
 
-          OUT=/data/results/eval/probe_physics
+          OUT=/data/results/eval/probe_physics_v2
           mkdir -p ${OUT}
           python3 experiments/EVAL/probe.py \
             --features ${ARMS} \

@@ -18,6 +18,7 @@ provenance record of what actually ran, and rewriting its tag would falsify the
 ledger. So the rule binds only specs with NO run record -- the ones whose next
 launch is still ahead of them.
 """
+import csv
 import pathlib
 import re
 import subprocess
@@ -47,8 +48,29 @@ def _executed_scripts(text: str) -> set[str]:
     return found
 
 
+def _launched_stems() -> set[str]:
+    """Spec stems with a run record, from the run_id and manifest_path COLUMNS.
+
+    Deliberately not a substring search of the whole file. The `reason` column is
+    prose and routinely names the specs a row is about -- the row recording this
+    very guard names four of them -- so matching free text would exempt exactly
+    the specs the guard exists to check.
+    """
+    stems = set()
+    with LEDGER.open() as f:
+        for row in csv.DictReader(f):
+            rid = (row.get("run_id") or "").strip()
+            if rid:
+                stems.add(rid)
+            man = (row.get("manifest_path") or "").strip()
+            if man:
+                stems.add(pathlib.Path(man).name
+                          .removeprefix("job-").removesuffix("-raunav.yaml"))
+    return stems
+
+
 def test_no_unlaunched_spec_is_pinned_behind_a_script_it_runs():
-    ledger = LEDGER.read_text()
+    launched = _launched_stems()
     behind = []
     for spec in sorted(REPO.glob("experiments/*/k8s/*.yaml")):
         text = spec.read_text()
@@ -59,11 +81,13 @@ def test_no_unlaunched_spec_is_pinned_behind_a_script_it_runs():
         if _git("rev-parse", "--verify", f"{tag}^{{commit}}") == "":
             continue                                    # tag not in this clone
 
-        # A run record means the pin is history. Match on the spec's stem
-        # because a run_id often versions the spec name (probe-bvc-raunav.yaml
-        # -> "probe-bvc-v1"), and the ledger cites both.
+        # A run record means the pin is history. A run_id often versions the
+        # spec name (probe-bvc-raunav.yaml -> "probe-bvc-v1"), so a stem counts
+        # as launched when it is a run_id, a manifest_path, or a prefix of a
+        # run_id -- but "probe-physics" must NOT match "probe-physics-v2".
         stem = spec.name.removeprefix("job-").removesuffix("-raunav.yaml")
-        if stem in ledger:
+        if any(r == stem or r.startswith(stem + "-v") or r.startswith(stem + "-s")
+               for r in launched):
             continue
 
         for script in sorted(_executed_scripts(text)):
@@ -112,6 +136,35 @@ def test_the_rerun_spec_is_pinned_at_the_fix_and_writes_somewhere_new():
     """The labelrec rerun must not reproduce the defect or overwrite the record."""
     spec = REPO / "experiments" / "EVAL" / "k8s" / "job-eval-labelrec-v2-raunav.yaml"
     text = spec.read_text()
-    assert '--branch "mtx-s1.32"' in text
+    assert '--branch "mtx-s1.33"' in text
     assert "OUT=/data/results/eval/label_recovery_v2" in text
     assert "OUT=/data/results/eval/label_recovery\n" not in text
+
+
+def test_the_physics_probe_rerun_does_not_repeat_or_overwrite_the_first_one():
+    """probe-physics-raunav Completed at mtx-s1.18 and its results are on the PVC.
+
+    The v1 spec must stay unappliable (its job name is taken by a Complete job,
+    and reapplying would overwrite OUT), and the v2 spec must differ in all three
+    of name, pin and output -- the same three the labelrec rerun changed.
+    """
+    k8s = REPO / "experiments" / "EVAL" / "k8s"
+    v1 = (k8s / "job-probe-physics-raunav.yaml").read_text()
+    v2 = (k8s / "job-probe-physics-v2-raunav.yaml").read_text()
+
+    assert "SUPERSEDED" in v1 and "DO NOT APPLY" in v1
+    assert "mtx-s1.18" in v1, "v1 must record the tag the job ACTUALLY ran at"
+
+    assert "name: probe-physics-v2-raunav" in v2
+    assert '--branch "mtx-s1.33"' in v2
+    assert "OUT=/data/results/eval/probe_physics_v2" in v2
+    assert "OUT=/data/results/eval/probe_physics\n" not in v2
+
+
+def test_both_reruns_are_pinned_at_the_same_tag():
+    """One tag for both reruns, so a single ref explains every new number."""
+    k8s = REPO / "experiments" / "EVAL" / "k8s"
+    pins = {f.name: re.search(r'--branch "([^"]+)"', f.read_text()).group(1)
+            for f in (k8s / "job-probe-physics-v2-raunav.yaml",
+                      k8s / "job-eval-labelrec-v2-raunav.yaml")}
+    assert set(pins.values()) == {"mtx-s1.33"}, pins
