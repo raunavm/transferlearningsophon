@@ -26,7 +26,14 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s1.23" \
+          # REPINNED mtx-s1.23 -> mtx-s1.32 (2026-09-08), BEFORE ITS FIRST RUN.
+          # 9710c97 ("fix the guards that were not guarding anything") lands
+          # between the two: at s1.23 extract_features.py silently defaulted
+          # --observers to four names instead of failing. job-probe-physics
+          # opens observers.npz for its kinematic window, so an extraction from
+          # the old code would have produced a cache the physics probe cannot
+          # use -- and would have said nothing about it.
+          git clone --depth 1 --branch "mtx-s1.32" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon

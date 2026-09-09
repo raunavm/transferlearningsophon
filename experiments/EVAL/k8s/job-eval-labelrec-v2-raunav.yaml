@@ -1,0 +1,105 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # LABEL-RECOVERY PROBE, RERUN AT EQUAL TRAINING SIZE. D6, STATISTICS P4.
+  #
+  # WHY A RERUN, AND WHY A NEW OUTPUT DIRECTORY. eval-labelrec-raunav Completed
+  # 2026-09-08 cloning mtx-s1.31 -- one commit BEFORE 759bbad ("compare the two
+  # probes at equal training size", mtx-s1.32). At s1.31 the MLP had
+  # early_stopping=True, which carves 10 % off ITS OWN training set, while the
+  # linear probe was fit on all of it. D6 makes the MLP mandatory beside any
+  # null precisely so a linear null cannot be read as "absent" when it is only
+  # "not linearly decodable" -- and that reading is not available when the two
+  # probes saw different amounts of data. So the s1.31 numbers are not a valid
+  # linear-vs-MLP comparison and this rerun replaces them.
+  #
+  # THE PIN IS THE POINT. The spec at tag mtx-s1.32 still cloned mtx-s1.31, so
+  # applying it would have reproduced the pre-fix run -- the same defect the
+  # ledger records for job-eval-anchors-raunav on 2026-09-08 ("still cloned
+  # mtx-s1.15, three commits before the fix"). Repinned here, deliberately, to
+  # the tag that CONTAINS the fix.
+  #
+  # Output goes to label_recovery_v2, never over label_recovery: overwriting a
+  # results file is RED, and the two runs are the evidence for the defect.
+  #
+  # CPU-ONLY, ZERO GPU: runs on features already cached by the extraction jobs.
+  name: eval-labelrec-v2-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: probe
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.32" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          # features_e79, NOT features_v2 -- item 18 fixed the paper checkpoint
+          # to epoch 79 and features_v2 came from net_best_epoch_state.pt.
+          #
+          # LOGITS ARE REQUIRED HERE, unlike the probes. The vocabulary-DEFINED
+          # score (class_sum) is built from the head's own node scores, so an
+          # arm whose cache has no logits.npy can only contribute the
+          # vocabulary-FREE scores. That asymmetry is the measurement, so it is
+          # reported as an absence rather than silently dropped -- but the
+          # extraction is run with --save-logits precisely so it does not happen.
+          #
+          # --own-rung maps each arm to the vocabulary it was PRETRAINED on, which
+          # is what decides its node roles. It cannot be inferred from the arm
+          # name without a convention nothing enforces, so it is explicit.
+          ARMS=""; RUNGS=""
+          for spec in mtx-r16q1-s2:R16_Q1 mtx-r16q1-s3:R16_Q1 mtx-r16q1-s4:R16_Q1 mtx-l162-s1b:L162; do
+            a=${spec%%:*}; r=${spec##*:}
+            d=/data/results/eval/${a}/features_e79
+            [ -f "${d}/features.npy" ] || { echo "FATAL: no ${d}/features.npy"; exit 1; }
+            # label188.npy, NOT observers.npz. This precondition was copied from
+            # job-probe-physics-raunav.yaml, which needs observers for its
+            # kinematic window; label_recovery.py never opens observers.npz
+            # (grep: 0 hits) and loads label188.npy unconditionally. As copied
+            # it hard-failed on a file it does not use while not checking the
+            # one it does.
+            [ -f "${d}/label188.npy" ] || { echo "FATAL: no ${d}/label188.npy"; exit 1; }
+            [ -f "${d}/logits.npy" ] || echo "NOTE: ${a} has no logits.npy -- class_sum will be absent for it"
+            ARMS="${ARMS} ${a#mtx-}=${d}"
+            RUNGS="${RUNGS} ${a#mtx-}=${r}"
+          done
+          echo "arms:${ARMS}"
+          echo "rungs:${RUNGS}"
+
+          OUT=/data/results/eval/label_recovery_v2
+          mkdir -p ${OUT}
+          python3 experiments/EVAL/label_recovery.py \
+            --features ${ARMS} \
+            --own-rung ${RUNGS} \
+            --out ${OUT} \
+            --n 200000
+
+          echo "=== results ==="
+          cat ${OUT}/label_recovery.json
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

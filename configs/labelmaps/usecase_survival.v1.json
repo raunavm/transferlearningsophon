@@ -1,0 +1,104 @@
+{
+  "sophon_eq4": {
+    "title": "X->bb vs QCD",
+    "source": "arXiv:2405.12972 Eq. (4)",
+    "constructible": {
+      "L188": true,
+      "L162": true,
+      "R63_Q1": true,
+      "R42_Q1": false,
+      "R29_Q1": false,
+      "R16_Q1": false,
+      "R3_VIS": false,
+      "R1_Q1": false
+    },
+    "n_coefficient_vectors": 2,
+    "dies_at": "R42_Q1",
+    "last_rung_alive": "R63_Q1"
+  },
+  "sophon_eq6_a1": {
+    "title": "X->cs vs QCD (A1)",
+    "source": "arXiv:2405.12972 Eq. (5)-(6)",
+    "constructible": {
+      "L188": true,
+      "L162": true,
+      "R63_Q1": false,
+      "R42_Q1": false,
+      "R29_Q1": false,
+      "R16_Q1": false,
+      "R3_VIS": false,
+      "R1_Q1": false
+    },
+    "n_coefficient_vectors": 2,
+    "dies_at": "R63_Q1",
+    "last_rung_alive": "L162"
+  },
+  "sophon_eq6_a3": {
+    "title": "X->bq_all q_all vs QCD (A3)",
+    "source": "arXiv:2405.12972 Eq. (5)-(6)",
+    "constructible": {
+      "L188": true,
+      "L162": true,
+      "R63_Q1": false,
+      "R42_Q1": false,
+      "R29_Q1": false,
+      "R16_Q1": false,
+      "R3_VIS": false,
+      "R1_Q1": false
+    },
+    "n_coefficient_vectors": 2,
+    "dies_at": "R63_Q1",
+    "last_rung_alive": "L162"
+  },
+  "sophon_eq7_9": {
+    "title": "triboson event discriminant",
+    "source": "arXiv:2405.12972 Eq. (7)-(9)",
+    "constructible": {
+      "L188": true,
+      "L162": true,
+      "R63_Q1": false,
+      "R42_Q1": false,
+      "R29_Q1": false,
+      "R16_Q1": false,
+      "R3_VIS": false,
+      "R1_Q1": false
+    },
+    "n_coefficient_vectors": 2,
+    "dies_at": "R63_Q1",
+    "last_rung_alive": "L162"
+  },
+  "vcb_eq1": {
+    "title": "D_bc (|V_cb|)",
+    "source": "arXiv:2503.00118 Eq. (1)",
+    "constructible": {
+      "L188": true,
+      "L162": true,
+      "R63_Q1": false,
+      "R42_Q1": false,
+      "R29_Q1": false,
+      "R16_Q1": false,
+      "R3_VIS": false,
+      "R1_Q1": false
+    },
+    "n_coefficient_vectors": 2,
+    "dies_at": "R63_Q1",
+    "last_rung_alive": "L162"
+  },
+  "gn3x_qcd_subclass": {
+    "title": "GN3X-style per-QCD-subclass rejection",
+    "source": "ATL-PHYS-PUB-2026-013 Sec. 6",
+    "constructible": {
+      "L188": true,
+      "L162": false,
+      "R63_Q1": false,
+      "R42_Q1": false,
+      "R29_Q1": false,
+      "R16_Q1": false,
+      "R3_VIS": false,
+      "R1_Q1": false
+    },
+    "n_coefficient_vectors": 27,
+    "dies_at": "L162",
+    "last_rung_alive": "L188"
+  }
+}

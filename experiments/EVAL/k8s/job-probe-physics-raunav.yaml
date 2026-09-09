@@ -21,6 +21,18 @@ metadata:
   # docs/PRD_PLAN.md 3.1(b): the ee/mumu split merges one rung earlier than the
   # prose says, at R63_Q1 into 2P_LEP_LL|nb0_nc0, not at R42_Q1.
   #
+  # REPINNED mtx-s1.20 -> mtx-s1.32 (2026-09-08), BEFORE ITS FIRST RUN. This
+  # spec has never been applied, and s1.20 predates two probe.py fixes that
+  # decide whether its output is usable at all:
+  #   - MIN_PER_CLASS is now counted on the IN-WINDOW test rows. bc_vs_rest
+  #     applies a three-cut kinematic window, so the pre-fix count could pass on
+  #     the full cache while the windowed cell held far too few jets.
+  #   - the MLP probe now records `converged` / `epochs_run` per seed and
+  #     `all_converged` in the meta. D6 makes the MLP mandatory beside any null,
+  #     and an unconverged MLP is an optimisation failure, not a measurement --
+  #     which is exactly what the first eval-labelrec run turned out to be.
+  # Left at s1.20 this job would have produced numbers with neither guard.
+  #
   # CPU-ONLY, ZERO GPU: runs on features already cached by the extraction jobs.
   # Runs the three original tasks too, so the whole probe table lands at once.
   name: probe-physics-raunav
@@ -37,7 +49,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s1.20" \
+          git clone --depth 1 --branch "mtx-s1.32" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon

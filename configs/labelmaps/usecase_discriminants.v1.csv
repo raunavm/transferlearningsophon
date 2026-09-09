@@ -1,0 +1,46 @@
+# Published Sophon-family tagging discriminants, as COEFFICIENT VECTORS over the
+# 188 native JetClass-II classes. docs/PRD_PLAN.md 3.1(c).
+#
+# WHY COEFFICIENTS AND NOT SETS. Sophon's Property 1 (arXiv:2405.12972 Eq. 2-3,
+# "class division property") says a coarse rung's group score is the SUM of the
+# fine class scores it contains: g_c = sum_l g_{c_l}. So at rung R the only
+# linear combinations an analyst can build are those whose per-class coefficient
+# is CONSTANT ON EVERY R-GROUP. A discriminant is therefore constructible at R
+# iff each of its coefficient vectors (numerator, denominator) is group-constant.
+# That is exact, not a heuristic -- which is why 3.1(c) says Property 1 makes
+# this table exact.
+#
+# `part` is num/den. `coeff` is the per-class weight. `@QCD` expands to all 27
+# QCD classes (read from the map, never hardcoded). `expand=each` means every
+# listed class must be INDIVIDUALLY resolvable, i.e. one requirement per class.
+#
+# DEFERRED ROW -- D_pigamma's P1 denominator. docs/PRD_PLAN.md 3.1(c) names it,
+# and it is NOT encoded here. arXiv:2606.09458 fine-tunes Sophon from 188 to 206
+# nodes and defines P1 over the EXTENDED head: four of its members (X->pi gamma
+# qq/qs/cq/cs) do not exist in the 188 vocabulary at all, and others are written
+# in a shorthand that does not map onto our class names -- its "X->see" is a
+# 3-object s,e,e state, whereas JetClass-II's 3-object classes are pair+single
+# (label_X_YY_sse is s,s,e). Encoding it would require that paper's own 206-node
+# table. A guessed mapping would produce a wrong row in a table whose whole value
+# is that Property 1 makes it EXACT, so the row waits for the mapping.
+discriminant,title,part,coeff,classes,expand,source
+sophon_eq4,X->bb vs QCD,num,1,label_X_bb,,arXiv:2405.12972 Eq. (4)
+sophon_eq4,X->bb vs QCD,den,1,label_X_bb,,arXiv:2405.12972 Eq. (4)
+sophon_eq4,X->bb vs QCD,den,1,@QCD,,arXiv:2405.12972 Eq. (4)
+sophon_eq6_a1,X->cs vs QCD (A1),num,1,label_X_cs,,arXiv:2405.12972 Eq. (5)-(6)
+sophon_eq6_a1,X->cs vs QCD (A1),den,1,label_X_cs,,arXiv:2405.12972 Eq. (5)-(6)
+sophon_eq6_a1,X->cs vs QCD (A1),den,1,@QCD,,arXiv:2405.12972 Eq. (5)-(6)
+sophon_eq6_a3,X->bq_all q_all vs QCD (A3),num,1,label_X_YY_ccb;label_X_YY_ssb;label_X_YY_qqb;label_X_YY_bcs;label_X_YY_bcq;label_X_YY_bsq,,arXiv:2405.12972 Eq. (5)-(6)
+sophon_eq6_a3,X->bq_all q_all vs QCD (A3),den,1,label_X_YY_ccb;label_X_YY_ssb;label_X_YY_qqb;label_X_YY_bcs;label_X_YY_bcq;label_X_YY_bsq,,arXiv:2405.12972 Eq. (5)-(6)
+sophon_eq6_a3,X->bq_all q_all vs QCD (A3),den,1,@QCD,,arXiv:2405.12972 Eq. (5)-(6)
+sophon_eq7_9,triboson event discriminant,num,0.3,label_X_cs;label_X_qq,,arXiv:2405.12972 Eq. (7)-(9)
+sophon_eq7_9,triboson event discriminant,num,0.1,label_X_YY_ccss;label_X_YY_qqcs;label_X_YY_qqqq,,arXiv:2405.12972 Eq. (7)-(9)
+sophon_eq7_9,triboson event discriminant,num,0.6,label_X_YY_ccs;label_X_YY_ccq;label_X_YY_ssc;label_X_YY_ssq;label_X_YY_qqc;label_X_YY_qqs;label_X_YY_qqq,,arXiv:2405.12972 Eq. (7)-(9)
+sophon_eq7_9,triboson event discriminant,den,0.3,label_X_cs;label_X_qq,,arXiv:2405.12972 Eq. (7)-(9)
+sophon_eq7_9,triboson event discriminant,den,0.1,label_X_YY_ccss;label_X_YY_qqcs;label_X_YY_qqqq,,arXiv:2405.12972 Eq. (7)-(9)
+sophon_eq7_9,triboson event discriminant,den,0.6,label_X_YY_ccs;label_X_YY_ccq;label_X_YY_ssc;label_X_YY_ssq;label_X_YY_qqc;label_X_YY_qqs;label_X_YY_qqq,,arXiv:2405.12972 Eq. (7)-(9)
+sophon_eq7_9,triboson event discriminant,den,1,@QCD,,arXiv:2405.12972 Eq. (7)-(9)
+vcb_eq1,D_bc (|V_cb|),num,1,label_X_bc,,arXiv:2503.00118 Eq. (1)
+vcb_eq1,D_bc (|V_cb|),den,1,label_X_bc;label_X_bq;label_X_cs;label_X_YY_qqb,,arXiv:2503.00118 Eq. (1)
+vcb_eq1,D_bc (|V_cb|),den,1,@QCD,,arXiv:2503.00118 Eq. (1)
+gn3x_qcd_subclass,GN3X-style per-QCD-subclass rejection,num,1,@QCD,each,ATL-PHYS-PUB-2026-013 Sec. 6
