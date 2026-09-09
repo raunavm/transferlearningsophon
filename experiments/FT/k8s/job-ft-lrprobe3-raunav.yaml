@@ -49,7 +49,19 @@ metadata:
   name: ft-lrprobe3-raunav
   namespace: cms-ml
 spec:
-  backoffLimit: 6
+  # RAISED 6 -> 50 (2026-09-09) AFTER THIS JOB DIED WITHOUT RUNNING ONCE.
+  # Every other job in this wave already carries 50; this one was the outlier
+  # and it is the one that died. Seven attempts were consumed by
+  # UnexpectedAdmissionError on k8s-chase-ci-07.calit2.optiputer.net -- "Allocate
+  # failed due to device plugin GetPreferredAllocation rpc failed" -- which is
+  # the same device-plugin defect already recorded for ry-gpu-03, c4705 and
+  # c4709. That rejection happens at ADMISSION: the container never starts, so
+  # the attempt does no work and produces no output, yet it still spends one
+  # slot of the backoff budget. A limit of 6 therefore measures how many broken
+  # nodes the scheduler happens to try, not how many times the job really
+  # failed. The node is now in the NotIn list below as well, so both the cause
+  # and the symptom are covered.
+  backoffLimit: 50
   ttlSecondsAfterFinished: 172800
   template:
     spec:
@@ -209,4 +221,4 @@ spec:
                 values: ["NVIDIA-GeForce-RTX-3090"]
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu"]
+                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net"]
