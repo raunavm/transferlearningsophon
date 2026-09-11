@@ -285,7 +285,7 @@ spec:
               # excluded 2026-09-07: device plugin rejects every pod (scripts/exclude_node.py)
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: ["nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net"]
+                values: ["nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org"]
       volumes:
       - name: jc2
         persistentVolumeClaim:
