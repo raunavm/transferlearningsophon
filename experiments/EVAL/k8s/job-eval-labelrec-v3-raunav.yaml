@@ -1,0 +1,136 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # LABEL RECOVERY AT FOUR R16_Q1 SEEDS. D6, STATISTICS P4.
+  #
+  # WHY v3. v2 fixed the metric (equal training size for the linear and MLP
+  # probes) and its numbers stand. It measured three R16_Q1 seeds because that
+  # is how many caches existed. mtx-r16q1-s5's features_e79 has been on the PVC
+  # since its extraction completed and no probe spec has ever listed it.
+  #
+  # WHY THE FOURTH SEED IS WORTH A RERUN. v2's result is a CROSSOVER: L162 leads
+  # by +0.089 at L188 (about 6x the seed spread), the lead decays monotonically
+  # down the ladder, and R16_Q1 edges ahead by +0.003 to +0.006 at and below its
+  # own rung. The sign flip at the bottom is the interesting part and it is
+  # SMALL relative to the seed scatter at n=3. A fourth seed is the only
+  # additional evidence obtainable without a GPU.
+  #
+  # WHAT A FOURTH SEED DOES AND DOES NOT BUY -- stated because the obvious
+  # reading is wrong. It does NOT shrink the published interval by adding an
+  # observation to a range: the project's uncertainty convention is an SD with
+  # ddof=1 (docs/GATES.md, experiments/EVAL/eval_arm.py seed_spread), which is
+  # n-invariant in expectation, and the inferential number per D7 is a paired
+  # bootstrap CI computed per contrast and independent of seed count. What it
+  # buys is a fourth draw from the pretraining-seed distribution, so the SD
+  # itself is estimated from 3 degrees of freedom instead of 2.
+  #
+  # THIS SPEC DOES NOT BUILD LOGITS, AND AN EARLIER DRAFT OF IT WRONGLY DID.
+  # job-eval-labelrec-v2-raunav.yaml's header says "LOGITS ARE REQUIRED HERE,
+  # unlike the probes", and mtx-r16q1-s5 indeed has no logits.npy. Both halves
+  # are true and the conclusion drawn from them was false:
+  # label_recovery.py NEVER READS logits.npy. It has zero occurrences of
+  # "logits" and zero of "class_sum"; it loads arms through probe.load_arm,
+  # which opens features.npy, label188.npy, extract_manifest.json and
+  # conditionally observers.npz -- never logits.npy. class_sum is anomaly.py's
+  # score (anomaly.py score_class_sum), and anomaly.py loads the logits itself.
+  # So s5's missing logits.npy blocks NOTHING here, and an inline build would
+  # have been dead work sitting in front of the measurement as a hard `exit 1`
+  # gate under `set -euo pipefail` -- able to kill the job over an artifact it
+  # would never open. The v2 header's claim was inert prose; promoting it to an
+  # executable precondition would have been the actual defect.
+  #
+  # If the anomaly table later wants s5, that belongs in job-eval-anomaly's arm
+  # list, not here.
+  #
+  # PRECONDITIONS ARE THE FILES probe.load_arm ACTUALLY OPENS. features.npy,
+  # label188.npy and extract_manifest.json are read unconditionally, so a
+  # missing one is a crash mid-run; observers.npz is optional and
+  # label_recovery.py never consults it, so it is not checked. An earlier spec
+  # in this directory had this exactly inverted -- it hard-failed on
+  # observers.npz, which the script does not open, while not checking
+  # label188.npy, which it does.
+  #
+  # PIN. mtx-s1.34, one tag ahead of v2's mtx-s1.33. label_recovery.py is
+  # byte-identical at s1.32/s1.33/s1.34/HEAD (md5
+  # e6528f1b49afa9877eb816764621e8ca). probe.py is NOT byte-identical across
+  # that range -- s1.34 added log1m_auc and rewired its main() -- but
+  # label_recovery.py imports only probe.load_arm and probe.check_alignment,
+  # neither of which the s1.33->s1.34 diff touches. So no code this job
+  # executes differs between v2's pin and this one, and the seed count is the
+  # only thing that moves (I1).
+  #
+  # L162 REMAINS n=1. Only l162-s1b has a cache; mtx-l162-s2..s5 are still
+  # pretraining. The asymmetry widens from 3:1 to 4:1 and no seed interval may
+  # be quoted on the L162 arm.
+  #
+  # Output goes to label_recovery_v3, never over v2 or v1: overwriting a
+  # results file is RED, and the three runs are each other's evidence.
+  #
+  # CPU-ONLY, ZERO GPU: runs on features already cached by the extraction jobs.
+  name: eval-labelrec-v3-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: probe
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.34" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          # features_e79, NOT features_v2 -- item 18 fixed the paper checkpoint
+          # to epoch 79 and features_v2 came from net_best_epoch_state.pt.
+          #
+          # --own-rung maps each arm to the vocabulary it was PRETRAINED on,
+          # which is what decides its node roles. It cannot be inferred from the
+          # arm name without a convention nothing enforces, so it is explicit.
+          ARMS=""; RUNGS=""
+          for spec in mtx-r16q1-s2:R16_Q1 mtx-r16q1-s3:R16_Q1 mtx-r16q1-s4:R16_Q1 mtx-r16q1-s5:R16_Q1 mtx-l162-s1b:L162; do
+            a=${spec%%:*}; r=${spec##*:}
+            d=/data/results/eval/${a}/features_e79
+            for f in features.npy label188.npy extract_manifest.json; do
+              [ -f "${d}/${f}" ] || { echo "FATAL: no ${d}/${f}"; exit 1; }
+            done
+            ARMS="${ARMS} ${a#mtx-}=${d}"
+            RUNGS="${RUNGS} ${a#mtx-}=${r}"
+          done
+          echo "arms:${ARMS}"
+          echo "rungs:${RUNGS}"
+
+          OUT=/data/results/eval/label_recovery_v3
+          mkdir -p ${OUT}
+          python3 experiments/EVAL/label_recovery.py \
+            --features ${ARMS} \
+            --own-rung ${RUNGS} \
+            --out ${OUT} \
+            --n 200000
+
+          echo "=== results ==="
+          cat ${OUT}/label_recovery.json
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

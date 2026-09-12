@@ -1,0 +1,135 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # THE PHYSICS PROBE TABLE AT FOUR R16_Q1 SEEDS. D6, D7.
+  #
+  # WHY v4. v3 is sound and its metric is repaired; it measured three R16_Q1
+  # seeds because that is how many feature caches existed when the spec was
+  # written. mtx-r16q1-s5 finished and job-extract-mtx-r16q1-s5 cached its
+  # features_e79, but every probe spec in this directory still lists s2/s3/s4 --
+  # the fourth seed has been sitting unused on the PVC. This is the same
+  # measurement over n=4 instead of n=3.
+  #
+  # WHAT THE FOURTH SEED BUYS. Not a narrower published interval: the project's
+  # uncertainty convention is an SD with ddof=1 (docs/GATES.md,
+  # experiments/EVAL/eval_arm.py seed_spread), n-invariant in expectation, and
+  # the D7 inferential number is a paired bootstrap CI computed per contrast and
+  # independent of seed count (probe.py delta_log1m_auc / ci95 / excludes_zero).
+  # It buys a fourth draw from the pretraining-seed distribution, so the scatter
+  # is estimated from 3 degrees of freedom rather than 2.
+  #
+  # THE "3-4x THE SEED SPREAD" SUMMARY IS WRONG AND IS NOT REPEATED HERE.
+  # docs/PRD_PLAN.md 4.2 and experiments/RUNS.csv (probe-physics-v3-result) both
+  # state that the between-arm gap is "3-4x the within-arm seed spread" on every
+  # task. Recomputed per task from v3's own recorded contrasts, using each
+  # task's OWN spread rather than bvc_resonant's applied to all four:
+  #
+  #     task                 spread   gap / spread
+  #     bvc_resonant         0.373    2.99 - 3.99
+  #     bvc_qcd              0.325    2.49 - 3.49
+  #     retained_topology    0.233    1.55 - 2.55
+  #     ee_vs_mm             0.657    >= 20.4  (a BOUND, not a ratio)
+  #
+  # "3-4x" describes bvc_resonant and nothing else: it overstates
+  # retained_topology by about 1.6x and understates ee_vs_mm by about 5x. The
+  # method is exact, not estimated -- the three l162-vs-r16q1 contrasts on a
+  # task share one l162 anchor, so their range IS the within-arm r16q1 spread;
+  # it reproduces the one spread the ledger states explicitly (0.373 derived vs
+  # 0.372 recorded). ee_vs_mm admits no ratio at all: l162 is censored at
+  # AUC = 1.0, so probe.py sets delta_is_bound and the magnitude is an
+  # inequality. EVERY MEASURED NUMBER IN v3 STANDS -- this is a summary error in
+  # the prose, not a measurement error, and a fourth seed does not fix it. It is
+  # corrected in docs/PRD_PLAN.md alongside this spec.
+  #
+  # THE ee_vs_mm PHYSICS ATTRIBUTION IS UNDER REVIEW -- see DECISIONS_PENDING.
+  # probe.py and docs/PRD_PLAN.md describe ee_vs_mm as "the lepton-flavour split
+  # 2606.09458's background suppression uses". That paper's Eq. 1 puts both
+  # lepton nodes in its P1 denominator as an UNWEIGHTED sum, so the coefficient
+  # vector is 1 on both and is group-constant under their merge; the committed
+  # map puts exactly label_X_ee (10) and label_X_mm (11) and nothing else into
+  # 2P_LEP_LL, so by Sophon Property 1 g_2P_LEP_LL = g_ee + g_mm exactly and the
+  # term SURVIVES to R16_Q1. The AUC this task measures is a valid probe of
+  # whether an arm retains the e/mu distinction; the use-case-survival claim
+  # attached to it is not established. This job measures the AUC and makes no
+  # such claim.
+  #
+  # PRECONDITIONS ARE THE FILES probe.load_arm ACTUALLY OPENS. features.npy,
+  # label188.npy and extract_manifest.json are read unconditionally, so a
+  # missing one crashes mid-run. observers.npz is optional in load_arm but the
+  # windowed task needs it, so it is checked to fail fast rather than let that
+  # task skip silently. An earlier spec here had this inverted -- it hard-failed
+  # on observers.npz while not checking label188.npy.
+  #
+  # PIN. mtx-s1.34 is the tag v3 ran at and probe.py is byte-identical between
+  # that tag and HEAD (md5 f5d19dd4d0699b55195f395157d05b20), so this is the
+  # same code on more data, not a code change smuggled in beside a seed change
+  # (I1). Deliberately not advanced past s1.34: the commits after it touch only
+  # job specs and the ledger.
+  #
+  # bc_vs_rest will SKIP again, correctly: 270 signal jets against a floor of
+  # 1,000. DECISIONS_PENDING item 26 -- it needs a bigger or pre-selected
+  # extraction, not a rerun, and a fourth seed does not change that.
+  #
+  # CPU-ONLY, ZERO GPU: runs on features already cached by the extraction jobs.
+  name: probe-physics-v4-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: probe
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.34" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          # features_e79, NOT features_v2. features_v2 was extracted from
+          # net_best_epoch_state.pt; DECISIONS_PENDING item 18 resolved the
+          # paper checkpoint to epoch 79 uniformly, so the published
+          # discriminants must be measured there.
+          ARMS=""
+          for a in mtx-r16q1-s2 mtx-r16q1-s3 mtx-r16q1-s4 mtx-r16q1-s5 mtx-l162-s1b; do
+            d=/data/results/eval/${a}/features_e79
+            for f in features.npy label188.npy extract_manifest.json observers.npz; do
+              [ -f "${d}/${f}" ] || { echo "FATAL: no ${d}/${f}"; exit 1; }
+            done
+            ARMS="${ARMS} ${a#mtx-}=${d}"
+          done
+          echo "arms:${ARMS}"
+
+          OUT=/data/results/eval/probe_physics_v4
+          mkdir -p ${OUT}
+          python3 experiments/EVAL/probe.py \
+            --features ${ARMS} \
+            --out ${OUT} \
+            --tasks bvc_resonant retained_topology bvc_qcd bc_vs_rest ee_vs_mm \
+            --bootstrap 2000
+
+          echo "=== results ==="
+          cat ${OUT}/*.json
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
