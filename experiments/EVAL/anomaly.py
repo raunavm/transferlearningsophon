@@ -426,6 +426,83 @@ def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
     return out
 
 
+def cross_arm_regret(results: dict) -> dict:
+    """Normalise sigma_min over ARMS. Call once, over ALL arms.
+
+    SPLIT OUT SO THE PER-ARM AND MERGED PATHS CANNOT DIVERGE. The grid is
+    ~1,440 cells at ~43 s and one 25 h attempt already died with one arm of
+    four done, so arms now run as separate jobs. A separate job CANNOT
+    compute this pass: the minimum is over arms, so an arm run alone
+    normalises against itself and reports regret 1.000 for every family --
+    the exact defect audit-2-anomaly found. anomaly_merge.py calls THIS
+    function rather than reimplementing it.
+    """
+    # CROSS-ARM REGRET -- the number the vocabulary ablation is about, and the
+    # reason this pass exists at all. Normalising inside one arm (as the first
+    # pass does) makes every arm's best family score exactly 1.000, so the
+    # cross-arm table reads "no regret from coarsening the vocabulary" for
+    # every arm no matter how much worse the coarse one is: precisely the null
+    # under test, manufactured by the aggregation. The minimum is taken over
+    # ARMS at fixed (signal, N_sig, family), so families are never compared
+    # against each other here.
+    cells = {}
+    for arm, ad in results["arms"].items():
+        for sig, per_n in ad["signals"].items():
+            for n_sig, agg in per_n.items():
+                if not isinstance(agg, dict):
+                    continue
+                for fam, v in agg.items():
+                    if isinstance(v, dict) and "sigma_min" in v:
+                        cells.setdefault((sig, n_sig, fam), []).append(v)
+    for key, vs in cells.items():
+        best = min(v["sigma_min"] for v in vs)
+        for v in vs:
+            v["regret"] = v["sigma_min"] / best if best > 0 else float("nan")
+            v["regret_n_arms"] = len(vs)
+    results["regret_normalisation"] = (
+        "sigma_min / min over ARMS at fixed (signal, n_sig, family); "
+        "regret_within_arm is the same ratio taken over families inside one arm")
+    return results
+
+
+def null_guard(results: dict) -> tuple[list, list]:
+    """Read the N_sig=0 null on ARGOS; record what was never measured.
+
+    Split out for the same reason as cross_arm_regret: the merged artifact
+    must carry the guard a single-process run would have applied.
+    """
+    bad, unmeasured = [], []
+    for arm, ad in results["arms"].items():
+        for sig, per_n in ad["signals"].items():
+            z = per_n.get("0", {})
+            for fam, v in z.items():
+                if not isinstance(v, dict) or v.get("skipped"):
+                    continue
+                if "argos" not in v:
+                    # NOT the same as passing. iad_hgb is excluded from the
+                    # ARGOS protocol, so `.get("argos", 0)` scored its null as
+                    # 0 -- i.e. "clean" -- when nothing had been measured at
+                    # all. An unmeasured null is reported as unmeasured.
+                    unmeasured.append(f"{arm}/{sig}/{fam}")
+                elif v["argos"] > NULL_ARGOS_MAX:
+                    bad.append(f"{arm}/{sig}/{fam} ARGOS {v['argos']:.3f} on pure "
+                               f"background (> {NULL_ARGOS_MAX})")
+    if bad:
+        print("\nWARNING: the N_sig=0 null is not flat -- do not quote these:")
+        for b in bad:
+            print("   ", b)
+    if unmeasured:
+        print(f"\nNOTE: {len(unmeasured)} null cells have NO ARGOS, so their null "
+              f"was never tested (not 'passed'):")
+        for u in unmeasured[:10]:
+            print("   ", u)
+        if len(unmeasured) > 10:
+            print(f"    ... and {len(unmeasured) - 10} more")
+    results["null_unmeasured"] = unmeasured
+    results["null_not_flat"] = bad
+    return bad, unmeasured
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--features", nargs="+", required=True,
@@ -564,31 +641,7 @@ def main(argv=None) -> int:
             _tmp.write_text(json.dumps(results, indent=2))
             _tmp.replace(_out / "anomaly_results.json")
 
-    # CROSS-ARM REGRET -- the number the vocabulary ablation is about, and the
-    # reason this pass exists at all. Normalising inside one arm (as the first
-    # pass does) makes every arm's best family score exactly 1.000, so the
-    # cross-arm table reads "no regret from coarsening the vocabulary" for
-    # every arm no matter how much worse the coarse one is: precisely the null
-    # under test, manufactured by the aggregation. The minimum is taken over
-    # ARMS at fixed (signal, N_sig, family), so families are never compared
-    # against each other here.
-    cells = {}
-    for arm, ad in results["arms"].items():
-        for sig, per_n in ad["signals"].items():
-            for n_sig, agg in per_n.items():
-                if not isinstance(agg, dict):
-                    continue
-                for fam, v in agg.items():
-                    if isinstance(v, dict) and "sigma_min" in v:
-                        cells.setdefault((sig, n_sig, fam), []).append(v)
-    for key, vs in cells.items():
-        best = min(v["sigma_min"] for v in vs)
-        for v in vs:
-            v["regret"] = v["sigma_min"] / best if best > 0 else float("nan")
-            v["regret_n_arms"] = len(vs)
-    results["regret_normalisation"] = (
-        "sigma_min / min over ARMS at fixed (signal, n_sig, family); "
-        "regret_within_arm is the same ratio taken over families inside one arm")
+    cross_arm_regret(results)
 
     out = pathlib.Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -600,35 +653,7 @@ def main(argv=None) -> int:
     # pure background ARGOS should sit near its random baseline; a large value
     # means the selection rule is manufacturing an excess out of background
     # alone, and every number downstream of it is suspect.
-    bad, unmeasured = [], []
-    for arm, ad in results["arms"].items():
-        for sig, per_n in ad["signals"].items():
-            z = per_n.get("0", {})
-            for fam, v in z.items():
-                if not isinstance(v, dict) or v.get("skipped"):
-                    continue
-                if "argos" not in v:
-                    # NOT the same as passing. iad_hgb is excluded from the
-                    # ARGOS protocol, so `.get("argos", 0)` scored its null as
-                    # 0 -- i.e. "clean" -- when nothing had been measured at
-                    # all. An unmeasured null is reported as unmeasured.
-                    unmeasured.append(f"{arm}/{sig}/{fam}")
-                elif v["argos"] > NULL_ARGOS_MAX:
-                    bad.append(f"{arm}/{sig}/{fam} ARGOS {v['argos']:.3f} on pure "
-                               f"background (> {NULL_ARGOS_MAX})")
-    if bad:
-        print("\nWARNING: the N_sig=0 null is not flat -- do not quote these:")
-        for b in bad:
-            print("   ", b)
-    if unmeasured:
-        print(f"\nNOTE: {len(unmeasured)} null cells have NO ARGOS, so their null "
-              f"was never tested (not 'passed'):")
-        for u in unmeasured[:10]:
-            print("   ", u)
-        if len(unmeasured) > 10:
-            print(f"    ... and {len(unmeasured) - 10} more")
-    results["null_unmeasured"] = unmeasured
-    results["null_not_flat"] = bad
+    bad, unmeasured = null_guard(results)
     (out / "anomaly_results.json").write_text(json.dumps(results, indent=2))
 
     # An all-skipped run is a FAILURE, not a result. The job asks 400,000 QCD
