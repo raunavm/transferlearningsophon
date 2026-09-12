@@ -1,0 +1,119 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # LEG 1 READOUT -- THE IN-DOMAIN HALF OF THE TRANSFER CLAIM.
+  #
+  # WHY THIS JOB EXISTS. job-ft-legs finished 108/108 fine-tunes with zero
+  # FAILED markers. Leg 2 (JetClass-I, the domain-shift leg) could be read
+  # straight out of each cell's predict.log, because weaver prints a "Test
+  # metric" there -- that table is already in the ledger. Leg 1 fine-tunes on
+  # JetClass-II's OWN 162-way vocabulary and writes a feature cache instead:
+  # features.npy, logits.npy, label188.npy per cell, and NOTHING in this repo
+  # reads them. A grep for leg1 across every .py returns only the job builder
+  # and its test. So 54 cells of finished inference -- about 70 GB of logits --
+  # have been sitting unread since the wave completed.
+  #
+  # WITHOUT THIS THE TRANSFER CLAIM IS HALF-MEASURED. The paper's argument is
+  # that pretraining vocabulary granularity governs transfer. Leg 2 shows that
+  # under a domain shift (JetClass-I has no pileup, JetClass-II does). Leg 1 is
+  # the in-domain control on the same grid: same inits, same N, same seeds. A
+  # granularity effect that appeared only under domain shift would mean
+  # something quite different from one that appears in both.
+  #
+  # METRICS ARE REUSED, NOT REDEFINED. accuracy / macro_auc_ovr / per-class AUC
+  # come from experiments/EVAL/eval_arm.py's metrics(), the function the E1 gate
+  # was measured with; the 188 -> L162 mapping comes from
+  # label_recovery.rung_maps() reading the committed
+  # configs/labelmaps/rung_label_maps.v1.csv. Defining a second accuracy here is
+  # how two of this project's own tables would stop being comparable.
+  #
+  # THE AUC IS ON A STRIDE, THE ACCURACY IS NOT. Accuracy is an argmax and is
+  # free at 2 M x 162. Macro OvR AUC is 162 ROC curves over 2 M rows and
+  # metrics() also computes per-class AUC, so a full pass is ~2 x 162 sorts per
+  # cell across 54 cells. --auc-stride 4 takes every 4th row: DETERMINISTIC (no
+  # seed to record), the SAME rows in every cell (so the between-init contrast
+  # stays paired rather than carrying per-cell sampling noise), and it preserves
+  # the class mix, which a head slice would not -- the test list interleaves
+  # Res2P / Res34P / QCD by file, so the first n rows are biased toward whichever
+  # files come first.
+  #
+  # ROW ALIGNMENT IS A HARD GATE. Every cell must have read out the same test
+  # jets in the same order or the comparison is not paired. The sha256 of
+  # label188.npy is compared across all 54 cells and a mismatch exits non-zero
+  # rather than averaging cells that scored different jets -- the failure that
+  # would otherwise produce a clean-looking table with no error at all.
+  #
+  # PIN mtx-s1.35, the tag that FIRST CONTAINS experiments/FT/leg1_metrics.py.
+  # Pinning to s1.34 would clone a tree without the script. Recorded explicitly
+  # because a spec cloning a tag that predates the code it runs is this
+  # project's most repeated defect (four instances on record).
+  #
+  # us-west is REQUIRED, not preferred, unlike the training specs. This job
+  # streams ~70 GB of cached logits off a PVC at SDSC; the four NRP idle-GPU
+  # warnings of 2026-09-11 were all us-east pods starved by exactly that
+  # distance. There is no GPU here to be flagged, but the wall-clock argument is
+  # the same and a CPU job can afford to queue.
+  #
+  # CPU-ONLY, ZERO GPU.
+  name: ft-leg1-metrics-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: readout
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.35" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          ROOT=/data/results/ft/leg1
+          [ -d "${ROOT}" ] || { echo "FATAL: no ${ROOT}"; exit 1; }
+          n=$(find ${ROOT} -name logits.npy -not -path "*.partial.*" | wc -l)
+          echo "complete leg1 cells with logits: ${n}"
+          [ "${n}" -ge 1 ] || { echo "FATAL: no logits under ${ROOT}"; exit 1; }
+
+          OUT=/data/results/ft/leg1_metrics
+          mkdir -p ${OUT}
+          python3 experiments/FT/leg1_metrics.py \
+            --root ${ROOT} \
+            --out ${OUT} \
+            --auc-stride 4
+
+          echo "=== summary ==="
+          python3 -c "
+          import json
+          d=json.load(open('${OUT}/leg1_metrics.json'))
+          for init,per in sorted(d['summary'].items()):
+              for N,s in sorted(per.items()):
+                  sd=s['accuracy_sd']
+                  print(f\"{init:16} {N:10} acc={s['accuracy_mean']:.5f}\" +
+                        (f\" +-{sd:.5f}\" if sd is not None else '') +
+                        f\" macroAUC={s['macro_auc_mean']:.5f} n={s['n_seeds']}\")
+          "
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
