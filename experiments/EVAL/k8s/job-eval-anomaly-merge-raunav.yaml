@@ -1,0 +1,91 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # MERGE THE PER-ARM ANOMALY RUNS AND APPLY THE CROSS-ARM PASS (PRD_PLAN 3.3).
+  #
+  # RUN THIS ONLY AFTER ALL THREE PER-ARM JOBS ARE Complete. It is the step that
+  # makes the anomaly table mean anything: the regret the vocabulary ablation is
+  # about is sigma_min / min over ARMS at fixed (signal, N_sig, family), and no
+  # per-arm job can compute it -- an arm alone normalises against itself and
+  # writes regret 1.000 for every family, which is the null under test
+  # manufactured by the aggregation (the defect audit-2-anomaly found). The
+  # per-arm files' regret columns are STALE BY CONSTRUCTION and are overwritten
+  # here by anomaly.cross_arm_regret, the same function the single-process path
+  # calls rather than a second copy of the arithmetic.
+  #
+  # FOUR INPUTS, ONE OF WHICH IS NOT RE-RUN. l162-s1b completed 2026-09-09 and
+  # its artifact at /data/results/eval/anomaly is merged in as-is; only the three
+  # R16_Q1 arms were recomputed. The merge refuses inputs that disagree on
+  # row_alignment_sha256, trainings, n_bkg, n_template, stat_cut, min_bkg_pass or
+  # sigma_t, so reusing an older arm cannot silently mix incommensurable cells --
+  # and it refuses a duplicated arm rather than letting last-one-win hide which
+  # run a published number came from.
+  #
+  # OUTPUT IS A NEW DIRECTORY. /data/results/eval/anomaly is NOT overwritten:
+  # overwriting a results file is RED, and that artifact is the l162-s1b input to
+  # this very merge.
+  #
+  # PIN mtx-s1.36.
+  #
+  # CPU-ONLY, ZERO GPU, minutes: this is JSON arithmetic, not a rerun.
+  name: eval-anomaly-merge-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: merge
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.36" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          IN=""
+          for d in /data/results/eval/anomaly \
+                   /data/results/eval/anomaly_r16q1-s2 \
+                   /data/results/eval/anomaly_r16q1-s3 \
+                   /data/results/eval/anomaly_r16q1-s4; do
+            [ -f "${d}/anomaly_results.json" ] || { echo "FATAL: no ${d}/anomaly_results.json -- run the per-arm jobs first"; exit 1; }
+            IN="${IN} ${d}"
+          done
+          echo "inputs:${IN}"
+
+          OUT=/data/results/eval/anomaly_merged
+          mkdir -p ${OUT}
+          python3 experiments/EVAL/anomaly_merge.py --inputs ${IN} --out ${OUT}
+
+          echo "=== arms in the merged artifact ==="
+          python3 -c "
+          import json
+          d=json.load(open('${OUT}/anomaly_results.json'))
+          print(sorted(d['arms']))
+          print('merged_from:', json.dumps(d.get('merged_from'), indent=1))
+          print('null_not_flat:', len(d.get('null_not_flat', [])))
+          print('null_unmeasured:', len(d.get('null_unmeasured', [])))
+          "
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "16Gi", cpu: "2", ephemeral-storage: "10Gi" }
+          limits:   { memory: "16Gi", cpu: "2", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

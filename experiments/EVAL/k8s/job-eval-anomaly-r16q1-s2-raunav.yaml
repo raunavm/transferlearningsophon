@@ -1,0 +1,100 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # ANOMALY DETECTION AS A VOCABULARY ABLATION -- ONE ARM PER JOB (PRD_PLAN 3.3).
+  #
+  # WHY THIS IS SPLIT BY ARM. The single-process version died after ~25 h with
+  # ONE arm of four finished (ledger: eval-anomaly-died-partial). The pod was
+  # garbage-collected before it could be inspected, so the cause was never
+  # determined -- which is exactly why it must not also be a run whose failure
+  # costs everything. Arms are independent up to one final normalisation, so
+  # each is now its own job:
+  #   - a death costs ONE arm, not the wave;
+  #   - the four arms run in PARALLEL, so wall clock is one arm (~25 h), not four;
+  #   - l162-s1b ALREADY COMPLETED on 2026-09-09 and is NOT re-run. Its result
+  #     at /data/results/eval/anomaly is merged in as-is, saving ~25 h.
+  #
+  # THIS JOB'S OWN regret COLUMN IS DEGENERATE AND MUST NOT BE READ. The regret
+  # the ablation is about is sigma_min / min over ARMS at fixed
+  # (signal, N_sig, family). An arm alone takes that minimum over itself and
+  # writes 1.000 everywhere -- "no regret from coarsening the vocabulary", the
+  # null under test, manufactured by the aggregation. That is the defect
+  # audit-2-anomaly found when the normalisation sat inside the arm loop, and
+  # splitting arms across jobs reintroduces it unless something recomputes.
+  # job-eval-anomaly-merge-raunav does, by calling anomaly.cross_arm_regret --
+  # the same function the single-process path calls, not a second copy.
+  # Read ONLY the merged artifact.
+  #
+  # PIN mtx-s1.36, the tag that first contains anomaly_merge.py and the
+  # cross_arm_regret / null_guard split.
+  #
+  # CPU-ONLY, ZERO GPU. us-west required: this streams cached features off a
+  # PVC at SDSC, and the 2026-09-11 idle-GPU warnings were all us-east pods
+  # starved by that distance.
+  name: eval-anomaly-r16q1-s2-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 108000
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: anomaly
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.36" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          a=mtx-r16q1-s2; r=R16_Q1; k=17
+          d=/data/results/eval/${a}/features_e79
+          [ -f "${d}/features.npy" ]   || { echo "FATAL: no ${d}/features.npy"; exit 1; }
+          [ -f "${d}/observers.npz" ]  || { echo "FATAL: no ${d}/observers.npz"; exit 1; }
+          # class_sum is the vocabulary-DEFINED score and needs the head's own
+          # node outputs. No extraction passes --save-logits, so build them from
+          # the cache: features.npy IS fc's input under extract_features' forward
+          # pre-hook, so fc(features) is the logits exactly -- one matmul per jet
+          # on CPU, and it cannot disagree with the features because it is
+          # applied to them.
+          if [ ! -f "${d}/logits.npy" ]; then
+            echo "building logits for ${a} (K=${k})"
+            python3 experiments/EVAL/logits_from_features.py \
+              --features ${d} --num-classes ${k} \
+              --checkpoint /data/results/mtx/${a}/net_epoch-79_state.pt
+          fi
+          [ -f "${d}/logits.npy" ] || { echo "FATAL: ${a} still has no logits.npy"; exit 1; }
+
+          OUT=/data/results/eval/anomaly_r16q1-s2
+          mkdir -p ${OUT}
+          python3 experiments/EVAL/anomaly.py \
+            --features r16q1-s2=${d} \
+            --rungs r16q1-s2=${r} \
+            --out ${OUT} \
+            --n-bkg 200000 --n-template 200000 --trainings 10
+
+          echo "=== done: ${OUT}/anomaly_results.json ==="
+          echo "regret in THIS file is degenerate (one arm); read the merged artifact"
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
