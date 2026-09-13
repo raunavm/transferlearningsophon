@@ -105,3 +105,69 @@ def test_the_merged_artifact_carries_the_null_guard(tmp_path):
     res = json.loads((out / "anomaly_results.json").read_text())
     assert len(res["null_not_flat"]) == 2      # ARGOS 0.9 on pure background
     assert "null_unmeasured" in res
+
+
+# --------------------------------------------------------------------------
+# Ragged grids. anomaly.py writes a complete-LOOKING results file after every
+# signal, so an existence check cannot tell a finished arm from a partial one,
+# and any arm killed by its deadline merges in silently. The l162-s1b payload
+# the committed merge job reads holds 5 of 6 signals for exactly this reason.
+
+def _ragged_payload(arms, signals, sigma=1.0):
+    def cell():
+        return {"250": {"knn": {"sigma_min": sigma, "max_sic": 2.0}}}
+    return {
+        "row_alignment_sha256": "deadbeef", "sigma_t": 2.0, "stat_cut": 0.5,
+        "min_bkg_pass": 10, "trainings": 10, "n_bkg": 200000,
+        "n_template": 200000,
+        "arms": {a: {"signals": {s: cell() for s in signals}} for a in arms},
+    }
+
+
+def _run_merge(tmp_path, payloads):
+    m = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    outs = []
+    for i, p in enumerate(payloads):
+        d = tmp_path / f"in{i}"
+        d.mkdir()
+        (d / "anomaly_results.json").write_text(json.dumps(p))
+        outs.append(str(d))
+    out = tmp_path / "merged"
+    m.main(["--inputs", *outs, "--out", str(out)])
+    return json.loads((out / "anomaly_results.json").read_text())
+
+
+def test_a_ragged_grid_is_reported_not_silently_merged(tmp_path, capsys):
+    merged = _run_merge(tmp_path, [
+        _ragged_payload(["l162-s1b"], ["bb", "qq", "qqqq"], sigma=1.0),
+        _ragged_payload(["r16q1-s2"], ["bb", "qq"], sigma=2.0),
+    ])
+    c = merged["completeness"]
+    assert c["arms_missing_signals"] == {"r16q1-s2": ["qqqq"]}
+    assert ["qqqq", "250"] in c["cells_normalised_against_one_arm"]
+    assert "RAGGED" in capsys.readouterr().out
+
+
+def test_a_single_arm_cell_is_flagged_even_though_its_regret_is_finite(tmp_path):
+    merged = _run_merge(tmp_path, [
+        _ragged_payload(["l162-s1b"], ["bb", "qqqq"], sigma=1.0),
+        _ragged_payload(["r16q1-s2"], ["bb"], sigma=4.0),
+    ])
+    lone = merged["arms"]["l162-s1b"]["signals"]["qqqq"]["250"]["knn"]
+    assert lone["regret"] == 1.0 and lone["regret_n_arms"] == 1, (
+        "a cell only one arm reached normalises against itself")
+    shared = merged["arms"]["r16q1-s2"]["signals"]["bb"]["250"]["knn"]
+    assert shared["regret_n_arms"] == 2 and shared["regret"] == 4.0
+    assert ["qqqq", "250"] in merged["completeness"]["cells_normalised_against_one_arm"]
+    assert ["bb", "250"] not in merged["completeness"]["cells_normalised_against_one_arm"]
+
+
+def test_a_complete_grid_reports_no_raggedness(tmp_path):
+    merged = _run_merge(tmp_path, [
+        _ragged_payload(["l162-s1b"], ["bb", "qq"], sigma=1.0),
+        _ragged_payload(["r16q1-s2"], ["bb", "qq"], sigma=2.0),
+    ])
+    c = merged["completeness"]
+    assert c["arms_missing_signals"] == {}
+    assert c["cells_normalised_against_one_arm"] == []
+    assert c["signals_seen"] == ["bb", "qq"]

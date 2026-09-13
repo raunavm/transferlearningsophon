@@ -118,6 +118,54 @@ def main(argv=None) -> int:
     an.cross_arm_regret(merged)
     bad, unmeasured = an.null_guard(merged)
 
+    # RAGGED GRIDS ARE THE EXPECTED CASE HERE, AND THEY ARE NOT UNIFORMLY FATAL.
+    #
+    # cross_arm_regret takes its minimum over the arms PRESENT in each
+    # (signal, N_sig, family) cell, and stamps regret_n_arms. A cell only one arm
+    # reached therefore normalises against itself and reports regret 1.000 -- the
+    # audit-2-anomaly defect, reappearing per-cell instead of per-arm. The
+    # stamp already existed; nothing read it, so the degenerate cells were
+    # indistinguishable from measured ones in the artifact.
+    #
+    # This is not hypothetical. The l162-s1b payload this merge is wired to read
+    # holds FIVE of six signals -- label_X_YY_qqqq is absent, because that job
+    # died at ~25 h (ledger: eval-anomaly-died-partial) -- and anomaly.py writes
+    # a complete-looking anomaly_results.json after EVERY signal, so an existence
+    # check cannot tell a finished arm from a partial one. Any arm killed by its
+    # deadline lands here the same way.
+    #
+    # Reported, not refused: a partial merge is a legitimate intermediate and
+    # refusing it would throw away the only copy of expensive work.
+    per_arm_signals = {arm: set(ad["signals"]) for arm, ad in merged["arms"].items()}
+    universe = sorted(set().union(*per_arm_signals.values())) if per_arm_signals else []
+    incomplete = {a: sorted(set(universe) - s) for a, s in per_arm_signals.items()
+                  if set(universe) - s}
+    counts = {}
+    for ad in merged["arms"].values():
+        for sig, per_n in ad["signals"].items():
+            for n_sig, agg in per_n.items():
+                for v in (agg or {}).values():
+                    if isinstance(v, dict) and "regret_n_arms" in v:
+                        counts[(sig, n_sig)] = max(counts.get((sig, n_sig), 0),
+                                                   v["regret_n_arms"])
+    degenerate = sorted(k for k, n in counts.items() if n < 2)
+    merged["completeness"] = {
+        "signals_seen": universe,
+        "arms_missing_signals": incomplete,
+        "cells_normalised_against_one_arm": [list(k) for k in degenerate],
+    }
+    if incomplete:
+        print("WARNING: the grid is RAGGED. Arms missing signals:")
+        for arm, miss in sorted(incomplete.items()):
+            print(f"  {arm}: missing {', '.join(miss)}")
+    if degenerate:
+        print(f"WARNING: {len(degenerate)} (signal, N_sig) cells were reached by "
+              f"only ONE arm. Their regret is 1.000 by construction, not by "
+              f"measurement, and must not be read as 'no cost to coarsening'. "
+              f"Filter on regret_n_arms >= 2 before publishing.")
+        for sig, n_sig in degenerate[:10]:
+            print(f"  {sig} N_sig={n_sig}")
+
     a.out.mkdir(parents=True, exist_ok=True)
     (a.out / "anomaly_results.json").write_text(json.dumps(merged, indent=2))
     print(f"wrote {a.out / 'anomaly_results.json'}")
