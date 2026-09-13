@@ -226,6 +226,13 @@ def interleaved_files() -> str:
 #
 # --max-jets 400,000 is HEADROOM, NOT A TARGET: ~171,000 survivors are expected
 # from 27.4 M streamed, so the cap cannot bind, but it still bounds a runaway.
+# A SEPARATE PIN, deliberately. PIN is module-level and every extraction spec
+# clones it, so moving PIN to pick up the new config would REWRITE the pins on
+# specs whose jobs already ran -- the ledger row audit-2-anchors records what
+# that costs: a spec still cloning a tag three commits before its own fix, and
+# nothing saying so. Window specs are new files, so they can take a new tag
+# without touching anybody else's provenance.
+WINDOW_PIN = "mtx-s1.39"
 WINDOW_CONFIG = "configs/data/JetClassII_vcbwindow.yaml"
 WINDOW_OUT = "features_vcbwindow_e79"
 WINDOW_MAX_JETS = 400_000
@@ -240,7 +247,8 @@ def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
     if window:
         name += "-vcbwindow"
     text = TEMPLATE.format(
-        run_id=run_id, arm=arm, k=k, ckpt_dir=ckpt_dir, image=IMAGE, pin=PIN,
+        run_id=run_id, arm=arm, k=k, ckpt_dir=ckpt_dir, image=IMAGE,
+        pin=(WINDOW_PIN if window else PIN),
         ckpt_file=(f"net_epoch-{ckpt_epoch}_state.pt" if ckpt_epoch is not None
                    else "net_best_epoch_state.pt"),
         name=name + ("-gpu" if gpu else ""),
@@ -320,13 +328,15 @@ def main() -> int:
               "experiments/MTX/ParT_sophon_arch_mtx.py",
               "experiments/E1/ParT_sophon_arch_10c.py"]
     for path in needed:
-        r = subprocess.run(["git", "cat-file", "-e", f"{PIN}:{path}"],
+        pin = WINDOW_PIN if args.window else PIN
+        r = subprocess.run(["git", "cat-file", "-e", f"{pin}:{path}"],
                            cwd=ROOT, capture_output=True)
         if r.returncode != 0:
-            sys.exit(f"FATAL: tag {PIN} does not contain {path}. The pod clones "
+            sys.exit(f"FATAL: tag {pin} does not contain {path}. The pod clones "
                      f"the TAG, so this job would fail after cloning. Tag a "
                      f"commit that has it, or fix PIN.")
-    print(f"pin {PIN} verified to contain all {len(needed)} files the job runs")
+    print(f"pin {WINDOW_PIN if args.window else PIN} verified to contain "
+          f"all {len(needed)} files the job runs")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for run_id, arm, k, ckpt in runs:
