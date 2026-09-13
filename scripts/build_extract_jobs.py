@@ -138,7 +138,7 @@ spec:
             --checkpoint "${{CKPT}}" \\
             --num-classes {k} \\
             --arm {arm} \\
-            --data-config configs/data/JetClassII_base.yaml \\
+            --data-config {data_config} \\
             --data-test {file_list} \\
             --out ${{OUT}} \\
             --batch-size 512 --num-workers 1 --fetch-step 1{max_jets}
@@ -209,9 +209,36 @@ def interleaved_files() -> str:
     return " ".join(out)
 
 
+# THE |V_cb| WINDOW MODE (DECISIONS_PENDING item 26, option A; PI approved
+# 2026-09-12 "do the most rigorous").
+#
+# bc_vs_rest SKIPPED on probe-physics-v2 with 270 signal jets in the test split
+# against MIN_PER_CLASS = 1,000, because only 0.62 % of jets survive the
+# published window. Extracting MORE jets unwindowed pays the model for 161 jets
+# per 1 kept; putting the window in `selection:` makes weaver apply it at load,
+# so the model runs on survivors only and the job turns I/O-bound.
+#
+# The SAME 335-file interleaved list is reused deliberately -- it already spans
+# the whole test split (DECISIONS_PENDING records that the first QCD jet sits
+# ~2.2e7 rows in), so `--max-jets` was the only thing capping the old
+# extractions at 2 M. Reusing it also keeps row alignment with the existing
+# caches derivable from one file list rather than two.
+#
+# --max-jets 400,000 is HEADROOM, NOT A TARGET: ~171,000 survivors are expected
+# from 27.4 M streamed, so the cap cannot bind, but it still bounds a runaway.
+WINDOW_CONFIG = "configs/data/JetClassII_vcbwindow.yaml"
+WINDOW_OUT = "features_vcbwindow_e79"
+WINDOW_MAX_JETS = 400_000
+# Only the arms the physics-probe table is built on (probe-physics-v4).
+WINDOW_RUNS = {"mtx-l162-s1b", "mtx-r16q1-s2", "mtx-r16q1-s3",
+               "mtx-r16q1-s4", "mtx-r16q1-s5"}
+
+
 def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
-          ckpt_epoch: int | None = 79) -> tuple[str, str]:
+          ckpt_epoch: int | None = 79, window: bool = False) -> tuple[str, str]:
     name = run_id.replace("_", "-").lower()
+    if window:
+        name += "-vcbwindow"
     text = TEMPLATE.format(
         run_id=run_id, arm=arm, k=k, ckpt_dir=ckpt_dir, image=IMAGE, pin=PIN,
         ckpt_file=(f"net_epoch-{ckpt_epoch}_state.pt" if ckpt_epoch is not None
@@ -222,8 +249,11 @@ def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
                      "GPU buys speed and\n  # not correctness -- and the GPU "
                      "queue has not scheduled anything in 3.5 days\n  # while "
                      "CPU is uncontended."),
-        out_name=(f"features_e{ckpt_epoch}" if ckpt_epoch is not None
-                  else "features_v2"),
+        data_config=(WINDOW_CONFIG if window
+                     else "configs/data/JetClassII_base.yaml"),
+        out_name=(WINDOW_OUT if window else
+                  (f"features_e{ckpt_epoch}" if ckpt_epoch is not None
+                   else "features_v2")),
         max_jets=(f" \\\n            --max-jets {max_jets}" if max_jets else ""),
         file_list=interleaved_files(),
         # 48Gi, not 32Gi. The loader dominates, not the model: 32Gi
@@ -256,9 +286,22 @@ def main() -> int:
     # breach the cap or leave un-launched YAML lying around that looks launched.
     ap.add_argument("--only", nargs="*", default=None, metavar="RUN_ID",
                     help="restrict to these run_ids (default: all of RUNS)")
+    # The |V_cb| windowed extraction. Forces its own data config, its own output
+    # directory and its own arm set, so it cannot overwrite an existing cache:
+    # extract_features.py np.save()s unconditionally, and reusing a path is how
+    # a published result would be silently replaced by a different sample.
+    ap.add_argument("--window", action="store_true",
+                    help="extract inside the arXiv:2503.00118 |V_cb| window "
+                         "(DECISIONS_PENDING item 26 option A)")
     args = ap.parse_args()
 
     runs = RUNS
+    if args.window:
+        runs = [r for r in RUNS if r[0] in WINDOW_RUNS]
+        if args.max_jets == 2_000_000:
+            args.max_jets = WINDOW_MAX_JETS
+        print(f"window mode: {len(runs)} arms, config {WINDOW_CONFIG}, "
+              f"out {WINDOW_OUT}, max-jets {args.max_jets}")
     if args.only:
         known = {r[0] for r in RUNS}
         unknown = set(args.only) - known
@@ -273,7 +316,7 @@ def main() -> int:
     # Verified at BUILD time now, where it costs nothing.
     import subprocess
     needed = ["experiments/EVAL/extract_features.py",
-              "configs/data/JetClassII_base.yaml",
+              WINDOW_CONFIG if args.window else "configs/data/JetClassII_base.yaml",
               "experiments/MTX/ParT_sophon_arch_mtx.py",
               "experiments/E1/ParT_sophon_arch_10c.py"]
     for path in needed:
@@ -289,11 +332,11 @@ def main() -> int:
     for run_id, arm, k, ckpt in runs:
         epoch = None if run_id in BEST_EPOCH_RUNS else args.ckpt_epoch
         fname, text = build(run_id, arm, k, ckpt, args.gpu, args.max_jets,
-                            epoch)
+                            epoch, window=args.window)
         d = yaml.safe_load(text)
         body = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
         for must in (f"--num-classes {k}", f"--arm {arm}",
-                     "configs/data/JetClassII_base.yaml",
+                     WINDOW_CONFIG if args.window else "configs/data/JetClassII_base.yaml",
                      *( (f"--max-jets {args.max_jets}",) if args.max_jets else () ),
                      f"net_epoch-{epoch}_state.pt"
                      if epoch is not None else "net_best_epoch_state.pt"):
