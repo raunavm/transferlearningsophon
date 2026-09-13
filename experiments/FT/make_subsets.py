@@ -127,8 +127,35 @@ def nested_prefixes(table: pa.Table, sizes: list[int],
     return {n: shuffled.slice(0, n) for n in sizes}
 
 
+def write_subset(out: pathlib.Path, n: int, seed: int, writer,
+                 *, skip_existing: bool) -> bool:
+    """Write train_N{n}_s{seed}.parquet unless it is already on disk.
+
+    GROWING THE GRID MUST NOT REWRITE WHAT IS ALREADY THERE. rng_for is keyed on
+    (seed, purpose) alone, and no builder consumes the generator as a function
+    of `sizes`: jc2 draws files, takes its per-file fraction and then calls
+    rng.permutation once; jc1 picks per-class jets with `per` fixed by
+    max(sizes); bench shuffles the pool once. So adding a size BELOW the existing
+    maximum reproduces the identical shuffle and the new subset is a true nested
+    prefix of the ones already written.
+
+    That makes rewriting them harmless in content -- and still wrong. Those files
+    are what a completed run was trained on, docs/RECORD.md treats the training
+    inputs as part of the provenance record, and CLAUDE.md puts overwriting data
+    behind PI sign-off. Skipping is the behaviour that lets the grid grow without
+    touching a byte of it.
+    """
+    dest = out / f"train_N{n}_s{seed}.parquet"
+    if skip_existing and dest.exists():
+        print(f"  seed {seed}: N={n:,} kept (already on disk)", flush=True)
+        return False
+    writer(dest)
+    return True
+
+
 def build_jc2(train_files, val_files, out: pathlib.Path, sizes, seeds,
-              n_files: int, take: float, val_size: int, n_val_files: int) -> dict:
+              n_files: int, take: float, val_size: int, n_val_files: int,
+              skip_existing: bool = False) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     manifest = {"mode": "jc2", "sizes": sizes, "seeds": seeds, "n_files": n_files,
                 "take_fraction": take, "selection": [PT_LO, PT_HI, MSD_LO, MSD_HI],
@@ -146,7 +173,8 @@ def build_jc2(train_files, val_files, out: pathlib.Path, sizes, seeds,
         pool = pa.concat_tables(parts)
         subs = nested_prefixes(pool, sizes, rng)
         for n, t in subs.items():
-            pq.write_table(t, out / f"train_N{n}_s{seed}.parquet")
+            write_subset(out, n, seed, lambda d, t=t: pq.write_table(t, d),
+                         skip_existing=skip_existing)
         manifest["per_seed"][str(seed)] = {"files": files, "n_files_used": len(files),
                                            "pool_rows": pool.num_rows,
                                            "pool_rows_per_family": per_family}
@@ -173,7 +201,8 @@ def read_root(path: str):
 
 
 def build_jc1(train_dir: str, val_dir: str, out: pathlib.Path, sizes, seeds,
-              files_per_class: int, val_per_class: int, classes=JC1_CLASSES) -> dict:
+              files_per_class: int, val_per_class: int, classes=JC1_CLASSES,
+              skip_existing: bool = False) -> dict:
     import awkward as ak
     out.mkdir(parents=True, exist_ok=True)
     if max(sizes) % len(classes):
@@ -205,7 +234,9 @@ def build_jc1(train_dir: str, val_dir: str, out: pathlib.Path, sizes, seeds,
         pool = ak.concatenate(parts)
         pool = pool[rng.permutation(len(pool))]
         for n in sizes:
-            ak.to_parquet(pool[:n], out / f"train_N{n}_s{seed}.parquet")
+            write_subset(out, n, seed,
+                         lambda d, s=pool[:n]: ak.to_parquet(s, d),
+                         skip_existing=skip_existing)
         manifest["per_seed"][str(seed)] = {"files": used, "pool_rows": len(pool)}
 
     rng = rng_for(VAL_SEED, "val")
@@ -238,7 +269,8 @@ def bench_test_files(dataset: str, src: str) -> list[str]:
 
 
 def build_bench(dataset: str, src: str, out: pathlib.Path, sizes: list[int],
-                seeds: list[int], val_size: int) -> dict:
+                seeds: list[int], val_size: int,
+                skip_existing: bool = False) -> dict:
     """Nested subsets for a published benchmark (legs 3 and 4).
 
     THE SHUFFLE IS LOAD-BEARING, not hygiene. The top reference dataset stores
@@ -272,7 +304,8 @@ def build_bench(dataset: str, src: str, out: pathlib.Path, sizes: list[int],
             sys.exit(f"FATAL: {dataset} seed {seed}: pool {pool.num_rows:,} < N_max {need:,}")
         fracs = {}
         for n, tbl in nested_prefixes(pool, sizes, rng).items():
-            pq.write_table(tbl, out / f"train_N{n}_s{seed}.parquet")
+            write_subset(out, n, seed, lambda d, b=tbl: pq.write_table(b, d),
+                         skip_existing=skip_existing)
             f = float(pc.mean(tbl.column("label")).as_py())
             # Scale with N. A flat 0.05 is 3.16 sigma at N=1000, so a perfectly
             # shuffled 50 % pool trips it on ~0.5 % of seeds (measured: 2 of 400,
@@ -342,6 +375,7 @@ def main(argv=None) -> int:
 
     sizes = sorted(args.sizes)
     out = pathlib.Path(args.out)
+    grow = None
     if (out / "DONE").exists():
         # A bare DONE check makes a re-stage or a grid change a SILENT no-op:
         # the request that produced the existing subsets is never compared
@@ -378,6 +412,28 @@ def main(argv=None) -> int:
         got = {k: (sorted(prev[k]) if k == "seeds" else prev[k])
                for k in want if k in prev}
         diff = {k: (got[k], want[k]) for k in got if got[k] != want[k]}
+        # GROWING THE GRID DOWNWARD IS NOT A MISMATCH, AND REFUSING IT IS WORSE
+        # THAN USELESS. DECISIONS_PENDING item 25 added N=1e3 to the leg grid;
+        # the two subset builders were left calling --sizes 10000 100000
+        # 1000000, so the N=1e3 subsets are simply ABSENT and the legs die
+        # looking for train_N1000_s1.parquet. The advice this branch would
+        # otherwise give -- "delete and rebuild" -- throws away the subsets wave
+        # 1 was trained on in order to add one prefix to them.
+        #
+        # Safe ONLY when the maximum is unchanged. jc1 fixes its per-class draw
+        # at `per = max(sizes) // len(classes)` and jc2/bench size their pool
+        # check against max(sizes), so RAISING the top changes the pool itself
+        # and the subsets already on disk stop being prefixes of it. Lowering the
+        # floor consumes not one extra RNG draw, so every existing subset stays
+        # a valid nested prefix -- see write_subset().
+        if set(diff) == {"sizes"}:
+            was, now = got["sizes"], want["sizes"]
+            if set(was) < set(now) and max(was) == max(now):
+                grow = sorted(set(now) - set(was))
+                print(f"{out}: size grid grew by {grow}, maximum unchanged at "
+                      f"{max(now):,}. Writing only the new sizes; every subset "
+                      f"already on disk is kept untouched.")
+                diff = {}
         if diff:
             raise SystemExit(
                 f"FATAL: {out} was built with different parameters; refusing to "
@@ -387,16 +443,20 @@ def main(argv=None) -> int:
             print(f"WARNING: {out}/manifest.json predates {unchecked}; that "
                   f"provenance could not be checked. If the source data has "
                   f"been re-staged, delete {out} rather than trusting this.")
-        print(f"{out}/DONE exists and matches the request; nothing to do")
-        return 0
+        if not grow:
+            print(f"{out}/DONE exists and matches the request; nothing to do")
+            return 0
     if args.mode == "jc2":
         m = build_jc2(args.train_files, args.val_files, out, sizes, args.seeds,
-                      args.n_files, args.take_fraction, args.val_size, args.n_val_files)
+                      args.n_files, args.take_fraction, args.val_size,
+                      args.n_val_files, skip_existing=bool(grow))
     elif args.mode == "jc1":
         m = build_jc1(args.train_dir, args.val_dir, out, sizes, args.seeds,
-                      args.files_per_class, args.val_per_class)
+                      args.files_per_class, args.val_per_class,
+                      skip_existing=bool(grow))
     else:
-        m = build_bench(args.dataset, args.src, out, sizes, args.seeds, args.val_size)
+        m = build_bench(args.dataset, args.src, out, sizes, args.seeds,
+                        args.val_size, skip_existing=bool(grow))
     finish(out, m)
     return 0
 

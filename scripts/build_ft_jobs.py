@@ -174,7 +174,14 @@ FETCH_SOPHON = """          # The released checkpoint is gitignored, so it is ne
 
 SUBSETS_JC2 = PREAMBLE + """
           OUT=/data/finetune/jc2
-          [ -f ${OUT}/DONE ] && { echo "already built:"; head -40 ${OUT}/manifest.json; exit 0; }
+          # NO BARE DONE SHORT-CIRCUIT. make_subsets.py compares the stored
+          # manifest against the request being made -- sizes, seeds, n_files,
+          # take_fraction -- and either refuses loudly or grows the grid. A
+          # `[ -f DONE ] && exit 0` in front of that MASKS all of it: when item
+          # 25 added N=1e3 to SIZES this job re-ran, printed "already built" and
+          # exited 0 while the N=1e3 subsets were never written, which the legs
+          # only discover days later as a missing parquet.
+          [ -f ${OUT}/manifest.json ] && head -40 ${OUT}/manifest.json
 """ + SPLIT_GUARD + SPACE_GUARD + """
           # 61 train files per seed (9 Res2P / 39 Res34P / 13 QCD): choose_files
           # rounds each family separately, so --n-files 60 reads 61 (and 12 val
@@ -183,7 +190,7 @@ SUBSETS_JC2 = PREAMBLE + """
           # the nested 1e4 / 1e5 / 1e6 subsets are prefixes of one shuffle.
           python3 experiments/FT/make_subsets.py jc2 \\
             --train-files "${TRAIN_FILES[@]}" --val-files "${VAL_FILES[@]}" \\
-            --out ${OUT} --sizes 10000 100000 1000000 --seeds 1 2 3 \\
+            --out ${OUT} --sizes __SIZES__ --seeds 1 2 3 \\
             --n-files 60 --take-fraction 0.30 --val-size 200000 --n-val-files 12
           ls -la ${OUT}; du -sh ${OUT}
 """
@@ -384,7 +391,14 @@ LEGS_BENCH = PREAMBLE + """
 
 SUBSETS_JC1 = PREAMBLE + """
           OUT=/data/finetune/jc1
-          [ -f ${OUT}/DONE ] && { echo "already built:"; head -40 ${OUT}/manifest.json; exit 0; }
+          # NO BARE DONE SHORT-CIRCUIT. make_subsets.py compares the stored
+          # manifest against the request being made -- sizes, seeds, n_files,
+          # take_fraction -- and either refuses loudly or grows the grid. A
+          # `[ -f DONE ] && exit 0` in front of that MASKS all of it: when item
+          # 25 added N=1e3 to SIZES this job re-ran, printed "already built" and
+          # exited 0 while the N=1e3 subsets were never written, which the legs
+          # only discover days later as a missing parquet.
+          [ -f ${OUT}/manifest.json ] && head -40 ${OUT}/manifest.json
           for C in __JC1_CLASSES__; do
             n=$(find /data/JetClass/Pythia/train_100M -maxdepth 1 -name "${C}_*.root" 2>/dev/null | wc -l || true)
             v=$(find /data/JetClass/Pythia/val_5M -maxdepth 1 -name "${C}_*.root" 2>/dev/null | wc -l || true)
@@ -396,7 +410,7 @@ SUBSETS_JC1 = PREAMBLE + """
           # per seed; val: 2e4 per class from one val_5M file per class.
           python3 experiments/FT/make_subsets.py jc1 \\
             --train-dir /data/JetClass/Pythia/train_100M --val-dir /data/JetClass/Pythia/val_5M \\
-            --out ${OUT} --sizes 10000 100000 1000000 --seeds 1 2 3 \\
+            --out ${OUT} --sizes __SIZES__ --seeds 1 2 3 \\
             --files-per-class 2 --val-per-class 20000
           ls -la ${OUT}; du -sh ${OUT}
 """
