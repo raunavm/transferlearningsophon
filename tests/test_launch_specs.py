@@ -177,3 +177,37 @@ def test_a_rate_split_across_arms_is_declared_not_accidental(specs):
         "arms are trained at DIFFERENT rates and at least one is undeclared, so "
         "the headline contrast varies vocabulary AND learning rate with nothing "
         "recording it:\n  " + "\n  ".join(f"{a}: {r}" for a, r in undeclared.items()))
+
+
+# --------------------------------------------------------------------------
+# Header/executed drift. start_lr() above strips comments ON PURPOSE, because
+# these specs quote historical rates at length -- but that is exactly why the
+# five L162 specs carried "LEARNING RATE 1e-3" against an executed 5e-4 for
+# sixteen days without CI noticing. The stripped view is right for deciding
+# what a run DOES; this test covers what a reader is TOLD.
+
+HEADER_LR_RE = re.compile(r"^\s*#\s*LEARNING RATE (\S+)", re.M)
+
+
+def test_the_declared_rate_in_the_header_matches_the_executed_rate():
+    """A spec is the provenance record for the run that clones it. A header
+    naming a different rate than the command line is a false record even when
+    the run itself is correct -- and here it read as evidence that the headline
+    pair still varied vocabulary AND learning rate, which is the I1 violation
+    mtx-l162-s1b exists to repair."""
+    checked = 0
+    for path in sorted((ROOT / "experiments" / "MTX" / "k8s").glob("job-mtx-*-raunav.yaml")):
+        declared = HEADER_LR_RE.findall(path.read_text())
+        if not declared:
+            continue
+        assert len(set(declared)) == 1, (
+            f"{path.name} declares more than one LEARNING RATE in its header: "
+            f"{declared}")
+        assert declared[0] == start_lr(path), (
+            f"{path.name}: header says LEARNING RATE {declared[0]} but the "
+            f"command line executes --start-lr {start_lr(path)}")
+        checked += 1
+    assert checked >= 20, (
+        f"only {checked} specs carried a LEARNING RATE header; this test is "
+        f"near-vacuous below that and the header block has probably been "
+        f"renamed")

@@ -96,20 +96,50 @@ TASKS = {
                 "names": ["label_QCD_bb", "label_QCD_cc"]},
 }
 
-# --- the two PUBLISHED physics discriminants (docs/PRD_PLAN.md 3.1b, 8.2) ----
-# These are not more probes of the same kind. The three above ask whether an
-# axis survived; these ask whether an arm can still build a discriminant a
-# PUBLISHED analysis depends on. That is the "use case survival" argument: a
-# coarse vocabulary does not merely score worse, it cannot construct the
-# quantity at all, because the nodes it would sum over no longer exist.
+# --- the ONE published physics discriminant, plus one vocabulary-retention ---
+#     probe that used to be sold as a second one (docs/PRD_PLAN.md 3.1b, 8.2)
+#
+# bc_vs_rest is not another probe of the same kind as the three above. The three
+# above ask whether an axis survived; bc_vs_rest asks whether an arm can still
+# build a discriminant a PUBLISHED analysis depends on. That is the "use case
+# survival" argument: a coarse vocabulary does not merely score worse, it cannot
+# construct the quantity at all, because the nodes it would sum over no longer
+# exist.
 #
 #   bc_vs_rest  arXiv:2503.00118 Eq. 1, the |V_cb| discriminant
 #               D_bc = g_bc / (g_bc + g_bq + g_cs + g_bqq + g_QCD)
 #               measured in that paper's window, 450 < pT < 600 and
 #               90 < m_SD < 140, and reported at eps_S = 60 % / 40 %.
 #               "bqq" is label_X_YY_qqb (native 70) -- the 3-prong q,q,b class.
-#   ee_vs_mm    the lepton-flavour split 2606.09458's background suppression
-#               uses.
+#
+#   ee_vs_mm    A VOCABULARY-RETENTION PROBE ONLY. It carries NO use-case-
+#               survival claim. DECISIONS_PENDING item 27, resolved 2026-09-12
+#               option (a).
+#
+#               THIS PROBE WAS PREVIOUSLY ATTRIBUTED TO arXiv:2606.09458 AND THE
+#               ATTRIBUTION WAS FALSE. That paper's only discriminant is
+#               D_pi-gamma (its Eq. 1), whose denominator carries a first-
+#               priority background SUM over the categories its Table 2 lists.
+#               X->ee and X->mm both appear there with coefficient 1 -- an
+#               UNWEIGHTED sum. A coefficient vector that is constant on a group
+#               is group-constant, so by Sophon Property 1 (arXiv:2405.12972
+#               Eq. 2) g_2P_LEP_LL = g_ee + g_mm EXACTLY, and the denominator
+#               term is reconstructible at every rung down to R16_Q1. The merge
+#               destroys nothing D_pi-gamma needs. Table 2 is a LIST of
+#               background categories, not a discriminant, and 2606.09458 builds
+#               on a fine-tuned 206-node head rather than the frozen pretrained
+#               vocabulary, so the survival framing never applied to it at all.
+#
+#               An audit enumerated all 34 InspireHEP citations of Sophon
+#               (recid 2788738): the only node-ratio builders are 2503.00118
+#               (D_bc), 2606.09458 (D_pi-gamma), 2508.15048 and 2505.07769, and
+#               none uses an ee-vs-mm split. Targeted searches for a boosted-jet
+#               ee/mm discriminant return nothing. Cite 2606.09458 only as
+#               evidence that BOTH lepton nodes are analysis-relevant.
+#
+#               The measurement is untouched and stands as what it is: a very
+#               large retention effect. It has no `window` key because no
+#               published window exists for it -- do not invent one.
 #
 # COLLAPSE RUNGS ARE DERIVED FROM configs/labelmaps/rung_label_maps.v1.csv, not
 # asserted. Doing so corrected docs/PRD_PLAN.md 3.1(b), which says the ee/mumu
@@ -185,6 +215,70 @@ PHYSICS_TASKS = {
                  "names": ["label_X_ee", "label_X_mm"]},
 }
 TASKS.update(PHYSICS_TASKS)
+
+# --- the D8 axes: the ONLY tasks on which the random control can differ ------
+#
+# WHY THESE EXIST. D8 makes the semantics-matched random control the paper's
+# primary novelty leg: RAND_d1 has the SAME K as R16_Q1 (17) but random group
+# membership, so comparing them separates "WHICH distinctions the vocabulary
+# kept" from "HOW MANY". An audit (2026-09-12) found that every task above is
+# arithmetically incapable of showing that difference, because R16_Q1 and all
+# three RAND draws agree on every pair those tasks use:
+#
+#     bvc_resonant       0 vs 1     R16_Q1 group 0  == RAND_d1 group 0
+#     ee_vs_mm          10 vs 11    R16_Q1 group 3  == RAND_d1 group 3
+#     bvc_qcd          169 vs 181   R16_Q1 group 16 == RAND_d1 group 16
+#     retained_topology  0 vs 15    split by both
+#
+# That is not chance. The control is share-matched, and res2p is share-RIGID --
+# its 4 groups coincide with R16_Q1's in ANY share-matched control whatsoever
+# (DECISIONS_PENDING item 24), and the QCD block is copied by design. Counted
+# over all pairs R16_Q1 merges: RAND_d1 splits 0 of 47 in res2p and 0 of 351 in
+# qcd, but 869 of 1,149 in res34p. ALL the control's power is in res34p and no
+# task looked there, so D8's pre-registered falsification rule -- "if semantic
+# contraction is no better than random at matched K, the claim is about capacity
+# not semantics" -- was forced to fire on an artefact of the control's own
+# construction rather than on evidence.
+#
+# THE DESIGN. Two axes pointing in OPPOSITE directions, sharing a reference
+# class so that class's own learnability is controlled:
+#
+#   bvc_4prong          R16_Q1 MERGES, RAND_d1 SPLITS. The random map kept a
+#                       distinction the semantic map discarded. If WHICH
+#                       distinctions matter, RAND_d1 should BEAT R16_Q1 here.
+#                       Physics: b-vs-c heavy flavour with light spectators --
+#                       the 4-prong analogue of bvc_resonant, and it carries the
+#                       IDENTICAL collapse signature (merged at R29_Q1 and
+#                       below), so it is the same question at the same depth.
+#
+#   visible_content     R16_Q1 SPLITS, RAND_d1 MERGES. The semantic map kept a
+#                       distinction the random map discarded. If WHICH
+#                       distinctions matter, R16_Q1 should BEAT RAND_d1 here.
+#                       Physics: fully hadronic 4-prong against a jet carrying a
+#                       hadronic tau plus a neutrino -- a visible-content split,
+#                       which is exactly what a topology-grouped vocabulary is
+#                       built to preserve.
+#
+# READ THEM TOGETHER. A tie on BOTH is the honest "only K matters" result. A
+# split decision -- each map winning on the axis it preserved -- is the "which
+# distinctions matter" result. One-sided outcomes need explaining and must not
+# be reported from one axis alone.
+#
+# STATISTICS WERE CHECKED BEFORE COMMITTING, not after (item 26 is the standing
+# lesson: bc_vs_rest SKIPPED on 270 test jets against a floor of 1,000). Counts
+# in the 2,000,000-jet cache, test split = 20 %:
+#     18 label_X_YY_bbqq     15,647 -> 3,129 test   3.1x floor
+#     34 label_X_YY_ccqq     16,078 -> 3,215 test   3.2x floor
+#    158 label_X_YY_cqtauhv  12,664 -> 2,532 test   2.5x floor
+# All three clear MIN_PER_CLASS with margin. bbbb-vs-cccc was the first
+# candidate and was REJECTED: at 5,416 and 5,967 it clears the floor by 8 %.
+D8_TASKS = {
+    "bvc_4prong": {"signal": [18], "background": [34],
+                   "names": ["label_X_YY_bbqq", "label_X_YY_ccqq"]},
+    "visible_content": {"signal": [18], "background": [158],
+                        "names": ["label_X_YY_bbqq", "label_X_YY_cqtauhv"]},
+}
+TASKS.update(D8_TASKS)
 
 for _name, _spec in TASKS.items():
     _spec["collapsed_at"] = derive_collapsed_at(_spec["signal"], _spec["background"])

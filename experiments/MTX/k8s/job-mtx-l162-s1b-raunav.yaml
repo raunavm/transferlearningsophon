@@ -1,9 +1,19 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  # LEARNING RATE 1e-3 -- this arm's own optimum, not a shared rate.
-  # G1 returned KILL (the optimum moves with K), so docs/GATES.md's
-  # branch applies and arms are compared at their own optima.
+  # LEARNING RATE 5e-4 -- MEASURED for this arm, and it equals the
+  # --start-lr this spec executes. CORRECTED 2026-09-12: this block said
+  # "LEARNING RATE 1e-3 ... arms are compared at their own optima" while the
+  # spec executed 5e-4. s1b was derived from the s1 spec by six targeted
+  # substitutions (name, RUN_ID, RECIPE, --start-lr, tensorboard, memory),
+  # which moved --start-lr but not this comment, and s2-s5 inherited it. The
+  # phrase "compared at their own optima" appears in docs/GATES.md ZERO times;
+  # it was invented in scripts/build_mtx_launch.py. The RUNS ARE UNAFFECTED --
+  # every one trained at 5e-4, which is what the RECIPE stamp and the ledger
+  # record -- but the header read as evidence that the headline pair still
+  # varied vocabulary AND rate, i.e. the exact I1 violation s1b exists to
+  # repair. tests/test_launch_specs.py strips comments before matching the
+  # rate, so CI could not see it.
   # Evidence: 2.5e-4 0.52183 < 5e-4 0.55232 < 1e-3 0.55548, and 2e-3 diverged to nan at iteration 2. Bracketed below by 5e-4 and above by the divergence. The 1e-3 vs 5e-4 gap is 0.00316 = 0.2x the noise floor, so the two are tied and 1e-3 is the point estimate, not a resolved winner.
   # Applied by scripts/build_mtx_launch.py.
   #

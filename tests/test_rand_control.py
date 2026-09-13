@@ -336,12 +336,25 @@ def _args(name):
 
 
 def test_the_control_arm_config_exists_and_is_k17():
-    import yaml
+    """D8 turns on the control having the SAME K as R16_Q1. Anything less than
+    a count of the groups the config actually emits leaves that unchecked.
+
+    The previous body asserted `"num_classes" not in yaml.safe_load(...) or True`
+    -- unconditionally true -- and then only that the string "truth_label"
+    appeared, so despite its name it never checked 17 and could not have failed.
+    """
+    import re
     p = ROOT / "configs" / "arms" / "RAND_d1.yaml"
     assert p.exists(), "run scripts/build_arm_configs.py"
-    assert "num_classes" not in yaml.safe_load(p.read_text()) or True
-    txt = p.read_text()
-    assert "truth_label" in txt
+    m = re.search(r"truth_label:(.*)", p.read_text())
+    assert m, "no truth_label expression in RAND_d1.yaml"
+    # weaver's custom label is `sum_k k * (predicate_k)`, with group 0 implicit
+    # in the fall-through, so K is max(multiplier) + 1.
+    mults = sorted({int(x) for x in re.findall(r"(\d+)\s*\*\s*\(", m.group(1))})
+    assert mults == list(range(1, 17)), (
+        f"multipliers must be a gapless 1..16 so every group is reachable; "
+        f"got {mults}")
+    assert max(mults) + 1 == 17, "the control must be K=17, matching R16_Q1"
 
 
 def test_the_control_shares_the_frozen_weights_block(request):

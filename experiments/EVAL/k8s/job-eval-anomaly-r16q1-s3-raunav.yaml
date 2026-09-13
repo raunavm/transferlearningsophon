@@ -35,7 +35,18 @@ metadata:
   namespace: cms-ml
 spec:
   backoffLimit: 2
-  activeDeadlineSeconds: 108000
+  # 72 h, RAISED FROM 108000 (30 h) ON 2026-09-12 AFTER MEASURING THE RATE.
+  # 30 h was carried over unchanged when this job was split out of the 4-arm
+  # spec, and one arm does not fit in it. Measured from eval-anomaly-r16q1-s3's
+  # own log timestamps: 88-99 min per (signal, N_sig) cell, mean 91.6, so
+  # ~8.3 h per signal and ~50 h for the six-signal suite. The estimate in
+  # anomaly.py's write-through comment -- "~1,440 cells at ~43 s each",
+  # i.e. 4.3 h/arm -- is low by roughly 12x and is why 30 h looked adequate.
+  # The evidence was already on file: ledger row eval-anomaly-died-partial
+  # records the 4-arm job ending at ~25 h with FIVE of six signals of ONE arm.
+  # NOTE: activeDeadlineSeconds counts from the Job's startTime across all
+  # retries and is TERMINAL -- backoffLimit does not apply to it.
+  activeDeadlineSeconds: 259200
   template:
     spec:
       restartPolicy: Never
@@ -55,8 +66,19 @@ spec:
 
           a=mtx-r16q1-s3; r=R16_Q1; k=17
           d=/data/results/eval/${a}/features_e79
-          [ -f "${d}/features.npy" ]   || { echo "FATAL: no ${d}/features.npy"; exit 1; }
-          [ -f "${d}/observers.npz" ]  || { echo "FATAL: no ${d}/observers.npz"; exit 1; }
+          # PRECONDITIONS MATCH WHAT probe.load_arm ACTUALLY OPENS (probe.py:211-218).
+          # CORRECTED 2026-09-12: this block hard-failed on observers.npz, which
+          # load_arm opens only under an `if (d/"observers.npz").exists()` guard
+          # -- an OPTIONAL file -- while never checking label188.npy or
+          # extract_manifest.json, which it opens UNCONDITIONALLY. That is the
+          # same precondition inversion already fixed in probe-physics-v4 and in
+          # eval-labelrec-v3; this was its third instance. A missing mandatory
+          # file therefore reached python as a bare traceback after the clone and
+          # the logits build, and a cache without observers was refused outright
+          # even though anomaly.py never needs them.
+          for f in features.npy label188.npy extract_manifest.json; do
+            [ -f "${d}/${f}" ] || { echo "FATAL: no ${d}/${f}"; exit 1; }
+          done
           # class_sum is the vocabulary-DEFINED score and needs the head's own
           # node outputs. No extraction passes --save-logits, so build them from
           # the cache: features.npy IS fc's input under extract_features' forward

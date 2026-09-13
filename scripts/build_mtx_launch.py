@@ -232,12 +232,28 @@ def patch(path: pathlib.Path, arm: str, k: int, rate: str) -> str:
             text = text.replace(
                 call, call + "\n            --lean-val-metrics \\")
 
-        # record WHY this rate, in the spec the run clones
+        # record WHY this rate, in the spec the run clones.
+        #
+        # THE PHRASE "compared at their own optima" USED TO APPEAR HERE and has
+        # been removed. It appears in docs/GATES.md ZERO times -- it was invented
+        # in this file and in build_lr_sweep.py and back-attributed to the gate
+        # document, as the RATES comment above records. Emitting it stamped the
+        # invention into every spec a run clones, which is how a phrase with no
+        # source became the documented justification for the headline pair.
+        #
+        # The rate is read from RATES[arm][1] rather than from `rate` so the
+        # stated rate and the executed rate cannot drift: the five L162 specs
+        # carried "LEARNING RATE 1e-3" against an executed 5e-4 for sixteen days
+        # because they were derived by targeted substitution -- which updated
+        # --start-lr but not this block -- rather than regenerated.
+        assert rate == RATES[arm][1], (
+            f"{arm}: emitter rate {rate} disagrees with RATES {RATES[arm][1]}")
         text = text.replace(
             "  # CORE-MATRIX GRANULARITY ARM",
-            f"  # LEARNING RATE {rate} -- this arm's own optimum, not a shared rate.\n"
-            f"  # G1 returned KILL (the optimum moves with K), so docs/GATES.md's\n"
-            f"  # branch applies and arms are compared at their own optima.\n"
+            f"  # LEARNING RATE {RATES[arm][1]} -- MEASURED for this arm, and it\n"
+            f"  # must equal the --start-lr below; tests/test_launch_specs.py\n"
+            f"  # compares them with comments STRIPPED, so only this assertion\n"
+            f"  # and a reader can catch a stale header.\n"
             f"  # Evidence: {RATES[arm][3]}\n"
             f"  # Applied by scripts/build_mtx_launch.py.\n"
             f"  #\n"

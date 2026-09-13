@@ -34,7 +34,18 @@ spec:
   # ~1,440 run_one calls at ~43 s measured = ~17 h. Without a deadline an
   # eviction at hour 30 is indistinguishable from a job still working; the
   # module now writes through after every signal, so a kill loses one signal.
-  activeDeadlineSeconds: 108000
+  # 72 h, RAISED FROM 108000 (30 h) ON 2026-09-12 AFTER MEASURING THE RATE.
+  # 30 h was carried over unchanged when this job was split out of the 4-arm
+  # spec, and one arm does not fit in it. Measured from eval-anomaly-r16q1-s3's
+  # own log timestamps: 88-99 min per (signal, N_sig) cell, mean 91.6, so
+  # ~8.3 h per signal and ~50 h for the six-signal suite. The estimate in
+  # anomaly.py's write-through comment -- "~1,440 cells at ~43 s each",
+  # i.e. 4.3 h/arm -- is low by roughly 12x and is why 30 h looked adequate.
+  # The evidence was already on file: ledger row eval-anomaly-died-partial
+  # records the 4-arm job ending at ~25 h with FIVE of six signals of ONE arm.
+  # NOTE: activeDeadlineSeconds counts from the Job's startTime across all
+  # retries and is TERMINAL -- backoffLimit does not apply to it.
+  activeDeadlineSeconds: 259200
   template:
     spec:
       restartPolicy: Never
@@ -70,7 +81,13 @@ spec:
             a=${spec%%:*}; r=${spec##*:}
             d=/data/results/eval/${a}/features_e79
             [ -f "${d}/features.npy" ] || { echo "FATAL: no ${d}/features.npy"; exit 1; }
-            [ -f "${d}/observers.npz" ] || { echo "FATAL: no ${d}/observers.npz"; exit 1; }
+            # CORRECTED 2026-09-12: observers.npz is OPTIONAL (probe.load_arm
+            # opens it under an .exists() guard, probe.py:217) while label188.npy
+            # and extract_manifest.json are opened unconditionally and were not
+            # checked. Third instance of this inversion; see the per-arm specs.
+            for g in label188.npy extract_manifest.json; do
+              [ -f "${d}/${g}" ] || { echo "FATAL: no ${d}/${g}"; exit 1; }
+            done
             # BUILD the logits rather than skipping class_sum. No extraction in
             # this project passes --save-logits, so the vocabulary-DEFINED score
             # could never be constructed and the artefact simply had no
