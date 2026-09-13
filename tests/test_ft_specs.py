@@ -102,7 +102,8 @@ def test_leg1_readout_uses_the_papers_exact_test_jets():
 
 
 def test_legs_design_matches_item_14():
-    from build_ft_jobs import EPOCHS, FT_SEEDS, INITS, LR_PRETRAINED, LR_SCRATCH, SIZES
+    from build_ft_jobs import (EPOCHS, FT_SEEDS, INITS, LR_PRETRAINED,
+                               LR_SCRATCH, SAMPLES_PER_EPOCH, SIZES)
     raw = (FT / "job-ft-legs-raunav.yaml").read_text()
     _, _, code = _spec(FT / "job-ft-legs-raunav.yaml")
     # The running job predates item 18 and loads the best-epoch checkpoint; the
@@ -118,8 +119,19 @@ def test_legs_design_matches_item_14():
         legacy = entry.replace("net_epoch-79_state.pt", "net_best_epoch_state.pt")
         assert legacy in code, f"neither {entry} nor its best-epoch form is in the spec"
     assert {n for n, _, _ in INITS} == {"r16q1-s2", "r16q1-s3", "r16q1-s4", "l162-s1b", "sophon-public", "scratch"}
-    assert SIZES == [10_000, 100_000, 1_000_000] and FT_SEEDS == [1, 2, 3]
-    assert EPOCHS == {10_000: 50, 100_000: 30, 1_000_000: 10}
+    # N=1e3 added 2026-09-12 by DECISIONS_PENDING item 25 option B, which
+    # docs/PRD_PLAN 4.1 and 6.4 had asked for from the start. The pin stays
+    # EXACT rather than becoming a subset check: this assertion exists to catch
+    # accidental design drift, and a `>=` would stop doing that.
+    assert SIZES == [1_000, 10_000, 100_000, 1_000_000] and FT_SEEDS == [1, 2, 3]
+    assert EPOCHS == {1_000: 50, 10_000: 50, 100_000: 30, 1_000_000: 10}
+    # The controlled variable is the TRAINING SET SIZE. samples-per-epoch is
+    # decoupled from it only at N=1e3, and only so the optimizer-step count
+    # matches the N=1e4 cell -- 50 epochs over 1,000 jets would otherwise give
+    # ~100 steps against ~1,000, and the cell would measure under-training.
+    assert SAMPLES_PER_EPOCH == {1_000: 10_000}, (
+        "any OTHER size decoupled from its subset size breaks the controlled "
+        "variable and must be argued for explicitly")
     # The WHOLE branch, once per leg: pretrained gets the load, the head
     # exclusion and LR_PRETRAINED; scratch gets no load and LR_SCRATCH. Asserting
     # only that both rates appear somewhere lets a swap pass.

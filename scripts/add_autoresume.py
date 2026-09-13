@@ -98,7 +98,7 @@ SNIPPET = """          # AUTO-RESUME + RECIPE GUARD. See scripts/add_autoresume.
           # writes them separately, and resuming from a state file whose
           # optimizer is missing only WARNS and then trains on with a fresh
           # optimizer -- silent corruption of a momentum-based run.
-          RECIPE='{recipe}'
+          RECIPE={q}{recipe}{q}
           RESUME=""
           LAST_EP=-1
           for f in ${{OUT}}/net_epoch-*_state.pt; do
@@ -143,12 +143,22 @@ def patch(path: pathlib.Path) -> str:
     if "AUTO-RESUME" in text:
         return "already patched"
 
-    m_ep = WEAVER_EPOCHS.search(text)
+    # DETECT ON THE LIVE COMMAND LINE, NOT ON COMMENTS. These specs discuss
+    # learning rates at length in their headers -- one explains that
+    # mtx-l162-s1 trains at --start-lr 1e-3 while its siblings do not -- and a
+    # bare scan picks those up, so `set(findall(...))` returned
+    # ['1e-3', '5e-4', 'but', 'this'] on a real spec and the patch refused to
+    # run. Comment-stripping is what tests/test_launch_specs.py already does for
+    # the same reason. Only DETECTION uses the stripped view; every replacement
+    # below still operates on the full text, so comments are preserved.
+    live = re.sub(r"^\s*#.*$", "", text, flags=re.M)
+
+    m_ep = WEAVER_EPOCHS.search(live)
     if not m_ep:
         return "FAILED: no '--num-epochs N --optimizer ranger' in the weaver call"
     epochs = m_ep.group(1)
 
-    lrs = set(WEAVER_LR.findall(text))
+    lrs = set(WEAVER_LR.findall(live))
     if len(lrs) != 1:
         return f"FAILED: expected exactly 1 distinct --start-lr, found {sorted(lrs)}"
     lr = lrs.pop()
@@ -156,8 +166,46 @@ def patch(path: pathlib.Path) -> str:
     anchor = "          # seed_weaver derives four independent RNG streams"
     if anchor not in text:
         return "FAILED: could not find the seed_weaver comment anchor"
-    recipe = f"lr={lr} epochs={epochs}"
-    text = text.replace(anchor, SNIPPET.format(recipe=recipe) + anchor)
+
+    # THE STAMP MUST CARRY THE VOCABULARY, NOT JUST THE RATE AND THE BUDGET.
+    #
+    # The guard exists so a run cannot resume a directory produced under a
+    # different recipe. It keyed on lr and epochs only, and that is not enough:
+    # DECISIONS_PENDING item 24 changed the D8 control's LABEL MAP and left
+    # `lr=5e-4 epochs=80` untouched, so the stamp would have MATCHED and the
+    # relaunch would have resumed the superseded vocabulary's epoch-0
+    # checkpoint. Both maps are K=17, so the head shape agrees and torch loads
+    # it WITHOUT ERROR -- the control would have started from the very artefact
+    # it exists to replace, silently. It was caught with the pod still Pending,
+    # so no GPU was spent, and job-mtx-rand-d1-s1b was hand-patched to include
+    # the md5. Every other arm spec kept the weak stamp.
+    #
+    # ${MD5} is already in scope in every arm spec: it is computed a few lines
+    # above as `MD5=$(md5sum ${CFG} | cut -d' ' -f1)` for the reweighting
+    # sidecar wait, so this adds no new shell state. It is included ONLY when
+    # the spec really defines it -- a spec without an arm config (the E1 and
+    # downstream jobs) keeps the two-field stamp rather than stamping a literal
+    # empty string, which would compare equal across different vocabularies and
+    # reintroduce the defect while looking fixed.
+    # QUOTING IS LOAD-BEARING HERE. The snippet wrote RECIPE='...' in SINGLE
+    # quotes, and bash does not expand ${MD5} inside single quotes -- every arm
+    # would have stamped the LITERAL string "arm=${MD5}", which compares equal
+    # across different vocabularies. That is worse than the weak stamp it
+    # replaces, because it looks fixed. Double quotes only when there is
+    # something to expand; the plain two-field form keeps single quotes so
+    # every existing spec regenerates byte-identically.
+    if "MD5=$(md5sum" in text:
+        # ORDER MATTERS AND IS CHECKED. The snippet is inserted AT the anchor,
+        # so MD5 must already be assigned by then or the stamp expands to the
+        # empty string -- which would compare equal across vocabularies and
+        # reintroduce the defect while looking fixed.
+        if text.index("MD5=$(md5sum") > text.index(anchor):
+            return ("FAILED: MD5 is assigned AFTER the auto-resume anchor, so "
+                    "the recipe stamp would expand to an empty fingerprint")
+        recipe, q = f"lr={lr} epochs={epochs} arm=${{MD5}}", '"'
+    else:
+        recipe, q = f"lr={lr} epochs={epochs}", "'"
+    text = text.replace(anchor, SNIPPET.format(recipe=recipe, q=q) + anchor)
 
     # hand the flag to weaver, next to the budget it interacts with
     old = f"--num-epochs {epochs} --optimizer ranger"
@@ -173,7 +221,7 @@ def patch(path: pathlib.Path) -> str:
     d = yaml.safe_load(text)
     args = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
     for must in ("AUTO-RESUME", "${RESUME}", "net_epoch-${n}_optimizer.pt",
-                 f"RECIPE='{recipe}'", 'RECIPE stamp', 'Refusing to resume'):
+                 f"RECIPE={q}{recipe}{q}", 'RECIPE stamp', 'Refusing to resume'):
         if must not in args:
             return f"FAILED: patched spec is missing {must!r}"
     if d["spec"]["backoffLimit"] != BACKOFF:

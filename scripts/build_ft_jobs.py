@@ -77,8 +77,36 @@ INITS = [
     ("sophon-public", "/workspace/sophon_public.pt", 188),
     ("scratch", "", 0),
 ]
-SIZES = [10_000, 100_000, 1_000_000]
-EPOCHS = {10_000: 50, 100_000: 30, 1_000_000: 10}
+# N = 1e3 ADDED 2026-09-12 (DECISIONS_PENDING item 25, option B). docs/PRD_PLAN
+# 4.1 asks for it because every N-sweep paper reaches it and the vocabulary
+# effect is predicted to be LARGEST there; top and q/g already run it.
+SIZES = [1_000, 10_000, 100_000, 1_000_000]
+EPOCHS = {1_000: 50, 10_000: 50, 100_000: 30, 1_000_000: 10}
+
+# OPTIMIZER STEPS, HELD FIXED -- the whole of option B.
+#
+# `--samples-per-epoch` is what weaver turns into steps_per_epoch (train.py:1006,
+# samples // batch_size). At N=1e3 the naive choice `--samples-per-epoch 1000`
+# with 50 epochs gives 50 * (1000/512) ~ 100 optimizer steps, an ORDER OF
+# MAGNITUDE fewer than the ~1,000 the N=1e4 cell gets. That cell would measure
+# under-training, not the vocabulary effect, in the one place 4.1 predicts the
+# effect is largest -- and it would read as "the coarse arm collapses at 1e3".
+#
+# So the TRAINING SET stays 1,000 jets -- that is the controlled variable -- and
+# an "epoch" becomes ten passes over it. Same compute as the N=1e4 cell, same 50
+# validation passes, and the best-validation-epoch checkpoint rule applied at
+# identical granularity, which is what makes the two comparable at all.
+#
+# WEAVER SUPPORTS THIS AND IT WAS VERIFIED, NOT ASSUMED (2026-09-12). Setting
+# --samples-per-epoch puts the loader in infinity_mode (train.py:286), and
+# _SimpleIter._try_get_next calls restart() on exhaustion rather than stopping
+# (dataset.py:309-312). restart() RE-SHUFFLES the file list (dataset.py:183-184)
+# and _preprocess re-shuffles rows on every load, so the ten cycles are ten
+# independently shuffled passes, NOT a replay of one ordering. That mattered:
+# a replay would make the 1e3 cell's optimizer trajectory incomparable to every
+# other cell's. Checked against the installed weaver 0.4.17 source, the same
+# version the image carries.
+SAMPLES_PER_EPOCH = {1_000: 10_000}   # else: N itself
 FT_SEEDS = [1, 2, 3]
 LR_PRETRAINED, LR_SCRATCH = "1e-4", "5e-4"
 
@@ -508,7 +536,11 @@ LEGS = PREAMBLE + """
             [ "$(find /data/JetClass/Pythia/test_20M -maxdepth 1 -name "${C}_*.root" | wc -l)" -ge 2 ] || { echo "FATAL: ${C}: fewer than 2 JetClass-I test files"; exit 1; }
           done
 
-          epochs_for () { case $1 in 10000) echo __E1__;; 100000) echo __E2__;; 1000000) echo __E3__;; *) echo "FATAL: no epoch budget for N=$1" >&2; exit 1;; esac; }
+          epochs_for () { case $1 in 1000) echo __E0__;; 10000) echo __E1__;; 100000) echo __E2__;; 1000000) echo __E3__;; *) echo "FATAL: no epoch budget for N=$1" >&2; exit 1;; esac; }
+          # samples-per-epoch DECOUPLED from the subset size; see SAMPLES_PER_EPOCH
+          # in scripts/build_ft_jobs.py. Only N=1e3 differs, and it differs so the
+          # optimizer-step count matches the N=1e4 cell.
+          samples_for () { case $1 in 1000) echo __S0__;; *) echo $1;; esac; }
           COMMON="--use-amp --batch-size 512 --num-workers 2 --fetch-by-files --fetch-step 1 --optimizer ranger"
 
           # ---------------------------------------------------------------- leg 1
@@ -527,12 +559,13 @@ LEGS = PREAMBLE + """
                 mkdir -p ${OUT}
                 if [ -n "${ckpt}" ]; then LOAD="--load-model-weights ${ckpt} --exclude-model-weights mod\\.fc\\..*"; LR=__LR_PRE__; else LOAD=""; LR=__LR_SCRATCH__; fi
                 EP=$(epochs_for ${N})
+                SPE=$(samples_for ${N})
                 python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json leg=1 init=${name} checkpoint=${ckpt} n_train=${N} ft_seed=${S} lr=${LR} epochs=${EP} subset=${SUB2}/train_N${N}_s${S}.parquet data_config=configs/finetune/JetClassII_L162_noweight.yaml num_classes=162 batch_size=512 steps_per_epoch=$((N/512))
                 python3 experiments/E1/seed_weaver.py --seed ${S} --lean-val-metrics \\
                   --data-train ${SUB2}/train_N${N}_s${S}.parquet --data-val ${SUB2}/val.parquet \\
                   --data-config configs/finetune/JetClassII_L162_noweight.yaml \\
                   --network-config experiments/MTX/ParT_sophon_arch_mtx.py -o num_classes 162 -o fc_params '[(512,0.1)]' \\
-                  ${COMMON} --start-lr ${LR} --samples-per-epoch ${N} --samples-per-epoch-val 200000 --num-epochs ${EP} \\
+                  ${COMMON} --start-lr ${LR} --samples-per-epoch ${SPE} --samples-per-epoch-val 200000 --num-epochs ${EP} \\
                   ${LOAD} --model-prefix ${OUT}/net --log ${OUT}/train.log 2>&1 | tee ${OUT}/stdout.log
                 [ -z "${ckpt}" ] || python3 experiments/FT/smoke_checks.py load-log --log ${OUT}/stdout.log
                 python3 experiments/EVAL/extract_features.py --checkpoint ${OUT}/net_best_epoch_state.pt --num-classes 162 --arm FT1_${name}_N${N}_s${S} \\
@@ -579,12 +612,13 @@ LEGS = PREAMBLE + """
                 mkdir -p ${OUT}
                 if [ -n "${ckpt}" ]; then LOAD="--load-model-weights ${ckpt} --exclude-model-weights mod\\.fc\\..*"; LR=__LR_PRE__; else LOAD=""; LR=__LR_SCRATCH__; fi
                 EP=$(epochs_for ${N})
+                SPE=$(samples_for ${N})
                 python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json leg=2 init=${name} checkpoint=${ckpt} n_train=${N} ft_seed=${S} lr=${LR} epochs=${EP} subset=${SUB1}/train_N${N}_s${S}.parquet data_config=configs/finetune/JetClassI_sophon_noweight.yaml num_classes=10 batch_size=512 steps_per_epoch=$((N/512))
                 python3 experiments/E1/seed_weaver.py --seed ${S} --lean-val-metrics \\
                   --data-train ${SUB1}/train_N${N}_s${S}.parquet --data-val ${SUB1}/val.parquet \\
                   --data-config configs/finetune/JetClassI_sophon_noweight.yaml \\
                   --network-config experiments/E1/ParT_sophon_arch_10c.py -o num_classes 10 -o fc_params '[(512,0.1)]' \\
-                  ${COMMON} --start-lr ${LR} --samples-per-epoch ${N} --samples-per-epoch-val 200000 --num-epochs ${EP} \\
+                  ${COMMON} --start-lr ${LR} --samples-per-epoch ${SPE} --samples-per-epoch-val 200000 --num-epochs ${EP} \\
                   ${LOAD} --model-prefix ${OUT}/net --log ${OUT}/train.log 2>&1 | tee ${OUT}/stdout.log
                 [ -z "${ckpt}" ] || python3 experiments/FT/smoke_checks.py load-log --log ${OUT}/stdout.log
                 weaver --predict --data-test ${TEST1} ${PRED} -o fc_params '[(512,0.1)]' --model-prefix ${OUT}/net --predict-output ${OUT}/pred.root 2>&1 | tee ${OUT}/predict.log | tail -3
@@ -671,6 +705,8 @@ def _fill(script: str, pin: str) -> str:
             .replace("__INITS__", inits)
             .replace("__SIZES__", " ".join(str(s) for s in SIZES))
             .replace("__FT_SEEDS__", " ".join(str(s) for s in FT_SEEDS))
+            .replace("__E0__", str(EPOCHS[1_000]))
+            .replace("__S0__", str(SAMPLES_PER_EPOCH[1_000]))
             .replace("__E1__", str(EPOCHS[10_000]))
             .replace("__E2__", str(EPOCHS[100_000]))
             .replace("__E3__", str(EPOCHS[1_000_000]))
@@ -743,7 +779,7 @@ def build(pin: str) -> dict[str, str]:
         assert d["metadata"]["name"].endswith("-raunav"), name
         args = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
         assert 'git clone --depth 1 --branch "${REPO_REF}"' in args, name
-        for tok in ("__TEST2M__", "__INITS__", "__SIZES__", "__E1__", "__LAMBDA__", "__SOPHON_SHA256__"):
+        for tok in ("__TEST2M__", "__INITS__", "__SIZES__", "__E0__", "__S0__", "__E1__", "__LAMBDA__", "__SOPHON_SHA256__"):
             assert tok not in args, f"{name}: {tok} unfilled"
         assert "--checkpoint models/" not in args, f"{name}: the released checkpoint is not in a clone"
         if name in ("job-ft-smoke-raunav.yaml", "job-ft-legs-raunav.yaml"):
