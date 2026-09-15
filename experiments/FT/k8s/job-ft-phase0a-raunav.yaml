@@ -1,0 +1,157 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # PHASE 0, PART A -- the 14 LR-sweep cells restated in D7's metrics.
+  #
+  # WHY A GPU PASS IS NEEDED AT ALL, when the sweep already "has results".
+  # The sweep's headline -- accuracy rising with the trunk rate then plateauing
+  # from 3e-3 to 3e-2 at ~0.930 -- is in the WRONG METRIC. D7 makes background
+  # rejection the headline and log(1 - AUC) the inferential quantity, and
+  # NEITHER EXISTS ANYWHERE. weaver's "Current validation metric" is ACCURACY,
+  # so the recorded 0.893-0.930 are accuracy-scale (ParT's top-tagging AUC is
+  # ~0.986); and the probe cells kept 20 epoch checkpoints each but no pred.root
+  # and no eval_results.json. There is no AUC to restate, only checkpoints to
+  # re-score. DECISIONS_PENDING item 32, "PHASE 0, PART A: BLOCKED".
+  #
+  # WHAT IT UNBLOCKS. Item 33 orders Phase 0 BEFORE wave 2 precisely so that
+  # wave 2's rate is chosen on D7's metrics rather than on accuracy. Wave 2 is
+  # ~145 GPU-h; this is ~14 x 404k jets of pure inference. Running it second
+  # would be spending six GPU-days to find out what a few GPU-hours could have
+  # said first.
+  #
+  # THIS JOB WRITES NOTHING INTO THE SWEEP'S OWN DIRECTORIES. The cells under
+  # /data/results/ft/lrprobe* are read for their checkpoints only; every output
+  # goes to /data/results/ft/phase0a/<probe>/<cell>/. Deleting or overwriting a
+  # result is RED (CLAUDE.md section 1), and a predict pass that dropped
+  # pred.root beside the checkpoints would be modifying a finished artifact to
+  # save one path component.
+  name: job-ft-phase0a-raunav
+spec:
+  # 50, not 1: the queue reaps Pending pods without ever running a step
+  # (scripts/add_autoresume.py documents seven jobs reaped three times each).
+  # A retry is safe here because every cell is guarded by its own DONE marker,
+  # so a restart re-scores only what is missing.
+  backoffLimit: 50
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: predict
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        env:
+        - name: REPO_REF
+          value: "mtx-s1.41"
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "${REPO_REF}" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          pip install --no-cache-dir -q pyarrow || exit 1
+          export PYTHONUNBUFFERED=1
+          nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+
+          # FAIL IN 30 SECONDS, NOT AFTER 14 GPU CELLS. phase0_auc.py imports
+          # experiments/EVAL/probe.py for log1m_auc and rejection_at, which pull
+          # sklearn, and reads pred.root through uproot. Both are in this image
+          # today; a missing one would otherwise surface only at the very end,
+          # with every expensive step already paid for.
+          python3 -c "import sklearn, uproot, numpy; print('deps ok')"
+
+          SRC=/data/results/ft
+          OUT=/data/results/ft/phase0a
+          TEST=/data/finetune/top/top_test.parquet
+          mkdir -p ${OUT}
+          [ -f "${TEST}" ] || { echo "FATAL: no ${TEST}"; exit 1; }
+
+          # The sweep ran 3 probes; every cell is <probe>/<arm>_lr<rate>. The
+          # checkpoint scored is net_best_epoch_state.pt -- the SAME file
+          # phase0_dtheta.py measured displacement on, so part A and part B
+          # describe one model and not two.
+          CELLS=$(ls -d ${SRC}/lrprobe*/*_lr* 2>/dev/null | sort)
+          N=$(echo "${CELLS}" | grep -c . || true)
+          # 18 DIRECTORIES, 14 DISTINCT POINTS -- and the difference is the
+          # point, not an accident. Each probe repeats its predecessor's top
+          # rate as an OVERLAP ANCHOR (3e-4 in lrprobe and lrprobe2, 3e-3 in
+          # lrprobe2 and lrprobe3), which is what measures run-to-run variance;
+          # without it the 0.001-0.002 arm gaps cannot be read at all. Item 32
+          # counts the 14 distinct (arm, rate) points. Both numbers are checked,
+          # because a guard on either alone would pass a grid that had lost the
+          # anchors or gained a rate.
+          DISTINCT=$(echo "${CELLS}" | xargs -n1 basename | sort -u | grep -c . || true)
+          echo "found ${N} cell directories, ${DISTINCT} distinct arm x rate points"
+          [ "${N}" -eq 18 ] && [ "${DISTINCT}" -eq 14 ] || {
+            echo "FATAL: expected 18 directories and 14 distinct points; got"
+            echo "${N} and ${DISTINCT}. The grid is 2 arms x {3e-5,1e-4,3e-4}"
+            echo "then {3e-4,1e-3,3e-3} then {3e-3,1e-2,3e-2}. A different count"
+            echo "means the sweep on disk is not the one item 32 reports."
+            echo "${CELLS}"; exit 1; }
+
+          PRED="--data-config configs/finetune/TopReference.yaml \
+                --network-config experiments/MTX/ParT_sophon_arch_mtx.py \
+                -o num_classes 2 -o fc_params [(512,0.1)] \
+                --predict-gpus 0 --batch-size 512 --num-workers 2 \
+                --fetch-by-files --fetch-step 1"
+
+          for D in ${CELLS}; do
+            CK=${D}/net_best_epoch_state.pt
+            CELL=$(basename ${D}); PROBE=$(basename $(dirname ${D}))
+            O=${OUT}/${PROBE}/${CELL}
+            # Refuse to write outside phase0a even if a name is ever malformed.
+            case "${O}" in ${OUT}/*/*) ;; *) echo "FATAL: refusing ${O}"; exit 1;; esac
+            [ -f "${O}/DONE" ] && { echo "skip ${PROBE}/${CELL} (done)"; continue; }
+            [ -f "${CK}" ] || { echo "FATAL: no ${CK}"; exit 1; }
+            echo "===== ${PROBE}/${CELL} ====="
+            mkdir -p ${O}
+            weaver --predict --data-test ${TEST} ${PRED} \
+              --model-prefix ${CK} \
+              --predict-output ${O}/pred.root 2>&1 | tee ${O}/predict.log | tail -3
+            [ -f "${O}/pred.root" ] || { echo "FATAL: no pred.root for ${CELL}"; exit 1; }
+            sha256sum ${CK} | cut -d' ' -f1 > ${O}/CHECKPOINT_SHA256
+            touch ${O}/DONE
+          done
+
+          echo "===== restating the sweep in D7's metrics ====="
+          python3 experiments/FT/phase0_auc.py \
+            --grid ${OUT} --out ${OUT}/phase0_auc.json
+          echo "PHASE 0 PART A COMPLETE -> ${OUT}/phase0_auc.json"
+        resources:
+          # 76Gi, matching job-ft-lrprobe3: CLAUDE.md's measured anon band for
+          # --fetch-by-files is 35-58 GB and 64Gi OOM-killed g1-r16q1-lr5e4.
+          # Inference is not lighter than training on this axis -- the loader
+          # dominates and does not care that no backward pass follows.
+          requests: { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "76Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }
+      tolerations:
+      - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: ["NVIDIA-GeForce-RTX-3090"]
+              # excluded: device plugin rejects every pod (scripts/exclude_node.py)
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org"]
