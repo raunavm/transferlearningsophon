@@ -816,6 +816,28 @@ def legs_w2() -> str:
         ("lr=${LR} epochs=${EP} subset=",
          "lr=${LR} head_lr_mult=__HEAD_MULT__ weight_decay=0.01 wave=2 "
          "epochs=${EP} subset=", 2),
+        # EVERY SUBSET THE GRID ASKS FOR MUST EXIST BEFORE ANY GPU IS SPENT.
+        # The legs wait on ${SUB}/DONE, and DONE ALREADY EXISTS from wave 1 --
+        # so the wait passes instantly and the first N=1e3 cell dies on a
+        # missing parquet after the wave has been running for hours. That is
+        # item 33's own recorded defect ("Wave 2 would have run for days and
+        # then died on a missing train_N1000_s1.parquet"), and a comment saying
+        # "run the rebuild first" does not prevent it. This does.
+        ("          epochs_for () { case $1 in 1000) echo __E0__;;",
+         "          # Checked HERE, not hours later, for the reason item 33 records.\n"
+         "          for S in __FT_SEEDS__; do\n"
+         "            for N in __SIZES__; do\n"
+         "              for SUB in ${SUB2} ${SUB1}; do\n"
+         "                f=${SUB}/train_N${N}_s${S}.parquet\n"
+         "                [ -f ${f} ] || { echo \"FATAL: no ${f}.\"; \\\n"
+         "                  echo \"Run job-ft-subsets-jc2-w2-raunav and \"\\\n"
+         "                       \"job-ft-subsets-jc1-w2-raunav first: the DONE marker\"\\\n"
+         "                       \"predates this grid, so waiting on it proves nothing.\"; \\\n"
+         "                  exit 1; }\n"
+         "              done\n"
+         "            done\n"
+         "          done\n\n"
+         "          epochs_for () { case $1 in 1000) echo __E0__;;", 1),
         ('echo "FT LEGS COMPLETE"', 'echo "FT LEGS WAVE 2 COMPLETE"', 1),
     ]
     out = LEGS

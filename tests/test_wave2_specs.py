@@ -250,3 +250,50 @@ def test_the_derivation_reports_what_it_expected_and_what_it_found(monkeypatch):
     monkeypatch.setattr(B, "LEGS", B.LEGS.replace('echo "FT LEGS COMPLETE"', ""))
     with pytest.raises(SystemExit, match="found 0"):
         B.legs_w2()
+
+
+# ------------------------------------- the subset precondition, run under bash
+
+def _precondition(text):
+    a = _args(text)
+    return a[a.index("# Checked HERE, not hours later"):a.index("epochs_for () {")]
+
+
+def test_the_legs_check_every_subset_before_spending_a_gpu(w2):
+    """A comment saying 'run the rebuild first' does not prevent anything. The
+    legs wait on ${SUB}/DONE and that marker ALREADY EXISTS from wave 1, so the
+    wait passes instantly and the first N=1e3 cell dies on a missing parquet
+    hours in -- item 33's own recorded defect."""
+    g = _precondition(w2[LEGS_W2])
+    assert "for N in 1000 10000 100000 1000000" in g
+    assert "for S in 1 2 3" in g
+    assert "${SUB2} ${SUB1}" in g
+
+
+@pytest.mark.parametrize("missing,expect_rc", [
+    (None, 0),                                  # every subset present
+    ("jc2/train_N1000_s2.parquet", 1),          # the real wave-2 failure mode
+    ("jc1/train_N1000000_s3.parquet", 1),       # a wave-1 subset gone missing
+])
+def test_the_precondition_behaves_under_a_real_shell(w2, tmp_path, missing, expect_rc):
+    """THE TEST THAT ACTUALLY CATCHES A QUOTING BUG. Everything above inspects
+    strings; this runs the emitted block. It carries backslash continuations
+    inside a brace group, which is exactly the shape that silently becomes a
+    no-op when it is wrong -- and a precondition that never fires is worse than
+    none, because it reads as checked."""
+    import subprocess
+    for d in ("jc2", "jc1"):
+        (tmp_path / d).mkdir()
+        for s in (1, 2, 3):
+            for n in (1000, 10000, 100000, 1000000):
+                (tmp_path / d / f"train_N{n}_s{s}.parquet").touch()
+    if missing:
+        (tmp_path / missing).unlink()
+    script = (f"set -euo pipefail\nSUB2={tmp_path}/jc2\nSUB1={tmp_path}/jc1\n"
+              + _precondition(w2[LEGS_W2]))
+    r = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+    assert r.returncode == expect_rc, r.stdout + r.stderr
+    if missing:
+        assert missing.split("/")[-1] in r.stdout, (
+            "the refusal must NAME the missing file; 'a subset is missing' "
+            "costs a cluster round trip to act on")
