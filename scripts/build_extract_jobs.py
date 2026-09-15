@@ -45,7 +45,19 @@ OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s"
 # move: `git diff mtx-s1.6 mtx-s1.7` over the four files this pod actually
 # executes (extract_features.py, JetClassII_base.yaml, the two arch files)
 # is EMPTY, so the pin change cannot alter what runs.
-PIN = "mtx-s1.23"
+# BUMPED mtx-s1.23 -> mtx-s1.41 on 2026-09-15, when the ladder arms were
+# added. tests/test_spec_pins.py caught that s1.23 predates 9710c97, which
+# moved refuse_foreign_checkpoint() BEFORE the first np.save instead of
+# after it -- at s1.23 the guard fires only once the arrays it protects
+# have already been overwritten.
+#
+# THIS DOES NOT BREAK I1 AGAINST THE FIVE ARMS ALREADY EXTRACTED AT s1.23,
+# and that was checked in the diff rather than assumed: 9710c97 touches
+# only the guard and reuses a hash the old code already computed. No line
+# in the feature or manifest computation changes, so the arrays this
+# produces are identical to the ones on disk. The new pin is strictly
+# safer, not different.
+PIN = "mtx-s1.41"
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 
 # (run_id, arm, K, checkpoint dir). The G1 rows are the SMOKE TEST described
@@ -69,7 +81,47 @@ RUNS = [
     ("mtx-r16q1-s3",    "R16_Q1",  17, "/data/results/mtx/mtx-r16q1-s3"),
     ("mtx-r16q1-s4",    "R16_Q1",  17, "/data/results/mtx/mtx-r16q1-s4"),
     ("mtx-r16q1-s5",    "R16_Q1",  17, "/data/results/mtx/mtx-r16q1-s5"),
+
+    # THE REST OF THE LADDER, added 2026-09-15 once the 32-arm matrix finished.
+    # Until now this list held one L162 seed and four R16_Q1 seeds, because that
+    # is what had completed when it was written -- so TWO OF THE FOUR RUNGS IN D3
+    # HAD NO FEATURES AT ALL and the headline granularity contrast rested on two
+    # rungs, not four. Every arm below is verified at ckpts=80 / last_epoch=79 by
+    # job-mtx-inventory-raunav.
+    #
+    # mtx-l162-s1 IS DELIBERATELY ABSENT AND MUST STAY ABSENT. It trained at
+    # --start-lr 1e-3; every other arm in the matrix trains at 5e-4 (checked
+    # across all 22 specs, not assumed). Including it would make the L162 row
+    # differ from its siblings in RATE as well as seed, which is exactly the
+    # confound I1 exists to prevent -- and it would look like a fifth seed.
+    # L162's five matrix seeds are therefore s1b, s2, s3, s4, s5.
+    ("mtx-l188-s1",     "L188",   188, "/data/results/mtx/mtx-l188-s1"),
+    ("mtx-l188-s2",     "L188",   188, "/data/results/mtx/mtx-l188-s2"),
+    ("mtx-l188-s3",     "L188",   188, "/data/results/mtx/mtx-l188-s3"),
+    ("mtx-l188-s4",     "L188",   188, "/data/results/mtx/mtx-l188-s4"),
+    ("mtx-l188-s5",     "L188",   188, "/data/results/mtx/mtx-l188-s5"),
+    ("mtx-l162-s2",     "L162",   162, "/data/results/mtx/mtx-l162-s2"),
+    ("mtx-l162-s3",     "L162",   162, "/data/results/mtx/mtx-l162-s3"),
+    ("mtx-l162-s4",     "L162",   162, "/data/results/mtx/mtx-l162-s4"),
+    ("mtx-l162-s5",     "L162",   162, "/data/results/mtx/mtx-l162-s5"),
+    # K=43, not 42. The rung is named for the number of RESONANT groups; the
+    # head also carries the QCD group, and the tree in docs/PLAN.md gives the
+    # widths as 188, 162, 64, 43, 30, 17, 4, 2. Taken from each arm's own spec.
+    ("mtx-r42q1-s1",    "R42_Q1",  43, "/data/results/mtx/mtx-r42q1-s1"),
+    ("mtx-r42q1-s2",    "R42_Q1",  43, "/data/results/mtx/mtx-r42q1-s2"),
+    ("mtx-r42q1-s3",    "R42_Q1",  43, "/data/results/mtx/mtx-r42q1-s3"),
+    ("mtx-r42q1-s4",    "R42_Q1",  43, "/data/results/mtx/mtx-r42q1-s4"),
+    ("mtx-r42q1-s5",    "R42_Q1",  43, "/data/results/mtx/mtx-r42q1-s5"),
+    ("mtx-r16q1-s1",    "R16_Q1",  17, "/data/results/mtx/mtx-r16q1-s1"),
 ]
+
+# Arms complete on the PVC that are NOT in RUNS, and why. Kept as data so a
+# reader does not have to infer an omission from silence.
+DELIBERATELY_EXCLUDED = {
+    "mtx-l162-s1": "trained at --start-lr 1e-3; every matrix arm trains at 5e-4",
+    "mtx-rand-d1-s1": "superseded by mtx-rand-d1-s1b (item 24); only 3 epochs",
+    "mtx-r42q1-s1.lr2p5e-4.superseded-20260907": "superseded rate, 7 epochs",
+}
 
 TEMPLATE = """apiVersion: batch/v1
 kind: Job
@@ -103,6 +155,21 @@ spec:
           cd /workspace/transferlearningsophon
           git rev-parse HEAD
           pip install --no-cache-dir -q pyarrow || exit 1
+
+          # CLAUDE.md: check free space before a write of this size. Each arm
+          # writes ~1.1 GB (2,000,000 jets x 128 float32, plus labels and
+          # observers; no --save-logits here). The FT specs have carried a guard
+          # like this since the legs; the extraction specs never did, and this
+          # wave adds fifteen of them at once to a PVC measured at 82% on
+          # 2026-09-15 -- roughly 34 GB of headroom before CLAUDE.md's line.
+          # FAILS SAFE, verified rather than hoped: --output=pcent is GNU-only
+          # (the image has it -- the FT specs' --output=avail guard runs here),
+          # but if df ever lacked it USED would be empty, `[ "" -lt 85 ]` errors
+          # under set -e, and the || branch exits 1. An unparseable check refuses
+          # the write instead of waving it through.
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          echo "PVC used: ${{USED}}%"
+          [ "${{USED}}" -lt 85 ] || {{ echo "FATAL: /data is ${{USED}}% full, at or over the 85% line."; df -h /data; exit 1; }}
 
           CKPT={ckpt_dir}/{ckpt_file}
           # CHECKPOINT RULE (DECISIONS_PENDING item 18, decided 2026-09-07).
