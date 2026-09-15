@@ -224,8 +224,19 @@ def interleaved_files() -> str:
 # extractions at 2 M. Reusing it also keeps row alignment with the existing
 # caches derivable from one file list rather than two.
 #
-# --max-jets 400,000 is HEADROOM, NOT A TARGET: ~171,000 survivors are expected
-# from 27.4 M streamed, so the cap cannot bind, but it still bounds a runaway.
+# --max-jets 400,000 WAS BELIEVED TO BE HEADROOM AND IT BOUND. This comment read
+# "HEADROOM, NOT A TARGET: ~171,000 survivors are expected from 27.4 M streamed,
+# so the cap cannot bind". All five arms stopped EXACTLY at 400,000 on
+# 2026-09-14, so the stream was cut short and the split was never swept.
+#
+# The ~171,000 came from probe-physics-v2's 0.62 % survival rate, which was
+# measured on a 2 M extraction drawn under the OLD strict-family-order list --
+# i.e. on Res2P jets ALONE. Over the interleaved all-family stream the survival
+# rate is far higher, so the cap was reached early. The cost is the only number
+# the row turns on: label_X_bc came to 8,208 per arm, a test fifth of 1,641
+# against probe.py's floor of 1,000 -- 1.64x, not the 3.76x this file sized for.
+# bc_vs_rest RUNS rather than SKIPS, so nothing was lost, but the headroom the
+# plan deliberately bought was halved. See ledger vcb-window-extraction-result.
 # A SEPARATE PIN, deliberately. PIN is module-level and every extraction spec
 # clones it, so moving PIN to pick up the new config would REWRITE the pins on
 # specs whose jobs already ran -- the ledger row audit-2-anchors records what
@@ -236,16 +247,26 @@ WINDOW_PIN = "mtx-s1.39"
 WINDOW_CONFIG = "configs/data/JetClassII_vcbwindow.yaml"
 WINDOW_OUT = "features_vcbwindow_e79"
 WINDOW_MAX_JETS = 400_000
+
+# THE SECOND PASS, sized off the MEASURED yield rather than a prediction.
+# 8,208 label_X_bc per 400,000 in-window jets is 2.052 %, so reaching the
+# plan's 3.76x floor needs ~916,000 survivors; 1,500,000 clears it with room
+# and still bounds the job at ~2.8 h on the observed 149 jets/s. A SEPARATE
+# OUTPUT DIRECTORY, not an overwrite: extract_features.py np.save()s
+# unconditionally and the 400k caches are the provenance of a completed run.
+WINDOW2_OUT = "features_vcbwindow_e79_full"
+WINDOW2_MAX_JETS = 1_500_000
 # Only the arms the physics-probe table is built on (probe-physics-v4).
 WINDOW_RUNS = {"mtx-l162-s1b", "mtx-r16q1-s2", "mtx-r16q1-s3",
                "mtx-r16q1-s4", "mtx-r16q1-s5"}
 
 
 def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
-          ckpt_epoch: int | None = 79, window: bool = False) -> tuple[str, str]:
+          ckpt_epoch: int | None = 79, window: bool = False,
+          window_full: bool = False) -> tuple[str, str]:
     name = run_id.replace("_", "-").lower()
     if window:
-        name += "-vcbwindow"
+        name += "-vcbwindow-full" if window_full else "-vcbwindow"
     text = TEMPLATE.format(
         run_id=run_id, arm=arm, k=k, ckpt_dir=ckpt_dir, image=IMAGE,
         pin=(WINDOW_PIN if window else PIN),
@@ -259,7 +280,7 @@ def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
                      "CPU is uncontended."),
         data_config=(WINDOW_CONFIG if window
                      else "configs/data/JetClassII_base.yaml"),
-        out_name=(WINDOW_OUT if window else
+        out_name=((WINDOW2_OUT if window_full else WINDOW_OUT) if window else
                   (f"features_e{ckpt_epoch}" if ckpt_epoch is not None
                    else "features_v2")),
         max_jets=(f" \\\n            --max-jets {max_jets}" if max_jets else ""),
@@ -301,15 +322,24 @@ def main() -> int:
     ap.add_argument("--window", action="store_true",
                     help="extract inside the arXiv:2503.00118 |V_cb| window "
                          "(DECISIONS_PENDING item 26 option A)")
+    ap.add_argument("--window-full", action="store_true",
+                    help="the SECOND windowed pass at the measured yield: "
+                         "--max-jets 1.5M into a separate output directory, "
+                         "because the 400k cap bound (ledger "
+                         "vcb-window-extraction-result). Implies --window.")
     args = ap.parse_args()
 
+    if args.window_full:
+        args.window = True
     runs = RUNS
     if args.window:
         runs = [r for r in RUNS if r[0] in WINDOW_RUNS]
         if args.max_jets == 2_000_000:
-            args.max_jets = WINDOW_MAX_JETS
-        print(f"window mode: {len(runs)} arms, config {WINDOW_CONFIG}, "
-              f"out {WINDOW_OUT}, max-jets {args.max_jets}")
+            args.max_jets = WINDOW2_MAX_JETS if args.window_full else WINDOW_MAX_JETS
+        print(f"window mode{' (FULL)' if args.window_full else ''}: "
+              f"{len(runs)} arms, config {WINDOW_CONFIG}, "
+              f"out {WINDOW2_OUT if args.window_full else WINDOW_OUT}, "
+              f"max-jets {args.max_jets}")
     if args.only:
         known = {r[0] for r in RUNS}
         unknown = set(args.only) - known
@@ -342,7 +372,8 @@ def main() -> int:
     for run_id, arm, k, ckpt in runs:
         epoch = None if run_id in BEST_EPOCH_RUNS else args.ckpt_epoch
         fname, text = build(run_id, arm, k, ckpt, args.gpu, args.max_jets,
-                            epoch, window=args.window)
+                            epoch, window=args.window,
+                            window_full=args.window_full)
         d = yaml.safe_load(text)
         body = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
         for must in (f"--num-classes {k}", f"--arm {arm}",
