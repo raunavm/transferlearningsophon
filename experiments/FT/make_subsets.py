@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import argparse
 import glob
+import hashlib
 import json
 import math
 import os
@@ -153,6 +154,34 @@ def write_subset(out: pathlib.Path, n: int, seed: int, writer,
     return True
 
 
+def write_val(out: pathlib.Path, writer, *, skip_existing: bool) -> bool:
+    """Write val.parquet unless it is already on disk.
+
+    GROWING THE GRID MUST NOT REWRITE THE VALIDATION SET EITHER, and the first
+    version of the growth path did. write_subset() guarded every train subset,
+    so on 2026-09-15 the wave-2 rebuild left all nine train files with their
+    Sep 6 mtimes and stamped a NEW mtime on val.parquet.
+
+    The content was almost certainly identical -- the draw is rng_for(VAL_SEED,
+    "val"), a fixed seed consumed in a fixed order, independent of `sizes` and
+    of the train seeds -- but that could not be PROVEN after the fact, because
+    nothing had hashed the old file. And val.parquet is not an inert artifact:
+    it is what `--model-prefix ... net_best_epoch_state.pt` selects on, so a
+    silent change to it retroactively detaches every completed run from the
+    basis its checkpoint was chosen by, with nothing in any log to notice.
+
+    Skipping the write, not the computation: the manifest's `val` block is still
+    filled from the freshly drawn table, so the record stays complete and a
+    genuine divergence would still show up as a row-count or file-list change.
+    """
+    dest = out / "val.parquet"
+    if skip_existing and dest.exists():
+        print("  val.parquet kept (already on disk)", flush=True)
+        return False
+    writer(dest)
+    return True
+
+
 def build_jc2(train_files, val_files, out: pathlib.Path, sizes, seeds,
               n_files: int, take: float, val_size: int, n_val_files: int,
               skip_existing: bool = False) -> dict:
@@ -185,7 +214,7 @@ def build_jc2(train_files, val_files, out: pathlib.Path, sizes, seeds,
     parts = [take_fraction(select_jc2(pq.read_table(f)), take, rng) for f in vfiles]
     vpool = pa.concat_tables(parts)
     val = nested_prefixes(vpool, [val_size], rng)[val_size]
-    pq.write_table(val, out / "val.parquet")
+    write_val(out, lambda d: pq.write_table(val, d), skip_existing=skip_existing)
     manifest["val"] = {"files": vfiles, "pool_rows": vpool.num_rows, "rows": val.num_rows}
     return manifest
 
@@ -251,7 +280,7 @@ def build_jc1(train_dir: str, val_dir: str, out: pathlib.Path, sizes, seeds,
         used[cls] = files
     val = ak.concatenate(parts)
     val = val[rng.permutation(len(val))]
-    ak.to_parquet(val, out / "val.parquet")
+    write_val(out, lambda d: ak.to_parquet(val, d), skip_existing=skip_existing)
     manifest["val"] = {"files": used, "rows": len(val)}
     return manifest
 
@@ -330,16 +359,32 @@ def build_bench(dataset: str, src: str, out: pathlib.Path, sizes: list[int],
     vpool = pa.concat_tables([pq.read_table(f) for f in vfiles])
     k = min(val_size, vpool.num_rows)
     val = nested_prefixes(vpool, [k], rng)[k]
-    pq.write_table(val, out / "val.parquet")
+    write_val(out, lambda d: pq.write_table(val, d), skip_existing=skip_existing)
     manifest["val"] = {"files": vfiles, "pool_rows": vpool.num_rows, "rows": val.num_rows,
                        "label_frac": round(float(pc.mean(val.column("label")).as_py()), 4)}
     return manifest
 
 
+def _sha256(p: pathlib.Path) -> str:
+    h = hashlib.sha256()
+    with p.open("rb") as f:
+        for chunk in iter(lambda: f.read(1 << 22), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def finish(out: pathlib.Path, manifest: dict) -> None:
     manifest["written_utc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    # sha256 PER OUTPUT, so a later growth run can PROVE it changed nothing.
+    # Row counts alone cannot: a redrawn val.parquet has the same 200,000
+    # rows and the same source file list, and compares equal on every field
+    # the manifest previously recorded. Reading ~14 GB costs about a minute
+    # once per build, against a class of silent change that is otherwise
+    # undetectable after the fact.
     manifest["outputs"] = {p.name: pq.read_metadata(p).num_rows
                            for p in sorted(out.glob("*.parquet"))}
+    manifest["sha256"] = {p.name: _sha256(p)
+                          for p in sorted(out.glob("*.parquet"))}
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2))
     (out / "DONE").write_text(manifest["written_utc"] + "\n")
     print(json.dumps(manifest["outputs"], indent=2))

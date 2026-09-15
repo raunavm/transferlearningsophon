@@ -196,3 +196,69 @@ def test_no_bare_done_guard_masks_the_manifest_comparison(bfj):
         assert "DONE ] && { echo \"already built" not in text, (
             f"{name} short-circuits on DONE before make_subsets.py can compare "
             "the manifest against the request")
+
+
+# ------------------------------------------- val.parquet, and proving it later
+
+def test_growing_the_grid_does_not_rewrite_the_validation_set(ms, files, tmp_path):
+    """FOUND IN PRODUCTION, 2026-09-15. The wave-2 rebuild left all nine train
+    files with their original Sep 6 mtimes and stamped a NEW mtime on
+    val.parquet: write_subset() guarded every train subset and nothing guarded
+    the val write.
+
+    The CONTENT was identical -- the test above compares every parquet byte,
+    val.parquet included, and passes -- so nothing was lost. But rewriting a
+    file identically still destroys the only cheap evidence that it did not
+    change, and val.parquet is not inert: it is what net_best_epoch_state.pt is
+    selected on, so a genuine change to it would retroactively detach every
+    completed run from the basis its checkpoint was chosen by.
+    """
+    out = tmp_path / "v"
+    assert _build(ms, files, out, [100, 1000]) == 0
+    val = out / "val.parquet"
+    before = (val.stat().st_mtime_ns, val.read_bytes())
+
+    assert _build(ms, files, out, [10, 100, 1000]) == 0
+    assert val.stat().st_mtime_ns == before[0], (
+        "val.parquet was rewritten during a grid growth; identical content is "
+        "not the point -- an untouched file is what makes the mtime evidence")
+    assert val.read_bytes() == before[1]
+
+
+def test_a_fresh_build_still_writes_the_validation_set(ms, files, tmp_path):
+    """The skip must be conditional on growth, or a first build produces no
+    validation set at all and the legs die on a missing val.parquet."""
+    out = tmp_path / "f"
+    assert _build(ms, files, out, [100, 1000]) == 0
+    assert (out / "val.parquet").exists()
+
+
+def test_the_manifest_carries_a_hash_of_every_output(ms, files, tmp_path):
+    """Row counts cannot prove preservation: a redrawn val.parquet has the same
+    200,000 rows and the same source file list, and compares equal on every
+    field the manifest used to record."""
+    out = tmp_path / "h"
+    assert _build(ms, files, out, [100, 1000]) == 0
+    m = json.loads((out / "manifest.json").read_text())
+    assert set(m["sha256"]) == set(m["outputs"]), (
+        "every output must be hashed, or the gap is where the next silent "
+        "rewrite hides")
+    for name, digest in m["sha256"].items():
+        assert len(digest) == 64
+        import hashlib
+        assert digest == hashlib.sha256((out / name).read_bytes()).hexdigest()
+
+
+def test_the_hashes_prove_a_growth_changed_only_the_new_size(ms, files, tmp_path):
+    """THE POINT OF THE HASH. This is the check that can now be run on the
+    CLUSTER, where reading 14 GB back to compare bytes is not practical."""
+    out = tmp_path / "p"
+    assert _build(ms, files, out, [100, 1000]) == 0
+    before = json.loads((out / "manifest.json").read_text())["sha256"]
+
+    assert _build(ms, files, out, [10, 100, 1000]) == 0
+    after = json.loads((out / "manifest.json").read_text())["sha256"]
+
+    assert set(after) - set(before) == {"train_N10_s1.parquet", "train_N10_s2.parquet"}
+    for name, digest in before.items():
+        assert after[name] == digest, f"{name} changed during a grid growth"
