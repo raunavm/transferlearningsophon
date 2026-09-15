@@ -739,6 +739,98 @@ W2_SUBSETS = {
 }
 
 
+def legs_w2() -> str:
+    """Wave 2 of the legs: LEGS at ParT's published recipe, in its own tree.
+
+    DERIVED FROM LEGS BY ASSERTED SUBSTITUTION, not copied. A 200-line duplicate
+    would drift -- wave 1 gains a guard, wave 2 does not, and nothing says so.
+    Every replacement below states how many times it must match and raises if it
+    does not, so a change to LEGS breaks this loudly instead of silently
+    producing a wave-2 spec that is missing the recipe it exists to apply.
+
+    WHAT CHANGES, AND WHY EACH ONE (item 32(b), item 33):
+
+      output root   /data/results/ft -> /data/results/ft/w2. Wave 1's 108 cells
+                    are complete and keyed by the SAME init names and sizes, so
+                    sharing a root means every wave-2 cell hits `[ -f DONE ]`
+                    and skips. The two waves are reported side by side.
+      weight decay  0.01 on every arm INCLUDING scratch. Item 33 option B was
+                    declined precisely because a wave-2 table without scratch
+                    has no internal reference row; scratch must therefore get
+                    the same optimiser change as everything else.
+      head rate     50x the trunk via weaver's lr_mult, pretrained arms ONLY.
+                    1e-4 x 50 = 5e-3 is exactly ParT's published 1e-4 trunk /
+                    5e-3 head. Scratch keeps its single 5e-4 and NO multiplier:
+                    there is no pretrained trunk to hold back and 5e-4 is the
+                    scratch rate, not 5e-3.
+
+    WHAT DELIBERATELY DOES NOT CHANGE: the LR scheduler. LEGS_BENCH passes
+    `--lr-scheduler none` because the published BENCHMARK recipe specifies a
+    constant rate, but item 32(b) adopts only `lr_mult 50` and
+    `weight_decay 0.01`, and the point of doing so is to put the legs on the
+    SAME protocol as our own LR sweep -- which ran weaver's default flat+decay.
+    Adding the constant schedule here would re-open the protocol gap in a new
+    place while appearing to close it.
+    """
+    subs = [
+        # (old, new, expected occurrences)
+        ("          ROOT_OUT=/data/results/ft\n",
+         "          ROOT_OUT=/data/results/ft/w2\n", 1),
+        ('          COMMON="--use-amp --batch-size 512 --num-workers 2 '
+         '--fetch-by-files --fetch-step 1 --optimizer ranger"',
+         '          COMMON="--use-amp --batch-size 512 --num-workers 2 '
+         '--fetch-by-files --fetch-step 1 --optimizer ranger '
+         '--optimizer-option weight_decay 0.01"\n'
+         '          # An ARRAY, not a string: the value carries parentheses and\n'
+         '          # single quotes, and as a plain string it is re-split on\n'
+         '          # expansion so the parens reach the shell as syntax.\n'
+         '          HEAD_MULT=(--optimizer-option lr_mult '
+         '"(r\'mod\\.fc\\..*\', __HEAD_MULT__)")', 1),
+        ('if [ -n "${ckpt}" ]; then LOAD="--load-model-weights ${ckpt} '
+         '--exclude-model-weights mod\\.fc\\..*"; LR=__LR_PRE__; '
+         'else LOAD=""; LR=__LR_SCRATCH__; fi',
+         'if [ -n "${ckpt}" ]; then LOAD="--load-model-weights ${ckpt} '
+         '--exclude-model-weights mod\\.fc\\..*"; LR=__LR_PRE__; '
+         'MULT=("${HEAD_MULT[@]}"); '
+         'else LOAD=""; LR=__LR_SCRATCH__; MULT=(); fi', 2),
+        ("${COMMON} --start-lr ${LR} --samples-per-epoch ${SPE}",
+         '${COMMON} ${MULT[@]+"${MULT[@]}"} --start-lr ${LR} '
+         "--samples-per-epoch ${SPE}", 2),
+        # THE MULTIPLIER MUST APPEAR IN WEAVER'S OWN LOG. If lr_mult silently
+        # fails to match, every pretrained cell trains its fresh head at the
+        # trunk rate -- which is wave 1's protocol, the exact thing wave 2
+        # exists to replace -- and the output is indistinguishable from a
+        # correct run. LEGS_BENCH already checks this; wave 2 must too.
+        ('[ -z "${ckpt}" ] || python3 experiments/FT/smoke_checks.py load-log '
+         '--log ${OUT}/stdout.log',
+         '[ -z "${ckpt}" ] || python3 experiments/FT/smoke_checks.py load-log '
+         '--log ${OUT}/stdout.log\n'
+         '                if [ -n "${ckpt}" ]; then\n'
+         '                  grep -q "Parameters with lr multiplied by '
+         '__HEAD_MULT__" ${OUT}/stdout.log || {\n'
+         '                    echo "FATAL: weaver did not apply the head lr '
+         'multiplier; this cell"\n'
+         '                    echo "       ran wave 1\'s protocol, not ParT\'s '
+         'published recipe."; exit 1; }\n'
+         '                fi', 2),
+        ("lr=${LR} epochs=${EP} subset=",
+         "lr=${LR} head_lr_mult=__HEAD_MULT__ weight_decay=0.01 wave=2 "
+         "epochs=${EP} subset=", 2),
+        ('echo "FT LEGS COMPLETE"', 'echo "FT LEGS WAVE 2 COMPLETE"', 1),
+    ]
+    out = LEGS
+    for old, new, n in subs:
+        got = out.count(old)
+        if got != n:
+            raise SystemExit(
+                f"FATAL: wave-2 derivation expected {n} occurrence(s) of "
+                f"{old[:70]!r} in LEGS, found {got}. LEGS changed; re-check the "
+                "substitution rather than loosening it -- a silent miss here "
+                "ships a wave-2 spec without the recipe it exists to apply.")
+        out = out.replace(old, new)
+    return out
+
+
 def _fill(script: str, pin: str) -> str:
     inits = " ".join(f"{n}:{c}:{k}" for n, c, k in INITS)
     return (script
@@ -830,6 +922,27 @@ def build(pin: str, wave2: bool = False) -> dict[str, str]:
                                "  # the provenance record for the subsets already built.\n")
             for fn, (jobname, body, mem, what) in W2_SUBSETS.items()
         }
+        specs["job-ft-legs-w2-raunav.yaml"] = job(
+            "ft-legs-w2-raunav", _fill(legs_w2(), pin), gpu=True, cpu="4",
+            memory="88Gi", shm="8Gi", backoff=50, pin=pin,
+            header=h + "  # WAVE 2 of the fine-tuning legs (item 33, option A, PI-approved).\n"
+                       "  # 6 inits x 4 sizes x 3 seeds x 2 legs = 144 fine-tunes, ~145 GPU-h.\n"
+                       "  #\n"
+                       "  # THREE THINGS DIFFER FROM WAVE 1, and all three are the point:\n"
+                       "  #  (1) ParT's published recipe -- head at 50x the trunk via lr_mult,\n"
+                       "  #      weight decay 0.01 -- so the legs, our own LR sweep and the\n"
+                       "  #      paper we compare against are finally ONE protocol. Item 32\n"
+                       "  #      found wave 1 passed neither, so at a nominal 1e-4 the sweep's\n"
+                       "  #      fresh head ran at 5e-3 and the legs' at 1e-4, a factor of 50.\n"
+                       "  #  (2) The LAST-epoch checkpoints (item 18). Wave 1 loaded\n"
+                       "  #      net_best_epoch_state.pt, i.e. epochs 74/64/76/78 -- a pilot.\n"
+                       "  #  (3) N=1e3 is in the grid (item 25). Run the w2 subset rebuild\n"
+                       "  #      FIRST or the first N=1e3 cell dies on a missing parquet.\n"
+                       "  #\n"
+                       "  # OUTPUT ROOT IS /data/results/ft/w2. Wave 1's 108 cells are keyed by\n"
+                       "  # the same init names and sizes, so a shared root would make every\n"
+                       "  # wave-2 cell hit `[ -f DONE ]` and skip. Wave 1 is untouched and the\n"
+                       "  # two are reported side by side as the curve.\n")
     for name, text in specs.items():
         d = yaml.safe_load(text)
         assert d["metadata"]["name"].endswith("-raunav"), name

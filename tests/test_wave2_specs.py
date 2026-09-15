@@ -23,7 +23,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 W1 = {"job-ft-subsets-jc2-raunav.yaml", "job-ft-subsets-jc1-raunav.yaml",
       "job-ft-subsets-bench-raunav.yaml", "job-ft-legs-bench-raunav.yaml",
       "job-ft-smoke-raunav.yaml", "job-ft-legs-raunav.yaml"}
-W2 = {"job-ft-subsets-jc2-w2-raunav.yaml", "job-ft-subsets-jc1-w2-raunav.yaml"}
+SUBSETS = {"job-ft-subsets-jc2-w2-raunav.yaml", "job-ft-subsets-jc1-w2-raunav.yaml"}
+W2 = SUBSETS | {"job-ft-legs-w2-raunav.yaml"}
 
 
 def _mod():
@@ -62,7 +63,7 @@ def _live(text):
 
 # ------------------------------------------------- the two sets stay disjoint
 
-def test_wave2_emits_only_the_two_rebuild_specs(w2):
+def test_wave2_emits_the_rebuilds_and_the_legs_and_nothing_else(w2):
     assert set(w2) == W2
 
 
@@ -87,7 +88,8 @@ def test_every_wave2_job_name_carries_raunav(w2):
 def test_both_rebuilds_request_all_four_sizes(w2):
     """N=1e3 is the point of the wave. Item 25 added it to SIZES and the
     builders were left asking for three sizes, so it was never written."""
-    for name, text in w2.items():
+    for name in SUBSETS:
+        text = w2[name]
         assert "--sizes 1000 10000 100000 1000000" in _live(text), name
 
 
@@ -95,8 +97,8 @@ def test_the_rebuilds_carry_no_bare_done_short_circuit(w2):
     """The exact defect item 33 records: `[ -f DONE ] && exit 0` in front of
     make_subsets.py's careful manifest comparison produced a confident green
     while the N=1e3 subsets were never written."""
-    for name, text in w2.items():
-        live = _live(text)
+    for name in SUBSETS:
+        live = _live(w2[name])
         assert "already built" not in live, name
         assert "exit 0" not in live.split("make_subsets")[0], name
         assert "${OUT}/manifest.json" in live, name
@@ -113,8 +115,8 @@ def test_the_rebuilds_grow_the_shared_data_dirs_in_place(w2):
 
 def test_the_rebuilds_take_no_gpu(w2):
     """Staging jobs held a GPU once by inheriting a template. These are CPU."""
-    for name, text in w2.items():
-        res = yaml.safe_load(text)["spec"]["template"]["spec"]["containers"][0]["resources"]
+    for name in SUBSETS:
+        res = yaml.safe_load(w2[name])["spec"]["template"]["spec"]["containers"][0]["resources"]
         assert "nvidia.com/gpu" not in res["limits"], name
 
 
@@ -139,3 +141,112 @@ def test_the_specs_on_disk_match_the_generator(w2):
         p = ROOT / "experiments" / "FT" / "k8s" / name
         assert p.exists(), f"{name} not written"
         assert p.read_text() == text, f"{name} on disk differs from the generator"
+
+
+# ------------------------------------------------------------ the wave-2 legs
+
+LEGS_W2 = "job-ft-legs-w2-raunav.yaml"
+
+
+def test_wave2_emits_the_legs_spec(w2):
+    assert LEGS_W2 in w2
+
+
+def test_the_legs_write_to_their_own_root(w2):
+    """THE LOAD-BEARING TEST for item 33's first open sub-item. Wave 1's 108
+    cells are keyed by the same init names and sizes, so a shared root makes
+    every wave-2 cell hit `[ -f DONE ]` and skip -- the wave would appear to
+    run, finish in minutes, and produce nothing."""
+    live = _live(w2[LEGS_W2])
+    assert "ROOT_OUT=/data/results/ft/w2" in live
+    assert "ROOT_OUT=/data/results/ft\n" not in live
+
+
+def test_the_legs_load_the_last_epoch_not_the_best_epoch(w2):
+    """Item 18 fixed the paper's pretraining checkpoint to the last epoch. Wave
+    1 loaded net_best_epoch_state.pt -- epochs 74/64/76/78 -- and is a pilot."""
+    live = _live(w2[LEGS_W2])
+    assert "net_epoch-79_state.pt" in live
+    assert "mtx-r16q1-s2/net_best_epoch_state.pt" not in live
+
+
+def test_the_legs_run_all_four_sizes(w2):
+    assert "for N in 1000 10000 100000 1000000" in _live(w2[LEGS_W2])
+
+
+# ------------------------------------------------- ParT's recipe, item 32(b)
+
+def test_weight_decay_reaches_every_arm_including_scratch(w2):
+    """Item 33 declined option B because a wave-2 table without scratch has no
+    internal reference row. Putting the decay in COMMON is what makes scratch
+    get the same optimiser change as everything else."""
+    live = _live(w2[LEGS_W2])
+    common = next(ln for ln in live.splitlines() if ln.strip().startswith("COMMON="))
+    assert "--optimizer-option weight_decay 0.01" in common
+
+
+def test_the_head_multiplier_is_emitted_exactly_as_the_working_bench_spec(w2):
+    """I GOT THIS WRONG ONCE. The replacement over-escaped and emitted
+    `mod\\\\.fc\\\\..*`, which as a Python regex matches a literal backslash and
+    would have matched NO parameter -- so lr_mult would silently not apply and
+    every pretrained cell would have run wave 1's protocol. Pinned against the
+    bench spec, which is known to work, so the two cannot drift."""
+    bench = (ROOT / "experiments" / "FT" / "k8s"
+             / "job-ft-legs-bench-raunav.yaml").read_text()
+    line = next(ln.strip() for ln in bench.splitlines()
+                if ln.strip().startswith("HEAD_MULT=("))
+    assert line in _live(w2[LEGS_W2]), (
+        "the wave-2 head multiplier does not match the bench spec's working form")
+    assert "mod\\\\.fc" not in _live(w2[LEGS_W2]), "over-escaped: matches nothing"
+
+
+def test_scratch_gets_no_multiplier_and_pretrained_does(w2):
+    """5e-4 is the scratch rate, not 5e-3: there is no pretrained trunk to hold
+    back, so multiplying scratch's head by 50 would just be a different run."""
+    live = _live(w2[LEGS_W2])
+    for ln in live.splitlines():
+        if "LOAD=\"--load-model-weights" in ln:
+            assert 'MULT=("${HEAD_MULT[@]}")' in ln and "MULT=()" in ln
+            assert "LR=1e-4" in ln and "LR=5e-4" in ln
+
+
+def test_the_multiplier_is_verified_in_weavers_own_log_on_both_legs(w2):
+    """If lr_mult silently fails to match, the cell trains its fresh head at the
+    trunk rate -- wave 1's protocol, the exact thing wave 2 replaces -- and the
+    output is indistinguishable from a correct run."""
+    assert _live(w2[LEGS_W2]).count(
+        'grep -q "Parameters with lr multiplied by 50"') == 2
+
+
+def test_the_manifest_records_the_recipe_not_just_the_rate(w2):
+    """docs/RECORD.md: the spec is provenance. `lr=1e-4` alone does not say the
+    head ran at 5e-3, and wave 1's manifests say exactly that same `lr=1e-4`."""
+    live = _live(w2[LEGS_W2])
+    assert live.count("head_lr_mult=50 weight_decay=0.01 wave=2") == 2
+
+
+def test_the_scheduler_is_deliberately_not_changed(w2):
+    """LEGS_BENCH passes --lr-scheduler none because the published BENCHMARK
+    recipe wants a constant rate. Item 32(b) adopts only lr_mult and weight
+    decay, and the point is to match OUR LR sweep, which ran weaver's default
+    flat+decay. Adding the constant schedule would re-open the protocol gap in
+    a new place while looking like it closed it."""
+    assert "--lr-scheduler none" not in _live(w2[LEGS_W2])
+
+
+# --------------------------------------- the derivation refuses to drift quietly
+
+def test_the_derivation_raises_if_wave_one_changes(monkeypatch):
+    """The whole reason wave 2 is DERIVED rather than copied. If LEGS gains a
+    guard and the substitution stops matching, this must fail loudly instead of
+    emitting a wave-2 spec silently missing the recipe."""
+    monkeypatch.setattr(B, "LEGS", B.LEGS.replace(
+        "ROOT_OUT=/data/results/ft\n", "ROOT_OUT=/data/results/ft_renamed\n"))
+    with pytest.raises(SystemExit, match="wave-2 derivation expected"):
+        B.legs_w2()
+
+
+def test_the_derivation_reports_what_it_expected_and_what_it_found(monkeypatch):
+    monkeypatch.setattr(B, "LEGS", B.LEGS.replace('echo "FT LEGS COMPLETE"', ""))
+    with pytest.raises(SystemExit, match="found 0"):
+        B.legs_w2()
