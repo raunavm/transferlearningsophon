@@ -149,11 +149,39 @@ def main(argv=None) -> int:
                         counts[(sig, n_sig)] = max(counts.get((sig, n_sig), 0),
                                                    v["regret_n_arms"])
     degenerate = sorted(k for k, n in counts.items() if n < 2)
+    # ONE ARM IS NOT THE ONLY WAY A REGRET CELL CAN BE EMPTY OF MEANING, and the
+    # check above misses the other way. `regret_n_arms >= 2` -- the filter this
+    # file tells the reader to publish on -- is satisfied by THREE R16_Q1 SEEDS
+    # with no L162 arm present, and that cell's regret then measures seed-to-seed
+    # variation inside ONE vocabulary while reading as a vocabulary ablation.
+    #
+    # It is not hypothetical: label_X_YY_qqqq is exactly this in the first real
+    # merge (2026-09-15). l162-s1b lost that signal when its job died at ~25 h,
+    # so the signal survives on the three R16_Q1 seeds alone, passes
+    # regret_n_arms = 3, and would have gone into the table as a measured cost of
+    # coarsening. The quantity the ablation is about is defined ACROSS RUNGS, so
+    # the rung -- not the arm -- is what has to be counted.
+    per_sig_rungs: dict[str, set] = {}
+    for arm, ad in merged["arms"].items():
+        rung = ad.get("rung", arm)
+        for sig in ad["signals"]:
+            per_sig_rungs.setdefault(sig, set()).add(rung)
+    one_rung = sorted(s for s, r in per_sig_rungs.items() if len(r) < 2)
+
     merged["completeness"] = {
         "signals_seen": universe,
         "arms_missing_signals": incomplete,
         "cells_normalised_against_one_arm": [list(k) for k in degenerate],
+        "rungs_per_signal": {s: sorted(r) for s, r in sorted(per_sig_rungs.items())},
+        "signals_with_one_rung": one_rung,
     }
+    if one_rung:
+        print(f"WARNING: {len(one_rung)} signal(s) are carried by only ONE RUNG, "
+              f"so their cross-arm regret measures SEED variation, not the cost "
+              f"of coarsening -- and they PASS regret_n_arms >= 2. Exclude them "
+              f"from any vocabulary claim:")
+        for s in one_rung:
+            print(f"  {s}: rungs {sorted(per_sig_rungs[s])}")
     if incomplete:
         print("WARNING: the grid is RAGGED. Arms missing signals:")
         for arm, miss in sorted(incomplete.items()):

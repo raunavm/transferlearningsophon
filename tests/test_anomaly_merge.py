@@ -171,3 +171,58 @@ def test_a_complete_grid_reports_no_raggedness(tmp_path):
     assert c["arms_missing_signals"] == {}
     assert c["cells_normalised_against_one_arm"] == []
     assert c["signals_seen"] == ["bb", "qq"]
+
+
+# --------------------------------------------- one RUNG is not one ARM (2026-09-15)
+
+def _rung_payload(arm, rung, signals):
+    """A per-arm payload carrying an explicit rung, as anomaly.py writes."""
+    cell = {"class_sum": {"max_sic": 2.0, "regret_n_arms": 3, "argos": 0.01}}
+    return {"row_alignment_sha256": "x", "sigma_t": 5, "stat_cut": 0.2,
+            "min_bkg_pass": 25, "trainings": 10, "n_bkg": 1000, "n_template": 1000,
+            "arms": {arm: {"rung": rung,
+                           "signals": {s: {"0": cell, "250": cell} for s in signals}}}}
+
+
+def test_a_signal_carried_by_one_rung_is_flagged(capsys):
+    """THE DEFECT THIS EXISTS FOR. Three R16_Q1 seeds satisfy regret_n_arms >= 2 --
+    the filter this module tells the reader to publish on -- while carrying NO
+    L162 arm, so the cell's regret is seed variation wearing a vocabulary
+    ablation's clothes. Real: label_X_YY_qqqq in the 2026-09-15 merge."""
+    both, coarse_only = "shared_sig", "coarse_only_sig"
+    payloads = [
+        (f"s{i}", _rung_payload(f"r16q1-s{i}", "R16_Q1", [both, coarse_only]))
+        for i in (2, 3, 4)
+    ] + [("f", _rung_payload("l162-s1b", "L162", [both]))]
+    mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    merged = mg.merge(payloads)
+
+    per = {}
+    for arm, ad in merged["arms"].items():
+        for sig in ad["signals"]:
+            per.setdefault(sig, set()).add(ad["rung"])
+    assert per[coarse_only] == {"R16_Q1"}, "fixture must exercise the defect"
+    assert len(per[both]) == 2
+
+
+def test_the_arm_count_alone_would_not_have_caught_it():
+    """Why the existing guard is insufficient rather than merely incomplete."""
+    payloads = [
+        (f"s{i}", _rung_payload(f"r16q1-s{i}", "R16_Q1", ["only_coarse"]))
+        for i in (2, 3, 4)
+    ]
+    mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    merged = mg.merge(payloads)
+    n_arms = len(merged["arms"])
+    rungs = {ad["rung"] for ad in merged["arms"].values()}
+    assert n_arms >= 2, "passes the arm-count filter"
+    assert len(rungs) == 1, "but there is only one rung, so no coarsening is measured"
+
+
+def test_rung_falls_back_to_the_arm_name_when_absent():
+    """Older payloads predate the `rung` field; the check must not crash on them."""
+    p = _rung_payload("a1", "R16_Q1", ["s"])
+    del p["arms"]["a1"]["rung"]
+    mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    merged = mg.merge([("x", p)])
+    assert merged["arms"]["a1"].get("rung", "a1") == "a1"
