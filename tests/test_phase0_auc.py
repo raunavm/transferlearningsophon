@@ -234,3 +234,61 @@ def test_main_warns_when_no_anchor_is_present(tmp_path, monkeypatch, capsys):
 def test_an_empty_grid_is_refused_rather_than_written_as_an_empty_table(tmp_path):
     with pytest.raises(SystemExit, match="no .*pred.root"):
         A.main(["--grid", str(tmp_path)])
+
+
+# ------------------------------------- what a zero anchor spread does NOT license
+
+def test_a_zero_spread_is_reported_as_determinism_not_as_a_variance_bound(
+        tmp_path, monkeypatch, capsys):
+    """THE DEFECT THIS PINS WAS IN MY OWN REPORT, and the real run triggered it.
+    The message read "any arm gap smaller than the spread is unreadable"; the
+    spread came back EXACTLY 0.00000, which licenses every gap in the table.
+    Backwards: a zero spread says the two probe jobs rebuilt the same checkpoint
+    bit for bit. Every cell ran --seed 1, so seed variance is unmeasured, and
+    reproducibility says nothing about the test set's own statistical error."""
+    _grid_like_the_real_one(tmp_path)
+    # identical scores for identical (arm, lr) -> spread exactly zero, as in production
+    monkeypatch.setattr(A, "read_cell",
+                        lambda p: _separable(seed=hash(p.parent.name) % 997))
+    A.main(["--grid", str(tmp_path)])
+    txt = capsys.readouterr().out
+    assert "Spread is EXACTLY zero" in txt
+    assert "determinism at fixed" in txt and "seed variance is unmeasured" in txt
+    assert "unreadable and must not be quoted" not in txt, (
+        "the variance-bound wording must not appear when the spread is zero")
+
+
+def test_a_real_spread_still_gets_the_variance_wording(tmp_path, monkeypatch, capsys):
+    _grid_like_the_real_one(tmp_path)
+    monkeypatch.setattr(A, "read_cell", lambda p: _separable(seed=len(str(p))))
+    A.main(["--grid", str(tmp_path)])
+    txt = capsys.readouterr().out
+    assert "Spread is EXACTLY zero" not in txt
+    assert "unreadable and must not be quoted" in txt
+
+
+# ------------------------------------------------ the arm gap and its error bar
+
+def test_the_arm_gap_is_reported_against_the_poisson_band(tmp_path, monkeypatch, capsys):
+    """Rejection is 1/eps_B and eps_B comes from a COUNT, so a cell with ~1,000
+    surviving background jets carries a ~3% band -- the size of the arm gaps
+    themselves at the top of the grid. Quoting the gap bare is how a 0.8-sigma
+    difference becomes 'the ordering flips'."""
+    _grid_like_the_real_one(tmp_path)
+    monkeypatch.setattr(A, "read_cell", lambda p: _separable(seed=len(str(p))))
+    A.main(["--grid", str(tmp_path)])
+    txt = capsys.readouterr().out
+    assert "arm gap in rejection" in txt and "n_sigma" in txt
+    assert "upper bounds on" in txt, (
+        "the band is background-only; signal error and seed variance widen it, "
+        "so the printed n_sigma must be flagged as an upper bound")
+
+
+def test_the_gap_table_is_skipped_when_a_rate_has_only_one_arm(tmp_path, monkeypatch, capsys):
+    for lr in ("3e-5", "1e-4"):
+        d = tmp_path / "lrprobe" / f"l162-s1b_lr{lr}"
+        d.mkdir(parents=True)
+        (d / "pred.root").write_bytes(b"")
+    monkeypatch.setattr(A, "read_cell", lambda p: _separable(seed=len(str(p))))
+    A.main(["--grid", str(tmp_path)])
+    assert "arm gap in rejection" not in capsys.readouterr().out

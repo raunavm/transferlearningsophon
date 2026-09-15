@@ -167,11 +167,57 @@ def main(argv=None) -> int:
                 print(f"  {arm:10s} lr {lr:7.0e} {k:18s} "
                       f"{' vs '.join(f'{x:.5f}' for x in vals)}  "
                       f"(spread {max(vals) - min(vals):+.5f})   [{probes}]")
-        print("  A spread here is run-to-run variance, not a rate effect. Any arm")
-        print("  gap smaller than it is unreadable and must not be quoted.")
+        spreads = [max(x[k] for x in v) - min(x[k] for x in v)
+                   for v in repeated.values() for k in ("auc",)]
+        if max(spreads) == 0.0:
+            # THIS SENTENCE USED TO READ "any arm gap smaller than the spread is
+            # unreadable", which with a spread of EXACTLY zero licenses every gap
+            # in the table. That is backwards. A zero spread says training is
+            # deterministic at fixed seed -- the two probe jobs built the same
+            # checkpoint bit for bit. It is NOT a variance estimate: every cell
+            # ran --seed 1, so seed-to-seed variation is UNMEASURED here, and the
+            # finite test set has its own error that reproducibility cannot see.
+            print("  Spread is EXACTLY zero: the two probe jobs rebuilt the same")
+            print("  checkpoint bit for bit.")
+            print("  That establishes determinism at fixed seed, and NOTHING else.")
+            print("  Every cell ran --seed 1, so seed variance is unmeasured here,")
+            print("  and reproducibility says nothing about the test set's own")
+            print("  statistical error.")
+            print("  Judge arm gaps against the Poisson band below, never against")
+            print("  this zero.")
+        else:
+            print("  A spread here is run-to-run variance, not a rate effect. Any arm")
+            print("  gap smaller than it is unreadable and must not be quoted.")
     else:
         print("\nWARNING: no overlap anchor found. Nothing in this table measures")
         print("run-to-run variance, so no arm gap in it can be called significant.")
+
+    # THE ARM GAP AGAINST ITS OWN STATISTICAL BAND. Rejection is 1/eps_B and
+    # eps_B is estimated from a COUNT, so a cell with ~1,000 surviving background
+    # jets carries a ~3 % Poisson band -- comparable to the arm differences
+    # themselves at the top of the grid. Quoting the gap without it is how a
+    # 0.8-sigma difference becomes "the ordering flips".
+    import math
+    by_rate = {}
+    for r in rows:
+        by_rate.setdefault(r["lr"], {})[r["arm"]] = r
+    pairs = [(lr, d) for lr, d in sorted(by_rate.items()) if len(d) == 2]
+    if pairs:
+        print("\narm gap in rejection, against the Poisson band on surviving background:")
+        a1, a2 = sorted(next(d for _, d in pairs))
+        print(f"  {'lr':>7} {a1:>10} {a2:>10} {'diff':>8} {'band':>7} {'n_sigma':>8}")
+        for lr, d in pairs:
+            x, y = d[a1], d[a2]
+            dx = x["rejection_at_0.50"] * x["rejection_rel_stat"]
+            dy = y["rejection_at_0.50"] * y["rejection_rel_stat"]
+            band = math.hypot(dx, dy)
+            diff = x["rejection_at_0.50"] - y["rejection_at_0.50"]
+            ns = abs(diff) / band if band > 0 else float("inf")
+            print(f"  {lr:7.0e} {x['rejection_at_0.50']:10.1f} "
+                  f"{y['rejection_at_0.50']:10.1f} {diff:+8.1f} {band:7.1f} {ns:8.2f}")
+        print("  The band is the BACKGROUND count only. Signal-side error and seed")
+        print("  variance would both widen it, so these n_sigma are upper bounds on")
+        print("  significance: a gap that is marginal here is not real.")
 
     # THE POINT OF THE EXERCISE: does the plateau survive the change of metric?
     # Accuracy plateaus from 3e-3; rejection and log(1 - AUC) magnify the tail of
