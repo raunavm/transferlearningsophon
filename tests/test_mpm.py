@@ -184,3 +184,70 @@ def test_mpm_mask_rate_out_of_range_is_refused():
     r = _run("--seed", "1", "--mpm", "--mpm-mask-rate", "1.0")
     assert r.returncode != 0
     assert "must be in (0, 1)" in r.stderr + r.stdout
+
+
+# ---------------------------------------------------- the evaluation path itself
+#
+# THIS IS THE TEST THAT WOULD HAVE SAVED THREE PODS. The smoke test ran 30
+# TRAINING steps on one fixed batch and passed every check, so the SSL arm was
+# launched believing it was exercised. Nothing had ever run the evaluation path,
+# and evaluate_mpm calls _run_epoch(model, None, None, ...) -- both the optimizer
+# and the scheduler are None there. The tqdm postfix line sat OUTSIDE the
+# `if train:` guard and fell through to `opt.defaults['lr']`, so every epoch
+# trained in full, checkpointed, and then died on its first validation batch.
+# Auto-resume then made it look like progress instead of a loop.
+
+class _Cfg:
+    input_names = ["x"]
+
+
+class _DS:
+    config = _Cfg()
+
+
+class _Loader:
+    dataset = _DS()
+
+    def __len__(self):
+        return 2
+
+    def __iter__(self):
+        for _ in range(2):
+            yield ({"x": torch.zeros(3, 4)}, None, None)
+
+
+class _Net(torch.nn.Module):
+    mask_rate = 0.4
+
+    def forward(self, x):
+        return (torch.zeros(3, 4), torch.zeros(3, 8),
+                torch.zeros(3, 4), torch.zeros(3, dtype=torch.long))
+
+    def loss(self, pc, pi, tc, ti):
+        one = torch.tensor(1.0, requires_grad=True)
+        return one, torch.tensor(0.5), torch.tensor(0.5)
+
+
+def test_an_eval_epoch_runs_with_no_optimizer_and_no_scheduler():
+    """The exact call evaluate_mpm makes. Before the fix this raised
+    AttributeError: 'NoneType' object has no attribute 'defaults'."""
+    out = mpm._run_epoch(_Net(), None, None, _Loader(), "cpu", 0, False)
+    assert out == pytest.approx(1.0)
+
+
+def test_a_train_epoch_still_reports_the_rate_from_the_optimizer():
+    """The fix must not silence the rate on the path that has one. No scheduler,
+    so this is the `elif opt` branch."""
+    net = _Net()
+    opt = torch.optim.SGD([torch.nn.Parameter(torch.zeros(1))], lr=5e-4)
+    assert mpm._run_epoch(net, opt, None, _Loader(), "cpu", 0, True) == pytest.approx(1.0)
+
+
+def test_the_postfix_line_is_guarded_for_both_none_cases():
+    """Pins the shape of the fix: a bare `else opt.defaults` returns, and the
+    eval path breaks again, without any test above necessarily failing first."""
+    import inspect
+    src = inspect.getsource(mpm._run_epoch)
+    assert "else '%.2e' % opt.defaults['lr'] if opt else" in src, (
+        "the lr postfix must handle opt is None; evaluation passes None for "
+        "both the optimizer and the scheduler")

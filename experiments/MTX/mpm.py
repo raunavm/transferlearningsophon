@@ -291,7 +291,15 @@ def _run_epoch(model, opt, scheduler, loader, dev, epoch, train: bool,
             tot_correct += (pi.argmax(1) == ti).sum().item()
             tot += loss.item(); tot_c += l_c.item(); tot_i += l_i.item()
             tq.set_postfix({
-                'lr': '%.2e' % scheduler.get_last_lr()[0] if scheduler else opt.defaults['lr'],
+                # BOTH opt AND scheduler ARE None IN EVALUATION. evaluate_mpm calls
+                # _run_epoch(model, None, None, ...), and this line ran OUTSIDE the
+                # `if train:` guard, so it fell through to opt.defaults and raised
+                # AttributeError on the first validation batch of every epoch.
+                # It cost three pods: each trained a full epoch, checkpointed, then
+                # died in validation -- and because auto-resume worked, it looked
+                # like progress rather than a loop.
+                'lr': ('%.2e' % scheduler.get_last_lr()[0] if scheduler
+                       else '%.2e' % opt.defaults['lr'] if opt else '-'),
                 'Loss': '%.5f' % loss.item(),
                 'L1': '%.5f' % l_c.item(),
                 'CE': '%.5f' % l_i.item(),
