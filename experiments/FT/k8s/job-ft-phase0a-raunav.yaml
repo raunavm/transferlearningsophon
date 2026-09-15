@@ -92,7 +92,7 @@ spec:
 
           PRED="--data-config configs/finetune/TopReference.yaml \
                 --network-config experiments/MTX/ParT_sophon_arch_mtx.py \
-                -o num_classes 2 -o fc_params [(512,0.1)] \
+                -o num_classes 2 \
                 --predict-gpus 0 --batch-size 512 --num-workers 2 \
                 --fetch-by-files --fetch-step 1"
 
@@ -106,7 +106,13 @@ spec:
             [ -f "${CK}" ] || { echo "FATAL: no ${CK}"; exit 1; }
             echo "===== ${PROBE}/${CELL} ====="
             mkdir -p ${O}
+            # fc_params is passed HERE, single-quoted, and not inside ${PRED}.
+            # Unquoted inside a variable it expands as a GLOB -- [(512,0.1)] is
+            # a one-character bracket set -- and bash only leaves it literal
+            # because nothing in the clone happens to match. This is the form
+            # the bench legs already use and it does not depend on that luck.
             weaver --predict --data-test ${TEST} ${PRED} \
+              -o fc_params '[(512,0.1)]' \
               --model-prefix ${CK} \
               --predict-output ${O}/pred.root 2>&1 | tee ${O}/predict.log | tail -3
             [ -f "${O}/pred.root" ] || { echo "FATAL: no pred.root for ${CELL}"; exit 1; }
