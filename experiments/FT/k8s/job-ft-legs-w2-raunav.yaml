@@ -40,7 +40,7 @@ spec:
         - name: POD_NAME
           valueFrom: { fieldRef: { fieldPath: metadata.name } }
         - name: REPO_REF
-          value: "mtx-s1.44"
+          value: "mtx-s1.45"
         args:
         - |
           set -euo pipefail
@@ -267,6 +267,9 @@ spec:
               - key: nvidia.com/gpu.product
                 operator: In
                 values: ["NVIDIA-GeForce-RTX-3090"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org"]
       volumes:
       - name: jc2
         persistentVolumeClaim:

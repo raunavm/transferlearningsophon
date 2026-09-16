@@ -645,8 +645,22 @@ LEGS = PREAMBLE + """
 """
 
 
+# Nodes measured to accept a pod and then fail it. Kept here rather than in each
+# spec so one list serves every GPU job this generator emits.
+#   ry-gpu-03, k8s-chase-ci-07, nrp-fiona-001, hcc-chase-shor-*: device plugin
+#     rejects at admission (scripts/exclude_node.py).
+#   nautilus-ext-gpu01: CSI volume attachment is forbidden for that node
+#     ("no relationship found between node ... and this object"), so every pod
+#     fails to mount /data, is evicted, and reschedules straight back onto it.
+#     Measured 2026-09-16: it took three wave-2 pods in ~90 min and put two
+#     .partial dirs on one cell, one short of halting the whole wave.
+BAD_NODES = ("ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu",
+             "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu",
+             "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org")
+
+
 def job(name: str, script: str, *, gpu: bool, cpu: str, memory: str, shm: str,
-        backoff: int, pin: str, header: str) -> str:
+        backoff: int, pin: str, header: str, exclude_hosts: tuple = ()) -> str:
     gpu_req = ', nvidia.com/gpu: "1"' if gpu else ""
     gpu_env = ('        - name: GPU_PRODUCT\n          value: "NVIDIA-GeForce-RTX-3090"\n'
                if gpu else "")
@@ -658,6 +672,16 @@ def job(name: str, script: str, *, gpu: bool, cpu: str, memory: str, shm: str,
     product = ("              - key: nvidia.com/gpu.product\n"
                "                operator: In\n"
                '                values: ["NVIDIA-GeForce-RTX-3090"]\n' if gpu else "")
+    # NODES THAT ADVERTISE FREE GPUs AND THEN REJECT THE POD. Kubernetes tells
+    # the scheduler nothing about a broken node until an admin taints it, so the
+    # spec has to say so -- the reason scripts/exclude_node.py exists (38 pods
+    # lost to ry-gpu-03 in one wave). Opt-in and empty by default, so adding it
+    # here changes no other spec's bytes.
+    if gpu and exclude_hosts:
+        product += ("              - key: kubernetes.io/hostname\n"
+                    "                operator: NotIn\n"
+                    "                values: [" +
+                    ", ".join(f'"{h}"' for h in exclude_hosts) + "]\n")
     body = "\n".join("          " + ln if ln and not ln.startswith("          ") else ln
                      for ln in script.splitlines())
     return f"""apiVersion: batch/v1
@@ -1061,7 +1085,7 @@ def build(pin: str, wave2: bool = False) -> dict[str, str]:
         }
         specs["job-ft-legs-w2-raunav.yaml"] = job(
             "ft-legs-w2-raunav", _fill(legs_w2(), pin), gpu=True, cpu="4",
-            memory="88Gi", shm="8Gi", backoff=50, pin=pin,
+            memory="88Gi", shm="8Gi", backoff=50, pin=pin, exclude_hosts=BAD_NODES,
             header=h + "  # WAVE 2 of the fine-tuning legs (item 33, option A, PI-approved).\n"
                        "  # 6 inits x 4 sizes x 3 seeds x 2 legs = 144 fine-tunes, ~145 GPU-h.\n"
                        "  #\n"

@@ -29,7 +29,7 @@ W2 = SUBSETS | {LEGS_W2}
 
 # Each wave-2 spec carries the pin it was generated for, and they are NOT the
 # same tag. See the w2 fixture for why.
-PINS = {LEGS_W2: "mtx-s1.44",
+PINS = {LEGS_W2: "mtx-s1.45",
         "job-ft-subsets-jc2-w2-raunav.yaml": "mtx-s1.41",
         "job-ft-subsets-jc1-w2-raunav.yaml": "mtx-s1.41"}
 
@@ -519,3 +519,44 @@ def test_wave1_and_bench_keep_the_original_space_guard(w1):
         body = _args(w1[name])
         assert '[ "$p" -lt 85 ]' in body, f"{name} lost its 85% guard"
         assert '-lt 92' not in body, f"the wave-2 raise leaked into {name}"
+
+
+def test_wave2_legs_exclude_the_known_bad_nodes(w2):
+    """A NODE CAN ADVERTISE FREE GPUs AND STILL FAIL EVERY POD, and Kubernetes
+    tells the scheduler nothing about it until an admin taints it.
+
+    Measured 2026-09-16: nautilus-ext-gpu01.fullerton.edu cannot attach the CSI
+    volume ("no relationship found between node ... and this object"), so each
+    pod fails to mount /data, is evicted, and reschedules straight back onto the
+    same node. It consumed three wave-2 pods in ~90 minutes and left TWO
+    .partial dirs on one cell -- one short of tripping attempt_ok and halting the
+    entire 144-cell wave. Every other GPU spec in the repo already carries this
+    list; the legs were the one that did not."""
+    import yaml
+    spec = yaml.safe_load(w2[LEGS_W2])
+    terms = (spec["spec"]["template"]["spec"]["affinity"]["nodeAffinity"]
+             ["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"])
+    excl = [e for t in terms for e in t["matchExpressions"]
+            if e["key"] == "kubernetes.io/hostname"]
+    assert excl, "the wave-2 legs have no hostname exclusion at all"
+    assert excl[0]["operator"] == "NotIn"
+    assert "nautilus-ext-gpu01.fullerton.edu" in excl[0]["values"], (
+        "the node that took three pods in 90 minutes is not excluded")
+    assert "ry-gpu-03.sdsc.optiputer.net" in excl[0]["values"], (
+        "the node scripts/exclude_node.py was written for is not excluded")
+
+
+def test_the_exclusion_is_opt_in_and_reaches_nothing_else(w1, w2):
+    """exclude_hosts defaults to empty, so adding the list to the legs cannot
+    silently rewrite the specs of runs that already finished."""
+    import yaml
+    for name, text in w1.items():
+        spec = yaml.safe_load(text)
+        aff = spec["spec"]["template"]["spec"].get("affinity")
+        if not aff:
+            continue
+        terms = (aff["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]
+                 ["nodeSelectorTerms"])
+        keys = [e["key"] for t in terms for e in t["matchExpressions"]]
+        assert "kubernetes.io/hostname" not in keys, (
+            f"the wave-2 node exclusion leaked into {name}, whose run is finished")
