@@ -931,6 +931,28 @@ def legs_w2() -> str:
          "              for S in __FT_SEEDS__; do",
          "            for S in __FT_SEEDS__; do\n"
          "              for N in __SIZES__; do", 2),
+        # ---- item 36 addendum 2: the 85% line now blocks a wave that fits ----
+        # PI-approved 2026-09-16. The guard fires before EVERY cell, and wave 2
+        # tripped it at 85% with 163 GB free while needing ~41 GB.
+        #
+        # THE THRESHOLD WAS CALIBRATED AGAINST A DIFFERENT WAVE. 85% was set when
+        # wave 2 was going to write 306 GB into 174 GB of free space -- a wave
+        # that genuinely could not fit, and the guard was right to be the thing
+        # that caught it. Item 36 cut the wave to ~41 GB, so the same threshold
+        # now refuses a wave that peaks near 89% with ~115 GB still free. The
+        # premise changed; the number had not.
+        #
+        # THE SECOND CONDITION IS DELIBERATELY UNTOUCHED. `g >= 50` is the check
+        # that actually protects the volume: it is an absolute floor in GB and it
+        # does not care how large the disk is or what fraction other people's data
+        # occupies. A percentage is a proxy for "will this fill up"; 50 GB free is
+        # the thing itself. Raising the proxy while keeping the floor is why this
+        # is safe, and if the floor is ever the binding one the wave still stops.
+        #
+        # WAVE 1 AND THE BENCH LEGS KEEP 85%. space_ok is defined separately in
+        # LEGS and LEGS_BENCH, so this substitution reaches wave 2 alone.
+        ('[ "$p" -lt 85 ] && [ "$g" -ge 50 ]',
+         '[ "$p" -lt 92 ] && [ "$g" -ge 50 ]', 1),
         ('echo "FT LEGS COMPLETE"', 'echo "FT LEGS WAVE 2 COMPLETE"', 1),
     ]
     out = LEGS

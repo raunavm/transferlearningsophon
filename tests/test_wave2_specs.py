@@ -29,7 +29,7 @@ W2 = SUBSETS | {LEGS_W2}
 
 # Each wave-2 spec carries the pin it was generated for, and they are NOT the
 # same tag. See the w2 fixture for why.
-PINS = {LEGS_W2: "mtx-s1.43",
+PINS = {LEGS_W2: "mtx-s1.44",
         "job-ft-subsets-jc2-w2-raunav.yaml": "mtx-s1.41",
         "job-ft-subsets-jc1-w2-raunav.yaml": "mtx-s1.41"}
 
@@ -491,3 +491,31 @@ def test_cheap_and_expensive_cells_interleave(w2):
         "init spends ~3.8 unbroken hours of GPU time at ~16% utilisation")
     assert pairs.count((sizes, seeds)) == 0, (
         "a size loop still wraps a seed loop -- that is the ~16% block")
+
+
+def test_wave2_space_guard_is_raised_but_the_floor_is_not(w2):
+    """PI-approved 2026-09-16. 85% was calibrated when wave 2 would write 306 GB
+    into 174 GB free -- a wave that could not fit, which the guard correctly
+    caught. Item 36 cut it to ~41 GB, so the same line then refused a wave
+    peaking near 89% with ~115 GB still free.
+
+    THE ABSOLUTE FLOOR MUST SURVIVE. `g >= 50` is what actually protects the
+    volume: a percentage is a proxy for "will this fill up", 50 GB free is the
+    thing itself, and it holds regardless of disk size or what share of it
+    belongs to other people. Raising the proxy is only safe while the floor
+    stands, so this asserts the floor as hard as it asserts the threshold."""
+    body = _live(w2[LEGS_W2])
+    assert '[ "$p" -lt 92 ] && [ "$g" -ge 50 ]' in body, (
+        "wave 2 must check BOTH the raised percentage AND the unchanged 50 GB "
+        "floor -- dropping the floor would remove the only absolute protection")
+    assert '-lt 85' not in body
+
+
+def test_wave1_and_bench_keep_the_original_space_guard(w1):
+    """The raise is a wave-2 substitution. space_ok is defined separately in
+    LEGS and LEGS_BENCH, and wave 1's 108 cells are finished -- rewriting their
+    spec would detach a completed run from the code that produced it."""
+    for name in ("job-ft-legs-raunav.yaml", "job-ft-legs-bench-raunav.yaml"):
+        body = _args(w1[name])
+        assert '[ "$p" -lt 85 ]' in body, f"{name} lost its 85% guard"
+        assert '-lt 92' not in body, f"the wave-2 raise leaked into {name}"

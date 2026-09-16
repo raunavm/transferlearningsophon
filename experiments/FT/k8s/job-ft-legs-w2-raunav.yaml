@@ -40,7 +40,7 @@ spec:
         - name: POD_NAME
           valueFrom: { fieldRef: { fieldPath: metadata.name } }
         - name: REPO_REF
-          value: "mtx-s1.43"
+          value: "mtx-s1.44"
         args:
         - |
           set -euo pipefail
@@ -78,7 +78,7 @@ spec:
           # Every fine-tune writes up to ~4 GB (weaver keeps state + optimizer per
           # epoch; leg 1 adds 2M x (128 + 162) float32 features + logits): ~250 GB
           # over the wave. CLAUDE.md: no write > 1 GB past 85% without the PI.
-          space_ok () { local p=$(df --output=pcent /data | tail -1 | tr -dc 0-9); local g=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9); echo "/data ${p}% used, ${g}G free"; [ "$p" -lt 85 ] && [ "$g" -ge 50 ] || { echo "FATAL: /data at ${p}% used, ${g}G free: stop and ask the PI"; exit 1; }; }
+          space_ok () { local p=$(df --output=pcent /data | tail -1 | tr -dc 0-9); local g=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9); echo "/data ${p}% used, ${g}G free"; [ "$p" -lt 92 ] && [ "$g" -ge 50 ] || { echo "FATAL: /data at ${p}% used, ${g}G free: stop and ask the PI"; exit 1; }; }
 
           # A fine-tune that fails deterministically (OOM, a failed check) would
           # otherwise be re-run by all 50 retries, each one moving the previous
