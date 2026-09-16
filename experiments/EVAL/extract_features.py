@@ -300,6 +300,16 @@ def main() -> int:
                          "on row alignment. Overridable only for testing.")
     ap.add_argument("--batch-size", type=int, default=512)
     ap.add_argument("--max-jets", type=int, default=0, help="0 = all")
+    # KEEP EVERY k-th ROW, NOT THE FIRST N. The two are not interchangeable and
+    # the difference is a biased class mix, not a smaller sample. The test list
+    # interleaves Res2P / Res34P / QCD by file, so a head slice over-represents
+    # whichever files come first -- which is exactly why leg1_metrics.py takes
+    # `np.arange(0, n, auc_stride)` rather than `[:n]` (its docstring, lines
+    # 32-36). Striding HERE caches precisely the rows that reader already uses
+    # at its default --auc-stride 4, so nothing downstream changes except that
+    # the 4x it would have discarded is never written.
+    ap.add_argument("--stride", type=int, default=1,
+                    help="keep every k-th jet (1 = every jet)")
     ap.add_argument("--num-workers", type=int, default=1,
                     help="1, not 2. Each worker holds its own file buffer, so "
                          "workers multiply the dominant memory cost, and a "
@@ -421,12 +431,22 @@ def main() -> int:
                 break
     tap.close()
 
-    F = np.concatenate(feats)[: args.max_jets or None]
-    L = np.concatenate(labels)[: args.max_jets or None]
+    if args.stride < 1:
+        raise SystemExit(f"FATAL: --stride must be >= 1, got {args.stride}")
+
+    # ONE helper for every array. Applying the cut per-array by hand is how a
+    # feature matrix and its labels come to disagree by a row, and the
+    # label188_sha256 alignment check below would still pass because it is
+    # computed on whatever L ended up being.
+    def keep(a):
+        return a[: args.max_jets or None][:: args.stride]
+
+    F = keep(np.concatenate(feats))
+    L = keep(np.concatenate(labels))
     np.save(out / "features.npy", F)
     np.save(out / "label188.npy", L)
     if args.save_logits:
-        G = np.concatenate(logits)[: args.max_jets or None]
+        G = keep(np.concatenate(logits))
         # Raw logits, NOT softmaxed. The consumer decides the normalisation, and
         # storing probabilities would throw away the ability to recompute them.
         assert G.shape == (F.shape[0], args.num_classes), (
@@ -436,7 +456,7 @@ def main() -> int:
     saved_obs = {}
     for k, v in obs.items():
         if v:
-            saved_obs[k] = np.concatenate(v)[: args.max_jets or None]
+            saved_obs[k] = keep(np.concatenate(v))
     # A requested observer that never arrived means the data config does not
     # list it. Downstream that reads as "the branch is all zeros" or as a
     # KeyError hours later; here it is one sentence naming the branch.
@@ -464,6 +484,10 @@ def main() -> int:
         "data_config_sha256": hashlib.sha256(
             pathlib.Path(args.data_config).read_bytes()).hexdigest(),
         "n_test_files": len(args.data_test),
+        # WITHOUT THIS a stride-4 cache and a full cache of a quarter as many
+        # jets are indistinguishable after the fact, and they are not the same
+        # sample: one preserves the class mix, the other is a head slice.
+        "stride": int(args.stride),
         "label188_sha256": hashlib.sha256(L.tobytes()).hexdigest(),
         "observers": sorted(saved_obs),
         "has_logits": bool(args.save_logits),

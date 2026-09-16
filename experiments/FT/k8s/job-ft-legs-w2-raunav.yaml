@@ -40,7 +40,7 @@ spec:
         - name: POD_NAME
           valueFrom: { fieldRef: { fieldPath: metadata.name } }
         - name: REPO_REF
-          value: "mtx-s1.41"
+          value: "mtx-s1.42"
         args:
         - |
           set -euo pipefail
@@ -57,7 +57,7 @@ spec:
 
           SUB2=/data/finetune/jc2
           SUB1=/data/finetune/jc1
-          ROOT_OUT=/data/results/ft/w2
+          ROOT_OUT=/data/results/ft/w2b
           mkdir -p ${ROOT_OUT}
 
           # The subsets come from two CPU jobs applied BEFORE this one, which is
@@ -162,7 +162,7 @@ spec:
                   --data-train ${SUB2}/train_N${N}_s${S}.parquet --data-val ${SUB2}/val.parquet \
                   --data-config configs/finetune/JetClassII_L162_noweight.yaml \
                   --network-config experiments/MTX/ParT_sophon_arch_mtx.py -o num_classes 162 -o fc_params '[(512,0.1)]' \
-                  ${COMMON} ${MULT[@]+"${MULT[@]}"} --start-lr ${LR} --samples-per-epoch ${SPE} --samples-per-epoch-val 200000 --num-epochs ${EP} \
+                  ${COMMON} ${MULT[@]+"${MULT[@]}"} --start-lr ${LR} --samples-per-epoch ${SPE} --samples-per-epoch-val 20000 --num-epochs ${EP} \
                   ${LOAD} --model-prefix ${OUT}/net --log ${OUT}/train.log 2>&1 | tee ${OUT}/stdout.log
                 [ -z "${ckpt}" ] || python3 experiments/FT/smoke_checks.py load-log --log ${OUT}/stdout.log
                 if [ -n "${ckpt}" ]; then
@@ -172,8 +172,14 @@ spec:
                 fi
                 python3 experiments/EVAL/extract_features.py --checkpoint ${OUT}/net_best_epoch_state.pt --num-classes 162 --arm FT1_${name}_N${N}_s${S} \
                   --data-config configs/data/JetClassII_base.yaml --data-test ${TEST2M} \
-                  --out ${OUT}/features_v2 --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets 2000000 --save-logits
-                python3 experiments/FT/smoke_checks.py features --dir ${OUT}/features_v2 --n 2000000 --k 162
+                  --out ${OUT}/features_v2 --batch-size 512 --num-workers 1 --fetch-step 1 --max-jets 2000000 --stride 4 --save-logits
+                python3 experiments/FT/smoke_checks.py features --dir ${OUT}/features_v2 --n 500000 --k 162
+                [ -f ${OUT}/net_best_epoch_state.pt ] || {
+                  echo "FATAL: no net_best_epoch_state.pt in ${OUT};"
+                  echo "       refusing to prune per-epoch checkpoints."; exit 1; }
+                rm -f ${OUT}/net_epoch-*_state.pt ${OUT}/net_epoch-*_optimizer.pt
+                [ -f ${OUT}/net_best_epoch_state.pt ] || {
+                  echo "FATAL: the prune removed net_best_epoch_state.pt in ${OUT}."; exit 1; }
                 touch ${OUT}/DONE
               done
             done
@@ -220,7 +226,7 @@ spec:
                   --data-train ${SUB1}/train_N${N}_s${S}.parquet --data-val ${SUB1}/val.parquet \
                   --data-config configs/finetune/JetClassI_sophon_noweight.yaml \
                   --network-config experiments/E1/ParT_sophon_arch_10c.py -o num_classes 10 -o fc_params '[(512,0.1)]' \
-                  ${COMMON} ${MULT[@]+"${MULT[@]}"} --start-lr ${LR} --samples-per-epoch ${SPE} --samples-per-epoch-val 200000 --num-epochs ${EP} \
+                  ${COMMON} ${MULT[@]+"${MULT[@]}"} --start-lr ${LR} --samples-per-epoch ${SPE} --samples-per-epoch-val 20000 --num-epochs ${EP} \
                   ${LOAD} --model-prefix ${OUT}/net --log ${OUT}/train.log 2>&1 | tee ${OUT}/stdout.log
                 [ -z "${ckpt}" ] || python3 experiments/FT/smoke_checks.py load-log --log ${OUT}/stdout.log
                 if [ -n "${ckpt}" ]; then
@@ -230,6 +236,12 @@ spec:
                 fi
                 weaver --predict --data-test ${TEST1} ${PRED} -o fc_params '[(512,0.1)]' --model-prefix ${OUT}/net --predict-output ${OUT}/pred.root 2>&1 | tee ${OUT}/predict.log | tail -3
                 [ -f ${OUT}/pred.root ] || { echo "FATAL: no pred.root in ${OUT}"; exit 1; }
+                [ -f ${OUT}/net_best_epoch_state.pt ] || {
+                  echo "FATAL: no net_best_epoch_state.pt in ${OUT};"
+                  echo "       refusing to prune per-epoch checkpoints."; exit 1; }
+                rm -f ${OUT}/net_epoch-*_state.pt ${OUT}/net_epoch-*_optimizer.pt
+                [ -f ${OUT}/net_best_epoch_state.pt ] || {
+                  echo "FATAL: the prune removed net_best_epoch_state.pt in ${OUT}."; exit 1; }
                 touch ${OUT}/DONE
               done
             done

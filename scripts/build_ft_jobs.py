@@ -750,10 +750,26 @@ def legs_w2() -> str:
 
     WHAT CHANGES, AND WHY EACH ONE (item 32(b), item 33):
 
-      output root   /data/results/ft -> /data/results/ft/w2. Wave 1's 108 cells
-                    are complete and keyed by the SAME init names and sizes, so
-                    sharing a root means every wave-2 cell hits `[ -f DONE ]`
-                    and skips. The two waves are reported side by side.
+      output root   /data/results/ft -> /data/results/ft/w2b. Wave 1's 108
+                    cells are complete and keyed by the SAME init names and
+                    sizes, so sharing a root means every wave-2 cell hits
+                    `[ -f DONE ]` and skips. The two waves are reported side by
+                    side.
+
+                    w2b, NOT w2, AND THE `b` IS LOad-BEARING (item 36). The
+                    first wave-2 launch completed 4 cells under the old
+                    protocol -- 200k validation, full 2e6 feature rows -- before
+                    it was stopped for running the volume out of space. Those
+                    four carry DONE markers, so relaunching into w2/ would SKIP
+                    them and ship a table whose first 4 cells were selected on a
+                    different validation set and cached a different row set from
+                    the other 140. That is an I1 break, and it would not even
+                    reach the table: leg1_metrics.py compares label188_sha256
+                    across cells and a mismatch is fatal, so the analysis would
+                    refuse the merge after the wave had been paid for. A new
+                    root re-runs all 144 under one protocol and OVERWRITES
+                    NOTHING -- the superseded cells stay under w2/ as the record
+                    of what was stopped and why.
       weight decay  0.01 on every arm INCLUDING scratch. Item 33 option B was
                     declined precisely because a wave-2 table without scratch
                     has no internal reference row; scratch must therefore get
@@ -775,7 +791,7 @@ def legs_w2() -> str:
     subs = [
         # (old, new, expected occurrences)
         ("          ROOT_OUT=/data/results/ft\n",
-         "          ROOT_OUT=/data/results/ft/w2\n", 1),
+         "          ROOT_OUT=/data/results/ft/w2b\n", 1),
         ('          COMMON="--use-amp --batch-size 512 --num-workers 2 '
          '--fetch-by-files --fetch-step 1 --optimizer ranger"',
          '          COMMON="--use-amp --batch-size 512 --num-workers 2 '
@@ -838,6 +854,54 @@ def legs_w2() -> str:
          "            done\n"
          "          done\n\n"
          "          epochs_for () { case $1 in 1000) echo __E0__;;", 1),
+        # ---- item 36: the wave could not fit on the volume ----------------
+        # Measured, not projected: 3.5 GB/cell x 144 = 306 GB against 174 GB
+        # free. The three changes below take it to ~41 GB. Each is a wave-2
+        # substitution rather than an edit to LEGS because wave 1's 108 cells
+        # are complete and must keep the spec they actually ran under.
+        #
+        # VALIDATION WAS 20x TO 200x THE TRAINING SET. --samples-per-epoch is
+        # 1000 or 10000 here; validating on 200000 spent ~80 s of every ~84 s
+        # epoch, which is both why the wave was projected at 9.4 days and why
+        # NRP measured 38.3% GPU utilisation (policy floor is 40%). Best-epoch
+        # selection is on aggregate accuracy, where 20000 jets give s.e.
+        # sqrt(.28*.72/2e4) = 0.0032 against an observed epoch-to-epoch step of
+        # ~0.010 -- 3x margin. 200000 resolved the same step to 0.001.
+        ("--samples-per-epoch-val 200000", "--samples-per-epoch-val 20000", 2),
+        # STRIDE, NOT A SMALLER --max-jets. leg1_metrics.py is the only reader
+        # of these caches and its --auc-stride DEFAULTS TO 4 (line 142), so the
+        # AUC is already computed on 2e6/4 rows; caching the other 3/4 writes
+        # 119 GB nothing opens. It must be a stride and not a head slice for the
+        # reason that file's own docstring gives (lines 32-36): the test list
+        # interleaves Res2P / Res34P / QCD by file, so `[:n]` is biased toward
+        # whichever files come first. Striding here caches exactly the rows the
+        # default analysis already selects -- no metric changes, and the
+        # full-sample accuracy only moves from s.e. 0.0003 to 0.0006.
+        ("--max-jets 2000000 --save-logits",
+         "--max-jets 2000000 --stride 4 --save-logits", 1),
+        ("--dir ${OUT}/features_v2 --n 2000000 --k 162",
+         "--dir ${OUT}/features_v2 --n 500000 --k 162", 1),
+        # PER-EPOCH CHECKPOINTS: 132 GB across the wave, read by nothing.
+        # weaver has NO option to stop writing them -- train.py:836-837 saves
+        # state AND optimizer every epoch, and :851 produces
+        # net_best_epoch_state.pt by shutil.copy2 of the per-epoch file -- so
+        # the only place to drop them is after that copy exists. Both call
+        # sites already finished with the cell here: leg 1 has extracted
+        # features from net_best_epoch_state.pt and leg 2 has run --predict
+        # (which resolves to _best_epoch_state.pt, train.py:878).
+        #
+        # THE GLOB CANNOT MATCH THE FILE WE KEEP: net_best_epoch_state.pt does
+        # not match net_epoch-*. The guards either side are still there because
+        # "cannot" is a claim about today's model_prefix, and the cost of being
+        # wrong is the only artifact the analysis reads.
+        ("                touch ${OUT}/DONE",
+         "                [ -f ${OUT}/net_best_epoch_state.pt ] || {\n"
+         "                  echo \"FATAL: no net_best_epoch_state.pt in ${OUT};\"\n"
+         "                  echo \"       refusing to prune per-epoch checkpoints.\"; exit 1; }\n"
+         "                rm -f ${OUT}/net_epoch-*_state.pt ${OUT}/net_epoch-*_optimizer.pt\n"
+         "                [ -f ${OUT}/net_best_epoch_state.pt ] || {\n"
+         "                  echo \"FATAL: the prune removed net_best_epoch_state.pt in ${OUT}.\"; exit 1; }\n"
+         "                touch ${OUT}/DONE", 2),
         ('echo "FT LEGS COMPLETE"', 'echo "FT LEGS WAVE 2 COMPLETE"', 1),
     ]
     out = LEGS

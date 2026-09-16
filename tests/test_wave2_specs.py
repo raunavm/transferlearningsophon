@@ -24,7 +24,14 @@ W1 = {"job-ft-subsets-jc2-raunav.yaml", "job-ft-subsets-jc1-raunav.yaml",
       "job-ft-subsets-bench-raunav.yaml", "job-ft-legs-bench-raunav.yaml",
       "job-ft-smoke-raunav.yaml", "job-ft-legs-raunav.yaml"}
 SUBSETS = {"job-ft-subsets-jc2-w2-raunav.yaml", "job-ft-subsets-jc1-w2-raunav.yaml"}
-W2 = SUBSETS | {"job-ft-legs-w2-raunav.yaml"}
+LEGS_W2 = "job-ft-legs-w2-raunav.yaml"
+W2 = SUBSETS | {LEGS_W2}
+
+# Each wave-2 spec carries the pin it was generated for, and they are NOT the
+# same tag. See the w2 fixture for why.
+PINS = {LEGS_W2: "mtx-s1.42",
+        "job-ft-subsets-jc2-w2-raunav.yaml": "mtx-s1.41",
+        "job-ft-subsets-jc1-w2-raunav.yaml": "mtx-s1.41"}
 
 
 def _mod():
@@ -40,7 +47,15 @@ B = _mod()
 
 @pytest.fixture(scope="module")
 def w2():
-    return B.build("mtx-s1.41", wave2=True)
+    """Built at the pin each spec ACTUALLY carries, not at one shared pin.
+
+    The two subset rebuilds ran and completed at mtx-s1.41; their pin is the
+    provenance record for the parquet files now on disk, and moving it would
+    detach a finished run from the code that produced it (the WINDOW_PIN
+    precedent item 33 cites). The legs spec was deliberately re-specced and
+    relaunched at mtx-s1.42 under item 36, because it needs
+    `extract_features.py --stride`, which does not exist in mtx-s1.41."""
+    return {name: B.build(pin, wave2=True)[name] for name, pin in PINS.items()}
 
 
 @pytest.fixture(scope="module")
@@ -123,7 +138,15 @@ def test_the_rebuilds_take_no_gpu(w2):
 def test_the_rebuilds_pin_the_tag_they_were_generated_for(w2):
     for name, text in w2.items():
         env = yaml.safe_load(text)["spec"]["template"]["spec"]["containers"][0]["env"]
-        assert {"name": "REPO_REF", "value": "mtx-s1.41"} in env, name
+        assert {"name": "REPO_REF", "value": PINS[name]} in env, name
+
+
+def test_the_legs_pin_is_new_enough_to_have_the_stride_flag():
+    """mtx-s1.42 is not cosmetic. The legs call `extract_features.py --stride 4`,
+    which item 36 added; at mtx-s1.41 that is an unrecognised argument and every
+    leg-1 cell dies AFTER its fine-tune has been paid for."""
+    assert PINS["job-ft-legs-w2-raunav.yaml"] != "mtx-s1.41", (
+        "the legs must not pin a tag that predates --stride")
 
 
 # ------------------------------------------------------------------ mechanics
@@ -131,7 +154,7 @@ def test_the_rebuilds_pin_the_tag_they_were_generated_for(w2):
 def test_generation_is_idempotent(w2):
     """A second run must not produce a spec that differs from the one on disk,
     or the file and the generator disagree about what ran."""
-    assert B.build("mtx-s1.41", wave2=True) == w2
+    assert {n: B.build(pin, wave2=True)[n] for n, pin in PINS.items()} == w2
 
 
 def test_the_specs_on_disk_match_the_generator(w2):
@@ -145,8 +168,6 @@ def test_the_specs_on_disk_match_the_generator(w2):
 
 # ------------------------------------------------------------ the wave-2 legs
 
-LEGS_W2 = "job-ft-legs-w2-raunav.yaml"
-
 
 def test_wave2_emits_the_legs_spec(w2):
     assert LEGS_W2 in w2
@@ -158,7 +179,12 @@ def test_the_legs_write_to_their_own_root(w2):
     every wave-2 cell hit `[ -f DONE ]` and skip -- the wave would appear to
     run, finish in minutes, and produce nothing."""
     live = _live(w2[LEGS_W2])
-    assert "ROOT_OUT=/data/results/ft/w2" in live
+    assert "ROOT_OUT=/data/results/ft/w2b" in live, (
+        "wave 2 relaunches into w2b, not w2: the first launch left 4 cells with "
+        "DONE markers under the OLD protocol (200k val, full 2e6 rows), and "
+        "reusing that root would skip them into a table whose first 4 cells "
+        "disagree with the other 140 -- which leg1_metrics.py would then refuse "
+        "on the label188_sha256 check, after the whole wave had been paid for.")
     assert "ROOT_OUT=/data/results/ft\n" not in live
 
 
@@ -297,3 +323,142 @@ def test_the_precondition_behaves_under_a_real_shell(w2, tmp_path, missing, expe
         assert missing.split("/")[-1] in r.stdout, (
             "the refusal must NAME the missing file; 'a subset is missing' "
             "costs a cluster round trip to act on")
+
+
+# ------------------------------------------------------------- item 36: space
+#
+# Wave 2 as first launched needed 306 GB against 174 GB free on a SHARED volume,
+# and would have hit 100% in 3.3 days at cell ~54 of 144 -- taking MPM and the
+# extraction wave down with it. These guard the three changes that fixed it.
+# They are written against the LIVE body, not the comments, because the spec
+# now explains the defect it avoids and a bare scan matches the explanation.
+
+def test_wave2_validates_on_20k_not_200k(w2):
+    """200k val against a 1k-10k train set is what produced BOTH the 9.4-day
+    projection and NRP's 38.3% utilisation warning (policy floor 40%)."""
+    body = _live(w2["job-ft-legs-w2-raunav.yaml"])
+    assert "--samples-per-epoch-val 200000" not in body, (
+        "wave 2 is validating on 200,000 jets per epoch against a training set "
+        "of 1,000-10,000. That is ~80 s of every ~84 s epoch, and it is why the "
+        "GPU sat at 38.3% -- below NRP's 40% policy floor -- and why the wave "
+        "was projected at 9.4 days.")
+    assert body.count("--samples-per-epoch-val 20000") == 2, (
+        "both legs must make the cut, or leg 2 keeps the utilisation problem")
+
+
+def test_wave1_still_validates_on_200k(w1):
+    """The cut is a wave-2 SUBSTITUTION, not an edit to LEGS. Wave 1's 108 cells
+    are complete and must keep the spec they actually ran under -- rewriting it
+    would detach a finished run from the code that produced it."""
+    body = _args(w1["job-ft-legs-raunav.yaml"])
+    assert "--samples-per-epoch-val 200000" in body, (
+        "the item-36 cut leaked into wave 1, whose cells are already finished")
+
+
+def test_wave2_features_are_strided_not_head_sliced(w2):
+    """A head slice is a BIASED sample, not a smaller one. The test list
+    interleaves Res2P / Res34P / QCD by file (leg1_metrics.py docstring, lines
+    32-36), so `--max-jets 500000` would over-represent whichever files come
+    first. The stride keeps the class mix."""
+    body = _live(w2["job-ft-legs-w2-raunav.yaml"])
+    assert "--max-jets 2000000 --stride 4 --save-logits" in body, (
+        "wave 2 must READ 2e6 jets and KEEP every 4th, not read the first "
+        "500,000 -- the two differ in class mix, not just in size")
+
+
+def test_extraction_stride_equals_what_leg1_metrics_actually_reads():
+    """THE COUPLING THAT MAKES THE CUT SAFE, AND THE ONE THAT CAN SILENTLY ROT.
+
+    Caching a stride-4 subsample is lossless ONLY because leg1_metrics.py
+    already computes its AUC on `np.arange(0, n, 4)`. If that default ever
+    moves -- to 2, say -- the cache silently stops containing the rows the
+    analysis asks for, every cell still loads, and the published AUC is
+    computed on a different sample than intended. Nothing else in the repo ties
+    these two numbers together, so this test is the tie."""
+    import re
+    src = (ROOT / "experiments" / "FT" / "leg1_metrics.py").read_text()
+    m = re.search(r'"--auc-stride",\s*type=int,\s*default=(\d+)', src)
+    assert m, "leg1_metrics.py no longer declares --auc-stride the same way"
+    reader_stride = int(m.group(1))
+
+    body = _live(B.build(PINS[LEGS_W2], wave2=True)[LEGS_W2])
+    m2 = re.search(r"--max-jets 2000000 --stride (\d+)", body)
+    assert m2, "wave 2 no longer strides its feature extraction"
+    cache_stride = int(m2.group(1))
+
+    assert cache_stride == reader_stride, (
+        f"wave 2 caches every {cache_stride}th jet but leg1_metrics.py reads "
+        f"every {reader_stride}th by default. The cache no longer holds the "
+        f"rows the analysis selects, and nothing will error -- the AUC will "
+        f"just be computed on a different subsample than the one intended.")
+
+
+def test_the_smoke_check_expects_the_strided_row_count(w2):
+    """2e6 jets read at stride 4 is 500,000 rows on disk. A smoke check still
+    asserting 2,000,000 fails every cell after the fine-tune has been paid for."""
+    body = _live(w2["job-ft-legs-w2-raunav.yaml"])
+    assert "--dir ${OUT}/features_v2 --n 500000 --k 162" in body
+    assert "--n 2000000 --k 162" not in body
+
+
+def test_per_epoch_checkpoints_are_pruned_in_both_legs(w2):
+    """132 GB across the wave, read by nothing. weaver cannot be told to stop
+    writing them (train.py:836-837), so they go after the best-epoch copy."""
+    body = _live(w2["job-ft-legs-w2-raunav.yaml"])
+    assert body.count(
+        "rm -f ${OUT}/net_epoch-*_state.pt ${OUT}/net_epoch-*_optimizer.pt") == 2
+
+
+def test_the_prune_cannot_match_the_file_the_analysis_reads(w2):
+    """net_best_epoch_state.pt is the ONLY checkpoint anything downstream opens,
+    and the prune runs in the same directory. The glob must be incapable of
+    matching it -- and the guard either side must survive, because "incapable"
+    is a claim about today's --model-prefix."""
+    import fnmatch
+    for pat in ("net_epoch-*_state.pt", "net_epoch-*_optimizer.pt"):
+        assert not fnmatch.fnmatch("net_best_epoch_state.pt", pat), (
+            f"the prune glob {pat!r} matches net_best_epoch_state.pt")
+        assert fnmatch.fnmatch("net_epoch-7_state.pt", pat) or "optimizer" in pat
+
+    body = _live(w2["job-ft-legs-w2-raunav.yaml"])
+    # guarded before AND after: refuse to prune without the copy, and refuse to
+    # continue if the prune took it anyway
+    assert body.count(
+        "[ -f ${OUT}/net_best_epoch_state.pt ] || {") == 4, (
+        "each of the two prunes needs a precondition and a postcondition")
+
+
+def test_the_prune_runs_after_the_cell_is_finished_with_the_checkpoints(w2):
+    """Leg 1 extracts features from net_best_epoch_state.pt and leg 2 runs
+    --predict (which resolves to _best_epoch_state.pt, weaver train.py:878).
+    Pruning before either would delete the input to the step that follows."""
+    body = _live(w2["job-ft-legs-w2-raunav.yaml"])
+    prune = "rm -f ${OUT}/net_epoch-*_state.pt"
+    for marker in ("--out ${OUT}/features_v2", "--predict-output ${OUT}/pred.root"):
+        assert marker in body
+        assert body.index(marker) < body.index(prune, body.index(marker)), (
+            f"the prune precedes {marker!r}; it would remove the checkpoint "
+            f"that step reads")
+
+
+def test_striding_the_cache_selects_the_rows_the_reader_would_have():
+    """THE ARITHMETIC THE "no metric changes" CLAIM RESTS ON.
+
+    Caching every 4th row and then reading all of it must give the same jets as
+    caching everything and reading every 4th. If it did not, item 36 would be
+    trading disk for a silently different sample -- and the AUC would move for a
+    reason no one could see from the artifact."""
+    import numpy as np
+    n, stride = 2_000_000, 4
+    full = np.arange(n)
+
+    cached = full[:n][::stride]                 # what extract_features now writes
+    read_from_full = full[np.arange(0, n, stride)]   # what leg1_metrics selects today
+
+    assert cached.shape == read_from_full.shape == (n // stride,)
+    assert np.array_equal(cached, read_from_full)
+
+    # and a head slice of the same SIZE is a different set of jets entirely --
+    # which is the whole reason this is a stride
+    head = full[: n // stride]
+    assert not np.array_equal(head, cached)
