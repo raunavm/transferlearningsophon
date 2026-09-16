@@ -902,6 +902,35 @@ def legs_w2() -> str:
          "                [ -f ${OUT}/net_best_epoch_state.pt ] || {\n"
          "                  echo \"FATAL: the prune removed net_best_epoch_state.pt in ${OUT}.\"; exit 1; }\n"
          "                touch ${OUT}/DONE", 2),
+        # ---- item 36 addendum: the val cut LOWERED utilisation -----------
+        # Cutting validation 200k -> 20k halved the epoch but made the GPU
+        # number WORSE, because validation WAS the GPU work. Measured on the
+        # relaunch, one N=1e3 epoch is 46 s: 4.4 s training and 3.1 s validating
+        # (both GPU) against ~38 s of fixed overhead that does not shrink --
+        # ~15 s writing the per-epoch checkpoint to a contended CephFS PVC,
+        # ~12 s in weaver's per-epoch metrics, ~11 s of teardown. nvidia-smi
+        # sampled 3 of 12 seconds busy: ~21%, against 38.3% before and a 40%
+        # policy floor.
+        #
+        # THE ORDER IS THE FIX, NOT THE RECIPE. Training time scales with
+        # --samples-per-epoch, so utilisation is a property of N:
+        #     N=1e3, 1e4   ~16%      N=1e5   ~55%      N=1e6   ~92%
+        # With N as the OUTER loop, each init runs three consecutive N=1e3 cells
+        # and then three consecutive N=1e4 cells -- a contiguous ~3.8 h block at
+        # ~16%, and NRP measures over 3 h windows. Swapping the loops interleaves
+        # every cheap cell with an expensive one: a seed block becomes
+        # [1e3, 1e4, 1e5, 1e6] = 199 min averaging 55%, and the worst 3 h window
+        # is ~51%.
+        #
+        # This reorders WHEN cells are computed and nothing else. Every cell is
+        # keyed by its own (init, N, seed) output directory, subset file and
+        # seed, the loop body reads only ${N} and ${S}, and the DONE skip makes
+        # the wave resumable in any order -- so cells already finished under the
+        # old order stay valid and are not redone.
+        ("            for N in __SIZES__; do\n"
+         "              for S in __FT_SEEDS__; do",
+         "            for S in __FT_SEEDS__; do\n"
+         "              for N in __SIZES__; do", 2),
         ('echo "FT LEGS COMPLETE"', 'echo "FT LEGS WAVE 2 COMPLETE"', 1),
     ]
     out = LEGS

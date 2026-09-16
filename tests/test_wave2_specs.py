@@ -29,7 +29,7 @@ W2 = SUBSETS | {LEGS_W2}
 
 # Each wave-2 spec carries the pin it was generated for, and they are NOT the
 # same tag. See the w2 fixture for why.
-PINS = {LEGS_W2: "mtx-s1.42",
+PINS = {LEGS_W2: "mtx-s1.43",
         "job-ft-subsets-jc2-w2-raunav.yaml": "mtx-s1.41",
         "job-ft-subsets-jc1-w2-raunav.yaml": "mtx-s1.41"}
 
@@ -462,3 +462,32 @@ def test_striding_the_cache_selects_the_rows_the_reader_would_have():
     # which is the whole reason this is a stride
     head = full[: n // stride]
     assert not np.array_equal(head, cached)
+
+
+def test_cheap_and_expensive_cells_interleave(w2):
+    """UTILISATION IS A PROPERTY OF N, SO ORDER DECIDES WHETHER NRP SEES A FLOOR.
+
+    Training time scales with --samples-per-epoch against a ~38 s fixed overhead
+    per epoch that does not, so an N=1e3 cell runs the GPU at ~16% and an N=1e6
+    cell at ~92%. With N as the outer loop each init runs three N=1e3 cells then
+    three N=1e4 cells back to back -- ~3.8 contiguous hours at ~16%, and NRP
+    averages over 3 h windows. Seeds outer / N inner interleaves them and no 3 h
+    window falls below ~51%.
+
+    This is scheduling, not protocol: cells are keyed by their own directory,
+    subset and seed, so the order they run in cannot reach the numbers."""
+    # indentation-agnostic: YAML dedents the block scalar on parse, so the
+    # literal leading whitespace here is not the file's
+    lines = [ln.strip() for ln in _live(w2[LEGS_W2]).splitlines()]
+    seeds, sizes = "for S in 1 2 3; do", "for N in 1000 10000 100000 1000000; do"
+
+    pairs = [(a, b) for a, b in zip(lines, lines[1:])]
+    # THREE, not two: the subset precondition block (item 33) iterates the same
+    # two loops before any GPU is spent, and it is already seeds-outer. Asserting
+    # 3 rather than >=2 means a leg that loses its loops fails here instead of
+    # being covered by the precondition's pair.
+    assert pairs.count((seeds, sizes)) == 3, (
+        "both legs must iterate seeds OUTSIDE sizes; with sizes outside, each "
+        "init spends ~3.8 unbroken hours of GPU time at ~16% utilisation")
+    assert pairs.count((sizes, seeds)) == 0, (
+        "a size loop still wraps a seed loop -- that is the ~16% block")

@@ -25,7 +25,16 @@ metadata:
   # overwriting a results file is RED, and that artifact is the l162-s1b input to
   # this very merge.
   #
-  # PIN mtx-s1.36.
+  # PIN mtx-s1.42, THE FIRST TAG THAT COUNTS RUNGS RATHER THAN ARMS.
+  # The previous pin (mtx-s1.38, while this comment still said s1.36 -- the
+  # comment had gone stale against the line below it) predates 56ca80a. At that
+  # tag the merge reports `regret_n_arms` and nothing else, and the four inputs
+  # below are FOUR ARMS SPANNING ONLY TWO RUNGS: l162-s1b plus three R16_Q1
+  # seeds. A signal that l162-s1b lost -- label_X_YY_qqqq, dropped when that job
+  # died at ~25 h -- then survives on the three R16_Q1 seeds alone, passes
+  # `regret_n_arms >= 2`, and reads as a measured cost of coarsening while
+  # actually measuring seed-to-seed variation inside ONE vocabulary. 56ca80a
+  # adds `signals_with_one_rung` so that cell is named instead of published.
   #
   # CPU-ONLY, ZERO GPU, minutes: this is JSON arithmetic, not a rerun.
   name: eval-anomaly-merge-raunav
@@ -42,7 +51,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s1.38" \
+          git clone --depth 1 --branch "mtx-s1.42" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
