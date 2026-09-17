@@ -40,7 +40,22 @@ def _specs():
 
 
 def _reads_features(text):
-    return any(s in text for s in FEATURE_CONSUMERS)
+    """Whether the spec RUNS a feature consumer -- comment lines excluded.
+
+    A bare substring match over the whole file counts a filename MENTIONED in a
+    comment as a feature cache being read. That is not hypothetical: the anomaly
+    merge job consumes per-arm JSON and touches no cache, and it started failing
+    this rule the moment its header comment explained what anomaly.py's scoring
+    function does. The rule would then have been satisfied by prechecking three
+    files the job never opens, which is worse than not checking -- it is a guard
+    asserting a precondition that has nothing to do with the job.
+
+    Dropping comment lines is the whole fix: an invocation is never `#`-prefixed,
+    and this reclassifies exactly one spec in the directory (the merge job,
+    True -> False) while every genuine consumer stays in."""
+    live = "\n".join(l for l in text.splitlines()
+                     if not l.lstrip().startswith("#"))
+    return any(s in live for s in FEATURE_CONSUMERS)
 
 
 def _windowed_tasks():

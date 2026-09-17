@@ -625,6 +625,26 @@ def main(argv=None) -> int:
                     if isinstance(v, dict) and "sigma_min" in v and np.isfinite(best) and best > 0:
                         v["regret_within_arm"] = v["sigma_min"] / best
                 agg["rng_seeds"] = seeds_used
+                # CARRIED BY HAND, like rng_seeds, and for the same reason: the
+                # family loop above keeps only keys whose value is a dict, so a
+                # scalar is filtered out. classes_removed was computed per rep
+                # (run_one) and then reached NO artifact at all, which is the
+                # one field this file's docstring calls load-bearing -- without
+                # it "the vocabulary-defined score degrades as the vocabulary
+                # coarsens" cannot be told apart from "leave-one-node-out
+                # removed 1 class at L162 and 29 at R16_Q1".
+                #
+                # It is a function of (rung, signal node) alone, so every rep
+                # must agree; disagreement would mean two reps read different
+                # trees and no median over them would mean anything.
+                cr = {r["classes_removed"] for r in reps if "classes_removed" in r}
+                if len(cr) > 1:
+                    raise SystemExit(
+                        f"FATAL: {arm}/{sig}/N_sig={n_sig} reps disagree on "
+                        f"classes_removed ({sorted(cr)}). It depends only on "
+                        "the rung and the signal's node, so reps cannot differ.")
+                if cr:
+                    agg["classes_removed"] = cr.pop()
                 per_n[str(n_sig)] = agg
                 line = "  ".join(
                     f"{k}:maxSIC={v['max_sic']:.2f}" for k, v in sorted(agg.items())

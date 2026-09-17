@@ -25,7 +25,30 @@ metadata:
   # overwriting a results file is RED, and that artifact is the l162-s1b input to
   # this very merge.
   #
-  # PIN mtx-s1.42, THE FIRST TAG THAT COUNTS RUNGS RATHER THAN ARMS.
+  # PIN mtx-s1.46, THE FIRST TAG THAT RECORDS WHAT class_sum ACTUALLY REMOVED.
+  # score_class_sum leaves the signal's OWN NODE out of the resonant sum
+  # (anomaly.py: `res = res - {sig_node}`) -- the standard precaution, since a
+  # score that keeps the signal's dedicated output is supervised classification
+  # wearing an AD costume. How many NATIVE classes that node holds is 1 at
+  # L188/L162 but 3-12 at R42_Q1 and 10-29 at R16_Q1, so the SAME CODE IS A
+  # DIFFERENT ESTIMATOR AT EACH RUNG. anomaly.py computed `classes_removed` per
+  # repetition and the aggregation dropped it -- it keeps only keys whose value
+  # is a dict, correctly, because a scalar is not a score family, and nothing
+  # carried it back. It reached no artifact at all, per-arm or merged, which is
+  # precisely the state anomaly.py's docstring calls unfalsifiable.
+  #
+  # NO ARM IS RE-RUN TO GET IT. The count is a function of the committed tree
+  # and the signal alone, so this merge recomputes it for every cell. Four arms
+  # at ~25 CPU-hours each stay on disk untouched.
+  #
+  # The same tag stamps `signal_provenance`: all six signals are NATIVE
+  # JetClass-II classes that every arm saw in pretraining, so this table is
+  # IN-DOMAIN sensitivity and never a discovery number (docs/PRD_PLAN.md 3.3
+  # admits the module on exactly that condition). The vocabulary-free controls
+  # do not exempt it -- their frozen 128-d features were learned from these
+  # same classes.
+  #
+  # PREVIOUSLY mtx-s1.42, THE FIRST TAG THAT COUNTS RUNGS RATHER THAN ARMS.
   # The previous pin (mtx-s1.38, while this comment still said s1.36 -- the
   # comment had gone stale against the line below it) predates 56ca80a. At that
   # tag the merge reports `regret_n_arms` and nothing else, and the four inputs
@@ -51,7 +74,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s1.42" \
+          git clone --depth 1 --branch "mtx-s1.46" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -68,7 +91,14 @@ spec:
           done
           echo "inputs:${IN}"
 
-          OUT=/data/results/eval/anomaly_merged
+          # A NEW DIRECTORY, NOT anomaly_merged. That path already holds the
+          # 2026-09-15 merge; rewriting it would destroy the only record of what
+          # the table looked like before classes_removed and the in-domain stamp
+          # existed, and overwriting a results file is RED (CLAUDE.md 1).
+          OUT=/data/results/eval/anomaly_merged_v2
+          [ -e "${OUT}/anomaly_results.json" ] && {
+            echo "FATAL: ${OUT}/anomaly_results.json exists; refusing to overwrite."
+            exit 1; }
           mkdir -p ${OUT}
           python3 experiments/EVAL/anomaly_merge.py --inputs ${IN} --out ${OUT}
 
@@ -80,6 +110,18 @@ spec:
           print('merged_from:', json.dumps(d.get('merged_from'), indent=1))
           print('null_not_flat:', len(d.get('null_not_flat', [])))
           print('null_unmeasured:', len(d.get('null_unmeasured', [])))
+          sp=d.get('signal_provenance',{})
+          print('in_domain:', sp.get('in_domain'))
+          print('=== classes_removed by rung (the estimator substitution) ===')
+          for sig,v in sorted(sp.get('signals',{}).items()):
+              print(' ', sig, v['classes_removed_by_rung'])
+          n=sum(1 for ad in d['arms'].values() for pn in ad['signals'].values()
+                for c in pn.values()
+                if isinstance(c,dict) and 'classes_removed' in c)
+          tot=sum(1 for ad in d['arms'].values() for pn in ad['signals'].values()
+                  for c in pn.values() if isinstance(c,dict))
+          print('cells carrying classes_removed: %d/%d' % (n,tot))
+          assert n==tot, 'every cell must carry it; that was the whole defect'
           "
         volumeMounts:
         - { name: data, mountPath: /data }

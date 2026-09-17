@@ -87,6 +87,123 @@ def merge(payloads: list[tuple[str, dict]]) -> dict:
     return merged
 
 
+def backfill_classes_removed(merged: dict, an) -> int:
+    """Fill `classes_removed` into cells written before it was carried through.
+
+    WHY A BACK-FILL IS LEGITIMATE HERE AND NOT A FABRICATION. The field counts
+    how many NATIVE classes sit inside the one node that score_class_sum leaves
+    out (anomaly.py:261, `res = res - {sig_node}`). That is a function of the
+    committed contraction tree and the signal alone -- not of the draw, not of
+    the seed, not of any number the run measured. Recomputing it here gives the
+    identical integer the run would have written, so the ~25 CPU-hours per arm
+    do not have to be spent again to obtain it.
+
+    WHY IT HAS TO BE THERE AT ALL. It is 1 at L188/L162 but 3-12 at R42_Q1 and
+    10-29 at R16_Q1, so class_sum is a DIFFERENT ESTIMATOR at each rung. Without
+    the field, a reader comparing class_sum across rungs cannot tell a genuine
+    vocabulary effect from the substitution -- which is the failure anomaly.py's
+    own docstring calls unfalsifiable.
+    """
+    by_name = {r["class_name"]: int(r["jet_label"]) for r in an.read_map()}
+    roles: dict[str, dict] = {}
+    filled, skipped = 0, []
+    for arm, ad in merged["arms"].items():
+        # NO RUNG, NO COUNT -- BUT SKIP, DO NOT REFUSE. Without the rung there
+        # is no node to count and any integer written here would be fabricated.
+        # Refusing the whole merge is the worse error: this file exists because
+        # an arm costs ~25 CPU-hours and a merge is the only way to read one,
+        # and its docstring commits to reporting a degraded input rather than
+        # discarding it. anomaly.py always writes 'rung'; an arm without one is
+        # a legacy artifact, not a contradiction.
+        rung = ad.get("rung")
+        if rung is None:
+            skipped.append(arm)
+            continue
+        if rung not in roles:
+            roles[rung] = an.node_roles(rung)[0]
+        node_of = roles[rung]
+        for sig, per_n in ad["signals"].items():
+            if sig not in by_name:
+                raise SystemExit(
+                    f"FATAL: signal {sig!r} is not a class_name in the committed "
+                    f"label map. An artifact naming a signal the tree does not "
+                    "contain was produced against a different tree and must not "
+                    "be merged.")
+            node = node_of[by_name[sig]]
+            n = int(sum(1 for lab, nd in node_of.items() if nd == node))
+            for agg in per_n.values():
+                if not isinstance(agg, dict):
+                    continue
+                if agg.get("classes_removed") not in (None, n):
+                    raise SystemExit(
+                        f"FATAL: {arm}/{sig} records classes_removed="
+                        f"{agg['classes_removed']} but the committed tree gives "
+                        f"{n}. The artifact and the tree disagree.")
+                if "classes_removed" not in agg:
+                    agg["classes_removed"] = n
+                    filled += 1
+    return filled, skipped
+
+
+def stamp_signal_provenance(merged: dict, an) -> dict:
+    """Record that every signal in this suite is IN-DOMAIN, on the artifact.
+
+    THE ARTIFACT HAS TO CARRY THIS, NOT A README. All six signals in
+    anomaly.SIGNAL_SUITE are native JetClass-II classes -- they are rows of the
+    committed label map, so every arm saw those jets in pretraining (I2/I3: the
+    training stream is bit-identical across arms; only the head's vocabulary
+    differs). No number in this file is a discovery claim, and the vocabulary-
+    free controls (knn / mahalanobis / iad_hgb) are NOT a defence against that:
+    the 128-d features they run on were themselves learned from these classes.
+
+    docs/PRD_PLAN.md is explicit -- the row is titled "Anomaly detection, jet
+    level, in-domain" and section 3.3 admits the module on the condition that it
+    is "never a 'discovery' number, always beside a vocabulary-free control".
+    The condition was met in the analysis and absent from the output, which is
+    the half that gets read downstream.
+
+    X->bs is the planned genuinely-unseen signal and is private/blocked; a
+    public alternative that is in NO node at ANY rung is noted in
+    docs/LIT_DOWNSTREAM_2026-09.md (semivisible jets).
+    """
+    by_name = {r["class_name"]: int(r["jet_label"]) for r in an.read_map()}
+    rungs = sorted({ad["rung"] for ad in merged["arms"].values()
+                    if ad.get("rung")})
+    sigs = sorted({s for ad in merged["arms"].values() for s in ad["signals"]
+                   if s in by_name})
+    per_sig = {}
+    for sig in sigs:
+        lab = by_name[sig]
+        removed = {}
+        for rung in rungs:
+            node_of = an.node_roles(rung)[0]
+            nd = node_of[lab]
+            removed[rung] = int(sum(1 for l, n in node_of.items() if n == nd))
+        per_sig[sig] = {
+            "native_jet_label": lab,
+            "in_pretraining_vocabulary": True,
+            "classes_removed_by_rung": removed,
+        }
+    return {
+        "in_domain": True,
+        "caveat": (
+            "Every signal here is a native JetClass-II class that all arms saw "
+            "in pretraining. These are IN-DOMAIN sensitivity measurements and "
+            "must not be reported as discovery or out-of-distribution results. "
+            "The vocabulary-free scores are not a defence: their frozen 128-d "
+            "features were learned from these same classes."),
+        "unseen_signal_status": (
+            "X->bs, the planned genuinely-unseen signal, is private and not yet "
+            "received (docs/PRD_PLAN.md suite row: 'Core when received')."),
+        "class_sum_is_a_different_estimator_per_rung": (
+            "score_class_sum leaves out the signal's own node. At L188/L162 that "
+            "node is one native class; at coarser rungs it is a merged group, so "
+            "the same code removes 3-12 classes at R42_Q1 and 10-29 at R16_Q1. "
+            "Compare class_sum across rungs only with classes_removed in view."),
+        "signals": per_sig,
+    }
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--inputs", nargs="+", required=True,
@@ -117,6 +234,23 @@ def main(argv=None) -> int:
     an = _anomaly()
     an.cross_arm_regret(merged)
     bad, unmeasured = an.null_guard(merged)
+
+    # BOTH OF THESE DESCRIBE THE ESTIMATOR, NOT THE MEASUREMENT, so they are
+    # recomputed from the committed tree on every merge and never read back off
+    # a stale artifact.
+    filled, no_rung = backfill_classes_removed(merged, an)
+    if filled:
+        print(f"back-filled classes_removed into {filled} cells (recomputed "
+              f"from the committed tree; no measurement was re-run)")
+    if no_rung:
+        print(f"WARNING: {len(no_rung)} arm(s) carry no 'rung' field, so "
+              f"classes_removed could not be filled for them and their "
+              f"class_sum must not be compared across rungs: "
+              f"{', '.join(sorted(no_rung))}")
+    merged["signal_provenance"] = stamp_signal_provenance(merged, an)
+    print("NOTE: all signals are NATIVE JetClass-II classes seen by every arm "
+          "in pretraining. This table is IN-DOMAIN sensitivity, never a "
+          "discovery result; see signal_provenance in the output.")
 
     # RAGGED GRIDS ARE THE EXPECTED CASE HERE, AND THEY ARE NOT UNIFORMLY FATAL.
     #

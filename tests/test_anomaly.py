@@ -388,3 +388,61 @@ def test_absent_argos_is_reported_unmeasured_not_passed(tmp_path):
     assert "null_unmeasured" in res
     assert any("iad_hgb" in u for u in res["null_unmeasured"]), \
         "iad_hgb has no ARGOS, so its null is unmeasured -- not passed"
+
+
+def _classes_removed_e2e(tmp_path, rung, k, tag):
+    """Run the real driver at one rung and return the written classes_removed."""
+    import json as _json
+    rng = np.random.default_rng(7)
+    qcd = sorted(an._probe().qcd_indices())
+    n = 6000
+    lab = np.array(rng.choice(qcd, size=n))
+    sidx = np.arange(0, 900)
+    lab[sidx] = 0                                # label_X_bb
+    d = tmp_path / f"arm_{tag}"
+    _cache(d, n, lab, rng, k=k, signal_boost=sidx)
+    out = tmp_path / f"ad_{tag}"
+    an.main(["--features", f"a={d}", "--rungs", f"a={rung}", "--out", str(out),
+             "--n-bkg", "1500", "--n-template", "1500", "--trainings", "2",
+             "--signals", "label_X_bb", "--n-sig", "400"])
+    return _json.loads((out / "anomaly_results.json").read_text())
+
+
+def test_classes_removed_reaches_the_artifact_not_just_the_cell(tmp_path):
+    """THE REGRESSION. run_one computed classes_removed and put it in its
+    return dict, but the aggregation keeps only keys whose value is a dict --
+    correctly, since a scalar is not a score family -- and nothing carried it
+    back, so it reached NO artifact. anomaly.py's own docstring calls it the
+    field without which 'the vocabulary-defined score degrades as the
+    vocabulary coarsens' is unfalsifiable, and it was silently absent."""
+    res = _classes_removed_e2e(tmp_path, "L188", 188, "fine")
+    cell = res["arms"]["a"]["signals"]["label_X_bb"]["400"]
+    assert "classes_removed" in cell, (
+        "classes_removed was computed per repetition and dropped by the "
+        "aggregation; the cross-rung class_sum comparison is unreadable "
+        "without it")
+    assert cell["classes_removed"] == 1, (
+        "at L188 the signal's node IS one native class")
+
+
+def test_classes_removed_records_the_estimator_substitution_at_a_coarse_rung(tmp_path):
+    """The number is the whole point: leave-one-node-out removes ONE class at
+    L188 and TEN at R16_Q1, so the same code is a different estimator per arm.
+    A reader comparing class_sum across rungs without this cannot tell that
+    substitution from a vocabulary effect."""
+    res = _classes_removed_e2e(tmp_path, "R16_Q1", 17, "coarse")
+    cell = res["arms"]["a"]["signals"]["label_X_bb"]["400"]
+    assert cell["classes_removed"] == 10, (
+        f"R16_Q1 merges label_X_bb into a node of 10 native classes; "
+        f"got {cell.get('classes_removed')}")
+
+
+def test_classes_removed_is_not_mistaken_for_a_score_family(tmp_path):
+    """It is a scalar. Anything that walks the cell looking for families must
+    still skip it, or the next median() is taken over an integer."""
+    res = _classes_removed_e2e(tmp_path, "L188", 188, "fam")
+    cell = res["arms"]["a"]["signals"]["label_X_bb"]["400"]
+    assert not isinstance(cell["classes_removed"], dict)
+    fams = {k for k, v in cell.items() if isinstance(v, dict)}
+    assert "classes_removed" not in fams
+    assert {"knn", "mahalanobis", "iad_hgb"} <= fams

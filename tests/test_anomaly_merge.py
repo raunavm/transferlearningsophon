@@ -226,3 +226,115 @@ def test_rung_falls_back_to_the_arm_name_when_absent():
     mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
     merged = mg.merge([("x", p)])
     assert merged["arms"]["a1"].get("rung", "a1") == "a1"
+
+
+def _payload_with_rung(arm, rung, *, sig="label_X_bb", cell=None):
+    p = _payload(arm, 2.0)
+    p["arms"][arm]["rung"] = rung
+    p["arms"][arm]["signals"] = {sig: {"100": cell if cell is not None
+                                       else {"knn": {"sigma_min": 2.0}}}}
+    return p
+
+
+def test_classes_removed_is_backfilled_from_the_committed_tree():
+    """The four arms on disk ran before the field was carried through, and
+    re-running them is ~25 CPU-hours each. classes_removed is a function of the
+    tree and the signal alone -- not of the draw or the seed -- so recomputing
+    it here yields the identical integer the run would have written."""
+    mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    an = _mod("anomaly", "experiments/EVAL/anomaly.py")
+    m = mg.merge([("a.json", _payload_with_rung("l162-s1b", "L162")),
+                  ("b.json", _payload_with_rung("r16q1-s2", "R16_Q1"))])
+    filled, no_rung = mg.backfill_classes_removed(m, an)
+    assert (filled, no_rung) == (2, [])
+    got = {arm: ad["signals"]["label_X_bb"]["100"]["classes_removed"]
+           for arm, ad in m["arms"].items()}
+    assert got == {"l162-s1b": 1, "r16q1-s2": 10}, got
+
+
+def test_the_backfill_refuses_an_artifact_that_disagrees_with_the_tree():
+    """If a run recorded a different count, the artifact was produced against a
+    different tree. Silently overwriting it would erase the only evidence."""
+    mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    an = _mod("anomaly", "experiments/EVAL/anomaly.py")
+    m = mg.merge([("a.json", _payload_with_rung(
+        "r16q1-s2", "R16_Q1",
+        cell={"knn": {"sigma_min": 2.0}, "classes_removed": 4}))])
+    with pytest.raises(SystemExit, match="classes_removed"):
+        mg.backfill_classes_removed(m, an)
+
+
+def test_the_backfill_leaves_a_value_the_run_already_wrote():
+    """Runs after the anomaly.py fix write it themselves; the merge must be a
+    no-op on those, not a second source of truth."""
+    mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    an = _mod("anomaly", "experiments/EVAL/anomaly.py")
+    m = mg.merge([("a.json", _payload_with_rung(
+        "r16q1-s2", "R16_Q1",
+        cell={"knn": {"sigma_min": 2.0}, "classes_removed": 10}))])
+    assert mg.backfill_classes_removed(m, an)[0] == 0
+    assert m["arms"]["r16q1-s2"]["signals"]["label_X_bb"]["100"][
+        "classes_removed"] == 10
+
+
+def test_an_arm_with_no_rung_is_skipped_and_named_not_guessed_at():
+    """Without the rung there is no node to count, and any integer written
+    would be fabricated. But refusing the merge is the worse error -- an arm is
+    ~25 CPU-hours and this file's whole premise is that a degraded input gets
+    REPORTED rather than discarded. So: no value, and the arm is named."""
+    mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    an = _mod("anomaly", "experiments/EVAL/anomaly.py")
+    m = mg.merge([("a.json", _payload("l162-s1b", 2.0))])   # no 'rung' key
+    filled, no_rung = mg.backfill_classes_removed(m, an)
+    assert (filled, no_rung) == (0, ["l162-s1b"])
+    cell = m["arms"]["l162-s1b"]["signals"]["label_X_bb"]["100"]
+    assert "classes_removed" not in cell, "a guessed count is worse than none"
+
+
+def test_a_signal_outside_the_committed_tree_is_fatal():
+    mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    an = _mod("anomaly", "experiments/EVAL/anomaly.py")
+    m = mg.merge([("a.json", _payload_with_rung("x", "L162", sig="label_NOPE"))])
+    with pytest.raises(SystemExit, match="label map"):
+        mg.backfill_classes_removed(m, an)
+
+
+def test_the_artifact_states_that_every_signal_is_in_domain():
+    """docs/PRD_PLAN.md section 3.3 admits this module on the condition that it
+    is 'never a discovery number, always beside a vocabulary-free control'. The
+    condition was met in the analysis and absent from the output, which is the
+    half that gets read downstream."""
+    mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    an = _mod("anomaly", "experiments/EVAL/anomaly.py")
+    m = mg.merge([("a.json", _payload_with_rung("l162-s1b", "L162"))])
+    prov = mg.stamp_signal_provenance(m, an)
+    assert prov["in_domain"] is True
+    assert "pretraining" in prov["caveat"]
+    assert "discovery" in prov["caveat"]
+    assert prov["signals"]["label_X_bb"]["in_pretraining_vocabulary"] is True
+    assert prov["signals"]["label_X_bb"]["native_jet_label"] == 0
+
+
+def test_the_stamp_says_the_vocabulary_free_controls_are_not_a_defence():
+    """They run on frozen 128-d features that were themselves learned from
+    these classes, so 'vocabulary-free' does not mean 'signal-unseen'."""
+    mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    an = _mod("anomaly", "experiments/EVAL/anomaly.py")
+    m = mg.merge([("a.json", _payload_with_rung("l162-s1b", "L162"))])
+    prov = mg.stamp_signal_provenance(m, an)
+    assert "features" in prov["caveat"] and "learned from these same" in prov["caveat"]
+
+
+def test_the_stamp_carries_the_per_rung_estimator_table():
+    """The at-a-glance version of classes_removed: a reader should not have to
+    walk ~1,440 cells to see that the estimator changed between rungs."""
+    mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    an = _mod("anomaly", "experiments/EVAL/anomaly.py")
+    m = mg.merge([("a.json", _payload_with_rung("l162-s1b", "L162")),
+                  ("b.json", _payload_with_rung("r16q1-s2", "R16_Q1"))])
+    prov = mg.stamp_signal_provenance(m, an)
+    tbl = prov["signals"]["label_X_bb"]["classes_removed_by_rung"]
+    assert tbl == {"L162": 1, "R16_Q1": 10}, tbl
+    assert tbl["L162"] != tbl["R16_Q1"], (
+        "if these were equal the estimator would be rung-invariant and the "
+        "whole caveat would be unnecessary")
