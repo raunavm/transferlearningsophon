@@ -159,6 +159,14 @@ def argos(s_data: np.ndarray, s_template: np.ndarray, n_points: int = 200):
 
     Signal-blind by construction: only the unlabelled signal-region sample and
     the background template enter.
+
+    THRESHOLDS ARE SCANNED FROM THE MEDIAN UPWARD ONLY, [50, 99.9] percentile of
+    the pooled scores. This is a deliberate restriction, not an oversight: a
+    threshold below the median selects more than half of all events, which is
+    not an anomaly-detection operating point. The consequence to state plainly
+    is that a signal whose best ARGOS sits below the median cannot be found by
+    this scan, and the reported ARGOS is then a lower bound on the achievable
+    one rather than the maximum.
     """
     lo, hi = np.percentile(np.concatenate([s_data, s_template]), [50.0, 99.9])
     if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
@@ -215,6 +223,18 @@ def sigma_min_asimov(eps_s: np.ndarray, eps_b: np.ndarray, n_b_total: int) -> fl
         return max(z) if z else 0.0
 
     lo, hi = 1e-6, 1.0
+    # THE LOWER END IS A BRACKET, NOT A FLOOR. If best_z already clears the
+    # target at lo, the root is BELOW the bracket and bisecting inside it
+    # returns lo itself -- a number that looks measured and is really the
+    # initial guess. Walk lo down until it genuinely fails to reach the target.
+    for _ in range(60):
+        if best_z(lo) < SIGMA_T:
+            break
+        lo /= 10.0
+        if lo < 1e-30:
+            # Detectable at an arbitrarily small injected signal: the score
+            # separates perfectly, which is a saturation report, not a reach.
+            return 0.0
     for _ in range(60):                       # expand until the target is bracketed
         if best_z(hi) >= SIGMA_T:
             break
@@ -235,6 +255,17 @@ def chi2_sculpting(m_pass: np.ndarray, m_all: np.ndarray, bins: int = 20) -> flo
 
     A score that sculpts the resonant variable manufactures a bump, so the
     number is reported for EVERY selection, not only suspicious ones.
+
+    THIS IS A RELATIVE DIAGNOSTIC AND NOT A CALIBRATED chi2. The expected counts
+    are built from m_all, which CONTAINS m_pass, so observed and expected are
+    correlated and the statistic is not chi2-distributed under the null. "About
+    1" is therefore NOT the right reference value, and no p-value may be quoted
+    from it. What it is good for is comparison at fixed binning across arms,
+    families and rungs -- which is the only way it is used. Comparing m_pass
+    against its complement instead would give an honest two-sample test, but it
+    would also be a DIFFERENT statistic from the one every cell already on disk
+    was scored with, so the definition is left alone and its limits are written
+    down instead.
     """
     if m_pass.size < bins or m_all.size < bins:
         return float("nan")
@@ -465,6 +496,77 @@ def cross_arm_regret(results: dict) -> dict:
     return results
 
 
+def rung_balanced_regret(results: dict) -> dict:
+    """Regret normalised over RUNGS, each rung represented by its MEDIAN seed.
+
+    WHY THE POOLED-MINIMUM REGRET CANNOT ANSWER THE VOCABULARY QUESTION ON ITS
+    OWN. cross_arm_regret divides by the minimum over ARMS, and the run matrix
+    has ONE L162 arm against THREE R16_Q1 seeds. A minimum over k draws falls as
+    k grows, so the rung with more seeds supplies the denominator more often --
+    not because its vocabulary is better, but because it had more chances.
+
+    Simulated with both rungs drawing sigma_min from the SAME distribution, i.e.
+    coarsening costing exactly nothing:
+
+        P(the 1-seed rung looks worse than the best 3-seed arm) = 0.75, not 0.50
+        regret of the 1-seed arm vs pool size k: 1.18 (k=1) -> 1.42 (k=5)
+
+    So the pooled number is not comparable across cells whose regret_n_arms
+    differ, and the head-to-head rung reading is 3:1 against the arm that
+    happens to have fewer seeds. The MEDIAN is used per rung precisely because
+    it does not move systematically with the number of seeds, which is the whole
+    defect; the minimum does.
+
+    cross_arm_regret is NOT replaced. Its ratio is the published definition
+    (arXiv:2604.20965: regret against the best feature set TESTED) and stays the
+    headline; this is the quantity the vocabulary ablation needs beside it.
+    """
+    cells: dict = {}
+    for arm, ad in results["arms"].items():
+        rung = ad.get("rung")
+        if rung is None:
+            continue
+        for sig, per_n in ad["signals"].items():
+            for n_sig, agg in per_n.items():
+                if not isinstance(agg, dict):
+                    continue
+                for fam, v in agg.items():
+                    if isinstance(v, dict) and "sigma_min" in v:
+                        cells.setdefault((sig, n_sig, fam), {}) \
+                             .setdefault(rung, []).append(v)
+
+    unequal = set()
+    for (sig, _n, _f), by_rung in cells.items():
+        counts = {r: len(vs) for r, vs in by_rung.items()}
+        if len(set(counts.values())) > 1:
+            unequal.add(sig)
+        med = {r: float(np.median([v["sigma_min"] for v in vs]))
+               for r, vs in by_rung.items()}
+        finite = [m for m in med.values() if np.isfinite(m) and m > 0]
+        best = min(finite) if finite else None
+        for r, vs in by_rung.items():
+            for v in vs:
+                v["arms_per_rung"] = dict(counts)
+                v["rungs_compared"] = sorted(by_rung)
+                if best is not None and np.isfinite(med[r]):
+                    v["regret_rung_balanced"] = med[r] / best
+
+    results["rung_balanced_normalisation"] = (
+        "regret_rung_balanced = (median sigma_min within a rung) / (min over "
+        "rungs of that median). Unlike `regret`, it does not move with the "
+        "number of seeds a rung happens to have. It is a RUNG-level quantity, "
+        "so every arm of a rung carries the same value.")
+    results["signals_with_unequal_seeds_per_rung"] = sorted(unequal)
+    if unequal:
+        print(f"\nNOTE: {len(unequal)} signal(s) have UNEQUAL seed counts across "
+              f"rungs, so their pooled `regret` is biased toward the rung with "
+              f"more seeds (P=0.75 against the 1-seed rung under a true null). "
+              f"Read regret_rung_balanced for the vocabulary claim:")
+        for s_ in unequal:
+            print("   ", s_)
+    return results
+
+
 def null_guard(results: dict) -> tuple[list, list]:
     """Read the N_sig=0 null on ARGOS; record what was never measured.
 
@@ -662,6 +764,9 @@ def main(argv=None) -> int:
             _tmp.replace(_out / "anomaly_results.json")
 
     cross_arm_regret(results)
+    # Beside it, never instead of it: the pooled minimum is the published
+    # definition but is biased by unequal seed counts per rung.
+    rung_balanced_regret(results)
 
     out = pathlib.Path(a.out)
     out.mkdir(parents=True, exist_ok=True)

@@ -172,3 +172,58 @@ def test_guard_is_called_before_any_array_is_written():
     call = src.index("refuse_foreign_checkpoint(prior_manifest")
     first_save = min(src.index("np.save("), src.index("np.savez("))
     assert call < first_save, "guard must precede the first array write"
+
+
+def _build_mod():
+    import importlib.util, pathlib
+    root = pathlib.Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location(
+        "build_extract_jobs", root / "scripts/build_extract_jobs.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_the_interleaved_prefix_stops_spanning_every_family():
+    """The docstring used to promise 'every prefix spans all three'. It cannot:
+    round-robin exhausts the SHORTEST family first. Res2P 50, Res34P 215, QCD 70
+    means only the first 150 of 335 files carry all three, and past ~210 the
+    list is Res34P alone. extract_features.py's keep() head-slices to --max-jets
+    BEFORE striding, so that promise is exactly what its class balance rests on."""
+    m = _build_mod()
+    per = {f: hi - lo + 1 for f, lo, hi in m.FAMILIES}
+    assert len(set(per.values())) > 1, (
+        "this test is only meaningful while the families are unequal; if they "
+        "are ever equalised the prefix really does span all three throughout")
+    files = m.interleaved_files().split()
+    fam_of = lambda p: p.rsplit("/", 1)[1].rsplit("_", 1)[0]
+    balanced_files = min(per.values()) * len(per)
+    assert len(set(map(fam_of, files[:balanced_files]))) == len(per)
+    assert len(set(map(fam_of, files))) == len(per)
+    # the tail is a single family -- the concrete form of the broken promise
+    assert len(set(map(fam_of, files[-50:]))) == 1
+
+
+def test_the_balanced_prefix_covers_the_cap_actually_in_use():
+    m = _build_mod()
+    assert m.balanced_prefix_jets() > 2_000_000, (
+        "the matrix extractions cap at 2,000,000; if the balanced prefix ever "
+        "falls below that, every cached feature matrix is class-biased")
+
+
+def test_a_cap_past_the_balanced_prefix_is_refused():
+    """A head slice beyond that point is class-biased while still looking like
+    a uniform cut -- it must fail loudly at build time, not quietly at analysis."""
+    m = _build_mod()
+    too_big = m.balanced_prefix_jets() + 1
+    with pytest.raises(SystemExit, match="balanced prefix"):
+        m.build("mtx-l188-s1", "L188", 188, "/ckpt", gpu=False, max_jets=too_big)
+
+
+def test_window_mode_is_exempt_from_the_prefix_guard():
+    """Window mode applies the selection at load, so --max-jets counts SURVIVORS
+    drawn from the whole stream, not leading rows of it. Guarding it would refuse
+    a cut that is not a head slice at all."""
+    m = _build_mod()
+    m.build("mtx-l162-s1b", "L162", 162, "/ckpt", gpu=False,
+            max_jets=m.balanced_prefix_jets() + 1, window=True)

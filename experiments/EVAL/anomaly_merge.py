@@ -233,6 +233,7 @@ def main(argv=None) -> int:
 
     an = _anomaly()
     an.cross_arm_regret(merged)
+    an.rung_balanced_regret(merged)
     bad, unmeasured = an.null_guard(merged)
 
     # BOTH OF THESE DESCRIBE THE ESTIMATOR, NOT THE MEASUREMENT, so they are

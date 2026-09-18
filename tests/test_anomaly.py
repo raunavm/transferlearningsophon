@@ -446,3 +446,68 @@ def test_classes_removed_is_not_mistaken_for_a_score_family(tmp_path):
     fams = {k for k, v in cell.items() if isinstance(v, dict)}
     assert "classes_removed" not in fams
     assert {"knn", "mahalanobis", "iad_hgb"} <= fams
+
+
+def _two_rung_results(a_vals, b_vals):
+    """One results dict: rung A with len(a_vals) arms, rung B with len(b_vals)."""
+    arms = {}
+    for i, v in enumerate(a_vals):
+        arms[f"l162-s{i}"] = {"rung": "L162", "signals": {
+            "label_X_bb": {"250": {"knn": {"sigma_min": float(v)}}}}}
+    for i, v in enumerate(b_vals):
+        arms[f"r16q1-s{i}"] = {"rung": "R16_Q1", "signals": {
+            "label_X_bb": {"250": {"knn": {"sigma_min": float(v)}}}}}
+    return {"arms": arms}
+
+
+def test_rung_balanced_regret_does_not_punish_the_rung_with_fewer_seeds():
+    """THE DEFECT, made concrete. L162 has ONE arm at sigma_min 2.0; R16_Q1 has
+    THREE at 1, 2, 3 -- the same centre, 2.0. The pooled minimum is 1.0, drawn
+    from R16_Q1 only because it had three chances, so the published `regret`
+    calls L162 twice as bad as the best. Normalising on each rung's MEDIAN says
+    what is true: the rungs are indistinguishable here."""
+    r = _two_rung_results([2.0], [1.0, 2.0, 3.0])
+    an.cross_arm_regret(r)
+    an.rung_balanced_regret(r)
+    l162 = r["arms"]["l162-s0"]["signals"]["label_X_bb"]["250"]["knn"]
+    r16 = [r["arms"][f"r16q1-s{i}"]["signals"]["label_X_bb"]["250"]["knn"]
+           for i in range(3)]
+    assert l162["regret"] == pytest.approx(2.0), "the pooled number, for contrast"
+    assert l162["regret_rung_balanced"] == pytest.approx(1.0)
+    assert all(v["regret_rung_balanced"] == pytest.approx(1.0) for v in r16)
+
+
+def test_rung_balanced_regret_still_reports_a_real_difference():
+    """It must not simply flatten everything: a rung that IS worse still shows."""
+    r = _two_rung_results([4.0], [1.0, 2.0, 3.0])
+    an.rung_balanced_regret(r)
+    l162 = r["arms"]["l162-s0"]["signals"]["label_X_bb"]["250"]["knn"]
+    assert l162["regret_rung_balanced"] == pytest.approx(2.0), "4.0 / median 2.0"
+
+
+def test_unequal_seeds_per_rung_are_named_not_silently_averaged():
+    r = _two_rung_results([2.0], [1.0, 2.0, 3.0])
+    an.rung_balanced_regret(r)
+    assert r["signals_with_unequal_seeds_per_rung"] == ["label_X_bb"]
+    cell = r["arms"]["l162-s0"]["signals"]["label_X_bb"]["250"]["knn"]
+    assert cell["arms_per_rung"] == {"L162": 1, "R16_Q1": 3}
+    assert cell["rungs_compared"] == ["L162", "R16_Q1"]
+
+
+def test_equal_seeds_per_rung_raise_no_flag():
+    r = _two_rung_results([2.0, 2.0], [1.0, 3.0])
+    an.rung_balanced_regret(r)
+    assert r["signals_with_unequal_seeds_per_rung"] == []
+
+
+def test_sigma_min_does_not_return_its_own_starting_bracket():
+    """The lower bracket was 1e-6 and the bisection lived inside it, so any cell
+    whose true sigma_min was smaller came back as 1e-6 -- the initial guess
+    wearing the costume of a measurement."""
+    eps_s = np.array([1.0])
+    eps_b = np.array([1e-14])
+    got = an.sigma_min_asimov(eps_s, eps_b, n_b_total=int(1e20))
+    assert got < 1e-6, f"still pinned at the bracket edge: {got}"
+    assert got > 0.0, "a real root, not the saturation return"
+    # Z ~ sigma_0 * eps_s / sqrt(eps_b) = sigma_0 * 1e7, so Z = 5 at 5e-7
+    assert got == pytest.approx(5e-7, rel=0.15)

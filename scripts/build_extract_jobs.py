@@ -264,8 +264,32 @@ GPU_AFF = """
 FAMILIES = [("Res2P", 250, 299), ("Res34P", 1075, 1289), ("QCD", 350, 419)]
 
 
+# Selected test jets, docs/GROUND_TRUTH.md. Used only to convert a file count
+# into a jet count for the balance guard below.
+TEST_JETS_SELECTED = 27_448_839
+
+
+def balanced_prefix_jets() -> int:
+    """How many leading jets still span every family.
+
+    Round-robin exhausts the SHORTEST family first, so only the first
+    3 x min(files) entries carry all three. With Res2P 50, Res34P 215, QCD 70
+    that is 150 of 335 files ~ 12.29 M jets; past ~210 files the list is Res34P
+    alone. A --max-jets beyond this point is a CLASS-BIASED head slice that
+    still looks like a uniform cut.
+    """
+    per = [hi - lo + 1 for _, lo, hi in FAMILIES]
+    return int(min(per) * len(per) * TEST_JETS_SELECTED / sum(per))
+
+
 def interleaved_files() -> str:
-    """Round-robin across families, so every prefix spans all three."""
+    """Round-robin across families.
+
+    EVERY PREFIX SPANS ALL THREE ONLY WHILE THE SHORTEST FAMILY LASTS -- the
+    original wording of this docstring said it held for every prefix, which is
+    false and is exactly the assumption extract_features.py's `keep()` relies on
+    when it head-slices to --max-jets before striding. See balanced_prefix_jets().
+    """
     per = [[f"/jc2/jet_data/{fam}_{i:04d}.parquet" for i in range(lo, hi + 1)]
            for fam, lo, hi in FAMILIES]
     out = []
@@ -332,6 +356,20 @@ def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
           ckpt_epoch: int | None = 79, window: bool = False,
           window_full: bool = False) -> tuple[str, str]:
     name = run_id.replace("_", "-").lower()
+    # THE CAP MUST STAY INSIDE THE BALANCED PREFIX. extract_features.py keeps
+    # a[:max_jets][::stride] -- a head slice first -- which is class-representative
+    # only while the round-robin still spans every family. Window mode is exempt:
+    # it applies the selection at load, so --max-jets counts SURVIVORS out of the
+    # whole stream rather than leading rows of it.
+    if max_jets and not window:
+        cap = balanced_prefix_jets()
+        if max_jets > cap:
+            raise SystemExit(
+                f"FATAL: --max-jets {max_jets:,} exceeds the balanced prefix of "
+                f"{cap:,} jets for {run_id}. Past that point the interleaved "
+                f"file list has exhausted the shortest family, so the head slice "
+                f"is class-biased while still looking like a uniform cut. Raise "
+                f"the family file ranges, or stride the full stream instead.")
     if window:
         name += "-vcbwindow-full" if window_full else "-vcbwindow"
     text = TEMPLATE.format(
