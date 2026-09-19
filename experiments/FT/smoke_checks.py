@@ -23,6 +23,12 @@ different key layout therefore leaves a randomly initialised trunk, trains it,
 and reports a plausible accuracy. The log line is the only evidence, and this
 turns it into a hard stop: anything missing or unexpected outside `mod.fc.`
 (the head, which --exclude-model-weights drops on purpose) fails.
+
+--fresh-prefix IS FOR THE SELF-SUPERVISED INIT ONLY (experiments/FT/mpm_init.py).
+Masked-particle pretraining never runs the class-attention blocks, so that init
+offers the particle-attention trunk alone and the prefixes named here are
+REQUIRED to be missing -- exactly --expect-fresh of them. Both directions fail:
+a trunk tensor that did not load, and a class-attention tensor that did.
 """
 from __future__ import annotations
 
@@ -63,9 +69,15 @@ def parse_load_log(text: str) -> tuple[list[str], list[str]]:
     return ast.literal_eval(m.group(1)), ast.literal_eval(m.group(2))
 
 
-def check_load_log(path: str) -> None:
+def check_load_log(path: str, fresh: tuple = (), expect_fresh: int | None = None) -> None:
     missing, unexpected = parse_load_log(pathlib.Path(path).read_text(errors="replace"))
-    bad_m = [k for k in missing if not k.startswith(HEAD_PREFIX)]
+    n_fresh = sum(1 for k in missing if k.startswith(tuple(fresh))) if fresh else 0
+    if fresh and n_fresh != expect_fresh:
+        raise SystemExit(f"FAIL load-log: {n_fresh} tensors under {list(fresh)} started fresh, "
+                         f"expected {expect_fresh}. Fewer means the init carried tensors it "
+                         f"must not (untrained class-attention weights were LOADED); more "
+                         f"means the model is not the one this count was measured on.")
+    bad_m = [k for k in missing if not k.startswith((HEAD_PREFIX,) + tuple(fresh))]
     bad_u = [k for k in unexpected if not k.startswith(HEAD_PREFIX)]
     if bad_m or bad_u:
         raise SystemExit(f"FAIL load-log: trunk keys did not load -- missing {bad_m[:5]} "
@@ -74,6 +86,10 @@ def check_load_log(path: str) -> None:
     if not missing:
         raise SystemExit("FAIL load-log: nothing was excluded -- the head was loaded too, so "
                          "--exclude-model-weights did not match mod.fc.*")
+    if fresh:
+        print(f"PASS load-log: particle-attention trunk loaded; {n_fresh} tensors under "
+              f"{list(fresh)} and the head start fresh, nothing else missing or unexpected")
+        return
     print(f"PASS load-log: trunk loaded; head re-initialised "
           f"({len(missing)} head tensors missing, {len(unexpected)} unexpected, all under {HEAD_PREFIX})")
 
@@ -130,6 +146,11 @@ def write_manifest(out: str, kv: list[str]) -> None:
     if ck and os.path.exists(ck):
         import hashlib
         rec["checkpoint_sha256"] = hashlib.sha256(pathlib.Path(ck).read_bytes()).hexdigest()
+        # A CONVERTED init (experiments/FT/mpm_init.py) lives in the pod, so its
+        # path and hash say nothing about which pretraining run it came from.
+        side = pathlib.Path(ck + ".json")
+        if side.exists():
+            rec["checkpoint_provenance"] = json.loads(side.read_text())
     sub = rec.get("subset")
     if sub and os.path.exists(sub):
         rec["subset_bytes"] = os.path.getsize(sub)
@@ -146,6 +167,10 @@ def main(argv=None) -> int:
     a.add_argument("--expect", type=int, required=True)
     b = sub.add_parser("load-log")
     b.add_argument("--log", required=True)
+    b.add_argument("--fresh-prefix", nargs="+", default=[],
+                   help="key prefixes REQUIRED to be missing besides the head "
+                        "(the self-supervised init only)")
+    b.add_argument("--expect-fresh", type=int, default=None)
     c = sub.add_parser("features")
     c.add_argument("--dir", required=True)
     c.add_argument("--n", type=int, required=True)
@@ -165,7 +190,9 @@ def main(argv=None) -> int:
             raise SystemExit(f"FAIL head-width: {w}, want {args.expect} ({args.checkpoint})")
         print(f"PASS head-width: {w}")
     elif args.cmd == "load-log":
-        check_load_log(args.log)
+        if bool(args.fresh_prefix) != (args.expect_fresh is not None):
+            raise SystemExit("FAIL load-log: --fresh-prefix and --expect-fresh go together")
+        check_load_log(args.log, tuple(args.fresh_prefix), args.expect_fresh)
     elif args.cmd == "features":
         check_features(args.dir, args.n, args.k)
     elif args.cmd == "pred":

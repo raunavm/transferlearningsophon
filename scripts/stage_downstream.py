@@ -76,6 +76,19 @@ SOURCES = {
                for i in range(20)},
         n_const=None,
     ),
+    # THE GENERATOR-SHIFT TEST SET: the same q/g task showered by Herwig 7.1.
+    # Never trained on -- every model is fine-tuned on the Pythia sample above
+    # and only EVALUATED here. Verified against the Zenodo API 2026-09-18:
+    # record 3066475 holds 40 files in the same two families, 20 x ~101 MB
+    # (2.02 GB) in the plain one. Unlike the Pythia record the first plain file
+    # IS numbered (QG_jets_herwig_0.npz, there is no bare QG_jets_herwig.npz).
+    # Same npz layout (X = pt, y, phi, pdgid; y = label), so it goes through
+    # load_qg and inherits the lepton charge-sign fix unchanged.
+    "qg_herwig": dict(
+        record="3066475",
+        files={f"chunk{i}": f"QG_jets_herwig_{i}.npz" for i in range(20)},
+        n_const=None,
+    ),
 }
 ZENODO = "https://zenodo.org/records/{record}/files/{fname}?download=1"
 

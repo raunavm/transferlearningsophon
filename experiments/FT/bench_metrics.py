@@ -44,6 +44,13 @@ does it: one sha256 of label188.npy across every cell, or the run is fatal.
 No p-values are computed here. experiments/FT/leg_stats.py owns inference and
 reads `cells[<dataset>]`, which has leg 1's cells[init][N][seed] shape.
 
+THE GENERATOR-SHIFT READOUT (--herwig). The v2 quark/gluon cells also score each
+fine-tuned model on Herwig 7.1 jets it never trained on and leave
+features/logits_herwig.npy + features/label_herwig.npy beside the Pythia pair.
+--herwig reads THAT pair through the same cell_metrics -- same checks, same
+row-alignment hash across cells -- for q/g only (top has no second generator),
+and writes bench_metrics_herwig.json so it can never overwrite the Pythia table.
+
 Run:  python3 experiments/FT/bench_metrics.py --root /data/results/ft \
           --out /data/results/ft/bench_metrics
 """
@@ -68,6 +75,9 @@ SIGNAL = {
     "qg": ("configs/finetune/EnergyFlowQG.yaml", ["label_gluon", "label_quark"]),
 }
 SIGNAL_COLUMN = 1     # asserted against the committed data config at runtime
+# (logits, labels) inside <cell>/features/, per test set
+TEST_FILES = {"pythia": ("logits.npy", "label188.npy"),
+              "herwig": ("logits_herwig.npy", "label_herwig.npy")}
 WORKING_POINTS = {"r50": 0.5, "r30": 0.3}
 METRICS = ["accuracy", "auc", "log1m_auc", "r50", "r30"]
 
@@ -113,7 +123,8 @@ def discover(root: pathlib.Path, dataset: str):
     for init_dir in sorted(p for p in leg.iterdir() if p.is_dir()):
         for n_dir in sorted(p for p in init_dir.iterdir() if p.is_dir()):
             for seed_dir in sorted(p for p in n_dir.iterdir() if p.is_dir()):
-                if ".partial." in seed_dir.name:
+                # <cell>.lock is the v2 shards' per-cell mutex, not a cell
+                if ".partial." in seed_dir.name or seed_dir.name.endswith(".lock"):
                     continue
                 if (seed_dir / "DONE").exists():
                     done.append((init_dir.name, n_dir.name, seed_dir.name, seed_dir))
@@ -122,14 +133,15 @@ def discover(root: pathlib.Path, dataset: str):
     return done, skipped
 
 
-def cell_metrics(cell: pathlib.Path, probe) -> dict:
+def cell_metrics(cell: pathlib.Path, probe, test_set: str = "pythia") -> dict:
     fd = cell / "features"
-    for f in ("logits.npy", "label188.npy"):
+    f_logits, f_labels = TEST_FILES[test_set]
+    for f in (f_logits, f_labels):
         if not (fd / f).exists():
             raise SystemExit(f"FATAL: {cell} is marked DONE but has no features/{f}")
-    lab = np.load(fd / "label188.npy")
+    lab = np.load(fd / f_labels)
     sha = hashlib.sha256(lab.tobytes()).hexdigest()
-    logits = np.load(fd / "logits.npy")
+    logits = np.load(fd / f_logits)
     if logits.ndim != 2 or logits.shape[1] != 2:
         raise SystemExit(f"FATAL: {fd} logits are {logits.shape}, not (n, 2). "
                          "Both benchmarks are binary; a different width means "
@@ -207,7 +219,12 @@ def main(argv=None) -> int:
                     help="the directory that holds leg_top/ and leg_qg/")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--datasets", nargs="+", default=list(SIGNAL), choices=list(SIGNAL))
+    ap.add_argument("--herwig", action="store_true",
+                    help="read the Herwig test pair of the q/g cells instead")
     args = ap.parse_args(argv)
+    test_set = "herwig" if args.herwig else "pythia"
+    if args.herwig:
+        args.datasets = ["qg"]
 
     probe = _load("probe", "experiments/EVAL/probe.py")
     res, summary, alignment, skipped = {}, {}, {}, []
@@ -224,7 +241,7 @@ def main(argv=None) -> int:
 
         shas = {}
         for init, n, seed, cell in cells:
-            m = cell_metrics(cell, probe)
+            m = cell_metrics(cell, probe, test_set)
             shas.setdefault(m["label188_sha256"], []).append(f"{init}/{n}/{seed}")
             res.setdefault(d, {}).setdefault(init, {}).setdefault(n, {})[seed] = m
             print(f"  {init:16} {n:10} {seed:4} acc={m['accuracy']:.5f} "
@@ -251,18 +268,20 @@ def main(argv=None) -> int:
         commit = None
 
     args.out.mkdir(parents=True, exist_ok=True)
-    (args.out / "bench_metrics.json").write_text(json.dumps(
+    out_json = args.out / ("bench_metrics_herwig.json" if args.herwig
+                           else "bench_metrics.json")
+    out_json.write_text(json.dumps(
         {"script": "experiments/FT/bench_metrics.py", "repo_commit": commit,
          # HEAD does not pin a script run from a dirty tree; its own hash does
          "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),
-         "root": str(args.root),
+         "root": str(args.root), "test_set": test_set,
          "signal": {d: {"data_config": SIGNAL[d][0], "background": SIGNAL[d][1][0],
                         "signal": SIGNAL[d][1][1], "signal_label": 1,
                         "signal_logit_column": SIGNAL_COLUMN} for d in res},
          "row_alignment_sha256": alignment,
          "skipped": skipped,
          "cells": res, "summary": summary}, indent=1, allow_nan=False))
-    print(f"\nwrote {args.out / 'bench_metrics.json'}")
+    print(f"\nwrote {out_json}")
     return 0
 
 

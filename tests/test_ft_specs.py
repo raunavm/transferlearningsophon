@@ -111,14 +111,15 @@ def test_legs_design_matches_item_14():
     # and must stay declared -- everything else about the design still has to match,
     # so only the checkpoint FILENAME is allowed to differ.
     lagging = "CKPT-EXCEPTION:" in raw
-    for name, ckpt, k in INITS:
+    # 4-tuples since 2026-09-18: the seeds travel with the init (wave 3)
+    for name, ckpt, k, _ in INITS:
         entry = f"{name}:{ckpt}:{k}"
         if entry in code:
             continue
         assert lagging, f"{entry} missing and no CKPT-EXCEPTION declared"
         legacy = entry.replace("net_epoch-79_state.pt", "net_best_epoch_state.pt")
         assert legacy in code, f"neither {entry} nor its best-epoch form is in the spec"
-    assert {n for n, _, _ in INITS} == {"r16q1-s2", "r16q1-s3", "r16q1-s4", "l162-s1b", "sophon-public", "scratch"}
+    assert {n for n, *_ in INITS} == {"r16q1-s2", "r16q1-s3", "r16q1-s4", "l162-s1b", "sophon-public", "scratch"}
     # N=1e3 added 2026-09-12 by DECISIONS_PENDING item 25 option B, which
     # docs/PRD_PLAN 4.1 and 6.4 had asked for from the start. The pin stays
     # EXACT rather than becoming a subset check: this assertion exists to catch

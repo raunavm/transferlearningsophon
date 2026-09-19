@@ -68,14 +68,23 @@ SOPHON_SHA256 = "cc7c33b522e796b5bbf0aa9bb5b01361c964f4ef3acebdd9682d7519c095b82
 
 JC1_CLASSES = "HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu"
 
-# name : checkpoint : K of that checkpoint's head (0 = from scratch)
+# name : checkpoint : K of that checkpoint's head (0 = no head to check: from
+# scratch, or the self-supervised init) : the fine-tuning seeds THIS init runs.
+#
+# THE SEEDS TRAVEL WITH THE INIT since 2026-09-18. The approved design makes the
+# PRETRAINING seed the unit of replication -- one fine-tuning seed from every
+# pretrained checkpoint -- and keeps three fine-tuning seeds only where the
+# fine-tuning spread is itself the measurement. These six are that sub-study
+# (waves 1 and 2): their seeds ARE FT_SEEDS, asserted below, and waves 1 and 2
+# still emit the single global `for S in 1 2 3`, so their specs do not move by
+# a byte. The per-init seeds are read by wave 3 and the v2 benchmarks only.
 INITS = [
-    ("r16q1-s2", "/data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt", 17),
-    ("r16q1-s3", "/data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt", 17),
-    ("r16q1-s4", "/data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt", 17),
-    ("l162-s1b", "/data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt", 162),
-    ("sophon-public", "/workspace/sophon_public.pt", 188),
-    ("scratch", "", 0),
+    ("r16q1-s2", "/data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt", 17, [1, 2, 3]),
+    ("r16q1-s3", "/data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt", 17, [1, 2, 3]),
+    ("r16q1-s4", "/data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt", 17, [1, 2, 3]),
+    ("l162-s1b", "/data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt", 162, [1, 2, 3]),
+    ("sophon-public", "/workspace/sophon_public.pt", 188, [1, 2, 3]),
+    ("scratch", "", 0, [1, 2, 3]),
 ]
 # N = 1e3 ADDED 2026-09-12 (DECISIONS_PENDING item 25, option B). docs/PRD_PLAN
 # 4.1 asks for it because every N-sweep paper reaches it and the vocabulary
@@ -108,6 +117,9 @@ EPOCHS = {1_000: 50, 10_000: 50, 100_000: 30, 1_000_000: 10}
 # version the image carries.
 SAMPLES_PER_EPOCH = {1_000: 10_000}   # else: N itself
 FT_SEEDS = [1, 2, 3]
+assert all(seeds == FT_SEEDS for *_, seeds in INITS), (
+    "waves 1 and 2 loop over the global FT_SEEDS; an init whose own seeds differ "
+    "would be recorded as running seeds it does not run")
 LR_PRETRAINED, LR_SCRATCH = "1e-4", "5e-4"
 
 # The published top / q-g recipe (docs/PRD_PLAN.md 4.1 `[V G]`). BENCH_HEAD_MULT
@@ -992,11 +1004,616 @@ def legs_w2() -> str:
     return out
 
 
-def _fill(script: str, pin: str) -> str:
-    inits = " ".join(f"{n}:{c}:{k}" for n, c, k in INITS)
+
+# ======================================================================= wave 3
+# THE APPROVED DESIGN (project lead, 2026-09-18). Every downstream comparison is
+# FOUR label granularities x FIVE pretraining seeds, the PRETRAINING seed is the
+# unit of replication, and every pretrained checkpoint is fine-tuned with ONE
+# fine-tuning seed (seed 1, training subset s1). The running three-seed wave 2
+# stays as the fine-tuning-variance sub-study. Wave 3 is therefore wave 2's
+# script -- same recipe, pruning, validation size, guard and loop order, derived
+# by the same asserted substitution -- run over the checkpoints wave 2 does not
+# cover, into wave 2's own tree, so leg1_metrics.py / leg2_metrics.py read ONE
+# tree. Init names are disjoint from wave 2's (asserted), so no cell is shared.
+#
+# FIVE SHARDS, ONE LOCK PER CELL. One pod per init subset, balanced by expected
+# GPU-hours, and every cell is claimed with an atomic `mkdir ${OUT}.lock` before
+# anything is written, so two shards cannot collide even if an init list is
+# ever wrong. The FAILED / WAIT_TIMEOUT halt markers are per shard: wave 2's
+# marker must not stop a shard and a shard's must not stop wave 2's restarts.
+#
+# NOT EMITTED BY DEFAULT: the groups in INITS_LATER. Their checkpoints do not
+# exist yet (two random-label draws are training, ~6.5 days; the masked-particle
+# run is at epoch 40 of 80). `--later <group>` emits one when it can be launched.
+PIN_W3 = "mtx-s1.52"          # every spec below runs code that first exists here
+W3_ROOT = "/data/results/ft/w2b"
+BENCH_V2_ROOT = "/data/results/ft/bench_v2"
+N_SHARDS = 5
+
+
+def _ckpt(run: str) -> str:
+    return f"/data/results/mtx/mtx-{run}/net_epoch-79_state.pt"
+
+
+INITS_W3 = (
+    [(f"l188-s{s}", _ckpt(f"l188-s{s}"), 188, [1]) for s in range(1, 6)]
+    # NEVER mtx-l162-s1: it trained at a different rate. s1b replaced it and
+    # already runs in wave 2, as do r16q1-s2/s3/s4.
+    + [(f"l162-s{s}", _ckpt(f"l162-s{s}"), 162, [1]) for s in range(2, 6)]
+    + [(f"r42q1-s{s}", _ckpt(f"r42q1-s{s}"), 43, [1]) for s in range(1, 6)]
+    + [(f"r16q1-s{s}", _ckpt(f"r16q1-s{s}"), 17, [1]) for s in (1, 5)]
+    # K is the CHECKPOINT's head width, which is what the preflight self-check
+    # verifies: the mass-output twins carry one regression output after their
+    # classes (ParT_sophon_arch_mass.py), and --exclude-model-weights drops the
+    # whole head anyway, so they fine-tune through the identical code path.
+    + [(f"l162mass-s{s}", _ckpt(f"l162mass-s{s}"), 163, [1]) for s in range(1, 6)]
+    + [(f"r16q1mass-s{s}", _ckpt(f"r16q1mass-s{s}"), 18, [1]) for s in range(1, 6)]
+    + [("rand-d1-s1b", _ckpt("rand-d1-s1b"), 17, [1])]
+)
+# The self-supervised init is CONVERTED in the pod (experiments/FT/mpm_init.py:
+# its keys are `trunk.mod.*` and weaver 0.4.17 has no prefix option) and the
+# converted file is what the cell loads, so its checkpoint path is in
+# /workspace, like the public checkpoint's. K = 0: it has no head to check.
+# mpm-s1 keeps THREE fine-tuning seeds: its pre-registered validity check is
+# "beats scratch by more than the fine-tuning-seed spread at 1e3 and 1e4", and
+# scratch has three seeds in wave 2.
+MPM_SOURCE = {f"mpm-s{s}": _ckpt(f"mpm-s{s}") for s in (1, 2, 3)}
+INITS_LATER = {
+    "rand-d2": [("rand-d2-s2", _ckpt("rand-d2-s2"), 17, [1])],
+    "rand-d3": [("rand-d3-s3", _ckpt("rand-d3-s3"), 17, [1])],
+    "mpm-s1": [("mpm-s1", "/workspace/mpm-s1_trunk.pt", 0, [1, 2, 3])],
+    "mpm-s2": [("mpm-s2", "/workspace/mpm-s2_trunk.pt", 0, [1])],
+    "mpm-s3": [("mpm-s3", "/workspace/mpm-s3_trunk.pt", 0, [1])],
+}
+# What smoke_checks.py load-log must see for a converted self-supervised init:
+# these 39 tensors (class token, two class-attention blocks, final norm) and the
+# head are the ONLY missing keys. Measured on the architecture, 2026-09-18.
+MPM_FRESH = ("mod.cls_token", "mod.cls_blocks.", "mod.norm.")
+MPM_N_FRESH = 39
+
+_all_new = INITS_W3 + [i for g in INITS_LATER.values() for i in g]
+_names = [n for n, *_ in INITS + _all_new]
+assert len(_names) == len(set(_names)), "an init name is used twice"
+assert not ({n for n, *_ in INITS} & {n for n, *_ in _all_new}), (
+    "a wave-3 init reuses a wave-2 name; the two waves share one output tree")
+for _n, _c, _k, _s in _all_new:
+    assert "/mtx-l162-s1/" not in _c and "/mtx-rand-d1-s1/" not in _c, _n
+    assert _s and sorted(_s) == _s, (_n, _s)
+    assert (_k == 0) == _n.startswith("mpm-"), (_n, _k)
+
+# ---------------------------------------------------------------- benchmarks v2
+# Top tagging and quark/gluon for every launchable init: the six of waves 1/2
+# (fine-tuning seed 1 only, except scratch, which keeps its three as the
+# reference row's spread) plus INITS_W3. The head re-initialisation repeats are
+# restricted to two inits x 5 repeats on top tagging at N_max; they hold the
+# data subset at s1 and are recorded as s2..s5 of that init, which is what the
+# old template did with its 9 (bench_metrics.py tells the two apart by
+# train_subsets). Those two inits have ft_seeds == [1], asserted, so a repeat's
+# directory can never collide with a real fine-tuning seed's.
+BENCH_V2_REPS = [1, 2, 3, 4, 5]
+BENCH_V2_REP_INITS = ["l162-s1b", "r16q1-s2"]
+BENCH_SIZES = {"top": [1_000, 10_000, 100_000, 1_200_000],
+               "qg": [1_000, 10_000, 100_000, 1_600_000]}
+# THE N=1e3 CELL GETS THE LEGS' RULE. PI decision, 2026-09-18.
+#
+# The published recipe is 20 epochs over the training set, and weaver floors
+# steps at samples_per_epoch // batch_size (train.py:1006), so a literal N=1e3
+# cell trains for ONE step per epoch -- 20 optimiser steps in total, against
+# ~380 at N=1e4. That cell would measure the optimiser, not the representation,
+# in the place a pretraining effect is predicted to be LARGEST. Item 25 option B
+# settled exactly this for the legs (SAMPLES_PER_EPOCH above, with the
+# re-shuffling verified against weaver's infinity_mode), and the benchmarks must
+# not differ from the legs on a knob that is not the variable under study.
+#
+# So the TRAINING SET stays 1,000 jets -- that is the controlled variable -- and
+# an "epoch" becomes ten passes over it: 19 steps x 20 epochs = 380, matching the
+# N=1e4 cell, with the same 20 validation passes and the same best-epoch rule
+# applied at the same granularity. The manifest records the samples and the steps
+# actually used, so a cell says which rule produced it.
+BENCH_SAMPLES_PER_EPOCH: dict[int, int] = {1_000: 10_000}
+assert BENCH_SAMPLES_PER_EPOCH[1_000] == SAMPLES_PER_EPOCH[1_000], (
+    "the benchmarks and the legs must decouple N=1e3 the same way, or the two "
+    "tables' smallest cells are not trained to a comparable step count")
+INITS_BENCH_V2 = ([(n, c, k, s if n == "scratch" else [1]) for n, c, k, s in INITS]
+                  + INITS_W3)
+for _n, _c, _k, _s in INITS_BENCH_V2:
+    assert _n not in BENCH_V2_REP_INITS or _s == [1], (_n, _s)
+HERWIG_TEST = ["/data/finetune/qg_herwig/qg_herwig_chunk0.parquet",
+               "/data/finetune/qg_herwig/qg_herwig_chunk1.parquet"]
+# The published test-split sizes. Asserted in the pod BEFORE any GPU work, from
+# the parquet metadata, so a truncated staging fails at the top and not after
+# 288 fine-tunes have been read out on a sample the community table is not.
+N_TEST = {"top": 404_000, "qg": 200_000, "herwig": 200_000}
+
+
+def cells_legs(inits) -> list[tuple]:
+    """(leg, init, N, seed) for every cell wave 3 runs from these inits."""
+    return [(leg, n, N, s) for leg in ("leg1", "leg2")
+            for n, _, _, seeds in inits for s in seeds for N in SIZES]
+
+
+def cells_bench(inits) -> list[tuple]:
+    """(leg_<set>, init, N, seed) for every cell benchmarks v2 run."""
+    out = []
+    for d in BENCH_SETS:
+        for n, _, _, seeds in inits:
+            out += [(f"leg_{d}", n, N, s) for s in seeds for N in BENCH_SIZES[d]]
+            if d == "top" and n in BENCH_V2_REP_INITS:
+                out += [(f"leg_{d}", n, BENCH_SIZES[d][-1], r)
+                        for r in BENCH_V2_REPS if r not in seeds]
+    return out
+
+
+# EXPECTED GPU-HOURS PER CELL -- used to balance the shards and by --plan only.
+#   legs    145/144 h: wave 2's own header (144 fine-tunes, ~145 GPU-h) under
+#           the protocol these cells run.
+#   top/qg  docs/PRD_PLAN.md 5 [V]: "top/q-g ParT recipe ~ 2.3-3 h per
+#           checkpoint at N_max" -> 2.3 h top (1.2M jets), 3.0 h q/g (1.6M).
+#           Smaller N: the same 20 epochs with training scaled by N over the
+#           ~38 s/epoch fixed overhead wave 2 measured, plus the validation
+#           pass (20k at N <= 1e4, 200k above): ~0.2 h at 1e3 and 1e4, ~0.5 h
+#           at 1e5. +0.05 h per cell for the test read-out.
+#           1e3 AND 1e4 CARRY THE SAME FIGURE, and BENCH_SAMPLES_PER_EPOCH is
+#           what makes that exact rather than approximate: both now run 10,000
+#           samples per epoch, so they differ only in the training SET. The
+#           table is unchanged by that decision -- it already assumed the
+#           equality, and the fixed per-epoch overhead dominates both.
+COST_LEG_CELL_H = 145 / 144
+COST_BENCH_CELL_H = {"top": {1_000: 0.25, 10_000: 0.25, 100_000: 0.55, 1_200_000: 2.35},
+                     "qg": {1_000: 0.25, 10_000: 0.25, 100_000: 0.55, 1_600_000: 3.05}}
+
+
+def cost_h(cell) -> float:
+    leg, _, N, _ = cell
+    return COST_LEG_CELL_H if leg in ("leg1", "leg2") else COST_BENCH_CELL_H[leg[4:]][N]
+
+
+def shard(inits, cells_of, n=N_SHARDS) -> list[list]:
+    """Split inits into n disjoint subsets: heaviest init first, onto the
+    lightest shard. Equal costs deal round-robin, so no shard holds one
+    granularity alone. Each subset keeps the inits' original order."""
+    cost = {i[0]: sum(cost_h(c) for c in cells_of([i])) for i in inits}
+    order = sorted(range(len(inits)), key=lambda k: (-cost[inits[k][0]], k))
+    load, out = [0.0] * n, [[] for _ in range(n)]
+    for k in order:
+        j = min(range(n), key=lambda j: (load[j], j))
+        out[j].append(k)
+        load[j] += cost[inits[k][0]]
+    return [[inits[k] for k in sorted(ix)] for ix in out]
+
+
+def _derive(base: str, subs: list, what: str) -> str:
+    """Asserted substitution, as legs_w2 does it: every replacement states how
+    many times it must match and raises otherwise."""
+    out = base
+    for old, new, n in subs:
+        got = out.count(old)
+        if got != n:
+            raise SystemExit(
+                f"FATAL: {what} derivation expected {n} occurrence(s) of "
+                f"{old[:70]!r}, found {got}. The base template changed; re-check "
+                "the substitution rather than loosening it.")
+        out = out.replace(old, new)
+    return out
+
+
+def _lock(indent: int) -> str:
+    p = " " * indent
+    return (
+        f"{p}# ONE CELL, ONE POD. mkdir creates the directory or fails, atomically,\n"
+        f"{p}# so two pods can never both believe they hold a cell, whatever the\n"
+        f"{p}# init lists say. A lock left by an evicted pod of THIS job is\n"
+        f"{p}# re-entered (its half-written cell is moved to .partial below, as\n"
+        f"{p}# always); a lock held by any OTHER job is left alone and counted.\n"
+        f"{p}mkdir -p ${{OUT%/*}}\n"
+        f"{p}if ! mkdir ${{OUT}}.lock 2>/dev/null; then\n"
+        f"{p}  owner=$(cat ${{OUT}}.lock/owner 2>/dev/null || echo unknown)\n"
+        f"{p}  if [ \"${{owner}}\" != \"${{SHARD}}\" ]; then\n"
+        f"{p}    echo \"LOCKED: ${{OUT}} is held by ${{owner}}, this is ${{SHARD}}; leaving it\"\n"
+        f"{p}    NLOCKED=$((NLOCKED+1)); continue\n"
+        f"{p}  fi\n"
+        f"{p}  echo \"re-entering ${{OUT}}.lock, left by an earlier pod of ${{SHARD}}\"\n"
+        f"{p}fi\n"
+        f"{p}echo \"${{SHARD}}\" > ${{OUT}}.lock/owner\n")
+
+
+def _prune(indent: int) -> str:
+    """Wave 2's per-epoch checkpoint prune (item 36), at another indentation.
+    tests/test_wave3_specs.py asserts it equals wave 2's line for line."""
+    p = " " * indent
+    return (
+        f"{p}[ -f ${{OUT}}/net_best_epoch_state.pt ] || {{\n"
+        f"{p}  echo \"FATAL: no net_best_epoch_state.pt in ${{OUT}};\"\n"
+        f"{p}  echo \"       refusing to prune per-epoch checkpoints.\"; exit 1; }}\n"
+        f"{p}rm -f ${{OUT}}/net_epoch-*_state.pt ${{OUT}}/net_epoch-*_optimizer.pt\n"
+        f"{p}[ -f ${{OUT}}/net_best_epoch_state.pt ] || {{\n"
+        f"{p}  echo \"FATAL: the prune removed net_best_epoch_state.pt in ${{OUT}}.\"; exit 1; }}\n")
+
+
+def _mpm_convert(inits) -> str:
+    """The in-pod conversion of every self-supervised init in `inits`."""
+    out = ("          # THE SELF-SUPERVISED INIT IS CONVERTED, NOT LOADED RAW. Its keys are\n"
+           "          # trunk.mod.* and weaver 0.4.17 has no prefix option, so offered raw it\n"
+           "          # loads NOTHING and the trunk trains from random weights (measured;\n"
+           "          # experiments/FT/mpm_init.py). The converter keeps the embedding, the\n"
+           "          # pair embedding and the 8 particle-attention blocks (194 tensors) and\n"
+           "          # refuses to write anything less; the class-attention blocks, class\n"
+           "          # token and final norm were never trained by masked-particle modelling\n"
+           "          # and start fresh, seeded by the fine-tuning seed like the head.\n")
+    for n, c, k, _ in inits:
+        if n.startswith("mpm-"):
+            out += (f"          [ -f {MPM_SOURCE[n]} ] || {{ echo \"FATAL: no {MPM_SOURCE[n]}\"; exit 1; }}\n"
+                    f"          python3 experiments/FT/mpm_init.py --src {MPM_SOURCE[n]} --out {c}\n")
+    return out
+
+
+_MPM_LOADLOG = ("load-log --log ${OUT}/stdout.log --fresh-prefix " + " ".join(MPM_FRESH)
+                + f" --expect-fresh {MPM_N_FRESH}")
+
+
+def legs_w3(inits, shard_name: str) -> str:
+    """Wave 3 = wave 2's script over `inits`, by asserted substitution."""
+    has_mpm = any(n.startswith("mpm-") for n, *_ in inits)
+    assert not has_mpm or all(n.startswith("mpm-") for n, *_ in inits), (
+        "a self-supervised init shares a spec only with other self-supervised "
+        "inits: the load-log check below is substituted for the whole spec")
+    seeds = sorted({s for *_, ss in inits for s in ss})
+    subs = [
+        ("          ROOT_OUT=/data/results/ft/w2b\n",
+         "          ROOT_OUT=/data/results/ft/w2b\n"
+         f"          SHARD={shard_name}\n"
+         "          NLOCKED=0\n", 1),
+        # halt markers per shard: shared ones would let one job stop another
+        ("          WAIT_MARK=${ROOT_OUT}/WAIT_TIMEOUT\n",
+         "          WAIT_MARK=${ROOT_OUT}/WAIT_TIMEOUT.${SHARD}\n", 1),
+        ("          FAIL_MARK=${ROOT_OUT}/FAILED\n",
+         "          # Per shard: wave 2 and the other shards write to this same tree,\n"
+         "          # and one job's deterministic failure must not halt another's restarts.\n"
+         "          FAIL_MARK=${ROOT_OUT}/FAILED.${SHARD}\n", 1),
+        # no public checkpoint in any wave-3 init; the self-supervised groups
+        # convert their init here instead
+        (FETCH_SOPHON, _mpm_convert(inits) if has_mpm else "", 1),
+        # name:ckpt:K:seeds -- K is the third field now, not the rest of the line
+        ("ckpt=${rest%%:*}; k=${rest#*:}\n",
+         "ckpt=${rest%%:*}; k=${rest#*:}; k=${k%%:*}\n", 1),
+        # ...AND SO ITS PRECONDITION GOES WITH IT. Leaving the arm-S check behind
+        # would hard-fail a shard on three checkpoints it never opens -- the
+        # precondition inversion tests/test_spec_preconditions.py exists for
+        # ("a spec hard-fails on an OPTIONAL input while never checking a
+        # MANDATORY one"). The JetClass-I test-file check below STAYS: leg 2
+        # does read those.
+        ("          # Leg-2 preconditions, checked HERE rather than days later after leg 1.\n"
+         "          for S in 1 2 3; do\n"
+         "            [ -f /data/results/e1/arm_s_s${S}/net_best_epoch_state.pt ] || "
+         "{ echo \"FATAL: no E1 arm S seed ${S} checkpoint\"; exit 1; }\n"
+         "          done\n",
+         "          # Leg-2 preconditions, checked HERE rather than days later after leg 1.\n"
+         "          # The E1 arm-S checkpoints are NOT among them: wave 2 writes the\n"
+         "          # leg2/ref_e1arms-s* rows and this shard does not, so refusing to\n"
+         "          # start without a file it never opens would be a precondition on\n"
+         "          # someone else's input.\n", 1),
+        # THE E1 ARM-S REFERENCE IS WAVE 2's. It is keyed by seed, not init, so
+        # five shards and wave 2 would race on the same pred.root; only wave 2
+        # writes it and leg2_metrics.py reads it from the shared tree.
+        ("          # The N_max scratch reference (E1 arm S, three seeds) on the SAME subset.\n"
+         "          for S in 1 2 3; do\n"
+         "            OUT=${ROOT_OUT}/leg2/ref_e1arms-s${S}\n"
+         "            [ -f ${OUT}/DONE ] && continue\n"
+         "            CK=/data/results/e1/arm_s_s${S}/net_best_epoch_state.pt\n"
+         "            [ -f \"${CK}\" ] || { echo \"FATAL: no ${CK}\"; exit 1; }\n"
+         "            mkdir -p ${OUT}\n"
+         "            weaver --predict --data-test ${TEST1} ${PRED} -o fc_params '[(512,0.1)]' "
+         "--model-prefix ${CK} --predict-output ${OUT}/pred.root 2>&1 | tee ${OUT}/predict.log | tail -3\n"
+         "            # weaver's save_root catches its own write errors and still exits 0.\n"
+         "            [ -f ${OUT}/pred.root ] || { echo \"FATAL: no pred.root in ${OUT}\"; exit 1; }\n"
+         "            touch ${OUT}/DONE\n"
+         "          done\n\n",
+         "          # The E1 arm-S reference rows (leg2/ref_e1arms-s*) are written by wave 2\n"
+         "          # alone; they are keyed by seed, not init, and five shards racing on one\n"
+         "          # pred.root is exactly what the per-cell lock exists to prevent.\n\n", 1),
+        # the subset precondition checks every seed any init in this shard runs
+        ("          for S in __FT_SEEDS__; do\n"
+         "            for N in __SIZES__; do\n"
+         "              for SUB in ${SUB2} ${SUB1}; do\n",
+         f"          for S in {' '.join(map(str, seeds))}; do\n"
+         "            for N in __SIZES__; do\n"
+         "              for SUB in ${SUB2} ${SUB1}; do\n", 1),
+        # each init runs ITS OWN seeds
+        ("            name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}\n"
+         "            for S in __FT_SEEDS__; do\n",
+         "            name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}; seeds=${spec##*:}\n"
+         "            for S in ${seeds//,/ }; do\n", 2),
+        ("                [ -f ${OUT}/DONE ] && { echo \"skip ${OUT} (DONE)\"; continue; }\n",
+         "                [ -f ${OUT}/DONE ] && { echo \"skip ${OUT} (DONE)\"; continue; }\n"
+         + _lock(16), 2),
+        ("                touch ${OUT}/DONE\n",
+         "                touch ${OUT}/DONE\n"
+         "                rm -rf ${OUT}.lock\n", 2),
+        # THE 128-d FEATURES NOTHING READS. leg1_metrics.py is the only reader of
+        # a leg-1 cache and its discover() gates on logits.npy + label188.npy and
+        # opens exactly those two (leg1_metrics.py:84-92, 95-97); no probe, no
+        # anomaly job and no phase-0 script is ever pointed at a leg tree
+        # (job-ft-phase0a imports probe.py for log1m_auc / rejection_at only, and
+        # the phase-0 readers glob pred.root). At 500,000 strided rows the matrix
+        # is 256 MB per leg-1 cell, 27.6 GB across wave 3 -- against 199 GB free
+        # and ~123 GB owed by waves 2 and 3 plus the benchmarks, i.e. a shard
+        # halting mid-wave on space_ok. Deleted AFTER the smoke check above,
+        # which loads all three arrays, in the same place and the same way the
+        # v2 benchmarks do it. logits.npy, label188.npy, observers.npz and
+        # extract_manifest.json stay: those are what the analysis opens.
+        #
+        # WAVE 2 IS UNTOUCHED, as with every other item-36 cut: its spec is the
+        # provenance record of a running job and must stay byte-identical.
+        ("                python3 experiments/FT/smoke_checks.py features "
+         "--dir ${OUT}/features_v2 --n 500000 --k 162\n",
+         "                python3 experiments/FT/smoke_checks.py features "
+         "--dir ${OUT}/features_v2 --n 500000 --k 162\n"
+         "                rm -f ${OUT}/features_v2/features.npy\n", 1),
+        ("weight_decay=0.01 wave=2 ", "weight_decay=0.01 wave=3 ", 2),
+        ('echo "FT LEGS WAVE 2 COMPLETE"',
+         'echo "FT LEGS WAVE 3 ${SHARD} COMPLETE (${NLOCKED} cells left to another job)"', 1),
+    ]
+    if has_mpm:
+        subs += [
+            # no head to self-check; the converter already verified the trunk
+            ("            [ -f \"${ckpt}\" ] || { echo \"FATAL: ${name}: no ${ckpt}\"; exit 1; }\n"
+             "            python3 experiments/EVAL/extract_features.py --checkpoint ${ckpt} --num-classes ${k}",
+             "            [ -f \"${ckpt}\" ] || { echo \"FATAL: ${name}: no ${ckpt}\"; exit 1; }\n"
+             "            case ${name} in mpm-*) continue;; esac   # no head: verified by mpm_init.py\n"
+             "            python3 experiments/EVAL/extract_features.py --checkpoint ${ckpt} --num-classes ${k}", 1),
+            ("load-log --log ${OUT}/stdout.log", _MPM_LOADLOG, 2),
+        ]
+    return _derive(legs_w2(), subs, f"wave-3 {shard_name}")
+
+
+def legs_bench_v2(inits, shard_name: str) -> str:
+    """Benchmarks v2 = LEGS_BENCH over `inits`, by asserted substitution.
+
+    What changes and why: wave 2's prune, validation size at N <= 1e4 and loop
+    order (item 36, measured); per-init seeds and the restricted head re-init
+    repeats (the approved design); features.npy deleted after its smoke check
+    (bench_metrics.py reads logits.npy, label188.npy and DONE; nothing reads
+    the 128-d features -- 207 MB per top cell); the Herwig read-out on the q/g
+    cells; the per-cell lock and per-shard halt marker. The recipe constants,
+    the 85% guard and the constant-LR scheduler are untouched.
+    """
+    has_mpm = any(n.startswith("mpm-") for n, *_ in inits)
+    assert not has_mpm or all(n.startswith("mpm-") for n, *_ in inits)
+    has_public = any(c == "/workspace/sophon_public.pt" for _, c, *_ in inits)
+    spe = "".join(f"{n}) echo {v};; " for n, v in BENCH_SAMPLES_PER_EPOCH.items())
+    subs = [
+        ("          ROOT_OUT=/data/results/ft\n          mkdir -p ${ROOT_OUT}\n",
+         f"          ROOT_OUT={BENCH_V2_ROOT}\n"
+         f"          SHARD={shard_name}\n"
+         "          NLOCKED=0\n"
+         "          mkdir -p ${ROOT_OUT}\n", 1),
+        ("            *) echo \"FATAL: no test files for $1\" >&2; exit 1;; esac; }\n",
+         "            *) echo \"FATAL: no test files for $1\" >&2; exit 1;; esac; }\n"
+         "          # N <= 1e4 validates on 20k jets, as wave 2 does (item 36): a 200k\n"
+         "          # pass there is 20-200x the training set and was measured to hold the\n"
+         "          # GPU at 16-21%. Best-epoch selection on aggregate accuracy resolves\n"
+         "          # the observed ~0.01 epoch-to-epoch step at s.e. 0.003 with 20k jets.\n"
+         "          val_for () { if [ \"$1\" -le 10000 ]; then echo 20000; else echo 200000; fi; }\n"
+         "          # BENCH_SAMPLES_PER_EPOCH in scripts/build_ft_jobs.py; empty = N itself.\n"
+         f"          samples_for () {{ case $1 in {spe}*) echo $1;; esac; }}\n"
+         f"          HERWIG=\"{' '.join(HERWIG_TEST)}\"\n"
+         "          nrows () { python3 -c \"import sys, pyarrow.parquet as pq; "
+         "print(sum(pq.ParquetFile(f).metadata.num_rows for f in sys.argv[1:]))\" \"$@\"; }\n", 1),
+        ("            [ -f \"$(cfg_for ${D})\" ] || { echo \"FATAL: ${D}: no $(cfg_for ${D})\"; exit 1; }\n"
+         "          done\n",
+         "            [ -f \"$(cfg_for ${D})\" ] || { echo \"FATAL: ${D}: no $(cfg_for ${D})\"; exit 1; }\n"
+         "          done\n"
+         "          for f in ${HERWIG}; do\n"
+         "            [ -f \"${f}\" ] || { echo \"FATAL: no ${f} -- run ft-stage-qg-herwig-raunav first\"; exit 1; }\n"
+         "          done\n"
+         "          # The test sets must be the PUBLISHED splits, or the rows do not drop\n"
+         "          # into the community table. Counted from parquet metadata, here, not\n"
+         "          # discovered by a failed smoke check after the fine-tune is paid for.\n"
+         "          NTEST_top=$(nrows $(test_for top)); NTEST_qg=$(nrows $(test_for qg)); NTEST_herwig=$(nrows ${HERWIG})\n"
+         "          echo \"test jets: top ${NTEST_top}  qg ${NTEST_qg}  qg-herwig ${NTEST_herwig}\"\n"
+         f"          [ \"${{NTEST_top}}\" -eq {N_TEST['top']} ] && [ \"${{NTEST_qg}}\" -eq {N_TEST['qg']} ] "
+         f"&& [ \"${{NTEST_herwig}}\" -eq {N_TEST['herwig']} ] || {{\n"
+         f"            echo \"FATAL: test sets are not the published {N_TEST['top']} / {N_TEST['qg']} / "
+         f"{N_TEST['herwig']} jets\"; exit 1; }}\n"
+         "          ntest_for () { case $1 in top) echo ${NTEST_top};; qg) echo ${NTEST_qg};; esac; }\n", 1),
+        ("          FAIL_MARK=${ROOT_OUT}/FAILED_BENCH\n",
+         "          FAIL_MARK=${ROOT_OUT}/FAILED_BENCH.${SHARD}\n", 1),
+        (FETCH_SOPHON, FETCH_SOPHON if has_public else (_mpm_convert(inits) if has_mpm else ""), 1),
+        # seeds travel with the init; repeats are named per init; seeds OUTSIDE
+        # sizes so the cheap and expensive cells interleave (item 36 addendum)
+        ("              name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}\n"
+         "              for N in $(sizes_for ${D}); do\n",
+         "              name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}\n"
+         "              seeds=${spec##*:}; seeds=${seeds//,/ }\n"
+         "              # Head re-initialisations: top only, N_max only, and only the inits\n"
+         "              # named here -- the benchmark's convention for the headline cell,\n"
+         "              # restricted to two inits x 5 (the approved design). A repeat runs\n"
+         "              # as seed S on the s1 subset; S=1 IS the ordinary seed-1 cell.\n"
+         "              REPS=\"\"\n"
+         "              if [ \"${D}\" = \"top\" ]; then\n"
+         f"                case \" {' '.join(BENCH_V2_REP_INITS)} \" in *\" ${{name}} \"*) "
+         f"REPS=\"{' '.join(map(str, BENCH_V2_REPS))}\";; esac\n"
+         "              fi\n"
+         "              for S in $(echo ${seeds} ${REPS} | tr ' ' '\\n' | sort -nu); do\n"
+         "                for N in $(sizes_for ${D}); do\n", 1),
+        ("                # 9 head re-inits at N_max, top only, pretrained arms only --\n"
+         "                # the benchmark's convention for the headline cell\n"
+         "                # (docs/PRD_PLAN.md 4.1). Everywhere else the three\n"
+         "                # fine-tuning seeds are the spread.\n"
+         "                REPS=\"__FT_SEEDS__\"\n"
+         "                if [ \"${D}\" = \"top\" ] && [ \"${N}\" = \"${NMAX}\" ] && [ -n \"${ckpt}\" ]; then\n"
+         "                  REPS=\"__NMAX_REPS__\"\n"
+         "                fi\n"
+         "                for S in ${REPS}; do\n", "", 1),
+        ("                  DSEED=${S}\n"
+         "                  [ \"${REPS}\" = \"__NMAX_REPS__\" ] && DSEED=1\n",
+         "                  DSEED=${S}\n"
+         "                  case \" ${seeds} \" in\n"
+         "                    *\" ${S} \"*) ;;\n"
+         "                    *) [ \"${N}\" = \"${NMAX}\" ] || continue\n"
+         "                       DSEED=1;;\n"
+         "                  esac\n", 1),
+        ("                  [ -f ${OUT}/DONE ] && { echo \"skip ${OUT} (DONE)\"; continue; }\n",
+         "                  [ -f ${OUT}/DONE ] && { echo \"skip ${OUT} (DONE)\"; continue; }\n"
+         + _lock(18), 1),
+        ("data_config=${CFG} num_classes=2 batch_size=512 steps_per_epoch=$((N/512))",
+         "data_config=${CFG} num_classes=2 batch_size=512 "
+         "samples_per_epoch=$(samples_for ${N}) steps_per_epoch=$(($(samples_for ${N})/512)) "
+         "samples_per_epoch_val=$(val_for ${N}) wave=bench-v2", 1),
+        ("--start-lr ${LR} --samples-per-epoch ${N} --samples-per-epoch-val 200000",
+         "--start-lr ${LR} --samples-per-epoch $(samples_for ${N}) --samples-per-epoch-val $(val_for ${N})", 1),
+        ("                  touch ${OUT}/DONE\n",
+         "                  python3 experiments/FT/smoke_checks.py features --dir ${OUT}/features --n $(ntest_for ${D}) --k 2\n"
+         "                  # 128 floats per test jet that nothing reads (bench_metrics.py opens\n"
+         "                  # logits.npy, label188.npy and DONE): 207 MB per top cell, gone.\n"
+         "                  rm -f ${OUT}/features/features.npy\n"
+         "                  if [ \"${D}\" = \"qg\" ]; then\n"
+         "                    # GENERATOR SHIFT: the same model on Herwig 7.1 jets it never saw\n"
+         "                    # (Zenodo 3066475, staged by ft-stage-qg-herwig-raunav). Its own\n"
+         "                    # --out, because extract_features refuses to write a cache that\n"
+         "                    # holds another manifest; then the pair is moved beside the Pythia\n"
+         "                    # one under the names bench_metrics.py --herwig reads.\n"
+         "                    python3 experiments/EVAL/extract_features.py --checkpoint ${OUT}/net_best_epoch_state.pt "
+         "--num-classes 2 --arm FT_${D}_${name}_N${N}_s${S}_herwig "
+         "--data-config ${CFG} --data-test ${HERWIG} --observers jet_pt jet_energy "
+         "--out ${OUT}/features_herwig --batch-size 512 --num-workers 1 --fetch-step 1 --save-logits\n"
+         "                    python3 experiments/FT/smoke_checks.py features --dir ${OUT}/features_herwig --n ${NTEST_herwig} --k 2\n"
+         "                    rm -f ${OUT}/features_herwig/features.npy\n"
+         "                    mv ${OUT}/features_herwig/logits.npy ${OUT}/features/logits_herwig.npy\n"
+         "                    mv ${OUT}/features_herwig/label188.npy ${OUT}/features/label_herwig.npy\n"
+         "                  fi\n"
+         "                  # Per-epoch checkpoints (state + optimizer, 20 x ~26 MB), read by\n"
+         "                  # nothing once the best-epoch copy exists -- wave 2's prune, item 36.\n"
+         + _prune(18)
+         + "                  touch ${OUT}/DONE\n"
+         "                  rm -rf ${OUT}.lock\n", 1),
+        ('echo "FT BENCH LEGS COMPLETE"',
+         'echo "FT BENCH V2 ${SHARD} COMPLETE (${NLOCKED} cells left to another job)"', 1),
+    ]
+    if has_mpm:
+        subs.append(("load-log --log ${OUT}/stdout.log", _MPM_LOADLOG, 1))
+    return _derive(LEGS_BENCH, subs, f"bench-v2 {shard_name}")
+
+
+STAGE_HERWIG = PREAMBLE + """
+          # THE GENERATOR-SHIFT TEST SET: EnergyFlow quark/gluon showered by
+          # Herwig 7.1 (Zenodo 3066475; 40 files verified against the API on
+          # 2026-09-18, we take two of the 20 PLAIN ones, never *_withbc_*).
+          # Only the two evaluated chunks are staged: 200,000 jets, the size of
+          # the Pythia test split, so the two read-outs carry the same
+          # statistical weight. Same converter, same measured deta/dphi
+          # convention, same lepton charge-sign fix as qg_v2.
+          OUT=/data/finetune/qg_herwig
+          [ -e ${OUT} ] && { echo "FATAL: ${OUT} exists; staged data is never overwritten"; exit 1; }
+          space_ok () { local p=$(df --output=pcent /data | tail -1 | tr -dc 0-9); local g=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9); echo "/data ${p}% used, ${g}G free"; [ "$p" -lt 85 ] && [ "$g" -ge 50 ] || { echo "FATAL: /data at ${p}% used, ${g}G free: stop and ask the PI"; exit 1; }; }
+          space_ok
+          # Into a temporary directory, renamed only once complete: a retry can
+          # never find a half-staged ${OUT} and refuse, nor overwrite one.
+          TMP=${OUT}.staging.$(date -u +%s)
+          python3 scripts/stage_downstream.py --dataset qg_herwig --out ${TMP} \\
+            --raw /data/finetune/_raw --limit-files 2
+          for i in 0 1; do
+            [ -f ${TMP}/qg_herwig_chunk${i}.parquet ] || { echo "FATAL: chunk ${i} not written"; exit 1; }
+          done
+          mv ${TMP} ${OUT}
+          ls -la ${OUT}; du -sh ${OUT}
+          echo "STAGE QG HERWIG DONE"
+"""
+
+
+def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None) -> dict:
+    """The 2026-09-18 specs. Every one pins PIN_W3 or later."""
+    if _tag_index(pin) < _tag_index(PIN_W3):
+        raise SystemExit(f"FATAL: these specs run code that first exists at {PIN_W3} "
+                         f"(mpm_init.py, load-log --fresh-prefix, the Herwig source); "
+                         f"{pin} predates it")
+    h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
+    gpu = dict(gpu=True, cpu="4", memory="88Gi", shm="8Gi", backoff=50, pin=pin,
+               exclude_hosts=BAD_NODES)
+    groups = []                      # (suffix, inits)
+    if later:
+        groups += [(g, INITS_LATER[g]) for g in later]
+    specs = {}
+    if wave3:
+        shards = [] if later else [(chr(ord("a") + i), s)
+                                   for i, s in enumerate(shard(INITS_W3, cells_legs))]
+        for suffix, inits in shards + groups:
+            name = f"ft-legs-w3-{suffix}-raunav"
+            cells = cells_legs(inits)
+            specs[f"job-{name}.yaml"] = job(
+                name, _fill(legs_w3(inits, name), pin, inits=inits), **gpu,
+                header=h + f"  # WAVE 3 of the fine-tuning legs, shard {suffix}: wave 2's script over the\n"
+                           "  # checkpoints wave 2 does not cover, ONE fine-tuning seed per pretrained\n"
+                           "  # checkpoint (the pretraining seed is the unit of replication), same tree.\n"
+                           f"  # inits: {' '.join(n for n, *_ in inits)}\n"
+                           f"  # {len(cells)} fine-tunes, ~{sum(cost_h(c) for c in cells):.0f} GPU-h. "
+                           "Per-cell mkdir lock; per-shard halt markers.\n")
+    if bench_v2:
+        shards = [] if later else [(chr(ord("a") + i), s)
+                                   for i, s in enumerate(shard(INITS_BENCH_V2, cells_bench))]
+        for suffix, inits in shards + groups:
+            name = f"ft-legs-bench-v2-{suffix}-raunav"
+            cells = cells_bench(inits)
+            specs[f"job-{name}.yaml"] = job(
+                name, _fill(legs_bench_v2(inits, name), pin, inits=inits), **gpu,
+                header=h + f"  # BENCHMARKS v2, shard {suffix}: top tagging and quark/gluon at the\n"
+                           "  # published recipe (20 epochs, 1e-4 trunk / 5e-3 head, constant LR,\n"
+                           "  # weight decay 0.01), one fine-tuning seed per pretrained checkpoint,\n"
+                           "  # three for scratch; wave 2's prune, 20k validation at N <= 1e4 and\n"
+                           "  # loop order; the Herwig read-out on every q/g cell. Supersedes\n"
+                           "  # job-ft-legs-bench-raunav.yaml, which never ran.\n"
+                           f"  # inits: {' '.join(n for n, *_ in inits)}\n"
+                           f"  # {len(cells)} fine-tunes, ~{sum(cost_h(c) for c in cells):.0f} GPU-h.\n")
+        if not later:
+            specs["job-ft-stage-qg-herwig-raunav.yaml"] = job(
+                "ft-stage-qg-herwig-raunav", _fill(STAGE_HERWIG, pin), gpu=False, cpu="4",
+                memory="32Gi", shm="4Gi", backoff=1, pin=pin,
+                header=h + "  # Stage the Herwig 7.1 quark/gluon test set (generator shift). CPU.\n"
+                           "  # Two chunks of Zenodo 3066475: ~0.2 GB downloaded, ~0.4 GB written.\n"
+                           "  # Run BEFORE any bench-v2 shard; they refuse to start without it.\n")
+    return specs
+
+
+def _tag_index(pin: str) -> int:
+    m = re.fullmatch(r"mtx-s1\.(\d+)", pin)
+    if not m:
+        raise SystemExit(f"FATAL: {pin!r} is not an mtx-s1.<n> tag")
+    return int(m.group(1))
+
+
+def plan(later: list | None = None) -> str:
+    """Cell counts and expected GPU-hours per shard, for the launch note."""
+    lines = []
+    for what, inits, cells_of in (("wave 3", INITS_W3, cells_legs),
+                                  ("bench v2", INITS_BENCH_V2, cells_bench)):
+        total = 0.0
+        for i, s in enumerate(shard(inits, cells_of)):
+            cells = cells_of(s)
+            h = sum(cost_h(c) for c in cells)
+            total += h
+            lines.append(f"{what} shard {chr(ord('a') + i)}: {len(s):2d} inits "
+                         f"{len(cells):3d} cells {h:6.1f} GPU-h  "
+                         f"[{' '.join(n for n, *_ in s)}]")
+        lines.append(f"{what} total: {len(cells_of(inits))} cells {total:.1f} GPU-h")
+    for g in later or []:
+        for what, cells_of in (("wave 3", cells_legs), ("bench v2", cells_bench)):
+            cells = cells_of(INITS_LATER[g])
+            lines.append(f"{what} later {g}: {len(cells)} cells "
+                         f"{sum(cost_h(c) for c in cells):.1f} GPU-h")
+    return "\n".join(lines)
+
+
+def _fill(script: str, pin: str, inits=None) -> str:
+    # Waves 1 and 2 emit `name:ckpt:K` and loop over the global FT_SEEDS; wave
+    # 3 and the v2 benchmarks emit `name:ckpt:K:s1,s2,..` -- the seeds travel
+    # with the init. The first form is what the launched specs carry.
+    if inits is None:
+        init_str = " ".join(f"{n}:{c}:{k}" for n, c, k, _ in INITS)
+    else:
+        init_str = " ".join(f"{n}:{c}:{k}:{','.join(map(str, ss))}" for n, c, k, ss in inits)
     return (script
             .replace("__TEST2M__", test2m_list())
-            .replace("__INITS__", inits)
+            .replace("__INITS__", init_str)
             .replace("__SIZES__", " ".join(str(s) for s in SIZES))
             .replace("__FT_SEEDS__", " ".join(str(s) for s in FT_SEEDS))
             .replace("__E0__", str(EPOCHS[1_000]))
@@ -1015,7 +1632,8 @@ def _fill(script: str, pin: str) -> str:
             .replace("__SOPHON_SHA256__", SOPHON_SHA256))
 
 
-def build(pin: str, wave2: bool = False) -> dict[str, str]:
+def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = False,
+          later: list | None = None) -> dict[str, str]:
     h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
     specs = {
         "job-ft-subsets-jc2-raunav.yaml": job(
@@ -1104,6 +1722,13 @@ def build(pin: str, wave2: bool = False) -> dict[str, str]:
                        "  # the same init names and sizes, so a shared root would make every\n"
                        "  # wave-2 cell hit `[ -f DONE ]` and skip. Wave 1 is untouched and the\n"
                        "  # two are reported side by side as the curve.\n")
+    if wave3 or bench_v2:
+        # ONLY the new specs, so a --wave3 / --bench-v2 run can never rewrite a
+        # launched wave-1 or wave-2 file.
+        specs = _new_specs(pin, wave3, bench_v2, later)
+        for name, text in specs.items():
+            left = re.findall(r"__[A-Z0-9_]+__", text)
+            assert not left, f"{name}: unfilled {sorted(set(left))}"
     for name, text in specs.items():
         d = yaml.safe_load(text)
         assert d["metadata"]["name"].endswith("-raunav"), name
@@ -1133,8 +1758,25 @@ def main() -> int:
                     help="emit ONLY the wave-2 subset rebuild specs, under new names")
     ap.add_argument("--repin", action="store_true",
                     help="allow moving REPO_REF on specs whose jobs may have run")
+    ap.add_argument("--wave3", action="store_true",
+                    help=f"emit ONLY the five wave-3 shards (pin {PIN_W3})")
+    ap.add_argument("--bench-v2", action="store_true",
+                    help=f"emit ONLY the five bench-v2 shards + the Herwig staging (pin {PIN_W3})")
+    ap.add_argument("--later", nargs="+", choices=sorted(INITS_LATER), metavar="GROUP",
+                    help="with --wave3/--bench-v2: emit the not-yet-launchable group(s) "
+                         f"{sorted(INITS_LATER)} instead of the shards")
+    ap.add_argument("--plan", action="store_true",
+                    help="print cells and expected GPU-hours per shard, write nothing")
     args = ap.parse_args()
-    specs = build(args.pin, wave2=args.wave2)
+    if args.plan:
+        print(plan(args.later))
+        return 0
+    if args.later and not (args.wave3 or args.bench_v2):
+        sys.exit("FATAL: --later needs --wave3 and/or --bench-v2")
+    if (args.wave3 or args.bench_v2) and args.pin == PIN:
+        args.pin = PIN_W3
+    specs = build(args.pin, wave2=args.wave2, wave3=args.wave3, bench_v2=args.bench_v2,
+                  later=args.later)
     if args.only:
         keep = {n: t for n, t in specs.items() if any(k in n for k in args.only)}
         missing = [k for k in args.only if not any(k in n for n in specs)]

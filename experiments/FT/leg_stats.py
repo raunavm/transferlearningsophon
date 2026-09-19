@@ -63,6 +63,7 @@ import itertools
 import json
 import math
 import pathlib
+import re
 import statistics as st
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
@@ -84,7 +85,21 @@ CONTRASTS = {
                               "i1_clean": False},  # start_lr differs; see above
 }
 
+# The grid of the two committed legs. main() does NOT use it: each metrics file
+# has its own grid (top ends at N1200000, q/g at N1600000, wave 2 adds N1000),
+# so the sizes are read from the file -- see sizes_in().
 SIZES = ["N10000", "N100000", "N1000000"]
+
+
+def sizes_in(cells: dict, arms: list[str]) -> list[str]:
+    """Every N<digits> size ANY arm of the contrast has, in numeric order.
+
+    The union, not the intersection: a size one arm lacks then reaches
+    arm_seed_values and is fatal there, instead of vanishing from the table.
+    Non-size keys (leg 2's `ref`) are not part of any contrast.
+    """
+    found = {s for arm in arms for s in cells[arm] if re.fullmatch(r"N\d+", s)}
+    return sorted(found, key=lambda s: int(s[1:]))
 
 
 def read_cells(doc: dict) -> dict:
@@ -331,25 +346,32 @@ def format_row(r: dict) -> str:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--leg1", default=str(REPO / "experiments/FIGS/data/leg1_metrics.json"))
-    ap.add_argument("--leg2", default=str(REPO / "experiments/FIGS/data/leg2_metrics.json"))
+    # NAME=PATH, repeatable. For bench_metrics.json, whose cells are keyed by
+    # dataset first, NAME picks the dataset: --leg top=... --leg qg=...
+    ap.add_argument("--leg", action="append", metavar="NAME=PATH", default=None)
     ap.add_argument("--metric", default="accuracy")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
 
     results = {"metric": a.metric, "legs": {}}
-    for leg, path in (("leg1", a.leg1), ("leg2", a.leg2)):
+    legs = a.leg or [f"{leg}={REPO / 'experiments/FIGS/data' / f'{leg}_metrics.json'}"
+                     for leg in ("leg1", "leg2")]
+    for item in legs:
+        leg, sep, path = item.partition("=")
+        if not sep:
+            raise SystemExit(f"FATAL: --leg wants NAME=PATH, got {item!r}")
         p = pathlib.Path(path)
         if not p.exists():
             raise SystemExit(f"FATAL: no {p}")
         cells = read_cells(json.loads(p.read_text()))
+        cells = cells.get(leg, cells)
         rows = []
         print(f"\n=== {leg} ===")
         for name, spec in CONTRASTS.items():
             if any(arm not in cells for arm in spec["a"] + spec["b"]):
                 print(f"  {name:24s} SKIPPED: arm absent from {leg}")
                 continue
-            for size in SIZES:
+            for size in sizes_in(cells, spec["a"] + spec["b"]):
                 r = contrast(cells, name, spec, size, a.metric)
                 rows.append(r)
                 print(format_row(r))
