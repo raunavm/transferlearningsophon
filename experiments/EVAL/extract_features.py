@@ -126,8 +126,15 @@ def refuse_foreign_checkpoint(manifest_path, ckpt_sha: str) -> None:
             f"silently mix two models. Use a new --out.")
 
 
-def load_trunk_or_die(model, ckpt_path: pathlib.Path, declared_k: int) -> dict:
+def load_trunk_or_die(model, ckpt_path: pathlib.Path, declared_k: int,
+                      num_reg: int = 0) -> dict:
     """Load a checkpoint and REFUSE to continue on an incomplete or mislabelled one.
+
+    `num_reg` is the number of regression outputs the head carries AFTER its
+    `declared_k` class outputs (experiments/MTX/ParT_sophon_arch_mass.py: one
+    jet-mass output, so the head is K + 1 wide). The width check is on the sum,
+    so a mass-output checkpoint declared as its plain twin -- or the reverse --
+    is refused exactly as a wrong K is.
 
     Order matters. The K check runs BEFORE load_state_dict, because
     load_state_dict raises a bare RuntimeError on the head's size mismatch and
@@ -160,9 +167,10 @@ def load_trunk_or_die(model, ckpt_path: pathlib.Path, declared_k: int) -> dict:
         m = re.search(r"\.(\d+)\.weight$", k)
         head_w.append((int(m.group(1)) if m else -1, k, v))
     ckpt_k = int(max(head_w)[2].shape[0]) if head_w else None
-    if ckpt_k is not None and ckpt_k != declared_k:
+    if ckpt_k is not None and ckpt_k != declared_k + num_reg:
         print(f"FATAL: {ckpt_path} has a head of width {ckpt_k}, but "
-              f"--num-classes says {declared_k}. The trunk is K-independent, so "
+              f"--num-classes {declared_k} + --num-reg {num_reg} says "
+              f"{declared_k + num_reg}. The trunk is K-independent, so "
               f"this would load cleanly and produce valid features attributed to "
               f"the wrong arm; refusing.", file=sys.stderr)
         raise SystemExit(3)
@@ -184,7 +192,7 @@ def load_trunk_or_die(model, ckpt_path: pathlib.Path, declared_k: int) -> dict:
 
     return {
         "checkpoint": str(ckpt_path),
-        "checkpoint_num_classes": ckpt_k,
+        "checkpoint_num_classes": None if ckpt_k is None else ckpt_k - num_reg,
         "sha256": hashlib.sha256(ckpt_path.read_bytes()).hexdigest(),
         "trunk_tensors_loaded": sum(1 for k in state if not is_head(k)),
         "head_missing": len([k for k in missing if is_head(k)]),
@@ -275,6 +283,17 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--checkpoint", required=True)
     ap.add_argument("--num-classes", type=int, required=True)
+    # THE MODELS PRETRAINED WITH A JET-MASS REGRESSION OUTPUT. Their network is
+    # this same architecture built K + 1 wide (ParT_sophon_arch_mass.py calls
+    # the mtx get_model with num_classes = K + 1 and adds nothing else), so the
+    # state_dict keys are identical and only fc's last Linear is wider --
+    # tests/test_extract_features.py builds one and loads it here. The mass
+    # file itself cannot be used to build the model: it refuses any process
+    # whose argv carries --data-test, which this one does. --num-classes stays
+    # the twin's K, so the manifest never reports the mass output as a class.
+    ap.add_argument("--num-reg", type=int, default=0,
+                    help="regression outputs after the K class outputs "
+                         "(1 for the mass-output models, else 0)")
     ap.add_argument("--arm", required=True)
     # Every name here must ALSO be in the data config's `observers:` block --
     # weaver only materialises what that block lists, and the collection loop
@@ -331,10 +350,12 @@ def main() -> int:
     print(f"device: {device}")
 
     data_config = DataConfig.load(args.data_config, load_observers=True)
-    model = build_model(data_config, args.num_classes)
+    n_out = args.num_classes + args.num_reg
+    model = build_model(data_config, n_out)
 
     print("guards:")
-    prov = load_trunk_or_die(model, pathlib.Path(args.checkpoint), args.num_classes)
+    prov = load_trunk_or_die(model, pathlib.Path(args.checkpoint),
+                             args.num_classes, args.num_reg)
     print(f"  [PASS] trunk complete: {prov['trunk_tensors_loaded']} tensors loaded, "
           f"0 missing/unexpected outside the head")
     model.to(device).eval()
@@ -449,9 +470,9 @@ def main() -> int:
         G = keep(np.concatenate(logits))
         # Raw logits, NOT softmaxed. The consumer decides the normalisation, and
         # storing probabilities would throw away the ability to recompute them.
-        assert G.shape == (F.shape[0], args.num_classes), (
+        assert G.shape == (F.shape[0], n_out), (
             f"logits {G.shape} do not match {F.shape[0]} jets x "
-            f"{args.num_classes} classes")
+            f"{n_out} head outputs")
         np.save(out / "logits.npy", G)
     saved_obs = {}
     for k, v in obs.items():
@@ -491,8 +512,19 @@ def main() -> int:
         "label188_sha256": hashlib.sha256(L.tobytes()).hexdigest(),
         "observers": sorted(saved_obs),
         "has_logits": bool(args.save_logits),
+        "num_reg": int(args.num_reg),
         **prov,
     }
+    if args.save_logits:
+        # logits.npy is the RAW head output, so for a mass-output model its
+        # last column is not a class. Softmaxing the whole row would score the
+        # mass output as a class that is never true. Half-open column ranges.
+        manifest["logit_columns"] = {"class_logits": [0, args.num_classes]}
+        if args.num_reg:
+            manifest["logit_columns"]["regression"] = [args.num_classes, n_out]
+            manifest["logit_columns"]["regression_target"] = (
+                "log(genjet_sdmass / jet_sdmass), trained only where "
+                "genjet_sdmass > 0 (experiments/MTX/hybrid_mass.py)")
     prior_manifest.write_text(json.dumps(manifest, indent=2))
     print(f"\nwrote {F.shape[0]:,} x {F.shape[1]} features to {out}")
     print(f"label188 sha256 {manifest['label188_sha256'][:16]}  "

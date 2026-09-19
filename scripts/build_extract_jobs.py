@@ -115,12 +115,59 @@ RUNS = [
     ("mtx-r16q1-s1",    "R16_Q1",  17, "/data/results/mtx/mtx-r16q1-s1"),
 ]
 
+# THE RANDOM-LABEL CONTROL AND THE TEN MASS-OUTPUT MODELS, added 2026-09-18.
+# Same 4-tuple as RUNS and the same template, file list, data config and jet
+# cap, so their rows align with the twenty caches above -- but a SEPARATE LIST
+# WITH ITS OWN PIN, for the reason WINDOW_PIN gives below: these need an
+# extract_features.py that PIN's tag predates (--num-reg), and moving PIN would
+# rewrite the tag on twenty specs whose jobs already ran.
+#
+# Run ids, K and arm names are read from experiments/MTX/k8s/job-mtx-*-raunav
+# .yaml (RUN_ID=, -o num_classes, --arm), not from the file names: the spec
+# files say `l162_mass`, the run directories say `l162mass`.
+# mtx-s1.49, NOT mtx-s1.48. s1.48 was the intended name, but by the time these
+# specs were written it already existed -- pushed, at 9fe3a1a, cloned by the ten
+# probe-ladder / labelrec-ladder specs -- and 9fe3a1a has neither --num-reg nor
+# extract_observers.py. A mass spec pinned there dies on "unrecognized
+# arguments: --num-reg", fifty times. Moving a pushed tag other specs clone is
+# not an option, so this wave takes the next name. verify_pin() now checks the
+# FLAG is in the tagged extractor, not just that the file is: presence alone
+# passed s1.48.
+CONTROL_AND_MASS_PIN = "mtx-s1.49"
+CONTROL_AND_MASS_RUNS = [
+    ("mtx-rand-d1-s1b", "RAND_d1", 17, "/data/results/mtx/mtx-rand-d1-s1b"),
+    *[(f"mtx-l162mass-s{s}", "L162_MASS", 162, f"/data/results/mtx/mtx-l162mass-s{s}")
+      for s in range(1, 6)],
+    *[(f"mtx-r16q1mass-s{s}", "R16_Q1_MASS", 17, f"/data/results/mtx/mtx-r16q1mass-s{s}")
+      for s in range(1, 6)],
+]
+# NOT TRAINED YET. Buildable by naming them with --only, and never emitted
+# otherwise: an un-launchable YAML on disk looks exactly like a launchable one,
+# and with backoffLimit 50 applying it early is fifty clones that each stop at
+# the checkpoint guard.
+NOT_YET_TRAINED = [
+    ("mtx-rand-d2-s2", "RAND_d2", 17, "/data/results/mtx/mtx-rand-d2-s2"),
+    ("mtx-rand-d3-s3", "RAND_d3", 17, "/data/results/mtx/mtx-rand-d3-s3"),
+]
+# Regression outputs AFTER the K class outputs (ParT_sophon_arch_mass.py: one,
+# the jet mass). The extractor is told --num-classes K --num-reg 1 rather than
+# --num-classes K+1, so K stays the plain twin's and the manifest never counts
+# the mass output as a class. It is recoverable ONLY as the last column of the
+# raw head output, so these runs also pass --save-logits:
+#   K=162: 2e6 x 163 x 4 B = 1.304 GB on top of the ~1.06 GB every run writes
+#   K=17:  2e6 x  18 x 4 B = 0.144 GB
+NUM_REG = {r[0]: 1 for r in CONTROL_AND_MASS_RUNS if r[1].endswith("_MASS")}
+
 # Arms complete on the PVC that are NOT in RUNS, and why. Kept as data so a
 # reader does not have to infer an omission from silence.
 DELIBERATELY_EXCLUDED = {
     "mtx-l162-s1": "trained at --start-lr 1e-3; every matrix arm trains at 5e-4",
     "mtx-rand-d1-s1": "superseded by mtx-rand-d1-s1b (item 24); only 3 epochs",
     "mtx-r42q1-s1.lr2p5e-4.superseded-20260907": "superseded rate, 7 epochs",
+    "mtx-mpm-s1": "masked-particle pretraining gives its two class-attention "
+                  "blocks no gradient (experiments/MTX/ParT_sophon_arch_mpm.py:"
+                  "8-11), so the class token this job would cache is a random "
+                  "projection of the trunk; evaluated by fine-tuning only",
 }
 
 TEMPLATE = """apiVersion: batch/v1
@@ -158,7 +205,7 @@ spec:
 
           # CLAUDE.md: check free space before a write of this size. Each arm
           # writes ~1.1 GB (2,000,000 jets x 128 float32, plus labels and
-          # observers; no --save-logits here). The FT specs have carried a guard
+          # observers; {logits_clause}). The FT specs have carried a guard
           # like this since the legs; the extraction specs never did, and this
           # wave adds fifteen of them at once to a PVC measured at 82% on
           # 2026-09-15 -- roughly 34 GB of headroom before CLAUDE.md's line.
@@ -208,7 +255,7 @@ spec:
             --data-config {data_config} \\
             --data-test {file_list} \\
             --out ${{OUT}} \\
-            --batch-size 512 --num-workers 1 --fetch-step 1{max_jets}
+            --batch-size 512 --num-workers 1 --fetch-step 1{max_jets}{extra_flags}
 
           echo "=== manifest ==="
           cat ${{OUT}}/extract_manifest.json
@@ -352,10 +399,23 @@ WINDOW_RUNS = {"mtx-l162-s1b", "mtx-r16q1-s2", "mtx-r16q1-s3",
                "mtx-r16q1-s4", "mtx-r16q1-s5"}
 
 
+def pin_for(run_id: str, window: bool = False) -> str:
+    """The tag a run's spec clones. Per list, so adding a list never moves the
+    tag under a spec that has already run."""
+    if window:
+        return WINDOW_PIN
+    late = {r[0] for r in CONTROL_AND_MASS_RUNS + NOT_YET_TRAINED}
+    return CONTROL_AND_MASS_PIN if run_id in late else PIN
+
+
 def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
           ckpt_epoch: int | None = 79, window: bool = False,
           window_full: bool = False) -> tuple[str, str]:
     name = run_id.replace("_", "-").lower()
+    num_reg = NUM_REG.get(run_id, 0)
+    if num_reg and window:
+        raise SystemExit(f"FATAL: {run_id} has a regression output, and "
+                         f"{WINDOW_PIN}'s extract_features.py has no --num-reg.")
     # THE CAP MUST STAY INSIDE THE BALANCED PREFIX. extract_features.py keeps
     # a[:max_jets][::stride] -- a head slice first -- which is class-representative
     # only while the round-robin still spans every family. Window mode is exempt:
@@ -374,7 +434,14 @@ def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
         name += "-vcbwindow-full" if window_full else "-vcbwindow"
     text = TEMPLATE.format(
         run_id=run_id, arm=arm, k=k, ckpt_dir=ckpt_dir, image=IMAGE,
-        pin=(WINDOW_PIN if window else PIN),
+        pin=pin_for(run_id, window),
+        logits_clause=(
+            "no --save-logits here" if not num_reg else
+            f"PLUS logits.npy here, 2,000,000 x {k + num_reg} float32 = "
+            f"{2_000_000 * (k + num_reg) * 4 / 1e9:.2f} GB, whose LAST column "
+            f"is the mass output and not a class"),
+        extra_flags=(f" \\\n            --num-reg {num_reg} --save-logits"
+                     if num_reg else ""),
         ckpt_file=(f"net_epoch-{ckpt_epoch}_state.pt" if ckpt_epoch is not None
                    else "net_best_epoch_state.pt"),
         name=name + ("-gpu" if gpu else ""),
@@ -403,6 +470,151 @@ def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
     return f"job-extract-{name}{'-gpu' if gpu else ''}-raunav.yaml", text
 
 
+# THE OBSERVER THE TWENTY CACHES NEVER CARRIED.
+#
+# None of the specs above passes --observers, so every cache holds
+# extract_features.py's default four (jet_pt, jet_sdmass, jet_eta,
+# jet_nparticles), and JetClassII_base.yaml does not list genjet_sdmass at all.
+# The jet-mass analysis needs it for every jet of every model. It is a property
+# of the jets, and the caches are row-aligned, so ONE model-free pass over the
+# same list supplies it for all of them: experiments/EVAL/extract_observers.py,
+# which refuses to write unless its rows are bit-identical to the caches named
+# here. ~44 MB (five float32 columns + int16 labels for 2,000,000 jets), under
+# CLAUDE.md's 100 MB line, so no free-space guard.
+OBSERVERS_OUT = "/data/results/eval/test2m_observers"
+OBSERVERS_CONFIG = "configs/data/JetClassII_massreg.yaml"
+OBSERVERS_TEMPLATE = """apiVersion: batch/v1
+kind: Job
+metadata:
+  # genjet_sdmass (AND THE FOUR DEFAULT OBSERVERS) FOR THE 2,000,000 TEST JETS
+  # OF EVERY FEATURE CACHE -- no model, no checkpoint, CPU only.
+  #
+  # The twenty caches under /data/results/eval/<run>/features_e79 were written
+  # without the generator-level groomed mass. They are row-aligned, so it is
+  # read once here instead of re-extracting twenty models. The script checks,
+  # BEFORE writing, that label188_sha256 equals every cache's and that jet_pt /
+  # jet_sdmass / jet_eta / jet_nparticles are bit-identical to theirs; on any
+  # difference it exits non-zero and writes nothing.
+  #
+  # genjet_sdmass is a hard 0.0 for an unmatched jet. MASK ON > 0.
+  #
+  # GENERATED by scripts/build_extract_jobs.py --observers-job.
+  name: extract-observers-test2m-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: extract
+        image: {image}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "{pin}" \\
+            https://github.com/raunavm/transferlearningsophon.git \\
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          pip install --no-cache-dir -q pyarrow || exit 1
+
+          OUT={out}
+          PYTHONUNBUFFERED=1 python3 experiments/EVAL/extract_observers.py \\
+            --data-config {data_config} \\
+            --data-test {file_list} \\
+            --align-with {align_with} \\
+            --out ${{OUT}} \\
+            --batch-size 512 --num-workers 1 --fetch-step 1 \\
+            --max-jets {max_jets}
+
+          echo "=== manifest ==="
+          cat ${{OUT}}/observers_manifest.json
+        volumeMounts:
+        - {{ name: jc2,  mountPath: /jc2, readOnly: true }}
+        - {{ name: data, mountPath: /data }}
+        - {{ name: dshm, mountPath: /dev/shm }}
+        resources:
+          requests: {{ memory: "48Gi", cpu: "2", ephemeral-storage: "20Gi" }}
+          limits:   {{ memory: "48Gi", cpu: "2", ephemeral-storage: "20Gi" }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: {{ medium: Memory, sizeLimit: "8Gi" }}
+"""
+
+
+def build_observers_job(max_jets: int) -> tuple[str, str]:
+    if not max_jets or max_jets > balanced_prefix_jets():
+        raise SystemExit("FATAL: the observers job needs the caches' own "
+                         "--max-jets, inside the balanced prefix")
+    caches = [f"/data/results/eval/{r[0]}/features_e79" for r in RUNS
+              if r[0] not in BEST_EPOCH_RUNS]
+    text = OBSERVERS_TEMPLATE.format(
+        image=IMAGE, pin=CONTROL_AND_MASS_PIN, out=OBSERVERS_OUT,
+        data_config=OBSERVERS_CONFIG, file_list=interleaved_files(),
+        align_with=" ".join(caches), max_jets=max_jets)
+    return "job-extract-observers-test2m-raunav.yaml", text
+
+
+def verify_pin(pin: str, needed: list[str], allow_untagged: bool,
+               must_say: dict[str, str] | None = None) -> None:
+    """The pod clones a TAG, not the working tree, so a script that exists here
+    can be absent there. That is exactly how the first attempt failed: the pin
+    predated the extractor and both jobs crash-looped on "No such file or
+    directory" after paying for a clone and a pip install. Verified at BUILD
+    time, where it costs nothing.
+
+    `must_say` maps a path to text the TAGGED copy must contain. A file being
+    present says nothing about whether it is new enough to accept the flags the
+    spec passes it."""
+    import subprocess
+    must_say = must_say or {}
+    tagged = subprocess.run(
+        ["git", "rev-parse", "-q", "--verify", f"refs/tags/{pin}"],
+        cwd=ROOT, capture_output=True).returncode == 0
+    if not tagged and allow_untagged:
+        gone = [p for p in needed if not (ROOT / p).exists()]
+        if gone:
+            sys.exit(f"FATAL: {gone} not in the working tree")
+        for path, text in must_say.items():
+            if text not in (ROOT / path).read_text():
+                sys.exit(f"FATAL: working-tree {path} does not contain {text!r}")
+        print(f"WARNING: tag {pin} DOES NOT EXIST YET. Create it on a commit "
+              f"containing all {len(needed)} files the job runs BEFORE "
+              f"applying any spec that clones it.")
+        return
+    for path in needed:
+        r = subprocess.run(["git", "cat-file", "-e", f"{pin}:{path}"],
+                           cwd=ROOT, capture_output=True)
+        if r.returncode != 0:
+            sys.exit(f"FATAL: tag {pin} does not contain {path}. The pod clones "
+                     f"the TAG, so this job would fail after cloning. Tag a "
+                     f"commit that has it, or fix the pin.")
+    for path, text in must_say.items():
+        shown = subprocess.run(["git", "show", f"{pin}:{path}"], cwd=ROOT,
+                               capture_output=True, text=True).stdout
+        if text not in shown:
+            sys.exit(f"FATAL: {path} at tag {pin} does not contain {text!r}, "
+                     f"which the spec relies on. The tag predates it.")
+    print(f"pin {pin} verified to contain all {len(needed)} files the job runs")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gpu", action="store_true")
@@ -419,7 +631,15 @@ def main() -> int:
     # RUNS is longer than that, so emitting all of them at once would either
     # breach the cap or leave un-launched YAML lying around that looks launched.
     ap.add_argument("--only", nargs="*", default=None, metavar="RUN_ID",
-                    help="restrict to these run_ids (default: all of RUNS)")
+                    help="restrict to these run_ids (default: RUNS and "
+                         "CONTROL_AND_MASS_RUNS; NOT_YET_TRAINED only by name)")
+    # The specs for a wave are written, committed and THEN tagged, so the tag
+    # they clone cannot exist while they are being written. Opt-in per call, so
+    # a mistyped pin still fails the build everywhere else.
+    ap.add_argument("--pin-not-yet-tagged", action="store_true",
+                    help="allow a pin with no tag yet; the files are checked in "
+                         "the working tree and the tag MUST be created on a "
+                         "commit containing them before any kubectl apply")
     # The |V_cb| windowed extraction. Forces its own data config, its own output
     # directory and its own arm set, so it cannot overwrite an existing cache:
     # extract_features.py np.save()s unconditionally, and reusing a path is how
@@ -432,12 +652,28 @@ def main() -> int:
                          "--max-jets 1.5M into a separate output directory, "
                          "because the 400k cap bound (ledger "
                          "vcb-window-extraction-result). Implies --window.")
+    ap.add_argument("--observers-job", action="store_true",
+                    help="emit ONLY the model-free job that adds genjet_sdmass "
+                         "for the caches' 2,000,000 jets (see OBSERVERS_TEMPLATE)")
     args = ap.parse_args()
+
+    if args.observers_job:
+        verify_pin(CONTROL_AND_MASS_PIN,
+                   ["experiments/EVAL/extract_observers.py", OBSERVERS_CONFIG],
+                   args.pin_not_yet_tagged)
+        fname, text = build_observers_job(args.max_jets)
+        yaml.safe_load(text)
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        (OUT_DIR / fname).write_text(text)
+        print(f"  {fname}  CPU, no model, max_jets={args.max_jets}")
+        return 0
 
     if args.window_full:
         args.window = True
-    runs = RUNS
+    runs = RUNS + CONTROL_AND_MASS_RUNS
+    selectable = runs + NOT_YET_TRAINED
     if args.window:
+        selectable = RUNS
         runs = [r for r in RUNS if r[0] in WINDOW_RUNS]
         if args.max_jets == 2_000_000:
             args.max_jets = WINDOW2_MAX_JETS if args.window_full else WINDOW_MAX_JETS
@@ -446,32 +682,22 @@ def main() -> int:
               f"out {WINDOW2_OUT if args.window_full else WINDOW_OUT}, "
               f"max-jets {args.max_jets}")
     if args.only:
-        known = {r[0] for r in RUNS}
+        known = {r[0] for r in selectable}
         unknown = set(args.only) - known
         if unknown:
             sys.exit(f"FATAL: unknown run_id(s) {sorted(unknown)}. "
                      f"Known: {sorted(known)}")
-        runs = [r for r in RUNS if r[0] in set(args.only)]
-    # The pod clones a TAG, not the working tree, so a script that exists here
-    # can be absent there. That is exactly how the first attempt failed: the pin
-    # predated the extractor and both jobs crash-looped on
-    # "No such file or directory" after paying for a clone and a pip install.
-    # Verified at BUILD time now, where it costs nothing.
-    import subprocess
+        runs = [r for r in selectable if r[0] in set(args.only)]
     needed = ["experiments/EVAL/extract_features.py",
               WINDOW_CONFIG if args.window else "configs/data/JetClassII_base.yaml",
               "experiments/MTX/ParT_sophon_arch_mtx.py",
               "experiments/E1/ParT_sophon_arch_10c.py"]
-    for path in needed:
-        pin = WINDOW_PIN if args.window else PIN
-        r = subprocess.run(["git", "cat-file", "-e", f"{pin}:{path}"],
-                           cwd=ROOT, capture_output=True)
-        if r.returncode != 0:
-            sys.exit(f"FATAL: tag {pin} does not contain {path}. The pod clones "
-                     f"the TAG, so this job would fail after cloning. Tag a "
-                     f"commit that has it, or fix PIN.")
-    print(f"pin {WINDOW_PIN if args.window else PIN} verified to contain "
-          f"all {len(needed)} files the job runs")
+    for pin in sorted({pin_for(r[0], args.window) for r in runs}):
+        uses_num_reg = any(r[0] in NUM_REG and pin_for(r[0], args.window) == pin
+                           for r in runs)
+        verify_pin(pin, needed, args.pin_not_yet_tagged,
+                   {"experiments/EVAL/extract_features.py": '"--num-reg"'}
+                   if uses_num_reg else None)
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for run_id, arm, k, ckpt in runs:
@@ -481,7 +707,10 @@ def main() -> int:
                             window_full=args.window_full)
         d = yaml.safe_load(text)
         body = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
-        for must in (f"--num-classes {k}", f"--arm {arm}",
+        for must in (f"--num-classes {k} ", f"--arm {arm} ",
+                     f'--branch "{pin_for(run_id, args.window)}"',
+                     *( (f"--num-reg {NUM_REG[run_id]} --save-logits",)
+                        if run_id in NUM_REG else () ),
                      WINDOW_CONFIG if args.window else "configs/data/JetClassII_base.yaml",
                      *( (f"--max-jets {args.max_jets}",) if args.max_jets else () ),
                      f"net_epoch-{epoch}_state.pt"
