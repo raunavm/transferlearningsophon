@@ -54,13 +54,17 @@ WHAT IS NOT BUILT HERE
     MPM     different objective; gated on G0.
 
 Run:  python3 scripts/build_mtx_launch.py [--allow-unbracketed] [--check-only]
+      python3 scripts/build_mtx_launch.py --derive-draws 2:2 3:3
+          the random control's further partition draws -- see derive_draw
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import pathlib
 import re
+import subprocess
 import sys
 
 import yaml
@@ -346,15 +350,197 @@ def derive_seed(arm: str, base_seed: int, seed: int, base_tag: str | None = None
     return f"derived from s{base_seed} (lr={RATES[arm][1]}, seed={seed})"
 
 
+# ---------------------------------------------------------------------------
+# THE RANDOM-LABEL CONTROL'S OTHER PARTITION DRAWS.
+#
+# derive_seed cannot express these. It holds the arm fixed and moves the seed;
+# a second draw is a different ARM CONFIG (configs/arms/RAND_d<N>.yaml), so the
+# config path, --arm and the sidecar name move with it. The source is the one
+# control spec that has actually trained, and everything it does not name --
+# pin, rate, budget, loader flags, memory, GPU model, backoffLimit, image, the
+# manifest call, the resume guard -- is inherited byte for byte.
+#
+# NO BLANKET RENAME. experiments/RUNS.csv `spec-copy-hazard` records what a
+# blanket L162 -> RAND_d1 rename did to a copied spec: it rewrote measured
+# numbers. Every site below is named and counted, the leftover mentions of the
+# source arm must all sit on comment lines, and none may survive.
+RAND_TRAIN = "job-mtx-rand-d1-s1b-raunav.yaml"
+RAND_MAKEWEIGHT = "job-mtx-makeweight-rand-raunav.yaml"
+
+PAIRING = """\
+  # DRAW {d} OF 3, SEED INDEX {s}. DERIVED from job-mtx-rand-d1-s1b-raunav.yaml
+  # by scripts/build_mtx_launch.py --derive-draws -- do not hand-edit.
+  #
+  # WHY SEED INDEX {s} AND NOT 1 AGAIN. Each control run is paired with the
+  # 17-class semantic model of the SAME seed index: draw 1 with mtx-r16q1-s1,
+  # draw 2 with mtx-r16q1-s2, draw 3 with mtx-r16q1-s3. The four RNG streams
+  # (trunk_init, head_init, data_sampling, dropout) derive from that index
+  # exactly as for every other run, so within a pair the data order and the
+  # initialisation are shared and the partition is the only difference. The
+  # three paired differences then sample partition-draw and seed variation
+  # TOGETHER. They do not separate the two; that would take several draws at
+  # one seed.
+  #
+  # Differs from the draw-1 spec at EXACTLY these sites, and
+  # tests/test_rand_draw_specs.py diffs the two files line by line: this
+  # block, metadata.name, RUN_ID (hence OUT), both --seed values, --arm, the
+  # arm config path (CFG, --data-config x2, the FATAL text), the sidecar name
+  # (SIDECAR, SRC), --tensorboard, and the arm's name where a comment cites
+  # it. Same pin -- configs/arms/RAND_d{d}.yaml is byte-identical at that tag.
+  #
+  # ITS SIDECAR IS ITS OWN: RAND_d{d}.<md5>.auto.yaml, written by
+  # job-mtx-makeweight-rand-d{d}-raunav.yaml, which must COMPLETE before this
+  # is applied. The histograms inside do not depend on the partition (I2);
+  # the filename and the labels block it carries do.
+  #
+"""
+
+MAKEWEIGHT_DERIVED = (
+    "  # DERIVED from job-mtx-makeweight-raunav.yaml on 2026-08-22, changing four\n"
+    "  # things: the name, the clone ref (arms-s1 no longer exists on the remote;\n"
+    "  # mtx-s1.29 is the tag carrying the SHARE-matched configs/arms/RAND_d1.yaml), the arm\n"
+    "  # list (RAND_d1 only -- the tree arms' sidecars exist, are in use by running\n"
+    "  # jobs, and recomputing them risks loss for no gain), and the final check.\n",
+    "  # DERIVED from job-mtx-makeweight-rand-raunav.yaml, the draw-1 pass, by\n"
+    "  # scripts/build_mtx_launch.py --derive-draws -- do not hand-edit. Changed:\n"
+    "  # the name, the clone ref ({pin}, the tag the control's training specs\n"
+    "  # clone), the arm (RAND_d{d} only -- every other sidecar exists, and\n"
+    "  # recomputing one risks loss for no gain), and the file the hash lands in.\n")
+
+MAKEWEIGHT_PIN = (
+    "          # Pinned to mtx-s1.29, the tag carrying the SHARE-matched control\n"
+    "          # (DECISIONS_PENDING item 24, resolved 2026-09-08). The earlier\n"
+    "          # mtx-s1.24 sidecar was built from the COUNT-matched RAND_d1.yaml and\n"
+    "          # is keyed on md5 07e850fb; the arm is now 3e293063, so that sidecar\n"
+    "          # is orphaned rather than wrong -- it is left in place, and this pass\n"
+    "          # writes the one the training spec's guard will look for.\n",
+    "          # Pinned to {pin}, read from the draw-1 training spec's REPO_REF.\n"
+    "          # configs/arms/RAND_d{d}.yaml is byte-identical at that tag and in the\n"
+    "          # tree this spec was generated from -- md5\n"
+    "          # {md5} -- so this pass writes the name\n"
+    "          # the training spec's guard will look for.\n")
+
+
+def _substitute(text: str, subs, d: int, cites: int) -> str:
+    """Apply each (old, new, expected count) in order, then rename the `cites`
+    leftover mentions of the source arm, which must ALL be comments. Raises
+    ValueError on any surprise, before anything is written."""
+    for old, new, n in subs:
+        if text.count(old) != n:
+            raise ValueError(f"expected {n} {old!r}, found {text.count(old)}")
+        text = text.replace(old, new)
+    left = [ln for ln in text.splitlines() if "RAND_d1" in ln]
+    live = [ln for ln in left if not ln.lstrip().startswith("#")]
+    if live:
+        raise ValueError(f"RAND_d1 survives on an executed line: {live[0].strip()}")
+    if text.count("RAND_d1") != cites:
+        raise ValueError(f"expected {cites} comment cites of RAND_d1, found "
+                         f"{text.count('RAND_d1')}")
+    return text.replace("RAND_d1", f"RAND_d{d}")
+
+
+def _same_outside(a: dict, b: dict) -> bool:
+    """True when two freshly parsed Jobs agree on everything but the name and
+    script. Consumes its arguments."""
+    def strip(j):
+        j["metadata"].pop("name")
+        j["spec"]["template"]["spec"]["containers"][0].pop("args")
+        return j
+    return strip(a) == strip(b)
+
+
+def derive_draw(draw: int, seed: int) -> list[str]:
+    """Write the training spec AND the sidecar spec for one further draw."""
+    if draw == 1:
+        return ["FAILED: draw 1 is the source spec"]
+    arm = f"RAND_d{draw}"
+    cfg = ROOT / "configs" / "arms" / f"{arm}.yaml"
+    pair = K8S / f"job-mtx-r16_q1-s{seed}-raunav.yaml"
+    for need in (cfg, pair):
+        if not need.exists():
+            return [f"FAILED: {need.name} not found"]
+
+    src_train = (K8S / RAND_TRAIN).read_text()
+    m = re.search(r'name: REPO_REF\n\s+value: "([^"]+)"', src_train)
+    if not m:
+        return ["FAILED: no REPO_REF in the draw-1 spec"]
+    pin = m.group(1)
+    at_pin = subprocess.run(["git", "-C", str(ROOT), "show", f"{pin}:configs/arms/{arm}.yaml"],
+                            capture_output=True)
+    if at_pin.returncode != 0 or at_pin.stdout != cfg.read_bytes():
+        return [f"FAILED: configs/arms/{arm}.yaml at {pin} is not the working "
+                f"tree's; the pod would train (and name its sidecar after) a "
+                f"different file. Repin deliberately, do not derive."]
+    md5 = hashlib.md5(cfg.read_bytes()).hexdigest()
+
+    run = f"mtx-rand-d{draw}-s{seed}"
+    jobs = {
+        # name: (source text, named sites, comment cites of the source arm)
+        f"job-{run}-raunav.yaml": (src_train, [
+            ("  # contraction tree.\n  #\n",
+             "  # contraction tree.\n  #\n" + PAIRING.format(d=draw, s=seed), 1),
+            ("RAND_d1 (K = 17), seed 1.", f"{arm} (K = 17), seed {seed}.", 1),
+            ("name: mtx-rand-d1-s1b-raunav", f"name: {run}-raunav", 1),
+            ("RUN_ID=mtx-rand-d1-s1b", f"RUN_ID={run}", 1),
+            ("--tensorboard mtx_RAND_d1_s1b", f"--tensorboard mtx_{arm}_s{seed}", 1),
+            ("--seed 1 \\", f"--seed {seed} \\", 2),
+            ("--arm RAND_d1 \\", f"--arm {arm} \\", 1),
+            ("configs/arms/RAND_d1.${MD5}.auto.yaml", f"configs/arms/{arm}.${{MD5}}.auto.yaml", 1),
+            ("makeweight/RAND_d1.${MD5}.auto.yaml", f"makeweight/{arm}.${{MD5}}.auto.yaml", 1),
+            ("configs/arms/RAND_d1.yaml", f"configs/arms/{arm}.yaml", 5),
+        ], 4),
+        f"job-mtx-makeweight-rand-d{draw}-raunav.yaml": ((K8S / RAND_MAKEWEIGHT).read_text(), [
+            (MAKEWEIGHT_DERIVED[0], MAKEWEIGHT_DERIVED[1].format(pin=pin, d=draw), 1),
+            (MAKEWEIGHT_PIN[0], MAKEWEIGHT_PIN[1].format(pin=pin, d=draw, md5=md5), 1),
+            ("name: mtx-makeweight-rand2-raunav", f"name: mtx-makeweight-rand-d{draw}-raunav", 1),
+            ("--branch mtx-s1.29 \\", f"--branch {pin} \\", 1),
+            ("run_arm RAND_d1  17", f"run_arm {arm}  17", 1),
+            ('ARM = "RAND_d1"', f'ARM = "{arm}"', 1),
+            ("hist_hashes_RAND_d1.json", f"hist_hashes_{arm}.json", 1),
+        ], 4),
+    }
+    out = []
+    for name, (text, subs, cites) in jobs.items():
+        dst = K8S / name
+        if dst.exists():
+            out.append(f"{name}   exists, not regenerated")
+            continue
+        try:
+            new = _substitute(text, subs, draw, cites)
+        except ValueError as e:
+            out.append(f"{name}   FAILED: {e}")
+            continue
+        if not _same_outside(yaml.safe_load(text), yaml.safe_load(new)):
+            out.append(f"{name}   FAILED: differs from its source outside the "
+                       f"job name and the script")
+            continue
+        dst.write_text(new)
+        out.append(f"{name}   derived ({arm}, pin {pin}, config md5 {md5[:8]})")
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--allow-unbracketed", action="store_true",
                     help="emit arms whose LR is not bracketed on both sides")
+    ap.add_argument("--derive-draws", nargs="+", default=[], metavar="DRAW:SEED",
+                    help="derive the random control's further partition draws "
+                         "(training spec + reweighting-sidecar spec) from the "
+                         "launched draw-1 specs, e.g. 2:2 3:3")
     ap.add_argument("--derive-seeds", nargs="+", default=[],
                     help="ARM:seed,seed,... derive extra seeds from that arm's "
                          "seed-1 spec. Refused for arms whose rate is not "
                          "bracketed, because the rate is baked in at write time.")
     args = ap.parse_args()
+
+    if args.derive_draws:
+        rc = 0
+        for spec in args.derive_draws:
+            draw, _, seed = spec.partition(":")
+            for r in derive_draw(int(draw), int(seed)):
+                print(r)
+                rc |= "FAILED" in r
+        return rc
 
     if args.derive_seeds:
         rc = 0

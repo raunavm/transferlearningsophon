@@ -335,7 +335,13 @@ def _args(name):
     return d, d["spec"]["template"]["spec"]["containers"][0]["args"][0]
 
 
-def test_the_control_arm_config_exists_and_is_k17():
+# All three partition draws train (d1 at seed 1, d2 at seed 2, d3 at seed 3), so
+# every config-level guarantee below binds each of them, not d1 alone.
+CONTROL_ARMS = ("RAND_d1", "RAND_d2", "RAND_d3")
+
+
+@pytest.mark.parametrize("arm", CONTROL_ARMS)
+def test_the_control_arm_config_exists_and_is_k17(arm):
     """D8 turns on the control having the SAME K as R16_Q1. Anything less than
     a count of the groups the config actually emits leaves that unchecked.
 
@@ -344,10 +350,10 @@ def test_the_control_arm_config_exists_and_is_k17():
     appeared, so despite its name it never checked 17 and could not have failed.
     """
     import re
-    p = ROOT / "configs" / "arms" / "RAND_d1.yaml"
+    p = ROOT / "configs" / "arms" / f"{arm}.yaml"
     assert p.exists(), "run scripts/build_arm_configs.py"
     m = re.search(r"truth_label:(.*)", p.read_text())
-    assert m, "no truth_label expression in RAND_d1.yaml"
+    assert m, f"no truth_label expression in {arm}.yaml"
     # weaver's custom label is `sum_k k * (predicate_k)`, with group 0 implicit
     # in the fall-through, so K is max(multiplier) + 1.
     mults = sorted({int(x) for x in re.findall(r"(\d+)\s*\*\s*\(", m.group(1))})
@@ -357,7 +363,8 @@ def test_the_control_arm_config_exists_and_is_k17():
     assert max(mults) + 1 == 17, "the control must be K=17, matching R16_Q1"
 
 
-def test_the_control_shares_the_frozen_weights_block(request):
+@pytest.mark.parametrize("arm", CONTROL_ARMS)
+def test_the_control_shares_the_frozen_weights_block(arm):
     """I2. The control must differ from every arm in LABELS ONLY.
 
     scripts/build_arm_configs.py asserts weights_block_sha256_matches_base for
@@ -370,8 +377,8 @@ def test_the_control_shares_the_frozen_weights_block(request):
         m = re.search(r"^weights:.*?(?=^\S|\Z)", t, re.S | re.M)
         assert m, f"no weights block in {p}"
         return hashlib.sha256(m.group(0).encode()).hexdigest()
-    assert block("RAND_d1.yaml") == block("R16_Q1.yaml"), (
-        "the control's weights block differs from R16_Q1's -- it would be a "
+    assert block(f"{arm}.yaml") == block("R16_Q1.yaml"), (
+        f"{arm}'s weights block differs from R16_Q1's -- it would be a "
         "DATA intervention, not a label-only one, and the study is void")
 
 
