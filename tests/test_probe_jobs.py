@@ -11,10 +11,11 @@ bp = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bp)
 
 
-def test_eighteen_jobs_all_named_raunav_and_parse():
+def test_twenty_three_jobs_all_named_raunav_and_parse():
     jobs = bp.build()
     # 5 probe v1 + 5 label-recovery v1 + 5 probe v2 + 3 random-label control
-    assert len(jobs) == 18
+    # + 5 mass-output 2x2
+    assert len(jobs) == 23
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"]
@@ -24,8 +25,8 @@ def test_eighteen_jobs_all_named_raunav_and_parse():
 
 def test_each_job_holds_one_seed_index_at_all_four_granularities():
     for fname, text in bp.build().items():
-        if "randcontrol" in fname:
-            continue          # two arms by design; covered by its own test below
+        if "randcontrol" in fname or "mass2x2" in fname:
+            continue          # not ladder jobs; each covered by its own test below
         seed = int(fname.split("-s")[-1].split("-")[0])
         line = next(l for l in text.splitlines() if l.strip().startswith("for spec in"))
         runs = line.split("for spec in")[1].split(";")[0].split()
@@ -41,7 +42,7 @@ def test_each_job_holds_one_seed_index_at_all_four_granularities():
 def test_outputs_are_disjoint_per_seed_and_mlp_cannot_be_skipped():
     outs = [l.strip() for t in bp.build().values() for l in t.splitlines()
             if l.strip().startswith("OUT=")]
-    assert len(outs) == len(set(outs)) == 18
+    assert len(outs) == len(set(outs)) == 23
     for text in bp.build().values():
         assert "--no-mlp" not in text and "--skip-mlp" not in text
 
@@ -154,3 +155,63 @@ def test_the_random_control_cannot_overwrite_the_ladder_results():
         t = bp.build()[f"job-probe-randcontrol-d{draw}-raunav.yaml"]
         assert "probe_ladder_v1" not in t and "probe_ladder_v2" not in t
         assert f'--branch "{bp.PIN_V2}"' in t, "must run the probe code the ladder ran"
+
+
+def test_the_mass_2x2_carries_all_four_corners_of_one_seed_index():
+    """C5 is a difference-in-differences: (162+mass − 162) − (17+mass − 17) at one
+    seed index. All four corners must be in ONE job, because probe.check_alignment
+    gates only the arms inside a job, and a DiD built across two jobs could be
+    comparing four models on two different orderings of the test set."""
+    jobs = bp.build()
+    assert [c for _, c in bp.MASS_CELLS] == ["L162", "L162_MASS", "R16_Q1", "R16_Q1_MASS"]
+    for seed in bp.SEEDS:
+        t = jobs[f"job-probe-mass2x2-s{seed}-raunav.yaml"]
+        line = next(l for l in t.splitlines() if l.strip().startswith("for spec in"))
+        runs = line.split("for spec in")[1].split(";")[0].split()
+        assert [r.split(":")[1] for r in runs] == ["L162", "L162_MASS", "R16_Q1", "R16_Q1_MASS"]
+        # every corner at THIS seed index, and the 162-class seed 1 is the 5e-4
+        # repair -- the excluded 1e-3 run has the same seed and must never appear
+        want = {f"mtx-l162-s1b" if seed == 1 else f"mtx-l162-s{seed}",
+                f"mtx-l162mass-s{seed}", f"mtx-r16q1-s{seed}", f"mtx-r16q1mass-s{seed}"}
+        assert {r.split(":")[0] for r in runs} == want, (seed, runs)
+        assert "mtx-l162-s1:" not in line
+
+
+def test_the_mass_2x2_measures_the_same_thing_as_the_ladder_rerun():
+    """C5's cells and C1's cells have to be the same measurement or they could not
+    sit in one multiplicity family: same tasks, same operating points, same probe
+    code. Only the models and the output directory differ."""
+    jobs = bp.build()
+    tasks = " ".join(bp.TASKS)
+    for seed in bp.SEEDS:
+        t = jobs[f"job-probe-mass2x2-s{seed}-raunav.yaml"]
+        v2 = jobs[f"job-probe-ladder-v2-s{seed}-raunav.yaml"]
+        assert f"--tasks {tasks}" in t, "the approved plan specifies the same probes for the 2x2"
+        eps = " ".join(str(e) for e in bp.EPS_S_V2)
+        assert f"--eps-s {eps}" in t and f"--eps-s {eps}" in v2
+        # the 90 % headline operating point has to be among them
+        assert "0.9" in bp.EPS_S_V2 or 0.9 in bp.EPS_S_V2
+
+
+def test_the_mass_2x2_cannot_overwrite_any_other_result():
+    for seed in bp.SEEDS:
+        t = bp.build()[f"job-probe-mass2x2-s{seed}-raunav.yaml"]
+        assert f"OUT=/data/results/eval/probe_ladder_mass2x2/s{seed}\n" in t
+        assert "probe_ladder_v1" not in t and "probe_ladder_v2" not in t
+        assert "probe_ladder_randcontrol" not in t
+
+
+def test_the_mass_pin_contains_the_probe_code_the_ladder_ran():
+    """A spec that clones a tag predating probe.py's current commit runs different
+    code from the ladder it is compared against. test_spec_pins enforces this in
+    general; C5 is the case where it would silently change a confirmatory result."""
+    import subprocess
+    root = str(pathlib.Path(bp.__file__).resolve().parents[1])
+    head = subprocess.run(["git", "-C", root, "log", "-1", "--format=%H",
+                           "--", "experiments/EVAL/probe.py"],
+                          capture_output=True, text=True).stdout.strip()
+    ok = subprocess.run(["git", "-C", root, "merge-base", "--is-ancestor", head, bp.MASS_PIN],
+                        capture_output=True)
+    assert ok.returncode == 0, (
+        f"{bp.MASS_PIN} does not contain probe.py at {head[:12]}; the 2x2 would run "
+        f"different probe code from the ladder")

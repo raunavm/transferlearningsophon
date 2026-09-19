@@ -109,3 +109,50 @@ def test_the_committed_configs_are_what_the_generator_produces_today():
         want = (b.OUT_DIR / f"{arm}.yaml").read_text()
         got = b.build_one(base, arm, maps[src], names[src], mass=mass)
         assert got == want, f"configs/arms/{arm}.yaml is stale: regenerate it"
+
+
+# ---------------------------------------------- the pairing C5 rests on
+
+MASS_TWIN_SPECS = [
+    (f"job-mtx-l162_mass-s{s}-raunav.yaml",
+     f"job-mtx-l162-s{'1b' if s == 1 else s}-raunav.yaml", s) for s in range(1, 6)
+] + [
+    (f"job-mtx-r16_q1_mass-s{s}-raunav.yaml", f"job-mtx-r16_q1-s{s}-raunav.yaml", s)
+    for s in range(1, 6)
+]
+
+
+def _seeds_in(spec: pathlib.Path) -> list[int]:
+    return [int(l.split("--seed")[1].split()[0])
+            for l in spec.read_text().splitlines() if "--seed" in l]
+
+
+@pytest.mark.parametrize("mass_name,twin_name,seed", MASS_TWIN_SPECS)
+def test_a_mass_run_and_its_plain_twin_carry_the_same_seed(mass_name, twin_name, seed):
+    """C5 is a WITHIN-SEED difference-in-differences, so seed index N has to mean
+    the same four RNG sub-streams on both sides of every pair. seed_weaver derives
+    them as sha256("seed-stream|v1|<seed>|<stream>") -- no arm, no class count, no
+    run id -- so identical `--seed` is exactly what makes the pairing valid.
+
+    This held by construction and by audit, and nothing checked it:
+    scripts/build_mass_jobs.py asserts the config, class count, rate, lambda,
+    architecture, recipe, arm, name, wait guard and pin of each emitted spec, and
+    does not assert the seed.
+    """
+    k8s = ROOT / "experiments" / "MTX" / "k8s"
+    mass, twin = k8s / mass_name, k8s / twin_name
+    assert mass.exists() and twin.exists(), (mass_name, twin_name)
+    ms, ts = _seeds_in(mass), _seeds_in(twin)
+    assert ms, f"{mass_name} passes no --seed at all"
+    assert set(ms) == {seed}, f"{mass_name} carries {set(ms)}, not seed {seed}"
+    assert set(ts) == {seed}, f"{twin_name} carries {set(ts)}, not seed {seed}"
+
+
+def test_every_mass_run_has_exactly_one_plain_twin():
+    """Ten pairs, and the 162-class seed 1 twin is the 5e-4 repair `s1b` -- NOT
+    `mtx-l162-s1`, which trained at 1e-3 and is excluded from the study."""
+    assert len(MASS_TWIN_SPECS) == 10
+    twins = [t for _, t, _ in MASS_TWIN_SPECS]
+    assert len(set(twins)) == 10
+    assert "job-mtx-l162-s1b-raunav.yaml" in twins
+    assert "job-mtx-l162-s1-raunav.yaml" not in twins

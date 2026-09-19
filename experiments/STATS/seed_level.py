@@ -148,7 +148,7 @@ def _sha(path) -> str:
     return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
 
 
-def load_ladder(src) -> dict:
+def load_ladder(src, parse=parse_arm) -> dict:
     """Tidy table: one row per (task, probe kind, level, seed index).
 
     `src` is a directory holding s*/probe_results.json, or a list of files.
@@ -156,6 +156,13 @@ def load_ladder(src) -> dict:
     (the models were then not scored on the same jets), if an arm name does not
     parse, or if a (level, seed) cell appears twice. Missing cells are not an
     error here; `missing_cells` reports them.
+
+    `parse` maps an arm name to (cell, seed index) and defaults to the ladder's
+    four granularities. The mass-output 2x2 passes `parse_mass_arm`, whose cell
+    is a string naming one corner of the 2x2 rather than an integer level. It
+    is a parameter and not a second loader because every guard above -- one
+    alignment hash, one jet count, no duplicated cell -- has to hold identically
+    for both, and two copies of it would be two things to keep in agreement.
     """
     paths = [pathlib.Path(p) for p in ([src] if isinstance(src, (str, pathlib.Path)) else src)]
     if len(paths) == 1 and paths[0].is_dir():
@@ -177,7 +184,7 @@ def load_ladder(src) -> dict:
                 skipped.append({"file": str(p), "task": task})
                 continue
             for arm, entry in t["arms"].items():
-                level, seed = parse_arm(arm)
+                level, seed = parse(arm)
                 for kind in PROBES:
                     if (task, kind, level, seed) in keys:
                         raise SystemExit(f"FATAL: duplicated cell task={task} probe={kind} "
@@ -509,6 +516,106 @@ def c4_sign_pattern(diffs: dict, ci: dict | None = None) -> dict:
             "p_floor": 1 / 2 ** m,
             "zero_cells_consistent": [c["zero_consistent"] for c in cells if not c["predicted_sign"]],
             "inference_level": "descriptive: one run per draw"}
+
+
+# ------------------------------------------- C5: granularity x mass output
+
+# The 2x2. Keys are the four corners, not integer levels: a mass-output model
+# and its plain twin share a granularity, so keying on the level alone would
+# collide and load_ladder's duplicated-cell guard would (correctly) refuse the
+# file. Keeping the corners as strings is what lets the ladder loader stay
+# strict about its own four levels.
+MASS_CELL = {"l162": "162", "l162mass": "162+mass",
+             "r16q1": "17", "r16q1mass": "17+mass"}
+MASS_ARM_RE = re.compile(r"^(l162mass|r16q1mass|l162|r16q1)-s([1-9]\d*)$")
+MASS_LEVELS = (162, 17)                 # the two granularities that have a twin
+C5_TASK = "bvc_resonant"                # PRESPEC C5: "the b-versus-c probe"
+C5_DIRECTION = ("two-sided; the written expectation is that the mass output "
+                "helps more at 17 classes than at 162")
+
+
+def parse_mass_arm(name: str) -> tuple[str, int]:
+    """Arm key -> (2x2 corner, seed index). Anything else is refused.
+
+    Deliberately a different function from `parse_arm` rather than a widening
+    of it: `parse_arm` must go on refusing every name that is not one of the
+    ladder's four granularities, because an unrecognised arm silently dropped
+    from a ladder is the failure this whole module is built to prevent.
+    """
+    m = MASS_ARM_RE.match(ARM_ALIAS.get(name, name))
+    if not m:
+        raise SystemExit(f"FATAL: arm name {name!r} does not parse as "
+                         f"<{'|'.join(MASS_CELL)}>-s<seed index> (aliases: {ARM_ALIAS}). "
+                         f"An unrecognised arm must not be silently dropped from the 2x2.")
+    return MASS_CELL[m.group(1)], int(m.group(2))
+
+
+def mass_gain(cells, task, kind, level, seeds) -> dict:
+    """(with mass output - without), by seed index, at one granularity.
+
+    Negative is better: the endpoint is log(1 - AUC).
+    """
+    plain, mass = str(level), f"{level}+mass"
+    used = [s for s in seeds if _cell(cells, task, kind, plain, s) is not None
+            and _cell(cells, task, kind, mass, s) is not None]
+    d = [_cell(cells, task, kind, mass, s) - _cell(cells, task, kind, plain, s) for s in used]
+    bound = any(_cell(cells, task, kind, c, s, "censored") for c in (plain, mass) for s in used)
+    return {"level": level, "seeds": used, "d": d, "is_bound": bool(bound)}
+
+
+def mass_did(cells, task, kind, seeds) -> dict:
+    """C5: the difference-in-differences, by seed index.
+
+    did_s = (162+mass - 162)_s - (17+mass - 17)_s, over the seed indices that
+    have all FOUR corners. A seed missing any one corner is dropped whole
+    rather than contributing a half-difference -- the quantity is the
+    interaction, and a partial seed cannot carry one.
+
+    Sign: the endpoint is log(1 - AUC) and lower is better, so the written
+    expectation ("the mass output helps more at 17 classes") is did > 0. The
+    test itself is two-sided, as pre-registered.
+    """
+    fine, coarse = MASS_LEVELS
+    used = [s for s in seeds
+            if all(_cell(cells, task, kind, c, s) is not None
+                   for c in (str(fine), f"{fine}+mass", str(coarse), f"{coarse}+mass"))]
+    d = [(_cell(cells, task, kind, f"{fine}+mass", s) - _cell(cells, task, kind, str(fine), s))
+         - (_cell(cells, task, kind, f"{coarse}+mass", s) - _cell(cells, task, kind, str(coarse), s))
+         for s in used]
+    bound = any(_cell(cells, task, kind, c, s, "censored") for s in used
+                for c in (str(fine), f"{fine}+mass", str(coarse), f"{coarse}+mass"))
+    return {"seeds": used, "d": d, "is_bound": bool(bound)}
+
+
+def c5_analysis(cells, seeds, tasks) -> dict:
+    """C5 on the pre-registered task, and the same quantity on every other.
+
+    Only `C5_TASK` is confirmatory: docs/PRESPEC_2026-09.md fixed C5 on the
+    b-versus-c probe before any of these numbers existed. The other tasks are
+    reported because the 2x2 measured them and withholding a measured cell is
+    its own kind of selection, but they are labelled exploratory, they carry no
+    verdict, and they enter no multiplicity family. Nothing downstream may
+    promote one of them.
+    """
+    def block(task):
+        out = {"task": task, "probes": {}}
+        for kind in PROBES:
+            did = mass_did(cells, task, kind, seeds)
+            out["probes"][kind] = {
+                "did": pair_contrast(did),
+                "gain_by_level": {str(lv): pair_contrast(mass_gain(cells, task, kind, lv, seeds))
+                                  for lv in MASS_LEVELS}}
+        return out
+
+    conf = block(C5_TASK) if C5_TASK in tasks else {"task": C5_TASK, "probes": {}}
+    linear = conf["probes"].get("linear", {}).get("did", {})
+    p = linear.get("p") if linear.get("estimable") else None
+    return {"prediction": C5_DIRECTION, "task": C5_TASK, "endpoint": ENDPOINT,
+            "did_definition": "(162+mass − 162) − (17+mass − 17), paired by seed index",
+            "expected_sign_if_written_expectation_holds": "+",
+            "confirmatory": conf, "p": p,
+            "exploratory": [block(t) for t in tasks if t != C5_TASK],
+            "exploratory_note": "measured by the same jobs; no verdict, no multiplicity family"}
 
 
 def holm_family(entries: list[tuple[str, float | None]], alpha: float = ALPHA) -> list[dict]:
@@ -929,6 +1036,42 @@ def format_contrast(r: dict) -> str:
             f"{'  [BOUND: a cell reached AUC=1]' if r['is_bound'] else ''}")
 
 
+def format_did(label: str, r: dict) -> str:
+    """One difference-in-differences (or one-level gain) line, in the same unit as the rest."""
+    if not r["estimable"]:
+        return f"    {label:<22} not estimable ({r['reason']}; n={r['n_pairs']})"
+    sf = r["sign_flip"]
+    return (f"    {label:<22} diff={r['mean_diff']:+.4f}  t={r['t']:+.2f} df={r['df']} "
+            f"p={_p(r['p'])} CI95=[{r['ci95'][0]:+.4f},{r['ci95'][1]:+.4f}]  "
+            f"sign-flip p={_p(sf['p'])} (floor {_p(sf['floor'])})  n={r['n_pairs']}"
+            f"{'  [BOUND: a cell reached AUC=1]' if r['is_bound'] else ''}")
+
+
+def format_c5(c5: dict) -> list[str]:
+    """C5 printed with its definition above it, because a DiD sign is easy to read backwards."""
+    out = ["  C5  mass output x granularity, " + c5["task"],
+           f"      prediction: {c5['prediction']}",
+           f"      difference-in-differences = {c5['did_definition']}",
+           f"      endpoint {c5['endpoint']}, LOWER IS BETTER, so the written "
+           f"expectation is a {c5['expected_sign_if_written_expectation_holds']} sign"]
+    for kind in PROBES:
+        blk = c5["confirmatory"]["probes"].get(kind)
+        if not blk:
+            out.append(f"    {kind}: no cells")
+            continue
+        out.append(f"    {kind}:")
+        out.append(format_did("DiD (162 − 17)", blk["did"]))
+        for lv in MASS_LEVELS:
+            out.append(format_did(f"gain at {lv} classes", blk["gain_by_level"][str(lv)]))
+    if c5["exploratory"]:
+        out.append("    EXPLORATORY -- the same difference-in-differences on the other tasks the")
+        out.append("    2x2 measured, linear probe. No verdict, and no multiplicity family:")
+        for blk in c5["exploratory"]:
+            lin = blk["probes"].get("linear", {}).get("did", {})
+            out.append(format_did(blk["task"], lin) if lin else f"    {blk['task']}: no cells")
+    return out
+
+
 def format_trend(name: str, r: dict, family_size: int) -> list[str]:
     out = [f"  {name}: {r['task']}, {r['probe']} probe — alternative: {r['alternative']}"]
     if r["blocks_dropped_incomplete"]:
@@ -1163,7 +1306,26 @@ def run_ladder(a, argv=None) -> int:
 
     print("\n  CONFIRMATORY")
     c1 = trend_test(cells, C1["task"], "linear", seeds, C1["predicted_step"])
-    fam = holm_family([("C1", c1.get("p"))] + [(c, None) for c in CONFIRMATORY[1:]])
+    # C5 only exists once the mass-output 2x2 has been probed. Its p joins the
+    # confirmatory family in place of C5's `None`; without --mass it stays
+    # pending exactly as C2 and C3 do, and the family size never changes.
+    c5 = None
+    if a.mass:
+        mdata = load_ladder(a.mass, parse=parse_mass_arm)
+        if mdata["row_alignment_sha256"] != data["row_alignment_sha256"]:
+            raise SystemExit(
+                "FATAL: the mass-output 2x2 was scored on a different set of test jets "
+                f"than the ladder ({mdata['row_alignment_sha256'][:16]} vs "
+                f"{data['row_alignment_sha256'][:16]}). C5 and C1 would not be the same "
+                "measurement and must not share a multiplicity family.")
+        mcells = index_cells(mdata["rows"], a.drop_pairs)
+        c5 = c5_analysis(mcells, seeds, sorted({r["task"] for r in mdata["rows"]}))
+        c5["provenance"] = {"inputs": mdata["files"],
+                            "row_alignment_sha256": mdata["row_alignment_sha256"],
+                            "n_jets_total": mdata["n_jets_total"],
+                            "arm_checkpoints": mdata["arm_checkpoints"]}
+    computed = {"C1": c1.get("p"), "C5": None if c5 is None else c5["p"]}
+    fam = holm_family([(c, computed.get(c)) for c in CONFIRMATORY])
     # C1's third clause is a predicted null and needs 2.5's equivalence test; the
     # trend test above answers only the first two. The three verdicts and the
     # composite live inside res["confirmatory"]["C1"] beside the trend result,
@@ -1172,9 +1334,13 @@ def run_ladder(a, argv=None) -> int:
     c1.update(c1_clauses(c1, c1_equal, next(h for h in fam if h["test"] == "C1"),
                          len(CONFIRMATORY)))
     res["confirmatory"] = {"C1": c1, "holm_family": fam}
+    if c5 is not None:
+        res["confirmatory"]["C5"] = c5
     print("\n".join(format_trend("C1", c1, len(CONFIRMATORY))))
     print("\n".join(format_clauses("C1", c1)))
     print("\n".join(format_equivalence_set(c1_equal)))
+    if c5 is not None:
+        print("\n".join(format_c5(c5)))
     print(f"  Holm over the full confirmatory family of {len(CONFIRMATORY)} at {ALPHA:.0%}:")
     print("\n".join(format_holm(fam)))
 
@@ -1278,7 +1444,14 @@ def main(argv=None) -> int:
                     help="S9: a directory holding s*/label_recovery.json, or the files. "
                          "Written to s9_label_recovery.json in --out; the ladder inputs are "
                          "optional when this is given")
+    ap.add_argument("--mass", nargs="+", default=None, metavar="PATH",
+                    help="C5: a directory holding s*/probe_results.json for the granularity x "
+                         "mass-output 2x2, or the files. Reported inside the ladder's "
+                         "confirmatory block; without it C5 stays pending")
     a = ap.parse_args(argv)
+    if a.mass and not a.inputs:
+        ap.error("--mass reports C5 inside the ladder's confirmatory family, so it needs the "
+                 "ladder inputs too; C5 and C1 are corrected together or not at all")
     if a.drop_pairs and not a.drop_reason:
         raise SystemExit("FATAL: --drop-pairs needs --drop-reason; a dropped pair is reported "
                          "with why it was dropped (PRESPEC 2.2)")

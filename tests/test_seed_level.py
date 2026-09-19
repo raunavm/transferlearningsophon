@@ -129,6 +129,58 @@ def cells_of(root, drop=()):
     return S.index_cells(S.load_ladder(root)["rows"], drop)
 
 
+# ------------------------------------------------- C5: the mass-output 2x2
+
+def mass_values(gain_162=0.0, gain_17=0.0, noise=0.05, rng_seed=11):
+    """value(task, probe, corner, seed) for the four corners of the 2x2.
+
+    `gain_162` / `gain_17` are the planted effects of ADDING the mass output at
+    each granularity, in log(1-AUC), so the planted difference-in-differences is
+    gain_162 - gain_17. Negative is an improvement.
+    """
+    rng = np.random.default_rng(rng_seed)
+    block = rng.normal(0, 0.3, 6)
+    eps = rng.normal(0, noise, (len(TASKS), 2, 4, 6))
+    corner = {"162": 0, "162+mass": 1, "17": 2, "17+mass": 3}
+
+    def value(task, kind, cell, seed):
+        i = (TASKS.index(task), S.PROBES.index(kind), corner[cell], seed)
+        base = 0.0 if cell.startswith("162") else 0.4      # 17 is worse to begin with
+        planted = (gain_162 if cell == "162+mass" else
+                   gain_17 if cell == "17+mass" else 0.0)
+        return float(-4.0 + block[seed] + eps[i] + base + planted)
+    return value
+
+
+def mass_doc(value, seed, omit=(), sha=SHA, n_jets=2_000_000, extra_arms=()):
+    arms = {f"l162-s{seed}" + ("b" if seed == 1 else ""): "162",
+            f"l162mass-s{seed}": "162+mass",
+            f"r16q1-s{seed}": "17",
+            f"r16q1mass-s{seed}": "17+mass"}
+    arms = {a: c for a, c in arms.items() if (c, seed) not in omit}
+    arms.update(extra_arms)
+    return {"n_jets_total": n_jets, "row_alignment_sha256": sha, "eps_s_default": 0.5,
+            "arm_checkpoints": {a: "cd" * 32 for a in arms}, "min_per_class_test": 1000,
+            "mlp_threads": 4,
+            "tasks": {t: {"eps_s": [0.5], "n": 30000, "n_signal": 15000, "names": ["a", "b"],
+                          "collapsed_at": ["R16_Q1"],
+                          "arms": {a: {k: _entry(value(t, k, c, seed), k)
+                                       for k in S.PROBES} for a, c in arms.items()},
+                          "contrasts": {}} for t in TASKS}}
+
+
+def write_mass(root, value, seeds=(1, 2, 3, 4, 5), **kw):
+    for s in seeds:
+        d = root / f"s{s}"
+        d.mkdir(parents=True)
+        (d / "probe_results.json").write_text(json.dumps(mass_doc(value, s, **kw)))
+    return root
+
+
+def mass_cells_of(root, drop=()):
+    return S.index_cells(S.load_ladder(root, parse=S.parse_mass_arm)["rows"], drop)
+
+
 def run(root, out, *extra):
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
@@ -976,3 +1028,129 @@ def test_the_headline_point_is_named_in_the_printed_report(tmp_path):
     assert "<- HEADLINE" in out
     assert "eps_s=0.90" in out and "eps_s=0.70" in out
     assert "CENSORED in 5/5" in out, "a capped point must say so in the report"
+
+
+# ------------------------------------------------- C5: the mass-output 2x2
+
+def test_the_mass_arm_parser_refuses_everything_the_ladder_parser_accepts_and_back(tmp_path):
+    """The two parsers must stay separate. A mass arm reaching the ladder loader
+    would claim a level that already has an arm, and a ladder arm reaching the
+    mass loader would claim a corner of a 2x2 it is not part of."""
+    assert S.parse_mass_arm("l162mass-s3") == ("162+mass", 3)
+    assert S.parse_mass_arm("r16q1mass-s1") == ("17+mass", 1)
+    assert S.parse_mass_arm("l162-s1b") == ("162", 1), "the alias applies here too"
+    assert S.parse_mass_arm("r16q1-s5") == ("17", 5)
+    for bad in ("l188-s1", "r42q1-s2", "rand-d1", "l162_mass-s1", "L162MASS-s1",
+                "l162mass-s0", "l162mass", "l162mass-s1-x"):
+        with pytest.raises(SystemExit, match="does not parse"):
+            S.parse_mass_arm(bad)
+    # and the ladder parser still refuses the mass names
+    for bad in ("l162mass-s1", "r16q1mass-s1"):
+        with pytest.raises(SystemExit, match="does not parse"):
+            S.parse_arm(bad)
+
+
+def test_the_mass_loader_refuses_two_arms_claiming_one_corner(tmp_path):
+    """TWO run directories answer to the 162-class model at seed 1: mtx-l162-s1,
+    trained at 1e-3 and excluded everywhere, and mtx-l162-s1b, the 5e-4 repair
+    that counts. They alias to the same corner, so a job that cached both would
+    put two different models in one cell. It must refuse, not average them."""
+    root = tmp_path / "in"
+    (root / "s1").mkdir(parents=True)
+    doc = mass_doc(mass_values(), 1)          # already holds l162-s1b
+    for t in doc["tasks"].values():
+        t["arms"]["l162-s1"] = t["arms"]["l162-s1b"]
+    (root / "s1" / "probe_results.json").write_text(json.dumps(doc))
+    with pytest.raises(SystemExit, match="duplicated cell"):
+        S.load_ladder(root, parse=S.parse_mass_arm)
+
+
+def test_the_did_is_the_interaction_and_its_sign_is_the_written_expectation(tmp_path):
+    """Planted: the mass output helps at 17 (-0.5) and not at 162 (0.0). The
+    written expectation is exactly that, and in log(1-AUC) -- lower is better --
+    it must come out as a POSITIVE difference-in-differences."""
+    root = write_mass(tmp_path / "in", mass_values(gain_162=0.0, gain_17=-0.5, noise=0.01))
+    cells = mass_cells_of(root)
+    did = S.pair_contrast(S.mass_did(cells, "bvc_resonant", "linear", (1, 2, 3, 4, 5)))
+    assert did["estimable"] and did["n_pairs"] == 5
+    assert did["mean_diff"] == pytest.approx(0.5, abs=0.05), "= gain_162 - gain_17"
+    assert did["p"] < 0.01
+    # and the per-level gains recover the planted effects separately
+    g162 = S.pair_contrast(S.mass_gain(cells, "bvc_resonant", "linear", 162, (1, 2, 3, 4, 5)))
+    g17 = S.pair_contrast(S.mass_gain(cells, "bvc_resonant", "linear", 17, (1, 2, 3, 4, 5)))
+    assert g162["mean_diff"] == pytest.approx(0.0, abs=0.05)
+    assert g17["mean_diff"] == pytest.approx(-0.5, abs=0.05)
+
+
+def test_a_seed_missing_one_corner_is_dropped_whole_from_the_did(tmp_path):
+    """A difference-in-differences needs all four corners. Contributing half of
+    one would silently change the estimand."""
+    root = write_mass(tmp_path / "in", mass_values(gain_17=-0.5), omit=(("162+mass", 3),))
+    cells = mass_cells_of(root)
+    did = S.mass_did(cells, "bvc_resonant", "linear", (1, 2, 3, 4, 5))
+    assert did["seeds"] == [1, 2, 4, 5], "seed 3 lost a corner and leaves entirely"
+    # the one-sided gain at 17 still has all five, which is the point of reporting both
+    assert S.mass_gain(cells, "bvc_resonant", "linear", 17, (1, 2, 3, 4, 5))["seeds"] == \
+        [1, 2, 3, 4, 5]
+
+
+def test_c5_joins_the_confirmatory_family_only_when_the_2x2_is_supplied(tmp_path):
+    """Without --mass, C5 is pending exactly as C2 and C3 are. With it, C5 carries
+    a p and the family size is still five -- Holm was always over all five."""
+    lad = write_ladder(tmp_path / "lad", ladder_values(step=1.0))
+    res_no = run(lad, tmp_path / "o1")[0]
+    fam_no = res_no["confirmatory"]["holm_family"]
+    assert [h["test"] for h in fam_no] == ["C1", "C2", "C3", "C4", "C5"]
+    assert [h["status"] for h in fam_no] == ["available"] + ["pending"] * 4
+    assert "C5" not in res_no["confirmatory"]
+
+    mass = write_mass(tmp_path / "mass", mass_values(gain_17=-0.5, noise=0.01))
+    res, out = run(lad, tmp_path / "o2", "--mass", str(mass))
+    fam = res["confirmatory"]["holm_family"]
+    assert [h["test"] for h in fam] == ["C1", "C2", "C3", "C4", "C5"]
+    assert [h["status"] for h in fam] == ["available", "pending", "pending", "pending",
+                                          "available"]
+    assert all(h["family_size"] == 5 for h in fam)
+    c5 = res["confirmatory"]["C5"]
+    assert c5["p"] == next(h for h in fam if h["test"] == "C5")["p_raw"]
+    assert c5["task"] == "bvc_resonant"
+    assert "mass output x granularity" in out
+
+
+def test_c5_is_confirmatory_on_one_task_and_the_rest_are_labelled_exploratory(tmp_path):
+    """The pre-registration fixed C5 on the b-versus-c probe. The 2x2 measures six
+    tasks; the other five are reported but must never be promoted into the family."""
+    lad = write_ladder(tmp_path / "lad", ladder_values(step=1.0))
+    mass = write_mass(tmp_path / "mass", mass_values(gain_17=-0.5))
+    res, out = run(lad, tmp_path / "o", "--mass", str(mass))
+    c5 = res["confirmatory"]["C5"]
+    assert c5["confirmatory"]["task"] == "bvc_resonant"
+    assert {b["task"] for b in c5["exploratory"]} == set(TASKS) - {"bvc_resonant"}
+    assert len(c5["exploratory"]) == 5
+    # the family carries exactly one C5 entry, whatever the other tasks did
+    fam = res["confirmatory"]["holm_family"]
+    assert len([h for h in fam if h["test"].startswith("C5")]) == 1
+    assert "EXPLORATORY" in out and "no multiplicity family" in out
+
+
+def test_c5_refuses_a_2x2_scored_on_different_jets_from_the_ladder(tmp_path):
+    """C1 and C5 share a multiplicity family, so they have to be the same
+    measurement. A different row alignment means different test jets."""
+    lad = write_ladder(tmp_path / "lad", ladder_values(step=1.0))
+    mass = write_mass(tmp_path / "mass", mass_values(), sha="ef" * 32)
+    with pytest.raises(SystemExit, match="different set of test jets"):
+        run(lad, tmp_path / "o", "--mass", str(mass))
+
+
+def test_the_mass_flag_needs_the_ladder_inputs(tmp_path):
+    mass = write_mass(tmp_path / "mass", mass_values())
+    with pytest.raises(SystemExit):
+        S.main(["--out", str(tmp_path / "o"), "--mass", str(mass)])
+
+
+def test_the_mass_2x2_never_reaches_the_ladder_analysis(tmp_path):
+    """The whole reason the corners are strings: if a mass arm were handed to the
+    ladder loader it would claim level 162 or 17 and collide with a real arm."""
+    mass = write_mass(tmp_path / "mass", mass_values(), seeds=(1,))
+    with pytest.raises(SystemExit, match="does not parse"):
+        S.load_ladder(mass)

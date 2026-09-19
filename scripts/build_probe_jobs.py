@@ -24,6 +24,11 @@ differs from v1 in exactly four places -- job name, output directory, the added
 `--eps-s` flag, and the pin. It writes to probe_ladder_v2, so it cannot touch
 v1's results. The label-recovery jobs are unrelated to that defect and stay at
 v1 and at their original pin.
+
+Two further blocks answer predictions of their own rather than the ladder: the
+random-label control (C4) and the granularity x mass-output 2x2 (C5). Each
+writes to its own output directory and neither shares a cell key with the
+ladder, so no analysis can mistake one for the other.
 """
 from __future__ import annotations
 
@@ -64,6 +69,35 @@ CONTROL_TASKS = ["bvc_4prong", "visible_content"]
 CONTROL_DRAWS = [("mtx-rand-d1-s1b", "mtx-r16q1-s1", 1),
                  ("mtx-rand-d2-s2", "mtx-r16q1-s2", 2),
                  ("mtx-rand-d3-s3", "mtx-r16q1-s3", 3)]
+
+# THE GRANULARITY x MASS-OUTPUT 2x2 (prediction C5, confirmatory). Four models
+# per seed index: the 162- and 17-class models, each with and without the added
+# jet-mass regression output. C5 is a difference-in-differences -- how much the
+# mass output changes the b-versus-c probe at 162 classes, minus how much it
+# changes it at 17 -- so all four cells of one seed must be scored on the same
+# jets in the same order, which is what putting them in ONE job buys
+# (probe.check_alignment only gates arms inside a single job).
+#
+# The pairing is valid on the seed axis: a mass run and its plain twin at index
+# N are both launched with `--seed N`, and seed_weaver derives the four RNG
+# sub-streams as sha256("seed-stream|v1|<seed>|<stream>") -- no arm, no class
+# count, no run id -- so index N means the same four streams on both sides.
+# Both carry the same required GPU-product pin, so invariant I7 holds within
+# every pair.
+#
+# ALL SIX TASKS, not just C5's. The approved plan specifies "same probes" for
+# the 2x2, and unlike the random-label control (whose extra tasks would be
+# meaningless, because a random partition has no rung) every task here is a
+# real measurement on a real vocabulary. Only bvc_resonant is confirmatory --
+# docs/PRESPEC_2026-09.md fixed C5 on the b-versus-c probe before any of this
+# existed. The other five are exploratory and the analysis labels them so; they
+# carry no inferential claim and enter no multiplicity family.
+#
+# 162 and 17 only. There is no 188-class or 43-class model with a mass output:
+# the 2x2 was pretrained at two granularities, which is what makes it a 2x2.
+MASS_PIN = "mtx-s1.53"     # contains probe.py at c53e861, the tag v2 also ran
+MASS_CELLS = [("mtx-l162", "L162"), ("mtx-l162mass", "L162_MASS"),
+              ("mtx-r16q1", "R16_Q1"), ("mtx-r16q1mass", "R16_Q1_MASS")]
 
 
 def run_name(stem: str, seed: int) -> str:
@@ -180,6 +214,18 @@ def build() -> dict[str, str]:
             HEAD.format(name=name, pin=PIN_V2, specs=cspecs)
             + PROBE.format(seed=f"d{draw}", tasks=ctasks, ver="randcontrol", eps=ceps)
             + TAIL)
+
+    # The mass-output 2x2, one job per seed index. Same tasks and same operating
+    # points as v2, so a mass cell and a ladder cell are the same measurement;
+    # a SEPARATE output directory, so the four extra arms can never reach the
+    # ladder analysis, whose loader would see two arms claiming level 162.
+    meps = " \\\n            --eps-s " + " ".join(str(e) for e in EPS_S_V2)
+    for seed in SEEDS:
+        name = f"probe-mass2x2-s{seed}-raunav"
+        mspecs = " ".join(f"{run_name(stem, seed)}:{arm}" for stem, arm in MASS_CELLS)
+        out[f"job-{name}.yaml"] = (
+            HEAD.format(name=name, pin=MASS_PIN, specs=mspecs)
+            + PROBE.format(seed=seed, tasks=tasks, ver="mass2x2", eps=meps) + TAIL)
     return out
 
 
