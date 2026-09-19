@@ -239,10 +239,17 @@ class Emitter:
 # ------------------------------------------------------------------ inputs
 
 def input_paths(root: pathlib.Path) -> dict:
+    # THE PROBE RE-RUN IS CANONICAL, not the original run beside it. It is a
+    # strict superset -- the same four vocabularies, the same five seeds, the
+    # same tasks and the same jets, plus the 70 % and 90 % working points that
+    # docs/PRESPEC_2026-09.md fixed once 50 % proved censored -- and it
+    # reproduces the original's confirmatory p-value to every digit printed.
+    # The paper's headline background rejection exists only here. The original
+    # run stays on disk, frozen, as the provenance record of what ran first.
     data = root / "experiments" / "FIGS" / "data"
     maps = root / "configs" / "labelmaps"
-    return {"ladder": sorted((data / "probe_ladder_v1").glob("s*.json")),
-            "analysis": data / "probe_ladder_v1" / "analysis" / "seed_level_results.json",
+    return {"ladder": sorted((data / "probe_ladder_v2").glob("s*.json")),
+            "analysis": data / "probe_ladder_v2" / "analysis" / "seed_level_results.json",
             "leg1": data / "leg1_metrics.json",
             "leg2": data / "leg2_metrics.json",
             "recovery": data / "label_recovery_v3.json",
@@ -340,15 +347,40 @@ def seed_values(table: list[dict], task: str, probe: str, level: int, field: str
 
 # ------------------------------------------------------------------ macros
 
+def headline_rejection(row: dict) -> dict:
+    """The background rejection the paper quotes, at the working point
+    docs/PRESPEC_2026-09.md fixed blind: 90 % signal efficiency.
+
+    The flat `rejection_*` fields sit at the probe's DEFAULT working point,
+    50 %, where no background jet survives at the three finer vocabularies and
+    the number is a statement about the size of the test sample rather than
+    about the models. Reading them here would print that censored number as the
+    paper's headline. An analysis file written before the working points were
+    recorded has no `rejection_points`; it then falls back to the flat fields,
+    and `eps` says which point the reader is actually looking at.
+    """
+    pts = row.get("rejection_points") or {}
+    eps = row.get("headline_eps_s")
+    if eps in pts:
+        p = pts[eps]
+        return {"eps": float(eps), "median": p["median"], "range": p["range"],
+                "n_bound": p["n_bound"], "n_seeds": p["n_seeds"],
+                "path": f".rejection_points['{eps}'].median"}
+    return {"eps": float(row["rejection_eps_s"]), "median": row["rejection_median"],
+            "range": row["rejection_range"], "n_bound": row["n_rejection_bound"],
+            "n_seeds": row["n_seeds"], "path": ".rejection_median"}
+
+
 def emit_design(em: Emitter, A: dict, src: pathlib.Path) -> None:
     p = A["provenance"]
     em.macro("ProbeNJets", fmt_int(p["n_jets_total"]), src, "provenance.n_jets_total")
     em.macro("ProbeNSeeds", str(len(A["seeds_used"])), src, "seeds_used (length)")
     em.macro("ProbeRowAlign", f"\\texttt{{{p['row_alignment_sha256'][:16]}}}", src,
              "provenance.row_alignment_sha256 (first 16)")
-    first = A["levels"][sorted(A["levels"])[0]]["linear"][0]
-    em.macro("ProbeEpsS", f"{float(first['rejection_eps_s']) * 100:.0f}\\%", src,
-             f"levels.{sorted(A['levels'])[0]}.linear[0].rejection_eps_s")
+    t0 = sorted(A["levels"])[0]
+    h = headline_rejection(A["levels"][t0]["linear"][0])
+    em.macro("ProbeEpsS", f"{h['eps'] * 100:.0f}\\%", src,
+             f"levels.{t0}.linear[0].headline_eps_s")
 
 
 def emit_levels(em: Emitter, A: dict, src: pathlib.Path) -> None:
@@ -383,10 +415,12 @@ def emit_levels(em: Emitter, A: dict, src: pathlib.Path) -> None:
                 em.macro("ProbeLogOneMinusAucSd" + key,
                          fmt(row["seed_sd"], 4) if row["seed_sd"] is not None else "---", src,
                          jp + ".seed_sd")
+                h = headline_rejection(row)
                 em.macro("ProbeRej" + key,
-                         fmt_rejection(row["rejection_median"], row["n_rejection_bound"],
-                                       row["n_seeds"]), src, jp + ".rejection_median",
-                         f"{row['n_rejection_bound']} of {row['n_seeds']} seeds at the cap")
+                         fmt_rejection(h["median"], h["n_bound"], h["n_seeds"]),
+                         src, jp + h["path"],
+                         f"at {h['eps']:.0%} signal efficiency; "
+                         f"{h['n_bound']} of {h['n_seeds']} seeds at the cap")
 
 
 def emit_mde(em: Emitter, A: dict, src: pathlib.Path) -> None:
@@ -560,7 +594,7 @@ def table_probe_ladder(A: dict, probe: str) -> str:
     """
     tasks = ordered_tasks(A["levels"])
     levels = A["levels_fine_to_coarse"]
-    eps = A["levels"][tasks[0]][probe][0]["rejection_eps_s"]
+    eps = headline_rejection(A["levels"][tasks[0]][probe][0])["eps"]
     ncol = len(tasks) + 2
     head = ["classes & quantity & " + " & ".join(TASK_LABELS.get(t, tex(t)) for t in tasks)
             + " \\\\", "\\midrule"]
@@ -577,10 +611,10 @@ def table_probe_ladder(A: dict, probe: str) -> str:
             spread = (f"\\,{tex('±')}\\,{fmt(np.std(sd, ddof=1), 5)}"
                       if len(sd) > 1 and row["n_censored"] < row["n_seeds"] else "")
             auc.append(fmt_auc(row["mean_auc"], row["n_censored"], row["n_seeds"]) + spread)
-            rej.append(fmt_rejection(row["rejection_median"], row["n_rejection_bound"],
-                                     row["n_seeds"])
-                       + f" [{fmt_rejection(row['rejection_range'][0], 0, 0)}, "
-                         f"{fmt_rejection(row['rejection_range'][1], 0, 0)}]")
+            h = headline_rejection(row)
+            rej.append(fmt_rejection(h["median"], h["n_bound"], h["n_seeds"])
+                       + f" [{fmt_rejection(h['range'][0], 0, 0)}, "
+                         f"{fmt_rejection(h['range'][1], 0, 0)}]")
         body.append(f"{lv} & AUC & " + " & ".join(auc) + " \\\\")
         body.append("     & $1/\\epsilon_B$ & " + " & ".join(rej) + " \\\\")
         if i < len(levels) - 1:

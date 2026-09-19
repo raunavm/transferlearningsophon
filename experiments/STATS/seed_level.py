@@ -86,6 +86,12 @@ PROBES = ("linear", "mlp")
 ENDPOINT = "log1m_auc"
 LOG_BASE = math.e                  # probe.py log1m_auc uses np.log
 ALPHA, POWER = 0.05, 0.80
+# The headline working point for background rejection, fixed blind in
+# docs/PRESPEC_2026-09.md before any re-run number existed, because 50 % signal
+# efficiency leaves no background jets at the three finer vocabularies and the
+# metric is then a statement about the size of the test sample. Rejection is
+# summarised at EVERY point the probe recorded; this one is labelled headline.
+HEADLINE_EPS_S = "0.90"
 PAIRS = [(a, b) for i, a in enumerate(LEVELS) for b in LEVELS[i + 1:]]   # (finer, coarser)
 
 SEEN_TASKS = ("bvc_resonant", "bvc_qcd", "retained_topology", "ee_vs_mm")   # PRESPEC 1
@@ -188,6 +194,18 @@ def load_ladder(src) -> dict:
                         "auc": float(e["auc"]), "rejection": float(rej["rejection"]),
                         "rejection_is_bound": bool(rej["rejection_is_bound"]),
                         "rejection_eps_s": float(d["eps_s_default"] if at else e["rejection_eps_s"]),
+                        # Every working point the probe recorded, not just the
+                        # default one. docs/PRESPEC_2026-09.md fixes 90 % signal
+                        # efficiency as the HEADLINE point for this metric,
+                        # because 50 % is censored on this task; the flat fields
+                        # above stay at the default so earlier outputs and the
+                        # table generator keep reading what they always read.
+                        "rejection_points": {
+                            eps: {"rejection": float(v["rejection"]),
+                                  "is_bound": bool(v["rejection_is_bound"]),
+                                  "n_bkg_pass": int(v["n_bkg_pass"]),
+                                  "rel_stat_err": float(v["rel_stat_err"])}
+                            for eps, v in sorted(e["rejection_at"].items())},
                         "file": str(p)})
     first = next(iter(docs.values()))
     return {"rows": rows, "files": [{"path": str(p), "sha256": _sha(p)} for p in paths],
@@ -290,7 +308,30 @@ def level_summary(cells, task, kind, seeds) -> list[dict]:
                     "rejection_range": [min(rej), max(rej)] if rs else None,
                     "rejection_eps_s": rs[0]["rejection_eps_s"] if rs else None,
                     "n_rejection_bound": sum(r["rejection_is_bound"] for r in rs),
+                    "rejection_points": rejection_points(rs),
+                    "headline_eps_s": HEADLINE_EPS_S,
                     "n_censored": sum(r["censored"] for r in rs)})
+    return out
+
+
+def rejection_points(rs) -> dict:
+    """Per working point: median rejection, its seed range, how many seeds hit
+    the cap, and the mean number of background jets left. A point where any seed
+    is bound is not a property of the models, so `is_bound` travels with it and
+    the table generator refuses to print a bound cell as a bare number."""
+    eps_all = sorted({e for r in rs for e in r.get("rejection_points", {})})
+    out = {}
+    for eps in eps_all:
+        vs = [r["rejection_points"][eps] for r in rs if eps in r.get("rejection_points", {})]
+        if not vs:
+            continue
+        rej = [v["rejection"] for v in vs]
+        left = [v["n_bkg_pass"] for v in vs]
+        out[eps] = {"n_seeds": len(vs), "median": float(np.median(rej)),
+                    "range": [min(rej), max(rej)],
+                    "n_bound": sum(v["is_bound"] for v in vs),
+                    "mean_n_bkg_pass": float(np.mean(left)),
+                    "is_headline": eps == HEADLINE_EPS_S}
     return out
 
 
@@ -1111,6 +1152,14 @@ def run_ladder(a, argv=None) -> int:
                       f"{r['rejection_median']:.1f} [{r['rejection_range'][0]:.1f}, "
                       f"{r['rejection_range'][1]:.1f}] bound in {r['n_rejection_bound']}"
                       f"  censored in {r['n_censored']}")
+                for eps, pt in r["rejection_points"].items():
+                    mark = " <- HEADLINE" if pt["is_headline"] else ""
+                    note = (f"  CENSORED in {pt['n_bound']}/{pt['n_seeds']}"
+                            if pt["n_bound"] else "")
+                    print(f"        eps_s={eps}  1/eps_B={pt['median']:9.1f} "
+                          f"[{pt['range'][0]:.1f}, {pt['range'][1]:.1f}]  "
+                          f"background jets left {pt['mean_n_bkg_pass']:5.1f}"
+                          f"{note}{mark}")
 
     print("\n  CONFIRMATORY")
     c1 = trend_test(cells, C1["task"], "linear", seeds, C1["predicted_step"])

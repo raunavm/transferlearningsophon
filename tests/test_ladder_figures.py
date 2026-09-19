@@ -142,7 +142,7 @@ def test_the_merge_annotation_is_computed_from_the_label_map(ladder):
 def test_a_label_map_that_contradicts_the_probe_file_stops_the_run(ladder, tmp_path):
     """Two answers to 'where is this distinction merged' means one is wrong, and
     the figure would annotate the wrong vocabulary."""
-    p = ladder["root"] / "experiments/FIGS/data/probe_ladder_v1/s1.json"
+    p = ladder["root"] / "experiments/FIGS/data/probe_ladder_v2/s1.json"
     d = json.loads(p.read_text())
     d["tasks"]["alpha"]["collapsed_at"] = ["R16_Q1"]
     p.write_text(json.dumps(d))

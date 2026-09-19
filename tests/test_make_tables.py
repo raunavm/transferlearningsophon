@@ -83,7 +83,7 @@ def write_ladder(root):
                 "arms": {f"{ARM_OF_LEVEL[lv]}-s{seed}":
                          {p: cell(task, p, lv, seed) for p in ("linear", "mlp")}
                          for lv in LEVELS}}
-        p = root / "experiments/FIGS/data/probe_ladder_v1" / f"s{seed}.json"
+        p = root / "experiments/FIGS/data/probe_ladder_v2" / f"s{seed}.json"
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(json.dumps(doc))
         out.append(p)
@@ -196,7 +196,7 @@ def write_analysis(root, ladder):
                                        "reject_possible": False}]},
         "pairwise_exploratory": {t: {p: _pairwise(rows, t, p) for p in ("linear", "mlp")}
                                  for t in TASKS}}
-    p = root / "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json"
+    p = root / "experiments/FIGS/data/probe_ladder_v2/analysis/seed_level_results.json"
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(doc))
     return p
@@ -305,7 +305,7 @@ def test_a_missing_input_is_reported_not_invented(root):
 def test_inputs_that_disagree_on_the_row_alignment_stop_the_run(root):
     """Different alignments means different jets: a paired contrast across them
     is not a paired contrast, and every number here assumes it is one."""
-    p = root / "experiments/FIGS/data/probe_ladder_v1/s2.json"
+    p = root / "experiments/FIGS/data/probe_ladder_v2/s2.json"
     d = json.loads(p.read_text())
     d["row_alignment_sha256"] = "b" * 64
     p.write_text(json.dumps(d))
@@ -316,7 +316,7 @@ def test_inputs_that_disagree_on_the_row_alignment_stop_the_run(root):
 
 def test_a_ladder_file_rewritten_since_the_analysis_stops_the_run(root):
     """Then the p-values describe data that is no longer on disk."""
-    p = root / "experiments/FIGS/data/probe_ladder_v1/s2.json"
+    p = root / "experiments/FIGS/data/probe_ladder_v2/s2.json"
     d = json.loads(p.read_text())
     d["n_jets_total"] = 1001
     p.write_text(json.dumps(d))
@@ -376,3 +376,57 @@ def test_macro_names_are_legal_latex(root):
 def test_the_committed_outputs_still_follow_from_the_committed_inputs():
     """CI's job: the paper's numbers are the numbers in the result files today."""
     assert M.main(["--check"]) == 0, "run python3 experiments/FIGS/make_tables.py"
+
+
+def _with_points(root, points):
+    """Give the fixture analysis the working-point block the real one carries."""
+    p = root / "experiments/FIGS/data/probe_ladder_v2/analysis/seed_level_results.json"
+    A = json.loads(p.read_text())
+    for task in A["levels"]:
+        for probe in A["levels"][task]:
+            for row in A["levels"][task][probe]:
+                row["headline_eps_s"] = "0.90"
+                row["rejection_points"] = {
+                    "0.50": {"n_seeds": row["n_seeds"], "median": row["rejection_median"],
+                             "range": row["rejection_range"],
+                             "n_bound": row["n_rejection_bound"],
+                             "mean_n_bkg_pass": 0.0, "is_headline": False},
+                    "0.90": {"n_seeds": row["n_seeds"], **points,
+                             "mean_n_bkg_pass": 40.0, "is_headline": True}}
+    p.write_text(json.dumps(A))
+
+
+def test_the_paper_quotes_rejection_at_the_headline_working_point(root):
+    """docs/PRESPEC_2026-09.md fixed 90 % signal efficiency as the headline,
+    blind, because at 50 % no background jet survives at the three finer
+    vocabularies and the number is then the size of the test sample. The flat
+    `rejection_*` fields sit at 50 %, so reading them would put the censored
+    number in the paper under a caption claiming it is a measurement."""
+    _with_points(root, {"median": 321.0, "range": [300.0, 350.0], "n_bound": 0})
+    built, _, _ = M.build(root)
+    m = macros_in(built["results_generated.tex"])
+    assert m["ProbeEpsS"] == "90\\%"
+    assert m["ProbeRejAlphaLinearOnetwo"] == "321", (
+        "the 0.90 value, not the 1,000.0 bound the flat fields hold at 0.50")
+    prov = json.loads(built["provenance.json"])
+    assert "rejection_points['0.90']" in prov["ProbeRejAlphaLinearOnetwo"]["json_path"]
+    assert "90\\% signal efficiency" in built["tables/probes_linear.tex"]
+
+
+def test_a_censored_headline_cell_still_never_prints_as_a_bare_number(root):
+    """If the headline point turns out to be censored too, that is the finding
+    and the table must say so -- it must not silently fall back to a number."""
+    _with_points(root, {"median": 11876.0, "range": [11876.0, 11876.0],
+                        "n_bound": len(SEEDS)})
+    m = macros_in(M.build(root)[0]["results_generated.tex"])
+    assert m["ProbeRejAlphaLinearOnetwo"].startswith("$>$")
+
+
+def test_an_analysis_without_working_points_falls_back_and_says_which_point(root):
+    """Analysis files written before the working points were recorded must keep
+    building, at the point they actually hold."""
+    built, _, _ = M.build(root)          # fixture has no rejection_points
+    m = macros_in(built["results_generated.tex"])
+    assert m["ProbeEpsS"] == "50\\%"
+    assert json.loads(built["provenance.json"])[
+        "ProbeRejAlphaLinearFour"]["json_path"].endswith(".rejection_median")

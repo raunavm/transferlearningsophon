@@ -909,3 +909,70 @@ def test_leg_stats_welch_agrees_with_scipy_and_src_stats():
         d = rng.normal(0.3, 0.5, n)
         t = paired_t(d)
         assert 2 * L._t_sf(abs(t["t"]), n - 1) == pytest.approx(t["p"], abs=1e-6)
+
+
+def _add_points(root, points):
+    """Give every probe entry the extra working points `points` = {eps: (rej,
+    bound, n_bkg_pass)}, leaving 0.50 as the default the flat fields mirror."""
+    for f in sorted(root.glob("s*/probe_results.json")):
+        d = json.loads(f.read_text())
+        for t in d["tasks"].values():
+            t["eps_s"] = [0.5] + sorted(points)
+            for arm in t["arms"].values():
+                for kind in S.PROBES:
+                    ra = arm[kind]["rejection_at"]
+                    for eps, (rej, bound, npass) in points.items():
+                        ra[f"{eps:.2f}"] = {"rejection": rej, "eps_b": 1.0 / rej,
+                                            "rejection_is_bound": bound,
+                                            "n_bkg_pass": npass, "rel_stat_err": 0.1}
+        f.write_text(json.dumps(d))
+
+
+def test_every_working_point_is_summarised_and_90_percent_is_the_headline(tmp_path):
+    """docs/PRESPEC_2026-09.md fixed 90 % signal efficiency as the headline
+    working point for background rejection, blind, because 50 % leaves no
+    background jets at the finer vocabularies. Reading only the probe's default
+    point would report the censored number as the headline."""
+    root = write_ladder(tmp_path / "in", ladder_values(step=1.0))
+    _add_points(root, {0.70: (5000.0, True, 2), 0.90: (300.0, False, 40)})
+    res, _ = run(root, tmp_path / "o")
+    pts = res["levels"]["bvc_resonant"]["linear"][0]["rejection_points"]
+    assert set(pts) == {"0.50", "0.70", "0.90"}, "every recorded point must be summarised"
+    assert [p["is_headline"] for p in pts.values()] == [False, False, True]
+    assert S.HEADLINE_EPS_S == "0.90"
+    assert pts["0.90"]["median"] == 300.0 and pts["0.90"]["n_bound"] == 0
+    assert pts["0.90"]["mean_n_bkg_pass"] == 40.0
+
+
+def test_a_censored_working_point_carries_its_flag_and_its_surviving_count(tmp_path):
+    """A point where any seed hit the cap is a statement about the size of the
+    test sample, not about the models, so the count of bound seeds and the mean
+    number of surviving background jets travel with the number."""
+    root = write_ladder(tmp_path / "in", ladder_values(step=1.0))
+    _add_points(root, {0.70: (11876.0, True, 0), 0.90: (300.0, False, 40)})
+    pts = run(root, tmp_path / "o")[0]["levels"]["bvc_resonant"]["linear"][0]["rejection_points"]
+    assert pts["0.70"]["n_bound"] == pts["0.70"]["n_seeds"] == 5
+    assert pts["0.70"]["mean_n_bkg_pass"] == 0.0
+    assert pts["0.90"]["n_bound"] == 0
+
+
+def test_the_flat_rejection_fields_still_mirror_the_default_point(tmp_path):
+    """The table generator and every earlier analysis read the flat fields. They
+    must keep meaning 'the probe's first working point' even now that the
+    headline is a different one, or old and new outputs stop being comparable."""
+    root = write_ladder(tmp_path / "in", ladder_values(step=1.0))
+    _add_points(root, {0.90: (300.0, False, 40)})
+    lv = run(root, tmp_path / "o")[0]["levels"]["bvc_resonant"]["linear"][0]
+    assert lv["rejection_eps_s"] == 0.5
+    assert lv["rejection_median"] == 50.0, "the 0.50 fixture value, not the 0.90 one"
+    assert lv["rejection_points"]["0.50"]["median"] == 50.0
+    assert lv["headline_eps_s"] == "0.90"
+
+
+def test_the_headline_point_is_named_in_the_printed_report(tmp_path):
+    root = write_ladder(tmp_path / "in", ladder_values(step=1.0))
+    _add_points(root, {0.70: (11876.0, True, 0), 0.90: (300.0, False, 40)})
+    _, out = run(root, tmp_path / "o")
+    assert "<- HEADLINE" in out
+    assert "eps_s=0.90" in out and "eps_s=0.70" in out
+    assert "CENSORED in 5/5" in out, "a capped point must say so in the report"

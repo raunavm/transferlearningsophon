@@ -40,7 +40,10 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import style                                                       # noqa: E402
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-ANALYSIS = REPO / "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json"
+# The probe re-run, which make_tables.input_paths also treats as canonical: same
+# jets, same seeds, same tasks, plus the working points the pre-registration
+# fixed. The figures and the tables must not read different files.
+ANALYSIS = REPO / "experiments/FIGS/data/probe_ladder_v2/analysis/seed_level_results.json"
 RUNG_MAP = REPO / "configs/labelmaps/rung_label_maps.v1.csv"
 RUNGS = ["L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1", "R3_VIS", "R1_Q1"]
 

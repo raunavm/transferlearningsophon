@@ -1,0 +1,12 @@
+First pass of the pre-specified analysis over the probe re-run, 2026-09-19.
+Identical inputs and identical inferential choices to the canonical `analysis/`
+directory beside it. It is kept only because seed_level.py refuses to overwrite
+a look at the data, and a look at the data is a record.
+
+What changed between this pass and the canonical one: NOTHING inferential. This
+pass summarised background rejection only at the probe's default working point
+(50 % signal efficiency), which docs/PRESPEC_2026-09.md had already declared
+unusable on this task; the canonical pass summarises every working point the
+probe recorded and labels 90 % as the headline, as that document fixed blind
+before any re-run number existed. No test, contrast, correction or endpoint
+moved, and the confirmatory p-value is identical in both.

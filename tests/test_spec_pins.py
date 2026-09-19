@@ -117,8 +117,13 @@ def test_the_rule_would_have_caught_the_labelrec_defect():
     ancestry test rejects it -- so a future refactor cannot quietly turn the
     check into one that always passes.
     """
-    last = _git("rev-list", "-1", "HEAD", "--", "experiments/EVAL/label_recovery.py")
-    assert last, "label_recovery.py has no history"
+    # The equal-size fix, named literally. Reading "the last commit that touched
+    # label_recovery.py" instead made this fixture dissolve the moment that file
+    # was edited again for any unrelated reason -- which happened on 2026-09-19
+    # -- and the test then failed while the guard it checks was working
+    # perfectly. A regression fixture has to name the commit it reproduces.
+    last = "759bbad33cbfe108a4a1b1587ee31febea607af3"
+    assert _git("cat-file", "-t", last) == "commit", "the fix commit is gone"
     stale = subprocess.run(
         ["git", "-C", str(REPO), "merge-base", "--is-ancestor", last, "mtx-s1.31"],
         capture_output=True)

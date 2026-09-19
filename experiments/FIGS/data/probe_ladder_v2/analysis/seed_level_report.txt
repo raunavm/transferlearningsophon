@@ -1,0 +1,373 @@
+SEED-LEVEL INFERENCE, four-granularity frozen probes (PRESPEC_2026-09 §2–3)
+  inputs: 5 file(s); row alignment a9449fd420c473f6; 2,000,000 jets
+  endpoint: log1m_auc = NATURAL log of (1 − AUC), lower is better; levels fine→coarse [188, 162, 43, 17]; differences are coarser − finer, paired by seed index
+  seed indices in the design: [1, 2, 3, 4, 5]
+
+== 1. MINIMUM DETECTABLE EFFECT AND SEED SPREAD (printed before any contrast) ==
+  MDE at 80% power, two-sided 5%, from the standard deviation of the 17-class − 162-class paired differences;
+  already-seen tasks only (PRESPEC §1); seed term only, no test-resampling floor
+    bvc_resonant       linear n=5 pairs  SD(paired diff)=0.1757  ×1.66  MDE=0.2921 (a factor 1.339 in 1−AUC)
+    bvc_resonant       mlp    n=5 pairs  SD(paired diff)=0.1432  ×1.66  MDE=0.2381 (a factor 1.269 in 1−AUC)
+    bvc_qcd            linear n=5 pairs  SD(paired diff)=0.1159  ×1.66  MDE=0.1927 (a factor 1.213 in 1−AUC)
+    bvc_qcd            mlp    n=5 pairs  SD(paired diff)=0.0942  ×1.66  MDE=0.1566 (a factor 1.170 in 1−AUC)
+    retained_topology  linear n=5 pairs  SD(paired diff)=0.1161  ×1.66  MDE=0.1931 (a factor 1.213 in 1−AUC)
+    retained_topology  mlp    n=5 pairs  SD(paired diff)=0.1181  ×1.66  MDE=0.1964 (a factor 1.217 in 1−AUC)
+    ee_vs_mm           linear n=5 pairs  SD(paired diff)=0.2488  ×1.66  MDE=0.4136 (a factor 1.512 in 1−AUC)
+    ee_vs_mm           mlp    n=5 pairs  SD(paired diff)=0.1404  ×1.66  MDE=0.2335 (a factor 1.263 in 1−AUC)
+  per-level standard deviation of log1m_auc over pretraining seeds (n seeds):
+    bvc_qcd            linear 188: 0.0422 (5)  162: 0.0142 (5)  43: 0.0370 (5)  17: 0.1198 (5)
+    bvc_qcd            mlp    188: 0.0404 (5)  162: 0.0254 (5)  43: 0.0317 (5)  17: 0.1005 (5)
+    bvc_resonant       linear 188: 0.0317 (5)  162: 0.0261 (5)  43: 0.0264 (5)  17: 0.1619 (5)
+    bvc_resonant       mlp    188: 0.0383 (5)  162: 0.0217 (5)  43: 0.0177 (5)  17: 0.1231 (5)
+    ee_vs_mm           linear 188: 0.0000 (5)  162: 0.0000 (5)  43: 0.9467 (5)  17: 0.2488 (5)
+    ee_vs_mm           mlp    188: 0.0000 (5)  162: 0.0000 (5)  43: 1.0002 (5)  17: 0.1404 (5)
+    retained_topology  linear 188: 0.0187 (5)  162: 0.0510 (5)  43: 0.0169 (5)  17: 0.0979 (5)
+    retained_topology  mlp    188: 0.0514 (5)  162: 0.0770 (5)  43: 0.0539 (5)  17: 0.0664 (5)
+    bvc_4prong         linear 188: 0.0389 (5)  162: 0.0264 (5)  43: 0.0646 (5)  17: 0.1667 (5)
+    bvc_4prong         mlp    188: 0.0287 (5)  162: 0.0301 (5)  43: 0.0743 (5)  17: 0.1505 (5)
+    visible_content    linear 188: 0.0358 (5)  162: 0.0449 (5)  43: 0.1137 (5)  17: 0.0889 (5)
+    visible_content    mlp    188: 0.0544 (5)  162: 0.0408 (5)  43: 0.0717 (5)  17: 0.0877 (5)
+
+== 2. CONTRASTS ==
+  per-level summary (rejection is the median over seeds; 'bound' counts seeds at the cap):
+    bvc_qcd / linear
+      188-class  n=5  mean log1m_auc=-4.2133  mean AUC=0.98519  1/eps_B@50%=5371.0 [5371.0, 5371.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   5371.0 [5371.0, 5371.0]  background jets left   0.2  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   1790.3 [1342.8, 5371.0]  background jets left   2.6  CENSORED in 1/5
+        eps_s=0.90  1/eps_B=     55.9 [51.2, 63.9]  background jets left  96.4 <- HEADLINE
+      162-class  n=5  mean log1m_auc=-4.0774  mean AUC=0.98305  1/eps_B@50%=5371.0 [2685.5, 5371.0] bound in 4  censored in 0
+        eps_s=0.50  1/eps_B=   5371.0 [2685.5, 5371.0]  background jets left   0.4  CENSORED in 4/5
+        eps_s=0.70  1/eps_B=   1074.2 [895.2, 1342.8]  background jets left   5.2
+        eps_s=0.90  1/eps_B=     45.1 [42.0, 46.7]  background jets left 121.4 <- HEADLINE
+       43-class  n=5  mean log1m_auc=-4.0638  mean AUC=0.98281  1/eps_B@50%=5371.0 [2685.5, 5371.0] bound in 4  censored in 0
+        eps_s=0.50  1/eps_B=   5371.0 [2685.5, 5371.0]  background jets left   0.6  CENSORED in 4/5
+        eps_s=0.70  1/eps_B=   1074.2 [671.4, 2685.5]  background jets left   5.0
+        eps_s=0.90  1/eps_B=     43.7 [37.6, 48.0]  background jets left 126.8 <- HEADLINE
+       17-class  n=5  mean log1m_auc=-3.1076  mean AUC=0.95504  1/eps_B@50%=335.7 [282.7, 537.1] bound in 0  censored in 0
+        eps_s=0.50  1/eps_B=    335.7 [282.7, 537.1]  background jets left  15.4
+        eps_s=0.70  1/eps_B=     74.6 [62.5, 124.9]  background jets left  67.6
+        eps_s=0.90  1/eps_B=      9.6 [8.0, 12.7]  background jets left 544.6 <- HEADLINE
+    bvc_qcd / mlp
+      188-class  n=5  mean log1m_auc=-4.2178  mean AUC=0.98526  1/eps_B@50%=5371.0 [5371.0, 5371.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   5371.0 [5371.0, 5371.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   1790.3 [1342.8, 5371.0]  background jets left   2.4  CENSORED in 1/5
+        eps_s=0.90  1/eps_B=     59.0 [47.1, 62.5]  background jets left  95.0 <- HEADLINE
+      162-class  n=5  mean log1m_auc=-4.1119  mean AUC=0.98362  1/eps_B@50%=5371.0 [5371.0, 5371.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   5371.0 [5371.0, 5371.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   1342.8 [895.2, 2685.5]  background jets left   4.2
+        eps_s=0.90  1/eps_B=     44.8 [40.4, 49.3]  background jets left 119.8 <- HEADLINE
+       43-class  n=5  mean log1m_auc=-4.0991  mean AUC=0.98341  1/eps_B@50%=5371.0 [5371.0, 5371.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   5371.0 [5371.0, 5371.0]  background jets left   0.2  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   1342.8 [1074.2, 2685.5]  background jets left   4.0
+        eps_s=0.90  1/eps_B=     44.8 [43.0, 45.9]  background jets left 120.2 <- HEADLINE
+       17-class  n=5  mean log1m_auc=-3.2811  mean AUC=0.96226  1/eps_B@50%=767.3 [488.3, 1790.3] bound in 0  censored in 0
+        eps_s=0.50  1/eps_B=    767.3 [488.3, 1790.3]  background jets left   7.4
+        eps_s=0.70  1/eps_B=    111.9 [88.0, 179.0]  background jets left  48.6
+        eps_s=0.90  1/eps_B=     11.5 [10.8, 14.6]  background jets left 453.4 <- HEADLINE
+    bvc_resonant / linear
+      188-class  n=5  mean log1m_auc=-6.0683  mean AUC=0.99768  1/eps_B@50%=11876.0 [11876.0, 11876.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=  11876.0 [11876.0, 11876.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=  11876.0 [11876.0, 11876.0]  background jets left   0.8  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   1319.6 [1079.6, 1979.3]  background jets left   9.0 <- HEADLINE
+      162-class  n=5  mean log1m_auc=-6.0493  mean AUC=0.99764  1/eps_B@50%=11876.0 [11876.0, 11876.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=  11876.0 [11876.0, 11876.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=  11876.0 [11876.0, 11876.0]  background jets left   0.6  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   1187.6 [1079.6, 1696.6]  background jets left   9.4 <- HEADLINE
+       43-class  n=5  mean log1m_auc=-5.9834  mean AUC=0.99748  1/eps_B@50%=11876.0 [11876.0, 11876.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=  11876.0 [11876.0, 11876.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=  11876.0 [11876.0, 11876.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   1187.6 [791.7, 1484.5]  background jets left  11.0 <- HEADLINE
+       17-class  n=5  mean log1m_auc=-4.6848  mean AUC=0.99067  1/eps_B@50%=1484.5 [989.7, 3958.7] bound in 0  censored in 0
+        eps_s=0.50  1/eps_B=   1484.5 [989.7, 3958.7]  background jets left   8.2
+        eps_s=0.70  1/eps_B=    625.1 [439.9, 791.7]  background jets left  20.0
+        eps_s=0.90  1/eps_B=    136.5 [99.0, 154.2]  background jets left  90.8 <- HEADLINE
+    bvc_resonant / mlp
+      188-class  n=5  mean log1m_auc=-6.1095  mean AUC=0.99778  1/eps_B@50%=11876.0 [11876.0, 11876.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=  11876.0 [11876.0, 11876.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=  11876.0 [11876.0, 11876.0]  background jets left   0.4  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   1187.6 [989.7, 1484.5]  background jets left   9.6 <- HEADLINE
+      162-class  n=5  mean log1m_auc=-6.0667  mean AUC=0.99768  1/eps_B@50%=11876.0 [11876.0, 11876.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=  11876.0 [11876.0, 11876.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=  11876.0 [11876.0, 11876.0]  background jets left   0.6  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   1079.6 [989.7, 1484.5]  background jets left  10.4 <- HEADLINE
+       43-class  n=5  mean log1m_auc=-5.9783  mean AUC=0.99747  1/eps_B@50%=11876.0 [11876.0, 11876.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=  11876.0 [11876.0, 11876.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=  11876.0 [5938.0, 11876.0]  background jets left   0.6  CENSORED in 4/5
+        eps_s=0.90  1/eps_B=   1079.6 [742.2, 1187.6]  background jets left  11.8 <- HEADLINE
+       17-class  n=5  mean log1m_auc=-4.9322  mean AUC=0.99275  1/eps_B@50%=11876.0 [5938.0, 11876.0] bound in 4  censored in 0
+        eps_s=0.50  1/eps_B=  11876.0 [5938.0, 11876.0]  background jets left   1.0  CENSORED in 4/5
+        eps_s=0.70  1/eps_B=   2969.0 [1696.6, 3958.7]  background jets left   4.8
+        eps_s=0.90  1/eps_B=    185.6 [177.3, 232.9]  background jets left  61.0 <- HEADLINE
+    ee_vs_mm / linear
+      188-class  n=5  mean log1m_auc=-16.9579  mean AUC=1.00000  1/eps_B@50%=4708.0 [4708.0, 4708.0] bound in 5  censored in 5
+        eps_s=0.50  1/eps_B=   4708.0 [4708.0, 4708.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   4708.0 [4708.0, 4708.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   4708.0 [4708.0, 4708.0]  background jets left   0.0  CENSORED in 5/5 <- HEADLINE
+      162-class  n=5  mean log1m_auc=-16.9579  mean AUC=1.00000  1/eps_B@50%=4708.0 [4708.0, 4708.0] bound in 5  censored in 5
+        eps_s=0.50  1/eps_B=   4708.0 [4708.0, 4708.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   4708.0 [4708.0, 4708.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   4708.0 [4708.0, 4708.0]  background jets left   0.0  CENSORED in 5/5 <- HEADLINE
+       43-class  n=5  mean log1m_auc=-4.0326  mean AUC=0.97519  1/eps_B@50%=181.1 [47.1, 523.1] bound in 0  censored in 0
+        eps_s=0.50  1/eps_B=    181.1 [47.1, 523.1]  background jets left  46.0
+        eps_s=0.70  1/eps_B=    134.5 [31.0, 313.9]  background jets left  67.0
+        eps_s=0.90  1/eps_B=     73.6 [12.6, 174.4]  background jets left 155.8 <- HEADLINE
+       17-class  n=5  mean log1m_auc=-3.2013  mean AUC=0.95832  1/eps_B@50%=67.3 [40.6, 98.1] bound in 0  censored in 0
+        eps_s=0.50  1/eps_B=     67.3 [40.6, 98.1]  background jets left  82.0
+        eps_s=0.70  1/eps_B=     40.6 [29.1, 69.2]  background jets left 117.6
+        eps_s=0.90  1/eps_B=     16.0 [13.0, 27.9]  background jets left 289.6 <- HEADLINE
+    ee_vs_mm / mlp
+      188-class  n=5  mean log1m_auc=-16.9579  mean AUC=1.00000  1/eps_B@50%=4708.0 [4708.0, 4708.0] bound in 5  censored in 5
+        eps_s=0.50  1/eps_B=   4708.0 [4708.0, 4708.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   4708.0 [4708.0, 4708.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   4708.0 [4708.0, 4708.0]  background jets left   0.0  CENSORED in 5/5 <- HEADLINE
+      162-class  n=5  mean log1m_auc=-16.9579  mean AUC=1.00000  1/eps_B@50%=4708.0 [4708.0, 4708.0] bound in 5  censored in 5
+        eps_s=0.50  1/eps_B=   4708.0 [4708.0, 4708.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   4708.0 [4708.0, 4708.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   4708.0 [4708.0, 4708.0]  background jets left   0.0  CENSORED in 5/5 <- HEADLINE
+       43-class  n=5  mean log1m_auc=-5.7676  mean AUC=0.99546  1/eps_B@50%=4708.0 [1569.3, 4708.0] bound in 4  censored in 0
+        eps_s=0.50  1/eps_B=   4708.0 [1569.3, 4708.0]  background jets left   0.8  CENSORED in 4/5
+        eps_s=0.70  1/eps_B=   1177.0 [672.6, 4708.0]  background jets left   3.8  CENSORED in 1/5
+        eps_s=0.90  1/eps_B=    224.2 [32.7, 941.6]  background jets left  50.0 <- HEADLINE
+       17-class  n=5  mean log1m_auc=-4.5657  mean AUC=0.98952  1/eps_B@50%=941.6 [672.6, 1569.3] bound in 0  censored in 0
+        eps_s=0.50  1/eps_B=    941.6 [672.6, 1569.3]  background jets left   4.8
+        eps_s=0.70  1/eps_B=    313.9 [261.6, 362.2]  background jets left  15.2
+        eps_s=0.90  1/eps_B=     44.4 [35.7, 61.9]  background jets left 109.2 <- HEADLINE
+    retained_topology / linear
+      188-class  n=5  mean log1m_auc=-5.1388  mean AUC=0.99413  1/eps_B@50%=1078.0 [1078.0, 1078.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   1078.0 [1078.0, 1078.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   1078.0 [539.0, 1078.0]  background jets left   0.6  CENSORED in 4/5
+        eps_s=0.90  1/eps_B=     71.9 [59.9, 77.0]  background jets left  15.4 <- HEADLINE
+      162-class  n=5  mean log1m_auc=-5.1395  mean AUC=0.99413  1/eps_B@50%=1078.0 [1078.0, 1078.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   1078.0 [1078.0, 1078.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   1078.0 [1078.0, 1078.0]  background jets left   0.8  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=     77.0 [63.4, 98.0]  background jets left  14.0 <- HEADLINE
+       43-class  n=5  mean log1m_auc=-4.9253  mean AUC=0.99274  1/eps_B@50%=1078.0 [1078.0, 1078.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   1078.0 [1078.0, 1078.0]  background jets left   0.2  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=    539.0 [359.3, 1078.0]  background jets left   2.2  CENSORED in 1/5
+        eps_s=0.90  1/eps_B=     67.4 [59.9, 71.9]  background jets left  16.4 <- HEADLINE
+       17-class  n=5  mean log1m_auc=-4.7095  mean AUC=0.99096  1/eps_B@50%=1078.0 [1078.0, 1078.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   1078.0 [1078.0, 1078.0]  background jets left   0.2  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=    359.3 [179.7, 539.0]  background jets left   3.8
+        eps_s=0.90  1/eps_B=     49.0 [38.5, 67.4]  background jets left  21.8 <- HEADLINE
+    retained_topology / mlp
+      188-class  n=5  mean log1m_auc=-5.1098  mean AUC=0.99396  1/eps_B@50%=1078.0 [1078.0, 1078.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   1078.0 [1078.0, 1078.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   1078.0 [539.0, 1078.0]  background jets left   0.8  CENSORED in 4/5
+        eps_s=0.90  1/eps_B=     67.4 [56.7, 77.0]  background jets left  15.8 <- HEADLINE
+      162-class  n=5  mean log1m_auc=-5.0924  mean AUC=0.99384  1/eps_B@50%=1078.0 [1078.0, 1078.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   1078.0 [1078.0, 1078.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   1078.0 [359.3, 1078.0]  background jets left   1.6  CENSORED in 3/5
+        eps_s=0.90  1/eps_B=     63.4 [53.9, 89.8]  background jets left  16.6 <- HEADLINE
+       43-class  n=5  mean log1m_auc=-4.9336  mean AUC=0.99279  1/eps_B@50%=1078.0 [1078.0, 1078.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   1078.0 [1078.0, 1078.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=    359.3 [215.6, 1078.0]  background jets left   2.8  CENSORED in 1/5
+        eps_s=0.90  1/eps_B=     63.4 [53.9, 71.9]  background jets left  17.6 <- HEADLINE
+       17-class  n=5  mean log1m_auc=-4.6916  mean AUC=0.99081  1/eps_B@50%=1078.0 [539.0, 1078.0] bound in 4  censored in 0
+        eps_s=0.50  1/eps_B=   1078.0 [539.0, 1078.0]  background jets left   0.6  CENSORED in 4/5
+        eps_s=0.70  1/eps_B=    215.6 [179.7, 269.5]  background jets left   5.0
+        eps_s=0.90  1/eps_B=     51.3 [44.9, 63.4]  background jets left  20.6 <- HEADLINE
+    bvc_4prong / linear  [control task: tabulated only; C4 needs the random-label control]
+      188-class  n=5  mean log1m_auc=-4.9915  mean AUC=0.99320  1/eps_B@50%=3158.0 [1052.7, 3158.0] bound in 4  censored in 0
+        eps_s=0.50  1/eps_B=   3158.0 [1052.7, 3158.0]  background jets left   0.8  CENSORED in 4/5
+        eps_s=0.70  1/eps_B=   1579.0 [1052.7, 1579.0]  background jets left   2.2
+        eps_s=0.90  1/eps_B=    225.6 [197.4, 263.2]  background jets left  14.0 <- HEADLINE
+      162-class  n=5  mean log1m_auc=-4.9777  mean AUC=0.99311  1/eps_B@50%=3158.0 [3158.0, 3158.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   3158.0 [3158.0, 3158.0]  background jets left   0.4  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   1579.0 [1579.0, 1579.0]  background jets left   2.0
+        eps_s=0.90  1/eps_B=    242.9 [175.4, 263.2]  background jets left  14.4 <- HEADLINE
+       43-class  n=5  mean log1m_auc=-4.8946  mean AUC=0.99250  1/eps_B@50%=3158.0 [3158.0, 3158.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   3158.0 [3158.0, 3158.0]  background jets left   0.4  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   1579.0 [1579.0, 3158.0]  background jets left   1.6  CENSORED in 2/5
+        eps_s=0.90  1/eps_B=    197.4 [166.2, 210.5]  background jets left  16.6 <- HEADLINE
+       17-class  n=5  mean log1m_auc=-3.4967  mean AUC=0.96936  1/eps_B@50%=451.1 [242.9, 1052.7] bound in 0  censored in 0
+        eps_s=0.50  1/eps_B=    451.1 [242.9, 1052.7]  background jets left   6.8
+        eps_s=0.70  1/eps_B=    197.4 [108.9, 287.1]  background jets left  19.6
+        eps_s=0.90  1/eps_B=     23.9 [16.6, 32.2]  background jets left 137.4 <- HEADLINE
+    bvc_4prong / mlp  [control task: tabulated only; C4 needs the random-label control]
+      188-class  n=5  mean log1m_auc=-4.9856  mean AUC=0.99316  1/eps_B@50%=3158.0 [1052.7, 3158.0] bound in 3  censored in 0
+        eps_s=0.50  1/eps_B=   3158.0 [1052.7, 3158.0]  background jets left   1.4  CENSORED in 3/5
+        eps_s=0.70  1/eps_B=   1579.0 [1052.7, 3158.0]  background jets left   2.2  CENSORED in 1/5
+        eps_s=0.90  1/eps_B=    210.5 [175.4, 263.2]  background jets left  15.0 <- HEADLINE
+      162-class  n=5  mean log1m_auc=-4.9883  mean AUC=0.99318  1/eps_B@50%=3158.0 [1579.0, 3158.0] bound in 4  censored in 0
+        eps_s=0.50  1/eps_B=   3158.0 [1579.0, 3158.0]  background jets left   0.6  CENSORED in 4/5
+        eps_s=0.70  1/eps_B=   1579.0 [1052.7, 1579.0]  background jets left   2.2
+        eps_s=0.90  1/eps_B=    175.4 [150.4, 263.2]  background jets left  17.2 <- HEADLINE
+       43-class  n=5  mean log1m_auc=-4.8709  mean AUC=0.99232  1/eps_B@50%=3158.0 [3158.0, 3158.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   3158.0 [3158.0, 3158.0]  background jets left   0.6  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   1579.0 [1052.7, 3158.0]  background jets left   2.0  CENSORED in 1/5
+        eps_s=0.90  1/eps_B=    197.4 [157.9, 210.5]  background jets left  16.8 <- HEADLINE
+       17-class  n=5  mean log1m_auc=-3.7910  mean AUC=0.97722  1/eps_B@50%=1052.7 [451.1, 3158.0] bound in 1  censored in 0
+        eps_s=0.50  1/eps_B=   1052.7 [451.1, 3158.0]  background jets left   3.4  CENSORED in 1/5
+        eps_s=0.70  1/eps_B=    210.5 [157.9, 315.8]  background jets left  14.6
+        eps_s=0.90  1/eps_B=     31.0 [24.3, 42.7]  background jets left 101.2 <- HEADLINE
+    visible_content / linear  [control task: tabulated only; C4 needs the random-label control]
+      188-class  n=5  mean log1m_auc=-7.0999  mean AUC=0.99917  1/eps_B@50%=2554.0 [2554.0, 2554.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.4  CENSORED in 5/5 <- HEADLINE
+      162-class  n=5  mean log1m_auc=-7.1480  mean AUC=0.99921  1/eps_B@50%=2554.0 [2554.0, 2554.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.6  CENSORED in 5/5 <- HEADLINE
+       43-class  n=5  mean log1m_auc=-7.1124  mean AUC=0.99918  1/eps_B@50%=2554.0 [2554.0, 2554.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.4  CENSORED in 5/5 <- HEADLINE
+       17-class  n=5  mean log1m_auc=-6.0684  mean AUC=0.99768  1/eps_B@50%=2554.0 [2554.0, 2554.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=    638.5 [510.8, 1277.0]  background jets left   3.4 <- HEADLINE
+    visible_content / mlp  [control task: tabulated only; C4 needs the random-label control]
+      188-class  n=5  mean log1m_auc=-7.0179  mean AUC=0.99910  1/eps_B@50%=2554.0 [2554.0, 2554.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.4  CENSORED in 5/5 <- HEADLINE
+      162-class  n=5  mean log1m_auc=-7.1025  mean AUC=0.99918  1/eps_B@50%=2554.0 [2554.0, 2554.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.4  CENSORED in 5/5 <- HEADLINE
+       43-class  n=5  mean log1m_auc=-7.1018  mean AUC=0.99917  1/eps_B@50%=2554.0 [2554.0, 2554.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.4  CENSORED in 5/5 <- HEADLINE
+       17-class  n=5  mean log1m_auc=-6.1658  mean AUC=0.99789  1/eps_B@50%=2554.0 [2554.0, 2554.0] bound in 5  censored in 0
+        eps_s=0.50  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.70  1/eps_B=   2554.0 [2554.0, 2554.0]  background jets left   0.0  CENSORED in 5/5
+        eps_s=0.90  1/eps_B=    851.3 [638.5, 1277.0]  background jets left   3.0 <- HEADLINE
+
+  CONFIRMATORY
+  C1: bvc_resonant, linear probe — alternative: log1m_auc increasing along levels = performance falls with coarser labels
+    max-T=31.039  global p=5.27e-06  (exact, 7,962,624 arrangements, 5 seed blocks; smallest attainable p 7.54e-07; single end-step bound 0.000977)
+    arg-max contrast: [188, 162, 43] | [17] — predicted step [188, 162, 43] | [17]: YES
+    per-contrast adjusted p (localisation only, not separate tests):
+                 [188] | [162, 43, 17]    diff=+0.4958 t=+11.41 p_adj=0.00196
+                 [188] | [43, 17]         diff=+0.7342 t=+15.93 p_adj=0.0019
+                 [188] | [17]             diff=+1.3835 t=+25.99 p_adj=0.000977
+            [188, 162] | [43, 17]         diff=+0.7247 t=+19.26 p_adj=0.000978
+            [188, 162] | [17]             diff=+1.3740 t=+29.81 p_adj=7.61e-05
+        [188, 162, 43] | [17]             diff=+1.3489 t=+31.04 p_adj=5.27e-06
+    seed SD per level, blocks used: 188: 0.0317  162: 0.0261  43: 0.0264  17: 0.1619
+    isotonic companion: E²=0.988 p=8.79e-07 pooled levels [[188], [162], [43], [17]]
+  C1 is 3 clauses — CONFIRMED IN CLAUSES 1-2, INCONCLUSIVE IN CLAUSE 3 (partially confirmed)
+    clause 1: "performance falls with coarser labels" — CONFIRMED
+      max-T trend test (exact, 5 seed blocks), p=5.27e-06
+      Holm at the full confirmatory family of 5: must beat 0.01 as the smallest; rejected whatever the pending tests give
+    clause 2: "the step is 43 -> 17" — CONFIRMED
+      arg-max contrast of the trend test
+      arg-max [188, 162, 43] | [17], predicted [188, 162, 43] | [17]; localisation only, no separate p
+    clause 3: "188 ~ 162 ~ 43" — INCONCLUSIVE
+      equivalence (TOST) at ±ln(1.1) on all 3 pairs inside the set, intersection-union, p=0.314
+      inconclusive at ±10%; equivalent within ±0.1273 (a factor 1.136 in 1−AUC)
+      TOST bound ±ln(1.1) = ±0.09531; all 3 pairs inside {188, 162, 43} must pass
+        162 − 188 diff=+0.0190  90% CI [-0.0250,+0.0630]  TOST p=0.0105  n=5  equivalent at ±10%
+         43 − 188 diff=+0.0849  90% CI [+0.0425,+0.1273]  TOST p=0.314  n=5  NOT equivalent at ±10%; equivalent within ±0.1273 (a factor 1.136 in 1−AUC)
+         43 − 162 diff=+0.0659  90% CI [+0.0520,+0.0797]  TOST p=0.00526  n=5  equivalent at ±10%
+      set verdict (intersection-union p=0.314): inconclusive at ±10%; equivalent within ±0.1273 (a factor 1.136 in 1−AUC)
+  Holm over the full confirmatory family of 5 at 5%:
+    C1                           raw p=5.27e-06  must beat 0.01 if smallest of 5: rejected whatever the pending tests give
+    C2                           pending
+    C3                           pending
+    C4                           pending
+    C5                           pending
+
+  SECONDARY
+  S1: bvc_qcd, linear probe — alternative: log1m_auc increasing along levels = performance falls with coarser labels
+    max-T=31.235  global p=6.03e-06  (exact, 7,962,624 arrangements, 5 seed blocks; smallest attainable p 7.54e-07; single end-step bound 0.000977)
+    arg-max contrast: [188, 162, 43] | [17]
+    per-contrast adjusted p (localisation only, not separate tests):
+                 [188] | [162, 43, 17]    diff=+0.4637 t=+14.33 p_adj=0.00107
+                 [188] | [43, 17]         diff=+0.6276 t=+18.29 p_adj=0.000985
+                 [188] | [17]             diff=+1.1057 t=+27.90 p_adj=1.21e-05
+            [188, 162] | [43, 17]         diff=+0.5597 t=+19.97 p_adj=0.000967
+            [188, 162] | [17]             diff=+1.0378 t=+30.24 p_adj=1.21e-05
+        [188, 162, 43] | [17]             diff=+1.0106 t=+31.23 p_adj=6.03e-06
+    seed SD per level, blocks used: 188: 0.0422  162: 0.0142  43: 0.0370  17: 0.1198
+    isotonic companion: E²=0.988 p=1e-06 pooled levels [[188], [162], [43], [17]]
+  S2: retained_topology, linear probe — predicted equivalent, TOST bound ±ln(1.1) = ±0.09531 in natural-log units
+    largest pairwise difference 17 − 162: +0.4300  90% CI [+0.3193, +0.5407]  TOST p=0.999  n=5
+    inconclusive at ±10%; equivalent within ±0.5407 (a factor 1.717 in 1−AUC)
+    companion over all 6 pairs: max TOST p=0.999; all equivalent within ±0.5407
+  S2: retained_topology, mlp probe (beside the linear probe; not in the Holm table) — predicted equivalent, TOST bound ±ln(1.1) = ±0.09531 in natural-log units
+    largest pairwise difference 17 − 188: +0.4182  90% CI [+0.3519, +0.4845]  TOST p=1  n=5
+    inconclusive at ±10%; equivalent within ±0.4845 (a factor 1.623 in 1−AUC)
+    companion over all 6 pairs: max TOST p=1; all equivalent within ±0.5135
+  S2: ee_vs_mm, linear probe — predicted equivalent, TOST bound ±ln(1.1) = ±0.09531 in natural-log units
+    largest pairwise difference 17 − 188: +13.7566  90% CI [+13.5194, +13.9938]  TOST p=1  n=5  [BOUND: a cell reached AUC=1]
+    inconclusive at ±10%; equivalent within ±13.9938 (a factor 1195135.148 in 1−AUC)
+    companion over all 5 pairs: max TOST p=1; all equivalent within ±13.9938
+  S2: ee_vs_mm, mlp probe (beside the linear probe; not in the Holm table) — predicted equivalent, TOST bound ±ln(1.1) = ±0.09531 in natural-log units
+    largest pairwise difference 17 − 188: +12.3922  90% CI [+12.2583, +12.5261]  TOST p=1  n=5  [BOUND: a cell reached AUC=1]
+    inconclusive at ±10%; equivalent within ±12.5261 (a factor 275420.886 in 1−AUC)
+    companion over all 5 pairs: max TOST p=1; all equivalent within ±12.5261
+  S6: bvc_qcd: MLP orders 6 of 6 level pairs as the linear probe does
+  S6: bvc_resonant: MLP orders 6 of 6 level pairs as the linear probe does
+  S6: ee_vs_mm: MLP orders 5 of 5 level pairs as the linear probe does
+  S6: retained_topology: MLP orders 5 of 6 level pairs as the linear probe does; disagree: ['162−188']
+  Holm within the secondary table (S1, S2 on the linear probe):
+    S1 bvc_qcd                   raw p=6.03e-06  must beat 0.0167 if smallest of 3: rejected whatever the pending tests give
+    S2 retained_topology         raw p=0.999  must beat 0.0167 if smallest of 3: not rejected
+    S2 ee_vs_mm                  raw p=1  must beat 0.0167 if smallest of 3: not rejected
+
+  PAIRWISE, coarser − finer by seed index — EXPLORATORY (not listed in PRESPEC §3);
+  primary = paired t on n−1 df; Holm within each table of six
+    bvc_qcd / linear
+    162 − 188  diff=+0.1359  t=+7.31 df=4 p=0.00187 CI95=[+0.0843,+0.1875]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     43 − 188  diff=+0.1495  t=+9.81 df=4 p=0.000605 CI95=[+0.1072,+0.1918]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 188  diff=+1.1057  t=+18.67 df=4 p=4.85e-05 CI95=[+0.9413,+1.2702]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     43 − 162  diff=+0.0136  t=+1.12 df=4 p=0.326 CI95=[-0.0202,+0.0474]  sign-flip p=0.5 (floor 0.0625)  n=5
+     17 − 162  diff=+0.9698  t=+18.71 df=4 p=4.8e-05 CI95=[+0.8259,+1.1137]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 43   diff=+0.9562  t=+19.12 df=4 p=4.41e-05 CI95=[+0.8174,+1.0951]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+    bvc_qcd / mlp
+    162 − 188  diff=+0.1059  t=+4.65 df=4 p=0.00964 CI95=[+0.0427,+0.1691]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     43 − 188  diff=+0.1187  t=+6.09 df=4 p=0.00367 CI95=[+0.0646,+0.1727]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 188  diff=+0.9367  t=+21.12 df=4 p=2.97e-05 CI95=[+0.8135,+1.0599]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     43 − 162  diff=+0.0128  t=+1.58 df=4 p=0.189 CI95=[-0.0096,+0.0352]  sign-flip p=0.188 (floor 0.0625)  n=5
+     17 − 162  diff=+0.8308  t=+19.72 df=4 p=3.9e-05 CI95=[+0.7138,+0.9478]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 43   diff=+0.8180  t=+18.17 df=4 p=5.4e-05 CI95=[+0.6930,+0.9430]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+    bvc_resonant / linear
+    162 − 188  diff=+0.0190  t=+0.92 df=4 p=0.409 CI95=[-0.0383,+0.0764]  sign-flip p=0.375 (floor 0.0625)  n=5
+     43 − 188  diff=+0.0849  t=+4.27 df=4 p=0.013 CI95=[+0.0297,+0.1401]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 188  diff=+1.3835  t=+20.39 df=4 p=3.41e-05 CI95=[+1.1952,+1.5719]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     43 − 162  diff=+0.0659  t=+10.14 df=4 p=0.000532 CI95=[+0.0478,+0.0839]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 162  diff=+1.3645  t=+17.36 df=4 p=6.46e-05 CI95=[+1.1463,+1.5827]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 43   diff=+1.2986  t=+17.75 df=4 p=5.92e-05 CI95=[+1.0955,+1.5018]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+    bvc_resonant / mlp
+    162 − 188  diff=+0.0428  t=+1.74 df=4 p=0.156 CI95=[-0.0253,+0.1109]  sign-flip p=0.188 (floor 0.0625)  n=5
+     43 − 188  diff=+0.1311  t=+6.31 df=4 p=0.00322 CI95=[+0.0734,+0.1888]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 188  diff=+1.1773  t=+23.20 df=4 p=2.05e-05 CI95=[+1.0363,+1.3182]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     43 − 162  diff=+0.0883  t=+7.26 df=4 p=0.00191 CI95=[+0.0546,+0.1221]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 162  diff=+1.1345  t=+17.71 df=4 p=5.97e-05 CI95=[+0.9566,+1.3123]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 43   diff=+1.0461  t=+19.68 df=4 p=3.93e-05 CI95=[+0.8986,+1.1937]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+    ee_vs_mm / linear
+    162 − 188  not estimable (identical paired differences (zero variance): t undefined; n=5)
+     43 − 188  diff=+12.9253  t=+30.53 df=4 p=6.86e-06 CI95=[+11.7499,+14.1007]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject  [BOUND: a cell reached AUC=1]
+     17 − 188  diff=+13.7566  t=+123.65 df=4 p=2.57e-08 CI95=[+13.4477,+14.0655]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject  [BOUND: a cell reached AUC=1]
+     43 − 162  diff=+12.9253  t=+30.53 df=4 p=6.86e-06 CI95=[+11.7499,+14.1007]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject  [BOUND: a cell reached AUC=1]
+     17 − 162  diff=+13.7566  t=+123.65 df=4 p=2.57e-08 CI95=[+13.4477,+14.0655]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject  [BOUND: a cell reached AUC=1]
+     17 − 43   diff=+0.8313  t=+2.21 df=4 p=0.0916 CI95=[-0.2130,+1.8755]  sign-flip p=0.125 (floor 0.0625)  n=5
+    ee_vs_mm / mlp
+    162 − 188  not estimable (identical paired differences (zero variance): t undefined; n=5)
+     43 − 188  diff=+11.1902  t=+25.02 df=4 p=1.52e-05 CI95=[+9.9484,+12.4321]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject  [BOUND: a cell reached AUC=1]
+     17 − 188  diff=+12.3922  t=+197.31 df=4 p=3.96e-09 CI95=[+12.2178,+12.5665]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject  [BOUND: a cell reached AUC=1]
+     43 − 162  diff=+11.1902  t=+25.02 df=4 p=1.52e-05 CI95=[+9.9484,+12.4321]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject  [BOUND: a cell reached AUC=1]
+     17 − 162  diff=+12.3922  t=+197.31 df=4 p=3.96e-09 CI95=[+12.2178,+12.5665]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject  [BOUND: a cell reached AUC=1]
+     17 − 43   diff=+1.2019  t=+3.03 df=4 p=0.0389 CI95=[+0.0995,+2.3043]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+    retained_topology / linear
+    162 − 188  diff=-0.0007  t=-0.02 df=4 p=0.983 CI95=[-0.0835,+0.0821]  sign-flip p=0.938 (floor 0.0625)  n=5
+     43 − 188  diff=+0.2136  t=+15.47 df=4 p=0.000102 CI95=[+0.1753,+0.2519]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 188  diff=+0.4293  t=+10.29 df=4 p=0.000503 CI95=[+0.3135,+0.5452]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     43 − 162  diff=+0.2143  t=+12.42 df=4 p=0.000241 CI95=[+0.1664,+0.2622]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 162  diff=+0.4300  t=+8.28 df=4 p=0.00116 CI95=[+0.2858,+0.5742]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 43   diff=+0.2157  t=+4.50 df=4 p=0.0109 CI95=[+0.0825,+0.3490]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+    retained_topology / mlp
+    162 − 188  diff=+0.0174  t=+0.32 df=4 p=0.765 CI95=[-0.1330,+0.1677]  sign-flip p=0.75 (floor 0.0625)  n=5
+     43 − 188  diff=+0.1762  t=+4.09 df=4 p=0.015 CI95=[+0.0566,+0.2958]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 188  diff=+0.4182  t=+13.44 df=4 p=0.000177 CI95=[+0.3318,+0.5046]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     43 − 162  diff=+0.1588  t=+9.48 df=4 p=0.000692 CI95=[+0.1123,+0.2054]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 162  diff=+0.4008  t=+7.59 df=4 p=0.00162 CI95=[+0.2542,+0.5475]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+     17 − 43   diff=+0.2420  t=+4.84 df=4 p=0.00839 CI95=[+0.1032,+0.3808]  sign-flip p=0.0625 (floor 0.0625)  n=5  Holm-reject
+
+  C4 is pending: the random-label control has no features yet. c4_sign_pattern() is implemented
+  and tested on a synthetic fixture; with one run per draw it is descriptive.
+
+wrote experiments/FIGS/data/probe_ladder_v2/analysis/seed_level_results.json
