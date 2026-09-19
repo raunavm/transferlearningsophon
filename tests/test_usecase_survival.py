@@ -6,11 +6,13 @@ to be "corrected" by someone who has not read why they differ.
 """
 import csv
 import importlib.util
+import json
 import pathlib
 import sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 MAP = REPO / "configs" / "labelmaps" / "rung_label_maps.v1.csv"
+OUT = pathlib.Path(__file__).resolve().parents[1] / "configs" / "labelmaps" / "usecase_survival.v1.json"
 SPEC = REPO / "configs" / "labelmaps" / "usecase_discriminants.v1.csv"
 
 
@@ -39,7 +41,7 @@ def test_every_class_the_spec_names_exists_in_the_map():
     with SPEC.open() as f:
         named = set()
         for r in csv.DictReader(l for l in f if not l.startswith("#")):
-            if r["classes"] != "@QCD":
+            if r["classes"] not in ("@QCD", "@UNEXPRESSIBLE"):
                 named.update(r["classes"].split(";"))
     assert named, "the spec names no classes at all"
     assert named <= set(by_name), sorted(named - set(by_name))
@@ -65,7 +67,7 @@ def test_survival_is_monotone_because_the_ladder_is_nested():
     """
     m = _mod()
     by_name, groups = m.read_map()
-    specs, _, _ = m.read_spec(by_name)
+    specs, _, _, _ = m.read_spec(by_name)
     for d, vectors in specs.items():
         alive = [all(m.group_constant(v, groups[r]) for v in vectors.values())
                  for r in m.RUNGS]
@@ -81,7 +83,7 @@ def test_per_qcd_subclass_work_is_possible_only_at_the_finest_rung():
     """
     m = _mod()
     by_name, groups = m.read_map()
-    specs, _, _ = m.read_spec(by_name)
+    specs, _, _, _ = m.read_spec(by_name)
     v = specs["gn3x_qcd_subclass"]
     alive = [r for r in m.RUNGS
              if all(m.group_constant(x, groups[r]) for x in v.values())]
@@ -101,7 +103,7 @@ def test_d_bc_dies_one_rung_before_the_trainable_probe_collapses():
     """
     m = _mod()
     by_name, groups = m.read_map()
-    specs, _, _ = m.read_spec(by_name)
+    specs, _, _, _ = m.read_spec(by_name)
     alive = [r for r in m.RUNGS
              if all(m.group_constant(v, groups[r]) for v in specs["vcb_eq1"].values())]
     assert alive == ["L188", "L162"], alive
@@ -131,6 +133,39 @@ def test_the_pigamma_row_is_deferred_rather_than_guessed():
     """
     m = _mod()
     by_name, _ = m.read_map()
-    specs, _, _ = m.read_spec(by_name)
+    specs, _, _, _ = m.read_spec(by_name)
     assert "pigamma_p1" not in specs
     assert "DEFERRED ROW" in SPEC.read_text()
+
+
+def test_a_resonance_specific_w_tagger_is_absent_for_a_different_reason_than_coarsening():
+    """Every other row in this table is lost to COARSENING: its coefficient
+    vector exists over the 188 native classes and stops being group-constant at
+    some rung. A W-versus-QCD score is absent at 188 too, because the vocabulary
+    names jets by decay products and not by parent resonance, so the W and the Z
+    share a class wherever they share a decay mode. The table has to show those
+    two failures as different things, or a reader concludes that finer labels
+    would have bought a W tagger, and they would not."""
+    out = json.loads(OUT.read_text())
+    w = out["w_vs_qcd_resonance"]
+    assert w["expressible_in_native_vocabulary"] is False
+    assert not any(w["constructible"].values()), "absent at EVERY granularity"
+    assert w["last_rung_alive"] is None
+    # and the contrast: every other row is expressible and alive at the finest
+    for name, row in out.items():
+        if name == "w_vs_qcd_resonance":
+            continue
+        assert row["expressible_in_native_vocabulary"] is True, name
+        assert row["constructible"]["L188"] is True, (
+            f"{name} is not constructible even at 188 classes, so it is not a "
+            "coarsening result either and needs its own explanation")
+
+
+def test_a_discriminant_with_no_vector_cannot_be_called_constructible_everywhere():
+    """all() over an empty set is True. Without the guard, a spec row that
+    silently resolved to nothing would print as constructible at every
+    granularity -- the most flattering possible wrong answer."""
+    m = _mod()
+    by_name, groups = m.read_map()
+    assert m.group_constant({}, groups["L188"]) is True, (
+        "this is the trap: an empty coefficient is constant on every group")

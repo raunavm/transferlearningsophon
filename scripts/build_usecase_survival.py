@@ -85,13 +85,24 @@ def read_spec(by_name):
             out.append(by_name[name])
         return out
 
-    specs, titles, sources = {}, {}, {}
+    # A discriminant can fail to be constructible in TWO different ways, and the
+    # table is misleading if it shows only one. The usual way is coarsening: the
+    # coefficient vector exists over the 188 native classes but stops being
+    # constant on a group once labels merge. The other way is that the quantity
+    # is not expressible in the native vocabulary AT ALL, at any granularity --
+    # `@UNEXPRESSIBLE` marks those. They cannot be written as a coefficient
+    # vector by construction, so there is nothing for group_constant to test.
+    specs, titles, sources, unexpressible = {}, {}, {}, set()
     for r in rows:
         d = r["discriminant"]
         titles.setdefault(d, r["title"])
         sources.setdefault(d, r["source"])
         if titles[d] != r["title"] or sources[d] != r["source"]:
             raise SystemExit(f"FATAL: {d} carries two different titles/sources")
+        if r["classes"] == "@UNEXPRESSIBLE":
+            unexpressible.add(d)
+            specs.setdefault(d, {})
+            continue
         idx = resolve(r["classes"])
         vectors = specs.setdefault(d, {})
         if r["expand"] == "each":
@@ -104,7 +115,7 @@ def read_spec(by_name):
             v = vectors.setdefault(r["part"], {})
             for i in idx:
                 v[i] = v.get(i, 0.0) + float(r["coeff"])
-    return specs, titles, sources
+    return specs, titles, sources, unexpressible
 
 
 def group_constant(coeff, groups_at_rung):
@@ -117,13 +128,21 @@ def group_constant(coeff, groups_at_rung):
 
 def main():
     by_name, groups = read_map()
-    specs, titles, sources = read_spec(by_name)
+    specs, titles, sources, unexpressible = read_spec(by_name)
 
     table, out = {}, {}
     for d, vectors in specs.items():
         row = {}
-        for rung in RUNGS:
-            row[rung] = all(group_constant(v, groups[rung]) for v in vectors.values())
+        if d in unexpressible:
+            # Not a coarsening loss. There is no coefficient vector at all.
+            row = {rung: False for rung in RUNGS}
+        else:
+            if not vectors:
+                raise SystemExit(f"FATAL: {d} has no coefficient vector and is not "
+                                 "marked @UNEXPRESSIBLE; all() over an empty set "
+                                 "would report it constructible everywhere")
+            for rung in RUNGS:
+                row[rung] = all(group_constant(v, groups[rung]) for v in vectors.values())
         table[d] = row
         alive = [r for r in RUNGS if row[r]]
         out[d] = {
@@ -131,6 +150,10 @@ def main():
             "source": sources[d],
             "constructible": row,
             "n_coefficient_vectors": len(vectors),
+            # False = the quantity cannot be written over the native classes at
+            # all, so it is absent at every granularity for a reason that has
+            # nothing to do with coarsening.
+            "expressible_in_native_vocabulary": d not in unexpressible,
             # The first rung at which it stops being constructible. None = survives
             # the whole ladder.
             "dies_at": next((r for r in RUNGS if not row[r]), None),

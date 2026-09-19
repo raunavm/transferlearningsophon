@@ -13,6 +13,7 @@
       "R1_Q1": false
     },
     "n_coefficient_vectors": 2,
+    "expressible_in_native_vocabulary": true,
     "dies_at": "R42_Q1",
     "last_rung_alive": "R63_Q1"
   },
@@ -30,6 +31,7 @@
       "R1_Q1": false
     },
     "n_coefficient_vectors": 2,
+    "expressible_in_native_vocabulary": true,
     "dies_at": "R63_Q1",
     "last_rung_alive": "L162"
   },
@@ -47,6 +49,7 @@
       "R1_Q1": false
     },
     "n_coefficient_vectors": 2,
+    "expressible_in_native_vocabulary": true,
     "dies_at": "R63_Q1",
     "last_rung_alive": "L162"
   },
@@ -64,6 +67,7 @@
       "R1_Q1": false
     },
     "n_coefficient_vectors": 2,
+    "expressible_in_native_vocabulary": true,
     "dies_at": "R63_Q1",
     "last_rung_alive": "L162"
   },
@@ -81,6 +85,7 @@
       "R1_Q1": false
     },
     "n_coefficient_vectors": 2,
+    "expressible_in_native_vocabulary": true,
     "dies_at": "R63_Q1",
     "last_rung_alive": "L162"
   },
@@ -98,7 +103,26 @@
       "R1_Q1": false
     },
     "n_coefficient_vectors": 27,
+    "expressible_in_native_vocabulary": true,
     "dies_at": "L162",
     "last_rung_alive": "L188"
+  },
+  "w_vs_qcd_resonance": {
+    "title": "W->qq vs QCD (resonance-specific)",
+    "source": "this work",
+    "constructible": {
+      "L188": false,
+      "L162": false,
+      "R63_Q1": false,
+      "R42_Q1": false,
+      "R29_Q1": false,
+      "R16_Q1": false,
+      "R3_VIS": false,
+      "R1_Q1": false
+    },
+    "n_coefficient_vectors": 0,
+    "expressible_in_native_vocabulary": false,
+    "dies_at": "L188",
+    "last_rung_alive": null
   }
 }

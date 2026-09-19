@@ -730,9 +730,17 @@ def table_usecase(surv: dict, sizes: dict) -> str:
     cols = [sizes[r] for r in RUNGS]
     head = ["discriminant & source & " + " & ".join(str(c) for c in cols) + " \\\\", "\\midrule"]
     rows = []
+    # A row absent at EVERY vocabulary is not a coarsening result, and the table
+    # is actively misleading if it renders identically to one: a reader would
+    # conclude that a finer vocabulary would have bought the discriminant. It
+    # would not -- the quantity is not expressible over the native classes at
+    # all. Marked with a dagger and explained in the notes.
+    never = [d for d, r in surv.items()
+             if not r.get("expressible_in_native_vocabulary", True)]
     for disc, row in surv.items():
         marks = " & ".join("$\\bullet$" if row["constructible"][r] else "---" for r in RUNGS)
-        rows.append(f"{tex(row['title'])} & {tex(row['source'])} & {marks} \\\\")
+        title = tex(row["title"]) + ("$^{\\dagger}$" if disc in never else "")
+        rows.append(f"{title} & {tex(row['source'])} & {marks} \\\\")
     caption = ("Published Sophon-family discriminants against pretraining vocabulary size "
                "(columns, finest first). $\\bullet$ = the discriminant is exactly constructible "
                "from that vocabulary's output nodes; --- = it is not. The criterion is Sophon's "
@@ -742,6 +750,14 @@ def table_usecase(surv: dict, sizes: dict) -> str:
     notes = ["Column headings are the number of classes in the vocabulary, counted from "
              "\\texttt{configs/labelmaps/rung\\_label\\_maps.v1.csv}; they are not the numbers "
              "in the internal rung names, which count resonant groups only."]
+    if never:
+        notes.append(
+            "$^{\\dagger}$ Absent for a different reason from every other row: not lost to "
+            "coarsening, but never expressible. The vocabulary labels jets by their decay "
+            "products and not by the parent resonance, so wherever the $W$ and the $Z$ share a "
+            "decay mode they share a class, and no sum of a head's outputs separates them --- at "
+            "the finest vocabulary as much as at the coarsest. A finer label set of this kind "
+            "would not buy this discriminant; a differently organised one would.")
     return _table(head + rows, caption, "tab:usecase", "l l " + "c" * len(cols), notes,
                   len(cols) + 2, wide=True)
 

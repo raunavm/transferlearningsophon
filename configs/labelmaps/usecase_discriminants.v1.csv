@@ -44,3 +44,22 @@ vcb_eq1,D_bc (|V_cb|),num,1,label_X_bc,,arXiv:2503.00118 Eq. (1)
 vcb_eq1,D_bc (|V_cb|),den,1,label_X_bc;label_X_bq;label_X_cs;label_X_YY_qqb,,arXiv:2503.00118 Eq. (1)
 vcb_eq1,D_bc (|V_cb|),den,1,@QCD,,arXiv:2503.00118 Eq. (1)
 gn3x_qcd_subclass,GN3X-style per-QCD-subclass rejection,num,1,@QCD,each,ATL-PHYS-PUB-2026-013 Sec. 6
+#
+# A RESONANCE-SPECIFIC W TAGGER IS NOT EXPRESSIBLE IN THIS VOCABULARY AT ALL.
+# Every other row below is lost to COARSENING: the coefficient vector exists
+# over the 188 native classes and stops being constant on a group at some rung.
+# This one never exists. The vocabulary names jets by DECAY PRODUCTS (X->qq,
+# X->cs, X->bb, ...) and not by PARENT RESONANCE, so where the W and the Z share
+# a decay mode they share a class, and no sum of this head's outputs separates
+# them -- at 188 classes just as much as at 17. Any "W versus QCD" score built
+# from these labels is therefore a W+Z score.
+#
+# Added 2026-09-19 after the real-data feasibility test. The test asked a
+# W-specific question of exactly such a score, judged it against a W-only peak
+# window and against a W-specific CMS tagger, and predictably got a fit sitting
+# on the Z at 92.8 GeV. That measurement is WITHDRAWN as a design error rather
+# than reported as a null result: it measured our own test, not the models. The
+# fact belongs here instead, where it is checkable from the label map with no
+# data, and where it also explains why the real-data section has one channel and
+# not two -- only one was ever constructible.
+w_vs_qcd_resonance,W->qq vs QCD (resonance-specific),num,1,@UNEXPRESSIBLE,,this work

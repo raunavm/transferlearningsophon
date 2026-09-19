@@ -120,10 +120,27 @@ Background rejection is quoted at \ProbeEpsS{} signal efficiency throughout.
 % WAITS ON: the remaining anomaly jobs and the merge over signal models.
 
 \subsection{Real data}
-% WAITS ON A DECISION, not on a job: DECISIONS_PENDING.md item 38. The
-% feasibility test returned a formal NO-GO whose three-prong channel passed
-% every criterion. Nothing here is drafted until that is settled, because the
-% shape of this subsection is exactly what is being decided.
+% DECIDED (item 38). ONE channel, the three-prong one, and the reason there is
+% only one belongs in the text rather than in a footnote.
+%
+% Holds: the models applied unchanged to CMS open data -- no fine-tuning, no
+% adaptation -- and the top-quark mass peak they find; the pipeline reference
+% first, so the reader knows the machinery was validated on CMS's own tagger
+% scores before ours were looked at; the fitted top mass against CMS's; the
+% honest efficiency comparison, which is that a frozen model that has never
+% seen a real detector finds a minority of the jets a purpose-built supervised
+% CMS tagger finds, and that finding the peak at the right mass at all is the
+% result.
+%
+% WHY THERE IS NO W ROW, and this is a statement, not an apology: a
+% resonance-specific W discriminant is not expressible in this vocabulary at
+% any granularity, because the labels name decay products and not parent
+% resonances, so the W and the Z share a class wherever they share a decay
+% mode. That is the daggered row of the constructible-discriminant table and it
+% is derived from the label map with no data. Only one channel was ever
+% constructible. The two-prong measurement we did run is withdrawn as a design
+% error and is not reported; see docs/PRESPEC_2026-09.md.
+\input{tables/usecase_survival}
 
 \section{Discussion}
 % Holds: what a pretraining vocabulary has to keep, stated as a rule someone
