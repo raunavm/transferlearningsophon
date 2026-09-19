@@ -1,0 +1,209 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # REAL-DATA FEASIBILITY TEST ON AspenOpenJets. Hand-written. NOT APPLIED.
+  #
+  # Every trunk here saw only JetClass-II fast simulation. This asks, on 8 of the
+  # 80 AspenOpenJets files (CMS 2016 JetHT Open Data, arXiv:2412.10504, DOI
+  # 10.25592/uhhfdm.16505, CC-BY 4.0), whether a real-data benchmark is feasible
+  # at all: do the two-prong and three-prong scores of (i) the public 188-class
+  # Sophon checkpoint and (ii) mtx-l162-s1b raise the W and top peaks out of
+  # unlabelled collision data, through a pipeline first shown to find them with
+  # the ParticleNet scores CMS ships in the same files.
+  #
+  #   download 4 Run G + 4 Run H files (19.2 GB, md5-pinned)  -> pod scratch
+  #   scripts/stage_aoj.py          -> JetClass-II parquet schema, pod scratch
+  #   experiments/AOJ/closure.py    -> 17 model inputs vs JetClass-II QCD
+  #   experiments/EVAL/extract_features.py --save-logits, x2 models -> pod scratch
+  #   experiments/AOJ/discriminants.py -> float16 scores          -> PVC (small)
+  #   experiments/AOJ/peak_fit.py   -> reference, our scores, GO / NO-GO -> PVC
+  #
+  # NOTHING LARGE TOUCHES THE PVC, which is 86 % full. Raw HDF5, staged parquet,
+  # features and logits live and die in an emptyDir; what is persisted is
+  # results.json, the histograms, the closure table, the staging counters and
+  # float16 scores plus per-jet observers for the selected jets -- ~50 bytes per
+  # jet, i.e. 25-50 MB for the 0.5-1.0 M jets expected, capped at 1 GB below.
+  #
+  # ONE RTX 3090, the GPU the extraction specs use. Inference is 2 models x
+  # 0.5-1.0 M jets. Measured CPU extraction is 64-149 jets/s on 8 cores
+  # (experiments/RUNS.csv: extract-e79-recap, vcb-window-full-launched), i.e.
+  # 2-8 h here; the same trunk trains at ~2,500 jets/s on a 3090, so inference is
+  # minutes. The price is a GPU idle for the ~25 min of download and staging.
+  # To run CPU-only instead, delete the three `nvidia.com/gpu` items below
+  # (resource, toleration, gpu.product term); extract_features.py picks the
+  # device itself.
+  #
+  # EXPECTED: ~45-60 min wall, peak scratch ~10-15 GB (raw files are deleted as
+  # they are staged, two in flight), < 100 MB persisted.
+  name: aoj-feasibility-v1-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: aoj
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT=/data/results/aoj/feasibility_v1
+          LOCAL=/scratch/out
+          RAW=/scratch/raw
+          STAGED=/scratch/staged
+          mkdir -p "${LOCAL}/staging" "${RAW}" "${STAGED}"
+
+          # NEVER OVERWRITE A RESULT. A rerun takes a new directory (feasibility_v2).
+          [ ! -e "${OUT}/results.json" ] || { echo "FATAL: ${OUT}/results.json exists; use a new output directory"; exit 1; }
+
+          # VOLUME-SPACE GUARD, WITH A DIFFERENT THRESHOLD FROM THE EXTRACTION SPECS
+          # AND DELIBERATELY SO. scripts/build_extract_jobs.py refuses at >= 85 %
+          # used because each of its jobs writes ~1.1 GB. The PVC is at 86 %, so
+          # that line would refuse this job outright -- for a write of < 100 MB,
+          # which CLAUDE.md permits (its rule above 85 % is about writes > 1 GB).
+          # So the guard is KEPT and re-aimed at what this job does: refuse at
+          # >= 95 % used or < 5 GB free, and persist() below refuses to copy more
+          # than 1 GB whatever the scripts produced. Fails safe like the original:
+          # an unparseable df leaves the variable empty, `[ "" -lt 95 ]` errors
+          # under set -e, and the job stops.
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          FREE_G=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9)
+          echo "PVC used: ${USED}%  free: ${FREE_G}G"
+          [ "${USED}" -lt 95 ] || { echo "FATAL: /data is ${USED}% full"; df -h /data; exit 1; }
+          [ "${FREE_G}" -ge 5 ] || { echo "FATAL: ${FREE_G}G free on /data, need 5G"; exit 1; }
+
+          persist () {
+            local mb; mb=$(du -sm "${LOCAL}" | cut -f1)
+            if [ "${mb}" -lt 1000 ]; then
+              mkdir -p "${OUT}" && cp -r "${LOCAL}/." "${OUT}/" && echo "persisted ${mb} MB to ${OUT}"
+            else
+              echo "FATAL: ${LOCAL} is ${mb} MB; refusing to copy >= 1 GB onto an 86 % full PVC"
+            fi
+          }
+          trap persist EXIT          # partial outputs (closure table) survive a later failure
+
+          git clone --depth 1 --branch "mtx-s1.50" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          pip install --no-cache-dir -q pyarrow h5py || exit 1
+
+          # ---- cheap preconditions BEFORE a 19 GB download ----------------------
+          CKPT_L162=/data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt
+          [ -f "${CKPT_L162}" ] || { echo "FATAL: no ${CKPT_L162}"; exit 1; }
+          REF="/jc2/jet_data/QCD_0350.parquet /jc2/jet_data/QCD_0351.parquet /jc2/jet_data/QCD_0352.parquet /jc2/jet_data/QCD_0353.parquet /jc2/jet_data/QCD_0354.parquet /jc2/jet_data/QCD_0355.parquet"
+          for f in ${REF}; do [ -f "${f}" ] || { echo "FATAL: no ${f}"; exit 1; }; done
+
+          # The released checkpoint is gitignored and not on the PVC. Fetched and
+          # pinned exactly as scripts/build_ft_jobs.py does for `sophon-public`.
+          SOPHON=/workspace/sophon_public.pt
+          curl -fsSL -o "${SOPHON}" https://huggingface.co/jet-universe/sophon/resolve/main/models/JetClassII_Sophon/model.pt
+          GOT=$(sha256sum "${SOPHON}" | cut -d' ' -f1)
+          [ "${GOT}" = "cc7c33b522e796b5bbf0aa9bb5b01361c964f4ef3acebdd9682d7519c095b824" ] || { echo "FATAL: public checkpoint sha256 ${GOT} != E0b pin"; exit 1; }
+
+          CFG=configs/finetune/AspenOpenJets.yaml
+          python3 scripts/build_aoj_config.py --check-only
+          python3 experiments/EVAL/extract_features.py --checkpoint "${SOPHON}" --num-classes 188 --arm SOPHON_PUBLIC \
+            --data-config ${CFG} --data-test unused --out /scratch/selfcheck --self-check-only
+          python3 experiments/EVAL/extract_features.py --checkpoint "${CKPT_L162}" --num-classes 162 --arm L162 \
+            --data-config ${CFG} --data-test unused --out /scratch/selfcheck --self-check-only
+
+          # ---- download + stage: two files in flight, raw deleted once staged ----
+          # URL pattern checked with a HEAD request 2026-09-18: 302 to a pre-signed
+          # S3 GET valid for 60 s, hence -L and a retry that starts from this URL.
+          # Sizes and md5 are from the record's bucket listing
+          # (https://www.fdr.uni-hamburg.de/api/files/8dea83ff-a005-45e2-a0b4-49309f3a00d1).
+          BASE=https://www.fdr.uni-hamburg.de/record/16505/files
+          fetch_and_stage () {  # file md5
+            curl -fsSL --retry 5 --retry-delay 20 -o "${RAW}/$1" "${BASE}/$1?download=1"
+            echo "$2  ${RAW}/$1" | md5sum -c - || { echo "FATAL: md5 mismatch for $1"; return 1; }
+            PYTHONUNBUFFERED=1 python3 scripts/stage_aoj.py --in "${RAW}/$1" --out "${STAGED}"
+            rm -f "${RAW}/$1"
+          }
+          pair () {  # fileA md5A fileB md5B
+            fetch_and_stage "$1" "$2" & local a=$!
+            fetch_and_stage "$3" "$4" & local b=$!
+            wait ${a}; wait ${b}
+          }
+          pair RunG_batch0.h5 bed9c27139f6651fb9511da39210e9e8 RunH_batch0.h5 e1f80505da028e2f800a84e592c6eb61
+          pair RunG_batch1.h5 7c5d85bbef57d52168cbf6e7b6f9293d RunH_batch1.h5 8d4431e6a9e9a4ee00ab4dee8e62be9a
+          pair RunG_batch2.h5 8845537f51e6680e36820511665715f5 RunH_batch2.h5 10e9f3d65e32652fae939444eaae0154
+          pair RunG_batch3.h5 b81d16257b371acc4021d1a27cae5ed5 RunH_batch3.h5 a46b299502af449c1d12a0082c89ee5d
+          cp "${STAGED}"/*.stats.json "${LOCAL}/staging/"
+          df -h /scratch | tail -1
+
+          # THE ORDER OF THIS LIST IS LOAD-BEARING: extract_features.py reads it in
+          # order and discriminants.py re-reads the same files in the same order to
+          # check row alignment.
+          FILES=""
+          for i in 0 1 2 3; do FILES="${FILES} ${STAGED}/RunG_batch${i}.parquet ${STAGED}/RunH_batch${i}.parquet"; done
+
+          # ---- input closure: are the staged inputs what the trunk was trained on?
+          PYTHONUNBUFFERED=1 python3 experiments/AOJ/closure.py \
+            --aoj ${FILES} --reference ${REF} --max-jets 50000 --out "${LOCAL}"
+
+          # ---- inference. logits and features stay in scratch ---------------------
+          OBS="jet_pt jet_eta jet_sdmass aoj_jet_pt aoj_jet_eta aoj_pn_WvsQCD aoj_pn_TvsQCD aoj_pn_HbbvsQCD"
+          score () {  # name checkpoint K rung
+            PYTHONUNBUFFERED=1 python3 experiments/EVAL/extract_features.py \
+              --checkpoint "$2" --num-classes "$3" --arm "$4" \
+              --data-config ${CFG} --observers ${OBS} --save-logits \
+              --data-test ${FILES} --out "/scratch/extract/$1" \
+              --batch-size 512 --num-workers 1 --fetch-step 1
+            python3 experiments/AOJ/discriminants.py --name "$1" --rung "$4" \
+              --extract-dir "/scratch/extract/$1" --staged ${FILES} --out "${LOCAL}"
+            rm -f "/scratch/extract/$1/features.npy" "/scratch/extract/$1/logits.npy"
+          }
+          score sophon-public "${SOPHON}"    188 L188
+          score mtx-l162-s1b  "${CKPT_L162}" 162 L162
+
+          # ---- pipeline reference, our two scores, verdict ------------------------
+          PYTHONUNBUFFERED=1 python3 experiments/AOJ/peak_fit.py \
+            --jets "${LOCAL}/jets.npz" --closure "${LOCAL}/closure.json" \
+            --scores sophon-public="${LOCAL}/scores_sophon-public.npz" mtx-l162-s1b="${LOCAL}/scores_mtx-l162-s1b.npz" \
+            --eff 0.01 --toys 200 --out "${LOCAL}"
+
+          ls -la "${LOCAL}"
+        volumeMounts:
+        - { name: jc2,     mountPath: /jc2, readOnly: true }
+        - { name: data,    mountPath: /data }
+        - { name: scratch, mountPath: /scratch }
+        - { name: dshm,    mountPath: /dev/shm }
+        resources:
+          # 32Gi: the loader holds ONE staged file (~70k jets) or one JetClass-II QCD
+          # file at a time, and two staging processes hold a 330 MB slab each.
+          # ephemeral-storage covers the emptyDir below plus the clone and pip.
+          requests: { memory: "32Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "32Gi" }
+          limits:   { memory: "32Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "32Gi" }
+      tolerations:
+      - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: ["NVIDIA-GeForce-RTX-3090"]
+              # device plugin rejects every pod on these (scripts/exclude_node.py)
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: scratch
+        emptyDir: { sizeLimit: "28Gi" }
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }
