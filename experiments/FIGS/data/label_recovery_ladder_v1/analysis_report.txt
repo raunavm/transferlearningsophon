@@ -1,0 +1,157 @@
+
+== 3. S9: LABEL RECOVERY ACROSS THE CONTRACTION TREE (PRESPEC_2026-09 §3, probe = both, D6) ==
+  inputs: 5 file(s); row alignment a9449fd420c473f6; 60,000 test jets per cell
+  endpoint: balanced accuracy, HIGHER is better; differences are FINER model − COARSER model,
+  paired by seed index: positive = the finer model recovers that rung better
+  rungs fine→coarse: L188 L162 R63_Q1 R42_Q1 R29_Q1 R16_Q1 R3_VIS R1_Q1
+  each model's own vocabulary: 188-class: L188  162-class: L162  43-class: R42_Q1  17-class: R16_Q1
+  S9 is 2 clauses — NOT CONFIRMED IN CLAUSES 1-2 (not confirmed)
+    clause 1: "each model wins at and below its own granularity" — NOT CONFIRMED
+      paired t on n−1 df at every rung at or below the model's own vocabulary; a model fails only where another is ahead by more than the 95% interval
+      1 of 4 models are never beaten there (linear probe); nonlinear probe: 0 of 4
+    clause 2: "the advantage of finer models decays to zero at the coarser model's own level" — NOT CONFIRMED
+      crossover of the per-rung paired differences, with its bracket
+      5 of 6 model pairs cross over exactly at the coarser model's own rung and 6 of 6 have that rung inside the crossover bracket (linear probe); nonlinear probe: 5 of 6
+    188-class over 162-class, linear probe
+      L188     diff=+0.0006  t=+0.51 df=4 p=0.636  CI95=[-0.0028,+0.0041]  sign-flip p=0.625 (floor 0.0625)  n=5  not distinguishable
+      L162     diff=-0.0005  t=-0.38 df=4 p=0.724  CI95=[-0.0039,+0.0030]  sign-flip p=0.75 (floor 0.0625)  n=5  not distinguishable
+      R63_Q1   diff=-0.0001  t=-0.07 df=4 p=0.948  CI95=[-0.0054,+0.0051]  sign-flip p=0.938 (floor 0.0625)  n=5  not distinguishable
+      R42_Q1   diff=-0.0000  t=-0.02 df=4 p=0.984  CI95=[-0.0032,+0.0032]  sign-flip p=1 (floor 0.0625)  n=5  not distinguishable
+      R29_Q1   diff=+0.0001  t=+0.11 df=4 p=0.921  CI95=[-0.0020,+0.0021]  sign-flip p=0.938 (floor 0.0625)  n=5  not distinguishable
+      R16_Q1   diff=+0.0001  t=+0.03 df=4 p=0.977  CI95=[-0.0048,+0.0049]  sign-flip p=1 (floor 0.0625)  n=5  not distinguishable
+      R3_VIS   diff=-0.0019  t=-3.51 df=4 p=0.0247  CI95=[-0.0034,-0.0004]  sign-flip p=0.0625 (floor 0.0625)  n=5  coarser better
+      R1_Q1    diff=-0.0017  t=-1.68 df=4 p=0.169  CI95=[-0.0044,+0.0011]  sign-flip p=0.188 (floor 0.0625)  n=5  not distinguishable
+      crossover at L188; bracket [L188, R3_VIS]; point estimate reaches zero at L162
+      the 162-class model's own rung is L162 — crossover there: NO (inside the bracket: yes)
+    188-class over 162-class, mlp probe (beside the linear probe; D6)
+      L188     diff=+0.0018  t=+3.22 df=4 p=0.0322  CI95=[+0.0003,+0.0034]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better
+      L162     diff=-0.0014  t=-1.46 df=4 p=0.218  CI95=[-0.0041,+0.0013]  sign-flip p=0.188 (floor 0.0625)  n=5  not distinguishable
+      R63_Q1   diff=+0.0002  t=+0.14 df=4 p=0.897  CI95=[-0.0044,+0.0049]  sign-flip p=0.938 (floor 0.0625)  n=5  not distinguishable
+      R42_Q1   diff=-0.0059  t=-1.67 df=4 p=0.17  CI95=[-0.0156,+0.0039]  sign-flip p=0.25 (floor 0.0625)  n=5  not distinguishable
+      R29_Q1   diff=-0.0024  t=-1.11 df=4 p=0.331  CI95=[-0.0085,+0.0037]  sign-flip p=0.312 (floor 0.0625)  n=5  not distinguishable
+      R16_Q1   diff=+0.0003  t=+0.09 df=4 p=0.93  CI95=[-0.0092,+0.0099]  sign-flip p=1 (floor 0.0625)  n=5  not distinguishable
+      R3_VIS   diff=+0.0014  t=+2.22 df=4 p=0.0905  CI95=[-0.0003,+0.0031]  sign-flip p=0.125 (floor 0.0625)  n=5  not distinguishable
+      R1_Q1    diff=-0.0004  t=-0.24 df=4 p=0.819  CI95=[-0.0050,+0.0042]  sign-flip p=0.938 (floor 0.0625)  n=5  not distinguishable
+      crossover at L162; bracket [L162, None]; point estimate reaches zero at L162
+      the 162-class model's own rung is L162 — crossover there: YES (inside the bracket: yes)
+    188-class over 43-class, linear probe
+      L188     diff=+0.0539  t=+13.66 df=4 p=0.000166  CI95=[+0.0429,+0.0648]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      L162     diff=+0.0603  t=+12.87 df=4 p=0.00021  CI95=[+0.0473,+0.0733]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R63_Q1   diff=+0.0066  t=+4.38 df=4 p=0.0119  CI95=[+0.0024,+0.0109]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better
+      R42_Q1   diff=-0.0011  t=-1.42 df=4 p=0.229  CI95=[-0.0033,+0.0011]  sign-flip p=0.188 (floor 0.0625)  n=5  not distinguishable
+      R29_Q1   diff=-0.0009  t=-0.59 df=4 p=0.588  CI95=[-0.0049,+0.0032]  sign-flip p=0.688 (floor 0.0625)  n=5  not distinguishable
+      R16_Q1   diff=-0.0016  t=-1.24 df=4 p=0.283  CI95=[-0.0052,+0.0020]  sign-flip p=0.312 (floor 0.0625)  n=5  not distinguishable
+      R3_VIS   diff=-0.0043  t=-4.69 df=4 p=0.00938  CI95=[-0.0069,-0.0018]  sign-flip p=0.0625 (floor 0.0625)  n=5  coarser better
+      R1_Q1    diff=-0.0028  t=-3.90 df=4 p=0.0175  CI95=[-0.0048,-0.0008]  sign-flip p=0.0625 (floor 0.0625)  n=5  coarser better
+      crossover at R42_Q1; bracket [R42_Q1, R3_VIS]; point estimate reaches zero at R42_Q1
+      the 43-class model's own rung is R42_Q1 — crossover there: YES (inside the bracket: yes)
+    188-class over 43-class, mlp probe (beside the linear probe; D6)
+      L188     diff=+0.0673  t=+17.59 df=4 p=6.14e-05  CI95=[+0.0567,+0.0780]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      L162     diff=+0.0741  t=+17.48 df=4 p=6.29e-05  CI95=[+0.0623,+0.0858]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R63_Q1   diff=+0.0116  t=+12.93 df=4 p=0.000206  CI95=[+0.0091,+0.0141]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R42_Q1   diff=+0.0029  t=+0.87 df=4 p=0.436  CI95=[-0.0065,+0.0123]  sign-flip p=0.438 (floor 0.0625)  n=5  not distinguishable
+      R29_Q1   diff=-0.0025  t=-1.16 df=4 p=0.31  CI95=[-0.0086,+0.0035]  sign-flip p=0.375 (floor 0.0625)  n=5  not distinguishable
+      R16_Q1   diff=-0.0035  t=-2.25 df=4 p=0.0878  CI95=[-0.0078,+0.0008]  sign-flip p=0.0625 (floor 0.0625)  n=5  not distinguishable
+      R3_VIS   diff=-0.0014  t=-7.06 df=4 p=0.00212  CI95=[-0.0020,-0.0009]  sign-flip p=0.0625 (floor 0.0625)  n=5  coarser better  Holm-reject
+      R1_Q1    diff=+0.0014  t=+0.76 df=4 p=0.489  CI95=[-0.0038,+0.0066]  sign-flip p=0.5 (floor 0.0625)  n=5  not distinguishable
+      crossover at R42_Q1; bracket [R42_Q1, R3_VIS]; point estimate reaches zero at R29_Q1
+      the 43-class model's own rung is R42_Q1 — crossover there: YES (inside the bracket: yes)
+    188-class over 17-class, linear probe
+      L188     diff=+0.1010  t=+32.32 df=4 p=5.46e-06  CI95=[+0.0923,+0.1096]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      L162     diff=+0.1128  t=+31.15 df=4 p=6.33e-06  CI95=[+0.1028,+0.1229]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R63_Q1   diff=+0.0696  t=+20.30 df=4 p=3.48e-05  CI95=[+0.0601,+0.0791]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R42_Q1   diff=+0.0484  t=+13.33 df=4 p=0.000183  CI95=[+0.0383,+0.0585]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R29_Q1   diff=+0.0241  t=+7.69 df=4 p=0.00154  CI95=[+0.0154,+0.0329]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R16_Q1   diff=-0.0039  t=-4.49 df=4 p=0.0109  CI95=[-0.0063,-0.0015]  sign-flip p=0.0625 (floor 0.0625)  n=5  coarser better  Holm-reject
+      R3_VIS   diff=-0.0072  t=-13.79 df=4 p=0.00016  CI95=[-0.0087,-0.0058]  sign-flip p=0.0625 (floor 0.0625)  n=5  coarser better  Holm-reject
+      R1_Q1    diff=-0.0033  t=-4.47 df=4 p=0.0111  CI95=[-0.0053,-0.0012]  sign-flip p=0.0625 (floor 0.0625)  n=5  coarser better  Holm-reject
+      crossover at R16_Q1; bracket [R16_Q1, R16_Q1]; point estimate reaches zero at R16_Q1
+      the 17-class model's own rung is R16_Q1 — crossover there: YES (inside the bracket: yes)
+    188-class over 17-class, mlp probe (beside the linear probe; D6)
+      L188     diff=+0.1179  t=+43.28 df=4 p=1.7e-06  CI95=[+0.1104,+0.1255]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      L162     diff=+0.1307  t=+30.53 df=4 p=6.86e-06  CI95=[+0.1188,+0.1426]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R63_Q1   diff=+0.0815  t=+16.84 df=4 p=7.29e-05  CI95=[+0.0680,+0.0949]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R42_Q1   diff=+0.0538  t=+11.84 df=4 p=0.000291  CI95=[+0.0412,+0.0665]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R29_Q1   diff=+0.0284  t=+11.08 df=4 p=0.000377  CI95=[+0.0213,+0.0355]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R16_Q1   diff=-0.0035  t=-0.63 df=4 p=0.562  CI95=[-0.0188,+0.0118]  sign-flip p=0.5 (floor 0.0625)  n=5  not distinguishable
+      R3_VIS   diff=-0.0023  t=-2.32 df=4 p=0.0815  CI95=[-0.0051,+0.0005]  sign-flip p=0.125 (floor 0.0625)  n=5  not distinguishable
+      R1_Q1    diff=+0.0025  t=+1.14 df=4 p=0.316  CI95=[-0.0035,+0.0084]  sign-flip p=0.375 (floor 0.0625)  n=5  not distinguishable
+      crossover at R16_Q1; bracket [R16_Q1, None]; point estimate reaches zero at R16_Q1
+      the 17-class model's own rung is R16_Q1 — crossover there: YES (inside the bracket: yes)
+    162-class over 43-class, linear probe
+      L188     diff=+0.0532  t=+14.03 df=4 p=0.00015  CI95=[+0.0427,+0.0638]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      L162     diff=+0.0607  t=+13.08 df=4 p=0.000197  CI95=[+0.0479,+0.0736]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R63_Q1   diff=+0.0068  t=+4.57 df=4 p=0.0102  CI95=[+0.0027,+0.0109]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better
+      R42_Q1   diff=-0.0011  t=-1.18 df=4 p=0.303  CI95=[-0.0037,+0.0015]  sign-flip p=0.312 (floor 0.0625)  n=5  not distinguishable
+      R29_Q1   diff=-0.0009  t=-0.76 df=4 p=0.487  CI95=[-0.0044,+0.0025]  sign-flip p=0.438 (floor 0.0625)  n=5  not distinguishable
+      R16_Q1   diff=-0.0017  t=-0.87 df=4 p=0.432  CI95=[-0.0070,+0.0036]  sign-flip p=0.312 (floor 0.0625)  n=5  not distinguishable
+      R3_VIS   diff=-0.0024  t=-2.26 df=4 p=0.087  CI95=[-0.0054,+0.0006]  sign-flip p=0.125 (floor 0.0625)  n=5  not distinguishable
+      R1_Q1    diff=-0.0011  t=-0.89 df=4 p=0.425  CI95=[-0.0047,+0.0024]  sign-flip p=0.438 (floor 0.0625)  n=5  not distinguishable
+      crossover at R42_Q1; bracket [R42_Q1, None]; point estimate reaches zero at R42_Q1
+      the 43-class model's own rung is R42_Q1 — crossover there: YES (inside the bracket: yes)
+    162-class over 43-class, mlp probe (beside the linear probe; D6)
+      L188     diff=+0.0655  t=+17.42 df=4 p=6.37e-05  CI95=[+0.0551,+0.0760]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      L162     diff=+0.0755  t=+21.18 df=4 p=2.94e-05  CI95=[+0.0656,+0.0854]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R63_Q1   diff=+0.0114  t=+14.14 df=4 p=0.000145  CI95=[+0.0092,+0.0136]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R42_Q1   diff=+0.0088  t=+4.12 df=4 p=0.0147  CI95=[+0.0029,+0.0147]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better
+      R29_Q1   diff=-0.0001  t=-0.05 df=4 p=0.964  CI95=[-0.0066,+0.0064]  sign-flip p=1 (floor 0.0625)  n=5  not distinguishable
+      R16_Q1   diff=-0.0038  t=-0.81 df=4 p=0.462  CI95=[-0.0168,+0.0092]  sign-flip p=0.562 (floor 0.0625)  n=5  not distinguishable
+      R3_VIS   diff=-0.0028  t=-4.14 df=4 p=0.0144  CI95=[-0.0046,-0.0009]  sign-flip p=0.0625 (floor 0.0625)  n=5  coarser better
+      R1_Q1    diff=+0.0018  t=+3.83 df=4 p=0.0185  CI95=[+0.0005,+0.0032]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better
+      crossover at R29_Q1; bracket [R29_Q1, R3_VIS]; point estimate reaches zero at R29_Q1
+      the 43-class model's own rung is R42_Q1 — crossover there: NO (inside the bracket: no)
+    162-class over 17-class, linear probe
+      L188     diff=+0.1003  t=+34.51 df=4 p=4.21e-06  CI95=[+0.0923,+0.1084]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      L162     diff=+0.1133  t=+35.61 df=4 p=3.71e-06  CI95=[+0.1045,+0.1221]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R63_Q1   diff=+0.0697  t=+18.18 df=4 p=5.39e-05  CI95=[+0.0591,+0.0803]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R42_Q1   diff=+0.0484  t=+12.18 df=4 p=0.000261  CI95=[+0.0374,+0.0595]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R29_Q1   diff=+0.0241  t=+6.90 df=4 p=0.00232  CI95=[+0.0144,+0.0337]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R16_Q1   diff=-0.0040  t=-3.19 df=4 p=0.0332  CI95=[-0.0074,-0.0005]  sign-flip p=0.0625 (floor 0.0625)  n=5  coarser better
+      R3_VIS   diff=-0.0053  t=-8.10 df=4 p=0.00126  CI95=[-0.0071,-0.0035]  sign-flip p=0.0625 (floor 0.0625)  n=5  coarser better  Holm-reject
+      R1_Q1    diff=-0.0016  t=-2.77 df=4 p=0.0505  CI95=[-0.0032,+0.0000]  sign-flip p=0.125 (floor 0.0625)  n=5  not distinguishable
+      crossover at R16_Q1; bracket [R16_Q1, R16_Q1]; point estimate reaches zero at R16_Q1
+      the 17-class model's own rung is R16_Q1 — crossover there: YES (inside the bracket: yes)
+    162-class over 17-class, mlp probe (beside the linear probe; D6)
+      L188     diff=+0.1161  t=+36.74 df=4 p=3.28e-06  CI95=[+0.1073,+0.1249]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      L162     diff=+0.1321  t=+30.91 df=4 p=6.53e-06  CI95=[+0.1203,+0.1440]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R63_Q1   diff=+0.0812  t=+24.98 df=4 p=1.52e-05  CI95=[+0.0722,+0.0903]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R42_Q1   diff=+0.0597  t=+25.60 df=4 p=1.38e-05  CI95=[+0.0532,+0.0662]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R29_Q1   diff=+0.0308  t=+6.78 df=4 p=0.00246  CI95=[+0.0182,+0.0435]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R16_Q1   diff=-0.0038  t=-1.58 df=4 p=0.189  CI95=[-0.0105,+0.0029]  sign-flip p=0.188 (floor 0.0625)  n=5  not distinguishable
+      R3_VIS   diff=-0.0037  t=-2.83 df=4 p=0.0473  CI95=[-0.0073,-0.0001]  sign-flip p=0.0625 (floor 0.0625)  n=5  coarser better
+      R1_Q1    diff=+0.0029  t=+3.65 df=4 p=0.0217  CI95=[+0.0007,+0.0050]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better
+      crossover at R16_Q1; bracket [R16_Q1, R3_VIS]; point estimate reaches zero at R16_Q1
+      the 17-class model's own rung is R16_Q1 — crossover there: YES (inside the bracket: yes)
+    43-class over 17-class, linear probe
+      L188     diff=+0.0471  t=+8.92 df=4 p=0.000873  CI95=[+0.0324,+0.0618]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      L162     diff=+0.0526  t=+8.01 df=4 p=0.00132  CI95=[+0.0343,+0.0708]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R63_Q1   diff=+0.0629  t=+15.24 df=4 p=0.000108  CI95=[+0.0515,+0.0744]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R42_Q1   diff=+0.0495  t=+13.99 df=4 p=0.000151  CI95=[+0.0397,+0.0593]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R29_Q1   diff=+0.0250  t=+7.18 df=4 p=0.002  CI95=[+0.0153,+0.0347]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R16_Q1   diff=-0.0023  t=-2.24 df=4 p=0.0885  CI95=[-0.0051,+0.0005]  sign-flip p=0.125 (floor 0.0625)  n=5  not distinguishable
+      R3_VIS   diff=-0.0029  t=-5.38 df=4 p=0.00577  CI95=[-0.0044,-0.0014]  sign-flip p=0.0625 (floor 0.0625)  n=5  coarser better  Holm-reject
+      R1_Q1    diff=-0.0005  t=-0.60 df=4 p=0.581  CI95=[-0.0027,+0.0017]  sign-flip p=0.688 (floor 0.0625)  n=5  not distinguishable
+      crossover at R16_Q1; bracket [R16_Q1, R3_VIS]; point estimate reaches zero at R16_Q1
+      the 17-class model's own rung is R16_Q1 — crossover there: YES (inside the bracket: yes)
+    43-class over 17-class, mlp probe (beside the linear probe; D6)
+      L188     diff=+0.0506  t=+8.75 df=4 p=0.000939  CI95=[+0.0345,+0.0666]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      L162     diff=+0.0567  t=+8.81 df=4 p=0.000917  CI95=[+0.0388,+0.0745]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R63_Q1   diff=+0.0698  t=+17.31 df=4 p=6.53e-05  CI95=[+0.0586,+0.0810]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R42_Q1   diff=+0.0509  t=+11.64 df=4 p=0.000311  CI95=[+0.0388,+0.0631]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R29_Q1   diff=+0.0310  t=+8.36 df=4 p=0.00112  CI95=[+0.0207,+0.0412]  sign-flip p=0.0625 (floor 0.0625)  n=5  finer better  Holm-reject
+      R16_Q1   diff=+0.0000  t=+0.00 df=4 p=0.999  CI95=[-0.0185,+0.0185]  sign-flip p=1 (floor 0.0625)  n=5  not distinguishable
+      R3_VIS   diff=-0.0009  t=-0.85 df=4 p=0.442  CI95=[-0.0039,+0.0021]  sign-flip p=0.375 (floor 0.0625)  n=5  not distinguishable
+      R1_Q1    diff=+0.0010  t=+1.12 df=4 p=0.324  CI95=[-0.0015,+0.0036]  sign-flip p=0.375 (floor 0.0625)  n=5  not distinguishable
+      crossover at R16_Q1; bracket [R16_Q1, None]; point estimate reaches zero at R3_VIS
+      the 17-class model's own rung is R16_Q1 — crossover there: YES (inside the bracket: yes)
+    wins at and below each model's own vocabulary:
+      188-class, linear: own rung L188, 8 rungs at or below it, 24 of 24 cells estimable — beaten in 6 (behind on the point estimate in 13): R16_Q1 by the 17-class model (diff=-0.0039, p=0.0109); R3_VIS by the 162-class model (diff=-0.0019, p=0.0247); R3_VIS by the 43-class model (diff=-0.0043, p=0.00938); R3_VIS by the 17-class model (diff=-0.0072, p=0.00016); R1_Q1 by the 43-class model (diff=-0.0028, p=0.0175); R1_Q1 by the 17-class model (diff=-0.0033, p=0.0111)
+      188-class, mlp: own rung L188, 8 rungs at or below it, 24 of 24 cells estimable — beaten in 1 (behind on the point estimate in 9): R3_VIS by the 43-class model (diff=-0.0014, p=0.00212)
+      162-class, linear: own rung L162, 7 rungs at or below it, 21 of 21 cells estimable — beaten in 2 (behind on the point estimate in 10): R16_Q1 by the 17-class model (diff=-0.0040, p=0.0332); R3_VIS by the 17-class model (diff=-0.0053, p=0.00126)
+      162-class, mlp: own rung L162, 7 rungs at or below it, 21 of 21 cells estimable — beaten in 2 (behind on the point estimate in 8): R3_VIS by the 43-class model (diff=-0.0028, p=0.0144); R3_VIS by the 17-class model (diff=-0.0037, p=0.0473)
+      43-class, linear: own rung R42_Q1, 5 rungs at or below it, 15 of 15 cells estimable — beaten in 1 (behind on the point estimate in 3): R3_VIS by the 17-class model (diff=-0.0029, p=0.00577)
+      43-class, mlp: own rung R42_Q1, 5 rungs at or below it, 15 of 15 cells estimable — beaten in 2 (behind on the point estimate in 5): R42_Q1 by the 162-class model (diff=-0.0088, p=0.0147); R1_Q1 by the 162-class model (diff=-0.0018, p=0.0185)
+      17-class, linear: own rung R16_Q1, 3 rungs at or below it, 9 of 9 cells estimable — beaten in 0 (behind on the point estimate in 0)
+      17-class, mlp: own rung R16_Q1, 3 rungs at or below it, 9 of 9 cells estimable — beaten in 1 (behind on the point estimate in 4): R1_Q1 by the 162-class model (diff=-0.0029, p=0.0217)
+
+wrote experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json
