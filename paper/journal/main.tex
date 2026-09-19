@@ -1,0 +1,146 @@
+% Journal-neutral skeleton. The document class is chosen at submission, after
+% the venue decision (plan, 26 October): revtex4-2 for Physical Review D,
+% iopart for Machine Learning: Science and Technology, SciPost for SciPost
+% Physics Core. Nothing below depends on which.
+%
+% RULE THIS FILE IS HELD TO, enforced by tests/test_manuscript_numbers.py:
+% every number in the prose is a macro from results_generated.tex, which
+% experiments/FIGS/make_tables.py writes with a source file, a path inside it
+% and a sha256 for each one. A literal typed here fails the suite. If a number
+% is genuinely not a result -- a column count, a confidence level -- it goes in
+% that test's ALLOWED list with the reason it cannot change.
+%
+% STATUS: structure and wiring only. The argument is not written. Each section
+% says what belongs in it and which results it waits on. Sections whose inputs
+% are still running carry no prose at all rather than prose to be corrected.
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+% Every result number in this document comes from here.
+\input{results_generated}
+
+\title{Which physical distinctions must a pretraining label vocabulary preserve
+       for a jet representation to remain transferable?}
+\author{Author list pending}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+% Written last, from the generated macros. Not drafted while results are
+% still landing: an abstract written early is the hardest thing in a paper to
+% correct honestly, because its numbers get quoted in talks before the draft
+% is finished.
+\end{abstract}
+
+\section{Introduction}
+% Holds: the question; why label granularity is the variable rather than
+% architecture or data; what is new here against Hong et al. (TMLR 2024), which
+% already varied pretraining label partitions with a fixed target and ran a
+% random-class-ID control, so this is adjudication with a cleaner instrument
+% and a physics payoff, and must be cited as such. Sophon is cited as a
+% preprint: it was never journal-published.
+
+\section{Related work}
+% Holds: supervised jet pretraining; self-supervised jet pretraining and why
+% one label-free reference is enough here; the negative literature on auxiliary
+% mass targets (ATLAS's abandoned joint mass output, PECM's multi-label pretext,
+% the JEPA-for-jets auxiliary outputs); PECM as the only published
+% particle-physics contrast of pretraining label spaces, and it was negative.
+
+\section{Setup}
+% Holds: the contraction tree and why it is nested; the one-variable-at-a-time
+% design and the three invariants that enforce it (identical training stream,
+% architecture fixed, four independent RNG streams); the five pretraining seeds,
+% which no comparable paper repeats.
+Every model in this study is evaluated on the same \ProbeNJets{} test jets, in
+the same order; the row alignment is \ProbeRowAlign{}. Each configuration is
+pretrained at \ProbeNSeeds{} independent seeds, and the pretraining seed is the
+unit of inference throughout.
+
+\section{Results}
+
+\subsection{What the frozen representations retain}
+% The confirmatory result. Prose pending; the numbers below are final.
+\input{tables/probes_linear}
+\input{tables/probes_mlp}
+\input{tables/tests}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{../../figures/probe_ladder_granularity.pdf}
+  \caption{Probe performance against pretraining label-set size, with the level
+  at which each distinction is merged in the label tree marked. The merge level
+  is computed from the label map, not annotated by hand.}
+  \label{fig:granularity}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{../../figures/probe_ladder_paired_linear.pdf}
+  \caption{Paired per-seed differences against the reference vocabulary, which
+  is the pairing the tests use.}
+  \label{fig:paired}
+\end{figure}
+
+Background rejection is quoted at \ProbeEpsS{} signal efficiency throughout.
+% WHY THIS OPERATING POINT, and it belongs in the text: at 50% signal
+% efficiency no background jet survives at the three finer vocabularies, so the
+% number there is the size of the test sample rather than a property of the
+% models. The headline point was fixed blind in docs/PRESPEC_2026-09.md before
+% any of these numbers existed. Censored cells are marked in the tables and
+% never printed as bare numbers.
+
+\subsection{Label recovery across the tree}
+% Waits on nothing -- five seeds are in. Holds: both clauses of the prediction
+% failed, and the shape that did hold (the finer model's advantage decaying to
+% zero exactly at the coarser model's own level, for both pairs involving the
+% coarsest model, on both probes). Also the unpredicted result that the two
+% finest vocabularies are indistinguishable at every level of the tree.
+
+\subsection{Controls}
+% Holds: the random-label control at three draws, which is the answer to the
+% tautology objection; the self-supervised control and its pre-registered
+% validity bar. WAITS ON: two random draws still pretraining, the
+% self-supervised run at epoch 47 of 80.
+
+\subsection{Transfer to downstream tasks}
+% WAITS ON: fine-tuning waves 2 and 3, and the two community benchmarks.
+
+\subsection{Label granularity and an auxiliary mass output}
+% WAITS ON: feature extraction for the ten mass-output models.
+
+\subsection{Anomaly detection}
+% WAITS ON: the remaining anomaly jobs and the merge over signal models.
+
+\subsection{Real data}
+% WAITS ON A DECISION, not on a job: DECISIONS_PENDING.md item 38. The
+% feasibility test returned a formal NO-GO whose three-prong channel passed
+% every criterion. Nothing here is drafted until that is settled, because the
+% shape of this subsection is exactly what is being decided.
+
+\section{Discussion}
+% Holds: what a pretraining vocabulary has to keep, stated as a rule someone
+% building the next foundation model could apply; the limits of the claim.
+
+\section{Limitations}
+% Holds, and none of these are optional: one simulation family; five seeds set
+% the smallest effect that could have been detected, which is stated as a
+% number rather than implied; absolute-momentum information in the
+% representation is not characterised and no claim here depends on it; the
+% rejection metric saturates on this test sample at the conventional operating
+% point, which is why the headline point is the one it is.
+
+\section*{Data and code availability}
+% Checkpoints, label maps, evaluation code. Location is the PI's decision.
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}
