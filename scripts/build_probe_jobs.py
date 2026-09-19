@@ -44,6 +44,27 @@ LADDER = [("mtx-l188", "L188"), ("mtx-l162", "L162"),
 TASKS = ["bvc_resonant", "retained_topology", "bvc_qcd", "ee_vs_mm",
          "bvc_4prong", "visible_content"]
 
+# THE SEMANTICS-MATCHED RANDOM-LABEL CONTROL (prediction C4). This is the answer
+# to the objection that the whole study is a tautology -- that we merged two
+# labels and then found the distinction they encoded got worse. A random
+# partition matched in class-size structure merges just as many classes, but
+# merges the WRONG ones, so if coarseness alone drove the effect the control
+# would reproduce it and it does not have to.
+#
+# One job per draw, each holding the draw AND the 17-class model at the SAME
+# seed index, because C4 is a within-seed contrast (random draw minus 17-class)
+# and probe.check_alignment only gates arms that are inside one job. Three
+# draws, not one: different random partitions merge different class pairs, so
+# draw-to-draw variation is a different quantity from training-seed variation
+# and cannot be estimated from a single draw.
+#
+# Only the two tasks C4 is defined on. The other four are not part of the
+# prediction and would be four more chances to find something.
+CONTROL_TASKS = ["bvc_4prong", "visible_content"]
+CONTROL_DRAWS = [("mtx-rand-d1-s1b", "mtx-r16q1-s1", 1),
+                 ("mtx-rand-d2-s2", "mtx-r16q1-s2", 2),
+                 ("mtx-rand-d3-s3", "mtx-r16q1-s3", 3)]
+
 
 def run_name(stem: str, seed: int) -> str:
     return f"{stem}-s1b" if (stem == "mtx-l162" and seed == 1) else f"{stem}-s{seed}"
@@ -146,6 +167,19 @@ def build() -> dict[str, str]:
         out[f"job-{name}.yaml"] = (
             HEAD.format(name=name, pin=PIN_V2, specs=specs)
             + PROBE.format(seed=seed, tasks=tasks, ver="v2", eps=eps) + TAIL)
+
+    # The random-label control, one job per draw.
+    ctasks = " ".join(CONTROL_TASKS)
+    ceps = " \\\n            --eps-s " + " ".join(str(e) for e in EPS_S_V2)
+    for rand, ref, draw in CONTROL_DRAWS:
+        name = f"probe-randcontrol-d{draw}-raunav"
+        # The rung label is only consumed by label_recovery, which this job does
+        # not run; the random arm HAS no rung, which is the point of it.
+        cspecs = f"{rand}:RAND {ref}:R16_Q1"
+        out[f"job-{name}.yaml"] = (
+            HEAD.format(name=name, pin=PIN_V2, specs=cspecs)
+            + PROBE.format(seed=f"d{draw}", tasks=ctasks, ver="randcontrol", eps=ceps)
+            + TAIL)
     return out
 
 

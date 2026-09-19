@@ -699,6 +699,24 @@ def main() -> int:
                    {"experiments/EVAL/extract_features.py": '"--num-reg"'}
                    if uses_num_reg else None)
 
+    # THE RANDOM-LABEL CONTROL MUST EXTRACT ON THE SAME DEVICE FOR EVERY DRAW.
+    # Draw 1 ran on CPU (job-extract-mtx-rand-d1-s1b-raunav.yaml requests no
+    # GPU), and prediction C4 compares the three draws with each other and with
+    # the 17-class models, which also extracted on CPU. Running a later draw on
+    # a GPU would put a device difference -- different kernels, and mixed
+    # precision where the CPU path has none -- inside the one control that
+    # answers the objection that this study is a tautology. Draws 2 and 3 are
+    # still pretraining as of 2026-09-19; this exists so that whoever emits
+    # their specs later cannot get it wrong by reaching for --gpu out of habit.
+    if args.gpu:
+        rand = sorted(r for r, _, _, _ in runs if r.startswith("mtx-rand-"))
+        if rand:
+            sys.exit("FATAL: --gpu with the random-label control draws "
+                     f"{rand}. Draw 1 extracted on CPU and C4 compares the "
+                     "draws with each other; a device difference between draws "
+                     "would be a second uncontrolled variable in the control "
+                     "itself. Emit them without --gpu.")
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for run_id, arm, k, ckpt in runs:
         epoch = None if run_id in BEST_EPOCH_RUNS else args.ckpt_epoch

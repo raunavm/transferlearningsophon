@@ -11,10 +11,10 @@ bp = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bp)
 
 
-def test_fifteen_jobs_all_named_raunav_and_parse():
+def test_eighteen_jobs_all_named_raunav_and_parse():
     jobs = bp.build()
-    # 5 probe v1 + 5 label-recovery v1 + 5 probe v2
-    assert len(jobs) == 15
+    # 5 probe v1 + 5 label-recovery v1 + 5 probe v2 + 3 random-label control
+    assert len(jobs) == 18
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"]
@@ -24,6 +24,8 @@ def test_fifteen_jobs_all_named_raunav_and_parse():
 
 def test_each_job_holds_one_seed_index_at_all_four_granularities():
     for fname, text in bp.build().items():
+        if "randcontrol" in fname:
+            continue          # two arms by design; covered by its own test below
         seed = int(fname.split("-s")[-1].split("-")[0])
         line = next(l for l in text.splitlines() if l.strip().startswith("for spec in"))
         runs = line.split("for spec in")[1].split(";")[0].split()
@@ -39,7 +41,7 @@ def test_each_job_holds_one_seed_index_at_all_four_granularities():
 def test_outputs_are_disjoint_per_seed_and_mlp_cannot_be_skipped():
     outs = [l.strip() for t in bp.build().values() for l in t.splitlines()
             if l.strip().startswith("OUT=")]
-    assert len(outs) == len(set(outs)) == 15
+    assert len(outs) == len(set(outs)) == 18
     for text in bp.build().values():
         assert "--no-mlp" not in text and "--skip-mlp" not in text
 
@@ -116,3 +118,39 @@ def test_committed_specs_match_the_builder():
         p = bp.K8S / fname
         assert p.exists(), f"run scripts/build_probe_jobs.py: {fname} missing"
         assert p.read_text() == text, f"{fname} drifted from the builder"
+
+
+def test_the_random_control_pairs_each_draw_with_its_own_seed_index():
+    """C4 is a WITHIN-SEED contrast: random draw minus the 17-class model at the
+    same seed index. probe.check_alignment only gates arms inside one job, so a
+    draw and its reference have to travel together or the contrast is across
+    different test jets and nothing would say so."""
+    jobs = bp.build()
+    assert len(bp.CONTROL_DRAWS) == 3, (
+        "three draws, not one: different random partitions merge different class "
+        "pairs, so draw-to-draw variation cannot be estimated from one draw")
+    for rand, ref, draw in bp.CONTROL_DRAWS:
+        t = jobs[f"job-probe-randcontrol-d{draw}-raunav.yaml"]
+        line = next(l for l in t.splitlines() if l.strip().startswith("for spec in"))
+        assert f"{rand}:RAND" in line and f"{ref}:R16_Q1" in line
+        # the draw's seed index and its reference's must agree
+        assert rand.split("-s")[-1].rstrip("b") == ref.split("-s")[-1], (rand, ref)
+        assert f"OUT=/data/results/eval/probe_ladder_randcontrol/sd{draw}\n" in t
+
+
+def test_the_random_control_runs_only_the_two_tasks_c4_is_defined_on():
+    """The other four probe tasks are not part of C4. Running them here would be
+    four more chances to find something in a confirmatory control."""
+    assert bp.CONTROL_TASKS == ["bvc_4prong", "visible_content"]
+    for _, _, draw in bp.CONTROL_DRAWS:
+        t = bp.build()[f"job-probe-randcontrol-d{draw}-raunav.yaml"]
+        assert "--tasks bvc_4prong visible_content" in t
+        for other in ("bvc_resonant", "retained_topology", "bvc_qcd", "ee_vs_mm"):
+            assert other not in t, f"draw {draw} runs {other}, which C4 does not use"
+
+
+def test_the_random_control_cannot_overwrite_the_ladder_results():
+    for _, _, draw in bp.CONTROL_DRAWS:
+        t = bp.build()[f"job-probe-randcontrol-d{draw}-raunav.yaml"]
+        assert "probe_ladder_v1" not in t and "probe_ladder_v2" not in t
+        assert f'--branch "{bp.PIN_V2}"' in t, "must run the probe code the ladder ran"

@@ -312,3 +312,31 @@ def test_mass_extraction_and_observer_alignment_end_to_end(ctx, mass17, tmp_path
     with pytest.raises(SystemExit, match="already holds"):
         _main(ob, ["--data-test", *files, "--align-with", str(cache),
                    "--out", str(out), *small], monkeypatch)
+
+
+def test_the_random_control_draws_refuse_to_be_built_for_a_gpu(b, monkeypatch, capsys):
+    """Draw 1 extracted on CPU, and C4 compares the three draws with each other
+    and with the 17-class models, which also extracted on CPU. A later draw on a
+    GPU would differ in kernels and in mixed precision, putting a second
+    uncontrolled variable inside the one control that answers the tautology
+    objection. Draws 2 and 3 were still pretraining when this was written, so
+    the refusal has to live in the builder, not in someone's memory."""
+    import pytest
+    monkeypatch.setattr(sys, "argv",
+                        ["build_extract_jobs.py", "--gpu", "--only", "mtx-rand-d2-s2"])
+    with pytest.raises(SystemExit) as e:
+        b.main()
+    msg = str(e.value)
+    assert "mtx-rand-d2-s2" in msg and "without --gpu" in msg
+
+
+def test_a_non_control_run_may_still_be_built_for_a_gpu(b):
+    """The refusal must be specific to the control. Everything else keeps the
+    option, or the guard would just be a broken flag.
+
+    Checks the emitted TEXT rather than calling main(), because main() writes
+    into experiments/EVAL/k8s/ and a test that litters the repository with a
+    spec nobody asked for is how an unreviewed job spec ends up being launched."""
+    fname, text = b.build("mtx-l162mass-s1", "L162_MASS", 162,
+                          "/data/results/mtx/mtx-l162mass-s1", True, 2_000_000, 79)
+    assert "nvidia.com/gpu" in text and "-gpu-raunav.yaml" in fname
