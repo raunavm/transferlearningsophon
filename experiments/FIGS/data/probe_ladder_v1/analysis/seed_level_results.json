@@ -22,8 +22,8 @@
         "sha256": "7b344e639c7960bd8d8386aef8be4981955061efda0158c6b117353cfb262fa2"
       }
     ],
-    "script_sha256": "16d0bc194007be6de91b2163949b4a2fead324ba45dc023129419eb18bd4237c",
-    "prespec_sha256": "ce952b270feef20ad7714efa007758f5a74869bac5947b71d6f8bd6706f7f73d",
+    "script_sha256": "397a6e08f915466dbda97752cc21996f637120fcfc4ba827ef04a8c447a34eb4",
+    "prespec_sha256": "b2e048b6aff46952f2f9c8a9642f2281d6d5510873b9dac16977029b24062c91",
     "stats_modules_sha256": {
       "src/stats/trend.py": "8fd25667065a7e2757f3eb037f88e212427c2802bd04b1b438466e7b3d78d55c",
       "src/stats/inference.py": "1346e8e0b5dc7d85de6e0d44dbdcee98db47d396a3c00bdfedd5525e4b0d32d2",
@@ -4746,6 +4746,110 @@
           -6.049268625902682,
           -5.983407208833782,
           -4.684877597067258
+        ]
+      },
+      "prediction": "performance falls with coarser labels; the step is 43 -> 17; 188 ~ 162 ~ 43",
+      "clauses": [
+        {
+          "n": 1,
+          "text": "performance falls with coarser labels",
+          "test": "max-T trend test (exact, 5 seed blocks)",
+          "verdict": "confirmed",
+          "p": 5.274643132716049e-06,
+          "detail": "Holm at the full confirmatory family of 5: must beat 0.01 as the smallest; rejected whatever the pending tests give"
+        },
+        {
+          "n": 2,
+          "text": "the step is 43 -> 17",
+          "test": "arg-max contrast of the trend test",
+          "verdict": "confirmed",
+          "p": null,
+          "detail": "arg-max [188, 162, 43] | [17], predicted [188, 162, 43] | [17]; localisation only, no separate p"
+        },
+        {
+          "n": 3,
+          "text": "188 ~ 162 ~ 43",
+          "test": "equivalence (TOST) at \u00b1ln(1.1) on all 3 pairs inside the set, intersection-union",
+          "verdict": "inconclusive",
+          "p": 0.3137281343522617,
+          "detail": "inconclusive at \u00b110%; equivalent within \u00b10.1273 (a factor 1.136 in 1\u2212AUC)"
+        }
+      ],
+      "composite_verdict": "confirmed in clauses 1-2, inconclusive in clause 3",
+      "overall": "partially confirmed",
+      "n_clauses": 3,
+      "n_clauses_confirmed": 2,
+      "clause3_equivalence": {
+        "task": "bvc_resonant",
+        "probe": "linear",
+        "levels": [
+          188,
+          162,
+          43
+        ],
+        "target_bound": 0.09531017980432493,
+        "log_base": "e",
+        "n_pairs_estimable": 3,
+        "n_pairs_total": 3,
+        "run": true,
+        "all_equivalent": false,
+        "p": 0.3137281343522617,
+        "n_equivalent": 2,
+        "not_equivalent": [
+          [
+            188,
+            43
+          ]
+        ],
+        "widest_pair": [
+          188,
+          43
+        ],
+        "smallest_bound_passed_by_all": 0.12726300961057707,
+        "verdict": "inconclusive at \u00b110%; equivalent within \u00b10.1273 (a factor 1.136 in 1\u2212AUC)",
+        "pairs": [
+          {
+            "fine": 188,
+            "coarse": 162,
+            "n_pairs": 5,
+            "is_bound": false,
+            "mean_diff": 0.01901389161191567,
+            "p": 0.010474393345601005,
+            "ci90": [
+              -0.025019852589102602,
+              0.0630476358129339
+            ],
+            "equivalent_at_target": true,
+            "smallest_bound_passed": 0.0630476358129339
+          },
+          {
+            "fine": 188,
+            "coarse": 43,
+            "n_pairs": 5,
+            "is_bound": false,
+            "mean_diff": 0.08487530868081591,
+            "p": 0.3137281343522617,
+            "ci90": [
+              0.04248760775105472,
+              0.12726300961057707
+            ],
+            "equivalent_at_target": false,
+            "smallest_bound_passed": 0.12726300961057707
+          },
+          {
+            "fine": 162,
+            "coarse": 43,
+            "n_pairs": 5,
+            "is_bound": false,
+            "mean_diff": 0.06586141706890025,
+            "p": 0.0052649525543762505,
+            "ci90": [
+              0.052020672742696755,
+              0.07970216139510373
+            ],
+            "equivalent_at_target": true,
+            "smallest_bound_passed": 0.07970216139510373
+          }
         ]
       }
     },

@@ -9,6 +9,10 @@
 test & prediction & test used & statistic & $p$ & Holm \\
 \midrule
 C1: $b$ vs $c$, two-prong resonance & performance falls with coarser labels & max-$T$ trend, exact, 5 seed blocks & $31.029$ & $5.27\times10^{-6}$ & rejected \\
+\quad clause 1 & performance falls with coarser labels & max-T trend test (exact, 5 seed blocks) & Holm at the full confirmatory family of 5: must beat 0.01 as the smallest; rejected whatever the pending tests give & $5.27\times10^{-6}$ & confirmed \\
+\quad clause 2 & the step is 43 $\to$ 17 & arg-max contrast of the trend test & arg-max [188, 162, 43] | [17], predicted [188, 162, 43] | [17]; localisation only, no separate p & --- & confirmed \\
+\quad clause 3 & 188 \textasciitilde{} 162 \textasciitilde{} 43 & equivalence (TOST) at $\pm$ln(1.1) on all 3 pairs inside the set, intersection-union & inconclusive at $\pm$10\%; equivalent within $\pm$0.1273 (a factor 1.136 in 1-AUC) & $0.314$ & inconclusive \\
+\multicolumn{6}{@{}l@{}}{\itshape C1 overall: confirmed in clauses 1-2, inconclusive in clause 3} \\
 C2 & not yet measured & --- & --- & --- & pending \\
 C3 & not yet measured & --- & --- & --- & pending \\
 C4 & not yet measured & --- & --- & --- & pending \\

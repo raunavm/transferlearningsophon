@@ -11,10 +11,21 @@ INPUT     one probe_results.json per pretraining-seed index, written by
           experiments/EVAL/probe.py. Arms `l188-sN`, `l162-sN`, `r42q1-sN`,
           `r16q1-sN` are the 188-, 162-, 43- and 17-class models; `l162-s1b` is
           seed index 1 of the 162-class model.
+          With --label-recovery, additionally one label_recovery.json per seed
+          index, written by experiments/EVAL/label_recovery.py (prediction S9).
 ENDPOINT  `log1m_auc` exactly as probe.py stores it: the NATURAL log of 1 - AUC,
           floored at the sample's resolution (`log1m_auc_censored` marks a
-          bound). LOWER is better.
+          bound). LOWER is better. The S9 block has its OWN endpoint, balanced
+          accuracy, where HIGHER is better; it says so on every field.
 UNIT      the pretraining seed. Contrasts are paired by seed index (2.1, 2.2).
+
+A MULTI-CLAUSE PREDICTION IS REPORTED CLAUSE BY CLAUSE. C1 is three clauses and
+S9 is two. A prediction that contains a predicted-EQUAL clause beside a
+directional one cannot be answered by the directional test alone: 2.5 sends the
+equal clause to an equivalence test, and a trend test that fires says nothing
+about it. Each clause carries its own verdict, and the composite verdict names
+which clauses hold -- "confirmed in clauses 1-2, inconclusive in clause 3" --
+rather than collapsing to a bare "confirmed" or "rejected".
 
 ORDER OF OPERATIONS is part of the pre-specification (2.6): the minimum
 detectable effect and the per-level seed standard deviations are printed BEFORE
@@ -36,6 +47,10 @@ Usage:
     python3 experiments/STATS/seed_level.py /data/results/eval/probe_ladder_v1 \
         --out /data/results/eval/probe_ladder_v1/stats \
         [--drop-pairs 2 --drop-reason "162-class seed 2 trained on a different GPU model"]
+
+    # S9, on its own or beside the ladder; writes s9_label_recovery.json
+    python3 experiments/STATS/seed_level.py \
+        --label-recovery /data/results/eval/label_recovery_ladder_v1 --out <dir>
 """
 from __future__ import annotations
 
@@ -75,7 +90,31 @@ PAIRS = [(a, b) for i, a in enumerate(LEVELS) for b in LEVELS[i + 1:]]   # (fine
 
 SEEN_TASKS = ("bvc_resonant", "bvc_qcd", "retained_topology", "ee_vs_mm")   # PRESPEC 1
 CONTROL_TASKS = ("bvc_4prong", "visible_content")                          # C4's two class pairs
-C1 = {"task": "bvc_resonant", "predicted_step": ([188, 162, 43], [17])}
+# PRESPEC 3 writes C1 as THREE clauses. The trend test answers the first, its
+# arg-max contrast locates the second, and the third -- "188 ~ 162 ~ 43" -- is a
+# PREDICTED NULL, which 2.5 sends to an equivalence test. Reporting the trend
+# test alone as "C1" overstates the prediction: a ladder can fall with its step
+# in the predicted place and still have the three fine levels differ.
+C1 = {"task": "bvc_resonant", "predicted_step": ([188, 162, 43], [17]),
+      "predicted_equal": (188, 162, 43),
+      "prediction": "performance falls with coarser labels; the step is 43 -> 17; "
+                    "188 ~ 162 ~ 43",
+      "clauses": ("performance falls with coarser labels",
+                  "the step is 43 -> 17",
+                  "188 ~ 162 ~ 43")}
+# Which other PRESPEC 3 predictions carry a predicted-EQUAL clause, i.e. one
+# that 2.5 sends to an equivalence test. Transcribed from the document's wording,
+# never inferred from it:
+#   C2 "188 ~ 162 > 43 ~ 17", C3 "equivalent across the four granularities" and
+#     S5 "same ordering as C2" do. All three are fine-tuning on the community
+#     benchmarks, which this script does not read; they stay pending, and the
+#     equivalence machinery below is what they will use.
+#   S2 "equivalent across granularities" does, and equivalence() runs it.
+#   S1 ("188 best; then 162 >= 43 > 17"), S3 ("steps at 162->43 and 43->17") and
+#     S4 ("gap shrinks with size but does not vanish") do NOT. ">=" admits a
+#     difference, and naming where the steps are is not a claim that the other
+#     rungs are equal. Neither gets an equivalence test, because the document
+#     does not predict one -- it would be a test this analysis invented.
 S1 = {"task": "bvc_qcd", "predicted_step": None}   # 188 best, then 162 >= 43 > 17: no single step
 S2_TASKS = ("retained_topology", "ee_vs_mm")
 CONFIRMATORY = ("C1", "C2", "C3", "C4", "C5")
@@ -299,6 +338,26 @@ def trend_test(cells, task, kind, seeds, predicted_step=None) -> dict:
                          "pooled": iso["fit"]["pooled"], "means": iso["fit"]["means"]}}
 
 
+def tost_pair(cells, task, kind, fine, coarse, seeds, bound) -> dict | None:
+    """One level pair's two one-sided tests, or None when it is not estimable."""
+    pd = paired_diffs(cells, task, kind, fine, coarse, seeds)
+    if len(pd["d"]) < 2 or np.ptp(pd["d"]) == 0:    # zero variance: see pair_contrast
+        return None
+    r = tost(pd["d"], bound=bound, alpha=ALPHA)
+    return {"fine": fine, "coarse": coarse, "n_pairs": len(pd["d"]), "is_bound": pd["is_bound"],
+            "mean_diff": float(np.mean(pd["d"])), "p": r["p"], "ci90": list(r["ci_1m2a"]),
+            "equivalent_at_target": r["equivalent"],
+            "smallest_bound_passed": float(max(abs(x) for x in r["ci_1m2a"]))}
+
+
+def tost_verdict(equivalent: bool, bound: float, x: float) -> str:
+    """PRESPEC 2.5's wording. `x` is the smallest bound passed. Never "no effect"."""
+    return (f"equivalent within ±{bound:.4f} (±10% in 1−AUC); smallest bound passed ±{x:.4f}"
+            if equivalent else
+            f"inconclusive at ±10%; equivalent within ±{x:.4f} "
+            f"(a factor {LOG_BASE ** x:.3f} in 1−AUC)")
+
+
 def equivalence(cells, task, kind, seeds) -> dict:
     """S2: TOST on the largest pairwise paired difference, bound +-ln(1.1).
 
@@ -309,31 +368,57 @@ def equivalence(cells, task, kind, seeds) -> dict:
     pair with the widest interval. The wording is PRESPEC 2.5's, never "no effect".
     """
     bound = tost_bound()
-    rows = []
-    for a, b in PAIRS:
-        pd = paired_diffs(cells, task, kind, a, b, seeds)
-        if len(pd["d"]) < 2 or np.ptp(pd["d"]) == 0:    # zero variance: see pair_contrast
-            continue
-        r = tost(pd["d"], bound=bound, alpha=ALPHA)
-        rows.append({"fine": a, "coarse": b, "n_pairs": len(pd["d"]), "is_bound": pd["is_bound"],
-                     "mean_diff": float(np.mean(pd["d"])), "p": r["p"], "ci90": list(r["ci_1m2a"]),
-                     "equivalent_at_target": r["equivalent"],
-                     "smallest_bound_passed": float(max(abs(x) for x in r["ci_1m2a"]))})
+    rows = [r for r in (tost_pair(cells, task, kind, a, b, seeds, bound) for a, b in PAIRS)
+            if r is not None]
     out = {"task": task, "probe": kind, "target_bound": bound, "log_base": "e",
            "n_pairs_estimable": len(rows), "n_pairs_total": len(PAIRS)}
     if not rows:
         return {**out, "run": False, "reason": "no level pair with 2 complete seed pairs and "
                                                "non-identical differences — not run"}
     top = max(rows, key=lambda r: abs(r["mean_diff"]))
-    x = top["smallest_bound_passed"]
-    verdict = (f"equivalent within ±{bound:.4f} (±10% in 1−AUC); smallest bound passed ±{x:.4f}"
-               if top["equivalent_at_target"] else
-               f"inconclusive at ±10%; equivalent within ±{x:.4f} "
-               f"(a factor {LOG_BASE ** x:.3f} in 1−AUC)")
-    return {**out, "run": True, "largest_pair": top, "p": top["p"], "verdict": verdict,
+    return {**out, "run": True, "largest_pair": top, "p": top["p"],
+            "verdict": tost_verdict(top["equivalent_at_target"], bound,
+                                    top["smallest_bound_passed"]),
             "all_pairs_companion": {"max_p": max(r["p"] for r in rows),
                                     "smallest_bound_passed_by_all": max(
                                         r["smallest_bound_passed"] for r in rows)},
+            "pairs": rows}
+
+
+def equivalence_set(cells, task, kind, levels, seeds) -> dict:
+    """A predicted-EQUAL SET of levels: TOST on every pair inside it (PRESPEC 2.5).
+
+    C1's third clause, "188 ~ 162 ~ 43", is a null over a SET, so it holds only
+    if EVERY pair inside that set is equivalent at ±ln(1.1). That is an
+    intersection-union test: the set's p is the MAXIMUM of the pair p-values and
+    takes no multiplicity correction, because the set null is rejected only when
+    every component null is. A pair that does not reach the target reports the
+    smallest bound it does pass -- never "no effect", and never a bare
+    "rejected", which is what a directional test would have produced here.
+    """
+    if list(levels) != [lv for lv in LEVELS if lv in levels]:
+        raise SystemExit(f"FATAL: the predicted-equal set {list(levels)} must be a subset of "
+                         f"{list(LEVELS)} given fine -> coarse; the pair differences are "
+                         f"coarser − finer and would otherwise change sign silently")
+    bound = tost_bound()
+    pairs = [(a, b) for i, a in enumerate(levels) for b in levels[i + 1:]]
+    rows = [r for r in (tost_pair(cells, task, kind, a, b, seeds, bound) for a, b in pairs)
+            if r is not None]
+    out = {"task": task, "probe": kind, "levels": list(levels), "target_bound": bound,
+           "log_base": "e", "n_pairs_estimable": len(rows), "n_pairs_total": len(pairs)}
+    if not rows:
+        return {**out, "run": False, "reason": "no pair inside the set has 2 complete seed pairs "
+                                               "and non-identical differences — not run"}
+    worst = max(rows, key=lambda r: r["smallest_bound_passed"])
+    all_eq = len(rows) == len(pairs) and all(r["equivalent_at_target"] for r in rows)
+    return {**out, "run": True, "all_equivalent": all_eq,
+            "p": max(r["p"] for r in rows),          # intersection-union: the worst pair
+            "n_equivalent": sum(r["equivalent_at_target"] for r in rows),
+            "not_equivalent": [[r["fine"], r["coarse"]] for r in rows
+                               if not r["equivalent_at_target"]],
+            "widest_pair": [worst["fine"], worst["coarse"]],
+            "smallest_bound_passed_by_all": worst["smallest_bound_passed"],
+            "verdict": tost_verdict(all_eq, bound, worst["smallest_bound_passed"]),
             "pairs": rows}
 
 
@@ -402,6 +487,388 @@ def holm_family(entries: list[tuple[str, float | None]], alpha: float = ALPHA) -
             for (name, p), w, b in zip(entries, worst, best)]
 
 
+# ------------------------------------------------- multi-clause predictions
+
+def clause(n: int, text: str, test: str, verdict: str, p=None, detail: str = "") -> dict:
+    """One clause of a prediction, with the test that answers it and its verdict.
+
+    `verdict` is one of: confirmed; not confirmed; inconclusive (2.5's word for
+    an equivalence test that did not reach ±10% -- never "no effect" and never
+    "rejected"); not run.
+    """
+    if verdict not in ("confirmed", "not confirmed", "inconclusive", "not run"):
+        raise SystemExit(f"FATAL: {verdict!r} is not one of the four clause verdicts")
+    return {"n": n, "text": text, "test": test, "verdict": verdict, "p": p, "detail": detail}
+
+
+def composite_verdict(clauses: list[dict]) -> str:
+    """"confirmed in clauses 1-2, inconclusive in clause 3" -- in clause order.
+
+    Consecutive clauses that share a verdict are merged into one span, so the
+    sentence names exactly which clauses hold. This is the string a table prints
+    instead of collapsing a three-clause prediction to one word.
+    """
+    parts, i = [], 0
+    while i < len(clauses):
+        j = i
+        while j + 1 < len(clauses) and clauses[j + 1]["verdict"] == clauses[i]["verdict"]:
+            j += 1
+        nums = [c["n"] for c in clauses[i:j + 1]]
+        span = f"{nums[0]}-{nums[-1]}" if len(nums) > 1 else str(nums[0])
+        parts.append(f"{clauses[i]['verdict']} in {'clauses' if len(nums) > 1 else 'clause'} {span}")
+        i = j + 1
+    return ", ".join(parts)
+
+
+def overall_verdict(clauses: list[dict]) -> str:
+    """confirmed / partially confirmed / not confirmed, over all clauses."""
+    v = [c["verdict"] for c in clauses]
+    if all(x == "confirmed" for x in v):
+        return "confirmed"
+    if not any(x == "confirmed" for x in v):
+        return "not confirmed"
+    return "partially confirmed"
+
+
+def compose(prediction: str, clauses: list[dict], **extra) -> dict:
+    """The block every multi-clause prediction carries beside its tests."""
+    return {"prediction": prediction, "clauses": clauses,
+            "composite_verdict": composite_verdict(clauses),
+            "overall": overall_verdict(clauses),
+            "n_clauses": len(clauses),
+            "n_clauses_confirmed": sum(c["verdict"] == "confirmed" for c in clauses), **extra}
+
+
+def c1_clauses(trend: dict, equal: dict, holm_entry: dict, family_size: int) -> dict:
+    """C1's three clauses (PRESPEC 3) and the composite verdict over them.
+
+    clause 1  the trend test, judged at the FULL confirmatory family threshold
+              (2.7), so the verdict holds whatever the pending members give.
+    clause 2  the arg-max contrast against the predicted step. Localisation
+              only: the addition of 2026-09-18 says the per-contrast adjusted
+              p-values locate the step and are not separate tests, so this
+              clause carries no p of its own.
+    clause 3  the predicted null "188 ~ 162 ~ 43", as an equivalence test over
+              the set (2.5). A trend test cannot answer it in either direction:
+              failing to reject a difference is not equivalence, and the max-T
+              statistic is driven by the step, not by the three fine levels.
+    """
+    if not trend["run"]:
+        c_1 = clause(1, C1["clauses"][0], "max-T trend test", "not run", detail=trend["reason"])
+        c_2 = clause(2, C1["clauses"][1], "arg-max contrast of the trend test", "not run",
+                     detail=trend["reason"])
+    else:
+        rejected = bool(holm_entry.get("reject_whatever_pending"))
+        c_1 = clause(1, C1["clauses"][0],
+                     f"max-T trend test ({trend['method']}, {trend['n_blocks']} seed blocks)",
+                     "confirmed" if rejected else "not confirmed", p=trend["p"],
+                     detail=(f"Holm at the full confirmatory family of {family_size}: must beat "
+                             f"{ALPHA / family_size:.3g} as the smallest; "
+                             + ("rejected whatever the pending tests give" if rejected
+                                else "does not reach that threshold")))
+        step = trend["argmax_step"]
+        c_2 = clause(2, C1["clauses"][1], "arg-max contrast of the trend test",
+                     "confirmed" if trend["argmax_is_predicted_step"] else "not confirmed",
+                     detail=f"arg-max {step[0]} | {step[1]}, predicted "
+                            f"{trend['predicted_step'][0]} | {trend['predicted_step'][1]}; "
+                            f"localisation only, no separate p")
+    if not equal["run"]:
+        c_3 = clause(3, C1["clauses"][2], "equivalence (TOST) over the set", "not run",
+                     detail=equal["reason"])
+    else:
+        c_3 = clause(3, C1["clauses"][2],
+                     f"equivalence (TOST) at ±ln(1.1) on all {equal['n_pairs_total']} pairs "
+                     f"inside the set, intersection-union",
+                     "confirmed" if equal["all_equivalent"] else "inconclusive",
+                     p=equal["p"], detail=equal["verdict"])
+    return compose(C1["prediction"], [c_1, c_2, c_3], clause3_equivalence=equal)
+
+
+# ------------------------------------------- S9: label recovery across the tree
+
+# The eight rungs of the contraction tree, FINE -> COARSE (docs/DECISIONS.md D3;
+# the same order experiments/EVAL/label_recovery.py writes).
+RUNGS = ("L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1", "R3_VIS", "R1_Q1")
+RECOVERY_FILE = "label_recovery.json"
+# S9's endpoint is NOT the ladder's. Balanced accuracy is higher-is-better, and
+# S9 is written about "the advantage of finer models", so every difference in
+# this block runs FINER MODEL - COARSER MODEL: positive = the finer model
+# recovers that rung better. The probe ladder's differences run the other way
+# (coarser - finer on log(1-AUC)); nothing is shared between the two conventions
+# except the pairing and the paired t.
+S9 = {"prediction": "each model wins at and below its own granularity; the advantage of finer "
+                    "models decays to zero at the coarser model's own level",
+      "clauses": ("each model wins at and below its own granularity",
+                  "the advantage of finer models decays to zero at the coarser model's "
+                  "own level")}
+
+
+def load_recovery(src) -> dict:
+    """Tidy table: one row per (rung, probe kind, model level, seed index).
+
+    `src` is a directory holding s*/label_recovery.json (or s*.json), or a list
+    of files, in the schema experiments/EVAL/label_recovery.py writes. Refuses
+    if the files disagree on `row_alignment_sha256` or `n_test` (the models were
+    then not scored on the same jets), if an arm name does not parse, if a
+    (rung, level, seed) cell appears twice, if a rung is not one of the eight, or
+    if an arm's `own_rung` is not the same in every seed file. A rung the probe
+    skipped is recorded, not silently dropped.
+    """
+    paths = [pathlib.Path(p) for p in ([src] if isinstance(src, (str, pathlib.Path)) else src)]
+    if len(paths) == 1 and paths[0].is_dir():
+        paths = sorted(paths[0].glob(f"s*/{RECOVERY_FILE}")) or sorted(paths[0].glob("s*.json"))
+    if not paths:
+        raise SystemExit(f"FATAL: no {RECOVERY_FILE} found under {src}")
+    docs = {p: json.loads(p.read_text()) for p in paths}
+    for key in ("row_alignment_sha256", "n_test"):
+        seen = {str(p): d.get(key) for p, d in docs.items()}
+        if None in seen.values() or len(set(seen.values())) != 1:
+            raise SystemExit(f"FATAL: label-recovery files disagree on (or lack) `{key}`; a "
+                             f"paired contrast across them would compare different jets.\n"
+                             + "\n".join(f"  {p}: {v}" for p, v in seen.items()))
+    rows, keys, skipped, own = [], set(), [], {}
+    for p, d in docs.items():
+        for arm, entry in d["arms"].items():
+            level, seed = parse_arm(arm)
+            if own.setdefault(level, entry["own_rung"]) != entry["own_rung"]:
+                raise SystemExit(f"FATAL: {arm} in {p} says its own vocabulary is "
+                                 f"{entry['own_rung']!r}; another file says {own[level]!r}")
+            for rung, cell in entry["rungs"].items():
+                if rung not in RUNGS:
+                    raise SystemExit(f"FATAL: rung {rung!r} in {p} is not one of {list(RUNGS)}")
+                if "linear" not in cell:
+                    skipped.append({"file": str(p), "arm": arm, "rung": rung,
+                                    "reason": cell.get("skipped", "no probe in the cell")})
+                    continue
+                for kind in PROBES:
+                    if (rung, kind, level, seed) in keys:
+                        raise SystemExit(f"FATAL: duplicated cell rung={rung} probe={kind} "
+                                         f"level={level} seed={seed} (arm {arm!r} in {p})")
+                    keys.add((rung, kind, level, seed))
+                    rows.append({"rung": rung, "probe": kind, "level": level, "seed": seed,
+                                 "arm": arm, "own_rung": entry["own_rung"],
+                                 "accuracy": float(cell[kind]), "n_groups": int(cell["n_groups"]),
+                                 "chance": float(cell["chance"]),
+                                 "not_recovered": bool(cell["not_recovered"]),
+                                 "mlp_converged": bool(cell["mlp_converged"]),
+                                 "mlp_below_linear": bool(cell["mlp_below_linear"]),
+                                 "file": str(p)})
+    first = next(iter(docs.values()))
+    return {"rows": rows, "files": [{"path": str(p), "sha256": _sha(p)} for p in paths],
+            "row_alignment_sha256": first["row_alignment_sha256"],
+            "n_used": first["n_used"], "n_train": first["n_train"], "n_test": first["n_test"],
+            "chance_sigma": first.get("chance_sigma"), "own_rung": own, "skipped_cells": skipped}
+
+
+def index_recovery(rows, drop=()) -> dict:
+    """(rung, probe, level, seed) -> row, without the dropped seed indices."""
+    return {(r["rung"], r["probe"], r["level"], r["seed"]): r for r in rows
+            if r["seed"] not in drop}
+
+
+def missing_recovery_cells(rcells, levels, rungs, seeds) -> dict:
+    """{"rung/probe": [[level, seed], ...]} for every expected cell that is absent."""
+    out = {}
+    for rung in rungs:
+        for kind in PROBES:
+            miss = [[lv, s] for s in seeds for lv in levels if (rung, kind, lv, s) not in rcells]
+            if miss:
+                out[f"{rung}/{kind}"] = miss
+    return out
+
+
+def recovery_diff(rcells, rung, kind, a, b, seeds) -> dict:
+    """(model a - model b) balanced accuracy at one rung, by seed index.
+
+    Higher balanced accuracy is better, so a POSITIVE difference means model `a`
+    recovers that rung better. Callers pass the finer model as `a`, which makes
+    the difference "the advantage of the finer model" that S9 is written about.
+    """
+    used = [s for s in seeds
+            if (rung, kind, a, s) in rcells and (rung, kind, b, s) in rcells]
+    return {"seeds": used, "is_bound": False,   # balanced accuracy has no censoring
+            "d": [rcells[(rung, kind, a, s)]["accuracy"] - rcells[(rung, kind, b, s)]["accuracy"]
+                  for s in used]}
+
+
+def recovery_row(rcells, rung, kind, fine, coarse, seeds) -> dict:
+    """One rung of one model pair: paired t on n-1 df, sign-flip p beside it."""
+    r = {"rung": rung, **pair_contrast(recovery_diff(rcells, rung, kind, fine, coarse, seeds))}
+    r.pop("is_bound")           # nothing here can be a bound; see recovery_diff
+    if r["estimable"]:
+        lo, hi = r["ci95"]
+        r["advantage"] = ("finer better" if lo > 0 else
+                          "coarser better" if hi < 0 else "not distinguishable")
+    else:
+        r["advantage"] = None
+    return r
+
+
+def recovery_pair_table(rcells, fine, coarse, kind, seeds, rungs) -> list[dict]:
+    """The eight rungs of one model pair, Holm-corrected within that table (2.7)."""
+    rows = [recovery_row(rcells, rung, kind, fine, coarse, seeds) for rung in rungs]
+    est = [r for r in rows if r["estimable"]]
+    for r, rej in zip(est, holm([r["p"] for r in est], ALPHA) if est else []):
+        r["holm_reject"] = bool(rej)
+    return rows
+
+
+def _in_bracket(rung: str, lo, hi) -> bool:
+    """Is `rung` inside the crossover bracket [lo, hi]? `hi=None` is open-ended."""
+    if lo is None:
+        return False            # the advantage never stops being demonstrable
+    i = RUNGS.index(rung)
+    return RUNGS.index(lo) <= i and (hi is None or i <= RUNGS.index(hi))
+
+
+def crossover(rows: list[dict], coarser_own_rung: str) -> dict:
+    """Where the finer model's advantage reaches zero, with its uncertainty.
+
+    Rows run fine -> coarse. Three rungs are read off the SAME per-rung 95%
+    paired intervals, walking that order:
+
+      crossover_rung    the first rung whose interval no longer excludes zero:
+                        the advantage stops being demonstrable here. This is the
+                        level S9 is about.
+      sign_change_rung  the first rung whose point estimate is <= 0.
+      excluded_rung     the first rung whose interval lies at or below zero: the
+                        advantage is demonstrably gone.
+
+    `crossover_bracket` = [crossover_rung, excluded_rung] is the uncertainty on
+    a discrete ladder -- the crossover is at or after the first and at or before
+    the second -- and it is what replaces reading a level off a plot. Any of the
+    three is None when its condition never occurs on the ladder, and None is a
+    finding: an advantage that never stops being demonstrable contradicts S9 as
+    directly as one that stops at the wrong rung.
+
+    The classification uses the RAW interval, not the Holm-corrected one. Holm
+    is a statement about the family of eight rung tests; "where does the
+    advantage reach zero" is a statement about each rung on its own, and the
+    corrected flag travels beside every row for anyone who wants the other read.
+    """
+    est = [r for r in rows if r["estimable"]]
+
+    def first(pred):
+        return next((r["rung"] for r in est if pred(r)), None)
+
+    cross = first(lambda r: r["ci95"][0] <= 0.0)
+    excluded = first(lambda r: r["ci95"][1] <= 0.0)
+    return {"crossover_rung": cross, "excluded_rung": excluded,
+            "sign_change_rung": first(lambda r: r["mean_diff"] <= 0.0),
+            "crossover_bracket": [cross, excluded],
+            "last_rung_with_advantage": next(
+                (r["rung"] for r in reversed(est) if r["advantage"] == "finer better"), None),
+            "coarser_own_rung": coarser_own_rung,
+            "crossover_at_coarser_own_rung": cross == coarser_own_rung,
+            "coarser_own_rung_in_bracket": _in_bracket(coarser_own_rung, cross, excluded),
+            "n_rungs_estimable": len(est), "n_rungs": len(rows),
+            "per_rung_advantage": {r["rung"]: r["advantage"] for r in rows}}
+
+
+def wins_at_and_below_own(rcells, level, own_rung, others, kind, seeds, rungs) -> dict:
+    """S9's first clause for ONE model: "wins at and below its own granularity".
+
+    "Below" is coarser: the model's own rung and every rung further down the
+    tree. "Wins" is scored as "is not beaten": at those rungs a coarser
+    vocabulary is a function of a finer one, so the models should tie, and a tie
+    cannot be demonstrated by failing to reject. A cell counts against the clause
+    only when ANOTHER model is ahead by more than the paired 95% interval; a cell
+    merely behind on the point estimate is counted separately and not scored.
+    """
+    checked = [r for r in rungs if RUNGS.index(r) >= RUNGS.index(own_rung)]
+    cells = []
+    for rung in checked:
+        for other in others:
+            r = pair_contrast(recovery_diff(rcells, rung, kind, level, other, seeds))
+            cells.append({"rung": rung, "other_level": other, "estimable": r["estimable"],
+                          "mean_diff": r.get("mean_diff"), "p": r.get("p"),
+                          "ci95": r.get("ci95"),
+                          "behind_on_point_estimate": (r["mean_diff"] < 0.0) if r["estimable"]
+                          else None,
+                          "beaten": (r["ci95"][1] < 0.0) if r["estimable"] else None})
+    est = [c for c in cells if c["estimable"]]
+    beaten = [c for c in est if c["beaten"]]
+    return {"level": level, "own_rung": own_rung, "probe": kind, "rungs_checked": checked,
+            "n_cells": len(cells), "n_estimable": len(est), "n_beaten": len(beaten),
+            "n_behind_on_point_estimate": sum(c["behind_on_point_estimate"] for c in est),
+            "holds": bool(est) and not beaten,
+            "beaten_by": [{"rung": c["rung"], "level": c["other_level"],
+                           "mean_diff": c["mean_diff"], "p": c["p"]} for c in beaten],
+            "cells": cells}
+
+
+def s9_analysis(data: dict, seeds, drop=()) -> dict:
+    """S9's two clauses from the label-recovery ladder, on BOTH probes (D6).
+
+    The second clause is a null -- "the advantage decays to ZERO" -- and D6
+    forbids reporting a linear-probe null without the nonlinear probe beside it,
+    because a linear probe only lower-bounds mutual information. The linear
+    probe is primary (as for S1, clarification 4 of 2026-09-19) and the MLP
+    result travels in the same structure and in the clause's detail line.
+
+    The unit is the pretraining seed and pairs are by seed index (2.1, 2.2); the
+    primary test at every rung is the paired t on n-1 degrees of freedom with the
+    exact sign-flip p and its floor beside it (2.4).
+    """
+    rcells = index_recovery(data["rows"], drop)
+    own = data["own_rung"]
+    levels = [lv for lv in LEVELS if lv in own]
+    rungs = [r for r in RUNGS if any(k[0] == r for k in rcells)]
+    pairs = [(a, b) for i, a in enumerate(levels) for b in levels[i + 1:]]
+    out = {"endpoint": {"field": "balanced accuracy", "lower_is_better": False,
+                        "difference": "finer model − coarser model, by seed index",
+                        "probe_primary": "linear", "probe_companion": "mlp (D6)"},
+           "rungs_fine_to_coarse": list(rungs), "levels_fine_to_coarse": levels,
+           "own_rung": {str(lv): own[lv] for lv in levels}, "seeds_used": list(seeds),
+           "missing_cells": missing_recovery_cells(rcells, levels, rungs, seeds),
+           "skipped_cells": data["skipped_cells"],
+           "pairs": {}, "wins": {}}
+    for fine, coarse in pairs:
+        block = {}
+        for kind in PROBES:
+            table = recovery_pair_table(rcells, fine, coarse, kind, seeds, rungs)
+            block[kind] = {"fine": fine, "coarse": coarse, "rungs": table,
+                           "crossover": crossover(table, own[coarse])}
+        out["pairs"][f"{fine}_vs_{coarse}"] = block
+    for lv in levels:
+        out["wins"][str(lv)] = {
+            kind: wins_at_and_below_own(rcells, lv, own[lv], [x for x in levels if x != lv],
+                                        kind, seeds, rungs) for kind in PROBES}
+
+    def by_probe(kind, field):
+        return [out["pairs"][k][kind]["crossover"][field] for k in out["pairs"]]
+
+    wins = {k: [out["wins"][str(lv)][k] for lv in levels] for k in PROBES}
+    n_pairs = len(pairs)
+    if not any(w["n_estimable"] for w in wins["linear"]):
+        c_1 = clause(1, S9["clauses"][0], "paired t at every rung at or below the model's own",
+                     "not run", detail="no rung has 2 complete seed pairs")
+    else:
+        hold = sum(w["holds"] for w in wins["linear"])
+        c_1 = clause(1, S9["clauses"][0],
+                     "paired t on n−1 df at every rung at or below the model's own vocabulary; "
+                     "a model fails only where another is ahead by more than the 95% interval",
+                     "confirmed" if hold == len(levels) else "not confirmed",
+                     detail=f"{hold} of {len(levels)} models are never beaten there (linear "
+                            f"probe); nonlinear probe: {sum(w['holds'] for w in wins['mlp'])} "
+                            f"of {len(levels)}")
+    if not any(by_probe("linear", "n_rungs_estimable")):
+        c_2 = clause(2, S9["clauses"][1], "crossover of the per-rung paired differences",
+                     "not run", detail="no rung has 2 complete seed pairs")
+    else:
+        at = sum(bool(x) for x in by_probe("linear", "crossover_at_coarser_own_rung"))
+        inside = sum(bool(x) for x in by_probe("linear", "coarser_own_rung_in_bracket"))
+        at_mlp = sum(bool(x) for x in by_probe("mlp", "crossover_at_coarser_own_rung"))
+        c_2 = clause(2, S9["clauses"][1],
+                     "crossover of the per-rung paired differences, with its bracket",
+                     "confirmed" if at == n_pairs else "not confirmed",
+                     detail=f"{at} of {n_pairs} model pairs cross over exactly at the coarser "
+                            f"model's own rung and {inside} of {n_pairs} have that rung inside "
+                            f"the crossover bracket (linear probe); nonlinear probe: {at_mlp} "
+                            f"of {n_pairs}")
+    return {**out, **compose(S9["prediction"], [c_1, c_2])}
+
+
 # ---------------------------------------------------------------- report
 
 def _p(x) -> str:
@@ -454,6 +921,94 @@ def format_trend(name: str, r: dict, family_size: int) -> list[str]:
     return out
 
 
+def format_equivalence_set(e: dict, indent: str = "      ") -> list[str]:
+    """Every pair inside a predicted-equal set, then the set's verdict."""
+    if not e["run"]:
+        return [f"{indent}{e['reason']}"]
+    out = [f"{indent}TOST bound ±ln(1.1) = ±{e['target_bound']:.5f}; all "
+           f"{e['n_pairs_total']} pairs inside "
+           f"{{{', '.join(str(x) for x in e['levels'])}}} must pass"]
+    for r in e["pairs"]:
+        tail = ("equivalent at ±10%" if r["equivalent_at_target"] else
+                f"NOT equivalent at ±10%; equivalent within ±{r['smallest_bound_passed']:.4f} "
+                f"(a factor {LOG_BASE ** r['smallest_bound_passed']:.3f} in 1−AUC)")
+        out.append(f"{indent}  {r['coarse']:>3d} − {r['fine']:<3d} diff={r['mean_diff']:+.4f}  "
+                   f"90% CI [{r['ci90'][0]:+.4f},{r['ci90'][1]:+.4f}]  TOST p={_p(r['p'])}  "
+                   f"n={r['n_pairs']}  {tail}"
+                   f"{'  [BOUND: a cell reached AUC=1]' if r['is_bound'] else ''}")
+    out.append(f"{indent}set verdict (intersection-union p={_p(e['p'])}): {e['verdict']}")
+    return out
+
+
+def format_clauses(name: str, block: dict) -> list[str]:
+    """The clause-by-clause verdict, and the composite sentence above it."""
+    out = [f"  {name} is {block['n_clauses']} clauses — {block['composite_verdict'].upper()} "
+           f"({block['overall']})"]
+    for c in block["clauses"]:
+        out.append(f"    clause {c['n']}: \"{c['text']}\" — {c['verdict'].upper()}")
+        out.append(f"      {c['test']}" + ("" if c["p"] is None else f", p={_p(c['p'])}"))
+        if c["detail"]:
+            out.append(f"      {c['detail']}")
+    return out
+
+
+def format_recovery_row(r: dict) -> str:
+    """One rung of one model pair. Same units as the ladder: t, df, p, no sigma."""
+    head = f"      {r['rung']:<8s}"
+    if not r["estimable"]:
+        return f"{head} not estimable ({r['reason']}; n={r['n_pairs']})"
+    sf = r["sign_flip"]
+    return (f"{head} diff={r['mean_diff']:+.4f}  t={r['t']:+.2f} df={r['df']} p={_p(r['p'])}  "
+            f"CI95=[{r['ci95'][0]:+.4f},{r['ci95'][1]:+.4f}]  "
+            f"sign-flip p={_p(sf['p'])} (floor {_p(sf['floor'])})  n={r['n_pairs']}  "
+            f"{r['advantage']}{'  Holm-reject' if r.get('holm_reject') else ''}")
+
+
+def format_s9(s9: dict) -> list[str]:
+    """The S9 block: the clauses, then every model pair's ladder and crossover."""
+    out = ["  endpoint: balanced accuracy, HIGHER is better; differences are FINER model − "
+           "COARSER model,",
+           "  paired by seed index: positive = the finer model recovers that rung better",
+           "  rungs fine→coarse: " + " ".join(s9["rungs_fine_to_coarse"]),
+           "  each model's own vocabulary: " + "  ".join(
+               f"{lv}-class: {s9['own_rung'][str(lv)]}" for lv in s9["levels_fine_to_coarse"])]
+    if s9["missing_cells"]:
+        for key, cells in s9["missing_cells"].items():
+            out.append(f"  MISSING cells, {key}: " + "; ".join(f"{lv}-class seed {s}"
+                                                               for lv, s in cells))
+    for sk in s9["skipped_cells"]:
+        out.append(f"  cell {sk['arm']} / {sk['rung']} was skipped by the probe: {sk['reason']}")
+    out += format_clauses("S9", s9)
+    for key, per_probe in s9["pairs"].items():
+        for kind in PROBES:
+            b = per_probe[kind]
+            c = b["crossover"]
+            role = "" if kind == "linear" else " (beside the linear probe; D6)"
+            lo, hi = c["crossover_bracket"]
+            out.append(f"    {b['fine']}-class over {b['coarse']}-class, {kind} probe{role}")
+            out += [format_recovery_row(r) for r in b["rungs"]]
+            out.append(f"      crossover at {lo}; bracket [{lo}, {hi}]; point estimate reaches "
+                       f"zero at {c['sign_change_rung']}")
+            out.append(f"      the {b['coarse']}-class model's own rung is "
+                       f"{c['coarser_own_rung']} — crossover there: "
+                       f"{'YES' if c['crossover_at_coarser_own_rung'] else 'NO'}"
+                       f" (inside the bracket: "
+                       f"{'yes' if c['coarser_own_rung_in_bracket'] else 'no'})")
+    out.append("    wins at and below each model's own vocabulary:")
+    for lv, per_probe in s9["wins"].items():
+        for kind in PROBES:
+            w = per_probe[kind]
+            beaten = "; ".join(f"{b['rung']} by the {b['level']}-class model "
+                               f"(diff={b['mean_diff']:+.4f}, p={_p(b['p'])})"
+                               for b in w["beaten_by"])
+            out.append(f"      {lv}-class, {kind}: own rung {w['own_rung']}, "
+                       f"{len(w['rungs_checked'])} rungs at or below it, {w['n_estimable']} of "
+                       f"{w['n_cells']} cells estimable — beaten in {w['n_beaten']} "
+                       f"(behind on the point estimate in {w['n_behind_on_point_estimate']})"
+                       + (f": {beaten}" if beaten else ""))
+    return out
+
+
 def format_holm(rows: list[dict]) -> list[str]:
     out = []
     for h in rows:
@@ -468,22 +1023,15 @@ def format_holm(rows: list[dict]) -> list[str]:
     return out
 
 
-def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("inputs", nargs="+", help="a directory holding s*/probe_results.json, or the files")
-    ap.add_argument("--out", required=True, help="directory for seed_level_results.json")
-    ap.add_argument("--drop-pairs", nargs="*", type=int, default=[],
-                    help="seed indices to exclude from every contrast (hardware-mismatched pairs)")
-    ap.add_argument("--drop-reason", default=None, help="required with --drop-pairs; recorded")
-    a = ap.parse_args(argv)
-    if a.drop_pairs and not a.drop_reason:
-        raise SystemExit("FATAL: --drop-pairs needs --drop-reason; a dropped pair is reported "
-                         "with why it was dropped (PRESPEC 2.2)")
-
-    out_file = pathlib.Path(a.out) / "seed_level_results.json"
+def _refuse_overwrite(out_file: pathlib.Path) -> pathlib.Path:
     if out_file.exists():
         raise SystemExit(f"FATAL: {out_file} exists; an earlier look at the data is a record. "
                          f"Refusing to overwrite it -- give a new --out.")
+    return out_file
+
+
+def run_ladder(a, argv=None) -> int:
+    out_file = _refuse_overwrite(pathlib.Path(a.out) / "seed_level_results.json")
 
     data = load_ladder(a.inputs)
     rows = data["rows"]
@@ -567,8 +1115,17 @@ def main(argv=None) -> int:
     print("\n  CONFIRMATORY")
     c1 = trend_test(cells, C1["task"], "linear", seeds, C1["predicted_step"])
     fam = holm_family([("C1", c1.get("p"))] + [(c, None) for c in CONFIRMATORY[1:]])
+    # C1's third clause is a predicted null and needs 2.5's equivalence test; the
+    # trend test above answers only the first two. The three verdicts and the
+    # composite live inside res["confirmatory"]["C1"] beside the trend result,
+    # so nothing that already reads that block moves.
+    c1_equal = equivalence_set(cells, C1["task"], "linear", C1["predicted_equal"], seeds)
+    c1.update(c1_clauses(c1, c1_equal, next(h for h in fam if h["test"] == "C1"),
+                         len(CONFIRMATORY)))
     res["confirmatory"] = {"C1": c1, "holm_family": fam}
     print("\n".join(format_trend("C1", c1, len(CONFIRMATORY))))
+    print("\n".join(format_clauses("C1", c1)))
+    print("\n".join(format_equivalence_set(c1_equal)))
     print(f"  Holm over the full confirmatory family of {len(CONFIRMATORY)} at {ALPHA:.0%}:")
     print("\n".join(format_holm(fam)))
 
@@ -625,6 +1182,61 @@ def main(argv=None) -> int:
     out_file.write_text(json.dumps(res, indent=2))
     print(f"\nwrote {out_file}")
     return 0
+
+
+def run_s9(a, argv=None) -> int:
+    """S9 on the label-recovery ladder. Its own inputs, its own output file."""
+    out_file = _refuse_overwrite(pathlib.Path(a.out) / "s9_label_recovery.json")
+
+    data = load_recovery(a.label_recovery)
+    all_seeds = sorted(set(EXPECTED_SEEDS) | {r["seed"] for r in data["rows"]})
+    seeds = [s for s in all_seeds if s not in a.drop_pairs]
+    s9 = s9_analysis(data, seeds, a.drop_pairs)
+    res = {"provenance": {
+               "inputs": data["files"], "script_sha256": _sha(__file__),
+               "prespec_sha256": _sha(PRESPEC) if PRESPEC.exists() else None,
+               "stats_modules_sha256": {m: _sha(REPO / m) for m in STATS_MODULES},
+               "row_alignment_sha256": data["row_alignment_sha256"],
+               "n_used": data["n_used"], "n_train": data["n_train"], "n_test": data["n_test"],
+               "chance_sigma": data["chance_sigma"], "argv": list(argv or sys.argv[1:])},
+           "dropped_pairs": {"seeds": a.drop_pairs, "reason": a.drop_reason},
+           "secondary": {"S9": s9}, "table": data["rows"]}
+
+    print("\n== 3. S9: LABEL RECOVERY ACROSS THE CONTRACTION TREE "
+          "(PRESPEC_2026-09 §3, probe = both, D6) ==")
+    print(f"  inputs: {len(data['files'])} file(s); row alignment "
+          f"{data['row_alignment_sha256'][:16]}; {data['n_test']:,} test jets per cell")
+    if a.drop_pairs:
+        print(f"  DROPPED seed indices {a.drop_pairs} from every contrast. "
+              f"Reason: {a.drop_reason}")
+    print("\n".join(format_s9(s9)))
+
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(json.dumps(res, indent=2))
+    print(f"\nwrote {out_file}")
+    return 0
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("inputs", nargs="*",
+                    help="a directory holding s*/probe_results.json, or the files")
+    ap.add_argument("--out", required=True, help="directory for seed_level_results.json")
+    ap.add_argument("--drop-pairs", nargs="*", type=int, default=[],
+                    help="seed indices to exclude from every contrast (hardware-mismatched pairs)")
+    ap.add_argument("--drop-reason", default=None, help="required with --drop-pairs; recorded")
+    ap.add_argument("--label-recovery", nargs="+", default=None, metavar="PATH",
+                    help="S9: a directory holding s*/label_recovery.json, or the files. "
+                         "Written to s9_label_recovery.json in --out; the ladder inputs are "
+                         "optional when this is given")
+    a = ap.parse_args(argv)
+    if a.drop_pairs and not a.drop_reason:
+        raise SystemExit("FATAL: --drop-pairs needs --drop-reason; a dropped pair is reported "
+                         "with why it was dropped (PRESPEC 2.2)")
+    if not a.inputs and not a.label_recovery:
+        ap.error("give the probe_results.json inputs, --label-recovery, or both")
+    rc = run_ladder(a, argv) if a.inputs else 0
+    return rc or (run_s9(a, argv) if a.label_recovery else 0)
 
 
 if __name__ == "__main__":

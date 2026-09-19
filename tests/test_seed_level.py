@@ -46,8 +46,14 @@ SHA = "ab" * 32
 
 # ---------------------------------------------------------------- fixtures
 
-def ladder_values(step=0.0, noise=0.05, rng_seed=7, step_tasks=("bvc_resonant",), mlp_sign=1.0):
-    """value(task, probe, level, seed) -> log(1-AUC): seed effect + noise + a step AT 17."""
+def ladder_values(step=0.0, noise=0.05, rng_seed=7, step_tasks=("bvc_resonant",), mlp_sign=1.0,
+                  offsets=None):
+    """value(task, probe, level, seed) -> log(1-AUC): seed effect + noise + a step AT 17.
+
+    `offsets` = {level: shift} adds a fixed shift at named levels of `step_tasks`
+    on top of the step. It exists to break C1's third clause, "188 ~ 162 ~ 43",
+    without touching the first two.
+    """
     rng = np.random.default_rng(rng_seed)
     block = rng.normal(0, 0.3, 6)
     eps = rng.normal(0, noise, (len(TASKS), 2, 4, 6))
@@ -56,7 +62,28 @@ def ladder_values(step=0.0, noise=0.05, rng_seed=7, step_tasks=("bvc_resonant",)
         i = (TASKS.index(task), S.PROBES.index(kind), S.LEVELS.index(level), seed)
         planted = step * (mlp_sign if kind == "mlp" else 1.0) \
             if task in step_tasks and level == 17 else 0.0
+        if task in step_tasks:
+            planted += (offsets or {}).get(level, 0.0)
         return float(-4.0 + block[seed] + eps[i] + planted)
+    return value
+
+
+def identical_fine_levels(step=1.0, jitter=1e-4, rng_seed=3):
+    """188, 162 and 43 identical to within `jitter`, with the step at 17.
+
+    NOT bit-identical. Paired differences with zero variance are not estimable --
+    the same rule pair_contrast uses for two cells censored at one resolution
+    floor -- so an exactly flat fixture would exercise the "not run" path rather
+    than equivalence. `jitter` is four orders below the ±ln(1.1) bound, so every
+    pair inside the set passes with room to spare.
+    """
+    rng = np.random.default_rng(rng_seed)
+    block = rng.normal(0, 0.3, 6)
+    eps = rng.normal(0, jitter, (len(TASKS), 2, 4, 6))
+
+    def value(task, kind, level, seed):
+        i = (TASKS.index(task), S.PROBES.index(kind), S.LEVELS.index(level), seed)
+        return float(-4.0 + block[seed] + eps[i] + (step if level == 17 else 0.0))
     return value
 
 
@@ -257,6 +284,131 @@ def test_single_file_is_handled_without_running_any_test(tmp_path):
     assert [h["status"] for h in res["confirmatory"]["holm_family"]] == ["pending"] * 5
 
 
+# ---------------------------------------------------------------- C1: all three clauses
+
+def test_c1_equivalence_covers_the_three_pairs_inside_the_predicted_equal_set(planted):
+    """C1's third clause is "188 ~ 162 ~ 43": three pairs, none of them with 17."""
+    assert S.C1["predicted_equal"] == (188, 162, 43)
+    e = planted[0]["confirmatory"]["C1"]["clause3_equivalence"]
+    assert [(r["fine"], r["coarse"]) for r in e["pairs"]] == [(188, 162), (188, 43), (162, 43)]
+    assert e["levels"] == [188, 162, 43] and e["n_pairs_total"] == 3
+    assert e["target_bound"] == pytest.approx(math.log(1.1))
+    assert e["task"] == "bvc_resonant" and e["probe"] == "linear"
+    # the intersection-union p is the worst pair's, and no pair involves 17
+    assert e["p"] == max(r["p"] for r in e["pairs"])
+    assert all(17 not in (r["fine"], r["coarse"]) for r in e["pairs"])
+
+
+def test_predicted_equal_set_must_be_given_fine_to_coarse(tmp_path):
+    cells = cells_of(write_ladder(tmp_path, ladder_values(step=1.0)))
+    with pytest.raises(SystemExit, match="fine -> coarse"):
+        S.equivalence_set(cells, "bvc_resonant", "linear", (43, 162, 188), [1, 2, 3, 4, 5])
+
+
+def test_three_identical_fine_levels_give_a_fully_confirmed_c1(tmp_path):
+    root = write_ladder(tmp_path, identical_fine_levels(step=1.0))
+    res, out = run(root, tmp_path / "out")
+    c1 = res["confirmatory"]["C1"]
+    assert [c["verdict"] for c in c1["clauses"]] == ["confirmed"] * 3
+    assert c1["composite_verdict"] == "confirmed in clauses 1-3"
+    assert c1["overall"] == "confirmed" and c1["n_clauses_confirmed"] == 3
+    e = c1["clause3_equivalence"]
+    assert e["run"] and e["all_equivalent"] and e["n_equivalent"] == 3
+    assert e["not_equivalent"] == [] and e["p"] < 0.05
+    assert e["verdict"].startswith("equivalent within ±0.0953")
+    assert "CONFIRMED IN CLAUSES 1-3" in out and "no effect" not in out.lower()
+
+
+def test_one_unequal_pair_gives_the_partial_verdict(tmp_path):
+    """The step is in the predicted place and the widest fine pair drifts past the bound.
+
+    The shape is the one the four-granularity probes actually show: the two
+    adjacent fine pairs sit inside ±ln(1.1) and the 188-versus-43 pair, whose
+    mean is the sum of both, does not. Clauses 1 and 2 are untouched by it.
+    """
+    root = write_ladder(tmp_path, ladder_values(step=1.0, noise=0.01,
+                                                offsets={162: 0.03, 43: 0.10}))
+    res, out = run(root, tmp_path / "out")
+    c1 = res["confirmatory"]["C1"]
+    assert c1["argmax_is_predicted_step"] is True          # the step is still 43 -> 17
+    assert [c["verdict"] for c in c1["clauses"]] == ["confirmed", "confirmed", "inconclusive"]
+    assert c1["composite_verdict"] == "confirmed in clauses 1-2, inconclusive in clause 3"
+    assert c1["overall"] == "partially confirmed" and c1["n_clauses_confirmed"] == 2
+    e = c1["clause3_equivalence"]
+    assert not e["all_equivalent"] and e["not_equivalent"] == [[188, 43]]
+    assert e["n_equivalent"] == 2 and e["widest_pair"] == [188, 43]
+    assert e["p"] == max(r["p"] for r in e["pairs"]) > 0.05
+    assert e["verdict"].startswith("inconclusive at ±10%; equivalent within ±")
+    assert "no effect" not in e["verdict"] and "rejected" not in e["verdict"]
+    assert "INCONCLUSIVE IN CLAUSE 3" in out
+
+
+def test_clause_verdict_vocabulary_and_composite_spans():
+    with pytest.raises(SystemExit, match="clause verdicts"):
+        S.clause(1, "t", "test", "rejected")
+    def mk(*verdicts):
+        return [S.clause(i + 1, "t", "test", v) for i, v in enumerate(verdicts)]
+    assert S.composite_verdict(mk("confirmed", "confirmed", "inconclusive")) == \
+        "confirmed in clauses 1-2, inconclusive in clause 3"
+    assert S.composite_verdict(mk("confirmed", "inconclusive", "confirmed")) == \
+        "confirmed in clause 1, inconclusive in clause 2, confirmed in clause 3"
+    assert S.overall_verdict(mk("confirmed", "confirmed", "confirmed")) == "confirmed"
+    assert S.overall_verdict(mk("confirmed", "not confirmed")) == "partially confirmed"
+    assert S.overall_verdict(mk("not confirmed", "inconclusive")) == "not confirmed"
+
+
+def test_c1_clauses_are_not_run_when_the_trend_test_is_not(tmp_path):
+    root = write_ladder(tmp_path, ladder_values(), seeds=(3,))
+    res, _ = run(root, tmp_path / "out")
+    c1 = res["confirmatory"]["C1"]
+    assert c1["run"] is False
+    assert [c["verdict"] for c in c1["clauses"]] == ["not run"] * 3
+    assert c1["overall"] == "not confirmed"
+
+
+def test_a_zero_variance_pair_is_not_reported_as_equivalence(tmp_path):
+    """Two cells censored at one floor give identical differences: not estimable."""
+    root = write_ladder(tmp_path, ladder_values(),
+                        censor={("bvc_resonant", 188), ("bvc_resonant", 162)})
+    res, _ = run(root, tmp_path / "out")
+    e = res["confirmatory"]["C1"]["clause3_equivalence"]
+    assert [(r["fine"], r["coarse"]) for r in e["pairs"]] == [(188, 43), (162, 43)]
+    assert e["n_pairs_estimable"] == 2 and e["n_pairs_total"] == 3
+    assert e["all_equivalent"] is False          # a pair that cannot be tested is not a pass
+
+
+# ------------------------------------------- the keys other tools read must not move
+
+def test_make_tables_still_reads_every_key_it_used_to(planted, tmp_path):
+    """experiments/FIGS/make_tables.py is owned elsewhere; nothing it reads may move."""
+    MT = _mod("make_tables", "experiments/FIGS/make_tables.py")
+    res, _ = planted
+    src = tmp_path / "seed_level_results.json"
+    src.write_text(json.dumps(res))
+    em = MT.Emitter(tmp_path)
+    MT.emit_design(em, res, src)
+    MT.emit_levels(em, res, src)
+    MT.emit_mde(em, res, src)
+    MT.emit_tests(em, res, src)
+    MT.emit_pairwise(em, res, src, res["levels_fine_to_coarse"][1])
+    names = {n for n, _, _ in em.macros}
+    for must in ("TrendStatCone", "TrendPCone", "TrendPMinCone", "TrendBlocksCone",
+                 "TrendStepCone", "TrendIsoPCone", "TrendHolmCone", "ProbeNJets", "ProbeNSeeds"):
+        assert must in names, must
+    assert MT.table_tests(res).startswith("\\begin{table*}")
+    assert MT.table_probe_ladder(res, "linear").startswith("\\begin{table*}")
+    # and the C1 block still carries the trend keys verbatim, plus the new ones
+    c1 = res["confirmatory"]["C1"]
+    for k in ("task", "probe", "run", "family", "method", "n_blocks", "n_arrangements", "stat",
+              "p", "p_min", "end_step_p_bound", "argmax_step", "predicted_step",
+              "argmax_is_predicted_step", "contrasts_localisation_only", "isotonic",
+              "alternative", "seed_sd_per_level", "blocks_used"):
+        assert k in c1, k
+    for k in ("prediction", "clauses", "clause3_equivalence", "composite_verdict", "overall",
+              "n_clauses", "n_clauses_confirmed"):
+        assert k in c1, k
+
+
 # ---------------------------------------------------------------- order of operations
 
 def test_mde_is_printed_before_any_contrast(planted):
@@ -445,6 +597,298 @@ def test_provenance_is_recorded(planted):
     if S.PRESPEC.exists():
         assert prov["prespec_sha256"] == S._sha(S.PRESPEC)
     assert "l162-s1b" in prov["arm_checkpoints"]
+
+
+# ---------------------------------------------------------------- S9: label recovery
+
+OWN_RUNG = {188: "L188", 162: "L162", 43: "R42_Q1", 17: "R16_Q1"}
+# Groups per rung: the config key counts RESONANT groups only, so R42_Q1 is 43
+# classes. Only `chance` is computed from this; no test reads the value.
+N_GROUPS = {"L188": 188, "L162": 162, "R63_Q1": 64, "R42_Q1": 43, "R29_Q1": 30,
+            "R16_Q1": 17, "R3_VIS": 4, "R1_Q1": 2}
+
+
+ALT = (1.0, -1.0, 1.0, -1.0, 0.0)      # a per-seed wobble that sums to zero
+
+
+def recovery_values(gap=0.02, noise=0.001, persist=False, shift=0):
+    """accuracy(rung, probe, level, seed): S9 planted exactly as it is written.
+
+    A model pays `gap` per rung by which the target rung is FINER than its own
+    vocabulary, so for the pair (finer F, coarser C) the advantage of F over C is
+    a positive multiple of `gap` at every rung finer than C's own and exactly
+    zero at C's own rung and every coarser one. The crossover is C's own rung by
+    construction.
+
+    The per-model wobble is DETERMINISTIC and sums to zero over the five seed
+    indices, so a rung with no planted advantage has paired differences of mean
+    exactly zero and non-zero spread: "not distinguishable" every time. Gaussian
+    noise would instead put a true null through a 5% test eight rungs x six
+    pairs x two probes deep, and roughly one cell in forty would land on a false
+    positive and move a crossover -- a flaky test, not a robust one.
+
+    `shift` moves the crossover `shift` rungs finer than C's own vocabulary:
+    clause 1 still holds (the models still tie at and below their own rungs) and
+    clause 2 fails. `persist=True` gives each model a flat handicap at every
+    rung, so the advantage never reaches zero and both clauses fail.
+    """
+    base = np.linspace(0.30, 0.85, len(S.RUNGS))          # coarse rungs are easier
+    block = np.array([0.0, 0.01, -0.02, 0.005, -0.008, 0.013])   # seed effect, model-free
+
+    def value(rung, kind, level, seed):
+        i, j = S.RUNGS.index(rung), S.LEVELS.index(level)
+        own = S.RUNGS.index(OWN_RUNG[level])
+        penalty = gap * (own if persist else max(0, own - shift - i))
+        wobble = noise * ALT[(seed - 1) % len(ALT)] * (1 + i + j + S.PROBES.index(kind))
+        return float(base[i] + block[seed] + wobble - penalty)
+    return value
+
+
+def recovery_cell(value, rung, level, seed):
+    return {"linear": value(rung, "linear", level, seed),
+            "n_fit": 126000, "n_train_available": 140000,
+            "mlp": value(rung, "mlp", level, seed),
+            "mlp_spread": 0.01, "mlp_n_iter": [19, 19, 17], "mlp_converged": True,
+            "mlp_below_linear": False, "n_groups": N_GROUPS[rung],
+            "chance": 1.0 / N_GROUPS[rung], "chance_margin": 0.0044, "chance_sigma": 5.0,
+            "is_own_rung": OWN_RUNG[level] == rung,
+            "is_finer_than_own": S.RUNGS.index(rung) < S.RUNGS.index(OWN_RUNG[level]),
+            "not_recovered": False}
+
+
+def recovery_doc(value, seed, omit=(), sha=SHA, n_test=60_000, extra_arms=(), skip=()):
+    arms = {f"{PREFIX[lv]}-s{seed}" + ("b" if (lv, seed) == (162, 1) else ""): lv
+            for lv in S.LEVELS if (lv, seed) not in omit}
+    arms.update(extra_arms)
+    return {"row_alignment_sha256": sha, "n_used": 200_000, "n_train": 140_000,
+            "n_test": n_test, "chance_sigma": 5.0,
+            "arms": {a: {"own_rung": OWN_RUNG[lv],
+                         "rungs": {r: ({"skipped": "one group"} if (a, r) in skip
+                                       else recovery_cell(value, r, lv, seed))
+                                   for r in S.RUNGS}}
+                     for a, lv in arms.items()}}
+
+
+def write_recovery(root, value, seeds=(1, 2, 3, 4, 5), **kw):
+    for s in seeds:
+        d = root / f"s{s}"
+        d.mkdir(parents=True)
+        (d / "label_recovery.json").write_text(json.dumps(recovery_doc(value, s, **kw)))
+    return root
+
+
+def s9_of(root, seeds=(1, 2, 3, 4, 5), drop=()):
+    return S.s9_analysis(S.load_recovery(root), [s for s in seeds if s not in drop], drop)
+
+
+def test_recovery_fixture_mimics_the_committed_schema():
+    """The fixture is checked against the one real label-recovery file in the repo."""
+    real = json.loads((REPO / "experiments/FIGS/data/label_recovery_v3.json").read_text())
+    fake = recovery_doc(recovery_values(), 3)
+    assert set(fake) == set(real)
+    ra = next(iter(real["arms"].values()))
+    fa = next(iter(fake["arms"].values()))
+    assert set(fa) == set(ra) and set(fa["rungs"]) == set(ra["rungs"]) == set(S.RUNGS)
+    assert set(fa["rungs"]["L188"]) == set(ra["rungs"]["L188"])
+    assert S.load_recovery([REPO / "experiments/FIGS/data/label_recovery_v3.json"])["rows"]
+
+
+def test_recovery_loader_is_a_tidy_table_at_full_precision(tmp_path):
+    value = recovery_values()
+    data = S.load_recovery(write_recovery(tmp_path, value))
+    rows = data["rows"]
+    assert len(rows) == len(S.RUNGS) * 2 * 4 * 5
+    assert len({(r["rung"], r["probe"], r["level"], r["seed"]) for r in rows}) == len(rows)
+    for r in rows:
+        assert r["accuracy"] == value(r["rung"], r["probe"], r["level"], r["seed"])
+    assert data["own_rung"] == OWN_RUNG and data["n_test"] == 60_000
+    s1b = [r for r in rows if r["arm"] == "l162-s1b"]
+    assert len(s1b) == len(S.RUNGS) * 2 and {(r["level"], r["seed"]) for r in s1b} == {(162, 1)}
+
+
+@pytest.mark.parametrize("field, kw", [("row_alignment_sha256", {"sha": "ef" * 32}),
+                                       ("n_test", {"n_test": 59_999})])
+def test_recovery_mismatched_alignment_is_refused(tmp_path, field, kw):
+    value = recovery_values()
+    write_recovery(tmp_path, value, seeds=(1, 2, 3, 4))
+    write_recovery(tmp_path, value, seeds=(5,), **kw)
+    with pytest.raises(SystemExit, match=field):
+        S.load_recovery(tmp_path)
+
+
+def test_recovery_loader_refuses_duplicates_bad_arms_and_unknown_rungs(tmp_path):
+    v = recovery_values()
+    write_recovery(tmp_path / "dup", v, seeds=(1,), extra_arms={"l162-s1": 162})
+    with pytest.raises(SystemExit, match="duplicated cell"):
+        S.load_recovery(tmp_path / "dup")
+    write_recovery(tmp_path / "bad", v, seeds=(1,), extra_arms={"rand-d1": 17})
+    with pytest.raises(SystemExit, match="does not parse"):
+        S.load_recovery(tmp_path / "bad")
+    write_recovery(tmp_path / "rung", v, seeds=(1,))
+    f = tmp_path / "rung" / "s1" / "label_recovery.json"
+    d = json.loads(f.read_text())
+    d["arms"]["l188-s1"]["rungs"]["R99_Q1"] = d["arms"]["l188-s1"]["rungs"]["L188"]
+    f.write_text(json.dumps(d))
+    with pytest.raises(SystemExit, match="is not one of"):
+        S.load_recovery(tmp_path / "rung")
+
+
+def test_recovery_disagreeing_own_rung_is_refused(tmp_path):
+    v = recovery_values()
+    write_recovery(tmp_path, v, seeds=(1, 2))
+    d = json.loads((tmp_path / "s2" / "label_recovery.json").read_text())
+    d["arms"]["r16q1-s2"]["own_rung"] = "R29_Q1"
+    (tmp_path / "s2" / "label_recovery.json").write_text(json.dumps(d))
+    with pytest.raises(SystemExit, match="own vocabulary"):
+        S.load_recovery(tmp_path)
+
+
+def test_s9_advantage_runs_finer_minus_coarser_and_is_paired_by_seed_index(tmp_path):
+    value = recovery_values()
+    data = S.load_recovery(write_recovery(tmp_path, value))
+    rcells = S.index_recovery(data["rows"])
+    d = [value("L188", "linear", 188, s) - value("L188", "linear", 17, s) for s in range(1, 6)]
+    row = S.recovery_row(rcells, "L188", "linear", 188, 17, [1, 2, 3, 4, 5])
+    ref = stats.ttest_rel([value("L188", "linear", 188, s) for s in range(1, 6)],
+                          [value("L188", "linear", 17, s) for s in range(1, 6)])
+    assert row["n_pairs"] == 5 and row["df"] == 4 and row["seeds"] == [1, 2, 3, 4, 5]
+    assert row["mean_diff"] > 0                                    # the finer model wins here
+    assert row["mean_diff"] == pytest.approx(float(np.mean(d)), rel=1e-12)
+    assert row["t"] == pytest.approx(ref.statistic, rel=1e-9)
+    assert row["p"] == pytest.approx(ref.pvalue, rel=1e-9)
+    assert row["sign_flip"] == {"p": 2 / 2 ** 5, "floor": 2 / 2 ** 5, "n_arrangements": 32}
+    assert row["advantage"] == "finer better" and "is_bound" not in row
+
+
+def test_s9_crossover_is_the_coarser_models_own_rung_when_planted_that_way(tmp_path):
+    s9 = s9_of(write_recovery(tmp_path, recovery_values()))
+    assert set(s9["pairs"]) == {"188_vs_162", "188_vs_43", "188_vs_17", "162_vs_43",
+                                "162_vs_17", "43_vs_17"}
+    for key, per_probe in s9["pairs"].items():
+        for kind in S.PROBES:
+            c = per_probe[kind]["crossover"]
+            assert c["crossover_rung"] == OWN_RUNG[per_probe[kind]["coarse"]], (key, kind)
+            assert c["crossover_at_coarser_own_rung"] is True
+            assert c["coarser_own_rung_in_bracket"] is True
+            assert c["crossover_bracket"][0] == c["crossover_rung"]
+            # every rung finer than the crossover carries a demonstrable advantage
+            finer = S.RUNGS[:S.RUNGS.index(c["crossover_rung"])]
+            assert all(c["per_rung_advantage"][r] == "finer better" for r in finer)
+            assert all(c["per_rung_advantage"][r] == "not distinguishable"
+                       for r in S.RUNGS[S.RUNGS.index(c["crossover_rung"]):])
+    assert [c["verdict"] for c in s9["clauses"]] == ["confirmed", "confirmed"]
+    assert s9["composite_verdict"] == "confirmed in clauses 1-2"
+    assert s9["overall"] == "confirmed"
+    assert all(w[k]["holds"] for w in s9["wins"].values() for k in S.PROBES)
+    assert s9["endpoint"]["lower_is_better"] is False
+    assert s9["endpoint"]["difference"].startswith("finer model")
+
+
+def test_s9_fails_both_clauses_when_the_advantage_never_decays(tmp_path):
+    """A flat handicap: the coarser model is behind even at its own vocabulary."""
+    s9 = s9_of(write_recovery(tmp_path, recovery_values(persist=True)))
+    for per_probe in s9["pairs"].values():
+        c = per_probe["linear"]["crossover"]
+        assert c["crossover_rung"] is None and c["crossover_bracket"] == [None, None]
+        assert c["crossover_at_coarser_own_rung"] is False
+        assert c["coarser_own_rung_in_bracket"] is False
+        assert c["last_rung_with_advantage"] == S.RUNGS[-1]
+    assert [c["verdict"] for c in s9["clauses"]] == ["not confirmed", "not confirmed"]
+    assert "0 of 6 model pairs" in s9["clauses"][1]["detail"]
+    assert s9["composite_verdict"] == "not confirmed in clauses 1-2"
+    assert s9["overall"] == "not confirmed"
+    # the 17-class model is beaten at its own rung, which is clause 1's failure
+    w = s9["wins"]["17"]["linear"]
+    assert w["own_rung"] == "R16_Q1" and not w["holds"] and w["n_beaten"] == w["n_estimable"]
+    assert {b["rung"] for b in w["beaten_by"]} == {"R16_Q1", "R3_VIS", "R1_Q1"}
+
+
+def test_s9_gives_the_partial_verdict_when_the_crossover_is_at_the_wrong_rung(tmp_path):
+    """The advantage dies one rung EARLY: the models still tie at and below own."""
+    s9 = s9_of(write_recovery(tmp_path, recovery_values(shift=1)))
+    for per_probe in s9["pairs"].values():
+        b = per_probe["linear"]
+        c = b["crossover"]
+        assert c["crossover_rung"] == S.RUNGS[S.RUNGS.index(OWN_RUNG[b["coarse"]]) - 1]
+        assert c["crossover_at_coarser_own_rung"] is False
+        assert c["coarser_own_rung_in_bracket"] is True      # still inside the bracket
+    assert [c["verdict"] for c in s9["clauses"]] == ["confirmed", "not confirmed"]
+    assert s9["composite_verdict"] == "confirmed in clause 1, not confirmed in clause 2"
+    assert s9["overall"] == "partially confirmed"
+    assert "0 of 6 model pairs cross over exactly" in s9["clauses"][1]["detail"]
+    assert "6 of 6 have that rung inside the crossover bracket" in s9["clauses"][1]["detail"]
+
+
+def test_s9_holm_is_within_each_pairs_own_ladder_of_rungs(tmp_path):
+    s9 = s9_of(write_recovery(tmp_path, recovery_values()))
+    rows = s9["pairs"]["188_vs_17"]["linear"]["rungs"]
+    assert [r["rung"] for r in rows] == list(S.RUNGS)
+    est = [r for r in rows if r["estimable"]]
+    assert len(est) == len(S.RUNGS)
+    assert [r["holm_reject"] for r in est] == \
+        list(map(bool, S.holm([r["p"] for r in est], S.ALPHA)))
+
+
+def test_s9_missing_cells_are_reported_not_silently_dropped(tmp_path):
+    root = write_recovery(tmp_path, recovery_values(), omit={(43, 2)})
+    s9 = s9_of(root)
+    assert set(s9["missing_cells"]) == {f"{r}/{k}" for r in S.RUNGS for k in S.PROBES}
+    assert all(v == [[43, 2]] for v in s9["missing_cells"].values())
+    for per_probe in s9["pairs"].values():
+        n = [r["n_pairs"] for r in per_probe["linear"]["rungs"]]
+        assert set(n) == ({4} if 43 in (per_probe["linear"]["fine"],
+                                        per_probe["linear"]["coarse"]) else {5})
+
+
+def test_s9_skipped_rung_is_recorded(tmp_path):
+    root = write_recovery(tmp_path, recovery_values(), skip={("r16q1-s3", "R1_Q1")})
+    s9 = s9_of(root)
+    assert s9["skipped_cells"] and s9["skipped_cells"][0]["rung"] == "R1_Q1"
+    assert s9["skipped_cells"][0]["reason"] == "one group"
+    assert s9["missing_cells"]["R1_Q1/linear"] == [[17, 3]]
+
+
+def test_s9_cli_writes_its_own_file_and_leaves_the_ladder_cli_alone(tmp_path):
+    root = write_recovery(tmp_path / "rec", recovery_values())
+    out = tmp_path / "out"
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        assert S.main(["--label-recovery", str(root), "--out", str(out)]) == 0
+    res = json.loads((out / "s9_label_recovery.json").read_text())
+    text = buf.getvalue()
+    assert not (out / "seed_level_results.json").exists()
+    assert res["secondary"]["S9"]["overall"] == "confirmed"
+    assert res["provenance"]["script_sha256"] == S._sha(REPO / "experiments/STATS/seed_level.py")
+    assert len(res["provenance"]["inputs"]) == 5
+    assert "S9: LABEL RECOVERY ACROSS THE CONTRACTION TREE" in text
+    assert "crossover at R16_Q1" in text and "crossover there: YES" in text
+    assert "higher is better" in text.lower() and "no effect" not in text.lower()
+    with pytest.raises(SystemExit, match="Refusing to overwrite"):
+        S.main(["--label-recovery", str(root), "--out", str(out)])
+    # and the ladder still runs on its own, with no --label-recovery
+    ladder = write_ladder(tmp_path / "lad", ladder_values(step=1.0))
+    res2, _ = run(ladder, tmp_path / "out2")
+    assert res2["confirmatory"]["C1"]["run"] is True
+    with pytest.raises(SystemExit):
+        S.main(["--out", str(tmp_path / "out3")])          # neither input given
+
+
+def test_s9_and_the_ladder_can_run_in_one_call(tmp_path):
+    ladder = write_ladder(tmp_path / "lad", ladder_values(step=1.0))
+    rec = write_recovery(tmp_path / "rec", recovery_values())
+    out = tmp_path / "out"
+    with contextlib.redirect_stdout(io.StringIO()):
+        assert S.main([str(ladder), "--label-recovery", str(rec), "--out", str(out)]) == 0
+    assert (out / "seed_level_results.json").exists()
+    assert (out / "s9_label_recovery.json").exists()
+
+
+def test_s9_drop_pairs_is_honoured(tmp_path):
+    root = write_recovery(tmp_path, recovery_values())
+    s9 = s9_of(root, drop=(2,))
+    assert s9["seeds_used"] == [1, 3, 4, 5]
+    rows = s9["pairs"]["188_vs_17"]["linear"]["rungs"]
+    assert all(r["n_pairs"] == 4 and r["df"] == 3 and 2 not in r["seeds"] for r in rows)
 
 
 # ---------------------------------------------------------------- two implementations, reconciled

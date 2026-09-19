@@ -622,6 +622,25 @@ def table_tests(A: dict) -> str:
     c1 = (A.get("confirmatory") or {}).get("C1")
     if c1 and c1.get("run"):
         trend_row("C1", c1)
+        # C1's prediction has three clauses and the trend test answers only two
+        # of them. The third -- that the three finer vocabularies perform alike
+        # -- is a predicted null, so PRESPEC 2.5 requires an equivalence test,
+        # and one of its three pairs fails at the declared bound. Printing the
+        # trend row alone would read as a clean confirmation of a prediction
+        # that is only partly confirmed, which is the failure a pre-registration
+        # exists to prevent. The clause rows come straight out of the analysis;
+        # nothing here recomputes a verdict.
+        for cl in c1.get("clauses", []):
+            rows.append(" & ".join([
+                f"\\quad clause {cl['n']}",
+                tex(cl["text"]),
+                tex(cl["test"]),
+                "---" if cl.get("detail") is None else tex(str(cl["detail"])),
+                "---" if cl.get("p") is None else fmt_p(cl["p"]),
+                tex(cl["verdict"])]) + " \\\\")
+        if c1.get("composite_verdict"):
+            rows.append("\\multicolumn{6}{@{}l@{}}{\\itshape C1 overall: "
+                        + tex(c1["composite_verdict"]) + "} \\\\")
     for h in A.get("confirmatory", {}).get("holm_family", []):
         if h["status"] == "pending":
             rows.append(f"{h['test']} & not yet measured & --- & --- & --- & pending \\\\")
