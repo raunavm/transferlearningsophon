@@ -256,6 +256,149 @@ def test_the_old_epsilon_floor_overstated_the_separation():
     assert value > np.log(1e-12), "the floor must not sink below the resolution"
 
 
+# ---------------------------------------------------------------------------
+# The operating-point flag (docs/PRESPEC_2026-09.md, final section).
+#
+# 50 % signal efficiency is unusable on bvc_resonant: zero of 11,876 test
+# background jets survive it at the three finest vocabularies, and on the MLP
+# probe at all four, so the headline physics number is a statement about the
+# size of the test split. The prespec added 70 % and 90 %. These tests bind the
+# two things that could go wrong while adding them -- silently MOVING the
+# working point instead of adding to it, and moving the one working point that
+# is pinned to a published table.
+# ---------------------------------------------------------------------------
+
+def _fixture_arm(d: pathlib.Path) -> pathlib.Path:
+    """One arm's feature cache: bvc_resonant perfectly separable (so its cells
+    are censored at every operating point), bc_vs_rest ordinary (so a resolved
+    cell is in the same run), both above MIN_PER_CLASS on the test split."""
+    d.mkdir(parents=True, exist_ok=True)
+    rng = np.random.default_rng(7)
+    per = 6000
+    labels = np.concatenate([
+        np.full(per, 0), np.full(per, 1),                       # bvc_resonant
+        np.full(per, 4),                                        # bc_vs_rest sig
+        np.repeat([5, 6, 70], per // 3)]).astype(np.int16)       # bc_vs_rest bkg
+    n = labels.size
+    X = rng.normal(size=(n, 8)).astype(np.float32)
+    X[labels == 0, 0] = 1.0          # exact, so the split is perfect
+    X[labels == 1, 0] = -1.0
+    X[labels == 4, 0] = 0.8 * rng.normal(size=int((labels == 4).sum())) + 0.8
+    np.save(d / "features.npy", X)
+    np.save(d / "label188.npy", labels)
+    (d / "extract_manifest.json").write_text('{"checkpoint_sha256": "%s"}' % ("d" * 64))
+    # bc_vs_rest is defined only inside its published window
+    np.savez(d / "observers.npz",
+             jet_pt=np.full(n, 500.0), jet_sdmass=np.full(n, 110.0),
+             jet_eta=np.zeros(n))
+    return d
+
+
+def _run(probe, tmp: pathlib.Path, extra: list[str]) -> dict:
+    import json as _json
+    feats = _fixture_arm(tmp / "feat")
+    out = tmp / ("out" + "".join(extra).replace(" ", "").replace("-", "").replace(".", ""))
+    argv = ["probe.py", "--features", f"A={feats}", "--out", str(out),
+            "--tasks", "bvc_resonant", "bc_vs_rest"] + extra
+    import sys as _sys
+    old = _sys.argv
+    _sys.argv = argv
+    try:
+        assert probe.main() == 0
+    finally:
+        _sys.argv = old
+    return _json.loads((out / "probe_results.json").read_text())
+
+
+@pytest.fixture(scope="module")
+def runs(probe, tmp_path_factory):
+    tmp = tmp_path_factory.mktemp("eps")
+    return {"default": _run(probe, tmp, []),
+            "flagged": _run(probe, tmp, ["--eps-s", "0.5", "0.7", "0.9"])}
+
+
+def test_the_default_reproduces_todays_behaviour_exactly(runs):
+    """No flag must mean what it meant before, or every committed v1 result
+    stops being reproducible from the committed code."""
+    d = runs["default"]
+    assert d["eps_s_default"] == 0.5
+    assert d["tasks"]["bvc_resonant"]["eps_s"] == [0.5]
+    for entry in d["tasks"]["bvc_resonant"]["arms"]["A"].values():
+        assert set(entry["rejection_at"]) == {"0.50"}
+        assert entry["rejection_eps_s"] == 0.5
+
+
+def test_the_flag_adds_operating_points_and_moves_none(runs):
+    """The 50 % cell -- and every flat field mirroring it -- must come back bit
+    for bit, so v2 contains v1 rather than replacing it."""
+    a = runs["default"]["tasks"]["bvc_resonant"]["arms"]["A"]
+    b = runs["flagged"]["tasks"]["bvc_resonant"]["arms"]["A"]
+    assert runs["flagged"]["eps_s_default"] == 0.5
+    assert runs["flagged"]["tasks"]["bvc_resonant"]["eps_s"] == [0.5, 0.7, 0.9]
+    for kind in ("linear", "mlp"):
+        assert set(b[kind]["rejection_at"]) == {"0.50", "0.70", "0.90"}
+        assert b[kind]["rejection_at"]["0.50"] == a[kind]["rejection_at"]["0.50"]
+        for k in ("auc", "log1m_auc", "log1m_auc_censored", "rejection", "eps_b",
+                  "rejection_is_bound", "n_bkg_pass", "rel_stat_err",
+                  "rejection_eps_s"):
+            assert b[kind][k] == a[kind][k], k
+
+
+def test_the_published_anchors_operating_points_are_untouched(probe, runs):
+    """bc_vs_rest quotes 60 % / 40 % to match arXiv:2503.00118's table. A task
+    pinned to a published number must not drift with a command-line default."""
+    assert probe.TASKS["bc_vs_rest"]["eps_s"] == [0.60, 0.40]
+    for r in runs.values():
+        t = r["tasks"]["bc_vs_rest"]
+        assert not t.get("skipped"), t
+        assert t["eps_s"] == [0.60, 0.40]
+        for entry in t["arms"]["A"].values():
+            assert set(entry["rejection_at"]) == {"0.60", "0.40"}
+            assert entry["rejection_eps_s"] == 0.60
+    # and it is a RESOLVED cell, so the censoring test below is not vacuous
+    lin = runs["flagged"]["tasks"]["bc_vs_rest"]["arms"]["A"]["linear"]
+    assert lin["n_bkg_pass"] > 0 and not lin["rejection_is_bound"]
+
+
+def test_a_censored_cell_carries_its_flag_and_its_cap_at_every_point(runs):
+    """A bound is a statement about the size of the test split. Every operating
+    point must return the full tuple, so no censored value can print as a bare
+    number, and the cap must be readable without inferring it from the cells
+    that happen to be sitting at it."""
+    t = runs["flagged"]["tasks"]["bvc_resonant"]
+    cap = t["n_background_test"]
+    assert cap > 0
+    lin = t["arms"]["A"]["linear"]
+    for point in ("0.50", "0.70", "0.90"):
+        r = lin["rejection_at"][point]
+        assert set(r) == {"rejection", "eps_b", "rejection_is_bound",
+                          "n_bkg_pass", "rel_stat_err"}
+        assert r["rejection_is_bound"] is True, point
+        assert r["n_bkg_pass"] == 0 and r["eps_b"] == 0.0
+        assert r["rejection"] == float(cap), (point, r["rejection"], cap)
+
+
+def test_the_cap_is_recorded_for_every_measured_task(runs):
+    """It is derivable from a BOUNDED cell (rejection == cap there) and from
+    nowhere else, so an uncensored cell could not say how much headroom it had
+    left. `n` and `n_signal` are full-sample counts, not test-split counts."""
+    for r in runs.values():
+        for task, t in r["tasks"].items():
+            if t.get("skipped"):
+                continue
+            assert t["n_background_test"] > 0 and t["n_signal_test"] > 0
+            assert t["n_background_test"] < t["n"] - t["n_signal"], \
+                "the cap is the TEST split's background count, not the sample's"
+
+
+def test_an_out_of_range_operating_point_is_rejected(probe, tmp_path):
+    """np.interp clamps rather than raising, so `--eps-s 50 70 90` would return
+    a rejection of 1.0 in every cell and nothing would error."""
+    with pytest.raises(SystemExit) as e:
+        _run(probe, tmp_path, ["--eps-s", "50", "70", "90"])
+    assert "0, 1" in str(e.value)
+
+
 def test_a_contrast_touching_a_censored_arm_is_flagged_as_a_bound():
     """The magnitude is a lower bound, so the code must say so in the JSON."""
     import ast

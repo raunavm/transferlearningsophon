@@ -1,0 +1,20 @@
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Published Sophon-family discriminants against pretraining vocabulary size (columns, finest first). $\bullet$ = the discriminant is exactly constructible from that vocabulary's output nodes; --- = it is not. The criterion is Sophon's class-division property: a discriminant survives a merge only if both of its coefficient vectors are constant on every merged group, so this is a statement about the partition and needs no training and no data.}
+\label{tab:usecase}
+\begin{tabular}{l l cccccccc}
+\toprule
+discriminant & source & 188 & 162 & 64 & 43 & 30 & 17 & 4 & 2 \\
+\midrule
+X$\to$bb vs QCD & arXiv:2405.12972 Eq. (4) & $\bullet$ & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- \\
+X$\to$cs vs QCD (A1) & arXiv:2405.12972 Eq. (5)-(6) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
+X$\to$bq\_all q\_all vs QCD (A3) & arXiv:2405.12972 Eq. (5)-(6) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
+triboson event discriminant & arXiv:2405.12972 Eq. (7)-(9) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
+D\_bc (|V\_cb|) & arXiv:2503.00118 Eq. (1) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
+GN3X-style per-QCD-subclass rejection & ATL-PHYS-PUB-2026-013 Sec. 6 & $\bullet$ & --- & --- & --- & --- & --- & --- & --- \\
+\bottomrule
+\multicolumn{10}{@{}p{\linewidth}@{}}{\footnotesize Column headings are the number of classes in the vocabulary, counted from \texttt{configs/labelmaps/rung\_label\_maps.v1.csv}; they are not the numbers in the internal rung names, which count resonant groups only.} \\
+\end{tabular}
+\end{table*}

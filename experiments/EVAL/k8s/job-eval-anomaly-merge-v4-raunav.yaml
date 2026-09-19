@@ -1,0 +1,287 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # MERGE THE ANOMALY RUNS AT FOUR LABEL GRANULARITIES x FIVE SEEDS (plan 2026-09-18).
+  #
+  # v1..v3 stay untouched. Each is the only record of what the table looked like
+  # at its own tag, and overwriting a results file is RED (CLAUDE.md 1). This
+  # writes a NEW directory and reads v3's inputs rather than v3's output.
+  #
+  # TWENTY INPUTS, THREE PROVENANCES. Three were merged into anomaly_merged_v3
+  # and are reused as they stand (17-class seeds 2/3/4); four were launched
+  # 2026-09-17 to make the comparison 4-vs-4 (162-class seeds 2/3/4, 17-class
+  # seed 5); and thirteen are the 2026-09-18 wave, which adds the 188-class and
+  # 43-class levels, fills 162-class seed 5 and 17-class seed 1, and re-runs
+  # 162-class seed 1 for the reason below. The per-model `regret` columns are
+  # STALE BY CONSTRUCTION --
+  # a model run alone normalises against itself and writes 1.000 everywhere,
+  # the null under test manufactured by the aggregation (audit-2-anomaly) -- and
+  # are overwritten here by the cross-model and level-balanced passes, which are
+  # the same functions the single-process path calls, not a second copy.
+  #
+  # WHAT THIS ASSERTS BEFORE ANYTHING IS WRITTEN, AND WHY EACH ONE.
+  #
+  #   1. EVERY MODEL CONTRIBUTES THE SAME (signal, N_sig) CELLS. The scoring
+  #      script writes a complete-LOOKING results file after every signal, so an
+  #      existence check cannot tell a finished run from one its deadline killed.
+  #      A model short of a signal still passes the arm-count filter and its
+  #      cells then read as a measured cost of coarsening while actually
+  #      measuring seed-to-seed spread inside one vocabulary.
+  #   2. classes_removed IS ON EVERY CELL AND AGREES WITH THE COMMITTED TREE.
+  #      The leave-one-node-out score drops the signal's own node, which holds 1
+  #      native class at 188/162 but 3-12 at 43 and 10-29 at 17 -- the same code
+  #      is a different estimator at each level. Recomputed from the tree here,
+  #      and a cell whose stored count disagrees is fatal rather than silently
+  #      overwritten: disagreement means the artifact was produced against a
+  #      different tree.
+  #   3. NO TWO MODELS DISAGREE ON ANY SHARED CONFIGURATION KEY -- above all
+  #      row_alignment_sha256, which says they scored the SAME jets in the SAME
+  #      order. Cells from runs that differ in configuration or row ordering have
+  #      no common minimum and concatenating them yields a table with no error
+  #      bar and no way to notice.
+  #   4. THE SEED COUNTS PER GRANULARITY ARE EQUAL. anomaly_merged_v3 flagged
+  #      FIVE of six signals as having unequal seeds per level, because it was
+  #      one L162 model against three R16_Q1 models. A minimum over k draws falls
+  #      as k grows, so the level with more seeds supplies the denominator more
+  #      often -- not because its vocabulary is better but because it had more
+  #      chances (P = 0.75 against the 1-seed level under a true null). The flag
+  #      is PRINTED either way and must now come back empty.
+  #
+  # ALL FOUR RUN IN A PREFLIGHT THAT WRITES NOTHING, so a ragged or
+  # incommensurable input costs minutes rather than a directory that has to be
+  # argued about later. The preflight calls the merge module's own functions --
+  # merge(), backfill_classes_removed() -- so it cannot drift from what the
+  # merge itself will do.
+  #
+  # WHY THE 162-CLASS SEED-1 INPUT IS anomaly_l162-s1b-v2 AND NOT anomaly.
+  # /data/results/eval/anomaly is that model's 2026-09-09 artifact and it holds
+  # FIVE of six signals -- label_X_YY_qqqq is absent because that job died at
+  # ~25 h (ledger: eval-anomaly-died-partial) and it is the last signal in the
+  # suite. anomaly_merged_v3 records it: arms_missing_signals
+  # {'l162-s1b': ['label_X_YY_qqqq']}, signals_with_one_rung ['label_X_YY_qqqq'].
+  # It contributes 30 cells where every other model contributes 36, so assertion
+  # 1 below refuses it -- the guard working, not a defect.
+  #
+  # RESOLVED BY A FULL RE-RUN (PI, 2026-09-19), job eval-anomaly-l162-s1b-v2-
+  # raunav, and NOT by an ~8.3 h single-signal top-up. A top-up would leave two
+  # payloads that have to be unioned into one model's record, and merge()
+  # refuses a duplicated model by design -- "keeping one silently hides which run
+  # the published number came from". That refusal guards the thing this study is
+  # most exposed to, and working around it to save ~40 pod-hours out of ~650 is
+  # a bad trade.
+  #
+  # THE 30-CELL ARTIFACT IS NOT DELETED AND NOT OVERWRITTEN. Nothing in
+  # /data/results ever is. It stays as the only record of what merges v1..v3
+  # actually read, and it is simply not an input here: listing both it and the
+  # re-run would be the duplicated model merge() refuses.
+  #
+  # PIN mtx-s1.51, the tag this wave's twelve per-model specs also clone, so one
+  # ref explains every new number.
+  #
+  # CPU-ONLY, ZERO GPU, minutes: this is JSON arithmetic, not a rerun.
+  name: eval-anomaly-merge-v4-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: merge
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.51" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          IN=""
+          for d in /data/results/eval/anomaly_l162-s1b-v2 \
+                   /data/results/eval/anomaly_l162-s2 \
+                   /data/results/eval/anomaly_l162-s3 \
+                   /data/results/eval/anomaly_l162-s4 \
+                   /data/results/eval/anomaly_l162-s5 \
+                   /data/results/eval/anomaly_l188-s1 \
+                   /data/results/eval/anomaly_l188-s2 \
+                   /data/results/eval/anomaly_l188-s3 \
+                   /data/results/eval/anomaly_l188-s4 \
+                   /data/results/eval/anomaly_l188-s5 \
+                   /data/results/eval/anomaly_r42q1-s1 \
+                   /data/results/eval/anomaly_r42q1-s2 \
+                   /data/results/eval/anomaly_r42q1-s3 \
+                   /data/results/eval/anomaly_r42q1-s4 \
+                   /data/results/eval/anomaly_r42q1-s5 \
+                   /data/results/eval/anomaly_r16q1-s1 \
+                   /data/results/eval/anomaly_r16q1-s2 \
+                   /data/results/eval/anomaly_r16q1-s3 \
+                   /data/results/eval/anomaly_r16q1-s4 \
+                   /data/results/eval/anomaly_r16q1-s5; do
+            [ -f "${d}/anomaly_results.json" ] || { echo "FATAL: no ${d}/anomaly_results.json -- run the per-model jobs first"; exit 1; }
+            IN="${IN} ${d}"
+          done
+
+          echo "=== preflight: writes nothing, refuses everything it cannot justify ==="
+          python3 - ${IN} <<'PY'
+          import collections, importlib.util, json, pathlib, sys
+
+          def _load(name, rel):
+              s = importlib.util.spec_from_file_location(name, rel)
+              m = importlib.util.module_from_spec(s)
+              s.loader.exec_module(m)
+              return m
+
+          # The scoring module is reached THROUGH the merge module's own loader
+          # rather than by path. That keeps one source of truth for where it
+          # lives, and it keeps this spec off tests/test_spec_preconditions'
+          # feature-consumer list: this job reads per-model JSON and opens no
+          # feature cache, so prechecking features.npy here would be a guard
+          # asserting a precondition that has nothing to do with the job.
+          mg = _load("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+          an = mg._anomaly()
+
+          dirs = sys.argv[1:]
+          payloads = [(d, json.loads((pathlib.Path(d) / "anomaly_results.json")
+                                     .read_text())) for d in dirs]
+          print("inputs: %d" % len(payloads))
+
+          # (3) shared configuration keys, and no duplicated model. merge()
+          # raises on either, naming the pair and the key.
+          m = mg.merge(payloads)
+          print("models: %d" % len(m["arms"]))
+          for a, src in sorted(m["merged_from"].items()):
+              print("  %-12s <- %s" % (a, src))
+
+          # (1) identical (signal, N_sig) cell sets
+          cells = {a: frozenset((s, n) for s, per in ad["signals"].items()
+                                for n in per)
+                   for a, ad in m["arms"].items()}
+          groups = collections.defaultdict(list)
+          for a, c in cells.items():
+              groups[c].append(a)
+          if len(groups) != 1:
+              ref = max(groups, key=lambda c: len(groups[c]))
+              print("FATAL: the models do not contribute the same "
+                    "(signal, N_sig) cells. %d of %d carry %d cells."
+                    % (len(groups[ref]), len(cells), len(ref)))
+              for c, aa in groups.items():
+                  if c == ref:
+                      continue
+                  for a in sorted(aa):
+                      print("  %s carries %d, missing %s"
+                            % (a, len(c), sorted(x for x in ref if x not in c)))
+              print("A run short of a signal still passes the arm-count filter, "
+                    "so its cells would read as a cost of coarsening while "
+                    "measuring seed spread inside ONE vocabulary.")
+              sys.exit(1)
+          print("every model carries the same %d (signal, N_sig) cells"
+                % len(next(iter(groups))))
+
+          # (2) classes_removed present everywhere and agreeing with the tree.
+          # backfill_classes_removed raises on any cell whose stored count
+          # disagrees with the committed contraction tree.
+          filled, no_rung = mg.backfill_classes_removed(m, an)
+          if no_rung:
+              print("FATAL: %s carry no label-set name, so the node that "
+                    "leave-one-node-out removes cannot be counted and any "
+                    "integer written would be fabricated." % sorted(no_rung))
+              sys.exit(1)
+          tot = sum(1 for ad in m["arms"].values()
+                    for per in ad["signals"].values()
+                    for agg in per.values() if isinstance(agg, dict))
+          have = sum(1 for ad in m["arms"].values()
+                     for per in ad["signals"].values()
+                     for agg in per.values()
+                     if isinstance(agg, dict) and "classes_removed" in agg)
+          print("classes_removed on %d/%d cells (%d recomputed from the tree)"
+                % (have, tot, filled))
+          if have != tot:
+              sys.exit(1)
+
+          # (4) equal seeds per granularity
+          per_level = collections.Counter(ad["rung"] for ad in m["arms"].values())
+          print("seeds per granularity: %s" % dict(sorted(per_level.items())))
+          if len(set(per_level.values())) != 1:
+              print("FATAL: the seed counts per granularity are not equal. The "
+                    "cross-model regret divides by a minimum over models, and a "
+                    "minimum over k draws falls as k grows, so the level with "
+                    "more seeds supplies the denominator more often -- not "
+                    "because its vocabulary is better but because it had more "
+                    "chances (P = 0.75 against the 1-seed level under a true "
+                    "null).")
+              sys.exit(1)
+          print("preflight passed")
+          PY
+
+          # A NEW DIRECTORY. v1..v3 are the only record of what the table looked
+          # like at their own tags, and overwriting a results file is RED.
+          OUT=/data/results/eval/anomaly_merged_v4
+          [ -e "${OUT}/anomaly_results.json" ] && {
+            echo "FATAL: ${OUT}/anomaly_results.json exists; refusing to overwrite."
+            exit 1; }
+          mkdir -p ${OUT}
+          python3 experiments/EVAL/anomaly_merge.py --inputs ${IN} --out ${OUT}
+
+          echo "=== the merged artifact ==="
+          python3 - "${OUT}" <<'PY'
+          import collections, json, sys
+          d = json.load(open(sys.argv[1] + "/anomaly_results.json"))
+          print("models:", sorted(d["arms"]))
+          print("seeds per granularity:", dict(sorted(collections.Counter(
+              ad["rung"] for ad in d["arms"].values()).items())))
+          print("null_not_flat:", len(d.get("null_not_flat", [])))
+          print("null_unmeasured:", len(d.get("null_unmeasured", [])))
+          c = d["completeness"]
+          print("arms_missing_signals:", c["arms_missing_signals"])
+          print("cells_normalised_against_one_arm:",
+                len(c["cells_normalised_against_one_arm"]))
+          print("signals_with_one_rung:", c["signals_with_one_rung"])
+          sp = d.get("signal_provenance", {})
+          print("in_domain:", sp.get("in_domain"))
+          for sig, v in sorted(sp.get("signals", {}).items()):
+              print(" ", sig, v["classes_removed_by_rung"])
+
+          # PRINTED EITHER WAY, then asserted. v3 reported five of six signals
+          # here; with equal seeds per granularity it must be empty, and an
+          # empty list is the evidence that the pooled regret is no longer
+          # decided by which level happened to have more seeds.
+          unequal = d.get("signals_with_unequal_seeds_per_rung")
+          print("signals_with_unequal_seeds_per_rung:", unequal)
+          assert unequal == [], (
+              "the seed counts per granularity are still unequal for these "
+              "signals; the pooled regret is biased toward the level with more "
+              "seeds and only regret_rung_balanced may be read")
+
+          rb = sum(1 for ad in d["arms"].values() for pn in ad["signals"].values()
+                   for c2 in pn.values() if isinstance(c2, dict)
+                   for v in c2.values()
+                   if isinstance(v, dict) and "regret_rung_balanced" in v)
+          pooled = sum(1 for ad in d["arms"].values()
+                       for pn in ad["signals"].values()
+                       for c2 in pn.values() if isinstance(c2, dict)
+                       for v in c2.values()
+                       if isinstance(v, dict) and "regret" in v)
+          print("family-cells with regret_rung_balanced: %d/%d" % (rb, pooled))
+          assert rb == pooled, "every regret must have a level-balanced twin"
+          PY
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "16Gi", cpu: "2", ephemeral-storage: "10Gi" }
+          limits:   { memory: "16Gi", cpu: "2", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

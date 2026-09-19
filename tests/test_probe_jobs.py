@@ -11,9 +11,10 @@ bp = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bp)
 
 
-def test_ten_jobs_all_named_raunav_and_parse():
+def test_fifteen_jobs_all_named_raunav_and_parse():
     jobs = bp.build()
-    assert len(jobs) == 10
+    # 5 probe v1 + 5 label-recovery v1 + 5 probe v2
+    assert len(jobs) == 15
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"]
@@ -38,9 +39,71 @@ def test_each_job_holds_one_seed_index_at_all_four_granularities():
 def test_outputs_are_disjoint_per_seed_and_mlp_cannot_be_skipped():
     outs = [l.strip() for t in bp.build().values() for l in t.splitlines()
             if l.strip().startswith("OUT=")]
-    assert len(outs) == len(set(outs)) == 10
+    assert len(outs) == len(set(outs)) == 15
     for text in bp.build().values():
         assert "--no-mlp" not in text and "--skip-mlp" not in text
+
+
+def test_v2_differs_from_v1_only_in_name_output_flag_and_pin():
+    """The re-run exists to add 70 % and 90 % signal efficiency to a censored
+    metric (docs/PRESPEC_2026-09.md, final section). Anything else that moved
+    between v1 and v2 -- the model list, the task list, the bootstrap count, the
+    resources -- would make the new rejection numbers incomparable to the
+    committed AUCs they sit beside. Stated as an exact rewrite rather than a
+    diff count, so a fifth difference cannot hide inside a fourth."""
+    jobs = bp.build()
+    tasks = " ".join(bp.TASKS)
+    for seed in bp.SEEDS:
+        v1 = jobs[f"job-probe-ladder-v1-s{seed}-raunav.yaml"]
+        v2 = jobs[f"job-probe-ladder-v2-s{seed}-raunav.yaml"]
+        rewritten = (
+            v1.replace(f"probe-ladder-v1-s{seed}-raunav",
+                       f"probe-ladder-v2-s{seed}-raunav")
+              .replace(f'--branch "{bp.PIN}"', f'--branch "{bp.PIN_V2}"')
+              .replace(f"probe_ladder_v1/s{seed}", f"probe_ladder_v2/s{seed}")
+              .replace(f"--tasks {tasks} \\",
+                       f"--tasks {tasks} \\\n            --eps-s 0.5 0.7 0.9 \\"))
+        assert rewritten == v2, f"seed {seed}: v2 changed something beyond the four"
+
+
+def test_v1_is_frozen_at_the_tag_and_the_directory_it_ran_at():
+    """v1 ran and its results are committed under
+    experiments/FIGS/data/probe_ladder_v1/. Re-pinning it or re-pointing its
+    output would falsify the ledger, and v2 must not be able to overwrite it."""
+    jobs = bp.build()
+    for seed in bp.SEEDS:
+        v1 = jobs[f"job-probe-ladder-v1-s{seed}-raunav.yaml"]
+        assert f'--branch "{bp.PIN}"' in v1 and bp.PIN_V2 not in v1
+        assert f"OUT=/data/results/eval/probe_ladder_v1/s{seed}\n" in v1
+        assert "--eps-s" not in v1, "v1 must reproduce the default behaviour"
+        v2 = jobs[f"job-probe-ladder-v2-s{seed}-raunav.yaml"]
+        assert f"OUT=/data/results/eval/probe_ladder_v2/s{seed}\n" in v2
+        assert "probe_ladder_v1" not in v2
+
+
+def test_the_v2_pin_and_its_operating_points():
+    assert bp.PIN_V2 == "mtx-s1.51"
+    assert bp.EPS_S_V2 == [0.5, 0.7, 0.9]
+    assert bp.EPS_S_V2[0] == 0.5, (
+        "50 % must stay FIRST: the flat rejection fields mirror the first "
+        "operating point and experiments/STATS/seed_level.py resolves "
+        "rejection_at through eps_s_default, so v2 must still contain v1")
+    for seed in bp.SEEDS:
+        v2 = bp.build()[f"job-probe-ladder-v2-s{seed}-raunav.yaml"]
+        assert f'--branch "{bp.PIN_V2}"' in v2
+        assert "--eps-s 0.5 0.7 0.9" in v2
+
+
+def test_the_label_recovery_jobs_are_untouched_by_the_rerun():
+    """Label recovery has no rejection metric and no censoring defect, so it
+    stays at v1, at its original pin, with no operating-point flag."""
+    jobs = bp.build()
+    for seed in bp.SEEDS:
+        t = jobs[f"job-labelrec-ladder-v1-s{seed}-raunav.yaml"]
+        assert f'--branch "{bp.PIN}"' in t and bp.PIN_V2 not in t
+        assert f"OUT=/data/results/eval/label_recovery_ladder_v1/s{seed}\n" in t
+        assert "--eps-s" not in t
+    assert len([f for f in jobs if f.startswith("job-labelrec-")]) == 5
 
 
 def test_windowed_task_is_not_requested():

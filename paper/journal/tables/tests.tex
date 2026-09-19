@@ -1,0 +1,28 @@
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{The pre-specified tests, exactly as \texttt{experiments/STATS/seed\_level.py} wrote them; nothing in this table is recomputed. ``Holm'' is the verdict at the full confirmatory family size of 5 with the unmeasured members still pending, so a rejection here holds whatever those turn out to be. Differences run coarser minus finer in $\log(1-$AUC$)$, paired by pretraining seed: positive means the coarser vocabulary is worse.}
+\label{tab:tests}
+\begin{tabular}{l p{0.20\linewidth} p{0.20\linewidth} r r l}
+\toprule
+test & prediction & test used & statistic & $p$ & Holm \\
+\midrule
+C1: $b$ vs $c$, two-prong resonance & performance falls with coarser labels & max-$T$ trend, exact, 5 seed blocks & $31.029$ & $5.27\times10^{-6}$ & rejected \\
+C2 & not yet measured & --- & --- & --- & pending \\
+C3 & not yet measured & --- & --- & --- & pending \\
+C4 & not yet measured & --- & --- & --- & pending \\
+C5 & not yet measured & --- & --- & --- & pending \\
+\addlinespace
+S1: $b$ vs $c$, QCD & performance falls with coarser labels & max-$T$ trend, exact, 5 seed blocks & $31.233$ & $6.03\times10^{-6}$ & rejected \\
+S2: two-prong vs four-prong & equivalent within $\pm\ln(1.1)$ of $1-$AUC & TOST, largest pair (17 vs 162 classes), 5 seed pairs & $+0.4300$ & $0.999$ & not rejected \\
+S2: electron vs muon pair & equivalent within $\pm\ln(1.1)$ of $1-$AUC & TOST, largest pair (17 vs 188 classes), 5 seed pairs & $+13.7566^{\ast}$ & $1$ & not rejected \\
+S6: $b$ vs $c$, two-prong resonance & the nonlinear probe orders the vocabularies as the linear probe does & sign agreement over the estimable level pairs & 6 of 6 & --- & descriptive \\
+S6: $b$ vs $c$, QCD & the nonlinear probe orders the vocabularies as the linear probe does & sign agreement over the estimable level pairs & 6 of 6 & --- & descriptive \\
+S6: two-prong vs four-prong & the nonlinear probe orders the vocabularies as the linear probe does & sign agreement over the estimable level pairs & 5 of 6 & --- & descriptive \\
+S6: electron vs muon pair & the nonlinear probe orders the vocabularies as the linear probe does & sign agreement over the estimable level pairs & 5 of 5 & --- & descriptive \\
+\bottomrule
+\multicolumn{6}{@{}p{\linewidth}@{}}{\footnotesize S6 is descriptive and carries no $p$: it is a count of level pairs, not a test.} \\
+\multicolumn{6}{@{}p{\linewidth}@{}}{\footnotesize $^{\ast}$ the contrast involves a cell whose AUC reached 1 at the resolution of the sample, so the difference is a bound rather than a measured value.} \\
+\end{tabular}
+\end{table*}

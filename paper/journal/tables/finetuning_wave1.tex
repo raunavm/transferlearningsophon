@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{WAVE 1, SUPERSEDED. Fine-tuning accuracy, mean over fine-tuning seeds $\pm$ their standard deviation, against the number of fine-tuning jets $N$. Leg 1 is in-domain, leg 2 is the domain-shifted transfer. These runs come from the first fine-tuning wave, whose 162-class side has a single pretraining seed; they are reported for completeness and are superseded by the five-seed wave.}
+\label{tab:finetuning-wave1}
+\begin{tabular}{l rrrr rrrr}
+\toprule
+& \multicolumn{4}{c}{leg 1} & \multicolumn{4}{c}{leg 2} \\
+initialisation & $10^{4}$ & $10^{5}$ & $10^{6}$ & ref & $10^{4}$ & $10^{5}$ & $10^{6}$ & ref \\
+\midrule
+162-class, seed 1 & 0.3227\,$\pm$\,0.0189 & 0.5351\,$\pm$\,0.0004 & 0.5434\,$\pm$\,0.0007 & --- & 0.7861\,$\pm$\,0.0011 & 0.8360\,$\pm$\,0.0004 & 0.8470\,$\pm$\,0.0003 & --- \\
+17-class, seed 2 & 0.2268\,$\pm$\,0.0081 & 0.4965\,$\pm$\,0.0011 & 0.5197\,$\pm$\,0.0007 & --- & 0.7216\,$\pm$\,0.0105 & 0.8261\,$\pm$\,0.0006 & 0.8394\,$\pm$\,0.0005 & --- \\
+17-class, seed 3 & 0.2420\,$\pm$\,0.0021 & 0.4931\,$\pm$\,0.0029 & 0.5180\,$\pm$\,0.0005 & --- & 0.7210\,$\pm$\,0.0165 & 0.8263\,$\pm$\,0.0004 & 0.8394\,$\pm$\,0.0002 & --- \\
+17-class, seed 4 & 0.2449\,$\pm$\,0.0065 & 0.4951\,$\pm$\,0.0013 & 0.5187\,$\pm$\,0.0005 & --- & 0.7295\,$\pm$\,0.0107 & 0.8256\,$\pm$\,0.0004 & 0.8391\,$\pm$\,0.0004 & --- \\
+pipeline-validation reference, seed 1 & --- & --- & --- & --- & --- & --- & --- & 0.8177 \\
+pipeline-validation reference, seed 2 & --- & --- & --- & --- & --- & --- & --- & 0.8160 \\
+pipeline-validation reference, seed 3 & --- & --- & --- & --- & --- & --- & --- & 0.8163 \\
+random initialisation & 0.3137\,$\pm$\,0.0071 & 0.4201\,$\pm$\,0.0027 & 0.4862\,$\pm$\,0.0010 & --- & 0.6823\,$\pm$\,0.0028 & 0.7777\,$\pm$\,0.0021 & 0.8230\,$\pm$\,0.0013 & --- \\
+published 188-class checkpoint & 0.2161\,$\pm$\,0.0073 & 0.5319\,$\pm$\,0.0023 & 0.5427\,$\pm$\,0.0006 & --- & 0.7274\,$\pm$\,0.0047 & 0.8349\,$\pm$\,0.0005 & 0.8463\,$\pm$\,0.0003 & --- \\
+\bottomrule
+\multicolumn{9}{@{}p{\linewidth}@{}}{\footnotesize --- is an initialisation, or a fine-tuning set size, that leg did not run.} \\
+\end{tabular}
+\end{table*}

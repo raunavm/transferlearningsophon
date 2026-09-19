@@ -32,7 +32,7 @@ metadata:
   # the same function the single-process path calls, not a second copy.
   # Read ONLY the merged artifact.
   #
-  # PIN mtx-s1.47.
+  # PIN mtx-s1.51.
   # THIS LINE AND THE `git clone --branch` LINE BELOW MUST NAME THE SAME TAG,
   # and until 2026-09-19 they did not: the header still cited the tag that first
   # carried the cross-arm regret split while the clone line had moved on twice,
@@ -44,7 +44,7 @@ metadata:
   # CPU-ONLY, ZERO GPU. us-west required: this streams cached features off a
   # PVC at SDSC, and the 2026-09-11 idle-GPU warnings were all us-east pods
   # starved by that distance.
-  name: eval-anomaly-l162-s2-raunav
+  name: eval-anomaly-l162-s5-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 2
@@ -70,14 +70,14 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s1.47" \
+          git clone --depth 1 --branch "mtx-s1.51" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
           git rev-parse HEAD
           export PYTHONUNBUFFERED=1
 
-          a=mtx-l162-s2; r=L162; k=162
+          a=mtx-l162-s5; r=L162; k=162
           d=/data/results/eval/${a}/features_e79
           # PRECONDITIONS MATCH WHAT probe.load_arm ACTUALLY OPENS (probe.py:211-218).
           # CORRECTED 2026-09-12: this block hard-failed on observers.npz, which
@@ -106,11 +106,11 @@ spec:
           fi
           [ -f "${d}/logits.npy" ] || { echo "FATAL: ${a} still has no logits.npy"; exit 1; }
 
-          OUT=/data/results/eval/anomaly_l162-s2
+          OUT=/data/results/eval/anomaly_l162-s5
           mkdir -p ${OUT}
           python3 experiments/EVAL/anomaly.py \
-            --features l162-s2=${d} \
-            --rungs l162-s2=${r} \
+            --features l162-s5=${d} \
+            --rungs l162-s5=${r} \
             --out ${OUT} \
             --n-bkg 200000 --n-template 200000 --trainings 10
 

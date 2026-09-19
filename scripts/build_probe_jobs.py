@@ -13,6 +13,17 @@ The 162-class model at seed index 1 is `mtx-l162-s1b` (the 5e-4 repair of the
 Templates are derived from job-probe-physics-v4 and job-eval-labelrec-v3, which
 ran. `bc_vs_rest` is NOT in the task list: it needs the windowed |V_cb| caches,
 which exist for two granularities only.
+
+TWO PROBE VERSIONS ARE EMITTED, AND v1 IS HISTORY.
+v1 ran, its results are committed under experiments/FIGS/data/probe_ladder_v1/,
+and its text is therefore frozen: this builder must keep reproducing it byte for
+byte or the drift check turns a provenance record into a fiction. v2 re-runs the
+same probes with the 70 % and 90 % operating points that
+docs/PRESPEC_2026-09.md fixed once 50 % proved censored on bvc_resonant, and
+differs from v1 in exactly four places -- job name, output directory, the added
+`--eps-s` flag, and the pin. It writes to probe_ladder_v2, so it cannot touch
+v1's results. The label-recovery jobs are unrelated to that defect and stay at
+v1 and at their original pin.
 """
 from __future__ import annotations
 
@@ -23,7 +34,9 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 K8S = ROOT / "experiments" / "EVAL" / "k8s"
 
-PIN = "mtx-s1.48"
+PIN = "mtx-s1.48"          # what v1 actually ran at; never bump it
+PIN_V2 = "mtx-s1.51"       # the tag carrying --eps-s
+EPS_S_V2 = [0.5, 0.7, 0.9]  # 50 % kept so v2 also reproduces v1's number
 SEEDS = [1, 2, 3, 4, 5]
 # (run-name stem, rung) in ladder order; the rung feeds label_recovery --own-rung
 LADDER = [("mtx-l188", "L188"), ("mtx-l162", "L162"),
@@ -75,12 +88,12 @@ spec:
 """
 
 PROBE = """
-          OUT=/data/results/eval/probe_ladder_v1/s{seed}
+          OUT=/data/results/eval/probe_ladder_{ver}/s{seed}
           mkdir -p ${{OUT}}
           python3 experiments/EVAL/probe.py \\
             --features ${{ARMS}} \\
             --out ${{OUT}} \\
-            --tasks {tasks} \\
+            --tasks {tasks}{eps} \\
             --bootstrap 2000
           date -u +"end %Y-%m-%dT%H:%M:%SZ"
 """
@@ -118,13 +131,21 @@ TAIL = """        volumeMounts:
 
 def build() -> dict[str, str]:
     out = {}
+    tasks = " ".join(TASKS)
     for seed in SEEDS:
         specs = " ".join(f"{run_name(stem, seed)}:{rung}" for stem, rung in LADDER)
         for kind, body in (("probe-ladder", PROBE), ("labelrec-ladder", LABELREC)):
             name = f"{kind}-v1-s{seed}-raunav"
             text = (HEAD.format(name=name, pin=PIN, specs=specs)
-                    + body.format(seed=seed, tasks=" ".join(TASKS)) + TAIL)
+                    + body.format(seed=seed, tasks=tasks, ver="v1", eps="") + TAIL)
             out[f"job-{name}.yaml"] = text
+        # The re-run. Same four models, same tasks, same resources; the only
+        # differences are the ones listed in the module docstring.
+        name = f"probe-ladder-v2-s{seed}-raunav"
+        eps = " \\\n            --eps-s " + " ".join(str(e) for e in EPS_S_V2)
+        out[f"job-{name}.yaml"] = (
+            HEAD.format(name=name, pin=PIN_V2, specs=specs)
+            + PROBE.format(seed=seed, tasks=tasks, ver="v2", eps=eps) + TAIL)
     return out
 
 

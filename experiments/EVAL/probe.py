@@ -39,6 +39,15 @@ seed noise is ~12x the AUC metric's. Rejection beyond the resolvable cap
 (1/N_bkg) is reported as a BOUND, never as a value -- past the cap the number is
 an artefact of sample size.
 
+The working point is NOT a property of this file. `--eps-s` sets it, defaulting
+to the single 50 % point every committed result was measured at. The pre-
+specified 50 % turned out to be unusable on bvc_resonant -- zero of 11,876 test
+background jets survive it at the three finest vocabularies, and on the MLP
+probe at all four -- so docs/PRESPEC_2026-09.md fixed 70 % and 90 % beside it
+(the values Vigl et al. and RS3L quote) before any new number was looked at. A
+task that pins its own `eps_s` is exempt: bc_vs_rest quotes 60 % / 40 % to match
+a published table, and moving it would stop being a comparison to that table.
+
 Arm differences carry a PAIRED bootstrap: the arms are scored on identical jets
 in identical order, which the row-alignment check below enforces rather than
 assumes.
@@ -521,7 +530,22 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--tasks", nargs="+", default=list(TASKS))
     ap.add_argument("--bootstrap", type=int, default=2000)
+    # ADDS operating points; it does not move the existing one. The default is
+    # today's single 50 % point, so a run without the flag reproduces every
+    # committed result byte for byte, and the flat `rejection*` fields keep
+    # mirroring eps_s[0] -- which is what experiments/STATS/seed_level.py
+    # resolves through `eps_s_default`.
+    ap.add_argument("--eps-s", nargs="+", type=float, default=[EPS_S],
+                    metavar="EPS",
+                    help="signal efficiencies at which to quote 1/eps_B, for "
+                         "tasks that do not pin their own list "
+                         f"(default: {EPS_S})")
     args = ap.parse_args()
+    # np.interp CLAMPS outside the ROC's range, so `--eps-s 50 70 90` would not
+    # error -- it would return eps_B = 1 and a rejection of 1.0 in every cell.
+    bad = [e for e in args.eps_s if not 0.0 < e < 1.0]
+    if bad:
+        raise SystemExit(f"FATAL: --eps-s wants signal efficiencies in (0, 1), got {bad}")
 
     arms = {}
     for spec in args.features:
@@ -540,7 +564,11 @@ def main() -> int:
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     results = {"n_jets_total": int(L.shape[0]), "row_alignment_sha256": align_sha,
-               "eps_s_default": EPS_S,
+               # The working point the FLAT rejection fields carry, which is the
+               # first requested one. Readers resolve `rejection_at` through
+               # this key, so it must track the list actually used rather than
+               # the module constant.
+               "eps_s_default": float(args.eps_s[0]),
                # Which checkpoint each arm's features came from. Without this
                # the artefact cannot be audited after the fact: label188 is
                # identical across checkpoints of one arm, so a best-epoch cache
@@ -600,20 +628,36 @@ def main() -> int:
                                       "n_signal_test": te_sig,
                                       "n_background_test": te_bkg}
             continue
+        # A task that pins its own operating points KEEPS them, whatever the
+        # command line says: bc_vs_rest quotes 60 % / 40 % because that is what
+        # arXiv:2503.00118's table quotes, and a number moved off the published
+        # working point is no longer a comparison to it.
+        eps_list = [float(e) for e in (spec.get("eps_s") or args.eps_s)]
         print(f"\n=== {task} ===  {spec['names'][0]} vs {spec['names'][1]}")
         print(f"  {rows.size:,} jets ({y.sum():,} signal), "
               f"split {tr.size:,}/{va.size:,}/{te.size:,}; "
               f"collapsed at: {', '.join(spec['collapsed_at'])}")
+        print(f"  {te_bkg:,} background jets in the test split, so 1/eps_B caps "
+              f"at {te_bkg:,}; quoted at "
+              f"{', '.join(f'{e:.0%}' for e in eps_list)} signal efficiency")
 
-        tr_res = {"eps_s": [float(e) for e in spec.get("eps_s", [EPS_S])],
+        tr_res = {"eps_s": eps_list,
                   "n": int(rows.size), "n_signal": int(y.sum()),
+                  # THE CAP, written out for every task. `rejection_is_bound`
+                  # means the cut kept no background jet, and the value printed
+                  # is then N_background_test -- a statement about the size of
+                  # the test split, not about the model. It is recoverable from
+                  # a bounded cell (there rejection == cap) but from nothing
+                  # else, so an UNCENSORED cell had no way to say how much
+                  # headroom was left. The skipped-task branch above already
+                  # emits these two names; this makes the schema uniform.
+                  "n_signal_test": te_sig, "n_background_test": te_bkg,
                   "names": spec["names"], "collapsed_at": spec["collapsed_at"],
                   "arms": {}}
         te_scores = {}
         for arm, d in sorted(arms.items()):
             X = d["F"][rows]
             entry = {}
-            eps_list = spec.get("eps_s", [EPS_S])
             for kind, fn in (("linear", fit_linear), ("mlp", fit_mlp)):
                 s, meta = fn(X[tr], y[tr], X[va], y[va], X[te])
                 l1m, censored, auc = log1m_auc(y[te], s)

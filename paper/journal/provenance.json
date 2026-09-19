@@ -1,0 +1,2942 @@
+{
+  "AccLegOneOnesevenSfourEFive": {
+    "json_path": "summary.r16q1-s4.N100000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.49510"
+  },
+  "AccLegOneOnesevenSfourEFour": {
+    "json_path": "summary.r16q1-s4.N10000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.24487"
+  },
+  "AccLegOneOnesevenSfourESix": {
+    "json_path": "summary.r16q1-s4.N1000000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.51872"
+  },
+  "AccLegOneOnesevenSthreeEFive": {
+    "json_path": "summary.r16q1-s3.N100000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.49313"
+  },
+  "AccLegOneOnesevenSthreeEFour": {
+    "json_path": "summary.r16q1-s3.N10000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.24203"
+  },
+  "AccLegOneOnesevenSthreeESix": {
+    "json_path": "summary.r16q1-s3.N1000000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.51804"
+  },
+  "AccLegOneOnesevenStwoEFive": {
+    "json_path": "summary.r16q1-s2.N100000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.49650"
+  },
+  "AccLegOneOnesevenStwoEFour": {
+    "json_path": "summary.r16q1-s2.N10000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.22684"
+  },
+  "AccLegOneOnesevenStwoESix": {
+    "json_path": "summary.r16q1-s2.N1000000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.51969"
+  },
+  "AccLegOneOnesixtwoSonebEFive": {
+    "json_path": "summary.l162-s1b.N100000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.53506"
+  },
+  "AccLegOneOnesixtwoSonebEFour": {
+    "json_path": "summary.l162-s1b.N10000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.32273"
+  },
+  "AccLegOneOnesixtwoSonebESix": {
+    "json_path": "summary.l162-s1b.N1000000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.54337"
+  },
+  "AccLegOneScratchEFive": {
+    "json_path": "summary.scratch.N100000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.42015"
+  },
+  "AccLegOneScratchEFour": {
+    "json_path": "summary.scratch.N10000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.31369"
+  },
+  "AccLegOneScratchESix": {
+    "json_path": "summary.scratch.N1000000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.48621"
+  },
+  "AccLegOneSophonPublicEFive": {
+    "json_path": "summary.sophon-public.N100000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.53187"
+  },
+  "AccLegOneSophonPublicEFour": {
+    "json_path": "summary.sophon-public.N10000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.21613"
+  },
+  "AccLegOneSophonPublicESix": {
+    "json_path": "summary.sophon-public.N1000000.accuracy_mean",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.54273"
+  },
+  "AccLegTwoOnesevenSfourEFive": {
+    "json_path": "summary.r16q1-s4.N100000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.82564"
+  },
+  "AccLegTwoOnesevenSfourEFour": {
+    "json_path": "summary.r16q1-s4.N10000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.72953"
+  },
+  "AccLegTwoOnesevenSfourESix": {
+    "json_path": "summary.r16q1-s4.N1000000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.83909"
+  },
+  "AccLegTwoOnesevenSthreeEFive": {
+    "json_path": "summary.r16q1-s3.N100000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.82629"
+  },
+  "AccLegTwoOnesevenSthreeEFour": {
+    "json_path": "summary.r16q1-s3.N10000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.72103"
+  },
+  "AccLegTwoOnesevenSthreeESix": {
+    "json_path": "summary.r16q1-s3.N1000000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.83944"
+  },
+  "AccLegTwoOnesevenStwoEFive": {
+    "json_path": "summary.r16q1-s2.N100000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.82614"
+  },
+  "AccLegTwoOnesevenStwoEFour": {
+    "json_path": "summary.r16q1-s2.N10000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.72156"
+  },
+  "AccLegTwoOnesevenStwoESix": {
+    "json_path": "summary.r16q1-s2.N1000000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.83943"
+  },
+  "AccLegTwoOnesixtwoSonebEFive": {
+    "json_path": "summary.l162-s1b.N100000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.83598"
+  },
+  "AccLegTwoOnesixtwoSonebEFour": {
+    "json_path": "summary.l162-s1b.N10000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.78606"
+  },
+  "AccLegTwoOnesixtwoSonebESix": {
+    "json_path": "summary.l162-s1b.N1000000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.84704"
+  },
+  "AccLegTwoRefEonearmsSoneRef": {
+    "json_path": "summary.ref_e1arms-s1.ref.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.81770"
+  },
+  "AccLegTwoRefEonearmsSthreeRef": {
+    "json_path": "summary.ref_e1arms-s3.ref.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.81625"
+  },
+  "AccLegTwoRefEonearmsStwoRef": {
+    "json_path": "summary.ref_e1arms-s2.ref.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.81602"
+  },
+  "AccLegTwoScratchEFive": {
+    "json_path": "summary.scratch.N100000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.77769"
+  },
+  "AccLegTwoScratchEFour": {
+    "json_path": "summary.scratch.N10000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.68230"
+  },
+  "AccLegTwoScratchESix": {
+    "json_path": "summary.scratch.N1000000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.82303"
+  },
+  "AccLegTwoSophonPublicEFive": {
+    "json_path": "summary.sophon-public.N100000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.83492"
+  },
+  "AccLegTwoSophonPublicEFour": {
+    "json_path": "summary.sophon-public.N10000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.72739"
+  },
+  "AccLegTwoSophonPublicESix": {
+    "json_path": "summary.sophon-public.N1000000.accuracy_mean",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.84632"
+  },
+  "AccSdLegOneOnesevenSfourEFive": {
+    "json_path": "summary.r16q1-s4.N100000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00133"
+  },
+  "AccSdLegOneOnesevenSfourEFour": {
+    "json_path": "summary.r16q1-s4.N10000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00645"
+  },
+  "AccSdLegOneOnesevenSfourESix": {
+    "json_path": "summary.r16q1-s4.N1000000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00049"
+  },
+  "AccSdLegOneOnesevenSthreeEFive": {
+    "json_path": "summary.r16q1-s3.N100000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00294"
+  },
+  "AccSdLegOneOnesevenSthreeEFour": {
+    "json_path": "summary.r16q1-s3.N10000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00213"
+  },
+  "AccSdLegOneOnesevenSthreeESix": {
+    "json_path": "summary.r16q1-s3.N1000000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00049"
+  },
+  "AccSdLegOneOnesevenStwoEFive": {
+    "json_path": "summary.r16q1-s2.N100000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00110"
+  },
+  "AccSdLegOneOnesevenStwoEFour": {
+    "json_path": "summary.r16q1-s2.N10000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00805"
+  },
+  "AccSdLegOneOnesevenStwoESix": {
+    "json_path": "summary.r16q1-s2.N1000000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00072"
+  },
+  "AccSdLegOneOnesixtwoSonebEFive": {
+    "json_path": "summary.l162-s1b.N100000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00044"
+  },
+  "AccSdLegOneOnesixtwoSonebEFour": {
+    "json_path": "summary.l162-s1b.N10000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.01894"
+  },
+  "AccSdLegOneOnesixtwoSonebESix": {
+    "json_path": "summary.l162-s1b.N1000000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00074"
+  },
+  "AccSdLegOneScratchEFive": {
+    "json_path": "summary.scratch.N100000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00267"
+  },
+  "AccSdLegOneScratchEFour": {
+    "json_path": "summary.scratch.N10000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00712"
+  },
+  "AccSdLegOneScratchESix": {
+    "json_path": "summary.scratch.N1000000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00100"
+  },
+  "AccSdLegOneSophonPublicEFive": {
+    "json_path": "summary.sophon-public.N100000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00231"
+  },
+  "AccSdLegOneSophonPublicEFour": {
+    "json_path": "summary.sophon-public.N10000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00734"
+  },
+  "AccSdLegOneSophonPublicESix": {
+    "json_path": "summary.sophon-public.N1000000.accuracy_sd",
+    "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",
+    "source_file": "experiments/FIGS/data/leg1_metrics.json",
+    "value": "0.00064"
+  },
+  "AccSdLegTwoOnesevenSfourEFive": {
+    "json_path": "summary.r16q1-s4.N100000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00041"
+  },
+  "AccSdLegTwoOnesevenSfourEFour": {
+    "json_path": "summary.r16q1-s4.N10000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.01069"
+  },
+  "AccSdLegTwoOnesevenSfourESix": {
+    "json_path": "summary.r16q1-s4.N1000000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00037"
+  },
+  "AccSdLegTwoOnesevenSthreeEFive": {
+    "json_path": "summary.r16q1-s3.N100000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00035"
+  },
+  "AccSdLegTwoOnesevenSthreeEFour": {
+    "json_path": "summary.r16q1-s3.N10000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.01651"
+  },
+  "AccSdLegTwoOnesevenSthreeESix": {
+    "json_path": "summary.r16q1-s3.N1000000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00019"
+  },
+  "AccSdLegTwoOnesevenStwoEFive": {
+    "json_path": "summary.r16q1-s2.N100000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00058"
+  },
+  "AccSdLegTwoOnesevenStwoEFour": {
+    "json_path": "summary.r16q1-s2.N10000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.01049"
+  },
+  "AccSdLegTwoOnesevenStwoESix": {
+    "json_path": "summary.r16q1-s2.N1000000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00052"
+  },
+  "AccSdLegTwoOnesixtwoSonebEFive": {
+    "json_path": "summary.l162-s1b.N100000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00037"
+  },
+  "AccSdLegTwoOnesixtwoSonebEFour": {
+    "json_path": "summary.l162-s1b.N10000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00111"
+  },
+  "AccSdLegTwoOnesixtwoSonebESix": {
+    "json_path": "summary.l162-s1b.N1000000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00027"
+  },
+  "AccSdLegTwoRefEonearmsSoneRef": {
+    "json_path": "summary.ref_e1arms-s1.ref.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "---"
+  },
+  "AccSdLegTwoRefEonearmsSthreeRef": {
+    "json_path": "summary.ref_e1arms-s3.ref.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "---"
+  },
+  "AccSdLegTwoRefEonearmsStwoRef": {
+    "json_path": "summary.ref_e1arms-s2.ref.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "---"
+  },
+  "AccSdLegTwoScratchEFive": {
+    "json_path": "summary.scratch.N100000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00208"
+  },
+  "AccSdLegTwoScratchEFour": {
+    "json_path": "summary.scratch.N10000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00282"
+  },
+  "AccSdLegTwoScratchESix": {
+    "json_path": "summary.scratch.N1000000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00134"
+  },
+  "AccSdLegTwoSophonPublicEFive": {
+    "json_path": "summary.sophon-public.N100000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00049"
+  },
+  "AccSdLegTwoSophonPublicEFour": {
+    "json_path": "summary.sophon-public.N10000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00470"
+  },
+  "AccSdLegTwoSophonPublicESix": {
+    "json_path": "summary.sophon-public.N1000000.accuracy_sd",
+    "sha256": "701c58c3240274bb3438594027c474fdacc1193dd1b0d5ef774a87ebe3651a83",
+    "source_file": "experiments/FIGS/data/leg2_metrics.json",
+    "value": "0.00031"
+  },
+  "MdeBvcQcdLinear": {
+    "json_path": "mde[2].mde",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.1927"
+  },
+  "MdeBvcQcdMlp": {
+    "json_path": "mde[3].mde",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.1564"
+  },
+  "MdeBvcResonantLinear": {
+    "json_path": "mde[0].mde",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.2922"
+  },
+  "MdeBvcResonantMlp": {
+    "json_path": "mde[1].mde",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.2380"
+  },
+  "MdeEeVsMmLinear": {
+    "json_path": "mde[6].mde",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.4136"
+  },
+  "MdeEeVsMmMlp": {
+    "json_path": "mde[7].mde",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.2247"
+  },
+  "MdeRatioBvcQcdLinear": {
+    "json_path": "mde[2].mde_as_ratio_of_1m_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "1.213"
+  },
+  "MdeRatioBvcQcdMlp": {
+    "json_path": "mde[3].mde_as_ratio_of_1m_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "1.169"
+  },
+  "MdeRatioBvcResonantLinear": {
+    "json_path": "mde[0].mde_as_ratio_of_1m_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "1.339"
+  },
+  "MdeRatioBvcResonantMlp": {
+    "json_path": "mde[1].mde_as_ratio_of_1m_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "1.269"
+  },
+  "MdeRatioEeVsMmLinear": {
+    "json_path": "mde[6].mde_as_ratio_of_1m_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "1.512"
+  },
+  "MdeRatioEeVsMmMlp": {
+    "json_path": "mde[7].mde_as_ratio_of_1m_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "1.252"
+  },
+  "MdeRatioRetainedTopologyLinear": {
+    "json_path": "mde[4].mde_as_ratio_of_1m_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "1.213"
+  },
+  "MdeRatioRetainedTopologyMlp": {
+    "json_path": "mde[5].mde_as_ratio_of_1m_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "1.217"
+  },
+  "MdeRetainedTopologyLinear": {
+    "json_path": "mde[4].mde",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.1931"
+  },
+  "MdeRetainedTopologyMlp": {
+    "json_path": "mde[5].mde",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.1965"
+  },
+  "PairCIBvcQcdLinearFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[3].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[-0.0202,\\,+0.0474]$"
+  },
+  "PairCIBvcQcdLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[0].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.0843,\\,+0.1875]$"
+  },
+  "PairCIBvcQcdLinearOneseven": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[4].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.8259,\\,+1.1138]$"
+  },
+  "PairCIBvcQcdMlpFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[3].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[-0.0107,\\,+0.0359]$"
+  },
+  "PairCIBvcQcdMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[0].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.0426,\\,+0.1694]$"
+  },
+  "PairCIBvcQcdMlpOneseven": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[4].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.7140,\\,+0.9476]$"
+  },
+  "PairCIBvcResonantLinearFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[3].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.0478,\\,+0.0839]$"
+  },
+  "PairCIBvcResonantLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[0].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[-0.0383,\\,+0.0764]$"
+  },
+  "PairCIBvcResonantLinearOneseven": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[4].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+1.1461,\\,+1.5826]$"
+  },
+  "PairCIBvcResonantMlpFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[3].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.0549,\\,+0.1206]$"
+  },
+  "PairCIBvcResonantMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[0].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[-0.0244,\\,+0.1110]$"
+  },
+  "PairCIBvcResonantMlpOneseven": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[4].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.9572,\\,+1.3128]$"
+  },
+  "PairCIEeVsMmLinearFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[3].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+11.7494,\\,+14.1015]$"
+  },
+  "PairCIEeVsMmLinearOneseven": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[4].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+13.4477,\\,+14.0655]$"
+  },
+  "PairCIEeVsMmMlpFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[3].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+9.9383,\\,+12.4255]$"
+  },
+  "PairCIEeVsMmMlpOneseven": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[4].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+12.2275,\\,+12.5631]$"
+  },
+  "PairCIRetainedTopologyLinearFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[3].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.1664,\\,+0.2622]$"
+  },
+  "PairCIRetainedTopologyLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[0].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[-0.0835,\\,+0.0821]$"
+  },
+  "PairCIRetainedTopologyLinearOneseven": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[4].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.2858,\\,+0.5742]$"
+  },
+  "PairCIRetainedTopologyMlpFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[3].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.1122,\\,+0.2056]$"
+  },
+  "PairCIRetainedTopologyMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[0].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[-0.1330,\\,+0.1682]$"
+  },
+  "PairCIRetainedTopologyMlpOneseven": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[4].ci95",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.2538,\\,+0.5473]$"
+  },
+  "PairDiffBvcQcdLinearFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[3].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.0136"
+  },
+  "PairDiffBvcQcdLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[0].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.1359"
+  },
+  "PairDiffBvcQcdLinearOneseven": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[4].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.9698"
+  },
+  "PairDiffBvcQcdMlpFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[3].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.0126"
+  },
+  "PairDiffBvcQcdMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[0].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.1060"
+  },
+  "PairDiffBvcQcdMlpOneseven": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[4].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.8308"
+  },
+  "PairDiffBvcResonantLinearFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[3].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.0659"
+  },
+  "PairDiffBvcResonantLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[0].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.0190"
+  },
+  "PairDiffBvcResonantLinearOneseven": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[4].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+1.3644"
+  },
+  "PairDiffBvcResonantMlpFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[3].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.0877"
+  },
+  "PairDiffBvcResonantMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[0].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.0433"
+  },
+  "PairDiffBvcResonantMlpOneseven": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[4].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+1.1350"
+  },
+  "PairDiffEeVsMmLinearFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[3].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+12.9255$^{\\ast}$"
+  },
+  "PairDiffEeVsMmLinearOneseven": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[4].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+13.7566$^{\\ast}$"
+  },
+  "PairDiffEeVsMmMlpFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[3].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+11.1819$^{\\ast}$"
+  },
+  "PairDiffEeVsMmMlpOneseven": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[4].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+12.3953$^{\\ast}$"
+  },
+  "PairDiffRetainedTopologyLinearFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[3].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.2143"
+  },
+  "PairDiffRetainedTopologyLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[0].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-0.0007"
+  },
+  "PairDiffRetainedTopologyLinearOneseven": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[4].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.4300"
+  },
+  "PairDiffRetainedTopologyMlpFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[3].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.1589"
+  },
+  "PairDiffRetainedTopologyMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[0].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.0176"
+  },
+  "PairDiffRetainedTopologyMlpOneseven": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[4].mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.4006"
+  },
+  "PairHolmBvcQcdLinearFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[3].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "no"
+  },
+  "PairHolmBvcQcdLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[0].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmBvcQcdLinearOneseven": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[4].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmBvcQcdMlpFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[3].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "no"
+  },
+  "PairHolmBvcQcdMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[0].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmBvcQcdMlpOneseven": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[4].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmBvcResonantLinearFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[3].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmBvcResonantLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[0].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "no"
+  },
+  "PairHolmBvcResonantLinearOneseven": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[4].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmBvcResonantMlpFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[3].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmBvcResonantMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[0].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "no"
+  },
+  "PairHolmBvcResonantMlpOneseven": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[4].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmEeVsMmLinearFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[3].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmEeVsMmLinearOneseven": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[4].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmEeVsMmMlpFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[3].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmEeVsMmMlpOneseven": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[4].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmRetainedTopologyLinearFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[3].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmRetainedTopologyLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[0].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "no"
+  },
+  "PairHolmRetainedTopologyLinearOneseven": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[4].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmRetainedTopologyMlpFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[3].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairHolmRetainedTopologyMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[0].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "no"
+  },
+  "PairHolmRetainedTopologyMlpOneseven": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[4].holm_reject",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "yes"
+  },
+  "PairPBvcQcdLinearFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[3].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.326$"
+  },
+  "PairPBvcQcdLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[0].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.00187$"
+  },
+  "PairPBvcQcdLinearOneseven": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[4].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$4.81\\times10^{-5}$"
+  },
+  "PairPBvcQcdMlpFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[3].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.207$"
+  },
+  "PairPBvcQcdMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[0].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.0097$"
+  },
+  "PairPBvcQcdMlpOneseven": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[4].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$3.88\\times10^{-5}$"
+  },
+  "PairPBvcResonantLinearFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[3].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.000532$"
+  },
+  "PairPBvcResonantLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[0].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.409$"
+  },
+  "PairPBvcResonantLinearOneseven": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[4].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$6.47\\times10^{-5}$"
+  },
+  "PairPBvcResonantMlpFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[3].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.00176$"
+  },
+  "PairPBvcResonantMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[0].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.151$"
+  },
+  "PairPBvcResonantMlpOneseven": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[4].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$5.95\\times10^{-5}$"
+  },
+  "PairPEeVsMmLinearFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[3].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$6.87\\times10^{-6}$"
+  },
+  "PairPEeVsMmLinearOneseven": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[4].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$2.56\\times10^{-8}$"
+  },
+  "PairPEeVsMmMlpFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[3].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$1.53\\times10^{-5}$"
+  },
+  "PairPEeVsMmMlpOneseven": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[4].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$3.39\\times10^{-9}$"
+  },
+  "PairPRetainedTopologyLinearFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[3].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.000241$"
+  },
+  "PairPRetainedTopologyLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[0].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.983$"
+  },
+  "PairPRetainedTopologyLinearOneseven": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[4].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.00116$"
+  },
+  "PairPRetainedTopologyMlpFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[3].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.000699$"
+  },
+  "PairPRetainedTopologyMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[0].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.762$"
+  },
+  "PairPRetainedTopologyMlpOneseven": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[4].p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.00163$"
+  },
+  "ProbeAucBvcFourprongLinearFourthree": {
+    "json_path": "levels.bvc_4prong.linear[2].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99250"
+  },
+  "ProbeAucBvcFourprongLinearOneeighteight": {
+    "json_path": "levels.bvc_4prong.linear[0].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99320"
+  },
+  "ProbeAucBvcFourprongLinearOneseven": {
+    "json_path": "levels.bvc_4prong.linear[3].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.96938"
+  },
+  "ProbeAucBvcFourprongLinearOnesixtwo": {
+    "json_path": "levels.bvc_4prong.linear[1].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99311"
+  },
+  "ProbeAucBvcFourprongMlpFourthree": {
+    "json_path": "levels.bvc_4prong.mlp[2].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99232"
+  },
+  "ProbeAucBvcFourprongMlpOneeighteight": {
+    "json_path": "levels.bvc_4prong.mlp[0].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99316"
+  },
+  "ProbeAucBvcFourprongMlpOneseven": {
+    "json_path": "levels.bvc_4prong.mlp[3].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.97722"
+  },
+  "ProbeAucBvcFourprongMlpOnesixtwo": {
+    "json_path": "levels.bvc_4prong.mlp[1].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99318"
+  },
+  "ProbeAucBvcQcdLinearFourthree": {
+    "json_path": "levels.bvc_qcd.linear[2].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.98281"
+  },
+  "ProbeAucBvcQcdLinearOneeighteight": {
+    "json_path": "levels.bvc_qcd.linear[0].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.98519"
+  },
+  "ProbeAucBvcQcdLinearOneseven": {
+    "json_path": "levels.bvc_qcd.linear[3].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.95504"
+  },
+  "ProbeAucBvcQcdLinearOnesixtwo": {
+    "json_path": "levels.bvc_qcd.linear[1].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.98305"
+  },
+  "ProbeAucBvcQcdMlpFourthree": {
+    "json_path": "levels.bvc_qcd.mlp[2].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.98341"
+  },
+  "ProbeAucBvcQcdMlpOneeighteight": {
+    "json_path": "levels.bvc_qcd.mlp[0].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.98526"
+  },
+  "ProbeAucBvcQcdMlpOneseven": {
+    "json_path": "levels.bvc_qcd.mlp[3].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.96226"
+  },
+  "ProbeAucBvcQcdMlpOnesixtwo": {
+    "json_path": "levels.bvc_qcd.mlp[1].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.98362"
+  },
+  "ProbeAucBvcResonantLinearFourthree": {
+    "json_path": "levels.bvc_resonant.linear[2].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99748"
+  },
+  "ProbeAucBvcResonantLinearOneeighteight": {
+    "json_path": "levels.bvc_resonant.linear[0].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99768"
+  },
+  "ProbeAucBvcResonantLinearOneseven": {
+    "json_path": "levels.bvc_resonant.linear[3].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99067"
+  },
+  "ProbeAucBvcResonantLinearOnesixtwo": {
+    "json_path": "levels.bvc_resonant.linear[1].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99764"
+  },
+  "ProbeAucBvcResonantMlpFourthree": {
+    "json_path": "levels.bvc_resonant.mlp[2].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99747"
+  },
+  "ProbeAucBvcResonantMlpOneeighteight": {
+    "json_path": "levels.bvc_resonant.mlp[0].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99778"
+  },
+  "ProbeAucBvcResonantMlpOneseven": {
+    "json_path": "levels.bvc_resonant.mlp[3].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99274"
+  },
+  "ProbeAucBvcResonantMlpOnesixtwo": {
+    "json_path": "levels.bvc_resonant.mlp[1].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99768"
+  },
+  "ProbeAucEeVsMmLinearFourthree": {
+    "json_path": "levels.ee_vs_mm.linear[2].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.97518"
+  },
+  "ProbeAucEeVsMmLinearOneeighteight": {
+    "json_path": "levels.ee_vs_mm.linear[0].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$1^{\\dagger}$"
+  },
+  "ProbeAucEeVsMmLinearOneseven": {
+    "json_path": "levels.ee_vs_mm.linear[3].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.95832"
+  },
+  "ProbeAucEeVsMmLinearOnesixtwo": {
+    "json_path": "levels.ee_vs_mm.linear[1].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$1^{\\dagger}$"
+  },
+  "ProbeAucEeVsMmMlpFourthree": {
+    "json_path": "levels.ee_vs_mm.mlp[2].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99550"
+  },
+  "ProbeAucEeVsMmMlpOneeighteight": {
+    "json_path": "levels.ee_vs_mm.mlp[0].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$1^{\\dagger}$"
+  },
+  "ProbeAucEeVsMmMlpOneseven": {
+    "json_path": "levels.ee_vs_mm.mlp[3].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.98949"
+  },
+  "ProbeAucEeVsMmMlpOnesixtwo": {
+    "json_path": "levels.ee_vs_mm.mlp[1].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$1^{\\dagger}$"
+  },
+  "ProbeAucRetainedTopologyLinearFourthree": {
+    "json_path": "levels.retained_topology.linear[2].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99274"
+  },
+  "ProbeAucRetainedTopologyLinearOneeighteight": {
+    "json_path": "levels.retained_topology.linear[0].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99413"
+  },
+  "ProbeAucRetainedTopologyLinearOneseven": {
+    "json_path": "levels.retained_topology.linear[3].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99096"
+  },
+  "ProbeAucRetainedTopologyLinearOnesixtwo": {
+    "json_path": "levels.retained_topology.linear[1].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99413"
+  },
+  "ProbeAucRetainedTopologyMlpFourthree": {
+    "json_path": "levels.retained_topology.mlp[2].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99279"
+  },
+  "ProbeAucRetainedTopologyMlpOneeighteight": {
+    "json_path": "levels.retained_topology.mlp[0].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99396"
+  },
+  "ProbeAucRetainedTopologyMlpOneseven": {
+    "json_path": "levels.retained_topology.mlp[3].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99081"
+  },
+  "ProbeAucRetainedTopologyMlpOnesixtwo": {
+    "json_path": "levels.retained_topology.mlp[1].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99384"
+  },
+  "ProbeAucSdBvcFourprongLinearFourthree": {
+    "json_path": "table[bvc_4prong,linear,43].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00049"
+  },
+  "ProbeAucSdBvcFourprongLinearOneeighteight": {
+    "json_path": "table[bvc_4prong,linear,188].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00027"
+  },
+  "ProbeAucSdBvcFourprongLinearOneseven": {
+    "json_path": "table[bvc_4prong,linear,17].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00513"
+  },
+  "ProbeAucSdBvcFourprongLinearOnesixtwo": {
+    "json_path": "table[bvc_4prong,linear,162].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00018"
+  },
+  "ProbeAucSdBvcFourprongMlpFourthree": {
+    "json_path": "table[bvc_4prong,mlp,43].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00058"
+  },
+  "ProbeAucSdBvcFourprongMlpOneeighteight": {
+    "json_path": "table[bvc_4prong,mlp,188].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00020"
+  },
+  "ProbeAucSdBvcFourprongMlpOneseven": {
+    "json_path": "table[bvc_4prong,mlp,17].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00350"
+  },
+  "ProbeAucSdBvcFourprongMlpOnesixtwo": {
+    "json_path": "table[bvc_4prong,mlp,162].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00020"
+  },
+  "ProbeAucSdBvcQcdLinearFourthree": {
+    "json_path": "table[bvc_qcd,linear,43].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00064"
+  },
+  "ProbeAucSdBvcQcdLinearOneeighteight": {
+    "json_path": "table[bvc_qcd,linear,188].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00061"
+  },
+  "ProbeAucSdBvcQcdLinearOneseven": {
+    "json_path": "table[bvc_qcd,linear,17].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00527"
+  },
+  "ProbeAucSdBvcQcdLinearOnesixtwo": {
+    "json_path": "table[bvc_qcd,linear,162].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00024"
+  },
+  "ProbeAucSdBvcQcdMlpFourthree": {
+    "json_path": "table[bvc_qcd,mlp,43].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00052"
+  },
+  "ProbeAucSdBvcQcdMlpOneeighteight": {
+    "json_path": "table[bvc_qcd,mlp,188].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00059"
+  },
+  "ProbeAucSdBvcQcdMlpOneseven": {
+    "json_path": "table[bvc_qcd,mlp,17].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00372"
+  },
+  "ProbeAucSdBvcQcdMlpOnesixtwo": {
+    "json_path": "table[bvc_qcd,mlp,162].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00041"
+  },
+  "ProbeAucSdBvcResonantLinearFourthree": {
+    "json_path": "table[bvc_resonant,linear,43].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00007"
+  },
+  "ProbeAucSdBvcResonantLinearOneeighteight": {
+    "json_path": "table[bvc_resonant,linear,188].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00007"
+  },
+  "ProbeAucSdBvcResonantLinearOneseven": {
+    "json_path": "table[bvc_resonant,linear,17].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00148"
+  },
+  "ProbeAucSdBvcResonantLinearOnesixtwo": {
+    "json_path": "table[bvc_resonant,linear,162].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00006"
+  },
+  "ProbeAucSdBvcResonantMlpFourthree": {
+    "json_path": "table[bvc_resonant,mlp,43].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00004"
+  },
+  "ProbeAucSdBvcResonantMlpOneeighteight": {
+    "json_path": "table[bvc_resonant,mlp,188].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00008"
+  },
+  "ProbeAucSdBvcResonantMlpOneseven": {
+    "json_path": "table[bvc_resonant,mlp,17].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00090"
+  },
+  "ProbeAucSdBvcResonantMlpOnesixtwo": {
+    "json_path": "table[bvc_resonant,mlp,162].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00005"
+  },
+  "ProbeAucSdEeVsMmLinearFourthree": {
+    "json_path": "table[ee_vs_mm,linear,43].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.02075"
+  },
+  "ProbeAucSdEeVsMmLinearOneeighteight": {
+    "json_path": "table[ee_vs_mm,linear,188].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00000"
+  },
+  "ProbeAucSdEeVsMmLinearOneseven": {
+    "json_path": "table[ee_vs_mm,linear,17].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00970"
+  },
+  "ProbeAucSdEeVsMmLinearOnesixtwo": {
+    "json_path": "table[ee_vs_mm,linear,162].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00000"
+  },
+  "ProbeAucSdEeVsMmMlpFourthree": {
+    "json_path": "table[ee_vs_mm,mlp,43].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00402"
+  },
+  "ProbeAucSdEeVsMmMlpOneeighteight": {
+    "json_path": "table[ee_vs_mm,mlp,188].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00000"
+  },
+  "ProbeAucSdEeVsMmMlpOneseven": {
+    "json_path": "table[ee_vs_mm,mlp,17].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00141"
+  },
+  "ProbeAucSdEeVsMmMlpOnesixtwo": {
+    "json_path": "table[ee_vs_mm,mlp,162].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00000"
+  },
+  "ProbeAucSdRetainedTopologyLinearFourthree": {
+    "json_path": "table[retained_topology,linear,43].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00012"
+  },
+  "ProbeAucSdRetainedTopologyLinearOneeighteight": {
+    "json_path": "table[retained_topology,linear,188].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00011"
+  },
+  "ProbeAucSdRetainedTopologyLinearOneseven": {
+    "json_path": "table[retained_topology,linear,17].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00092"
+  },
+  "ProbeAucSdRetainedTopologyLinearOnesixtwo": {
+    "json_path": "table[retained_topology,linear,162].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00030"
+  },
+  "ProbeAucSdRetainedTopologyMlpFourthree": {
+    "json_path": "table[retained_topology,mlp,43].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00038"
+  },
+  "ProbeAucSdRetainedTopologyMlpOneeighteight": {
+    "json_path": "table[retained_topology,mlp,188].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00031"
+  },
+  "ProbeAucSdRetainedTopologyMlpOneseven": {
+    "json_path": "table[retained_topology,mlp,17].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00063"
+  },
+  "ProbeAucSdRetainedTopologyMlpOnesixtwo": {
+    "json_path": "table[retained_topology,mlp,162].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00048"
+  },
+  "ProbeAucSdVisibleContentLinearFourthree": {
+    "json_path": "table[visible_content,linear,43].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00009"
+  },
+  "ProbeAucSdVisibleContentLinearOneeighteight": {
+    "json_path": "table[visible_content,linear,188].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00003"
+  },
+  "ProbeAucSdVisibleContentLinearOneseven": {
+    "json_path": "table[visible_content,linear,17].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00020"
+  },
+  "ProbeAucSdVisibleContentLinearOnesixtwo": {
+    "json_path": "table[visible_content,linear,162].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00004"
+  },
+  "ProbeAucSdVisibleContentMlpFourthree": {
+    "json_path": "table[visible_content,mlp,43].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00006"
+  },
+  "ProbeAucSdVisibleContentMlpOneeighteight": {
+    "json_path": "table[visible_content,mlp,188].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00005"
+  },
+  "ProbeAucSdVisibleContentMlpOneseven": {
+    "json_path": "table[visible_content,mlp,17].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00018"
+  },
+  "ProbeAucSdVisibleContentMlpOnesixtwo": {
+    "json_path": "table[visible_content,mlp,162].auc (SD over seeds, ddof=1)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.00003"
+  },
+  "ProbeAucVisibleContentLinearFourthree": {
+    "json_path": "levels.visible_content.linear[2].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99918"
+  },
+  "ProbeAucVisibleContentLinearOneeighteight": {
+    "json_path": "levels.visible_content.linear[0].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99917"
+  },
+  "ProbeAucVisibleContentLinearOneseven": {
+    "json_path": "levels.visible_content.linear[3].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99768"
+  },
+  "ProbeAucVisibleContentLinearOnesixtwo": {
+    "json_path": "levels.visible_content.linear[1].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99921"
+  },
+  "ProbeAucVisibleContentMlpFourthree": {
+    "json_path": "levels.visible_content.mlp[2].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99917"
+  },
+  "ProbeAucVisibleContentMlpOneeighteight": {
+    "json_path": "levels.visible_content.mlp[0].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99910"
+  },
+  "ProbeAucVisibleContentMlpOneseven": {
+    "json_path": "levels.visible_content.mlp[3].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99789"
+  },
+  "ProbeAucVisibleContentMlpOnesixtwo": {
+    "json_path": "levels.visible_content.mlp[1].mean_auc",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.99918"
+  },
+  "ProbeEpsS": {
+    "json_path": "levels.bvc_4prong.linear[0].rejection_eps_s",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "50\\%"
+  },
+  "ProbeLogOneMinusAucBvcFourprongLinearFourthree": {
+    "json_path": "levels.bvc_4prong.linear[2].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.8946"
+  },
+  "ProbeLogOneMinusAucBvcFourprongLinearOneeighteight": {
+    "json_path": "levels.bvc_4prong.linear[0].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.9915"
+  },
+  "ProbeLogOneMinusAucBvcFourprongLinearOneseven": {
+    "json_path": "levels.bvc_4prong.linear[3].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-3.4972"
+  },
+  "ProbeLogOneMinusAucBvcFourprongLinearOnesixtwo": {
+    "json_path": "levels.bvc_4prong.linear[1].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.9777"
+  },
+  "ProbeLogOneMinusAucBvcFourprongMlpFourthree": {
+    "json_path": "levels.bvc_4prong.mlp[2].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.8713"
+  },
+  "ProbeLogOneMinusAucBvcFourprongMlpOneeighteight": {
+    "json_path": "levels.bvc_4prong.mlp[0].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.9855"
+  },
+  "ProbeLogOneMinusAucBvcFourprongMlpOneseven": {
+    "json_path": "levels.bvc_4prong.mlp[3].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-3.7911"
+  },
+  "ProbeLogOneMinusAucBvcFourprongMlpOnesixtwo": {
+    "json_path": "levels.bvc_4prong.mlp[1].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.9883"
+  },
+  "ProbeLogOneMinusAucBvcQcdLinearFourthree": {
+    "json_path": "levels.bvc_qcd.linear[2].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.0638"
+  },
+  "ProbeLogOneMinusAucBvcQcdLinearOneeighteight": {
+    "json_path": "levels.bvc_qcd.linear[0].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.2133"
+  },
+  "ProbeLogOneMinusAucBvcQcdLinearOneseven": {
+    "json_path": "levels.bvc_qcd.linear[3].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-3.1076"
+  },
+  "ProbeLogOneMinusAucBvcQcdLinearOnesixtwo": {
+    "json_path": "levels.bvc_qcd.linear[1].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.0774"
+  },
+  "ProbeLogOneMinusAucBvcQcdMlpFourthree": {
+    "json_path": "levels.bvc_qcd.mlp[2].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.0992"
+  },
+  "ProbeLogOneMinusAucBvcQcdMlpOneeighteight": {
+    "json_path": "levels.bvc_qcd.mlp[0].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.2178"
+  },
+  "ProbeLogOneMinusAucBvcQcdMlpOneseven": {
+    "json_path": "levels.bvc_qcd.mlp[3].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-3.2809"
+  },
+  "ProbeLogOneMinusAucBvcQcdMlpOnesixtwo": {
+    "json_path": "levels.bvc_qcd.mlp[1].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.1118"
+  },
+  "ProbeLogOneMinusAucBvcResonantLinearFourthree": {
+    "json_path": "levels.bvc_resonant.linear[2].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-5.9834"
+  },
+  "ProbeLogOneMinusAucBvcResonantLinearOneeighteight": {
+    "json_path": "levels.bvc_resonant.linear[0].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-6.0683"
+  },
+  "ProbeLogOneMinusAucBvcResonantLinearOneseven": {
+    "json_path": "levels.bvc_resonant.linear[3].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.6849"
+  },
+  "ProbeLogOneMinusAucBvcResonantLinearOnesixtwo": {
+    "json_path": "levels.bvc_resonant.linear[1].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-6.0493"
+  },
+  "ProbeLogOneMinusAucBvcResonantMlpFourthree": {
+    "json_path": "levels.bvc_resonant.mlp[2].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-5.9789"
+  },
+  "ProbeLogOneMinusAucBvcResonantMlpOneeighteight": {
+    "json_path": "levels.bvc_resonant.mlp[0].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-6.1099"
+  },
+  "ProbeLogOneMinusAucBvcResonantMlpOneseven": {
+    "json_path": "levels.bvc_resonant.mlp[3].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.9317"
+  },
+  "ProbeLogOneMinusAucBvcResonantMlpOnesixtwo": {
+    "json_path": "levels.bvc_resonant.mlp[1].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-6.0666"
+  },
+  "ProbeLogOneMinusAucEeVsMmLinearFourthree": {
+    "json_path": "levels.ee_vs_mm.linear[2].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.0324"
+  },
+  "ProbeLogOneMinusAucEeVsMmLinearOneeighteight": {
+    "json_path": "levels.ee_vs_mm.linear[0].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-16.9579"
+  },
+  "ProbeLogOneMinusAucEeVsMmLinearOneseven": {
+    "json_path": "levels.ee_vs_mm.linear[3].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-3.2013"
+  },
+  "ProbeLogOneMinusAucEeVsMmLinearOnesixtwo": {
+    "json_path": "levels.ee_vs_mm.linear[1].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-16.9579"
+  },
+  "ProbeLogOneMinusAucEeVsMmMlpFourthree": {
+    "json_path": "levels.ee_vs_mm.mlp[2].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-5.7759"
+  },
+  "ProbeLogOneMinusAucEeVsMmMlpOneeighteight": {
+    "json_path": "levels.ee_vs_mm.mlp[0].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-16.9579"
+  },
+  "ProbeLogOneMinusAucEeVsMmMlpOneseven": {
+    "json_path": "levels.ee_vs_mm.mlp[3].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.5626"
+  },
+  "ProbeLogOneMinusAucEeVsMmMlpOnesixtwo": {
+    "json_path": "levels.ee_vs_mm.mlp[1].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-16.9579"
+  },
+  "ProbeLogOneMinusAucRetainedTopologyLinearFourthree": {
+    "json_path": "levels.retained_topology.linear[2].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.9253"
+  },
+  "ProbeLogOneMinusAucRetainedTopologyLinearOneeighteight": {
+    "json_path": "levels.retained_topology.linear[0].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-5.1388"
+  },
+  "ProbeLogOneMinusAucRetainedTopologyLinearOneseven": {
+    "json_path": "levels.retained_topology.linear[3].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.7095"
+  },
+  "ProbeLogOneMinusAucRetainedTopologyLinearOnesixtwo": {
+    "json_path": "levels.retained_topology.linear[1].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-5.1395"
+  },
+  "ProbeLogOneMinusAucRetainedTopologyMlpFourthree": {
+    "json_path": "levels.retained_topology.mlp[2].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.9335"
+  },
+  "ProbeLogOneMinusAucRetainedTopologyMlpOneeighteight": {
+    "json_path": "levels.retained_topology.mlp[0].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-5.1100"
+  },
+  "ProbeLogOneMinusAucRetainedTopologyMlpOneseven": {
+    "json_path": "levels.retained_topology.mlp[3].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-4.6918"
+  },
+  "ProbeLogOneMinusAucRetainedTopologyMlpOnesixtwo": {
+    "json_path": "levels.retained_topology.mlp[1].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-5.0924"
+  },
+  "ProbeLogOneMinusAucSdBvcFourprongLinearFourthree": {
+    "json_path": "levels.bvc_4prong.linear[2].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0646"
+  },
+  "ProbeLogOneMinusAucSdBvcFourprongLinearOneeighteight": {
+    "json_path": "levels.bvc_4prong.linear[0].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0389"
+  },
+  "ProbeLogOneMinusAucSdBvcFourprongLinearOneseven": {
+    "json_path": "levels.bvc_4prong.linear[3].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.1665"
+  },
+  "ProbeLogOneMinusAucSdBvcFourprongLinearOnesixtwo": {
+    "json_path": "levels.bvc_4prong.linear[1].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0264"
+  },
+  "ProbeLogOneMinusAucSdBvcFourprongMlpFourthree": {
+    "json_path": "levels.bvc_4prong.mlp[2].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0741"
+  },
+  "ProbeLogOneMinusAucSdBvcFourprongMlpOneeighteight": {
+    "json_path": "levels.bvc_4prong.mlp[0].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0287"
+  },
+  "ProbeLogOneMinusAucSdBvcFourprongMlpOneseven": {
+    "json_path": "levels.bvc_4prong.mlp[3].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.1505"
+  },
+  "ProbeLogOneMinusAucSdBvcFourprongMlpOnesixtwo": {
+    "json_path": "levels.bvc_4prong.mlp[1].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0300"
+  },
+  "ProbeLogOneMinusAucSdBvcQcdLinearFourthree": {
+    "json_path": "levels.bvc_qcd.linear[2].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0370"
+  },
+  "ProbeLogOneMinusAucSdBvcQcdLinearOneeighteight": {
+    "json_path": "levels.bvc_qcd.linear[0].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0422"
+  },
+  "ProbeLogOneMinusAucSdBvcQcdLinearOneseven": {
+    "json_path": "levels.bvc_qcd.linear[3].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.1198"
+  },
+  "ProbeLogOneMinusAucSdBvcQcdLinearOnesixtwo": {
+    "json_path": "levels.bvc_qcd.linear[1].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0142"
+  },
+  "ProbeLogOneMinusAucSdBvcQcdMlpFourthree": {
+    "json_path": "levels.bvc_qcd.mlp[2].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0315"
+  },
+  "ProbeLogOneMinusAucSdBvcQcdMlpOneeighteight": {
+    "json_path": "levels.bvc_qcd.mlp[0].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0404"
+  },
+  "ProbeLogOneMinusAucSdBvcQcdMlpOneseven": {
+    "json_path": "levels.bvc_qcd.mlp[3].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.1005"
+  },
+  "ProbeLogOneMinusAucSdBvcQcdMlpOnesixtwo": {
+    "json_path": "levels.bvc_qcd.mlp[1].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0254"
+  },
+  "ProbeLogOneMinusAucSdBvcResonantLinearFourthree": {
+    "json_path": "levels.bvc_resonant.linear[2].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0264"
+  },
+  "ProbeLogOneMinusAucSdBvcResonantLinearOneeighteight": {
+    "json_path": "levels.bvc_resonant.linear[0].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0317"
+  },
+  "ProbeLogOneMinusAucSdBvcResonantLinearOneseven": {
+    "json_path": "levels.bvc_resonant.linear[3].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.1619"
+  },
+  "ProbeLogOneMinusAucSdBvcResonantLinearOnesixtwo": {
+    "json_path": "levels.bvc_resonant.linear[1].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0261"
+  },
+  "ProbeLogOneMinusAucSdBvcResonantMlpFourthree": {
+    "json_path": "levels.bvc_resonant.mlp[2].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0169"
+  },
+  "ProbeLogOneMinusAucSdBvcResonantMlpOneeighteight": {
+    "json_path": "levels.bvc_resonant.mlp[0].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0380"
+  },
+  "ProbeLogOneMinusAucSdBvcResonantMlpOneseven": {
+    "json_path": "levels.bvc_resonant.mlp[3].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.1230"
+  },
+  "ProbeLogOneMinusAucSdBvcResonantMlpOnesixtwo": {
+    "json_path": "levels.bvc_resonant.mlp[1].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0217"
+  },
+  "ProbeLogOneMinusAucSdEeVsMmLinearFourthree": {
+    "json_path": "levels.ee_vs_mm.linear[2].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.9472"
+  },
+  "ProbeLogOneMinusAucSdEeVsMmLinearOneeighteight": {
+    "json_path": "levels.ee_vs_mm.linear[0].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0000"
+  },
+  "ProbeLogOneMinusAucSdEeVsMmLinearOneseven": {
+    "json_path": "levels.ee_vs_mm.linear[3].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.2488"
+  },
+  "ProbeLogOneMinusAucSdEeVsMmLinearOnesixtwo": {
+    "json_path": "levels.ee_vs_mm.linear[1].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0000"
+  },
+  "ProbeLogOneMinusAucSdEeVsMmMlpFourthree": {
+    "json_path": "levels.ee_vs_mm.mlp[2].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "1.0016"
+  },
+  "ProbeLogOneMinusAucSdEeVsMmMlpOneeighteight": {
+    "json_path": "levels.ee_vs_mm.mlp[0].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0000"
+  },
+  "ProbeLogOneMinusAucSdEeVsMmMlpOneseven": {
+    "json_path": "levels.ee_vs_mm.mlp[3].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.1351"
+  },
+  "ProbeLogOneMinusAucSdEeVsMmMlpOnesixtwo": {
+    "json_path": "levels.ee_vs_mm.mlp[1].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0000"
+  },
+  "ProbeLogOneMinusAucSdRetainedTopologyLinearFourthree": {
+    "json_path": "levels.retained_topology.linear[2].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0169"
+  },
+  "ProbeLogOneMinusAucSdRetainedTopologyLinearOneeighteight": {
+    "json_path": "levels.retained_topology.linear[0].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0187"
+  },
+  "ProbeLogOneMinusAucSdRetainedTopologyLinearOneseven": {
+    "json_path": "levels.retained_topology.linear[3].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0979"
+  },
+  "ProbeLogOneMinusAucSdRetainedTopologyLinearOnesixtwo": {
+    "json_path": "levels.retained_topology.linear[1].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0510"
+  },
+  "ProbeLogOneMinusAucSdRetainedTopologyMlpFourthree": {
+    "json_path": "levels.retained_topology.mlp[2].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0539"
+  },
+  "ProbeLogOneMinusAucSdRetainedTopologyMlpOneeighteight": {
+    "json_path": "levels.retained_topology.mlp[0].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0516"
+  },
+  "ProbeLogOneMinusAucSdRetainedTopologyMlpOneseven": {
+    "json_path": "levels.retained_topology.mlp[3].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0665"
+  },
+  "ProbeLogOneMinusAucSdRetainedTopologyMlpOnesixtwo": {
+    "json_path": "levels.retained_topology.mlp[1].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0770"
+  },
+  "ProbeLogOneMinusAucSdVisibleContentLinearFourthree": {
+    "json_path": "levels.visible_content.linear[2].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.1137"
+  },
+  "ProbeLogOneMinusAucSdVisibleContentLinearOneeighteight": {
+    "json_path": "levels.visible_content.linear[0].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0358"
+  },
+  "ProbeLogOneMinusAucSdVisibleContentLinearOneseven": {
+    "json_path": "levels.visible_content.linear[3].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0889"
+  },
+  "ProbeLogOneMinusAucSdVisibleContentLinearOnesixtwo": {
+    "json_path": "levels.visible_content.linear[1].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0449"
+  },
+  "ProbeLogOneMinusAucSdVisibleContentMlpFourthree": {
+    "json_path": "levels.visible_content.mlp[2].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0718"
+  },
+  "ProbeLogOneMinusAucSdVisibleContentMlpOneeighteight": {
+    "json_path": "levels.visible_content.mlp[0].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0544"
+  },
+  "ProbeLogOneMinusAucSdVisibleContentMlpOneseven": {
+    "json_path": "levels.visible_content.mlp[3].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0877"
+  },
+  "ProbeLogOneMinusAucSdVisibleContentMlpOnesixtwo": {
+    "json_path": "levels.visible_content.mlp[1].seed_sd",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.0407"
+  },
+  "ProbeLogOneMinusAucVisibleContentLinearFourthree": {
+    "json_path": "levels.visible_content.linear[2].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-7.1124"
+  },
+  "ProbeLogOneMinusAucVisibleContentLinearOneeighteight": {
+    "json_path": "levels.visible_content.linear[0].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-7.0999"
+  },
+  "ProbeLogOneMinusAucVisibleContentLinearOneseven": {
+    "json_path": "levels.visible_content.linear[3].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-6.0684"
+  },
+  "ProbeLogOneMinusAucVisibleContentLinearOnesixtwo": {
+    "json_path": "levels.visible_content.linear[1].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-7.1480"
+  },
+  "ProbeLogOneMinusAucVisibleContentMlpFourthree": {
+    "json_path": "levels.visible_content.mlp[2].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-7.1018"
+  },
+  "ProbeLogOneMinusAucVisibleContentMlpOneeighteight": {
+    "json_path": "levels.visible_content.mlp[0].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-7.0179"
+  },
+  "ProbeLogOneMinusAucVisibleContentMlpOneseven": {
+    "json_path": "levels.visible_content.mlp[3].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-6.1659"
+  },
+  "ProbeLogOneMinusAucVisibleContentMlpOnesixtwo": {
+    "json_path": "levels.visible_content.mlp[1].mean",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "-7.1025"
+  },
+  "ProbeNJets": {
+    "json_path": "provenance.n_jets_total",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "2{,}000{,}000"
+  },
+  "ProbeNSeeds": {
+    "json_path": "seeds_used (length)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "5"
+  },
+  "ProbeRejBvcFourprongLinearFourthree": {
+    "json_path": "levels.bvc_4prong.linear[2].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$3{,}158"
+  },
+  "ProbeRejBvcFourprongLinearOneeighteight": {
+    "json_path": "levels.bvc_4prong.linear[0].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$\\geq$3{,}158$^{\\ast}$"
+  },
+  "ProbeRejBvcFourprongLinearOneseven": {
+    "json_path": "levels.bvc_4prong.linear[3].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "451.1"
+  },
+  "ProbeRejBvcFourprongLinearOnesixtwo": {
+    "json_path": "levels.bvc_4prong.linear[1].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$3{,}158"
+  },
+  "ProbeRejBvcFourprongMlpFourthree": {
+    "json_path": "levels.bvc_4prong.mlp[2].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$3{,}158"
+  },
+  "ProbeRejBvcFourprongMlpOneeighteight": {
+    "json_path": "levels.bvc_4prong.mlp[0].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$\\geq$3{,}158$^{\\ast}$"
+  },
+  "ProbeRejBvcFourprongMlpOneseven": {
+    "json_path": "levels.bvc_4prong.mlp[3].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$\\geq$1{,}052.7$^{\\ast}$"
+  },
+  "ProbeRejBvcFourprongMlpOnesixtwo": {
+    "json_path": "levels.bvc_4prong.mlp[1].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$\\geq$3{,}158$^{\\ast}$"
+  },
+  "ProbeRejBvcQcdLinearFourthree": {
+    "json_path": "levels.bvc_qcd.linear[2].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$\\geq$5{,}371$^{\\ast}$"
+  },
+  "ProbeRejBvcQcdLinearOneeighteight": {
+    "json_path": "levels.bvc_qcd.linear[0].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$5{,}371"
+  },
+  "ProbeRejBvcQcdLinearOneseven": {
+    "json_path": "levels.bvc_qcd.linear[3].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "335.7"
+  },
+  "ProbeRejBvcQcdLinearOnesixtwo": {
+    "json_path": "levels.bvc_qcd.linear[1].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$\\geq$5{,}371$^{\\ast}$"
+  },
+  "ProbeRejBvcQcdMlpFourthree": {
+    "json_path": "levels.bvc_qcd.mlp[2].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$5{,}371"
+  },
+  "ProbeRejBvcQcdMlpOneeighteight": {
+    "json_path": "levels.bvc_qcd.mlp[0].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$5{,}371"
+  },
+  "ProbeRejBvcQcdMlpOneseven": {
+    "json_path": "levels.bvc_qcd.mlp[3].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "767.3"
+  },
+  "ProbeRejBvcQcdMlpOnesixtwo": {
+    "json_path": "levels.bvc_qcd.mlp[1].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$5{,}371"
+  },
+  "ProbeRejBvcResonantLinearFourthree": {
+    "json_path": "levels.bvc_resonant.linear[2].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$11{,}876"
+  },
+  "ProbeRejBvcResonantLinearOneeighteight": {
+    "json_path": "levels.bvc_resonant.linear[0].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$11{,}876"
+  },
+  "ProbeRejBvcResonantLinearOneseven": {
+    "json_path": "levels.bvc_resonant.linear[3].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "1{,}484.5"
+  },
+  "ProbeRejBvcResonantLinearOnesixtwo": {
+    "json_path": "levels.bvc_resonant.linear[1].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$11{,}876"
+  },
+  "ProbeRejBvcResonantMlpFourthree": {
+    "json_path": "levels.bvc_resonant.mlp[2].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$11{,}876"
+  },
+  "ProbeRejBvcResonantMlpOneeighteight": {
+    "json_path": "levels.bvc_resonant.mlp[0].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$11{,}876"
+  },
+  "ProbeRejBvcResonantMlpOneseven": {
+    "json_path": "levels.bvc_resonant.mlp[3].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$\\geq$11{,}876$^{\\ast}$"
+  },
+  "ProbeRejBvcResonantMlpOnesixtwo": {
+    "json_path": "levels.bvc_resonant.mlp[1].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$11{,}876"
+  },
+  "ProbeRejEeVsMmLinearFourthree": {
+    "json_path": "levels.ee_vs_mm.linear[2].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "181.1"
+  },
+  "ProbeRejEeVsMmLinearOneeighteight": {
+    "json_path": "levels.ee_vs_mm.linear[0].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$4{,}708"
+  },
+  "ProbeRejEeVsMmLinearOneseven": {
+    "json_path": "levels.ee_vs_mm.linear[3].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "66.3"
+  },
+  "ProbeRejEeVsMmLinearOnesixtwo": {
+    "json_path": "levels.ee_vs_mm.linear[1].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$4{,}708"
+  },
+  "ProbeRejEeVsMmMlpFourthree": {
+    "json_path": "levels.ee_vs_mm.mlp[2].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$\\geq$4{,}708$^{\\ast}$"
+  },
+  "ProbeRejEeVsMmMlpOneeighteight": {
+    "json_path": "levels.ee_vs_mm.mlp[0].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$4{,}708"
+  },
+  "ProbeRejEeVsMmMlpOneseven": {
+    "json_path": "levels.ee_vs_mm.mlp[3].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "941.6"
+  },
+  "ProbeRejEeVsMmMlpOnesixtwo": {
+    "json_path": "levels.ee_vs_mm.mlp[1].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$4{,}708"
+  },
+  "ProbeRejRetainedTopologyLinearFourthree": {
+    "json_path": "levels.retained_topology.linear[2].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$1{,}078"
+  },
+  "ProbeRejRetainedTopologyLinearOneeighteight": {
+    "json_path": "levels.retained_topology.linear[0].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$1{,}078"
+  },
+  "ProbeRejRetainedTopologyLinearOneseven": {
+    "json_path": "levels.retained_topology.linear[3].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$1{,}078"
+  },
+  "ProbeRejRetainedTopologyLinearOnesixtwo": {
+    "json_path": "levels.retained_topology.linear[1].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$1{,}078"
+  },
+  "ProbeRejRetainedTopologyMlpFourthree": {
+    "json_path": "levels.retained_topology.mlp[2].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$1{,}078"
+  },
+  "ProbeRejRetainedTopologyMlpOneeighteight": {
+    "json_path": "levels.retained_topology.mlp[0].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$1{,}078"
+  },
+  "ProbeRejRetainedTopologyMlpOneseven": {
+    "json_path": "levels.retained_topology.mlp[3].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$\\geq$1{,}078$^{\\ast}$"
+  },
+  "ProbeRejRetainedTopologyMlpOnesixtwo": {
+    "json_path": "levels.retained_topology.mlp[1].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$1{,}078"
+  },
+  "ProbeRejVisibleContentLinearFourthree": {
+    "json_path": "levels.visible_content.linear[2].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$2{,}554"
+  },
+  "ProbeRejVisibleContentLinearOneeighteight": {
+    "json_path": "levels.visible_content.linear[0].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$2{,}554"
+  },
+  "ProbeRejVisibleContentLinearOneseven": {
+    "json_path": "levels.visible_content.linear[3].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$2{,}554"
+  },
+  "ProbeRejVisibleContentLinearOnesixtwo": {
+    "json_path": "levels.visible_content.linear[1].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$2{,}554"
+  },
+  "ProbeRejVisibleContentMlpFourthree": {
+    "json_path": "levels.visible_content.mlp[2].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$2{,}554"
+  },
+  "ProbeRejVisibleContentMlpOneeighteight": {
+    "json_path": "levels.visible_content.mlp[0].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$2{,}554"
+  },
+  "ProbeRejVisibleContentMlpOneseven": {
+    "json_path": "levels.visible_content.mlp[3].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$2{,}554"
+  },
+  "ProbeRejVisibleContentMlpOnesixtwo": {
+    "json_path": "levels.visible_content.mlp[1].rejection_median",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$>$2{,}554"
+  },
+  "ProbeRowAlign": {
+    "json_path": "provenance.row_alignment_sha256 (first 16)",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "\\texttt{a9449fd420c473f6}"
+  },
+  "SignAgreeBvcQcd": {
+    "json_path": "secondary.S6.bvc_qcd.n_agree",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "6 of 6"
+  },
+  "SignAgreeBvcResonant": {
+    "json_path": "secondary.S6.bvc_resonant.n_agree",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "6 of 6"
+  },
+  "SignAgreeEeVsMm": {
+    "json_path": "secondary.S6.ee_vs_mm.n_agree",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "5 of 5"
+  },
+  "SignAgreeRetainedTopology": {
+    "json_path": "secondary.S6.retained_topology.n_agree",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "5 of 6"
+  },
+  "TostBoundStwoEeVsMmLinear": {
+    "json_path": "secondary.S2.ee_vs_mm.linear.target_bound",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.09531"
+  },
+  "TostBoundStwoEeVsMmMlp": {
+    "json_path": "secondary.S2.ee_vs_mm.mlp.target_bound",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.09531"
+  },
+  "TostBoundStwoRetainedTopologyLinear": {
+    "json_path": "secondary.S2.retained_topology.linear.target_bound",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.09531"
+  },
+  "TostBoundStwoRetainedTopologyMlp": {
+    "json_path": "secondary.S2.retained_topology.mlp.target_bound",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.09531"
+  },
+  "TostCIStwoEeVsMmLinear": {
+    "json_path": "secondary.S2.ee_vs_mm.linear.largest_pair.ci90",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+13.5195,\\,+13.9938]$"
+  },
+  "TostCIStwoEeVsMmMlp": {
+    "json_path": "secondary.S2.ee_vs_mm.mlp.largest_pair.ci90",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+12.2664,\\,+12.5241]$"
+  },
+  "TostCIStwoRetainedTopologyLinear": {
+    "json_path": "secondary.S2.retained_topology.linear.largest_pair.ci90",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.3193,\\,+0.5407]$"
+  },
+  "TostCIStwoRetainedTopologyMlp": {
+    "json_path": "secondary.S2.retained_topology.mlp.largest_pair.ci90",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$[+0.3517,\\,+0.4847]$"
+  },
+  "TostDiffStwoEeVsMmLinear": {
+    "json_path": "secondary.S2.ee_vs_mm.linear.largest_pair.mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+13.7566$^{\\ast}$"
+  },
+  "TostDiffStwoEeVsMmMlp": {
+    "json_path": "secondary.S2.ee_vs_mm.mlp.largest_pair.mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+12.3953$^{\\ast}$"
+  },
+  "TostDiffStwoRetainedTopologyLinear": {
+    "json_path": "secondary.S2.retained_topology.linear.largest_pair.mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.4300"
+  },
+  "TostDiffStwoRetainedTopologyMlp": {
+    "json_path": "secondary.S2.retained_topology.mlp.largest_pair.mean_diff",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "+0.4182"
+  },
+  "TostPStwoEeVsMmLinear": {
+    "json_path": "secondary.S2.ee_vs_mm.linear.largest_pair.p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$1$"
+  },
+  "TostPStwoEeVsMmMlp": {
+    "json_path": "secondary.S2.ee_vs_mm.mlp.largest_pair.p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$1$"
+  },
+  "TostPStwoRetainedTopologyLinear": {
+    "json_path": "secondary.S2.retained_topology.linear.largest_pair.p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$0.999$"
+  },
+  "TostPStwoRetainedTopologyMlp": {
+    "json_path": "secondary.S2.retained_topology.mlp.largest_pair.p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$1$"
+  },
+  "TostSmallestBoundStwoEeVsMmLinear": {
+    "json_path": "secondary.S2.ee_vs_mm.linear.largest_pair.smallest_bound_passed",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "13.9938"
+  },
+  "TostSmallestBoundStwoEeVsMmMlp": {
+    "json_path": "secondary.S2.ee_vs_mm.mlp.largest_pair.smallest_bound_passed",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "12.5241"
+  },
+  "TostSmallestBoundStwoRetainedTopologyLinear": {
+    "json_path": "secondary.S2.retained_topology.linear.largest_pair.smallest_bound_passed",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.5407"
+  },
+  "TostSmallestBoundStwoRetainedTopologyMlp": {
+    "json_path": "secondary.S2.retained_topology.mlp.largest_pair.smallest_bound_passed",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "0.4847"
+  },
+  "TrendBlocksCone": {
+    "json_path": "confirmatory.C1.n_blocks",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "5"
+  },
+  "TrendBlocksSone": {
+    "json_path": "secondary.S1.n_blocks",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "5"
+  },
+  "TrendHolmCone": {
+    "json_path": "confirmatory.holm_family[C1]",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "rejected"
+  },
+  "TrendHolmSone": {
+    "json_path": "secondary.holm_family[S1]",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "rejected"
+  },
+  "TrendIsoPCone": {
+    "json_path": "confirmatory.C1.isotonic.p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$8.79\\times10^{-7}$"
+  },
+  "TrendIsoPSone": {
+    "json_path": "secondary.S1.isotonic.p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$1\\times10^{-6}$"
+  },
+  "TrendPCone": {
+    "json_path": "confirmatory.C1.p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$5.27\\times10^{-6}$"
+  },
+  "TrendPMinCone": {
+    "json_path": "confirmatory.C1.p_min",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$7.54\\times10^{-7}$"
+  },
+  "TrendPMinSone": {
+    "json_path": "secondary.S1.p_min",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$7.54\\times10^{-7}$"
+  },
+  "TrendPSone": {
+    "json_path": "secondary.S1.p",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$6.03\\times10^{-6}$"
+  },
+  "TrendStatCone": {
+    "json_path": "confirmatory.C1.stat",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "31.029"
+  },
+  "TrendStatSone": {
+    "json_path": "secondary.S1.stat",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "31.233"
+  },
+  "TrendStepCone": {
+    "json_path": "confirmatory.C1.argmax_step",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$\\{188,162,43\\}$ vs $\\{17\\}$"
+  },
+  "TrendStepSone": {
+    "json_path": "secondary.S1.argmax_step",
+    "sha256": "1a11f75c228ade23b388da3600c0b42f3df3df0404e7ed8bc610bdc3bd3c1cca",
+    "source_file": "experiments/FIGS/data/probe_ladder_v1/analysis/seed_level_results.json",
+    "value": "$\\{188,162,43\\}$ vs $\\{17\\}$"
+  },
+  "UseDiesAtGnthreexQcdSubclass": {
+    "json_path": "gn3x_qcd_subclass.dies_at",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "162"
+  },
+  "UseDiesAtSophonEqfour": {
+    "json_path": "sophon_eq4.dies_at",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "43"
+  },
+  "UseDiesAtSophonEqsevenNine": {
+    "json_path": "sophon_eq7_9.dies_at",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "64"
+  },
+  "UseDiesAtSophonEqsixAone": {
+    "json_path": "sophon_eq6_a1.dies_at",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "64"
+  },
+  "UseDiesAtSophonEqsixAthree": {
+    "json_path": "sophon_eq6_a3.dies_at",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "64"
+  },
+  "UseDiesAtVcbEqone": {
+    "json_path": "vcb_eq1.dies_at",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "64"
+  },
+  "UseLastAliveGnthreexQcdSubclass": {
+    "json_path": "gn3x_qcd_subclass.last_rung_alive",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "188"
+  },
+  "UseLastAliveSophonEqfour": {
+    "json_path": "sophon_eq4.last_rung_alive",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "64"
+  },
+  "UseLastAliveSophonEqsevenNine": {
+    "json_path": "sophon_eq7_9.last_rung_alive",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "162"
+  },
+  "UseLastAliveSophonEqsixAone": {
+    "json_path": "sophon_eq6_a1.last_rung_alive",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "162"
+  },
+  "UseLastAliveSophonEqsixAthree": {
+    "json_path": "sophon_eq6_a3.last_rung_alive",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "162"
+  },
+  "UseLastAliveVcbEqone": {
+    "json_path": "vcb_eq1.last_rung_alive",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "162"
+  },
+  "UseVectorsGnthreexQcdSubclass": {
+    "json_path": "gn3x_qcd_subclass.n_coefficient_vectors",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "27"
+  },
+  "UseVectorsSophonEqfour": {
+    "json_path": "sophon_eq4.n_coefficient_vectors",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "2"
+  },
+  "UseVectorsSophonEqsevenNine": {
+    "json_path": "sophon_eq7_9.n_coefficient_vectors",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "2"
+  },
+  "UseVectorsSophonEqsixAone": {
+    "json_path": "sophon_eq6_a1.n_coefficient_vectors",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "2"
+  },
+  "UseVectorsSophonEqsixAthree": {
+    "json_path": "sophon_eq6_a3.n_coefficient_vectors",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "2"
+  },
+  "UseVectorsVcbEqone": {
+    "json_path": "vcb_eq1.n_coefficient_vectors",
+    "sha256": "77de45ee4283250fe8bc29903c5f328326bdb0a96979fdffe6037beb67155d30",
+    "source_file": "configs/labelmaps/usecase_survival.v1.json",
+    "value": "2"
+  },
+  "VocabSizeLoneeighteight": {
+    "json_path": "column L188 (distinct group count)",
+    "sha256": "412f9aa3b58db41243d9913eaa6f392abc761cce220cdf2b21a87acfae754a78",
+    "source_file": "configs/labelmaps/rung_label_maps.v1.csv",
+    "value": "188"
+  },
+  "VocabSizeLonesixtwo": {
+    "json_path": "column L162 (distinct group count)",
+    "sha256": "412f9aa3b58db41243d9913eaa6f392abc761cce220cdf2b21a87acfae754a78",
+    "source_file": "configs/labelmaps/rung_label_maps.v1.csv",
+    "value": "162"
+  },
+  "VocabSizeRfourtwoQone": {
+    "json_path": "column R42_Q1 (distinct group count)",
+    "sha256": "412f9aa3b58db41243d9913eaa6f392abc761cce220cdf2b21a87acfae754a78",
+    "source_file": "configs/labelmaps/rung_label_maps.v1.csv",
+    "value": "43"
+  },
+  "VocabSizeRoneQone": {
+    "json_path": "column R1_Q1 (distinct group count)",
+    "sha256": "412f9aa3b58db41243d9913eaa6f392abc761cce220cdf2b21a87acfae754a78",
+    "source_file": "configs/labelmaps/rung_label_maps.v1.csv",
+    "value": "2"
+  },
+  "VocabSizeRonesixQone": {
+    "json_path": "column R16_Q1 (distinct group count)",
+    "sha256": "412f9aa3b58db41243d9913eaa6f392abc761cce220cdf2b21a87acfae754a78",
+    "source_file": "configs/labelmaps/rung_label_maps.v1.csv",
+    "value": "17"
+  },
+  "VocabSizeRsixthreeQone": {
+    "json_path": "column R63_Q1 (distinct group count)",
+    "sha256": "412f9aa3b58db41243d9913eaa6f392abc761cce220cdf2b21a87acfae754a78",
+    "source_file": "configs/labelmaps/rung_label_maps.v1.csv",
+    "value": "64"
+  },
+  "VocabSizeRthreeVIS": {
+    "json_path": "column R3_VIS (distinct group count)",
+    "sha256": "412f9aa3b58db41243d9913eaa6f392abc761cce220cdf2b21a87acfae754a78",
+    "source_file": "configs/labelmaps/rung_label_maps.v1.csv",
+    "value": "4"
+  },
+  "VocabSizeRtwonineQone": {
+    "json_path": "column R29_Q1 (distinct group count)",
+    "sha256": "412f9aa3b58db41243d9913eaa6f392abc761cce220cdf2b21a87acfae754a78",
+    "source_file": "configs/labelmaps/rung_label_maps.v1.csv",
+    "value": "30"
+  }
+}
