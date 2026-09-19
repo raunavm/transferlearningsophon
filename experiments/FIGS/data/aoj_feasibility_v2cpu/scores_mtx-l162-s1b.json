@@ -1,0 +1,60 @@
+{
+  "name": "mtx-l162-s1b",
+  "rung": "L162",
+  "n_jets": 1172309,
+  "n_outputs": 162,
+  "checkpoint": "/data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt",
+  "checkpoint_sha256": "12268b5543f2bc622cd43f2cc3d12bc2185a8964be16a69f37529c1132c889da",
+  "members": {
+    "two_prong": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "three_prong": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      41,
+      42,
+      43,
+      44,
+      45,
+      56,
+      57,
+      58,
+      59,
+      60,
+      70,
+      71,
+      72,
+      73,
+      74,
+      83,
+      84,
+      85,
+      86,
+      87,
+      127,
+      128,
+      129,
+      130
+    ]
+  },
+  "qcd_nodes": [
+    161
+  ],
+  "median_logodds": {
+    "two_prong": -9.870071084556177,
+    "three_prong": -2.523002872180777
+  }
+}

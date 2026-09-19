@@ -1,0 +1,263 @@
+{
+  "n_jets_aoj": 50208,
+  "n_jets_reference": 37772,
+  "pt_window": [
+    500.0,
+    700.0
+  ],
+  "hard_flags": [],
+  "soft_flags": [
+    "species:part_isNeutralHadron 0.0730 vs 0.1117",
+    "species:part_isElectron 0.0027 vs 0.0043",
+    "species:part_isMuon 0.0020 vs 0.0011"
+  ],
+  "rows": [
+    {
+      "feature": "part_pt_scale_log",
+      "stat": "median|iqr",
+      "aoj": -0.744969367980957,
+      "reference": -0.2901330590248108,
+      "ratio": 2.567681774992938,
+      "shift_in_ref_iqr": -0.34638947683962695,
+      "iqr_aoj": 1.393812962807715,
+      "iqr_reference": 1.3130777329206467,
+      "iqr_ratio": 1.061485491576718,
+      "p01_aoj": -2.0328615975379942,
+      "p99_aoj": 2.07891524076462,
+      "p01_reference": -1.8884375309944152,
+      "p99_reference": 2.0475611352920535
+    },
+    {
+      "feature": "part_e_scale_log",
+      "stat": "median|iqr",
+      "aoj": -0.7084057629108429,
+      "reference": -0.25044557452201843,
+      "ratio": 2.8285816759304003,
+      "shift_in_ref_iqr": -0.35827546205221233,
+      "iqr_aoj": 1.4076661504805088,
+      "iqr_reference": 1.2782348692417145,
+      "iqr_ratio": 1.101257823857971,
+      "p01_aoj": -2.0853380227088927,
+      "p99_aoj": 2.1572278189659126,
+      "p01_reference": -1.9089933133125305,
+      "p99_reference": 2.1830201435089114
+    },
+    {
+      "feature": "part_logptrel",
+      "stat": "median|iqr",
+      "aoj": -0.6151951551437378,
+      "reference": -0.16035880148410797,
+      "ratio": 3.836366631891455,
+      "shift_in_ref_iqr": -0.3463894597824619,
+      "iqr_aoj": 1.3938129879534245,
+      "iqr_reference": 1.3130779266357422,
+      "iqr_ratio": 1.0614853541286273,
+      "p01_aoj": -1.9030875611305236,
+      "p99_aoj": 2.208689365386965,
+      "p01_reference": -1.758663206100464,
+      "p99_reference": 2.177335243225098
+    },
+    {
+      "feature": "part_logerel",
+      "stat": "median|iqr",
+      "aoj": -0.6189343631267548,
+      "reference": -0.16134047508239746,
+      "ratio": 3.836200202154243,
+      "shift_in_ref_iqr": -0.3560433690944176,
+      "iqr_aoj": 1.3829507380723953,
+      "iqr_reference": 1.285219520330429,
+      "iqr_ratio": 1.0760424318149475,
+      "p01_aoj": -1.927936315536499,
+      "p99_aoj": 2.201793520450593,
+      "p01_reference": -1.7336327505111695,
+      "p99_reference": 2.1714642763137824
+    },
+    {
+      "feature": "part_deltaR",
+      "stat": "median|iqr",
+      "aoj": 0.268968403339386,
+      "reference": -0.13412606716156006,
+      "ratio": -2.00534026704446,
+      "shift_in_ref_iqr": 0.406852649806586,
+      "iqr_aoj": 1.2201948761940002,
+      "iqr_reference": 0.9907627999782562,
+      "iqr_ratio": 1.2315711452032507,
+      "p01_aoj": -0.7284762394428254,
+      "p99_aoj": 2.3367764544487004,
+      "p01_reference": -0.7523406541347504,
+      "p99_reference": 3.2584859943390074
+    },
+    {
+      "feature": "part_charge",
+      "stat": "fraction_nonzero",
+      "aoj": 0.6040153950427861,
+      "reference": 0.4961316845872354,
+      "ratio": 1.2174497493448868
+    },
+    {
+      "feature": "part_isChargedHadron",
+      "stat": "fraction_nonzero",
+      "aoj": 0.5992860874217598,
+      "reference": 0.4907369615427015,
+      "ratio": 1.221196148620676
+    },
+    {
+      "feature": "part_isNeutralHadron",
+      "stat": "fraction_nonzero",
+      "aoj": 0.0730080152510222,
+      "reference": 0.11171948730772023,
+      "ratio": 0.6534940054811464,
+      "flag": "species"
+    },
+    {
+      "feature": "part_isPhoton",
+      "stat": "fraction_nonzero",
+      "aoj": 0.3229765897061917,
+      "reference": 0.39214882810504437,
+      "ratio": 0.8236071780882038
+    },
+    {
+      "feature": "part_isElectron",
+      "stat": "fraction_nonzero",
+      "aoj": 0.0026915426436747484,
+      "reference": 0.0042864172037459765,
+      "ratio": 0.627923628461215,
+      "flag": "species"
+    },
+    {
+      "feature": "part_isMuon",
+      "stat": "fraction_nonzero",
+      "aoj": 0.0020377649773514993,
+      "reference": 0.0011083058407879134,
+      "ratio": 1.8386305497612623,
+      "flag": "species"
+    },
+    {
+      "feature": "part_d0",
+      "stat": "median|iqr",
+      "aoj": 0.052099693566560745,
+      "reference": 0.018595805391669273,
+      "ratio": 2.801690621579685,
+      "shift_in_ref_iqr": 0.9720658045205304,
+      "iqr_aoj": 0.291974700987339,
+      "iqr_reference": 0.03446668735705316,
+      "iqr_ratio": 8.471214479148086,
+      "p01_aoj": 0.000598132552113384,
+      "p99_aoj": 1.0,
+      "p01_reference": 0.00031262347416486595,
+      "p99_reference": 1.0
+    },
+    {
+      "feature": "part_d0err",
+      "stat": "median|iqr",
+      "aoj": 0.063934326171875,
+      "reference": 0.02370000071823597,
+      "ratio": 2.697650811574901,
+      "shift_in_ref_iqr": 1.8205577366484371,
+      "iqr_aoj": 0.1343536376953125,
+      "iqr_reference": 0.022099999710917473,
+      "iqr_ratio": 6.079350201481739,
+      "p01_aoj": 0.010786056518554688,
+      "p99_aoj": 1.0,
+      "p01_reference": 0.010099999606609344,
+      "p99_reference": 0.2387000024318695
+    },
+    {
+      "feature": "part_dz",
+      "stat": "median|iqr",
+      "aoj": 0.08774071931838989,
+      "reference": 0.04131634160876274,
+      "ratio": 2.1236323426026917,
+      "shift_in_ref_iqr": 0.6372474336776982,
+      "iqr_aoj": 0.738593976944685,
+      "iqr_reference": 0.07285141572356224,
+      "iqr_ratio": 10.138361342864096,
+      "p01_aoj": 0.0011634820839390159,
+      "p99_aoj": 1.0,
+      "p01_reference": 0.0007171629695221782,
+      "p99_reference": 1.0
+    },
+    {
+      "feature": "part_dzerr",
+      "stat": "median|iqr",
+      "aoj": 0.07228851318359375,
+      "reference": 0.04839999973773956,
+      "ratio": 1.4935643300681112,
+      "shift_in_ref_iqr": 0.5581428626263455,
+      "iqr_aoj": 0.118255615234375,
+      "iqr_reference": 0.042799998074769974,
+      "iqr_ratio": 2.7629817886390304,
+      "p01_aoj": 0.0203704833984375,
+      "p99_aoj": 1.0,
+      "p01_reference": 0.0284000001847744,
+      "p99_reference": 0.8251000046730042
+    },
+    {
+      "feature": "part_deta",
+      "stat": "median|iqr",
+      "aoj": -0.010911456774920225,
+      "reference": -0.003123641014099121,
+      "ratio": 3.493185268623822,
+      "shift_in_ref_iqr": -0.043156214583131194,
+      "iqr_aoj": 0.27348734252154827,
+      "iqr_reference": 0.18045641481876373,
+      "iqr_ratio": 1.5155312865780777,
+      "p01_aoj": -0.6737545275688172,
+      "p99_aoj": 0.6292410212755204,
+      "p01_reference": -0.5946896755695343,
+      "p99_reference": 0.7753562879562379
+    },
+    {
+      "feature": "part_dphi",
+      "stat": "median|iqr",
+      "aoj": -1.3727960322285071e-05,
+      "reference": 1.811981201171875e-05,
+      "ratio": -0.7576215643631784,
+      "shift_in_ref_iqr": -0.00017875799938121058,
+      "iqr_aoj": 0.2949126474559307,
+      "iqr_reference": 0.1781613826751709,
+      "iqr_ratio": 1.6553118472010524,
+      "p01_aoj": -0.6524538385868073,
+      "p99_aoj": 0.6525960189104083,
+      "p01_reference": -0.5792701315879821,
+      "p99_reference": 0.579456110000611
+    },
+    {
+      "feature": "d0_dphi_sign",
+      "stat": "sign_asymmetry",
+      "aoj": 0.19446739554405212,
+      "reference": 0.2660951614379883,
+      "n_aoj": 686259,
+      "n_reference": 115252
+    },
+    {
+      "feature": "dz_deta_sign",
+      "stat": "sign_asymmetry",
+      "aoj": -0.0011275771539658308,
+      "reference": 0.0002681986952666193,
+      "n_aoj": 857591,
+      "n_reference": 212529
+    },
+    {
+      "feature": "charged_no_track",
+      "stat": "fraction",
+      "aoj": 0.04578334924666996,
+      "reference": 0.00012789886018270026
+    },
+    {
+      "feature": "neutral_with_displacement",
+      "stat": "fraction",
+      "aoj": 0.0,
+      "reference": 0.0
+    },
+    {
+      "feature": "n_particles",
+      "stat": "median|iqr",
+      "aoj": 61.0,
+      "reference": 48.0,
+      "ratio": 1.2708333333333333,
+      "iqr_aoj": 26.0,
+      "iqr_reference": 23.0
+    }
+  ]
+}
