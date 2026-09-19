@@ -87,6 +87,42 @@ def test_main_runs_and_the_own_rung_control_is_reported(tmp_path):
         assert c["chance"] == pytest.approx(1.0 / c["n_groups"])
 
 
+def test_the_own_rung_control_is_judged_against_chance_not_an_absolute(tmp_path, capsys):
+    """The control exists to catch a broken checkpoint or a broken probe. Its
+    bar must therefore be the same `not_recovered` criterion every other cell is
+    judged by. An absolute accuracy bar cannot be right across eight
+    vocabularies whose chance levels span 0.0053 to 0.5: at K=188 a 0.5 bar
+    fires on an arm recovering its own vocabulary at 65x chance."""
+    rng = np.random.default_rng(7)
+    n = 4000
+    lab = rng.integers(0, 188, size=n)
+    d = tmp_path / "arm"
+    _cache(d, n, lab, rng, sep=30.0)
+    out = tmp_path / "o"
+    lr.main(["--features", f"a={d}", "--own-rung", "a=L188", "--out", str(out),
+             "--n", "3000", "--rungs", "L188"])
+    cell = json.loads((out / "label_recovery.json").read_text())["arms"]["a"]["rungs"]["L188"]
+    assert cell["not_recovered"] is False, "this cache does carry the label"
+    assert max(cell["linear"], cell["mlp"]) < 0.5, (
+        "the point of the test is a cell far above chance but under an "
+        "absolute 0.5; if this ever exceeds 0.5 the test proves nothing")
+    assert "cannot recover its own vocabulary" not in capsys.readouterr().out
+
+
+def test_the_own_rung_control_still_fires_on_a_dead_representation(tmp_path, capsys):
+    rng = np.random.default_rng(8)
+    n = 3000
+    lab = rng.integers(0, 188, size=n)
+    d = tmp_path / "arm"
+    _cache(d, n, lab, rng, sep=0.0)          # features carry nothing
+    out = tmp_path / "o"
+    lr.main(["--features", f"a={d}", "--own-rung", "a=R16_Q1", "--out", str(out),
+             "--n", "2500", "--rungs", "R16_Q1"])
+    cell = json.loads((out / "label_recovery.json").read_text())["arms"]["a"]["rungs"]["R16_Q1"]
+    assert cell["not_recovered"] is True
+    assert "cannot recover its own vocabulary" in capsys.readouterr().out
+
+
 def test_finer_than_own_is_flagged_on_the_right_cells(tmp_path):
     rng = np.random.default_rng(1)
     n = 3000

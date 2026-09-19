@@ -239,12 +239,22 @@ def main(argv=None) -> int:
     # broken checkpoint or a broken probe, and every other cell in its row is
     # then uninterpretable -- so this is checked loudly rather than left to a
     # reader of the JSON.
+    #
+    # The bar is chance + chance_margin, i.e. the same `not_recovered` criterion
+    # every other cell is judged by, NOT an absolute accuracy. An absolute bar
+    # cannot be right across eight vocabularies whose chance levels span 0.0053
+    # to 0.5: at K=188 it fired on an arm recovering its own vocabulary at 65x
+    # chance and beating every coarser arm, which is a working checkpoint, not a
+    # broken one. Recorded 2026-09-19 in docs/PRESPEC_2026-09.md; the flag is
+    # printed only and appears in no JSON field, so no recorded number moves.
     bad = []
     for arm, ad in res["arms"].items():
         cell = ad["rungs"].get(ad["own_rung"], {})
-        if "linear" in cell and max(cell["linear"], cell["mlp"]) < 0.5:
+        if "linear" in cell and cell["not_recovered"]:
             bad.append(f"{arm} recovers its own rung {ad['own_rung']} at only "
-                       f"{max(cell['linear'], cell['mlp']):.3f}")
+                       f"{max(cell['linear'], cell['mlp']):.3f} "
+                       f"(chance {cell['chance']:.4f} "
+                       f"+ margin {cell['chance_margin']:.4f})")
     if bad:
         print("\nWARNING: an arm cannot recover its own vocabulary; its row is "
               "not interpretable:")
