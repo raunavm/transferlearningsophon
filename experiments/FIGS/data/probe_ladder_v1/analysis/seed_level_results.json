@@ -1,0 +1,7001 @@
+{
+  "provenance": {
+    "inputs": [
+      {
+        "path": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+        "sha256": "af89ff41e8acc5bb393f07733c0bb471d8ba531d570f4018c52c37d6ad0ee4e5"
+      },
+      {
+        "path": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+        "sha256": "ee59faf6599626d637e060c68409bb2e1c153b4e21cf4820bb51a5cf86e49e8b"
+      },
+      {
+        "path": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+        "sha256": "b31a311472a28e7d720fbfdb9e361bb37781042836a05b1d45edb1f0e1c43ac2"
+      },
+      {
+        "path": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+        "sha256": "c8c6ae072e397aac4e4180f5175682f9c8d7fdbaad63bbdd310688653d294198"
+      },
+      {
+        "path": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+        "sha256": "7b344e639c7960bd8d8386aef8be4981955061efda0158c6b117353cfb262fa2"
+      }
+    ],
+    "script_sha256": "16d0bc194007be6de91b2163949b4a2fead324ba45dc023129419eb18bd4237c",
+    "prespec_sha256": "ce952b270feef20ad7714efa007758f5a74869bac5947b71d6f8bd6706f7f73d",
+    "stats_modules_sha256": {
+      "src/stats/trend.py": "8fd25667065a7e2757f3eb037f88e212427c2802bd04b1b438466e7b3d78d55c",
+      "src/stats/inference.py": "1346e8e0b5dc7d85de6e0d44dbdcee98db47d396a3c00bdfedd5525e4b0d32d2",
+      "src/stats/mde.py": "626468dcc37940bb827fd5cc07696b7e55084beac4bb5669ae8c3693aa0ee68c"
+    },
+    "row_alignment_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba",
+    "n_jets_total": 2000000,
+    "arm_checkpoints": {
+      "l162-s1b": "12268b5543f2bc622cd43f2cc3d12bc2185a8964be16a69f37529c1132c889da",
+      "l188-s1": "9165323360e3f9000c1aaa38bd1191bec855cf18080236ff4deb649a9ef8f8a4",
+      "r16q1-s1": "7d1331e5fa5cb442e6737fff74c3b20ac817322b4178548fbf919cd024c12b11",
+      "r42q1-s1": "06381f867507be15ec1985961806b153dbbbc284c3bc3d6a437ebcd922c88926",
+      "l162-s2": "3a0651c4e1145f3c65a0dfc9a598b8a90fc6e27dc09795851f1051f84e894dab",
+      "l188-s2": "87515eade39c2d46957ddd2271fdd03108793c32d57e3c2f279ce1648c68a9f9",
+      "r16q1-s2": "5ad62a61c9a5045e2fcc4998bc247f97b443885dd6b2c723f95cf7ded6218028",
+      "r42q1-s2": "ed27e44c7b06bc4c4b9d629fb2906190d80a1d439a9ab66a715b3e8b93ba8b18",
+      "l162-s3": "39ea383cd30a76e8d4665fc3d8565585b2cf1c11003f0114c6867d49c14f8523",
+      "l188-s3": "394a3a48ee0d8781b8702e7a388877e7d486488d8b98a9433400b93cdae3e486",
+      "r16q1-s3": "cc2626a2dde7d54c3956c31a42e6d8f30820d5ef1c673e63472512f44591ddf2",
+      "r42q1-s3": "ee60dc2022088e5f7f75aa0c9ac13b9d8fca98ed160480bf2c9e2130fbb1285f",
+      "l162-s4": "202302ffccd923cd8156dd8a73d831160021a5935da548743f7ce9fccb1da54b",
+      "l188-s4": "d67de25c74aad66d1a54e14d434b11dbad1c33c82d9a2caf5a88229f8396bfad",
+      "r16q1-s4": "6c118cb20035b297d4287694993a952cc8d5fd07299680936136d9f700b9906b",
+      "r42q1-s4": "79ab5ef7e9963818170f60765070056fdb651adcc26b06ceb24c12e6e388c837",
+      "l162-s5": "0649173188d74b8d79b1ceac39fe13a9c69f128435d1dabc8835a1fbf6fa75d8",
+      "l188-s5": "d7c92f000240fbb0d38213fbcbb76caece9c5cb293174af0600952a27e9fca74",
+      "r16q1-s5": "7daa947e50d58349787b59f662b60398f56c7b68b48272845aac78d6f5ff6469",
+      "r42q1-s5": "f120c00318919b9d330ccdd8a9bc6f27314a195f39a132c613c30e0bb67823cc"
+    },
+    "argv": [
+      "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "--out",
+      "experiments/FIGS/data/probe_ladder_v1/analysis"
+    ]
+  },
+  "endpoint": {
+    "field": "log1m_auc",
+    "log_base": "e (natural log, probe.py np.log)",
+    "lower_is_better": true,
+    "difference": "coarser \u2212 finer, by seed index"
+  },
+  "levels_fine_to_coarse": [
+    188,
+    162,
+    43,
+    17
+  ],
+  "seeds_used": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "dropped_pairs": {
+    "seeds": [],
+    "reason": null
+  },
+  "missing_cells": {},
+  "skipped_tasks": [],
+  "table": [
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 162,
+      "seed": 1,
+      "arm": "l162-s1b",
+      "log1m_auc": -6.032146604698681,
+      "censored": false,
+      "auc": 0.9975996641278692,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 1,
+      "arm": "l162-s1b",
+      "log1m_auc": -6.073656609787814,
+      "censored": false,
+      "auc": 0.997697262415685,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 188,
+      "seed": 1,
+      "arm": "l188-s1",
+      "log1m_auc": -6.047274917652001,
+      "censored": false,
+      "auc": 0.9976357038625903,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 1,
+      "arm": "l188-s1",
+      "log1m_auc": -6.089163638154473,
+      "censored": false,
+      "auc": 0.9977326955910558,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 17,
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "log1m_auc": -4.5161847664570285,
+      "censored": false,
+      "auc": 0.9890693528118604,
+      "rejection": 1079.6363636363637,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "log1m_auc": -4.844945533479331,
+      "censored": false,
+      "auc": 0.9921319540115945,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 43,
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "log1m_auc": -5.953629808928389,
+      "censored": false,
+      "auc": 0.9974036010388803,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "log1m_auc": -5.959872048219352,
+      "censored": false,
+      "auc": 0.9974197579025225,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 162,
+      "seed": 1,
+      "arm": "l162-s1b",
+      "log1m_auc": -5.1525464638321266,
+      "censored": false,
+      "auc": 0.9942153444604366,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 1,
+      "arm": "l162-s1b",
+      "log1m_auc": -5.133256991245175,
+      "censored": false,
+      "auc": 0.9941026783646114,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 188,
+      "seed": 1,
+      "arm": "l188-s1",
+      "log1m_auc": -5.151389426534928,
+      "censored": false,
+      "auc": 0.9942086475246708,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 1,
+      "arm": "l188-s1",
+      "log1m_auc": -5.1246900331785845,
+      "censored": false,
+      "auc": 0.9940519392277504,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 17,
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "log1m_auc": -4.779025880188594,
+      "censored": false,
+      "auc": 0.9915958183387628,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "log1m_auc": -4.744673502514276,
+      "censored": false,
+      "auc": 0.9913020986148215,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 43,
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "log1m_auc": -4.929067914632358,
+      "censored": false,
+      "auc": 0.9927667578605481,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "log1m_auc": -4.9342661921266515,
+      "censored": false,
+      "auc": 0.9928042607008367,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 162,
+      "seed": 1,
+      "arm": "l162-s1b",
+      "log1m_auc": -4.096891233947632,
+      "censored": false,
+      "auc": 0.9833757238618016,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 1,
+      "arm": "l162-s1b",
+      "log1m_auc": -4.150767662265068,
+      "censored": false,
+      "auc": 0.9842476806189726,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 188,
+      "seed": 1,
+      "arm": "l188-s1",
+      "log1m_auc": -4.211168733186891,
+      "censored": false,
+      "auc": 0.9851709729696398,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 1,
+      "arm": "l188-s1",
+      "log1m_auc": -4.194583260571818,
+      "censored": false,
+      "auc": 0.984922975656452,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 17,
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "log1m_auc": -3.0708856019001343,
+      "censored": false,
+      "auc": 0.9536199376070489,
+      "rejection": 298.3888888888889,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "log1m_auc": -3.2521128512567503,
+      "censored": false,
+      "auc": 0.9613076298161916,
+      "rejection": 767.2857142857143,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 43,
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "log1m_auc": -4.097080312415753,
+      "censored": false,
+      "auc": 0.9833788668573217,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "log1m_auc": -4.141694887094869,
+      "censored": false,
+      "auc": 0.9841041130736041,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 162,
+      "seed": 1,
+      "arm": "l162-s1b",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 1,
+      "arm": "l162-s1b",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 188,
+      "seed": 1,
+      "arm": "l188-s1",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 1,
+      "arm": "l188-s1",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 17,
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "log1m_auc": -3.216523189689441,
+      "censored": false,
+      "auc": 0.9599057838081423,
+      "rejection": 66.30985915492958,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "log1m_auc": -4.741776824008142,
+      "censored": false,
+      "auc": 0.9912768670646287,
+      "rejection": 1177.0,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 43,
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "log1m_auc": -4.911693461324514,
+      "censored": false,
+      "auc": 0.992639986126999,
+      "rejection": 523.1111111111111,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "log1m_auc": -6.5804891829780185,
+      "censored": false,
+      "auc": 0.9986128294513861,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 162,
+      "seed": 1,
+      "arm": "l162-s1b",
+      "log1m_auc": -5.005521088671879,
+      "censored": false,
+      "auc": 0.9932991512980318,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 1,
+      "arm": "l162-s1b",
+      "log1m_auc": -5.037613754862576,
+      "censored": false,
+      "auc": 0.9935107852852976,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 188,
+      "seed": 1,
+      "arm": "l188-s1",
+      "log1m_auc": -4.945693122862165,
+      "censored": false,
+      "auc": 0.9928860179088058,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 1,
+      "arm": "l188-s1",
+      "log1m_auc": -4.961693576843104,
+      "censored": false,
+      "auc": 0.9929989390480207,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 17,
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "log1m_auc": -3.4475411505320435,
+      "censored": false,
+      "auc": 0.9681762098359925,
+      "rejection": 451.1428571428571,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "log1m_auc": -3.713575047469136,
+      "censored": false,
+      "auc": 0.9756098287990338,
+      "rejection": 1052.6666666666667,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 43,
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "log1m_auc": -4.874372390360186,
+      "censored": false,
+      "auc": 0.9923601124183844,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "log1m_auc": -4.8548355135646,
+      "censored": false,
+      "auc": 0.992209385301632,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 162,
+      "seed": 1,
+      "arm": "l162-s1b",
+      "log1m_auc": -7.105916988104826,
+      "censored": false,
+      "auc": 0.9991797627974257,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 1,
+      "arm": "l162-s1b",
+      "log1m_auc": -7.072399357806752,
+      "censored": false,
+      "auc": 0.9991518044588764,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 188,
+      "seed": 1,
+      "arm": "l188-s1",
+      "log1m_auc": -7.086304044714663,
+      "censored": false,
+      "auc": 0.9991635167358364,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 1,
+      "arm": "l188-s1",
+      "log1m_auc": -7.032950242893794,
+      "censored": false,
+      "auc": 0.9991176751356924,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 17,
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "log1m_auc": -6.03338524441024,
+      "censored": false,
+      "auc": 0.9976026354386298,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "log1m_auc": -6.095139943481287,
+      "censored": false,
+      "auc": 0.9977462052852343,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 43,
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "log1m_auc": -6.951174261422805,
+      "censored": false,
+      "auc": 0.999042489873918,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "log1m_auc": -7.009393190524782,
+      "censored": false,
+      "auc": 0.9990966434125494,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s1.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 162,
+      "seed": 2,
+      "arm": "l162-s2",
+      "log1m_auc": -6.027171231185685,
+      "censored": false,
+      "auc": 0.9975876918016485,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 2,
+      "arm": "l162-s2",
+      "log1m_auc": -6.034969367606837,
+      "censored": false,
+      "auc": 0.9976064301530011,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 188,
+      "seed": 2,
+      "arm": "l188-s2",
+      "log1m_auc": -6.095896658942507,
+      "censored": false,
+      "auc": 0.997747910121422,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 2,
+      "arm": "l188-s2",
+      "log1m_auc": -6.161086277105187,
+      "censored": false,
+      "auc": 0.9978900399748606,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 17,
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "log1m_auc": -4.914408078432504,
+      "censored": false,
+      "auc": 0.9926599386525873,
+      "rejection": 3958.666666666667,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "log1m_auc": -5.087501673128706,
+      "censored": false,
+      "auc": 0.9938265761321958,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 43,
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "log1m_auc": -5.984235395281876,
+      "censored": false,
+      "auc": 0.997481861636938,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "log1m_auc": -5.981793772803684,
+      "censored": false,
+      "auc": 0.9974757057816284,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 162,
+      "seed": 2,
+      "arm": "l162-s2",
+      "log1m_auc": -5.189943205715524,
+      "censored": false,
+      "auc": 0.9944276767179532,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 2,
+      "arm": "l162-s2",
+      "log1m_auc": -5.094923561771904,
+      "censored": false,
+      "auc": 0.9938722249867873,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 188,
+      "seed": 2,
+      "arm": "l188-s2",
+      "log1m_auc": -5.117825772842205,
+      "censored": false,
+      "auc": 0.9940109697383593,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 2,
+      "arm": "l188-s2",
+      "log1m_auc": -5.059319849226108,
+      "censored": false,
+      "auc": 0.9936501230818006,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 17,
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "log1m_auc": -4.790585939525259,
+      "censored": false,
+      "auc": 0.9916924117887499,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "log1m_auc": -4.742999134875545,
+      "censored": false,
+      "auc": 0.991287522931096,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 43,
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "log1m_auc": -4.927076586585954,
+      "censored": false,
+      "auc": 0.9927523397517817,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "log1m_auc": -4.910516989569709,
+      "censored": false,
+      "auc": 0.9926313221831191,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 162,
+      "seed": 2,
+      "arm": "l162-s2",
+      "log1m_auc": -4.077163721781316,
+      "censored": false,
+      "auc": 0.9830445120005556,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 2,
+      "arm": "l162-s2",
+      "log1m_auc": -4.121236395528699,
+      "censored": false,
+      "auc": 0.983775557791905,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 188,
+      "seed": 2,
+      "arm": "l188-s2",
+      "log1m_auc": -4.199349533600151,
+      "censored": false,
+      "auc": 0.984994665887603,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 2,
+      "arm": "l188-s2",
+      "log1m_auc": -4.236797007760708,
+      "censored": false,
+      "auc": 0.9855461867681686,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 17,
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "log1m_auc": -3.2845011156667727,
+      "censored": false,
+      "auc": 0.962540731725277,
+      "rejection": 537.1,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "log1m_auc": -3.4332267391298945,
+      "censored": false,
+      "auc": 0.9677173950134729,
+      "rejection": 1790.3333333333333,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 43,
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "log1m_auc": -4.079753389311914,
+      "censored": false,
+      "auc": 0.9830883642713848,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "log1m_auc": -4.095415849652836,
+      "censored": false,
+      "auc": 0.9833511785634536,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 162,
+      "seed": 2,
+      "arm": "l162-s2",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 2,
+      "arm": "l162-s2",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 188,
+      "seed": 2,
+      "arm": "l188-s2",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 2,
+      "arm": "l188-s2",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 17,
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "log1m_auc": -3.5864065183081224,
+      "censored": false,
+      "auc": 0.972302317077868,
+      "rejection": 98.08333333333333,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "log1m_auc": -4.6199363463474725,
+      "censored": false,
+      "auc": 0.9901465767523947,
+      "rejection": 784.6666666666666,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 43,
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "log1m_auc": -4.172390745538102,
+      "censored": false,
+      "auc": 0.9845846381732408,
+      "rejection": 181.0769230769231,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "log1m_auc": -5.820068896818784,
+      "censored": false,
+      "auc": 0.9970325993067298,
+      "rejection": 1569.3333333333333,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 162,
+      "seed": 2,
+      "arm": "l162-s2",
+      "log1m_auc": -5.00128931152333,
+      "censored": false,
+      "auc": 0.9932707347157039,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 2,
+      "arm": "l162-s2",
+      "log1m_auc": -4.993113396558639,
+      "censored": false,
+      "auc": 0.9932154912899201,
+      "rejection": 1579.0,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 188,
+      "seed": 2,
+      "arm": "l188-s2",
+      "log1m_auc": -5.004231903569376,
+      "censored": false,
+      "auc": 0.9932905070929181,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 2,
+      "arm": "l188-s2",
+      "log1m_auc": -4.980293734208241,
+      "censored": false,
+      "auc": 0.9931279562933092,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 17,
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "log1m_auc": -3.6847216031040837,
+      "censored": false,
+      "auc": 0.9748958373283803,
+      "rejection": 1052.6666666666667,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "log1m_auc": -3.921707140133021,
+      "censored": false,
+      "auc": 0.9801927478894726,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 43,
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "log1m_auc": -4.7983674514841494,
+      "censored": false,
+      "auc": 0.9917568065166575,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "log1m_auc": -4.752787496504442,
+      "censored": false,
+      "auc": 0.9913723877857978,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 162,
+      "seed": 2,
+      "arm": "l162-s2",
+      "log1m_auc": -7.200198984863397,
+      "censored": false,
+      "auc": 0.9992535627361189,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 2,
+      "arm": "l162-s2",
+      "log1m_auc": -7.139643838162473,
+      "censored": false,
+      "auc": 0.9992069655052034,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 188,
+      "seed": 2,
+      "arm": "l188-s2",
+      "log1m_auc": -7.048775634307698,
+      "censored": false,
+      "auc": 0.9991315283665051,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 2,
+      "arm": "l188-s2",
+      "log1m_auc": -6.946581378865843,
+      "censored": false,
+      "auc": 0.9990380820277504,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 17,
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "log1m_auc": -6.214782664366215,
+      "censored": false,
+      "auc": 0.9980003491014166,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "log1m_auc": -6.3175712987579065,
+      "censored": false,
+      "auc": 0.9981956796558757,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 43,
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "log1m_auc": -7.134732937203816,
+      "censored": false,
+      "auc": 0.9992030614128835,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "log1m_auc": -7.1045360903019965,
+      "censored": false,
+      "auc": 0.9991786293512683,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s2.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 162,
+      "seed": 3,
+      "arm": "l162-s3",
+      "log1m_auc": -6.088848391184565,
+      "censored": false,
+      "auc": 0.9977319807175361,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 3,
+      "arm": "l162-s3",
+      "log1m_auc": -6.093238939429154,
+      "censored": false,
+      "auc": 0.9977419167373669,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 188,
+      "seed": 3,
+      "arm": "l188-s3",
+      "log1m_auc": -6.076797345479526,
+      "censored": false,
+      "auc": 0.9977044833603297,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 3,
+      "arm": "l188-s3",
+      "log1m_auc": -6.114743615258982,
+      "censored": false,
+      "auc": 0.9977899576820872,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 17,
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "log1m_auc": -4.542216597915484,
+      "censored": false,
+      "auc": 0.9893502258956998,
+      "rejection": 1696.5714285714287,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "log1m_auc": -4.774145307833006,
+      "censored": false,
+      "auc": 0.9915547008652915,
+      "rejection": 5938.0,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 43,
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "log1m_auc": -6.015677125439975,
+      "censored": false,
+      "auc": 0.9975598045134311,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "log1m_auc": -5.981254698868203,
+      "censored": false,
+      "auc": 0.997474344633563,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 162,
+      "seed": 3,
+      "arm": "l162-s3",
+      "log1m_auc": -5.18179001088631,
+      "censored": false,
+      "auc": 0.994382058767266,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 3,
+      "arm": "l162-s3",
+      "log1m_auc": -5.1865978476280095,
+      "censored": false,
+      "auc": 0.9944090040852884,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 188,
+      "seed": 3,
+      "arm": "l188-s3",
+      "log1m_auc": -5.125021235778223,
+      "censored": false,
+      "auc": 0.9940539089147402,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 3,
+      "arm": "l188-s3",
+      "log1m_auc": -5.052444845331441,
+      "censored": false,
+      "auc": 0.9936063172431442,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 17,
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "log1m_auc": -4.557129954560961,
+      "censored": false,
+      "auc": 0.9895078713419367,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "log1m_auc": -4.582592180641658,
+      "censored": false,
+      "auc": 0.9897716518236307,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 43,
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "log1m_auc": -4.950548073111742,
+      "censored": false,
+      "auc": 0.9929204722332439,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "log1m_auc": -5.022126989286259,
+      "censored": false,
+      "auc": 0.9934095061191084,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 162,
+      "seed": 3,
+      "arm": "l162-s3",
+      "log1m_auc": -4.056917851261293,
+      "censored": false,
+      "auc": 0.982697734828162,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 3,
+      "arm": "l162-s3",
+      "log1m_auc": -4.0843837458810865,
+      "censored": false,
+      "auc": 0.9831664901600292,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 188,
+      "seed": 3,
+      "arm": "l188-s3",
+      "log1m_auc": -4.18461204436389,
+      "censored": false,
+      "auc": 0.9847718873718032,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 3,
+      "arm": "l188-s3",
+      "log1m_auc": -4.2045446102225155,
+      "censored": false,
+      "auc": 0.9850724176101142,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 17,
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "log1m_auc": -2.963906303564252,
+      "censored": false,
+      "auc": 0.9483831084046095,
+      "rejection": 282.6842105263158,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "log1m_auc": -3.154578871176008,
+      "censored": false,
+      "auc": 0.9573436389662,
+      "rejection": 488.2727272727273,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 43,
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "log1m_auc": -4.01277471949401,
+      "censored": false,
+      "auc": 0.9819168501078496,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "log1m_auc": -4.064384751737025,
+      "censored": false,
+      "auc": 0.9828264479780362,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 162,
+      "seed": 3,
+      "arm": "l162-s3",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 3,
+      "arm": "l162-s3",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 188,
+      "seed": 3,
+      "arm": "l188-s3",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 3,
+      "arm": "l188-s3",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 17,
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "log1m_auc": -2.9256470740072023,
+      "censored": false,
+      "auc": 0.9463700218821027,
+      "rejection": 40.58620689655172,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "log1m_auc": -4.4463752376337204,
+      "censored": false,
+      "auc": 0.988279024185,
+      "rejection": 672.5714285714286,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 43,
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "log1m_auc": -3.0944071979254115,
+      "censored": false,
+      "auc": 0.9546981404617161,
+      "rejection": 57.414634146341456,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "log1m_auc": -5.006176165126656,
+      "censored": false,
+      "auc": 0.993303539428806,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 162,
+      "seed": 3,
+      "arm": "l162-s3",
+      "log1m_auc": -4.975433089294337,
+      "censored": false,
+      "auc": 0.9930944724183286,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 3,
+      "arm": "l162-s3",
+      "log1m_auc": -4.9699088871940225,
+      "censored": false,
+      "auc": 0.9930562193267338,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 188,
+      "seed": 3,
+      "arm": "l188-s3",
+      "log1m_auc": -5.015235833926568,
+      "censored": false,
+      "auc": 0.9933639331570445,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 3,
+      "arm": "l188-s3",
+      "log1m_auc": -5.009205154814076,
+      "censored": false,
+      "auc": 0.9933237922505397,
+      "rejection": 1579.0,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 17,
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "log1m_auc": -3.273292673164956,
+      "censored": false,
+      "auc": 0.9621185098662175,
+      "rejection": 242.92307692307693,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "log1m_auc": -3.578957071898233,
+      "censored": false,
+      "auc": 0.9720952142302296,
+      "rejection": 451.1428571428571,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 43,
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "log1m_auc": -4.973851629421354,
+      "censored": false,
+      "auc": 0.9930835429635873,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "log1m_auc": -4.941664877922972,
+      "censored": false,
+      "auc": 0.9928573032504396,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 162,
+      "seed": 3,
+      "arm": "l162-s3",
+      "log1m_auc": -7.166196206659514,
+      "censored": false,
+      "auc": 0.9992277453514224,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 3,
+      "arm": "l162-s3",
+      "log1m_auc": -7.083898028516327,
+      "censored": false,
+      "auc": 0.9991615017204454,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 188,
+      "seed": 3,
+      "arm": "l188-s3",
+      "log1m_auc": -7.117033360104333,
+      "censored": false,
+      "auc": 0.9991888303666849,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 3,
+      "arm": "l188-s3",
+      "log1m_auc": -7.077609641272219,
+      "censored": false,
+      "auc": 0.9991562123050441,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 17,
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "log1m_auc": -5.976215156850764,
+      "censored": false,
+      "auc": 0.9974615843612641,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "log1m_auc": -6.120033738578354,
+      "censored": false,
+      "auc": 0.997801618208485,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 43,
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "log1m_auc": -7.196157895006435,
+      "censored": false,
+      "auc": 0.9992505402130325,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "log1m_auc": -7.137264584125658,
+      "censored": false,
+      "auc": 0.9992050764282745,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s3.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 162,
+      "seed": 4,
+      "arm": "l162-s4",
+      "log1m_auc": -6.062694545638419,
+      "censored": false,
+      "auc": 0.9976718807952595,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 4,
+      "arm": "l162-s4",
+      "log1m_auc": -6.073622116486587,
+      "censored": false,
+      "auc": 0.997697182985294,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 188,
+      "seed": 4,
+      "arm": "l188-s4",
+      "log1m_auc": -6.024465888954226,
+      "censored": false,
+      "auc": 0.9975811568467452,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 4,
+      "arm": "l188-s4",
+      "log1m_auc": -6.060036889067474,
+      "censored": false,
+      "auc": 0.9976656852247544,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 17,
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "log1m_auc": -4.7205717830304605,
+      "censored": false,
+      "auc": 0.9910899175423,
+      "rejection": 1484.5,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "log1m_auc": -4.977315132450409,
+      "censored": false,
+      "auc": 0.9931074566969338,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 43,
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "log1m_auc": -6.0024049550636045,
+      "censored": false,
+      "auc": 0.997527201948361,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "log1m_auc": -6.004050353216341,
+      "censored": false,
+      "auc": 0.9975312673401959,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 162,
+      "seed": 4,
+      "arm": "l162-s4",
+      "log1m_auc": -5.099240105966926,
+      "censored": false,
+      "auc": 0.9938986187924527,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 4,
+      "arm": "l162-s4",
+      "log1m_auc": -4.980540663335932,
+      "censored": false,
+      "auc": 0.9931296529915764,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 188,
+      "seed": 4,
+      "arm": "l188-s4",
+      "log1m_auc": -5.136522125487239,
+      "censored": false,
+      "auc": 0.9941219025096333,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 4,
+      "arm": "l188-s4",
+      "log1m_auc": -5.166646852440516,
+      "censored": false,
+      "auc": 0.9942963379894633,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 17,
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "log1m_auc": -4.6675427180859685,
+      "censored": false,
+      "auc": 0.9906046718454203,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "log1m_auc": -4.68126336579965,
+      "censored": false,
+      "auc": 0.9907327014997669,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 43,
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "log1m_auc": -4.907911486643482,
+      "censored": false,
+      "auc": 0.9926120980380972,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "log1m_auc": -4.877680949857745,
+      "censored": false,
+      "auc": 0.9923853476718142,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 162,
+      "seed": 4,
+      "arm": "l162-s4",
+      "log1m_auc": -4.078815738588852,
+      "censored": false,
+      "auc": 0.9830724996273306,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 4,
+      "arm": "l162-s4",
+      "log1m_auc": -4.102248772461219,
+      "censored": false,
+      "auc": 0.98346455090186,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 188,
+      "seed": 4,
+      "arm": "l188-s4",
+      "log1m_auc": -4.185285509613717,
+      "censored": false,
+      "auc": 0.9847821395238572,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 4,
+      "arm": "l188-s4",
+      "log1m_auc": -4.174972861653275,
+      "censored": false,
+      "auc": 0.9846243910820346,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 17,
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "log1m_auc": -3.154898209761838,
+      "censored": false,
+      "auc": 0.957357258613454,
+      "rejection": 383.64285714285717,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "log1m_auc": -3.2959999409012357,
+      "censored": false,
+      "auc": 0.9629690022815155,
+      "rejection": 596.7777777777778,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 43,
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "log1m_auc": -4.037421501629029,
+      "censored": false,
+      "auc": 0.9823570939803554,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "log1m_auc": -4.07557611886006,
+      "censored": false,
+      "auc": 0.983017572038954,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 162,
+      "seed": 4,
+      "arm": "l162-s4",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 4,
+      "arm": "l162-s4",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 188,
+      "seed": 4,
+      "arm": "l188-s4",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 4,
+      "arm": "l188-s4",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 17,
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "log1m_auc": -3.2260392283913286,
+      "censored": false,
+      "auc": 0.9602855123001114,
+      "rejection": 66.30985915492958,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "log1m_auc": -4.594439428930962,
+      "censored": false,
+      "auc": 0.9898921146187611,
+      "rejection": 1569.3333333333333,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 43,
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "log1m_auc": -4.969713644164299,
+      "censored": false,
+      "auc": 0.9930548634696009,
+      "rejection": 362.1538461538462,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "log1m_auc": -6.912805088577568,
+      "censored": false,
+      "auc": 0.9990050370807421,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 162,
+      "seed": 4,
+      "arm": "l162-s4",
+      "log1m_auc": -4.941817905433457,
+      "censored": false,
+      "auc": 0.9928583961959139,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 4,
+      "arm": "l162-s4",
+      "log1m_auc": -4.9797444663107,
+      "censored": false,
+      "auc": 0.9931241806634894,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 188,
+      "seed": 4,
+      "arm": "l188-s4",
+      "log1m_auc": -4.956138694973953,
+      "censored": false,
+      "auc": 0.9929599407663297,
+      "rejection": 1052.6666666666667,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 4,
+      "arm": "l188-s4",
+      "log1m_auc": -4.955609585100748,
+      "censored": false,
+      "auc": 0.9929562148158495,
+      "rejection": 1052.6666666666667,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 17,
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "log1m_auc": -3.6387061615772462,
+      "censored": false,
+      "auc": 0.9737136677600757,
+      "rejection": 1052.6666666666667,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "log1m_auc": -3.940973470511867,
+      "censored": false,
+      "auc": 0.980570708306167,
+      "rejection": 1579.0,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 43,
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "log1m_auc": -4.907667811853514,
+      "censored": false,
+      "auc": 0.9926102975732833,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "log1m_auc": -4.885751458169667,
+      "censored": false,
+      "auc": 0.992446554469521,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 162,
+      "seed": 4,
+      "arm": "l162-s4",
+      "log1m_auc": -7.171592344354821,
+      "censored": false,
+      "auc": 0.9992319013206663,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 4,
+      "arm": "l162-s4",
+      "log1m_auc": -7.152751442706298,
+      "censored": false,
+      "auc": 0.9992172924590819,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 188,
+      "seed": 4,
+      "arm": "l188-s4",
+      "log1m_auc": -7.144898208980634,
+      "censored": false,
+      "auc": 0.9992111214744472,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 4,
+      "arm": "l188-s4",
+      "log1m_auc": -7.054447139366936,
+      "censored": false,
+      "auc": 0.9991364399665206,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 17,
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "log1m_auc": -6.070414622113499,
+      "censored": false,
+      "auc": 0.9976897848542879,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "log1m_auc": -6.143156491010355,
+      "censored": false,
+      "auc": 0.9978518676547966,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 43,
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "log1m_auc": -7.048775634307827,
+      "censored": false,
+      "auc": 0.9991315283665052,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "log1m_auc": -7.06044437814223,
+      "censored": false,
+      "auc": 0.9991416034434599,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s4.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 162,
+      "seed": 5,
+      "arm": "l162-s5",
+      "log1m_auc": -6.035482356806059,
+      "censored": false,
+      "auc": 0.9976076577135906,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 5,
+      "arm": "l162-s5",
+      "log1m_auc": -6.05776274228242,
+      "censored": false,
+      "auc": 0.9976603706094959,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 188,
+      "seed": 5,
+      "arm": "l188-s5",
+      "log1m_auc": -6.096977776544728,
+      "censored": false,
+      "auc": 0.9977503435797672,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 5,
+      "arm": "l188-s5",
+      "log1m_auc": -6.1246005700888775,
+      "censored": false,
+      "auc": 0.9978116349579101,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 17,
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "log1m_auc": -4.731006759500814,
+      "censored": false,
+      "auc": 0.9911824106222522,
+      "rejection": 989.6666666666667,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "log1m_auc": -4.974433025294648,
+      "censored": false,
+      "auc": 0.9930875629944381,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "level": 43,
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "log1m_auc": -5.961088759455065,
+      "censored": false,
+      "auc": 0.9974228954029702,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "log1m_auc": -5.967604887241129,
+      "censored": false,
+      "auc": 0.9974396335526564,
+      "rejection": 11876.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 162,
+      "seed": 5,
+      "arm": "l162-s5",
+      "log1m_auc": -5.074119564374735,
+      "censored": false,
+      "auc": 0.9937434074576446,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 5,
+      "arm": "l162-s5",
+      "log1m_auc": -5.066629832400805,
+      "censored": false,
+      "auc": 0.9936963713323247,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 188,
+      "seed": 5,
+      "arm": "l188-s5",
+      "log1m_auc": -5.16348855584565,
+      "censored": false,
+      "auc": 0.9942782956566354,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 5,
+      "arm": "l188-s5",
+      "log1m_auc": -5.146869414767347,
+      "censored": false,
+      "auc": 0.9941824112939646,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 17,
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "log1m_auc": -4.753316048257934,
+      "censored": false,
+      "auc": 0.9913769467204395,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "log1m_auc": -4.707579200495957,
+      "censored": false,
+      "auc": 0.9909733972499388,
+      "rejection": 539.0,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "level": 43,
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "log1m_auc": -4.911715235139433,
+      "censored": false,
+      "auc": 0.9926401463808342,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "log1m_auc": -4.922759361991108,
+      "censored": false,
+      "auc": 0.9927209823349017,
+      "rejection": 1078.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 162,
+      "seed": 5,
+      "arm": "l162-s5",
+      "log1m_auc": -4.077335863511762,
+      "censored": false,
+      "auc": 0.9830474304963958,
+      "rejection": 2685.5,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 5,
+      "arm": "l162-s5",
+      "log1m_auc": -4.1002504446040575,
+      "censored": false,
+      "auc": 0.9834314746156715,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 188,
+      "seed": 5,
+      "arm": "l188-s5",
+      "log1m_auc": -4.286237147287598,
+      "censored": false,
+      "auc": 0.9862434079410624,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 5,
+      "arm": "l188-s5",
+      "log1m_auc": -4.278045797703321,
+      "censored": false,
+      "auc": 0.9861302601023358,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 17,
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "log1m_auc": -3.0637136549738857,
+      "censored": false,
+      "auc": 0.9532861065828694,
+      "rejection": 335.6875,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "log1m_auc": -3.268781382727373,
+      "censored": false,
+      "auc": 0.961947229404549,
+      "rejection": 767.2857142857143,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "level": 43,
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "log1m_auc": -4.092095212450177,
+      "censored": false,
+      "auc": 0.983295801975717,
+      "rejection": 2685.5,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "log1m_auc": -4.118776415018318,
+      "censored": false,
+      "auc": 0.9837355968488627,
+      "rejection": 5371.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 162,
+      "seed": 5,
+      "arm": "l162-s5",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 5,
+      "arm": "l162-s5",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 188,
+      "seed": 5,
+      "arm": "l188-s5",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 5,
+      "arm": "l188-s5",
+      "log1m_auc": -16.957879005175506,
+      "censored": true,
+      "auc": 1.0,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 17,
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "log1m_auc": -3.051689885902423,
+      "censored": false,
+      "auc": 0.9527210392038362,
+      "rejection": 44.41509433962264,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "log1m_auc": -4.410495846383869,
+      "censored": false,
+      "auc": 0.987850847277294,
+      "rejection": 941.6,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "level": 43,
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "log1m_auc": -3.0139075126602335,
+      "censored": false,
+      "auc": 0.9509005532791805,
+      "rejection": 47.55555555555556,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "log1m_auc": -4.560116324409816,
+      "censored": false,
+      "auc": 0.989539157978625,
+      "rejection": 4708.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 162,
+      "seed": 5,
+      "arm": "l162-s5",
+      "log1m_auc": -4.96450042169807,
+      "censored": false,
+      "auc": 0.9930185623872154,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 5,
+      "arm": "l162-s5",
+      "log1m_auc": -4.961076417670936,
+      "censored": false,
+      "auc": 0.9929946169454639,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 188,
+      "seed": 5,
+      "arm": "l188-s5",
+      "log1m_auc": -5.036007353391126,
+      "censored": false,
+      "auc": 0.9935003526239535,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 5,
+      "arm": "l188-s5",
+      "log1m_auc": -5.020760958709392,
+      "censored": false,
+      "auc": 0.9934004971510885,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 17,
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "log1m_auc": -3.4415055506041736,
+      "censored": false,
+      "auc": 0.9679835533565052,
+      "rejection": 394.75,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "log1m_auc": -3.8001806163619176,
+      "censored": false,
+      "auc": 0.9776332683063896,
+      "rejection": 631.6,
+      "rejection_is_bound": false,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "level": 43,
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "log1m_auc": -4.91884957261441,
+      "censored": false,
+      "auc": 0.9926924672012031,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "log1m_auc": -4.921313617206498,
+      "censored": false,
+      "auc": 0.9927104511221867,
+      "rejection": 3158.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 162,
+      "seed": 5,
+      "arm": "l162-s5",
+      "log1m_auc": -7.096290509915181,
+      "censored": false,
+      "auc": 0.9991718286743239,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 162,
+      "seed": 5,
+      "arm": "l162-s5",
+      "log1m_auc": -7.063971718660025,
+      "censored": false,
+      "auc": 0.9991446259665462,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 188,
+      "seed": 5,
+      "arm": "l188-s5",
+      "log1m_auc": -7.102697854490201,
+      "censored": false,
+      "auc": 0.9991771180897251,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 188,
+      "seed": 5,
+      "arm": "l188-s5",
+      "log1m_auc": -6.977696772957849,
+      "censored": false,
+      "auc": 0.9990675516278428,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 17,
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "log1m_auc": -6.046977943443013,
+      "censored": false,
+      "auc": 0.9976350016233467,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 17,
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "log1m_auc": -6.153528438549831,
+      "censored": false,
+      "auc": 0.9978740328240969,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "linear",
+      "level": 43,
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "log1m_auc": -7.231387256368532,
+      "censored": false,
+      "auc": 0.9992764835361909,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    },
+    {
+      "task": "visible_content",
+      "probe": "mlp",
+      "level": 43,
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "log1m_auc": -7.197166637526281,
+      "censored": false,
+      "auc": 0.999251295843804,
+      "rejection": 2554.0,
+      "rejection_is_bound": true,
+      "rejection_eps_s": 0.5,
+      "file": "experiments/FIGS/data/probe_ladder_v1/s5.json",
+      "dropped_pair": false
+    }
+  ],
+  "mde": [
+    {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "n_pairs": 5,
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "estimable": true,
+      "sd_paired_diff": 0.175775232273569,
+      "multiplier": 1.6624761500272074,
+      "mde": 0.2922221314203011,
+      "mde_as_ratio_of_1m_auc": 1.3394005075342346
+    },
+    {
+      "task": "bvc_resonant",
+      "probe": "mlp",
+      "n_pairs": 5,
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "estimable": true,
+      "sd_paired_diff": 0.14318481292546584,
+      "multiplier": 1.6624761500272074,
+      "mde": 0.23804133653469436,
+      "mde_as_ratio_of_1m_auc": 1.2687616379504194
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "n_pairs": 5,
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "estimable": true,
+      "sd_paired_diff": 0.11591310576923357,
+      "multiplier": 1.6624761500272074,
+      "mde": 0.1927027738169319,
+      "mde_as_ratio_of_1m_auc": 1.2125223465656825
+    },
+    {
+      "task": "bvc_qcd",
+      "probe": "mlp",
+      "n_pairs": 5,
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "estimable": true,
+      "sd_paired_diff": 0.09407247647721532,
+      "multiplier": 1.6624761500272074,
+      "mde": 0.15639324851736597,
+      "mde_as_ratio_of_1m_auc": 1.1692859326493519
+    },
+    {
+      "task": "retained_topology",
+      "probe": "linear",
+      "n_pairs": 5,
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "estimable": true,
+      "sd_paired_diff": 0.11613375053436896,
+      "multiplier": 1.6624761500272074,
+      "mde": 0.19306959047659786,
+      "mde_as_ratio_of_1m_auc": 1.2129672015477413
+    },
+    {
+      "task": "retained_topology",
+      "probe": "mlp",
+      "n_pairs": 5,
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "estimable": true,
+      "sd_paired_diff": 0.11819497485318739,
+      "multiplier": 1.6624761500272074,
+      "mde": 0.19649632674648956,
+      "mde_as_ratio_of_1m_auc": 1.2171308500398152
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "linear",
+      "n_pairs": 5,
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "estimable": true,
+      "sd_paired_diff": 0.24875616559321428,
+      "multiplier": 1.6624761500272074,
+      "mde": 0.41355119247093736,
+      "mde_as_ratio_of_1m_auc": 1.5121782975587035
+    },
+    {
+      "task": "ee_vs_mm",
+      "probe": "mlp",
+      "n_pairs": 5,
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "estimable": true,
+      "sd_paired_diff": 0.13513827079233476,
+      "multiplier": 1.6624761500272074,
+      "mde": 0.2246641521481749,
+      "mde_as_ratio_of_1m_auc": 1.2519021969170396
+    }
+  ],
+  "levels": {
+    "bvc_qcd": {
+      "linear": [
+        {
+          "level": 188,
+          "n_seeds": 5,
+          "mean": -4.213330593610449,
+          "seed_sd": 0.04221016185645434,
+          "mean_auc": 0.9851926147387932,
+          "rejection_median": 5371.0,
+          "rejection_range": [
+            5371.0,
+            5371.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 162,
+          "n_seeds": 5,
+          "mean": -4.077424881818171,
+          "seed_sd": 0.014155279747051861,
+          "mean_auc": 0.9830475801628491,
+          "rejection_median": 5371.0,
+          "rejection_range": [
+            2685.5,
+            5371.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 4,
+          "n_censored": 0
+        },
+        {
+          "level": 43,
+          "n_seeds": 5,
+          "mean": -4.063825027060178,
+          "seed_sd": 0.03695304509739953,
+          "mean_auc": 0.9828073954385257,
+          "rejection_median": 5371.0,
+          "rejection_range": [
+            2685.5,
+            5371.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 4,
+          "n_censored": 0
+        },
+        {
+          "level": 17,
+          "n_seeds": 5,
+          "mean": -3.1075809771733764,
+          "seed_sd": 0.11984673573406107,
+          "mean_auc": 0.9550374285866517,
+          "rejection_median": 335.6875,
+          "rejection_range": [
+            282.6842105263158,
+            537.1
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 0,
+          "n_censored": 0
+        }
+      ],
+      "mlp": [
+        {
+          "level": 188,
+          "n_seeds": 5,
+          "mean": -4.2177887075823275,
+          "seed_sd": 0.04043305557948533,
+          "mean_auc": 0.985259246243821,
+          "rejection_median": 5371.0,
+          "rejection_range": [
+            5371.0,
+            5371.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 162,
+          "n_seeds": 5,
+          "mean": -4.111777404148026,
+          "seed_sd": 0.025415501555990212,
+          "mean_auc": 0.9836171508176876,
+          "rejection_median": 5371.0,
+          "rejection_range": [
+            5371.0,
+            5371.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 43,
+          "n_seeds": 5,
+          "mean": -4.099169604472622,
+          "seed_sd": 0.03151807378438271,
+          "mean_auc": 0.9834069817005823,
+          "rejection_median": 5371.0,
+          "rejection_range": [
+            5371.0,
+            5371.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 17,
+          "n_seeds": 5,
+          "mean": -3.2809399570382523,
+          "seed_sd": 0.10045399953595324,
+          "mean_auc": 0.9622569790963859,
+          "rejection_median": 767.2857142857143,
+          "rejection_range": [
+            488.2727272727273,
+            1790.3333333333333
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 0,
+          "n_censored": 0
+        }
+      ]
+    },
+    "bvc_resonant": {
+      "linear": [
+        {
+          "level": 188,
+          "n_seeds": 5,
+          "mean": -6.068282517514598,
+          "seed_sd": 0.03170046207574796,
+          "mean_auc": 0.9976839195541709,
+          "rejection_median": 11876.0,
+          "rejection_range": [
+            11876.0,
+            11876.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 162,
+          "n_seeds": 5,
+          "mean": -6.049268625902682,
+          "seed_sd": 0.026068816714193907,
+          "mean_auc": 0.9976397750311807,
+          "rejection_median": 11876.0,
+          "rejection_range": [
+            11876.0,
+            11876.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 43,
+          "n_seeds": 5,
+          "mean": -5.983407208833782,
+          "seed_sd": 0.026399595168166222,
+          "mean_auc": 0.997479072908116,
+          "rejection_median": 11876.0,
+          "rejection_range": [
+            11876.0,
+            11876.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 17,
+          "n_seeds": 5,
+          "mean": -4.684877597067258,
+          "seed_sd": 0.1619379882797985,
+          "mean_auc": 0.9906703691049399,
+          "rejection_median": 1484.5,
+          "rejection_range": [
+            989.6666666666667,
+            3958.666666666667
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 0,
+          "n_censored": 0
+        }
+      ],
+      "mlp": [
+        {
+          "level": 188,
+          "n_seeds": 5,
+          "mean": -6.109926197934998,
+          "seed_sd": 0.03799975472421838,
+          "mean_auc": 0.9977780026861336,
+          "rejection_median": 11876.0,
+          "rejection_range": [
+            11876.0,
+            11876.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 162,
+          "n_seeds": 5,
+          "mean": -6.066649955118562,
+          "seed_sd": 0.02172165110867395,
+          "mean_auc": 0.9976806325801686,
+          "rejection_median": 11876.0,
+          "rejection_range": [
+            11876.0,
+            11876.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 43,
+          "n_seeds": 5,
+          "mean": -5.9789151520697414,
+          "seed_sd": 0.016853042514499855,
+          "mean_auc": 0.9974681418421133,
+          "rejection_median": 11876.0,
+          "rejection_range": [
+            11876.0,
+            11876.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 17,
+          "n_seeds": 5,
+          "mean": -4.93166813443722,
+          "seed_sd": 0.12301506667585192,
+          "mean_auc": 0.9927416501400907,
+          "rejection_median": 11876.0,
+          "rejection_range": [
+            5938.0,
+            11876.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 4,
+          "n_censored": 0
+        }
+      ]
+    },
+    "ee_vs_mm": {
+      "linear": [
+        {
+          "level": 188,
+          "n_seeds": 5,
+          "mean": -16.957879005175506,
+          "seed_sd": 0.0,
+          "mean_auc": 1.0,
+          "rejection_median": 4708.0,
+          "rejection_range": [
+            4708.0,
+            4708.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 5
+        },
+        {
+          "level": 162,
+          "n_seeds": 5,
+          "mean": -16.957879005175506,
+          "seed_sd": 0.0,
+          "mean_auc": 1.0,
+          "rejection_median": 4708.0,
+          "rejection_range": [
+            4708.0,
+            4708.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 5
+        },
+        {
+          "level": 43,
+          "n_seeds": 5,
+          "mean": -4.032422512322512,
+          "seed_sd": 0.9471626983362172,
+          "mean_auc": 0.9751756363021474,
+          "rejection_median": 181.0769230769231,
+          "rejection_range": [
+            47.55555555555556,
+            523.1111111111111
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 0,
+          "n_censored": 0
+        },
+        {
+          "level": 17,
+          "n_seeds": 5,
+          "mean": -3.2012611792597037,
+          "seed_sd": 0.2487561655932143,
+          "mean_auc": 0.9583169348544122,
+          "rejection_median": 66.30985915492958,
+          "rejection_range": [
+            40.58620689655172,
+            98.08333333333333
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 0,
+          "n_censored": 0
+        }
+      ],
+      "mlp": [
+        {
+          "level": 188,
+          "n_seeds": 5,
+          "mean": -16.957879005175506,
+          "seed_sd": 0.0,
+          "mean_auc": 1.0,
+          "rejection_median": 4708.0,
+          "rejection_range": [
+            4708.0,
+            4708.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 5
+        },
+        {
+          "level": 162,
+          "n_seeds": 5,
+          "mean": -16.957879005175506,
+          "seed_sd": 0.0,
+          "mean_auc": 1.0,
+          "rejection_median": 4708.0,
+          "rejection_range": [
+            4708.0,
+            4708.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 5
+        },
+        {
+          "level": 43,
+          "n_seeds": 5,
+          "mean": -5.775931131582168,
+          "seed_sd": 1.001557855069144,
+          "mean_auc": 0.9954986326492576,
+          "rejection_median": 4708.0,
+          "rejection_range": [
+            1569.3333333333333,
+            4708.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 4,
+          "n_censored": 0
+        },
+        {
+          "level": 17,
+          "n_seeds": 5,
+          "mean": -4.562604736660833,
+          "seed_sd": 0.1351382707923351,
+          "mean_auc": 0.9894890859796156,
+          "rejection_median": 941.6,
+          "rejection_range": [
+            672.5714285714286,
+            1569.3333333333333
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 0,
+          "n_censored": 0
+        }
+      ]
+    },
+    "retained_topology": {
+      "linear": [
+        {
+          "level": 188,
+          "n_seeds": 5,
+          "mean": -5.138849423297649,
+          "seed_sd": 0.01872810386526322,
+          "mean_auc": 0.9941347448688077,
+          "rejection_median": 1078.0,
+          "rejection_range": [
+            1078.0,
+            1078.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 162,
+          "n_seeds": 5,
+          "mean": -5.139527870155123,
+          "seed_sd": 0.050986833566426575,
+          "mean_auc": 0.9941334212391506,
+          "rejection_median": 1078.0,
+          "rejection_range": [
+            1078.0,
+            1078.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 43,
+          "n_seeds": 5,
+          "mean": -4.925263859222594,
+          "seed_sd": 0.01689466142541572,
+          "mean_auc": 0.9927383628529011,
+          "rejection_median": 1078.0,
+          "rejection_range": [
+            1078.0,
+            1078.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 17,
+          "n_seeds": 5,
+          "mean": -4.709520108123743,
+          "seed_sd": 0.09785916656177315,
+          "mean_auc": 0.9909555440070619,
+          "rejection_median": 1078.0,
+          "rejection_range": [
+            1078.0,
+            1078.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        }
+      ],
+      "mlp": [
+        {
+          "level": 188,
+          "n_seeds": 5,
+          "mean": -5.109994198988799,
+          "seed_sd": 0.05163596143827413,
+          "mean_auc": 0.9939574257672247,
+          "rejection_median": 1078.0,
+          "rejection_range": [
+            1078.0,
+            1078.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 162,
+          "n_seeds": 5,
+          "mean": -5.092389779276365,
+          "seed_sd": 0.07701543483301657,
+          "mean_auc": 0.9938419863521176,
+          "rejection_median": 1078.0,
+          "rejection_range": [
+            1078.0,
+            1078.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 43,
+          "n_seeds": 5,
+          "mean": -4.933470096566294,
+          "seed_sd": 0.05388569439402582,
+          "mean_auc": 0.9927902838019559,
+          "rejection_median": 1078.0,
+          "rejection_range": [
+            1078.0,
+            1078.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 17,
+          "n_seeds": 5,
+          "mean": -4.6918214768654165,
+          "seed_sd": 0.066526889321951,
+          "mean_auc": 0.9908134744238508,
+          "rejection_median": 1078.0,
+          "rejection_range": [
+            539.0,
+            1078.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 4,
+          "n_censored": 0
+        }
+      ]
+    },
+    "bvc_4prong": {
+      "linear": [
+        {
+          "level": 188,
+          "n_seeds": 5,
+          "mean": -4.991461381744638,
+          "seed_sd": 0.03890719765027304,
+          "mean_auc": 0.9932001503098103,
+          "rejection_median": 3158.0,
+          "rejection_range": [
+            1052.6666666666667,
+            3158.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 4,
+          "n_censored": 0
+        },
+        {
+          "level": 162,
+          "n_seeds": 5,
+          "mean": -4.977712363324214,
+          "seed_sd": 0.026445038715952402,
+          "mean_auc": 0.9931082634030387,
+          "rejection_median": 3158.0,
+          "rejection_range": [
+            3158.0,
+            3158.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 43,
+          "n_seeds": 5,
+          "mean": -4.894621771146722,
+          "seed_sd": 0.06463259135343807,
+          "mean_auc": 0.9925006453346231,
+          "rejection_median": 3158.0,
+          "rejection_range": [
+            3158.0,
+            3158.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 17,
+          "n_seeds": 5,
+          "mean": -3.4971534277965004,
+          "seed_sd": 0.16650127520878122,
+          "mean_auc": 0.9693775556294343,
+          "rejection_median": 451.1428571428571,
+          "rejection_range": [
+            242.92307692307693,
+            1052.6666666666667
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 0,
+          "n_censored": 0
+        }
+      ],
+      "mlp": [
+        {
+          "level": 188,
+          "n_seeds": 5,
+          "mean": -4.985512601935112,
+          "seed_sd": 0.02869040200872906,
+          "mean_auc": 0.9931614799117614,
+          "rejection_median": 3158.0,
+          "rejection_range": [
+            1052.6666666666667,
+            3158.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 3,
+          "n_censored": 0
+        },
+        {
+          "level": 162,
+          "n_seeds": 5,
+          "mean": -4.988291384519374,
+          "seed_sd": 0.030031518675063353,
+          "mean_auc": 0.993180258702181,
+          "rejection_median": 3158.0,
+          "rejection_range": [
+            1579.0,
+            3158.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 4,
+          "n_censored": 0
+        },
+        {
+          "level": 43,
+          "n_seeds": 5,
+          "mean": -4.8712705926736355,
+          "seed_sd": 0.074124407364974,
+          "mean_auc": 0.9923192163859154,
+          "rejection_median": 3158.0,
+          "rejection_range": [
+            3158.0,
+            3158.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 17,
+          "n_seeds": 5,
+          "mean": -3.7910786692748344,
+          "seed_sd": 0.1505136852116904,
+          "mean_auc": 0.9772203535062586,
+          "rejection_median": 1052.6666666666667,
+          "rejection_range": [
+            451.1428571428571,
+            3158.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 1,
+          "n_censored": 0
+        }
+      ]
+    },
+    "visible_content": {
+      "linear": [
+        {
+          "level": 188,
+          "n_seeds": 5,
+          "mean": -7.099941820519506,
+          "seed_sd": 0.03579371750901185,
+          "mean_auc": 0.9991744230066398,
+          "rejection_median": 2554.0,
+          "rejection_range": [
+            2554.0,
+            2554.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 162,
+          "n_seeds": 5,
+          "mean": -7.1480390067795465,
+          "seed_sd": 0.044881171768009945,
+          "mean_auc": 0.9992129601759914,
+          "rejection_median": 2554.0,
+          "rejection_range": [
+            2554.0,
+            2554.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 43,
+          "n_seeds": 5,
+          "mean": -7.112445596861884,
+          "seed_sd": 0.11370345259961734,
+          "mean_auc": 0.999180820680506,
+          "rejection_median": 2554.0,
+          "rejection_range": [
+            2554.0,
+            2554.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 17,
+          "n_seeds": 5,
+          "mean": -6.068355126236746,
+          "seed_sd": 0.08890291893904499,
+          "mean_auc": 0.9976778710757891,
+          "rejection_median": 2554.0,
+          "rejection_range": [
+            2554.0,
+            2554.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        }
+      ],
+      "mlp": [
+        {
+          "level": 188,
+          "n_seeds": 5,
+          "mean": -7.017857035071327,
+          "seed_sd": 0.05438308657818229,
+          "mean_auc": 0.9991031922125699,
+          "rejection_median": 2554.0,
+          "rejection_range": [
+            2554.0,
+            2554.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 162,
+          "n_seeds": 5,
+          "mean": -7.1025328771703755,
+          "seed_sd": 0.040747322824635474,
+          "mean_auc": 0.9991764380220307,
+          "rejection_median": 2554.0,
+          "rejection_range": [
+            2554.0,
+            2554.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 43,
+          "n_seeds": 5,
+          "mean": -7.101760976124188,
+          "seed_sd": 0.07177972686060685,
+          "mean_auc": 0.9991746496958713,
+          "rejection_median": 2554.0,
+          "rejection_range": [
+            2554.0,
+            2554.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        },
+        {
+          "level": 17,
+          "n_seeds": 5,
+          "mean": -6.1658859820755465,
+          "seed_sd": 0.08772856455226911,
+          "mean_auc": 0.9978938807256977,
+          "rejection_median": 2554.0,
+          "rejection_range": [
+            2554.0,
+            2554.0
+          ],
+          "rejection_eps_s": 0.5,
+          "n_rejection_bound": 5,
+          "n_censored": 0
+        }
+      ]
+    }
+  },
+  "confirmatory": {
+    "C1": {
+      "task": "bvc_resonant",
+      "probe": "linear",
+      "levels_fine_to_coarse": [
+        188,
+        162,
+        43,
+        17
+      ],
+      "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+      "blocks_used": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "blocks_dropped_incomplete": {},
+      "run": true,
+      "family": "marcus",
+      "method": "exact",
+      "n_blocks": 5,
+      "n_arrangements": 7962624,
+      "stat": 31.029413658411197,
+      "p": 5.274643132716049e-06,
+      "p_min": 7.535204475308642e-07,
+      "end_step_p_bound": 0.0009765625,
+      "argmax_step": [
+        [
+          188,
+          162,
+          43
+        ],
+        [
+          17
+        ]
+      ],
+      "predicted_step": [
+        [
+          188,
+          162,
+          43
+        ],
+        [
+          17
+        ]
+      ],
+      "argmax_is_predicted_step": true,
+      "contrasts_localisation_only": [
+        {
+          "lower": [
+            188
+          ],
+          "upper": [
+            162,
+            43,
+            17
+          ],
+          "difference": 0.49576470691335783,
+          "t": 11.405376015319714,
+          "p_adj": 0.001958399643132716
+        },
+        {
+          "lower": [
+            188
+          ],
+          "upper": [
+            43,
+            17
+          ],
+          "difference": 0.734140114564078,
+          "t": 15.923432650607488,
+          "p_adj": 0.0019003785686728396
+        },
+        {
+          "lower": [
+            188
+          ],
+          "upper": [
+            17
+          ],
+          "difference": 1.3834049204473404,
+          "t": 25.985895510741347,
+          "p_adj": 0.0009765625
+        },
+        {
+          "lower": [
+            188,
+            162
+          ],
+          "upper": [
+            43,
+            17
+          ],
+          "difference": 0.7246331687581202,
+          "t": 19.24959420960057,
+          "p_adj": 0.0009780695408950616
+        },
+        {
+          "lower": [
+            188,
+            162
+          ],
+          "upper": [
+            17
+          ],
+          "difference": 1.373897974641382,
+          "t": 29.79972274229755,
+          "p_adj": 7.610556520061728e-05
+        },
+        {
+          "lower": [
+            188,
+            162,
+            43
+          ],
+          "upper": [
+            17
+          ],
+          "difference": 1.348775187016428,
+          "t": 31.029413658411197,
+          "p_adj": 5.274643132716049e-06
+        }
+      ],
+      "n_censored_cells": 0,
+      "seed_sd_per_level": [
+        0.03170046207574796,
+        0.026068816714193907,
+        0.026399595168166222,
+        0.1619379882797985
+      ],
+      "isotonic": {
+        "stat": 0.9877253475960214,
+        "p": 8.791071887860083e-07,
+        "fitted": [
+          -6.068282517514598,
+          -6.049268625902682,
+          -5.983407208833784,
+          -4.684877597067259
+        ],
+        "pooled": [
+          [
+            188
+          ],
+          [
+            162
+          ],
+          [
+            43
+          ],
+          [
+            17
+          ]
+        ],
+        "means": [
+          -6.068282517514598,
+          -6.049268625902682,
+          -5.983407208833782,
+          -4.684877597067258
+        ]
+      }
+    },
+    "holm_family": [
+      {
+        "test": "C1",
+        "status": "available",
+        "p_raw": 5.274643132716049e-06,
+        "family_size": 5,
+        "threshold_if_smallest": 0.01,
+        "reject_whatever_pending": true,
+        "reject_possible": true
+      },
+      {
+        "test": "C2",
+        "status": "pending",
+        "p_raw": null,
+        "family_size": 5,
+        "threshold_if_smallest": 0.01,
+        "reject_whatever_pending": null,
+        "reject_possible": null
+      },
+      {
+        "test": "C3",
+        "status": "pending",
+        "p_raw": null,
+        "family_size": 5,
+        "threshold_if_smallest": 0.01,
+        "reject_whatever_pending": null,
+        "reject_possible": null
+      },
+      {
+        "test": "C4",
+        "status": "pending",
+        "p_raw": null,
+        "family_size": 5,
+        "threshold_if_smallest": 0.01,
+        "reject_whatever_pending": null,
+        "reject_possible": null
+      },
+      {
+        "test": "C5",
+        "status": "pending",
+        "p_raw": null,
+        "family_size": 5,
+        "threshold_if_smallest": 0.01,
+        "reject_whatever_pending": null,
+        "reject_possible": null
+      }
+    ]
+  },
+  "secondary": {
+    "S1": {
+      "task": "bvc_qcd",
+      "probe": "linear",
+      "levels_fine_to_coarse": [
+        188,
+        162,
+        43,
+        17
+      ],
+      "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+      "blocks_used": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "blocks_dropped_incomplete": {},
+      "run": true,
+      "family": "marcus",
+      "method": "exact",
+      "n_blocks": 5,
+      "n_arrangements": 7962624,
+      "stat": 31.23266674147459,
+      "p": 6.028163580246913e-06,
+      "p_min": 7.535204475308642e-07,
+      "end_step_p_bound": 0.0009765625,
+      "argmax_step": [
+        [
+          188,
+          162,
+          43
+        ],
+        [
+          17
+        ]
+      ],
+      "predicted_step": null,
+      "argmax_is_predicted_step": null,
+      "contrasts_localisation_only": [
+        {
+          "lower": [
+            188
+          ],
+          "upper": [
+            162,
+            43,
+            17
+          ],
+          "difference": 0.46372029825987393,
+          "t": 14.331132058813257,
+          "p_adj": 0.0010669849537037037
+        },
+        {
+          "lower": [
+            188
+          ],
+          "upper": [
+            43,
+            17
+          ],
+          "difference": 0.6276275914936716,
+          "t": 18.287323931858197,
+          "p_adj": 0.0009846000514403292
+        },
+        {
+          "lower": [
+            188
+          ],
+          "upper": [
+            17
+          ],
+          "difference": 1.105749616437072,
+          "t": 27.902014450885385,
+          "p_adj": 1.2056327160493826e-05
+        },
+        {
+          "lower": [
+            188,
+            162
+          ],
+          "upper": [
+            43,
+            17
+          ],
+          "difference": 0.5596747355975329,
+          "t": 19.97236353819626,
+          "p_adj": 0.0009665155606995885
+        },
+        {
+          "lower": [
+            188,
+            162
+          ],
+          "upper": [
+            17
+          ],
+          "difference": 1.0377967605409333,
+          "t": 30.238513718427644,
+          "p_adj": 1.2056327160493826e-05
+        },
+        {
+          "lower": [
+            188,
+            162,
+            43
+          ],
+          "upper": [
+            17
+          ],
+          "difference": 1.010612523656222,
+          "t": 31.23266674147459,
+          "p_adj": 6.028163580246913e-06
+        }
+      ],
+      "n_censored_cells": 0,
+      "seed_sd_per_level": [
+        0.04221016185645434,
+        0.014155279747051861,
+        0.03695304509739953,
+        0.11984673573406107
+      ],
+      "isotonic": {
+        "stat": 0.9880583538576219,
+        "p": 1.0046939300411523e-06,
+        "fitted": [
+          -4.213330593610449,
+          -4.07742488181817,
+          -4.063825027060178,
+          -3.1075809771733773
+        ],
+        "pooled": [
+          [
+            188
+          ],
+          [
+            162
+          ],
+          [
+            43
+          ],
+          [
+            17
+          ]
+        ],
+        "means": [
+          -4.213330593610449,
+          -4.077424881818171,
+          -4.063825027060178,
+          -3.1075809771733764
+        ]
+      }
+    },
+    "S2": {
+      "retained_topology": {
+        "linear": {
+          "task": "retained_topology",
+          "probe": "linear",
+          "target_bound": 0.09531017980432493,
+          "log_base": "e",
+          "n_pairs_estimable": 6,
+          "n_pairs_total": 6,
+          "run": true,
+          "largest_pair": {
+            "fine": 162,
+            "coarse": 17,
+            "n_pairs": 5,
+            "is_bound": false,
+            "mean_diff": 0.4300077620313811,
+            "p": 0.9985081791853865,
+            "ci90": [
+              0.3192869049948339,
+              0.5407286190679282
+            ],
+            "equivalent_at_target": false,
+            "smallest_bound_passed": 0.5407286190679282
+          },
+          "p": 0.9985081791853865,
+          "verdict": "inconclusive at \u00b110%; equivalent within \u00b10.5407 (a factor 1.717 in 1\u2212AUC)",
+          "all_pairs_companion": {
+            "max_p": 0.9994903630431453,
+            "smallest_bound_passed_by_all": 0.5407286190679282
+          },
+          "pairs": [
+            {
+              "fine": 188,
+              "coarse": 162,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": -0.0006784468574753788,
+              "p": 0.016894642426057826,
+              "ci90": [
+                -0.06427651551073431,
+                0.0629196217957835
+              ],
+              "equivalent_at_target": true,
+              "smallest_bound_passed": 0.06427651551073431
+            },
+            {
+              "fine": 188,
+              "coarse": 43,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 0.21358556407505508,
+              "p": 0.9994903630431453,
+              "ci90": [
+                0.18415505625845932,
+                0.2430160718916508
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 0.2430160718916508
+            },
+            {
+              "fine": 188,
+              "coarse": 17,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 0.4293293151739057,
+              "p": 0.9993401929362621,
+              "ci90": [
+                0.3403954066225969,
+                0.5182632237252145
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 0.5182632237252145
+            },
+            {
+              "fine": 162,
+              "coarse": 43,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 0.21426401093253045,
+              "p": 0.9988408278357754,
+              "ci90": [
+                0.17749095149734373,
+                0.25103707036771716
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 0.25103707036771716
+            },
+            {
+              "fine": 162,
+              "coarse": 17,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 0.4300077620313811,
+              "p": 0.9985081791853865,
+              "ci90": [
+                0.3192869049948339,
+                0.5407286190679282
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 0.5407286190679282
+            },
+            {
+              "fine": 43,
+              "coarse": 17,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 0.21574375109885063,
+              "p": 0.9669557082730692,
+              "ci90": [
+                0.11343649106722042,
+                0.3180510111304808
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 0.3180510111304808
+            }
+          ]
+        },
+        "mlp": {
+          "task": "retained_topology",
+          "probe": "mlp",
+          "target_bound": 0.09531017980432493,
+          "log_base": "e",
+          "n_pairs_estimable": 6,
+          "n_pairs_total": 6,
+          "run": true,
+          "largest_pair": {
+            "fine": 188,
+            "coarse": 17,
+            "n_pairs": 5,
+            "is_bound": false,
+            "mean_diff": 0.4181727221233821,
+            "p": 0.9997540275034811,
+            "ci90": [
+              0.3516676811678656,
+              0.48467776307889854
+            ],
+            "equivalent_at_target": false,
+            "smallest_bound_passed": 0.48467776307889854
+          },
+          "p": 0.9997540275034811,
+          "verdict": "inconclusive at \u00b110%; equivalent within \u00b10.4847 (a factor 1.624 in 1\u2212AUC)",
+          "all_pairs_companion": {
+            "max_p": 0.9997540275034811,
+            "smallest_bound_passed_by_all": 0.5132543118865928
+          },
+          "pairs": [
+            {
+              "fine": 188,
+              "coarse": 162,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 0.017604419712433917,
+              "p": 0.11265791020374531,
+              "ci90": [
+                -0.09804937010141877,
+                0.13325820952628653
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 0.13325820952628653
+            },
+            {
+              "fine": 188,
+              "coarse": 43,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 0.17652410242250446,
+              "p": 0.9335095142979256,
+              "ci90": [
+                0.0845261845405073,
+                0.26852202030450156
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 0.26852202030450156
+            },
+            {
+              "fine": 188,
+              "coarse": 17,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 0.4181727221233821,
+              "p": 0.9997540275034811,
+              "ci90": [
+                0.3516676811678656,
+                0.48467776307889854
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 0.48467776307889854
+            },
+            {
+              "fine": 162,
+              "coarse": 43,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 0.15891968271007056,
+              "p": 0.9903052744259562,
+              "ci90": [
+                0.12307139250181084,
+                0.19476797291833026
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 0.19476797291833026
+            },
+            {
+              "fine": 162,
+              "coarse": 17,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 0.4005683024109482,
+              "p": 0.9977678438645327,
+              "ci90": [
+                0.28788229293530354,
+                0.5132543118865928
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 0.5132543118865928
+            },
+            {
+              "fine": 43,
+              "coarse": 17,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 0.24164861970087764,
+              "p": 0.9784545656203326,
+              "ci90": [
+                0.1349384971630856,
+                0.34835874223866964
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 0.34835874223866964
+            }
+          ]
+        }
+      },
+      "ee_vs_mm": {
+        "linear": {
+          "task": "ee_vs_mm",
+          "probe": "linear",
+          "target_bound": 0.09531017980432493,
+          "log_base": "e",
+          "n_pairs_estimable": 5,
+          "n_pairs_total": 6,
+          "run": true,
+          "largest_pair": {
+            "fine": 188,
+            "coarse": 17,
+            "n_pairs": 5,
+            "is_bound": true,
+            "mean_diff": 13.756617825915802,
+            "p": 0.999999986813923,
+            "ci90": [
+              13.519455969686463,
+              13.99377968214514
+            ],
+            "equivalent_at_target": false,
+            "smallest_bound_passed": 13.99377968214514
+          },
+          "p": 0.999999986813923,
+          "verdict": "inconclusive at \u00b110%; equivalent within \u00b113.9938 (a factor 1195146.921 in 1\u2212AUC)",
+          "all_pairs_companion": {
+            "max_p": 0.999999986813923,
+            "smallest_bound_passed_by_all": 13.99377968214514
+          },
+          "pairs": [
+            {
+              "fine": 188,
+              "coarse": 43,
+              "n_pairs": 5,
+              "is_bound": true,
+              "mean_diff": 12.925456492852993,
+              "p": 0.9999964616243978,
+              "ci90": [
+                12.022440227294611,
+                13.828472758411374
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 13.828472758411374
+            },
+            {
+              "fine": 188,
+              "coarse": 17,
+              "n_pairs": 5,
+              "is_bound": true,
+              "mean_diff": 13.756617825915802,
+              "p": 0.999999986813923,
+              "ci90": [
+                13.519455969686463,
+                13.99377968214514
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 13.99377968214514
+            },
+            {
+              "fine": 162,
+              "coarse": 43,
+              "n_pairs": 5,
+              "is_bound": true,
+              "mean_diff": 12.925456492852993,
+              "p": 0.9999964616243978,
+              "ci90": [
+                12.022440227294611,
+                13.828472758411374
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 13.828472758411374
+            },
+            {
+              "fine": 162,
+              "coarse": 17,
+              "n_pairs": 5,
+              "is_bound": true,
+              "mean_diff": 13.756617825915802,
+              "p": 0.999999986813923,
+              "ci90": [
+                13.519455969686463,
+                13.99377968214514
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 13.99377968214514
+            },
+            {
+              "fine": 43,
+              "coarse": 17,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 0.8311613330628088,
+              "p": 0.9388807305721719,
+              "ci90": [
+                0.028790458474285407,
+                1.633532207651332
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 1.633532207651332
+            }
+          ]
+        },
+        "mlp": {
+          "task": "ee_vs_mm",
+          "probe": "mlp",
+          "target_bound": 0.09531017980432493,
+          "log_base": "e",
+          "n_pairs_estimable": 5,
+          "n_pairs_total": 6,
+          "run": true,
+          "largest_pair": {
+            "fine": 188,
+            "coarse": 17,
+            "n_pairs": 5,
+            "is_bound": true,
+            "mean_diff": 12.395274268514672,
+            "p": 0.9999999982517264,
+            "ci90": [
+              12.266434675444472,
+              12.524113861584873
+            ],
+            "equivalent_at_target": false,
+            "smallest_bound_passed": 12.524113861584873
+          },
+          "p": 0.9999999982517264,
+          "verdict": "inconclusive at \u00b110%; equivalent within \u00b112.5241 (a factor 274886.582 in 1\u2212AUC)",
+          "all_pairs_companion": {
+            "max_p": 0.9999999982517264,
+            "smallest_bound_passed_by_all": 12.524113861584873
+          },
+          "pairs": [
+            {
+              "fine": 188,
+              "coarse": 43,
+              "n_pairs": 5,
+              "is_bound": true,
+              "mean_diff": 11.181947873593339,
+              "p": 0.999992093670469,
+              "ci90": [
+                10.22707176243112,
+                12.136823984755559
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 12.136823984755559
+            },
+            {
+              "fine": 188,
+              "coarse": 17,
+              "n_pairs": 5,
+              "is_bound": true,
+              "mean_diff": 12.395274268514672,
+              "p": 0.9999999982517264,
+              "ci90": [
+                12.266434675444472,
+                12.524113861584873
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 12.524113861584873
+            },
+            {
+              "fine": 162,
+              "coarse": 43,
+              "n_pairs": 5,
+              "is_bound": true,
+              "mean_diff": 11.181947873593339,
+              "p": 0.999992093670469,
+              "ci90": [
+                10.22707176243112,
+                12.136823984755559
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 12.136823984755559
+            },
+            {
+              "fine": 162,
+              "coarse": 17,
+              "n_pairs": 5,
+              "is_bound": true,
+              "mean_diff": 12.395274268514672,
+              "p": 0.9999999982517264,
+              "ci90": [
+                12.266434675444472,
+                12.524113861584873
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 12.524113861584873
+            },
+            {
+              "fine": 43,
+              "coarse": 17,
+              "n_pairs": 5,
+              "is_bound": false,
+              "mean_diff": 1.2133263949213353,
+              "p": 0.9757876300309661,
+              "ci90": [
+                0.36446589824021514,
+                2.062186891602455
+              ],
+              "equivalent_at_target": false,
+              "smallest_bound_passed": 2.062186891602455
+            }
+          ]
+        }
+      }
+    },
+    "S6": {
+      "bvc_qcd": {
+        "n_agree": 6,
+        "n_pairs": 6,
+        "pairs": [
+          {
+            "fine": 188,
+            "coarse": 162,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 188,
+            "coarse": 43,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 188,
+            "coarse": 17,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 162,
+            "coarse": 43,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 162,
+            "coarse": 17,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 43,
+            "coarse": 17,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          }
+        ]
+      },
+      "bvc_resonant": {
+        "n_agree": 6,
+        "n_pairs": 6,
+        "pairs": [
+          {
+            "fine": 188,
+            "coarse": 162,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 188,
+            "coarse": 43,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 188,
+            "coarse": 17,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 162,
+            "coarse": 43,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 162,
+            "coarse": 17,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 43,
+            "coarse": 17,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          }
+        ]
+      },
+      "ee_vs_mm": {
+        "n_agree": 5,
+        "n_pairs": 5,
+        "pairs": [
+          {
+            "fine": 188,
+            "coarse": 43,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 188,
+            "coarse": 17,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 162,
+            "coarse": 43,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 162,
+            "coarse": 17,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 43,
+            "coarse": 17,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          }
+        ]
+      },
+      "retained_topology": {
+        "n_agree": 5,
+        "n_pairs": 6,
+        "pairs": [
+          {
+            "fine": 188,
+            "coarse": 162,
+            "linear": -1,
+            "mlp": 1,
+            "agree": false
+          },
+          {
+            "fine": 188,
+            "coarse": 43,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 188,
+            "coarse": 17,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 162,
+            "coarse": 43,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 162,
+            "coarse": 17,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          },
+          {
+            "fine": 43,
+            "coarse": 17,
+            "linear": 1,
+            "mlp": 1,
+            "agree": true
+          }
+        ]
+      }
+    },
+    "holm_family": [
+      {
+        "test": "S1 bvc_qcd",
+        "status": "available",
+        "p_raw": 6.028163580246913e-06,
+        "family_size": 3,
+        "threshold_if_smallest": 0.016666666666666666,
+        "reject_whatever_pending": true,
+        "reject_possible": true
+      },
+      {
+        "test": "S2 retained_topology",
+        "status": "available",
+        "p_raw": 0.9985081791853865,
+        "family_size": 3,
+        "threshold_if_smallest": 0.016666666666666666,
+        "reject_whatever_pending": false,
+        "reject_possible": false
+      },
+      {
+        "test": "S2 ee_vs_mm",
+        "status": "available",
+        "p_raw": 0.999999986813923,
+        "family_size": 3,
+        "threshold_if_smallest": 0.016666666666666666,
+        "reject_whatever_pending": false,
+        "reject_possible": false
+      }
+    ]
+  },
+  "pairwise_exploratory": {
+    "bvc_qcd": {
+      "linear": [
+        {
+          "fine": 188,
+          "coarse": 162,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.13590571179227826,
+          "sd_diff": 0.041588076448605606,
+          "t": 7.307248520464286,
+          "df": 4,
+          "p": 0.0018653851499049441,
+          "ci95": [
+            0.08426729451149884,
+            0.18754412907305767
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 188,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.14950556655027275,
+          "sd_diff": 0.034068883432043645,
+          "t": 9.812608343559534,
+          "df": 4,
+          "p": 0.0006046816752982604,
+          "ci95": [
+            0.10720346053370347,
+            0.19180767256684203
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 188,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 1.1057496164370728,
+          "sd_diff": 0.13244466638451452,
+          "t": 18.668409804207133,
+          "df": 4,
+          "p": 4.846850695939506e-05,
+          "ci95": [
+            0.9412978424333128,
+            1.2702013904408327
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.013599854757994478,
+          "sd_diff": 0.027211666607307058,
+          "t": 1.1175427129051203,
+          "df": 4,
+          "p": 0.3263509816347548,
+          "ci95": [
+            -0.020187891999422263,
+            0.047387601515411215
+          ],
+          "sign_flip": {
+            "p": 0.5,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": false
+        },
+        {
+          "fine": 162,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.9698439046447944,
+          "sd_diff": 0.11591310576923357,
+          "t": 18.709160486710022,
+          "df": 4,
+          "p": 4.805156113431968e-05,
+          "ci95": [
+            0.825918774291152,
+            1.1137690349984368
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 43,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.9562440498868,
+          "sd_diff": 0.11183614161902466,
+          "t": 19.119281724780524,
+          "df": 4,
+          "p": 4.4094634114163286e-05,
+          "ci95": [
+            0.8173811391404395,
+            1.0951069606331605
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        }
+      ],
+      "mlp": [
+        {
+          "fine": 188,
+          "coarse": 162,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.1060113034343015,
+          "sd_diff": 0.051040899107976635,
+          "t": 4.644284975485656,
+          "df": 4,
+          "p": 0.00970283645713174,
+          "ci95": [
+            0.04263565657597629,
+            0.1693869502926267
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 188,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.11861910310970583,
+          "sd_diff": 0.0427919048233433,
+          "t": 6.198377451958351,
+          "df": 4,
+          "p": 0.003445097941132217,
+          "ci95": [
+            0.06548593547599846,
+            0.1717522707434132
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 188,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.936848750544075,
+          "sd_diff": 0.0989745548178,
+          "t": 21.165616705310473,
+          "df": 4,
+          "p": 2.945724161445658e-05,
+          "ci95": [
+            0.8139556090885678,
+            1.0597418919995822
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.012607799675404329,
+          "sd_diff": 0.01876722257043218,
+          "t": 1.5021880310259808,
+          "df": 4,
+          "p": 0.20746297491600824,
+          "ci95": [
+            -0.010694784936578418,
+            0.035910384287387076
+          ],
+          "sign_flip": {
+            "p": 0.1875,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": false
+        },
+        {
+          "fine": 162,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.8308374471097736,
+          "sd_diff": 0.09407247647721532,
+          "t": 19.748698870915845,
+          "df": 4,
+          "p": 3.878018828460144e-05,
+          "ci95": [
+            0.7140310398461449,
+            0.9476438543734023
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 43,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.8182296474343694,
+          "sd_diff": 0.10041059374111812,
+          "t": 18.221355383936036,
+          "df": 4,
+          "p": 5.3352918118821624e-05,
+          "ci95": [
+            0.6935534281477589,
+            0.94290586672098
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        }
+      ]
+    },
+    "bvc_resonant": {
+      "linear": [
+        {
+          "fine": 188,
+          "coarse": 162,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.01901389161191567,
+          "sd_diff": 0.04618645484696065,
+          "t": 0.9205372939303291,
+          "df": 4,
+          "p": 0.40938484636154876,
+          "ci95": [
+            -0.03833416657621911,
+            0.07636194980005045
+          ],
+          "sign_flip": {
+            "p": 0.375,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": false
+        },
+        {
+          "fine": 188,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.08487530868081591,
+          "sd_diff": 0.04445994022496989,
+          "t": 4.268718285747783,
+          "df": 4,
+          "p": 0.012963341668449209,
+          "ci95": [
+            0.029671001541179437,
+            0.1400796158204524
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 188,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 1.3834049204473395,
+          "sd_diff": 0.15170792417765525,
+          "t": 20.390414405153127,
+          "df": 4,
+          "p": 3.415979286931243e-05,
+          "ci95": [
+            1.1950346527537186,
+            1.5717751881409605
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.06586141706890025,
+          "sd_diff": 0.014517387164540548,
+          "t": 10.144429158729183,
+          "df": 4,
+          "p": 0.0005316397346691467,
+          "ci95": [
+            0.04783570007870483,
+            0.08388713405909567
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 1.3643910288354237,
+          "sd_diff": 0.175775232273569,
+          "t": 17.35666082704211,
+          "df": 4,
+          "p": 6.467498526806139e-05,
+          "ci95": [
+            1.1461372511454289,
+            1.5826448065254186
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 43,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 1.2985296117665235,
+          "sd_diff": 0.16368178620327395,
+          "t": 17.73930105516089,
+          "df": 4,
+          "p": 5.9328057467895634e-05,
+          "ci95": [
+            1.0952918306762327,
+            1.5017673928568143
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        }
+      ],
+      "mlp": [
+        {
+          "fine": 188,
+          "coarse": 162,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.043276242816436473,
+          "sd_diff": 0.05453457972035781,
+          "t": 1.7744451546990667,
+          "df": 4,
+          "p": 0.1506566373742849,
+          "ci95": [
+            -0.02443738147950491,
+            0.11098986711237785
+          ],
+          "sign_flip": {
+            "p": 0.125,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": false
+        },
+        {
+          "fine": 188,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.131011045865257,
+          "sd_diff": 0.04648675634452008,
+          "t": 6.301786302037627,
+          "df": 4,
+          "p": 0.003241104951176754,
+          "ci95": [
+            0.073290114118996,
+            0.188731977611518
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 188,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 1.1782580634977788,
+          "sd_diff": 0.11355381778300462,
+          "t": 23.20190704686833,
+          "df": 4,
+          "p": 2.0450186279226323e-05,
+          "ci95": [
+            1.0372623760980317,
+            1.319253750897526
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.08773480304882053,
+          "sd_diff": 0.026442065010651463,
+          "t": 7.419276199899378,
+          "df": 4,
+          "p": 0.001761391247010077,
+          "ci95": [
+            0.05490264288693118,
+            0.12056696321070988
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 1.1349818206813425,
+          "sd_diff": 0.14318481292546584,
+          "t": 17.724620736076584,
+          "df": 4,
+          "p": 5.9522789745650444e-05,
+          "ci95": [
+            0.9571943933822505,
+            1.3127692479804343
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 43,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 1.047247017632522,
+          "sd_diff": 0.119244031254425,
+          "t": 19.63801035595517,
+          "df": 4,
+          "p": 3.965434904588917e-05,
+          "ci95": [
+            0.899185997023218,
+            1.195308038241826
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        }
+      ]
+    },
+    "ee_vs_mm": {
+      "linear": [
+        {
+          "fine": 188,
+          "coarse": 162,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": true,
+          "estimable": false,
+          "mean_diff": 0.0,
+          "reason": "identical paired differences (zero variance): t undefined"
+        },
+        {
+          "fine": 188,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": true,
+          "estimable": true,
+          "mean_diff": 12.925456492852993,
+          "sd_diff": 0.9471626983362172,
+          "t": 30.514503378358146,
+          "df": 4,
+          "p": 6.871047968862164e-06,
+          "ci95": [
+            11.74939866988738,
+            14.101514315818605
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 188,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": true,
+          "estimable": true,
+          "mean_diff": 13.756617825915802,
+          "sd_diff": 0.24875616559321428,
+          "t": 123.65817155075254,
+          "df": 4,
+          "p": 2.564901251953767e-08,
+          "ci95": [
+            13.447746250767494,
+            14.06548940106411
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": true,
+          "estimable": true,
+          "mean_diff": 12.925456492852993,
+          "sd_diff": 0.9471626983362172,
+          "t": 30.514503378358146,
+          "df": 4,
+          "p": 6.871047968862164e-06,
+          "ci95": [
+            11.74939866988738,
+            14.101514315818605
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": true,
+          "estimable": true,
+          "mean_diff": 13.756617825915802,
+          "sd_diff": 0.24875616559321428,
+          "t": 123.65817155075254,
+          "df": 4,
+          "p": 2.564901251953767e-08,
+          "ci95": [
+            13.447746250767494,
+            14.06548940106411
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 43,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.8311613330628088,
+          "sd_diff": 0.8415969807273893,
+          "t": 2.208341146128472,
+          "df": 4,
+          "p": 0.09179552437423141,
+          "ci95": [
+            -0.21381933890337745,
+            1.8761420050289952
+          ],
+          "sign_flip": {
+            "p": 0.125,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": false
+        }
+      ],
+      "mlp": [
+        {
+          "fine": 188,
+          "coarse": 162,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": true,
+          "estimable": false,
+          "mean_diff": 0.0,
+          "reason": "identical paired differences (zero variance): t undefined"
+        },
+        {
+          "fine": 188,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": true,
+          "estimable": true,
+          "mean_diff": 11.181947873593339,
+          "sd_diff": 1.001557855069144,
+          "t": 24.964704175264817,
+          "df": 4,
+          "p": 1.5283196537636107e-05,
+          "ci95": [
+            9.9383495428358,
+            12.425546204350878
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 188,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": true,
+          "estimable": true,
+          "mean_diff": 12.395274268514672,
+          "sd_diff": 0.13513827079233476,
+          "t": 205.09864231387607,
+          "df": 4,
+          "p": 3.390246553901561e-09,
+          "ci95": [
+            12.22747794289232,
+            12.563070594137026
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": true,
+          "estimable": true,
+          "mean_diff": 11.181947873593339,
+          "sd_diff": 1.001557855069144,
+          "t": 24.964704175264817,
+          "df": 4,
+          "p": 1.5283196537636107e-05,
+          "ci95": [
+            9.9383495428358,
+            12.425546204350878
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": true,
+          "estimable": true,
+          "mean_diff": 12.395274268514672,
+          "sd_diff": 0.13513827079233476,
+          "t": 205.09864231387607,
+          "df": 4,
+          "p": 3.390246553901561e-09,
+          "ci95": [
+            12.22747794289232,
+            12.563070594137026
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 43,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 1.2133263949213353,
+          "sd_diff": 0.8903593758085309,
+          "t": 3.0471744013198343,
+          "df": 4,
+          "p": 0.038133475653841765,
+          "ci95": [
+            0.1077992125167071,
+            2.3188535773259638
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        }
+      ]
+    },
+    "retained_topology": {
+      "linear": [
+        {
+          "fine": 188,
+          "coarse": 162,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": -0.0006784468574753788,
+          "sd_diff": 0.06670723508766989,
+          "t": -0.022741960305239353,
+          "df": 4,
+          "p": 0.9829453673447434,
+          "ci95": [
+            -0.08350641908555,
+            0.08214952537059923
+          ],
+          "sign_flip": {
+            "p": 0.9375,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": false
+        },
+        {
+          "fine": 188,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.21358556407505508,
+          "sd_diff": 0.030869299103638094,
+          "t": 15.471418339659472,
+          "df": 4,
+          "p": 0.00010186636091485721,
+          "ci95": [
+            0.17525626672828393,
+            0.25191486142182623
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 188,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.4293293151739057,
+          "sd_diff": 0.09328168717421417,
+          "t": 10.291511255251612,
+          "df": 4,
+          "p": 0.0005027839919177472,
+          "ci95": [
+            0.3135048025179782,
+            0.5451538278298332
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.21426401093253045,
+          "sd_diff": 0.03857081154476471,
+          "t": 12.421540392554341,
+          "df": 4,
+          "p": 0.00024149821426773085,
+          "ci95": [
+            0.16637202285589398,
+            0.2621559990091669
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.4300077620313811,
+          "sd_diff": 0.11613375053436896,
+          "t": 8.279475883026478,
+          "df": 4,
+          "p": 0.001161558681720254,
+          "ci95": [
+            0.285808665016478,
+            0.5742068590462841
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 43,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.21574375109885063,
+          "sd_diff": 0.10730883170861226,
+          "t": 4.495601019008277,
+          "df": 4,
+          "p": 0.010859082236220384,
+          "ci95": [
+            0.08250223807696028,
+            0.348985264120741
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        }
+      ],
+      "mlp": [
+        {
+          "fine": 188,
+          "coarse": 162,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.017604419712433917,
+          "sd_diff": 0.1213078432924598,
+          "t": 0.3245023414235108,
+          "df": 4,
+          "p": 0.7618188762234547,
+          "ci95": [
+            -0.13301916200355737,
+            0.16822800142842523
+          ],
+          "sign_flip": {
+            "p": 0.75,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": false
+        },
+        {
+          "fine": 188,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.17652410242250446,
+          "sd_diff": 0.09649548902482377,
+          "t": 4.090552798611263,
+          "df": 4,
+          "p": 0.014968347153155658,
+          "ci95": [
+            0.05670912771131435,
+            0.29633907713369456
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 188,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.4181727221233821,
+          "sd_diff": 0.0697563227229766,
+          "t": 13.404700771246619,
+          "df": 4,
+          "p": 0.00017913443509440518,
+          "ci95": [
+            0.33155880755117884,
+            0.5047866366955853
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 43,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.15891968271007056,
+          "sd_diff": 0.0376008324317386,
+          "t": 9.450727298326058,
+          "df": 4,
+          "p": 0.0006991172113534203,
+          "ci95": [
+            0.11223208277708827,
+            0.20560728264305286
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 162,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.4005683024109482,
+          "sd_diff": 0.11819497485318739,
+          "t": 7.578139044702531,
+          "df": 4,
+          "p": 0.0016259034558640962,
+          "ci95": [
+            0.25380985736714623,
+            0.5473267474547502
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        },
+        {
+          "fine": 43,
+          "coarse": 17,
+          "n_pairs": 5,
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_bound": false,
+          "estimable": true,
+          "mean_diff": 0.24164861970087764,
+          "sd_diff": 0.11192694025304799,
+          "t": 4.827637913611623,
+          "df": 4,
+          "p": 0.008475814612254112,
+          "ci95": [
+            0.10267296755956426,
+            0.38062427184219105
+          ],
+          "sign_flip": {
+            "p": 0.0625,
+            "floor": 0.0625,
+            "n_arrangements": 32
+          },
+          "holm_reject": true
+        }
+      ]
+    }
+  }
+}
