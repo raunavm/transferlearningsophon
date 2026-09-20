@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: massres-s5-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: probe
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.54" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+          date -u +"start %Y-%m-%dT%H:%M:%SZ"; nproc; free -g | head -2
+
+          ARMS=""; RUNGS=""
+          for spec in mtx-l188-s5:L188 mtx-l162-s5:L162 mtx-r42q1-s5:R42_Q1 mtx-r16q1-s5:R16_Q1 mtx-l162mass-s5:L162_MASS mtx-r16q1mass-s5:R16_Q1_MASS; do
+            a=${spec%%:*}; r=${spec##*:}
+            d=/data/results/eval/${a}/features_e79
+            for f in features.npy label188.npy extract_manifest.json; do
+              [ -f "${d}/${f}" ] || { echo "FATAL: no ${d}/${f}"; exit 1; }
+            done
+            ARMS="${ARMS} ${a#mtx-}=${d}"
+            RUNGS="${RUNGS} ${a#mtx-}=${r}"
+          done
+          echo "arms:${ARMS}"
+
+          OBS=/data/results/eval/test2m_observers
+          for f in observers.npz label188.npy observers_manifest.json; do
+            [ -f "${OBS}/${f}" ] || { echo "FATAL: no ${OBS}/${f}"; exit 1; }
+          done
+          OUT=/data/results/eval/mass_resolution/s5
+          mkdir -p ${OUT}
+          python3 experiments/EVAL/mass_resolution.py \
+            --features ${ARMS} \
+            --observers ${OBS} \
+            --out ${OUT}
+          date -u +"end %Y-%m-%dT%H:%M:%SZ"
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

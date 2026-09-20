@@ -99,6 +99,22 @@ MASS_PIN = "mtx-s1.53"     # contains probe.py at c53e861, the tag v2 also ran
 MASS_CELLS = [("mtx-l162", "L162"), ("mtx-l162mass", "L162_MASS"),
               ("mtx-r16q1", "R16_Q1"), ("mtx-r16q1mass", "R16_Q1_MASS")]
 
+# S7, the frozen-feature jet-mass regression. SIX models per seed, not the 2x2's
+# four: S7's third clause is about the granularity ladder WITHOUT the mass
+# output ("without the mass output, finer labels give equal or better
+# resolution"), so the two granularities that have no mass twin are needed too.
+#
+# What "resolution" means here was pre-registered before any of these numbers
+# existed -- docs/PRESPEC_2026-09.md, amendment 2026-09-20, and
+# DECISIONS_PENDING item 40. The readout refuses to run unless every model's
+# cached-label digest matches the generator-level mass cache's, which is the one
+# alignment the observer job could not check for the mass-output models.
+MASSRES_PIN = "mtx-s1.54"      # the tag that first carries mass_resolution.py
+MASSRES_OBS = "/data/results/eval/test2m_observers"
+MASSRES_CELLS = [("mtx-l188", "L188"), ("mtx-l162", "L162"),
+                 ("mtx-r42q1", "R42_Q1"), ("mtx-r16q1", "R16_Q1"),
+                 ("mtx-l162mass", "L162_MASS"), ("mtx-r16q1mass", "R16_Q1_MASS")]
+
 
 def run_name(stem: str, seed: int) -> str:
     return f"{stem}-s1b" if (stem == "mtx-l162" and seed == 1) else f"{stem}-s{seed}"
@@ -164,6 +180,20 @@ LABELREC = """
           date -u +"end %Y-%m-%dT%H:%M:%SZ"
 """
 
+MASSRES = """
+          OBS={obs}
+          for f in observers.npz label188.npy observers_manifest.json; do
+            [ -f "${{OBS}}/${{f}}" ] || {{ echo "FATAL: no ${{OBS}}/${{f}}"; exit 1; }}
+          done
+          OUT=/data/results/eval/mass_resolution/s{seed}
+          mkdir -p ${{OUT}}
+          python3 experiments/EVAL/mass_resolution.py \\
+            --features ${{ARMS}} \\
+            --observers ${{OBS}} \\
+            --out ${{OUT}}
+          date -u +"end %Y-%m-%dT%H:%M:%SZ"
+"""
+
 TAIL = """        volumeMounts:
         - { name: data, mountPath: /data }
         resources:
@@ -226,6 +256,14 @@ def build() -> dict[str, str]:
         out[f"job-{name}.yaml"] = (
             HEAD.format(name=name, pin=MASS_PIN, specs=mspecs)
             + PROBE.format(seed=seed, tasks=tasks, ver="mass2x2", eps=meps) + TAIL)
+
+    # S7's mass regression, one job per seed index, six models each.
+    for seed in SEEDS:
+        name = f"massres-s{seed}-raunav"
+        rspecs = " ".join(f"{run_name(stem, seed)}:{arm}" for stem, arm in MASSRES_CELLS)
+        out[f"job-{name}.yaml"] = (
+            HEAD.format(name=name, pin=MASSRES_PIN, specs=rspecs)
+            + MASSRES.format(seed=seed, obs=MASSRES_OBS) + TAIL)
     return out
 
 

@@ -11,11 +11,11 @@ bp = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bp)
 
 
-def test_twenty_three_jobs_all_named_raunav_and_parse():
+def test_twenty_eight_jobs_all_named_raunav_and_parse():
     jobs = bp.build()
     # 5 probe v1 + 5 label-recovery v1 + 5 probe v2 + 3 random-label control
-    # + 5 mass-output 2x2
-    assert len(jobs) == 23
+    # + 5 mass-output 2x2 + 5 mass regression
+    assert len(jobs) == 28
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"]
@@ -25,7 +25,7 @@ def test_twenty_three_jobs_all_named_raunav_and_parse():
 
 def test_each_job_holds_one_seed_index_at_all_four_granularities():
     for fname, text in bp.build().items():
-        if "randcontrol" in fname or "mass2x2" in fname:
+        if any(k in fname for k in ("randcontrol", "mass2x2", "massres")):
             continue          # not ladder jobs; each covered by its own test below
         seed = int(fname.split("-s")[-1].split("-")[0])
         line = next(l for l in text.splitlines() if l.strip().startswith("for spec in"))
@@ -42,7 +42,7 @@ def test_each_job_holds_one_seed_index_at_all_four_granularities():
 def test_outputs_are_disjoint_per_seed_and_mlp_cannot_be_skipped():
     outs = [l.strip() for t in bp.build().values() for l in t.splitlines()
             if l.strip().startswith("OUT=")]
-    assert len(outs) == len(set(outs)) == 23
+    assert len(outs) == len(set(outs)) == 28
     for text in bp.build().values():
         assert "--no-mlp" not in text and "--skip-mlp" not in text
 
@@ -215,3 +215,49 @@ def test_the_mass_pin_contains_the_probe_code_the_ladder_ran():
     assert ok.returncode == 0, (
         f"{bp.MASS_PIN} does not contain probe.py at {head[:12]}; the 2x2 would run "
         f"different probe code from the ladder")
+
+
+def test_the_mass_regression_carries_six_models_including_the_two_without_a_twin():
+    """S7's third clause is about the granularity ladder WITHOUT the mass output
+    -- "without the mass output, finer labels give equal or better resolution" --
+    so the 188- and 43-class models are needed too, even though neither has a
+    mass twin. Four models would answer only two of the three clauses."""
+    jobs = bp.build()
+    assert [c for _, c in bp.MASSRES_CELLS] == [
+        "L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS", "R16_Q1_MASS"]
+    for seed in bp.SEEDS:
+        t = jobs[f"job-massres-s{seed}-raunav.yaml"]
+        line = next(l for l in t.splitlines() if l.strip().startswith("for spec in"))
+        runs = line.split("for spec in")[1].split(";")[0].split()
+        assert len(runs) == 6
+        want = {f"mtx-l188-s{seed}", "mtx-l162-s1b" if seed == 1 else f"mtx-l162-s{seed}",
+                f"mtx-r42q1-s{seed}", f"mtx-r16q1-s{seed}",
+                f"mtx-l162mass-s{seed}", f"mtx-r16q1mass-s{seed}"}
+        assert {r.split(":")[0] for r in runs} == want, (seed, runs)
+        assert "mtx-l162-s1:" not in line
+
+
+def test_the_mass_regression_requires_the_generator_level_mass_cache():
+    """The target lives in one place and nowhere else. A job that started without
+    it would fail deep inside the probe instead of in its first ten seconds."""
+    for seed in bp.SEEDS:
+        t = bp.build()[f"job-massres-s{seed}-raunav.yaml"]
+        assert bp.MASSRES_OBS in t
+        for f in ("observers.npz", "label188.npy", "observers_manifest.json"):
+            assert f in t, f
+        assert "--observers" in t
+        assert f"OUT=/data/results/eval/mass_resolution/s{seed}\n" in t
+        # it must not be able to land on any probe result
+        assert "probe_ladder" not in t
+
+
+def test_the_mass_regression_pin_carries_the_script_it_runs():
+    """mass_resolution.py is new, so a spec pinned at any earlier tag would clone a
+    repository that does not contain it and die on the first line."""
+    import subprocess
+    root = str(pathlib.Path(bp.__file__).resolve().parents[1])
+    ok = subprocess.run(["git", "-C", root, "cat-file", "-e",
+                         f"{bp.MASSRES_PIN}:experiments/EVAL/mass_resolution.py"],
+                        capture_output=True)
+    assert ok.returncode == 0, (
+        f"{bp.MASSRES_PIN} does not contain experiments/EVAL/mass_resolution.py")
