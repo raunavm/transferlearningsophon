@@ -430,3 +430,102 @@ def test_an_analysis_without_working_points_falls_back_and_says_which_point(root
     assert m["ProbeEpsS"] == "50\\%"
     assert json.loads(built["provenance.json"])[
         "ProbeRejAlphaLinearFour"]["json_path"].endswith(".rejection_median")
+
+
+# ------------------------------- no confirmatory test may vanish from T2
+
+def _measured_c5(p=2.0e-07):
+    """A C5 block in the shape experiments/STATS/seed_level.py writes it."""
+    def did(mean, t, pv):
+        return {"estimable": True, "n_pairs": 5, "seeds": [1, 2, 3, 4, 5],
+                "is_bound": False, "mean_diff": mean, "sd_diff": 0.02, "t": t, "df": 4,
+                "p": pv, "ci95": [mean - 0.04, mean + 0.04],
+                "sign_flip": {"p": 0.0625, "floor": 0.0625, "n_arrangements": 32}}
+    probes = {k: {"did": did(0.5044, 73.96, p),
+                  "gain_by_level": {"162": did(-0.0490, -4.09, 0.0149),
+                                    "17": did(-0.5078, -47.10, 1.22e-06)}}
+              for k in ("linear", "mlp")}
+    return {"prediction": "two-sided; the written expectation is that the mass output "
+                          "helps more at 17 classes than at 162",
+            "task": "alpha", "endpoint": "log1m_auc",
+            "did_definition": "(162+mass - 162) - (17+mass - 17), paired by seed index",
+            "expected_sign_if_written_expectation_holds": "+",
+            "confirmatory": {"task": "alpha", "probes": probes},
+            "p": p, "exploratory": [], "exploratory_note": "no verdict"}
+
+
+def _analysis_of(root):
+    p = root / "experiments/FIGS/data/probe_ladder_v2/analysis/seed_level_results.json"
+    return p, json.loads(p.read_text())
+
+
+def test_every_confirmatory_family_member_reaches_the_tests_table(root):
+    """The defect this pins: table_tests rendered a confirmatory member ONLY while
+    its status was 'pending'. C5 is the first member that can become 'available'
+    without being a trend test, so the moment it was measured it rendered as
+    nothing, while the caption went on claiming the full family. A measured,
+    Holm-judged confirmatory result must never be silently absent."""
+    _, A = _analysis_of(root)
+    A["confirmatory"]["C5"] = _measured_c5()
+    A["confirmatory"]["holm_family"].append(
+        {"test": "C5", "status": "available", "p_raw": 2.0e-07, "family_size": 3,
+         "threshold_if_smallest": 0.05 / 3,
+         "reject_whatever_pending": True, "reject_possible": True})
+    tex = M.table_tests(A)
+    for h in A["confirmatory"]["holm_family"]:
+        assert h["test"] in tex, (
+            f"{h['test']} is in the confirmatory family and has no row in the tests table")
+    assert "C5: " in tex, "a measured C5 needs its own row, not the bare fallback"
+    assert "no row generator" not in tex, "C5 has a renderer; it must not hit the fallback"
+
+
+def test_the_c5_row_carries_the_nonlinear_probe_and_both_one_sided_gains(root):
+    """D6: never a linear probe alone. And the interaction is a DIFFERENCE of two
+    gains, so a reader who sees only the difference cannot tell which side moved."""
+    _, A = _analysis_of(root)
+    A["confirmatory"]["C5"] = _measured_c5()
+    A["confirmatory"]["holm_family"].append(
+        {"test": "C5", "status": "available", "p_raw": 2.0e-07, "family_size": 3,
+         "threshold_if_smallest": 0.05 / 3,
+         "reject_whatever_pending": True, "reject_possible": True})
+    tex = M.table_tests(A)
+    assert "nonlinear probe" in tex
+    assert "gain at 162 classes" in tex and "gain at 17 classes" in tex
+    # the interaction is Holm-judged; the companions never are
+    assert tex.count("rejected") >= 1
+    for line in tex.splitlines():
+        if "gain at" in line or "nonlinear probe" in line:
+            assert "descriptive" in line, line
+
+
+def test_a_measured_confirmatory_test_with_no_renderer_still_prints_a_row(root):
+    """Belt and braces for the same failure: if a future confirmatory member
+    becomes available and nobody writes it a renderer, the table must show that it
+    exists rather than drop it."""
+    _, A = _analysis_of(root)
+    for h in A["confirmatory"]["holm_family"]:
+        if h["test"] == "C2":
+            h.update({"status": "available", "p_raw": 0.031,
+                      "reject_whatever_pending": False, "reject_possible": True})
+    tex = M.table_tests(A)
+    assert "C2" in tex, "an available member with no renderer vanished from the table"
+    assert "no row generator" in tex
+
+
+def test_c5_emits_macros_for_both_probes_and_both_gains(root):
+    """PRESPEC: every number in the manuscript comes from this generator. If C5 has
+    no macros, its numbers cannot be written into the paper at all."""
+    path, A = _analysis_of(root)
+    A["confirmatory"]["C5"] = _measured_c5()
+    path.write_text(json.dumps(A))
+    built, _, _ = M.build(root)
+    m = macros_in(built["results_generated.tex"])
+    names = set(m)
+    did = [n for n in names if n.startswith("MassDid")]
+    gain = [n for n in names if n.startswith("MassGain")]
+    assert did, "no C5 difference-in-differences macro; it cannot reach the manuscript"
+    assert gain, "no per-granularity gain macro"
+    assert any("Linear" in n for n in did) and any("Mlp" in n for n in did), \
+        "D6: the nonlinear probe travels with the linear one"
+    assert len([n for n in gain if not n.startswith("MassGainP")]) == 2, \
+        "one gain macro per granularity"

@@ -1154,3 +1154,41 @@ def test_the_mass_2x2_never_reaches_the_ladder_analysis(tmp_path):
     mass = write_mass(tmp_path / "mass", mass_values(), seeds=(1,))
     with pytest.raises(SystemExit, match="does not parse"):
         S.load_ladder(mass)
+
+
+def test_a_c5_that_ran_but_is_not_estimable_is_not_reported_as_unmeasured(tmp_path):
+    """Holm keeps C5 pending because there is no p to use, and that arithmetic is
+    right. But "pending" is also the word for a test nobody has run, and a C5 that
+    ran on one seed and could not be estimated is a different fact about the study.
+    The analysis has to be able to tell them apart."""
+    lad = write_ladder(tmp_path / "lad", ladder_values(step=1.0))
+    mass = write_mass(tmp_path / "mass", mass_values(gain_17=-0.5), seeds=(1,))
+    res, out = run(lad, tmp_path / "o", "--mass", str(mass))
+    c5 = res["confirmatory"]["C5"]
+    assert c5["measured"] is True
+    assert c5["estimable"] is False
+    assert "fewer than 2" in c5["not_estimable_reason"]
+    assert c5["p"] is None
+    # Holm is still conservative about it, which is correct
+    assert next(h for h in res["confirmatory"]["holm_family"]
+                if h["test"] == "C5")["status"] == "pending"
+    assert "MEASURED, NOT ESTIMABLE" in out
+
+
+def test_a_fully_estimable_c5_says_so(tmp_path):
+    lad = write_ladder(tmp_path / "lad", ladder_values(step=1.0))
+    mass = write_mass(tmp_path / "mass", mass_values(gain_17=-0.5, noise=0.01))
+    res, out = run(lad, tmp_path / "o", "--mass", str(mass))
+    c5 = res["confirmatory"]["C5"]
+    assert c5["measured"] is True and c5["estimable"] is True
+    assert c5["not_estimable_reason"] is None
+    assert "MEASURED, NOT ESTIMABLE" not in out
+
+
+def test_the_exploratory_lines_carry_the_nonlinear_probe_too(tmp_path):
+    """D6 does not make an exception for a line that carries no verdict."""
+    lad = write_ladder(tmp_path / "lad", ladder_values(step=1.0))
+    mass = write_mass(tmp_path / "mass", mass_values(gain_17=-0.5))
+    _, out = run(lad, tmp_path / "o", "--mass", str(mass))
+    block = out.split("EXPLORATORY")[1].split("Holm over")[0]
+    assert block.count("mlp") == 5, "one nonlinear line per exploratory task"

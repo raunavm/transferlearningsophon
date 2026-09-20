@@ -479,6 +479,42 @@ def emit_tests(em: Emitter, A: dict, src: pathlib.Path) -> None:
                  f"{path.split('.')[0]}.holm_family[{name}]",
                  f"family of {entry['family_size']}" if entry else "")
 
+    # C5, the mass-output x granularity interaction. Both probes, because D6
+    # forbids a linear result standing alone, and the two one-sided gains,
+    # because the interaction is their difference and a reader cannot see which
+    # side moved from the difference alone.
+    c5 = (A.get("confirmatory") or {}).get("C5")
+    if c5:
+        base = "confirmatory.C5.confirmatory.probes"
+        for probe in ("linear", "mlp"):
+            d = (c5.get("confirmatory", {}).get("probes", {}).get(probe, {}).get("did") or {})
+            if not d.get("estimable"):
+                continue
+            key, path = texname("C5", probe), f"{base}.{probe}.did"
+            em.macro("MassDid" + key, fmt(d["mean_diff"], 4, sign=True), src,
+                     path + ".mean_diff",
+                     "(162+mass - 162) - (17+mass - 17) in log(1-AUC); "
+                     "positive = the mass output helps more at 17 classes")
+            em.macro("MassDidT" + key, fmt(d["t"], 2, sign=True), src, path + ".t")
+            em.macro("MassDidP" + key, fmt_p(d["p"]), src, path + ".p")
+            em.macro("MassDidDf" + key, str(d["df"]), src, path + ".df")
+            em.macro("MassDidCI" + key,
+                     f"$[{fmt(d['ci95'][0], 4, sign=True)},\\,{fmt(d['ci95'][1], 4, sign=True)}]$",
+                     src, path + ".ci95", "95% interval")
+            em.macro("MassDidN" + key, str(d["n_pairs"]), src, path + ".n_pairs",
+                     "pretraining seeds with all four corners of the 2x2")
+        for lv in ("162", "17"):
+            g = (c5.get("confirmatory", {}).get("probes", {}).get("linear", {})
+                 .get("gain_by_level", {}).get(lv) or {})
+            if not g.get("estimable"):
+                continue
+            key = texname("C5", "gain", lv)
+            path = f"{base}.linear.gain_by_level.{lv}"
+            em.macro("MassGain" + key, fmt(g["mean_diff"], 4, sign=True), src,
+                     path + ".mean_diff",
+                     f"with the mass output minus without, at {lv} classes; negative is better")
+            em.macro("MassGainP" + key, fmt_p(g["p"]), src, path + ".p")
+
     for task, per_probe in (A.get("secondary", {}).get("S2") or {}).items():
         for probe, e in per_probe.items():
             if not e.get("run"):
@@ -675,9 +711,66 @@ def table_tests(A: dict) -> str:
         if c1.get("composite_verdict"):
             rows.append("\\multicolumn{6}{@{}l@{}}{\\itshape C1 overall: "
                         + tex(c1["composite_verdict"]) + "} \\\\")
+    # C5, the mass-output x granularity interaction. It is the first member of
+    # the confirmatory family that can become available WITHOUT being a trend
+    # test, so it needs a renderer of its own.
+    rendered = {"C1"} if (c1 and c1.get("run")) else set()
+    c5 = (A.get("confirmatory") or {}).get("C5")
+    lin = ((c5 or {}).get("confirmatory", {}).get("probes", {})
+           .get("linear", {}).get("did") or {})
+    if c5 and not lin.get("estimable"):
+        # It RAN. Holm keeps it pending because there is no p, but the table must
+        # not say "not yet measured" about a test that was measured and could not
+        # be estimated -- those are different facts about the study.
+        rendered.add("C5")
+        rows.append(f"C5: {TASK_LABELS.get(c5.get('task', ''), tex(c5.get('task', '')))} & "
+                    + tex(c5.get("prediction", "")) + " & paired difference-in-differences & "
+                    "--- & --- & measured, not estimable ("
+                    + tex(str(c5.get("not_estimable_reason") or "unknown")) + ") \\\\")
+    elif c5:
+        rendered.add("C5")
+        rows.append(" & ".join([
+            f"C5: {TASK_LABELS.get(c5['task'], tex(c5['task']))}",
+            tex(c5["prediction"]),
+            "paired difference-in-differences, " + tex(c5["did_definition"]),
+            f"${fmt(lin['mean_diff'], 4, sign=True)}$ ($t={fmt(lin['t'], 2, sign=True)}$, "
+            f"{lin['df']} df)",
+            fmt_p(lin["p"]),
+            holm_verdict(holm.get("C5"))]) + " \\\\")
+        # D6: never a linear probe alone. The nonlinear probe goes beside it,
+        # and it is not a second test -- it has no Holm entry and no verdict.
+        mlp = (c5["confirmatory"]["probes"].get("mlp", {}).get("did") or {})
+        if mlp.get("estimable"):
+            rows.append(" & ".join([
+                "\\quad nonlinear probe",
+                "the nonlinear probe gives the same interaction",
+                "paired difference-in-differences",
+                f"${fmt(mlp['mean_diff'], 4, sign=True)}$ ($t={fmt(mlp['t'], 2, sign=True)}$, "
+                f"{mlp['df']} df)",
+                fmt_p(mlp["p"]), "descriptive"]) + " \\\\")
+        # The interaction is a difference of two gains; printing only the
+        # difference leaves a reader unable to see which side moved.
+        for lv in ("162", "17"):
+            g = c5["confirmatory"]["probes"]["linear"]["gain_by_level"].get(lv) or {}
+            if g.get("estimable"):
+                rows.append(" & ".join([
+                    f"\\quad gain at {lv} classes",
+                    "effect of adding the mass output at this granularity alone",
+                    "paired difference",
+                    f"${fmt(g['mean_diff'], 4, sign=True)}$",
+                    fmt_p(g["p"]), "descriptive"]) + " \\\\")
     for h in A.get("confirmatory", {}).get("holm_family", []):
         if h["status"] == "pending":
             rows.append(f"{h['test']} & not yet measured & --- & --- & --- & pending \\\\")
+        elif h["test"] not in rendered:
+            # A measured confirmatory test with no renderer of its own. Printing
+            # nothing is the one thing this table must never do: the caption
+            # claims a family of five, and a member that has been measured and
+            # Holm-judged would vanish while the caption went on asserting it.
+            # This row is deliberately bare -- it exists so the omission is
+            # visible in the manuscript rather than silent.
+            rows.append(f"{h['test']} & measured; no row generator & --- & --- & "
+                        f"{fmt_p(h['p_raw'])} & {holm_verdict(h)} \\\\")
     rows.append("\\addlinespace")
     s1 = (A.get("secondary") or {}).get("S1")
     if s1 and s1.get("run"):

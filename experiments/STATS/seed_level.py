@@ -609,11 +609,21 @@ def c5_analysis(cells, seeds, tasks) -> dict:
 
     conf = block(C5_TASK) if C5_TASK in tasks else {"task": C5_TASK, "probes": {}}
     linear = conf["probes"].get("linear", {}).get("did", {})
-    p = linear.get("p") if linear.get("estimable") else None
+    estimable = bool(linear.get("estimable"))
+    p = linear.get("p") if estimable else None
+    # Holm still has no p to use, so C5's family entry stays "pending" -- that is
+    # the conservative arithmetic and it is right. But "pending" is also the word
+    # for a test that has not been run, and these are not the same thing: a C5
+    # that ran and could not be estimated must not be reported as one nobody has
+    # measured yet. Everything downstream reads these two fields to tell them
+    # apart.
+    reason = (None if estimable else
+              linear.get("reason", "the 2x2 has no b-versus-c cells at all"))
     return {"prediction": C5_DIRECTION, "task": C5_TASK, "endpoint": ENDPOINT,
             "did_definition": "(162+mass − 162) − (17+mass − 17), paired by seed index",
             "expected_sign_if_written_expectation_holds": "+",
             "confirmatory": conf, "p": p,
+            "measured": True, "estimable": estimable, "not_estimable_reason": reason,
             "exploratory": [block(t) for t in tasks if t != C5_TASK],
             "exploratory_note": "measured by the same jobs; no verdict, no multiplicity family"}
 
@@ -1054,6 +1064,10 @@ def format_c5(c5: dict) -> list[str]:
            f"      difference-in-differences = {c5['did_definition']}",
            f"      endpoint {c5['endpoint']}, LOWER IS BETTER, so the written "
            f"expectation is a {c5['expected_sign_if_written_expectation_holds']} sign"]
+    if not c5.get("estimable", True):
+        out.append(f"    MEASURED, NOT ESTIMABLE: {c5.get('not_estimable_reason')}")
+        out.append("    (it stays pending in the Holm family because there is no p to use;")
+        out.append("     that is not the same as a test nobody has run yet)")
     for kind in PROBES:
         blk = c5["confirmatory"]["probes"].get(kind)
         if not blk:
@@ -1065,10 +1079,13 @@ def format_c5(c5: dict) -> list[str]:
             out.append(format_did(f"gain at {lv} classes", blk["gain_by_level"][str(lv)]))
     if c5["exploratory"]:
         out.append("    EXPLORATORY -- the same difference-in-differences on the other tasks the")
-        out.append("    2x2 measured, linear probe. No verdict, and no multiplicity family:")
+        out.append("    2x2 measured. No verdict, and no multiplicity family. Both probes, because")
+        out.append("    D6 does not make an exception for a line that carries no verdict:")
         for blk in c5["exploratory"]:
-            lin = blk["probes"].get("linear", {}).get("did", {})
-            out.append(format_did(blk["task"], lin) if lin else f"    {blk['task']}: no cells")
+            for kind in PROBES:
+                d = blk["probes"].get(kind, {}).get("did", {})
+                label = blk["task"] if kind == "linear" else f"  {kind}"
+                out.append(format_did(label, d) if d else f"    {blk['task']}: no cells")
     return out
 
 
