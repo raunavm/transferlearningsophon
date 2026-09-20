@@ -196,7 +196,7 @@ def write_analysis(root, ladder):
                                        "reject_possible": False}]},
         "pairwise_exploratory": {t: {p: _pairwise(rows, t, p) for p in ("linear", "mlp")}
                                  for t in TASKS}}
-    p = root / "experiments/FIGS/data/probe_ladder_v2/analysis/seed_level_results.json"
+    p = root / "experiments/FIGS/data/probe_ladder_v2/analysis_with_c5/seed_level_results.json"
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(doc))
     return p
@@ -380,7 +380,7 @@ def test_the_committed_outputs_still_follow_from_the_committed_inputs():
 
 def _with_points(root, points):
     """Give the fixture analysis the working-point block the real one carries."""
-    p = root / "experiments/FIGS/data/probe_ladder_v2/analysis/seed_level_results.json"
+    p = root / "experiments/FIGS/data/probe_ladder_v2/analysis_with_c5/seed_level_results.json"
     A = json.loads(p.read_text())
     for task in A["levels"]:
         for probe in A["levels"][task]:
@@ -455,7 +455,7 @@ def _measured_c5(p=2.0e-07):
 
 
 def _analysis_of(root):
-    p = root / "experiments/FIGS/data/probe_ladder_v2/analysis/seed_level_results.json"
+    p = root / "experiments/FIGS/data/probe_ladder_v2/analysis_with_c5/seed_level_results.json"
     return p, json.loads(p.read_text())
 
 

@@ -249,7 +249,14 @@ def input_paths(root: pathlib.Path) -> dict:
     data = root / "experiments" / "FIGS" / "data"
     maps = root / "configs" / "labelmaps"
     return {"ladder": sorted((data / "probe_ladder_v2").glob("s*.json")),
-            "analysis": data / "probe_ladder_v2" / "analysis" / "seed_level_results.json",
+            # analysis_with_c5, not analysis: the same run of the same script over
+            # the same five ladder files, plus the mass-output 2x2 that makes C5
+            # measurable. Verified a strict superset before it was adopted -- C1's
+            # p reproduces to all sixteen digits and every other field is
+            # identical; only the C5 block, the Holm family it joins and the
+            # provenance differ. The earlier directory is kept as the record of
+            # what the tables said while C5 was still pending.
+            "analysis": data / "probe_ladder_v2" / "analysis_with_c5" / "seed_level_results.json",
             "leg1": data / "leg1_metrics.json",
             "leg2": data / "leg2_metrics.json",
             "recovery": data / "label_recovery_v3.json",
