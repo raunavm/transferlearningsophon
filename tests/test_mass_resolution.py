@@ -229,9 +229,15 @@ def test_both_probes_are_always_reported(tmp_path):
     assert set(mr.PROBES) <= set(r)
     for p in mr.PROBES:
         assert r[p]["sigma_eff"] > 0 and r[p]["sd"] > 0
-    # and the spread of the target itself, or a resolution means nothing
-    assert r["target"]["sigma_eff"] > r["ridge"]["sigma_eff"], (
-        "a probe that learned something must beat the uninformed spread")
+    # The spread of the target itself travels with them, or a resolution means
+    # nothing. But do NOT assert the probe beats it ON sigma_eff: a least-squares
+    # fit against a heavy-tailed target pulls the TAILS in and can widen the 68 %
+    # core doing it, which is exactly what the real data does -- every plain
+    # model's residual has a narrower standard deviation and a smaller tail
+    # fraction than the uncentred target while its sigma_eff is slightly larger.
+    # The statistic that must improve is the one the fit optimises.
+    assert r["target"]["sd"] > r["ridge"]["sd"], (
+        "a least-squares probe that learned something must shrink the variance")
 
 
 def test_the_scale_travels_with_the_width():

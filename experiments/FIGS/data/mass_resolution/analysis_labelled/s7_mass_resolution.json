@@ -1,0 +1,1451 @@
+{
+  "provenance": {
+    "inputs": [
+      {
+        "path": "experiments/FIGS/data/mass_resolution/s1.json",
+        "sha256": "88a57bbad270d51c744cfc55fb3e53ca88b62bfd0f9e0324e97f0144ee5c2e57"
+      },
+      {
+        "path": "experiments/FIGS/data/mass_resolution/s2.json",
+        "sha256": "a23a9f53fced9e43ea5b0053af6f157c532a34865410f2fe569a51e915cf01c1"
+      },
+      {
+        "path": "experiments/FIGS/data/mass_resolution/s3.json",
+        "sha256": "5c97004edc5941ce87ede7e0e169a51efcfddf642c94d61ce837af96ddec1663"
+      },
+      {
+        "path": "experiments/FIGS/data/mass_resolution/s4.json",
+        "sha256": "d80664ece1e8c7cda937109c3779dd36698ce92946e635219ba740e7fa15ff53"
+      },
+      {
+        "path": "experiments/FIGS/data/mass_resolution/s5.json",
+        "sha256": "ddb9faa4719c958251bbef166746af27ba606c6b086cd70dd5929a32973fbb36"
+      }
+    ],
+    "script_sha256": "bcb2f751491014f58db471c2525de83ffb9779176e27a53da1c504857214843f",
+    "prespec_sha256": "f898a2895098c32238c031cc0d868cf9a1b982699fc6693bf243f53b51647c1b",
+    "stats_modules_sha256": {
+      "src/stats/trend.py": "8fd25667065a7e2757f3eb037f88e212427c2802bd04b1b438466e7b3d78d55c",
+      "src/stats/inference.py": "1346e8e0b5dc7d85de6e0d44dbdcee98db47d396a3c00bdfedd5525e4b0d32d2",
+      "src/stats/mde.py": "626468dcc37940bb827fd5cc07696b7e55084beac4bb5669ae8c3693aa0ee68c"
+    },
+    "row_alignment_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba",
+    "resolution_statistic": "sigma_eff = half the SMALLEST interval containing 68% of the residual area (CMS-DP-2021-017 p.5; CERN-THESIS-2024-281 p.172). The central 68% half-width and the standard deviation are reported beside it and carry no prediction.",
+    "centering": "per-188-native-class mean of the target, fitted on the training split only; subsumes family-mean removal",
+    "n_jets_valid": 1993321,
+    "n_classes_used": 184,
+    "argv": [
+      "--mass-resolution",
+      "experiments/FIGS/data/mass_resolution/s1.json",
+      "experiments/FIGS/data/mass_resolution/s2.json",
+      "experiments/FIGS/data/mass_resolution/s3.json",
+      "experiments/FIGS/data/mass_resolution/s4.json",
+      "experiments/FIGS/data/mass_resolution/s5.json",
+      "--out",
+      "experiments/FIGS/data/mass_resolution/analysis_labelled"
+    ]
+  },
+  "dropped_pairs": {
+    "seeds": [],
+    "reason": null
+  },
+  "secondary": {
+    "S7": {
+      "statistic": "sigma_eff",
+      "lower_is_better": true,
+      "probes": {
+        "ridge": {
+          "gain_by_level": {
+            "162": {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.10634443905459934,
+              "sd_diff": 0.0021253016812146646,
+              "t": -111.88688968582689,
+              "df": 4,
+              "p": 3.8265130861775464e-08,
+              "ci95": [
+                -0.10898334963748552,
+                -0.10370552847171316
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              }
+            },
+            "17": {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.08309087824716273,
+              "sd_diff": 0.01082333692672565,
+              "t": -17.16631879139172,
+              "df": 4,
+              "p": 6.755861852031878e-05,
+              "ci95": [
+                -0.09652982604950734,
+                -0.06965193044481811
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              }
+            }
+          },
+          "did": {
+            "n_pairs": 5,
+            "seeds": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "is_bound": false,
+            "estimable": true,
+            "mean_diff": -0.023253560807436624,
+            "sd_diff": 0.01144953768838638,
+            "t": -4.541366131935169,
+            "df": 4,
+            "p": 0.01048620462868908,
+            "ci95": [
+              -0.03747003955118314,
+              -0.009037082063690109
+            ],
+            "sign_flip": {
+              "p": 0.0625,
+              "floor": 0.0625,
+              "n_arrangements": 32
+            }
+          },
+          "ladder_pairs": [
+            {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.009152491680913189,
+              "sd_diff": 0.00271383293723265,
+              "t": -7.541213492269124,
+              "df": 4,
+              "p": 0.0016562131294315281,
+              "ci95": [
+                -0.012522160336214547,
+                -0.0057828230256118315
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              },
+              "fine": 188,
+              "coarse": 162,
+              "violation": true
+            },
+            {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.016519425686182386,
+              "sd_diff": 0.001922631661030548,
+              "t": -19.212498957684137,
+              "df": 4,
+              "p": 4.3252626645197957e-05,
+              "ci95": [
+                -0.01890668820149072,
+                -0.01413216317087405
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              },
+              "fine": 188,
+              "coarse": 43,
+              "violation": true
+            },
+            {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.03920461473486664,
+              "sd_diff": 0.010963304504183875,
+              "t": -7.996146011031328,
+              "df": 4,
+              "p": 0.0013263254302779762,
+              "ci95": [
+                -0.05281735523905692,
+                -0.025591874230676354
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              },
+              "fine": 188,
+              "coarse": 17,
+              "violation": true
+            },
+            {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.007366934005269199,
+              "sd_diff": 0.0027467281688342217,
+              "t": -5.997304505210011,
+              "df": 4,
+              "p": 0.0038889364413491165,
+              "ci95": [
+                -0.010777447485362801,
+                -0.003956420525175596
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              },
+              "fine": 162,
+              "coarse": 43,
+              "violation": true
+            },
+            {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.03005212305395345,
+              "sd_diff": 0.011722618685751841,
+              "t": -5.73238726074955,
+              "df": 4,
+              "p": 0.004586311483090762,
+              "ci95": [
+                -0.04460767664072224,
+                -0.015496569467184664
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              },
+              "fine": 162,
+              "coarse": 17,
+              "violation": true
+            },
+            {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.022685189048684253,
+              "sd_diff": 0.011015247322962262,
+              "t": -4.605037300392675,
+              "df": 4,
+              "p": 0.009992906327109693,
+              "ci95": [
+                -0.03636242508091689,
+                -0.00900795301645162
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              },
+              "fine": 43,
+              "coarse": 17,
+              "violation": true
+            }
+          ],
+          "n_violations": 6
+        },
+        "mlp": {
+          "gain_by_level": {
+            "162": {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.04955029705242771,
+              "sd_diff": 0.0017795169454371826,
+              "t": -62.262870156212855,
+              "df": 4,
+              "p": 3.985549619292946e-07,
+              "ci95": [
+                -0.05175985917777059,
+                -0.04734073492708483
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              }
+            },
+            "17": {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.0408841118169092,
+              "sd_diff": 0.0027806989321958325,
+              "t": -32.87650171826409,
+              "df": 4,
+              "p": 5.104284875606694e-06,
+              "ci95": [
+                -0.044336805570860414,
+                -0.03743141806295799
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              }
+            }
+          },
+          "did": {
+            "n_pairs": 5,
+            "seeds": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "is_bound": false,
+            "estimable": true,
+            "mean_diff": -0.008666185235518509,
+            "sd_diff": 0.004492892059929596,
+            "t": -4.3130747486793775,
+            "df": 4,
+            "p": 0.01251561353922127,
+            "ci95": [
+              -0.014244847554148638,
+              -0.003087522916888381
+            ],
+            "sign_flip": {
+              "p": 0.0625,
+              "floor": 0.0625,
+              "n_arrangements": 32
+            }
+          },
+          "ladder_pairs": [
+            {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.0024791884979743885,
+              "sd_diff": 0.0015442597394799008,
+              "t": -3.589832635521147,
+              "df": 4,
+              "p": 0.022965249631147214,
+              "ci95": [
+                -0.004396640220362106,
+                -0.0005617367755866717
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              },
+              "fine": 188,
+              "coarse": 162,
+              "violation": true
+            },
+            {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.005564094893450255,
+              "sd_diff": 0.00258904969678639,
+              "t": -4.8055062173805485,
+              "df": 4,
+              "p": 0.008613483901465253,
+              "ci95": [
+                -0.008778824691510288,
+                -0.002349365095390223
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              },
+              "fine": 188,
+              "coarse": 43,
+              "violation": true
+            },
+            {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.01049379123349436,
+              "sd_diff": 0.003933952639987721,
+              "t": -5.9646957366161875,
+              "df": 4,
+              "p": 0.003967388614857084,
+              "ci95": [
+                -0.015378438597205765,
+                -0.005609143869782954
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              },
+              "fine": 188,
+              "coarse": 17,
+              "violation": true
+            },
+            {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.003084906395475867,
+              "sd_diff": 0.0017109701311400895,
+              "t": -4.031666175207529,
+              "df": 4,
+              "p": 0.015711889373600404,
+              "ci95": [
+                -0.005209356409314489,
+                -0.000960456381637245
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              },
+              "fine": 162,
+              "coarse": 43,
+              "violation": true
+            },
+            {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.00801460273551997,
+              "sd_diff": 0.0041646630529990104,
+              "t": -4.303156414148129,
+              "df": 4,
+              "p": 0.012614085112716365,
+              "ci95": [
+                -0.013185714913078217,
+                -0.0028434905579617243
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              },
+              "fine": 162,
+              "coarse": 17,
+              "violation": true
+            },
+            {
+              "n_pairs": 5,
+              "seeds": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "is_bound": false,
+              "estimable": true,
+              "mean_diff": -0.004929696340044104,
+              "sd_diff": 0.003137819900835142,
+              "t": -3.5129919731329027,
+              "df": 4,
+              "p": 0.024605279213462995,
+              "ci95": [
+                -0.008825814343758405,
+                -0.0010335783363298024
+              ],
+              "sign_flip": {
+                "p": 0.0625,
+                "floor": 0.0625,
+                "n_arrangements": 32
+              },
+              "fine": 43,
+              "coarse": 17,
+              "violation": true
+            }
+          ],
+          "n_violations": 6
+        }
+      },
+      "prediction": "resolution improves with the mass output at both granularities; larger gain at 17 classes; without the mass output, finer labels give equal or better resolution",
+      "clauses": [
+        {
+          "n": 1,
+          "text": "the mass output improves resolution at both granularities",
+          "test": "paired difference in sigma_eff at each granularity, intersection-union",
+          "verdict": "confirmed",
+          "p": 6.755861852031878e-05,
+          "detail": ""
+        },
+        {
+          "n": 2,
+          "text": "the gain is larger at 17 classes than at 162",
+          "test": "paired difference-in-differences",
+          "verdict": "not confirmed",
+          "p": 0.01048620462868908,
+          "detail": "REVERSED: the gain is larger at 162 classes, significantly (difference-in-differences -0.0233, p=0.0105)"
+        },
+        {
+          "n": 3,
+          "text": "without the mass output, finer labels give equal or better resolution",
+          "test": "one-sided: a violation is a coarser level significantly better",
+          "verdict": "not confirmed",
+          "p": null,
+          "detail": "6 of 6 pairs violate -- the ordering is INVERTED: coarser labels give better resolution"
+        }
+      ],
+      "composite_verdict": "confirmed in clause 1, not confirmed in clauses 2-3",
+      "overall": "partially confirmed",
+      "n_clauses": 3,
+      "n_clauses_confirmed": 1
+    }
+  },
+  "table": [
+    {
+      "cell": "188",
+      "probe": "ridge",
+      "seed": 1,
+      "arm": "l188-s1",
+      "sigma_eff": 0.3397036155484801,
+      "sigma68_central": 0.34227305255555046,
+      "sd": 0.6326114277224824,
+      "median": -0.03467203906103883,
+      "fractional": 0.40453124764438203,
+      "tail_fraction": 0.06420570711821888,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s1.json"
+    },
+    {
+      "cell": "188",
+      "probe": "mlp",
+      "seed": 1,
+      "arm": "l188-s1",
+      "sigma_eff": 0.24741847859597355,
+      "sigma68_central": 0.25147827248818155,
+      "sd": 0.557748925498516,
+      "median": -0.007459078504966479,
+      "fractional": 0.2807149524468763,
+      "tail_fraction": 0.04796738789589213,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s1.json"
+    },
+    {
+      "cell": "162",
+      "probe": "ridge",
+      "seed": 1,
+      "arm": "l162-s1b",
+      "sigma_eff": 0.3283267796142211,
+      "sigma68_central": 0.33101717925025126,
+      "sd": 0.6218749881819103,
+      "median": -0.028020286035611686,
+      "fractional": 0.38864267827313886,
+      "tail_fraction": 0.06094198808403888,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s1.json"
+    },
+    {
+      "cell": "162",
+      "probe": "mlp",
+      "seed": 1,
+      "arm": "l162-s1b",
+      "sigma_eff": 0.2424261066359392,
+      "sigma68_central": 0.24618659550413097,
+      "sd": 0.5529930094692734,
+      "median": -0.007795670219537344,
+      "fractional": 0.2743370806304105,
+      "tail_fraction": 0.04637441204139229,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s1.json"
+    },
+    {
+      "cell": "43",
+      "probe": "ridge",
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "sigma_eff": 0.320253610356908,
+      "sigma68_central": 0.32286605778837807,
+      "sd": 0.6107580834429346,
+      "median": -0.025958302494715688,
+      "fractional": 0.37747706249072094,
+      "tail_fraction": 0.05814487300094073,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s1.json"
+    },
+    {
+      "cell": "43",
+      "probe": "mlp",
+      "seed": 1,
+      "arm": "r42q1-s1",
+      "sigma_eff": 0.23922009441629047,
+      "sigma68_central": 0.24296905253858797,
+      "sd": 0.5482784651834874,
+      "median": -0.006304122197010903,
+      "fractional": 0.2702580825306699,
+      "tail_fraction": 0.04508247099404202,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s1.json"
+    },
+    {
+      "cell": "17",
+      "probe": "ridge",
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "sigma_eff": 0.3052653109868393,
+      "sigma68_central": 0.308100672764025,
+      "sd": 0.6045740235586224,
+      "median": -0.025792228490316343,
+      "fractional": 0.3569849782751279,
+      "tail_fraction": 0.05650172467858263,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s1.json"
+    },
+    {
+      "cell": "17",
+      "probe": "mlp",
+      "seed": 1,
+      "arm": "r16q1-s1",
+      "sigma_eff": 0.23905638789318862,
+      "sigma68_central": 0.24286380222961212,
+      "sd": 0.5472415161124415,
+      "median": -0.0013441483891706296,
+      "fractional": 0.2700501500169556,
+      "tail_fraction": 0.0450398243963625,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s1.json"
+    },
+    {
+      "cell": "162+mass",
+      "probe": "ridge",
+      "seed": 1,
+      "arm": "l162mass-s1",
+      "sigma_eff": 0.22476955389265144,
+      "sigma68_central": 0.22836539121961236,
+      "sd": 0.4936043208310144,
+      "median": 0.001961129613854426,
+      "fractional": 0.25203415654677425,
+      "tail_fraction": 0.03367325180307306,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s1.json"
+    },
+    {
+      "cell": "162+mass",
+      "probe": "mlp",
+      "seed": 1,
+      "arm": "l162mass-s1",
+      "sigma_eff": 0.1941260825429566,
+      "sigma68_central": 0.1990029631902432,
+      "sd": 0.48187845111644734,
+      "median": 0.008392646930353076,
+      "fractional": 0.21424936895351548,
+      "tail_fraction": 0.034310442144873,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s1.json"
+    },
+    {
+      "cell": "17+mass",
+      "probe": "ridge",
+      "seed": 1,
+      "arm": "r16q1mass-s1",
+      "sigma_eff": 0.21966289257391997,
+      "sigma68_central": 0.22451690955026177,
+      "sd": 0.48988626878488944,
+      "median": 0.0034004440828307447,
+      "fractional": 0.24565673966304138,
+      "tail_fraction": 0.03293320790216369,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s1.json"
+    },
+    {
+      "cell": "17+mass",
+      "probe": "mlp",
+      "seed": 1,
+      "arm": "r16q1mass-s1",
+      "sigma_eff": 0.19513241488641647,
+      "sigma68_central": 0.19974388004401197,
+      "sd": 0.48166259159507174,
+      "median": 0.009252377669366492,
+      "fractional": 0.21547192241088822,
+      "tail_fraction": 0.034373157729695826,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s1.json"
+    },
+    {
+      "cell": "188",
+      "probe": "ridge",
+      "seed": 2,
+      "arm": "l188-s2",
+      "sigma_eff": 0.33675627893332366,
+      "sigma68_central": 0.3395598582196835,
+      "sd": 0.6238160382259688,
+      "median": -0.028059141237606777,
+      "fractional": 0.40039771571832716,
+      "tail_fraction": 0.06183756663530887,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s2.json"
+    },
+    {
+      "cell": "188",
+      "probe": "mlp",
+      "seed": 2,
+      "arm": "l188-s2",
+      "sigma_eff": 0.2426495290528844,
+      "sigma68_central": 0.24623296549471474,
+      "sd": 0.5532716693456519,
+      "median": -0.0037347104455751623,
+      "fractional": 0.274621827909246,
+      "tail_fraction": 0.04599059266227658,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s2.json"
+    },
+    {
+      "cell": "162",
+      "probe": "ridge",
+      "seed": 2,
+      "arm": "l162-s2",
+      "sigma_eff": 0.32773579077574244,
+      "sigma68_central": 0.330668024932379,
+      "sd": 0.6210599865245101,
+      "median": -0.027624300717726452,
+      "fractional": 0.3878222484059706,
+      "tail_fraction": 0.06096958294136093,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s2.json"
+    },
+    {
+      "cell": "162",
+      "probe": "mlp",
+      "seed": 2,
+      "arm": "l162-s2",
+      "sigma_eff": 0.2415364335533639,
+      "sigma68_central": 0.24547937470665568,
+      "sd": 0.5532277080378545,
+      "median": -0.00904004638338407,
+      "fractional": 0.27320384141260845,
+      "tail_fraction": 0.04629915333960489,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s2.json"
+    },
+    {
+      "cell": "43",
+      "probe": "ridge",
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "sigma_eff": 0.32174472541111676,
+      "sigma68_central": 0.3248166222917484,
+      "sd": 0.618601144738222,
+      "median": -0.025781658877633055,
+      "fractional": 0.3795325713947078,
+      "tail_fraction": 0.060653496393853874,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s2.json"
+    },
+    {
+      "cell": "43",
+      "probe": "mlp",
+      "seed": 2,
+      "arm": "r42q1-s2",
+      "sigma_eff": 0.24123293377020846,
+      "sigma68_central": 0.2451170857320891,
+      "sd": 0.551867427665114,
+      "median": -0.010927088926808708,
+      "fractional": 0.27281748295564673,
+      "tail_fraction": 0.04635434305424898,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s2.json"
+    },
+    {
+      "cell": "17",
+      "probe": "ridge",
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "sigma_eff": 0.3146774412984147,
+      "sigma68_central": 0.31750609575549193,
+      "sd": 0.6120529462279413,
+      "median": -0.028963797093242483,
+      "fractional": 0.3698173931688647,
+      "tail_fraction": 0.05864408905613045,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s2.json"
+    },
+    {
+      "cell": "17",
+      "probe": "mlp",
+      "seed": 2,
+      "arm": "r16q1-s2",
+      "sigma_eff": 0.23782817002492587,
+      "sigma68_central": 0.24195178912727783,
+      "sd": 0.5485829911321454,
+      "median": -0.010149790554619065,
+      "fractional": 0.2684912092845209,
+      "tail_fraction": 0.04592787707745375,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s2.json"
+    },
+    {
+      "cell": "162+mass",
+      "probe": "ridge",
+      "seed": 2,
+      "arm": "l162mass-s2",
+      "sigma_eff": 0.22086877998145374,
+      "sigma68_central": 0.22504457306158382,
+      "sd": 0.492943437535406,
+      "median": 0.004364849615524913,
+      "fractional": 0.24715976749854315,
+      "tail_fraction": 0.03345249294449671,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s2.json"
+    },
+    {
+      "cell": "162+mass",
+      "probe": "mlp",
+      "seed": 2,
+      "arm": "l162mass-s2",
+      "sigma_eff": 0.19428976548217414,
+      "sigma68_central": 0.19906954509955915,
+      "sd": 0.48310970476284293,
+      "median": 0.011274734783940657,
+      "fractional": 0.21444813712620442,
+      "tail_fraction": 0.03408717466290373,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s2.json"
+    },
+    {
+      "cell": "17+mass",
+      "probe": "ridge",
+      "seed": 2,
+      "arm": "r16q1mass-s2",
+      "sigma_eff": 0.21415903599475455,
+      "sigma68_central": 0.21830200442669667,
+      "sd": 0.48774879247030517,
+      "median": 0.004133703302344333,
+      "fractional": 0.2388196560442126,
+      "tail_fraction": 0.03277516462841016,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s2.json"
+    },
+    {
+      "cell": "17+mass",
+      "probe": "mlp",
+      "seed": 2,
+      "arm": "r16q1mass-s2",
+      "sigma_eff": 0.19392047970166346,
+      "sigma68_central": 0.1981153647148908,
+      "sd": 0.48022150510948775,
+      "median": 0.0054270464027585796,
+      "fractional": 0.21399974149615686,
+      "tail_fraction": 0.03405205393540295,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s2.json"
+    },
+    {
+      "cell": "188",
+      "probe": "ridge",
+      "seed": 3,
+      "arm": "l188-s3",
+      "sigma_eff": 0.3385022068582126,
+      "sigma68_central": 0.34167736444122354,
+      "sd": 0.6336792484543298,
+      "median": -0.031081442555559835,
+      "fractional": 0.40284484483005173,
+      "tail_fraction": 0.06456444026340545,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s3.json"
+    },
+    {
+      "cell": "188",
+      "probe": "mlp",
+      "seed": 3,
+      "arm": "l188-s3",
+      "sigma_eff": 0.24685398389151092,
+      "sigma68_central": 0.25018499716329873,
+      "sd": 0.5562572774860209,
+      "median": -0.006545384550158656,
+      "fractional": 0.2799921996525488,
+      "tail_fraction": 0.047402947632486675,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s3.json"
+    },
+    {
+      "cell": "162",
+      "probe": "ridge",
+      "seed": 3,
+      "arm": "l162-s3",
+      "sigma_eff": 0.32892450016628394,
+      "sigma68_central": 0.331878364197693,
+      "sd": 0.6276750976694185,
+      "median": -0.030472114926674343,
+      "fractional": 0.38947294665093174,
+      "tail_fraction": 0.06325744747569771,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s3.json"
+    },
+    {
+      "cell": "162",
+      "probe": "mlp",
+      "seed": 3,
+      "arm": "l162-s3",
+      "sigma_eff": 0.24429957441425137,
+      "sigma68_central": 0.24830884501219583,
+      "sd": 0.5574052038590777,
+      "median": -0.008466878999866645,
+      "fractional": 0.27672674787301593,
+      "tail_fraction": 0.04763624960802759,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s3.json"
+    },
+    {
+      "cell": "43",
+      "probe": "ridge",
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "sigma_eff": 0.3238957854705422,
+      "sigma68_central": 0.3269377517042171,
+      "sd": 0.6231245005430309,
+      "median": -0.028240586489014674,
+      "fractional": 0.382503222688938,
+      "tail_fraction": 0.06134838507369081,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s3.json"
+    },
+    {
+      "cell": "43",
+      "probe": "mlp",
+      "seed": 3,
+      "arm": "r42q1-s3",
+      "sigma_eff": 0.24129051888224018,
+      "sigma68_central": 0.24509190760151045,
+      "sd": 0.5526877510789125,
+      "median": -0.0010656364815478936,
+      "fractional": 0.27289078040339926,
+      "tail_fraction": 0.046311696456569455,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s3.json"
+    },
+    {
+      "cell": "17",
+      "probe": "ridge",
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "sigma_eff": 0.2934433183629009,
+      "sigma68_central": 0.29672809315605475,
+      "sd": 0.5937696131355158,
+      "median": -0.021190170531944927,
+      "fractional": 0.3410371650739602,
+      "tail_fraction": 0.05439448102853559,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s3.json"
+    },
+    {
+      "cell": "17",
+      "probe": "mlp",
+      "seed": 3,
+      "arm": "r16q1-s3",
+      "sigma_eff": 0.2338868408646078,
+      "sigma68_central": 0.23788739200793424,
+      "sd": 0.5421510834264538,
+      "median": -0.011573747205492313,
+      "fractional": 0.26350150737976874,
+      "tail_fraction": 0.04412919410473503,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s3.json"
+    },
+    {
+      "cell": "162+mass",
+      "probe": "ridge",
+      "seed": 3,
+      "arm": "l162mass-s3",
+      "sigma_eff": 0.22399837492092123,
+      "sigma68_central": 0.22844368537750087,
+      "sd": 0.4948153301874868,
+      "median": 0.002921835058682598,
+      "fractional": 0.25106898634067454,
+      "tail_fraction": 0.03343744120413923,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s3.json"
+    },
+    {
+      "cell": "162+mass",
+      "probe": "mlp",
+      "seed": 3,
+      "arm": "l162mass-s3",
+      "sigma_eff": 0.19434003984074588,
+      "sigma68_central": 0.19877961966252058,
+      "sd": 0.483112543289973,
+      "median": 0.009812710956487093,
+      "fractional": 0.21450919426210838,
+      "tail_fraction": 0.03396926936343681,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s3.json"
+    },
+    {
+      "cell": "17+mass",
+      "probe": "ridge",
+      "seed": 3,
+      "arm": "r16q1mass-s3",
+      "sigma_eff": 0.21398465576940046,
+      "sigma68_central": 0.21880305600681585,
+      "sd": 0.48955283134285393,
+      "median": 0.005119407016350623,
+      "fractional": 0.2386036492276246,
+      "tail_fraction": 0.032714957666980245,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s3.json"
+    },
+    {
+      "cell": "17+mass",
+      "probe": "mlp",
+      "seed": 3,
+      "arm": "r16q1mass-s3",
+      "sigma_eff": 0.19483175450642784,
+      "sigma68_central": 0.19948531519588958,
+      "sd": 0.482414961261873,
+      "median": 0.003473510552142539,
+      "fractional": 0.21510653309262878,
+      "tail_fraction": 0.03391909689557855,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s3.json"
+    },
+    {
+      "cell": "188",
+      "probe": "ridge",
+      "seed": 4,
+      "arm": "l188-s4",
+      "sigma_eff": 0.34209982033829966,
+      "sigma68_central": 0.3448144594991355,
+      "sd": 0.6338325865086526,
+      "median": -0.03189052940170742,
+      "fractional": 0.4079008276370108,
+      "tail_fraction": 0.06557541549074945,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s4.json"
+    },
+    {
+      "cell": "188",
+      "probe": "mlp",
+      "seed": 4,
+      "arm": "l188-s4",
+      "sigma_eff": 0.2460295761205038,
+      "sigma68_central": 0.25001954164624907,
+      "sd": 0.556882876013936,
+      "median": -0.003913292271974206,
+      "fractional": 0.2789373989889998,
+      "tail_fraction": 0.04735277516462841,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s4.json"
+    },
+    {
+      "cell": "162",
+      "probe": "ridge",
+      "seed": 4,
+      "arm": "l162-s4",
+      "sigma_eff": 0.33095460123826353,
+      "sigma68_central": 0.33354850176007644,
+      "sd": 0.6290035973489196,
+      "median": -0.03377501647616493,
+      "fractional": 0.39229658233257,
+      "tail_fraction": 0.06303668861712136,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s4.json"
+    },
+    {
+      "cell": "162",
+      "probe": "mlp",
+      "seed": 4,
+      "arm": "l162-s4",
+      "sigma_eff": 0.24471107521296973,
+      "sigma68_central": 0.24809695426128223,
+      "sd": 0.5555002711200554,
+      "median": -0.00138518358602846,
+      "fractional": 0.27725223006026556,
+      "tail_fraction": 0.047076826591407966,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s4.json"
+    },
+    {
+      "cell": "43",
+      "probe": "ridge",
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "sigma_eff": 0.32506664394303875,
+      "sigma68_central": 0.328134466730291,
+      "sd": 0.6174531339048285,
+      "median": -0.02126182670449356,
+      "fractional": 0.38412288631388164,
+      "tail_fraction": 0.05986077140169332,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s4.json"
+    },
+    {
+      "cell": "43",
+      "probe": "mlp",
+      "seed": 4,
+      "arm": "r42q1-s4",
+      "sigma_eff": 0.24058195215174596,
+      "sigma68_central": 0.24379489272977187,
+      "sd": 0.5504324095033133,
+      "median": -0.005999215362485225,
+      "fractional": 0.2719891718075024,
+      "tail_fraction": 0.04519535904672311,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s4.json"
+    },
+    {
+      "cell": "17",
+      "probe": "ridge",
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "sigma_eff": 0.2939047083304158,
+      "sigma68_central": 0.2969426430795852,
+      "sd": 0.5990332778891743,
+      "median": -0.022460001129740226,
+      "fractional": 0.3416560489304122,
+      "tail_fraction": 0.055139542176230794,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s4.json"
+    },
+    {
+      "cell": "17",
+      "probe": "mlp",
+      "seed": 4,
+      "arm": "r16q1-s4",
+      "sigma_eff": 0.23442879381744966,
+      "sigma68_central": 0.23799108309761668,
+      "sd": 0.5429983997127401,
+      "median": -0.008794286039282936,
+      "fractional": 0.26418645133954943,
+      "tail_fraction": 0.04385073690812167,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s4.json"
+    },
+    {
+      "cell": "162+mass",
+      "probe": "ridge",
+      "seed": 4,
+      "arm": "l162mass-s4",
+      "sigma_eff": 0.22355363519662408,
+      "sigma68_central": 0.22757129811423776,
+      "sd": 0.49316231792000814,
+      "median": 0.003438024197025713,
+      "fractional": 0.2505127099728809,
+      "tail_fraction": 0.03352273439949827,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s4.json"
+    },
+    {
+      "cell": "162+mass",
+      "probe": "mlp",
+      "seed": 4,
+      "arm": "l162mass-s4",
+      "sigma_eff": 0.1941736385581131,
+      "sigma68_central": 0.19907474628632016,
+      "sd": 0.48278240843665443,
+      "median": 0.005760313151973916,
+      "fractional": 0.2143071151879887,
+      "tail_fraction": 0.034195045468799,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s4.json"
+    },
+    {
+      "cell": "17+mass",
+      "probe": "ridge",
+      "seed": 4,
+      "arm": "r16q1mass-s4",
+      "sigma_eff": 0.22145746278804612,
+      "sigma68_central": 0.22644917444267942,
+      "sd": 0.49240965818522364,
+      "median": 0.00580322290256334,
+      "fractional": 0.24789416515317092,
+      "tail_fraction": 0.03307870805895265,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s4.json"
+    },
+    {
+      "cell": "17+mass",
+      "probe": "mlp",
+      "seed": 4,
+      "arm": "r16q1mass-s4",
+      "sigma_eff": 0.19531845275520138,
+      "sigma68_central": 0.19960375310117895,
+      "sd": 0.48292752357739616,
+      "median": 0.009866525760117761,
+      "fractional": 0.21569806725200133,
+      "tail_fraction": 0.03373847601128881,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s4.json"
+    },
+    {
+      "cell": "188",
+      "probe": "ridge",
+      "seed": 5,
+      "arm": "l188-s5",
+      "sigma_eff": 0.33958386812612007,
+      "sigma68_central": 0.34278224593186324,
+      "sd": 0.6311454238965607,
+      "median": -0.030223421868105727,
+      "fractional": 0.40436306871754996,
+      "tail_fraction": 0.06450172467858263,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s5.json"
+    },
+    {
+      "cell": "188",
+      "probe": "mlp",
+      "seed": 5,
+      "arm": "l188-s5",
+      "sigma_eff": 0.2485460967543761,
+      "sigma68_central": 0.25288086140618365,
+      "sd": 0.5582744370354723,
+      "median": -0.005997187638121654,
+      "fractional": 0.28215992441820015,
+      "tail_fraction": 0.048057698338037004,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s5.json"
+    },
+    {
+      "cell": "162",
+      "probe": "ridge",
+      "seed": 5,
+      "arm": "l162-s5",
+      "sigma_eff": 0.33494165960535915,
+      "sigma68_central": 0.3379607097335933,
+      "sd": 0.629650263331813,
+      "median": -0.03273292944984185,
+      "fractional": 0.3978588312076786,
+      "tail_fraction": 0.06371903417999372,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s5.json"
+    },
+    {
+      "cell": "162",
+      "probe": "mlp",
+      "seed": 5,
+      "arm": "l162-s5",
+      "sigma_eff": 0.24612853210885263,
+      "sigma68_central": 0.24963180383386685,
+      "sd": 0.5582134959196654,
+      "median": -0.005976393128234614,
+      "fractional": 0.27906396376542103,
+      "tail_fraction": 0.04800752587017874,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s5.json"
+    },
+    {
+      "cell": "43",
+      "probe": "ridge",
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "sigma_eff": 0.3230878961919184,
+      "sigma68_central": 0.32634172913723847,
+      "sd": 0.6217196552726045,
+      "median": -0.029208240282330156,
+      "fractional": 0.38138676420580864,
+      "tail_fraction": 0.06039009093759799,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s5.json"
+    },
+    {
+      "cell": "43",
+      "probe": "mlp",
+      "seed": 5,
+      "arm": "r42q1-s5",
+      "sigma_eff": 0.24135169072751242,
+      "sigma68_central": 0.24483619149388258,
+      "sd": 0.5536314082106624,
+      "median": -0.0072307421619011575,
+      "fractional": 0.2729686478628904,
+      "tail_fraction": 0.04653245531514581,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s5.json"
+    },
+    {
+      "cell": "17",
+      "probe": "ridge",
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "sigma_eff": 0.2933319371515322,
+      "sigma68_central": 0.29673972941614873,
+      "sd": 0.5955689271671555,
+      "median": -0.019438645982676257,
+      "fractional": 0.3408878070480172,
+      "tail_fraction": 0.054364377547820635,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s5.json"
+    },
+    {
+      "cell": "17",
+      "probe": "mlp",
+      "seed": 5,
+      "arm": "r16q1-s5",
+      "sigma_eff": 0.23382851564760504,
+      "sigma68_central": 0.23744790966068097,
+      "sd": 0.5421054392958288,
+      "median": -0.007121428049992259,
+      "fractional": 0.263427815529235,
+      "tail_fraction": 0.04369520225776105,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s5.json"
+    },
+    {
+      "cell": "162+mass",
+      "probe": "ridge",
+      "seed": 5,
+      "arm": "l162mass-s5",
+      "sigma_eff": 0.22597079213522292,
+      "sigma68_central": 0.2302357866704109,
+      "sd": 0.4934828684198473,
+      "median": 0.0037570198125988497,
+      "fractional": 0.2535390515443748,
+      "tail_fraction": 0.03379617434932581,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s5.json"
+    },
+    {
+      "cell": "162+mass",
+      "probe": "mlp",
+      "seed": 5,
+      "arm": "l162mass-s5",
+      "sigma_eff": 0.19442071023924856,
+      "sigma68_central": 0.1990817134182467,
+      "sd": 0.4823173100996055,
+      "median": 0.006649039059916886,
+      "fractional": 0.2146071731547397,
+      "tail_fraction": 0.034114769520225775,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s5.json"
+    },
+    {
+      "cell": "17+mass",
+      "probe": "ridge",
+      "seed": 5,
+      "arm": "r16q1mass-s5",
+      "sigma_eff": 0.21590427776816817,
+      "sigma68_central": 0.22102275020215187,
+      "sd": 0.4899650373535085,
+      "median": 0.00511047118814098,
+      "fractional": 0.2409835835967933,
+      "tail_fraction": 0.03317403574788335,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s5.json"
+    },
+    {
+      "cell": "17+mass",
+      "probe": "mlp",
+      "seed": 5,
+      "arm": "r16q1mass-s5",
+      "sigma_eff": 0.19540504731352182,
+      "sigma68_central": 0.19994183765084306,
+      "sd": 0.4823375359703591,
+      "median": 0.011214132636882992,
+      "fractional": 0.21580334464734502,
+      "tail_fraction": 0.03393164001254312,
+      "target_sigma_eff": 0.2986301355609203,
+      "file": "experiments/FIGS/data/mass_resolution/s5.json"
+    }
+  ]
+}

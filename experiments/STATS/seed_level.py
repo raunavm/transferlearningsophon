@@ -831,6 +831,22 @@ def massres_diff(cells, kind, a_cell, b_cell, seeds) -> dict:
             "d": [_mcell(cells, b_cell, kind, s) - _mcell(cells, a_cell, kind, s) for s in used]}
 
 
+def _did_direction(did: dict) -> str:
+    """Say which way a failed directional clause failed.
+
+    "not confirmed" is one of the four permitted verdicts and it has to cover
+    both "we found nothing" and "we found the opposite", which are not the same
+    finding. The verdict stays as the vocabulary allows; the detail says which.
+    """
+    if not did.get("estimable"):
+        return "not estimable"
+    if did["mean_diff"] > 0:
+        return f"as predicted, larger at 17 classes by {did['mean_diff']:+.4f}"
+    return ("REVERSED: the gain is larger at 162 classes, "
+            + ("significantly" if did["p"] < ALPHA else "but not significantly")
+            + f" (difference-in-differences {did['mean_diff']:+.4f}, p={_p(did['p'])})")
+
+
 def s7_analysis(cells, seeds) -> dict:
     """S7's three clauses, each tested and each reported separately.
 
@@ -874,11 +890,14 @@ def s7_analysis(cells, seeds) -> dict:
                  "paired difference-in-differences",
                  "confirmed" if (lin["did"].get("estimable") and lin["did"]["mean_diff"] > 0
                                  and lin["did"]["p"] < ALPHA) else "not confirmed",
-                 lin["did"].get("p")),
+                 lin["did"].get("p"), _did_direction(lin["did"])),
           clause(3, "without the mass output, finer labels give equal or better resolution",
                  "one-sided: a violation is a coarser level significantly better",
                  "confirmed" if lin["n_violations"] == 0 else "not confirmed",
-                 None, f"{lin['n_violations']} of {len(lin['ladder_pairs'])} pairs violate")]
+                 None,
+                 f"{lin['n_violations']} of {len(lin['ladder_pairs'])} pairs violate"
+                 + (" -- the ordering is INVERTED: coarser labels give better resolution"
+                    if lin["n_violations"] == len(lin["ladder_pairs"]) else ""))]
     return {**out, **compose(
         "resolution improves with the mass output at both granularities; larger gain at "
         "17 classes; without the mass output, finer labels give equal or better resolution",
