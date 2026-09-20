@@ -1192,3 +1192,159 @@ def test_the_exploratory_lines_carry_the_nonlinear_probe_too(tmp_path):
     _, out = run(lad, tmp_path / "o", "--mass", str(mass))
     block = out.split("EXPLORATORY")[1].split("Holm over")[0]
     assert block.count("mlp") == 5, "one nonlinear line per exploratory task"
+
+
+# ------------------------------------- S7: frozen-feature mass regression
+
+def massres_doc(seed, sigma, sha=SHA, stat="sigma_eff = half the SMALLEST interval",
+                centering="per-188-native-class mean", arms=None):
+    """One mass_resolution.json. `sigma(cell, probe)` -> the resolution."""
+    arms = arms or {f"l188-s{seed}": "188",
+                    f"l162-s{seed}" + ("b" if seed == 1 else ""): "162",
+                    f"r42q1-s{seed}": "43", f"r16q1-s{seed}": "17",
+                    f"l162mass-s{seed}": "162+mass", f"r16q1mass-s{seed}": "17+mass"}
+
+    def block(cell, kind):
+        s = sigma(cell, kind, seed)
+        return {"sigma_eff": s, "sigma_eff_interval": [-s, s], "sigma68_central": s * 1.02,
+                "sd": s * 1.3, "median": 0.0, "mode_of_eff_interval": 0.0,
+                "fractional": math.expm1(s), "tail_fraction": 0.01, "tail_at": 1.0, "n": 1000}
+    return {"row_alignment_sha256": sha, "resolution_statistic": stat, "centering": centering,
+            "tail_at": 1.0, "n_jets_valid": 1_993_321, "n_classes_used": 184,
+            "arms": {a: {**{k: block(c, k) for k in S.MASSRES_PROBES},
+                         "target": block("target", "ridge")} for a, c in arms.items()}}
+
+
+def write_massres(root, sigma, seeds=(1, 2, 3, 4, 5), **kw):
+    for s in seeds:
+        d = root / f"s{s}"
+        d.mkdir(parents=True)
+        (d / "mass_resolution.json").write_text(json.dumps(massres_doc(s, sigma, **kw)))
+    return root
+
+
+def massres_sigma(gain_162=0.0, gain_17=0.0, ladder=None, noise=0.002, rng_seed=21):
+    """Base resolution per cell plus a planted effect of adding the mass output."""
+    rng = np.random.default_rng(rng_seed)
+    base = dict(ladder or {"188": 0.30, "162": 0.31, "43": 0.33, "17": 0.36})
+    base["162+mass"] = base["162"] + gain_162
+    base["17+mass"] = base["17"] + gain_17
+    base["target"] = 1.0
+    jit = {}
+
+    def sigma(cell, kind, seed):
+        # jitter MUST vary by seed: the contrasts are paired across seeds, and a
+        # fixture with no seed-to-seed variation has zero paired variance and is
+        # not estimable at all -- it would exercise the "not run" path instead.
+        key = (cell, kind, seed)
+        if key not in jit:
+            jit[key] = float(rng.normal(0, noise))
+        return base[cell] + jit[key] + (0.01 if kind == "mlp" else 0.0)
+    return sigma
+
+
+def s7_of(root, extra=()):
+    buf = io.StringIO()
+    out = root.parent / ("o7_" + root.name)
+    with contextlib.redirect_stdout(buf):
+        assert S.main(["--out", str(out), "--mass-resolution", str(root), *extra]) == 0
+    return json.loads((out / "s7_mass_resolution.json").read_text()), buf.getvalue()
+
+
+def test_the_mass_resolution_parser_takes_six_cells_and_refuses_the_rest():
+    for a, want in (("l188-s2", ("188", 2)), ("l162-s1b", ("162", 1)), ("r42q1-s3", ("43", 3)),
+                    ("r16q1-s5", ("17", 5)), ("l162mass-s4", ("162+mass", 4)),
+                    ("r16q1mass-s1", ("17+mass", 1))):
+        assert S.parse_massres_arm(a) == want
+    for bad in ("rand-d1", "l162_mass-s1", "mpm-s1", "l188-s0", "l188"):
+        with pytest.raises(SystemExit, match="does not parse"):
+            S.parse_massres_arm(bad)
+
+
+def test_s7_confirms_all_three_clauses_when_the_prediction_is_planted(tmp_path):
+    """Planted exactly as S7 predicts: the mass output improves resolution at both
+    granularities (negative gain) and improves it more at 17, with the plain
+    ladder ordered finer-is-better."""
+    root = write_massres(tmp_path / "in", massres_sigma(gain_162=-0.01, gain_17=-0.04))
+    res, out = s7_of(root)
+    s7 = res["secondary"]["S7"]
+    assert [c["verdict"] for c in s7["clauses"]] == ["confirmed"] * 3
+    assert s7["composite_verdict"].lower().startswith("confirmed")
+    lin = s7["probes"]["ridge"]
+    assert lin["gain_by_level"]["162"]["mean_diff"] == pytest.approx(-0.01, abs=0.004)
+    assert lin["gain_by_level"]["17"]["mean_diff"] == pytest.approx(-0.04, abs=0.004)
+    assert lin["did"]["mean_diff"] == pytest.approx(0.03, abs=0.006)
+    assert lin["n_violations"] == 0
+
+
+def test_s7_clause_one_fails_when_the_mass_output_makes_resolution_worse(tmp_path):
+    """The direction that C5 actually found on the classification probe. S7's
+    first clause has to be able to fail, and to fail on its own."""
+    root = write_massres(tmp_path / "in", massres_sigma(gain_162=+0.01, gain_17=+0.04))
+    s7 = s7_of(root)[0]["secondary"]["S7"]
+    assert s7["clauses"][0]["verdict"] == "not confirmed"
+    assert s7["probes"]["ridge"]["gain_by_level"]["17"]["mean_diff"] > 0
+
+
+def test_s7_clause_three_fires_only_when_a_coarser_level_is_significantly_better(tmp_path):
+    """"Equal or better" is one-sided and permissive: two levels being alike does
+    NOT violate it. Only a coarser model genuinely beating a finer one does."""
+    ok = write_massres(tmp_path / "flat", massres_sigma(
+        ladder={"188": 0.31, "162": 0.31, "43": 0.31, "17": 0.31}))
+    assert s7_of(ok)[0]["secondary"]["S7"]["clauses"][2]["verdict"] == "confirmed", \
+        "levels that are alike must not count as a violation"
+    bad = write_massres(tmp_path / "inverted", massres_sigma(
+        ladder={"188": 0.40, "162": 0.38, "43": 0.33, "17": 0.30}))
+    res, out = s7_of(bad)
+    s7 = res["secondary"]["S7"]
+    assert s7["clauses"][2]["verdict"] == "not confirmed"
+    assert s7["probes"]["ridge"]["n_violations"] > 0
+    assert "VIOLATION" in out, "a violated ordering must be named in the report"
+
+
+def test_s7_reports_both_probes(tmp_path):
+    root = write_massres(tmp_path / "in", massres_sigma(gain_17=-0.04))
+    s7 = s7_of(root)[0]["secondary"]["S7"]
+    assert set(S.MASSRES_PROBES) == set(s7["probes"])
+    for k in S.MASSRES_PROBES:
+        assert s7["probes"][k]["did"]["estimable"]
+
+
+def test_s7_does_not_join_the_secondary_holm_table(tmp_path):
+    """PRESPEC 2.5 fixes that table at m = 3 -- S1 and the two S2 tasks on the
+    linear probe. Enlarging it after its members were computed would change their
+    adjusted verdicts, which is exactly what a pre-registration forbids."""
+    lad = write_ladder(tmp_path / "lad", ladder_values(step=1.0))
+    root = write_massres(tmp_path / "in", massres_sigma(gain_17=-0.04))
+    buf = io.StringIO()
+    out = tmp_path / "both"
+    with contextlib.redirect_stdout(buf):
+        assert S.main([str(lad), "--out", str(out), "--mass-resolution", str(root)]) == 0
+    lad_res = json.loads((out / "seed_level_results.json").read_text())
+    sec = lad_res["secondary"]["holm_family"]
+    assert [h["test"] for h in sec] == ["S1 bvc_qcd", "S2 retained_topology", "S2 ee_vs_mm"]
+    assert all(h["family_size"] == 3 for h in sec)
+    assert "S7" not in json.dumps([h["test"] for h in sec])
+    assert (out / "s7_mass_resolution.json").exists(), "S7 writes its own file"
+    assert "not in the secondary holm table" in buf.getvalue().lower()
+
+
+def test_s7_refuses_inputs_that_measured_resolution_differently(tmp_path):
+    root = tmp_path / "in"
+    (root / "s1").mkdir(parents=True)
+    (root / "s1" / "mass_resolution.json").write_text(json.dumps(massres_doc(1, massres_sigma())))
+    (root / "s2").mkdir(parents=True)
+    (root / "s2" / "mass_resolution.json").write_text(json.dumps(
+        massres_doc(2, massres_sigma(), stat="sigma68_central = (q84-q16)/2")))
+    with pytest.raises(SystemExit, match="resolution_statistic"):
+        S.load_mass_resolution(root)
+
+
+def test_s7_refuses_inputs_scored_on_different_jets(tmp_path):
+    root = tmp_path / "in"
+    for s, sha in ((1, SHA), (2, "ef" * 32)):
+        (root / f"s{s}").mkdir(parents=True)
+        (root / f"s{s}" / "mass_resolution.json").write_text(
+            json.dumps(massres_doc(s, massres_sigma(), sha=sha)))
+    with pytest.raises(SystemExit, match="row_alignment_sha256"):
+        S.load_mass_resolution(root)

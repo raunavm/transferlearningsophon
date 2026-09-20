@@ -746,6 +746,145 @@ def c1_clauses(trend: dict, equal: dict, holm_entry: dict, family_size: int) -> 
 
 # The eight rungs of the contraction tree, FINE -> COARSE (docs/DECISIONS.md D3;
 # the same order experiments/EVAL/label_recovery.py writes).
+# ------------------------------------- S7: frozen-feature mass regression
+
+# The six cells the readout produces: the four plain granularities and the two
+# that have a mass twin. Strings again, and for the same reason as the 2x2 --
+# a mass-output model and its twin share a granularity.
+MASSRES_CELL = {"l188": "188", "l162": "162", "r42q1": "43", "r16q1": "17",
+                "l162mass": "162+mass", "r16q1mass": "17+mass"}
+MASSRES_ARM_RE = re.compile(r"^(l162mass|r16q1mass|l188|l162|r42q1|r16q1)-s([1-9]\d*)$")
+MASSRES_FILE = "mass_resolution.json"
+MASSRES_PROBES = ("ridge", "mlp")       # the readout's own names for linear / nonlinear
+# The pre-registered statistic (PRESPEC amendment 2026-09-20): half the smallest
+# interval containing 68 % of the residual area. Lower is better.
+MASSRES_ENDPOINT = "sigma_eff"
+S7_PAIRS = [(162, "162+mass"), (17, "17+mass")]
+
+
+def parse_massres_arm(name: str) -> tuple[str, int]:
+    m = MASSRES_ARM_RE.match(ARM_ALIAS.get(name, name))
+    if not m:
+        raise SystemExit(f"FATAL: arm name {name!r} does not parse as "
+                         f"<{'|'.join(MASSRES_CELL)}>-s<seed index>. An unrecognised arm "
+                         f"must not be silently dropped from the mass-regression readout.")
+    return MASSRES_CELL[m.group(1)], int(m.group(2))
+
+
+def load_mass_resolution(src) -> dict:
+    """Tidy table: one row per (cell, seed, probe) of the mass-regression readout.
+
+    Refuses on a disagreeing row alignment, an unparseable arm or a duplicated
+    cell, exactly as the probe loader does. Also refuses if the files disagree
+    on the resolution statistic or the centering, because two files that
+    measured resolution differently cannot be paired.
+    """
+    paths = [pathlib.Path(p) for p in ([src] if isinstance(src, (str, pathlib.Path)) else src)]
+    if len(paths) == 1 and paths[0].is_dir():
+        paths = sorted(paths[0].glob(f"s*/{MASSRES_FILE}")) or sorted(paths[0].glob("s*.json"))
+    if not paths:
+        raise SystemExit(f"FATAL: no {MASSRES_FILE} found under {src}")
+    docs = {p: json.loads(p.read_text()) for p in paths}
+    for key in ("row_alignment_sha256", "resolution_statistic", "centering", "tail_at"):
+        seen = {str(p): d.get(key) for p, d in docs.items()}
+        if None in seen.values() or len(set(map(str, seen.values()))) != 1:
+            raise SystemExit(f"FATAL: mass-regression inputs disagree on (or lack) `{key}`; "
+                             f"they did not measure the same quantity.\n"
+                             + "\n".join(f"  {p}: {v}" for p, v in seen.items()))
+    rows, keys = [], set()
+    for p, d in docs.items():
+        for arm, entry in d["arms"].items():
+            cell, seed = parse_massres_arm(arm)
+            for kind in MASSRES_PROBES:
+                if (cell, kind, seed) in keys:
+                    raise SystemExit(f"FATAL: duplicated cell {cell} probe={kind} "
+                                     f"seed={seed} (arm {arm!r} in {p})")
+                keys.add((cell, kind, seed))
+                e = entry[kind]
+                rows.append({"cell": cell, "probe": kind, "seed": seed, "arm": arm,
+                             MASSRES_ENDPOINT: float(e[MASSRES_ENDPOINT]),
+                             "sigma68_central": float(e["sigma68_central"]),
+                             "sd": float(e["sd"]), "median": float(e["median"]),
+                             "fractional": float(e["fractional"]),
+                             "tail_fraction": float(e["tail_fraction"]),
+                             "target_sigma_eff": float(entry["target"][MASSRES_ENDPOINT]),
+                             "file": str(p)})
+    first = next(iter(docs.values()))
+    return {"rows": rows, "files": [{"path": str(p), "sha256": _sha(p)} for p in paths],
+            "row_alignment_sha256": first["row_alignment_sha256"],
+            "resolution_statistic": first["resolution_statistic"],
+            "centering": first["centering"],
+            "n_jets_valid": first.get("n_jets_valid"),
+            "n_classes_used": first.get("n_classes_used")}
+
+
+def _mcell(cells, cell, kind, seed):
+    r = cells.get((cell, kind, seed))
+    return None if r is None else r[MASSRES_ENDPOINT]
+
+
+def massres_diff(cells, kind, a_cell, b_cell, seeds) -> dict:
+    """(b - a) by seed index. Lower sigma_eff is better, so negative = b is better."""
+    used = [s for s in seeds if _mcell(cells, a_cell, kind, s) is not None
+            and _mcell(cells, b_cell, kind, s) is not None]
+    return {"seeds": used, "is_bound": False,
+            "d": [_mcell(cells, b_cell, kind, s) - _mcell(cells, a_cell, kind, s) for s in used]}
+
+
+def s7_analysis(cells, seeds) -> dict:
+    """S7's three clauses, each tested and each reported separately.
+
+    The prediction is a conjunction of three different claims and they do not
+    stand or fall together, so a single verdict would hide which part failed --
+    the same reason C1 is reported in clauses.
+
+    Clause 3 is "without the mass output, finer labels give EQUAL OR BETTER
+    resolution". That is one-sided and permissive: it is violated only by a
+    COARSER model being significantly BETTER, not by two levels being alike. So
+    it is tested as the absence of such a violation, not as a trend.
+    """
+    out = {"statistic": MASSRES_ENDPOINT, "lower_is_better": True, "probes": {}}
+    for kind in MASSRES_PROBES:
+        gains = {str(lv): pair_contrast(massres_diff(cells, kind, str(lv), mass, seeds))
+                 for lv, mass in S7_PAIRS}
+        did = pair_contrast({
+            "seeds": massres_diff(cells, kind, "162", "162+mass", seeds)["seeds"],
+            "is_bound": False,
+            "d": [a - b for a, b in zip(massres_diff(cells, kind, "162", "162+mass", seeds)["d"],
+                                        massres_diff(cells, kind, "17", "17+mass", seeds)["d"])]})
+        ladder = []
+        for i, fine in enumerate(LEVELS):
+            for coarse in LEVELS[i + 1:]:
+                c = pair_contrast(massres_diff(cells, kind, str(fine), str(coarse), seeds))
+                # violation = the COARSER model is better, and significantly so
+                c.update({"fine": fine, "coarse": coarse,
+                          "violation": bool(c.get("estimable") and c["mean_diff"] < 0
+                                            and c["p"] < ALPHA)})
+                ladder.append(c)
+        out["probes"][kind] = {"gain_by_level": gains, "did": did, "ladder_pairs": ladder,
+                               "n_violations": sum(c["violation"] for c in ladder)}
+    lin = out["probes"]["ridge"]
+    cl = [clause(1, "the mass output improves resolution at both granularities",
+                 "paired difference in sigma_eff at each granularity, intersection-union",
+                 "confirmed" if all(g.get("estimable") and g["mean_diff"] < 0 and g["p"] < ALPHA
+                                    for g in lin["gain_by_level"].values()) else "not confirmed",
+                 max((g.get("p") for g in lin["gain_by_level"].values() if g.get("estimable")),
+                     default=None)),
+          clause(2, "the gain is larger at 17 classes than at 162",
+                 "paired difference-in-differences",
+                 "confirmed" if (lin["did"].get("estimable") and lin["did"]["mean_diff"] > 0
+                                 and lin["did"]["p"] < ALPHA) else "not confirmed",
+                 lin["did"].get("p")),
+          clause(3, "without the mass output, finer labels give equal or better resolution",
+                 "one-sided: a violation is a coarser level significantly better",
+                 "confirmed" if lin["n_violations"] == 0 else "not confirmed",
+                 None, f"{lin['n_violations']} of {len(lin['ladder_pairs'])} pairs violate")]
+    return {**out, **compose(
+        "resolution improves with the mass output at both granularities; larger gain at "
+        "17 classes; without the mass output, finer labels give equal or better resolution",
+        cl)}
+
+
 RUNGS = ("L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1", "R3_VIS", "R1_Q1")
 RECOVERY_FILE = "label_recovery.json"
 # S9's endpoint is NOT the ladder's. Balanced accuracy is higher-is-better, and
@@ -1416,6 +1555,60 @@ def run_ladder(a, argv=None) -> int:
     return 0
 
 
+def format_s7(s7: dict) -> list[str]:
+    out = ["\n== 4. S7: FROZEN-FEATURE JET-MASS REGRESSION (PRESPEC_2026-09 §3, "
+           "amendment 2026-09-20) ==",
+           f"  statistic: {s7['statistic']} = half the smallest interval holding 68 % of the "
+           f"residual area; LOWER IS BETTER",
+           "  NOT in the secondary Holm table: PRESPEC 2.5 fixes that table at m = 3 "
+           "(S1 and the two S2 tasks).",
+           "  S7 is corrected within itself, as 2.7 directs for everything outside the "
+           "confirmatory family."]
+    for kind in MASSRES_PROBES:
+        b = s7["probes"][kind]
+        out.append(f"    {kind}:")
+        for lv, _ in S7_PAIRS:
+            out.append(format_did(f"gain at {lv} classes", b["gain_by_level"][str(lv)]))
+        out.append(format_did("DiD (162 - 17)", b["did"]))
+        out.append(f"      ladder without the mass output: {b['n_violations']} of "
+                   f"{len(b['ladder_pairs'])} pairs show a coarser level significantly better")
+        for c in b["ladder_pairs"]:
+            if c["violation"]:
+                out.append(f"        VIOLATION {c['coarse']} beats {c['fine']} "
+                           f"diff={c['mean_diff']:+.4f} p={_p(c['p'])}")
+    out += format_clauses("S7", s7)
+    return out
+
+
+def run_s7(a, argv=None) -> int:
+    """S7 on the mass-regression readout. Its own inputs, its own output file."""
+    out_file = _refuse_overwrite(pathlib.Path(a.out) / "s7_mass_resolution.json")
+    data = load_mass_resolution(a.mass_resolution)
+    all_seeds = sorted(set(EXPECTED_SEEDS) | {r["seed"] for r in data["rows"]})
+    seeds = [s for s in all_seeds if s not in a.drop_pairs]
+    cells = {(r["cell"], r["probe"], r["seed"]): r for r in data["rows"]
+             if r["seed"] not in a.drop_pairs}
+    s7 = s7_analysis(cells, seeds)
+    res = {"provenance": {
+               "inputs": data["files"], "script_sha256": _sha(__file__),
+               "prespec_sha256": _sha(PRESPEC) if PRESPEC.exists() else None,
+               "stats_modules_sha256": {m: _sha(REPO / m) for m in STATS_MODULES},
+               "row_alignment_sha256": data["row_alignment_sha256"],
+               "resolution_statistic": data["resolution_statistic"],
+               "centering": data["centering"], "n_jets_valid": data["n_jets_valid"],
+               "n_classes_used": data["n_classes_used"], "argv": list(argv or sys.argv[1:])},
+           "dropped_pairs": {"seeds": a.drop_pairs, "reason": a.drop_reason},
+           "secondary": {"S7": s7}, "table": data["rows"]}
+    print(f"  inputs: {len(data['files'])} file(s); row alignment "
+          f"{data['row_alignment_sha256'][:16]}; {data['n_jets_valid']:,} jets with a matched "
+          f"generator-level groomed mass; {data['n_classes_used']} native classes")
+    print("\n".join(format_s7(s7)))
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(json.dumps(res, indent=2))
+    print(f"\nwrote {out_file}")
+    return 0
+
+
 def run_s9(a, argv=None) -> int:
     """S9 on the label-recovery ladder. Its own inputs, its own output file."""
     out_file = _refuse_overwrite(pathlib.Path(a.out) / "s9_label_recovery.json")
@@ -1465,6 +1658,10 @@ def main(argv=None) -> int:
                     help="C5: a directory holding s*/probe_results.json for the granularity x "
                          "mass-output 2x2, or the files. Reported inside the ladder's "
                          "confirmatory block; without it C5 stays pending")
+    ap.add_argument("--mass-resolution", nargs="+", default=None, metavar="PATH",
+                    help="S7: a directory holding s*/mass_resolution.json, or the files. "
+                         "Written to s7_mass_resolution.json in --out; the ladder inputs are "
+                         "optional when this is given")
     a = ap.parse_args(argv)
     if a.mass and not a.inputs:
         ap.error("--mass reports C5 inside the ladder's confirmatory family, so it needs the "
@@ -1472,10 +1669,12 @@ def main(argv=None) -> int:
     if a.drop_pairs and not a.drop_reason:
         raise SystemExit("FATAL: --drop-pairs needs --drop-reason; a dropped pair is reported "
                          "with why it was dropped (PRESPEC 2.2)")
-    if not a.inputs and not a.label_recovery:
-        ap.error("give the probe_results.json inputs, --label-recovery, or both")
+    if not a.inputs and not a.label_recovery and not a.mass_resolution:
+        ap.error("give the probe_results.json inputs, --label-recovery, --mass-resolution, "
+                 "or a combination")
     rc = run_ladder(a, argv) if a.inputs else 0
-    return rc or (run_s9(a, argv) if a.label_recovery else 0)
+    rc = rc or (run_s9(a, argv) if a.label_recovery else 0)
+    return rc or (run_s7(a, argv) if a.mass_resolution else 0)
 
 
 if __name__ == "__main__":
