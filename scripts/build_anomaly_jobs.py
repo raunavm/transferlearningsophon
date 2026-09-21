@@ -142,7 +142,9 @@ TEMPLATE_MODEL = Model("L162", "2", 162)
 # seed 5 in flight since 2026-09-17. The two granularities the approved plan
 # adds have NO coverage at all, which is why they lead the launch order.
 MODELS = [
-    *[Model("L188", str(s), 188) for s in range(1, 6)],
+    # Seed 1 is listed at the bottom, versioned, because its first attempt is
+    # dead. It is REPLACED there, not joined -- see that entry.
+    *[Model("L188", str(s), 188) for s in range(2, 6)],
     *[Model("R42_Q1", str(s), 43) for s in range(1, 6)],
     Model("L162", "5", 162),
     Model("R16_Q1", "1", 17),
@@ -163,6 +165,25 @@ MODELS = [
     #
     # Its logits already exist (1,296,000,128 B), so this one skips the build.
     Model("L162", "1b", 162, version="v2"),
+    # THE SECOND RE-RUN (2026-09-21). This entry REPLACES the unversioned
+    # 188-class seed-1 model in the comprehension above; it is not an addition
+    # beside it. Adding it beside was my first attempt and three tests caught
+    # it: `(rung, label)` must stay unique across MODELS or a granularity gains
+    # a phantom seed, which is the exact miscount the versioning scheme exists
+    # to prevent. There is still exactly ONE model scoring the 188-class seed-1
+    # checkpoint -- it just writes to a versioned directory now.
+    #
+    # eval-anomaly-l188-s1-raunav is FAILED,
+    # not slow: `BackoffLimitExceeded`, failed=3 against backoffLimit=2, no
+    # active pod. It lost its node twice to `TaintManagerEviction` and the
+    # third pod went Unknown at ~8 h, which exhausted a budget sized for one
+    # retry. Its artifact is PARTIAL -- no `null_unmeasured` key -- so it
+    # contributes nothing to a merge, and there is no resume: the ~50 h starts
+    # over. Versioned for the same two reasons as the 162-class re-run above:
+    # the directory moves so the partial artifact stays on disk as the record
+    # of what the failed attempts read, and the MODEL name does not, so this
+    # cannot read as a sixth 188-class seed.
+    Model("L188", "1", 188, version="v2"),
 ]
 
 # The only lines a generated spec may differ from the template on. Each entry is
@@ -413,20 +434,30 @@ def main(argv=None) -> int:
 
     verify_pin(a.pin, a.pin_not_yet_tagged)
 
-    known = {m.run: m for m in MODELS}
+    # KEYED ON `tag`, NOT ON `run`. Two models can share a run directory -- a
+    # re-run scores the SAME checkpoint, which is why `run` is deliberately not
+    # versioned -- so `{m.run: m}` silently dropped one of them and made
+    # `--only` unable to name the re-run at all. `tag` is the versioned name and
+    # is unique by construction; the assert says so rather than trusting it.
+    known = {m.tag: m for m in MODELS}
+    assert len(known) == len(MODELS), "two models share a tag: " + str(
+        sorted({m.tag for m in MODELS if [x.tag for x in MODELS].count(m.tag) > 1}))
     chosen = MODELS
     if a.only is not None:
         unknown = [r for r in a.only if r not in known]
         if unknown:
-            sys.exit(f"FATAL: unknown run ids {unknown}")
+            sys.exit(f"FATAL: unknown run ids {sorted(unknown)}. "
+                     f"Known: {sorted(known)}")
         chosen = [known[r] for r in a.only]
 
-    done = {m.run: build(m, a.pin, a.check_only) for m in chosen}
+    done = {m.tag: build(m, a.pin, a.check_only) for m in chosen}
     for wave, runs in LAUNCH_WAVES:
         print(f"\nwave {wave}:")
+        # A wave names run directories, and a re-run adds a second model under
+        # the same one, so this resolves run -> every model that scores it.
         for run in runs:
-            if run in done:
-                print(f"  {known[run].job_spec.name:47s} {done[run]}")
+            for m in (x for x in MODELS if x.run == run and x.tag in done):
+                print(f"  {m.job_spec.name:47s} {done[m.tag]}")
     print("\nmerge when every wave is Complete: "
           "job-eval-anomaly-merge-v4-raunav.yaml")
     return 0

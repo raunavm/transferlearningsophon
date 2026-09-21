@@ -106,7 +106,7 @@ spec:
                    /data/results/eval/anomaly_l162-s3 \
                    /data/results/eval/anomaly_l162-s4 \
                    /data/results/eval/anomaly_l162-s5 \
-                   /data/results/eval/anomaly_l188-s1 \
+                   /data/results/eval/anomaly_l188-s1-v2 \
                    /data/results/eval/anomaly_l188-s2 \
                    /data/results/eval/anomaly_l188-s3 \
                    /data/results/eval/anomaly_l188-s4 \
