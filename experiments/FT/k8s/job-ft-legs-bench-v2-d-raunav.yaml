@@ -131,6 +131,22 @@ spec:
           # parens reach the shell as syntax.
           HEAD_MULT=(--optimizer-option lr_mult "(r'mod\.fc\..*', 50)")
 
+          # CELL ORDER: smoke cell, then every full-training-set cell, then the
+          # rest. The two confirmatory benchmark predictions (C2 on quark/gluon
+          # and C3 on top tagging, docs/PRESPEC_2026-09.md 3) are BOTH defined
+          # on the full training set only. Walking sizes ascending inside a
+          # dataset loop -- which is what the grid literally is -- puts them
+          # last, and puts C2 behind the whole top-tagging block, so an
+          # interrupted wave yields a pile of small-N cells and NEITHER
+          # confirmatory result. The order below is the only thing that
+          # changes: same cells, same recipe, same seeds, same sizes_for
+          # string. The smoke cell stays first so the cheapest cell still
+          # proves the pipeline before a ~3 h cell can fail late on a config
+          # error (plan section 5: "One smallest-size cell per dataset is
+          # smoke-tested first"). Re-walked cells are skipped by the DONE
+          # check below, so the passes cannot duplicate work.
+          SMOKE_NAME=$(set -- ${INITS}; echo ${1%%:*})
+          for PASS in smoke nmax rest; do
           for D in top qg; do
             SUB=$(src_for ${D})_sub; CFG=$(cfg_for ${D}); TEST=$(test_for ${D})
             NMAX=$(nmax_for ${D})
@@ -147,6 +163,11 @@ spec:
               fi
               for S in $(echo ${seeds} ${REPS} | tr ' ' '\n' | sort -nu); do
                 for N in $(sizes_for ${D}); do
+                case ${PASS} in
+                  smoke) { [ "${N}" = "1000" ] && [ "${name}" = "${SMOKE_NAME}" ]; } || continue ;;
+                  nmax)  [ "${N}" = "${NMAX}" ] || continue ;;
+                  rest)  [ "${N}" = "${NMAX}" ] && continue ;;
+                esac
                   # S is the TRAINING seed (head init, data order, dropout).
                   # DSEED indexes the data subset and is a different thing.
                   # Tying them together made "9 head re-initialisations" demand
@@ -229,6 +250,7 @@ spec:
                 done
               done
             done
+          done
           done
           echo "FT BENCH V2 ${SHARD} COMPLETE (${NLOCKED} cells left to another job)"
         resources:

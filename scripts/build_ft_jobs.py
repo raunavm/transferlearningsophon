@@ -332,12 +332,33 @@ LEGS_BENCH = PREAMBLE + """
           # parens reach the shell as syntax.
           HEAD_MULT=(--optimizer-option lr_mult "(r'mod\\.fc\\..*', __HEAD_MULT__)")
 
+          # CELL ORDER: smoke cell, then every full-training-set cell, then the
+          # rest. The two confirmatory benchmark predictions (C2 on quark/gluon
+          # and C3 on top tagging, docs/PRESPEC_2026-09.md 3) are BOTH defined
+          # on the full training set only. Walking sizes ascending inside a
+          # dataset loop -- which is what the grid literally is -- puts them
+          # last, and puts C2 behind the whole top-tagging block, so an
+          # interrupted wave yields a pile of small-N cells and NEITHER
+          # confirmatory result. The order below is the only thing that
+          # changes: same cells, same recipe, same seeds, same sizes_for
+          # string. The smoke cell stays first so the cheapest cell still
+          # proves the pipeline before a ~3 h cell can fail late on a config
+          # error (plan section 5: "One smallest-size cell per dataset is
+          # smoke-tested first"). Re-walked cells are skipped by the DONE
+          # check below, so the passes cannot duplicate work.
+          SMOKE_NAME=$(set -- ${INITS}; echo ${1%%:*})
+          for PASS in smoke nmax rest; do
           for D in __BENCH_SETS__; do
             SUB=$(src_for ${D})_sub; CFG=$(cfg_for ${D}); TEST=$(test_for ${D})
             NMAX=$(nmax_for ${D})
             for spec in ${INITS}; do
               name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}
               for N in $(sizes_for ${D}); do
+                case ${PASS} in
+                  smoke) { [ "${N}" = "1000" ] && [ "${name}" = "${SMOKE_NAME}" ]; } || continue ;;
+                  nmax)  [ "${N}" = "${NMAX}" ] || continue ;;
+                  rest)  [ "${N}" = "${NMAX}" ] && continue ;;
+                esac
                 # 9 head re-inits at N_max, top only, pretrained arms only --
                 # the benchmark's convention for the headline cell
                 # (docs/PRD_PLAN.md 4.1). Everywhere else the three
@@ -397,6 +418,7 @@ LEGS_BENCH = PREAMBLE + """
                 done
               done
             done
+          done
           done
           echo "FT BENCH LEGS COMPLETE"
 """
