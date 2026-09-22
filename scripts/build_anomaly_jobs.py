@@ -142,9 +142,10 @@ TEMPLATE_MODEL = Model("L162", "2", 162)
 # seed 5 in flight since 2026-09-17. The two granularities the approved plan
 # adds have NO coverage at all, which is why they lead the launch order.
 MODELS = [
-    # Seed 1 is listed at the bottom, versioned, because its first attempt is
-    # dead. It is REPLACED there, not joined -- see that entry.
-    *[Model("L188", str(s), 188) for s in range(2, 6)],
+    # Seeds 1 AND 2 are listed at the bottom, versioned, because both first
+    # attempts are dead. They are REPLACED there, not joined -- see those
+    # entries. Both lost their nodes to the same taint eviction.
+    *[Model("L188", str(s), 188) for s in range(3, 6)],
     *[Model("R42_Q1", str(s), 43) for s in range(1, 6)],
     Model("L162", "5", 162),
     Model("R16_Q1", "1", 17),
@@ -184,6 +185,20 @@ MODELS = [
     # of what the failed attempts read, and the MODEL name does not, so this
     # cannot read as a sixth 188-class seed.
     Model("L188", "1", 188, version="v2"),
+    # THE THIRD RE-RUN (2026-09-21, same cause, found in the same sweep).
+    # eval-anomaly-l188-s2-raunav is also FAILED -- BackoffLimitExceeded,
+    # failed=3 against backoffLimit=2 -- having lost its node to the same
+    # TaintManagerEviction wave as seed 1 and then had its replacement go
+    # Unknown at ~18 h. Its artifact is likewise partial. Replaces the
+    # unversioned seed-2 entry above, for the reasons on the seed-1 entry.
+    #
+    # THE RETRY BUDGET IS THE COMMON CAUSE AND IT IS NOT FIXED HERE.
+    # backoffLimit 2 was sized for one bad node, and this wave lost several at
+    # once. Raising it is NOT obviously right: this scoring has no resume, so
+    # every retry restarts ~50 h, and a larger budget spends more pod-hours
+    # rather than fewer. Left alone deliberately, and recorded so the next
+    # eviction wave is read as the same cause rather than a new mystery.
+    Model("L188", "2", 188, version="v2"),
 ]
 
 # The only lines a generated spec may differ from the template on. Each entry is
