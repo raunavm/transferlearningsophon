@@ -7,8 +7,12 @@ denominator for. `num_classes=None` and `fc_params=None` drop the classification
 head entirely -- weaver's ParticleTransformer then returns the pooled class token
 and never builds `fc` -- because MPM trains no classifier. The 2 class-attention
 blocks are still constructed and still receive gradients through nothing during
-pretraining; they are left in place so the checkpoint's state_dict is a superset
-of a supervised arm's trunk and loads into it with `strict=False`.
+pretraining, so the checkpoint holds only this run's random initialisation for
+them. The checkpoint does NOT load into a supervised arm with `strict=False`:
+MPMNet holds the trunk as `self.trunk`, so every key is `trunk.mod.*` against the
+arm's `mod.*` and NOTHING matches -- measured 2026-09-18, 0 of the supervised
+model's 237 keys. Convert it with experiments/FT/mpm_init.py, which strips the
+prefix and drops the 39 untrained class-attention tensors.
 
 Invoke with:   -o mask_rate 0.4 -o dec_layers 3 -o dec_heads 4
 Train with:    experiments/E1/seed_weaver.py --mpm ...

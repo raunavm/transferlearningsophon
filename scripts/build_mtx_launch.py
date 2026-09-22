@@ -168,7 +168,12 @@ RATES = {
     # tuning budget, and giving the SSL arm a swept rate while the supervised
     # arms carry an inherited one would hand it an advantage the comparison then
     # could not separate from self-supervision. If it FAILS the pre-registered
-    # bar (item 17: macro AUC >= 0.95 and Rej_bb >= 100), the documented tuning
+    # bar (docs/PRESPEC_2026-09.md:60-66, which REPLACED item 17's macro AUC
+    # >= 0.95 / Rej_bb >= 100 because that bar assumed a frozen readout this
+    # model has no trained class-attention blocks for: fine-tuning from it must
+    # beat training from scratch at 1e3 and 1e4 jets by more than the
+    # fine-tuning-seed spread, and at 1e6 jets land within 0.02 macro AUC of the
+    # supervised models), the documented tuning
     # budget is spent BEFORE the failure is reported, because an untuned SSL run
     # landing in the known collapse regime is evidence about our implementation
     # and not about self-supervision.

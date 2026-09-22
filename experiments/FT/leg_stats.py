@@ -33,10 +33,10 @@ impossible to repeat:
      low-N headline "8.7 sigma" is p = 0.013. This script emits t, df and a
      two-sided p, and NEVER emits a bare sigma. `format_row` has no sigma field.
 
-THE DESIGN CONSTRAINT THAT OUTRANKS ALL THREE. L162 has ONE pretraining seed
-(mtx-l162-s1b). At the pretraining-seed level the design is 1 L162 against 3
-R16_Q1, so there are C(4,1) = 4 label arrangements and the smallest attainable
-one-sided permutation p is 1/4 = 0.25. NO pretraining-seed-level claim of any
+THE DESIGN CONSTRAINT THAT OUTRANKS ALL THREE. The leg cells this script reads
+hold ONE 162-class pretraining seed (mtx-l162-s1b) against 3 of the 17-class
+model, so at the pretraining-seed level there are C(4,1) = 4 label arrangements
+and the smallest attainable one-sided permutation p is 1/4 = 0.25. NO pretraining-seed-level claim of any
 strength is expressible from this design, whatever denominator is chosen. That
 is a property of the design, not of the analysis, and it does not go away by
 picking a better test -- it goes away when L162 seeds 2-5 finish. Every row this

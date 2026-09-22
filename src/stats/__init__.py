@@ -1,8 +1,9 @@
 """Statistical procedures for the granularity/pileup analysis (PLAN §16).
 
 Every public function here is unit-tested against an analytic case in
-`tests/test_stats.py` / `tests/test_trend.py` before first confirmatory use
-(AGENT §8).
+`src/stats/tests/test_stats.py` / `src/stats/tests/test_trend.py` before first
+confirmatory use. Those paths are OUTSIDE `tests/`: pytest must be given both
+roots or about fifty of these tests are silently skipped.
 """
 from .bootstrap import ci, event_bootstrap, paired_bootstrap_diff
 from .inference import holm, paired_t, tost

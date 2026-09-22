@@ -19,7 +19,13 @@
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{xcolor}
 \usepackage{hyperref}
+
+% \pending{} renders in red, so a placeholder for a result that has not landed
+% cannot reach a compiled draft unnoticed. results_generated.tex's header tells
+% the author to use it for every entry in its MISSING INPUTS list.
+\newcommand{\pending}[1]{\textcolor{red}{\textbf{[#1]}}}
 
 % Every result number in this document comes from here.
 \input{results_generated}
@@ -100,21 +106,25 @@ Background rejection is quoted at \ProbeEpsS{} signal efficiency throughout.
 \subsection{Label recovery across the tree}
 % Waits on nothing -- five seeds are in. Holds: both clauses of the prediction
 % failed, and the shape that did hold (the finer model's advantage decaying to
-% zero exactly at the coarser model's own level, for both pairs involving the
-% coarsest model, on both probes). Also the unpredicted result that the two
+% zero exactly at the coarser model's own level, for all three pairs involving
+% the coarsest model, on both probes). Also the unpredicted result that the two
 % finest vocabularies are indistinguishable at every level of the tree.
 
 \subsection{Controls}
 % Holds: the random-label control at three draws, which is the answer to the
 % tautology objection; the self-supervised control and its pre-registered
-% validity bar. WAITS ON: two random draws still pretraining, the
-% self-supervised run at epoch 47 of 80.
+% validity bar. WAITS ON: two random draws still pretraining, and the
+% self-supervised run.
 
 \subsection{Transfer to downstream tasks}
 % WAITS ON: fine-tuning waves 2 and 3, and the two community benchmarks.
 
 \subsection{Label granularity and an auxiliary mass output}
-% WAITS ON: feature extraction for the ten mass-output models.
+% Waits on nothing: features are extracted for all ten mass-output models and
+% the interaction is measured at five seeds with all four corners present. Its
+% numbers are already generated and printed -- they are the C5 rows of
+% tables/tests.tex, which the Results section inputs above; splitting that
+% table out is a writing decision, not a missing input.
 
 \subsection{Anomaly detection}
 % WAITS ON: the remaining anomaly jobs and the merge over signal models.

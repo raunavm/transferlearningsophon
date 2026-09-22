@@ -187,10 +187,12 @@ class Decoder(nn.Module):
 class MPMNet(nn.Module):
     """The supervised arms' trunk, pretrained by masked reconstruction.
 
-    `self.trunk` is the SAME `ParticleTransformerSophonWrapper` the arms build, so
-    a checkpoint written here loads into a supervised arm's model with
-    `strict=False` and the trunk weights land in the right places. Only `mod.fc`
-    (unused here, and None) and the decoder differ.
+    `self.trunk` is the SAME `ParticleTransformerSophonWrapper` the arms build, but
+    a checkpoint written here does NOT load into a supervised arm's model with
+    `strict=False`: the wrapping names every key `trunk.mod.*` against the arm's
+    `mod.*`, so of the 296 keys offered NOTHING matches (measured 2026-09-18).
+    Use experiments/FT/mpm_init.py, which strips the prefix, keeps the 194 trained
+    trunk tensors and drops the 39 class-attention tensors `encode` never trains.
     """
 
     def __init__(self, trunk, cont_idx, type_idx, charge_idx, pt_idx,

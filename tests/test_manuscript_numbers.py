@@ -26,7 +26,15 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 JOURNAL = REPO / "paper" / "journal"
 
 # Files the generator writes. Their numbers ARE the provenance record.
-GENERATED = {"results_generated.tex"}
+# Files the generator writes, as paths relative to paper/journal. Their numbers
+# ARE the provenance record. Paths, not directories: exempting all of tables/
+# would exempt a hand-written table dropped in there, and nothing would notice.
+GENERATED = {"results_generated.tex",
+             "tables/probes_linear.tex",
+             "tables/probes_mlp.tex",
+             "tables/tests.tex",
+             "tables/usecase_survival.tex",
+             "tables/finetuning_wave1.tex"}
 
 # Numbers allowed in prose, each with the reason it is not a result.
 # A number earns a line here only if it cannot change when a job finishes.
@@ -60,7 +68,7 @@ def manuscript_files() -> list[pathlib.Path]:
     if not JOURNAL.is_dir():
         return []
     return sorted(p for p in JOURNAL.rglob("*.tex")
-                  if p.name not in GENERATED and "tables" not in p.parts)
+                  if p.relative_to(JOURNAL).as_posix() not in GENERATED)
 
 
 def prose_of(path: pathlib.Path) -> str:
@@ -109,8 +117,12 @@ def test_every_macro_the_manuscript_uses_is_one_the_generator_defines(path):
     used = set(re.findall(r"\\([A-Za-z]+)", prose_of(path)))
     result_like = {m for m in used
                    if m.startswith(("Probe", "Test", "Recovery", "Bench", "Anomaly",
-                                    "Mass", "Aoj", "Survival", "Leg"))}
-    undefined = sorted(result_like - defined - local)
+                                    "Mass", "Aoj", "Survival", "Leg",
+                                    "Acc", "Mde", "Pair", "SignAgree", "Tost",
+                                    "Trend", "Use", "Vocab"))}
+    # NOT "- local": a result macro defined by hand in this file is precisely the
+    # hazard named above, so a local definition aggravates it, never excuses it.
+    undefined = sorted((result_like - defined) | (result_like & local))
     assert not undefined, (
         f"{path.relative_to(REPO)} uses result macros the generator does not "
         f"define: {undefined}. Regenerate, or correct the name.")

@@ -4,10 +4,15 @@
 FIG 1  label recovery across the contraction tree -- the crossover.
 FIG 2  the fine-tuning curves, in-domain (leg 1) beside domain-shifted (leg 2).
 
-WHAT THE FIGURES ARE ALLOWED TO SAY. L162 has exactly ONE pretraining seed
-(`l162-s1b`); `mtx-l162-s2..s5` are still pretraining. So L162 is drawn as a bare
-line with NO band anywhere, and every shaded band belongs to R16_Q1, whose three
-or four pretraining seeds are the only pretraining-seed scatter measured. Drawing
+WHAT THE FIGURES ARE ALLOWED TO SAY. The artifact FIG 1 reads,
+`data/label_recovery_v3.json`, holds exactly ONE 162-class pretraining seed
+(`l162-s1b`) against four 17-class seeds. Pretraining itself finished on
+2026-09-15 (`experiments/RUNS.csv`, `mtx-matrix-complete`) and the five-seed,
+four-vocabulary label recovery now exists at
+`data/label_recovery_ladder_v1/s1..s5`; repointing FIG 1 at it is an analysis
+change and is not made here. So the 162-class model is drawn as a bare line with
+NO band anywhere, and every shaded band belongs to the 17-class model, whose
+four pretraining seeds are the only pretraining-seed scatter in that file. Drawing
 a band on both would imply a symmetry of evidence that does not exist. The
 caption says so; the figure is built so it cannot accidentally stop saying so.
 
@@ -20,6 +25,7 @@ hiding it would be worse than labelling it.
 """
 from __future__ import annotations
 
+import csv
 import json
 import pathlib
 
@@ -31,6 +37,12 @@ import numpy as np
 HERE = pathlib.Path(__file__).resolve().parent
 OUT = HERE.parents[1] / "figures"
 RUNGS = ["L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1", "R3_VIS", "R1_Q1"]
+# Rendered tick labels: the number of classes at each contraction level, counted
+# from the committed label map. RUNGS are internal keys into the result JSON and
+# must never reach a figure.
+with (HERE.parents[1] / "configs/labelmaps/rung_label_maps.v1.csv").open() as _f:
+    _MAP_ROWS = list(csv.DictReader(_f))
+RUNG_LABELS = [f"{len({row[r] for row in _MAP_ROWS})}-class" for r in RUNGS]
 R16_SEEDS = ["r16q1-s2", "r16q1-s3", "r16q1-s4", "r16q1-s5"]
 C_L162, C_R16, C_SOPH, C_SCRATCH = "#1f77b4", "#d62728", "#7f7f7f", "#2ca02c"
 
@@ -48,11 +60,11 @@ def fig1_label_recovery(path: pathlib.Path):
     fig, (ax, bx) = plt.subplots(2, 1, figsize=(7.2, 6.0), sharex=True,
                                  gridspec_kw={"height_ratios": [2.2, 1]})
     ax.plot(x, l162, "-o", color=C_L162, lw=2, ms=5,
-            label="L162 pretraining (n = 1 seed, no band)")
+            label="162-class pretraining (n = 1 seed, no band)")
     ax.plot(x, mean, "-s", color=C_R16, lw=2, ms=5,
-            label=f"R16_Q1 pretraining (mean of {len(seeds)} seeds)")
+            label=f"17-class pretraining (mean of {len(seeds)} seeds)")
     ax.fill_between(x, mean - sd, mean + sd, color=C_R16, alpha=0.22, lw=0,
-                    label="R16_Q1 pretraining-seed SD")
+                    label="17-class pretraining-seed SD")
     for s in range(r16.shape[0]):
         ax.plot(x, r16[s], color=C_R16, alpha=0.30, lw=0.8, zorder=1)
     ax.set_ylabel("label-recovery balanced accuracy")
@@ -68,7 +80,7 @@ def fig1_label_recovery(path: pathlib.Path):
     lo, hi = gap.min(), gap.max()
     pad = 0.34 * (hi - lo)
     bx.set_ylim(lo - pad, hi + pad)
-    bx.annotate(f"sign flip at {RUNGS[flip]}\nR16_Q1's own rung",
+    bx.annotate(f"sign flip at {RUNG_LABELS[flip]}\nthe 17-class model's own level",
                 xy=(flip, gap[flip]), xytext=(len(RUNGS) - 1.15, hi * 0.72),
                 fontsize=8, ha="center",
                 arrowprops=dict(arrowstyle="->", lw=0.9,
@@ -76,14 +88,14 @@ def fig1_label_recovery(path: pathlib.Path):
     for i, g in enumerate(gap):
         bx.annotate(f"{g/sd[i]:+.1f}$\\sigma$", (i, g), textcoords="offset points",
                     xytext=(0, 8 if g > 0 else -14), ha="center", fontsize=7)
-    bx.set_ylabel("L162 − R16_Q1")
-    bx.set_xticks(x, RUNGS, rotation=30, ha="right", fontsize=8)
-    bx.set_xlabel("contraction rung the probe must recover  (finer → coarser)")
+    bx.set_ylabel("162-class − 17-class")
+    bx.set_xticks(x, RUNG_LABELS, rotation=30, ha="right", fontsize=8)
+    bx.set_xlabel("contraction level the probe must recover  (finer → coarser)")
     bx.grid(alpha=0.3)
 
     fig.suptitle("Which distinctions survive vocabulary compression\n"
-                 "frozen linear probe; arms differ ONLY in pretraining label "
-                 "vocabulary (I1); σ is R16_Q1 pretraining-seed SD", fontsize=9, y=0.985)
+                 "frozen linear probe; the models differ ONLY in pretraining label "
+                 "vocabulary; σ is 17-class pretraining-seed SD", fontsize=9, y=0.985)
     fig.tight_layout()
     fig.subplots_adjust(top=0.895, hspace=0.08)
     for ext in ("pdf", "png"):
@@ -101,15 +113,15 @@ def _curve(summary, init, ns):
 def fig2_transfer(p1: pathlib.Path, p2: pathlib.Path):
     ns = ["N10000", "N100000", "N1000000"]
     xs = np.array([1e4, 1e5, 1e6])
-    legs = [("leg 1 — in-domain\nJetClass-II, 162-way", json.loads(p1.read_text())["summary"]),
-            ("leg 2 — domain shift\nJetClass-I, 10-class", json.loads(p2.read_text())["summary"])]
+    legs = [("in-domain\nJetClass-II, 162-way", json.loads(p1.read_text())["summary"]),
+            ("domain shift\nJetClass-I, 10-class", json.loads(p2.read_text())["summary"])]
 
     fig, axes = plt.subplots(1, 2, figsize=(9.6, 4.2))
     for ax, (title, S) in zip(axes, legs):
         r16 = np.array([[S[s][n]["accuracy_mean"] for n in ns]
                         for s in R16_SEEDS if s in S])
         ax.errorbar(xs, *_curve(S, "l162-s1b", ns), fmt="-o", color=C_L162, lw=2,
-                    ms=5, capsize=3, label="L162 (n = 1 pretraining seed)")
+                    ms=5, capsize=3, label="162-class (n = 1 pretraining seed)")
         ax.plot(xs, r16.mean(0), "-s", color=C_R16, lw=2, ms=5,
                 label=f"R16_Q1 (mean of {r16.shape[0]})")
         ax.fill_between(xs, r16.min(0), r16.max(0), color=C_R16, alpha=0.22, lw=0)
@@ -128,7 +140,7 @@ def fig2_transfer(p1: pathlib.Path, p2: pathlib.Path):
                  "and under domain shift\n"
                  "shaded orange: at $N=10^4$ the scratch curve alone runs at LR 5e-4 "
                  "vs 1e-4 pretrained — that contrast is confounded; "
-                 "L162-vs-R16_Q1 is not", fontsize=8.5, y=0.985)
+                 "162-class vs 17-class is not", fontsize=8.5, y=0.985)
     fig.tight_layout()
     fig.subplots_adjust(top=0.80)
     for ext in ("pdf", "png"):
