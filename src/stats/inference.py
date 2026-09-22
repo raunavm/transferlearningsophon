@@ -2,8 +2,10 @@
 
 Primary decision (P0): two-sided paired t (α=0.05) AND TOST equivalence
 (α=0.05 ⇔ 90% CI within ±ln(1.1)). "No effect" language is permitted only on a
-TOST pass; otherwise "inconclusive at the pre-registered MEI". Secondaries
-S1–S8: Holm at family α=0.05 over exactly eight p-values.
+TOST pass; otherwise "inconclusive at the pre-registered MEI". Secondaries are
+Holm-corrected at family α=0.05 within their own table; the seed-level secondary
+table is three p-values — S1 and the two S2 tasks on the linear probe
+(PRESPEC_2026-09 §2.7, clarification 3 of 2026-09-19).
 """
 from __future__ import annotations
 

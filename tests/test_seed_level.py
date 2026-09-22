@@ -1311,7 +1311,7 @@ def test_s7_reports_both_probes(tmp_path):
 
 
 def test_s7_does_not_join_the_secondary_holm_table(tmp_path):
-    """PRESPEC 2.5 fixes that table at m = 3 -- S1 and the two S2 tasks on the
+    """Clarification 3 of 2026-09-19 fixes that table at m = 3 -- S1 and the two S2 tasks on the
     linear probe. Enlarging it after its members were computed would change their
     adjusted verdicts, which is exactly what a pre-registration forbids."""
     lad = write_ladder(tmp_path / "lad", ladder_values(step=1.0))

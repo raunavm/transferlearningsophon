@@ -248,7 +248,8 @@ def input_paths(root: pathlib.Path) -> dict:
     # run stays on disk, frozen, as the provenance record of what ran first.
     data = root / "experiments" / "FIGS" / "data"
     maps = root / "configs" / "labelmaps"
-    return {"ladder": sorted((data / "probe_ladder_v2").glob("s*.json")),
+    return {"ladder": sorted((data / "probe_ladder_v2").glob("s*.json"))
+                      + sorted((data / "probe_ladder_mass2x2").glob("s*.json")),
             # analysis_with_c5, not analysis: the same run of the same script over
             # the same five ladder files, plus the mass-output 2x2 that makes C5
             # measurable. Verified a strict superset before it was adopted -- C1's
@@ -259,7 +260,7 @@ def input_paths(root: pathlib.Path) -> dict:
             "analysis": data / "probe_ladder_v2" / "analysis_with_c5" / "seed_level_results.json",
             "leg1": data / "leg1_metrics.json",
             "leg2": data / "leg2_metrics.json",
-            "recovery": data / "label_recovery_v3.json",
+            "recovery": data / "label_recovery_ladder_v1" / "analysis" / "s9_label_recovery.json",
             "survival": maps / "usecase_survival.v1.json",
             "rung_map": maps / "rung_label_maps.v1.csv"}
 
@@ -1013,6 +1014,8 @@ def main(argv=None) -> int:
                 drift.append(f"{rel}: differs from what the inputs now say")
         for line in drift:
             print(f"DRIFT  {line}")
+        for line in missing:
+            print(f"MISSING  {line}")
         if drift:
             print(f"\n{len(drift)} generated file(s) are stale. Run "
                   f"python3 experiments/FIGS/make_tables.py")

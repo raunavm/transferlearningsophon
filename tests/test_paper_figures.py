@@ -1,5 +1,9 @@
-"""The figure script is where measured numbers become the paper's claims, so
-the claims themselves are pinned here rather than only the plotting mechanics."""
+"""Regression guard on make_paper_figures.py, which reads the two-model
+label-recovery file: one 162-class pretraining seed against four 17-class seeds.
+That input is frozen, so nothing here can fail on a re-measurement. The
+five-seed measurement of the same quantity is
+experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json,
+and that is the file the paper's claim has to be checked against."""
 import importlib.util
 import pathlib
 

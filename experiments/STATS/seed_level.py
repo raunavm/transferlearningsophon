@@ -1555,7 +1555,7 @@ def run_ladder(a, argv=None) -> int:
     res["secondary"] = {"S1": s1, "S2": s2, "S6": s6, "holm_family": sec}
 
     print("\n  PAIRWISE, coarser − finer by seed index — EXPLORATORY (not listed in PRESPEC §3);"
-          "\n  primary = paired t on n−1 df; Holm within each table of six")
+          "\n  primary = paired t on n−1 df; Holm within each table over its estimable contrasts")
     for t in pw:
         for k in PROBES:
             if not any(r["estimable"] for r in pw[t][k]):
@@ -1579,8 +1579,8 @@ def format_s7(s7: dict) -> list[str]:
            "amendment 2026-09-20) ==",
            f"  statistic: {s7['statistic']} = half the smallest interval holding 68 % of the "
            f"residual area; LOWER IS BETTER",
-           "  NOT in the secondary Holm table: PRESPEC 2.5 fixes that table at m = 3 "
-           "(S1 and the two S2 tasks).",
+           "  NOT in the secondary Holm table: clarification 3 of 2026-09-19 fixes that "
+           "table at m = 3 (S1 and the two S2 tasks).",
            "  S7 is corrected within itself, as 2.7 directs for everything outside the "
            "confirmatory family."]
     for kind in MASSRES_PROBES:
