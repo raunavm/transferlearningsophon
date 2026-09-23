@@ -1,69 +1,85 @@
-"""Regression guard on make_paper_figures.py, which reads the two-model
-label-recovery file: one 162-class pretraining seed against four 17-class seeds.
-That input is frozen, so nothing here can fail on a re-measurement. The
-five-seed measurement of the same quantity is
-experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json,
-and that is the file the paper's claim has to be checked against."""
+"""The label-recovery claims the paper may make, pinned against the five-seed,
+four-label-set analysis that make_paper_figures.py now draws
+(experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json).
+
+It replaced a two-model file (one 162-class seed against four 17-class seeds) on
+2026-09-22. The two agree on the headline and disagree on a secondary shape
+claim, so the shape claim is no longer made and nothing here asserts it."""
 import importlib.util
 import pathlib
 
 import pytest
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
-RUNGS_FINER = ["L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1"]
-RUNGS_AT_OR_BELOW = ["R16_Q1", "R3_VIS", "R1_Q1"]
+FINER = ["L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1"]
+DECAY = ["L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1"]
+PROBES = ("linear", "mlp")
 
 
 @pytest.fixture(scope="module")
-def gaps(tmp_path_factory):
+def fig(tmp_path_factory):
     spec = importlib.util.spec_from_file_location(
         "make_paper_figures", REPO / "experiments/FIGS/make_paper_figures.py")
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     m.OUT = tmp_path_factory.mktemp("figs")
-    return m, m.fig1_label_recovery(REPO / "experiments/FIGS/data/label_recovery_v3.json")
+    return m, m.fig1_label_recovery(m.LABEL_RECOVERY)
 
 
-def test_the_crossover_is_where_the_paper_says_it_is(gaps):
-    """L162 leads at every rung FINER than R16_Q1 and trails at R16_Q1 and
-    below. If a re-measurement moves the sign flip, the paper's cleanest figure
-    is telling a different story and this must fail."""
-    _, g = gaps
-    for r in RUNGS_FINER:
-        assert g[r][0] > 0, f"{r} should favour L162, got {g[r][0]:+.4f}"
-    for r in RUNGS_AT_OR_BELOW:
-        assert g[r][0] < 0, f"{r} should favour R16_Q1, got {g[r][0]:+.4f}"
+@pytest.mark.parametrize("probe", PROBES)
+def test_the_lead_ends_at_the_17_class_models_own_level(fig, probe):
+    """Both probes: the 162-class model's advantage is last seen one level finer
+    than the 17-class set, and the sign changes at the 17-class set itself."""
+    c = fig[1]["crossover"][probe]
+    assert c["crossover_rung"] == "R16_Q1"
+    assert c["crossover_at_coarser_own_rung"] is True
 
 
-def test_the_advantage_decays_monotonically_to_the_crossover_then_returns(gaps):
-    """The shape is decay-to-a-minimum, NOT monotone decay all the way down --
-    a distinction worth pinning because the loose phrasing is easy to write.
-
-    From the L162 rung the lead falls monotonically and crosses zero at R16_Q1,
-    which is the minimum. BELOW R16_Q1 the gap is negative but shrinks back
-    toward zero (-0.0042 -> -0.0037 -> -0.0022), and it must: R1_Q1 is a binary
-    split, so there is almost nothing left for either vocabulary to distinguish
-    and both arms have to converge. Asserting monotone decay across all eight
-    rungs would fail on a correct result."""
-    _, g = gaps
-    decay = [g[r][0] for r in ["L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1"]]
-    assert all(a > b for a, b in zip(decay, decay[1:])), f"not monotone: {decay}"
-    assert decay[-1] == min(g[r][0] for r in g), "R16_Q1 should be the minimum"
-    below = [abs(g[r][0]) for r in RUNGS_AT_OR_BELOW]
-    assert all(a >= b for a, b in zip(below, below[1:])), \
-        f"gap should shrink toward zero below the crossover: {below}"
+@pytest.mark.parametrize("probe", PROBES)
+def test_no_level_at_or_below_the_17_class_set_significantly_favours_162(fig, probe):
+    """Not "the lead is gone at every coarser level" point by point: on the
+    nonlinear probe the 2-class level shows +0.003 for the 162-class model, which
+    is why the analysis records its last rung with an advantage as the 2-class
+    one there. None of it survives correction, and that is the claim pinned."""
+    cells = fig[1]["contrasts"][probe]
+    for r in ("R16_Q1", "R3_VIS", "R1_Q1"):
+        assert not (cells[r]["mean_diff"] > 0 and cells[r]["holm_reject"]), (r, cells[r])
 
 
-def test_the_sign_flip_is_resolved_against_the_seed_scatter(gaps):
-    """At n=3 seeds this gap was inside the noise. The fourth seed is what makes
-    it quotable, so the sigma is pinned, not just the sign."""
-    _, g = gaps
-    assert g["R16_Q1"][1] < -2.0, f"flip is only {g['R16_Q1'][1]:.1f} sigma"
-    assert g["L188"][1] > 10.0, f"fine-rung lead is only {g['L188'][1]:.1f} sigma"
+@pytest.mark.parametrize("probe", PROBES)
+def test_the_finer_levels_favour_the_162_class_model_after_correction(fig, probe):
+    cells = fig[1]["contrasts"][probe]
+    for r in FINER:
+        assert cells[r]["mean_diff"] > 0, (r, cells[r]["mean_diff"])
+        assert cells[r]["holm_reject"] is True, (r, cells[r]["p"])
 
 
-def test_both_figures_are_written(gaps):
-    m, _ = gaps
+@pytest.mark.parametrize("probe", PROBES)
+def test_the_lead_shrinks_level_by_level_down_to_the_crossover(fig, probe):
+    d = [fig[1]["contrasts"][probe][r]["mean_diff"] for r in DECAY]
+    assert all(a > b for a, b in zip(d, d[1:])), d
+
+
+@pytest.mark.parametrize("probe", PROBES)
+def test_the_reversal_at_the_17_class_level_is_not_a_significant_win(fig, probe):
+    """GUARD AGAINST OVERCLAIMING. The sign flips at the 17-class model's own
+    level, but after correction the reversal is not significant on either probe,
+    so the paper may say the lead DISAPPEARS there -- not that the 17-class model
+    wins there. The older test pinned the flip at >2 sigma on four seeds; five
+    paired seeds under Holm do not support that."""
+    cell = fig[1]["contrasts"][probe]["R16_Q1"]
+    assert cell["mean_diff"] < 0
+    assert cell["holm_reject"] is False
+
+
+def test_the_preregistered_label_recovery_prediction_is_recorded_as_failed(fig):
+    """The figure shows a clean crossover, but the pre-registered prediction about
+    it was not confirmed. The caption must not imply otherwise."""
+    assert fig[1]["composite_verdict"] == "not confirmed in clauses 1-2"
+
+
+def test_both_figures_are_written(fig):
+    m, _ = fig
     m.fig2_transfer(REPO / "experiments/FIGS/data/leg1_metrics.json",
                     REPO / "experiments/FIGS/data/leg2_metrics.json")
     for stem in ("label_recovery_crossover", "transfer_curves"):

@@ -4,22 +4,21 @@
 FIG 1  label recovery across the contraction tree -- the crossover.
 FIG 2  the fine-tuning curves, in-domain (leg 1) beside domain-shifted (leg 2).
 
-WHAT THE FIGURES ARE ALLOWED TO SAY. The artifact FIG 1 reads,
-`data/label_recovery_v3.json`, holds exactly ONE 162-class pretraining seed
-(`l162-s1b`) against four 17-class seeds. Pretraining itself finished on
-2026-09-15 (`experiments/RUNS.csv`, `mtx-matrix-complete`) and the five-seed,
-four-vocabulary label recovery now exists at
-`data/label_recovery_ladder_v1/s1..s5`; repointing FIG 1 at it is an analysis
-change and is not made here. So the 162-class model is drawn as a bare line with
-NO band anywhere, and every shaded band belongs to the 17-class model, whose
-four pretraining seeds are the only pretraining-seed scatter in that file. Drawing
-a band on both would imply a symmetry of evidence that does not exist. The
-caption says so; the figure is built so it cannot accidentally stop saying so.
+FIG 1 READS THE FIVE-SEED MEASUREMENT (decided 2026-09-22). It used to read
+`data/label_recovery_v3.json`: ONE 162-class pretraining seed against four
+17-class seeds, so only one side had a band. The seed-level analysis of all four
+label sets at five seeds each now exists and measures the same quantity with
+equal evidence on every side, so FIG 1 reads that and every line carries a band.
+The two agree on the headline -- the 162-class model's lead shrinks level by
+level and changes sign at the 17-class model's own level -- and disagree on a
+secondary shape claim the older file supported (where the gap is deepest below
+the crossover). The paper makes no claim the five-seed file does not support.
+The older file stays on disk as the record of what was drawn first.
 
 WHY N=1e4 IS DRAWN BUT ANNOTATED IN FIG 2. The pretrained-vs-scratch contrast at
 N=1e4 confounds initialisation with learning rate: weaver ran scratch at
 start_lr 5e-4 and every pretrained init at 1e-4, per the documented recipe. The
-GRANULARITY contrast (L162 vs R16_Q1) uses 1e-4 on both sides and is unaffected,
+GRANULARITY contrast (162-class vs 17-class) uses 1e-4 on both sides and is unaffected,
 which is why the scratch curve is drawn dashed and marked rather than omitted --
 hiding it would be worse than labelling it.
 """
@@ -29,79 +28,110 @@ import csv
 import json
 import pathlib
 
+import sys
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import style                                                       # noqa: E402
+
 HERE = pathlib.Path(__file__).resolve().parent
 OUT = HERE.parents[1] / "figures"
+LABEL_RECOVERY = HERE / "data/label_recovery_ladder_v1/analysis/s9_label_recovery.json"
 RUNGS = ["L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1", "R3_VIS", "R1_Q1"]
 # Rendered tick labels: the number of classes at each contraction level, counted
 # from the committed label map. RUNGS are internal keys into the result JSON and
 # must never reach a figure.
 with (HERE.parents[1] / "configs/labelmaps/rung_label_maps.v1.csv").open() as _f:
     _MAP_ROWS = list(csv.DictReader(_f))
-RUNG_LABELS = [f"{len({row[r] for row in _MAP_ROWS})}-class" for r in RUNGS]
+RUNG_NCLASS = [len({row[r] for row in _MAP_ROWS}) for r in RUNGS]
 R16_SEEDS = ["r16q1-s2", "r16q1-s3", "r16q1-s4", "r16q1-s5"]
 C_L162, C_R16, C_SOPH, C_SCRATCH = "#1f77b4", "#d62728", "#7f7f7f", "#2ca02c"
 
 
 def fig1_label_recovery(path: pathlib.Path):
+    """Label recovery at the eight contraction levels, four pretraining label sets,
+    five pretraining seeds each, both probes -- read from the seed-level analysis
+    (experiments/STATS/seed_level.py), whose paired contrasts are plotted as the
+    analysis computed them rather than recomputed here.
+
+    Top row: balanced accuracy of recovering each level's labels from frozen
+    features, mean over seeds with a +-1 SD band. Bottom row: the paired
+    162-class minus 17-class difference by seed index with its 95% interval;
+    filled where Holm rejects within the analysis's own table, open where not."""
     d = json.loads(path.read_text())
-    A = d["arms"]
-    seeds = [s for s in R16_SEEDS if s in A]
-    l162 = np.array([A["l162-s1b"]["rungs"][r]["linear"] for r in RUNGS])
-    r16 = np.array([[A[s]["rungs"][r]["linear"] for r in RUNGS] for s in seeds])
-    mean, sd = r16.mean(0), r16.std(0, ddof=1)
-    gap = l162 - mean
+    s9 = d["secondary"]["S9"]
+    levels = s9["levels_fine_to_coarse"]
+    assert s9["rungs_fine_to_coarse"] == RUNGS, s9["rungs_fine_to_coarse"]
+    rows = d["table"]
     x = np.arange(len(RUNGS))
+    style.use_style()
+    fig, axes = plt.subplots(2, 2, figsize=(style.FIG_W_TWO_COLUMN, 5.2), sharex=True,
+                             gridspec_kw={"height_ratios": [2.0, 1.1]})
+    contrasts = {}
+    for col, probe in enumerate(("linear", "mlp")):
+        ax, bx = axes[0, col], axes[1, col]
+        first = {}
+        for lvl in levels:
+            acc = np.array([[next(r["accuracy"] for r in rows if r["probe"] == probe
+                                  and r["level"] == lvl and r["seed"] == s and r["rung"] == g)
+                             for g in RUNGS] for s in s9["seeds_used"]])
+            mean, sd = acc.mean(0), acc.std(0, ddof=1)
+            c = style.LEVEL_COLOURS[lvl]
+            ax.fill_between(x, mean - sd, mean + sd, color=c, alpha=0.18, lw=0)
+            ax.plot(x, mean, ls=style.PROBE_LINESTYLES[probe], color=c,
+                    marker=style.LEVEL_MARKERS[lvl], fillstyle=style.PROBE_FILLSTYLES[probe],
+                    label=f"pretrained on {style.level_label(lvl)}")
+            first[lvl] = mean[0]
+        # Direct labels at the finest level, where the curves separate. Curves
+        # that coincide there (188 and 162 do) share one label rather than
+        # overprinting each other.
+        groups = []
+        for lvl in sorted(first, key=first.get, reverse=True):
+            if groups and abs(first[groups[-1][-1]] - first[lvl]) < 0.02:
+                groups[-1].append(lvl)
+            else:
+                groups.append([lvl])
+        for g in groups:
+            y = float(np.mean([first[v] for v in g]))
+            ax.annotate(" & ".join(str(v) for v in g) + "-class", (0, y),
+                        textcoords="offset points", xytext=(-7, 0), ha="right",
+                        va="center", fontsize=6.5)
+        ax.set_title(style.PROBE_LABELS[probe])
+        ax.set_xlim(-1.9, len(RUNGS) - 0.6)
+        if col == 0:
+            ax.set_ylabel("label-recovery balanced accuracy")
+            ax.legend(loc="lower right")
 
-    fig, (ax, bx) = plt.subplots(2, 1, figsize=(7.2, 6.0), sharex=True,
-                                 gridspec_kw={"height_ratios": [2.2, 1]})
-    ax.plot(x, l162, "-o", color=C_L162, lw=2, ms=5,
-            label="162-class pretraining (n = 1 seed, no band)")
-    ax.plot(x, mean, "-s", color=C_R16, lw=2, ms=5,
-            label=f"17-class pretraining (mean of {len(seeds)} seeds)")
-    ax.fill_between(x, mean - sd, mean + sd, color=C_R16, alpha=0.22, lw=0,
-                    label="17-class pretraining-seed SD")
-    for s in range(r16.shape[0]):
-        ax.plot(x, r16[s], color=C_R16, alpha=0.30, lw=0.8, zorder=1)
-    ax.set_ylabel("label-recovery balanced accuracy")
-    ax.grid(alpha=0.3)
-    ax.legend(fontsize=8, loc="upper left")
-
-    bx.axhline(0, color="k", lw=1)
-    bx.plot(x, gap, "-o", color="#9467bd", lw=2, ms=5)
-    flip = next(i for i in range(len(gap)) if gap[i] < 0)
-    bx.axvline(flip, ls=":", color="k", lw=1)
-    # Headroom FIRST, so the per-point sigma labels and the callout have space
-    # that does not collide with the rung tick labels below the axis.
-    lo, hi = gap.min(), gap.max()
-    pad = 0.34 * (hi - lo)
-    bx.set_ylim(lo - pad, hi + pad)
-    bx.annotate(f"sign flip at {RUNG_LABELS[flip]}\nthe 17-class model's own level",
-                xy=(flip, gap[flip]), xytext=(len(RUNGS) - 1.15, hi * 0.72),
-                fontsize=8, ha="center",
-                arrowprops=dict(arrowstyle="->", lw=0.9,
-                                connectionstyle="arc3,rad=0.25"))
-    for i, g in enumerate(gap):
-        bx.annotate(f"{g/sd[i]:+.1f}$\\sigma$", (i, g), textcoords="offset points",
-                    xytext=(0, 8 if g > 0 else -14), ha="center", fontsize=7)
-    bx.set_ylabel("162-class − 17-class")
-    bx.set_xticks(x, RUNG_LABELS, rotation=30, ha="right", fontsize=8)
-    bx.set_xlabel("contraction level the probe must recover  (finer → coarser)")
-    bx.grid(alpha=0.3)
-
-    fig.suptitle("Which distinctions survive vocabulary compression\n"
-                 "frozen linear probe; the models differ ONLY in pretraining label "
-                 "vocabulary; σ is 17-class pretraining-seed SD", fontsize=9, y=0.985)
+        pair = s9["pairs"]["162_vs_17"][probe]
+        cells = {c["rung"]: c for c in pair["rungs"]}
+        contrasts[probe] = cells
+        m = np.array([cells[g]["mean_diff"] for g in RUNGS])
+        lo = m - np.array([cells[g]["ci95"][0] for g in RUNGS])
+        hi = np.array([cells[g]["ci95"][1] for g in RUNGS]) - m
+        bx.axhline(0, color="k", lw=0.8)
+        own = RUNGS.index(s9["own_rung"]["17"])
+        bx.axvline(own, ls=":", color="k", lw=0.8)
+        for i, g in enumerate(RUNGS):
+            bx.errorbar(i, m[i], yerr=[[lo[i]], [hi[i]]], fmt="o", color="#444444",
+                        mfc="#444444" if cells[g]["holm_reject"] else "white", capsize=2)
+        bx.annotate("17-class model's\nown level", (own, bx.get_ylim()[1]),
+                    textcoords="offset points", xytext=(4, -10), fontsize=6.5, va="top")
+        bx.set_xticks(x, [str(n) for n in RUNG_NCLASS])
+        if col == 0:
+            bx.set_ylabel("162-class \u2212 17-class")
+    fig.suptitle("Label recovery from frozen features: four pretraining label sets, "
+                 f"{len(s9['seeds_used'])} pretraining seeds each", fontsize=9)
+    fig.supxlabel("classes in the label set the probe must recover (finer \u2192 coarser)",
+                  fontsize=8)
     fig.tight_layout()
-    fig.subplots_adjust(top=0.895, hspace=0.08)
-    for ext in ("pdf", "png"):
-        fig.savefig(OUT / f"label_recovery_crossover.{ext}", dpi=180)
-    plt.close(fig)
-    return {RUNGS[i]: (float(gap[i]), float(gap[i] / sd[i])) for i in range(len(RUNGS))}
+    style.save(fig, "label_recovery_crossover", OUT)
+    return {"contrasts": contrasts,
+            "crossover": {p: s9["pairs"]["162_vs_17"][p]["crossover"] for p in ("linear", "mlp")},
+            "composite_verdict": s9["composite_verdict"]}
 
 
 def _curve(summary, init, ns):
@@ -123,7 +153,7 @@ def fig2_transfer(p1: pathlib.Path, p2: pathlib.Path):
         ax.errorbar(xs, *_curve(S, "l162-s1b", ns), fmt="-o", color=C_L162, lw=2,
                     ms=5, capsize=3, label="162-class (n = 1 pretraining seed)")
         ax.plot(xs, r16.mean(0), "-s", color=C_R16, lw=2, ms=5,
-                label=f"R16_Q1 (mean of {r16.shape[0]})")
+                label=f"17-class (mean of {r16.shape[0]})")
         ax.fill_between(xs, r16.min(0), r16.max(0), color=C_R16, alpha=0.22, lw=0)
         ax.errorbar(xs, *_curve(S, "sophon-public", ns), fmt="-^", color=C_SOPH,
                     lw=1.5, ms=5, capsize=3, label="Sophon public (188)")
@@ -150,10 +180,11 @@ def fig2_transfer(p1: pathlib.Path, p2: pathlib.Path):
 
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
-    g = fig1_label_recovery(HERE / "data/label_recovery_v3.json")
-    print("fig 1 gaps (value, sigma):")
-    for r, (v, s) in g.items():
-        print(f"  {r:8} {v:+.4f}  {s:+6.1f} sigma")
+    g = fig1_label_recovery(LABEL_RECOVERY)
+    print("fig 1: 162-class minus 17-class, linear probe, paired by seed:")
+    for r in RUNGS:
+        c = g["contrasts"]["linear"][r]
+        print(f"  {r:8} {c['mean_diff']:+.4f}  p={c['p']:.2g}  {c['advantage']}")
     fig2_transfer(HERE / "data/leg1_metrics.json", HERE / "data/leg2_metrics.json")
     print(f"\nwrote {OUT}/label_recovery_crossover.{{pdf,png}} and "
           f"{OUT}/transfer_curves.{{pdf,png}}")
