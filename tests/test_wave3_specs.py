@@ -124,7 +124,14 @@ def test_the_not_yet_launchable_groups_are_not_emitted_by_default(new):
     assert set(later) == {"job-ft-legs-w3-mpm-s1-raunav.yaml", "job-ft-legs-w3-rand-d2-raunav.yaml",
                           "job-ft-legs-bench-v2-mpm-s1-raunav.yaml",
                           "job-ft-legs-bench-v2-rand-d2-raunav.yaml"}
-    assert not any((K8S / n).exists() for n in later), "a later group was written to disk"
+    # A spec on disk is allowed only for a group recorded as launched, whose
+    # pretraining job is Complete. Everything else must still be absent.
+    launched = {n for n in later if any(f"-{g}-raunav" in n for g in B.LAUNCHED_LATER)}
+    assert not any((K8S / n).exists() for n in set(later) - launched), \
+        "a later group was written to disk before it was launched"
+    for n in launched:
+        if (K8S / n).exists():
+            assert (K8S / n).read_text() == later[n], f"{n} drifted from the builder"
 
 
 def test_gpu_specs_are_sized_and_scheduled_like_wave_two(new, w2):

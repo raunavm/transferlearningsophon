@@ -1044,9 +1044,9 @@ def legs_w2() -> str:
 # ever wrong. The FAILED / WAIT_TIMEOUT halt markers are per shard: wave 2's
 # marker must not stop a shard and a shard's must not stop wave 2's restarts.
 #
-# NOT EMITTED BY DEFAULT: the groups in INITS_LATER. Their checkpoints do not
-# exist yet (two random-label draws are training, ~6.5 days; the masked-particle
-# run is at epoch 40 of 80). `--later <group>` emits one when it can be launched.
+# NOT EMITTED BY DEFAULT: the groups in INITS_LATER, whose checkpoints did not
+# exist when this wave was built. `--later <group>` emits one when it can be
+# launched, and LAUNCHED_LATER below records which ones have been.
 PIN_W3 = "mtx-s1.52"          # every spec below runs code that first exists here
 W3_ROOT = "/data/results/ft/w2b"
 BENCH_V2_ROOT = "/data/results/ft/bench_v2"
@@ -1087,6 +1087,14 @@ INITS_LATER = {
     "mpm-s2": [("mpm-s2", "/workspace/mpm-s2_trunk.pt", 0, [1])],
     "mpm-s3": [("mpm-s3", "/workspace/mpm-s3_trunk.pt", 0, [1])],
 }
+# LATER GROUPS THAT HAVE BEEN LAUNCHED, so their specs may be committed like any
+# launched spec while every other later group must still have none on disk
+# (tests/test_wave3_specs.py). A group joins only when its pretraining JOB is
+# Complete -- not when its last epoch file appears. On 2026-09-21 mpm-s1's
+# net_epoch-79 files existed while the job was still in its closing validation
+# pass, and that test stopped a premature emit. mpm-s1: job Complete 2026-09-22.
+LAUNCHED_LATER = {"mpm-s1"}
+assert LAUNCHED_LATER <= set(INITS_LATER), LAUNCHED_LATER - set(INITS_LATER)
 # What smoke_checks.py load-log must see for a converted self-supervised init:
 # these 39 tensors (class token, two class-attention blocks, final norm) and the
 # head are the ONLY missing keys. Measured on the architecture, 2026-09-18.
