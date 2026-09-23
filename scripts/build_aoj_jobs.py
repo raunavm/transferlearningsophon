@@ -76,11 +76,15 @@ NEEDED_FLAGS = {"experiments/AOJ/discriminants.py": "--structures",
                 "experiments/AOJ/peak_fit.py": "--peaks",
                 "experiments/EVAL/extract_features.py": "--num-reg"}
 
-# Same list as scripts/build_ft_jobs.py BAD_NODES + LOST_GPU_NODES.
+# scripts/build_ft_jobs.py BAD_NODES + LOST_GPU_NODES, plus ry-gpu-10: "GPU is
+# lost" (the same NVLink query failure as ry-gpu-01), measured 2026-09-23 when it
+# refused all three attempts of the first shard-0 job at admission. It has also
+# lost its gpu.product label, which is why the 3090 NotIn below did not keep the
+# shard off it -- hence the Exists term as well.
 BAD_NODES = ("ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu",
              "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu",
              "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org",
-             "ry-gpu-01.sdsc.optiputer.net")
+             "ry-gpu-01.sdsc.optiputer.net", "ry-gpu-10.sdsc.optiputer.net")
 
 SOPHON_URL = "https://huggingface.co/jet-universe/sophon/resolve/main/models/JetClassII_Sophon/model.pt"
 SOPHON_SHA256 = "cc7c33b522e796b5bbf0aa9bb5b01361c964f4ef3acebdd9682d7519c095b824"
@@ -288,7 +292,11 @@ spec:
               - key: topology.kubernetes.io/region
                 operator: In
                 values: ["us-west"]
-              # never the 3090 pool: the benchmark wave is Pending for it
+              # never the 3090 pool: the benchmark wave is Pending for it. NotIn
+              # alone also matches a node whose GPU discovery failed and left no
+              # product label (ry-gpu-10, 2026-09-23), so the label must exist.
+              - key: nvidia.com/gpu.product
+                operator: Exists
               - key: nvidia.com/gpu.product
                 operator: NotIn
                 values: ["NVIDIA-GeForce-RTX-3090"]

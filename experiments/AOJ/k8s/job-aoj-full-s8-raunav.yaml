@@ -152,13 +152,17 @@ spec:
               - key: topology.kubernetes.io/region
                 operator: In
                 values: ["us-west"]
-              # never the 3090 pool: the benchmark wave is Pending for it
+              # never the 3090 pool: the benchmark wave is Pending for it. NotIn
+              # alone also matches a node whose GPU discovery failed and left no
+              # product label (ry-gpu-10, 2026-09-23), so the label must exist.
+              - key: nvidia.com/gpu.product
+                operator: Exists
               - key: nvidia.com/gpu.product
                 operator: NotIn
                 values: ["NVIDIA-GeForce-RTX-3090"]
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org", "ry-gpu-01.sdsc.optiputer.net"]
+                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org", "ry-gpu-01.sdsc.optiputer.net", "ry-gpu-10.sdsc.optiputer.net"]
       volumes:
       - name: jc2
         persistentVolumeClaim:

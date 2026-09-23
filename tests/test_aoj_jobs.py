@@ -90,12 +90,14 @@ def test_shards_stay_off_the_3090_pool_and_off_every_bad_node():
     for p in SHARDS:
         terms = yaml.safe_load(SPECS[p])["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
             "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
+        gpu = [t for t in terms if t["key"] == "nvidia.com/gpu.product"]
+        assert {g["operator"] for g in gpu} == {"Exists", "NotIn"}, "an unlabelled node must not match"
+        assert next(g for g in gpu if g["operator"] == "NotIn")["values"] == ["NVIDIA-GeForce-RTX-3090"]
         by_key = {t["key"]: t for t in terms}
-        gpu = by_key["nvidia.com/gpu.product"]
-        assert gpu["operator"] == "NotIn" and gpu["values"] == ["NVIDIA-GeForce-RTX-3090"]
         hosts = by_key["kubernetes.io/hostname"]
         assert hosts["operator"] == "NotIn"
-        assert set(hosts["values"]) >= set(FT.BAD_NODES) | set(FT.LOST_GPU_NODES)
+        assert set(hosts["values"]) >= set(FT.BAD_NODES) | set(FT.LOST_GPU_NODES) | {
+            "ry-gpu-10.sdsc.optiputer.net"}
 
 
 def test_the_fit_refuses_until_every_shard_is_done_and_never_overwrites():
