@@ -141,7 +141,17 @@ def test_gpu_specs_are_sized_and_scheduled_like_wave_two(new, w2):
         assert d["backoffLimit"] == ref["backoffLimit"] == 50
         c, rc = d["template"]["spec"]["containers"][0], ref["template"]["spec"]["containers"][0]
         assert c["resources"] == rc["resources"], name
-        assert d["template"]["spec"]["affinity"] == ref["template"]["spec"]["affinity"], name
+        # Identical to wave 2 except that the benchmark wave also avoids the node
+        # that lost its GPU on 2026-09-22 (B.LOST_GPU_NODES). Strip exactly that
+        # and demand identity for everything else.
+        aff = yaml.safe_load(yaml.safe_dump(d["template"]["spec"]["affinity"]))
+        if name in BV2:
+            for t in (aff["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]
+                      ["nodeSelectorTerms"]):
+                for e in t["matchExpressions"]:
+                    if e["key"] == "kubernetes.io/hostname":
+                        e["values"] = [v for v in e["values"] if v not in B.LOST_GPU_NODES]
+        assert aff == ref["template"]["spec"]["affinity"], name
         assert {"name": "GPU_PRODUCT", "value": "NVIDIA-GeForce-RTX-3090"} in c["env"]
     s = yaml.safe_load(new[STAGE])["spec"]
     assert "nvidia.com/gpu" not in s["template"]["spec"]["containers"][0]["resources"]["limits"]
@@ -672,3 +682,24 @@ def test_the_later_mpm_group_converts_its_init_and_checks_the_fresh_tensors(tmp_
         seeds = {int(re.search(r"--seed (\d+)", l).group(1))
                  for l in calls.splitlines() if "seed_weaver.py" in l}
         assert seeds == {1, 2, 3}
+
+
+def _excluded(text):
+    spec = yaml.safe_load(text)["spec"]["template"]["spec"]
+    terms = (spec["affinity"]["nodeAffinity"]
+             ["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"])
+    return {v for t in terms for e in t["matchExpressions"]
+            if e["key"] == "kubernetes.io/hostname" and e["operator"] == "NotIn"
+            for v in e["values"]}
+
+
+def test_the_lost_gpu_node_is_excluded_from_the_benchmark_wave_only(new):
+    """ry-gpu-01 took eight benchmark pods on 2026-09-22 with "GPU is lost". The
+    benchmark wave must avoid it; waves 2 and 3 must NOT have it in their
+    committed specs, because those jobs are running from the older list and a
+    committed spec that disagrees with its running job misdescribes it."""
+    for name in BV2:
+        ex = _excluded(new[name])
+        assert set(B.LOST_GPU_NODES) <= ex and set(B.BAD_NODES) <= ex, name
+    for name in W3:
+        assert not set(B.LOST_GPU_NODES) & _excluded(new[name]), name

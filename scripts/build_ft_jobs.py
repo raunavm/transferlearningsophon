@@ -691,6 +691,15 @@ LEGS = PREAMBLE + """
 BAD_NODES = ("ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu",
              "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu",
              "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org")
+# ry-gpu-01: the device plugin reports "GPU is lost" (its NVLink query fails),
+# measured 2026-09-22. It took eight benchmark-v2 pods in ~20 min -- two died
+# mid-training with "CUDA error: unknown error", six were refused at admission --
+# while every pod on every other node ran. Kept OUT of BAD_NODES on purpose:
+# that list is baked into waves 2 and 3, which are running, and re-emitting their
+# specs would make the committed files describe jobs that are not the ones in the
+# cluster. Applied to the benchmark wave, which is being re-created anyway. Fold
+# it into BAD_NODES the next time waves 2 and 3 are emitted.
+LOST_GPU_NODES = ("ry-gpu-01.sdsc.optiputer.net",)
 
 
 def job(name: str, script: str, *, gpu: bool, cpu: str, memory: str, shm: str,
@@ -1595,7 +1604,8 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None) -> dic
             name = f"ft-legs-bench-v2-{suffix}-raunav"
             cells = cells_bench(inits)
             specs[f"job-{name}.yaml"] = job(
-                name, _fill(legs_bench_v2(inits, name), pin, inits=inits), **gpu,
+                name, _fill(legs_bench_v2(inits, name), pin, inits=inits),
+                **{**gpu, "exclude_hosts": BAD_NODES + LOST_GPU_NODES},
                 header=h + f"  # BENCHMARKS v2, shard {suffix}: top tagging and quark/gluon at the\n"
                            "  # published recipe (20 epochs, 1e-4 trunk / 5e-3 head, constant LR,\n"
                            "  # weight decay 0.01), one fine-tuning seed per pretrained checkpoint,\n"
