@@ -57,6 +57,12 @@ PIN = "mtx-s1.55"
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 OUT_ROOT = "/data/results/aoj/full_v1"
 N_SHARDS = 10
+# Models scored at once on a shard's GPU. Measured on shard 0 (RTX 2080 Ti,
+# 2026-09-23): ONE model runs at 788 jets/s with its single loader process at
+# 100 % of a core and the GPU at 31 %. The loader must stay single-process for
+# row alignment, so the parallelism is across models: three loaders, one GPU,
+# ~3 GB of GPU memory each (fits the 11 GB of a 1080 Ti or 2080 Ti).
+PARALLEL = 3
 NEEDED_AT_PIN = [
     "experiments/AOJ/closure.py",
     "experiments/AOJ/discriminants.py",
@@ -256,18 +262,30 @@ spec:
           [ -f "${{OUT}}/closure.json" ] || PYTHONUNBUFFERED=1 python3 experiments/AOJ/closure.py \
             --aoj ${{FILES}} --reference ${{REF}} --max-jets 50000 --out "${{OUT}}"
 
+          # Every step is chained with &&, so score returns the status of the step
+          # that failed even where set -e is suspended (a function run under ||).
           score () {{  # name checkpoint K num_reg arm rung
             [ -f "${{OUT}}/scores_$1.npz" ] && {{ echo "skip $1 (scored)"; return 0; }}
             PYTHONUNBUFFERED=1 python3 experiments/EVAL/extract_features.py \
               --checkpoint "$2" --num-classes "$3" --num-reg "$4" --arm "$5" \
               --data-config ${{CFG}} --observers {observers} --save-logits \
               --data-test ${{FILES}} --out "/scratch/extract/$1" \
-              --batch-size 512 --num-workers 1 --fetch-step 1
-            python3 experiments/AOJ/discriminants.py --name "$1" --rung "$6" --structures three_prong \
-              --extract-dir "/scratch/extract/$1" --staged ${{FILES}} --out "${{OUT}}"
-            echo "$1 ${{GPU}}" >> "${{OUT}}/gpu_per_model.txt"
-            rm -rf "/scratch/extract/$1"
+              --batch-size 512 --num-workers 1 --fetch-step 1 \
+            && python3 experiments/AOJ/discriminants.py --name "$1" --rung "$6" --structures three_prong \
+              --extract-dir "/scratch/extract/$1" --staged ${{FILES}} --out "${{OUT}}" \
+            && echo "$1 ${{GPU}}" >> "${{OUT}}/gpu_per_model.txt" \
+            && rm -rf "/scratch/extract/$1"
           }}
+          # One log per model, so {parallel} models at once do not interleave; on
+          # failure its tail is printed and the shard stops (set -e on the wait).
+          mkdir -p /scratch/logs
+          scored () {{
+            score "$@" > "/scratch/logs/$1.log" 2>&1 \
+              || {{ echo "FATAL: $1 failed"; tail -40 "/scratch/logs/$1.log"; return 1; }}
+            echo "$1: $(grep -E 'jets/s|^skip' /scratch/logs/$1.log | tail -1)"
+          }}
+          # The FIRST model runs alone: its discriminants.py call writes jets.npz,
+          # which every later model is checked against, and two writers would race.
 {scores}
           touch "${{OUT}}/DONE"
           ls -la "${{OUT}}"
@@ -277,11 +295,12 @@ spec:
         - {{ name: scratch, mountPath: /scratch }}
         - {{ name: dshm,    mountPath: /dev/shm }}
         resources:
-          # 32Gi and 8 CPU as the feasibility spec: the loader holds one staged file
-          # at a time. Scratch: two raw files in flight (<= 10 GB) plus eight staged
-          # files plus one model's logits and features (~1.5 GB), deleted per model.
-          requests: {{ memory: "32Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "48Gi" }}
-          limits:   {{ memory: "32Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "48Gi" }}
+          # 8 CPU: {parallel} loaders at 100 % of a core plus their main processes.
+          # 48Gi: one model measured 6.6 GB loader + 1.5 GB main resident, times
+          # {parallel}. Scratch: two raw files in flight (<= 10 GB), eight staged files,
+          # and {parallel} models' logits and features (~1.5 GB each), deleted per model.
+          requests: {{ memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "48Gi" }}
+          limits:   {{ memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "48Gi" }}
       tolerations:
       - {{ key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }}
       affinity:
@@ -389,15 +408,21 @@ def render_shard(i: int, files: list[dict]) -> str:
     pairs = "\n".join(f"          pair {a['key']} {a['md5']} {b['key']} {b['md5']}" for a, b in zip(g, h))
     staged = " ".join(f"${{STAGED}}/{f['key'].removesuffix('.h5')}.parquet"
                       for a, b in zip(g, h) for f in (a, b))
-    scores = "\n".join(f'          score {m.name} "{m.checkpoint}" {m.k} {m.num_reg} {m.arm} {m.rung}'
-                       for m in MODELS)
+    line = lambda m: f'scored {m.name} "{m.checkpoint}" {m.k} {m.num_reg} {m.arm} {m.rung}'
+    first, rest = MODELS[0], MODELS[1:]
+    scores = [f"          {line(first)}"]
+    for start in range(0, len(rest), PARALLEL):
+        group = rest[start:start + PARALLEL]
+        scores += [f"          {line(m)} & p{k}=$!" for k, m in enumerate(group)]
+        scores.append("          " + "; ".join(f"wait ${{p{k}}}" for k in range(len(group))))
+    scores = "\n".join(scores)
     checkpoints = " ".join(m.checkpoint for m in MODELS if m.spec)
     return SHARD_TEMPLATE.format(
         i=i, n=N_SHARDS, image=IMAGE, pin=PIN, out=OUT_ROOT,
         files_short=f"{g[0]['key']}..{g[-1]['key']} and {h[0]['key']}..{h[-1]['key']}",
         model_names=" ".join(m.name for m in MODELS), checkpoints=checkpoints,
         ref=" ".join(REF_QCD), sophon_url=SOPHON_URL, sophon_sha=SOPHON_SHA256,
-        pairs=pairs, staged=staged, observers=OBSERVERS, scores=scores,
+        pairs=pairs, staged=staged, observers=OBSERVERS, scores=scores, parallel=PARALLEL,
         bad_nodes=", ".join(f'"{b}"' for b in BAD_NODES))
 
 

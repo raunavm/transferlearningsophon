@@ -67,7 +67,8 @@ def test_every_shard_scores_every_model_with_its_own_head_width():
     names = [m.name for m in B.MODELS]
     assert len(names) == len(set(names)) == 31
     for p in SHARDS:
-        lines = re.findall(r"^\s+score (\S+) \"(\S+)\" (\d+) (\d) (\S+) (\S+)$", SPECS[p], re.M)
+        lines = re.findall(r"^\s+scored (\S+) \"(\S+)\" (\d+) (\d) (\S+) (\S+)(?: & p\d=\$!)?$",
+                           SPECS[p], re.M)
         assert [l[0] for l in lines] == names
         for (name, ckpt, k, reg, arm, rung), m in zip(lines, B.MODELS):
             assert (int(k), int(reg), rung) == (m.k, m.num_reg, m.rung)
@@ -117,3 +118,44 @@ def test_the_pin_carries_every_flag_the_run_passes():
     B.verify_pin(B.PIN, not_yet_tagged=True)
     for path, flag in B.NEEDED_FLAGS.items():
         assert flag in (REPO / path).read_text()
+
+
+def _run_scoring_block(tmp_path, fail=None):
+    """Run the shard's real scoring block under bash with a fake python3 that
+    succeeds for every model except `fail`."""
+    s = _script(SPECS[SHARDS[0]])
+    block = s[s.index("# Every step is chained"):s.rindex('touch "${OUT}/DONE"')]
+    block = block.replace("/scratch/", f"{tmp_path}/scratch/")
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    fake = bindir / "python3"
+    fake.write_text(f"""#!/bin/bash
+args="$*"
+if [[ "$args" == *extract_features.py* ]]; then
+  [[ -n "{fail or ''}" && "$args" == *"/scratch/extract/{fail or 'NONE'} "* ]] && {{ echo boom; exit 3; }}
+  echo "1,000 jets  900 jets/s"; exit 0
+fi
+if [[ "$args" == *discriminants.py* ]]; then
+  name=$(sed -E 's/.*--name ([^ ]+).*/\\1/' <<< "$args"); touch "$OUT/scores_$name.npz"; exit 0
+fi
+exit 9
+""")
+    fake.chmod(0o755)
+    harness = (f"set -euo pipefail\nexport OUT={tmp_path}/out\nFILES=f\nCFG=c\nGPU=fake\n"
+               f"mkdir -p $OUT\n{block}\ntouch \"$OUT/DONE\"\n")
+    env = {"PATH": f"{bindir}:/usr/bin:/bin", "HOME": str(tmp_path)}
+    return subprocess.run(["bash", "-c", harness], capture_output=True, text=True, env=env)
+
+
+def test_the_parallel_scoring_block_scores_every_model_and_finishes(tmp_path):
+    r = _run_scoring_block(tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    got = {p.stem.removeprefix("scores_") for p in (tmp_path / "out").glob("scores_*.npz")}
+    assert got == {m.name for m in B.MODELS} and (tmp_path / "out" / "DONE").exists()
+
+
+def test_one_failed_model_inside_a_parallel_group_stops_the_shard_without_done(tmp_path):
+    r = _run_scoring_block(tmp_path, fail="l188-s2")
+    assert r.returncode != 0 and "FATAL: l188-s2 failed" in r.stdout, r.stdout + r.stderr
+    assert not (tmp_path / "out" / "DONE").exists()
+    assert not (tmp_path / "out" / "scores_l188-s2.npz").exists()

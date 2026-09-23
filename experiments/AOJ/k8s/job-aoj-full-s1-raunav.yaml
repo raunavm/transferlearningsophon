@@ -86,49 +86,71 @@ spec:
           [ -f "${OUT}/closure.json" ] || PYTHONUNBUFFERED=1 python3 experiments/AOJ/closure.py \
             --aoj ${FILES} --reference ${REF} --max-jets 50000 --out "${OUT}"
 
+          # Every step is chained with &&, so score returns the status of the step
+          # that failed even where set -e is suspended (a function run under ||).
           score () {  # name checkpoint K num_reg arm rung
             [ -f "${OUT}/scores_$1.npz" ] && { echo "skip $1 (scored)"; return 0; }
             PYTHONUNBUFFERED=1 python3 experiments/EVAL/extract_features.py \
               --checkpoint "$2" --num-classes "$3" --num-reg "$4" --arm "$5" \
               --data-config ${CFG} --observers jet_pt jet_eta jet_sdmass aoj_jet_pt aoj_jet_eta aoj_pn_WvsQCD aoj_pn_TvsQCD aoj_pn_HbbvsQCD --save-logits \
               --data-test ${FILES} --out "/scratch/extract/$1" \
-              --batch-size 512 --num-workers 1 --fetch-step 1
-            python3 experiments/AOJ/discriminants.py --name "$1" --rung "$6" --structures three_prong \
-              --extract-dir "/scratch/extract/$1" --staged ${FILES} --out "${OUT}"
-            echo "$1 ${GPU}" >> "${OUT}/gpu_per_model.txt"
-            rm -rf "/scratch/extract/$1"
+              --batch-size 512 --num-workers 1 --fetch-step 1 \
+            && python3 experiments/AOJ/discriminants.py --name "$1" --rung "$6" --structures three_prong \
+              --extract-dir "/scratch/extract/$1" --staged ${FILES} --out "${OUT}" \
+            && echo "$1 ${GPU}" >> "${OUT}/gpu_per_model.txt" \
+            && rm -rf "/scratch/extract/$1"
           }
-          score sophon-public "/workspace/sophon_public.pt" 188 0 SOPHON_PUBLIC L188
-          score l188-s1 "/data/results/mtx/mtx-l188-s1/net_epoch-79_state.pt" 188 0 L188 L188
-          score l188-s2 "/data/results/mtx/mtx-l188-s2/net_epoch-79_state.pt" 188 0 L188 L188
-          score l188-s3 "/data/results/mtx/mtx-l188-s3/net_epoch-79_state.pt" 188 0 L188 L188
-          score l188-s4 "/data/results/mtx/mtx-l188-s4/net_epoch-79_state.pt" 188 0 L188 L188
-          score l188-s5 "/data/results/mtx/mtx-l188-s5/net_epoch-79_state.pt" 188 0 L188 L188
-          score l162-s1b "/data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt" 162 0 L162 L162
-          score l162-s2 "/data/results/mtx/mtx-l162-s2/net_epoch-79_state.pt" 162 0 L162 L162
-          score l162-s3 "/data/results/mtx/mtx-l162-s3/net_epoch-79_state.pt" 162 0 L162 L162
-          score l162-s4 "/data/results/mtx/mtx-l162-s4/net_epoch-79_state.pt" 162 0 L162 L162
-          score l162-s5 "/data/results/mtx/mtx-l162-s5/net_epoch-79_state.pt" 162 0 L162 L162
-          score r42q1-s1 "/data/results/mtx/mtx-r42q1-s1/net_epoch-79_state.pt" 43 0 R42_Q1 R42_Q1
-          score r42q1-s2 "/data/results/mtx/mtx-r42q1-s2/net_epoch-79_state.pt" 43 0 R42_Q1 R42_Q1
-          score r42q1-s3 "/data/results/mtx/mtx-r42q1-s3/net_epoch-79_state.pt" 43 0 R42_Q1 R42_Q1
-          score r42q1-s4 "/data/results/mtx/mtx-r42q1-s4/net_epoch-79_state.pt" 43 0 R42_Q1 R42_Q1
-          score r42q1-s5 "/data/results/mtx/mtx-r42q1-s5/net_epoch-79_state.pt" 43 0 R42_Q1 R42_Q1
-          score r16q1-s1 "/data/results/mtx/mtx-r16q1-s1/net_epoch-79_state.pt" 17 0 R16_Q1 R16_Q1
-          score r16q1-s2 "/data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt" 17 0 R16_Q1 R16_Q1
-          score r16q1-s3 "/data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt" 17 0 R16_Q1 R16_Q1
-          score r16q1-s4 "/data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt" 17 0 R16_Q1 R16_Q1
-          score r16q1-s5 "/data/results/mtx/mtx-r16q1-s5/net_epoch-79_state.pt" 17 0 R16_Q1 R16_Q1
-          score l162mass-s1 "/data/results/mtx/mtx-l162mass-s1/net_epoch-79_state.pt" 162 1 L162_MASS L162
-          score l162mass-s2 "/data/results/mtx/mtx-l162mass-s2/net_epoch-79_state.pt" 162 1 L162_MASS L162
-          score l162mass-s3 "/data/results/mtx/mtx-l162mass-s3/net_epoch-79_state.pt" 162 1 L162_MASS L162
-          score l162mass-s4 "/data/results/mtx/mtx-l162mass-s4/net_epoch-79_state.pt" 162 1 L162_MASS L162
-          score l162mass-s5 "/data/results/mtx/mtx-l162mass-s5/net_epoch-79_state.pt" 162 1 L162_MASS L162
-          score r16q1mass-s1 "/data/results/mtx/mtx-r16q1mass-s1/net_epoch-79_state.pt" 17 1 R16_Q1_MASS R16_Q1
-          score r16q1mass-s2 "/data/results/mtx/mtx-r16q1mass-s2/net_epoch-79_state.pt" 17 1 R16_Q1_MASS R16_Q1
-          score r16q1mass-s3 "/data/results/mtx/mtx-r16q1mass-s3/net_epoch-79_state.pt" 17 1 R16_Q1_MASS R16_Q1
-          score r16q1mass-s4 "/data/results/mtx/mtx-r16q1mass-s4/net_epoch-79_state.pt" 17 1 R16_Q1_MASS R16_Q1
-          score r16q1mass-s5 "/data/results/mtx/mtx-r16q1mass-s5/net_epoch-79_state.pt" 17 1 R16_Q1_MASS R16_Q1
+          # One log per model, so 3 models at once do not interleave; on
+          # failure its tail is printed and the shard stops (set -e on the wait).
+          mkdir -p /scratch/logs
+          scored () {
+            score "$@" > "/scratch/logs/$1.log" 2>&1 \
+              || { echo "FATAL: $1 failed"; tail -40 "/scratch/logs/$1.log"; return 1; }
+            echo "$1: $(grep -E 'jets/s|^skip' /scratch/logs/$1.log | tail -1)"
+          }
+          # The FIRST model runs alone: its discriminants.py call writes jets.npz,
+          # which every later model is checked against, and two writers would race.
+          scored sophon-public "/workspace/sophon_public.pt" 188 0 SOPHON_PUBLIC L188
+          scored l188-s1 "/data/results/mtx/mtx-l188-s1/net_epoch-79_state.pt" 188 0 L188 L188 & p0=$!
+          scored l188-s2 "/data/results/mtx/mtx-l188-s2/net_epoch-79_state.pt" 188 0 L188 L188 & p1=$!
+          scored l188-s3 "/data/results/mtx/mtx-l188-s3/net_epoch-79_state.pt" 188 0 L188 L188 & p2=$!
+          wait ${p0}; wait ${p1}; wait ${p2}
+          scored l188-s4 "/data/results/mtx/mtx-l188-s4/net_epoch-79_state.pt" 188 0 L188 L188 & p0=$!
+          scored l188-s5 "/data/results/mtx/mtx-l188-s5/net_epoch-79_state.pt" 188 0 L188 L188 & p1=$!
+          scored l162-s1b "/data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt" 162 0 L162 L162 & p2=$!
+          wait ${p0}; wait ${p1}; wait ${p2}
+          scored l162-s2 "/data/results/mtx/mtx-l162-s2/net_epoch-79_state.pt" 162 0 L162 L162 & p0=$!
+          scored l162-s3 "/data/results/mtx/mtx-l162-s3/net_epoch-79_state.pt" 162 0 L162 L162 & p1=$!
+          scored l162-s4 "/data/results/mtx/mtx-l162-s4/net_epoch-79_state.pt" 162 0 L162 L162 & p2=$!
+          wait ${p0}; wait ${p1}; wait ${p2}
+          scored l162-s5 "/data/results/mtx/mtx-l162-s5/net_epoch-79_state.pt" 162 0 L162 L162 & p0=$!
+          scored r42q1-s1 "/data/results/mtx/mtx-r42q1-s1/net_epoch-79_state.pt" 43 0 R42_Q1 R42_Q1 & p1=$!
+          scored r42q1-s2 "/data/results/mtx/mtx-r42q1-s2/net_epoch-79_state.pt" 43 0 R42_Q1 R42_Q1 & p2=$!
+          wait ${p0}; wait ${p1}; wait ${p2}
+          scored r42q1-s3 "/data/results/mtx/mtx-r42q1-s3/net_epoch-79_state.pt" 43 0 R42_Q1 R42_Q1 & p0=$!
+          scored r42q1-s4 "/data/results/mtx/mtx-r42q1-s4/net_epoch-79_state.pt" 43 0 R42_Q1 R42_Q1 & p1=$!
+          scored r42q1-s5 "/data/results/mtx/mtx-r42q1-s5/net_epoch-79_state.pt" 43 0 R42_Q1 R42_Q1 & p2=$!
+          wait ${p0}; wait ${p1}; wait ${p2}
+          scored r16q1-s1 "/data/results/mtx/mtx-r16q1-s1/net_epoch-79_state.pt" 17 0 R16_Q1 R16_Q1 & p0=$!
+          scored r16q1-s2 "/data/results/mtx/mtx-r16q1-s2/net_epoch-79_state.pt" 17 0 R16_Q1 R16_Q1 & p1=$!
+          scored r16q1-s3 "/data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt" 17 0 R16_Q1 R16_Q1 & p2=$!
+          wait ${p0}; wait ${p1}; wait ${p2}
+          scored r16q1-s4 "/data/results/mtx/mtx-r16q1-s4/net_epoch-79_state.pt" 17 0 R16_Q1 R16_Q1 & p0=$!
+          scored r16q1-s5 "/data/results/mtx/mtx-r16q1-s5/net_epoch-79_state.pt" 17 0 R16_Q1 R16_Q1 & p1=$!
+          scored l162mass-s1 "/data/results/mtx/mtx-l162mass-s1/net_epoch-79_state.pt" 162 1 L162_MASS L162 & p2=$!
+          wait ${p0}; wait ${p1}; wait ${p2}
+          scored l162mass-s2 "/data/results/mtx/mtx-l162mass-s2/net_epoch-79_state.pt" 162 1 L162_MASS L162 & p0=$!
+          scored l162mass-s3 "/data/results/mtx/mtx-l162mass-s3/net_epoch-79_state.pt" 162 1 L162_MASS L162 & p1=$!
+          scored l162mass-s4 "/data/results/mtx/mtx-l162mass-s4/net_epoch-79_state.pt" 162 1 L162_MASS L162 & p2=$!
+          wait ${p0}; wait ${p1}; wait ${p2}
+          scored l162mass-s5 "/data/results/mtx/mtx-l162mass-s5/net_epoch-79_state.pt" 162 1 L162_MASS L162 & p0=$!
+          scored r16q1mass-s1 "/data/results/mtx/mtx-r16q1mass-s1/net_epoch-79_state.pt" 17 1 R16_Q1_MASS R16_Q1 & p1=$!
+          scored r16q1mass-s2 "/data/results/mtx/mtx-r16q1mass-s2/net_epoch-79_state.pt" 17 1 R16_Q1_MASS R16_Q1 & p2=$!
+          wait ${p0}; wait ${p1}; wait ${p2}
+          scored r16q1mass-s3 "/data/results/mtx/mtx-r16q1mass-s3/net_epoch-79_state.pt" 17 1 R16_Q1_MASS R16_Q1 & p0=$!
+          scored r16q1mass-s4 "/data/results/mtx/mtx-r16q1mass-s4/net_epoch-79_state.pt" 17 1 R16_Q1_MASS R16_Q1 & p1=$!
+          scored r16q1mass-s5 "/data/results/mtx/mtx-r16q1mass-s5/net_epoch-79_state.pt" 17 1 R16_Q1_MASS R16_Q1 & p2=$!
+          wait ${p0}; wait ${p1}; wait ${p2}
           touch "${OUT}/DONE"
           ls -la "${OUT}"
         volumeMounts:
@@ -137,11 +159,12 @@ spec:
         - { name: scratch, mountPath: /scratch }
         - { name: dshm,    mountPath: /dev/shm }
         resources:
-          # 32Gi and 8 CPU as the feasibility spec: the loader holds one staged file
-          # at a time. Scratch: two raw files in flight (<= 10 GB) plus eight staged
-          # files plus one model's logits and features (~1.5 GB), deleted per model.
-          requests: { memory: "32Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "48Gi" }
-          limits:   { memory: "32Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "48Gi" }
+          # 8 CPU: 3 loaders at 100 % of a core plus their main processes.
+          # 48Gi: one model measured 6.6 GB loader + 1.5 GB main resident, times
+          # 3. Scratch: two raw files in flight (<= 10 GB), eight staged files,
+          # and 3 models' logits and features (~1.5 GB each), deleted per model.
+          requests: { memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "48Gi" }
+          limits:   { memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "48Gi" }
       tolerations:
       - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
       affinity:
