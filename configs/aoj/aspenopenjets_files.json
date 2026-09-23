@@ -1,0 +1,407 @@
+{
+ "source": "https://www.fdr.uni-hamburg.de/api/files/8dea83ff-a005-45e2-a0b4-49309f3a00d1",
+ "record": "https://www.fdr.uni-hamburg.de/record/16505 (AspenOpenJets, arXiv:2412.10504, CC-BY 4.0)",
+ "retrieved": "2026-09-22",
+ "files": [
+  {
+   "key": "RunG_batch0.h5",
+   "md5": "bed9c27139f6651fb9511da39210e9e8",
+   "size": 2379411451
+  },
+  {
+   "key": "RunG_batch1.h5",
+   "md5": "7c5d85bbef57d52168cbf6e7b6f9293d",
+   "size": 2478381156
+  },
+  {
+   "key": "RunG_batch2.h5",
+   "md5": "8845537f51e6680e36820511665715f5",
+   "size": 2303714277
+  },
+  {
+   "key": "RunG_batch3.h5",
+   "md5": "b81d16257b371acc4021d1a27cae5ed5",
+   "size": 2433390761
+  },
+  {
+   "key": "RunG_batch4.h5",
+   "md5": "b94165566ff2a3085ce30fb201cf4783",
+   "size": 2561304003
+  },
+  {
+   "key": "RunG_batch5.h5",
+   "md5": "d81d867fc7a5b09665d725140003827c",
+   "size": 2647538523
+  },
+  {
+   "key": "RunG_batch6.h5",
+   "md5": "d05108f7d3913bb1a204052834332e2a",
+   "size": 2374408679
+  },
+  {
+   "key": "RunG_batch7.h5",
+   "md5": "eb522dd62f6abffd936e51cec5ef0e1b",
+   "size": 2339834059
+  },
+  {
+   "key": "RunG_batch8.h5",
+   "md5": "96cd7df0741cae05a42005ac434bc6cf",
+   "size": 2396718208
+  },
+  {
+   "key": "RunG_batch9.h5",
+   "md5": "9ddfc6bd753a3fdcfb53195eec492333",
+   "size": 2476090230
+  },
+  {
+   "key": "RunG_batch10.h5",
+   "md5": "d1d6526c38ac2e1f822e8db958151f5c",
+   "size": 2412987323
+  },
+  {
+   "key": "RunG_batch11.h5",
+   "md5": "9b2046dbdbc26cee5754917c6c15c5c1",
+   "size": 2499439167
+  },
+  {
+   "key": "RunG_batch12.h5",
+   "md5": "1789b978073651698cceda6a11044ae7",
+   "size": 2446902437
+  },
+  {
+   "key": "RunG_batch13.h5",
+   "md5": "43b7600c25047e7ca09ea062fc77c3c8",
+   "size": 2520493759
+  },
+  {
+   "key": "RunG_batch14.h5",
+   "md5": "8fa23f0dd377a61035cd5936a7fcfab7",
+   "size": 2543447621
+  },
+  {
+   "key": "RunG_batch15.h5",
+   "md5": "4d0af0a9d38e24a1ab7ebb169d2f6484",
+   "size": 2428600713
+  },
+  {
+   "key": "RunG_batch16.h5",
+   "md5": "8e1fb1b737fd666c4d794cc003f95813",
+   "size": 2598881853
+  },
+  {
+   "key": "RunG_batch17.h5",
+   "md5": "d895ea7f4478819dcfb35d672c130c49",
+   "size": 2577044198
+  },
+  {
+   "key": "RunG_batch18.h5",
+   "md5": "3ec969ce6935c16254283231117abfc1",
+   "size": 2428676700
+  },
+  {
+   "key": "RunG_batch19.h5",
+   "md5": "09abd20e0dc46eee72c13a61c765abea",
+   "size": 2544742858
+  },
+  {
+   "key": "RunG_batch20.h5",
+   "md5": "870ac08cd2377bb1e068539a664aeda2",
+   "size": 2301768945
+  },
+  {
+   "key": "RunG_batch21.h5",
+   "md5": "7a29a047ccecbfe18439bd466d1ea86e",
+   "size": 2398116867
+  },
+  {
+   "key": "RunG_batch22.h5",
+   "md5": "bea18b4d90dbc7ef01f0db8c2e0772f9",
+   "size": 2570285154
+  },
+  {
+   "key": "RunG_batch23.h5",
+   "md5": "1a9aa5f09ea8d0e5687859cf79aace59",
+   "size": 2530806950
+  },
+  {
+   "key": "RunG_batch24.h5",
+   "md5": "c8267f474419b27f1472c750396532d4",
+   "size": 2377331608
+  },
+  {
+   "key": "RunG_batch25.h5",
+   "md5": "bc6de5075284ea7e1db4f78eb2a8490c",
+   "size": 2483818764
+  },
+  {
+   "key": "RunG_batch26.h5",
+   "md5": "533c98643f63abbc9c95161b39494c8b",
+   "size": 2461819129
+  },
+  {
+   "key": "RunG_batch27.h5",
+   "md5": "94f9b1e957c6cc9f3f3489d362cc9b92",
+   "size": 2443577046
+  },
+  {
+   "key": "RunG_batch28.h5",
+   "md5": "bff3cd0eb05b6c11f55511956cd65936",
+   "size": 2518198030
+  },
+  {
+   "key": "RunG_batch29.h5",
+   "md5": "a3f6500c20681554361570a2e3005352",
+   "size": 2303659941
+  },
+  {
+   "key": "RunG_batch30.h5",
+   "md5": "bdde11c6af382b8a360582999f09742f",
+   "size": 2403518390
+  },
+  {
+   "key": "RunG_batch31.h5",
+   "md5": "d84931fec851266e8e8d08ff11ba32cf",
+   "size": 2440842206
+  },
+  {
+   "key": "RunG_batch32.h5",
+   "md5": "cff8da1b4f62f83fdc7f4d23fd2478d9",
+   "size": 2465383068
+  },
+  {
+   "key": "RunG_batch33.h5",
+   "md5": "b8df08c907e0d3ff880a29efb0d4b250",
+   "size": 2343624815
+  },
+  {
+   "key": "RunG_batch34.h5",
+   "md5": "5f1f739d0be0aaa7ea667aa72257fefb",
+   "size": 2579147179
+  },
+  {
+   "key": "RunG_batch35.h5",
+   "md5": "7a73ecf750f1c98829fb675cde4b49f9",
+   "size": 2499670754
+  },
+  {
+   "key": "RunG_batch36.h5",
+   "md5": "278d9b722c0748dc9cebc066d677b447",
+   "size": 2541561498
+  },
+  {
+   "key": "RunG_batch37.h5",
+   "md5": "e1931a2d81f8dd6afa6dccdf1295ba22",
+   "size": 2487409906
+  },
+  {
+   "key": "RunG_batch38.h5",
+   "md5": "f157af70dde0dd9f9bee533adf494195",
+   "size": 2490464942
+  },
+  {
+   "key": "RunG_batch39.h5",
+   "md5": "c893435a6b2b19e804360a86035a3577",
+   "size": 5280446668
+  },
+  {
+   "key": "RunH_batch0.h5",
+   "md5": "e1f80505da028e2f800a84e592c6eb61",
+   "size": 2373231012
+  },
+  {
+   "key": "RunH_batch1.h5",
+   "md5": "8d4431e6a9e9a4ee00ab4dee8e62be9a",
+   "size": 2509312881
+  },
+  {
+   "key": "RunH_batch2.h5",
+   "md5": "10e9f3d65e32652fae939444eaae0154",
+   "size": 2404910941
+  },
+  {
+   "key": "RunH_batch3.h5",
+   "md5": "a46b299502af449c1d12a0082c89ee5d",
+   "size": 2321783962
+  },
+  {
+   "key": "RunH_batch4.h5",
+   "md5": "5078689e3acb6c97616235223dfd893e",
+   "size": 2435159447
+  },
+  {
+   "key": "RunH_batch5.h5",
+   "md5": "194597a9ca6b7f5f9d57d06ecfc88955",
+   "size": 2462704947
+  },
+  {
+   "key": "RunH_batch6.h5",
+   "md5": "f90dda1ad19b2d66a0fd9540ecf0d9f7",
+   "size": 2581991169
+  },
+  {
+   "key": "RunH_batch7.h5",
+   "md5": "e3b5f858b3f6b0b3cd2b0e371fa19a9b",
+   "size": 2618306959
+  },
+  {
+   "key": "RunH_batch8.h5",
+   "md5": "926cd17ac27a2673b665998a82d5aa20",
+   "size": 2525973138
+  },
+  {
+   "key": "RunH_batch9.h5",
+   "md5": "890444d314f7b90c89919a369ab467e6",
+   "size": 2334807666
+  },
+  {
+   "key": "RunH_batch10.h5",
+   "md5": "7e5fa5f3cb065a623702e2b9a6f55a82",
+   "size": 2504185468
+  },
+  {
+   "key": "RunH_batch11.h5",
+   "md5": "40cf917c2d0e6164f5c5d3c12a0405de",
+   "size": 2588807592
+  },
+  {
+   "key": "RunH_batch12.h5",
+   "md5": "90f2bdb87fc3adbadb161d7e9ee94191",
+   "size": 2645562672
+  },
+  {
+   "key": "RunH_batch13.h5",
+   "md5": "eb9cf126983144ebf57e905aa263ae69",
+   "size": 2557596911
+  },
+  {
+   "key": "RunH_batch14.h5",
+   "md5": "1ce5a82dba4253da5e1451468dc32654",
+   "size": 2632865777
+  },
+  {
+   "key": "RunH_batch15.h5",
+   "md5": "64f7ff3bb44b4fd6169fb30490cad676",
+   "size": 2697861022
+  },
+  {
+   "key": "RunH_batch16.h5",
+   "md5": "9c92564610df6d88a58ef3dda1a007b7",
+   "size": 2757022978
+  },
+  {
+   "key": "RunH_batch17.h5",
+   "md5": "da3593c4840042ef655f898632bfe364",
+   "size": 2658405249
+  },
+  {
+   "key": "RunH_batch18.h5",
+   "md5": "cbac393a793e8d39532582df63100598",
+   "size": 2763862111
+  },
+  {
+   "key": "RunH_batch19.h5",
+   "md5": "3170d1560f1db00e55eef4e486fb2c92",
+   "size": 2703528303
+  },
+  {
+   "key": "RunH_batch20.h5",
+   "md5": "15b63c56e79aa06a85edb6a74ddcd8ee",
+   "size": 2641481312
+  },
+  {
+   "key": "RunH_batch21.h5",
+   "md5": "b159025f556277fdf0cfb20468db008d",
+   "size": 2471379510
+  },
+  {
+   "key": "RunH_batch22.h5",
+   "md5": "93d7104826c94a1ab5506ddffaba7aa0",
+   "size": 2649802372
+  },
+  {
+   "key": "RunH_batch23.h5",
+   "md5": "b24e8ff61f111984f512bbda88bca082",
+   "size": 2495112071
+  },
+  {
+   "key": "RunH_batch24.h5",
+   "md5": "ecdcea8320892754f4ff1af1da3f1c02",
+   "size": 2596669145
+  },
+  {
+   "key": "RunH_batch25.h5",
+   "md5": "848fb914bbcb2a9c91d82806f076e582",
+   "size": 2707149514
+  },
+  {
+   "key": "RunH_batch26.h5",
+   "md5": "7efdb2313d3c56be8f7e4488e10774ad",
+   "size": 2607187548
+  },
+  {
+   "key": "RunH_batch27.h5",
+   "md5": "4e7288e32424df99fc05984236c1e6da",
+   "size": 2769923065
+  },
+  {
+   "key": "RunH_batch28.h5",
+   "md5": "555b12702cd2a00a3dd6eddf795f1290",
+   "size": 2637973434
+  },
+  {
+   "key": "RunH_batch29.h5",
+   "md5": "65a26fac1db7513bfb445f9b95a06e7f",
+   "size": 2627317882
+  },
+  {
+   "key": "RunH_batch30.h5",
+   "md5": "8affe7bc849c5a221566ba0cac49abf7",
+   "size": 2642510304
+  },
+  {
+   "key": "RunH_batch31.h5",
+   "md5": "d054602f665e15c84921c5aed0c474bd",
+   "size": 2574878035
+  },
+  {
+   "key": "RunH_batch32.h5",
+   "md5": "1f81308608b0ca5d5651ccf89f445a0f",
+   "size": 2685088734
+  },
+  {
+   "key": "RunH_batch33.h5",
+   "md5": "fcf3e84e3e20f7852bca0eeb606d1dfe",
+   "size": 2648706767
+  },
+  {
+   "key": "RunH_batch34.h5",
+   "md5": "db6ddc517b92f8f95c660394ebc22596",
+   "size": 2570723331
+  },
+  {
+   "key": "RunH_batch35.h5",
+   "md5": "80c65779443b2301e7af6f1a9ef9c2d3",
+   "size": 2580402583
+  },
+  {
+   "key": "RunH_batch36.h5",
+   "md5": "41557437e64bc7be233092de90e1a529",
+   "size": 2523934432
+  },
+  {
+   "key": "RunH_batch37.h5",
+   "md5": "0a2f0e51c68c646d2b703135e0423bc8",
+   "size": 2713430567
+  },
+  {
+   "key": "RunH_batch38.h5",
+   "md5": "69494b6c28b1cb5f54a1a8bb77049b21",
+   "size": 2700504487
+  },
+  {
+   "key": "RunH_batch39.h5",
+   "md5": "6714459031414b332cde2420ac52ddb5",
+   "size": 5057106355
+  }
+ ]
+}

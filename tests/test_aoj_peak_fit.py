@@ -170,6 +170,26 @@ def test_main_says_go_for_a_tagger_and_no_go_for_noise(tmp_path, monkeypatch, ca
     assert "good_W_n_pass" in np.load(tmp_path / "histograms.npz").files
 
 
+def test_the_top_peak_alone_is_fitted_from_a_three_prong_only_score_file(tmp_path, monkeypatch):
+    """The full run writes no two-prong score (the W channel is withdrawn), so the
+    fitter must run on the top peak alone and never ask for the W inputs."""
+    rng = np.random.default_rng(91)
+    parts = [sample(92, n_bkg=250_000), sample(93, n_bkg=0, n_sig=5000, peak="top")]
+    mass, pt = (np.concatenate([p[k] for p in parts]) for k in (0, 1))
+    kind = np.repeat([0, 1], [len(p[0]) for p in parts])
+    tag = rng.normal(np.where(kind == 1, 3.0, -3.0), 2.0)
+    np.savez(tmp_path / "jets.npz", jet_sdmass=mass.astype(np.float32), aoj_jet_pt=pt.astype(np.float32),
+             aoj_pn_TvsQCD=(1 / (1 + np.exp(-tag))).astype(np.float16))
+    np.savez(tmp_path / "m.npz", three_prong_logodds=tag.astype(np.float16))
+    monkeypatch.setattr(sys, "argv", ["peak_fit.py", "--jets", str(tmp_path / "jets.npz"), "--toys", "0",
+                                      "--out", str(tmp_path), "--peaks", "top",
+                                      "--scores", f"m={tmp_path/'m.npz'}"])
+    assert pf.main() == 0
+    res = json.loads((tmp_path / "results.json").read_text())
+    assert res["peaks"] == ["top"] and list(res["reference"]) == ["top"]
+    assert list(res["models"]["m"]) == ["top"] and res["verdict"]["m"] == "GO"
+
+
 def test_a_hard_closure_flag_vetoes_go_and_a_failed_reference_outranks_both():
     good = dict(W=dict(criteria=dict(peak_position=True, auc=True)))
     bad = dict(W=dict(criteria=dict(peak_position=True, auc=False)))

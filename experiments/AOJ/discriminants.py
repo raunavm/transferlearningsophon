@@ -131,10 +131,20 @@ def main() -> int:
     ap.add_argument("--staged", nargs="+", required=True,
                     help="staged parquet files, in the --data-test order")
     ap.add_argument("--out", required=True)
+    # The full run persists only the three-prong score: the two-prong channel was
+    # WITHDRAWN as a design error (docs/PRESPEC_2026-09.md, amendment 2026-09-19),
+    # so its score is not written where a later reader could fit it.
+    ap.add_argument("--structures", nargs="+", choices=list(STRUCTURES), default=list(STRUCTURES))
     a = ap.parse_args()
 
     ext, out = pathlib.Path(a.extract_dir), pathlib.Path(a.out)
+    manifest = json.loads((ext / "extract_manifest.json").read_text())
     logits = np.load(ext / "logits.npy", mmap_mode="r")
+    # A mass-output model's last logit column is the mass regression, not a class
+    # (extract_features.py records the split). Scoring it as a class would put a
+    # never-true output into both sums.
+    lo_col, hi_col = manifest.get("logit_columns", {}).get("class_logits", [0, logits.shape[1]])
+    logits = logits[:, lo_col:hi_col]
     obs = np.load(ext / "observers.npz")
     jets = staged_jets(a.staged)
 
@@ -152,7 +162,7 @@ def main() -> int:
                              "logits are not row-aligned with them")
 
     out.mkdir(parents=True, exist_ok=True)
-    lo = {s: log_odds(np.asarray(logits), a.rung, st) for s, st in STRUCTURES.items()}
+    lo = {s: log_odds(np.asarray(logits), a.rung, STRUCTURES[s]) for s in a.structures}
     np.savez(out / f"scores_{a.name}.npz",
              **{f"{s}_logodds": v.astype(np.float16) for s, v in lo.items()})
 
@@ -166,11 +176,11 @@ def main() -> int:
                  **{k: jets[k].astype(np.float16) for k in JET_FLOATS if k.startswith("aoj_pn_")},
                  **{k: jets[k] for k in JET_INTS})
 
-    manifest = json.loads((ext / "extract_manifest.json").read_text())
     summary = dict(
         name=a.name, rung=a.rung, n_jets=n, n_outputs=n_outputs(a.rung),
         checkpoint=manifest.get("checkpoint"), checkpoint_sha256=manifest.get("checkpoint_sha256"),
-        members={s: members(a.rung, st) for s, st in STRUCTURES.items()},
+        class_logit_columns=[lo_col, hi_col],
+        members={s: members(a.rung, STRUCTURES[s]) for s in a.structures},
         qcd_nodes=qcd_nodes(a.rung),
         median_logodds={s: float(np.median(v)) for s, v in lo.items()})
     (out / f"scores_{a.name}.json").write_text(json.dumps(summary, indent=2))

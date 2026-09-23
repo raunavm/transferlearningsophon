@@ -101,7 +101,7 @@ def test_heads_that_cannot_express_the_discriminant_are_refused():
         disc.log_odds(np.zeros((3, 188)), "L162", "2P_HAD_2PARTON")
 
 
-def _fake_extraction(tmp_path, monkeypatch, corrupt=False):
+def _fake_extraction(tmp_path, monkeypatch, corrupt=False, num_reg=0, extra=()):
     sa = _load("scripts/stage_aoj.py", "stage_aoj")
     t = _load("tests/test_stage_aoj.py", "t_stage_aoj")
     import awkward as ak
@@ -112,15 +112,19 @@ def _fake_extraction(tmp_path, monkeypatch, corrupt=False):
         ak.to_parquet(ak.Array(rec), paths[-1])
     jets = disc.staged_jets(paths)
     ext = tmp_path / "extract"; ext.mkdir()
-    np.save(ext / "logits.npy", np.random.default_rng(1).normal(size=(40, 162)).astype(np.float32))
+    np.save(ext / "logits.npy",
+            np.random.default_rng(1).normal(size=(40, 162 + num_reg)).astype(np.float32))
     obs = {k: jets[k].astype(np.float32) for k in disc.JET_FLOATS}
     if corrupt:
         obs["jet_sdmass"] = obs["jet_sdmass"][::-1].copy() + 1.0
     np.savez(ext / "observers.npz", **obs)
-    (ext / "extract_manifest.json").write_text(json.dumps(dict(checkpoint="x", checkpoint_sha256="y")))
+    man = dict(checkpoint="x", checkpoint_sha256="y")
+    if num_reg:
+        man["logit_columns"] = {"class_logits": [0, 162], "regression": [162, 162 + num_reg]}
+    (ext / "extract_manifest.json").write_text(json.dumps(man))
     monkeypatch.setattr(sys, "argv", ["discriminants.py", "--name", "m", "--rung", "L162",
                                       "--extract-dir", str(ext), "--out", str(tmp_path / "out"),
-                                      "--staged", *map(str, paths)])
+                                      "--staged", *map(str, paths), *extra])
     return jets
 
 
@@ -140,3 +144,19 @@ def test_main_refuses_logits_that_are_not_row_aligned_with_the_staged_files(tmp_
     _fake_extraction(tmp_path, monkeypatch, corrupt=True)
     with pytest.raises(SystemExit, match="not row-aligned"):
         disc.main()
+
+
+def test_a_mass_output_head_is_scored_on_its_class_columns_only(tmp_path, monkeypatch):
+    """The last column of a mass-output model is the mass regression. The score
+    must equal the one computed from the 162 class columns alone."""
+    _fake_extraction(tmp_path, monkeypatch, num_reg=1)
+    assert disc.main() == 0
+    full = np.load(tmp_path / "extract" / "logits.npy")
+    want = disc.log_odds(full[:, :162], "L162", "3P_HAD_3PARTON").astype(np.float16)
+    assert np.array_equal(np.load(tmp_path / "out" / "scores_m.npz")["three_prong_logodds"], want)
+
+
+def test_the_withdrawn_two_prong_score_can_be_left_unwritten(tmp_path, monkeypatch):
+    _fake_extraction(tmp_path, monkeypatch, extra=("--structures", "three_prong"))
+    assert disc.main() == 0
+    assert np.load(tmp_path / "out" / "scores_m.npz").files == ["three_prong_logodds"]

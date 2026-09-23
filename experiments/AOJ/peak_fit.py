@@ -403,7 +403,13 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--eff", type=float, default=0.01, help="data efficiency of every cut")
     ap.add_argument("--toys", type=int, default=200)
+    # The full run fits the top peak only: the W channel was WITHDRAWN as a design
+    # error (docs/PRESPEC_2026-09.md, amendment 2026-09-19) and is not re-fitted.
+    ap.add_argument("--peaks", nargs="+", choices=list(PEAKS), default=list(PEAKS))
     a = ap.parse_args()
+    peaks = {pk: cfg for pk, cfg in PEAKS.items() if pk in a.peaks}
+    score_key = dict(W="two_prong_logodds", top="three_prong_logodds")
+    cms_key = dict(W="aoj_pn_WvsQCD", top="aoj_pn_TvsQCD")
 
     j = np.load(a.jets)
     mass, pt = j["jet_sdmass"].astype(float), j["aoj_jet_pt"].astype(float)
@@ -412,16 +418,15 @@ def main() -> int:
     mass, pt = mass[ok], pt[ok]
     print(f"{ok.sum():,} of {len(ok):,} jets inside {RHO_RANGE[0]} < rho < {RHO_RANGE[1]}", flush=True)
 
-    cms = dict(W=logit(j["aoj_pn_WvsQCD"])[ok], top=logit(j["aoj_pn_TvsQCD"])[ok])
+    cms = {pk: logit(j[cms_key[pk]])[ok] for pk in peaks}
     ours = {}
     for item in a.scores:
         name, path = item.split("=", 1)
         s = np.load(path)
-        ours[name] = dict(W=s["two_prong_logodds"].astype(float)[ok],
-                          top=s["three_prong_logodds"].astype(float)[ok])
+        ours[name] = {pk: s[score_key[pk]].astype(float)[ok] for pk in peaks}
 
     results, hists, ref_pass = dict(reference={}, models={n: {} for n in ours}), {}, {}
-    for peak, cfg in PEAKS.items():
+    for peak, cfg in peaks.items():
         print(f"\n===== {peak}: reference (shipped CMS ParticleNet) =====", flush=True)
         ref, ref_pass[peak], h = analyse(cms[peak], mass, pt, peak, a.eff, a.toys)
         ref["ok"] = bool(ref["z_wald"] >= cfg["reference_z"])
@@ -457,10 +462,10 @@ def main() -> int:
               + (f"   closure hard flags: {hard}" if hard else ""))
     if not pipeline_ok:
         print("PIPELINE-INVALID: the shipped CMS scores do not reach "
-              + ", ".join(f"{pk} >= {c['reference_z']} sigma" for pk, c in PEAKS.items())
+              + ", ".join(f"{pk} >= {c['reference_z']} sigma" for pk, c in peaks.items())
               + " through this pipeline, so a missing peak for OUR scores says nothing about them.")
     results.update(verdict=verdict, closure_hard_flags=hard, pipeline_ok=pipeline_ok,
-                   eff=a.eff, n_jets=int(ok.sum()), n_toys=a.toys)
+                   eff=a.eff, n_jets=int(ok.sum()), n_toys=a.toys, peaks=list(peaks))
 
     out = pathlib.Path(a.out); out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(json.dumps(results, indent=2))
