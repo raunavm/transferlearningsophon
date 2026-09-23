@@ -90,7 +90,11 @@ NEEDED_FLAGS = {"experiments/AOJ/discriminants.py": "--structures",
 BAD_NODES = ("ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu",
              "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu",
              "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org",
-             "ry-gpu-01.sdsc.optiputer.net", "ry-gpu-10.sdsc.optiputer.net")
+             "ry-gpu-01.sdsc.optiputer.net", "ry-gpu-10.sdsc.optiputer.net",
+             # k8s-haosu-15: shard 9's GPU failed mid-run after 19 models (CUDA abort in
+             # extract_features, 2026-09-23 11:41Z), then both retries were refused at
+             # admission with the same NVLink "GPU is lost" error.
+             "k8s-haosu-15.sdsc.optiputer.net")
 
 SOPHON_URL = "https://huggingface.co/jet-universe/sophon/resolve/main/models/JetClassII_Sophon/model.pt"
 SOPHON_SHA256 = "cc7c33b522e796b5bbf0aa9bb5b01361c964f4ef3acebdd9682d7519c095b824"
