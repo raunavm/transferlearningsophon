@@ -63,8 +63,10 @@
 \section{Setup}
 % Holds: the contraction tree and why it is nested; the one-variable-at-a-time
 % design and the three invariants that enforce it (identical training stream,
-% architecture fixed, four independent RNG streams); the five pretraining seeds,
-% which no comparable paper repeats.
+% architecture fixed, four independent RNG streams); the five pretraining seeds.
+% Hong et al. (2410.23129) repeat pretraining twice on iNaturalist (App. A.1.1:
+% "2 random seeds for backbone pretraining and 3 random seeds for finetuning")
+% and once on ImageNet21k (App. A.1.2); do not claim nobody repeats it.
 Every model in this study is evaluated on the same \ProbeNJets{} test jets, in
 the same order; the row alignment is \ProbeRowAlign{}. Each configuration is
 pretrained at \ProbeNSeeds{} independent seeds, and the pretraining seed is the
