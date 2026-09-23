@@ -1684,6 +1684,8 @@ def aoj_analysis(data: dict, seeds) -> dict:
     trend = trend_test(cells, task, kind, seeds, AOJ["predicted_step"])
     trend["alternative"] = f"{AOJ_ENDPOINT} increases along levels = the top yield falls with coarser labels"
     equal = equivalence_set(cells, task, kind, AOJ["predicted_equal"], seeds)
+    if equal.get("verdict"):   # tost_verdict speaks of 1−AUC; here the log is of the yield
+        equal["verdict"] = equal["verdict"].replace("in 1−AUC", "in yield")
     pairs = pairwise_table(cells, task, kind, seeds)
 
     g162 = paired_diffs(cells, task, kind, 162, "162+mass", seeds)

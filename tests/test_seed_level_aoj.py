@@ -51,6 +51,7 @@ def test_the_predicted_pattern_is_confirmed_in_all_three_clauses(tmp_path):
     data = S.load_aoj(write(tmp_path, results(predicted)))
     r = S.aoj_analysis(data, [1, 2, 3, 4, 5])
     assert r["run"] and r["composite_verdict"] == "confirmed in clauses 1-3", r["composite_verdict"]
+    assert "AUC" not in r["equivalence"]["verdict"] and "in yield" in r["equivalence"]["verdict"]
     assert r["trend"]["argmax_is_predicted_step"]
 
 
