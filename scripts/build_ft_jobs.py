@@ -1412,6 +1412,16 @@ def legs_bench_v2(inits, shard_name: str) -> str:
     has_public = any(c == "/workspace/sophon_public.pt" for _, c, *_ in inits)
     spe = "".join(f"{n}) echo {v};; " for n, v in BENCH_SAMPLES_PER_EPOCH.items())
     subs = [
+        # 85% -> 92%, PI decision 2026-09-22 (DECISIONS_PENDING item 43, option C,
+        # "for now"), the same raise wave 2 got on 2026-09-16 and by the same
+        # mechanism. The benchmark wave -- the only route to the two outstanding
+        # confirmatory predictions -- was refusing at 85% while waves 2 and 3,
+        # which are not on that path, kept writing up to 92%, so it could never
+        # restart on its own. `g >= 50`, the absolute floor that actually
+        # protects the volume, is untouched. Confined to bench v2: LEGS_BENCH
+        # (v1, never launched) and the Herwig staging keep 85%.
+        ('[ "$p" -lt 85 ] && [ "$g" -ge 50 ]',
+         '[ "$p" -lt 92 ] && [ "$g" -ge 50 ]', 1),
         ("          ROOT_OUT=/data/results/ft\n          mkdir -p ${ROOT_OUT}\n",
          f"          ROOT_OUT={BENCH_V2_ROOT}\n"
          f"          SHARD={shard_name}\n"

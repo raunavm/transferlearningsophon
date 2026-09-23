@@ -304,7 +304,9 @@ def test_every_cell_is_locked_before_anything_is_written_and_unlocked_after_done
 
 # ------------------------------------------------------------- benchmarks v2
 
-def test_bench_v2_keeps_the_published_recipe_and_the_85_percent_guard(new):
+def test_bench_v2_keeps_the_published_recipe_and_the_raised_92_percent_guard(new):
+    """92%, not 85%: the PI raised it 2026-09-22 (item 43, option C), as for wave
+    2. The 50 GB absolute floor must survive the raise."""
     old = (K8S / "job-ft-legs-bench-raunav.yaml").read_text()
     head = next(ln.strip() for ln in old.splitlines() if ln.strip().startswith("HEAD_MULT=("))
     for name in BV2:
@@ -312,7 +314,7 @@ def test_bench_v2_keeps_the_published_recipe_and_the_85_percent_guard(new):
         assert head in live and "--lr-scheduler none" in live
         assert f"--num-epochs {B.BENCH_EPOCHS}" in live and B.BENCH_EPOCHS == 20
         assert "--optimizer-option weight_decay 0.01" in live
-        assert '[ "$p" -lt 85 ] && [ "$g" -ge 50 ]' in live and "-lt 92" not in live
+        assert '[ "$p" -lt 92 ] && [ "$g" -ge 50 ]' in live and "-lt 85" not in live
         assert "ROOT_OUT=/data/results/ft/bench_v2" in live
         assert 'top) echo "1000 10000 100000 1200000"' in live
         assert 'qg)  echo "1000 10000 100000 1600000"' in live

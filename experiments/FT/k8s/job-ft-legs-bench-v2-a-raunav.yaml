@@ -102,7 +102,7 @@ spec:
           echo "free on /data: ${FREE_G}G"
           [ "${FREE_G}" -ge 100 ] || { echo "FATAL: ${FREE_G}G free on /data, need 100G"; exit 1; }
 
-          space_ok () { local p=$(df --output=pcent /data | tail -1 | tr -dc 0-9); local g=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9); echo "/data ${p}% used, ${g}G free"; [ "$p" -lt 85 ] && [ "$g" -ge 50 ] || { echo "FATAL: /data at ${p}% used, ${g}G free: stop and ask the PI"; exit 1; }; }
+          space_ok () { local p=$(df --output=pcent /data | tail -1 | tr -dc 0-9); local g=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9); echo "/data ${p}% used, ${g}G free"; [ "$p" -lt 92 ] && [ "$g" -ge 50 ] || { echo "FATAL: /data at ${p}% used, ${g}G free: stop and ask the PI"; exit 1; }; }
           FAIL_MARK=${ROOT_OUT}/FAILED_BENCH.${SHARD}
           [ -f ${FAIL_MARK} ] && { echo "FATAL: an earlier attempt failed twice: $(cat ${FAIL_MARK}). Fix it, then remove ${FAIL_MARK}"; exit 1; }
           attempt_ok () { local o=$1; local n=$(ls -d ${o}.partial.* 2>/dev/null | wc -l); [ "$n" -ge 2 ] && { echo "${o} failed ${n} times" | tee ${FAIL_MARK}; exit 1; }; return 0; }
