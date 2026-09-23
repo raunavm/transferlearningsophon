@@ -1,0 +1,135 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # ANOMALY DETECTION AS A VOCABULARY ABLATION -- ONE ARM PER JOB (PRD_PLAN 3.3).
+  #
+  # WHY THIS IS SPLIT BY ARM. The single-process version died after ~25 h with
+  # ONE arm of four finished (ledger: eval-anomaly-died-partial). The pod was
+  # garbage-collected before it could be inspected, so the cause was never
+  # determined -- which is exactly why it must not also be a run whose failure
+  # costs everything. Arms are independent up to one final normalisation, so
+  # each is now its own job:
+  #   - a death costs ONE arm, not the wave;
+  #   - the four arms run in PARALLEL, so wall clock is one arm (~25 h), not four;
+  #   - l162-s1b was NOT re-run in THAT wave: its 2026-09-09 result at
+  #     /data/results/eval/anomaly was merged in as-is, saving ~25 h.
+  #     CORRECTED 2026-09-19 -- THAT NO LONGER HOLDS. The artifact carries FIVE
+  #     of six signals: label_X_YY_qqqq is absent because that job died at ~25 h
+  #     and it is the last signal in the suite, so the model contributes 30
+  #     cells where every other model contributes 36. The 2026-09-18 wave
+  #     re-runs it in full as eval-anomaly-l162-s1b-v2-raunav, writing a NEW
+  #     directory. Nothing in /data/results is overwritten or deleted: the
+  #     30-cell artifact stays as the record of what merges v1..v3 actually read.
+  #
+  # THIS JOB'S OWN regret COLUMN IS DEGENERATE AND MUST NOT BE READ. The regret
+  # the ablation is about is sigma_min / min over ARMS at fixed
+  # (signal, N_sig, family). An arm alone takes that minimum over itself and
+  # writes 1.000 everywhere -- "no regret from coarsening the vocabulary", the
+  # null under test, manufactured by the aggregation. That is the defect
+  # audit-2-anomaly found when the normalisation sat inside the arm loop, and
+  # splitting arms across jobs reintroduces it unless something recomputes.
+  # job-eval-anomaly-merge-raunav does, by calling anomaly.cross_arm_regret --
+  # the same function the single-process path calls, not a second copy.
+  # Read ONLY the merged artifact.
+  #
+  # PIN mtx-s1.51.
+  # THIS LINE AND THE `git clone --branch` LINE BELOW MUST NAME THE SAME TAG,
+  # and until 2026-09-19 they did not: the header still cited the tag that first
+  # carried the cross-arm regret split while the clone line had moved on twice,
+  # so the header documented a run that never happened. It is the same failure
+  # the merge job's own header records against itself. The line above is now a
+  # SUBSTITUTED line in scripts/build_anomaly_jobs.py, so a spec derived from
+  # this template cannot inherit a pin comment that contradicts its own clone.
+  #
+  # CPU-ONLY, ZERO GPU. us-west required: this streams cached features off a
+  # PVC at SDSC, and the 2026-09-11 idle-GPU warnings were all us-east pods
+  # starved by that distance.
+  name: eval-anomaly-l188-s3-v2-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  # 72 h, RAISED FROM 108000 (30 h) ON 2026-09-12 AFTER MEASURING THE RATE.
+  # 30 h was carried over unchanged when this job was split out of the 4-arm
+  # spec, and one arm does not fit in it. Measured from eval-anomaly-r16q1-s3's
+  # own log timestamps: 88-99 min per (signal, N_sig) cell, mean 91.6, so
+  # ~8.3 h per signal and ~50 h for the six-signal suite. The estimate in
+  # anomaly.py's write-through comment -- "~1,440 cells at ~43 s each",
+  # i.e. 4.3 h/arm -- is low by roughly 12x and is why 30 h looked adequate.
+  # The evidence was already on file: ledger row eval-anomaly-died-partial
+  # records the 4-arm job ending at ~25 h with FIVE of six signals of ONE arm.
+  # NOTE: activeDeadlineSeconds counts from the Job's startTime across all
+  # retries and is TERMINAL -- backoffLimit does not apply to it.
+  activeDeadlineSeconds: 259200
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: anomaly
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.51" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          a=mtx-l188-s3; r=L188; k=188
+          d=/data/results/eval/${a}/features_e79
+          # PRECONDITIONS MATCH WHAT probe.load_arm ACTUALLY OPENS (probe.py:211-218).
+          # CORRECTED 2026-09-12: this block hard-failed on observers.npz, which
+          # load_arm opens only under an `if (d/"observers.npz").exists()` guard
+          # -- an OPTIONAL file -- while never checking label188.npy or
+          # extract_manifest.json, which it opens UNCONDITIONALLY. That is the
+          # same precondition inversion already fixed in probe-physics-v4 and in
+          # eval-labelrec-v3; this was its third instance. A missing mandatory
+          # file therefore reached python as a bare traceback after the clone and
+          # the logits build, and a cache without observers was refused outright
+          # even though anomaly.py never needs them.
+          for f in features.npy label188.npy extract_manifest.json; do
+            [ -f "${d}/${f}" ] || { echo "FATAL: no ${d}/${f}"; exit 1; }
+          done
+          # class_sum is the vocabulary-DEFINED score and needs the head's own
+          # node outputs. No extraction passes --save-logits, so build them from
+          # the cache: features.npy IS fc's input under extract_features' forward
+          # pre-hook, so fc(features) is the logits exactly -- one matmul per jet
+          # on CPU, and it cannot disagree with the features because it is
+          # applied to them.
+          if [ ! -f "${d}/logits.npy" ]; then
+            echo "building logits for ${a} (K=${k})"
+            python3 experiments/EVAL/logits_from_features.py \
+              --features ${d} --num-classes ${k} \
+              --checkpoint /data/results/mtx/${a}/net_epoch-79_state.pt
+          fi
+          [ -f "${d}/logits.npy" ] || { echo "FATAL: ${a} still has no logits.npy"; exit 1; }
+
+          OUT=/data/results/eval/anomaly_l188-s3-v2
+          mkdir -p ${OUT}
+          python3 experiments/EVAL/anomaly.py \
+            --features l188-s3=${d} \
+            --rungs l188-s3=${r} \
+            --out ${OUT} \
+            --n-bkg 200000 --n-template 200000 --trainings 10
+
+          echo "=== done: ${OUT}/anomaly_results.json ==="
+          echo "regret in THIS file is degenerate (one arm); read the merged artifact"
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
