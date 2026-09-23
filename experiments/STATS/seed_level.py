@@ -1613,6 +1613,171 @@ def format_s7(s7: dict) -> list[str]:
     return out
 
 
+# ------------------------------------------- §6: real data, the top-quark peak
+
+# The prediction of PRESPEC §6 for the three-prong channel (the W channel is
+# withdrawn, amendment 2026-09-19), transcribed: "top efficiency 188 ≈ 162 ≈ 43
+# > 17 (b content)". It has C1's shape, so it gets C1's three tests. The
+# mass-output models are "two-sided": the 2x2 difference-in-differences.
+AOJ = {"task": "aoj_top", "kind": "fit", "predicted_step": ([188, 162, 43], [17]),
+       "predicted_equal": (188, 162, 43),
+       "prediction": "top efficiency 188 ~ 162 ~ 43 > 17",
+       "clauses": ("performance falls with coarser labels", "the step is 43 -> 17",
+                   "188 ~ 162 ~ 43")}
+AOJ_ARM_RE = re.compile(r"^(l162mass|r16q1mass|l188|l162|r42q1|r16q1)-s([1-9]\d*)b?$")
+AOJ_CELL = {"l188": 188, "l162": 162, "r42q1": 43, "r16q1": 17,
+            "l162mass": "162+mass", "r16q1mass": "17+mass"}
+AOJ_ENDPOINT = "-ln(top signal yield at 1% data efficiency)"
+
+
+def load_aoj(path) -> dict:
+    """peak_fit.py's results.json -> one row per pretrained model.
+
+    The endpoint is -ln(fitted top yield): lower is better and log-scale, like
+    log(1 - AUC), so the trend test and the ±ln(1.1) equivalence bound (10 % in
+    yield, as §2.5 reads for rejection) apply unchanged. Every model is fitted on
+    the SAME jets, so paired differences cancel the data's own fluctuation.
+
+    A yield below its own uncertainty is a BOUND, not a measurement: the row takes
+    -ln(uncertainty) and is marked censored, the convention the probes use for a
+    rejection at the resolution floor. Dropping it instead would drop exactly the
+    models the prediction says lose the peak.
+    """
+    res = json.loads(pathlib.Path(path).read_text())
+    if res.get("peaks") != ["top"]:
+        raise SystemExit(f"FATAL: {path} fitted {res.get('peaks')}; the full run fits the top peak only")
+    rows, other = [], {}
+    for name, per_peak in res["models"].items():
+        m = AOJ_ARM_RE.match(name)
+        top = per_peak["top"]
+        y, err = float(top["signal_yield"]), float(top["signal_yield_err"])
+        entry = {"model": name, "signal_yield": y, "signal_yield_err": err,
+                 "efficiency_relative_to_reference": top.get("efficiency_relative_to_reference"),
+                 "criteria": top.get("criteria"), "verdict": res["verdict"].get(name)}
+        if not m:
+            other[name] = entry        # the public checkpoint: a reference row, no seed index
+            continue
+        rows.append({**entry, "task": AOJ["task"], "probe": AOJ["kind"],
+                     "level": AOJ_CELL[m.group(1)], "seed": int(m.group(2)),
+                     ENDPOINT: -float(np.log(max(y, err))), "censored": bool(y < err)})
+    return {"rows": rows, "reference_models": other, "reference": res["reference"]["top"],
+            "pipeline_ok": bool(res["pipeline_ok"]), "closure_hard_flags": res["closure_hard_flags"],
+            "n_jets": res["n_jets"], "eff": res["eff"]}
+
+
+def aoj_analysis(data: dict, seeds) -> dict:
+    """§6's three clauses on the granularity ladder, and the mass-output 2x2.
+
+    Not in the confirmatory family (§2.7): its two p-values -- the trend test and
+    the 2x2 interaction -- are Holm-corrected within their own table of two.
+    Nothing is tested if the pipeline reference failed or a closure hard flag was
+    raised: then a missing peak would say nothing about the models.
+    """
+    out = {"endpoint": AOJ_ENDPOINT, "lower_is_better": True, "prediction": AOJ["prediction"]}
+    if not data["pipeline_ok"] or data["closure_hard_flags"]:
+        return {**out, "run": False,
+                "reason": ("the shipped CMS score does not show the top peak through this pipeline"
+                           if not data["pipeline_ok"] else
+                           f"closure hard flags: {data['closure_hard_flags']}")}
+    cells = index_cells(data["rows"])
+    task, kind = AOJ["task"], AOJ["kind"]
+    trend = trend_test(cells, task, kind, seeds, AOJ["predicted_step"])
+    trend["alternative"] = f"{AOJ_ENDPOINT} increases along levels = the top yield falls with coarser labels"
+    equal = equivalence_set(cells, task, kind, AOJ["predicted_equal"], seeds)
+    pairs = pairwise_table(cells, task, kind, seeds)
+
+    g162 = paired_diffs(cells, task, kind, 162, "162+mass", seeds)
+    g17 = paired_diffs(cells, task, kind, 17, "17+mass", seeds)
+    both = [s for s in g162["seeds"] if s in g17["seeds"]]
+    did = pair_contrast({"seeds": both, "is_bound": g162["is_bound"] or g17["is_bound"],
+                         "d": [g162["d"][g162["seeds"].index(s)] - g17["d"][g17["seeds"].index(s)]
+                               for s in both]})
+    mass = {"gain_162": pair_contrast(g162), "gain_17": pair_contrast(g17),
+            "difference_in_differences": did,
+            "reading": "each gain is (with mass output) - (without) in the endpoint, so positive "
+                       "means the mass output LOWERS the top yield; two-sided"}
+
+    ps = [trend.get("p") if trend.get("run") else None,
+          did.get("p") if did.get("estimable") else None]
+    avail = [p for p in ps if p is not None]
+    rej = iter(holm(avail, ALPHA)) if avail else iter(())
+    table = [{"test": name, "p": p, "family_size": len(avail),
+              "holm_reject": None if p is None else bool(next(rej))}
+             for name, p in (("trend 188 -> 17", ps[0]), ("mass-output 2x2 interaction", ps[1]))]
+
+    if not trend["run"]:
+        c_1 = clause(1, AOJ["clauses"][0], "max-T trend test", "not run", detail=trend["reason"])
+        c_2 = clause(2, AOJ["clauses"][1], "arg-max contrast of the trend test", "not run",
+                     detail=trend["reason"])
+    else:
+        c_1 = clause(1, AOJ["clauses"][0],
+                     f"max-T trend test ({trend['method']}, {trend['n_blocks']} seed blocks)",
+                     "confirmed" if table[0]["holm_reject"] else "not confirmed", p=trend["p"],
+                     detail=f"Holm within the real-data table of {len(avail)}")
+        step = trend["argmax_step"]
+        c_2 = clause(2, AOJ["clauses"][1], "arg-max contrast of the trend test",
+                     "confirmed" if trend["argmax_is_predicted_step"] else "not confirmed",
+                     detail=f"arg-max {step[0]} | {step[1]}; localisation only, no separate p")
+    c_3 = (clause(3, AOJ["clauses"][2], "equivalence (TOST) over the set", "not run",
+                  detail=equal["reason"]) if not equal["run"] else
+           clause(3, AOJ["clauses"][2],
+                  f"equivalence (TOST) at ±ln(1.1) on all {equal['n_pairs_total']} pairs inside the "
+                  f"set, intersection-union", "confirmed" if equal["all_equivalent"] else "inconclusive",
+                  p=equal["p"], detail=equal["verdict"]))
+    return {**out, "run": True, "trend": trend, "equivalence": equal, "pairwise_exploratory": pairs,
+            "mass_output_2x2": mass, "holm_table": table,
+            **compose(AOJ["prediction"], [c_1, c_2, c_3], clause3_equivalence=equal)}
+
+
+def format_aoj(r: dict, data: dict) -> list[str]:
+    out = [f"\n== REAL DATA (PRESPEC §6), top peak at {data['eff']:.0%} data efficiency, "
+           f"{data['n_jets']:,} jets ==",
+           f"  endpoint: {AOJ_ENDPOINT}; lower is better",
+           f"  reference (shipped CMS ParticleNet): yield {data['reference']['signal_yield']:.0f} "
+           f"± {data['reference']['signal_yield_err']:.0f}"]
+    for row in sorted(data["rows"], key=lambda x: (str(x["level"]), x["seed"])):
+        out.append(f"    {str(row['level']):>9s} s{row['seed']}  yield {row['signal_yield']:8.1f} "
+                   f"± {row['signal_yield_err']:6.1f}  -ln(yield) "
+                   f"{row[ENDPOINT]:+.4f}{'  [BOUND]' if row['censored'] else ''}  {row['verdict']}")
+    for name, e in data["reference_models"].items():
+        out.append(f"    {name:>12s}  yield {e['signal_yield']:8.1f} ± {e['signal_yield_err']:6.1f}  "
+                   f"(reference row, no seed)")
+    if not r["run"]:
+        return out + [f"  NOT RUN: {r['reason']}"]
+    out.append(f"  {r['prediction']}: {r['composite_verdict']}")
+    for c in r["clauses"]:
+        out.append(f"    clause {c['n']} ({c['text']}): {c['verdict']}"
+                   + (f", p = {_p(c['p'])}" if c["p"] is not None else "") + f"  -- {c['detail']}")
+    d = r["mass_output_2x2"]["difference_in_differences"]
+    if d.get("estimable"):
+        out.append(f"  mass-output 2x2: DiD {d['mean_diff']:+.4f}, t = {d['t']:.2f}, p = {_p(d['p'])}")
+    for h in r["holm_table"]:
+        out.append(f"    Holm (m = {h['family_size']}): {h['test']}: "
+                   + ("pending" if h["p"] is None else f"p = {_p(h['p'])}, "
+                      + ("rejected" if h["holm_reject"] else "not rejected")))
+    return out
+
+
+def run_aoj(a, argv=None) -> int:
+    """§6 on the full real-data fit. Its own input, its own output file."""
+    out_file = _refuse_overwrite(pathlib.Path(a.out) / "aoj_top.json")
+    data = load_aoj(a.real_data)
+    seeds = [s for s in EXPECTED_SEEDS if s not in a.drop_pairs]
+    r = aoj_analysis({**data, "rows": [x for x in data["rows"] if x["seed"] in seeds]}, seeds)
+    res = {"provenance": {"input": str(a.real_data), "input_sha256": _sha(a.real_data),
+                          "script_sha256": _sha(__file__),
+                          "prespec_sha256": _sha(PRESPEC) if PRESPEC.exists() else None,
+                          "stats_modules_sha256": {m: _sha(REPO / m) for m in STATS_MODULES},
+                          "argv": list(argv or sys.argv[1:])},
+           "dropped_pairs": {"seeds": a.drop_pairs, "reason": a.drop_reason},
+           "secondary": {"real_data_top": r}, "table": data["rows"],
+           "reference_models": data["reference_models"], "reference": data["reference"]}
+    print("\n".join(format_aoj(r, data)))
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(json.dumps(res, indent=2))
+    return 0
+
+
 def run_s7(a, argv=None) -> int:
     """S7 on the mass-regression readout. Its own inputs, its own output file."""
     out_file = _refuse_overwrite(pathlib.Path(a.out) / "s7_mass_resolution.json")
@@ -1695,6 +1860,9 @@ def main(argv=None) -> int:
                     help="S7: a directory holding s*/mass_resolution.json, or the files. "
                          "Written to s7_mass_resolution.json in --out; the ladder inputs are "
                          "optional when this is given")
+    ap.add_argument("--real-data", default=None, metavar="RESULTS_JSON",
+                    help="§6: the full real-data fit's results.json (experiments/AOJ/peak_fit.py "
+                         "--peaks top). Written to aoj_top.json in --out")
     a = ap.parse_args(argv)
     if a.mass and not a.inputs:
         ap.error("--mass reports C5 inside the ladder's confirmatory family, so it needs the "
@@ -1702,12 +1870,13 @@ def main(argv=None) -> int:
     if a.drop_pairs and not a.drop_reason:
         raise SystemExit("FATAL: --drop-pairs needs --drop-reason; a dropped pair is reported "
                          "with why it was dropped (PRESPEC 2.2)")
-    if not a.inputs and not a.label_recovery and not a.mass_resolution:
+    if not a.inputs and not a.label_recovery and not a.mass_resolution and not a.real_data:
         ap.error("give the probe_results.json inputs, --label-recovery, --mass-resolution, "
-                 "or a combination")
+                 "--real-data, or a combination")
     rc = run_ladder(a, argv) if a.inputs else 0
     rc = rc or (run_s9(a, argv) if a.label_recovery else 0)
-    return rc or (run_s7(a, argv) if a.mass_resolution else 0)
+    rc = rc or (run_s7(a, argv) if a.mass_resolution else 0)
+    return rc or (run_aoj(a, argv) if a.real_data else 0)
 
 
 if __name__ == "__main__":
