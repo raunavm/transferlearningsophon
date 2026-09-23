@@ -1302,6 +1302,24 @@ def test_s7_clause_three_fires_only_when_a_coarser_level_is_significantly_better
     assert "VIOLATION" in out, "a violated ordering must be named in the report"
 
 
+def test_s7_clause_three_counts_only_violations_that_survive_holm(tmp_path):
+    """The report says S7 is corrected within itself. Until 2026-09-22 each of
+    clause 3's six contrasts was compared with a raw 0.05 while that sentence was
+    printed. A violation must now carry a Holm rejection over the table's
+    estimable contrasts, on both probes, and the count must match."""
+    for name, ladder, noise in (("inverted", {"188": 0.40, "162": 0.38, "43": 0.33, "17": 0.30}, 0.002),
+                                ("marginal", {"188": 0.310, "162": 0.308, "43": 0.306, "17": 0.304}, 0.002)):
+        s7 = s7_of(write_massres(tmp_path / name, massres_sigma(ladder=ladder, noise=noise)))[0]
+        for kind, blk in s7["secondary"]["S7"]["probes"].items():
+            est = [c for c in blk["ladder_pairs"] if c.get("estimable")]
+            assert all("holm_reject" in c for c in est), (name, kind)
+            want = S.holm([c["p"] for c in est], S.ALPHA)
+            for c, rej in zip(est, want):
+                assert c["holm_reject"] == bool(rej), (name, kind, c["fine"], c["coarse"])
+                assert c["violation"] == bool(rej and c["mean_diff"] < 0), (name, kind)
+            assert blk["n_violations"] == sum(c["violation"] for c in blk["ladder_pairs"])
+
+
 def test_s7_reports_both_probes(tmp_path):
     root = write_massres(tmp_path / "in", massres_sigma(gain_17=-0.04))
     s7 = s7_of(root)[0]["secondary"]["S7"]

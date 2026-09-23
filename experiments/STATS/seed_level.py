@@ -872,11 +872,19 @@ def s7_analysis(cells, seeds) -> dict:
         for i, fine in enumerate(LEVELS):
             for coarse in LEVELS[i + 1:]:
                 c = pair_contrast(massres_diff(cells, kind, str(fine), str(coarse), seeds))
-                # violation = the COARSER model is better, and significantly so
-                c.update({"fine": fine, "coarse": coarse,
-                          "violation": bool(c.get("estimable") and c["mean_diff"] < 0
-                                            and c["p"] < ALPHA)})
+                c.update({"fine": fine, "coarse": coarse})
                 ladder.append(c)
+        # violation = the COARSER model is better, significantly so AFTER Holm over
+        # this table's estimable contrasts -- the correction the report claims and
+        # PRESPEC 2.7 requires, and the convention pairwise_table already uses.
+        # Until 2026-09-22 this compared each raw p with ALPHA while the report
+        # said "corrected within itself". Primary probe: 6 of 6 either way.
+        # Nonlinear companion: 6 raw, 2 after correction.
+        est = [c for c in ladder if c.get("estimable")]
+        for c, rej in zip(est, holm([c["p"] for c in est], ALPHA)):
+            c["holm_reject"] = bool(rej)
+        for c in ladder:
+            c["violation"] = bool(c.get("holm_reject") and c["mean_diff"] < 0)
         out["probes"][kind] = {"gain_by_level": gains, "did": did, "ladder_pairs": ladder,
                                "n_violations": sum(c["violation"] for c in ladder)}
     lin = out["probes"]["ridge"]
@@ -1582,7 +1590,9 @@ def format_s7(s7: dict) -> list[str]:
            "  NOT in the secondary Holm table: clarification 3 of 2026-09-19 fixes that "
            "table at m = 3 (S1 and the two S2 tasks).",
            "  S7 is corrected within itself, as 2.7 directs for everything outside the "
-           "confirmatory family."]
+           "confirmatory family:",
+           "  clause 3's six pairwise contrasts are Holm-corrected within their table; "
+           "clause 1 is an intersection-union test and clause 2 a single test."]
     for kind in MASSRES_PROBES:
         b = s7["probes"][kind]
         out.append(f"    {kind}:")
