@@ -54,6 +54,13 @@ MTX_K8S = ROOT / "experiments" / "MTX" / "k8s"
 FILES = ROOT / "configs" / "aoj" / "aspenopenjets_files.json"
 
 PIN = "mtx-s1.55"
+# The fit clones a later tag. mtx-s1.55's merge_shards.py required every
+# (run, lumi, event) to be unique, but one event holds up to five jets, so the
+# first fit job refused the real run 2,157,112 times (2026-09-23). The shards
+# ran at mtx-s1.55 and their specs keep it: they are the record of what ran.
+FIT_PIN = "mtx-s1.56"
+FIT_NEEDED_FLAGS = {"experiments/AOJ/merge_shards.py": "occur in more than one shard",
+                    "experiments/AOJ/peak_fit.py": "--peaks"}
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 OUT_ROOT = "/data/results/aoj/full_v1"
 N_SHARDS = 10
@@ -165,7 +172,7 @@ def shards() -> list[list[dict]]:
     return out
 
 
-def verify_pin(pin: str, not_yet_tagged: bool) -> None:
+def verify_pin(pin: str, not_yet_tagged: bool, flags: dict | None = None) -> None:
     def read(path):
         if not_yet_tagged:
             p = ROOT / path
@@ -176,7 +183,7 @@ def verify_pin(pin: str, not_yet_tagged: bool) -> None:
     for path in NEEDED_AT_PIN:
         if read(path) is None:
             raise SystemExit(f"FATAL: {path} is not in {'the working tree' if not_yet_tagged else pin}")
-    for path, flag in NEEDED_FLAGS.items():
+    for path, flag in (NEEDED_FLAGS if flags is None else flags).items():
         if flag not in (read(path) or ""):
             raise SystemExit(f"FATAL: {path} at {pin} has no {flag}")
 
@@ -431,7 +438,7 @@ def render_shard(i: int, files: list[dict]) -> str:
 
 
 def render_fit() -> str:
-    return FIT_TEMPLATE.format(n=N_SHARDS, last=N_SHARDS - 1, image=IMAGE, pin=PIN, out=OUT_ROOT,
+    return FIT_TEMPLATE.format(n=N_SHARDS, last=N_SHARDS - 1, image=IMAGE, pin=FIT_PIN, out=OUT_ROOT,
                                model_names=" ".join(m.name for m in MODELS))
 
 
@@ -445,10 +452,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-only", action="store_true", help="verify, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
-                    help=f"check the working tree instead of {PIN}, which is tagged after the commit")
+                    help=f"check the working tree instead of {FIT_PIN}, which is tagged after the commit")
     a = ap.parse_args()
     verify_heads()
-    verify_pin(PIN, a.pin_not_yet_tagged)
+    verify_pin(PIN, False)                      # the shards already ran at it
+    verify_pin(FIT_PIN, a.pin_not_yet_tagged, FIT_NEEDED_FLAGS)
     for path, text in specs().items():
         if a.check_only:
             print(f"ok   {path.relative_to(ROOT)}")

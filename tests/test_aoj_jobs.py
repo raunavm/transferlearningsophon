@@ -159,3 +159,10 @@ def test_one_failed_model_inside_a_parallel_group_stops_the_shard_without_done(t
     assert r.returncode != 0 and "FATAL: l188-s2 failed" in r.stdout, r.stdout + r.stderr
     assert not (tmp_path / "out" / "DONE").exists()
     assert not (tmp_path / "out" / "scores_l188-s2.npz").exists()
+
+
+def test_the_fit_clones_the_tag_with_the_corrected_merge_and_the_shards_keep_theirs():
+    """The shards ran at PIN and their specs are the record of it; only the fit moves."""
+    assert f'--branch "{B.FIT_PIN}"' in SPECS[FIT] and f'--branch "{B.PIN}"' not in SPECS[FIT]
+    assert all(f'--branch "{B.PIN}"' in SPECS[p] for p in SHARDS)
+    B.verify_pin(B.FIT_PIN, not_yet_tagged=True, flags=B.FIT_NEEDED_FLAGS)

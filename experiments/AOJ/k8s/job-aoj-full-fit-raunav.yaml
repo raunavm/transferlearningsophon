@@ -26,7 +26,7 @@ spec:
             [ -f "/data/results/aoj/full_v1/shard${i}/DONE" ] || { echo "FATAL: shard ${i} has not finished"; exit 1; }
             SHARDS="${SHARDS} /data/results/aoj/full_v1/shard${i}"
           done
-          git clone --depth 1 --branch "mtx-s1.55" \
+          git clone --depth 1 --branch "mtx-s1.56" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon

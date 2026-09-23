@@ -51,8 +51,18 @@ def test_a_model_scored_from_two_checkpoints_is_refused(tmp_path):
 def test_an_event_in_two_shards_is_refused(tmp_path):
     ds = [shard(tmp_path, 0, 4, event0=0), shard(tmp_path, 1, 4, event0=0)]
     np.savez(ds[1] / "jets.npz", **{**dict(np.load(ds[0] / "jets.npz"))})
-    with pytest.raises(SystemExit, match="more than once"):
+    with pytest.raises(SystemExit, match="4 collision events occur in more than one shard"):
         ms.merge(ds, tmp_path / "out")
+
+
+def test_several_jets_of_one_event_inside_a_shard_are_accepted(tmp_path):
+    """AspenOpenJets stores up to five jets per event (measured: ~200k events a shard
+    hold more than one). The check is between shards, never within one."""
+    ds = [shard(tmp_path, 0, 6), shard(tmp_path, 1, 4)]
+    j = dict(np.load(ds[0] / "jets.npz"))
+    j["event"] = np.repeat(j["event"][:3], 2)
+    np.savez(ds[0] / "jets.npz", **j)
+    assert ms.merge(ds, tmp_path / "out")["n_jets"] == 10
 
 
 def test_score_rows_that_disagree_with_the_jets_are_refused(tmp_path):

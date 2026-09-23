@@ -13,7 +13,10 @@ something different from one pass over all the files:
     than jets.npz, or silently misaligned against it);
   - a model scored from a different checkpoint in different shards;
   - score and jet row counts that disagree inside a shard;
-  - the same collision event in two shards (a file staged twice).
+  - the same collision event in two DIFFERENT shards (a file staged twice).
+    One event holds up to five jets, so an event repeating INSIDE a shard is
+    normal and is not checked: the first version of this refused exactly that,
+    2,157,112 times, on the real run (2026-09-23).
 
 Closure hard flags are carried through as the union over shards, each tagged
 with its shard, so peak_fit.py's veto sees every one.
@@ -64,10 +67,12 @@ def merge(shards: list[pathlib.Path], out: pathlib.Path) -> dict:
             if set(got.values()) != {k}:
                 raise SystemExit(f"FATAL: {s.name}/scores_{name}.npz has {got} rows, jets.npz has {k:,}")
 
-    ids = np.concatenate([np.stack([j["run"], j["lumi"], j["event"]], axis=1) for j in jets])
-    if len(np.unique(ids, axis=0)) != len(ids):
-        raise SystemExit(f"FATAL: {len(ids) - len(np.unique(ids, axis=0)):,} (run, lumi, event) "
-                         "triples occur more than once across the shards")
+    events = np.concatenate([np.unique(np.stack([j["run"], j["lumi"], j["event"]], axis=1), axis=0)
+                             for j in jets])
+    shared = len(events) - len(np.unique(events, axis=0))
+    if shared:
+        raise SystemExit(f"FATAL: {shared:,} collision events occur in more than one shard; "
+                         "a file was staged twice")
 
     out.mkdir(parents=True, exist_ok=True)
     np.savez(out / "jets.npz", **{k: np.concatenate([j[k] for j in jets]) for k in sorted(keys)})
