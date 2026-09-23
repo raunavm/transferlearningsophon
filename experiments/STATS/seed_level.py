@@ -123,7 +123,15 @@ C1 = {"task": "bvc_resonant", "predicted_step": ([188, 162, 43], [17]),
 #     does not predict one -- it would be a test this analysis invented.
 S1 = {"task": "bvc_qcd", "predicted_step": None}   # 188 best, then 162 >= 43 > 17: no single step
 S2_TASKS = ("retained_topology", "ee_vs_mm")
-CONFIRMATORY = ("C1", "C2", "C3", "C4", "C5")
+# PRESPEC amendment 2026-09-22: C4 is pre-specified but DESCRIPTIVE and outside the
+# Holm count. Its exact binomial over four signed cells cannot go below 1/16 > ALPHA,
+# so it can never be rejected at any Holm step; the discrete-test procedures (Tarone
+# 1990; Hommel & Krummenauer 1998, Tarone-Holm) never count such a test, which here
+# reduces exactly to Holm over the other four.
+CONFIRMATORY = ("C1", "C2", "C3", "C5")
+# The family as first registered, kept as a sensitivity analysis: dropping C4 only
+# loosens the others' thresholds, so this shows which verdicts depend on the amendment.
+CONFIRMATORY_AS_REGISTERED = ("C1", "C2", "C3", "C4", "C5")
 # Predicted sign of (random-label control - 17-class model, same seed index) in
 # log(1-AUC), draws 1, 2, 3 (PRESPEC 3, "C4 in detail"). 0 = predicted no difference.
 C4_PREDICTED = {"bvc_4prong": (-1, -1, 0), "visible_content": (+1, 0, +1)}
@@ -407,30 +415,20 @@ def tost_verdict(equivalent: bool, bound: float, x: float) -> str:
 
 
 def equivalence(cells, task, kind, seeds) -> dict:
-    """S2: TOST on the largest pairwise paired difference, bound +-ln(1.1).
+    """S2 and C3: equivalence across all four levels, TOST at +-ln(1.1) on all six pairs.
 
-    The pair is chosen by rule -- largest |mean paired difference| among the six
-    -- and `smallest_bound_passed` is the half-width at which its (1-2a) interval
-    just fits. The maximum over all six pairs is reported beside it as a
-    companion, because the pair with the largest mean is not necessarily the
-    pair with the widest interval. The wording is PRESPEC 2.5's, never "no effect".
+    PRESPEC amendment 2026-09-22: the claim is about the SET, so it is an
+    intersection-union test (Berger 1982; Berger & Hsu 1996) -- `p` is the MAXIMUM
+    pair p and the verdict is the bound every pair passes. This is equivalence_set
+    over all four levels. Until that amendment `p` was the p of the pair with the
+    largest |mean paired difference|, a pair selected on the data, which is not a
+    valid p for the set claim. That pair is still reported, as `largest_pair`, for
+    its effect size. The wording is PRESPEC 2.5's, never "no effect".
     """
-    bound = tost_bound()
-    rows = [r for r in (tost_pair(cells, task, kind, a, b, seeds, bound) for a, b in PAIRS)
-            if r is not None]
-    out = {"task": task, "probe": kind, "target_bound": bound, "log_base": "e",
-           "n_pairs_estimable": len(rows), "n_pairs_total": len(PAIRS)}
-    if not rows:
-        return {**out, "run": False, "reason": "no level pair with 2 complete seed pairs and "
-                                               "non-identical differences — not run"}
-    top = max(rows, key=lambda r: abs(r["mean_diff"]))
-    return {**out, "run": True, "largest_pair": top, "p": top["p"],
-            "verdict": tost_verdict(top["equivalent_at_target"], bound,
-                                    top["smallest_bound_passed"]),
-            "all_pairs_companion": {"max_p": max(r["p"] for r in rows),
-                                    "smallest_bound_passed_by_all": max(
-                                        r["smallest_bound_passed"] for r in rows)},
-            "pairs": rows}
+    out = equivalence_set(cells, task, kind, LEVELS, seeds)
+    if not out["run"]:
+        return out
+    return {**out, "largest_pair": max(out["pairs"], key=lambda r: abs(r["mean_diff"]))}
 
 
 def equivalence_set(cells, task, kind, levels, seeds) -> dict:
@@ -1509,6 +1507,7 @@ def run_ladder(a, argv=None) -> int:
                             "arm_checkpoints": mdata["arm_checkpoints"]}
     computed = {"C1": c1.get("p"), "C5": None if c5 is None else c5["p"]}
     fam = holm_family([(c, computed.get(c)) for c in CONFIRMATORY])
+    fam_registered = holm_family([(c, computed.get(c)) for c in CONFIRMATORY_AS_REGISTERED])
     # C1's third clause is a predicted null and needs 2.5's equivalence test; the
     # trend test above answers only the first two. The three verdicts and the
     # composite live inside res["confirmatory"]["C1"] beside the trend result,
@@ -1516,7 +1515,8 @@ def run_ladder(a, argv=None) -> int:
     c1_equal = equivalence_set(cells, C1["task"], "linear", C1["predicted_equal"], seeds)
     c1.update(c1_clauses(c1, c1_equal, next(h for h in fam if h["test"] == "C1"),
                          len(CONFIRMATORY)))
-    res["confirmatory"] = {"C1": c1, "holm_family": fam}
+    res["confirmatory"] = {"C1": c1, "holm_family": fam,
+                           "holm_family_as_registered": fam_registered}
     if c5 is not None:
         res["confirmatory"]["C5"] = c5
     print("\n".join(format_trend("C1", c1, len(CONFIRMATORY))))
@@ -1526,6 +1526,8 @@ def run_ladder(a, argv=None) -> int:
         print("\n".join(format_c5(c5)))
     print(f"  Holm over the full confirmatory family of {len(CONFIRMATORY)} at {ALPHA:.0%}:")
     print("\n".join(format_holm(fam)))
+    print(f"  sensitivity, the family of {len(CONFIRMATORY_AS_REGISTERED)} as first registered:")
+    print("\n".join(format_holm(fam_registered)))
 
     print("\n  SECONDARY")
     s1 = trend_test(cells, S1["task"], "linear", seeds, S1["predicted_step"])
@@ -1542,14 +1544,14 @@ def run_ladder(a, argv=None) -> int:
             if not e["run"]:
                 print(f"    {e['reason']}")
                 continue
-            top, comp = e["largest_pair"], e["all_pairs_companion"]
+            top = e["largest_pair"]
+            print(f"    intersection-union over {e['n_pairs_estimable']} of {e['n_pairs_total']} "
+                  f"pairs: p = max TOST p = {_p(e['p'])}")
             print(f"    largest pairwise difference {top['coarse']} − {top['fine']}: "
                   f"{top['mean_diff']:+.4f}  90% CI [{top['ci90'][0]:+.4f}, {top['ci90'][1]:+.4f}]"
-                  f"  TOST p={_p(top['p'])}  n={top['n_pairs']}"
+                  f"  n={top['n_pairs']}"
                   f"{'  [BOUND: a cell reached AUC=1]' if top['is_bound'] else ''}")
             print(f"    {e['verdict']}")
-            print(f"    companion over all {e['n_pairs_estimable']} pairs: max TOST p="
-                  f"{_p(comp['max_p'])}; all equivalent within ±{comp['smallest_bound_passed_by_all']:.4f}")
     pw = {t: {k: pairwise_table(cells, t, k, seeds) for k in PROBES}
           for t in tasks if t not in CONTROL_TASKS}
     s6 = {t: sign_agreement(pw[t]["linear"], pw[t]["mlp"]) for t in pw}
@@ -1574,7 +1576,9 @@ def run_ladder(a, argv=None) -> int:
     res["pairwise_exploratory"] = pw
 
     print("\n  C4 is pending: the random-label control has no features yet. c4_sign_pattern() is "
-          "implemented\n  and tested on a synthetic fixture; with one run per draw it is descriptive.")
+          "implemented\n  and tested on a synthetic fixture; with one run per draw it is descriptive.\n"
+          "  C4 is outside the Holm family (PRESPEC amendment 2026-09-22): its floor, 1/16, is "
+          f"above α = {ALPHA}.")
 
     out_file.parent.mkdir(parents=True, exist_ok=True)
     out_file.write_text(json.dumps(res, indent=2))

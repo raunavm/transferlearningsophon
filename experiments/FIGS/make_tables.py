@@ -257,7 +257,11 @@ def input_paths(root: pathlib.Path) -> dict:
             # identical; only the C5 block, the Holm family it joins and the
             # provenance differ. The earlier directory is kept as the record of
             # what the tables said while C5 was still pending.
-            "analysis": data / "probe_ladder_v2" / "analysis_with_c5" / "seed_level_results.json",
+            # analysis_family_of_four supersedes it (amendment of 2026-09-22): the
+            # same inputs, with C4 outside the Holm count and S2's p the
+            # intersection-union maximum. Verified field by field: only the Holm
+            # families, the S2 p and bound fields and C1's family-size wording differ.
+            "analysis": data / "probe_ladder_v2" / "analysis_family_of_four" / "seed_level_results.json",
             "leg1": data / "leg1_metrics.json",
             "leg2": data / "leg2_metrics.json",
             "recovery": data / "label_recovery_ladder_v1" / "analysis" / "s9_label_recovery.json",
@@ -539,9 +543,10 @@ def emit_tests(em: Emitter, A: dict, src: pathlib.Path) -> None:
             em.macro("TostCI" + key,
                      f"$[{fmt(top['ci90'][0], 4, sign=True)},\\,{fmt(top['ci90'][1], 4, sign=True)}]$",
                      src, path + ".largest_pair.ci90", "90% interval, the TOST interval")
-            em.macro("TostP" + key, fmt_p(top["p"]), src, path + ".largest_pair.p")
-            em.macro("TostSmallestBound" + key, fmt(top["smallest_bound_passed"], 4), src,
-                     path + ".largest_pair.smallest_bound_passed")
+            em.macro("TostP" + key, fmt_p(e["p"]), src, path + ".p",
+                     "intersection-union: the largest TOST p over all six pairs")
+            em.macro("TostSmallestBound" + key, fmt(e["smallest_bound_passed_by_all"], 4), src,
+                     path + ".smallest_bound_passed_by_all")
 
     for task, g in (A.get("secondary", {}).get("S6") or {}).items():
         if not g["n_pairs"]:
@@ -779,6 +784,11 @@ def table_tests(A: dict) -> str:
             # visible in the manuscript rather than silent.
             rows.append(f"{h['test']} & measured; no row generator & --- & --- & "
                         f"{fmt_p(h['p_raw'])} & {holm_verdict(h)} \\\\")
+    # C4 is pre-specified but outside the Holm count (PRESPEC amendment 2026-09-22):
+    # its smallest attainable p, 1/16, is above alpha. It keeps a row so it cannot vanish.
+    rows.append("C4 & random-label control: a pair is separated better when the labels "
+                "split it & sign pattern over six cells, exact binomial over the four signed "
+                "cells (smallest attainable $p=1/16$) & --- & --- & descriptive \\\\")
     rows.append("\\addlinespace")
     s1 = (A.get("secondary") or {}).get("S1")
     if s1 and s1.get("run"):
@@ -793,11 +803,11 @@ def table_tests(A: dict) -> str:
         rows.append(" & ".join([
             f"S2: {TASK_LABELS.get(task, tex(task))}",
             "equivalent within $\\pm\\ln(1.1)$ of $1-$AUC",
-            f"TOST, largest pair ({top['coarse']} vs {top['fine']} classes), "
-            f"{top['n_pairs']} seed pairs",
+            f"TOST on all {e['n_pairs_total']} pairs, intersection-union; largest pair "
+            f"{top['coarse']} vs {top['fine']} classes, {top['n_pairs']} seed pairs",
             f"${fmt(top['mean_diff'], 4, sign=True)}"
             + ("^{\\ast}$" if top["is_bound"] else "$"),
-            fmt_p(top["p"]),
+            fmt_p(e["p"]),
             holm_verdict(entry)]) + " \\\\")
     s6 = A.get("secondary", {}).get("S6") or {}
     for task in ordered_tasks(s6):

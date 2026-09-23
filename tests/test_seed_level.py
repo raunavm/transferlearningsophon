@@ -333,7 +333,7 @@ def test_single_file_is_handled_without_running_any_test(tmp_path):
     assert all(not m["estimable"] for m in res["mde"])
     assert all(not r["estimable"] for t in res["pairwise_exploratory"].values()
                for k in t.values() for r in k)
-    assert [h["status"] for h in res["confirmatory"]["holm_family"]] == ["pending"] * 5
+    assert [h["status"] for h in res["confirmatory"]["holm_family"]] == ["pending"] * 4
 
 
 # ---------------------------------------------------------------- C1: all three clauses
@@ -562,9 +562,29 @@ def test_equivalence_wording_and_smallest_bound(tmp_path):
     x = max(abs(top["ci90"][0]), abs(top["ci90"][1]))
     assert not top["equivalent_at_target"] and x > e["target_bound"]
     assert top["smallest_bound_passed"] == x
-    assert e["verdict"].startswith(f"inconclusive at ±10%; equivalent within ±{x:.4f}")
-    assert e["all_pairs_companion"]["smallest_bound_passed_by_all"] >= x
+    x_all = max(r["smallest_bound_passed"] for r in e["pairs"])
+    assert e["smallest_bound_passed_by_all"] == x_all >= x
+    assert e["verdict"].startswith(f"inconclusive at ±10%; equivalent within ±{x_all:.4f}")
+    assert e["p"] == max(r["p"] for r in e["pairs"])
     assert "no effect" not in e["verdict"]
+
+
+def test_equivalence_p_is_the_intersection_union_maximum_not_a_selected_pair():
+    """PRESPEC amendment 2026-09-22. 'Equivalent across the four granularities' is a
+    claim about all six pairs, so its p is the largest pair p (Berger 1982). Here the
+    pair with the largest mean difference is precise and the 188-vs-43 pair is noisy:
+    the selected pair would pass the bound while the set claim must not."""
+    d = math.log(1.1)
+    mu = {188: 0.0, 162: 0.8 * d, 43: 0.5 * d, 17: 0.45 * d}
+    noise = {188: [0.003, -0.002, 0.001, -0.003, 0.001], 162: [-0.002, 0.003, -0.001, 0.002, -0.002],
+             43: [0.12, -0.10, 0.08, -0.13, 0.03], 17: [0.001, 0.002, -0.003, 0.0, 0.001]}
+    cells = {("t", "linear", lv, s): {S.ENDPOINT: mu[lv] + noise[lv][s - 1], "censored": False}
+             for lv in S.LEVELS for s in (1, 2, 3, 4, 5)}
+    e = S.equivalence(cells, "t", "linear", [1, 2, 3, 4, 5])
+    top = e["largest_pair"]
+    assert (top["fine"], top["coarse"]) == (188, 162) and top["p"] < 0.05
+    assert e["p"] == max(r["p"] for r in e["pairs"]) > 0.05
+    assert not e["all_equivalent"] and e["verdict"].startswith("inconclusive")
 
 
 def test_censored_cells_are_bounds_and_never_produce_a_nan(tmp_path):
@@ -619,11 +639,30 @@ def test_c4_sign_pattern_on_a_synthetic_fixture():
     assert "DESCRIPTIVE" in S.c4_sign_pattern.__doc__ and "ONE run per draw" in S.c4_sign_pattern.__doc__
 
 
-def test_holm_family_is_five_with_pending_members(planted):
+def test_c4_is_outside_the_holm_family_because_it_cannot_reach_alpha():
+    """PRESPEC amendment 2026-09-22: a member whose smallest attainable p is above alpha
+    is never counted (Tarone 1990; Hommel & Krummenauer 1998)."""
+    perfect = S.c4_sign_pattern({"bvc_4prong": [-1.0, -1.0, 0.0], "visible_content": [1.0, 0.0, 1.0]})
+    assert perfect["p_at_least"] == perfect["p_floor"] == 1 / 16 > S.ALPHA
+    assert set(S.CONFIRMATORY_AS_REGISTERED) - set(S.CONFIRMATORY) == {"C4"}
+
+
+def test_the_family_as_registered_is_reported_and_never_rejects_more(planted):
+    """The sensitivity analysis: Holm over the original five can only be stricter."""
+    conf = planted[0]["confirmatory"]
+    reg = {h["test"]: h for h in conf["holm_family_as_registered"]}
+    assert list(reg) == ["C1", "C2", "C3", "C4", "C5"]
+    assert all(h["family_size"] == 5 for h in reg.values())
+    for h in conf["holm_family"]:
+        if h["status"] == "available" and not h["reject_possible"]:
+            assert not reg[h["test"]]["reject_possible"]
+
+
+def test_holm_family_is_four_with_pending_members(planted):
     fam = planted[0]["confirmatory"]["holm_family"]
-    assert [h["test"] for h in fam] == ["C1", "C2", "C3", "C4", "C5"]
-    assert [h["status"] for h in fam] == ["available"] + ["pending"] * 4
-    assert all(h["family_size"] == 5 and h["threshold_if_smallest"] == 0.05 / 5 for h in fam)
+    assert [h["test"] for h in fam] == ["C1", "C2", "C3", "C5"]
+    assert [h["status"] for h in fam] == ["available"] + ["pending"] * 3
+    assert all(h["family_size"] == 4 and h["threshold_if_smallest"] == 0.05 / 4 for h in fam)
     assert fam[0]["p_raw"] == planted[0]["confirmatory"]["C1"]["p"]
     assert fam[0]["reject_whatever_pending"] is True
 
@@ -1096,21 +1135,21 @@ def test_a_seed_missing_one_corner_is_dropped_whole_from_the_did(tmp_path):
 
 def test_c5_joins_the_confirmatory_family_only_when_the_2x2_is_supplied(tmp_path):
     """Without --mass, C5 is pending exactly as C2 and C3 are. With it, C5 carries
-    a p and the family size is still five -- Holm was always over all five."""
+    a p and the family size is still four (C4 left the count by the amendment of
+    2026-09-22)."""
     lad = write_ladder(tmp_path / "lad", ladder_values(step=1.0))
     res_no = run(lad, tmp_path / "o1")[0]
     fam_no = res_no["confirmatory"]["holm_family"]
-    assert [h["test"] for h in fam_no] == ["C1", "C2", "C3", "C4", "C5"]
-    assert [h["status"] for h in fam_no] == ["available"] + ["pending"] * 4
+    assert [h["test"] for h in fam_no] == ["C1", "C2", "C3", "C5"]
+    assert [h["status"] for h in fam_no] == ["available"] + ["pending"] * 3
     assert "C5" not in res_no["confirmatory"]
 
     mass = write_mass(tmp_path / "mass", mass_values(gain_17=-0.5, noise=0.01))
     res, out = run(lad, tmp_path / "o2", "--mass", str(mass))
     fam = res["confirmatory"]["holm_family"]
-    assert [h["test"] for h in fam] == ["C1", "C2", "C3", "C4", "C5"]
-    assert [h["status"] for h in fam] == ["available", "pending", "pending", "pending",
-                                          "available"]
-    assert all(h["family_size"] == 5 for h in fam)
+    assert [h["test"] for h in fam] == ["C1", "C2", "C3", "C5"]
+    assert [h["status"] for h in fam] == ["available", "pending", "pending", "available"]
+    assert all(h["family_size"] == 4 for h in fam)
     c5 = res["confirmatory"]["C5"]
     assert c5["p"] == next(h for h in fam if h["test"] == "C5")["p_raw"]
     assert c5["task"] == "bvc_resonant"

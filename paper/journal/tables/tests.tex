@@ -2,14 +2,14 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{The pre-specified tests, exactly as \texttt{experiments/STATS/seed\_level.py} wrote them; nothing in this table is recomputed. ``Holm'' is the verdict at the full confirmatory family size of 5 with the unmeasured members still pending, so a rejection here holds whatever those turn out to be. Differences run coarser minus finer in $\log(1-$AUC$)$, paired by pretraining seed: positive means the coarser vocabulary is worse.}
+\caption{The pre-specified tests, exactly as \texttt{experiments/STATS/seed\_level.py} wrote them; nothing in this table is recomputed. ``Holm'' is the verdict at the full confirmatory family size of 4 with the unmeasured members still pending, so a rejection here holds whatever those turn out to be. Differences run coarser minus finer in $\log(1-$AUC$)$, paired by pretraining seed: positive means the coarser vocabulary is worse.}
 \label{tab:tests}
 \begin{tabular}{l p{0.20\linewidth} p{0.20\linewidth} r r l}
 \toprule
 test & prediction & test used & statistic & $p$ & Holm \\
 \midrule
 C1: $b$ vs $c$, two-prong resonance & performance falls with coarser labels & max-$T$ trend, exact, 5 seed blocks & $31.039$ & $5.27\times10^{-6}$ & rejected \\
-\quad clause 1 & performance falls with coarser labels & max-T trend test (exact, 5 seed blocks) & Holm at the full confirmatory family of 5: must beat 0.01 as the smallest; rejected whatever the pending tests give & $5.27\times10^{-6}$ & confirmed \\
+\quad clause 1 & performance falls with coarser labels & max-T trend test (exact, 5 seed blocks) & Holm at the full confirmatory family of 4: must beat 0.0125 as the smallest; rejected whatever the pending tests give & $5.27\times10^{-6}$ & confirmed \\
 \quad clause 2 & the step is 43 $\to$ 17 & arg-max contrast of the trend test & arg-max [188, 162, 43] | [17], predicted [188, 162, 43] | [17]; localisation only, no separate p & --- & confirmed \\
 \quad clause 3 & 188 \textasciitilde{} 162 \textasciitilde{} 43 & equivalence (TOST) at $\pm$ln(1.1) on all 3 pairs inside the set, intersection-union & inconclusive at $\pm$10\%; equivalent within $\pm$0.1273 (a factor 1.136 in 1-AUC) & $0.314$ & inconclusive \\
 \multicolumn{6}{@{}l@{}}{\itshape C1 overall: confirmed in clauses 1-2, inconclusive in clause 3} \\
@@ -19,11 +19,11 @@ C5: $b$ vs $c$, two-prong resonance & two-sided; the written expectation is that
 \quad gain at 17 classes & effect of adding the mass output at this granularity alone & paired difference & $+1.0956$ & $0.00257$ & descriptive \\
 C2 & not yet measured & --- & --- & --- & pending \\
 C3 & not yet measured & --- & --- & --- & pending \\
-C4 & not yet measured & --- & --- & --- & pending \\
+C4 & random-label control: a pair is separated better when the labels split it & sign pattern over six cells, exact binomial over the four signed cells (smallest attainable $p=1/16$) & --- & --- & descriptive \\
 \addlinespace
 S1: $b$ vs $c$, QCD & performance falls with coarser labels & max-$T$ trend, exact, 5 seed blocks & $31.235$ & $6.03\times10^{-6}$ & rejected \\
-S2: two-prong vs four-prong & equivalent within $\pm\ln(1.1)$ of $1-$AUC & TOST, largest pair (17 vs 162 classes), 5 seed pairs & $+0.4300$ & $0.999$ & not rejected \\
-S2: electron vs muon pair & equivalent within $\pm\ln(1.1)$ of $1-$AUC & TOST, largest pair (17 vs 188 classes), 5 seed pairs & $+13.7566^{\ast}$ & $1$ & not rejected \\
+S2: two-prong vs four-prong & equivalent within $\pm\ln(1.1)$ of $1-$AUC & TOST on all 6 pairs, intersection-union; largest pair 17 vs 162 classes, 5 seed pairs & $+0.4300$ & $0.999$ & not rejected \\
+S2: electron vs muon pair & equivalent within $\pm\ln(1.1)$ of $1-$AUC & TOST on all 6 pairs, intersection-union; largest pair 17 vs 188 classes, 5 seed pairs & $+13.7566^{\ast}$ & $1$ & not rejected \\
 S6: $b$ vs $c$, two-prong resonance & the nonlinear probe orders the vocabularies as the linear probe does & sign agreement over the estimable level pairs & 6 of 6 & --- & descriptive \\
 S6: $b$ vs $c$, QCD & the nonlinear probe orders the vocabularies as the linear probe does & sign agreement over the estimable level pairs & 6 of 6 & --- & descriptive \\
 S6: two-prong vs four-prong & the nonlinear probe orders the vocabularies as the linear probe does & sign agreement over the estimable level pairs & 5 of 6 & --- & descriptive \\
