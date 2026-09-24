@@ -140,13 +140,14 @@ CONTROL_AND_MASS_RUNS = [
       for s in range(1, 6)],
     *[(f"mtx-r16q1mass-s{s}", "R16_Q1_MASS", 17, f"/data/results/mtx/mtx-r16q1mass-s{s}")
       for s in range(1, 6)],
+    # Trained: job mtx-rand-d2-s2-raunav Complete 2026-09-23T23:14Z, epoch 79 on disk.
+    ("mtx-rand-d2-s2", "RAND_d2", 17, "/data/results/mtx/mtx-rand-d2-s2"),
 ]
 # NOT TRAINED YET. Buildable by naming them with --only, and never emitted
 # otherwise: an un-launchable YAML on disk looks exactly like a launchable one,
 # and with backoffLimit 50 applying it early is fifty clones that each stop at
 # the checkpoint guard.
 NOT_YET_TRAINED = [
-    ("mtx-rand-d2-s2", "RAND_d2", 17, "/data/results/mtx/mtx-rand-d2-s2"),
     ("mtx-rand-d3-s3", "RAND_d3", 17, "/data/results/mtx/mtx-rand-d3-s3"),
 ]
 # Regression outputs AFTER the K class outputs (ParT_sophon_arch_mass.py: one,
