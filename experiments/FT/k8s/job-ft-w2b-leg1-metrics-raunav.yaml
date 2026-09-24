@@ -1,0 +1,84 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # LEG 1 READOUT FOR FINE-TUNING WAVES 2 AND 3 AND THE SELF-SUPERVISED CONTROL.
+  #
+  # Derived from job-ft-leg1-metrics-raunav.yaml (wave 1, /data/results/ft/leg1),
+  # which stays as the record of that run. The only differences: the pin, the
+  # ROOT (the w2b tree that waves 2 and 3 and mtx-mpm-s1's fine-tune write to),
+  # a NEW output directory that is refused if it exists, and this header.
+  #
+  # WHAT IT FEEDS. (1) The self-supervised control's validity bar (PRESPEC §4):
+  # fine-tuning from mtx-mpm-s1 must beat training from scratch at 10^3 and 10^4
+  # jets on JetClass-II (this leg) and on JetClass (leg 2) by more than the
+  # fine-tuning-seed spread; at 10^6 its macro AUC must be within 0.02 of the
+  # supervised-pretrained models. Leg 2 is read from predict.log; this is the
+  # half that needs the cached logits. (2) The paper's in-domain fine-tuning rows
+  # for every pretrained checkpoint.
+  #
+  # 192 leg-1 cells with logits at launch (2026-09-24): wave 2's 72, wave 3's 108,
+  # mtx-mpm-s1's 12. Leg 1 of every wave is complete; the six cells wave 2 still
+  # runs are all leg 2. Output is one JSON of a few hundred kB.
+  name: ft-w2b-leg1-metrics-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: readout
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT=/data/results/ft/w2b_leg1_metrics_v1
+          [ ! -e "${OUT}/leg1_metrics.json" ] || { echo "FATAL: ${OUT}/leg1_metrics.json exists; use a new output directory"; exit 1; }
+          git clone --depth 1 --branch "mtx-s1.56" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          ROOT=/data/results/ft/w2b/leg1
+          [ -d "${ROOT}" ] || { echo "FATAL: no ${ROOT}"; exit 1; }
+          n=$(find ${ROOT} -name logits.npy -not -path "*.partial.*" | wc -l)
+          echo "complete leg1 cells with logits: ${n}"
+          [ "${n}" -ge 192 ] || { echo "FATAL: ${n} leg-1 cells with logits, expected 192"; exit 1; }
+
+          mkdir -p ${OUT}
+          python3 experiments/FT/leg1_metrics.py \
+            --root ${ROOT} \
+            --out ${OUT} \
+            --auc-stride 4
+
+          echo "=== summary ==="
+          python3 -c "
+          import json
+          d=json.load(open('${OUT}/leg1_metrics.json'))
+          for init,per in sorted(d['summary'].items()):
+              for N,s in sorted(per.items()):
+                  sd=s['accuracy_sd']
+                  print(f\"{init:16} {N:10} acc={s['accuracy_mean']:.5f}\" +
+                        (f\" +-{sd:.5f}\" if sd is not None else '') +
+                        f\" macroAUC={s['macro_auc_mean']:.5f} n={s['n_seeds']}\")
+          "
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
