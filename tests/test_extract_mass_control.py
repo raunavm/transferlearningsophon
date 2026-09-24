@@ -71,7 +71,8 @@ def test_run_ids_k_and_arm_match_the_training_specs(b):
         assert ckpt == f"/data/results/mtx/{run_id}"
         assert (run_id in b.NUM_REG) == t_mass, (
             f"{run_id}: --num-reg must follow the architecture it trained with")
-    assert len(b.CONTROL_AND_MASS_RUNS) == 11 and len(b.NUM_REG) == 10
+    # three random draws and ten mass-output models, however many have trained yet
+    assert len(b.CONTROL_AND_MASS_RUNS) + len(b.NOT_YET_TRAINED) == 13 and len(b.NUM_REG) == 10
 
 
 def test_the_committed_specs_are_what_the_generator_emits(b):
