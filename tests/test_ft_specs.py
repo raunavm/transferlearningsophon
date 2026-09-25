@@ -250,9 +250,13 @@ def test_every_live_spec_records_each_attempt():
     # attempt records as the rest. The control is counted SEPARATELY rather
     # than folded into the matrix total, because it is deliberately not a rung
     # of the contraction tree and the tree's size is itself an invariant.
+    # The self-supervised control is counted apart for the same reason, and has
+    # three seeds since it cleared its validity bar (PRESPEC §4, 2026-09-24).
     control = [p for p in live if "rand" in p.name]
-    matrix = [p for p in live if "rand" not in p.name]
-    assert len(matrix) == 25, sorted(p.name for p in matrix)
+    mpm = [p for p in live if "mpm" in p.name]
+    matrix = [p for p in live if "rand" not in p.name and "mpm" not in p.name]
+    assert len(matrix) == 24, sorted(p.name for p in matrix)
+    assert len(mpm) == 3, sorted(p.name for p in mpm)
     assert len(control) <= 4, sorted(p.name for p in control)
     for p in live:
         _, _, code = _spec(p)

@@ -142,14 +142,14 @@ CONTROL_AND_MASS_RUNS = [
       for s in range(1, 6)],
     # Trained: job mtx-rand-d2-s2-raunav Complete 2026-09-23T23:14Z, epoch 79 on disk.
     ("mtx-rand-d2-s2", "RAND_d2", 17, "/data/results/mtx/mtx-rand-d2-s2"),
+    # Trained: job mtx-rand-d3-s3-raunav Complete 2026-09-24T18:39Z, epoch 79 on disk.
+    ("mtx-rand-d3-s3", "RAND_d3", 17, "/data/results/mtx/mtx-rand-d3-s3"),
 ]
 # NOT TRAINED YET. Buildable by naming them with --only, and never emitted
 # otherwise: an un-launchable YAML on disk looks exactly like a launchable one,
 # and with backoffLimit 50 applying it early is fifty clones that each stop at
 # the checkpoint guard.
-NOT_YET_TRAINED = [
-    ("mtx-rand-d3-s3", "RAND_d3", 17, "/data/results/mtx/mtx-rand-d3-s3"),
-]
+NOT_YET_TRAINED = []
 # Regression outputs AFTER the K class outputs (ParT_sophon_arch_mass.py: one,
 # the jet mass). The extractor is told --num-classes K --num-reg 1 rather than
 # --num-classes K+1, so K stays the plain twin's and the manifest never counts
