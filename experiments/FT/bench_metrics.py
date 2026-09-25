@@ -173,12 +173,14 @@ def cell_metrics(cell: pathlib.Path, probe, test_set: str = "pythia") -> dict:
                     # inf (no background jet passed) is not JSON; null is
                     f"{k}_rel_stat": rel if math.isfinite(rel) else None})
     manifest = cell / "ft_manifest.json"
+    man = json.loads(manifest.read_text()) if manifest.exists() else {}
     out.update({
         "n_jets": int(y.size), "n_signal": n_sig, "n_background": n_bkg,
         # p saturates to exactly 0 or 1 past |z1 - z0| ~ 37 and those jets tie
         "n_score_saturated": int(((score == 0.0) | (score == 1.0)).sum()),
-        "train_subset": (json.loads(manifest.read_text()).get("subset")
-                         if manifest.exists() else None),
+        "train_subset": man.get("subset"),
+        # CLAUDE.md: never compare models fine-tuned on different GPU models
+        "gpu": man.get("gpu_device_name"),
         "label188_sha256": sha,
         "cell": str(cell),
     })

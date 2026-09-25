@@ -249,3 +249,14 @@ def test_no_cells_at_all_is_fatal(tmp_path):
     (tmp_path / "leg_top").mkdir()
     with pytest.raises(SystemExit, match="no DONE cells"):
         M.main(["--root", str(tmp_path), "--out", str(tmp_path / "out")])
+
+
+def test_the_fine_tuning_gpu_is_carried_from_the_manifest(tmp_path):
+    """CLAUDE.md forbids comparing models fine-tuned on different GPU models, so
+    the readout must say which GPU each cell ran on; absent means unknown."""
+    y, z = _separable()
+    a = _cell(tmp_path, y, z, seed="s1")
+    (a / "ft_manifest.json").write_text(json.dumps({"gpu_device_name": "NVIDIA GeForce RTX 3090"}))
+    b = _cell(tmp_path, y, z, seed="s2")
+    assert M.cell_metrics(a, PROBE)["gpu"] == "NVIDIA GeForce RTX 3090"
+    assert M.cell_metrics(b, PROBE)["gpu"] is None

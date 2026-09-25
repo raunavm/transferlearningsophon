@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # READOUT OF THE SECOND BENCHMARK WAVE: top tagging and quark/gluon.
+  #
+  # Derived from job-ft-w2b-leg1-metrics-raunav.yaml. Runs
+  # experiments/FT/bench_metrics.py over /data/results/ft/bench_v2 twice: once
+  # on the Pythia test sets (bench_metrics.json) and once on the Herwig
+  # quark/gluon test set the same cells scored (bench_metrics_herwig.json).
+  #
+  # WHAT IT FEEDS. The confirmatory C2 (quark/gluon, full training set) and C3
+  # (top tagging, full training set), the secondary S5 (Herwig), and the
+  # community-format rows. At launch (2026-09-25) every full-training-set cell of
+  # the 20 granularity models is DONE on both benchmarks; shard a is still
+  # training smaller sizes. Cells without DONE are skipped and LISTED in the
+  # output, never read. So this is v1; the complete table is a later v2 into a
+  # new directory.
+  #
+  # A new output directory is refused if it already holds a result. Output is
+  # two JSON files of a few MB.
+  name: ft-bench-v2-metrics-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: readout
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT=/data/results/ft/bench_v2_metrics_v1
+          [ ! -e "${OUT}/bench_metrics.json" ] || { echo "FATAL: ${OUT}/bench_metrics.json exists; use a new output directory"; exit 1; }
+          git clone --depth 1 --branch "mtx-s1.57" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          ROOT=/data/results/ft/bench_v2
+          for d in leg_top leg_qg; do
+            [ -d "${ROOT}/${d}" ] || { echo "FATAL: no ${ROOT}/${d}"; exit 1; }
+          done
+          # The confirmatory cells: fine-tuning seed 1 at the full training set,
+          # for all twenty granularity models, on both benchmarks.
+          missing=0
+          for a in l188 l162 r42q1 r16q1; do for s in 1 2 3 4 5; do
+            init=${a}-s${s}; [ "${init}" = "l162-s1" ] && init=l162-s1b
+            for c in leg_top/${init}/N1200000/s1 leg_qg/${init}/N1600000/s1; do
+              [ -f "${ROOT}/${c}/DONE" ] || { echo "MISSING confirmatory cell ${c}"; missing=$((missing+1)); }
+            done
+          done; done
+          [ "${missing}" -eq 0 ] || { echo "FATAL: ${missing} confirmatory cells not DONE"; exit 1; }
+
+          mkdir -p ${OUT}
+          python3 experiments/FT/bench_metrics.py --root ${ROOT} --out ${OUT}
+          python3 experiments/FT/bench_metrics.py --root ${ROOT} --out ${OUT} --herwig
+          ls -la ${OUT}
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "16Gi", cpu: "4", ephemeral-storage: "10Gi" }
+          limits:   { memory: "16Gi", cpu: "4", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
