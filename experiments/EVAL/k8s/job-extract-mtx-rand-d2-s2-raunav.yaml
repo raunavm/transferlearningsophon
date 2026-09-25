@@ -46,7 +46,7 @@ spec:
           # the write instead of waving it through.
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           echo "PVC used: ${USED}%"
-          [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full, at or over the 85% line."; df -h /data; exit 1; }
+          [ "${USED}" -lt 92 ] || { echo "FATAL: /data is ${USED}% full, at or over the 92% line."; df -h /data; exit 1; }
 
           CKPT=/data/results/mtx/mtx-rand-d2-s2/net_epoch-79_state.pt
           # CHECKPOINT RULE (DECISIONS_PENDING item 18, decided 2026-09-07).

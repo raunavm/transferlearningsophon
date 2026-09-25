@@ -94,11 +94,19 @@ def test_new_specs_differ_from_a_launched_one_only_where_they_must(b):
         assert re.search(r"--data-test (.*?) \\\n", text).group(1) == ref_list
         assert "--max-jets 2000000" in text
         assert "--data-config configs/data/JetClassII_base.yaml" in text
-        assert '[ "${USED}" -lt 85 ]' in text, "the 85% guard must not be weakened"
+        line = b.STORAGE_LINE_APPROVED.get(run_id, 85)
+        assert f'[ "${{USED}}" -lt {line} ]' in text, "the 85% guard must not be weakened"
         assert f'--branch "{b.CONTROL_AND_MASS_PIN}"' in text
         assert f"OUT=/data/results/eval/{run_id}/features_e79" in text
         assert ("--num-reg 1 --save-logits" in text) == (run_id in b.NUM_REG)
         assert "--observers" not in text, "default observers, as the twenty have"
+
+
+def test_the_storage_line_is_raised_only_where_the_pi_confirmed_it(b):
+    """Above 85% a write over 1 GB needs the PI's go-ahead, given 2026-09-24 for
+    the two later random draws; never past the benchmark wave's 92%."""
+    assert set(b.STORAGE_LINE_APPROVED) == {"mtx-rand-d2-s2", "mtx-rand-d3-s3"}
+    assert all(85 < v <= 92 for v in b.STORAGE_LINE_APPROVED.values())
 
 
 def test_no_launched_spec_was_repinned(b):

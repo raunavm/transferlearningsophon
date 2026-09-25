@@ -150,6 +150,11 @@ CONTROL_AND_MASS_RUNS = [
 # and with backoffLimit 50 applying it early is fifty clones that each stop at
 # the checkpoint guard.
 NOT_YET_TRAINED = []
+# CLAUDE.md: above 85% full, a write over 1 GB needs the PI's confirmation. These
+# are the runs it was given for (2026-09-24, with the volume at 89%), and the line
+# each gets instead: 92%, the ceiling the PI set for the benchmark wave
+# (DECISIONS_PENDING item 43, option C). Every other spec keeps 85%.
+STORAGE_LINE_APPROVED = {"mtx-rand-d2-s2": 92, "mtx-rand-d3-s3": 92}
 # Regression outputs AFTER the K class outputs (ParT_sophon_arch_mass.py: one,
 # the jet mass). The extractor is told --num-classes K --num-reg 1 rather than
 # --num-classes K+1, so K stays the plain twin's and the manifest never counts
@@ -217,7 +222,7 @@ spec:
           # the write instead of waving it through.
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           echo "PVC used: ${{USED}}%"
-          [ "${{USED}}" -lt 85 ] || {{ echo "FATAL: /data is ${{USED}}% full, at or over the 85% line."; df -h /data; exit 1; }}
+          [ "${{USED}}" -lt {storage_line} ] || {{ echo "FATAL: /data is ${{USED}}% full, at or over the {storage_line}% line."; df -h /data; exit 1; }}
 
           CKPT={ckpt_dir}/{ckpt_file}
           # CHECKPOINT RULE (DECISIONS_PENDING item 18, decided 2026-09-07).
@@ -435,6 +440,7 @@ def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
         name += "-vcbwindow-full" if window_full else "-vcbwindow"
     text = TEMPLATE.format(
         run_id=run_id, arm=arm, k=k, ckpt_dir=ckpt_dir, image=IMAGE,
+        storage_line=STORAGE_LINE_APPROVED.get(run_id, 85),
         pin=pin_for(run_id, window),
         logits_clause=(
             "no --save-logits here" if not num_reg else
