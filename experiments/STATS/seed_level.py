@@ -113,8 +113,8 @@ C1 = {"task": "bvc_resonant", "predicted_step": ([188, 162, 43], [17]),
 # never inferred from it:
 #   C2 "188 ~ 162 > 43 ~ 17", C3 "equivalent across the four granularities" and
 #     S5 "same ordering as C2" do. All three are fine-tuning on the community
-#     benchmarks, which this script does not read; they stay pending, and the
-#     equivalence machinery below is what they will use.
+#     benchmarks, read with --bench / --bench-herwig (load_bench); without those
+#     C2 and C3 stay pending in the family.
 #   S2 "equivalent across granularities" does, and equivalence() runs it.
 #   S1 ("188 best; then 162 >= 43 > 17"), S3 ("steps at 162->43 and 43->17") and
 #     S4 ("gap shrinks with size but does not vanish") do NOT. ">=" admits a
@@ -1506,6 +1506,26 @@ def run_ladder(a, argv=None) -> int:
                             "n_jets_total": mdata["n_jets_total"],
                             "arm_checkpoints": mdata["arm_checkpoints"]}
     computed = {"C1": c1.get("p"), "C5": None if c5 is None else c5["p"]}
+    # C2 and C3 exist once the benchmark wave is read out. Each benchmark drops a
+    # seed block whose four fine-tunes ran on different GPU models (2.2).
+    bench = {}
+    if a.bench:
+        for key, spec in (("C2", C2), ("C3", C3)):
+            d = load_bench(a.bench, spec)
+            mism = gpu_mismatched_seeds(d["rows"], seeds)
+            use = [s for s in seeds if s not in mism]
+            bc = index_cells(d["rows"], list(mism))
+            bench[key] = {"data": d, "cells": bc, "seeds": use,
+                          "gpu_mismatched_dropped": {str(s): g for s, g in mism.items()},
+                          "gpu_unrecorded": [r["arm"] for r in d["rows"] if r["gpu"] is None],
+                          "missing_cells": [[lv, s] for s in use for lv in LEVELS
+                                            if (spec["task"], BENCH_KIND, lv, s) not in bc]}
+        b2, b3 = bench["C2"], bench["C3"]
+        c2 = trend_test(b2["cells"], C2["task"], BENCH_KIND, b2["seeds"], C2["predicted_step"])
+        c2["alternative"] = f"{BENCH_ENDPOINT} increases along levels = performance falls"
+        c3 = _bench_words(equivalence(b3["cells"], C3["task"], BENCH_KIND, b3["seeds"]))
+        computed["C2"] = c2.get("p")
+        computed["C3"] = c3.get("p") if c3["run"] else None
     fam = holm_family([(c, computed.get(c)) for c in CONFIRMATORY])
     fam_registered = holm_family([(c, computed.get(c)) for c in CONFIRMATORY_AS_REGISTERED])
     # C1's third clause is a predicted null and needs 2.5's equivalence test; the
@@ -1519,11 +1539,56 @@ def run_ladder(a, argv=None) -> int:
                            "holm_family_as_registered": fam_registered}
     if c5 is not None:
         res["confirmatory"]["C5"] = c5
+    if a.bench:
+        holm_of = {h["test"]: h for h in fam}
+        eq_f = _bench_words(equivalence_set(b2["cells"], C2["task"], BENCH_KIND, (188, 162), b2["seeds"]))
+        eq_c = _bench_words(equivalence_set(b2["cells"], C2["task"], BENCH_KIND, (43, 17), b2["seeds"]))
+        c2.update(c2_clauses(c2, eq_f, eq_c, holm_of["C2"], len(CONFIRMATORY)))
+        c3.update(c3_clauses(c3, holm_of["C3"], len(CONFIRMATORY)))
+        for key, blk, spec in (("C2", c2, C2), ("C3", c3, C3)):
+            b = bench[key]
+            blk.update({"endpoint": BENCH_ENDPOINT, "fine_tuning_seed": BENCH_FT_SEED,
+                        "n_train": spec["n_max"], "seeds_used": b["seeds"],
+                        "gpu_mismatched_dropped": b["gpu_mismatched_dropped"],
+                        "gpu_unrecorded": b["gpu_unrecorded"], "missing_cells": b["missing_cells"],
+                        "levels": bench_level_summary(b["cells"], spec["task"], b["seeds"]),
+                        "pairwise_exploratory": pairwise_table(b["cells"], spec["task"],
+                                                               BENCH_KIND, b["seeds"]),
+                        "reference_rows": b["data"]["reference"],
+                        "provenance": {k: b["data"][k] for k in ("file", "row_alignment_sha256",
+                                                                   "script_sha256", "repo_commit")}})
+        # §7: "C3 showing a granularity effect on top tagging as large as on quark/gluon"
+        # counts against the thesis. Descriptive, no test: the spread of the level means.
+        c3["span_vs_c2"] = {"top": bench_span(b3["cells"], C3["task"], b3["seeds"]),
+                            "qg": bench_span(b2["cells"], C2["task"], b2["seeds"]),
+                            "reading": "largest minus smallest level mean of the endpoint; §7, "
+                                       "descriptive"}
+        res["confirmatory"]["C2"], res["confirmatory"]["C3"] = c2, c3
     print("\n".join(format_trend("C1", c1, len(CONFIRMATORY))))
     print("\n".join(format_clauses("C1", c1)))
     print("\n".join(format_equivalence_set(c1_equal)))
     if c5 is not None:
         print("\n".join(format_c5(c5)))
+    if a.bench:
+        for key, blk, spec in (("C2", c2, C2), ("C3", c3, C3)):
+            b = bench[key]
+            print("\n".join(format_bench(key, spec, b["data"], b["cells"], b["seeds"])))
+            for s, g in b["gpu_mismatched_dropped"].items():
+                print(f"    seed block {s} DROPPED: fine-tuned on {g}")
+            if b["missing_cells"]:
+                print(f"    MISSING cells [level, seed]: {b['missing_cells']}")
+        print("\n".join(format_trend("C2", c2, len(CONFIRMATORY))))
+        print("\n".join(format_clauses("C2", c2)))
+        for e in (c2["clause3_equivalence"], c2["clause4_equivalence"]):
+            print("\n".join(x.replace("in 1−AUC", "in R50") for x in format_equivalence_set(e)))
+        print(f"  C3: {C3['task']} — predicted equivalent across the four granularities")
+        print("\n".join(x.replace("in 1−AUC", "in R50") for x in format_equivalence_set(c3)))
+        print("\n".join(format_clauses("C3", c3)))
+        sp = c3["span_vs_c2"]
+        if sp["top"] is not None and sp["qg"] is not None:
+            print(f"  §7, descriptive: spread of level means, top {sp['top']:.4f} vs "
+                  f"quark/gluon {sp['qg']:.4f} (a factor {math.exp(sp['top']):.3f} vs "
+                  f"{math.exp(sp['qg']):.3f} in R50)")
     print(f"  Holm over the full confirmatory family of {len(CONFIRMATORY)} at {ALPHA:.0%}:")
     print("\n".join(format_holm(fam)))
     print(f"  sensitivity, the family of {len(CONFIRMATORY_AS_REGISTERED)} as first registered:")
@@ -1563,6 +1628,25 @@ def run_ladder(a, argv=None) -> int:
     print("  Holm within the secondary table (S1, S2 on the linear probe):")
     print("\n".join(format_holm(sec)))
     res["secondary"] = {"S1": s1, "S2": s2, "S6": s6, "holm_family": sec}
+    if a.bench_herwig:
+        hw = load_bench(a.bench_herwig, S5, "herwig")
+        if hw["row_alignment_sha256"] == b2["data"]["row_alignment_sha256"]:
+            raise SystemExit("FATAL: the Herwig readout has the Pythia test set's row hash; "
+                             "--bench-herwig was given the Pythia file")
+        mism = gpu_mismatched_seeds(hw["rows"], b2["seeds"])
+        s5 = s5_analysis(b2["data"], hw, [s for s in b2["seeds"] if s not in mism])
+        s5.update({"endpoint": BENCH_ENDPOINT, "holm": "its own table of one (PRESPEC 2.7)",
+                   "provenance": {k: hw[k] for k in ("file", "row_alignment_sha256",
+                                                     "script_sha256", "repo_commit")},
+                   "reference_rows": hw["reference"]})
+        print("\n".join(format_bench("S5", S5, hw, index_cells(hw["rows"]), b2["seeds"])))
+        print("\n".join(format_trend("S5", s5["trend"], 1)))
+        o, l = s5["ordering_vs_pythia"], s5["all_lose"]
+        print(f"    ordering: Herwig orders {o['n_agree']} of {o['n_pairs']} level pairs as Pythia does")
+        print(f"    all models lose performance: {l['n_lose']} of {l['n_models']} have a lower R50 "
+              f"on Herwig" + ("" if l["n_lose"] == l["n_models"] else " — NOT all: "
+                              + ", ".join(m["arm"] for m in l["models"] if not m["loses"])))
+        res["secondary"]["S5"] = s5
 
     print("\n  PAIRWISE, coarser − finer by seed index — EXPLORATORY (not listed in PRESPEC §3);"
           "\n  primary = paired t on n−1 df; Holm within each table over its estimable contrasts")
@@ -1842,6 +1926,212 @@ def run_s9(a, argv=None) -> int:
     return 0
 
 
+# ------------------------------------ C2, C3, S5: the two community benchmarks
+
+# PRESPEC 3, transcribed. C2 "188 ~ 162 > 43 ~ 17" carries two predicted-equal
+# pairs, each a clause of its own; C3 is one predicted null over all four levels;
+# S5 is C2's benchmark scored on Herwig jets no model trained on.
+C2 = {"task": "bench_qg", "dataset": "qg", "n_max": "N1600000",
+      "predicted_step": ([188, 162], [43, 17]),
+      "prediction": "188 ~ 162 > 43 ~ 17",
+      "clauses": ("performance falls with coarser labels", "the step is 162 -> 43",
+                  "188 ~ 162", "43 ~ 17")}
+C3 = {"task": "bench_top", "dataset": "top", "n_max": "N1200000",
+      "prediction": "equivalent across the four granularities"}
+S5 = {"task": "bench_qg_herwig", "dataset": "qg", "n_max": "N1600000",
+      "predicted_step": C2["predicted_step"],
+      "prediction": "same ordering as C2; all models lose performance"}
+BENCH_KIND = "finetune"
+BENCH_FT_SEED = "s1"       # the plan's primary analysis: fine-tuning seed 1 per model
+BENCH_ENDPOINT = "-ln(background rejection at 50% signal efficiency)"   # PRESPEC 2.3
+
+
+def load_bench(path, spec: dict, test_set: str = "pythia") -> dict:
+    """bench_metrics.py's JSON -> one row per granularity model for one benchmark.
+
+    PRESPEC 2.3 puts inference on log rejection at 50% signal efficiency. The row
+    stores -ln(R50) under ENDPOINT, so lower is better like log(1 - AUC) and the
+    trend test, the ±ln(1.1) bound (10 % in rejection) and the paired differences
+    apply unchanged -- the convention the real-data yield already uses. Each model
+    enters through fine-tuning seed 1 at the benchmark's full training set (2.1:
+    fine-tuning seeds are nested in the pretraining seed). A rejection at the
+    1/N_bkg cap is a bound and is marked censored. Models outside the ladder
+    (scratch, the public checkpoint, the controls, the mass-output models) are
+    kept as reference rows and enter no test.
+    """
+    doc = json.loads(pathlib.Path(path).read_text())
+    if doc.get("test_set") != test_set:
+        raise SystemExit(f"FATAL: {path} is the {doc.get('test_set')!r} readout; "
+                         f"{spec['task']} needs {test_set!r}")
+    per_init = doc["cells"].get(spec["dataset"])
+    if not per_init:
+        raise SystemExit(f"FATAL: {path} has no {spec['dataset']} cells")
+    rows, reference = [], {}
+    for init, per_n in sorted(per_init.items()):
+        c = per_n.get(spec["n_max"], {}).get(BENCH_FT_SEED)
+        if c is None:
+            continue                  # a missing ladder cell is reported by missing_cells
+        entry = {"arm": init, "r50": c["r50"], "r50_is_bound": c["r50_is_bound"],
+                 "r50_n_bkg_pass": c["r50_n_bkg_pass"], "r30": c["r30"],
+                 "r30_is_bound": c["r30_is_bound"], "auc": c["auc"],
+                 "accuracy": c["accuracy"], "gpu": c.get("gpu")}
+        m = ARM_RE.match(ARM_ALIAS.get(init, init))
+        if not m:
+            reference[init] = entry
+            continue
+        rows.append({**entry, "task": spec["task"], "probe": BENCH_KIND,
+                     "level": ARM_LEVEL[m.group(1)], "seed": int(m.group(2)),
+                     ENDPOINT: -math.log(c["r50"]), "censored": bool(c["r50_is_bound"])})
+    return {"rows": rows, "reference": reference,
+            "file": {"path": str(path), "sha256": _sha(path)},
+            "row_alignment_sha256": doc["row_alignment_sha256"].get(spec["dataset"]),
+            "script_sha256": doc.get("script_sha256"), "repo_commit": doc.get("repo_commit")}
+
+
+def gpu_mismatched_seeds(rows, seeds) -> dict:
+    """{seed: GPU names} for each seed block fine-tuned on more than one GPU model.
+
+    CLAUDE.md and PRESPEC 2.2: a pair on different GPU models is dropped, never
+    averaged. A cell that did not record its GPU cannot show a mismatch; it is
+    listed by `gpu_unrecorded` instead of being dropped on missing metadata.
+    """
+    out = {}
+    for s in seeds:
+        g = {r["gpu"] for r in rows if r["seed"] == s and r["gpu"] is not None}
+        if len(g) > 1:
+            out[s] = sorted(g)
+    return out
+
+
+def bench_level_summary(cells, task, seeds) -> list[dict]:
+    """Per level: the endpoint's mean and seed SD, and R50/R30 as median and range
+    (clarification 7), with how many seeds sit at the rejection cap."""
+    out = []
+    for lv in LEVELS:
+        rs = [cells[(task, BENCH_KIND, lv, s)] for s in seeds if (task, BENCH_KIND, lv, s) in cells]
+        row = {"level": lv, "n_seeds": len(rs)}
+        if rs:
+            y = [r[ENDPOINT] for r in rs]
+            row.update({"mean": float(np.mean(y)),
+                        "seed_sd": float(np.std(y, ddof=1)) if len(rs) > 1 else None,
+                        "mean_auc": float(np.mean([r["auc"] for r in rs])),
+                        "mean_accuracy": float(np.mean([r["accuracy"] for r in rs])),
+                        "gpus": sorted({str(r["gpu"]) for r in rs})})
+            for k in ("r50", "r30"):
+                v = [r[k] for r in rs]
+                row[k] = {"median": float(np.median(v)), "range": [min(v), max(v)],
+                          "n_bound": sum(r[f"{k}_is_bound"] for r in rs)}
+        out.append(row)
+    return out
+
+
+def _bench_words(e: dict) -> dict:
+    """tost_verdict speaks of 1−AUC; here the log is of the rejection at 50%."""
+    if e.get("verdict"):
+        e["verdict"] = e["verdict"].replace("in 1−AUC", "in rejection at 50% signal efficiency")
+    return e
+
+
+def bench_span(cells, task, seeds) -> float | None:
+    """Largest minus smallest level mean of the endpoint: the size of any
+    granularity effect, for §7's "as large on top tagging as on quark/gluon"."""
+    m = [r["mean"] for r in bench_level_summary(cells, task, seeds) if r["n_seeds"]]
+    return float(max(m) - min(m)) if len(m) > 1 else None
+
+
+def c2_clauses(trend: dict, eq_fine: dict, eq_coarse: dict, holm_entry: dict,
+               family_size: int) -> dict:
+    """C2's four clauses: the trend (judged at the full confirmatory family, as
+    C1's), the arg-max step, and the two predicted-equal pairs (2.5)."""
+    if not trend["run"]:
+        c_1 = clause(1, C2["clauses"][0], "max-T trend test", "not run", detail=trend["reason"])
+        c_2 = clause(2, C2["clauses"][1], "arg-max contrast of the trend test", "not run",
+                     detail=trend["reason"])
+    else:
+        rejected = bool(holm_entry.get("reject_whatever_pending"))
+        c_1 = clause(1, C2["clauses"][0],
+                     f"max-T trend test ({trend['method']}, {trend['n_blocks']} seed blocks)",
+                     "confirmed" if rejected else "not confirmed", p=trend["p"],
+                     detail=f"Holm at the full confirmatory family of {family_size}; "
+                            + ("rejected whatever the pending tests give" if rejected
+                               else "does not reach its threshold"))
+        step = trend["argmax_step"]
+        c_2 = clause(2, C2["clauses"][1], "arg-max contrast of the trend test",
+                     "confirmed" if trend["argmax_is_predicted_step"] else "not confirmed",
+                     detail=f"arg-max {step[0]} | {step[1]}, predicted {trend['predicted_step'][0]} "
+                            f"| {trend['predicted_step'][1]}; localisation only, no separate p")
+    eqs = []
+    for n, text, e in ((3, C2["clauses"][2], eq_fine), (4, C2["clauses"][3], eq_coarse)):
+        eqs.append(clause(n, text, "equivalence (TOST) over the set", "not run", detail=e["reason"])
+                   if not e["run"] else
+                   clause(n, text, "equivalence (TOST) at ±ln(1.1), one pair",
+                          "confirmed" if e["all_equivalent"] else "inconclusive",
+                          p=e["p"], detail=e["verdict"]))
+    return compose(C2["prediction"], [c_1, c_2, *eqs],
+                   clause3_equivalence=eq_fine, clause4_equivalence=eq_coarse)
+
+
+def c3_clauses(equal: dict, holm_entry: dict, family_size: int) -> dict:
+    """C3 is one predicted null over all four levels. Its confirmatory p is the
+    intersection-union TOST p (amendment A2), judged at the full family: at 5 %
+    alone every pair passing is not enough if Holm's threshold is not met."""
+    if not equal["run"]:
+        c = clause(1, C3["prediction"], "equivalence (TOST) over the set", "not run",
+                   detail=equal["reason"])
+    else:
+        rejected = bool(holm_entry.get("reject_whatever_pending"))
+        c = clause(1, C3["prediction"],
+                   f"equivalence (TOST) at ±ln(1.1) on all {equal['n_pairs_total']} pairs, "
+                   f"intersection-union, Holm at the full confirmatory family of {family_size}",
+                   "confirmed" if rejected else "inconclusive", p=equal["p"],
+                   detail=equal["verdict"] + ("" if rejected or not equal["all_equivalent"] else
+                                              "; every pair passes at 5 % but the set p does not "
+                                              "reach its Holm threshold"))
+    return compose(C3["prediction"], [c])   # the block it joins IS the equivalence result
+
+
+def s5_analysis(pythia: dict, herwig: dict, seeds) -> dict:
+    """S5: C2's trend on Herwig jets, the ordering against Pythia's, and whether
+    every model loses performance on the generator it never saw."""
+    hc = index_cells(herwig["rows"])
+    pc = index_cells(pythia["rows"])
+    trend = trend_test(hc, S5["task"], BENCH_KIND, seeds, S5["predicted_step"])
+    trend["alternative"] = f"{BENCH_ENDPOINT} increases along levels = performance falls"
+    order = sign_agreement(pairwise_table(pc, C2["task"], BENCH_KIND, seeds),
+                           pairwise_table(hc, S5["task"], BENCH_KIND, seeds))
+    lose = []
+    for r in herwig["rows"]:
+        p = pc.get((C2["task"], BENCH_KIND, r["level"], r["seed"]))
+        if p is not None:
+            lose.append({"arm": r["arm"], "r50_pythia": p["r50"], "r50_herwig": r["r50"],
+                         "loses": r["r50"] < p["r50"]})
+    return {"prediction": S5["prediction"], "trend": trend,
+            "ordering_vs_pythia": {**order, "note": "sign of each level pair's mean paired "
+                                                    "difference, Pythia vs Herwig"},
+            "all_lose": {"n_models": len(lose), "n_lose": sum(x["loses"] for x in lose),
+                         "models": lose}}
+
+
+def format_bench(name: str, spec: dict, data: dict, cells, seeds) -> list[str]:
+    out = [f"  {name}: {spec['task']} at {spec['n_max'][1:]} training jets, fine-tuning seed "
+           f"{BENCH_FT_SEED[1:]}; endpoint {BENCH_ENDPOINT}, lower is better"]
+    for r in bench_level_summary(cells, spec["task"], seeds):
+        if not r["n_seeds"]:
+            out.append(f"    {r['level']:>3d}-class  no seeds")
+            continue
+        out.append(f"    {r['level']:>3d}-class  n={r['n_seeds']}  mean={r['mean']:+.4f}"
+                   f"  sd={r['seed_sd'] if r['seed_sd'] is None else round(r['seed_sd'], 4)}"
+                   f"  AUC={r['mean_auc']:.5f}  acc={r['mean_accuracy']:.5f}"
+                   f"  R50 median {r['r50']['median']:.1f} [{r['r50']['range'][0]:.1f}, "
+                   f"{r['r50']['range'][1]:.1f}]  R30 median {r['r30']['median']:.1f}"
+                   + (f"  BOUND in {r['r50']['n_bound']}" if r["r50"]["n_bound"] else "")
+                   + f"  GPU {r['gpus']}")
+    for init, e in sorted(data["reference"].items()):
+        out.append(f"    reference {init:16s} R50={e['r50']:.1f}  R30={e['r30']:.1f}  "
+                   f"AUC={e['auc']:.5f}  acc={e['accuracy']:.5f}")
+    return out
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("inputs", nargs="*",
@@ -1865,7 +2155,18 @@ def main(argv=None) -> int:
     ap.add_argument("--real-data", default=None, metavar="RESULTS_JSON",
                     help="§6: the full real-data fit's results.json (experiments/AOJ/peak_fit.py "
                          "--peaks top). Written to aoj_top.json in --out")
+    ap.add_argument("--bench", default=None, metavar="BENCH_JSON",
+                    help="C2 and C3: bench_metrics.json of the benchmark wave (Pythia test sets). "
+                         "Reported inside the ladder's confirmatory family; without it both "
+                         "stay pending")
+    ap.add_argument("--bench-herwig", default=None, metavar="HERWIG_JSON",
+                    help="S5: bench_metrics_herwig.json of the same wave; needs --bench")
     a = ap.parse_args(argv)
+    if (a.bench or a.bench_herwig) and not a.inputs:
+        ap.error("--bench reports C2 and C3 inside the ladder's confirmatory family, so it "
+                 "needs the ladder inputs too")
+    if a.bench_herwig and not a.bench:
+        ap.error("--bench-herwig compares against the Pythia readout; give --bench too")
     if a.mass and not a.inputs:
         ap.error("--mass reports C5 inside the ladder's confirmatory family, so it needs the "
                  "ladder inputs too; C5 and C1 are corrected together or not at all")
