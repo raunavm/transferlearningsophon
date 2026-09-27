@@ -23,8 +23,9 @@ def _load(rel, name):
 B = _load("scripts/build_aoj_jobs.py", "build_aoj_jobs")
 FT = _load("scripts/build_ft_jobs.py", "build_ft_jobs")
 SPECS = B.specs()
-SHARDS = [p for p in SPECS if "-fit-" not in p.name]
+SHARDS = [p for p in SPECS if "-full-s" in p.name]
 FIT = next(p for p in SPECS if "-fit-" in p.name)
+CHECK = next(p for p in SPECS if "-fitcheck-" in p.name)
 
 
 def _script(text):
@@ -166,3 +167,15 @@ def test_the_fit_clones_the_tag_with_the_corrected_merge_and_the_shards_keep_the
     assert f'--branch "{B.FIT_PIN}"' in SPECS[FIT] and f'--branch "{B.PIN}"' not in SPECS[FIT]
     assert all(f'--branch "{B.PIN}"' in SPECS[p] for p in SHARDS)
     B.verify_pin(B.FIT_PIN, not_yet_tagged=True, flags=B.FIT_NEEDED_FLAGS)
+
+
+def test_the_fit_check_merges_exactly_as_the_fit_did_and_writes_only_its_report():
+    """Everything up to the merged jets is the fit's own job, line for line; after
+    it the check runs instead of the fit and cannot write where the fit wrote."""
+    fit, check = SPECS[FIT], SPECS[CHECK]
+    merge = "python3 experiments/AOJ/merge_shards.py --shards ${SHARDS} --out /scratch/merged"
+    assert merge in fit and merge in check
+    assert "peak_fit.py" not in check and "fit_convergence_check.py" in check
+    assert f'--branch "{B.CHECK_PIN}"' in check
+    assert f"OUT={B.OUT_ROOT}/fit_convergence_check" in check and f"OUT={B.OUT_ROOT}/fit\n" not in check
+    assert yaml.safe_load(check)["spec"]["backoffLimit"] == 1
