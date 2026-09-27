@@ -4,6 +4,7 @@
 \setlength{\tabcolsep}{4pt}
 \caption{WAVE 1, SUPERSEDED. Fine-tuning accuracy, mean over fine-tuning seeds $\pm$ their standard deviation, against the number of fine-tuning jets $N$. Leg 1 is in-domain, leg 2 is the domain-shifted transfer. These runs come from the first fine-tuning wave, whose 162-class side has a single pretraining seed; they are reported for completeness and are superseded by the five-seed wave.}
 \label{tab:finetuning-wave1}
+\begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l rrrr rrrr}
 \toprule
 & \multicolumn{4}{c}{leg 1} & \multicolumn{4}{c}{leg 2} \\
@@ -19,6 +20,7 @@ pipeline-validation reference, seed 3 & --- & --- & --- & --- & --- & --- & --- 
 random initialisation & 0.3137\,$\pm$\,0.0071 & 0.4201\,$\pm$\,0.0027 & 0.4862\,$\pm$\,0.0010 & --- & 0.6823\,$\pm$\,0.0028 & 0.7777\,$\pm$\,0.0021 & 0.8230\,$\pm$\,0.0013 & --- \\
 published 188-class checkpoint & 0.2161\,$\pm$\,0.0073 & 0.5319\,$\pm$\,0.0023 & 0.5427\,$\pm$\,0.0006 & --- & 0.7274\,$\pm$\,0.0047 & 0.8349\,$\pm$\,0.0005 & 0.8463\,$\pm$\,0.0003 & --- \\
 \bottomrule
-\multicolumn{9}{@{}p{\linewidth}@{}}{\footnotesize --- is an initialisation, or a fine-tuning set size, that leg did not run.} \\
 \end{tabular}
+\end{adjustbox}
+\par\smallskip{\footnotesize --- is an initialisation, or a fine-tuning set size, that leg did not run.}
 \end{table*}

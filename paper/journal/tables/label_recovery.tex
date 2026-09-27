@@ -1,0 +1,23 @@
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Label recovery: balanced accuracy of a frozen linear probe trained to recover each level of the label tree (rows, finest first) from each pretrained model (columns), mean over five pretraining seeds $\pm$ their standard deviation.}
+\label{tab:recovery}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l rrrr}
+\toprule
+read out at & 188-class model & 162-class model & 43-class model & 17-class model \\
+\midrule
+188 classes & 0.343\,$\pm$\,0.001 & 0.343\,$\pm$\,0.002 & 0.290\,$\pm$\,0.008 & 0.242\,$\pm$\,0.007 \\
+162 classes & 0.382\,$\pm$\,0.001 & 0.383\,$\pm$\,0.002 & 0.322\,$\pm$\,0.010 & 0.270\,$\pm$\,0.008 \\
+64 classes & 0.534\,$\pm$\,0.002 & 0.534\,$\pm$\,0.004 & 0.527\,$\pm$\,0.002 & 0.464\,$\pm$\,0.007 \\
+43 classes & 0.612\,$\pm$\,0.002 & 0.612\,$\pm$\,0.002 & 0.613\,$\pm$\,0.002 & 0.563\,$\pm$\,0.008 \\
+30 classes & 0.634\,$\pm$\,0.002 & 0.634\,$\pm$\,0.002 & 0.635\,$\pm$\,0.002 & 0.610\,$\pm$\,0.007 \\
+17 classes & 0.716\,$\pm$\,0.002 & 0.716\,$\pm$\,0.003 & 0.718\,$\pm$\,0.002 & 0.720\,$\pm$\,0.001 \\
+4 classes & 0.741\,$\pm$\,0.001 & 0.743\,$\pm$\,0.002 & 0.746\,$\pm$\,0.002 & 0.749\,$\pm$\,0.001 \\
+2 classes & 0.825\,$\pm$\,0.002 & 0.827\,$\pm$\,0.001 & 0.828\,$\pm$\,0.003 & 0.829\,$\pm$\,0.001 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

@@ -4,6 +4,7 @@
 \setlength{\tabcolsep}{4pt}
 \caption{Frozen nonlinear (MLP) probes on the four pretraining vocabularies. AUC is the mean over 5 pretraining seeds $\pm$ the seed standard deviation; $1/\epsilon_B$ is the background rejection at 90\% signal efficiency, as the median over seeds with the [min, max] range beside it. Rows are the pretraining label-set size, finest first; lower granularity is further down.}
 \label{tab:probes-mlp}
+\begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{r l rrrrrr}
 \toprule
 classes & quantity & $b$ vs $c$, two-prong resonance & $b$ vs $c$, QCD & two-prong vs four-prong & electron vs muon pair & $b$ vs $c$, four-prong & visible decay content \\
@@ -20,7 +21,8 @@ classes & quantity & $b$ vs $c$, two-prong resonance & $b$ vs $c$, QCD & two-pro
 17 & AUC & 0.99275\,$\pm$\,0.00090 & 0.96226\,$\pm$\,0.00373 & 0.99081\,$\pm$\,0.00063 & 0.98952\,$\pm$\,0.00145 & 0.97722\,$\pm$\,0.00350 & 0.99789\,$\pm$\,0.00018 \\
      & $1/\epsilon_B$ & 185.6 [177.3, 232.9] & 11.5 [10.8, 14.6] & 51.3 [44.9, 63.4] & 44.4 [35.7, 61.9] & 31.0 [24.3, 42.7] & 851.3 [638.5, 1{,}277] \\
 \bottomrule
-\multicolumn{8}{@{}p{\linewidth}@{}}{\footnotesize $>$ a lower bound: no background jet survived the cut in any seed, so the value is the sample size, not a measured rejection. $^{\ast}$ only some seeds are at that cap, so the median may itself be a bound.} \\
-\multicolumn{8}{@{}p{\linewidth}@{}}{\footnotesize $^{\dagger}$ the AUC reached 1 at the resolution of the sample in at least one seed; $1-$AUC is then an upper bound and the cell is not a measurement.} \\
 \end{tabular}
+\end{adjustbox}
+\par\smallskip{\footnotesize $>$ a lower bound: no background jet survived the cut in any seed, so the value is the sample size, not a measured rejection. $^{\ast}$ only some seeds are at that cap, so the median may itself be a bound.}
+\par\smallskip{\footnotesize $^{\dagger}$ the AUC reached 1 at the resolution of the sample in at least one seed; $1-$AUC is then an upper bound and the cell is not a measurement.}
 \end{table*}

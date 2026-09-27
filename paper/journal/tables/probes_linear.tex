@@ -4,6 +4,7 @@
 \setlength{\tabcolsep}{4pt}
 \caption{Frozen linear probes on the four pretraining vocabularies. AUC is the mean over 5 pretraining seeds $\pm$ the seed standard deviation; $1/\epsilon_B$ is the background rejection at 90\% signal efficiency, as the median over seeds with the [min, max] range beside it. Rows are the pretraining label-set size, finest first; lower granularity is further down.}
 \label{tab:probes-linear}
+\begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{r l rrrrrr}
 \toprule
 classes & quantity & $b$ vs $c$, two-prong resonance & $b$ vs $c$, QCD & two-prong vs four-prong & electron vs muon pair & $b$ vs $c$, four-prong & visible decay content \\
@@ -20,7 +21,8 @@ classes & quantity & $b$ vs $c$, two-prong resonance & $b$ vs $c$, QCD & two-pro
 17 & AUC & 0.99067\,$\pm$\,0.00147 & 0.95504\,$\pm$\,0.00527 & 0.99096\,$\pm$\,0.00092 & 0.95832\,$\pm$\,0.00970 & 0.96936\,$\pm$\,0.00514 & 0.99768\,$\pm$\,0.00020 \\
      & $1/\epsilon_B$ & 136.5 [99.0, 154.2] & 9.6 [8.0, 12.7] & 49.0 [38.5, 67.4] & 16.0 [13.0, 27.9] & 23.9 [16.6, 32.2] & 638.5 [510.8, 1{,}277] \\
 \bottomrule
-\multicolumn{8}{@{}p{\linewidth}@{}}{\footnotesize $>$ a lower bound: no background jet survived the cut in any seed, so the value is the sample size, not a measured rejection. $^{\ast}$ only some seeds are at that cap, so the median may itself be a bound.} \\
-\multicolumn{8}{@{}p{\linewidth}@{}}{\footnotesize $^{\dagger}$ the AUC reached 1 at the resolution of the sample in at least one seed; $1-$AUC is then an upper bound and the cell is not a measurement.} \\
 \end{tabular}
+\end{adjustbox}
+\par\smallskip{\footnotesize $>$ a lower bound: no background jet survived the cut in any seed, so the value is the sample size, not a measured rejection. $^{\ast}$ only some seeds are at that cap, so the median may itself be a bound.}
+\par\smallskip{\footnotesize $^{\dagger}$ the AUC reached 1 at the resolution of the sample in at least one seed; $1-$AUC is then an upper bound and the cell is not a measurement.}
 \end{table*}

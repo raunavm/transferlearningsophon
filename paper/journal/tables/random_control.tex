@@ -1,0 +1,18 @@
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{The random-label control against the 17-class model of the same seed index: difference in the natural log of $1-$AUC on the two dedicated pairs, frozen linear probe, with its paired bootstrap 95\% interval and, in brackets, the sign that was predicted (negative: the control is better). Each draw is one random partition with the class-size structure of the 17-class label set.}
+\label{tab:random-control}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l ccc}
+\toprule
+pair & draw 1 & draw 2 & draw 3 \\
+\midrule
+$b$ vs $c$, four-prong & $-$1.11 [$-$1.27, $-$0.94] ($-$) & $-$0.82 [$-$0.98, $-$0.65] ($-$) & $-$1.33 [$-$1.50, $-$1.17] ($0$) \\
+visible decay content & $-$0.65 [$-$0.91, $-$0.41] ($+$) & $-$0.70 [$-$1.00, $-$0.44] ($0$) & $-$0.86 [$-$1.16, $-$0.59] ($+$) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\smallskip{\footnotesize The MLP probe agrees in sign in every cell.}
+\end{table*}

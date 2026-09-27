@@ -34,7 +34,13 @@ GENERATED = {"results_generated.tex",
              "tables/probes_mlp.tex",
              "tables/tests.tex",
              "tables/usecase_survival.tex",
-             "tables/finetuning_wave1.tex"}
+             "tables/finetuning_wave1.tex",
+             "tables/label_recovery.tex",
+             "tables/random_control.tex",
+             "tables/finetune.tex",
+             "tables/anomaly.tex",
+             "tables/mass.tex",
+             "tables/realdata.tex"}
 
 # Numbers allowed in prose, each with the reason it is not a result.
 # A number earns a line here only if it cannot change when a job finishes.
@@ -47,6 +53,8 @@ ALLOWED = {
     "11": "font sizes",
     "12": "font sizes",
     "95": "the confidence level, fixed by docs/STATISTICS.md, not measured",
+    "80": "the power the minimum detectable effect is quoted at, fixed by PRESPEC 2.6",
+    "68": "the area inside sigma_eff, its definition, fixed by the PRESPEC S7 amendment",
 }
 
 # Contexts whose digits are never claims about data.
@@ -56,7 +64,8 @@ STRIP = [
                 r"|documentclass|bibliographystyle|bibliography|url|href"
                 r"|includegraphics|newcommand|renewcommand|def)\s*"
                 r"(?:\[[^\]]*\])?\s*(?:\{[^{}]*\})+", re.S), " "),
-    (re.compile(r"\\begin\{(?:tabular|array)\}\{[^}]*\}"), " "),
+    # a column spec may nest one level of braces: l p{0.45\linewidth}
+    (re.compile(r"\\begin\{(?:tabular|array)\}\{(?:[^{}]|\{[^{}]*\})*\}"), " "),
     (re.compile(r"\\[a-zA-Z]+\s*\{[^{}]*\}\s*=\s*[-0-9.]+\s*(?:pt|em|ex|cm|mm|in)"), " "),
     (re.compile(r"-?[0-9.]+\s*(?:pt|em|ex|cm|mm|in|bp|sp)\b"), " "),  # lengths
 ]
@@ -119,7 +128,7 @@ def test_every_macro_the_manuscript_uses_is_one_the_generator_defines(path):
                    if m.startswith(("Probe", "Test", "Recovery", "Bench", "Anomaly",
                                     "Mass", "Aoj", "Survival", "Leg",
                                     "Acc", "Mde", "Pair", "SignAgree", "Tost",
-                                    "Trend", "Use", "Vocab"))}
+                                    "Trend", "Use", "Vocab", "Design", "Rand", "Ft"))}
     # NOT "- local": a result macro defined by hand in this file is precisely the
     # hazard named above, so a local definition aggravates it, never excuses it.
     undefined = sorted((result_like - defined) | (result_like & local))

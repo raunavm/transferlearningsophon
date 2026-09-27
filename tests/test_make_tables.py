@@ -262,8 +262,8 @@ def test_a_rejection_that_is_a_bound_never_prints_as_a_bare_number(root):
     """
     built, _, _ = M.build(root)
     m = macros_in(built["results_generated.tex"])
-    assert m["ProbeRejAlphaLinearOnetwo"].startswith("$>$")
-    assert m["ProbeRejAlphaLinearEight"].startswith("$\\geq$")
+    assert m["ProbeRejAlphaLinearOnetwo"].startswith("\\ensuremath{>}")
+    assert m["ProbeRejAlphaLinearEight"].startswith("\\ensuremath{\\geq}")
     assert "^{\\ast}" in m["ProbeRejAlphaLinearEight"]
     assert re.fullmatch(r"[0-9{},.]+", m["ProbeRejAlphaLinearFour"])
     table = built["tables/probes_linear.tex"]
@@ -275,7 +275,7 @@ def test_a_saturated_auc_is_marked_rather_than_printed_to_five_decimals(root):
     """AUC = 1 at the sample's resolution is a bound on 1-AUC, not a measurement."""
     built, _, _ = M.build(root)
     m = macros_in(built["results_generated.tex"])
-    assert m["ProbeAucBetaLinearOnetwo"] == "$1^{\\dagger}$"
+    assert m["ProbeAucBetaLinearOnetwo"] == "\\ensuremath{1^{\\dagger}}"
     assert m["ProbeAucAlphaLinearOnetwo"].startswith("0.")
     table = built["tables/probes_linear.tex"]
     assert "$1^{\\dagger}$" in table and "1.00000" not in table
@@ -418,7 +418,7 @@ def test_a_censored_headline_cell_still_never_prints_as_a_bare_number(root):
     _with_points(root, {"median": 11876.0, "range": [11876.0, 11876.0],
                         "n_bound": len(SEEDS)})
     m = macros_in(M.build(root)[0]["results_generated.tex"])
-    assert m["ProbeRejAlphaLinearOnetwo"].startswith("$>$")
+    assert m["ProbeRejAlphaLinearOnetwo"].startswith("\\ensuremath{>}")
 
 
 def test_an_analysis_without_working_points_falls_back_and_says_which_point(root):
@@ -528,3 +528,67 @@ def test_c5_emits_macros_for_both_probes_and_both_gains(root):
         "D6: the nonlinear probe travels with the linear one"
     assert len([n for n in gain if not n.startswith("MassGainP")]) == 2, \
         "one gain macro per granularity"
+
+
+# ---------------------------------------------------------------- later results
+
+def _repo_macros():
+    built = M.build(REPO)[0]
+    return macros_in(built["results_generated.tex"]), json.loads(built["provenance.json"])
+
+
+def _load(rel):
+    return json.loads((REPO / rel).read_text())
+
+
+def test_later_results_are_the_stored_values_re_read_independently():
+    """Each check reads the analysis file itself, without the generator's helpers,
+    and compares with the macro the paper would print."""
+    got, prov = _repo_macros()
+    ft = _load(prov["FtTrendPSfourEFour"]["source_file"])["secondary"]
+    assert got["FtTrendPSfourEFour"] == M.math_safe(M.fmt_p(ft["S4"]["per_size"]["N10000"]["trend"]["p"]))
+    assert got["FtGapSthreeESix"] == M.math_safe(f"{ft['S3']['gap_17_minus_188']['N1000000']:+.3f}")
+    c4 = _load(prov["RandDiffBvcFourprongDrawThreeLinear"]["source_file"])
+    cell = next(c for c in c4["C4"]["linear"]["cells"] if c["task"] == "bvc_4prong" and c["draw"] == 3)
+    assert got["RandDiffBvcFourprongDrawThreeLinear"] == M.math_safe(f"{cell['diff']:+.3f}")
+    s5 = _load(prov["AnomalyNRejected"]["source_file"])["section5"]["tests"]
+    assert got["AnomalyNRejected"] == str(sum(bool(v.get("holm_reject")) for v in s5.values()))
+    s7 = _load(prov["MassResSigmaEffOneseven"]["source_file"])["table"]
+    v = [r["sigma_eff"] for r in s7 if r["cell"] == "17" and r["probe"] == "ridge"]
+    assert len(v) == 5 and got["MassResSigmaEffOneseven"] == f"{sum(v) / 5:.4f}"
+    aoj = _load(prov["AojYieldOneeighteight"]["source_file"])["table"]
+    y = [r["signal_yield"] for r in aoj if str(r["level"]) == "188"]
+    assert got["AojYieldOneeighteight"] == M.fmt_int(math.exp(sum(map(math.log, y)) / len(y)))
+
+
+def test_the_design_numbers_are_the_ones_the_pretraining_job_ran_with():
+    got, prov = _repo_macros()
+    spec = (REPO / prov["DesignEpochs"]["source_file"]).read_text()
+    assert f"--num-epochs {got['DesignEpochs']}" in spec
+    assert f"--batch-size {got['DesignBatchSize']}" in spec
+    assert got["DesignExamplesSeen"] == "\\ensuremath{8.192\\times10^{8}}"   # docs/GROUND_TRUTH.md
+    assert (got["DesignParticleBlocks"], got["DesignClassBlocks"], got["DesignEmbedDim"]) == \
+        ("8", "2", "128")                                          # docs/GROUND_TRUTH.md
+
+
+def test_the_design_parser_refuses_a_flag_given_two_values(tmp_path):
+    spec = tmp_path / "job.yaml"
+    spec.write_text("--num-epochs 80 --num-epochs 60 --samples-per-epoch 10 --batch-size 1 "
+                    "--start-lr 5e-4 -o fc_params '[(512,0.1)]'")
+    em = M.Emitter(tmp_path)
+    with pytest.raises(SystemExit, match="--num-epochs"):
+        M.emit_training_design(em, spec, spec, spec)
+
+
+def test_a_later_analysis_whose_input_changed_stops_the_run(tmp_path):
+    (tmp_path / "in.json").write_text("{}")
+    sha = hashlib.sha256(b"{}").hexdigest()
+    a = tmp_path / "analysis.json"
+    a.write_text(json.dumps({"provenance": {"inputs": [{"path": "in.json", "sha256": sha}]}}))
+    M.check_inputs_unchanged(a, tmp_path)
+    (tmp_path / "in.json").write_text("{ }")
+    with pytest.raises(SystemExit, match="changed since"):
+        M.check_inputs_unchanged(a, tmp_path)
+    a.write_text("{}")
+    with pytest.raises(SystemExit, match="records no input hash"):
+        M.check_inputs_unchanged(a, tmp_path)
