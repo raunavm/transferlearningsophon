@@ -57,10 +57,11 @@ def test_both_figures_are_written_end_to_end_from_the_fixture(ladder, tmp_path):
             assert (out / f"{stem}.{ext}").stat().st_size > 5000, f"{stem}.{ext} is empty"
 
 
-def test_no_number_in_the_figure_script_reaches_a_plotting_call():
+@pytest.mark.parametrize("script", ["make_ladder_figures.py", "make_results_figures.py"])
+def test_no_number_in_the_figure_script_reaches_a_plotting_call(script):
     """Every coordinate must come from a file. This greps the syntax tree rather
     than the text, so a literal cannot hide inside a keyword argument list."""
-    tree = ast.parse((REPO / "experiments/FIGS/make_ladder_figures.py").read_text())
+    tree = ast.parse((REPO / "experiments/FIGS" / script).read_text())
     bad = []
 
     def numeric(node):
