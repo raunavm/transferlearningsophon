@@ -63,3 +63,34 @@ def test_summary_uses_ddof_1_and_reports_none_for_a_single_seed(tmp_path):
     d = json.loads((out / "leg2_metrics.json").read_text())["summary"]
     assert d["init"]["N10000"]["accuracy_sd"] == pytest.approx(0.02)
     assert d["solo"]["N10000"]["accuracy_sd"] is None
+
+
+def _pred_root(m, monkeypatch, truth, scores, names=("QCD", "Hbb", "Hcc")):
+    """Stand in for weaver's pred.root: the reader is the only uproot call."""
+    import numpy as np
+    monkeypatch.setattr(m, "read_pred_root",
+                        lambda path: (list(names), np.eye(len(names))[truth].astype(np.int32),
+                                      scores.astype(np.float32)))
+
+
+def test_macro_auc_comes_from_pred_root_and_must_agree_with_the_log(tmp_path, monkeypatch):
+    """PRESPEC 2.3's JetClass endpoint is log(1 - macro AUC); the log only has
+    accuracy. The recomputed accuracy must match the log's, or the file is not
+    the pass the log describes."""
+    import numpy as np
+    m = _mod()
+    rng = np.random.default_rng(0)
+    truth = np.tile([0, 1, 2], 400)
+    scores = rng.random((truth.size, 3)) + 2.0 * np.eye(3)[truth]
+    scores /= scores.sum(1, keepdims=True)
+    acc = float((scores.argmax(1) == truth).mean())
+    d = tmp_path / "init" / "N10000" / "s1"
+    d.mkdir(parents=True)
+    (d / "predict.log").write_text(f"Test metric {acc:.6f}\n")
+    _pred_root(m, monkeypatch, truth, scores)
+    assert m.main(["--root", str(tmp_path), "--out", str(tmp_path / "o"), "--macro-auc"]) == 0
+    c = json.loads((tmp_path / "o" / "leg2_metrics.json").read_text())["cells"]["init"]["N10000"]["s1"]
+    assert 0.9 < c["macro_auc_ovr"] <= 1.0 and c["classes"] == ["QCD", "Hbb", "Hcc"]
+    (d / "predict.log").write_text(f"Test metric {acc - 0.01:.6f}\n")
+    with pytest.raises(SystemExit, match="not the same pass"):
+        m.main(["--root", str(tmp_path), "--out", str(tmp_path / "o2"), "--macro-auc"])
