@@ -416,6 +416,93 @@ WINDOW_RUNS = {"mtx-l162-s1b", "mtx-r16q1-s2", "mtx-r16q1-s3",
                "mtx-r16q1-s1"}
 
 
+# S8, mass output and early classification accuracy (docs/PRESPEC_2026-09.md,
+# clarification of 2026-09-27). The logged validation accuracy is not a paired
+# comparison -- resumed runs validate on different jets (experiments/MTX/
+# val_by_epoch.py) -- so the checkpoints at the six fixed epochs are scored on
+# the same 100,000 test jets: every 20th of the 2,000,000 every frozen-feature
+# cache holds, verified against the 17-class cache of the same seed index. One
+# job per seed index, holding its four models, so the pairs are scored on the
+# same in-memory jets. Writes one small JSON per job; CPU only, as every
+# extraction.
+EPOCH_ACC_PIN = "mtx-s1.60"
+EPOCH_ACC_EPOCHS = (0, 4, 9, 19, 39, 79)       # epochs 1, 5, 10, 20, 40, 80
+EPOCH_ACC_OUT = "/data/results/eval/s8_epoch_accuracy"
+EPOCH_ACC_TEMPLATE = """apiVersion: batch/v1
+kind: Job
+metadata:
+  # S8: accuracy at fixed epochs of the 162- and 17-class models with and
+  # without the mass output, seed index {seed}. See experiments/EVAL/epoch_accuracy.py.
+  name: s8-epoch-accuracy-s{seed}-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: epoch-accuracy
+        image: {image}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "{pin}" \\
+            https://github.com/raunavm/transferlearningsophon.git \\
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          pip install --no-cache-dir -q pyarrow || exit 1
+          mkdir -p {out}
+          PYTHONUNBUFFERED=1 python3 experiments/EVAL/epoch_accuracy.py \\
+            --runs {runs} \\
+            --epochs {epochs} \\
+            --data-config configs/data/JetClassII_base.yaml \\
+            --data-test {file_list} \\
+            --max-jets 2000000 --stride 20 \\
+            --align-with /data/results/eval/mtx-r16q1-s{seed}/features_e79 \\
+            --batch-size 512 --num-workers 1 \\
+            --out {out}/s{seed}.json
+          cat {out}/s{seed}.json
+        volumeMounts:
+        - {{ name: jc2,  mountPath: /jc2, readOnly: true }}
+        - {{ name: data, mountPath: /data }}
+        - {{ name: dshm, mountPath: /dev/shm }}
+        resources:
+          requests: {{ memory: "48Gi", cpu: "16", ephemeral-storage: "20Gi" }}
+          limits:   {{ memory: "48Gi", cpu: "16", ephemeral-storage: "20Gi" }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: {{ medium: Memory, sizeLimit: "8Gi" }}
+"""
+
+
+def build_epoch_accuracy(seed: int) -> tuple[str, str]:
+    twin = "mtx-l162-s1b" if seed == 1 else f"mtx-l162-s{seed}"
+    runs = [(twin, "L162", 162, 0), (f"mtx-l162mass-s{seed}", "L162", 162, 1),
+            (f"mtx-r16q1-s{seed}", "R16_Q1", 17, 0), (f"mtx-r16q1mass-s{seed}", "R16_Q1", 17, 1)]
+    text = EPOCH_ACC_TEMPLATE.format(
+        seed=seed, image=IMAGE, pin=EPOCH_ACC_PIN, out=EPOCH_ACC_OUT,
+        runs=" ".join(f"/data/results/mtx/{r}:{rung}:{k}:{reg}" for r, rung, k, reg in runs),
+        epochs=" ".join(map(str, EPOCH_ACC_EPOCHS)), file_list=interleaved_files())
+    return f"job-s8-epoch-accuracy-s{seed}-raunav.yaml", text
+
+
 def pin_for(run_id: str, window: bool = False) -> str:
     """The tag a run's spec clones. Per list, so adding a list never moves the
     tag under a spec that has already run."""
@@ -671,10 +758,26 @@ def main() -> int:
                          "--max-jets 1.5M into a separate output directory, "
                          "because the 400k cap bound (ledger "
                          "vcb-window-extraction-result). Implies --window.")
+    ap.add_argument("--epoch-accuracy", action="store_true",
+                    help="emit ONLY the five S8 jobs that score checkpoints at fixed epochs")
     ap.add_argument("--observers-job", action="store_true",
                     help="emit ONLY the model-free job that adds genjet_sdmass "
                          "for the caches' 2,000,000 jets (see OBSERVERS_TEMPLATE)")
     args = ap.parse_args()
+
+    if args.epoch_accuracy:
+        verify_pin(EPOCH_ACC_PIN, ["experiments/EVAL/epoch_accuracy.py",
+                                   "experiments/EVAL/extract_features.py",
+                                   "configs/labelmaps/rung_label_maps.v1.csv",
+                                   "configs/data/JetClassII_base.yaml"],
+                   args.pin_not_yet_tagged, {"experiments/EVAL/epoch_accuracy.py": "--align-with"})
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        for seed in range(1, 6):
+            fname, text = build_epoch_accuracy(seed)
+            yaml.safe_load(text)
+            (OUT_DIR / fname).write_text(text)
+            print(f"  {fname}")
+        return 0
 
     if args.observers_job:
         verify_pin(CONTROL_AND_MASS_PIN,
