@@ -24,7 +24,7 @@ B = _load("scripts/build_aoj_jobs.py", "build_aoj_jobs")
 FT = _load("scripts/build_ft_jobs.py", "build_ft_jobs")
 SPECS = B.specs()
 SHARDS = [p for p in SPECS if "-full-s" in p.name]
-FIT = next(p for p in SPECS if "-fit-" in p.name)
+FIT = next(p for p in SPECS if p.name == "job-aoj-full-fit-raunav.yaml")
 CHECK = next(p for p in SPECS if "-fitcheck-" in p.name)
 
 
@@ -179,3 +179,13 @@ def test_the_fit_check_merges_exactly_as_the_fit_did_and_writes_only_its_report(
     assert f'--branch "{B.CHECK_PIN}"' in check
     assert f"OUT={B.OUT_ROOT}/fit_convergence_check" in check and f"OUT={B.OUT_ROOT}/fit\n" not in check
     assert yaml.safe_load(check)["spec"]["backoffLimit"] == 1
+
+
+def test_the_v2_fit_is_the_first_fit_with_only_the_minimiser_pin_output_and_check_changed():
+    one, two = B.render_fit(), B.render_fit_v2()
+    assert "name: aoj-full-fit-v2-raunav" in two and f'--branch "{B.FIT2_PIN}"' in two
+    assert f"OUT={B.OUT_ROOT}/fit_v2\n" in two and f"OUT={B.OUT_ROOT}/fit\n" not in two
+    assert '--results "${OUT}/results.json"' in two and '--out "${OUT}/check.json"' in two
+    # everything from the merge through the fit command is the first run's, line for line
+    body = lambda t: t[t.index("python3 experiments/AOJ/merge_shards.py"):t.index('ls -la "${OUT}"')]
+    assert body(one) == body(two)

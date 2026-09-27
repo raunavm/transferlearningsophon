@@ -174,6 +174,34 @@ def _half_deviance(n, mu):
     return mu - n + xlogy(n, n) - xlogy(n, mu)
 
 
+FIT_OPTIONS = dict(maxiter=2000, ftol=1e-12, gtol=1e-8)
+MAX_RESTARTS = 500
+RESTART_TOL = 1e-7          # half-deviance units
+
+
+def _minimize(loss, x0):
+    """L-BFGS-B, restarted from its own end point until a restart stops lowering the loss.
+
+    ONE CALL IS NOT A MINIMUM. With these options a single call stopped at its
+    iteration limit in 9 of the 32 real-data top fits of 2026-09-23, and a
+    restart from its end point found a lower loss in every one of them, moving
+    the yield by up to 0.77 of its error (experiments/AOJ/fit_convergence_check.py,
+    2026-09-27; experiments/FIGS/data/aoj_full_v1/fit_convergence_check/). The
+    loss has long, shallow valleys along the transfer-factor polynomial, and a
+    restart discards the curvature memory that stalls there. Returns
+    (x, loss, converged, n_restarts); converged means the last restart lowered
+    the loss by less than RESTART_TOL."""
+    x, f = np.asarray(x0, dtype=float), np.inf
+    for k in range(MAX_RESTARTS):
+        r = optimize.minimize(loss, x, jac=True, method="L-BFGS-B", options=FIT_OPTIONS)
+        drop = f - float(r.fun)
+        if drop > 0:
+            x, f = r.x, float(r.fun)
+        if drop < RESTART_TOL:
+            return x, f, True, k
+    return x, f, False, MAX_RESTARTS
+
+
 class _Model:
     """pass = tf_norm * poly(rho, pT) * q + S_j * G ;  fail = q  (q profiled)."""
 
@@ -221,10 +249,13 @@ class _Model:
         return val, grad
 
     def fit(self, start=None):
-        r = optimize.minimize(self.loss, self.x0 if start is None else start, jac=True,
-                              method="L-BFGS-B", options=dict(maxiter=2000, ftol=1e-12, gtol=1e-8))
-        self.converged = bool(r.success)
-        return r.x, float(r.fun)
+        x, f, self.converged, self.n_restarts = _minimize(self.loss, self.x0 if start is None else start)
+        return x, f
+
+    def edm(self, x):
+        """Estimated distance to the minimum, 1/2 g^T H^-1 g, in units of the loss."""
+        g = self.loss(x)[1]
+        return float(0.5 * g @ self.covariance(x) @ g)
 
     def embed(self, x, order):
         """Parameters of a lower-order fit, laid out for THIS model's order -- a
@@ -298,7 +329,7 @@ def fit_peak(mass, pt, passed, peak, mean=None, width=None, float_shape=False, o
     t, s, q, mu = model.expect(x)
     n_par = len(x)
     out = dict(peak=peak, tf_order=list(order), f_test=trail, n_bins=int(len(t)), n_parameters=n_par,
-               converged=model.converged,
+               converged=model.converged, n_restarts=model.n_restarts, edm=model.edm(x),
                deviance=2 * half_dev, n_pass=float(b["n_pass"].sum()), n_fail=float(b["n_fail"].sum()),
                asymptotic_p=float(stats.chi2.sf(2 * half_dev, max(len(t) - n_par, 1))))
     hist = {k: np.bincount(b["i"], weights=v, minlength=len(b["m_edges"]) - 1)

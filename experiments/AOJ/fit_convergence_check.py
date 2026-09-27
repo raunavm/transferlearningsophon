@@ -62,9 +62,12 @@ def signal_yield(model, x):
 
 
 def diagnose(model, seed=0) -> dict:
-    """Stop reason, gradient, EDM, and what restarts from nearby find."""
-    r = optimize.minimize(model.loss, model.x0, jac=True, method="L-BFGS-B", options=OPTIONS)
-    x, f = r.x, float(r.fun)
+    """Reproduce the fit with the fit's own minimiser, then its gradient, EDM, and
+    what single L-BFGS-B restarts from its end point and from nearby starts find.
+    (peak_fit.py at mtx-s1.56, the tag of the first full run, fits with one
+    L-BFGS-B call of OPTIONS; from mtx-s1.61 it restarts until the loss stops
+    falling. model.fit() is whichever the checked fit used.)"""
+    x, f = model.fit()
     g = model.loss(x)[1]
     cov = model.covariance(x)                                # pinv of the Hessian
     edm = float(0.5 * g @ cov @ g)
@@ -78,7 +81,7 @@ def diagnose(model, seed=0) -> dict:
         rr = optimize.minimize(model.loss, s, jac=True, method="L-BFGS-B", options=OPTIONS)
         runs.append((float(rr.fun), signal_yield(model, rr.x)))
     best_f, best_y = min(runs)
-    return {"success": bool(r.success), "message": str(r.message), "nit": int(r.nit),
+    return {"success": bool(model.converged), "n_restarts": getattr(model, "n_restarts", 0),
             "half_deviance": f, "grad_max_abs": float(np.max(np.abs(g))), "edm": edm,
             "signal_yield": y, "signal_yield_err": y_err,
             "restart_best_half_deviance_drop": f - best_f,
@@ -123,7 +126,7 @@ def main(argv=None) -> int:
                                             <= 1e-6 * max(1.0, abs(stored["signal_yield"])))
         out["fits"][name] = d
         print(f"{name:14s} stored {stored['signal_yield']:9.1f}  refit {d['signal_yield']:9.1f}  "
-              f"{d['message'][:40]:40s} edm {d['edm']:.2e}  restart drop "
+              f"success {d['success']!s:5s} edm {d['edm']:.2e}  restart drop "
               f"{d['restart_best_half_deviance_drop']:.2e}  at_minimum {d['at_minimum']}", flush=True)
     f = out["fits"].values()
     out["summary"] = {"n_fits": len(out["fits"]),
