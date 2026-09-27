@@ -116,6 +116,19 @@ MASSRES_CELLS = [("mtx-l188", "L188"), ("mtx-l162", "L162"),
                  ("mtx-l162mass", "L162_MASS"), ("mtx-r16q1mass", "R16_Q1_MASS")]
 
 
+FEAT = "features_e79"           # the 2,000,000-jet caches every job above reads
+
+# S10, the |V_cb| discriminant probe, 162 against 17 classes (docs/PRESPEC_2026-09.md,
+# clarification of 2026-09-27). The task lives inside the published window, so
+# it reads the windowed caches over the whole test split, not the 2 M ones.
+# ONE job holding all ten models: every seed index is paired, and
+# probe.check_alignment only gates the arms inside one job. Same pin as the 2x2,
+# whose probe.py is the one every other probe in the paper ran.
+VCB_FEAT = "features_vcbwindow_e79_full"
+VCB_CELLS = [("mtx-l162", "L162"), ("mtx-r16q1", "R16_Q1")]
+VCB_EPS_S = [0.6, 0.4]          # arXiv:2503.00118's working points, as the task pins
+
+
 def run_name(stem: str, seed: int) -> str:
     return f"{stem}-s1b" if (stem == "mtx-l162" and seed == 1) else f"{stem}-s{seed}"
 
@@ -148,7 +161,7 @@ spec:
           ARMS=""; RUNGS=""
           for spec in {specs}; do
             a=${{spec%%:*}}; r=${{spec##*:}}
-            d=/data/results/eval/${{a}}/features_e79
+            d=/data/results/eval/${{a}}/{feat}
             for f in features.npy label188.npy extract_manifest.json; do
               [ -f "${{d}}/${{f}}" ] || {{ echo "FATAL: no ${{d}}/${{f}}"; exit 1; }}
             done
@@ -221,7 +234,7 @@ def build() -> dict[str, str]:
         specs = " ".join(f"{run_name(stem, seed)}:{rung}" for stem, rung in LADDER)
         for kind, body in (("probe-ladder", PROBE), ("labelrec-ladder", LABELREC)):
             name = f"{kind}-v1-s{seed}-raunav"
-            text = (HEAD.format(name=name, pin=PIN, specs=specs)
+            text = (HEAD.format(name=name, feat=FEAT, pin=PIN, specs=specs)
                     + body.format(seed=seed, tasks=tasks, ver="v1", eps="") + TAIL)
             out[f"job-{name}.yaml"] = text
         # The re-run. Same four models, same tasks, same resources; the only
@@ -229,7 +242,7 @@ def build() -> dict[str, str]:
         name = f"probe-ladder-v2-s{seed}-raunav"
         eps = " \\\n            --eps-s " + " ".join(str(e) for e in EPS_S_V2)
         out[f"job-{name}.yaml"] = (
-            HEAD.format(name=name, pin=PIN_V2, specs=specs)
+            HEAD.format(name=name, feat=FEAT, pin=PIN_V2, specs=specs)
             + PROBE.format(seed=seed, tasks=tasks, ver="v2", eps=eps) + TAIL)
 
     # The random-label control, one job per draw.
@@ -241,7 +254,7 @@ def build() -> dict[str, str]:
         # not run; the random arm HAS no rung, which is the point of it.
         cspecs = f"{rand}:RAND {ref}:R16_Q1"
         out[f"job-{name}.yaml"] = (
-            HEAD.format(name=name, pin=PIN_V2, specs=cspecs)
+            HEAD.format(name=name, feat=FEAT, pin=PIN_V2, specs=cspecs)
             + PROBE.format(seed=f"d{draw}", tasks=ctasks, ver="randcontrol", eps=ceps)
             + TAIL)
 
@@ -254,15 +267,23 @@ def build() -> dict[str, str]:
         name = f"probe-mass2x2-s{seed}-raunav"
         mspecs = " ".join(f"{run_name(stem, seed)}:{arm}" for stem, arm in MASS_CELLS)
         out[f"job-{name}.yaml"] = (
-            HEAD.format(name=name, pin=MASS_PIN, specs=mspecs)
+            HEAD.format(name=name, feat=FEAT, pin=MASS_PIN, specs=mspecs)
             + PROBE.format(seed=seed, tasks=tasks, ver="mass2x2", eps=meps) + TAIL)
+
+    # S10, all ten windowed models in one job.
+    name = "probe-vcbwindow-s10-raunav"
+    vspecs = " ".join(f"{run_name(stem, seed)}:{arm}" for stem, arm in VCB_CELLS for seed in SEEDS)
+    veps = " \\\n            --eps-s " + " ".join(str(e) for e in VCB_EPS_S)
+    out[f"job-{name}.yaml"] = (
+        HEAD.format(name=name, feat=VCB_FEAT, pin=MASS_PIN, specs=vspecs)
+        + PROBE.format(seed="all", tasks="bc_vs_rest", ver="vcbwindow", eps=veps) + TAIL)
 
     # S7's mass regression, one job per seed index, six models each.
     for seed in SEEDS:
         name = f"massres-s{seed}-raunav"
         rspecs = " ".join(f"{run_name(stem, seed)}:{arm}" for stem, arm in MASSRES_CELLS)
         out[f"job-{name}.yaml"] = (
-            HEAD.format(name=name, pin=MASSRES_PIN, specs=rspecs)
+            HEAD.format(name=name, feat=FEAT, pin=MASSRES_PIN, specs=rspecs)
             + MASSRES.format(seed=seed, obs=MASSRES_OBS) + TAIL)
     return out
 
