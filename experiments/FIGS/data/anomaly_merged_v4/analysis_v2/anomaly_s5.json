@@ -1,0 +1,4108 @@
+{
+  "provenance": {
+    "input": {
+      "path": "experiments/FIGS/data/anomaly_merged_v4/anomaly_results.json",
+      "sha256": "8814a4763a8de24ce6d5d92a4dffa17d311cf35cf31ef051ac86ddb061a655b3"
+    },
+    "script_sha256": "e049d5696c6fa7d0febef0f40319770cd21e7eae145e9c428cc758c64bab8830",
+    "row_alignment_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba",
+    "detector_trainings": 10,
+    "argv": [
+      "--anomaly",
+      "experiments/FIGS/data/anomaly_merged_v4/anomaly_results.json",
+      "--out",
+      "experiments/FIGS/data/anomaly_merged_v4/analysis_v2"
+    ]
+  },
+  "section5": {
+    "endpoint": "ln sigma_min (median over detector trainings), lower is better",
+    "injection": "4000",
+    "table": "20 trend tests, Holm within",
+    "tests": {
+      "class_sum|label_X_bb": {
+        "trend": {
+          "task": "label_X_bb|class_sum|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 10.016865994834957,
+          "p": 0.0009946469907407408,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              43,
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.21837721711650646,
+              "t": 5.78727548362908,
+              "p_adj": 0.002008885513117284
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.3274516272677717,
+              "t": 8.181590157265752,
+              "p_adj": 0.0011360576613940329
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.10114838288018053,
+              "t": 2.1886692839066217,
+              "p_adj": 0.05787991496270576
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.3273374288607835,
+              "t": 10.016865994834957,
+              "p_adj": 0.0009946469907407408
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.1010341844731924,
+              "t": 2.5244042795893025,
+              "p_adj": 0.034940743152006175
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": -0.08351270660959893,
+              "t": -2.2131935094464974,
+              "p_adj": 0.9978414150913066
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.09125811902269443,
+            0.11089098235622002,
+            0.14720271012170555,
+            0.016676541080042944
+          ],
+          "isotonic": {
+            "stat": 0.4818085803071677,
+            "p": 0.010486744068287037,
+            "fitted": [
+              0.8060264659149248,
+              0.8062548627289011,
+              1.1334780931826962,
+              1.1334780931826962
+            ],
+            "pooled": [
+              [
+                188
+              ],
+              [
+                162
+              ],
+              [
+                43,
+                17
+              ]
+            ],
+            "means": [
+              0.8060264659149248,
+              0.806254862728901,
+              1.3597813375702874,
+              0.9071748487951053
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.10114838288018062,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "class_sum|label_X_YY_bbb": {
+        "trend": {
+          "task": "label_X_YY_bbb|class_sum|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [],
+          "blocks_dropped_incomplete": {
+            "1": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "2": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "3": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "4": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "5": [
+              188,
+              162,
+              43,
+              17
+            ]
+          },
+          "run": false,
+          "reason": "fewer than 2 complete seed blocks \u2014 not run"
+        },
+        "gap_17_minus_188": null,
+        "n_censored": 0
+      },
+      "class_sum|label_X_YY_bbbb": {
+        "trend": {
+          "task": "label_X_YY_bbbb|class_sum|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 3.670678297568505,
+          "p": 8.590133101851852e-05,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              43,
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.23605177270204936,
+              "t": 1.9288971634729677,
+              "p_adj": 0.0816235954378858
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.37155027083676573,
+              "t": 2.8624844043283773,
+              "p_adj": 0.005956704724472736
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.2323924164290528,
+              "t": 1.5505227059544673,
+              "p_adj": 0.16967321325231483
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.3890228826204575,
+              "t": 3.670678297568505,
+              "p_adj": 8.590133101851852e-05
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.24986502821274456,
+              "t": 1.9250012786567907,
+              "p_adj": 0.08238100907439558
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.07380478253668776,
+              "t": 0.6030958126522893,
+              "p_adj": 0.5337004484953703
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.13526374143768216,
+            0.1237007739119371,
+            0.43286600413079096,
+            0.07411246903037451
+          ],
+          "isotonic": {
+            "stat": 0.4649948794791665,
+            "p": 0.0010216481401105967,
+            "fitted": [
+              0.2742702463106267,
+              0.2742702463106267,
+              0.6632931289310842,
+              0.6632931289310842
+            ],
+            "pooled": [
+              [
+                188,
+                162
+              ],
+              [
+                43,
+                17
+              ]
+            ],
+            "means": [
+              0.2917428580943184,
+              0.25679763452693494,
+              0.8024509833387972,
+              0.5241352745233712
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.23239241642905278,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "class_sum|label_X_qq": {
+        "trend": {
+          "task": "label_X_qq|class_sum|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 5.261863438041142,
+          "p": 0.0005822201324588478,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.13210236517167662,
+              "t": 3.0458661113876593,
+              "p_adj": 0.013752878448109568
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.1714447682196131,
+              "t": 3.726903872207374,
+              "p_adj": 0.005486131204989712
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.2687646490937521,
+              "t": 5.059722876661455,
+              "p_adj": 0.0010825577096193416
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.1447359886817109,
+              "t": 3.8534179493351983,
+              "p_adj": 0.004495754163451646
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.24205586955585004,
+              "t": 5.261863438041142,
+              "p_adj": 0.0005822201324588478
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.22625050028665966,
+              "t": 5.216626747084093,
+              "p_adj": 0.0006535534014917696
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.1623959894583885,
+            0.14974930915663046,
+            0.07064947898714398,
+            0.004529774859697262
+          ],
+          "isotonic": {
+            "stat": 0.7093510254621854,
+            "p": 0.00020244582690329217,
+            "fitted": [
+              1.3103152142280021,
+              1.3637327733038063,
+              1.3844401015734764,
+              1.5790798633217542
+            ],
+            "pooled": [
+              [
+                188
+              ],
+              [
+                162
+              ],
+              [
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              1.3103152142280021,
+              1.3637327733038063,
+              1.384440101573476,
+              1.5790798633217542
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.26876464909375203,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "class_sum|label_X_YY_qqq": {
+        "trend": {
+          "task": "label_X_YY_qqq|class_sum|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 1.5863580838738276,
+          "p": 0.15642481674382716,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              43,
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.006911869358312009,
+              "t": 0.18551434343969703,
+              "p_adj": 0.6885343324009774
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.030776824977301772,
+              "t": 0.7788064260585996,
+              "p_adj": 0.4862821602527006
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.012100658736961149,
+              "t": 0.26518280270717964,
+              "p_adj": 0.6649784041039738
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.05118584591713571,
+              "t": 1.5863580838738276,
+              "p_adj": 0.15642481674382716
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.03250967967679501,
+              "t": 0.8226562506063391,
+              "p_adj": 0.46566345466017234
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.00922234229096993,
+              "t": 0.2475273600227908,
+              "p_adj": 0.670190128279321
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.07205775861838937,
+            0.03901074316850629,
+            0.09826265717295235,
+            0.0189417683004415
+          ],
+          "isotonic": {
+            "stat": 0.15741366792614986,
+            "p": 0.1714493865338863,
+            "fitted": [
+              1.1920372971231123,
+              1.1920372971231123,
+              1.2432231430402476,
+              1.2432231430402476
+            ],
+            "pooled": [
+              [
+                188,
+                162
+              ],
+              [
+                43,
+                17
+              ]
+            ],
+            "means": [
+              1.2124463180629461,
+              1.1716282761832784,
+              1.2618993092805886,
+              1.2245469767999073
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.012100658736961024,
+        "n_censored": 0,
+        "holm_reject": false
+      },
+      "class_sum|label_X_YY_qqqq": {
+        "trend": {
+          "task": "label_X_YY_qqqq|class_sum|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 4.363921771472389,
+          "p": 0.0001471876607510288,
+          "p_min": 5.023469650205762e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              43,
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.11534356676548642,
+              "t": 1.4718909947925556,
+              "p_adj": 0.19329620486914867
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.23458730537833897,
+              "t": 2.8223477065068656,
+              "p_adj": 0.011933754501028807
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.24806818278267845,
+              "t": 2.5846855032667855,
+              "p_adj": 0.02060062110178755
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.29615926060844816,
+              "t": 4.363921771472389,
+              "p_adj": 0.0001471876607510288
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.30964013801278756,
+              "t": 3.7253172414996096,
+              "p_adj": 0.000886767980002572
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.21541401027808463,
+              "t": 2.7488827575890236,
+              "p_adj": 0.014194064670138888
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.1955340331464959,
+            0.13548738427983129,
+            0.1376850361888151,
+            0.028287351857174
+          ],
+          "isotonic": {
+            "stat": 0.5835617267154488,
+            "p": 0.0002632298096707819,
+            "fitted": [
+              0.8483905323689258,
+              0.8483905323689258,
+              1.1310689155730347,
+              1.1580306703817136
+            ],
+            "pooled": [
+              [
+                188,
+                162
+              ],
+              [
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              0.9099624875990351,
+              0.7868185771388166,
+              1.1310689155730347,
+              1.1580306703817134
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.2480681827826782,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "knn|label_X_bb": {
+        "trend": {
+          "task": "label_X_bb|knn|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": -5.907160080224414,
+          "p": 0.9999922136220422,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188
+            ],
+            [
+              162,
+              43,
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": -0.10903018912343401,
+              "t": -5.907160080224414,
+              "p_adj": 0.9999922136220422
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": -0.1463415194487005,
+              "t": -7.475207860441105,
+              "p_adj": 0.9999996232397762
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": -0.2121110172261821,
+              "t": -9.383169722514193,
+              "p_adj": 1.0
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": -0.12913775521225035,
+              "t": -8.078943591931342,
+              "p_adj": 0.9999997488265175
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": -0.19490725298973188,
+              "t": -9.955973090169827,
+              "p_adj": 1.0
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": -0.17378450051147548,
+              "t": -9.415491913170378,
+              "p_adj": 1.0
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.04731266723600527,
+            0.02155770029070972,
+            0.05942678122712578,
+            0.030850192353370925
+          ],
+          "isotonic": {
+            "stat": 1.0631026743195504e-31,
+            "p": 1.0,
+            "fitted": [
+              0.7887954641625659,
+              0.7887954641625659,
+              0.7887954641625659,
+              0.7887954641625659
+            ],
+            "pooled": [
+              [
+                188,
+                162,
+                43,
+                17
+              ]
+            ],
+            "means": [
+              0.8705681060051413,
+              0.8361605775322409,
+              0.7899960843339223,
+              0.6584570887789593
+            ]
+          }
+        },
+        "gap_17_minus_188": -0.21211101722618214,
+        "n_censored": 0,
+        "holm_reject": false
+      },
+      "knn|label_X_YY_bbb": {
+        "trend": {
+          "task": "label_X_YY_bbb|knn|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [],
+          "blocks_dropped_incomplete": {
+            "1": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "2": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "3": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "4": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "5": [
+              188,
+              162,
+              43,
+              17
+            ]
+          },
+          "run": false,
+          "reason": "fewer than 2 complete seed blocks \u2014 not run"
+        },
+        "gap_17_minus_188": null,
+        "n_censored": 0
+      },
+      "knn|label_X_YY_bbbb": {
+        "trend": {
+          "task": "label_X_YY_bbbb|knn|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 7.603530587972718,
+          "p": 1.8838011188271604e-05,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.008638495346166099,
+              "t": 0.2621145659351893,
+              "p_adj": 0.6477369771572788
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.09511233825690855,
+              "t": 2.720906696305982,
+              "p_adj": 0.028840869542502572
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.1836353247959252,
+              "t": 4.549499797654388,
+              "p_adj": 0.0017128775639789094
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.1772669334945681,
+              "t": 6.210837298067957,
+              "p_adj": 0.00011729801633230453
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.26578992003358476,
+              "t": 7.603530587972718,
+              "p_adj": 1.8838011188271604e-05
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.23620860438173416,
+              "t": 7.167187493497188,
+              "p_adj": 3.516428755144033e-05
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.05362858673475905,
+            0.04781674347449355,
+            0.08460458403364317,
+            0.05530830291449644
+          ],
+          "isotonic": {
+            "stat": 0.669261554258083,
+            "p": 0.00045701015142746913,
+            "fitted": [
+              -0.4417119543260711,
+              -0.4417119543260711,
+              -0.3529680073705196,
+              -0.17592203429248626
+            ],
+            "pooled": [
+              [
+                188,
+                162
+              ],
+              [
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              -0.3595573590884115,
+              -0.5238665495637306,
+              -0.3529680073705196,
+              -0.17592203429248632
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.18363532479592523,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "knn|label_X_qq": {
+        "trend": {
+          "task": "label_X_qq|knn|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 5.78727526053261,
+          "p": 3.064316486625515e-05,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.02860181829426409,
+              "t": 2.944971332946767,
+              "p_adj": 0.0141565142345036
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.04398880759265059,
+              "t": 4.270250545253312,
+              "p_adj": 0.0018515253263245886
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.0585299389144781,
+              "t": 4.920620478022531,
+              "p_adj": 0.0003850489486882716
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.04507488774390478,
+              "t": 5.35909493421462,
+              "p_adj": 0.00012470763406635804
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.05961601906573243,
+              "t": 5.78727526053261,
+              "p_adj": 3.064316486625515e-05
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.04943810025837363,
+              "t": 5.090368259749932,
+              "p_adj": 0.0002461500128600823
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.012791517331580033,
+            0.008168982925473457,
+            0.028926960844375675,
+            0.019074839150539476
+          ],
+          "isotonic": {
+            "stat": 0.7424976816294958,
+            "p": 2.561969521604938e-05,
+            "fitted": [
+              1.4582000365275818,
+              1.4582000365275818,
+              1.488733792949659,
+              1.517816055593314
+            ],
+            "pooled": [
+              [
+                188,
+                162
+              ],
+              [
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              1.459286116678836,
+              1.4571139563763276,
+              1.488733792949659,
+              1.5178160555933142
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.05852993891447822,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "knn|label_X_YY_qqq": {
+        "trend": {
+          "task": "label_X_YY_qqq|knn|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 3.9609777213180593,
+          "p": 0.00021500450102880658,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.007041138385872114,
+              "t": 0.7356856149117341,
+              "p_adj": 0.47539353861239714
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.020537551297704272,
+              "t": 2.023120655937721,
+              "p_adj": 0.07359119305394804
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.030233712197544556,
+              "t": 2.579260631342249,
+              "p_adj": 0.02642018510480967
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.030513395016600442,
+              "t": 3.6813684317075457,
+              "p_adj": 0.0011375647022890947
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.04020955591644054,
+              "t": 3.9609777213180593,
+              "p_adj": 0.00021500450102880658
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.033270477877520487,
+              "t": 3.4762293587131334,
+              "p_adj": 0.00279028621720679
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.012748404626342268,
+            0.011551344913453195,
+            0.023678089960130305,
+            0.016732366892532023
+          ],
+          "isotonic": {
+            "stat": 0.5223221771603838,
+            "p": 0.0013369964474022635,
+            "fitted": [
+              1.503596533332575,
+              1.503596533332575,
+              1.5244137674493352,
+              1.5438060892490149
+            ],
+            "pooled": [
+              [
+                188,
+                162
+              ],
+              [
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              1.5135723770514709,
+              1.4936206896136788,
+              1.5244137674493352,
+              1.5438060892490153
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.030233712197544494,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "knn|label_X_YY_qqqq": {
+        "trend": {
+          "task": "label_X_YY_qqqq|knn|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": -0.4907082570773236,
+          "p": 0.888860883045589,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              43,
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": -0.035744198351998664,
+              "t": -2.68983976696291,
+              "p_adj": 0.9993401672614455
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": -0.029631748634796916,
+              "t": -2.102334746593036,
+              "p_adj": 0.9971794473781507
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": -0.04599877643963023,
+              "t": -2.8263210863868427,
+              "p_adj": 0.9995222680362654
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": -0.0056471997415962205,
+              "t": -0.4907082570773236,
+              "p_adj": 0.888860883045589
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": -0.022014227546429562,
+              "t": -1.561881347627121,
+              "p_adj": 0.9891562128263246
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": -0.025587503567508576,
+              "t": -1.9255232403146758,
+              "p_adj": 0.9956264417357896
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.01742645642452448,
+            0.014412205886583403,
+            0.038694262992610085,
+            0.017756764291245338
+          ],
+          "isotonic": {
+            "stat": 1.3416209970158851e-30,
+            "p": 1.0,
+            "fitted": [
+              1.4163959354030111,
+              1.4163959354030111,
+              1.4163959354030111,
+              1.4163959354030111
+            ],
+            "pooled": [
+              [
+                188,
+                162,
+                43,
+                17
+              ]
+            ],
+            "means": [
+              1.4432040841670097,
+              1.3952349863806084,
+              1.4299393633370463,
+              1.3972053077273794
+            ]
+          }
+        },
+        "gap_17_minus_188": -0.04599877643963039,
+        "n_censored": 0,
+        "holm_reject": false
+      },
+      "mahalanobis|label_X_bb": {
+        "trend": {
+          "task": "label_X_bb|mahalanobis|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 12.949796985172894,
+          "p": 0.0001220703125,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162,
+              43
+            ],
+            [
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.02121268440700733,
+              "t": 2.273337547819234,
+              "p_adj": 0.04825293772505144
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.043927938304922115,
+              "t": 4.43846555465081,
+              "p_adj": 0.003616521387924383
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.10653616381459195,
+              "t": 9.322227972893153,
+              "p_adj": 0.001004442756558642
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.05603684999933323,
+              "t": 6.934439714236651,
+              "p_adj": 0.001334107952353395
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.11864507550900306,
+              "t": 11.987862421866696,
+              "p_adj": 0.0003888165509259259
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.12083553401244855,
+              "t": 12.949796985172894,
+              "p_adj": 0.0001220703125
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.02415439693671606,
+            0.009080494965725707,
+            0.02321001063691442,
+            0.02446381536369138
+          ],
+          "isotonic": {
+            "stat": 0.9082939921478014,
+            "p": 0.0009765625,
+            "fitted": [
+              0.4701598106968025,
+              0.4701598106968025,
+              0.4701598106968025,
+              0.5909953447092511
+            ],
+            "pooled": [
+              [
+                188,
+                162,
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              0.48445918089465917,
+              0.46024135750583695,
+              0.4657788936899115,
+              0.5909953447092511
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.10653616381459197,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "mahalanobis|label_X_YY_bbb": {
+        "trend": {
+          "task": "label_X_YY_bbb|mahalanobis|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [],
+          "blocks_dropped_incomplete": {
+            "1": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "2": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "3": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "4": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "5": [
+              188,
+              162,
+              43,
+              17
+            ]
+          },
+          "run": false,
+          "reason": "fewer than 2 complete seed blocks \u2014 not run"
+        },
+        "gap_17_minus_188": null,
+        "n_censored": 0
+      },
+      "mahalanobis|label_X_YY_bbbb": {
+        "trend": {
+          "task": "label_X_YY_bbbb|mahalanobis|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 12.2480622300415,
+          "p": 2.511734825102881e-07,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.27517560096074956,
+              "t": 4.451041866399039,
+              "p_adj": 0.003956610283243313
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.486856609900563,
+              "t": 7.42465990503095,
+              "p_adj": 0.00019641766332304525
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.729047963182453,
+              "t": 9.628579644353534,
+              "p_adj": 2.021946534207819e-05
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.5609498183600016,
+              "t": 10.477197621807495,
+              "p_adj": 7.284030992798354e-06
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.8031411716418917,
+              "t": 12.2480622300415,
+              "p_adj": 2.511734825102881e-07
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.6968883499491876,
+              "t": 11.272362851210882,
+              "p_adj": 1.7582143775720165e-06
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.056311537082512936,
+            0.06117246089852788,
+            0.15147297877449223,
+            0.1471972634019715
+          ],
+          "isotonic": {
+            "stat": 0.9049387450996873,
+            "p": 4.3955359439300415e-06,
+            "fitted": [
+              -1.1274566547528315,
+              -1.1274566547528315,
+              -0.8086981896747201,
+              -0.3243154831109397
+            ],
+            "pooled": [
+              [
+                188,
+                162
+              ],
+              [
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              -1.053363446293393,
+              -1.2015498632122703,
+              -0.8086981896747201,
+              -0.32431548311094
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.7290479631824527,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "mahalanobis|label_X_qq": {
+        "trend": {
+          "task": "label_X_qq|mahalanobis|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 3.7073641301199642,
+          "p": 0.001364625530478395,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              43,
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.0145148713973536,
+              "t": 2.1553495458881335,
+              "p_adj": 0.05314064810796039
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.021697041338439478,
+              "t": 3.037587347973368,
+              "p_adj": 0.0071622118537808645
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.022815788032105024,
+              "t": 2.7662687072420584,
+              "p_adj": 0.013072575070730452
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.021621775580848546,
+              "t": 3.7073641301199642,
+              "p_adj": 0.001364625530478395
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.022740522274514185,
+              "t": 3.183674754077759,
+              "p_adj": 0.005283434204603909
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.015906179312120197,
+              "t": 2.3619483368928695,
+              "p_adj": 0.03284269105259774
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.010089909941339627,
+            0.006515782191713448,
+            0.018893843641040256,
+            0.011865584695241701
+          ],
+          "isotonic": {
+            "stat": 0.5352165581946637,
+            "p": 0.0011106891396604939,
+            "fitted": [
+              1.463846637647652,
+              1.4639971691628342,
+              1.4844249322924257,
+              1.4866624256797571
+            ],
+            "pooled": [
+              [
+                188
+              ],
+              [
+                162
+              ],
+              [
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              1.463846637647652,
+              1.463997169162834,
+              1.484424932292426,
+              1.4866624256797571
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.022815788032105155,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "mahalanobis|label_X_YY_qqq": {
+        "trend": {
+          "task": "label_X_YY_qqq|mahalanobis|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 6.0956132453044996,
+          "p": 3.139668531378601e-05,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.013311313230278107,
+              "t": 1.9520463303922568,
+              "p_adj": 0.09504844131783693
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.026305245068767275,
+              "t": 3.636933071836559,
+              "p_adj": 0.0068453565055941355
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.0377501358348135,
+              "t": 4.520038221871055,
+              "p_adj": 0.0012819894547325102
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.032643520292117034,
+              "t": 5.5275868316847925,
+              "p_adj": 0.00012671702192644033
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.04408841105816353,
+              "t": 6.0956132453044996,
+              "p_adj": 3.139668531378601e-05
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.037022201216139916,
+              "t": 5.429145177248452,
+              "p_adj": 0.00016301159014917696
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.012847981971919654,
+            0.006129663931471564,
+            0.01507680097251822,
+            0.012953420516235143
+          ],
+          "isotonic": {
+            "stat": 0.7268678278487096,
+            "p": 6.116074299125514e-05,
+            "fitted": [
+              1.5074574112099008,
+              1.5074574112099008,
+              1.5286560407359715,
+              1.5515458222680643
+            ],
+            "pooled": [
+              [
+                188,
+                162
+              ],
+              [
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              1.5137956864332507,
+              1.501119135986551,
+              1.5286560407359715,
+              1.5515458222680643
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.03775013583481344,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "mahalanobis|label_X_YY_qqqq": {
+        "trend": {
+          "task": "label_X_YY_qqqq|mahalanobis|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 2.0387892197040354,
+          "p": 0.07731735166698817,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              43,
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.004977373730213589,
+              "t": 0.46649520881822715,
+              "p_adj": 0.5664440516091178
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.013152490775836084,
+              "t": 1.162194139106729,
+              "p_adj": 0.288721406410751
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.0075391973326154075,
+              "t": 0.5769343771705531,
+              "p_adj": 0.5198239926938657
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.018838920956351868,
+              "t": 2.0387892197040354,
+              "p_adj": 0.07731735166698817
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.013225627513130925,
+              "t": 1.1686567239422585,
+              "p_adj": 0.28650505160108025
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.005074889379940235,
+              "t": 0.4756346839406203,
+              "p_adj": 0.5622613851916153
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.018343935173775455,
+            0.011942223145914014,
+            0.028701713801798125,
+            0.016003705352695543
+          ],
+          "isotonic": {
+            "stat": 0.2354760613288297,
+            "p": 0.08130573539576903,
+            "fitted": [
+              1.408990811885272,
+              1.408990811885272,
+              1.4278297328416238,
+              1.4278297328416238
+            ],
+            "pooled": [
+              [
+                188,
+                162
+              ],
+              [
+                43,
+                17
+              ]
+            ],
+            "means": [
+              1.4146772420657878,
+              1.4033043817047564,
+              1.4334430262848448,
+              1.4222164393984031
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.007539197332615366,
+        "n_censored": 0,
+        "holm_reject": false
+      },
+      "iad_hgb|label_X_bb": {
+        "trend": {
+          "task": "label_X_bb|iad_hgb|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 1.4570720480994488,
+          "p": 0.1894237377025463,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.021923138928354756,
+              "t": 0.9128231390898676,
+              "p_adj": 0.36827206709747945
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.028065053218546535,
+              "t": 1.101725783567088,
+              "p_adj": 0.29651280783822015
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.04193669934514748,
+              "t": 1.4257143503128167,
+              "p_adj": 0.1976430131574717
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.02324539804456116,
+              "t": 1.1176099509791784,
+              "p_adj": 0.29141159999517746
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.037117044171162114,
+              "t": 1.4570720480994488,
+              "p_adj": 0.1894237377025463
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.03399246019850869,
+              "t": 1.4153586457301506,
+              "p_adj": 0.2004506303449717
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.04158612505212738,
+            0.035293795078009525,
+            0.05761715643069098,
+            0.029396596174942106
+          ],
+          "isotonic": {
+            "stat": 0.15766057114467924,
+            "p": 0.15949340317965535,
+            "fitted": [
+              -1.3573303545904094,
+              -1.3476910442424386,
+              -1.3431369474984636,
+              -1.315393655245262
+            ],
+            "pooled": [
+              [
+                188
+              ],
+              [
+                162
+              ],
+              [
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              -1.3573303545904094,
+              -1.3476910442424386,
+              -1.3431369474984638,
+              -1.3153936552452619
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.041936699345147634,
+        "n_censored": 0,
+        "holm_reject": false
+      },
+      "iad_hgb|label_X_YY_bbb": {
+        "trend": {
+          "task": "label_X_YY_bbb|iad_hgb|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [],
+          "blocks_dropped_incomplete": {
+            "1": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "2": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "3": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "4": [
+              188,
+              162,
+              43,
+              17
+            ],
+            "5": [
+              188,
+              162,
+              43,
+              17
+            ]
+          },
+          "run": false,
+          "reason": "fewer than 2 complete seed blocks \u2014 not run"
+        },
+        "gap_17_minus_188": null,
+        "n_censored": 0
+      },
+      "iad_hgb|label_X_YY_bbbb": {
+        "trend": {
+          "task": "label_X_YY_bbbb|iad_hgb|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 4.597515021761972,
+          "p": 0.0008934240772890947,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162,
+              43
+            ],
+            [
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.012176019484675171,
+              "t": 0.7675205381531681,
+              "p_adj": 0.4622665844827032
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.021612869442992108,
+              "t": 1.2844607565252628,
+              "p_adj": 0.23733960061406892
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.06383357929810843,
+              "t": 3.2853998934197843,
+              "p_adj": 0.008384422019675927
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.02496170965897182,
+              "t": 1.8168888801822578,
+              "p_adj": 0.10256719393004116
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.06718241951408789,
+              "t": 3.992675827792117,
+              "p_adj": 0.003299540452996399
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.0729354195794693,
+              "t": 4.597515021761972,
+              "p_adj": 0.0008934240772890947
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.021604662137219614,
+            0.017340668427080458,
+            0.01605739096941487,
+            0.045652835644021936
+          ],
+          "isotonic": {
+            "stat": 0.616098628476727,
+            "p": 0.00200511791087963,
+            "fitted": [
+              -2.3434664091972763,
+              -2.3434664091972763,
+              -2.3434664091972763,
+              -2.2705309896178063
+            ],
+            "pooled": [
+              [
+                188,
+                162,
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              -2.334364568915915,
+              -2.3410622493478743,
+              -2.354972409328039,
+              -2.2705309896178067
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.0638335792981084,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "iad_hgb|label_X_qq": {
+        "trend": {
+          "task": "label_X_qq|iad_hgb|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 8.497859372507559,
+          "p": 0.00012784730259773663,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.06408956156360521,
+              "t": 3.837176857178822,
+              "p_adj": 0.007033736617476852
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.09317582862695978,
+              "t": 5.259585487336855,
+              "p_adj": 0.0022952232831790122
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.15350176289561604,
+              "t": 7.503990125421822,
+              "p_adj": 0.001448266300154321
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.09021731490851179,
+              "t": 6.237115428261699,
+              "p_adj": 0.0020061226048096706
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.150543249177168,
+              "t": 8.497859372507559,
+              "p_adj": 0.00012784730259773663
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.14057945563054952,
+              "t": 8.416787704265849,
+              "p_adj": 0.00016451863104423867
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.0275560682688189,
+            0.0180309945813544,
+            0.05805458829808552,
+            0.036520715860509596
+          ],
+          "isotonic": {
+            "stat": 0.860095819399025,
+            "p": 4.596474729938272e-05,
+            "fitted": [
+              0.18799784261598557,
+              0.1939148700528816,
+              0.22084773697428917,
+              0.34149960551160163
+            ],
+            "pooled": [
+              [
+                188
+              ],
+              [
+                162
+              ],
+              [
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              0.18799784261598557,
+              0.1939148700528816,
+              0.22084773697428917,
+              0.3414996055116016
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.15350176289561598,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "iad_hgb|label_X_YY_qqq": {
+        "trend": {
+          "task": "label_X_YY_qqq|iad_hgb|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 12.081660132814399,
+          "p": 0.0006157517923739712,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162,
+              43
+            ],
+            [
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.08333324672594275,
+              "t": 3.824932394466283,
+              "p_adj": 0.007567982614776234
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.1349543739539466,
+              "t": 5.840044609020162,
+              "p_adj": 0.002090265721450617
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.2599159664029591,
+              "t": 9.740758809551396,
+              "p_adj": 0.0010458863811728396
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.144908877818979,
+              "t": 7.680152124459397,
+              "p_adj": 0.0013001995322145061
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.26987047026799166,
+              "t": 11.678432783217179,
+              "p_adj": 0.0008498454780735597
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.2632213751446695,
+              "t": 12.081660132814399,
+              "p_adj": 0.0006157517923739712
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.03446263408798453,
+            0.03259318366716263,
+            0.0546150794570005,
+            0.02892937342191362
+          ],
+          "isotonic": {
+            "stat": 0.9211601128914748,
+            "p": 0.00034234945666152265,
+            "fitted": [
+              0.15765283365727445,
+              0.15765283365727445,
+              0.17760011902724085,
+              0.427523303925266
+            ],
+            "pooled": [
+              [
+                188,
+                162
+              ],
+              [
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              0.1676073375223069,
+              0.14769832979224204,
+              0.17760011902724088,
+              0.42752330392526605
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.2599159664029592,
+        "n_censored": 0,
+        "holm_reject": true
+      },
+      "iad_hgb|label_X_YY_qqqq": {
+        "trend": {
+          "task": "label_X_YY_qqqq|iad_hgb|4000",
+          "probe": "anomaly",
+          "levels_fine_to_coarse": [
+            188,
+            162,
+            43,
+            17
+          ],
+          "alternative": "log1m_auc increasing along levels = performance falls with coarser labels",
+          "blocks_used": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "blocks_dropped_incomplete": {},
+          "run": true,
+          "family": "marcus",
+          "method": "exact",
+          "n_blocks": 5,
+          "n_arrangements": 7962624,
+          "stat": 17.898480778871775,
+          "p": 3.516428755144033e-06,
+          "p_min": 2.511734825102881e-07,
+          "end_step_p_bound": 0.0009765625,
+          "argmax_step": [
+            [
+              188,
+              162
+            ],
+            [
+              17
+            ]
+          ],
+          "predicted_step": null,
+          "argmax_is_predicted_step": null,
+          "contrasts_localisation_only": [
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                162,
+                43,
+                17
+              ],
+              "difference": 0.17025627000761334,
+              "t": 8.403326723364083,
+              "p_adj": 0.0010264204362782922
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.2517241013134175,
+              "t": 11.713769465352895,
+              "p_adj": 0.0001283496495627572
+            },
+            {
+              "lower": [
+                188
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.38829131442971676,
+              "t": 15.648048419648424,
+              "p_adj": 1.2558674125514404e-05
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                43,
+                17
+              ],
+              "difference": 0.24806379761541492,
+              "t": 14.137769317240815,
+              "p_adj": 4.320183899176955e-05
+            },
+            {
+              "lower": [
+                188,
+                162
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.38463101073171413,
+              "t": 17.898480778871775,
+              "p_adj": 3.516428755144033e-06
+            },
+            {
+              "lower": [
+                188,
+                162,
+                43
+              ],
+              "upper": [
+                17
+              ],
+              "difference": 0.3474654825653422,
+              "t": 17.149829342304805,
+              "p_adj": 1.0046939300411523e-05
+            }
+          ],
+          "n_censored_cells": 0,
+          "seed_sd_per_level": [
+            0.038272956375431766,
+            0.02020494618845591,
+            0.034679931959869445,
+            0.043428462624167476
+          ],
+          "isotonic": {
+            "stat": 0.9639772886280218,
+            "p": 1.5070408950617283e-06,
+            "fitted": [
+              -0.6573953362103009,
+              -0.6500747288142957,
+              -0.5422384480131826,
+              -0.2691040217805842
+            ],
+            "pooled": [
+              [
+                188
+              ],
+              [
+                162
+              ],
+              [
+                43
+              ],
+              [
+                17
+              ]
+            ],
+            "means": [
+              -0.6573953362103009,
+              -0.6500747288142957,
+              -0.5422384480131827,
+              -0.2691040217805841
+            ]
+          }
+        },
+        "gap_17_minus_188": 0.38829131442971665,
+        "n_censored": 0,
+        "holm_reject": true
+      }
+    },
+    "clause1_per_family": {
+      "class_sum": {
+        "n_signals_rejected": 4,
+        "confirmed": true
+      },
+      "knn": {
+        "n_signals_rejected": 3,
+        "confirmed": false
+      },
+      "mahalanobis": {
+        "n_signals_rejected": 4,
+        "confirmed": true
+      },
+      "iad_hgb": {
+        "n_signals_rejected": 4,
+        "confirmed": true
+      }
+    },
+    "clause1": "not confirmed",
+    "clause2_per_family": {
+      "class_sum": {
+        "mean_gap_b": null,
+        "mean_gap_light": null,
+        "b_larger": null
+      },
+      "knn": {
+        "mean_gap_b": null,
+        "mean_gap_light": null,
+        "b_larger": null
+      },
+      "mahalanobis": {
+        "mean_gap_b": null,
+        "mean_gap_light": null,
+        "b_larger": null
+      },
+      "iad_hgb": {
+        "mean_gap_b": null,
+        "mean_gap_light": null,
+        "b_larger": null
+      }
+    },
+    "clause2": "not evaluable",
+    "clause2_on_testable_signals": {
+      "class_sum": {
+        "mean_gap_b": 0.1667703996546167,
+        "mean_gap_light": 0.17631116353779708,
+        "b_larger": false,
+        "signals_b": [
+          "label_X_bb",
+          "label_X_YY_bbbb"
+        ]
+      },
+      "knn": {
+        "mean_gap_b": -0.014237846215128455,
+        "mean_gap_light": 0.014254958224130773,
+        "b_larger": false,
+        "signals_b": [
+          "label_X_bb",
+          "label_X_YY_bbbb"
+        ]
+      },
+      "mahalanobis": {
+        "mean_gap_b": 0.4177920634985223,
+        "mean_gap_light": 0.022701707066511322,
+        "b_larger": true,
+        "signals_b": [
+          "label_X_bb",
+          "label_X_YY_bbbb"
+        ]
+      },
+      "iad_hgb": {
+        "mean_gap_b": 0.052885139321628014,
+        "mean_gap_light": 0.2672363479094306,
+        "b_larger": false,
+        "signals_b": [
+          "label_X_bb",
+          "label_X_YY_bbbb"
+        ]
+      }
+    },
+    "skipped_at_injection": [
+      "label_X_YY_bbb"
+    ],
+    "level_means_all_injections": {
+      "class_sum|label_X_bb|250": {
+        "162": 0.6932918203517568,
+        "188": 0.6782266834748301,
+        "43": 1.1861440008455815,
+        "17": 0.7987453561849044
+      },
+      "knn|label_X_bb|250": {
+        "162": 0.8095567709937338,
+        "188": 0.8467251974153355,
+        "43": 0.7587615662521343,
+        "17": 0.6228372228191059
+      },
+      "mahalanobis|label_X_bb|250": {
+        "162": 0.4384110221240377,
+        "188": 0.46821949955168696,
+        "43": 0.4399598573384824,
+        "17": 0.5683912808104225
+      },
+      "iad_hgb|label_X_bb|250": {
+        "162": -0.6609744994601802,
+        "188": -0.5884483696866536,
+        "43": -0.8080173648157551,
+        "17": -0.38217907909844373
+      },
+      "class_sum|label_X_bb|500": {
+        "162": 0.7320751565780463,
+        "188": 0.717288100012804,
+        "43": 1.3045938690674048,
+        "17": 0.8433230046371059
+      },
+      "knn|label_X_bb|500": {
+        "162": 0.8202974309721514,
+        "188": 0.862910734732749,
+        "43": 0.7592887514394449,
+        "17": 0.6401065894344498
+      },
+      "mahalanobis|label_X_bb|500": {
+        "162": 0.4512111286760339,
+        "188": 0.47440498559856337,
+        "43": 0.447753575265017,
+        "17": 0.5802349981092574
+      },
+      "iad_hgb|label_X_bb|500": {
+        "162": -1.1478719586448434,
+        "188": -1.135122125717007,
+        "43": -1.1733069901783575,
+        "17": -1.050698060869259
+      },
+      "class_sum|label_X_bb|1000": {
+        "162": 0.786684095218573,
+        "188": 0.7521968482885504,
+        "43": 1.328051256944771,
+        "17": 0.8681693730140843
+      },
+      "knn|label_X_bb|1000": {
+        "162": 0.8288381425289291,
+        "188": 0.8617027986987547,
+        "43": 0.7754555820944607,
+        "17": 0.6467391097445636
+      },
+      "mahalanobis|label_X_bb|1000": {
+        "162": 0.4582603907146196,
+        "188": 0.4762205874157379,
+        "43": 0.46282102979830286,
+        "17": 0.583981354947782
+      },
+      "iad_hgb|label_X_bb|1000": {
+        "162": -1.2680067436280038,
+        "188": -1.2704492347963003,
+        "43": -1.2968441499886985,
+        "17": -1.196094794728349
+      },
+      "class_sum|label_X_bb|2000": {
+        "162": 0.7834808898042004,
+        "188": 0.7859804696706665,
+        "43": 1.3530944585746183,
+        "17": 0.891152663819873
+      },
+      "knn|label_X_bb|2000": {
+        "162": 0.8279645889483966,
+        "188": 0.8706615859915514,
+        "43": 0.7774895353826496,
+        "17": 0.6561729133349324
+      },
+      "mahalanobis|label_X_bb|2000": {
+        "162": 0.45894679535968264,
+        "188": 0.48278787919911703,
+        "43": 0.4628859523539096,
+        "17": 0.5888666456622492
+      },
+      "iad_hgb|label_X_bb|2000": {
+        "162": -1.2899448655849823,
+        "188": -1.3162553128336945,
+        "43": -1.3205529199683002,
+        "17": -1.2698178496053756
+      },
+      "class_sum|label_X_bb|4000": {
+        "162": 0.806254862728901,
+        "188": 0.8060264659149248,
+        "43": 1.3597813375702874,
+        "17": 0.9071748487951053
+      },
+      "knn|label_X_bb|4000": {
+        "162": 0.8361605775322409,
+        "188": 0.8705681060051413,
+        "43": 0.7899960843339223,
+        "17": 0.6584570887789593
+      },
+      "mahalanobis|label_X_bb|4000": {
+        "162": 0.46024135750583695,
+        "188": 0.48445918089465917,
+        "43": 0.4657788936899115,
+        "17": 0.5909953447092511
+      },
+      "iad_hgb|label_X_bb|4000": {
+        "162": -1.3476910442424386,
+        "188": -1.3573303545904094,
+        "43": -1.3431369474984638,
+        "17": -1.3153936552452619
+      },
+      "class_sum|label_X_qq|250": {
+        "162": 1.3451812094747568,
+        "188": 1.3000982079686616,
+        "43": 1.3617653859045054,
+        "17": 1.560121648332788
+      },
+      "knn|label_X_qq|250": {
+        "162": 1.435553940916782,
+        "188": 1.4436231207015513,
+        "43": 1.4709870743499738,
+        "17": 1.502845714891634
+      },
+      "mahalanobis|label_X_qq|250": {
+        "162": 1.444013944327192,
+        "188": 1.4501640773377737,
+        "43": 1.466001772692581,
+        "17": 1.4730692911018122
+      },
+      "iad_hgb|label_X_qq|250": {
+        "162": 1.56961244399436,
+        "188": 1.6089084353293273,
+        "43": 1.5788692823698285,
+        "17": 1.5903986457011017
+      },
+      "class_sum|label_X_qq|500": {
+        "162": 1.3461658055463535,
+        "188": 1.2886172179772375,
+        "43": 1.3702350170762538,
+        "17": 1.5674375067599682
+      },
+      "knn|label_X_qq|500": {
+        "162": 1.4499139159951464,
+        "188": 1.4460990061796732,
+        "43": 1.4787880553257513,
+        "17": 1.5120434842632409
+      },
+      "mahalanobis|label_X_qq|500": {
+        "162": 1.463591405805351,
+        "188": 1.4528463073815883,
+        "43": 1.4736747592469435,
+        "17": 1.4757300073298967
+      },
+      "iad_hgb|label_X_qq|500": {
+        "162": 1.4196120175449096,
+        "188": 1.522215127576391,
+        "43": 1.3911039046767368,
+        "17": 1.4442314929896896
+      },
+      "class_sum|label_X_qq|1000": {
+        "162": 1.3534136689803602,
+        "188": 1.3040016347674643,
+        "43": 1.379194647116429,
+        "17": 1.5721713622678344
+      },
+      "knn|label_X_qq|1000": {
+        "162": 1.4559737319264534,
+        "188": 1.4600386768137643,
+        "43": 1.4812950136383842,
+        "17": 1.5129838776892668
+      },
+      "mahalanobis|label_X_qq|1000": {
+        "162": 1.4654005936100916,
+        "188": 1.46352710383299,
+        "43": 1.4728249239389917,
+        "17": 1.4836844153396729
+      },
+      "iad_hgb|label_X_qq|1000": {
+        "162": 0.7866613544768406,
+        "188": 0.8397853526099004,
+        "43": 0.7839180661699632,
+        "17": 1.062361177562714
+      },
+      "class_sum|label_X_qq|2000": {
+        "162": 1.3582513677432992,
+        "188": 1.3055852956692457,
+        "43": 1.3796910947168335,
+        "17": 1.5740325659658772
+      },
+      "knn|label_X_qq|2000": {
+        "162": 1.455009075307615,
+        "188": 1.4594003710273724,
+        "43": 1.4855641757138558,
+        "17": 1.5159677542369399
+      },
+      "mahalanobis|label_X_qq|2000": {
+        "162": 1.4594290080249972,
+        "188": 1.462457470728716,
+        "43": 1.4805570859272794,
+        "17": 1.4861791559648139
+      },
+      "iad_hgb|label_X_qq|2000": {
+        "162": 0.30985544267577264,
+        "188": 0.3154800594228919,
+        "43": 0.3501125546666066,
+        "17": 0.5044328635373245
+      },
+      "class_sum|label_X_qq|4000": {
+        "162": 1.3637327733038063,
+        "188": 1.3103152142280021,
+        "43": 1.384440101573476,
+        "17": 1.5790798633217542
+      },
+      "knn|label_X_qq|4000": {
+        "162": 1.4571139563763276,
+        "188": 1.459286116678836,
+        "43": 1.488733792949659,
+        "17": 1.5178160555933142
+      },
+      "mahalanobis|label_X_qq|4000": {
+        "162": 1.463997169162834,
+        "188": 1.463846637647652,
+        "43": 1.484424932292426,
+        "17": 1.4866624256797571
+      },
+      "iad_hgb|label_X_qq|4000": {
+        "162": 0.1939148700528816,
+        "188": 0.18799784261598557,
+        "43": 0.22084773697428917,
+        "17": 0.3414996055116016
+      },
+      "class_sum|label_X_YY_bbb|250": {
+        "162": 0.3541072931100345,
+        "188": 0.4154440156760268,
+        "43": 0.6914967811930721,
+        "17": 0.4723334775961849
+      },
+      "knn|label_X_YY_bbb|250": {
+        "162": 0.11249236668646814,
+        "188": 0.1361984168591815,
+        "43": 0.33422603312032934,
+        "17": 0.4455293440077891
+      },
+      "mahalanobis|label_X_YY_bbb|250": {
+        "162": -0.306002486836147,
+        "188": -0.3224708035179161,
+        "43": 0.009197321926569966,
+        "17": 0.3426552933505286
+      },
+      "iad_hgb|label_X_YY_bbb|250": {
+        "162": -1.5784264290015704,
+        "188": -1.5261721358994393,
+        "43": -1.4911160291264371,
+        "17": -1.2170271472308716
+      },
+      "class_sum|label_X_YY_bbb|500": {
+        "162": 0.3626921889274269,
+        "188": 0.42775776202352567,
+        "43": 0.7144572308084232,
+        "17": 0.4705663197007158
+      },
+      "knn|label_X_YY_bbb|500": {
+        "162": 0.10520513075721498,
+        "188": 0.14110599489810496,
+        "43": 0.34451218442011616,
+        "17": 0.45338523271911535
+      },
+      "mahalanobis|label_X_YY_bbb|500": {
+        "162": -0.3040281527813681,
+        "188": -0.30527687486454813,
+        "43": 0.031631539820753105,
+        "17": 0.36350552329929087
+      },
+      "iad_hgb|label_X_YY_bbb|500": {
+        "162": -1.7492369977603388,
+        "188": -1.6947192831171036,
+        "43": -1.6913617710940887,
+        "17": -1.5609292807812796
+      },
+      "class_sum|label_X_YY_bbb|1000": {
+        "162": 0.3716253317416393,
+        "188": 0.427171542021754,
+        "43": 0.724982983480549,
+        "17": 0.48511243928579234
+      },
+      "knn|label_X_YY_bbb|1000": {
+        "162": 0.1161953748406177,
+        "188": 0.14691926761096166,
+        "43": 0.36432375385929866,
+        "17": 0.46668690575352284
+      },
+      "mahalanobis|label_X_YY_bbb|1000": {
+        "162": -0.2914243829669644,
+        "188": -0.3008632818953,
+        "43": 0.03762936468791245,
+        "17": 0.37851835273445245
+      },
+      "iad_hgb|label_X_YY_bbb|1000": {
+        "162": -1.7885201270245776,
+        "188": -1.7685094540463187,
+        "43": -1.7664876520891775,
+        "17": -1.6510592633412404
+      },
+      "class_sum|label_X_YY_bbb|2000": {
+        "162": 0.37955887856361414,
+        "188": 0.43498036308510946,
+        "43": 0.728986347044256,
+        "17": 0.49186722607297034
+      },
+      "knn|label_X_YY_bbb|2000": {
+        "162": 0.12279651186136001,
+        "188": 0.15635521729226348,
+        "43": 0.35684461708217247,
+        "17": 0.4760427806714243
+      },
+      "mahalanobis|label_X_YY_bbb|2000": {
+        "162": -0.2867826300901194,
+        "188": -0.2935511007843581,
+        "43": 0.034880895780105406,
+        "17": 0.38982787318613077
+      },
+      "iad_hgb|label_X_YY_bbb|2000": {
+        "162": -1.8172984366299776,
+        "188": -1.7995707302291557,
+        "43": -1.7910111209223216,
+        "17": -1.6869265258877786
+      },
+      "class_sum|label_X_YY_qqq|250": {
+        "162": 1.1639649440098419,
+        "188": 1.1867988925493465,
+        "43": 1.2456823843647196,
+        "17": 1.2093597200945794
+      },
+      "knn|label_X_YY_qqq|250": {
+        "162": 1.4808295288212654,
+        "188": 1.503793218538186,
+        "43": 1.5070780836620312,
+        "17": 1.5331778335725819
+      },
+      "mahalanobis|label_X_YY_qqq|250": {
+        "162": 1.4874391938625244,
+        "188": 1.503859396522909,
+        "43": 1.5083833541935072,
+        "17": 1.5383005991532837
+      },
+      "iad_hgb|label_X_YY_qqq|250": {
+        "162": 1.590632566888398,
+        "188": 1.6063738420701121,
+        "43": 1.5945113982625074,
+        "17": 1.5969022332666007
+      },
+      "class_sum|label_X_YY_qqq|500": {
+        "162": 1.1597173005211214,
+        "188": 1.2094741038245882,
+        "43": 1.2495199801186914,
+        "17": 1.2119801213949617
+      },
+      "knn|label_X_YY_qqq|500": {
+        "162": 1.4865989132444564,
+        "188": 1.5053843815362637,
+        "43": 1.5190719113690077,
+        "17": 1.5333750810114544
+      },
+      "mahalanobis|label_X_YY_qqq|500": {
+        "162": 1.4926888348783802,
+        "188": 1.5046458546746906,
+        "43": 1.5213761563011887,
+        "17": 1.5427409078804617
+      },
+      "iad_hgb|label_X_YY_qqq|500": {
+        "162": 1.5322411778183604,
+        "188": 1.5294944450031946,
+        "43": 1.5291094158608578,
+        "17": 1.5602384722884408
+      },
+      "class_sum|label_X_YY_qqq|1000": {
+        "162": 1.1675215536759762,
+        "188": 1.2077669384672975,
+        "43": 1.2583008791262578,
+        "17": 1.2141598047991713
+      },
+      "knn|label_X_YY_qqq|1000": {
+        "162": 1.4905948682962056,
+        "188": 1.511205317157696,
+        "43": 1.5195639914191066,
+        "17": 1.5379848974043675
+      },
+      "mahalanobis|label_X_YY_qqq|1000": {
+        "162": 1.498281078607457,
+        "188": 1.5094852005922792,
+        "43": 1.5232458683376904,
+        "17": 1.5428313129885098
+      },
+      "iad_hgb|label_X_YY_qqq|1000": {
+        "162": 1.0448463395104575,
+        "188": 1.1063712789392497,
+        "43": 1.212412162990196,
+        "17": 1.2582877019279133
+      },
+      "class_sum|label_X_YY_qqq|2000": {
+        "162": 1.1689256726586714,
+        "188": 1.2080538290014249,
+        "43": 1.2586927203736633,
+        "17": 1.2227978951654639
+      },
+      "knn|label_X_YY_qqq|2000": {
+        "162": 1.4924495090949779,
+        "188": 1.5122607517191753,
+        "43": 1.5237297444568494,
+        "17": 1.5415744500567503
+      },
+      "mahalanobis|label_X_YY_qqq|2000": {
+        "162": 1.5002606262090628,
+        "188": 1.5089493319093066,
+        "43": 1.5278137525075965,
+        "17": 1.5481783896920829
+      },
+      "iad_hgb|label_X_YY_qqq|2000": {
+        "162": 0.36171126686925825,
+        "188": 0.36968143823340666,
+        "43": 0.405563557110066,
+        "17": 0.7541608476794616
+      },
+      "class_sum|label_X_YY_qqq|4000": {
+        "162": 1.1716282761832784,
+        "188": 1.2124463180629461,
+        "43": 1.2618993092805886,
+        "17": 1.2245469767999073
+      },
+      "knn|label_X_YY_qqq|4000": {
+        "162": 1.4936206896136788,
+        "188": 1.5135723770514709,
+        "43": 1.5244137674493352,
+        "17": 1.5438060892490153
+      },
+      "mahalanobis|label_X_YY_qqq|4000": {
+        "162": 1.501119135986551,
+        "188": 1.5137956864332507,
+        "43": 1.5286560407359715,
+        "17": 1.5515458222680643
+      },
+      "iad_hgb|label_X_YY_qqq|4000": {
+        "162": 0.14769832979224204,
+        "188": 0.1676073375223069,
+        "43": 0.17760011902724088,
+        "17": 0.42752330392526605
+      },
+      "class_sum|label_X_YY_bbbb|250": {
+        "162": 0.17519660094394424,
+        "188": 0.23124959633001346,
+        "43": 0.7719997811077007,
+        "17": 0.4916930065503509
+      },
+      "knn|label_X_YY_bbbb|250": {
+        "162": -0.563610160454781,
+        "188": -0.3632871082319725,
+        "43": -0.4000039691344841,
+        "17": -0.2464501661852486
+      },
+      "mahalanobis|label_X_YY_bbbb|250": {
+        "162": -1.22712603372582,
+        "188": -1.068684337490526,
+        "43": -0.8413359826454594,
+        "17": -0.35408103742537256
+      },
+      "iad_hgb|label_X_YY_bbbb|250": {
+        "162": -2.2638858687577637,
+        "188": -2.260753900608265,
+        "43": -2.2495375719060946,
+        "17": -2.0995933804405182
+      },
+      "class_sum|label_X_YY_bbbb|500": {
+        "162": 0.20953116433267707,
+        "188": 0.24921741805089176,
+        "43": 0.7908333885576392,
+        "17": 0.5088504260168187
+      },
+      "knn|label_X_YY_bbbb|500": {
+        "162": -0.5323467138006135,
+        "188": -0.36939732154443006,
+        "43": -0.3636763714349244,
+        "17": -0.19987110236974956
+      },
+      "mahalanobis|label_X_YY_bbbb|500": {
+        "162": -1.2042051748817837,
+        "188": -1.060103012195285,
+        "43": -0.8152791828896998,
+        "17": -0.34097674238845116
+      },
+      "iad_hgb|label_X_YY_bbbb|500": {
+        "162": -2.315669257347411,
+        "188": -2.301264729985405,
+        "43": -2.2982263634822386,
+        "17": -2.183503314881316
+      },
+      "class_sum|label_X_YY_bbbb|1000": {
+        "162": 0.25598031632390494,
+        "188": 0.28437384423556283,
+        "43": 0.7896666440622967,
+        "17": 0.5139843724696027
+      },
+      "knn|label_X_YY_bbbb|1000": {
+        "162": -0.525349316960189,
+        "188": -0.354931350121831,
+        "43": -0.3471110047290776,
+        "17": -0.1804146155248152
+      },
+      "mahalanobis|label_X_YY_bbbb|1000": {
+        "162": -1.2009484076202115,
+        "188": -1.0574170429898935,
+        "43": -0.8071337510733267,
+        "17": -0.34024886927889536
+      },
+      "iad_hgb|label_X_YY_bbbb|1000": {
+        "162": -2.324811613051039,
+        "188": -2.3416646493068805,
+        "43": -2.338122725524734,
+        "17": -2.2204569446437477
+      },
+      "class_sum|label_X_YY_bbbb|2000": {
+        "162": 0.24930490062337762,
+        "188": 0.2853145918426333,
+        "43": 0.7957869729436489,
+        "17": 0.5213768291089377
+      },
+      "knn|label_X_YY_bbbb|2000": {
+        "162": -0.5168969006453323,
+        "188": -0.36186369517543115,
+        "43": -0.34385774692044213,
+        "17": -0.17244679008671848
+      },
+      "mahalanobis|label_X_YY_bbbb|2000": {
+        "162": -1.2031594588294443,
+        "188": -1.0472873377693048,
+        "43": -0.7972098914357677,
+        "17": -0.33473528014112874
+      },
+      "iad_hgb|label_X_YY_bbbb|2000": {
+        "162": -2.3396026902447353,
+        "188": -2.3389312566113967,
+        "43": -2.3528074158307,
+        "17": -2.2522680995583904
+      },
+      "class_sum|label_X_YY_bbbb|4000": {
+        "162": 0.25679763452693494,
+        "188": 0.2917428580943184,
+        "43": 0.8024509833387972,
+        "17": 0.5241352745233712
+      },
+      "knn|label_X_YY_bbbb|4000": {
+        "162": -0.5238665495637306,
+        "188": -0.3595573590884115,
+        "43": -0.3529680073705196,
+        "17": -0.17592203429248632
+      },
+      "mahalanobis|label_X_YY_bbbb|4000": {
+        "162": -1.2015498632122703,
+        "188": -1.053363446293393,
+        "43": -0.8086981896747201,
+        "17": -0.32431548311094
+      },
+      "iad_hgb|label_X_YY_bbbb|4000": {
+        "162": -2.3410622493478743,
+        "188": -2.334364568915915,
+        "43": -2.354972409328039,
+        "17": -2.2705309896178067
+      },
+      "class_sum|label_X_YY_qqqq|250": {
+        "162": 0.7370976855878288,
+        "188": 0.8434044364334607,
+        "43": 1.117584718567129,
+        "17": 1.1377607832191126
+      },
+      "knn|label_X_YY_qqqq|250": {
+        "162": 1.374638457745697,
+        "188": 1.425684930698162,
+        "43": 1.4048046560273661,
+        "17": 1.3681543657804363
+      },
+      "mahalanobis|label_X_YY_qqqq|250": {
+        "162": 1.3727928975530297,
+        "188": 1.392145834994745,
+        "43": 1.4091217533419595,
+        "17": 1.397442480189411
+      },
+      "iad_hgb|label_X_YY_qqqq|250": {
+        "162": 1.311335696177122,
+        "188": 1.3335868206899089,
+        "43": 1.311408989357999,
+        "17": 1.4471448687512423
+      },
+      "class_sum|label_X_YY_qqqq|500": {
+        "162": 0.771913134488071,
+        "188": 0.8794464857052346,
+        "43": 1.1132670077869555,
+        "17": 1.1462351160776156
+      },
+      "knn|label_X_YY_qqqq|500": {
+        "162": 1.37964254151718,
+        "188": 1.4320646472215075,
+        "43": 1.4156479001548956,
+        "17": 1.3827600815178214
+      },
+      "mahalanobis|label_X_YY_qqqq|500": {
+        "162": 1.3898452979662992,
+        "188": 1.4043190424521705,
+        "43": 1.4159216471874867,
+        "17": 1.4054946993451707
+      },
+      "iad_hgb|label_X_YY_qqqq|500": {
+        "162": 0.1306026377131236,
+        "188": 0.08283032294167955,
+        "43": 0.0642606277096505,
+        "17": 0.945170560871361
+      },
+      "class_sum|label_X_YY_qqqq|1000": {
+        "162": 0.7703761179894199,
+        "188": 0.9015838656972756,
+        "43": 1.1223505079804184,
+        "17": 1.1514585833912565
+      },
+      "knn|label_X_YY_qqqq|1000": {
+        "162": 1.384007493846777,
+        "188": 1.4362667418841792,
+        "43": 1.4238216398633352,
+        "17": 1.3903954727328973
+      },
+      "mahalanobis|label_X_YY_qqqq|1000": {
+        "162": 1.3912312986000068,
+        "188": 1.4072927887877156,
+        "43": 1.42847377929306,
+        "17": 1.4148077186404655
+      },
+      "iad_hgb|label_X_YY_qqqq|1000": {
+        "162": -0.5125710513009468,
+        "188": -0.4879198770783365,
+        "43": -0.38855668724046033,
+        "17": 0.07115014839720939
+      },
+      "class_sum|label_X_YY_qqqq|2000": {
+        "162": 0.7850555749972291,
+        "188": 0.9004231971194386,
+        "43": 1.1288247716940474,
+        "17": 1.160506185067971
+      },
+      "knn|label_X_YY_qqqq|2000": {
+        "162": 1.3905092252080413,
+        "188": 1.4405055709320507,
+        "43": 1.4308054138695006,
+        "17": 1.3972810464208054
+      },
+      "mahalanobis|label_X_YY_qqqq|2000": {
+        "162": 1.4002638454637473,
+        "188": 1.412069102542104,
+        "43": 1.4350762118110278,
+        "17": 1.4231292384444698
+      },
+      "iad_hgb|label_X_YY_qqqq|2000": {
+        "162": -0.5988224751925311,
+        "188": -0.6170827278530739,
+        "43": -0.4791077964725405,
+        "17": -0.1325597949114649
+      },
+      "class_sum|label_X_YY_qqqq|4000": {
+        "162": 0.7868185771388166,
+        "188": 0.9099624875990351,
+        "43": 1.1310689155730347,
+        "17": 1.1580306703817134
+      },
+      "knn|label_X_YY_qqqq|4000": {
+        "162": 1.3952349863806084,
+        "188": 1.4432040841670097,
+        "43": 1.4299393633370463,
+        "17": 1.3972053077273794
+      },
+      "mahalanobis|label_X_YY_qqqq|4000": {
+        "162": 1.4033043817047564,
+        "188": 1.4146772420657878,
+        "43": 1.4334430262848448,
+        "17": 1.4222164393984031
+      },
+      "iad_hgb|label_X_YY_qqqq|4000": {
+        "162": -0.6500747288142957,
+        "188": -0.6573953362103009,
+        "43": -0.5422384480131827,
+        "17": -0.2691040217805841
+      }
+    }
+  }
+}

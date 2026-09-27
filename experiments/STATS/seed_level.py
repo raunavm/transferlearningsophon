@@ -2132,6 +2132,126 @@ def format_bench(name: str, spec: dict, data: dict, cells, seeds) -> list[str]:
     return out
 
 
+# ------------------------------------ §5: anomaly detection across the ladder
+
+# The clarification of 2026-09-27 (PRESPEC), written before the level comparison.
+AD_N_SIG = "4000"
+AD_B_SIGNALS = ("label_X_bb", "label_X_YY_bbb", "label_X_YY_bbbb")
+AD_Q_SIGNALS = ("label_X_qq", "label_X_YY_qqq", "label_X_YY_qqqq")
+AD_FAMILIES = ("class_sum", "knn", "mahalanobis", "iad_hgb")
+
+
+def load_anomaly(path) -> dict:
+    """anomaly_merge.py output -> one row per (model, signal, family, injection):
+    ln sigma_min, censored when the detector hit its max-SIC ceiling."""
+    doc = json.loads(pathlib.Path(path).read_text())
+    if doc.get("signals_with_unequal_seeds_per_rung"):
+        raise SystemExit(f"FATAL: unequal seeds per level: {doc['signals_with_unequal_seeds_per_rung']}")
+    rows = []
+    for arm, ad in doc["arms"].items():
+        level, seed = parse_arm(arm)
+        for sig, per_n in ad["signals"].items():
+            for n, per_f in per_n.items():
+                for fam in AD_FAMILIES:
+                    v = per_f.get(fam, {})
+                    if "sigma_min" not in v:
+                        continue
+                    sm = float(v["sigma_min"])
+                    rows.append({"task": f"{sig}|{fam}|{n}", "probe": "anomaly", "level": level,
+                                 "seed": seed, "arm": arm, "signal": sig, "family": fam, "n_sig": n,
+                                 "sigma_min": sm, ENDPOINT: math.log(sm) if sm > 0 else float("nan"),
+                                 "censored": bool(v.get("at_ceiling")), "max_sic": v.get("max_sic")})
+    return {"rows": rows, "file": {"path": str(path), "sha256": _sha(path)},
+            "row_alignment_sha256": doc["row_alignment_sha256"], "trainings": doc["trainings"]}
+
+
+def anomaly_analysis(data: dict, seeds) -> dict:
+    cells = index_cells([r for r in data["rows"] if math.isfinite(r[ENDPOINT])])
+    signals = AD_B_SIGNALS + AD_Q_SIGNALS
+    tests = {}
+    for fam in AD_FAMILIES:
+        for sig in signals:
+            task = f"{sig}|{fam}|{AD_N_SIG}"
+            t = trend_test(cells, task, "anomaly", seeds)
+            pw = pairwise_table(cells, task, "anomaly", seeds)
+            gap = next((r["mean_diff"] for r in pw if (r["fine"], r["coarse"]) == (188, 17)
+                        and r["estimable"]), None)
+            tests[(fam, sig)] = {"trend": t, "gap_17_minus_188": gap,
+                                 "n_censored": t.get("n_censored_cells", 0)}
+    avail = [(k, v["trend"]["p"]) for k, v in tests.items() if v["trend"]["run"]]
+    for (k, _), rej in zip(avail, holm([p for _, p in avail], ALPHA) if avail else []):
+        tests[k]["holm_reject"] = bool(rej)
+    fam_c1, fam_c2 = {}, {}
+    for fam in AD_FAMILIES:
+        hits = sum(bool(tests[(fam, s)].get("holm_reject")) for s in signals)
+        fam_c1[fam] = {"n_signals_rejected": hits, "confirmed": hits > len(signals) / 2}
+        b = [tests[(fam, s)]["gap_17_minus_188"] for s in AD_B_SIGNALS]
+        q = [tests[(fam, s)]["gap_17_minus_188"] for s in AD_Q_SIGNALS]
+        ok = None not in b + q
+        fam_c2[fam] = {"mean_gap_b": float(np.mean(b)) if ok else None,
+                       "mean_gap_light": float(np.mean(q)) if ok else None,
+                       "b_larger": bool(np.mean(b) > np.mean(q)) if ok else None}
+    return {"endpoint": "ln sigma_min (median over detector trainings), lower is better",
+            "injection": AD_N_SIG, "table": f"{len(avail)} trend tests, Holm within",
+            "tests": {f"{f}|{s}": v for (f, s), v in tests.items()},
+            "clause1_per_family": fam_c1,
+            "clause1": "confirmed" if all(v["confirmed"] for v in fam_c1.values()) else "not confirmed",
+            "clause2_per_family": fam_c2,
+            # a signal skipped at the fixed injection (too few jets in the test sample)
+            # leaves clause 2 unevaluable as written; it is not a failure of the clause
+            "clause2": ("not evaluable" if any(v["b_larger"] is None for v in fam_c2.values())
+                        else "confirmed" if all(v["b_larger"] for v in fam_c2.values())
+                        else "not confirmed"),
+            "clause2_on_testable_signals": {
+                fam: {"mean_gap_b": float(np.mean(bb)), "mean_gap_light": float(np.mean(qq)),
+                      "b_larger": bool(np.mean(bb) > np.mean(qq)),
+                      "signals_b": [s for s in AD_B_SIGNALS if tests[(fam, s)]["gap_17_minus_188"] is not None]}
+                for fam in AD_FAMILIES
+                if (bb := [g for s in AD_B_SIGNALS if (g := tests[(fam, s)]["gap_17_minus_188"]) is not None])
+                and (qq := [g for s in AD_Q_SIGNALS if (g := tests[(fam, s)]["gap_17_minus_188"]) is not None])},
+            "skipped_at_injection": sorted({r["signal"] for r in data["rows"]} - {
+                r["signal"] for r in data["rows"] if r["n_sig"] == AD_N_SIG})}
+
+
+def run_anomaly(a, argv=None) -> int:
+    out_file = _refuse_overwrite(pathlib.Path(a.out) / "anomaly_s5.json")
+    data = load_anomaly(a.anomaly)
+    seeds = [s for s in EXPECTED_SEEDS if s not in a.drop_pairs]
+    r = anomaly_analysis(data, seeds)
+    # the smaller injections, tabulated beside the test: level means of ln sigma_min
+    tab = {}
+    for row in data["rows"]:
+        if math.isfinite(row[ENDPOINT]):
+            tab.setdefault(f"{row['family']}|{row['signal']}|{row['n_sig']}", {}).setdefault(
+                row["level"], []).append(row[ENDPOINT])
+    r["level_means_all_injections"] = {k: {str(lv): float(np.mean(v)) for lv, v in d.items()}
+                                       for k, d in tab.items()}
+    res = {"provenance": {"input": data["file"], "script_sha256": _sha(__file__),
+                          "row_alignment_sha256": data["row_alignment_sha256"],
+                          "detector_trainings": data["trainings"], "argv": list(argv or sys.argv[1:])},
+           "section5": r}
+    print(f"§5 ANOMALY DETECTION, injection {AD_N_SIG} jets, endpoint {r['endpoint']}; {r['table']}")
+    for fam in AD_FAMILIES:
+        print(f"  {fam}")
+        for sig in AD_B_SIGNALS + AD_Q_SIGNALS:
+            t = r["tests"][f"{fam}|{sig}"]
+            tr = t["trend"]
+            print(f"    {sig:18s} " + (f"trend p={_p(tr['p'])} arg-max {tr['argmax_step'][0]}|"
+                                        f"{tr['argmax_step'][1]} Holm-reject {t.get('holm_reject')}"
+                                        if tr["run"] else tr["reason"])
+                  + (f"  gap(17-188)={t['gap_17_minus_188']:+.3f}" if t["gap_17_minus_188"] is not None else "")
+                  + (f"  censored cells {t['n_censored']}" if t["n_censored"] else ""))
+        c1, c2 = r["clause1_per_family"][fam], r["clause2_per_family"][fam]
+        print(f"    clause 1: {c1['n_signals_rejected']}/6 signals rejected -> "
+              f"{'confirmed' if c1['confirmed'] else 'not confirmed'};  clause 2: mean gap b "
+              f"{c2['mean_gap_b']} vs light {c2['mean_gap_light']} -> b larger: {c2['b_larger']}")
+    print(f"  CLAUSE 1 (every family): {r['clause1'].upper()};  CLAUSE 2 (every family): {r['clause2'].upper()}")
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(json.dumps(res, indent=2, default=bool))
+    print(f"\nwrote {out_file}")
+    return 0
+
+
 # ------------------------------------------ C4: the random-label control
 
 def load_random_control(paths) -> dict:
@@ -2382,6 +2502,8 @@ def main(argv=None) -> int:
                          "stay pending")
     ap.add_argument("--bench-herwig", default=None, metavar="HERWIG_JSON",
                     help="S5: bench_metrics_herwig.json of the same wave; needs --bench")
+    ap.add_argument("--anomaly", default=None, metavar="ANOMALY_JSON",
+                    help="§5: anomaly_merge.py's anomaly_results.json. Written to anomaly_s5.json")
     ap.add_argument("--random-control", nargs="+", default=None, metavar="PATH",
                     help="C4: probe_results.json for random-label draws 1, 2, 3, each with the "
                          "17-class model of the same seed index. Written to c4_random_control.json")
@@ -2403,7 +2525,7 @@ def main(argv=None) -> int:
         raise SystemExit("FATAL: --drop-pairs needs --drop-reason; a dropped pair is reported "
                          "with why it was dropped (PRESPEC 2.2)")
     if not (a.inputs or a.label_recovery or a.mass_resolution or a.real_data
-            or a.finetune_jetclass2 or a.finetune_jetclass or a.random_control):
+            or a.finetune_jetclass2 or a.finetune_jetclass or a.random_control or a.anomaly):
         ap.error("give the probe_results.json inputs, --label-recovery, --mass-resolution, "
                  "--real-data, or a combination")
     rc = run_ladder(a, argv) if a.inputs else 0
@@ -2411,7 +2533,8 @@ def main(argv=None) -> int:
     rc = rc or (run_s7(a, argv) if a.mass_resolution else 0)
     rc = rc or (run_aoj(a, argv) if a.real_data else 0)
     rc = rc or (run_ft_legs(a, argv) if (a.finetune_jetclass2 or a.finetune_jetclass) else 0)
-    return rc or (run_c4(a, argv) if a.random_control else 0)
+    rc = rc or (run_c4(a, argv) if a.random_control else 0)
+    return rc or (run_anomaly(a, argv) if a.anomaly else 0)
 
 
 if __name__ == "__main__":
