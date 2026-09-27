@@ -486,6 +486,11 @@ def emit_levels(em: Emitter, A: dict, src: pathlib.Path) -> None:
                          fmt(row["seed_sd"], 4) if row["seed_sd"] is not None else "---", src,
                          jp + ".seed_sd")
                 h = headline_rejection(row)
+                pt = (row.get("rejection_points") or {}).get(row.get("headline_eps_s"))
+                if pt and "mean_n_bkg_pass" in pt:
+                    em.macro("ProbeBkgLeft" + key, fmt(pt["mean_n_bkg_pass"], 1), src,
+                             jp + f".rejection_points['{row['headline_eps_s']}'].mean_n_bkg_pass",
+                             "background jets passing the cut, mean over seeds")
                 em.macro("ProbeRej" + key,
                          fmt_rejection(h["median"], h["n_bound"], h["n_seeds"]),
                          src, jp + h["path"],
@@ -622,7 +627,17 @@ def emit_pairwise(em: Emitter, A: dict, src: pathlib.Path, reference: int) -> No
     for task in sorted(A.get("pairwise_exploratory", {})):
         for probe in sorted(A["pairwise_exploratory"][task]):
             for i, r in enumerate(A["pairwise_exploratory"][task][probe]):
-                if not r["estimable"] or reference not in (r["fine"], r["coarse"]):
+                if not r["estimable"]:
+                    continue
+                if reference not in (r["fine"], r["coarse"]):
+                    # A step between two non-reference vocabularies, e.g. 43 -> 17:
+                    # the size of the step itself, not its sum with 162 -> 43.
+                    k2 = texname(task, probe, r["coarse"], "vs", r["fine"])
+                    jp = f"pairwise_exploratory.{task}.{probe}[{i}]"
+                    em.macro("PairFactor" + k2, fmt_factor(r["mean_diff"], 3) + bound_mark(r["is_bound"]),
+                             src, jp + ".mean_diff",
+                             f"{r['coarse']}-class over {r['fine']}-class, a factor in 1-AUC")
+                    em.macro("PairP" + k2, fmt_p(r["p"]), src, jp + ".p", f"df={r['df']}")
                     continue
                 other = r["coarse"] if r["fine"] == reference else r["fine"]
                 key = texname(task, probe, other)
@@ -787,15 +802,17 @@ def emit_recovery(em: Emitter, R: dict, src: pathlib.Path) -> None:
     for i, cl in enumerate(S["clauses"]):
         em.macro("RecoveryClause" + texname(cl["n"]) + "Verdict", tex(cl["verdict"]), src,
                  f"{base}.clauses[{i}].verdict", cl["text"])
-    worst = 0.0
+    worst = {"linear": 0.0, "mlp": 0.0}
     for lv, per in S["wins"].items():
         for probe, w in per.items():
             em.macro("RecoveryBeaten" + texname(lv, probe), of(w["n_beaten"], w["n_estimable"]),
                      src, f"{base}.wins.{lv}.{probe}.n_beaten",
                      "cells at or below its own vocabulary where another model is ahead")
-            worst = max([worst] + [abs(b["mean_diff"]) for b in w["beaten_by"]])
-    em.macro("RecoveryWorstLoss", fmt(worst, 4), src, f"{base}.wins.*.*.beaten_by[*].mean_diff",
-             "largest |difference| in balanced accuracy among all losses (max over cells)")
+            worst[probe] = max([worst[probe]] + [abs(b["mean_diff"]) for b in w["beaten_by"]])
+    for probe, v in worst.items():
+        em.macro("RecoveryWorstLoss" + texname(probe), fmt(v, 4), src,
+                 f"{base}.wins.*.{probe}.beaten_by[*].mean_diff",
+                 "largest |difference| in balanced accuracy among this probe's losses")
     for probe in ("linear", "mlp"):
         cr = [S["pairs"][p][probe]["crossover"] for p in S["pairs"]]
         em.macro("RecoveryCrossAtOwn" + texname(probe),
@@ -888,6 +905,26 @@ def emit_finetune(em: Emitter, F: dict, src: pathlib.Path) -> None:
             em.macro("FtGapFactor" + k2, fmt_factor(gap, 2), src, f"{base}.gap_17_minus_188.{n}",
                      "exp of the gap: a factor in 1 - macro AUC")
             em.macro("FtSize" + k2, fmt_n_jets(n), src, f"{base}.per_size.{n}", "training jets")
+            for j, r in enumerate(d["pairwise"]):
+                if not r["estimable"]:
+                    continue
+                path = f"{base}.per_size.{n}.pairwise[{j}]"
+                k3 = k2 + texname(r["coarse"], "vs", r["fine"])
+                em.macro("FtPairDiff" + k3, fmt(r["mean_diff"], 3, sign=True), src,
+                         path + ".mean_diff", f"{r['coarse']}-class minus {r['fine']}-class, exploratory")
+                em.macro("FtPairCI" + k3,
+                         f"$[{fmt(r['ci95'][0], 3, sign=True)},\\,{fmt(r['ci95'][1], 3, sign=True)}]$",
+                         src, path + ".ci95", "95% paired-t interval")
+                em.macro("FtPairHolm" + k3, "yes" if r["holm_reject"] else "no", src,
+                         path + ".holm_reject", "Holm within the six pairs at this size")
+            em.macro("FtPairNExcludeZero" + k2,
+                     of(sum(1 for r in d["pairwise"] if r["estimable"] and (r["ci95"][0] > 0 or r["ci95"][1] < 0)),
+                        sum(1 for r in d["pairwise"] if r["estimable"])), src,
+                     f"{base}.per_size.{n}.pairwise[*].ci95", "pairs whose 95% interval excludes zero")
+            em.macro("FtPairNHolm" + k2,
+                     of(sum(1 for r in d["pairwise"] if r.get("holm_reject")),
+                        sum(1 for r in d["pairwise"] if r["estimable"])), src,
+                     f"{base}.per_size.{n}.pairwise[*].holm_reject", "pairs rejected after Holm")
             refs = S["reference_rows"][n]
             for arm in ("scratch", "mpm-s1"):
                 if arm in refs:
@@ -921,6 +958,22 @@ def emit_anomaly(em: Emitter, S5: dict, src: pathlib.Path) -> None:
                  "mean 17 minus 188 in ln sigma_min, b-quark signals")
         em.macro("AnomalyGapLight" + texname(fam), fmt(r["mean_gap_light"], 3, sign=True), src,
                  f"section5.clause2_on_testable_signals.{fam}.mean_gap_light")
+    sigs = sorted({k.split("|")[1] for k in s["tests"]})
+    testable = sorted({k.split("|")[1] for k, v in s["tests"].items() if v["trend"].get("run")})
+    em.macro("AnomalyNSignals", str(len(sigs)), src, "section5.tests (distinct signals)")
+    em.macro("AnomalyNTestableSignals", str(len(testable)), src, "section5.tests[*].trend.run",
+             "signals testable at the fixed injection")
+    for k, v in s["tests"].items():
+        if not v["trend"].get("run"):
+            continue
+        k2 = texname(*k.split("|"))
+        em.macro("AnomalyGap" + k2, fmt(v["gap_17_minus_188"], 3, sign=True), src,
+                 f"section5.tests.{k}.gap_17_minus_188", "17 minus 188 in ln sigma_min")
+        em.macro("AnomalyTrendP" + k2, fmt_p(v["trend"]["p"]), src, f"section5.tests.{k}.trend.p")
+    bl = s["clause2_on_testable_signals"]
+    em.macro("AnomalyBLarger", of(sum(bool(r["b_larger"]) for r in bl.values()), len(bl)), src,
+             "section5.clause2_on_testable_signals.*.b_larger",
+             "families where the b-quark signals gain more, testable signals only; descriptive")
     below = sum(1 for v in run if v.get("holm_reject")
                 and {188, 162} <= set(v["trend"]["argmax_step"][0]))
     em.macro("AnomalyStepBelowOnesixtwo", of(below, sum(1 for v in run if v.get("holm_reject"))),
@@ -959,6 +1012,10 @@ def emit_mass_resolution(em: Emitter, M: dict, src: pathlib.Path) -> None:
                  of(sum(p["mean_diff"] < 0 for p in P["ladder_pairs"]), len(P["ladder_pairs"])),
                  src, f"{base}.probes.{probe}.ladder_pairs[*].mean_diff",
                  "pairs where the coarser model is better on the point estimate")
+    tgt = {round(r["target_sigma_eff"], 12) for r in M["table"] if r["probe"] == "ridge"}
+    if len(tgt) == 1:
+        em.macro("MassResTargetSigmaEff", fmt(tgt.pop(), 4), src, "table[*].target_sigma_eff",
+                 "sigma_eff of the class-centred target itself (a model that predicts the class mean)")
     for cell in sorted({r["cell"] for r in M["table"]}):
         rows = [r for r in M["table"] if r["cell"] == cell and r["probe"] == "ridge"]
         k = texname(cell.replace("+mass", " mass"))
@@ -977,12 +1034,31 @@ def emit_real_data(em: Emitter, J: dict, src: pathlib.Path) -> None:
     em.macro("AojNJetsFit", fmt_int(res["n_jets"]), res_path, "n_jets",
              "jets in the fit region, all files")
     em.macro("AojNToys", str(res["n_toys"]), res_path, "n_toys")
+    fits = {"reference": res["reference"]["top"], **{m: v["top"] for m, v in res["models"].items()}}
+    em.macro("AojNConverged", of(sum(bool(f["converged"]) for f in fits.values()), len(fits)),
+             res_path, "reference.top.converged, models.*.top.converged",
+             "fits whose minimiser reported success (scipy L-BFGS-B), reference included")
+    em.macro("AojRefValidationToyP", fmt_p(res["reference"]["top"]["validation"]["toy_p"]), res_path,
+             "reference.top.validation.toy_p", "background-only fit in the fail-region band")
+    worst = min(res["models"], key=lambda m: res["models"][m]["top"]["signal_yield"])
+    w = res["models"][worst]["top"]
+    em.macro("AojWorstYield", fmt_int(w["signal_yield"]), res_path, f"models.{worst}.top.signal_yield")
+    em.macro("AojWorstYieldErr", fmt_int(w["signal_yield_err"]), res_path,
+             f"models.{worst}.top.signal_yield_err")
+    em.macro("AojWorstMean", fmt(w["floated_mean"], 0), res_path, f"models.{worst}.top.floated_mean",
+             "GeV, the peak position fitted with the shape floating")
     em.macro("AojTrendP", fmt_p(r["trend"]["p"]), src, f"{base}.trend.p", "Holm table of two")
     em.macro("AojEquivFactor", fmt_factor(r["clause3_equivalence"]["smallest_bound_passed_by_all"], 2),
              src, f"{base}.clause3_equivalence.smallest_bound_passed_by_all", "a factor in yield")
     for i, cl in enumerate(r["clauses"]):
         em.macro("AojClause" + texname(cl["n"]) + "Verdict", tex(cl["verdict"]), src,
                  f"{base}.clauses[{i}].verdict", cl["text"])
+    for lv in ("162", "17"):
+        g = r["mass_output_2x2"][f"gain_{lv}"]
+        em.macro("AojMassGain" + texname(lv), fmt(g["mean_diff"], 3, sign=True), src,
+                 f"{base}.mass_output_2x2.gain_{lv}.mean_diff", "with minus without, -ln(yield)")
+        em.macro("AojMassGainP" + texname(lv), fmt_p(g["p"]), src,
+                 f"{base}.mass_output_2x2.gain_{lv}.p")
     d = r["mass_output_2x2"]["difference_in_differences"]
     em.macro("AojMassDid", fmt(d["mean_diff"], 3, sign=True), src,
              f"{base}.mass_output_2x2.difference_in_differences.mean_diff")
@@ -1014,6 +1090,9 @@ def emit_real_data(em: Emitter, J: dict, src: pathlib.Path) -> None:
     em.macro("AojNPass", of(ok, len(J["table"])), src, "table[*].criteria",
              "models passing all four peak criteria")
     rel = np.median([x["signal_yield_err"] / x["signal_yield"] for x in J["table"]])
+    eff = np.median([x["efficiency_relative_to_reference"] for x in J["table"]])
+    em.macro("AojMedianRelEff", f"{eff * 100:.0f}\\%", src,
+             "table[*].efficiency_relative_to_reference", "median over models: yield / CMS tagger's yield")
     em.macro("AojMedianFitErr", f"{rel * 100:.0f}\\%", src,
              "table[*].signal_yield_err / signal_yield", "median over models")
 
@@ -1526,6 +1605,14 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     reference = A["levels_fine_to_coarse"][1]
     emit_pairwise(em, A, paths["analysis"], reference)
     emit_vocabulary(em, sizes, paths["rung_map"])
+    # The test-sample background count, which bounds every rejection: the same
+    # jets in every ladder file, or the files were not scored on the same sample.
+    ladders = [json.loads(pathlib.Path(f).read_text()) for f in paths["ladder"]]
+    for task in sorted(ladders[0]["tasks"]):
+        counts = {d["tasks"][task].get("n_background_test") for d in ladders if task in d["tasks"]}
+        if len(counts) == 1 and None not in counts:
+            em.macro("ProbeNBkgTest" + texname(task), fmt_int(counts.pop()), paths["ladder"][0],
+                     f"tasks.{task}.n_background_test", "test-sample background jets")
 
     out = {"tables/probes_linear.tex": table_probe_ladder(A, "linear"),
            "tables/probes_mlp.tex": table_probe_ladder(A, "mlp"),
