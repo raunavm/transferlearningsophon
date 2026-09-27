@@ -1,0 +1,23 @@
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Anomaly-detection sensitivity at 4{,}000 injected signal jets: the 17-class minus 188-class difference in $\ln\sigma_{\min}$, the smallest initial significance from which the signal is still discovered at $5\sigma$ (positive: the coarser vocabulary needs more signal). Mean over paired pretraining seeds of the median over ten detector trainings. Bold: the four-level trend test rejects after Holm over the table.}
+\label{tab:anomaly}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l rrrr}
+\toprule
+signal & class sum & Mahalanobis & $k$-nearest neighbours & classifier-based (HGB) \\
+\midrule
+$X\to b\bar b$ & \textbf{+0.10} & \textbf{+0.11} & $-$0.21 & +0.04 \\
+$X\to q\bar q$ & \textbf{+0.27} & \textbf{+0.02} & \textbf{+0.06} & \textbf{+0.15} \\
+$X\to YY\to bbb$ & --- & --- & --- & --- \\
+$X\to YY\to bbbb$ & \textbf{+0.23} & \textbf{+0.73} & \textbf{+0.18} & \textbf{+0.06} \\
+$X\to YY\to qqq$ & +0.01 & \textbf{+0.04} & \textbf{+0.03} & \textbf{+0.26} \\
+$X\to YY\to qqqq$ & \textbf{+0.25} & +0.01 & $-$0.05 & \textbf{+0.39} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\smallskip{\footnotesize --- the test sample holds too few such jets at this injection; the trend test was not run.}
+\par\smallskip{\footnotesize Only the class-sum score uses the pretraining labels; the other three families work on the frozen features alone.}
+\end{table}

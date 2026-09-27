@@ -60,8 +60,11 @@ def test_s4_confirms_all_three_clauses_on_a_gap_that_shrinks_but_stays(tmp_path)
 def test_s4_says_not_confirmed_when_the_small_size_shows_nothing(tmp_path):
     def flat_at_1k(stem, n):
         return 0.1 if n == "N1000" else shrinking(stem, n)
-    v = [c["verdict"] for c in run(tmp_path, "S4", flat_at_1k)["clauses"]]
+    clauses = run(tmp_path, "S4", flat_at_1k)["clauses"]
+    v = [c["verdict"] for c in clauses]
     assert v[0] == "not confirmed" and v[2] == "confirmed"
+    # the detail must say where it rejected, not only where it had to
+    assert clauses[0]["detail"].endswith("it rejects at ['N10000']")
 
 
 def test_s3_finds_both_steps_only_when_both_exist(tmp_path):

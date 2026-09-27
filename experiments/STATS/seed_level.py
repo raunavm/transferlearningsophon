@@ -2299,6 +2299,59 @@ def load_random_control(paths) -> dict:
             "row_alignment_sha256": next(iter(docs.values()))[1]["row_alignment_sha256"]}
 
 
+def c4_grouping_cost(rows, ladder_paths) -> dict:
+    """POST HOC and descriptive (PRESPEC C4 outcome, 2026-09-27; not a test):
+    what each 17-group grouping costs against the three finer vocabularies of the
+    same seed index, in log(1-AUC) on C4's two pairs. It quantifies the reading
+    that a vocabulary loses a distinction when it removes a whole physical axis,
+    not when it merges one pair. Draw k is compared with the 188-, 162- and
+    43-class models of seed index k, scored on the same jets by the four-level
+    probe run; the 17-class value there must equal the one in the draw's file
+    on the deterministic linear probe, or the two runs did not see the same
+    features."""
+    ladder = {}
+    for p in [pathlib.Path(x) for x in ladder_paths]:
+        d = json.loads(p.read_text())
+        seeds = {parse_arm(a)[1] for t in CONTROL_TASKS for a in d["tasks"][t]["arms"]}
+        if len(seeds) != 1:
+            raise SystemExit(f"FATAL: {p} holds seed indices {sorted(seeds)}; one per file")
+        ladder[seeds.pop()] = (p, d)
+    per = {t: {k: [] for k in PROBES} for t in CONTROL_TASKS}
+    for r in rows:
+        if r["draw"] not in ladder:
+            raise SystemExit(f"FATAL: no four-level probe file for seed index {r['draw']}")
+        p, d = ladder[r["draw"]]
+        arms = d["tasks"][r["task"]]["arms"]
+        fine = [v[r["probe"]][ENDPOINT] for a, v in arms.items() if parse_arm(a)[0] in (188, 162, 43)]
+        if len(fine) != 3:
+            raise SystemExit(f"FATAL: {p} {r['task']} has {len(fine)} finer models, not 3")
+        sem = arms[r["semantic"]][r["probe"]][ENDPOINT]
+        if r["probe"] == "linear" and abs(sem - r["semantic_log1m_auc"]) > 1e-4:
+            raise SystemExit(f"FATAL: the 17-class linear probe differs between {p} and the draw "
+                             f"file ({sem} vs {r['semantic_log1m_auc']}); not the same features")
+        fm = float(np.mean(fine))
+        per[r["task"]][r["probe"]].append({
+            "draw": r["draw"], "fine_mean": fm,
+            "control_minus_fine": r["control_log1m_auc"] - fm,
+            "semantic_minus_fine": r["semantic_log1m_auc"] - fm,
+            "semantic_here_minus_ladder": r["semantic_log1m_auc"] - sem})
+    out = {}
+    for t in CONTROL_TASKS:
+        out[t] = {}
+        for k in PROBES:
+            rows_k = sorted(per[t][k], key=lambda x: x["draw"])
+            c = float(np.mean([x["control_minus_fine"] for x in rows_k]))
+            s_ = float(np.mean([x["semantic_minus_fine"] for x in rows_k]))
+            out[t][k] = {"per_draw": rows_k, "mean_control_minus_fine": c,
+                         "mean_semantic_minus_fine": s_, "factor_control": float(np.exp(c)),
+                         "factor_semantic": float(np.exp(s_))}
+    return {"reading": "POST HOC, descriptive, not a test: cost of each 17-group grouping "
+                       "relative to the mean of the 188-, 162- and 43-class models of the same "
+                       "seed index, in log(1-AUC); factor = exp(mean), i.e. in 1-AUC",
+            "ladder_inputs": [{"path": str(p), "sha256": _sha(p)} for p, _ in ladder.values()],
+            "tasks": out}
+
+
 def run_c4(a, argv=None) -> int:
     """C4, descriptive (amendment A1): the sign pattern on the linear probe, the
     MLP beside it. Its own inputs, its own output file."""
@@ -2315,6 +2368,8 @@ def run_c4(a, argv=None) -> int:
            "section7_reading": "PRESPEC §7 counts 'the control beating the semantic model on a pair "
                                "the semantic model splits' against the thesis; visible_content is "
                                "that pair (split at 17 classes)"}
+    if a.c4_fine_ladder:
+        res["grouping_cost_post_hoc"] = c4_grouping_cost(data["rows"], a.c4_fine_ladder)
     print("C4, random-label control minus 17-class model, log(1-AUC), DESCRIPTIVE (outside Holm)")
     for k in PROBES:
         r = res["C4"][k]
@@ -2414,7 +2469,9 @@ def ft_leg_analysis(data: dict, test: str, key: str, seeds) -> dict:
         out["clauses"] = [
             {"n": 1, "text": "monotone decrease with coarser labels at small training sizes",
              "verdict": "confirmed" if c1 else "not confirmed",
-             "detail": f"trend test rejects, Holm within the table, at {small}"},
+             "detail": f"required: the trend test rejects, Holm within the table, at every "
+                       f"small size {small}; it rejects at "
+                       f"{[n for n in small if per[n]['trend'].get('holm_reject_within_table')]}"},
             {"n": 2, "text": "gap shrinks with size", "verdict": "confirmed" if c2 else "not confirmed",
              "detail": "17-class minus 188-class mean paired difference strictly decreasing over "
                        f"{data['sizes']}: {[None if x is None else round(x, 4) for x in g]}; descriptive"},
@@ -2507,6 +2564,9 @@ def main(argv=None) -> int:
     ap.add_argument("--random-control", nargs="+", default=None, metavar="PATH",
                     help="C4: probe_results.json for random-label draws 1, 2, 3, each with the "
                          "17-class model of the same seed index. Written to c4_random_control.json")
+    ap.add_argument("--c4-fine-ladder", nargs="+", default=None, metavar="PATH",
+                    help="with --random-control: the four-level probe files of seed indices "
+                         "1-3, for the post-hoc cost of each grouping against the finer models")
     ap.add_argument("--finetune-jetclass2", default=None, metavar="LEG1_JSON",
                     help="S4: leg1_metrics.json (JetClass-II fine-tuning). Written to "
                          "s3_s4_finetune.json in --out")

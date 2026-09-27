@@ -4,6 +4,7 @@
 \setlength{\tabcolsep}{4pt}
 \caption{The pre-specified tests, exactly as \texttt{experiments/STATS/seed\_level.py} wrote them; nothing in this table is recomputed. ``Holm'' is the verdict at the full confirmatory family size of 4 with the unmeasured members still pending, so a rejection here holds whatever those turn out to be. Differences run coarser minus finer in $\log(1-$AUC$)$, paired by pretraining seed: positive means the coarser vocabulary is worse.}
 \label{tab:tests}
+\begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l p{0.20\linewidth} p{0.20\linewidth} r r l}
 \toprule
 test & prediction & test used & statistic & $p$ & Holm \\
@@ -29,7 +30,8 @@ S6: $b$ vs $c$, QCD & the nonlinear probe orders the vocabularies as the linear 
 S6: two-prong vs four-prong & the nonlinear probe orders the vocabularies as the linear probe does & sign agreement over the estimable level pairs & 5 of 6 & --- & descriptive \\
 S6: electron vs muon pair & the nonlinear probe orders the vocabularies as the linear probe does & sign agreement over the estimable level pairs & 5 of 5 & --- & descriptive \\
 \bottomrule
-\multicolumn{6}{@{}p{\linewidth}@{}}{\footnotesize S6 is descriptive and carries no $p$: it is a count of level pairs, not a test.} \\
-\multicolumn{6}{@{}p{\linewidth}@{}}{\footnotesize $^{\ast}$ the contrast involves a cell whose AUC reached 1 at the resolution of the sample, so the difference is a bound rather than a measured value.} \\
 \end{tabular}
+\end{adjustbox}
+\par\smallskip{\footnotesize S6 is descriptive and carries no $p$: it is a count of level pairs, not a test.}
+\par\smallskip{\footnotesize $^{\ast}$ the contrast involves a cell whose AUC reached 1 at the resolution of the sample, so the difference is a bound rather than a measured value.}
 \end{table*}

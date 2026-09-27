@@ -467,29 +467,815 @@
     "source_file": "experiments/FIGS/data/leg2_metrics.json",
     "value": "0.00031"
   },
+  "AnomalyClauseOneVerdict": {
+    "json_path": "section5.clause1",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "not confirmed"
+  },
+  "AnomalyClauseTwoVerdict": {
+    "json_path": "section5.clause2",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "not evaluable"
+  },
+  "AnomalyGapBClassSum": {
+    "json_path": "section5.clause2_on_testable_signals.class_sum.mean_gap_b",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.167"
+  },
+  "AnomalyGapBIadHgb": {
+    "json_path": "section5.clause2_on_testable_signals.iad_hgb.mean_gap_b",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.053"
+  },
+  "AnomalyGapBKnn": {
+    "json_path": "section5.clause2_on_testable_signals.knn.mean_gap_b",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{-}0.014"
+  },
+  "AnomalyGapBMahalanobis": {
+    "json_path": "section5.clause2_on_testable_signals.mahalanobis.mean_gap_b",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.418"
+  },
+  "AnomalyGapLightClassSum": {
+    "json_path": "section5.clause2_on_testable_signals.class_sum.mean_gap_light",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.176"
+  },
+  "AnomalyGapLightIadHgb": {
+    "json_path": "section5.clause2_on_testable_signals.iad_hgb.mean_gap_light",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.267"
+  },
+  "AnomalyGapLightKnn": {
+    "json_path": "section5.clause2_on_testable_signals.knn.mean_gap_light",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.014"
+  },
+  "AnomalyGapLightMahalanobis": {
+    "json_path": "section5.clause2_on_testable_signals.mahalanobis.mean_gap_light",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.023"
+  },
+  "AnomalyInjection": {
+    "json_path": "section5.injection",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "4{,}000"
+  },
+  "AnomalyNPlanned": {
+    "json_path": "section5.tests (count)",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "24"
+  },
+  "AnomalyNRejected": {
+    "json_path": "section5.tests[*].holm_reject",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "15"
+  },
+  "AnomalyNTested": {
+    "json_path": "section5.tests[*].trend.run",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "20"
+  },
+  "AnomalyNTrainings": {
+    "json_path": "provenance.detector_trainings",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "10"
+  },
+  "AnomalyRejectedClassSum": {
+    "json_path": "section5.clause1_per_family.class_sum.n_signals_rejected",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "4 of 6"
+  },
+  "AnomalyRejectedIadHgb": {
+    "json_path": "section5.clause1_per_family.iad_hgb.n_signals_rejected",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "4 of 6"
+  },
+  "AnomalyRejectedKnn": {
+    "json_path": "section5.clause1_per_family.knn.n_signals_rejected",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "3 of 6"
+  },
+  "AnomalyRejectedMahalanobis": {
+    "json_path": "section5.clause1_per_family.mahalanobis.n_signals_rejected",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "4 of 6"
+  },
+  "AnomalyStepBelowOnesixtwo": {
+    "json_path": "section5.tests[*].trend.argmax_step",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "15 of 15"
+  },
+  "AojClauseOneVerdict": {
+    "json_path": "secondary.real_data_top.clauses[0].verdict",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "not confirmed"
+  },
+  "AojClauseThreeVerdict": {
+    "json_path": "secondary.real_data_top.clauses[2].verdict",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "inconclusive"
+  },
+  "AojClauseTwoVerdict": {
+    "json_path": "secondary.real_data_top.clauses[1].verdict",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "not confirmed"
+  },
+  "AojEquivFactor": {
+    "json_path": "secondary.real_data_top.clause3_equivalence.smallest_bound_passed_by_all",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "2.72"
+  },
+  "AojMassDid": {
+    "json_path": "secondary.real_data_top.mass_output_2x2.difference_in_differences.mean_diff",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "\\ensuremath{-}0.110"
+  },
+  "AojMassDidP": {
+    "json_path": "secondary.real_data_top.mass_output_2x2.difference_in_differences.p",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "\\ensuremath{0.77}"
+  },
+  "AojMedianFitErr": {
+    "json_path": "table[*].signal_yield_err / signal_yield",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "11\\%"
+  },
+  "AojNJetsFit": {
+    "json_path": "n_jets",
+    "sha256": "2ac7d7a74edbb691c8600fa087754994101b22a4ccf9ec57e7d61e4dd0a59941",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/results.json",
+    "value": "9{,}441{,}209"
+  },
+  "AojNPass": {
+    "json_path": "table[*].criteria",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "28 of 30"
+  },
+  "AojNToys": {
+    "json_path": "n_toys",
+    "sha256": "2ac7d7a74edbb691c8600fa087754994101b22a4ccf9ec57e7d61e4dd0a59941",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/results.json",
+    "value": "200"
+  },
+  "AojOneeighteightVsOnesevenDiff": {
+    "json_path": "secondary.real_data_top.pairwise_exploratory[2].mean_diff",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "+0.002"
+  },
+  "AojOneeighteightVsOnesevenP": {
+    "json_path": "secondary.real_data_top.pairwise_exploratory[2].p",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "\\ensuremath{0.987}"
+  },
+  "AojPublicYield": {
+    "json_path": "reference_models.sophon-public.signal_yield",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "2{,}594"
+  },
+  "AojRefMass": {
+    "json_path": "reference.mean",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "180.1"
+  },
+  "AojRefYield": {
+    "json_path": "reference.signal_yield",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "27{,}562"
+  },
+  "AojRefYieldErr": {
+    "json_path": "reference.signal_yield_err",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "458"
+  },
+  "AojRefZ": {
+    "json_path": "reference.z_wald",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "60"
+  },
+  "AojTrendP": {
+    "json_path": "secondary.real_data_top.trend.p",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "\\ensuremath{0.616}"
+  },
+  "AojYieldFourthree": {
+    "json_path": "table[level=43].signal_yield",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "3{,}104"
+  },
+  "AojYieldMaxFourthree": {
+    "json_path": "table[level=43].signal_yield (max)",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "4{,}867"
+  },
+  "AojYieldMaxOneeighteight": {
+    "json_path": "table[level=188].signal_yield (max)",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "4{,}290"
+  },
+  "AojYieldMaxOneseven": {
+    "json_path": "table[level=17].signal_yield (max)",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "3{,}951"
+  },
+  "AojYieldMaxOnesevenMass": {
+    "json_path": "table[level=17+mass].signal_yield (max)",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "4{,}818"
+  },
+  "AojYieldMaxOnesixtwo": {
+    "json_path": "table[level=162].signal_yield (max)",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "4{,}324"
+  },
+  "AojYieldMaxOnesixtwoMass": {
+    "json_path": "table[level=162+mass].signal_yield (max)",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "3{,}905"
+  },
+  "AojYieldMinFourthree": {
+    "json_path": "table[level=43].signal_yield (min)",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "1{,}723"
+  },
+  "AojYieldMinOneeighteight": {
+    "json_path": "table[level=188].signal_yield (min)",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "2{,}578"
+  },
+  "AojYieldMinOneseven": {
+    "json_path": "table[level=17].signal_yield (min)",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "2{,}982"
+  },
+  "AojYieldMinOnesevenMass": {
+    "json_path": "table[level=17+mass].signal_yield (min)",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "2{,}375"
+  },
+  "AojYieldMinOnesixtwo": {
+    "json_path": "table[level=162].signal_yield (min)",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "722"
+  },
+  "AojYieldMinOnesixtwoMass": {
+    "json_path": "table[level=162+mass].signal_yield (min)",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "3{,}038"
+  },
+  "AojYieldOneeighteight": {
+    "json_path": "table[level=188].signal_yield",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "3{,}406"
+  },
+  "AojYieldOneseven": {
+    "json_path": "table[level=17].signal_yield",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "3{,}399"
+  },
+  "AojYieldOnesevenMass": {
+    "json_path": "table[level=17+mass].signal_yield",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "3{,}746"
+  },
+  "AojYieldOnesixtwo": {
+    "json_path": "table[level=162].signal_yield",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "2{,}720"
+  },
+  "AojYieldOnesixtwoMass": {
+    "json_path": "table[level=162+mass].signal_yield",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "3{,}345"
+  },
+  "DesignBatchSize": {
+    "json_path": "--batch-size",
+    "sha256": "96fef4b6337aaa27538d30778f8fe41f38e838cfb6faf2bf6fcdb7f0f0b5573b",
+    "source_file": "experiments/MTX/k8s/job-mtx-l188-s1-raunav.yaml",
+    "value": "512"
+  },
+  "DesignClassBlocks": {
+    "json_path": "num_cls_layers=(\\d+)",
+    "sha256": "5793faa7d55a8b0d7fe83962e9a824c4ace7485fd99a214b118dc014cdd25912",
+    "source_file": "experiments/E1/ParT_sophon_arch_10c.py",
+    "value": "2"
+  },
+  "DesignEmbedDim": {
+    "json_path": "\\bembed_dims=\\[\\d+, \\d+, (\\d+)\\]",
+    "sha256": "5793faa7d55a8b0d7fe83962e9a824c4ace7485fd99a214b118dc014cdd25912",
+    "source_file": "experiments/E1/ParT_sophon_arch_10c.py",
+    "value": "128"
+  },
+  "DesignEpochs": {
+    "json_path": "--num-epochs",
+    "sha256": "96fef4b6337aaa27538d30778f8fe41f38e838cfb6faf2bf6fcdb7f0f0b5573b",
+    "source_file": "experiments/MTX/k8s/job-mtx-l188-s1-raunav.yaml",
+    "value": "80"
+  },
+  "DesignExamplesSeen": {
+    "json_path": "--num-epochs x --samples-per-epoch",
+    "sha256": "96fef4b6337aaa27538d30778f8fe41f38e838cfb6faf2bf6fcdb7f0f0b5573b",
+    "source_file": "experiments/MTX/k8s/job-mtx-l188-s1-raunav.yaml",
+    "value": "\\ensuremath{8.192\\times10^{8}}"
+  },
+  "DesignHeadHidden": {
+    "json_path": "-o fc_params (hidden width)",
+    "sha256": "96fef4b6337aaa27538d30778f8fe41f38e838cfb6faf2bf6fcdb7f0f0b5573b",
+    "source_file": "experiments/MTX/k8s/job-mtx-l188-s1-raunav.yaml",
+    "value": "512"
+  },
+  "DesignHeads": {
+    "json_path": "num_heads=(\\d+)",
+    "sha256": "5793faa7d55a8b0d7fe83962e9a824c4ace7485fd99a214b118dc014cdd25912",
+    "source_file": "experiments/E1/ParT_sophon_arch_10c.py",
+    "value": "8"
+  },
+  "DesignMsdMax": {
+    "json_path": "selection",
+    "sha256": "d5a188dc80885515f920118ab91756b8eae150a5329f8cafeb26b2cf48c5f80f",
+    "source_file": "configs/arms/L188.yaml",
+    "value": "500"
+  },
+  "DesignMsdMin": {
+    "json_path": "selection",
+    "sha256": "d5a188dc80885515f920118ab91756b8eae150a5329f8cafeb26b2cf48c5f80f",
+    "source_file": "configs/arms/L188.yaml",
+    "value": "20"
+  },
+  "DesignParticleBlocks": {
+    "json_path": "num_layers=(\\d+)",
+    "sha256": "5793faa7d55a8b0d7fe83962e9a824c4ace7485fd99a214b118dc014cdd25912",
+    "source_file": "experiments/E1/ParT_sophon_arch_10c.py",
+    "value": "8"
+  },
+  "DesignPtMax": {
+    "json_path": "selection",
+    "sha256": "d5a188dc80885515f920118ab91756b8eae150a5329f8cafeb26b2cf48c5f80f",
+    "source_file": "configs/arms/L188.yaml",
+    "value": "2{,}500"
+  },
+  "DesignPtMin": {
+    "json_path": "selection",
+    "sha256": "d5a188dc80885515f920118ab91756b8eae150a5329f8cafeb26b2cf48c5f80f",
+    "source_file": "configs/arms/L188.yaml",
+    "value": "200"
+  },
+  "DesignSamplesPerEpoch": {
+    "json_path": "--samples-per-epoch",
+    "sha256": "96fef4b6337aaa27538d30778f8fe41f38e838cfb6faf2bf6fcdb7f0f0b5573b",
+    "source_file": "experiments/MTX/k8s/job-mtx-l188-s1-raunav.yaml",
+    "value": "10{,}240{,}000"
+  },
+  "DesignStartLr": {
+    "json_path": "--start-lr",
+    "sha256": "96fef4b6337aaa27538d30778f8fe41f38e838cfb6faf2bf6fcdb7f0f0b5573b",
+    "source_file": "experiments/MTX/k8s/job-mtx-l188-s1-raunav.yaml",
+    "value": "\\ensuremath{5\\times10^{-4}}"
+  },
+  "FtClauseSfourOneVerdict": {
+    "json_path": "secondary.S4.clauses[0].verdict",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "not confirmed"
+  },
+  "FtClauseSfourThreeVerdict": {
+    "json_path": "secondary.S4.clauses[2].verdict",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "confirmed"
+  },
+  "FtClauseSfourTwoVerdict": {
+    "json_path": "secondary.S4.clauses[1].verdict",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "not confirmed"
+  },
+  "FtClauseSthreeOneVerdict": {
+    "json_path": "secondary.S3.clauses[0].verdict",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "partially confirmed"
+  },
+  "FtClauseSthreeTwoVerdict": {
+    "json_path": "secondary.S3.clauses[1].verdict",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "partially confirmed"
+  },
+  "FtGapFactorSfourEFive": {
+    "json_path": "secondary.S4.gap_17_minus_188.N100000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "1.22"
+  },
+  "FtGapFactorSfourEFour": {
+    "json_path": "secondary.S4.gap_17_minus_188.N10000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "1.32"
+  },
+  "FtGapFactorSfourESix": {
+    "json_path": "secondary.S4.gap_17_minus_188.N1000000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "1.14"
+  },
+  "FtGapFactorSfourEThree": {
+    "json_path": "secondary.S4.gap_17_minus_188.N1000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.97"
+  },
+  "FtGapFactorSthreeEFive": {
+    "json_path": "secondary.S3.gap_17_minus_188.N100000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "1.07"
+  },
+  "FtGapFactorSthreeEFour": {
+    "json_path": "secondary.S3.gap_17_minus_188.N10000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "1.07"
+  },
+  "FtGapFactorSthreeESix": {
+    "json_path": "secondary.S3.gap_17_minus_188.N1000000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "1.08"
+  },
+  "FtGapFactorSthreeEThree": {
+    "json_path": "secondary.S3.gap_17_minus_188.N1000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "1.07"
+  },
+  "FtGapSfourEFive": {
+    "json_path": "secondary.S4.gap_17_minus_188.N100000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.195"
+  },
+  "FtGapSfourEFour": {
+    "json_path": "secondary.S4.gap_17_minus_188.N10000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.274"
+  },
+  "FtGapSfourESix": {
+    "json_path": "secondary.S4.gap_17_minus_188.N1000000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.135"
+  },
+  "FtGapSfourEThree": {
+    "json_path": "secondary.S4.gap_17_minus_188.N1000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{-}0.029"
+  },
+  "FtGapSthreeEFive": {
+    "json_path": "secondary.S3.gap_17_minus_188.N100000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.070"
+  },
+  "FtGapSthreeEFour": {
+    "json_path": "secondary.S3.gap_17_minus_188.N10000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.064"
+  },
+  "FtGapSthreeESix": {
+    "json_path": "secondary.S3.gap_17_minus_188.N1000000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.080"
+  },
+  "FtGapSthreeEThree": {
+    "json_path": "secondary.S3.gap_17_minus_188.N1000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.068"
+  },
+  "FtRefAucSfourEFiveMpmSone": {
+    "json_path": "secondary.S4.reference_rows.N100000.mpm-s1.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9643"
+  },
+  "FtRefAucSfourEFiveScratch": {
+    "json_path": "secondary.S4.reference_rows.N100000.scratch.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9612"
+  },
+  "FtRefAucSfourEFourMpmSone": {
+    "json_path": "secondary.S4.reference_rows.N10000.mpm-s1.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9433"
+  },
+  "FtRefAucSfourEFourScratch": {
+    "json_path": "secondary.S4.reference_rows.N10000.scratch.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9207"
+  },
+  "FtRefAucSfourESixMpmSone": {
+    "json_path": "secondary.S4.reference_rows.N1000000.mpm-s1.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9745"
+  },
+  "FtRefAucSfourESixScratch": {
+    "json_path": "secondary.S4.reference_rows.N1000000.scratch.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9733"
+  },
+  "FtRefAucSfourEThreeMpmSone": {
+    "json_path": "secondary.S4.reference_rows.N1000.mpm-s1.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.8075"
+  },
+  "FtRefAucSfourEThreeScratch": {
+    "json_path": "secondary.S4.reference_rows.N1000.scratch.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.7434"
+  },
+  "FtRefAucSthreeEFiveMpmSone": {
+    "json_path": "secondary.S3.reference_rows.N100000.mpm-s1.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9773"
+  },
+  "FtRefAucSthreeEFiveScratch": {
+    "json_path": "secondary.S3.reference_rows.N100000.scratch.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9723"
+  },
+  "FtRefAucSthreeEFourMpmSone": {
+    "json_path": "secondary.S3.reference_rows.N10000.mpm-s1.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9660"
+  },
+  "FtRefAucSthreeEFourScratch": {
+    "json_path": "secondary.S3.reference_rows.N10000.scratch.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9460"
+  },
+  "FtRefAucSthreeESixMpmSone": {
+    "json_path": "secondary.S3.reference_rows.N1000000.mpm-s1.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9822"
+  },
+  "FtRefAucSthreeESixScratch": {
+    "json_path": "secondary.S3.reference_rows.N1000000.scratch.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9814"
+  },
+  "FtRefAucSthreeEThreeMpmSone": {
+    "json_path": "secondary.S3.reference_rows.N1000.mpm-s1.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.9292"
+  },
+  "FtRefAucSthreeEThreeScratch": {
+    "json_path": "secondary.S3.reference_rows.N1000.scratch.macro_auc",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "0.8775"
+  },
+  "FtSizeSfourEFive": {
+    "json_path": "secondary.S4.per_size.N100000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{10^{5}}"
+  },
+  "FtSizeSfourEFour": {
+    "json_path": "secondary.S4.per_size.N10000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{10^{4}}"
+  },
+  "FtSizeSfourESix": {
+    "json_path": "secondary.S4.per_size.N1000000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{10^{6}}"
+  },
+  "FtSizeSfourEThree": {
+    "json_path": "secondary.S4.per_size.N1000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{10^{3}}"
+  },
+  "FtSizeSthreeEFive": {
+    "json_path": "secondary.S3.per_size.N100000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{10^{5}}"
+  },
+  "FtSizeSthreeEFour": {
+    "json_path": "secondary.S3.per_size.N10000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{10^{4}}"
+  },
+  "FtSizeSthreeESix": {
+    "json_path": "secondary.S3.per_size.N1000000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{10^{6}}"
+  },
+  "FtSizeSthreeEThree": {
+    "json_path": "secondary.S3.per_size.N1000",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{10^{3}}"
+  },
+  "FtTrendHolmSfourEFive": {
+    "json_path": "secondary.S4.per_size.N100000.trend.holm_reject_within_table",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "rejected"
+  },
+  "FtTrendHolmSfourEFour": {
+    "json_path": "secondary.S4.per_size.N10000.trend.holm_reject_within_table",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "rejected"
+  },
+  "FtTrendHolmSfourESix": {
+    "json_path": "secondary.S4.per_size.N1000000.trend.holm_reject_within_table",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "rejected"
+  },
+  "FtTrendHolmSfourEThree": {
+    "json_path": "secondary.S4.per_size.N1000.trend.holm_reject_within_table",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "not rejected"
+  },
+  "FtTrendHolmSthreeEFive": {
+    "json_path": "secondary.S3.per_size.N100000.trend.holm_reject_within_table",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "rejected"
+  },
+  "FtTrendHolmSthreeEFour": {
+    "json_path": "secondary.S3.per_size.N10000.trend.holm_reject_within_table",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "rejected"
+  },
+  "FtTrendHolmSthreeESix": {
+    "json_path": "secondary.S3.per_size.N1000000.trend.holm_reject_within_table",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "rejected"
+  },
+  "FtTrendHolmSthreeEThree": {
+    "json_path": "secondary.S3.per_size.N1000.trend.holm_reject_within_table",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "not rejected"
+  },
+  "FtTrendPSfourEFive": {
+    "json_path": "secondary.S4.per_size.N100000.trend.p",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{1.76\\times10^{-6}}"
+  },
+  "FtTrendPSfourEFour": {
+    "json_path": "secondary.S4.per_size.N10000.trend.p",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{4.65\\times10^{-6}}"
+  },
+  "FtTrendPSfourESix": {
+    "json_path": "secondary.S4.per_size.N1000000.trend.p",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{1.26\\times10^{-6}}"
+  },
+  "FtTrendPSfourEThree": {
+    "json_path": "secondary.S4.per_size.N1000.trend.p",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{0.192}"
+  },
+  "FtTrendPSthreeEFive": {
+    "json_path": "secondary.S3.per_size.N100000.trend.p",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{2.51\\times10^{-7}}"
+  },
+  "FtTrendPSthreeEFour": {
+    "json_path": "secondary.S3.per_size.N10000.trend.p",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{0.000567}"
+  },
+  "FtTrendPSthreeESix": {
+    "json_path": "secondary.S3.per_size.N1000000.trend.p",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{6.03\\times10^{-6}}"
+  },
+  "FtTrendPSthreeEThree": {
+    "json_path": "secondary.S3.per_size.N1000.trend.p",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{0.056}"
+  },
   "MassDidCICfiveLinear": {
     "json_path": "confirmatory.C5.confirmatory.probes.linear.did.ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[-1.4348,\\,-0.5483]$"
+    "value": "\\ensuremath{[-1.4348,\\,-0.5483]}"
   },
   "MassDidCICfiveMlp": {
     "json_path": "confirmatory.C5.confirmatory.probes.mlp.did.ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[-0.8970,\\,-0.2980]$"
+    "value": "\\ensuremath{[-0.8970,\\,-0.2980]}"
   },
   "MassDidCfiveLinear": {
     "json_path": "confirmatory.C5.confirmatory.probes.linear.did.mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-0.9916"
+    "value": "\\ensuremath{-}0.9916"
   },
   "MassDidCfiveMlp": {
     "json_path": "confirmatory.C5.confirmatory.probes.mlp.did.mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-0.5975"
+    "value": "\\ensuremath{-}0.5975"
   },
   "MassDidDfCfiveLinear": {
     "json_path": "confirmatory.C5.confirmatory.probes.linear.did.df",
@@ -519,25 +1305,25 @@
     "json_path": "confirmatory.C5.confirmatory.probes.linear.did.p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.00342$"
+    "value": "\\ensuremath{0.00342}"
   },
   "MassDidPCfiveMlp": {
     "json_path": "confirmatory.C5.confirmatory.probes.mlp.did.p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.0052$"
+    "value": "\\ensuremath{0.0052}"
   },
   "MassDidTCfiveLinear": {
     "json_path": "confirmatory.C5.confirmatory.probes.linear.did.t",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-6.21"
+    "value": "\\ensuremath{-}6.21"
   },
   "MassDidTCfiveMlp": {
     "json_path": "confirmatory.C5.confirmatory.probes.mlp.did.t",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-5.54"
+    "value": "\\ensuremath{-}5.54"
   },
   "MassGainCfiveGainOneseven": {
     "json_path": "confirmatory.C5.confirmatory.probes.linear.gain_by_level.17.mean_diff",
@@ -555,13 +1341,247 @@
     "json_path": "confirmatory.C5.confirmatory.probes.linear.gain_by_level.17.p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.00257$"
+    "value": "\\ensuremath{0.00257}"
   },
   "MassGainPCfiveGainOnesixtwo": {
     "json_path": "confirmatory.C5.confirmatory.probes.linear.gain_by_level.162.p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.000917$"
+    "value": "\\ensuremath{0.000917}"
+  },
+  "MassResClauseOneVerdict": {
+    "json_path": "secondary.S7.clauses[0].verdict",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "confirmed"
+  },
+  "MassResClauseThreeVerdict": {
+    "json_path": "secondary.S7.clauses[2].verdict",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "not confirmed"
+  },
+  "MassResClauseTwoVerdict": {
+    "json_path": "secondary.S7.clauses[1].verdict",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "not confirmed"
+  },
+  "MassResDidMlp": {
+    "json_path": "secondary.S7.probes.mlp.did.mean_diff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "\\ensuremath{-}0.0087"
+  },
+  "MassResDidPMlp": {
+    "json_path": "secondary.S7.probes.mlp.did.p",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "\\ensuremath{0.0125}"
+  },
+  "MassResDidPRidge": {
+    "json_path": "secondary.S7.probes.ridge.did.p",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "\\ensuremath{0.0105}"
+  },
+  "MassResDidRidge": {
+    "json_path": "secondary.S7.probes.ridge.did.mean_diff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "\\ensuremath{-}0.0233"
+  },
+  "MassResGainMlpOneseven": {
+    "json_path": "secondary.S7.probes.mlp.gain_by_level.17.mean_diff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "\\ensuremath{-}0.0409"
+  },
+  "MassResGainMlpOnesixtwo": {
+    "json_path": "secondary.S7.probes.mlp.gain_by_level.162.mean_diff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "\\ensuremath{-}0.0496"
+  },
+  "MassResGainPMlpOneseven": {
+    "json_path": "secondary.S7.probes.mlp.gain_by_level.17.p",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "\\ensuremath{5.1\\times10^{-6}}"
+  },
+  "MassResGainPMlpOnesixtwo": {
+    "json_path": "secondary.S7.probes.mlp.gain_by_level.162.p",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "\\ensuremath{3.99\\times10^{-7}}"
+  },
+  "MassResGainPRidgeOneseven": {
+    "json_path": "secondary.S7.probes.ridge.gain_by_level.17.p",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "\\ensuremath{6.76\\times10^{-5}}"
+  },
+  "MassResGainPRidgeOnesixtwo": {
+    "json_path": "secondary.S7.probes.ridge.gain_by_level.162.p",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "\\ensuremath{3.83\\times10^{-8}}"
+  },
+  "MassResGainRidgeOneseven": {
+    "json_path": "secondary.S7.probes.ridge.gain_by_level.17.mean_diff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "\\ensuremath{-}0.0831"
+  },
+  "MassResGainRidgeOnesixtwo": {
+    "json_path": "secondary.S7.probes.ridge.gain_by_level.162.mean_diff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "\\ensuremath{-}0.1063"
+  },
+  "MassResLadderHolmMlp": {
+    "json_path": "secondary.S7.probes.mlp.ladder_pairs[*].holm_reject",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "2 of 6"
+  },
+  "MassResLadderHolmRidge": {
+    "json_path": "secondary.S7.probes.ridge.ladder_pairs[*].holm_reject",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "6 of 6"
+  },
+  "MassResLadderSignMlp": {
+    "json_path": "secondary.S7.probes.mlp.ladder_pairs[*].mean_diff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "6 of 6"
+  },
+  "MassResLadderSignRidge": {
+    "json_path": "secondary.S7.probes.ridge.ladder_pairs[*].mean_diff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "6 of 6"
+  },
+  "MassResNClasses": {
+    "json_path": "provenance.n_classes_used",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "184"
+  },
+  "MassResNJets": {
+    "json_path": "provenance.n_jets_valid",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "1{,}993{,}321"
+  },
+  "MassResSdFourthree": {
+    "json_path": "table[cell=43,probe=ridge].sd",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.618"
+  },
+  "MassResSdOneeighteight": {
+    "json_path": "table[cell=188,probe=ridge].sd",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.631"
+  },
+  "MassResSdOneseven": {
+    "json_path": "table[cell=17,probe=ridge].sd",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.601"
+  },
+  "MassResSdOnesevenMass": {
+    "json_path": "table[cell=17+mass,probe=ridge].sd",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.490"
+  },
+  "MassResSdOnesixtwo": {
+    "json_path": "table[cell=162,probe=ridge].sd",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.626"
+  },
+  "MassResSdOnesixtwoMass": {
+    "json_path": "table[cell=162+mass,probe=ridge].sd",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.494"
+  },
+  "MassResSigmaEffFourthree": {
+    "json_path": "table[cell=43,probe=ridge].sigma_eff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.3228"
+  },
+  "MassResSigmaEffOneeighteight": {
+    "json_path": "table[cell=188,probe=ridge].sigma_eff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.3393"
+  },
+  "MassResSigmaEffOneseven": {
+    "json_path": "table[cell=17,probe=ridge].sigma_eff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.3001"
+  },
+  "MassResSigmaEffOnesevenMass": {
+    "json_path": "table[cell=17+mass,probe=ridge].sigma_eff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.2170"
+  },
+  "MassResSigmaEffOnesixtwo": {
+    "json_path": "table[cell=162,probe=ridge].sigma_eff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.3302"
+  },
+  "MassResSigmaEffOnesixtwoMass": {
+    "json_path": "table[cell=162+mass,probe=ridge].sigma_eff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.2238"
+  },
+  "MassResTailFractionFourthree": {
+    "json_path": "table[cell=43,probe=ridge].tail_fraction",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.060"
+  },
+  "MassResTailFractionOneeighteight": {
+    "json_path": "table[cell=188,probe=ridge].tail_fraction",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.064"
+  },
+  "MassResTailFractionOneseven": {
+    "json_path": "table[cell=17,probe=ridge].tail_fraction",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.056"
+  },
+  "MassResTailFractionOnesevenMass": {
+    "json_path": "table[cell=17+mass,probe=ridge].tail_fraction",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.033"
+  },
+  "MassResTailFractionOnesixtwo": {
+    "json_path": "table[cell=162,probe=ridge].tail_fraction",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.062"
+  },
+  "MassResTailFractionOnesixtwoMass": {
+    "json_path": "table[cell=162+mass,probe=ridge].tail_fraction",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.034"
   },
   "MdeBvcQcdLinear": {
     "json_path": "mde[2].mde",
@@ -663,133 +1683,133 @@
     "json_path": "pairwise_exploratory.bvc_qcd.linear[3].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[-0.0202,\\,+0.0474]$"
+    "value": "\\ensuremath{[-0.0202,\\,+0.0474]}"
   },
   "PairCIBvcQcdLinearOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_qcd.linear[0].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.0843,\\,+0.1875]$"
+    "value": "\\ensuremath{[+0.0843,\\,+0.1875]}"
   },
   "PairCIBvcQcdLinearOneseven": {
     "json_path": "pairwise_exploratory.bvc_qcd.linear[4].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.8259,\\,+1.1137]$"
+    "value": "\\ensuremath{[+0.8259,\\,+1.1137]}"
   },
   "PairCIBvcQcdMlpFourthree": {
     "json_path": "pairwise_exploratory.bvc_qcd.mlp[3].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[-0.0096,\\,+0.0352]$"
+    "value": "\\ensuremath{[-0.0096,\\,+0.0352]}"
   },
   "PairCIBvcQcdMlpOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_qcd.mlp[0].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.0427,\\,+0.1691]$"
+    "value": "\\ensuremath{[+0.0427,\\,+0.1691]}"
   },
   "PairCIBvcQcdMlpOneseven": {
     "json_path": "pairwise_exploratory.bvc_qcd.mlp[4].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.7138,\\,+0.9478]$"
+    "value": "\\ensuremath{[+0.7138,\\,+0.9478]}"
   },
   "PairCIBvcResonantLinearFourthree": {
     "json_path": "pairwise_exploratory.bvc_resonant.linear[3].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.0478,\\,+0.0839]$"
+    "value": "\\ensuremath{[+0.0478,\\,+0.0839]}"
   },
   "PairCIBvcResonantLinearOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_resonant.linear[0].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[-0.0383,\\,+0.0764]$"
+    "value": "\\ensuremath{[-0.0383,\\,+0.0764]}"
   },
   "PairCIBvcResonantLinearOneseven": {
     "json_path": "pairwise_exploratory.bvc_resonant.linear[4].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+1.1463,\\,+1.5827]$"
+    "value": "\\ensuremath{[+1.1463,\\,+1.5827]}"
   },
   "PairCIBvcResonantMlpFourthree": {
     "json_path": "pairwise_exploratory.bvc_resonant.mlp[3].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.0546,\\,+0.1221]$"
+    "value": "\\ensuremath{[+0.0546,\\,+0.1221]}"
   },
   "PairCIBvcResonantMlpOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_resonant.mlp[0].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[-0.0253,\\,+0.1109]$"
+    "value": "\\ensuremath{[-0.0253,\\,+0.1109]}"
   },
   "PairCIBvcResonantMlpOneseven": {
     "json_path": "pairwise_exploratory.bvc_resonant.mlp[4].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.9566,\\,+1.3123]$"
+    "value": "\\ensuremath{[+0.9566,\\,+1.3123]}"
   },
   "PairCIEeVsMmLinearFourthree": {
     "json_path": "pairwise_exploratory.ee_vs_mm.linear[3].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+11.7499,\\,+14.1007]$"
+    "value": "\\ensuremath{[+11.7499,\\,+14.1007]}"
   },
   "PairCIEeVsMmLinearOneseven": {
     "json_path": "pairwise_exploratory.ee_vs_mm.linear[4].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+13.4477,\\,+14.0655]$"
+    "value": "\\ensuremath{[+13.4477,\\,+14.0655]}"
   },
   "PairCIEeVsMmMlpFourthree": {
     "json_path": "pairwise_exploratory.ee_vs_mm.mlp[3].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+9.9484,\\,+12.4321]$"
+    "value": "\\ensuremath{[+9.9484,\\,+12.4321]}"
   },
   "PairCIEeVsMmMlpOneseven": {
     "json_path": "pairwise_exploratory.ee_vs_mm.mlp[4].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+12.2178,\\,+12.5665]$"
+    "value": "\\ensuremath{[+12.2178,\\,+12.5665]}"
   },
   "PairCIRetainedTopologyLinearFourthree": {
     "json_path": "pairwise_exploratory.retained_topology.linear[3].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.1664,\\,+0.2622]$"
+    "value": "\\ensuremath{[+0.1664,\\,+0.2622]}"
   },
   "PairCIRetainedTopologyLinearOneeighteight": {
     "json_path": "pairwise_exploratory.retained_topology.linear[0].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[-0.0835,\\,+0.0821]$"
+    "value": "\\ensuremath{[-0.0835,\\,+0.0821]}"
   },
   "PairCIRetainedTopologyLinearOneseven": {
     "json_path": "pairwise_exploratory.retained_topology.linear[4].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.2858,\\,+0.5742]$"
+    "value": "\\ensuremath{[+0.2858,\\,+0.5742]}"
   },
   "PairCIRetainedTopologyMlpFourthree": {
     "json_path": "pairwise_exploratory.retained_topology.mlp[3].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.1123,\\,+0.2054]$"
+    "value": "\\ensuremath{[+0.1123,\\,+0.2054]}"
   },
   "PairCIRetainedTopologyMlpOneeighteight": {
     "json_path": "pairwise_exploratory.retained_topology.mlp[0].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[-0.1330,\\,+0.1677]$"
+    "value": "\\ensuremath{[-0.1330,\\,+0.1677]}"
   },
   "PairCIRetainedTopologyMlpOneseven": {
     "json_path": "pairwise_exploratory.retained_topology.mlp[4].ci95",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.2542,\\,+0.5475]$"
+    "value": "\\ensuremath{[+0.2542,\\,+0.5475]}"
   },
   "PairDiffBvcQcdLinearFourthree": {
     "json_path": "pairwise_exploratory.bvc_qcd.linear[3].mean_diff",
@@ -867,25 +1887,25 @@
     "json_path": "pairwise_exploratory.ee_vs_mm.linear[3].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "+12.9253$^{\\ast}$"
+    "value": "+12.9253\\ensuremath{^{\\ast}}"
   },
   "PairDiffEeVsMmLinearOneseven": {
     "json_path": "pairwise_exploratory.ee_vs_mm.linear[4].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "+13.7566$^{\\ast}$"
+    "value": "+13.7566\\ensuremath{^{\\ast}}"
   },
   "PairDiffEeVsMmMlpFourthree": {
     "json_path": "pairwise_exploratory.ee_vs_mm.mlp[3].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "+11.1902$^{\\ast}$"
+    "value": "+11.1902\\ensuremath{^{\\ast}}"
   },
   "PairDiffEeVsMmMlpOneseven": {
     "json_path": "pairwise_exploratory.ee_vs_mm.mlp[4].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "+12.3922$^{\\ast}$"
+    "value": "+12.3922\\ensuremath{^{\\ast}}"
   },
   "PairDiffRetainedTopologyLinearFourthree": {
     "json_path": "pairwise_exploratory.retained_topology.linear[3].mean_diff",
@@ -897,7 +1917,7 @@
     "json_path": "pairwise_exploratory.retained_topology.linear[0].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-0.0007"
+    "value": "\\ensuremath{-}0.0007"
   },
   "PairDiffRetainedTopologyLinearOneseven": {
     "json_path": "pairwise_exploratory.retained_topology.linear[4].mean_diff",
@@ -922,6 +1942,138 @@
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "+0.4008"
+  },
+  "PairFactorBvcQcdLinearFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[3].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.014"
+  },
+  "PairFactorBvcQcdLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[0].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.146"
+  },
+  "PairFactorBvcQcdLinearOneseven": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[4].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "2.637"
+  },
+  "PairFactorBvcQcdMlpFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[3].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.013"
+  },
+  "PairFactorBvcQcdMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[0].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.112"
+  },
+  "PairFactorBvcQcdMlpOneseven": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[4].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "2.295"
+  },
+  "PairFactorBvcResonantLinearFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[3].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.068"
+  },
+  "PairFactorBvcResonantLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[0].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.019"
+  },
+  "PairFactorBvcResonantLinearOneseven": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[4].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "3.914"
+  },
+  "PairFactorBvcResonantMlpFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[3].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.092"
+  },
+  "PairFactorBvcResonantMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[0].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.044"
+  },
+  "PairFactorBvcResonantMlpOneseven": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[4].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "3.109"
+  },
+  "PairFactorEeVsMmLinearFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[3].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "410578.920\\ensuremath{^{\\ast}}"
+  },
+  "PairFactorEeVsMmLinearOneseven": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[4].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "942781.350\\ensuremath{^{\\ast}}"
+  },
+  "PairFactorEeVsMmMlpFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[3].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "72420.801\\ensuremath{^{\\ast}}"
+  },
+  "PairFactorEeVsMmMlpOneseven": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[4].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "240906.315\\ensuremath{^{\\ast}}"
+  },
+  "PairFactorRetainedTopologyLinearFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[3].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.239"
+  },
+  "PairFactorRetainedTopologyLinearOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[0].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.999"
+  },
+  "PairFactorRetainedTopologyLinearOneseven": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[4].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.537"
+  },
+  "PairFactorRetainedTopologyMlpFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[3].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.172"
+  },
+  "PairFactorRetainedTopologyMlpOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[0].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.018"
+  },
+  "PairFactorRetainedTopologyMlpOneseven": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[4].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.493"
   },
   "PairHolmBvcQcdLinearFourthree": {
     "json_path": "pairwise_exploratory.bvc_qcd.linear[3].holm_reject",
@@ -1059,133 +2211,133 @@
     "json_path": "pairwise_exploratory.bvc_qcd.linear[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.326$"
+    "value": "\\ensuremath{0.326}"
   },
   "PairPBvcQcdLinearOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_qcd.linear[0].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.00187$"
+    "value": "\\ensuremath{0.00187}"
   },
   "PairPBvcQcdLinearOneseven": {
     "json_path": "pairwise_exploratory.bvc_qcd.linear[4].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$4.8\\times10^{-5}$"
+    "value": "\\ensuremath{4.8\\times10^{-5}}"
   },
   "PairPBvcQcdMlpFourthree": {
     "json_path": "pairwise_exploratory.bvc_qcd.mlp[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.189$"
+    "value": "\\ensuremath{0.189}"
   },
   "PairPBvcQcdMlpOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_qcd.mlp[0].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.00964$"
+    "value": "\\ensuremath{0.00964}"
   },
   "PairPBvcQcdMlpOneseven": {
     "json_path": "pairwise_exploratory.bvc_qcd.mlp[4].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$3.9\\times10^{-5}$"
+    "value": "\\ensuremath{3.9\\times10^{-5}}"
   },
   "PairPBvcResonantLinearFourthree": {
     "json_path": "pairwise_exploratory.bvc_resonant.linear[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.000532$"
+    "value": "\\ensuremath{0.000532}"
   },
   "PairPBvcResonantLinearOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_resonant.linear[0].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.409$"
+    "value": "\\ensuremath{0.409}"
   },
   "PairPBvcResonantLinearOneseven": {
     "json_path": "pairwise_exploratory.bvc_resonant.linear[4].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$6.46\\times10^{-5}$"
+    "value": "\\ensuremath{6.46\\times10^{-5}}"
   },
   "PairPBvcResonantMlpFourthree": {
     "json_path": "pairwise_exploratory.bvc_resonant.mlp[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.00191$"
+    "value": "\\ensuremath{0.00191}"
   },
   "PairPBvcResonantMlpOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_resonant.mlp[0].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.156$"
+    "value": "\\ensuremath{0.156}"
   },
   "PairPBvcResonantMlpOneseven": {
     "json_path": "pairwise_exploratory.bvc_resonant.mlp[4].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$5.97\\times10^{-5}$"
+    "value": "\\ensuremath{5.97\\times10^{-5}}"
   },
   "PairPEeVsMmLinearFourthree": {
     "json_path": "pairwise_exploratory.ee_vs_mm.linear[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$6.86\\times10^{-6}$"
+    "value": "\\ensuremath{6.86\\times10^{-6}}"
   },
   "PairPEeVsMmLinearOneseven": {
     "json_path": "pairwise_exploratory.ee_vs_mm.linear[4].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$2.57\\times10^{-8}$"
+    "value": "\\ensuremath{2.57\\times10^{-8}}"
   },
   "PairPEeVsMmMlpFourthree": {
     "json_path": "pairwise_exploratory.ee_vs_mm.mlp[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$1.52\\times10^{-5}$"
+    "value": "\\ensuremath{1.52\\times10^{-5}}"
   },
   "PairPEeVsMmMlpOneseven": {
     "json_path": "pairwise_exploratory.ee_vs_mm.mlp[4].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$3.96\\times10^{-9}$"
+    "value": "\\ensuremath{3.96\\times10^{-9}}"
   },
   "PairPRetainedTopologyLinearFourthree": {
     "json_path": "pairwise_exploratory.retained_topology.linear[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.000241$"
+    "value": "\\ensuremath{0.000241}"
   },
   "PairPRetainedTopologyLinearOneeighteight": {
     "json_path": "pairwise_exploratory.retained_topology.linear[0].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.983$"
+    "value": "\\ensuremath{0.983}"
   },
   "PairPRetainedTopologyLinearOneseven": {
     "json_path": "pairwise_exploratory.retained_topology.linear[4].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.00116$"
+    "value": "\\ensuremath{0.00116}"
   },
   "PairPRetainedTopologyMlpFourthree": {
     "json_path": "pairwise_exploratory.retained_topology.mlp[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.000692$"
+    "value": "\\ensuremath{0.000692}"
   },
   "PairPRetainedTopologyMlpOneeighteight": {
     "json_path": "pairwise_exploratory.retained_topology.mlp[0].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.765$"
+    "value": "\\ensuremath{0.765}"
   },
   "PairPRetainedTopologyMlpOneseven": {
     "json_path": "pairwise_exploratory.retained_topology.mlp[4].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.00162$"
+    "value": "\\ensuremath{0.00162}"
   },
   "ProbeAucBvcFourprongLinearFourthree": {
     "json_path": "levels.bvc_4prong.linear[2].mean_auc",
@@ -1341,7 +2493,7 @@
     "json_path": "levels.ee_vs_mm.linear[0].mean_auc",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$1^{\\dagger}$"
+    "value": "\\ensuremath{1^{\\dagger}}"
   },
   "ProbeAucEeVsMmLinearOneseven": {
     "json_path": "levels.ee_vs_mm.linear[3].mean_auc",
@@ -1353,7 +2505,7 @@
     "json_path": "levels.ee_vs_mm.linear[1].mean_auc",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$1^{\\dagger}$"
+    "value": "\\ensuremath{1^{\\dagger}}"
   },
   "ProbeAucEeVsMmMlpFourthree": {
     "json_path": "levels.ee_vs_mm.mlp[2].mean_auc",
@@ -1365,7 +2517,7 @@
     "json_path": "levels.ee_vs_mm.mlp[0].mean_auc",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$1^{\\dagger}$"
+    "value": "\\ensuremath{1^{\\dagger}}"
   },
   "ProbeAucEeVsMmMlpOneseven": {
     "json_path": "levels.ee_vs_mm.mlp[3].mean_auc",
@@ -1377,7 +2529,7 @@
     "json_path": "levels.ee_vs_mm.mlp[1].mean_auc",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$1^{\\dagger}$"
+    "value": "\\ensuremath{1^{\\dagger}}"
   },
   "ProbeAucRetainedTopologyLinearFourthree": {
     "json_path": "levels.retained_topology.linear[2].mean_auc",
@@ -1773,241 +2925,241 @@
     "json_path": "levels.bvc_4prong.linear[2].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.8946"
+    "value": "\\ensuremath{-}4.8946"
   },
   "ProbeLogOneMinusAucBvcFourprongLinearOneeighteight": {
     "json_path": "levels.bvc_4prong.linear[0].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.9915"
+    "value": "\\ensuremath{-}4.9915"
   },
   "ProbeLogOneMinusAucBvcFourprongLinearOneseven": {
     "json_path": "levels.bvc_4prong.linear[3].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-3.4967"
+    "value": "\\ensuremath{-}3.4967"
   },
   "ProbeLogOneMinusAucBvcFourprongLinearOnesixtwo": {
     "json_path": "levels.bvc_4prong.linear[1].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.9777"
+    "value": "\\ensuremath{-}4.9777"
   },
   "ProbeLogOneMinusAucBvcFourprongMlpFourthree": {
     "json_path": "levels.bvc_4prong.mlp[2].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.8709"
+    "value": "\\ensuremath{-}4.8709"
   },
   "ProbeLogOneMinusAucBvcFourprongMlpOneeighteight": {
     "json_path": "levels.bvc_4prong.mlp[0].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.9856"
+    "value": "\\ensuremath{-}4.9856"
   },
   "ProbeLogOneMinusAucBvcFourprongMlpOneseven": {
     "json_path": "levels.bvc_4prong.mlp[3].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-3.7910"
+    "value": "\\ensuremath{-}3.7910"
   },
   "ProbeLogOneMinusAucBvcFourprongMlpOnesixtwo": {
     "json_path": "levels.bvc_4prong.mlp[1].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.9883"
+    "value": "\\ensuremath{-}4.9883"
   },
   "ProbeLogOneMinusAucBvcQcdLinearFourthree": {
     "json_path": "levels.bvc_qcd.linear[2].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.0638"
+    "value": "\\ensuremath{-}4.0638"
   },
   "ProbeLogOneMinusAucBvcQcdLinearOneeighteight": {
     "json_path": "levels.bvc_qcd.linear[0].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.2133"
+    "value": "\\ensuremath{-}4.2133"
   },
   "ProbeLogOneMinusAucBvcQcdLinearOneseven": {
     "json_path": "levels.bvc_qcd.linear[3].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-3.1076"
+    "value": "\\ensuremath{-}3.1076"
   },
   "ProbeLogOneMinusAucBvcQcdLinearOnesixtwo": {
     "json_path": "levels.bvc_qcd.linear[1].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.0774"
+    "value": "\\ensuremath{-}4.0774"
   },
   "ProbeLogOneMinusAucBvcQcdMlpFourthree": {
     "json_path": "levels.bvc_qcd.mlp[2].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.0991"
+    "value": "\\ensuremath{-}4.0991"
   },
   "ProbeLogOneMinusAucBvcQcdMlpOneeighteight": {
     "json_path": "levels.bvc_qcd.mlp[0].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.2178"
+    "value": "\\ensuremath{-}4.2178"
   },
   "ProbeLogOneMinusAucBvcQcdMlpOneseven": {
     "json_path": "levels.bvc_qcd.mlp[3].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-3.2811"
+    "value": "\\ensuremath{-}3.2811"
   },
   "ProbeLogOneMinusAucBvcQcdMlpOnesixtwo": {
     "json_path": "levels.bvc_qcd.mlp[1].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.1119"
+    "value": "\\ensuremath{-}4.1119"
   },
   "ProbeLogOneMinusAucBvcResonantLinearFourthree": {
     "json_path": "levels.bvc_resonant.linear[2].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-5.9834"
+    "value": "\\ensuremath{-}5.9834"
   },
   "ProbeLogOneMinusAucBvcResonantLinearOneeighteight": {
     "json_path": "levels.bvc_resonant.linear[0].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-6.0683"
+    "value": "\\ensuremath{-}6.0683"
   },
   "ProbeLogOneMinusAucBvcResonantLinearOneseven": {
     "json_path": "levels.bvc_resonant.linear[3].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.6848"
+    "value": "\\ensuremath{-}4.6848"
   },
   "ProbeLogOneMinusAucBvcResonantLinearOnesixtwo": {
     "json_path": "levels.bvc_resonant.linear[1].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-6.0493"
+    "value": "\\ensuremath{-}6.0493"
   },
   "ProbeLogOneMinusAucBvcResonantMlpFourthree": {
     "json_path": "levels.bvc_resonant.mlp[2].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-5.9783"
+    "value": "\\ensuremath{-}5.9783"
   },
   "ProbeLogOneMinusAucBvcResonantMlpOneeighteight": {
     "json_path": "levels.bvc_resonant.mlp[0].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-6.1095"
+    "value": "\\ensuremath{-}6.1095"
   },
   "ProbeLogOneMinusAucBvcResonantMlpOneseven": {
     "json_path": "levels.bvc_resonant.mlp[3].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.9322"
+    "value": "\\ensuremath{-}4.9322"
   },
   "ProbeLogOneMinusAucBvcResonantMlpOnesixtwo": {
     "json_path": "levels.bvc_resonant.mlp[1].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-6.0667"
+    "value": "\\ensuremath{-}6.0667"
   },
   "ProbeLogOneMinusAucEeVsMmLinearFourthree": {
     "json_path": "levels.ee_vs_mm.linear[2].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.0326"
+    "value": "\\ensuremath{-}4.0326"
   },
   "ProbeLogOneMinusAucEeVsMmLinearOneeighteight": {
     "json_path": "levels.ee_vs_mm.linear[0].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-16.9579"
+    "value": "\\ensuremath{-}16.9579"
   },
   "ProbeLogOneMinusAucEeVsMmLinearOneseven": {
     "json_path": "levels.ee_vs_mm.linear[3].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-3.2013"
+    "value": "\\ensuremath{-}3.2013"
   },
   "ProbeLogOneMinusAucEeVsMmLinearOnesixtwo": {
     "json_path": "levels.ee_vs_mm.linear[1].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-16.9579"
+    "value": "\\ensuremath{-}16.9579"
   },
   "ProbeLogOneMinusAucEeVsMmMlpFourthree": {
     "json_path": "levels.ee_vs_mm.mlp[2].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-5.7676"
+    "value": "\\ensuremath{-}5.7676"
   },
   "ProbeLogOneMinusAucEeVsMmMlpOneeighteight": {
     "json_path": "levels.ee_vs_mm.mlp[0].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-16.9579"
+    "value": "\\ensuremath{-}16.9579"
   },
   "ProbeLogOneMinusAucEeVsMmMlpOneseven": {
     "json_path": "levels.ee_vs_mm.mlp[3].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.5657"
+    "value": "\\ensuremath{-}4.5657"
   },
   "ProbeLogOneMinusAucEeVsMmMlpOnesixtwo": {
     "json_path": "levels.ee_vs_mm.mlp[1].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-16.9579"
+    "value": "\\ensuremath{-}16.9579"
   },
   "ProbeLogOneMinusAucRetainedTopologyLinearFourthree": {
     "json_path": "levels.retained_topology.linear[2].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.9253"
+    "value": "\\ensuremath{-}4.9253"
   },
   "ProbeLogOneMinusAucRetainedTopologyLinearOneeighteight": {
     "json_path": "levels.retained_topology.linear[0].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-5.1388"
+    "value": "\\ensuremath{-}5.1388"
   },
   "ProbeLogOneMinusAucRetainedTopologyLinearOneseven": {
     "json_path": "levels.retained_topology.linear[3].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.7095"
+    "value": "\\ensuremath{-}4.7095"
   },
   "ProbeLogOneMinusAucRetainedTopologyLinearOnesixtwo": {
     "json_path": "levels.retained_topology.linear[1].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-5.1395"
+    "value": "\\ensuremath{-}5.1395"
   },
   "ProbeLogOneMinusAucRetainedTopologyMlpFourthree": {
     "json_path": "levels.retained_topology.mlp[2].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.9336"
+    "value": "\\ensuremath{-}4.9336"
   },
   "ProbeLogOneMinusAucRetainedTopologyMlpOneeighteight": {
     "json_path": "levels.retained_topology.mlp[0].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-5.1098"
+    "value": "\\ensuremath{-}5.1098"
   },
   "ProbeLogOneMinusAucRetainedTopologyMlpOneseven": {
     "json_path": "levels.retained_topology.mlp[3].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-4.6916"
+    "value": "\\ensuremath{-}4.6916"
   },
   "ProbeLogOneMinusAucRetainedTopologyMlpOnesixtwo": {
     "json_path": "levels.retained_topology.mlp[1].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-5.0924"
+    "value": "\\ensuremath{-}5.0924"
   },
   "ProbeLogOneMinusAucSdBvcFourprongLinearFourthree": {
     "json_path": "levels.bvc_4prong.linear[2].seed_sd",
@@ -2301,49 +3453,49 @@
     "json_path": "levels.visible_content.linear[2].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-7.1124"
+    "value": "\\ensuremath{-}7.1124"
   },
   "ProbeLogOneMinusAucVisibleContentLinearOneeighteight": {
     "json_path": "levels.visible_content.linear[0].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-7.0999"
+    "value": "\\ensuremath{-}7.0999"
   },
   "ProbeLogOneMinusAucVisibleContentLinearOneseven": {
     "json_path": "levels.visible_content.linear[3].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-6.0684"
+    "value": "\\ensuremath{-}6.0684"
   },
   "ProbeLogOneMinusAucVisibleContentLinearOnesixtwo": {
     "json_path": "levels.visible_content.linear[1].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-7.1480"
+    "value": "\\ensuremath{-}7.1480"
   },
   "ProbeLogOneMinusAucVisibleContentMlpFourthree": {
     "json_path": "levels.visible_content.mlp[2].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-7.1018"
+    "value": "\\ensuremath{-}7.1018"
   },
   "ProbeLogOneMinusAucVisibleContentMlpOneeighteight": {
     "json_path": "levels.visible_content.mlp[0].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-7.0179"
+    "value": "\\ensuremath{-}7.0179"
   },
   "ProbeLogOneMinusAucVisibleContentMlpOneseven": {
     "json_path": "levels.visible_content.mlp[3].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-6.1658"
+    "value": "\\ensuremath{-}6.1658"
   },
   "ProbeLogOneMinusAucVisibleContentMlpOnesixtwo": {
     "json_path": "levels.visible_content.mlp[1].mean",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "-7.1025"
+    "value": "\\ensuremath{-}7.1025"
   },
   "ProbeNJets": {
     "json_path": "provenance.n_jets_total",
@@ -2511,7 +3663,7 @@
     "json_path": "levels.ee_vs_mm.linear[0].rejection_points['0.90'].median",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$>$4{,}708"
+    "value": "\\ensuremath{>}4{,}708"
   },
   "ProbeRejEeVsMmLinearOneseven": {
     "json_path": "levels.ee_vs_mm.linear[3].rejection_points['0.90'].median",
@@ -2523,7 +3675,7 @@
     "json_path": "levels.ee_vs_mm.linear[1].rejection_points['0.90'].median",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$>$4{,}708"
+    "value": "\\ensuremath{>}4{,}708"
   },
   "ProbeRejEeVsMmMlpFourthree": {
     "json_path": "levels.ee_vs_mm.mlp[2].rejection_points['0.90'].median",
@@ -2535,7 +3687,7 @@
     "json_path": "levels.ee_vs_mm.mlp[0].rejection_points['0.90'].median",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$>$4{,}708"
+    "value": "\\ensuremath{>}4{,}708"
   },
   "ProbeRejEeVsMmMlpOneseven": {
     "json_path": "levels.ee_vs_mm.mlp[3].rejection_points['0.90'].median",
@@ -2547,7 +3699,7 @@
     "json_path": "levels.ee_vs_mm.mlp[1].rejection_points['0.90'].median",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$>$4{,}708"
+    "value": "\\ensuremath{>}4{,}708"
   },
   "ProbeRejRetainedTopologyLinearFourthree": {
     "json_path": "levels.retained_topology.linear[2].rejection_points['0.90'].median",
@@ -2601,13 +3753,13 @@
     "json_path": "levels.visible_content.linear[2].rejection_points['0.90'].median",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$>$2{,}554"
+    "value": "\\ensuremath{>}2{,}554"
   },
   "ProbeRejVisibleContentLinearOneeighteight": {
     "json_path": "levels.visible_content.linear[0].rejection_points['0.90'].median",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$>$2{,}554"
+    "value": "\\ensuremath{>}2{,}554"
   },
   "ProbeRejVisibleContentLinearOneseven": {
     "json_path": "levels.visible_content.linear[3].rejection_points['0.90'].median",
@@ -2619,19 +3771,19 @@
     "json_path": "levels.visible_content.linear[1].rejection_points['0.90'].median",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$>$2{,}554"
+    "value": "\\ensuremath{>}2{,}554"
   },
   "ProbeRejVisibleContentMlpFourthree": {
     "json_path": "levels.visible_content.mlp[2].rejection_points['0.90'].median",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$>$2{,}554"
+    "value": "\\ensuremath{>}2{,}554"
   },
   "ProbeRejVisibleContentMlpOneeighteight": {
     "json_path": "levels.visible_content.mlp[0].rejection_points['0.90'].median",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$>$2{,}554"
+    "value": "\\ensuremath{>}2{,}554"
   },
   "ProbeRejVisibleContentMlpOneseven": {
     "json_path": "levels.visible_content.mlp[3].rejection_points['0.90'].median",
@@ -2643,13 +3795,589 @@
     "json_path": "levels.visible_content.mlp[1].rejection_points['0.90'].median",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$>$2{,}554"
+    "value": "\\ensuremath{>}2{,}554"
   },
   "ProbeRowAlign": {
     "json_path": "provenance.row_alignment_sha256 (first 16)",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\texttt{a9449fd420c473f6}"
+  },
+  "RandCIBvcFourprongDrawOneLinear": {
+    "json_path": "C4.linear.cells[0].ci",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{[-1.269,\\,-0.942]}"
+  },
+  "RandCIBvcFourprongDrawOneMlp": {
+    "json_path": "C4.mlp.cells[0].ci",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{[-1.011,\\,-0.685]}"
+  },
+  "RandCIBvcFourprongDrawThreeLinear": {
+    "json_path": "C4.linear.cells[2].ci",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{[-1.503,\\,-1.171]}"
+  },
+  "RandCIBvcFourprongDrawThreeMlp": {
+    "json_path": "C4.mlp.cells[2].ci",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{[-1.270,\\,-0.943]}"
+  },
+  "RandCIBvcFourprongDrawTwoLinear": {
+    "json_path": "C4.linear.cells[1].ci",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{[-0.976,\\,-0.651]}"
+  },
+  "RandCIBvcFourprongDrawTwoMlp": {
+    "json_path": "C4.mlp.cells[1].ci",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{[-0.796,\\,-0.486]}"
+  },
+  "RandCIVisibleContentDrawOneLinear": {
+    "json_path": "C4.linear.cells[3].ci",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{[-0.906,\\,-0.411]}"
+  },
+  "RandCIVisibleContentDrawOneMlp": {
+    "json_path": "C4.mlp.cells[3].ci",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{[-0.872,\\,-0.381]}"
+  },
+  "RandCIVisibleContentDrawThreeLinear": {
+    "json_path": "C4.linear.cells[5].ci",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{[-1.156,\\,-0.587]}"
+  },
+  "RandCIVisibleContentDrawThreeMlp": {
+    "json_path": "C4.mlp.cells[5].ci",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{[-0.957,\\,-0.362]}"
+  },
+  "RandCIVisibleContentDrawTwoLinear": {
+    "json_path": "C4.linear.cells[4].ci",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{[-0.996,\\,-0.445]}"
+  },
+  "RandCIVisibleContentDrawTwoMlp": {
+    "json_path": "C4.mlp.cells[4].ci",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{[-0.797,\\,-0.268]}"
+  },
+  "RandCostFactorBvcFourprongLinear": {
+    "json_path": "grouping_cost_post_hoc.tasks.bvc_4prong.linear.factor_control",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "1.49"
+  },
+  "RandCostFactorBvcFourprongMlp": {
+    "json_path": "grouping_cost_post_hoc.tasks.bvc_4prong.mlp.factor_control",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "1.41"
+  },
+  "RandCostFactorVisibleContentLinear": {
+    "json_path": "grouping_cost_post_hoc.tasks.visible_content.linear.factor_control",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "1.35"
+  },
+  "RandCostFactorVisibleContentMlp": {
+    "json_path": "grouping_cost_post_hoc.tasks.visible_content.mlp.factor_control",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "1.34"
+  },
+  "RandDiffBvcFourprongDrawOneLinear": {
+    "json_path": "C4.linear.cells[0].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}1.105"
+  },
+  "RandDiffBvcFourprongDrawOneMlp": {
+    "json_path": "C4.mlp.cells[0].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}0.845"
+  },
+  "RandDiffBvcFourprongDrawThreeLinear": {
+    "json_path": "C4.linear.cells[2].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}1.334"
+  },
+  "RandDiffBvcFourprongDrawThreeMlp": {
+    "json_path": "C4.mlp.cells[2].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}1.101"
+  },
+  "RandDiffBvcFourprongDrawTwoLinear": {
+    "json_path": "C4.linear.cells[1].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}0.816"
+  },
+  "RandDiffBvcFourprongDrawTwoMlp": {
+    "json_path": "C4.mlp.cells[1].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}0.639"
+  },
+  "RandDiffVisibleContentDrawOneLinear": {
+    "json_path": "C4.linear.cells[3].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}0.651"
+  },
+  "RandDiffVisibleContentDrawOneMlp": {
+    "json_path": "C4.mlp.cells[3].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}0.613"
+  },
+  "RandDiffVisibleContentDrawThreeLinear": {
+    "json_path": "C4.linear.cells[5].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}0.858"
+  },
+  "RandDiffVisibleContentDrawThreeMlp": {
+    "json_path": "C4.mlp.cells[5].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}0.643"
+  },
+  "RandDiffVisibleContentDrawTwoLinear": {
+    "json_path": "C4.linear.cells[4].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}0.704"
+  },
+  "RandDiffVisibleContentDrawTwoMlp": {
+    "json_path": "C4.mlp.cells[4].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}0.525"
+  },
+  "RandLevelBvcFourprongDrawOne": {
+    "json_path": "table[0].control_log1m_auc",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}4.55"
+  },
+  "RandLevelBvcFourprongDrawThree": {
+    "json_path": "table[8].control_log1m_auc",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}4.61"
+  },
+  "RandLevelBvcFourprongDrawTwo": {
+    "json_path": "table[4].control_log1m_auc",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}4.50"
+  },
+  "RandLevelVisibleContentDrawOne": {
+    "json_path": "table[2].control_log1m_auc",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}6.68"
+  },
+  "RandLevelVisibleContentDrawThree": {
+    "json_path": "table[10].control_log1m_auc",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}6.83"
+  },
+  "RandLevelVisibleContentDrawTwo": {
+    "json_path": "table[6].control_log1m_auc",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{-}6.92"
+  },
+  "RandMatchLinear": {
+    "json_path": "C4.linear.n_match",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "2 of 4"
+  },
+  "RandMatchMlp": {
+    "json_path": "C4.mlp.n_match",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "2 of 4"
+  },
+  "RandMlpSameSign": {
+    "json_path": "C4.{linear,mlp}.cells[*].diff",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "6 of 6"
+  },
+  "RandPFloorLinear": {
+    "json_path": "C4.linear.p_floor",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{0.0625}"
+  },
+  "RandPFloorMlp": {
+    "json_path": "C4.mlp.p_floor",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{0.0625}"
+  },
+  "RandPLinear": {
+    "json_path": "C4.linear.p_at_least",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{0.688}"
+  },
+  "RandPMlp": {
+    "json_path": "C4.mlp.p_at_least",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "\\ensuremath{0.688}"
+  },
+  "RandSemCostFactorBvcFourprongLinear": {
+    "json_path": "grouping_cost_post_hoc.tasks.bvc_4prong.linear.factor_semantic",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "4.42"
+  },
+  "RandSemCostFactorBvcFourprongMlp": {
+    "json_path": "grouping_cost_post_hoc.tasks.bvc_4prong.mlp.factor_semantic",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "3.34"
+  },
+  "RandSemCostFactorVisibleContentLinear": {
+    "json_path": "grouping_cost_post_hoc.tasks.visible_content.linear.factor_semantic",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "2.82"
+  },
+  "RandSemCostFactorVisibleContentMlp": {
+    "json_path": "grouping_cost_post_hoc.tasks.visible_content.mlp.factor_semantic",
+    "sha256": "456693e0f23022629b416ec9ff49ac1b61591494a3d665414e1e46db265e4014",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol/analysis_v2/c4_random_control.json",
+    "value": "2.43"
+  },
+  "RecoveryAdvOneeighteightOverOnesixtwoAtLoneeighteight": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[0].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "+0.0006"
+  },
+  "RecoveryAdvOneeighteightOverOnesixtwoAtLonesixtwo": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[1].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{-}0.0005"
+  },
+  "RecoveryAdvOneeighteightOverOnesixtwoAtRfourtwoQone": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[3].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{-}0.0000"
+  },
+  "RecoveryAdvOneeighteightOverOnesixtwoAtRoneQone": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[7].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{-}0.0017"
+  },
+  "RecoveryAdvOneeighteightOverOnesixtwoAtRonesixQone": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[5].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "+0.0001"
+  },
+  "RecoveryAdvOneeighteightOverOnesixtwoAtRsixthreeQone": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[2].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{-}0.0001"
+  },
+  "RecoveryAdvOneeighteightOverOnesixtwoAtRthreeVIS": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[6].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{-}0.0019"
+  },
+  "RecoveryAdvOneeighteightOverOnesixtwoAtRtwonineQone": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[4].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "+0.0001"
+  },
+  "RecoveryAdvOnesixtwoOverOnesevenAtLoneeighteight": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[0].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "+0.1003"
+  },
+  "RecoveryAdvOnesixtwoOverOnesevenAtLonesixtwo": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[1].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "+0.1133"
+  },
+  "RecoveryAdvOnesixtwoOverOnesevenAtRfourtwoQone": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[3].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "+0.0484"
+  },
+  "RecoveryAdvOnesixtwoOverOnesevenAtRoneQone": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[7].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{-}0.0016"
+  },
+  "RecoveryAdvOnesixtwoOverOnesevenAtRonesixQone": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[5].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{-}0.0040"
+  },
+  "RecoveryAdvOnesixtwoOverOnesevenAtRsixthreeQone": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[2].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "+0.0697"
+  },
+  "RecoveryAdvOnesixtwoOverOnesevenAtRthreeVIS": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[6].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{-}0.0053"
+  },
+  "RecoveryAdvOnesixtwoOverOnesevenAtRtwonineQone": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[4].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "+0.0241"
+  },
+  "RecoveryAdvPOneeighteightOverOnesixtwoAtLoneeighteight": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[0].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.636}"
+  },
+  "RecoveryAdvPOneeighteightOverOnesixtwoAtLonesixtwo": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[1].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.724}"
+  },
+  "RecoveryAdvPOneeighteightOverOnesixtwoAtRfourtwoQone": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[3].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.984}"
+  },
+  "RecoveryAdvPOneeighteightOverOnesixtwoAtRoneQone": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[7].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.169}"
+  },
+  "RecoveryAdvPOneeighteightOverOnesixtwoAtRonesixQone": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[5].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.977}"
+  },
+  "RecoveryAdvPOneeighteightOverOnesixtwoAtRsixthreeQone": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[2].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.948}"
+  },
+  "RecoveryAdvPOneeighteightOverOnesixtwoAtRthreeVIS": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[6].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.0247}"
+  },
+  "RecoveryAdvPOneeighteightOverOnesixtwoAtRtwonineQone": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[4].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.921}"
+  },
+  "RecoveryAdvPOnesixtwoOverOnesevenAtLoneeighteight": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[0].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{4.21\\times10^{-6}}"
+  },
+  "RecoveryAdvPOnesixtwoOverOnesevenAtLonesixtwo": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[1].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{3.71\\times10^{-6}}"
+  },
+  "RecoveryAdvPOnesixtwoOverOnesevenAtRfourtwoQone": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[3].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.000261}"
+  },
+  "RecoveryAdvPOnesixtwoOverOnesevenAtRoneQone": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[7].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.0505}"
+  },
+  "RecoveryAdvPOnesixtwoOverOnesevenAtRonesixQone": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[5].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.0332}"
+  },
+  "RecoveryAdvPOnesixtwoOverOnesevenAtRsixthreeQone": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[2].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{5.39\\times10^{-5}}"
+  },
+  "RecoveryAdvPOnesixtwoOverOnesevenAtRthreeVIS": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[6].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.00126}"
+  },
+  "RecoveryAdvPOnesixtwoOverOnesevenAtRtwonineQone": {
+    "json_path": "secondary.S9.pairs.162_vs_17.linear.rungs[4].p",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "\\ensuremath{0.00232}"
+  },
+  "RecoveryBeatenFourthreeLinear": {
+    "json_path": "secondary.S9.wins.43.linear.n_beaten",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "1 of 15"
+  },
+  "RecoveryBeatenFourthreeMlp": {
+    "json_path": "secondary.S9.wins.43.mlp.n_beaten",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "2 of 15"
+  },
+  "RecoveryBeatenOneeighteightLinear": {
+    "json_path": "secondary.S9.wins.188.linear.n_beaten",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "6 of 24"
+  },
+  "RecoveryBeatenOneeighteightMlp": {
+    "json_path": "secondary.S9.wins.188.mlp.n_beaten",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "1 of 24"
+  },
+  "RecoveryBeatenOnesevenLinear": {
+    "json_path": "secondary.S9.wins.17.linear.n_beaten",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "0 of 9"
+  },
+  "RecoveryBeatenOnesevenMlp": {
+    "json_path": "secondary.S9.wins.17.mlp.n_beaten",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "1 of 9"
+  },
+  "RecoveryBeatenOnesixtwoLinear": {
+    "json_path": "secondary.S9.wins.162.linear.n_beaten",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "2 of 21"
+  },
+  "RecoveryBeatenOnesixtwoMlp": {
+    "json_path": "secondary.S9.wins.162.mlp.n_beaten",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "2 of 21"
+  },
+  "RecoveryClauseOneVerdict": {
+    "json_path": "secondary.S9.clauses[0].verdict",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "not confirmed"
+  },
+  "RecoveryClauseTwoVerdict": {
+    "json_path": "secondary.S9.clauses[1].verdict",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "not confirmed"
+  },
+  "RecoveryCrossAtOwnLinear": {
+    "json_path": "secondary.S9.pairs.*.linear.crossover.crossover_at_coarser_own_rung",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "5 of 6"
+  },
+  "RecoveryCrossAtOwnMlp": {
+    "json_path": "secondary.S9.pairs.*.mlp.crossover.crossover_at_coarser_own_rung",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "5 of 6"
+  },
+  "RecoveryCrossInBracketLinear": {
+    "json_path": "secondary.S9.pairs.*.linear.crossover.coarser_own_rung_in_bracket",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "6 of 6"
+  },
+  "RecoveryCrossInBracketMlp": {
+    "json_path": "secondary.S9.pairs.*.mlp.crossover.coarser_own_rung_in_bracket",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "5 of 6"
+  },
+  "RecoveryNTest": {
+    "json_path": "provenance.n_test",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "60{,}000"
+  },
+  "RecoveryNTrain": {
+    "json_path": "provenance.n_train",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "140{,}000"
+  },
+  "RecoveryOneeighteightOnesixtwoMaxAbs": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[*].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "0.0019"
+  },
+  "RecoveryOneeighteightOnesixtwoNDistinct": {
+    "json_path": "secondary.S9.pairs.188_vs_162.linear.rungs[*].holm_reject",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "0 of 8"
+  },
+  "RecoveryWorstLoss": {
+    "json_path": "secondary.S9.wins.*.*.beaten_by[*].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "0.0088"
   },
   "SignAgreeBvcQcd": {
     "json_path": "secondary.S6.bvc_qcd.n_agree",
@@ -2674,6 +4402,72 @@
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "5 of 6"
+  },
+  "TestConeClauseOneVerdict": {
+    "json_path": "confirmatory.C1.clauses[0].verdict",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "confirmed"
+  },
+  "TestConeClauseThreeVerdict": {
+    "json_path": "confirmatory.C1.clauses[2].verdict",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "inconclusive"
+  },
+  "TestConeClauseTwoVerdict": {
+    "json_path": "confirmatory.C1.clauses[1].verdict",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "confirmed"
+  },
+  "TestConeEquivBound": {
+    "json_path": "confirmatory.C1.clause3_equivalence.smallest_bound_passed_by_all",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.1273"
+  },
+  "TestConeEquivFactor": {
+    "json_path": "confirmatory.C1.clause3_equivalence.smallest_bound_passed_by_all",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.136"
+  },
+  "TestConeEquivP": {
+    "json_path": "confirmatory.C1.clause3_equivalence.p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.314}"
+  },
+  "TestConeEquivTarget": {
+    "json_path": "confirmatory.C1.clause3_equivalence.target_bound",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.1"
+  },
+  "TestConeSeedSdFourthree": {
+    "json_path": "confirmatory.C1.seed_sd_per_level",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.026"
+  },
+  "TestConeSeedSdOneeighteight": {
+    "json_path": "confirmatory.C1.seed_sd_per_level",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.032"
+  },
+  "TestConeSeedSdOneseven": {
+    "json_path": "confirmatory.C1.seed_sd_per_level",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.162"
+  },
+  "TestConeSeedSdOnesixtwo": {
+    "json_path": "confirmatory.C1.seed_sd_per_level",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.026"
   },
   "TostBoundStwoEeVsMmLinear": {
     "json_path": "secondary.S2.ee_vs_mm.linear.target_bound",
@@ -2703,37 +4497,37 @@
     "json_path": "secondary.S2.ee_vs_mm.linear.largest_pair.ci90",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+13.5194,\\,+13.9938]$"
+    "value": "\\ensuremath{[+13.5194,\\,+13.9938]}"
   },
   "TostCIStwoEeVsMmMlp": {
     "json_path": "secondary.S2.ee_vs_mm.mlp.largest_pair.ci90",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+12.2583,\\,+12.5261]$"
+    "value": "\\ensuremath{[+12.2583,\\,+12.5261]}"
   },
   "TostCIStwoRetainedTopologyLinear": {
     "json_path": "secondary.S2.retained_topology.linear.largest_pair.ci90",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.3193,\\,+0.5407]$"
+    "value": "\\ensuremath{[+0.3193,\\,+0.5407]}"
   },
   "TostCIStwoRetainedTopologyMlp": {
     "json_path": "secondary.S2.retained_topology.mlp.largest_pair.ci90",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$[+0.3519,\\,+0.4845]$"
+    "value": "\\ensuremath{[+0.3519,\\,+0.4845]}"
   },
   "TostDiffStwoEeVsMmLinear": {
     "json_path": "secondary.S2.ee_vs_mm.linear.largest_pair.mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "+13.7566$^{\\ast}$"
+    "value": "+13.7566\\ensuremath{^{\\ast}}"
   },
   "TostDiffStwoEeVsMmMlp": {
     "json_path": "secondary.S2.ee_vs_mm.mlp.largest_pair.mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "+12.3922$^{\\ast}$"
+    "value": "+12.3922\\ensuremath{^{\\ast}}"
   },
   "TostDiffStwoRetainedTopologyLinear": {
     "json_path": "secondary.S2.retained_topology.linear.largest_pair.mean_diff",
@@ -2751,25 +4545,25 @@
     "json_path": "secondary.S2.ee_vs_mm.linear.p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$1$"
+    "value": "\\ensuremath{1}"
   },
   "TostPStwoEeVsMmMlp": {
     "json_path": "secondary.S2.ee_vs_mm.mlp.p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$1$"
+    "value": "\\ensuremath{1}"
   },
   "TostPStwoRetainedTopologyLinear": {
     "json_path": "secondary.S2.retained_topology.linear.p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$0.999$"
+    "value": "\\ensuremath{0.999}"
   },
   "TostPStwoRetainedTopologyMlp": {
     "json_path": "secondary.S2.retained_topology.mlp.p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$1$"
+    "value": "\\ensuremath{1}"
   },
   "TostSmallestBoundStwoEeVsMmLinear": {
     "json_path": "secondary.S2.ee_vs_mm.linear.smallest_bound_passed_by_all",
@@ -2823,37 +4617,37 @@
     "json_path": "confirmatory.C1.isotonic.p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$8.79\\times10^{-7}$"
+    "value": "\\ensuremath{8.79\\times10^{-7}}"
   },
   "TrendIsoPSone": {
     "json_path": "secondary.S1.isotonic.p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$1\\times10^{-6}$"
+    "value": "\\ensuremath{1\\times10^{-6}}"
   },
   "TrendPCone": {
     "json_path": "confirmatory.C1.p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$5.27\\times10^{-6}$"
+    "value": "\\ensuremath{5.27\\times10^{-6}}"
   },
   "TrendPMinCone": {
     "json_path": "confirmatory.C1.p_min",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$7.54\\times10^{-7}$"
+    "value": "\\ensuremath{7.54\\times10^{-7}}"
   },
   "TrendPMinSone": {
     "json_path": "secondary.S1.p_min",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$7.54\\times10^{-7}$"
+    "value": "\\ensuremath{7.54\\times10^{-7}}"
   },
   "TrendPSone": {
     "json_path": "secondary.S1.p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$6.03\\times10^{-6}$"
+    "value": "\\ensuremath{6.03\\times10^{-6}}"
   },
   "TrendStatCone": {
     "json_path": "confirmatory.C1.stat",
@@ -2871,13 +4665,13 @@
     "json_path": "confirmatory.C1.argmax_step",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$\\{188,162,43\\}$ vs $\\{17\\}$"
+    "value": "\\ensuremath{\\{188,162,43\\}} vs \\ensuremath{\\{17\\}}"
   },
   "TrendStepSone": {
     "json_path": "secondary.S1.argmax_step",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
-    "value": "$\\{188,162,43\\}$ vs $\\{17\\}$"
+    "value": "\\ensuremath{\\{188,162,43\\}} vs \\ensuremath{\\{17\\}}"
   },
   "UseDiesAtGnthreexQcdSubclass": {
     "json_path": "gn3x_qcd_subclass.dies_at",

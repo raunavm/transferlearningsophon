@@ -1,0 +1,35 @@
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Fine-tuning every pretrained model on the pretraining dataset's own 162-class task and on JetClass's 10-class task: natural log of $1-$macro AUC (lower is better), mean over the five pretraining seeds, fine-tuning seed 1, best-validation epoch. The reference rows are single models. The trend test is the pre-specified max-$T$ test with pretraining seed as the block.}
+\label{tab:finetune}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l rrrr}
+\toprule
+training jets & $10^{3}$ & $10^{4}$ & $10^{5}$ & $10^{6}$ \\
+\midrule
+\multicolumn{5}{@{}l}{\itshape JetClass-II, 162 classes} \\
+188 classes & $-$2.323 & $-$3.585 & $-$3.876 & $-$3.956 \\
+162 classes & $-$2.369 & $-$3.591 & $-$3.881 & $-$3.954 \\
+43 classes & $-$2.498 & $-$3.404 & $-$3.793 & $-$3.912 \\
+17 classes & $-$2.352 & $-$3.311 & $-$3.681 & $-$3.821 \\
+random initialisation & $-$1.360 & $-$2.534 & $-$3.250 & $-$3.622 \\
+self-supervised, seed 1 & $-$1.648 & $-$2.869 & $-$3.333 & $-$3.670 \\
+random-label control, draw 1 & $-$2.542 & $-$3.427 & $-$3.737 & $-$3.883 \\
+trend $p$ & $0.192$$^{\circ}$ & $4.65\times10^{-6}$ & $1.76\times10^{-6}$ & $1.26\times10^{-6}$ \\
+\addlinespace
+\multicolumn{5}{@{}l}{\itshape JetClass, 10 classes} \\
+188 classes & $-$3.006 & $-$3.750 & $-$4.095 & $-$4.253 \\
+162 classes & $-$3.050 & $-$3.773 & $-$4.112 & $-$4.253 \\
+43 classes & $-$3.000 & $-$3.766 & $-$4.080 & $-$4.233 \\
+17 classes & $-$2.939 & $-$3.686 & $-$4.025 & $-$4.174 \\
+random initialisation & $-$2.099 & $-$2.919 & $-$3.585 & $-$3.987 \\
+self-supervised, seed 1 & $-$2.648 & $-$3.380 & $-$3.787 & $-$4.027 \\
+random-label control, draw 1 & $-$2.950 & $-$3.671 & $-$4.054 & $-$4.208 \\
+trend $p$ & $0.056$$^{\circ}$ & $0.000567$ & $2.51\times10^{-7}$ & $6.03\times10^{-6}$ \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\smallskip{\footnotesize $^{\circ}$ not rejected after Holm within the four sizes of its dataset.}
+\end{table}

@@ -1,0 +1,18 @@
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Jet-mass regression from frozen features. The residual is $\ln(m_{\mathrm{pred}}/m_{\mathrm{true}})$ after removing each native class's training-set mean; $\sigma_{\mathrm{eff}}$ is half the smallest interval holding 68\% of it, the tail fraction is the share with $|$residual$|>1$. Ridge probe, mean over five pretraining seeds; columns are the label set, with or without the added mass output.}
+\label{tab:mass}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l rrrrrr}
+\toprule
+& 188 & 162 & 43 & 17 & 162 + mass & 17 + mass \\
+\midrule
+$\sigma_{\mathrm{eff}}$ & 0.3393 & 0.3302 & 0.3228 & 0.3001 & 0.2238 & 0.2170 \\
+standard deviation & 0.631 & 0.626 & 0.618 & 0.601 & 0.494 & 0.490 \\
+tail fraction & 0.064 & 0.062 & 0.060 & 0.056 & 0.034 & 0.033 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
