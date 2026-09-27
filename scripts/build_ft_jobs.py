@@ -1102,7 +1102,8 @@ INITS_LATER = {
 # Complete -- not when its last epoch file appears. On 2026-09-21 mpm-s1's
 # net_epoch-79 files existed while the job was still in its closing validation
 # pass, and that test stopped a premature emit. mpm-s1: job Complete 2026-09-22.
-LAUNCHED_LATER = {"mpm-s1"}
+# rand-d2, rand-d3: pretraining Complete 2026-09-23 / 2026-09-24; launched 2026-09-27.
+LAUNCHED_LATER = {"mpm-s1", "rand-d2", "rand-d3"}
 assert LAUNCHED_LATER <= set(INITS_LATER), LAUNCHED_LATER - set(INITS_LATER)
 # What smoke_checks.py load-log must see for a converted self-supervised init:
 # these 39 tensors (class token, two class-attention blocks, final norm) and the
