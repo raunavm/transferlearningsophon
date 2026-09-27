@@ -1,0 +1,2682 @@
+{
+ "provenance": {
+  "script_sha256": "9fa71913d159f4e75a8763335413b5453ce9a116ef37f7f11aceed9a08018c7a",
+  "trend_module_sha256": "8fd25667065a7e2757f3eb037f88e212427c2802bd04b1b438466e7b3d78d55c",
+  "seed_level_sha256": "d1cfc58c8df3f2e5fa0c73c0fa107ad7918976dd0d05a801ad9136eedf8afed0",
+  "analyses": [
+   {
+    "path": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9"
+   },
+   {
+    "path": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430"
+   },
+   {
+    "path": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc"
+   },
+   {
+    "path": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73"
+   }
+  ],
+  "seed": 20260927,
+  "alpha": 0.05,
+  "n_size_draws": 10000,
+  "n_stat_draws": 2000000,
+  "n_perm_monte_carlo": 9999,
+  "nulls": [
+   "cov",
+   "indep",
+   "indep_upper"
+  ]
+ },
+ "tests": [
+  {
+   "analysis": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+   "json_path": "confirmatory.C1",
+   "task": "bvc_resonant",
+   "probe": "linear",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 31.038681962100338,
+   "p": 5.274643132716049e-06,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.03170046207574776,
+      0.026068816714193907,
+      0.026399595168166062,
+      0.1619022082888335
+     ],
+     "n_ge": 1,
+     "n_draws": 2000000,
+     "p_sim": 9.9999950000025e-07,
+     "size": {
+      "size": 0.124,
+      "size_ci95": [
+       0.1176004943012195,
+       0.13061935225647883
+      ],
+      "n_rejections": 1240,
+      "n_draws": 10000,
+      "method": "exact"
+     },
+     "size_monte_carlo": {
+      "size": 0.1214,
+      "size_ci95": [
+       0.11505984789189826,
+       0.12796153930589182
+      ],
+      "n_rejections": 1214,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.03170046207574776,
+      0.026068816714193907,
+      0.026399595168166062,
+      0.1619022082888335
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.125,
+      "size_ci95": [
+       0.11857791374742555,
+       0.13164134051209261
+      ],
+      "n_rejections": 1250,
+      "n_draws": 10000,
+      "method": "exact"
+     },
+     "size_monte_carlo": {
+      "size": 0.1206,
+      "size_ci95": [
+       0.11427830063238656,
+       0.1271435608080101
+      ],
+      "n_rejections": 1206,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.03170046207574776,
+      0.026068816714193907,
+      0.026399595168166062,
+      0.1619022082888335
+     ],
+     "inflated_level_index": 3,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 11,
+     "n_draws": 2000000,
+     "p_sim": 5.9999970000015e-06,
+     "size": {
+      "size": 0.1309,
+      "size_ci95": [
+       0.12434740081532122,
+       0.1376683616034891
+      ],
+      "n_rejections": 1309,
+      "n_draws": 10000,
+      "method": "exact"
+     },
+     "size_monte_carlo": {
+      "size": 0.1258,
+      "size_ci95": [
+       0.11935994690461116,
+       0.13245883361523977
+      ],
+      "n_rejections": 1258,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+   "json_path": "secondary.S1",
+   "task": "bvc_qcd",
+   "probe": "linear",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 31.234670426798214,
+   "p": 6.028163580246913e-06,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.042210161856454494,
+      0.014155279747051861,
+      0.036953045097399315,
+      0.11984071107282585
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.123,
+      "size_ci95": [
+       0.11662321172592302,
+       0.12959722727062595
+      ],
+      "n_rejections": 1230,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.042210161856454494,
+      0.014155279747051861,
+      0.036953045097399315,
+      0.11984071107282585
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.1079,
+      "size_ci95": [
+       0.1018839542028215,
+       0.11414544989622981
+      ],
+      "n_rejections": 1079,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.042210161856454494,
+      0.014155279747051861,
+      0.036953045097399315,
+      0.11984071107282585
+     ],
+     "inflated_level_index": 3,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 4,
+     "n_draws": 2000000,
+     "p_sim": 2.499998750000625e-06,
+     "size": {
+      "size": 0.1303,
+      "size_ci95": [
+       0.12376046587518792,
+       0.13705565144251758
+      ],
+      "n_rejections": 1303,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+   "json_path": "secondary.S4.per_size.N1000.trend",
+   "task": "jc2_N1000",
+   "probe": "finetune",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 1.4534783418454964,
+   "p": 0.19157328036586935,
+   "rejects": false,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.03758139896644138,
+      0.0676726509830111,
+      0.06242820613945713,
+      0.08284123059044925
+     ],
+     "n_ge": 418979,
+     "n_draws": 2000000,
+     "p_sim": 0.20948989525505238,
+     "size": {
+      "size": 0.0764,
+      "size_ci95": [
+       0.07126753438771563,
+       0.08178074402117505
+      ],
+      "n_rejections": 764,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.03758139896644138,
+      0.0676726509830111,
+      0.06242820613945713,
+      0.08284123059044925
+     ],
+     "n_ge": 380276,
+     "n_draws": 2000000,
+     "p_sim": 0.19013840493079753,
+     "size": {
+      "size": 0.055,
+      "size_ci95": [
+       0.05061179822537788,
+       0.05964955870092175
+      ],
+      "n_rejections": 550,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.03758139896644138,
+      0.0676726509830111,
+      0.06242820613945713,
+      0.08284123059044925
+     ],
+     "inflated_level_index": 3,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 428283,
+     "n_draws": 2000000,
+     "p_sim": 0.21414189292905353,
+     "size": {
+      "size": 0.1121,
+      "size_ci95": [
+       0.10598013010365319,
+       0.11844677644587018
+      ],
+      "n_rejections": 1121,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": false
+  },
+  {
+   "analysis": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+   "json_path": "secondary.S4.per_size.N10000.trend",
+   "task": "jc2_N10000",
+   "probe": "finetune",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 38.8315657092383,
+   "p": 4.646709426440329e-06,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.014596585818505313,
+      0.01726820921466987,
+      0.014078230869094986,
+      0.012851938943624196
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0595,
+      "size_ci95": [
+       0.05494236762452195,
+       0.06431621083728956
+      ],
+      "n_rejections": 595,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.014596585818505313,
+      0.01726820921466987,
+      0.014078230869094986,
+      0.012851938943624196
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0378,
+      "size_ci95": [
+       0.034147263338750775,
+       0.04172496056039499
+      ],
+      "n_rejections": 378,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.014596585818505313,
+      0.01726820921466987,
+      0.014078230869094986,
+      0.012851938943624196
+     ],
+     "inflated_level_index": 1,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0411,
+      "size_ci95": [
+       0.03729323540299498,
+       0.04517686228294089
+      ],
+      "n_rejections": 411,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+   "json_path": "secondary.S4.per_size.N100000.trend",
+   "task": "jc2_N100000",
+   "probe": "finetune",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 34.06524171387695,
+   "p": 1.7582143775720165e-06,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.007681797691625187,
+      0.008392179308662673,
+      0.01544057705163445,
+      0.011690606345293945
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0598,
+      "size_ci95": [
+       0.055231348074443576,
+       0.06462704581444237
+      ],
+      "n_rejections": 598,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.007681797691625187,
+      0.008392179308662673,
+      0.01544057705163445,
+      0.011690606345293945
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0481,
+      "size_ci95": [
+       0.04398825582418151,
+       0.05247740433863589
+      ],
+      "n_rejections": 481,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.007681797691625187,
+      0.008392179308662673,
+      0.01544057705163445,
+      0.011690606345293945
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0461,
+      "size_ci95": [
+       0.04207264525947953,
+       0.0503942742052909
+      ],
+      "n_rejections": 461,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+   "json_path": "secondary.S4.per_size.N1000000.trend",
+   "task": "jc2_N1000000",
+   "probe": "finetune",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 53.94767622080694,
+   "p": 1.2558674125514403e-06,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.0023255475018578247,
+      0.0028856011644762826,
+      0.0044943702784848725,
+      0.006587867346072473
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0882,
+      "size_ci95": [
+       0.08271233825788749,
+       0.09392883379463372
+      ],
+      "n_rejections": 882,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.0023255475018578247,
+      0.0028856011644762826,
+      0.0044943702784848725,
+      0.006587867346072473
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0741,
+      "size_ci95": [
+       0.0690407869498393,
+       0.07940888344760363
+      ],
+      "n_rejections": 741,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.0023255475018578247,
+      0.0028856011644762826,
+      0.0044943702784848725,
+      0.006587867346072473
+     ],
+     "inflated_level_index": 3,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.1134,
+      "size_ci95": [
+       0.10724855840792226,
+       0.11977757574942566
+      ],
+      "n_rejections": 1134,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+   "json_path": "secondary.S3.per_size.N1000.trend",
+   "task": "jc1_N1000",
+   "probe": "finetune",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 2.3020302548944933,
+   "p": 0.05602449644740226,
+   "rejects": false,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.07887785972391324,
+      0.04213239399335996,
+      0.0809883085485301,
+      0.04473807297720362
+     ],
+     "n_ge": 185921,
+     "n_draws": 2000000,
+     "p_sim": 0.09296095351952324,
+     "size": {
+      "size": 0.099,
+      "size_ci95": [
+       0.09321372455899608,
+       0.10502098397613147
+      ],
+      "n_rejections": 990,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.07887785972391324,
+      0.04213239399335996,
+      0.0809883085485301,
+      0.04473807297720362
+     ],
+     "n_ge": 113175,
+     "n_draws": 2000000,
+     "p_sim": 0.056587971706014144,
+     "size": {
+      "size": 0.0542,
+      "size_ci95": [
+       0.04984276971726854,
+       0.05881908325760827
+      ],
+      "n_rejections": 542,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.07887785972391324,
+      0.04213239399335996,
+      0.0809883085485301,
+      0.04473807297720362
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 81864,
+     "n_draws": 2000000,
+     "p_sim": 0.04093247953376023,
+     "size": {
+      "size": 0.0446,
+      "size_ci95": [
+       0.040637326052525166,
+       0.04883054209385682
+      ],
+      "n_rejections": 446,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": false
+  },
+  {
+   "analysis": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+   "json_path": "secondary.S3.per_size.N10000.trend",
+   "task": "jc1_N10000",
+   "probe": "finetune",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 6.722961302818585,
+   "p": 0.0005668985500257202,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.032811917289529334,
+      0.029614268169725816,
+      0.021135058670865976,
+      0.024378261955906748
+     ],
+     "n_ge": 1546,
+     "n_draws": 2000000,
+     "p_sim": 0.0007734996132501933,
+     "size": {
+      "size": 0.0972,
+      "size_ci95": [
+       0.09146191287251432,
+       0.10317387070132154
+      ],
+      "n_rejections": 972,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.032811917289529334,
+      0.029614268169725816,
+      0.021135058670865976,
+      0.024378261955906748
+     ],
+     "n_ge": 117,
+     "n_draws": 2000000,
+     "p_sim": 5.899997050001475e-05,
+     "size": {
+      "size": 0.0537,
+      "size_ci95": [
+       0.04936226379281585,
+       0.058299899562679565
+      ],
+      "n_rejections": 537,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.032811917289529334,
+      0.029614268169725816,
+      0.021135058670865976,
+      0.024378261955906748
+     ],
+     "inflated_level_index": 0,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 4327,
+     "n_draws": 2000000,
+     "p_sim": 0.002163998918000541,
+     "size": {
+      "size": 0.1098,
+      "size_ci95": [
+       0.10373663631664332,
+       0.11609163752496207
+      ],
+      "n_rejections": 1098,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+   "json_path": "secondary.S3.per_size.N100000.trend",
+   "task": "jc1_N100000",
+   "probe": "finetune",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 19.53878599221927,
+   "p": 2.511734825102881e-07,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.01294556559095124,
+      0.003383042843485324,
+      0.009149431211314915,
+      0.0023661312149783555
+     ],
+     "n_ge": 2,
+     "n_draws": 2000000,
+     "p_sim": 1.499999250000375e-06,
+     "size": {
+      "size": 0.0701,
+      "size_ci95": [
+       0.06517165718348382,
+       0.07528044049889941
+      ],
+      "n_rejections": 701,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.01294556559095124,
+      0.003383042843485324,
+      0.009149431211314915,
+      0.0023661312149783555
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0791,
+      "size_ci95": [
+       0.07388330332202622,
+       0.08456334413479533
+      ],
+      "n_rejections": 791,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.01294556559095124,
+      0.003383042843485324,
+      0.009149431211314915,
+      0.0023661312149783555
+     ],
+     "inflated_level_index": 0,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 23,
+     "n_draws": 2000000,
+     "p_sim": 1.1999994000003e-05,
+     "size": {
+      "size": 0.1282,
+      "size_ci95": [
+       0.12170655952819591,
+       0.13491080029024166
+      ],
+      "n_rejections": 1282,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+   "json_path": "secondary.S3.per_size.N1000000.trend",
+   "task": "jc1_N1000000",
+   "probe": "finetune",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 32.390324029720205,
+   "p": 6.028163580246913e-06,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.005067111866018898,
+      0.003757183262803108,
+      0.003983416701650205,
+      0.005815351188508889
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.074,
+      "size_ci95": [
+       0.06894400412908744,
+       0.07930572684856307
+      ],
+      "n_rejections": 740,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.005067111866018898,
+      0.003757183262803108,
+      0.003983416701650205,
+      0.005815351188508889
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.067,
+      "size_ci95": [
+       0.062176305399655456,
+       0.07207767968868264
+      ],
+      "n_rejections": 670,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.005067111866018898,
+      0.003757183262803108,
+      0.003983416701650205,
+      0.005815351188508889
+     ],
+     "inflated_level_index": 3,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.1155,
+      "size_ci95": [
+       0.10929810505612567,
+       0.12192678201301603
+      ],
+      "n_rejections": 1155,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.class_sum|label_X_bb.trend",
+   "task": "label_X_bb|class_sum|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 10.016865994834957,
+   "p": 0.0009946469907407408,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.09125811902269443,
+      0.11089098235622002,
+      0.14720271012170552,
+      0.016676541080042944
+     ],
+     "n_ge": 13,
+     "n_draws": 2000000,
+     "p_sim": 6.99999650000175e-06,
+     "size": {
+      "size": 0.0376,
+      "size_ci95": [
+       0.03395683647481057,
+       0.041515517150736786
+      ],
+      "n_rejections": 376,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.09125811902269443,
+      0.11089098235622002,
+      0.14720271012170552,
+      0.016676541080042944
+     ],
+     "n_ge": 3,
+     "n_draws": 2000000,
+     "p_sim": 1.9999990000005e-06,
+     "size": {
+      "size": 0.0345,
+      "size_ci95": [
+       0.03100900522667056,
+       0.03826537375479422
+      ],
+      "n_rejections": 345,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.09125811902269443,
+      0.11089098235622002,
+      0.14720271012170552,
+      0.016676541080042944
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 25,
+     "n_draws": 2000000,
+     "p_sim": 1.299999350000325e-05,
+     "size": {
+      "size": 0.0427,
+      "size_ci95": [
+       0.038821063575524936,
+       0.04684801194060442
+      ],
+      "n_rejections": 427,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.class_sum|label_X_YY_bbbb.trend",
+   "task": "label_X_YY_bbbb|class_sum|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 3.670678297568505,
+   "p": 8.590133101851852e-05,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.13526374143768216,
+      0.1237007739119371,
+      0.43286600413079096,
+      0.07411246903037451
+     ],
+     "n_ge": 30044,
+     "n_draws": 2000000,
+     "p_sim": 0.015022492488753756,
+     "size": {
+      "size": 0.0707,
+      "size_ci95": [
+       0.0657517350942146,
+       0.07589999794017828
+      ],
+      "n_rejections": 707,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.13526374143768216,
+      0.1237007739119371,
+      0.43286600413079096,
+      0.07411246903037451
+     ],
+     "n_ge": 10962,
+     "n_draws": 2000000,
+     "p_sim": 0.0054814972592513705,
+     "size": {
+      "size": 0.0412,
+      "size_ci95": [
+       0.03738867858193326,
+       0.04528135506298406
+      ],
+      "n_rejections": 412,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.13526374143768216,
+      0.1237007739119371,
+      0.43286600413079096,
+      0.07411246903037451
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 20322,
+     "n_draws": 2000000,
+     "p_sim": 0.01016149491925254,
+     "size": {
+      "size": 0.0507,
+      "size_ci95": [
+       0.04648152570428965,
+       0.05518250598397544
+      ],
+      "n_rejections": 507,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.class_sum|label_X_qq.trend",
+   "task": "label_X_qq|class_sum|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 5.261863438041142,
+   "p": 0.0005822201324588478,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.1623959894583885,
+      0.14974930915663046,
+      0.07064947898714398,
+      0.004529774859697262
+     ],
+     "n_ge": 7586,
+     "n_draws": 2000000,
+     "p_sim": 0.0037934981032509483,
+     "size": {
+      "size": 0.093,
+      "size_ci95": [
+       0.08737675460286537,
+       0.09886154069294502
+      ],
+      "n_rejections": 930,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.1623959894583885,
+      0.14974930915663046,
+      0.07064947898714398,
+      0.004529774859697262
+     ],
+     "n_ge": 3088,
+     "n_draws": 2000000,
+     "p_sim": 0.0015444992277503862,
+     "size": {
+      "size": 0.0696,
+      "size_ci95": [
+       0.06468833985006803,
+       0.07476406186359923
+      ],
+      "n_rejections": 696,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.1623959894583885,
+      0.14974930915663046,
+      0.07064947898714398,
+      0.004529774859697262
+     ],
+     "inflated_level_index": 0,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 21595,
+     "n_draws": 2000000,
+     "p_sim": 0.010797994601002699,
+     "size": {
+      "size": 0.1165,
+      "size_ci95": [
+       0.1102743132301171,
+       0.12294998024968755
+      ],
+      "n_rejections": 1165,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.class_sum|label_X_YY_qqq.trend",
+   "task": "label_X_YY_qqq|class_sum|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 1.5863580838738276,
+   "p": 0.15642481674382716,
+   "rejects": false,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.07205775861838937,
+      0.03901074316850629,
+      0.09826265717295235,
+      0.0189417683004415
+     ],
+     "n_ge": 322352,
+     "n_draws": 2000000,
+     "p_sim": 0.16117641941179028,
+     "size": {
+      "size": 0.0815,
+      "size_ci95": [
+       0.07620995986674665,
+       0.08703524047239074
+      ],
+      "n_rejections": 815,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.07205775861838937,
+      0.03901074316850629,
+      0.09826265717295235,
+      0.0189417683004415
+     ],
+     "n_ge": 277352,
+     "n_draws": 2000000,
+     "p_sim": 0.13867643066178467,
+     "size": {
+      "size": 0.0485,
+      "size_ci95": [
+       0.04437162197967517,
+       0.05289378704026545
+      ],
+      "n_rejections": 485,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.07205775861838937,
+      0.03901074316850629,
+      0.09826265717295235,
+      0.0189417683004415
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 230830,
+     "n_draws": 2000000,
+     "p_sim": 0.11541544229227885,
+     "size": {
+      "size": 0.0445,
+      "size_ci95": [
+       0.040541682033867876,
+       0.048726249494547735
+      ],
+      "n_rejections": 445,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": false
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.class_sum|label_X_YY_qqqq.trend",
+   "task": "label_X_YY_qqqq|class_sum|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 4.363921771472389,
+   "p": 0.0001471876607510288,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.1955340331464959,
+      0.13548738427983129,
+      0.1376850361888151,
+      0.028287351857174
+     ],
+     "n_ge": 36062,
+     "n_draws": 2000000,
+     "p_sim": 0.01803149098425451,
+     "size": {
+      "size": 0.1103,
+      "size_ci95": [
+       0.10422428099569317,
+       0.11660369552485622
+      ],
+      "n_rejections": 1103,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.1955340331464959,
+      0.13548738427983129,
+      0.1376850361888151,
+      0.028287351857174
+     ],
+     "n_ge": 8626,
+     "n_draws": 2000000,
+     "p_sim": 0.004313497843251079,
+     "size": {
+      "size": 0.0632,
+      "size_ci95": [
+       0.05850871798849908,
+       0.06814758919407847
+      ],
+      "n_rejections": 632,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.1955340331464959,
+      0.13548738427983129,
+      0.1376850361888151,
+      0.028287351857174
+     ],
+     "inflated_level_index": 0,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 43600,
+     "n_draws": 2000000,
+     "p_sim": 0.02180048909975545,
+     "size": {
+      "size": 0.1149,
+      "size_ci95": [
+       0.10871245207556174,
+       0.12131279122788564
+      ],
+      "n_rejections": 1149,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.knn|label_X_bb.trend",
+   "task": "label_X_bb|knn|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": -5.907160080224414,
+   "p": 0.9999922136220422,
+   "rejects": false,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.04731266723600527,
+      0.02155770029070972,
+      0.05942678122712578,
+      0.030850192353370925
+     ],
+     "n_ge": 2000000,
+     "n_draws": 2000000,
+     "p_sim": 1.0,
+     "size": {
+      "size": 0.0414,
+      "size_ci95": [
+       0.037579583648594574,
+       0.04549032197779029
+      ],
+      "n_rejections": 414,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.04731266723600527,
+      0.02155770029070972,
+      0.05942678122712578,
+      0.030850192353370925
+     ],
+     "n_ge": 1999999,
+     "n_draws": 2000000,
+     "p_sim": 0.99999950000025,
+     "size": {
+      "size": 0.0548,
+      "size_ci95": [
+       0.050419516065904044,
+       0.05944196480899522
+      ],
+      "n_rejections": 548,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.04731266723600527,
+      0.02155770029070972,
+      0.05942678122712578,
+      0.030850192353370925
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 2000000,
+     "n_draws": 2000000,
+     "p_sim": 1.0,
+     "size": {
+      "size": 0.0421,
+      "size_ci95": [
+       0.03824794557601876,
+       0.04622151264280474
+      ],
+      "n_rejections": 421,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": false
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.knn|label_X_YY_bbbb.trend",
+   "task": "label_X_YY_bbbb|knn|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 7.603530587972718,
+   "p": 1.8838011188271604e-05,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.05362858673475905,
+      0.04781674347449355,
+      0.08460458403364317,
+      0.05530830291449644
+     ],
+     "n_ge": 110,
+     "n_draws": 2000000,
+     "p_sim": 5.5499972250013874e-05,
+     "size": {
+      "size": 0.0646,
+      "size_ci95": [
+       0.0598593839399427,
+       0.06959606656947633
+      ],
+      "n_rejections": 646,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.05362858673475905,
+      0.04781674347449355,
+      0.08460458403364317,
+      0.05530830291449644
+     ],
+     "n_ge": 19,
+     "n_draws": 2000000,
+     "p_sim": 9.9999950000025e-06,
+     "size": {
+      "size": 0.042,
+      "size_ci95": [
+       0.03815244697527522,
+       0.04611707509736453
+      ],
+      "n_rejections": 420,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.05362858673475905,
+      0.04781674347449355,
+      0.08460458403364317,
+      0.05530830291449644
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 170,
+     "n_draws": 2000000,
+     "p_sim": 8.549995725002137e-05,
+     "size": {
+      "size": 0.0474,
+      "size_ci95": [
+       0.04331755824655551,
+       0.05174854197875795
+      ],
+      "n_rejections": 474,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.knn|label_X_qq.trend",
+   "task": "label_X_qq|knn|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 5.78727526053261,
+   "p": 3.064316486625515e-05,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.012791517331580033,
+      0.008168982925473457,
+      0.028926960844375675,
+      0.019074839150539476
+     ],
+     "n_ge": 4586,
+     "n_draws": 2000000,
+     "p_sim": 0.002293498853250573,
+     "size": {
+      "size": 0.0895,
+      "size_ci95": [
+       0.08397514360133393,
+       0.09526524862820872
+      ],
+      "n_rejections": 895,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.012791517331580033,
+      0.008168982925473457,
+      0.028926960844375675,
+      0.019074839150539476
+     ],
+     "n_ge": 434,
+     "n_draws": 2000000,
+     "p_sim": 0.00021749989125005437,
+     "size": {
+      "size": 0.0464,
+      "size_ci95": [
+       0.04235985443445193,
+       0.050706875739866236
+      ],
+      "n_rejections": 464,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.012791517331580033,
+      0.008168982925473457,
+      0.028926960844375675,
+      0.019074839150539476
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 1669,
+     "n_draws": 2000000,
+     "p_sim": 0.0008349995825002088,
+     "size": {
+      "size": 0.0471,
+      "size_ci95": [
+       0.043030192753386313,
+       0.05143609629473477
+      ],
+      "n_rejections": 471,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.knn|label_X_YY_qqq.trend",
+   "task": "label_X_YY_qqq|knn|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 3.9609777213180593,
+   "p": 0.00021500450102880658,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.01274840462634227,
+      0.011551344913453195,
+      0.023678089960130305,
+      0.016732366892532023
+     ],
+     "n_ge": 40211,
+     "n_draws": 2000000,
+     "p_sim": 0.020105989947005028,
+     "size": {
+      "size": 0.0999,
+      "size_ci95": [
+       0.09408985480908043,
+       0.10594431650724956
+      ],
+      "n_rejections": 999,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.01274840462634227,
+      0.011551344913453195,
+      0.023678089960130305,
+      0.016732366892532023
+     ],
+     "n_ge": 5472,
+     "n_draws": 2000000,
+     "p_sim": 0.0027364986317506843,
+     "size": {
+      "size": 0.047,
+      "size_ci95": [
+       0.042934414544901725,
+       0.051331937474623945
+      ],
+      "n_rejections": 470,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.01274840462634227,
+      0.011551344913453195,
+      0.023678089960130305,
+      0.016732366892532023
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 9480,
+     "n_draws": 2000000,
+     "p_sim": 0.004740497629751185,
+     "size": {
+      "size": 0.051,
+      "size_ci95": [
+       0.046769417099720115,
+       0.055494427264619825
+      ],
+      "n_rejections": 510,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.knn|label_X_YY_qqqq.trend",
+   "task": "label_X_YY_qqqq|knn|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": -0.4907082570773236,
+   "p": 0.888860883045589,
+   "rejects": false,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.01742645642452448,
+      0.014412205886583403,
+      0.038694262992610085,
+      0.017756764291245338
+     ],
+     "n_ge": 1752259,
+     "n_draws": 2000000,
+     "p_sim": 0.8761295619352191,
+     "size": {
+      "size": 0.0964,
+      "size_ci95": [
+       0.0906835250637199,
+       0.10235273656955282
+      ],
+      "n_rejections": 964,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.01742645642452448,
+      0.014412205886583403,
+      0.038694262992610085,
+      0.017756764291245338
+     ],
+     "n_ge": 1877749,
+     "n_draws": 2000000,
+     "p_sim": 0.9388745305627347,
+     "size": {
+      "size": 0.0436,
+      "size_ci95": [
+       0.03968113963218419,
+       0.04778736313950635
+      ],
+      "n_rejections": 436,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.01742645642452448,
+      0.014412205886583403,
+      0.038694262992610085,
+      0.017756764291245338
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 1988829,
+     "n_draws": 2000000,
+     "p_sim": 0.9944145027927486,
+     "size": {
+      "size": 0.0477,
+      "size_ci95": [
+       0.043604969717780336,
+       0.05206094182019859
+      ],
+      "n_rejections": 477,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": false
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.mahalanobis|label_X_bb.trend",
+   "task": "label_X_bb|mahalanobis|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 12.949796985172894,
+   "p": 0.0001220703125,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.02415439693671606,
+      0.009080494965725707,
+      0.02321001063691442,
+      0.02446381536369138
+     ],
+     "n_ge": 7,
+     "n_draws": 2000000,
+     "p_sim": 3.999998000001e-06,
+     "size": {
+      "size": 0.0879,
+      "size_ci95": [
+       0.08242097294757565,
+       0.09362037914159793
+      ],
+      "n_rejections": 879,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.02415439693671606,
+      0.009080494965725707,
+      0.02321001063691442,
+      0.02446381536369138
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0663,
+      "size_ci95": [
+       0.06150034596128299,
+       0.07135406614467203
+      ],
+      "n_rejections": 663,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.02415439693671606,
+      0.009080494965725707,
+      0.02321001063691442,
+      0.02446381536369138
+     ],
+     "inflated_level_index": 3,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 33,
+     "n_draws": 2000000,
+     "p_sim": 1.699999150000425e-05,
+     "size": {
+      "size": 0.1072,
+      "size_ci95": [
+       0.10120153570004044,
+       0.11342828498834909
+      ],
+      "n_rejections": 1072,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.mahalanobis|label_X_YY_bbbb.trend",
+   "task": "label_X_YY_bbbb|mahalanobis|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 12.2480622300415,
+   "p": 2.511734825102881e-07,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.056311537082512936,
+      0.06117246089852788,
+      0.15147297877449223,
+      0.14719726340197148
+     ],
+     "n_ge": 21,
+     "n_draws": 2000000,
+     "p_sim": 1.099999450000275e-05,
+     "size": {
+      "size": 0.0749,
+      "size_ci95": [
+       0.06981514726440972,
+       0.08023403867298359
+      ],
+      "n_rejections": 749,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.056311537082512936,
+      0.06117246089852788,
+      0.15147297877449223,
+      0.14719726340197148
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0586,
+      "size_ci95": [
+       0.05407562715815668,
+       0.06338350549234581
+      ],
+      "n_rejections": 586,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.056311537082512936,
+      0.06117246089852788,
+      0.15147297877449223,
+      0.14719726340197148
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 2,
+     "n_draws": 2000000,
+     "p_sim": 1.499999250000375e-06,
+     "size": {
+      "size": 0.0495,
+      "size_ci95": [
+       0.0453303814706066,
+       0.0539344006793399
+      ],
+      "n_rejections": 495,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.mahalanobis|label_X_qq.trend",
+   "task": "label_X_qq|mahalanobis|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 3.7073641301199642,
+   "p": 0.001364625530478395,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.010089909941339627,
+      0.006515782191713448,
+      0.018893843641040256,
+      0.011865584695241701
+     ],
+     "n_ge": 48085,
+     "n_draws": 2000000,
+     "p_sim": 0.02404298797850601,
+     "size": {
+      "size": 0.0967,
+      "size_ci95": [
+       0.09097540626884265,
+       0.10266067607268471
+      ],
+      "n_rejections": 967,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.010089909941339627,
+      0.006515782191713448,
+      0.018893843641040256,
+      0.011865584695241701
+     ],
+     "n_ge": 8855,
+     "n_draws": 2000000,
+     "p_sim": 0.004427997786001107,
+     "size": {
+      "size": 0.0435,
+      "size_ci95": [
+       0.03958555234394763,
+       0.0476830139904561
+      ],
+      "n_rejections": 435,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.010089909941339627,
+      0.006515782191713448,
+      0.018893843641040256,
+      0.011865584695241701
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 14299,
+     "n_draws": 2000000,
+     "p_sim": 0.007149996425001788,
+     "size": {
+      "size": 0.0495,
+      "size_ci95": [
+       0.0453303814706066,
+       0.0539344006793399
+      ],
+      "n_rejections": 495,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.mahalanobis|label_X_YY_qqq.trend",
+   "task": "label_X_YY_qqq|mahalanobis|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 6.0956132453044996,
+   "p": 3.139668531378601e-05,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.012847981971919654,
+      0.006129663931471564,
+      0.015076800972518222,
+      0.012953420516235143
+     ],
+     "n_ge": 6764,
+     "n_draws": 2000000,
+     "p_sim": 0.0033824983087508455,
+     "size": {
+      "size": 0.1071,
+      "size_ci95": [
+       0.10110405394604546,
+       0.1133258262631238
+      ],
+      "n_rejections": 1071,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.012847981971919654,
+      0.006129663931471564,
+      0.015076800972518222,
+      0.012953420516235143
+     ],
+     "n_ge": 324,
+     "n_draws": 2000000,
+     "p_sim": 0.00016249991875004062,
+     "size": {
+      "size": 0.0594,
+      "size_ci95": [
+       0.05484604820151324,
+       0.06421259180231127
+      ],
+      "n_rejections": 594,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.012847981971919654,
+      0.006129663931471564,
+      0.015076800972518222,
+      0.012953420516235143
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 509,
+     "n_draws": 2000000,
+     "p_sim": 0.00025499987250006374,
+     "size": {
+      "size": 0.0469,
+      "size_ci95": [
+       0.042838641507346835,
+       0.05122777349902944
+      ],
+      "n_rejections": 469,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.mahalanobis|label_X_YY_qqqq.trend",
+   "task": "label_X_YY_qqqq|mahalanobis|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 2.0387892197040354,
+   "p": 0.07731735166698817,
+   "rejects": false,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.01834393517377545,
+      0.011942223145914014,
+      0.028701713801798125,
+      0.016003705352695543
+     ],
+     "n_ge": 241651,
+     "n_draws": 2000000,
+     "p_sim": 0.12082593958703021,
+     "size": {
+      "size": 0.0927,
+      "size_ci95": [
+       0.08708509012954496,
+       0.09855338476142002
+      ],
+      "n_rejections": 927,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.01834393517377545,
+      0.011942223145914014,
+      0.028701713801798125,
+      0.016003705352695543
+     ],
+     "n_ge": 144376,
+     "n_draws": 2000000,
+     "p_sim": 0.07218846390576805,
+     "size": {
+      "size": 0.0427,
+      "size_ci95": [
+       0.038821063575524936,
+       0.04684801194060442
+      ],
+      "n_rejections": 427,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.01834393517377545,
+      0.011942223145914014,
+      0.028701713801798125,
+      0.016003705352695543
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 124692,
+     "n_draws": 2000000,
+     "p_sim": 0.06234646882676559,
+     "size": {
+      "size": 0.0463,
+      "size_ci95": [
+       0.04226411275474305,
+       0.050602680500642705
+      ],
+      "n_rejections": 463,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": false
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.iad_hgb|label_X_bb.trend",
+   "task": "label_X_bb|iad_hgb|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 1.4570720480994488,
+   "p": 0.1894237377025463,
+   "rejects": false,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.04158612505212738,
+      0.035293795078009525,
+      0.05761715643069098,
+      0.029396596174942106
+     ],
+     "n_ge": 323277,
+     "n_draws": 2000000,
+     "p_sim": 0.1616389191805404,
+     "size": {
+      "size": 0.0434,
+      "size_ci95": [
+       0.03948997083131689,
+       0.0475786590844446
+      ],
+      "n_rejections": 434,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.04158612505212738,
+      0.035293795078009525,
+      0.05761715643069098,
+      0.029396596174942106
+     ],
+     "n_ge": 351841,
+     "n_draws": 2000000,
+     "p_sim": 0.175920912039544,
+     "size": {
+      "size": 0.0417,
+      "size_ci95": [
+       0.03786598769786934,
+       0.045803726058552846
+      ],
+      "n_rejections": 417,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.04158612505212738,
+      0.035293795078009525,
+      0.05761715643069098,
+      0.029396596174942106
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 286102,
+     "n_draws": 2000000,
+     "p_sim": 0.14305142847428576,
+     "size": {
+      "size": 0.0411,
+      "size_ci95": [
+       0.03729323540299498,
+       0.04517686228294089
+      ],
+      "n_rejections": 411,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": false
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.iad_hgb|label_X_YY_bbbb.trend",
+   "task": "label_X_YY_bbbb|iad_hgb|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 4.597515021761972,
+   "p": 0.0008934240772890947,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.021604662137219614,
+      0.017340668427080458,
+      0.01605739096941487,
+      0.045652835644021936
+     ],
+     "n_ge": 25008,
+     "n_draws": 2000000,
+     "p_sim": 0.012504493747753127,
+     "size": {
+      "size": 0.1109,
+      "size_ci95": [
+       0.10480950719080166,
+       0.11721811260670366
+      ],
+      "n_rejections": 1109,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.021604662137219614,
+      0.017340668427080458,
+      0.01605739096941487,
+      0.045652835644021936
+     ],
+     "n_ge": 14006,
+     "n_draws": 2000000,
+     "p_sim": 0.007003496498251751,
+     "size": {
+      "size": 0.0932,
+      "size_ci95": [
+       0.08757120759123316,
+       0.09906696798867799
+      ],
+      "n_rejections": 932,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.021604662137219614,
+      0.017340668427080458,
+      0.01605739096941487,
+      0.045652835644021936
+     ],
+     "inflated_level_index": 3,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 44743,
+     "n_draws": 2000000,
+     "p_sim": 0.022371988814005594,
+     "size": {
+      "size": 0.132,
+      "size_ci95": [
+       0.12542356740810023,
+       0.13879154447795725
+      ],
+      "n_rejections": 1320,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.iad_hgb|label_X_qq.trend",
+   "task": "label_X_qq|iad_hgb|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 8.497859372507559,
+   "p": 0.00012784730259773663,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.027556068268818904,
+      0.0180309945813544,
+      0.05805458829808552,
+      0.036520715860509596
+     ],
+     "n_ge": 197,
+     "n_draws": 2000000,
+     "p_sim": 9.899995050002475e-05,
+     "size": {
+      "size": 0.0608,
+      "size_ci95": [
+       0.056194853902169564,
+       0.06566292528889528
+      ],
+      "n_rejections": 608,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.027556068268818904,
+      0.0180309945813544,
+      0.05805458829808552,
+      0.036520715860509596
+     ],
+     "n_ge": 9,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-06,
+     "size": {
+      "size": 0.0477,
+      "size_ci95": [
+       0.043604969717780336,
+       0.05206094182019859
+      ],
+      "n_rejections": 477,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.027556068268818904,
+      0.0180309945813544,
+      0.05805458829808552,
+      0.036520715860509596
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 113,
+     "n_draws": 2000000,
+     "p_sim": 5.699997150001425e-05,
+     "size": {
+      "size": 0.0515,
+      "size_ci95": [
+       0.04724932798861333,
+       0.05601420442002797
+      ],
+      "n_rejections": 515,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.iad_hgb|label_X_YY_qqq.trend",
+   "task": "label_X_YY_qqq|iad_hgb|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 12.081660132814399,
+   "p": 0.0006157517923739712,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.03446263408798453,
+      0.03259318366716263,
+      0.0546150794570005,
+      0.028929373421913623
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0401,
+      "size_ci95": [
+       0.03633915188019463,
+       0.04413158741768167
+      ],
+      "n_rejections": 401,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.03446263408798453,
+      0.03259318366716263,
+      0.0546150794570005,
+      0.028929373421913623
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0397,
+      "size_ci95": [
+       0.03595769894524389,
+       0.04371329762774314
+      ],
+      "n_rejections": 397,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.03446263408798453,
+      0.03259318366716263,
+      0.0546150794570005,
+      0.028929373421913623
+     ],
+     "inflated_level_index": 2,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 2,
+     "n_draws": 2000000,
+     "p_sim": 1.499999250000375e-06,
+     "size": {
+      "size": 0.0435,
+      "size_ci95": [
+       0.03958555234394763,
+       0.0476830139904561
+      ],
+      "n_rejections": 435,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+   "json_path": "section5.tests.iad_hgb|label_X_YY_qqqq.trend",
+   "task": "label_X_YY_qqqq|iad_hgb|4000",
+   "probe": "anomaly",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 17.898480778871775,
+   "p": 3.516428755144033e-06,
+   "rejects": true,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.038272956375431766,
+      0.02020494618845591,
+      0.03467993195986945,
+      0.043428462624167476
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0631,
+      "size_ci95": [
+       0.05841226712265585,
+       0.0680441013055228
+      ],
+      "n_rejections": 631,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.038272956375431766,
+      0.02020494618845591,
+      0.03467993195986945,
+      0.043428462624167476
+     ],
+     "n_ge": 0,
+     "n_draws": 2000000,
+     "p_sim": 4.99999750000125e-07,
+     "size": {
+      "size": 0.0663,
+      "size_ci95": [
+       0.06150034596128299,
+       0.07135406614467203
+      ],
+      "n_rejections": 663,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.038272956375431766,
+      0.02020494618845591,
+      0.03467993195986945,
+      0.043428462624167476
+     ],
+     "inflated_level_index": 3,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 3,
+     "n_draws": 2000000,
+     "p_sim": 1.9999990000005e-06,
+     "size": {
+      "size": 0.1149,
+      "size_ci95": [
+       0.10871245207556174,
+       0.12131279122788564
+      ],
+      "n_rejections": 1149,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": true
+  },
+  {
+   "analysis": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+   "json_path": "secondary.real_data_top.trend",
+   "task": "aoj_top",
+   "probe": "fit",
+   "levels": [
+    188,
+    162,
+    43,
+    17
+   ],
+   "n_blocks": 5,
+   "stat": 0.4669841751427493,
+   "p": 0.6158526385271991,
+   "rejects": false,
+   "nulls": {
+    "cov": {
+     "seed_sd": [
+      0.21459507285240403,
+      0.7578840994432563,
+      0.38141190708739037,
+      0.10918901180671886
+     ],
+     "n_ge": 1208802,
+     "n_draws": 2000000,
+     "p_sim": 0.604401197799401,
+     "size": {
+      "size": 0.0341,
+      "size_ci95": [
+       0.030629184232697615,
+       0.03784545825996719
+      ],
+      "n_rejections": 341,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep": {
+     "seed_sd": [
+      0.21459507285240403,
+      0.7578840994432563,
+      0.38141190708739037,
+      0.10918901180671886
+     ],
+     "n_ge": 1218780,
+     "n_draws": 2000000,
+     "p_sim": 0.6093901953049023,
+     "size": {
+      "size": 0.034,
+      "size_ci95": [
+       0.030534249401637577,
+       0.037740459053245086
+      ],
+      "n_rejections": 340,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    },
+    "indep_upper": {
+     "seed_sd": [
+      0.21459507285240403,
+      0.7578840994432563,
+      0.38141190708739037,
+      0.10918901180671886
+     ],
+     "inflated_level_index": 1,
+     "sd_factor": 2.873555634078219,
+     "n_ge": 1163354,
+     "n_draws": 2000000,
+     "p_sim": 0.5816772091613954,
+     "size": {
+      "size": 0.0477,
+      "size_ci95": [
+       0.043604969717780336,
+       0.05206094182019859
+      ],
+      "n_rejections": 477,
+      "n_draws": 10000,
+      "method": "monte-carlo 9999"
+     }
+    }
+   },
+   "survives_every_null": false
+  }
+ ],
+ "summary": {
+  "n_tests": 31,
+  "n_rejected": 23,
+  "n_rejected_surviving_every_null": 23,
+  "rejected_not_surviving": [],
+  "max_size": {
+   "cov": 0.124,
+   "indep": 0.125,
+   "indep_upper": 0.132
+  }
+ }
+}

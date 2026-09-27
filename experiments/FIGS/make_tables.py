@@ -296,6 +296,7 @@ def input_paths(root: pathlib.Path) -> dict:
             "design_arm": root / "configs" / "arms" / "L188.yaml",
             "literature": data / "literature_facts.json",
             "trend_sim": data / "trend_size_sim" / "trend_size_sim.json",
+            "trend_holm": data / "trend_size_sim" / "holm_under_simulated_nulls.json",
             "ft_recipes": data / "ft_recipes" / "recipes_w2b_bench_v2.json",
             "ft_leg_specs": sorted((root / "experiments" / "FT" / "k8s").glob("job-ft-legs-w[23]*-raunav.yaml")),
             "ft_bench_specs": sorted((root / "experiments" / "FT" / "k8s").glob("job-ft-legs-bench-v2-*-raunav.yaml")),
@@ -878,6 +879,21 @@ def emit_trend_sim(em: Emitter, T: dict, src: pathlib.Path) -> None:
     for k, n in names.items():
         em.macro(f"TrendSimMaxSize{n}", fmt(100 * S["max_size"][k], 1) + "\\%", src,
                  f"summary.max_size.{k}", "largest size over every trend test")
+
+
+def emit_trend_holm(em: Emitter, H: dict, src: pathlib.Path) -> None:
+    """Each family's Holm correction applied to the simulated p-values."""
+    names = {"cov": "Cov", "indep": "Indep", "indep_upper": "IndepUpper"}
+    F = H["families"]
+    a = F["anomaly (all tests)"]
+    base = "families.anomaly (all tests)"
+    for k, n in names.items():
+        em.macro(f"TrendSimAnomalyNRejected{n}", str(a[f"n_rejected_{k}"]), src, f"{base}.n_rejected_{k}")
+    lost = sorted({x for v in a["lost"].values() for x in v})
+    em.macro("TrendSimAnomalyNLostAny", str(len(lost)), src, f"{base}.lost (union over nulls)")
+    ft = [f for name, f in F.items() if "fine-tuning" in name]
+    n_lost = sum(len(v) for f in ft for v in f["lost"].values())
+    em.macro("TrendSimFtNLost", str(n_lost), src, "families.*fine-tuning*.lost (count)")
 
 
 def emit_training_design(em: Emitter, spec: pathlib.Path, arch: pathlib.Path,
@@ -1788,7 +1804,13 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     if "literature" in have:
         emit_literature(em, paths["literature"])
     if "trend_sim" in have:
+        check_inputs_unchanged(paths["trend_sim"], root)
         emit_trend_sim(em, json.loads(paths["trend_sim"].read_text()), paths["trend_sim"])
+        if "trend_holm" not in have:
+            raise SystemExit("FATAL: the trend simulation has no Holm summary; run "
+                             "trend_size_sim.py --holm-from")
+        check_inputs_unchanged(paths["trend_holm"], root)
+        emit_trend_holm(em, json.loads(paths["trend_holm"].read_text()), paths["trend_holm"])
     else:
         missing.append(f"trend-test size simulation -- {paths['trend_sim']}")
     if "mass_specs" in have and paths["mass_specs"]:

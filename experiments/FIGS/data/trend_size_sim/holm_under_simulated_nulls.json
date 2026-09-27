@@ -1,0 +1,59 @@
+{
+ "provenance": {
+  "input": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+  "input_sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+  "script_sha256": "5676cafb2db04088ccab511972fd64b0d442d21d6af4ff883c2d615e071b5f16",
+  "alpha": 0.05
+ },
+ "families": {
+  "anomaly (all tests)": {
+   "n_tests": 20,
+   "n_rejected_permutation": 15,
+   "lost": {
+    "cov": [
+     "section5.tests.class_sum|label_X_YY_bbbb.trend",
+     "section5.tests.class_sum|label_X_YY_qqqq.trend",
+     "section5.tests.knn|label_X_YY_qqq.trend",
+     "section5.tests.mahalanobis|label_X_qq.trend",
+     "section5.tests.iad_hgb|label_X_YY_bbbb.trend"
+    ],
+    "indep": [],
+    "indep_upper": [
+     "section5.tests.class_sum|label_X_YY_bbbb.trend",
+     "section5.tests.class_sum|label_X_qq.trend",
+     "section5.tests.class_sum|label_X_YY_qqqq.trend",
+     "section5.tests.knn|label_X_YY_qqq.trend",
+     "section5.tests.mahalanobis|label_X_qq.trend",
+     "section5.tests.iad_hgb|label_X_YY_bbbb.trend"
+    ]
+   },
+   "n_rejected_cov": 10,
+   "n_rejected_indep": 15,
+   "n_rejected_indep_upper": 9
+  },
+  "JetClass-II fine-tuning (sizes)": {
+   "n_tests": 4,
+   "n_rejected_permutation": 3,
+   "lost": {
+    "cov": [],
+    "indep": [],
+    "indep_upper": []
+   },
+   "n_rejected_cov": 3,
+   "n_rejected_indep": 3,
+   "n_rejected_indep_upper": 3
+  },
+  "JetClass fine-tuning (sizes)": {
+   "n_tests": 4,
+   "n_rejected_permutation": 3,
+   "lost": {
+    "cov": [],
+    "indep": [],
+    "indep_upper": []
+   },
+   "n_rejected_cov": 3,
+   "n_rejected_indep": 3,
+   "n_rejected_indep_upper": 4
+  }
+ }
+}

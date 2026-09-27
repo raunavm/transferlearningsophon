@@ -63,6 +63,7 @@ from scipy import stats
 REPO = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 from src.stats import trend as T                                   # noqa: E402
+from src.stats.inference import holm                                # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("seed_level", REPO / "experiments/STATS/seed_level.py")
 S = importlib.util.module_from_spec(_spec)
@@ -243,6 +244,45 @@ def size(C, b, order, kw, exact, seed, pool, workers) -> dict:
             "n_draws": N_SIZE, "method": "exact" if exact else f"monte-carlo {N_PERM_MC}"}
 
 
+# ------------------------------------------------------------ Holm families
+
+# The multiplicity families the analyses correct within (experiments/STATS/seed_level.py):
+# the anomaly tests over all of them, each fine-tuning dataset over its sizes.
+# C1 is in the confirmatory family with tests that are not trend tests, and S1
+# and the real-data test stand alone, so their own simulated p is the answer.
+HOLM_FAMILIES = {"anomaly (all tests)": "section5.tests.",
+                 "JetClass-II fine-tuning (sizes)": "secondary.S4.per_size.",
+                 "JetClass fine-tuning (sizes)": "secondary.S3.per_size."}
+
+
+def holm_under_nulls(rows: list[dict]) -> dict:
+    """Each family's Holm correction applied to its permutation p and to its simulated p."""
+    out = {}
+    for name, prefix in HOLM_FAMILIES.items():
+        fam = [r for r in rows if r["json_path"].startswith(prefix)]
+        if not fam:
+            continue
+        perm = holm([r["p"] for r in fam], ALPHA)
+        res = {"n_tests": len(fam), "n_rejected_permutation": int(perm.sum()), "lost": {}}
+        for k in NULLS:
+            sim = holm([r["nulls"][k]["p_sim"] for r in fam], ALPHA)
+            res[f"n_rejected_{k}"] = int(sim.sum())
+            res["lost"][k] = [r["json_path"] for r, a, b in zip(fam, perm, sim) if a and not b]
+        out[name] = res
+    return out
+
+
+def resummarise(path: pathlib.Path, out: pathlib.Path) -> int:
+    """Holm under the simulated nulls from a finished simulation, without rerunning it."""
+    doc = json.loads(path.read_text())
+    res = {"provenance": {"input": str(path.resolve().relative_to(REPO)), "input_sha256": sha256(path),
+                          "script_sha256": sha256(__file__), "alpha": ALPHA},
+           "families": holm_under_nulls(doc["tests"])}
+    out.write_text(json.dumps(res, indent=1))
+    print(json.dumps(res["families"], indent=1))
+    return 0
+
+
 # ------------------------------------------------------------ main
 
 def main(argv=None) -> int:
@@ -250,7 +290,11 @@ def main(argv=None) -> int:
     ap.add_argument("--analyses", nargs="+", type=pathlib.Path, default=ANALYSES)
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 2))
+    ap.add_argument("--holm-from", type=pathlib.Path, default=None,
+                    help="a finished trend_size_sim.json: write only the Holm families to --out")
     a = ap.parse_args(argv)
+    if a.holm_from is not None:
+        return resummarise(a.holm_from, a.out)
     out_file = a.out / "trend_size_sim.json"
     if out_file.exists():
         raise SystemExit(f"FATAL: {out_file} exists; write a new directory")
@@ -303,7 +347,8 @@ def main(argv=None) -> int:
                        "n_rejected_surviving_every_null": sum(r["survives_every_null"] for r in rejected),
                        "rejected_not_surviving": [r["json_path"] for r in rejected
                                                   if not r["survives_every_null"]],
-                       "max_size": {k: max(r["nulls"][k]["size"]["size"] for r in rows) for k in NULLS}}}
+                       "max_size": {k: max(r["nulls"][k]["size"]["size"] for r in rows) for k in NULLS},
+                       "holm_families": holm_under_nulls(rows)}}
     a.out.mkdir(parents=True, exist_ok=True)
     out_file.write_text(json.dumps(out, indent=1))
     print(json.dumps(out["summary"], indent=1))

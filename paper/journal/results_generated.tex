@@ -10,7 +10,6 @@
 %
 % MISSING INPUTS -- no macro was emitted for these:
 %   C2 and C3 as registered: community benchmarks at the last epoch (amendment A6) -- experiments/FIGS/data/bench_v3_metrics*/bench_metrics_last.json
-%   trend-test size simulation -- /Users/raunavmendiratta/transferlearningsophon/experiments/FIGS/data/trend_size_sim/trend_size_sim.json
 %   per-arm parameters and MACs -- flops_by_arm.json (see docs/RECORD.md 2.1)
 %
 % SKIPPED TABLES:
@@ -595,6 +594,29 @@
 \newcommand{\LitJetClassTwoPileupMean}{50}  % experiments/FIGS/data/literature_facts.json :: facts[7].value :: sha256 aa0e7f48a61df17f :: arXiv:2405.12972v1 Sec. II, p. 2
 \newcommand{\LitJetClassTwoJetRadius}{0.8}  % experiments/FIGS/data/literature_facts.json :: facts[8].value :: sha256 aa0e7f48a61df17f :: arXiv:2405.12972v1 Sec. II, p. 2
 \newcommand{\LitAtlasUnifiedEffDropPercent}{10}  % experiments/FIGS/data/literature_facts.json :: facts[9].value :: sha256 aa0e7f48a61df17f :: ATL-PHYS-PUB-2026-013 Sec. 6.5, p. 22
+\newcommand{\TrendSimNDraws}{2{,}000{,}000}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: provenance.n_stat_draws :: sha256 a5d227bb37edc601
+\newcommand{\TrendSimNSizeDraws}{10{,}000}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: provenance.n_size_draws :: sha256 a5d227bb37edc601
+\newcommand{\TrendSimSizeConeCov}{12.4\%}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: tests[0].nulls.cov.size.size :: sha256 a5d227bb37edc601 :: percent, nominal 5%
+\newcommand{\TrendSimNGeConeCov}{1}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: tests[0].nulls.cov.n_ge :: sha256 a5d227bb37edc601
+\newcommand{\TrendSimPConeCov}{\ensuremath{1\times10^{-6}}}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: tests[0].nulls.cov.p_sim :: sha256 a5d227bb37edc601
+\newcommand{\TrendSimSizeConeIndep}{12.5\%}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: tests[0].nulls.indep.size.size :: sha256 a5d227bb37edc601 :: percent, nominal 5%
+\newcommand{\TrendSimNGeConeIndep}{0}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: tests[0].nulls.indep.n_ge :: sha256 a5d227bb37edc601
+\newcommand{\TrendSimPConeIndep}{\ensuremath{5\times10^{-7}}}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: tests[0].nulls.indep.p_sim :: sha256 a5d227bb37edc601
+\newcommand{\TrendSimSizeConeIndepUpper}{13.1\%}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: tests[0].nulls.indep_upper.size.size :: sha256 a5d227bb37edc601 :: percent, nominal 5%
+\newcommand{\TrendSimNGeConeIndepUpper}{11}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: tests[0].nulls.indep_upper.n_ge :: sha256 a5d227bb37edc601
+\newcommand{\TrendSimPConeIndepUpper}{\ensuremath{6\times10^{-6}}}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: tests[0].nulls.indep_upper.p_sim :: sha256 a5d227bb37edc601
+\newcommand{\TrendSimSdFactor}{2.87}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: tests[0].nulls.indep_upper.sd_factor :: sha256 a5d227bb37edc601
+\newcommand{\TrendSimNTests}{31}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: summary.n_tests :: sha256 a5d227bb37edc601
+\newcommand{\TrendSimNRejected}{23}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: summary.n_rejected :: sha256 a5d227bb37edc601
+\newcommand{\TrendSimNRejectedSurviving}{23}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: summary.n_rejected_surviving_every_null :: sha256 a5d227bb37edc601 :: p_sim <= 0.05 under all three nulls
+\newcommand{\TrendSimMaxSizeCov}{12.4\%}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: summary.max_size.cov :: sha256 a5d227bb37edc601 :: largest size over every trend test
+\newcommand{\TrendSimMaxSizeIndep}{12.5\%}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: summary.max_size.indep :: sha256 a5d227bb37edc601 :: largest size over every trend test
+\newcommand{\TrendSimMaxSizeIndepUpper}{13.2\%}  % experiments/FIGS/data/trend_size_sim/trend_size_sim.json :: summary.max_size.indep_upper :: sha256 a5d227bb37edc601 :: largest size over every trend test
+\newcommand{\TrendSimAnomalyNRejectedCov}{10}  % experiments/FIGS/data/trend_size_sim/holm_under_simulated_nulls.json :: families.anomaly (all tests).n_rejected_cov :: sha256 5e2c2f7037c11e56
+\newcommand{\TrendSimAnomalyNRejectedIndep}{15}  % experiments/FIGS/data/trend_size_sim/holm_under_simulated_nulls.json :: families.anomaly (all tests).n_rejected_indep :: sha256 5e2c2f7037c11e56
+\newcommand{\TrendSimAnomalyNRejectedIndepUpper}{9}  % experiments/FIGS/data/trend_size_sim/holm_under_simulated_nulls.json :: families.anomaly (all tests).n_rejected_indep_upper :: sha256 5e2c2f7037c11e56
+\newcommand{\TrendSimAnomalyNLostAny}{6}  % experiments/FIGS/data/trend_size_sim/holm_under_simulated_nulls.json :: families.anomaly (all tests).lost (union over nulls) :: sha256 5e2c2f7037c11e56
+\newcommand{\TrendSimFtNLost}{0}  % experiments/FIGS/data/trend_size_sim/holm_under_simulated_nulls.json :: families.*fine-tuning*.lost (count) :: sha256 5e2c2f7037c11e56
 \newcommand{\DesignMassLambda}{5.0}  % experiments/MTX/k8s/job-mtx-l162_mass-s1-raunav.yaml :: --mass-lambda :: sha256 8882459fe5520795 :: identical in all ten mass-output pretraining specs
 \newcommand{\FtRecipeNRuns}{735}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs (count) :: sha256 cb620e950901c5be
 \newcommand{\FtRecipeLr}{\ensuremath{1\times10^{-4}}}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs[*].lr, pretrained starts :: sha256 cb620e950901c5be

@@ -6689,6 +6689,144 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{6.03\\times10^{-6}}"
   },
+  "TrendSimAnomalyNLostAny": {
+    "json_path": "families.anomaly (all tests).lost (union over nulls)",
+    "sha256": "5e2c2f7037c11e56a52c32f109f11a5aaf072458c710f2ee4138b3b7969294a5",
+    "source_file": "experiments/FIGS/data/trend_size_sim/holm_under_simulated_nulls.json",
+    "value": "6"
+  },
+  "TrendSimAnomalyNRejectedCov": {
+    "json_path": "families.anomaly (all tests).n_rejected_cov",
+    "sha256": "5e2c2f7037c11e56a52c32f109f11a5aaf072458c710f2ee4138b3b7969294a5",
+    "source_file": "experiments/FIGS/data/trend_size_sim/holm_under_simulated_nulls.json",
+    "value": "10"
+  },
+  "TrendSimAnomalyNRejectedIndep": {
+    "json_path": "families.anomaly (all tests).n_rejected_indep",
+    "sha256": "5e2c2f7037c11e56a52c32f109f11a5aaf072458c710f2ee4138b3b7969294a5",
+    "source_file": "experiments/FIGS/data/trend_size_sim/holm_under_simulated_nulls.json",
+    "value": "15"
+  },
+  "TrendSimAnomalyNRejectedIndepUpper": {
+    "json_path": "families.anomaly (all tests).n_rejected_indep_upper",
+    "sha256": "5e2c2f7037c11e56a52c32f109f11a5aaf072458c710f2ee4138b3b7969294a5",
+    "source_file": "experiments/FIGS/data/trend_size_sim/holm_under_simulated_nulls.json",
+    "value": "9"
+  },
+  "TrendSimFtNLost": {
+    "json_path": "families.*fine-tuning*.lost (count)",
+    "sha256": "5e2c2f7037c11e56a52c32f109f11a5aaf072458c710f2ee4138b3b7969294a5",
+    "source_file": "experiments/FIGS/data/trend_size_sim/holm_under_simulated_nulls.json",
+    "value": "0"
+  },
+  "TrendSimMaxSizeCov": {
+    "json_path": "summary.max_size.cov",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "12.4\\%"
+  },
+  "TrendSimMaxSizeIndep": {
+    "json_path": "summary.max_size.indep",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "12.5\\%"
+  },
+  "TrendSimMaxSizeIndepUpper": {
+    "json_path": "summary.max_size.indep_upper",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "13.2\\%"
+  },
+  "TrendSimNDraws": {
+    "json_path": "provenance.n_stat_draws",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "2{,}000{,}000"
+  },
+  "TrendSimNGeConeCov": {
+    "json_path": "tests[0].nulls.cov.n_ge",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "1"
+  },
+  "TrendSimNGeConeIndep": {
+    "json_path": "tests[0].nulls.indep.n_ge",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "0"
+  },
+  "TrendSimNGeConeIndepUpper": {
+    "json_path": "tests[0].nulls.indep_upper.n_ge",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "11"
+  },
+  "TrendSimNRejected": {
+    "json_path": "summary.n_rejected",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "23"
+  },
+  "TrendSimNRejectedSurviving": {
+    "json_path": "summary.n_rejected_surviving_every_null",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "23"
+  },
+  "TrendSimNSizeDraws": {
+    "json_path": "provenance.n_size_draws",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "10{,}000"
+  },
+  "TrendSimNTests": {
+    "json_path": "summary.n_tests",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "31"
+  },
+  "TrendSimPConeCov": {
+    "json_path": "tests[0].nulls.cov.p_sim",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "\\ensuremath{1\\times10^{-6}}"
+  },
+  "TrendSimPConeIndep": {
+    "json_path": "tests[0].nulls.indep.p_sim",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "\\ensuremath{5\\times10^{-7}}"
+  },
+  "TrendSimPConeIndepUpper": {
+    "json_path": "tests[0].nulls.indep_upper.p_sim",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "\\ensuremath{6\\times10^{-6}}"
+  },
+  "TrendSimSdFactor": {
+    "json_path": "tests[0].nulls.indep_upper.sd_factor",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "2.87"
+  },
+  "TrendSimSizeConeCov": {
+    "json_path": "tests[0].nulls.cov.size.size",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "12.4\\%"
+  },
+  "TrendSimSizeConeIndep": {
+    "json_path": "tests[0].nulls.indep.size.size",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "12.5\\%"
+  },
+  "TrendSimSizeConeIndepUpper": {
+    "json_path": "tests[0].nulls.indep_upper.size.size",
+    "sha256": "a5d227bb37edc6016acfb51759c478db58292db7010e9a5a9b81952363308ec3",
+    "source_file": "experiments/FIGS/data/trend_size_sim/trend_size_sim.json",
+    "value": "13.1\\%"
+  },
   "TrendStatCone": {
     "json_path": "confirmatory.C1.stat",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",

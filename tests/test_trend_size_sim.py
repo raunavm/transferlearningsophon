@@ -83,3 +83,16 @@ def test_a_null_with_equal_spreads_keeps_the_monte_carlo_test_near_its_level():
     finally:
         M.N_SIZE = old
     assert 5 <= r <= 40          # 400 draws at 5%: mean 20, 99.9% within this band
+
+
+def test_holm_under_the_nulls_counts_what_each_family_loses():
+    def row(path, p, psim):
+        return {"json_path": path, "p": p,
+                "nulls": {k: {"p_sim": psim} for k in M.NULLS}}
+    rows = [row("section5.tests.a|x.trend", 1e-5, 1e-5), row("section5.tests.b|x.trend", 1e-3, 0.03),
+            row("section5.tests.c|x.trend", 0.5, 0.5), row("secondary.S1", 1e-6, 1e-6)]
+    h = M.holm_under_nulls(rows)
+    fam = h["anomaly (all tests)"]
+    assert fam["n_tests"] == 3 and fam["n_rejected_permutation"] == 2
+    assert fam["n_rejected_cov"] == 1 and fam["lost"]["cov"] == ["section5.tests.b|x.trend"]
+    assert set(h) == {"anomaly (all tests)"}          # S1 belongs to no family

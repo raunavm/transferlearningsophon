@@ -79,7 +79,8 @@ physical axis, not when it merges one pair. On the pretraining dataset's own
 task, fine-tuning leaves a gap of a factor \FtGapFactorSfourEFour{} at
 \FtSizeSfourEFour{} training jets and \FtGapFactorSfourESix{} at
 \FtSizeSfourESix, and none at \FtSizeSfourEThree. Anomaly-detection sensitivity
-falls with coarser labels in \AnomalyNRejected{} of \AnomalyNTested{} tests,
+falls with coarser labels in \AnomalyNRejected{} of \AnomalyNTested{} tests
+(\TrendSimAnomalyNRejectedIndepUpper{} without assuming equal seed spreads),
 including for detectors that do not use the vocabulary. An auxiliary mass output
 improves mass regression but degrades the $b$-versus-$c$ probe, far more at
 \Kcoarse{} classes than at \Kres, the opposite of the expected direction. On CMS
@@ -394,7 +395,18 @@ permutations; the contrast attaining the maximum locates the step. Because the
 null is exchangeability rather than equal means, a coarsest vocabulary much
 noisier than the others inflates the test's size above its nominal level; the
 seed spreads are reported beside every trend test.
-\pending{the size under the observed unequal spreads, from a committed simulation}
+We therefore also compare every trend statistic with its distribution under a
+Gaussian null with equal means and the observed seed spreads, in three versions:
+the observed covariance across vocabularies; independent vocabularies with the
+observed spreads; and independent vocabularies with the largest spread raised by
+a factor \TrendSimSdFactor, to the upper end of its 95\% interval
+(\TrendSimNDraws{} draws of the statistic and \TrendSimNSizeDraws{} runs of the
+test per null). Under these nulls the permutation test at a nominal 5\% rejects
+in up to \TrendSimMaxSizeIndepUpper{} of data sets. All \TrendSimNRejected{} trend
+tests in this paper that reject at 5\% also do so against every simulated null;
+where a table is corrected with Holm, the counts under the simulated nulls are
+given with the results; of the Holm-corrected fine-tuning rejections,
+\TrendSimFtNLost{} are lost under any simulated null.
 Predicted absences of an effect are tested for equivalence with two one-sided
 tests~\cite{tost} at $\pm\ln\TestConeEquivTarget$ on the log scale, taking the
 largest $p$ over all pairs in the set~\cite{bergerhsu}; when that bound is not
@@ -451,7 +463,12 @@ others (seed standard deviation \TestConeSeedSdOneseven{} in \loma, against
 \TestConeSeedSdOneeighteight, \TestConeSeedSdOnesixtwo{} and
 \TestConeSeedSdFourthree), which inflates the trend test's size
 (Sec.~\ref{sec:stats}).
-\pending{the observed statistic against the null simulated with these spreads}
+Against the three simulated nulls of Sec.~\ref{sec:stats}, the test's size for
+this table is \TrendSimSizeConeCov, \TrendSimSizeConeIndep{} and
+\TrendSimSizeConeIndepUpper, and the observed statistic is reached in
+\TrendSimNGeConeCov, \TrendSimNGeConeIndep{} and \TrendSimNGeConeIndepUpper{} of
+\TrendSimNDraws{} simulated data sets ($p \le \TrendSimPConeIndepUpper$). The
+spread of the \Kcoarse-class models does not produce the step.
 
 One reading of this result is a tautology: the labels merged $b$ with $c$, so
 the representation separates them less well. The coarsening from \Kres{} to
@@ -705,7 +722,12 @@ flavour content the coarser vocabularies merge. Table~\ref{tab:anomaly} and
 Fig.~\ref{fig:anomaly} give the results at \AnomalyInjection{} injected signal
 jets. One of the \AnomalyNSignals{} signals has too few test jets at this
 injection, leaving \AnomalyNTested{} of \AnomalyNPlanned{} planned trend tests;
-\AnomalyNRejected{} of them reject after correction. Counted as the rule was
+\AnomalyNRejected{} of them reject after correction. That count assumes the
+vocabularies are exchangeable within a seed. Against the simulated nulls with the
+observed seed spreads (Sec.~\ref{sec:stats}), \TrendSimAnomalyNRejectedIndep,
+\TrendSimAnomalyNRejectedCov{} and \TrendSimAnomalyNRejectedIndepUpper{} survive
+the same correction, so \TrendSimAnomalyNLostAny{} of the rejections rest on that
+assumption. Counted as the rule was
 written, over all \AnomalyNSignals{} signals of which \AnomalyNTestableSignals{}
 could be tested, sensitivity falls with coarser labels for
 \AnomalyRejectedClassSum{} with the class-sum score,
