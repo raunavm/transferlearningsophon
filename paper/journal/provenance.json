@@ -467,6 +467,12 @@
     "source_file": "experiments/FIGS/data/leg2_metrics.json",
     "value": "0.00031"
   },
+  "AnomalyBLarger": {
+    "json_path": "section5.clause2_on_testable_signals.*.b_larger",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "1 of 4"
+  },
   "AnomalyClauseOneVerdict": {
     "json_path": "section5.clause1",
     "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
@@ -503,6 +509,96 @@
     "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
     "value": "+0.418"
   },
+  "AnomalyGapClassSumLabelXBb": {
+    "json_path": "section5.tests.class_sum|label_X_bb.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.101"
+  },
+  "AnomalyGapClassSumLabelXQq": {
+    "json_path": "section5.tests.class_sum|label_X_qq.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.269"
+  },
+  "AnomalyGapClassSumLabelXYYBbbb": {
+    "json_path": "section5.tests.class_sum|label_X_YY_bbbb.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.232"
+  },
+  "AnomalyGapClassSumLabelXYYQqq": {
+    "json_path": "section5.tests.class_sum|label_X_YY_qqq.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.012"
+  },
+  "AnomalyGapClassSumLabelXYYQqqq": {
+    "json_path": "section5.tests.class_sum|label_X_YY_qqqq.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.248"
+  },
+  "AnomalyGapIadHgbLabelXBb": {
+    "json_path": "section5.tests.iad_hgb|label_X_bb.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.042"
+  },
+  "AnomalyGapIadHgbLabelXQq": {
+    "json_path": "section5.tests.iad_hgb|label_X_qq.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.154"
+  },
+  "AnomalyGapIadHgbLabelXYYBbbb": {
+    "json_path": "section5.tests.iad_hgb|label_X_YY_bbbb.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.064"
+  },
+  "AnomalyGapIadHgbLabelXYYQqq": {
+    "json_path": "section5.tests.iad_hgb|label_X_YY_qqq.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.260"
+  },
+  "AnomalyGapIadHgbLabelXYYQqqq": {
+    "json_path": "section5.tests.iad_hgb|label_X_YY_qqqq.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.388"
+  },
+  "AnomalyGapKnnLabelXBb": {
+    "json_path": "section5.tests.knn|label_X_bb.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{-}0.212"
+  },
+  "AnomalyGapKnnLabelXQq": {
+    "json_path": "section5.tests.knn|label_X_qq.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.059"
+  },
+  "AnomalyGapKnnLabelXYYBbbb": {
+    "json_path": "section5.tests.knn|label_X_YY_bbbb.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.184"
+  },
+  "AnomalyGapKnnLabelXYYQqq": {
+    "json_path": "section5.tests.knn|label_X_YY_qqq.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.030"
+  },
+  "AnomalyGapKnnLabelXYYQqqq": {
+    "json_path": "section5.tests.knn|label_X_YY_qqqq.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{-}0.046"
+  },
   "AnomalyGapLightClassSum": {
     "json_path": "section5.clause2_on_testable_signals.class_sum.mean_gap_light",
     "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
@@ -527,6 +623,36 @@
     "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
     "value": "+0.023"
   },
+  "AnomalyGapMahalanobisLabelXBb": {
+    "json_path": "section5.tests.mahalanobis|label_X_bb.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.107"
+  },
+  "AnomalyGapMahalanobisLabelXQq": {
+    "json_path": "section5.tests.mahalanobis|label_X_qq.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.023"
+  },
+  "AnomalyGapMahalanobisLabelXYYBbbb": {
+    "json_path": "section5.tests.mahalanobis|label_X_YY_bbbb.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.729"
+  },
+  "AnomalyGapMahalanobisLabelXYYQqq": {
+    "json_path": "section5.tests.mahalanobis|label_X_YY_qqq.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.038"
+  },
+  "AnomalyGapMahalanobisLabelXYYQqqq": {
+    "json_path": "section5.tests.mahalanobis|label_X_YY_qqqq.gap_17_minus_188",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "+0.008"
+  },
   "AnomalyInjection": {
     "json_path": "section5.injection",
     "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
@@ -544,6 +670,18 @@
     "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
     "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
     "value": "15"
+  },
+  "AnomalyNSignals": {
+    "json_path": "section5.tests (distinct signals)",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "6"
+  },
+  "AnomalyNTestableSignals": {
+    "json_path": "section5.tests[*].trend.run",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "5"
   },
   "AnomalyNTested": {
     "json_path": "section5.tests[*].trend.run",
@@ -587,6 +725,126 @@
     "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
     "value": "15 of 15"
   },
+  "AnomalyTrendPClassSumLabelXBb": {
+    "json_path": "section5.tests.class_sum|label_X_bb.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.000995}"
+  },
+  "AnomalyTrendPClassSumLabelXQq": {
+    "json_path": "section5.tests.class_sum|label_X_qq.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.000582}"
+  },
+  "AnomalyTrendPClassSumLabelXYYBbbb": {
+    "json_path": "section5.tests.class_sum|label_X_YY_bbbb.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{8.59\\times10^{-5}}"
+  },
+  "AnomalyTrendPClassSumLabelXYYQqq": {
+    "json_path": "section5.tests.class_sum|label_X_YY_qqq.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.156}"
+  },
+  "AnomalyTrendPClassSumLabelXYYQqqq": {
+    "json_path": "section5.tests.class_sum|label_X_YY_qqqq.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.000147}"
+  },
+  "AnomalyTrendPIadHgbLabelXBb": {
+    "json_path": "section5.tests.iad_hgb|label_X_bb.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.189}"
+  },
+  "AnomalyTrendPIadHgbLabelXQq": {
+    "json_path": "section5.tests.iad_hgb|label_X_qq.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.000128}"
+  },
+  "AnomalyTrendPIadHgbLabelXYYBbbb": {
+    "json_path": "section5.tests.iad_hgb|label_X_YY_bbbb.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.000893}"
+  },
+  "AnomalyTrendPIadHgbLabelXYYQqq": {
+    "json_path": "section5.tests.iad_hgb|label_X_YY_qqq.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.000616}"
+  },
+  "AnomalyTrendPIadHgbLabelXYYQqqq": {
+    "json_path": "section5.tests.iad_hgb|label_X_YY_qqqq.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{3.52\\times10^{-6}}"
+  },
+  "AnomalyTrendPKnnLabelXBb": {
+    "json_path": "section5.tests.knn|label_X_bb.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{1}"
+  },
+  "AnomalyTrendPKnnLabelXQq": {
+    "json_path": "section5.tests.knn|label_X_qq.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{3.06\\times10^{-5}}"
+  },
+  "AnomalyTrendPKnnLabelXYYBbbb": {
+    "json_path": "section5.tests.knn|label_X_YY_bbbb.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{1.88\\times10^{-5}}"
+  },
+  "AnomalyTrendPKnnLabelXYYQqq": {
+    "json_path": "section5.tests.knn|label_X_YY_qqq.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.000215}"
+  },
+  "AnomalyTrendPKnnLabelXYYQqqq": {
+    "json_path": "section5.tests.knn|label_X_YY_qqqq.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.889}"
+  },
+  "AnomalyTrendPMahalanobisLabelXBb": {
+    "json_path": "section5.tests.mahalanobis|label_X_bb.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.000122}"
+  },
+  "AnomalyTrendPMahalanobisLabelXQq": {
+    "json_path": "section5.tests.mahalanobis|label_X_qq.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.00136}"
+  },
+  "AnomalyTrendPMahalanobisLabelXYYBbbb": {
+    "json_path": "section5.tests.mahalanobis|label_X_YY_bbbb.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{2.51\\times10^{-7}}"
+  },
+  "AnomalyTrendPMahalanobisLabelXYYQqq": {
+    "json_path": "section5.tests.mahalanobis|label_X_YY_qqq.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{3.14\\times10^{-5}}"
+  },
+  "AnomalyTrendPMahalanobisLabelXYYQqqq": {
+    "json_path": "section5.tests.mahalanobis|label_X_YY_qqqq.trend.p",
+    "sha256": "1437facd3ff9ee26e1cd91ab1f5358f52a95057ede57b27d020b3c29b92532fc",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    "value": "\\ensuremath{0.0773}"
+  },
   "AojClauseOneVerdict": {
     "json_path": "secondary.real_data_top.clauses[0].verdict",
     "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
@@ -623,11 +881,47 @@
     "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
     "value": "\\ensuremath{0.77}"
   },
+  "AojMassGainOneseven": {
+    "json_path": "secondary.real_data_top.mass_output_2x2.gain_17.mean_diff",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "\\ensuremath{-}0.097"
+  },
+  "AojMassGainOnesixtwo": {
+    "json_path": "secondary.real_data_top.mass_output_2x2.gain_162.mean_diff",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "\\ensuremath{-}0.207"
+  },
+  "AojMassGainPOneseven": {
+    "json_path": "secondary.real_data_top.mass_output_2x2.gain_17.p",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "\\ensuremath{0.572}"
+  },
+  "AojMassGainPOnesixtwo": {
+    "json_path": "secondary.real_data_top.mass_output_2x2.gain_162.p",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "\\ensuremath{0.578}"
+  },
   "AojMedianFitErr": {
     "json_path": "table[*].signal_yield_err / signal_yield",
     "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
     "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
     "value": "11\\%"
+  },
+  "AojMedianRelEff": {
+    "json_path": "table[*].efficiency_relative_to_reference",
+    "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
+    "value": "12\\%"
+  },
+  "AojNConverged": {
+    "json_path": "reference.top.converged, models.*.top.converged",
+    "sha256": "2ac7d7a74edbb691c8600fa087754994101b22a4ccf9ec57e7d61e4dd0a59941",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/results.json",
+    "value": "11 of 32"
   },
   "AojNJetsFit": {
     "json_path": "n_jets",
@@ -671,6 +965,12 @@
     "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
     "value": "180.1"
   },
+  "AojRefValidationToyP": {
+    "json_path": "reference.top.validation.toy_p",
+    "sha256": "2ac7d7a74edbb691c8600fa087754994101b22a4ccf9ec57e7d61e4dd0a59941",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/results.json",
+    "value": "\\ensuremath{0.00498}"
+  },
   "AojRefYield": {
     "json_path": "reference.signal_yield",
     "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
@@ -694,6 +994,24 @@
     "sha256": "54b15dd5035d8edd4d7bdafd927bfbbc26edc73b7fa8ea5f574bfca9931c9e73",
     "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_labelled/aoj_top.json",
     "value": "\\ensuremath{0.616}"
+  },
+  "AojWorstMean": {
+    "json_path": "models.l162-s2.top.floated_mean",
+    "sha256": "2ac7d7a74edbb691c8600fa087754994101b22a4ccf9ec57e7d61e4dd0a59941",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/results.json",
+    "value": "145"
+  },
+  "AojWorstYield": {
+    "json_path": "models.l162-s2.top.signal_yield",
+    "sha256": "2ac7d7a74edbb691c8600fa087754994101b22a4ccf9ec57e7d61e4dd0a59941",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/results.json",
+    "value": "722"
+  },
+  "AojWorstYieldErr": {
+    "json_path": "models.l162-s2.top.signal_yield_err",
+    "sha256": "2ac7d7a74edbb691c8600fa087754994101b22a4ccf9ec57e7d61e4dd0a59941",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/results.json",
+    "value": "462"
   },
   "AojYieldFourthree": {
     "json_path": "table[level=43].signal_yield",
@@ -1012,6 +1330,966 @@
     "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
     "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
     "value": "+0.068"
+  },
+  "FtPairCISfourEFiveFourthreeVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[1].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.059,\\,+0.107]}"
+  },
+  "FtPairCISfourEFiveFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[3].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.069,\\,+0.107]}"
+  },
+  "FtPairCISfourEFiveOnesevenVsFourthree": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[5].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.093,\\,+0.131]}"
+  },
+  "FtPairCISfourEFiveOnesevenVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[2].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.181,\\,+0.208]}"
+  },
+  "FtPairCISfourEFiveOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[4].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.180,\\,+0.219]}"
+  },
+  "FtPairCISfourEFiveOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[0].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.019,\\,+0.009]}"
+  },
+  "FtPairCISfourEFourFourthreeVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[1].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.154,\\,+0.209]}"
+  },
+  "FtPairCISfourEFourFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[3].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.173,\\,+0.202]}"
+  },
+  "FtPairCISfourEFourOnesevenVsFourthree": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[5].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.065,\\,+0.121]}"
+  },
+  "FtPairCISfourEFourOnesevenVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[2].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.257,\\,+0.291]}"
+  },
+  "FtPairCISfourEFourOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[4].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.255,\\,+0.306]}"
+  },
+  "FtPairCISfourEFourOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[0].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.030,\\,+0.018]}"
+  },
+  "FtPairCISfourESixFourthreeVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[1].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.037,\\,+0.052]}"
+  },
+  "FtPairCISfourESixFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[3].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.036,\\,+0.049]}"
+  },
+  "FtPairCISfourESixOnesevenVsFourthree": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[5].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.081,\\,+0.100]}"
+  },
+  "FtPairCISfourESixOnesevenVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[2].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.125,\\,+0.145]}"
+  },
+  "FtPairCISfourESixOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[4].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.125,\\,+0.142]}"
+  },
+  "FtPairCISfourESixOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[0].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.002,\\,+0.005]}"
+  },
+  "FtPairCISfourEThreeFourthreeVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[1].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.261,\\,-0.090]}"
+  },
+  "FtPairCISfourEThreeFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[3].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.229,\\,-0.028]}"
+  },
+  "FtPairCISfourEThreeOnesevenVsFourthree": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[5].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.074,\\,+0.219]}"
+  },
+  "FtPairCISfourEThreeOnesevenVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[2].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.147,\\,+0.090]}"
+  },
+  "FtPairCISfourEThreeOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[4].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.129,\\,+0.164]}"
+  },
+  "FtPairCISfourEThreeOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[0].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.142,\\,+0.050]}"
+  },
+  "FtPairCISthreeEFiveFourthreeVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[1].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.002,\\,+0.028]}"
+  },
+  "FtPairCISthreeEFiveFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[3].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.018,\\,+0.046]}"
+  },
+  "FtPairCISthreeEFiveOnesevenVsFourthree": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[5].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.042,\\,+0.068]}"
+  },
+  "FtPairCISthreeEFiveOnesevenVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[2].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.055,\\,+0.086]}"
+  },
+  "FtPairCISthreeEFiveOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[4].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.085,\\,+0.089]}"
+  },
+  "FtPairCISthreeEFiveOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[0].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.032,\\,-0.002]}"
+  },
+  "FtPairCISthreeEFourFourthreeVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[1].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.068,\\,+0.036]}"
+  },
+  "FtPairCISthreeEFourFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[3].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.031,\\,+0.044]}"
+  },
+  "FtPairCISthreeEFourOnesevenVsFourthree": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[5].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.066,\\,+0.095]}"
+  },
+  "FtPairCISthreeEFourOnesevenVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[2].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.022,\\,+0.107]}"
+  },
+  "FtPairCISthreeEFourOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[4].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.056,\\,+0.117]}"
+  },
+  "FtPairCISthreeEFourOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[0].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.069,\\,+0.024]}"
+  },
+  "FtPairCISthreeESixFourthreeVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[1].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.012,\\,+0.028]}"
+  },
+  "FtPairCISthreeESixFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[3].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.011,\\,+0.028]}"
+  },
+  "FtPairCISthreeESixOnesevenVsFourthree": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[5].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.053,\\,+0.066]}"
+  },
+  "FtPairCISthreeESixOnesevenVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[2].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.070,\\,+0.089]}"
+  },
+  "FtPairCISthreeESixOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[4].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.072,\\,+0.087]}"
+  },
+  "FtPairCISthreeESixOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[0].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.006,\\,+0.007]}"
+  },
+  "FtPairCISthreeEThreeFourthreeVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[1].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.176,\\,+0.188]}"
+  },
+  "FtPairCISthreeEThreeFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[3].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.043,\\,+0.141]}"
+  },
+  "FtPairCISthreeEThreeOnesevenVsFourthree": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[5].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.020,\\,+0.143]}"
+  },
+  "FtPairCISthreeEThreeOnesevenVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[2].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.075,\\,+0.211]}"
+  },
+  "FtPairCISthreeEThreeOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[4].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[+0.063,\\,+0.159]}"
+  },
+  "FtPairCISthreeEThreeOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[0].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{[-0.192,\\,+0.105]}"
+  },
+  "FtPairDiffSfourEFiveFourthreeVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[1].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.083"
+  },
+  "FtPairDiffSfourEFiveFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[3].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.088"
+  },
+  "FtPairDiffSfourEFiveOnesevenVsFourthree": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[5].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.112"
+  },
+  "FtPairDiffSfourEFiveOnesevenVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[2].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.195"
+  },
+  "FtPairDiffSfourEFiveOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[4].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.200"
+  },
+  "FtPairDiffSfourEFiveOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[0].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{-}0.005"
+  },
+  "FtPairDiffSfourEFourFourthreeVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[1].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.181"
+  },
+  "FtPairDiffSfourEFourFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[3].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.187"
+  },
+  "FtPairDiffSfourEFourOnesevenVsFourthree": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[5].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.093"
+  },
+  "FtPairDiffSfourEFourOnesevenVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[2].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.274"
+  },
+  "FtPairDiffSfourEFourOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[4].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.280"
+  },
+  "FtPairDiffSfourEFourOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[0].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{-}0.006"
+  },
+  "FtPairDiffSfourESixFourthreeVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[1].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.044"
+  },
+  "FtPairDiffSfourESixFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[3].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.043"
+  },
+  "FtPairDiffSfourESixOnesevenVsFourthree": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[5].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.091"
+  },
+  "FtPairDiffSfourESixOnesevenVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[2].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.135"
+  },
+  "FtPairDiffSfourESixOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[4].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.133"
+  },
+  "FtPairDiffSfourESixOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[0].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.002"
+  },
+  "FtPairDiffSfourEThreeFourthreeVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[1].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{-}0.175"
+  },
+  "FtPairDiffSfourEThreeFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[3].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{-}0.129"
+  },
+  "FtPairDiffSfourEThreeOnesevenVsFourthree": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[5].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.147"
+  },
+  "FtPairDiffSfourEThreeOnesevenVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[2].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{-}0.029"
+  },
+  "FtPairDiffSfourEThreeOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[4].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.018"
+  },
+  "FtPairDiffSfourEThreeOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[0].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{-}0.046"
+  },
+  "FtPairDiffSthreeEFiveFourthreeVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[1].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.015"
+  },
+  "FtPairDiffSthreeEFiveFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[3].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.032"
+  },
+  "FtPairDiffSthreeEFiveOnesevenVsFourthree": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[5].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.055"
+  },
+  "FtPairDiffSthreeEFiveOnesevenVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[2].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.070"
+  },
+  "FtPairDiffSthreeEFiveOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[4].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.087"
+  },
+  "FtPairDiffSthreeEFiveOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[0].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{-}0.017"
+  },
+  "FtPairDiffSthreeEFourFourthreeVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[1].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{-}0.016"
+  },
+  "FtPairDiffSthreeEFourFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[3].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.006"
+  },
+  "FtPairDiffSthreeEFourOnesevenVsFourthree": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[5].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.080"
+  },
+  "FtPairDiffSthreeEFourOnesevenVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[2].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.064"
+  },
+  "FtPairDiffSthreeEFourOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[4].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.087"
+  },
+  "FtPairDiffSthreeEFourOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[0].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{-}0.022"
+  },
+  "FtPairDiffSthreeESixFourthreeVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[1].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.020"
+  },
+  "FtPairDiffSthreeESixFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[3].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.020"
+  },
+  "FtPairDiffSthreeESixOnesevenVsFourthree": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[5].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.060"
+  },
+  "FtPairDiffSthreeESixOnesevenVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[2].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.080"
+  },
+  "FtPairDiffSthreeESixOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[4].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.079"
+  },
+  "FtPairDiffSthreeESixOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[0].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.000"
+  },
+  "FtPairDiffSthreeEThreeFourthreeVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[1].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.006"
+  },
+  "FtPairDiffSthreeEThreeFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[3].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.049"
+  },
+  "FtPairDiffSthreeEThreeOnesevenVsFourthree": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[5].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.062"
+  },
+  "FtPairDiffSthreeEThreeOnesevenVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[2].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.068"
+  },
+  "FtPairDiffSthreeEThreeOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[4].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "+0.111"
+  },
+  "FtPairDiffSthreeEThreeOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[0].mean_diff",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "\\ensuremath{-}0.043"
+  },
+  "FtPairHolmSfourEFiveFourthreeVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[1].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourEFiveFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[3].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourEFiveOnesevenVsFourthree": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[5].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourEFiveOnesevenVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[2].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourEFiveOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[4].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourEFiveOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[0].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSfourEFourFourthreeVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[1].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourEFourFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[3].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourEFourOnesevenVsFourthree": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[5].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourEFourOnesevenVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[2].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourEFourOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[4].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourEFourOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[0].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSfourESixFourthreeVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[1].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourESixFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[3].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourESixOnesevenVsFourthree": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[5].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourESixOnesevenVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[2].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourESixOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[4].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourESixOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[0].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSfourEThreeFourthreeVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[1].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourEThreeFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[3].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSfourEThreeOnesevenVsFourthree": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[5].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSfourEThreeOnesevenVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[2].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSfourEThreeOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[4].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSfourEThreeOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[0].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSthreeEFiveFourthreeVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[1].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSthreeEFiveFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[3].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSthreeEFiveOnesevenVsFourthree": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[5].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSthreeEFiveOnesevenVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[2].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSthreeEFiveOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[4].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSthreeEFiveOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[0].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSthreeEFourFourthreeVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[1].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSthreeEFourFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[3].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSthreeEFourOnesevenVsFourthree": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[5].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSthreeEFourOnesevenVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[2].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSthreeEFourOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[4].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSthreeEFourOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[0].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSthreeESixFourthreeVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[1].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSthreeESixFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[3].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSthreeESixOnesevenVsFourthree": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[5].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSthreeESixOnesevenVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[2].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSthreeESixOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[4].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSthreeESixOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[0].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSthreeEThreeFourthreeVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[1].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSthreeEThreeFourthreeVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[3].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSthreeEThreeOnesevenVsFourthree": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[5].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSthreeEThreeOnesevenVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[2].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairHolmSthreeEThreeOnesevenVsOnesixtwo": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[4].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "yes"
+  },
+  "FtPairHolmSthreeEThreeOnesixtwoVsOneeighteight": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[0].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "no"
+  },
+  "FtPairNExcludeZeroSfourEFive": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[*].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "5 of 6"
+  },
+  "FtPairNExcludeZeroSfourEFour": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[*].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "5 of 6"
+  },
+  "FtPairNExcludeZeroSfourESix": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[*].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "5 of 6"
+  },
+  "FtPairNExcludeZeroSfourEThree": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[*].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "3 of 6"
+  },
+  "FtPairNExcludeZeroSthreeEFive": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[*].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "6 of 6"
+  },
+  "FtPairNExcludeZeroSthreeEFour": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[*].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "3 of 6"
+  },
+  "FtPairNExcludeZeroSthreeESix": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[*].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "5 of 6"
+  },
+  "FtPairNExcludeZeroSthreeEThree": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[*].ci95",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "1 of 6"
+  },
+  "FtPairNHolmSfourEFive": {
+    "json_path": "secondary.S4.per_size.N100000.pairwise[*].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "5 of 6"
+  },
+  "FtPairNHolmSfourEFour": {
+    "json_path": "secondary.S4.per_size.N10000.pairwise[*].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "5 of 6"
+  },
+  "FtPairNHolmSfourESix": {
+    "json_path": "secondary.S4.per_size.N1000000.pairwise[*].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "5 of 6"
+  },
+  "FtPairNHolmSfourEThree": {
+    "json_path": "secondary.S4.per_size.N1000.pairwise[*].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "2 of 6"
+  },
+  "FtPairNHolmSthreeEFive": {
+    "json_path": "secondary.S3.per_size.N100000.pairwise[*].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "4 of 6"
+  },
+  "FtPairNHolmSthreeEFour": {
+    "json_path": "secondary.S3.per_size.N10000.pairwise[*].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "2 of 6"
+  },
+  "FtPairNHolmSthreeESix": {
+    "json_path": "secondary.S3.per_size.N1000000.pairwise[*].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "5 of 6"
+  },
+  "FtPairNHolmSthreeEThree": {
+    "json_path": "secondary.S3.per_size.N1000.pairwise[*].holm_reject",
+    "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
+    "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
+    "value": "1 of 6"
   },
   "FtRefAucSfourEFiveMpmSone": {
     "json_path": "secondary.S4.reference_rows.N100000.mpm-s1.macro_auc",
@@ -1583,6 +2861,12 @@
     "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
     "value": "0.034"
   },
+  "MassResTargetSigmaEff": {
+    "json_path": "table[*].target_sigma_eff",
+    "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
+    "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
+    "value": "0.2986"
+  },
   "MdeBvcQcdLinear": {
     "json_path": "mde[2].mde",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
@@ -1949,6 +3233,12 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "1.014"
   },
+  "PairFactorBvcQcdLinearFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[1].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.161"
+  },
   "PairFactorBvcQcdLinearOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_qcd.linear[0].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
@@ -1961,11 +3251,29 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "2.637"
   },
+  "PairFactorBvcQcdLinearOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[5].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "2.602"
+  },
+  "PairFactorBvcQcdLinearOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[2].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "3.021"
+  },
   "PairFactorBvcQcdMlpFourthree": {
     "json_path": "pairwise_exploratory.bvc_qcd.mlp[3].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "1.013"
+  },
+  "PairFactorBvcQcdMlpFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[1].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.126"
   },
   "PairFactorBvcQcdMlpOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_qcd.mlp[0].mean_diff",
@@ -1979,11 +3287,29 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "2.295"
   },
+  "PairFactorBvcQcdMlpOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[5].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "2.266"
+  },
+  "PairFactorBvcQcdMlpOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[2].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "2.552"
+  },
   "PairFactorBvcResonantLinearFourthree": {
     "json_path": "pairwise_exploratory.bvc_resonant.linear[3].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "1.068"
+  },
+  "PairFactorBvcResonantLinearFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[1].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.089"
   },
   "PairFactorBvcResonantLinearOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_resonant.linear[0].mean_diff",
@@ -1997,11 +3323,29 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "3.914"
   },
+  "PairFactorBvcResonantLinearOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[5].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "3.664"
+  },
+  "PairFactorBvcResonantLinearOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[2].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "3.989"
+  },
   "PairFactorBvcResonantMlpFourthree": {
     "json_path": "pairwise_exploratory.bvc_resonant.mlp[3].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "1.092"
+  },
+  "PairFactorBvcResonantMlpFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[1].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.140"
   },
   "PairFactorBvcResonantMlpOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_resonant.mlp[0].mean_diff",
@@ -2015,8 +3359,26 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "3.109"
   },
+  "PairFactorBvcResonantMlpOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[5].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "2.847"
+  },
+  "PairFactorBvcResonantMlpOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[2].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "3.245"
+  },
   "PairFactorEeVsMmLinearFourthree": {
     "json_path": "pairwise_exploratory.ee_vs_mm.linear[3].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "410578.920\\ensuremath{^{\\ast}}"
+  },
+  "PairFactorEeVsMmLinearFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[1].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "410578.920\\ensuremath{^{\\ast}}"
@@ -2027,8 +3389,26 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "942781.350\\ensuremath{^{\\ast}}"
   },
+  "PairFactorEeVsMmLinearOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[5].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "2.296"
+  },
+  "PairFactorEeVsMmLinearOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[2].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "942781.350\\ensuremath{^{\\ast}}"
+  },
   "PairFactorEeVsMmMlpFourthree": {
     "json_path": "pairwise_exploratory.ee_vs_mm.mlp[3].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "72420.801\\ensuremath{^{\\ast}}"
+  },
+  "PairFactorEeVsMmMlpFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[1].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "72420.801\\ensuremath{^{\\ast}}"
@@ -2039,11 +3419,29 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "240906.315\\ensuremath{^{\\ast}}"
   },
+  "PairFactorEeVsMmMlpOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[5].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "3.326"
+  },
+  "PairFactorEeVsMmMlpOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[2].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "240906.315\\ensuremath{^{\\ast}}"
+  },
   "PairFactorRetainedTopologyLinearFourthree": {
     "json_path": "pairwise_exploratory.retained_topology.linear[3].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "1.239"
+  },
+  "PairFactorRetainedTopologyLinearFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[1].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.238"
   },
   "PairFactorRetainedTopologyLinearOneeighteight": {
     "json_path": "pairwise_exploratory.retained_topology.linear[0].mean_diff",
@@ -2057,11 +3455,29 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "1.537"
   },
+  "PairFactorRetainedTopologyLinearOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[5].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.241"
+  },
+  "PairFactorRetainedTopologyLinearOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[2].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.536"
+  },
   "PairFactorRetainedTopologyMlpFourthree": {
     "json_path": "pairwise_exploratory.retained_topology.mlp[3].mean_diff",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "1.172"
+  },
+  "PairFactorRetainedTopologyMlpFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[1].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.193"
   },
   "PairFactorRetainedTopologyMlpOneeighteight": {
     "json_path": "pairwise_exploratory.retained_topology.mlp[0].mean_diff",
@@ -2074,6 +3490,18 @@
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "1.493"
+  },
+  "PairFactorRetainedTopologyMlpOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[5].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.274"
+  },
+  "PairFactorRetainedTopologyMlpOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[2].mean_diff",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "1.519"
   },
   "PairHolmBvcQcdLinearFourthree": {
     "json_path": "pairwise_exploratory.bvc_qcd.linear[3].holm_reject",
@@ -2213,6 +3641,12 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{0.326}"
   },
+  "PairPBvcQcdLinearFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[1].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.000605}"
+  },
   "PairPBvcQcdLinearOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_qcd.linear[0].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
@@ -2225,11 +3659,29 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{4.8\\times10^{-5}}"
   },
+  "PairPBvcQcdLinearOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[5].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{4.41\\times10^{-5}}"
+  },
+  "PairPBvcQcdLinearOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.linear[2].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{4.85\\times10^{-5}}"
+  },
   "PairPBvcQcdMlpFourthree": {
     "json_path": "pairwise_exploratory.bvc_qcd.mlp[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{0.189}"
+  },
+  "PairPBvcQcdMlpFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[1].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.00367}"
   },
   "PairPBvcQcdMlpOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_qcd.mlp[0].p",
@@ -2243,11 +3695,29 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{3.9\\times10^{-5}}"
   },
+  "PairPBvcQcdMlpOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[5].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{5.4\\times10^{-5}}"
+  },
+  "PairPBvcQcdMlpOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_qcd.mlp[2].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{2.97\\times10^{-5}}"
+  },
   "PairPBvcResonantLinearFourthree": {
     "json_path": "pairwise_exploratory.bvc_resonant.linear[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{0.000532}"
+  },
+  "PairPBvcResonantLinearFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[1].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.013}"
   },
   "PairPBvcResonantLinearOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_resonant.linear[0].p",
@@ -2261,11 +3731,29 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{6.46\\times10^{-5}}"
   },
+  "PairPBvcResonantLinearOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[5].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{5.92\\times10^{-5}}"
+  },
+  "PairPBvcResonantLinearOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.linear[2].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{3.41\\times10^{-5}}"
+  },
   "PairPBvcResonantMlpFourthree": {
     "json_path": "pairwise_exploratory.bvc_resonant.mlp[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{0.00191}"
+  },
+  "PairPBvcResonantMlpFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[1].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.00322}"
   },
   "PairPBvcResonantMlpOneeighteight": {
     "json_path": "pairwise_exploratory.bvc_resonant.mlp[0].p",
@@ -2279,8 +3767,26 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{5.97\\times10^{-5}}"
   },
+  "PairPBvcResonantMlpOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[5].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{3.93\\times10^{-5}}"
+  },
+  "PairPBvcResonantMlpOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.bvc_resonant.mlp[2].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{2.05\\times10^{-5}}"
+  },
   "PairPEeVsMmLinearFourthree": {
     "json_path": "pairwise_exploratory.ee_vs_mm.linear[3].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{6.86\\times10^{-6}}"
+  },
+  "PairPEeVsMmLinearFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[1].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{6.86\\times10^{-6}}"
@@ -2291,8 +3797,26 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{2.57\\times10^{-8}}"
   },
+  "PairPEeVsMmLinearOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[5].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.0916}"
+  },
+  "PairPEeVsMmLinearOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.linear[2].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{2.57\\times10^{-8}}"
+  },
   "PairPEeVsMmMlpFourthree": {
     "json_path": "pairwise_exploratory.ee_vs_mm.mlp[3].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{1.52\\times10^{-5}}"
+  },
+  "PairPEeVsMmMlpFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[1].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{1.52\\times10^{-5}}"
@@ -2303,11 +3827,29 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{3.96\\times10^{-9}}"
   },
+  "PairPEeVsMmMlpOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[5].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.0389}"
+  },
+  "PairPEeVsMmMlpOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.ee_vs_mm.mlp[2].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{3.96\\times10^{-9}}"
+  },
   "PairPRetainedTopologyLinearFourthree": {
     "json_path": "pairwise_exploratory.retained_topology.linear[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{0.000241}"
+  },
+  "PairPRetainedTopologyLinearFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[1].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.000102}"
   },
   "PairPRetainedTopologyLinearOneeighteight": {
     "json_path": "pairwise_exploratory.retained_topology.linear[0].p",
@@ -2321,11 +3863,29 @@
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{0.00116}"
   },
+  "PairPRetainedTopologyLinearOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[5].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.0109}"
+  },
+  "PairPRetainedTopologyLinearOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.linear[2].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.000503}"
+  },
   "PairPRetainedTopologyMlpFourthree": {
     "json_path": "pairwise_exploratory.retained_topology.mlp[3].p",
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{0.000692}"
+  },
+  "PairPRetainedTopologyMlpFourthreeVsOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[1].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.015}"
   },
   "PairPRetainedTopologyMlpOneeighteight": {
     "json_path": "pairwise_exploratory.retained_topology.mlp[0].p",
@@ -2338,6 +3898,18 @@
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{0.00162}"
+  },
+  "PairPRetainedTopologyMlpOnesevenVsFourthree": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[5].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.00839}"
+  },
+  "PairPRetainedTopologyMlpOnesevenVsOneeighteight": {
+    "json_path": "pairwise_exploratory.retained_topology.mlp[2].p",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "\\ensuremath{0.000177}"
   },
   "ProbeAucBvcFourprongLinearFourthree": {
     "json_path": "levels.bvc_4prong.linear[2].mean_auc",
@@ -2914,6 +4486,294 @@
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "0.99918"
+  },
+  "ProbeBkgLeftBvcFourprongLinearFourthree": {
+    "json_path": "levels.bvc_4prong.linear[2].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "16.6"
+  },
+  "ProbeBkgLeftBvcFourprongLinearOneeighteight": {
+    "json_path": "levels.bvc_4prong.linear[0].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "14.0"
+  },
+  "ProbeBkgLeftBvcFourprongLinearOneseven": {
+    "json_path": "levels.bvc_4prong.linear[3].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "137.4"
+  },
+  "ProbeBkgLeftBvcFourprongLinearOnesixtwo": {
+    "json_path": "levels.bvc_4prong.linear[1].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "14.4"
+  },
+  "ProbeBkgLeftBvcFourprongMlpFourthree": {
+    "json_path": "levels.bvc_4prong.mlp[2].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "16.8"
+  },
+  "ProbeBkgLeftBvcFourprongMlpOneeighteight": {
+    "json_path": "levels.bvc_4prong.mlp[0].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "15.0"
+  },
+  "ProbeBkgLeftBvcFourprongMlpOneseven": {
+    "json_path": "levels.bvc_4prong.mlp[3].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "101.2"
+  },
+  "ProbeBkgLeftBvcFourprongMlpOnesixtwo": {
+    "json_path": "levels.bvc_4prong.mlp[1].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "17.2"
+  },
+  "ProbeBkgLeftBvcQcdLinearFourthree": {
+    "json_path": "levels.bvc_qcd.linear[2].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "126.8"
+  },
+  "ProbeBkgLeftBvcQcdLinearOneeighteight": {
+    "json_path": "levels.bvc_qcd.linear[0].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "96.4"
+  },
+  "ProbeBkgLeftBvcQcdLinearOneseven": {
+    "json_path": "levels.bvc_qcd.linear[3].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "544.6"
+  },
+  "ProbeBkgLeftBvcQcdLinearOnesixtwo": {
+    "json_path": "levels.bvc_qcd.linear[1].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "121.4"
+  },
+  "ProbeBkgLeftBvcQcdMlpFourthree": {
+    "json_path": "levels.bvc_qcd.mlp[2].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "120.2"
+  },
+  "ProbeBkgLeftBvcQcdMlpOneeighteight": {
+    "json_path": "levels.bvc_qcd.mlp[0].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "95.0"
+  },
+  "ProbeBkgLeftBvcQcdMlpOneseven": {
+    "json_path": "levels.bvc_qcd.mlp[3].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "453.4"
+  },
+  "ProbeBkgLeftBvcQcdMlpOnesixtwo": {
+    "json_path": "levels.bvc_qcd.mlp[1].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "119.8"
+  },
+  "ProbeBkgLeftBvcResonantLinearFourthree": {
+    "json_path": "levels.bvc_resonant.linear[2].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "11.0"
+  },
+  "ProbeBkgLeftBvcResonantLinearOneeighteight": {
+    "json_path": "levels.bvc_resonant.linear[0].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "9.0"
+  },
+  "ProbeBkgLeftBvcResonantLinearOneseven": {
+    "json_path": "levels.bvc_resonant.linear[3].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "90.8"
+  },
+  "ProbeBkgLeftBvcResonantLinearOnesixtwo": {
+    "json_path": "levels.bvc_resonant.linear[1].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "9.4"
+  },
+  "ProbeBkgLeftBvcResonantMlpFourthree": {
+    "json_path": "levels.bvc_resonant.mlp[2].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "11.8"
+  },
+  "ProbeBkgLeftBvcResonantMlpOneeighteight": {
+    "json_path": "levels.bvc_resonant.mlp[0].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "9.6"
+  },
+  "ProbeBkgLeftBvcResonantMlpOneseven": {
+    "json_path": "levels.bvc_resonant.mlp[3].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "61.0"
+  },
+  "ProbeBkgLeftBvcResonantMlpOnesixtwo": {
+    "json_path": "levels.bvc_resonant.mlp[1].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "10.4"
+  },
+  "ProbeBkgLeftEeVsMmLinearFourthree": {
+    "json_path": "levels.ee_vs_mm.linear[2].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "155.8"
+  },
+  "ProbeBkgLeftEeVsMmLinearOneeighteight": {
+    "json_path": "levels.ee_vs_mm.linear[0].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.0"
+  },
+  "ProbeBkgLeftEeVsMmLinearOneseven": {
+    "json_path": "levels.ee_vs_mm.linear[3].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "289.6"
+  },
+  "ProbeBkgLeftEeVsMmLinearOnesixtwo": {
+    "json_path": "levels.ee_vs_mm.linear[1].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.0"
+  },
+  "ProbeBkgLeftEeVsMmMlpFourthree": {
+    "json_path": "levels.ee_vs_mm.mlp[2].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "50.0"
+  },
+  "ProbeBkgLeftEeVsMmMlpOneeighteight": {
+    "json_path": "levels.ee_vs_mm.mlp[0].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.0"
+  },
+  "ProbeBkgLeftEeVsMmMlpOneseven": {
+    "json_path": "levels.ee_vs_mm.mlp[3].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "109.2"
+  },
+  "ProbeBkgLeftEeVsMmMlpOnesixtwo": {
+    "json_path": "levels.ee_vs_mm.mlp[1].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.0"
+  },
+  "ProbeBkgLeftRetainedTopologyLinearFourthree": {
+    "json_path": "levels.retained_topology.linear[2].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "16.4"
+  },
+  "ProbeBkgLeftRetainedTopologyLinearOneeighteight": {
+    "json_path": "levels.retained_topology.linear[0].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "15.4"
+  },
+  "ProbeBkgLeftRetainedTopologyLinearOneseven": {
+    "json_path": "levels.retained_topology.linear[3].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "21.8"
+  },
+  "ProbeBkgLeftRetainedTopologyLinearOnesixtwo": {
+    "json_path": "levels.retained_topology.linear[1].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "14.0"
+  },
+  "ProbeBkgLeftRetainedTopologyMlpFourthree": {
+    "json_path": "levels.retained_topology.mlp[2].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "17.6"
+  },
+  "ProbeBkgLeftRetainedTopologyMlpOneeighteight": {
+    "json_path": "levels.retained_topology.mlp[0].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "15.8"
+  },
+  "ProbeBkgLeftRetainedTopologyMlpOneseven": {
+    "json_path": "levels.retained_topology.mlp[3].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "20.6"
+  },
+  "ProbeBkgLeftRetainedTopologyMlpOnesixtwo": {
+    "json_path": "levels.retained_topology.mlp[1].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "16.6"
+  },
+  "ProbeBkgLeftVisibleContentLinearFourthree": {
+    "json_path": "levels.visible_content.linear[2].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.4"
+  },
+  "ProbeBkgLeftVisibleContentLinearOneeighteight": {
+    "json_path": "levels.visible_content.linear[0].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.4"
+  },
+  "ProbeBkgLeftVisibleContentLinearOneseven": {
+    "json_path": "levels.visible_content.linear[3].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "3.4"
+  },
+  "ProbeBkgLeftVisibleContentLinearOnesixtwo": {
+    "json_path": "levels.visible_content.linear[1].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.6"
+  },
+  "ProbeBkgLeftVisibleContentMlpFourthree": {
+    "json_path": "levels.visible_content.mlp[2].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.4"
+  },
+  "ProbeBkgLeftVisibleContentMlpOneeighteight": {
+    "json_path": "levels.visible_content.mlp[0].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.4"
+  },
+  "ProbeBkgLeftVisibleContentMlpOneseven": {
+    "json_path": "levels.visible_content.mlp[3].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "3.0"
+  },
+  "ProbeBkgLeftVisibleContentMlpOnesixtwo": {
+    "json_path": "levels.visible_content.mlp[1].rejection_points['0.90'].mean_n_bkg_pass",
+    "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
+    "value": "0.4"
   },
   "ProbeEpsS": {
     "json_path": "levels.bvc_4prong.linear[0].headline_eps_s",
@@ -3496,6 +5356,42 @@
     "sha256": "de1400c27801b1798be8d40f56c7c82cd96a8fd4a9fc4e5bfe3fa6a378f74bc9",
     "source_file": "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json",
     "value": "\\ensuremath{-}7.1025"
+  },
+  "ProbeNBkgTestBvcFourprong": {
+    "json_path": "tasks.bvc_4prong.n_background_test",
+    "sha256": "5404a2ffc1a6f1562875d014c7efbb2744e9354c671374957660ab4e85f6adfe",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/s1.json",
+    "value": "3{,}158"
+  },
+  "ProbeNBkgTestBvcQcd": {
+    "json_path": "tasks.bvc_qcd.n_background_test",
+    "sha256": "5404a2ffc1a6f1562875d014c7efbb2744e9354c671374957660ab4e85f6adfe",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/s1.json",
+    "value": "5{,}371"
+  },
+  "ProbeNBkgTestBvcResonant": {
+    "json_path": "tasks.bvc_resonant.n_background_test",
+    "sha256": "5404a2ffc1a6f1562875d014c7efbb2744e9354c671374957660ab4e85f6adfe",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/s1.json",
+    "value": "11{,}876"
+  },
+  "ProbeNBkgTestEeVsMm": {
+    "json_path": "tasks.ee_vs_mm.n_background_test",
+    "sha256": "5404a2ffc1a6f1562875d014c7efbb2744e9354c671374957660ab4e85f6adfe",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/s1.json",
+    "value": "4{,}708"
+  },
+  "ProbeNBkgTestRetainedTopology": {
+    "json_path": "tasks.retained_topology.n_background_test",
+    "sha256": "5404a2ffc1a6f1562875d014c7efbb2744e9354c671374957660ab4e85f6adfe",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/s1.json",
+    "value": "1{,}078"
+  },
+  "ProbeNBkgTestVisibleContent": {
+    "json_path": "tasks.visible_content.n_background_test",
+    "sha256": "5404a2ffc1a6f1562875d014c7efbb2744e9354c671374957660ab4e85f6adfe",
+    "source_file": "experiments/FIGS/data/probe_ladder_v2/s1.json",
+    "value": "2{,}554"
   },
   "ProbeNJets": {
     "json_path": "provenance.n_jets_total",
@@ -4373,8 +6269,14 @@
     "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
     "value": "0 of 8"
   },
-  "RecoveryWorstLoss": {
-    "json_path": "secondary.S9.wins.*.*.beaten_by[*].mean_diff",
+  "RecoveryWorstLossLinear": {
+    "json_path": "secondary.S9.wins.*.linear.beaten_by[*].mean_diff",
+    "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
+    "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
+    "value": "0.0072"
+  },
+  "RecoveryWorstLossMlp": {
+    "json_path": "secondary.S9.wins.*.mlp.beaten_by[*].mean_diff",
     "sha256": "0ef24e5d18f412a49523ced3f2224688146a4f33c0a48f4dd165cb30fb321f6a",
     "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
     "value": "0.0088"
