@@ -133,8 +133,9 @@ def discover(root: pathlib.Path, dataset: str):
     return done, skipped
 
 
-def cell_metrics(cell: pathlib.Path, probe, test_set: str = "pythia") -> dict:
-    fd = cell / "features"
+def cell_metrics(cell: pathlib.Path, probe, test_set: str = "pythia",
+                 features_dir: str = "features") -> dict:
+    fd = cell / features_dir
     f_logits, f_labels = TEST_FILES[test_set]
     for f in (f_logits, f_labels):
         if not (fd / f).exists():
@@ -223,6 +224,10 @@ def main(argv=None) -> int:
     ap.add_argument("--datasets", nargs="+", default=list(SIGNAL), choices=list(SIGNAL))
     ap.add_argument("--herwig", action="store_true",
                     help="read the Herwig test pair of the q/g cells instead")
+    # bench v3 scores two checkpoints of one run: features/ is the best-validation
+    # epoch (bench v2's rule), features_last/ the last epoch (PRESPEC 2.8's).
+    ap.add_argument("--features-dir", default="features", choices=["features", "features_last"],
+                    help="which checkpoint's outputs to read (default: the best-validation epoch)")
     args = ap.parse_args(argv)
     test_set = "herwig" if args.herwig else "pythia"
     if args.herwig:
@@ -243,7 +248,7 @@ def main(argv=None) -> int:
 
         shas = {}
         for init, n, seed, cell in cells:
-            m = cell_metrics(cell, probe, test_set)
+            m = cell_metrics(cell, probe, test_set, args.features_dir)
             shas.setdefault(m["label188_sha256"], []).append(f"{init}/{n}/{seed}")
             res.setdefault(d, {}).setdefault(init, {}).setdefault(n, {})[seed] = m
             print(f"  {init:16} {n:10} {seed:4} acc={m['accuracy']:.5f} "
@@ -270,13 +275,15 @@ def main(argv=None) -> int:
         commit = None
 
     args.out.mkdir(parents=True, exist_ok=True)
-    out_json = args.out / ("bench_metrics_herwig.json" if args.herwig
-                           else "bench_metrics.json")
+    out_json = args.out / (("bench_metrics_herwig" if args.herwig else "bench_metrics")
+                           + ("_last" if args.features_dir == "features_last" else "") + ".json")
     out_json.write_text(json.dumps(
         {"script": "experiments/FT/bench_metrics.py", "repo_commit": commit,
          # HEAD does not pin a script run from a dirty tree; its own hash does
          "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),
          "root": str(args.root), "test_set": test_set,
+         "checkpoint_rule": ("last epoch" if args.features_dir == "features_last"
+                             else "best validation epoch"),
          "signal": {d: {"data_config": SIGNAL[d][0], "background": SIGNAL[d][1][0],
                         "signal": SIGNAL[d][1][1], "signal_label": 1,
                         "signal_logit_column": SIGNAL_COLUMN} for d in res},

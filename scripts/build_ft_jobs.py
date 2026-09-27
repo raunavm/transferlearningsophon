@@ -1544,6 +1544,83 @@ def legs_bench_v2(inits, shard_name: str) -> str:
     return _derive(LEGS_BENCH, subs, f"bench-v2 {shard_name}")
 
 
+# ========================================================= bench v3, last epoch
+# WHY THIS WAVE EXISTS (found 2026-09-27). docs/PRESPEC_2026-09.md 2.8 registers
+# "Fine-tuning: last epoch", but every fine-tune in the project -- bench v2
+# included -- scores net_best_epoch_state.pt, the best-VALIDATION epoch, the rule
+# docs/PRD_PLAN.md 4.1 wrote on 2026-09-07. The two documents disagree, and
+# bench v2's prune deleted every other epoch, so the registered C2 and C3 cannot
+# be computed from what is on disk. This wave reruns exactly their 40 cells --
+# the 20 granularity models, fine-tuning seed 1, each benchmark's full training
+# set -- with bench v2's script unchanged, and scores BOTH checkpoints of the same
+# run: the last epoch into features_last/ (the registered rule) and the best
+# epoch into features/ (bench v2's rule), so the two can be compared on one run.
+# The last-epoch weights are kept as net_last_epoch_state.pt. New root: nothing
+# in bench v2 is read or overwritten.
+BENCH_V3_ROOT = "/data/results/ft/bench_v3_lastepoch"
+BENCH_V3_LAST_EPOCH = BENCH_EPOCHS - 1          # weaver numbers epochs from 0
+_GRANULARITY = re.compile(r"^(l188|l162|r42q1|r16q1)-s[1-5]b?$")
+INITS_BENCH_V3 = [(n, c, k, [1]) for n, c, k, _ in INITS_BENCH_V2 if _GRANULARITY.match(n)]
+assert len(INITS_BENCH_V3) == 20, [n for n, *_ in INITS_BENCH_V3]
+
+
+def cells_bench_v3(inits) -> list[tuple]:
+    """(leg_<set>, init, N_max, 1): the confirmatory cells only."""
+    return [(f"leg_{d}", n, BENCH_SIZES[d][-1], 1) for d in BENCH_SETS for n, *_ in inits]
+
+
+def _extract_last(indent: int) -> str:
+    """Score the last epoch, Pythia and (q/g) Herwig, exactly as bench v2 scores
+    the best one, then keep its weights under a name the prune cannot match."""
+    p = " " * indent
+    last = f"${{OUT}}/net_epoch-{BENCH_V3_LAST_EPOCH}_state.pt"
+    ext = ("python3 experiments/EVAL/extract_features.py --checkpoint {ck} --num-classes 2 "
+           "--arm FT_${{D}}_${{name}}_N${{N}}_s${{S}}{sfx} --data-config ${{CFG}} --data-test {test} "
+           "--observers jet_pt jet_energy --out {out} --batch-size 512 --num-workers 1 "
+           "--fetch-step 1 --save-logits\n")
+    return (
+        f"{p}# PRESPEC 2.8's rule: the LAST epoch. Same extractor, same test set.\n"
+        f"{p}[ -f {last} ] || {{ echo \"FATAL: no {last}; the last epoch is what PRESPEC 2.8 registers\"; exit 1; }}\n"
+        + p + ext.format(ck=last, sfx="_last", test="${TEST}", out="${OUT}/features_last")
+        + f"{p}python3 experiments/FT/smoke_checks.py features --dir ${{OUT}}/features_last --n $(ntest_for ${{D}}) --k 2\n"
+        f"{p}rm -f ${{OUT}}/features_last/features.npy\n"
+        f"{p}if [ \"${{D}}\" = \"qg\" ]; then\n"
+        + p + "  " + ext.format(ck=last, sfx="_last_herwig", test="${HERWIG}",
+                                out="${OUT}/features_last_herwig")
+        + f"{p}  python3 experiments/FT/smoke_checks.py features --dir ${{OUT}}/features_last_herwig --n ${{NTEST_herwig}} --k 2\n"
+        f"{p}  mv ${{OUT}}/features_last_herwig/logits.npy ${{OUT}}/features_last/logits_herwig.npy\n"
+        f"{p}  mv ${{OUT}}/features_last_herwig/label188.npy ${{OUT}}/features_last/label_herwig.npy\n"
+        f"{p}  rm -rf ${{OUT}}/features_last_herwig\n"
+        f"{p}fi\n"
+        f"{p}cp {last} ${{OUT}}/net_last_epoch_state.pt\n")
+
+
+def legs_bench_v3_last(inits, shard_name: str) -> str:
+    """bench v2's script for `inits`, by asserted substitution: N_max only, no
+    head re-initialisation repeats, its own root and wave label, and the last
+    epoch scored beside the best one before the prune."""
+    subs = [
+        (f"          ROOT_OUT={BENCH_V2_ROOT}\n", f"          ROOT_OUT={BENCH_V3_ROOT}\n", 1),
+        ("            top) echo \"1000 10000 100000 1200000\";;\n"
+         "            qg)  echo \"1000 10000 100000 1600000\";;\n",
+         "            top) echo \"1200000\";;\n"
+         "            qg)  echo \"1600000\";;\n", 1),
+        (f"REPS=\"{' '.join(map(str, BENCH_V2_REPS))}\";; esac\n", "REPS=\"\";; esac\n", 1),
+        ("samples_per_epoch_val=$(val_for ${N}) wave=bench-v2",
+         "samples_per_epoch_val=$(val_for ${N}) wave=bench-v3-lastepoch", 1),
+        ("                  # Per-epoch checkpoints (state + optimizer, 20 x ~26 MB), read by\n",
+         _extract_last(18)
+         + "                  # Per-epoch checkpoints (state + optimizer, 20 x ~26 MB), read by\n", 1),
+        ("                  touch ${OUT}/DONE\n                  rm -rf ${OUT}.lock\n",
+         "                  [ -f ${OUT}/net_last_epoch_state.pt ] || {\n"
+         "                    echo \"FATAL: the prune removed net_last_epoch_state.pt in ${OUT}.\"; exit 1; }\n"
+         "                  touch ${OUT}/DONE\n                  rm -rf ${OUT}.lock\n", 1),
+        ("FAILED_BENCH.${SHARD}", "FAILED_BENCH_V3.${SHARD}", 1),
+        ("FT BENCH V2 ${SHARD} COMPLETE", "FT BENCH V3 LAST-EPOCH ${SHARD} COMPLETE", 1),
+    ]
+    return _derive(legs_bench_v2(inits, shard_name), subs, f"bench-v3 {shard_name}")
+
+
 STAGE_HERWIG = PREAMBLE + """
           # THE GENERATOR-SHIFT TEST SET: EnergyFlow quark/gluon showered by
           # Herwig 7.1 (Zenodo 3066475; 40 files verified against the API on
@@ -1570,7 +1647,8 @@ STAGE_HERWIG = PREAMBLE + """
 """
 
 
-def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None) -> dict:
+def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
+               bench_v3: bool = False) -> dict:
     """The 2026-09-18 specs. Every one pins PIN_W3 or later."""
     if _tag_index(pin) < _tag_index(PIN_W3):
         raise SystemExit(f"FATAL: these specs run code that first exists at {PIN_W3} "
@@ -1621,6 +1699,20 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None) -> dic
                 header=h + "  # Stage the Herwig 7.1 quark/gluon test set (generator shift). CPU.\n"
                            "  # Two chunks of Zenodo 3066475: ~0.2 GB downloaded, ~0.4 GB written.\n"
                            "  # Run BEFORE any bench-v2 shard; they refuse to start without it.\n")
+    if bench_v3:
+        for i, inits in enumerate(shard(INITS_BENCH_V3, cells_bench_v3)):
+            name = f"ft-legs-bench-v3-last-{chr(ord('a') + i)}-raunav"
+            cells = cells_bench_v3(inits)
+            specs[f"job-{name}.yaml"] = job(
+                name, _fill(legs_bench_v3_last(inits, name), pin, inits=inits),
+                **{**gpu, "exclude_hosts": BAD_NODES + LOST_GPU_NODES},
+                header=h + "  # BENCHMARKS v3, LAST EPOCH: the 40 cells behind C2 and C3 (20 granularity\n"
+                           "  # models x top and q/g, fine-tuning seed 1, full training set), rerun\n"
+                           "  # with bench v2's script and scored at BOTH the last epoch (PRESPEC 2.8,\n"
+                           "  # features_last/) and the best-validation epoch (features/). Bench v2\n"
+                           "  # kept only the best epoch, so the registered rule was not computable.\n"
+                           f"  # inits: {' '.join(n for n, *_ in inits)}\n"
+                           f"  # {len(cells)} fine-tunes, ~{sum(cost_h(c) for c in cells):.0f} GPU-h. Root {BENCH_V3_ROOT}.\n")
     return specs
 
 
@@ -1683,7 +1775,7 @@ def _fill(script: str, pin: str, inits=None) -> str:
 
 
 def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = False,
-          later: list | None = None) -> dict[str, str]:
+          later: list | None = None, bench_v3: bool = False) -> dict[str, str]:
     h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
     specs = {
         "job-ft-subsets-jc2-raunav.yaml": job(
@@ -1772,10 +1864,10 @@ def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = F
                        "  # the same init names and sizes, so a shared root would make every\n"
                        "  # wave-2 cell hit `[ -f DONE ]` and skip. Wave 1 is untouched and the\n"
                        "  # two are reported side by side as the curve.\n")
-    if wave3 or bench_v2:
+    if wave3 or bench_v2 or bench_v3:
         # ONLY the new specs, so a --wave3 / --bench-v2 run can never rewrite a
         # launched wave-1 or wave-2 file.
-        specs = _new_specs(pin, wave3, bench_v2, later)
+        specs = _new_specs(pin, wave3, bench_v2, later, bench_v3)
         for name, text in specs.items():
             left = re.findall(r"__[A-Z0-9_]+__", text)
             assert not left, f"{name}: unfilled {sorted(set(left))}"
@@ -1812,6 +1904,9 @@ def main() -> int:
                     help=f"emit ONLY the five wave-3 shards (pin {PIN_W3})")
     ap.add_argument("--bench-v2", action="store_true",
                     help=f"emit ONLY the five bench-v2 shards + the Herwig staging (pin {PIN_W3})")
+    ap.add_argument("--bench-v3-last", action="store_true",
+                    help="emit ONLY the bench-v3 last-epoch shards: C2 and C3's 40 cells, "
+                         "scored at the last and the best-validation epoch")
     ap.add_argument("--later", nargs="+", choices=sorted(INITS_LATER), metavar="GROUP",
                     help="with --wave3/--bench-v2: emit the not-yet-launchable group(s) "
                          f"{sorted(INITS_LATER)} instead of the shards")
@@ -1823,10 +1918,10 @@ def main() -> int:
         return 0
     if args.later and not (args.wave3 or args.bench_v2):
         sys.exit("FATAL: --later needs --wave3 and/or --bench-v2")
-    if (args.wave3 or args.bench_v2) and args.pin == PIN:
+    if (args.wave3 or args.bench_v2 or args.bench_v3_last) and args.pin == PIN:
         args.pin = PIN_W3
     specs = build(args.pin, wave2=args.wave2, wave3=args.wave3, bench_v2=args.bench_v2,
-                  later=args.later)
+                  later=args.later, bench_v3=args.bench_v3_last)
     if args.only:
         keep = {n: t for n, t in specs.items() if any(k in n for k in args.only)}
         missing = [k for k in args.only if not any(k in n for n in specs)]

@@ -260,3 +260,21 @@ def test_the_fine_tuning_gpu_is_carried_from_the_manifest(tmp_path):
     b = _cell(tmp_path, y, z, seed="s2")
     assert M.cell_metrics(a, PROBE)["gpu"] == "NVIDIA GeForce RTX 3090"
     assert M.cell_metrics(b, PROBE)["gpu"] is None
+
+
+def test_the_last_epoch_outputs_are_read_from_their_own_folder_and_file(tmp_path):
+    """bench v3 scores the last epoch into features_last/ beside the best epoch's
+    features/; the readout must read the one asked for and name its output so the
+    two can never overwrite each other."""
+    y, z = _separable()
+    cell = _cell(tmp_path, y, z)
+    fl = cell / "features_last"
+    fl.mkdir()
+    np.save(fl / "label188.npy", np.asarray(y).astype(np.int16))
+    np.save(fl / "logits.npy", np.stack([np.zeros(len(z)), -np.asarray(z)], axis=1).astype(np.float32))
+    assert M.cell_metrics(cell, PROBE)["auc"] > 0.5 > M.cell_metrics(cell, PROBE, "pythia", "features_last")["auc"]
+    for sub, name in (("features", "bench_metrics.json"), ("features_last", "bench_metrics_last.json")):
+        assert M.main(["--root", str(tmp_path), "--out", str(tmp_path / "o"), "--datasets", "top",
+                       "--features-dir", sub]) == 0
+        d = _strict(tmp_path / "o" / name)
+        assert d["checkpoint_rule"] == ("last epoch" if sub == "features_last" else "best validation epoch")
