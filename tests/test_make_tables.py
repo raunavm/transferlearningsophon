@@ -592,3 +592,77 @@ def test_a_later_analysis_whose_input_changed_stops_the_run(tmp_path):
     a.write_text("{}")
     with pytest.raises(SystemExit, match="records no input hash"):
         M.check_inputs_unchanged(a, tmp_path)
+
+
+def test_every_literature_number_is_in_its_quoted_passage():
+    got, prov = _repo_macros()
+    facts = _load(prov["LitJetClassTwoNJetsMillion"]["source_file"])["facts"]
+    assert facts, "no literature facts"
+    for f in facts:
+        assert got[f["macro"]] == f["value"] and f["value"] in f["quote"]
+    assert got["LitJetClassTwoNResonantClasses"] == "161"      # docs/GROUND_TRUTH.md
+    assert got["LitJetClassTwoNQcdClasses"] == "27"            # docs/GROUND_TRUTH.md
+
+
+def test_a_literature_number_missing_from_its_quote_is_refused(tmp_path):
+    p = tmp_path / "facts.json"
+    p.write_text(json.dumps({"facts": [{"macro": "LitX", "value": "140", "source": "s",
+                                        "location": "l", "quote": "around 139 M"}]}))
+    with pytest.raises(SystemExit, match="must appear in its quote"):
+        M.emit_literature(M.Emitter(tmp_path), p)
+
+
+def test_the_mass_loss_weight_is_read_from_all_ten_specs_and_they_must_agree(tmp_path):
+    got, _ = _repo_macros()
+    assert got["DesignMassLambda"] == "5.0"                    # docs/DECISIONS.md D2
+    specs = []
+    for i in range(10):
+        s = tmp_path / f"job-mtx-x_mass-s{i}-raunav.yaml"
+        s.write_text(f"--mass-lambda {'5.0' if i else '0.05'}")
+        specs.append(s)
+    with pytest.raises(SystemExit, match="one --mass-lambda"):
+        M.emit_mass_lambda(M.Emitter(tmp_path), specs)
+
+
+def _recipes(tmp_path, **override):
+    run = {"leg": "1", "init": "l162-s2", "n_train": "1000", "lr": "1e-4", "head_lr_mult": "50",
+           "epochs": "50", "lr_schedule": None, "weight_decay": "0.01", "batch_size": "512",
+           "samples_per_epoch_val": None}
+    runs = [{**run, **override},
+            {**run, "init": "scratch", "lr": "5e-4"},
+            {**run, "leg": "top", "lr_schedule": "constant", "epochs": "20", "samples_per_epoch_val": "20000"},
+            {**run, "leg": "top", "n_train": "100000", "lr_schedule": "constant", "epochs": "20",
+             "samples_per_epoch_val": "200000"},
+            {**run, "leg": "top", "init": "scratch", "lr": "5e-4", "lr_schedule": "constant",
+             "epochs": "20", "samples_per_epoch_val": "20000"}]
+    for n, e in ((10_000, "50"), (100_000, "30"), (1_000_000, "10")):
+        runs.append({**run, "n_train": str(n), "epochs": e})
+    leg = tmp_path / "leg.yaml"
+    leg.write_text("--use-amp --optimizer ranger LR=5e-4; MULT=() LR=1e-4 --samples-per-epoch-val 20000")
+    bench = tmp_path / "bench.yaml"
+    bench.write_text("--use-amp --optimizer ranger LR=5e-4; MULT=() LR=1e-4 --lr-scheduler none")
+    return {"runs": runs}, [leg], [bench]
+
+
+def test_the_fine_tuning_table_states_one_recorded_value_per_setting(tmp_path):
+    R, legs, bench = _recipes(tmp_path)
+    rec = M.ft_recipe(R, legs, bench)
+    assert (rec["lr"], rec["lr_scratch"], rec["head_mult"]) == ("1e-4", "5e-4", "50")
+    assert rec["epochs_jetclass"] == {1_000: "50", 10_000: "50", 100_000: "30", 1_000_000: "10"}
+    assert (rec["val_bench_small"], rec["val_bench_large"]) == ("20000", "200000")
+    got, prov = _repo_macros()
+    assert got["FtRecipeLrHead"] == "\\ensuremath{5\\times10^{-3}}"
+
+
+def test_a_run_that_departs_from_its_group_stops_the_table(tmp_path):
+    R, legs, bench = _recipes(tmp_path, lr="3e-4")
+    R["runs"].append({**R["runs"][0], "lr": "1e-4"})
+    with pytest.raises(SystemExit, match="disagree within a group"):
+        M.ft_recipe(R, legs, bench)
+
+
+def test_a_command_with_a_schedule_flag_contradicts_the_jetclass_row(tmp_path):
+    R, legs, bench = _recipes(tmp_path)
+    legs[0].write_text(legs[0].read_text() + " --lr-scheduler none")
+    with pytest.raises(SystemExit, match="not the JetClass recipe"):
+        M.ft_recipe(R, legs, bench)

@@ -10,6 +10,7 @@
 %
 % MISSING INPUTS -- no macro was emitted for these:
 %   C2 and C3 as registered: community benchmarks at the last epoch (amendment A6) -- experiments/FIGS/data/bench_v3_metrics*/bench_metrics_last.json
+%   trend-test size simulation -- /Users/raunavmendiratta/transferlearningsophon/experiments/FIGS/data/trend_size_sim/trend_size_sim.json
 %   per-arm parameters and MACs -- flops_by_arm.json (see docs/RECORD.md 2.1)
 %
 % SKIPPED TABLES:
@@ -584,6 +585,29 @@
 \newcommand{\DesignPtMax}{2{,}500}  % configs/arms/L188.yaml :: selection :: sha256 d5a188dc80885515 :: GeV
 \newcommand{\DesignMsdMin}{20}  % configs/arms/L188.yaml :: selection :: sha256 d5a188dc80885515 :: GeV
 \newcommand{\DesignMsdMax}{500}  % configs/arms/L188.yaml :: selection :: sha256 d5a188dc80885515 :: GeV
+\newcommand{\LitJetClassTwoNJetsMillion}{139}  % experiments/FIGS/data/literature_facts.json :: facts[0].value :: sha256 aa0e7f48a61df17f :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitJetClassTwoNResonantClasses}{161}  % experiments/FIGS/data/literature_facts.json :: facts[1].value :: sha256 aa0e7f48a61df17f :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitJetClassTwoNQcdClasses}{27}  % experiments/FIGS/data/literature_facts.json :: facts[2].value :: sha256 aa0e7f48a61df17f :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitJetClassTwoMaxResonanceMass}{500}  % experiments/FIGS/data/literature_facts.json :: facts[3].value :: sha256 aa0e7f48a61df17f :: arXiv:2405.12972v1 Sec. II, p. 2
+\newcommand{\LitMadgraphVersion}{2.9.18}  % experiments/FIGS/data/literature_facts.json :: facts[4].value :: sha256 aa0e7f48a61df17f :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitPythiaVersion}{8.3}  % experiments/FIGS/data/literature_facts.json :: facts[5].value :: sha256 aa0e7f48a61df17f :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitDelphesVersion}{3}  % experiments/FIGS/data/literature_facts.json :: facts[6].value :: sha256 aa0e7f48a61df17f :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitJetClassTwoPileupMean}{50}  % experiments/FIGS/data/literature_facts.json :: facts[7].value :: sha256 aa0e7f48a61df17f :: arXiv:2405.12972v1 Sec. II, p. 2
+\newcommand{\LitJetClassTwoJetRadius}{0.8}  % experiments/FIGS/data/literature_facts.json :: facts[8].value :: sha256 aa0e7f48a61df17f :: arXiv:2405.12972v1 Sec. II, p. 2
+\newcommand{\LitAtlasUnifiedEffDropPercent}{10}  % experiments/FIGS/data/literature_facts.json :: facts[9].value :: sha256 aa0e7f48a61df17f :: ATL-PHYS-PUB-2026-013 Sec. 6.5, p. 22
+\newcommand{\DesignMassLambda}{5.0}  % experiments/MTX/k8s/job-mtx-l162_mass-s1-raunav.yaml :: --mass-lambda :: sha256 8882459fe5520795 :: identical in all ten mass-output pretraining specs
+\newcommand{\FtRecipeNRuns}{735}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs (count) :: sha256 cb620e950901c5be
+\newcommand{\FtRecipeLr}{\ensuremath{1\times10^{-4}}}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs[*].lr, pretrained starts :: sha256 cb620e950901c5be
+\newcommand{\FtRecipeHeadMult}{50}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs[*].head_lr_mult, pretrained starts :: sha256 cb620e950901c5be
+\newcommand{\FtRecipeLrHead}{\ensuremath{5\times10^{-3}}}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: lr x head_lr_mult :: sha256 cb620e950901c5be
+\newcommand{\FtRecipeLrScratch}{\ensuremath{5\times10^{-4}}}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs[*].lr, from scratch :: sha256 cb620e950901c5be
+\newcommand{\FtRecipeWeightDecay}{0.01}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs[*].weight_decay :: sha256 cb620e950901c5be
+\newcommand{\FtRecipeBatch}{512}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs[*].batch_size :: sha256 cb620e950901c5be
+\newcommand{\FtRecipeEpochsEThree}{50}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs[leg 1,2; n_train 1000].epochs :: sha256 cb620e950901c5be
+\newcommand{\FtRecipeEpochsEFour}{50}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs[leg 1,2; n_train 10000].epochs :: sha256 cb620e950901c5be
+\newcommand{\FtRecipeEpochsEFive}{30}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs[leg 1,2; n_train 100000].epochs :: sha256 cb620e950901c5be
+\newcommand{\FtRecipeEpochsESix}{10}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs[leg 1,2; n_train 1000000].epochs :: sha256 cb620e950901c5be
+\newcommand{\FtRecipeEpochsBench}{20}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json :: runs[bench].epochs :: sha256 cb620e950901c5be
 \newcommand{\TestConeClauseOneVerdict}{confirmed}  % experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json :: confirmatory.C1.clauses[0].verdict :: sha256 de1400c27801b179 :: performance falls with coarser labels
 \newcommand{\TestConeClauseTwoVerdict}{confirmed}  % experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json :: confirmatory.C1.clauses[1].verdict :: sha256 de1400c27801b179 :: the step is 43 -> 17
 \newcommand{\TestConeClauseThreeVerdict}{inconclusive}  % experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json :: confirmatory.C1.clauses[2].verdict :: sha256 de1400c27801b179 :: 188 ~ 162 ~ 43

@@ -1163,6 +1163,12 @@
     "source_file": "experiments/E1/ParT_sophon_arch_10c.py",
     "value": "8"
   },
+  "DesignMassLambda": {
+    "json_path": "--mass-lambda",
+    "sha256": "8882459fe55207952fdb8f2ce1307be447f07505eab0f73d18f650f6766dfb0a",
+    "source_file": "experiments/MTX/k8s/job-mtx-l162_mass-s1-raunav.yaml",
+    "value": "5.0"
+  },
   "DesignMsdMax": {
     "json_path": "selection",
     "sha256": "d5a188dc80885515f920118ab91756b8eae150a5329f8cafeb26b2cf48c5f80f",
@@ -2291,6 +2297,78 @@
     "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
     "value": "1 of 6"
   },
+  "FtRecipeBatch": {
+    "json_path": "runs[*].batch_size",
+    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "value": "512"
+  },
+  "FtRecipeEpochsBench": {
+    "json_path": "runs[bench].epochs",
+    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "value": "20"
+  },
+  "FtRecipeEpochsEFive": {
+    "json_path": "runs[leg 1,2; n_train 100000].epochs",
+    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "value": "30"
+  },
+  "FtRecipeEpochsEFour": {
+    "json_path": "runs[leg 1,2; n_train 10000].epochs",
+    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "value": "50"
+  },
+  "FtRecipeEpochsESix": {
+    "json_path": "runs[leg 1,2; n_train 1000000].epochs",
+    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "value": "10"
+  },
+  "FtRecipeEpochsEThree": {
+    "json_path": "runs[leg 1,2; n_train 1000].epochs",
+    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "value": "50"
+  },
+  "FtRecipeHeadMult": {
+    "json_path": "runs[*].head_lr_mult, pretrained starts",
+    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "value": "50"
+  },
+  "FtRecipeLr": {
+    "json_path": "runs[*].lr, pretrained starts",
+    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "value": "\\ensuremath{1\\times10^{-4}}"
+  },
+  "FtRecipeLrHead": {
+    "json_path": "lr x head_lr_mult",
+    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "value": "\\ensuremath{5\\times10^{-3}}"
+  },
+  "FtRecipeLrScratch": {
+    "json_path": "runs[*].lr, from scratch",
+    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "value": "\\ensuremath{5\\times10^{-4}}"
+  },
+  "FtRecipeNRuns": {
+    "json_path": "runs (count)",
+    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "value": "735"
+  },
+  "FtRecipeWeightDecay": {
+    "json_path": "runs[*].weight_decay",
+    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "value": "0.01"
+  },
   "FtRefAucSfourEFiveMpmSone": {
     "json_path": "secondary.S4.reference_rows.N100000.mpm-s1.macro_auc",
     "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
@@ -2530,6 +2608,66 @@
     "sha256": "1930f0831006e35a8e9ff76c6f3d5cb0c9f31e04bdda02c83237c4d1a4639430",
     "source_file": "experiments/FIGS/data/finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
     "value": "\\ensuremath{0.056}"
+  },
+  "LitAtlasUnifiedEffDropPercent": {
+    "json_path": "facts[9].value",
+    "sha256": "aa0e7f48a61df17f57b73c18df65f4d36f52002494a3b98097e4bce65277d49e",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "10"
+  },
+  "LitDelphesVersion": {
+    "json_path": "facts[6].value",
+    "sha256": "aa0e7f48a61df17f57b73c18df65f4d36f52002494a3b98097e4bce65277d49e",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "3"
+  },
+  "LitJetClassTwoJetRadius": {
+    "json_path": "facts[8].value",
+    "sha256": "aa0e7f48a61df17f57b73c18df65f4d36f52002494a3b98097e4bce65277d49e",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "0.8"
+  },
+  "LitJetClassTwoMaxResonanceMass": {
+    "json_path": "facts[3].value",
+    "sha256": "aa0e7f48a61df17f57b73c18df65f4d36f52002494a3b98097e4bce65277d49e",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "500"
+  },
+  "LitJetClassTwoNJetsMillion": {
+    "json_path": "facts[0].value",
+    "sha256": "aa0e7f48a61df17f57b73c18df65f4d36f52002494a3b98097e4bce65277d49e",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "139"
+  },
+  "LitJetClassTwoNQcdClasses": {
+    "json_path": "facts[2].value",
+    "sha256": "aa0e7f48a61df17f57b73c18df65f4d36f52002494a3b98097e4bce65277d49e",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "27"
+  },
+  "LitJetClassTwoNResonantClasses": {
+    "json_path": "facts[1].value",
+    "sha256": "aa0e7f48a61df17f57b73c18df65f4d36f52002494a3b98097e4bce65277d49e",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "161"
+  },
+  "LitJetClassTwoPileupMean": {
+    "json_path": "facts[7].value",
+    "sha256": "aa0e7f48a61df17f57b73c18df65f4d36f52002494a3b98097e4bce65277d49e",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "50"
+  },
+  "LitMadgraphVersion": {
+    "json_path": "facts[4].value",
+    "sha256": "aa0e7f48a61df17f57b73c18df65f4d36f52002494a3b98097e4bce65277d49e",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "2.9.18"
+  },
+  "LitPythiaVersion": {
+    "json_path": "facts[5].value",
+    "sha256": "aa0e7f48a61df17f57b73c18df65f4d36f52002494a3b98097e4bce65277d49e",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "8.3"
   },
   "MassDidCICfiveLinear": {
     "json_path": "confirmatory.C5.confirmatory.probes.linear.did.ci95",

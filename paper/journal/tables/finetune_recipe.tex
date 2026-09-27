@@ -1,0 +1,22 @@
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Fine-tuning settings, as the 735 fine-tuning runs behind the reported results recorded them, checked against their job commands. The head is freshly initialised in every run; a pretrained start loads every other weight.}
+\label{tab:ftrecipe}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l l l}
+\toprule
+& JetClass-II and JetClass & top tagging and quark/gluon \\
+\midrule
+optimizer & \multicolumn{2}{l}{Ranger, mixed precision, batch size 512, weight decay 0.01} \\
+learning rate, pretrained start & \multicolumn{2}{l}{$1\times10^{-4}$ (trunk), $5\times10^{-3}$ (new head)} \\
+learning rate, from scratch & \multicolumn{2}{l}{$5\times10^{-4}$ (all parameters)} \\
+schedule & flat, then decay (weaver default) & constant \\
+epochs & 50, 50, 30, 10 at $10^{3}$, $10^{4}$, $10^{5}$, $10^{6}$ jets & 20 at every size \\
+validation jets & 20{,}000 & 20{,}000 below $10^{5}$, 200{,}000 from it \\
+checkpoint & best validation & last epoch (C2, C3, S5); best validation otherwise \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

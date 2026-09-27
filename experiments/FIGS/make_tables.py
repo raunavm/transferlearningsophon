@@ -294,6 +294,12 @@ def input_paths(root: pathlib.Path) -> dict:
             "design_spec": root / "experiments" / "MTX" / "k8s" / "job-mtx-l188-s1-raunav.yaml",
             "design_arch": root / "experiments" / "E1" / "ParT_sophon_arch_10c.py",
             "design_arm": root / "configs" / "arms" / "L188.yaml",
+            "literature": data / "literature_facts.json",
+            "trend_sim": data / "trend_size_sim" / "trend_size_sim.json",
+            "ft_recipes": data / "ft_recipes" / "recipes_w2b_bench_v2.json",
+            "ft_leg_specs": sorted((root / "experiments" / "FT" / "k8s").glob("job-ft-legs-w[23]*-raunav.yaml")),
+            "ft_bench_specs": sorted((root / "experiments" / "FT" / "k8s").glob("job-ft-legs-bench-v2-*-raunav.yaml")),
+            "mass_specs": sorted((root / "experiments" / "MTX" / "k8s").glob("job-mtx-*_mass-s[1-5]-raunav.yaml")),
             "survival": maps / "usecase_survival.v1.json",
             "rung_map": maps / "rung_label_maps.v1.csv"}
 
@@ -721,6 +727,157 @@ def fmt_factor(log_value, nd: int = 2) -> str:
 
 def of(n, m) -> str:
     return f"{n} of {m}"
+
+
+def emit_literature(em: Emitter, path: pathlib.Path) -> None:
+    """Numbers quoted from other papers, each with the verbatim passage it rests on
+    (experiments/FIGS/data/literature_facts.json). Not results, but typed by hand
+    they would be the one kind of number in the manuscript that nothing traces."""
+    facts = json.loads(path.read_text())["facts"]
+    for i, f in enumerate(facts):
+        if not f["macro"].startswith("Lit") or not f["quote"] or f["value"] not in f["quote"]:
+            raise SystemExit(f"FATAL: {path} fact {i} ({f['macro']}): a literature macro must "
+                             f"start with Lit and its value must appear in its quote")
+        em.macro(f["macro"], f["value"], path, f"facts[{i}].value",
+                 f"{f['source']} {f['location']}")
+
+
+def emit_mass_lambda(em: Emitter, specs: list) -> None:
+    """The mass-loss weight, read from every mass-output pretraining job, which must agree."""
+    vals = {m for p in specs for m in re.findall(r"--mass-lambda\s+([0-9.]+)", p.read_text())}
+    if len(specs) != 10 or len(vals) != 1:
+        raise SystemExit(f"FATAL: expected one --mass-lambda over ten mass-output specs, found "
+                         f"{sorted(vals)} over {len(specs)}")
+    em.macro("DesignMassLambda", fmt(float(vals.pop()), 1), specs[0], "--mass-lambda",
+             "identical in all ten mass-output pretraining specs")
+
+
+def ft_recipe(R: dict, leg_specs: list, bench_specs: list) -> dict:
+    """The fine-tuning settings, from what each run recorded, checked against the commands.
+
+    Every field the table quotes must take ONE value within its group, or this
+    stops. Three facts are not in the run manifests and are read from the
+    committed job commands instead, which must all agree: the optimizer and
+    mixed precision, the learning-rate schedule of the JetClass-II/JetClass waves
+    (no --lr-scheduler flag, so weaver's default), and their validation size.
+    The manifests also record head_lr_mult=50 for the from-scratch runs, but
+    their commands pass no multiplier (LR=5e-4; MULT=()) and weaver's logs show
+    none was applied, so the from-scratch row is taken from the commands."""
+    one = {}
+
+    def put(key, v):
+        one.setdefault(key, set()).add(v)
+    for r in R["runs"]:
+        fam = "jetclass" if r["leg"] in ("1", "2") else "bench"
+        kind = "scratch" if r["init"] == "scratch" else "pretrained"
+        put((fam, kind, "lr"), r["lr"])
+        put((fam, "weight_decay"), r["weight_decay"])
+        put((fam, "batch_size"), r["batch_size"])
+        put((fam, "lr_schedule"), r["lr_schedule"])
+        put((fam, "epochs", int(r["n_train"]) if fam == "jetclass" else "all"), r["epochs"])
+        if kind == "pretrained":
+            put((fam, "head_lr_mult"), r["head_lr_mult"])
+        if fam == "bench":
+            put(("bench", "val", int(r["n_train"]) >= 100_000), r["samples_per_epoch_val"])
+    bad = {k: sorted(map(str, v)) for k, v in one.items() if len(v) != 1}
+    if bad:
+        raise SystemExit(f"FATAL: fine-tuning runs disagree within a group: {bad}")
+    v = {k: next(iter(s)) for k, s in one.items()}
+    for f in leg_specs + bench_specs:
+        t = f.read_text()
+        for need in ("--use-amp", "--optimizer ranger", "LR=5e-4; MULT=()", "LR=1e-4"):
+            if need not in t:
+                raise SystemExit(f"FATAL: {f} lacks {need!r}")
+    for f in leg_specs:
+        t = f.read_text()
+        if "--lr-scheduler" in t or set(re.findall(r"--samples-per-epoch-val (\S+)", t)) != {"20000"}:
+            raise SystemExit(f"FATAL: {f} is not the JetClass recipe the table states")
+    for f in bench_specs:
+        if "--lr-scheduler none" not in f.read_text():
+            raise SystemExit(f"FATAL: {f} does not run the benchmarks at a constant rate")
+    if (v[("jetclass", "lr_schedule")], v[("bench", "lr_schedule")]) != (None, "constant"):
+        raise SystemExit("FATAL: recorded schedules are not (weaver default, constant)")
+    for fam in ("jetclass", "bench"):
+        if v[(fam, "pretrained", "lr")] != v[("jetclass", "pretrained", "lr")] or \
+                v[(fam, "scratch", "lr")] != v[("jetclass", "scratch", "lr")] or \
+                v[(fam, "head_lr_mult")] != v[("jetclass", "head_lr_mult")] or \
+                v[(fam, "weight_decay")] != v[("jetclass", "weight_decay")] or \
+                v[(fam, "batch_size")] != v[("jetclass", "batch_size")]:
+            raise SystemExit("FATAL: the two families of fine-tuning differ in a shared setting")
+    return {"n_runs": len(R["runs"]), "lr": v[("jetclass", "pretrained", "lr")],
+            "head_mult": v[("jetclass", "head_lr_mult")], "lr_scratch": v[("jetclass", "scratch", "lr")],
+            "weight_decay": v[("jetclass", "weight_decay")], "batch": v[("jetclass", "batch_size")],
+            "epochs_jetclass": {n: v[("jetclass", "epochs", n)] for n in (1_000, 10_000, 100_000, 1_000_000)},
+            "epochs_bench": v[("bench", "epochs", "all")],
+            "val_bench_small": v[("bench", "val", False)], "val_bench_large": v[("bench", "val", True)],
+            "val_jetclass": "20000"}
+
+
+def emit_ft_recipe(em: Emitter, rec: dict, src: pathlib.Path) -> None:
+    em.macro("FtRecipeNRuns", fmt_int(rec["n_runs"]), src, "runs (count)")
+    em.macro("FtRecipeLr", fmt_sci(rec["lr"]), src, "runs[*].lr, pretrained starts")
+    em.macro("FtRecipeHeadMult", rec["head_mult"], src, "runs[*].head_lr_mult, pretrained starts")
+    em.macro("FtRecipeLrHead", fmt_sci(float(rec["lr"]) * float(rec["head_mult"])), src,
+             "lr x head_lr_mult")
+    em.macro("FtRecipeLrScratch", fmt_sci(rec["lr_scratch"]), src, "runs[*].lr, from scratch")
+    em.macro("FtRecipeWeightDecay", rec["weight_decay"], src, "runs[*].weight_decay")
+    em.macro("FtRecipeBatch", rec["batch"], src, "runs[*].batch_size")
+    for n, e in rec["epochs_jetclass"].items():
+        em.macro("FtRecipeEpochsE" + texname(f"{len(str(n)) - 1}"), e, src,
+                 f"runs[leg 1,2; n_train {n}].epochs")
+    em.macro("FtRecipeEpochsBench", rec["epochs_bench"], src, "runs[bench].epochs")
+
+
+def table_ft_recipe(rec: dict) -> str:
+    ep = rec["epochs_jetclass"]
+    body = ["& JetClass-II and JetClass & top tagging and quark/gluon \\\\", "\\midrule",
+            f"optimizer & \\multicolumn{{2}}{{l}}{{Ranger, mixed precision, batch size {rec['batch']}, "
+            f"weight decay {rec['weight_decay']}}} \\\\",
+            f"learning rate, pretrained start & \\multicolumn{{2}}{{l}}{{{fmt_sci(rec['lr'])} "
+            f"(trunk), {fmt_sci(float(rec['lr']) * float(rec['head_mult']))} (new head)}} \\\\",
+            f"learning rate, from scratch & \\multicolumn{{2}}{{l}}{{{fmt_sci(rec['lr_scratch'])} "
+            f"(all parameters)}} \\\\",
+            "schedule & flat, then decay (weaver default) & constant \\\\",
+            "epochs & " + ", ".join(str(ep[n]) for n in sorted(ep))
+            + " at " + ", ".join(fmt_n_jets(f"N{n}") for n in sorted(ep))
+            + f" jets & {rec['epochs_bench']} at every size \\\\",
+            f"validation jets & {fmt_int(rec['val_jetclass'])} & {fmt_int(rec['val_bench_small'])} "
+            f"below {fmt_n_jets('N100000')}, {fmt_int(rec['val_bench_large'])} from it \\\\",
+            "checkpoint & best validation & last epoch (C2, C3, S5); best validation otherwise \\\\"]
+    caption = (f"Fine-tuning settings, as the {fmt_int(rec['n_runs'])} fine-tuning runs behind the "
+               "reported results recorded them, checked against their job commands. The head is "
+               "freshly initialised in every run; a pretrained start loads every other weight.")
+    return _table(body, caption, "tab:ftrecipe", "l l l", [])
+
+
+def emit_trend_sim(em: Emitter, T: dict, src: pathlib.Path) -> None:
+    """The trend test under a null with equal means and the observed seed spreads
+    (experiments/STATS/trend_size_sim.py): C1 in full, every other test in summary."""
+    names = {"cov": "Cov", "indep": "Indep", "indep_upper": "IndepUpper"}
+    prov = T["provenance"]
+    em.macro("TrendSimNDraws", fmt_int(prov["n_stat_draws"]), src, "provenance.n_stat_draws")
+    em.macro("TrendSimNSizeDraws", fmt_int(prov["n_size_draws"]), src, "provenance.n_size_draws")
+    c1 = [i for i, r in enumerate(T["tests"]) if r["json_path"] == "confirmatory.C1"]
+    if len(c1) != 1:
+        raise SystemExit(f"FATAL: {src} holds {len(c1)} C1 rows")
+    i = c1[0]
+    for k, n in names.items():
+        r = T["tests"][i]["nulls"][k]
+        base = f"tests[{i}].nulls.{k}"
+        em.macro(f"TrendSimSizeCone{n}", fmt(100 * r["size"]["size"], 1) + "\\%", src,
+                 f"{base}.size.size", "percent, nominal 5%")
+        em.macro(f"TrendSimNGeCone{n}", fmt_int(r["n_ge"]), src, f"{base}.n_ge")
+        em.macro(f"TrendSimPCone{n}", fmt_p(r["p_sim"]), src, f"{base}.p_sim")
+        if k == "indep_upper":
+            em.macro("TrendSimSdFactor", fmt(r["sd_factor"], 2), src, f"{base}.sd_factor")
+    S = T["summary"]
+    em.macro("TrendSimNTests", str(S["n_tests"]), src, "summary.n_tests")
+    em.macro("TrendSimNRejected", str(S["n_rejected"]), src, "summary.n_rejected")
+    em.macro("TrendSimNRejectedSurviving", str(S["n_rejected_surviving_every_null"]), src,
+             "summary.n_rejected_surviving_every_null", "p_sim <= 0.05 under all three nulls")
+    for k, n in names.items():
+        em.macro(f"TrendSimMaxSize{n}", fmt(100 * S["max_size"][k], 1) + "\\%", src,
+                 f"summary.max_size.{k}", "largest size over every trend test")
 
 
 def emit_training_design(em: Emitter, spec: pathlib.Path, arch: pathlib.Path,
@@ -1628,6 +1785,20 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
 
     if all(k in have for k in ("design_spec", "design_arch", "design_arm")):
         emit_training_design(em, paths["design_spec"], paths["design_arch"], paths["design_arm"])
+    if "literature" in have:
+        emit_literature(em, paths["literature"])
+    if "trend_sim" in have:
+        emit_trend_sim(em, json.loads(paths["trend_sim"].read_text()), paths["trend_sim"])
+    else:
+        missing.append(f"trend-test size simulation -- {paths['trend_sim']}")
+    if "mass_specs" in have and paths["mass_specs"]:
+        emit_mass_lambda(em, paths["mass_specs"])
+    if all(k in have for k in ("ft_recipes", "ft_leg_specs", "ft_bench_specs")) \
+            and paths["ft_leg_specs"] and paths["ft_bench_specs"]:
+        rec = ft_recipe(json.loads(paths["ft_recipes"].read_text()),
+                        paths["ft_leg_specs"], paths["ft_bench_specs"])
+        emit_ft_recipe(em, rec, paths["ft_recipes"])
+        out["tables/finetune_recipe.tex"] = table_ft_recipe(rec)
     if (A.get("confirmatory") or {}).get("C1", {}).get("clause3_equivalence"):
         emit_c1_detail(em, A, paths["analysis"])
     later = (("recovery", emit_recovery, lambda d: table_recovery(d, sizes), "label_recovery"),

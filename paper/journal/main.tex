@@ -107,9 +107,9 @@ else held fixed. It is also costly: every class needs a truth definition, enough
 simulated jets, and its share of the training budget. Whoever builds the next
 model needs to know which distinctions buy transfer and which only cost. In
 computer vision finer pretraining labels help when the downstream task needs the
-distinctions they carry~\cite{huh,mahajan,chen,hong}, and Hong
-et~al.~\cite{hong} varied label partitions with the data fixed and added a
-random-class control. In particle physics, Sophon compared its vocabulary with a
+distinctions they carry~\cite{huh,chen,hong}, a vocabulary aligned with the
+target classes transfers best~\cite{mahajan}, and Hong et~al.~\cite{hong}
+varied label partitions with the data fixed and added a random-class control. In particle physics, Sophon compared its vocabulary with a
 coarser one while the data subset and training length also
 changed~\cite{sophon}, and a contrast of pretraining label spaces for event
 classification was negative in several of its comparisons~\cite{pecm}.
@@ -185,23 +185,28 @@ directly, it was ahead of or level with the self-supervised
 alternatives~\cite{objectives,hepjepa}. We therefore treat the supervised
 vocabulary as the object of study and use one validated self-supervised model as
 the label-free reference.
-% CHECK: [mahajan] and [jpjepa] are cited from training knowledge; the repository
-% notes do not cover them. Verify both claims against the papers.
-
 \paragraph{Label granularity.} In vision, finer pretraining labels improve
 transfer to tasks that need the distinctions they carry, and coarse labels can
-suffice when the downstream task does not~\cite{huh,mahajan,chen,pirovano,mehta}.
+suffice when the downstream task does not~\cite{huh,chen,pirovano,mehta}. With
+web images labelled by hashtags, a larger vocabulary transferred better to
+targets with many or fine-grained classes and a smaller one matched to the
+target classes did best on that target, although the images changed with the
+vocabulary~\cite{mahajan}.
 Hong et~al.~\cite{hong} varied pretraining label partitions with the data fixed
 and ran a random-class control. Our design adapts theirs to jets and differs in
 three respects: the vocabularies are nested levels of one physics-defined tree,
 pretraining is repeated five times per vocabulary, and the random control is
 matched in class sizes to the coarsest vocabulary.
 
-\paragraph{Auxiliary targets.} ATLAS abandoned a joint classifier and
-mass-regression output in a boosted-jet tagger after the regression loss
-dominated early training and cost classification efficiency~\cite{atlasgnx}.
-Other auxiliary objectives have also disappointed: auxiliary regression heads
-lowered accuracy in a joint-embedding jet model~\cite{jpjepa}, and a multi-label
+\paragraph{Auxiliary targets.} ATLAS did not pursue a single network
+combining classification with jet mass and $p_{\mathrm T}$ regression for its
+boosted-Higgs tagger: the regression loss dominated early training, and the
+combined model lost about \LitAtlasUnifiedEffDropPercent\% in classification
+efficiency relative to a dedicated classifier~\cite{atlasgnx}. Other auxiliary
+objectives have also disappointed: letting auxiliary losses that reconstruct
+particle type, track displacement and pairwise kinematics train the encoder of a
+joint-embedding jet model lowered its fine-tuned accuracy in a small
+ablation~\cite{jpjepa}, and a multi-label
 pretext was negative in several comparisons for event
 classification~\cite{pecm}. Whether the cost of an auxiliary mass target depends
 on the classification vocabulary has not been tested.
@@ -212,7 +217,21 @@ on the classification vocabulary has not been tested.
 
 \subsection{Data, model and pretraining}
 
-All models are pretrained on JetClass-II~\cite{sophon}, selecting jets with
+JetClass-II~\cite{sophon} labels about \LitJetClassTwoNJetsMillion{} million
+large-radius jets in \Kfull{} classes: \LitJetClassTwoNResonantClasses{}
+resonant classes, from two-prong decays of a spin-0 resonance with mass up to
+\LitJetClassTwoMaxResonanceMass~GeV and three- and four-prong decays through a
+pair of secondary resonances, and \LitJetClassTwoNQcdClasses{} QCD classes
+defined by the numbers of $b$, $c$ and $s$ quarks in the jet. Resonances are
+generated at leading order with MadGraph5\_aMC@NLO~\LitMadgraphVersion{} and QCD
+multijet events with Pythia~\LitPythiaVersion, which also simulates the
+resonance decays and parton showering; the detector is simulated with
+Delphes~\LitDelphesVersion{} using a card adapted from CMS, with an average of
+\LitJetClassTwoPileupMean{} pileup interactions and the PUPPI algorithm applied
+for pileup removal. Jets are clustered from the Delphes E-flow objects with the
+anti-$k_{\mathrm T}$ algorithm with $R = \LitJetClassTwoJetRadius$.
+
+All models are pretrained on JetClass-II, selecting jets with
 $\DesignPtMin < p_{\mathrm T} < \DesignPtMax$~GeV and soft-drop mass
 $\DesignMsdMin < m_{\mathrm{SD}} < \DesignMsdMax$~GeV. Training jets are
 reweighted to a flat distribution in $(p_{\mathrm T}, m_{\mathrm{SD}})$ within
@@ -230,8 +249,6 @@ of classes. Every model is trained for \DesignEpochs{} epochs of
 batch size \DesignBatchSize{}, the Ranger optimizer and an initial learning rate
 of \DesignStartLr, as in Sophon; the checkpoint after the last epoch is used
 downstream.
-% CHECK: JetClass-II generator, detector and pileup description to be taken
-% from Sophon Sec. II and cited, not restated from memory.
 
 \subsection{The label tree}\label{sec:tree}
 
@@ -294,11 +311,9 @@ reference with two fine-tuning seeds.
 
 \paragraph{Mass output.} The \Kres- and \Kcoarse-class models were also
 pretrained, five times each, with an added output that regresses the jet's
-groomed mass, with the loss weight fixed a priori to GloParT's
-value~\cite{glopart} and not tuned. With the models without it, this gives a
+groomed mass, with the loss weight fixed a priori to GloParT's value,
+$\lambda = \DesignMassLambda$~\cite{glopartdp}, and not tuned. With the models without it, this gives a
 two-by-two design, vocabulary crossed with the mass output.
-% CHECK: lambda = 5.0 needs a generated macro before it may be quoted; source
-% is the mass-output pretraining specs (experiments/MTX/k8s/job-mtx-*mass*).
 
 \subsection{Evaluation}\label{sec:eval}
 
@@ -338,9 +353,7 @@ set, never the test set, and a dated amendment written before any last-epoch
 number existed resolves the conflict: the JetClass-II and JetClass results are
 reported under the best-validation rule they ran with, and the two confirmatory
 benchmark tests are recomputed at the last epoch from a rerun that records
-both.
-% CHECK: fine-tuning learning rates, epoch budgets and the validation subset
-% (scripts/build_ft_jobs.py) to be summarised in an appendix table.
+both. Table~\ref{tab:ftrecipe} lists the fine-tuning settings.
 
 \paragraph{Anomaly detection.} Signal jets of six resonance classes are
 injected into QCD background, and each detector's sensitivity is summarised by
@@ -920,6 +933,10 @@ is the verdict the pre-registration permits; the text says in which direction
 each failure went.}
 \label{tab:prereg}
 \end{table}
+
+\section{Fine-tuning settings}\label{app:ftrecipe}
+
+\input{tables/finetune_recipe}
 
 \bibliographystyle{plain}
 \bibliography{refs}
