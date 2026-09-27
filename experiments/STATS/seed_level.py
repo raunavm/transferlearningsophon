@@ -2132,6 +2132,227 @@ def format_bench(name: str, spec: dict, data: dict, cells, seeds) -> list[str]:
     return out
 
 
+# ------------------------------------------ C4: the random-label control
+
+def load_random_control(paths) -> dict:
+    """probe.py output for the random-label draws, one file per draw, each with
+    the draw and the 17-class model of the SAME seed index on C4's two pairs.
+    Returns (control - 17-class) in log(1-AUC) by task, probe and draw, with the
+    paired bootstrap interval probe.py stores for (17-class - control), negated."""
+    docs = {}
+    for p in [pathlib.Path(x) for x in paths]:
+        d = json.loads(p.read_text())
+        rand = {a for t in CONTROL_TASKS for a in d["tasks"][t]["arms"] if a.startswith("rand-d")}
+        if len(rand) != 1:
+            raise SystemExit(f"FATAL: {p} holds {sorted(rand)}; one random draw per file")
+        draw = int(re.match(r"rand-d(\d)", next(iter(rand))).group(1))
+        if draw in docs:
+            raise SystemExit(f"FATAL: draw {draw} appears twice")
+        docs[draw] = (p, d)
+    if sorted(docs) != [1, 2, 3]:
+        raise SystemExit(f"FATAL: C4 needs draws 1, 2, 3; got {sorted(docs)}")
+    if len({d["row_alignment_sha256"] for _, d in docs.values()}) != 1:
+        raise SystemExit("FATAL: the draws were probed on different test jets")
+    diffs = {k: {t: [] for t in CONTROL_TASKS} for k in PROBES}
+    ci = {k: {t: [] for t in CONTROL_TASKS} for k in PROBES}
+    levels = []
+    for draw in (1, 2, 3):
+        p, d = docs[draw]
+        for t in CONTROL_TASKS:
+            arms = d["tasks"][t]["arms"]
+            rand = next(a for a in arms if a.startswith("rand-d"))
+            sem = next(a for a in arms if a.startswith("r16q1-"))
+            if parse_arm(sem)[1] != draw:
+                raise SystemExit(f"FATAL: draw {draw} is paired with {sem}; PRESPEC pairs draw k "
+                                 f"with seed index k")
+            for k in PROBES:
+                diffs[k][t].append(arms[rand][k][ENDPOINT] - arms[sem][k][ENDPOINT])
+                c = d["tasks"][t]["contrasts"][f"{k}:{sem}-{rand}"]
+                ci[k][t].append([-c["ci95"][1], -c["ci95"][0]])
+                levels.append({"draw": draw, "task": t, "probe": k, "control": rand, "semantic": sem,
+                               "control_log1m_auc": arms[rand][k][ENDPOINT],
+                               "semantic_log1m_auc": arms[sem][k][ENDPOINT],
+                               "censored": bool(arms[rand][k]["log1m_auc_censored"]
+                                                or arms[sem][k]["log1m_auc_censored"])})
+    return {"diffs": diffs, "ci": ci, "rows": levels,
+            "files": [{"path": str(p), "sha256": _sha(p)} for p, _ in docs.values()],
+            "row_alignment_sha256": next(iter(docs.values()))[1]["row_alignment_sha256"]}
+
+
+def run_c4(a, argv=None) -> int:
+    """C4, descriptive (amendment A1): the sign pattern on the linear probe, the
+    MLP beside it. Its own inputs, its own output file."""
+    out_file = _refuse_overwrite(pathlib.Path(a.out) / "c4_random_control.json")
+    data = load_random_control(a.random_control)
+    res = {"provenance": {"inputs": data["files"], "script_sha256": _sha(__file__),
+                          "row_alignment_sha256": data["row_alignment_sha256"],
+                          "argv": list(argv or sys.argv[1:])},
+           "C4": {k: c4_sign_pattern(data["diffs"][k], data["ci"][k]) for k in PROBES},
+           "table": data["rows"],
+           "section7_check": {k: [{"draw": i + 1, "diff": d, "control_better": d < 0}
+                                  for i, d in enumerate(data["diffs"][k]["visible_content"])]
+                              for k in PROBES},
+           "section7_reading": "PRESPEC §7 counts 'the control beating the semantic model on a pair "
+                               "the semantic model splits' against the thesis; visible_content is "
+                               "that pair (split at 17 classes)"}
+    print("C4, random-label control minus 17-class model, log(1-AUC), DESCRIPTIVE (outside Holm)")
+    for k in PROBES:
+        r = res["C4"][k]
+        print(f"  {k} probe: {r['n_match']} of {r['n_signed_cells']} signed cells match; exact "
+              f"binomial p(>= that) = {r['p_at_least']:.4g} (floor {r['p_floor']:.4g}); "
+              f"predicted-zero cells whose interval covers 0: {r['zero_cells_consistent']}")
+        for c in r["cells"]:
+            print(f"    {c['task']:16s} draw {c['draw']}  diff {c['diff']:+.4f}  CI "
+                  f"[{c['ci'][0]:+.3f}, {c['ci'][1]:+.3f}]  predicted {c['predicted_sign']:+d}  "
+                  + ("match" if c["sign_matches"] else "MISMATCH" if c["sign_matches"] is False
+                     else "zero cell"))
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(json.dumps(res, indent=2))
+    print(f"\nwrote {out_file}")
+    return 0
+
+
+# ------------------------------ S3, S4: fine-tuning on JetClass and JetClass-II
+
+# PRESPEC 3, transcribed. Both are secondary, each a trend test per training size
+# with Holm inside its own table (2.7); the endpoint is log(1 - macro AUC)
+# (2.3), from fine-tuning seed 1 of each granularity model (the plan's primary
+# analysis), under the best-validation checkpoint rule these waves ran with
+# (PRESPEC amendment A6).
+FT_LEGS = {
+    "S4": {"name": "JetClass-II 162-way, fine-tuned",
+           "prediction": "monotone decrease with coarser labels at small training sizes; gap "
+                         "shrinks with size but does not vanish",
+           "small": ("N1000", "N10000")},
+    "S3": {"name": "JetClass 10-way, fine-tuned",
+           "prediction": "steps at 162 -> 43 (gluon) and 43 -> 17 (flavour)",
+           "steps": ((162, 43), (43, 17))},
+}
+FT_SEED = "s1"
+
+
+def load_ft_leg(path, test: str) -> dict:
+    """leg1_metrics.py / leg2_metrics.py --macro-auc output -> one row per
+    (training size, granularity model), fine-tuning seed 1. Other inits
+    (scratch, the controls, the mass-output models) are reference rows."""
+    doc = json.loads(pathlib.Path(path).read_text())
+    rows, reference = [], {}
+    for init, per_n in sorted(doc["cells"].items()):
+        m = ARM_RE.match(ARM_ALIAS.get(init, init))
+        for n, per_seed in per_n.items():
+            c = per_seed.get(FT_SEED)
+            if c is None:
+                continue
+            if "macro_auc_ovr" not in c:
+                raise SystemExit(f"FATAL: {path} has no macro_auc_ovr for {init}/{n}; PRESPEC 2.3's "
+                                 "endpoint needs it (leg2_metrics.py --macro-auc)")
+            auc = float(c["macro_auc_ovr"])
+            entry = {"arm": init, "n_train": n, "macro_auc": auc, "accuracy": c["accuracy"]}
+            if not m:
+                reference.setdefault(n, {})[init] = entry
+                continue
+            rows.append({**entry, "task": f"{test}_{n}", "probe": BENCH_KIND,
+                         "level": ARM_LEVEL[m.group(1)], "seed": int(m.group(2)),
+                         ENDPOINT: math.log(max(1.0 - auc, 1e-9)), "censored": auc >= 1.0})
+    sizes = sorted({r["n_train"] for r in rows}, key=lambda n: int(n[1:]))
+    return {"rows": rows, "reference": reference, "sizes": sizes,
+            "file": {"path": str(path), "sha256": _sha(path)},
+            "row_alignment_sha256": doc.get("row_alignment_sha256")}
+
+
+def ft_leg_analysis(data: dict, test: str, key: str, seeds) -> dict:
+    """Per size: the trend test, the six pairwise contrasts, the level means; Holm
+    over the per-size trend tests. Then S4's or S3's clauses from those."""
+    spec, cells = FT_LEGS[key], index_cells(data["rows"])
+    per = {}
+    for n in data["sizes"]:
+        task = f"{test}_{n}"
+        levels = [{"level": lv, **({"mean": float(np.mean(v)), "n_seeds": len(v)} if (v := [
+            cells[(task, BENCH_KIND, lv, s)][ENDPOINT] for s in seeds
+            if (task, BENCH_KIND, lv, s) in cells]) else {"n_seeds": 0})} for lv in LEVELS]
+        per[n] = {"trend": trend_test(cells, task, BENCH_KIND, seeds),
+                  "pairwise": pairwise_table(cells, task, BENCH_KIND, seeds), "levels": levels}
+    avail = [(n, r["trend"]["p"]) for n, r in per.items() if r["trend"]["run"]]
+    for (n, _), rej in zip(avail, holm([p for _, p in avail], ALPHA) if avail else []):
+        per[n]["trend"]["holm_reject_within_table"] = bool(rej)
+    out = {"name": spec["name"], "prediction": spec["prediction"], "endpoint":
+           "log(1 - macro AUC), natural log, lower is better", "fine_tuning_seed": FT_SEED,
+           "checkpoint_rule": "best validation epoch (PRESPEC amendment A6)",
+           "holm_table": f"per-size trend tests, {len(avail)}", "per_size": per,
+           "reference_rows": data["reference"]}
+    gap = {n: next((r["mean_diff"] for r in per[n]["pairwise"]
+                    if (r["fine"], r["coarse"]) == (188, 17) and r["estimable"]), None)
+           for n in data["sizes"]}
+    out["gap_17_minus_188"] = gap
+    if key == "S4":
+        small = [n for n in spec["small"] if n in per]
+        c1 = all(per[n]["trend"].get("holm_reject_within_table") for n in small) and bool(small)
+        g = [gap[n] for n in data["sizes"] if gap[n] is not None]
+        c2 = len(g) > 1 and all(a > b for a, b in zip(g, g[1:]))
+        big = data["sizes"][-1]
+        c3 = bool(per[big]["trend"].get("holm_reject_within_table"))
+        out["clauses"] = [
+            {"n": 1, "text": "monotone decrease with coarser labels at small training sizes",
+             "verdict": "confirmed" if c1 else "not confirmed",
+             "detail": f"trend test rejects, Holm within the table, at {small}"},
+            {"n": 2, "text": "gap shrinks with size", "verdict": "confirmed" if c2 else "not confirmed",
+             "detail": "17-class minus 188-class mean paired difference strictly decreasing over "
+                       f"{data['sizes']}: {[None if x is None else round(x, 4) for x in g]}; descriptive"},
+            {"n": 3, "text": "gap does not vanish", "verdict": "confirmed" if c3 else "not confirmed",
+             "detail": f"trend test at the largest size ({big}) rejects, Holm within the table"}]
+    else:
+        cl = []
+        for i, (a, b) in enumerate(spec["steps"], start=1):
+            hits = {n: next(r for r in per[n]["pairwise"] if (r["fine"], r["coarse"]) == (a, b))
+                    for n in data["sizes"]}
+            ok = {n: bool(h.get("holm_reject")) and h.get("mean_diff", 0) > 0 for n, h in hits.items()}
+            cl.append({"n": i, "text": f"step at {a} -> {b}",
+                       "verdict": "confirmed" if all(ok.values()) else
+                                  "not confirmed" if not any(ok.values()) else "partially confirmed",
+                       "detail": "pairwise (coarser - finer) > 0 and Holm-rejected within its pairwise "
+                                 f"table, by size: {ok}"})
+        out["clauses"] = cl
+    return out
+
+
+def format_ft_leg(key: str, r: dict) -> list[str]:
+    out = [f"\n== {key}: {r['name']} — {r['prediction']}",
+           f"  endpoint {r['endpoint']}; fine-tuning seed {r['fine_tuning_seed'][1:]}; "
+           f"{r['checkpoint_rule']}; Holm over the {r['holm_table']}"]
+    for n, p in r["per_size"].items():
+        t = p["trend"]
+        means = "  ".join(f"{x['level']}: {x['mean']:+.4f}" for x in p["levels"] if x["n_seeds"])
+        out.append(f"  {n:9s} {means}")
+        out.append(f"            trend " + (f"p={_p(t['p'])}, arg-max {t['argmax_step'][0]}|"
+                                           f"{t['argmax_step'][1]}, Holm-reject "
+                                           f"{t.get('holm_reject_within_table')}" if t["run"]
+                                           else t["reason"]))
+    for c in r["clauses"]:
+        out.append(f"  clause {c['n']}: \"{c['text']}\" — {c['verdict'].upper()}: {c['detail']}")
+    return out
+
+
+def run_ft_legs(a, argv=None) -> int:
+    """S4 (JetClass-II) and S3 (JetClass). Their own inputs, their own output file."""
+    out_file = _refuse_overwrite(pathlib.Path(a.out) / "s3_s4_finetune.json")
+    seeds = [s for s in EXPECTED_SEEDS if s not in a.drop_pairs]
+    res = {"provenance": {"script_sha256": _sha(__file__), "argv": list(argv or sys.argv[1:]),
+                          "prespec_sha256": _sha(PRESPEC) if PRESPEC.exists() else None},
+           "secondary": {}}
+    for key, path, test in (("S4", a.finetune_jetclass2, "jc2"), ("S3", a.finetune_jetclass, "jc1")):
+        if not path:
+            continue
+        d = load_ft_leg(path, test)
+        r = ft_leg_analysis(d, test, key, seeds)
+        r["provenance"] = {"file": d["file"], "row_alignment_sha256": d["row_alignment_sha256"]}
+        res["secondary"][key] = r
+        print("\n".join(format_ft_leg(key, r)))
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(json.dumps(res, indent=2))
+    print(f"\nwrote {out_file}")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("inputs", nargs="*",
@@ -2161,6 +2382,14 @@ def main(argv=None) -> int:
                          "stay pending")
     ap.add_argument("--bench-herwig", default=None, metavar="HERWIG_JSON",
                     help="S5: bench_metrics_herwig.json of the same wave; needs --bench")
+    ap.add_argument("--random-control", nargs="+", default=None, metavar="PATH",
+                    help="C4: probe_results.json for random-label draws 1, 2, 3, each with the "
+                         "17-class model of the same seed index. Written to c4_random_control.json")
+    ap.add_argument("--finetune-jetclass2", default=None, metavar="LEG1_JSON",
+                    help="S4: leg1_metrics.json (JetClass-II fine-tuning). Written to "
+                         "s3_s4_finetune.json in --out")
+    ap.add_argument("--finetune-jetclass", default=None, metavar="LEG2_JSON",
+                    help="S3: leg2_metrics.json made with --macro-auc (JetClass fine-tuning)")
     a = ap.parse_args(argv)
     if (a.bench or a.bench_herwig) and not a.inputs:
         ap.error("--bench reports C2 and C3 inside the ladder's confirmatory family, so it "
@@ -2173,13 +2402,16 @@ def main(argv=None) -> int:
     if a.drop_pairs and not a.drop_reason:
         raise SystemExit("FATAL: --drop-pairs needs --drop-reason; a dropped pair is reported "
                          "with why it was dropped (PRESPEC 2.2)")
-    if not a.inputs and not a.label_recovery and not a.mass_resolution and not a.real_data:
+    if not (a.inputs or a.label_recovery or a.mass_resolution or a.real_data
+            or a.finetune_jetclass2 or a.finetune_jetclass or a.random_control):
         ap.error("give the probe_results.json inputs, --label-recovery, --mass-resolution, "
                  "--real-data, or a combination")
     rc = run_ladder(a, argv) if a.inputs else 0
     rc = rc or (run_s9(a, argv) if a.label_recovery else 0)
     rc = rc or (run_s7(a, argv) if a.mass_resolution else 0)
-    return rc or (run_aoj(a, argv) if a.real_data else 0)
+    rc = rc or (run_aoj(a, argv) if a.real_data else 0)
+    rc = rc or (run_ft_legs(a, argv) if (a.finetune_jetclass2 or a.finetune_jetclass) else 0)
+    return rc or (run_c4(a, argv) if a.random_control else 0)
 
 
 if __name__ == "__main__":
