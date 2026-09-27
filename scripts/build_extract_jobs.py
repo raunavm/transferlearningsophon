@@ -155,6 +155,12 @@ NOT_YET_TRAINED = []
 # each gets instead: 92%, the ceiling the PI set for the benchmark wave
 # (DECISIONS_PENDING item 43, option C). Every other spec keeps 85%.
 STORAGE_LINE_APPROVED = {"mtx-rand-d2-s2": 92, "mtx-rand-d3-s3": 92}
+# The five windowed extractions that complete S10's pairs, 381 MB each (1.9 GB
+# in all, measured on the five that exist), launched 2026-09-27 with the volume
+# at 90%: an approved plan item under the same 92% ceiling. Window mode only, so
+# no spec that has already run is regenerated with a different line.
+STORAGE_LINE_APPROVED_WINDOW = {r: 92 for r in ("mtx-l162-s2", "mtx-l162-s3", "mtx-l162-s4",
+                                                "mtx-l162-s5", "mtx-r16q1-s1")}
 # Regression outputs AFTER the K class outputs (ParT_sophon_arch_mass.py: one,
 # the jet mass). The extractor is told --num-classes K --num-reg 1 rather than
 # --num-classes K+1, so K stays the plain twin's and the manifest never counts
@@ -400,9 +406,14 @@ WINDOW_MAX_JETS = 400_000
 # unconditionally and the 400k caches are the provenance of a completed run.
 WINDOW2_OUT = "features_vcbwindow_e79_full"
 WINDOW2_MAX_JETS = 1_500_000
-# Only the arms the physics-probe table is built on (probe-physics-v4).
+# The first five are the arms the physics-probe table was built on
+# (probe-physics-v4). The other five complete S10's pairs (162 vs 17 at seed
+# indices 1-5; docs/PRESPEC_2026-09.md clarification of 2026-09-27). They take
+# the same pin, config and file list, so all ten stream the same jets.
 WINDOW_RUNS = {"mtx-l162-s1b", "mtx-r16q1-s2", "mtx-r16q1-s3",
-               "mtx-r16q1-s4", "mtx-r16q1-s5"}
+               "mtx-r16q1-s4", "mtx-r16q1-s5",
+               "mtx-l162-s2", "mtx-l162-s3", "mtx-l162-s4", "mtx-l162-s5",
+               "mtx-r16q1-s1"}
 
 
 def pin_for(run_id: str, window: bool = False) -> str:
@@ -440,7 +451,8 @@ def build(run_id, arm, k, ckpt_dir, gpu: bool, max_jets: int,
         name += "-vcbwindow-full" if window_full else "-vcbwindow"
     text = TEMPLATE.format(
         run_id=run_id, arm=arm, k=k, ckpt_dir=ckpt_dir, image=IMAGE,
-        storage_line=STORAGE_LINE_APPROVED.get(run_id, 85),
+        storage_line=(STORAGE_LINE_APPROVED_WINDOW if window
+                      else STORAGE_LINE_APPROVED).get(run_id, 85),
         pin=pin_for(run_id, window),
         logits_clause=(
             "no --save-logits here" if not num_reg else

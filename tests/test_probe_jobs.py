@@ -11,11 +11,11 @@ bp = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bp)
 
 
-def test_twenty_eight_jobs_all_named_raunav_and_parse():
+def test_twenty_nine_jobs_all_named_raunav_and_parse():
     jobs = bp.build()
     # 5 probe v1 + 5 label-recovery v1 + 5 probe v2 + 3 random-label control
-    # + 5 mass-output 2x2 + 5 mass regression
-    assert len(jobs) == 28
+    # + 5 mass-output 2x2 + 5 mass regression + 1 |V_cb| window (S10)
+    assert len(jobs) == 29
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"]
@@ -25,7 +25,7 @@ def test_twenty_eight_jobs_all_named_raunav_and_parse():
 
 def test_each_job_holds_one_seed_index_at_all_four_granularities():
     for fname, text in bp.build().items():
-        if any(k in fname for k in ("randcontrol", "mass2x2", "massres")):
+        if any(k in fname for k in ("randcontrol", "mass2x2", "massres", "vcbwindow")):
             continue          # not ladder jobs; each covered by its own test below
         seed = int(fname.split("-s")[-1].split("-")[0])
         line = next(l for l in text.splitlines() if l.strip().startswith("for spec in"))
@@ -42,7 +42,7 @@ def test_each_job_holds_one_seed_index_at_all_four_granularities():
 def test_outputs_are_disjoint_per_seed_and_mlp_cannot_be_skipped():
     outs = [l.strip() for t in bp.build().values() for l in t.splitlines()
             if l.strip().startswith("OUT=")]
-    assert len(outs) == len(set(outs)) == 28
+    assert len(outs) == len(set(outs)) == 29
     for text in bp.build().values():
         assert "--no-mlp" not in text and "--skip-mlp" not in text
 
@@ -261,3 +261,24 @@ def test_the_mass_regression_pin_carries_the_script_it_runs():
                         capture_output=True)
     assert ok.returncode == 0, (
         f"{bp.MASSRES_PIN} does not contain experiments/EVAL/mass_resolution.py")
+
+
+def test_s10_job_pairs_162_and_17_at_all_five_seeds_on_the_windowed_caches():
+    """S10 (docs/PRESPEC_2026-09.md, clarification of 2026-09-27): 162 against 17
+    classes at seed indices 1-5, the |V_cb| task only, inside the published window.
+    All ten in ONE job, because probe.check_alignment only gates arms inside a job."""
+    text = bp.build()["job-probe-vcbwindow-s10-raunav.yaml"]
+    line = next(l for l in text.splitlines() if l.strip().startswith("for spec in"))
+    runs = line.split("for spec in")[1].split(";")[0].split()
+    assert runs == ([f"mtx-l162-{'s1b' if s == 1 else f's{s}'}:L162" for s in bp.SEEDS]
+                    + [f"mtx-r16q1-s{s}:R16_Q1" for s in bp.SEEDS])
+    assert "mtx-l162-s1:" not in line                 # the excluded 1e-3 run
+    assert "/features_vcbwindow_e79_full\n" in text and "/features_e79\n" not in text
+    assert "--tasks bc_vs_rest \\\n" in text and "--eps-s 0.6 0.4 \\\n" in text
+    assert f'--branch "{bp.MASS_PIN}"' in text
+
+
+def test_every_other_job_still_reads_the_2m_caches():
+    for fname, text in bp.build().items():
+        if "vcbwindow" not in fname:
+            assert "/features_e79\n" in text and "vcbwindow" not in text, fname
