@@ -2,17 +2,17 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{The random-label control against the 17-class model of the same seed index: difference in the natural log of $1-$AUC on the two dedicated pairs, frozen linear probe, with its paired bootstrap 95\% interval and, in brackets, the sign that was predicted (negative: the control is better). Each draw is one random partition with the class-size structure of the 17-class label set.}
+\caption{The random-label control, frozen linear probe: $1-$AUC in units of $10^{-3}$ (lower is better) on the two tasks it was built for. The pretrained label sets are the mean $\pm$ standard deviation over the five pretraining seeds; each draw of the control is one run, and the last column is the mean $\pm$ standard deviation over the three draws. Each draw permutes the resonant classes within the two-prong and the three-/four-prong strata and cuts them into groups matching the training-stream share of each 17-class group; the QCD class is kept.}
 \label{tab:random-control}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{l ccc}
+\begin{tabular}{l rrrrrrrr}
 \toprule
-pair & draw 1 & draw 2 & draw 3 \\
+& \multicolumn{4}{c}{pretraining label set} & \multicolumn{4}{c}{random 17-group control} \\
+task & 188 & 162 & 43 & 17 & draw 1 & draw 2 & draw 3 & mean $\pm$ SD \\
 \midrule
-$b$ vs $c$, four-prong & $-$1.11 [$-$1.27, $-$0.94] ($-$) & $-$0.82 [$-$0.98, $-$0.65] ($-$) & $-$1.33 [$-$1.50, $-$1.17] ($0$) \\
-visible decay content & $-$0.65 [$-$0.91, $-$0.41] ($+$) & $-$0.70 [$-$1.00, $-$0.44] ($0$) & $-$0.86 [$-$1.16, $-$0.59] ($+$) \\
+$b$ vs $c$, four-prong & 6.80\,$\pm$\,0.27 & 6.89\,$\pm$\,0.18 & 7.5\,$\pm$\,0.5 & 31\,$\pm$\,5 & 10.5 & 11.1 & 9.98 & 10.5\,$\pm$\,0.6 \\
+visible decay content & 0.826\,$\pm$\,0.030 & 0.787\,$\pm$\,0.035 & 0.82\,$\pm$\,0.10 & 2.32\,$\pm$\,0.20 & 1.25 & 0.989 & 1.08 & 1.11\,$\pm$\,0.13 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\smallskip{\footnotesize The MLP probe agrees in sign in every cell.}
 \end{table*}

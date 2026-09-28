@@ -32,17 +32,16 @@ JOURNAL = REPO / "paper" / "journal"
 GENERATED = {"results_generated.tex",
              "tables/probes_linear.tex",
              "tables/probes_mlp.tex",
-             "tables/tests.tex",
              "tables/usecase_survival.tex",
              "tables/finetuning_wave1.tex",
              "tables/label_recovery.tex",
              "tables/random_control.tex",
              "tables/finetune.tex",
+             "tables/finetune_accuracy.tex",
              "tables/anomaly.tex",
              "tables/mass.tex",
              "tables/realdata.tex",
-             "tables/finetune_recipe.tex",
-             "tables/s8.tex"}
+             "tables/finetune_recipe.tex"}
 
 # Numbers allowed in prose, each with the reason it is not a result.
 # A number earns a line here only if it cannot change when a job finishes.
@@ -55,7 +54,6 @@ ALLOWED = {
     "11": "font sizes",
     "12": "font sizes",
     "95": "the confidence level, fixed by docs/STATISTICS.md, not measured",
-    "80": "the power the minimum detectable effect is quoted at, fixed by PRESPEC 2.6",
     "68": "the area inside sigma_eff, its definition, fixed by the PRESPEC S7 amendment",
 }
 

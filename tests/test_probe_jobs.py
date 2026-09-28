@@ -205,18 +205,16 @@ def test_the_mass_2x2_cannot_overwrite_any_other_result():
 
 
 def test_the_mass_pin_contains_the_probe_code_the_ladder_ran():
-    """A spec that clones a tag predating probe.py's current commit runs different
-    code from the ladder it is compared against. test_spec_pins enforces this in
-    general; C5 is the case where it would silently change a confirmatory result."""
+    """A spec that clones a different probe.py from the ladder it is compared
+    against runs different code. The 2x2 and the ladder must carry the same
+    probe.py; later changes (the converged MLP) reach both through the mlp2
+    reruns, which share one pin."""
     import subprocess
     root = str(pathlib.Path(bp.__file__).resolve().parents[1])
-    head = subprocess.run(["git", "-C", root, "log", "-1", "--format=%H",
-                           "--", "experiments/EVAL/probe.py"],
-                          capture_output=True, text=True).stdout.strip()
-    ok = subprocess.run(["git", "-C", root, "merge-base", "--is-ancestor", head, bp.MASS_PIN],
-                        capture_output=True)
-    assert ok.returncode == 0, (
-        f"{bp.MASS_PIN} does not contain probe.py at {head[:12]}; the 2x2 would run "
+    show = lambda tag: subprocess.run(["git", "-C", root, "show", f"{tag}:experiments/EVAL/probe.py"],
+                                      capture_output=True, text=True).stdout      # noqa: E731
+    assert show(bp.MASS_PIN) and show(bp.MASS_PIN) == show(bp.PIN_V2), (
+        f"{bp.MASS_PIN} and {bp.PIN_V2} carry different probe.py; the 2x2 would run "
         f"different probe code from the ladder")
 
 

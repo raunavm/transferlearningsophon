@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """The two figures that put pretraining vocabulary size on an axis.
 
-F1  GRANULARITY ON THE X-AXIS. log(1 - AUC) of the frozen probes against the
-    number of classes the model was pretrained on, one line per probe task,
-    linear probe solid and nonlinear dashed, per-seed points behind the mean.
+F1  GRANULARITY ON THE X-AXIS. 1 - AUC of the frozen probes, on a log axis,
+    against the number of classes the model was pretrained on, one line per
+    probe task, linear probe solid and nonlinear dashed: the mean over seeds
+    with a band of one standard deviation, per-seed points behind it.
 F2  THE PAIRING, MADE VISIBLE. The same result as five paired differences per
     task against the reference vocabulary, with the interval the pre-specified
     analysis computed -- because a reader cannot tell from F1 whether the gap
@@ -17,7 +18,7 @@ intervals, `rung_label_maps.v1.csv` for the merge points. There is no number
 literal in this file, and tests/test_ladder_figures.py greps for one.
 
 A SATURATED CELL IS NOT A POINT. Where a probe reached AUC = 1 at the resolution
-of the sample, log(1 - AUC) is a floor, not a measurement -- the electron/muon
+of the sample, 1 - AUC is a floor, not a measurement -- the electron/muon
 task does this at the two finest vocabularies. Those cells are drawn as
 downward carets at the floor, outside the mean line, so nobody reads a bound as
 a value or a flat segment as an equality.
@@ -114,24 +115,33 @@ def cells(A: dict, task: str, probe: str, level: int) -> list[dict]:
 
 
 def plotted_tasks(A: dict) -> list:
-    """The tasks the pre-specified analysis contrasts; the control tasks are tabulated only."""
-    keys = set(A["pairwise_exploratory"])
+    """Every task the analysis summarises by level, in TASK_LABELS order."""
+    keys = set(A["levels"])
     return [t for t in TASK_LABELS if t in keys] + sorted(keys - set(TASK_LABELS))
 
 
 # ------------------------------------------------------------------ figure 1
 
 def series(A: dict, task: str, probe: str, levels: list) -> dict:
-    """One task/probe line: the measured levels, and the levels that only bound it."""
+    """One task/probe line in 1 - AUC: the measured levels, and the levels that only bound it.
+
+    The file stores the natural log (its `endpoint` block says so); the mean and
+    the standard deviation over seeds are taken of 1 - AUC itself, the plotted
+    quantity.
+    """
     xs, ys, sds, pts, bounds = [], [], [], [], []
     for lv in levels:
         rs = cells(A, task, probe, lv)
         if not rs:
             continue
-        y = [r["log1m_auc"] for r in rs]
+        y = [float(np.exp(r["log1m_auc"])) for r in rs]
         if all(r["censored"] for r in rs):
             bounds.append(lv)           # a floor, not a value: drawn off the scale
             continue
+        if any(r["censored"] for r in rs):
+            # The tables dagger such a cell as "not a measurement"; averaging its
+            # floor values into a band would draw it as one.
+            raise SystemExit(f"FATAL: {task}/{probe}/{lv} mixes saturated and measured seeds")
         xs.append(lv)
         ys.append(float(np.mean(y)))
         sds.append(float(np.std(y, ddof=1)) if len(y) > 1 else 0.0)
@@ -140,12 +150,13 @@ def series(A: dict, task: str, probe: str, levels: list) -> dict:
 
 
 def fig1_granularity(A: dict, merges: dict, outdir=None):
-    """log(1 - AUC) against vocabulary size, one line per task, two probe kinds.
+    """1 - AUC against vocabulary size, one line per task, two probe kinds.
 
-    The y limits come from the measured cells only. A saturated cell would sit
-    at the sample's floor, which is far below everything else and would flatten
-    the whole figure into a line; it is drawn instead as a caret on the bottom
-    axis, which is what "this is a bound, off the scale" looks like.
+    The y limits come from the measured cells only, padded by a factor because
+    the axis is logarithmic. A saturated cell would sit at the sample's floor,
+    which is far below everything else and would flatten the whole figure into a
+    line; it is drawn instead as a caret on the bottom axis, which is what "this
+    is a bound, off the scale" looks like.
     """
     levels = A["levels_fine_to_coarse"]
     tasks = plotted_tasks(A)
@@ -173,34 +184,41 @@ def fig1_granularity(A: dict, merges: dict, outdir=None):
                     marker=marker[task], color=colour[task], alpha=0.35,
                     markersize=plt.rcParams["lines.markersize"] * 0.6,
                     fillstyle=style.PROBE_FILLSTYLES[probe], zorder=2)
-        # The vocabulary size at which the two classes stop being separate nodes.
-        # It need not be one of the four measured sizes -- that is the point.
-        if merged_at and min(levels) <= merged_at <= max(levels):
-            ax.axvline(merged_at, color=colour[task], ls=":", lw=0.8, alpha=0.8, zorder=0)
+    # The vocabulary size at which each task's two classes stop being separate
+    # nodes. It need not be one of the four measured sizes -- that is the point.
+    # A size shared by several tasks gets one neutral line, not overdrawn colours.
+    at = {}
+    for task in tasks:
+        m = merges.get(task, {}).get("level")
+        if m and min(levels) <= m <= max(levels):
+            at.setdefault(m, []).append(task)
+    for m, ts in at.items():
+        ax.axvline(m, color=colour[ts[0]] if len(ts) == 1 else "0.5", ls=":", lw=0.8,
+                   alpha=0.8, zorder=0)
 
     lo = min(p[1] for s in drawn.values() for p in s["points"])
     hi = max(p[1] for s in drawn.values() for p in s["points"])
-    pad = (hi - lo) * 0.12
-    ax.set_ylim(lo - pad * 2, hi + pad)
+    pad = (hi / lo) ** 0.12
+    ax.set_ylim(lo / pad ** 2, hi * pad)
     for task in tasks:
         b = sorted({lv for p in style.PROBE_LINESTYLES for lv in drawn[(task, p)]["bounds"]})
         if b:
-            ax.plot(b, [lo - pad * 1.5] * len(b), linestyle="none", marker="v",
+            ax.plot(b, [lo / pad ** 1.5] * len(b), linestyle="none", marker="v",
                     color=colour[task], markerfacecolor="none",
                     markersize=plt.rcParams["lines.markersize"] * 1.5, zorder=4)
-            ax.annotate("AUC saturated: off scale, a bound", xy=(b[0], lo - pad * 1.5),
+            ax.annotate("AUC saturated: off scale, a bound", xy=(b[0], lo / pad ** 1.5),
                         xytext=(10, 3), textcoords="offset points", fontsize=6,
                         color=colour[task])
 
     ax.set_xscale("log")
+    ax.set_yscale("log")
     ax.set_xticks(levels, [str(lv) for lv in levels])
     ax.set_xlim(max(levels) * 1.15, min(levels) / 1.15)     # fine -> coarse, left to right
-    ax.minorticks_off()
+    ax.xaxis.minorticks_off()                   # the log y axis keeps its minor ticks
     ax.set_xlabel("classes in the pretraining label set  (fine $\\rightarrow$ coarse)")
-    ax.set_ylabel("$\\log(1-\\mathrm{AUC})$   (lower is better)")
-    ax.set_title("What a frozen probe can still read off, against pretraining vocabulary size\n"
-                 "solid: linear probe.   dashed: nonlinear (MLP) probe.   "
-                 "dotted vertical: where that distinction is merged away")
+    ax.set_ylabel("$1-\\mathrm{AUC}$   (lower is better)")
+    for probe, ls in style.PROBE_LINESTYLES.items():       # the linestyle key, colourless
+        ax.plot([], [], linestyle=ls, color="0.4", label=style.PROBE_LABELS[probe])
     # Below the axes: every corner inside them holds either a line or the
     # off-scale strip, and a legend over data is a legend that hides data.
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=2, borderaxespad=0)
@@ -243,7 +261,7 @@ def paired_rows(A: dict, task: str, probe: str, reference: int) -> list[dict]:
 
 def fig2_paired(A: dict, reference: int, probe: str = "linear", outdir=None):
     """One panel per task: five paired differences, plus the interval over seeds."""
-    tasks = plotted_tasks(A)
+    tasks = [t for t in plotted_tasks(A) if t in A["pairwise_exploratory"]]
     ncol = int(np.ceil(len(tasks) / 2))
     # No shared x axis: the panels do not all have the same estimable level pairs
     # (a pair whose two cells both saturated has no spread and is dropped), so a

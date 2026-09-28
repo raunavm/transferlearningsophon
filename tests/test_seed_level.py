@@ -432,7 +432,9 @@ def test_a_zero_variance_pair_is_not_reported_as_equivalence(tmp_path):
 # ------------------------------------------- the keys other tools read must not move
 
 def test_make_tables_still_reads_every_key_it_used_to(planted, tmp_path):
-    """experiments/FIGS/make_tables.py is owned elsewhere; nothing it reads may move."""
+    """experiments/FIGS/make_tables.py is owned elsewhere; nothing it reads may move.
+    It reads the descriptive keys only -- the per-seed table rows and the per-level
+    summary -- and no test result."""
     MT = _mod("make_tables", "experiments/FIGS/make_tables.py")
     res, _ = planted
     src = tmp_path / "seed_level_results.json"
@@ -440,25 +442,25 @@ def test_make_tables_still_reads_every_key_it_used_to(planted, tmp_path):
     em = MT.Emitter(tmp_path)
     MT.emit_design(em, res, src)
     MT.emit_levels(em, res, src)
-    MT.emit_mde(em, res, src)
-    MT.emit_tests(em, res, src)
-    MT.emit_pairwise(em, res, src, res["levels_fine_to_coarse"][1])
     names = {n for n, _, _ in em.macros}
-    for must in ("TrendStatCone", "TrendPCone", "TrendPMinCone", "TrendBlocksCone",
-                 "TrendStepCone", "TrendIsoPCone", "TrendHolmCone", "ProbeNJets", "ProbeNSeeds"):
+    for must in ("ProbeNJets", "ProbeNSeeds", "ProbeRowAlign", "ProbeEpsS"):
         assert must in names, must
-    assert MT.table_tests(res).startswith("\\begin{table*}")
-    assert MT.table_probe_ladder(res, "linear").startswith("\\begin{table*}")
-    # and the C1 block still carries the trend keys verbatim, plus the new ones
-    c1 = res["confirmatory"]["C1"]
-    for k in ("task", "probe", "run", "family", "method", "n_blocks", "n_arrangements", "stat",
-              "p", "p_min", "end_step_p_bound", "argmax_step", "predicted_step",
-              "argmax_is_predicted_step", "contrasts_localisation_only", "isotonic",
-              "alternative", "seed_sd_per_level", "blocks_used"):
-        assert k in c1, k
-    for k in ("prediction", "clauses", "clause3_equivalence", "composite_verdict", "overall",
-              "n_clauses", "n_clauses_confirmed"):
-        assert k in c1, k
+    for prefix in ("ProbeAuc", "ProbeOma", "ProbeOmaRatio", "ProbeRej"):
+        assert any(n.startswith(prefix) for n in names), prefix
+    assert MT.table_probe_ladder(res, "linear", {}).startswith("\\begin{table*}")
+    for k in ("provenance", "seeds_used", "levels", "levels_fine_to_coarse", "table"):
+        assert k in res, k
+    for k in ("n_jets_total", "row_alignment_sha256"):
+        assert k in res["provenance"], k
+    for task in res["levels"]:
+        for row in res["levels"][task]["linear"]:
+            for k in ("level", "n_seeds", "mean_auc", "n_censored", "mean", "seed_sd",
+                      "rejection_eps_s"):
+                assert k in row, k
+    for r in res["table"]:
+        for k in ("task", "probe", "level", "seed", "auc", "censored", "rejection",
+                  "rejection_is_bound", "dropped_pair"):
+            assert k in r, k
 
 
 # ---------------------------------------------------------------- order of operations

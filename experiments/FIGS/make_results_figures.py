@@ -8,9 +8,11 @@
   realdata_top_yield    section 6: fitted top-quark yield in CMS open data.
 
 Same rules as make_ladder_figures.py: every coordinate comes from a committed
-analysis file, the encoding lives in style.py (colour = pretraining label-set
-size), and nothing is recomputed that the analysis already states. Means over
-seeds are drawn beside the per-seed points they are the mean of.
+file, the encoding lives in style.py (colour = pretraining label-set size), and
+nothing is recomputed that the analysis already states. The spread shown is the
+standard deviation over the five pretraining seeds (ddof=1): a band around a
+mean line, or an error bar on a mean marker with the per-seed points beside it.
+No figure carries a test result or an interval over seeds; those are in the tables.
 
 Usage:
     python3 experiments/FIGS/make_results_figures.py [--outdir figures]
@@ -25,6 +27,7 @@ import sys
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
@@ -33,16 +36,24 @@ import style                                                       # noqa: E402
 HERE = pathlib.Path(__file__).resolve().parent
 DATA = HERE / "data"
 INPUTS = {
-    "finetune": DATA / "finetune_s3_s4/analysis_v2/s3_s4_finetune.json",
-    "anomaly": DATA / "anomaly_merged_v4/analysis_v2/anomaly_s5.json",
+    # The metrics files the S3/S4 analysis read (its provenance names them):
+    # leg 1 is the JetClass-II 162-class task, leg 2 the JetClass 10-class task.
+    # A later metrics file (the rerun from-scratch and self-supervised
+    # fine-tunes) is appended to its task's list and named in FT_REFERENCES.
+    "finetune": {"JetClass-II, 162 classes": [DATA / "w2b_leg1_metrics.json"],
+                 "JetClass, 10 classes": [DATA / "w2b_leg2_metrics.json"]},
+    "anomaly": DATA / "anomaly_merged_v4/analysis_v3/anomaly_summary.json",
     "mass": DATA / "mass_resolution/analysis_holm/s7_mass_resolution.json",
     "mass2x2": sorted((DATA / "probe_ladder_mass2x2").glob("s*.json")),
     "realdata": DATA / "aoj_full_v1/analysis_v3/aoj_top.json",
 }
 LEVELS = [188, 162, 43, 17]
-REFERENCES = {"scratch": ("random initialisation", "#7f7f7f", "x"),
-              "mpm-s1": ("self-supervised, seed 1", "#CC79A7", "v"),
-              "rand-d1-s1b": ("random-label control, draw 1", "#D55E00", "P")}
+ARMS = {"l188": 188, "l162": 162, "r42q1": 43, "r16q1": 17}
+ARM_ALIAS = {"l162-s1b": "l162-s1"}      # seed index 1 of the 162-class model is a rerun
+FT_SEED = "s1"                           # the pre-specified fine-tuning seed
+# Initialisations drawn as one dashed line, no band.
+FT_REFERENCES = {"rand-d1-s1b": ("random-label control (one run)", "#D55E00", "P")}
+SEED_OFFSET = 0.1                        # per-seed points sit this far left of their mean
 SIGNALS = {"label_X_bb": r"$X\to b\bar b$", "label_X_qq": r"$X\to q\bar q$",
            "label_X_YY_bbb": r"$YY\to bbb$", "label_X_YY_bbbb": r"$YY\to bbbb$",
            "label_X_YY_qqq": r"$YY\to qqq$", "label_X_YY_qqqq": r"$YY\to qqqq$"}
@@ -69,70 +80,101 @@ def save(fig, outdir: pathlib.Path, stem: str) -> None:
     plt.close(fig)
 
 
-def fig_finetune(F: dict, outdir: pathlib.Path) -> None:
-    fig, axes = plt.subplots(2, 2, figsize=(style.FIG_W_TWO_COLUMN, 5.6), sharex=True)
-    for col, (key, title) in enumerate((("S4", "JetClass-II, 162 classes"),
-                                        ("S3", "JetClass, 10 classes"))):
-        S = F["secondary"][key]
-        sizes = list(S["per_size"])
-        x = np.array([n_of(n) for n in sizes])
+def ft_cells(paths) -> dict:
+    """1 - macro AUC (one-vs-rest) at fine-tuning seed 1, keyed (initialisation, jets)."""
+    out = {}
+    for p in paths:
+        for init, per_n in json.loads(pathlib.Path(p).read_text())["cells"].items():
+            for n, per_seed in per_n.items():
+                if FT_SEED not in per_seed:
+                    continue
+                if (init, n) in out:
+                    raise SystemExit(f"FATAL: {init}/{n} appears in two fine-tuning files")
+                out[(init, n)] = 1.0 - per_seed[FT_SEED]["macro_auc_ovr"]
+    return out
+
+
+def ft_by_seed(cells: dict) -> dict:
+    """{label set: {training jets: {pretraining seed: 1 - macro AUC}}}."""
+    out = {lv: {} for lv in LEVELS}
+    for (init, n), v in cells.items():
+        arm, _, seed = ARM_ALIAS.get(init, init).partition("-s")
+        if arm in ARMS and seed.isdigit():
+            out[ARMS[arm]].setdefault(n_of(n), {})[int(seed)] = v
+    return out
+
+
+def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
+    fig, axes = plt.subplots(2, 2, figsize=(style.FIG_W_TWO_COLUMN, 5.6), sharex=True,
+                             gridspec_kw={"height_ratios": (2, 1)})
+    for col, (title, paths) in enumerate(legs.items()):
+        cells = ft_cells(paths)
+        by = ft_by_seed(cells)
         top, bottom = axes[0, col], axes[1, col]
         for lv in LEVELS:
-            y = [next(r["mean"] for r in S["per_size"][n]["levels"] if r["level"] == lv)
-                 for n in sizes]
-            top.plot(x, y, color=style.LEVEL_COLOURS[lv], marker=style.LEVEL_MARKERS[lv],
-                     label=f"{lv} classes")
-        for arm, (label, colour, marker) in REFERENCES.items():
-            pts = [(n_of(n), np.log1p(-S["reference_rows"][n][arm]["macro_auc"]))
-                   for n in sizes if arm in S["reference_rows"][n]]
+            x = sorted(by[lv])
+            y = [list(by[lv][n].values()) for n in x]
+            m = np.array([np.mean(v) for v in y])
+            sd = np.array([np.std(v, ddof=1) for v in y])
+            kw = {"color": style.LEVEL_COLOURS[lv], "marker": style.LEVEL_MARKERS[lv]}
+            top.plot(x, m, label=f"{lv} classes", **kw)
+            top.fill_between(x, m - sd, m + sd, color=kw["color"], alpha=0.2, lw=0)
+            if lv == LEVELS[0]:
+                continue
+            # Ratio to the 188-class model of the same pretraining seed, then
+            # mean and spread of the ratio over seeds.
+            r = [[by[lv][n][s] / by[LEVELS[0]][n][s] for s in by[lv][n]] for n in x]
+            m = np.array([np.mean(v) for v in r])
+            sd = np.array([np.std(v, ddof=1) for v in r])
+            bottom.plot(x, m, **kw)
+            bottom.fill_between(x, m - sd, m + sd, color=kw["color"], alpha=0.2, lw=0)
+        for init, (label, colour, marker) in FT_REFERENCES.items():
+            pts = sorted((n_of(n), v) for (i, n), v in cells.items() if i == init)
             if pts:
-                top.plot(*zip(*pts), color=colour, marker=marker, linestyle=":", label=label)
-        for lv in LEVELS[1:]:
-            rows = [next(r for r in S["per_size"][n]["pairwise"]
-                         if (r["fine"], r["coarse"]) == (LEVELS[0], lv)) for n in sizes]
-            m = np.array([r["mean_diff"] for r in rows])
-            ci = np.array([r["ci95"] for r in rows])
-            bottom.errorbar(x, m, yerr=[m - ci[:, 0], ci[:, 1] - m], capsize=2,
-                            color=style.LEVEL_COLOURS[lv], marker=style.LEVEL_MARKERS[lv],
-                            label=f"{lv} minus {LEVELS[0]} classes")
-        bottom.axhline(0, color="#999999", linewidth=0.8)
+                top.plot(*zip(*pts), color=colour, marker=marker, linestyle="--", label=label)
+        bottom.axhline(1, color="#999999", linewidth=0.8)
         top.set_title(title)
         top.set_xscale("log")
+        top.set_yscale("log")
         margin = np.sqrt(x[1] / x[0])
-        top.set_xlim(x.min() / margin, x.max() * margin)
+        top.set_xlim(x[0] / margin, x[-1] * margin)
         bottom.set_xlabel("fine-tuning jets")
-    axes[0, 0].set_ylabel(r"$\ln(1-$macro AUC$)$")
-    axes[1, 0].set_ylabel("paired difference, 95% interval")
+    axes[0, 0].set_ylabel(r"$1-$macro AUC (one-vs-rest)")
+    axes[1, 0].set_ylabel(f"ratio to {LEVELS[0]} classes\n(same pretraining seed)")
     axes[0, 0].legend(fontsize="x-small", loc="upper right")
-    axes[1, 0].legend(fontsize="x-small", loc="lower right")
     fig.tight_layout()
     save(fig, outdir, "finetune_curves")
 
 
-def fig_anomaly(S5: dict, outdir: pathlib.Path) -> None:
-    s = S5["section5"]
-    inj = s["injection"]
-    fams = [f for f in FAMILIES if any(k.startswith(f + "|") for k in s["tests"])]
-    sigs = [g for g in SIGNALS if any(k.endswith("|" + g) for k in s["tests"])]
-    fig, axes = plt.subplots(1, len(fams), figsize=(style.FIG_W_TWO_COLUMN, 3.0), sharey=True)
+def fig_anomaly(S: dict, outdir: pathlib.Path) -> None:
+    """sigma_min per signal and label set for the two feature-based detectors: mean
+    +- SD over seeds (each seed the median over resamplings). Signals no detector sees at any label set are left out; the table lists them."""
+    inj = S["conventions"]["primary_injection"]
+    nd = set(S["not_detected_rule"]["not_detected"])
+    fams = [f for f in FAMILIES if f in ("mahalanobis", "knn")]
+    sigs = [g for g in SIGNALS if any(f"{f}|{g}" not in nd for f in fams)]
+    fig, axes = plt.subplots(1, len(fams), figsize=(style.FIG_W_TWO_COLUMN, 2.8), sharey=True)
     offsets = np.linspace(-0.24, 0.24, len(LEVELS))
     xs = np.arange(len(sigs))
     for ax, fam in zip(axes, fams):
         for j, lv in enumerate(LEVELS):
-            pts = [(i + offsets[j], s["level_means_all_injections"][f"{fam}|{g}|{inj}"][str(lv)])
-                   for i, g in enumerate(sigs)
-                   if s["tests"][f"{fam}|{g}"]["trend"].get("run")]
-            ax.plot(*zip(*pts), linestyle="none", color=style.LEVEL_COLOURS[lv],
-                    marker=style.LEVEL_MARKERS[lv], markersize=4, label=f"{lv} classes")
-        r = s["clause1_per_family"][fam]["n_signals_rejected"]
-        ax.set_title(f"{FAMILIES[fam]}\ntrend rejects: {r} of {len(sigs)}", fontsize="x-small")
+            per = [np.exp(S["families"][fam][g][inj]["levels"][str(lv)]["ln_sigma_min"]) for g in sigs]
+            x = xs + offsets[j]
+            ax.errorbar(x, [np.mean(v) for v in per], yerr=[np.std(v, ddof=1) for v in per],
+                        linestyle="none", color=style.LEVEL_COLOURS[lv],
+                        marker=style.LEVEL_MARKERS[lv], markersize=4, capsize=2,
+                        label=f"{lv} classes", zorder=3)
+        ax.set_yscale("log")
+        ax.yaxis.set_major_formatter(ticker.FormatStrFormatter("%g"))
+        ax.yaxis.set_minor_formatter(ticker.FormatStrFormatter("%g"))
+        ax.set_title(FAMILIES[fam], fontsize="small")
         ax.set_xticks(xs)
-        ax.set_xticklabels([SIGNALS[g] for g in sigs], rotation=60, fontsize="x-small")
-    axes[0].set_ylabel(r"$\ln\sigma_{\min}$ (lower is more sensitive)")
+        ax.set_xticklabels([SIGNALS[g] for g in sigs], fontsize="small")
+    axes[0].set_ylabel(r"$\sigma_{\min}$  (lower is more sensitive)")
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncol=len(LEVELS), fontsize="x-small",
-               frameon=False, bbox_to_anchor=(0.5, -0.06))
-    fig.tight_layout()
+    fig.legend(handles, labels, loc="lower center", ncol=len(LEVELS), fontsize="small",
+               frameon=False, bbox_to_anchor=(0.5, -0.04))
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
     save(fig, outdir, "anomaly_sensitivity")
 
 
@@ -147,26 +189,42 @@ def mass2x2_points(paths) -> dict:
     return out
 
 
+def seeds_and_mean(ax, x: float, y, g: str) -> None:
+    """Per-seed points, light, just left of a mean marker with a +-1 SD bar."""
+    ax.plot([x - SEED_OFFSET] * len(y), y, linestyle="none", alpha=0.4, markersize=4,
+            **group_style(g))
+    ax.errorbar([x], [np.mean(y)], yerr=[np.std(y, ddof=1)], capsize=3, **group_style(g))
+
+
 def fig_mass(M: dict, pts2x2: dict, outdir: pathlib.Path) -> None:
-    fig, (left, right) = plt.subplots(1, 2, figsize=(style.FIG_W_TWO_COLUMN, 3.2))
-    corners, gap = ["162", "162+mass", "17", "17+mass"], 0.3
+    corners, gap = ["162", "162+mass", "17", "17+mass"], 0.4
+    fig, (left, right) = plt.subplots(1, 2, figsize=(style.FIG_W_TWO_COLUMN, 3.2),
+                                      gridspec_kw={"width_ratios": (len(corners), len(GROUPS))})
     pos = [i // 2 + (i % 2) * gap for i in range(len(corners))]
     for x, g in zip(pos, corners):
-        y = pts2x2[g]
-        left.plot([x] * len(y), y, linestyle="none", **group_style(g))
-        left.plot([x], [np.mean(y)], marker="_", markersize=18, color="#333333")
+        seeds_and_mean(left, x, np.exp(pts2x2[g]), g)      # stored as ln(1 - AUC)
+    left.set_yscale("log")
+    # About one decade: label the 2-3-4-6 minor ticks too, or only one tick is labelled.
+    left.yaxis.set_minor_formatter(ticker.LogFormatterSciNotation(minor_thresholds=(2, 0.4)))
     left.set_xticks(pos)
     left.set_xticklabels([g.replace("+mass", "\n+ mass") for g in corners], fontsize="x-small")
-    left.set_ylabel(r"$b$ vs $c$ probe, $\ln(1-$AUC$)$")
+    left.set_ylabel(r"$b$ vs $c$ probe, $1-$AUC")
     left.set_title("classification (frozen linear probe)", fontsize="small")
     for i, g in enumerate(GROUPS):
-        y = [r["sigma_eff"] for r in M["table"] if r["cell"] == g and r["probe"] == "ridge"]
-        right.plot([i] * len(y), y, linestyle="none", **group_style(g))
-        right.plot([i], [np.mean(y)], marker="_", markersize=18, color="#333333")
+        y = [r["sigma_eff"] for r in M["table"] if r["cell"] == g and r["probe"] == "mlp"]
+        seeds_and_mean(right, i, y, g)
+    target = {r["target_sigma_eff"] for r in M["table"]}
+    if len(target) != 1:
+        raise SystemExit(f"FATAL: the rows disagree on the class-mean-only sigma_eff: {target}")
+    target = target.pop()
+    right.axhline(target, color="#999999", linestyle="--", linewidth=0.8)
+    right.annotate("class mean only", xy=(1, target), xycoords=("axes fraction", "data"),
+                   xytext=(-3, -3), textcoords="offset points", ha="right", va="top",
+                   fontsize="x-small", color="#777777")
     right.set_xticks(np.arange(len(GROUPS)))
     right.set_xticklabels([g.replace("+mass", "\n+ mass") for g in GROUPS], fontsize="x-small")
     right.set_ylabel(r"$\sigma_{\mathrm{eff}}$ of $\ln(m_{\mathrm{pred}}/m_{\mathrm{true}})$")
-    right.set_title("jet-mass regression (frozen ridge probe)", fontsize="small")
+    right.set_title("jet-mass regression (frozen nonlinear (MLP) probe)", fontsize="small")
     fig.tight_layout()
     save(fig, outdir, "mass_tradeoff")
 
@@ -196,7 +254,8 @@ def main(argv=None) -> int:
     ap.add_argument("--outdir", type=pathlib.Path, default=style.FIGURES)
     a = ap.parse_args(argv)
     load = lambda p: json.loads(pathlib.Path(p).read_text())           # noqa: E731
-    fig_finetune(load(INPUTS["finetune"]), a.outdir)
+    style.use_style()
+    fig_finetune(INPUTS["finetune"], a.outdir)
     fig_anomaly(load(INPUTS["anomaly"]), a.outdir)
     fig_mass(load(INPUTS["mass"]), mass2x2_points(INPUTS["mass2x2"]), a.outdir)
     fig_realdata(load(INPUTS["realdata"]), a.outdir)

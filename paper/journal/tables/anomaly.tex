@@ -2,22 +2,30 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Anomaly-detection sensitivity at 4{,}000 injected signal jets: the 17-class minus 188-class difference in $\ln\sigma_{\min}$, the smallest initial significance from which the signal is still discovered at $5\sigma$ (positive: the coarser vocabulary needs more signal). Mean over paired pretraining seeds of the median over ten detector trainings. Bold: the four-level trend test rejects after Holm over the table.}
+\caption{Anomaly detection with detectors on the frozen features, 2{,}000 signal jets injected: $\sigma_{\min}$, the smallest initial significance from which a $5\sigma$ discovery is still reached (lower is more sensitive), and the maximum significance improvement (max SIC). Mean $\pm$ standard deviation over the five pretraining seeds of each seed's median over 10 resamplings of the background and signal samples.}
 \label{tab:anomaly}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{l rrrr}
+\begin{tabular}{l l rrrr}
 \toprule
-signal & class sum & Mahalanobis & $k$-nearest neighbours & classifier-based (HGB) \\
+& detector & 188 classes & 162 classes & 43 classes & 17 classes \\
 \midrule
-$X\to b\bar b$ & \textbf{+0.10} & \textbf{+0.11} & $-$0.21 & +0.04 \\
-$X\to q\bar q$ & \textbf{+0.27} & \textbf{+0.02} & \textbf{+0.06} & \textbf{+0.15} \\
-$X\to YY\to bbb$ & --- & --- & --- & --- \\
-$X\to YY\to bbbb$ & \textbf{+0.23} & \textbf{+0.73} & \textbf{+0.18} & \textbf{+0.06} \\
-$X\to YY\to qqq$ & +0.01 & \textbf{+0.04} & \textbf{+0.03} & \textbf{+0.26} \\
-$X\to YY\to qqqq$ & \textbf{+0.25} & +0.01 & $-$0.05 & \textbf{+0.39} \\
+\multicolumn{6}{@{}l}{\itshape $\sigma_{\min}$} \\
+$X\to b\bar b$ & Mahalanobis & 1.62\,$\pm$\,0.04 & 1.582\,$\pm$\,0.017 & 1.59\,$\pm$\,0.04 & 1.80\,$\pm$\,0.04 \\
+ & $k$-nearest neighbours & 2.39\,$\pm$\,0.12 & 2.29\,$\pm$\,0.05 & 2.18\,$\pm$\,0.12 & 1.93\,$\pm$\,0.07 \\
+$X\to YY\to bbb$ & Mahalanobis & 0.75\,$\pm$\,0.06 & 0.75\,$\pm$\,0.05 & 1.04\,$\pm$\,0.05 & 1.48\,$\pm$\,0.14 \\
+ & $k$-nearest neighbours & 1.17\,$\pm$\,0.08 & 1.13\,$\pm$\,0.05 & 1.43\,$\pm$\,0.06 & 1.61\,$\pm$\,0.08 \\
+$X\to YY\to bbbb$ & Mahalanobis & 0.351\,$\pm$\,0.021 & 0.301\,$\pm$\,0.019 & 0.45\,$\pm$\,0.06 & 0.72\,$\pm$\,0.11 \\
+ & $k$-nearest neighbours & 0.70\,$\pm$\,0.04 & 0.597\,$\pm$\,0.026 & 0.71\,$\pm$\,0.06 & 0.84\,$\pm$\,0.05 \\
+\addlinespace
+\multicolumn{6}{@{}l}{\itshape max SIC} \\
+$X\to b\bar b$ & Mahalanobis & 3.11\,$\pm$\,0.08 & 3.185\,$\pm$\,0.034 & 3.17\,$\pm$\,0.07 & 2.80\,$\pm$\,0.06 \\
+ & $k$-nearest neighbours & 2.11\,$\pm$\,0.10 & 2.20\,$\pm$\,0.05 & 2.32\,$\pm$\,0.13 & 2.62\,$\pm$\,0.09 \\
+$X\to YY\to bbb$ & Mahalanobis & 6.9\,$\pm$\,0.5 & 6.9\,$\pm$\,0.4 & 4.93\,$\pm$\,0.24 & 3.44\,$\pm$\,0.32 \\
+ & $k$-nearest neighbours & 4.34\,$\pm$\,0.28 & 4.49\,$\pm$\,0.20 & 3.54\,$\pm$\,0.16 & 3.14\,$\pm$\,0.16 \\
+$X\to YY\to bbbb$ & Mahalanobis & 15.0\,$\pm$\,0.8 & 17.9\,$\pm$\,1.4 & 11.7\,$\pm$\,1.8 & 7.3\,$\pm$\,1.2 \\
+ & $k$-nearest neighbours & 7.3\,$\pm$\,0.4 & 8.6\,$\pm$\,0.4 & 7.3\,$\pm$\,0.7 & 6.2\,$\pm$\,0.4 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\smallskip{\footnotesize --- the test sample holds too few such jets at this injection; the trend test was not run.}
-\par\smallskip{\footnotesize Only the class-sum score uses the pretraining labels; the other three families work on the frozen features alone.}
+\par\smallskip{\footnotesize Not detected by either detector at any label set (max SIC below 1.3 at every label set): $X\to q\bar q$, $X\to YY\to qqq$, $X\to YY\to qqqq$.}
 \end{table}

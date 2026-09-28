@@ -262,13 +262,13 @@ def test_a_rejection_that_is_a_bound_never_prints_as_a_bare_number(root):
     """
     built, _, _ = M.build(root)
     m = macros_in(built["results_generated.tex"])
-    assert m["ProbeRejAlphaLinearOnetwo"].startswith("\\ensuremath{>}")
+    assert m["ProbeRejAlphaLinearOnetwo"] == "\\ensuremath{>}333"     # N_B/3, N_B = 1000
     assert m["ProbeRejAlphaLinearEight"].startswith("\\ensuremath{\\geq}")
     assert "^{\\ast}" in m["ProbeRejAlphaLinearEight"]
-    assert re.fullmatch(r"[0-9{},.]+", m["ProbeRejAlphaLinearFour"])
+    assert m["ProbeRejAlphaLinearFour"] == "302.0\\,\\ensuremath{\\pm}\\,1.0"   # 301, 302, 303
     table = built["tables/probes_linear.tex"]
-    assert "$>$1{,}000" in table and "$\\geq$900$^{\\ast}$" in table
-    assert "a lower bound" in table              # the footnote is not optional
+    assert "$>$333" in table and "$\\geq$900$^{\\ast}$" in table
+    assert "95\\% confidence lower limit" in table        # the footnote is not optional
 
 
 def test_a_saturated_auc_is_marked_rather_than_printed_to_five_decimals(root):
@@ -336,7 +336,7 @@ def test_check_mode_is_clean_after_a_write_and_fails_after_drift(root, tmp_path)
     assert M.main(["--root", str(root), "--out", str(out), "--check"]) == 1
     # and so does a hand-edit of a generated file
     assert M.main(["--root", str(root), "--out", str(out)]) == 0
-    (out / "tables/tests.tex").write_text("hand edited\n")
+    (out / "tables/probes_linear.tex").write_text("hand edited\n")
     assert M.main(["--root", str(root), "--out", str(out), "--check"]) == 1
 
 
@@ -377,10 +377,17 @@ def test_the_committed_outputs_still_follow_from_the_committed_inputs():
     assert M.main(["--check"]) == 0, "run python3 experiments/FIGS/make_tables.py"
 
 
-def _with_points(root, points):
-    """Give the fixture analysis the working-point block the real one carries."""
+def _with_points(root, points, per_seed):
+    """Give the fixture analysis the working-point block the real one carries,
+    in the per-level summary and in each per-seed row: `per_seed` maps a seed to
+    its (rejection, is_bound) at 90 %."""
     p = root / "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json"
     A = json.loads(p.read_text())
+    for r in A["table"]:
+        rej, bound = per_seed[r["seed"]]
+        r["rejection_points"] = {
+            "0.50": {"rejection": r["rejection"], "is_bound": r["rejection_is_bound"]},
+            "0.90": {"rejection": rej, "is_bound": bound}}
     for task in A["levels"]:
         for probe in A["levels"][task]:
             for row in A["levels"][task][probe]:
@@ -401,12 +408,13 @@ def test_the_paper_quotes_rejection_at_the_headline_working_point(root):
     vocabularies and the number is then the size of the test sample. The flat
     `rejection_*` fields sit at 50 %, so reading them would put the censored
     number in the paper under a caption claiming it is a measurement."""
-    _with_points(root, {"median": 321.0, "range": [300.0, 350.0], "n_bound": 0})
+    _with_points(root, {"median": 321.0, "range": [300.0, 350.0], "n_bound": 0},
+                 {1: (300.0, False), 2: (321.0, False), 3: (350.0, False)})
     built, _, _ = M.build(root)
     m = macros_in(built["results_generated.tex"])
     assert m["ProbeEpsS"] == "90\\%"
-    assert m["ProbeRejAlphaLinearOnetwo"] == "321", (
-        "the 0.90 value, not the 1,000.0 bound the flat fields hold at 0.50")
+    assert m["ProbeRejAlphaLinearOnetwo"] == "324\\,\\ensuremath{\\pm}\\,25", (
+        "the mean +- SD of the 0.90 values, not the 1,000.0 bound the flat fields hold at 0.50")
     prov = json.loads(built["provenance.json"])
     assert "rejection_points['0.90']" in prov["ProbeRejAlphaLinearOnetwo"]["json_path"]
     assert "90\\% signal efficiency" in built["tables/probes_linear.tex"]
@@ -416,9 +424,9 @@ def test_a_censored_headline_cell_still_never_prints_as_a_bare_number(root):
     """If the headline point turns out to be censored too, that is the finding
     and the table must say so -- it must not silently fall back to a number."""
     _with_points(root, {"median": 11876.0, "range": [11876.0, 11876.0],
-                        "n_bound": len(SEEDS)})
+                        "n_bound": len(SEEDS)}, {s: (11876.0, True) for s in SEEDS})
     m = macros_in(M.build(root)[0]["results_generated.tex"])
-    assert m["ProbeRejAlphaLinearOnetwo"].startswith("\\ensuremath{>}")
+    assert m["ProbeRejAlphaLinearOnetwo"] == "\\ensuremath{>}3{,}963"   # 11876 / 2.996
 
 
 def test_an_analysis_without_working_points_falls_back_and_says_which_point(root):
@@ -428,106 +436,7 @@ def test_an_analysis_without_working_points_falls_back_and_says_which_point(root
     m = macros_in(built["results_generated.tex"])
     assert m["ProbeEpsS"] == "50\\%"
     assert json.loads(built["provenance.json"])[
-        "ProbeRejAlphaLinearFour"]["json_path"].endswith(".rejection_median")
-
-
-# ------------------------------- no confirmatory test may vanish from T2
-
-def _measured_c5(p=2.0e-07):
-    """A C5 block in the shape experiments/STATS/seed_level.py writes it."""
-    def did(mean, t, pv):
-        return {"estimable": True, "n_pairs": 5, "seeds": [1, 2, 3, 4, 5],
-                "is_bound": False, "mean_diff": mean, "sd_diff": 0.02, "t": t, "df": 4,
-                "p": pv, "ci95": [mean - 0.04, mean + 0.04],
-                "sign_flip": {"p": 0.0625, "floor": 0.0625, "n_arrangements": 32}}
-    probes = {k: {"did": did(0.5044, 73.96, p),
-                  "gain_by_level": {"162": did(-0.0490, -4.09, 0.0149),
-                                    "17": did(-0.5078, -47.10, 1.22e-06)}}
-              for k in ("linear", "mlp")}
-    return {"prediction": "two-sided; the written expectation is that the mass output "
-                          "helps more at 17 classes than at 162",
-            "task": "alpha", "endpoint": "log1m_auc",
-            "did_definition": "(162+mass - 162) - (17+mass - 17), paired by seed index",
-            "expected_sign_if_written_expectation_holds": "+",
-            "confirmatory": {"task": "alpha", "probes": probes},
-            "p": p, "exploratory": [], "exploratory_note": "no verdict"}
-
-
-def _analysis_of(root):
-    p = root / "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json"
-    return p, json.loads(p.read_text())
-
-
-def test_every_confirmatory_family_member_reaches_the_tests_table(root):
-    """The defect this pins: table_tests rendered a confirmatory member ONLY while
-    its status was 'pending'. C5 is the first member that can become 'available'
-    without being a trend test, so the moment it was measured it rendered as
-    nothing, while the caption went on claiming the full family. A measured,
-    Holm-judged confirmatory result must never be silently absent."""
-    _, A = _analysis_of(root)
-    A["confirmatory"]["C5"] = _measured_c5()
-    A["confirmatory"]["holm_family"].append(
-        {"test": "C5", "status": "available", "p_raw": 2.0e-07, "family_size": 3,
-         "threshold_if_smallest": 0.05 / 3,
-         "reject_whatever_pending": True, "reject_possible": True})
-    tex = M.table_tests(A)
-    for h in A["confirmatory"]["holm_family"]:
-        assert h["test"] in tex, (
-            f"{h['test']} is in the confirmatory family and has no row in the tests table")
-    assert "C5: " in tex, "a measured C5 needs its own row, not the bare fallback"
-    assert "no row generator" not in tex, "C5 has a renderer; it must not hit the fallback"
-
-
-def test_the_c5_row_carries_the_nonlinear_probe_and_both_one_sided_gains(root):
-    """D6: never a linear probe alone. And the interaction is a DIFFERENCE of two
-    gains, so a reader who sees only the difference cannot tell which side moved."""
-    _, A = _analysis_of(root)
-    A["confirmatory"]["C5"] = _measured_c5()
-    A["confirmatory"]["holm_family"].append(
-        {"test": "C5", "status": "available", "p_raw": 2.0e-07, "family_size": 3,
-         "threshold_if_smallest": 0.05 / 3,
-         "reject_whatever_pending": True, "reject_possible": True})
-    tex = M.table_tests(A)
-    assert "nonlinear probe" in tex
-    assert "gain at 162 classes" in tex and "gain at 17 classes" in tex
-    # the interaction is Holm-judged; the companions never are
-    assert tex.count("rejected") >= 1
-    for line in tex.splitlines():
-        if "gain at" in line or "nonlinear probe" in line:
-            assert "descriptive" in line, line
-
-
-def test_a_measured_confirmatory_test_with_no_renderer_still_prints_a_row(root):
-    """Belt and braces for the same failure: if a future confirmatory member
-    becomes available and nobody writes it a renderer, the table must show that it
-    exists rather than drop it."""
-    _, A = _analysis_of(root)
-    for h in A["confirmatory"]["holm_family"]:
-        if h["test"] == "C2":
-            h.update({"status": "available", "p_raw": 0.031,
-                      "reject_whatever_pending": False, "reject_possible": True})
-    tex = M.table_tests(A)
-    assert "C2" in tex, "an available member with no renderer vanished from the table"
-    assert "no row generator" in tex
-
-
-def test_c5_emits_macros_for_both_probes_and_both_gains(root):
-    """PRESPEC: every number in the manuscript comes from this generator. If C5 has
-    no macros, its numbers cannot be written into the paper at all."""
-    path, A = _analysis_of(root)
-    A["confirmatory"]["C5"] = _measured_c5()
-    path.write_text(json.dumps(A))
-    built, _, _ = M.build(root)
-    m = macros_in(built["results_generated.tex"])
-    names = set(m)
-    did = [n for n in names if n.startswith("MassDid")]
-    gain = [n for n in names if n.startswith("MassGain")]
-    assert did, "no C5 difference-in-differences macro; it cannot reach the manuscript"
-    assert gain, "no per-granularity gain macro"
-    assert any("Linear" in n for n in did) and any("Mlp" in n for n in did), \
-        "D6: the nonlinear probe travels with the linear one"
-    assert len([n for n in gain if not n.startswith("MassGainP")]) == 2, \
-        "one gain macro per granularity"
+        "ProbeRejAlphaLinearFour"]["json_path"].endswith(".rejection")
 
 
 # ---------------------------------------------------------------- later results
@@ -542,20 +451,32 @@ def _load(rel):
 
 
 def test_later_results_are_the_stored_values_re_read_independently():
-    """Each check reads the analysis file itself, without the generator's helpers,
-    and compares with the macro the paper would print."""
+    """Each check reads the result file itself, without the generator's helpers
+    for reading it, and compares with the macro the paper would print."""
     got, prov = _repo_macros()
-    ft = _load(prov["FtTrendPSfourEFour"]["source_file"])["secondary"]
-    assert got["FtTrendPSfourEFour"] == M.math_safe(M.fmt_p(ft["S4"]["per_size"]["N10000"]["trend"]["p"]))
-    assert got["FtGapSthreeESix"] == M.math_safe(f"{ft['S3']['gap_17_minus_188']['N1000000']:+.3f}")
-    c4 = _load(prov["RandDiffBvcFourprongDrawThreeLinear"]["source_file"])
-    cell = next(c for c in c4["C4"]["linear"]["cells"] if c["task"] == "bvc_4prong" and c["draw"] == 3)
-    assert got["RandDiffBvcFourprongDrawThreeLinear"] == M.math_safe(f"{cell['diff']:+.3f}")
-    s5 = _load(prov["AnomalyNRejected"]["source_file"])["section5"]["tests"]
-    assert got["AnomalyNRejected"] == str(sum(bool(v.get("holm_reject")) for v in s5.values()))
+    import numpy as np
+    ft = _load(prov["FtAucJciiEFourOneeighteight"]["source_file"])["cells"]
+    assert {c["s1"]["n_classes_present"] for c in ft["l188-s1"].values()} == {162}
+    v = [ft[f"l188-s{s}"]["N10000"]["s1"]["macro_auc_ovr"] for s in range(1, 6)]
+    assert got["FtAucJciiEFourOneeighteight"] == M.math_safe(M.fmt_pm(np.mean(v), np.std(v, ddof=1)))
+    c4 = _load(prov["RandOmaBvcFourprongDrawThreeLinear"]["source_file"])
+    row = next(r for r in c4["table"]
+               if (r["task"], r["probe"], r["draw"]) == ("bvc_4prong", "linear", 3))
+    assert got["RandOmaBvcFourprongDrawThreeLinear"] == M.math_safe(
+        M.fmt_one_sci(math.exp(row["control_log1m_auc"])))
+    # sigma_min straight from the per-model results, not from the summary file.
+    raw = _load(_load(prov["AnomalySigmaMinMahalanobisXYYBbbbOneseven"]["source_file"])
+                ["provenance"]["inputs"]["anomaly"]["path"])
+    v = [raw["arms"][f"r16q1-s{s}"]["signals"]["label_X_YY_bbbb"]["2000"]["mahalanobis"]["sigma_min"]
+         for s in range(1, 6)]
+    assert got["AnomalySigmaMinMahalanobisXYYBbbbOneseven"] == M.math_safe(
+        M.fmt_pm(np.mean(v), np.std(v, ddof=1)))
     s7 = _load(prov["MassResSigmaEffOneseven"]["source_file"])["table"]
     v = [r["sigma_eff"] for r in s7 if r["cell"] == "17" and r["probe"] == "ridge"]
     assert len(v) == 5 and got["MassResSigmaEffOneseven"] == f"{sum(v) / 5:.4f}"
+    d = _load(prov["MassResNTest"]["source_file"])["centering_detail"]
+    n = d["n_jets_used"]
+    assert got["MassResNTest"] == M.fmt_int(n - int(0.8 * n)) == M.fmt_int(d["split"][2])
     aoj = _load(prov["AojYieldOneeighteight"]["source_file"])["table"]
     y = [r["signal_yield"] for r in aoj if str(r["level"]) == "188"]
     assert got["AojYieldOneeighteight"] == M.fmt_int(math.exp(sum(map(math.log, y)) / len(y)))
@@ -669,19 +590,77 @@ def test_a_command_with_a_schedule_flag_contradicts_the_jetclass_row(tmp_path):
 
 
 def test_a_vcb_rejection_that_is_a_bound_in_any_seed_is_printed_as_a_bound(tmp_path):
-    cell = lambda r, b: {"rejection": r, "is_bound": b}
-    probe = {"log1m_auc": {"162": [-3.0], "17": [-2.5]}, "mean_diff": 0.5, "p": 0.01, "ci95": [0.4, 0.6],
-             "rejection_at": {"0.60": {"162": [cell(200.0, False)], "17": [cell(60.0, False)]},
-                              "0.40": {"162": [cell(1000.0, False), cell(4000.0, True)],
-                                       "17": [cell(300.0, False)]}}}
-    S = {"secondary": {"S10": {"verdict": "confirmed", "rule": "r", "n_signal_test": 1659,
-                               "n_background_test": 19244, "seeds": [1, 2],
-                               "probes": {"linear": probe, "mlp": probe}}}}
-    src = tmp_path / "s10.json"
-    src.write_text(json.dumps(S))
+    sizes = {"L188": 188, "L162": 162, "R42_Q1": 43, "R16_Q1": 17}
+
+    def cell(log1m, rej, bound):
+        return {"log1m_auc": log1m, "log1m_auc_censored": False,
+                "rejection_at": {"0.60": {"rejection": rej, "rejection_is_bound": bound,
+                                          "n_bkg_pass": 0 if bound else 3}}}
+    arms = {"l162-s1b": cell(-3.0, 1000.0, False), "l162-s2": cell(-3.1, 1500.0, True),
+            "l162-s3": cell(-3.2, 1500.0, True),
+            "r16q1-s1": cell(-2.5, 1500.0, True), "r16q1-s2": cell(-2.5, 1500.0, True),
+            "r16q1-s3": cell(-2.4, 1500.0, True)}
+    V = {"tasks": {"bc_vs_rest": {"n_signal_test": 100, "n_background_test": 1500, "eps_s": [0.6],
+                                  "arms": {a: {"linear": c, "mlp": c} for a, c in arms.items()}}}}
+    src = tmp_path / "sall.json"
+    src.write_text(json.dumps(V))
     em = M.Emitter(tmp_path)
-    M.emit_s10(em, S, src)
+    M.emit_vcb(em, V, src, sizes)
     got = {name: body for name, body, _ in em.macros}
-    assert got["VcbRejLinearFortyOnesixtwo"] == "\\ensuremath{>}2{,}000"   # geometric mean of 1000 and 4000, a bound
-    assert got["VcbRejLinearFortyOneseven"] == "300" and got["VcbEpsForty"] == "40"
-    assert got["VcbFactorLinear"] == "1.65"
+    assert got["VcbRejLinearSixtyOnesixtwo"] == M.math_safe("$\\geq$1{,}500$^{\\ast}$")  # two of three bound
+    assert got["VcbRejLinearSixtyOneseven"] == M.math_safe("$>$500")        # every seed bound: N_B/3
+    assert got["VcbEpsSixty"] == "60" and "VcbEpsForty" not in got
+    oma = lambda xs: sum(math.exp(x) for x in xs) / len(xs)
+    assert got["VcbOmaRatioLinear"] == M.fmt_ratio(oma([-2.5, -2.5, -2.4]) / oma([-3.0, -3.1, -3.2]))
+
+
+# ---------------------------------------------------------------- descriptive reporting
+
+@pytest.mark.parametrize("sd, want", [(351, "350"), (0.071, "0.07"), (0.97, "1.0"),
+                                      (0.0000745, "0.00007"), (0.09996, "0.10"), (25.1, "25")])
+def test_the_spread_is_rounded_by_the_pdg_rule(sd, want):
+    """100-354: two significant figures; 355-949: one; 950-999: up to 1000, two."""
+    got, place = M.pdg(sd)
+    assert M._fixed(got, place) == want
+
+
+def test_the_mean_is_printed_to_the_place_of_its_rounded_spread():
+    assert M.fmt_pm(1377, 351) == "1{,}380\\,$\\pm$\\,350"
+    assert M.fmt_pm(0.997684, 0.0000745) == "0.99768\\,$\\pm$\\,0.00007"
+    assert M.fmt_pm(0.5, 0.97) == "0.5\\,$\\pm$\\,1.0"
+    assert M.fmt_pm_sci(2.3213e-3, 0.0712e-3) == "$(2.32 \\pm 0.07)\\times10^{-3}$"
+    assert M.fmt_pm(851.3, 0.0) == "851"                 # seeds that agree exactly
+    assert M.fmt_one(0.910295) == "0.910" and M.fmt_one(1319.6) == "1{,}320"
+    assert M.fmt_ratio(3.72) == "3.7" and M.fmt_ratio(1.0213) == "1.02"
+
+
+def test_a_bound_is_never_averaged_into_a_mean():
+    """All seeds bound: the 95% lower limit N_B/3. Some: the median, marked. None: mean +- SD."""
+    assert M.fmt_rejection([2554.0] * 5, [True] * 5) == "$>$852"                     # N_B/2.996
+    assert M.fmt_rejection([2554.0] * 5, [True] * 5, [0, 1, 0, 0, 0]) == "$>$538"      # one passed: N_B/4.744
+    assert M.fmt_rejection([900.0, 900.0, 450.0], [True, True, False]) == "$\\geq$900$^{\\ast}$"
+    assert M.fmt_rejection([301.0, 302.0, 303.0], [False] * 3) == "302.0\\,$\\pm$\\,1.0"
+
+
+FORBIDDEN = re.compile(r"Holm|\$p\$|p=|trend|registered|clause|verdict|\b(?:C[1-5]|S(?:10|[1-9]))\b")
+# Section 6 (real data) is left as it was until it is rewritten against its new
+# analysis file; everything else must be clean.
+NOT_YET = ("Aoj",)
+
+
+def test_no_generated_file_carries_test_language_or_prediction_labels():
+    built = M.build(REPO)[0]
+    bad = []
+    for rel, text in built.items():
+        if rel == "tables/realdata.tex":
+            continue
+        if rel == "provenance.json":
+            lines = [f"{k} {json.dumps(v)}" for k, v in json.loads(text).items()
+                     if not k.startswith(NOT_YET)]
+        else:
+            lines = [ln for ln in text.splitlines()
+                     if not re.match(r"\\newcommand\{\\(?:" + "|".join(NOT_YET) + ")", ln)]
+        bad += [f"{rel}: {m.group()!r} in {ln[:120]!r}" for ln in lines
+                for m in [FORBIDDEN.search(ln)] if m]
+    assert not bad, "\n".join(bad)
+    assert "tables/tests.tex" not in built and "tables/s8.tex" not in built

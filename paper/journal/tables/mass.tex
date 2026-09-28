@@ -2,16 +2,15 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Jet-mass regression from frozen features. The residual is $\ln(m_{\mathrm{pred}}/m_{\mathrm{true}})$ after removing each native class's training-set mean; $\sigma_{\mathrm{eff}}$ is half the smallest interval holding 68\% of it, the tail fraction is the share with $|$residual$|>1$. Ridge probe, mean over five pretraining seeds; columns are the label set, with or without the added mass output.}
+\caption{Jet-mass regression from frozen features: $\sigma_{\mathrm{eff}}$ of the residual. The residual is $\ln(m_{\mathrm{pred}}/m_{\mathrm{true}})$ after removing each native class's training-set mean; $\sigma_{\mathrm{eff}}$ is half the smallest interval holding 68\% of it. Mean $\pm$ standard deviation over the five pretraining seeds, on 398{,}625 test jets. Columns are the pretraining label set, with or without the added mass output; the last is a predictor that returns the class mean alone, the same for both probes.}
 \label{tab:mass}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{l rrrrrr}
+\begin{tabular}{l rrrrrrr}
 \toprule
-& 188 & 162 & 43 & 17 & 162 + mass & 17 + mass \\
+& 188 & 162 & 43 & 17 & 162 + mass & 17 + mass & class mean only \\
 \midrule
-$\sigma_{\mathrm{eff}}$ & 0.3393 & 0.3302 & 0.3228 & 0.3001 & 0.2238 & 0.2170 \\
-standard deviation & 0.631 & 0.626 & 0.618 & 0.601 & 0.494 & 0.490 \\
-tail fraction & 0.064 & 0.062 & 0.060 & 0.056 & 0.034 & 0.033 \\
+nonlinear (MLP) probe & 0.2463\,$\pm$\,0.0022 & 0.2438\,$\pm$\,0.0018 & 0.2407\,$\pm$\,0.0009 & 0.2358\,$\pm$\,0.0025 & 0.19427\,$\pm$\,0.00012 & 0.1949\,$\pm$\,0.0006 & 0.2986 \\
+linear (ridge) probe & 0.3393\,$\pm$\,0.0019 & 0.3302\,$\pm$\,0.0029 & 0.3228\,$\pm$\,0.0019 & 0.300\,$\pm$\,0.010 & 0.2238\,$\pm$\,0.0019 & 0.2170\,$\pm$\,0.0034 & 0.2986 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

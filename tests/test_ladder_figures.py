@@ -11,8 +11,10 @@ ladder, so the two halves of the pipeline are tested against the same schema.
 import ast
 import importlib.util
 import json
+import math
 import pathlib
 
+import numpy as np
 import pytest
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
@@ -97,6 +99,38 @@ def test_a_saturated_cell_is_a_bound_and_never_a_point(ladder):
     assert not any(x in s["bounds"] for x, _ in s["points"])
     clean = F.series(A, "alpha", "linear", levels)
     assert clean["bounds"] == [] and clean["x"] == levels
+
+
+def test_the_granularity_line_is_one_minus_auc_with_its_seed_standard_deviation(ladder):
+    """The file stores ln(1 - AUC); the figure plots 1 - AUC on a log axis, and
+    the band is the standard deviation over seeds of that plotted quantity."""
+    A = ladder["A"]
+    s = F.series(A, "alpha", "linear", A["levels_fine_to_coarse"])
+    for x, y, sd in zip(s["x"], s["y"], s["sd"]):
+        v = [math.exp(r["log1m_auc"]) for r in F.cells(A, "alpha", "linear", x)]
+        assert y == pytest.approx(np.mean(v))
+        assert sd == pytest.approx(np.std(v, ddof=1))
+
+
+def test_the_granularity_figure_needs_only_the_levels_block(ladder, tmp_path, monkeypatch):
+    """The pairwise tests are leaving the analysis file; the figure's tasks come
+    from `levels`, its y axis is logarithmic, and it has no title of its own."""
+    A = ladder["A"]
+    del A["pairwise_exploratory"]
+    seen = {}
+
+    def spy(fig, name, outdir=None):
+        ax = fig.axes[0]
+        seen.update(yscale=ax.get_yscale(), title=ax.get_title(),
+                    labels=ax.get_legend_handles_labels()[1])
+        F.plt.close(fig)
+        return []
+
+    monkeypatch.setattr(F.style, "save", spy)
+    F.fig1_granularity(A, {}, tmp_path)
+    assert set(F.plotted_tasks(A)) == set(A["levels"])
+    assert seen["yscale"] == "log" and seen["title"] == ""
+    assert all(t in seen["labels"] for t in A["levels"])
 
 
 def test_the_paired_figure_reads_the_stored_interval_and_flips_its_sign_once(ladder):
