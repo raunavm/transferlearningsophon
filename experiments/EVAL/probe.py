@@ -57,6 +57,11 @@ Usage:
         --features L162=/data/results/eval/mtx-l162-s1/features \
                    R16_Q1=/data/results/eval/mtx-r16q1-s1/features \
         --out /data/results/eval/probe
+
+    # re-fit only the MLP of an earlier run, on the same features, elsewhere
+    python3 experiments/EVAL/probe.py --features <as that run> \
+        --mlp-rerun-of /data/results/eval/probe/probe_results.json \
+        --out /data/results/eval/probe_mlp2
 """
 from __future__ import annotations
 
@@ -307,6 +312,21 @@ MLP_SEEDS = (0, 1, 2)
 # The value is recorded in the results so it is auditable, and 4 is what the
 # original spec allocated.
 MLP_THREADS = 4
+# THE MLP IS TRAINED TO A PLATEAU, NOT FOR A BUDGET. It used to stop at a hard
+# 60 epochs, and 93 of the ladder's 360 fits (and 140 of the 2x2's 360) were
+# still improving when they hit it -- mostly on the 17-class models, which is
+# where the vocabularies are compared. Now the cap is a safety net only, and the
+# rule is early stopping on validation AUC with the best state restored
+# (Prechelt, "Early Stopping -- But When?", Neural Networks: Tricks of the Trade,
+# LNCS 1524 (1998) 55, whose slower criteria trade a little time for a better
+# optimum), with the learning rate cut tenfold on a plateau first (torch's
+# ReduceLROnPlateau at its default factor). An epoch counts as progress only if
+# it lowers the validation 1 - AUC by 0.1 % of its best value, i.e. by 0.001 in
+# log(1 - AUC), D7's metric; the scheduler and the stopping rule use that same
+# test. The fit stops after a full LR-patience window without progress at each of
+# three learning rates (1e-3, 1e-4, 1e-5): stop_patience = 3 * (lr_patience + 1).
+MLP_SCHEDULE = {"max_epochs": 500, "lr": 1e-3, "lr_factor": 0.1, "lr_patience": 10,
+                "stop_patience": 33, "min_rel_gain": 1e-3}
 SPLIT_SEED = 20260822
 
 
@@ -465,6 +485,7 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
     import torch
     from sklearn.metrics import roc_auc_score
     from sklearn.preprocessing import StandardScaler
+    S = MLP_SCHEDULE
     sc = StandardScaler().fit(Xtr)
     tr = torch.tensor(sc.transform(Xtr), dtype=torch.float32)
     va = torch.tensor(sc.transform(Xva), dtype=torch.float32)
@@ -476,7 +497,10 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
         net = torch.nn.Sequential(
             torch.nn.Linear(tr.shape[1], 256), torch.nn.ReLU(),
             torch.nn.Dropout(0.1), torch.nn.Linear(256, 2))
-        opt = torch.optim.AdamW(net.parameters(), lr=1e-3, weight_decay=1e-4)
+        opt = torch.optim.AdamW(net.parameters(), lr=S["lr"], weight_decay=1e-4)
+        sched = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            opt, mode="min", factor=S["lr_factor"], patience=S["lr_patience"],
+            threshold=S["min_rel_gain"], threshold_mode="rel")
         lossf = torch.nn.CrossEntropyLoss()
         # `stopped_early` distinguishes "the validation AUC plateaued" from
         # "we ran out of epochs". Both end the loop and both restore the best
@@ -485,9 +509,12 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
         # "absent" apart from "present but not linearly decodable". That
         # argument needs a converged fit. label_recovery.py's sklearn MLP hit
         # its cap on every cell of the first live run and returned a value
-        # BELOW its own linear probe with nothing recording why.
-        best_va, best_state, patience, stopped_early = -1.0, None, 0, False
-        for epoch in range(60):
+        # BELOW its own linear probe with nothing recording why. It is written
+        # as `converged`, and the per-epoch validation AUC travels with it so a
+        # reader can see the plateau rather than take the flag on trust.
+        best_va, best_state, best_epoch, patience, stopped_early = -1.0, None, 0, 0, False
+        curve = []
+        for epoch in range(S["max_epochs"]):
             net.train()
             perm = torch.randperm(tr.shape[0])
             for i in range(0, tr.shape[0], 4096):
@@ -499,12 +526,14 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
             with torch.no_grad():
                 v = (net(va)[:, 1] - net(va)[:, 0]).numpy()
             auc = roc_auc_score(yva, v)
-            if auc > best_va:
-                best_va, best_state, patience = auc, \
-                    {k: t.clone() for k, t in net.state_dict().items()}, 0
+            curve.append(round(float(auc), 10))
+            sched.step(1.0 - auc)
+            if 1.0 - auc < (1.0 - best_va) * (1.0 - S["min_rel_gain"]):
+                best_va, best_state, best_epoch, patience = auc, \
+                    {k: t.clone() for k, t in net.state_dict().items()}, epoch + 1, 0
             else:
                 patience += 1
-                if patience >= 8:
+                if patience >= S["stop_patience"]:
                     stopped_early = True
                     break
         net.load_state_dict(best_state)
@@ -512,7 +541,8 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
         with torch.no_grad():
             scores.append((net(te)[:, 1] - net(te)[:, 0]).numpy())
         meta.append({"seed": sd, "val_auc": float(best_va),
-                     "epochs_run": epoch + 1, "converged": stopped_early})
+                     "epochs_run": epoch + 1, "converged": stopped_early,
+                     "best_epoch": best_epoch, "val_auc_curve": curve})
     return np.mean(scores, axis=0), {
         "seeds": meta,
         "val_auc_mean": float(np.mean([m["val_auc"] for m in meta])),
@@ -540,6 +570,17 @@ def main() -> int:
                     help="signal efficiencies at which to quote 1/eps_B, for "
                          "tasks that do not pin their own list "
                          f"(default: {EPS_S})")
+    # MLP-ONLY RE-RUN, for results measured before the MLP trained to a plateau
+    # (MLP_SCHEDULE). The linear probe was never affected, and it is deterministic
+    # only on a given node (a refit elsewhere moves it by up to ~5e-4 in
+    # log(1-AUC)), so its numbers and its contrasts are COPIED from the source:
+    # the output is the source file with its MLP blocks replaced, in the same
+    # schema, so every reader takes it by a change of path. A copy is only valid
+    # on the same jets, so the source must match on row alignment, checkpoints and
+    # every task's counts, and the tasks and working points are the source's own.
+    ap.add_argument("--mlp-rerun-of", metavar="PROBE_RESULTS_JSON",
+                    help="re-fit only the MLP probe; copy every other field, "
+                         "linear numbers included, from this earlier output")
     args = ap.parse_args()
     # np.interp CLAMPS outside the ROC's range, so `--eps-s 50 70 90` would not
     # error -- it would return eps_B = 1 and a rejection of 1.0 in every cell.
@@ -562,6 +603,16 @@ def main() -> int:
           f"(label188 sha {align_sha[:16]})")
 
     out = pathlib.Path(args.out)
+    src = None
+    if args.mlp_rerun_of:
+        src_path = pathlib.Path(args.mlp_rerun_of)
+        if args.tasks != list(TASKS) or args.eps_s != [EPS_S]:
+            raise SystemExit("FATAL: --mlp-rerun-of takes its tasks and working "
+                             "points from the source file")
+        if (out / "probe_results.json").resolve() == src_path.resolve():
+            raise SystemExit(f"FATAL: --out would overwrite the source {src_path}")
+        src = json.loads(src_path.read_text())
+        args.tasks = list(src["tasks"])
     out.mkdir(parents=True, exist_ok=True)
     results = {"n_jets_total": int(L.shape[0]), "row_alignment_sha256": align_sha,
                # The working point the FLAT rejection fields carry, which is the
@@ -581,8 +632,23 @@ def main() -> int:
                "min_per_class_test": MIN_PER_CLASS,
                "mlp_threads": MLP_THREADS,
                "tasks": {}}
+    if src:
+        for k in ("n_jets_total", "row_alignment_sha256", "arm_checkpoints",
+                  "min_per_class_test", "mlp_threads"):
+            if results[k] != src.get(k):
+                raise SystemExit(f"FATAL: {k} is {results[k]!r} here and "
+                                 f"{src.get(k)!r} in {src_path}; its linear "
+                                 f"numbers were measured on something else")
+        results["eps_s_default"] = src["eps_s_default"]
+        results["mlp_rerun_of"] = {"path": str(src_path), "sha256": hashlib.sha256(
+            src_path.read_bytes()).hexdigest()}
+    results["mlp_training"] = MLP_SCHEDULE
+    kinds = (("mlp", fit_mlp),) if src else (("linear", fit_linear), ("mlp", fit_mlp))
 
     for task in args.tasks:
+        if src and src["tasks"][task].get("skipped"):
+            results["tasks"][task] = src["tasks"][task]
+            continue
         spec = TASKS[task]
         sig = np.isin(L, spec["signal"])
         bkg = np.isin(L, spec["background"])
@@ -632,7 +698,8 @@ def main() -> int:
         # command line says: bc_vs_rest quotes 60 % / 40 % because that is what
         # arXiv:2503.00118's table quotes, and a number moved off the published
         # working point is no longer a comparison to it.
-        eps_list = [float(e) for e in (spec.get("eps_s") or args.eps_s)]
+        eps_list = [float(e) for e in (src["tasks"][task]["eps_s"] if src
+                                       else spec.get("eps_s") or args.eps_s)]
         print(f"\n=== {task} ===  {spec['names'][0]} vs {spec['names'][1]}")
         print(f"  {rows.size:,} jets ({y.sum():,} signal), "
               f"split {tr.size:,}/{va.size:,}/{te.size:,}; "
@@ -654,11 +721,19 @@ def main() -> int:
                   "n_signal_test": te_sig, "n_background_test": te_bkg,
                   "names": spec["names"], "collapsed_at": spec["collapsed_at"],
                   "arms": {}}
+        if src:
+            s0 = src["tasks"][task]
+            moved = {k: (s0.get(k), tr_res[k]) for k in
+                     ("n", "n_signal", "n_signal_test", "n_background_test")
+                     if s0.get(k) != tr_res[k]}
+            if moved or sorted(s0["arms"]) != sorted(arms):
+                raise SystemExit(f"FATAL: {task} is not the task {src_path} measured "
+                                 f"(source, here): {moved or (sorted(s0['arms']), sorted(arms))}")
         te_scores = {}
         for arm, d in sorted(arms.items()):
             X = d["F"][rows]
-            entry = {}
-            for kind, fn in (("linear", fit_linear), ("mlp", fit_mlp)):
+            entry = {"linear": src["tasks"][task]["arms"][arm]["linear"]} if src else {}
+            for kind, fn in kinds:
                 s, meta = fn(X[tr], y[tr], X[va], y[va], X[te])
                 l1m, censored, auc = log1m_auc(y[te], s)
                 rejs = {}
@@ -690,9 +765,10 @@ def main() -> int:
             tr_res["arms"][arm] = entry
 
         # paired arm differences on log(1-AUC) -- D7's inferential metric
-        tr_res["contrasts"] = {}
+        tr_res["contrasts"] = ({k: v for k, v in src["tasks"][task]["contrasts"].items()
+                                if k.startswith("linear:")} if src else {})
         names = sorted(arms)
-        for kind in ("linear", "mlp"):
+        for kind, _ in kinds:
             for i in range(len(names)):
                 for j in range(i + 1, len(names)):
                     a, b = names[i], names[j]
@@ -726,6 +802,9 @@ def main() -> int:
                           f"{'  [BOUND: an arm reached AUC=1.0]' if bounded else ''}")
         results["tasks"][task] = tr_res
 
+    if src and [t for t, v in results["tasks"].items() if v.get("skipped")] != \
+            [t for t, v in src["tasks"].items() if v.get("skipped")]:
+        raise SystemExit(f"FATAL: this run skipped different tasks from {src_path}")
     (out / "probe_results.json").write_text(json.dumps(results, indent=2))
     print(f"\nwrote {out/'probe_results.json'}")
     return 0

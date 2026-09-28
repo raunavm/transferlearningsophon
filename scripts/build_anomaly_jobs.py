@@ -52,6 +52,7 @@ precisely the miscount the seed-balanced regret exists to prevent.
 
 Run:  python3 scripts/build_anomaly_jobs.py [--check-only] [--only RUN_ID ...]
       python3 scripts/build_anomaly_jobs.py --pin-not-yet-tagged
+      python3 scripts/build_anomaly_jobs.py --class-sum-rerun --pin-not-yet-tagged
 """
 from __future__ import annotations
 
@@ -312,7 +313,7 @@ def verify_head_widths(models=MODELS) -> dict[str, int]:
     return out
 
 
-def verify_pin(pin: str, allow_untagged: bool) -> None:
+def verify_pin(pin: str, allow_untagged: bool, needed=NEEDED_AT_PIN) -> None:
     """The pod clones a TAG, so check the TAG's tree, not the working tree."""
     tagged = subprocess.run(
         ["git", "rev-parse", "-q", "--verify", f"refs/tags/{pin}"],
@@ -321,23 +322,23 @@ def verify_pin(pin: str, allow_untagged: bool) -> None:
         if not allow_untagged:
             sys.exit(f"FATAL: tag {pin} does not exist. Pass "
                      f"--pin-not-yet-tagged if it is about to be created on a "
-                     f"commit carrying {len(NEEDED_AT_PIN)} files, and create it "
+                     f"commit carrying {len(needed)} files, and create it "
                      f"BEFORE applying any spec that clones it.")
-        gone = [p for p in NEEDED_AT_PIN if not (ROOT / p).exists()]
+        gone = [p for p in needed if not (ROOT / p).exists()]
         if gone:
             sys.exit(f"FATAL: {gone} not in the working tree either")
-        print(f"WARNING: tag {pin} DOES NOT EXIST YET. All {len(NEEDED_AT_PIN)} "
+        print(f"WARNING: tag {pin} DOES NOT EXIST YET. All {len(needed)} "
               f"files are in the working tree; create the tag on a commit that "
               f"has them before applying anything.")
         return
     listed = subprocess.run(
-        ["git", "ls-tree", "-r", "--name-only", pin, "--", *NEEDED_AT_PIN],
+        ["git", "ls-tree", "-r", "--name-only", pin, "--", *needed],
         cwd=ROOT, capture_output=True, text=True).stdout.split()
-    missing = [p for p in NEEDED_AT_PIN if p not in listed]
+    missing = [p for p in needed if p not in listed]
     if missing:
         sys.exit(f"FATAL: tag {pin} does not contain {missing}. The pod clones "
                  f"the TAG, so the job would die after paying for the clone.")
-    print(f"pin {pin} verified to contain all {len(NEEDED_AT_PIN)} files the "
+    print(f"pin {pin} verified to contain all {len(needed)} files the "
           f"job runs")
 
 
@@ -440,15 +441,254 @@ def build(m: Model, pin: str, check_only: bool) -> str:
     return "rewritten" if existed else "written"
 
 
+# ------------------------------------------------ THE CLASS-SUM RERUN (2026-09-28)
+#
+# class_sum leaves out only the signal's own output node: 1 native class at 188
+# and 162 classes, 3-12 at 43, 10-29 at 17, so comparing it across label sets
+# mixes the label-set effect with a change of estimator. anomaly.py's
+# class_sum_matched leaves out the signal's whole 17-class group at every label
+# set. It needs the head's logits and nothing else, so these twenty specs score
+# ONLY that family (--families): no kNN, Mahalanobis or IAD.
+#
+# Each spec is the four-family template with the model and pin substituted as in
+# render(), the lines in CS_ALLOWED_ANCHORS changed, and its header and deadline
+# comments replaced (they describe the four-family run). The model name is NOT
+# versioned (Model.label), so anomaly.cell_seed draws the committed resamplings;
+# anomaly_summary.py refuses the merged rerun unless every cell's rng_seeds match
+# and, at 17 classes, where the two estimators coincide, the committed class_sum
+# is reproduced. The version "cs" moves only the job name and the output
+# directory, as "v2" does for the re-runs above.
+#
+# mtx-s1.64: the first tag after mtx-s1.63 that carries class_sum_matched. It
+# does not exist when these are written -- --pin-not-yet-tagged, as above.
+CS_PIN = "mtx-s1.64"
+CS_FAMILIES = "class_sum_matched"
+CS_MODELS = [Model(rung, seed, k, version="cs")
+             for rung, k, seeds in (("L188", 188, "12345"), ("L162", 162, ["1b", *"2345"]),
+                                    ("R42_Q1", 43, "12345"), ("R16_Q1", 17, "12345"))
+             for seed in seeds]
+CS_MERGE = K8S / "job-eval-anomaly-cs-merge-raunav.yaml"
+CS_MERGE_OUT = "/data/results/eval/anomaly_cs_merged_v1"
+MERGE_V4 = K8S / "job-eval-anomaly-merge-v4-raunav.yaml"
+MERGE_V4_PIN = "mtx-s1.51"
+CS_NEEDED_AT_PIN = [*NEEDED_AT_PIN, "experiments/EVAL/anomaly_merge.py"]
+# COST, MEASURED (2026-09-28, Apple M4 Pro, production sizes: 200,000 + 200,000
+# QCD, 2,000 injected, 188 outputs). class_sum_matched alone: 37.6 s per
+# resampling with a signal, almost all of it the sigma_min bisection, and 0.7 s
+# per null resampling. 29 (signal, N_sig) cells carry a signal (X->YY->bbb is
+# skipped at 4,000): 29 x 10 x 37.6 s = 3.0 h per model locally. The same
+# machine takes 226 s (signal) / 50 s (null) for the four-family resampling,
+# 197 s averaged over the grid, against 550 s on the pods (91.6 min per cell,
+# measured off eval-anomaly-r16q1-s3's log), so a pod is ~2.8x slower:
+# ~8.5 h per model, ~170 core-hours for the twenty (340 CPU-hours requested at
+# 2 CPUs), against ~50 h x 8 CPUs per model for the four-family run.
+# 36 h covers two attempts (backoffLimit 1) with a 2x margin on the rate.
+CS_DEADLINE = 129600
+
+# Executed lines a rerun spec may differ from the template on. Unlike
+# ALLOWED_ANCHORS this is a set a changed line must fall in, not an exact
+# sequence, because the template's own model (162-class seed 2) is one of the
+# twenty and its identity lines therefore do not move.
+CS_ALLOWED_ANCHORS = [
+    ("  name: eval-anomaly-", "the job name"),
+    ("  backoffLimit: ", "one retry"),
+    ("  activeDeadlineSeconds: ", "the deadline, sized to class-sum scoring"),
+    ('          git clone --depth 1 --branch "', "the pinned tag"),
+    ("          a=mtx-", "the model"),
+    ("          OUT=/data/results/eval/anomaly_", "the output directory"),
+    ("            --features ", "the model name"),
+    ("            --rungs ", "the model name"),
+    ("            --out ${OUT}", "the families scored"),
+    ("          requests: ", "2 CPUs, 16Gi: single-threaded scoring"),
+    ("          limits:   ", "2 CPUs, 16Gi: single-threaded scoring"),
+]
+CS_MERGE_ANCHORS = [
+    ("  name: eval-anomaly-", "the job name"),
+    ("  backoffLimit: ", "one retry"),
+    ('          git clone --depth 1 --branch "', "the pinned tag"),
+    ("          for d in /data/results/eval/anomaly_", "the inputs"),
+    ("                   /data/results/eval/anomaly_", "the inputs"),
+    ("          OUT=/data/results/eval/anomaly_", "the output directory"),
+]
+
+CS_HEADER = """\
+  # CLASS-SUM RERUN, ONE MODEL PER JOB (2026-09-28): ONLY class_sum_matched.
+  #
+  # WHY. The committed class_sum leaves out the signal's own output node, which
+  # is 1 native class at 188 and 162 classes but 3-12 at 43 and 10-29 at 17, so
+  # comparing it across label sets mixes the label-set effect with a change of
+  # estimator. class_sum_matched leaves out the signal's whole 17-class group
+  # at every label set; the tree is nested, so at every finer set that group is
+  # an exact union of output nodes and the SAME native classes are removed.
+  #
+  # HELD FIXED. The feature cache and its logits (built from the features only
+  # if absent, never overwritten), --n-bkg / --n-template / --trainings, the
+  # signals and injections. --features names the UNVERSIONED model, so the
+  # committed resamplings are drawn exactly; anomaly_summary.py refuses the
+  # merged rerun unless every cell's rng_seeds match and, at 17 classes where
+  # the two estimators coincide, the committed class_sum is reproduced.
+  #
+  # NOT RUN. kNN, Mahalanobis, IAD. IAD is dropped from the paper: its
+  # sigma_min is not the definition of arXiv:2604.20965 Sec. V.4.
+  #
+  # PIN {pin}. Not tagged when this was written: create the tag on the commit
+  # carrying class_sum_matched BEFORE applying this spec.
+  #
+  # CPU-ONLY, ZERO GPU, us-west (the caches are on the PVC at SDSC). 2 CPUs,
+  # not 8: class-sum scoring is single-threaded Python. Generated by
+  # scripts/build_anomaly_jobs.py --class-sum-rerun; do not hand-edit.
+"""
+CS_DEADLINE_COMMENT = """\
+  # 36 h. ~8.5 h per model expected (measured locally and scaled by the pods'
+  # measured rate; scripts/build_anomaly_jobs.py, CS_DEADLINE). The deadline
+  # counts across the one retry and is TERMINAL: two attempts, 2x margin.
+"""
+CS_MERGE_HEADER = """\
+  # MERGE THE CLASS-SUM RERUN: twenty models, only class_sum_matched (2026-09-28).
+  #
+  # The same merge, preflight and post-checks as eval-anomaly-merge-v4-raunav,
+  # reading the twenty eval-anomaly-*-cs-raunav outputs instead. Written to a
+  # NEW directory; anomaly_merged_v4 is not touched. The committed class_sum is
+  # superseded only when anomaly_summary.py accepts this artifact beside it
+  # (same draws; the committed class_sum reproduced at 17 classes).
+  #
+  # PIN {pin}, the tag the twenty per-model specs clone. Not tagged when this
+  # was written. Generated by scripts/build_anomaly_jobs.py --class-sum-rerun.
+  #
+  # CPU-ONLY, ZERO GPU, minutes: this is JSON arithmetic, not a rerun.
+"""
+
+
+def _swap_comments(text: str, after: str, before: str, new: str) -> str:
+    """Replace the comment lines between the unique lines `after` and `before`."""
+    for s in (after, before):
+        if text.count(s) != 1:
+            raise SystemExit(f"FATAL: expected one {s!r} in the template, "
+                             f"found {text.count(s)}")
+    i, j = text.index(after) + len(after), text.index(before)
+    if any(not ln.lstrip().startswith("#") for ln in text[i:j].splitlines()):
+        raise SystemExit(f"FATAL: non-comment lines between {after!r} and "
+                         f"{before!r}; only comments may be replaced")
+    return text[:i] + new + text[j:]
+
+
+def _live(text: str) -> str:
+    return "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("#"))
+
+
+def _check_live_diff(template: str, out: str, anchors, what: str) -> None:
+    """Every executed line that moved must be one the anchors permit."""
+    for n, was, now in changed_lines(_live(template), _live(out)):
+        if not any(was.startswith(a) and now.startswith(a) for a, _ in anchors):
+            raise SystemExit(f"FATAL: {what} executed line {n} moved outside the "
+                             f"permitted set: {was.strip()!r} -> {now.strip()!r}")
+
+
+def render_cs(m: Model, pin: str = CS_PIN) -> str:
+    """The class-sum-only rerun spec for one model, template-derived and checked."""
+    t = TEMPLATE_MODEL
+    text = TEMPLATE_SPEC.read_text()
+    out = _substitute(text, [
+        (f"  name: eval-anomaly-{t.tag}-raunav\n",
+         f"  name: eval-anomaly-{m.tag}-raunav\n", 1),
+        ("  backoffLimit: 2\n", "  backoffLimit: 1\n", 1),
+        ("  activeDeadlineSeconds: 259200\n",
+         f"  activeDeadlineSeconds: {CS_DEADLINE}\n", 1),
+        (f'--branch "{TEMPLATE_PIN}"', f'--branch "{pin}"', 1),
+        (f"          a={t.run}; r={t.rung}; k={t.k}\n",
+         f"          a={m.run}; r={m.rung}; k={m.k}\n", 1),
+        (f"          OUT=/data/results/eval/anomaly_{t.tag}\n",
+         f"          OUT=/data/results/eval/anomaly_{m.tag}\n", 1),
+        (f"            --features {t.label}=${{d}} \\\n",
+         f"            --features {m.label}=${{d}} \\\n", 1),
+        (f"            --rungs {t.label}=${{r}} \\\n",
+         f"            --rungs {m.label}=${{r}} \\\n", 1),
+        ("            --out ${OUT} \\\n",
+         f"            --out ${{OUT}} --families {CS_FAMILIES} \\\n", 1),
+        ('memory: "32Gi", cpu: "8"', 'memory: "16Gi", cpu: "2"', 2),
+    ])
+    out = _swap_comments(out, "metadata:\n", "  name: eval-anomaly-",
+                         CS_HEADER.format(pin=pin))
+    out = _swap_comments(out, "  backoffLimit: 1\n", "  activeDeadlineSeconds: ",
+                         CS_DEADLINE_COMMENT)
+    _check_live_diff(text, out, CS_ALLOWED_ANCHORS, m.tag)
+    if TEMPLATE_PIN in out:
+        raise SystemExit(f"FATAL: {TEMPLATE_PIN!r} survives in {m.tag}")
+    if m.label != t.label and t.label in _live(out):
+        raise SystemExit(f"FATAL: {t.label!r} survives on an executed line of {m.tag}")
+    return out
+
+
+def render_cs_merge(pin: str = CS_PIN) -> str:
+    """The v4 merge spec pointed at the twenty rerun outputs."""
+    text = MERGE_V4.read_text()
+    old = re.findall(r"^\s+(?:for d in )?/data/results/eval/anomaly_([\w.-]+)(?: \\|; do)$",
+                     text, re.M)
+    by_label = {m.label: m for m in CS_MODELS}
+    if sorted(o.removesuffix("-v2") for o in old) != sorted(by_label):
+        raise SystemExit(f"FATAL: the v4 merge reads {old}, not the twenty models")
+    subs = [("  name: eval-anomaly-merge-v4-raunav\n",
+             "  name: eval-anomaly-cs-merge-raunav\n", 1),
+            ("  backoffLimit: 2\n", "  backoffLimit: 1\n", 1),
+            (f'--branch "{MERGE_V4_PIN}"', f'--branch "{pin}"', 1),
+            ("          OUT=/data/results/eval/anomaly_merged_v4\n",
+             f"          OUT={CS_MERGE_OUT}\n", 1)]
+    for o in old:
+        new = by_label[o.removesuffix("-v2")].tag
+        for end in (" \\\n", "; do\n"):
+            if f"/data/results/eval/anomaly_{o}{end}" in text:
+                subs.append((f"/data/results/eval/anomaly_{o}{end}",
+                             f"/data/results/eval/anomaly_{new}{end}", 1))
+    out = _substitute(text, subs)
+    out = _swap_comments(out, "metadata:\n", "  name: eval-anomaly-",
+                         CS_MERGE_HEADER.format(pin=pin))
+    _check_live_diff(text, out, CS_MERGE_ANCHORS, CS_MERGE.name)
+    if MERGE_V4_PIN in out:
+        raise SystemExit(f"FATAL: {MERGE_V4_PIN!r} survives in {CS_MERGE.name}")
+    return out
+
+
+def _write(path: pathlib.Path, text: str, check_only: bool) -> str:
+    if check_only:
+        return "MISSING" if not path.exists() else (
+            "ok" if path.read_text() == text else "DIFFERS")
+    existed = path.exists()
+    if existed and path.read_text() == text:
+        return "unchanged"
+    path.write_text(text)
+    return "rewritten" if existed else "written"
+
+
+def main_cs(a) -> int:
+    pin = a.pin or CS_PIN
+    widths = verify_head_widths(CS_MODELS)
+    print(f"head widths verified for {len(widths)} models")
+    verify_pin(pin, a.pin_not_yet_tagged, CS_NEEDED_AT_PIN)
+    for m in CS_MODELS:
+        print(f"  {m.job_spec.name:47s} "
+              f"{_write(m.job_spec, render_cs(m, pin), a.check_only)}")
+    print(f"  {CS_MERGE.name:47s} "
+          f"{_write(CS_MERGE, render_cs_merge(pin), a.check_only)}")
+    print(f"\nlaunch the {len(CS_MODELS)} per-model jobs (~8.5 h each on 2 CPUs), "
+          f"then the merge; then anomaly_summary.py --class-sum-rerun")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-only", action="store_true",
                     help="compare against the committed files, write nothing")
+    ap.add_argument("--class-sum-rerun", action="store_true",
+                    help="emit the class-sum-only rerun specs and their merge")
     ap.add_argument("--only", nargs="*", default=None, metavar="RUN_ID",
                     help="restrict to these run ids (default: all of MODELS)")
-    ap.add_argument("--pin", default=PIN)
+    ap.add_argument("--pin", default=None, help=f"default {PIN}, or {CS_PIN} "
+                    "with --class-sum-rerun")
     ap.add_argument("--pin-not-yet-tagged", action="store_true")
     a = ap.parse_args(argv)
+    if a.class_sum_rerun:
+        return main_cs(a)
+    a.pin = a.pin or PIN
 
     widths = verify_head_widths()
     print("head widths, read from each model's own training spec and "

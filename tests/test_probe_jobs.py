@@ -1,7 +1,9 @@
 """The four-granularity probe jobs: one per seed index, four models each."""
 import importlib.util
 import pathlib
+import re
 
+import pytest
 import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -11,11 +13,12 @@ bp = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bp)
 
 
-def test_twenty_nine_jobs_all_named_raunav_and_parse():
+def test_forty_three_jobs_all_named_raunav_and_parse():
     jobs = bp.build()
     # 5 probe v1 + 5 label-recovery v1 + 5 probe v2 + 3 random-label control
     # + 5 mass-output 2x2 + 5 mass regression + 1 |V_cb| window (S10)
-    assert len(jobs) == 29
+    # + 14 MLP re-runs (5 ladder v2 + 3 control + 5 mass 2x2 + 1 |V_cb|)
+    assert len(jobs) == 43
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"]
@@ -42,7 +45,7 @@ def test_each_job_holds_one_seed_index_at_all_four_granularities():
 def test_outputs_are_disjoint_per_seed_and_mlp_cannot_be_skipped():
     outs = [l.strip() for t in bp.build().values() for l in t.splitlines()
             if l.strip().startswith("OUT=")]
-    assert len(outs) == len(set(outs)) == 29
+    assert len(outs) == len(set(outs)) == 43
     for text in bp.build().values():
         assert "--no-mlp" not in text and "--skip-mlp" not in text
 
@@ -282,3 +285,74 @@ def test_every_other_job_still_reads_the_2m_caches():
     for fname, text in bp.build().items():
         if "vcbwindow" not in fname:
             assert "/features_e79\n" in text and "vcbwindow" not in text, fname
+
+
+# ---------------------------------------------------------------------------
+# The MLP re-runs (mlp2). The first runs capped the MLP at 60 epochs while fits
+# were still improving; these re-fit only the MLP, on the caches each run read,
+# and copy the linear numbers from that run's own output.
+# ---------------------------------------------------------------------------
+
+def _models_line(text):
+    return next(l for l in text.splitlines() if l.strip().startswith("for spec in"))
+
+
+def test_every_probe_set_whose_mlp_the_paper_reads_has_a_rerun():
+    """The four-level ladder (5), the random-label control (3), the mass-output
+    2x2 (5) and the |V_cb| probe (1); the frozen v1 and the label-recovery and
+    mass-regression jobs have no MLP the paper reads and get none."""
+    jobs = bp.build()
+    reruns = sorted(f for f in jobs if "-mlp2-" in f)
+    assert reruns == sorted(f"job-{bp.mlp2_name(n)}.yaml" for n in bp.MLP2_SOURCES)
+    assert len(reruns) == 14
+    for name in bp.MLP2_SOURCES:
+        assert f"job-{name}.yaml" in jobs, name
+    assert not any(("v1" in n) or ("labelrec" in n) or ("massres" in n) for n in bp.MLP2_SOURCES)
+
+
+def test_a_rerun_is_its_source_with_only_name_pin_and_probe_call_moved():
+    """Same models, same caches, same resources and region as the run whose
+    linear numbers it copies. Checked as: the text before the probe call equals
+    the source's with the name and pin rewritten, and the text after it is the
+    source's own."""
+    jobs = bp.build()
+    for name in bp.MLP2_SOURCES:
+        src, new = jobs[f"job-{name}.yaml"], jobs[f"job-{bp.mlp2_name(name)}.yaml"]
+        pin = re.search(r'--branch "([^"]+)"', src).group(1)
+        head_src, head_new = src.split("          OUT=")[0], new.split("          SRC=")[0]
+        assert head_new == (head_src.replace(f"name: {name}\n", f"name: {bp.mlp2_name(name)}\n")
+                            .replace(f'--branch "{pin}"', f'--branch "{bp.MLP2_PIN}"')), name
+        assert src.split("--bootstrap 2000\n")[1] == new.split("--bootstrap 2000\n")[1], name
+        assert _models_line(src) == _models_line(new)
+
+
+def test_a_rerun_reads_its_sources_output_and_writes_beside_it():
+    jobs = bp.build()
+    old_outs = {l.strip() for f, t in jobs.items() if "-mlp2-" not in f
+                for l in t.splitlines() if l.strip().startswith("OUT=")}
+    for name in bp.MLP2_SOURCES:
+        src, new = jobs[f"job-{name}.yaml"], jobs[f"job-{bp.mlp2_name(name)}.yaml"]
+        src_out = re.search(r"^          OUT=(\S+)$", src, re.M).group(1)
+        new_out = re.search(r"^          OUT=(\S+)$", new, re.M).group(1)
+        assert f"          SRC={src_out}/probe_results.json\n" in new
+        head, leaf = src_out.rsplit("/", 1)
+        assert new_out == f"{head}_mlp2/{leaf}" and f"OUT={new_out}" not in old_outs
+        # never over a result: the job refuses to start if its output exists
+        assert '[ ! -e "${OUT}/probe_results.json" ] || {' in new
+        # tasks and working points come from the source file, never the command line
+        call = new.split("python3 experiments/EVAL/probe.py")[1].split("date -u")[0]
+        assert "--mlp-rerun-of ${SRC}" in call and "--bootstrap 2000" in call
+        assert "--tasks" not in call and "--eps-s" not in call
+        assert f'--branch "{bp.MLP2_PIN}"' in new
+
+
+def test_the_rerun_pin_is_refused_until_tagged_unless_declared():
+    """The pod clones a TAG. mtx-s1.64 is created after the commit, so the build
+    must name that explicitly, and the flag it relies on must be in the file."""
+    assert bp.MLP2_PIN == "mtx-s1.64"
+    with pytest.raises(SystemExit):
+        bp.verify_pin("mtx-s0.0-does-not-exist", False, bp.MLP2_NEEDED)
+    bp.verify_pin("mtx-s0.0-does-not-exist", True, bp.MLP2_NEEDED)
+    with pytest.raises(SystemExit):
+        bp.verify_pin("mtx-s0.0-does-not-exist", True,
+                      {"experiments/EVAL/probe.py": "--no-such-flag"})

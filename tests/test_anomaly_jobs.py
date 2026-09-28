@@ -363,3 +363,100 @@ def test_the_merge_and_the_wave_clone_one_tag():
     pins = {re.search(r'--branch "([^"]+)"', p.read_text()).group(1)
             for p in [MERGE_V4] + [m.job_spec for m in B.MODELS]}
     assert pins == {B.PIN}, pins
+
+
+# ------------------------------------------------- the class-sum rerun (2026-09-28)
+
+CS_MERGE_DIRS = re.compile(
+    r"^\s+(?:for d in )?(/data/results/eval/anomaly[\w.-]*)(?: \\|; do)$", re.M)
+
+
+def test_the_class_sum_rerun_is_five_seeds_at_four_label_sets_named_as_scored():
+    """The same twenty models the v4 merge read, under their UNVERSIONED names:
+    anomaly.cell_seed hashes the model name, so any other name would draw other
+    resamplings and the rerun would not be comparable to the committed run."""
+    per_level = {}
+    for m in B.CS_MODELS:
+        per_level[m.rung] = per_level.get(m.rung, 0) + 1
+        assert m.version == "cs" and m.tag == f"{m.label}-cs"
+    assert per_level == PLANNED_LEVELS
+    v4 = {p.removeprefix("/data/results/eval/anomaly_").removesuffix("-v2")
+          for p in CS_MERGE_DIRS.findall(MERGE_V4.read_text())}
+    assert {m.label for m in B.CS_MODELS} == v4 and len(v4) == 20
+    assert B.verify_head_widths(B.CS_MODELS) == {m.run: m.k for m in B.CS_MODELS}
+
+
+@pytest.mark.parametrize("m", B.CS_MODELS, ids=lambda m: m.tag)
+def test_the_committed_rerun_spec_is_exactly_what_the_builder_renders(m):
+    assert m.job_spec.exists(), f"{m.job_spec.name} was never written"
+    assert m.job_spec.read_text() == B.render_cs(m)
+
+
+def test_the_committed_rerun_merge_is_exactly_what_the_builder_renders():
+    assert B.CS_MERGE.read_text() == B.render_cs_merge()
+
+
+@pytest.mark.parametrize("m", B.CS_MODELS, ids=lambda m: m.tag)
+def test_a_rerun_spec_moves_only_the_permitted_executed_lines(m):
+    """Against the FILE ON DISK: everything the four-family run held fixed --
+    the precondition loop, the logit build, --n-bkg / --n-template / --trainings,
+    the region pin -- is the template's, and the families are class-sum only."""
+    text = m.job_spec.read_text()
+    B._check_live_diff(B.TEMPLATE_SPEC.read_text(), text, B.CS_ALLOWED_ANCHORS,
+                       m.job_spec.name)
+    live = B._live(text)
+    assert f"  name: eval-anomaly-{m.label}-cs-raunav" in live
+    assert "  backoffLimit: 1\n" in live + "\n"
+    assert f'--branch "{B.CS_PIN}"' in live and f"  # PIN {B.CS_PIN}." in text
+    assert f"a={m.run}; r={m.rung}; k={m.k}" in live
+    assert f"OUT=/data/results/eval/anomaly_{m.label}-cs\n" in live + "\n"
+    assert f"--features {m.label}=${{d}}" in live and f"--rungs {m.label}=${{r}}" in live
+    assert "--out ${OUT} --families class_sum_matched \\" in live
+    assert "--n-bkg 200000 --n-template 200000 --trainings 10" in live
+    assert "--overwrite" not in live
+    assert B.TEMPLATE_PIN not in text
+
+
+def test_no_rerun_spec_writes_where_another_spec_already_writes():
+    """The committed per-model artifacts and anomaly_merged_v4 are the record of
+    the four-family run; the rerun writes only new directories."""
+    mine = {re.search(r"^          OUT=(\S+)$", m.job_spec.read_text(), re.M).group(1)
+            for m in B.CS_MODELS} | {B.CS_MERGE_OUT}
+    assert len(mine) == 21
+    theirs = set()
+    for spec in K8S.glob("job-*.yaml"):
+        if spec in {m.job_spec for m in B.CS_MODELS} | {B.CS_MERGE}:
+            continue
+        theirs.update(re.findall(r"^          OUT=(\S+)$", spec.read_text(), re.M))
+    assert not (mine & theirs), sorted(mine & theirs)
+
+
+def test_the_rerun_merge_reads_the_twenty_rerun_outputs_and_writes_somewhere_new():
+    text = B.CS_MERGE.read_text()
+    B._check_live_diff(MERGE_V4.read_text(), text, B.CS_MERGE_ANCHORS, B.CS_MERGE.name)
+    assert set(CS_MERGE_DIRS.findall(text)) == {
+        f"/data/results/eval/anomaly_{m.tag}" for m in B.CS_MODELS}
+    live = B._live(text)
+    assert f"OUT={B.CS_MERGE_OUT}" in live and "refusing to overwrite" in live
+    assert "  name: eval-anomaly-cs-merge-raunav" in live
+    assert "  backoffLimit: 1\n" in live + "\n"
+    for name in ("anomaly.py", "probe.py"):
+        assert name not in live, "the merge opens no feature cache"
+
+
+def test_the_rerun_clones_one_tag_that_does_not_exist_yet():
+    """mtx-s1.64 is created on the commit carrying class_sum_matched, before any
+    of these is applied; until then the builder needs --pin-not-yet-tagged."""
+    pins = {re.search(r'--branch "([^"]+)"', p.read_text()).group(1)
+            for p in [B.CS_MERGE] + [m.job_spec for m in B.CS_MODELS]}
+    assert pins == {B.CS_PIN} == {"mtx-s1.64"}
+    assert "experiments/EVAL/anomaly_merge.py" in B.CS_NEEDED_AT_PIN
+    B.verify_pin(B.CS_PIN, allow_untagged=True, needed=B.CS_NEEDED_AT_PIN)
+
+
+def test_the_rerun_deadline_covers_two_attempts_at_the_measured_rate():
+    """~8.5 h per model on a pod (measured locally, scaled by the pods' own
+    four-family rate); backoffLimit 1 means two attempts inside one deadline."""
+    assert B.CS_DEADLINE >= 2 * 8.5 * 3600
+    for m in B.CS_MODELS:
+        assert f"activeDeadlineSeconds: {B.CS_DEADLINE}\n" in m.job_spec.read_text()

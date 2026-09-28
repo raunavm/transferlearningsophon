@@ -34,6 +34,8 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import re
+import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -127,6 +129,80 @@ FEAT = "features_e79"           # the 2,000,000-jet caches every job above reads
 VCB_FEAT = "features_vcbwindow_e79_full"
 VCB_CELLS = [("mtx-l162", "L162"), ("mtx-r16q1", "R16_Q1")]
 VCB_EPS_S = [0.6, 0.4]          # arXiv:2503.00118's working points, as the task pins
+
+# THE MLP PROBE RE-FITTED TO A PLATEAU ("mlp2"). Every probe run above capped the
+# MLP at 60 epochs, and fits were still improving when they hit it: 93 of the
+# ladder's 360, 140 of the 2x2's 360, 22 of the random control's 36 and 1 of the
+# |V_cb| probe's 30 -- mostly on the 17-class models, which is where the
+# vocabularies are compared. probe.py now trains to a plateau (MLP_SCHEDULE) and
+# --mlp-rerun-of re-fits only the MLP on the caches each run read, copying every
+# linear number from that run's own output. One re-run per spec whose MLP the
+# paper reads, derived from it by substitution: same models, caches and
+# resources; only the name, the pin and the probe call move, and it writes to a
+# new directory beside the old one, which it refuses to find already written.
+MLP2_PIN = "mtx-s1.64"          # tagged after the commit: build with --pin-not-yet-tagged
+MLP2_NEEDED = {"experiments/EVAL/probe.py": "--mlp-rerun-of"}
+MLP2_SOURCES = ([f"probe-ladder-v2-s{s}-raunav" for s in SEEDS]
+                + [f"probe-randcontrol-d{d}-raunav" for _, _, d in CONTROL_DRAWS]
+                + [f"probe-mass2x2-s{s}-raunav" for s in SEEDS]
+                + ["probe-vcbwindow-s10-raunav"])
+
+MLP2 = """          SRC={src}/probe_results.json
+          [ -f "${{SRC}}" ] || {{ echo "FATAL: no ${{SRC}}"; exit 1; }}
+          OUT={out}
+          [ ! -e "${{OUT}}/probe_results.json" ] || {{ echo "FATAL: ${{OUT}}/probe_results.json exists"; exit 1; }}
+          mkdir -p ${{OUT}}
+          python3 experiments/EVAL/probe.py \\
+            --features ${{ARMS}} \\
+            --out ${{OUT}} \\
+            --mlp-rerun-of ${{SRC}} \\
+            --bootstrap 2000
+"""
+
+
+def mlp2_name(name: str) -> str:
+    """probe-ladder-v2-s1-raunav -> probe-ladder-v2-mlp2-s1-raunav."""
+    stem, last = name.removesuffix("-raunav").rsplit("-", 1)
+    return f"{stem}-mlp2-{last}-raunav"
+
+
+def mlp2_spec(text: str) -> str:
+    """The re-run of one probe spec: its probe call swapped for the MLP-only one,
+    reading that spec's own output, writing to <its directory>_mlp2."""
+    name = re.search(r"^  name: (\S+)$", text, re.M).group(1)
+    pin = re.search(r'--branch "([^"]+)"', text).group(1)
+    call = re.search(r"^          OUT=(\S+)/(\S+)\n.*?^            --bootstrap 2000\n",
+                     text, re.M | re.S)
+    subs = [(f"  name: {name}\n", f"  name: {mlp2_name(name)}\n"),
+            (f'--branch "{pin}"', f'--branch "{MLP2_PIN}"'),
+            (call.group(0), MLP2.format(src=f"{call.group(1)}/{call.group(2)}",
+                                        out=f"{call.group(1)}_mlp2/{call.group(2)}"))]
+    for a, b in subs:
+        if text.count(a) != 1:
+            raise SystemExit(f"FATAL: {name} changed shape; cannot derive its re-run ({a[:40]!r})")
+        text = text.replace(a, b)
+    return text
+
+
+def verify_pin(pin: str, not_yet_tagged: bool, flags: dict) -> None:
+    """The pod clones the TAG, so the flags a spec passes must be in the tag's copy
+    of the script (build_aoj_jobs.verify_pin). A tag made after the commit cannot
+    exist while its specs are written; --pin-not-yet-tagged then reads the working
+    tree instead and says so."""
+    tagged = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "-q", "--verify",
+                             f"refs/tags/{pin}"], capture_output=True).returncode == 0
+    if not tagged and not not_yet_tagged:
+        raise SystemExit(f"FATAL: tag {pin} does not exist. Pass --pin-not-yet-tagged if it "
+                         f"is about to be created, and create it BEFORE applying any spec.")
+    for path, flag in flags.items():
+        text = ((ROOT / path).read_text() if not tagged else subprocess.run(
+            ["git", "-C", str(ROOT), "show", f"{pin}:{path}"],
+            capture_output=True, text=True).stdout)
+        if flag not in text:
+            raise SystemExit(f"FATAL: {path} at {pin if tagged else 'the working tree'} has no {flag}")
+    if not tagged:
+        print(f"WARNING: tag {pin} DOES NOT EXIST YET. Create it on a commit carrying "
+              f"{sorted(flags)} before applying any spec that clones it.")
 
 
 def run_name(stem: str, seed: int) -> str:
@@ -285,6 +361,10 @@ def build() -> dict[str, str]:
         out[f"job-{name}.yaml"] = (
             HEAD.format(name=name, feat=FEAT, pin=MASSRES_PIN, specs=rspecs)
             + MASSRES.format(seed=seed, obs=MASSRES_OBS) + TAIL)
+
+    # The MLP re-runs, one per probe spec above whose MLP the paper reads.
+    for name in MLP2_SOURCES:
+        out[f"job-{mlp2_name(name)}.yaml"] = mlp2_spec(out[f"job-{name}.yaml"])
     return out
 
 
@@ -292,7 +372,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true",
                     help="exit 1 if a committed spec differs from the generated one")
+    ap.add_argument("--pin-not-yet-tagged", action="store_true",
+                    help=f"check the working tree instead of {MLP2_PIN}, which is "
+                         f"tagged after the commit")
     args = ap.parse_args()
+    verify_pin(MLP2_PIN, args.pin_not_yet_tagged, MLP2_NEEDED)
     bad = 0
     for fname, text in build().items():
         p = K8S / fname

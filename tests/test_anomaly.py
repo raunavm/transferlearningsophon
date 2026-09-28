@@ -511,3 +511,121 @@ def test_sigma_min_does_not_return_its_own_starting_bracket():
     assert got > 0.0, "a real root, not the saturation return"
     # Z ~ sigma_0 * eps_s / sqrt(eps_b) = sigma_0 * 1e7, so Z = 5 at 5e-7
     assert got == pytest.approx(5e-7, rel=0.15)
+
+
+# ------------------------------------------------ class_sum_matched (2026-09-28)
+
+# A toy tree: six resonant classes in two coarse groups, two QCD classes, and
+# four label sets nested fine -> coarse, as the committed tree is.
+_TOY = [  # jet_label, class_name, L188, L162, R42_Q1, R16_Q1
+    (0, "label_X_a1", 0, 0, 0, 0), (1, "label_X_a2", 1, 1, 1, 0),
+    (2, "label_X_a3", 2, 2, 1, 0), (3, "label_X_b1", 3, 3, 2, 1),
+    (4, "label_X_b2", 4, 4, 2, 1), (5, "label_X_b3", 5, 5, 3, 1),
+    (6, "label_QCD_x", 6, 6, 4, 2), (7, "label_QCD_y", 7, 6, 4, 2)]
+_TOY_RUNGS = ("L188", "L162", "R42_Q1", "R16_Q1")
+
+
+def _toy_map(tmp_path, monkeypatch, rows=_TOY):
+    p = tmp_path / "toy_map.csv"
+    p.write_text("jet_label,class_name," + ",".join(_TOY_RUNGS) + "\n"
+                 + "".join(",".join(map(str, r)) + "\n" for r in rows))
+    monkeypatch.setattr(an, "MAP", p)
+
+
+def _toy_logits(p_native, rung):
+    """Logits whose softmax is the native probabilities summed into rung nodes,
+    i.e. four heads that agree exactly about every native class."""
+    node = np.array([r[2 + _TOY_RUNGS.index(rung)] for r in _TOY])
+    return np.log(np.stack([p_native[:, node == k].sum(axis=1)
+                            for k in range(node.max() + 1)], axis=1))
+
+
+def test_class_sum_matched_removes_the_same_native_classes_at_every_label_set(
+        tmp_path, monkeypatch):
+    """THE DEFECT: class_sum leaves out the signal's own node, so it removes one
+    native class at the fine end and the whole group at the coarse end -- a
+    different estimator per label set. class_sum_matched must remove the SAME
+    native classes everywhere, and so return the same score from heads that
+    agree about every native class, while class_sum does not."""
+    _toy_map(tmp_path, monkeypatch)
+    p = np.random.default_rng(3).dirichlet(np.ones(8), size=200)
+    for sig in range(6):
+        removed = {rung: {lab for lab, nd in an.node_roles(rung)[0].items()
+                          if nd in an.matched_nodes(rung, sig)} for rung in _TOY_RUNGS}
+        group = {0, 1, 2} if sig < 3 else {3, 4, 5}
+        assert all(v == group for v in removed.values()), removed
+        s = {rung: an.score_class_sum_matched(_toy_logits(p, rung), rung, sig)
+             for rung in _TOY_RUNGS}
+        for rung in _TOY_RUNGS[1:]:
+            np.testing.assert_allclose(s[rung], s["L188"], rtol=1e-10)
+    old = {rung: an.score_class_sum(_toy_logits(p, rung), rung,
+                                    an.node_roles(rung)[0][0]) for rung in _TOY_RUNGS}
+    assert not np.allclose(old["L188"], old["R16_Q1"]), (
+        "the old estimator must differ across label sets on this tree, or the "
+        "test above proves nothing")
+
+
+def test_class_sum_matched_refuses_a_tree_that_is_not_nested(tmp_path, monkeypatch):
+    """A node straddling the signal's coarse group would make the removed set
+    depend on the label set again; that is fatal, not rounded."""
+    rows = [list(r) for r in _TOY]
+    rows[2][4] = rows[3][4] = 9            # R42_Q1 node joins a3 (group 0) and b1 (group 1)
+    _toy_map(tmp_path, monkeypatch, rows)
+    with pytest.raises(SystemExit, match="not nested"):
+        an.matched_nodes("R42_Q1", 0)
+
+
+def test_class_sum_matched_on_the_committed_tree():
+    """Every suite signal: the same native set at 188, 162, 43 and 17 classes --
+    its whole 17-class group -- and at 17 classes the two estimators coincide,
+    which is what lets the rerun be checked against the committed class_sum."""
+    by = {r["class_name"]: int(r["jet_label"]) for r in an.read_map()}
+    sizes = {}
+    logits = np.random.default_rng(5).normal(size=(300, 17))
+    for sig in an.SIGNAL_SUITE:
+        lab = by[sig]
+        sets = [frozenset(l for l, nd in an.node_roles(rung)[0].items()
+                          if nd in an.matched_nodes(rung, lab))
+                for rung in ("L188", "L162", "R42_Q1", "R16_Q1")]
+        assert len(set(sets)) == 1, sig
+        sizes[sig] = len(sets[0])
+        node = an.node_roles("R16_Q1")[0][lab]
+        np.testing.assert_array_equal(
+            an.score_class_sum_matched(logits, "R16_Q1", lab),
+            an.score_class_sum(logits, "R16_Q1", node))
+    assert sizes == {"label_X_bb": 10, "label_X_qq": 10, "label_X_YY_bbb": 29,
+                     "label_X_YY_qqq": 29, "label_X_YY_bbbb": 27,
+                     "label_X_YY_qqqq": 27}
+
+
+def test_a_family_subset_reproduces_the_full_runs_cells(tmp_path):
+    """The rerun scores ONLY class-sum families. It is comparable to the
+    committed run only if it draws the same resamplings, so a subset run must
+    return the full run's cells exactly -- and must not score what it skipped."""
+    import json as _json
+    rng = np.random.default_rng(7)
+    qcd = sorted(an._probe().qcd_indices())
+    n = 6000
+    lab = np.array(rng.choice(qcd, size=n))
+    lab[:900] = 0
+    d = tmp_path / "arm"
+    _cache(d, n, lab, rng, k=188, signal_boost=np.arange(900))
+    args = ["--features", f"a={d}", "--rungs", "a=L188", "--n-bkg", "1500",
+            "--n-template", "1500", "--trainings", "2", "--signals", "label_X_bb",
+            "--n-sig", "0", "400"]
+    an.main(args + ["--out", str(tmp_path / "full")])
+    an.main(args + ["--out", str(tmp_path / "cs"), "--families", "class_sum",
+                    "class_sum_matched"])
+    full, cs = (_json.loads((tmp_path / x / "anomaly_results.json").read_text())
+                ["arms"]["a"]["signals"]["label_X_bb"] for x in ("full", "cs"))
+    for n_sig in ("0", "400"):
+        assert cs[n_sig]["rng_seeds"] == full[n_sig]["rng_seeds"]
+        fams = {k for k, v in cs[n_sig].items() if isinstance(v, dict)}
+        assert fams == {"class_sum", "class_sum_matched"}, fams
+        for fam in fams:
+            for m in ("max_sic", "sigma_min", "argos"):
+                if m in full[n_sig][fam]:
+                    assert cs[n_sig][fam][m] == full[n_sig][fam][m], (n_sig, fam, m)
+    assert cs["400"]["classes_removed"] == 1
+    assert cs["400"]["classes_removed_matched"] == 10, (
+        "label_X_bb's 17-class group holds ten native classes")

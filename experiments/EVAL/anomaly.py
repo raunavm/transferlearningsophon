@@ -28,6 +28,17 @@ So every configuration runs two families side by side:
                                      per cell -- without it, "the vocabulary-
                                      defined score degrades as the vocabulary
                                      coarsens" is unfalsifiable.
+                       class_sum_matched -- the same ratio, but leaving out the
+                                     signal's WHOLE group at the coarsest label
+                                     set in the matrix (R16_Q1) at every label
+                                     set. The tree is nested, so at L188, L162
+                                     and R42_Q1 that group is an exact union of
+                                     output nodes and the SAME native classes
+                                     (10, 29 or 27 for the suite) are removed
+                                     everywhere: across label sets only the
+                                     head differs, not the estimator. class_sum
+                                     is kept under its own name so the committed
+                                     numbers stay reproducible.
   vocabulary-FREE      knn, mahalanobis, iad_hgb -- run on the frozen 128-d
                                      features, identical code for every arm, so
                                      they isolate the representation from the
@@ -88,6 +99,10 @@ KNN_K = 10
 # and data that genuinely disagree would sail through it. 0.05 still clears the
 # measured null by several times while being able to fire at all.
 NULL_ARGOS_MAX = 0.05
+# class_sum_matched removes the signal's group at this label set, the coarsest
+# in the D3 run matrix, so every finer label set can express it exactly.
+MATCH_RUNG = "R16_Q1"
+FAMILIES = ("class_sum", "class_sum_matched", "knn", "mahalanobis", "iad_hgb")
 
 
 def _probe():
@@ -135,6 +150,23 @@ def node_roles(rung: str) -> tuple[dict[int, str], set[int], set[int]]:
         elif not any(isq):
             res.add(node)
     return node_of, res, qcd
+
+
+def matched_nodes(rung: str, sig_lab: int) -> set[int]:
+    """The output nodes at `rung` that together hold the signal's MATCH_RUNG group.
+
+    A node straddling the group's boundary would make the removed native set
+    depend on the label set again -- the defect this family exists to remove --
+    so it is fatal rather than rounded to the nearest union.
+    """
+    node_of = node_roles(rung)[0]
+    grp = node_roles(MATCH_RUNG)[0]
+    members = {lab for lab, g in grp.items() if g == grp[sig_lab]}
+    nodes = {node_of[lab] for lab in members}
+    if {lab for lab, nd in node_of.items() if nd in nodes} != members:
+        raise SystemExit(f"FATAL: {rung} is not nested in {MATCH_RUNG} around "
+                         f"native label {sig_lab}; class_sum_matched is undefined")
+    return nodes
 
 
 def sic_curve(y: np.ndarray, s: np.ndarray):
@@ -288,8 +320,18 @@ def score_class_sum(logits, rung, sig_node):
     Returns None when the arm's vocabulary cannot express it -- which is the
     measurement at the coarse end, not an error.
     """
+    return class_sum_without(logits, rung, {sig_node})
+
+
+def score_class_sum_matched(logits, rung, sig_lab):
+    """class_sum leaving out the signal's whole MATCH_RUNG group at every rung."""
+    return class_sum_without(logits, rung, matched_nodes(rung, sig_lab))
+
+
+def class_sum_without(logits, rung, drop):
+    """Resonant over resonant+QCD softmax mass, with the nodes in `drop` removed."""
     _, res, qcd = node_roles(rung)
-    res = res - {sig_node}
+    res = res - set(drop)
     if not res or not qcd:
         return None
     e = np.exp(logits - logits.max(axis=1, keepdims=True))
@@ -336,6 +378,12 @@ def score_iad(X_data, X_template, seed):
     """IAD: a classifier separating the signal region from the template.
 
     Weakly supervised -- it never sees a truth label, only the two samples.
+
+    ITS sigma_min IS NOT THE PUBLISHED ONE. It is scored on its own training
+    rows, and sigma_min_asimov scans sigma_0 with THIS classifier's efficiency
+    curve held fixed, whereas arXiv:2604.20965 Sec. V.4 trains a classifier per
+    injection, takes the median Asimov Z over trainings and interpolates to 5.
+    Too optimistic by about 2x; dropped from the paper (anomaly_summary.py).
     """
     X = np.vstack([X_data, X_template])
     y = np.concatenate([np.ones(len(X_data)), np.zeros(len(X_template))])
@@ -354,7 +402,7 @@ N_SIG_SCAN = [0, 250, 500, 1000, 2000, 4000]   # 0 is the null: SIC must not exc
 
 
 def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
-            n_bkg, n_template, seed):
+            n_bkg, n_template, seed, families=FAMILIES):
     """One AD experiment: build the SR sample and template, score, measure."""
     qcd = np.array(sorted(_probe().qcd_indices()))
     is_q = np.isin(L, qcd)
@@ -370,36 +418,47 @@ def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
     d_idx = np.concatenate([data_q, data_s]).astype(int)
     y = np.concatenate([np.zeros(data_q.size), np.ones(data_s.size)])
 
-    scores = {}
     # How many NATIVE classes the leave-one-node-out actually removes. It is 1
     # at L188/L162 but 3-12 at R42_Q1 and 10-29 at R16_Q1, so class_sum is a
     # different estimator per arm; recorded so a reader can see the
     # substitution instead of reading it as a vocabulary effect.
+    # class_sum_matched removes the signal's MATCH_RUNG group instead, so its
+    # count is the same integer at every rung by construction.
     node_of, _res, _q = node_roles(rung)
     classes_removed = int(sum(1 for lab, nd in node_of.items() if nd == sig_node))
-    cs = score_class_sum(logits[d_idx], rung, sig_node) if logits is not None else None
-    if cs is not None:
-        scores["class_sum"] = cs
-    Xd, Xt = F[d_idx], F[tmpl_q]
-    scores["knn"] = score_knn(Xd, Xt)
-    scores["mahalanobis"] = score_mahalanobis(Xd, Xt)
-    scores["iad_hgb"] = score_iad(Xd, Xt, seed)
-
     out = {"classes_removed": classes_removed}
+    matched = None
+    if "class_sum_matched" in families:
+        matched = matched_nodes(rung, sig_lab)
+        out["classes_removed_matched"] = int(sum(1 for nd in node_of.values()
+                                                 if nd in matched))
     if logits is None:
         # Absent, and WHY -- otherwise anomaly_results.json simply has no
         # class_sum for any cell, exit 0, with nothing recording that the
         # headline vocabulary-defined score was never computed.
         out["class_sum_absent"] = "no logits.npy in this feature cache"
-    tmpl_score = {
-        "class_sum": (score_class_sum(logits[tmpl_q], rung, sig_node)
-                      if logits is not None else None),
-        "knn": score_knn_selfless(Xt),
-        "mahalanobis": score_mahalanobis(Xt, Xt),
+
+    # ONLY THE REQUESTED FAMILIES ARE SCORED. Every draw is made above and no
+    # score consumes `rng`, so a subset run reproduces the full run's cells.
+    scores, tmpl_score = {}, {}
+    for fam, drop in (("class_sum", {sig_node}), ("class_sum_matched", matched)):
+        if fam in families and logits is not None:
+            cs = class_sum_without(logits[d_idx], rung, drop)
+            if cs is not None:
+                scores[fam] = cs
+                tmpl_score[fam] = class_sum_without(logits[tmpl_q], rung, drop)
+    if {"knn", "mahalanobis", "iad_hgb"} & set(families):
+        Xd, Xt = F[d_idx], F[tmpl_q]
+    if "knn" in families:
+        scores["knn"] = score_knn(Xd, Xt)
+        tmpl_score["knn"] = score_knn_selfless(Xt)
+    if "mahalanobis" in families:
+        scores["mahalanobis"] = score_mahalanobis(Xd, Xt)
+        tmpl_score["mahalanobis"] = score_mahalanobis(Xt, Xt)
+    if "iad_hgb" in families:
         # IAD's score is defined by a classifier fitted to (data vs template),
         # so it has no meaning applied to the template alone and gets no ARGOS.
-        "iad_hgb": None,
-    }
+        scores["iad_hgb"] = score_iad(Xd, Xt, seed)
     for name, s in scores.items():
         rec = {"n_sig": int(n_sig)}
 
@@ -617,6 +676,8 @@ def main(argv=None) -> int:
     ap.add_argument("--trainings", type=int, default=N_TRAININGS)
     ap.add_argument("--signals", nargs="+", default=SIGNAL_SUITE)
     ap.add_argument("--n-sig", type=int, nargs="+", default=N_SIG_SCAN)
+    ap.add_argument("--families", nargs="+", choices=FAMILIES, default=list(FAMILIES),
+                    help="score only these; the draws do not depend on the choice")
     a = ap.parse_args(argv)
 
     probe = _probe()
@@ -675,7 +736,8 @@ def main(argv=None) -> int:
                     seed = cell_seed(arm, sig, n_sig, t)
                     rng = np.random.default_rng(seed)
                     r = run_one(arm, rung, F, L, logits, obs, lab, snode,
-                                n_sig, rng, a.n_bkg, a.n_template, seed=t)
+                                n_sig, rng, a.n_bkg, a.n_template, seed=t,
+                                families=a.families)
                     if r:
                         r["rng_seed"] = int(seed)
                         reps.append(r)
@@ -739,14 +801,15 @@ def main(argv=None) -> int:
                 # It is a function of (rung, signal node) alone, so every rep
                 # must agree; disagreement would mean two reps read different
                 # trees and no median over them would mean anything.
-                cr = {r["classes_removed"] for r in reps if "classes_removed" in r}
-                if len(cr) > 1:
-                    raise SystemExit(
-                        f"FATAL: {arm}/{sig}/N_sig={n_sig} reps disagree on "
-                        f"classes_removed ({sorted(cr)}). It depends only on "
-                        "the rung and the signal's node, so reps cannot differ.")
-                if cr:
-                    agg["classes_removed"] = cr.pop()
+                for key in ("classes_removed", "classes_removed_matched"):
+                    cr = {r[key] for r in reps if key in r}
+                    if len(cr) > 1:
+                        raise SystemExit(
+                            f"FATAL: {arm}/{sig}/N_sig={n_sig} reps disagree on "
+                            f"{key} ({sorted(cr)}). It depends only on the "
+                            "rung and the signal, so reps cannot differ.")
+                    if cr:
+                        agg[key] = cr.pop()
                 per_n[str(n_sig)] = agg
                 line = "  ".join(
                     f"{k}:maxSIC={v['max_sic']:.2f}" for k, v in sorted(agg.items())

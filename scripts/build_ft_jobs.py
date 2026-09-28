@@ -47,12 +47,15 @@ partial directory is moved aside, never overwritten) so an eviction costs one
 fine-tune, not the sweep.
 
 Run:  python3 scripts/build_ft_jobs.py [--pin TAG]
+      python3 scripts/build_ft_jobs.py --wave3 --bench-v2 --later scratch-v2 mpm-s1-v2 \\
+          --pin-not-yet-tagged          # the baselines' own recipes (BASELINE RECIPES)
 """
 from __future__ import annotations
 
 import argparse
 import pathlib
 import re
+import subprocess
 import sys
 
 import yaml
@@ -1089,12 +1092,19 @@ INITS_W3 = (
 # "beats scratch by more than the fine-tuning-seed spread at 1e3 and 1e4", and
 # scratch has three seeds in wave 2.
 MPM_SOURCE = {f"mpm-s{s}": _ckpt(f"mpm-s{s}") for s in (1, 2, 3)}
+MPM_SOURCE["mpm-s1-v2"] = MPM_SOURCE["mpm-s1"]    # the same pretraining run, fine-tuned again
 INITS_LATER = {
     "rand-d2": [("rand-d2-s2", _ckpt("rand-d2-s2"), 17, [1])],
     "rand-d3": [("rand-d3-s3", _ckpt("rand-d3-s3"), 17, [1])],
     "mpm-s1": [("mpm-s1", "/workspace/mpm-s1_trunk.pt", 0, [1, 2, 3])],
     "mpm-s2": [("mpm-s2", "/workspace/mpm-s2_trunk.pt", 0, [1])],
     "mpm-s3": [("mpm-s3", "/workspace/mpm-s3_trunk.pt", 0, [1])],
+    # The two baselines again, at their own recipes (BASELINE RECIPES below), under
+    # NEW names so the cells `scratch` and `mpm-s1` wrote stay as they are. Three
+    # fine-tuning seeds each, as the cells they supersede: scratch has no
+    # pretraining seed, and mpm-s1 kept three for the validity bar.
+    "scratch-v2": [("scratch-v2", "", 0, [1, 2, 3])],
+    "mpm-s1-v2": [("mpm-s1-v2", "/workspace/mpm-s1_trunk.pt", 0, [1, 2, 3])],
 }
 # LATER GROUPS THAT HAVE BEEN LAUNCHED, so their specs may be committed like any
 # launched spec while every other later group must still have none on disk
@@ -1103,7 +1113,9 @@ INITS_LATER = {
 # net_epoch-79 files existed while the job was still in its closing validation
 # pass, and that test stopped a premature emit. mpm-s1: job Complete 2026-09-22.
 # rand-d2, rand-d3: pretraining Complete 2026-09-23 / 2026-09-24; launched 2026-09-27.
-LAUNCHED_LATER = {"mpm-s1", "rand-d2", "rand-d3"}
+# scratch-v2, mpm-s1-v2: nothing to wait for (no checkpoint; mpm-s1 Complete);
+# emitted 2026-09-28 for launch. mpm-s2 and mpm-s3 stay out until their jobs are.
+LAUNCHED_LATER = {"mpm-s1", "rand-d2", "rand-d3", "scratch-v2", "mpm-s1-v2"}
 assert LAUNCHED_LATER <= set(INITS_LATER), LAUNCHED_LATER - set(INITS_LATER)
 # What smoke_checks.py load-log must see for a converted self-supervised init:
 # these 39 tensors (class token, two class-attention blocks, final norm) and the
@@ -1119,7 +1131,7 @@ assert not ({n for n, *_ in INITS} & {n for n, *_ in _all_new}), (
 for _n, _c, _k, _s in _all_new:
     assert "/mtx-l162-s1/" not in _c and "/mtx-rand-d1-s1/" not in _c, _n
     assert _s and sorted(_s) == _s, (_n, _s)
-    assert (_k == 0) == _n.startswith("mpm-"), (_n, _k)
+    assert (_k == 0) == _n.startswith(("mpm-", "scratch")), (_n, _k)
 
 # ---------------------------------------------------------------- benchmarks v2
 # Top tagging and quark/gluon for every launchable init: the six of waves 1/2
@@ -1291,6 +1303,120 @@ _MPM_LOADLOG = ("load-log --log ${OUT}/stdout.log --fresh-prefix " + " ".join(MP
                 + f" --expect-fresh {MPM_N_FRESH}")
 
 
+# ============================================================ baseline recipes
+# TWO BASELINES WERE NOT TRAINED FAIRLY (audit, 2026-09-28). Both are fixed for
+# NEW init names only (INITS_LATER scratch-v2 / mpm-s1-v2, and mpm-s2 / mpm-s3,
+# never fine-tuned); every launched spec regenerates byte for byte.
+#
+# FROM SCRATCH. Every scratch cell so far ran at our pretraining rate, 5e-4 --
+# weaver's default flat+decay on the legs, constant (--lr-scheduler none) on the
+# benchmarks -- which is not how ParT trains from scratch; on top tagging at the
+# full size it reached R50 348 +- 8 against ParT's published 413 +- 16. ParT's
+# own scripts (jet-universe/particle_transformer @ 2925bdb, model "ParT") train
+# from scratch with --start-lr 1e-3, --optimizer ranger, --batch-size 512,
+# --use-amp and weaver's default scheduler (flat, then decay to 1% over the last
+# 30% of epochs); weight decay 0.01 in train_TopLandscape.sh and
+# train_QuarkGluon.sh, none in train_JetClass.sh. scratch-v2 takes exactly that
+# per dataset. Epochs, samples per epoch, validation size and the best-validation
+# checkpoint stay those of the pretrained cells it is compared with (PRESPEC A6:
+# the controls keep the best-validation rule).
+#
+# SELF-SUPERVISED. Masked-particle modelling never calls the class token, the two
+# class-attention blocks or the final norm (MPM_FRESH; ParT_sophon_arch_mpm.py),
+# so at fine-tuning they are as untrained as the head, but lr_mult matched the
+# head alone and they trained at the trunk rate, 50x below it. ParT's fine-tuning
+# recipe (train_TopLandscape.sh ParT-FineTune: 1e-4, lr_mult ("fc.*", 50),
+# --lr-scheduler none) gives the head rate to the parameters that did not come
+# from pretraining; for a self-supervised init that is the head AND these 39.
+# The trunk rate, the multiplier and every supervised cell are unchanged.
+PIN_REFS = "mtx-s1.64"   # NOT YET TAGGED: tag the commit carrying this block
+LR_SCRATCH_PART = "1e-3"
+SCRATCH_REF = "scratch-v2"
+MPM_HEAD_ONLY = {"mpm-s1"}   # fine-tuned before the fix; its specs are its record
+MPM_LR_MULT = "|".join(re.escape(p) for p in ("mod.fc.",) + MPM_FRESH)
+MPM_N_MULT = MPM_N_FRESH + 4   # + mod.fc.0.0.{weight,bias}, mod.fc.1.{weight,bias}
+
+
+def _baseline(name: str) -> str | None:
+    """'scratch' or 'mpm' for an init that takes a baseline recipe above, else None."""
+    if name == SCRATCH_REF:
+        return "scratch"
+    if name.startswith("mpm-") and name not in MPM_HEAD_ONLY:
+        return "mpm"
+    return None
+
+
+REFS_GROUPS = {g for g, inits in INITS_LATER.items() if all(_baseline(n) for n, *_ in inits)}
+REFS_NOTE = ("  # BASELINE RECIPES (2026-09-28), overriding the recipe stated below for this init:\n"
+             "  # from scratch at ParT's own from-scratch recipe (lr 1e-3, weaver's default\n"
+             "  # flat+decay; weight decay 0.01 on top and q/g, none on JetClass); self-supervised\n"
+             "  # with the 39 tensors pretraining never trained at the head rate. See BASELINE\n"
+             "  # RECIPES in scripts/build_ft_jobs.py. backoffLimit 1: every cell resumes from its\n"
+             "  # DONE marker, so a failed job is re-applied, not retried in a loop.\n")
+
+
+def _mult_count(indent: int) -> str:
+    """weaver 0.4.17 optim() logs 'Parameters with lr multiplied by <m>:' and then
+    one ' - <name>' line per matched parameter. The header alone is also printed
+    when only the head matched -- the defect -- so the names are counted."""
+    p = " " * indent
+    return ("NMULT=$(awk '/Parameters with lr multiplied by/{f=1; next} f && /^ - /{n++; next} "
+            "{f=0} END{print n+0}' ${OUT}/stdout.log)\n"
+            f"{p}[ \"${{NMULT}}\" -eq {MPM_N_MULT} ] || {{\n"
+            f"{p}  echo \"FATAL: weaver gave the head rate to ${{NMULT}} parameters, not the head's 4\"\n"
+            f"{p}  echo \"       plus the {MPM_N_FRESH} pretraining never trained.\"; exit 1; }}\n{p}")
+
+
+def _refs_subs(inits, bench: bool) -> list:
+    """The substitutions that give `inits` its baseline recipe, for legs_w3
+    (bench=False) or legs_bench_v2. Empty for every other init."""
+    kinds = {_baseline(n) for n, *_ in inits}
+    assert len(kinds) == 1, f"a baseline recipe is substituted for a whole spec: {kinds}"
+    kind = kinds.pop()
+    if kind == "scratch" and not bench:
+        return [
+            ('            [ "${name}" = "scratch" ] && continue\n',
+             '            [ -z "${ckpt}" ] && continue   # from scratch: nothing to check\n', 1),
+            ('          COMMON="--use-amp --batch-size 512 --num-workers 2 --fetch-by-files '
+             '--fetch-step 1 --optimizer ranger --optimizer-option weight_decay 0.01"\n',
+             "          # ParT from scratch on JetClass (train_JetClass.sh): no weight decay.\n"
+             '          COMMON="--use-amp --batch-size 512 --num-workers 2 --fetch-by-files '
+             '--fetch-step 1 --optimizer ranger"\n', 1),
+            ("LR=__LR_SCRATCH__; MULT=()", f"LR={LR_SCRATCH_PART}; MULT=()", 2),
+            ("head_lr_mult=__HEAD_MULT__ weight_decay=0.01 wave=3 ",
+             "head_lr_mult=1 weight_decay=0 recipe=part-from-scratch wave=3 ", 2),
+        ]
+    if kind == "scratch":
+        return [
+            ('            [ "${name}" = "scratch" ] && continue\n',
+             '            [ -z "${ckpt}" ] && continue   # from scratch: nothing to check\n', 1),
+            ("          # The benchmark recipe, set in ONE place. --lr-scheduler none is the\n"
+             "          # constant LR the published recipe specifies; weaver's default is\n"
+             "          # flat+decay, which would silently anneal and make the row not\n"
+             "          # comparable to the community table.\n",
+             "          # ParT FROM SCRATCH (train_TopLandscape.sh / train_QuarkGluon.sh, model\n"
+             "          # ParT): weaver's default flat+decay, NOT the fine-tuning recipe's\n"
+             "          # constant rate; weight decay 0.01.\n", 1),
+            ("--optimizer ranger --lr-scheduler none --num-epochs", "--optimizer ranger --num-epochs", 1),
+            ("LR=__LR_SCRATCH__; MULT=()", f"LR={LR_SCRATCH_PART}; MULT=()", 1),
+            ("head_lr_mult=__HEAD_MULT__ epochs=__BENCH_EPOCHS__ lr_schedule=constant",
+             "head_lr_mult=1 epochs=__BENCH_EPOCHS__ lr_schedule=flat+decay recipe=part-from-scratch", 1),
+        ]
+    if kind == "mpm":
+        grep = 'grep -q "Parameters with lr multiplied by __HEAD_MULT__" ${OUT}/stdout.log || {'
+        rec = "head_lr_mult=__HEAD_MULT__ epochs=" if bench else "head_lr_mult=__HEAD_MULT__ weight_decay="
+        return [
+            ("          HEAD_MULT=(--optimizer-option lr_mult \"(r'mod\\.fc\\..*', __HEAD_MULT__)\")\n",
+             "          # Self-supervised init: the class token, class-attention blocks and final\n"
+             "          # norm never trained in pretraining, so they take the head rate too.\n"
+             f"          HEAD_MULT=(--optimizer-option lr_mult \"(r'{MPM_LR_MULT}', __HEAD_MULT__)\")\n", 1),
+            (grep, _mult_count(20 if bench else 18) + grep, 1 if bench else 2),
+            (rec, rec.replace("head_lr_mult=__HEAD_MULT__ ", "head_lr_mult=__HEAD_MULT__ lr_mult_prefixes="
+                              + ",".join(("mod.fc.",) + MPM_FRESH) + " "), 1 if bench else 2),
+        ]
+    return []
+
+
 def legs_w3(inits, shard_name: str) -> str:
     """Wave 3 = wave 2's script over `inits`, by asserted substitution."""
     has_mpm = any(n.startswith("mpm-") for n, *_ in inits)
@@ -1403,6 +1529,7 @@ def legs_w3(inits, shard_name: str) -> str:
              "            python3 experiments/EVAL/extract_features.py --checkpoint ${ckpt} --num-classes ${k}", 1),
             ("load-log --log ${OUT}/stdout.log", _MPM_LOADLOG, 2),
         ]
+    subs += _refs_subs(inits, bench=False)
     return _derive(legs_w2(), subs, f"wave-3 {shard_name}")
 
 
@@ -1542,6 +1669,7 @@ def legs_bench_v2(inits, shard_name: str) -> str:
     ]
     if has_mpm:
         subs.append(("load-log --log ${OUT}/stdout.log", _MPM_LOADLOG, 1))
+    subs += _refs_subs(inits, bench=True)
     return _derive(LEGS_BENCH, subs, f"bench-v2 {shard_name}")
 
 
@@ -1655,9 +1783,18 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
         raise SystemExit(f"FATAL: these specs run code that first exists at {PIN_W3} "
                          f"(mpm_init.py, load-log --fresh-prefix, the Herwig source); "
                          f"{pin} predates it")
+    refs = [g for g in later or [] if g in REFS_GROUPS]
+    if refs and _tag_index(pin) < _tag_index(PIN_REFS):
+        raise SystemExit(f"FATAL: {refs} carry the baseline recipes, first emitted at "
+                         f"{PIN_REFS}; {pin} predates them")
     h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
     gpu = dict(gpu=True, cpu="4", memory="88Gi", shm="8Gi", backoff=50, pin=pin,
                exclude_hosts=BAD_NODES)
+    # The baseline specs: ry-gpu-01 folded in (LOST_GPU_NODES), backoffLimit 1, and
+    # named `baseline`, not w3 / bench-v2 -- experiments/FIGS/make_tables.py globs
+    # those two names for the recipe table, which states the recipe of the rows
+    # the paper reports now; it moves when these rows replace scratch and mpm-s1.
+    gpu_refs = {**gpu, "backoff": 1, "exclude_hosts": BAD_NODES + LOST_GPU_NODES}
     groups = []                      # (suffix, inits)
     if later:
         groups += [(g, INITS_LATER[g]) for g in later]
@@ -1666,11 +1803,14 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
         shards = [] if later else [(chr(ord("a") + i), s)
                                    for i, s in enumerate(shard(INITS_W3, cells_legs))]
         for suffix, inits in shards + groups:
-            name = f"ft-legs-w3-{suffix}-raunav"
+            ref = suffix in REFS_GROUPS
+            name = f"ft-legs-{'baseline' if ref else 'w3'}-{suffix}-raunav"
             cells = cells_legs(inits)
             specs[f"job-{name}.yaml"] = job(
-                name, _fill(legs_w3(inits, name), pin, inits=inits), **gpu,
-                header=h + f"  # WAVE 3 of the fine-tuning legs, shard {suffix}: wave 2's script over the\n"
+                name, _fill(legs_w3(inits, name), pin, inits=inits),
+                **(gpu_refs if ref else gpu),
+                header=h + (REFS_NOTE if ref else "")
+                         + f"  # WAVE 3 of the fine-tuning legs, shard {suffix}: wave 2's script over the\n"
                            "  # checkpoints wave 2 does not cover, ONE fine-tuning seed per pretrained\n"
                            "  # checkpoint (the pretraining seed is the unit of replication), same tree.\n"
                            f"  # inits: {' '.join(n for n, *_ in inits)}\n"
@@ -1680,12 +1820,14 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
         shards = [] if later else [(chr(ord("a") + i), s)
                                    for i, s in enumerate(shard(INITS_BENCH_V2, cells_bench))]
         for suffix, inits in shards + groups:
-            name = f"ft-legs-bench-v2-{suffix}-raunav"
+            ref = suffix in REFS_GROUPS
+            name = f"ft-legs-bench-{'baseline' if ref else 'v2'}-{suffix}-raunav"
             cells = cells_bench(inits)
             specs[f"job-{name}.yaml"] = job(
                 name, _fill(legs_bench_v2(inits, name), pin, inits=inits),
-                **{**gpu, "exclude_hosts": BAD_NODES + LOST_GPU_NODES},
-                header=h + f"  # BENCHMARKS v2, shard {suffix}: top tagging and quark/gluon at the\n"
+                **(gpu_refs if ref else {**gpu, "exclude_hosts": BAD_NODES + LOST_GPU_NODES}),
+                header=h + (REFS_NOTE if ref else "")
+                         + f"  # BENCHMARKS v2, shard {suffix}: top tagging and quark/gluon at the\n"
                            "  # published recipe (20 epochs, 1e-4 trunk / 5e-3 head, constant LR,\n"
                            "  # weight decay 0.01), one fine-tuning seed per pretrained checkpoint,\n"
                            "  # three for scratch; wave 2's prune, 20k validation at N <= 1e4 and\n"
@@ -1722,6 +1864,33 @@ def _tag_index(pin: str) -> int:
     if not m:
         raise SystemExit(f"FATAL: {pin!r} is not an mtx-s1.<n> tag")
     return int(m.group(1))
+
+
+# What a baseline spec's tag must carry: the builder that wrote the recipe, and
+# the two in-pod scripts whose flags the self-supervised cells call.
+REFS_NEEDED = {"scripts/build_ft_jobs.py": "MPM_LR_MULT",
+               "experiments/FT/mpm_init.py": "N_FRESH",
+               "experiments/FT/smoke_checks.py": "--fresh-prefix"}
+
+
+def verify_pin(pin: str, not_yet_tagged: bool) -> None:
+    """The pod clones a TAG, so check the tag's tree (scripts/build_anomaly_jobs.py
+    and build_aoj_jobs.py): a tag that does not exist yet is refused unless it is
+    declared with --pin-not-yet-tagged, and then the working tree is checked."""
+    tagged = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "-q", "--verify",
+                             f"refs/tags/{pin}"], capture_output=True).returncode == 0
+    if not tagged and not not_yet_tagged:
+        sys.exit(f"FATAL: tag {pin} does not exist. Pass --pin-not-yet-tagged if it is about "
+                 "to be created on the commit carrying these specs, and create it BEFORE "
+                 "applying any of them.")
+    for path, flag in REFS_NEEDED.items():
+        text = ((ROOT / path).read_text() if not tagged else subprocess.run(
+            ["git", "-C", str(ROOT), "show", f"{pin}:{path}"], capture_output=True, text=True).stdout)
+        if flag not in text:
+            sys.exit(f"FATAL: {path} {'in the working tree' if not tagged else 'at ' + pin} has no {flag}")
+    if not tagged:
+        print(f"WARNING: tag {pin} DOES NOT EXIST YET. Create it on a commit carrying "
+              f"{', '.join(REFS_NEEDED)} before applying any spec that clones it.")
 
 
 def plan(later: list | None = None) -> str:
@@ -1913,14 +2082,22 @@ def main() -> int:
                          f"{sorted(INITS_LATER)} instead of the shards")
     ap.add_argument("--plan", action="store_true",
                     help="print cells and expected GPU-hours per shard, write nothing")
+    ap.add_argument("--pin-not-yet-tagged", action="store_true",
+                    help=f"the baseline groups {sorted(REFS_GROUPS)} pin {PIN_REFS}, tagged after "
+                         "the commit: check the working tree instead of the tag")
     args = ap.parse_args()
     if args.plan:
         print(plan(args.later))
         return 0
     if args.later and not (args.wave3 or args.bench_v2):
         sys.exit("FATAL: --later needs --wave3 and/or --bench-v2")
+    refs = set(args.later or []) & REFS_GROUPS
+    if refs and args.pin == PIN:
+        args.pin = PIN_REFS
     if (args.wave3 or args.bench_v2 or args.bench_v3_last) and args.pin == PIN:
         args.pin = PIN_W3
+    if refs:
+        verify_pin(args.pin, args.pin_not_yet_tagged)
     specs = build(args.pin, wave2=args.wave2, wave3=args.wave3, bench_v2=args.bench_v2,
                   later=args.later, bench_v3=args.bench_v3_last)
     if args.only:
