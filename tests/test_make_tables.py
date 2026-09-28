@@ -666,3 +666,22 @@ def test_a_command_with_a_schedule_flag_contradicts_the_jetclass_row(tmp_path):
     legs[0].write_text(legs[0].read_text() + " --lr-scheduler none")
     with pytest.raises(SystemExit, match="not the JetClass recipe"):
         M.ft_recipe(R, legs, bench)
+
+
+def test_a_vcb_rejection_that_is_a_bound_in_any_seed_is_printed_as_a_bound(tmp_path):
+    cell = lambda r, b: {"rejection": r, "is_bound": b}
+    probe = {"log1m_auc": {"162": [-3.0], "17": [-2.5]}, "mean_diff": 0.5, "p": 0.01, "ci95": [0.4, 0.6],
+             "rejection_at": {"0.60": {"162": [cell(200.0, False)], "17": [cell(60.0, False)]},
+                              "0.40": {"162": [cell(1000.0, False), cell(4000.0, True)],
+                                       "17": [cell(300.0, False)]}}}
+    S = {"secondary": {"S10": {"verdict": "confirmed", "rule": "r", "n_signal_test": 1659,
+                               "n_background_test": 19244, "seeds": [1, 2],
+                               "probes": {"linear": probe, "mlp": probe}}}}
+    src = tmp_path / "s10.json"
+    src.write_text(json.dumps(S))
+    em = M.Emitter(tmp_path)
+    M.emit_s10(em, S, src)
+    got = {name: body for name, body, _ in em.macros}
+    assert got["VcbRejLinearFortyOnesixtwo"] == "\\ensuremath{>}2{,}000"   # geometric mean of 1000 and 4000, a bound
+    assert got["VcbRejLinearFortyOneseven"] == "300" and got["VcbEpsForty"] == "40"
+    assert got["VcbFactorLinear"] == "1.65"

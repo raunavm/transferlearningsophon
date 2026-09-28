@@ -292,6 +292,7 @@ def input_paths(root: pathlib.Path) -> dict:
             "mass_resolution": data / "mass_resolution" / "analysis_holm" / "s7_mass_resolution.json",
             "real_data": data / "aoj_full_v1" / "analysis_labelled" / "aoj_top.json",
             "s8": data / "s8_epoch_accuracy" / "analysis" / "s8_mass_early_accuracy.json",
+            "s10": data / "probe_ladder_vcbwindow" / "analysis" / "s10_vcb.json",
             "design_spec": root / "experiments" / "MTX" / "k8s" / "job-mtx-l188-s1-raunav.yaml",
             "design_arch": root / "experiments" / "E1" / "ParT_sophon_arch_10c.py",
             "design_arm": root / "configs" / "arms" / "L188.yaml",
@@ -1238,6 +1239,39 @@ def emit_s8(em: Emitter, S: dict, src: pathlib.Path) -> None:
              "scored vs weaver-logged validation accuracy over the fixed epochs, run means removed")
 
 
+def emit_s10(em: Emitter, S: dict, src: pathlib.Path) -> None:
+    """S10, the |V_cb| discriminant probe, 162 classes above 17."""
+    R, base = S["secondary"]["S10"], "secondary.S10"
+    em.macro("VcbVerdict", tex(R["verdict"]), src, f"{base}.verdict", R["rule"])
+    em.macro("VcbNSignal", fmt_int(R["n_signal_test"]), src, f"{base}.n_signal_test", "X->bc test jets in the window")
+    em.macro("VcbNBackground", fmt_int(R["n_background_test"]), src, f"{base}.n_background_test",
+             "bq, cs, bqq and QCD test jets in the window")
+    em.macro("VcbNPairs", str(len(R["seeds"])), src, f"{base}.seeds", "seed pairs")
+    for probe in ("linear", "mlp"):
+        P, k = R["probes"][probe], texname(probe)
+        for lv in ("162", "17"):
+            em.macro("VcbLogOma" + k + texname(lv), fmt(np.mean(P["log1m_auc"][lv]), 3, sign=True), src,
+                     f"{base}.probes.{probe}.log1m_auc.{lv}", "mean over seeds")
+        em.macro("VcbDiff" + k, fmt(P["mean_diff"], 3, sign=True), src, f"{base}.probes.{probe}.mean_diff",
+                 "17-class minus 162-class log(1 - AUC)")
+        em.macro("VcbDiffP" + k, fmt_p(P["p"]), src, f"{base}.probes.{probe}.p")
+        em.macro("VcbDiffLo" + k, fmt(P["ci95"][0], 3, sign=True), src, f"{base}.probes.{probe}.ci95[0]")
+        em.macro("VcbDiffHi" + k, fmt(P["ci95"][1], 3, sign=True), src, f"{base}.probes.{probe}.ci95[1]")
+        em.macro("VcbFactor" + k, fmt(np.exp(P["mean_diff"]), 2), src, f"exp({base}.probes.{probe}.mean_diff)",
+                 "factor in 1 - AUC, 17 classes over 162")
+        for eps, word in (("0.60", "Sixty"), ("0.40", "Forty")):
+            if probe == "linear":
+                em.macro("VcbEps" + word, f"{100 * float(eps):.0f}", src,
+                         f"{base}.probes.{probe}.rejection_at (key {eps})", "signal efficiency, percent")
+            for lv in ("162", "17"):
+                cells = P["rejection_at"][eps][lv]
+                gm = float(np.exp(np.mean(np.log([c["rejection"] for c in cells]))))
+                mark = "$>$" if any(c["is_bound"] for c in cells) else ""
+                em.macro("VcbRej" + k + word + texname(lv), mark + fmt_int(gm), src,
+                         f"{base}.probes.{probe}.rejection_at.{eps}.{lv}",
+                         "geometric mean over seeds of the background rejection at this signal efficiency")
+
+
 def emit_real_data(em: Emitter, J: dict, src: pathlib.Path) -> None:
     """Section 6, the top peak in CMS open data (AspenOpenJets), 1% data efficiency."""
     r = J["secondary"]["real_data_top"]
@@ -1898,6 +1932,12 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
         d = json.loads(pathlib.Path(paths[key]).read_text())
         emit(em, d, paths[key])
         out[f"tables/{name}.tex"] = table(d)
+
+    if "s10" in have:
+        check_inputs_unchanged(paths["s10"], root)
+        emit_s10(em, json.loads(pathlib.Path(paths["s10"]).read_text()), paths["s10"])
+    else:
+        missing.append(f"s10 -- {paths['s10']}")
 
     legs = {leg: json.loads(pathlib.Path(paths[f"leg{leg}"]).read_text())
             for leg in (1, 2) if f"leg{leg}" in have}

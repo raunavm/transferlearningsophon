@@ -7079,6 +7079,174 @@
     "source_file": "configs/labelmaps/usecase_survival.v1.json",
     "value": "0"
   },
+  "VcbDiffHiLinear": {
+    "json_path": "secondary.S10.probes.linear.ci95[1]",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "+0.559"
+  },
+  "VcbDiffHiMlp": {
+    "json_path": "secondary.S10.probes.mlp.ci95[1]",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "+0.465"
+  },
+  "VcbDiffLinear": {
+    "json_path": "secondary.S10.probes.linear.mean_diff",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "+0.496"
+  },
+  "VcbDiffLoLinear": {
+    "json_path": "secondary.S10.probes.linear.ci95[0]",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "+0.432"
+  },
+  "VcbDiffLoMlp": {
+    "json_path": "secondary.S10.probes.mlp.ci95[0]",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "+0.352"
+  },
+  "VcbDiffMlp": {
+    "json_path": "secondary.S10.probes.mlp.mean_diff",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "+0.409"
+  },
+  "VcbDiffPLinear": {
+    "json_path": "secondary.S10.probes.linear.p",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "\\ensuremath{2.69\\times10^{-5}}"
+  },
+  "VcbDiffPMlp": {
+    "json_path": "secondary.S10.probes.mlp.p",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "\\ensuremath{3.55\\times10^{-5}}"
+  },
+  "VcbEpsForty": {
+    "json_path": "secondary.S10.probes.linear.rejection_at (key 0.40)",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "40"
+  },
+  "VcbEpsSixty": {
+    "json_path": "secondary.S10.probes.linear.rejection_at (key 0.60)",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "60"
+  },
+  "VcbFactorLinear": {
+    "json_path": "exp(secondary.S10.probes.linear.mean_diff)",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "1.64"
+  },
+  "VcbFactorMlp": {
+    "json_path": "exp(secondary.S10.probes.mlp.mean_diff)",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "1.50"
+  },
+  "VcbLogOmaLinearOneseven": {
+    "json_path": "secondary.S10.probes.linear.log1m_auc.17",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "\\ensuremath{-}2.955"
+  },
+  "VcbLogOmaLinearOnesixtwo": {
+    "json_path": "secondary.S10.probes.linear.log1m_auc.162",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "\\ensuremath{-}3.451"
+  },
+  "VcbLogOmaMlpOneseven": {
+    "json_path": "secondary.S10.probes.mlp.log1m_auc.17",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "\\ensuremath{-}3.064"
+  },
+  "VcbLogOmaMlpOnesixtwo": {
+    "json_path": "secondary.S10.probes.mlp.log1m_auc.162",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "\\ensuremath{-}3.472"
+  },
+  "VcbNBackground": {
+    "json_path": "secondary.S10.n_background_test",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "19{,}244"
+  },
+  "VcbNPairs": {
+    "json_path": "secondary.S10.seeds",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "5"
+  },
+  "VcbNSignal": {
+    "json_path": "secondary.S10.n_signal_test",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "1{,}659"
+  },
+  "VcbRejLinearFortyOneseven": {
+    "json_path": "secondary.S10.probes.linear.rejection_at.0.40.17",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "349"
+  },
+  "VcbRejLinearFortyOnesixtwo": {
+    "json_path": "secondary.S10.probes.linear.rejection_at.0.40.162",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "1{,}764"
+  },
+  "VcbRejLinearSixtyOneseven": {
+    "json_path": "secondary.S10.probes.linear.rejection_at.0.60.17",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "66"
+  },
+  "VcbRejLinearSixtyOnesixtwo": {
+    "json_path": "secondary.S10.probes.linear.rejection_at.0.60.162",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "207"
+  },
+  "VcbRejMlpFortyOneseven": {
+    "json_path": "secondary.S10.probes.mlp.rejection_at.0.40.17",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "467"
+  },
+  "VcbRejMlpFortyOnesixtwo": {
+    "json_path": "secondary.S10.probes.mlp.rejection_at.0.40.162",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "1{,}695"
+  },
+  "VcbRejMlpSixtyOneseven": {
+    "json_path": "secondary.S10.probes.mlp.rejection_at.0.60.17",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "76"
+  },
+  "VcbRejMlpSixtyOnesixtwo": {
+    "json_path": "secondary.S10.probes.mlp.rejection_at.0.60.162",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "230"
+  },
+  "VcbVerdict": {
+    "json_path": "secondary.S10.verdict",
+    "sha256": "b0f2a69c88beeb628f6f5dbf844a84f03901781e3e11eb6b87ab21704a4d476b",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/analysis/s10_vcb.json",
+    "value": "confirmed"
+  },
   "VocabSizeLoneeighteight": {
     "json_path": "column L188 (distinct group count)",
     "sha256": "412f9aa3b58db41243d9913eaa6f392abc761cce220cdf2b21a87acfae754a78",

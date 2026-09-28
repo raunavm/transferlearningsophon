@@ -1,0 +1,298 @@
+{
+  "secondary": {
+    "S10": {
+      "name": "S10",
+      "prediction": "|V_cb| discriminant probe, 162 above 17",
+      "task": "bc_vs_rest",
+      "n_signal_test": 1659,
+      "n_background_test": 19244,
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "dropped_pairs": [],
+      "probes": {
+        "linear": {
+          "log1m_auc": {
+            "162": [
+              -3.459496021671616,
+              -3.4428149664085006,
+              -3.4697161498354423,
+              -3.433224663882458,
+              -3.449049012153248
+            ],
+            "17": [
+              -2.93669843313267,
+              -3.030960066441127,
+              -2.924914791108736,
+              -2.921773998994137,
+              -2.960746898980987
+            ]
+          },
+          "censored": false,
+          "diff_17_minus_162": [
+            0.5227975885389462,
+            0.41185489996737346,
+            0.5448013587267062,
+            0.5114506648883208,
+            0.48830211317226135
+          ],
+          "mean_diff": 0.4958413250587216,
+          "t": 21.663062358388675,
+          "p": 2.6861320636385592e-05,
+          "ci95": [
+            0.4322918509752026,
+            0.5593907991422405
+          ],
+          "rejection_at": {
+            "0.60": {
+              "162": [
+                {
+                  "rejection": 211.47252747252745,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 181.54716981132077,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 209.17391304347825,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 200.45833333333331,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 234.68292682926833,
+                  "is_bound": false
+                }
+              ],
+              "17": [
+                {
+                  "rejection": 63.72185430463576,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 91.20379146919431,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 58.850152905198776,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 54.98285714285715,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 67.52280701754385,
+                  "is_bound": false
+                }
+              ]
+            },
+            "0.40": {
+              "162": [
+                {
+                  "rejection": 1480.3076923076924,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 2138.222222222222,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 1749.4545454545455,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 1603.6666666666665,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 1924.3999999999999,
+                  "is_bound": false
+                }
+              ],
+              "17": [
+                {
+                  "rejection": 493.4358974358974,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 418.3478260869565,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 253.21052631578945,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 320.73333333333335,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 310.38709677419354,
+                  "is_bound": false
+                }
+              ]
+            }
+          }
+        },
+        "mlp": {
+          "log1m_auc": {
+            "162": [
+              -3.482773010902712,
+              -3.471756030446754,
+              -3.471537236665067,
+              -3.4703926267855234,
+              -3.465604231118551
+            ],
+            "17": [
+              -3.015858917069153,
+              -3.1305113176586477,
+              -3.0619498855775213,
+              -3.0684622960980237,
+              -3.042754257434813
+            ]
+          },
+          "censored": false,
+          "diff_17_minus_162": [
+            0.46691409383355875,
+            0.3412447127881064,
+            0.40958735108754585,
+            0.4019303306874997,
+            0.4228499736837379
+          ],
+          "mean_diff": 0.40850529241608974,
+          "t": 20.19219783186447,
+          "p": 3.5509858770693834e-05,
+          "ci95": [
+            0.3523354525095976,
+            0.4646751323225819
+          ],
+          "rejection_at": {
+            "0.60": {
+              "162": [
+                {
+                  "rejection": 246.7179487179487,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 200.45833333333331,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 216.22471910112358,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 226.4,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 267.27777777777777,
+                  "is_bound": false
+                }
+              ],
+              "17": [
+                {
+                  "rejection": 77.59677419354838,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 101.2842105263158,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 68.0,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 69.72463768115942,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 68.48398576512456,
+                  "is_bound": false
+                }
+              ]
+            },
+            "0.40": {
+              "162": [
+                {
+                  "rejection": 1749.4545454545455,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 1749.4545454545455,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 1603.6666666666665,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 1480.3076923076924,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 1924.3999999999999,
+                  "is_bound": false
+                }
+              ],
+              "17": [
+                {
+                  "rejection": 469.36585365853665,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 549.8285714285714,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 400.91666666666663,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 437.3636363636364,
+                  "is_bound": false
+                },
+                {
+                  "rejection": 493.4358974358974,
+                  "is_bound": false
+                }
+              ]
+            }
+          }
+        }
+      },
+      "verdict": "confirmed",
+      "rule": "linear-probe difference (17 - 162) in log(1 - AUC) positive with two-sided p < 0.05",
+      "provenance": {
+        "script_sha256": "ddc1ae6777ce479bd716088cd4da6fd57adf691dcc86e2f6166ba4fd4363d2dd",
+        "argv": [
+          "--s10",
+          "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+          "--s10-gpu-log",
+          "experiments/FIGS/data/s8_val_by_epoch/val_by_epoch.json",
+          "--out",
+          "experiments/FIGS/data/probe_ladder_vcbwindow/analysis"
+        ],
+        "prespec_sha256": "c2abf7899014fc9cc6901c970ae2a0912aec14946e50fd674e9a59506c94e5a5",
+        "file": {
+          "path": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+          "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9"
+        },
+        "gpu_log": {
+          "path": "experiments/FIGS/data/s8_val_by_epoch/val_by_epoch.json",
+          "sha256": "395434f8ccb449ea66e4a61d1d5d98dc67b572674e0e86e0bf7b3727cfbd20cc"
+        },
+        "row_alignment_sha256": "31e6e8d2d738a5b000844a338680e4b08ce8c4d7fffc0ed883613facf7eea348"
+      }
+    }
+  }
+}
