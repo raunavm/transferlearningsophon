@@ -73,3 +73,43 @@ def test_the_export_refuses_bins_that_differ_from_the_runs_histograms(run, tmp_p
     with pytest.raises(SystemExit, match="not the bins that run fitted"):
         _export(run, tmp_path / "bins.npz", tmp_path / "other.npz")
     assert not (tmp_path / "bins.npz").exists()
+
+
+D = _mod("fit_minimum_diagnostic", "experiments/AOJ/fit_minimum_diagnostic.py")
+
+
+def test_the_orthonormal_basis_is_the_same_polynomial_and_reaches_the_same_minimum(run, tmp_path):
+    assert _export(run, tmp_path / "bins.npz") == 0
+    z = np.load(tmp_path / "bins.npz")
+    res = json.loads((run / "results.json").read_text())
+    stored = res["models"]["m"]["top"]
+    b = {k: z[f"m|main|{k}"] for k in E.KEYS}
+    side = ~P.in_windows(P._bin_centres(b), [P.PEAKS["top"]["window"]])
+    tf_norm = b["n_pass"][side].sum() / max(b["n_fail"][side].sum(), 1.0)
+    args = (b, tuple(stored["tf_order"]), tf_norm, stored["mean"], stored["width"])
+    ortho, mono = D.Orthonormal(*args), P._Model(*args)
+    u = np.random.default_rng(0).normal(size=len(ortho.x0))
+    t = ortho.transform()
+    assert np.allclose(mono.loss(t @ u)[0], ortho.loss_u(t)(u)[0])
+    assert np.allclose(ortho.X @ (t @ u)[:ortho.n_tf], np.linalg.qr(ortho.X)[0] @ u[:ortho.n_tf])
+    (x1, f1), (x2, f2) = mono.fit(), ortho.fit()
+    assert abs(f1 - f2) < 1e-6
+    xn, fn, edm, _ = D.newton(ortho, x2)
+    assert fn <= f2 + 1e-9 and edm < 1e-6
+
+
+def test_the_diagnostic_reproduces_the_run_and_finds_nothing_on_a_well_posed_fit(run, tmp_path):
+    assert _export(run, tmp_path / "bins.npz") == 0
+    assert D.main(["--bins", str(tmp_path / "bins.npz"), "--results", str(run / "results.json"),
+                   "--out", str(tmp_path / "d.json"), "--workers", "1"]) == 0
+    s = json.loads((tmp_path / "d.json").read_text())["summary"]
+    assert s["n_fits"] == 2 and s["n_as_run_reproduced"] == 2 and s["n_same_order"] == 2
+    assert s["max_abs_yield_shift_over_err"] < 0.01 and s["max_newton_edm"] < 1e-6
+
+
+def test_the_profile_likelihood_error_matches_the_orthonormal_hessian_error(run, tmp_path):
+    assert _export(run, tmp_path / "bins.npz") == 0
+    assert D.main(["--bins", str(tmp_path / "bins.npz"), "--results", str(run / "results.json"),
+                   "--out", str(tmp_path / "d.json"), "--workers", "1", "--only", "m"]) == 0
+    r = json.loads((tmp_path / "d.json").read_text())["fits"]["m"]
+    assert r["profile_err_at_minimum"] == pytest.approx(r["orthonormal_err_from_orthonormal_hessian"], rel=0.02)

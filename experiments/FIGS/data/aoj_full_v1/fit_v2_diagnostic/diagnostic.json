@@ -1,0 +1,2523 @@
+{
+  "results": "experiments/FIGS/data/aoj_full_v1/fit_v2/results.json",
+  "bins": "experiments/FIGS/data/aoj_full_v1/fit_v2/bins.npz",
+  "fits": {
+    "reference": {
+      "as_run": {
+        "tf_order": [
+          4,
+          1
+        ],
+        "mean": 180.05073390796824,
+        "width": 17.321727008133163,
+        "signal_yield": 27674.307362647683,
+        "signal_yield_err": 490.3747551473088,
+        "deviance": 381.4329947944567,
+        "edm": 0.0009995133429042838,
+        "n_restarts": 22,
+        "delta_deviance_vs_background_only": 6217.683778159396,
+        "validation_tf_order": [
+          4,
+          3
+        ],
+        "validation_deviance": 313.33015185841066,
+        "validation_asymptotic_p": 1.6333014595016762e-06,
+        "validation_edm": 1.9590270220948252
+      },
+      "orthonormal": {
+        "tf_order": [
+          4,
+          2
+        ],
+        "mean": 180.05072891588398,
+        "width": 17.321565858617273,
+        "signal_yield": 27546.843388780377,
+        "signal_yield_err": 573.4285040255688,
+        "deviance": 359.26382868636694,
+        "edm": 0.32289323794896063,
+        "n_restarts": 2,
+        "delta_deviance_vs_background_only": 4165.264957046064,
+        "validation_tf_order": [
+          4,
+          3
+        ],
+        "validation_deviance": 310.03227426206126,
+        "validation_asymptotic_p": 2.955321561789033e-06,
+        "validation_edm": 7.430181082427452e-10
+      },
+      "replay_yield_shift_over_err": 0.00769521314663064,
+      "replay_deviance_shift": -0.009692812516107097,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 358.46625892620165,
+        "edm": 0.004033749023141232,
+        "n_steps": 5,
+        "signal_yield": 26717.270002405603,
+        "deviance_drop_from_orthonormal": 0.7975697601652882
+      },
+      "orthonormal_err_from_orthonormal_hessian": 785.798629608262,
+      "as_run_err_from_orthonormal_hessian": 485.2315957538845,
+      "profile_err_at_minimum": null,
+      "gradient_check_max_abs": 1.2568535725531547,
+      "clipping_orthonormal": {
+        "min_transfer_factor": -0.015333846787860993,
+        "n_tf_clipped": 7,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.006682902187967436,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": false,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": null,
+        "yield_shift_over_err": -0.26268687979658706,
+        "newton_yield_shift_over_err": -1.0557073467897724,
+        "err_ratio_orthonormal_over_as_run": 1.1693679130225834,
+        "profile_err_over_as_run_err": null,
+        "validation_deviance_as_run_minus_orthonormal": 3.2978775963493945
+      }
+    },
+    "sophon-public": {
+      "as_run": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2599.157474251222,
+        "signal_yield_err": 376.6934669116985,
+        "deviance": 222.88136154122463,
+        "edm": 6.418077841639466e-07,
+        "n_restarts": 2,
+        "delta_deviance_vs_background_only": 108.32075524758164,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 179.45787091890884,
+        "validation_asymptotic_p": 0.966808282736219,
+        "validation_edm": 8.054523433244381e-10
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2599.193250186393,
+        "signal_yield_err": 376.6935931281702,
+        "deviance": 222.88136026507794,
+        "edm": 4.101194024824234e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 108.3207564187723,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 179.45787091753826,
+        "validation_asymptotic_p": 0.9668082827417424,
+        "validation_edm": 3.155680945676193e-10
+      },
+      "replay_yield_shift_over_err": 0.0019582442524093665,
+      "replay_deviance_shift": -9.77265000301486e-06,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 222.88136025888144,
+        "edm": 1.0174625841437496e-20,
+        "n_steps": 1,
+        "signal_yield": 2599.188114300824,
+        "deviance_drop_from_orthonormal": 6.196501090016682e-09
+      },
+      "orthonormal_err_from_orthonormal_hessian": 376.6934571625439,
+      "as_run_err_from_orthonormal_hessian": 376.69333202919347,
+      "profile_err_at_minimum": 376.6980548667429,
+      "gradient_check_max_abs": 0.00034828354758547936,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008812882216094487,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.008811855760226122,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 1.2761466905431007e-06,
+        "yield_shift_over_err": 9.497363539251421e-05,
+        "newton_yield_shift_over_err": -1.3634124700884415e-05,
+        "err_ratio_orthonormal_over_as_run": 1.0000003350641378,
+        "profile_err_over_as_run_err": 1.0000121795450343,
+        "validation_deviance_as_run_minus_orthonormal": 1.3705800938623725e-09
+      }
+    },
+    "l188-s1": {
+      "as_run": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3449.4707528614954,
+        "signal_yield_err": 446.76763851640834,
+        "deviance": 232.15494383402594,
+        "edm": 0.0066618027878467085,
+        "n_restarts": 33,
+        "delta_deviance_vs_background_only": 140.37637532805618,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 213.1421905750306,
+        "validation_asymptotic_p": 0.5422048261717481,
+        "validation_edm": 1.236996151132077e-09
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3426.8100469639876,
+        "signal_yield_err": 446.53911128890286,
+        "deviance": 232.14167439542985,
+        "edm": 3.797943089524063e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 140.3883415159728,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 213.1421905730345,
+        "validation_asymptotic_p": 0.5422048262101774,
+        "validation_edm": 2.139248537635009e-10
+      },
+      "replay_yield_shift_over_err": 0.021714975154920442,
+      "replay_deviance_shift": 0.010628065431575351,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 232.14167432177368,
+        "edm": 1.649699966575609e-19,
+        "n_steps": 1,
+        "signal_yield": 3426.913803273659,
+        "deviance_drop_from_orthonormal": 7.365616738752578e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 446.50884913066284,
+      "as_run_err_from_orthonormal_hessian": 446.7405530981506,
+      "profile_err_at_minimum": 446.524356991234,
+      "gradient_check_max_abs": 0.0005288725517820702,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.005415979927949565,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.005771113361700522,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.013269438596097416,
+        "yield_shift_over_err": -0.05072453293159879,
+        "newton_yield_shift_over_err": 0.00023237234799167574,
+        "err_ratio_orthonormal_over_as_run": 0.999488487509381,
+        "profile_err_over_as_run_err": 0.9994554629650836,
+        "validation_deviance_as_run_minus_orthonormal": 1.9961134967161343e-09
+      }
+    },
+    "l188-s2": {
+      "as_run": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3760.9266641933255,
+        "signal_yield_err": 384.98710429509174,
+        "deviance": 250.73675215098712,
+        "edm": 0.00016497895860048342,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 203.02754568001495,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 194.33077075484522,
+        "validation_asymptotic_p": 0.8525102209901751,
+        "validation_edm": 4.5589106695515103e-11
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3756.661047504307,
+        "signal_yield_err": 384.995117189149,
+        "deviance": 250.7364221893319,
+        "edm": 6.618597890340268e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 203.0278756397343,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 194.33077075594395,
+        "validation_asymptotic_p": 0.8525102209770975,
+        "validation_edm": 5.623378320730159e-10
+      },
+      "replay_yield_shift_over_err": 0.00045996285035888033,
+      "replay_deviance_shift": -7.911920192782418e-06,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 250.7364221776258,
+        "edm": 2.19811311834279e-20,
+        "n_steps": 1,
+        "signal_yield": 3756.655939955169,
+        "deviance_drop_from_orthonormal": 1.170610630651936e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 384.99501357214984,
+      "as_run_err_from_orthonormal_hessian": 384.987003674127,
+      "profile_err_at_minimum": 384.9991285354898,
+      "gradient_check_max_abs": 0.0005568030947930985,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.00912841865325914,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.009128393565596006,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.00032996165521126386,
+        "yield_shift_over_err": -0.011079897888264705,
+        "newton_yield_shift_over_err": -1.326653322433035e-05,
+        "err_ratio_orthonormal_over_as_run": 1.0000208134089892,
+        "profile_err_over_as_run_err": 1.000031232839396,
+        "validation_deviance_as_run_minus_orthonormal": -1.0987264431605581e-09
+      }
+    },
+    "l188-s3": {
+      "as_run": {
+        "tf_order": [
+          2,
+          1
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4290.222045596516,
+        "signal_yield_err": 313.3376414582099,
+        "deviance": 268.14084824099155,
+        "edm": 9.746411901952535e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 304.38916012896743,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 224.88305855442252,
+        "validation_asymptotic_p": 0.32504473029685677,
+        "validation_edm": 2.031409311660685e-08
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          1
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4290.172055993693,
+        "signal_yield_err": 313.3378539020701,
+        "deviance": 268.14084804818935,
+        "edm": 1.078463777698238e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 304.3891603218574,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 224.88305851229393,
+        "validation_asymptotic_p": 0.3250447310069217,
+        "validation_edm": 3.9820687919614234e-11
+      },
+      "replay_yield_shift_over_err": 0.00023147156608232025,
+      "replay_deviance_shift": -7.732643325653044e-08,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 268.14084804529807,
+        "edm": 3.304742353837904e-11,
+        "n_steps": 7,
+        "signal_yield": 4290.168578987312,
+        "deviance_drop_from_orthonormal": 2.891283656936139e-09
+      },
+      "orthonormal_err_from_orthonormal_hessian": 313.3377829072694,
+      "as_run_err_from_orthonormal_hessian": 313.33757040893295,
+      "profile_err_at_minimum": 313.3397384403457,
+      "gradient_check_max_abs": 0.000532765683882725,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.007309655807547147,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.007309698442049136,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 1.9280219021311495e-07,
+        "yield_shift_over_err": -0.00015953912822502567,
+        "newton_yield_shift_over_err": -1.1096671294972774e-05,
+        "err_ratio_orthonormal_over_as_run": 1.0000006780029977,
+        "profile_err_over_as_run_err": 1.000006692404162,
+        "validation_deviance_as_run_minus_orthonormal": 4.212859039398609e-08
+      }
+    },
+    "l188-s4": {
+      "as_run": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2650.785675972753,
+        "signal_yield_err": 453.7615806756949,
+        "deviance": 236.57979426795296,
+        "edm": 0.0009825940346798914,
+        "n_restarts": 19,
+        "delta_deviance_vs_background_only": 119.74758283965755,
+        "validation_tf_order": [
+          3,
+          2
+        ],
+        "validation_deviance": 243.14776322902947,
+        "validation_asymptotic_p": 0.07651981067241109,
+        "validation_edm": 0.0011470883596034097
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2639.5487478623995,
+        "signal_yield_err": 453.687779558247,
+        "deviance": 236.5778306965309,
+        "edm": 6.74647132382695e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 119.74885545386724,
+        "validation_tf_order": [
+          3,
+          2
+        ],
+        "validation_deviance": 243.14546651018168,
+        "validation_asymptotic_p": 0.07653445835386412,
+        "validation_edm": 1.883883909197302e-10
+      },
+      "replay_yield_shift_over_err": -0.004278682331173134,
+      "replay_deviance_shift": -0.0023078501984343802,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 236.57783068600202,
+        "edm": 2.159105189964669e-19,
+        "n_steps": 1,
+        "signal_yield": 2639.55639286014,
+        "deviance_drop_from_orthonormal": 1.0528879101912025e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 453.65668207703635,
+      "as_run_err_from_orthonormal_hessian": 453.73170113854536,
+      "profile_err_at_minimum": 453.67068335536266,
+      "gradient_check_max_abs": 0.0006006580315688884,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.0042417888388816246,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.004386013384361692,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.0019635714220669342,
+        "yield_shift_over_err": -0.024765578605498828,
+        "newton_yield_shift_over_err": 1.6851945629791534e-05,
+        "err_ratio_orthonormal_over_as_run": 0.9998373570602032,
+        "profile_err_over_as_run_err": 0.9997996804396774,
+        "validation_deviance_as_run_minus_orthonormal": 0.0022967188477878153
+      }
+    },
+    "l188-s5": {
+      "as_run": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2276.3912097037783,
+        "signal_yield_err": 465.8956292584881,
+        "deviance": 203.3141728128069,
+        "edm": 0.047086275722804834,
+        "n_restarts": 19,
+        "delta_deviance_vs_background_only": 105.71687031503009,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 187.57720032354877,
+        "validation_asymptotic_p": 0.9192579633810386,
+        "validation_edm": 1.1117195353976444e-08
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2199.222048763705,
+        "signal_yield_err": 465.6988478504458,
+        "deviance": 203.22018901958353,
+        "edm": 9.770160510035832e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 105.81058024459321,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 187.57720030111943,
+        "validation_asymptotic_p": 0.9192579635585785,
+        "validation_edm": 3.0899905923812548e-12
+      },
+      "replay_yield_shift_over_err": 0.0119339772940811,
+      "replay_deviance_shift": 0.004454983308079363,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 203.22018900199635,
+        "edm": 9.78101498671365e-20,
+        "n_steps": 1,
+        "signal_yield": 2199.249508838672,
+        "deviance_drop_from_orthonormal": 1.7587183265277417e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 465.69156131287576,
+      "as_run_err_from_orthonormal_hessian": 465.89290868949706,
+      "profile_err_at_minimum": 465.7007022403101,
+      "gradient_check_max_abs": 0.00037366465115065266,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008322834477553326,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.008306817142583628,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.09398379322337291,
+        "yield_shift_over_err": -0.16563712282537446,
+        "newton_yield_shift_over_err": 5.8966228397506194e-05,
+        "err_ratio_orthonormal_over_as_run": 0.9995776277009607,
+        "profile_err_over_as_run_err": 0.9995816079698188,
+        "validation_deviance_as_run_minus_orthonormal": 2.2429333057516487e-08
+      }
+    },
+    "l162-s1b": {
+      "as_run": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3842.922485487208,
+        "signal_yield_err": 386.3883917115162,
+        "deviance": 228.24179043932224,
+        "edm": 0.000557071313694283,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 223.01509320403272,
+        "validation_tf_order": [
+          3,
+          1
+        ],
+        "validation_deviance": 209.26076016147755,
+        "validation_asymptotic_p": 0.6345399579967874,
+        "validation_edm": 3.1589603963423754e-10
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3850.4476840409066,
+        "signal_yield_err": 386.3769295060152,
+        "deviance": 228.24067639794976,
+        "edm": 5.89222857299978e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 223.01620724489385,
+        "validation_tf_order": [
+          3,
+          1
+        ],
+        "validation_deviance": 209.2607601603778,
+        "validation_asymptotic_p": 0.6345399580171202,
+        "validation_edm": 4.055208295315565e-11
+      },
+      "replay_yield_shift_over_err": 0.0002340277269582699,
+      "replay_deviance_shift": -2.563979919045778e-05,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 228.2406763885706,
+        "edm": 1.3107618470446583e-20,
+        "n_steps": 1,
+        "signal_yield": 3850.44670397334,
+        "deviance_drop_from_orthonormal": 9.379164112033322e-09
+      },
+      "orthonormal_err_from_orthonormal_hessian": 386.3765985834609,
+      "as_run_err_from_orthonormal_hessian": 386.3880566629413,
+      "profile_err_at_minimum": 386.38227651345863,
+      "gradient_check_max_abs": 0.0004601802263918004,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.009087278903064936,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.009087860367623922,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.0011140413724888276,
+        "yield_shift_over_err": 0.019475753517564975,
+        "newton_yield_shift_over_err": -2.5365603655966903e-06,
+        "err_ratio_orthonormal_over_as_run": 0.9999703350158885,
+        "profile_err_over_as_run_err": 0.9999841734426066,
+        "validation_deviance_as_run_minus_orthonormal": 1.0997496247000527e-09
+      }
+    },
+    "l162-s2": {
+      "as_run": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 922.9062059302732,
+        "signal_yield_err": 460.419941684534,
+        "deviance": 178.82363861269073,
+        "edm": 0.014288225964985305,
+        "n_restarts": 21,
+        "delta_deviance_vs_background_only": 68.91401046042893,
+        "validation_tf_order": [
+          3,
+          2
+        ],
+        "validation_deviance": 206.6181863251972,
+        "validation_asymptotic_p": 0.6102437338676562,
+        "validation_edm": 0.0012643841865690932
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 881.686946931123,
+        "signal_yield_err": 460.37975665742,
+        "deviance": 178.7950716547589,
+        "edm": 2.3137898465300813e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 68.91185722520842,
+        "validation_tf_order": [
+          3,
+          2
+        ],
+        "validation_deviance": 206.61565700867231,
+        "validation_asymptotic_p": 0.6102916949935612,
+        "validation_edm": 1.7612952933471731e-10
+      },
+      "replay_yield_shift_over_err": 0.015420423372791337,
+      "replay_deviance_shift": 0.008497316899877205,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 178.79507160977838,
+        "edm": 8.631371957972337e-20,
+        "n_steps": 1,
+        "signal_yield": 881.6047657116137,
+        "deviance_drop_from_orthonormal": 4.498053840507055e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 460.37456350766735,
+      "as_run_err_from_orthonormal_hessian": 460.4174089431002,
+      "profile_err_at_minimum": 460.38366217786125,
+      "gradient_check_max_abs": 0.0007619360442272507,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008291313017029383,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.00829681119089045,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.028566957931815296,
+        "yield_shift_over_err": -0.08952584806419488,
+        "newton_yield_shift_over_err": -0.00017850947038236498,
+        "err_ratio_orthonormal_over_as_run": 0.9999127209239309,
+        "profile_err_over_as_run_err": 0.9999212034419274,
+        "validation_deviance_as_run_minus_orthonormal": 0.0025293165248854166
+      }
+    },
+    "l162-s3": {
+      "as_run": {
+        "tf_order": [
+          4,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4356.024802898033,
+        "signal_yield_err": 1120.7671973774795,
+        "deviance": 213.61532782355522,
+        "edm": 0.6176053968059043,
+        "n_restarts": 35,
+        "delta_deviance_vs_background_only": 175.85246664352206,
+        "validation_tf_order": [
+          2,
+          1
+        ],
+        "validation_deviance": 212.86505441998207,
+        "validation_asymptotic_p": 0.6041044373905069,
+        "validation_edm": 6.523281533193119e-11
+      },
+      "orthonormal": {
+        "tf_order": [
+          4,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4120.882110524057,
+        "signal_yield_err": 484.6800452383285,
+        "deviance": 211.92046553811963,
+        "edm": 1.669300331973625e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 175.2503972974157,
+        "validation_tf_order": [
+          2,
+          1
+        ],
+        "validation_deviance": 212.86505441993114,
+        "validation_asymptotic_p": 0.6041044373914622,
+        "validation_edm": 1.2006703077386367e-13
+      },
+      "replay_yield_shift_over_err": 0.029361719247335126,
+      "replay_deviance_shift": 0.20203681285823905,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 211.92046548951132,
+        "edm": 3.2345249405403024e-19,
+        "n_steps": 1,
+        "signal_yield": 4120.755876717252,
+        "deviance_drop_from_orthonormal": 4.8608313818476745e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 1044.9602836780846,
+      "as_run_err_from_orthonormal_hessian": 1043.3690216214145,
+      "profile_err_at_minimum": 1045.0081451854198,
+      "gradient_check_max_abs": 0.0005070605045869572,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.005303698983049574,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.006249036750831417,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 1.6948622854355904,
+        "yield_shift_over_err": -0.22536867350015852,
+        "newton_yield_shift_over_err": -0.00012080249247387587,
+        "err_ratio_orthonormal_over_as_run": 0.4324538105437485,
+        "profile_err_over_as_run_err": 0.9324042920159237,
+        "validation_deviance_as_run_minus_orthonormal": 5.093170329928398e-11
+      }
+    },
+    "l162-s4": {
+      "as_run": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4257.787521252195,
+        "signal_yield_err": 384.1205298441605,
+        "deviance": 255.02595293915027,
+        "edm": 8.155475404344768e-07,
+        "n_restarts": 2,
+        "delta_deviance_vs_background_only": 251.82874534654155,
+        "validation_tf_order": [
+          2,
+          3
+        ],
+        "validation_deviance": 213.29367822327802,
+        "validation_asymptotic_p": 0.48144554921415583,
+        "validation_edm": 0.005039778863528239
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4257.7569918144845,
+        "signal_yield_err": 384.12097143588915,
+        "deviance": 255.02595131062776,
+        "edm": 1.975866232175623e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 251.82874697331,
+        "validation_tf_order": [
+          2,
+          3
+        ],
+        "validation_deviance": 213.28361294243484,
+        "validation_asymptotic_p": 0.4816396649635132,
+        "validation_edm": 7.011182040853611e-10
+      },
+      "replay_yield_shift_over_err": 0.0023766264109196596,
+      "replay_deviance_shift": -1.3074701001869471e-05,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 255.02595130814794,
+        "edm": 5.0158260823419954e-21,
+        "n_steps": 1,
+        "signal_yield": 4257.749486052546,
+        "deviance_drop_from_orthonormal": 2.47982256951218e-09
+      },
+      "orthonormal_err_from_orthonormal_hessian": 384.1209473102878,
+      "as_run_err_from_orthonormal_hessian": 384.12050602743557,
+      "profile_err_at_minimum": 384.12646661382246,
+      "gradient_check_max_abs": 0.0005928117509943855,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.0071046247365368145,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.007105780671277728,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 1.6285225115098e-06,
+        "yield_shift_over_err": -7.947880217614804e-05,
+        "newton_yield_shift_over_err": -1.9540100562936622e-05,
+        "err_ratio_orthonormal_over_as_run": 1.0000011496176182,
+        "profile_err_over_as_run_err": 1.0000154554864964,
+        "validation_deviance_as_run_minus_orthonormal": 0.010065280843178925
+      }
+    },
+    "l162-s5": {
+      "as_run": {
+        "tf_order": [
+          3,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3631.9739623911214,
+        "signal_yield_err": 654.9920762499971,
+        "deviance": 251.85467463398572,
+        "edm": 0.35065679500982716,
+        "n_restarts": 11,
+        "delta_deviance_vs_background_only": 131.56934973800236,
+        "validation_tf_order": [
+          2,
+          3
+        ],
+        "validation_deviance": 207.20526357882684,
+        "validation_asymptotic_p": 0.5990782360898991,
+        "validation_edm": 1.3683021211209014e-05
+      },
+      "orthonormal": {
+        "tf_order": [
+          3,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3333.7379320256314,
+        "signal_yield_err": 659.9531856288916,
+        "deviance": 251.14613117776884,
+        "edm": 1.8730331533072978e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 130.31460527561148,
+        "validation_tf_order": [
+          2,
+          3
+        ],
+        "validation_deviance": 207.2052362086133,
+        "validation_asymptotic_p": 0.5990787581122466,
+        "validation_edm": 1.7551502686803198e-11
+      },
+      "replay_yield_shift_over_err": 0.05776037684926035,
+      "replay_deviance_shift": 0.31759487509708606,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 251.1461311426056,
+        "edm": 3.4545045044571945e-19,
+        "n_steps": 1,
+        "signal_yield": 3333.8289574903074,
+        "deviance_drop_from_orthonormal": 3.5163225220458116e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 658.4555877605297,
+      "as_run_err_from_orthonormal_hessian": 653.9525456829997,
+      "profile_err_at_minimum": 658.4903023832638,
+      "gradient_check_max_abs": 0.0007486011937951269,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.0077207761404040716,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.00767465890792069,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.7085434562168871,
+        "yield_shift_over_err": -0.45605148620379937,
+        "newton_yield_shift_over_err": 0.00013824085688999698,
+        "err_ratio_orthonormal_over_as_run": 1.0075743044210521,
+        "profile_err_over_as_run_err": 1.0053408678671274,
+        "validation_deviance_as_run_minus_orthonormal": 2.7370213558697287e-05
+      }
+    },
+    "r42q1-s1": {
+      "as_run": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3333.951167761906,
+        "signal_yield_err": 464.9663554799247,
+        "deviance": 220.45734922199972,
+        "edm": 0.024524686004471486,
+        "n_restarts": 19,
+        "delta_deviance_vs_background_only": 184.45954900635184,
+        "validation_tf_order": [
+          3,
+          2
+        ],
+        "validation_deviance": 233.6302373837038,
+        "validation_asymptotic_p": 0.15840584156119392,
+        "validation_edm": 9.703058360808095e-05
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3281.5790671984723,
+        "signal_yield_err": 464.68173560895843,
+        "deviance": 220.408440852075,
+        "edm": 2.0377468328815687e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 184.5083131942011,
+        "validation_tf_order": [
+          3,
+          2
+        ],
+        "validation_deviance": 233.6300433099972,
+        "validation_asymptotic_p": 0.15840797854728714,
+        "validation_edm": 9.32225666965763e-11
+      },
+      "replay_yield_shift_over_err": 0.018275341855598048,
+      "replay_deviance_shift": 0.013919590831363848,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 220.40844081207715,
+        "edm": 3.200916894548882e-19,
+        "n_steps": 1,
+        "signal_yield": 3281.6293902579982,
+        "deviance_drop_from_orthonormal": 3.999784325969813e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 464.6360785334029,
+      "as_run_err_from_orthonormal_hessian": 464.9296706767418,
+      "profile_err_at_minimum": 464.64589000763556,
+      "gradient_check_max_abs": 0.0007430768269861373,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.006656515384960076,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.007480687785951465,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.04890836992473169,
+        "yield_shift_over_err": -0.1126452103760169,
+        "newton_yield_shift_over_err": 0.0001083063968799085,
+        "err_ratio_orthonormal_over_as_run": 0.9993878699660484,
+        "profile_err_over_as_run_err": 0.9993107770734113,
+        "validation_deviance_as_run_minus_orthonormal": 0.0001940737065808662
+      }
+    },
+    "r42q1-s2": {
+      "as_run": {
+        "tf_order": [
+          3,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3529.5951197768027,
+        "signal_yield_err": 695.9520111296079,
+        "deviance": 225.63106894467353,
+        "edm": 1.2348963891649734,
+        "n_restarts": 52,
+        "delta_deviance_vs_background_only": 138.1185937195279,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 199.86406078671973,
+        "validation_asymptotic_p": 0.7776482878824506,
+        "validation_edm": 1.4849795927035314e-06
+      },
+      "orthonormal": {
+        "tf_order": [
+          3,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4205.185275956684,
+        "signal_yield_err": 753.6874938482534,
+        "deviance": 223.2624941235723,
+        "edm": 2.3530355992174336e-07,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 140.00185449403477,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 199.8640578163163,
+        "validation_asymptotic_p": 0.7776483327141774,
+        "validation_edm": 2.127576697488152e-11
+      },
+      "replay_yield_shift_over_err": -0.007100612254561782,
+      "replay_deviance_shift": -0.13495052657987117,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 223.26249374266436,
+        "edm": 9.80387994413969e-18,
+        "n_steps": 1,
+        "signal_yield": 4205.546260823533,
+        "deviance_drop_from_orthonormal": 3.809079487382405e-07
+      },
+      "orthonormal_err_from_orthonormal_hessian": 683.638051162628,
+      "as_run_err_from_orthonormal_hessian": 694.3146327826859,
+      "profile_err_at_minimum": 683.6727174579734,
+      "gradient_check_max_abs": 0.0006257343550852934,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.00455100476153758,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.008080282414541673,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 2.3685748211012196,
+        "yield_shift_over_err": 0.9730317125425391,
+        "newton_yield_shift_over_err": 0.0005280350709493321,
+        "err_ratio_orthonormal_over_as_run": 1.0829589997519147,
+        "profile_err_over_as_run_err": 0.9823561201415255,
+        "validation_deviance_as_run_minus_orthonormal": 2.970403443214309e-06
+      }
+    },
+    "r42q1-s3": {
+      "as_run": {
+        "tf_order": [
+          2,
+          1
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4867.274386385147,
+        "signal_yield_err": 317.08768168928185,
+        "deviance": 254.44787731527333,
+        "edm": 1.5933835160559217e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 403.6339821991784,
+        "validation_tf_order": [
+          2,
+          1
+        ],
+        "validation_deviance": 221.99864712440052,
+        "validation_asymptotic_p": 0.4307529635670633,
+        "validation_edm": 4.810722102895557e-12
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          1
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4867.285750508656,
+        "signal_yield_err": 317.08757677751396,
+        "deviance": 254.44787728747843,
+        "edm": 1.4402716296283246e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 403.6339822247018,
+        "validation_tf_order": [
+          2,
+          1
+        ],
+        "validation_deviance": 221.99864712458668,
+        "validation_asymptotic_p": 0.4307529635636006,
+        "validation_edm": 3.4864538456619097e-11
+      },
+      "replay_yield_shift_over_err": -0.000753512541850408,
+      "replay_deviance_shift": -9.696054803498555e-07,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 254.44787728473779,
+        "edm": 2.865010404269914e-22,
+        "n_steps": 1,
+        "signal_yield": 4867.300132161237,
+        "deviance_drop_from_orthonormal": 2.7406485969549976e-09
+      },
+      "orthonormal_err_from_orthonormal_hessian": 317.08758188013786,
+      "as_run_err_from_orthonormal_hessian": 317.0876868550642,
+      "profile_err_at_minimum": 317.0895958068964,
+      "gradient_check_max_abs": 0.0005270335750214924,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008369893765254521,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.008369927210171687,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 2.7794897050625877e-08,
+        "yield_shift_over_err": 3.583905644883369e-05,
+        "newton_yield_shift_over_err": 4.5355458249834206e-05,
+        "err_ratio_orthonormal_over_as_run": 0.9999996691395663,
+        "profile_err_over_as_run_err": 1.0000060365562116,
+        "validation_deviance_as_run_minus_orthonormal": -1.8616219676914625e-10
+      }
+    },
+    "r42q1-s4": {
+      "as_run": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2844.9399808939097,
+        "signal_yield_err": 385.3458854491577,
+        "deviance": 209.47617149671203,
+        "edm": 7.608287375192798e-07,
+        "n_restarts": 2,
+        "delta_deviance_vs_background_only": 123.39447946730996,
+        "validation_tf_order": [
+          3,
+          2
+        ],
+        "validation_deviance": 215.92858653160025,
+        "validation_asymptotic_p": 0.43112296016852636,
+        "validation_edm": 4.002757251636007e-05
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2844.7841189032456,
+        "signal_yield_err": 385.34586619902757,
+        "deviance": 209.4761700351279,
+        "edm": 3.130713003106517e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 123.39448090433348,
+        "validation_tf_order": [
+          3,
+          2
+        ],
+        "validation_deviance": 215.9285063874501,
+        "validation_asymptotic_p": 0.43112447190047043,
+        "validation_edm": 1.6424580898245646e-10
+      },
+      "replay_yield_shift_over_err": 0.0005841462857924963,
+      "replay_deviance_shift": -2.7198917393889133e-06,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 209.47616997517173,
+        "edm": 3.390870043320165e-19,
+        "n_steps": 1,
+        "signal_yield": 2844.7016291181026,
+        "deviance_drop_from_orthonormal": 5.995616447762586e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 385.34569550642,
+      "as_run_err_from_orthonormal_hessian": 385.3457138805248,
+      "profile_err_at_minimum": 385.35117804146864,
+      "gradient_check_max_abs": 0.0006020091128942032,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.00946997363203233,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.009469726610042738,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 1.4615841337217717e-06,
+        "yield_shift_over_err": -0.0004044731394428628,
+        "newton_yield_shift_over_err": -0.00021406696923154163,
+        "err_ratio_orthonormal_over_as_run": 0.9999999500445421,
+        "profile_err_over_as_run_err": 1.0000137346537508,
+        "validation_deviance_as_run_minus_orthonormal": 8.014415013235521e-05
+      }
+    },
+    "r42q1-s5": {
+      "as_run": {
+        "tf_order": [
+          2,
+          1
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 1722.968002702976,
+        "signal_yield_err": 298.5766465804703,
+        "deviance": 250.92933584388737,
+        "edm": 2.4808315259241043e-07,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 76.88828262138901,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 206.66387727081963,
+        "validation_asymptotic_p": 0.6640804122324119,
+        "validation_edm": 3.448621276980316e-09
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          1
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 1723.0913975297287,
+        "signal_yield_err": 298.5763524284519,
+        "deviance": 250.92933534876875,
+        "edm": 9.594429558027798e-10,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 76.88828311536082,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 206.66387726386057,
+        "validation_asymptotic_p": 0.6640804123581464,
+        "validation_edm": 1.348590918986328e-10
+      },
+      "replay_yield_shift_over_err": -0.00017206694429788366,
+      "replay_deviance_shift": 1.6874537323019467e-07,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 250.9293353492016,
+        "edm": 9.592084951892031e-10,
+        "n_steps": 2,
+        "signal_yield": 1723.0913966443186,
+        "deviance_drop_from_orthonormal": -4.3286263462505303e-10
+      },
+      "orthonormal_err_from_orthonormal_hessian": 298.5763545166799,
+      "as_run_err_from_orthonormal_hessian": 298.5766487494903,
+      "profile_err_at_minimum": 298.5782891242271,
+      "gradient_check_max_abs": 0.0005845473047979464,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008636459659019704,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.008636508770429218,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 4.951186269863683e-07,
+        "yield_shift_over_err": 0.0004132768830700858,
+        "newton_yield_shift_over_err": -2.9654388381195983e-09,
+        "err_ratio_orthonormal_over_as_run": 0.9999990148190698,
+        "profile_err_over_as_run_err": 1.0000055012465832,
+        "validation_deviance_as_run_minus_orthonormal": 6.959055554034421e-09
+      }
+    },
+    "r16q1-s1": {
+      "as_run": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3328.8524082924796,
+        "signal_yield_err": 386.62250169845345,
+        "deviance": 225.83704365293005,
+        "edm": 5.468432939780944e-07,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 117.91083234215768,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 189.13494741531696,
+        "validation_asymptotic_p": 0.9062421204683857,
+        "validation_edm": 4.572011212532183e-09
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3328.703067744404,
+        "signal_yield_err": 386.6232675550417,
+        "deviance": 225.8370425631053,
+        "edm": 1.3113450556203309e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 117.91083337648163,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 189.13494740559062,
+        "validation_asymptotic_p": 0.9062421205539878,
+        "validation_edm": 2.528116800029974e-11
+      },
+      "replay_yield_shift_over_err": 0.003613851052534751,
+      "replay_deviance_shift": -3.718230135518752e-05,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 225.83704256160752,
+        "edm": 6.392559003043952e-22,
+        "n_steps": 1,
+        "signal_yield": 3328.715200590116,
+        "deviance_drop_from_orthonormal": 1.4977956652728608e-09
+      },
+      "orthonormal_err_from_orthonormal_hessian": 386.6223671386829,
+      "as_run_err_from_orthonormal_hessian": 386.6216019135127,
+      "profile_err_at_minimum": 386.62726221094493,
+      "gradient_check_max_abs": 0.0004892049783687545,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008342560987824363,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.008342434122192845,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 1.0898247353452462e-06,
+        "yield_shift_over_err": -0.000386270573957609,
+        "newton_yield_shift_over_err": 3.1381644578581655e-05,
+        "err_ratio_orthonormal_over_as_run": 1.000001980889847,
+        "profile_err_over_as_run_err": 1.0000123130766332,
+        "validation_deviance_as_run_minus_orthonormal": 9.726335292725707e-09
+      }
+    },
+    "r16q1-s2": {
+      "as_run": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3948.2725711920357,
+        "signal_yield_err": 388.80081162860955,
+        "deviance": 206.0201160846401,
+        "edm": 3.201041599073462e-05,
+        "n_restarts": 2,
+        "delta_deviance_vs_background_only": 214.73216995785464,
+        "validation_tf_order": [
+          3,
+          1
+        ],
+        "validation_deviance": 218.41332221780527,
+        "validation_asymptotic_p": 0.4602969317189215,
+        "validation_edm": 1.3940562470611444e-09
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3950.002187206791,
+        "signal_yield_err": 388.79930759743417,
+        "deviance": 206.02005207844195,
+        "edm": 6.222163901004187e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 214.73223396393212,
+        "validation_tf_order": [
+          3,
+          1
+        ],
+        "validation_deviance": 218.41332221547174,
+        "validation_asymptotic_p": 0.46029693176318354,
+        "validation_edm": 6.0513542916167354e-12
+      },
+      "replay_yield_shift_over_err": -0.0059911627036497135,
+      "replay_deviance_shift": 3.182943851243181e-05,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 206.02005206539883,
+        "edm": 7.868684549725959e-21,
+        "n_steps": 1,
+        "signal_yield": 3949.9839284815653,
+        "deviance_drop_from_orthonormal": 1.3043120361544425e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 388.79911573056523,
+      "as_run_err_from_orthonormal_hessian": 388.80061811812544,
+      "profile_err_at_minimum": 388.804861913901,
+      "gradient_check_max_abs": 0.00047692176876294734,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.009368084065148156,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.009367845826100013,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 6.400619815849495e-05,
+        "yield_shift_over_err": 0.004448593788577191,
+        "newton_yield_shift_over_err": -4.6961848643532454e-05,
+        "err_ratio_orthonormal_over_as_run": 0.9999961316151346,
+        "profile_err_over_as_run_err": 1.0000104173786943,
+        "validation_deviance_as_run_minus_orthonormal": 2.3335360310738906e-09
+      }
+    },
+    "r16q1-s3": {
+      "as_run": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3168.275052433558,
+        "signal_yield_err": 450.550218980036,
+        "deviance": 240.12200603981307,
+        "edm": 0.0320323529633496,
+        "n_restarts": 24,
+        "delta_deviance_vs_background_only": 130.68638669584755,
+        "validation_tf_order": [
+          3,
+          1
+        ],
+        "validation_deviance": 196.41636764162152,
+        "validation_asymptotic_p": 0.838636481659739,
+        "validation_edm": 4.6792579561210105e-12
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3225.6365300477146,
+        "signal_yield_err": 450.86320048247154,
+        "deviance": 240.05767356577314,
+        "edm": 4.34209553524282e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 130.75062945188995,
+        "validation_tf_order": [
+          3,
+          1
+        ],
+        "validation_deviance": 196.4163676412652,
+        "validation_asymptotic_p": 0.8386364816642115,
+        "validation_edm": 7.928285217974894e-13
+      },
+      "replay_yield_shift_over_err": 0.0029676075607075933,
+      "replay_deviance_shift": -0.004962375017925069,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 240.05767355892579,
+        "edm": 1.7957854769333006e-20,
+        "n_steps": 1,
+        "signal_yield": 3225.6443828944484,
+        "deviance_drop_from_orthonormal": 6.8473582359729335e-09
+      },
+      "orthonormal_err_from_orthonormal_hessian": 450.85642088085956,
+      "as_run_err_from_orthonormal_hessian": 450.5468605432122,
+      "profile_err_at_minimum": 450.8665533806622,
+      "gradient_check_max_abs": 0.0005479597659572112,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008207489912949744,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.008205664690718314,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.06433247403992937,
+        "yield_shift_over_err": 0.12731523097286152,
+        "newton_yield_shift_over_err": 1.741762204139767e-05,
+        "err_ratio_orthonormal_over_as_run": 1.0006946650767234,
+        "profile_err_over_as_run_err": 1.0007021068624544,
+        "validation_deviance_as_run_minus_orthonormal": 3.5632297112897504e-10
+      }
+    },
+    "r16q1-s4": {
+      "as_run": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3618.06187241123,
+        "signal_yield_err": 378.51845666162524,
+        "deviance": 246.72600472236252,
+        "edm": 4.777565953969159e-07,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 173.27991145191618,
+        "validation_tf_order": [
+          3,
+          2
+        ],
+        "validation_deviance": 206.7006160684783,
+        "validation_asymptotic_p": 0.6086799938226598,
+        "validation_edm": 0.006773057033633774
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3617.9993796952167,
+        "signal_yield_err": 378.5185031363968,
+        "deviance": 246.72600377388284,
+        "edm": 2.516080759002871e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 173.27991221054765,
+        "validation_tf_order": [
+          3,
+          2
+        ],
+        "validation_deviance": 206.68706529372577,
+        "validation_asymptotic_p": 0.6089371526623334,
+        "validation_edm": 3.1879715245486867e-10
+      },
+      "replay_yield_shift_over_err": 0.0002563258344381655,
+      "replay_deviance_shift": 3.6109560141994734e-07,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 246.72600376952363,
+        "edm": 3.088970387774813e-21,
+        "n_steps": 1,
+        "signal_yield": 3617.9845293015255,
+        "deviance_drop_from_orthonormal": 4.359208105597645e-09
+      },
+      "orthonormal_err_from_orthonormal_hessian": 378.5182327588027,
+      "as_run_err_from_orthonormal_hessian": 378.518186324384,
+      "profile_err_at_minimum": 378.52371520074496,
+      "gradient_check_max_abs": 0.00024095257286856596,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008266910676811727,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.008266847424177907,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 9.484796805736551e-07,
+        "yield_shift_over_err": -0.00016509831831385596,
+        "newton_yield_shift_over_err": -3.9232967944106824e-05,
+        "err_ratio_orthonormal_over_as_run": 1.0000001227807278,
+        "profile_err_over_as_run_err": 1.0000138924246023,
+        "validation_deviance_as_run_minus_orthonormal": 0.01355077475253097
+      }
+    },
+    "r16q1-s5": {
+      "as_run": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3028.3269221868572,
+        "signal_yield_err": 459.59132044110686,
+        "deviance": 217.96096133531597,
+        "edm": 0.01128213971600375,
+        "n_restarts": 34,
+        "delta_deviance_vs_background_only": 143.4876276574186,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 219.15334992289988,
+        "validation_asymptotic_p": 0.42738846393050023,
+        "validation_edm": 5.3864058289613836e-08
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2991.609451126025,
+        "signal_yield_err": 459.4497959081956,
+        "deviance": 217.9384338430106,
+        "edm": 6.765199715282596e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 143.49647874772228,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 219.1533498149476,
+        "validation_asymptotic_p": 0.4273884659480322,
+        "validation_edm": 4.45456055546206e-12
+      },
+      "replay_yield_shift_over_err": -0.03488215245428971,
+      "replay_deviance_shift": -0.024357068531969617,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 217.93843370876908,
+        "edm": 8.575040284546751e-19,
+        "n_steps": 1,
+        "signal_yield": 2991.7296835072725,
+        "deviance_drop_from_orthonormal": 1.3424153166852193e-07
+      },
+      "orthonormal_err_from_orthonormal_hessian": 459.43915944276887,
+      "as_run_err_from_orthonormal_hessian": 459.58371125064383,
+      "profile_err_at_minimum": 459.44860755370297,
+      "gradient_check_max_abs": 0.0005187201896548251,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008243078016536835,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.008242207708156878,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.022527492305357555,
+        "yield_shift_over_err": -0.07989289037445398,
+        "newton_yield_shift_over_err": 0.00026169380379653445,
+        "err_ratio_orthonormal_over_as_run": 0.9996920643915219,
+        "profile_err_over_as_run_err": 0.9996894787149877,
+        "validation_deviance_as_run_minus_orthonormal": 1.079522746749717e-07
+      }
+    },
+    "l162mass-s1": {
+      "as_run": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2957.4299572698083,
+        "signal_yield_err": 453.5759544534166,
+        "deviance": 226.3408321172638,
+        "edm": 0.014095107988878088,
+        "n_restarts": 14,
+        "delta_deviance_vs_background_only": 119.80520639375902,
+        "validation_tf_order": [
+          2,
+          1
+        ],
+        "validation_deviance": 216.5403711437013,
+        "validation_asymptotic_p": 0.5342974263801209,
+        "validation_edm": 7.045461171458084e-12
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2917.5319964676505,
+        "signal_yield_err": 453.3723497065187,
+        "deviance": 226.31271039712976,
+        "edm": 6.6777307676937685e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 119.83327192601371,
+        "validation_tf_order": [
+          2,
+          1
+        ],
+        "validation_deviance": 216.54037114374168,
+        "validation_asymptotic_p": 0.5342974263793484,
+        "validation_edm": 2.3862322087154042e-11
+      },
+      "replay_yield_shift_over_err": -0.02566476483916519,
+      "replay_deviance_shift": -0.024870782540460823,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 226.31271038683036,
+        "edm": 1.603010330705102e-20,
+        "n_steps": 1,
+        "signal_yield": 2917.542486841513,
+        "deviance_drop_from_orthonormal": 1.0299402219970943e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 453.37084353557174,
+      "as_run_err_from_orthonormal_hessian": 453.57517210296203,
+      "profile_err_at_minimum": 453.3812799714036,
+      "gradient_check_max_abs": 0.0010236539499141602,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.0077814805516321015,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.00777420376594432,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.02812172013403824,
+        "yield_shift_over_err": -0.08796328206672843,
+        "newton_yield_shift_over_err": 2.3138616019313472e-05,
+        "err_ratio_orthonormal_over_as_run": 0.9995511121237826,
+        "profile_err_over_as_run_err": 0.9995708007002981,
+        "validation_deviance_as_run_minus_orthonormal": -4.0387249100604095e-11
+      }
+    },
+    "l162mass-s2": {
+      "as_run": {
+        "tf_order": [
+          3,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3419.1136770926723,
+        "signal_yield_err": 505.2066219589938,
+        "deviance": 273.38102581512953,
+        "edm": 0.014511043411246177,
+        "n_restarts": 15,
+        "delta_deviance_vs_background_only": 135.9415599362452,
+        "validation_tf_order": [
+          2,
+          3
+        ],
+        "validation_deviance": 175.6289167193696,
+        "validation_asymptotic_p": 0.9710256238683651,
+        "validation_edm": 0.0017466406343006665
+      },
+      "orthonormal": {
+        "tf_order": [
+          3,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3369.1496929512473,
+        "signal_yield_err": 505.35031903730777,
+        "deviance": 273.35202188876167,
+        "edm": 2.9567528384164645e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 135.9702122504279,
+        "validation_tf_order": [
+          2,
+          3
+        ],
+        "validation_deviance": 175.62542594723905,
+        "validation_asymptotic_p": 0.9710383463097971,
+        "validation_edm": 1.9673717194584591e-10
+      },
+      "replay_yield_shift_over_err": -0.0032683323532519183,
+      "replay_deviance_shift": -0.006688598986329453,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 273.35202183241796,
+        "edm": 2.0638982908114434e-19,
+        "n_steps": 1,
+        "signal_yield": 3369.0406019722204,
+        "deviance_drop_from_orthonormal": 5.634370836560265e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 505.23045531826824,
+      "as_run_err_from_orthonormal_hessian": 505.1008989086417,
+      "profile_err_at_minimum": 505.23927396392503,
+      "gradient_check_max_abs": 0.0007441723412751162,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.003906304272530267,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.004070538649896527,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.02900392636786364,
+        "yield_shift_over_err": -0.09891881849622702,
+        "newton_yield_shift_over_err": -0.00021592320470404633,
+        "err_ratio_orthonormal_over_as_run": 1.0002844322937747,
+        "profile_err_over_as_run_err": 1.0000646309915824,
+        "validation_deviance_as_run_minus_orthonormal": 0.0034907721305614814
+      }
+    },
+    "l162mass-s3": {
+      "as_run": {
+        "tf_order": [
+          2,
+          1
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3405.2675387494087,
+        "signal_yield_err": 311.0656054535341,
+        "deviance": 232.45695766862957,
+        "edm": 4.4031522246210475e-07,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 233.0970850783783,
+        "validation_tf_order": [
+          4,
+          2
+        ],
+        "validation_deviance": 179.7831747306775,
+        "validation_asymptotic_p": 0.9355943080397964,
+        "validation_edm": 0.5715570994382524
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          1
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3405.274526701212,
+        "signal_yield_err": 311.06498318065604,
+        "deviance": 232.4569567922366,
+        "edm": 1.2369051001607114e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 233.09708595620287,
+        "validation_tf_order": [
+          4,
+          2
+        ],
+        "validation_deviance": 178.98541879904025,
+        "validation_asymptotic_p": 0.9408633976977474,
+        "validation_edm": 2.10263955092303e-10
+      },
+      "replay_yield_shift_over_err": -1.415706504302566e-05,
+      "replay_deviance_shift": 8.591948130742821e-07,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 232.45695678918906,
+        "edm": 1.1171966269699978e-21,
+        "n_steps": 1,
+        "signal_yield": 3405.2720349095107,
+        "deviance_drop_from_orthonormal": 3.0475462153845e-09
+      },
+      "orthonormal_err_from_orthonormal_hessian": 311.064984324621,
+      "as_run_err_from_orthonormal_hessian": 311.06560670067904,
+      "profile_err_at_minimum": 311.0670561764159,
+      "gradient_check_max_abs": 0.00037371484269861015,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008933011102984622,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.008932883782533858,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 8.763929599808762e-07,
+        "yield_shift_over_err": 2.2464559413550097e-05,
+        "newton_yield_shift_over_err": -8.010518145080974e-06,
+        "err_ratio_orthonormal_over_as_run": 0.9999979995445747,
+        "profile_err_over_as_run_err": 1.0000046637199882,
+        "validation_deviance_as_run_minus_orthonormal": 0.7977559316372549
+      }
+    },
+    "l162mass-s4": {
+      "as_run": {
+        "tf_order": [
+          2,
+          1
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3184.5910282004043,
+        "signal_yield_err": 308.1830712564035,
+        "deviance": 259.5414117382205,
+        "edm": 3.4257578570358363e-07,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 203.8893430165607,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 217.6490926825606,
+        "validation_asymptotic_p": 0.45572777295514716,
+        "validation_edm": 2.201565095301046e-09
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          1
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3184.73324656702,
+        "signal_yield_err": 308.18267800257087,
+        "deviance": 259.5414110588207,
+        "edm": 3.1505579111347734e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 203.88934369855565,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 217.64909267813903,
+        "validation_asymptotic_p": 0.45572777303904405,
+        "validation_edm": 3.876422319878752e-11
+      },
+      "replay_yield_shift_over_err": -0.0001641119778887478,
+      "replay_deviance_shift": -7.661612357878766e-07,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 259.54141105327164,
+        "edm": 1.1186811462085515e-20,
+        "n_steps": 1,
+        "signal_yield": 3184.7223483085927,
+        "deviance_drop_from_orthonormal": 5.549054549192078e-09
+      },
+      "orthonormal_err_from_orthonormal_hessian": 308.1826755941457,
+      "as_run_err_from_orthonormal_hessian": 308.1830688277201,
+      "profile_err_at_minimum": 308.1849111694987,
+      "gradient_check_max_abs": 0.0007222007105399213,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008455705401684855,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.008455876127528033,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 6.793998181819916e-07,
+        "yield_shift_over_err": 0.00046147365316622825,
+        "newton_yield_shift_over_err": -3.536298205894908e-05,
+        "err_ratio_orthonormal_over_as_run": 0.9999987239603039,
+        "profile_err_over_as_run_err": 1.0000059701952082,
+        "validation_deviance_as_run_minus_orthonormal": 4.4215653360879514e-09
+      }
+    },
+    "l162mass-s5": {
+      "as_run": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3904.2070001932602,
+        "signal_yield_err": 376.73842837291744,
+        "deviance": 244.7035079720285,
+        "edm": 3.6455002776916903e-07,
+        "n_restarts": 2,
+        "delta_deviance_vs_background_only": 201.41229909602117,
+        "validation_tf_order": [
+          2,
+          1
+        ],
+        "validation_deviance": 206.4260451119288,
+        "validation_asymptotic_p": 0.7192752689315719,
+        "validation_edm": 1.0469067914710378e-12
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3904.1659914079632,
+        "signal_yield_err": 376.7385629124561,
+        "deviance": 244.7035073363811,
+        "edm": 4.5795375391546636e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 201.41229972215285,
+        "validation_tf_order": [
+          2,
+          1
+        ],
+        "validation_deviance": 206.42604511319522,
+        "validation_asymptotic_p": 0.71927526891036,
+        "validation_edm": 2.463348239205722e-11
+      },
+      "replay_yield_shift_over_err": 0.0018532029601193315,
+      "replay_deviance_shift": -1.0923643628757418e-05,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 244.70350724486727,
+        "edm": 2.9350353669884213e-19,
+        "n_steps": 1,
+        "signal_yield": 3904.2774340080323,
+        "deviance_drop_from_orthonormal": 9.151384006145236e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 376.7385910934266,
+      "as_run_err_from_orthonormal_hessian": 376.73845742882025,
+      "profile_err_at_minimum": 376.7441488271741,
+      "gradient_check_max_abs": 0.0005011345814192231,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008386035763665659,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.008386094393390556,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 6.356473818414088e-07,
+        "yield_shift_over_err": -0.00010885213465293491,
+        "newton_yield_shift_over_err": 0.00029580882528013606,
+        "err_ratio_orthonormal_over_as_run": 1.0000003571165788,
+        "profile_err_over_as_run_err": 1.0000151841538474,
+        "validation_deviance_as_run_minus_orthonormal": -1.2664145287999418e-09
+      }
+    },
+    "r16q1mass-s1": {
+      "as_run": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3202.568132409414,
+        "signal_yield_err": 381.5733609077836,
+        "deviance": 231.9070870012747,
+        "edm": 9.563294160327967e-07,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 105.54394740420207,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 219.83376340539064,
+        "validation_asymptotic_p": 0.4147250396468209,
+        "validation_edm": 3.984026845514075e-08
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 3202.750895837991,
+        "signal_yield_err": 381.5725597082271,
+        "deviance": 231.90708520968485,
+        "edm": 6.196617634102448e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 105.54394915813623,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 219.83376332618855,
+        "validation_asymptotic_p": 0.4147250411144878,
+        "validation_edm": 1.9573135433232922e-10
+      },
+      "replay_yield_shift_over_err": -0.00017588624665910944,
+      "replay_deviance_shift": -2.1292682390594564e-06,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 231.90708508872902,
+        "edm": 7.637482148959137e-18,
+        "n_steps": 1,
+        "signal_yield": 3202.649692291475,
+        "deviance_drop_from_orthonormal": 1.20955832016989e-07
+      },
+      "orthonormal_err_from_orthonormal_hessian": 381.57197250506897,
+      "as_run_err_from_orthonormal_hessian": 381.57277347639916,
+      "profile_err_at_minimum": 381.57220429966424,
+      "gradient_check_max_abs": 0.00045226659659644715,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.00579676081412875,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.005796879368417383,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 1.7915898524734075e-06,
+        "yield_shift_over_err": 0.0004789739763447642,
+        "newton_yield_shift_over_err": -0.0002652279355099785,
+        "err_ratio_orthonormal_over_as_run": 0.9999979002738698,
+        "profile_err_over_as_run_err": 0.9999969688446892,
+        "validation_deviance_as_run_minus_orthonormal": 7.920209554868052e-08
+      }
+    },
+    "r16q1mass-s2": {
+      "as_run": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4424.070019744013,
+        "signal_yield_err": 391.62176988724934,
+        "deviance": 205.55473183874062,
+        "edm": 3.063720292087894e-07,
+        "n_restarts": 2,
+        "delta_deviance_vs_background_only": 289.7048950494126,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 196.5207350839559,
+        "validation_asymptotic_p": 0.8250082061941526,
+        "validation_edm": 1.1358349954995822e-09
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          2
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4423.862634199251,
+        "signal_yield_err": 391.62202774117196,
+        "deviance": 205.55473123457625,
+        "edm": 4.223860394140809e-09,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 289.7048951802184,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 196.5207350813718,
+        "validation_asymptotic_p": 0.8250082062282842,
+        "validation_edm": 4.973731275555636e-11
+      },
+      "replay_yield_shift_over_err": 0.0009804328271896259,
+      "replay_deviance_shift": -2.727390722156997e-07,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 205.55473122643895,
+        "edm": 2.884192983107297e-21,
+        "n_steps": 1,
+        "signal_yield": 4423.854990883592,
+        "deviance_drop_from_orthonormal": 8.13730594018125e-09
+      },
+      "orthonormal_err_from_orthonormal_hessian": 391.62172582549965,
+      "as_run_err_from_orthonormal_hessian": 391.6214679107242,
+      "profile_err_at_minimum": 391.62589096597986,
+      "gradient_check_max_abs": 0.00041779013506459365,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.009186961662267169,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.009186954811832442,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 6.04164370088256e-07,
+        "yield_shift_over_err": -0.0005295561192494196,
+        "newton_yield_shift_over_err": -1.951708793234248e-05,
+        "err_ratio_orthonormal_over_as_run": 1.0000006584259162,
+        "profile_err_over_as_run_err": 1.0000105231094065,
+        "validation_deviance_as_run_minus_orthonormal": 2.5841018214123324e-09
+      }
+    },
+    "r16q1mass-s3": {
+      "as_run": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4778.961604128106,
+        "signal_yield_err": 457.0013257262918,
+        "deviance": 237.6452885679157,
+        "edm": 0.014840877616597425,
+        "n_restarts": 9,
+        "delta_deviance_vs_background_only": 245.01858080348518,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 242.68072888549298,
+        "validation_asymptotic_p": 0.10273924254791582,
+        "validation_edm": 1.2226005237997205e-09
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4738.008514853655,
+        "signal_yield_err": 456.73947914939083,
+        "deviance": 237.6157021285353,
+        "edm": 3.7607673301116964e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 245.0481202630416,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 242.68072888293608,
+        "validation_asymptotic_p": 0.10273924256829207,
+        "validation_edm": 1.0366525424395451e-10
+      },
+      "replay_yield_shift_over_err": -0.03506156308304074,
+      "replay_deviance_shift": -0.03578873224483914,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 237.61570205406053,
+        "edm": 2.366546050050034e-19,
+        "n_steps": 1,
+        "signal_yield": 4738.100961837048,
+        "deviance_drop_from_orthonormal": 7.447476946254028e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 456.73955278385256,
+      "as_run_err_from_orthonormal_hessian": 457.0030713410976,
+      "profile_err_at_minimum": 456.7480808411931,
+      "gradient_check_max_abs": 0.0005620154569082689,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008260371443412774,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.00826256354947489,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.0295864393804095,
+        "yield_shift_over_err": -0.08961228456139839,
+        "newton_yield_shift_over_err": 0.00020240634477583486,
+        "err_ratio_orthonormal_over_as_run": 0.9994270332225299,
+        "profile_err_over_as_run_err": 0.9994458552506468,
+        "validation_deviance_as_run_minus_orthonormal": 2.5569022454874357e-09
+      }
+    },
+    "r16q1mass-s4": {
+      "as_run": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2697.8702117006505,
+        "signal_yield_err": 460.01811108830185,
+        "deviance": 169.39567262201365,
+        "edm": 0.018384816124142563,
+        "n_restarts": 25,
+        "delta_deviance_vs_background_only": 99.8551035695412,
+        "validation_tf_order": [
+          3,
+          2
+        ],
+        "validation_deviance": 226.3710878096134,
+        "validation_asymptotic_p": 0.25242026121933214,
+        "validation_edm": 0.00921199432777775
+      },
+      "orthonormal": {
+        "tf_order": [
+          2,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 2740.481337541698,
+        "signal_yield_err": 460.0961186091301,
+        "deviance": 169.35888129281432,
+        "edm": 1.1474506691947193e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 99.89066720056587,
+        "validation_tf_order": [
+          3,
+          2
+        ],
+        "validation_deviance": 226.35265228560257,
+        "validation_asymptotic_p": 0.2526942450046823,
+        "validation_edm": 1.236339888870774e-10
+      },
+      "replay_yield_shift_over_err": 0.041123860358368854,
+      "replay_deviance_shift": -0.03820990772138089,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 169.3588812700956,
+        "edm": 2.2244449631252892e-20,
+        "n_steps": 1,
+        "signal_yield": 2740.5243384435707,
+        "deviance_drop_from_orthonormal": 2.271872290293686e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 460.0835243835651,
+      "as_run_err_from_orthonormal_hessian": 460.0102021212717,
+      "profile_err_at_minimum": 460.09264134979605,
+      "gradient_check_max_abs": 0.0006164867044285774,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.008522053997944106,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.00857202641657422,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.03679132919933181,
+        "yield_shift_over_err": 0.09263082784806129,
+        "newton_yield_shift_over_err": 9.346325089549933e-05,
+        "err_ratio_orthonormal_over_as_run": 1.000169574890527,
+        "profile_err_over_as_run_err": 1.0001620159287161,
+        "validation_deviance_as_run_minus_orthonormal": 0.018435524010840254
+      }
+    },
+    "r16q1mass-s5": {
+      "as_run": {
+        "tf_order": [
+          3,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4706.382749136265,
+        "signal_yield_err": 694.1488996150773,
+        "deviance": 223.18584783898353,
+        "edm": 0.20003430895450575,
+        "n_restarts": 26,
+        "delta_deviance_vs_background_only": 218.52668248360055,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 230.58624410586623,
+        "validation_asymptotic_p": 0.2362294161417401,
+        "validation_edm": 4.2695188625744035e-10
+      },
+      "orthonormal": {
+        "tf_order": [
+          3,
+          3
+        ],
+        "mean": 180.05071647100164,
+        "width": 17.32150746502,
+        "signal_yield": 4994.545877511776,
+        "signal_yield_err": 690.2963700552444,
+        "deviance": 222.79145354965868,
+        "edm": 1.222684770375714e-08,
+        "n_restarts": 1,
+        "delta_deviance_vs_background_only": 217.98337662943317,
+        "validation_tf_order": [
+          2,
+          2
+        ],
+        "validation_deviance": 230.58624410546497,
+        "validation_asymptotic_p": 0.23622941614743534,
+        "validation_edm": 5.153105227778391e-12
+      },
+      "replay_yield_shift_over_err": 0.005385696285540698,
+      "replay_deviance_shift": -0.025488666837787832,
+      "reproduces_stored": true,
+      "newton": {
+        "deviance": 222.7914535229122,
+        "edm": 5.665191157554769e-19,
+        "n_steps": 1,
+        "signal_yield": 4994.5803980322735,
+        "deviance_drop_from_orthonormal": 2.6746477033157134e-08
+      },
+      "orthonormal_err_from_orthonormal_hessian": 689.8521241816842,
+      "as_run_err_from_orthonormal_hessian": 693.7377037215439,
+      "profile_err_at_minimum": 689.8858129912013,
+      "gradient_check_max_abs": 0.0005005867936446055,
+      "clipping_orthonormal": {
+        "min_transfer_factor": 0.00766751273058458,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "clipping_as_run": {
+        "min_transfer_factor": 0.007679969282881856,
+        "n_tf_clipped": 0,
+        "n_mu_clipped": 0
+      },
+      "summary": {
+        "same_order": true,
+        "same_validation_order": true,
+        "deviance_as_run_minus_orthonormal": 0.39439428932485043,
+        "yield_shift_over_err": 0.41537763744087197,
+        "newton_yield_shift_over_err": 5.004046416128332e-05,
+        "err_ratio_orthonormal_over_as_run": 0.9944499954376227,
+        "profile_err_over_as_run_err": 0.9938585415517621,
+        "validation_deviance_as_run_minus_orthonormal": 4.012576937384438e-10
+      }
+    }
+  },
+  "summary": {
+    "n_fits": 32,
+    "n_as_run_reproduced": 32,
+    "max_abs_replay_yield_shift_over_err": 0.05776037684926035,
+    "n_same_order": 31,
+    "n_same_validation_order": 32,
+    "max_abs_yield_shift_over_err": 0.9730317125425391,
+    "max_deviance_as_run_minus_orthonormal": 2.3685748211012196,
+    "min_deviance_as_run_minus_orthonormal": 2.7794897050625877e-08,
+    "max_newton_edm": 0.004033749023141232,
+    "max_abs_newton_yield_shift_over_err": 1.0557073467897724,
+    "err_ratio_range": [
+      0.4324538105437485,
+      1.1693679130225834
+    ],
+    "profile_over_as_run_err_range": [
+      0.9324042920159237,
+      1.0053408678671274
+    ],
+    "max_n_tf_clipped": 7
+  }
+}
