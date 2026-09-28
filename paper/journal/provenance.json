@@ -1,4 +1,106 @@
 {
+  "AccEarlyEpochOneShareHiOneseven": {
+    "json_path": "secondary.S8.cells[R16_Q1,1].ci95[1] / twin_mean",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "+2.1"
+  },
+  "AccEarlyEpochOneShareHiOnesixtwo": {
+    "json_path": "secondary.S8.cells[L162,1].ci95[1] / twin_mean",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "+2.5"
+  },
+  "AccEarlyEpochOneShareLoOneseven": {
+    "json_path": "secondary.S8.cells[R16_Q1,1].ci95[0] / twin_mean",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "\\ensuremath{-}0.4"
+  },
+  "AccEarlyEpochOneShareLoOnesixtwo": {
+    "json_path": "secondary.S8.cells[L162,1].ci95[0] / twin_mean",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "\\ensuremath{-}1.0"
+  },
+  "AccEarlyEpochOneShareOneseven": {
+    "json_path": "secondary.S8.cells[R16_Q1,1].share_of_twin",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "+0.8"
+  },
+  "AccEarlyEpochOneShareOnesixtwo": {
+    "json_path": "secondary.S8.cells[L162,1].share_of_twin",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "+0.8"
+  },
+  "AccEarlyEpochs": {
+    "json_path": "secondary.S8.cells[*].epoch",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "1, 5, 10, 20, 40 and 80"
+  },
+  "AccEarlyLateEpochs": {
+    "json_path": "secondary.S8.late_epoch_range",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "20, 40 and 80"
+  },
+  "AccEarlyLoggedCorr": {
+    "json_path": "secondary.S8.logged_agreement.within_run_correlation",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "0.86"
+  },
+  "AccEarlyMaxLateRange": {
+    "json_path": "secondary.S8.max_late_epoch_range.range",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "0.27"
+  },
+  "AccEarlyMinP": {
+    "json_path": "secondary.S8.cells[*].p",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "\\ensuremath{0.0168}"
+  },
+  "AccEarlyMinPClasses": {
+    "json_path": "secondary.S8.cells[*].n_classes",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "17"
+  },
+  "AccEarlyMinPDiff": {
+    "json_path": "secondary.S8.cells[*].mean_diff",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "\\ensuremath{-}0.149"
+  },
+  "AccEarlyMinPEpoch": {
+    "json_path": "secondary.S8.cells[*].epoch",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "10"
+  },
+  "AccEarlyNCells": {
+    "json_path": "secondary.S8.cells",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "12"
+  },
+  "AccEarlyNHolm": {
+    "json_path": "secondary.S8.cells[*].holm_reject",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "0"
+  },
+  "AccEarlyNJets": {
+    "json_path": "secondary.S8.jets.n_jets",
+    "sha256": "d287a002203425897d88cbce8a60248bd75ec5ce2720c5efc4c09653c272e153",
+    "source_file": "experiments/FIGS/data/s8_epoch_accuracy/analysis/s8_mass_early_accuracy.json",
+    "value": "100{,}000"
+  },
   "AccLegOneOnesevenSfourEFive": {
     "json_path": "summary.r16q1-s4.N100000.accuracy_mean",
     "sha256": "3f564e960b2c86a794408ea8707e1141f689f3567c657918b43734fdd7d0d0d7",

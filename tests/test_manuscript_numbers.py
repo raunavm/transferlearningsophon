@@ -41,7 +41,8 @@ GENERATED = {"results_generated.tex",
              "tables/anomaly.tex",
              "tables/mass.tex",
              "tables/realdata.tex",
-             "tables/finetune_recipe.tex"}
+             "tables/finetune_recipe.tex",
+             "tables/s8.tex"}
 
 # Numbers allowed in prose, each with the reason it is not a result.
 # A number earns a line here only if it cannot change when a job finishes.

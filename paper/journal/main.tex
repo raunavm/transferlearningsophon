@@ -702,7 +702,28 @@ costs classification, more at \Kcoarse{} classes than at \Kres. One possible
 mechanism, which we have not tested, is that the mass term's fixed weight takes
 a larger share of the loss when there are fewer classes to separate.
 
+ATLAS found that the regression loss dominated the early training of its
+combined model~\cite{atlasgnx}. We test the early effect directly (S8,
+Table~\ref{tab:s8}): the top-1 accuracy of the checkpoints saved at epochs \AccEarlyEpochs, scored on the same
+\AccEarlyNJets{} test jets for every model,
+with the mass output minus without it, per seed pair. None of the
+\AccEarlyNCells{} cells survives correction; the smallest $p$, \AccEarlyMinP, is
+a difference of \AccEarlyMinPDiff{} at epoch \AccEarlyMinPEpoch{} with
+\AccEarlyMinPClasses{} classes. After the first epoch the mass output changes
+accuracy by \AccEarlyEpochOneShareOnesixtwo\% of the twin's (95\% interval
+\AccEarlyEpochOneShareLoOnesixtwo\% to \AccEarlyEpochOneShareHiOnesixtwo\%) at
+\Kres{} classes and by \AccEarlyEpochOneShareOneseven\%
+(\AccEarlyEpochOneShareLoOneseven\% to \AccEarlyEpochOneShareHiOneseven\%) at
+\Kcoarse. ATLAS quotes an efficiency, not an accuracy, so the two do not compare
+directly, but no loss of several per cent appears at the start of our training.
+Later epochs cannot answer the question: one run's accuracy moves by up to
+\AccEarlyMaxLateRange{} between its checkpoints at epochs \AccEarlyLateEpochs. The
+movements belong to the checkpoints, not to the scoring; the accuracy each run
+logged on its own validation jets during training moves with them (correlation
+\AccEarlyLoggedCorr{} within runs).
+
 \input{tables/mass}
+\input{tables/s8}
 
 \begin{figure}
   \centering
@@ -938,7 +959,7 @@ S5 & Herwig: ordering of C2, all degraded & \pending{pending} \\
 S6 & nonlinear probe orders as the linear probe & confirmed \\
 S7 & mass regression: mass output helps, more at \Kcoarse; finer labels at least as good
    & \MassResClauseOneVerdict, \MassResClauseTwoVerdict{} (reversed), \MassResClauseThreeVerdict{} (inverted) \\
-S8 & mass output and early classification accuracy (two-sided) & \pending{not yet read out} \\
+S8 & mass output and early classification accuracy (two-sided) & no difference detected (\AccEarlyNHolm{} of \AccEarlyNCells{} cells); no early loss at epoch 1 \\
 S9 & label recovery: wins at own level; advantage decays at the coarser level & \RecoveryClauseOneVerdict, \RecoveryClauseTwoVerdict \\
 S10 & $|V_{cb}|$ discriminant probe, \Kres{} above \Kcoarse & \pending{not yet read out} \\
 self-supervised & validity bar & valid, with the qualifications in Sec.~\ref{sec:controls} \\

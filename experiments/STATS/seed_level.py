@@ -2530,6 +2530,211 @@ def run_ft_legs(a, argv=None) -> int:
     return 0
 
 
+# S8 (PRESPEC §3, clarification 2026-09-27): the mass output and early
+# classification accuracy. Checkpoint accuracy on common test jets
+# (experiments/EVAL/epoch_accuracy.py), mass-output model minus its twin per seed
+# index, two-sided paired t in each of the 12 cells, Holm within the table.
+S8_EPOCHS = (0, 4, 9, 19, 39, 79)          # weaver's indices of epochs 1, 5, 10, 20, 40, 80
+S8_EARLY = (0, 4, 9)
+S8_SETS = {"L162": ("l162", "l162mass", 162), "R16_Q1": ("r16q1", "r16q1mass", 17)}
+S8_RERUN = {("l162", 1): "l162-s1b"}       # seed index 1 at 162 classes is the rerun
+
+
+def _s8_run(stem, k):
+    return "mtx-" + S8_RERUN.get((stem, k), f"{stem}-s{k}")
+
+
+def load_s8(paths, val_log) -> dict:
+    """epoch_accuracy.py outputs (one per seed index) -> accuracy[run][epoch]. Every
+    file must score the same jets with the same truth, and hold the four runs of
+    its seed index with the head widths the runs were trained with."""
+    files = sorted(pathlib.Path(x) for x in paths)
+    acc, common, prov = {}, None, []
+    for f in files:
+        doc = json.loads(f.read_text())
+        key = {k: doc[k] for k in ("n_jets", "stream_jets", "stride", "native_label_sha256",
+                                   "data_config_sha256")}
+        if common is None:
+            common = key
+        elif key != common:
+            raise SystemExit(f"FATAL: {f} scores other jets or truth than {files[0]}: {key} vs {common}")
+        for run, r in doc["runs"].items():
+            if run in acc:
+                raise SystemExit(f"FATAL: {run} appears in more than one S8 file")
+            acc[run] = {int(e): v["accuracy"] for e, v in r["epochs"].items()}
+            acc[run]["_head"] = (r["num_classes"], r["num_reg"])
+        prov.append({"path": str(f), "sha256": _sha(f)})
+    for lset, (twin, mass, k) in S8_SETS.items():
+        for s in EXPECTED_SEEDS:
+            for stem, reg in ((twin, 0), (mass, 1)):
+                run = _s8_run(stem, s)
+                if run not in acc:
+                    raise SystemExit(f"FATAL: no S8 accuracy for {run}")
+                if acc[run]["_head"] != (k, reg) or set(acc[run]) - {"_head"} != set(S8_EPOCHS):
+                    raise SystemExit(f"FATAL: {run} has head {acc[run]['_head']} and epochs "
+                                     f"{sorted(set(acc[run]) - {'_head'})}; S8 needs ({k}, {reg}) at {S8_EPOCHS}")
+    log = json.loads(pathlib.Path(val_log).read_text())
+    return {"accuracy": acc, "common": common, "files": prov, "validation_log": log,
+            "validation_log_file": {"path": str(val_log), "sha256": _sha(val_log)}}
+
+
+def s8_analysis(data: dict, seeds) -> dict:
+    acc, log = data["accuracy"], data["validation_log"]
+    cells, dropped = [], []
+    for lset, (twin, mass, k) in S8_SETS.items():
+        use = []
+        for s in seeds:
+            g = {r: log[r]["gpu"] for r in (_s8_run(twin, s), _s8_run(mass, s))}
+            if len(set(map(tuple, g.values()))) != 1 or len(next(iter(g.values()))) != 1:
+                dropped.append({"label_set": lset, "seed": s, "gpu": g})
+            else:
+                use.append(s)
+        for e in S8_EPOCHS:
+            base = [acc[_s8_run(twin, s)][e] for s in use]
+            d = [acc[_s8_run(mass, s)][e] - acc[_s8_run(twin, s)][e] for s in use]
+            t = paired_t(d, ALPHA) if len(d) >= 2 else None
+            logged = []
+            for s in seeds:
+                a, b = log[_s8_run(mass, s)], log[_s8_run(twin, s)]
+                if a["val_state"].get(str(e)) == b["val_state"].get(str(e)) is not None:
+                    logged.append({"seed": s, "with": a["metric"][str(e)], "without": b["metric"][str(e)]})
+            cells.append({"label_set": lset, "n_classes": k, "epoch": e + 1, "weaver_epoch": e,
+                          "early": e in S8_EARLY, "seeds": use, "diffs": d,
+                          "twin_accuracy": base, "twin_mean": float(np.mean(base)) if base else None,
+                          **({"mean_diff": t["mean"], "t": t["t"], "p": t["p"], "ci95": t["ci"],
+                              "share_of_twin": t["mean"] / float(np.mean(base))} if t else {"p": None}),
+                          "logged_validation_same_jets": logged})
+    est = [c for c in cells if c["p"] is not None]
+    for c, rej in zip(est, holm([c["p"] for c in est], ALPHA)):
+        c["holm_reject"] = bool(rej)
+    # Descriptive: how far one run's accuracy moves between its checkpoints at
+    # epochs 20, 40 and 80, the noise a single-checkpoint comparison carries.
+    late = {r: max(acc[r][e] for e in S8_EPOCHS[3:]) - min(acc[r][e] for e in S8_EPOCHS[3:])
+            for lset, (twin, mass, k) in S8_SETS.items() for s in seeds
+            for r in (_s8_run(twin, s), _s8_run(mass, s))}
+    worst = max(late, key=late.get)
+    # Is that movement the model's or the scoring's? Weaver logged each run's accuracy
+    # on its own validation jets at every epoch (class-reweighted, a different mix):
+    # the correlation of the two over the fixed epochs, each run's mean removed.
+    dx, dy = [], []
+    for run in late:
+        pts = [(acc[run][e], log[run]["metric"][str(e)]) for e in S8_EPOCHS
+               if log[run]["metric"].get(str(e)) is not None]
+        a = np.array(pts) - np.mean(pts, axis=0)
+        dx += list(a[:, 0]); dy += list(a[:, 1])
+    return {"name": "S8", "prediction": "mass output and early classification accuracy",
+            "late_epoch_range": late, "max_late_epoch_range": {"run": worst, "range": late[worst]},
+            "logged_agreement": {"n_points": len(dx), "within_run_correlation":
+                                 float(np.corrcoef(dx, dy)[0, 1])},
+            "endpoint": "top-1 accuracy over the K class outputs on common test jets; "
+                        "difference = with - without the mass output",
+            "test": "two-sided paired t, 4 d.o.f., per cell", "holm_table": f"{len(est)} cells",
+            "jets": data["common"], "dropped_pairs": dropped, "cells": cells}
+
+
+def format_s8(r: dict) -> list[str]:
+    out = [f"\n== S8: {r['prediction']}", f"  {r['endpoint']}; {r['test']}; Holm over {r['holm_table']}",
+           f"  {r['jets']['n_jets']:,} jets (every {r['jets']['stride']}th of {r['jets']['stream_jets']:,});"
+           f" dropped pairs: {r['dropped_pairs'] or 'none'}"]
+    for c in r["cells"]:
+        if c["p"] is None:
+            out.append(f"  {c['label_set']:6s} epoch {c['epoch']:2d}: not estimable")
+            continue
+        out.append(f"  {c['label_set']:6s} epoch {c['epoch']:2d}: twin {c['twin_mean']:.4f}  "
+                   f"diff {c['mean_diff']:+.4f} [{c['ci95'][0]:+.4f}, {c['ci95'][1]:+.4f}] "
+                   f"({100 * c['share_of_twin']:+.1f}%)  p={_p(c['p'])}  Holm-reject {c['holm_reject']}"
+                   f"  logged pairs on the same jets: {len(c['logged_validation_same_jets'])}")
+    return out
+
+
+def run_s8(a, argv=None) -> int:
+    out_file = _refuse_overwrite(pathlib.Path(a.out) / "s8_mass_early_accuracy.json")
+    seeds = [s for s in EXPECTED_SEEDS if s not in a.drop_pairs]
+    d = load_s8(a.s8, a.s8_validation_log)
+    r = s8_analysis(d, seeds)
+    r["provenance"] = {"script_sha256": _sha(__file__), "argv": list(argv or sys.argv[1:]),
+                       "prespec_sha256": _sha(PRESPEC) if PRESPEC.exists() else None,
+                       "files": d["files"], "validation_log": d["validation_log_file"]}
+    print("\n".join(format_s8(r)))
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(json.dumps({"secondary": {"S8": r}}, indent=2))
+    print(f"\nwrote {out_file}")
+    return 0
+
+
+# S10 (PRESPEC §3, clarification 2026-09-27): the |V_cb| discriminant probe,
+# 162 classes above 17. bc_vs_rest in the published window, log(1 - AUC), paired
+# difference 17 - 162 per seed index, two-sided paired t; holds if the linear
+# probe's difference is positive with p < 0.05.
+S10_TASK = "bc_vs_rest"
+S10_ARMS = {162: ("l162", 162), 17: ("r16q1", 17)}
+
+
+def s10_analysis(doc: dict, gpu: dict, seeds) -> dict:
+    task = doc["tasks"][S10_TASK]
+    arm = lambda stem, s: S8_RERUN.get((stem, s), f"{stem}-s{s}")
+    use, dropped = [], []
+    for s in seeds:
+        g = {a: gpu["mtx-" + a]["gpu"] for a in (arm("l162", s), arm("r16q1", s))}
+        if len(set(map(tuple, g.values()))) == 1 and len(next(iter(g.values()))) == 1:
+            use.append(s)
+        else:
+            dropped.append({"seed": s, "gpu": g})
+    out = {"name": "S10", "prediction": "|V_cb| discriminant probe, 162 above 17",
+           "task": S10_TASK, "n_signal_test": task.get("n_signal_test"),
+           "n_background_test": task.get("n_background_test"), "seeds": use, "dropped_pairs": dropped,
+           "probes": {}}
+    for probe in ("linear", "mlp"):
+        cell = {k: [task["arms"][arm(stem, s)][probe] for s in use] for k, (stem, _) in S10_ARMS.items()}
+        d = [b["log1m_auc"] - a["log1m_auc"] for a, b in zip(cell[162], cell[17])]
+        t_ = paired_t(d, ALPHA)
+        rej = {}
+        for eps in ("0.60", "0.40"):
+            rej[eps] = {str(k): [{"rejection": c["rejection_at"][eps]["rejection"],
+                                  "is_bound": c["rejection_at"][eps]["rejection_is_bound"]} for c in v]
+                        for k, v in cell.items()}
+        out["probes"][probe] = {
+            "log1m_auc": {str(k): [c["log1m_auc"] for c in v] for k, v in cell.items()},
+            "censored": any(c["log1m_auc_censored"] for v in cell.values() for c in v),
+            "diff_17_minus_162": d, "mean_diff": t_["mean"], "t": t_["t"], "p": t_["p"], "ci95": t_["ci"],
+            "rejection_at": rej}
+    L = out["probes"]["linear"]
+    holds = L["mean_diff"] > 0 and L["p"] < ALPHA
+    out["verdict"] = "confirmed" if holds else "not confirmed"
+    out["rule"] = "linear-probe difference (17 - 162) in log(1 - AUC) positive with two-sided p < 0.05"
+    return out
+
+
+def format_s10(r: dict) -> list[str]:
+    out = [f"\n== S10: {r['prediction']} ({r['task']}; {r['n_signal_test']} signal, "
+           f"{r['n_background_test']} background test jets); pairs {r['seeds']}, dropped {r['dropped_pairs'] or 'none'}"]
+    for probe, P in r["probes"].items():
+        m = {k: float(np.mean(v)) for k, v in P["log1m_auc"].items()}
+        out.append(f"  {probe:6s} log(1-AUC) 162 {m['162']:+.3f}  17 {m['17']:+.3f}  diff {P['mean_diff']:+.3f} "
+                   f"[{P['ci95'][0]:+.3f}, {P['ci95'][1]:+.3f}]  p={_p(P['p'])}"
+                   + ("  CENSORED" if P["censored"] else ""))
+    out.append(f"  verdict: {r['verdict'].upper()} ({r['rule']})")
+    return out
+
+
+def run_s10(a, argv=None) -> int:
+    out_file = _refuse_overwrite(pathlib.Path(a.out) / "s10_vcb.json")
+    seeds = [s for s in EXPECTED_SEEDS if s not in a.drop_pairs]
+    doc = json.loads(pathlib.Path(a.s10).read_text())
+    gpu = json.loads(pathlib.Path(a.s10_gpu_log).read_text())
+    r = s10_analysis(doc, gpu, seeds)
+    r["provenance"] = {"script_sha256": _sha(__file__), "argv": list(argv or sys.argv[1:]),
+                       "prespec_sha256": _sha(PRESPEC) if PRESPEC.exists() else None,
+                       "file": {"path": str(a.s10), "sha256": _sha(a.s10)},
+                       "gpu_log": {"path": str(a.s10_gpu_log), "sha256": _sha(a.s10_gpu_log)},
+                       "row_alignment_sha256": doc.get("row_alignment_sha256")}
+    print("\n".join(format_s10(r)))
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(json.dumps({"secondary": {"S10": r}}, indent=2))
+    print(f"\nwrote {out_file}")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("inputs", nargs="*",
@@ -2572,6 +2777,17 @@ def main(argv=None) -> int:
                          "s3_s4_finetune.json in --out")
     ap.add_argument("--finetune-jetclass", default=None, metavar="LEG2_JSON",
                     help="S3: leg2_metrics.json made with --macro-auc (JetClass fine-tuning)")
+    ap.add_argument("--s8", nargs="+", default=None, metavar="PATH",
+                    help="S8: epoch_accuracy.py outputs, one per seed index. Written to "
+                         "s8_mass_early_accuracy.json in --out; needs --s8-validation-log")
+    ap.add_argument("--s10", default=None, metavar="PROBE_JSON",
+                    help="S10: probe.py output of the |V_cb|-window probe (bc_vs_rest), 162- and "
+                         "17-class models, seed indices 1-5. Written to s10_vcb.json; needs --s10-gpu-log")
+    ap.add_argument("--s10-gpu-log", default=None, metavar="VAL_BY_EPOCH_JSON",
+                    help="val_by_epoch.py output, for the GPU each pretraining run used")
+    ap.add_argument("--s8-validation-log", default=None, metavar="VAL_BY_EPOCH_JSON",
+                    help="experiments/MTX/val_by_epoch.py output: GPU per run and the logged "
+                         "validation accuracy, shown where a pair validated on the same jets")
     a = ap.parse_args(argv)
     if (a.bench or a.bench_herwig) and not a.inputs:
         ap.error("--bench reports C2 and C3 inside the ladder's confirmatory family, so it "
@@ -2581,11 +2797,16 @@ def main(argv=None) -> int:
     if a.mass and not a.inputs:
         ap.error("--mass reports C5 inside the ladder's confirmatory family, so it needs the "
                  "ladder inputs too; C5 and C1 are corrected together or not at all")
+    if a.s10 and not a.s10_gpu_log:
+        ap.error("--s10 needs --s10-gpu-log: a pair trained on different GPU models is dropped")
+    if a.s8 and not a.s8_validation_log:
+        ap.error("--s8 needs --s8-validation-log: a pair trained on different GPU models is dropped")
     if a.drop_pairs and not a.drop_reason:
         raise SystemExit("FATAL: --drop-pairs needs --drop-reason; a dropped pair is reported "
                          "with why it was dropped (PRESPEC 2.2)")
     if not (a.inputs or a.label_recovery or a.mass_resolution or a.real_data
-            or a.finetune_jetclass2 or a.finetune_jetclass or a.random_control or a.anomaly):
+            or a.finetune_jetclass2 or a.finetune_jetclass or a.random_control or a.anomaly
+            or a.s8 or a.s10):
         ap.error("give the probe_results.json inputs, --label-recovery, --mass-resolution, "
                  "--real-data, or a combination")
     rc = run_ladder(a, argv) if a.inputs else 0
@@ -2594,6 +2815,8 @@ def main(argv=None) -> int:
     rc = rc or (run_aoj(a, argv) if a.real_data else 0)
     rc = rc or (run_ft_legs(a, argv) if (a.finetune_jetclass2 or a.finetune_jetclass) else 0)
     rc = rc or (run_c4(a, argv) if a.random_control else 0)
+    rc = rc or (run_s8(a, argv) if a.s8 else 0)
+    rc = rc or (run_s10(a, argv) if a.s10 else 0)
     return rc or (run_anomaly(a, argv) if a.anomaly else 0)
 
 

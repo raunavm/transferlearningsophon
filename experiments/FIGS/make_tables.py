@@ -291,6 +291,7 @@ def input_paths(root: pathlib.Path) -> dict:
             "anomaly": data / "anomaly_merged_v4" / "analysis_v2" / "anomaly_s5.json",
             "mass_resolution": data / "mass_resolution" / "analysis_holm" / "s7_mass_resolution.json",
             "real_data": data / "aoj_full_v1" / "analysis_labelled" / "aoj_top.json",
+            "s8": data / "s8_epoch_accuracy" / "analysis" / "s8_mass_early_accuracy.json",
             "design_spec": root / "experiments" / "MTX" / "k8s" / "job-mtx-l188-s1-raunav.yaml",
             "design_arch": root / "experiments" / "E1" / "ParT_sophon_arch_10c.py",
             "design_arm": root / "configs" / "arms" / "L188.yaml",
@@ -1198,6 +1199,45 @@ def emit_mass_resolution(em: Emitter, M: dict, src: pathlib.Path) -> None:
                      f"mean over {len(rows)} seeds")
 
 
+def emit_s8(em: Emitter, S: dict, src: pathlib.Path) -> None:
+    """S8, the mass output and early classification accuracy (Holm within its 12 cells)."""
+    R, base = S["secondary"]["S8"], "secondary.S8"
+    cells = [c for c in R["cells"] if c["p"] is not None]
+    em.macro("AccEarlyNJets", fmt_int(R["jets"]["n_jets"]), src, f"{base}.jets.n_jets",
+             "test jets scored at every checkpoint, the same for all 20 models")
+    em.macro("AccEarlyNCells", str(len(cells)), src, f"{base}.cells", "label sets x fixed epochs tested")
+    words = lambda xs: ", ".join(map(str, xs[:-1])) + " and " + str(xs[-1])
+    epochs = sorted({c["epoch"] for c in cells})
+    em.macro("AccEarlyEpochs", words(epochs), src, f"{base}.cells[*].epoch", "the fixed epochs, PRESPEC S8")
+    em.macro("AccEarlyLateEpochs", words(epochs[3:]), src, f"{base}.late_epoch_range",
+             "the checkpoints the late spread is taken over")
+    em.macro("AccEarlyNHolm", str(sum(c["holm_reject"] for c in cells)), src,
+             f"{base}.cells[*].holm_reject", "cells rejecting after Holm within the table")
+    best = min(cells, key=lambda c: c["p"])
+    em.macro("AccEarlyMinP", fmt_p(best["p"]), src, f"{base}.cells[*].p", "smallest p before correction")
+    em.macro("AccEarlyMinPEpoch", str(best["epoch"]), src, f"{base}.cells[*].epoch", "epoch of the smallest p")
+    em.macro("AccEarlyMinPDiff", fmt(best["mean_diff"], 3, sign=True), src, f"{base}.cells[*].mean_diff",
+             "accuracy difference in that cell")
+    em.macro("AccEarlyMinPClasses", str(best["n_classes"]), src, f"{base}.cells[*].n_classes",
+             "label set of the smallest p")
+    for c in cells:
+        if c["epoch"] != 1:
+            continue
+        k, tw = texname(c["n_classes"]), c["twin_mean"]
+        em.macro("AccEarlyEpochOneShare" + k, fmt(100 * c["share_of_twin"], 1, sign=True), src,
+                 f"{base}.cells[{c['label_set']},1].share_of_twin", "percent of the twin's accuracy")
+        em.macro("AccEarlyEpochOneShareLo" + k, fmt(100 * c["ci95"][0] / tw, 1, sign=True), src,
+                 f"{base}.cells[{c['label_set']},1].ci95[0] / twin_mean", "95% interval, percent")
+        em.macro("AccEarlyEpochOneShareHi" + k, fmt(100 * c["ci95"][1] / tw, 1, sign=True), src,
+                 f"{base}.cells[{c['label_set']},1].ci95[1] / twin_mean", "95% interval, percent")
+    em.macro("AccEarlyMaxLateRange", fmt(R["max_late_epoch_range"]["range"], 2), src,
+             f"{base}.max_late_epoch_range.range",
+             "largest spread of one run's accuracy over its epoch-20, -40 and -80 checkpoints")
+    em.macro("AccEarlyLoggedCorr", fmt(R["logged_agreement"]["within_run_correlation"], 2), src,
+             f"{base}.logged_agreement.within_run_correlation",
+             "scored vs weaver-logged validation accuracy over the fixed epochs, run means removed")
+
+
 def emit_real_data(em: Emitter, J: dict, src: pathlib.Path) -> None:
     """Section 6, the top peak in CMS open data (AspenOpenJets), 1% data efficiency."""
     r = J["secondary"]["real_data_top"]
@@ -1701,6 +1741,26 @@ def table_mass(M: dict) -> str:
     return _table(head + body, caption, "tab:mass", "l " + "r" * len(cells), [], wide=True)
 
 
+def table_s8(S: dict) -> str:
+    """S8: accuracy with minus without the mass output, per label set and epoch."""
+    R = S["secondary"]["S8"]
+    head = ["classes & epoch & accuracy without & difference & 95\\% interval & $p$ & Holm \\\\", "\\midrule"]
+    body = []
+    for c in R["cells"]:
+        if c["p"] is None:
+            continue
+        body.append(f"{c['n_classes']} & {c['epoch']} & {fmt(c['twin_mean'], 3)} & "
+                    f"{fmt(c['mean_diff'], 3, sign=True)} & [{fmt(c['ci95'][0], 3, sign=True)}, "
+                    f"{fmt(c['ci95'][1], 3, sign=True)}] & {fmt_p(c['p'])} & "
+                    f"{'reject' if c['holm_reject'] else '---'} \\\\")
+    caption = ("Mass output and classification accuracy during pretraining (S8). Top-1 accuracy over "
+               "the class outputs of the checkpoint saved at each epoch, on the same "
+               f"{fmt_int(R['jets']['n_jets'])} test jets for every model; difference = with minus "
+               "without the mass output, mean over five seed pairs; two-sided paired $t$, Holm over "
+               "the table.")
+    return _table(head + body, caption, "tab:s8", "r r r r c r l", [])
+
+
 def table_realdata(J: dict) -> str:
     """Section 6: fitted top yield at 1% data efficiency in CMS open data."""
     groups = ["188", "162", "43", "17", "162+mass", "17+mass"]
@@ -1828,7 +1888,8 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
              ("finetune", emit_finetune, table_finetune, "finetune"),
              ("anomaly", emit_anomaly, table_anomaly, "anomaly"),
              ("mass_resolution", emit_mass_resolution, table_mass, "mass"),
-             ("real_data", emit_real_data, table_realdata, "realdata"))
+             ("real_data", emit_real_data, table_realdata, "realdata"),
+             ("s8", emit_s8, table_s8, "s8"))
     for key, emit, table, name in later:
         if key not in have:
             missing.append(f"{key} -- {paths[key]}")

@@ -1,0 +1,138 @@
+{
+ "n_jets": 100000,
+ "stream_jets": 2000000,
+ "stride": 20,
+ "aligned_with": "/data/results/eval/mtx-r16q1-s3/features_e79",
+ "native_label_sha256": "3c699011a8cc1d6493dc1cecccdbdb971e6d5a630ee8ef97a742a8f4fcb48096",
+ "data_config_sha256": "df45b6b9dd0f3e0726ea18132fef7d8525dc9d7e750ecd82ee5fa60cb441e625",
+ "runs": {
+  "mtx-l162-s3": {
+   "run_dir": "/data/results/mtx/mtx-l162-s3",
+   "rung": "L162",
+   "num_classes": 162,
+   "num_reg": 0,
+   "epochs": {
+    "0": {
+     "accuracy": 0.34197,
+     "checkpoint_sha256": "296f9aec013d53022436e1213de068f9ba185dbb0c36274edf624228a050c975"
+    },
+    "4": {
+     "accuracy": 0.37705,
+     "checkpoint_sha256": "3cf1240698b11d004ccecdc0290f6e13ab7d79d29636c577b87ca9d98c15e7b0"
+    },
+    "9": {
+     "accuracy": 0.40863,
+     "checkpoint_sha256": "f8c4a0f0e35ccc0cfd256056eccfd3033958cff01368075dc972b03a3b2eebef"
+    },
+    "19": {
+     "accuracy": 0.38468,
+     "checkpoint_sha256": "fb1870cbd1cd265cf4cef223a71362ddd9fe4df81e0b3a1c28e661a19c05756a"
+    },
+    "39": {
+     "accuracy": 0.48507,
+     "checkpoint_sha256": "3949e5e8220b48680639749fb156fabdf0a0fce9332cfc80d78fcab2af9fc4b3"
+    },
+    "79": {
+     "accuracy": 0.52219,
+     "checkpoint_sha256": "39ea383cd30a76e8d4665fc3d8565585b2cf1c11003f0114c6867d49c14f8523"
+    }
+   }
+  },
+  "mtx-l162mass-s3": {
+   "run_dir": "/data/results/mtx/mtx-l162mass-s3",
+   "rung": "L162",
+   "num_classes": 162,
+   "num_reg": 1,
+   "epochs": {
+    "0": {
+     "accuracy": 0.33782,
+     "checkpoint_sha256": "9d517d75af43f88f3aa286f8806f4a783d22ec3bb884d60529d9cba09665b497"
+    },
+    "4": {
+     "accuracy": 0.42093,
+     "checkpoint_sha256": "800635f782956594c6ca7b523b7479de5e2b42965fe6f4e8aad2c7bd1c809fdd"
+    },
+    "9": {
+     "accuracy": 0.50597,
+     "checkpoint_sha256": "38900f4929008cc3ef1a7b74af62c1a14a69ebc69d9cc18aaed26db7c6edd5b0"
+    },
+    "19": {
+     "accuracy": 0.45258,
+     "checkpoint_sha256": "1d9a11bc988b9f32dda40f6a057336447c25baebfa211ae0301ba901307f2841"
+    },
+    "39": {
+     "accuracy": 0.48068,
+     "checkpoint_sha256": "3376678eb7b90aa2ebae1190dc9ccfb687999c69b4e7d5cb664a0103228d53da"
+    },
+    "79": {
+     "accuracy": 0.54302,
+     "checkpoint_sha256": "e8aee5e12105ee6df4fe70b637e62e3f98ab7660ed4c0a42f2abca77814a13d3"
+    }
+   }
+  },
+  "mtx-r16q1-s3": {
+   "run_dir": "/data/results/mtx/mtx-r16q1-s3",
+   "rung": "R16_Q1",
+   "num_classes": 17,
+   "num_reg": 0,
+   "epochs": {
+    "0": {
+     "accuracy": 0.57425,
+     "checkpoint_sha256": "d26171fcab6d8806010b7d57381570facd93e59fe3753758a70af5c0b47b4c0c"
+    },
+    "4": {
+     "accuracy": 0.67822,
+     "checkpoint_sha256": "88404acd9afc64ee9fbc0d8f6fe70da20f4ee7a2a8684a3d8a83be67c183c034"
+    },
+    "9": {
+     "accuracy": 0.6805,
+     "checkpoint_sha256": "30cb283f06137989cf1ffe886bf1cb298a4e543574deee2e29094995b59b2a46"
+    },
+    "19": {
+     "accuracy": 0.67755,
+     "checkpoint_sha256": "46de3e65f4ccdb9da9ac644e3d477a917681f17f163812b79fa64017e6f1d19a"
+    },
+    "39": {
+     "accuracy": 0.64749,
+     "checkpoint_sha256": "d317d87d9619c6c0d2f0d04801e58030a26b26c42f323a2203f3c3f56dfa8551"
+    },
+    "79": {
+     "accuracy": 0.72433,
+     "checkpoint_sha256": "cc2626a2dde7d54c3956c31a42e6d8f30820d5ef1c673e63472512f44591ddf2"
+    }
+   }
+  },
+  "mtx-r16q1mass-s3": {
+   "run_dir": "/data/results/mtx/mtx-r16q1mass-s3",
+   "rung": "R16_Q1",
+   "num_classes": 17,
+   "num_reg": 1,
+   "epochs": {
+    "0": {
+     "accuracy": 0.57717,
+     "checkpoint_sha256": "86a4e19df92bcf981135a1fba305ad448af0fd3bd13bb5020c76cc0f956d7c62"
+    },
+    "4": {
+     "accuracy": 0.67217,
+     "checkpoint_sha256": "b01611898c4ebf5e4f8a09097c52f36d09c62110d2426eefc96921b72f37ca83"
+    },
+    "9": {
+     "accuracy": 0.47589,
+     "checkpoint_sha256": "6bb9c3f7eb2c9916fc4f2e094f6b6fa0e592fa2b9da22586f92af6e5e0863cb2"
+    },
+    "19": {
+     "accuracy": 0.67905,
+     "checkpoint_sha256": "e59573ef1bb86d5c486f3563f8410ac3a293724d09ff28e3b976543aa1709507"
+    },
+    "39": {
+     "accuracy": 0.70209,
+     "checkpoint_sha256": "53b857aaced0513ca42a8b4a4c913f7b158eaf41998dffc74edcff95942fc2ca"
+    },
+    "79": {
+     "accuracy": 0.6996,
+     "checkpoint_sha256": "a06592d7a28d34cd67c23a422f4b7b278c0a9eac2c22adcc2eb3bbb86feb99d9"
+    }
+   }
+  }
+ }
+}
