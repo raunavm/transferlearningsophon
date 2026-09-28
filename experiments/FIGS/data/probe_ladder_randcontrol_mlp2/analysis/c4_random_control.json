@@ -1,0 +1,514 @@
+{
+  "provenance": {
+    "inputs": [
+      {
+        "path": "experiments/FIGS/data/probe_ladder_randcontrol_mlp2/sd1.json",
+        "sha256": "c4354562d07089fbe2257a409f8c164e000dc58c546c318a61a89e7adbe0df9b"
+      },
+      {
+        "path": "experiments/FIGS/data/probe_ladder_randcontrol_mlp2/sd2.json",
+        "sha256": "6fb4a50e38068b391272dc9c7f12c399e548015d09c9cc7e170647ed35367e91"
+      },
+      {
+        "path": "experiments/FIGS/data/probe_ladder_randcontrol_mlp2/sd3.json",
+        "sha256": "bded3fe1de96fe6337629ac271206cab664bbaa3c1ef7c518eb3657910c05a36"
+      }
+    ],
+    "script_sha256": "ddc1ae6777ce479bd716088cd4da6fd57adf691dcc86e2f6166ba4fd4363d2dd",
+    "row_alignment_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba",
+    "argv": [
+      "--random-control",
+      "experiments/FIGS/data/probe_ladder_randcontrol_mlp2/sd1.json",
+      "experiments/FIGS/data/probe_ladder_randcontrol_mlp2/sd2.json",
+      "experiments/FIGS/data/probe_ladder_randcontrol_mlp2/sd3.json",
+      "--c4-fine-ladder",
+      "experiments/FIGS/data/probe_ladder_v2_mlp2/s1.json",
+      "experiments/FIGS/data/probe_ladder_v2_mlp2/s2.json",
+      "experiments/FIGS/data/probe_ladder_v2_mlp2/s3.json",
+      "--out",
+      "experiments/FIGS/data/probe_ladder_randcontrol_mlp2/analysis"
+    ]
+  },
+  "C4": {
+    "linear": {
+      "cells": [
+        {
+          "task": "bvc_4prong",
+          "draw": 1,
+          "seed": 1,
+          "diff": -1.1051998225338724,
+          "ci": [
+            -1.2694310471847983,
+            -0.941937689520284
+          ],
+          "predicted_sign": -1,
+          "sign_matches": true,
+          "zero_consistent": null
+        },
+        {
+          "task": "bvc_4prong",
+          "draw": 2,
+          "seed": 2,
+          "diff": -0.815936572640307,
+          "ci": [
+            -0.976375338780012,
+            -0.6514701110674922
+          ],
+          "predicted_sign": -1,
+          "sign_matches": true,
+          "zero_consistent": null
+        },
+        {
+          "task": "bvc_4prong",
+          "draw": 3,
+          "seed": 3,
+          "diff": -1.3341500414525043,
+          "ci": [
+            -1.502802010667007,
+            -1.1712772612746218
+          ],
+          "predicted_sign": 0,
+          "sign_matches": null,
+          "zero_consistent": false
+        },
+        {
+          "task": "visible_content",
+          "draw": 1,
+          "seed": 1,
+          "diff": -0.6511743460935984,
+          "ci": [
+            -0.9059762323472638,
+            -0.41077787059358156
+          ],
+          "predicted_sign": 1,
+          "sign_matches": false,
+          "zero_consistent": null
+        },
+        {
+          "task": "visible_content",
+          "draw": 2,
+          "seed": 2,
+          "diff": -0.7035296491090968,
+          "ci": [
+            -0.9961828101578007,
+            -0.4449902598449367
+          ],
+          "predicted_sign": 0,
+          "sign_matches": null,
+          "zero_consistent": false
+        },
+        {
+          "task": "visible_content",
+          "draw": 3,
+          "seed": 3,
+          "diff": -0.8581556942508035,
+          "ci": [
+            -1.1564063249619465,
+            -0.5872607520076689
+          ],
+          "predicted_sign": 1,
+          "sign_matches": false,
+          "zero_consistent": null
+        }
+      ],
+      "n_signed_cells": 4,
+      "n_match": 2,
+      "p_at_least": 0.6875,
+      "p_floor": 0.0625,
+      "zero_cells_consistent": [
+        false,
+        false
+      ],
+      "inference_level": "descriptive: one run per draw"
+    },
+    "mlp": {
+      "cells": [
+        {
+          "task": "bvc_4prong",
+          "draw": 1,
+          "seed": 1,
+          "diff": -0.8297495574242442,
+          "ci": [
+            -0.9956469588548643,
+            -0.6711464699093932
+          ],
+          "predicted_sign": -1,
+          "sign_matches": true,
+          "zero_consistent": null
+        },
+        {
+          "task": "bvc_4prong",
+          "draw": 2,
+          "seed": 2,
+          "diff": -0.6275158734139858,
+          "ci": [
+            -0.7835727914820431,
+            -0.4747889774576719
+          ],
+          "predicted_sign": -1,
+          "sign_matches": true,
+          "zero_consistent": null
+        },
+        {
+          "task": "bvc_4prong",
+          "draw": 3,
+          "seed": 3,
+          "diff": -1.0566948937820158,
+          "ci": [
+            -1.2257378718283511,
+            -0.8958390091686278
+          ],
+          "predicted_sign": 0,
+          "sign_matches": null,
+          "zero_consistent": false
+        },
+        {
+          "task": "visible_content",
+          "draw": 1,
+          "seed": 1,
+          "diff": -0.6149883420588864,
+          "ci": [
+            -0.8736885329334886,
+            -0.38279903758961586
+          ],
+          "predicted_sign": 1,
+          "sign_matches": false,
+          "zero_consistent": null
+        },
+        {
+          "task": "visible_content",
+          "draw": 2,
+          "seed": 2,
+          "diff": -0.4896283142556097,
+          "ci": [
+            -0.7631751170592006,
+            -0.2255282237566374
+          ],
+          "predicted_sign": 0,
+          "sign_matches": null,
+          "zero_consistent": false
+        },
+        {
+          "task": "visible_content",
+          "draw": 3,
+          "seed": 3,
+          "diff": -0.6278086949337025,
+          "ci": [
+            -0.9502373863304254,
+            -0.3415159871847752
+          ],
+          "predicted_sign": 1,
+          "sign_matches": false,
+          "zero_consistent": null
+        }
+      ],
+      "n_signed_cells": 4,
+      "n_match": 2,
+      "p_at_least": 0.6875,
+      "p_floor": 0.0625,
+      "zero_cells_consistent": [
+        false,
+        false
+      ],
+      "inference_level": "descriptive: one run per draw"
+    }
+  },
+  "table": [
+    {
+      "draw": 1,
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "control": "rand-d1-s1b",
+      "semantic": "r16q1-s1",
+      "control_log1m_auc": -4.552740973065916,
+      "semantic_log1m_auc": -3.4475411505320435,
+      "censored": false
+    },
+    {
+      "draw": 1,
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "control": "rand-d1-s1b",
+      "semantic": "r16q1-s1",
+      "control_log1m_auc": -4.558793401630439,
+      "semantic_log1m_auc": -3.7290438442061946,
+      "censored": false
+    },
+    {
+      "draw": 1,
+      "task": "visible_content",
+      "probe": "linear",
+      "control": "rand-d1-s1b",
+      "semantic": "r16q1-s1",
+      "control_log1m_auc": -6.684559590503837,
+      "semantic_log1m_auc": -6.033385244410239,
+      "censored": false
+    },
+    {
+      "draw": 1,
+      "task": "visible_content",
+      "probe": "mlp",
+      "control": "rand-d1-s1b",
+      "semantic": "r16q1-s1",
+      "control_log1m_auc": -6.7189962787737585,
+      "semantic_log1m_auc": -6.104007936714872,
+      "censored": false
+    },
+    {
+      "draw": 2,
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "control": "rand-d2-s2",
+      "semantic": "r16q1-s2",
+      "control_log1m_auc": -4.500662133608966,
+      "semantic_log1m_auc": -3.684725560968659,
+      "censored": false
+    },
+    {
+      "draw": 2,
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "control": "rand-d2-s2",
+      "semantic": "r16q1-s2",
+      "control_log1m_auc": -4.561766809415516,
+      "semantic_log1m_auc": -3.9342509360015305,
+      "censored": false
+    },
+    {
+      "draw": 2,
+      "task": "visible_content",
+      "probe": "linear",
+      "control": "rand-d2-s2",
+      "semantic": "r16q1-s2",
+      "control_log1m_auc": -6.918312313475312,
+      "semantic_log1m_auc": -6.214782664366215,
+      "censored": false
+    },
+    {
+      "draw": 2,
+      "task": "visible_content",
+      "probe": "mlp",
+      "control": "rand-d2-s2",
+      "semantic": "r16q1-s2",
+      "control_log1m_auc": -6.844604428618814,
+      "semantic_log1m_auc": -6.354976114363204,
+      "censored": false
+    },
+    {
+      "draw": 3,
+      "task": "bvc_4prong",
+      "probe": "linear",
+      "control": "rand-d3-s3",
+      "semantic": "r16q1-s3",
+      "control_log1m_auc": -4.60744271461746,
+      "semantic_log1m_auc": -3.273292673164956,
+      "censored": false
+    },
+    {
+      "draw": 3,
+      "task": "bvc_4prong",
+      "probe": "mlp",
+      "control": "rand-d3-s3",
+      "semantic": "r16q1-s3",
+      "control_log1m_auc": -4.679925712485537,
+      "semantic_log1m_auc": -3.6232308187035214,
+      "censored": false
+    },
+    {
+      "draw": 3,
+      "task": "visible_content",
+      "probe": "linear",
+      "control": "rand-d3-s3",
+      "semantic": "r16q1-s3",
+      "control_log1m_auc": -6.834370851101568,
+      "semantic_log1m_auc": -5.976215156850764,
+      "censored": false
+    },
+    {
+      "draw": 3,
+      "task": "visible_content",
+      "probe": "mlp",
+      "control": "rand-d3-s3",
+      "semantic": "r16q1-s3",
+      "control_log1m_auc": -6.782048244624627,
+      "semantic_log1m_auc": -6.154239549690924,
+      "censored": false
+    }
+  ],
+  "section7_check": {
+    "linear": [
+      {
+        "draw": 1,
+        "diff": -0.6511743460935984,
+        "control_better": true
+      },
+      {
+        "draw": 2,
+        "diff": -0.7035296491090968,
+        "control_better": true
+      },
+      {
+        "draw": 3,
+        "diff": -0.8581556942508035,
+        "control_better": true
+      }
+    ],
+    "mlp": [
+      {
+        "draw": 1,
+        "diff": -0.6149883420588864,
+        "control_better": true
+      },
+      {
+        "draw": 2,
+        "diff": -0.4896283142556097,
+        "control_better": true
+      },
+      {
+        "draw": 3,
+        "diff": -0.6278086949337025,
+        "control_better": true
+      }
+    ]
+  },
+  "section7_reading": "PRESPEC \u00a77 counts 'the control beating the semantic model on a pair the semantic model splits' against the thesis; visible_content is that pair (split at 17 classes)",
+  "grouping_cost_post_hoc": {
+    "reading": "POST HOC, descriptive, not a test: cost of each 17-group grouping relative to the mean of the 188-, 162- and 43-class models of the same seed index, in log(1-AUC); factor = exp(mean), i.e. in 1-AUC",
+    "ladder_inputs": [
+      {
+        "path": "experiments/FIGS/data/probe_ladder_v2_mlp2/s1.json",
+        "sha256": "f7e1de0e43be89b83b61987085b4ed928710fc612db4c2de446c356ee821c15d"
+      },
+      {
+        "path": "experiments/FIGS/data/probe_ladder_v2_mlp2/s2.json",
+        "sha256": "fa03dab6830998b2d01bf1f60185bc58a6c557786412238b69b4a1bb440a117f"
+      },
+      {
+        "path": "experiments/FIGS/data/probe_ladder_v2_mlp2/s3.json",
+        "sha256": "fb18859cb30e89b736f3dc186bc7fc7fe7128c864faf79383b0abd1dac59a664"
+      }
+    ],
+    "tasks": {
+      "bvc_4prong": {
+        "linear": {
+          "per_draw": [
+            {
+              "draw": 1,
+              "fine_mean": -4.94186220063141,
+              "control_minus_fine": 0.38912122756549383,
+              "semantic_minus_fine": 1.4943210500993662,
+              "semantic_here_minus_ladder": 0.0
+            },
+            {
+              "draw": 2,
+              "fine_mean": -4.9346295555256185,
+              "control_minus_fine": 0.4339674219166527,
+              "semantic_minus_fine": 1.2499039945569597,
+              "semantic_here_minus_ladder": -3.957864575188097e-06
+            },
+            {
+              "draw": 3,
+              "fine_mean": -4.98817351754742,
+              "control_minus_fine": 0.38073080292995964,
+              "semantic_minus_fine": 1.714880844382464,
+              "semantic_here_minus_ladder": 0.0
+            }
+          ],
+          "mean_control_minus_fine": 0.4012731508040354,
+          "mean_semantic_minus_fine": 1.4863686296795968,
+          "factor_control": 1.493725225026821,
+          "factor_semantic": 4.421012002303996
+        },
+        "mlp": {
+          "per_draw": [
+            {
+              "draw": 1,
+              "fine_mean": -4.951959557826793,
+              "control_minus_fine": 0.3931661561963544,
+              "semantic_minus_fine": 1.2229157136205986,
+              "semantic_here_minus_ladder": -9.928843298112611e-05
+            },
+            {
+              "draw": 2,
+              "fine_mean": -4.908987999267075,
+              "control_minus_fine": 0.3472211898515587,
+              "semantic_minus_fine": 0.9747370632655445,
+              "semantic_here_minus_ladder": 0.002329165960909041
+            },
+            {
+              "draw": 3,
+              "fine_mean": -4.973537116987746,
+              "control_minus_fine": 0.2936114045022089,
+              "semantic_minus_fine": 1.3503062982842247,
+              "semantic_here_minus_ladder": 0.0
+            }
+          ],
+          "mean_control_minus_fine": 0.344666250183374,
+          "mean_semantic_minus_fine": 1.1826530250567893,
+          "factor_control": 1.4115187469221746,
+          "factor_semantic": 3.2630196023538915
+        }
+      },
+      "visible_content": {
+        "linear": {
+          "per_draw": [
+            {
+              "draw": 1,
+              "fine_mean": -7.0477984314140985,
+              "control_minus_fine": 0.3632388409102614,
+              "semantic_minus_fine": 1.0144131870038597,
+              "semantic_here_minus_ladder": 0.0
+            },
+            {
+              "draw": 2,
+              "fine_mean": -7.127902518791637,
+              "control_minus_fine": 0.20959020531632522,
+              "semantic_minus_fine": 0.913119854425422,
+              "semantic_here_minus_ladder": 0.0
+            },
+            {
+              "draw": 3,
+              "fine_mean": -7.159795820590094,
+              "control_minus_fine": 0.32542496948852584,
+              "semantic_minus_fine": 1.1835806637393294,
+              "semantic_here_minus_ladder": 0.0
+            }
+          ],
+          "mean_control_minus_fine": 0.2994180052383708,
+          "mean_semantic_minus_fine": 1.0370379017228704,
+          "factor_control": 1.3490734253873833,
+          "factor_semantic": 2.8208489950738995
+        },
+        "mlp": {
+          "per_draw": [
+            {
+              "draw": 1,
+              "fine_mean": -7.04050546408227,
+              "control_minus_fine": 0.32150918530851147,
+              "semantic_minus_fine": 0.9364975273673979,
+              "semantic_here_minus_ladder": -0.0005072565982535693
+            },
+            {
+              "draw": 2,
+              "fine_mean": -7.062607130223743,
+              "control_minus_fine": 0.21800270160492907,
+              "semantic_minus_fine": 0.7076310158605388,
+              "semantic_here_minus_ladder": -0.0006519141153455976
+            },
+            {
+              "draw": 3,
+              "fine_mean": -7.099504364429424,
+              "control_minus_fine": 0.31745611980479715,
+              "semantic_minus_fine": 0.9452648147384997,
+              "semantic_here_minus_ladder": 0.0
+            }
+          ],
+          "mean_control_minus_fine": 0.28565600223941257,
+          "mean_semantic_minus_fine": 0.8631311193221455,
+          "factor_control": 1.330634641176573,
+          "factor_semantic": 2.37057162802033
+        }
+      }
+    }
+  }
+}

@@ -350,8 +350,11 @@ def input_paths(root: pathlib.Path) -> dict:
     # run stays on disk, frozen, as the provenance record of what ran first.
     data = root / "experiments" / "FIGS" / "data"
     maps = root / "configs" / "labelmaps"
-    return {"ladder": sorted((data / "probe_ladder_v2").glob("s*.json"))
-                      + sorted((data / "probe_ladder_mass2x2").glob("s*.json")),
+    # The *_mlp2 files are those runs with the MLP probe refitted to convergence
+    # (probe.py --mlp-rerun-of): their linear blocks are the originals' byte for
+    # byte, and their MLP blocks replace fits that stopped at a 60-epoch cap.
+    return {"ladder": sorted((data / "probe_ladder_v2_mlp2").glob("s*.json"))
+                      + sorted((data / "probe_ladder_mass2x2_mlp2").glob("s*.json")),
             # analysis_with_c5, not analysis: the same run of the same script over
             # the same five ladder files, plus the mass-output 2x2 that makes C5
             # measurable. Verified a strict superset before it was adopted -- C1's
@@ -363,7 +366,7 @@ def input_paths(root: pathlib.Path) -> dict:
             # same inputs, with C4 outside the Holm count and S2's p the
             # intersection-union maximum. Verified field by field: only the Holm
             # families, the S2 p and bound fields and C1's family-size wording differ.
-            "analysis": data / "probe_ladder_v2" / "analysis_family_of_four" / "seed_level_results.json",
+            "analysis": data / "probe_ladder_v2_mlp2" / "analysis" / "seed_level_results.json",
             "leg1": data / "leg1_metrics.json",
             "leg2": data / "leg2_metrics.json",
             "recovery": data / "label_recovery_ladder_v1" / "analysis" / "s9_label_recovery.json",
@@ -373,18 +376,16 @@ def input_paths(root: pathlib.Path) -> dict:
             # S3/S4 and of section 5 fix wording; analysis_holm of S7 applies the
             # Holm correction amendment A4 requires; analysis_labelled of the real
             # data fixes one verdict's wording.
-            "random_control": data / "probe_ladder_randcontrol" / "analysis_v2" / "c4_random_control.json",
+            "random_control": data / "probe_ladder_randcontrol_mlp2" / "analysis" / "c4_random_control.json",
             # The +mass arms' probe files alone, for the mass-output cells.
-            "mass2x2": sorted((data / "probe_ladder_mass2x2").glob("s*.json")),
+            "mass2x2": sorted((data / "probe_ladder_mass2x2_mlp2").glob("s*.json")),
             # The per-cell fine-tuning metrics themselves (fine-tuning wave 2b); which
             # file is which dataset is read from the class count its cells record.
             "ft_legs": [data / "w2b_leg1_metrics.json", data / "w2b_leg2_metrics.json"],
             "anomaly": data / "anomaly_merged_v4" / "analysis_v3" / "anomaly_summary.json",
             "mass_resolution": data / "mass_resolution" / "analysis_holm" / "s7_mass_resolution.json",
-            # analysis_v3 supersedes analysis_labelled (2026-09-28): the same registered
-            # analysis on the fits redone in an orthonormal basis (fit_v3), whose own
-            # diagnostic puts every fit at its minimum. The first run's fits stopped short
-            # (fit_convergence_check/, fit_v2_diagnostic/); the verdicts are unchanged.
+            # analysis_v4: the fits redone with each model's own floating peak shape
+            # (fit_v4, experiments/AOJ/refit_from_bins.py).
             "real_data": data / "aoj_full_v1" / "analysis_v4" / "aoj_top.json",
             # The per-seed cells of the |V_cb| window probe, the file its analysis
             # read: they carry the surviving background counts the analysis drops.
@@ -1727,7 +1728,7 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
         out["tables/finetune_recipe.tex"] = table_ft_recipe(rec)
     later = (("recovery", lambda em, d, src: emit_recovery(em, d, src, sizes),
               lambda d: table_recovery(d, sizes), "label_recovery"),
-             ("random_control", emit_random_control, lambda d: table_random_control(d, A),
+             ("random_control", emit_random_control, lambda d: table_random_control(d, A, probes=("linear", "mlp")),
               "random_control"),
              ("anomaly", emit_anomaly, table_anomaly, "anomaly"),
              ("mass_resolution", emit_mass_resolution, lambda d: table_mass(d, root), "mass"),

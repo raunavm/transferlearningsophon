@@ -44,7 +44,7 @@ INPUTS = {
                  "JetClass, 10 classes": [DATA / "w2b_leg2_metrics.json"]},
     "anomaly": DATA / "anomaly_merged_v4/analysis_v3/anomaly_summary.json",
     "mass": DATA / "mass_resolution/analysis_holm/s7_mass_resolution.json",
-    "mass2x2": sorted((DATA / "probe_ladder_mass2x2").glob("s*.json")),
+    "mass2x2": sorted((DATA / "probe_ladder_mass2x2_mlp2").glob("s*.json")),
     "realdata": DATA / "aoj_full_v1/analysis_v4/aoj_top.json",
 }
 LEVELS = [188, 162, 43, 17]

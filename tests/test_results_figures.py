@@ -27,7 +27,7 @@ def test_the_two_by_two_points_are_the_ones_the_c5_test_used():
     the gains stored beside C5 in the confirmatory analysis."""
     pts = R.mass2x2_points(R.INPUTS["mass2x2"])
     assert all(len(v) == 5 for v in pts.values())
-    A = json.loads((REPO / "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/"
+    A = json.loads((REPO / "experiments/FIGS/data/probe_ladder_v2_mlp2/analysis/"
                     "seed_level_results.json").read_text())
     gains = A["confirmatory"]["C5"]["confirmatory"]["probes"]["linear"]["gain_by_level"]
     for lv, g in (("162", "162+mass"), ("17", "17+mass")):

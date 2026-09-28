@@ -11,7 +11,7 @@
 % that test's ALLOWED list with the reason it cannot change.
 %
 % Red \pending{} marks what is still running or being rerun: the community
-% benchmarks (bench v3), the nonlinear-probe rerun, the from-scratch and
+% benchmarks (bench v3), the from-scratch and
 % self-supervised fine-tuning reruns, the anomaly class-sum rerun, the
 % real-data refit with per-model peak shapes, and X->bs.
 \documentclass[11pt]{article}
@@ -312,8 +312,9 @@ present but not linearly decodable. For each task the jets are split into
 \ProbeSplitTrain{} training, \ProbeSplitVal{} validation and \ProbeSplitTest{}
 test jets, identically for every model; features are standardised on the
 training jets, the regularisation of the linear probe is chosen on the
-validation jets from \ProbeCMin{} to \ProbeCMax, and the nonlinear probe stops
-on the validation AUC. The tasks are pairs of native classes chosen for where
+validation jets from \ProbeCMin{} to \ProbeCMax, and the nonlinear probe is
+trained until its validation AUC stops improving: the learning rate drops tenfold
+on each plateau, and training stops after three drops bring no gain. The tasks are pairs of native classes chosen for where
 they merge in the tree: $b$ versus $c$ in two-prong resonance decays (separate
 labels down to \Kmid{} classes, merged from \VocabSizeRtwonineQone{} down), $b$
 versus $c$ in QCD jets (separate only at \Kfull), two-prong versus four-prong
@@ -463,7 +464,16 @@ two, which this task may use. Electron versus muon pairs are merged from
 perfectly at the resolution of the test sample, while $1-$AUC is
 \ProbeOmaEeVsMmLinearFourthree{} at \Kmid{} and \ProbeOmaEeVsMmLinearOneseven{} at
 \Kcoarse{} classes.
-\pending{nonlinear probe: the rerun with converged training replaces Table~\ref{tab:probes-mlp}}
+The nonlinear probe (Table~\ref{tab:probes-mlp}) gives the same picture. On $b$
+versus $c$ in two-prong decays its $1-$AUC is \ProbeOmaBvcResonantMlpFourthree{}
+at \Kmid{} and \ProbeOmaBvcResonantMlpOneseven{} at \Kcoarse{} classes, a factor
+\ProbeOmaRatioBvcResonantMlpOnesevenOverFourthree, and on the topology task it is
+\ProbeOmaRatioRetainedTopologyMlpOnesevenOverOnesixtwo{} times higher at \Kcoarse{}
+than at \Kres{} classes. The one clear difference is lepton flavour: the
+nonlinear probe separates electron from muon pairs with $1-$AUC
+\ProbeOmaEeVsMmMlpFourthree{} at \Kmid{} and \ProbeOmaEeVsMmMlpOneseven{} at
+\Kcoarse{} classes, so most of this distinction is still in the representation
+after its labels are merged, but not in a linearly readable form.
 
 The last probe takes its task from a physics analysis: separating $X\to bc$
 decays from the $bq$, $cs$ and $bqq$ decays and QCD jets that a boosted
@@ -533,8 +543,10 @@ training shares produces groups that mix flavours. Telling those groups apart
 still requires flavour, so the representation keeps it. Together with the QCD
 flavour task above, this suggests that a vocabulary loses a distinction when it
 removes the physical axis from every class boundary, not when it merges one pair.
-The control rests on three draws with one pretraining run each.
-\pending{nonlinear-probe rows from the rerun}
+The nonlinear probe gives the same factors, \RandCostFactorBvcFourprongMlp{} for
+the random grouping and \RandSemCostFactorBvcFourprongMlp{} for the \Kcoarse-class
+one on the $b$-versus-$c$ task. The control rests on three draws with one
+pretraining run each.
 
 \input{tables/random_control}
 
@@ -597,7 +609,9 @@ The mass output \emph{costs} $b$-versus-$c$ separation at both granularities
 without it and \MassOmaLinearOnesixtwoMass{} with it, a factor
 \MassOmaRatioLinearOnesixtwo; with \Kcoarse{} classes it is
 \MassOmaLinearOneseven{} without and \MassOmaLinearOnesevenMass{} with, a factor
-\MassOmaRatioLinearOneseven. The cost is far larger with the coarser vocabulary,
+\MassOmaRatioLinearOneseven; the nonlinear probe gives factors
+\MassOmaRatioMlpOnesixtwo{} and \MassOmaRatioMlpOneseven. The cost is far larger
+with the coarser vocabulary,
 and the \Kcoarse-class models with the mass output vary much more from run to
 run.
 

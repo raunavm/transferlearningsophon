@@ -83,7 +83,7 @@ def write_ladder(root):
                 "arms": {f"{ARM_OF_LEVEL[lv]}-s{seed}":
                          {p: cell(task, p, lv, seed) for p in ("linear", "mlp")}
                          for lv in LEVELS}}
-        p = root / "experiments/FIGS/data/probe_ladder_v2" / f"s{seed}.json"
+        p = root / "experiments/FIGS/data/probe_ladder_v2_mlp2" / f"s{seed}.json"
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(json.dumps(doc))
         out.append(p)
@@ -195,7 +195,7 @@ def write_analysis(root, ladder):
                                        "reject_possible": False}]},
         "pairwise_exploratory": {t: {p: _pairwise(rows, t, p) for p in ("linear", "mlp")}
                                  for t in TASKS}}
-    p = root / "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json"
+    p = root / "experiments/FIGS/data/probe_ladder_v2_mlp2/analysis/seed_level_results.json"
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(doc))
     return p
@@ -304,7 +304,7 @@ def test_a_missing_input_is_reported_not_invented(root):
 def test_inputs_that_disagree_on_the_row_alignment_stop_the_run(root):
     """Different alignments means different jets: a paired contrast across them
     is not a paired contrast, and every number here assumes it is one."""
-    p = root / "experiments/FIGS/data/probe_ladder_v2/s2.json"
+    p = root / "experiments/FIGS/data/probe_ladder_v2_mlp2/s2.json"
     d = json.loads(p.read_text())
     d["row_alignment_sha256"] = "b" * 64
     p.write_text(json.dumps(d))
@@ -315,7 +315,7 @@ def test_inputs_that_disagree_on_the_row_alignment_stop_the_run(root):
 
 def test_a_ladder_file_rewritten_since_the_analysis_stops_the_run(root):
     """Then the p-values describe data that is no longer on disk."""
-    p = root / "experiments/FIGS/data/probe_ladder_v2/s2.json"
+    p = root / "experiments/FIGS/data/probe_ladder_v2_mlp2/s2.json"
     d = json.loads(p.read_text())
     d["n_jets_total"] = 1001
     p.write_text(json.dumps(d))
@@ -381,7 +381,7 @@ def _with_points(root, points, per_seed):
     """Give the fixture analysis the working-point block the real one carries,
     in the per-level summary and in each per-seed row: `per_seed` maps a seed to
     its (rejection, is_bound) at 90 %."""
-    p = root / "experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json"
+    p = root / "experiments/FIGS/data/probe_ladder_v2_mlp2/analysis/seed_level_results.json"
     A = json.loads(p.read_text())
     for r in A["table"]:
         rej, bound = per_seed[r["seed"]]
