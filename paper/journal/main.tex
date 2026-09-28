@@ -400,7 +400,8 @@ Every number is the mean over the five independently pretrained models of a
 configuration, and the uncertainty is the standard deviation between them. Each
 pretrained model is probed or fine-tuned once, so the spread contains the
 pretraining and the downstream training variation together. Rows with fewer runs
-say so; the random-label draws are single runs. The statistical uncertainty of
+say so. For the random-label control the spread is between its three draws,
+each pretrained once. The statistical uncertainty of
 the finite test sample is common to all models scored on the same jets and is
 not included, except where we state it: background rejections at tight working
 points rest on few background jets, and the tables give how many. Uncertainties
@@ -574,11 +575,18 @@ agree at every size, the \Kmid-class models trail slightly (a factor
 jets) and the \Kcoarse-class models trail by a factor
 \FtOmaRatioJcESixOnesevenOverOneeighteight. JetClass has classes for gluon and
 light-quark jets and for $b$- and $c$-quark decays; merging gluons with light
-quarks costs little there, and removing flavour costs more. At \FtSizeESix{}
-jets the single random-label run lies between the \Kmid- and \Kcoarse-class
-models on both datasets.
+quarks costs little there, and removing flavour costs more.
+
+The three random-label draws agree closely with one another. From
+\FtSizeEFive{} jets up, the control lies between the \Kmid- and \Kcoarse-class
+models on both datasets: at \FtSizeESix{} jets its $1-$macro AUC is
+\FtOmaRatioJciiESixRandOverOneeighteight{} times that of the \Kfull-class models on
+JetClass-II and \FtOmaRatioJcESixRandOverOneeighteight{} times on JetClass. A
+random grouping with the class sizes of the \Kcoarse-class vocabulary therefore
+transfers slightly better than the \Kcoarse-class vocabulary itself, but not as
+well as any vocabulary that keeps flavour.
 \pending{from-scratch and self-supervised references from the corrected-recipe
-reruns; random-label draws two and three}
+reruns}
 
 \input{tables/finetune}
 
@@ -587,7 +595,8 @@ reruns; random-label draws two and three}
   \includegraphics[width=\linewidth]{../../figures/finetune_curves.pdf}
   \caption{Fine-tuning on JetClass-II (left) and JetClass (right). Top: $1-$macro
   AUC against the number of fine-tuning jets, mean (line) and $\pm1$ standard
-  deviation (band) over five pretraining runs per vocabulary. Bottom: ratio of
+  deviation (band) over five pretraining runs per vocabulary; dashed, the
+  random-label control, mean and standard deviation over its three draws. Bottom: ratio of
   each model's $1-$macro AUC to that of the \Kfull-class model of the same run
   index, mean and standard deviation over the five runs.}
   \label{fig:finetune}

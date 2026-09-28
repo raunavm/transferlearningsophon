@@ -1453,1275 +1453,1275 @@
   },
   "FtAccJcEFiveFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N100000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8336\\,\\ensuremath{\\pm}\\,0.0008"
   },
   "FtAccJcEFiveOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N100000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8351\\,\\ensuremath{\\pm}\\,0.0008"
   },
   "FtAccJcEFiveOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N100000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8286\\,\\ensuremath{\\pm}\\,0.0006"
   },
   "FtAccJcEFiveOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N100000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8265\\,\\ensuremath{\\pm}\\,0.0007"
   },
   "FtAccJcEFiveOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N100000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8363\\,\\ensuremath{\\pm}\\,0.0008"
   },
   "FtAccJcEFiveOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N100000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8349\\,\\ensuremath{\\pm}\\,0.0005"
   },
-  "FtAccJcEFiveRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N100000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
-    "value": "0.8326"
+  "FtAccJcEFiveRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N100000.s1.accuracy",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
+    "value": "0.8323\\,\\ensuremath{\\pm}\\,0.0011"
   },
   "FtAccJcEFourFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N10000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8050\\,\\ensuremath{\\pm}\\,0.0026"
   },
   "FtAccJcEFourOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N10000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8039\\,\\ensuremath{\\pm}\\,0.0030"
   },
   "FtAccJcEFourOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N10000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.7964\\,\\ensuremath{\\pm}\\,0.0019"
   },
   "FtAccJcEFourOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N10000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.7909\\,\\ensuremath{\\pm}\\,0.0031"
   },
   "FtAccJcEFourOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N10000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8069\\,\\ensuremath{\\pm}\\,0.0025"
   },
   "FtAccJcEFourOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N10000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8043\\,\\ensuremath{\\pm}\\,0.0020"
   },
-  "FtAccJcEFourRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N10000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
-    "value": "0.7974"
+  "FtAccJcEFourRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N10000.s1.accuracy",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
+    "value": "0.7973\\,\\ensuremath{\\pm}\\,0.0025"
   },
   "FtAccJcESixFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N1000000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.84679\\,\\ensuremath{\\pm}\\,0.00029"
   },
   "FtAccJcESixOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N1000000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8486\\,\\ensuremath{\\pm}\\,0.0005"
   },
   "FtAccJcESixOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N1000000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8415\\,\\ensuremath{\\pm}\\,0.0007"
   },
   "FtAccJcESixOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N1000000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8390\\,\\ensuremath{\\pm}\\,0.0011"
   },
   "FtAccJcESixOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N1000000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8485\\,\\ensuremath{\\pm}\\,0.0005"
   },
   "FtAccJcESixOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N1000000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.8475\\,\\ensuremath{\\pm}\\,0.0009"
   },
-  "FtAccJcESixRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N1000000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
-    "value": "0.84467"
+  "FtAccJcESixRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N1000000.s1.accuracy",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
+    "value": "0.84442\\,\\ensuremath{\\pm}\\,0.00030"
   },
   "FtAccJcEThreeFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N1000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.722\\,\\ensuremath{\\pm}\\,0.007"
   },
   "FtAccJcEThreeOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N1000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.7183\\,\\ensuremath{\\pm}\\,0.0032"
   },
   "FtAccJcEThreeOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N1000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.714\\,\\ensuremath{\\pm}\\,0.005"
   },
   "FtAccJcEThreeOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N1000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.702\\,\\ensuremath{\\pm}\\,0.005"
   },
   "FtAccJcEThreeOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N1000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.7268\\,\\ensuremath{\\pm}\\,0.0017"
   },
   "FtAccJcEThreeOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N1000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.728\\,\\ensuremath{\\pm}\\,0.004"
   },
-  "FtAccJcEThreeRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N1000.s1.accuracy",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
-    "value": "0.7049"
+  "FtAccJcEThreeRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N1000.s1.accuracy",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
+    "value": "0.709\\,\\ensuremath{\\pm}\\,0.004"
   },
   "FtAccJciiEFiveFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N100000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.5219\\,\\ensuremath{\\pm}\\,0.0017"
   },
   "FtAccJciiEFiveOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N100000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.5379\\,\\ensuremath{\\pm}\\,0.0010"
   },
   "FtAccJciiEFiveOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N100000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.5078\\,\\ensuremath{\\pm}\\,0.0011"
   },
   "FtAccJciiEFiveOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N100000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.4993\\,\\ensuremath{\\pm}\\,0.0022"
   },
   "FtAccJciiEFiveOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N100000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.5387\\,\\ensuremath{\\pm}\\,0.0008"
   },
   "FtAccJciiEFiveOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N100000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.5357\\,\\ensuremath{\\pm}\\,0.0007"
   },
-  "FtAccJciiEFiveRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N100000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "0.5226"
+  "FtAccJciiEFiveRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N100000.s1.accuracy",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "0.5238\\,\\ensuremath{\\pm}\\,0.0010"
   },
   "FtAccJciiEFourFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N10000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.481\\,\\ensuremath{\\pm}\\,0.004"
   },
   "FtAccJciiEFourOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N10000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.5199\\,\\ensuremath{\\pm}\\,0.0018"
   },
   "FtAccJciiEFourOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N10000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.447\\,\\ensuremath{\\pm}\\,0.013"
   },
   "FtAccJciiEFourOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N10000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.4507\\,\\ensuremath{\\pm}\\,0.0034"
   },
   "FtAccJciiEFourOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N10000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.5212\\,\\ensuremath{\\pm}\\,0.0013"
   },
   "FtAccJciiEFourOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N10000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.515\\,\\ensuremath{\\pm}\\,0.004"
   },
-  "FtAccJciiEFourRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N10000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "0.5070"
+  "FtAccJciiEFourRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N10000.s1.accuracy",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "0.5086\\,\\ensuremath{\\pm}\\,0.0025"
   },
   "FtAccJciiESixFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N1000000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.5362\\,\\ensuremath{\\pm}\\,0.0007"
   },
   "FtAccJciiESixOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N1000000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.54426\\,\\ensuremath{\\pm}\\,0.00035"
   },
   "FtAccJciiESixOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N1000000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.5227\\,\\ensuremath{\\pm}\\,0.0010"
   },
   "FtAccJciiESixOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N1000000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.5166\\,\\ensuremath{\\pm}\\,0.0013"
   },
   "FtAccJciiESixOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N1000000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.5440\\,\\ensuremath{\\pm}\\,0.0006"
   },
   "FtAccJciiESixOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N1000000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.5409\\,\\ensuremath{\\pm}\\,0.0010"
   },
-  "FtAccJciiESixRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N1000000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "0.53354"
+  "FtAccJciiESixRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N1000000.s1.accuracy",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "0.5342\\,\\ensuremath{\\pm}\\,0.0006"
   },
   "FtAccJciiEThreeFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N1000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.380\\,\\ensuremath{\\pm}\\,0.005"
   },
   "FtAccJciiEThreeOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N1000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.445\\,\\ensuremath{\\pm}\\,0.004"
   },
   "FtAccJciiEThreeOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N1000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.332\\,\\ensuremath{\\pm}\\,0.004"
   },
   "FtAccJciiEThreeOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N1000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.331\\,\\ensuremath{\\pm}\\,0.005"
   },
   "FtAccJciiEThreeOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N1000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.448\\,\\ensuremath{\\pm}\\,0.006"
   },
   "FtAccJciiEThreeOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N1000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.451\\,\\ensuremath{\\pm}\\,0.007"
   },
-  "FtAccJciiEThreeRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N1000.s1.accuracy",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "0.424"
+  "FtAccJciiEThreeRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N1000.s1.accuracy",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "0.4226\\,\\ensuremath{\\pm}\\,0.0021"
   },
   "FtAucJcEFiveFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98308\\,\\ensuremath{\\pm}\\,0.00016"
   },
   "FtAucJcEFiveOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98334\\,\\ensuremath{\\pm}\\,0.00022"
   },
   "FtAucJcEFiveOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98213\\,\\ensuremath{\\pm}\\,0.00004"
   },
   "FtAucJcEFiveOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98175\\,\\ensuremath{\\pm}\\,0.00016"
   },
   "FtAucJcEFiveOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98362\\,\\ensuremath{\\pm}\\,0.00006"
   },
   "FtAucJcEFiveOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98336\\,\\ensuremath{\\pm}\\,0.00010"
   },
-  "FtAucJcEFiveRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
-    "value": "0.98265"
+  "FtAucJcEFiveRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N100000.s1.macro_auc_ovr",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
+    "value": "0.98265\\,\\ensuremath{\\pm}\\,0.00013"
   },
   "FtAucJcEFourFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.9769\\,\\ensuremath{\\pm}\\,0.0005"
   },
   "FtAucJcEFourOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.9765\\,\\ensuremath{\\pm}\\,0.0008"
   },
   "FtAucJcEFourOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.9749\\,\\ensuremath{\\pm}\\,0.0006"
   },
   "FtAucJcEFourOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.9737\\,\\ensuremath{\\pm}\\,0.0008"
   },
   "FtAucJcEFourOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.9770\\,\\ensuremath{\\pm}\\,0.0007"
   },
   "FtAucJcEFourOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.9768\\,\\ensuremath{\\pm}\\,0.0005"
   },
-  "FtAucJcEFourRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
-    "value": "0.9745"
+  "FtAucJcEFourRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N10000.s1.macro_auc_ovr",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
+    "value": "0.9748\\,\\ensuremath{\\pm}\\,0.0007"
   },
   "FtAucJcESixFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98549\\,\\ensuremath{\\pm}\\,0.00006"
   },
   "FtAucJcESixOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98578\\,\\ensuremath{\\pm}\\,0.00007"
   },
   "FtAucJcESixOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98460\\,\\ensuremath{\\pm}\\,0.00009"
   },
   "FtAucJcESixOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98422\\,\\ensuremath{\\pm}\\,0.00017"
   },
   "FtAucJcESixOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98578\\,\\ensuremath{\\pm}\\,0.00005"
   },
   "FtAucJcESixOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98561\\,\\ensuremath{\\pm}\\,0.00012"
   },
-  "FtAucJcESixRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
-    "value": "0.98513"
+  "FtAucJcESixRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N1000000.s1.macro_auc_ovr",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
+    "value": "0.98510\\,\\ensuremath{\\pm}\\,0.00004"
   },
   "FtAucJcEThreeFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.950\\,\\ensuremath{\\pm}\\,0.004"
   },
   "FtAucJcEThreeOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.950\\,\\ensuremath{\\pm}\\,0.004"
   },
   "FtAucJcEThreeOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.9470\\,\\ensuremath{\\pm}\\,0.0024"
   },
   "FtAucJcEThreeOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.9460\\,\\ensuremath{\\pm}\\,0.0029"
   },
   "FtAucJcEThreeOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.9526\\,\\ensuremath{\\pm}\\,0.0020"
   },
   "FtAucJcEThreeOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.9569\\,\\ensuremath{\\pm}\\,0.0016"
   },
-  "FtAucJcEThreeRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
-    "value": "0.9477"
+  "FtAucJcEThreeRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N1000.s1.macro_auc_ovr",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
+    "value": "0.9483\\,\\ensuremath{\\pm}\\,0.0016"
   },
   "FtAucJciiEFiveFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.97747\\,\\ensuremath{\\pm}\\,0.00035"
   },
   "FtAucJciiEFiveOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.97927\\,\\ensuremath{\\pm}\\,0.00016"
   },
   "FtAucJciiEFiveOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.97481\\,\\ensuremath{\\pm}\\,0.00029"
   },
   "FtAucJciiEFiveOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.9740\\,\\ensuremath{\\pm}\\,0.0004"
   },
   "FtAucJciiEFiveOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.97937\\,\\ensuremath{\\pm}\\,0.00017"
   },
   "FtAucJciiEFiveOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.97899\\,\\ensuremath{\\pm}\\,0.00015"
   },
-  "FtAucJciiEFiveRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "0.97617"
+  "FtAucJciiEFiveRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N100000.s1.macro_auc_ovr",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "0.97630\\,\\ensuremath{\\pm}\\,0.00033"
   },
   "FtAucJciiEFourFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.9667\\,\\ensuremath{\\pm}\\,0.0005"
   },
   "FtAucJciiEFourOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.9723\\,\\ensuremath{\\pm}\\,0.0004"
   },
   "FtAucJciiEFourOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.9635\\,\\ensuremath{\\pm}\\,0.0005"
   },
   "FtAucJciiEFourOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.9639\\,\\ensuremath{\\pm}\\,0.0007"
   },
   "FtAucJciiEFourOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.9724\\,\\ensuremath{\\pm}\\,0.0005"
   },
   "FtAucJciiEFourOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.9724\\,\\ensuremath{\\pm}\\,0.0013"
   },
-  "FtAucJciiEFourRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "0.9675"
+  "FtAucJciiEFourRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N10000.s1.macro_auc_ovr",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "0.9679\\,\\ensuremath{\\pm}\\,0.0006"
   },
   "FtAucJciiESixFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.97999\\,\\ensuremath{\\pm}\\,0.00009"
   },
   "FtAucJciiESixOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.98086\\,\\ensuremath{\\pm}\\,0.00004"
   },
   "FtAucJciiESixOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.97809\\,\\ensuremath{\\pm}\\,0.00014"
   },
   "FtAucJciiESixOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.97738\\,\\ensuremath{\\pm}\\,0.00014"
   },
   "FtAucJciiESixOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.98083\\,\\ensuremath{\\pm}\\,0.00006"
   },
   "FtAucJciiESixOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.98047\\,\\ensuremath{\\pm}\\,0.00010"
   },
-  "FtAucJciiESixRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "0.97941"
+  "FtAucJciiESixRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N1000000.s1.macro_auc_ovr",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "0.97944\\,\\ensuremath{\\pm}\\,0.00005"
   },
   "FtAucJciiEThreeFourthree": {
     "json_path": "cells.{r42q1-s1,r42q1-s2,r42q1-s3,r42q1-s4,r42q1-s5}.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.918\\,\\ensuremath{\\pm}\\,0.005"
   },
   "FtAucJciiEThreeOneeighteight": {
     "json_path": "cells.{l188-s1,l188-s2,l188-s3,l188-s4,l188-s5}.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.902\\,\\ensuremath{\\pm}\\,0.004"
   },
   "FtAucJciiEThreeOneseven": {
     "json_path": "cells.{r16q1-s1,r16q1-s2,r16q1-s3,r16q1-s4,r16q1-s5}.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.905\\,\\ensuremath{\\pm}\\,0.008"
   },
   "FtAucJciiEThreeOnesevenMass": {
     "json_path": "cells.{r16q1mass-s1,r16q1mass-s2,r16q1mass-s3,r16q1mass-s4,r16q1mass-s5}.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.904\\,\\ensuremath{\\pm}\\,0.007"
   },
   "FtAucJciiEThreeOnesixtwo": {
     "json_path": "cells.{l162-s1b,l162-s2,l162-s3,l162-s4,l162-s5}.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.906\\,\\ensuremath{\\pm}\\,0.007"
   },
   "FtAucJciiEThreeOnesixtwoMass": {
     "json_path": "cells.{l162mass-s1,l162mass-s2,l162mass-s3,l162mass-s4,l162mass-s5}.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.921\\,\\ensuremath{\\pm}\\,0.005"
   },
-  "FtAucJciiEThreeRandDrawOne": {
-    "json_path": "cells.{rand-d1-s1b}.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "0.921"
+  "FtAucJciiEThreeRand": {
+    "json_path": "cells.{rand-d1-s1b,rand-d2-s2,rand-d3-s3}.N1000.s1.macro_auc_ovr",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "0.9180\\,\\ensuremath{\\pm}\\,0.0034"
   },
   "FtNTestAccJc": {
     "json_path": "cells.*.*.s1.n_jets",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "2{,}000{,}000"
   },
   "FtNTestAccJcii": {
     "json_path": "cells.*.*.s1.n_jets",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "500{,}000"
   },
   "FtNTestAucJc": {
     "json_path": "cells.*.*.s1.n_jets_auc",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "500{,}000"
   },
   "FtNTestAucJcii": {
     "json_path": "cells.*.*.s1.n_jets_auc",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "125{,}000"
   },
   "FtOmaRatioJcEFiveFourthreeOverOneeighteight": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.02"
   },
   "FtOmaRatioJcEFiveFourthreeOverOnesixtwo": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.03"
   },
   "FtOmaRatioJcEFiveOneeighteightOverOnesixtwo": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.02"
   },
   "FtOmaRatioJcEFiveOnesevenMassOverOneeighteight": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.10"
   },
   "FtOmaRatioJcEFiveOnesevenMassOverOnesixtwo": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.11"
   },
   "FtOmaRatioJcEFiveOnesevenOverOneeighteight": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.07"
   },
   "FtOmaRatioJcEFiveOnesevenOverOnesixtwo": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.09"
   },
   "FtOmaRatioJcEFiveOnesixtwoMassOverOneeighteight": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.00"
   },
   "FtOmaRatioJcEFiveOnesixtwoMassOverOnesixtwo": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.02"
   },
   "FtOmaRatioJcEFiveOnesixtwoOverOneeighteight": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98"
   },
-  "FtOmaRatioJcEFiveRandDrawOneOverOneeighteight": {
+  "FtOmaRatioJcEFiveRandOverOneeighteight": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.04"
   },
-  "FtOmaRatioJcEFiveRandDrawOneOverOnesixtwo": {
+  "FtOmaRatioJcEFiveRandOverOnesixtwo": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.06"
   },
   "FtOmaRatioJcEFourFourthreeOverOneeighteight": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98"
   },
   "FtOmaRatioJcEFourFourthreeOverOnesixtwo": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.01"
   },
   "FtOmaRatioJcEFourOneeighteightOverOnesixtwo": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.02"
   },
   "FtOmaRatioJcEFourOnesevenMassOverOneeighteight": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.12"
   },
   "FtOmaRatioJcEFourOnesevenMassOverOnesixtwo": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.14"
   },
   "FtOmaRatioJcEFourOnesevenOverOneeighteight": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.07"
   },
   "FtOmaRatioJcEFourOnesevenOverOnesixtwo": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.09"
   },
   "FtOmaRatioJcEFourOnesixtwoMassOverOneeighteight": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.99"
   },
   "FtOmaRatioJcEFourOnesixtwoMassOverOnesixtwo": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.01"
   },
   "FtOmaRatioJcEFourOnesixtwoOverOneeighteight": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.98"
   },
-  "FtOmaRatioJcEFourRandDrawOneOverOneeighteight": {
+  "FtOmaRatioJcEFourRandOverOneeighteight": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
-    "value": "1.08"
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
+    "value": "1.07"
   },
-  "FtOmaRatioJcEFourRandDrawOneOverOnesixtwo": {
+  "FtOmaRatioJcEFourRandOverOnesixtwo": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
-    "value": "1.11"
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
+    "value": "1.10"
   },
   "FtOmaRatioJcESixFourthreeOverOneeighteight": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.02"
   },
   "FtOmaRatioJcESixFourthreeOverOnesixtwo": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.02"
   },
   "FtOmaRatioJcESixOneeighteightOverOnesixtwo": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.00"
   },
   "FtOmaRatioJcESixOnesevenMassOverOneeighteight": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.11"
   },
   "FtOmaRatioJcESixOnesevenMassOverOnesixtwo": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.11"
   },
   "FtOmaRatioJcESixOnesevenOverOneeighteight": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.08"
   },
   "FtOmaRatioJcESixOnesevenOverOnesixtwo": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.08"
   },
   "FtOmaRatioJcESixOnesixtwoMassOverOneeighteight": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.01"
   },
   "FtOmaRatioJcESixOnesixtwoMassOverOnesixtwo": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.01"
   },
   "FtOmaRatioJcESixOnesixtwoOverOneeighteight": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.00"
   },
-  "FtOmaRatioJcESixRandDrawOneOverOneeighteight": {
+  "FtOmaRatioJcESixRandOverOneeighteight": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.05"
   },
-  "FtOmaRatioJcESixRandDrawOneOverOnesixtwo": {
+  "FtOmaRatioJcESixRandOverOnesixtwo": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.05"
   },
   "FtOmaRatioJcEThreeFourthreeOverOneeighteight": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.01"
   },
   "FtOmaRatioJcEThreeFourthreeOverOnesixtwo": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.05"
   },
   "FtOmaRatioJcEThreeOneeighteightOverOnesixtwo": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.05"
   },
   "FtOmaRatioJcEThreeOnesevenMassOverOneeighteight": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.09"
   },
   "FtOmaRatioJcEThreeOnesevenMassOverOnesixtwo": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.14"
   },
   "FtOmaRatioJcEThreeOnesevenOverOneeighteight": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.07"
   },
   "FtOmaRatioJcEThreeOnesevenOverOnesixtwo": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "1.12"
   },
   "FtOmaRatioJcEThreeOnesixtwoMassOverOneeighteight": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.87"
   },
   "FtOmaRatioJcEThreeOnesixtwoMassOverOnesixtwo": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.91"
   },
   "FtOmaRatioJcEThreeOnesixtwoOverOneeighteight": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
     "value": "0.96"
   },
-  "FtOmaRatioJcEThreeRandDrawOneOverOneeighteight": {
+  "FtOmaRatioJcEThreeRandOverOneeighteight": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
-    "value": "1.06"
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
+    "value": "1.04"
   },
-  "FtOmaRatioJcEThreeRandDrawOneOverOnesixtwo": {
+  "FtOmaRatioJcEThreeRandOverOnesixtwo": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "e242d3df423cf0b7dfd15647f593cac38ceb0240a139d00496f1c5206ee2d5ab",
-    "source_file": "experiments/FIGS/data/w2b_leg2_metrics.json",
-    "value": "1.10"
+    "sha256": "9cd059d3e2f51798ace7ecde1283e93e5cb1bef2b590d34b78207f6392d935e2",
+    "source_file": "experiments/FIGS/data/w2b_leg2_metrics_v2.json",
+    "value": "1.09"
   },
   "FtOmaRatioJciiEFiveFourthreeOverOneeighteight": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.09"
   },
   "FtOmaRatioJciiEFiveFourthreeOverOnesixtwo": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.09"
   },
   "FtOmaRatioJciiEFiveOneeighteightOverOnesixtwo": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.00"
   },
   "FtOmaRatioJciiEFiveOnesevenMassOverOneeighteight": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.26"
   },
   "FtOmaRatioJciiEFiveOnesevenMassOverOnesixtwo": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.26"
   },
   "FtOmaRatioJciiEFiveOnesevenOverOneeighteight": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.22"
   },
   "FtOmaRatioJciiEFiveOnesevenOverOnesixtwo": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.22"
   },
   "FtOmaRatioJciiEFiveOnesixtwoMassOverOneeighteight": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.01"
   },
   "FtOmaRatioJciiEFiveOnesixtwoMassOverOnesixtwo": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.02"
   },
   "FtOmaRatioJciiEFiveOnesixtwoOverOneeighteight": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.00"
   },
-  "FtOmaRatioJciiEFiveRandDrawOneOverOneeighteight": {
+  "FtOmaRatioJciiEFiveRandOverOneeighteight": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "1.15"
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "1.14"
   },
-  "FtOmaRatioJciiEFiveRandDrawOneOverOnesixtwo": {
+  "FtOmaRatioJciiEFiveRandOverOnesixtwo": {
     "json_path": "cells.*.N100000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.15"
   },
   "FtOmaRatioJciiEFourFourthreeOverOneeighteight": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.20"
   },
   "FtOmaRatioJciiEFourFourthreeOverOnesixtwo": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.21"
   },
   "FtOmaRatioJciiEFourOneeighteightOverOnesixtwo": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.01"
   },
   "FtOmaRatioJciiEFourOnesevenMassOverOneeighteight": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.30"
   },
   "FtOmaRatioJciiEFourOnesevenMassOverOnesixtwo": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.31"
   },
   "FtOmaRatioJciiEFourOnesevenOverOneeighteight": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.32"
   },
   "FtOmaRatioJciiEFourOnesevenOverOnesixtwo": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.32"
   },
   "FtOmaRatioJciiEFourOnesixtwoMassOverOneeighteight": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.99"
   },
   "FtOmaRatioJciiEFourOnesixtwoMassOverOnesixtwo": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.00"
   },
   "FtOmaRatioJciiEFourOnesixtwoOverOneeighteight": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.99"
   },
-  "FtOmaRatioJciiEFourRandDrawOneOverOneeighteight": {
+  "FtOmaRatioJciiEFourRandOverOneeighteight": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "1.17"
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "1.16"
   },
-  "FtOmaRatioJciiEFourRandDrawOneOverOnesixtwo": {
+  "FtOmaRatioJciiEFourRandOverOnesixtwo": {
     "json_path": "cells.*.N10000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "1.18"
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "1.16"
   },
   "FtOmaRatioJciiESixFourthreeOverOneeighteight": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.05"
   },
   "FtOmaRatioJciiESixFourthreeOverOnesixtwo": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.04"
   },
   "FtOmaRatioJciiESixOneeighteightOverOnesixtwo": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.00"
   },
   "FtOmaRatioJciiESixOnesevenMassOverOneeighteight": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.18"
   },
   "FtOmaRatioJciiESixOnesevenMassOverOnesixtwo": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.18"
   },
   "FtOmaRatioJciiESixOnesevenOverOneeighteight": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.14"
   },
   "FtOmaRatioJciiESixOnesevenOverOnesixtwo": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.14"
   },
   "FtOmaRatioJciiESixOnesixtwoMassOverOneeighteight": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.02"
   },
   "FtOmaRatioJciiESixOnesixtwoMassOverOnesixtwo": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.02"
   },
   "FtOmaRatioJciiESixOnesixtwoOverOneeighteight": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.00"
   },
-  "FtOmaRatioJciiESixRandDrawOneOverOneeighteight": {
+  "FtOmaRatioJciiESixRandOverOneeighteight": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "1.08"
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "1.07"
   },
-  "FtOmaRatioJciiESixRandDrawOneOverOnesixtwo": {
+  "FtOmaRatioJciiESixRandOverOnesixtwo": {
     "json_path": "cells.*.N1000000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.07"
   },
   "FtOmaRatioJciiEThreeFourthreeOverOneeighteight": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.84"
   },
   "FtOmaRatioJciiEThreeFourthreeOverOnesixtwo": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.88"
   },
   "FtOmaRatioJciiEThreeOneeighteightOverOnesixtwo": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.05"
   },
   "FtOmaRatioJciiEThreeOnesevenMassOverOneeighteight": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.98"
   },
   "FtOmaRatioJciiEThreeOnesevenMassOverOnesixtwo": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.02"
   },
   "FtOmaRatioJciiEThreeOnesevenOverOneeighteight": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.97"
   },
   "FtOmaRatioJciiEThreeOnesevenOverOnesixtwo": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "1.02"
   },
   "FtOmaRatioJciiEThreeOnesixtwoMassOverOneeighteight": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.81"
   },
   "FtOmaRatioJciiEThreeOnesixtwoMassOverOnesixtwo": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.85"
   },
   "FtOmaRatioJciiEThreeOnesixtwoOverOneeighteight": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.96"
   },
-  "FtOmaRatioJciiEThreeRandDrawOneOverOneeighteight": {
+  "FtOmaRatioJciiEThreeRandOverOneeighteight": {
     "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
-    "value": "0.80"
-  },
-  "FtOmaRatioJciiEThreeRandDrawOneOverOnesixtwo": {
-    "json_path": "cells.*.N1000.s1.macro_auc_ovr",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.84"
+  },
+  "FtOmaRatioJciiEThreeRandOverOnesixtwo": {
+    "json_path": "cells.*.N1000.s1.macro_auc_ovr",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
+    "value": "0.87"
   },
   "FtRecipeBatch": {
     "json_path": "runs[*].batch_size",
@@ -2797,26 +2797,26 @@
   },
   "FtSizeEFive": {
     "json_path": "cells.*.N100000",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "\\ensuremath{10^{5}}"
   },
   "FtSizeEFour": {
     "json_path": "cells.*.N10000",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "\\ensuremath{10^{4}}"
   },
   "FtSizeESix": {
     "json_path": "cells.*.N1000000",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "\\ensuremath{10^{6}}"
   },
   "FtSizeEThree": {
     "json_path": "cells.*.N1000",
-    "sha256": "cc7d5744d8e4897199f54464fee46ba16f220c73c56d566ffa926618194dd51f",
-    "source_file": "experiments/FIGS/data/w2b_leg1_metrics.json",
+    "sha256": "b56bf70be99820448de2cfea544707b4fe86a794634f6d286c10d5237726cdb8",
+    "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "\\ensuremath{10^{3}}"
   },
   "LitAtlasUnifiedEffDropPercent": {

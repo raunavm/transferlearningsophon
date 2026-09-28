@@ -381,7 +381,8 @@ def input_paths(root: pathlib.Path) -> dict:
             "mass2x2": sorted((data / "probe_ladder_mass2x2_mlp2").glob("s*.json")),
             # The per-cell fine-tuning metrics themselves (fine-tuning wave 2b); which
             # file is which dataset is read from the class count its cells record.
-            "ft_legs": [data / "w2b_leg1_metrics.json", data / "w2b_leg2_metrics.json"],
+            # v2 rereads every v1 cell plus the random-label draws 2 and 3.
+            "ft_legs": [data / "w2b_leg1_metrics_v2.json", data / "w2b_leg2_metrics_v2.json"],
             "anomaly": data / "anomaly_merged_v4" / "analysis_v3" / "anomaly_summary.json",
             "mass_resolution": data / "mass_resolution" / "analysis_holm" / "s7_mass_resolution.json",
             # analysis_v4: the fits redone with each model's own floating peak shape
@@ -962,6 +963,11 @@ def emit_random_control(em: Emitter, C: dict, src: pathlib.Path) -> None:
 FT_DATASETS = {162: ("Jcii", "JetClass-II"), 10: ("Jc", "JetClass")}
 
 
+# The random-label control's three draws, one pretraining run each; its row is
+# the mean +- SD over the draws.
+RAND_FT = ("rand-d1-s1b", "rand-d2-s2", "rand-d3-s3")
+
+
 def ft_rows(sizes: dict) -> list:
     """Rows of the fine-tuning tables: (macro key, label, initialisations), each
     model fine-tuned once, at fine-tuning seed s1.
@@ -975,7 +981,7 @@ def ft_rows(sizes: dict) -> list:
             for a, r in ARM_RUNG.items()]
     rows += [(texname(sizes[ARM_RUNG[a]]) + "Mass", f"{sizes[ARM_RUNG[a]]} classes + mass output",
               five(a + "mass")) for a in ("l162", "r16q1")]
-    return rows + [("RandDrawOne", "random-label control, draw 1", ["rand-d1-s1b"])]
+    return rows + [("Rand", "random-label control", list(RAND_FT))]
 
 
 def ft_load(paths: list) -> dict:
@@ -1039,7 +1045,7 @@ def emit_finetune(em: Emitter, ft: dict, sizes: dict) -> None:
                     em.macro(name + ds + n_tag(n) + key, text[(key, n)], src,
                              f"cells.{{{','.join(inits)}}}.{n}.s1.{metric}",
                              "one run" if len(inits) == 1
-                             else f"mean +- SD over {len(inits)} pretraining seeds")
+                             else f"mean +- SD over the row's {len(inits)} pretrained models")
         oma = {key: {n: np.mean([1 - c[i][n]["s1"]["macro_auc_ovr"] for i in inits]) for n in ns}
                for key, _, inits in rows}
         for n in ns:
@@ -1477,7 +1483,10 @@ def table_finetune(ft: dict, sizes: dict, metric: str) -> str:
                     f"{F['classes']} classes}} \\\\")
         for key, label, inits in rows:
             n = len(inits)
-            label += " (one run)" if n == 1 else f" ($n={n}$)" if n < 5 else ""
+            if key == "Rand":
+                label += f" ({words(n)} draws)"
+            else:
+                label += " (one run)" if n == 1 else f" ($n={n}$)" if n < 5 else ""
             body.append(f"{label} & " + " & ".join(text[(key, s)] for s in ns) + " \\\\")
         if j < len(ft) - 1:
             body.append("\\addlinespace")
@@ -1490,8 +1499,9 @@ def table_finetune(ft: dict, sizes: dict, metric: str) -> str:
                + ": " + ("macro-averaged one-vs-rest AUC" if auc else "accuracy")
                + f" on {n_test} test jets, at the epoch of best validation accuracy. Mean "
                f"{tex('±')} standard deviation over the "
-               f"{words(max(len(i) for *_, i in rows))} pretraining seeds, each fine-tuned once; "
-               "a row with fewer models gives their number. Rows are the pretraining label set, "
+               f"{words(max(len(i) for *_, i in rows))} pretraining seeds, each fine-tuned once, "
+               "and for the random-label control over its random partitions, one pretraining "
+               "run each. Rows are the pretraining label set, "
                "columns the number of fine-tuning training jets.")
     return _table(head + body, caption, "tab:finetune" if auc else "tab:finetune-accuracy",
                   "l " + "r" * len(ns), [])

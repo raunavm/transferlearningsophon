@@ -40,8 +40,8 @@ INPUTS = {
     # leg 1 is the JetClass-II 162-class task, leg 2 the JetClass 10-class task.
     # A later metrics file (the rerun from-scratch and self-supervised
     # fine-tunes) is appended to its task's list and named in FT_REFERENCES.
-    "finetune": {"JetClass-II, 162 classes": [DATA / "w2b_leg1_metrics.json"],
-                 "JetClass, 10 classes": [DATA / "w2b_leg2_metrics.json"]},
+    "finetune": {"JetClass-II, 162 classes": [DATA / "w2b_leg1_metrics_v2.json"],
+                 "JetClass, 10 classes": [DATA / "w2b_leg2_metrics_v2.json"]},
     "anomaly": DATA / "anomaly_merged_v4/analysis_v3/anomaly_summary.json",
     "mass": DATA / "mass_resolution/analysis_holm/s7_mass_resolution.json",
     "mass2x2": sorted((DATA / "probe_ladder_mass2x2_mlp2").glob("s*.json")),
@@ -51,8 +51,9 @@ LEVELS = [188, 162, 43, 17]
 ARMS = {"l188": 188, "l162": 162, "r42q1": 43, "r16q1": 17}
 ARM_ALIAS = {"l162-s1b": "l162-s1"}      # seed index 1 of the 162-class model is a rerun
 FT_SEED = "s1"                           # the pre-specified fine-tuning seed
-# Initialisations drawn as one dashed line, no band.
-FT_REFERENCES = {"rand-d1-s1b": ("random-label control (one run)", "#D55E00", "P")}
+# References drawn as a dashed line with seed-spread error bars: label, colour,
+# marker, the pretrained models averaged.
+FT_REFERENCES = {"random-label control": ("#CC79A7", "P", ("rand-d1-s1b", "rand-d2-s2", "rand-d3-s3"))}
 SEED_OFFSET = 0.1                        # per-seed points sit this far left of their mean
 SIGNALS = {"label_X_bb": r"$X\to b\bar b$", "label_X_qq": r"$X\to q\bar q$",
            "label_X_YY_bbb": r"$YY\to bbb$", "label_X_YY_bbbb": r"$YY\to bbbb$",
@@ -128,10 +129,17 @@ def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
             sd = np.array([np.std(v, ddof=1) for v in r])
             bottom.plot(x, m, **kw)
             bottom.fill_between(x, m - sd, m + sd, color=kw["color"], alpha=0.2, lw=0)
-        for init, (label, colour, marker) in FT_REFERENCES.items():
-            pts = sorted((n_of(n), v) for (i, n), v in cells.items() if i == init)
-            if pts:
-                top.plot(*zip(*pts), color=colour, marker=marker, linestyle="--", label=label)
+        for label, (colour, marker, inits) in FT_REFERENCES.items():
+            per = {}
+            for (i, n), v in cells.items():
+                if i in inits:
+                    per.setdefault(n_of(n), []).append(v)
+            xs = sorted(n for n in per if len(per[n]) == len(inits))
+            if xs:
+                top.errorbar(xs, [np.mean(per[n]) for n in xs],
+                             yerr=[np.std(per[n], ddof=1) for n in xs], color=colour,
+                             marker=marker, linestyle="--", capsize=2,
+                             label=f"{label} ({len(inits)} draws)")
         bottom.axhline(1, color="#999999", linewidth=0.8)
         top.set_title(title)
         top.set_xscale("log")

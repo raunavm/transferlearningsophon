@@ -2,7 +2,7 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Fine-tuning every pretrained model on JetClass-II's 162-class task and on JetClass's 10-class task: macro-averaged one-vs-rest AUC on 125{,}000 (JetClass-II) and 500{,}000 (JetClass) test jets, at the epoch of best validation accuracy. Mean $\pm$ standard deviation over the five pretraining seeds, each fine-tuned once; a row with fewer models gives their number. Rows are the pretraining label set, columns the number of fine-tuning training jets.}
+\caption{Fine-tuning every pretrained model on JetClass-II's 162-class task and on JetClass's 10-class task: macro-averaged one-vs-rest AUC on 125{,}000 (JetClass-II) and 500{,}000 (JetClass) test jets, at the epoch of best validation accuracy. Mean $\pm$ standard deviation over the five pretraining seeds, each fine-tuned once, and for the random-label control over its random partitions, one pretraining run each. Rows are the pretraining label set, columns the number of fine-tuning training jets.}
 \label{tab:finetune}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l rrrr}
@@ -16,7 +16,7 @@ training jets & $10^{3}$ & $10^{4}$ & $10^{5}$ & $10^{6}$ \\
 17 classes & 0.905\,$\pm$\,0.008 & 0.9635\,$\pm$\,0.0005 & 0.97481\,$\pm$\,0.00029 & 0.97809\,$\pm$\,0.00014 \\
 162 classes + mass output & 0.921\,$\pm$\,0.005 & 0.9724\,$\pm$\,0.0013 & 0.97899\,$\pm$\,0.00015 & 0.98047\,$\pm$\,0.00010 \\
 17 classes + mass output & 0.904\,$\pm$\,0.007 & 0.9639\,$\pm$\,0.0007 & 0.9740\,$\pm$\,0.0004 & 0.97738\,$\pm$\,0.00014 \\
-random-label control, draw 1 (one run) & 0.921 & 0.9675 & 0.97617 & 0.97941 \\
+random-label control (three draws) & 0.9180\,$\pm$\,0.0034 & 0.9679\,$\pm$\,0.0006 & 0.97630\,$\pm$\,0.00033 & 0.97944\,$\pm$\,0.00005 \\
 \addlinespace
 \multicolumn{5}{@{}l}{\itshape JetClass, 10 classes} \\
 188 classes & 0.950\,$\pm$\,0.004 & 0.9765\,$\pm$\,0.0008 & 0.98334\,$\pm$\,0.00022 & 0.98578\,$\pm$\,0.00007 \\
@@ -25,7 +25,7 @@ random-label control, draw 1 (one run) & 0.921 & 0.9675 & 0.97617 & 0.97941 \\
 17 classes & 0.9470\,$\pm$\,0.0024 & 0.9749\,$\pm$\,0.0006 & 0.98213\,$\pm$\,0.00004 & 0.98460\,$\pm$\,0.00009 \\
 162 classes + mass output & 0.9569\,$\pm$\,0.0016 & 0.9768\,$\pm$\,0.0005 & 0.98336\,$\pm$\,0.00010 & 0.98561\,$\pm$\,0.00012 \\
 17 classes + mass output & 0.9460\,$\pm$\,0.0029 & 0.9737\,$\pm$\,0.0008 & 0.98175\,$\pm$\,0.00016 & 0.98422\,$\pm$\,0.00017 \\
-random-label control, draw 1 (one run) & 0.9477 & 0.9745 & 0.98265 & 0.98513 \\
+random-label control (three draws) & 0.9483\,$\pm$\,0.0016 & 0.9748\,$\pm$\,0.0007 & 0.98265\,$\pm$\,0.00013 & 0.98510\,$\pm$\,0.00004 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

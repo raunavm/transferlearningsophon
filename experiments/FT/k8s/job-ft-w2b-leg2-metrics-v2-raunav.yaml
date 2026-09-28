@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # V2 READOUT, 2026-09-28. Identical to job-ft-w2b-leg2-metrics-raunav.yaml
+  # (kept as the record of v1) except: the pin (mtx-s1.64; leg2_metrics.py,
+  # eval_arm.py and label_recovery.py are unchanged since v1's pin), the
+  # output directory (_v2), and the expected cell count (203), which now
+  # includes the random-label draws 2 and 3 (ft-legs-w3-rand-d2/d3, 4 cells
+  # each on this leg). v1's cells are re-read, not copied, so every row of
+  # the fine-tuning table comes from one readout.
+  #
+  # LEG 2 (JetClass, 10 classes) READOUT FOR FINE-TUNING WAVES 2 AND 3 AND THE
+  # SELF-SUPERVISED CONTROL, WITH MACRO AUC.
+  #
+  # Derived from job-ft-w2b-leg1-metrics-raunav.yaml. PRESPEC 2.3 puts JetClass
+  # inference on log(1 - macro AUC); weaver's predict.log records accuracy only,
+  # so experiments/FT/leg2_metrics.py --macro-auc computes the macro one-vs-rest
+  # AUC from each cell's pred.root (all 2,000,000 test jets, stride 4, the same
+  # function as leg 1) and refuses a cell whose recomputed accuracy differs from
+  # its log's. Feeds S3 (JetClass 10-way) and the fine-tuning tables.
+  #
+  # 192 leg-2 cells at launch (wave 2's 72, wave 3's 108, mtx-mpm-s1's 12). The
+  # control fine-tunes launched 2026-09-27 write into the same tree; a cell with
+  # a predict.log but no DONE stops the job rather than being read half-written.
+  name: ft-w2b-leg2-metrics-v2-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: readout
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT=/data/results/ft/w2b_leg2_metrics_v2
+          [ ! -e "${OUT}/leg2_metrics.json" ] || { echo "FATAL: ${OUT}/leg2_metrics.json exists; use a new output directory"; exit 1; }
+          git clone --depth 1 --branch "mtx-s1.64" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          ROOT=/data/results/ft/w2b/leg2
+          [ -d "${ROOT}" ] || { echo "FATAL: no ${ROOT}"; exit 1; }
+          n=$(find ${ROOT} -name predict.log -not -path "*.partial.*" | wc -l)
+          echo "leg-2 cells with predict.log: ${n}"
+          [ "${n}" -ge 203 ] || { echo "FATAL: ${n} leg-2 cells, expected 203"; exit 1; }
+          open=0
+          for f in $(find ${ROOT} -name predict.log -not -path "*.partial.*"); do
+            [ -f "$(dirname ${f})/DONE" ] || { echo "NOT DONE: $(dirname ${f})"; open=$((open+1)); }
+          done
+          [ "${open}" -eq 0 ] || { echo "FATAL: ${open} cells have a log but no DONE"; exit 1; }
+
+          mkdir -p ${OUT}
+          python3 experiments/FT/leg2_metrics.py --root ${ROOT} --out ${OUT} --macro-auc --auc-stride 4
+          ls -la ${OUT}
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
