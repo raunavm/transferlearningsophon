@@ -37,7 +37,7 @@ INPUTS = {
     "anomaly": DATA / "anomaly_merged_v4/analysis_v2/anomaly_s5.json",
     "mass": DATA / "mass_resolution/analysis_holm/s7_mass_resolution.json",
     "mass2x2": sorted((DATA / "probe_ladder_mass2x2").glob("s*.json")),
-    "realdata": DATA / "aoj_full_v1/analysis_labelled/aoj_top.json",
+    "realdata": DATA / "aoj_full_v1/analysis_v3/aoj_top.json",
 }
 LEVELS = [188, 162, 43, 17]
 REFERENCES = {"scratch": ("random initialisation", "#7f7f7f", "x"),
@@ -186,7 +186,7 @@ def fig_realdata(J: dict, outdir: pathlib.Path) -> None:
     ax.set_xticklabels([g.replace("+mass", "\n+ mass") for g in GROUPS], fontsize="x-small")
     ax.set_ylabel("fitted top-quark yield\n(1% data efficiency)")
     ax.set_xlabel("pretraining label set (one point per seed)")
-    ax.legend(fontsize="x-small", loc="lower left")
+    ax.legend(fontsize="x-small", loc="lower right")
     fig.tight_layout()
     save(fig, outdir, "realdata_top_yield")
 

@@ -373,6 +373,12 @@ own output nodes with no fine-tuning, is applied to the AspenOpenJets sample of
 CMS open data~\cite{aspen}. A cut at 1\% data efficiency, decorrelated from the
 jet mass, is followed by a simultaneous fit of the soft-drop mass in the passing
 and failing jets~\cite{ddt}, and the endpoint is the fitted top-quark yield. The
+background in the passing jets is the failing spectrum times a transfer factor, a
+polynomial in $\rho$ and $p_{\mathrm T}$ whose order an $F$-test chooses; an
+order whose fit sets the transfer factor to zero in any bin is not admitted,
+since a zero background beneath populated failing bins is unphysical. The fits
+are minimised, and their errors taken, in an orthonormal basis of the
+polynomial. The
 pipeline was validated first on the CMS ParticleNet top score shipped with the
 dataset. Every input-preprocessing choice was fixed by closure of the input
 distributions against simulation, never by looking at a peak. A second,
@@ -807,13 +813,15 @@ finds the peak at \AojRefMass~GeV with a yield of \AojRefYield{} $\pm$
 applied with no fine-tuning, \AojNPass{} pass all four pre-declared peak
 criteria (Table~\ref{tab:realdata}, Fig.~\ref{fig:realdata}). The other two
 fail on the fitted peak position; one of them, a \Kres-class seed, fits a peak at
-\AojWorstMean~GeV with a yield of \AojWorstYield{} $\pm$ \AojWorstYieldErr, which
-is compatible with zero. The fit minimiser reports convergence for only
-\AojNConverged{} fits, the reference among those that do not, and the
-reference's background-only validation fit gives a toy $p$ of
-\AojRefValidationToyP; the gate as registered passed.
-\pending{a refit of every model from its end point and from perturbed starts, to
-show whether the non-converged fits sit at their minimum}
+\AojWorstMean~GeV with a yield of \AojWorstYield{} $\pm$ \AojWorstYieldErr,
+\AojWorstZ{} standard deviations from zero. The reference's background-only
+validation fit gives a toy $p$ of \AojRefValidationToyP; the gate as registered
+passed. Every one of the \AojFitNChecked{} fits is at its minimum: continuing
+from it with Newton steps moves no yield by more than \AojFitMaxNewtonShift{} of
+its error, and every quoted error agrees with a profile-likelihood scan to a
+relative \AojFitProfileAgree. Two earlier runs of these fits, minimised in the
+monomial basis, had stopped short of the minimum in several fits; the verdicts
+below are the same as on the first of them.
 
 The prediction is \AojClauseOneVerdict. The yield does not fall with coarser
 labels (trend $p=\AojTrendP$), and the maximal contrast does not sit at the

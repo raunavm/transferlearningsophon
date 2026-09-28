@@ -290,7 +290,11 @@ def input_paths(root: pathlib.Path) -> dict:
             "finetune": data / "finetune_s3_s4" / "analysis_v2" / "s3_s4_finetune.json",
             "anomaly": data / "anomaly_merged_v4" / "analysis_v2" / "anomaly_s5.json",
             "mass_resolution": data / "mass_resolution" / "analysis_holm" / "s7_mass_resolution.json",
-            "real_data": data / "aoj_full_v1" / "analysis_labelled" / "aoj_top.json",
+            # analysis_v3 supersedes analysis_labelled (2026-09-28): the same registered
+            # analysis on the fits redone in an orthonormal basis (fit_v3), whose own
+            # diagnostic puts every fit at its minimum. The first run's fits stopped short
+            # (fit_convergence_check/, fit_v2_diagnostic/); the verdicts are unchanged.
+            "real_data": data / "aoj_full_v1" / "analysis_v3" / "aoj_top.json",
             "s8": data / "s8_epoch_accuracy" / "analysis" / "s8_mass_early_accuracy.json",
             "s10": data / "probe_ladder_vcbwindow" / "analysis" / "s10_vcb.json",
             "design_spec": root / "experiments" / "MTX" / "k8s" / "job-mtx-l188-s1-raunav.yaml",
@@ -1294,6 +1298,22 @@ def emit_real_data(em: Emitter, J: dict, src: pathlib.Path) -> None:
              f"models.{worst}.top.signal_yield_err")
     em.macro("AojWorstMean", fmt(w["floated_mean"], 0), res_path, f"models.{worst}.top.floated_mean",
              "GeV, the peak position fitted with the shape floating")
+    em.macro("AojWorstZ", fmt(w["signal_yield"] / w["signal_yield_err"], 1), res_path,
+             f"models.{worst}.top.signal_yield / signal_yield_err", "standard deviations from zero")
+    diag_path = res_path.parent / "diagnostic.json"
+    if diag_path.exists():
+        D = json.loads(diag_path.read_text())
+        s = D["summary"]
+        if pathlib.Path(D["results"]).name != "results.json" or not s["n_as_run_reproduced"] == s["n_fits"]:
+            raise SystemExit(f"FATAL: {diag_path} does not reproduce every fit it checks")
+        em.macro("AojFitNChecked", str(s["n_fits"]), diag_path, "summary.n_fits",
+                 "fits redone from their bins by fit_minimum_diagnostic.py")
+        em.macro("AojFitMaxNewtonShift", fmt_sci(float(f'{s["max_abs_newton_yield_shift_over_err"]:.1g}')), diag_path,
+                 "summary.max_abs_newton_yield_shift_over_err",
+                 "largest yield change, in units of its error, when Newton steps continue from the fit")
+        em.macro("AojFitProfileAgree", fmt_sci(float(f'{max(abs(x - 1) for x in s["profile_over_as_run_err_range"]):.1g}')),
+                 diag_path, "summary.profile_over_as_run_err_range",
+                 "largest relative difference between a quoted error and its profile-likelihood error")
     em.macro("AojTrendP", fmt_p(r["trend"]["p"]), src, f"{base}.trend.p", "Holm table of two")
     em.macro("AojEquivFactor", fmt_factor(r["clause3_equivalence"]["smallest_bound_passed_by_all"], 2),
              src, f"{base}.clause3_equivalence.smallest_bound_passed_by_all", "a factor in yield")
