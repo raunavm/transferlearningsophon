@@ -389,7 +389,7 @@ def input_paths(root: pathlib.Path) -> dict:
             "real_data": data / "aoj_full_v1" / "analysis_v4" / "aoj_top.json",
             # The per-seed cells of the |V_cb| window probe, the file its analysis
             # read: they carry the surviving background counts the analysis drops.
-            "vcb": data / "probe_ladder_vcbwindow" / "sall.json",
+            "vcb": data / "probe_ladder_vcbwindow_mlp2" / "sall.json",
             "probe_code": root / "experiments" / "EVAL" / "probe.py",
             "design_spec": root / "experiments" / "MTX" / "k8s" / "job-mtx-l188-s1-raunav.yaml",
             "design_arch": root / "experiments" / "E1" / "ParT_sophon_arch_10c.py",

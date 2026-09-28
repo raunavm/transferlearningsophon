@@ -6259,141 +6259,141 @@
   },
   "VcbBkgLeftLinearSixtyOneseven": {
     "json_path": "tasks.bc_vs_rest.arms.r16q1-s*.linear.rejection_at['0.60'].n_bkg_pass",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "295.0"
   },
   "VcbBkgLeftLinearSixtyOnesixtwo": {
     "json_path": "tasks.bc_vs_rest.arms.l162-s*.linear.rejection_at['0.60'].n_bkg_pass",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "93.4"
   },
   "VcbBkgLeftMlpSixtyOneseven": {
     "json_path": "tasks.bc_vs_rest.arms.r16q1-s*.mlp.rejection_at['0.60'].n_bkg_pass",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
-    "value": "255.6"
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
+    "value": "250.8"
   },
   "VcbBkgLeftMlpSixtyOnesixtwo": {
     "json_path": "tasks.bc_vs_rest.arms.l162-s*.mlp.rejection_at['0.60'].n_bkg_pass",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
-    "value": "84.0"
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
+    "value": "84.8"
   },
   "VcbEpsSixty": {
     "json_path": "tasks.bc_vs_rest.eps_s",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "60"
   },
   "VcbFactorLinear": {
     "json_path": "tasks.bc_vs_rest.arms.*.linear.log1m_auc",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "1.64"
   },
   "VcbFactorMlp": {
     "json_path": "tasks.bc_vs_rest.arms.*.mlp.log1m_auc",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "1.50"
   },
   "VcbLogOmaLinearOneseven": {
     "json_path": "tasks.bc_vs_rest.arms.r16q1-s*.linear.log1m_auc",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "\\ensuremath{-}2.955"
   },
   "VcbLogOmaLinearOnesixtwo": {
     "json_path": "tasks.bc_vs_rest.arms.l162-s*.linear.log1m_auc",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "\\ensuremath{-}3.451"
   },
   "VcbLogOmaMlpOneseven": {
     "json_path": "tasks.bc_vs_rest.arms.r16q1-s*.mlp.log1m_auc",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
-    "value": "\\ensuremath{-}3.064"
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
+    "value": "\\ensuremath{-}3.066"
   },
   "VcbLogOmaMlpOnesixtwo": {
     "json_path": "tasks.bc_vs_rest.arms.l162-s*.mlp.log1m_auc",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
-    "value": "\\ensuremath{-}3.472"
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
+    "value": "\\ensuremath{-}3.473"
   },
   "VcbNBackground": {
     "json_path": "tasks.bc_vs_rest.n_background_test",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "19{,}244"
   },
   "VcbNSignal": {
     "json_path": "tasks.bc_vs_rest.n_signal_test",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "1{,}659"
   },
   "VcbOmaLinearOneseven": {
     "json_path": "tasks.bc_vs_rest.arms.r16q1-s*.linear.log1m_auc",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "\\ensuremath{(5.21 \\pm 0.23)\\times10^{-2}}"
   },
   "VcbOmaLinearOnesixtwo": {
     "json_path": "tasks.bc_vs_rest.arms.l162-s*.linear.log1m_auc",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "\\ensuremath{(3.17 \\pm 0.05)\\times10^{-2}}"
   },
   "VcbOmaMlpOneseven": {
     "json_path": "tasks.bc_vs_rest.arms.r16q1-s*.mlp.log1m_auc",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
-    "value": "\\ensuremath{(4.67 \\pm 0.20)\\times10^{-2}}"
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
+    "value": "\\ensuremath{(4.66 \\pm 0.19)\\times10^{-2}}"
   },
   "VcbOmaMlpOnesixtwo": {
     "json_path": "tasks.bc_vs_rest.arms.l162-s*.mlp.log1m_auc",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
-    "value": "\\ensuremath{(3.104 \\pm 0.020)\\times10^{-2}}"
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
+    "value": "\\ensuremath{(3.102 \\pm 0.023)\\times10^{-2}}"
   },
   "VcbOmaRatioLinear": {
     "json_path": "tasks.bc_vs_rest.arms.*.linear.log1m_auc",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "1.64"
   },
   "VcbOmaRatioMlp": {
     "json_path": "tasks.bc_vs_rest.arms.*.mlp.log1m_auc",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
-    "value": "1.51"
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
+    "value": "1.50"
   },
   "VcbRejLinearSixtyOneseven": {
     "json_path": "tasks.bc_vs_rest.arms.r16q1-s*.linear.rejection_at['0.60'].rejection",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "67\\,\\ensuremath{\\pm}\\,14"
   },
   "VcbRejLinearSixtyOnesixtwo": {
     "json_path": "tasks.bc_vs_rest.arms.l162-s*.linear.rejection_at['0.60'].rejection",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
     "value": "207\\,\\ensuremath{\\pm}\\,19"
   },
   "VcbRejMlpSixtyOneseven": {
     "json_path": "tasks.bc_vs_rest.arms.r16q1-s*.mlp.rejection_at['0.60'].rejection",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
-    "value": "77\\,\\ensuremath{\\pm}\\,14"
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
+    "value": "78\\,\\ensuremath{\\pm}\\,13"
   },
   "VcbRejMlpSixtyOnesixtwo": {
     "json_path": "tasks.bc_vs_rest.arms.l162-s*.mlp.rejection_at['0.60'].rejection",
-    "sha256": "a5b08d606a16c20e1725731b234a41165b04ea2b9ff5b8145f2e11c692d126e9",
-    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow/sall.json",
-    "value": "231\\,\\ensuremath{\\pm}\\,26"
+    "sha256": "5b8b5c7c28602f93b7f6b09d419407b5eed173ea2cd82390732e76c339937b16",
+    "source_file": "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json",
+    "value": "230\\,\\ensuremath{\\pm}\\,31"
   },
   "VocabSizeLoneeighteight": {
     "json_path": "column L188 (distinct group count)",
