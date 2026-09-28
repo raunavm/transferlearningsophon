@@ -164,7 +164,16 @@ def test_main_says_go_for_a_tagger_and_no_go_for_noise(tmp_path, monkeypatch, ca
     assert res["pipeline_ok"] and res["verdict"] == dict(good="GO", noise="NO-GO"), capsys.readouterr().out
     assert 75 < res["reference"]["W"]["mean"] < 90 and 160 < res["reference"]["top"]["mean"] < 185
     good = res["models"]["good"]["W"]
-    assert good["mean"] == res["reference"]["W"]["mean"] and not good["shape_floated"]
+    # every score floats its own shape, starting from the reference's; the peak position
+    # criterion reads the fit the yield comes from, not a second fit at START_ORDER
+    assert good["shape_floated"] and good["floated_mean"] == good["mean"] and 75 < good["mean"] < 90
+    assert good["shape_start"] == [res["reference"]["W"]["mean"], res["reference"]["W"]["width"]]
+    var = res["shape_variations"]["W"]
+    assert var["pool"] == ["good", "noise"] and var["old_reference"] == res["reference"]["W"]["shape_start"]
+    assert set(good["shape_variations"]) == {"pooled", "old_reference"}
+    assert all(v["delta_deviance_vs_fitted_shape"] > -1e-3 for v in good["shape_variations"].values())
+    for f in (res["reference"]["W"], good, res["models"]["noise"]["W"]):
+        assert f["profile_error_ok"] or f["signal_yield_err"] == f["signal_yield_err_hessian"]
     assert 0.5 < good["efficiency_relative_to_reference"] < 1.5 and good["auc_vs_cms_proxy"] > 0.8
     assert not res["models"]["noise"]["W"]["criteria"]["s_over_sqrt_b"]
     assert "good_W_n_pass" in np.load(tmp_path / "histograms.npz").files
@@ -172,7 +181,8 @@ def test_main_says_go_for_a_tagger_and_no_go_for_noise(tmp_path, monkeypatch, ca
 
 def test_the_top_peak_alone_is_fitted_from_a_three_prong_only_score_file(tmp_path, monkeypatch):
     """The full run writes no two-prong score (the W channel is withdrawn), so the
-    fitter must run on the top peak alone and never ask for the W inputs."""
+    fitter must run on the top peak alone and never ask for the W inputs. And by
+    default the published checkpoint is fitted but not pooled into the shape systematic."""
     rng = np.random.default_rng(91)
     parts = [sample(92, n_bkg=250_000), sample(93, n_bkg=0, n_sig=5000, peak="top")]
     mass, pt = (np.concatenate([p[k] for p in parts]) for k in (0, 1))
@@ -183,11 +193,125 @@ def test_the_top_peak_alone_is_fitted_from_a_three_prong_only_score_file(tmp_pat
     np.savez(tmp_path / "m.npz", three_prong_logodds=tag.astype(np.float16))
     monkeypatch.setattr(sys, "argv", ["peak_fit.py", "--jets", str(tmp_path / "jets.npz"), "--toys", "0",
                                       "--out", str(tmp_path), "--peaks", "top",
-                                      "--scores", f"m={tmp_path/'m.npz'}"])
+                                      "--scores", f"m={tmp_path/'m.npz'}", f"{pf.PUBLISHED}={tmp_path/'m.npz'}"])
     assert pf.main() == 0
     res = json.loads((tmp_path / "results.json").read_text())
     assert res["peaks"] == ["top"] and list(res["reference"]) == ["top"]
     assert list(res["models"]["m"]) == ["top"] and res["verdict"]["m"] == "GO"
+    assert pf.PUBLISHED in res["models"] and res["shape_variations"]["top"]["pool"] == ["m"]
+
+
+def _top_bins(seed, n_sig=5000):
+    mass, pt, score, is_sig = sample(seed, n_sig=n_sig, peak="top")
+    passed = pf.passes(score, mass, pt, pf.build_map(score, mass, pt, EFF))
+    return pf._bins(mass, pt, passed, pf.PEAKS["top"]["fit_range"]), (mass, pt, passed, is_sig)
+
+
+def test_the_shape_floats_to_the_injected_peak_from_a_wrong_start_and_the_start_does_not_matter():
+    """Started from a shape 7 GeV high and 3 GeV too wide -- as the reference's was for
+    every real score -- the fit must find the injected peak and end where a start at
+    the truth ends."""
+    b, (mass, pt, passed, is_sig) = _top_bins(12)
+    wrong = pf.fit_binned(b, "top", 180.0, 17.3, float_shape=True)[0]
+    right = pf.fit_binned(b, "top", *SHAPES["top"], float_shape=True)[0]
+    assert wrong["profile_error_ok"] and not wrong["width_at_bound"] and wrong["shape_start"] == [180.0, 17.3]
+    assert abs(wrong["mean"] - 173.0) < 1.5 and abs(wrong["width"] - 14.0) < 1.5
+    assert wrong["tf_order"] == right["tf_order"]
+    assert max(abs(wrong["mean"] - right["mean"]), abs(wrong["width"] - right["width"])) < 0.1
+    assert abs(wrong["signal_yield"] - right["signal_yield"]) < 0.05 * right["signal_yield_err"]
+    _, expected = truth_in_fitted_bins(mass, pt, passed, is_sig, "top")
+    assert abs(wrong["signal_yield"] - expected) < 2.5 * wrong["signal_yield_err"]
+    assert wrong["signal_yield_err"] >= wrong["signal_yield_err_hessian"], "profiling the shape cannot narrow it"
+
+
+def test_the_quoted_error_is_where_the_deviance_profiled_over_tf_and_shape_rises_by_one():
+    """Re-derived with a different minimiser over the shape (Nelder-Mead from an offset
+    start). And the fixed-yield fit it rests on gives, at a FIXED shape, the Hessian
+    error -- the fixed-shape profile error of fit_minimum_diagnostic."""
+    from scipy import optimize
+    b, _ = _top_bins(13)
+    fit, _, (model, x) = pf.fit_binned(b, "top", *SHAPES["top"], float_shape=True)
+    order, tf_norm = tuple(fit["tf_order"]), model.tf_norm
+    y0 = fit["signal_yield"]
+
+    def prof(y):
+        at = lambda v: pf._Model(b, order, tf_norm, v[0], v[1]).fit_at_yield(y, x)[1]
+        return optimize.minimize(at, (fit["mean"] + 0.7, fit["width"] - 0.7), method="Nelder-Mead",
+                                 options=dict(xatol=1e-4, fatol=1e-10)).fun
+    f0 = prof(y0)
+    assert abs(f0 - fit["deviance"] / 2) < 1e-4, "the fitted shape is the profile's minimum"
+    for sign, e in ((-1, fit["signal_yield_err_lo"]), (1, fit["signal_yield_err_hi"])):
+        assert 2 * (prof(y0 + sign * e) - f0) == pytest.approx(1.0, abs=0.01)
+    h = fit["signal_yield_err_hessian"]
+    fixed = [2 * (model.fit_at_yield(y0 + d, x)[1] - model.loss(x)[0]) for d in (-h, h)]
+    assert fixed == pytest.approx([1.0, 1.0], abs=0.05)
+
+
+def test_the_order_is_chosen_by_f_tests_between_fits_each_maximised_over_its_own_shape():
+    """Re-derived from the trail: every order the F-test visits sits at a minimum of the
+    loss in (mean, width) AT THAT ORDER, its deviance is that minimum, and each p-value is
+    the F-test between those maximised likelihoods with the two shape parameters in the
+    parameter count of both models."""
+    from scipy import stats
+    b, _ = _top_bins(15)
+    tf_norm, window = pf._tf_norm(b, pf.PEAKS["top"]["window"]), pf.PEAKS["top"]["window"]
+    order, shape, trail = pf._choose_shape_and_order(b, tf_norm, window, [(180.0, 17.3)])
+    assert len(trail) >= 3, "the fixture must visit more than one candidate order"
+    dev = lambda o, m, w: 2 * pf._Model(b, tuple(o), tf_norm, m, w).fit()[1]
+    for t in trail:
+        assert dev(t["order"], t["mean"], t["width"]) == pytest.approx(t["deviance"], abs=1e-6)
+        for dm, dw in ((0.5, 0), (-0.5, 0), (0, 0.5), (0, -0.5)):
+            assert dev(t["order"], t["mean"] + dm, t["width"] + dw) > t["deviance"] - 1e-6, t
+    n_par = lambda o: (o[0] + 1) * (o[1] + 1)
+    n_other = len(np.unique(b["j"])) + 2
+    by_order = {tuple(t["order"]): t for t in trail}
+    for t in trail[1:]:
+        if "f_test_p" not in t:
+            continue
+        parent = [by_order[p] for p in ((t["order"][0] - 1, t["order"][1]), (t["order"][0], t["order"][1] - 1))
+                  if p in by_order and "admissible" not in by_order[p]]
+        dof = len(b["n_pass"]) - n_par(t["order"]) - n_other
+        ps = [stats.f.sf(((p["deviance"] - t["deviance"]) / (n_par(t["order"]) - n_par(p["order"])))
+                         / (t["deviance"] / dof), n_par(t["order"]) - n_par(p["order"]), dof) for p in parent]
+        assert any(p == pytest.approx(t["f_test_p"], rel=1e-9) for p in ps), t
+    chosen = by_order[tuple(order)]
+    assert (chosen["mean"], chosen["width"]) == shape
+
+
+def test_the_order_and_shape_do_not_depend_on_where_the_shape_search_starts():
+    b, _ = _top_bins(16)
+    tf_norm, window = pf._tf_norm(b, pf.PEAKS["top"]["window"]), pf.PEAKS["top"]["window"]
+    answers = [pf._choose_shape_and_order(b, tf_norm, window, [s])[:2] for s in ((150.0, 25.0), (190.0, 8.0))]
+    assert answers[0][0] == answers[1][0]
+    assert np.allclose(answers[0][1], answers[1][1], atol=0.1)
+
+
+def test_background_only_spectra_fitted_with_a_floating_shape_show_no_significant_peak():
+    """The shape free over the whole window can put a Gaussian on any upward fluctuation
+    (look-elsewhere); on background alone the yield must still be within 3 of its error,
+    or the fit must say it has no profile error."""
+    for seed in (101, 102, 103, 104):
+        mass, pt, score, _ = sample(seed, n_bkg=200_000)
+        passed = pf.passes(score, mass, pt, pf.build_map(score, mass, pt, EFF))
+        fit, _, _ = pf.fit_peak(mass, pt, passed, "top", *SHAPES["top"], float_shape=True)
+        assert abs(fit["signal_yield"] / fit["signal_yield_err"]) < 3 or not fit["profile_error_ok"], (seed, fit)
+
+
+def test_a_profile_error_whose_crossing_search_ends_short_of_tolerance_is_not_quoted(monkeypatch):
+    b, _ = _top_bins(13)
+    monkeypatch.setattr(pf, "MAX_CROSSING_STEPS", 1)
+    monkeypatch.setattr(pf, "CROSSING_TOL", 1e-12)
+    fit = pf.fit_binned(b, "top", *SHAPES["top"], float_shape=True)[0]
+    assert not fit["profile_error_ok"] and fit["signal_yield_err_lo"] is None
+    assert fit["signal_yield_err"] == fit["signal_yield_err_hessian"]
+
+
+def test_a_width_on_its_bound_is_flagged(monkeypatch):
+    """A peak narrower than the 3 GeV floor: the width stops there, and the fit says so."""
+    monkeypatch.setitem(SHAPES, "top", (173.0, 1.0))
+    b, _ = _top_bins(14)
+    fit = pf.fit_binned(b, "top", 173.0, 8.0, float_shape=True)[0]
+    assert fit["width_at_bound"] and fit["width"] < pf.WIDTH_BOUNDS[0] + 0.05
 
 
 def test_a_hard_closure_flag_vetoes_go_and_a_failed_reference_outranks_both():

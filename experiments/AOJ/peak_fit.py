@@ -21,15 +21,22 @@ makes a bump. Two steps keep those apart.
 (b) THE FIT, per (m_SD, pT) bin:   fail = q,   pass = TF(rho, pT) * q + S_j * G(m)
     q     free per bin, profiled analytically (it is the fail spectrum)
     TF    (pass/fail outside the peak window) times a polynomial in (rho, pT);
-          order by F-test from (2, 1). An order whose best fit puts TF on its
-          floor (zero) in any bin is not admissible: a zero background under a
+          order by Fisher F-test up from (2, 1), as CMS chooses it in its pass/fail
+          fits (arXiv:1709.05543, 1710.00159). An order whose best fit puts TF on
+          its floor (zero) in any bin is not admissible: a zero background under a
           populated fail bin is outside the model's physical range
-    G     Gaussian core integrated over the mass bin. Mean and width FLOAT only
-          for the reference selection (the shipped CMS score) and are FIXED from
-          it for every other score
+    G     Gaussian core integrated over the mass bin. Mean and width FLOAT in every
+          fit, the reference's and each score's, and are profiled at every order the
+          F-test compares (_choose_shape_and_order). CMS takes the peak shape from
+          simulation, with the jet-mass scale and resolution as constrained nuisance
+          parameters fitted in situ (arXiv:1705.10532, CMS-EXO-16-030); with no
+          simulated template here, the Gaussian mean and width are free parameters
     S_j   one signal yield per pT bin, so no signal pT spectrum is assumed; the
-          reported yield is the fitted signal IN THE FITTED BINS, summed over pT
-          with the full covariance
+          reported yield is the fitted signal IN THE FITTED BINS, summed over pT.
+          Its error is the profile-likelihood (MINOS) error with the TF and the
+          shape re-minimised; the Hessian error at the fitted shape is kept beside it
+    SHAPE SYSTEMATIC, label-set blind (shape_variations): every fit again at its own
+          order with one pooled (mean, width), and with the reference's old shape
     Only bins lying fully inside the rho window are used. Signal left in the
     fail region is absorbed by q, which biases the yield LOW by about
     TF * (1 - eff_S) / eff_S -- 2 % for a good tagger, the safe direction.
@@ -68,6 +75,9 @@ PT_EDGES = np.array([500, 550, 600, 675, 750, 850, 1000, 1200, 2500], dtype=floa
 MAP_ORDER, MAP_CELLS, MAP_MIN_PASS, MAP_ITERATIONS = (3, 2), (10, 5), 10, 6
 START_ORDER, MAX_ORDER, F_ALPHA = (2, 1), (4, 3), 0.05
 SHAPE_WIDTHS = (5.0, 7.0, 9.0, 12.0, 15.0, 20.0)
+WIDTH_BOUNDS = (3.0, 30.0)
+PUBLISHED = "sophon-public"     # the published 188-class checkpoint: a reference row, never pooled
+CROSSING_TOL, MAX_CROSSING_STEPS = 0.01, 6      # 2 x the profile rise within 1 +- 0.01
 # The validation band starts this many `eff` below the cut: 50-51 % for eff = 1 %.
 # NOT just under the cut. Signal in a band scales with the ROC slope there, which
 # for a ParticleNet-class tagger is ~2 at 10 % background efficiency -- the band
@@ -274,6 +284,21 @@ class _Model:
         u, f, self.converged, self.n_restarts = _minimize(self._loss_u, np.linalg.solve(self.T, x0))
         return self.T @ u, f
 
+    def fit_at_yield(self, y, start):
+        """Minimum of the loss with the total yield v.x_sig held at y, from `start`: the
+        signal moves only in the directions orthogonal to v, the TF in orthonormal
+        coordinates (fit_minimum_diagnostic.profile_error, which this generalises)."""
+        n, v = self.n_tf, self.G.sum(axis=0)
+        wc = np.linalg.svd(v[None, :])[2][1:].T
+        rtf = self.T[:n, :n]
+        join = lambda p: np.r_[rtf @ p[:n], y * v / (v @ v) + wc @ p[n:]]
+
+        def loss(p):
+            val, g = self.loss(join(p))
+            return val, np.r_[rtf.T @ g[:n], wc.T @ g[n:]]
+        p, f, _, _ = _minimize(loss, np.r_[np.linalg.solve(rtf, start[:n]), wc.T @ start[n:]])
+        return join(p), f
+
     def n_at_floor(self, x):
         """Bins where the transfer factor sits on its floor."""
         return int((self.tf_norm * (self.X @ x[:self.n_tf]) <= TF_FLOOR).sum())
@@ -306,65 +331,175 @@ class _Model:
         return self.T @ np.linalg.pinv(0.5 * (h + h.T)) @ self.T.T
 
 
-def _choose_order(b, tf_norm, mean, width):
-    """F-test up from START_ORDER: raise an order only if it buys a significant
-    drop in deviance. Each candidate is started from the current best fit. A
-    candidate whose fit puts the transfer factor on its floor in any bin is not
-    admissible (module docstring); it is kept in the trail, marked."""
+def _f_test_up(fit, n_data, n_other):
+    """F-test up from START_ORDER: raise an order only if it buys a significant drop
+    in deviance. fit(order, parent) -> (half deviance, n bins with the TF on its floor,
+    state, extra trail fields) is the maximum-likelihood fit at `order`; `parent` is
+    (order, state) of the fit it is compared to, None at START_ORDER. n_other counts
+    the parameters besides the TF's. A candidate whose fit puts the transfer factor on
+    its floor in any bin is not admissible (module docstring); it is kept in the
+    trail, marked. Returns (order, trail, state)."""
     n_par = lambda o: (o[0] + 1) * (o[1] + 1)
-    n_data, n_sig = len(b["n_pass"]), (len(np.unique(b["j"])) if mean is not None else 0)
     order = START_ORDER
-    start = _Model(b, order, tf_norm, mean, width)
-    x, dev = start.fit()
-    trail = [dict(order=order, deviance=2 * dev, n_tf_at_floor=start.n_at_floor(x))]
+    dev, floor, state, extra = fit(order, None)
+    trail = [dict(order=order, deviance=2 * dev, n_tf_at_floor=floor, **extra)]
     while True:
         best = None
         for cand in ((order[0] + 1, order[1]), (order[0], order[1] + 1)):
-            dof = n_data - n_par(cand) - n_sig
+            dof = n_data - n_par(cand) - n_other
             if cand[0] > MAX_ORDER[0] or cand[1] > MAX_ORDER[1] or dof <= 0:
                 continue
-            model = _Model(b, cand, tf_norm, mean, width)
-            x_c, dev_c = model.fit(model.embed(x, order))
+            dev_c, floor_c, state_c, extra = fit(cand, (order, state))
             if dev_c <= 0:
                 continue
-            if model.n_at_floor(x_c):
-                trail.append(dict(order=cand, deviance=2 * dev_c, admissible=False,
-                                  n_tf_at_floor=model.n_at_floor(x_c)))
+            if floor_c:
+                trail.append(dict(order=cand, deviance=2 * dev_c, admissible=False, n_tf_at_floor=floor_c, **extra))
                 continue
             f = ((dev - dev_c) / (n_par(cand) - n_par(order))) / (dev_c / dof)
             p = float(stats.f.sf(max(f, 0.0), n_par(cand) - n_par(order), dof))
-            trail.append(dict(order=cand, deviance=2 * dev_c, f_test_p=p))
+            trail.append(dict(order=cand, deviance=2 * dev_c, f_test_p=p, **extra))
             if p < F_ALPHA and (best is None or p < best[3]):
-                best = (cand, x_c, dev_c, p)
+                best = (cand, state_c, dev_c, p)
         if best is None:
-            return order, trail
-        order, x, dev = best[:3]
+            return order, trail, state
+        order, state, dev = best[:3]
+
+
+def _choose_order(b, tf_norm, mean, width):
+    """The F-test order at a FIXED signal shape (or background only, mean None). Each
+    candidate is started from the fit it is compared to."""
+    def fit(order, parent):
+        model = _Model(b, order, tf_norm, mean, width)
+        x, dev = model.fit(None if parent is None else model.embed(parent[1], parent[0]))
+        return dev, model.n_at_floor(x), x, {}
+    n_sig = len(np.unique(b["j"])) if mean is not None else 0
+    order, trail, _ = _f_test_up(fit, len(b["n_pass"]), n_sig)
+    return order, trail
+
+
+def _tf_norm(b, window):
+    side = ~in_windows(_bin_centres(b), [window])
+    return b["n_pass"][side].sum() / max(b["n_fail"][side].sum(), 1.0)
+
+
+def _minimize_shape(f, start, f_start, window, xtol, ftol):
+    """((mean, width), f) minimising f inside the bounds from `start`, by Powell -- or,
+    when scipy's bounded Powell ends ABOVE its start, by a simplex from the start. It
+    did so on a peak narrower than a mass bin, whose minimum sits on the width floor
+    (tests/test_aoj_peak_fit.py); without this the start came back as the answer."""
+    bounds = [window, WIDTH_BOUNDS]
+    r = optimize.minimize(f, start, method="Powell", bounds=bounds, options=dict(xtol=xtol, ftol=ftol))
+    if r.fun > f_start:
+        r = optimize.minimize(f, start, method="Nelder-Mead", bounds=bounds, options=dict(xatol=xtol, fatol=1e-9))
+    if r.fun > f_start:
+        return tuple(map(float, start)), f_start
+    return (float(r.x[0]), float(r.x[1])), float(r.fun)
+
+
+def _float_shape(b, tf_norm, order, window, starts=()):
+    """(mean, width) of the signal minimising the loss at this TF order.
+    GRID FIRST, then polish. A wrong (mean, width) lets the polynomial contort
+    itself into a bump, so the profile has local minima a line search falls into.
+    The polish runs from the best grid point and from each shape in `starts`; the
+    lowest end point wins."""
+    outer = lambda v: _Model(b, order, tf_norm, v[0], v[1]).fit()[1]
+    grid = [(m, w) for m in np.arange(window[0] + 5, window[1] - 4, 2.5) for w in SHAPE_WIDTHS]
+    losses = [outer(v) for v in grid]
+    k = int(np.argmin(losses))
+    best = _minimize_shape(outer, grid[k], losses[k], window, 1e-2, 1e-6)
+    for s in starts:
+        polished = _minimize_shape(outer, tuple(s), outer(s), window, 1e-2, 1e-6)
+        if polished[1] < best[1]:
+            best = polished
+    return best[0]
+
+
+def _choose_shape_and_order(b, tf_norm, window, starts=()):
+    """TF order and signal shape by the nested-model comparison with the shape PROFILED
+    at every order: each order the F-test visits gets its own floated (mean, width)
+    (_float_shape, its polish started also from `starts` and from the shape of the
+    order it is compared to), and the F-test compares those maximised likelihoods,
+    the two shape parameters counted in every model. The order then depends on the
+    data, not on where the shape search starts. Returns (order, shape, F-test trail,
+    each order's floated mean and width in it).
+
+    WHY (2026-09-28). Until then every score was fitted with the reference's shape,
+    180.05 / 17.32 GeV, floated at START_ORDER. No score's peak has that shape: floated
+    at its own order each sits near 183 / 11.5 GeV, the wider Gaussian took in
+    background and the yields came out about 1.5x too high. And a shape floated at
+    START_ORDER is not the shape at the fitted order: at (2, 1) the polynomial cannot
+    follow the background, and in fit_v3 l162-s2's floated peak went to 145 GeV and
+    r16q1mass-s4's to 190 GeV, both with the width on its 30 GeV bound. The first fix
+    alternated {F-test order at the current shape; shape floated at that order} until
+    the order held. Its F-test compared orders at a shape floated for one of them,
+    which favours that order, and r16q1mass-s3 had two stable answers -- (2, 3) from
+    the reference's shape, (2, 2) from the pooled one."""
+    def fit(order, parent):
+        shape = _float_shape(b, tf_norm, order, window, [*starts, *([parent[1]] if parent else [])])
+        model = _Model(b, order, tf_norm, *shape)
+        x, dev = model.fit()
+        return dev, model.n_at_floor(x), shape, dict(mean=shape[0], width=shape[1])
+    order, trail, shape = _f_test_up(fit, len(b["n_pass"]), len(np.unique(b["j"])) + 2)
+    return order, shape, trail
+
+
+def _profile_yield_error(model, x, window, guess):
+    """(lo, hi) MINOS errors of the total yield with the TF AND the signal shape
+    profiled: on each side, the yield change at which 2 x the loss, minimised over
+    everything else at that yield, has risen by 1 -- the profile likelihood ratio of
+    Cowan et al., arXiv:1007.1727 eq. (7), whose nuisance parameters here are the TF,
+    the split of the yield over pT and the Gaussian's mean and width. Each side steps
+    to its parabola's crossing until the rise is within CROSSING_TOL of 1. The shape
+    is minimised by Powell (the loss is smooth in it near the fitted shape), the rest
+    by the fit's own minimiser. The TF order is not profiled: it is a choice of model.
+    None when the profile falls BELOW the fit's minimum -- with no peak the shape is
+    not measured, and a dip placed elsewhere does better -- or when MAX_CROSSING_STEPS
+    end with the rise still not within CROSSING_TOL of 1."""
+    order, tf_norm, mean, width = model.args
+    y0 = float(model.G.sum(axis=0) @ x[model.n_tf:])
+
+    def prof(y):
+        at = lambda v: _Model(model.b, order, tf_norm, v[0], v[1]).fit_at_yield(y, x)[1]
+        return _minimize_shape(at, (mean, width), at((mean, width)), window, 1e-3, 1e-12)[1]
+    f0 = prof(y0)
+    out = []
+    for sign in (-1.0, 1.0):
+        d = guess
+        for _ in range(MAX_CROSSING_STEPS):
+            rise = 2 * (prof(y0 + sign * d) - f0)
+            if rise <= 0:
+                return None
+            d, done = d / np.sqrt(rise), abs(rise - 1) < CROSSING_TOL
+            if done:
+                break
+        else:
+            return None
+        out.append(float(d))
+    return tuple(out)
 
 
 def fit_peak(mass, pt, passed, peak, mean=None, width=None, float_shape=False, order=None):
     """Simultaneous pass/fail fit of one peak. mean/width None -> background only."""
+    return fit_binned(_bins(mass, pt, passed, PEAKS[peak]["fit_range"]), peak, mean, width, float_shape, order)
+
+
+def fit_binned(b, peak, mean=None, width=None, float_shape=False, order=None):
+    """fit_peak on bins already made. float_shape: the mean and width float, profiled
+    at every order the F-test compares (_choose_shape_and_order); `order` is then not
+    used, and (mean, width) -- or when none is given the shape floated at START_ORDER
+    -- is recorded as shape_start and also starts the shape search at every order."""
     cfg = PEAKS[peak]
-    b = _bins(mass, pt, passed, cfg["fit_range"])
-    side = ~in_windows(_bin_centres(b), [cfg["window"]])
-    tf_norm = b["n_pass"][side].sum() / max(b["n_fail"][side].sum(), 1.0)
-    if float_shape:
-        # GRID FIRST, then polish. A wrong (mean, width) lets the polynomial contort
-        # itself into a bump, so the profile has local minima a line search falls into.
-        outer = lambda v: _Model(b, order or START_ORDER, tf_norm, v[0], v[1]).fit()[1]
-        grid = [(m, w) for m in np.arange(cfg["window"][0] + 5, cfg["window"][1] - 4, 2.5)
-                for w in SHAPE_WIDTHS]
-        losses = [outer(v) for v in grid]
-        best = grid[int(np.argmin(losses))]
-        r = optimize.minimize(outer, best, method="Powell", bounds=[cfg["window"], (3.0, 30.0)],
-                              options=dict(xtol=1e-2, ftol=1e-6))
-        mean, width = (float(r.x[0]), float(r.x[1])) if r.fun <= min(losses) else best
+    tf_norm = _tf_norm(b, cfg["window"])
     trail = None
-    if order is None:
+    if float_shape:
+        start = (mean, width) if mean is not None else _float_shape(b, tf_norm, START_ORDER, cfg["window"])
+        order, (mean, width), trail = _choose_shape_and_order(b, tf_norm, cfg["window"], [start])
+    elif order is None:
         order, trail = _choose_order(b, tf_norm, mean, width)
     model = _Model(b, order, tf_norm, mean, width)
     x, half_dev = model.fit()
     t, s, q, mu = model.expect(x)
-    n_par = len(x)
+    n_par = len(x) + (2 if float_shape else 0)
     out = dict(peak=peak, tf_order=list(order), f_test=trail, n_bins=int(len(t)), n_parameters=n_par,
                converged=model.converged, n_restarts=model.n_restarts, edm=model.edm(x),
                n_tf_at_floor=model.n_at_floor(x),
@@ -384,6 +519,14 @@ def fit_peak(mass, pt, passed, peak, mean=None, width=None, float_shape=False, o
         win = in_windows(_bin_centres(b), [cfg["window"]])
         s_win, b_win = float(s[win].sum()), float((t * q)[win].sum())
         _, dev0 = _Model(b, order, tf_norm).fit()
+        if float_shape:
+            lo, hi = _profile_yield_error(model, x, cfg["window"], err) or (None, None)
+            at_bound = lambda v, bounds: bool(min(v - bounds[0], bounds[1] - v) < 0.05)
+            out.update(signal_yield_err_lo=lo, signal_yield_err_hi=hi, signal_yield_err_hessian=err,
+                       profile_error_ok=lo is not None,
+                       shape_start=[float(v) for v in start],
+                       mean_at_bound=at_bound(mean, cfg["window"]), width_at_bound=at_bound(width, WIDTH_BOUNDS))
+            err = err if lo is None else 0.5 * (lo + hi)    # no profile error: the Hessian's, flagged
         out.update(mean=mean, width=width, shape_floated=bool(float_shape),
                    signal_yield=float(yields.sum()), signal_yield_err=err,
                    yield_per_pt_bin={f"{PT_EDGES[j]:g}-{PT_EDGES[j + 1]:g}": float(y)
@@ -412,19 +555,26 @@ def validation(z, mass, pt, peak, eff, n_toys, shape=None):
 
     HOW TO READ A FAILURE. The band is depleted for a GOOD tagger; a weak one
     leaves real signal in it and the background-only fit can then fail for that
-    reason. `band_signal_z` is the significance of a peak of the reference shape
-    fitted in the band: background-only p < 0.05 WITH a significant band signal
+    reason. `band_signal_z` is the significance of a peak of the score's own fitted
+    shape in the band: background-only p < 0.05 WITH a significant band signal
     means leftover resonance, WITHOUT one it means the map plus polynomial do not
     describe the background."""
     outer = build_map(z, mass, pt, (VALIDATION_OFFSET + 1) * eff)
     inner = build_map(z, mass, pt, VALIDATION_OFFSET * eff)
     region = ~passes(z, mass, pt, inner)
     passed = passes(z, mass, pt, outer)[region]
-    res, hist, (model, x) = fit_peak(mass[region], pt[region], passed, peak)
-    res["toy_p"] = toy_p_value(model, x, n_toys) if n_toys else None
+    res, hist = validation_binned(_bins(mass[region], pt[region], passed, PEAKS[peak]["fit_range"]),
+                                  peak, n_toys, shape)
     res["band"] = [VALIDATION_OFFSET * eff, (VALIDATION_OFFSET + 1) * eff]
+    return res, hist
+
+
+def validation_binned(b, peak, n_toys, shape=None):
+    """validation() on the band's bins already made."""
+    res, hist, (model, x) = fit_binned(b, peak)
+    res["toy_p"] = toy_p_value(model, x, n_toys) if n_toys else None
     if shape is not None:
-        with_signal, _, _ = fit_peak(mass[region], pt[region], passed, peak, *shape, order=tuple(res["tf_order"]))
+        with_signal, _, _ = fit_binned(b, peak, *shape, order=tuple(res["tf_order"]))
         res["band_signal_z"] = with_signal["z_wald"]
     return res, hist
 
@@ -438,19 +588,53 @@ def auc(score, label):
 
 
 def analyse(score, mass, pt, peak, eff, n_toys, shape=None):
-    """Map -> cut -> fit (+ floating-shape diagnostic) -> validation, for one score
-    given on a log-odds-like scale."""
+    """Map -> cut -> fit with the shape floating -> validation, for one score given on
+    a log-odds-like scale. `shape` also starts the shape search (the reference's
+    fitted shape); None for the reference itself, whose search also starts from its
+    own shape floated at START_ORDER."""
     z = np.asarray(score, float)
     passed = passes(z, mass, pt, build_map(z, mass, pt, eff))
-    floated, hist_f, _ = fit_peak(mass, pt, passed, peak, float_shape=True)
-    if shape is None:                                   # this IS the reference
-        fit, hist = floated, hist_f
-    else:
-        fit, hist, _ = fit_peak(mass, pt, passed, peak, mean=shape[0], width=shape[1])
-        fit["floated_mean"], fit["floated_width"] = floated["mean"], floated["width"]
+    fit, hist, _ = fit_peak(mass, pt, passed, peak, *(shape or (None, None)), float_shape=True)
+    # floated_* was a second fit, at START_ORDER, until 2026-09-28; now it is this fit's
+    fit["floated_mean"], fit["floated_width"] = fit["mean"], fit["width"]
     fit["data_efficiency"] = float(passed.mean())
     fit["validation"], hist_v = validation(z, mass, pt, peak, eff, n_toys, shape=(fit["mean"], fit["width"]))
     return fit, passed, dict(hist, **{f"validation_{k}": v for k, v in hist_v.items()})
+
+
+def shape_variations(bins, fits, pool, old_reference, peak):
+    """The shape systematic, blind to the label set: every fit in `fits` again, at its
+    own TF order, with two fixed shapes --
+      pooled         one (mean, width) minimising the summed loss of the fits named
+                     in `pool`, each at its own order (main(): every pretrained
+                     model; the reference and the published checkpoint are not pooled)
+      old_reference  the reference's shape floated at START_ORDER, which every score
+                     was fitted with until 2026-09-28
+    Adds fit["shape_variations"]; returns the two shapes."""
+    cfg = PEAKS[peak]
+    norm = {n: _tf_norm(b, cfg["window"]) for n, b in bins.items()}
+    total = lambda v: sum(_Model(bins[n], tuple(fits[n]["tf_order"]), norm[n], v[0], v[1]).fit()[1] for n in pool)
+    start = np.median([[fits[n]["mean"], fits[n]["width"]] for n in pool], axis=0)
+    pooled = _minimize_shape(total, start, total(start), cfg["window"], 1e-2, 1e-9)[0]
+    shapes = dict(pooled=list(pooled), old_reference=[float(v) for v in old_reference])
+    for n, fit in fits.items():
+        fit["shape_variations"] = {}
+        for k, v in shapes.items():
+            var = fit_binned(bins[n], peak, *v, order=tuple(fit["tf_order"]))[0]
+            fit["shape_variations"][k] = dict(
+                mean=v[0], width=v[1], signal_yield=var["signal_yield"], signal_yield_err=var["signal_yield_err"],
+                deviance=var["deviance"], delta_deviance_vs_fitted_shape=var["deviance"] - fit["deviance"])
+    return dict(shapes, pool=list(pool))
+
+
+def criteria(fit, peak, toys):
+    """The four criteria of one model's fit (a GO needs all)."""
+    cfg = PEAKS[peak]
+    val_p = fit["validation"]["toy_p"] if toys else fit["validation"]["asymptotic_p"]
+    return dict(peak_position=bool(cfg["mean_ok"][0] <= fit["floated_mean"] <= cfg["mean_ok"][1]),
+                s_over_sqrt_b=bool(fit["s_over_sqrt_b"] >= cfg["min_s_sqrt_b"]),
+                validation_p=bool(val_p > MIN_VALIDATION_P),
+                auc=bool((fit["auc_vs_cms_proxy"] or 0.0) >= MIN_AUC))
 
 
 # ---------------------------------------------------------------------- verdict
@@ -475,6 +659,9 @@ def main() -> int:
     # The full run fits the top peak only: the W channel was WITHDRAWN as a design
     # error (docs/PRESPEC_2026-09.md, amendment 2026-09-19) and is not re-fitted.
     ap.add_argument("--peaks", nargs="+", choices=list(PEAKS), default=list(PEAKS))
+    ap.add_argument("--shape-pool", nargs="+", default=None, metavar="NAME",
+                    help="models whose fits define the pooled shape of the shape systematic (default: every "
+                         f"score but the published checkpoint, {PUBLISHED}; the reference is never pooled)")
     a = ap.parse_args()
     peaks = {pk: cfg for pk, cfg in PEAKS.items() if pk in a.peaks}
     score_key = dict(W="two_prong_logodds", top="three_prong_logodds")
@@ -494,11 +681,13 @@ def main() -> int:
         s = np.load(path)
         ours[name] = {pk: s[score_key[pk]].astype(float)[ok] for pk in peaks}
 
-    results, hists, ref_pass = dict(reference={}, models={n: {} for n in ours}), {}, {}
+    results = dict(reference={}, models={n: {} for n in ours}, shape_variations={})
+    hists, ref_pass = {}, {}
     for peak, cfg in peaks.items():
         print(f"\n===== {peak}: reference (shipped CMS ParticleNet) =====", flush=True)
         ref, ref_pass[peak], h = analyse(cms[peak], mass, pt, peak, a.eff, a.toys)
         ref["ok"] = bool(ref["z_wald"] >= cfg["reference_z"])
+        bins = {"reference": _bins(mass, pt, ref_pass[peak], cfg["fit_range"])}
         results["reference"][peak] = ref
         hists.update({f"reference_{peak}_{k}": v for k, v in h.items()})
         print(json.dumps({k: ref[k] for k in ("mean", "width", "signal_yield", "signal_yield_err",
@@ -506,20 +695,19 @@ def main() -> int:
         in_win = in_windows(mass, [cfg["window"]])
         for name, sc in ours.items():
             print(f"===== {peak}: {name} =====", flush=True)
-            fit, _, h = analyse(sc[peak], mass, pt, peak, a.eff, a.toys, shape=(ref["mean"], ref["width"]))
+            fit, passed, h = analyse(sc[peak], mass, pt, peak, a.eff, a.toys, shape=(ref["mean"], ref["width"]))
+            bins[name] = _bins(mass, pt, passed, cfg["fit_range"])
             fit["efficiency_relative_to_reference"] = (
                 fit["signal_yield"] / ref["signal_yield"] if ref["signal_yield"] > 0 else None)
             fit["auc_vs_cms_proxy"] = auc(sc[peak][in_win], ref_pass[peak][in_win])
-            val_p = fit["validation"]["toy_p"] if a.toys else fit["validation"]["asymptotic_p"]
-            fit["criteria"] = dict(
-                peak_position=bool(cfg["mean_ok"][0] <= fit["floated_mean"] <= cfg["mean_ok"][1]),
-                s_over_sqrt_b=bool(fit["s_over_sqrt_b"] >= cfg["min_s_sqrt_b"]),
-                validation_p=bool(val_p > MIN_VALIDATION_P),
-                auc=bool((fit["auc_vs_cms_proxy"] or 0.0) >= MIN_AUC))
+            fit["criteria"] = criteria(fit, peak, a.toys)
             results["models"][name][peak] = fit
             hists.update({f"{name}_{peak}_{k}": v for k, v in h.items()})
             print(json.dumps({k: fit[k] for k in ("signal_yield", "signal_yield_err", "s_over_sqrt_b",
                                                   "floated_mean", "auc_vs_cms_proxy", "criteria")}), flush=True)
+        fits = {"reference": ref, **{n: results["models"][n][peak] for n in ours}}
+        pool = a.shape_pool or [n for n in ours if n != PUBLISHED]
+        results["shape_variations"][peak] = shape_variations(bins, fits, pool, ref["shape_start"], peak)
 
     hard = json.loads(pathlib.Path(a.closure).read_text())["hard_flags"] if a.closure else []
     pipeline_ok = all(r["ok"] for r in results["reference"].values())

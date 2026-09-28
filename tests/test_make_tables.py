@@ -477,9 +477,10 @@ def test_later_results_are_the_stored_values_re_read_independently():
     d = _load(prov["MassResNTest"]["source_file"])["centering_detail"]
     n = d["n_jets_used"]
     assert got["MassResNTest"] == M.fmt_int(n - int(0.8 * n)) == M.fmt_int(d["split"][2])
-    aoj = _load(prov["AojYieldOneeighteight"]["source_file"])["table"]
-    y = [r["signal_yield"] for r in aoj if str(r["level"]) == "188"]
-    assert got["AojYieldOneeighteight"] == M.fmt_int(math.exp(sum(map(math.log, y)) / len(y)))
+    # the yield from the fits themselves, not from the analysis file's summary
+    fits = _load(_load(prov["AojYieldOneeighteight"]["source_file"])["provenance"]["input"])["models"]
+    y = [fits[f"l188-s{s}"]["top"]["signal_yield"] for s in range(1, 6)]
+    assert got["AojYieldOneeighteight"] == M.math_safe(M.fmt_pm(np.mean(y), np.std(y, ddof=1)))
 
 
 def test_the_design_numbers_are_the_ones_the_pretraining_job_ran_with():
@@ -643,23 +644,14 @@ def test_a_bound_is_never_averaged_into_a_mean():
 
 
 FORBIDDEN = re.compile(r"Holm|\$p\$|p=|trend|registered|clause|verdict|\b(?:C[1-5]|S(?:10|[1-9]))\b")
-# Section 6 (real data) is left as it was until it is rewritten against its new
-# analysis file; everything else must be clean.
-NOT_YET = ("Aoj",)
 
 
 def test_no_generated_file_carries_test_language_or_prediction_labels():
     built = M.build(REPO)[0]
     bad = []
     for rel, text in built.items():
-        if rel == "tables/realdata.tex":
-            continue
-        if rel == "provenance.json":
-            lines = [f"{k} {json.dumps(v)}" for k, v in json.loads(text).items()
-                     if not k.startswith(NOT_YET)]
-        else:
-            lines = [ln for ln in text.splitlines()
-                     if not re.match(r"\\newcommand\{\\(?:" + "|".join(NOT_YET) + ")", ln)]
+        lines = ([f"{k} {json.dumps(v)}" for k, v in json.loads(text).items()]
+                 if rel == "provenance.json" else text.splitlines())
         bad += [f"{rel}: {m.group()!r} in {ln[:120]!r}" for ln in lines
                 for m in [FORBIDDEN.search(ln)] if m]
     assert not bad, "\n".join(bad)

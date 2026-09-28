@@ -716,56 +716,50 @@
 \newcommand{\MassResSigmaEffFourthree}{0.3228}  % experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json :: table[cell=43,probe=ridge].sigma_eff :: sha256 e03cde45ece9f385 :: mean over 5 seeds
 \newcommand{\MassResSdFourthree}{0.618}  % experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json :: table[cell=43,probe=ridge].sd :: sha256 e03cde45ece9f385 :: mean over 5 seeds
 \newcommand{\MassResTailFractionFourthree}{0.060}  % experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json :: table[cell=43,probe=ridge].tail_fraction :: sha256 e03cde45ece9f385 :: mean over 5 seeds
-\newcommand{\AojNJetsFit}{9{,}441{,}209}  % experiments/FIGS/data/aoj_full_v1/fit_v3/results.json :: n_jets :: sha256 f594f6a8983ba82b :: jets in the fit region, all files
-\newcommand{\AojNToys}{200}  % experiments/FIGS/data/aoj_full_v1/fit_v3/results.json :: n_toys :: sha256 f594f6a8983ba82b
-\newcommand{\AojNConverged}{32 of 32}  % experiments/FIGS/data/aoj_full_v1/fit_v3/results.json :: reference.top.converged, models.*.top.converged :: sha256 f594f6a8983ba82b :: fits whose minimiser reported success (scipy L-BFGS-B), reference included
-\newcommand{\AojRefValidationToyP}{\ensuremath{0.00498}}  % experiments/FIGS/data/aoj_full_v1/fit_v3/results.json :: reference.top.validation.toy_p :: sha256 f594f6a8983ba82b :: background-only fit in the fail-region band
-\newcommand{\AojWorstYield}{882}  % experiments/FIGS/data/aoj_full_v1/fit_v3/results.json :: models.l162-s2.top.signal_yield :: sha256 f594f6a8983ba82b
-\newcommand{\AojWorstYieldErr}{460}  % experiments/FIGS/data/aoj_full_v1/fit_v3/results.json :: models.l162-s2.top.signal_yield_err :: sha256 f594f6a8983ba82b
-\newcommand{\AojWorstMean}{145}  % experiments/FIGS/data/aoj_full_v1/fit_v3/results.json :: models.l162-s2.top.floated_mean :: sha256 f594f6a8983ba82b :: GeV, the peak position fitted with the shape floating
-\newcommand{\AojWorstZ}{1.9}  % experiments/FIGS/data/aoj_full_v1/fit_v3/results.json :: models.l162-s2.top.signal_yield / signal_yield_err :: sha256 f594f6a8983ba82b :: standard deviations from zero
-\newcommand{\AojFitNChecked}{32}  % experiments/FIGS/data/aoj_full_v1/fit_v3/diagnostic.json :: summary.n_fits :: sha256 6bb06725fa6fa2e6 :: fits redone from their bins by fit_minimum_diagnostic.py
-\newcommand{\AojFitMaxNewtonShift}{\ensuremath{2\times10^{-4}}}  % experiments/FIGS/data/aoj_full_v1/fit_v3/diagnostic.json :: summary.max_abs_newton_yield_shift_over_err :: sha256 6bb06725fa6fa2e6 :: largest yield change, in units of its error, when Newton steps continue from the fit
-\newcommand{\AojFitProfileAgree}{\ensuremath{3\times10^{-5}}}  % experiments/FIGS/data/aoj_full_v1/fit_v3/diagnostic.json :: summary.profile_over_as_run_err_range :: sha256 6bb06725fa6fa2e6 :: largest relative difference between a quoted error and its profile-likelihood error
-\newcommand{\AojTrendP}{\ensuremath{0.742}}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.trend.p :: sha256 62b1ed857c7038f7 :: Holm table of two
-\newcommand{\AojEquivFactor}{2.54}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.clause3_equivalence.smallest_bound_passed_by_all :: sha256 62b1ed857c7038f7 :: a factor in yield
-\newcommand{\AojClauseOneVerdict}{not confirmed}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.clauses[0].verdict :: sha256 62b1ed857c7038f7 :: performance falls with coarser labels
-\newcommand{\AojClauseTwoVerdict}{not confirmed}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.clauses[1].verdict :: sha256 62b1ed857c7038f7 :: the step is 43 -> 17
-\newcommand{\AojClauseThreeVerdict}{inconclusive}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.clauses[2].verdict :: sha256 62b1ed857c7038f7 :: 188 ~ 162 ~ 43
-\newcommand{\AojMassGainOnesixtwo}{\ensuremath{-}0.148}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.mass_output_2x2.gain_162.mean_diff :: sha256 62b1ed857c7038f7 :: with minus without, -ln(yield)
-\newcommand{\AojMassGainPOnesixtwo}{\ensuremath{0.657}}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.mass_output_2x2.gain_162.p :: sha256 62b1ed857c7038f7
-\newcommand{\AojMassGainOneseven}{\ensuremath{-}0.139}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.mass_output_2x2.gain_17.mean_diff :: sha256 62b1ed857c7038f7 :: with minus without, -ln(yield)
-\newcommand{\AojMassGainPOneseven}{\ensuremath{0.385}}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.mass_output_2x2.gain_17.p :: sha256 62b1ed857c7038f7
-\newcommand{\AojMassDid}{\ensuremath{-}0.009}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.mass_output_2x2.difference_in_differences.mean_diff :: sha256 62b1ed857c7038f7
-\newcommand{\AojMassDidP}{\ensuremath{0.978}}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.mass_output_2x2.difference_in_differences.p :: sha256 62b1ed857c7038f7
-\newcommand{\AojOneeighteightVsOnesevenDiff}{\ensuremath{-}0.072}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.pairwise_exploratory[2].mean_diff :: sha256 62b1ed857c7038f7 :: -ln(yield), 17 minus 188
-\newcommand{\AojOneeighteightVsOnesevenP}{\ensuremath{0.558}}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: secondary.real_data_top.pairwise_exploratory[2].p :: sha256 62b1ed857c7038f7
-\newcommand{\AojYieldOneeighteight}{3{,}171}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=188].signal_yield :: sha256 62b1ed857c7038f7 :: geometric mean over 5 seeds
-\newcommand{\AojYieldMinOneeighteight}{2{,}199}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=188].signal_yield (min) :: sha256 62b1ed857c7038f7
-\newcommand{\AojYieldMaxOneeighteight}{4{,}290}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=188].signal_yield (max) :: sha256 62b1ed857c7038f7
-\newcommand{\AojYieldOnesixtwo}{2{,}881}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=162].signal_yield :: sha256 62b1ed857c7038f7 :: geometric mean over 5 seeds
-\newcommand{\AojYieldMinOnesixtwo}{882}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=162].signal_yield (min) :: sha256 62b1ed857c7038f7
-\newcommand{\AojYieldMaxOnesixtwo}{4{,}258}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=162].signal_yield (max) :: sha256 62b1ed857c7038f7
-\newcommand{\AojYieldFourthree}{3{,}188}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=43].signal_yield :: sha256 62b1ed857c7038f7 :: geometric mean over 5 seeds
-\newcommand{\AojYieldMinFourthree}{1{,}723}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=43].signal_yield (min) :: sha256 62b1ed857c7038f7
-\newcommand{\AojYieldMaxFourthree}{4{,}867}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=43].signal_yield (max) :: sha256 62b1ed857c7038f7
-\newcommand{\AojYieldOneseven}{3{,}407}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=17].signal_yield :: sha256 62b1ed857c7038f7 :: geometric mean over 5 seeds
-\newcommand{\AojYieldMinOneseven}{2{,}992}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=17].signal_yield (min) :: sha256 62b1ed857c7038f7
-\newcommand{\AojYieldMaxOneseven}{3{,}950}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=17].signal_yield (max) :: sha256 62b1ed857c7038f7
-\newcommand{\AojYieldOnesixtwoMass}{3{,}341}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=162+mass].signal_yield :: sha256 62b1ed857c7038f7 :: geometric mean over 5 seeds
-\newcommand{\AojYieldMinOnesixtwoMass}{2{,}918}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=162+mass].signal_yield (min) :: sha256 62b1ed857c7038f7
-\newcommand{\AojYieldMaxOnesixtwoMass}{3{,}904}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=162+mass].signal_yield (max) :: sha256 62b1ed857c7038f7
-\newcommand{\AojYieldOnesevenMass}{3{,}914}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=17+mass].signal_yield :: sha256 62b1ed857c7038f7 :: geometric mean over 5 seeds
-\newcommand{\AojYieldMinOnesevenMass}{2{,}740}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=17+mass].signal_yield (min) :: sha256 62b1ed857c7038f7
-\newcommand{\AojYieldMaxOnesevenMass}{4{,}995}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[level=17+mass].signal_yield (max) :: sha256 62b1ed857c7038f7
-\newcommand{\AojRefYield}{27{,}678}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: reference.signal_yield :: sha256 62b1ed857c7038f7 :: shipped CMS ParticleNet top score through the same fit
-\newcommand{\AojRefYieldErr}{485}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: reference.signal_yield_err :: sha256 62b1ed857c7038f7
-\newcommand{\AojRefMass}{180.1}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: reference.mean :: sha256 62b1ed857c7038f7 :: GeV
-\newcommand{\AojRefZ}{57}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: reference.z_wald :: sha256 62b1ed857c7038f7
-\newcommand{\AojPublicYield}{2{,}599}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: reference_models.sophon-public.signal_yield :: sha256 62b1ed857c7038f7
-\newcommand{\AojNPass}{28 of 30}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[*].criteria :: sha256 62b1ed857c7038f7 :: models passing all four peak criteria
-\newcommand{\AojMedianRelEff}{12\%}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[*].efficiency_relative_to_reference :: sha256 62b1ed857c7038f7 :: median over models: yield / CMS tagger's yield
-\newcommand{\AojMedianFitErr}{13\%}  % experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json :: table[*].signal_yield_err / signal_yield :: sha256 62b1ed857c7038f7 :: median over models
+\newcommand{\AojNJetsFit}{9{,}441{,}209}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: n_jets :: sha256 f6698971d312f598 :: jets in the fit region, all files
+\newcommand{\AojYieldOneeighteight}{2{,}200\,\ensuremath{\pm}\,600}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.188.signal_yield :: sha256 0d7e7d257f7932bb :: mean +- SD over 5 seeds
+\newcommand{\AojStatErrOneeighteight}{251}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.188.median_stat_err :: sha256 0d7e7d257f7932bb :: median per-fit statistical error
+\newcommand{\AojYieldPooledOneeighteight}{2{,}200\,\ensuremath{\pm}\,500}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.188.by_shape.pooled :: sha256 0d7e7d257f7932bb :: every fit with the pooled shape
+\newcommand{\AojYieldOnesixtwo}{2{,}000\,\ensuremath{\pm}\,800}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162.signal_yield :: sha256 0d7e7d257f7932bb :: mean +- SD over 5 seeds
+\newcommand{\AojStatErrOnesixtwo}{250}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162.median_stat_err :: sha256 0d7e7d257f7932bb :: median per-fit statistical error
+\newcommand{\AojYieldPooledOnesixtwo}{2{,}200\,\ensuremath{\pm}\,900}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162.by_shape.pooled :: sha256 0d7e7d257f7932bb :: every fit with the pooled shape
+\newcommand{\AojYieldFourthree}{2{,}100\,\ensuremath{\pm}\,800}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.43.signal_yield :: sha256 0d7e7d257f7932bb :: mean +- SD over 5 seeds
+\newcommand{\AojStatErrFourthree}{265}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.43.median_stat_err :: sha256 0d7e7d257f7932bb :: median per-fit statistical error
+\newcommand{\AojYieldPooledFourthree}{2{,}200\,\ensuremath{\pm}\,800}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.43.by_shape.pooled :: sha256 0d7e7d257f7932bb :: every fit with the pooled shape
+\newcommand{\AojYieldOneseven}{2{,}280\,\ensuremath{\pm}\,290}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17.signal_yield :: sha256 0d7e7d257f7932bb :: mean +- SD over 5 seeds
+\newcommand{\AojStatErrOneseven}{333}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17.median_stat_err :: sha256 0d7e7d257f7932bb :: median per-fit statistical error
+\newcommand{\AojYieldPooledOneseven}{2{,}150\,\ensuremath{\pm}\,230}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17.by_shape.pooled :: sha256 0d7e7d257f7932bb :: every fit with the pooled shape
+\newcommand{\AojYieldOnesixtwoMass}{2{,}160\,\ensuremath{\pm}\,310}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162+mass.signal_yield :: sha256 0d7e7d257f7932bb :: mean +- SD over 5 seeds
+\newcommand{\AojStatErrOnesixtwoMass}{270}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162+mass.median_stat_err :: sha256 0d7e7d257f7932bb :: median per-fit statistical error
+\newcommand{\AojYieldPooledOnesixtwoMass}{2{,}230\,\ensuremath{\pm}\,230}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162+mass.by_shape.pooled :: sha256 0d7e7d257f7932bb :: every fit with the pooled shape
+\newcommand{\AojYieldOnesevenMass}{2{,}600\,\ensuremath{\pm}\,500}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17+mass.signal_yield :: sha256 0d7e7d257f7932bb :: mean +- SD over 5 seeds
+\newcommand{\AojStatErrOnesevenMass}{374}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17+mass.median_stat_err :: sha256 0d7e7d257f7932bb :: median per-fit statistical error
+\newcommand{\AojYieldPooledOnesevenMass}{2{,}300\,\ensuremath{\pm}\,600}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17+mass.by_shape.pooled :: sha256 0d7e7d257f7932bb :: every fit with the pooled shape
+\newcommand{\AojShapeShiftMin}{\ensuremath{-}12\%}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.*.by_shape.pooled.mean / signal_yield.mean - 1 :: sha256 0d7e7d257f7932bb :: smallest
+\newcommand{\AojShapeShiftMax}{+8\%}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.*.by_shape.pooled.mean / signal_yield.mean - 1 :: sha256 0d7e7d257f7932bb :: largest
+\newcommand{\AojPooledMean}{182.9}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.shapes.pooled :: sha256 0d7e7d257f7932bb :: GeV
+\newcommand{\AojPooledWidth}{11.4}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.shapes.pooled :: sha256 0d7e7d257f7932bb :: GeV
+\newcommand{\AojPeakMeanMin}{181.6}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.*.top.floated_mean (min) :: sha256 f6698971d312f598 :: GeV
+\newcommand{\AojPeakMeanMax}{184.2}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.*.top.floated_mean (max) :: sha256 f6698971d312f598 :: GeV
+\newcommand{\AojPeakWidthMin}{9.7}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.*.top.floated_width (min) :: sha256 f6698971d312f598 :: GeV
+\newcommand{\AojPeakWidthMax}{13.6}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.*.top.floated_width (max) :: sha256 f6698971d312f598 :: GeV
+\newcommand{\AojNModels}{30}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models (pretrained) :: sha256 f6698971d312f598 :: fits
+\newcommand{\AojWeakestYield}{749}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.l162-s2.top.signal_yield :: sha256 f6698971d312f598 :: the smallest yield of any pretrained model
+\newcommand{\AojWeakestYieldErr}{250}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.l162-s2.top.signal_yield_err :: sha256 f6698971d312f598
+\newcommand{\AojRefYield}{29{,}143}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: reference.top.signal_yield :: sha256 f6698971d312f598
+\newcommand{\AojRefYieldErr}{865}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: reference.top.signal_yield_err :: sha256 f6698971d312f598
+\newcommand{\AojRefMass}{181.0}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: reference.top.floated_mean :: sha256 f6698971d312f598 :: GeV
+\newcommand{\AojRefWidth}{17.8}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: reference.top.floated_width :: sha256 f6698971d312f598 :: GeV
+\newcommand{\AojPublicYield}{1{,}505}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.sophon-public.top.signal_yield :: sha256 f6698971d312f598
+\newcommand{\AojPublicYieldErr}{235}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.sophon-public.top.signal_yield_err :: sha256 f6698971d312f598
+\newcommand{\AojPublicMass}{183.1}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.sophon-public.top.floated_mean :: sha256 f6698971d312f598 :: GeV
+\newcommand{\AojPublicWidth}{10.5}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.sophon-public.top.floated_width :: sha256 f6698971d312f598 :: GeV
+\newcommand{\AojClosureDzeroIqr}{8.5}  % experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json :: rows[part_d0].iqr_ratio :: sha256 f5f1df762bdb8a57 :: open data over JetClass-II QCD
+\newcommand{\AojClosureDzIqr}{10.1}  % experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json :: rows[part_dz].iqr_ratio :: sha256 f5f1df762bdb8a57 :: open data over JetClass-II QCD
+\newcommand{\AojClosureNeutral}{0.65}  % experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json :: rows[part_isNeutralHadron].ratio :: sha256 f5f1df762bdb8a57 :: open data over JetClass-II QCD
+\newcommand{\AojClosureCharged}{1.22}  % experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json :: rows[part_isChargedHadron].ratio :: sha256 f5f1df762bdb8a57 :: open data over JetClass-II QCD
+\newcommand{\AojClosureNPartAoj}{61}  % experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json :: rows[n_particles].aoj :: sha256 f5f1df762bdb8a57 :: median
+\newcommand{\AojClosureNPartRef}{48}  % experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json :: rows[n_particles].reference :: sha256 f5f1df762bdb8a57 :: median
 \newcommand{\MassOmaLinearOnesixtwo}{\ensuremath{(2.36 \pm 0.06)\times10^{-3}}}  % experiments/FIGS/data/probe_ladder_v2/analysis_family_of_four/seed_level_results.json :: table[bvc_resonant,linear,162].auc :: sha256 de1400c27801b179 :: 1-AUC, mean +- SD over 5 seeds
 \newcommand{\MassOmaLinearOnesixtwoMass}{\ensuremath{(2.62 \pm 0.08)\times10^{-3}}}  % experiments/FIGS/data/probe_ladder_mass2x2/s1.json :: tasks.bvc_resonant.arms.l162mass-s*.linear.auc :: sha256 179f25de496d2bab :: 1-AUC, mean +- SD over the 5 per-seed files
 \newcommand{\MassOmaRatioLinearOnesixtwo}{1.11}  % experiments/FIGS/data/probe_ladder_mass2x2/s1.json :: tasks.bvc_resonant.arms.l162mass-s*.linear.auc over table[bvc_resonant,linear,162].auc :: sha256 179f25de496d2bab :: seed mean of 1-AUC with the mass output over without

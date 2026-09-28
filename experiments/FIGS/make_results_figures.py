@@ -45,7 +45,7 @@ INPUTS = {
     "anomaly": DATA / "anomaly_merged_v4/analysis_v3/anomaly_summary.json",
     "mass": DATA / "mass_resolution/analysis_holm/s7_mass_resolution.json",
     "mass2x2": sorted((DATA / "probe_ladder_mass2x2").glob("s*.json")),
-    "realdata": DATA / "aoj_full_v1/analysis_v3/aoj_top.json",
+    "realdata": DATA / "aoj_full_v1/analysis_v4/aoj_top.json",
 }
 LEVELS = [188, 162, 43, 17]
 ARMS = {"l188": 188, "l162": 162, "r42q1": 43, "r16q1": 17}
@@ -230,6 +230,8 @@ def fig_mass(M: dict, pts2x2: dict, outdir: pathlib.Path) -> None:
 
 
 def fig_realdata(J: dict, outdir: pathlib.Path) -> None:
+    """Fitted top yield per pretrained model with its fit error (light), and the
+    mean +- SD over the five seeds of each label set (bold)."""
     fig, ax = plt.subplots(figsize=(style.FIG_W_ONE_COLUMN * 1.4, 3.0))
     pub = J["reference_models"]["sophon-public"]
     ax.axhspan(pub["signal_yield"] - pub["signal_yield_err"],
@@ -237,14 +239,16 @@ def fig_realdata(J: dict, outdir: pathlib.Path) -> None:
                label="published 188-class checkpoint")
     for i, g in enumerate(GROUPS):
         rows = [r for r in J["table"] if str(r["level"]) == g]
-        ax.errorbar([i] * len(rows), [r["signal_yield"] for r in rows],
-                    yerr=[r["signal_yield_err"] for r in rows], linestyle="none", capsize=2,
-                    **group_style(g))
+        y = [r["signal_yield"] for r in rows]
+        ax.errorbar([i - SEED_OFFSET] * len(rows), y, yerr=[r["signal_yield_err"] for r in rows],
+                    linestyle="none", capsize=0, alpha=0.4, markersize=3, **group_style(g))
+        ax.errorbar([i + SEED_OFFSET], [np.mean(y)], yerr=[np.std(y, ddof=1)], linestyle="none",
+                    capsize=3, markersize=6, **group_style(g))
     ax.set_xticks(np.arange(len(GROUPS)))
-    ax.set_xticklabels([g.replace("+mass", "\n+ mass") for g in GROUPS], fontsize="x-small")
+    ax.set_xticklabels([g.replace("+mass", "\n+ mass") for g in GROUPS], fontsize="small")
     ax.set_ylabel("fitted top-quark yield\n(1% data efficiency)")
-    ax.set_xlabel("pretraining label set (one point per seed)")
-    ax.legend(fontsize="x-small", loc="lower right")
+    ax.set_xlabel("pretraining label set")
+    ax.legend(fontsize="small", loc="lower right")
     fig.tight_layout()
     save(fig, outdir, "realdata_top_yield")
 

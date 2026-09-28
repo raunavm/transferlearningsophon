@@ -385,7 +385,7 @@ def input_paths(root: pathlib.Path) -> dict:
             # analysis on the fits redone in an orthonormal basis (fit_v3), whose own
             # diagnostic puts every fit at its minimum. The first run's fits stopped short
             # (fit_convergence_check/, fit_v2_diagnostic/); the verdicts are unchanged.
-            "real_data": data / "aoj_full_v1" / "analysis_v3" / "aoj_top.json",
+            "real_data": data / "aoj_full_v1" / "analysis_v4" / "aoj_top.json",
             # The per-seed cells of the |V_cb| window probe, the file its analysis
             # read: they carry the surviving background counts the analysis drops.
             "vcb": data / "probe_ladder_vcbwindow" / "sall.json",
@@ -1254,92 +1254,62 @@ def emit_vcb(em: Emitter, V: dict, src: pathlib.Path, sizes: dict) -> None:
                  f"exp of the difference of the seed means of log(1-AUC), {lo} classes over {hi}")
 
 
+AOJ_SETS = ("188", "162", "43", "17", "162+mass", "17+mass")
+
+
 def emit_real_data(em: Emitter, J: dict, src: pathlib.Path) -> None:
-    """Section 6, the top peak in CMS open data (AspenOpenJets), 1% data efficiency."""
-    r = J["secondary"]["real_data_top"]
-    base = "secondary.real_data_top"
+    """The top peak in CMS open data (AspenOpenJets) at 1% data efficiency: the
+    fitted yield per label set, mean +- SD over the five seeds, with each fit's own
+    floating Gaussian peak (experiments/AOJ/peak_fit.py, refit_from_bins.py)."""
     res_path = em.root / J["provenance"]["input"]
     res = json.loads(res_path.read_text())
-    em.macro("AojNJetsFit", fmt_int(res["n_jets"]), res_path, "n_jets",
-             "jets in the fit region, all files")
-    em.macro("AojNToys", str(res["n_toys"]), res_path, "n_toys")
-    fits = {"reference": res["reference"]["top"], **{m: v["top"] for m, v in res["models"].items()}}
-    em.macro("AojNConverged", of(sum(bool(f["converged"]) for f in fits.values()), len(fits)),
-             res_path, "reference.top.converged, models.*.top.converged",
-             "fits whose minimiser reported success (scipy L-BFGS-B), reference included")
-    em.macro("AojRefValidationToyP", fmt_p(res["reference"]["top"]["validation"]["toy_p"]), res_path,
-             "reference.top.validation.toy_p", "background-only fit in the fail-region band")
-    worst = min(res["models"], key=lambda m: res["models"][m]["top"]["signal_yield"])
-    w = res["models"][worst]["top"]
-    em.macro("AojWorstYield", fmt_int(w["signal_yield"]), res_path, f"models.{worst}.top.signal_yield")
-    em.macro("AojWorstYieldErr", fmt_int(w["signal_yield_err"]), res_path,
-             f"models.{worst}.top.signal_yield_err")
-    em.macro("AojWorstMean", fmt(w["floated_mean"], 0), res_path, f"models.{worst}.top.floated_mean",
-             "GeV, the peak position fitted with the shape floating")
-    em.macro("AojWorstZ", fmt(w["signal_yield"] / w["signal_yield_err"], 1), res_path,
-             f"models.{worst}.top.signal_yield / signal_yield_err", "standard deviations from zero")
-    diag_path = res_path.parent / "diagnostic.json"
-    if diag_path.exists():
-        D = json.loads(diag_path.read_text())
-        s = D["summary"]
-        if pathlib.Path(D["results"]).name != "results.json" or not s["n_as_run_reproduced"] == s["n_fits"]:
-            raise SystemExit(f"FATAL: {diag_path} does not reproduce every fit it checks")
-        em.macro("AojFitNChecked", str(s["n_fits"]), diag_path, "summary.n_fits",
-                 "fits redone from their bins by fit_minimum_diagnostic.py")
-        em.macro("AojFitMaxNewtonShift", fmt_sci(float(f'{s["max_abs_newton_yield_shift_over_err"]:.1g}')), diag_path,
-                 "summary.max_abs_newton_yield_shift_over_err",
-                 "largest yield change, in units of its error, when Newton steps continue from the fit")
-        em.macro("AojFitProfileAgree", fmt_sci(float(f'{max(abs(x - 1) for x in s["profile_over_as_run_err_range"]):.1g}')),
-                 diag_path, "summary.profile_over_as_run_err_range",
-                 "largest relative difference between a quoted error and its profile-likelihood error")
-    em.macro("AojTrendP", fmt_p(r["trend"]["p"]), src, f"{base}.trend.p", "Holm table of two")
-    em.macro("AojEquivFactor", fmt_factor(r["clause3_equivalence"]["smallest_bound_passed_by_all"], 2),
-             src, f"{base}.clause3_equivalence.smallest_bound_passed_by_all", "a factor in yield")
-    for i, cl in enumerate(r["clauses"]):
-        em.macro("AojClause" + texname(cl["n"]) + "Verdict", tex(cl["verdict"]), src,
-                 f"{base}.clauses[{i}].verdict", cl["text"])
-    for lv in ("162", "17"):
-        g = r["mass_output_2x2"][f"gain_{lv}"]
-        em.macro("AojMassGain" + texname(lv), fmt(g["mean_diff"], 3, sign=True), src,
-                 f"{base}.mass_output_2x2.gain_{lv}.mean_diff", "with minus without, -ln(yield)")
-        em.macro("AojMassGainP" + texname(lv), fmt_p(g["p"]), src,
-                 f"{base}.mass_output_2x2.gain_{lv}.p")
-    d = r["mass_output_2x2"]["difference_in_differences"]
-    em.macro("AojMassDid", fmt(d["mean_diff"], 3, sign=True), src,
-             f"{base}.mass_output_2x2.difference_in_differences.mean_diff")
-    em.macro("AojMassDidP", fmt_p(d["p"]), src, f"{base}.mass_output_2x2.difference_in_differences.p")
-    for i, p in enumerate(r["pairwise_exploratory"]):
-        if (p["fine"], p["coarse"]) == (188, 17):
-            em.macro("Aoj" + texname(188, "vs", 17) + "Diff", fmt(p["mean_diff"], 3, sign=True), src,
-                     f"{base}.pairwise_exploratory[{i}].mean_diff", "-ln(yield), 17 minus 188")
-            em.macro("Aoj" + texname(188, "vs", 17) + "P", fmt_p(p["p"]), src,
-                     f"{base}.pairwise_exploratory[{i}].p")
-    for lv in ("188", "162", "43", "17", "162+mass", "17+mass"):
-        rows = [x for x in J["table"] if str(x["level"]) == lv]
-        y = np.array([x["signal_yield"] for x in rows])
-        k = texname(lv.replace("+mass", " mass"))
-        em.macro("AojYield" + k, fmt_int(np.exp(np.mean(np.log(y)))), src,
-                 f"table[level={lv}].signal_yield", f"geometric mean over {len(y)} seeds")
-        em.macro("AojYieldMin" + k, fmt_int(y.min()), src, f"table[level={lv}].signal_yield (min)")
-        em.macro("AojYieldMax" + k, fmt_int(y.max()), src, f"table[level={lv}].signal_yield (max)")
-    ref = J["reference"]
-    em.macro("AojRefYield", fmt_int(ref["signal_yield"]), src, "reference.signal_yield",
-             "shipped CMS ParticleNet top score through the same fit")
-    em.macro("AojRefYieldErr", fmt_int(ref["signal_yield_err"]), src, "reference.signal_yield_err")
-    em.macro("AojRefMass", fmt(ref["mean"], 1), src, "reference.mean", "GeV")
-    em.macro("AojRefZ", fmt(ref["z_wald"], 0), src, "reference.z_wald")
-    pub = J["reference_models"]["sophon-public"]
-    em.macro("AojPublicYield", fmt_int(pub["signal_yield"]), src,
-             "reference_models.sophon-public.signal_yield")
-    ok = sum(1 for x in J["table"] if all(x["criteria"].values()))
-    em.macro("AojNPass", of(ok, len(J["table"])), src, "table[*].criteria",
-             "models passing all four peak criteria")
-    rel = np.median([x["signal_yield_err"] / x["signal_yield"] for x in J["table"]])
-    eff = np.median([x["efficiency_relative_to_reference"] for x in J["table"]])
-    em.macro("AojMedianRelEff", f"{eff * 100:.0f}\\%", src,
-             "table[*].efficiency_relative_to_reference", "median over models: yield / CMS tagger's yield")
-    em.macro("AojMedianFitErr", f"{rel * 100:.0f}\\%", src,
-             "table[*].signal_yield_err / signal_yield", "median over models")
+    P = J["per_label_set"]
+    em.macro("AojNJetsFit", fmt_int(res["n_jets"]), res_path, "n_jets", "jets in the fit region, all files")
+    shift = []
+    for lv in AOJ_SETS:
+        c, k = P["label_sets"][lv], texname(lv.replace("+mass", " mass"))
+        y, pooled = c["signal_yield"], c["by_shape"]["pooled"]
+        em.macro("AojYield" + k, fmt_pm(y["mean"], y["sd"]), src,
+                 f"per_label_set.label_sets.{lv}.signal_yield", f"mean +- SD over {y['n']} seeds")
+        em.macro("AojStatErr" + k, fmt_int(c["median_stat_err"]), src,
+                 f"per_label_set.label_sets.{lv}.median_stat_err", "median per-fit statistical error")
+        em.macro("AojYieldPooled" + k, fmt_pm(pooled["mean"], pooled["sd"]), src,
+                 f"per_label_set.label_sets.{lv}.by_shape.pooled", "every fit with the pooled shape")
+        shift.append(pooled["mean"] / y["mean"] - 1)
+    em.macro("AojShapeShiftMin", fmt(100 * min(shift), 0, sign=True) + "\\%", src,
+             "per_label_set.label_sets.*.by_shape.pooled.mean / signal_yield.mean - 1", "smallest")
+    em.macro("AojShapeShiftMax", fmt(100 * max(shift), 0, sign=True) + "\\%", src,
+             "per_label_set.label_sets.*.by_shape.pooled.mean / signal_yield.mean - 1", "largest")
+    for name, v in zip(("AojPooledMean", "AojPooledWidth"), P["shapes"]["pooled"]):
+        em.macro(name, fmt(v, 1), src, "per_label_set.shapes.pooled", "GeV")
+    models = {m: v["top"] for m, v in res["models"].items() if m in P["shapes"]["pool"]}
+    for q, name in (("floated_mean", "Mean"), ("floated_width", "Width")):
+        vals = [f[q] for f in models.values()]
+        em.macro(f"AojPeak{name}Min", fmt(min(vals), 1), res_path, f"models.*.top.{q} (min)", "GeV")
+        em.macro(f"AojPeak{name}Max", fmt(max(vals), 1), res_path, f"models.*.top.{q} (max)", "GeV")
+    em.macro("AojNModels", str(len(models)), res_path, "models (pretrained)", "fits")
+    weak = min(models, key=lambda m: models[m]["signal_yield"])
+    em.macro("AojWeakestYield", fmt_int(models[weak]["signal_yield"]), res_path,
+             f"models.{weak}.top.signal_yield", "the smallest yield of any pretrained model")
+    em.macro("AojWeakestYieldErr", fmt_int(models[weak]["signal_yield_err"]), res_path,
+             f"models.{weak}.top.signal_yield_err")
+    ref, pub = res["reference"]["top"], res["models"]["sophon-public"]["top"]
+    for name, f, path in (("AojRef", ref, "reference.top"), ("AojPublic", pub, "models.sophon-public.top")):
+        em.macro(name + "Yield", fmt_int(f["signal_yield"]), res_path, path + ".signal_yield")
+        em.macro(name + "YieldErr", fmt_int(f["signal_yield_err"]), res_path, path + ".signal_yield_err")
+        em.macro(name + "Mass", fmt(f["floated_mean"], 1), res_path, path + ".floated_mean", "GeV")
+        em.macro(name + "Width", fmt(f["floated_width"], 1), res_path, path + ".floated_width", "GeV")
+    cl = em.root / "experiments" / "FIGS" / "data" / "aoj_feasibility_v2cpu" / "closure.json"
+    rows = {r["feature"]: r for r in json.loads(cl.read_text())["rows"]}
+    for feat, name, field in (("part_d0", "AojClosureDzeroIqr", "iqr_ratio"),
+                              ("part_dz", "AojClosureDzIqr", "iqr_ratio"),
+                              ("part_isNeutralHadron", "AojClosureNeutral", "ratio"),
+                              ("part_isChargedHadron", "AojClosureCharged", "ratio")):
+        em.macro(name, fmt(rows[feat][field], 1 if field == "iqr_ratio" else 2), cl,
+                 f"rows[{feat}].{field}", "open data over JetClass-II QCD")
+    n = rows["n_particles"]
+    em.macro("AojClosureNPartAoj", fmt_int(n["aoj"]), cl, "rows[n_particles].aoj", "median")
+    em.macro("AojClosureNPartRef", fmt_int(n["reference"]), cl, "rows[n_particles].reference", "median")
 
 
 # ------------------------------------------------------------------ tables
@@ -1646,25 +1616,28 @@ def table_mass(M: dict, root: pathlib.Path) -> str:
 
 
 def table_realdata(J: dict) -> str:
-    """Section 6: fitted top yield at 1% data efficiency in CMS open data."""
-    groups = ["188", "162", "43", "17", "162+mass", "17+mass"]
-    head = ["label set & geometric-mean yield & range over seeds \\\\", "\\midrule"]
+    """Fitted top-quark yield in CMS open data at 1% data efficiency."""
+    P = J["per_label_set"]
+    res = json.loads((REPO / J["provenance"]["input"]).read_text())
+    head = ["pretraining label set & yield & statistical error per fit & yield, pooled peak shape "
+            "\\\\", "\\midrule"]
     body = []
-    for g in groups:
-        y = np.array([x["signal_yield"] for x in J["table"] if str(x["level"]) == g])
-        body.append(f"{g.replace('+mass', ' + mass')} & {fmt_int(np.exp(np.mean(np.log(y))))} & "
-                    f"{fmt_int(y.min())}--{fmt_int(y.max())} \\\\")
-    pub = J["reference_models"]["sophon-public"]
+    for lv in AOJ_SETS:
+        c = P["label_sets"][lv]
+        y, pooled = c["signal_yield"], c["by_shape"]["pooled"]
+        body.append(f"{lv.replace('+mass', ' + mass')} & {fmt_pm(y['mean'], y['sd'])} & "
+                    f"{fmt_int(c['median_stat_err'])} & {fmt_pm(pooled['mean'], pooled['sd'])} \\\\")
     body.append("\\addlinespace")
-    body.append(f"published 188-class checkpoint & {fmt_int(pub['signal_yield'])} "
-                f"$\\pm$ {fmt_int(pub['signal_yield_err'])} & --- \\\\")
-    ref = J["reference"]
-    body.append(f"CMS ParticleNet (shipped) & {fmt_int(ref['signal_yield'])} $\\pm$ "
-                f"{fmt_int(ref['signal_yield_err'])} & --- \\\\")
-    caption = ("Top quarks found in CMS open data with no fine-tuning: fitted top-peak yield at 1\\% "
-               "data efficiency, from one simultaneous pass/fail fit over all files, per pretrained "
-               "model. Geometric mean and range over five pretraining seeds.")
-    return _table(head + body, caption, "tab:realdata", "l r r", [])
+    for name, f in (("published 188-class checkpoint (one model)", res["models"]["sophon-public"]["top"]),
+                    ("CMS ParticleNet top score (shipped)", res["reference"]["top"])):
+        body.append(f"{name} & {fmt_int(f['signal_yield'])} & {fmt_int(f['signal_yield_err'])} & --- \\\\")
+    m, w = P["shapes"]["pooled"]
+    caption = ("Top quarks found in CMS open data with no fine-tuning: the top-quark yield fitted at 1\\% "
+               "data efficiency, one simultaneous pass/fail fit over all files per model, each with its "
+               f"own Gaussian peak. Mean {tex('±')} standard deviation over the five pretraining seeds; the "
+               "second column is the median statistical error of a single fit; the last column refits every "
+               f"model with one peak shape shared by all thirty ({fmt(m, 1)}~GeV, width {fmt(w, 1)}~GeV).")
+    return _table(head + body, caption, "tab:realdata", "l r r r", [])
 
 
 # ------------------------------------------------------------------ assembly

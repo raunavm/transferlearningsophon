@@ -2,22 +2,22 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Top quarks found in CMS open data with no fine-tuning: fitted top-peak yield at 1\% data efficiency, from one simultaneous pass/fail fit over all files, per pretrained model. Geometric mean and range over five pretraining seeds.}
+\caption{Top quarks found in CMS open data with no fine-tuning: the top-quark yield fitted at 1\% data efficiency, one simultaneous pass/fail fit over all files per model, each with its own Gaussian peak. Mean $\pm$ standard deviation over the five pretraining seeds; the second column is the median statistical error of a single fit; the last column refits every model with one peak shape shared by all thirty (182.9~GeV, width 11.4~GeV).}
 \label{tab:realdata}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{l r r}
+\begin{tabular}{l r r r}
 \toprule
-label set & geometric-mean yield & range over seeds \\
+pretraining label set & yield & statistical error per fit & yield, pooled peak shape \\
 \midrule
-188 & 3{,}171 & 2{,}199--4{,}290 \\
-162 & 2{,}881 & 882--4{,}258 \\
-43 & 3{,}188 & 1{,}723--4{,}867 \\
-17 & 3{,}407 & 2{,}992--3{,}950 \\
-162 + mass & 3{,}341 & 2{,}918--3{,}904 \\
-17 + mass & 3{,}914 & 2{,}740--4{,}995 \\
+188 & 2{,}200\,$\pm$\,600 & 251 & 2{,}200\,$\pm$\,500 \\
+162 & 2{,}000\,$\pm$\,800 & 250 & 2{,}200\,$\pm$\,900 \\
+43 & 2{,}100\,$\pm$\,800 & 265 & 2{,}200\,$\pm$\,800 \\
+17 & 2{,}280\,$\pm$\,290 & 333 & 2{,}150\,$\pm$\,230 \\
+162 + mass & 2{,}160\,$\pm$\,310 & 270 & 2{,}230\,$\pm$\,230 \\
+17 + mass & 2{,}600\,$\pm$\,500 & 374 & 2{,}300\,$\pm$\,600 \\
 \addlinespace
-published 188-class checkpoint & 2{,}599 $\pm$ 377 & --- \\
-CMS ParticleNet (shipped) & 27{,}678 $\pm$ 485 & --- \\
+published 188-class checkpoint (one model) & 1{,}505 & 235 & --- \\
+CMS ParticleNet top score (shipped) & 29{,}143 & 865 & --- \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

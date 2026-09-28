@@ -17,8 +17,9 @@ HOW. peak_fit.fit_peak is run unchanged on the exported (m_SD, pT) bins
   orthonormal  with the same model minimised in an orthonormal basis of the SAME
                polynomial space (QR of the design matrix). The model, its deviance and
                its minimum are unchanged; only the conditioning of the search is.
-The whole procedure is redone either way: the floated peak shape of the reference,
-the F-test choice of order, the fit, the background-only fit, the validation fit.
+The whole procedure is redone either way: the floated peak shape of the reference
+(as fit_v2 and fit_v3 floated it, at START_ORDER; see replay), the F-test choice of
+order, the fit, the background-only fit, the validation fit.
 Then each orthonormal fit is polished with Newton steps on a Hessian taken in the
 orthonormal coordinates, its gradient is checked against finite differences, and
 the yield's error is measured by a profile-likelihood scan (the yield change that
@@ -91,8 +92,14 @@ def patched(**attrs):
 
 
 def replay(b, model_cls, **kw):
-    """peak_fit.fit_peak on these bins with this model class."""
+    """peak_fit.fit_peak on these bins with this model class. float_shape=True is
+    replayed as the procedure of fit_v2 and fit_v3 ran it -- the shape floated at
+    START_ORDER, then the order by F-test at that shape (refit_from_bins.old_fit) --
+    not as peak_fit now floats it (the shape profiled at every order)."""
     with patched(_bins=lambda *a, **k: b, _Model=model_cls):
+        if kw.pop("float_shape", False):
+            window = P.PEAKS[PEAK]["window"]
+            kw["mean"], kw["width"] = P._float_shape(b, P._tf_norm(b, window), P.START_ORDER, window)
         out, _, (model, x) = P.fit_peak(None, None, None, PEAK, **kw)
     return out, model, x
 

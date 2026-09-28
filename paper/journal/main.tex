@@ -71,7 +71,11 @@ models a factor \FtOmaRatioJciiESixOnesevenOverOneeighteight{} behind the
 \Kfull-class models in $1-$macro AUC at \FtSizeESix{} training jets. An auxiliary
 mass output improves the jet-mass information in the representation and costs
 $b$-versus-$c$ separation, far more at \Kcoarse{} classes than at \Kres.
-\pending{one sentence each on the community benchmarks, anomaly detection and CMS open data once the reruns land}
+Anomaly detectors on the frozen features lose sensitivity to decays with several
+$b$ quarks once the vocabulary stops distinguishing their number. On CMS open
+data every model finds the top-quark peak with no fine-tuning, and the fitted
+yield varies more between pretraining runs than between vocabularies.
+\pending{one sentence on the community benchmarks}
 \end{abstract}
 
 % ============================================================================
@@ -141,8 +145,12 @@ Our results are:
   features and costs $b$-versus-$c$ separation, far more at \Kcoarse{} classes
   than at \Kres{} (Sec.~\ref{sec:mass}). Without it, coarser vocabularies carry
   slightly more mass information.
-\item \pending{anomaly detection and CMS open data, once the class-sum rerun and
-  the real-data refit land}
+\item Anomaly detectors that work on the frozen features lose sensitivity to decays
+  with several $b$ quarks from the \Kmid-class vocabulary down, the first that no
+  longer distinguishes their number (Sec.~\ref{sec:anomaly}).
+\item On CMS open data, applied with no adaptation, every model finds the
+  top-quark peak, and the fitted yield depends on the pretraining run rather than
+  on the vocabulary (Sec.~\ref{sec:realdata}).
 \end{itemize}
 
 % ============================================================================
@@ -361,16 +369,29 @@ classes removed at every vocabulary}
 \paragraph{Real data.} Each model's three-prong-versus-QCD score, the sum of its
 output scores for hadronic three-prong decays over the sum for QCD, built with
 no fine-tuning, is applied to the AspenOpenJets sample of CMS open
-data~\cite{aspen}, as OmniLearned did for its own model~\cite{omnilearned}. The
-score does not distinguish flavour at any vocabulary. A cut at 1\% data
-efficiency, decorrelated from the jet mass~\cite{ddt}, is followed by a
-simultaneous fit of the soft-drop mass in the passing and failing
-jets~\cite{cmshbb,cmszprime}: the background in the passing jets is the failing
-spectrum times a transfer factor, a polynomial in $\rho$ and $p_{\mathrm T}$
-whose order an $F$-test chooses, and the top-quark signal is a Gaussian whose
-mean and width float for each model. The reported quantity is the fitted
-top-quark yield. \pending{fit details and validation, from the refit with
-per-model peak shapes}
+data~\cite{aspen}, whose top-quark peak OmniLearned recovered with its own
+model~\cite{omnilearned}. The score does not distinguish quark flavour at any
+vocabulary. A cut on the score, set in bins of $\rho$ and $p_{\mathrm T}$ to pass
+1\% of the jets in the mass sidebands, keeps the background mass shape nearly
+unchanged~\cite{ddt}. It is followed by a simultaneous fit of the soft-drop mass
+of the \AojNJetsFit{} jets in the passing and failing
+categories~\cite{cmshbb,cmszprime}: the background in the passing jets is the
+failing spectrum times a transfer factor, a polynomial in $\rho$ and
+$p_{\mathrm T}$, and the top-quark signal is a Gaussian. With no simulation of
+these data to supply a template, the Gaussian's mean and width float in every
+fit, where CMS analyses take the shape from simulation and let its scale and
+resolution float within constraints. The order of the transfer factor is chosen
+by an $F$-test with the peak shape fitted at every candidate order. The
+statistical error of the yield is taken from the profile likelihood, with the
+transfer factor and the peak shape refitted at each value of the yield. As a
+check on the peak shape, every model is refitted with one shape shared by all
+of them. The open data are not the simulation the models were trained on: on
+the inputs the network receives, the interquartile ranges of the transverse and
+longitudinal impact parameters are \AojClosureDzeroIqr{} and \AojClosureDzIqr{}
+times those of JetClass-II QCD jets, jets carry more particles (median
+\AojClosureNPartAoj{} against \AojClosureNPartRef), and neutral hadrons are
+\AojClosureNeutral{} times as frequent. The models are applied to these inputs
+without adaptation.
 
 \subsection{Uncertainties}\label{sec:stats}
 
@@ -439,10 +460,9 @@ classes and \ProbeOmaRatioRetainedTopologyLinearOnesevenOverOnesixtwo{} at
 \Kcoarse. The \Kmid-class vocabulary no longer distinguishes one $b$ quark from
 two, which this task may use. Electron versus muon pairs are merged from
 \VocabSizeRsixthreeQone{} classes down: the two finer vocabularies separate them
-perfectly at the resolution of the test sample, while the AUC is
-\ProbeAucEeVsMmLinearFourthree{}~$\pm$~\ProbeAucSdEeVsMmLinearFourthree{} at
-\Kmid{} and \ProbeAucEeVsMmLinearOneseven{}~$\pm$~\ProbeAucSdEeVsMmLinearOneseven{}
-at \Kcoarse{} classes.
+perfectly at the resolution of the test sample, while $1-$AUC is
+\ProbeOmaEeVsMmLinearFourthree{} at \Kmid{} and \ProbeOmaEeVsMmLinearOneseven{} at
+\Kcoarse{} classes.
 \pending{nonlinear probe: the rerun with converged training replaces Table~\ref{tab:probes-mlp}}
 
 The last probe takes its task from a physics analysis: separating $X\to bc$
@@ -472,8 +492,9 @@ is \VcbRejLinearSixtyOnesixtwo{} and \VcbRejLinearSixtyOneseven{}
 
 \subsection{Label recovery across the tree}\label{sec:recovery}
 
-Table~\ref{tab:recovery} reads every level of the tree out of every model. Each
-model is at its best at and above its own level: at the \Kfull-class readout the
+Table~\ref{tab:recovery} reads every level of the tree out of every model. A model
+recovers the levels at and above its own as well as any finer model does, and
+loses the levels below it: at the \Kfull-class readout the
 balanced accuracy is \RecoveryAccOneeighteightByOneeighteight{} for the
 \Kfull-class models and \RecoveryAccOneeighteightByOneseven{} for the
 \Kcoarse-class models, and at the \Kmid-class readout the three finer
@@ -660,10 +681,43 @@ $X\to YY\to bbbb$, where the \Kres-class models are slightly more sensitive.
 
 \subsection{Real data}\label{sec:realdata}
 
-\pending{rewritten from the refit with per-model peak shapes: fitted top-quark
-yield per vocabulary, mean and standard deviation over five runs, with the
-per-fit statistical uncertainty and the peak-shape variation; input differences
-between the open data and the simulation}
+Every one of the \AojNModels{} pretrained models finds the top-quark peak in the
+data, applied with no fine-tuning, at \AojPeakMeanMin--\AojPeakMeanMax~GeV with
+widths of \AojPeakWidthMin--\AojPeakWidthMax~GeV (Table~\ref{tab:realdata},
+Fig.~\ref{fig:realdata}). The fitted yield shows no dependence on the vocabulary:
+\AojYieldOneeighteight, \AojYieldOnesixtwo, \AojYieldFourthree{} and
+\AojYieldOneseven{} from finest to coarsest. What varies is the pretraining run:
+the spread between runs of one vocabulary is two to three times the statistical
+error of a single fit, and one \Kres-class run finds far fewer top quarks than
+the others (\AojWeakestYield{}~$\pm$~\AojWeakestYieldErr). With the mass output
+the yields are \AojYieldOnesixtwoMass{} at \Kres{} classes and
+\AojYieldOnesevenMass{} at \Kcoarse. Refitting every model with one shared peak
+shape moves the label-set means by \AojShapeShiftMin{} to \AojShapeShiftMax{}
+and leaves the picture unchanged. The published \Kfull-class Sophon checkpoint
+finds \AojPublicYield{}~$\pm$~\AojPublicYieldErr, within the range of our
+\Kfull-class runs.
+
+The score is the same flavour-inclusive three-prong score at every vocabulary,
+so this test asks whether the representation still supports it on real data,
+not whether the vocabulary can name the $b$ quark in a top decay. At this working
+point it is carried by prong structure and mass, which every vocabulary keeps. The
+CMS ParticleNet top score shipped with the dataset, trained on CMS simulation and
+not decorrelated from the mass, finds \AojRefYield{}~$\pm$~\AojRefYieldErr{} in
+a wider peak (\AojRefWidth~GeV); it shows that the pipeline recovers a top peak,
+but its yield is not comparable with ours.
+
+\input{tables/realdata}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.7\linewidth]{../../figures/realdata_top_yield.pdf}
+  \caption{Fitted top-quark yield in CMS open data at 1\% data efficiency. Light
+  points: individual pretrained models with their statistical errors; bold
+  points: mean $\pm1$ standard deviation over the five pretraining runs; open
+  markers carry the mass output. The grey band is the published \Kfull-class
+  checkpoint.}
+  \label{fig:realdata}
+\end{figure}
 
 % ============================================================================
 \section{Discussion}\label{sec:discussion}

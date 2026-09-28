@@ -1,0 +1,378 @@
+{
+  "n_fits": 32,
+  "all_converged": true,
+  "max_edm": 8.088846240558139e-09,
+  "profile_error_check": {
+    "what": "twice the rise of the loss profiled over TF and shape at each quoted crossing, by Nelder-Mead over the shape (refit_from_bins.crossing_check); 1 if the error is right",
+    "twice_rise_range": [
+      0.9990046415174163,
+      1.0007516702475527
+    ],
+    "max_fit_minus_profile_minimum": 2.595946440919761e-06,
+    "per_fit": {
+      "reference": {
+        "twice_rise": [
+          1.00000197874067,
+          0.999997644958512
+        ],
+        "fit_minus_profile_minimum": 2.2632696072832914e-07
+      },
+      "sophon-public": {
+        "twice_rise": [
+          1.0000711438628969,
+          0.9998720018509744
+        ],
+        "fit_minus_profile_minimum": 4.1729521171873785e-08
+      },
+      "l188-s1": {
+        "twice_rise": [
+          1.0007277204577179,
+          0.9990046415174163
+        ],
+        "fit_minus_profile_minimum": 5.690194768703805e-07
+      },
+      "l188-s2": {
+        "twice_rise": [
+          1.000019382851832,
+          0.9999685266068639
+        ],
+        "fit_minus_profile_minimum": 8.272513696283568e-07
+      },
+      "l188-s3": {
+        "twice_rise": [
+          1.0000206792458926,
+          0.9999692544639629
+        ],
+        "fit_minus_profile_minimum": 9.543434913439341e-07
+      },
+      "l188-s4": {
+        "twice_rise": [
+          1.0001070337407896,
+          0.9998268544214284
+        ],
+        "fit_minus_profile_minimum": 3.6849510820502474e-07
+      },
+      "l188-s5": {
+        "twice_rise": [
+          1.0000364385366538,
+          0.9999258421893273
+        ],
+        "fit_minus_profile_minimum": 1.6974297523120185e-09
+      },
+      "l162-s1b": {
+        "twice_rise": [
+          1.000043865508303,
+          0.9999336017369274
+        ],
+        "fit_minus_profile_minimum": 2.5008739612530917e-07
+      },
+      "l162-s2": {
+        "twice_rise": [
+          0.9999269131234314,
+          0.9994943086321655
+        ],
+        "fit_minus_profile_minimum": 1.4111681423401023e-07
+      },
+      "l162-s3": {
+        "twice_rise": [
+          1.0000287851754024,
+          0.9999591124303322
+        ],
+        "fit_minus_profile_minimum": 4.516024887379899e-09
+      },
+      "l162-s4": {
+        "twice_rise": [
+          1.0000283511237171,
+          0.9999571692247855
+        ],
+        "fit_minus_profile_minimum": 1.3902741500260163e-06
+      },
+      "l162-s5": {
+        "twice_rise": [
+          1.0000288527954808,
+          0.999957238942784
+        ],
+        "fit_minus_profile_minimum": 9.455561666982248e-09
+      },
+      "r42q1-s1": {
+        "twice_rise": [
+          1.0000452267489948,
+          0.9999296582052182
+        ],
+        "fit_minus_profile_minimum": 7.755129729503096e-07
+      },
+      "r42q1-s2": {
+        "twice_rise": [
+          1.0000603660868137,
+          0.9999079491582279
+        ],
+        "fit_minus_profile_minimum": 3.6641452538788144e-07
+      },
+      "r42q1-s3": {
+        "twice_rise": [
+          1.0000331328439813,
+          0.9999548622855912
+        ],
+        "fit_minus_profile_minimum": 2.595946440919761e-06
+      },
+      "r42q1-s4": {
+        "twice_rise": [
+          1.0003298788721224,
+          0.9994858912580753
+        ],
+        "fit_minus_profile_minimum": 8.773052684318827e-07
+      },
+      "r42q1-s5": {
+        "twice_rise": [
+          1.000222435678694,
+          0.9995557223687115
+        ],
+        "fit_minus_profile_minimum": 2.0559298263833625e-07
+      },
+      "r16q1-s1": {
+        "twice_rise": [
+          1.0001462194919384,
+          0.9997440198037566
+        ],
+        "fit_minus_profile_minimum": 1.4931211467228422e-07
+      },
+      "r16q1-s2": {
+        "twice_rise": [
+          1.0000927960793433,
+          0.9998545950492996
+        ],
+        "fit_minus_profile_minimum": 4.723672475392959e-08
+      },
+      "r16q1-s3": {
+        "twice_rise": [
+          1.0003529645553613,
+          0.999436181235211
+        ],
+        "fit_minus_profile_minimum": 4.733145431146113e-08
+      },
+      "r16q1-s4": {
+        "twice_rise": [
+          1.0000747431077457,
+          0.9998882060313292
+        ],
+        "fit_minus_profile_minimum": 2.720403813327721e-08
+      },
+      "r16q1-s5": {
+        "twice_rise": [
+          1.000099937378053,
+          0.9998014731696117
+        ],
+        "fit_minus_profile_minimum": 1.0210001732957608e-08
+      },
+      "l162mass-s1": {
+        "twice_rise": [
+          1.0001293108151117,
+          0.9998176719971639
+        ],
+        "fit_minus_profile_minimum": 5.206694027037884e-07
+      },
+      "l162mass-s2": {
+        "twice_rise": [
+          1.0000749240887785,
+          0.9998789415315628
+        ],
+        "fit_minus_profile_minimum": 5.365365041143377e-09
+      },
+      "l162mass-s3": {
+        "twice_rise": [
+          1.0000264725979946,
+          0.9999614597457196
+        ],
+        "fit_minus_profile_minimum": 5.2598579713958316e-08
+      },
+      "l162mass-s4": {
+        "twice_rise": [
+          1.000024443546664,
+          0.9999623452981155
+        ],
+        "fit_minus_profile_minimum": 1.3294084055814892e-08
+      },
+      "l162mass-s5": {
+        "twice_rise": [
+          1.0000546052569064,
+          0.9999225858466048
+        ],
+        "fit_minus_profile_minimum": 8.164519726960862e-08
+      },
+      "r16q1mass-s1": {
+        "twice_rise": [
+          1.0007516702475527,
+          0.9998233984069884
+        ],
+        "fit_minus_profile_minimum": 1.1683226830427884e-08
+      },
+      "r16q1mass-s2": {
+        "twice_rise": [
+          1.00003342916537,
+          0.9999539892502298
+        ],
+        "fit_minus_profile_minimum": 1.651670800129068e-09
+      },
+      "r16q1mass-s3": {
+        "twice_rise": [
+          1.0000579864974952,
+          0.9999179678873986
+        ],
+        "fit_minus_profile_minimum": 2.046736341299038e-06
+      },
+      "r16q1mass-s4": {
+        "twice_rise": [
+          1.0006087538803854,
+          0.9991013357581267
+        ],
+        "fit_minus_profile_minimum": 3.9488270431320416e-09
+      },
+      "r16q1mass-s5": {
+        "twice_rise": [
+          1.0001211120563482,
+          0.9998251584444802
+        ],
+        "fit_minus_profile_minimum": 1.970401655171372e-07
+      }
+    }
+  },
+  "n_no_profile_error": 0,
+  "n_width_or_mean_at_bound": 0,
+  "n_start_dependent": 0,
+  "start_tol": {
+    "shape_gev": 0.1,
+    "yield_over_err": 0.1
+  },
+  "max_start_shape_shift_gev": 0.0014829447775071003,
+  "max_abs_start_yield_shift_over_err": 0.0006327043777615122,
+  "tf_order": {
+    "reference": [
+      4,
+      1
+    ],
+    "sophon-public": [
+      2,
+      2
+    ],
+    "l188-s1": [
+      2,
+      3
+    ],
+    "l188-s2": [
+      2,
+      1
+    ],
+    "l188-s3": [
+      2,
+      1
+    ],
+    "l188-s4": [
+      2,
+      3
+    ],
+    "l188-s5": [
+      2,
+      3
+    ],
+    "l162-s1b": [
+      2,
+      2
+    ],
+    "l162-s2": [
+      2,
+      3
+    ],
+    "l162-s3": [
+      2,
+      2
+    ],
+    "l162-s4": [
+      2,
+      1
+    ],
+    "l162-s5": [
+      2,
+      2
+    ],
+    "r42q1-s1": [
+      2,
+      2
+    ],
+    "r42q1-s2": [
+      2,
+      2
+    ],
+    "r42q1-s3": [
+      2,
+      1
+    ],
+    "r42q1-s4": [
+      2,
+      1
+    ],
+    "r42q1-s5": [
+      2,
+      1
+    ],
+    "r16q1-s1": [
+      2,
+      2
+    ],
+    "r16q1-s2": [
+      2,
+      2
+    ],
+    "r16q1-s3": [
+      2,
+      3
+    ],
+    "r16q1-s4": [
+      2,
+      2
+    ],
+    "r16q1-s5": [
+      2,
+      3
+    ],
+    "l162mass-s1": [
+      2,
+      3
+    ],
+    "l162mass-s2": [
+      2,
+      2
+    ],
+    "l162mass-s3": [
+      2,
+      1
+    ],
+    "l162mass-s4": [
+      2,
+      1
+    ],
+    "l162mass-s5": [
+      2,
+      1
+    ],
+    "r16q1mass-s1": [
+      2,
+      2
+    ],
+    "r16q1mass-s2": [
+      2,
+      1
+    ],
+    "r16q1mass-s3": [
+      2,
+      2
+    ],
+    "r16q1mass-s4": [
+      2,
+      3
+    ],
+    "r16q1mass-s5": [
+      2,
+      3
+    ]
+  }
+}

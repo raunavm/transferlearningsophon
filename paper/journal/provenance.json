@@ -1097,305 +1097,269 @@
     "source_file": "experiments/FIGS/data/anomaly_merged_v4/anomaly_results.json",
     "value": "20\\%"
   },
-  "AojClauseOneVerdict": {
-    "json_path": "secondary.real_data_top.clauses[0].verdict",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "not confirmed"
+  "AojClosureCharged": {
+    "json_path": "rows[part_isChargedHadron].ratio",
+    "sha256": "f5f1df762bdb8a57d5a91a317cbc976e224cfc8ed8436c54eb7010eff900ad60",
+    "source_file": "experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json",
+    "value": "1.22"
   },
-  "AojClauseThreeVerdict": {
-    "json_path": "secondary.real_data_top.clauses[2].verdict",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "inconclusive"
+  "AojClosureDzIqr": {
+    "json_path": "rows[part_dz].iqr_ratio",
+    "sha256": "f5f1df762bdb8a57d5a91a317cbc976e224cfc8ed8436c54eb7010eff900ad60",
+    "source_file": "experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json",
+    "value": "10.1"
   },
-  "AojClauseTwoVerdict": {
-    "json_path": "secondary.real_data_top.clauses[1].verdict",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "not confirmed"
+  "AojClosureDzeroIqr": {
+    "json_path": "rows[part_d0].iqr_ratio",
+    "sha256": "f5f1df762bdb8a57d5a91a317cbc976e224cfc8ed8436c54eb7010eff900ad60",
+    "source_file": "experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json",
+    "value": "8.5"
   },
-  "AojEquivFactor": {
-    "json_path": "secondary.real_data_top.clause3_equivalence.smallest_bound_passed_by_all",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "2.54"
+  "AojClosureNPartAoj": {
+    "json_path": "rows[n_particles].aoj",
+    "sha256": "f5f1df762bdb8a57d5a91a317cbc976e224cfc8ed8436c54eb7010eff900ad60",
+    "source_file": "experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json",
+    "value": "61"
   },
-  "AojFitMaxNewtonShift": {
-    "json_path": "summary.max_abs_newton_yield_shift_over_err",
-    "sha256": "6bb06725fa6fa2e64d3e8ddf0d513368793cfb576a5c3bbce59bfd1f1699e8b7",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v3/diagnostic.json",
-    "value": "\\ensuremath{2\\times10^{-4}}"
+  "AojClosureNPartRef": {
+    "json_path": "rows[n_particles].reference",
+    "sha256": "f5f1df762bdb8a57d5a91a317cbc976e224cfc8ed8436c54eb7010eff900ad60",
+    "source_file": "experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json",
+    "value": "48"
   },
-  "AojFitNChecked": {
-    "json_path": "summary.n_fits",
-    "sha256": "6bb06725fa6fa2e64d3e8ddf0d513368793cfb576a5c3bbce59bfd1f1699e8b7",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v3/diagnostic.json",
-    "value": "32"
-  },
-  "AojFitProfileAgree": {
-    "json_path": "summary.profile_over_as_run_err_range",
-    "sha256": "6bb06725fa6fa2e64d3e8ddf0d513368793cfb576a5c3bbce59bfd1f1699e8b7",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v3/diagnostic.json",
-    "value": "\\ensuremath{3\\times10^{-5}}"
-  },
-  "AojMassDid": {
-    "json_path": "secondary.real_data_top.mass_output_2x2.difference_in_differences.mean_diff",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "\\ensuremath{-}0.009"
-  },
-  "AojMassDidP": {
-    "json_path": "secondary.real_data_top.mass_output_2x2.difference_in_differences.p",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "\\ensuremath{0.978}"
-  },
-  "AojMassGainOneseven": {
-    "json_path": "secondary.real_data_top.mass_output_2x2.gain_17.mean_diff",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "\\ensuremath{-}0.139"
-  },
-  "AojMassGainOnesixtwo": {
-    "json_path": "secondary.real_data_top.mass_output_2x2.gain_162.mean_diff",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "\\ensuremath{-}0.148"
-  },
-  "AojMassGainPOneseven": {
-    "json_path": "secondary.real_data_top.mass_output_2x2.gain_17.p",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "\\ensuremath{0.385}"
-  },
-  "AojMassGainPOnesixtwo": {
-    "json_path": "secondary.real_data_top.mass_output_2x2.gain_162.p",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "\\ensuremath{0.657}"
-  },
-  "AojMedianFitErr": {
-    "json_path": "table[*].signal_yield_err / signal_yield",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "13\\%"
-  },
-  "AojMedianRelEff": {
-    "json_path": "table[*].efficiency_relative_to_reference",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "12\\%"
-  },
-  "AojNConverged": {
-    "json_path": "reference.top.converged, models.*.top.converged",
-    "sha256": "f594f6a8983ba82b5a08248f4d75d8452ecadbf7b9a872e298cd08a4bb4a2542",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v3/results.json",
-    "value": "32 of 32"
+  "AojClosureNeutral": {
+    "json_path": "rows[part_isNeutralHadron].ratio",
+    "sha256": "f5f1df762bdb8a57d5a91a317cbc976e224cfc8ed8436c54eb7010eff900ad60",
+    "source_file": "experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json",
+    "value": "0.65"
   },
   "AojNJetsFit": {
     "json_path": "n_jets",
-    "sha256": "f594f6a8983ba82b5a08248f4d75d8452ecadbf7b9a872e298cd08a4bb4a2542",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v3/results.json",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
     "value": "9{,}441{,}209"
   },
-  "AojNPass": {
-    "json_path": "table[*].criteria",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "28 of 30"
+  "AojNModels": {
+    "json_path": "models (pretrained)",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "30"
   },
-  "AojNToys": {
-    "json_path": "n_toys",
-    "sha256": "f594f6a8983ba82b5a08248f4d75d8452ecadbf7b9a872e298cd08a4bb4a2542",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v3/results.json",
-    "value": "200"
+  "AojPeakMeanMax": {
+    "json_path": "models.*.top.floated_mean (max)",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "184.2"
   },
-  "AojOneeighteightVsOnesevenDiff": {
-    "json_path": "secondary.real_data_top.pairwise_exploratory[2].mean_diff",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "\\ensuremath{-}0.072"
+  "AojPeakMeanMin": {
+    "json_path": "models.*.top.floated_mean (min)",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "181.6"
   },
-  "AojOneeighteightVsOnesevenP": {
-    "json_path": "secondary.real_data_top.pairwise_exploratory[2].p",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "\\ensuremath{0.558}"
+  "AojPeakWidthMax": {
+    "json_path": "models.*.top.floated_width (max)",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "13.6"
+  },
+  "AojPeakWidthMin": {
+    "json_path": "models.*.top.floated_width (min)",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "9.7"
+  },
+  "AojPooledMean": {
+    "json_path": "per_label_set.shapes.pooled",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "182.9"
+  },
+  "AojPooledWidth": {
+    "json_path": "per_label_set.shapes.pooled",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "11.4"
+  },
+  "AojPublicMass": {
+    "json_path": "models.sophon-public.top.floated_mean",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "183.1"
+  },
+  "AojPublicWidth": {
+    "json_path": "models.sophon-public.top.floated_width",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "10.5"
   },
   "AojPublicYield": {
-    "json_path": "reference_models.sophon-public.signal_yield",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "2{,}599"
+    "json_path": "models.sophon-public.top.signal_yield",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "1{,}505"
+  },
+  "AojPublicYieldErr": {
+    "json_path": "models.sophon-public.top.signal_yield_err",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "235"
   },
   "AojRefMass": {
-    "json_path": "reference.mean",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "180.1"
+    "json_path": "reference.top.floated_mean",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "181.0"
   },
-  "AojRefValidationToyP": {
-    "json_path": "reference.top.validation.toy_p",
-    "sha256": "f594f6a8983ba82b5a08248f4d75d8452ecadbf7b9a872e298cd08a4bb4a2542",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v3/results.json",
-    "value": "\\ensuremath{0.00498}"
+  "AojRefWidth": {
+    "json_path": "reference.top.floated_width",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "17.8"
   },
   "AojRefYield": {
-    "json_path": "reference.signal_yield",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "27{,}678"
+    "json_path": "reference.top.signal_yield",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "29{,}143"
   },
   "AojRefYieldErr": {
-    "json_path": "reference.signal_yield_err",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "485"
+    "json_path": "reference.top.signal_yield_err",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "865"
   },
-  "AojRefZ": {
-    "json_path": "reference.z_wald",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "57"
+  "AojShapeShiftMax": {
+    "json_path": "per_label_set.label_sets.*.by_shape.pooled.mean / signal_yield.mean - 1",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "+8\\%"
   },
-  "AojTrendP": {
-    "json_path": "secondary.real_data_top.trend.p",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "\\ensuremath{0.742}"
+  "AojShapeShiftMin": {
+    "json_path": "per_label_set.label_sets.*.by_shape.pooled.mean / signal_yield.mean - 1",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "\\ensuremath{-}12\\%"
   },
-  "AojWorstMean": {
-    "json_path": "models.l162-s2.top.floated_mean",
-    "sha256": "f594f6a8983ba82b5a08248f4d75d8452ecadbf7b9a872e298cd08a4bb4a2542",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v3/results.json",
-    "value": "145"
+  "AojStatErrFourthree": {
+    "json_path": "per_label_set.label_sets.43.median_stat_err",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "265"
   },
-  "AojWorstYield": {
+  "AojStatErrOneeighteight": {
+    "json_path": "per_label_set.label_sets.188.median_stat_err",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "251"
+  },
+  "AojStatErrOneseven": {
+    "json_path": "per_label_set.label_sets.17.median_stat_err",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "333"
+  },
+  "AojStatErrOnesevenMass": {
+    "json_path": "per_label_set.label_sets.17+mass.median_stat_err",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "374"
+  },
+  "AojStatErrOnesixtwo": {
+    "json_path": "per_label_set.label_sets.162.median_stat_err",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "250"
+  },
+  "AojStatErrOnesixtwoMass": {
+    "json_path": "per_label_set.label_sets.162+mass.median_stat_err",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "270"
+  },
+  "AojWeakestYield": {
     "json_path": "models.l162-s2.top.signal_yield",
-    "sha256": "f594f6a8983ba82b5a08248f4d75d8452ecadbf7b9a872e298cd08a4bb4a2542",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v3/results.json",
-    "value": "882"
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "749"
   },
-  "AojWorstYieldErr": {
+  "AojWeakestYieldErr": {
     "json_path": "models.l162-s2.top.signal_yield_err",
-    "sha256": "f594f6a8983ba82b5a08248f4d75d8452ecadbf7b9a872e298cd08a4bb4a2542",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v3/results.json",
-    "value": "460"
-  },
-  "AojWorstZ": {
-    "json_path": "models.l162-s2.top.signal_yield / signal_yield_err",
-    "sha256": "f594f6a8983ba82b5a08248f4d75d8452ecadbf7b9a872e298cd08a4bb4a2542",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v3/results.json",
-    "value": "1.9"
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "250"
   },
   "AojYieldFourthree": {
-    "json_path": "table[level=43].signal_yield",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "3{,}188"
-  },
-  "AojYieldMaxFourthree": {
-    "json_path": "table[level=43].signal_yield (max)",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "4{,}867"
-  },
-  "AojYieldMaxOneeighteight": {
-    "json_path": "table[level=188].signal_yield (max)",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "4{,}290"
-  },
-  "AojYieldMaxOneseven": {
-    "json_path": "table[level=17].signal_yield (max)",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "3{,}950"
-  },
-  "AojYieldMaxOnesevenMass": {
-    "json_path": "table[level=17+mass].signal_yield (max)",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "4{,}995"
-  },
-  "AojYieldMaxOnesixtwo": {
-    "json_path": "table[level=162].signal_yield (max)",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "4{,}258"
-  },
-  "AojYieldMaxOnesixtwoMass": {
-    "json_path": "table[level=162+mass].signal_yield (max)",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "3{,}904"
-  },
-  "AojYieldMinFourthree": {
-    "json_path": "table[level=43].signal_yield (min)",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "1{,}723"
-  },
-  "AojYieldMinOneeighteight": {
-    "json_path": "table[level=188].signal_yield (min)",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "2{,}199"
-  },
-  "AojYieldMinOneseven": {
-    "json_path": "table[level=17].signal_yield (min)",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "2{,}992"
-  },
-  "AojYieldMinOnesevenMass": {
-    "json_path": "table[level=17+mass].signal_yield (min)",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "2{,}740"
-  },
-  "AojYieldMinOnesixtwo": {
-    "json_path": "table[level=162].signal_yield (min)",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "882"
-  },
-  "AojYieldMinOnesixtwoMass": {
-    "json_path": "table[level=162+mass].signal_yield (min)",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "2{,}918"
+    "json_path": "per_label_set.label_sets.43.signal_yield",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2{,}100\\,\\ensuremath{\\pm}\\,800"
   },
   "AojYieldOneeighteight": {
-    "json_path": "table[level=188].signal_yield",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "3{,}171"
+    "json_path": "per_label_set.label_sets.188.signal_yield",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2{,}200\\,\\ensuremath{\\pm}\\,600"
   },
   "AojYieldOneseven": {
-    "json_path": "table[level=17].signal_yield",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "3{,}407"
+    "json_path": "per_label_set.label_sets.17.signal_yield",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2{,}280\\,\\ensuremath{\\pm}\\,290"
   },
   "AojYieldOnesevenMass": {
-    "json_path": "table[level=17+mass].signal_yield",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "3{,}914"
+    "json_path": "per_label_set.label_sets.17+mass.signal_yield",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2{,}600\\,\\ensuremath{\\pm}\\,500"
   },
   "AojYieldOnesixtwo": {
-    "json_path": "table[level=162].signal_yield",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "2{,}881"
+    "json_path": "per_label_set.label_sets.162.signal_yield",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2{,}000\\,\\ensuremath{\\pm}\\,800"
   },
   "AojYieldOnesixtwoMass": {
-    "json_path": "table[level=162+mass].signal_yield",
-    "sha256": "62b1ed857c7038f7726ca419d99e225e314c90d5ff1e6b855cd23899d288ae41",
-    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v3/aoj_top.json",
-    "value": "3{,}341"
+    "json_path": "per_label_set.label_sets.162+mass.signal_yield",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2{,}160\\,\\ensuremath{\\pm}\\,310"
+  },
+  "AojYieldPooledFourthree": {
+    "json_path": "per_label_set.label_sets.43.by_shape.pooled",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2{,}200\\,\\ensuremath{\\pm}\\,800"
+  },
+  "AojYieldPooledOneeighteight": {
+    "json_path": "per_label_set.label_sets.188.by_shape.pooled",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2{,}200\\,\\ensuremath{\\pm}\\,500"
+  },
+  "AojYieldPooledOneseven": {
+    "json_path": "per_label_set.label_sets.17.by_shape.pooled",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2{,}150\\,\\ensuremath{\\pm}\\,230"
+  },
+  "AojYieldPooledOnesevenMass": {
+    "json_path": "per_label_set.label_sets.17+mass.by_shape.pooled",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2{,}300\\,\\ensuremath{\\pm}\\,600"
+  },
+  "AojYieldPooledOnesixtwo": {
+    "json_path": "per_label_set.label_sets.162.by_shape.pooled",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2{,}200\\,\\ensuremath{\\pm}\\,900"
+  },
+  "AojYieldPooledOnesixtwoMass": {
+    "json_path": "per_label_set.label_sets.162+mass.by_shape.pooled",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2{,}230\\,\\ensuremath{\\pm}\\,230"
   },
   "DesignBatchSize": {
     "json_path": "--batch-size",
