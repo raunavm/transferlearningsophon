@@ -189,3 +189,14 @@ def test_the_v2_fit_is_the_first_fit_with_only_the_minimiser_pin_output_and_chec
     # everything from the merge through the fit command is the first run's, line for line
     body = lambda t: t[t.index("python3 experiments/AOJ/merge_shards.py"):t.index('ls -la "${OUT}"')]
     assert body(one) == body(two)
+
+
+def test_the_bins_export_merges_exactly_as_the_fit_did_and_fits_nothing():
+    fit, bins = SPECS[FIT], B.render_fit_bins()
+    merge = "python3 experiments/AOJ/merge_shards.py --shards ${SHARDS} --out /scratch/merged"
+    assert merge in fit and merge in bins
+    assert "peak_fit.py" not in bins and "export_fit_bins.py" in bins
+    assert f'--branch "{B.BINS_PIN}"' in bins and "name: aoj-full-fitbins-raunav" in bins
+    assert f"--results {B.OUT_ROOT}/fit_v2/results.json" in bins
+    assert f"--histograms {B.OUT_ROOT}/fit_v2/histograms.npz" in bins
+    assert f"OUT={B.OUT_ROOT}/fit_v2_bins\n" in bins and yaml.safe_load(bins)["spec"]["backoffLimit"] == 1

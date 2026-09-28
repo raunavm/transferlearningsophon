@@ -1,0 +1,75 @@
+"""experiments/AOJ/export_fit_bins.py: the exported bins must be the ones the run
+fitted -- a fit rebuilt from them reproduces the stored yield -- and the export
+refuses when they are not."""
+import importlib.util
+import json
+import pathlib
+import sys
+
+import numpy as np
+import pytest
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+def _mod(name, rel):
+    spec = importlib.util.spec_from_file_location(name, ROOT / rel)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+E = _mod("export_fit_bins", "experiments/AOJ/export_fit_bins.py")
+T = _mod("test_aoj_peak_fit_helpers", "tests/test_aoj_peak_fit.py")
+P = E.P
+
+
+@pytest.fixture(scope="module")
+def run(tmp_path_factory):
+    tmp = tmp_path_factory.mktemp("run")
+    rng = np.random.default_rng(91)
+    parts = [T.sample(92, n_bkg=250_000), T.sample(93, n_bkg=0, n_sig=5000, peak="top")]
+    mass, pt = (np.concatenate([p[k] for p in parts]) for k in (0, 1))
+    kind = np.repeat([0, 1], [len(p[0]) for p in parts])
+    tag = rng.normal(np.where(kind == 1, 3.0, -3.0), 2.0)
+    np.savez(tmp / "jets.npz", jet_sdmass=mass.astype(np.float32), aoj_jet_pt=pt.astype(np.float32),
+             aoj_pn_TvsQCD=(1 / (1 + np.exp(-tag))).astype(np.float16))
+    np.savez(tmp / "m.npz", three_prong_logodds=tag.astype(np.float16))
+    argv = sys.argv
+    try:
+        sys.argv = ["peak_fit.py", "--jets", str(tmp / "jets.npz"), "--toys", "0", "--out", str(tmp),
+                    "--peaks", "top", "--scores", f"m={tmp/'m.npz'}"]
+        assert P.main() == 0
+    finally:
+        sys.argv = argv
+    return tmp
+
+
+def _export(run, out, histograms=None):
+    return E.main(["--jets", str(run / "jets.npz"), "--results", str(run / "results.json"),
+                   "--histograms", str(histograms or run / "histograms.npz"),
+                   "--scores", f"m={run/'m.npz'}", "--out", str(out)])
+
+
+def test_a_fit_rebuilt_from_the_exported_bins_reproduces_the_stored_yield(run, tmp_path):
+    assert _export(run, tmp_path / "bins.npz") == 0
+    z = np.load(tmp_path / "bins.npz")
+    res = json.loads((run / "results.json").read_text())
+    for name, stored in (("reference", res["reference"]["top"]), ("m", res["models"]["m"]["top"])):
+        b = {k: z[f"{name}|main|{k}"] for k in E.KEYS}
+        side = ~P.in_windows(P._bin_centres(b), [P.PEAKS["top"]["window"]])
+        tf_norm = b["n_pass"][side].sum() / max(b["n_fail"][side].sum(), 1.0)
+        model = P._Model(b, tuple(stored["tf_order"]), tf_norm, stored["mean"], stored["width"])
+        x, _ = model.fit()
+        y = float(model.G.sum(axis=0) @ x[model.n_tf:])
+        assert abs(y - stored["signal_yield"]) <= 1e-9 * abs(stored["signal_yield"])
+        assert len(z[f"{name}|validation|n_pass"]) > 0
+
+
+def test_the_export_refuses_bins_that_differ_from_the_runs_histograms(run, tmp_path):
+    h = dict(np.load(run / "histograms.npz"))
+    h["m_top_validation_n_fail"] = h["m_top_validation_n_fail"] + 1
+    np.savez(tmp_path / "other.npz", **h)
+    with pytest.raises(SystemExit, match="not the bins that run fitted"):
+        _export(run, tmp_path / "bins.npz", tmp_path / "other.npz")
+    assert not (tmp_path / "bins.npz").exists()
