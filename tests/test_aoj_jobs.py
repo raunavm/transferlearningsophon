@@ -200,3 +200,14 @@ def test_the_bins_export_merges_exactly_as_the_fit_did_and_fits_nothing():
     assert f"--results {B.OUT_ROOT}/fit_v2/results.json" in bins
     assert f"--histograms {B.OUT_ROOT}/fit_v2/histograms.npz" in bins
     assert f"OUT={B.OUT_ROOT}/fit_v2_bins\n" in bins and yaml.safe_load(bins)["spec"]["backoffLimit"] == 1
+
+
+def test_the_v3_fit_is_the_first_fit_with_its_checks_appended():
+    one, three = B.render_fit(), B.render_fit_v3()
+    assert "name: aoj-full-fit-v3-raunav" in three and f'--branch "{B.FIT3_PIN}"' in three
+    assert f"OUT={B.OUT_ROOT}/fit_v3\n" in three and f"OUT={B.OUT_ROOT}/fit\n" not in three
+    body = lambda t: t[t.index("python3 experiments/AOJ/merge_shards.py"):t.index('ls -la "${OUT}"')]
+    assert body(one) == body(three)
+    after = three[three.index('ls -la "${OUT}"'):]
+    order = [after.index(s) for s in ("fit_convergence_check.py", "export_fit_bins.py", "fit_minimum_diagnostic.py")]
+    assert order == sorted(order) and '--histograms "${OUT}/histograms.npz"' in after

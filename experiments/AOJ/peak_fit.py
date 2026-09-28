@@ -21,7 +21,9 @@ makes a bump. Two steps keep those apart.
 (b) THE FIT, per (m_SD, pT) bin:   fail = q,   pass = TF(rho, pT) * q + S_j * G(m)
     q     free per bin, profiled analytically (it is the fail spectrum)
     TF    (pass/fail outside the peak window) times a polynomial in (rho, pT);
-          order by F-test from (2, 1)
+          order by F-test from (2, 1). An order whose best fit puts TF on its
+          floor (zero) in any bin is not admissible: a zero background under a
+          populated fail bin is outside the model's physical range
     G     Gaussian core integrated over the mass bin. Mean and width FLOAT only
           for the reference selection (the shipped CMS score) and are FIXED from
           it for every other score
@@ -177,6 +179,7 @@ def _half_deviance(n, mu):
 FIT_OPTIONS = dict(maxiter=2000, ftol=1e-12, gtol=1e-8)
 MAX_RESTARTS = 500
 RESTART_TOL = 1e-7          # half-deviance units
+TF_FLOOR, MU_FLOOR = 1e-12, 1e-9
 
 
 def _minimize(loss, x0):
@@ -190,7 +193,8 @@ def _minimize(loss, x0):
     loss has long, shallow valleys along the transfer-factor polynomial, and a
     restart discards the curvature memory that stalls there. Returns
     (x, loss, converged, n_restarts); converged means the last restart lowered
-    the loss by less than RESTART_TOL."""
+    the loss by less than RESTART_TOL. _Model.fit calls it in orthonormal
+    coordinates: restarts alone left 31 of 32 fits short of their minimum."""
     x, f = np.asarray(x0, dtype=float), np.inf
     for k in range(MAX_RESTARTS):
         r = optimize.minimize(loss, x, jac=True, method="L-BFGS-B", options=FIT_OPTIONS)
@@ -229,28 +233,50 @@ class _Model:
                 norm = self.G[core, k].sum()
                 s0.append(max(excess[core & (self.G[:, k] > 0)].sum(), 0.0) / norm if norm > 0 else 0.0)
         self.x0 = np.r_[1.0, np.zeros(self.n_tf - 1), s0]
+        # MINIMISED AND DIFFERENTIATED IN AN ORTHONORMAL BASIS (2026-09-28). The monomials
+        # r^k p^l on [0, 1]^2 are nearly collinear at orders 3-4. In that basis L-BFGS-B
+        # stopped short of the minimum by up to 2.4 in deviance (yields off by up to 1 sigma)
+        # and finite-difference Hessians gave yield errors off by up to a factor 2
+        # (experiments/AOJ/fit_minimum_diagnostic.py on the v2 fits). With X = Q R the
+        # search and the Hessian use u = R x_tf, whose design is Q. The polynomial, the
+        # deviance and its minimum are unchanged; x goes in and comes out in monomials.
+        _, r = np.linalg.qr(self.X)
+        self.T = np.eye(len(self.x0))
+        self.T[:self.n_tf, :self.n_tf] = np.linalg.inv(r)
 
     def expect(self, x):
-        t = np.maximum(self.tf_norm * (self.X @ x[:self.n_tf]), 1e-12)
+        t = np.maximum(self.tf_norm * (self.X @ x[:self.n_tf]), TF_FLOOR)
         s = self.G @ x[self.n_tf:] if self.signal else np.zeros_like(t)
         p, f = self.b["n_pass"], self.b["n_fail"]
         a, bq, c = (1 + t) * t, (1 + t) * s - (p + f) * t, -f * s
         q = (-bq + np.sqrt(np.maximum(bq * bq - 4 * a * c, 0.0))) / (2 * a)
-        return t, s, np.maximum(q, 1e-12), np.maximum(t * q + s, 1e-9)
+        return t, s, np.maximum(q, 1e-12), np.maximum(t * q + s, MU_FLOOR)
 
     def loss(self, x):
         """Half the saturated deviance, and its gradient (q is at its optimum, so
-        only the explicit dependence on the parameters contributes)."""
+        only the explicit dependence on the parameters contributes). Where TF or the
+        pass expectation sits on its floor the loss does not depend on them, and
+        neither does the gradient."""
         t, s, q, mu = self.expect(x)
         p, f = self.b["n_pass"], self.b["n_fail"]
         val = _half_deviance(p, mu).sum() + _half_deviance(f, q).sum()
-        d_mu = 1.0 - p / mu
-        grad = np.r_[(d_mu * q * self.tf_norm) @ self.X, d_mu @ self.G if self.signal else []]
+        d_mu = (1.0 - p / mu) * (t * q + s > MU_FLOOR)
+        on = self.tf_norm * (self.X @ x[:self.n_tf]) > TF_FLOOR
+        grad = np.r_[(d_mu * q * self.tf_norm * on) @ self.X, d_mu @ self.G if self.signal else []]
         return val, grad
 
+    def _loss_u(self, u):
+        val, g = self.loss(self.T @ u)
+        return val, self.T.T @ g
+
     def fit(self, start=None):
-        x, f, self.converged, self.n_restarts = _minimize(self.loss, self.x0 if start is None else start)
-        return x, f
+        x0 = self.x0 if start is None else start
+        u, f, self.converged, self.n_restarts = _minimize(self._loss_u, np.linalg.solve(self.T, x0))
+        return self.T @ u, f
+
+    def n_at_floor(self, x):
+        """Bins where the transfer factor sits on its floor."""
+        return int((self.tf_norm * (self.X @ x[:self.n_tf]) <= TF_FLOOR).sum())
 
     def edm(self, x):
         """Estimated distance to the minimum, 1/2 g^T H^-1 g, in units of the loss."""
@@ -269,21 +295,28 @@ class _Model:
         return out
 
     def covariance(self, x):
-        h, eps = np.zeros((len(x), len(x))), 1e-4
-        for k in range(len(x)):
-            d = np.zeros(len(x)); d[k] = eps * max(1.0, abs(x[k]))
-            h[k] = (self.loss(x + d)[1] - self.loss(x - d)[1]) / (2 * d[k])
-        return np.linalg.pinv(0.5 * (h + h.T))
+        """pinv of the Hessian, by central differences of the gradient in the orthonormal
+        coordinates, transformed back. Matches the profile-likelihood error of the yield
+        to 0.2% on the real-data fits (fit_minimum_diagnostic.py)."""
+        u = np.linalg.solve(self.T, x)
+        h = np.zeros((len(u), len(u)))
+        for k in range(len(u)):
+            d = np.zeros(len(u)); d[k] = 1e-5 * max(1.0, abs(u[k]))
+            h[k] = (self._loss_u(u + d)[1] - self._loss_u(u - d)[1]) / (2 * d[k])
+        return self.T @ np.linalg.pinv(0.5 * (h + h.T)) @ self.T.T
 
 
 def _choose_order(b, tf_norm, mean, width):
     """F-test up from START_ORDER: raise an order only if it buys a significant
-    drop in deviance. Each candidate is started from the current best fit."""
+    drop in deviance. Each candidate is started from the current best fit. A
+    candidate whose fit puts the transfer factor on its floor in any bin is not
+    admissible (module docstring); it is kept in the trail, marked."""
     n_par = lambda o: (o[0] + 1) * (o[1] + 1)
     n_data, n_sig = len(b["n_pass"]), (len(np.unique(b["j"])) if mean is not None else 0)
     order = START_ORDER
-    x, dev = _Model(b, order, tf_norm, mean, width).fit()
-    trail = [dict(order=order, deviance=2 * dev)]
+    start = _Model(b, order, tf_norm, mean, width)
+    x, dev = start.fit()
+    trail = [dict(order=order, deviance=2 * dev, n_tf_at_floor=start.n_at_floor(x))]
     while True:
         best = None
         for cand in ((order[0] + 1, order[1]), (order[0], order[1] + 1)):
@@ -293,6 +326,10 @@ def _choose_order(b, tf_norm, mean, width):
             model = _Model(b, cand, tf_norm, mean, width)
             x_c, dev_c = model.fit(model.embed(x, order))
             if dev_c <= 0:
+                continue
+            if model.n_at_floor(x_c):
+                trail.append(dict(order=cand, deviance=2 * dev_c, admissible=False,
+                                  n_tf_at_floor=model.n_at_floor(x_c)))
                 continue
             f = ((dev - dev_c) / (n_par(cand) - n_par(order))) / (dev_c / dof)
             p = float(stats.f.sf(max(f, 0.0), n_par(cand) - n_par(order), dof))
@@ -330,6 +367,7 @@ def fit_peak(mass, pt, passed, peak, mean=None, width=None, float_shape=False, o
     n_par = len(x)
     out = dict(peak=peak, tf_order=list(order), f_test=trail, n_bins=int(len(t)), n_parameters=n_par,
                converged=model.converged, n_restarts=model.n_restarts, edm=model.edm(x),
+               n_tf_at_floor=model.n_at_floor(x),
                deviance=2 * half_dev, n_pass=float(b["n_pass"].sum()), n_fail=float(b["n_fail"].sum()),
                asymptotic_p=float(stats.chi2.sf(2 * half_dev, max(len(t) - n_par, 1))))
     hist = {k: np.bincount(b["i"], weights=v, minlength=len(b["m_edges"]) - 1)

@@ -42,6 +42,7 @@ import sys
 from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
+from scipy import optimize
 
 HERE = pathlib.Path(__file__).resolve().parent
 _spec = importlib.util.spec_from_file_location("peak_fit", HERE / "peak_fit.py")
@@ -127,7 +128,8 @@ def newton(model, x, n_iter=100):
             break
         u, f, g = u + a * step, f1, g1
     w, v = np.linalg.eigh(hessian_u(lu, u))
-    edm = float(0.5 * (v.T @ g) @ ((v.T @ g) / np.maximum(w, 1e-300)))
+    keep = w > 1e-12 * w.max()                       # pinv: flat directions carry no distance
+    edm = float(0.5 * np.sum((v.T @ g)[keep] ** 2 / w[keep]))
     return t @ u, float(f), edm, steps
 
 
@@ -164,10 +166,11 @@ def clipped(model, x):
                 n_mu_clipped=int((raw_t.clip(1e-12) * q + s <= 1e-9).sum()))
 
 
-def profile_error(model, x, sigma_guess, ks=(-1.5, -1.0, -0.5, 0.5, 1.0, 1.5)):
-    """Profile-likelihood error of the total yield Y = v.s around the minimum x: 2 x the
-    loss, minimised over everything else at fixed Y, fitted with a parabola in Y. None
-    if the transfer factor sits on its floor (the loss is not smooth there)."""
+def profile_error(model, x, sigma_guess):
+    """Profile-likelihood error of the total yield Y = v.s at the minimum x, as MINOS
+    defines it: where 2 x the loss, minimised over everything else at fixed Y, has risen
+    by 1. Measured at Y +- sigma_guess and scaled by the local parabola on each side,
+    the two sides averaged. None if the transfer factor sits on its floor at x."""
     if clipped(model, x)["n_tf_clipped"]:
         return None
     t = Orthonormal.transform(model)
@@ -180,14 +183,23 @@ def profile_error(model, x, sigma_guess, ks=(-1.5, -1.0, -0.5, 0.5, 1.0, 1.5)):
     p0 = np.r_[np.linalg.solve(rtf, x[:n]), wc.T @ x[n:]]
 
     def prof(y):
+        # tighter than the fit's own settings: at +-0.5 sigma the deviance rises by only
+        # 0.25, so a profile point left 0.01 short moves the error by several per cent
         def f(p):
             val, g = model.loss(join(p[:n], y, p[n:]))
             return val, np.r_[rtf.T @ g[:n], wc.T @ g[n:]]
-        return P._minimize(f, p0)[1]
-    ys = y0 + sigma_guess * np.asarray(ks)
-    d2 = np.array([2 * (prof(y) - f0) for y in ys])
-    c = np.polyfit(ys - y0, d2, 2)
-    return float(1 / np.sqrt(c[0])) if c[0] > 0 else None
+        p, best = p0, np.inf
+        for _ in range(200):
+            r = optimize.minimize(f, p, jac=True, method="L-BFGS-B",
+                                  options=dict(maxiter=5000, ftol=1e-15, gtol=1e-10))
+            if best - r.fun < 1e-10:
+                return min(best, float(r.fun))
+            p, best = r.x, float(r.fun)
+        return best
+    d2 = [2 * (prof(y0 + k * sigma_guess) - f0) for k in (-1.0, 1.0)]
+    if min(d2) <= 0:
+        return None
+    return float(np.mean([sigma_guess / np.sqrt(d) for d in d2]))
 
 
 def one(job):
@@ -284,10 +296,10 @@ def main(argv=None) -> int:
         "max_abs_newton_yield_shift_over_err": max(abs(x["newton_yield_shift_over_err"]) for x in s),
         "err_ratio_range": [min(x["err_ratio_orthonormal_over_as_run"] for x in s),
                             max(x["err_ratio_orthonormal_over_as_run"] for x in s)],
-        "profile_over_as_run_err_range": [min(x["profile_err_over_as_run_err"] for x in s
-                                              if x["profile_err_over_as_run_err"]),
-                                          max(x["profile_err_over_as_run_err"] for x in s
-                                              if x["profile_err_over_as_run_err"])],
+        "profile_over_as_run_err_range": [min((x["profile_err_over_as_run_err"] for x in s
+                                               if x["profile_err_over_as_run_err"]), default=None),
+                                          max((x["profile_err_over_as_run_err"] for x in s
+                                               if x["profile_err_over_as_run_err"]), default=None)],
         "max_n_tf_clipped": max(r["clipping_orthonormal"]["n_tf_clipped"] for r in rows.values())}}
     pathlib.Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     pathlib.Path(a.out).write_text(json.dumps(out, indent=2))

@@ -4,6 +4,7 @@ import importlib.util
 import pathlib
 
 import numpy as np
+import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
@@ -69,3 +70,58 @@ def test_a_fit_records_that_it_converged_and_its_distance_to_the_minimum():
     passed = C.P.passes(score, mass, pt, C.P.build_map(score, mass, pt, T.EFF))
     fit, _, _ = C.P.fit_peak(mass, pt, passed, "top", *T.SHAPES["top"])
     assert fit["converged"] and fit["n_restarts"] >= 1 and fit["edm"] < 1e-3
+
+
+D = _mod("fit_minimum_diagnostic", "experiments/AOJ/fit_minimum_diagnostic.py")
+
+
+BINS = ROOT / "experiments/FIGS/data/aoj_full_v1/fit_v2/bins.npz"
+RESULTS = ROOT / "experiments/FIGS/data/aoj_full_v1/fit_v2/results.json"
+
+
+def _real_fit(name):
+    """One real-data top fit at its stored order, from the committed bins."""
+    import json
+    z = np.load(BINS)
+    st = json.loads(RESULTS.read_text())["models"][name]["top"]
+    b = {k: z[f"{name}|main|{k}"] for k in D.KEYS}
+    fit, model, x = D.replay(b, C.P._Model, mean=st["mean"], width=st["width"], order=tuple(st["tf_order"]))
+    return fit, model, x
+
+
+@pytest.mark.parametrize("name", ["l162-s3", "r42q1-s2"])
+def test_a_high_order_real_fit_is_at_its_minimum_and_its_error_is_the_profile_likelihood_error(name):
+    """The two real fits the v2 minimiser left furthest from their minimum, at orders
+    (4, 3) and (3, 3). Newton steps must find nothing lower, and the quoted error must
+    be the yield change that raises the deviance by 1."""
+    fit, model, x = _real_fit(name)
+    xn, fn, edm, _ = D.newton(model, x)
+    assert model.loss(x)[0] - fn < 1e-6 and edm < 1e-6
+    assert abs(D.yield_and_error(model, xn)[0] - fit["signal_yield"]) < 1e-3 * fit["signal_yield_err"]
+    assert D.profile_error(model, x, fit["signal_yield_err"]) == pytest.approx(fit["signal_yield_err"], rel=0.01)
+    assert fit["n_tf_at_floor"] == 0
+
+
+def test_the_gradient_is_the_derivative_of_the_loss_even_where_the_transfer_factor_is_floored():
+    _, model, x = _real_fit("l162-s3")
+    y = x.copy()
+    y[1] -= 3.0                                     # drive the polynomial below zero in part of the plane
+    assert model.n_at_floor(y) > 0
+    g = model.loss(y)[1]
+    num = np.array([(model.loss(y + e)[0] - model.loss(y - e)[0]) / 2e-7
+                    for e in np.eye(len(y)) * 1e-7])
+    assert np.allclose(g, num, rtol=1e-4, atol=1e-2)
+
+
+def test_an_order_whose_fit_floors_the_transfer_factor_is_not_admissible(monkeypatch):
+    mass, pt, score, _ = T.sample(5, n_sig=5000, peak="top")
+    passed = C.P.passes(score, mass, pt, C.P.build_map(score, mass, pt, T.EFF))
+    free, _, _ = C.P.fit_peak(mass, pt, passed, "top", *T.SHAPES["top"])
+    step = [t["order"] for t in free["f_test"][1:] if t.get("f_test_p", 1.0) < C.P.F_ALPHA]
+    assert step, "the fixture must raise the order at least once"
+    banned = tuple(step[0])
+    monkeypatch.setattr(C.P._Model, "n_at_floor", lambda self, x: 4 if tuple(self.args[0]) == banned else 0)
+    fit, _, _ = C.P.fit_peak(mass, pt, passed, "top", *T.SHAPES["top"])
+    marked = [t for t in fit["f_test"] if tuple(t["order"]) == banned]
+    assert marked and all(t.get("admissible") is False and t["n_tf_at_floor"] == 4 for t in marked)
+    assert tuple(fit["tf_order"]) != banned
