@@ -79,3 +79,24 @@ def test_main_writes_a_rising_curve_and_the_mlp_check_and_resumes(tmp_path):
     assert (out / "label_recovery_curve.json").read_text() == before
     with pytest.raises(SystemExit, match="other jets or sizes"):
         lc.main(argv[:7] + ["60", "0"] + argv[11:])
+
+
+def test_summary_gives_per_run_values_the_data_gain_and_the_capacity_gap(tmp_path):
+    rng = np.random.default_rng(0)
+    lab = rng.integers(0, 188, size=4000)
+    files = []
+    for s in (1, 2):
+        _cache(tmp_path / f"arm{s}", lab, rng, sep=0.6)
+        out = tmp_path / f"o{s}"
+        lc.main(["--features", f"r16q1-s{s}={tmp_path / f'arm{s}'}", "--own-rung", f"r16q1-s{s}=R16_Q1",
+                 "--out", str(out), "--sizes", "100", "400", "0", "--rungs", "R16_Q1",
+                 "--mlp-rungs", "R16_Q1", "--threads", "1"])
+        files.append(out / "label_recovery_curve.json")
+    assert lc.main(["--summarise", *map(str, files), "--out", str(tmp_path / "sum")]) == 0
+    S = json.loads((tmp_path / "sum" / "label_recovery_curve_summary.json").read_text())
+    last = [c for c in S["summary"] if c["probe"] == "linear" and c["n_train"] == S["sizes"][-1]]
+    assert len(last) == 1 and last[0]["seeds"] == [1, 2] and len(last[0]["accuracy"]) == 2
+    assert S["data_gain_last_step"][0]["from"] == 400 and len(S["data_gain_last_step"][0]["per_run"]) == 2
+    assert len(S["mlp_minus_linear_at_largest"][0]["per_run"]) == 2
+    with pytest.raises(SystemExit):
+        lc.main(["--summarise", *map(str, files), "--out", str(tmp_path / "sum")])

@@ -36,6 +36,8 @@ spec:
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           echo "PVC used: ${USED}%"
           [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          python3 -c 'import sys, torch; sys.exit(0 if torch.cuda.is_available() else 3)' \
+            || { echo "no usable GPU on $(hostname); retried elsewhere"; exit 137; }
           OUT=/data/results/eval/v2/mtx-r16q1mass-s4
           python3 experiments/EVAL/extract_v2.py \
             --run-dir /data/results/mtx_v2/mtx-r16q1mass-s4 --rung R16_Q1 --num-classes 17 --num-reg 1 \
@@ -59,6 +61,9 @@ spec:
               - key: topology.kubernetes.io/region
                 operator: In
                 values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["patternlab.calit2.optiputer.net"]
       volumes:
       - name: jc2
         persistentVolumeClaim:

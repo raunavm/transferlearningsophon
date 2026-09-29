@@ -90,6 +90,30 @@ def needs(counts: np.ndarray, window_counts: np.ndarray, probe_files: list[pathl
     return out
 
 
+# Bytes per kept row, as extract_v2.write stores them.
+FEATURE_ROW_BYTES = 128 * 2 + 8 + 2          # float16 features, int64 row, int16 label
+HEAD_ROW_BYTES = 8 + 2 + 2 + 4 * 4 + 12 * 4  # rows, label, argmax, 4 floats, 12 class sums
+
+
+def storage(counts: dict, prefix_counts: np.ndarray, feature_classes: list[int],
+            head_classes: list[int], n_models: int, n_ckpt_features: int,
+            n_ckpt_heads: int, diag: int = 20_000) -> dict:
+    """Bytes the v2 extraction writes: features at n_ckpt_features checkpoints
+    (probe classes over the split, plus the first 2,000,000 jets), head scores at
+    n_ckpt_heads (the anomaly rows of the first 2,000,000 and a stride sample).
+    Uncompressed; head_scores.npz is compressed, so its figure is an upper bound."""
+    sel = np.asarray(counts["selected_per_class"])
+    fc = sorted(set(feature_classes))
+    n_feat = int(sel[fc].sum() + prefix_counts.sum() - prefix_counts[fc].sum())
+    n_head = int(prefix_counts[sorted(set(head_classes))].sum() + diag)
+    per_model = (n_ckpt_features * n_feat * FEATURE_ROW_BYTES
+                 + n_ckpt_heads * n_head * HEAD_ROW_BYTES)
+    return {"feature_rows_per_checkpoint": n_feat, "head_rows_per_checkpoint": n_head,
+            "bytes_per_model": per_model, "bytes_total": per_model * n_models,
+            "n_models": n_models, "checkpoints_with_features": n_ckpt_features,
+            "checkpoints_with_heads": n_ckpt_heads}
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--data-test", nargs="+", required=True)

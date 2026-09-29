@@ -782,7 +782,7 @@ spec:
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           echo "PVC used: ${{USED}}%"
           [ "${{USED}}" -lt 85 ] || {{ echo "FATAL: /data is ${{USED}}% full"; exit 42; }}
-{body}        volumeMounts:
+{gpu_check}{body}        volumeMounts:
         - {{ name: jc2,  mountPath: /jc2, readOnly: true }}
         - {{ name: data, mountPath: /data }}
         - {{ name: dshm, mountPath: /dev/shm }}
@@ -796,7 +796,7 @@ spec:
             - matchExpressions:
               - key: topology.kubernetes.io/region
                 operator: In
-                values: ["us-west"]
+                values: ["us-west"]{node_exclude}
       volumes:
       - name: jc2
         persistentVolumeClaim:
@@ -808,6 +808,17 @@ spec:
       - name: dshm
         emptyDir: {{ medium: Memory, sizeLimit: "8Gi" }}
 """
+
+# A GPU pod on a node whose driver is broken sees no device and silently runs on
+# the CPU, ~30x slower (2026-09-29: patternlab.calit2.optiputer.net, "CUDA unknown
+# error", and a StartError there the same hour). Such a pod exits 137 so the Job
+# retries it elsewhere, and the node is excluded.
+GPU_CHECK = """          python3 -c 'import sys, torch; sys.exit(0 if torch.cuda.is_available() else 3)' \\
+            || {{ echo "no usable GPU on $(hostname); retried elsewhere"; exit 137; }}
+"""
+BAD_GPU_NODES = ("patternlab.calit2.optiputer.net",)
+NODE_EXCLUDE = ("\n              - key: kubernetes.io/hostname\n                operator: NotIn\n"
+                "                values: [" + ", ".join(f'"{n}"' for n in BAD_GPU_NODES) + "]")
 
 HEADS_BODY = """          OUT={out}
           ls ${{OUT}}/e0{{70..79}}/manifest.json >/dev/null 2>&1 && {{ echo "done by an earlier attempt"; exit 0; }}
@@ -847,10 +858,13 @@ def build_v1err() -> dict[str, str]:
             out[f"job-{name}.yaml"] = V1ERR_TEMPLATE.format(
                 name=name, image=IMAGE, pin=V1ERR_PIN, body=body,
                 mem="48Gi" if gpu else "32Gi", cpu="4" if gpu else "8",
-                gpu_req=', nvidia.com/gpu: "1"' if gpu else "")
+                gpu_req=', nvidia.com/gpu: "1"' if gpu else "",
+                gpu_check=GPU_CHECK.format() if gpu else "",
+                node_exclude=NODE_EXCLUDE if gpu else "")
     name = "test-class-counts-raunav"
     out[f"job-{name}.yaml"] = V1ERR_TEMPLATE.format(
         name=name, image=IMAGE, pin=V1ERR_PIN, mem="8Gi", cpu="2", gpu_req="",
+        gpu_check="", node_exclude="",
         body=COUNTS_BODY.format(out="/data/results/eval/v1err/class_counts/test_class_counts.json",
                                 files=files))
     return out
@@ -909,7 +923,8 @@ def build_v2() -> dict[str, str]:
                 f"            --out ${{OUT}} || halt\n")
         out[f"job-{name}.yaml"] = V1ERR_TEMPLATE.format(
             name=name, image=IMAGE, pin=V2_PIN, body=body, mem="64Gi", cpu="6",
-            gpu_req=', nvidia.com/gpu: "1"')
+            gpu_req=', nvidia.com/gpu: "1"', gpu_check=GPU_CHECK.format(),
+            node_exclude=NODE_EXCLUDE)
     return out
 
 

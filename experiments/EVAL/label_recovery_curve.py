@@ -146,10 +146,63 @@ def fit_mlp(Xtr, ytr, Xva, yva, Xte, yte, threads: int) -> dict:
             "val_curve": curve}
 
 
+def summarise(files: list[pathlib.Path]) -> dict:
+    """The table the paper reads, from the per-model curve files: per rung x
+    vocabulary x probe x training size, every run's balanced accuracy and their
+    mean and SD; the MLP-minus-linear gap at the largest size (capacity); and the
+    gain from the second-largest to the largest size (data), each per run."""
+    parse_arm = _load("seed_level", "experiments/STATS/seed_level.py").parse_arm
+    rows, prov = [], []
+    for f in files:
+        d = json.loads(pathlib.Path(f).read_text())
+        prov.append({"path": str(f), "sha256": hashlib.sha256(pathlib.Path(f).read_bytes()).hexdigest()})
+        for arm, ad in d["arms"].items():
+            level, seed = parse_arm(arm)
+            for rung, cell in ad["rungs"].items():
+                if "skipped" in cell:
+                    continue
+                base = {"rung": rung, "level": level, "seed": seed, "arm": arm,
+                        "own_rung": ad["own_rung"], "n_groups": cell["n_groups"],
+                        "chance": cell["chance"], "file": str(f)}
+                for c in cell["curve"]:
+                    rows.append({**base, "probe": "linear", "n_train": c["n_train"],
+                                 "accuracy": c["balanced_accuracy"], "converged": c["converged"]})
+                if "mlp" in cell:
+                    rows.append({**base, "probe": "mlp", "n_train": cell["mlp"]["n_train"],
+                                 "accuracy": cell["mlp"]["balanced_accuracy"],
+                                 "converged": cell["mlp"]["converged"]})
+    cells = {}
+    for r in rows:
+        cells.setdefault((r["rung"], r["level"], r["probe"], r["n_train"]), {})[r["seed"]] = r["accuracy"]
+    agg = [{"rung": k[0], "level": k[1], "probe": k[2], "n_train": k[3],
+            "seeds": sorted(v), "accuracy": [v[s] for s in sorted(v)],
+            "mean": float(np.mean(list(v.values()))),
+            "sd": float(np.std(list(v.values()), ddof=1)) if len(v) > 1 else None}
+           for k, v in sorted(cells.items(), key=lambda kv: (kv[0][0], -kv[0][1], kv[0][2], kv[0][3]))]
+    gains, capacity = [], []
+    sizes = sorted({r["n_train"] for r in rows if r["probe"] == "linear"})
+    for (rung, level) in sorted({(r["rung"], r["level"]) for r in rows}):
+        lin = {s: cells.get((rung, level, "linear", s), {}) for s in sizes}
+        if len(sizes) >= 2 and lin[sizes[-1]] and lin[sizes[-2]]:
+            d = [lin[sizes[-1]][s] - lin[sizes[-2]][s] for s in lin[sizes[-1]] if s in lin[sizes[-2]]]
+            gains.append({"rung": rung, "level": level, "from": sizes[-2], "to": sizes[-1],
+                          "per_run": d, "mean": float(np.mean(d)),
+                          "sd": float(np.std(d, ddof=1)) if len(d) > 1 else None})
+        mlp = cells.get((rung, level, "mlp", sizes[-1]), {})
+        if mlp:
+            d = [mlp[s] - lin[sizes[-1]][s] for s in mlp if s in lin[sizes[-1]]]
+            capacity.append({"rung": rung, "level": level, "n_train": sizes[-1], "per_run": d,
+                             "mean": float(np.mean(d)),
+                             "sd": float(np.std(d, ddof=1)) if len(d) > 1 else None})
+    return {"provenance": {"inputs": prov}, "sizes": sizes, "table": rows, "summary": agg,
+            "data_gain_last_step": gains, "mlp_minus_linear_at_largest": capacity,
+            "unconverged": [r for r in rows if not r["converged"]]}
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--features", nargs="+", required=True, help="arm=DIR ...")
-    ap.add_argument("--own-rung", nargs="+", required=True, help="arm=RUNG ...")
+    ap.add_argument("--features", nargs="+", default=None, help="arm=DIR ...")
+    ap.add_argument("--own-rung", nargs="+", default=None, help="arm=RUNG ...")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--sizes", nargs="+", type=int, default=list(DEFAULT_SIZES),
                     help="training sizes; 0 = every jet in the training pool")
@@ -157,7 +210,23 @@ def main(argv=None) -> int:
     ap.add_argument("--mlp-rungs", nargs="*", default=["L188"],
                     help="rungs that get the MLP capacity check at the largest size")
     ap.add_argument("--threads", type=int, default=8)
+    ap.add_argument("--summarise", nargs="+", type=pathlib.Path, default=None,
+                    help="instead of fitting: summarise these label_recovery_curve.json "
+                         "files into <out>/label_recovery_curve_summary.json")
     a = ap.parse_args(argv)
+    if a.summarise:
+        dest = a.out / "label_recovery_curve_summary.json"
+        if dest.exists():
+            raise SystemExit(f"FATAL: {dest} exists; refusing to overwrite")
+        res = summarise(a.summarise)
+        res["provenance"]["script_sha256"] = hashlib.sha256(
+            pathlib.Path(__file__).read_bytes()).hexdigest()
+        a.out.mkdir(parents=True, exist_ok=True)
+        dest.write_text(json.dumps(res, indent=1))
+        print(f"wrote {dest}")
+        return 0
+    if not a.features or not a.own_rung:
+        raise SystemExit("FATAL: --features and --own-rung are required to fit")
 
     lrm = _load("label_recovery", "experiments/EVAL/label_recovery.py")
     probe = _load("probe", "experiments/EVAL/probe.py")

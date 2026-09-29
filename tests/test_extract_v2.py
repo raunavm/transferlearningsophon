@@ -172,6 +172,9 @@ def test_v1err_head_specs_cover_every_model_with_the_retry_policy():
             gpu = "nvidia.com/gpu" in text
             assert gpu == fname.startswith("job-heads-anomaly-")
             assert ("--no-anomaly-rows" in text) == (not gpu)
+            # a GPU pod that sees no device must not fall back to the CPU
+            assert ("torch.cuda.is_available()" in text and "exit 137" in text) == gpu
+            assert ("patternlab.calit2.optiputer.net" in text) == gpu
 
 
 def test_v2_specs_one_per_classification_run_primary_features_only():
@@ -192,3 +195,16 @@ def test_head_scores_outside_the_tree_keep_only_what_is_defined():
     z = np.random.default_rng(0).normal(size=(10, 17)).astype(np.float32)
     h = xv.head_score_columns(z, "none", {})
     assert set(h) == {"argmax", "logsumexp"}
+
+
+def test_storage_estimate_counts_each_row_once():
+    cc = _load("class_counts", "experiments/EVAL/class_counts.py")
+    sel = np.zeros(188, int)
+    sel[[0, 1]] = [1000, 2000]
+    prefix = np.zeros(188, int)
+    prefix[[0, 5, 170]] = [100, 50, 300]
+    s = cc.storage({"selected_per_class": sel.tolist()}, prefix, [0, 1], [170], n_models=2,
+                   n_ckpt_features=1, n_ckpt_heads=11, diag=10)
+    assert s["feature_rows_per_checkpoint"] == 3000 + 50 + 300     # class 0 counted once
+    assert s["head_rows_per_checkpoint"] == 310
+    assert s["bytes_total"] == 2 * (3350 * cc.FEATURE_ROW_BYTES + 11 * 310 * cc.HEAD_ROW_BYTES)

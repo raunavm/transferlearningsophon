@@ -85,6 +85,27 @@ def _sha(p) -> str:
 
 
 # ----------------------------------------------------------------- probes
+def reproduction(dirs: list[pathlib.Path], committed: dict) -> dict:
+    """The refit against the committed result it repeats: largest |dAUC| per
+    probe, over every task and model. The linear probe is deterministic and must
+    agree exactly; the MLP is refitted with the same seeds and schedule."""
+    out = {}
+    for d in dirs:
+        ref = committed.get(str(d))
+        if ref is None:
+            continue
+        A = json.loads((d / "probe_results.json").read_text())["tasks"]
+        R = json.loads(pathlib.Path(ref).read_text())["tasks"]
+        worst = {"linear": 0.0, "mlp": 0.0}
+        for task, T in A.items():
+            for arm, v in T.get("arms", {}).items():
+                for kind in worst:
+                    worst[kind] = max(worst[kind], abs(v[kind]["auc"] - R[task]["arms"][arm][kind]["auc"]))
+        out[str(d)] = {"committed": str(ref), "committed_sha256": _sha(ref),
+                       "max_abs_dauc": worst}
+    return out
+
+
 def probe_replicates(dirs: list[pathlib.Path], b: int = B, seed: int = SEED):
     """Replicates of 1 - AUC and eps_B at every working point, per task x probe x model.
 
@@ -233,7 +254,10 @@ def _group(meta: dict):
     return out
 
 
-def ratios(vec: dict, meta: dict) -> dict:
+def ratios(vec: dict, meta: dict, run_dirs_root: pathlib.Path | None = None) -> dict:
+    """Every comparison of PAIRS. With `run_dirs_root` (v2), each model's run
+    directory is <root>/mtx-<model> and paired_ratio refuses a pair whose
+    realised training streams differ; without it (v1) runs pair by index."""
     rows, rej, models = [], [], {}
     for (fam, task, kind, metric), by_model in sorted(_group(meta).items()):
         per_level = {}
@@ -257,8 +281,15 @@ def ratios(vec: dict, meta: dict) -> dict:
                    "fine": fine, "coarse": coarse,
                    "fine_models": [by_key(by_model, fk[r]) for r in pairs],
                    "coarse_models": [by_key(by_model, ck[r]) for r in pairs]}
-            fv = {r: vec[fk[r]] for r in pairs}
-            cv = {r: vec[ck[r]] for r in pairs}
+            fm = {r: by_key(by_model, fk[r]) for r in pairs}
+            cm = {r: by_key(by_model, ck[r]) for r in pairs}
+            fv = {fm[r]: vec[fk[r]] for r in pairs}
+            cv = {cm[r]: vec[ck[r]] for r in pairs}
+            mpairs = {cm[r]: fm[r] for r in pairs}
+            dirs = None
+            if run_dirs_root is not None:
+                dirs = {m: pathlib.Path(run_dirs_root) / f"mtx-{m}"
+                        for m in list(fm.values()) + list(cm.values())}
             censored = [m for m in row["fine_models"] + row["coarse_models"]
                         if meta[by_model[m]].get("censored")]
             zero = [m for m in row["fine_models"] + row["coarse_models"]
@@ -268,12 +299,39 @@ def ratios(vec: dict, meta: dict) -> dict:
                                        "or in a resampling; the ratio of rejections is "
                                        "undefined there -- see the Poisson intervals")
             else:
-                row.update(P.paired_ratio(fv, cv))
+                row.update(P.paired_ratio(fv, cv, pairs=mpairs, run_dirs=dirs))
             if censored:
                 row["censored_models"] = censored
                 row["note"] = ("an AUC of 1 is floored at one discordant pair; the "
                                "ratio is a bound, not a value")
             rows.append(row)
+        # BETWEEN RANDOM DRAWS (must-fix 11a). One run per draw, so no run
+        # spread of their own: the test-sample term is measured, and the run
+        # term is borrowed from the 17-class models (same head width), whose
+        # ln metric varies over five runs by sd17; the difference of two single
+        # runs carries 2 * sd17^2 of it.
+        draws = per_level.get("random", {})
+        if len(draws) > 1 and "17" in per_level and len(per_level["17"]) > 1:
+            pts = [float(np.log(vec[k][0])) for k in per_level["17"].values()]
+            sd17 = float(np.std(pts, ddof=1)) if all(np.isfinite(pts)) else float("nan")
+            ds = sorted(draws)
+            for i, di in enumerate(ds):
+                for dj in ds[i + 1:]:
+                    mi, mj = by_key(by_model, draws[di]), by_key(by_model, draws[dj])
+                    row = {"family": fam, "task": task, "kind": kind, "metric": metric,
+                           "fine": f"random draw {di}", "coarse": f"random draw {dj}",
+                           "fine_models": [mi], "coarse_models": [mj]}
+                    if np.any(vec[draws[di]] <= 0) or np.any(vec[draws[dj]] <= 0):
+                        row["not_computed"] = "a draw passes no background jet"
+                    else:
+                        row.update(P.paired_ratio({mi: vec[draws[di]]}, {mj: vec[draws[dj]]},
+                                                  pairs={mj: mi}))
+                        comb = float(np.sqrt(row["ln_test_se"] ** 2 + 2 * sd17 ** 2))
+                        row.update({"run_sd_proxy_17": sd17,
+                                    "ln_combined_se_with_proxy": comb,
+                                    "ci95_with_proxy": [float(np.exp(row["ln_ratio"] - 1.96 * comb)),
+                                                        float(np.exp(row["ln_ratio"] + 1.96 * comb))]})
+                    rows.append(row)
         if metric.startswith("eps_b@"):
             for lv, runs in per_level.items():
                 cells = []
@@ -383,6 +441,8 @@ def main(argv=None) -> int:
         s.add_argument("--seed", type=int, default=SEED)
         if name == "probe-replicates":
             s.add_argument("--probe-dirs", nargs="+", required=True, type=pathlib.Path)
+            s.add_argument("--committed", nargs="*", default=[],
+                           help="DIR=FILE: the committed probe_results each refit repeats")
         elif name == "mass-replicates":
             s.add_argument("--mass-dirs", nargs="+", required=True, type=pathlib.Path)
         else:
@@ -393,11 +453,14 @@ def main(argv=None) -> int:
             s.add_argument("--procs", type=int, default=8)
     s = sub.add_parser("ratios")
     s.add_argument("--replicates", nargs="+", required=True, type=pathlib.Path)
+    s.add_argument("--run-dirs-root", type=pathlib.Path, default=None,
+                   help="v2: the pretraining runs' root; pairs must share their stream")
     s.add_argument("--out", required=True, type=pathlib.Path)
     a = ap.parse_args(argv)
 
     if a.cmd == "probe-replicates":
         vec, meta, prov = probe_replicates(a.probe_dirs, a.b, a.seed)
+        prov["reproduction"] = reproduction(a.probe_dirs, dict(x.split("=", 1) for x in a.committed))
         save(a.out, vec, meta, prov, a.b, a.seed)
     elif a.cmd == "mass-replicates":
         vec, meta, prov = mass_replicates(a.mass_dirs, a.b, a.seed)
@@ -413,7 +476,7 @@ def main(argv=None) -> int:
         if a.out.exists():
             raise SystemExit(f"FATAL: {a.out} exists; refusing to overwrite")
         vec, meta, prov = load(a.replicates)
-        res = ratios(vec, meta)
+        res = ratios(vec, meta, a.run_dirs_root)
         res = {"provenance": {"replicates": prov, "script_sha256": _sha(__file__),
                               "method_sha256": _sha(REPO / "src" / "stats" / "paired.py")},
                "method": {

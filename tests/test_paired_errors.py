@@ -65,7 +65,12 @@ def test_probe_ratios_pair_runs_and_the_random_draws(tmp_path):
     assert r["n_runs"] == 3 and r["ratio"] > 1.5 and r["ln_test_se"] > 0
     assert r["fine_models"] == ["l188-s1", "l188-s2", "l188-s3"]
     rr = rows[("linear", "1-auc", "17", "random")]
-    assert rr["n_runs"] == 2 and rr["pairs"] == {"1": "1", "2": "2"} and rr["ratio"] < 1
+    assert rr["n_runs"] == 2 and rr["ratio"] < 1
+    assert rr["pairs"] == {"rand-d1-s1b": "r16q1-s1", "rand-d2-s2": "r16q1-s2"}
+    assert rr["stream_pairing"] == "unchecked"
+    dd = rows[("linear", "1-auc", "random draw 1", "random draw 2")]
+    assert dd["n_runs"] == 1 and dd["run_sd_proxy_17"] > 0
+    assert dd["ln_combined_se_with_proxy"] > dd["ln_test_se"]
     rej = [x for x in res["rejections"] if x["level"] == "188" and x["eps_s"] == 0.9
            and x["kind"] == "linear"]
     assert len(rej) == 1 and len(rej[0]["per_run"]) == 3
@@ -91,3 +96,30 @@ def test_models_on_different_jets_are_not_paired():
          "probe|t|linear|r16q1-s1|1-auc": {"jets": "b"}}
     with pytest.raises(SystemExit, match="same jets"):
         pe.ratios(v, m)
+
+
+def test_v2_pairs_are_refused_when_their_streams_differ(tmp_path):
+    import hashlib as _h
+    for name, rows in (("mtx-l188-s1", ["a", "b"]), ("mtx-r16q1-s1", ["a", "c"])):
+        d = tmp_path / "runs" / name / "stream"
+        d.mkdir(parents=True)
+        for e, r in enumerate(rows):
+            (d / f"epoch-{e:03d}.json").write_text(json.dumps(
+                {"run": name, "epoch": e, "seed_data": 1, "seed_dropout": 1, "files_sha256": "f",
+                 "rows_sha256": r, "sha256": _h.sha256(("f" + r).encode()).hexdigest(),
+                 "n_jets": 1}))
+    v = {"probe|t|linear|l188-s1|1-auc": np.full(3, 0.1),
+         "probe|t|linear|r16q1-s1|1-auc": np.full(3, 0.2)}
+    m = {k: {"jets": "a"} for k in v}
+    with pytest.raises(SystemExit, match="not a pair"):
+        pe.ratios(v, m, tmp_path / "runs")
+
+
+def test_reproduction_reports_the_largest_auc_difference(tmp_path):
+    _probe_dir(tmp_path / "s1", {"l188-s1": 2.0}, 1)
+    J = json.loads((tmp_path / "s1" / "probe_results.json").read_text())
+    J["tasks"]["bvc_resonant"]["arms"]["l188-s1"]["mlp"]["auc"] += 1e-4
+    (tmp_path / "ref.json").write_text(json.dumps(J))
+    r = pe.reproduction([tmp_path / "s1"], {str(tmp_path / "s1"): str(tmp_path / "ref.json")})
+    w = r[str(tmp_path / "s1")]["max_abs_dauc"]
+    assert w["linear"] == 0.0 and w["mlp"] == pytest.approx(1e-4)
