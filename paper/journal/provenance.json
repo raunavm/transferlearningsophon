@@ -3049,74 +3049,62 @@
   },
   "FtRecipeBatch": {
     "json_path": "runs[*].batch_size",
-    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
-    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "sha256": "7dc8c791343e1b6f68a841f4689c9a744174e95efc6d576f1b95297ed2ccc5bd",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json",
     "value": "512"
-  },
-  "FtRecipeEpochsBench": {
-    "json_path": "runs[bench].epochs",
-    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
-    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
-    "value": "20"
   },
   "FtRecipeEpochsEFive": {
     "json_path": "runs[leg 1,2; n_train 100000].epochs",
-    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
-    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "sha256": "7dc8c791343e1b6f68a841f4689c9a744174e95efc6d576f1b95297ed2ccc5bd",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json",
     "value": "30"
   },
   "FtRecipeEpochsEFour": {
     "json_path": "runs[leg 1,2; n_train 10000].epochs",
-    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
-    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "sha256": "7dc8c791343e1b6f68a841f4689c9a744174e95efc6d576f1b95297ed2ccc5bd",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json",
     "value": "50"
   },
   "FtRecipeEpochsESix": {
     "json_path": "runs[leg 1,2; n_train 1000000].epochs",
-    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
-    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "sha256": "7dc8c791343e1b6f68a841f4689c9a744174e95efc6d576f1b95297ed2ccc5bd",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json",
     "value": "10"
   },
   "FtRecipeEpochsEThree": {
     "json_path": "runs[leg 1,2; n_train 1000].epochs",
-    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
-    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "sha256": "7dc8c791343e1b6f68a841f4689c9a744174e95efc6d576f1b95297ed2ccc5bd",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json",
     "value": "50"
   },
   "FtRecipeHeadMult": {
     "json_path": "runs[*].head_lr_mult, pretrained starts",
-    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
-    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "sha256": "7dc8c791343e1b6f68a841f4689c9a744174e95efc6d576f1b95297ed2ccc5bd",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json",
     "value": "50"
   },
   "FtRecipeLr": {
     "json_path": "runs[*].lr, pretrained starts",
-    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
-    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "sha256": "7dc8c791343e1b6f68a841f4689c9a744174e95efc6d576f1b95297ed2ccc5bd",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json",
     "value": "\\ensuremath{1\\times10^{-4}}"
   },
   "FtRecipeLrHead": {
     "json_path": "lr x head_lr_mult",
-    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
-    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "sha256": "7dc8c791343e1b6f68a841f4689c9a744174e95efc6d576f1b95297ed2ccc5bd",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json",
     "value": "\\ensuremath{5\\times10^{-3}}"
   },
-  "FtRecipeLrScratch": {
-    "json_path": "runs[*].lr, from scratch",
-    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
-    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
-    "value": "\\ensuremath{5\\times10^{-4}}"
-  },
   "FtRecipeNRuns": {
-    "json_path": "runs (count)",
-    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
-    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
-    "value": "735"
+    "json_path": "runs (count), reported cells",
+    "sha256": "7dc8c791343e1b6f68a841f4689c9a744174e95efc6d576f1b95297ed2ccc5bd",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json",
+    "value": "264"
   },
   "FtRecipeWeightDecay": {
     "json_path": "runs[*].weight_decay",
-    "sha256": "cb620e950901c5be65fdc1d97dfc2e0cd569d1932c150de85853a1c4cfec17e9",
-    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2.json",
+    "sha256": "7dc8c791343e1b6f68a841f4689c9a744174e95efc6d576f1b95297ed2ccc5bd",
+    "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json",
     "value": "0.01"
   },
   "FtSizeEFive": {

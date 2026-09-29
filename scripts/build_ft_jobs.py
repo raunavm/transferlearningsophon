@@ -705,8 +705,127 @@ BAD_NODES = ("ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu",
 LOST_GPU_NODES = ("ry-gpu-01.sdsc.optiputer.net",)
 
 
+# ============================================ retries that survive a flaky cluster
+# THREE BASELINE JOBS FAILED IN ONE DAY WITH NOTHING WRONG IN THEM (2026-09-29).
+# Nodes rebooted, and on re-admission the kubelet refused our pods because the GPU
+# was not back yet ("UnexpectedAdmissionError: requested number of devices
+# unavailable"), or tainted the node and evicted them. Each such pod counts as a
+# Job failure, so backoffLimit 1 died on the second bad node; and each killed
+# attempt left a .partial directory, so attempt_ok -- which counted every
+# partial -- would halt a shard after two evictions of one cell although the
+# cell never failed. The fix separates the three ways a pod ends:
+#   * EVICTED (taint manager, preemption, a lost node): the pod carries the
+#     DisruptionTarget condition and the policy below IGNORES it -- not counted;
+#   * REFUSED at admission, OOM-killed, a crash: counted, up to ROBUST_BACKOFF;
+#   * HALTED by the script (a cell that failed twice, or a FAILED marker from an
+#     earlier pod): exit EXIT_HALT, which the policy turns into FailJob at once,
+#     so a deterministic failure never burns the retries.
+# At cell level a FAILED attempt now leaves ATTEMPT_FAILED in its directory (an
+# EXIT trap; an evicted pod is SIGKILLed and runs no trap), and attempt_ok counts
+# only those -- two failed attempts stop the job, as before, and six attempts of
+# any kind stop it too, so a cell cannot be retried forever.
+# Kubernetes 1.33 on Nautilus (podFailurePolicy is GA from 1.31).
+EXIT_HALT = 42
+ROBUST_BACKOFF = 20
+POD_FAILURE_POLICY = (
+    "  podFailurePolicy:\n"
+    "    rules:\n"
+    "    - action: FailJob\n"
+    f"      onExitCodes: {{ containerName: main, operator: In, values: [{EXIT_HALT}] }}\n"
+    "    - action: Ignore\n"
+    "      onPodConditions:\n"
+    "      - type: DisruptionTarget\n")
+# Specs that keep the one-retry logic because their job ran to completion, or is
+# running, under it: the committed file is that job's record and must describe
+# the job the cluster ran.
+ONE_RETRY_RECORDS = {"ft-legs-bench-baseline-scratch-v2-raunav"}   # Complete 2026-09-29
+# Launched specs outside the baselines that took the fix when their job was
+# re-created: bench v3 shard e (Pending, one cell one eviction from a halt), and
+# shard c, re-created when its running cell (leg_qg/l162-s5, 15 of 20 epochs on
+# 2026-09-29) finished, so that its last cell runs under the fix. Shards a, b
+# and d are Complete; their files stay their record.
+ROBUST_LATE = {"ft-legs-bench-v3-last-c-raunav", "ft-legs-bench-v3-last-e-raunav"}
+
+
+def robust(name: str) -> bool:
+    """Whether the spec called `name` carries the retry logic above."""
+    if name in ONE_RETRY_RECORDS:
+        return False
+    return name.startswith(("ft-legs-baseline-", "ft-legs-bench-baseline-")) or name in ROBUST_LATE
+
+
+_ATTEMPT_OK_OLD = (
+    "          [ -f ${FAIL_MARK} ] && { echo \"FATAL: an earlier attempt failed twice: "
+    "$(cat ${FAIL_MARK}). Fix it, then remove ${FAIL_MARK}\"; exit 1; }\n"
+    "          attempt_ok () { local o=$1; local n=$(ls -d ${o}.partial.* 2>/dev/null | wc -l); "
+    "[ \"$n\" -ge 2 ] && { echo \"${o} failed ${n} times\" | tee ${FAIL_MARK}; exit 1; }; return 0; }\n")
+_ATTEMPT_OK_NEW = (
+    f"          HALT={EXIT_HALT}   # the pod failure policy fails the Job at once on this code\n"
+    "          [ -f ${FAIL_MARK} ] && { echo \"FATAL: an earlier attempt failed twice: "
+    "$(cat ${FAIL_MARK}). Fix it, then remove ${FAIL_MARK}\"; exit ${HALT}; }\n"
+    "          # A FAILED attempt leaves ATTEMPT_FAILED in its cell (the EXIT trap below);\n"
+    "          # an evicted pod is SIGKILLed, runs no trap and leaves none, so eviction is\n"
+    "          # not counted. Attempts from before the trap existed count as failed when\n"
+    "          # their stdout.log holds a Python traceback. Two failed attempts, or six in\n"
+    "          # all, stop the job.\n"
+    "          attempt_ok () {\n"
+    "            local o=$1 f=0 a=0 p\n"
+    "            for p in ${o}.partial.* ${o}; do\n"
+    "              [ -d \"${p}\" ] || continue\n"
+    "              a=$((a+1))\n"
+    "              if [ -f \"${p}/ATTEMPT_FAILED\" ] || grep -q \"^Traceback\" \"${p}/stdout.log\" 2>/dev/null; then f=$((f+1)); fi\n"
+    "            done\n"
+    "            if [ \"${f}\" -ge 2 ] || [ \"${a}\" -ge 6 ]; then\n"
+    "              echo \"${o}: ${f} failed attempts, ${a} in all\" | tee ${FAIL_MARK}; exit ${HALT}\n"
+    "            fi\n"
+    "            return 0\n"
+    "          }\n"
+    "          CELL=\"\"\n"
+    "          trap 'rc=$?; if [ ${rc} -ne 0 ] && [ ${rc} -ne ${HALT} ] && [ -n \"${CELL}\" ] && [ -d \"${CELL}\" ] "
+    "&& [ ! -f \"${CELL}/DONE\" ]; then echo \"rc=${rc} pod=${POD_NAME} node=${NODE_NAME} "
+    "$(date -u +%FT%TZ)\" > \"${CELL}/ATTEMPT_FAILED\"; fi' EXIT\n")
+
+
+def _nan_guard(p: str) -> str:
+    return (f"{p}# A run whose loss went to NaN is not a result even if it finishes: weaver\n"
+            f"{p}# still keeps a best epoch. Fail the attempt; attempt_ok allows one retry.\n"
+            f"{p}if grep -q \"AvgLoss: nan\" ${{OUT}}/train.log 2>/dev/null; then\n"
+            f"{p}  echo \"FATAL: ${{OUT}} diverged (NaN training loss)\"; exit 1; fi\n")
+
+
+def robust_script(script: str, what: str) -> str:
+    """The retry logic above, by asserted substitution, for a legs (two cell
+    loops, indent 16) or benchmark (one loop, indent 18) script."""
+    ind, loops = (16, 2) if "ROOT_OUT=/data/results/ft/w2b\n" in script else (18, 1)
+    p = " " * ind
+    return _derive(script, [
+        (_ATTEMPT_OK_OLD, _ATTEMPT_OK_NEW, 1),
+        (f"{p}[ -d ${{OUT}} ] && mv ${{OUT}} ${{OUT}}.partial.$(date -u +%s)\n{p}mkdir -p ${{OUT}}\n",
+         f"{p}[ -d ${{OUT}} ] && mv ${{OUT}} ${{OUT}}.partial.$(date -u +%s)\n{p}mkdir -p ${{OUT}}\n"
+         f"{p}CELL=${{OUT}}\n", loops),
+        (f"{p}[ -z \"${{ckpt}}\" ] || python3 experiments/FT/smoke_checks.py load-log",
+         _nan_guard(p) + f"{p}[ -z \"${{ckpt}}\" ] || python3 experiments/FT/smoke_checks.py load-log", loops),
+        (f"{p}touch ${{OUT}}/DONE\n{p}rm -rf ${{OUT}}.lock\n",
+         f"{p}touch ${{OUT}}/DONE\n{p}rm -rf ${{OUT}}.lock\n{p}CELL=\"\"\n", loops),
+    ], f"retry logic {what}")
+
+
+RETRY_NOTE = ("  # RETRIES (2026-09-29): pod failure policy -- evictions are not counted, exit\n"
+              f"  # {EXIT_HALT} (a cell that failed twice) fails the Job at once; see \"retries that\n"
+              "  # survive a flaky cluster\" in scripts/build_ft_jobs.py.\n")
+
+
+def _retry_kw(name: str, kw: dict) -> dict:
+    """job() keyword arguments for `name`: the policy and at least ROBUST_BACKOFF
+    retries when it carries the retry logic, `kw` untouched otherwise."""
+    if not robust(name):
+        return kw
+    return {**kw, "backoff": max(kw["backoff"], ROBUST_BACKOFF), "failure_policy": True}
+
+
 def job(name: str, script: str, *, gpu: bool, cpu: str, memory: str, shm: str,
-        backoff: int, pin: str, header: str, exclude_hosts: tuple = ()) -> str:
+        backoff: int, pin: str, header: str, exclude_hosts: tuple = (),
+        failure_policy: bool = False) -> str:
     gpu_req = ', nvidia.com/gpu: "1"' if gpu else ""
     gpu_env = ('        - name: GPU_PRODUCT\n          value: "NVIDIA-GeForce-RTX-3090"\n'
                if gpu else "")
@@ -737,7 +856,7 @@ metadata:
   namespace: cms-ml
 spec:
   backoffLimit: {backoff}
-  template:
+{POD_FAILURE_POLICY if failure_policy else ""}  template:
     spec:
       restartPolicy: Never
       containers:
@@ -1355,6 +1474,16 @@ REFS_NOTE = ("  # BASELINE RECIPES (2026-09-28), overriding the recipe stated be
              "  # DONE marker, so a failed job is re-applied, not retried in a loop.\n")
 
 
+def _refs_note(name: str) -> str:
+    """REFS_NOTE, with the retry paragraph for a spec that carries the retry logic."""
+    if not robust(name):
+        return REFS_NOTE
+    old = ("backoffLimit 1: every cell resumes from its\n"
+           "  # DONE marker, so a failed job is re-applied, not retried in a loop.\n")
+    assert REFS_NOTE.count(old) == 1
+    return REFS_NOTE.replace(old, "Every cell resumes from its DONE\n  # marker.\n") + RETRY_NOTE
+
+
 def _mult_count(indent: int) -> str:
     """weaver 0.4.17 optim() logs 'Parameters with lr multiplied by <m>:' and then
     one ' - <name>' line per matched parameter. The header alone is also printed
@@ -1806,10 +1935,11 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
             ref = suffix in REFS_GROUPS
             name = f"ft-legs-{'baseline' if ref else 'w3'}-{suffix}-raunav"
             cells = cells_legs(inits)
+            script = legs_w3(inits, name)
             specs[f"job-{name}.yaml"] = job(
-                name, _fill(legs_w3(inits, name), pin, inits=inits),
-                **(gpu_refs if ref else gpu),
-                header=h + (REFS_NOTE if ref else "")
+                name, _fill(robust_script(script, name) if robust(name) else script, pin, inits=inits),
+                **_retry_kw(name, gpu_refs if ref else gpu),
+                header=h + (_refs_note(name) if ref else "")
                          + f"  # WAVE 3 of the fine-tuning legs, shard {suffix}: wave 2's script over the\n"
                            "  # checkpoints wave 2 does not cover, ONE fine-tuning seed per pretrained\n"
                            "  # checkpoint (the pretraining seed is the unit of replication), same tree.\n"
@@ -1823,10 +1953,11 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
             ref = suffix in REFS_GROUPS
             name = f"ft-legs-bench-{'baseline' if ref else 'v2'}-{suffix}-raunav"
             cells = cells_bench(inits)
+            script = legs_bench_v2(inits, name)
             specs[f"job-{name}.yaml"] = job(
-                name, _fill(legs_bench_v2(inits, name), pin, inits=inits),
-                **(gpu_refs if ref else {**gpu, "exclude_hosts": BAD_NODES + LOST_GPU_NODES}),
-                header=h + (REFS_NOTE if ref else "")
+                name, _fill(robust_script(script, name) if robust(name) else script, pin, inits=inits),
+                **_retry_kw(name, gpu_refs if ref else {**gpu, "exclude_hosts": BAD_NODES + LOST_GPU_NODES}),
+                header=h + (_refs_note(name) if ref else "")
                          + f"  # BENCHMARKS v2, shard {suffix}: top tagging and quark/gluon at the\n"
                            "  # published recipe (20 epochs, 1e-4 trunk / 5e-3 head, constant LR,\n"
                            "  # weight decay 0.01), one fine-tuning seed per pretrained checkpoint,\n"
@@ -1846,10 +1977,12 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
         for i, inits in enumerate(shard(INITS_BENCH_V3, cells_bench_v3)):
             name = f"ft-legs-bench-v3-last-{chr(ord('a') + i)}-raunav"
             cells = cells_bench_v3(inits)
+            script = legs_bench_v3_last(inits, name)
             specs[f"job-{name}.yaml"] = job(
-                name, _fill(legs_bench_v3_last(inits, name), pin, inits=inits),
-                **{**gpu, "exclude_hosts": BAD_NODES + LOST_GPU_NODES},
-                header=h + "  # BENCHMARKS v3, LAST EPOCH: the 40 cells behind C2 and C3 (20 granularity\n"
+                name, _fill(robust_script(script, name) if robust(name) else script, pin, inits=inits),
+                **_retry_kw(name, {**gpu, "exclude_hosts": BAD_NODES + LOST_GPU_NODES}),
+                header=h + (RETRY_NOTE if robust(name) else "")
+                         + "  # BENCHMARKS v3, LAST EPOCH: the 40 cells behind C2 and C3 (20 granularity\n"
                            "  # models x top and q/g, fine-tuning seed 1, full training set), rerun\n"
                            "  # with bench v2's script and scored at BOTH the last epoch (PRESPEC 2.8,\n"
                            "  # features_last/) and the best-validation epoch (features/). Bench v2\n"

@@ -90,10 +90,20 @@ def discover(root: pathlib.Path):
         if any(".partial." in p for p in rel):
             continue
         if len(rel) == 3:
+            if diverged(log.parent):
+                raise SystemExit(f"FATAL: {log.parent} trained to a NaN loss; not a result")
             out.append((rel[0], rel[1], rel[2], log))
         elif len(rel) == 1:
             out.append((rel[0], "ref", "s1", log))
     return out
+
+
+def diverged(cell: pathlib.Path) -> bool:
+    """A cell whose training loss went to NaN at any epoch, read off weaver's
+    train.log. Such a run still ends with a best-epoch checkpoint and, before the
+    retry logic of 2026-09-29, could still be marked DONE; it is not a result."""
+    log = cell / "train.log"
+    return log.exists() and "AvgLoss: nan" in log.read_text(errors="replace")
 
 
 def main(argv=None) -> int:

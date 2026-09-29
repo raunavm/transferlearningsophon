@@ -35,6 +35,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import collections
 import csv
 import hashlib
 import json
@@ -398,9 +399,9 @@ def input_paths(root: pathlib.Path) -> dict:
             "design_arch": root / "experiments" / "E1" / "ParT_sophon_arch_10c.py",
             "design_arm": root / "configs" / "arms" / "L188.yaml",
             "literature": data / "literature_facts.json",
-            "ft_recipes": data / "ft_recipes" / "recipes_w2b_bench_v2.json",
+            # collected 2026-09-29 (collect_recipes.py over w2b, bench_v2, bench_v3)
+            "ft_recipes": data / "ft_recipes" / "recipes_w2b_bench_v2_v3.json",
             "ft_leg_specs": sorted((root / "experiments" / "FT" / "k8s").glob("job-ft-legs-w[23]*-raunav.yaml")),
-            "ft_bench_specs": sorted((root / "experiments" / "FT" / "k8s").glob("job-ft-legs-bench-v2-*-raunav.yaml")),
             "mass_specs": sorted((root / "experiments" / "MTX" / "k8s").glob("job-mtx-*_mass-s[1-5]-raunav.yaml")),
             "survival": maps / "usecase_survival.v1.json",
             "rung_map": maps / "rung_label_maps.v1.csv"}
@@ -733,104 +734,80 @@ def emit_mass_lambda(em: Emitter, specs: list) -> None:
              "identical in all ten mass-output pretraining specs")
 
 
-def ft_recipe(R: dict, leg_specs: list, bench_specs: list) -> dict:
-    """The fine-tuning settings, from what each run recorded, checked against the commands.
+def ft_recipe(R: dict, leg_specs: list, reported: set) -> dict:
+    """The fine-tuning settings of the runs behind the reported fine-tuning rows,
+    from what each run recorded, checked against the commands.
 
-    Every field the table quotes must take ONE value within its group, or this
+    The runs are the JetClass-II (leg 1) and JetClass (leg 2) cells of the models
+    in `reported`, at fine-tuning seed 1; interrupted attempts (.partial.) wrote
+    a manifest too and are left out. Every such cell must have exactly one
+    recorded run, and every field the table quotes must take ONE value, or this
     stops. Three facts are not in the run manifests and are read from the
-    committed job commands instead, which must all agree: the optimizer and
-    mixed precision, the learning-rate schedule of the JetClass-II/JetClass waves
-    (no --lr-scheduler flag, so weaver's default), and their validation size.
-    The manifests also record head_lr_mult=50 for the from-scratch runs, but
-    their commands pass no multiplier (LR=5e-4; MULT=()) and weaver's logs show
-    none was applied, so the from-scratch row is taken from the commands."""
+    committed job commands, which must all agree: the optimizer and mixed
+    precision, the learning-rate schedule (no --lr-scheduler flag, so weaver's
+    default) and the validation size."""
+    runs = [r for r in R["runs"] if ".partial." not in r["path"] and r["leg"] in ("1", "2")
+            and r["init"] in reported and r["ft_seed"] == "1"]
+    cells = collections.Counter((r["leg"], r["init"], int(r["n_train"])) for r in runs)
+    sizes = sorted({n for _, _, n in cells})
+    want = {(leg, i, n) for leg in ("1", "2") for i in reported for n in sizes}
+    if set(cells) != want or any(c != 1 for c in cells.values()):
+        raise SystemExit(f"FATAL: the recorded runs do not match the reported cells one to one: "
+                         f"missing {sorted(want - set(cells))[:5]}, "
+                         f"repeated {sorted(k for k, c in cells.items() if c != 1)[:5]}")
     one = {}
-
-    def put(key, v):
-        one.setdefault(key, set()).add(v)
-    for r in R["runs"]:
-        fam = "jetclass" if r["leg"] in ("1", "2") else "bench"
-        kind = "scratch" if r["init"] == "scratch" else "pretrained"
-        put((fam, kind, "lr"), r["lr"])
-        put((fam, "weight_decay"), r["weight_decay"])
-        put((fam, "batch_size"), r["batch_size"])
-        put((fam, "lr_schedule"), r["lr_schedule"])
-        put((fam, "epochs", int(r["n_train"]) if fam == "jetclass" else "all"), r["epochs"])
-        if kind == "pretrained":
-            put((fam, "head_lr_mult"), r["head_lr_mult"])
-        if fam == "bench":
-            put(("bench", "val", int(r["n_train"]) >= 100_000), r["samples_per_epoch_val"])
-    bad = {k: sorted(map(str, v)) for k, v in one.items() if len(v) != 1}
+    for r in runs:
+        for key in ("lr", "head_lr_mult", "weight_decay", "batch_size", "lr_schedule"):
+            one.setdefault(key, set()).add(r[key])
+        one.setdefault(("epochs", int(r["n_train"])), set()).add(r["epochs"])
+    bad = {str(k): sorted(map(str, v)) for k, v in one.items() if len(v) != 1}
     if bad:
         raise SystemExit(f"FATAL: fine-tuning runs disagree within a group: {bad}")
     v = {k: next(iter(s)) for k, s in one.items()}
-    for f in leg_specs + bench_specs:
-        t = f.read_text()
-        for need in ("--use-amp", "--optimizer ranger", "LR=5e-4; MULT=()", "LR=1e-4"):
-            if need not in t:
-                raise SystemExit(f"FATAL: {f} lacks {need!r}")
     for f in leg_specs:
         t = f.read_text()
+        for need in ("--use-amp", "--optimizer ranger", "LR=1e-4"):
+            if need not in t:
+                raise SystemExit(f"FATAL: {f} lacks {need!r}")
         if "--lr-scheduler" in t or set(re.findall(r"--samples-per-epoch-val (\S+)", t)) != {"20000"}:
             raise SystemExit(f"FATAL: {f} is not the JetClass recipe the table states")
-    for f in bench_specs:
-        if "--lr-scheduler none" not in f.read_text():
-            raise SystemExit(f"FATAL: {f} does not run the benchmarks at a constant rate")
-    if (v[("jetclass", "lr_schedule")], v[("bench", "lr_schedule")]) != (None, "constant"):
-        raise SystemExit("FATAL: recorded schedules are not (weaver default, constant)")
-    for fam in ("jetclass", "bench"):
-        if v[(fam, "pretrained", "lr")] != v[("jetclass", "pretrained", "lr")] or \
-                v[(fam, "scratch", "lr")] != v[("jetclass", "scratch", "lr")] or \
-                v[(fam, "head_lr_mult")] != v[("jetclass", "head_lr_mult")] or \
-                v[(fam, "weight_decay")] != v[("jetclass", "weight_decay")] or \
-                v[(fam, "batch_size")] != v[("jetclass", "batch_size")]:
-            raise SystemExit("FATAL: the two families of fine-tuning differ in a shared setting")
-    return {"n_runs": len(R["runs"]), "lr": v[("jetclass", "pretrained", "lr")],
-            "head_mult": v[("jetclass", "head_lr_mult")], "lr_scratch": v[("jetclass", "scratch", "lr")],
-            "weight_decay": v[("jetclass", "weight_decay")], "batch": v[("jetclass", "batch_size")],
-            "epochs_jetclass": {n: v[("jetclass", "epochs", n)] for n in (1_000, 10_000, 100_000, 1_000_000)},
-            "epochs_bench": v[("bench", "epochs", "all")],
-            "val_bench_small": v[("bench", "val", False)], "val_bench_large": v[("bench", "val", True)],
-            "val_jetclass": "20000"}
+    if v["lr_schedule"] is not None:
+        raise SystemExit("FATAL: the recorded schedule is not weaver's default")
+    return {"n_runs": len(runs), "lr": v["lr"], "head_mult": v["head_lr_mult"],
+            "weight_decay": v["weight_decay"], "batch": v["batch_size"],
+            "epochs_jetclass": {n: v[("epochs", n)] for n in sizes}, "val_jetclass": "20000"}
 
 
 def emit_ft_recipe(em: Emitter, rec: dict, src: pathlib.Path) -> None:
-    em.macro("FtRecipeNRuns", fmt_int(rec["n_runs"]), src, "runs (count)")
+    em.macro("FtRecipeNRuns", fmt_int(rec["n_runs"]), src, "runs (count), reported cells")
     em.macro("FtRecipeLr", fmt_sci(rec["lr"]), src, "runs[*].lr, pretrained starts")
     em.macro("FtRecipeHeadMult", rec["head_mult"], src, "runs[*].head_lr_mult, pretrained starts")
     em.macro("FtRecipeLrHead", fmt_sci(float(rec["lr"]) * float(rec["head_mult"])), src,
              "lr x head_lr_mult")
-    em.macro("FtRecipeLrScratch", fmt_sci(rec["lr_scratch"]), src, "runs[*].lr, from scratch")
     em.macro("FtRecipeWeightDecay", rec["weight_decay"], src, "runs[*].weight_decay")
     em.macro("FtRecipeBatch", rec["batch"], src, "runs[*].batch_size")
     for n, e in rec["epochs_jetclass"].items():
         em.macro("FtRecipeEpochsE" + texname(f"{len(str(n)) - 1}"), e, src,
                  f"runs[leg 1,2; n_train {n}].epochs")
-    em.macro("FtRecipeEpochsBench", rec["epochs_bench"], src, "runs[bench].epochs")
 
 
 def table_ft_recipe(rec: dict) -> str:
     ep = rec["epochs_jetclass"]
-    body = ["& JetClass-II and JetClass & top tagging and quark/gluon \\\\", "\\midrule",
-            f"optimizer & \\multicolumn{{2}}{{l}}{{Ranger, mixed precision, batch size {rec['batch']}, "
-            f"weight decay {rec['weight_decay']}}} \\\\",
-            f"learning rate, pretrained start & \\multicolumn{{2}}{{l}}{{{fmt_sci(rec['lr'])} "
-            f"(trunk), {fmt_sci(float(rec['lr']) * float(rec['head_mult']))} (new head)}} \\\\",
-            f"learning rate, from scratch & \\multicolumn{{2}}{{l}}{{{fmt_sci(rec['lr_scratch'])} "
-            f"(all parameters)}} \\\\",
-            "schedule & pretrained start: trunk at a constant rate, new head flat then decayed "
-            "to 1\\% over the last 30\\% of epochs (weaver default with a head multiplier); "
-            "from scratch: all parameters flat then decayed & constant \\\\",
+    body = [f"optimizer & Ranger, mixed precision, batch size {rec['batch']}, "
+            f"weight decay {rec['weight_decay']} \\\\",
+            f"learning rate & {fmt_sci(rec['lr'])} (pretrained weights), "
+            f"{fmt_sci(float(rec['lr']) * float(rec['head_mult']))} (new head) \\\\",
+            "schedule & pretrained weights at a constant rate, new head flat then decayed "
+            "to 1\\% over the last 30\\% of epochs (weaver default with a head multiplier) \\\\",
             "epochs & " + ", ".join(str(ep[n]) for n in sorted(ep))
-            + " at " + ", ".join(fmt_n_jets(f"N{n}") for n in sorted(ep))
-            + f" jets & {rec['epochs_bench']} at every size \\\\",
-            f"validation jets & {fmt_int(rec['val_jetclass'])} & {fmt_int(rec['val_bench_small'])} "
-            f"below {fmt_n_jets('N100000')}, {fmt_int(rec['val_bench_large'])} from it \\\\",
-            "checkpoint & \\multicolumn{2}{l}{best validation accuracy} \\\\"]
-    caption = (f"Fine-tuning settings, as the {fmt_int(rec['n_runs'])} fine-tuning runs behind the "
-               "reported results recorded them, checked against their job commands. The head is "
-               "freshly initialised in every run; a pretrained start loads every other weight.")
-    return _table(body, caption, "tab:ftrecipe", "l p{0.42\\linewidth} l", [])
+            + " at " + ", ".join(fmt_n_jets(f"N{n}") for n in sorted(ep)) + " jets \\\\",
+            f"validation jets & {fmt_int(rec['val_jetclass'])} \\\\",
+            "checkpoint & best validation accuracy \\\\"]
+    caption = (f"Fine-tuning settings of the {fmt_int(rec['n_runs'])} runs behind the JetClass-II and "
+               "JetClass results, as each run recorded them, checked against the job commands. "
+               "The head is freshly initialised in every run; every other weight is loaded "
+               "from the pretrained model.")
+    return _table(body, caption, "tab:ftrecipe", "l p{0.7\\linewidth}", [])
 
 
 def emit_training_design(em: Emitter, spec: pathlib.Path, arch: pathlib.Path,
@@ -1746,10 +1723,9 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
         emit_literature(em, paths["literature"])
     if "mass_specs" in have and paths["mass_specs"]:
         emit_mass_lambda(em, paths["mass_specs"])
-    if all(k in have for k in ("ft_recipes", "ft_leg_specs", "ft_bench_specs")) \
-            and paths["ft_leg_specs"] and paths["ft_bench_specs"]:
-        rec = ft_recipe(json.loads(paths["ft_recipes"].read_text()),
-                        paths["ft_leg_specs"], paths["ft_bench_specs"])
+    if all(k in have for k in ("ft_recipes", "ft_leg_specs")) and paths["ft_leg_specs"]:
+        reported = {i for _, _, inits in ft_rows(sizes) for i in inits}
+        rec = ft_recipe(json.loads(paths["ft_recipes"].read_text()), paths["ft_leg_specs"], reported)
         emit_ft_recipe(em, rec, paths["ft_recipes"])
         out["tables/finetune_recipe.tex"] = table_ft_recipe(rec)
     later = (("recovery", lambda em, d, src: emit_recovery(em, d, src, sizes),

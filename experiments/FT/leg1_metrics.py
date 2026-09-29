@@ -88,8 +88,18 @@ def discover(root: pathlib.Path) -> list[tuple[str, str, str, pathlib.Path]]:
                     continue
                 fd = seed_dir / "features_v2"
                 if (fd / "logits.npy").exists() and (fd / "label188.npy").exists():
+                    if diverged(seed_dir):
+                        raise SystemExit(f"FATAL: {seed_dir} trained to a NaN loss; not a result")
                     out.append((init_dir.name, n_dir.name, seed_dir.name, fd))
     return out
+
+
+def diverged(cell: pathlib.Path) -> bool:
+    """A cell whose training loss went to NaN at any epoch, read off weaver's
+    train.log. Such a run still ends with a best-epoch checkpoint and, before the
+    retry logic of 2026-09-29, could still be marked DONE; it is not a result."""
+    log = cell / "train.log"
+    return log.exists() and "AvgLoss: nan" in log.read_text(errors="replace")
 
 
 def cell_metrics(fd: pathlib.Path, l162: dict[int, int], eval_arm, auc_stride: int):

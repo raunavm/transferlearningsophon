@@ -236,7 +236,7 @@ def test_mpm_s2_and_s3_get_the_fix_and_stay_off_disk_until_their_pretraining_is_
     assert len(later) == 4
     for name, text in later.items():
         assert f"(r'{B.MPM_LR_MULT}', 50)" in text and "-eq 43 ]" in text, name
-        assert yaml.safe_load(text)["spec"]["backoffLimit"] == 1
+        assert yaml.safe_load(text)["spec"]["backoffLimit"] == B.ROBUST_BACKOFF
         assert not (K8S / name).exists(), f"{name} written before its pretraining job is Complete"
     assert not ({"mpm-s2", "mpm-s3"} & B.LAUNCHED_LATER)
 
@@ -259,7 +259,9 @@ def test_the_new_specs_on_disk_are_the_generators_pinned_at_the_untagged_tag(ref
         assert (K8S / name).read_text() == text, f"{name} is stale; regenerate"
         d = yaml.safe_load(text)
         assert d["metadata"]["name"].endswith("-raunav")
-        assert d["spec"]["backoffLimit"] == 1
+        # one retry on the job that ran to completion under it; the retry
+        # policy (tests/test_ft_retry_policy.py) on the rest
+        assert d["spec"]["backoffLimit"] == (B.ROBUST_BACKOFF if B.robust(d["metadata"]["name"]) else 1)
         c = d["spec"]["template"]["spec"]["containers"][0]
         assert {"name": "REPO_REF", "value": B.PIN_REFS} in c["env"]
         assert {"name": "GPU_PRODUCT", "value": "NVIDIA-GeForce-RTX-3090"} in c["env"]

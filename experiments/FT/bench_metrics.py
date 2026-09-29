@@ -127,10 +127,20 @@ def discover(root: pathlib.Path, dataset: str):
                 if ".partial." in seed_dir.name or seed_dir.name.endswith(".lock"):
                     continue
                 if (seed_dir / "DONE").exists():
+                    if diverged(seed_dir):
+                        raise SystemExit(f"FATAL: {seed_dir} trained to a NaN loss; not a result")
                     done.append((init_dir.name, n_dir.name, seed_dir.name, seed_dir))
                 else:
                     skipped.append(seed_dir)
     return done, skipped
+
+
+def diverged(cell: pathlib.Path) -> bool:
+    """A cell whose training loss went to NaN at any epoch, read off weaver's
+    train.log. Such a run still ends with a best-epoch checkpoint and, before the
+    retry logic of 2026-09-29, could still be marked DONE; it is not a result."""
+    log = cell / "train.log"
+    return log.exists() and "AvgLoss: nan" in log.read_text(errors="replace")
 
 
 def cell_metrics(cell: pathlib.Path, probe, test_set: str = "pythia",

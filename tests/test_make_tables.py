@@ -546,48 +546,59 @@ def test_the_mass_loss_weight_is_read_from_all_ten_specs_and_they_must_agree(tmp
         M.emit_mass_lambda(M.Emitter(tmp_path), specs)
 
 
-def _recipes(tmp_path, **override):
-    run = {"leg": "1", "init": "l162-s2", "n_train": "1000", "lr": "1e-4", "head_lr_mult": "50",
-           "epochs": "50", "lr_schedule": None, "weight_decay": "0.01", "batch_size": "512",
-           "samples_per_epoch_val": None}
-    runs = [{**run, **override},
-            {**run, "init": "scratch", "lr": "5e-4"},
-            {**run, "leg": "top", "lr_schedule": "constant", "epochs": "20", "samples_per_epoch_val": "20000"},
-            {**run, "leg": "top", "n_train": "100000", "lr_schedule": "constant", "epochs": "20",
-             "samples_per_epoch_val": "200000"},
-            {**run, "leg": "top", "init": "scratch", "lr": "5e-4", "lr_schedule": "constant",
-             "epochs": "20", "samples_per_epoch_val": "20000"}]
-    for n, e in ((10_000, "50"), (100_000, "30"), (1_000_000, "10")):
-        runs.append({**run, "n_train": str(n), "epochs": e})
+REPORTED = {"l162-s2", "r16q1-s2"}
+EPOCHS = {1_000: "50", 10_000: "50", 100_000: "30", 1_000_000: "10"}
+
+
+def _recipes(tmp_path):
+    """One recorded run per reported cell (two legs, four sizes), plus what the
+    table must leave out: an interrupted attempt, another fine-tuning seed, a
+    model the paper does not report, a benchmark run."""
+    run = {"path": "/data/results/ft/w2b/x/ft_manifest.json", "leg": "1", "init": "l162-s2",
+           "n_train": "1000", "ft_seed": "1", "lr": "1e-4", "head_lr_mult": "50", "epochs": "50",
+           "lr_schedule": None, "weight_decay": "0.01", "batch_size": "512"}
+    runs = [{**run, "leg": leg, "init": i, "n_train": str(n), "epochs": e}
+            for leg in ("1", "2") for i in sorted(REPORTED) for n, e in EPOCHS.items()]
+    runs += [{**run, "path": "/data/results/ft/w2b/leg1/l162-s2/N1000/s1.partial.17/ft_manifest.json",
+              "lr": "3e-4"},
+             {**run, "ft_seed": "2", "lr": "3e-4"},
+             {**run, "init": "scratch-v2", "lr": "1e-3", "head_lr_mult": "1"},
+             {**run, "leg": "top", "lr_schedule": "constant", "epochs": "20"}]
     leg = tmp_path / "leg.yaml"
-    leg.write_text("--use-amp --optimizer ranger LR=5e-4; MULT=() LR=1e-4 --samples-per-epoch-val 20000")
-    bench = tmp_path / "bench.yaml"
-    bench.write_text("--use-amp --optimizer ranger LR=5e-4; MULT=() LR=1e-4 --lr-scheduler none")
-    return {"runs": runs}, [leg], [bench]
+    leg.write_text("--use-amp --optimizer ranger LR=1e-4 --samples-per-epoch-val 20000")
+    return {"runs": runs}, [leg]
 
 
-def test_the_fine_tuning_table_states_one_recorded_value_per_setting(tmp_path):
-    R, legs, bench = _recipes(tmp_path)
-    rec = M.ft_recipe(R, legs, bench)
-    assert (rec["lr"], rec["lr_scratch"], rec["head_mult"]) == ("1e-4", "5e-4", "50")
-    assert rec["epochs_jetclass"] == {1_000: "50", 10_000: "50", 100_000: "30", 1_000_000: "10"}
-    assert (rec["val_bench_small"], rec["val_bench_large"]) == ("20000", "200000")
+def test_the_fine_tuning_table_states_the_settings_of_the_reported_runs_only(tmp_path):
+    R, legs = _recipes(tmp_path)
+    rec = M.ft_recipe(R, legs, REPORTED)
+    assert (rec["lr"], rec["head_mult"], rec["n_runs"]) == ("1e-4", "50", 16)
+    assert rec["epochs_jetclass"] == EPOCHS
     got, prov = _repo_macros()
     assert got["FtRecipeLrHead"] == "\\ensuremath{5\\times10^{-3}}"
+    assert "FtRecipeLrScratch" not in got          # no from-scratch row is reported yet
 
 
 def test_a_run_that_departs_from_its_group_stops_the_table(tmp_path):
-    R, legs, bench = _recipes(tmp_path, lr="3e-4")
-    R["runs"].append({**R["runs"][0], "lr": "1e-4"})
+    R, legs = _recipes(tmp_path)
+    R["runs"][0]["lr"] = "3e-4"
     with pytest.raises(SystemExit, match="disagree within a group"):
-        M.ft_recipe(R, legs, bench)
+        M.ft_recipe(R, legs, REPORTED)
+
+
+def test_a_reported_cell_without_exactly_one_recorded_run_stops_the_table(tmp_path):
+    R, legs = _recipes(tmp_path)
+    with pytest.raises(SystemExit, match="one to one"):
+        M.ft_recipe({"runs": R["runs"][1:]}, legs, REPORTED)
+    with pytest.raises(SystemExit, match="one to one"):
+        M.ft_recipe({"runs": R["runs"] + [R["runs"][0]]}, legs, REPORTED)
 
 
 def test_a_command_with_a_schedule_flag_contradicts_the_jetclass_row(tmp_path):
-    R, legs, bench = _recipes(tmp_path)
+    R, legs = _recipes(tmp_path)
     legs[0].write_text(legs[0].read_text() + " --lr-scheduler none")
     with pytest.raises(SystemExit, match="not the JetClass recipe"):
-        M.ft_recipe(R, legs, bench)
+        M.ft_recipe(R, legs, REPORTED)
 
 
 def test_a_vcb_rejection_that_is_a_bound_in_any_seed_is_printed_as_a_bound(tmp_path):
