@@ -243,12 +243,19 @@ $\DesignMsdMin < m_{\mathrm{SD}} < \DesignMsdMax$~GeV. Training jets are
 reweighted to an approximately flat distribution in
 $(p_{\mathrm T}, m_{\mathrm{SD}})$ within each of Sophon's reweighting
 classes~\cite[App.~B.1]{sophon}, groups of native classes inside which the
-flattening is done. The reweighting classes, their weights and the data-sampling seed are identical for every vocabulary, so the
-stream of training examples is the same whatever the labels by construction; we
-did not record the realised stream to check it, and runs resumed after node
-failures may depart from their counterparts after the resume point. The network
-is the ParT configuration of Sophon's released code: \DesignParticleBlocks{}
-particle-attention blocks,
+flattening is done. The reweighting classes and their weights are identical for
+every vocabulary. Training jets are read as in Sophon's released code: every
+fetch loads the same fraction of the files of every family of decays, so every
+fetch carries the nominal class mix. The data order and the dropout masks of each
+epoch are derived from the run index and the epoch number alone, so run $k$ of
+every vocabulary sees the same training examples in the same order, also when a
+job is resumed after a node failure, and every run records the examples it saw.
+Runs with the same index also start from the same trunk weights; the vocabularies
+differ only in the labels and in the width of the output layer.
+\PendingPretrain{} The network is the ParT configuration of Sophon's released
+code\footnote{Sophon's paper states six particle-attention
+blocks~\cite[App.~B.1]{sophon}; its released code, which we follow, has
+\DesignParticleBlocks.}: \DesignParticleBlocks{} particle-attention blocks,
 \DesignClassBlocks{} class-attention blocks, embedding dimension
 \DesignEmbedDim{} and \DesignHeads{} attention heads, followed by a head with
 one hidden layer of \DesignHeadHidden{} units whose output width is the number
@@ -256,10 +263,12 @@ of classes. Every model is trained for \DesignEpochs{} epochs of
 \DesignSamplesPerEpoch{} jets (\DesignExamplesSeen{} training examples), with
 batch size \DesignBatchSize{}, the Ranger optimizer (RAdam~\cite{radam} with
 Lookahead~\cite{lookahead}) and an initial learning rate
-of \DesignStartLr, as in Sophon; the checkpoint after the last epoch is used
-downstream. Each vocabulary is pretrained five times; the five runs use
-independent random streams for the weight initialisation, the data sampling and
-dropout, and run $k$ of every vocabulary uses the same streams.
+of \DesignStartLr, as in Sophon's released training script. As in
+Sophon~\cite[App.~B.1]{sophon}, the checkpoint with the best accuracy on a fixed
+validation sample is used downstream; results averaged over the checkpoints of
+the last ten epochs are a robustness check. Each vocabulary is pretrained five
+times, with independent random streams for the initialisation, the data order
+and dropout from one run to the next.
 
 \subsection{The label tree}\label{sec:tree}
 
@@ -322,20 +331,35 @@ $X\to YY\to ccqq$, and a pair that differs in visible decay content,
 $X\to YY\to bbqq$ against $X\to YY\to cq\tau_h\nu$, whose second member
 carries a hadronic $\tau$ decay and a neutrino in place of two quarks.
 
-\paragraph{Self-supervised control.} Masked particle modelling~\cite{mpm} on the
-same network and training stream. Its class-attention blocks receive no gradient
+\paragraph{Self-supervised control.} Masked particle modelling in the
+tokenisation-free form of Ref.~\cite{mpmtok}, on the same ParT network and
+training stream: \DesignMpmMaskRate{} of each jet's particles are hidden from
+the encoder, and a transformer decoder reconstructs their continuous features,
+with an L1 loss, and their particle type and charge, with a cross-entropy loss.
+Unlike Ref.~\cite{mpmtok} we add no register tokens, so that the network is the
+one the supervised models use. Its class-attention blocks receive no gradient
 during pretraining, so a frozen class-token probe would read an untrained
 projection; the model is evaluated through fine-tuning only, with the
 class-attention blocks trained as part of the new head.
 \pending{self-supervised runs two and three, and the fine-tuning rerun with the class-attention blocks at the head's learning rate}
 
 \paragraph{Mass output.} The \Kres- and \Kcoarse-class models were also
-pretrained, five times each, with an added output that regresses the jet's
-groomed mass, with the loss weight fixed a priori to the value of the CMS Global
-Particle Transformer (GloParT),
-$\lambda = \DesignMassLambda$~\cite{glopartdp}, and not tuned. With the models
-without it, this gives a two-by-two design, vocabulary crossed with the mass
-output.
+pretrained, five times each, with one added output node that regresses
+$\ln(m_{\mathrm{SD}}^{\mathrm{gen}}/m_{\mathrm{SD}}^{\mathrm{reco}})$, the
+logarithm of the ratio of the soft-drop mass of the matched generator-level jet
+to that of the reconstructed jet, on the jets that have a matched generator-level
+jet. Its log-cosh loss is added to the classification loss with weight
+$\lambda = \DesignMassLambda$, the value of the CMS Global Particle Transformer
+(GloParT)~\cite[Eq.~11.7]{glopart}. There it weights two log-cosh terms with
+other targets, the generator-level resonance and visible masses as ratios to the
+ungroomed jet mass, beside a classifier of more than three hundred classes. With
+the models without it, this gives a two-by-two design, vocabulary crossed with
+the mass output. The mass term's share of the pretraining loss is
+\MassLossShareOnesixtwoMass{} at \Kres{} classes and \MassLossShareOnesevenMass{}
+at \Kcoarse; a further \Kcoarse-class model with $\lambda =
+\MassLambdaMatched$, which gives the mass term the share it has at \Kres{}
+classes, separates the effect of the vocabulary from that of the loss weight.
+\PendingMassLambda
 
 \subsection{Evaluation}\label{sec:eval}
 
@@ -371,16 +395,23 @@ freshly initialised head, on the pretraining dataset's own
 task~\cite{part}, at \FtSizeEThree, \FtSizeEFour, \FtSizeEFive{} and
 \FtSizeESix{} training jets, and on two community benchmarks: top
 tagging~\cite{toptag} and quark/gluon tagging~\cite{efn}, the latter also
-evaluated on a Herwig-generated sample. The recipe is ParT's fine-tuning
-recipe~\cite{part}: the pretrained weights at a learning rate of \FtRecipeLr{}
-and the new head at \FtRecipeHeadMult{} times that
-(Appendix~\ref{app:ftrecipe}). The JetClass-II fine-tuning jets are drawn from
-the pretraining training files, so every pretrained model has seen them during
-pretraining; the test files are disjoint. The checkpoint is the epoch with the
-best validation accuracy, as in ParT and Sophon. On JetClass-II the macro AUC,
+evaluated on a Herwig-generated sample. The pretrained weights train at a
+constant learning rate of \FtRecipeLr{} and the new head at \FtRecipeHeadMult{}
+times that, the two rates ParT uses for fine-tuning~\cite{part}. Unlike ParT,
+which holds both rates constant over twenty epochs, the head's rate follows
+weaver's default schedule and decays over the last epochs
+(Appendix~\ref{app:ftrecipe}). The numbers of epochs, \FtRecipeEpochsEThree,
+\FtRecipeEpochsEFour, \FtRecipeEpochsEFive{} and \FtRecipeEpochsESix{} at the
+four training-set sizes, are our choice; at \FtSizeEThree{} jets an epoch is
+\FtRecipePassesEThree{} passes over the training jets, so that it takes as many
+optimizer steps, \FtRecipeStepsEThree, as at \FtSizeEFour{} jets. The
+JetClass-II fine-tuning jets are drawn from files held out from pretraining, and
+the test files are disjoint from both. \PendingFtHeldout{} The checkpoint is the
+epoch with the best accuracy on \FtRecipeValJets{} validation jets. On
+JetClass-II the macro AUC,
 averaged one-versus-rest over the classes, is computed on
 \FtNTestAucJcii{} test jets and the accuracy on \FtNTestAccJcii.
-\pending{from-scratch references, rerun with ParT's from-scratch recipe}
+\PendingFtRefs
 
 \paragraph{Anomaly detection.} Jets of one resonance class at a time are
 injected, \AnomalyInjection{} at a time, into \AnomalyNBkg{} QCD test jets; a
@@ -390,11 +421,14 @@ every model, and never see the pretraining labels: the Mahalanobis distance from
 the template's mean under its covariance, and the distance to the
 \AnomalyKnnK-th nearest template jet. For each detector we report
 $\sigma_{\min}$, the smallest initial significance $\sigma_0 = S/\sqrt{B}$ of the
-injected signal before any cut from which a $\AnomalySigmaT\sigma$ discovery is still reached after the best cut on
-the score~\cite{sigmamin}, and the maximum significance improvement (max SIC),
-$\epsilon_S/\sqrt{\epsilon_B}$ maximised over cuts that keep at least
-\AnomalyMinBkgPass{} background jets, so that the background efficiency is known
-to better than \AnomalyStatCut~\cite{sigmamin,argos}. Each model's value is the
+injected signal before any cut from which a $\AnomalySigmaT\sigma$ discovery is
+still reached after the best cut on the score, with the significance after the
+cut in its Asimov form for $B = \AnomalyNBkg$ background
+jets~\cite[Eqs.~(3)--(4)]{sigmamin}, and the maximum significance improvement
+(max SIC), $\epsilon_S/\sqrt{\epsilon_B}$ maximised over cuts. Both are taken
+over cuts that keep more than \AnomalyMinBkgPass{} background jets, so that the
+relative statistical uncertainty of the background efficiency, $1/\sqrt{n_B}$,
+is below \AnomalyStatCut, the criterion of Refs.~\cite{sigmamin,argos}. Each model's value is the
 median over \AnomalyNResamplings{} resamplings of the background and signal
 samples. None of the scores depends on how much signal is injected. A detector with no
 discriminating power has a max SIC of one, and we call a signal not detected when
@@ -413,26 +447,41 @@ the signal, at every vocabulary.
 
 \paragraph{Real data.} Each model's three-prong-versus-QCD score, the sum of its
 output scores for hadronic three-prong decays over the sum for QCD, built with
-no fine-tuning, is applied to the AspenOpenJets sample of CMS open
-data~\cite{aspen}, whose top-quark peak OmniLearned recovered with its own
-model~\cite{omnilearned}. The score does not distinguish quark flavour at any
-vocabulary. A cut on the score, set in bins of $\rho = \ln(m_{\mathrm{SD}}^2/p_{\mathrm T}^2)$
-and $p_{\mathrm T}$ to pass 1\% of the jets in the mass sidebands (outside the
-$W$ and top-quark mass windows), keeps the background mass shape nearly
-unchanged~\cite{ddt}. It is followed by a simultaneous fit of the soft-drop mass
-of the \AojNJetsFit{} jets in the passing and failing
-categories~\cite{cmshbb,cmszprime}: the background in the passing jets is the
-failing spectrum times a transfer factor, a polynomial in $\rho$ and
-$p_{\mathrm T}$, and the top-quark signal is a Gaussian. With no simulation of
-these data to supply a template, the Gaussian's mean and width float in every
-fit, where CMS analyses take the shape from simulation and let its scale and
-resolution float within constraints. The order of the transfer factor is chosen
-by an $F$-test with the peak shape fitted at every candidate order. The
-statistical error of the yield is taken from the profile likelihood, with the
-transfer factor and the peak shape refitted at each value of the yield. As a
-check on the peak shape, every model is refitted with one shape shared by all
-of them. The open data are not the simulation the models were trained on: on
-the inputs the network receives, the interquartile ranges of the transverse and
+no fine-tuning, is applied to the Aspen Open Jets sample~\cite{aspen},
+\AojChainDataset{} million large-radius jets of CMS open data. OmniLearned, whose
+pretraining included these data, revealed their top-quark peak with the ratio of
+its own generic three-prong and QCD outputs~\cite{omnilearned}. The score does
+not distinguish quark flavour at any vocabulary. We keep the \AojChainStaged{}
+jets with $\AojPtMin < p_{\mathrm T} < \AojPtMax$~GeV,
+$|\eta| < \AojChainEtaMax$ and the soft-drop mass range of the pretraining
+selection, of which \AojChainRhoWindow{} have
+$\AojRhoMin < \rho < \AojRhoMax$, with
+$\rho = \ln(m_{\mathrm{SD}}^2/p_{\mathrm T}^2)$. The cut on the score is a
+polynomial surface, of order \AojMapOrderRho{} in $\rho$ and \AojMapOrderPt{} in
+$\ln p_{\mathrm T}$, fitted to the score above which \AojEffPercent{} of the jets
+lie in each cell of $(\rho, p_{\mathrm T})$, using only the jets outside the $W$
+(\AojWindowWLo--\AojWindowWHi~GeV) and top-quark
+(\AojWindowTopLo--\AojWindowTopHi~GeV) mass windows. This follows the percentile
+maps with which CMS decorrelated a substructure variable from the jet
+mass~\cite{cmshbb,cmszprime}, themselves a generalisation of the linear
+decorrelation of Ref.~\cite{ddt}, but the map here is built on the data rather
+than on simulated QCD. A simultaneous fit of the soft-drop mass of the
+\AojNJetsFit{} jets between \AojFitLo{} and \AojFitHi~GeV, in
+\AojMassBin-GeV bins and \AojChainPtBins{} categories of $p_{\mathrm T}$, follows
+Refs.~\cite{cmshbb,cmszprime}: the background in the passing jets is the failing
+spectrum times a pass-to-fail ratio that is a polynomial in $\rho$ and
+$\ln p_{\mathrm T}$, and the top-quark signal is a Gaussian in the passing jets.
+With no simulation of these data to supply a template, the Gaussian's mean and
+width float in every fit, where CMS analyses take the shape from simulation and
+let its scale and resolution float within constraints. The order of the
+pass-to-fail ratio is chosen by an $F$-test with the peak shape fitted at every
+candidate order. The statistical error of the yield is taken from the profile
+likelihood, with the pass-to-fail ratio and the peak shape refitted at each value
+of the yield. As a check on the peak shape, every model is refitted with one
+shape shared by all of them. The background model is validated on a band of
+jets around the median of the score, not at the working point. The open data are not the simulation the models were trained on: on
+the inputs the network receives, measured on the first staged shard of the data,
+the interquartile ranges of the transverse and
 longitudinal impact parameters are \AojClosureDzeroIqr{} and \AojClosureDzIqr{}
 times those of JetClass-II QCD jets, jets carry more particles (median
 \AojClosureNPartAoj{} against \AojClosureNPartRef), and neutral hadrons are
@@ -523,8 +572,9 @@ after its labels are merged, but not in a linearly readable form.
 
 The last probe takes its task from a physics analysis: separating $X\to bc$
 decays from the $bq$, $cs$ and $bqq$ decays and QCD jets that a boosted
-$|V_{cb}|$ measurement must reject, in that study's kinematic
-window~\cite{vcbboosted}, for the \Kres- and \Kcoarse-class models. The
+$|V_{cb}|$ measurement must reject, in the kinematic window of that study's
+tagger benchmark~\cite[App.~A]{vcbboosted} (Table~\ref{tab:app-tasks}), for the
+\Kres- and \Kcoarse-class models. The
 background here is JetClass-II's own mix of these classes and the score is a
 probe on frozen features, not the analysis's discriminant, so the numbers are not
 comparable with that study's. $1-$AUC is \VcbOmaLinearOnesixtwo{} with \Kres{}
@@ -691,9 +741,12 @@ mean, so we do not use it as a measure.
 Together the two measurements describe a trade-off: finer vocabularies keep more
 of the probed class information and slightly less continuous mass information,
 and the auxiliary output buys mass information and costs classification, more at
-\Kcoarse{} classes than at \Kres. One possible mechanism, which we have not
-tested, is that the mass term's fixed weight takes a larger share of the loss
-when there are fewer classes to separate. After fine-tuning the cost is small:
+\Kcoarse{} classes than at \Kres. With a fixed weight the mass term takes a
+larger share of the loss when there are fewer classes to separate,
+\MassLossShareOnesevenMass{} at \Kcoarse{} classes against
+\MassLossShareOnesixtwoMass{} at \Kres; the \Kcoarse-class model with the
+weight matched in loss share tells this apart from the vocabulary.
+\PendingMassLambda{} After fine-tuning the cost is small:
 on the JetClass-II task at \FtSizeESix{} jets the models with the mass output
 reach \FtAucJciiESixOnesixtwoMass{} and \FtAucJciiESixOnesevenMass{} against
 \FtAucJciiESixOnesixtwo{} and \FtAucJciiESixOneseven{} without it
@@ -772,24 +825,29 @@ widths of \AojPeakWidthMin--\AojPeakWidthMax~GeV (Table~\ref{tab:realdata},
 Fig.~\ref{fig:realdata}). The fitted yield shows no dependence on the vocabulary:
 \AojYieldOneeighteight, \AojYieldOnesixtwo, \AojYieldFourthree{} and
 \AojYieldOneseven{} from finest to coarsest. What varies is the pretraining run:
-the spread between runs of one vocabulary is two to three times the statistical
-error of a single fit, and one \Kres-class run finds far fewer top quarks than
-the others (\AojWeakestYield{}~$\pm$~\AojWeakestYieldErr). With the mass output
+at \Kfull, \Kres{} and \Kmid{} classes the spread between runs is
+\AojSpreadOverStatOneeighteight, \AojSpreadOverStatOnesixtwo{} and
+\AojSpreadOverStatFourthree{} times the median statistical error of a single fit,
+while at \Kcoarse{} classes it is \AojSpreadOverStatOneseven{} times that error,
+and one \Kres-class run finds far fewer top quarks than the others (\AojWeakestYield{}~$\pm$~\AojWeakestYieldErr). With the mass output
 the yields are \AojYieldOnesixtwoMass{} at \Kres{} classes and
 \AojYieldOnesevenMass{} at \Kcoarse. Refitting every model with one shared peak
-shape moves the label-set means by \AojShapeShiftMin{} to \AojShapeShiftMax{}
+shape moves the means of the vocabularies by \AojShapeShiftMin{} to \AojShapeShiftMax{}
 and leaves the picture unchanged. The published \Kfull-class Sophon checkpoint
 finds \AojPublicYield{}~$\pm$~\AojPublicYieldErr, within the range of our
 \Kfull-class runs.
 
 The score is the same flavour-inclusive three-prong score at every vocabulary,
 so this test asks whether the representation still supports it on real data,
-not whether the vocabulary can name the $b$ quark in a top decay. At this working
-point it is carried by prong structure and mass, which every vocabulary keeps. The
-CMS ParticleNet top score shipped with the dataset, trained on CMS simulation and
-not decorrelated from the mass, finds \AojRefYield{}~$\pm$~\AojRefYieldErr{} in
-a wider peak (\AojRefWidth~GeV); it shows that the pipeline recovers a top peak,
-but its yield is not comparable with ours.
+not whether the vocabulary can name the $b$ quark in a top decay. The CMS
+ParticleNet top score shipped with the dataset, trained on CMS simulation and not
+decorrelated from the mass, finds \AojRefYield{}~$\pm$~\AojRefYieldErr{} in a
+wider peak (\AojRefWidth~GeV). With the same construction of the cut it passes
+\AojRefEffPercent{} of all data jets, against \AojModelEffMin{} to
+\AojModelEffMax{} for the pretrained models, and it fails the validation of the
+background model ($p = \AojRefValidationP$, against at least
+\AojModelsValidationPMin{} for every pretrained model), so its yield is not
+comparable with ours.
 
 \input{tables/realdata}
 
