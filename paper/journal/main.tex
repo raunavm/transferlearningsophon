@@ -95,14 +95,20 @@ that matters, and in particle physics it has not been varied with everything
 else held fixed. It is also costly: every class needs a truth definition, enough
 simulated jets, and its share of the training budget. Whoever builds the next
 model needs to know which distinctions buy transfer and which only cost. In
-computer vision, finer pretraining labels help when the downstream task needs the
-distinctions they carry~\cite{huh,chen,hong}, a vocabulary aligned with the
-target classes transfers best~\cite{mahajan}, and Hong et~al.~\cite{hong}
-varied label partitions with the data fixed and added a random-class control. In
-particle physics, Sophon compared its vocabulary with a coarser one while the
-data subset and training length also changed~\cite{sophon}, and a contrast of
-pretraining label spaces for event classification was negative in several of its
-comparisons~\cite{pecm}. Controlled studies of jet pretraining have otherwise
+computer vision the evidence is mixed: pretraining on a coarse grouping of the
+ImageNet classes cost little in transfer to object detection~\cite{huh}, finer
+training labels raised accuracy on the coarse classes of the same images by an
+amount that depended on the dataset~\cite{chen}, and whether fine labels help
+depends on how the fine and coarse decision boundaries align and on the dataset
+size~\cite{pirovano}. With web images labelled by hashtags, a vocabulary matched
+to the ImageNet-1k classes transferred best to that task at about a billion
+images~\cite{mahajan}, and Hong et~al.~\cite{hong} varied the label partition of
+a fixed image set and added a random-class control. In particle physics, Sophon
+compared its \Kfull-class model with one trained on a subset of its classes, the
+two-prong decays and QCD, which also left out every other jet and saw a quarter
+of the training examples~\cite{sophon}. For event classification, pretraining on
+process labels helped consistently, while a multilabel objective was neutral or
+slightly harmful on some tasks~\cite{pecm}. Controlled studies of jet pretraining have otherwise
 varied the objective~\cite{objectives,rieck}, the data
 composition~\cite{datacomp} and the scale~\cite{scaling}.
 
@@ -165,27 +171,39 @@ fine-tuning of such models for downstream analyses~\cite{vigl}, established that
 jet-classification pretraining transfers; OmniLearn~\cite{omnilearn} and
 OmniLearned~\cite{omnilearned} showed the same for a single model fine-tuned
 across many jet tasks, including on CMS open data. Self-supervised alternatives
-include masked particle modelling~\cite{mpm,mpmtok}, generative
-pretraining~\cite{omnijet}, re-simulation-based contrastive
-learning~\cite{rs3l} and joint-embedding predictive
-architectures~\cite{hepjepa,jpjepa}. Where supervised pretraining was compared
-directly, it was ahead of or level with the self-supervised
-alternatives~\cite{objectives,hepjepa}. We therefore treat the supervised
+include masked particle modelling, first with tokenised targets~\cite{mpm} and
+then without tokenisation~\cite{mpmtok}, generative pretraining~\cite{omnijet},
+re-simulation-based contrastive learning~\cite{rs3l} and joint-embedding
+predictive architectures~\cite{hepjepa,jpjepa}. In direct comparisons, supervised
+pretraining on JetClass was ahead of these alternatives or level with
+them~\cite{hepjepa,jpjepa}, and a study of pretraining objectives found a pure
+classifier best when downstream labels and model capacity are plentiful, but
+masked particle modelling ahead of it with few labels and the smallest
+model~\cite{objectives}. We therefore treat the supervised
 vocabulary as the object of study and use one self-supervised model as the
 label-free reference.
 
-\paragraph{Label granularity.} In vision, finer pretraining labels improve
-transfer to tasks that need the distinctions they carry, and coarse labels can
-suffice when the downstream task does not~\cite{huh,chen,pirovano,mehta}. With
-web images labelled by hashtags, a larger vocabulary transferred better to
-targets with many or fine-grained classes and a smaller one matched to the
-target classes did best on that target, although the images changed with the
-vocabulary~\cite{mahajan}. Hong et~al.~\cite{hong} varied pretraining label
-partitions with the data fixed and ran a random-class control. Our design adapts
-theirs to jets and differs in three respects: the vocabularies are nested levels
-of one physics-defined tree, pretraining is repeated five times per vocabulary,
-and the random control is matched to the coarsest vocabulary in the training
-share of each class.
+\paragraph{Label granularity.} In vision, finer pretraining labels help on some
+targets and not on others. A coarse grouping of the ImageNet classes cost little
+in transfer~\cite{huh}; finer labels raised accuracy on the coarse classes of
+the same images~\cite{chen}; and whether they help depends on how the fine and
+coarse decision boundaries align and on the dataset size~\cite{pirovano}.
+Networks trained on as few as eight broad categories matched or exceeded the
+alignment with human and macaque visual responses of networks trained on
+finer-grained objectives~\cite{mehta}, a result about alignment with the brain
+rather than transfer. With web images labelled by hashtags, larger vocabularies
+transferred better to targets with more or finer classes, a vocabulary matched to
+the ImageNet-1k classes did best on that task at about a billion images, and with
+the largest image set the largest vocabulary was best everywhere; the images
+changed with the vocabulary~\cite{mahajan}. Hong et~al.~\cite{hong} varied the
+label partition of a fixed image set, fine-tuned on a few coarse classes, and
+found that moderately finer labels helped, overly fine ones did not, and random
+classes did worst, with two pretraining runs per partition in their main
+experiments. Our design adapts theirs
+to jets and differs in three respects: the vocabularies are nested levels of one
+physics-defined tree, pretraining is repeated five times per vocabulary, and the
+random control is matched to the coarsest vocabulary in each class's share of the
+training examples.
 
 \paragraph{Auxiliary targets.} ATLAS did not pursue a single network
 combining classification with jet mass and $p_{\mathrm T}$ regression for its
@@ -195,8 +213,7 @@ efficiency relative to a dedicated classifier~\cite{atlasgnx}. Other auxiliary
 objectives have also disappointed: letting auxiliary losses that reconstruct
 particle type, track displacement and pairwise kinematics train the encoder of a
 joint-embedding jet model lowered its fine-tuned accuracy in a small
-ablation~\cite{jpjepa}, and a multi-label pretext was negative in several
-comparisons for event classification~\cite{pecm}. Whether the cost of an
+ablation~\cite{jpjepa}. Whether the cost of an
 auxiliary mass target depends on the classification vocabulary has not been
 tested.
 
@@ -818,7 +835,7 @@ On JetClass, a different simulation, only the removal of flavour costs.
 \paragraph{Mass information and classification.} The coarser vocabularies keep
 slightly more continuous mass information, and an auxiliary mass output costs
 the probed classification more at \Kcoarse{} classes than at \Kres. Published
-reports of auxiliary targets hurting~\cite{atlasgnx,jpjepa,pecm} are consistent
+reports of auxiliary targets hurting~\cite{atlasgnx,jpjepa} are consistent
 with this; we add that the cost depends on the vocabulary. The mass-loss weight
 was inherited from a finer vocabulary and not scanned, so the size of the
 trade-off is specific to that weight.
