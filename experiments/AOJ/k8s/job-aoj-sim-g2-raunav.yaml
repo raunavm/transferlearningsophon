@@ -48,7 +48,7 @@ spec:
           [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 1; }
           [ "${FREE_G}" -ge 5 ] || { echo "FATAL: ${FREE_G}G free on /data, need 5G"; exit 1; }
 
-          git clone --depth 1 --branch "mtx-s1.66" \
+          git clone --depth 1 --branch "mtx-s1.68" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon

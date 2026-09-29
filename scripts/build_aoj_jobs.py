@@ -102,13 +102,13 @@ FIT3_NEEDED_FLAGS = {"experiments/AOJ/peak_fit.py": "n_at_floor",
 #             for its signal efficiency there -- what separates model from domain.
 # Both carry the pod failure policy of scripts/build_ft_jobs.py ("retries that survive
 # a flaky cluster"): evictions are not counted, two failed attempts halt the job.
-RESCORE_PIN = "mtx-s1.66"
+RESCORE_PIN = "mtx-s1.68"
 RESCORE_NEEDED_FLAGS = {"experiments/AOJ/discriminants.py": "prong_only",
                         "experiments/AOJ/closure.py": "quantiles_aoj",
                         "experiments/AOJ/sim_scores.py": "scored on other jets"}
 # The analysis job clones a later tag: realdata_checks.py is finished after the GPU
 # runs were launched, and it reads only what they write.
-CHECKS_PIN = "mtx-s1.67"
+CHECKS_PIN = "mtx-s1.69"
 CHECKS_NEEDED_FLAGS = {"experiments/AOJ/realdata_checks.py": "def step_reproduce",
                        "experiments/AOJ/peak_fit.py": "data_efficiency_sidebands",
                        "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json": "shape_variations"}
