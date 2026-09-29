@@ -18,6 +18,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
+\usepackage{longtable}
 \usepackage{adjustbox}
 \usepackage{array}
 \usepackage{graphicx}
@@ -726,7 +727,8 @@ features (Table~\ref{tab:mass}). The residual is
 $\ln(m_{\mathrm{pred}}/m_{\mathrm{true}})$ after each native class's mean is
 removed, so a better classifier is not credited as a better mass regressor, and
 the resolution is $\sigma_{\mathrm{eff}}$, half the smallest interval containing
-68\% of the residual distribution, as in CMS~\cite{glopart}, measured on
+68\% of the residual distribution, as defined in
+Ref.~\cite[Sec.~8.2.2]{glopart}, measured on
 \MassResNTest{} test jets in \MassResNClasses{} classes. A predictor that knows
 only the class mean reaches \MassResTargetSigmaEff. With a nonlinear probe, the
 models without the mass output reach \MassResSigmaEffMlpOneeighteight,
@@ -935,13 +937,46 @@ Pretrained checkpoints, label maps and evaluation code will be released on
 Zenodo at submission. Every number in this paper is generated from committed
 result files by a script that records each file's hash beside the number.
 
+% Every float of the main text is placed before the appendix begins.
+\clearpage
 % ============================================================================
 \appendix
-\section{Fine-tuning settings}\label{app:ftrecipe}
+\section{Vocabularies, random partitions and tasks}\label{app:vocab}
 % ============================================================================
+
+Table~\ref{tab:app-levels} lists the levels of the label tree and the groups of
+the \Kcoarse-class vocabulary, Table~\ref{tab:app-vocabulary} gives the group of
+every native class at each coarser level and in every random partition, and
+Table~\ref{tab:app-tasks} gives the native classes of every probe task and
+anomaly signal. All three are generated from the label maps and from the code
+that ran the tasks.
+
+\input{tables/appendix_levels}
+\input{tables/appendix_tasks}
+\clearpage
+\input{tables/appendix_vocabulary}
+
+% ============================================================================
+\section{Fine-tuning settings and accuracy}\label{app:ftrecipe}
+% ============================================================================
+
+Table~\ref{tab:ftrecipe} gives the settings of the fine-tuning runs behind
+Sec.~\ref{sec:finetune} and Table~\ref{tab:finetune-accuracy} their accuracy.
 
 \input{tables/finetune_recipe}
 \input{tables/finetune_accuracy}
+
+% ============================================================================
+\section{Anomaly detection, run by run}\label{app:anomaly}
+% ============================================================================
+
+Table~\ref{tab:anomaly-per-run} gives $\sigma_{\min}$ of every pretraining run
+behind Table~\ref{tab:anomaly}.
+
+\input{tables/anomaly_per_run}
+
+% Every float of the appendix is placed before the references.
+\clearpage
 
 \bibliographystyle{plain}
 \bibliography{refs}
