@@ -1,0 +1,45 @@
+{
+ "file": "/jc2/jet_data/Res34P_0000.parquet",
+ "n_jets": 100000,
+ "n_family_in_file": 36223,
+ "extra_selection": "~(((jet_label >= 15) & (jet_label < 20)) | ((jet_label >= 32) & (jet_label < 36)) | ((jet_label >= 48) & (jet_label < 51)) | ((jet_label >= 63) & (jet_label < 65)) | (jet_label == 77) | ((jet_label >= 115) & (jet_label < 127)))",
+ "weaver_core": "0.4.17",
+ "arms": {
+  "L188": {
+   "config_sha256_pod": "d5a188dc80885515f920118ab91756b8eae150a5329f8cafeb26b2cf48c5f80f",
+   "config_sha256_local": "d5a188dc80885515f920118ab91756b8eae150a5329f8cafeb26b2cf48c5f80f",
+   "selection": "((jet_pt > 200) & (jet_pt < 2500) & (jet_sdmass > 20) & (jet_sdmass < 500)) & (~(((jet_label >= 15) & (jet_label < 20)) | ((jet_label >= 32) & (jet_label < 36)) | ((jet_label >= 48) & (jet_label < 51)) | ((jet_label >= 63) & (jet_label < 65)) | (jet_label == 77) | ((jet_label >= 115) & (jet_label < 127))))",
+   "n_pass_parent": 90205,
+   "n_pass_lofo": 57370,
+   "n_family_pass_parent": 32835,
+   "n_family_pass_lofo": 0
+  },
+  "L162": {
+   "config_sha256_pod": "fe7a2d005ab71d5488c3fc18bdbf374a51516becca93818bb01640fa54f42e8b",
+   "config_sha256_local": "fe7a2d005ab71d5488c3fc18bdbf374a51516becca93818bb01640fa54f42e8b",
+   "selection": "((jet_pt > 200) & (jet_pt < 2500) & (jet_sdmass > 20) & (jet_sdmass < 500)) & (~(((jet_label >= 15) & (jet_label < 20)) | ((jet_label >= 32) & (jet_label < 36)) | ((jet_label >= 48) & (jet_label < 51)) | ((jet_label >= 63) & (jet_label < 65)) | (jet_label == 77) | ((jet_label >= 115) & (jet_label < 127))))",
+   "n_pass_parent": 90205,
+   "n_pass_lofo": 57370,
+   "n_family_pass_parent": 32835,
+   "n_family_pass_lofo": 0
+  },
+  "R42_Q1": {
+   "config_sha256_pod": "febc07800b0644ae5aaa3c5d9f390bcb9c286300a4159cadad2fa3b8048cb760",
+   "config_sha256_local": "febc07800b0644ae5aaa3c5d9f390bcb9c286300a4159cadad2fa3b8048cb760",
+   "selection": "((jet_pt > 200) & (jet_pt < 2500) & (jet_sdmass > 20) & (jet_sdmass < 500)) & (~(((jet_label >= 15) & (jet_label < 20)) | ((jet_label >= 32) & (jet_label < 36)) | ((jet_label >= 48) & (jet_label < 51)) | ((jet_label >= 63) & (jet_label < 65)) | (jet_label == 77) | ((jet_label >= 115) & (jet_label < 127))))",
+   "n_pass_parent": 90205,
+   "n_pass_lofo": 57370,
+   "n_family_pass_parent": 32835,
+   "n_family_pass_lofo": 0
+  },
+  "R16_Q1": {
+   "config_sha256_pod": "70a2cc225d413d8f694b29e822a5783243cb038f033dbf3f7b117406219b8791",
+   "config_sha256_local": "70a2cc225d413d8f694b29e822a5783243cb038f033dbf3f7b117406219b8791",
+   "selection": "((jet_pt > 200) & (jet_pt < 2500) & (jet_sdmass > 20) & (jet_sdmass < 500)) & (~(((jet_label >= 15) & (jet_label < 20)) | ((jet_label >= 32) & (jet_label < 36)) | ((jet_label >= 48) & (jet_label < 51)) | ((jet_label >= 63) & (jet_label < 65)) | (jet_label == 77) | ((jet_label >= 115) & (jet_label < 127))))",
+   "n_pass_parent": 90205,
+   "n_pass_lofo": 57370,
+   "n_family_pass_parent": 32835,
+   "n_family_pass_lofo": 0
+  }
+ }
+}

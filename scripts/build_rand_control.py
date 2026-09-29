@@ -52,6 +52,15 @@ STRATA = {"res2p": range(0, 15), "res34p": range(15, 161)}
 QCD_LO = 161
 SEEDS = (42, 43, 44)
 
+# --pool: which natives may share a random group.
+#   strata    (v1, the default) two-prong and three/four-prong decays are
+#             scrambled separately. Under share matching the two-prong stratum
+#             is rigid, so its four groups EQUAL the 17-class groups and no
+#             two-prong pair can be tested (audit 2026-09-29, must-fix 2).
+#   resonant  (v2) one pool of all 161 resonant natives, so two-prong decays
+#             are permuted too. QCD is still copied, not randomised.
+POOLS = {"strata": STRATA, "resonant": {"res": range(0, QCD_LO)}}
+
 
 def hash_order(items, seed, tag):
     """Deterministic permutation, stable across Python versions and platforms.
@@ -96,11 +105,11 @@ def target_profile(rows, rung):
     return sizes, qcd_groups
 
 
-def draw(rows, sizes, qcd_groups, rung, seed, d):
+def draw(rows, sizes, qcd_groups, rung, seed, d, strata=STRATA):
     """One random partition with the target's shape and scrambled membership."""
     assign = {}
     gid = 0
-    for s, rng in STRATA.items():
+    for s, rng in strata.items():
         perm = hash_order(list(rng), seed, f"rand|draw{d}|{s}")
         pos = 0
         for size in sizes[s]:
@@ -366,14 +375,14 @@ def place_classes(shape, by_value, tgt_of, val_of, tag):
     return out, _agreement(m)
 
 
-def share_draw(rows, units, rung, seed, d):
+def share_draw(rows, units, rung, seed, d, strata=STRATA):
     """One share-matched partition with maximally scrambled membership."""
     tgt_of = {int(r["jet_label"]): int(r[rung]) for r in rows}
 
     assign = {}
     gid = 0
     stats = {}
-    for s, rng in STRATA.items():
+    for s, rng in strata.items():
         labs = [m for m in rng]
         counts = collections.Counter(units[m] for m in labs)
         groups = collections.defaultdict(list)
@@ -441,7 +450,17 @@ def main(argv=None) -> int:
                          "count, which the network never observes -- kept only "
                          "so the superseded control stays reproducible "
                          "(DECISIONS_PENDING item 24)")
+    ap.add_argument("--pool", choices=sorted(POOLS), default="strata",
+                    help="strata (v1 default): two-prong and three/four-prong "
+                         "scrambled separately; resonant (v2): one pool of all "
+                         "161 resonant natives")
+    ap.add_argument("--prefix", default="RAND_d",
+                    help="column prefix; draw d is written as <prefix><d>")
     a = ap.parse_args(argv)
+    strata = POOLS[a.pool]
+    if a.pool != "strata" and a.match != "share":
+        raise SystemExit("FATAL: --pool resonant is share-matched only; the "
+                         "count-matched control exists for v1 reproducibility")
 
     rows = read_rows()
     sizes, qcd_groups = target_profile(rows, a.target)
@@ -459,7 +478,7 @@ def main(argv=None) -> int:
     def stratum(lab):
         if lab >= QCD_LO:
             return "qcd"
-        for st, rng in STRATA.items():
+        for st, rng in strata.items():
             if lab in rng:
                 return st
         raise SystemExit(f"FATAL: native {lab} falls in no stratum")
@@ -481,7 +500,7 @@ def main(argv=None) -> int:
     for d, seed in enumerate(a.seeds, start=1):
         if a.match == "share":
             print(f"  draw {d} (seed {seed}):")
-            assign = share_draw(rows, units, a.target, seed, d)
+            assign = share_draw(rows, units, a.target, seed, d, strata)
         else:
             assign = draw(rows, sizes, qcd_groups, a.target, seed, d)
         k = len(set(assign.values()))
@@ -515,19 +534,21 @@ def main(argv=None) -> int:
     # stratum -- which is honest, and says so.
     cols = ["jet_label", "class_name", a.target]
     for d in draws:
-        cols += [f"RAND_d{d}", f"RAND_d{d}_name"]
+        cols += [f"{a.prefix}{d}", f"{a.prefix}{d}_name"]
     strat_of = {}
-    for st, rng in STRATA.items():
+    for st, rng in strata.items():
         for m in rng:
             strat_of[m] = st
     names = {}
     for d, assign in draws.items():
+        # v1's group names predate --prefix and are kept byte-exact
+        stem = f"RAND{d}" if a.prefix == "RAND_d" else f"{a.prefix}{d}"
         seen = {}
         for lab in sorted(assign):
             g = assign[lab]
             if g not in seen:
                 st = strat_of.get(lab, "qcd")
-                seen[g] = f"RAND{d}_{st}_{g:02d}"
+                seen[g] = f"{stem}_{st}_{g:02d}"
         names[d] = seen
     with out.open("w", newline="") as f:
         w = csv.writer(f)

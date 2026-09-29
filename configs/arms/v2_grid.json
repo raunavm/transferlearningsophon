@@ -1,0 +1,234 @@
+{
+ "generated_by": "scripts/build_v2_arms.py",
+ "fields": {
+  "config": "weaver --data-config; its make_weight sidecar is keyed by this file's md5",
+  "num_classes": "weaver -o num_classes; null for the self-supervised arm",
+  "mass_lambda": "hybrid_mass.py --mass-lambda; null = no mass output",
+  "extra_selection": "weaver --extra-selection; applied after the reweighting histograms, so the parent config and its sidecar are used unchanged",
+  "runs": "number of pretraining seeds",
+  "tier": "1 first"
+ },
+ "arms": [
+  {
+   "name": "L188",
+   "config": "configs/arms/L188.yaml",
+   "num_classes": 188,
+   "mass_lambda": null,
+   "runs": 5,
+   "tier": 1,
+   "extra_selection": null,
+   "objective": "classification"
+  },
+  {
+   "name": "L162",
+   "config": "configs/arms/L162.yaml",
+   "num_classes": 162,
+   "mass_lambda": null,
+   "runs": 5,
+   "tier": 1,
+   "extra_selection": null,
+   "objective": "classification"
+  },
+  {
+   "name": "R42_Q1",
+   "config": "configs/arms/R42_Q1.yaml",
+   "num_classes": 43,
+   "mass_lambda": null,
+   "runs": 5,
+   "tier": 1,
+   "extra_selection": null,
+   "objective": "classification"
+  },
+  {
+   "name": "R16_Q1",
+   "config": "configs/arms/R16_Q1.yaml",
+   "num_classes": 17,
+   "mass_lambda": null,
+   "runs": 5,
+   "tier": 1,
+   "extra_selection": null,
+   "objective": "classification"
+  },
+  {
+   "name": "L162_MASS",
+   "config": "configs/arms/L162_MASS.yaml",
+   "num_classes": 162,
+   "mass_lambda": 5.0,
+   "runs": 5,
+   "tier": 1,
+   "extra_selection": null,
+   "objective": "classification+mass"
+  },
+  {
+   "name": "R16_Q1_MASS",
+   "config": "configs/arms/R16_Q1_MASS.yaml",
+   "num_classes": 17,
+   "mass_lambda": 5.0,
+   "runs": 5,
+   "tier": 1,
+   "extra_selection": null,
+   "objective": "classification+mass"
+  },
+  {
+   "name": "RAND2_p1",
+   "config": "configs/arms/v2/RAND2_p1.yaml",
+   "num_classes": 17,
+   "mass_lambda": null,
+   "runs": 2,
+   "tier": 1,
+   "extra_selection": null,
+   "objective": "classification",
+   "partition_seed": 45
+  },
+  {
+   "name": "RAND2_p2",
+   "config": "configs/arms/v2/RAND2_p2.yaml",
+   "num_classes": 17,
+   "mass_lambda": null,
+   "runs": 2,
+   "tier": 1,
+   "extra_selection": null,
+   "objective": "classification",
+   "partition_seed": 46
+  },
+  {
+   "name": "RAND2_p3",
+   "config": "configs/arms/v2/RAND2_p3.yaml",
+   "num_classes": 17,
+   "mass_lambda": null,
+   "runs": 2,
+   "tier": 1,
+   "extra_selection": null,
+   "objective": "classification",
+   "partition_seed": 47
+  },
+  {
+   "name": "RAND2_p4",
+   "config": "configs/arms/v2/RAND2_p4.yaml",
+   "num_classes": 17,
+   "mass_lambda": null,
+   "runs": 2,
+   "tier": 1,
+   "extra_selection": null,
+   "objective": "classification",
+   "partition_seed": 48
+  },
+  {
+   "name": "RAND2_p5",
+   "config": "configs/arms/v2/RAND2_p5.yaml",
+   "num_classes": 17,
+   "mass_lambda": null,
+   "runs": 2,
+   "tier": 1,
+   "extra_selection": null,
+   "objective": "classification",
+   "partition_seed": 49
+  },
+  {
+   "name": "FLAV_F0",
+   "config": "configs/arms/v2/FLAV_F0.yaml",
+   "num_classes": 17,
+   "mass_lambda": null,
+   "runs": 2,
+   "tier": 2,
+   "extra_selection": null,
+   "objective": "classification",
+   "partition_seed": 1
+  },
+  {
+   "name": "FLAV_F1",
+   "config": "configs/arms/v2/FLAV_F1.yaml",
+   "num_classes": 17,
+   "mass_lambda": null,
+   "runs": 2,
+   "tier": 2,
+   "extra_selection": null,
+   "objective": "classification",
+   "partition_seed": 1
+  },
+  {
+   "name": "R16_Q1_MASS_LM",
+   "config": "configs/arms/v2/R16_Q1_MASS_LM.yaml",
+   "num_classes": 17,
+   "mass_lambda": 1.74,
+   "runs": 5,
+   "tier": 2,
+   "extra_selection": null,
+   "objective": "classification+mass"
+  },
+  {
+   "name": "MPM",
+   "config": "configs/arms/L188.yaml",
+   "num_classes": null,
+   "mass_lambda": null,
+   "runs": 3,
+   "tier": 2,
+   "extra_selection": null,
+   "objective": "mpm"
+  },
+  {
+   "name": "R63_Q1",
+   "config": "configs/arms/R63_Q1.yaml",
+   "num_classes": 64,
+   "mass_lambda": null,
+   "runs": 5,
+   "tier": 3,
+   "extra_selection": null,
+   "objective": "classification"
+  },
+  {
+   "name": "R29_Q1",
+   "config": "configs/arms/R29_Q1.yaml",
+   "num_classes": 30,
+   "mass_lambda": null,
+   "runs": 5,
+   "tier": 3,
+   "extra_selection": null,
+   "objective": "classification"
+  },
+  {
+   "name": "L188_LOFO4P",
+   "config": "configs/arms/L188.yaml",
+   "num_classes": 188,
+   "mass_lambda": null,
+   "runs": 3,
+   "tier": 3,
+   "extra_selection": "~(((jet_label >= 15) & (jet_label < 20)) | ((jet_label >= 32) & (jet_label < 36)) | ((jet_label >= 48) & (jet_label < 51)) | ((jet_label >= 63) & (jet_label < 65)) | (jet_label == 77) | ((jet_label >= 115) & (jet_label < 127)))",
+   "objective": "classification",
+   "parent": "L188"
+  },
+  {
+   "name": "L162_LOFO4P",
+   "config": "configs/arms/L162.yaml",
+   "num_classes": 162,
+   "mass_lambda": null,
+   "runs": 3,
+   "tier": 3,
+   "extra_selection": "~(((jet_label >= 15) & (jet_label < 20)) | ((jet_label >= 32) & (jet_label < 36)) | ((jet_label >= 48) & (jet_label < 51)) | ((jet_label >= 63) & (jet_label < 65)) | (jet_label == 77) | ((jet_label >= 115) & (jet_label < 127)))",
+   "objective": "classification",
+   "parent": "L162"
+  },
+  {
+   "name": "R42_Q1_LOFO4P",
+   "config": "configs/arms/R42_Q1.yaml",
+   "num_classes": 43,
+   "mass_lambda": null,
+   "runs": 3,
+   "tier": 3,
+   "extra_selection": "~(((jet_label >= 15) & (jet_label < 20)) | ((jet_label >= 32) & (jet_label < 36)) | ((jet_label >= 48) & (jet_label < 51)) | ((jet_label >= 63) & (jet_label < 65)) | (jet_label == 77) | ((jet_label >= 115) & (jet_label < 127)))",
+   "objective": "classification",
+   "parent": "R42_Q1"
+  },
+  {
+   "name": "R16_Q1_LOFO4P",
+   "config": "configs/arms/R16_Q1.yaml",
+   "num_classes": 17,
+   "mass_lambda": null,
+   "runs": 3,
+   "tier": 3,
+   "extra_selection": "~(((jet_label >= 15) & (jet_label < 20)) | ((jet_label >= 32) & (jet_label < 36)) | ((jet_label >= 48) & (jet_label < 51)) | ((jet_label >= 63) & (jet_label < 65)) | (jet_label == 77) | ((jet_label >= 115) & (jet_label < 127)))",
+   "objective": "classification",
+   "parent": "R16_Q1"
+  }
+ ]
+}

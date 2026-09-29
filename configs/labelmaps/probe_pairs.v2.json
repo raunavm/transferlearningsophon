@@ -1,0 +1,564 @@
+{
+ "generated_by": "scripts/build_v2_arms.py",
+ "probe_tasks": {
+  "bvc_resonant": {
+   "description": "b vs c, two-prong (X->bb vs X->cc)",
+   "sub_pairs": [
+    "X_bb|X_cc"
+   ]
+  },
+  "bvc_4prong": {
+   "description": "b vs c, four-prong (X->YY->bbqq vs X->YY->ccqq)",
+   "sub_pairs": [
+    "X_YY_bbqq|X_YY_ccqq"
+   ]
+  },
+  "visible_content": {
+   "description": "visible decay content (X->YY->bbqq vs X->YY->cq tau_h nu)",
+   "sub_pairs": [
+    "X_YY_bbqq|X_YY_cqtauhv"
+   ]
+  },
+  "retained_topology": {
+   "description": "two- vs four-prong (X->bb vs X->YY->bbbb)",
+   "sub_pairs": [
+    "X_bb|X_YY_bbbb"
+   ]
+  },
+  "ee_vs_mm": {
+   "description": "e vs mu (X->ee vs X->mumu)",
+   "sub_pairs": [
+    "X_ee|X_mm"
+   ]
+  },
+  "bc_vs_rest": {
+   "description": "|Vcb| (X->bc vs X->bq, X->cs, X->YY->qqb, QCD)",
+   "sub_pairs": [
+    "X_bc|X_bq",
+    "X_bc|X_cs",
+    "X_bc|X_YY_qqb",
+    "X_bc|QCD"
+   ]
+  }
+ },
+ "partition_seeds": {
+  "RAND2_p1": 45,
+  "RAND2_p2": 46,
+  "RAND2_p3": 47,
+  "RAND2_p4": 48,
+  "RAND2_p5": 49,
+  "FLAV_F0": 1,
+  "FLAV_F1": 1
+ },
+ "status": {
+  "L188": {
+   "bvc_resonant": {
+    "merged": [],
+    "split": [
+     "X_bb|X_cc"
+    ]
+   },
+   "bvc_4prong": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ]
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [],
+    "split": [
+     "X_bb|X_YY_bbbb"
+    ]
+   },
+   "ee_vs_mm": {
+    "merged": [],
+    "split": [
+     "X_ee|X_mm"
+    ]
+   },
+   "bc_vs_rest": {
+    "merged": [],
+    "split": [
+     "X_bc|X_bq",
+     "X_bc|X_cs",
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "L162": {
+   "bvc_resonant": {
+    "merged": [],
+    "split": [
+     "X_bb|X_cc"
+    ]
+   },
+   "bvc_4prong": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ]
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [],
+    "split": [
+     "X_bb|X_YY_bbbb"
+    ]
+   },
+   "ee_vs_mm": {
+    "merged": [],
+    "split": [
+     "X_ee|X_mm"
+    ]
+   },
+   "bc_vs_rest": {
+    "merged": [],
+    "split": [
+     "X_bc|X_bq",
+     "X_bc|X_cs",
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "R42_Q1": {
+   "bvc_resonant": {
+    "merged": [],
+    "split": [
+     "X_bb|X_cc"
+    ]
+   },
+   "bvc_4prong": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ]
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [],
+    "split": [
+     "X_bb|X_YY_bbbb"
+    ]
+   },
+   "ee_vs_mm": {
+    "merged": [
+     "X_ee|X_mm"
+    ],
+    "split": []
+   },
+   "bc_vs_rest": {
+    "merged": [
+     "X_bc|X_bq"
+    ],
+    "split": [
+     "X_bc|X_cs",
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "R16_Q1": {
+   "bvc_resonant": {
+    "merged": [
+     "X_bb|X_cc"
+    ],
+    "split": []
+   },
+   "bvc_4prong": {
+    "merged": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ],
+    "split": []
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [],
+    "split": [
+     "X_bb|X_YY_bbbb"
+    ]
+   },
+   "ee_vs_mm": {
+    "merged": [
+     "X_ee|X_mm"
+    ],
+    "split": []
+   },
+   "bc_vs_rest": {
+    "merged": [
+     "X_bc|X_bq",
+     "X_bc|X_cs"
+    ],
+    "split": [
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "FLAV_F0": {
+   "bvc_resonant": {
+    "merged": [
+     "X_bb|X_cc"
+    ],
+    "split": []
+   },
+   "bvc_4prong": {
+    "merged": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ],
+    "split": []
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [],
+    "split": [
+     "X_bb|X_YY_bbbb"
+    ]
+   },
+   "ee_vs_mm": {
+    "merged": [],
+    "split": [
+     "X_ee|X_mm"
+    ]
+   },
+   "bc_vs_rest": {
+    "merged": [
+     "X_bc|X_bq",
+     "X_bc|X_cs"
+    ],
+    "split": [
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "FLAV_F1": {
+   "bvc_resonant": {
+    "merged": [
+     "X_bb|X_cc"
+    ],
+    "split": []
+   },
+   "bvc_4prong": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ]
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [],
+    "split": [
+     "X_bb|X_YY_bbbb"
+    ]
+   },
+   "ee_vs_mm": {
+    "merged": [],
+    "split": [
+     "X_ee|X_mm"
+    ]
+   },
+   "bc_vs_rest": {
+    "merged": [
+     "X_bc|X_bq",
+     "X_bc|X_cs"
+    ],
+    "split": [
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "RAND2_p1": {
+   "bvc_resonant": {
+    "merged": [
+     "X_bb|X_cc"
+    ],
+    "split": []
+   },
+   "bvc_4prong": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ]
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [],
+    "split": [
+     "X_bb|X_YY_bbbb"
+    ]
+   },
+   "ee_vs_mm": {
+    "merged": [
+     "X_ee|X_mm"
+    ],
+    "split": []
+   },
+   "bc_vs_rest": {
+    "merged": [
+     "X_bc|X_bq"
+    ],
+    "split": [
+     "X_bc|X_cs",
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "RAND2_p2": {
+   "bvc_resonant": {
+    "merged": [],
+    "split": [
+     "X_bb|X_cc"
+    ]
+   },
+   "bvc_4prong": {
+    "merged": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ],
+    "split": []
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [
+     "X_bb|X_YY_bbbb"
+    ],
+    "split": []
+   },
+   "ee_vs_mm": {
+    "merged": [],
+    "split": [
+     "X_ee|X_mm"
+    ]
+   },
+   "bc_vs_rest": {
+    "merged": [
+     "X_bc|X_cs"
+    ],
+    "split": [
+     "X_bc|X_bq",
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "RAND2_p3": {
+   "bvc_resonant": {
+    "merged": [],
+    "split": [
+     "X_bb|X_cc"
+    ]
+   },
+   "bvc_4prong": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ]
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [],
+    "split": [
+     "X_bb|X_YY_bbbb"
+    ]
+   },
+   "ee_vs_mm": {
+    "merged": [],
+    "split": [
+     "X_ee|X_mm"
+    ]
+   },
+   "bc_vs_rest": {
+    "merged": [
+     "X_bc|X_bq",
+     "X_bc|X_cs"
+    ],
+    "split": [
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "RAND2_p4": {
+   "bvc_resonant": {
+    "merged": [],
+    "split": [
+     "X_bb|X_cc"
+    ]
+   },
+   "bvc_4prong": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ]
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [
+     "X_bb|X_YY_bbbb"
+    ],
+    "split": []
+   },
+   "ee_vs_mm": {
+    "merged": [],
+    "split": [
+     "X_ee|X_mm"
+    ]
+   },
+   "bc_vs_rest": {
+    "merged": [],
+    "split": [
+     "X_bc|X_bq",
+     "X_bc|X_cs",
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "RAND2_p5": {
+   "bvc_resonant": {
+    "merged": [
+     "X_bb|X_cc"
+    ],
+    "split": []
+   },
+   "bvc_4prong": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ]
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [],
+    "split": [
+     "X_bb|X_YY_bbbb"
+    ]
+   },
+   "ee_vs_mm": {
+    "merged": [],
+    "split": [
+     "X_ee|X_mm"
+    ]
+   },
+   "bc_vs_rest": {
+    "merged": [
+     "X_bc|X_bq"
+    ],
+    "split": [
+     "X_bc|X_cs",
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  }
+ },
+ "tree_first_merge": {
+  "bvc_resonant": {
+   "X_bb|X_cc": {
+    "level": "R29_Q1",
+    "num_classes": 30
+   }
+  },
+  "bvc_4prong": {
+   "X_YY_bbqq|X_YY_ccqq": {
+    "level": "R29_Q1",
+    "num_classes": 30
+   }
+  },
+  "visible_content": {
+   "X_YY_bbqq|X_YY_cqtauhv": {
+    "level": "R1_Q1",
+    "num_classes": 2
+   }
+  },
+  "retained_topology": {
+   "X_bb|X_YY_bbbb": {
+    "level": "R1_Q1",
+    "num_classes": 2
+   }
+  },
+  "ee_vs_mm": {
+   "X_ee|X_mm": {
+    "level": "R63_Q1",
+    "num_classes": 64
+   }
+  },
+  "bc_vs_rest": {
+   "X_bc|X_bq": {
+    "level": "R42_Q1",
+    "num_classes": 43
+   },
+   "X_bc|X_cs": {
+    "level": "R29_Q1",
+    "num_classes": 30
+   },
+   "X_bc|X_YY_qqb": {
+    "level": "R1_Q1",
+    "num_classes": 2
+   },
+   "X_bc|QCD": {
+    "level": null,
+    "num_classes": null
+   }
+  }
+ }
+}
