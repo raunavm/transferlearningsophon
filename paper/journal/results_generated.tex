@@ -10,11 +10,56 @@
 %
 % MISSING INPUTS -- no macro was emitted for these:
 %   community benchmarks, bench v3 readout -- experiments/FIGS/data/bench_v3_metrics*/bench_metrics_last.json
+%   v2 pretraining rerun: data order and dropout fixed by seed and epoch, identical initial trunk weights, family-stratified loading, fixed validation sample, best-validation checkpoint -- experiments/FIGS/data/v2/pretraining/
+%   v2 frozen probes on the rerun models, best-validation checkpoint and the average over the last ten epochs -- experiments/FIGS/data/v2/probe_ladder/
+%   v2 the 64- and 30-class vocabularies -- experiments/FIGS/data/v2/levels_64_30/
+%   v2 the leave-one-family-out vocabularies -- experiments/FIGS/data/v2/leave_one_family_out/
+%   v2 label-tree recovery on the rerun models -- experiments/FIGS/data/v2/label_recovery/
+%   v2 the additional random partitions -- experiments/FIGS/data/v2/random_partitions/
+%   v2 JetClass-II fine-tuning on files held out from pretraining -- experiments/FIGS/data/v2/finetune/
+%   v2 fine-tuning from random initialisation and from the self-supervised model -- experiments/FIGS/data/v2/finetune_references/
+%   v2 top tagging and quark/gluon tagging (Pythia and Herwig) fine-tuned from every rerun model -- experiments/FIGS/data/v2/benchmarks/
+%   v2 the second and third self-supervised pretraining runs -- experiments/FIGS/data/v2/self_supervised/
+%   v2 the mass-output models with the loss weight matched in loss share -- experiments/FIGS/data/v2/mass_lambda_matched/
+%   v2 anomaly detection on the rerun models, per-run values -- experiments/FIGS/data/v2/anomaly/
+%   v2 the open-data fits on the rerun models -- experiments/FIGS/data/v2/real_data/
+%   AojChainDataset -- experiments/FIGS/data/aoj_*/selection_chain.json :: n_dataset
+%   AojChainStaged -- experiments/FIGS/data/aoj_*/selection_chain.json :: n_staged
+%   AojChainRhoWindow -- experiments/FIGS/data/aoj_*/selection_chain.json :: n_rho_window
+%   AojNJetsFit -- experiments/FIGS/data/aoj_*/selection_chain.json :: n_fit
+%   AojChainPtBins -- experiments/FIGS/data/aoj_*/selection_chain.json :: n_pt_bins
+%   AojChainEtaMax -- experiments/FIGS/data/aoj_*/selection_chain.json :: abs_eta_max
+%   MassLossShareOnesixtwoMass -- experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.162+mass
+%   MassLossShareOnesevenMass -- experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass
+%   MassLambdaMatched -- experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: lambda_matched
 %   per-arm parameters and MACs -- flops_by_arm.json (see docs/RECORD.md 2.1)
 %
 % SKIPPED TABLES:
 %   T4 compute/parameters: no machine-readable source in the repository; docs/RECORD.md 2.1 names /data/results/mtx/flops/flops_by_arm.json, which is not committed
 
+\newcommand{\PendingPretrain}{\pending{pending v2: pretraining rerun: data order and dropout fixed by seed and epoch, identical initial trunk weights, family-stratified loading, fixed validation sample, best-validation checkpoint}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Pretrain'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingProbes}{\pending{pending v2: frozen probes on the rerun models, best-validation checkpoint and the average over the last ten epochs}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Probes'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingLevels}{\pending{pending v2: the 64- and 30-class vocabularies}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Levels'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingLofo}{\pending{pending v2: the leave-one-family-out vocabularies}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Lofo'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingRecovery}{\pending{pending v2: label-tree recovery on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Recovery'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingRandom}{\pending{pending v2: the additional random partitions}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Random'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingFtHeldout}{\pending{pending v2: JetClass-II fine-tuning on files held out from pretraining}}  % experiments/FIGS/make_tables.py :: V2_PENDING['FtHeldout'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingFtRefs}{\pending{pending v2: fine-tuning from random initialisation and from the self-supervised model}}  % experiments/FIGS/make_tables.py :: V2_PENDING['FtRefs'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingBench}{\pending{pending v2: top tagging and quark/gluon tagging (Pythia and Herwig) fine-tuned from every rerun model}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Bench'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingSsl}{\pending{pending v2: the second and third self-supervised pretraining runs}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Ssl'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingMassLambda}{\pending{pending v2: the mass-output models with the loss weight matched in loss share}}  % experiments/FIGS/make_tables.py :: V2_PENDING['MassLambda'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingAnomaly}{\pending{pending v2: anomaly detection on the rerun models, per-run values}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Anomaly'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingRealData}{\pending{pending v2: the open-data fits on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['RealData'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingConclusion}{\pending{pending v2: written once every input above is in}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Conclusion'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
+\newcommand{\AojChainDataset}{\pending{pending: jets in the open-data sample}}  % experiments/FIGS/make_tables.py :: SLOTS[AojChainDataset] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/aoj_*/selection_chain.json :: n_dataset does not exist yet
+\newcommand{\AojChainStaged}{\pending{pending: jets after the kinematic selection}}  % experiments/FIGS/make_tables.py :: SLOTS[AojChainStaged] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/aoj_*/selection_chain.json :: n_staged does not exist yet
+\newcommand{\AojChainRhoWindow}{\pending{pending: jets inside the rho window}}  % experiments/FIGS/make_tables.py :: SLOTS[AojChainRhoWindow] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/aoj_*/selection_chain.json :: n_rho_window does not exist yet
+\newcommand{\AojNJetsFit}{\pending{pending: jets in the mass fit}}  % experiments/FIGS/make_tables.py :: SLOTS[AojNJetsFit] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/aoj_*/selection_chain.json :: n_fit does not exist yet
+\newcommand{\AojChainPtBins}{\pending{pending: pT categories of the fit}}  % experiments/FIGS/make_tables.py :: SLOTS[AojChainPtBins] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/aoj_*/selection_chain.json :: n_pt_bins does not exist yet
+\newcommand{\AojChainEtaMax}{\pending{pending: the pseudorapidity cut}}  % experiments/FIGS/make_tables.py :: SLOTS[AojChainEtaMax] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/aoj_*/selection_chain.json :: abs_eta_max does not exist yet
+\newcommand{\MassLossShareOnesixtwoMass}{\pending{pending: mass-loss share, 162 classes}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareOnesixtwoMass] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.162+mass does not exist yet
+\newcommand{\MassLossShareOnesevenMass}{\pending{pending: mass-loss share, 17 classes}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareOnesevenMass] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass does not exist yet
+\newcommand{\MassLambdaMatched}{\pending{pending: the share-matched loss weight}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLambdaMatched] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: lambda_matched does not exist yet
 \newcommand{\ProbeNJets}{2{,}000{,}000}  % experiments/FIGS/data/probe_ladder_v2_mlp2/analysis/seed_level_results.json :: provenance.n_jets_total :: sha256 53e1ec81343ac2c1
 \newcommand{\ProbeNSeeds}{5}  % experiments/FIGS/data/probe_ladder_v2_mlp2/analysis/seed_level_results.json :: seeds_used (length) :: sha256 53e1ec81343ac2c1
 \newcommand{\ProbeRowAlign}{\texttt{a9449fd420c473f6}}  % experiments/FIGS/data/probe_ladder_v2_mlp2/analysis/seed_level_results.json :: provenance.row_alignment_sha256 (first 16) :: sha256 53e1ec81343ac2c1
@@ -425,13 +470,13 @@
 \newcommand{\VocabSizeRonesixQone}{17}  % configs/labelmaps/rung_label_maps.v1.csv :: column R16_Q1 (distinct group count) :: sha256 412f9aa3b58db412
 \newcommand{\VocabSizeRthreeVIS}{4}  % configs/labelmaps/rung_label_maps.v1.csv :: column R3_VIS (distinct group count) :: sha256 412f9aa3b58db412
 \newcommand{\VocabSizeRoneQone}{2}  % configs/labelmaps/rung_label_maps.v1.csv :: column R1_Q1 (distinct group count) :: sha256 412f9aa3b58db412
-\newcommand{\ProbeSplitTrain}{60\%}  % experiments/EVAL/probe.py :: make_splits :: sha256 3bd58fd31763da98 :: share of the probe sample; the same jets for every model
-\newcommand{\ProbeSplitVal}{20\%}  % experiments/EVAL/probe.py :: make_splits :: sha256 3bd58fd31763da98 :: share of the probe sample; the same jets for every model
-\newcommand{\ProbeSplitTest}{20\%}  % experiments/EVAL/probe.py :: make_splits :: sha256 3bd58fd31763da98 :: share of the probe sample; the same jets for every model
-\newcommand{\ProbeMlpHidden}{256}  % experiments/EVAL/probe.py :: _fit_mlp :: sha256 3bd58fd31763da98 :: hidden width of the MLP probe
-\newcommand{\ProbeMlpInits}{3}  % experiments/EVAL/probe.py :: MLP_SEEDS :: sha256 3bd58fd31763da98 :: MLP initialisations whose scores are averaged per cell
-\newcommand{\ProbeCMin}{\ensuremath{10^{-2}}}  % experiments/EVAL/probe.py :: C_GRID :: sha256 3bd58fd31763da98 :: end of the logistic-regression inverse-regularisation grid
-\newcommand{\ProbeCMax}{\ensuremath{10^{2}}}  % experiments/EVAL/probe.py :: C_GRID :: sha256 3bd58fd31763da98 :: end of the logistic-regression inverse-regularisation grid
+\newcommand{\ProbeSplitTrain}{60\%}  % experiments/EVAL/probe.py :: SPLIT_FRACTIONS :: sha256 7abe4635bd6bbb3e :: share of the probe sample; the same jets for every model
+\newcommand{\ProbeSplitVal}{20\%}  % experiments/EVAL/probe.py :: SPLIT_FRACTIONS :: sha256 7abe4635bd6bbb3e :: share of the probe sample; the same jets for every model
+\newcommand{\ProbeSplitTest}{20\%}  % experiments/EVAL/probe.py :: SPLIT_FRACTIONS :: sha256 7abe4635bd6bbb3e :: share of the probe sample; the same jets for every model
+\newcommand{\ProbeMlpHidden}{256}  % experiments/EVAL/probe.py :: _fit_mlp :: sha256 7abe4635bd6bbb3e :: hidden width of the MLP probe
+\newcommand{\ProbeMlpInits}{3}  % experiments/EVAL/probe.py :: MLP_SEEDS :: sha256 7abe4635bd6bbb3e :: MLP initialisations whose scores are averaged per cell
+\newcommand{\ProbeCMin}{\ensuremath{10^{-2}}}  % experiments/EVAL/probe.py :: C_GRID :: sha256 7abe4635bd6bbb3e :: end of the logistic-regression inverse-regularisation grid
+\newcommand{\ProbeCMax}{\ensuremath{10^{2}}}  % experiments/EVAL/probe.py :: C_GRID :: sha256 7abe4635bd6bbb3e :: end of the logistic-regression inverse-regularisation grid
 \newcommand{\ProbeNBkgTestBvcFourprong}{3{,}158}  % experiments/FIGS/data/probe_ladder_v2_mlp2/s1.json :: tasks.bvc_4prong.n_background_test :: sha256 f7e1de0e43be89b8 :: test-sample background jets
 \newcommand{\ProbeNBkgTestBvcQcd}{5{,}371}  % experiments/FIGS/data/probe_ladder_v2_mlp2/s1.json :: tasks.bvc_qcd.n_background_test :: sha256 f7e1de0e43be89b8 :: test-sample background jets
 \newcommand{\ProbeNBkgTestBvcResonant}{11{,}876}  % experiments/FIGS/data/probe_ladder_v2_mlp2/s1.json :: tasks.bvc_resonant.n_background_test :: sha256 f7e1de0e43be89b8 :: test-sample background jets
@@ -440,25 +485,16 @@
 \newcommand{\ProbeNBkgTestVisibleContent}{2{,}554}  % experiments/FIGS/data/probe_ladder_v2_mlp2/s1.json :: tasks.visible_content.n_background_test :: sha256 f7e1de0e43be89b8 :: test-sample background jets
 \newcommand{\UseDiesAtSophonEqfour}{43}  % configs/labelmaps/usecase_survival.v1.json :: sophon_eq4.dies_at :: sha256 122275213c349593 :: first vocabulary size at which it is not constructible
 \newcommand{\UseLastAliveSophonEqfour}{64}  % configs/labelmaps/usecase_survival.v1.json :: sophon_eq4.last_rung_alive :: sha256 122275213c349593
-\newcommand{\UseVectorsSophonEqfour}{2}  % configs/labelmaps/usecase_survival.v1.json :: sophon_eq4.n_coefficient_vectors :: sha256 122275213c349593
 \newcommand{\UseDiesAtSophonEqsixAone}{64}  % configs/labelmaps/usecase_survival.v1.json :: sophon_eq6_a1.dies_at :: sha256 122275213c349593 :: first vocabulary size at which it is not constructible
 \newcommand{\UseLastAliveSophonEqsixAone}{162}  % configs/labelmaps/usecase_survival.v1.json :: sophon_eq6_a1.last_rung_alive :: sha256 122275213c349593
-\newcommand{\UseVectorsSophonEqsixAone}{2}  % configs/labelmaps/usecase_survival.v1.json :: sophon_eq6_a1.n_coefficient_vectors :: sha256 122275213c349593
 \newcommand{\UseDiesAtSophonEqsixAthree}{64}  % configs/labelmaps/usecase_survival.v1.json :: sophon_eq6_a3.dies_at :: sha256 122275213c349593 :: first vocabulary size at which it is not constructible
 \newcommand{\UseLastAliveSophonEqsixAthree}{162}  % configs/labelmaps/usecase_survival.v1.json :: sophon_eq6_a3.last_rung_alive :: sha256 122275213c349593
-\newcommand{\UseVectorsSophonEqsixAthree}{2}  % configs/labelmaps/usecase_survival.v1.json :: sophon_eq6_a3.n_coefficient_vectors :: sha256 122275213c349593
 \newcommand{\UseDiesAtSophonEqsevenNine}{64}  % configs/labelmaps/usecase_survival.v1.json :: sophon_eq7_9.dies_at :: sha256 122275213c349593 :: first vocabulary size at which it is not constructible
 \newcommand{\UseLastAliveSophonEqsevenNine}{162}  % configs/labelmaps/usecase_survival.v1.json :: sophon_eq7_9.last_rung_alive :: sha256 122275213c349593
-\newcommand{\UseVectorsSophonEqsevenNine}{2}  % configs/labelmaps/usecase_survival.v1.json :: sophon_eq7_9.n_coefficient_vectors :: sha256 122275213c349593
 \newcommand{\UseDiesAtVcbEqone}{64}  % configs/labelmaps/usecase_survival.v1.json :: vcb_eq1.dies_at :: sha256 122275213c349593 :: first vocabulary size at which it is not constructible
 \newcommand{\UseLastAliveVcbEqone}{162}  % configs/labelmaps/usecase_survival.v1.json :: vcb_eq1.last_rung_alive :: sha256 122275213c349593
-\newcommand{\UseVectorsVcbEqone}{2}  % configs/labelmaps/usecase_survival.v1.json :: vcb_eq1.n_coefficient_vectors :: sha256 122275213c349593
-\newcommand{\UseDiesAtGnthreexQcdSubclass}{162}  % configs/labelmaps/usecase_survival.v1.json :: gn3x_qcd_subclass.dies_at :: sha256 122275213c349593 :: first vocabulary size at which it is not constructible
-\newcommand{\UseLastAliveGnthreexQcdSubclass}{188}  % configs/labelmaps/usecase_survival.v1.json :: gn3x_qcd_subclass.last_rung_alive :: sha256 122275213c349593
-\newcommand{\UseVectorsGnthreexQcdSubclass}{27}  % configs/labelmaps/usecase_survival.v1.json :: gn3x_qcd_subclass.n_coefficient_vectors :: sha256 122275213c349593
-\newcommand{\UseDiesAtWVsQcdResonance}{188}  % configs/labelmaps/usecase_survival.v1.json :: w_vs_qcd_resonance.dies_at :: sha256 122275213c349593 :: first vocabulary size at which it is not constructible
-\newcommand{\UseLastAliveWVsQcdResonance}{none}  % configs/labelmaps/usecase_survival.v1.json :: w_vs_qcd_resonance.last_rung_alive :: sha256 122275213c349593
-\newcommand{\UseVectorsWVsQcdResonance}{0}  % configs/labelmaps/usecase_survival.v1.json :: w_vs_qcd_resonance.n_coefficient_vectors :: sha256 122275213c349593
+\newcommand{\UseWlikeLastAlive}{162}  % configs/labelmaps/rung_label_maps.v1.csv :: groups at each level vs {label_X_cs, label_X_qq} and that plus the QCD classes :: sha256 412f9aa3b58db412 :: last level at which Sophon's W-like score g_W(2) is constructible
+\newcommand{\UseWlikeDiesAt}{64}  % configs/labelmaps/rung_label_maps.v1.csv :: groups at each level vs {label_X_cs, label_X_qq} and that plus the QCD classes :: sha256 412f9aa3b58db412 :: first level at which it is not
 \newcommand{\DesignEpochs}{80}  % experiments/MTX/k8s/job-mtx-l188-s1-raunav.yaml :: --num-epochs :: sha256 96fef4b6337aaa27
 \newcommand{\DesignSamplesPerEpoch}{10{,}240{,}000}  % experiments/MTX/k8s/job-mtx-l188-s1-raunav.yaml :: --samples-per-epoch :: sha256 96fef4b6337aaa27
 \newcommand{\DesignExamplesSeen}{\ensuremath{8.192\times10^{8}}}  % experiments/MTX/k8s/job-mtx-l188-s1-raunav.yaml :: --num-epochs x --samples-per-epoch :: sha256 96fef4b6337aaa27 :: training examples drawn over the run
@@ -469,6 +505,7 @@
 \newcommand{\DesignClassBlocks}{2}  % experiments/E1/ParT_sophon_arch_10c.py :: num_cls_layers=(\d+) :: sha256 5793faa7d55a8b0d
 \newcommand{\DesignHeads}{8}  % experiments/E1/ParT_sophon_arch_10c.py :: num_heads=(\d+) :: sha256 5793faa7d55a8b0d
 \newcommand{\DesignEmbedDim}{128}  % experiments/E1/ParT_sophon_arch_10c.py :: \bembed_dims=\[\d+, \d+, (\d+)\] :: sha256 5793faa7d55a8b0d
+\newcommand{\DesignMpmMaskRate}{40\%}  % experiments/MTX/mpm.py :: DEFAULT_MASK_RATE :: sha256 49f0c8c6666d0211 :: share of each jet's particles hidden from the encoder
 \newcommand{\DesignPtMin}{200}  % configs/arms/L188.yaml :: selection :: sha256 d5a188dc80885515 :: GeV
 \newcommand{\DesignPtMax}{2{,}500}  % configs/arms/L188.yaml :: selection :: sha256 d5a188dc80885515 :: GeV
 \newcommand{\DesignMsdMin}{20}  % configs/arms/L188.yaml :: selection :: sha256 d5a188dc80885515 :: GeV
@@ -491,9 +528,18 @@
 \newcommand{\FtRecipeWeightDecay}{0.01}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json :: runs[*].weight_decay :: sha256 7dc8c791343e1b6f
 \newcommand{\FtRecipeBatch}{512}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json :: runs[*].batch_size :: sha256 7dc8c791343e1b6f
 \newcommand{\FtRecipeEpochsEThree}{50}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json :: runs[leg 1,2; n_train 1000].epochs :: sha256 7dc8c791343e1b6f
+\newcommand{\FtRecipeStepsEThree}{19}  % experiments/FT/k8s/job-ft-legs-w2-raunav.yaml :: job commands: samples per epoch at n_train 1000 // batch size :: sha256 f0962eddb451b7b0 :: optimizer steps per epoch, as weaver floors them
+\newcommand{\FtRecipePassesEThree}{10}  % experiments/FT/k8s/job-ft-legs-w2-raunav.yaml :: job commands: samples per epoch at n_train 1000 // n_train :: sha256 f0962eddb451b7b0 :: passes over the training subset per epoch
 \newcommand{\FtRecipeEpochsEFour}{50}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json :: runs[leg 1,2; n_train 10000].epochs :: sha256 7dc8c791343e1b6f
+\newcommand{\FtRecipeStepsEFour}{19}  % experiments/FT/k8s/job-ft-legs-w2-raunav.yaml :: job commands: samples per epoch at n_train 10000 // batch size :: sha256 f0962eddb451b7b0 :: optimizer steps per epoch, as weaver floors them
+\newcommand{\FtRecipePassesEFour}{one}  % experiments/FT/k8s/job-ft-legs-w2-raunav.yaml :: job commands: samples per epoch at n_train 10000 // n_train :: sha256 f0962eddb451b7b0 :: passes over the training subset per epoch
 \newcommand{\FtRecipeEpochsEFive}{30}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json :: runs[leg 1,2; n_train 100000].epochs :: sha256 7dc8c791343e1b6f
+\newcommand{\FtRecipeStepsEFive}{195}  % experiments/FT/k8s/job-ft-legs-w2-raunav.yaml :: job commands: samples per epoch at n_train 100000 // batch size :: sha256 f0962eddb451b7b0 :: optimizer steps per epoch, as weaver floors them
+\newcommand{\FtRecipePassesEFive}{one}  % experiments/FT/k8s/job-ft-legs-w2-raunav.yaml :: job commands: samples per epoch at n_train 100000 // n_train :: sha256 f0962eddb451b7b0 :: passes over the training subset per epoch
 \newcommand{\FtRecipeEpochsESix}{10}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json :: runs[leg 1,2; n_train 1000000].epochs :: sha256 7dc8c791343e1b6f
+\newcommand{\FtRecipeStepsESix}{1{,}953}  % experiments/FT/k8s/job-ft-legs-w2-raunav.yaml :: job commands: samples per epoch at n_train 1000000 // batch size :: sha256 f0962eddb451b7b0 :: optimizer steps per epoch, as weaver floors them
+\newcommand{\FtRecipePassesESix}{one}  % experiments/FT/k8s/job-ft-legs-w2-raunav.yaml :: job commands: samples per epoch at n_train 1000000 // n_train :: sha256 f0962eddb451b7b0 :: passes over the training subset per epoch
+\newcommand{\FtRecipeValJets}{19{,}968}  % experiments/FT/k8s/job-ft-legs-w2-raunav.yaml :: --samples-per-epoch-val 20000 // batch x batch :: sha256 f0962eddb451b7b0 :: validation jets per epoch, floored to whole batches
 \newcommand{\RecoveryAccOneeighteightByOneeighteight}{0.3434\,\ensuremath{\pm}\,0.0010}  % experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json :: table[rung=L188,level=188,probe=linear].accuracy :: sha256 0ef24e5d18f412a4 :: balanced accuracy, mean +- SD over 5 seeds
 \newcommand{\RecoveryAccOneeighteightByOnesixtwo}{0.3427\,\ensuremath{\pm}\,0.0019}  % experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json :: table[rung=L188,level=162,probe=linear].accuracy :: sha256 0ef24e5d18f412a4 :: balanced accuracy, mean +- SD over 5 seeds
 \newcommand{\RecoveryAccOneeighteightByFourthree}{0.290\,\ensuremath{\pm}\,0.008}  % experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json :: table[rung=L188,level=43,probe=linear].accuracy :: sha256 0ef24e5d18f412a4 :: balanced accuracy, mean +- SD over 5 seeds
@@ -546,6 +592,7 @@
 \newcommand{\RecoveryNTrain}{126{,}000}  % experiments/FIGS/data/label_recovery_ladder_v1/s1/label_recovery.json :: arms.*.rungs.*.n_fit :: sha256 8f09a8820a7a256e :: jets the linear probe is fit on, recorded in every cell of all 5 per-seed files
 \newcommand{\RecoveryNTest}{60{,}000}  % experiments/FIGS/data/label_recovery_ladder_v1/s1/label_recovery.json :: n_test :: sha256 8f09a8820a7a256e :: jets the probes are scored on, recorded in all 5 per-seed files
 \newcommand{\RandNDraws}{three}  % experiments/FIGS/data/probe_ladder_randcontrol_mlp2/analysis/c4_random_control.json :: table[*].draw :: sha256 c675e609ff4fe3c9 :: random partitions drawn
+\newcommand{\RandNDrawsCap}{Three}  % experiments/FIGS/data/probe_ladder_randcontrol_mlp2/analysis/c4_random_control.json :: table[*].draw :: sha256 c675e609ff4fe3c9 :: random partitions drawn, capitalised to open a sentence
 \newcommand{\RandOmaBvcFourprongDrawOneLinear}{\ensuremath{1.05\times10^{-2}}}  % experiments/FIGS/data/probe_ladder_randcontrol_mlp2/analysis/c4_random_control.json :: table[0].control_log1m_auc :: sha256 c675e609ff4fe3c9 :: 1-AUC = exp of it, one run
 \newcommand{\RandOmaBvcFourprongDrawTwoLinear}{\ensuremath{1.11\times10^{-2}}}  % experiments/FIGS/data/probe_ladder_randcontrol_mlp2/analysis/c4_random_control.json :: table[4].control_log1m_auc :: sha256 c675e609ff4fe3c9 :: 1-AUC = exp of it, one run
 \newcommand{\RandOmaBvcFourprongDrawThreeLinear}{\ensuremath{9.98\times10^{-3}}}  % experiments/FIGS/data/probe_ladder_randcontrol_mlp2/analysis/c4_random_control.json :: table[8].control_log1m_auc :: sha256 c675e609ff4fe3c9 :: 1-AUC = exp of it, one run
@@ -577,7 +624,7 @@
 \newcommand{\AnomalyStatCut}{20\%}  % experiments/FIGS/data/anomaly_merged_v4/anomaly_results.json :: stat_cut :: sha256 8814a4763a8de24c :: largest relative statistical error on eps_B at a usable threshold
 \newcommand{\AnomalyMinBkgPass}{25}  % experiments/FIGS/data/anomaly_merged_v4/anomaly_results.json :: stat_cut :: sha256 8814a4763a8de24c :: background jets that must pass a threshold, 1/stat_cut^2
 \newcommand{\AnomalySigmaT}{5}  % experiments/FIGS/data/anomaly_merged_v4/anomaly_results.json :: sigma_t :: sha256 8814a4763a8de24c :: target significance
-\newcommand{\AnomalyKnnK}{10}  % experiments/EVAL/anomaly.py :: KNN_K :: sha256 2da2839820a909f0 :: the k of the nearest-neighbour distance
+\newcommand{\AnomalyKnnK}{10}  % experiments/EVAL/anomaly.py :: KNN_K :: sha256 8be37a95fcbde6b8 :: the k of the nearest-neighbour distance
 \newcommand{\AnomalyClassSumRemovedXBb}{10}  % experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json :: classes_removed_by_level.class_sum_matched.label_X_bb :: sha256 ae78806bfafca3a9 :: native classes left out of the class sum, the same at every label set
 \newcommand{\AnomalyClassSumRemovedXQq}{10}  % experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json :: classes_removed_by_level.class_sum_matched.label_X_qq :: sha256 ae78806bfafca3a9 :: native classes left out of the class sum, the same at every label set
 \newcommand{\AnomalyClassSumRemovedXYYBbb}{29}  % experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json :: classes_removed_by_level.class_sum_matched.label_X_YY_bbb :: sha256 ae78806bfafca3a9 :: native classes left out of the class sum, the same at every label set
@@ -768,25 +815,45 @@
 \newcommand{\MassResSigmaEffFourthree}{0.3228}  % experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json :: table[cell=43,probe=ridge].sigma_eff :: sha256 e03cde45ece9f385 :: mean over 5 seeds
 \newcommand{\MassResSdFourthree}{0.618}  % experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json :: table[cell=43,probe=ridge].sd :: sha256 e03cde45ece9f385 :: mean over 5 seeds
 \newcommand{\MassResTailFractionFourthree}{0.060}  % experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json :: table[cell=43,probe=ridge].tail_fraction :: sha256 e03cde45ece9f385 :: mean over 5 seeds
-\newcommand{\AojNJetsFit}{9{,}441{,}209}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: n_jets :: sha256 f6698971d312f598 :: jets in the fit region, all files
+\newcommand{\AojEffPercent}{1\%}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: eff :: sha256 f6698971d312f598 :: the score cut's pass fraction outside the mass windows
+\newcommand{\AojPtMin}{500}  % experiments/AOJ/peak_fit.py :: PT_RANGE[0] :: sha256 758a1c45c335c75f :: GeV
+\newcommand{\AojPtMax}{2{,}500}  % experiments/AOJ/peak_fit.py :: PT_RANGE[1] :: sha256 758a1c45c335c75f :: GeV
+\newcommand{\AojRhoMin}{\ensuremath{-}5.5}  % experiments/AOJ/peak_fit.py :: RHO_RANGE[0] :: sha256 758a1c45c335c75f
+\newcommand{\AojRhoMax}{\ensuremath{-}2.0}  % experiments/AOJ/peak_fit.py :: RHO_RANGE[1] :: sha256 758a1c45c335c75f
+\newcommand{\AojWindowWLo}{65}  % experiments/AOJ/peak_fit.py :: PEAKS[W].window[0] :: sha256 758a1c45c335c75f :: GeV
+\newcommand{\AojWindowWHi}{105}  % experiments/AOJ/peak_fit.py :: PEAKS[W].window[1] :: sha256 758a1c45c335c75f :: GeV
+\newcommand{\AojWindowTopLo}{140}  % experiments/AOJ/peak_fit.py :: PEAKS[top].window[0] :: sha256 758a1c45c335c75f :: GeV
+\newcommand{\AojWindowTopHi}{220}  % experiments/AOJ/peak_fit.py :: PEAKS[top].window[1] :: sha256 758a1c45c335c75f :: GeV
+\newcommand{\AojFitLo}{105}  % experiments/AOJ/peak_fit.py :: PEAKS[top].fit_range[0] :: sha256 758a1c45c335c75f :: GeV
+\newcommand{\AojFitHi}{300}  % experiments/AOJ/peak_fit.py :: PEAKS[top].fit_range[1] :: sha256 758a1c45c335c75f :: GeV
+\newcommand{\AojMassBin}{5}  % experiments/AOJ/peak_fit.py :: MASS_BIN :: sha256 758a1c45c335c75f :: GeV
+\newcommand{\AojMapOrderRho}{3}  % experiments/AOJ/peak_fit.py :: MAP_ORDER[0] :: sha256 758a1c45c335c75f :: polynomial order in rho
+\newcommand{\AojMapOrderPt}{2}  % experiments/AOJ/peak_fit.py :: MAP_ORDER[1] :: sha256 758a1c45c335c75f :: polynomial order in ln pT
+\newcommand{\AojNJetsRhoWindow}{9{,}441{,}209}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: n_jets :: sha256 f6698971d312f598 :: staged jets inside the rho window, all files; not the jets in the mass fit
 \newcommand{\AojYieldOneeighteight}{2{,}200\,\ensuremath{\pm}\,600}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.188.signal_yield :: sha256 0d7e7d257f7932bb :: mean +- SD over 5 seeds
 \newcommand{\AojStatErrOneeighteight}{251}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.188.median_stat_err :: sha256 0d7e7d257f7932bb :: median per-fit statistical error
 \newcommand{\AojYieldPooledOneeighteight}{2{,}200\,\ensuremath{\pm}\,500}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.188.by_shape.pooled :: sha256 0d7e7d257f7932bb :: every fit with the pooled shape
+\newcommand{\AojSpreadOverStatOneeighteight}{2.3}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.188.signal_yield.sd / median_stat_err :: sha256 0d7e7d257f7932bb :: spread between runs over the median per-fit statistical error
 \newcommand{\AojYieldOnesixtwo}{2{,}000\,\ensuremath{\pm}\,800}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162.signal_yield :: sha256 0d7e7d257f7932bb :: mean +- SD over 5 seeds
 \newcommand{\AojStatErrOnesixtwo}{250}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162.median_stat_err :: sha256 0d7e7d257f7932bb :: median per-fit statistical error
 \newcommand{\AojYieldPooledOnesixtwo}{2{,}200\,\ensuremath{\pm}\,900}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162.by_shape.pooled :: sha256 0d7e7d257f7932bb :: every fit with the pooled shape
+\newcommand{\AojSpreadOverStatOnesixtwo}{3.1}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162.signal_yield.sd / median_stat_err :: sha256 0d7e7d257f7932bb :: spread between runs over the median per-fit statistical error
 \newcommand{\AojYieldFourthree}{2{,}100\,\ensuremath{\pm}\,800}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.43.signal_yield :: sha256 0d7e7d257f7932bb :: mean +- SD over 5 seeds
 \newcommand{\AojStatErrFourthree}{265}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.43.median_stat_err :: sha256 0d7e7d257f7932bb :: median per-fit statistical error
 \newcommand{\AojYieldPooledFourthree}{2{,}200\,\ensuremath{\pm}\,800}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.43.by_shape.pooled :: sha256 0d7e7d257f7932bb :: every fit with the pooled shape
+\newcommand{\AojSpreadOverStatFourthree}{2.9}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.43.signal_yield.sd / median_stat_err :: sha256 0d7e7d257f7932bb :: spread between runs over the median per-fit statistical error
 \newcommand{\AojYieldOneseven}{2{,}280\,\ensuremath{\pm}\,290}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17.signal_yield :: sha256 0d7e7d257f7932bb :: mean +- SD over 5 seeds
 \newcommand{\AojStatErrOneseven}{333}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17.median_stat_err :: sha256 0d7e7d257f7932bb :: median per-fit statistical error
 \newcommand{\AojYieldPooledOneseven}{2{,}150\,\ensuremath{\pm}\,230}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17.by_shape.pooled :: sha256 0d7e7d257f7932bb :: every fit with the pooled shape
+\newcommand{\AojSpreadOverStatOneseven}{0.9}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17.signal_yield.sd / median_stat_err :: sha256 0d7e7d257f7932bb :: spread between runs over the median per-fit statistical error
 \newcommand{\AojYieldOnesixtwoMass}{2{,}160\,\ensuremath{\pm}\,310}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162+mass.signal_yield :: sha256 0d7e7d257f7932bb :: mean +- SD over 5 seeds
 \newcommand{\AojStatErrOnesixtwoMass}{270}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162+mass.median_stat_err :: sha256 0d7e7d257f7932bb :: median per-fit statistical error
 \newcommand{\AojYieldPooledOnesixtwoMass}{2{,}230\,\ensuremath{\pm}\,230}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162+mass.by_shape.pooled :: sha256 0d7e7d257f7932bb :: every fit with the pooled shape
+\newcommand{\AojSpreadOverStatOnesixtwoMass}{1.1}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.162+mass.signal_yield.sd / median_stat_err :: sha256 0d7e7d257f7932bb :: spread between runs over the median per-fit statistical error
 \newcommand{\AojYieldOnesevenMass}{2{,}600\,\ensuremath{\pm}\,500}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17+mass.signal_yield :: sha256 0d7e7d257f7932bb :: mean +- SD over 5 seeds
 \newcommand{\AojStatErrOnesevenMass}{374}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17+mass.median_stat_err :: sha256 0d7e7d257f7932bb :: median per-fit statistical error
 \newcommand{\AojYieldPooledOnesevenMass}{2{,}300\,\ensuremath{\pm}\,600}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17+mass.by_shape.pooled :: sha256 0d7e7d257f7932bb :: every fit with the pooled shape
+\newcommand{\AojSpreadOverStatOnesevenMass}{1.3}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.17+mass.signal_yield.sd / median_stat_err :: sha256 0d7e7d257f7932bb :: spread between runs over the median per-fit statistical error
 \newcommand{\AojShapeShiftMin}{\ensuremath{-}12\%}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.*.by_shape.pooled.mean / signal_yield.mean - 1 :: sha256 0d7e7d257f7932bb :: smallest
 \newcommand{\AojShapeShiftMax}{+8\%}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.label_sets.*.by_shape.pooled.mean / signal_yield.mean - 1 :: sha256 0d7e7d257f7932bb :: largest
 \newcommand{\AojPooledMean}{182.9}  % experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json :: per_label_set.shapes.pooled :: sha256 0d7e7d257f7932bb :: GeV
@@ -798,6 +865,11 @@
 \newcommand{\AojNModels}{30}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models (pretrained) :: sha256 f6698971d312f598 :: fits
 \newcommand{\AojWeakestYield}{749}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.l162-s2.top.signal_yield :: sha256 f6698971d312f598 :: the smallest yield of any pretrained model
 \newcommand{\AojWeakestYieldErr}{250}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.l162-s2.top.signal_yield_err :: sha256 f6698971d312f598
+\newcommand{\AojRefEffPercent}{1.38\%}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: reference.top.data_efficiency :: sha256 f6698971d312f598 :: fraction of all data jets passing its cut
+\newcommand{\AojRefValidationP}{0.005}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: reference.top.validation.toy_p :: sha256 f6698971d312f598 :: toy p-value of the background validation
+\newcommand{\AojModelEffMin}{1.01\%}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.*.top.data_efficiency (min) :: sha256 f6698971d312f598 :: pretrained models
+\newcommand{\AojModelEffMax}{1.05\%}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.*.top.data_efficiency (max) :: sha256 f6698971d312f598 :: pretrained models
+\newcommand{\AojModelsValidationPMin}{0.11}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: models.*.top.validation.toy_p (min) :: sha256 f6698971d312f598 :: pretrained models
 \newcommand{\AojRefYield}{29{,}143}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: reference.top.signal_yield :: sha256 f6698971d312f598
 \newcommand{\AojRefYieldErr}{865}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: reference.top.signal_yield_err :: sha256 f6698971d312f598
 \newcommand{\AojRefMass}{181.0}  % experiments/FIGS/data/aoj_full_v1/fit_v4/results.json :: reference.top.floated_mean :: sha256 f6698971d312f598 :: GeV

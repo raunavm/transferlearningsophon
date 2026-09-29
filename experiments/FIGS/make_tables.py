@@ -38,6 +38,7 @@ import argparse
 import collections
 import csv
 import hashlib
+import importlib.util
 import json
 import math
 import pathlib
@@ -61,7 +62,8 @@ TASK_LABELS = {
     "retained_topology": "two-prong vs four-prong",
     "ee_vs_mm": "electron vs muon pair",
     "bvc_4prong": "$b$ vs $c$, four-prong",
-    "visible_content": "visible decay content",
+    "visible_content": "$bbqq$ vs $cq\\tau_h\\nu$, four-prong",
+    "bc_vs_rest": "$X\\to bc$ vs its backgrounds",
 }
 INIT_LABELS = {"scratch": "random initialisation",
                "sophon-public": "published 188-class checkpoint",
@@ -73,6 +75,42 @@ PENDING_INPUTS = [
     ("community benchmarks, bench v3 readout",
      "experiments/FIGS/data/bench_v3_metrics*/bench_metrics_last.json"),
 ]
+
+# THE SECOND PRETRAINING GRID ("v2", decided 2026-09-29). Every pretraining run is
+# repeated with the data order and dropout derived from (seed, epoch), identical
+# trunk weights across vocabularies, Sophon's family-stratified loading, a fixed
+# validation sample and the best-validation checkpoint; JetClass-II fine-tuning
+# moves to held-out files; more random partitions, a loss-share-matched mass arm,
+# the 64- and 30-class levels and leave-one-family-out arms are added. Until a
+# section's v2 inputs exist, the section keeps its first-grid text and the paper
+# prints the marker below, in red, naming what it waits for. Each input is a
+# directory under experiments/FIGS/data/v2/; when it appears the marker changes
+# to a request to rewrite the section, never to nothing, so first-grid text
+# cannot outlive its replacement silently.
+V2_PENDING = {
+    "Pretrain": ("pretraining rerun: data order and dropout fixed by seed and epoch, "
+                 "identical initial trunk weights, family-stratified loading, fixed "
+                 "validation sample, best-validation checkpoint", "pretraining"),
+    "Probes": ("frozen probes on the rerun models, best-validation checkpoint and "
+               "the average over the last ten epochs", "probe_ladder"),
+    "Levels": ("the 64- and 30-class vocabularies", "levels_64_30"),
+    "Lofo": ("the leave-one-family-out vocabularies", "leave_one_family_out"),
+    "Recovery": ("label-tree recovery on the rerun models", "label_recovery"),
+    "Random": ("the additional random partitions", "random_partitions"),
+    "FtHeldout": ("JetClass-II fine-tuning on files held out from pretraining",
+                  "finetune"),
+    "FtRefs": ("fine-tuning from random initialisation and from the self-supervised "
+               "model", "finetune_references"),
+    "Bench": ("top tagging and quark/gluon tagging (Pythia and Herwig) fine-tuned "
+              "from every rerun model", "benchmarks"),
+    "Ssl": ("the second and third self-supervised pretraining runs", "self_supervised"),
+    "MassLambda": ("the mass-output models with the loss weight matched in loss share",
+                   "mass_lambda_matched"),
+    "Anomaly": ("anomaly detection on the rerun models, per-run values",
+                "anomaly"),
+    "RealData": ("the open-data fits on the rerun models", "real_data"),
+    "Conclusion": ("written once every input above is in", None),
+}
 
 _DIGITS = {"0": "zero", "1": "one", "2": "two", "3": "three", "4": "four",
            "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "nine"}
@@ -629,9 +667,9 @@ def emit_probe_settings(em: Emitter, path: pathlib.Path) -> None:
         if len(m) != 1:
             raise SystemExit(f"FATAL: {path} matches {pat} {len(m)} times; expected once")
         return m[0]
-    a, b = (float(x) for x in one(r"a, b = int\(([0-9.]+) \* n\), int\(([0-9.]+) \* n\)"))
-    for name, frac in (("Train", a), ("Val", b - a), ("Test", 1 - b)):
-        em.macro("ProbeSplit" + name, f"{100 * frac:.0f}\\%", path, "make_splits",
+    a, v = (float(x) for x in one(r"^SPLIT_FRACTIONS = \(([0-9.]+), ([0-9.]+)\)"))
+    for name, frac in (("Train", a), ("Val", v), ("Test", 1 - a - v)):
+        em.macro("ProbeSplit" + name, f"{100 * frac:.0f}\\%", path, "SPLIT_FRACTIONS",
                  "share of the probe sample; the same jets for every model")
     em.macro("ProbeMlpHidden", one(r"torch\.nn\.Linear\(tr\.shape\[1\], (\d+)\)"), path,
              "_fit_mlp", "hidden width of the MLP probe")
@@ -653,17 +691,87 @@ def emit_vocabulary(em: Emitter, sizes: dict, src: pathlib.Path) -> None:
                  f"column {rung} (distinct group count)")
 
 
-def emit_usecase(em: Emitter, surv: dict, sizes: dict, src: pathlib.Path) -> None:
-    for disc, row in surv.items():
-        key = texname(disc)
+# Table 1: the published discriminants it prints, with the label each is given,
+# and the ones in configs/labelmaps/usecase_survival.v1.json it leaves out and why.
+# A row in neither dict stops the build, so nothing is dropped silently.
+USECASE_ROWS = {
+    "sophon_eq4": "$X\\to b\\bar b$ vs QCD",
+    "sophon_eq6_a1": "$X\\to c\\bar s$ vs QCD (Sophon's $A_1$)",
+    "sophon_eq6_a3": "three quarks, exactly one $b$, vs QCD (Sophon's $A_3$)",
+    "sophon_eq7_9": "$W'\\to W\\phi\\to WWW$ event discriminant",
+    "vcb_eq1": "$D_{bc}$, boosted $|V_{cb}|$ measurement",
+}
+USECASE_LEFT_OUT = {
+    # ATL-PHYS-PUB-2026-013 p.10 Eq. (1): D_s = log[p_s / (sum_b f_b p_b + ...)]
+    # with f_QCD "applied to all QCD classes". It needs only the QCD sum, so over
+    # these labels it is the X->bb row again; the per-subclass rejection the row
+    # encoded is an evaluation of the tagger, not a discriminant built from it.
+    "gn3x_qcd_subclass": "reads as the X->bb row: one QCD fraction for every subclass",
+    # Not a published discriminant. W-vs-Z is never expressible over labels that
+    # name decay products; the W-like score of Sophon Eq. (9) is, and the text
+    # gives where it survives (UseWlike*, from wlike_survival below).
+    "w_vs_qcd_resonance": "not published; stated in the text",
+}
+# Sophon Eq. (9): g_W(2) = g_{X->cs} + g_{X->qq}, the W-like two-prong score.
+WLIKE_CLASSES = ("label_X_cs", "label_X_qq")
+USECASE_CITE = {"arXiv:2405.12972": "sophon", "arXiv:2503.00118": "vcbboosted"}
+
+
+def usecase_rows(surv: dict) -> list:
+    unknown = set(surv) - set(USECASE_ROWS) - set(USECASE_LEFT_OUT)
+    if unknown:
+        raise SystemExit(f"FATAL: Table 1 has no decision for {sorted(unknown)}: add each to "
+                         f"USECASE_ROWS or USECASE_LEFT_OUT with its reason")
+    return [d for d in USECASE_ROWS if d in surv]
+
+
+def wlike_survival(rung_map: pathlib.Path) -> dict | None:
+    """{rung: constructible} for Sophon's W-like score g_W(2) / (g_W(2) + sum g_QCD).
+
+    Sophon's class-division property (arXiv:2405.12972 Eq. 2): a coarse class's
+    score is the sum of the scores it merged, so the ratio is buildable at a level
+    iff its numerator set and its denominator set are each a union of groups there.
+    None when the map does not hold its classes (a synthetic map).
+    """
+    with pathlib.Path(rung_map).open() as f:
+        rows = list(csv.DictReader(f))
+    if not set(WLIKE_CLASSES) <= {r["class_name"] for r in rows}:
+        return None
+    num = set(WLIKE_CLASSES)
+    den = num | {r["class_name"] for r in rows if r["class_name"].startswith("label_QCD_")}
+    out = {}
+    for rung in RUNGS:
+        groups = collections.defaultdict(set)
+        for r in rows:
+            groups[r[rung]].add(r["class_name"])
+        out[rung] = all(g <= s or not (g & s) for s in (num, den) for g in groups.values())
+    return out
+
+
+def emit_usecase(em: Emitter, surv: dict, sizes: dict, src: pathlib.Path,
+                 rung_map: pathlib.Path) -> None:
+    for disc in usecase_rows(surv):
+        row, key = surv[disc], texname(disc)
         dies = row["dies_at"]
         em.macro("UseDiesAt" + key, "survives" if dies is None else str(sizes[dies]), src,
                  f"{disc}.dies_at", "first vocabulary size at which it is not constructible")
         alive = row["last_rung_alive"]
         em.macro("UseLastAlive" + key, "none" if alive is None else str(sizes[alive]), src,
                  f"{disc}.last_rung_alive")
-        em.macro("UseVectors" + key, str(row["n_coefficient_vectors"]), src,
-                 f"{disc}.n_coefficient_vectors")
+    w = wlike_survival(rung_map)
+    if w is None:
+        return
+    alive = [r for r in RUNGS if w[r]]
+    if not alive or alive != RUNGS[:len(alive)]:
+        raise SystemExit(f"FATAL: the W-like score is constructible at {alive}, not at a run of "
+                         f"the finest levels; the text's reading of it no longer holds")
+    em.macro("UseWlikeLastAlive", str(sizes[alive[-1]]), rung_map,
+             "groups at each level vs {label_X_cs, label_X_qq} and that plus the QCD classes",
+             "last level at which Sophon's W-like score g_W(2) is constructible")
+    em.macro("UseWlikeDiesAt", str(sizes[RUNGS[len(alive)]]) if len(alive) < len(RUNGS)
+             else "survives", rung_map,
+             "groups at each level vs {label_X_cs, label_X_qq} and that plus the QCD classes",
+             "first level at which it is not")
 
 
 def emit_legs(em: Emitter, legs: dict, src_by_leg: dict, sizes: dict) -> None:
@@ -680,6 +788,84 @@ def emit_legs(em: Emitter, legs: dict, src_by_leg: dict, sizes: dict) -> None:
                 sd = cell.get("accuracy_sd")
                 em.macro("AccSd" + key, fmt(sd, 5) if sd else "---", src,
                          f"summary.{init}.{n}.accuracy_sd", "wave 1, superseded")
+
+
+# Numbers the text has a slot for and another piece of work supplies. Each slot
+# is a macro: the value once its JSON exists, a red marker naming the input until
+# then. (macro, JSON glob relative to the root, key inside it, formatter, what the
+# marker says).
+#   The open-data selection chain (the real-data work): the dataset, the staged
+#   jets, the rho window, the jets in the mass fit and its pT categories.
+#   The mass term's share of the pretraining loss (the loss-share-matched mass
+#   arm): lambda * L_reg / L_total at the last epoch, per run, for each mass arm.
+SLOTS = [
+    ("AojChainDataset", "experiments/FIGS/data/aoj_*/selection_chain.json", "n_dataset", "millions",
+     "jets in the open-data sample"),
+    ("AojChainStaged", "experiments/FIGS/data/aoj_*/selection_chain.json", "n_staged", "int",
+     "jets after the kinematic selection"),
+    ("AojChainRhoWindow", "experiments/FIGS/data/aoj_*/selection_chain.json", "n_rho_window", "int",
+     "jets inside the rho window"),
+    ("AojNJetsFit", "experiments/FIGS/data/aoj_*/selection_chain.json", "n_fit", "int",
+     "jets in the mass fit"),
+    ("AojChainPtBins", "experiments/FIGS/data/aoj_*/selection_chain.json", "n_pt_bins", "int",
+     "pT categories of the fit"),
+    ("AojChainEtaMax", "experiments/FIGS/data/aoj_*/selection_chain.json", "abs_eta_max", "one",
+     "the pseudorapidity cut"),
+    ("MassLossShareOnesixtwoMass", "experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json",
+     "shares.162+mass", "percent_pm", "mass-loss share, 162 classes"),
+    ("MassLossShareOnesevenMass", "experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json",
+     "shares.17+mass", "percent_pm", "mass-loss share, 17 classes"),
+    ("MassLambdaMatched", "experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json",
+     "lambda_matched", "one", "the share-matched loss weight"),
+]
+
+
+def emit_slots(em: Emitter, missing: list) -> None:
+    """Fill each SLOTS macro from its JSON, or mark it pending (never a guess)."""
+    me = pathlib.Path(__file__).resolve()
+    for name, pattern, key, form, what in SLOTS:
+        hits = sorted(em.root.glob(pattern))
+        if len(hits) > 1:
+            raise SystemExit(f"FATAL: {pattern} matches {len(hits)} files; the slot {name} "
+                             f"needs exactly one")
+        if not hits:
+            if me.is_relative_to(em.root.resolve()):
+                em.macro(name, f"\\pending{{pending: {what}}}", me, f"SLOTS[{name}]",
+                         f"a marker, not a number: {pattern} :: {key} does not exist yet")
+            missing.append(f"{name} -- {pattern} :: {key}")
+            continue
+        v = pick(json.loads(hits[0].read_text()), key)
+        body = {"int": lambda x: fmt_int(x),
+                "millions": lambda x: fmt_int(float(x) / 1e6),
+                "one": lambda x: fmt_one(x),
+                "percent_pm": lambda x: fmt_pm(100 * np.mean(x), 100 * np.std(x, ddof=1)) + "\\%"}[form](v)
+        em.macro(name, body, hits[0], key)
+
+
+def v2_present(root: pathlib.Path, sub: str) -> bool:
+    d = root / "experiments" / "FIGS" / "data" / "v2" / sub
+    return d.is_dir() and any(d.iterdir())
+
+
+def emit_pending(em: Emitter, missing: list) -> None:
+    """One red marker per v2 input the text waits for, from V2_PENDING (this file).
+
+    The source recorded for each marker is this script, where the registry lives.
+    A fixture root that does not contain this script gets no markers: it has no
+    manuscript that could print them.
+    """
+    me = pathlib.Path(__file__).resolve()
+    if not me.is_relative_to(em.root.resolve()):
+        return
+    for key, (what, sub) in V2_PENDING.items():
+        here = (v2_present(em.root, sub) if sub else
+                all(v2_present(em.root, x) for _, x in V2_PENDING.values() if x))
+        text = (f"v2 input present ({sub}): rewrite this from it" if here
+                else f"pending v2: {what}")
+        if not here and sub:
+            missing.append(f"v2 {what} -- experiments/FIGS/data/v2/{sub}/")
+        em.macro("Pending" + key, f"\\pending{{{text}}}", me, f"V2_PENDING['{key}']",
+                 "a marker, not a number: red in the draft until the input exists")
 
 
 # ------------------------------------------------------------------ later results
@@ -764,6 +950,21 @@ def ft_recipe(R: dict, leg_specs: list, reported: set) -> dict:
     if bad:
         raise SystemExit(f"FATAL: fine-tuning runs disagree within a group: {bad}")
     v = {k: next(iter(s)) for k, s in one.items()}
+    # weaver takes samples_per_epoch // batch_size optimizer steps per epoch and
+    # drops the last partial batch (train.py:1006); the job commands decouple
+    # samples_per_epoch from the subset size at the smallest N only, where an
+    # "epoch" is several passes over the subset (scripts/build_ft_jobs.py
+    # SAMPLES_PER_EPOCH). The run manifests' steps_per_epoch = N/512 is wrong
+    # there, so the steps are computed from the commands, not read from them.
+    spe = set()
+    for f in leg_specs:
+        spe |= {tuple(m) for m in re.findall(r"samples_for \(\) \{ case \$1 in (\d+)\) echo (\d+);;",
+                                            f.read_text())}
+    if len(spe) != 1:
+        raise SystemExit(f"FATAL: the fine-tuning commands disagree on samples per epoch: {sorted(spe)}")
+    (n_small, spe_small), = spe
+    per_epoch = {n: int(spe_small) if n == int(n_small) else n for n in sizes}
+    batch = int(v["batch_size"])
     for f in leg_specs:
         t = f.read_text()
         for need in ("--use-amp", "--optimizer ranger", "LR=1e-4"):
@@ -775,7 +976,10 @@ def ft_recipe(R: dict, leg_specs: list, reported: set) -> dict:
         raise SystemExit("FATAL: the recorded schedule is not weaver's default")
     return {"n_runs": len(runs), "lr": v["lr"], "head_mult": v["head_lr_mult"],
             "weight_decay": v["weight_decay"], "batch": v["batch_size"],
-            "epochs_jetclass": {n: v[("epochs", n)] for n in sizes}, "val_jetclass": "20000"}
+            "epochs_jetclass": {n: v[("epochs", n)] for n in sizes},
+            "steps": {n: per_epoch[n] // batch for n in sizes},
+            "passes": {n: per_epoch[n] // n for n in sizes}, "spec": leg_specs[0],
+            "val_jetclass": str(20000 // batch * batch)}
 
 
 def emit_ft_recipe(em: Emitter, rec: dict, src: pathlib.Path) -> None:
@@ -787,8 +991,16 @@ def emit_ft_recipe(em: Emitter, rec: dict, src: pathlib.Path) -> None:
     em.macro("FtRecipeWeightDecay", rec["weight_decay"], src, "runs[*].weight_decay")
     em.macro("FtRecipeBatch", rec["batch"], src, "runs[*].batch_size")
     for n, e in rec["epochs_jetclass"].items():
-        em.macro("FtRecipeEpochsE" + texname(f"{len(str(n)) - 1}"), e, src,
-                 f"runs[leg 1,2; n_train {n}].epochs")
+        p = texname(f"{len(str(n)) - 1}")
+        em.macro("FtRecipeEpochsE" + p, e, src, f"runs[leg 1,2; n_train {n}].epochs")
+        em.macro("FtRecipeStepsE" + p, fmt_int(rec["steps"][n]), rec["spec"],
+                 f"job commands: samples per epoch at n_train {n} // batch size",
+                 "optimizer steps per epoch, as weaver floors them")
+        em.macro("FtRecipePassesE" + p, words(rec["passes"][n]), rec["spec"],
+                 f"job commands: samples per epoch at n_train {n} // n_train",
+                 "passes over the training subset per epoch")
+    em.macro("FtRecipeValJets", fmt_int(rec["val_jetclass"]), rec["spec"],
+             "--samples-per-epoch-val 20000 // batch x batch", "validation jets per epoch, floored to whole batches")
 
 
 def table_ft_recipe(rec: dict) -> str:
@@ -801,10 +1013,14 @@ def table_ft_recipe(rec: dict) -> str:
             "to 1\\% over the last 30\\% of epochs (weaver default with a head multiplier) \\\\",
             "epochs & " + ", ".join(str(ep[n]) for n in sorted(ep))
             + " at " + ", ".join(fmt_n_jets(f"N{n}") for n in sorted(ep)) + " jets \\\\",
+            "steps per epoch & " + ", ".join(fmt_int(rec["steps"][n]) for n in sorted(ep))
+            + f" (at {fmt_n_jets(f'N{min(ep)}')} jets an epoch is {words(rec['passes'][min(ep)])} "
+            "passes over the training jets) \\\\",
             f"validation jets & {fmt_int(rec['val_jetclass'])} \\\\",
             "checkpoint & best validation accuracy \\\\"]
     caption = (f"Fine-tuning settings of the {fmt_int(rec['n_runs'])} runs behind the JetClass-II and "
-               "JetClass results, as each run recorded them, checked against the job commands. "
+               "JetClass results, as each run recorded them, checked against the job commands; the "
+               "steps per epoch are computed from the commands. "
                "The head is freshly initialised in every run; every other weight is loaded "
                "from the pretrained model.")
     return _table(body, caption, "tab:ftrecipe", "l p{0.7\\linewidth}", [])
@@ -849,6 +1065,13 @@ def emit_training_design(em: Emitter, spec: pathlib.Path, arch: pathlib.Path,
             raise SystemExit(f"FATAL: {arch} matches {pat} {len(m)} times")
         em.macro(name, m[0], arch, pat)
 
+    mpm = spec.parents[3] / "experiments" / "MTX" / "mpm.py"
+    if mpm.exists():
+        r = re.findall(r"^DEFAULT_MASK_RATE = ([0-9.]+)", mpm.read_text(), re.M)
+        if len(r) != 1:
+            raise SystemExit(f"FATAL: {mpm} sets DEFAULT_MASK_RATE {len(r)} times")
+        em.macro("DesignMpmMaskRate", f"{100 * float(r[0]):.0f}\\%", mpm, "DEFAULT_MASK_RATE",
+                 "share of each jet's particles hidden from the encoder")
     m = re.search(r"\(jet_pt > (\d+)\) & \(jet_pt < (\d+)\) & \(jet_sdmass > (\d+)\) & "
                   r"\(jet_sdmass < (\d+)\)", arm.read_text())
     if not m:
@@ -910,8 +1133,10 @@ def emit_recovery(em: Emitter, R: dict, src: pathlib.Path, sizes: dict) -> None:
 
 def emit_random_control(em: Emitter, C: dict, src: pathlib.Path) -> None:
     """The random-label control: 1-AUC of each draw, one run each, and over the draws."""
-    em.macro("RandNDraws", words(len({r["draw"] for r in C["table"]})), src, "table[*].draw",
-             "random partitions drawn")
+    n = words(len({r["draw"] for r in C["table"]}))
+    em.macro("RandNDraws", n, src, "table[*].draw", "random partitions drawn")
+    em.macro("RandNDrawsCap", n[:1].upper() + n[1:], src, "table[*].draw",
+             "random partitions drawn, capitalised to open a sentence")
     for task in ordered_tasks({r["task"] for r in C["table"]}):
         for probe in ("linear", "mlp"):
             rows = sorted(((i, r) for i, r in enumerate(C["table"])
@@ -1252,14 +1477,52 @@ def emit_vcb(em: Emitter, V: dict, src: pathlib.Path, sizes: dict) -> None:
 AOJ_SETS = ("188", "162", "43", "17", "162+mass", "17+mass")
 
 
+def emit_aoj_settings(em: Emitter, code: pathlib.Path) -> None:
+    """The open-data selection and fit settings the text states, read from
+    experiments/AOJ/peak_fit.py, which sets them."""
+    s = code.read_text()
+
+    def one(pat):
+        m = re.findall(pat, s, re.M)
+        if len(m) != 1:
+            raise SystemExit(f"FATAL: {code} matches {pat} {len(m)} times; expected once")
+        return m[0]
+    lo, hi = one(r"^RHO_RANGE = \(([-0-9.]+), ([-0-9.]+)\)")
+    lo_pt, hi_pt = one(r"^PT_RANGE = \(([0-9.]+), ([0-9.]+)\)")
+    em.macro("AojPtMin", fmt_int(lo_pt), code, "PT_RANGE[0]", "GeV")
+    em.macro("AojPtMax", fmt_int(hi_pt), code, "PT_RANGE[1]", "GeV")
+    em.macro("AojRhoMin", fmt(float(lo), 1), code, "RHO_RANGE[0]")
+    em.macro("AojRhoMax", fmt(float(hi), 1), code, "RHO_RANGE[1]")
+    for peak, key in (("W", "AojWindowW"), ("top", "AojWindowTop")):
+        w = one(rf"^\s*{peak}=dict\(window=\(([0-9.]+), ([0-9.]+)\), fit_range=\(([0-9.]+), ([0-9.]+)\)")
+        em.macro(key + "Lo", fmt_int(w[0]), code, f"PEAKS[{peak}].window[0]", "GeV")
+        em.macro(key + "Hi", fmt_int(w[1]), code, f"PEAKS[{peak}].window[1]", "GeV")
+        if peak == "top":
+            em.macro("AojFitLo", fmt_int(w[2]), code, "PEAKS[top].fit_range[0]", "GeV")
+            em.macro("AojFitHi", fmt_int(w[3]), code, "PEAKS[top].fit_range[1]", "GeV")
+    em.macro("AojMassBin", fmt_int(one(r"^MASS_BIN = ([0-9.]+)")), code, "MASS_BIN", "GeV")
+    o = one(r"^MAP_ORDER, MAP_CELLS, MAP_MIN_PASS, MAP_ITERATIONS = \((\d+), (\d+)\)")
+    em.macro("AojMapOrderRho", o[0], code, "MAP_ORDER[0]", "polynomial order in rho")
+    em.macro("AojMapOrderPt", o[1], code, "MAP_ORDER[1]", "polynomial order in ln pT")
+
+
 def emit_real_data(em: Emitter, J: dict, src: pathlib.Path) -> None:
     """The top peak in CMS open data (AspenOpenJets) at 1% data efficiency: the
     fitted yield per label set, mean +- SD over the five seeds, with each fit's own
     floating Gaussian peak (experiments/AOJ/peak_fit.py, refit_from_bins.py)."""
     res_path = em.root / J["provenance"]["input"]
     res = json.loads(res_path.read_text())
+    em.macro("AojEffPercent", fmt_one(100 * float(res["eff"]), 0) + "\\%", res_path, "eff",
+             "the score cut's pass fraction outside the mass windows")
+    code = em.root / "experiments" / "AOJ" / "peak_fit.py"
+    if code.exists():
+        emit_aoj_settings(em, code)
     P = J["per_label_set"]
-    em.macro("AojNJetsFit", fmt_int(res["n_jets"]), res_path, "n_jets", "jets in the fit region, all files")
+    # n_jets counts the staged jets inside the rho window, all files: the
+    # population the score map is built on, NOT the jets in the mass fit (the
+    # fit's 105-300 GeV range holds fewer; AojNJetsFit, from the selection chain).
+    em.macro("AojNJetsRhoWindow", fmt_int(res["n_jets"]), res_path, "n_jets",
+             "staged jets inside the rho window, all files; not the jets in the mass fit")
     shift = []
     for lv in AOJ_SETS:
         c, k = P["label_sets"][lv], texname(lv.replace("+mass", " mass"))
@@ -1271,6 +1534,9 @@ def emit_real_data(em: Emitter, J: dict, src: pathlib.Path) -> None:
         em.macro("AojYieldPooled" + k, fmt_pm(pooled["mean"], pooled["sd"]), src,
                  f"per_label_set.label_sets.{lv}.by_shape.pooled", "every fit with the pooled shape")
         shift.append(pooled["mean"] / y["mean"] - 1)
+        em.macro("AojSpreadOverStat" + k, fmt(y["sd"] / c["median_stat_err"], 1), src,
+                 f"per_label_set.label_sets.{lv}.signal_yield.sd / median_stat_err",
+                 "spread between runs over the median per-fit statistical error")
     em.macro("AojShapeShiftMin", fmt(100 * min(shift), 0, sign=True) + "\\%", src,
              "per_label_set.label_sets.*.by_shape.pooled.mean / signal_yield.mean - 1", "smallest")
     em.macro("AojShapeShiftMax", fmt(100 * max(shift), 0, sign=True) + "\\%", src,
@@ -1289,6 +1555,17 @@ def emit_real_data(em: Emitter, J: dict, src: pathlib.Path) -> None:
     em.macro("AojWeakestYieldErr", fmt_int(models[weak]["signal_yield_err"]), res_path,
              f"models.{weak}.top.signal_yield_err")
     ref, pub = res["reference"]["top"], res["models"]["sophon-public"]["top"]
+    em.macro("AojRefEffPercent", fmt(100 * ref["data_efficiency"], 2) + "\\%", res_path,
+             "reference.top.data_efficiency", "fraction of all data jets passing its cut")
+    em.macro("AojRefValidationP", fmt_one(ref["validation"]["toy_p"], 3), res_path,
+             "reference.top.validation.toy_p", "toy p-value of the background validation")
+    eff = [f["data_efficiency"] for f in models.values()]
+    em.macro("AojModelEffMin", fmt(100 * min(eff), 2) + "\\%", res_path,
+             "models.*.top.data_efficiency (min)", "pretrained models")
+    em.macro("AojModelEffMax", fmt(100 * max(eff), 2) + "\\%", res_path,
+             "models.*.top.data_efficiency (max)", "pretrained models")
+    em.macro("AojModelsValidationPMin", fmt(min(f["validation"]["toy_p"] for f in models.values()), 2),
+             res_path, "models.*.top.validation.toy_p (min)", "pretrained models")
     for name, f, path in (("AojRef", ref, "reference.top"), ("AojPublic", pub, "models.sophon-public.top")):
         em.macro(name + "Yield", fmt_int(f["signal_yield"]), res_path, path + ".signal_yield")
         em.macro(name + "YieldErr", fmt_int(f["signal_yield_err"]), res_path, path + ".signal_yield_err")
@@ -1357,21 +1634,21 @@ def table_probe_ladder(A: dict, probe: str, nbkg: dict) -> str:
     caption = (f"Frozen {'linear' if probe == 'linear' else 'nonlinear (MLP)'} probes on the "
                f"four pretraining vocabularies: AUC and the background rejection $1/\\epsilon_B$ at "
                f"{eps * 100:.0f}\\% signal efficiency, mean {tex('±')} standard deviation over the "
-               f"{words(min(n_seeds))} pretraining seeds. Rows are the pretraining label-set size, "
-               f"finest first; lower granularity is further down.")
+               f"{words(min(n_seeds))} pretraining runs. Rows are the number of classes in the "
+               f"pretraining vocabulary, finest first and coarsest last.")
     cells = " ".join(auc_all + rej_all)
     notes = []
     if "$>$" in cells:
-        notes.append("$>$ at most one background jet passed the cut in every seed; the entry is "
+        notes.append("$>$ at most one background jet passed the cut in every run; the entry is "
                      "the 95\\% confidence lower limit on the rejection, $N_B/3.0$ when none passed "
                      "and $N_B/4.74$ when one did, with $N_B$ the number of background test jets.")
     if "$\\geq$" in cells:
-        notes.append("$\\geq$ with $^{\\ast}$: in some seeds at most one background jet passed "
-                     "the cut; the entry is the median over seeds with those seeds at $N_B$, not a "
+        notes.append("$\\geq$ with $^{\\ast}$: in some runs at most one background jet passed "
+                     "the cut; the entry is the median over runs with those runs at $N_B$, not a "
                      "measured value.")
     if "dagger" in cells:
         notes.append("$^{\\dagger}$ the AUC reached 1 at the resolution of the sample in at least "
-                     "one seed; $1-$AUC is then an upper bound and the cell is not a measurement.")
+                     "one run; $1-$AUC is then an upper bound and the cell is not a measurement.")
     if nbkg:
         notes.insert(0, "Background test jets $N_B$ per task: " + "; ".join(
             f"{TASK_LABELS.get(t, tex(t))}, {fmt_int(nbkg[t])}" for t in tasks if t in nbkg) + ".")
@@ -1379,39 +1656,29 @@ def table_probe_ladder(A: dict, probe: str, nbkg: dict) -> str:
                   "r l " + "r" * len(tasks), notes, wide=True)
 
 
-def table_usecase(surv: dict, sizes: dict) -> str:
-    """T3: which published discriminant is still constructible at each vocabulary."""
+def table_usecase(surv: dict, sizes: dict, pretrained: list) -> str:
+    """Table 1: which published discriminant is still constructible at each vocabulary."""
     cols = [sizes[r] for r in RUNGS]
     head = ["discriminant & source & " + " & ".join(str(c) for c in cols) + " \\\\", "\\midrule"]
     rows = []
-    # A row absent at EVERY vocabulary is not a coarsening result, and the table
-    # is actively misleading if it renders identically to one: a reader would
-    # conclude that a finer vocabulary would have bought the discriminant. It
-    # would not -- the quantity is not expressible over the native classes at
-    # all. Marked with a dagger and explained in the notes.
-    never = [d for d, r in surv.items()
-             if not r.get("expressible_in_native_vocabulary", True)]
-    for disc, row in surv.items():
+    for disc in usecase_rows(surv):
+        row = surv[disc]
         marks = " & ".join("$\\bullet$" if row["constructible"][r] else "---" for r in RUNGS)
-        title = tex(row["title"]) + ("$^{\\dagger}$" if disc in never else "")
-        rows.append(f"{title} & {tex(row['source'])} & {marks} \\\\")
-    caption = ("Published Sophon-family discriminants against pretraining vocabulary size "
-               "(columns, finest first). $\\bullet$ = the discriminant is exactly constructible "
-               "from that vocabulary's output nodes; --- = it is not. The criterion is Sophon's "
-               "class-division property: a discriminant survives a merge only if both of its "
-               "coefficient vectors are constant on every merged group, so this is a statement "
-               "about the partition and needs no training and no data.")
-    notes = ["Column headings are the number of classes in the vocabulary, counted from "
-             "\\texttt{configs/labelmaps/rung\\_label\\_maps.v1.csv}; they are not the numbers "
-             "in the internal rung names, which count resonant groups only."]
-    if never:
-        notes.append(
-            "$^{\\dagger}$ Absent for a different reason from every other row: not lost to "
-            "coarsening, but never expressible. The vocabulary labels jets by their decay "
-            "products and not by the parent resonance, so wherever the $W$ and the $Z$ share a "
-            "decay mode they share a class, and no sum of a head's outputs separates them --- at "
-            "the finest vocabulary as much as at the coarsest. A finer label set of this kind "
-            "would not buy this discriminant; a differently organised one would.")
+        ref, eq = row["source"].split(" ", 1)
+        eq = eq.replace("Eq. ", "Eqs.~" if ")-(" in eq else "Eq.~").replace(")-(", ")--(")
+        cite = f"\\cite{{{USECASE_CITE[ref]}}}" if ref in USECASE_CITE else tex(ref)
+        rows.append(f"{USECASE_ROWS[disc]} & {cite}, {eq} & {marks} \\\\")
+    caption = ("Published discriminants built from sums of Sophon's output scores, against the "
+               "number of classes in the vocabulary (columns, finest first). $\\bullet$: the "
+               "discriminant can be built exactly from that vocabulary's outputs; ---: it cannot. "
+               "By Sophon's class-division property (Property~1, Eq.~(2) of "
+               "Ref.~\\cite{sophon}), the score of a merged class is the sum of the scores of "
+               "the classes it merges, so a discriminant survives a merge only if its numerator "
+               "and its denominator each contain every merged class or none of them. This is a "
+               "property of the partition and needs no training and no data.")
+    notes = ["Pretrained in this study: the "
+             + ", ".join(str(sizes[r]) for r in pretrained[:-1])
+             + f" and {sizes[pretrained[-1]]}-class vocabularies."]
     return _table(head + rows, caption, "tab:usecase", "l l " + "c" * len(cols), notes,
                   wide=True)
 
@@ -1454,7 +1721,7 @@ def table_legs(legs: dict, sizes: dict) -> str:
 SIGNAL_LABELS = {"label_X_bb": "$X\\to b\\bar b$", "label_X_qq": "$X\\to q\\bar q$",
                  "label_X_YY_bbb": "$X\\to YY\\to bbb$", "label_X_YY_bbbb": "$X\\to YY\\to bbbb$",
                  "label_X_YY_qqq": "$X\\to YY\\to qqq$", "label_X_YY_qqqq": "$X\\to YY\\to qqqq$"}
-FAMILY_LABELS = {"class_sum": "class sum", "class_sum_matched": "class sum",
+FAMILY_LABELS = {"class_sum": "output ratio", "class_sum_matched": "output ratio",
                  "mahalanobis": "Mahalanobis",
                  "knn": "$k$-nearest neighbours", "iad_hgb": "classifier-based (HGB)"}
 
@@ -1473,7 +1740,7 @@ def table_finetune(ft: dict, sizes: dict, metric: str) -> str:
         for key, label, inits in rows:
             n = len(inits)
             if key == "Rand":
-                label += f" ({words(n)} draws)"
+                label += f" ({words(n)} partitions)"
             else:
                 label += " (one run)" if n == 1 else f" ($n={n}$)" if n < 5 else ""
             body.append(f"{label} & " + " & ".join(text[(key, s)] for s in ns) + " \\\\")
@@ -1488,9 +1755,9 @@ def table_finetune(ft: dict, sizes: dict, metric: str) -> str:
                + ": " + ("macro-averaged one-vs-rest AUC" if auc else "accuracy")
                + f" on {n_test} test jets, at the epoch of best validation accuracy. Mean "
                f"{tex('±')} standard deviation over the "
-               f"{words(max(len(i) for *_, i in rows))} pretraining seeds, each fine-tuned once, "
+               f"{words(max(len(i) for *_, i in rows))} pretraining runs, each fine-tuned once, "
                "and for the random-label control over its random partitions, one pretraining "
-               "run each. Rows are the pretraining label set, "
+               "run each. Rows are the pretraining vocabulary, "
                "columns the number of fine-tuning training jets.")
     return _table(head + body, caption, "tab:finetune" if auc else "tab:finetune-accuracy",
                   "l " + "r" * len(ns), [])
@@ -1517,22 +1784,53 @@ def table_anomaly(S: dict) -> str:
         if qty == "sigma_min":
             body.append("\\addlinespace")
     light = [g for g in SIGNAL_LABELS if all(f"{f}|{g}" in nd for f in ANOMALY_FAMILIES)]
-    caption = (f"Anomaly detection with the class sum of the model's own outputs and two "
-               f"detectors on the frozen features, "
+    caption = (f"Anomaly detection with the resonance-to-QCD probability ratio from the model's own "
+               f"outputs (output ratio) and two detectors on the frozen features, "
                f"{fmt_int(S['conventions']['primary_injection'])} signal jets injected: "
                "$\\sigma_{\\min}$, the smallest initial significance from which a $5\\sigma$ "
                "discovery is still reached (lower is more sensitive), and the maximum significance "
                f"improvement (max SIC). Mean {tex('±')} standard deviation over the five pretraining "
-               "seeds of each seed's median over "
+               "runs of each run's median over "
                f"{words(S['provenance']['resamplings_per_seed'])} resamplings of the background "
-               "and signal samples.")
+               "and signal samples; Table~\\ref{tab:anomaly-per-run} gives each run's value.")
     thr = fmt(S['not_detected_rule']['threshold_max_sic'], 1)
-    notes = [f"A detector whose max SIC stays below {thr} at every label set does not detect "
+    notes = [f"A detector whose max SIC stays below {thr} at every vocabulary does not detect "
              "that signal."]
     if light:
-        notes.append("Not detected by any of the three at any label set, and not shown: "
+        notes.append("Not detected by any of the three at any vocabulary, and not shown: "
                      + ", ".join(SIGNAL_LABELS[g] for g in light) + ".")
     return _table(head + body, caption, "tab:anomaly", "l l " + "r" * len(levels), notes)
+
+
+def table_anomaly_per_run(S: dict) -> str:
+    """sigma_min of every pretraining run, for every signal and score Table 8 shows:
+    the values behind its mean +- SD, ordered by run. A single run's defective
+    output layer shows here and not in a mean."""
+    inj = S["conventions"]["primary_injection"]
+    nd = set(S["not_detected_rule"]["not_detected"])
+    first = S["families"][ANOMALY_FAMILIES[0]]
+    levels = sorted({int(k) for k in first[next(iter(first))][inj]["levels"]}, reverse=True)
+    sigs = [g for g in SIGNAL_LABELS if any(f"{f}|{g}" not in nd for f in ANOMALY_FAMILIES)]
+    run = lambda a: int(re.search(r"-s(\d+)", a).group(1))
+    body = []
+    for g in sigs:
+        for i, f in enumerate(ANOMALY_FAMILIES):
+            cells = []
+            for lv in levels:
+                c = S["families"][f][g][inj]["levels"][str(lv)]
+                pairs = sorted(zip(map(run, c["arms"]), np.exp(c["ln_sigma_min"])))
+                if [r for r, _ in pairs] != list(range(1, len(pairs) + 1)):
+                    raise SystemExit(f"FATAL: {f}/{g}/{lv} runs are {[r for r, _ in pairs]}")
+                cells.append(", ".join(fmt(v, 2) for _, v in pairs))
+            body.append((SIGNAL_LABELS[g] if i == 0 else "") + f" & {FAMILY_LABELS[f]} & "
+                        + " & ".join(cells) + " \\\\")
+        body.append("\\addlinespace")
+    head = ["& score & " + " & ".join(f"{lv} classes" for lv in levels) + " \\\\", "\\midrule"]
+    caption = ("$\\sigma_{\\min}$ of each pretraining run, runs one to five in order, for the "
+               "signals and scores of Table~\\ref{tab:anomaly}: each value is that run's median "
+               f"over resamplings at {fmt_int(inj)} injected signal jets.")
+    return _table(head + body[:-1], caption, "tab:anomaly-per-run", "l l " + "r" * len(levels), [],
+                  wide=True)
 
 
 def table_random_control(C: dict, A: dict, probes=("linear",)) -> str:
@@ -1545,9 +1843,9 @@ def table_random_control(C: dict, A: dict, probes=("linear",)) -> str:
     draws = sorted({r["draw"] for r in C["table"]})
     tasks = [t for t in TASK_LABELS if any(r["task"] == t for r in C["table"])]
     head = [f"& \\multicolumn{{{len(levels)}}}{{c}}{{pretraining label set}} & "
-            f"\\multicolumn{{{len(draws) + 1}}}{{c}}{{random {levels[-1]}-group control}} \\\\",
+            f"\\multicolumn{{{len(draws) + 1}}}{{c}}{{random partitions into {levels[-1]} classes}} \\\\",
             "task & " + " & ".join(str(lv) for lv in levels) + " & "
-            + " & ".join(f"draw {d}" for d in draws) + f" & mean {tex('±')} SD \\\\", "\\midrule"]
+            + " & ".join(f"{d}" for d in draws) + f" & mean {tex('±')} SD \\\\", "\\midrule"]
     body, n_seeds = [], set()
     for probe in probes:
         for t in tasks:
@@ -1568,13 +1866,14 @@ def table_random_control(C: dict, A: dict, probes=("linear",)) -> str:
                         + " & ".join(cells) + " \\\\")
     which = " and ".join({"linear": "linear", "mlp": "nonlinear (MLP)"}[p] for p in probes)
     caption = (f"The random-label control, frozen {which} probe: $1-$AUC in units of $10^{{-3}}$ "
-               f"(lower is better) on the two tasks it was built for. The pretrained label sets are "
-               f"the mean {tex('±')} standard deviation over the {words(min(n_seeds))} pretraining "
-               f"seeds; each draw of the control is one run, and the last column is the mean "
-               f"{tex('±')} standard deviation over the {words(len(draws))} draws. Each draw permutes "
-               f"the resonant classes within the two-prong and the three-/four-prong strata and cuts "
-               f"them into groups matching the training-stream share of each {levels[-1]}-class "
-               f"group; the QCD class is kept.")
+               f"(lower is better) on the two tasks it was built for. The pretrained vocabularies "
+               f"(number of classes) are the mean {tex('±')} standard deviation over the "
+               f"{words(min(n_seeds))} pretraining runs; each random partition (numbered) is one "
+               f"run, and the last column is the mean {tex('±')} standard deviation over the "
+               f"{words(len(draws))} partitions. Each partition permutes the resonant classes "
+               f"within two sets, the two-prong decays and the three- and four-prong decays, and "
+               f"cuts them into groups that each hold the same fraction of the reweighted training "
+               f"examples as one {levels[-1]}-class group; the QCD class is kept.")
     return _table(head + body, caption, "tab:random-control",
                   "l " + "r" * (len(levels) + len(draws) + 1), [], wide=True)
 
@@ -1583,16 +1882,17 @@ def table_recovery(R: dict, sizes: dict) -> str:
     """Balanced accuracy recovering each level of the tree from each model."""
     acc = recovery_acc(R)
     levels = sorted({lv for _, lv in acc}, reverse=True)
-    head = ["read out at & " + " & ".join(f"{lv}-class model" for lv in levels) + " \\\\",
+    head = ["level recovered & " + " & ".join(f"{lv}-class model" for lv in levels) + " \\\\",
             "\\midrule"]
     body = []
     for rung in RUNGS:
         cells = [fmt_pm(np.mean(acc[(rung, lv)]), np.std(acc[(rung, lv)], ddof=1)) for lv in levels]
         body.append(f"{sizes[rung]} classes & " + " & ".join(cells) + " \\\\")
-    caption = ("Label recovery: balanced accuracy of a frozen linear probe trained to recover "
-               "each level of the label tree (rows, finest first) from each pretrained model "
+    caption = ("Linear decodability of each level of the label tree: balanced accuracy of a "
+               "frozen linear probe trained to recover that level (rows, finest first) from each "
+               "pretrained model "
                f"(columns), mean $\\pm$ standard deviation over the "
-               f"{words(len(acc[(RUNGS[0], levels[0])]))} pretraining seeds.")
+               f"{words(len(acc[(RUNGS[0], levels[0])]))} pretraining runs.")
     return _table(head + body, caption, "tab:recovery", "l " + "r" * len(levels), [])
 
 
@@ -1601,7 +1901,7 @@ def table_mass(M: dict, root: pathlib.Path) -> str:
     tgt = {round(r["target_sigma_eff"], 12) for r in M["table"] if r["probe"] == "ridge"}
     tgt = fmt(tgt.pop(), 4) if len(tgt) == 1 else "---"
     head = ["& " + " & ".join(c.replace("+mass", " + mass") for c in MASS_CELLS)
-            + " & class mean only \\\\", "\\midrule"]
+            + " & true-class mean \\\\", "\\midrule"]
     body = []
     for probe, name in (("mlp", "nonlinear (MLP) probe"), ("ridge", "linear (ridge) probe")):
         cells = [fmt_pm(np.mean(v), np.std(v, ddof=1))
@@ -1611,10 +1911,11 @@ def table_mass(M: dict, root: pathlib.Path) -> str:
                "The residual is $\\ln(m_{\\mathrm{pred}}/m_{\\mathrm{true}})$ after removing each "
                "native class's training-set mean; $\\sigma_{\\mathrm{eff}}$ is half the smallest "
                f"interval holding 68\\% of it. Mean {tex('±')} standard deviation over the "
-               f"{words(len(mass_values(M, MASS_CELLS[0], 'ridge')))} pretraining seeds, on "
-               f"{fmt_int(mass_n_test(M, root)[0])} test jets. Columns are the pretraining label set, "
-               "with or without the added mass output; the last is a predictor that returns the "
-               "class mean alone, the same for both probes.")
+               f"{words(len(mass_values(M, MASS_CELLS[0], 'ridge')))} pretraining runs, on "
+               f"{fmt_int(mass_n_test(M, root)[0])} test jets. Columns are the number of classes "
+               "in the pretraining vocabulary, with or without the added mass output; the last is "
+               "an oracle that knows each jet's true native class and returns that class's mean, "
+               "the same for both probes.")
     return _table(head + body, caption, "tab:mass", "l " + "r" * (len(MASS_CELLS) + 1), [],
                   wide=True)
 
@@ -1623,7 +1924,7 @@ def table_realdata(J: dict) -> str:
     """Fitted top-quark yield in CMS open data at 1% data efficiency."""
     P = J["per_label_set"]
     res = json.loads((REPO / J["provenance"]["input"]).read_text())
-    head = ["pretraining label set & yield & statistical error per fit & yield, pooled peak shape "
+    head = ["pretraining vocabulary & yield & statistical error per fit & yield, pooled peak shape "
             "\\\\", "\\midrule"]
     body = []
     for lv in AOJ_SETS:
@@ -1636,9 +1937,11 @@ def table_realdata(J: dict) -> str:
                     ("CMS ParticleNet top score (shipped)", res["reference"]["top"])):
         body.append(f"{name} & {fmt_int(f['signal_yield'])} & {fmt_int(f['signal_yield_err'])} & --- \\\\")
     m, w = P["shapes"]["pooled"]
-    caption = ("Top quarks found in CMS open data with no fine-tuning: the top-quark yield fitted at 1\\% "
-               "data efficiency, one simultaneous pass/fail fit over all files per model, each with its "
-               f"own Gaussian peak. Mean {tex('±')} standard deviation over the five pretraining seeds; the "
+    caption = ("Top quarks found in CMS open data with no fine-tuning: the top-quark yield fitted with "
+               "the score cut set, in bins of $\\rho$ and $p_{\\mathrm T}$, to pass 1\\% of the jets "
+               "in the mass sidebands; one simultaneous pass/fail fit over all files per model, each "
+               "with its "
+               f"own Gaussian peak. Mean {tex('±')} standard deviation over the five pretraining runs; the "
                "second column is the median statistical error of a single fit; the last column refits every "
                f"model with one peak shape shared by all thirty ({fmt(m, 1)}~GeV, width {fmt(w, 1)}~GeV).")
     return _table(head + body, caption, "tab:realdata", "l r r r", [])
@@ -1690,6 +1993,8 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     sizes = vocabulary_sizes(paths["rung_map"])
 
     em = Emitter(root)
+    emit_pending(em, missing)
+    emit_slots(em, missing)
     emit_design(em, A, paths["analysis"])
     emit_levels(em, A, paths["analysis"])
     emit_vocabulary(em, sizes, paths["rung_map"])
@@ -1711,8 +2016,10 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
 
     if "survival" in have:
         surv = json.loads(pathlib.Path(paths["survival"]).read_text())
-        emit_usecase(em, surv, sizes, paths["survival"])
-        out["tables/usecase_survival.tex"] = table_usecase(surv, sizes)
+        emit_usecase(em, surv, sizes, paths["survival"], paths["rung_map"])
+        pretrained = [r for r in RUNGS if r in ARM_RUNG.values()
+                      or (r in ("R63_Q1", "R29_Q1") and v2_present(root, "levels_64_30"))]
+        out["tables/usecase_survival.tex"] = table_usecase(surv, sizes, pretrained)
     else:
         missing.append(f"use-case survival -- {paths['survival']}")
         skipped.append("T3 use-case survival: configs/labelmaps/usecase_survival.v1.json missing")
@@ -1743,6 +2050,8 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
         d = json.loads(pathlib.Path(paths[key]).read_text())
         emit(em, d, paths[key])
         out[f"tables/{name}.tex"] = table(d)
+        if key == "anomaly":
+            out["tables/anomaly_per_run.tex"] = table_anomaly_per_run(d)
 
     if "mass2x2" in have:
         emit_mass_output(em, A, paths["analysis"], paths["mass2x2"], sizes)
@@ -1778,6 +2087,15 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
                    "docs/RECORD.md 2.1 names /data/results/mtx/flops/flops_by_arm.json, "
                    "which is not committed")
     missing.append("per-arm parameters and MACs -- flops_by_arm.json (see docs/RECORD.md 2.1)")
+
+    # The appendix: vocabularies, random partitions, and the classes of every task.
+    spec = importlib.util.spec_from_file_location(
+        "appendix_tables", pathlib.Path(__file__).resolve().parent / "appendix_tables.py")
+    appendix = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(appendix)
+    out.update(appendix.build(root, paths["ladder"][0], paths["vcb"] if "vcb" in have else None,
+                              paths["anomaly"] if "anomaly" in have else None,
+                              TASK_LABELS, v2_present(root, "levels_64_30")))
 
     out["results_generated.tex"] = render_macros(em, missing, skipped)
     out["provenance.json"] = json.dumps(em.provenance, indent=2, sort_keys=True) + "\n"
@@ -1828,7 +2146,8 @@ def main(argv=None) -> int:
         for s in skipped:
             print(f"  {s}")
     if missing:
-        print("\nMISSING INPUTS (no placeholder was written for any of these):")
+        print("\nMISSING INPUTS (no number was written for any of these; a slot the text "
+              "uses prints a red pending marker instead):")
         for m in missing:
             print(f"  {m}")
     return 0

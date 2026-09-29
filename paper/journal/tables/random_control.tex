@@ -2,18 +2,18 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{The random-label control, frozen linear and nonlinear (MLP) probe: $1-$AUC in units of $10^{-3}$ (lower is better) on the two tasks it was built for. The pretrained label sets are the mean $\pm$ standard deviation over the five pretraining seeds; each draw of the control is one run, and the last column is the mean $\pm$ standard deviation over the three draws. Each draw permutes the resonant classes within the two-prong and the three-/four-prong strata and cuts them into groups matching the training-stream share of each 17-class group; the QCD class is kept.}
+\caption{The random-label control, frozen linear and nonlinear (MLP) probe: $1-$AUC in units of $10^{-3}$ (lower is better) on the two tasks it was built for. The pretrained vocabularies (number of classes) are the mean $\pm$ standard deviation over the five pretraining runs; each random partition (numbered) is one run, and the last column is the mean $\pm$ standard deviation over the three partitions. Each partition permutes the resonant classes within two sets, the two-prong decays and the three- and four-prong decays, and cuts them into groups that each hold the same fraction of the reweighted training examples as one 17-class group; the QCD class is kept.}
 \label{tab:random-control}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l rrrrrrrr}
 \toprule
-& \multicolumn{4}{c}{pretraining label set} & \multicolumn{4}{c}{random 17-group control} \\
-task & 188 & 162 & 43 & 17 & draw 1 & draw 2 & draw 3 & mean $\pm$ SD \\
+& \multicolumn{4}{c}{pretraining label set} & \multicolumn{4}{c}{random partitions into 17 classes} \\
+task & 188 & 162 & 43 & 17 & 1 & 2 & 3 & mean $\pm$ SD \\
 \midrule
 $b$ vs $c$, four-prong & 6.80\,$\pm$\,0.27 & 6.89\,$\pm$\,0.18 & 7.5\,$\pm$\,0.5 & 31\,$\pm$\,5 & 10.5 & 11.1 & 9.98 & 10.5\,$\pm$\,0.6 \\
-visible decay content & 0.826\,$\pm$\,0.030 & 0.787\,$\pm$\,0.035 & 0.82\,$\pm$\,0.10 & 2.32\,$\pm$\,0.20 & 1.25 & 0.989 & 1.08 & 1.11\,$\pm$\,0.13 \\
+$bbqq$ vs $cq\tau_h\nu$, four-prong & 0.826\,$\pm$\,0.030 & 0.787\,$\pm$\,0.035 & 0.82\,$\pm$\,0.10 & 2.32\,$\pm$\,0.20 & 1.25 & 0.989 & 1.08 & 1.11\,$\pm$\,0.13 \\
 $b$ vs $c$, four-prong, MLP probe & 6.84\,$\pm$\,0.20 & 6.82\,$\pm$\,0.20 & 7.7\,$\pm$\,0.6 & 22.3\,$\pm$\,3.1 & 10.5 & 10.4 & 9.28 & 10.1\,$\pm$\,0.7 \\
-visible decay content, MLP probe & 0.89\,$\pm$\,0.05 & 0.825\,$\pm$\,0.030 & 0.83\,$\pm$\,0.06 & 2.07\,$\pm$\,0.20 & 1.21 & 1.07 & 1.13 & 1.14\,$\pm$\,0.07 \\
+$bbqq$ vs $cq\tau_h\nu$, four-prong, MLP probe & 0.89\,$\pm$\,0.05 & 0.825\,$\pm$\,0.030 & 0.83\,$\pm$\,0.06 & 2.07\,$\pm$\,0.20 & 1.21 & 1.07 & 1.13 & 1.14\,$\pm$\,0.07 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

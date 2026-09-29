@@ -511,7 +511,7 @@
   },
   "AnomalyKnnK": {
     "json_path": "KNN_K",
-    "sha256": "2da2839820a909f04381366d43f4a9b67edb95bcdfbca206eccd3b3c9cfb9761",
+    "sha256": "8be37a95fcbde6b8e3dee8d0661536d53b21b71ec91d773e3bc877de4048ba1e",
     "source_file": "experiments/EVAL/anomaly.py",
     "value": "10"
   },
@@ -1421,6 +1421,36 @@
     "source_file": "experiments/FIGS/data/anomaly_merged_v4/anomaly_results.json",
     "value": "20\\%"
   },
+  "AojChainDataset": {
+    "json_path": "SLOTS[AojChainDataset]",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending: jets in the open-data sample}"
+  },
+  "AojChainEtaMax": {
+    "json_path": "SLOTS[AojChainEtaMax]",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending: the pseudorapidity cut}"
+  },
+  "AojChainPtBins": {
+    "json_path": "SLOTS[AojChainPtBins]",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending: pT categories of the fit}"
+  },
+  "AojChainRhoWindow": {
+    "json_path": "SLOTS[AojChainRhoWindow]",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending: jets inside the rho window}"
+  },
+  "AojChainStaged": {
+    "json_path": "SLOTS[AojChainStaged]",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending: jets after the kinematic selection}"
+  },
   "AojClosureCharged": {
     "json_path": "rows[part_isChargedHadron].ratio",
     "sha256": "f5f1df762bdb8a57d5a91a317cbc976e224cfc8ed8436c54eb7010eff900ad60",
@@ -1457,7 +1487,67 @@
     "source_file": "experiments/FIGS/data/aoj_feasibility_v2cpu/closure.json",
     "value": "0.65"
   },
+  "AojEffPercent": {
+    "json_path": "eff",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "1\\%"
+  },
+  "AojFitHi": {
+    "json_path": "PEAKS[top].fit_range[1]",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "300"
+  },
+  "AojFitLo": {
+    "json_path": "PEAKS[top].fit_range[0]",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "105"
+  },
+  "AojMapOrderPt": {
+    "json_path": "MAP_ORDER[1]",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "2"
+  },
+  "AojMapOrderRho": {
+    "json_path": "MAP_ORDER[0]",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "3"
+  },
+  "AojMassBin": {
+    "json_path": "MASS_BIN",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "5"
+  },
+  "AojModelEffMax": {
+    "json_path": "models.*.top.data_efficiency (max)",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "1.05\\%"
+  },
+  "AojModelEffMin": {
+    "json_path": "models.*.top.data_efficiency (min)",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "1.01\\%"
+  },
+  "AojModelsValidationPMin": {
+    "json_path": "models.*.top.validation.toy_p (min)",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "0.11"
+  },
   "AojNJetsFit": {
+    "json_path": "SLOTS[AojNJetsFit]",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending: jets in the mass fit}"
+  },
+  "AojNJetsRhoWindow": {
     "json_path": "n_jets",
     "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
     "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
@@ -1505,6 +1595,18 @@
     "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
     "value": "11.4"
   },
+  "AojPtMax": {
+    "json_path": "PT_RANGE[1]",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "2{,}500"
+  },
+  "AojPtMin": {
+    "json_path": "PT_RANGE[0]",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "500"
+  },
   "AojPublicMass": {
     "json_path": "models.sophon-public.top.floated_mean",
     "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
@@ -1529,11 +1631,23 @@
     "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
     "value": "235"
   },
+  "AojRefEffPercent": {
+    "json_path": "reference.top.data_efficiency",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "1.38\\%"
+  },
   "AojRefMass": {
     "json_path": "reference.top.floated_mean",
     "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
     "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
     "value": "181.0"
+  },
+  "AojRefValidationP": {
+    "json_path": "reference.top.validation.toy_p",
+    "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+    "value": "0.005"
   },
   "AojRefWidth": {
     "json_path": "reference.top.floated_width",
@@ -1553,6 +1667,18 @@
     "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
     "value": "865"
   },
+  "AojRhoMax": {
+    "json_path": "RHO_RANGE[1]",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "\\ensuremath{-}2.0"
+  },
+  "AojRhoMin": {
+    "json_path": "RHO_RANGE[0]",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "\\ensuremath{-}5.5"
+  },
   "AojShapeShiftMax": {
     "json_path": "per_label_set.label_sets.*.by_shape.pooled.mean / signal_yield.mean - 1",
     "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
@@ -1564,6 +1690,42 @@
     "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
     "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
     "value": "\\ensuremath{-}12\\%"
+  },
+  "AojSpreadOverStatFourthree": {
+    "json_path": "per_label_set.label_sets.43.signal_yield.sd / median_stat_err",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2.9"
+  },
+  "AojSpreadOverStatOneeighteight": {
+    "json_path": "per_label_set.label_sets.188.signal_yield.sd / median_stat_err",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "2.3"
+  },
+  "AojSpreadOverStatOneseven": {
+    "json_path": "per_label_set.label_sets.17.signal_yield.sd / median_stat_err",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "0.9"
+  },
+  "AojSpreadOverStatOnesevenMass": {
+    "json_path": "per_label_set.label_sets.17+mass.signal_yield.sd / median_stat_err",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "1.3"
+  },
+  "AojSpreadOverStatOnesixtwo": {
+    "json_path": "per_label_set.label_sets.162.signal_yield.sd / median_stat_err",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "3.1"
+  },
+  "AojSpreadOverStatOnesixtwoMass": {
+    "json_path": "per_label_set.label_sets.162+mass.signal_yield.sd / median_stat_err",
+    "sha256": "0d7e7d257f7932bb1b0eeb639a8b4a39cfd4b7291eee0a375a3dce88582f3167",
+    "source_file": "experiments/FIGS/data/aoj_full_v1/analysis_v4/aoj_top.json",
+    "value": "1.1"
   },
   "AojStatErrFourthree": {
     "json_path": "per_label_set.label_sets.43.median_stat_err",
@@ -1612,6 +1774,30 @@
     "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0",
     "source_file": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
     "value": "250"
+  },
+  "AojWindowTopHi": {
+    "json_path": "PEAKS[top].window[1]",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "220"
+  },
+  "AojWindowTopLo": {
+    "json_path": "PEAKS[top].window[0]",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "140"
+  },
+  "AojWindowWHi": {
+    "json_path": "PEAKS[W].window[1]",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "105"
+  },
+  "AojWindowWLo": {
+    "json_path": "PEAKS[W].window[0]",
+    "sha256": "758a1c45c335c75f3eb0246641ecb6aa9963d7ecad53fe1f1ba8ba11ed758cf8",
+    "source_file": "experiments/AOJ/peak_fit.py",
+    "value": "65"
   },
   "AojYieldFourthree": {
     "json_path": "per_label_set.label_sets.43.signal_yield",
@@ -1732,6 +1918,12 @@
     "sha256": "8882459fe55207952fdb8f2ce1307be447f07505eab0f73d18f650f6766dfb0a",
     "source_file": "experiments/MTX/k8s/job-mtx-l162_mass-s1-raunav.yaml",
     "value": "5.0"
+  },
+  "DesignMpmMaskRate": {
+    "json_path": "DEFAULT_MASK_RATE",
+    "sha256": "49f0c8c6666d02117d6054ba6d0abb036ea165850671a37460e0d64e1290bf26",
+    "source_file": "experiments/MTX/mpm.py",
+    "value": "40\\%"
   },
   "DesignMsdMax": {
     "json_path": "selection",
@@ -3101,6 +3293,60 @@
     "source_file": "experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json",
     "value": "264"
   },
+  "FtRecipePassesEFive": {
+    "json_path": "job commands: samples per epoch at n_train 100000 // n_train",
+    "sha256": "f0962eddb451b7b044f1072d0da86d4522d6db3e80701ddf7cb0e9b60cddff39",
+    "source_file": "experiments/FT/k8s/job-ft-legs-w2-raunav.yaml",
+    "value": "one"
+  },
+  "FtRecipePassesEFour": {
+    "json_path": "job commands: samples per epoch at n_train 10000 // n_train",
+    "sha256": "f0962eddb451b7b044f1072d0da86d4522d6db3e80701ddf7cb0e9b60cddff39",
+    "source_file": "experiments/FT/k8s/job-ft-legs-w2-raunav.yaml",
+    "value": "one"
+  },
+  "FtRecipePassesESix": {
+    "json_path": "job commands: samples per epoch at n_train 1000000 // n_train",
+    "sha256": "f0962eddb451b7b044f1072d0da86d4522d6db3e80701ddf7cb0e9b60cddff39",
+    "source_file": "experiments/FT/k8s/job-ft-legs-w2-raunav.yaml",
+    "value": "one"
+  },
+  "FtRecipePassesEThree": {
+    "json_path": "job commands: samples per epoch at n_train 1000 // n_train",
+    "sha256": "f0962eddb451b7b044f1072d0da86d4522d6db3e80701ddf7cb0e9b60cddff39",
+    "source_file": "experiments/FT/k8s/job-ft-legs-w2-raunav.yaml",
+    "value": "10"
+  },
+  "FtRecipeStepsEFive": {
+    "json_path": "job commands: samples per epoch at n_train 100000 // batch size",
+    "sha256": "f0962eddb451b7b044f1072d0da86d4522d6db3e80701ddf7cb0e9b60cddff39",
+    "source_file": "experiments/FT/k8s/job-ft-legs-w2-raunav.yaml",
+    "value": "195"
+  },
+  "FtRecipeStepsEFour": {
+    "json_path": "job commands: samples per epoch at n_train 10000 // batch size",
+    "sha256": "f0962eddb451b7b044f1072d0da86d4522d6db3e80701ddf7cb0e9b60cddff39",
+    "source_file": "experiments/FT/k8s/job-ft-legs-w2-raunav.yaml",
+    "value": "19"
+  },
+  "FtRecipeStepsESix": {
+    "json_path": "job commands: samples per epoch at n_train 1000000 // batch size",
+    "sha256": "f0962eddb451b7b044f1072d0da86d4522d6db3e80701ddf7cb0e9b60cddff39",
+    "source_file": "experiments/FT/k8s/job-ft-legs-w2-raunav.yaml",
+    "value": "1{,}953"
+  },
+  "FtRecipeStepsEThree": {
+    "json_path": "job commands: samples per epoch at n_train 1000 // batch size",
+    "sha256": "f0962eddb451b7b044f1072d0da86d4522d6db3e80701ddf7cb0e9b60cddff39",
+    "source_file": "experiments/FT/k8s/job-ft-legs-w2-raunav.yaml",
+    "value": "19"
+  },
+  "FtRecipeValJets": {
+    "json_path": "--samples-per-epoch-val 20000 // batch x batch",
+    "sha256": "f0962eddb451b7b044f1072d0da86d4522d6db3e80701ddf7cb0e9b60cddff39",
+    "source_file": "experiments/FT/k8s/job-ft-legs-w2-raunav.yaml",
+    "value": "19{,}968"
+  },
   "FtRecipeWeightDecay": {
     "json_path": "runs[*].weight_decay",
     "sha256": "7dc8c791343e1b6f68a841f4689c9a744174e95efc6d576f1b95297ed2ccc5bd",
@@ -3190,6 +3436,24 @@
     "sha256": "aa0e7f48a61df17f57b73c18df65f4d36f52002494a3b98097e4bce65277d49e",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "8.3"
+  },
+  "MassLambdaMatched": {
+    "json_path": "SLOTS[MassLambdaMatched]",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending: the share-matched loss weight}"
+  },
+  "MassLossShareOnesevenMass": {
+    "json_path": "SLOTS[MassLossShareOnesevenMass]",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending: mass-loss share, 17 classes}"
+  },
+  "MassLossShareOnesixtwoMass": {
+    "json_path": "SLOTS[MassLossShareOnesixtwoMass]",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending: mass-loss share, 162 classes}"
   },
   "MassOmaLinearOneseven": {
     "json_path": "table[bvc_resonant,linear,17].auc",
@@ -3496,6 +3760,90 @@
     "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
     "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
     "value": "0.2986"
+  },
+  "PendingAnomaly": {
+    "json_path": "V2_PENDING['Anomaly']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: anomaly detection on the rerun models, per-run values}"
+  },
+  "PendingBench": {
+    "json_path": "V2_PENDING['Bench']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: top tagging and quark/gluon tagging (Pythia and Herwig) fine-tuned from every rerun model}"
+  },
+  "PendingConclusion": {
+    "json_path": "V2_PENDING['Conclusion']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: written once every input above is in}"
+  },
+  "PendingFtHeldout": {
+    "json_path": "V2_PENDING['FtHeldout']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: JetClass-II fine-tuning on files held out from pretraining}"
+  },
+  "PendingFtRefs": {
+    "json_path": "V2_PENDING['FtRefs']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: fine-tuning from random initialisation and from the self-supervised model}"
+  },
+  "PendingLevels": {
+    "json_path": "V2_PENDING['Levels']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: the 64- and 30-class vocabularies}"
+  },
+  "PendingLofo": {
+    "json_path": "V2_PENDING['Lofo']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: the leave-one-family-out vocabularies}"
+  },
+  "PendingMassLambda": {
+    "json_path": "V2_PENDING['MassLambda']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: the mass-output models with the loss weight matched in loss share}"
+  },
+  "PendingPretrain": {
+    "json_path": "V2_PENDING['Pretrain']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: pretraining rerun: data order and dropout fixed by seed and epoch, identical initial trunk weights, family-stratified loading, fixed validation sample, best-validation checkpoint}"
+  },
+  "PendingProbes": {
+    "json_path": "V2_PENDING['Probes']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: frozen probes on the rerun models, best-validation checkpoint and the average over the last ten epochs}"
+  },
+  "PendingRandom": {
+    "json_path": "V2_PENDING['Random']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: the additional random partitions}"
+  },
+  "PendingRealData": {
+    "json_path": "V2_PENDING['RealData']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: the open-data fits on the rerun models}"
+  },
+  "PendingRecovery": {
+    "json_path": "V2_PENDING['Recovery']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: label-tree recovery on the rerun models}"
+  },
+  "PendingSsl": {
+    "json_path": "V2_PENDING['Ssl']",
+    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending v2: the second and third self-supervised pretraining runs}"
   },
   "ProbeAucBvcFourprongLinearFourthree": {
     "json_path": "levels.bvc_4prong.linear[2].mean_auc",
@@ -4363,13 +4711,13 @@
   },
   "ProbeCMax": {
     "json_path": "C_GRID",
-    "sha256": "3bd58fd31763da98febaa49a7c11df1bfdf96ac318993cc88faa0136d051c961",
+    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
     "source_file": "experiments/EVAL/probe.py",
     "value": "\\ensuremath{10^{2}}"
   },
   "ProbeCMin": {
     "json_path": "C_GRID",
-    "sha256": "3bd58fd31763da98febaa49a7c11df1bfdf96ac318993cc88faa0136d051c961",
+    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
     "source_file": "experiments/EVAL/probe.py",
     "value": "\\ensuremath{10^{-2}}"
   },
@@ -4957,13 +5305,13 @@
   },
   "ProbeMlpHidden": {
     "json_path": "_fit_mlp",
-    "sha256": "3bd58fd31763da98febaa49a7c11df1bfdf96ac318993cc88faa0136d051c961",
+    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
     "source_file": "experiments/EVAL/probe.py",
     "value": "256"
   },
   "ProbeMlpInits": {
     "json_path": "MLP_SEEDS",
-    "sha256": "3bd58fd31763da98febaa49a7c11df1bfdf96ac318993cc88faa0136d051c961",
+    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
     "source_file": "experiments/EVAL/probe.py",
     "value": "3"
   },
@@ -5970,20 +6318,20 @@
     "value": "\\texttt{a9449fd420c473f6}"
   },
   "ProbeSplitTest": {
-    "json_path": "make_splits",
-    "sha256": "3bd58fd31763da98febaa49a7c11df1bfdf96ac318993cc88faa0136d051c961",
+    "json_path": "SPLIT_FRACTIONS",
+    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
     "source_file": "experiments/EVAL/probe.py",
     "value": "20\\%"
   },
   "ProbeSplitTrain": {
-    "json_path": "make_splits",
-    "sha256": "3bd58fd31763da98febaa49a7c11df1bfdf96ac318993cc88faa0136d051c961",
+    "json_path": "SPLIT_FRACTIONS",
+    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
     "source_file": "experiments/EVAL/probe.py",
     "value": "60\\%"
   },
   "ProbeSplitVal": {
-    "json_path": "make_splits",
-    "sha256": "3bd58fd31763da98febaa49a7c11df1bfdf96ac318993cc88faa0136d051c961",
+    "json_path": "SPLIT_FRACTIONS",
+    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
     "source_file": "experiments/EVAL/probe.py",
     "value": "20\\%"
   },
@@ -6016,6 +6364,12 @@
     "sha256": "c675e609ff4fe3c989f35964389156594ca15a6a2cb780c5d8967472fe96a0e3",
     "source_file": "experiments/FIGS/data/probe_ladder_randcontrol_mlp2/analysis/c4_random_control.json",
     "value": "three"
+  },
+  "RandNDrawsCap": {
+    "json_path": "table[*].draw",
+    "sha256": "c675e609ff4fe3c989f35964389156594ca15a6a2cb780c5d8967472fe96a0e3",
+    "source_file": "experiments/FIGS/data/probe_ladder_randcontrol_mlp2/analysis/c4_random_control.json",
+    "value": "Three"
   },
   "RandOmaBvcFourprongDrawOneLinear": {
     "json_path": "table[0].control_log1m_auc",
@@ -6443,12 +6797,6 @@
     "source_file": "experiments/FIGS/data/label_recovery_ladder_v1/analysis/s9_label_recovery.json",
     "value": "0.0019"
   },
-  "UseDiesAtGnthreexQcdSubclass": {
-    "json_path": "gn3x_qcd_subclass.dies_at",
-    "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
-    "source_file": "configs/labelmaps/usecase_survival.v1.json",
-    "value": "162"
-  },
   "UseDiesAtSophonEqfour": {
     "json_path": "sophon_eq4.dies_at",
     "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
@@ -6478,18 +6826,6 @@
     "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
     "source_file": "configs/labelmaps/usecase_survival.v1.json",
     "value": "64"
-  },
-  "UseDiesAtWVsQcdResonance": {
-    "json_path": "w_vs_qcd_resonance.dies_at",
-    "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
-    "source_file": "configs/labelmaps/usecase_survival.v1.json",
-    "value": "188"
-  },
-  "UseLastAliveGnthreexQcdSubclass": {
-    "json_path": "gn3x_qcd_subclass.last_rung_alive",
-    "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
-    "source_file": "configs/labelmaps/usecase_survival.v1.json",
-    "value": "188"
   },
   "UseLastAliveSophonEqfour": {
     "json_path": "sophon_eq4.last_rung_alive",
@@ -6521,53 +6857,17 @@
     "source_file": "configs/labelmaps/usecase_survival.v1.json",
     "value": "162"
   },
-  "UseLastAliveWVsQcdResonance": {
-    "json_path": "w_vs_qcd_resonance.last_rung_alive",
-    "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
-    "source_file": "configs/labelmaps/usecase_survival.v1.json",
-    "value": "none"
+  "UseWlikeDiesAt": {
+    "json_path": "groups at each level vs {label_X_cs, label_X_qq} and that plus the QCD classes",
+    "sha256": "412f9aa3b58db41243d9913eaa6f392abc761cce220cdf2b21a87acfae754a78",
+    "source_file": "configs/labelmaps/rung_label_maps.v1.csv",
+    "value": "64"
   },
-  "UseVectorsGnthreexQcdSubclass": {
-    "json_path": "gn3x_qcd_subclass.n_coefficient_vectors",
-    "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
-    "source_file": "configs/labelmaps/usecase_survival.v1.json",
-    "value": "27"
-  },
-  "UseVectorsSophonEqfour": {
-    "json_path": "sophon_eq4.n_coefficient_vectors",
-    "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
-    "source_file": "configs/labelmaps/usecase_survival.v1.json",
-    "value": "2"
-  },
-  "UseVectorsSophonEqsevenNine": {
-    "json_path": "sophon_eq7_9.n_coefficient_vectors",
-    "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
-    "source_file": "configs/labelmaps/usecase_survival.v1.json",
-    "value": "2"
-  },
-  "UseVectorsSophonEqsixAone": {
-    "json_path": "sophon_eq6_a1.n_coefficient_vectors",
-    "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
-    "source_file": "configs/labelmaps/usecase_survival.v1.json",
-    "value": "2"
-  },
-  "UseVectorsSophonEqsixAthree": {
-    "json_path": "sophon_eq6_a3.n_coefficient_vectors",
-    "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
-    "source_file": "configs/labelmaps/usecase_survival.v1.json",
-    "value": "2"
-  },
-  "UseVectorsVcbEqone": {
-    "json_path": "vcb_eq1.n_coefficient_vectors",
-    "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
-    "source_file": "configs/labelmaps/usecase_survival.v1.json",
-    "value": "2"
-  },
-  "UseVectorsWVsQcdResonance": {
-    "json_path": "w_vs_qcd_resonance.n_coefficient_vectors",
-    "sha256": "122275213c349593aee31687fd6fb077abc80d2bb1bcd8de49a3806db6ba78bf",
-    "source_file": "configs/labelmaps/usecase_survival.v1.json",
-    "value": "0"
+  "UseWlikeLastAlive": {
+    "json_path": "groups at each level vs {label_X_cs, label_X_qq} and that plus the QCD classes",
+    "sha256": "412f9aa3b58db41243d9913eaa6f392abc761cce220cdf2b21a87acfae754a78",
+    "source_file": "configs/labelmaps/rung_label_maps.v1.csv",
+    "value": "162"
   },
   "VcbBkgLeftLinearSixtyOneseven": {
     "json_path": "tasks.bc_vs_rest.arms.r16q1-s*.linear.rejection_at['0.60'].n_bkg_pass",

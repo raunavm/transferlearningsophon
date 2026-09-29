@@ -219,7 +219,7 @@ def write_rung_map(root):
 
 
 def write_extras(root):
-    surv = {"disc_one": {"title": "X->bb vs QCD", "source": "arXiv:0000.00000 Eq. (1)",
+    surv = {"sophon_eq4": {"title": "X->bb vs QCD", "source": "arXiv:0000.00000 Eq. (1)",
                          "constructible": {r: r in M.RUNGS[:2] for r in M.RUNGS},
                          "n_coefficient_vectors": 2, "dies_at": M.RUNGS[2],
                          "last_rung_alive": M.RUNGS[1]}}
@@ -565,7 +565,8 @@ def _recipes(tmp_path):
              {**run, "init": "scratch-v2", "lr": "1e-3", "head_lr_mult": "1"},
              {**run, "leg": "top", "lr_schedule": "constant", "epochs": "20"}]
     leg = tmp_path / "leg.yaml"
-    leg.write_text("--use-amp --optimizer ranger LR=1e-4 --samples-per-epoch-val 20000")
+    leg.write_text("--use-amp --optimizer ranger LR=1e-4 --samples-per-epoch-val 20000\n"
+                   "samples_for () { case $1 in 1000) echo 10000;; *) echo $1;; esac; }")
     return {"runs": runs}, [leg]
 
 
@@ -574,6 +575,9 @@ def test_the_fine_tuning_table_states_the_settings_of_the_reported_runs_only(tmp
     rec = M.ft_recipe(R, legs, REPORTED)
     assert (rec["lr"], rec["head_mult"], rec["n_runs"]) == ("1e-4", "50", 16)
     assert rec["epochs_jetclass"] == EPOCHS
+    # weaver's steps are samples_per_epoch // batch; the smallest set is cycled
+    assert rec["steps"][1000] == 10000 // 512 and rec["passes"][1000] == 10
+    assert rec["val_jetclass"] == str(20000 // 512 * 512)
     got, prov = _repo_macros()
     assert got["FtRecipeLrHead"] == "\\ensuremath{5\\times10^{-3}}"
     assert "FtRecipeLrScratch" not in got          # no from-scratch row is reported yet

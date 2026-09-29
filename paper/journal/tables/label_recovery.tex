@@ -2,12 +2,12 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Label recovery: balanced accuracy of a frozen linear probe trained to recover each level of the label tree (rows, finest first) from each pretrained model (columns), mean $\pm$ standard deviation over the five pretraining seeds.}
+\caption{Linear decodability of each level of the label tree: balanced accuracy of a frozen linear probe trained to recover that level (rows, finest first) from each pretrained model (columns), mean $\pm$ standard deviation over the five pretraining runs.}
 \label{tab:recovery}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l rrrr}
 \toprule
-read out at & 188-class model & 162-class model & 43-class model & 17-class model \\
+level recovered & 188-class model & 162-class model & 43-class model & 17-class model \\
 \midrule
 188 classes & 0.3434\,$\pm$\,0.0010 & 0.3427\,$\pm$\,0.0019 & 0.290\,$\pm$\,0.008 & 0.242\,$\pm$\,0.007 \\
 162 classes & 0.3824\,$\pm$\,0.0008 & 0.3828\,$\pm$\,0.0024 & 0.322\,$\pm$\,0.010 & 0.270\,$\pm$\,0.008 \\

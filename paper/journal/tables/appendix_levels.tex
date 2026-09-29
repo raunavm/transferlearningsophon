@@ -1,0 +1,39 @@
+\begin{table}[p]
+\centering
+\small
+\caption{The levels of the label tree, finest first: the number of classes, what each level labels, and whether models were pretrained on it. Below, the groups of the 17-class vocabulary, by the group number used in Table~\ref{tab:app-vocabulary}, with the number of native classes each merges. $\ell$ is an electron or a muon; $\tau_\ell$ a leptonic $\tau$ decay.}
+\label{tab:app-levels}
+\begin{tabular}{r p{0.62\linewidth} l}
+\toprule
+classes & labels & pretrained \\
+\midrule
+188 & native classes & yes \\
+162 & one QCD class; every resonant class kept & yes \\
+64 & each decay topology by its numbers of $b$ and $c$ quarks & \pending{rerun} \\
+43 & each decay topology by whether it holds a $b$ quark, else a $c$, else neither & yes \\
+30 & each decay topology by whether it holds a $b$ or $c$ quark & \pending{rerun} \\
+17 & decay topology: prongs, and quarks or gluons and leptons, without flavour & yes \\
+4 & two-, three- or four-prong decay, or QCD & no \\
+2 & resonance decay or QCD & no \\
+\midrule
+\multicolumn{3}{@{}l}{\itshape the 17 classes of the 17-class vocabulary} \\
+0 & two-prong: two quarks or gluons & 10 native \\
+3 & two-prong: $\ell\ell$ & 2 native \\
+2 & two-prong: $\tau_h$, $\tau_\ell$ & 2 native \\
+1 & two-prong: $\tau_h$, $\tau_h$ & 1 native \\
+9 & four-prong: four quarks or gluons & 27 native \\
+11 & four-prong: two quarks or gluons, $\ell\ell$ & 10 native \\
+12 & four-prong: two quarks or gluons, $\tau_h$, $\tau_\ell$ & 10 native \\
+10 & four-prong: two quarks or gluons, $\tau_h$, $\tau_h$ & 5 native \\
+4 & three-prong: three quarks or gluons & 29 native \\
+6 & three-prong: two quarks or gluons, $\ell$ & 10 native \\
+7 & three-prong: one quark or gluon, $\ell\ell$ & 10 native \\
+8 & three-prong: one quark or gluon, $\tau_h$, $\tau_\ell$ & 10 native \\
+5 & three-prong: one quark or gluon, $\tau_h$, $\tau_h$ & 5 native \\
+13 & four-prong: two quarks or gluons, $\ell$, $\nu$ & 12 native \\
+14 & four-prong: two quarks or gluons, $\tau_\ell$, $\nu$ & 12 native \\
+15 & four-prong: two quarks or gluons, $\tau_h$, $\nu$ & 6 native \\
+16 & QCD & 27 native \\
+\bottomrule
+\end{tabular}
+\end{table}

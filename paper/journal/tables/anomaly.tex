@@ -2,7 +2,7 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Anomaly detection with the class sum of the model's own outputs and two detectors on the frozen features, 2{,}000 signal jets injected: $\sigma_{\min}$, the smallest initial significance from which a $5\sigma$ discovery is still reached (lower is more sensitive), and the maximum significance improvement (max SIC). Mean $\pm$ standard deviation over the five pretraining seeds of each seed's median over 10 resamplings of the background and signal samples.}
+\caption{Anomaly detection with the resonance-to-QCD probability ratio from the model's own outputs (output ratio) and two detectors on the frozen features, 2{,}000 signal jets injected: $\sigma_{\min}$, the smallest initial significance from which a $5\sigma$ discovery is still reached (lower is more sensitive), and the maximum significance improvement (max SIC). Mean $\pm$ standard deviation over the five pretraining runs of each run's median over 10 resamplings of the background and signal samples; Table~\ref{tab:anomaly-per-run} gives each run's value.}
 \label{tab:anomaly}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l l rrrr}
@@ -10,41 +10,41 @@
 & detector & 188 classes & 162 classes & 43 classes & 17 classes \\
 \midrule
 \multicolumn{6}{@{}l}{\itshape $\sigma_{\min}$} \\
-$X\to b\bar b$ & class sum & 2.51\,$\pm$\,0.10 & 2.48\,$\pm$\,0.13 & 2.8\,$\pm$\,0.6 & 2.44\,$\pm$\,0.04 \\
+$X\to b\bar b$ & output ratio & 2.51\,$\pm$\,0.10 & 2.48\,$\pm$\,0.13 & 2.8\,$\pm$\,0.6 & 2.44\,$\pm$\,0.04 \\
  & Mahalanobis & 1.62\,$\pm$\,0.04 & 1.582\,$\pm$\,0.017 & 1.59\,$\pm$\,0.04 & 1.80\,$\pm$\,0.04 \\
  & $k$-nearest neighbours & 2.39\,$\pm$\,0.12 & 2.29\,$\pm$\,0.05 & 2.18\,$\pm$\,0.12 & 1.93\,$\pm$\,0.07 \\
-$X\to YY\to bbb$ & class sum & 1.61\,$\pm$\,0.22 & 1.53\,$\pm$\,0.22 & 2.2\,$\pm$\,1.1 & 1.64\,$\pm$\,0.13 \\
+$X\to YY\to bbb$ & output ratio & 1.61\,$\pm$\,0.22 & 1.53\,$\pm$\,0.22 & 2.2\,$\pm$\,1.1 & 1.64\,$\pm$\,0.13 \\
  & Mahalanobis & 0.75\,$\pm$\,0.06 & 0.75\,$\pm$\,0.05 & 1.04\,$\pm$\,0.05 & 1.48\,$\pm$\,0.14 \\
  & $k$-nearest neighbours & 1.17\,$\pm$\,0.08 & 1.13\,$\pm$\,0.05 & 1.43\,$\pm$\,0.06 & 1.61\,$\pm$\,0.08 \\
-$X\to YY\to bbbb$ & class sum & 1.59\,$\pm$\,0.25 & 1.59\,$\pm$\,0.26 & 2.3\,$\pm$\,1.4 & 1.69\,$\pm$\,0.13 \\
+$X\to YY\to bbbb$ & output ratio & 1.59\,$\pm$\,0.25 & 1.59\,$\pm$\,0.26 & 2.3\,$\pm$\,1.4 & 1.69\,$\pm$\,0.13 \\
  & Mahalanobis & 0.351\,$\pm$\,0.021 & 0.301\,$\pm$\,0.019 & 0.45\,$\pm$\,0.06 & 0.72\,$\pm$\,0.11 \\
  & $k$-nearest neighbours & 0.70\,$\pm$\,0.04 & 0.597\,$\pm$\,0.026 & 0.71\,$\pm$\,0.06 & 0.84\,$\pm$\,0.05 \\
-$X\to YY\to qqq$ & class sum & 3.45\,$\pm$\,0.20 & 3.33\,$\pm$\,0.09 & 3.6\,$\pm$\,0.4 & 3.40\,$\pm$\,0.06 \\
+$X\to YY\to qqq$ & output ratio & 3.45\,$\pm$\,0.20 & 3.33\,$\pm$\,0.09 & 3.6\,$\pm$\,0.4 & 3.40\,$\pm$\,0.06 \\
  & Mahalanobis & 4.52\,$\pm$\,0.05 & 4.483\,$\pm$\,0.021 & 4.61\,$\pm$\,0.07 & 4.70\,$\pm$\,0.07 \\
  & $k$-nearest neighbours & 4.54\,$\pm$\,0.06 & 4.45\,$\pm$\,0.04 & 4.59\,$\pm$\,0.11 & 4.67\,$\pm$\,0.08 \\
-$X\to YY\to qqqq$ & class sum & 3.2\,$\pm$\,0.4 & 3.01\,$\pm$\,0.29 & 3.4\,$\pm$\,0.6 & 3.19\,$\pm$\,0.08 \\
+$X\to YY\to qqqq$ & output ratio & 3.2\,$\pm$\,0.4 & 3.01\,$\pm$\,0.29 & 3.4\,$\pm$\,0.6 & 3.19\,$\pm$\,0.08 \\
  & Mahalanobis & 4.10\,$\pm$\,0.07 & 4.06\,$\pm$\,0.06 & 4.20\,$\pm$\,0.12 & 4.15\,$\pm$\,0.08 \\
  & $k$-nearest neighbours & 4.22\,$\pm$\,0.06 & 4.02\,$\pm$\,0.07 & 4.18\,$\pm$\,0.17 & 4.04\,$\pm$\,0.06 \\
 \addlinespace
 \multicolumn{6}{@{}l}{\itshape max SIC} \\
-$X\to b\bar b$ & class sum & 2.05\,$\pm$\,0.07 & 2.07\,$\pm$\,0.13 & 1.85\,$\pm$\,0.31 & 2.09\,$\pm$\,0.04 \\
+$X\to b\bar b$ & output ratio & 2.05\,$\pm$\,0.07 & 2.07\,$\pm$\,0.13 & 1.85\,$\pm$\,0.31 & 2.09\,$\pm$\,0.04 \\
  & Mahalanobis & 3.11\,$\pm$\,0.08 & 3.185\,$\pm$\,0.034 & 3.17\,$\pm$\,0.07 & 2.80\,$\pm$\,0.06 \\
  & $k$-nearest neighbours & 2.11\,$\pm$\,0.10 & 2.20\,$\pm$\,0.05 & 2.32\,$\pm$\,0.13 & 2.62\,$\pm$\,0.09 \\
-$X\to YY\to bbb$ & class sum & 3.2\,$\pm$\,0.5 & 3.4\,$\pm$\,0.5 & 2.6\,$\pm$\,0.8 & 3.10\,$\pm$\,0.27 \\
+$X\to YY\to bbb$ & output ratio & 3.2\,$\pm$\,0.5 & 3.4\,$\pm$\,0.5 & 2.6\,$\pm$\,0.8 & 3.10\,$\pm$\,0.27 \\
  & Mahalanobis & 6.9\,$\pm$\,0.5 & 6.9\,$\pm$\,0.4 & 4.93\,$\pm$\,0.24 & 3.44\,$\pm$\,0.32 \\
  & $k$-nearest neighbours & 4.34\,$\pm$\,0.28 & 4.49\,$\pm$\,0.20 & 3.54\,$\pm$\,0.16 & 3.14\,$\pm$\,0.16 \\
-$X\to YY\to bbbb$ & class sum & 3.2\,$\pm$\,0.6 & 3.2\,$\pm$\,0.5 & 2.7\,$\pm$\,0.9 & 3.00\,$\pm$\,0.22 \\
+$X\to YY\to bbbb$ & output ratio & 3.2\,$\pm$\,0.6 & 3.2\,$\pm$\,0.5 & 2.7\,$\pm$\,0.9 & 3.00\,$\pm$\,0.22 \\
  & Mahalanobis & 15.0\,$\pm$\,0.8 & 17.9\,$\pm$\,1.4 & 11.7\,$\pm$\,1.8 & 7.3\,$\pm$\,1.2 \\
  & $k$-nearest neighbours & 7.3\,$\pm$\,0.4 & 8.6\,$\pm$\,0.4 & 7.3\,$\pm$\,0.7 & 6.2\,$\pm$\,0.4 \\
-$X\to YY\to qqq$ & class sum & 1.46\,$\pm$\,0.08 & 1.51\,$\pm$\,0.04 & 1.42\,$\pm$\,0.14 & 1.478\,$\pm$\,0.029 \\
+$X\to YY\to qqq$ & output ratio & 1.46\,$\pm$\,0.08 & 1.51\,$\pm$\,0.04 & 1.42\,$\pm$\,0.14 & 1.478\,$\pm$\,0.029 \\
  & Mahalanobis & 1.108\,$\pm$\,0.013 & 1.118\,$\pm$\,0.005 & 1.088\,$\pm$\,0.016 & 1.066\,$\pm$\,0.017 \\
  & $k$-nearest neighbours & 1.105\,$\pm$\,0.014 & 1.127\,$\pm$\,0.011 & 1.092\,$\pm$\,0.026 & 1.073\,$\pm$\,0.019 \\
-$X\to YY\to qqqq$ & class sum & 1.60\,$\pm$\,0.22 & 1.68\,$\pm$\,0.17 & 1.50\,$\pm$\,0.20 & 1.57\,$\pm$\,0.04 \\
+$X\to YY\to qqqq$ & output ratio & 1.60\,$\pm$\,0.22 & 1.68\,$\pm$\,0.17 & 1.50\,$\pm$\,0.20 & 1.57\,$\pm$\,0.04 \\
  & Mahalanobis & 1.222\,$\pm$\,0.021 & 1.237\,$\pm$\,0.019 & 1.194\,$\pm$\,0.033 & 1.209\,$\pm$\,0.023 \\
  & $k$-nearest neighbours & 1.187\,$\pm$\,0.018 & 1.249\,$\pm$\,0.021 & 1.20\,$\pm$\,0.05 & 1.240\,$\pm$\,0.019 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\smallskip{\footnotesize A detector whose max SIC stays below 1.3 at every label set does not detect that signal.}
-\par\smallskip{\footnotesize Not detected by any of the three at any label set, and not shown: $X\to q\bar q$.}
+\par\smallskip{\footnotesize A detector whose max SIC stays below 1.3 at every vocabulary does not detect that signal.}
+\par\smallskip{\footnotesize Not detected by any of the three at any vocabulary, and not shown: $X\to q\bar q$.}
 \end{table}

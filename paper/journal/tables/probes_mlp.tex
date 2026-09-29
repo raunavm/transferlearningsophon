@@ -2,12 +2,12 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Frozen nonlinear (MLP) probes on the four pretraining vocabularies: AUC and the background rejection $1/\epsilon_B$ at 90\% signal efficiency, mean $\pm$ standard deviation over the five pretraining seeds. Rows are the pretraining label-set size, finest first; lower granularity is further down.}
+\caption{Frozen nonlinear (MLP) probes on the four pretraining vocabularies: AUC and the background rejection $1/\epsilon_B$ at 90\% signal efficiency, mean $\pm$ standard deviation over the five pretraining runs. Rows are the number of classes in the pretraining vocabulary, finest first and coarsest last.}
 \label{tab:probes-mlp}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{r l rrrrrr}
 \toprule
-classes & quantity & $b$ vs $c$, two-prong resonance & $b$ vs $c$, QCD & two-prong vs four-prong & electron vs muon pair & $b$ vs $c$, four-prong & visible decay content \\
+classes & quantity & $b$ vs $c$, two-prong resonance & $b$ vs $c$, QCD & two-prong vs four-prong & electron vs muon pair & $b$ vs $c$, four-prong & $bbqq$ vs $cq\tau_h\nu$, four-prong \\
 \midrule
 188 & AUC & 0.99778\,$\pm$\,0.00009 & 0.9853\,$\pm$\,0.0006 & 0.99394\,$\pm$\,0.00032 & $1^{\dagger}$ & 0.99316\,$\pm$\,0.00020 & 0.99911\,$\pm$\,0.00005 \\
      & $1/\epsilon_B$ at 90\% & 1{,}230\,$\pm$\,180 & 57\,$\pm$\,6 & 69\,$\pm$\,9 & $>$1{,}571 & 212\,$\pm$\,34 & $>$538 \\
@@ -23,8 +23,8 @@ classes & quantity & $b$ vs $c$, two-prong resonance & $b$ vs $c$, QCD & two-pro
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\smallskip{\footnotesize Background test jets $N_B$ per task: $b$ vs $c$, two-prong resonance, 11{,}876; $b$ vs $c$, QCD, 5{,}371; two-prong vs four-prong, 1{,}078; electron vs muon pair, 4{,}708; $b$ vs $c$, four-prong, 3{,}158; visible decay content, 2{,}554.}
-\par\smallskip{\footnotesize $>$ at most one background jet passed the cut in every seed; the entry is the 95\% confidence lower limit on the rejection, $N_B/3.0$ when none passed and $N_B/4.74$ when one did, with $N_B$ the number of background test jets.}
-\par\smallskip{\footnotesize $\geq$ with $^{\ast}$: in some seeds at most one background jet passed the cut; the entry is the median over seeds with those seeds at $N_B$, not a measured value.}
-\par\smallskip{\footnotesize $^{\dagger}$ the AUC reached 1 at the resolution of the sample in at least one seed; $1-$AUC is then an upper bound and the cell is not a measurement.}
+\par\smallskip{\footnotesize Background test jets $N_B$ per task: $b$ vs $c$, two-prong resonance, 11{,}876; $b$ vs $c$, QCD, 5{,}371; two-prong vs four-prong, 1{,}078; electron vs muon pair, 4{,}708; $b$ vs $c$, four-prong, 3{,}158; $bbqq$ vs $cq\tau_h\nu$, four-prong, 2{,}554.}
+\par\smallskip{\footnotesize $>$ at most one background jet passed the cut in every run; the entry is the 95\% confidence lower limit on the rejection, $N_B/3.0$ when none passed and $N_B/4.74$ when one did, with $N_B$ the number of background test jets.}
+\par\smallskip{\footnotesize $\geq$ with $^{\ast}$: in some runs at most one background jet passed the cut; the entry is the median over runs with those runs at $N_B$, not a measured value.}
+\par\smallskip{\footnotesize $^{\dagger}$ the AUC reached 1 at the resolution of the sample in at least one run; $1-$AUC is then an upper bound and the cell is not a measurement.}
 \end{table*}

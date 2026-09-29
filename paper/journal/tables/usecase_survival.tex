@@ -2,23 +2,20 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Published Sophon-family discriminants against pretraining vocabulary size (columns, finest first). $\bullet$ = the discriminant is exactly constructible from that vocabulary's output nodes; --- = it is not. The criterion is Sophon's class-division property: a discriminant survives a merge only if both of its coefficient vectors are constant on every merged group, so this is a statement about the partition and needs no training and no data.}
+\caption{Published discriminants built from sums of Sophon's output scores, against the number of classes in the vocabulary (columns, finest first). $\bullet$: the discriminant can be built exactly from that vocabulary's outputs; ---: it cannot. By Sophon's class-division property (Property~1, Eq.~(2) of Ref.~\cite{sophon}), the score of a merged class is the sum of the scores of the classes it merges, so a discriminant survives a merge only if its numerator and its denominator each contain every merged class or none of them. This is a property of the partition and needs no training and no data.}
 \label{tab:usecase}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l l cccccccc}
 \toprule
 discriminant & source & 188 & 162 & 64 & 43 & 30 & 17 & 4 & 2 \\
 \midrule
-X$\to$bb vs QCD & arXiv:2405.12972 Eq. (4) & $\bullet$ & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- \\
-X$\to$cs vs QCD (A1) & arXiv:2405.12972 Eq. (5)-(6) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
-X$\to$bq\_all q\_all vs QCD (A3) & arXiv:2405.12972 Eq. (5)-(6) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
-triboson event discriminant & arXiv:2405.12972 Eq. (7)-(9) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
-D\_bc (|V\_cb|) & arXiv:2503.00118 Eq. (1) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
-GN3X-style per-QCD-subclass rejection & ATL-PHYS-PUB-2026-013 Sec. 6 & $\bullet$ & --- & --- & --- & --- & --- & --- & --- \\
-W$\to$qq vs QCD (resonance-specific)$^{\dagger}$ & this work & --- & --- & --- & --- & --- & --- & --- & --- \\
+$X\to b\bar b$ vs QCD & \cite{sophon}, Eq.~(4) & $\bullet$ & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- \\
+$X\to c\bar s$ vs QCD (Sophon's $A_1$) & \cite{sophon}, Eqs.~(5)--(6) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
+three quarks, exactly one $b$, vs QCD (Sophon's $A_3$) & \cite{sophon}, Eqs.~(5)--(6) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
+$W'\to W\phi\to WWW$ event discriminant & \cite{sophon}, Eqs.~(7)--(9) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
+$D_{bc}$, boosted $|V_{cb}|$ measurement & \cite{vcbboosted}, Eq.~(1) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\smallskip{\footnotesize Column headings are the number of classes in the vocabulary, counted from \texttt{configs/labelmaps/rung\_label\_maps.v1.csv}; they are not the numbers in the internal rung names, which count resonant groups only.}
-\par\smallskip{\footnotesize $^{\dagger}$ Absent for a different reason from every other row: not lost to coarsening, but never expressible. The vocabulary labels jets by their decay products and not by the parent resonance, so wherever the $W$ and the $Z$ share a decay mode they share a class, and no sum of a head's outputs separates them --- at the finest vocabulary as much as at the coarsest. A finer label set of this kind would not buy this discriminant; a differently organised one would.}
+\par\smallskip{\footnotesize Pretrained in this study: the 188, 162, 43 and 17-class vocabularies.}
 \end{table*}

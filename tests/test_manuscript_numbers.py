@@ -41,7 +41,11 @@ GENERATED = {"results_generated.tex",
              "tables/anomaly.tex",
              "tables/mass.tex",
              "tables/realdata.tex",
-             "tables/finetune_recipe.tex"}
+             "tables/finetune_recipe.tex",
+             "tables/appendix_levels.tex",
+             "tables/appendix_vocabulary.tex",
+             "tables/appendix_tasks.tex",
+             "tables/anomaly_per_run.tex"}
 
 # Numbers allowed in prose, each with the reason it is not a result.
 # A number earns a line here only if it cannot change when a job finishes.

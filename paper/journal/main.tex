@@ -265,9 +265,20 @@ Every pretrained level keeps a QCD class, hadronic two- and three-prong classes
 and leptonic classes. Where a given pair of native classes is merged is read off
 the tree, so each probe task below has a known level at which its two classes
 stop being separate labels. Table~\ref{tab:usecase} applies the same bookkeeping
-to published Sophon-family discriminants: a discriminant built from sums of
-output scores survives a merge only if every merged group lies wholly inside or
-wholly outside each of its sums.
+to published discriminants built from sums of Sophon's output scores. By Sophon's
+class-division property~\cite[Property~1, Eq.~(2)]{sophon}, the score of a merged
+class is the sum of the scores of the classes it merges, so such a discriminant
+survives a merge only if every merged group lies wholly inside or wholly outside
+each of its sums. None of these discriminants needs the QCD subclasses that
+separate the \Kfull- from the \Kres-class vocabulary. ATLAS's GN3X tagger has
+QCD subclasses of its own, but its discriminant applies one QCD fraction to all
+of them~\cite[Eq.~(1)]{atlasgnx}, so it too needs only their sum. A tagger that
+tells a $W$ from a $Z$ boson cannot be built from any of these vocabularies: they
+name the decay products and not the parent resonance, so wherever the $W$ and the
+$Z$ share a decay mode they share a class. Sophon's two-prong $W$-like score, the
+sum of its $X\to cs$ and $X\to qq$ outputs~\cite[Eq.~(9)]{sophon}, taken against
+QCD, can be built down to \UseWlikeLastAlive{} classes and not at
+\UseWlikeDiesAt.
 
 \input{tables/usecase_survival}
 

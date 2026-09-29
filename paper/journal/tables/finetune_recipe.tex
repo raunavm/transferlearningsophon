@@ -2,7 +2,7 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Fine-tuning settings of the 264 runs behind the JetClass-II and JetClass results, as each run recorded them, checked against the job commands. The head is freshly initialised in every run; every other weight is loaded from the pretrained model.}
+\caption{Fine-tuning settings of the 264 runs behind the JetClass-II and JetClass results, as each run recorded them, checked against the job commands; the steps per epoch are computed from the commands. The head is freshly initialised in every run; every other weight is loaded from the pretrained model.}
 \label{tab:ftrecipe}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l p{0.7\linewidth}}
@@ -11,7 +11,8 @@ optimizer & Ranger, mixed precision, batch size 512, weight decay 0.01 \\
 learning rate & $1\times10^{-4}$ (pretrained weights), $5\times10^{-3}$ (new head) \\
 schedule & pretrained weights at a constant rate, new head flat then decayed to 1\% over the last 30\% of epochs (weaver default with a head multiplier) \\
 epochs & 50, 50, 30, 10 at $10^{3}$, $10^{4}$, $10^{5}$, $10^{6}$ jets \\
-validation jets & 20{,}000 \\
+steps per epoch & 19, 19, 195, 1{,}953 (at $10^{3}$ jets an epoch is 10 passes over the training jets) \\
+validation jets & 19{,}968 \\
 checkpoint & best validation accuracy \\
 \bottomrule
 \end{tabular}
