@@ -1,0 +1,1840 @@
+{
+  "models": {
+    "l162-s1b": {
+      "label_set": "162",
+      "signal_yield": 2430.0902195991807,
+      "signal_yield_err": 260.44135193131694,
+      "signal_yield_err_lo": 248.27225780780907,
+      "signal_yield_err_hi": 272.6104460548249,
+      "z_wald": 9.330661976597476,
+      "s_over_sqrt_b": 16.28016652099547,
+      "s_in_window": 2429.77604129692,
+      "b_in_window": 22274.850880864484,
+      "mean": 182.83493179275624,
+      "width": 10.75191288379895,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 5.8746006984607176e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 265.48337355771866,
+      "data_efficiency": 0.010354923823845018,
+      "yield_per_pt_bin": {
+        "500-550": 370.33202529478416,
+        "550-600": 598.3439215019944,
+        "600-675": 686.380817441683,
+        "675-750": 376.85281212578985,
+        "750-850": 220.8992462982355,
+        "850-1000": 144.2526002434496,
+        "1000-1200": 15.96613440062279,
+        "1200-2500": 17.062662292621386
+      },
+      "validation": {
+        "toy_p": 0.6666666666666666,
+        "asymptotic_p": 0.6345399580114512,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.5549478456763564,
+        "tf_order": [
+          3,
+          1
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2562.8671336686753,
+      "pooled_shape_yield_err": 196.15399329271136,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "l162-s2": {
+      "label_set": "162",
+      "signal_yield": 749.3336771281547,
+      "signal_yield_err": 249.9493599043535,
+      "signal_yield_err_lo": 228.63714927310642,
+      "signal_yield_err_hi": 271.26157053560064,
+      "z_wald": 2.997941972785597,
+      "s_over_sqrt_b": 4.890193356554103,
+      "s_in_window": 748.6815303575115,
+      "b_in_window": 23439.167154782735,
+      "mean": 182.72262302073472,
+      "width": 11.959013153000601,
+      "tf_order": [
+        2,
+        3
+      ],
+      "converged": true,
+      "edm": 1.7805337702394525e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 73.86026695194235,
+      "data_efficiency": 0.010101884197246348,
+      "yield_per_pt_bin": {
+        "500-550": -83.01945751586807,
+        "550-600": 50.32366535097035,
+        "600-675": 180.53172943728433,
+        "675-750": 166.75389819669164,
+        "750-850": 183.41305171462784,
+        "850-1000": 136.60458254113277,
+        "1000-1200": 52.90651957615432,
+        "1200-2500": 61.819687827161545
+      },
+      "validation": {
+        "toy_p": 0.736318407960199,
+        "asymptotic_p": 0.6102916949879067,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.9693447650345303,
+        "tf_order": [
+          3,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {
+        "500-550": -83.01945751586807
+      },
+      "pooled_shape_yield": 722.303304743866,
+      "pooled_shape_yield_err": 208.59379765185176,
+      "lower_orders_shape_at_bound": [
+        {
+          "order": [
+            2,
+            1
+          ],
+          "mean": 145.18409005230825,
+          "width": 29.999750642332415
+        },
+        {
+          "order": [
+            3,
+            1
+          ],
+          "mean": 140.0,
+          "width": 25.81534935391828
+        },
+        {
+          "order": [
+            2,
+            2
+          ],
+          "mean": 140.0,
+          "width": 19.473721174057573
+        },
+        {
+          "order": [
+            3,
+            2
+          ],
+          "mean": 140.0,
+          "width": 18.681674490218434
+        }
+      ],
+      "head_defect": null
+    },
+    "l162-s3": {
+      "label_set": "162",
+      "signal_yield": 2488.6374211590655,
+      "signal_yield_err": 243.35360576522964,
+      "signal_yield_err_lo": 234.10328280925089,
+      "signal_yield_err_hi": 252.60392872120843,
+      "z_wald": 10.22642509583329,
+      "s_over_sqrt_b": 16.638310836895876,
+      "s_in_window": 2488.5626641797076,
+      "b_in_window": 22370.65474421368,
+      "mean": 183.47852451096648,
+      "width": 9.724162960764483,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 7.608658107662022e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 283.567248722375,
+      "data_efficiency": 0.010454169587814442,
+      "yield_per_pt_bin": {
+        "500-550": 551.7338504093245,
+        "550-600": 665.1717508985353,
+        "600-675": 563.4180976284975,
+        "675-750": 358.1932573594566,
+        "750-850": 180.27548175229992,
+        "850-1000": 121.98071441401183,
+        "1000-1200": 28.671692014482936,
+        "1200-2500": 19.192576682456885
+      },
+      "validation": {
+        "toy_p": 0.681592039800995,
+        "asymptotic_p": 0.604104437389156,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.07028724868004524,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2893.8990008308037,
+      "pooled_shape_yield_err": 196.89616721925765,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "l162-s4": {
+      "label_set": "162",
+      "signal_yield": 2691.6342312934858,
+      "signal_yield_err": 250.23301814356714,
+      "signal_yield_err_lo": 239.9860026984013,
+      "signal_yield_err_hi": 260.48003358873297,
+      "z_wald": 10.756511076204996,
+      "s_over_sqrt_b": 18.02698490672095,
+      "s_in_window": 2691.1216225063517,
+      "b_in_window": 22285.401413580556,
+      "mean": 182.79236262896544,
+      "width": 11.114188653424788,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 1.8250533313097412e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 342.37450738568583,
+      "data_efficiency": 0.010417521739006095,
+      "yield_per_pt_bin": {
+        "500-550": 408.9937764534513,
+        "550-600": 819.4681436341727,
+        "600-675": 688.8207770730106,
+        "675-750": 371.14444468023623,
+        "750-850": 205.49382680303378,
+        "850-1000": 133.4814072114157,
+        "1000-1200": 47.767515172746116,
+        "1200-2500": 16.464340265419416
+      },
+      "validation": {
+        "toy_p": 0.5472636815920398,
+        "asymptotic_p": 0.4816396649641698,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.39573681224407775,
+        "tf_order": [
+          2,
+          3
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2743.9998182637655,
+      "pooled_shape_yield_err": 178.04720877504516,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "l162-s5": {
+      "label_set": "162",
+      "signal_yield": 1862.6383339251151,
+      "signal_yield_err": 227.2877343039035,
+      "signal_yield_err_lo": 218.23708344086145,
+      "signal_yield_err_hi": 236.33838516694559,
+      "z_wald": 8.19506754128054,
+      "s_over_sqrt_b": 12.845968676912632,
+      "s_in_window": 1862.545611785645,
+      "b_in_window": 21022.294534253706,
+      "mean": 183.01720490537835,
+      "width": 10.088980560463895,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 7.195696135225881e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 165.0429868487915,
+      "data_efficiency": 0.010188737480549366,
+      "yield_per_pt_bin": {
+        "500-550": 400.68925364919033,
+        "550-600": 449.1016457539479,
+        "600-675": 466.55340787965446,
+        "675-750": 240.7855643753469,
+        "750-850": 170.65449568419646,
+        "850-1000": 94.16132180478152,
+        "1000-1200": 28.72754298484832,
+        "1200-2500": 11.965101793149298
+      },
+      "validation": {
+        "toy_p": 0.6915422885572139,
+        "asymptotic_p": 0.599078758112941,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.15372875994667917,
+        "tf_order": [
+          2,
+          3
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2090.5856698337543,
+      "pooled_shape_yield_err": 188.4645191973702,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": "top-1 0.386 vs 0.501-0.545; P(QCD) on resonant jets 0.239"
+    },
+    "l162mass-s1": {
+      "label_set": "162+mass",
+      "signal_yield": 1745.9942198966203,
+      "signal_yield_err": 280.3638120927768,
+      "signal_yield_err_lo": 263.055272272638,
+      "signal_yield_err_hi": 297.6723519129157,
+      "z_wald": 6.2276019392932325,
+      "s_over_sqrt_b": 11.766298367137033,
+      "s_in_window": 1745.7309325617857,
+      "b_in_window": 22012.780375965143,
+      "mean": 182.65467846036637,
+      "width": 10.801168042796853,
+      "tf_order": [
+        2,
+        3
+      ],
+      "converged": true,
+      "edm": 9.94291769722192e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 145.82448031548114,
+      "data_efficiency": 0.01036382098945167,
+      "yield_per_pt_bin": {
+        "500-550": 347.77307256716074,
+        "550-600": 327.6351199651281,
+        "600-675": 427.65414157788445,
+        "675-750": 282.34086749099123,
+        "750-850": 174.35332203599506,
+        "850-1000": 115.62090711552233,
+        "1000-1200": 29.568405844282346,
+        "1200-2500": 41.048383299655804
+      },
+      "validation": {
+        "toy_p": 0.582089552238806,
+        "asymptotic_p": 0.5342974263749501,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.2906431091687544,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 1850.4729495377883,
+      "pooled_shape_yield_err": 208.9451375063226,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "l162mass-s2": {
+      "label_set": "162+mass",
+      "signal_yield": 2108.11451317772,
+      "signal_yield_err": 269.5897099659657,
+      "signal_yield_err_lo": 255.56041443731576,
+      "signal_yield_err_hi": 283.6190054946157,
+      "z_wald": 7.819714311217065,
+      "s_over_sqrt_b": 14.506540024520563,
+      "s_in_window": 2107.8472306638714,
+      "b_in_window": 21113.03083154132,
+      "mean": 183.23501512488954,
+      "width": 10.796101841488047,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 5.540763617716634e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 171.7786446943407,
+      "data_efficiency": 0.010330032943874032,
+      "yield_per_pt_bin": {
+        "500-550": 514.9507613754314,
+        "550-600": 593.6358804376616,
+        "600-675": 469.3480443133566,
+        "675-750": 254.388540041244,
+        "750-850": 180.51293571223243,
+        "850-1000": 65.83077406943174,
+        "1000-1200": 16.16686485502573,
+        "1200-2500": 13.280712373335946
+      },
+      "validation": {
+        "toy_p": 0.9900497512437811,
+        "asymptotic_p": 0.9710383463069036,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.9867661122305855,
+        "tf_order": [
+          2,
+          3
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2221.928455162636,
+      "pooled_shape_yield_err": 188.64300957881505,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "l162mass-s3": {
+      "label_set": "162+mass",
+      "signal_yield": 2313.6277153999317,
+      "signal_yield_err": 238.03152328407373,
+      "signal_yield_err_lo": 228.72704574121178,
+      "signal_yield_err_hi": 247.33600082693567,
+      "z_wald": 9.719837454633188,
+      "s_over_sqrt_b": 15.467320216077564,
+      "s_in_window": 2313.131121039745,
+      "b_in_window": 22365.07453833692,
+      "mean": 183.6839386719087,
+      "width": 11.089561730622366,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 7.086918137866875e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 272.75953423597156,
+      "data_efficiency": 0.010385957984830121,
+      "yield_per_pt_bin": {
+        "500-550": 344.2365122290476,
+        "550-600": 610.4273942096684,
+        "600-675": 647.2001005614549,
+        "675-750": 366.25891667292694,
+        "750-850": 205.11769521206895,
+        "850-1000": 108.6443139802778,
+        "1000-1200": 26.72233929929154,
+        "1200-2500": 5.020443235195364
+      },
+      "validation": {
+        "toy_p": 0.9502487562189055,
+        "asymptotic_p": 0.9408633976903693,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.32175348817467764,
+        "tf_order": [
+          4,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2368.495062934123,
+      "pooled_shape_yield_err": 177.03189814160686,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "l162mass-s4": {
+      "label_set": "162+mass",
+      "signal_yield": 2047.5162578223587,
+      "signal_yield_err": 209.4873788493154,
+      "signal_yield_err_lo": 201.46496938456994,
+      "signal_yield_err_hi": 217.50978831406084,
+      "z_wald": 9.773936115240337,
+      "s_over_sqrt_b": 13.771502006964376,
+      "s_in_window": 2047.3811260088003,
+      "b_in_window": 22102.162686753654,
+      "mean": 183.9283354180952,
+      "width": 10.12924442024072,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 1.066501527881212e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 252.33197601905613,
+      "data_efficiency": 0.010377378575137994,
+      "yield_per_pt_bin": {
+        "500-550": 299.00281213377025,
+        "550-600": 517.9057722244137,
+        "600-675": 601.6640518600224,
+        "675-750": 308.1277968050251,
+        "750-850": 190.4813693026138,
+        "850-1000": 100.384802085253,
+        "1000-1200": 22.29519342576462,
+        "1200-2500": 7.654459985495863
+      },
+      "validation": {
+        "toy_p": 0.5373134328358209,
+        "asymptotic_p": 0.45572777303498324,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.9234805488523962,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2250.2102494630776,
+      "pooled_shape_yield_err": 174.3771312129081,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "l162mass-s5": {
+      "label_set": "162+mass",
+      "signal_yield": 2574.8875027789845,
+      "signal_yield_err": 270.4675767928197,
+      "signal_yield_err_lo": 258.20330756953837,
+      "signal_yield_err_hi": 282.7318460161011,
+      "z_wald": 9.520133737698876,
+      "s_over_sqrt_b": 17.62849485400782,
+      "s_in_window": 2573.568434838351,
+      "b_in_window": 21312.82289630398,
+      "mean": 183.55397548463156,
+      "width": 11.961511628607845,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 7.047864364368778e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 258.9905417687492,
+      "data_efficiency": 0.010355029742483193,
+      "yield_per_pt_bin": {
+        "500-550": 569.4615769228185,
+        "550-600": 673.0264734412344,
+        "600-675": 606.9884869296902,
+        "675-750": 343.1328687126288,
+        "750-850": 204.0020698840074,
+        "850-1000": 116.233339918208,
+        "1000-1200": 45.890993269627494,
+        "1200-2500": 16.151693700769563
+      },
+      "validation": {
+        "toy_p": 0.7761194029850746,
+        "asymptotic_p": 0.7192752689263892,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.60669868805845,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2464.57388278258,
+      "pooled_shape_yield_err": 173.6316405735388,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "l188-s1": {
+      "label_set": "188",
+      "signal_yield": 2517.3663078712984,
+      "signal_yield_err": 465.05065089944276,
+      "signal_yield_err_lo": 418.58184336117654,
+      "signal_yield_err_hi": 511.519458437709,
+      "z_wald": 5.4131013535891706,
+      "s_over_sqrt_b": 17.23791797097342,
+      "s_in_window": 2513.0565449450983,
+      "b_in_window": 21253.717395919222,
+      "mean": 184.2218687509806,
+      "width": 13.327960339762777,
+      "tf_order": [
+        2,
+        3
+      ],
+      "converged": true,
+      "edm": 5.827675729997713e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 158.7132543630358,
+      "data_efficiency": 0.010374095097354586,
+      "yield_per_pt_bin": {
+        "500-550": 512.2148208658416,
+        "550-600": 616.5046935484281,
+        "600-675": 631.830064948602,
+        "675-750": 378.09583316358777,
+        "750-850": 210.72033890018088,
+        "850-1000": 97.43308041217762,
+        "1000-1200": 57.87914337366821,
+        "1200-2500": 12.68833265881213
+      },
+      "validation": {
+        "toy_p": 0.6218905472636815,
+        "asymptotic_p": 0.542204826219296,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.8366385592478259,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2077.1632322836576,
+      "pooled_shape_yield_err": 207.8814080585438,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "l188-s2": {
+      "label_set": "188",
+      "signal_yield": 2389.872415379399,
+      "signal_yield_err": 237.5689693571819,
+      "signal_yield_err_lo": 228.32358354194704,
+      "signal_yield_err_hi": 246.8143551724168,
+      "z_wald": 10.059699386859975,
+      "s_over_sqrt_b": 15.977107806995173,
+      "s_in_window": 2389.3689927450696,
+      "b_in_window": 22365.06247453163,
+      "mean": 182.24154665921807,
+      "width": 11.175032920861678,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 5.658373172431106e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 266.713045665065,
+      "data_efficiency": 0.010428325440099886,
+      "yield_per_pt_bin": {
+        "500-550": 419.83222112934396,
+        "550-600": 610.3253519355453,
+        "600-675": 621.9726626758086,
+        "675-750": 361.79426734521246,
+        "750-850": 207.80974026546406,
+        "850-1000": 117.36278016084681,
+        "1000-1200": 40.283355292715335,
+        "1200-2500": 10.492036574462695
+      },
+      "validation": {
+        "toy_p": 0.900497512437811,
+        "asymptotic_p": 0.8525102209721066,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.3749026271962887,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2413.9776581651217,
+      "pooled_shape_yield_err": 177.09492041795582,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "l188-s3": {
+      "label_set": "188",
+      "signal_yield": 2845.6140799612517,
+      "signal_yield_err": 250.78307501487188,
+      "signal_yield_err_lo": 241.2968799361492,
+      "signal_yield_err_hi": 260.26927009359457,
+      "z_wald": 11.346914379259852,
+      "s_over_sqrt_b": 19.074240696802892,
+      "s_in_window": 2845.002639881757,
+      "b_in_window": 22246.96799810689,
+      "mean": 183.13251565970174,
+      "width": 11.148018311176271,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 6.539413358262359e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 358.0195259329877,
+      "data_efficiency": 0.010494524588958894,
+      "yield_per_pt_bin": {
+        "500-550": 584.9367191695553,
+        "550-600": 755.3820473373282,
+        "600-675": 649.9309288167375,
+        "675-750": 404.9631808109681,
+        "750-850": 254.62238647273955,
+        "850-1000": 163.1854996236487,
+        "1000-1200": 28.68228067555229,
+        "1200-2500": 3.911037054721694
+      },
+      "validation": {
+        "toy_p": 0.373134328358209,
+        "asymptotic_p": 0.32504473098325765,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.051118320294341296,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2901.9398034487567,
+      "pooled_shape_yield_err": 179.5005954113658,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "l188-s4": {
+      "label_set": "188",
+      "signal_yield": 1764.6402007785127,
+      "signal_yield_err": 259.2635628044991,
+      "signal_yield_err_lo": 243.32187722003886,
+      "signal_yield_err_hi": 275.2052483889594,
+      "z_wald": 6.806356364504493,
+      "s_over_sqrt_b": 11.685481618570016,
+      "s_in_window": 1764.48051299037,
+      "b_in_window": 22800.296752685044,
+      "mean": 184.09905269206956,
+      "width": 10.230197482887053,
+      "tf_order": [
+        2,
+        3
+      ],
+      "converged": true,
+      "edm": 1.884325811399129e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 153.7512307674471,
+      "data_efficiency": 0.010387334927126388,
+      "yield_per_pt_bin": {
+        "500-550": 234.18554583909702,
+        "550-600": 416.33719859994693,
+        "600-675": 483.58082252422565,
+        "675-750": 282.7444028833811,
+        "750-850": 162.35885258445228,
+        "850-1000": 135.01618467871347,
+        "1000-1200": 24.133945606956512,
+        "1200-2500": 26.283248061739883
+      },
+      "validation": {
+        "toy_p": 0.11940298507462686,
+        "asymptotic_p": 0.07653445835133613,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.894709107181326,
+        "tf_order": [
+          3,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 1933.2149768562963,
+      "pooled_shape_yield_err": 210.5462088634807,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "l188-s5": {
+      "label_set": "188",
+      "signal_yield": 1427.8953820545607,
+      "signal_yield_err": 227.35373727030446,
+      "signal_yield_err_lo": 215.41188482826828,
+      "signal_yield_err_hi": 239.29558971234064,
+      "z_wald": 6.280501034196386,
+      "s_over_sqrt_b": 9.317398357514207,
+      "s_in_window": 1427.7869982918455,
+      "b_in_window": 23482.13163009711,
+      "mean": 183.20194441794703,
+      "width": 10.139615907178154,
+      "tf_order": [
+        2,
+        3
+      ],
+      "converged": true,
+      "edm": 2.087446544869066e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 133.84966831737785,
+      "data_efficiency": 0.010440082408937245,
+      "yield_per_pt_bin": {
+        "500-550": 160.96119234155375,
+        "550-600": 246.12566169483492,
+        "600-675": 377.89095394144897,
+        "675-750": 251.62048981591997,
+        "750-850": 196.15137478634833,
+        "850-1000": 111.08604142876243,
+        "1000-1200": 34.255789880363146,
+        "1200-2500": 49.80387816532924
+      },
+      "validation": {
+        "toy_p": 0.9601990049751243,
+        "asymptotic_p": 0.9192579635561429,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.2138967919262981,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 1584.60212886108,
+      "pooled_shape_yield_err": 213.41456512476415,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": "top-1 0.327 vs 0.463-0.490; P(QCD) on resonant jets 0.301"
+    },
+    "r16q1-s1": {
+      "label_set": "17",
+      "signal_yield": 2070.784576351917,
+      "signal_yield_err": 302.428939033149,
+      "signal_yield_err_lo": 282.3467139486277,
+      "signal_yield_err_hi": 322.51116411767026,
+      "z_wald": 6.847177333532027,
+      "s_over_sqrt_b": 13.700428384782338,
+      "s_in_window": 2070.3324237786383,
+      "b_in_window": 22835.57090252629,
+      "mean": 183.4714748747142,
+      "width": 11.217346319093481,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 7.517514407361463e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 144.62771092280394,
+      "data_efficiency": 0.010505540127329032,
+      "yield_per_pt_bin": {
+        "500-550": 586.8158861940491,
+        "550-600": 508.83648944684313,
+        "600-675": 462.71362810797933,
+        "675-750": 218.12819189868958,
+        "750-850": 139.86184228048404,
+        "850-1000": 96.698428697077,
+        "1000-1200": 46.375142015240996,
+        "1200-2500": 11.354967711554137
+      },
+      "validation": {
+        "toy_p": 0.900497512437811,
+        "asymptotic_p": 0.9062421205526167,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.5774413768127334,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2112.02522368662,
+      "pooled_shape_yield_err": 198.47617787035782,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r16q1-s2": {
+      "label_set": "17",
+      "signal_yield": 2785.070319512164,
+      "signal_yield_err": 333.35513645284027,
+      "signal_yield_err_lo": 314.42999364607175,
+      "signal_yield_err_hi": 352.2802792596088,
+      "z_wald": 8.354664485291853,
+      "s_over_sqrt_b": 18.596233623722846,
+      "s_in_window": 2782.4878187258573,
+      "b_in_window": 22388.06485596786,
+      "mean": 182.27534055241122,
+      "width": 12.620792405420246,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 1.8655624180175036e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 234.92503484227166,
+      "data_efficiency": 0.010511895245619497,
+      "yield_per_pt_bin": {
+        "500-550": 466.3299367163638,
+        "550-600": 794.3819228144786,
+        "600-675": 675.800900038337,
+        "675-750": 379.2575691042094,
+        "750-850": 262.03237859610203,
+        "850-1000": 149.20522718854855,
+        "1000-1200": 25.631379929791883,
+        "1200-2500": 32.43100512433301
+      },
+      "validation": {
+        "toy_p": 0.4527363184079602,
+        "asymptotic_p": 0.46029693175497954,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.6291698330632136,
+        "tf_order": [
+          3,
+          1
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2479.999257498944,
+      "pooled_shape_yield_err": 198.66434400065182,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r16q1-s3": {
+      "label_set": "17",
+      "signal_yield": 2132.553486729829,
+      "signal_yield_err": 367.9839381270365,
+      "signal_yield_err_lo": 336.2681993550103,
+      "signal_yield_err_hi": 399.6996768990627,
+      "z_wald": 5.795235242016521,
+      "s_over_sqrt_b": 14.425928109005314,
+      "s_in_window": 2130.8624366517297,
+      "b_in_window": 21818.420125978904,
+      "mean": 182.18450562646703,
+      "width": 12.38116388107177,
+      "tf_order": [
+        2,
+        3
+      ],
+      "converged": true,
+      "edm": 3.3625223188640036e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 143.25155910955795,
+      "data_efficiency": 0.010344014204113053,
+      "yield_per_pt_bin": {
+        "500-550": 397.32894500013623,
+        "550-600": 540.2210606384399,
+        "600-675": 481.8910239613833,
+        "675-750": 268.6850367411944,
+        "750-850": 260.94889566097817,
+        "850-1000": 144.0868746009976,
+        "1000-1200": 36.87137538907269,
+        "1200-2500": 2.520274737626742
+      },
+      "validation": {
+        "toy_p": 0.8258706467661692,
+        "asymptotic_p": 0.8386364816563547,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -1.47448464128262,
+        "tf_order": [
+          3,
+          1
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 1911.1239097908397,
+      "pooled_shape_yield_err": 208.6077203143685,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r16q1-s4": {
+      "label_set": "17",
+      "signal_yield": 2231.15254433194,
+      "signal_yield_err": 276.8754209188512,
+      "signal_yield_err_lo": 262.4284424015996,
+      "signal_yield_err_hi": 291.32239943610284,
+      "z_wald": 8.058326509906648,
+      "s_over_sqrt_b": 15.180851188212303,
+      "s_in_window": 2230.7823656345417,
+      "b_in_window": 21593.456161053666,
+      "mean": 181.9938258389764,
+      "width": 10.98739623149535,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 7.897770404822659e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 201.98993559534017,
+      "data_efficiency": 0.010318911486865718,
+      "yield_per_pt_bin": {
+        "500-550": 410.4428809560318,
+        "550-600": 635.9095904249328,
+        "600-675": 500.7833372578798,
+        "675-750": 328.0190694874025,
+        "750-850": 197.09620169019107,
+        "850-1000": 107.41502005911795,
+        "1000-1200": 27.524452991748134,
+        "1200-2500": 23.96199146463596
+      },
+      "validation": {
+        "toy_p": 0.6467661691542289,
+        "asymptotic_p": 0.6089371526457205,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.9814736297156463,
+        "tf_order": [
+          3,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2290.7873761036994,
+      "pooled_shape_yield_err": 192.51859364710074,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r16q1-s5": {
+      "label_set": "17",
+      "signal_yield": 2200.9937248394485,
+      "signal_yield_err": 335.59305075830355,
+      "signal_yield_err_lo": 313.6911409348871,
+      "signal_yield_err_hi": 357.49496058172,
+      "z_wald": 6.558519968950786,
+      "s_over_sqrt_b": 14.699765890239215,
+      "s_in_window": 2198.963018175892,
+      "b_in_window": 22377.677707262483,
+      "mean": 181.83469037543543,
+      "width": 12.523291831500826,
+      "tf_order": [
+        2,
+        3
+      ],
+      "converged": true,
+      "edm": 1.612927103677239e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 157.65499185730584,
+      "data_efficiency": 0.01043563382613392,
+      "yield_per_pt_bin": {
+        "500-550": 353.4708184643206,
+        "550-600": 589.142340449029,
+        "600-675": 466.841713412821,
+        "675-750": 275.40591066909593,
+        "750-850": 251.47658478711608,
+        "850-1000": 183.55333555286478,
+        "1000-1200": 56.781575116925374,
+        "1200-2500": 24.32144638727569
+      },
+      "validation": {
+        "toy_p": 0.44776119402985076,
+        "asymptotic_p": 0.42738846594504276,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.61079030566699,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 1979.8862549662779,
+      "pooled_shape_yield_err": 212.64628574453968,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r16q1mass-s1": {
+      "label_set": "17+mass",
+      "signal_yield": 2279.7736840868592,
+      "signal_yield_err": 441.63190020432614,
+      "signal_yield_err_lo": 394.2979147133326,
+      "signal_yield_err_hi": 488.96588569531974,
+      "z_wald": 5.16215808466756,
+      "s_over_sqrt_b": 15.282708185422784,
+      "s_in_window": 2276.6108776495175,
+      "b_in_window": 22191.005036299182,
+      "mean": 181.94564313510082,
+      "width": 13.178754887648799,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 3.1358347497176917e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 113.66936937079043,
+      "data_efficiency": 0.010449721005011117,
+      "yield_per_pt_bin": {
+        "500-550": 676.7452478382978,
+        "550-600": 644.3135161937131,
+        "600-675": 530.2558185835503,
+        "675-750": 232.10530739927697,
+        "750-850": 125.89339507428488,
+        "850-1000": 50.662845392412095,
+        "1000-1200": 18.88847909355081,
+        "1200-2500": 0.9090745117735223
+      },
+      "validation": {
+        "toy_p": 0.48258706467661694,
+        "asymptotic_p": 0.4147250411179459,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.0745136386821579,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 1886.5643232331868,
+      "pooled_shape_yield_err": 194.9694752764093,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r16q1mass-s2": {
+      "label_set": "17+mass",
+      "signal_yield": 3162.2979570480015,
+      "signal_yield_err": 290.4267927428267,
+      "signal_yield_err_lo": 278.78573090351495,
+      "signal_yield_err_hi": 302.0678545821384,
+      "z_wald": 10.888451189998232,
+      "s_over_sqrt_b": 20.96989543255166,
+      "s_in_window": 3159.570244140112,
+      "b_in_window": 22701.96765463714,
+      "mean": 182.50211968848086,
+      "width": 12.474150473116605,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 7.226642436300682e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 364.7666997711715,
+      "data_efficiency": 0.010536362451037786,
+      "yield_per_pt_bin": {
+        "500-550": 666.7867082271958,
+        "550-600": 790.2742800974532,
+        "600-675": 669.2385192823701,
+        "675-750": 431.93890298415397,
+        "750-850": 330.21735031677235,
+        "850-1000": 199.99090248269673,
+        "1000-1200": 54.81541128288633,
+        "1200-2500": 19.035882374472692
+      },
+      "validation": {
+        "toy_p": 0.8159203980099502,
+        "asymptotic_p": 0.8250082062258565,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.48648620459646563,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2880.0184963150177,
+      "pooled_shape_yield_err": 181.92757691530454,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r16q1mass-s3": {
+      "label_set": "17+mass",
+      "signal_yield": 2815.6733151993744,
+      "signal_yield_err": 303.35447213878547,
+      "signal_yield_err_lo": 289.253553405213,
+      "signal_yield_err_hi": 317.455390872358,
+      "z_wald": 9.281792667659095,
+      "s_over_sqrt_b": 19.063135214958937,
+      "s_in_window": 2814.42635654835,
+      "b_in_window": 21796.71881839891,
+      "mean": 182.19933488523003,
+      "width": 11.830064322900595,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 3.0381024105691746e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 278.62383572570803,
+      "data_efficiency": 0.010459995112914035,
+      "yield_per_pt_bin": {
+        "500-550": 532.2626405632043,
+        "550-600": 697.096788433819,
+        "600-675": 722.1929761776407,
+        "675-750": 414.95544263747234,
+        "750-850": 249.52883674075917,
+        "850-1000": 148.721413585183,
+        "1000-1200": 32.3762945400225,
+        "1200-2500": 18.538922521273577
+      },
+      "validation": {
+        "toy_p": 0.11442786069651742,
+        "asymptotic_p": 0.1027392425716771,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -1.920728357965788,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2684.156172870989,
+      "pooled_shape_yield_err": 197.15136856395205,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r16q1mass-s4": {
+      "label_set": "17+mass",
+      "signal_yield": 1968.2768732072043,
+      "signal_yield_err": 432.5186836797531,
+      "signal_yield_err_lo": 387.722002990559,
+      "signal_yield_err_hi": 477.3153643689472,
+      "z_wald": 4.550732598327619,
+      "s_over_sqrt_b": 13.115306245849029,
+      "s_in_window": 1963.8266091478868,
+      "b_in_window": 22420.712442769225,
+      "mean": 181.55981784309935,
+      "width": 13.560958367615083,
+      "tf_order": [
+        2,
+        3
+      ],
+      "converged": true,
+      "edm": 2.7473622908079395e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 104.84068184711748,
+      "data_efficiency": 0.010266799516883907,
+      "yield_per_pt_bin": {
+        "500-550": 551.0344204981584,
+        "550-600": 354.96043631803343,
+        "600-675": 356.4963813111812,
+        "675-750": 226.1956257242128,
+        "750-850": 224.56647667389475,
+        "850-1000": 146.73805338988623,
+        "1000-1200": 32.601644384044214,
+        "1200-2500": 75.68383490779334
+      },
+      "validation": {
+        "toy_p": 0.31840796019900497,
+        "asymptotic_p": 0.2526942449927446,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.1158300919606705,
+        "tf_order": [
+          3,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 1542.4480116488423,
+      "pooled_shape_yield_err": 210.58656862076322,
+      "lower_orders_shape_at_bound": [
+        {
+          "order": [
+            2,
+            1
+          ],
+          "mean": 189.82971836184296,
+          "width": 29.9997938021513
+        },
+        {
+          "order": [
+            3,
+            1
+          ],
+          "mean": 185.04700180412897,
+          "width": 29.999860405706563
+        }
+      ],
+      "head_defect": "top-1 0.479 vs 0.682-0.719; P(QCD) on resonant jets 0.231"
+    },
+    "r16q1mass-s5": {
+      "label_set": "17+mass",
+      "signal_yield": 2974.09133872063,
+      "signal_yield_err": 374.2921779881152,
+      "signal_yield_err_lo": 351.9852213534891,
+      "signal_yield_err_hi": 396.59913462274136,
+      "z_wald": 7.945908340128512,
+      "s_over_sqrt_b": 20.03491134926532,
+      "s_in_window": 2971.1335747755475,
+      "b_in_window": 21992.241903586008,
+      "mean": 182.07820960060306,
+      "width": 12.660503741874956,
+      "tf_order": [
+        2,
+        3
+      ],
+      "converged": true,
+      "edm": 5.739601088203244e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 256.5115809302421,
+      "data_efficiency": 0.010472069837665918,
+      "yield_per_pt_bin": {
+        "500-550": 489.10074727620355,
+        "550-600": 815.1455384466333,
+        "600-675": 694.6294110505144,
+        "675-750": 422.3818790751569,
+        "750-850": 330.0050661952118,
+        "850-1000": 155.51232472222344,
+        "1000-1200": 30.149801987444047,
+        "1200-2500": 37.16656996724288
+      },
+      "validation": {
+        "toy_p": 0.30845771144278605,
+        "asymptotic_p": 0.23622941615193818,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.5852615604383923,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2604.200666228898,
+      "pooled_shape_yield_err": 213.57704605138196,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r42q1-s1": {
+      "label_set": "43",
+      "signal_yield": 2152.6695268859385,
+      "signal_yield_err": 258.8139140103098,
+      "signal_yield_err_lo": 246.98501155689337,
+      "signal_yield_err_hi": 270.64281646372626,
+      "z_wald": 8.317441259360526,
+      "s_over_sqrt_b": 14.105617244875905,
+      "s_in_window": 2152.3222681275674,
+      "b_in_window": 23282.54267725628,
+      "mean": 182.68975769470924,
+      "width": 10.883762875629586,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 1.8646284359382757e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 216.13773710593816,
+      "data_efficiency": 0.010510200547408706,
+      "yield_per_pt_bin": {
+        "500-550": 280.8450647701212,
+        "550-600": 515.9870765318477,
+        "600-675": 584.0678316190227,
+        "675-750": 357.8908865107289,
+        "750-850": 232.70562307486537,
+        "850-1000": 104.9452016714657,
+        "1000-1200": 40.989685794158056,
+        "1200-2500": 35.238156913728645
+      },
+      "validation": {
+        "toy_p": 0.21393034825870647,
+        "asymptotic_p": 0.15840797852032285,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.16772840723645185,
+        "tf_order": [
+          3,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2246.8898357276125,
+      "pooled_shape_yield_err": 200.85978688135717,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r42q1-s2": {
+      "label_set": "43",
+      "signal_yield": 2049.2424306815324,
+      "signal_yield_err": 264.75448230462956,
+      "signal_yield_err_lo": 250.98320521127064,
+      "signal_yield_err_hi": 278.52575939798845,
+      "z_wald": 7.740161423683284,
+      "s_over_sqrt_b": 13.566449795605799,
+      "s_in_window": 2048.9273688374587,
+      "b_in_window": 22809.759345457784,
+      "mean": 183.18442989862646,
+      "width": 10.774387108806927,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 2.1745568622740705e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 196.02871403497033,
+      "data_efficiency": 0.010519733224844403,
+      "yield_per_pt_bin": {
+        "500-550": 428.3087573189805,
+        "550-600": 391.9001308633408,
+        "600-675": 498.2955091246781,
+        "675-750": 326.0481954284676,
+        "750-850": 215.01333711994147,
+        "850-1000": 120.42864743332431,
+        "1000-1200": 36.05525139469091,
+        "1200-2500": 33.19260199810868
+      },
+      "validation": {
+        "toy_p": 0.8059701492537313,
+        "asymptotic_p": 0.7776483327121331,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.999097083991093,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 2174.0085463472187,
+      "pooled_shape_yield_err": 198.7690538295815,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r42q1-s3": {
+      "label_set": "43",
+      "signal_yield": 3318.3585659359487,
+      "signal_yield_err": 270.41373937154765,
+      "signal_yield_err_lo": 260.6343752854872,
+      "signal_yield_err_hi": 280.1931034576081,
+      "z_wald": 12.27141259038075,
+      "s_over_sqrt_b": 22.098580886628305,
+      "s_in_window": 3317.3601417120276,
+      "b_in_window": 22534.943519810688,
+      "mean": 183.03012327577295,
+      "width": 11.483843093983943,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 5.013531708238837e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 454.13760902949446,
+      "data_efficiency": 0.010549390443533238,
+      "yield_per_pt_bin": {
+        "500-550": 618.0435031781451,
+        "550-600": 857.5082167284788,
+        "600-675": 888.2325040108708,
+        "675-750": 455.9321256150102,
+        "750-850": 271.35665824226356,
+        "850-1000": 147.40866751152123,
+        "1000-1200": 53.27959575287957,
+        "1200-2500": 26.597294896779392
+      },
+      "validation": {
+        "toy_p": 0.5024875621890548,
+        "asymptotic_p": 0.4307529635653367,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.008189985839481046,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 3292.7344328299623,
+      "pooled_shape_yield_err": 181.93036793957754,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r42q1-s4": {
+      "label_set": "43",
+      "signal_yield": 1912.336332764305,
+      "signal_yield_err": 287.21369254328044,
+      "signal_yield_err_lo": 263.65613562548907,
+      "signal_yield_err_hi": 310.77124946107176,
+      "z_wald": 6.658235252750472,
+      "s_over_sqrt_b": 12.67340709299624,
+      "s_in_window": 1911.5010145985927,
+      "b_in_window": 22748.99917171267,
+      "mean": 183.88770705004447,
+      "width": 11.68461134258329,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 8.088846240558139e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 166.37698751315753,
+      "data_efficiency": 0.010394961069074947,
+      "yield_per_pt_bin": {
+        "500-550": 396.6254606432075,
+        "550-600": 418.49064621794963,
+        "600-675": 486.4006473674197,
+        "675-750": 297.6239786794164,
+        "750-850": 130.17690070816977,
+        "850-1000": 123.82041469373421,
+        "1000-1200": 35.631185463793564,
+        "1200-2500": 23.56709899061428
+      },
+      "validation": {
+        "toy_p": 0.472636815920398,
+        "asymptotic_p": 0.4311244718914097,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.4974981418177123,
+        "tf_order": [
+          3,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 1871.8464286861565,
+      "pooled_shape_yield_err": 176.08671004474976,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    },
+    "r42q1-s5": {
+      "label_set": "43",
+      "signal_yield": 1203.7069691142506,
+      "signal_yield_err": 248.2902053033428,
+      "signal_yield_err_lo": 228.4391478753035,
+      "signal_yield_err_hi": 268.1412627313821,
+      "z_wald": 4.8479841065162015,
+      "s_over_sqrt_b": 8.242014667396381,
+      "s_in_window": 1203.4223136709475,
+      "b_in_window": 21319.12390062026,
+      "mean": 182.3068001678878,
+      "width": 11.322149840340279,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 4.0611925997451265e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 84.83231296161739,
+      "data_efficiency": 0.010165011705598298,
+      "yield_per_pt_bin": {
+        "500-550": 208.1557755024815,
+        "550-600": 305.4296593652001,
+        "600-675": 356.76512073234517,
+        "675-750": 221.11671104528102,
+        "750-850": 76.41394669634217,
+        "850-1000": 6.01310707565412,
+        "1000-1200": 12.045367733242777,
+        "1200-2500": 17.76728096370348
+      },
+      "validation": {
+        "toy_p": 0.6915422885572139,
+        "asymptotic_p": 0.6640804123391206,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.9587944346893656,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 1210.22800750218,
+      "pooled_shape_yield_err": 167.09367965095032,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": "top-1 0.550 vs 0.605-0.671; never predicts QCD (P(QCD) 0.000)"
+    },
+    "sophon-public": {
+      "label_set": "published",
+      "signal_yield": 1504.8696196950675,
+      "signal_yield_err": 235.19390562712078,
+      "signal_yield_err_lo": 221.62767479824166,
+      "signal_yield_err_hi": 248.7601364559999,
+      "z_wald": 6.398420978139228,
+      "s_over_sqrt_b": 10.158708686803097,
+      "s_in_window": 1504.7079974770395,
+      "b_in_window": 21939.536347610512,
+      "mean": 183.107148442242,
+      "width": 10.511116869730358,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 8.831472592364842e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 134.06284873931503,
+      "data_efficiency": 0.01030048164382337,
+      "yield_per_pt_bin": {
+        "500-550": 175.37311744756772,
+        "550-600": 339.9716311177571,
+        "600-675": 433.41416484645003,
+        "675-750": 266.9850884450381,
+        "750-850": 172.0372996406356,
+        "850-1000": 98.05523824307238,
+        "1000-1200": 9.948749759203324,
+        "1200-2500": 9.084330195343318
+      },
+      "validation": {
+        "toy_p": 0.9850746268656716,
+        "asymptotic_p": 0.9668082827395394,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.6345593474755061,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "negative_pt_bins": {},
+      "pooled_shape_yield": 1632.1549489540084,
+      "pooled_shape_yield_err": 190.5640672800643,
+      "lower_orders_shape_at_bound": [],
+      "head_defect": null
+    }
+  },
+  "lowest_yield_per_label_set": {
+    "162": "l162-s2",
+    "162+mass": "l162mass-s1",
+    "188": "l188-s5",
+    "17": "r16q1-s1",
+    "17+mass": "r16q1mass-s4",
+    "43": "r42q1-s5"
+  },
+  "yield_by_label_set": {
+    "162": {
+      "n": 5,
+      "mean": 2044.4667766210005,
+      "sd": 786.6463696614453,
+      "min": 749.3336771281547,
+      "max": 2691.6342312934858
+    },
+    "162+mass": {
+      "n": 5,
+      "mean": 2158.0280418151233,
+      "sd": 309.21641036733837,
+      "min": 1745.9942198966203,
+      "max": 2574.8875027789845
+    },
+    "188": {
+      "n": 5,
+      "mean": 2189.0776772090044,
+      "sd": 578.5061922514687,
+      "min": 1427.8953820545607,
+      "max": 2845.6140799612517
+    },
+    "17": {
+      "n": 5,
+      "mean": 2284.11093035306,
+      "sd": 286.85848519698976,
+      "min": 2070.784576351917,
+      "max": 2785.070319512164
+    },
+    "17+mass": {
+      "n": 5,
+      "mean": 2640.022633652414,
+      "sd": 499.0611804681443,
+      "min": 1968.2768732072043,
+      "max": 3162.2979570480015
+    },
+    "43": {
+      "n": 5,
+      "mean": 2127.2627650763948,
+      "sd": 762.3304012224077,
+      "min": 1203.7069691142506,
+      "max": 3318.3585659359487
+    }
+  },
+  "run_spread_vs_stat_error": {
+    "162": {
+      "sd_over_run": 786.6463696614453,
+      "median_stat_err": 249.9493599043535,
+      "mean_stat_err": 246.25301400967413,
+      "sd_over_median_stat_err": 3.1472229813369643
+    },
+    "162+mass": {
+      "sd_over_run": 309.21641036733837,
+      "median_stat_err": 269.5897099659657,
+      "mean_stat_err": 253.5880001969903,
+      "sd_over_median_stat_err": 1.146988920335184
+    },
+    "188": {
+      "sd_over_run": 578.5061922514687,
+      "median_stat_err": 250.78307501487188,
+      "mean_stat_err": 288.00399906926003,
+      "sd_over_median_stat_err": 2.3067991817915234
+    },
+    "17": {
+      "sd_over_run": 286.85848519698976,
+      "median_stat_err": 333.35513645284027,
+      "mean_stat_err": 323.2472970580361,
+      "sd_over_median_stat_err": 0.8605191695840919
+    },
+    "17+mass": {
+      "sd_over_run": 499.0611804681443,
+      "median_stat_err": 374.2921779881152,
+      "mean_stat_err": 368.4448053507614,
+      "sd_over_median_stat_err": 1.333346539996331
+    },
+    "43": {
+      "sd_over_run": 762.3304012224077,
+      "median_stat_err": 264.75448230462956,
+      "mean_stat_err": 265.89720670662206,
+      "sd_over_median_stat_err": 2.879386194282677
+    }
+  },
+  "pooled_shape": [
+    182.9013341034829,
+    11.37319048610815
+  ],
+  "head_defects_source": "audit 2026-09-29, report section B4 (head_acc.py on 2M test jets)",
+  "provenance": {
+    "code": "4726096ba560a751d4bdd08f23764d9ca4345187",
+    "code_dirty": false,
+    "inputs": {
+      "fit": {
+        "path": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+        "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0"
+      },
+      "jets": {
+        "path": "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/aoj_v1/merged/jets.npz",
+        "sha256": "f547be2590ee5f1be62042fef275a5b0ba940bf8daa6b362656915bf32c31c25"
+      }
+    },
+    "partial_models": null
+  }
+}
