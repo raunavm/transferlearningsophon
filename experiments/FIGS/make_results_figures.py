@@ -2,7 +2,7 @@
 """The results figures of the journal draft that the ladder figures do not cover.
 
   finetune_curves       S3 and S4: fine-tuning on JetClass-II and JetClass.
-  anomaly_sensitivity   section 5: ln sigma_min per signal, detector family and label set.
+  anomaly_sensitivity   section 5: sigma_min per signal, detector family and vocabulary.
   mass_tradeoff         C5 (b vs c with and without the mass output) beside S7
                         (jet-mass resolution from frozen features).
   realdata_top_yield    section 6: fitted top-quark yield in CMS open data.
@@ -54,11 +54,17 @@ FT_SEED = "s1"                           # the pre-specified fine-tuning seed
 # References drawn as a dashed line with seed-spread error bars: label, colour,
 # marker, the pretrained models averaged.
 FT_REFERENCES = {"random-label control": ("#CC79A7", "P", ("rand-d1-s1b", "rand-d2-s2", "rand-d3-s3"))}
+# The models drawn in the ratio panel beside the four vocabularies, each paired
+# with the 188-class model of the same pretraining run: the mass-output models
+# (open markers of their vocabulary's colour) and the random partitions, whose
+# partition k was pretrained with the random streams of run k.
+FT_RATIO_EXTRA = {"162+mass": ("l162mass", 162, "none"), "17+mass": ("r16q1mass", 17, "none")}
+RAND_RUN = {"rand-d1-s1b": 1, "rand-d2-s2": 2, "rand-d3-s3": 3}
 SEED_OFFSET = 0.1                        # per-seed points sit this far left of their mean
 SIGNALS = {"label_X_bb": r"$X\to b\bar b$", "label_X_qq": r"$X\to q\bar q$",
            "label_X_YY_bbb": r"$YY\to bbb$", "label_X_YY_bbbb": r"$YY\to bbbb$",
            "label_X_YY_qqq": r"$YY\to qqq$", "label_X_YY_qqqq": r"$YY\to qqqq$"}
-FAMILIES = {"class_sum_matched": "class sum of the outputs", "mahalanobis": "Mahalanobis",
+FAMILIES = {"class_sum_matched": "output ratio", "mahalanobis": "Mahalanobis",
             "knn": "nearest neighbours", "iad_hgb": "classifier-based"}
 GROUPS = ["188", "162", "43", "17", "162+mass", "17+mass"]
 
@@ -129,6 +135,27 @@ def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
             sd = np.array([np.std(v, ddof=1) for v in r])
             bottom.plot(x, m, **kw)
             bottom.fill_between(x, m - sd, m + sd, color=kw["color"], alpha=0.2, lw=0)
+        for label, (stem, lv, fill) in FT_RATIO_EXTRA.items():
+            per = {}
+            for (i, n), v in cells.items():
+                arm, _, seed = i.partition("-s")
+                if arm == stem and seed.isdigit() and int(seed) in by[LEVELS[0]].get(n_of(n), {}):
+                    per.setdefault(n_of(n), []).append(v / by[LEVELS[0]][n_of(n)][int(seed)])
+            xs = sorted(per)
+            if xs:
+                bottom.plot(xs, [np.mean(per[n]) for n in xs], color=style.LEVEL_COLOURS[lv],
+                            marker=style.LEVEL_MARKERS[lv], fillstyle=fill, linestyle=":",
+                            label=f"{label} output")
+        per = {}
+        for (i, n), v in cells.items():
+            if i in RAND_RUN:
+                per.setdefault(n_of(n), []).append(v / by[LEVELS[0]][n_of(n)][RAND_RUN[i]])
+        xs = sorted(n for n in per if len(per[n]) == len(RAND_RUN))
+        if xs:
+            colour, marker, _ = FT_REFERENCES["random-label control"]
+            bottom.errorbar(xs, [np.mean(per[n]) for n in xs],
+                            yerr=[np.std(per[n], ddof=1) for n in xs], color=colour,
+                            marker=marker, linestyle="--", capsize=2)
         for label, (colour, marker, inits) in FT_REFERENCES.items():
             per = {}
             for (i, n), v in cells.items():
@@ -139,7 +166,7 @@ def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
                 top.errorbar(xs, [np.mean(per[n]) for n in xs],
                              yerr=[np.std(per[n], ddof=1) for n in xs], color=colour,
                              marker=marker, linestyle="--", capsize=2,
-                             label=f"{label} ({len(inits)} draws)")
+                             label=f"{label} ({len(inits)} partitions)")
         bottom.axhline(1, color="#999999", linewidth=0.8)
         top.set_title(title)
         top.set_xscale("log")
@@ -148,15 +175,18 @@ def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
         top.set_xlim(x[0] / margin, x[-1] * margin)
         bottom.set_xlabel("fine-tuning jets")
     axes[0, 0].set_ylabel(r"$1-$macro AUC (one-vs-rest)")
-    axes[1, 0].set_ylabel(f"ratio to {LEVELS[0]} classes\n(same pretraining seed)")
+    axes[1, 0].set_ylabel(f"ratio to {LEVELS[0]} classes\n(same pretraining run)")
+    axes[1, 0].legend(fontsize="x-small", loc="upper right")
     axes[0, 0].legend(fontsize="x-small", loc="upper right")
     fig.tight_layout()
     save(fig, outdir, "finetune_curves")
 
 
 def fig_anomaly(S: dict, outdir: pathlib.Path) -> None:
-    """sigma_min per signal and label set for the class sum and the two feature-based detectors: mean
-    +- SD over seeds (each seed the median over resamplings). Signals no detector sees at any label set are left out; the table lists them."""
+    """sigma_min per signal and vocabulary for the output ratio and the two feature-based
+    detectors: mean +- SD over pretraining runs (each run the median over resamplings), with
+    every run as a small point beside it. Signals no score detects at any vocabulary are
+    left out (the table lists them); a signal this panel's score does not detect is open."""
     inj = S["conventions"]["primary_injection"]
     nd = set(S["not_detected_rule"]["not_detected"])
     fams = [f for f in FAMILIES if f in ("class_sum_matched", "mahalanobis", "knn")]
@@ -168,10 +198,14 @@ def fig_anomaly(S: dict, outdir: pathlib.Path) -> None:
         for j, lv in enumerate(LEVELS):
             per = [np.exp(S["families"][fam][g][inj]["levels"][str(lv)]["ln_sigma_min"]) for g in sigs]
             x = xs + offsets[j]
-            ax.errorbar(x, [np.mean(v) for v in per], yerr=[np.std(v, ddof=1) for v in per],
-                        linestyle="none", color=style.LEVEL_COLOURS[lv],
-                        marker=style.LEVEL_MARKERS[lv], markersize=4, capsize=2,
-                        label=f"{lv} classes", zorder=3)
+            for k, (xi, v) in enumerate(zip(x, per)):
+                seen = f"{fam}|{sigs[k]}" not in nd
+                ax.errorbar([xi], [np.mean(v)], yerr=[np.std(v, ddof=1)], linestyle="none",
+                            color=style.LEVEL_COLOURS[lv], marker=style.LEVEL_MARKERS[lv],
+                            markersize=4, capsize=2, fillstyle="full" if seen else "none",
+                            label=f"{lv} classes" if k == 0 else None, zorder=3)
+                ax.plot([xi + 0.035] * len(v), v, linestyle="none", marker=".",
+                        markersize=2, color=style.LEVEL_COLOURS[lv], alpha=0.6, zorder=2)
         ax.set_yscale("log")
         ax.yaxis.set_major_locator(ticker.FixedLocator([0.3, 0.5, 1, 2, 3, 5]))
         ax.yaxis.set_major_formatter(ticker.FormatStrFormatter("%g"))
@@ -257,7 +291,7 @@ def fig_realdata(J: dict, outdir: pathlib.Path) -> None:
     ax.set_xticks(np.arange(len(GROUPS)))
     ax.set_xticklabels([g.replace("+mass", "\n+ mass") for g in GROUPS], fontsize="small")
     ax.set_ylabel("fitted top-quark yield\n(1% data efficiency)")
-    ax.set_xlabel("pretraining label set")
+    ax.set_xlabel("pretraining vocabulary")
     ax.legend(fontsize="small", loc="lower right")
     fig.tight_layout()
     save(fig, outdir, "realdata_top_yield")

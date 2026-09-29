@@ -54,15 +54,15 @@ has not been varied under control. We pretrain Particle Transformer models on
 JetClass-II with four nested vocabularies of \Kfull, \Kres, \Kmid{} and
 \Kcoarse{} classes, formed by merging classes of one label tree, with the data
 stream identical across vocabularies and five independent pretraining runs per
-vocabulary. Beside them we train a random-label control with the class structure
+vocabulary. Alongside these we train a random-label control with the class structure
 of the coarsest vocabulary, a self-supervised control, and models with an
 auxiliary jet-mass output. In frozen representations, the separation of $b$-
 from $c$-quark decays of two-prong resonances is nearly unchanged from \Kfull{}
 to \Kmid{} classes and drops sharply where quark flavour leaves the vocabulary:
 $1-\mathrm{AUC}$ rises by a factor
 \ProbeOmaRatioBvcResonantLinearOnesevenOverFourthree{} from \Kmid{} to \Kcoarse{}
-classes. A random grouping into classes of the same training shares loses much
-less of this information than the \Kcoarse-class vocabulary does, which suggests
+classes. A random grouping into classes with the same shares of the training
+examples loses much less of this information than the \Kcoarse-class vocabulary does, which suggests
 that a vocabulary loses a distinction when no class boundary depends on it,
 rather than when it merges a particular pair. After fine-tuning on the
 pretraining dataset's own task the ordering persists, with the \Kcoarse-class
@@ -120,7 +120,7 @@ controls accompany the vocabularies: random partitions with the class structure
 of the \Kcoarse-class vocabulary, which separate what a vocabulary \emph{says}
 from how many classes it has; a self-supervised model with the same network,
 which sets the level reached with no labels at all; and an auxiliary jet-mass
-output added at two granularities.
+output added to two of the vocabularies.
 
 Our results are:
 \begin{itemize}
@@ -223,19 +223,22 @@ anti-$k_{\mathrm T}$ algorithm with $R = \LitJetClassTwoJetRadius$.
 All models are pretrained on JetClass-II, selecting jets with
 $\DesignPtMin < p_{\mathrm T} < \DesignPtMax$~GeV and soft-drop mass
 $\DesignMsdMin < m_{\mathrm{SD}} < \DesignMsdMax$~GeV. Training jets are
-reweighted to a flat distribution in $(p_{\mathrm T}, m_{\mathrm{SD}})$ within
-each reweighting category, following Sophon. The reweighting categories, their
-weights and the data-sampling seed are identical for every vocabulary, so the
+reweighted to an approximately flat distribution in
+$(p_{\mathrm T}, m_{\mathrm{SD}})$ within each of Sophon's reweighting
+classes~\cite[App.~B.1]{sophon}, groups of native classes inside which the
+flattening is done. The reweighting classes, their weights and the data-sampling seed are identical for every vocabulary, so the
 stream of training examples is the same whatever the labels by construction; we
 did not record the realised stream to check it, and runs resumed after node
 failures may depart from their counterparts after the resume point. The network
-is Sophon's ParT: \DesignParticleBlocks{} particle-attention blocks,
+is the ParT configuration of Sophon's released code: \DesignParticleBlocks{}
+particle-attention blocks,
 \DesignClassBlocks{} class-attention blocks, embedding dimension
 \DesignEmbedDim{} and \DesignHeads{} attention heads, followed by a head with
 one hidden layer of \DesignHeadHidden{} units whose output width is the number
 of classes. Every model is trained for \DesignEpochs{} epochs of
 \DesignSamplesPerEpoch{} jets (\DesignExamplesSeen{} training examples), with
-batch size \DesignBatchSize{}, the Ranger optimizer and an initial learning rate
+batch size \DesignBatchSize{}, the Ranger optimizer (RAdam~\cite{radam} with
+Lookahead~\cite{lookahead}) and an initial learning rate
 of \DesignStartLr, as in Sophon; the checkpoint after the last epoch is used
 downstream. Each vocabulary is pretrained five times; the five runs use
 independent random streams for the weight initialisation, the data sampling and
@@ -284,19 +287,23 @@ QCD, can be built down to \UseWlikeLastAlive{} classes and not at
 
 \subsection{Controls}\label{sec:controls}
 
-\paragraph{Random-label control.} \RandNDraws{} random partitions (draws) of the
-native classes, each pretrained once with the random streams of the
-corresponding run index. Each draw permutes the resonant classes within two prong
-strata, the two-prong decays and the three- and four-prong decays, and cuts them
-into groups whose shares of the training stream equal those of the
-\Kcoarse-class groups; the number of native classes per group is left free, and
-the QCD class is kept as it is. Matching the training share rather than the class
+\paragraph{Random-label control.} \RandNDrawsCap{} random partitions of the
+native classes, numbered one to three, each pretrained once, partition $k$ with
+the random streams of pretraining run $k$ of the vocabularies. Each partition
+permutes the resonant classes within two sets, the two-prong decays and the three-
+and four-prong decays, and cuts them into groups that each hold the same fraction
+of the reweighted training examples as one of the \Kcoarse-class groups; the number of native classes per group is left free, and
+the QCD class is kept as it is. Matching these fractions rather than the class
 count keeps what the loss sees of each group the same as in the \Kcoarse-class
-vocabulary. With these shares, the two-prong groups of every draw coincide with
-those of the \Kcoarse-class vocabulary, so the draws differ from it only among
-the three- and four-prong decays. The two probe tasks for the control were chosen
-among those decays, after the draws were made and before any control model was
-evaluated, so that the draws disagree about whether the pair is merged.
+vocabulary. With these fractions, the two-prong groups of every partition coincide
+with those of the \Kcoarse-class vocabulary, so the partitions differ from it only
+among the three- and four-prong decays. The two probe tasks for the control were
+chosen among those decays, after the partitions were made and before any control
+model was evaluated, so that the partitions disagree about whether the pair is
+merged: $b$ versus $c$ in four-prong decays, $X\to YY\to bbqq$ against
+$X\to YY\to ccqq$, and a pair that differs in visible decay content,
+$X\to YY\to bbqq$ against $X\to YY\to cq\tau_h\nu$, whose second member
+carries a hadronic $\tau$ decay and a neutrino in place of two quarks.
 
 \paragraph{Self-supervised control.} Masked particle modelling~\cite{mpm} on the
 same network and training stream. Its class-attention blocks receive no gradient
@@ -307,7 +314,8 @@ class-attention blocks trained as part of the new head.
 
 \paragraph{Mass output.} The \Kres- and \Kcoarse-class models were also
 pretrained, five times each, with an added output that regresses the jet's
-groomed mass, with the loss weight fixed a priori to GloParT's value,
+groomed mass, with the loss weight fixed a priori to the value of the CMS Global
+Particle Transformer (GloParT),
 $\lambda = \DesignMassLambda$~\cite{glopartdp}, and not tuned. With the models
 without it, this gives a two-by-two design, vocabulary crossed with the mass
 output.
@@ -336,8 +344,8 @@ all-$b$ decays (separate in every pretrained vocabulary, merged only at
 \Kres{} classes), and the two random-control tasks. We report the AUC, $1-$AUC
 and the background rejection $1/\epsilon_B$ at \ProbeEpsS{} signal efficiency.
 
-\paragraph{Label recovery.} A linear probe is trained to recover every level of
-the tree from every model's frozen features (\RecoveryNTrain{} training and
+\paragraph{Linear decodability of the label tree.} A linear probe is trained to
+recover every level of the tree from every model's frozen features (\RecoveryNTrain{} training and
 \RecoveryNTest{} test jets) and scored by balanced accuracy.
 
 \paragraph{Fine-tuning.} Every pretrained model is fine-tuned end to end, with a
@@ -364,8 +372,8 @@ template. Two detectors work on the frozen features, with identical code for
 every model, and never see the pretraining labels: the Mahalanobis distance from
 the template's mean under its covariance, and the distance to the
 \AnomalyKnnK-th nearest template jet. For each detector we report
-$\sigma_{\min}$, the smallest initial significance of the injected signal from
-which a $\AnomalySigmaT\sigma$ discovery is still reached after the best cut on
+$\sigma_{\min}$, the smallest initial significance $\sigma_0 = S/\sqrt{B}$ of the
+injected signal before any cut from which a $\AnomalySigmaT\sigma$ discovery is still reached after the best cut on
 the score~\cite{sigmamin}, and the maximum significance improvement (max SIC),
 $\epsilon_S/\sqrt{\epsilon_B}$ maximised over cuts that keep at least
 \AnomalyMinBkgPass{} background jets, so that the background efficiency is known
@@ -376,9 +384,9 @@ discriminating power has a max SIC of one, and we call a signal not detected whe
 the max SIC stays below \AnomalyNdThreshold{} at every vocabulary. All signals
 are native JetClass-II classes, so this measures in-domain sensitivity, not the
 discovery of unseen physics.
-A third score uses the model's own outputs: the summed probabilities of the
-resonance classes over the summed probabilities of the resonance and QCD
-classes, with the signal's classes left out so that the score cannot simply
+A third score uses the model's own outputs: the resonance-to-QCD probability
+ratio (the output ratio below), the summed probabilities of the resonance classes
+over the summed probabilities of the resonance and QCD classes, with the signal's classes left out so that the score cannot simply
 read the signal's own label. Leaving out only the signal's class would remove a
 different number of native classes at each vocabulary, and so compare different
 scores. We therefore leave out the signal's whole group in the \Kcoarse-class
@@ -391,8 +399,9 @@ output scores for hadronic three-prong decays over the sum for QCD, built with
 no fine-tuning, is applied to the AspenOpenJets sample of CMS open
 data~\cite{aspen}, whose top-quark peak OmniLearned recovered with its own
 model~\cite{omnilearned}. The score does not distinguish quark flavour at any
-vocabulary. A cut on the score, set in bins of $\rho$ and $p_{\mathrm T}$ to pass
-1\% of the jets in the mass sidebands, keeps the background mass shape nearly
+vocabulary. A cut on the score, set in bins of $\rho = \ln(m_{\mathrm{SD}}^2/p_{\mathrm T}^2)$
+and $p_{\mathrm T}$ to pass 1\% of the jets in the mass sidebands (outside the
+$W$ and top-quark mass windows), keeps the background mass shape nearly
 unchanged~\cite{ddt}. It is followed by a simultaneous fit of the soft-drop mass
 of the \AojNJetsFit{} jets in the passing and failing
 categories~\cite{cmshbb,cmszprime}: the background in the passing jets is the
@@ -419,8 +428,8 @@ Every number is the mean over the five independently pretrained models of a
 configuration, and the uncertainty is the standard deviation between them. Each
 pretrained model is probed or fine-tuned once, so the spread contains the
 pretraining and the downstream training variation together. Rows with fewer runs
-say so. For the random-label control the spread is between its three draws,
-each pretrained once. The statistical uncertainty of
+say so. For the random-label control the spread is between its three random
+partitions, each pretrained once. The statistical uncertainty of
 the finite test sample is common to all models scored on the same jets and is
 not included, except where we state it: background rejections at tight working
 points rest on few background jets, and the tables give how many. Uncertainties
@@ -457,8 +466,8 @@ run than the others.
 
 One reading of this result is a tautology: the labels merged $b$ with $c$, so
 the representation separates them less well. The coarsening from \Kres{} to
-\Kmid{} classes calibrates it: it merges many classes but keeps this pair apart,
-and raises $1-$AUC by a factor
+\Kmid{} classes gives the baseline cost of a merge that keeps the pair apart: it
+merges many classes but not these two, and raises $1-$AUC by a factor
 \ProbeOmaRatioBvcResonantLinearFourthreeOverOnesixtwo; merging the pair raises it
 by a further \ProbeOmaRatioBvcResonantLinearOnesevenOverFourthree. The next task
 tests the tautology directly.
@@ -520,23 +529,23 @@ is \VcbRejLinearSixtyOnesixtwo{} and \VcbRejLinearSixtyOneseven{}
   \label{fig:granularity}
 \end{figure}
 
-\subsection{Label recovery across the tree}\label{sec:recovery}
+\subsection{Linear decodability of the label tree}\label{sec:recovery}
 
-Table~\ref{tab:recovery} reads every level of the tree out of every model. A model
-recovers the levels at and above its own as well as any finer model does, and
-loses the levels below it: at the \Kfull-class readout the
+Table~\ref{tab:recovery} gives how well a linear probe recovers every level of the
+tree from every model. A model recovers the levels at and above its own as well as
+any finer model does, and loses the levels below it: at the \Kfull-class level the
 balanced accuracy is \RecoveryAccOneeighteightByOneeighteight{} for the
 \Kfull-class models and \RecoveryAccOneeighteightByOneseven{} for the
-\Kcoarse-class models, and at the \Kmid-class readout the three finer
+\Kcoarse-class models, and at the \Kmid-class level the three finer
 vocabularies reach \RecoveryAccFourthreeByOneeighteight,
 \RecoveryAccFourthreeByOnesixtwo{} and \RecoveryAccFourthreeByFourthree{} against
 \RecoveryAccFourthreeByOneseven{} for the \Kcoarse-class models. At the
-\Kcoarse-class readout and coarser the order reverses by a small margin: the
+\Kcoarse-class level and coarser the order reverses by a small margin: the
 \Kcoarse-class models reach \RecoveryAccOnesevenByOneseven{} against
 \RecoveryAccOnesevenByOneeighteight{} for the \Kfull-class models. The
 \Kfull- and \Kres-class models never differ by more than
 \RecoveryOneeighteightOnesixtwoMaxAbs{} at any level, so the QCD subclasses that
-separate them leave no visible trace in label recovery. Below its own level a
+separate them leave no visible trace in the decodability of the tree. Below its own level a
 model keeps part of the finer information: the \Kmid-class models read the
 \Kfull-class labels at \RecoveryAccOneeighteightByFourthree.
 
@@ -546,27 +555,28 @@ model keeps part of the finer information: the \Kmid-class models read the
 
 Table~\ref{tab:random-control} compares the random-label control with the four
 vocabularies on its two tasks. On $b$ versus $c$ in four-prong decays, $1-$AUC is
-\RandOmaMeanBvcFourprongLinear{} over the \RandNDraws{} draws, much closer to the
-three finer vocabularies than to the \Kcoarse-class models. Measured against the
-three finer vocabularies of the same run index, a random grouping raises $1-$AUC
+\RandOmaMeanBvcFourprongLinear{} over the \RandNDraws{} random partitions, much
+closer to the three finer vocabularies than to the \Kcoarse-class models. Measured
+against the three finer vocabularies of the matched pretraining run, a random
+grouping raises $1-$AUC
 by a factor \RandCostFactorBvcFourprongLinear, and the real \Kcoarse-class
 grouping by \RandSemCostFactorBvcFourprongLinear; on the second task the factors
 are \RandCostFactorVisibleContentLinear{} and
-\RandSemCostFactorVisibleContentLinear. Whether a draw merges the particular pair
-makes no visible difference: draw three, which merges the $b$-versus-$c$ pair,
-reaches \RandOmaBvcFourprongDrawThreeLinear, against
+\RandSemCostFactorVisibleContentLinear. Whether a partition merges the particular pair
+makes no visible difference: partition three, which merges the $b$-versus-$c$
+pair, reaches \RandOmaBvcFourprongDrawThreeLinear, against
 \RandOmaBvcFourprongDrawOneLinear{} and \RandOmaBvcFourprongDrawTwoLinear{} for
-the draws that keep it apart.
+the partitions that keep it apart.
 
-A random grouping of the three- and four-prong decays into groups of the same
-training shares produces groups that mix flavours. Telling those groups apart
+A random grouping of the three- and four-prong decays into groups with the same
+fractions of the training examples produces groups that mix flavours. Telling those groups apart
 still requires flavour, so the representation keeps it. Together with the QCD
 flavour task above, this suggests that a vocabulary loses a distinction when it
 removes the physical axis from every class boundary, not when it merges one pair.
 The nonlinear probe gives the same factors, \RandCostFactorBvcFourprongMlp{} for
 the random grouping and \RandSemCostFactorBvcFourprongMlp{} for the \Kcoarse-class
-one on the $b$-versus-$c$ task. The control rests on three draws with one
-pretraining run each.
+one on the $b$-versus-$c$ task. The control rests on three random partitions
+with one pretraining run each.
 
 \input{tables/random_control}
 
@@ -596,7 +606,7 @@ jets) and the \Kcoarse-class models trail by a factor
 light-quark jets and for $b$- and $c$-quark decays; merging gluons with light
 quarks costs little there, and removing flavour costs more.
 
-The three random-label draws agree closely with one another. From
+The three random partitions agree closely with one another. From
 \FtSizeEFive{} jets up, the control lies between the \Kmid- and \Kcoarse-class
 models on both datasets: at \FtSizeESix{} jets its $1-$macro AUC is
 \FtOmaRatioJciiESixRandOverOneeighteight{} times that of the \Kfull-class models on
@@ -615,9 +625,10 @@ reruns}
   \caption{Fine-tuning on JetClass-II (left) and JetClass (right). Top: $1-$macro
   AUC against the number of fine-tuning jets, mean (line) and $\pm1$ standard
   deviation (band) over five pretraining runs per vocabulary; dashed, the
-  random-label control, mean and standard deviation over its three draws. Bottom: ratio of
-  each model's $1-$macro AUC to that of the \Kfull-class model of the same run
-  index, mean and standard deviation over the five runs.}
+  random-label control, mean and standard deviation over its three random
+  partitions. Bottom: ratio of each model's $1-$macro AUC to that of the
+  \Kfull-class model of the matched pretraining run, mean and standard deviation
+  over the runs; open markers carry the mass output.}
   \label{fig:finetune}
 \end{figure}
 
@@ -632,7 +643,7 @@ points, mean and standard deviation over the five pretraining runs}
 
 \subsection{Vocabulary and an auxiliary mass output}\label{sec:mass}
 
-The mass output \emph{costs} $b$-versus-$c$ separation at both granularities
+The mass output \emph{costs} $b$-versus-$c$ separation with both vocabularies
 (Fig.~\ref{fig:mass}). With \Kres{} classes, $1-$AUC is \MassOmaLinearOnesixtwo{}
 without it and \MassOmaLinearOnesixtwoMass{} with it, a factor
 \MassOmaRatioLinearOnesixtwo; with \Kcoarse{} classes it is
@@ -707,15 +718,14 @@ nearest-neighbour distance is more sensitive
 (\AnomalySigmaMinKnnXBbOneseven{} against \AnomalySigmaMinKnnXBbOneeighteight).
 The \Kfull- and \Kres-class models agree within their spread except on
 $X\to YY\to bbbb$, where the \Kres-class models are slightly more sensitive.
-The class sum from the model's own outputs shows no dependence on the
-vocabulary. With the same native classes left out everywhere, the \Kfull-,
+The output ratio shows no dependence on the vocabulary. With the same native classes left out everywhere, the \Kfull-,
 \Kres- and \Kcoarse-class models agree within their spread on every signal: for
 $X\to YY\to bbbb$, $\sigma_{\min}$ is
 \AnomalySigmaMinClassSumMatchedXYYBbbbOneeighteight,
 \AnomalySigmaMinClassSumMatchedXYYBbbbOnesixtwo{} and
 \AnomalySigmaMinClassSumMatchedXYYBbbbOneseven. The \Kmid-class models have the
 largest spread, because one of their five pretraining runs is much less
-sensitive than the other four. The class sum is less sensitive than the
+sensitive than the other four. The output ratio is less sensitive than the
 Mahalanobis distance to every signal with $b$ quarks, at every vocabulary, but it
 is the only score that detects the three- and four-prong light-quark decays,
 with a max SIC of \AnomalyMaxSicClassSumMatchedXYYQqqOneeighteight{} for
@@ -727,11 +737,13 @@ $X\to YY\to qqqq$ with \Kfull{} classes. No score detects $X\to q\bar q$.
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{../../figures/anomaly_sensitivity.pdf}
-  \caption{Anomaly-detection sensitivity of the class sum of the model's outputs
-  (left) and two detectors on the frozen features, for the five signals at least
-  one of them detects: $\sigma_{\min}$ (lower is more sensitive),
-  mean $\pm1$ standard deviation over five pretraining runs, each the median over
-  resamplings.}
+  \caption{Anomaly-detection sensitivity of the output ratio, the
+  resonance-to-QCD probability ratio from the model's own outputs (left), and of
+  two detectors on the frozen features, for the five signals at least one of the
+  three scores detects; a signal a panel's score does not detect is drawn open.
+  $\sigma_{\min}$ (lower is more sensitive): mean $\pm1$ standard deviation over
+  five pretraining runs (bars) and the individual runs (small points), each the
+  median over resamplings.}
   \label{fig:anomaly}
 \end{figure}
 
@@ -767,7 +779,8 @@ but its yield is not comparable with ours.
 \begin{figure}
   \centering
   \includegraphics[width=0.7\linewidth]{../../figures/realdata_top_yield.pdf}
-  \caption{Fitted top-quark yield in CMS open data at 1\% data efficiency. Light
+  \caption{Fitted top-quark yield in CMS open data, with the score cut set to pass
+  1\% of the jets in the mass sidebands. Light
   points: individual pretrained models with their statistical errors; bold
   points: mean $\pm1$ standard deviation over the five pretraining runs; open
   markers carry the mass output. The grey band is the published \Kfull-class
@@ -792,7 +805,7 @@ vocabulary would cover the axes that downstream tasks need, such as prong
 structure, lepton content and quark flavour, before refining within any one of
 them. The QCD subclasses that distinguish the two finest vocabularies paid off
 only on the one task that needs exactly them, $b$ versus $c$ in QCD jets, and
-left no difference in label recovery or fine-tuning. The step from \Kres{} to
+left no difference in the decodability of the tree or in fine-tuning. The step from \Kres{} to
 \Kmid{} classes merges gluons with light quarks, electrons with muons and
 different numbers of heavy quarks; it costs most on tasks that use one of these,
 including the pretraining dataset's own fine-tuning task, and little on JetClass.

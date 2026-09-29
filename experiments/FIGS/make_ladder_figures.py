@@ -54,7 +54,7 @@ TASK_LABELS = {
     "retained_topology": "two-prong vs four-prong",
     "ee_vs_mm": "electron vs muon pair",
     "bvc_4prong": "b vs c, four-prong",
-    "visible_content": "visible decay content",
+    "visible_content": "bbqq vs cq$\\tau_h\\nu$, four-prong",
 }
 
 
@@ -193,8 +193,12 @@ def fig1_granularity(A: dict, merges: dict, outdir=None):
         if m and min(levels) <= m <= max(levels):
             at.setdefault(m, []).append(task)
     for m, ts in at.items():
-        ax.axvline(m, color=colour[ts[0]] if len(ts) == 1 else "0.5", ls=":", lw=0.8,
-                   alpha=0.8, zorder=0)
+        c = colour[ts[0]] if len(ts) == 1 else "0.5"
+        ax.axvline(m, color=c, ls=":", lw=0.8, alpha=0.8, zorder=0)
+        # Say what the line is: a merge level, which may be one no model was trained at.
+        ax.annotate(f"merged at {m}", xy=(m, 1), xycoords=("data", "axes fraction"),
+                    xytext=(2, -2), textcoords="offset points", rotation=90, va="top",
+                    ha="left", fontsize=6, color=c)
 
     lo = min(p[1] for s in drawn.values() for p in s["points"])
     hi = max(p[1] for s in drawn.values() for p in s["points"])
@@ -215,7 +219,7 @@ def fig1_granularity(A: dict, merges: dict, outdir=None):
     ax.set_xticks(levels, [str(lv) for lv in levels])
     ax.set_xlim(max(levels) * 1.15, min(levels) / 1.15)     # fine -> coarse, left to right
     ax.xaxis.minorticks_off()                   # the log y axis keeps its minor ticks
-    ax.set_xlabel("classes in the pretraining label set  (fine $\\rightarrow$ coarse)")
+    ax.set_xlabel("classes in the pretraining vocabulary  (fine $\\rightarrow$ coarse)")
     ax.set_ylabel("$1-\\mathrm{AUC}$   (lower is better)")
     for probe, ls in style.PROBE_LINESTYLES.items():       # the linestyle key, colourless
         ax.plot([], [], linestyle=ls, color="0.4", label=style.PROBE_LABELS[probe])
@@ -295,12 +299,12 @@ def fig2_paired(A: dict, reference: int, probe: str = "linear", outdir=None):
     for ax in axes[len(tasks):]:
         ax.set_visible(False)
     for ax in axes[len(tasks) - ncol:len(tasks)]:
-        ax.set_xlabel(f"pretraining label set, against the {reference}-class model")
+        ax.set_xlabel(f"pretraining vocabulary, against the {reference}-class model")
     for ax in axes[:len(tasks):ncol]:
         ax.set_ylabel(f"$\\Delta\\log(1-\\mathrm{{AUC}})$ vs {reference}-class")
     n_seeds = len(A["seeds_used"])
     fig.suptitle(f"{n_seeds} paired differences per task, {style.PROBE_LABELS[probe]}: each grey "
-                 f"line is one pretraining seed\npositive = worse than the {reference}-class "
+                 f"line is one pretraining run\npositive = worse than the {reference}-class "
                  f"model; bars are the 95% paired interval over seeds, from the pre-specified "
                  f"analysis", fontsize=plt.rcParams["axes.titlesize"])
     fig.tight_layout()
