@@ -24,6 +24,13 @@ the macro one-vs-rest AUC is computed from it with the SAME function and the
 SAME row stride as leg 1 (experiments/EVAL/eval_arm.metrics, stride 4), and the
 accuracy recomputed from pred.root must equal the log's to 5e-4 or the file is
 not the pass the log describes. The label sha256 must agree across cells.
+
+REUSED CELLS AND TRUE BOOKKEEPING (audit 2026-09-29). v2 reuses v1's complete
+from-scratch cells, whose subsets are unchanged: --ref-init <tree>/<init> adds
+one such init directory, and each of its cells must have trained on a subset in
+the sha256 record (--sha-table) with the size it recorded when it ran. Every
+cell carries weaver's own run arguments from train.log (the v1 manifests wrote
+steps_per_epoch as N/512) and, for v2, the pretrained checkpoint its rule chose.
 """
 from __future__ import annotations
 
@@ -37,6 +44,16 @@ import statistics as st
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 ACC_TOL = 5e-4
+
+
+def _load(name: str, rel: str):
+    spec = importlib.util.spec_from_file_location(name, REPO / rel)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+FT_V2 = _load("ft_v2", "experiments/FT/ft_v2.py")
 
 METRIC = re.compile(r"Test metric ([0-9.]+)")
 
@@ -98,6 +115,34 @@ def discover(root: pathlib.Path):
     return out
 
 
+def ref_cells(init_dir: pathlib.Path, table: dict):
+    """(init, N, seed, predict.log) of one reused init directory, each checked
+    against the sha256 record; .partial.* attempts skipped as in discover()."""
+    out = []
+    for log in sorted(init_dir.glob("N*/s*/predict.log")):
+        if ".partial." in log.parent.name:
+            continue
+        if diverged(log.parent):
+            raise SystemExit(f"FATAL: {log.parent} trained to a NaN loss; not a result")
+        bad = FT_V2.ref_cell_problem(log.parent, table)
+        if bad:
+            raise SystemExit(f"FATAL: reused cell refused: {bad}")
+        out.append((init_dir.name, log.parent.parent.name, log.parent.name, log))
+    if not out:
+        raise SystemExit(f"FATAL: no cells under {init_dir}")
+    return out
+
+
+def run_record(cell: pathlib.Path) -> dict:
+    """weaver's own run arguments and (v2) the pretrained checkpoint chosen."""
+    rec = {}
+    if (cell / "train.log").exists():
+        rec["run"] = FT_V2.weaver_args(cell / "train.log")
+    if (cell / "init_checkpoint.json").exists():
+        rec["init_checkpoint"] = json.loads((cell / "init_checkpoint.json").read_text())
+    return rec
+
+
 def diverged(cell: pathlib.Path) -> bool:
     """A cell whose training loss went to NaN at any epoch, read off weaver's
     train.log. Such a run still ends with a best-epoch checkpoint and, before the
@@ -113,7 +158,14 @@ def main(argv=None) -> int:
     ap.add_argument("--macro-auc", action="store_true",
                     help="also compute macro OvR AUC from each cell's pred.root (PRESPEC 2.3)")
     ap.add_argument("--auc-stride", type=int, default=4, help="as leg1_metrics.py")
+    ap.add_argument("--ref-init", type=pathlib.Path, action="append", default=[],
+                    help="a reused init directory (<tree>/<init>), checked against --sha-table")
+    ap.add_argument("--sha-table", type=pathlib.Path,
+                    help="the sha256 record of the subsets (experiments/FT/data/ft_v2_subsets_sha256.json)")
     a = ap.parse_args(argv)
+    if a.ref_init and not a.sha_table:
+        raise SystemExit("FATAL: --ref-init needs --sha-table: a reused cell is only as good "
+                         "as the proof that its subset is unchanged")
     eval_arm = None
     if a.macro_auc:
         spec = importlib.util.spec_from_file_location("eval_arm", REPO / "experiments/EVAL/eval_arm.py")
@@ -123,9 +175,14 @@ def main(argv=None) -> int:
     cells = discover(a.root)
     if not cells:
         raise SystemExit(f"FATAL: no predict.log under {a.root}")
+    table = FT_V2.load_table(a.sha_table) if a.ref_init else {}
+    for d in a.ref_init:
+        if any(c[0] == d.name for c in cells):
+            raise SystemExit(f"FATAL: init {d.name} is under both {a.root} and {d}")
+        cells += ref_cells(d, table)
     res, shas = {}, {}
     for init, n, seed, log in cells:
-        c = {"accuracy": cell_metric(log)}
+        c = {"accuracy": cell_metric(log), **run_record(log.parent)}
         if a.macro_auc:
             m = pred_root_metrics(log.parent / "pred.root", eval_arm, a.auc_stride)
             if abs(m["accuracy_pred_root"] - c["accuracy"]) > ACC_TOL:
@@ -153,6 +210,7 @@ def main(argv=None) -> int:
     (a.out / "leg2_metrics.json").write_text(
         json.dumps({"cells": res, "summary": summary,
                     "row_alignment_sha256": next(iter(shas), None),
+                    "reused_inits": [str(d) for d in a.ref_init],
                     "auc_stride": a.auc_stride if a.macro_auc else None}, indent=1))
     print(f"\n{len(cells)} cells -> {a.out / 'leg2_metrics.json'}")
     return 0

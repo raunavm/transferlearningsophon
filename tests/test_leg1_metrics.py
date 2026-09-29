@@ -28,6 +28,12 @@ def _cell(root, init, n, seed, *, k=162, labels=None, partial=False):
     np.save(fd / "label188.npy", lab)
     rng = np.random.default_rng(0)
     np.save(fd / "logits.npy", rng.normal(size=(lab.shape[0], k)).astype(np.float32))
+    # the training subset and its recorded coverage, as make_subsets jc2v2 writes it
+    sub = root.parent / "subsets"
+    sub.mkdir(exist_ok=True)
+    (sub / "manifest.json").write_text(json.dumps({"class_coverage": {
+        f"train_{n}_s1.parquet": {"n_jets": 1000, "n_classes_present": 161, "counts": [0] * 188}}}))
+    (fd.parent / "ft_manifest.json").write_text(json.dumps({"subset": str(sub / f"train_{n}_s1.parquet")}))
     return fd
 
 
@@ -113,3 +119,50 @@ def test_misaligned_cells_are_fatal_rather_than_averaged(tmp_path):
         capture_output=True, text=True)
     assert r.returncode != 0
     assert "not" in (r.stdout + r.stderr) and "paired" in (r.stdout + r.stderr)
+
+
+def test_each_cell_carries_its_training_coverage_and_the_steps_weaver_ran(tmp_path):
+    """must-fix 6 and 14: the 1e3 cell is reported with the classes its subset
+    holds, and with weaver's own steps per epoch, not the manifest's N/512."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    m = _mod()
+    root = tmp_path / "leg1"
+    fd = _cell(root, "l188-s1", "N1000", "s1")
+    (fd.parent / "train.log").write_text(" - ('steps_per_epoch', 19)\n - ('num_epochs', 50)\n")
+    man = json.loads((fd.parent / "ft_manifest.json").read_text())
+    (fd.parent / "ft_manifest.json").write_text(json.dumps({**man, "steps_per_epoch": "1"}))
+    # a v1 subset: no coverage in its manifest, so it is counted from the parquet
+    v1 = tmp_path / "v1sub"
+    v1.mkdir()
+    pq.write_table(pa.table({"jet_label": [0, 0, 3, 7, 7, 7]}), v1 / "train_N1000_s2.parquet")
+    fd2 = _cell(root, "l188-s1", "N1000", "s2")
+    (fd2.parent / "ft_manifest.json").write_text(json.dumps({"subset": str(v1 / "train_N1000_s2.parquet")}))
+    out = tmp_path / "out"
+    r = subprocess.run([sys.executable, str(REPO / "experiments/FT/leg1_metrics.py"),
+                        "--root", str(root), "--out", str(out), "--auc-stride", "1"],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr[-2000:]
+    res = json.loads((out / "leg1_metrics.json").read_text())
+    c1 = res["cells"]["l188-s1"]["N1000"]["s1"]
+    assert c1["train_coverage"]["n_classes_present"] == 161 and "counts" not in c1["train_coverage"]
+    assert c1["run"]["steps_per_epoch"] == 19 and c1["manifest_steps_per_epoch_wrong"] is True
+    c2 = res["cells"]["l188-s1"]["N1000"]["s2"]["train_coverage"]
+    assert c2["n_classes_present"] == 3 and c2["median_per_present_class"] == 2.0
+    assert c2["min_per_present_class"] == 1 and c2["source"].endswith(".parquet")
+    assert len(res["summary"]["l188-s1"]["N1000"]["train_coverage"]) == 2
+
+
+def test_several_roots_are_read_together_and_an_init_in_two_is_fatal(tmp_path):
+    m = _mod()
+    _cell(tmp_path / "a", "l188-s1", "N1000", "s1")
+    _cell(tmp_path / "b", "scratch-v2", "N1000", "s1")
+    out = tmp_path / "out"
+    base = [sys.executable, str(REPO / "experiments/FT/leg1_metrics.py"), "--out", str(out),
+            "--auc-stride", "1", "--root"]
+    r = subprocess.run(base + [str(tmp_path / "a"), str(tmp_path / "b")], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert set(json.loads((out / "leg1_metrics.json").read_text())["cells"]) == {"l188-s1", "scratch-v2"}
+    _cell(tmp_path / "c", "l188-s1", "N10000", "s1")
+    r = subprocess.run(base + [str(tmp_path / "a"), str(tmp_path / "c")], capture_output=True, text=True)
+    assert r.returncode != 0 and "under both" in r.stdout + r.stderr

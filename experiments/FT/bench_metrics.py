@@ -51,6 +51,13 @@ features/logits_herwig.npy + features/label_herwig.npy beside the Pythia pair.
 row-alignment hash across cells -- for q/g only (top has no second generator),
 and writes bench_metrics_herwig.json so it can never overwrite the Pythia table.
 
+REUSED CELLS AND TRUE BOOKKEEPING (audit 2026-09-29). v2 reuses v1's complete
+from-scratch cells, whose subsets are unchanged: --ref-init <tree>/leg_<set>/<init>
+adds one such init directory to that set, and each of its cells must have
+trained on a subset in the sha256 record (--sha-table) with the size it recorded
+when it ran. Every cell carries weaver's own run arguments from train.log and,
+for v2, the pretrained checkpoint its rule chose.
+
 Run:  python3 experiments/FT/bench_metrics.py --root /data/results/ft \
           --out /data/results/ft/bench_metrics
 """
@@ -87,6 +94,9 @@ def _load(name: str, rel: str):
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     return m
+
+
+FT_V2 = _load("ft_v2", "experiments/FT/ft_v2.py")
 
 
 def softmax(z: np.ndarray) -> np.ndarray:
@@ -132,6 +142,25 @@ def discover(root: pathlib.Path, dataset: str):
                     done.append((init_dir.name, n_dir.name, seed_dir.name, seed_dir))
                 else:
                     skipped.append(seed_dir)
+    return done, skipped
+
+
+def ref_cells(init_dir: pathlib.Path, table: dict):
+    """([(init, N, seed, cell)] of one reused init directory, [cells without DONE]),
+    each DONE cell checked against the sha256 record."""
+    done, skipped = [], []
+    for cell in sorted(init_dir.glob("N*/s*")):
+        if not cell.is_dir() or ".partial." in cell.name or cell.name.endswith(".lock"):
+            continue
+        if not (cell / "DONE").exists():
+            skipped.append(cell)
+            continue
+        if diverged(cell):
+            raise SystemExit(f"FATAL: {cell} trained to a NaN loss; not a result")
+        bad = FT_V2.ref_cell_problem(cell, table)
+        if bad:
+            raise SystemExit(f"FATAL: reused cell refused: {bad}")
+        done.append((init_dir.name, cell.parent.name, cell.name, cell))
     return done, skipped
 
 
@@ -192,9 +221,12 @@ def cell_metrics(cell: pathlib.Path, probe, test_set: str = "pythia",
         "train_subset": man.get("subset"),
         # CLAUDE.md: never compare models fine-tuned on different GPU models
         "gpu": man.get("gpu_device_name"),
+        "run": FT_V2.weaver_args(cell / "train.log") if (cell / "train.log").exists() else {},
         "label188_sha256": sha,
         "cell": str(cell),
     })
+    if (cell / "init_checkpoint.json").exists():
+        out["init_checkpoint"] = json.loads((cell / "init_checkpoint.json").read_text())
     return out
 
 
@@ -238,7 +270,18 @@ def main(argv=None) -> int:
     # epoch (bench v2's rule), features_last/ the last epoch (PRESPEC 2.8's).
     ap.add_argument("--features-dir", default="features", choices=["features", "features_last"],
                     help="which checkpoint's outputs to read (default: the best-validation epoch)")
+    ap.add_argument("--ref-init", type=pathlib.Path, action="append", default=[],
+                    help="a reused init directory (<tree>/leg_<set>/<init>), checked against --sha-table")
+    ap.add_argument("--sha-table", type=pathlib.Path,
+                    help="the sha256 record of the subsets (experiments/FT/data/ft_v2_subsets_sha256.json)")
     args = ap.parse_args(argv)
+    if args.ref_init and not args.sha_table:
+        raise SystemExit("FATAL: --ref-init needs --sha-table: a reused cell is only as good "
+                         "as the proof that its subset is unchanged")
+    table = FT_V2.load_table(args.sha_table) if args.ref_init else {}
+    stray = [str(r) for r in args.ref_init if r.parent.name not in {f"leg_{d}" for d in args.datasets}]
+    if stray:
+        raise SystemExit(f"FATAL: --ref-init {stray} is not <tree>/leg_<set>/<init> for a set read here")
     test_set = "herwig" if args.herwig else "pythia"
     if args.herwig:
         args.datasets = ["qg"]
@@ -251,6 +294,12 @@ def main(argv=None) -> int:
             continue
         check_label_order(d)
         cells, no_done = discover(args.root, d)
+        for ref in (r for r in args.ref_init if r.parent.name == f"leg_{d}"):
+            if any(c[0] == ref.name for c in cells):
+                raise SystemExit(f"FATAL: init {ref.name} is under both {args.root} and {ref}")
+            more, more_skipped = ref_cells(ref, table)
+            cells += more
+            no_done += more_skipped
         skipped += [{"cell": str(p), "reason": "no DONE"} for p in no_done]
         for p in no_done:
             print(f"  SKIPPED (no DONE): {p}", flush=True)
@@ -298,6 +347,7 @@ def main(argv=None) -> int:
                         "signal": SIGNAL[d][1][1], "signal_label": 1,
                         "signal_logit_column": SIGNAL_COLUMN} for d in res},
          "row_alignment_sha256": alignment,
+         "reused_inits": [str(r) for r in args.ref_init],
          "skipped": skipped,
          "cells": res, "summary": summary}, indent=1, allow_nan=False))
     print(f"\nwrote {out_json}")

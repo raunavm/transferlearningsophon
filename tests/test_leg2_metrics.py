@@ -94,3 +94,23 @@ def test_macro_auc_comes_from_pred_root_and_must_agree_with_the_log(tmp_path, mo
     (d / "predict.log").write_text(f"Test metric {acc - 0.01:.6f}\n")
     with pytest.raises(SystemExit, match="not the same pass"):
         m.main(["--root", str(tmp_path), "--out", str(tmp_path / "o2"), "--macro-auc"])
+
+
+def test_a_reused_init_must_have_trained_on_a_recorded_subset(tmp_path):
+    m = _mod()
+    _log(tmp_path / "v2", ("l188-s1", "N1000", "s1"), "Test metric 0.80\n")
+    _log(tmp_path / "v1", ("scratch-v2", "N1000", "s1"), "Test metric 0.70\n")
+    sub = "/data/finetune/jc1/train_N1000_s1.parquet"
+    cell = tmp_path / "v1/scratch-v2/N1000/s1"
+    (cell / "ft_manifest.json").write_text(json.dumps({"subset": sub, "subset_bytes": 1292785}))
+    (cell / "train.log").write_text(" - ('steps_per_epoch', 19)\n")
+    table = tmp_path / "t.json"
+    table.write_text(json.dumps({"files": {sub: {"sha256": "x", "bytes": 1292785}}}))
+    args = ["--root", str(tmp_path / "v2"), "--out", str(tmp_path / "o"),
+            "--ref-init", str(tmp_path / "v1/scratch-v2"), "--sha-table", str(table)]
+    assert m.main(args) == 0
+    res = json.loads((tmp_path / "o" / "leg2_metrics.json").read_text())
+    assert res["cells"]["scratch-v2"]["N1000"]["s1"]["run"] == {"steps_per_epoch": 19}
+    (cell / "ft_manifest.json").write_text(json.dumps({"subset": "/elsewhere.parquet"}))
+    with pytest.raises(SystemExit, match="reused cell refused"):
+        m.main(args)

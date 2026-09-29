@@ -24,6 +24,15 @@ jc2  JetClass-II parquet (the in-domain recovery leg). Files are drawn per
      per file would over-weight QCD, whose selection efficiency is 51.8%
      against 86-91% for resonant jets (docs/GROUND_TRUTH.md). Rows are copied
      whole, so the schema is the release's own.
+jc2v2  JetClass-II, v2 (audit 2026-09-29, must-fix 7): the jc2 recipe, but drawn
+     ONLY from the fine-tuning held-out files (JC2_ROLES["ft_heldout"]), which
+     no pretraining run trains or validates on and which the fine-tuning test
+     list does not touch. Validation files are drawn first and removed from the
+     pool, so training and validation never share a file for any seed. The
+     validation set is a multiple of the batch size: it is evaluated whole
+     every epoch (weaver --steps-per-epoch-val -1, drop_last), so best-epoch
+     selection compares every epoch on the same jets. Every output's native
+     class coverage is recorded in the manifest (must-fix 6).
 jc1  JetClass-I ROOT (the pileup-shift leg; 10 classes, train_100M). Balanced,
      N/10 per class, from `files_per_class` random files per class per seed,
      written as parquet -- weaver reads .parquet with ak.from_parquet and the
@@ -72,6 +81,57 @@ QG_TRAIN_CHUNKS = list(range(16))
 QG_VAL_CHUNKS = [16, 17]
 QG_TEST_CHUNKS = [18, 19]
 QG_CHUNK_ROWS = 100_000
+
+# --- the JetClass-II file partition (v2, 2026-09-29) ---------------------------
+# Every JetClass-II file has exactly one role. pretrain_train is the split every
+# pretraining job trains on (SPLIT_GUARD in scripts/build_ft_jobs.py); ft_test is
+# the 335-file list of the fine-tuning read-out (job-extract-mtx-r16q1-s2);
+# pretrain_fixed_val and ft_heldout divide the validation split as decided on
+# 2026-09-29. tests/test_ft_v2_subsets.py checks the four are disjoint, cover
+# those lists exactly, and that a build reads nothing outside ft_heldout.
+JC2_ROLES = {
+    "pretrain_train":     {"Res2P": (0, 199),   "Res34P": (0, 859),     "QCD": (0, 279)},
+    "pretrain_fixed_val": {"Res2P": (200, 203), "Res34P": (860, 875),   "QCD": (280, 284)},
+    "ft_heldout":         {"Res2P": (204, 249), "Res34P": (876, 1074),  "QCD": (285, 349)},
+    "ft_test":            {"Res2P": (250, 299), "Res34P": (1075, 1289), "QCD": (350, 419)},
+}
+N_NATIVE = 188
+BATCH = 512
+
+
+def jc2_role_files(role: str, root: str = "/jc2/jet_data") -> list[str]:
+    return [f"{root}/{fam}_{i:04d}.parquet"
+            for fam, (a, b) in JC2_ROLES[role].items() for i in range(a, b + 1)]
+
+
+def jc2_role(path: str) -> str | None:
+    """The role of a JetClass-II file, from its name; None if it has none."""
+    stem = os.path.basename(path)
+    if not stem.endswith(".parquet") or stem.count("_") != 1:
+        return None
+    fam, idx = stem[:-len(".parquet")].split("_")
+    for role, ranges in JC2_ROLES.items():
+        if fam in ranges and idx.isdigit() and ranges[fam][0] <= int(idx) <= ranges[fam][1]:
+            return role
+    return None
+
+
+def class_coverage(labels) -> dict:
+    """Native-class coverage of a set of jets (jet_label, 0..187)."""
+    lab = np.asarray(labels, dtype=np.int64)
+    if lab.size and (lab.min() < 0 or lab.max() >= N_NATIVE):
+        raise SystemExit(f"FATAL: native labels outside 0..{N_NATIVE - 1}: "
+                         f"[{lab.min()}, {lab.max()}]")
+    counts = np.bincount(lab, minlength=N_NATIVE)
+    present = counts[counts > 0]
+    return {"n_jets": int(lab.size),
+            "n_classes_present": int(present.size),
+            "classes_absent": [int(c) for c in np.flatnonzero(counts == 0)],
+            "median_per_present_class": float(np.median(present)),
+            "min_per_present_class": int(present.min()),
+            "max_per_present_class": int(present.max()),
+            "n_classes_with_one_jet": int((counts == 1).sum()),
+            "counts": counts.tolist()}
 
 
 def rng_for(seed: int, purpose: str) -> np.random.Generator:
@@ -216,6 +276,68 @@ def build_jc2(train_files, val_files, out: pathlib.Path, sizes, seeds,
     val = nested_prefixes(vpool, [val_size], rng)[val_size]
     write_val(out, lambda d: pq.write_table(val, d), skip_existing=skip_existing)
     manifest["val"] = {"files": vfiles, "pool_rows": vpool.num_rows, "rows": val.num_rows}
+    return manifest
+
+
+def build_jc2v2(pool_files, out: pathlib.Path, sizes, seeds, n_files: int, take: float,
+                val_size: int, n_val_files: int, skip_existing: bool = False) -> dict:
+    """jc2's recipe on the fine-tuning held-out files only (module docstring)."""
+    outside = sorted({jc2_role(f) or "none" for f in pool_files} - {"ft_heldout"})
+    if outside:
+        bad = [f for f in pool_files if jc2_role(f) != "ft_heldout"]
+        raise SystemExit(f"FATAL: {len(bad)} pool file(s) are {outside}, not fine-tuning "
+                         f"held-out files, e.g. {bad[:3]}")
+    if val_size % BATCH:
+        raise SystemExit(f"FATAL: --val-size {val_size} is not a multiple of {BATCH}; weaver "
+                         "drops the last partial batch, so the validation set would not be "
+                         "the same jets every epoch")
+    out.mkdir(parents=True, exist_ok=True)
+    manifest = {"mode": "jc2v2", "sizes": sizes, "seeds": seeds, "n_files": n_files,
+                "take_fraction": take, "val_size": val_size, "n_val_files": n_val_files,
+                "selection": [PT_LO, PT_HI, MSD_LO, MSD_HI],
+                "roles": {r: {f: list(ab) for f, ab in v.items()} for r, v in JC2_ROLES.items()},
+                "pool_files": sorted(pool_files), "per_seed": {}, "val": {},
+                "class_coverage": {}}
+    # Validation first, then removed from the pool: disjoint for every seed.
+    rng = rng_for(VAL_SEED, "val")
+    vfiles = choose_files(group_by_family(pool_files), n_val_files, rng)
+    vpool = pa.concat_tables([take_fraction(select_jc2(pq.read_table(f)), take, rng)
+                              for f in vfiles])
+    val = nested_prefixes(vpool, [val_size], rng)[val_size]
+    write_val(out, lambda d: pq.write_table(val, d), skip_existing=skip_existing)
+    manifest["val"] = {"files": vfiles, "pool_rows": vpool.num_rows, "rows": val.num_rows}
+    manifest["class_coverage"]["val.parquet"] = class_coverage(val.column("jet_label"))
+
+    fams = group_by_family(sorted(set(pool_files) - set(vfiles)))
+    for seed in seeds:
+        rng = rng_for(seed, "train")
+        files = choose_files(fams, n_files, rng)
+        parts, per_family = [], {}
+        for f in files:
+            t = take_fraction(select_jc2(pq.read_table(f)), take, rng)
+            per_family[family_of(f)] = per_family.get(family_of(f), 0) + t.num_rows
+            parts.append(t)
+        pool = pa.concat_tables(parts)
+        for n, t in nested_prefixes(pool, sizes, rng).items():
+            write_subset(out, n, seed, lambda d, t=t: pq.write_table(t, d),
+                         skip_existing=skip_existing)
+            manifest["class_coverage"][f"train_N{n}_s{seed}.parquet"] = \
+                class_coverage(t.column("jet_label"))
+        manifest["per_seed"][str(seed)] = {"files": files, "n_files_used": len(files),
+                                           "pool_rows": pool.num_rows,
+                                           "pool_rows_per_family": per_family}
+        print(f"seed {seed}: pool {pool.num_rows:,} rows {per_family}", flush=True)
+
+    # The proof, from the files actually read: none is a pretraining or test file.
+    used = set(vfiles) | {f for s in manifest["per_seed"].values() for f in s["files"]}
+    names = {os.path.basename(f) for f in used}
+    manifest["overlap_files"] = {
+        role: len(names & {os.path.basename(f) for f in jc2_role_files(role)})
+        for role in ("pretrain_train", "pretrain_fixed_val", "ft_test")}
+    manifest["overlap_files"]["train_vs_val"] = len(
+        {f for s in manifest["per_seed"].values() for f in s["files"]} & set(vfiles))
+    if any(manifest["overlap_files"].values()):
+        raise SystemExit(f"FATAL: overlap {manifest['overlap_files']}")
     return manifest
 
 
@@ -402,6 +524,13 @@ def main(argv=None) -> int:
                    help="fraction of each file's SELECTED rows kept in the pool")
     a.add_argument("--val-size", type=int, default=200_000)
     a.add_argument("--n-val-files", type=int, default=12)
+    v = sub.add_parser("jc2v2")
+    v.add_argument("--pool-files", nargs="+", required=True,
+                   help="the fine-tuning held-out files; anything else is refused")
+    v.add_argument("--n-files", type=int, default=60)
+    v.add_argument("--take-fraction", type=float, default=0.30)
+    v.add_argument("--val-size", type=int, default=20_480)
+    v.add_argument("--n-val-files", type=int, default=12)
     b = sub.add_parser("jc1")
     b.add_argument("--train-dir", required=True)
     b.add_argument("--val-dir", required=True)
@@ -412,7 +541,7 @@ def main(argv=None) -> int:
     c.add_argument("--src", required=True,
                    help="staged directory written by scripts/stage_downstream.py")
     c.add_argument("--val-size", type=int, default=200_000)
-    for p in (a, b, c):
+    for p in (a, v, b, c):
         p.add_argument("--out", required=True)
         p.add_argument("--sizes", type=int, nargs="+", default=SIZES)
         p.add_argument("--seeds", type=int, nargs="+", default=SEEDS)
@@ -440,9 +569,13 @@ def main(argv=None) -> int:
         # --take-fraction 0.90 over a stored 0.30, --n-files 200 over 60, and
         # jc1 --files-per-class 9 over 2. The live hazard is widening the pool
         # and silently training on the old narrow one.
-        if args.mode == "jc2":
+        if args.mode in ("jc2", "jc2v2"):
             want["n_files"] = args.n_files
             want["take_fraction"] = args.take_fraction
+        if args.mode == "jc2v2":
+            want["val_size"] = args.val_size
+            want["n_val_files"] = args.n_val_files
+            want["pool_files"] = sorted(args.pool_files)
         if args.mode == "jc1":
             want["files_per_class"] = args.files_per_class
         if args.mode == "bench":
@@ -495,6 +628,13 @@ def main(argv=None) -> int:
         m = build_jc2(args.train_files, args.val_files, out, sizes, args.seeds,
                       args.n_files, args.take_fraction, args.val_size,
                       args.n_val_files, skip_existing=bool(grow))
+    elif args.mode == "jc2v2":
+        if grow:
+            # coverage is recorded from the tables in memory, so a partial
+            # rebuild would leave the kept subsets' coverage unrecorded
+            raise SystemExit(f"FATAL: {out}: jc2v2 does not grow a grid in place")
+        m = build_jc2v2(args.pool_files, out, sizes, args.seeds, args.n_files,
+                        args.take_fraction, args.val_size, args.n_val_files)
     elif args.mode == "jc1":
         m = build_jc1(args.train_dir, args.val_dir, out, sizes, args.seeds,
                       args.files_per_class, args.val_per_class,

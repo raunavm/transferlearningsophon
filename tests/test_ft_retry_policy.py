@@ -100,7 +100,10 @@ def test_the_policy_is_on_exactly_the_specs_being_re_created(refs):
 
 def test_no_other_spec_on_disk_carries_the_policy():
     have = {p.name for p in K8S.glob("job-*.yaml") if "podFailurePolicy" in p.read_text()}
-    assert have == {"job-ft-legs-baseline-scratch-v2-raunav.yaml",
+    # every v2 spec carries it (audit 2026-09-29): its name says so
+    v2 = {p.name for p in K8S.glob("job-ft-v2-*.yaml")} | {"job-ft-subsets-jc2-v2-raunav.yaml"}
+    assert v2 <= have
+    assert have - v2 == {"job-ft-legs-baseline-scratch-v2-raunav.yaml",
                     "job-ft-legs-baseline-mpm-s1-v2-raunav.yaml",
                     "job-ft-legs-bench-baseline-mpm-s1-v2-raunav.yaml",
                     "job-ft-legs-bench-v3-last-c-raunav.yaml",

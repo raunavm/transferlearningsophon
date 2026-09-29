@@ -41,6 +41,16 @@ ROW ALIGNMENT IS VERIFIED, NOT ASSUMED. Every cell must have read out the same
 test jets in the same order or the between-init comparison is not paired. The
 sha256 of label188.npy is checked across cells and a mismatch is fatal, which is
 the same guard probe.py's check_alignment applies.
+
+WHAT EACH CELL TRAINED ON AND HOW (audit 2026-09-29, must-fix 6 and 14). Every
+cell carries its training subset's native-class coverage -- the subset
+manifest's record (make_subsets.py jc2v2), else counted from the parquet's
+jet_label -- because at 1e3 jets not every class is present (v1: 161 of 188,
+median 5 per class); and the steps and validation weaver actually ran, from its
+own argument dump in train.log, because the v1 manifests recorded N/512 steps
+per epoch (1 at 1e3) against the 19 that ran. v2 cells also carry the pretrained
+checkpoint their rule selected (init_checkpoint.json). --root takes several
+trees, e.g. a v2 rule's leg1/ and the from-scratch reference's.
 """
 from __future__ import annotations
 
@@ -61,6 +71,9 @@ def _load(name: str, rel: str):
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     return m
+
+
+FT_V2 = _load("ft_v2", "experiments/FT/ft_v2.py")
 
 
 def softmax(z: np.ndarray) -> np.ndarray:
@@ -100,6 +113,47 @@ def diverged(cell: pathlib.Path) -> bool:
     retry logic of 2026-09-29, could still be marked DONE; it is not a result."""
     log = cell / "train.log"
     return log.exists() and "AvgLoss: nan" in log.read_text(errors="replace")
+
+
+def subset_coverage(subset: str, cache: dict) -> dict:
+    """Native-class coverage of a training subset: its manifest's record, else
+    counted from the parquet (the v1 subsets were built before it was recorded)."""
+    if subset not in cache:
+        p = pathlib.Path(subset)
+        man = p.parent / "manifest.json"
+        cov = (json.loads(man.read_text()).get("class_coverage", {}).get(p.name)
+               if man.exists() else None)
+        src = str(man)
+        if cov is None:
+            if not p.exists():
+                raise SystemExit(f"FATAL: {p} is not readable and no manifest records its coverage")
+            import pyarrow.parquet as pq
+            ms = _load("make_subsets", "experiments/FT/make_subsets.py")
+            cov = ms.class_coverage(pq.read_table(p, columns=["jet_label"])
+                                    .column("jet_label").to_numpy())
+            src = str(p)
+        cache[subset] = {**{k: v for k, v in cov.items() if k != "counts"}, "source": src}
+    return cache[subset]
+
+
+def cell_record(cell: pathlib.Path, cov_cache: dict) -> dict:
+    """What the cell trained on and how: subset, its coverage, weaver's own run
+    arguments, and (v2) the pretrained checkpoint its rule selected."""
+    man = cell / "ft_manifest.json"
+    if not man.exists():
+        raise SystemExit(f"FATAL: {cell} has no ft_manifest.json; its training set is unknown")
+    m = json.loads(man.read_text())
+    if not m.get("subset"):
+        raise SystemExit(f"FATAL: {man} records no training subset")
+    run = FT_V2.weaver_args(cell / "train.log") if (cell / "train.log").exists() else {}
+    rec = {"train_subset": m["subset"], "train_coverage": subset_coverage(m["subset"], cov_cache),
+           "run": run}
+    if "steps_per_epoch" in m and "steps_per_epoch" in run:
+        rec["manifest_steps_per_epoch_wrong"] = int(m["steps_per_epoch"]) != int(run["steps_per_epoch"])
+    ic = cell / "init_checkpoint.json"
+    if ic.exists():
+        rec["init_checkpoint"] = json.loads(ic.read_text())
+    return rec
 
 
 def cell_metrics(fd: pathlib.Path, l162: dict[int, int], eval_arm, auc_stride: int):
@@ -147,7 +201,7 @@ def cell_metrics(fd: pathlib.Path, l162: dict[int, int], eval_arm, auc_stride: i
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--root", required=True, type=pathlib.Path)
+    ap.add_argument("--root", required=True, type=pathlib.Path, nargs="+")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--auc-stride", type=int, default=4,
                     help="compute the AUC on every k-th row (1 = every row)")
@@ -165,14 +219,20 @@ def main() -> int:
                          f"{len(qcd_members)} members, expected the 27 QCD "
                          "classes -- the QCD group id moved")
 
-    cells = discover(args.root)
+    cells, seen = [], {}
+    for root in args.root:
+        for c in discover(root):
+            if seen.setdefault(c[0], root) != root:
+                raise SystemExit(f"FATAL: init {c[0]} is under both {seen[c[0]]} and {root}")
+            cells.append(c)
     if not cells:
         raise SystemExit(f"FATAL: no complete cells under {args.root}")
     print(f"{len(cells)} cells", flush=True)
 
-    res, shas = {}, {}
+    res, shas, cov_cache = {}, {}, {}
     for init, n, seed, fd in cells:
         m = cell_metrics(fd, l162, eval_arm, args.auc_stride)
+        m.update(cell_record(fd.parent, cov_cache))
         shas.setdefault(m["label188_sha256"], []).append(f"{init}/{n}/{seed}")
         res.setdefault(init, {}).setdefault(n, {})[seed] = m
         print(f"  {init:16} {n:10} {seed:4} acc={m['accuracy']:.5f} "
@@ -196,11 +256,14 @@ def main() -> int:
                 "accuracy_sd": float(a.std(ddof=1)) if a.size > 1 else None,
                 "macro_auc_mean": float(u.mean()),
                 "macro_auc_sd": float(u.std(ddof=1)) if u.size > 1 else None,
+                # one entry per distinct training subset behind the seeds
+                "train_coverage": {v["train_subset"]: v["train_coverage"]
+                                   for v in per_seed.values()},
             }
 
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "leg1_metrics.json").write_text(json.dumps(
-        {"row_alignment_sha256": next(iter(shas)),
+        {"row_alignment_sha256": next(iter(shas)), "roots": [str(r) for r in args.root],
          "auc_stride": args.auc_stride,
          "cells": res, "summary": summary}, indent=1))
     print(f"\nwrote {args.out / 'leg1_metrics.json'}")

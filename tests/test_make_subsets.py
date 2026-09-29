@@ -161,7 +161,9 @@ def test_done_shortcircuit_compares_every_row_changing_parameter():
     for field in ("n_files", "take_fraction", "files_per_class"):
         assert field in block, f"{field} changes the rows and must be compared"
     # and each is gated on the mode whose manifest actually stores it
-    assert 'args.mode == "jc2"' in block and 'args.mode == "jc1"' in block
+    assert 'args.mode in ("jc2", "jc2v2")' in block and 'args.mode == "jc1"' in block
+    for field in ("val_size", "n_val_files", "pool_files"):       # jc2v2 also
+        assert field in block, f"{field} changes the rows and must be compared"
 
 
 def test_signal_fraction_tolerance_scales_with_n():

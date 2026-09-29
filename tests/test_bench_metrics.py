@@ -278,3 +278,27 @@ def test_the_last_epoch_outputs_are_read_from_their_own_folder_and_file(tmp_path
                        "--features-dir", sub]) == 0
         d = _strict(tmp_path / "o" / name)
         assert d["checkpoint_rule"] == ("last epoch" if sub == "features_last" else "best validation epoch")
+
+
+def test_a_reused_init_joins_its_set_only_when_its_subsets_are_on_record(tmp_path):
+    """v2 reuses v1's complete from-scratch cells. Each one must have trained on a
+    subset in the sha256 record, with the size it recorded when it ran."""
+    y, z = _separable()
+    _cell(tmp_path / "v2", y, z, init="l188-s1")
+    ref = _cell(tmp_path / "v1", y, z, init="scratch-v2")
+    sub = "/data/finetune/top_sub/train_N1000_s1.parquet"
+    (ref / "ft_manifest.json").write_text(json.dumps({"subset": sub, "subset_bytes": 1869174}))
+    table = tmp_path / "t.json"
+    table.write_text(json.dumps({"files": {sub: {"sha256": "x", "bytes": 1869174}}}))
+    args = ["--root", str(tmp_path / "v2"), "--out", str(tmp_path / "o"), "--datasets", "top",
+            "--ref-init", str(tmp_path / "v1/leg_top/scratch-v2")]
+    with pytest.raises(SystemExit, match="needs --sha-table"):
+        M.main(args)
+    assert M.main(args + ["--sha-table", str(table)]) == 0
+    res = json.loads((tmp_path / "o" / "bench_metrics.json").read_text())
+    assert set(res["cells"]["top"]) == {"l188-s1", "scratch-v2"}
+    table.write_text(json.dumps({"files": {sub: {"sha256": "x", "bytes": 5}}}))
+    with pytest.raises(SystemExit, match="reused cell refused"):
+        M.main(args + ["--sha-table", str(table)])
+    with pytest.raises(SystemExit, match="not <tree>/leg_<set>/<init>"):
+        M.main(args[:-1] + [str(tmp_path / "v1/scratch-v2"), "--sha-table", str(table)])

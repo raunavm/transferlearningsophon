@@ -53,6 +53,7 @@ Run:  python3 scripts/build_ft_jobs.py [--pin TAG]
 from __future__ import annotations
 
 import argparse
+import json
 import pathlib
 import re
 import subprocess
@@ -751,7 +752,8 @@ def robust(name: str) -> bool:
     """Whether the spec called `name` carries the retry logic above."""
     if name in ONE_RETRY_RECORDS:
         return False
-    return name.startswith(("ft-legs-baseline-", "ft-legs-bench-baseline-")) or name in ROBUST_LATE
+    return (name.startswith(("ft-legs-baseline-", "ft-legs-bench-baseline-", "ft-v2-",
+                             "ft-subsets-jc2-v2-")) or name in ROBUST_LATE)
 
 
 _ATTEMPT_OK_OLD = (
@@ -1401,8 +1403,10 @@ def _prune(indent: int) -> str:
         f"{p}  echo \"FATAL: the prune removed net_best_epoch_state.pt in ${{OUT}}.\"; exit 1; }}\n")
 
 
-def _mpm_convert(inits) -> str:
-    """The in-pod conversion of every self-supervised init in `inits`."""
+def _mpm_convert(inits, src: dict | None = None) -> str:
+    """The in-pod conversion of every self-supervised init in `inits`, from
+    `src` (default MPM_SOURCE, the v1 runs)."""
+    src = MPM_SOURCE if src is None else src
     out = ("          # THE SELF-SUPERVISED INIT IS CONVERTED, NOT LOADED RAW. Its keys are\n"
            "          # trunk.mod.* and weaver 0.4.17 has no prefix option, so offered raw it\n"
            "          # loads NOTHING and the trunk trains from random weights (measured;\n"
@@ -1413,8 +1417,8 @@ def _mpm_convert(inits) -> str:
            "          # and start fresh, seeded by the fine-tuning seed like the head.\n")
     for n, c, k, _ in inits:
         if n.startswith("mpm-"):
-            out += (f"          [ -f {MPM_SOURCE[n]} ] || {{ echo \"FATAL: no {MPM_SOURCE[n]}\"; exit 1; }}\n"
-                    f"          python3 experiments/FT/mpm_init.py --src {MPM_SOURCE[n]} --out {c}\n")
+            out += (f"          [ -f {src[n]} ] || {{ echo \"FATAL: no {src[n]}\"; exit 1; }}\n"
+                    f"          python3 experiments/FT/mpm_init.py --src {src[n]} --out {c}\n")
     return out
 
 
@@ -1546,7 +1550,7 @@ def _refs_subs(inits, bench: bool) -> list:
     return []
 
 
-def legs_w3(inits, shard_name: str) -> str:
+def legs_w3(inits, shard_name: str, mpm_src: dict | None = None) -> str:
     """Wave 3 = wave 2's script over `inits`, by asserted substitution."""
     has_mpm = any(n.startswith("mpm-") for n, *_ in inits)
     assert not has_mpm or all(n.startswith("mpm-") for n, *_ in inits), (
@@ -1567,7 +1571,7 @@ def legs_w3(inits, shard_name: str) -> str:
          "          FAIL_MARK=${ROOT_OUT}/FAILED.${SHARD}\n", 1),
         # no public checkpoint in any wave-3 init; the self-supervised groups
         # convert their init here instead
-        (FETCH_SOPHON, _mpm_convert(inits) if has_mpm else "", 1),
+        (FETCH_SOPHON, _mpm_convert(inits, mpm_src) if has_mpm else "", 1),
         # name:ckpt:K:seeds -- K is the third field now, not the rest of the line
         ("ckpt=${rest%%:*}; k=${rest#*:}\n",
          "ckpt=${rest%%:*}; k=${rest#*:}; k=${k%%:*}\n", 1),
@@ -1662,7 +1666,7 @@ def legs_w3(inits, shard_name: str) -> str:
     return _derive(legs_w2(), subs, f"wave-3 {shard_name}")
 
 
-def legs_bench_v2(inits, shard_name: str) -> str:
+def legs_bench_v2(inits, shard_name: str, mpm_src: dict | None = None) -> str:
     """Benchmarks v2 = LEGS_BENCH over `inits`, by asserted substitution.
 
     What changes and why: wave 2's prune, validation size at N <= 1e4 and loop
@@ -1724,7 +1728,7 @@ def legs_bench_v2(inits, shard_name: str) -> str:
          "          ntest_for () { case $1 in top) echo ${NTEST_top};; qg) echo ${NTEST_qg};; esac; }\n", 1),
         ("          FAIL_MARK=${ROOT_OUT}/FAILED_BENCH\n",
          "          FAIL_MARK=${ROOT_OUT}/FAILED_BENCH.${SHARD}\n", 1),
-        (FETCH_SOPHON, FETCH_SOPHON if has_public else (_mpm_convert(inits) if has_mpm else ""), 1),
+        (FETCH_SOPHON, FETCH_SOPHON if has_public else (_mpm_convert(inits, mpm_src) if has_mpm else ""), 1),
         # seeds travel with the init; repeats are named per init; seeds OUTSIDE
         # sizes so the cheap and expensive cells interleave (item 36 addendum)
         ("              name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}\n"
@@ -1905,6 +1909,312 @@ STAGE_HERWIG = PREAMBLE + """
 """
 
 
+# ================================================================== v2 (2026-09-29)
+# THE AUDIT OF 2026-09-29, item 4 and must-fix 6, 7 and 14:
+#   * JetClass-II fine-tuning trained on jets from the PRETRAINING files. v2 draws
+#     its subsets from the fine-tuning held-out files only (make_subsets.py
+#     jc2v2), one draw per size used by every cell, and validates on a fixed
+#     20,480-jet sample evaluated whole every epoch (--steps-per-epoch-val -1: a
+#     finite validation pass, and weaver drops no partial batch because the size
+#     is a multiple of 512), where v1 drew 19,968 jets per epoch from a rotating
+#     200k stream.
+#   * The manifests recorded steps_per_epoch = N/512 (1 at N = 1e3) while weaver
+#     ran samples_per_epoch // 512 (19). v2 records the samples and steps from the
+#     variable weaver is given, and each cell checks weaver's own log agrees.
+#   * Every v2 cell loads its pretrained checkpoint by RULE, resolved in the pod
+#     (experiments/FT/ft_v2.py resolve): `bestval`, the primary, the best
+#     validation epoch of the run on the fixed sample; `e79`, the robustness
+#     check, the last epoch of the kept 70-79 window. Each rule has its own tree.
+#   * JetClass and the benchmarks keep their subsets and recipe, so the complete
+#     from-scratch cells of v1 are reused; every v2 job first checks that the
+#     subsets it reads have the sha256 on record (V2_SHA_TABLE), the record the
+#     staging job wrote and the read-outs check reused cells against.
+# Nothing here that loads a v2 checkpoint may be applied before the checkpoints
+# exist (no pretraining launches): only the staging job and the from-scratch
+# JetClass-II reference, which load none.
+PIN_V2 = "mtx-s1.66"
+V2_SUBSETS = "/data/finetune/jc2_v2"
+V2_SHA_TABLE = "experiments/FT/data/ft_v2_subsets_sha256.json"
+V2_ROOT = "/data/results/ft_v2"
+MTX_V2 = "/data/results/mtx_v2"
+V2_RULES = ("bestval", "e79")
+V2_VAL_JETS = 20_480
+V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
+assert V2_VAL_JETS % 512 == 0
+V2_POOL = ("/jc2/jet_data/Res2P_{0204..0249}.parquet /jc2/jet_data/Res34P_{0876..1074}.parquet "
+           "/jc2/jet_data/QCD_{0285..0349}.parquet")
+# The subsets v2 reuses unchanged, and the Herwig test pair: hashed by the
+# staging job, checked by every v2 job before it reads them.
+V2_REUSED = (["/data/finetune/jc1/val.parquet", "/data/finetune/top_sub/val.parquet",
+              "/data/finetune/qg_v2_sub/val.parquet"] + HERWIG_TEST
+             + [f"/data/finetune/jc1/train_N{n}_s{s}.parquet" for n in SIZES for s in FT_SEEDS]
+             + [f"/data/finetune/{d}/train_N{n}_s{s}.parquet"
+                for d, b in (("top_sub", "top"), ("qg_v2_sub", "qg"))
+                for n in BENCH_SIZES[b] for s in FT_SEEDS])
+
+
+def v2_runs() -> list[tuple[str, str, int, int]]:
+    """(init name, run directory, head width K, tier) for every pretraining run in
+    configs/arms/v2_grid.json. The run directory is mtx-<arm, lower case, no
+    underscores>-s<seed>, as v1 named the same arms (L162_MASS -> mtx-l162mass-s1),
+    and the init name drops the mtx-. K is the checkpoint's head: the classes, plus
+    the mass node, 0 for the self-supervised arm. That arm's inits are named
+    mpm-v2-s<seed>: the name routes them through the self-supervised recipe
+    (_baseline, BASELINE RECIPES), and mpm-s1 would not -- it is v1's head-only
+    record (MPM_HEAD_ONLY)."""
+    if not V2_GRID.exists():
+        raise SystemExit(f"FATAL: {V2_GRID.relative_to(ROOT)} does not exist; it lists the v2 runs")
+    out = []
+    for arm in json.loads(V2_GRID.read_text())["arms"]:
+        slug = arm["name"].lower().replace("_", "")
+        mpm = arm["objective"] == "mpm"
+        k = 0 if mpm else arm["num_classes"] + (1 if arm["mass_lambda"] else 0)
+        for s in range(1, arm["runs"] + 1):
+            out.append((f"mpm-v2-s{s}" if mpm else f"{slug}-s{s}",
+                        f"{MTX_V2}/mtx-{slug}-s{s}", k, arm["tier"]))
+    names = [n for n, *_ in out]
+    assert len(names) == len(set(names)), names
+    return out
+
+
+def cells_bench_v2ckpt(inits) -> list[tuple]:
+    """cells_bench without the head re-initialisation repeats, which v2 does not run."""
+    return [(f"leg_{d}", n, N, s) for d in BENCH_SETS for n, _, _, seeds in inits
+            for s in seeds for N in BENCH_SIZES[d]]
+
+
+def _between(text: str, start: str, end: str, new: str, what: str) -> str:
+    """Replace start..end (start included, end kept), each marker exactly once."""
+    for mk in (start, end):
+        if text.count(mk) != 1:
+            raise SystemExit(f"FATAL: {what}: marker {mk[:60]!r} found {text.count(mk)} times")
+    a = text.index(start)
+    b = text.index(end, a)
+    return text[:a] + new + text[b:]
+
+
+_LEG2_MARK = "          # ---------------------------------------------------------------- leg 2\n"
+_MPM_MARK = "          # THE SELF-SUPERVISED INIT IS CONVERTED, NOT LOADED RAW. Its keys are\n"
+
+
+def _v2_mpm_src(inits) -> dict | None:
+    """The conversion's source for v2 self-supervised inits: the file resolve links."""
+    src = {n: f"/workspace/ckpt/{n}.src.pt" for n, *_ in inits if n.startswith("mpm-")}
+    return src or None
+_NAN_MARK = "# A run whose loss went to NaN is not a result even if it finishes: weaver\n"
+
+
+def _verify_block(files: list[str]) -> str:
+    return ("          # EVERY SUBSET THIS JOB READS, against its sha256 record, before any GPU\n"
+            "          # work: the bytes the record holds, or the job stops (ft_v2.py verify).\n"
+            f"          python3 experiments/FT/ft_v2.py verify --table {V2_SHA_TABLE} \\\n"
+            f"            --files {' '.join(files)} || exit ${{HALT}}\n\n")
+
+
+def _resolve_block(inits, rule: str) -> str:
+    """Resolve every init's checkpoint by `rule`. A self-supervised init's
+    selected file is linked as <init>.src.pt, which the conversion reads."""
+    run = {n: d for n, d, *_ in v2_runs()}
+    out = (f"          # v2 PRETRAINED CHECKPOINTS, rule {rule}: ft_v2.py resolve links each run's\n"
+           "          # selected epoch to /workspace/ckpt/<init>.pt and records the choice in\n"
+           "          # <init>.pt.json, which every cell copies beside its result.\n")
+    for n, *_ in inits:
+        link = f"/workspace/ckpt/{n}.src.pt" if n.startswith("mpm-") else f"/workspace/ckpt/{n}.pt"
+        out += (f"          python3 experiments/FT/ft_v2.py resolve --run-dir {run[n]} "
+                f"--rule {rule} --link {link} || exit ${{HALT}}\n")
+        if n.startswith("mpm-"):
+            out += f"          cp {link}.json /workspace/ckpt/{n}.pt.json\n"
+    return out + "\n"
+
+
+def _steps_guard(p: str, spe: str) -> str:
+    return (f"{p}# TRUE BOOKKEEPING (must-fix 14): weaver's own log must show the steps the\n"
+            f"{p}# manifest records.\n"
+            f"{p}grep -q \"('steps_per_epoch', $(({spe}/512)))\" ${{OUT}}/train.log || {{\n"
+            f"{p}  echo \"FATAL: ${{OUT}}: weaver did not run $(({spe}/512)) steps per epoch\"; exit 1; }}\n")
+
+
+def legs_v2(inits, name: str, rule: str | None) -> str:
+    """wave 3's script (robust) over v2 inits, by asserted substitution. rule None is
+    the from-scratch JetClass-II reference: leg 1 only, its own tree."""
+    scratch = rule is None
+    seeds = sorted({s for *_, ss in inits for s in ss})
+    base = robust_script(legs_w3(inits, name, _v2_mpm_src(inits)), name)
+    head, tail = base.split(_LEG2_MARK) if base.count(_LEG2_MARK) == 1 else (None, None)
+    assert head is not None, "legs script: leg-2 marker not found once"
+    fixed = (f"val_jets={V2_VAL_JETS} steps_per_epoch_val={V2_VAL_JETS // 512} "
+             "val_rule=fixed-sample-whole-pass")
+    wave = f"wave=v2 ckpt_rule={rule or 'none'} "
+    p = " " * 16
+    head = _derive(head, [
+        ("          SUB2=/data/finetune/jc2\n", f"          SUB2={V2_SUBSETS}\n", 1),
+        ("          ROOT_OUT=/data/results/ft/w2b\n",
+         f"          ROOT_OUT={V2_ROOT}/{'scratch' if scratch else rule}\n", 1),
+        ('[ "$p" -lt 92 ] && [ "$g" -ge 50 ]', '[ "$p" -lt 85 ] && [ "$g" -ge 50 ]', 1),
+        ("${SUB2}/train_N${N}_s${S}.parquet", "${SUB2}/train_N${N}_s1.parquet", 2),
+        ("wave=3 epochs=${EP} subset=", wave + "epochs=${EP} subset=", 1),
+        ("num_classes=162 batch_size=512 steps_per_epoch=$((N/512))",
+         "num_classes=162 batch_size=512 samples_per_epoch=${SPE} steps_per_epoch=$((SPE/512)) "
+         + fixed, 1),
+        ("--samples-per-epoch ${SPE} --samples-per-epoch-val 20000 --num-epochs ${EP}",
+         "--samples-per-epoch ${SPE} --steps-per-epoch-val -1 --num-epochs ${EP}", 1),
+        (p + _NAN_MARK, _steps_guard(p, "SPE")
+         + f"{p}# ...and every epoch validated on the whole fixed sample, {V2_VAL_JETS} jets.\n"
+         f"{p}[ \"$(grep -c \"Processed {V2_VAL_JETS} entries\" ${{OUT}}/train.log)\" -eq \"${{EP}}\" ] || {{\n"
+         f"{p}  echo \"FATAL: ${{OUT}}: not every epoch validated on the fixed sample\"; exit 1; }}\n"
+         + p + _NAN_MARK, 1),
+    ], f"v2 legs {name} leg 1")
+    tail = _derive(tail, [
+        ("wave=3 epochs=${EP} subset=", wave + "epochs=${EP} subset=", 1),
+        ("num_classes=10 batch_size=512 steps_per_epoch=$((N/512))",
+         "num_classes=10 batch_size=512 samples_per_epoch=${SPE} steps_per_epoch=$((SPE/512)) "
+         "samples_per_epoch_val=20000 steps_per_epoch_val=39 val_rule=rotating-stream", 1),
+        (p + _NAN_MARK, _steps_guard(p, "SPE") + p + _NAN_MARK, 1),
+        ('echo "FT LEGS WAVE 3 ${SHARD} COMPLETE',
+         f'echo "FT V2 LEGS ({"scratch" if scratch else rule}) ${{SHARD}} COMPLETE', 1),
+    ], f"v2 legs {name} leg 2")
+    jc2 = [f"{V2_SUBSETS}/train_N{n}_s1.parquet" for n in SIZES] + [f"{V2_SUBSETS}/val.parquet"]
+    if scratch:
+        # leg 1 only: JetClass's from-scratch cells are v1's, reused.
+        text = _between(head, "          # Leg-2 preconditions, checked HERE rather than days later after leg 1.\n",
+                        "          epochs_for () {", _verify_block(jc2), f"v2 scratch {name}")
+        text = _derive(text, [("          SUB1=/data/finetune/jc1\n", "", 1),
+                              ("          wait_for ${SUB1}/DONE\n", "", 1)], f"v2 scratch {name}")
+        end = tail[tail.index('          echo "FT V2 LEGS'):]
+        return text + end
+    jc1 = ([f"/data/finetune/jc1/train_N{n}_s{s}.parquet" for n in SIZES for s in seeds]
+           + ["/data/finetune/jc1/val.parquet"])
+    text = _between(head, "          # Checked HERE, not hours later, for the reason item 33 records.\n",
+                    "          epochs_for () {", _verify_block(jc2 + jc1), f"v2 legs {name}")
+    cp = f"{p}cp /workspace/ckpt/${{name}}.pt.json ${{OUT}}/init_checkpoint.json\n"
+    anchor = _MPM_MARK if _v2_mpm_src(inits) else '          INITS="__INITS__"\n'
+    text = _derive(text, [(anchor, _resolve_block(inits, rule) + anchor, 1),
+                          (f"{p}CELL=${{OUT}}\n", f"{p}CELL=${{OUT}}\n" + cp, 1)], f"v2 legs {name}")
+    tail = _derive(tail, [(f"{p}CELL=${{OUT}}\n", f"{p}CELL=${{OUT}}\n" + cp, 1)], f"v2 legs {name}")
+    return text + _LEG2_MARK + tail
+
+
+def bench_v2ckpt(inits, name: str, rule: str) -> str:
+    """bench v2's script (robust) over v2 inits, by asserted substitution: its own
+    tree, no head re-initialisation repeats, and the last epoch scored beside the
+    best one at the full training set, as bench v3 does for C2 and C3 (A6)."""
+    p = " " * 18
+    files = (HERWIG_TEST + [f"/data/finetune/{d}_sub/train_N{n}_s1.parquet"
+                            for d, b in (("top", "top"), ("qg_v2", "qg")) for n in BENCH_SIZES[b]]
+             + ["/data/finetune/top_sub/val.parquet", "/data/finetune/qg_v2_sub/val.parquet"])
+    anchor = _MPM_MARK if _v2_mpm_src(inits) else '          INITS="__INITS__"\n'
+    return _derive(robust_script(legs_bench_v2(inits, name, _v2_mpm_src(inits)), name), [
+        (f"          ROOT_OUT={BENCH_V2_ROOT}\n", f"          ROOT_OUT={V2_ROOT}/{rule}\n", 1),
+        ('[ "$p" -lt 92 ] && [ "$g" -ge 50 ]', '[ "$p" -lt 85 ] && [ "$g" -ge 50 ]', 1),
+        (anchor, _verify_block(files) + _resolve_block(inits, rule) + anchor, 1),
+        (f"REPS=\"{' '.join(map(str, BENCH_V2_REPS))}\";; esac\n", "REPS=\"\";; esac\n", 1),
+        ("samples_per_epoch_val=$(val_for ${N}) wave=bench-v2",
+         "samples_per_epoch_val=$(val_for ${N}) steps_per_epoch_val=$(($(val_for ${N})/512)) "
+         f"val_rule=rotating-stream wave=v2 ckpt_rule={rule}", 1),
+        (f"{p}CELL=${{OUT}}\n",
+         f"{p}CELL=${{OUT}}\n{p}cp /workspace/ckpt/${{name}}.pt.json ${{OUT}}/init_checkpoint.json\n", 1),
+        (p + _NAN_MARK, _steps_guard(p, "$(samples_for ${N})") + p + _NAN_MARK, 1),
+        (f"{p}# Per-epoch checkpoints (state + optimizer, 20 x ~26 MB), read by\n",
+         f"{p}if [ \"${{N}}\" = \"${{NMAX}}\" ]; then\n" + _extract_last(20) + f"{p}fi\n"
+         f"{p}# Per-epoch checkpoints (state + optimizer, 20 x ~26 MB), read by\n", 1),
+        ("FT BENCH V2 ${SHARD} COMPLETE", f"FT V2 BENCH ({rule}) ${{SHARD}} COMPLETE", 1),
+    ], f"v2 bench {name}")
+
+
+SUBSETS_JC2_V2 = PREAMBLE + f"""
+          HALT={EXIT_HALT}   # the pod failure policy fails the Job at once on this code
+          OUT={V2_SUBSETS}
+          [ -f ${{OUT}}/DONE ] && {{ echo "FATAL: ${{OUT}} is complete; staged data is never rebuilt"; exit ${{HALT}}; }}
+          POOL=({V2_POOL})
+          n_present () {{ local n=0; for f in "$@"; do [ -f "$f" ] && n=$((n+1)); done; echo $n; }}
+          [ "$(n_present "${{POOL[@]}}")" -eq 310 ] || {{ echo "FATAL: not all 310 held-out files are present"; exit ${{HALT}}; }}
+          df -h /data
+          p=$(df --output=pcent /data | tail -1 | tr -dc 0-9); g=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9)
+          [ "$p" -lt 85 ] && [ "$g" -ge 100 ] || {{ echo "FATAL: /data at ${{p}}% used, ${{g}}G free"; exit ${{HALT}}; }}
+          # Built in ${{OUT}}.staging, moved into place only when complete. An attempt
+          # killed with its pod leaves an incomplete build there, which no job has
+          # read, and the next attempt starts it again.
+          rm -rf ${{OUT}}.staging
+          python3 experiments/FT/make_subsets.py jc2v2 --pool-files "${{POOL[@]}}" \\
+            --out ${{OUT}}.staging --sizes {' '.join(map(str, SIZES))} --seeds 1 \\
+            --n-files 60 --take-fraction 0.30 --val-size {V2_VAL_JETS} --n-val-files 12 || exit ${{HALT}}
+          mv ${{OUT}}.staging ${{OUT}}
+          ls -la ${{OUT}}; du -sh ${{OUT}}
+          # The sha256 record every v2 job checks: the new subsets, and the ones
+          # v2 reuses (their builds recorded no sha256). Read-only on the latter.
+          python3 experiments/FT/ft_v2.py hash --out ${{OUT}}/ft_v2_subsets_sha256.json \\
+            --files ${{OUT}}/train_N*_s1.parquet ${{OUT}}/val.parquet {' '.join(V2_REUSED)} || exit ${{HALT}}
+          df -h /data
+          echo "SUBSETS JC2 V2 DONE"
+"""
+
+
+def v2_groups(cells_of) -> list[tuple[str, list]]:
+    """(suffix, inits) per spec: every tier's supervised runs in up to N_SHARDS
+    balanced shards, its self-supervised runs in a spec of their own (the
+    conversion and their recipe are substituted per spec). One fine-tuning seed."""
+    runs = v2_runs()
+    out = []
+    for tier in sorted({r[3] for r in runs}):
+        sup = [(n, f"/workspace/ckpt/{n}.pt", k, [1]) for n, _, k, t in runs if t == tier and k]
+        ssl = [(n, f"/workspace/ckpt/{n}.pt", 0, [1]) for n, _, k, t in runs if t == tier and not k]
+        if sup:
+            out += [(f"t{tier}{chr(ord('a') + i)}", s)
+                    for i, s in enumerate(shard(sup, cells_of, min(N_SHARDS, len(sup)))) if s]
+        if ssl:
+            out.append((f"t{tier}mpm", ssl))
+    return out
+
+
+def _v2_specs(pin: str, subsets: bool, finetune: bool) -> dict:
+    h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
+    gpu = dict(gpu=True, cpu="4", memory="88Gi", shm="8Gi", backoff=1, pin=pin,
+               exclude_hosts=BAD_NODES + LOST_GPU_NODES)
+    specs = {}
+    if subsets:
+        name = "ft-subsets-jc2-v2-raunav"
+        specs[f"job-{name}.yaml"] = job(
+            name, _fill(SUBSETS_JC2_V2, pin), **_retry_kw(name, dict(
+                gpu=False, cpu="4", memory="48Gi", shm="4Gi", backoff=1, pin=pin)),
+            header=h + RETRY_NOTE
+            + "  # v2 JetClass-II fine-tuning subsets (audit must-fix 7): 1e3..1e6 jets and a\n"
+              f"  # {V2_VAL_JETS:,}-jet validation set, from the fine-tuning held-out files only.\n"
+              "  # CPU, ~5 GB written. Then the sha256 record of these and of the reused subsets.\n")
+    if not finetune:
+        return specs
+    if not (ROOT / V2_SHA_TABLE).exists():
+        raise SystemExit(f"FATAL: {V2_SHA_TABLE} is not in the tree: copy it from "
+                         f"{V2_SUBSETS}/ft_v2_subsets_sha256.json after the staging job")
+    for rule in V2_RULES:
+        for kind, cells_of, script in (("legs", cells_legs, legs_v2),
+                                       ("bench", cells_bench_v2ckpt, bench_v2ckpt)):
+            for suffix, s in v2_groups(cells_of):
+                name = f"ft-v2-{kind}-{rule}-{suffix}-raunav"
+                cells = cells_of(s)
+                what = ("JetClass-II on the held-out subsets (fixed-sample validation) and\n"
+                        "  # JetClass, wave 3's recipe" if kind == "legs" else
+                        "top and quark/gluon (with Herwig) at bench v2's\n"
+                        "  # recipe; the full training set also scored at its last epoch")
+                specs[f"job-{name}.yaml"] = job(
+                    name, _fill(script(s, name, rule), pin, inits=s), **_retry_kw(name, gpu),
+                    header=h + RETRY_NOTE
+                    + f"  # v2 FINE-TUNING ({kind}), pretrained checkpoint rule {rule}: {what}.\n"
+                      "  # DO NOT APPLY before these v2 checkpoints exist.\n"
+                      f"  # inits: {' '.join(n for n, *_ in s)}\n"
+                      f"  # {len(cells)} fine-tunes, ~{sum(cost_h(c) for c in cells):.0f} GPU-h. "
+                      f"Root {V2_ROOT}/{rule}.\n")
+    ref = INITS_LATER[SCRATCH_REF]
+    name = "ft-v2-legs-scratch-raunav"
+    specs[f"job-{name}.yaml"] = job(
+        name, _fill(legs_v2(ref, name, None), pin, inits=ref), **_retry_kw(name, gpu),
+        header=h + RETRY_NOTE
+        + "  # v2 FROM-SCRATCH REFERENCE on the held-out JetClass-II subsets: ParT's own\n"
+          "  # from-scratch recipe (BASELINE RECIPES), three fine-tuning seeds on the one\n"
+          "  # subset per size, leg 1 only; loads no pretrained checkpoint.\n"
+          f"  # 12 fine-tunes, ~12 GPU-h. Root {V2_ROOT}/scratch.\n")
+    return specs
+
+
 def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
                bench_v3: bool = False) -> dict:
     """The 2026-09-18 specs. Every one pins PIN_W3 or later."""
@@ -2006,7 +2316,15 @@ REFS_NEEDED = {"scripts/build_ft_jobs.py": "MPM_LR_MULT",
                "experiments/FT/smoke_checks.py": "--fresh-prefix"}
 
 
-def verify_pin(pin: str, not_yet_tagged: bool) -> None:
+# What a v2 spec's tag must carry: the builder of the held-out subsets and the
+# resolver / verifier every v2 job calls; the fine-tuning specs also the sha256
+# record they verify against.
+V2_NEEDED = {"experiments/FT/make_subsets.py": "def build_jc2v2",
+             "experiments/FT/ft_v2.py": "def resolve",
+             V2_SHA_TABLE: '"files"'}
+
+
+def verify_pin(pin: str, not_yet_tagged: bool, needed: dict = REFS_NEEDED) -> None:
     """The pod clones a TAG, so check the tag's tree (scripts/build_anomaly_jobs.py
     and build_aoj_jobs.py): a tag that does not exist yet is refused unless it is
     declared with --pin-not-yet-tagged, and then the working tree is checked."""
@@ -2016,14 +2334,14 @@ def verify_pin(pin: str, not_yet_tagged: bool) -> None:
         sys.exit(f"FATAL: tag {pin} does not exist. Pass --pin-not-yet-tagged if it is about "
                  "to be created on the commit carrying these specs, and create it BEFORE "
                  "applying any of them.")
-    for path, flag in REFS_NEEDED.items():
+    for path, flag in needed.items():
         text = ((ROOT / path).read_text() if not tagged else subprocess.run(
             ["git", "-C", str(ROOT), "show", f"{pin}:{path}"], capture_output=True, text=True).stdout)
         if flag not in text:
             sys.exit(f"FATAL: {path} {'in the working tree' if not tagged else 'at ' + pin} has no {flag}")
     if not tagged:
         print(f"WARNING: tag {pin} DOES NOT EXIST YET. Create it on a commit carrying "
-              f"{', '.join(REFS_NEEDED)} before applying any spec that clones it.")
+              f"{', '.join(needed)} before applying any spec that clones it.")
 
 
 def plan(later: list | None = None) -> str:
@@ -2078,7 +2396,8 @@ def _fill(script: str, pin: str, inits=None) -> str:
 
 
 def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = False,
-          later: list | None = None, bench_v3: bool = False) -> dict[str, str]:
+          later: list | None = None, bench_v3: bool = False, v2_subsets: bool = False,
+          v2: bool = False) -> dict[str, str]:
     h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
     specs = {
         "job-ft-subsets-jc2-raunav.yaml": job(
@@ -2167,7 +2486,13 @@ def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = F
                        "  # the same init names and sizes, so a shared root would make every\n"
                        "  # wave-2 cell hit `[ -f DONE ]` and skip. Wave 1 is untouched and the\n"
                        "  # two are reported side by side as the curve.\n")
-    if wave3 or bench_v2 or bench_v3:
+    if v2_subsets or v2:
+        # ONLY the v2 specs.
+        specs = _v2_specs(pin, v2_subsets, v2)
+        for name, text in specs.items():
+            left = re.findall(r"__[A-Z0-9_]+__", text)
+            assert not left, f"{name}: unfilled {sorted(set(left))}"
+    elif wave3 or bench_v2 or bench_v3:
         # ONLY the new specs, so a --wave3 / --bench-v2 run can never rewrite a
         # launched wave-1 or wave-2 file.
         specs = _new_specs(pin, wave3, bench_v2, later, bench_v3)
@@ -2213,6 +2538,10 @@ def main() -> int:
     ap.add_argument("--later", nargs="+", choices=sorted(INITS_LATER), metavar="GROUP",
                     help="with --wave3/--bench-v2: emit the not-yet-launchable group(s) "
                          f"{sorted(INITS_LATER)} instead of the shards")
+    ap.add_argument("--v2-subsets", action="store_true",
+                    help=f"emit ONLY the v2 JetClass-II subset staging job (pin {PIN_V2})")
+    ap.add_argument("--v2", action="store_true",
+                    help=f"emit ONLY the v2 fine-tuning specs (pin {PIN_V2}); needs {V2_SHA_TABLE}")
     ap.add_argument("--plan", action="store_true",
                     help="print cells and expected GPU-hours per shard, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
@@ -2231,8 +2560,14 @@ def main() -> int:
         args.pin = PIN_W3
     if refs:
         verify_pin(args.pin, args.pin_not_yet_tagged)
+    if args.v2_subsets or args.v2:
+        if args.pin == PIN:
+            args.pin = PIN_V2
+        verify_pin(args.pin, args.pin_not_yet_tagged,
+                   V2_NEEDED if args.v2 else {k: V2_NEEDED[k] for k in list(V2_NEEDED)[:2]})
     specs = build(args.pin, wave2=args.wave2, wave3=args.wave3, bench_v2=args.bench_v2,
-                  later=args.later, bench_v3=args.bench_v3_last)
+                  later=args.later, bench_v3=args.bench_v3_last,
+                  v2_subsets=args.v2_subsets, v2=args.v2)
     if args.only:
         keep = {n: t for n, t in specs.items() if any(k in n for k in args.only)}
         missing = [k for k in args.only if not any(k in n for n in specs)]
