@@ -39,6 +39,15 @@ ParT_sophon_arch_mpm.py and ANY arm config -- MPM never reads the label, so the
 SSL arm streams exactly what the supervised arms stream and I2/I3 hold unchanged.
 The arch refuses to build without the loop installed.
 
+WHAT IS REALISED (audit 2026-09-29, B1). Of the four seeds, trunk_init (line
+~112) is overwritten by data_sampling before weaver builds anything, and
+data_sampling (line ~240) is overwritten by head_init/dropout inside model_setup, before the
+DataLoader draws its seed. So head_init seeds ALL weights (the class token is
+drawn after the output layer, so it depends on K) and dropout seeds data order
+and dropout masks. weaver restores only model and optimizer on --load-epoch, so a
+resume restarts the stream, dropout, Lookahead slow weights and GradScaler.
+v2 pretraining does not use this wrapper: experiments/MTX/pretrain_v2.py.
+
 Reproducibility: a run is reproducible on the SAME GPU model. Cross-GPU is
 statistically — not bit — identical (different CUDA kernels and reduction
 orders). Pin the GPU model in the job spec; see k8s/NODE_SELECTOR.md.

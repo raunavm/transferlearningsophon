@@ -129,6 +129,46 @@ def _weaver_installed() -> str | None:
         return None
 
 
+def _v2_fields(manifest: dict, a) -> None:
+    """What experiments/MTX/pretrain_v2.py realises, replacing v1's fields.
+
+    Every recorded seed governs something (pretrain_v2.build_model, stream_v2,
+    pretrain_v2.main), so there is no `inert` entry: a manifest must not list a
+    seed the run does not use."""
+    manifest["driver"] = "experiments/MTX/pretrain_v2.py"
+    r = manifest["randomness"]
+    r["effective_streams"] = {
+        "trunk_init": "every trunk tensor, class token included, via a trunk-only build "
+                      "(independent of the output width)",
+        "head_init": "the output layer / mass node / self-supervised decoder",
+        "data_sampling": "per (epoch, worker, fetch): file order within each family, the "
+                         "split schedule and load ranges, reweighting draws, row permutation",
+        "dropout": "torch/numpy/python reseeded at every epoch from (seed, epoch): dropout, "
+                   "SequenceTrimmer trimming, self-supervised masks; validation from a fixed value",
+    }
+    r["epoch_stream_record"] = "<run_dir>/stream/epoch-EEE.json (experiments/MTX/stream_ids.py)"
+    r["cudnn_deterministic_intended"] = True
+    d = manifest["data_stream"]
+    d["loader"] = {"schedule": "Sophon --data-split-num (hqucms/weaver-core@c97de3c), ported in "
+                               "experiments/MTX/stream_v2.py",
+                   "fetch_step": a.fetch_step, "data_split_num": a.data_split_num,
+                   "num_workers": a.num_workers, "fresh_stream_every_epoch": True}
+    d["validation"] = {"files": sorted(a.val_files), "n_files": len(a.val_files),
+                       "rows": "every row passing the selection, no reweighting, same order every epoch",
+                       "metrics": "<run_dir>/metrics/epoch-EEE.json"}
+    d["first_1e6_jet_id_sha256"] = "superseded by the per-epoch stream records"
+    manifest["checkpoints"] = {
+        "primary": "best validation accuracy on the fixed sample (net_best_epoch_state.pt, "
+                   "best_epoch.json); accuracy weighted by the training reweighting weights; "
+                   "self-supervised: lowest validation loss",
+        "robustness": f"mean of each result over epochs {a.num_epochs - 10}-{a.num_epochs - 1}",
+        "retention": a.keep_checkpoints,
+        "resume_restores": ["model", "RAdam state", "Lookahead slow weights and step counter",
+                            "AMP GradScaler", "LR scheduler", "SequenceTrimmer counters",
+                            "best-so-far"],
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run-id", required=True)
@@ -143,8 +183,19 @@ def main() -> int:
     ap.add_argument("--mpm-mask-rate", type=float, default=None,
                     help="MPMv2 mask rate. Present only on the self-supervised arm; "
                          "its --num-classes is 0 because it has no classification head.")
+    ap.add_argument("--driver", default="seed_weaver", choices=["seed_weaver", "pretrain_v2"],
+                    help="seed_weaver: v1 runs (weaver's own loop). pretrain_v2: "
+                         "experiments/MTX/pretrain_v2.py, whose four seeds are all effective.")
+    ap.add_argument("--num-workers", type=int, default=None)
+    ap.add_argument("--data-split-num", type=int, default=None)
+    ap.add_argument("--fetch-step", type=float, default=None)
+    ap.add_argument("--val-files", nargs="*", default=None,
+                    help="pretrain_v2: the fixed validation sample's files")
+    ap.add_argument("--keep-checkpoints", default=None)
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
+    if a.driver == "pretrain_v2" and None in (a.num_workers, a.data_split_num, a.fetch_step, a.val_files):
+        ap.error("--driver pretrain_v2 needs --num-workers, --data-split-num, --fetch-step and --val-files")
 
     cfg = pathlib.Path(a.data_config)
     if not cfg.is_absolute():
@@ -281,6 +332,9 @@ def main() -> int:
             "flops_convention": "MACs, as in ParT Table 4 (PMLR 162:18281)",
         },
     }
+
+    if a.driver == "pretrain_v2":
+        _v2_fields(manifest, a)
 
     out = pathlib.Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)

@@ -524,6 +524,403 @@ def derive_draw(draw: int, seed: int) -> list[str]:
     return out
 
 
+# ============================================================ v2 specs (audit 2026-09-29)
+# v2 pretraining runs experiments/MTX/pretrain_v2.py: the Sophon loader
+# (--fetch-step 1.0 --data-split-num 200, 5 workers), a fresh epoch-seeded stream
+# every epoch, the fixed validation sample, full-state auto-resume and per-epoch
+# metrics and stream records. One function emits the spec of any (arm, run index,
+# GPU product); nothing here applies a spec.
+V2_ROOT = "/data/results/mtx_v2"
+V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
+V2_IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
+V2_GPU = "NVIDIA-GeForce-RTX-3090"
+V2_RATE = "5e-4"                    # RATES: every arm of the ladder trains at 5e-4
+V2_EPOCHS = 80
+V2_SAMPLES = 10_240_000
+V2_LOADER = "--num-workers 5 --fetch-step 1.0 --data-split-num 200"
+V2_CPU = "8"
+V2_MEM = "88Gi"
+V2_BACKOFF = 20                     # counted failures; evictions are ignored
+EXIT_HALT = 42
+V2_BAD_NODES = ("ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net",
+                "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu",
+                "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu",
+                "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org")
+TRAIN_GLOBS = ("Res2P:/jc2/jet_data/Res2P_{0000..0199}.parquet",
+               "Res34P:/jc2/jet_data/Res34P_{0000..0859}.parquet",
+               "QCD:/jc2/jet_data/QCD_{0000..0279}.parquet")
+# The fixed validation sample (decided 2026-09-29): 25 validation-split files,
+# every selected row, the same order every epoch. Fine-tuning v2 draws only from
+# the other validation-split files (Res2P_0204-0249, Res34P_0876-1074, QCD_0285-0349).
+VAL_GLOBS = ("/jc2/jet_data/Res2P_{0200..0203}.parquet",
+             "/jc2/jet_data/Res34P_{0860..0875}.parquet",
+             "/jc2/jet_data/QCD_{0280..0284}.parquet")
+N_TRAIN_FILES, N_VAL_FILES = 1340, 25
+ARCH = {"classification": "experiments/MTX/ParT_sophon_arch_mtx.py",
+        "classification+mass": "experiments/MTX/ParT_sophon_arch_mass.py",
+        "mpm": "experiments/MTX/ParT_sophon_arch_mpm.py"}
+# Used only while configs/arms/v2_grid.json does not exist.
+V2_DEFAULT_ARMS = [
+    {"name": "L188", "config": "configs/arms/L188.yaml", "num_classes": 188, "mass_lambda": None,
+     "runs": 5, "objective": "classification", "extra_selection": None},
+    {"name": "L162", "config": "configs/arms/L162.yaml", "num_classes": 162, "mass_lambda": None,
+     "runs": 5, "objective": "classification", "extra_selection": None},
+    {"name": "R42_Q1", "config": "configs/arms/R42_Q1.yaml", "num_classes": 43, "mass_lambda": None,
+     "runs": 5, "objective": "classification", "extra_selection": None},
+    {"name": "R16_Q1", "config": "configs/arms/R16_Q1.yaml", "num_classes": 17, "mass_lambda": None,
+     "runs": 5, "objective": "classification", "extra_selection": None},
+    {"name": "L162_MASS", "config": "configs/arms/L162_MASS.yaml", "num_classes": 162, "mass_lambda": 5.0,
+     "runs": 5, "objective": "classification+mass", "extra_selection": None},
+    {"name": "R16_Q1_MASS", "config": "configs/arms/R16_Q1_MASS.yaml", "num_classes": 17, "mass_lambda": 5.0,
+     "runs": 5, "objective": "classification+mass", "extra_selection": None},
+]
+
+
+def v2_arms() -> list:
+    """The v2 grid (configs/arms/v2_grid.json, scripts/build_v2_arms.py), else the defaults."""
+    if V2_GRID.exists():
+        import json
+        return json.loads(V2_GRID.read_text())["arms"]
+    return V2_DEFAULT_ARMS
+
+
+def v2_run_id(arm: str, run: int, gpu: str = V2_GPU) -> str:
+    slug = re.sub(r"[^a-z0-9]", "", arm.lower())
+    tail = "" if gpu == V2_GPU else "-" + gpu_short(gpu)
+    return f"mtx2-{slug}-r{run}{tail}"
+
+
+def gpu_short(gpu: str) -> str:
+    return {"NVIDIA-GeForce-RTX-3090": "3090", "NVIDIA-L40": "l40", "NVIDIA-RTX-A6000": "a6000",
+            "NVIDIA-A40": "a40"}.get(gpu) or re.sub(r"[^a-z0-9]", "", gpu.lower())[-12:]
+
+
+def v2_spec(arm: dict, run: int, gpu: str = V2_GPU, *, tag: str, **kw) -> tuple:
+    """(job name, spec text) for one v2 pretraining run.
+
+    `arm` is one entry of configs/arms/v2_grid.json ("name", "config",
+    "num_classes", "mass_lambda", "objective", "extra_selection"). The run index
+    is the master seed, so run k of every arm draws the same stream.
+    """
+    run_id = kw.pop("run_id", None) or v2_run_id(arm["name"], run, gpu)
+    job = kw.pop("job", None) or f"{run_id}-raunav"
+    cpu, mem = kw.pop("cpu", V2_CPU), kw.pop("mem", V2_MEM)
+    script = v2_script(arm, run, run_id=run_id, **kw)
+    title = f"v2 PRETRAINING -- {arm['name']}, run {run} (master seed {run}), {gpu}."
+    return job, v2_job(job, [script], gpu, tag, title, cpu=cpu, mem=mem)
+
+
+def v2_script(arm: dict, run: int, *, run_id: str, out_root: str = V2_ROOT,
+              epochs: int = V2_EPOCHS, samples: int = V2_SAMPLES, deterministic: bool = False,
+              kill_after_epoch: int | None = None) -> str:
+    """The bash for one run, after the clone. It runs in a subshell of the pod
+    script, so `exit` leaves this run only. kill_after_epoch (smoke only)
+    SIGKILLs the trainer during the epoch after that one, then restarts it."""
+    obj = arm["objective"]
+    head = ""
+    if obj != "mpm":
+        head = f" -o num_classes {int(arm['num_classes'])} -o fc_params '[(512,0.1)]'"
+    extra = ""
+    if arm.get("mass_lambda") is not None:
+        extra += f" --mass-lambda {float(arm['mass_lambda'])}"
+    if obj == "mpm":
+        extra += " --mpm --mpm-mask-rate 0.40"
+    if arm.get("extra_selection"):
+        if "'" in arm["extra_selection"]:
+            raise ValueError("extra_selection must not contain a single quote")
+        extra += f" --extra-selection '{arm['extra_selection']}'"
+    if deterministic:
+        extra += " --deterministic"
+    k = 0 if obj == "mpm" else int(arm["num_classes"])
+    cfg = arm["config"]
+    train_cmd = (
+        "python3 experiments/MTX/pretrain_v2.py --seed ${SEED} --out ${OUT}"
+        f" --data-train {' '.join(TRAIN_GLOBS)} --data-val {' '.join(VAL_GLOBS)}"
+        f" --data-config ${{CFG}} --network-config {ARCH[obj]}{head}"
+        f" --use-amp --batch-size 512 --start-lr {V2_RATE} --num-epochs {epochs}"
+        f" --samples-per-epoch {samples} {V2_LOADER}{extra} --keep-checkpoints all")
+    if kill_after_epoch is None:
+        run_block = f"PYTHONUNBUFFERED=1 {train_cmd} 2>&1 | tee -a ${{OUT}}/train.log\n"
+    else:
+        e = int(kill_after_epoch)
+        run_block = (
+            "if [ ! -f ${OUT}/KILLED ]; then\n"
+            f"  PYTHONUNBUFFERED=1 {train_cmd} >> ${{OUT}}/train.log 2>&1 &\n"
+            "  BG=$!\n"
+            f"  until [ -f ${{OUT}}/net_epoch-{e}_resume.pt ] || ! kill -0 ${{BG}} 2>/dev/null; do sleep 5; done\n"
+            "  sleep 45\n"
+            "  kill -9 ${BG} || true      # the trainer only; its loader workers exit with it\n"
+            "  wait ${BG} || true\n"
+            f"  echo \"killed during epoch {e + 1} at $(date -u +%FT%TZ)\" | tee ${{OUT}}/KILLED\n"
+            "fi\n"
+            f"PYTHONUNBUFFERED=1 {train_cmd} 2>&1 | tee -a ${{OUT}}/train.log\n")
+    return f"""(
+set -euo pipefail
+HALT={EXIT_HALT}
+RUN_ID={run_id}
+SEED={int(run)}
+OUT={out_root}/${{RUN_ID}}
+mkdir -p ${{OUT}}/attempts
+if [ -f ${{OUT}}/DONE ]; then echo "${{RUN_ID}} is DONE"; exit 0; fi
+USE=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+echo "/data at ${{USE}}%"
+[ "${{USE}}" -le 85 ] || {{ echo "FATAL: /data at ${{USE}}%, above 85%"; exit ${{HALT}}; }}
+# A FAILED attempt leaves attempts/failed-* naming the last complete epoch (the
+# EXIT trap; an evicted pod is SIGKILLed, runs no trap and is not counted). Two
+# failed attempts with no epoch completed in between stop the job.
+LAST=$(ls ${{OUT}} | sed -n 's/^net_epoch-\\([0-9]*\\)_resume\\.pt$/\\1/p' | sort -n | tail -1)
+LAST=${{LAST:--1}}
+NF=$(ls ${{OUT}}/attempts | grep -c -- "-e${{LAST}}$" || true)
+[ "${{NF}}" -lt 2 ] || {{ echo "FATAL: ${{NF}} failed attempts after epoch ${{LAST}}"; exit ${{HALT}}; }}
+ATTEMPT=$(date -u +%Y%m%dT%H%M%SZ)
+trap 'rc=$?; if [ ${{rc}} -ne 0 ] && [ ${{rc}} -ne ${{HALT}} ]; then echo "rc=${{rc}} pod=${{POD_NAME}} node=${{NODE_NAME}}" > ${{OUT}}/attempts/failed-${{ATTEMPT}}-e${{LAST}}; fi' EXIT
+echo "${{ATTEMPT}} pod=${{POD_NAME}} node=${{NODE_NAME}} gpu=${{GPU_PRODUCT}} after_epoch=${{LAST}} ref=${{REPO_REF}}" >> ${{OUT}}/attempts.log
+TRAIN_FILES=({' '.join(g.split(':', 1)[1] for g in TRAIN_GLOBS)})
+VAL_FILES=({' '.join(VAL_GLOBS)})
+n_present () {{ local n=0; for f in "$@"; do [ -f "$f" ] && n=$((n+1)); done; echo $n; }}
+N_TRAIN=$(n_present "${{TRAIN_FILES[@]}}"); N_VAL=$(n_present "${{VAL_FILES[@]}}")
+[ "${{N_TRAIN}}" -eq {N_TRAIN_FILES} ] || {{ echo "FATAL: ${{N_TRAIN}} of {N_TRAIN_FILES} training files present"; exit 1; }}
+[ "${{N_VAL}}" -eq {N_VAL_FILES} ] || {{ echo "FATAL: ${{N_VAL}} of {N_VAL_FILES} validation files present"; exit 1; }}
+CFG={cfg}
+MD5=$(md5sum ${{CFG}} | cut -d' ' -f1)
+SIDECAR=${{CFG%.yaml}}.${{MD5}}.auto.yaml
+SRC=/data/results/mtx/makeweight/$(basename ${{SIDECAR}})
+[ -f "${{SRC}}" ] || {{ echo "FATAL: no reweighting sidecar ${{SRC}}: run the make_weight job for ${{CFG}}"; exit ${{HALT}}; }}
+cp "${{SRC}}" "${{SIDECAR}}"
+cp "${{SIDECAR}}" ${{OUT}}/
+sha256sum "${{SIDECAR}}" > ${{OUT}}/reweight_sidecar.sha256
+MANIFEST=${{OUT}}/run_manifest.json
+[ -f ${{MANIFEST}} ] && MANIFEST=${{OUT}}/run_manifest.${{ATTEMPT}}.json
+python3 scripts/write_run_manifest.py --driver pretrain_v2 --run-id ${{RUN_ID}} --arm {arm['name']} \\
+  --num-classes {k} --seed ${{SEED}} --data-config ${{CFG}} --samples-per-epoch {samples} \\
+  --num-epochs {epochs} --batch-size 512{f" --lambda-mass {float(arm['mass_lambda'])}" if arm.get('mass_lambda') is not None else ""}{" --mpm-mask-rate 0.40" if obj == "mpm" else ""} \\
+  --num-workers 5 --data-split-num 200 --fetch-step 1.0 --keep-checkpoints all \\
+  --val-files "${{VAL_FILES[@]}}" --out ${{MANIFEST}}
+{run_block})
+"""
+
+
+def v2_job(name: str, scripts: list, gpu: str, tag: str, title: str, *,
+           cpu: str = V2_CPU, mem: str = V2_MEM, pre: str = "") -> str:
+    """A Job that clones `tag` and runs each script in turn, with the retry policy
+    of scripts/build_ft_jobs.py (commit 3cb4d7a): evictions ignored, exit 42 fails
+    the Job at once, other failures counted up to V2_BACKOFF."""
+    if len(name) > 63:
+        raise ValueError(f"{name}: longer than a Kubernetes name allows")
+    exclude = ", ".join(f'"{n}"' for n in V2_BAD_NODES)
+    script = ("set -euo pipefail\n"
+              'git clone --depth 1 --branch "${REPO_REF}" '
+              "https://github.com/raunavm/transferlearningsophon.git /workspace/transferlearningsophon\n"
+              "cd /workspace/transferlearningsophon\n"
+              "pip install --no-cache-dir -q pyarrow || exit 1\n" + pre + "".join(scripts))
+    body = "\n".join(("          " + ln) if ln else "" for ln in script.splitlines())
+    return f"""apiVersion: batch/v1
+kind: Job
+metadata:
+  # {title}
+  # GENERATED by scripts/build_mtx_launch.py (v2_job) -- do not hand-edit.
+  # experiments/MTX/pretrain_v2.py: Sophon loader, epoch-seeded streams, fixed
+  # validation sample, full-state auto-resume, per-epoch metrics and stream records.
+  name: {name}
+  namespace: cms-ml
+spec:
+  backoffLimit: {V2_BACKOFF}
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: {{ containerName: main, operator: In, values: [{EXIT_HALT}] }}
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: {V2_IMAGE}
+        command: ["/bin/bash", "-c"]
+        env:
+        - name: GPU_PRODUCT
+          value: "{gpu}"
+        - name: NODE_NAME
+          valueFrom: {{ fieldRef: {{ fieldPath: spec.nodeName }} }}
+        - name: POD_NAME
+          valueFrom: {{ fieldRef: {{ fieldPath: metadata.name }} }}
+        - name: REGION
+          value: "us-west"
+        - name: REPO_REF
+          value: "{tag}"
+        args:
+        - |
+{body}
+        resources:
+          requests: {{ memory: "{mem}", cpu: "{cpu}", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
+          limits:   {{ memory: "{mem}", cpu: "{cpu}", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
+        volumeMounts:
+        - {{ name: jc2,  mountPath: /jc2, readOnly: true }}
+        - {{ name: data, mountPath: /data }}
+        - {{ name: dshm, mountPath: /dev/shm }}
+      tolerations:
+      - {{ key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: ["{gpu}"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: [{exclude}]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: {{ medium: Memory, sizeLimit: "8Gi" }}
+"""
+
+
+SMOKE_ROOT = V2_ROOT + "/smoke"
+SMOKE_EPOCHS, SMOKE_SAMPLES = 3, 200_000        # the gate: at most 3 epochs x 200,000 jets
+NUMERICS_GPUS = ("NVIDIA-L40", "NVIDIA-RTX-A6000", "NVIDIA-A40")
+
+
+def _arm(name: str) -> dict:
+    return next(a for a in v2_arms() if a["name"] == name)
+
+
+def v2_smoke_specs(tag: str, deterministic: bool = False) -> dict:
+    """The smoke and GPU-numerics jobs (3 epochs x 200,000 jets, R16_Q1 run 1):
+    on one RTX 3090, in turn, A (uninterrupted), B (killed during epoch 2, then
+    resumed), C (the 188-class output, same seed) and A2 (A again); and A once
+    on each of NUMERICS_GPUS. Before training, the 3090 pod runs the v2 tests
+    under the image's weaver 0.4.17."""
+    sfx = "-det" if deterministic else ""
+    kw = dict(out_root=SMOKE_ROOT, epochs=SMOKE_EPOCHS, samples=SMOKE_SAMPLES, deterministic=deterministic)
+    a, c = _arm("R16_Q1"), _arm("L188")
+    scripts = [v2_script(a, 1, run_id=f"smoke{sfx}-a", **kw),
+               v2_script(a, 1, run_id=f"smoke{sfx}-b", kill_after_epoch=1, **kw),
+               v2_script(c, 1, run_id=f"smoke{sfx}-c", **kw),
+               v2_script(a, 1, run_id=f"smoke{sfx}-a2", **kw)]
+    pre = (f"mkdir -p {SMOKE_ROOT}\n"
+           "pip install --no-cache-dir -q pytest || exit 1\n"
+           "python3 -m pytest tests/test_pretrain_v2.py tests/test_stream_ids.py -q -p no:cacheprovider "
+           f"> {SMOKE_ROOT}/pytest_weaver0417{sfx}.txt 2>&1 || true\n"
+           f"tail -3 {SMOKE_ROOT}/pytest_weaver0417{sfx}.txt\n") if not deterministic else f"mkdir -p {SMOKE_ROOT}\n"
+    out = {}
+    name = f"mtx2-smoke{sfx}-3090-raunav"
+    out[f"job-{name}.yaml"] = v2_job(name, scripts, V2_GPU, tag,
+                                     "v2 SMOKE on RTX 3090: A, B (kill + resume), C (188 outputs), A2.", pre=pre)
+    for g in NUMERICS_GPUS:
+        name = f"mtx2-smoke{sfx}-a-{gpu_short(g)}-raunav"
+        out[f"job-{name}.yaml"] = v2_job(name, [v2_script(a, 1, run_id=f"smoke{sfx}-a-{gpu_short(g)}", **kw)],
+                                         g, tag, f"v2 SMOKE, configuration A on {g} (GPU numerics check).",
+                                         pre=f"mkdir -p {SMOKE_ROOT}\n")
+    return out
+
+
+def v2_dryrun_spec(tag: str, full_columns: bool = False) -> tuple:
+    """The CPU loader-only dry run: 20 epochs x 10,240,000 jets through the v2
+    training stream with column projection, or (full_columns) one epoch with every
+    input column finalised, for memory and loader throughput."""
+    name = "mtx2-loader-memprobe-raunav" if full_columns else "mtx2-loader-dryrun-raunav"
+    epochs = 1 if full_columns else 20
+    out = f"{V2_ROOT}/loader_dryrun/{'memprobe' if full_columns else 'dryrun'}_seed1.json"
+    cmd = ("CFG=configs/arms/R16_Q1.yaml\n"
+           "MD5=$(md5sum ${CFG} | cut -d' ' -f1)\n"
+           "cp /data/results/mtx/makeweight/R16_Q1.${MD5}.auto.yaml configs/arms/\n"
+           f"mkdir -p {V2_ROOT}/loader_dryrun\n"
+           f"PYTHONUNBUFFERED=1 python3 experiments/MTX/loader_dryrun.py --seed 1 --epochs {epochs} "
+           f"--samples-per-epoch {V2_SAMPLES} --num-workers 5 --data-split-num 200 --fetch-step 1.0 "
+           f"--data-config ${{CFG}} --data-train {' '.join(TRAIN_GLOBS)} "
+           f"{'--full-columns ' if full_columns else ''}--out {out} 2>&1 | tee {out[:-5]}.log\n")
+    exclude = ", ".join(f'"{n}"' for n in V2_BAD_NODES)
+    body = "\n".join(("          " + ln) if ln else "" for ln in (
+        "set -euo pipefail\n"
+        'git clone --depth 1 --branch "${REPO_REF}" '
+        "https://github.com/raunavm/transferlearningsophon.git /workspace/transferlearningsophon\n"
+        "cd /workspace/transferlearningsophon\n"
+        "pip install --no-cache-dir -q pyarrow || exit 1\n" + cmd).splitlines())
+    mem = V2_MEM if full_columns else "16Gi"
+    return name, f"""apiVersion: batch/v1
+kind: Job
+metadata:
+  # v2 LOADER {'MEMORY PROBE' if full_columns else 'DRY RUN'} -- CPU only, no training (audit item 2).
+  # GENERATED by scripts/build_mtx_launch.py v2_dryrun_spec() -- do not hand-edit.
+  name: {name}
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  podFailurePolicy:
+    rules:
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: {V2_IMAGE}
+        command: ["/bin/bash", "-c"]
+        env:
+        - name: REPO_REF
+          value: "{tag}"
+        args:
+        - |
+{body}
+        resources:
+          requests: {{ memory: "{mem}", cpu: "8", ephemeral-storage: "10Gi" }}
+          limits:   {{ memory: "{mem}", cpu: "8", ephemeral-storage: "10Gi" }}
+        volumeMounts:
+        - {{ name: jc2,  mountPath: /jc2, readOnly: true }}
+        - {{ name: data, mountPath: /data }}
+        - {{ name: dshm, mountPath: /dev/shm }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: [{exclude}]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: {{ medium: Memory, sizeLimit: "8Gi" }}
+"""
+
+
+def v2_grid_specs(tag: str, gpu: str = V2_GPU, tiers=None) -> dict:
+    """{file name: spec} for every (arm, run) of the v2 grid."""
+    out = {}
+    for arm in v2_arms():
+        if tiers is not None and arm.get("tier", 1) not in tiers:
+            continue
+        for run in range(1, int(arm["runs"]) + 1):
+            name, spec = v2_spec(arm, run, gpu, tag=tag)
+            out[f"job-{name}.yaml"] = spec
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--allow-unbracketed", action="store_true",
@@ -536,7 +933,40 @@ def main() -> int:
                     help="ARM:seed,seed,... derive extra seeds from that arm's "
                          "seed-1 spec. Refused for arms whose rate is not "
                          "bracketed, because the rate is baked in at write time.")
+    ap.add_argument("--v2", metavar="DIR", default=None,
+                    help="write the v2 pretraining specs (experiments/MTX/pretrain_v2.py) "
+                         "for every arm and run of configs/arms/v2_grid.json into DIR; applies nothing")
+    ap.add_argument("--tag", default=None, help="--v2: the repository tag the jobs clone")
+    ap.add_argument("--gpu", default=V2_GPU, help="--v2: the GPU product to pin")
+    ap.add_argument("--v2-smoke", metavar="DIR", default=None,
+                    help="write the v2 smoke, GPU-numerics and loader dry-run specs into DIR")
+    ap.add_argument("--deterministic", action="store_true", help="--v2-smoke: the -det variants")
     args = ap.parse_args()
+
+    if args.v2_smoke:
+        if not args.tag:
+            ap.error("--v2-smoke needs --tag")
+        d = pathlib.Path(args.v2_smoke)
+        d.mkdir(parents=True, exist_ok=True)
+        specs = v2_smoke_specs(args.tag, args.deterministic)
+        if not args.deterministic:
+            for full in (False, True):
+                n, sp = v2_dryrun_spec(args.tag, full)
+                specs[f"job-{n}.yaml"] = sp
+        for fn, spec in specs.items():
+            (d / fn).write_text(spec)
+            print(d / fn)
+        return 0
+
+    if args.v2:
+        if not args.tag:
+            ap.error("--v2 needs --tag")
+        d = pathlib.Path(args.v2)
+        d.mkdir(parents=True, exist_ok=True)
+        for fn, spec in v2_grid_specs(args.tag, args.gpu).items():
+            (d / fn).write_text(spec)
+            print(d / fn)
+        return 0
 
     if args.derive_draws:
         rc = 0
