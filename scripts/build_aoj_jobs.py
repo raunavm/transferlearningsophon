@@ -727,6 +727,11 @@ spec:
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
           git rev-parse HEAD
+          # THE IMAGE HAS NO pyarrow, and weaver reads parquet through it. Without it weaver
+          # logs the ImportError, swallows it and fails later with "Zero entries loaded"
+          # (every group of the first launch, 2026-09-29) -- so install, then import.
+          pip install --no-cache-dir -q pyarrow || exit 1
+          python3 -c "import pyarrow" || {{ echo "FATAL: pyarrow does not import"; exit 1; }}
           for c in {checkpoints}; do [ -f "${{c}}" ] || {{ echo "FATAL: no ${{c}}"; exit 1; }}; done
 {sophon}          # THE ORDER OF THIS LIST IS LOAD-BEARING: every model reads it in this order.
           FILES="{files}"

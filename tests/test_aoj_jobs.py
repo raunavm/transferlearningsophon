@@ -282,3 +282,15 @@ def test_the_sim_jobs_score_every_model_once_on_one_file_list_of_test_files_only
         s = _script(SPECS[p])
         assert "--num-workers 1" in s and f"--data-config {B.SIM_CONFIG}" in s
         assert "sim_scores.py" in s and "rm -rf \"/scratch/extract/$1\"" in s
+
+
+@pytest.mark.parametrize("path", sorted(SPECS), ids=lambda p: p.name)
+def test_every_job_reading_parquet_through_weaver_installs_pyarrow_first(path):
+    """The image has no pyarrow; weaver swallows the ImportError and dies later with
+    "Zero entries loaded" (the first simulation launch, 2026-09-29)."""
+    s = _script(SPECS[path])
+    uses = [s.find(k) for k in ("extract_features.py", "closure.py", "stage_aoj.py") if k in s]
+    if not uses:
+        return
+    install = s.find("pip install --no-cache-dir -q pyarrow")
+    assert 0 <= install < min(uses), f"{path.name} reads parquet before installing pyarrow"

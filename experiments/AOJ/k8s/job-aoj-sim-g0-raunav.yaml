@@ -53,6 +53,11 @@ spec:
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
           git rev-parse HEAD
+          # THE IMAGE HAS NO pyarrow, and weaver reads parquet through it. Without it weaver
+          # logs the ImportError, swallows it and fails later with "Zero entries loaded"
+          # (every group of the first launch, 2026-09-29) -- so install, then import.
+          pip install --no-cache-dir -q pyarrow || exit 1
+          python3 -c "import pyarrow" || { echo "FATAL: pyarrow does not import"; exit 1; }
           for c in /data/results/mtx/mtx-l162-s1b/net_epoch-79_state.pt /data/results/mtx/mtx-r42q1-s2/net_epoch-79_state.pt /data/results/mtx/mtx-r16q1-s3/net_epoch-79_state.pt /data/results/mtx/mtx-l162mass-s4/net_epoch-79_state.pt /data/results/mtx/mtx-r16q1mass-s5/net_epoch-79_state.pt; do [ -f "${c}" ] || { echo "FATAL: no ${c}"; exit 1; }; done
           curl -fsSL -o /workspace/sophon_public.pt https://huggingface.co/jet-universe/sophon/resolve/main/models/JetClassII_Sophon/model.pt
           GOT=$(sha256sum /workspace/sophon_public.pt | cut -d' ' -f1)
