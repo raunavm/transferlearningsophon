@@ -377,6 +377,10 @@ def _choose_order(b, tf_norm, mean, width):
     return order, trail
 
 
+def _peak_cfg(peak):
+    return PEAKS[peak] if isinstance(peak, str) else peak
+
+
 def _tf_norm(b, window):
     side = ~in_windows(_bin_centres(b), [window])
     return b["n_pass"][side].sum() / max(b["n_fail"][side].sum(), 1.0)
@@ -480,15 +484,17 @@ def _profile_yield_error(model, x, window, guess):
 
 def fit_peak(mass, pt, passed, peak, mean=None, width=None, float_shape=False, order=None):
     """Simultaneous pass/fail fit of one peak. mean/width None -> background only."""
-    return fit_binned(_bins(mass, pt, passed, PEAKS[peak]["fit_range"]), peak, mean, width, float_shape, order)
+    return fit_binned(_bins(mass, pt, passed, _peak_cfg(peak)["fit_range"]), peak, mean, width, float_shape, order)
 
 
 def fit_binned(b, peak, mean=None, width=None, float_shape=False, order=None):
     """fit_peak on bins already made. float_shape: the mean and width float, profiled
     at every order the F-test compares (_choose_shape_and_order); `order` is then not
     used, and (mean, width) -- or when none is given the shape floated at START_ORDER
-    -- is recorded as shape_start and also starts the shape search at every order."""
-    cfg = PEAKS[peak]
+    -- is recorded as shape_start and also starts the shape search at every order.
+    `peak` is a key of PEAKS or a config of the same form (window, fit_range) -- the
+    signal-free pseudo-peak of experiments/AOJ/realdata_checks.py is one."""
+    cfg = _peak_cfg(peak)
     tf_norm = _tf_norm(b, cfg["window"])
     trail = None
     if float_shape:
@@ -500,7 +506,7 @@ def fit_binned(b, peak, mean=None, width=None, float_shape=False, order=None):
     x, half_dev = model.fit()
     t, s, q, mu = model.expect(x)
     n_par = len(x) + (2 if float_shape else 0)
-    out = dict(peak=peak, tf_order=list(order), f_test=trail, n_bins=int(len(t)), n_parameters=n_par,
+    out = dict(peak=peak if isinstance(peak, str) else cfg.get("name", "custom"), tf_order=list(order), f_test=trail, n_bins=int(len(t)), n_parameters=n_par,
                converged=model.converged, n_restarts=model.n_restarts, edm=model.edm(x),
                n_tf_at_floor=model.n_at_floor(x),
                deviance=2 * half_dev, n_pass=float(b["n_pass"].sum()), n_fail=float(b["n_fail"].sum()),
@@ -563,7 +569,7 @@ def validation(z, mass, pt, peak, eff, n_toys, shape=None):
     inner = build_map(z, mass, pt, VALIDATION_OFFSET * eff)
     region = ~passes(z, mass, pt, inner)
     passed = passes(z, mass, pt, outer)[region]
-    res, hist = validation_binned(_bins(mass[region], pt[region], passed, PEAKS[peak]["fit_range"]),
+    res, hist = validation_binned(_bins(mass[region], pt[region], passed, _peak_cfg(peak)["fit_range"]),
                                   peak, n_toys, shape)
     res["band"] = [VALIDATION_OFFSET * eff, (VALIDATION_OFFSET + 1) * eff]
     return res, hist
@@ -598,6 +604,14 @@ def analyse(score, mass, pt, peak, eff, n_toys, shape=None):
     # floated_* was a second fit, at START_ORDER, until 2026-09-28; now it is this fit's
     fit["floated_mean"], fit["floated_width"] = fit["mean"], fit["width"]
     fit["data_efficiency"] = float(passed.mean())
+    # THE WORKING POINT IS DEFINED ON THE SIDEBANDS: build_map sets 1 % of the jets
+    # OUTSIDE the masked windows to pass. data_efficiency above counts all jets, so a
+    # score that passes more inside the windows -- signal, or background it sculpts
+    # there -- reads above 1 % (the CMS reference: 1.38 %, 2.2 % in the top window;
+    # audit 2026-09-29). Both are recorded so the two are never confused.
+    side = ~in_windows(mass, MASKED)
+    fit["data_efficiency_sidebands"] = float(passed[side].mean())
+    fit["data_efficiency_top_window"] = float(passed[in_windows(mass, [PEAKS["top"]["window"]])].mean())
     fit["validation"], hist_v = validation(z, mass, pt, peak, eff, n_toys, shape=(fit["mean"], fit["width"]))
     return fit, passed, dict(hist, **{f"validation_{k}": v for k, v in hist_v.items()})
 

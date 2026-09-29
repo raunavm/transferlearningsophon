@@ -175,6 +175,10 @@ def test_main_says_go_for_a_tagger_and_no_go_for_noise(tmp_path, monkeypatch, ca
     for f in (res["reference"]["W"], good, res["models"]["noise"]["W"]):
         assert f["profile_error_ok"] or f["signal_yield_err"] == f["signal_yield_err_hessian"]
     assert 0.5 < good["efficiency_relative_to_reference"] < 1.5 and good["auc_vs_cms_proxy"] > 0.8
+    # the working point is 1 % of the SIDEBAND jets; the all-jet efficiency is recorded beside it
+    for f in (res["reference"]["W"], good, res["models"]["noise"]["W"]):
+        assert f["data_efficiency_sidebands"] == pytest.approx(EFF, abs=1e-3)
+        assert 0.0 <= f["data_efficiency_top_window"] <= 1.0 and 0.0 < f["data_efficiency"] < 1.0
     assert not res["models"]["noise"]["W"]["criteria"]["s_over_sqrt_b"]
     assert "good_W_n_pass" in np.load(tmp_path / "histograms.npz").files
 
