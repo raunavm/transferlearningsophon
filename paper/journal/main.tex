@@ -10,9 +10,10 @@
 % is genuinely not a result -- a column count, a confidence level -- it goes in
 % that test's ALLOWED list with the reason it cannot change.
 %
-% Red \pending{} marks what is still running or being rerun: the community
-% benchmarks (bench v3), the from-scratch and
-% self-supervised fine-tuning reruns, and X->bs.
+% Red \pending{} marks what is still running or being rerun. The markers are
+% macros (\PendingFoo, and the slots of SLOTS) that make_tables.py writes from
+% its V2_PENDING registry: each names the input it waits for, and changes to a
+% request to rewrite the section once that input exists.
 \documentclass[11pt]{article}
 
 \usepackage[utf8]{inputenc}
@@ -53,22 +54,25 @@ Supervised pretraining on large simulated jet datasets is a leading route to jet
 foundation models, yet the label vocabulary it trains on is a design choice that
 has not been varied under control. We pretrain Particle Transformer models on
 JetClass-II with four nested vocabularies of \Kfull, \Kres, \Kmid{} and
-\Kcoarse{} classes, formed by merging classes of one label tree, with the data
-stream identical across vocabularies and five independent pretraining runs per
-vocabulary. Alongside these we train a random-label control with the class structure
+\Kcoarse{} classes, formed by merging classes of one label tree, five times
+each, with the same training examples in the same order and the same initial
+trunk weights for every vocabulary. \PendingPretrain{} Alongside these we train a random-label control with the class structure
 of the coarsest vocabulary, a self-supervised control, and models with an
 auxiliary jet-mass output. In frozen representations, the separation of $b$-
 from $c$-quark decays of two-prong resonances is nearly unchanged from \Kfull{}
 to \Kmid{} classes and drops sharply where quark flavour leaves the vocabulary:
 $1-\mathrm{AUC}$ rises by a factor
 \ProbeOmaRatioBvcResonantLinearOnesevenOverFourthree{} from \Kmid{} to \Kcoarse{}
-classes. A random grouping into classes with the same shares of the training
-examples loses much less of this information than the \Kcoarse-class vocabulary does, which suggests
+classes. A random grouping of the three- and four-prong decays into classes with
+the same shares of the training examples keeps much more of the $b$-versus-$c$
+separation in four-prong decays than the \Kcoarse-class vocabulary does, which
+suggests
 that a vocabulary loses a distinction when no class boundary depends on it,
 rather than when it merges a particular pair. After fine-tuning on the
 pretraining dataset's own task the ordering persists, with the \Kcoarse-class
 models a factor \FtOmaRatioJciiESixOnesevenOverOneeighteight{} behind the
-\Kfull-class models in $1-$macro AUC at \FtSizeESix{} training jets. An auxiliary
+\Kfull-class models in $1-$macro AUC at \FtSizeESix{} training jets.
+\PendingFtHeldout{} An auxiliary
 mass output improves the jet-mass information in the representation and costs
 $b$-versus-$c$ separation, far more at \Kcoarse{} classes than at \Kres.
 Anomaly detectors on the frozen features lose sensitivity to decays with several
@@ -76,7 +80,7 @@ $b$ quarks once the vocabulary stops distinguishing their number, while a score
 built from the model's own outputs does not depend on the vocabulary. On CMS open
 data every model finds the top-quark peak with no fine-tuning, and the fitted
 yield varies more between pretraining runs than between vocabularies.
-\pending{one sentence on the community benchmarks}
+\PendingBench
 \end{abstract}
 
 % ============================================================================
@@ -116,9 +120,10 @@ composition~\cite{datacomp} and the scale~\cite{scaling}.
 We ask which physical distinctions a vocabulary must preserve for the
 representation to remain transferable. Four vocabularies of \Kfull, \Kres,
 \Kmid{} and \Kcoarse{} classes are nested levels of one label tree, so every
-coarser vocabulary is a merge of the finer one. The models share the data
-configuration, the sample weights and the data-sampling seeds; they differ in
-the labels and in the width of the output layer. Each vocabulary is pretrained
+coarser vocabulary is a merge of the finer one. Run $k$ of every vocabulary sees
+the same training examples in the same order and starts from the same trunk
+weights; the models differ only in the labels and in the width of the output
+layer. \PendingPretrain Each vocabulary is pretrained
 five times with independent seeds, and every result is quoted as the mean and
 standard deviation over these five models. Repeated pretraining is rare in this
 literature: the uncertainties quoted for fine-tuned jet foundation models usually
@@ -147,7 +152,7 @@ Our results are:
 \item Fine-tuning on the pretraining dataset's own task keeps the ordering of
   the frozen probes from \FtSizeEFour{} training jets upward; on JetClass the
   \Kfull-, \Kres- and \Kmid-class models are close and the \Kcoarse-class models
-  trail (Sec.~\ref{sec:finetune}).
+  trail (Sec.~\ref{sec:finetune}). \PendingFtHeldout
 \item An auxiliary mass output improves the jet mass regressed from frozen
   features and costs $b$-versus-$c$ separation, far more at \Kcoarse{} classes
   than at \Kres{} (Sec.~\ref{sec:mass}). Without it, coarser vocabularies carry
@@ -278,7 +283,9 @@ them in a tree of successive merges with eight levels, of \VocabSizeLoneeighteig
 \VocabSizeLonesixtwo, \VocabSizeRsixthreeQone, \VocabSizeRfourtwoQone,
 \VocabSizeRtwonineQone, \VocabSizeRonesixQone, \VocabSizeRthreeVIS{} and
 \VocabSizeRoneQone{} classes. The order of the merges was fixed before any model
-was trained. Four levels are pretrained:
+was trained. Four levels are pretrained, and the rerun adds the
+\VocabSizeRsixthreeQone- and \VocabSizeRtwonineQone-class levels
+\PendingLevels:
 \begin{itemize}
 \item \Kfull{} classes, the native vocabulary, which also splits QCD jets by
   their parton flavour content;
@@ -342,7 +349,12 @@ one the supervised models use. Its class-attention blocks receive no gradient
 during pretraining, so a frozen class-token probe would read an untrained
 projection; the model is evaluated through fine-tuning only, with the
 class-attention blocks trained as part of the new head.
-\pending{self-supervised runs two and three, and the fine-tuning rerun with the class-attention blocks at the head's learning rate}
+\PendingSsl
+
+\paragraph{Leave-one-family-out models.} Each of the four vocabularies is also
+pretrained with one family of decays, the fully hadronic four-prong decays,
+removed from the training data, so that transfer to decays no pretraining label
+covered can be measured. \PendingLofo
 
 \paragraph{Mass output.} The \Kres- and \Kcoarse-class models were also
 pretrained, five times each, with one added output node that regresses
@@ -508,6 +520,7 @@ are compared in the text, we quote both values, or the ratio of their means.
 % ============================================================================
 
 \subsection{What the frozen representations retain}\label{sec:probes}
+\PendingProbes
 
 Table~\ref{tab:probes-linear} and Fig.~\ref{fig:granularity} give the four
 vocabularies on every probe task. On the separation of $b$ from $c$ in two-prong
@@ -598,6 +611,7 @@ is \VcbRejLinearSixtyOnesixtwo{} and \VcbRejLinearSixtyOneseven{}
 \end{figure}
 
 \subsection{Linear decodability of the label tree}\label{sec:recovery}
+\PendingRecovery
 
 Table~\ref{tab:recovery} gives how well a linear probe recovers every level of the
 tree from every model. A model recovers the levels at and above its own as well as
@@ -620,6 +634,7 @@ model keeps part of the finer information: the \Kmid-class models read the
 \input{tables/label_recovery}
 
 \subsection{The random-label control}\label{sec:random}
+\PendingRandom
 
 Table~\ref{tab:random-control} compares the random-label control with the four
 vocabularies on its two tasks. On $b$ versus $c$ in four-prong decays, $1-$AUC is
@@ -649,6 +664,7 @@ with one pretraining run each.
 \input{tables/random_control}
 
 \subsection{Fine-tuning}\label{sec:finetune}
+\PendingFtHeldout
 
 Table~\ref{tab:finetune} and Fig.~\ref{fig:finetune} fine-tune every model on
 the \Kres-class JetClass-II task and on the ten-class JetClass task, at the
@@ -682,8 +698,7 @@ JetClass-II and \FtOmaRatioJcESixRandOverOneeighteight{} times on JetClass. A
 random grouping with the class sizes of the \Kcoarse-class vocabulary therefore
 transfers slightly better than the \Kcoarse-class vocabulary itself, but not as
 well as any vocabulary that keeps flavour.
-\pending{from-scratch and self-supervised references from the corrected-recipe
-reruns}
+\PendingFtRefs
 
 \input{tables/finetune}
 
@@ -704,12 +719,12 @@ reruns}
 
 Top tagging needs prong structure and mass, which every vocabulary keeps;
 quark/gluon tagging needs the gluon--light-quark distinction, which only the two
-finest vocabularies name.
-\pending{top tagging and quark/gluon tagging, Pythia and Herwig, from the bench v3
-readout: accuracy, AUC and background rejection at the community's two working
-points, mean and standard deviation over the five pretraining runs}
+finest vocabularies name. Both are scored by the accuracy, the AUC and the
+background rejection at the community's working points, as the mean and standard
+deviation over the pretraining runs. \PendingBench
 
 \subsection{Vocabulary and an auxiliary mass output}\label{sec:mass}
+\PendingProbes
 
 The mass output \emph{costs} $b$-versus-$c$ separation with both vocabularies
 (Fig.~\ref{fig:mass}). With \Kres{} classes, $1-$AUC is \MassOmaLinearOnesixtwo{}
@@ -769,6 +784,7 @@ reach \FtAucJciiESixOnesixtwoMass{} and \FtAucJciiESixOnesevenMass{} against
 \end{figure}
 
 \subsection{Anomaly detection}\label{sec:anomaly}
+\PendingAnomaly
 
 Table~\ref{tab:anomaly} and Fig.~\ref{fig:anomaly} give the three scores. The two
 detectors on the frozen features behave alike. Neither detects the light-quark signals at any vocabulary, so
@@ -820,6 +836,7 @@ $X\to YY\to qqqq$ with \Kfull{} classes. No score detects $X\to q\bar q$.
 \end{figure}
 
 \subsection{Real data}\label{sec:realdata}
+\PendingRealData
 
 Every one of the \AojNModels{} pretrained models finds the top-quark peak in the
 data, applied with no fine-tuning, at \AojPeakMeanMin--\AojPeakMeanMax~GeV with
@@ -873,8 +890,8 @@ comparable with ours.
 and the QCD flavour task point to one rule: a distinction survives roughly as
 long as some class boundary in the vocabulary still depends on the physical axis
 it lies on. Merging classes along other axes, or merging the specific pair while
-flavour-mixed classes remain elsewhere, costs much less. This is a reading of
-the results rather than something the design was built to test, and it does not
+flavour-mixed classes remain elsewhere, costs much less. The additional random
+partitions of the rerun test this rule directly. \PendingRandom{} It does not
 account for everything: coarsenings that keep a task's classes apart still cost
 up to a factor \ProbeOmaRatioRetainedTopologyLinearOnesevenOverOnesixtwo{} in
 $1-$AUC on the topology task. If the rule holds up, a builder of a pretraining
@@ -890,15 +907,16 @@ including the pretraining dataset's own fine-tuning task, and little on JetClass
 \paragraph{Fine-tuning.} On JetClass-II the ordering of the frozen probes
 survives fine-tuning from \FtSizeEFour{} jets upward and narrows with more data.
 On JetClass, a different simulation, only the removal of flavour costs.
-\pending{whether it survives on the community benchmarks}
+\PendingBench
 
 \paragraph{Mass information and classification.} The coarser vocabularies keep
 slightly more continuous mass information, and an auxiliary mass output costs
 the probed classification more at \Kcoarse{} classes than at \Kres. Published
 reports of auxiliary targets hurting~\cite{atlasgnx,jpjepa} are consistent
-with this; we add that the cost depends on the vocabulary. The mass-loss weight
-was inherited from a finer vocabulary and not scanned, so the size of the
-trade-off is specific to that weight.
+with this; we add that the cost depends on the vocabulary. Whether it depends on
+the vocabulary itself, or on the larger share of the loss that the mass term
+takes when there are fewer classes, is what the loss-share-matched model decides.
+\PendingMassLambda
 
 \paragraph{Pretraining runs.} Variation between pretraining runs is not a
 nuisance to average away. The \Kcoarse-class models vary several times more
@@ -910,27 +928,24 @@ misjudge the size of the effects reported here.
 \section{Limitations}\label{sec:limitations}
 % ============================================================================
 
-All pretraining and all but two evaluations use one simulation family: the
-real-data test covers one channel at one working point, and the Herwig sample
-covers one generator change on one task. The identity of the training streams
-across vocabularies holds by construction but was not recorded, and runs resumed
-after node failures may diverge after the resume point. Only four levels of the
-tree were pretrained, so a change can be located only between trained levels:
-the primary task's classes merge at \VocabSizeRtwonineQone{} classes, where no
-model exists. The random control rests on three draws of one run each, which
-differ from the \Kcoarse-class vocabulary only among three- and four-prong
-decays. The mass-output weight was fixed, not scanned. The fine-tuning recipe is
-ParT's and was not tuned per vocabulary or per training-set size. The
-self-supervised control is one implementation of one family; contrastive and
-joint-embedding baselines were not run. The representations' absolute-momentum
-content is not characterised and no claim here depends on it.
+All pretraining and all but two evaluations use one simulation family. The
+exceptions are the open data, one channel at one working point, and the Herwig
+quark/gluon sample, one change of generator on one task; an effect of the
+vocabulary that is specific to this family of simulated samples cannot be
+excluded. The open data have no simulation of their own here, so on them a
+difference between models cannot be separated from the shift between simulation
+and data.
 
 % ============================================================================
 \section{Conclusion}
 % ============================================================================
 
-\pending{written once the benchmarks, anomaly detection and real-data sections
-are final}
+\PendingConclusion
+
+% Skeleton, no claims until the rerun is in: what a vocabulary must keep
+% (Sec. 5); whether the ordering of the frozen features survives fine-tuning on
+% held-out jets and the community benchmarks; the cost of an auxiliary mass
+% output at matched loss share; what the open data show.
 
 \section*{Data and code availability}
 Pretrained checkpoints, label maps and evaluation code will be released on
