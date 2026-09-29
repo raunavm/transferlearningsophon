@@ -314,7 +314,7 @@ def _run(probe, tmp: pathlib.Path, extra: list[str]) -> dict:
 def runs(probe, tmp_path_factory):
     tmp = tmp_path_factory.mktemp("eps")
     return {"default": _run(probe, tmp, []),
-            "flagged": _run(probe, tmp, ["--eps-s", "0.5", "0.7", "0.9"])}
+            "flagged": _run(probe, tmp, ["--eps-s", "0.5", "0.7", "0.9", "--save-scores"])}
 
 
 def test_the_default_reproduces_todays_behaviour_exactly(runs):
@@ -360,6 +360,26 @@ def test_the_published_anchors_operating_points_are_untouched(probe, runs):
     assert lin["n_bkg_pass"] > 0 and not lin["rejection_is_bound"]
 
 
+def test_saved_scores_reproduce_the_reported_auc(runs, tmp_path_factory):
+    """--save-scores writes every arm's test scores, so a paired error can be put
+    on any ratio later (src/stats/paired.py); they must be the scores the JSON
+    reports, on the rows the JSON counts."""
+    from sklearn.metrics import roc_auc_score
+    import hashlib
+    d = runs["flagged"]
+    root = next(pathlib.Path(p) for p in tmp_path_factory.getbasetemp().glob("eps*/out*savescores*"))
+    z = np.load(root / "scores.npz")
+    assert hashlib.sha256((root / "scores.npz").read_bytes()).hexdigest() == d["scores_npz_sha256"]
+    labels = np.load(root.parent / "feat" / "label188.npy")
+    for task, t in d["tasks"].items():
+        y, rows = z[f"{task}|y"], z[f"{task}|rows"]
+        assert y.size == t["n_signal_test"] + t["n_background_test"]
+        assert np.array_equal(y == 1, np.isin(labels[rows], _probe().TASKS[task]["signal"]))
+        for kind in ("linear", "mlp"):
+            s = z[f"{task}|{kind}|A"]
+            assert roc_auc_score(y, s) == t["arms"]["A"][kind]["auc"]
+
+
 def test_a_censored_cell_carries_its_flag_and_its_cap_at_every_point(runs):
     """A bound is a statement about the size of the test split. Every operating
     point must return the full tuple, so no censored value can print as a bare
@@ -372,8 +392,11 @@ def test_a_censored_cell_carries_its_flag_and_its_cap_at_every_point(runs):
     for point in ("0.50", "0.70", "0.90"):
         r = lin["rejection_at"][point]
         assert set(r) == {"rejection", "eps_b", "rejection_is_bound",
-                          "n_bkg_pass", "rel_stat_err"}
+                          "n_bkg_pass", "rel_stat_err", "poisson68"}
         assert r["rejection_is_bound"] is True, point
+        # zero passing jets: the Poisson interval is a lower bound, no upper end
+        assert r["poisson68"]["is_bound"] and r["poisson68"]["interval"][1] == float("inf")
+        assert r["poisson68"]["interval"][0] == pytest.approx(cap / 1.8410216, rel=1e-7)
         assert r["n_bkg_pass"] == 0 and r["eps_b"] == 0.0
         assert r["rejection"] == float(cap), (point, r["rejection"], cap)
 

@@ -331,9 +331,14 @@ SPLIT_SEED = 20260822
 
 
 def load_arm(d: pathlib.Path) -> dict:
+    """A feature cache: v1 (extract_features.py, extract_manifest.json, float32)
+    or v2 (extract_v2.py, manifest.json, float16 on the rows rows.npy names)."""
     F = np.load(d / "features.npy")
+    if F.dtype != np.float32:
+        F = F.astype(np.float32)
     L = np.load(d / "label188.npy")
-    man = json.loads((d / "extract_manifest.json").read_text())
+    v1 = d / "extract_manifest.json"
+    man = json.loads((v1 if v1.exists() else d / "manifest.json").read_text())
     if F.shape[0] != L.shape[0]:
         raise SystemExit(f"FATAL: {d} has {F.shape[0]} features and {L.shape[0]} labels")
     obs = {}
@@ -352,7 +357,8 @@ def check_alignment(arms: dict[str, dict]) -> str:
     """The paired bootstrap is only valid if the arms scored the SAME jets in
     the SAME order. Verified from the label vectors, not assumed from the fact
     that the same config was used."""
-    shas = {a: v["label_sha"] for a, v in arms.items()}
+    shas = {a: v["label_sha"] + ((v.get("manifest") or {}).get("rows_sha256") or "")
+            for a, v in arms.items()}
     if len(set(shas.values())) != 1:
         print("FATAL: arms are not row-aligned; their native-label vectors differ.",
               file=sys.stderr)
@@ -382,15 +388,25 @@ def check_alignment(arms: dict[str, dict]) -> str:
     return next(iter(shas.values()))
 
 
-def make_splits(n: int, rng_seed: int = SPLIT_SEED):
+SPLIT_FRACTIONS = (0.6, 0.2)   # train, validation; the rest is the test split
+
+
+def make_splits(n: int, rng_seed: int = SPLIT_SEED, fractions=SPLIT_FRACTIONS):
     """Deterministic, arm-independent probe train/val/test split.
 
     Arm-independent is the point: the same jets must land in the same split for
-    every arm, or the comparison is confounded by the split.
+    every arm, or the comparison is confounded by the split. `fractions` is
+    (train, validation); the default reproduces every committed result. The v2
+    extraction scores the full test split, and there the test fraction is raised
+    so that enough background jets pass the 90 % working point
+    (scripts/build_extract_jobs.py V2_SPLIT_FRACTIONS).
     """
+    ftr, fva = fractions
+    if not (0 < ftr and 0 < fva and ftr + fva < 1):
+        raise SystemExit(f"FATAL: split fractions {fractions} leave no test split")
     rng = np.random.default_rng(rng_seed)
     perm = rng.permutation(n)
-    a, b = int(0.6 * n), int(0.8 * n)
+    a, b = int(ftr * n), int((ftr + fva) * n)
     return perm[:a], perm[a:b], perm[b:]
 
 
@@ -553,6 +569,7 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
 def main() -> int:
     from sklearn.metrics import roc_auc_score
     from src.stats.bootstrap import ci, paired_bootstrap_diff
+    from src.stats.paired import rejection_interval
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--features", nargs="+", required=True,
@@ -578,6 +595,16 @@ def main() -> int:
     # schema, so every reader takes it by a change of path. A copy is only valid
     # on the same jets, so the source must match on row alignment, checkpoints and
     # every task's counts, and the tasks and working points are the source's own.
+    ap.add_argument("--split-fractions", nargs=2, type=float, default=list(SPLIT_FRACTIONS),
+                    metavar=("TRAIN", "VAL"),
+                    help="probe train and validation fractions; the rest is tested "
+                         f"(default {SPLIT_FRACTIONS}, every committed result)")
+    # PER-JET TEST SCORES. Without them no error can be put on a ratio of two
+    # models' metrics: the test-sample term needs both models' scores on the
+    # same resampled jets (src/stats/paired.py). Written beside the JSON.
+    ap.add_argument("--save-scores", action="store_true",
+                    help="also write scores.npz: per task the test rows, their "
+                         "labels and every arm's test score, per probe")
     ap.add_argument("--mlp-rerun-of", metavar="PROBE_RESULTS_JSON",
                     help="re-fit only the MLP probe; copy every other field, "
                          "linear numbers included, from this earlier output")
@@ -604,6 +631,10 @@ def main() -> int:
 
     out = pathlib.Path(args.out)
     src = None
+    if args.save_scores and args.mlp_rerun_of:
+        raise SystemExit("FATAL: --save-scores needs every probe fitted here; "
+                         "--mlp-rerun-of copies the linear one")
+    saved = {}
     if args.mlp_rerun_of:
         src_path = pathlib.Path(args.mlp_rerun_of)
         if args.tasks != list(TASKS) or args.eps_s != [EPS_S]:
@@ -631,6 +662,7 @@ def main() -> int:
                    for a, v in sorted(arms.items())},
                "min_per_class_test": MIN_PER_CLASS,
                "mlp_threads": MLP_THREADS,
+               "split_fractions": [float(x) for x in args.split_fractions],
                "tasks": {}}
     if src:
         for k in ("n_jets_total", "row_alignment_sha256", "arm_checkpoints",
@@ -681,7 +713,7 @@ def main() -> int:
         # estimator can then take only a handful of distinct values and its
         # 16-84 % spread runs from roughly half the true value to the cap,
         # while the reported number looks as precise as any other.
-        tr, va, te = make_splits(rows.size)
+        tr, va, te = make_splits(rows.size, fractions=tuple(args.split_fractions))
         te_sig, te_bkg = int(y[te].sum()), int(y[te].size - y[te].sum())
         if min(te_sig, te_bkg) < MIN_PER_CLASS:
             print(f"\n=== {task} === SKIPPED: test split has {te_sig:,} signal / "
@@ -742,7 +774,10 @@ def main() -> int:
                     rejs[f"{e:.2f}"] = {"rejection": r, "eps_b": eb,
                                         "rejection_is_bound": bd,
                                         "n_bkg_pass": npass,
-                                        "rel_stat_err": rel}
+                                        "rel_stat_err": rel,
+                                        # the count behind 1/eps_B, Garwood 68 %
+                                        "poisson68": rejection_interval(
+                                            te_bkg, eb * te_bkg)}
                 first = rejs[f"{eps_list[0]:.2f}"]
                 entry[kind] = {"auc": auc, "log1m_auc": l1m,
                                "log1m_auc_censored": censored,
@@ -757,6 +792,8 @@ def main() -> int:
                                "rejection_eps_s": float(eps_list[0]),
                                "rejection_at": rejs, "selection": meta}
                 te_scores.setdefault(kind, {})[arm] = s
+                if args.save_scores:
+                    saved[f"{task}|{kind}|{arm}"] = np.asarray(s, dtype=np.float64)
                 txt = "  ".join(
                     f"1/eps_B@{float(e):.0%}={rejs[e]['rejection']:.1f}"
                     f"{' (BOUND)' if rejs[e]['rejection_is_bound'] else ''}"
@@ -801,10 +838,19 @@ def main() -> int:
                           f"{'  *' if (lo > 0 or hi < 0) else ''}"
                           f"{'  [BOUND: an arm reached AUC=1.0]' if bounded else ''}")
         results["tasks"][task] = tr_res
+        if args.save_scores:
+            saved[f"{task}|rows"] = rows[te].astype(np.int64)
+            saved[f"{task}|y"] = y[te].astype(np.int8)
 
     if src and [t for t, v in results["tasks"].items() if v.get("skipped")] != \
             [t for t, v in src["tasks"].items() if v.get("skipped")]:
         raise SystemExit(f"FATAL: this run skipped different tasks from {src_path}")
+    if args.save_scores:
+        # rows index the feature cache, so a reader can check them against the
+        # labels; the JSON records the file's digest so the two travel together
+        np.savez_compressed(out / "scores.npz", **saved)
+        results["scores_npz_sha256"] = hashlib.sha256(
+            (out / "scores.npz").read_bytes()).hexdigest()
     (out / "probe_results.json").write_text(json.dumps(results, indent=2))
     print(f"\nwrote {out/'probe_results.json'}")
     return 0

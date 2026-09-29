@@ -674,6 +674,98 @@ def main_cs(a) -> int:
     return 0
 
 
+# ====================================== v1 anomaly by the checkpoint rule (v1err)
+# (audit 2026-09-29, B4 and must-fix 3). Reads the per-jet output-layer scores
+# extract_v2.py wrote for epochs 70-79 (scripts/build_extract_jobs.py --v1err):
+# a model's anomaly directory when its GPU extraction finished, its diagnostics
+# directory otherwise (head numbers only). experiments/EVAL/anomaly_heads.py
+# redraws exactly the committed resamplings, so epoch 79 is checked against the
+# committed anomaly run and its class-sum rerun (the /data copies are the files
+# under experiments/FIGS/data, sha256 checked 2026-09-29).
+V1ERR_PIN = "mtx-s1.66"
+V1ERR_HEADS = "/data/results/eval/v1err/heads"
+V1ERR_LADDER = [f"mtx-{a}-s{s}" if not (a == "l162" and s == 1) else "mtx-l162-s1b"
+                for a in ("l188", "l162", "r42q1", "r16q1") for s in range(1, 6)]
+V1ERR_MASS = [f"mtx-{a}mass-s{s}" for a in ("l162", "r16q1") for s in range(1, 6)]
+V1ERR_RUNG = {"l188": "L188", "l162": "L162", "r42q1": "R42_Q1", "r16q1": "R16_Q1",
+              "l162mass": "L162", "r16q1mass": "R16_Q1"}
+
+V1ERR_SPEC = """apiVersion: batch/v1
+kind: Job
+metadata:
+  name: anomaly-heads-v1err-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: {{ containerName: main, operator: In, values: [42] }}
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          halt () {{ rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }}
+          git clone --depth 1 --branch "{pin}" \\
+            https://github.com/raunavm/transferlearningsophon.git \\
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+          OUT=/data/results/eval/v1err/anomaly_heads/anomaly_heads.json
+          [ -f ${{OUT}} ] && {{ echo "done by an earlier attempt"; exit 0; }}
+          MODELS=""
+          for spec in {specs}; do
+            run=${{spec%%:*}}; rung=${{spec##*:}}
+            d={heads}/anomaly/${{run}}
+            ls ${{d}}/e0{{70..79}}/manifest.json >/dev/null 2>&1 || d={heads}/diag/${{run}}
+            ls ${{d}}/e0{{70..79}}/manifest.json >/dev/null 2>&1 || {{ echo "FATAL: no heads for ${{run}}"; exit 42; }}
+            MODELS="${{MODELS}} ${{run#mtx-}}=${{rung}}=${{d}}"
+          done
+          echo "models:${{MODELS}}"
+          mkdir -p $(dirname ${{OUT}})
+          python3 experiments/EVAL/anomaly_heads.py \\
+            --models ${{MODELS}} \\
+            --labels /data/results/eval/mtx-l188-s1/features_e79/label188.npy \\
+            --committed /data/results/eval/anomaly_merged_v4/anomaly_results.json \\
+            --committed-rerun /data/results/eval/anomaly_cs_merged_v1/anomaly_results.json \\
+            --n-sig 2000 4000 --procs 15 \\
+            --out ${{OUT}} || halt
+        volumeMounts:
+        - {{ name: data, mountPath: /data }}
+        resources:
+          requests: {{ memory: "64Gi", cpu: "16", ephemeral-storage: "10Gi" }}
+          limits:   {{ memory: "64Gi", cpu: "16", ephemeral-storage: "10Gi" }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+"""
+
+
+def v1err_spec() -> str:
+    specs = " ".join(f"{r}:{V1ERR_RUNG[r.removeprefix('mtx-').rsplit('-s', 1)[0]]}"
+                     for r in V1ERR_LADDER + V1ERR_MASS)
+    return V1ERR_SPEC.format(pin=V1ERR_PIN, specs=specs, heads=V1ERR_HEADS)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-only", action="store_true",
@@ -685,7 +777,14 @@ def main(argv=None) -> int:
     ap.add_argument("--pin", default=None, help=f"default {PIN}, or {CS_PIN} "
                     "with --class-sum-rerun")
     ap.add_argument("--pin-not-yet-tagged", action="store_true")
+    ap.add_argument("--v1err", action="store_true",
+                    help="emit ONLY the v1 anomaly-by-checkpoint-rule job (audit 2026-09-29)")
     a = ap.parse_args(argv)
+    if a.v1err:
+        out = ROOT / "experiments" / "EVAL" / "k8s" / "job-anomaly-heads-v1err-raunav.yaml"
+        out.write_text(v1err_spec())
+        print(f"wrote {out}")
+        return 0
     if a.class_sum_rerun:
         return main_cs(a)
     a.pin = a.pin or PIN

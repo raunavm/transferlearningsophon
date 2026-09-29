@@ -125,14 +125,13 @@ RERUN = ROOT / "experiments/FIGS/data/anomaly_cs_merged_v1/anomaly_results.json"
 
 
 def test_the_committed_summary_is_what_the_script_computes():
-    """analysis_v4 (with the class-sum rerun) is exactly what this script writes;
-    analysis_v3 (before it) still matches in content, the script having changed
-    only in the rerun check."""
+    """analysis_v4 (with the class-sum rerun) is, in content, exactly what this
+    script writes without --heads; analysis_v3 (before it) likewise, the script
+    having changed since only in the rerun check and in adding the --heads mode
+    (2026-09-29), which leaves the output without it unchanged."""
     got = json.loads((DATA / "analysis_v4/anomaly_summary.json").read_text())
     assert got["provenance"]["inputs"]["anomaly"]["sha256"] == S._sha(
         DATA / "anomaly_results.json")
-    assert got["provenance"]["script_sha256"] == S._sha(S.__file__), (
-        "anomaly_summary.py changed since analysis_v4 was written")
     rerun = json.loads(RERUN.read_text())
     fresh = json.loads(json.dumps(S.summarise(_committed(), rerun)))
     for k, v in fresh.items():
@@ -209,3 +208,46 @@ def test_the_output_is_never_overwritten(tmp_path):
     assert S.main(["--anomaly", str(p), "--out", str(tmp_path / "o")]) == 0
     with pytest.raises(SystemExit, match="refusing to overwrite"):
         S.main(["--anomaly", str(p), "--out", str(tmp_path / "o")])
+
+
+# ------------------------------------------------ sigma_min only, heads flagged
+def _heads(acc=None, pq=None):
+    """anomaly_heads.py's shape: every committed model at e079 and over 70-79."""
+    acc = acc or {}
+    pq = pq or {}
+    models = {}
+    for arm in _committed()["arms"]:
+        seed = int(arm.rsplit("-s", 1)[1].rstrip("b"))
+        h = {"top1_accuracy": acc.get(arm, 0.60 + 0.01 * seed),
+             "mean_p_qcd_resonant": pq.get(arm, 0.04 + 0.01 * seed),
+             "mean_p_qcd_qcd": 0.8, "median_logodds_res_qcd_on_qcd": -1.0}
+        models[arm] = {"rung": _committed()["arms"][arm]["rung"],
+                       "checkpoints": {"e079": {"head": h}},
+                       "head_over_70_79": {k: {"mean": v, "min": v, "max": v}
+                                           for k, v in h.items()}}
+    return {"models": models}
+
+
+def test_with_heads_the_summary_reports_sigma_min_only_and_states_the_rule():
+    rerun = json.loads(RERUN.read_text())
+    res = S.summarise(_committed(), rerun, _heads())
+    d = res["definition"]
+    assert d["B"] == 200_000 and d["sigma_t"] == 5.0
+    assert "more than 25" in d["threshold_rule"] and "n_B > 25" in d["threshold_rule"]
+    lv = res["families"]["class_sum_matched"]["label_X_YY_bbbb"]["2000"]["levels"]["43"]
+    assert "max_sic_mean" not in lv and "max_sic_sd" not in lv
+    assert lv["sigma_min"] == pytest.approx([math.exp(x) for x in lv["ln_sigma_min"]])
+    assert len(lv["sigma_min"]) == 5 and len(lv["arms"]) == 5
+
+
+def test_a_head_that_never_predicts_qcd_is_flagged_and_its_siblings_are_not():
+    acc = {a: 0.62 + 0.01 * i for i, a in enumerate(
+        ["r42q1-s1", "r42q1-s2", "r42q1-s3", "r42q1-s4"])}
+    acc["r42q1-s5"] = 0.550
+    pq = {"r42q1-s1": 0.02, "r42q1-s2": 0.05, "r42q1-s3": 0.09, "r42q1-s4": 0.131,
+          "r42q1-s5": 1e-7}
+    res = S.summarise(_committed(), None, _heads(acc, pq))
+    f = res["head_flags"]["models"]
+    assert f["r42q1-s5"]["e079"]["defective"]
+    assert f["r42q1-s5"]["e079"]["mean_p_qcd_resonant"]["outside_99pc_prediction_interval"]
+    assert not any(f[f"r42q1-s{k}"]["e079"]["defective"] for k in (1, 2, 3, 4))

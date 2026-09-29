@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: anomaly-heads-v1err-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
+          git clone --depth 1 --branch "mtx-s1.66" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+          OUT=/data/results/eval/v1err/anomaly_heads/anomaly_heads.json
+          [ -f ${OUT} ] && { echo "done by an earlier attempt"; exit 0; }
+          MODELS=""
+          for spec in mtx-l188-s1:L188 mtx-l188-s2:L188 mtx-l188-s3:L188 mtx-l188-s4:L188 mtx-l188-s5:L188 mtx-l162-s1b:L162 mtx-l162-s2:L162 mtx-l162-s3:L162 mtx-l162-s4:L162 mtx-l162-s5:L162 mtx-r42q1-s1:R42_Q1 mtx-r42q1-s2:R42_Q1 mtx-r42q1-s3:R42_Q1 mtx-r42q1-s4:R42_Q1 mtx-r42q1-s5:R42_Q1 mtx-r16q1-s1:R16_Q1 mtx-r16q1-s2:R16_Q1 mtx-r16q1-s3:R16_Q1 mtx-r16q1-s4:R16_Q1 mtx-r16q1-s5:R16_Q1 mtx-l162mass-s1:L162 mtx-l162mass-s2:L162 mtx-l162mass-s3:L162 mtx-l162mass-s4:L162 mtx-l162mass-s5:L162 mtx-r16q1mass-s1:R16_Q1 mtx-r16q1mass-s2:R16_Q1 mtx-r16q1mass-s3:R16_Q1 mtx-r16q1mass-s4:R16_Q1 mtx-r16q1mass-s5:R16_Q1; do
+            run=${spec%%:*}; rung=${spec##*:}
+            d=/data/results/eval/v1err/heads/anomaly/${run}
+            ls ${d}/e0{70..79}/manifest.json >/dev/null 2>&1 || d=/data/results/eval/v1err/heads/diag/${run}
+            ls ${d}/e0{70..79}/manifest.json >/dev/null 2>&1 || { echo "FATAL: no heads for ${run}"; exit 42; }
+            MODELS="${MODELS} ${run#mtx-}=${rung}=${d}"
+          done
+          echo "models:${MODELS}"
+          mkdir -p $(dirname ${OUT})
+          python3 experiments/EVAL/anomaly_heads.py \
+            --models ${MODELS} \
+            --labels /data/results/eval/mtx-l188-s1/features_e79/label188.npy \
+            --committed /data/results/eval/anomaly_merged_v4/anomaly_results.json \
+            --committed-rerun /data/results/eval/anomaly_cs_merged_v1/anomaly_results.json \
+            --n-sig 2000 4000 --procs 15 \
+            --out ${OUT} || halt
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "64Gi", cpu: "16", ephemeral-storage: "10Gi" }
+          limits:   { memory: "64Gi", cpu: "16", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

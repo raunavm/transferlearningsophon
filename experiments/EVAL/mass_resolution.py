@@ -219,13 +219,21 @@ def check_alignment(arm: str, d: pathlib.Path, obs_sha: str, n: int) -> dict:
             "checkpoint_sha256": man.get("checkpoint_sha256")}
 
 
-def probe_arm(F: np.ndarray, y: np.ndarray, tr, va, te) -> dict:
-    """Both probes, always. D6: a linear result never stands on its own."""
+def probe_arm(F: np.ndarray, y: np.ndarray, tr, va, te, residuals: dict | None = None) -> dict:
+    """Both probes, always. D6: a linear result never stands on its own.
+
+    `residuals`, when given, receives each probe's per-jet test residuals: a
+    ratio of two models' sigma_eff needs both on the same resampled jets
+    (src/stats/paired.py), and the JSON keeps only the summary."""
     out = {}
     pred, meta = fit_ridge(F[tr], y[tr], F[va], y[va], F[te])
     out["ridge"] = {**resolution(pred - y[te]), **meta}
+    if residuals is not None:
+        residuals["ridge"] = (pred - y[te]).astype(np.float64)
     pred, meta = fit_mlp(F[tr], y[tr], F[va], y[va], F[te])
     out["mlp"] = {**resolution(pred - y[te]), "fit": meta}
+    if residuals is not None:
+        residuals["mlp"] = (pred - y[te]).astype(np.float64)
     # The spread of the centered target itself: the resolution a probe that
     # learned nothing would report. Without it a resolution is not interpretable.
     out["target"] = resolution(y[te])
@@ -239,9 +247,13 @@ def main(argv=None) -> int:
                     help="directory holding observers.npz, label188.npy and "
                          "observers_manifest.json (the test2m_observers cache)")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--save-residuals", action="store_true",
+                    help="also write residuals.npz: the test rows, their native "
+                         "labels and every arm's per-jet residual, per probe")
     a = ap.parse_args(argv)
 
     out = pathlib.Path(a.out)
+    saved = {}
     obs = load_observers(pathlib.Path(a.observers))
     print(f"observers: {obs['n']:,} jets, {obs['n_valid']:,} with a matched "
           f"generator-level groomed mass ({obs['n_valid'] / obs['n']:.1%}); "
@@ -298,7 +310,10 @@ def main(argv=None) -> int:
                              f"observers have {obs['n']}")
         prov = check_alignment(name, d, obs["label188_sha256"], obs["n"])
         Fu = F[vidx][keep]
-        r = probe_arm(Fu, y_use, tr, va, te)
+        rs = {} if a.save_residuals else None
+        r = probe_arm(Fu, y_use, tr, va, te, rs)
+        for kind, v in (rs or {}).items():
+            saved[f"{kind}|{name}"] = v
         r["provenance"] = prov
         res["arms"][name] = r
         print(f"\n=== {name} ===  {Fu.shape[0]:,} jets, {Fu.shape[1]}-d")
@@ -311,6 +326,12 @@ def main(argv=None) -> int:
     res["n_classes_used"] = cinfo["n_classes_used"]
     res["labels_used_sha256"] = hashlib.sha256(lab_use.tobytes()).hexdigest()
     out.mkdir(parents=True, exist_ok=True)
+    if a.save_residuals:
+        saved["rows"] = vidx[keep][te].astype(np.int64)
+        saved["label188"] = lab_use[te].astype(np.int64)
+        np.savez_compressed(out / "residuals.npz", **saved)
+        res["residuals_npz_sha256"] = hashlib.sha256(
+            (out / "residuals.npz").read_bytes()).hexdigest()
     (out / "mass_resolution.json").write_text(json.dumps(res, indent=2))
     print(f"\nwrote {out}/mass_resolution.json")
     return 0

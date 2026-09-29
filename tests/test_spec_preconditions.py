@@ -76,7 +76,7 @@ def _runs_a_windowed_task(text):
 
 
 def _hard_fails_on(text, fname):
-    """Does the spec `exit 1` when fname is absent?
+    """Does the spec `exit 1` (or the retry policy's `exit 42`) when fname is absent?
 
     Covers both idioms these specs use: a direct `[ -f ... ] || { ...; exit 1; }`
     naming the file, and a `for f in a b c; do [ -f ... ] || exit 1; done` loop.
@@ -93,7 +93,8 @@ def _hard_fails_on(text, fname):
     for m in re.finditer(r"for \w+ in ([^;\n]+); do", text):
         if fname not in m.group(1).split():
             continue
-        if "exit 1" in text[m.end():m.end() + 400]:
+        # exit 42 is the retry policy's deterministic halt (FailJob at once)
+        if re.search(r"exit (1|42)\b", text[m.end():m.end() + 400]):
             return True
     return False
 

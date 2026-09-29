@@ -303,6 +303,242 @@ TAIL = """        volumeMounts:
 """
 
 
+# ======================================================= v1 errors (audit 2026-09-29)
+# The committed probe, mass-probe and label-recovery numbers carry no error on a
+# ratio of two models, because no per-jet output was kept. These jobs refit the
+# same probes on the same features with the per-jet outputs saved
+# (probe.py --save-scores, mass_resolution.py --save-residuals), run the new
+# label-recovery learning curve, and bootstrap the fine-tuning cells; the
+# ratios are then formed by experiments/STATS/paired_errors.py. Outputs go under
+# /data/results/eval/v1err/, never over a committed result.
+#
+# THE RETRY POLICY OF COMMIT 3cb4d7a, IN ITS CPU FORM. An evicted pod (node
+# drained, preempted) is not counted (DisruptionTarget -> Ignore); a pod killed
+# by a signal -- OOM, a lost node -- is counted up to V1ERR_BACKOFF; a Python
+# failure is deterministic and exits 42, which fails the Job at once instead of
+# burning the retries. Every step skips work a previous attempt finished.
+V1ERR_PIN = "mtx-s1.66"
+V1ERR_BACKOFF = 6
+THREADS_OF = {False: 8, True: 1}   # BLAS threads: the CPUs a spec requests; 1 per worker in the pooled FT job
+V1ERR_ROOT = "/data/results/eval/v1err"
+V1ERR_PROBE_SOURCES = ([f"probe-ladder-v2-s{s}-raunav" for s in SEEDS]
+                       + [f"probe-randcontrol-d{d}-raunav" for _, _, d in CONTROL_DRAWS]
+                       + [f"probe-mass2x2-s{s}-raunav" for s in SEEDS]
+                       + ["probe-vcbwindow-s10-raunav"])
+V1ERR_MASSRES_SOURCES = [f"massres-s{s}-raunav" for s in SEEDS]
+V1ERR_NEEDED = {"experiments/EVAL/probe.py": "--save-scores",
+                "experiments/EVAL/mass_resolution.py": "--save-residuals",
+                "experiments/EVAL/label_recovery_curve.py": "--mlp-rungs",
+                "experiments/STATS/paired_errors.py": "ft-replicates",
+                "src/stats/paired.py": "def paired_ratio"}
+CURVE_SIZES = [14_000, 44_000, 140_000, 443_000, 0]     # 0 = the whole training pool
+FT_LEGS = {"leg1": ("/data/results/ft/w2b/leg1", "/data/results/ft/w2b_leg1_metrics_v2/leg1_metrics.json"),
+           "leg2": ("/data/results/ft/w2b/leg2", "/data/results/ft/w2b_leg2_metrics_v2/leg2_metrics.json")}
+
+ROBUST_HEAD = """apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {name}
+  namespace: cms-ml
+spec:
+  backoffLimit: {backoff}
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: {{ containerName: main, operator: In, values: [42] }}
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          # a signal (OOM, lost node) is retried; any other failure is deterministic
+          halt () {{ rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }}
+          git clone --depth 1 --branch "{pin}" \\
+            https://github.com/raunavm/transferlearningsophon.git \\
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+          # BLAS threads = the CPUs requested: nproc reports the node's cores
+          export OMP_NUM_THREADS={threads} OPENBLAS_NUM_THREADS={threads} MKL_NUM_THREADS={threads}
+          date -u +"start %Y-%m-%dT%H:%M:%SZ"; nproc; free -g | head -2
+"""
+
+ARMS_LOOP = """
+          ARMS=""; RUNGS=""
+          for spec in {specs}; do
+            a=${{spec%%:*}}; r=${{spec##*:}}
+            d=/data/results/eval/${{a}}/{feat}
+            for f in features.npy label188.npy extract_manifest.json; do
+              [ -f "${{d}}/${{f}}" ] || {{ echo "FATAL: no ${{d}}/${{f}}"; exit 42; }}
+            done
+            ARMS="${{ARMS}} ${{a#mtx-}}=${{d}}"
+            RUNGS="${{RUNGS}} ${{a#mtx-}}=${{r}}"
+          done
+          echo "arms:${{ARMS}}"
+"""
+
+ROBUST_TAIL = """        volumeMounts:
+        - {{ name: data, mountPath: /data }}
+        resources:
+          requests: {{ memory: "{mem}", cpu: "{cpu}", ephemeral-storage: "10Gi" }}
+          limits:   {{ memory: "{mem}", cpu: "{cpu}", ephemeral-storage: "10Gi" }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+"""
+
+V1ERR_PROBE = """
+          OUT={out}
+          if [ -f "${{OUT}}/scores.npz" ] && [ -f "${{OUT}}/probe_results.json" ]; then
+            echo "done by an earlier attempt"; exit 0
+          fi
+          mkdir -p ${{OUT}}
+          python3 experiments/EVAL/probe.py \\
+            --features ${{ARMS}} \\
+            --out ${{OUT}} \\
+            --tasks {tasks} \\
+            --eps-s {eps} \\
+            --bootstrap 2000 \\
+            --save-scores || halt
+          date -u +"end %Y-%m-%dT%H:%M:%SZ"
+"""
+
+V1ERR_MASSRES = """
+          OBS={obs}
+          OUT={out}
+          if [ -f "${{OUT}}/residuals.npz" ] && [ -f "${{OUT}}/mass_resolution.json" ]; then
+            echo "done by an earlier attempt"; exit 0
+          fi
+          mkdir -p ${{OUT}}
+          python3 experiments/EVAL/mass_resolution.py \\
+            --features ${{ARMS}} \\
+            --observers ${{OBS}} \\
+            --out ${{OUT}} \\
+            --save-residuals || halt
+          date -u +"end %Y-%m-%dT%H:%M:%SZ"
+"""
+
+V1ERR_CURVE = """
+          OUT={out}
+          mkdir -p ${{OUT}}
+          # resumable: label_recovery_curve.py keeps every finished cell and skips it
+          python3 experiments/EVAL/label_recovery_curve.py \\
+            --features ${{ARMS}} \\
+            --own-rung ${{RUNGS}} \\
+            --out ${{OUT}} \\
+            --sizes {sizes} \\
+            --mlp-rungs L188 \\
+            --threads {cpu} || halt
+          date -u +"end %Y-%m-%dT%H:%M:%SZ"
+"""
+
+V1ERR_FT = """
+          OUT={out}
+          if [ -f "${{OUT}}/replicates_ft.npz" ] && [ -f "${{OUT}}/replicates_ft.json" ]; then
+            echo "done by an earlier attempt"; exit 0
+          fi
+          mkdir -p ${{OUT}}
+          python3 experiments/STATS/paired_errors.py ft-replicates \\
+            --leg1-root {leg1_root} --leg1-metrics {leg1_metrics} \\
+            --leg2-root {leg2_root} --leg2-metrics {leg2_metrics} \\
+            --procs {procs} --out ${{OUT}}/replicates_ft.npz || halt
+          date -u +"end %Y-%m-%dT%H:%M:%SZ"
+"""
+
+
+def v1err_name(name: str) -> str:
+    """probe-ladder-v2-s1-raunav -> probe-ladder-v2-v1err-s1-raunav."""
+    stem, last = name.removesuffix("-raunav").rsplit("-", 1)
+    return f"{stem}-v1err-{last}-raunav"
+
+
+def _field(text: str, pattern: str) -> str:
+    m = re.findall(pattern, text, re.M)
+    if len(m) != 1:
+        raise SystemExit(f"FATAL: a source spec changed shape ({pattern!r} found {len(m)} times)")
+    return m[0]
+
+
+def v1err_probe_spec(text: str) -> str:
+    """The rerun of one committed probe spec with its per-jet scores saved: the
+    same models, features, tasks and working points, into v1err/."""
+    name = _field(text, r"^  name: (\S+)$")
+    specs = _field(text, r"^          for spec in (.+); do$")
+    feat = _field(text, r"^            d=/data/results/eval/\$\{a\}/(\S+)$")
+    out = _field(text, r"^          OUT=/data/results/eval/(\S+)$")
+    tasks = _field(text, r"^            --tasks (.+) \\$")
+    eps = _field(text, r"^            --eps-s (.+) \\$")
+    return (ROBUST_HEAD.format(name=v1err_name(name), pin=V1ERR_PIN, backoff=V1ERR_BACKOFF, threads=THREADS_OF[v1err_name(name).startswith("paired-ft")])
+            + ARMS_LOOP.format(specs=specs, feat=feat)
+            + V1ERR_PROBE.format(out=f"{V1ERR_ROOT}/{out}", tasks=tasks, eps=eps)
+            + ROBUST_TAIL.format(mem="32Gi", cpu="8"))
+
+
+def v1err_massres_spec(text: str) -> str:
+    name = _field(text, r"^  name: (\S+)$")
+    specs = _field(text, r"^          for spec in (.+); do$")
+    feat = _field(text, r"^            d=/data/results/eval/\$\{a\}/(\S+)$")
+    out = _field(text, r"^          OUT=/data/results/eval/(\S+)$")
+    obs = _field(text, r"^          OBS=(\S+)$")
+    return (ROBUST_HEAD.format(name=v1err_name(name), pin=V1ERR_PIN, backoff=V1ERR_BACKOFF, threads=THREADS_OF[v1err_name(name).startswith("paired-ft")])
+            + ARMS_LOOP.format(specs=specs, feat=feat)
+            + V1ERR_MASSRES.format(obs=obs, out=f"{V1ERR_ROOT}/{out}")
+            + ROBUST_TAIL.format(mem="32Gi", cpu="8"))
+
+
+def v1err_curve_spec(stem: str, rung: str, seed: int) -> tuple[str, str]:
+    """One model per job: the largest fit (1.4 M jets x 188 classes) is hours."""
+    run = run_name(stem, seed)
+    name = f"labelrec-curve-v1err-{run.removeprefix('mtx-')}-raunav"
+    return name, (ROBUST_HEAD.format(name=name, pin=V1ERR_PIN, backoff=V1ERR_BACKOFF, threads=THREADS_OF[name.startswith("paired-ft")])
+                  + ARMS_LOOP.format(specs=f"{run}:{rung}", feat=FEAT)
+                  + V1ERR_CURVE.format(out=f"{V1ERR_ROOT}/label_recovery_curve/{run.removeprefix('mtx-')}",
+                                       sizes=" ".join(map(str, CURVE_SIZES)), cpu=8)
+                  + ROBUST_TAIL.format(mem="32Gi", cpu="8"))
+
+
+def v1err_ft_spec() -> tuple[str, str]:
+    name = "paired-ft-v1err-raunav"
+    return name, (ROBUST_HEAD.format(name=name, pin=V1ERR_PIN, backoff=V1ERR_BACKOFF, threads=THREADS_OF[name.startswith("paired-ft")])
+                  + V1ERR_FT.format(out=f"{V1ERR_ROOT}/ft", procs=14,
+                                    leg1_root=FT_LEGS["leg1"][0], leg1_metrics=FT_LEGS["leg1"][1],
+                                    leg2_root=FT_LEGS["leg2"][0], leg2_metrics=FT_LEGS["leg2"][1])
+                  + ROBUST_TAIL.format(mem="48Gi", cpu="16"))
+
+
+def build_v1err(base: dict[str, str]) -> dict[str, str]:
+    out = {}
+    for name in V1ERR_PROBE_SOURCES:
+        out[f"job-{v1err_name(name)}.yaml"] = v1err_probe_spec(base[f"job-{name}.yaml"])
+    for name in V1ERR_MASSRES_SOURCES:
+        out[f"job-{v1err_name(name)}.yaml"] = v1err_massres_spec(base[f"job-{name}.yaml"])
+    for seed in SEEDS:
+        for stem, rung in LADDER:
+            name, text = v1err_curve_spec(stem, rung, seed)
+            out[f"job-{name}.yaml"] = text
+    name, text = v1err_ft_spec()
+    out[f"job-{name}.yaml"] = text
+    return out
+
+
 def build() -> dict[str, str]:
     out = {}
     tasks = " ".join(TASKS)
@@ -373,12 +609,15 @@ def main() -> int:
     ap.add_argument("--check", action="store_true",
                     help="exit 1 if a committed spec differs from the generated one")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
-                    help=f"check the working tree instead of {MLP2_PIN}, which is "
+                    help=f"check the working tree instead of {V1ERR_PIN}, which is "
                          f"tagged after the commit")
     args = ap.parse_args()
-    verify_pin(MLP2_PIN, args.pin_not_yet_tagged, MLP2_NEEDED)
+    verify_pin(MLP2_PIN, False, MLP2_NEEDED)
+    verify_pin(V1ERR_PIN, args.pin_not_yet_tagged, V1ERR_NEEDED)
     bad = 0
-    for fname, text in build().items():
+    jobs = build()
+    jobs.update(build_v1err(jobs))
+    for fname, text in jobs.items():
         p = K8S / fname
         if args.check:
             if not p.exists() or p.read_text() != text:

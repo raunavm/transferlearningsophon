@@ -225,7 +225,120 @@ def check_rerun(doc: dict, rerun: dict) -> dict:
             "max_abs_log_difference_at_17_classes": worst}
 
 
-def summarise(doc: dict, rerun: dict | None = None) -> dict:
+# ------------------------------------------------ sigma_min only, heads flagged
+# (audit 2026-09-29, B4 and must-fix 3). With --heads (anomaly_heads.py's output)
+# the summary reports sigma_min alone -- max SIC carried the same information
+# (sigma_min x max SIC / 5 = 1.01-1.08) and stays only as the detection flag --
+# states the definition exactly as anomaly.py codes it, gives every run's value,
+# flags output layers that are defective against their sibling runs, and adds
+# sigma_min by the checkpoint rule (mean over the epochs 70-79 heads).
+FLAG_ALPHA = 0.01
+
+
+def definition(doc: dict) -> dict:
+    an = _load("anomaly", "experiments/EVAL/anomaly.py")
+    return {"statistic": "sigma_min, the smallest initial significance S/sqrt(B) from which "
+                         f"the best threshold still reaches Z = {doc['sigma_t']:g} "
+                         "(arXiv:2604.20965 Eq. 4), Z the Asimov significance "
+                         "sqrt(2[(s+b)ln(1+s/b) - s]) (Eq. 3)",
+            "B": doc["n_bkg"], "sigma_t": doc["sigma_t"],
+            "threshold_rule": f"only thresholds that more than {an.MIN_BKG_PASS} of the B "
+                              f"background jets pass (n_B > {an.MIN_BKG_PASS}, strictly: "
+                              f"at n_B = {an.MIN_BKG_PASS} the relative error "
+                              f"1/sqrt({an.MIN_BKG_PASS}) = {doc['stat_cut']:.0%} is not "
+                              f"below {doc['stat_cut']:.0%}); anomaly.sic_curve",
+            "per_run_value": "median over the resamplings (anomaly.aggregate)",
+            "max_sic": "kept per run only for the not-detected flag"}
+
+
+def head_flags(heads: dict) -> dict:
+    """Output layers defective against their siblings: the same label set's other
+    runs. A value is flagged when it falls outside the 99 % prediction interval
+    of the siblings (Student t, n-1 degrees of freedom, sd * sqrt(1 + 1/n)), on
+    the head's top-1 accuracy or on the logit of its mean P(QCD) on resonant
+    jets. Taken at epoch 79 (the checkpoint every v1 result read) and on the
+    mean over epochs 70-79."""
+    from scipy.stats import t as student
+    groups = {}
+    for arm, m in heads["models"].items():
+        key = arm.rsplit("-s", 1)[0]
+        groups.setdefault(key, {})[arm] = m
+    logit = lambda p: math.log(max(p, 1e-12) / max(1 - p, 1e-12))
+    out = {}
+    for key, ms in groups.items():
+        for arm, m in ms.items():
+            rec = {}
+            for where in ("e079", "mean_70_79"):
+                def val(x, q):
+                    if where == "e079":
+                        c = x["checkpoints"].get("e079")
+                        return None if c is None else c["head"][q]
+                    h = x.get("head_over_70_79")
+                    return None if h is None else h[q]["mean"]
+                cell = {}
+                for q, f in (("top1_accuracy", float), ("mean_p_qcd_resonant", logit)):
+                    me, sib = val(m, q), [val(x, q) for a, x in ms.items() if a != arm]
+                    sib = [s for s in sib if s is not None]
+                    if me is None or len(sib) < 3:
+                        continue
+                    y = [f(s) for s in sib]
+                    n = len(y)
+                    half = (student.ppf(1 - FLAG_ALPHA / 2, n - 1) * np.std(y, ddof=1)
+                            * math.sqrt(1 + 1 / n))
+                    cell[q] = {"value": me, "siblings": sib,
+                               "outside_99pc_prediction_interval": bool(abs(f(me) - np.mean(y)) > half)}
+                if cell:
+                    cell["defective"] = any(v["outside_99pc_prediction_interval"] for v in cell.values())
+                    rec[where] = cell
+            out[arm] = rec
+    return out
+
+
+def checkpoint_rule(fams: dict, heads: dict) -> dict:
+    """sigma_min by the checkpoint rule: each run's mean of ln sigma_min over the
+    epochs 70-79 heads, then mean and sd over runs, beside the epoch-79 value."""
+    parse_arm = _load("seed_level", "experiments/STATS/seed_level.py").parse_arm
+    out = {}
+    for fam in ("class_sum", "class_sum_matched"):
+        for sig in fams.get(fam, {}):
+            for n in (PRIMARY, REFERENCE):
+                per = {}
+                for arm, m in heads["models"].items():
+                    c = m.get("anomaly_mean_70_79", {}).get(fam, {}).get(sig, {}).get(n)
+                    if c is None:
+                        continue
+                    level, seed = parse_arm(arm)
+                    per.setdefault(str(level), {})[seed] = (arm, c)
+                for lv, runs in per.items():
+                    if tuple(sorted(runs)) != SEEDS:
+                        continue
+                    ln = [runs[s][1]["ln_sigma_min_mean"] for s in SEEDS]
+                    out.setdefault(fam, {}).setdefault(sig, {}).setdefault(n, {})[lv] = {
+                        "arms": [runs[s][0] for s in SEEDS], "ln_sigma_min": ln,
+                        "sigma_min": [math.exp(x) for x in ln],
+                        "ln_sigma_min_mean": float(np.mean(ln)),
+                        "ln_sigma_min_sd": float(np.std(ln, ddof=1)),
+                        "ln_sigma_min_per_epoch": [runs[s][1]["ln_sigma_min_per_epoch"]
+                                                   for s in SEEDS]}
+    checks = {a: m["checkpoints"]["e079"]["committed_check"]
+              for a, m in heads["models"].items()
+              if "committed_check" in m.get("checkpoints", {}).get("e079", {})}
+    return {"sigma_min": out, "epoch79_reproduces_committed": checks}
+
+
+def sigma_min_only(fams: dict) -> dict:
+    """The level blocks with max SIC reduced to the per-run flag input."""
+    for blk in fams.values():
+        for per_n in blk.values():
+            for c in per_n.values():
+                for e in c.get("levels", {}).values():
+                    e["sigma_min"] = [math.exp(x) for x in e["ln_sigma_min"]]
+                    e.pop("max_sic_mean", None)
+                    e.pop("max_sic_sd", None)
+    return fams
+
+
+def summarise(doc: dict, rerun: dict | None = None, heads: dict | None = None) -> dict:
     parse_arm = _load("seed_level", "experiments/STATS/seed_level.py").parse_arm
     fams = {f: family_block(doc, f, parse_arm) for f in FAMILIES}
     res = {"families": fams, "excluded_families": dict(EXCLUDED), "superseded": {}}
@@ -273,6 +386,15 @@ def summarise(doc: dict, rerun: dict | None = None) -> dict:
                                                  min(kept, default=None)],
         "not_detected": sorted(f"{f}|{s}" for (f, s), p in peak.items()
                                if p < NOT_DETECTED_MAX_SIC)}
+    if heads is not None:
+        res["definition"] = definition(doc)
+        sigma_min_only(fams)
+        res["head_flags"] = {"rule": f"outside the {1 - FLAG_ALPHA:.0%} prediction interval of "
+                                     "the same label set's other runs (Student t, n-1 dof, "
+                                     "sd*sqrt(1+1/n)) on top-1 accuracy or logit mean "
+                                     "P(QCD) on resonant jets",
+                             "models": head_flags(heads)}
+        res["checkpoint_rule"] = checkpoint_rule(fams, heads)
     return res
 
 
@@ -280,6 +402,9 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--anomaly", required=True, type=pathlib.Path)
     ap.add_argument("--class-sum-rerun", type=pathlib.Path, default=None)
+    ap.add_argument("--heads", type=pathlib.Path, default=None,
+                    help="anomaly_heads.py's output: sigma_min only, head flags, and "
+                         "the checkpoint rule")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     a = ap.parse_args(argv)
     out_file = a.out / "anomaly_summary.json"
@@ -289,13 +414,16 @@ def main(argv=None) -> int:
     doc = json.loads(a.anomaly.read_text())
     rerun = (json.loads(a.class_sum_rerun.read_text())
              if a.class_sum_rerun else None)
-    res = summarise(doc, rerun)
+    heads = json.loads(a.heads.read_text()) if a.heads else None
+    res = summarise(doc, rerun, heads)
     res = {"provenance": {
                "inputs": {"anomaly": {"path": str(a.anomaly), "sha256": _sha(a.anomaly)},
                           "class_sum_rerun": (
                               {"path": str(a.class_sum_rerun),
                                "sha256": _sha(a.class_sum_rerun)}
-                              if a.class_sum_rerun else None)},
+                              if a.class_sum_rerun else None),
+                          **({"heads": {"path": str(a.heads), "sha256": _sha(a.heads)}}
+                             if a.heads else {})},
                "script_sha256": _sha(__file__),
                "row_alignment_sha256": doc["row_alignment_sha256"],
                "resamplings_per_seed": doc["trainings"],
@@ -315,7 +443,7 @@ def main(argv=None) -> int:
         for sig, per_n in blk.items():
             c = per_n[PRIMARY]
             row = "  ".join(f"{lv:>3s}: {e['ln_sigma_min_mean']:+.3f}+/-"
-                            f"{e['ln_sigma_min_sd']:.3f} [{e['max_sic_mean']:.2f}]"
+                            f"{e['ln_sigma_min_sd']:.3f} [{np.mean(e['max_sic']):.2f}]"
                             for lv, e in c["levels"].items())
             print(f"    {sig:18s}{'*' if c['not_detected'] else ' '} {row}")
     print(f"excluded: {sorted(res['excluded_families'])}; injection agreement "

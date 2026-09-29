@@ -354,3 +354,65 @@ def test_the_rerun_pin_is_refused_until_tagged_unless_declared():
     with pytest.raises(SystemExit):
         bp.verify_pin("mtx-s0.0-does-not-exist", True,
                       {"experiments/EVAL/probe.py": "--no-such-flag"})
+
+
+# ---------------------------------------------------------------------------
+# v1 errors (audit 2026-09-29): refits of the committed probes with per-jet
+# outputs saved, the label-recovery learning curve and the fine-tuning bootstrap.
+# ---------------------------------------------------------------------------
+
+def _v1err():
+    base = bp.build()
+    return base, bp.build_v1err(base)
+
+
+def test_v1err_jobs_parse_carry_the_retry_policy_and_are_committed():
+    base, jobs = _v1err()
+    assert len(jobs) == 14 + 5 + 20 + 1
+    for fname, text in jobs.items():
+        d = yaml.safe_load(text)
+        assert "raunav" in d["metadata"]["name"] and fname == f"job-{d['metadata']['name']}.yaml"
+        rules = d["spec"]["podFailurePolicy"]["rules"]
+        assert {"action": "FailJob", "onExitCodes": {"containerName": "main", "operator": "In",
+                                                      "values": [42]}} in rules
+        assert {"action": "Ignore", "onPodConditions": [{"type": "DisruptionTarget"}]} in rules
+        assert d["spec"]["template"]["spec"]["containers"][0]["name"] == "main"
+        assert f'--branch "{bp.V1ERR_PIN}"' in text and "|| halt" in text
+        assert "/data/results/eval/v1err/" in text
+        assert (bp.K8S / fname).read_text() == text, f"{fname} not committed as built"
+
+
+def test_v1err_probe_reruns_are_their_sources_with_scores_saved():
+    base, jobs = _v1err()
+    for src in bp.V1ERR_PROBE_SOURCES:
+        s, r = base[f"job-{src}.yaml"], jobs[f"job-{bp.v1err_name(src)}.yaml"]
+        assert _models_line(s) == _models_line(r)
+        for pat in (r"--tasks .+", r"--eps-s .+", r"d=/data/results/eval/\$\{a\}/\S+"):
+            assert re.findall(pat, s) == re.findall(pat, r), (src, pat)
+        out = re.search(r"OUT=/data/results/eval/(\S+)", s).group(1)
+        assert f"OUT=/data/results/eval/v1err/{out}\n" in r and "--save-scores" in r
+
+
+def test_v1err_mass_reruns_save_residuals_on_the_same_models():
+    base, jobs = _v1err()
+    for src in bp.V1ERR_MASSRES_SOURCES:
+        s, r = base[f"job-{src}.yaml"], jobs[f"job-{bp.v1err_name(src)}.yaml"]
+        assert _models_line(s) == _models_line(r) and "--save-residuals" in r
+
+
+def test_label_recovery_curve_one_model_per_job_five_sizes_to_the_whole_pool():
+    _, jobs = _v1err()
+    curve = {k: v for k, v in jobs.items() if "labelrec-curve" in k}
+    assert len(curve) == 20
+    assert len(set(bp.CURVE_SIZES)) >= 5 and bp.CURVE_SIZES[-1] == 0
+    for text in curve.values():
+        assert len(_models_line(text).split()[3:-1]) == 1
+        assert "--sizes " + " ".join(map(str, bp.CURVE_SIZES)) in text
+        assert "--mlp-rungs L188" in text
+
+
+def test_v1err_pin_needs_the_flags_it_passes():
+    assert set(bp.V1ERR_NEEDED) >= {"experiments/EVAL/probe.py",
+                                    "experiments/EVAL/mass_resolution.py",
+                                    "experiments/STATS/paired_errors.py"}
+    bp.verify_pin("mtx-s0.0-does-not-exist", True, bp.V1ERR_NEEDED)

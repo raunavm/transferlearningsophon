@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: paired-ft-v1err-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          # a signal (OOM, lost node) is retried; any other failure is deterministic
+          halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
+          git clone --depth 1 --branch "mtx-s1.66" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+          # BLAS threads = the CPUs requested: nproc reports the node's cores
+          export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+          date -u +"start %Y-%m-%dT%H:%M:%SZ"; nproc; free -g | head -2
+
+          OUT=/data/results/eval/v1err/ft
+          if [ -f "${OUT}/replicates_ft.npz" ] && [ -f "${OUT}/replicates_ft.json" ]; then
+            echo "done by an earlier attempt"; exit 0
+          fi
+          mkdir -p ${OUT}
+          python3 experiments/STATS/paired_errors.py ft-replicates \
+            --leg1-root /data/results/ft/w2b/leg1 --leg1-metrics /data/results/ft/w2b_leg1_metrics_v2/leg1_metrics.json \
+            --leg2-root /data/results/ft/w2b/leg2 --leg2-metrics /data/results/ft/w2b_leg2_metrics_v2/leg2_metrics.json \
+            --procs 14 --out ${OUT}/replicates_ft.npz || halt
+          date -u +"end %Y-%m-%dT%H:%M:%SZ"
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "48Gi", cpu: "16", ephemeral-storage: "10Gi" }
+          limits:   { memory: "48Gi", cpu: "16", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

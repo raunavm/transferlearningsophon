@@ -256,3 +256,18 @@ def test_the_residual_is_reported_as_a_fraction_because_it_is_a_log_ratio():
     r = mr.resolution(np.random.default_rng(13).normal(0, 0.10, 100_000))
     assert r["fractional"] == pytest.approx(np.expm1(r["sigma_eff"]), rel=1e-9)
     assert r["fractional"] == pytest.approx(0.105, abs=0.01), "~10% for a 0.10 log width"
+
+
+def test_saved_residuals_are_the_ones_the_summary_describes():
+    """--save-residuals hands src/stats/paired.py the per-jet residuals; they must
+    be the residuals whose sigma_eff the summary reports."""
+    rng = np.random.default_rng(11)
+    n = 1500
+    F = rng.normal(0, 1, (n, 8))
+    y = F[:, 0] * 0.7 + rng.normal(0, 0.3, n)
+    tr, va, te = mr.make_splits(n)
+    rs = {}
+    r = mr.probe_arm(F, y, tr, va, te, rs)
+    for p in mr.PROBES:
+        assert rs[p].shape == (te.size,)
+        assert mr.sigma_eff(rs[p])[0] == r[p]["sigma_eff"]

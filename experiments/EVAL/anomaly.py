@@ -248,11 +248,25 @@ def sigma_min_asimov(eps_s: np.ndarray, eps_b: np.ndarray, n_b_total: int) -> fl
     B = float(n_b_total)
     if B <= 0:
         return float("inf")
+    es = np.asarray(eps_s, dtype=np.float64)
+    eb = np.asarray(eps_b, dtype=np.float64)
 
+    # VECTORISED over thresholds (2026-09-29). The per-threshold Python loop it
+    # replaces cost ~100 s per cell at 200,000 background jets -- 10.6 h for one
+    # model's class-sum rerun -- which made the checkpoint rule (the mean over
+    # epochs 70-79) unaffordable. Same formula, element for element (eq. 3 with
+    # Z = 0 where s or b is not positive); tests/test_anomaly.py checks it
+    # against the scalar asimov() on random curves.
     def best_z(sig0: float) -> float:
+        if es.size == 0:
+            return 0.0
         S = sig0 * np.sqrt(B)
-        z = [asimov(S * float(a), B * float(b)) for a, b in zip(eps_s, eps_b)]
-        return max(z) if z else 0.0
+        s, b = S * es, B * eb
+        ok = (s > 0) & (b > 0)
+        if not ok.any():
+            return 0.0
+        s, b = s[ok], b[ok]
+        return float(np.sqrt(2.0 * ((s + b) * np.log1p(s / b) - s)).max())
 
     lo, hi = 1e-6, 1.0
     # THE LOWER END IS A BRACKET, NOT A FLOOR. If best_z already clears the
@@ -402,8 +416,13 @@ N_SIG_SCAN = [0, 250, 500, 1000, 2000, 4000]   # 0 is the null: SIC must not exc
 
 
 def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
-            n_bkg, n_template, seed, families=FAMILIES):
-    """One AD experiment: build the SR sample and template, score, measure."""
+            n_bkg, n_template, seed, families=FAMILIES, precomputed=None):
+    """One AD experiment: build the SR sample and template, score, measure.
+
+    `precomputed` maps a class-sum family to a function row indices -> scores,
+    for output-layer scores computed elsewhere from the same logits with
+    class_sum_without (extract_v2.head_score_columns). The draws do not depend
+    on it, so the same (arm, signal, N_sig, t) draws the same jets either way."""
     qcd = np.array(sorted(_probe().qcd_indices()))
     is_q = np.isin(L, qcd)
     is_s = L == sig_lab
@@ -432,7 +451,7 @@ def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
         matched = matched_nodes(rung, sig_lab)
         out["classes_removed_matched"] = int(sum(1 for nd in node_of.values()
                                                  if nd in matched))
-    if logits is None:
+    if logits is None and not precomputed:
         # Absent, and WHY -- otherwise anomaly_results.json simply has no
         # class_sum for any cell, exit 0, with nothing recording that the
         # headline vocabulary-defined score was never computed.
@@ -442,7 +461,10 @@ def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
     # score consumes `rng`, so a subset run reproduces the full run's cells.
     scores, tmpl_score = {}, {}
     for fam, drop in (("class_sum", {sig_node}), ("class_sum_matched", matched)):
-        if fam in families and logits is not None:
+        if fam in families and precomputed and fam in precomputed:
+            scores[fam] = precomputed[fam](d_idx)
+            tmpl_score[fam] = precomputed[fam](tmpl_q)
+        elif fam in families and logits is not None:
             cs = class_sum_without(logits[d_idx], rung, drop)
             if cs is not None:
                 scores[fam] = cs
@@ -514,6 +536,69 @@ def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
                 rec["sic_at_argos_point"] = e_s / np.sqrt(e_b) if e_b > 0 else float("nan")
         out[name] = rec
     return out
+
+
+def aggregate(reps: list[dict], arm: str = "", sig: str = "", n_sig: int = 0) -> dict:
+    """One cell from its resamplings: the MEDIAN over them of every measure
+    (arXiv:2604.20965 Sec. V.4 reports the median over its 10 training sets)."""
+    seeds_used = [r["rng_seed"] for r in reps if "rng_seed" in r]
+    agg = {}
+    # only the score-family dicts; a scalar bookkeeping key (e.g. rng_seed) is
+    # not a family and must not be aggregated as one
+    for fam in {k for r in reps for k, v in r.items() if isinstance(v, dict)}:
+        vals = [r[fam] for r in reps if fam in r and "max_sic" in r[fam]]
+        if not vals:
+            nulls = [r[fam] for r in reps if fam in r and r[fam].get("null")]
+            if nulls:
+                # the N_sig = 0 point: no SIC exists, but ARGOS and the
+                # sculpting check do, and they ARE the null test
+                agg[fam] = {"null": True}
+                for m in ("argos", "chi2_sculpting_msd"):
+                    have = [v[m] for v in nulls if m in v]
+                    if have:
+                        agg[fam][m] = float(np.median(have))
+                agg[fam]["n_trainings"] = len(nulls)
+            else:
+                agg[fam] = {"skipped": reps[0].get(fam, {}).get("skipped", "n/a")}
+            continue
+        agg[fam] = {m: float(np.median([v[m] for v in vals if m in v]))
+                    for m in ("max_sic", "max_sic_ceiling",
+                              "sic_at_eps_s_0p5", "sigma_min",
+                              "argos", "sic_at_argos_point",
+                              "chi2_sculpting_msd")
+                    if any(m in v for v in vals)}
+        # a boolean does not survive a median; if ANY training clipped, the
+        # cell is not a clean measurement
+        agg[fam]["at_ceiling"] = bool(
+            any(v.get("at_ceiling") for v in vals))
+        agg[fam]["n_trainings"] = len(vals)
+        agg[fam]["max_sic_iqr"] = float(
+            np.subtract(*np.percentile([v["max_sic"] for v in vals], [75, 25])))
+    # WITHIN-ARM regret: best family for this arm on this cell. NOT the number
+    # the vocabulary ablation wants -- see the cross-arm pass after every arm is
+    # built. Kept because it answers a different, real question (which score
+    # family to use given a fixed vocabulary), under a name that says so.
+    best = min((v.get("sigma_min", float("inf")) for v in agg.values()
+                if isinstance(v, dict)), default=float("inf"))
+    for v in agg.values():
+        if isinstance(v, dict) and "sigma_min" in v and np.isfinite(best) and best > 0:
+            v["regret_within_arm"] = v["sigma_min"] / best
+    agg["rng_seeds"] = seeds_used
+    # CARRIED BY HAND, like rng_seeds: the family loop keeps only dict values,
+    # so a scalar is filtered out. classes_removed is a function of (rung,
+    # signal node) alone, so every rep must agree; without it "the vocabulary-
+    # defined score degrades as the vocabulary coarsens" cannot be told apart
+    # from "leave-one-node-out removed 1 class at L162 and 29 at R16_Q1".
+    for key in ("classes_removed", "classes_removed_matched"):
+        cr = {r[key] for r in reps if key in r}
+        if len(cr) > 1:
+            raise SystemExit(
+                f"FATAL: {arm}/{sig}/N_sig={n_sig} reps disagree on "
+                f"{key} ({sorted(cr)}). It depends only on the "
+                "rung and the signal, so reps cannot differ.")
+        if cr:
+            agg[key] = cr.pop()
+    return agg
 
 
 def cross_arm_regret(results: dict) -> dict:
@@ -744,72 +829,7 @@ def main(argv=None) -> int:
                 if not reps:
                     per_n[str(n_sig)] = {"skipped": "insufficient jets"}
                     continue
-                seeds_used = [r["rng_seed"] for r in reps if "rng_seed" in r]
-                agg = {}
-                # only the score-family dicts; a scalar bookkeeping key (e.g.
-                # rng_seed) is not a family and must not be aggregated as one
-                for fam in {k for r in reps for k, v in r.items()
-                            if isinstance(v, dict)}:
-                    vals = [r[fam] for r in reps if fam in r and "max_sic" in r[fam]]
-                    if not vals:
-                        nulls = [r[fam] for r in reps if fam in r and r[fam].get("null")]
-                        if nulls:
-                            # the N_sig = 0 point: no SIC exists, but ARGOS and
-                            # the sculpting check do, and they ARE the null test
-                            agg[fam] = {"null": True}
-                            for m in ("argos", "chi2_sculpting_msd"):
-                                have = [v[m] for v in nulls if m in v]
-                                if have:
-                                    agg[fam][m] = float(np.median(have))
-                            agg[fam]["n_trainings"] = len(nulls)
-                        else:
-                            agg[fam] = {"skipped": reps[0].get(fam, {}).get("skipped", "n/a")}
-                        continue
-                    agg[fam] = {m: float(np.median([v[m] for v in vals if m in v]))
-                                for m in ("max_sic", "max_sic_ceiling",
-                                          "sic_at_eps_s_0p5", "sigma_min",
-                                          "argos", "sic_at_argos_point",
-                                          "chi2_sculpting_msd")
-                                if any(m in v for v in vals)}
-                    # a boolean does not survive a median; if ANY training
-                    # clipped, the cell is not a clean measurement
-                    agg[fam]["at_ceiling"] = bool(
-                        any(v.get("at_ceiling") for v in vals))
-                    agg[fam]["n_trainings"] = len(vals)
-                    agg[fam]["max_sic_iqr"] = float(
-                        np.subtract(*np.percentile([v["max_sic"] for v in vals], [75, 25])))
-                # WITHIN-ARM regret: best family for this arm on this cell.
-                # This is NOT the number the vocabulary ablation wants -- see
-                # the cross-arm pass after every arm is built. Kept because it
-                # answers a different, real question (which score family to
-                # use given a fixed vocabulary), under a name that says so.
-                best = min((v.get("sigma_min", float("inf")) for v in agg.values()
-                            if isinstance(v, dict)), default=float("inf"))
-                for v in agg.values():
-                    if isinstance(v, dict) and "sigma_min" in v and np.isfinite(best) and best > 0:
-                        v["regret_within_arm"] = v["sigma_min"] / best
-                agg["rng_seeds"] = seeds_used
-                # CARRIED BY HAND, like rng_seeds, and for the same reason: the
-                # family loop above keeps only keys whose value is a dict, so a
-                # scalar is filtered out. classes_removed was computed per rep
-                # (run_one) and then reached NO artifact at all, which is the
-                # one field this file's docstring calls load-bearing -- without
-                # it "the vocabulary-defined score degrades as the vocabulary
-                # coarsens" cannot be told apart from "leave-one-node-out
-                # removed 1 class at L162 and 29 at R16_Q1".
-                #
-                # It is a function of (rung, signal node) alone, so every rep
-                # must agree; disagreement would mean two reps read different
-                # trees and no median over them would mean anything.
-                for key in ("classes_removed", "classes_removed_matched"):
-                    cr = {r[key] for r in reps if key in r}
-                    if len(cr) > 1:
-                        raise SystemExit(
-                            f"FATAL: {arm}/{sig}/N_sig={n_sig} reps disagree on "
-                            f"{key} ({sorted(cr)}). It depends only on the "
-                            "rung and the signal, so reps cannot differ.")
-                    if cr:
-                        agg[key] = cr.pop()
+                agg = aggregate(reps, arm, sig, n_sig)
                 per_n[str(n_sig)] = agg
                 line = "  ".join(
                     f"{k}:maxSIC={v['max_sic']:.2f}" for k, v in sorted(agg.items())

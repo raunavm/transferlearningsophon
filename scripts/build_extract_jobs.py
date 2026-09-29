@@ -721,6 +721,198 @@ def verify_pin(pin: str, needed: list[str], allow_untagged: bool,
     print(f"pin {pin} verified to contain all {len(needed)} files the job runs")
 
 
+# ================================================ v1 heads by the checkpoint rule
+# (audit 2026-09-29, B4 and must-fix 3). experiments/EVAL/extract_v2.py scores
+# the checkpoints of epochs 70-79 of every v1 model in ONE pass over the same
+# 2,000,000 jets the v1 caches hold (checked row for row with --align-with),
+# and keeps only the per-jet output-layer scores:
+#   diag     every 100th jet (20,000), all 30 models, CPU: head accuracy and
+#            P(QCD) per epoch -- the audit's test of "heads that swing"
+#   anomaly  the QCD and six signal jets of the 2,000,000 (~0.8 M), the 20
+#            models the anomaly table reads, GPU: the class-sum anomaly score
+#            per epoch, so sigma_min can be averaged over 70-79. At the CPU
+#            rate of the model (~120 jets/s on 8 cores) this is ~18 h per
+#            model; on a GPU it is minutes.
+# The retry policy of commit 3cb4d7a in its CPU form, as build_probe_jobs.py's
+# v1err specs: evictions ignored, signals counted, a Python failure halts.
+V1ERR_PIN = "mtx-s1.66"
+V1ERR_NEEDED = ["experiments/EVAL/extract_v2.py", "experiments/EVAL/extract_features.py",
+                "experiments/EVAL/anomaly.py", "experiments/EVAL/class_counts.py"]
+V1ERR_HEADS = "/data/results/eval/v1err/heads"
+HEAD_RUNS = [r for r in RUNS if r[0].startswith("mtx-")] + [
+    r for r in CONTROL_AND_MASS_RUNS if r[1].endswith("_MASS")]
+RUNG_OF = {"L188": "L188", "L162": "L162", "R42_Q1": "R42_Q1", "R16_Q1": "R16_Q1",
+           "L162_MASS": "L162", "R16_Q1_MASS": "R16_Q1"}
+
+V1ERR_TEMPLATE = """apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {name}
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: {{ containerName: main, operator: In, values: [42] }}
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: {image}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          # a signal (OOM, lost node) is retried; any other failure is deterministic
+          halt () {{ rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }}
+          git clone --depth 1 --branch "{pin}" \\
+            https://github.com/raunavm/transferlearningsophon.git \\
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          pip install --no-cache-dir -q pyarrow
+          export PYTHONUNBUFFERED=1
+          # BLAS threads = the CPUs requested: nproc reports the node's cores
+          export OMP_NUM_THREADS={cpu} OPENBLAS_NUM_THREADS={cpu} MKL_NUM_THREADS={cpu}
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          echo "PVC used: ${{USED}}%"
+          [ "${{USED}}" -lt 85 ] || {{ echo "FATAL: /data is ${{USED}}% full"; exit 42; }}
+{body}        volumeMounts:
+        - {{ name: jc2,  mountPath: /jc2, readOnly: true }}
+        - {{ name: data, mountPath: /data }}
+        - {{ name: dshm, mountPath: /dev/shm }}
+        resources:
+          requests: {{ memory: "{mem}", cpu: "{cpu}"{gpu_req}, ephemeral-storage: "20Gi" }}
+          limits:   {{ memory: "{mem}", cpu: "{cpu}"{gpu_req}, ephemeral-storage: "20Gi" }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: {{ medium: Memory, sizeLimit: "8Gi" }}
+"""
+
+HEADS_BODY = """          OUT={out}
+          ls ${{OUT}}/e0{{70..79}}/manifest.json >/dev/null 2>&1 && {{ echo "done by an earlier attempt"; exit 0; }}
+          python3 experiments/EVAL/extract_v2.py \\
+            --run-dir {run_dir} --rung {rung} --num-classes {k} --num-reg {num_reg} \\
+            --checkpoints 70-79 --feature-classes {flags} \\
+            --head-prefix 2000000 --diag-stride 100 --max-jets 2000000 \\
+            --align-with /data/results/eval/{run}/features_e79 \\
+            --data-test {files} \\
+            --out ${{OUT}} || halt
+          date -u +"end %Y-%m-%dT%H:%M:%SZ"
+"""
+
+COUNTS_BODY = """          OUT={out}
+          [ -f ${{OUT}} ] && {{ echo "done by an earlier attempt"; exit 0; }}
+          python3 experiments/EVAL/class_counts.py \\
+            --data-test {files} \\
+            --out ${{OUT}} || halt
+"""
+
+
+def build_v1err() -> dict[str, str]:
+    """{file name: spec}: the head jobs (diag for 30 models, anomaly for 20) and
+    the test-split class count."""
+    out = {}
+    files = interleaved_files()
+    for run, arm, k, run_dir in HEAD_RUNS:
+        rung, reg = RUNG_OF[arm], NUM_REG.get(run, 0)
+        short = run.removeprefix("mtx-")
+        kinds = [("diag", "\\\n            --no-anomaly-rows", False)]
+        if not arm.endswith("_MASS"):
+            kinds.append(("anomaly", "", True))
+        for kind, flags, gpu in kinds:
+            name = f"heads-{kind}-v1err-{short}-raunav"
+            body = HEADS_BODY.format(out=f"{V1ERR_HEADS}/{kind}/{run}", run_dir=run_dir, rung=rung,
+                                     k=k, num_reg=reg, flags=flags, run=run, files=files)
+            out[f"job-{name}.yaml"] = V1ERR_TEMPLATE.format(
+                name=name, image=IMAGE, pin=V1ERR_PIN, body=body,
+                mem="48Gi" if gpu else "32Gi", cpu="4" if gpu else "8",
+                gpu_req=', nvidia.com/gpu: "1"' if gpu else "")
+    name = "test-class-counts-raunav"
+    out[f"job-{name}.yaml"] = V1ERR_TEMPLATE.format(
+        name=name, image=IMAGE, pin=V1ERR_PIN, mem="8Gi", cpu="2", gpu_req="",
+        body=COUNTS_BODY.format(out="/data/results/eval/v1err/class_counts/test_class_counts.json",
+                                files=files))
+    return out
+
+
+# ========================================================= v2 extraction specs
+# One job per v2 pretraining run of configs/arms/v2_grid.json: the whole test
+# split in one pass, the primary checkpoint (best validation on the fixed sample)
+# and the robustness checkpoints of epochs 70-79. Features (float16) of every
+# probe task's classes over the whole split and of the first 2,000,000 jets are
+# kept at the primary checkpoint only; every checkpoint keeps the per-jet
+# output-layer scores. GPU: the split is 27.4 M jets and the model is scored
+# 11 times on the selected rows. NOT launched until the v2 runs exist; the
+# storage this needs is estimated by experiments/EVAL/class_counts.py
+# (--storage) against the volume's free space before any launch.
+V2_PIN = "mtx-s1.66"
+V2_ROOT = "/data/results/mtx_v2"
+V2_OUT = "/data/results/eval/v2"
+V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
+
+
+def v2_rung(arm: str) -> str:
+    """The contraction-tree column an arm's output layer is scored on, or 'none'."""
+    base = arm.removesuffix("_MASS_LM").removesuffix("_MASS").removesuffix("_LOFO4P")
+    return base if base in ("L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1") else "none"
+
+
+def v2_runs() -> list[tuple[str, str, int, int, int]]:
+    """(run name, arm, K, num_reg, seed) for every classification run of the grid."""
+    import json
+    grid = json.loads(V2_GRID.read_text())
+    out = []
+    for a in grid["arms"]:
+        if a["num_classes"] is None:            # the self-supervised run has no output layer
+            continue
+        stem = a["name"].lower().replace("_", "")
+        for s in range(1, a["runs"] + 1):
+            out.append((f"mtx-{stem}-s{s}", a["name"], a["num_classes"],
+                        1 if a["mass_lambda"] else 0, s))
+    return out
+
+
+def build_v2() -> dict[str, str]:
+    out = {}
+    files = interleaved_files()
+    for run, arm, k, reg, _s in v2_runs():
+        name = f"extract-v2-{run.removeprefix('mtx-')}-raunav"
+        body = (f"          OUT={V2_OUT}/{run}\n"
+                f"          python3 experiments/EVAL/extract_v2.py \\\n"
+                f"            --run-dir {V2_ROOT}/{run} --rung {v2_rung(arm)} "
+                f"--num-classes {k} --num-reg {reg} \\\n"
+                f"            --checkpoints best 70-79 --features-at best \\\n"
+                f"            --feature-classes probe --prefix-features 2000000 \\\n"
+                f"            --head-prefix 2000000 --diag-stride 100 \\\n"
+                f"            --data-test {files} \\\n"
+                f"            --out ${{OUT}} || halt\n")
+        out[f"job-{name}.yaml"] = V1ERR_TEMPLATE.format(
+            name=name, image=IMAGE, pin=V2_PIN, body=body, mem="64Gi", cpu="6",
+            gpu_req=', nvidia.com/gpu: "1"')
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gpu", action="store_true")
@@ -763,7 +955,33 @@ def main() -> int:
     ap.add_argument("--observers-job", action="store_true",
                     help="emit ONLY the model-free job that adds genjet_sdmass "
                          "for the caches' 2,000,000 jets (see OBSERVERS_TEMPLATE)")
+    ap.add_argument("--v2", action="store_true",
+                    help="emit ONLY the v2 extraction specs (one per run of "
+                         "configs/arms/v2_grid.json); not launchable before the runs exist")
+    ap.add_argument("--v1err", action="store_true",
+                    help="emit ONLY the v1 head jobs by the checkpoint rule and the "
+                         "test-split class count (audit 2026-09-29)")
     args = ap.parse_args()
+
+    if args.v2:
+        verify_pin(V2_PIN, V1ERR_NEEDED, args.pin_not_yet_tagged,
+                   {"experiments/EVAL/extract_v2.py": "--features-at"})
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        for fname, text in build_v2().items():
+            yaml.safe_load(text)
+            (OUT_DIR / fname).write_text(text)
+            print(f"  {fname}")
+        return 0
+
+    if args.v1err:
+        verify_pin(V1ERR_PIN, V1ERR_NEEDED, args.pin_not_yet_tagged,
+                   {"experiments/EVAL/extract_v2.py": "--no-anomaly-rows"})
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        for fname, text in build_v1err().items():
+            yaml.safe_load(text)
+            (OUT_DIR / fname).write_text(text)
+            print(f"  {fname}")
+        return 0
 
     if args.epoch_accuracy:
         verify_pin(EPOCH_ACC_PIN, ["experiments/EVAL/epoch_accuracy.py",

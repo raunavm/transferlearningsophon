@@ -1,0 +1,76 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: labelrec-curve-v1err-r42q1-s4-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          # a signal (OOM, lost node) is retried; any other failure is deterministic
+          halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
+          git clone --depth 1 --branch "mtx-s1.66" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+          # BLAS threads = the CPUs requested: nproc reports the node's cores
+          export OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 MKL_NUM_THREADS=8
+          date -u +"start %Y-%m-%dT%H:%M:%SZ"; nproc; free -g | head -2
+
+          ARMS=""; RUNGS=""
+          for spec in mtx-r42q1-s4:R42_Q1; do
+            a=${spec%%:*}; r=${spec##*:}
+            d=/data/results/eval/${a}/features_e79
+            for f in features.npy label188.npy extract_manifest.json; do
+              [ -f "${d}/${f}" ] || { echo "FATAL: no ${d}/${f}"; exit 42; }
+            done
+            ARMS="${ARMS} ${a#mtx-}=${d}"
+            RUNGS="${RUNGS} ${a#mtx-}=${r}"
+          done
+          echo "arms:${ARMS}"
+
+          OUT=/data/results/eval/v1err/label_recovery_curve/r42q1-s4
+          mkdir -p ${OUT}
+          # resumable: label_recovery_curve.py keeps every finished cell and skips it
+          python3 experiments/EVAL/label_recovery_curve.py \
+            --features ${ARMS} \
+            --own-rung ${RUNGS} \
+            --out ${OUT} \
+            --sizes 14000 44000 140000 443000 0 \
+            --mlp-rungs L188 \
+            --threads 8 || halt
+          date -u +"end %Y-%m-%dT%H:%M:%SZ"
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
