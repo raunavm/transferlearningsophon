@@ -5,20 +5,26 @@
 % The workshop draft is retired; if these ever diverge, this file is the one the
 % journal manuscript compiles against.
 
-@article{part,
-  title  = {Particle Transformer for Jet Tagging},
-  author = {Qu, Huilin and Li, Congqiao and Qian, Sitian},
-  journal= {Proceedings of the 39th International Conference on Machine Learning},
-  year   = {2022},
-  note   = {arXiv:2202.03772}
+@inproceedings{part,
+  title     = {Particle Transformer for Jet Tagging},
+  author    = {Qu, Huilin and Li, Congqiao and Qian, Sitian},
+  booktitle = {Proceedings of the 39th International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {162},
+  pages     = {18281--18292},
+  publisher = {PMLR},
+  year      = {2022},
+  note      = {arXiv:2202.03772}
 }
 
 @misc{sophon,
   title  = {Accelerating Resonance Searches via Signature-Oriented Pre-training},
   author = {Li, Congqiao and Agapitos, Antonios and Drews, Jovin and Duarte, Javier
-            and Fu, Dawei and Gao, Leyun and others},
+            and Fu, Dawei and Gao, Leyun and Kansal, Raghav and Kasieczka, Gregor
+            and Moureaux, Louis and Qu, Huilin and Mantilla Suarez, Cristina
+            and Li, Qiang},
   year   = {2024},
-  note   = {arXiv:2405.12972}
+  note   = {FERMILAB-PUB-24-0699-V, arXiv:2405.12972}
 }
 
 @misc{objectives,
@@ -63,11 +69,11 @@
 }
 
 @article{hong,
-  author = {Hong, Guan Zhe and Cui, Yin and Fuxman, Ariel and Chan, Stanley and Luo, Enming},
+  author = {Hong, Guan Zhe and Cui, Yin and Fuxman, Ariel and Chan, Stanley H. and Luo, Enming},
   title  = {Why Fine-grained Labels in Pretraining Benefit Generalization?},
   journal= {Transactions on Machine Learning Research},
   year   = {2024},
-  note   = {arXiv:2410.23129}
+  note   = {\url{https://openreview.net/forum?id=FojAV72owK}, arXiv:2410.23129}
 }
 
 @misc{huh,
@@ -88,15 +94,16 @@
 }
 
 @misc{mehta,
-  title  = {An extremely coarse feedback signal is sufficient for learning
-            human-aligned visual representations},
+  title  = {Extremely coarse learning objectives induce human-aligned
+            representations in {AI} vision models},
   author = {Mehta, Yash and Bonner, Michael F.},
+  month  = sep,
   year   = {2026},
-  note   = {arXiv:2605.05556}
+  note   = {arXiv:2605.05556v2}
 }
 
 @inproceedings{chen,
-  title  = {Understanding the Impact of Label Granularity on CNN-based Image
+  title  = {Understanding the Impact of Label Granularity on {CNN}-based Image
             Classification},
   author = {Chen, Zhuo and Ding, Ruizhou and Chin, Ting-Wu and
             Marculescu, Diana},
@@ -111,8 +118,9 @@
   title  = {Finetuning foundation models for joint analysis optimization in High
             Energy Physics},
   author = {Vigl, Matthias and Hartman, Nicole and Heinrich, Lukas},
-  journal= {Machine Learning: Science and Technology},
+  journal= {Mach. Learn. Sci. Tech.},
   volume = {5},
+  number = {2},
   pages  = {025075},
   year   = {2024},
   doi    = {10.1088/2632-2153/ad55a3},
@@ -175,15 +183,18 @@
     year = "2024"
 }
 
-@misc{mpmtok,
+@article{mpmtok,
     author = "Leigh, Matthew and Klein, Samuel and Charton, Fran{\c{c}}ois and Golling, Tobias and Heinrich, Lukas and Kagan, Michael and Ochoa, In{\^e}s and Osadchy, Margarita",
-    title = "{Is Tokenization Needed for Masked Particle Modelling?}",
+    title = "{Is Tokenization Needed for Masked Particle Modeling?}",
     eprint = "2409.12589",
-    note = "arXiv:2409.12589",
     archivePrefix = "arXiv",
     primaryClass = "hep-ph",
-    month = "9",
-    year = "2024"
+    doi = "10.1088/2632-2153/addb98",
+    journal = "Mach. Learn. Sci. Tech.",
+    volume = "6",
+    number = "2",
+    pages = "025075",
+    year = "2025"
 }
 
 @article{rieck,
@@ -221,7 +232,7 @@
     note = "arXiv:2502.03933",
     archivePrefix = "arXiv",
     primaryClass = "cs.LG",
-    month = "2",
+    month = feb,
     year = "2025"
 }
 
@@ -232,7 +243,7 @@
     note = "arXiv:2606.14813",
     archivePrefix = "arXiv",
     primaryClass = "hep-ph",
-    month = "6",
+    month = jun,
     year = "2026"
 }
 
@@ -272,7 +283,7 @@
     archivePrefix = "arXiv",
     primaryClass = "hep-ph",
     reportNumber = "TTK-26-10",
-    month = "4",
+    month = apr,
     year = "2026"
 }
 
@@ -326,7 +337,7 @@
     reportNumber = "CERN-THESIS-2024-281, CMS TS-2025-001",
     note = "CERN-THESIS-2024-281",
     school = "Peking U., Beijing",
-    month = "6",
+    month = jun,
     year = "2024"
 }
 
@@ -336,15 +347,15 @@
     institution = "CERN",
     type = "ATLAS PUB Note",
     number = "ATL-PHYS-PUB-2026-013",
-    month = "7",
+    month = jul,
     year = "2026"
 }
 
 @article{tarone, title={A Modified {B}onferroni Method for Discrete Data}, volume={46}, ISSN={0006-341X}, url={http://dx.doi.org/10.2307/2531456}, DOI={10.2307/2531456}, number={2}, journal={Biometrics}, publisher={JSTOR}, author={Tarone, R. E.}, year={1990}, month=jun, pages={515} }
 
-@article{bergerhsu, title={Bioequivalence trials, intersection-union tests and equivalence confidence sets}, volume={11}, ISSN={0883-4237}, url={http://dx.doi.org/10.1214/ss/1032280304}, DOI={10.1214/ss/1032280304}, number={4}, journal={Statistical Science}, publisher={Institute of Mathematical Statistics}, author={Berger, Roger L. and Hsu, Jason C.}, year={1996}, month=Nov }
+@article{bergerhsu, title={Bioequivalence trials, intersection-union tests and equivalence confidence sets}, volume={11}, ISSN={0883-4237}, url={http://dx.doi.org/10.1214/ss/1032280304}, DOI={10.1214/ss/1032280304}, number={4}, journal={Statistical Science}, publisher={Institute of Mathematical Statistics}, author={Berger, Roger L. and Hsu, Jason C.}, year={1996}, month=nov }
 
-@article{tost, title={A comparison of the Two One-Sided Tests Procedure and the Power Approach for assessing the equivalence of average bioavailability}, volume={15}, ISSN={0090-466X}, url={http://dx.doi.org/10.1007/BF01068419}, DOI={10.1007/bf01068419}, number={6}, journal={Journal of Pharmacokinetics and Biopharmaceutics}, publisher={Springer Science and Business Media LLC}, author={Schuirmann, Donald J.}, year={1987}, month=Dec, pages={657–680} }
+@article{tost, title={A comparison of the Two One-Sided Tests Procedure and the Power Approach for assessing the equivalence of average bioavailability}, volume={15}, ISSN={0090-466X}, url={http://dx.doi.org/10.1007/BF01068419}, DOI={10.1007/bf01068419}, number={6}, journal={Journal of Pharmacokinetics and Biopharmaceutics}, publisher={Springer Science and Business Media LLC}, author={Schuirmann, Donald J.}, year={1987}, month=dec, pages={657–680} }
 
 % Not in INSPIRE or Crossref (no DOI); entered by hand from the journal record.
 @article{holm,
@@ -376,7 +387,7 @@
     note = "arXiv:2503.00118",
     archivePrefix = "arXiv",
     primaryClass = "hep-ph",
-    month = "2",
+    month = feb,
     year = "2025"
 }
 
@@ -395,8 +406,7 @@
 }
 
 @article{cmshbb,
-    author = "Sirunyan, Albert M and others",
-    collaboration = "CMS",
+    author = "{CMS Collaboration}",
     title = "{Inclusive search for a highly boosted Higgs boson decaying to a bottom quark-antiquark pair}",
     eprint = "1709.05543",
     archivePrefix = "arXiv",
@@ -411,8 +421,7 @@
 }
 
 @article{cmszprime,
-    author = "Sirunyan, Albert M and others",
-    collaboration = "CMS",
+    author = "{CMS Collaboration}",
     title = "{Search for low mass vector resonances decaying into quark-antiquark pairs in proton-proton collisions at $ \sqrt{s}=13 $ TeV}",
     eprint = "1710.00159",
     archivePrefix = "arXiv",
@@ -425,14 +434,33 @@
     year = "2018"
 }
 
-@misc{pdg,
-    author = "Navas, S. and others",
-    collaboration = "Particle Data Group",
+@article{pdg,
+    author = "{Particle Data Group}",
     title = "{Review of Particle Physics}",
-    journal = "Phys. Rev. D",
-    volume = "110",
-    number = "3",
-    pages = "030001",
-    doi = "10.1103/PhysRevD.110.030001",
-    year = "2024"
+    journal = "Int. J. Mod. Phys. A",
+    volume = "41",
+    number = "22",
+    pages = "2630011",
+    doi = "10.1142/S0217751X26300115",
+    year = "2026"
+}
+
+% The Ranger optimizer used by Sophon's and our pretraining is RAdam wrapped in
+% Lookahead; these are the two papers that define it (arXiv records, 2026-09-29).
+@inproceedings{radam,
+  title     = {On the Variance of the Adaptive Learning Rate and Beyond},
+  author    = {Liu, Liyuan and Jiang, Haoming and He, Pengcheng and Chen, Weizhu
+               and Liu, Xiaodong and Gao, Jianfeng and Han, Jiawei},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2020},
+  note      = {arXiv:1908.03265}
+}
+
+@inproceedings{lookahead,
+  title     = {Lookahead Optimizer: $k$ steps forward, 1 step back},
+  author    = {Zhang, Michael R. and Lucas, James and Hinton, Geoffrey and Ba, Jimmy},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {32},
+  year      = {2019},
+  note      = {arXiv:1907.08610}
 }
