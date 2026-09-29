@@ -170,6 +170,15 @@ def classes_removed(doc: dict, key: str) -> dict:
             for s, per in got.items()}
 
 
+# The rerun rebuilds the logits from the cached features on whichever node it
+# lands on, and a matrix product is reproducible only on one node: the last
+# digits differ, and a jet that sits exactly on a threshold can change side. On
+# the 2026-09-29 rerun 143 of 145 cells at 17 classes agreed to 1e-9 and two
+# differed by 3e-5 in log; the spread between pretraining seeds is ~0.1. A
+# real disagreement (a different score, a different sample) is far larger.
+REPRO_TOL = 1e-4
+
+
 def check_rerun(doc: dict, rerun: dict) -> dict:
     """The rerun must be the committed run's draws, or its numbers are not comparable."""
     for k in CONFIG_KEYS:
@@ -179,7 +188,7 @@ def check_rerun(doc: dict, rerun: dict) -> dict:
     if set(doc["arms"]) != set(rerun["arms"]):
         raise SystemExit(f"FATAL: the rerun has models {sorted(rerun['arms'])}, the "
                          f"committed run {sorted(doc['arms'])}")
-    n_seeds = n_same = 0
+    n_seeds = n_same = n_exact = 0
     worst = 0.0
     for arm, ad in doc["arms"].items():
         for sig, per_n in ad["signals"].items():
@@ -201,14 +210,18 @@ def check_rerun(doc: dict, rerun: dict) -> dict:
                     for m in ("sigma_min", "max_sic"):
                         d = abs(math.log(new[m]) - math.log(old[m]))
                         worst = max(worst, d)
-                        if d > 1e-9:
+                        if d > REPRO_TOL:
                             raise SystemExit(
                                 f"FATAL: {arm}/{sig}/N={n}: {RERUN_FAMILY} {m} "
                                 f"{new[m]!r} does not reproduce the committed "
                                 f"class_sum {old[m]!r} at 17 classes")
                     n_same += 1
+                    n_exact += all(abs(math.log(new[m]) - math.log(old[m])) <= 1e-9
+                                   for m in ("sigma_min", "max_sic"))
     return {"cells_with_identical_rng_seeds": n_seeds,
             "cells_at_17_classes_reproducing_class_sum": n_same,
+            "cells_at_17_classes_identical_to_1e-9": n_exact,
+            "tolerance_abs_log": REPRO_TOL,
             "max_abs_log_difference_at_17_classes": worst}
 
 

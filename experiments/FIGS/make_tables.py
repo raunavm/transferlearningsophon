@@ -383,7 +383,9 @@ def input_paths(root: pathlib.Path) -> dict:
             # file is which dataset is read from the class count its cells record.
             # v2 rereads every v1 cell plus the random-label draws 2 and 3.
             "ft_legs": [data / "w2b_leg1_metrics_v2.json", data / "w2b_leg2_metrics_v2.json"],
-            "anomaly": data / "anomaly_merged_v4" / "analysis_v3" / "anomaly_summary.json",
+            # analysis_v4 adds the class-sum score rerun with the same classes
+            # removed at every label set (anomaly_cs_merged_v1).
+            "anomaly": data / "anomaly_merged_v4" / "analysis_v4" / "anomaly_summary.json",
             "mass_resolution": data / "mass_resolution" / "analysis_holm" / "s7_mass_resolution.json",
             # analysis_v4: the fits redone with each model's own floating peak shape
             # (fit_v4, experiments/AOJ/refit_from_bins.py).
@@ -1067,7 +1069,9 @@ def emit_finetune(em: Emitter, ft: dict, sizes: dict) -> None:
                  "fine-tuning training jets")
 
 
-ANOMALY_FAMILIES = ("mahalanobis", "knn")     # feature-based; the class sum waits for its rerun
+# The class sum from the model's own outputs, with the signal's 17-class group
+# removed at every label set, then the two detectors on the frozen features.
+ANOMALY_FAMILIES = ("class_sum_matched", "mahalanobis", "knn")
 
 
 def anomaly_signal_key(sig: str) -> str:
@@ -1107,6 +1111,13 @@ def emit_anomaly(em: Emitter, S: dict, src: pathlib.Path) -> None:
     if len(k) != 1:
         raise SystemExit(f"FATAL: {code} sets KNN_K {len(k)} times")
     em.macro("AnomalyKnnK", k[0], code, "KNN_K", "the k of the nearest-neighbour distance")
+    for sig, per in S["classes_removed_by_level"]["class_sum_matched"].items():
+        n = set(per.values())
+        if len(n) != 1:
+            raise SystemExit(f"FATAL: class_sum_matched removes {per} classes for {sig}")
+        em.macro("AnomalyClassSumRemoved" + anomaly_signal_key(sig), str(n.pop()), src,
+                 f"classes_removed_by_level.class_sum_matched.{sig}",
+                 "native classes left out of the class sum, the same at every label set")
     nd = S["not_detected_rule"]
     em.macro("AnomalyNdThreshold", fmt(nd["threshold_max_sic"], 1), src,
              "not_detected_rule.threshold_max_sic", "max SIC below this at every label set")
@@ -1466,7 +1477,8 @@ def table_legs(legs: dict, sizes: dict) -> str:
 SIGNAL_LABELS = {"label_X_bb": "$X\\to b\\bar b$", "label_X_qq": "$X\\to q\\bar q$",
                  "label_X_YY_bbb": "$X\\to YY\\to bbb$", "label_X_YY_bbbb": "$X\\to YY\\to bbbb$",
                  "label_X_YY_qqq": "$X\\to YY\\to qqq$", "label_X_YY_qqqq": "$X\\to YY\\to qqqq$"}
-FAMILY_LABELS = {"class_sum": "class sum", "mahalanobis": "Mahalanobis",
+FAMILY_LABELS = {"class_sum": "class sum", "class_sum_matched": "class sum",
+                 "mahalanobis": "Mahalanobis",
                  "knn": "$k$-nearest neighbours", "iad_hgb": "classifier-based (HGB)"}
 
 
@@ -1528,7 +1540,8 @@ def table_anomaly(S: dict) -> str:
         if qty == "sigma_min":
             body.append("\\addlinespace")
     light = [g for g in SIGNAL_LABELS if all(f"{f}|{g}" in nd for f in ANOMALY_FAMILIES)]
-    caption = (f"Anomaly detection with detectors on the frozen features, "
+    caption = (f"Anomaly detection with the class sum of the model's own outputs and two "
+               f"detectors on the frozen features, "
                f"{fmt_int(S['conventions']['primary_injection'])} signal jets injected: "
                "$\\sigma_{\\min}$, the smallest initial significance from which a $5\\sigma$ "
                "discovery is still reached (lower is more sensitive), and the maximum significance "
@@ -1536,9 +1549,12 @@ def table_anomaly(S: dict) -> str:
                "seeds of each seed's median over "
                f"{words(S['provenance']['resamplings_per_seed'])} resamplings of the background "
                "and signal samples.")
-    notes = ["Not detected by either detector at any label set (max SIC below "
-             f"{fmt(S['not_detected_rule']['threshold_max_sic'], 1)} at every label set): "
-             + ", ".join(SIGNAL_LABELS[g] for g in light) + "."] if light else []
+    thr = fmt(S['not_detected_rule']['threshold_max_sic'], 1)
+    notes = [f"A detector whose max SIC stays below {thr} at every label set does not detect "
+             "that signal."]
+    if light:
+        notes.append("Not detected by any of the three at any label set, and not shown: "
+                     + ", ".join(SIGNAL_LABELS[g] for g in light) + ".")
     return _table(head + body, caption, "tab:anomaly", "l l " + "r" * len(levels), notes)
 
 

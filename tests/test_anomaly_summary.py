@@ -121,15 +121,25 @@ def test_not_detected_is_the_light_quark_signals_for_the_feature_space_scores():
     assert lo < S.NOT_DETECTED_MAX_SIC <= hi
 
 
+RERUN = ROOT / "experiments/FIGS/data/anomaly_cs_merged_v1/anomaly_results.json"
+
+
 def test_the_committed_summary_is_what_the_script_computes():
-    got = json.loads((DATA / "analysis_v3/anomaly_summary.json").read_text())
+    """analysis_v4 (with the class-sum rerun) is exactly what this script writes;
+    analysis_v3 (before it) still matches in content, the script having changed
+    only in the rerun check."""
+    got = json.loads((DATA / "analysis_v4/anomaly_summary.json").read_text())
     assert got["provenance"]["inputs"]["anomaly"]["sha256"] == S._sha(
         DATA / "anomaly_results.json")
     assert got["provenance"]["script_sha256"] == S._sha(S.__file__), (
-        "anomaly_summary.py changed since analysis_v3 was written")
-    fresh = json.loads(json.dumps(S.summarise(_committed())))
+        "anomaly_summary.py changed since analysis_v4 was written")
+    rerun = json.loads(RERUN.read_text())
+    fresh = json.loads(json.dumps(S.summarise(_committed(), rerun)))
     for k, v in fresh.items():
         assert got[k] == v, k
+    v3 = json.loads((DATA / "analysis_v3/anomaly_summary.json").read_text())
+    for k, v in json.loads(json.dumps(S.summarise(_committed()))).items():
+        assert v3[k] == v, k
 
 
 # ------------------------------------------------------------- the rerun
@@ -164,6 +174,18 @@ def test_a_rerun_that_does_not_reproduce_class_sum_at_17_classes_is_refused():
     cell["class_sum_matched"]["sigma_min"] *= 1.01
     with pytest.raises(SystemExit, match="does not reproduce"):
         S.summarise(doc, r)
+
+
+def test_a_rerun_off_only_in_the_last_digits_is_accepted_and_counted():
+    """Logits rebuilt on another node differ in the last digits; a threshold tie
+    can then move sigma_min by ~1e-5. That reproduces; it is counted, not hidden."""
+    doc = _doc()
+    r = _rerun(doc)
+    r["arms"]["r16q1-s2"]["signals"]["label_X_bb"]["4000"]["class_sum_matched"]["sigma_min"] *= 1 + 3e-5
+    rep = S.summarise(doc, r)["reproduction"]
+    assert rep["cells_at_17_classes_reproducing_class_sum"] == 5 * 2
+    assert rep["cells_at_17_classes_identical_to_1e-9"] == 5 * 2 - 1
+    assert 2e-5 < rep["max_abs_log_difference_at_17_classes"] < 1e-4
 
 
 def test_a_rerun_under_another_configuration_is_refused():

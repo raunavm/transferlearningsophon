@@ -12,8 +12,7 @@
 %
 % Red \pending{} marks what is still running or being rerun: the community
 % benchmarks (bench v3), the from-scratch and
-% self-supervised fine-tuning reruns, the anomaly class-sum rerun, the
-% real-data refit with per-model peak shapes, and X->bs.
+% self-supervised fine-tuning reruns, and X->bs.
 \documentclass[11pt]{article}
 
 \usepackage[utf8]{inputenc}
@@ -72,7 +71,8 @@ models a factor \FtOmaRatioJciiESixOnesevenOverOneeighteight{} behind the
 mass output improves the jet-mass information in the representation and costs
 $b$-versus-$c$ separation, far more at \Kcoarse{} classes than at \Kres.
 Anomaly detectors on the frozen features lose sensitivity to decays with several
-$b$ quarks once the vocabulary stops distinguishing their number. On CMS open
+$b$ quarks once the vocabulary stops distinguishing their number, while a score
+built from the model's own outputs does not depend on the vocabulary. On CMS open
 data every model finds the top-quark peak with no fine-tuning, and the fitted
 yield varies more between pretraining runs than between vocabularies.
 \pending{one sentence on the community benchmarks}
@@ -147,7 +147,9 @@ Our results are:
   slightly more mass information.
 \item Anomaly detectors that work on the frozen features lose sensitivity to decays
   with several $b$ quarks from the \Kmid-class vocabulary down, the first that no
-  longer distinguishes their number (Sec.~\ref{sec:anomaly}).
+  longer distinguishes their number. A score built from the model's own class
+  outputs, with the same classes left out at every vocabulary, does not depend
+  on the vocabulary (Sec.~\ref{sec:anomaly}).
 \item On CMS open data, applied with no adaptation, every model finds the
   top-quark peak, and the fitted yield depends on the pretraining run rather than
   on the vocabulary (Sec.~\ref{sec:realdata}).
@@ -358,14 +360,20 @@ $\epsilon_S/\sqrt{\epsilon_B}$ maximised over cuts that keep at least
 \AnomalyMinBkgPass{} background jets, so that the background efficiency is known
 to better than \AnomalyStatCut~\cite{sigmamin,argos}. Each model's value is the
 median over \AnomalyNResamplings{} resamplings of the background and signal
-samples. Neither score depends on how much signal is injected. A detector with no
+samples. None of the scores depends on how much signal is injected. A detector with no
 discriminating power has a max SIC of one, and we call a signal not detected when
 the max SIC stays below \AnomalyNdThreshold{} at every vocabulary. All signals
 are native JetClass-II classes, so this measures in-domain sensitivity, not the
 discovery of unseen physics.
-\pending{a third score from the model's own outputs, the summed resonance scores
-over the summed QCD scores with the signal's classes left out, rerun with the same
-classes removed at every vocabulary}
+A third score uses the model's own outputs: the summed probabilities of the
+resonance classes over the summed probabilities of the resonance and QCD
+classes, with the signal's classes left out so that the score cannot simply
+read the signal's own label. Leaving out only the signal's class would remove a
+different number of native classes at each vocabulary, and so compare different
+scores. We therefore leave out the signal's whole group in the \Kcoarse-class
+vocabulary, the same \AnomalyClassSumRemovedXBb{} to
+\AnomalyClassSumRemovedXYYBbb{} of the \Kfull{} native classes, depending on
+the signal, at every vocabulary.
 
 \paragraph{Real data.} Each model's three-prong-versus-QCD score, the sum of its
 output scores for hadronic three-prong decays over the sum for QCD, built with
@@ -668,8 +676,8 @@ reach \FtAucJciiESixOnesixtwoMass{} and \FtAucJciiESixOnesevenMass{} against
 
 \subsection{Anomaly detection}\label{sec:anomaly}
 
-Table~\ref{tab:anomaly} and Fig.~\ref{fig:anomaly} give the two detectors on the
-frozen features. Neither detects the light-quark signals at any vocabulary, so
+Table~\ref{tab:anomaly} and Fig.~\ref{fig:anomaly} give the three scores. The two
+detectors on the frozen features behave alike. Neither detects the light-quark signals at any vocabulary, so
 those say nothing about the vocabulary. On the signals with $b$ quarks the two
 multi-$b$ decays lose sensitivity with coarser labels, and the loss begins at
 \Kmid{} classes, the vocabulary that no longer distinguishes one $b$ quark from
@@ -688,15 +696,29 @@ nearest-neighbour distance is more sensitive
 (\AnomalySigmaMinKnnXBbOneseven{} against \AnomalySigmaMinKnnXBbOneeighteight).
 The \Kfull- and \Kres-class models agree within their spread except on
 $X\to YY\to bbbb$, where the \Kres-class models are slightly more sensitive.
-\pending{the class-sum score, once its rerun lands}
+The class sum from the model's own outputs shows no dependence on the
+vocabulary. With the same native classes left out everywhere, the \Kfull-,
+\Kres- and \Kcoarse-class models agree within their spread on every signal: for
+$X\to YY\to bbbb$, $\sigma_{\min}$ is
+\AnomalySigmaMinClassSumMatchedXYYBbbbOneeighteight,
+\AnomalySigmaMinClassSumMatchedXYYBbbbOnesixtwo{} and
+\AnomalySigmaMinClassSumMatchedXYYBbbbOneseven. The \Kmid-class models have the
+largest spread, because one of their five pretraining runs is much less
+sensitive than the other four. The class sum is less sensitive than the
+Mahalanobis distance to every signal with $b$ quarks, at every vocabulary, but it
+is the only score that detects the three- and four-prong light-quark decays,
+with a max SIC of \AnomalyMaxSicClassSumMatchedXYYQqqOneeighteight{} for
+$X\to YY\to qqq$ and \AnomalyMaxSicClassSumMatchedXYYQqqqOneeighteight{} for
+$X\to YY\to qqqq$ with \Kfull{} classes. No score detects $X\to q\bar q$.
 
 \input{tables/anomaly}
 
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{../../figures/anomaly_sensitivity.pdf}
-  \caption{Anomaly-detection sensitivity of two detectors on the frozen features
-  for the three signals they detect: $\sigma_{\min}$ (lower is more sensitive),
+  \caption{Anomaly-detection sensitivity of the class sum of the model's outputs
+  (left) and two detectors on the frozen features, for the five signals at least
+  one of them detects: $\sigma_{\min}$ (lower is more sensitive),
   mean $\pm1$ standard deviation over five pretraining runs, each the median over
   resamplings.}
   \label{fig:anomaly}

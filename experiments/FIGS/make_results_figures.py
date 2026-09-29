@@ -42,7 +42,7 @@ INPUTS = {
     # fine-tunes) is appended to its task's list and named in FT_REFERENCES.
     "finetune": {"JetClass-II, 162 classes": [DATA / "w2b_leg1_metrics_v2.json"],
                  "JetClass, 10 classes": [DATA / "w2b_leg2_metrics_v2.json"]},
-    "anomaly": DATA / "anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "anomaly": DATA / "anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "mass": DATA / "mass_resolution/analysis_holm/s7_mass_resolution.json",
     "mass2x2": sorted((DATA / "probe_ladder_mass2x2_mlp2").glob("s*.json")),
     "realdata": DATA / "aoj_full_v1/analysis_v4/aoj_top.json",
@@ -58,7 +58,7 @@ SEED_OFFSET = 0.1                        # per-seed points sit this far left of 
 SIGNALS = {"label_X_bb": r"$X\to b\bar b$", "label_X_qq": r"$X\to q\bar q$",
            "label_X_YY_bbb": r"$YY\to bbb$", "label_X_YY_bbbb": r"$YY\to bbbb$",
            "label_X_YY_qqq": r"$YY\to qqq$", "label_X_YY_qqqq": r"$YY\to qqqq$"}
-FAMILIES = {"class_sum": "class sum (uses labels)", "mahalanobis": "Mahalanobis",
+FAMILIES = {"class_sum_matched": "class sum of the outputs", "mahalanobis": "Mahalanobis",
             "knn": "nearest neighbours", "iad_hgb": "classifier-based"}
 GROUPS = ["188", "162", "43", "17", "162+mass", "17+mass"]
 
@@ -155,11 +155,11 @@ def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
 
 
 def fig_anomaly(S: dict, outdir: pathlib.Path) -> None:
-    """sigma_min per signal and label set for the two feature-based detectors: mean
+    """sigma_min per signal and label set for the class sum and the two feature-based detectors: mean
     +- SD over seeds (each seed the median over resamplings). Signals no detector sees at any label set are left out; the table lists them."""
     inj = S["conventions"]["primary_injection"]
     nd = set(S["not_detected_rule"]["not_detected"])
-    fams = [f for f in FAMILIES if f in ("mahalanobis", "knn")]
+    fams = [f for f in FAMILIES if f in ("class_sum_matched", "mahalanobis", "knn")]
     sigs = [g for g in SIGNALS if any(f"{f}|{g}" not in nd for f in fams)]
     fig, axes = plt.subplots(1, len(fams), figsize=(style.FIG_W_TWO_COLUMN, 2.8), sharey=True)
     offsets = np.linspace(-0.24, 0.24, len(LEVELS))
@@ -173,11 +173,13 @@ def fig_anomaly(S: dict, outdir: pathlib.Path) -> None:
                         marker=style.LEVEL_MARKERS[lv], markersize=4, capsize=2,
                         label=f"{lv} classes", zorder=3)
         ax.set_yscale("log")
+        ax.yaxis.set_major_locator(ticker.FixedLocator([0.3, 0.5, 1, 2, 3, 5]))
         ax.yaxis.set_major_formatter(ticker.FormatStrFormatter("%g"))
-        ax.yaxis.set_minor_formatter(ticker.FormatStrFormatter("%g"))
+        ax.yaxis.set_minor_formatter(ticker.NullFormatter())
         ax.set_title(FAMILIES[fam], fontsize="small")
         ax.set_xticks(xs)
-        ax.set_xticklabels([SIGNALS[g] for g in sigs], fontsize="small")
+        ax.set_xticklabels([SIGNALS[g] for g in sigs], fontsize="small", rotation=35,
+                           ha="right", rotation_mode="anchor")
     axes[0].set_ylabel(r"$\sigma_{\min}$  (lower is more sensitive)")
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=len(LEVELS), fontsize="small",

@@ -467,10 +467,46 @@
     "source_file": "experiments/FIGS/data/leg2_metrics.json",
     "value": "0.00031"
   },
+  "AnomalyClassSumRemovedXBb": {
+    "json_path": "classes_removed_by_level.class_sum_matched.label_X_bb",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "10"
+  },
+  "AnomalyClassSumRemovedXQq": {
+    "json_path": "classes_removed_by_level.class_sum_matched.label_X_qq",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "10"
+  },
+  "AnomalyClassSumRemovedXYYBbb": {
+    "json_path": "classes_removed_by_level.class_sum_matched.label_X_YY_bbb",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "29"
+  },
+  "AnomalyClassSumRemovedXYYBbbb": {
+    "json_path": "classes_removed_by_level.class_sum_matched.label_X_YY_bbbb",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "27"
+  },
+  "AnomalyClassSumRemovedXYYQqq": {
+    "json_path": "classes_removed_by_level.class_sum_matched.label_X_YY_qqq",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "29"
+  },
+  "AnomalyClassSumRemovedXYYQqqq": {
+    "json_path": "classes_removed_by_level.class_sum_matched.label_X_YY_qqqq",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "27"
+  },
   "AnomalyInjection": {
     "json_path": "conventions.primary_injection",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "2{,}000"
   },
   "AnomalyKnnK": {
@@ -479,292 +515,436 @@
     "source_file": "experiments/EVAL/anomaly.py",
     "value": "10"
   },
+  "AnomalyMaxSicClassSumMatchedXBbFourthree": {
+    "json_path": "families.class_sum_matched.label_X_bb.2000.levels.43.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.85\\,\\ensuremath{\\pm}\\,0.31"
+  },
+  "AnomalyMaxSicClassSumMatchedXBbOneeighteight": {
+    "json_path": "families.class_sum_matched.label_X_bb.2000.levels.188.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "2.05\\,\\ensuremath{\\pm}\\,0.07"
+  },
+  "AnomalyMaxSicClassSumMatchedXBbOneseven": {
+    "json_path": "families.class_sum_matched.label_X_bb.2000.levels.17.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "2.09\\,\\ensuremath{\\pm}\\,0.04"
+  },
+  "AnomalyMaxSicClassSumMatchedXBbOnesixtwo": {
+    "json_path": "families.class_sum_matched.label_X_bb.2000.levels.162.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "2.07\\,\\ensuremath{\\pm}\\,0.13"
+  },
+  "AnomalyMaxSicClassSumMatchedXQqFourthree": {
+    "json_path": "families.class_sum_matched.label_X_qq.2000.levels.43.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.033\\,\\ensuremath{\\pm}\\,0.008"
+  },
+  "AnomalyMaxSicClassSumMatchedXQqOneeighteight": {
+    "json_path": "families.class_sum_matched.label_X_qq.2000.levels.188.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.040\\,\\ensuremath{\\pm}\\,0.008"
+  },
+  "AnomalyMaxSicClassSumMatchedXQqOneseven": {
+    "json_path": "families.class_sum_matched.label_X_qq.2000.levels.17.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.038\\,\\ensuremath{\\pm}\\,0.005"
+  },
+  "AnomalyMaxSicClassSumMatchedXQqOnesixtwo": {
+    "json_path": "families.class_sum_matched.label_X_qq.2000.levels.162.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.040\\,\\ensuremath{\\pm}\\,0.007"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYBbbFourthree": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbb.2000.levels.43.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "2.6\\,\\ensuremath{\\pm}\\,0.8"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYBbbOneeighteight": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbb.2000.levels.188.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.2\\,\\ensuremath{\\pm}\\,0.5"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYBbbOneseven": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbb.2000.levels.17.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.10\\,\\ensuremath{\\pm}\\,0.27"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYBbbOnesixtwo": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbb.2000.levels.162.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.4\\,\\ensuremath{\\pm}\\,0.5"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYBbbbFourthree": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbbb.2000.levels.43.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "2.7\\,\\ensuremath{\\pm}\\,0.9"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYBbbbOneeighteight": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbbb.2000.levels.188.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.2\\,\\ensuremath{\\pm}\\,0.6"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYBbbbOneseven": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbbb.2000.levels.17.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.00\\,\\ensuremath{\\pm}\\,0.22"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYBbbbOnesixtwo": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbbb.2000.levels.162.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.2\\,\\ensuremath{\\pm}\\,0.5"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYQqqFourthree": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqq.2000.levels.43.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.42\\,\\ensuremath{\\pm}\\,0.14"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYQqqOneeighteight": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqq.2000.levels.188.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.46\\,\\ensuremath{\\pm}\\,0.08"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYQqqOneseven": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqq.2000.levels.17.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.478\\,\\ensuremath{\\pm}\\,0.029"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYQqqOnesixtwo": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqq.2000.levels.162.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.51\\,\\ensuremath{\\pm}\\,0.04"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYQqqqFourthree": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqqq.2000.levels.43.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.50\\,\\ensuremath{\\pm}\\,0.20"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYQqqqOneeighteight": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqqq.2000.levels.188.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.60\\,\\ensuremath{\\pm}\\,0.22"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYQqqqOneseven": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqqq.2000.levels.17.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.57\\,\\ensuremath{\\pm}\\,0.04"
+  },
+  "AnomalyMaxSicClassSumMatchedXYYQqqqOnesixtwo": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqqq.2000.levels.162.max_sic",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.68\\,\\ensuremath{\\pm}\\,0.17"
+  },
   "AnomalyMaxSicKnnXBbFourthree": {
     "json_path": "families.knn.label_X_bb.2000.levels.43.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "2.32\\,\\ensuremath{\\pm}\\,0.13"
   },
   "AnomalyMaxSicKnnXBbOneeighteight": {
     "json_path": "families.knn.label_X_bb.2000.levels.188.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "2.11\\,\\ensuremath{\\pm}\\,0.10"
   },
   "AnomalyMaxSicKnnXBbOneseven": {
     "json_path": "families.knn.label_X_bb.2000.levels.17.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "2.62\\,\\ensuremath{\\pm}\\,0.09"
   },
   "AnomalyMaxSicKnnXBbOnesixtwo": {
     "json_path": "families.knn.label_X_bb.2000.levels.162.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "2.20\\,\\ensuremath{\\pm}\\,0.05"
   },
   "AnomalyMaxSicKnnXQqFourthree": {
     "json_path": "families.knn.label_X_qq.2000.levels.43.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.135\\,\\ensuremath{\\pm}\\,0.031"
   },
   "AnomalyMaxSicKnnXQqOneeighteight": {
     "json_path": "families.knn.label_X_qq.2000.levels.188.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.165\\,\\ensuremath{\\pm}\\,0.015"
   },
   "AnomalyMaxSicKnnXQqOneseven": {
     "json_path": "families.knn.label_X_qq.2000.levels.17.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.101\\,\\ensuremath{\\pm}\\,0.022"
   },
   "AnomalyMaxSicKnnXQqOnesixtwo": {
     "json_path": "families.knn.label_X_qq.2000.levels.162.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.170\\,\\ensuremath{\\pm}\\,0.008"
   },
   "AnomalyMaxSicKnnXYYBbbFourthree": {
     "json_path": "families.knn.label_X_YY_bbb.2000.levels.43.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "3.54\\,\\ensuremath{\\pm}\\,0.16"
   },
   "AnomalyMaxSicKnnXYYBbbOneeighteight": {
     "json_path": "families.knn.label_X_YY_bbb.2000.levels.188.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.34\\,\\ensuremath{\\pm}\\,0.28"
   },
   "AnomalyMaxSicKnnXYYBbbOneseven": {
     "json_path": "families.knn.label_X_YY_bbb.2000.levels.17.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "3.14\\,\\ensuremath{\\pm}\\,0.16"
   },
   "AnomalyMaxSicKnnXYYBbbOnesixtwo": {
     "json_path": "families.knn.label_X_YY_bbb.2000.levels.162.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.49\\,\\ensuremath{\\pm}\\,0.20"
   },
   "AnomalyMaxSicKnnXYYBbbbFourthree": {
     "json_path": "families.knn.label_X_YY_bbbb.2000.levels.43.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "7.3\\,\\ensuremath{\\pm}\\,0.7"
   },
   "AnomalyMaxSicKnnXYYBbbbOneeighteight": {
     "json_path": "families.knn.label_X_YY_bbbb.2000.levels.188.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "7.3\\,\\ensuremath{\\pm}\\,0.4"
   },
   "AnomalyMaxSicKnnXYYBbbbOneseven": {
     "json_path": "families.knn.label_X_YY_bbbb.2000.levels.17.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "6.2\\,\\ensuremath{\\pm}\\,0.4"
   },
   "AnomalyMaxSicKnnXYYBbbbOnesixtwo": {
     "json_path": "families.knn.label_X_YY_bbbb.2000.levels.162.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "8.6\\,\\ensuremath{\\pm}\\,0.4"
   },
   "AnomalyMaxSicKnnXYYQqqFourthree": {
     "json_path": "families.knn.label_X_YY_qqq.2000.levels.43.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.092\\,\\ensuremath{\\pm}\\,0.026"
   },
   "AnomalyMaxSicKnnXYYQqqOneeighteight": {
     "json_path": "families.knn.label_X_YY_qqq.2000.levels.188.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.105\\,\\ensuremath{\\pm}\\,0.014"
   },
   "AnomalyMaxSicKnnXYYQqqOneseven": {
     "json_path": "families.knn.label_X_YY_qqq.2000.levels.17.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.073\\,\\ensuremath{\\pm}\\,0.019"
   },
   "AnomalyMaxSicKnnXYYQqqOnesixtwo": {
     "json_path": "families.knn.label_X_YY_qqq.2000.levels.162.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.127\\,\\ensuremath{\\pm}\\,0.011"
   },
   "AnomalyMaxSicKnnXYYQqqqFourthree": {
     "json_path": "families.knn.label_X_YY_qqqq.2000.levels.43.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.20\\,\\ensuremath{\\pm}\\,0.05"
   },
   "AnomalyMaxSicKnnXYYQqqqOneeighteight": {
     "json_path": "families.knn.label_X_YY_qqqq.2000.levels.188.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.187\\,\\ensuremath{\\pm}\\,0.018"
   },
   "AnomalyMaxSicKnnXYYQqqqOneseven": {
     "json_path": "families.knn.label_X_YY_qqqq.2000.levels.17.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.240\\,\\ensuremath{\\pm}\\,0.019"
   },
   "AnomalyMaxSicKnnXYYQqqqOnesixtwo": {
     "json_path": "families.knn.label_X_YY_qqqq.2000.levels.162.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.249\\,\\ensuremath{\\pm}\\,0.021"
   },
   "AnomalyMaxSicMahalanobisXBbFourthree": {
     "json_path": "families.mahalanobis.label_X_bb.2000.levels.43.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "3.17\\,\\ensuremath{\\pm}\\,0.07"
   },
   "AnomalyMaxSicMahalanobisXBbOneeighteight": {
     "json_path": "families.mahalanobis.label_X_bb.2000.levels.188.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "3.11\\,\\ensuremath{\\pm}\\,0.08"
   },
   "AnomalyMaxSicMahalanobisXBbOneseven": {
     "json_path": "families.mahalanobis.label_X_bb.2000.levels.17.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "2.80\\,\\ensuremath{\\pm}\\,0.06"
   },
   "AnomalyMaxSicMahalanobisXBbOnesixtwo": {
     "json_path": "families.mahalanobis.label_X_bb.2000.levels.162.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "3.185\\,\\ensuremath{\\pm}\\,0.034"
   },
   "AnomalyMaxSicMahalanobisXQqFourthree": {
     "json_path": "families.mahalanobis.label_X_qq.2000.levels.43.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.141\\,\\ensuremath{\\pm}\\,0.023"
   },
   "AnomalyMaxSicMahalanobisXQqOneeighteight": {
     "json_path": "families.mahalanobis.label_X_qq.2000.levels.188.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.161\\,\\ensuremath{\\pm}\\,0.013"
   },
   "AnomalyMaxSicMahalanobisXQqOneseven": {
     "json_path": "families.mahalanobis.label_X_qq.2000.levels.17.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.134\\,\\ensuremath{\\pm}\\,0.018"
   },
   "AnomalyMaxSicMahalanobisXQqOnesixtwo": {
     "json_path": "families.mahalanobis.label_X_qq.2000.levels.162.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.165\\,\\ensuremath{\\pm}\\,0.006"
   },
   "AnomalyMaxSicMahalanobisXYYBbbFourthree": {
     "json_path": "families.mahalanobis.label_X_YY_bbb.2000.levels.43.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.93\\,\\ensuremath{\\pm}\\,0.24"
   },
   "AnomalyMaxSicMahalanobisXYYBbbOneeighteight": {
     "json_path": "families.mahalanobis.label_X_YY_bbb.2000.levels.188.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "6.9\\,\\ensuremath{\\pm}\\,0.5"
   },
   "AnomalyMaxSicMahalanobisXYYBbbOneseven": {
     "json_path": "families.mahalanobis.label_X_YY_bbb.2000.levels.17.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "3.44\\,\\ensuremath{\\pm}\\,0.32"
   },
   "AnomalyMaxSicMahalanobisXYYBbbOnesixtwo": {
     "json_path": "families.mahalanobis.label_X_YY_bbb.2000.levels.162.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "6.9\\,\\ensuremath{\\pm}\\,0.4"
   },
   "AnomalyMaxSicMahalanobisXYYBbbbFourthree": {
     "json_path": "families.mahalanobis.label_X_YY_bbbb.2000.levels.43.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "11.7\\,\\ensuremath{\\pm}\\,1.8"
   },
   "AnomalyMaxSicMahalanobisXYYBbbbOneeighteight": {
     "json_path": "families.mahalanobis.label_X_YY_bbbb.2000.levels.188.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "15.0\\,\\ensuremath{\\pm}\\,0.8"
   },
   "AnomalyMaxSicMahalanobisXYYBbbbOneseven": {
     "json_path": "families.mahalanobis.label_X_YY_bbbb.2000.levels.17.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "7.3\\,\\ensuremath{\\pm}\\,1.2"
   },
   "AnomalyMaxSicMahalanobisXYYBbbbOnesixtwo": {
     "json_path": "families.mahalanobis.label_X_YY_bbbb.2000.levels.162.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "17.9\\,\\ensuremath{\\pm}\\,1.4"
   },
   "AnomalyMaxSicMahalanobisXYYQqqFourthree": {
     "json_path": "families.mahalanobis.label_X_YY_qqq.2000.levels.43.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.088\\,\\ensuremath{\\pm}\\,0.016"
   },
   "AnomalyMaxSicMahalanobisXYYQqqOneeighteight": {
     "json_path": "families.mahalanobis.label_X_YY_qqq.2000.levels.188.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.108\\,\\ensuremath{\\pm}\\,0.013"
   },
   "AnomalyMaxSicMahalanobisXYYQqqOneseven": {
     "json_path": "families.mahalanobis.label_X_YY_qqq.2000.levels.17.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.066\\,\\ensuremath{\\pm}\\,0.017"
   },
   "AnomalyMaxSicMahalanobisXYYQqqOnesixtwo": {
     "json_path": "families.mahalanobis.label_X_YY_qqq.2000.levels.162.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.118\\,\\ensuremath{\\pm}\\,0.005"
   },
   "AnomalyMaxSicMahalanobisXYYQqqqFourthree": {
     "json_path": "families.mahalanobis.label_X_YY_qqqq.2000.levels.43.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.194\\,\\ensuremath{\\pm}\\,0.033"
   },
   "AnomalyMaxSicMahalanobisXYYQqqqOneeighteight": {
     "json_path": "families.mahalanobis.label_X_YY_qqqq.2000.levels.188.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.222\\,\\ensuremath{\\pm}\\,0.021"
   },
   "AnomalyMaxSicMahalanobisXYYQqqqOneseven": {
     "json_path": "families.mahalanobis.label_X_YY_qqqq.2000.levels.17.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.209\\,\\ensuremath{\\pm}\\,0.023"
   },
   "AnomalyMaxSicMahalanobisXYYQqqqOnesixtwo": {
     "json_path": "families.mahalanobis.label_X_YY_qqqq.2000.levels.162.max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.237\\,\\ensuremath{\\pm}\\,0.019"
   },
   "AnomalyMinBkgPass": {
@@ -781,8 +961,8 @@
   },
   "AnomalyNResamplings": {
     "json_path": "provenance.resamplings_per_seed",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "10"
   },
   "AnomalyNTemplate": {
@@ -793,296 +973,440 @@
   },
   "AnomalyNdThreshold": {
     "json_path": "not_detected_rule.threshold_max_sic",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.3"
+  },
+  "AnomalySigmaMinClassSumMatchedXBbFourthree": {
+    "json_path": "families.class_sum_matched.label_X_bb.2000.levels.43.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "2.8\\,\\ensuremath{\\pm}\\,0.6"
+  },
+  "AnomalySigmaMinClassSumMatchedXBbOneeighteight": {
+    "json_path": "families.class_sum_matched.label_X_bb.2000.levels.188.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "2.51\\,\\ensuremath{\\pm}\\,0.10"
+  },
+  "AnomalySigmaMinClassSumMatchedXBbOneseven": {
+    "json_path": "families.class_sum_matched.label_X_bb.2000.levels.17.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "2.44\\,\\ensuremath{\\pm}\\,0.04"
+  },
+  "AnomalySigmaMinClassSumMatchedXBbOnesixtwo": {
+    "json_path": "families.class_sum_matched.label_X_bb.2000.levels.162.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "2.48\\,\\ensuremath{\\pm}\\,0.13"
+  },
+  "AnomalySigmaMinClassSumMatchedXQqFourthree": {
+    "json_path": "families.class_sum_matched.label_X_qq.2000.levels.43.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "4.85\\,\\ensuremath{\\pm}\\,0.04"
+  },
+  "AnomalySigmaMinClassSumMatchedXQqOneeighteight": {
+    "json_path": "families.class_sum_matched.label_X_qq.2000.levels.188.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "4.820\\,\\ensuremath{\\pm}\\,0.035"
+  },
+  "AnomalySigmaMinClassSumMatchedXQqOneseven": {
+    "json_path": "families.class_sum_matched.label_X_qq.2000.levels.17.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "4.826\\,\\ensuremath{\\pm}\\,0.021"
+  },
+  "AnomalySigmaMinClassSumMatchedXQqOnesixtwo": {
+    "json_path": "families.class_sum_matched.label_X_qq.2000.levels.162.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "4.819\\,\\ensuremath{\\pm}\\,0.031"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYBbbFourthree": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbb.2000.levels.43.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "2.2\\,\\ensuremath{\\pm}\\,1.1"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYBbbOneeighteight": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbb.2000.levels.188.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.61\\,\\ensuremath{\\pm}\\,0.22"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYBbbOneseven": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbb.2000.levels.17.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.64\\,\\ensuremath{\\pm}\\,0.13"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYBbbOnesixtwo": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbb.2000.levels.162.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.53\\,\\ensuremath{\\pm}\\,0.22"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYBbbbFourthree": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbbb.2000.levels.43.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "2.3\\,\\ensuremath{\\pm}\\,1.4"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYBbbbOneeighteight": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbbb.2000.levels.188.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.59\\,\\ensuremath{\\pm}\\,0.25"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYBbbbOneseven": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbbb.2000.levels.17.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.69\\,\\ensuremath{\\pm}\\,0.13"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYBbbbOnesixtwo": {
+    "json_path": "families.class_sum_matched.label_X_YY_bbbb.2000.levels.162.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "1.59\\,\\ensuremath{\\pm}\\,0.26"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYQqqFourthree": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqq.2000.levels.43.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.6\\,\\ensuremath{\\pm}\\,0.4"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYQqqOneeighteight": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqq.2000.levels.188.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.45\\,\\ensuremath{\\pm}\\,0.20"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYQqqOneseven": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqq.2000.levels.17.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.40\\,\\ensuremath{\\pm}\\,0.06"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYQqqOnesixtwo": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqq.2000.levels.162.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.33\\,\\ensuremath{\\pm}\\,0.09"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYQqqqFourthree": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqqq.2000.levels.43.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.4\\,\\ensuremath{\\pm}\\,0.6"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYQqqqOneeighteight": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqqq.2000.levels.188.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.2\\,\\ensuremath{\\pm}\\,0.4"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYQqqqOneseven": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqqq.2000.levels.17.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.19\\,\\ensuremath{\\pm}\\,0.08"
+  },
+  "AnomalySigmaMinClassSumMatchedXYYQqqqOnesixtwo": {
+    "json_path": "families.class_sum_matched.label_X_YY_qqqq.2000.levels.162.ln_sigma_min",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    "value": "3.01\\,\\ensuremath{\\pm}\\,0.29"
   },
   "AnomalySigmaMinKnnXBbFourthree": {
     "json_path": "families.knn.label_X_bb.2000.levels.43.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "2.18\\,\\ensuremath{\\pm}\\,0.12"
   },
   "AnomalySigmaMinKnnXBbOneeighteight": {
     "json_path": "families.knn.label_X_bb.2000.levels.188.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "2.39\\,\\ensuremath{\\pm}\\,0.12"
   },
   "AnomalySigmaMinKnnXBbOneseven": {
     "json_path": "families.knn.label_X_bb.2000.levels.17.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.93\\,\\ensuremath{\\pm}\\,0.07"
   },
   "AnomalySigmaMinKnnXBbOnesixtwo": {
     "json_path": "families.knn.label_X_bb.2000.levels.162.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "2.29\\,\\ensuremath{\\pm}\\,0.05"
   },
   "AnomalySigmaMinKnnXQqFourthree": {
     "json_path": "families.knn.label_X_qq.2000.levels.43.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.42\\,\\ensuremath{\\pm}\\,0.12"
   },
   "AnomalySigmaMinKnnXQqOneeighteight": {
     "json_path": "families.knn.label_X_qq.2000.levels.188.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.30\\,\\ensuremath{\\pm}\\,0.06"
   },
   "AnomalySigmaMinKnnXQqOneseven": {
     "json_path": "families.knn.label_X_qq.2000.levels.17.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.55\\,\\ensuremath{\\pm}\\,0.09"
   },
   "AnomalySigmaMinKnnXQqOnesixtwo": {
     "json_path": "families.knn.label_X_qq.2000.levels.162.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.285\\,\\ensuremath{\\pm}\\,0.031"
   },
   "AnomalySigmaMinKnnXYYBbbFourthree": {
     "json_path": "families.knn.label_X_YY_bbb.2000.levels.43.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.43\\,\\ensuremath{\\pm}\\,0.06"
   },
   "AnomalySigmaMinKnnXYYBbbOneeighteight": {
     "json_path": "families.knn.label_X_YY_bbb.2000.levels.188.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.17\\,\\ensuremath{\\pm}\\,0.08"
   },
   "AnomalySigmaMinKnnXYYBbbOneseven": {
     "json_path": "families.knn.label_X_YY_bbb.2000.levels.17.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.61\\,\\ensuremath{\\pm}\\,0.08"
   },
   "AnomalySigmaMinKnnXYYBbbOnesixtwo": {
     "json_path": "families.knn.label_X_YY_bbb.2000.levels.162.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.13\\,\\ensuremath{\\pm}\\,0.05"
   },
   "AnomalySigmaMinKnnXYYBbbbFourthree": {
     "json_path": "families.knn.label_X_YY_bbbb.2000.levels.43.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "0.71\\,\\ensuremath{\\pm}\\,0.06"
   },
   "AnomalySigmaMinKnnXYYBbbbOneeighteight": {
     "json_path": "families.knn.label_X_YY_bbbb.2000.levels.188.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "0.70\\,\\ensuremath{\\pm}\\,0.04"
   },
   "AnomalySigmaMinKnnXYYBbbbOneseven": {
     "json_path": "families.knn.label_X_YY_bbbb.2000.levels.17.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "0.84\\,\\ensuremath{\\pm}\\,0.05"
   },
   "AnomalySigmaMinKnnXYYBbbbOnesixtwo": {
     "json_path": "families.knn.label_X_YY_bbbb.2000.levels.162.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "0.597\\,\\ensuremath{\\pm}\\,0.026"
   },
   "AnomalySigmaMinKnnXYYQqqFourthree": {
     "json_path": "families.knn.label_X_YY_qqq.2000.levels.43.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.59\\,\\ensuremath{\\pm}\\,0.11"
   },
   "AnomalySigmaMinKnnXYYQqqOneeighteight": {
     "json_path": "families.knn.label_X_YY_qqq.2000.levels.188.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.54\\,\\ensuremath{\\pm}\\,0.06"
   },
   "AnomalySigmaMinKnnXYYQqqOneseven": {
     "json_path": "families.knn.label_X_YY_qqq.2000.levels.17.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.67\\,\\ensuremath{\\pm}\\,0.08"
   },
   "AnomalySigmaMinKnnXYYQqqOnesixtwo": {
     "json_path": "families.knn.label_X_YY_qqq.2000.levels.162.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.45\\,\\ensuremath{\\pm}\\,0.04"
   },
   "AnomalySigmaMinKnnXYYQqqqFourthree": {
     "json_path": "families.knn.label_X_YY_qqqq.2000.levels.43.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.18\\,\\ensuremath{\\pm}\\,0.17"
   },
   "AnomalySigmaMinKnnXYYQqqqOneeighteight": {
     "json_path": "families.knn.label_X_YY_qqqq.2000.levels.188.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.22\\,\\ensuremath{\\pm}\\,0.06"
   },
   "AnomalySigmaMinKnnXYYQqqqOneseven": {
     "json_path": "families.knn.label_X_YY_qqqq.2000.levels.17.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.04\\,\\ensuremath{\\pm}\\,0.06"
   },
   "AnomalySigmaMinKnnXYYQqqqOnesixtwo": {
     "json_path": "families.knn.label_X_YY_qqqq.2000.levels.162.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.02\\,\\ensuremath{\\pm}\\,0.07"
   },
   "AnomalySigmaMinMahalanobisXBbFourthree": {
     "json_path": "families.mahalanobis.label_X_bb.2000.levels.43.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.59\\,\\ensuremath{\\pm}\\,0.04"
   },
   "AnomalySigmaMinMahalanobisXBbOneeighteight": {
     "json_path": "families.mahalanobis.label_X_bb.2000.levels.188.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.62\\,\\ensuremath{\\pm}\\,0.04"
   },
   "AnomalySigmaMinMahalanobisXBbOneseven": {
     "json_path": "families.mahalanobis.label_X_bb.2000.levels.17.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.80\\,\\ensuremath{\\pm}\\,0.04"
   },
   "AnomalySigmaMinMahalanobisXBbOnesixtwo": {
     "json_path": "families.mahalanobis.label_X_bb.2000.levels.162.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.582\\,\\ensuremath{\\pm}\\,0.017"
   },
   "AnomalySigmaMinMahalanobisXQqFourthree": {
     "json_path": "families.mahalanobis.label_X_qq.2000.levels.43.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.40\\,\\ensuremath{\\pm}\\,0.09"
   },
   "AnomalySigmaMinMahalanobisXQqOneeighteight": {
     "json_path": "families.mahalanobis.label_X_qq.2000.levels.188.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.32\\,\\ensuremath{\\pm}\\,0.05"
   },
   "AnomalySigmaMinMahalanobisXQqOneseven": {
     "json_path": "families.mahalanobis.label_X_qq.2000.levels.17.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.42\\,\\ensuremath{\\pm}\\,0.07"
   },
   "AnomalySigmaMinMahalanobisXQqOnesixtwo": {
     "json_path": "families.mahalanobis.label_X_qq.2000.levels.162.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.304\\,\\ensuremath{\\pm}\\,0.021"
   },
   "AnomalySigmaMinMahalanobisXYYBbbFourthree": {
     "json_path": "families.mahalanobis.label_X_YY_bbb.2000.levels.43.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.04\\,\\ensuremath{\\pm}\\,0.05"
   },
   "AnomalySigmaMinMahalanobisXYYBbbOneeighteight": {
     "json_path": "families.mahalanobis.label_X_YY_bbb.2000.levels.188.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "0.75\\,\\ensuremath{\\pm}\\,0.06"
   },
   "AnomalySigmaMinMahalanobisXYYBbbOneseven": {
     "json_path": "families.mahalanobis.label_X_YY_bbb.2000.levels.17.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "1.48\\,\\ensuremath{\\pm}\\,0.14"
   },
   "AnomalySigmaMinMahalanobisXYYBbbOnesixtwo": {
     "json_path": "families.mahalanobis.label_X_YY_bbb.2000.levels.162.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "0.75\\,\\ensuremath{\\pm}\\,0.05"
   },
   "AnomalySigmaMinMahalanobisXYYBbbbFourthree": {
     "json_path": "families.mahalanobis.label_X_YY_bbbb.2000.levels.43.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "0.45\\,\\ensuremath{\\pm}\\,0.06"
   },
   "AnomalySigmaMinMahalanobisXYYBbbbOneeighteight": {
     "json_path": "families.mahalanobis.label_X_YY_bbbb.2000.levels.188.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "0.351\\,\\ensuremath{\\pm}\\,0.021"
   },
   "AnomalySigmaMinMahalanobisXYYBbbbOneseven": {
     "json_path": "families.mahalanobis.label_X_YY_bbbb.2000.levels.17.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "0.72\\,\\ensuremath{\\pm}\\,0.11"
   },
   "AnomalySigmaMinMahalanobisXYYBbbbOnesixtwo": {
     "json_path": "families.mahalanobis.label_X_YY_bbbb.2000.levels.162.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "0.301\\,\\ensuremath{\\pm}\\,0.019"
   },
   "AnomalySigmaMinMahalanobisXYYQqqFourthree": {
     "json_path": "families.mahalanobis.label_X_YY_qqq.2000.levels.43.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.61\\,\\ensuremath{\\pm}\\,0.07"
   },
   "AnomalySigmaMinMahalanobisXYYQqqOneeighteight": {
     "json_path": "families.mahalanobis.label_X_YY_qqq.2000.levels.188.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.52\\,\\ensuremath{\\pm}\\,0.05"
   },
   "AnomalySigmaMinMahalanobisXYYQqqOneseven": {
     "json_path": "families.mahalanobis.label_X_YY_qqq.2000.levels.17.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.70\\,\\ensuremath{\\pm}\\,0.07"
   },
   "AnomalySigmaMinMahalanobisXYYQqqOnesixtwo": {
     "json_path": "families.mahalanobis.label_X_YY_qqq.2000.levels.162.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.483\\,\\ensuremath{\\pm}\\,0.021"
   },
   "AnomalySigmaMinMahalanobisXYYQqqqFourthree": {
     "json_path": "families.mahalanobis.label_X_YY_qqqq.2000.levels.43.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.20\\,\\ensuremath{\\pm}\\,0.12"
   },
   "AnomalySigmaMinMahalanobisXYYQqqqOneeighteight": {
     "json_path": "families.mahalanobis.label_X_YY_qqqq.2000.levels.188.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.10\\,\\ensuremath{\\pm}\\,0.07"
   },
   "AnomalySigmaMinMahalanobisXYYQqqqOneseven": {
     "json_path": "families.mahalanobis.label_X_YY_qqqq.2000.levels.17.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.15\\,\\ensuremath{\\pm}\\,0.08"
   },
   "AnomalySigmaMinMahalanobisXYYQqqqOnesixtwo": {
     "json_path": "families.mahalanobis.label_X_YY_qqqq.2000.levels.162.ln_sigma_min",
-    "sha256": "a5c4db7e1b4b77d547b4428ff42f9cbdf9b33b8780edd3669051ee8b52f14d0e",
-    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v3/anomaly_summary.json",
+    "sha256": "ae78806bfafca3a961e327a19b1d297c77fd8c35a5aa69e11ba69a7c81b5ebec",
+    "source_file": "experiments/FIGS/data/anomaly_merged_v4/analysis_v4/anomaly_summary.json",
     "value": "4.06\\,\\ensuremath{\\pm}\\,0.06"
   },
   "AnomalySigmaT": {
