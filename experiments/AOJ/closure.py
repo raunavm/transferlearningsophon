@@ -37,6 +37,16 @@ FLAGS
                         displacement, which is what stage_aoj.py assumed
 A hard flag makes the feasibility verdict NO-GO whatever the peaks look like.
 
+POOLING THE SHARDS (2026-09-29, audit B5). The full run checks closure once per
+shard, on that shard's files. A median or an IQR cannot be averaged across
+shards, so every continuous row also carries each sample's quantile function
+(QUANTILE_LEVELS) and its particle count; pool_shards() rebuilds each shard's
+CDF from it, averages the CDFs weighted by count, and reads the pooled median,
+IQR, 1st/99th percentiles and the Kolmogorov-Smirnov distance to the reference
+off the result -- exact to the quantile grid. The reference is the same JetClass-
+II jets in every shard; pool_shards() refuses shards whose reference differs.
+Closures written before this (no quantiles) are summarised shard by shard.
+
 Run:  python3 experiments/AOJ/closure.py --aoj /scratch/staged/*.parquet \
           --reference /jc2/jet_data/QCD_035{0..3}.parquet --out /data/results/aoj/feasibility_v1
 """
@@ -62,6 +72,7 @@ UNIT_BANDS = ((5.0, 20.0), (0.05, 0.2))
 NO_TRACK_MAX = 0.20
 DISPLACED = 0.1          # |tanh(d0 / mm)| above which a track counts as displaced
 ASYM_SIGMA = 5.0
+QUANTILE_LEVELS = np.linspace(0.0, 1.0, 1001)
 
 
 def load_inputs(config, files, pt_window, max_jets):
@@ -90,6 +101,10 @@ def load_inputs(config, files, pt_window, max_jets):
 def _quantiles(x):
     p1, p25, p50, p75, p99 = np.percentile(x, [1, 25, 50, 75, 99])
     return dict(median=float(p50), iqr=float(p75 - p25), p01=float(p1), p99=float(p99))
+
+
+def _qfunc(x):
+    return [float(v) for v in np.quantile(x, QUANTILE_LEVELS)]
 
 
 def _asymmetry(a, b):
@@ -124,7 +139,8 @@ def compare(f_aoj, m_aoj, f_ref, m_ref, names):
                    shift_in_ref_iqr=(qa["median"] - qr["median"]) / qr["iqr"] if qr["iqr"] else None,
                    iqr_aoj=qa["iqr"], iqr_reference=qr["iqr"],
                    iqr_ratio=qa["iqr"] / qr["iqr"] if qr["iqr"] else None,
-                   p01_aoj=qa["p01"], p99_aoj=qa["p99"], p01_reference=qr["p01"], p99_reference=qr["p99"])
+                   p01_aoj=qa["p01"], p99_aoj=qa["p99"], p01_reference=qr["p01"], p99_reference=qr["p99"],
+                   n_aoj=int(a.size), n_reference=int(r.size), quantiles_aoj=_qfunc(a), quantiles_reference=_qfunc(r))
         if qa["p01"] > qr["p99"] or qr["p01"] > qa["p99"]:
             row["flag"] = "support"; hard.append(f"support:{k}")
         if k in DISPLACEMENT and row["ratio"] and any(lo < row["ratio"] < hi for lo, hi in UNIT_BANDS):
@@ -167,10 +183,100 @@ def compare(f_aoj, m_aoj, f_ref, m_ref, names):
         row["flag"] = "neutral_with_displacement"; soft.append(f"neutral_with_displacement {da:.3f} vs {dr:.3f}")
     rows.append(row)
 
-    ma, mr = _quantiles(m_aoj.sum(axis=1)), _quantiles(m_ref.sum(axis=1))
+    na_, nr_ = m_aoj.sum(axis=1), m_ref.sum(axis=1)
+    ma, mr = _quantiles(na_), _quantiles(nr_)
     rows.append(dict(feature="n_particles", stat="median|iqr", aoj=ma["median"], reference=mr["median"],
-                     ratio=ma["median"] / mr["median"], iqr_aoj=ma["iqr"], iqr_reference=mr["iqr"]))
+                     ratio=ma["median"] / mr["median"], iqr_aoj=ma["iqr"], iqr_reference=mr["iqr"],
+                     iqr_ratio=ma["iqr"] / mr["iqr"] if mr["iqr"] else None,
+                     shift_in_ref_iqr=(ma["median"] - mr["median"]) / mr["iqr"] if mr["iqr"] else None,
+                     n_aoj=int(na_.size), n_reference=int(nr_.size),
+                     quantiles_aoj=_qfunc(na_), quantiles_reference=_qfunc(nr_)))
     return rows, hard, soft
+
+
+def _cdf(q, x):
+    """CDF at x of a sample given by its quantile function q on QUANTILE_LEVELS.
+    Flat stretches (ties) take the upper level, as a CDF does."""
+    q = np.asarray(q, float)
+    return np.interp(x, q, QUANTILE_LEVELS, left=0.0, right=1.0)
+
+
+def _pooled_quantile(qs, ns, levels):
+    """Quantiles at `levels` of the count-weighted mixture of samples given by their
+    quantile functions: the mixture CDF on the union of their knots, inverted."""
+    grid = np.unique(np.concatenate([np.asarray(q, float) for q in qs]))
+    cdf = sum(n * _cdf(q, grid) for q, n in zip(qs, ns)) / sum(ns)
+    cdf = np.maximum.accumulate(cdf)
+    return np.interp(levels, cdf, grid)
+
+
+def ks_distance(q_a, q_b) -> float:
+    """max |F_a - F_b| of two samples given by their quantile functions."""
+    grid = np.unique(np.concatenate([np.asarray(q_a, float), np.asarray(q_b, float)]))
+    return float(np.max(np.abs(_cdf(q_a, grid) - _cdf(q_b, grid))))
+
+
+SUMMARY_FIELDS = ("aoj", "reference", "ratio", "iqr_ratio", "shift_in_ref_iqr")
+
+
+def pool_shards(closures: list[dict]) -> dict:
+    """One closure table from the per-shard closure.json of a run.
+
+    Per feature: every field of SUMMARY_FIELDS shard by shard, with its mean, SD
+    (n - 1) and range over the shards; and, where every shard carries quantile
+    functions, the POOLED AOJ median, IQR, 1st/99th percentiles, the ratios to the
+    reference and the KS distance. Flags are the union, tagged by shard index."""
+    if not closures:
+        raise SystemExit("FATAL: no closure to pool")
+    by_feat = {}
+    for i, c in enumerate(closures):
+        for r in c["rows"]:
+            by_feat.setdefault(r["feature"], []).append((i, r))
+    out = {}
+    for feat, rs in by_feat.items():
+        if len(rs) != len(closures):
+            raise SystemExit(f"FATAL: {feat} is in {len(rs)} of {len(closures)} shard closures")
+        row = dict(feature=feat, stat=rs[0][1]["stat"], n_shards=len(rs))
+        for k in SUMMARY_FIELDS:
+            v = [r.get(k) for _, r in rs]
+            if all(x is not None for x in v):
+                v = np.array(v, float)
+                row[k] = dict(per_shard=v.tolist(), mean=float(v.mean()),
+                              sd=float(v.std(ddof=1)) if len(v) > 1 else 0.0,
+                              min=float(v.min()), max=float(v.max()))
+        if all("quantiles_aoj" in r for _, r in rs):
+            refs = {tuple(r["quantiles_reference"]) for _, r in rs}
+            if len(refs) != 1:
+                raise SystemExit(f"FATAL: {feat}: the shards' reference samples differ; pooling "
+                                 "assumes one reference")
+            q_ref = rs[0][1]["quantiles_reference"]
+            pooled = _pooled_quantile([r["quantiles_aoj"] for _, r in rs],
+                                      [r["n_aoj"] for _, r in rs], np.array([0.01, 0.25, 0.5, 0.75, 0.99]))
+            p01, p25, p50, p75, p99 = (float(v) for v in pooled)
+            ref = _quantiles_from(q_ref)
+            grid_q = _pooled_quantile([r["quantiles_aoj"] for _, r in rs],
+                                      [r["n_aoj"] for _, r in rs], QUANTILE_LEVELS)
+            row["pooled"] = dict(
+                n_aoj=int(sum(r["n_aoj"] for _, r in rs)), n_reference=int(rs[0][1]["n_reference"]),
+                median_aoj=p50, iqr_aoj=p75 - p25, p01_aoj=p01, p99_aoj=p99,
+                median_reference=ref["median"], iqr_reference=ref["iqr"],
+                p01_reference=ref["p01"], p99_reference=ref["p99"],
+                median_ratio=p50 / ref["median"] if abs(ref["median"]) > 1e-6 else None,
+                iqr_ratio=(p75 - p25) / ref["iqr"] if ref["iqr"] else None,
+                shift_in_ref_iqr=(p50 - ref["median"]) / ref["iqr"] if ref["iqr"] else None,
+                ks=ks_distance(grid_q, q_ref))
+        out[feat] = row
+    hard = [f"shard{i}: {h}" for i, c in enumerate(closures) for h in c["hard_flags"]]
+    soft = [f"shard{i}: {s}" for i, c in enumerate(closures) for s in c["soft_flags"]]
+    return dict(n_shards=len(closures), n_jets_aoj=[c["n_jets_aoj"] for c in closures],
+                n_jets_reference=[c["n_jets_reference"] for c in closures],
+                pt_window=closures[0]["pt_window"], hard_flags=hard, soft_flags=soft, features=out)
+
+
+def _quantiles_from(q):
+    """_quantiles() of a sample given by its quantile function."""
+    p1, p25, p50, p75, p99 = np.interp([0.01, 0.25, 0.5, 0.75, 0.99], QUANTILE_LEVELS, np.asarray(q, float))
+    return dict(median=float(p50), iqr=float(p75 - p25), p01=float(p1), p99=float(p99))
 
 
 def main() -> int:
@@ -190,9 +296,10 @@ def main() -> int:
     rows, hard, soft = compare(f_aoj, m_aoj, f_ref, m_ref, names)
 
     out = pathlib.Path(a.out); out.mkdir(parents=True, exist_ok=True)
-    fields = sorted({k for r in rows for k in r}, key=lambda k: (k not in ("feature", "stat", "flag"), k))
+    fields = sorted({k for r in rows for k in r if not k.startswith("quantiles_")},
+                    key=lambda k: (k not in ("feature", "stat", "flag"), k))
     with (out / "closure_table.csv").open("w", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=fields); w.writeheader(); w.writerows(rows)
+        w = csv.DictWriter(fh, fieldnames=fields, extrasaction="ignore"); w.writeheader(); w.writerows(rows)
     (out / "closure.json").write_text(json.dumps(dict(
         n_jets_aoj=int(len(f_aoj)), n_jets_reference=int(len(f_ref)), pt_window=a.pt_window,
         hard_flags=hard, soft_flags=soft, rows=rows), indent=2))

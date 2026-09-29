@@ -100,3 +100,53 @@ def test_a_correlation_present_in_one_sample_only_is_a_soft_flag():
     f[:, ix] = f[:, ix] * rng.choice([-1.0, 1.0], (f.shape[0], 1))        # averages the asymmetry out
     _, hard, soft = cl.compare(f, m, *REF, NAMES)
     assert hard == [] and [s_.split(":")[0] for s_ in soft] == ["dz_deta_sign_one_sided"]
+
+
+# ---- pooling the shards (audit B5: the paper quoted shard 0 only) ----
+def _closure(seed, **kw):
+    rows, hard, soft = cl.compare(*tensors(seed, **kw), *REF, NAMES)
+    return dict(rows=rows, hard_flags=hard, soft_flags=soft, n_jets_aoj=1500, n_jets_reference=1500,
+                pt_window=[500.0, 700.0])
+
+
+def test_pooled_quantiles_equal_those_of_the_concatenated_sample():
+    """Three shards pooled from their quantile functions must give the median and
+    IQR of all their particles together, to the quantile grid's resolution."""
+    shards = [tensors(s, d0_scale=[1.0, 3.0, 8.0][s - 1]) for s in (1, 2, 3)]
+    pooled = cl.pool_shards([dict(zip(("rows", "hard_flags", "soft_flags"), cl.compare(*sh, *REF, NAMES)),
+                                  n_jets_aoj=1500, n_jets_reference=1500, pt_window=[500.0, 700.0])
+                             for sh in shards])
+    ix = NAMES.index("part_logptrel")
+    allv = np.concatenate([f[:, ix][m] for f, m in shards])
+    got = pooled["features"]["part_logptrel"]["pooled"]
+    assert got["median_aoj"] == pytest.approx(np.median(allv), abs=5e-3)
+    q25, q75 = np.percentile(allv, [25, 75])
+    assert got["iqr_aoj"] == pytest.approx(q75 - q25, abs=1e-2)
+    ixd = NAMES.index("part_d0")
+    d0 = np.concatenate([np.abs(f[:, ixd][m][f[:, ixd][m] != 0]) for f, m in shards])
+    p = pooled["features"]["part_d0"]["pooled"]
+    assert p["median_aoj"] == pytest.approx(np.median(d0), rel=0.02)
+    # the per-shard summary is kept beside it: three values, their spread
+    assert len(pooled["features"]["part_d0"]["iqr_ratio"]["per_shard"]) == 3
+    assert pooled["features"]["part_d0"]["iqr_ratio"]["max"] > 4 * pooled["features"]["part_d0"]["iqr_ratio"]["min"]
+
+
+def test_ks_distance_is_zero_for_one_sample_and_one_for_disjoint_ones():
+    q = np.quantile(np.random.default_rng(0).normal(size=5000), cl.QUANTILE_LEVELS)
+    assert cl.ks_distance(q, q) == 0.0
+    assert cl.ks_distance(q, q + 100.0) == pytest.approx(1.0)
+    pooled = cl.pool_shards([_closure(1), _closure(2)])
+    assert pooled["features"]["part_logptrel"]["pooled"]["ks"] < 0.05
+    assert cl.pool_shards([_closure(1, shift=8.0)])["features"]["part_logptrel"]["pooled"]["ks"] > 0.99
+
+
+def test_pooling_refuses_shards_with_different_references_and_summarises_old_closures():
+    a, b = _closure(1), _closure(2)
+    b = dict(b, rows=[dict(r, quantiles_reference=[v + 1 for v in r["quantiles_reference"]])
+                      if "quantiles_reference" in r else r for r in b["rows"]])
+    with pytest.raises(SystemExit, match="reference samples differ"):
+        cl.pool_shards([a, b])
+    old = [dict(c, rows=[{k: v for k, v in r.items() if not k.startswith("quantiles_")} for r in c["rows"]])
+           for c in (_closure(1), _closure(2))]
+    p = cl.pool_shards(old)
+    assert "pooled" not in p["features"]["part_d0"] and p["features"]["part_d0"]["iqr_ratio"]["mean"] > 0

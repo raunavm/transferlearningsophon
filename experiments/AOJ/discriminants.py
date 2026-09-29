@@ -22,6 +22,20 @@ QCD nodes come from experiments/EVAL/anomaly.py::node_roles -- a node is QCD onl
 if EVERY native class in it is -- so the denominator is the one the anomaly
 scores already use.
 
+THE PRONG-ONLY SCORE (2026-09-29, audit must-fix 9). The two scores above set
+one prong structure against QCD, so they carry everything that separates a
+hadronic resonance from a QCD jet -- colour flow, radiation, mass -- and the
+prong count. The paper said the real-data top selection is "carried by prong
+structure and mass"; the test of that needs a score that knows ONLY the prong
+count:
+
+    prong_only  = sum P(three-prong nodes) / sum P(two- and four-prong nodes)
+
+hadronic three-parton decays against hadronic two- and four-parton ones, no QCD
+node anywhere in it. Every term is a hadronic resonance, so the resonance-vs-QCD
+information cancels and what is left is which prong count the jet looks like.
+The same class-division criterion makes it the same score at every head.
+
 P_sig / (P_sig + P_QCD) = sigmoid(logsumexp(sig logits) - logsumexp(QCD logits)):
 the softmax normaliser cancels, so the score is computed from raw logits in log
 space and PERSISTED AS THE LOG-ODDS in float16. A probability in float16 has a
@@ -46,6 +60,11 @@ from scipy.special import logsumexp
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 STRUCTURES = {"two_prong": "2P_HAD_2PARTON", "three_prong": "3P_HAD_3PARTON"}
+# Every score written, as (numerator structures, denominator structures); "QCD" is
+# the QCD nodes. Persisted as <name>_logodds.
+SCORES = {"two_prong": ((STRUCTURES["two_prong"],), "QCD"),
+          "three_prong": ((STRUCTURES["three_prong"],), "QCD"),
+          "prong_only": ((STRUCTURES["three_prong"],), (STRUCTURES["two_prong"], "4P_HAD_4PARTON"))}
 # Rungs whose node names carry the structural prefix. The finer ones (L188, L162)
 # name nodes after native classes, so their members come through these.
 NAMED_RUNGS = ["R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1"]
@@ -102,13 +121,35 @@ def n_outputs(rung: str) -> int:
     return len(_survival.read_map()[1][rung])
 
 
-def log_odds(logits: np.ndarray, rung: str, structure: str) -> np.ndarray:
-    """log[ sum P(structure nodes) / sum P(QCD nodes) ], from raw logits."""
+def nodes(rung: str, structures) -> list[int]:
+    """Output indices of a `rung` head realising the union of `structures`; "QCD"
+    is the QCD nodes."""
+    if structures == "QCD":
+        return qcd_nodes(rung)
+    return sorted({i for s in structures for i in members(rung, s)})
+
+
+def contrast(logits: np.ndarray, rung: str, score_name: str) -> np.ndarray:
+    """log[ sum P(numerator nodes) / sum P(denominator nodes) ] of SCORES[score_name],
+    from raw logits. The two node sets must not share a node."""
+    num, den = (nodes(rung, s) for s in SCORES[score_name])
+    if set(num) & set(den):
+        raise SystemExit(f"FATAL: {score_name} at {rung}: nodes {sorted(set(num) & set(den))} "
+                         "are in both the numerator and the denominator")
+    return _lse_ratio(logits, rung, num, den)
+
+
+def _lse_ratio(logits, rung, num, den):
     if logits.ndim != 2 or logits.shape[1] != n_outputs(rung):
         raise SystemExit(f"FATAL: logits {logits.shape} are not a {rung} head "
                          f"({n_outputs(rung)} outputs)")
     x = logits.astype(np.float64)
-    return logsumexp(x[:, members(rung, structure)], axis=1) - logsumexp(x[:, qcd_nodes(rung)], axis=1)
+    return logsumexp(x[:, num], axis=1) - logsumexp(x[:, den], axis=1)
+
+
+def log_odds(logits: np.ndarray, rung: str, structure: str) -> np.ndarray:
+    """log[ sum P(structure nodes) / sum P(QCD nodes) ], from raw logits."""
+    return _lse_ratio(logits, rung, members(rung, structure), qcd_nodes(rung))
 
 
 def score(logits: np.ndarray, rung: str, structure: str) -> np.ndarray:
@@ -134,7 +175,8 @@ def main() -> int:
     # The full run persists only the three-prong score: the two-prong channel was
     # WITHDRAWN as a design error (docs/PRESPEC_2026-09.md, amendment 2026-09-19),
     # so its score is not written where a later reader could fit it.
-    ap.add_argument("--structures", nargs="+", choices=list(STRUCTURES), default=list(STRUCTURES))
+    # prong_only (the "carried by prong structure" test) is written only when asked.
+    ap.add_argument("--structures", nargs="+", choices=list(SCORES), default=list(STRUCTURES))
     a = ap.parse_args()
 
     ext, out = pathlib.Path(a.extract_dir), pathlib.Path(a.out)
@@ -162,7 +204,7 @@ def main() -> int:
                              "logits are not row-aligned with them")
 
     out.mkdir(parents=True, exist_ok=True)
-    lo = {s: log_odds(np.asarray(logits), a.rung, STRUCTURES[s]) for s in a.structures}
+    lo = {s: contrast(np.asarray(logits), a.rung, s) for s in a.structures}
     np.savez(out / f"scores_{a.name}.npz",
              **{f"{s}_logodds": v.astype(np.float16) for s, v in lo.items()})
 
@@ -180,7 +222,8 @@ def main() -> int:
         name=a.name, rung=a.rung, n_jets=n, n_outputs=n_outputs(a.rung),
         checkpoint=manifest.get("checkpoint"), checkpoint_sha256=manifest.get("checkpoint_sha256"),
         class_logit_columns=[lo_col, hi_col],
-        members={s: members(a.rung, STRUCTURES[s]) for s in a.structures},
+        members={s: nodes(a.rung, SCORES[s][0]) for s in a.structures},
+        denominators={s: nodes(a.rung, SCORES[s][1]) for s in a.structures},
         qcd_nodes=qcd_nodes(a.rung),
         median_logodds={s: float(np.median(v)) for s, v in lo.items()})
     (out / f"scores_{a.name}.json").write_text(json.dumps(summary, indent=2))

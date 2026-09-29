@@ -160,3 +160,48 @@ def test_the_withdrawn_two_prong_score_can_be_left_unwritten(tmp_path, monkeypat
     _fake_extraction(tmp_path, monkeypatch, extra=("--structures", "three_prong"))
     assert disc.main() == 0
     assert np.load(tmp_path / "out" / "scores_m.npz").files == ["three_prong_logodds"]
+
+
+# ---- the prong-only score (audit must-fix 9: "carried by prong structure") ----
+def test_the_prong_only_score_is_three_over_two_plus_four_prong_with_no_qcd_node():
+    rng = np.random.default_rng(3)
+    p188 = rng.dirichlet(np.full(188, 0.3), size=400)
+    got = disc.contrast(np.log(p188), "L188", "prong_only")
+    three = sorted(disc.native_classes("3P_HAD_3PARTON"))
+    other = sorted(disc.native_classes("2P_HAD_2PARTON") | disc.native_classes("4P_HAD_4PARTON"))
+    np.testing.assert_allclose(got, np.log(p188[:, three].sum(1) / p188[:, other].sum(1)), rtol=1e-10)
+    qcd = {int(r["jet_label"]) for r in ROWS if r["class_name"].startswith("label_QCD_")}
+    for rung in HEADS:
+        used = _native(rung, disc.nodes(rung, disc.SCORES["prong_only"][0])
+                       + disc.nodes(rung, disc.SCORES["prong_only"][1]))
+        assert not used & qcd, f"{rung}: the prong-only score reads a QCD node"
+        assert len(_native(rung, disc.nodes(rung, disc.SCORES["prong_only"][1]))) == 37
+
+
+def test_every_score_is_identical_at_every_granularity_under_class_division():
+    rng = np.random.default_rng(4)
+    p188 = rng.dirichlet(np.full(188, 0.3), size=300)
+    ref = {s: disc.contrast(np.log(p188), "L188", s) for s in disc.SCORES}
+    for rung, k in HEADS.items():
+        node = np.array([int(r[rung]) for r in sorted(ROWS, key=lambda r: int(r["jet_label"]))])
+        pk = np.zeros((len(p188), k))
+        np.add.at(pk, (slice(None), node), p188)
+        for s in disc.SCORES:
+            np.testing.assert_allclose(disc.contrast(np.log(pk), rung, s), ref[s], rtol=1e-10)
+
+
+def test_the_three_prong_score_through_contrast_is_bit_identical_to_log_odds():
+    """The rescore reproduces v1's persisted scores only if the arithmetic is the same."""
+    x = np.random.default_rng(5).normal(size=(200, 43)) * 4
+    assert np.array_equal(disc.contrast(x, "R42_Q1", "three_prong"), disc.log_odds(x, "R42_Q1", "3P_HAD_3PARTON"))
+
+
+def test_main_writes_the_prong_only_score_when_asked(tmp_path, monkeypatch):
+    _fake_extraction(tmp_path, monkeypatch, extra=("--structures", "three_prong", "prong_only"))
+    assert disc.main() == 0
+    s = np.load(tmp_path / "out" / "scores_m.npz")
+    assert sorted(s.files) == ["prong_only_logodds", "three_prong_logodds"]
+    full = np.load(tmp_path / "extract" / "logits.npy")
+    assert np.array_equal(s["prong_only_logodds"], disc.contrast(full, "L162", "prong_only").astype(np.float16))
+    summary = json.loads((tmp_path / "out" / "scores_m.json").read_text())
+    assert summary["denominators"]["prong_only"] == disc.nodes("L162", disc.SCORES["prong_only"][1])

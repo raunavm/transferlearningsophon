@@ -211,3 +211,74 @@ def test_the_v3_fit_is_the_first_fit_with_its_checks_appended():
     after = three[three.index('ls -la "${OUT}"'):]
     order = [after.index(s) for s in ("fit_convergence_check.py", "export_fit_bins.py", "fit_minimum_diagnostic.py")]
     assert order == sorted(order) and '--histograms "${OUT}/histograms.npz"' in after
+
+
+# ---- the checks of the real-data section (audit B5, must-fix 9) ----
+RESCORE = sorted(p for p in SPECS if "-rescore-s" in p.name)
+SIM = sorted(p for p in SPECS if "-sim-g" in p.name)
+
+
+def test_each_rescore_shard_is_its_first_run_shard_with_only_the_listed_changes():
+    """Staging, row alignment and scoring must be the first run's line for line, so the
+    three-prong score can be checked bit for bit against it."""
+    assert len(RESCORE) == B.N_SHARDS
+    for i, fs in enumerate(B.shards()):
+        one, two = B.render_shard(i, fs), B.render_rescore_shard(i, fs)
+        s1, s2 = _script(one), _script(two)
+        assert s2.replace(f"OUT={B.RESCORE_ROOT}/shard{i}", f"OUT={B.OUT_ROOT}/shard{i}", 1) \
+                 .replace(f'--branch "{B.RESCORE_PIN}"', f'--branch "{B.PIN}"') \
+                 .replace("--structures three_prong prong_only", "--structures three_prong") \
+                 .replace("".join(ln[10:] + "\n" for ln in B._failure_accounting("${OUT}", FT.EXIT_HALT)
+                              .splitlines()), "") == s1
+        doc = yaml.safe_load(two)
+        assert doc["metadata"]["name"] == f"aoj-rescore-s{i}-raunav"
+        assert "two_prong" not in s2, "the withdrawn two-prong channel stays unwritten"
+
+
+@pytest.mark.parametrize("path", RESCORE + SIM, ids=lambda p: p.name)
+def test_the_check_jobs_carry_the_retry_policy_of_the_fine_tuning_jobs(path):
+    doc = yaml.safe_load(SPECS[path])
+    spec = doc["spec"]
+    assert spec["backoffLimit"] == FT.ROBUST_BACKOFF
+    rules = spec["podFailurePolicy"]["rules"]
+    assert rules[0] == {"action": "FailJob", "onExitCodes": {"containerName": "main", "operator": "In",
+                                                              "values": [FT.EXIT_HALT]}}
+    assert rules[1]["action"] == "Ignore" and rules[1]["onPodConditions"] == [{"type": "DisruptionTarget"}]
+    assert [c["name"] for c in spec["template"]["spec"]["containers"]] == ["main"]
+    terms = spec["template"]["spec"]["affinity"]["nodeAffinity"][
+        "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
+    gpu = [t for t in terms if t["key"] == "nvidia.com/gpu.product"]
+    assert {g["operator"] for g in gpu} == {"Exists", "NotIn"}
+    assert f'--branch "{B.RESCORE_PIN}"' in SPECS[path]
+
+
+def _accounting_run(tmp_path, rc):
+    """One attempt of the failure accounting, ending with exit code rc."""
+    script = "set -euo pipefail\nACC=" + str(tmp_path) + "\n" + B._failure_accounting("${ACC}", 42) + f"exit {rc}\n"
+    return subprocess.run(["bash", "-c", script], capture_output=True, text=True).returncode
+
+
+def test_two_failed_attempts_halt_with_the_failjob_code_and_evictions_do_not_count(tmp_path):
+    assert _accounting_run(tmp_path, 1) == 1
+    assert _accounting_run(tmp_path, 0) == 0          # a successful attempt is not a failure
+    assert _accounting_run(tmp_path, 1) == 1
+    assert _accounting_run(tmp_path, 0) == 42, "two failed attempts: the next one halts at once"
+    assert (tmp_path / "FAILED_ATTEMPTS").read_text().count("rc=1") == 2
+
+
+def test_the_sim_jobs_score_every_model_once_on_one_file_list_of_test_files_only():
+    names = [re.findall(r'^\s+scored (\S+) "', SPECS[p], re.M) for p in SIM]
+    flat = [n for g in names for n in g]
+    assert sorted(flat) == sorted(m.name for m in B.MODELS) and len(flat) == len(set(flat))
+    lists = {re.search(r'FILES="([^"]+)"', SPECS[p]).group(1) for p in SIM}
+    assert len(lists) == 1, "every model must read the same files in the same order"
+    files = lists.pop().split()
+    fam = {"Res34P": (1075, 1289), "QCD": (350, 419)}
+    for f in files:
+        m = re.fullmatch(r"/jc2/jet_data/(Res34P|QCD)_(\d{4})\.parquet", f)
+        assert m and fam[m[1]][0] <= int(m[2]) <= fam[m[1]][1], f"{f} is not a test file"
+    assert sum("QCD_" in f for f in files) == 70
+    for p in SIM:
+        s = _script(SPECS[p])
+        assert "--num-workers 1" in s and f"--data-config {B.SIM_CONFIG}" in s
+        assert "sim_scores.py" in s and "rm -rf \"/scratch/extract/$1\"" in s

@@ -89,6 +89,39 @@ FIT3_PIN = "mtx-s1.63"
 FIT3_NEEDED_FLAGS = {"experiments/AOJ/peak_fit.py": "n_at_floor",
                      "experiments/AOJ/fit_minimum_diagnostic.py": "def profile_error",
                      "experiments/AOJ/export_fit_bins.py": "these are not the bins that run fitted"}
+# THE CHECKS OF THE REAL-DATA SECTION (2026-09-29, audit B5 / must-fix 9). Two GPU runs
+# feed experiments/AOJ/realdata_checks.py, both scoring the SAME v1 checkpoints as the
+# shards above:
+#   rescore   the 80 files again, every model now also writing the prong-only score
+#             (discriminants.SCORES) -- the test of "carried by prong structure" -- and
+#             the closure now keeping quantile functions, so the ten shards pool exactly.
+#             The three-prong score must come out bit-identical to the first run's.
+#   sim       JetClass-II test files through the AspenOpenJets selection
+#             (experiments/AOJ/sim_scores.py): QCD for the map's closure at 1 % and for
+#             each model's background efficiency at its data cut, three-prong decays
+#             for its signal efficiency there -- what separates model from domain.
+# Both carry the pod failure policy of scripts/build_ft_jobs.py ("retries that survive
+# a flaky cluster"): evictions are not counted, two failed attempts halt the job.
+RESCORE_PIN = "mtx-s1.66"
+RESCORE_NEEDED_FLAGS = {"experiments/AOJ/discriminants.py": "prong_only",
+                        "experiments/AOJ/closure.py": "quantiles_aoj",
+                        "experiments/AOJ/sim_scores.py": "scored on other jets"}
+# The analysis job clones a later tag: realdata_checks.py is finished after the GPU
+# runs were launched, and it reads only what they write.
+CHECKS_PIN = "mtx-s1.67"
+CHECKS_NEEDED_FLAGS = {"experiments/AOJ/realdata_checks.py": "def step_reproduce",
+                       "experiments/AOJ/peak_fit.py": "data_efficiency_sidebands",
+                       "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json": "shape_variations"}
+RESCORE_ROOT = "/data/results/aoj/full_v1_rescore"
+SIM_ROOT = "/data/results/aoj/sim_v1"
+SIM_CONFIG = "configs/finetune/JetClassII_base_selAspenOpenJets.yaml"
+# JetClass-II TEST files only (scripts/build_extract_jobs.py FAMILIES: Res34P 1075-1289,
+# QCD 350-419). All 70 QCD files: at 1 % the map's closure needs ~3,000 passing QCD jets
+# in the top window for a 2 % error on the background shape, and a 2M-jet test cache
+# holds 330. Eight Res34P files hold ~26,000 three-prong jets in the window.
+SIM_FILES = ([f"/jc2/jet_data/Res34P_{i:04d}.parquet" for i in range(1075, 1083)]
+             + [f"/jc2/jet_data/QCD_{i:04d}.parquet" for i in range(350, 420)])
+N_SIM_JOBS = 6
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 OUT_ROOT = "/data/results/aoj/full_v1"
 N_SHARDS = 10
@@ -594,6 +627,287 @@ def render_fit_v3() -> str:
     return t
 
 
+def _ft():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("build_ft_jobs", ROOT / "scripts" / "build_ft_jobs.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def _failure_accounting(out: str, halt: int) -> str:
+    """Bash that halts the job (exit `halt`, which the pod failure policy turns into
+    FailJob) after two FAILED attempts or eight in all. A failed attempt is recorded by
+    the EXIT trap; an evicted pod is SIGKILLed, runs no trap and is not counted."""
+    return (f'          mkdir -p "{out}"\n'
+            f'          echo "$(date -u +%FT%TZ) $(hostname)" >> "{out}/ATTEMPTS"\n'
+            # grep -c, not cat | wc -l: under pipefail a missing file fails the pipeline
+            f'          NF=$(grep -c . "{out}/FAILED_ATTEMPTS" 2>/dev/null || true)\n'
+            f'          NA=$(grep -c . "{out}/ATTEMPTS" 2>/dev/null || true)\n'
+            f'          if [ "${{NF:-0}}" -ge 2 ] || [ "${{NA:-0}}" -gt 8 ]; then\n'
+            f'            echo "FATAL: ${{NF}} failed attempts, ${{NA}} in all: fix the cause, then remove '
+            f'{out}/FAILED_ATTEMPTS"; exit {halt}; fi\n'
+            f"          trap 'rc=$?; if [ ${{rc}} -ne 0 ] && [ ${{rc}} -ne {halt} ]; then "
+            f'echo "rc=${{rc}} $(date -u +%FT%TZ) $(hostname)" >> "{out}/FAILED_ATTEMPTS"; fi\' EXIT\n')
+
+
+def _robust(text: str, backoff_old: str) -> str:
+    """The pod failure policy and ROBUST_BACKOFF, container renamed `main` (the policy
+    names it), by asserted substitution."""
+    ft = _ft()
+    subs = [(backoff_old, f"  backoffLimit: {ft.ROBUST_BACKOFF}\n{ft.POD_FAILURE_POLICY}"),
+            ("      - name: aoj\n", "      - name: main\n")]
+    for a, b in subs:
+        if text.count(a) != 1:
+            raise SystemExit(f"FATAL: template changed; cannot add the retry policy ({a[:40]!r})")
+        text = text.replace(a, b)
+    return text
+
+
+def render_rescore_shard(i: int, files: list[dict]) -> str:
+    """Shard i of the first run, again, at RESCORE_PIN into RESCORE_ROOT, every model also
+    writing the prong-only score, with the retry policy. Derived by substitution, each
+    asserted, so staging, row alignment and scoring are the first run's line for line."""
+    ft = _ft()
+    t = render_shard(i, files)
+    subs = [
+        ("  # FULL REAL-DATA RUN, SHARD", "  # REAL-DATA CHECKS: THE FIRST RUN RESCORED (+ prong-only score), SHARD"),
+        (f"name: aoj-full-s{i}-raunav", f"name: aoj-rescore-s{i}-raunav"),
+        (f"          OUT={OUT_ROOT}/shard{i}\n",
+         f"          OUT={RESCORE_ROOT}/shard{i}\n" + _failure_accounting("${OUT}", ft.EXIT_HALT)),
+        (f'--branch "{PIN}"', f'--branch "{RESCORE_PIN}"'),
+        ("--structures three_prong ", "--structures three_prong prong_only "),
+    ]
+    for a, b in subs:
+        if t.count(a) != 1:
+            raise SystemExit(f"FATAL: the shard template changed; cannot derive the rescore ({a[:50]!r})")
+        t = t.replace(a, b)
+    return _robust(t, "  # 2, not 1: the shard resumes model by model, so a retry after a lost node\n"
+                      "  # repeats only the ~30 min of download and staging.\n  backoffLimit: 2\n")
+
+
+SIM_TEMPLATE = r"""apiVersion: batch/v1
+kind: Job
+metadata:
+  # REAL-DATA CHECKS: THE SCORES ON SIMULATION, GROUP {g} OF {n}. GENERATED by
+  # scripts/build_aoj_jobs.py. Scores {models_short} with the real-data scores
+  # (experiments/AOJ/sim_scores.py) on {n_files} JetClass-II test files through the
+  # AspenOpenJets selection. One loader worker and one file list for every model and
+  # group, so every model's rows are the same jets; sim_scores.py refuses otherwise.
+  name: aoj-sim-g{g}-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: aoj
+        image: {image}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT={out}
+          ACC="${{OUT}}/attempts/g{g}"
+{accounting}          MODELS="{model_names}"
+          todo=""
+          for m in ${{MODELS}}; do [ -f "${{OUT}}/scores_${{m}}.npz" ] || todo="${{todo}} ${{m}}"; done
+          if [ -z "${{todo}}" ]; then echo "group {g} complete"; touch "${{ACC}}/DONE"; exit 0; fi
+          echo "to score:${{todo}}"
+
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          FREE_G=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9)
+          echo "PVC used: ${{USED}}%  free: ${{FREE_G}}G"
+          [ "${{USED}}" -lt 85 ] || {{ echo "FATAL: /data is ${{USED}}% full"; exit 1; }}
+          [ "${{FREE_G}}" -ge 5 ] || {{ echo "FATAL: ${{FREE_G}}G free on /data, need 5G"; exit 1; }}
+
+          git clone --depth 1 --branch "{pin}" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          for c in {checkpoints}; do [ -f "${{c}}" ] || {{ echo "FATAL: no ${{c}}"; exit 1; }}; done
+{sophon}          # THE ORDER OF THIS LIST IS LOAD-BEARING: every model reads it in this order.
+          FILES="{files}"
+          for f in ${{FILES}}; do [ -f "${{f}}" ] || {{ echo "FATAL: no ${{f}}"; exit 1; }}; done
+          GPU=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1); echo "GPU: ${{GPU}}"
+
+          score () {{  # name checkpoint K num_reg arm rung
+            [ -f "${{OUT}}/scores_$1.npz" ] && {{ echo "skip $1 (scored)"; return 0; }}
+            PYTHONUNBUFFERED=1 python3 experiments/EVAL/extract_features.py \
+              --checkpoint "$2" --num-classes "$3" --num-reg "$4" --arm "$5" \
+              --data-config {config} --observers jet_pt jet_eta jet_sdmass --save-logits \
+              --data-test ${{FILES}} --out "/scratch/extract/$1" \
+              --batch-size 512 --num-workers 1 --fetch-step 1 \
+            && python3 experiments/AOJ/sim_scores.py --name "$1" --rung "$6" \
+              --extract-dir "/scratch/extract/$1" --out "${{OUT}}" \
+            && echo "$1 ${{GPU}}" >> "${{OUT}}/gpu_per_model.txt" \
+            && rm -rf "/scratch/extract/$1"
+          }}
+          mkdir -p /scratch/logs
+          scored () {{
+            score "$@" > "/scratch/logs/$1.log" 2>&1 \
+              || {{ echo "FATAL: $1 failed"; tail -40 "/scratch/logs/$1.log"; return 1; }}
+            echo "$1: $(grep -E 'jets/s|^skip' /scratch/logs/$1.log | tail -1)"
+          }}
+{scores}
+          touch "${{ACC}}/DONE"
+        volumeMounts:
+        - {{ name: jc2,     mountPath: /jc2, readOnly: true }}
+        - {{ name: data,    mountPath: /data }}
+        - {{ name: scratch, mountPath: /scratch }}
+        - {{ name: dshm,    mountPath: /dev/shm }}
+        resources:
+          # as the shards: {parallel} single-worker loaders at a core each. Each model holds
+          # ~2.4 M jets of features and logits (~3 GB) before writing them.
+          requests: {{ memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "40Gi" }}
+          limits:   {{ memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "40Gi" }}
+      tolerations:
+      - {{ key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: nvidia.com/gpu.product
+                operator: Exists
+              - key: nvidia.com/gpu.product
+                operator: NotIn
+                values: ["NVIDIA-GeForce-RTX-3090"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: [{bad_nodes}]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: scratch
+        emptyDir: {{ sizeLimit: "36Gi" }}
+      - name: dshm
+        emptyDir: {{ medium: Memory, sizeLimit: "8Gi" }}
+"""
+
+
+def sim_groups() -> list[list[Model]]:
+    """MODELS dealt round-robin into N_SIM_JOBS groups; the published checkpoint is in
+    group 0."""
+    return [MODELS[g::N_SIM_JOBS] for g in range(N_SIM_JOBS)]
+
+
+def render_sim(g: int, models: list[Model]) -> str:
+    ft = _ft()
+    line = lambda m: f'scored {m.name} "{m.checkpoint}" {m.k} {m.num_reg} {m.arm} {m.rung}'
+    scores = []
+    for start in range(0, len(models), PARALLEL):
+        group = models[start:start + PARALLEL]
+        scores += [f"          {line(m)} & p{k}=$!" for k, m in enumerate(group)]
+        scores.append("          " + "; ".join(f"wait ${{p{k}}}" for k in range(len(group))))
+    sophon = ""
+    if any(not m.spec for m in models):
+        sophon = (f"          curl -fsSL -o /workspace/sophon_public.pt {SOPHON_URL}\n"
+                  "          GOT=$(sha256sum /workspace/sophon_public.pt | cut -d' ' -f1)\n"
+                  f'          [ "${{GOT}}" = "{SOPHON_SHA256}" ] || {{ echo "FATAL: public checkpoint sha256 ${{GOT}}"; exit 1; }}\n')
+    t = SIM_TEMPLATE.format(
+        g=g, n=N_SIM_JOBS, image=IMAGE, pin=RESCORE_PIN, out=SIM_ROOT, n_files=len(SIM_FILES),
+        models_short=", ".join(m.name for m in models),
+        accounting=_failure_accounting("${ACC}", ft.EXIT_HALT),
+        model_names=" ".join(m.name for m in models),
+        checkpoints=" ".join(m.checkpoint for m in models if m.spec) or "",
+        sophon=sophon, files=" ".join(SIM_FILES), config=SIM_CONFIG, scores="\n".join(scores),
+        parallel=PARALLEL, bad_nodes=", ".join(f'"{b}"' for b in BAD_NODES))
+    return _robust(t, "  backoffLimit: 2\n")
+
+
+CHECKS_ROOT = "/data/results/aoj/checks_v1"
+# the main fit the checks are read against: the first run's, refitted from its bins with
+# the shape floating (experiments/AOJ/refit_from_bins.py); it exists only in the repository
+MAIN_FIT = "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json"
+
+CHECKS_TEMPLATE = r"""apiVersion: batch/v1
+kind: Job
+metadata:
+  # REAL-DATA CHECKS: THE ANALYSIS. GENERATED by scripts/build_aoj_jobs.py. Joins the
+  # rescored shards (merge_shards.py) and runs experiments/AOJ/realdata_checks.py over
+  # them, the simulation scores and the main fit: every check of the real-data
+  # section, one JSON each, into {out}. Refuses to start before every rescore shard and
+  # simulation group has finished.
+  name: aoj-checks-v1-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: aoj
+        image: {image}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT={out}
+{accounting}          [ ! -e "${{OUT}}/prong_test.json" ] || {{ echo "done: ${{OUT}}/prong_test.json exists"; exit 0; }}
+          SHARDS=""; FIRST=""
+          for i in $(seq 0 {last}); do
+            [ -f "{rescore}/shard${{i}}/DONE" ] || {{ echo "FATAL: rescore shard ${{i}} has not finished"; exit {halt}; }}
+            SHARDS="${{SHARDS}} {rescore}/shard${{i}}"; FIRST="${{FIRST}} {first}/shard${{i}}"
+          done
+          for g in $(seq 0 {last_sim}); do
+            [ -f "{sim}/attempts/g${{g}}/DONE" ] || {{ echo "FATAL: simulation group ${{g}} has not finished"; exit {halt}; }}
+          done
+          git clone --depth 1 --branch "{pin}" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          python3 experiments/AOJ/merge_shards.py --shards ${{SHARDS}} --out /scratch/merged
+          PYTHONUNBUFFERED=1 python3 experiments/AOJ/realdata_checks.py \
+            --merged /scratch/merged --shards ${{SHARDS}} --first-run-shards ${{FIRST}} \
+            --fit {main_fit} --sim {sim} --out "${{OUT}}" --workers 15 --toys 200
+          cp /scratch/merged/merge_manifest.json "${{OUT}}/"
+          ls -la "${{OUT}}"
+        volumeMounts:
+        - {{ name: data,    mountPath: /data }}
+        - {{ name: scratch, mountPath: /scratch }}
+        resources:
+          # ~12.6 M jets x 31 models x two float16 scores, and the simulation, shared by
+          # fifteen forked workers; each worker copies a model's scores to float64.
+          requests: {{ memory: "48Gi", cpu: "16", ephemeral-storage: "16Gi" }}
+          limits:   {{ memory: "48Gi", cpu: "16", ephemeral-storage: "16Gi" }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: scratch
+        emptyDir: {{ sizeLimit: "12Gi" }}
+"""
+
+
+def render_checks() -> str:
+    ft = _ft()
+    t = CHECKS_TEMPLATE.format(
+        image=IMAGE, out=CHECKS_ROOT, accounting=_failure_accounting("${OUT}", ft.EXIT_HALT),
+        last=N_SHARDS - 1, last_sim=N_SIM_JOBS - 1, rescore=RESCORE_ROOT, first=OUT_ROOT, sim=SIM_ROOT,
+        halt=ft.EXIT_HALT, pin=CHECKS_PIN, main_fit=MAIN_FIT)
+    return _robust(t, "  backoffLimit: 2\n")
+
+
 def specs() -> dict[pathlib.Path, str]:
     out = {K8S / f"job-aoj-full-s{i}-raunav.yaml": render_shard(i, fs) for i, fs in enumerate(shards())}
     out[K8S / "job-aoj-full-fit-raunav.yaml"] = render_fit()
@@ -601,6 +915,10 @@ def specs() -> dict[pathlib.Path, str]:
     out[K8S / "job-aoj-full-fit-v2-raunav.yaml"] = render_fit_v2()
     out[K8S / "job-aoj-full-fitbins-raunav.yaml"] = render_fit_bins()
     out[K8S / "job-aoj-full-fit-v3-raunav.yaml"] = render_fit_v3()
+    for i, fs in enumerate(shards()):
+        out[K8S / f"job-aoj-rescore-s{i}-raunav.yaml"] = render_rescore_shard(i, fs)
+    for g, ms in enumerate(sim_groups()):
+        out[K8S / f"job-aoj-sim-g{g}-raunav.yaml"] = render_sim(g, ms)
     return out
 
 
@@ -608,7 +926,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-only", action="store_true", help="verify, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
-                    help=f"check the working tree instead of {FIT3_PIN}, which is tagged after the commit")
+                    help=f"check the working tree instead of {RESCORE_PIN}, which is tagged after the commit")
     a = ap.parse_args()
     verify_heads()
     verify_pin(PIN, False)                      # the shards already ran at it
@@ -616,7 +934,8 @@ def main() -> int:
     verify_pin(CHECK_PIN, False, CHECK_NEEDED_FLAGS)
     verify_pin(FIT2_PIN, False, FIT2_NEEDED_FLAGS)
     verify_pin(BINS_PIN, False, BINS_NEEDED_FLAGS)
-    verify_pin(FIT3_PIN, a.pin_not_yet_tagged, FIT3_NEEDED_FLAGS)
+    verify_pin(FIT3_PIN, False, FIT3_NEEDED_FLAGS)
+    verify_pin(RESCORE_PIN, a.pin_not_yet_tagged, RESCORE_NEEDED_FLAGS)
     for path, text in specs().items():
         if a.check_only:
             print(f"ok   {path.relative_to(ROOT)}")
