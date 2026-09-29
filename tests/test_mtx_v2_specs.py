@@ -38,7 +38,7 @@ def test_one_spec_per_arm_and_run(grid):
     assert len(grid) == want
     for arm in b.v2_arms():
         for r in range(1, int(arm["runs"]) + 1):
-            assert f"job-{b.v2_run_id(arm['name'], r)}-raunav.yaml" in grid
+            assert f"job-{b.v2_job_name(arm['name'], r)}.yaml" in grid
 
 
 def test_every_spec_is_valid_yaml_and_bash(grid):
@@ -68,7 +68,8 @@ def test_v2_code_loader_validation_and_output(grid):
     for fn, spec in grid.items():
         s = _script(spec)
         run_id = re.search(r"^RUN_ID=(\S+)$", s, re.M).group(1)
-        assert f"OUT={b.V2_ROOT}/${{RUN_ID}}" in s and fn == f"job-{run_id}-raunav.yaml"
+        assert f"OUT={b.V2_ROOT}/${{RUN_ID}}" in s and fn == "job-mtx2-" + run_id[len("mtx-"):] + "-raunav.yaml"
+        assert re.fullmatch(r"mtx-[a-z0-9]+-s\d", run_id)
         assert "python3 experiments/MTX/pretrain_v2.py" in s and "seed_weaver" not in s
         assert "--num-workers 5 --fetch-step 1.0 --data-split-num 200" in s
         assert "--fetch-by-files" not in s and "--samples-per-epoch 10240000" in s
@@ -80,12 +81,12 @@ def test_v2_code_loader_validation_and_output(grid):
         assert sum(map(_brace_count, tr)) == b.N_TRAIN_FILES
         assert "--driver pretrain_v2" in s and "--keep-checkpoints all" in s
         seed = re.search(r"^SEED=(\d+)$", s, re.M).group(1)
-        assert run_id.endswith(f"-r{seed}")
+        assert run_id.endswith(f"-s{seed}")
 
 
 def test_objectives_map_to_their_flags(grid):
     for arm in b.v2_arms():
-        s = _script(grid[f"job-{b.v2_run_id(arm['name'], 1)}-raunav.yaml"])
+        s = _script(grid[f"job-{b.v2_job_name(arm['name'], 1)}.yaml"])
         assert f"--network-config {b.ARCH[arm['objective']]}" in s
         if arm["objective"] == "mpm":
             assert "--mpm --mpm-mask-rate 0.40" in s and "num_classes" not in s
@@ -179,3 +180,26 @@ def test_the_v1_manifest_is_unchanged_by_default(tmp_path):
     m = json.loads(out.read_text())
     assert m["randomness"]["effective_streams"]["inert"] == ["trunk_init", "data_sampling"]
     assert "driver" not in m
+
+
+def test_run_directories_follow_the_fine_tuning_contract():
+    assert b.v2_run_id("L162_MASS", 3) == "mtx-l162mass-s3"
+    assert b.v2_run_id("RAND2_p1", 1) == "mtx-rand2p1-s1"
+    assert b.v2_run_id("L188_LOFO4P", 2) == "mtx-l188lofo4p-s2"
+    assert b.v2_job_name("MPM", 1) == "mtx2-mpm-s1-raunav"
+
+
+def test_every_new_config_gets_a_checked_make_weight_pass():
+    specs = b.v2_makeweight_specs(TAG)
+    text = "".join(_script(s) for s in specs.values())
+    new = b.v2_new_configs()
+    assert new and all(c not in b.V1_SIDECAR_CONFIGS for c, _ in new)
+    for c, k in new:
+        assert text.count(f"run_cfg {c} {k}\n") == 1
+    assert text.count(b.HIST_SHA256) >= 2 * len(specs)
+    for spec in specs.values():
+        d = yaml.safe_load(spec)["spec"]["template"]["spec"]
+        assert "nvidia.com/gpu" not in d["containers"][0]["resources"]["requests"]
+        assert subprocess.run(["bash", "-n"], input=_script(spec), text=True).returncode == 0
+    grid_cfgs = {a["config"] for a in b.v2_arms()}
+    assert grid_cfgs <= b.V1_SIDECAR_CONFIGS | {c for c, _ in new}

@@ -585,9 +585,16 @@ def v2_arms() -> list:
 
 
 def v2_run_id(arm: str, run: int, gpu: str = V2_GPU) -> str:
+    """The run directory under V2_ROOT: mtx-<arm, lower case, no underscores>-s<seed>,
+    the name the fine-tuning jobs read (scratchpad ft_v2_checkpoint_contract.txt)."""
     slug = re.sub(r"[^a-z0-9]", "", arm.lower())
     tail = "" if gpu == V2_GPU else "-" + gpu_short(gpu)
-    return f"mtx2-{slug}-r{run}{tail}"
+    return f"mtx-{slug}-s{run}{tail}"
+
+
+def v2_job_name(arm: str, run: int, gpu: str = V2_GPU) -> str:
+    """mtx2-...: v1's jobs are called mtx-<slug>-s<seed>-raunav and some still exist."""
+    return "mtx2-" + v2_run_id(arm, run, gpu)[len("mtx-"):] + "-raunav"
 
 
 def gpu_short(gpu: str) -> str:
@@ -603,7 +610,7 @@ def v2_spec(arm: dict, run: int, gpu: str = V2_GPU, *, tag: str, **kw) -> tuple:
     is the master seed, so run k of every arm draws the same stream.
     """
     run_id = kw.pop("run_id", None) or v2_run_id(arm["name"], run, gpu)
-    job = kw.pop("job", None) or f"{run_id}-raunav"
+    job = kw.pop("job", None) or v2_job_name(arm["name"], run, gpu)
     cpu, mem = kw.pop("cpu", V2_CPU), kw.pop("mem", V2_MEM)
     script = v2_script(arm, run, run_id=run_id, **kw)
     title = f"v2 PRETRAINING -- {arm['name']}, run {run} (master seed {run}), {gpu}."
@@ -909,6 +916,137 @@ spec:
 """
 
 
+# ------------------------------------------------ reweighting sidecars for new configs
+# Every config needs its own make_weight pass: the sidecar is keyed by the md5 of
+# the config file. The histograms themselves key on NATIVE label categories, so
+# they must equal every earlier arm's (sha256 below, hist_hashes*.json on /data,
+# all 13 v1 sidecars). The job checks that and fails if any differs.
+V1_SIDECAR_CONFIGS = {"configs/arms/L188.yaml", "configs/arms/L162.yaml", "configs/arms/R42_Q1.yaml",
+                      "configs/arms/R16_Q1.yaml", "configs/arms/L162_MASS.yaml",
+                      "configs/arms/R16_Q1_MASS.yaml"}
+HIST_SHA256 = "546306f0ceb465ca095e8cb573ef3d8f4e754b026b3c6af4cf90b90c197b5a55"
+MAKEWEIGHT_ROOT = "/data/results/mtx/makeweight"
+
+
+def v2_new_configs() -> list:
+    """(config, K) for every grid config without a v1 sidecar, in grid order."""
+    out, seen = [], set(V1_SIDECAR_CONFIGS)
+    for arm in v2_arms():
+        if arm["config"] not in seen:
+            seen.add(arm["config"])
+            out.append((arm["config"], int(arm["num_classes"] or 188)))
+    return out
+
+
+def v2_makeweight_specs(tag: str, pods: int = 2) -> dict:
+    """CPU jobs running weaver's make_weight (the v1 recipe: weaver --print over the
+    1675 train+val files) for each new config, copying each sidecar out as soon as
+    it exists, then checking its histograms against HIST_SHA256."""
+    cfgs = v2_new_configs()
+    chunks = [cfgs[i::pods] for i in range(pods)]
+    exclude = ", ".join(f'"{n}"' for n in V2_BAD_NODES)
+    out = {}
+    for i, chunk in enumerate(chunks):
+        if not chunk:
+            continue
+        runs = "".join(f"run_cfg {c} {k}\n" for c, k in chunk)
+        script = f"""set -euo pipefail
+git clone --depth 1 --branch "${{REPO_REF}}" https://github.com/raunavm/transferlearningsophon.git /workspace/transferlearningsophon
+cd /workspace/transferlearningsophon
+pip install --no-cache-dir -q pyarrow || exit 1
+OUT={MAKEWEIGHT_ROOT}
+mkdir -p ${{OUT}}
+USE=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+[ "${{USE}}" -le 85 ] || {{ echo "FATAL: /data at ${{USE}}%"; exit 1; }}
+ALLSET=""
+for i in $(seq -w 0000 0249); do ALLSET="$ALLSET Res2P:/jc2/jet_data/Res2P_$i.parquet"; done
+for i in $(seq -w 0000 1074); do ALLSET="$ALLSET Res34P:/jc2/jet_data/Res34P_$i.parquet"; done
+for i in $(seq -w 0000 0349); do ALLSET="$ALLSET QCD:/jc2/jet_data/QCD_$i.parquet"; done
+N=$(echo $ALLSET | wc -w)
+[ "$N" -eq 1675 ] || {{ echo "FATAL: expected 1675 train+val files, got $N"; exit 1; }}
+run_cfg () {{
+  CFG=$1; K=$2
+  MD5=$(md5sum ${{CFG}} | cut -d' ' -f1)
+  SIDECAR=${{CFG%.yaml}}.${{MD5}}.auto.yaml
+  NAME=$(basename ${{SIDECAR}})
+  if [ -f ${{OUT}}/${{NAME}} ]; then echo "=== ${{NAME}} exists"; cp ${{OUT}}/${{NAME}} ${{SIDECAR}}; else
+    echo "=== ${{CFG}} K=${{K}} -> ${{NAME}}"
+    PYTHONUNBUFFERED=1 weaver --print --gpus "" --data-train $ALLSET --data-config ${{CFG}} \
+      --network-config experiments/E1/ParT_sophon_arch_10c.py -o num_classes ${{K}} -o fc_params '[(512,0.1)]' \
+      --batch-size 512 --start-lr 5e-4 --num-workers 2 --fetch-by-files --fetch-step 5 \
+      > ${{OUT}}/makeweight_$(basename ${{CFG%.yaml}}).log 2>&1
+    [ -f "${{SIDECAR}}" ] || {{ echo "FATAL: no ${{SIDECAR}}"; exit 1; }}
+    cp -v "${{SIDECAR}}" ${{OUT}}/
+  fi
+  python3 - "${{SIDECAR}}" "${{CFG}}" <<'PY'
+import hashlib, json, sys, yaml
+side, cfg = yaml.safe_load(open(sys.argv[1])), yaml.safe_load(open(sys.argv[2]))
+h = hashlib.sha256(json.dumps(side["weights"]["reweight_hists"], sort_keys=True, default=str).encode()).hexdigest()
+own = side.get("labels") == cfg.get("labels")
+print(f"{{sys.argv[2]}}: reweight_hists sha256 {{h}} {{'MATCH' if h == '{HIST_SHA256}' else 'DIFFER'}}; labels block {{'own' if own else 'WRONG'}}")
+json.dump({{sys.argv[2]: h}}, open("{MAKEWEIGHT_ROOT}/hist_hashes_" + sys.argv[1].split("/")[-1].split(".")[0] + "_v2.json", "w"), indent=2)
+sys.exit(0 if (h == "{HIST_SHA256}" and own) else 1)
+PY
+}}
+{runs}"""
+        body = "\n".join(("          " + ln) if ln else "" for ln in script.splitlines())
+        name = f"mtx2-makeweight-{i + 1}-raunav"
+        out[f"job-{name}.yaml"] = f"""apiVersion: batch/v1
+kind: Job
+metadata:
+  # v2 REWEIGHTING SIDECARS (make_weight, CPU): {", ".join(c for c, _ in chunk)}.
+  # GENERATED by scripts/build_mtx_launch.py v2_makeweight_specs() -- do not hand-edit.
+  name: {name}
+  namespace: cms-ml
+spec:
+  backoffLimit: 3
+  podFailurePolicy:
+    rules:
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: {V2_IMAGE}
+        command: ["/bin/bash", "-c"]
+        env:
+        - name: REPO_REF
+          value: "{tag}"
+        args:
+        - |
+{body}
+        resources:
+          requests: {{ memory: "48Gi", cpu: "4", ephemeral-storage: "10Gi" }}
+          limits:   {{ memory: "48Gi", cpu: "4", ephemeral-storage: "10Gi" }}
+        volumeMounts:
+        - {{ name: jc2,  mountPath: /jc2, readOnly: true }}
+        - {{ name: data, mountPath: /data }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: [{exclude}]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+"""
+    return out
+
+
 def v2_grid_specs(tag: str, gpu: str = V2_GPU, tiers=None) -> dict:
     """{file name: spec} for every (arm, run) of the v2 grid."""
     out = {}
@@ -953,6 +1091,7 @@ def main() -> int:
             for full in (False, True):
                 n, sp = v2_dryrun_spec(args.tag, full)
                 specs[f"job-{n}.yaml"] = sp
+            specs.update(v2_makeweight_specs(args.tag))
         for fn, spec in specs.items():
             (d / fn).write_text(spec)
             print(d / fn)
