@@ -57,6 +57,11 @@ spec:
           # the first run, merged exactly as its fit merged it: its three-prong scores are
           # the ones the main fit saw, and every check reads those (realdata_checks.load_data)
           python3 experiments/AOJ/merge_shards.py --shards ${FIRST} --out /scratch/merged_first
+          # ONE BLAS THREAD PER PROCESS. The parallelism is fifteen worker processes; the
+          # image's OpenBLAS otherwise starts a thread per host CPU (256 here, 48 live per
+          # worker), and the first run of the injection step spun for 2 h on 16 CPUs doing
+          # what takes 11 s single-threaded (2026-09-30).
+          export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
           PYTHONUNBUFFERED=1 python3 experiments/AOJ/realdata_checks.py \
             --merged /scratch/merged --shards ${SHARDS} --first-run-shards ${FIRST} \
             --first-run-merged /scratch/merged_first \

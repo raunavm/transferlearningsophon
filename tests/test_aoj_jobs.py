@@ -367,3 +367,9 @@ def test_a_split_shard_scores_every_model_once_across_its_parts_and_only_the_las
     (tmp_path / f"scores_{B.MODELS[-1].name}.npz").touch()
     run()
     assert (tmp_path / "DONE").exists()
+
+
+def test_the_checks_job_runs_one_blas_thread_per_process():
+    s = _script(SPECS[CHECKS[0]])
+    env = "export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1"
+    assert env in s and s.index(env) < s.index("python3 experiments/AOJ/realdata_checks.py")

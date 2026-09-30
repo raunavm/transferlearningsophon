@@ -49,6 +49,7 @@ import importlib.util
 import inspect
 import json
 import multiprocessing
+import os
 import pathlib
 from collections.abc import Mapping
 import subprocess
@@ -316,6 +317,9 @@ def _fit_summary(fit: dict) -> dict:
     return out
 
 
+BLAS_THREAD_VARS = ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS")
+
+
 def _init_worker(state):
     """A worker's _W, rebuilt from paths: each worker reads the jets once and a model's
     scores when it is given that model."""
@@ -338,8 +342,27 @@ def _parallel(fn, items, workers):
     if workers <= 1:
         return [fn(x) for x in items]
     state = {k: (v["_spec"] if isinstance(v, dict) and "_spec" in v else v) for k, v in _W.items()}
-    with multiprocessing.get_context("spawn").Pool(workers, initializer=_init_worker, initargs=(state,)) as pool:
-        return pool.map(fn, items, chunksize=1)
+    # ONE BLAS THREAD PER WORKER: the parallelism is the workers. A spawned worker reads
+    # these when it imports numpy, before any initializer runs, so they are set in the
+    # environment it inherits. Without them OpenBLAS started a thread per host CPU in each
+    # worker and fifteen workers spun for 2 h on a step that takes 11 s (2026-09-30).
+    saved = {k: os.environ.get(k) for k in BLAS_THREAD_VARS}
+    os.environ.update({k: "1" for k in BLAS_THREAD_VARS})
+    try:
+        with multiprocessing.get_context("spawn").Pool(workers, initializer=_init_worker,
+                                                       initargs=(state,)) as pool:
+            return pool.map(fn, items, chunksize=1)
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+def _blas_threads(_=None) -> dict:
+    """The BLAS thread variables as a worker sees them (a test hook)."""
+    return {k: os.environ.get(k) for k in BLAS_THREAD_VARS}
 
 
 def spread(values) -> dict:

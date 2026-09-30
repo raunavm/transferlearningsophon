@@ -272,3 +272,20 @@ def test_spawned_workers_give_the_same_answers_as_one_process(tmp_path):
         assert r.returncode == 0, r.stderr[-2000:]
         outs[w] = json.loads((out / "model_vs_domain.json").read_text())["models"]
     assert outs[1] == outs[2] and set(outs[1]) == set(names)
+
+
+def test_spawned_workers_run_one_blas_thread_each_and_the_parent_keeps_its_setting():
+    """Imported by name in a fresh interpreter, as the script's spawned workers see it."""
+    import os
+    import subprocess
+    import sys
+    code = ("import sys, os, json; sys.path.insert(0, 'experiments/AOJ'); import realdata_checks as R; "
+            "R._W.clear(); got = R._parallel(R._blas_threads, [0, 1], 2); "
+            "print(json.dumps([got, R._blas_threads()]))")
+    env = dict(os.environ, OMP_NUM_THREADS="8")
+    env.pop("OPENBLAS_NUM_THREADS", None)
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, env=env, cwd=RC.REPO, timeout=300)
+    assert r.returncode == 0, r.stderr[-2000:]
+    workers, parent = json.loads(r.stdout.strip().splitlines()[-1])
+    assert workers == [{k: "1" for k in RC.BLAS_THREAD_VARS}] * 2
+    assert parent["OMP_NUM_THREADS"] == "8" and parent["OPENBLAS_NUM_THREADS"] is None
