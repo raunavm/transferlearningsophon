@@ -309,13 +309,19 @@ class StreamRecord:
         self.h = hashlib.sha256()
         self.n = 0
         self.native = np.zeros(n_native, dtype=np.int64)
+        self.native_last = np.zeros(n_native, dtype=np.int64)   # the epoch's last 20% of batches
+        self.files = set()
 
-    def update(self, Z) -> None:
+    def update(self, Z, last: bool = False) -> None:
         import numpy as np
         rid = Z["_rowid"].numpy().astype("<i8", copy=False)
         self.h.update(np.ascontiguousarray(rid).tobytes())
         self.n += len(rid)
-        self.native += np.bincount(Z["_jet_label"].numpy(), minlength=len(self.native))[:len(self.native)]
+        c = np.bincount(Z["_jet_label"].numpy(), minlength=len(self.native))[:len(self.native)]
+        self.native += c
+        if last:
+            self.native_last += c
+        self.files.update(np.unique(rid >> 20).tolist())
 
     def record(self, run: str, epoch: int, seed_data: int, seed_dropout: int, files_sha256: str) -> dict:
         rows = self.h.hexdigest()
@@ -357,6 +363,106 @@ class MemMonitor(threading.Thread):
     def take(self):
         p, self.peak = self.peak, None
         return None if p is None else round(p / 2 ** 30, 2)
+
+
+# ---------------------------------------------------------------- weight average (amendment A8)
+WAVG_EPOCHS = 10          # the robustness checkpoint: the last ten epochs (70-79 of 80)
+BN_JETS = 200_000         # BatchNorm statistics recomputed on this many training jets
+
+
+def sha256_file(path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def average_states(paths) -> dict:
+    """Mean of each floating tensor over the state dicts; other tensors (the
+    BatchNorm batch counters) from the last one."""
+    import torch
+    states = [torch.load(p, map_location="cpu", weights_only=True) for p in paths]
+    out = {}
+    for k, v in states[-1].items():
+        if v.is_floating_point():
+            out[k] = (sum(s[k].double() for s in states) / len(states)).to(v.dtype)
+        else:
+            out[k] = v.clone()
+    return out
+
+
+def recompute_bn(model, batches, n_jets: int, dev, amp: bool, input_names) -> int:
+    """Running statistics of every BatchNorm layer from scratch: reset, cumulative
+    average (momentum None), forward passes in train mode without gradients over
+    the first n_jets jets of `batches`; nothing else changes. Returns the number
+    of BatchNorm layers."""
+    import torch
+    bns = [m for m in model.modules() if isinstance(m, torch.nn.modules.batchnorm._BatchNorm)]
+    momenta = [m.momentum for m in bns]
+    for m in bns:
+        m.reset_running_stats()
+        m.momentum = None
+    model.train()
+    seen = 0
+    with torch.no_grad():
+        for X, y, Z in batches:
+            take = min(len(Z["_rowid"]), n_jets - seen)
+            inputs = [X[k][:take].to(dev, non_blocking=True) for k in input_names]
+            with torch.cuda.amp.autocast(enabled=amp):
+                model(*inputs)
+            seen += take
+            if seen >= n_jets:
+                break
+    for m, mom in zip(bns, momenta):
+        m.momentum = mom
+    return len(bns)
+
+
+def write_weight_average(out: pathlib.Path, a, model, ds_train, seeds, dev, amp, loader_kw, input_names):
+    """net_wavg<F>-<L>_state.pt: the weight average of the last WAVG_EPOCHS epochs'
+    state files (70-79 of 80), BatchNorm statistics recomputed on BN_JETS jets of the
+    stream of epoch num_epochs (drawn like any epoch, never trained on), and
+    net_wavg<F>-<L>.json recording the inputs' sha256, the file's sha256 and the
+    BatchNorm sample. The format is the one experiments/FT/ft_v2.py resolve_wavg reads."""
+    import torch
+    from torch.utils.data import DataLoader
+    first = max(0, a.num_epochs - WAVG_EPOCHS)
+    epochs = list(range(first, a.num_epochs))
+    name = f"net_wavg{first}-{a.num_epochs - 1}"
+    meta = out / f"{name}.json"
+    if meta.exists():
+        return
+    paths = [out / f"net_epoch-{e}_state.pt" for e in epochs]
+    model.load_state_dict(average_states(paths))
+    seed_all(epoch_seed(seeds["dropout"], "bn-recompute", 0))
+    ds_train.set_epoch(a.num_epochs)
+    rec = StreamRecord()
+
+    def recorded(it):
+        seen = 0
+        for X, y, Z in it:
+            take = min(len(Z["_rowid"]), BN_JETS - seen)
+            rec.update({k: v[:take] for k, v in Z.items()})
+            seen += take
+            yield X, y, Z
+    it = iter(DataLoader(ds_train, **loader_kw))
+    n_bn = recompute_bn(model, recorded(it), BN_JETS, dev, amp, input_names)
+    del it
+    state = out / f"{name}_state.pt"
+    torch_save(model.state_dict(), state)
+    names = {v: k for k, v in ds_train.file_index.items()}
+    write_json(meta, {
+        "inputs": {str(e): sha256_file(p) for e, p in zip(epochs, paths)},
+        "sha256": sha256_file(state),
+        "bn_recompute": {"n_jets": int(rec.n), "batchnorm_layers": n_bn, "stream_epoch": a.num_epochs,
+                         "seed_data": seeds["data_sampling"], "rows_sha256": rec.h.hexdigest(),
+                         "files": sorted(names[i] for i in rec.files),
+                         "dropout_seed": epoch_seed(seeds["dropout"], "bn-recompute", 0),
+                         "mode": "train, no gradient, cumulative average (momentum None)"},
+        "code": {"repo_ref": os.environ.get("REPO_REF"), "driver": "experiments/MTX/pretrain_v2.py"}})
+    print(f"[pretrain_v2] {state.name}: mean of epochs {first}-{a.num_epochs - 1}, "
+          f"{n_bn} BatchNorm layers recomputed on {rec.n} jets", flush=True)
 
 
 def write_json(path: pathlib.Path, obj) -> None:
@@ -551,7 +657,7 @@ def main(argv=None) -> int:
             if step == 0:
                 t_first, n_first, max_fetch = time.time(), len(Z["_rowid"]), 0
             max_fetch = max(max_fetch, int(Z["_fetch"].max()))
-            rec.update(Z)
+            rec.update(Z, last=step >= int(0.8 * steps))
             inputs = [X[k].to(dev, non_blocking=True) for k in input_names]
             opt.zero_grad()
             with torch.cuda.amp.autocast(enabled=amp):
@@ -581,7 +687,9 @@ def main(argv=None) -> int:
         if kind != "mpm":
             train["acc"] = float(n_correct) / rec.n
         train.update(n_jets=rec.n, qcd_share=float(rec.native[161:].sum()) / rec.n,
-                     native_counts=rec.native.tolist(), seconds=round(t_train, 1),
+                     native_counts=rec.native.tolist(), native_counts_last20=rec.native_last.tolist(),
+                     qcd_share_last20=float(rec.native_last[161:].sum()) / max(int(rec.native_last.sum()), 1),
+                     seconds=round(t_train, 1),
                      jets_per_s=round(rec.n / t_train, 1),
                      startup_seconds=round(t_first - t0, 1), max_fetch_id=max_fetch,
                      jets_per_s_after_first_batch=round((rec.n - n_first) / max(t0 + t_train - t_first, 1e-9), 1))
@@ -626,6 +734,7 @@ def main(argv=None) -> int:
         print(f"[pretrain_v2] epoch {epoch} done: lr {lr:.4e} train {train['loss']:.5f} "
               f"val {name}={value:.5f} best={best['epoch']} stream {stream['sha256'][:12]} "
               f"{train['jets_per_s']:.0f} jets/s", flush=True)
+    write_weight_average(out, a, model, ds_train, seeds, dev, amp, loader_kw, input_names)
     (out / "DONE").write_text(json.dumps(best) + "\n")
     return 0
 

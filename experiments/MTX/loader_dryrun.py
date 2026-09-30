@@ -28,6 +28,57 @@ sys.path.insert(0, str(HERE.parent.parent))
 sys.path.insert(0, str(HERE))
 
 
+FAMILIES = ("two-prong", "three/four-prong", "QCD")
+FAMILY_EDGES = (0, 15, 161)                      # native jet_label where each family starts
+
+
+def family_counts(native) -> list:
+    return [int(native[0:15].sum()), int(native[15:161].sum()), int(native[161:].sum())]
+
+
+def _stats(shares, n, copy_factor) -> dict:
+    """Mean and SD of a family share over epochs, against the binomial SD of n jets
+    with weaver's repeated rows counted (variance x copy factor) and without."""
+    import numpy as np
+    shares = np.asarray(shares, float)
+    p = float(shares.mean())
+    b = math.sqrt(p * (1 - p) / n)
+    return {"mean": p, "sd": float(shares.std(ddof=1)) if len(shares) > 1 else None,
+            "binomial_sd": b, "binomial_sd_with_copies": b * math.sqrt(copy_factor),
+            "sd_over_binomial_with_copies": float(shares.std(ddof=1)) / (b * math.sqrt(copy_factor))
+            if len(shares) > 1 else None,
+            "min": float(shares.min()), "max": float(shares.max())}
+
+
+def summarise(epochs) -> dict:
+    """Epoch-level and last-20% family shares, and the per-fetch family mix (all
+    fetches, and those read in the last 20% of an epoch), each against binomial
+    with copies: Pearson chi2 = sum over fetches and families of
+    (count - n p)^2 / (n p c), two degrees of freedom per fetch."""
+    import numpy as np
+    c = float(np.mean([x["copy_factor"] for x in epochs]))
+    out = {"copy_factor": c,
+           "epoch": {f: _stats([x["family_shares"][j] for x in epochs], epochs[0]["n_jets"], c)
+                     for j, f in enumerate(FAMILIES)},
+           "last20": {f: _stats([x["last20"]["family_shares"][j] for x in epochs],
+                                int(np.mean([x["last20"]["n_jets"] for x in epochs])), c)
+                      for j, f in enumerate(FAMILIES)}}
+    for key, sel in (("per_fetch", lambda r: True), ("per_fetch_last20", lambda r: r[6] == 1)):
+        chi, dof, sizes = 0.0, 0, []
+        for x in epochs:
+            p = np.array(x["family_shares"])
+            rows = np.array([r for r in x["per_fetch"] if sel(r) and r[2] >= 1000], float)
+            if not len(rows):
+                continue
+            n = rows[:, 2:3]
+            chi += float((((rows[:, 3:6] - n * p) ** 2) / (n * p * c)).sum())
+            dof += 2 * len(rows)                 # three shares that sum to one
+            sizes += rows[:, 2].tolist()
+        out[key] = {"fetches": len(sizes), "median_jets": float(np.median(sizes)) if sizes else None,
+                    "chi2_per_dof_with_copies": chi / dof if dof else None}
+    return out
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--seed", type=int, required=True)
@@ -66,24 +117,30 @@ def main(argv=None) -> int:
     check_steps = a.check_jets // a.batch_size
     mem = pv.MemMonitor()
     epochs = []
+    last_from = int(0.8 * steps)                   # the epoch's last 20% of batches
     for e in range(a.epochs):
         ds.set_epoch(e)
         rec = pv.StreamRecord()
-        per_fetch = {}
+        per_fetch, last_fetches, rids = {}, set(), []
         check = None
         t0 = time.time()
         it = iter(DataLoader(ds, batch_size=None, num_workers=a.num_workers,
                              multiprocessing_context="fork" if a.num_workers else None))
         for i in range(steps):
             _, _, Z = next(it)
-            rec.update(Z)
+            rec.update(Z, last=i >= last_from)
+            rids.append(Z["_rowid"].numpy())
             w = i % max(a.num_workers, 1)          # DataLoader takes workers round robin
-            qcd = (Z["_jet_label"].numpy() >= sv.NATIVE_QCD_FIRST)
-            for fid in np.unique(Z["_fetch"].numpy()):
-                m = Z["_fetch"].numpy() == fid
-                c = per_fetch.setdefault((w, int(fid)), [0, 0])
+            fam = np.searchsorted(FAMILY_EDGES, Z["_jet_label"].numpy(), side="right") - 1
+            fetch = Z["_fetch"].numpy()
+            for fid in np.unique(fetch):
+                m = fetch == fid
+                c = per_fetch.setdefault((w, int(fid)), [0, 0, 0, 0])
                 c[0] += int(m.sum())
-                c[1] += int(qcd[m].sum())
+                for j in range(3):
+                    c[1 + j] += int((fam[m] == j).sum())
+                if i >= last_from:
+                    last_fetches.add((w, int(fid)))
             if i + 1 == check_steps:
                 check = rec.h.copy().hexdigest()
         del it
@@ -91,35 +148,31 @@ def main(argv=None) -> int:
                                    a.data_split_num, a.fetch_step, a.data_fraction)
         r = rec.record("dryrun", e, seeds["data_sampling"], seeds["dropout"], files_sha)
         n = r["n_jets"]
-        q = int(rec.native[sv.NATIVE_QCD_FIRST:].sum())
+        _, copies = np.unique(np.concatenate(rids), return_counts=True)
+        fam_all = family_counts(rec.native)
+        fam_last = family_counts(rec.native_last)
         epochs.append({
-            "epoch": e, "n_jets": n, "qcd_share": q / n, "seconds": round(time.time() - t0, 1),
+            "epoch": e, "n_jets": n, "qcd_share": fam_all[2] / n, "seconds": round(time.time() - t0, 1),
             "sha256": r["sha256"], "files_sha256": files_sha,
             f"sha256_after_{check_steps * a.batch_size}": hashlib.sha256((files_sha + check).encode()).hexdigest()
             if check else None,
-            "per_fetch": [[w, f, c[0], c[1]] for (w, f), c in sorted(per_fetch.items())],
+            "distinct_jets": int(len(copies)), "copy_factor": float((copies ** 2).sum() / copies.sum()),
+            "family_shares": [x / n for x in fam_all],
+            "last20": {"n_jets": int(sum(fam_last)), "family_shares": [x / max(sum(fam_last), 1) for x in fam_last],
+                       "native_counts": rec.native_last.tolist()},
+            "per_fetch": [[w, f, *c, int((w, f) in last_fetches)] for (w, f), c in sorted(per_fetch.items())],
             "max_fetch_id": max(f for _, f in per_fetch),
             "native_counts": rec.native.tolist(), "peak_anon_gb": mem.take()})
-        print(f"epoch {e}: qcd share {q / n:.5f} over {n} jets, {len(per_fetch)} fetches, "
-              f"{epochs[-1]['seconds']} s", flush=True)
+        print(f"epoch {e}: qcd share {fam_all[2] / n:.5f} over {n} jets (last 20%: "
+              f"{epochs[-1]['last20']['family_shares'][2]:.5f}), {len(per_fetch)} fetches, "
+              f"copy factor {epochs[-1]['copy_factor']:.3f}, {epochs[-1]['seconds']} s", flush=True)
 
-    shares = np.array([x["qcd_share"] for x in epochs])
-    p, n = shares.mean(), epochs[0]["n_jets"]
-    fetch_sh = np.array([c[3] / c[2] for x in epochs for c in x["per_fetch"] if c[2] >= 10_000])
-    fetch_n = np.array([c[2] for x in epochs for c in x["per_fetch"] if c[2] >= 10_000])
-    summary = {
-        "epochs": len(epochs), "jets_per_epoch": n, "mean_qcd_share": p,
-        "sd_qcd_share": float(shares.std(ddof=1)) if len(shares) > 1 else None,
-        "binomial_sd": math.sqrt(p * (1 - p) / n),
-        "min": float(shares.min()), "max": float(shares.max()),
-        "per_fetch": {"n_fetches_with_10k_jets": int(len(fetch_sh)),
-                      "median_jets": float(np.median(fetch_n)) if len(fetch_n) else None,
-                      "sd_share": float(fetch_sh.std(ddof=1)) if len(fetch_sh) > 1 else None,
-                      "binomial_sd_at_median": math.sqrt(p * (1 - p) / np.median(fetch_n)) if len(fetch_n) else None,
-                      "min": float(fetch_sh.min()) if len(fetch_sh) else None,
-                      "max": float(fetch_sh.max()) if len(fetch_sh) else None},
-        "v1_epoch_range_for_reference": [0.080, 0.175],
-    }
+    out_summary = summarise(epochs)
+    summary = {"epochs": len(epochs), "jets_per_epoch": epochs[0]["n_jets"],
+               "mean_qcd_share": out_summary["epoch"]["QCD"]["mean"],
+               "sd_qcd_share": out_summary["epoch"]["QCD"]["sd"],
+               "binomial_sd": out_summary["epoch"]["QCD"]["binomial_sd"],
+               **out_summary, "v1_epoch_range_for_reference": [0.080, 0.175]}
     out = pathlib.Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"args": vars(a), "summary": summary, "epochs": epochs}, indent=1) + "\n")

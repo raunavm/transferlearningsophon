@@ -399,7 +399,8 @@ def test_a_resumed_run_repeats_the_uninterrupted_run_exactly(data, run_a, tmp_pa
         for part in ("train", "val"):
             for k in ("loss", "acc", "head_top1_acc", "p_qcd_resonant", "p_qcd_qcd"):
                 if k in ma[e][part]:
-                    assert ma[e][part][k] == pytest.approx(mb[e][part][k], rel=1e-5), (e, part, k)
+                    rel = abs(ma[e][part][k] - mb[e][part][k]) / abs(ma[e][part][k])
+                    assert rel < 1e-5, (e, part, k, ma[e][part][k], mb[e][part][k], rel)
     sa2, sb2 = torch.load(run_a / "net_epoch-2_state.pt"), torch.load(out / "net_epoch-2_state.pt")
     assert sa2.keys() == sb2.keys()
     for k in sa2:
@@ -487,3 +488,69 @@ def test_the_loader_dry_run_draws_the_rows_training_draws(data, run_a, tmp_path)
     m = _epochs(run_a, "metrics")
     assert [e["qcd_share"] for e in dry["epochs"]] == [m[e]["train"]["qcd_share"] for e in range(3)]
     assert dry["summary"]["jets_per_epoch"] == 96 and sum(c[2] for c in dry["epochs"][0]["per_fetch"]) == 96
+    e0 = dry["epochs"][0]
+    assert sum(sum(c[3:6]) for c in e0["per_fetch"]) == 96                      # family counts per fetch
+    assert e0["last20"]["native_counts"] == m[0]["train"]["native_counts_last20"]
+    assert e0["distinct_jets"] <= 96 and e0["copy_factor"] >= 1
+    for key in ("epoch", "last20"):
+        assert set(dry["summary"][key]) == {"two-prong", "three/four-prong", "QCD"}
+    assert dry["summary"]["per_fetch"]["fetches"] >= 0
+
+
+def test_the_run_ends_with_the_weight_average_in_the_fine_tuning_format(run_a):
+    rec = json.loads((run_a / "net_wavg0-2.json").read_text())
+    state = run_a / "net_wavg0-2_state.pt"
+    assert rec["inputs"] == {str(e): pv.sha256_file(run_a / f"net_epoch-{e}_state.pt") for e in range(3)}
+    assert rec["sha256"] == pv.sha256_file(state) and (run_a / "DONE").exists()
+    bn = rec["bn_recompute"]
+    assert bn["n_jets"] == min(pv.BN_JETS, bn["n_jets"]) > 0 and bn["batchnorm_layers"] > 0 and bn["files"]
+    w = torch.load(state)
+    ins = [torch.load(run_a / f"net_epoch-{e}_state.pt") for e in range(3)]
+    k = "mod.fc.1.weight"
+    torch.testing.assert_close(w[k], sum(s[k] for s in ins) / 3)
+    bnk = [k for k in w if k.endswith("running_mean")]
+    assert bnk and not all(torch.equal(w[k], sum(s[k] for s in ins) / 3) for k in bnk)   # recomputed
+
+
+def test_the_fine_tuning_reader_accepts_the_weight_average(tmp_path):
+    """Round trip through experiments/FT/ft_v2.py resolve_wavg with an 80-epoch run."""
+    sys.path.insert(0, str(ROOT / "experiments" / "FT"))
+    ft = pytest.importorskip("ft_v2")
+    m = torch.nn.Sequential(torch.nn.Linear(3, 4), torch.nn.BatchNorm1d(4))
+    for e in range(80):
+        with torch.no_grad():
+            for p_ in m.parameters():
+                p_.add_(0.01)
+        torch.save(m.state_dict(), tmp_path / f"net_epoch-{e}_state.pt")
+
+    class A:
+        num_epochs = 80
+
+    class DS:
+        file_index = {"f.parquet": 0}
+
+        def set_epoch(self, e):
+            pass
+
+    import pretrain_v2
+    batches = [({"x": torch.randn(64, 3)}, {}, {"_rowid": torch.arange(64), "_jet_label": torch.zeros(64, dtype=torch.long)})] * 4
+
+    class Loader:
+        def __init__(self, *a, **k):
+            pass
+
+        def __iter__(self):
+            return iter(batches)
+    import torch.utils.data as tud
+    real = tud.DataLoader
+    tud.DataLoader = Loader
+    try:
+        model = torch.nn.Sequential(torch.nn.Linear(3, 4), torch.nn.BatchNorm1d(4))
+        pretrain_v2.write_weight_average(tmp_path, A, model, DS(), {"dropout": 1, "data_sampling": 2},
+                                         torch.device("cpu"), False, {}, ["x"])
+    finally:
+        tud.DataLoader = real
+    (tmp_path / "DONE").write_text("{}")
+    rec = ft.resolve_wavg(tmp_path, {})
+    assert rec["epoch"] == "wavg70-79" and rec["sha256"] == pretrain_v2.sha256_file(tmp_path / "net_wavg70-79_state.pt")
+    assert sorted(rec["inputs"]) == [str(e) for e in range(70, 80)]
