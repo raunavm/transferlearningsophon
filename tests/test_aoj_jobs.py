@@ -373,3 +373,15 @@ def test_the_checks_job_runs_one_blas_thread_per_process():
     s = _script(SPECS[CHECKS[0]])
     env = "export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1"
     assert env in s and s.index(env) < s.index("python3 experiments/AOJ/realdata_checks.py")
+
+
+def test_the_read_back_job_mounts_the_volume_read_only_and_writes_nothing():
+    doc = yaml.safe_load(SPECS[K8S_READ])
+    pod = doc["spec"]["template"]["spec"]
+    assert pod["volumes"][0]["persistentVolumeClaim"]["readOnly"] is True
+    assert all(m.get("readOnly") for m in pod["containers"][0]["volumeMounts"])
+    s = _script(SPECS[K8S_READ])
+    assert f"{B.CHECKS_ROOT}/prong_test.json" in s and "BEGIN-TAR" in s and ">" not in s.replace("2>", "")
+
+
+K8S_READ = B.K8S / "job-aoj-read-checks-v1-raunav.yaml"
