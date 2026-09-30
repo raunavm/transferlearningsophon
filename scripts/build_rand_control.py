@@ -500,7 +500,11 @@ def main(argv=None) -> int:
     for d, seed in enumerate(a.seeds, start=1):
         if a.match == "share":
             print(f"  draw {d} (seed {seed}):")
-            assign = share_draw(rows, units, a.target, seed, d, strata)
+            # v1 draws hash their column index d; resonant-pool draws are
+            # identified by the seed alone, so a draw from a pool of seeds
+            # regenerates identically whichever column it is written to.
+            assign = share_draw(rows, units, a.target, seed,
+                                d if a.pool == "strata" else 0, strata)
         else:
             assign = draw(rows, sizes, qcd_groups, a.target, seed, d)
         k = len(set(assign.values()))

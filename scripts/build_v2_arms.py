@@ -9,7 +9,9 @@ WHAT IT WRITES
                                           like the four existing arms
   configs/arms/v2/RAND2_p{1..5}.yaml      five share-matched random partitions of
                                           all 161 resonant classes (map written by
-                                          build_rand_control.py --pool resonant)
+                                          build_rand_control.py --pool resonant),
+                                          drawn under a balance rule recorded in
+                                          configs/labelmaps/rand_v2_selection.json
   configs/labelmaps/flavour_pair_map.v2.csv, flavour_pair.v2.json
   configs/arms/v2/FLAV_F0.yaml, FLAV_F1.yaml   the decisive pair, see below
   configs/arms/v2/R16_Q1_MASS_LM.yaml     17 classes + mass output at the
@@ -60,6 +62,7 @@ surviving jet then has exactly the parent's sampling weight.
 Run:
   python3 scripts/build_v2_arms.py [--check-only] [--pairs-out PATH]
   python3 scripts/build_v2_arms.py --mass-logs DIR     # re-parse the log dumps
+  python3 scripts/build_v2_arms.py --select-rand 4     # redraw pool, reselect
   python3 scripts/build_v2_arms.py --lofo-pod-script   # print the pod check
 """
 from __future__ import annotations
@@ -72,6 +75,7 @@ import importlib.util
 import itertools
 import json
 import pathlib
+import random
 import re
 import statistics
 import sys
@@ -98,11 +102,36 @@ VOCABS = ["L188", "L162", "R42_Q1", "R16_Q1"]
 TARGET = "R16_Q1"
 QCD_LO = brc.QCD_LO
 
-# The v2 random partitions: build_rand_control.py --pool resonant --prefix
-# RAND2_p --seeds 45 46 47 48 49 --out configs/labelmaps/rand_label_map.v2.csv
-# (v1 used 42-44).
-RAND_V2_SEEDS = (45, 46, 47, 48, 49)
+# The v2 random partitions, drawn at random under a BALANCE RULE fixed on
+# 2026-09-29 before any pool draw was made. The first five (seeds 45-49, never
+# run) merged the visible-content pair in none of five, so a prediction "a
+# partition that splits a pair beats one that merges it" could not be tested on
+# the pair C4 was about.
+#   rule       each BALANCE_PAIRS pair is merged in 2 or 3 of the 5 partitions
+#              and split in the rest; shares exact; QCD one class
+#   pool       share-matched draws (build_rand_control.py --pool resonant) for
+#              seeds 100-199; extended by the next block of 100, in order, only
+#              if no 5-subset of the pool meets the rule
+#   selection  random.Random(SELECT_SEED).sample(pool, 5) repeated until a
+#              sample meets the rule: uniform over the 5-subsets that do
+# Recorded in configs/labelmaps/rand_v2_selection.json: the rule, every seed
+# tried with its merge pattern, the number of samples, the accepted seeds.
 RAND_V2_PREFIX = "RAND2_p"
+RAND_SEL = REPO / "configs" / "labelmaps" / "rand_v2_selection.json"
+BALANCE_PAIRS = {
+    "bb/cc": ("label_X_bb", "label_X_cc"),
+    "bbqq/ccqq": ("label_X_YY_bbqq", "label_X_YY_ccqq"),
+    "visible": ("label_X_YY_bbqq", "label_X_YY_cqtauhv"),
+    "bb/bbbb": ("label_X_bb", "label_X_YY_bbbb"),
+    "ee/mm": ("label_X_ee", "label_X_mm"),
+    "bc/bq": ("label_X_bc", "label_X_bq"),
+    "bc/cs": ("label_X_bc", "label_X_cs"),
+}
+MERGED_IN = (2, 3)
+N_PARTITIONS = 5
+POOL_BLOCKS = [range(100 + 100 * i, 200 + 100 * i) for i in range(4)]
+SELECT_SEED = 20260929
+MAX_SAMPLES = 10_000_000
 
 FLAV_SEED = 1
 FLAV_TRIALS = 64
@@ -191,6 +220,105 @@ def first_merge_level(rows, tasks, names) -> dict:
             hit = next((lvl for lvl in TREE if merged(column(rows, lvl), a, b)), None)
             out[t][label] = {"level": hit, "num_classes": k[hit] if hit else None}
     return out
+
+
+# ------------------------------------------- random partitions: selection
+def merge_vector(mapping: dict[int, int], names: dict[int, str]) -> tuple[int, ...]:
+    idx = {s: n for n, s in names.items()}
+    return tuple(int(mapping[idx[a]] == mapping[idx[b]])
+                 for a, b in BALANCE_PAIRS.values())
+
+
+def rule_ok(vectors) -> bool:
+    lo, hi = MERGED_IN
+    return all(lo <= sum(col) <= hi for col in zip(*vectors))
+
+
+def feasible(vectors: dict[int, tuple]) -> bool:
+    """Whether ANY 5 distinct pool seeds meet the rule: backtracking over the
+    distinct merge patterns, so the rejection sampler is known to terminate."""
+    lo, hi = MERGED_IN
+    types = collections.Counter(vectors.values())
+    keys = sorted(types)
+
+    def rec(i, left, sums):
+        if max(sums) > hi or min(sums) + left < lo:
+            return False
+        if left == 0:
+            return True
+        if i == len(keys):
+            return False
+        for m in range(min(left, types[keys[i]]), -1, -1):
+            if rec(i + 1, left - m, [s + m * b for s, b in zip(sums, keys[i])]):
+                return True
+        return False
+
+    return rec(0, N_PARTITIONS, [0] * len(BALANCE_PAIRS))
+
+
+def select(vectors: dict[int, tuple]) -> tuple[list[int], int]:
+    rng = random.Random(SELECT_SEED)
+    pool = sorted(vectors)
+    for n in range(1, MAX_SAMPLES + 1):
+        pick = sorted(rng.sample(pool, N_PARTITIONS))
+        if rule_ok([vectors[s] for s in pick]):
+            return pick, n
+    raise SystemExit(f"FATAL: no sample of {MAX_SAMPLES} met the rule")
+
+
+def _pool_draw(seed: int):
+    import contextlib
+    import io
+    rows = read_map()
+    with contextlib.redirect_stdout(io.StringIO()):
+        assign = brc.share_draw(rows, brc.exact_share_units(), TARGET, seed, 0,
+                                brc.POOLS["resonant"])
+    return seed, merge_vector(assign, names_of(rows))
+
+
+def select_rand(workers: int) -> dict:
+    """Draw the pool block by block until the rule is feasible, sample the five,
+    write the selection record and regenerate rand_label_map.v2.csv."""
+    import multiprocessing
+    vectors = {}
+    for block in POOL_BLOCKS:
+        with multiprocessing.Pool(workers) as p:
+            vectors.update(p.imap_unordered(_pool_draw, block))
+        print(f"  pool seeds {min(vectors)}-{max(vectors)}: rule "
+              f"{'feasible' if feasible(vectors) else 'infeasible'}")
+        if feasible(vectors):
+            break
+    else:
+        raise SystemExit("FATAL: the balance rule is infeasible on every pool block")
+    accepted, n = select(vectors)
+    pool = sorted(vectors)
+    record = {
+        "rule": (f"each of the {len(BALANCE_PAIRS)} pairs is merged in "
+                 f"{MERGED_IN[0]} or {MERGED_IN[1]} of the {N_PARTITIONS} partitions "
+                 "and split in the rest; shares exact; QCD one class"),
+        "fixed": "2026-09-29, before any pool draw",
+        "pairs": BALANCE_PAIRS, "merged_in": list(MERGED_IN),
+        "draw": "build_rand_control.share_draw, --pool resonant, identified by seed",
+        "selection": (f"random.Random({SELECT_SEED}).sample(sorted pool, "
+                      f"{N_PARTITIONS}) until a sample meets the rule"),
+        "select_seed": SELECT_SEED,
+        "seeds_tried": pool,
+        "merge_vectors": {str(s): list(vectors[s]) for s in pool},
+        "pool_merge_rate": {k: sum(vectors[s][i] for s in pool) / len(pool)
+                            for i, k in enumerate(BALANCE_PAIRS)},
+        "samples_drawn": n,
+        "accepted_seeds": accepted,
+        "accepted_merged_count": {k: sum(vectors[s][i] for s in accepted)
+                                  for i, k in enumerate(BALANCE_PAIRS)},
+    }
+    RAND_SEL.write_text(json.dumps(record, indent=1) + "\n")
+    brc.main(["--pool", "resonant", "--prefix", RAND_V2_PREFIX, "--seeds",
+              *map(str, accepted), "--out", str(RAND_V2)])
+    return record
+
+
+def rand_v2_seeds() -> list[int]:
+    return json.loads(RAND_SEL.read_text())["accepted_seeds"]
 
 
 # ------------------------------------------------------------- F0 / F1
@@ -483,7 +611,7 @@ def build_configs(base, rows, f0, f1, lam) -> dict[pathlib.Path, str]:
     for lvl in ("R63_Q1", "R29_Q1"):
         p = ARMS / f"{lvl}.yaml"
         out[p] = arm_text(base, p, column(rows, lvl), tree_names(lvl), tree_src)
-    for d in range(1, len(RAND_V2_SEEDS) + 1):
+    for d in range(1, N_PARTITIONS + 1):
         p = V2 / f"{RAND_V2_PREFIX}{d}.yaml"
         m, nm = read_two_col_map(RAND_V2, p.stem)
         out[p] = arm_text(base, p, m, nm, "configs/labelmaps/rand_label_map.v2.csv")
@@ -573,7 +701,7 @@ def registry(rows, lam, lofo_expr) -> dict:
         objective="classification+mass")
     add("R16_Q1_MASS", "configs/arms/R16_Q1_MASS.yaml", k[TARGET], 5, 1, LAMBDA_V1,
         objective="classification+mass")
-    for d, seed in enumerate(RAND_V2_SEEDS, start=1):
+    for d, seed in enumerate(rand_v2_seeds(), start=1):
         add(f"{RAND_V2_PREFIX}{d}", f"configs/arms/v2/{RAND_V2_PREFIX}{d}.yaml",
             k[TARGET], 2, 1, objective="classification", partition_seed=seed)
     for arm in ("FLAV_F0", "FLAV_F1"):
@@ -609,7 +737,12 @@ def main(argv=None) -> int:
     ap.add_argument("--lofo-pod-script", action="store_true")
     ap.add_argument("--pairs-out", type=pathlib.Path,
                     help="also write the probe-pair table here")
+    ap.add_argument("--select-rand", type=int, metavar="WORKERS",
+                    help="redraw the pool and select the five random partitions "
+                         "(rewrites rand_v2_selection.json and rand_label_map.v2.csv)")
     a = ap.parse_args(argv)
+    if a.select_rand:
+        select_rand(a.select_rand)
 
     rows = read_map()
     if a.lofo_pod_script:
@@ -629,15 +762,23 @@ def main(argv=None) -> int:
     if not a.check_only:
         write_flavour_csv(rows, f0, f1)
     maps = {"FLAV_F0": f0, "FLAV_F1": f1}
-    for d in range(1, len(RAND_V2_SEEDS) + 1):
+    for d in range(1, N_PARTITIONS + 1):
         arm = f"{RAND_V2_PREFIX}{d}"
         maps[arm] = read_two_col_map(RAND_V2, arm)[0]
     for lvl in ("R63_Q1", "R29_Q1"):
         maps[lvl] = column(rows, lvl)
+    sel = json.loads(RAND_SEL.read_text())
+    got = [list(merge_vector(maps[f"{RAND_V2_PREFIX}{d}"], names_of(rows)))
+           for d in range(1, N_PARTITIONS + 1)]
+    want = [sel["merge_vectors"][str(s)] for s in sel["accepted_seeds"]]
+    if got != want or not rule_ok(got):
+        print("  [FAIL] rand_label_map.v2.csv is not the recorded selection")
+        failed = 1
+    else:
+        failed = 0
     maps["R16_Q1_MASS_LM"] = column(rows, TARGET)
 
     configs = build_configs(base, rows, f0, f1, lam["lambda_m"])
-    failed = 0
     for path, text in configs.items():
         fails = check_config(text, maps[path.stem], base_sha)
         print(f"  [{'FAIL' if fails else 'PASS'}] {path.relative_to(REPO)} "
@@ -655,7 +796,7 @@ def main(argv=None) -> int:
                                  "sub_pairs": [p[0] for p in sub_pairs(tasks[t], names)]}
                              for t in tasks},
              "partition_seeds": {**{f"{RAND_V2_PREFIX}{d}": s for d, s in
-                                    enumerate(RAND_V2_SEEDS, start=1)},
+                                    enumerate(rand_v2_seeds(), start=1)},
                                  "FLAV_F0": FLAV_SEED, "FLAV_F1": FLAV_SEED},
              "status": status,
              "tree_first_merge": first_merge_level(rows, tasks, names)}

@@ -42,11 +42,11 @@
   }
  },
  "partition_seeds": {
-  "RAND2_p1": 45,
-  "RAND2_p2": 46,
-  "RAND2_p3": 47,
-  "RAND2_p4": 48,
-  "RAND2_p5": 49,
+  "RAND2_p1": 107,
+  "RAND2_p2": 126,
+  "RAND2_p3": 137,
+  "RAND2_p4": 141,
+  "RAND2_p5": 178,
   "FLAV_F0": 1,
   "FLAV_F1": 1
  },
@@ -321,10 +321,10 @@
     ]
    },
    "retained_topology": {
-    "merged": [],
-    "split": [
+    "merged": [
      "X_bb|X_YY_bbbb"
-    ]
+    ],
+    "split": []
    },
    "ee_vs_mm": {
     "merged": [
@@ -334,10 +334,10 @@
    },
    "bc_vs_rest": {
     "merged": [
-     "X_bc|X_bq"
+     "X_bc|X_bq",
+     "X_bc|X_cs"
     ],
     "split": [
-     "X_bc|X_cs",
      "X_bc|X_YY_qqb",
      "X_bc|QCD"
     ]
@@ -351,16 +351,16 @@
     ]
    },
    "bvc_4prong": {
-    "merged": [
-     "X_YY_bbqq|X_YY_ccqq"
-    ],
-    "split": []
-   },
-   "visible_content": {
     "merged": [],
     "split": [
-     "X_YY_bbqq|X_YY_cqtauhv"
+     "X_YY_bbqq|X_YY_ccqq"
     ]
+   },
+   "visible_content": {
+    "merged": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ],
+    "split": []
    },
    "retained_topology": {
     "merged": [
@@ -375,11 +375,10 @@
     ]
    },
    "bc_vs_rest": {
-    "merged": [
-     "X_bc|X_cs"
-    ],
+    "merged": [],
     "split": [
      "X_bc|X_bq",
+     "X_bc|X_cs",
      "X_bc|X_YY_qqb",
      "X_bc|QCD"
     ]
@@ -393,10 +392,93 @@
     ]
    },
    "bvc_4prong": {
+    "merged": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ],
+    "split": []
+   },
+   "visible_content": {
+    "merged": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ],
+    "split": []
+   },
+   "retained_topology": {
+    "merged": [
+     "X_bb|X_YY_bbbb"
+    ],
+    "split": []
+   },
+   "ee_vs_mm": {
     "merged": [],
     "split": [
-     "X_YY_bbqq|X_YY_ccqq"
+     "X_ee|X_mm"
     ]
+   },
+   "bc_vs_rest": {
+    "merged": [],
+    "split": [
+     "X_bc|X_bq",
+     "X_bc|X_cs",
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "RAND2_p4": {
+   "bvc_resonant": {
+    "merged": [
+     "X_bb|X_cc"
+    ],
+    "split": []
+   },
+   "bvc_4prong": {
+    "merged": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ],
+    "split": []
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [],
+    "split": [
+     "X_bb|X_YY_bbbb"
+    ]
+   },
+   "ee_vs_mm": {
+    "merged": [
+     "X_ee|X_mm"
+    ],
+    "split": []
+   },
+   "bc_vs_rest": {
+    "merged": [
+     "X_bc|X_bq",
+     "X_bc|X_cs"
+    ],
+    "split": [
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "RAND2_p5": {
+   "bvc_resonant": {
+    "merged": [],
+    "split": [
+     "X_bb|X_cc"
+    ]
+   },
+   "bvc_4prong": {
+    "merged": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ],
+    "split": []
    },
    "visible_content": {
     "merged": [],
@@ -422,89 +504,6 @@
      "X_bc|X_cs"
     ],
     "split": [
-     "X_bc|X_YY_qqb",
-     "X_bc|QCD"
-    ]
-   }
-  },
-  "RAND2_p4": {
-   "bvc_resonant": {
-    "merged": [],
-    "split": [
-     "X_bb|X_cc"
-    ]
-   },
-   "bvc_4prong": {
-    "merged": [],
-    "split": [
-     "X_YY_bbqq|X_YY_ccqq"
-    ]
-   },
-   "visible_content": {
-    "merged": [],
-    "split": [
-     "X_YY_bbqq|X_YY_cqtauhv"
-    ]
-   },
-   "retained_topology": {
-    "merged": [
-     "X_bb|X_YY_bbbb"
-    ],
-    "split": []
-   },
-   "ee_vs_mm": {
-    "merged": [],
-    "split": [
-     "X_ee|X_mm"
-    ]
-   },
-   "bc_vs_rest": {
-    "merged": [],
-    "split": [
-     "X_bc|X_bq",
-     "X_bc|X_cs",
-     "X_bc|X_YY_qqb",
-     "X_bc|QCD"
-    ]
-   }
-  },
-  "RAND2_p5": {
-   "bvc_resonant": {
-    "merged": [
-     "X_bb|X_cc"
-    ],
-    "split": []
-   },
-   "bvc_4prong": {
-    "merged": [],
-    "split": [
-     "X_YY_bbqq|X_YY_ccqq"
-    ]
-   },
-   "visible_content": {
-    "merged": [],
-    "split": [
-     "X_YY_bbqq|X_YY_cqtauhv"
-    ]
-   },
-   "retained_topology": {
-    "merged": [],
-    "split": [
-     "X_bb|X_YY_bbbb"
-    ]
-   },
-   "ee_vs_mm": {
-    "merged": [],
-    "split": [
-     "X_ee|X_mm"
-    ]
-   },
-   "bc_vs_rest": {
-    "merged": [
-     "X_bc|X_bq"
-    ],
-    "split": [
-     "X_bc|X_cs",
      "X_bc|X_YY_qqb",
      "X_bc|QCD"
     ]

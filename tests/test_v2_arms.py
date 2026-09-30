@@ -84,6 +84,7 @@ def share_profile(m):
 
 
 RAND_V2 = ROOT / "configs" / "labelmaps" / "rand_label_map.v2.csv"
+SEL = json.loads((ROOT / "configs" / "labelmaps" / "rand_v2_selection.json").read_text())
 FLAV = ROOT / "configs" / "labelmaps" / "flavour_pair_map.v2.csv"
 RAND_ARMS = [f"RAND2_p{d}" for d in range(1, 6)]
 
@@ -138,7 +139,7 @@ def test_mass_lambdas_in_the_registry():
 
 
 def test_partition_seeds_are_recorded():
-    assert [ARMS[a]["partition_seed"] for a in RAND_ARMS] == list(v2.RAND_V2_SEEDS)
+    assert [ARMS[a]["partition_seed"] for a in RAND_ARMS] == SEL["accepted_seeds"]
     assert ARMS["FLAV_F0"]["partition_seed"] == ARMS["FLAV_F1"]["partition_seed"]
 
 
@@ -218,10 +219,46 @@ def test_random_partitions_are_distinct_controls():
 
 
 def test_random_partition_is_reproducible_from_its_seed(tmp_path):
-    out = tmp_path / "p1.csv"
+    """Resonant-pool draws are identified by the seed alone, so the last
+    accepted seed regenerates as column 1 exactly as it was drawn in the pool."""
+    out = tmp_path / "p5.csv"
     brc.main(["--pool", "resonant", "--prefix", "RAND2_p",
-              "--seeds", str(v2.RAND_V2_SEEDS[0]), "--out", str(out)])
-    assert partition(csv_map(out, "RAND2_p1")) == partition(EXPECTED_MAP["RAND2_p1"])
+              "--seeds", str(SEL["accepted_seeds"][-1]), "--out", str(out)])
+    assert partition(csv_map(out, "RAND2_p1")) == partition(EXPECTED_MAP["RAND2_p5"])
+
+
+# -------------------------------------------- balance rule for the five
+def test_balance_rule_holds_on_the_committed_partitions():
+    """Each of the seven probe pairs is merged in 2 or 3 of the 5 partitions."""
+    vec = [v2.merge_vector(EXPECTED_MAP[a], NAMES) for a in RAND_ARMS]
+    assert [sum(c) for c in zip(*vec)] == list(SEL["accepted_merged_count"].values())
+    assert all(2 <= sum(c) <= 3 for c in zip(*vec))
+    assert [list(x) for x in vec] == [SEL["merge_vectors"][str(s)]
+                                      for s in SEL["accepted_seeds"]]
+    assert SEL["pairs"] == {k: list(p) for k, p in v2.BALANCE_PAIRS.items()}
+    assert SEL["merged_in"] == [2, 3]
+
+
+def test_selection_replays_from_the_record():
+    """Uniform over the rule-meeting 5-subsets of the pool: the recorded pool
+    and SELECT_SEED give back the accepted seeds after the recorded number of
+    samples, and the pool was extended only while the rule was infeasible."""
+    vectors = {int(k): tuple(x) for k, x in SEL["merge_vectors"].items()}
+    assert v2.select(vectors) == (SEL["accepted_seeds"], SEL["samples_drawn"])
+    blocks = [list(b) for b in v2.POOL_BLOCKS]
+    used = next(i for i in range(len(blocks))
+                if sorted(vectors) == sorted(sum(blocks[:i + 1], [])))
+    for i in range(used):
+        assert not v2.feasible({s: vectors[s] for s in sum(blocks[:i + 1], [])})
+    assert v2.feasible(vectors)
+
+
+def test_rule_helpers():
+    one, zero = (1,) * 7, (0,) * 7
+    assert v2.rule_ok([one, one, zero, zero, zero]) and v2.rule_ok([one] * 3 + [zero] * 2)
+    assert not v2.rule_ok([one] * 4 + [zero]) and not v2.rule_ok([one] + [zero] * 4)
+    assert v2.feasible({1: one, 2: one, 3: zero, 4: zero, 5: zero})
+    assert not v2.feasible({1: one, 2: zero, 3: zero, 4: zero, 5: zero, 6: zero})
 
 
 def test_resonant_pool_is_share_matched_only():
