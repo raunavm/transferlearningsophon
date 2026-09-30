@@ -1,0 +1,2008 @@
+{
+  "models": {
+    "l162-s1b": {
+      "signal_yield": -258.13638622393654,
+      "signal_yield_err": 189.41153350786487,
+      "signal_yield_err_lo": 192.7102840216317,
+      "signal_yield_err_hi": 186.112782994098,
+      "z_wald": -1.3628335162241745,
+      "s_over_sqrt_b": -1.8686163997774419,
+      "s_in_window": -255.22138710603022,
+      "b_in_window": 18654.938310354162,
+      "mean": 158.16747413996347,
+      "width": 7.963873637745532,
+      "tf_order": [
+        4,
+        2
+      ],
+      "converged": true,
+      "edm": 1.0698581641499731e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 23.463144325507045,
+      "data_efficiency": 0.009374434990264488,
+      "data_efficiency_sidebands": 0.01001020555134423,
+      "data_efficiency_top_window": 0.008451594663053091,
+      "yield_per_pt_bin": {
+        "500-550": -400.7006963019457,
+        "550-600": -3.490214339044251,
+        "600-675": 108.84786892603572,
+        "675-750": 77.8511579750905,
+        "750-850": -42.51206367704703,
+        "850-1000": -9.407574780989437,
+        "1000-1200": 11.926405747266925,
+        "1200-2500": -0.6512697733032845
+      },
+      "validation": {
+        "toy_p": 0.6467661691542289,
+        "asymptotic_p": 0.5665934201296077,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.1843661202493387,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2430.0902195991807,
+      "three_prong_yield_err": 260.44135193131694,
+      "ratio_to_three_prong": -0.10622502166463334,
+      "overlap_jaccard": 0.002615955173508879,
+      "shared_fraction_of_prong_only": 0.005491153142159854
+    },
+    "l162-s2": {
+      "signal_yield": 226.92916847872962,
+      "signal_yield_err": 160.99344756288446,
+      "signal_yield_err_lo": 144.6063512098278,
+      "signal_yield_err_hi": 177.3805439159411,
+      "z_wald": 1.4095553074611344,
+      "s_over_sqrt_b": 1.6387842139056323,
+      "s_in_window": 226.82360912781115,
+      "b_in_window": 19157.241289998718,
+      "mean": 195.47295300136986,
+      "width": 10.144391564775367,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 8.687805387291081e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 50.811927148389174,
+      "data_efficiency": 0.009515518616312805,
+      "data_efficiency_sidebands": 0.00999963441486337,
+      "data_efficiency_top_window": 0.008725250432120593,
+      "yield_per_pt_bin": {
+        "500-550": 230.05468316367723,
+        "550-600": 70.45723856360105,
+        "600-675": -87.09010797209808,
+        "675-750": -60.19051813582823,
+        "750-850": 72.85445325902002,
+        "850-1000": 34.16205342682454,
+        "1000-1200": -26.16838073446665,
+        "1200-2500": -7.150253092000251
+      },
+      "validation": {
+        "toy_p": 0.527363184079602,
+        "asymptotic_p": 0.46058019621562346,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.8540026987013397,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 749.3336771281547,
+      "three_prong_yield_err": 249.9493599043535,
+      "ratio_to_three_prong": 0.30284127806512434,
+      "overlap_jaccard": 0.00046454846969091324,
+      "shared_fraction_of_prong_only": 0.0009572786571384047
+    },
+    "l162-s3": {
+      "signal_yield": 71.34849910105535,
+      "signal_yield_err": 62.75160243900313,
+      "signal_yield_err_lo": null,
+      "signal_yield_err_hi": null,
+      "z_wald": 1.1369988387214292,
+      "s_over_sqrt_b": 0.49987307703511136,
+      "s_in_window": 71.3484991341772,
+      "b_in_window": 20372.77509409464,
+      "mean": 196.56600944039366,
+      "width": 3.9869005068465357,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 1.8482629354916935e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": false,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 30.10627946211656,
+      "data_efficiency": 0.00974419695613136,
+      "data_efficiency_sidebands": 0.010000955806923478,
+      "data_efficiency_top_window": 0.009332321136693529,
+      "yield_per_pt_bin": {
+        "500-550": 93.79804176098757,
+        "550-600": 47.71151058346674,
+        "600-675": -54.23283884389007,
+        "675-750": -34.49450377466195,
+        "750-850": 31.78182511760338,
+        "850-1000": 6.9967282285571075,
+        "1000-1200": -14.624472318575819,
+        "1200-2500": -5.587791652431596
+      },
+      "validation": {
+        "toy_p": 0.2885572139303483,
+        "asymptotic_p": 0.24861327649614215,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.04471884263432949,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2488.6374211590655,
+      "three_prong_yield_err": 243.35360576522964,
+      "ratio_to_three_prong": 0.0286697043508352,
+      "overlap_jaccard": 0.0022863209679284354,
+      "shared_fraction_of_prong_only": 0.0047284150570127284
+    },
+    "l162-s4": {
+      "signal_yield": -144.24059859217573,
+      "signal_yield_err": 98.79845585595271,
+      "signal_yield_err_lo": 104.52252586029918,
+      "signal_yield_err_hi": 93.07438585160624,
+      "z_wald": -1.459947904474107,
+      "s_over_sqrt_b": -0.9955224525121171,
+      "s_in_window": -144.24059840400784,
+      "b_in_window": 20992.92297179935,
+      "mean": 162.60961623411256,
+      "width": 3.79751970503261,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 4.16841409595357e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 27.039521820665072,
+      "data_efficiency": 0.009767287219253382,
+      "data_efficiency_sidebands": 0.010005360447123836,
+      "data_efficiency_top_window": 0.009263082930061993,
+      "yield_per_pt_bin": {
+        "500-550": -45.23781453023031,
+        "550-600": -109.04819272167384,
+        "600-675": -31.700725598755405,
+        "675-750": 71.05142898855325,
+        "750-850": 8.668421637606084,
+        "850-1000": -23.167471715954306,
+        "1000-1200": -14.199212159288091,
+        "1200-2500": -0.6070324924330979
+      },
+      "validation": {
+        "toy_p": 0.8756218905472637,
+        "asymptotic_p": 0.8449147732591697,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -1.1491500965988664,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2691.6342312934858,
+      "three_prong_yield_err": 250.23301814356714,
+      "ratio_to_three_prong": -0.05358848424321747,
+      "overlap_jaccard": 0.017138312748855133,
+      "shared_fraction_of_prong_only": 0.034820799219215964
+    },
+    "l162-s5": {
+      "signal_yield": -3689.790136131434,
+      "signal_yield_err": 3032.4825399576825,
+      "signal_yield_err_lo": 3826.3527488566738,
+      "signal_yield_err_hi": 2238.6123310586913,
+      "z_wald": -1.2167556078271513,
+      "s_over_sqrt_b": -22.594435835908776,
+      "s_in_window": -3307.9029062634677,
+      "b_in_window": 21433.964328354887,
+      "mean": 183.27223504658969,
+      "width": 27.256988423259617,
+      "tf_order": [
+        4,
+        2
+      ],
+      "converged": true,
+      "edm": 7.647792378243998e-08,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 40.6687948557518,
+      "data_efficiency": 0.009284510066454412,
+      "data_efficiency_sidebands": 0.010017913671694858,
+      "data_efficiency_top_window": 0.008090566871331509,
+      "yield_per_pt_bin": {
+        "500-550": -1505.4257350841615,
+        "550-600": -863.0038753650342,
+        "600-675": -540.6108794606607,
+        "675-750": -267.88076027229783,
+        "750-850": -182.01384420681495,
+        "850-1000": -107.93015754604554,
+        "1000-1200": -79.2389120758854,
+        "1200-2500": -143.68597212053368
+      },
+      "validation": {
+        "toy_p": 0.5074626865671642,
+        "asymptotic_p": 0.4132797036738403,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -1.2112946005436531,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 1862.6383339251151,
+      "three_prong_yield_err": 227.2877343039035,
+      "ratio_to_three_prong": -1.9809482436431898,
+      "overlap_jaccard": 0.0030169450839616363,
+      "shared_fraction_of_prong_only": 0.006308680424837719
+    },
+    "l162mass-s1": {
+      "signal_yield": 792.1892123167693,
+      "signal_yield_err": 330.8369014238437,
+      "signal_yield_err_lo": 261.68590556077027,
+      "signal_yield_err_hi": 399.98789728691713,
+      "z_wald": 2.3945007612735294,
+      "s_over_sqrt_b": 3.7388291675143948,
+      "s_in_window": 516.9432976702461,
+      "b_in_window": 19116.772583353995,
+      "mean": 142.7160209473463,
+      "width": 7.030064242469262,
+      "tf_order": [
+        4,
+        2
+      ],
+      "converged": true,
+      "edm": 1.2251602038896408e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 33.53045294679475,
+      "data_efficiency": 0.009630122582817518,
+      "data_efficiency_sidebands": 0.010004259287073746,
+      "data_efficiency_top_window": 0.00900220325864674,
+      "yield_per_pt_bin": {
+        "500-550": 512.3451428005019,
+        "550-600": 258.3496384629165,
+        "600-675": -13.05868182968389,
+        "675-750": -8.101123062679976,
+        "750-850": 14.218247369332097,
+        "850-1000": 10.697394556802445,
+        "1000-1200": 12.818643512371017,
+        "1200-2500": 4.919950507209083
+      },
+      "validation": {
+        "toy_p": 0.13432835820895522,
+        "asymptotic_p": 0.13161059017366275,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.9664953477689668,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 1745.9942198966203,
+      "three_prong_yield_err": 280.3638120927768,
+      "ratio_to_three_prong": 0.45371811847331,
+      "overlap_jaccard": 0.0008695513857149674,
+      "shared_fraction_of_prong_only": 0.001803783545974483
+    },
+    "l162mass-s2": {
+      "signal_yield": 1374.5995037431974,
+      "signal_yield_err": 349.5919241944616,
+      "signal_yield_err_lo": 312.0182893277387,
+      "signal_yield_err_hi": 387.1655590611846,
+      "z_wald": 3.9320116072777815,
+      "s_over_sqrt_b": 9.382291100364206,
+      "s_in_window": 1371.6017904216374,
+      "b_in_window": 21371.66114699674,
+      "mean": 187.88116755569726,
+      "width": 12.631568783475531,
+      "tf_order": [
+        3,
+        2
+      ],
+      "converged": true,
+      "edm": 1.2399249631983404e-08,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 77.11722507404647,
+      "data_efficiency": 0.010193080144714517,
+      "data_efficiency_sidebands": 0.010001396270943513,
+      "data_efficiency_top_window": 0.010802396631066689,
+      "yield_per_pt_bin": {
+        "500-550": 423.862863752173,
+        "550-600": 209.33943561318688,
+        "600-675": 231.51600128994107,
+        "675-750": 194.4463264242989,
+        "750-850": 177.7681182954037,
+        "850-1000": 117.97531197042017,
+        "1000-1200": 22.373603216046256,
+        "1200-2500": -2.682156818272584
+      },
+      "validation": {
+        "toy_p": 0.35323383084577115,
+        "asymptotic_p": 0.3087737129404958,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 2.1013515787099384,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2108.11451317772,
+      "three_prong_yield_err": 269.5897099659657,
+      "ratio_to_three_prong": 0.6520516296200437,
+      "overlap_jaccard": 0.03613253050704256,
+      "shared_fraction_of_prong_only": 0.07021353977243207
+    },
+    "l162mass-s3": {
+      "signal_yield": 201.41923384831497,
+      "signal_yield_err": 231.111574435605,
+      "signal_yield_err_lo": 215.07552033644282,
+      "signal_yield_err_hi": 247.14762853476716,
+      "z_wald": 0.8715237838701875,
+      "s_over_sqrt_b": 1.5725477101707297,
+      "s_in_window": 218.6820458366153,
+      "b_in_window": 19338.313447836015,
+      "mean": 197.18528135520373,
+      "width": 18.378925881093522,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 2.954997493624985e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 72.1147848528164,
+      "data_efficiency": 0.009608197424715414,
+      "data_efficiency_sidebands": 0.010012628103454426,
+      "data_efficiency_top_window": 0.008864138977565997,
+      "yield_per_pt_bin": {
+        "500-550": 466.5511211202424,
+        "550-600": 103.68561626758337,
+        "600-675": -181.67588373661195,
+        "675-750": -132.84160830146794,
+        "750-850": -17.80191764170406,
+        "850-1000": 18.789660706464776,
+        "1000-1200": -28.940884867419605,
+        "1200-2500": -26.346869698771986
+      },
+      "validation": {
+        "toy_p": 0.6467661691542289,
+        "asymptotic_p": 0.5626855090203575,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -1.1698651350142941,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2313.6277153999317,
+      "three_prong_yield_err": 238.03152328407373,
+      "ratio_to_three_prong": 0.08705775458498854,
+      "overlap_jaccard": 0.004165203791771727,
+      "shared_fraction_of_prong_only": 0.00863161840089072
+    },
+    "l162mass-s4": {
+      "signal_yield": 0.5003059996053665,
+      "signal_yield_err": 81.41782574663824,
+      "signal_yield_err_lo": 81.57781595164377,
+      "signal_yield_err_hi": 81.25783554163272,
+      "z_wald": 0.006144919678428335,
+      "s_over_sqrt_b": 0.003407275217692681,
+      "s_in_window": 0.5003059996053771,
+      "b_in_window": 21560.408886765206,
+      "mean": 171.08557359947457,
+      "width": 3.0000004919119823,
+      "tf_order": [
+        2,
+        3
+      ],
+      "converged": true,
+      "edm": 1.6575544021313199e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": true,
+      "delta_deviance_vs_background_only": 30.98867156169996,
+      "data_efficiency": 0.009815268362346391,
+      "data_efficiency_sidebands": 0.009995229774663012,
+      "data_efficiency_top_window": 0.009631529101065527,
+      "yield_per_pt_bin": {
+        "500-550": -45.034613600886516,
+        "550-600": 26.186762376981598,
+        "600-675": 36.809261512938,
+        "675-750": -36.71009855174935,
+        "750-850": 11.951389332119815,
+        "850-1000": -16.218099375066185,
+        "1000-1200": 3.6403261356131957,
+        "1200-2500": 19.875378169654805
+      },
+      "validation": {
+        "toy_p": 0.5223880597014925,
+        "asymptotic_p": 0.5043612646882654,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.02691493696364558,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2047.5162578223587,
+      "three_prong_yield_err": 209.4873788493154,
+      "ratio_to_three_prong": 0.00024434775435554695,
+      "overlap_jaccard": 0.005400302712280943,
+      "shared_fraction_of_prong_only": 0.011050200716536453
+    },
+    "l162mass-s5": {
+      "signal_yield": -377.8173646300015,
+      "signal_yield_err": 175.10365062555695,
+      "signal_yield_err_lo": 192.4160686593104,
+      "signal_yield_err_hi": 157.7912325918035,
+      "z_wald": -2.157678399509381,
+      "s_over_sqrt_b": -2.538999961783594,
+      "s_in_window": -377.69935591511523,
+      "b_in_window": 22129.270617929185,
+      "mean": 161.62181556297162,
+      "width": 6.320594475366037,
+      "tf_order": [
+        3,
+        3
+      ],
+      "converged": true,
+      "edm": 2.1811543797543354e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 23.609230045950795,
+      "data_efficiency": 0.010053055705047945,
+      "data_efficiency_sidebands": 0.010006681839183943,
+      "data_efficiency_top_window": 0.010094353541822762,
+      "yield_per_pt_bin": {
+        "500-550": -75.7903435246849,
+        "550-600": -149.52763788559795,
+        "600-675": -61.1046652498701,
+        "675-750": 12.129731952795572,
+        "750-850": -37.585245662661464,
+        "850-1000": -38.407038827255455,
+        "1000-1200": -27.655774847056527,
+        "1200-2500": 0.12360941432934874
+      },
+      "validation": {
+        "toy_p": 0.31840796019900497,
+        "asymptotic_p": 0.2756410590115691,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.2412825450599113,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2574.8875027789845,
+      "three_prong_yield_err": 270.4675767928197,
+      "ratio_to_three_prong": -0.14673160059312754,
+      "overlap_jaccard": 0.02356009817150264,
+      "shared_fraction_of_prong_only": 0.046727002623455166
+    },
+    "l188-s1": {
+      "signal_yield": -106.70647774901998,
+      "signal_yield_err": 171.53264483000794,
+      "signal_yield_err_lo": null,
+      "signal_yield_err_hi": null,
+      "z_wald": -0.6220767939232098,
+      "s_over_sqrt_b": -0.6919689696736204,
+      "s_in_window": -104.08749144816828,
+      "b_in_window": 22626.83681729965,
+      "mean": 210.1633364108288,
+      "width": 17.64960901678968,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 2.0110386520459433e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": false,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 24.209756673074963,
+      "data_efficiency": 0.010056974694660398,
+      "data_efficiency_sidebands": 0.010007562767224015,
+      "data_efficiency_top_window": 0.010232829955085834,
+      "yield_per_pt_bin": {
+        "500-550": 14.602199094957731,
+        "550-600": 5.322717791301641,
+        "600-675": -116.22902188306935,
+        "675-750": -22.241297276322264,
+        "750-850": 13.758809017739022,
+        "850-1000": 47.280414369948865,
+        "1000-1200": -26.608046958179656,
+        "1200-2500": -22.59225190539597
+      },
+      "validation": {
+        "toy_p": 0.44776119402985076,
+        "asymptotic_p": 0.3510659591962579,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.3686054145976258,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2517.3663078712984,
+      "three_prong_yield_err": 465.05065089944276,
+      "ratio_to_three_prong": -0.042388140897639835,
+      "overlap_jaccard": 0.006743144643584096,
+      "shared_fraction_of_prong_only": 0.013607161664033703
+    },
+    "l188-s2": {
+      "signal_yield": 913.4548262934974,
+      "signal_yield_err": 361.22958029899746,
+      "signal_yield_err_lo": 275.56328132193255,
+      "signal_yield_err_hi": 446.8958792760623,
+      "z_wald": 2.5287376120676806,
+      "s_over_sqrt_b": 5.96198902750697,
+      "s_in_window": 911.1315459557279,
+      "b_in_window": 23354.997329825288,
+      "mean": 190.01783913945278,
+      "width": 12.475066894161083,
+      "tf_order": [
+        3,
+        2
+      ],
+      "converged": true,
+      "edm": 1.627325702467435e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 38.1890824375248,
+      "data_efficiency": 0.010076993317275362,
+      "data_efficiency_sidebands": 0.009998973718833317,
+      "data_efficiency_top_window": 0.010707606229130657,
+      "yield_per_pt_bin": {
+        "500-550": 64.77365991718914,
+        "550-600": 217.4344780458714,
+        "600-675": 349.5605732263576,
+        "675-750": 177.36279828138177,
+        "750-850": 83.62405700415948,
+        "850-1000": 34.11660796207163,
+        "1000-1200": 9.529087141400723,
+        "1200-2500": -22.94643528493441
+      },
+      "validation": {
+        "toy_p": 0.07960199004975124,
+        "asymptotic_p": 0.06568083448886898,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.22371567991372884,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2389.872415379399,
+      "three_prong_yield_err": 237.5689693571819,
+      "ratio_to_three_prong": 0.3822190759704148,
+      "overlap_jaccard": 0.0287537729031161,
+      "shared_fraction_of_prong_only": 0.05687467810256572
+    },
+    "l188-s3": {
+      "signal_yield": 200.1766070689676,
+      "signal_yield_err": 93.68765396284729,
+      "signal_yield_err_lo": 92.55988613359965,
+      "signal_yield_err_hi": 94.81542179209494,
+      "z_wald": 2.136638058503946,
+      "s_over_sqrt_b": 1.4033455640754362,
+      "s_in_window": 195.70589420904042,
+      "b_in_window": 19448.16181052653,
+      "mean": 208.3468085595511,
+      "width": 8.483372152001937,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 7.425953344802207e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 26.51006771230601,
+      "data_efficiency": 0.009564770783063906,
+      "data_efficiency_sidebands": 0.010011526943404337,
+      "data_efficiency_top_window": 0.008742559983778478,
+      "yield_per_pt_bin": {
+        "500-550": 96.37246286648049,
+        "550-600": 50.451167875530366,
+        "600-675": 0.6198902190240628,
+        "675-750": -36.91225899421558,
+        "750-850": 43.46356310431843,
+        "850-1000": 36.00476608706271,
+        "1000-1200": 2.9664411308910714,
+        "1200-2500": 7.210574779876027
+      },
+      "validation": {
+        "toy_p": 0.8706467661691543,
+        "asymptotic_p": 0.8256746490163138,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.4514559230449952,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2845.6140799612517,
+      "three_prong_yield_err": 250.78307501487188,
+      "ratio_to_three_prong": 0.07034566228730967,
+      "overlap_jaccard": 0.005185582276667003,
+      "shared_fraction_of_prong_only": 0.010819131147359445
+    },
+    "l188-s4": {
+      "signal_yield": -1202.9864058380776,
+      "signal_yield_err": 686.3861571006605,
+      "signal_yield_err_lo": 761.4615102977266,
+      "signal_yield_err_hi": 611.3108039035945,
+      "z_wald": -1.7526379187476187,
+      "s_over_sqrt_b": -4.083167832319619,
+      "s_in_window": -616.8804593775478,
+      "b_in_window": 22824.830677066,
+      "mean": 140.0,
+      "width": 21.016849514096975,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 8.197000159612504e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": true,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 33.04714050702992,
+      "data_efficiency": 0.009799274647982054,
+      "data_efficiency_sidebands": 0.01000712230320398,
+      "data_efficiency_top_window": 0.00997112601930592,
+      "yield_per_pt_bin": {
+        "500-550": -972.5777220324056,
+        "550-600": -88.92190746375815,
+        "600-675": 4.5035120610830885,
+        "675-750": -104.31729032888019,
+        "750-850": 46.347520619393535,
+        "850-1000": -83.88492408380492,
+        "1000-1200": -5.252002199589655,
+        "1200-2500": 1.11640758988426
+      },
+      "validation": {
+        "toy_p": 0.21890547263681592,
+        "asymptotic_p": 0.16813055458604068,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.19157349287112574,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 1764.6402007785127,
+      "three_prong_yield_err": 259.2635628044991,
+      "ratio_to_three_prong": -0.6817176698725054,
+      "overlap_jaccard": 0.013318729696247894,
+      "shared_fraction_of_prong_only": 0.02707610493206654
+    },
+    "l188-s5": {
+      "signal_yield": -3837.3652119400067,
+      "signal_yield_err": 2833.298163385817,
+      "signal_yield_err_lo": 2750.0204334200725,
+      "signal_yield_err_hi": 2916.5758933515613,
+      "z_wald": -1.3543810042760627,
+      "s_over_sqrt_b": -21.537711318901472,
+      "s_in_window": -3211.0282513006737,
+      "b_in_window": 22227.42482058129,
+      "mean": 176.2627835099704,
+      "width": 29.999857511006642,
+      "tf_order": [
+        4,
+        2
+      ],
+      "converged": true,
+      "edm": 3.210190069045346e-08,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": true,
+      "delta_deviance_vs_background_only": 20.675717487916472,
+      "data_efficiency": 0.00958192960244816,
+      "data_efficiency_sidebands": 0.010002056966973568,
+      "data_efficiency_top_window": 0.008695576914992792,
+      "yield_per_pt_bin": {
+        "500-550": -1755.4174451789381,
+        "550-600": -896.2357100990196,
+        "600-675": -566.4366437855033,
+        "675-750": -152.09327222055785,
+        "750-850": -127.47570071767721,
+        "850-1000": -142.71874897625642,
+        "1000-1200": -97.5108545703894,
+        "1200-2500": -99.47683639166472
+      },
+      "validation": {
+        "toy_p": 0.5870646766169154,
+        "asymptotic_p": 0.5108861057590727,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -2.2302240779125695,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 1427.8953820545607,
+      "three_prong_yield_err": 227.35373727030446,
+      "ratio_to_three_prong": -2.68742742652373,
+      "overlap_jaccard": 0.0012500264836119409,
+      "shared_fraction_of_prong_only": 0.0026087437130381916
+    },
+    "r16q1-s1": {
+      "signal_yield": -452.05540705279066,
+      "signal_yield_err": 259.6896450642693,
+      "signal_yield_err_lo": 297.5203072190598,
+      "signal_yield_err_hi": 221.85898290947884,
+      "z_wald": -1.7407525315108874,
+      "s_over_sqrt_b": -2.9701502918965255,
+      "s_in_window": -450.33130670742617,
+      "b_in_window": 22988.330308765624,
+      "mean": 160.6346691380982,
+      "width": 7.749364432763479,
+      "tf_order": [
+        4,
+        3
+      ],
+      "converged": true,
+      "edm": 3.6350617809934275e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 38.35867120683298,
+      "data_efficiency": 0.01009182192661978,
+      "data_efficiency_sidebands": 0.010000515342903442,
+      "data_efficiency_top_window": 0.010499891609236048,
+      "yield_per_pt_bin": {
+        "500-550": -76.75197769318862,
+        "550-600": -110.81643363868461,
+        "600-675": -89.57114558988283,
+        "675-750": -7.247392320718705,
+        "750-850": -21.16899872448993,
+        "850-1000": -89.01487218428113,
+        "1000-1200": -49.8570880798406,
+        "1200-2500": -7.627498821704209
+      },
+      "validation": {
+        "toy_p": 0.05472636815920398,
+        "asymptotic_p": 0.04141618925597512,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.4791226388940929,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2070.784576351917,
+      "three_prong_yield_err": 302.428939033149,
+      "ratio_to_three_prong": -0.2183015134530182,
+      "overlap_jaccard": 0.021886610018970146,
+      "shared_fraction_of_prong_only": 0.04371372495513177
+    },
+    "r16q1-s2": {
+      "signal_yield": 1417.0237486322003,
+      "signal_yield_err": 271.87389044883116,
+      "signal_yield_err_lo": 249.22133102594773,
+      "signal_yield_err_hi": 294.52644987171465,
+      "z_wald": 5.212062645268599,
+      "s_over_sqrt_b": 9.667314013583264,
+      "s_in_window": 1409.3254010556493,
+      "b_in_window": 21252.543213678975,
+      "mean": 189.90198594617746,
+      "width": 13.730673163724605,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 7.287254020287451e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 91.34893169567874,
+      "data_efficiency": 0.010055703671002305,
+      "data_efficiency_sidebands": 0.010006902071193962,
+      "data_efficiency_top_window": 0.01023653914472681,
+      "yield_per_pt_bin": {
+        "500-550": 316.1342113837574,
+        "550-600": 306.9366750884238,
+        "600-675": 276.0403014715962,
+        "675-750": 160.01651640722685,
+        "750-850": 183.6213487481649,
+        "850-1000": 104.30638256600699,
+        "1000-1200": 61.58536563529149,
+        "1200-2500": 8.382947331732563
+      },
+      "validation": {
+        "toy_p": 0.5870646766169154,
+        "asymptotic_p": 0.5731665322500709,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -1.1898468176459722,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2785.070319512164,
+      "three_prong_yield_err": 333.35513645284027,
+      "ratio_to_three_prong": 0.5087928081041801,
+      "overlap_jaccard": 0.04033666570231551,
+      "shared_fraction_of_prong_only": 0.07930438812698815
+    },
+    "r16q1-s3": {
+      "signal_yield": 639.6243314946564,
+      "signal_yield_err": 752.5476756715784,
+      "signal_yield_err_lo": 635.9565873112086,
+      "signal_yield_err_hi": 869.1387640319482,
+      "z_wald": 0.8499452621707343,
+      "s_over_sqrt_b": 4.4617063941802995,
+      "s_in_window": 654.3928602092029,
+      "b_in_window": 21511.71963012286,
+      "mean": 203.2385590286724,
+      "width": 29.99987014635513,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 3.1680695731456655e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": true,
+      "delta_deviance_vs_background_only": 21.207450208771547,
+      "data_efficiency": 0.009877972196145642,
+      "data_efficiency_sidebands": 0.010013949495514535,
+      "data_efficiency_top_window": 0.010017284823726944,
+      "yield_per_pt_bin": {
+        "500-550": 653.320054428616,
+        "550-600": 193.63455181997787,
+        "600-675": 55.10809003856374,
+        "675-750": -92.51709172729231,
+        "750-850": -88.30353663188625,
+        "850-1000": -36.55929364776264,
+        "1000-1200": -13.523048101794892,
+        "1200-2500": -31.535394683765038
+      },
+      "validation": {
+        "toy_p": 0.7114427860696517,
+        "asymptotic_p": 0.6775745821113914,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.336487109661155,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2132.553486729829,
+      "three_prong_yield_err": 367.9839381270365,
+      "ratio_to_three_prong": 0.2999335470246472,
+      "overlap_jaccard": 0.004276539001720084,
+      "shared_fraction_of_prong_only": 0.008717563800128673
+    },
+    "r16q1-s4": {
+      "signal_yield": 358.9365580889235,
+      "signal_yield_err": 141.88600819293174,
+      "signal_yield_err_lo": 127.28337677490191,
+      "signal_yield_err_hi": 156.4886396109616,
+      "z_wald": 2.5297530225873563,
+      "s_over_sqrt_b": 3.1274263721550146,
+      "s_in_window": 422.85364023437677,
+      "b_in_window": 18281.25300861,
+      "mean": 218.8729837428224,
+      "width": 12.59446121841518,
+      "tf_order": [
+        2,
+        3
+      ],
+      "converged": true,
+      "edm": 2.9259307912168956e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 71.18287333420642,
+      "data_efficiency": 0.009566147725360174,
+      "data_efficiency_sidebands": 0.010006241375163908,
+      "data_efficiency_top_window": 0.00850063839275043,
+      "yield_per_pt_bin": {
+        "500-550": 193.5137025298086,
+        "550-600": 190.64473631949636,
+        "600-675": 114.56083413222065,
+        "675-750": -95.39685086271653,
+        "750-850": -60.39257509116601,
+        "850-1000": 7.519059461419939,
+        "1000-1200": 17.63871910192581,
+        "1200-2500": -9.151067502065304
+      },
+      "validation": {
+        "toy_p": 0.31343283582089554,
+        "asymptotic_p": 0.24654786805187084,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.79435805738299,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2231.15254433194,
+      "three_prong_yield_err": 276.8754209188512,
+      "ratio_to_three_prong": 0.16087495182737388,
+      "overlap_jaccard": 0.0016967148825371757,
+      "shared_fraction_of_prong_only": 0.0035209708135878473
+    },
+    "r16q1-s5": {
+      "signal_yield": 951.7011768013256,
+      "signal_yield_err": 292.2063774253544,
+      "signal_yield_err_lo": 259.26983068657756,
+      "signal_yield_err_hi": 325.14292416413116,
+      "z_wald": 3.256948685332655,
+      "s_over_sqrt_b": 6.300168627531216,
+      "s_in_window": 950.9904353462905,
+      "b_in_window": 22784.943213563165,
+      "mean": 188.51026173324655,
+      "width": 10.957310410781737,
+      "tf_order": [
+        3,
+        3
+      ],
+      "converged": true,
+      "edm": 8.962069438136166e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 41.72632608400792,
+      "data_efficiency": 0.010214369790987573,
+      "data_efficiency_sidebands": 0.010006241375163908,
+      "data_efficiency_top_window": 0.01107564026795186,
+      "yield_per_pt_bin": {
+        "500-550": 295.81157602363356,
+        "550-600": 158.37731852411594,
+        "600-675": 151.72121315061017,
+        "675-750": 124.40380586295112,
+        "750-850": 158.60996579229302,
+        "850-1000": 58.92773709362529,
+        "1000-1200": 12.765947195935178,
+        "1200-2500": -8.916386841838747
+      },
+      "validation": {
+        "toy_p": 0.06467661691542288,
+        "asymptotic_p": 0.034277121978176124,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.6869732351623686,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2200.9937248394485,
+      "three_prong_yield_err": 335.59305075830355,
+      "ratio_to_three_prong": 0.4323961336467451,
+      "overlap_jaccard": 0.03280199609045977,
+      "shared_fraction_of_prong_only": 0.06420838690945291
+    },
+    "r16q1mass-s1": {
+      "signal_yield": 215.62834802265564,
+      "signal_yield_err": 104.82268373418799,
+      "signal_yield_err_lo": 96.86297837241277,
+      "signal_yield_err_hi": 112.78238909596323,
+      "z_wald": 2.0570771548785323,
+      "s_over_sqrt_b": 1.4462536665268535,
+      "s_in_window": 215.62830358272095,
+      "b_in_window": 22229.136178288154,
+      "mean": 190.21610786674904,
+      "width": 6.000459951790628,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 9.905389959013871e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 24.825200347271732,
+      "data_efficiency": 0.010116500969314417,
+      "data_efficiency_sidebands": 0.009997872558783228,
+      "data_efficiency_top_window": 0.010298358972076396,
+      "yield_per_pt_bin": {
+        "500-550": 104.7486607648301,
+        "550-600": 56.47721130102937,
+        "600-675": -74.04064083852286,
+        "675-750": 71.56664287592652,
+        "750-850": 36.6349239295634,
+        "850-1000": 6.941256548933015,
+        "1000-1200": 8.261252631351741,
+        "1200-2500": 5.039040809544348
+      },
+      "validation": {
+        "toy_p": 0.3781094527363184,
+        "asymptotic_p": 0.3521598197818934,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.0600366692317595,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2279.7736840868592,
+      "three_prong_yield_err": 441.63190020432614,
+      "ratio_to_three_prong": 0.09458322531213156,
+      "overlap_jaccard": 0.007429775135157571,
+      "shared_fraction_of_prong_only": 0.014992880475751738
+    },
+    "r16q1mass-s2": {
+      "signal_yield": 937.9904447738484,
+      "signal_yield_err": 325.2156539378045,
+      "signal_yield_err_lo": 243.06613311216447,
+      "signal_yield_err_hi": 407.3651747634446,
+      "z_wald": 2.884210625830555,
+      "s_over_sqrt_b": 6.422687535036218,
+      "s_in_window": 937.2379344548775,
+      "b_in_window": 21294.435338064424,
+      "mean": 183.47599363540016,
+      "width": 12.1449601595318,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 9.575023748971583e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 56.489884462010025,
+      "data_efficiency": 0.00992521190877143,
+      "data_efficiency_sidebands": 0.00999963441486337,
+      "data_efficiency_top_window": 0.010053964587954366,
+      "yield_per_pt_bin": {
+        "500-550": 229.03701452615636,
+        "550-600": 134.29825615330412,
+        "600-675": 173.95089216727408,
+        "675-750": 144.60532616202866,
+        "750-850": 173.17041656417334,
+        "850-1000": 68.94071102970759,
+        "1000-1200": 4.419851085373624,
+        "1200-2500": 9.567977085830682
+      },
+      "validation": {
+        "toy_p": 0.04477611940298507,
+        "asymptotic_p": 0.024052801417464,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.3578259898558097,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": false
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": true,
+        "validation_p": false,
+        "auc": true
+      },
+      "three_prong_yield": 3162.2979570480015,
+      "three_prong_yield_err": 290.4267927428267,
+      "ratio_to_three_prong": 0.29661671908027937,
+      "overlap_jaccard": 0.030293010207891116,
+      "shared_fraction_of_prong_only": 0.06061511536080934
+    },
+    "r16q1mass-s3": {
+      "signal_yield": -483.3941484680315,
+      "signal_yield_err": 212.88925040179802,
+      "signal_yield_err_lo": 249.62403579223556,
+      "signal_yield_err_hi": 176.1544650113605,
+      "z_wald": -2.2706367163005843,
+      "s_over_sqrt_b": -3.4535994499188383,
+      "s_in_window": -483.31073236599747,
+      "b_in_window": 19584.340231619593,
+      "mean": 160.90035436901644,
+      "width": 5.837992713308337,
+      "tf_order": [
+        4,
+        3
+      ],
+      "converged": true,
+      "edm": 1.9073317488775502e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 21.33381049938538,
+      "data_efficiency": 0.00975330595901436,
+      "data_efficiency_sidebands": 0.010006681839183943,
+      "data_efficiency_top_window": 0.009172825982131597,
+      "yield_per_pt_bin": {
+        "500-550": -351.43279490359146,
+        "550-600": -93.48272005376468,
+        "600-675": 34.128477325666154,
+        "675-750": -17.427577075878784,
+        "750-850": -52.72121236078998,
+        "850-1000": -4.447322860918712,
+        "1000-1200": -0.08732686650282512,
+        "1200-2500": 2.0763283277487936
+      },
+      "validation": {
+        "toy_p": 0.8208955223880597,
+        "asymptotic_p": 0.8074681803892475,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.1580539735825166,
+        "tf_order": [
+          3,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2815.6733151993744,
+      "three_prong_yield_err": 303.35447213878547,
+      "ratio_to_three_prong": -0.17167977046861452,
+      "overlap_jaccard": 0.001784795640899117,
+      "shared_fraction_of_prong_only": 0.0036923210581757764
+    },
+    "r16q1mass-s4": {
+      "signal_yield": 68.66647490463811,
+      "signal_yield_err": 85.33912599237425,
+      "signal_yield_err_lo": 85.02299350426561,
+      "signal_yield_err_hi": 85.65525848048289,
+      "z_wald": 0.8046306322702909,
+      "s_over_sqrt_b": 0.49626537811509996,
+      "s_in_window": 68.33992886819995,
+      "b_in_window": 18963.61323846675,
+      "mean": 147.6158582244742,
+      "width": 3.0,
+      "tf_order": [
+        4,
+        3
+      ],
+      "converged": true,
+      "edm": 1.137223508654339e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": true,
+      "delta_deviance_vs_background_only": 23.473569850163585,
+      "data_efficiency": 0.009652047740919621,
+      "data_efficiency_sidebands": 0.010002056966973568,
+      "data_efficiency_top_window": 0.008727311093032247,
+      "yield_per_pt_bin": {
+        "500-550": 30.373640938823968,
+        "550-600": 97.93221654800634,
+        "600-675": -46.568513313721695,
+        "675-750": -43.41031963356357,
+        "750-850": 3.148097368781282,
+        "850-1000": 19.003323776801782,
+        "1000-1200": -1.7950711850722079,
+        "1200-2500": 9.983100404582235
+      },
+      "validation": {
+        "toy_p": 0.3283582089552239,
+        "asymptotic_p": 0.23977281266621342,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.4266706437232182,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 1968.2768732072043,
+      "three_prong_yield_err": 432.5186836797531,
+      "ratio_to_three_prong": 0.03488659336465691,
+      "overlap_jaccard": 0.0011339135989778806,
+      "shared_fraction_of_prong_only": 0.0023373972587707264
+    },
+    "r16q1mass-s5": {
+      "signal_yield": -103.14167564585762,
+      "signal_yield_err": 100.7150772839669,
+      "signal_yield_err_lo": 104.52446763914526,
+      "signal_yield_err_hi": 96.90568692878855,
+      "z_wald": -1.0240936950785322,
+      "s_over_sqrt_b": -0.6916683741266404,
+      "s_in_window": -103.14167564585766,
+      "b_in_window": 22236.81221363278,
+      "mean": 170.71974889436387,
+      "width": 3.0,
+      "tf_order": [
+        4,
+        2
+      ],
+      "converged": true,
+      "edm": 6.377248024196853e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": true,
+      "delta_deviance_vs_background_only": 16.630907354650162,
+      "data_efficiency": 0.00991006554351249,
+      "data_efficiency_sidebands": 0.010008003231244051,
+      "data_efficiency_top_window": 0.010073334800523902,
+      "yield_per_pt_bin": {
+        "500-550": -74.03600645137288,
+        "550-600": -40.853736888614044,
+        "600-675": 33.56011767782114,
+        "675-750": -32.14950774375227,
+        "750-850": 0.5048298416416273,
+        "850-1000": -5.547476914590718,
+        "1000-1200": -4.395014622374311,
+        "1200-2500": 19.775119455383827
+      },
+      "validation": {
+        "toy_p": 0.1044776119402985,
+        "asymptotic_p": 0.0779004156953235,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.8639414547767914,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2974.09133872063,
+      "three_prong_yield_err": 374.2921779881152,
+      "ratio_to_three_prong": -0.03468006321898178,
+      "overlap_jaccard": 0.01880559085133418,
+      "shared_fraction_of_prong_only": 0.037963724976753634
+    },
+    "r42q1-s1": {
+      "signal_yield": 754.7074929569936,
+      "signal_yield_err": 591.1514067849255,
+      "signal_yield_err_lo": 510.7404752893534,
+      "signal_yield_err_hi": 671.5623382804974,
+      "z_wald": 1.276673766305649,
+      "s_over_sqrt_b": 4.328414258656879,
+      "s_in_window": 624.2789040771946,
+      "b_in_window": 20801.740800287047,
+      "mean": 157.2678381344705,
+      "width": 18.050509132157128,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 1.4206565918066973e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 30.182861368923398,
+      "data_efficiency": 0.009733075499123047,
+      "data_efficiency_sidebands": 0.009999414182853352,
+      "data_efficiency_top_window": 0.009548690532417081,
+      "yield_per_pt_bin": {
+        "500-550": 245.06947622252898,
+        "550-600": 354.11652955408914,
+        "600-675": 288.23662722508874,
+        "675-750": -48.823493736420005,
+        "750-850": -15.31083020576017,
+        "850-1000": -71.7177591922285,
+        "1000-1200": -5.871066937043765,
+        "1200-2500": 9.00801002673925
+      },
+      "validation": {
+        "toy_p": 0.4079601990049751,
+        "asymptotic_p": 0.3883893368565706,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.08027096730995821,
+        "tf_order": [
+          3,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2152.6695268859385,
+      "three_prong_yield_err": 258.8139140103098,
+      "ratio_to_three_prong": 0.3505914324196139,
+      "overlap_jaccard": 0.004345906859911505,
+      "shared_fraction_of_prong_only": 0.008999695294476124
+    },
+    "r42q1-s2": {
+      "signal_yield": 1772.9869058262584,
+      "signal_yield_err": 869.5383482850266,
+      "signal_yield_err_lo": 805.4069387055292,
+      "signal_yield_err_hi": 933.6697578645238,
+      "z_wald": 2.0389979456605745,
+      "s_over_sqrt_b": 11.655931682573993,
+      "s_in_window": 1663.1953611146196,
+      "b_in_window": 20360.692428395574,
+      "mean": 196.5975901067159,
+      "width": 29.99999964700565,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 1.4476447866666026e-08,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": true,
+      "delta_deviance_vs_background_only": 177.9053108346551,
+      "data_efficiency": 0.010110781362852999,
+      "data_efficiency_sidebands": 0.010000295110893424,
+      "data_efficiency_top_window": 0.010311135069728644,
+      "yield_per_pt_bin": {
+        "500-550": 2049.218695921401,
+        "550-600": 354.60530716593945,
+        "600-675": -160.70225963125233,
+        "675-750": -248.60430634619706,
+        "750-850": -104.27792908021247,
+        "850-1000": -43.66873263814313,
+        "1000-1200": -60.72127925588651,
+        "1200-2500": -12.86259030939047
+      },
+      "validation": {
+        "toy_p": 0.2885572139303483,
+        "asymptotic_p": 0.26685219315173125,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.22216169055141619,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2049.2424306815324,
+      "three_prong_yield_err": 264.75448230462956,
+      "ratio_to_three_prong": 0.8651913894036454,
+      "overlap_jaccard": 0.005819777949909631,
+      "shared_fraction_of_prong_only": 0.011806239393241007
+    },
+    "r42q1-s3": {
+      "signal_yield": -97.55574844091342,
+      "signal_yield_err": 82.25327078971908,
+      "signal_yield_err_lo": 84.81969693479766,
+      "signal_yield_err_hi": 79.6868446446405,
+      "z_wald": -1.1860409623140118,
+      "s_over_sqrt_b": -0.6597913837365781,
+      "s_in_window": -97.5557484409134,
+      "b_in_window": 21862.128908769322,
+      "mean": 165.54111922439523,
+      "width": 3.0,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 5.945180371428383e-10,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": true,
+      "delta_deviance_vs_background_only": 22.24006745724853,
+      "data_efficiency": 0.009875112392914933,
+      "data_efficiency_sidebands": 0.010012187639434391,
+      "data_efficiency_top_window": 0.00972714376736622,
+      "yield_per_pt_bin": {
+        "500-550": -50.3674011817788,
+        "550-600": -8.163745230843332,
+        "600-675": 66.58389505778221,
+        "675-750": -58.87389180641658,
+        "750-850": -15.291066374198804,
+        "850-1000": -28.99288405072514,
+        "1000-1200": -0.6452527685660562,
+        "1200-2500": -1.805402086166923
+      },
+      "validation": {
+        "toy_p": 0.11940298507462686,
+        "asymptotic_p": 0.047904008411355795,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -1.1369993497746897,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 3318.3585659359487,
+      "three_prong_yield_err": 270.41373937154765,
+      "ratio_to_three_prong": -0.029398796574413487,
+      "overlap_jaccard": 0.01779258000327244,
+      "shared_fraction_of_prong_only": 0.036156725622901766
+    },
+    "r42q1-s4": {
+      "signal_yield": 267.09261700621414,
+      "signal_yield_err": 150.75134836662073,
+      "signal_yield_err_lo": 140.58125720909467,
+      "signal_yield_err_hi": 160.92143952414676,
+      "z_wald": 1.7717428062842695,
+      "s_over_sqrt_b": 1.8174631321194992,
+      "s_in_window": 260.685153205617,
+      "b_in_window": 20573.177610473198,
+      "mean": 200.62718244756127,
+      "width": 11.861889770728514,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 1.7225258398998052e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 30.74242139602137,
+      "data_efficiency": 0.009727673648576152,
+      "data_efficiency_sidebands": 0.0100049199831038,
+      "data_efficiency_top_window": 0.00922434250492292,
+      "yield_per_pt_bin": {
+        "500-550": 114.46309664722543,
+        "550-600": 77.8789692814146,
+        "600-675": -50.286008081424605,
+        "675-750": -38.605233916803655,
+        "750-850": 54.56793100827244,
+        "850-1000": 72.36126753949425,
+        "1000-1200": 34.12684998389327,
+        "1200-2500": 2.585744544142408
+      },
+      "validation": {
+        "toy_p": 0.19402985074626866,
+        "asymptotic_p": 0.1654802574652945,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.8543388161305401,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 1912.336332764305,
+      "three_prong_yield_err": 287.21369254328044,
+      "ratio_to_three_prong": 0.13966822280687863,
+      "overlap_jaccard": 0.012087601817668462,
+      "shared_fraction_of_prong_only": 0.024705741444452912
+    },
+    "r42q1-s5": {
+      "signal_yield": 724.3995818549198,
+      "signal_yield_err": 236.45977662201602,
+      "signal_yield_err_lo": 207.19852790581302,
+      "signal_yield_err_hi": 265.721025338219,
+      "z_wald": 3.063521382805338,
+      "s_over_sqrt_b": 4.853428719039405,
+      "s_in_window": 723.953398538565,
+      "b_in_window": 22249.68726963373,
+      "mean": 190.96537263254746,
+      "width": 10.05467315154456,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 1.1075810640558462e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 39.61065127599616,
+      "data_efficiency": 0.010112899735616488,
+      "data_efficiency_sidebands": 0.010007562767224015,
+      "data_efficiency_top_window": 0.010605397447912675,
+      "yield_per_pt_bin": {
+        "500-550": 230.4488657241272,
+        "550-600": 213.02160112116158,
+        "600-675": 51.22422981470172,
+        "675-750": 102.79698545196482,
+        "750-850": 64.43922807887672,
+        "850-1000": 34.999153932699635,
+        "1000-1200": 27.10192422738142,
+        "1200-2500": 0.3675935040066557
+      },
+      "validation": {
+        "toy_p": 0.3383084577114428,
+        "asymptotic_p": 0.2825313389813875,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.8457503960756959,
+        "tf_order": [
+          3,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 1203.7069691142506,
+      "three_prong_yield_err": 248.2902053033428,
+      "ratio_to_three_prong": 0.6018072508028846,
+      "overlap_jaccard": 0.010919843700496357,
+      "shared_fraction_of_prong_only": 0.02165943987096504
+    },
+    "sophon-public": {
+      "signal_yield": 144.13210450209408,
+      "signal_yield_err": 153.37250870003479,
+      "signal_yield_err_lo": 136.14659941392657,
+      "signal_yield_err_hi": 170.598417986143,
+      "z_wald": 0.9397518872432801,
+      "s_over_sqrt_b": 0.993048728496815,
+      "s_in_window": 144.1455827326332,
+      "b_in_window": 21069.855494363306,
+      "mean": 198.7527488782756,
+      "width": 10.462772430767386,
+      "tf_order": [
+        3,
+        2
+      ],
+      "converged": true,
+      "edm": 1.90109466086849e-09,
+      "n_tf_at_floor": 0,
+      "profile_error_ok": true,
+      "mean_at_bound": false,
+      "width_at_bound": false,
+      "delta_deviance_vs_background_only": 26.64782058947702,
+      "data_efficiency": 0.009754894738586975,
+      "data_efficiency_sidebands": 0.010006241375163908,
+      "data_efficiency_top_window": 0.009530144584212205,
+      "yield_per_pt_bin": {
+        "500-550": 224.37290364165563,
+        "550-600": 42.22591581076762,
+        "600-675": -121.81488814161992,
+        "675-750": -52.89078907706908,
+        "750-850": 51.311925691715466,
+        "850-1000": 4.1601279042981725,
+        "1000-1200": 2.7866256674906977,
+        "1200-2500": -6.019716995144506
+      },
+      "validation": {
+        "toy_p": 0.9950248756218906,
+        "asymptotic_p": 0.9912836186358142,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.2497883534104951,
+        "tf_order": [
+          3,
+          1
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": false,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 1504.8696196950675,
+      "three_prong_yield_err": 235.19390562712078,
+      "ratio_to_three_prong": 0.09577713751128795,
+      "overlap_jaccard": 0.007684816101924929,
+      "shared_fraction_of_prong_only": 0.01567895068296814
+    }
+  },
+  "yield_by_label_set": {
+    "162": {
+      "n": 5,
+      "mean": -758.7778906735523,
+      "sd": 1649.2315643825764,
+      "min": -3689.790136131434,
+      "max": 226.92916847872962
+    },
+    "162+mass": {
+      "n": 5,
+      "mean": 398.17817825557705,
+      "sd": 690.592889243285,
+      "min": -377.8173646300015,
+      "max": 1374.5995037431974
+    },
+    "188": {
+      "n": 5,
+      "mean": -806.6853324329279,
+      "sd": 1857.733740388851,
+      "min": -3837.3652119400067,
+      "max": 913.4548262934974
+    },
+    "17": {
+      "n": 5,
+      "mean": 583.0460815928631,
+      "sd": 699.3365779485399,
+      "min": -452.05540705279066,
+      "max": 1417.0237486322003
+    },
+    "17+mass": {
+      "n": 5,
+      "mean": 127.14988871745061,
+      "sd": 523.0940118080398,
+      "min": -483.3941484680315,
+      "max": 937.9904447738484
+    },
+    "43": {
+      "n": 5,
+      "mean": 684.3261698406945,
+      "sd": 703.0584575299024,
+      "min": -97.55574844091342,
+      "max": 1772.9869058262584
+    }
+  },
+  "ratio_by_label_set": {
+    "162": {
+      "n": 5,
+      "mean": -0.3618501534270162,
+      "sd": 0.918717659136375,
+      "min": -1.9809482436431898,
+      "max": 0.30284127806512434
+    },
+    "162+mass": {
+      "n": 5,
+      "mean": 0.20926804996791404,
+      "sd": 0.3321050850205679,
+      "min": -0.14673160059312754,
+      "max": 0.6520516296200437
+    },
+    "188": {
+      "n": 5,
+      "mean": -0.5917936998072302,
+      "sd": 1.2337689134637189,
+      "min": -2.68742742652373,
+      "max": 0.3822190759704148
+    },
+    "17": {
+      "n": 5,
+      "mean": 0.23673918542998562,
+      "sd": 0.28683870115147025,
+      "min": -0.2183015134530182,
+      "max": 0.5087928081041801
+    },
+    "17+mass": {
+      "n": 5,
+      "mean": 0.0439453408138943,
+      "sd": 0.17260158198997472,
+      "min": -0.17167977046861452,
+      "max": 0.29661671908027937
+    },
+    "43": {
+      "n": 5,
+      "mean": 0.3855718997717218,
+      "sd": 0.3573113180887765,
+      "min": -0.029398796574413487,
+      "max": 0.8651913894036454
+    }
+  },
+  "n_runs_peak_found": 0,
+  "n_runs_validation_passes": 29,
+  "n_runs": 30,
+  "score": "log[ sum P(three-prong hadronic) / sum P(two- and four-prong hadronic) ] (discriminants.SCORES['prong_only']): no QCD node, so the resonance-vs-QCD information cancels and only the prong count is left",
+  "procedure": "peak_fit.analyse at 1 % data efficiency: the map (windows masked), the floated-shape fit started from the reference's shape, the validation band; the criteria's AUC term is not applicable and is set to pass",
+  "tests": "whether the prong count alone, with the resonance-vs-QCD part of the score removed and the mass decorrelated by the same map, selects the top peak, and how many of the three-prong-vs-QCD score's tops it keeps",
+  "provenance": {
+    "code": "be22c6f2438a9b21f32a7fc2d725297ed632d332",
+    "code_dirty": false,
+    "inputs": {
+      "fit": {
+        "path": "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json",
+        "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0"
+      },
+      "jets": {
+        "path": "/scratch/merged/jets.npz",
+        "sha256": "538ecf0c3d3d0df2185e1a235054d8dfeda1fb6ff088bdd5da1a560441e08be2"
+      },
+      "sim_jets": {
+        "path": "/data/results/aoj/sim_v1/jets.npz",
+        "sha256": "2523d94a93b123e08fcc73dafd462681f05decf073a231bc5ec0a5d5fd2bb414"
+      }
+    },
+    "partial_models": null
+  }
+}

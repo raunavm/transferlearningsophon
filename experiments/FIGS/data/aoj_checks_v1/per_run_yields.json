@@ -52,7 +52,8 @@
       "pooled_shape_yield": 2562.8671336686753,
       "pooled_shape_yield_err": 196.15399329271136,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.3622648537902775
     },
     "l162-s2": {
       "label_set": "162",
@@ -141,7 +142,8 @@
           "width": 18.681674490218434
         }
       ],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.2479977649469175
     },
     "l162-s3": {
       "label_set": "162",
@@ -195,7 +197,8 @@
       "pooled_shape_yield": 2893.8990008308037,
       "pooled_shape_yield_err": 196.89616721925765,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.5535481467684857
     },
     "l162-s4": {
       "label_set": "162",
@@ -249,7 +252,8 @@
       "pooled_shape_yield": 2743.9998182637655,
       "pooled_shape_yield_err": 178.04720877504516,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.3946731234866828
     },
     "l162-s5": {
       "label_set": "162",
@@ -303,7 +307,8 @@
       "pooled_shape_yield": 2090.5856698337543,
       "pooled_shape_yield_err": 188.4645191973702,
       "lower_orders_shape_at_bound": [],
-      "head_defect": "top-1 0.386 vs 0.501-0.545; P(QCD) on resonant jets 0.239"
+      "head_defect": "top-1 0.386 vs 0.501-0.545; P(QCD) on resonant jets 0.239",
+      "sim_signal_eff_at_data_cut": 0.3582603836841125
     },
     "l162mass-s1": {
       "label_set": "162+mass",
@@ -357,7 +362,8 @@
       "pooled_shape_yield": 1850.4729495377883,
       "pooled_shape_yield_err": 208.9451375063226,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.3245948966287949
     },
     "l162mass-s2": {
       "label_set": "162+mass",
@@ -411,7 +417,8 @@
       "pooled_shape_yield": 2221.928455162636,
       "pooled_shape_yield_err": 188.64300957881505,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.3007077668094617
     },
     "l162mass-s3": {
       "label_set": "162+mass",
@@ -465,7 +472,8 @@
       "pooled_shape_yield": 2368.495062934123,
       "pooled_shape_yield_err": 177.03189814160686,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.36277705345501954
     },
     "l162mass-s4": {
       "label_set": "162+mass",
@@ -519,7 +527,8 @@
       "pooled_shape_yield": 2250.2102494630776,
       "pooled_shape_yield_err": 174.3771312129081,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.3922052523747439
     },
     "l162mass-s5": {
       "label_set": "162+mass",
@@ -573,7 +582,8 @@
       "pooled_shape_yield": 2464.57388278258,
       "pooled_shape_yield_err": 173.6316405735388,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.5038182156826224
     },
     "l188-s1": {
       "label_set": "188",
@@ -627,7 +637,8 @@
       "pooled_shape_yield": 2077.1632322836576,
       "pooled_shape_yield_err": 207.8814080585438,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.38265971316818775
     },
     "l188-s2": {
       "label_set": "188",
@@ -681,7 +692,8 @@
       "pooled_shape_yield": 2413.9776581651217,
       "pooled_shape_yield_err": 177.09492041795582,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.3434997206183647
     },
     "l188-s3": {
       "label_set": "188",
@@ -735,7 +747,8 @@
       "pooled_shape_yield": 2901.9398034487567,
       "pooled_shape_yield_err": 179.5005954113658,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.5143881542186627
     },
     "l188-s4": {
       "label_set": "188",
@@ -789,7 +802,8 @@
       "pooled_shape_yield": 1933.2149768562963,
       "pooled_shape_yield_err": 210.5462088634807,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.3351182715589495
     },
     "l188-s5": {
       "label_set": "188",
@@ -843,7 +857,8 @@
       "pooled_shape_yield": 1584.60212886108,
       "pooled_shape_yield_err": 213.41456512476415,
       "lower_orders_shape_at_bound": [],
-      "head_defect": "top-1 0.327 vs 0.463-0.490; P(QCD) on resonant jets 0.301"
+      "head_defect": "top-1 0.327 vs 0.463-0.490; P(QCD) on resonant jets 0.301",
+      "sim_signal_eff_at_data_cut": 0.32077668094617245
     },
     "r16q1-s1": {
       "label_set": "17",
@@ -897,7 +912,8 @@
       "pooled_shape_yield": 2112.02522368662,
       "pooled_shape_yield_err": 198.47617787035782,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.34359284783013594
     },
     "r16q1-s2": {
       "label_set": "17",
@@ -951,7 +967,8 @@
       "pooled_shape_yield": 2479.999257498944,
       "pooled_shape_yield_err": 198.66434400065182,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.40570869808157944
     },
     "r16q1-s3": {
       "label_set": "17",
@@ -1005,7 +1022,8 @@
       "pooled_shape_yield": 1911.1239097908397,
       "pooled_shape_yield_err": 208.6077203143685,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.2497671819705718
     },
     "r16q1-s4": {
       "label_set": "17",
@@ -1059,7 +1077,8 @@
       "pooled_shape_yield": 2290.7873761036994,
       "pooled_shape_yield_err": 192.51859364710074,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.34401192028310673
     },
     "r16q1-s5": {
       "label_set": "17",
@@ -1113,7 +1132,8 @@
       "pooled_shape_yield": 1979.8862549662779,
       "pooled_shape_yield_err": 212.64628574453968,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.42074874278264107
     },
     "r16q1mass-s1": {
       "label_set": "17+mass",
@@ -1167,7 +1187,8 @@
       "pooled_shape_yield": 1886.5643232331868,
       "pooled_shape_yield_err": 194.9694752764093,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.25074501769417024
     },
     "r16q1mass-s2": {
       "label_set": "17+mass",
@@ -1221,7 +1242,8 @@
       "pooled_shape_yield": 2880.0184963150177,
       "pooled_shape_yield_err": 181.92757691530454,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.2879959024026821
     },
     "r16q1mass-s3": {
       "label_set": "17+mass",
@@ -1275,7 +1297,8 @@
       "pooled_shape_yield": 2684.156172870989,
       "pooled_shape_yield_err": 197.15136856395205,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.4546936114732725
     },
     "r16q1mass-s4": {
       "label_set": "17+mass",
@@ -1346,7 +1369,8 @@
           "width": 29.999860405706563
         }
       ],
-      "head_defect": "top-1 0.479 vs 0.682-0.719; P(QCD) on resonant jets 0.231"
+      "head_defect": "top-1 0.479 vs 0.682-0.719; P(QCD) on resonant jets 0.231",
+      "sim_signal_eff_at_data_cut": 0.16660458185881916
     },
     "r16q1mass-s5": {
       "label_set": "17+mass",
@@ -1400,7 +1424,8 @@
       "pooled_shape_yield": 2604.200666228898,
       "pooled_shape_yield_err": 213.57704605138196,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.3954647047867387
     },
     "r42q1-s1": {
       "label_set": "43",
@@ -1454,7 +1479,8 @@
       "pooled_shape_yield": 2246.8898357276125,
       "pooled_shape_yield_err": 200.85978688135717,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.6666045818588191
     },
     "r42q1-s2": {
       "label_set": "43",
@@ -1508,7 +1534,8 @@
       "pooled_shape_yield": 2174.0085463472187,
       "pooled_shape_yield_err": 198.7690538295815,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.2856677221084001
     },
     "r42q1-s3": {
       "label_set": "43",
@@ -1562,7 +1589,8 @@
       "pooled_shape_yield": 3292.7344328299623,
       "pooled_shape_yield_err": 181.93036793957754,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.398398211957534
     },
     "r42q1-s4": {
       "label_set": "43",
@@ -1616,7 +1644,8 @@
       "pooled_shape_yield": 1871.8464286861565,
       "pooled_shape_yield_err": 176.08671004474976,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.32883218476438814
     },
     "r42q1-s5": {
       "label_set": "43",
@@ -1670,7 +1699,8 @@
       "pooled_shape_yield": 1210.22800750218,
       "pooled_shape_yield_err": 167.09367965095032,
       "lower_orders_shape_at_bound": [],
-      "head_defect": "top-1 0.550 vs 0.605-0.671; never predicts QCD (P(QCD) 0.000)"
+      "head_defect": "top-1 0.550 vs 0.605-0.671; never predicts QCD (P(QCD) 0.000)",
+      "sim_signal_eff_at_data_cut": 0.9768113242689513
     },
     "sophon-public": {
       "label_set": "published",
@@ -1724,7 +1754,8 @@
       "pooled_shape_yield": 1632.1549489540084,
       "pooled_shape_yield_err": 190.5640672800643,
       "lower_orders_shape_at_bound": [],
-      "head_defect": null
+      "head_defect": null,
+      "sim_signal_eff_at_data_cut": 0.3730210467498603
     }
   },
   "lowest_yield_per_label_set": {
@@ -1823,7 +1854,7 @@
   ],
   "head_defects_source": "audit 2026-09-29, report section B4 (head_acc.py on 2M test jets)",
   "provenance": {
-    "code": "4726096ba560a751d4bdd08f23764d9ca4345187",
+    "code": "be22c6f2438a9b21f32a7fc2d725297ed632d332",
     "code_dirty": false,
     "inputs": {
       "fit": {
@@ -1831,8 +1862,12 @@
         "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0"
       },
       "jets": {
-        "path": "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/aoj_v1/merged/jets.npz",
-        "sha256": "f547be2590ee5f1be62042fef275a5b0ba940bf8daa6b362656915bf32c31c25"
+        "path": "/scratch/merged/jets.npz",
+        "sha256": "538ecf0c3d3d0df2185e1a235054d8dfeda1fb6ff088bdd5da1a560441e08be2"
+      },
+      "sim_jets": {
+        "path": "/data/results/aoj/sim_v1/jets.npz",
+        "sha256": "2523d94a93b123e08fcc73dafd462681f05decf073a231bc5ec0a5d5fd2bb414"
       }
     },
     "partial_models": null

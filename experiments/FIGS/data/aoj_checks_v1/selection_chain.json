@@ -86,7 +86,7 @@
   ],
   "n_files": 80,
   "provenance": {
-    "code": "4726096ba560a751d4bdd08f23764d9ca4345187",
+    "code": "be22c6f2438a9b21f32a7fc2d725297ed632d332",
     "code_dirty": false,
     "inputs": {
       "fit": {
@@ -94,8 +94,12 @@
         "sha256": "f6698971d312f5981d51d1a33980255b3bc2aa90ff748779a9c430ff8f4caed0"
       },
       "jets": {
-        "path": "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/aoj_v1/merged/jets.npz",
-        "sha256": "f547be2590ee5f1be62042fef275a5b0ba940bf8daa6b362656915bf32c31c25"
+        "path": "/scratch/merged/jets.npz",
+        "sha256": "538ecf0c3d3d0df2185e1a235054d8dfeda1fb6ff088bdd5da1a560441e08be2"
+      },
+      "sim_jets": {
+        "path": "/data/results/aoj/sim_v1/jets.npz",
+        "sha256": "2523d94a93b123e08fcc73dafd462681f05decf073a231bc5ec0a5d5fd2bb414"
       }
     },
     "partial_models": null
