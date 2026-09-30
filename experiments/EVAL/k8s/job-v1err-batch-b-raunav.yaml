@@ -1,0 +1,81 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: v1err-batch-b-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          # a signal (OOM, lost node) is retried; any other failure is deterministic
+          halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
+          git clone --depth 1 --branch "mtx-s1.66" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+          # BLAS threads = the CPUs requested: nproc reports the node's cores
+          export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+          date -u +"start %Y-%m-%dT%H:%M:%SZ"; nproc; free -g | head -2
+
+          run_massres () {   # SPECS OUT; background
+            local ARMS=""
+            for spec in $1; do
+              a=${spec%%:*}; d=/data/results/eval/${a}/features_e79
+              for f in features.npy label188.npy extract_manifest.json; do
+                [ -f "${d}/${f}" ] || { echo "FATAL: no ${d}/${f}"; exit 42; }
+              done
+              ARMS="${ARMS} ${a#mtx-}=${d}"
+            done
+            if [ -f "$2/residuals.npz" ] && [ -f "$2/mass_resolution.json" ]; then exit 0; fi
+            mkdir -p $2
+            OMP_NUM_THREADS=3 OPENBLAS_NUM_THREADS=3 MKL_NUM_THREADS=3 \
+            python3 experiments/EVAL/mass_resolution.py --features ${ARMS} \
+              --observers /data/results/eval/test2m_observers --out $2 --save-residuals > $2.log 2>&1
+          }
+          P=""
+          run_massres "mtx-l188-s1:L188 mtx-l162-s1b:L162 mtx-r42q1-s1:R42_Q1 mtx-r16q1-s1:R16_Q1 mtx-l162mass-s1:L162_MASS mtx-r16q1mass-s1:R16_Q1_MASS" /data/results/eval/v1err/mass_resolution/s1 &
+          P="$P $!"
+          run_massres "mtx-l188-s2:L188 mtx-l162-s2:L162 mtx-r42q1-s2:R42_Q1 mtx-r16q1-s2:R16_Q1 mtx-l162mass-s2:L162_MASS mtx-r16q1mass-s2:R16_Q1_MASS" /data/results/eval/v1err/mass_resolution/s2 &
+          P="$P $!"
+          run_massres "mtx-l188-s3:L188 mtx-l162-s3:L162 mtx-r42q1-s3:R42_Q1 mtx-r16q1-s3:R16_Q1 mtx-l162mass-s3:L162_MASS mtx-r16q1mass-s3:R16_Q1_MASS" /data/results/eval/v1err/mass_resolution/s3 &
+          P="$P $!"
+          run_massres "mtx-l188-s4:L188 mtx-l162-s4:L162 mtx-r42q1-s4:R42_Q1 mtx-r16q1-s4:R16_Q1 mtx-l162mass-s4:L162_MASS mtx-r16q1mass-s4:R16_Q1_MASS" /data/results/eval/v1err/mass_resolution/s4 &
+          P="$P $!"
+          run_massres "mtx-l188-s5:L188 mtx-l162-s5:L162 mtx-r42q1-s5:R42_Q1 mtx-r16q1-s5:R16_Q1 mtx-l162mass-s5:L162_MASS mtx-r16q1mass-s5:R16_Q1_MASS" /data/results/eval/v1err/mass_resolution/s5 &
+          P="$P $!"
+          for p in ${P}; do wait ${p} || halt; done
+          date -u +"end %Y-%m-%dT%H:%M:%SZ"
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "80Gi", cpu: "16", ephemeral-storage: "10Gi" }
+          limits:   { memory: "80Gi", cpu: "16", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

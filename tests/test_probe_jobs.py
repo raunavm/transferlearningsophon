@@ -368,7 +368,7 @@ def _v1err():
 
 def test_v1err_jobs_parse_carry_the_retry_policy_and_are_committed():
     base, jobs = _v1err()
-    assert len(jobs) == 14 + 5 + 5 + 1
+    assert len(jobs) == 14 + 5 + 5 + 1 + 2
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"] and fname == f"job-{d['metadata']['name']}.yaml"
@@ -377,7 +377,8 @@ def test_v1err_jobs_parse_carry_the_retry_policy_and_are_committed():
                                                       "values": [42]}} in rules
         assert {"action": "Ignore", "onPodConditions": [{"type": "DisruptionTarget"}]} in rules
         assert d["spec"]["template"]["spec"]["containers"][0]["name"] == "main"
-        pin = bp.V1ERR_PIN2 if ("labelrec-curve" in fname or "paired-ft" in fname) else bp.V1ERR_PIN
+        pin = (bp.V1ERR_PIN2 if any(k in fname for k in ("labelrec-curve", "paired-ft", "batch-a"))
+               else bp.V1ERR_PIN)
         assert f'--branch "{pin}"' in text and "|| halt" in text
         assert "/data/results/eval/v1err/" in text
         assert (bp.K8S / fname).read_text() == text, f"{fname} not committed as built"
@@ -417,3 +418,31 @@ def test_v1err_pin_needs_the_flags_it_passes():
                                     "experiments/EVAL/mass_resolution.py",
                                     "experiments/STATS/paired_errors.py"}
     bp.verify_pin("mtx-s0.0-does-not-exist", True, bp.V1ERR_NEEDED)
+
+
+def test_batch_a_runs_the_same_probe_reruns_as_the_single_specs():
+    base, jobs = _v1err()
+    a = jobs["job-v1err-batch-a-raunav.yaml"]
+    d = yaml.safe_load(a)
+    assert d["spec"]["podFailurePolicy"]["rules"][0]["onExitCodes"]["values"] == [42]
+    assert f'--branch "{bp.V1ERR_PIN2}"' in a and "class_counts.py" in a and "ft-replicates" in a
+    for src in bp.BATCH_A_PROBES:
+        single = jobs[f"job-{bp.v1err_name(src)}.yaml"]
+        specs = re.search(r"for spec in (.+); do", single).group(1)
+        out = re.search(r"OUT=(\S+)", single).group(1)
+        tasks = re.search(r"--tasks (.+) \\", single).group(1)
+        eps = re.search(r"--eps-s (.+) \\", single).group(1)
+        assert f'run_probe "{specs}" ' in a and f' {out} "{tasks}" "{eps}" &' in a
+    assert a.count("run_probe \"") == len(bp.BATCH_A_PROBES)
+    assert "for p in ${P}; do wait ${p} || halt; done" in a
+    assert (bp.K8S / "job-v1err-batch-a-raunav.yaml").read_text() == a
+
+
+def test_batch_b_runs_the_five_mass_reruns():
+    base, jobs = _v1err()
+    b = jobs["job-v1err-batch-b-raunav.yaml"]
+    assert b.count('run_massres "') == 5 and "--save-residuals" in b
+    for src in bp.V1ERR_MASSRES_SOURCES:
+        specs = re.search(r"for spec in (.+); do", base[f"job-{src}.yaml"]).group(1)
+        assert f'run_massres "{specs}" ' in b
+    assert (bp.K8S / "job-v1err-batch-b-raunav.yaml").read_text() == b

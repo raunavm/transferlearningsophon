@@ -538,6 +538,118 @@ def v1err_ft_spec() -> tuple[str, str]:
                   + ROBUST_TAIL.format(mem="48Gi", cpu="16"))
 
 
+# BATCHED, for a cluster whose pod cap is the constraint (2026-09-30: 29-30 raunav
+# pods active against a cap of 25 for hours, so seven single-purpose pods would
+# wait all night). Batch A runs the class count, the fine-tuning bootstrap and
+# the five probe reruns not yet applied in ONE pod; batch B the five mass
+# reruns side by side. Same scripts, same outputs, same skip-if-done checks as
+# the single specs above, which are therefore not applied.
+BATCH_A_PROBES = [f"probe-randcontrol-d{d}-raunav" for _, _, d in CONTROL_DRAWS] + [
+    "probe-vcbwindow-s10-raunav", "probe-mass2x2-s5-raunav"]
+RUN_PROBE = """
+          run_probe () {{   # SPECS FEAT OUT TASKS EPS; background, so its exit is its status
+            local ARMS=""
+            for spec in $1; do
+              a=${{spec%%:*}}; d=/data/results/eval/${{a}}/$2
+              for f in features.npy label188.npy extract_manifest.json; do
+                [ -f "${{d}}/${{f}}" ] || {{ echo "FATAL: no ${{d}}/${{f}}"; exit 42; }}
+              done
+              ARMS="${{ARMS}} ${{a#mtx-}}=${{d}}"
+            done
+            if [ -f "$3/scores.npz" ] && [ -f "$3/probe_results.json" ]; then exit 0; fi
+            mkdir -p $3
+            OMP_NUM_THREADS=3 OPENBLAS_NUM_THREADS=3 MKL_NUM_THREADS=3 \\
+            python3 experiments/EVAL/probe.py --features ${{ARMS}} --out $3 \\
+              --tasks $4 --eps-s $5 --bootstrap 2000 --save-scores > $3.log 2>&1
+          }}
+"""
+RUN_MASSRES = """
+          run_massres () {{   # SPECS OUT; background
+            local ARMS=""
+            for spec in $1; do
+              a=${{spec%%:*}}; d=/data/results/eval/${{a}}/{feat}
+              for f in features.npy label188.npy extract_manifest.json; do
+                [ -f "${{d}}/${{f}}" ] || {{ echo "FATAL: no ${{d}}/${{f}}"; exit 42; }}
+              done
+              ARMS="${{ARMS}} ${{a#mtx-}}=${{d}}"
+            done
+            if [ -f "$2/residuals.npz" ] && [ -f "$2/mass_resolution.json" ]; then exit 0; fi
+            mkdir -p $2
+            OMP_NUM_THREADS=3 OPENBLAS_NUM_THREADS=3 MKL_NUM_THREADS=3 \\
+            python3 experiments/EVAL/mass_resolution.py --features ${{ARMS}} \\
+              --observers {obs} --out $2 --save-residuals > $2.log 2>&1
+          }}
+"""
+
+
+def v1err_batch_a(base: dict[str, str]) -> tuple[str, str]:
+    """Class count, then the fine-tuning bootstrap, then five probe reruns in parallel."""
+    bx = _load_builder("build_extract_jobs")
+    name = "v1err-batch-a-raunav"
+    body = ["\n          pip install --no-cache-dir -q pyarrow",
+            "          OUTC=/data/results/eval/v1err/class_counts/test_class_counts.json",
+            "          if [ ! -f ${OUTC} ]; then",
+            "            python3 experiments/EVAL/class_counts.py --data-test "
+            + bx.interleaved_files() + " --out ${OUTC} || halt",
+            "          fi"]
+    L1, L2 = FT_LEGS["leg1"], FT_LEGS["leg2"]
+    ft = (f"\n          OUT={V1ERR_ROOT}/ft\n"
+          '          if ! { [ -f "${OUT}/replicates_ft.npz" ] && [ -f "${OUT}/replicates_ft.json" ]; }; then\n'
+          "            mkdir -p ${OUT}\n"
+          "            python3 experiments/STATS/paired_errors.py ft-replicates \\\n"
+          f"              --leg1-root {L1[0]} --leg1-metrics {L1[1]} \\\n"
+          f"              --leg2-root {L2[0]} --leg2-metrics {L2[1]} \\\n"
+          "              --procs 14 --out ${OUT}/replicates_ft.npz || halt\n"
+          "          fi\n")
+    calls = []
+    for src in BATCH_A_PROBES:
+        s = base[f"job-{src}.yaml"]
+        specs = _field(s, r"^          for spec in (.+); do$")
+        feat = _field(s, r"^            d=/data/results/eval/\$\{a\}/(\S+)$")
+        out = _field(s, r"^          OUT=/data/results/eval/(\S+)$")
+        tasks = _field(s, r"^            --tasks (.+) \\$")
+        eps = _field(s, r"^            --eps-s (.+) \\$")
+        calls.append(f'          run_probe "{specs}" {feat} {V1ERR_ROOT}/{out} "{tasks}" "{eps}" &\n'
+                     f'          P="$P $!"')
+    text = (ROBUST_HEAD.format(name=name, pin=V1ERR_PIN2, backoff=V1ERR_BACKOFF, threads=1)
+            + "\n".join(body) + "\n" + ft + RUN_PROBE.format()
+            + '          P=""\n' + "\n".join(calls) + "\n"
+            + "          for p in ${P}; do wait ${p} || halt; done\n"
+            + '          date -u +"end %Y-%m-%dT%H:%M:%SZ"\n')
+    tail = ROBUST_TAIL.format(mem="64Gi", cpu="16")
+    tail = tail.replace("        - { name: data, mountPath: /data }\n",
+                        "        - { name: data, mountPath: /data }\n"
+                        "        - { name: jc2,  mountPath: /jc2, readOnly: true }\n")
+    tail = tail.replace("      volumes:\n", "      volumes:\n      - name: jc2\n"
+                        "        persistentVolumeClaim:\n          claimName: tn-pvc-base-jetclass2\n"
+                        "          readOnly: true\n")
+    return name, text + tail
+
+
+def v1err_batch_b(base: dict[str, str]) -> tuple[str, str]:
+    """The five mass reruns side by side."""
+    name = "v1err-batch-b-raunav"
+    calls = []
+    for src in V1ERR_MASSRES_SOURCES:
+        s = base[f"job-{src}.yaml"]
+        specs = _field(s, r"^          for spec in (.+); do$")
+        out = _field(s, r"^          OUT=/data/results/eval/(\S+)$")
+        calls.append(f'          run_massres "{specs}" {V1ERR_ROOT}/{out} &\n          P="$P $!"')
+    text = (ROBUST_HEAD.format(name=name, pin=V1ERR_PIN, backoff=V1ERR_BACKOFF, threads=1)
+            + RUN_MASSRES.format(feat=FEAT, obs=MASSRES_OBS) + '          P=""\n'
+            + "\n".join(calls) + "\n          for p in ${P}; do wait ${p} || halt; done\n"
+            + '          date -u +"end %Y-%m-%dT%H:%M:%SZ"\n')
+    return name, text + ROBUST_TAIL.format(mem="80Gi", cpu="16")
+
+
+def _load_builder(name: str):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / f"{name}.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
 def build_v1err(base: dict[str, str]) -> dict[str, str]:
     out = {}
     for name in V1ERR_PROBE_SOURCES:
@@ -549,6 +661,9 @@ def build_v1err(base: dict[str, str]) -> dict[str, str]:
         out[f"job-{name}.yaml"] = text
     name, text = v1err_ft_spec()
     out[f"job-{name}.yaml"] = text
+    for fn in (v1err_batch_a, v1err_batch_b):
+        name, text = fn(base)
+        out[f"job-{name}.yaml"] = text
     return out
 
 

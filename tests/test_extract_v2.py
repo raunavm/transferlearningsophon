@@ -154,9 +154,11 @@ def test_v1err_head_specs_cover_every_model_with_the_retry_policy():
     import yaml
     bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
     jobs = bx.build_v1err()
-    diag = {k for k in jobs if k.startswith("job-heads-diag-")}
+    diag = {k for k in jobs if k.startswith("job-heads-diag-") and "diag-mass" not in k}
     anom = {k for k in jobs if k.startswith("job-heads-anomaly-")}
     assert len(diag) == 30 and len(anom) == 20 and "job-test-class-counts-raunav.yaml" in jobs
+    batch = jobs["job-heads-diag-mass-v1err-raunav.yaml"]
+    assert batch.count("run_heads mtx-") == 10 and "mass" in batch
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"] and fname == f"job-{d['metadata']['name']}.yaml"
@@ -165,7 +167,7 @@ def test_v1err_head_specs_cover_every_model_with_the_retry_policy():
         pin = bx.V1ERR_PIN2 if "class-counts" in fname else bx.V1ERR_PIN
         assert f'--branch "{pin}"' in text and "|| halt" in text
         assert (bx.OUT_DIR / fname).read_text() == text, f"{fname} not committed as built"
-        if "heads-" in fname:
+        if "heads-" in fname and "diag-mass" not in fname:
             run = "mtx-" + fname.split("-v1err-")[1].removesuffix("-raunav.yaml")
             assert f"--align-with /data/results/eval/{run}/features_e79" in text
             assert "--checkpoints 70-79" in text and "--max-jets 2000000" in text

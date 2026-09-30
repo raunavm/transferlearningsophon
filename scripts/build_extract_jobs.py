@@ -841,6 +841,35 @@ COUNTS_BODY = """          OUT={out}
 """
 
 
+def build_heads_batch(runs: list, name: str, parallel: int = 5) -> tuple[str, str]:
+    """Head diagnostics for several models in ONE CPU pod, `parallel` at a time
+    (the pod cap, not the CPU, is the constraint; build_probe_jobs.py BATCH_A)."""
+    files = interleaved_files()
+    lines = ["          run_heads () {   # RUN RUN_DIR RUNG K NUM_REG; background",
+             "            OUT=" + V1ERR_HEADS + "/diag/$1",
+             "            ls ${OUT}/e0{70..79}/manifest.json >/dev/null 2>&1 && exit 0",
+             "            OMP_NUM_THREADS=3 OPENBLAS_NUM_THREADS=3 MKL_NUM_THREADS=3 \\",
+             "            python3 experiments/EVAL/extract_v2.py --run-dir $2 --rung $3 \\",
+             "              --num-classes $4 --num-reg $5 --checkpoints 70-79 --feature-classes \\",
+             "              --no-anomaly-rows --head-prefix 2000000 --diag-stride 100 --max-jets 2000000 \\",
+             "              --align-with /data/results/eval/$1/features_e79 \\",
+             f"              --data-test {files} \\",
+             "              --out ${OUT} > ${OUT}.log 2>&1",
+             "          }"]
+    groups = [runs[i:i + parallel] for i in range(0, len(runs), parallel)]
+    for g in groups:
+        lines.append('          P=""')
+        for run, arm, k, run_dir in g:
+            lines.append(f"          mkdir -p {V1ERR_HEADS}/diag")
+            lines.append(f"          run_heads {run} {run_dir} {RUNG_OF[arm]} {k} {NUM_REG.get(run, 0)} &")
+            lines.append('          P="$P $!"')
+        lines.append("          for p in ${P}; do wait ${p} || halt; done")
+    body = "\n".join(lines) + "\n"
+    return f"job-{name}.yaml", V1ERR_TEMPLATE.format(
+        name=name, image=IMAGE, pin=V1ERR_PIN, body=body, mem="64Gi", cpu="16",
+        gpu_req="", gpu_check="", node_exclude="")
+
+
 def build_v1err() -> dict[str, str]:
     """{file name: spec}: the head jobs (diag for 30 models, anomaly for 20) and
     the test-split class count."""
@@ -862,6 +891,9 @@ def build_v1err() -> dict[str, str]:
                 gpu_req=', nvidia.com/gpu: "1"' if gpu else "",
                 gpu_check=GPU_CHECK.format() if gpu else "",
                 node_exclude=NODE_EXCLUDE if gpu else "")
+    fname, text = build_heads_batch([r for r in HEAD_RUNS if r[1].endswith("_MASS")],
+                                    "heads-diag-mass-v1err-raunav")
+    out[fname] = text
     name = "test-class-counts-raunav"
     out[f"job-{name}.yaml"] = V1ERR_TEMPLATE.format(
         name=name, image=IMAGE, pin=V1ERR_PIN2, mem="8Gi", cpu="2", gpu_req="",
