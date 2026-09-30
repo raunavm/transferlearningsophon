@@ -435,20 +435,30 @@ def figure(a) -> int:
     import matplotlib.pyplot as plt
     d = json.loads(a.json.read_text())
     defective = set(a.defective)
-    fig, ax = plt.subplots(1, 3, figsize=(style.FIG_W_TWO_COLUMN, 2.6))
+    plt.rcParams.update({"font.size": 7})
+    fig, ax = plt.subplots(1, 3, figsize=(style.FIG_W_TWO_COLUMN, 2.5))
     for run, r in d["runs"].items():
         ep = sorted((int(t[1:]), c) for t, c in r["checkpoints"].items() if is_epoch(t))
         x = [e for e, _ in ep]
         kw = {"color": style.LEVEL_COLOURS[r["num_classes"]], "marker": style.LEVEL_MARKERS[r["num_classes"]],
               "markersize": 3, "linewidth": 1, "linestyle": "-" if run in defective else ":"}
-        ax[0].plot(x, [c["head"]["top1_accuracy"] for _, c in ep], label=run.removeprefix("mtx-"), **kw)
+        tag = (f"{r['num_classes']} classes{' + mass' if r['num_reg'] else ''}, run "
+               f"{re.search(r'-s(\d+)', run).group(1)}" + (" (defective at 79)" if run in defective else ""))
+        ax[0].plot(x, [c["head"]["top1_accuracy"] for _, c in ep], label=tag, **kw)
+        ax[0].plot([x[-1] + 2], [r["checkpoints"]["wavg"]["head"]["top1_accuracy"]],
+                   **{**kw, "linestyle": "none", "fillstyle": "none"})
         ax[1].plot(x, [c["probe"]["log1m_auc"] for _, c in ep], **kw)
         ax[2].plot([c["stream_qcd_share"] for _, c in ep],
                    [c["head"]["mean_p_qcd_resonant"] for _, c in ep], **{**kw, "linestyle": "none"})
-    ax[0].set(xlabel="epoch", ylabel="head top-1 accuracy")
-    ax[1].set(xlabel="epoch", ylabel=r"linear probe $\log(1-\mathrm{AUC})$, $b$ vs $c$")
-    ax[2].set(xlabel="QCD share of the epoch's training stream", ylabel="mean P(QCD), resonant jets")
-    ax[0].legend(fontsize=5, ncol=2, frameon=False)
+    ticks = list(range(70, 80, 3))
+    ax[0].set_xticks(ticks + [81], [str(t) for t in ticks] + ["avg"])
+    ax[0].set(xlabel="epoch (avg: weights averaged over 70-79)", ylabel="top-1 accuracy",
+              title="(a) output layer")
+    ax[1].set(xlabel="epoch", ylabel=r"$\log(1-\mathrm{AUC})$", title=r"(b) linear probe, X$\to$bb vs X$\to$cc")
+    ax[2].set(xlabel="QCD share of the epoch's training jets", ylabel="mean P(QCD) on resonant jets",
+              title="(c) output layer vs stream")
+    h, l = ax[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="upper center", ncol=4, frameon=False, fontsize=6, bbox_to_anchor=(0.5, 0.02))
     fig.tight_layout()
     a.outdir.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):
