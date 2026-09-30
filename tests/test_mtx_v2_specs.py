@@ -210,3 +210,16 @@ def test_a_labelled_dry_run_gets_its_own_name_and_output():
     name, spec = b.v2_dryrun_spec(TAG, False, "s170")
     assert name == "mtx2-loader-dryrun-s170-raunav"
     assert "loader_dryrun/dryrun_s170_seed1.json" in _script(spec)
+
+
+def test_the_any_gpu_resume_check_pins_a_list_and_stays_inside_the_gate():
+    name, spec = b.v2_det_any_spec(TAG)
+    t = yaml.safe_load(spec)["spec"]["template"]["spec"]
+    ex = {e["key"]: e for e in t["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"][
+        "nodeSelectorTerms"][0]["matchExpressions"]}
+    assert ex["nvidia.com/gpu.product"]["values"] == list(b.ANY_GPUS)
+    s = _script(spec)
+    assert [m.group(1) for m in re.finditer(r"^RUN_ID=(\S+)$", s, re.M)] == ["smoke-detany-a", "smoke-detany-b", "smoke-detany-a2"]
+    for line in re.findall(r"python3 experiments/MTX/pretrain_v2\.py --seed .*", s):
+        assert "--deterministic" in line and "--num-epochs 3 " in line and "--samples-per-epoch 200000 " in line
+    assert subprocess.run(["bash", "-n"], input=s, text=True).returncode == 0

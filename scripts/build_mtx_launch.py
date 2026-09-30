@@ -715,7 +715,7 @@ python3 scripts/write_run_manifest.py --driver pretrain_v2 --run-id ${{RUN_ID}} 
 """
 
 
-def v2_job(name: str, scripts: list, gpu: str, tag: str, title: str, *,
+def v2_job(name: str, scripts: list, gpu, tag: str, title: str, *,
            cpu: str = V2_CPU, mem: str = V2_MEM, pre: str = "") -> str:
     """A Job that clones `tag` and runs each script in turn, with the retry policy
     of scripts/build_ft_jobs.py (commit 3cb4d7a): evictions ignored, exit 42 fails
@@ -756,7 +756,7 @@ spec:
         command: ["/bin/bash", "-c"]
         env:
         - name: GPU_PRODUCT
-          value: "{gpu}"
+          value: "{gpu if isinstance(gpu, str) else ','.join(gpu)}"
         - name: NODE_NAME
           valueFrom: {{ fieldRef: {{ fieldPath: spec.nodeName }} }}
         - name: POD_NAME
@@ -787,7 +787,7 @@ spec:
                 values: ["us-west"]
               - key: nvidia.com/gpu.product
                 operator: In
-                values: ["{gpu}"]
+                values: [{", ".join(f'"{g}"' for g in ([gpu] if isinstance(gpu, str) else gpu))}]
               - key: kubernetes.io/hostname
                 operator: NotIn
                 values: [{exclude}]
@@ -841,6 +841,28 @@ def v2_smoke_specs(tag: str, deterministic: bool = False) -> dict:
                                          g, tag, f"v2 SMOKE, configuration A on {g} (GPU numerics check).",
                                          pre=f"mkdir -p {SMOKE_ROOT}\n")
     return out
+
+
+# GPUs of 24 GB or more in us-west that the cu121 image supports (not Blackwell).
+ANY_GPUS = ("NVIDIA-GeForce-RTX-3090", "NVIDIA-L40", "NVIDIA-RTX-A6000", "NVIDIA-A40", "NVIDIA-L4",
+            "NVIDIA-A100-SXM4-80GB", "NVIDIA-A100-80GB-PCIe", "NVIDIA-H100-80GB-HBM3",
+            "Tesla-V100-SXM2-32GB", "NVIDIA-TITAN-RTX")
+
+
+def v2_det_any_spec(tag: str) -> tuple:
+    """The deterministic resume check on whichever ANY_GPUS product is free: A, B
+    (SIGKILL during epoch 2, resumed) and A2 in one pod, so all three share one
+    GPU. It asks only whether a resume repeats the run bit for bit once kernel
+    choice is fixed, which does not depend on the product."""
+    kw = dict(out_root=SMOKE_ROOT, epochs=SMOKE_EPOCHS, samples=SMOKE_SAMPLES, deterministic=True)
+    a = _arm("R16_Q1")
+    scripts = [v2_script(a, 1, run_id="smoke-detany-a", **kw),
+               v2_script(a, 1, run_id="smoke-detany-b", kill_after_epoch=1, **kw),
+               v2_script(a, 1, run_id="smoke-detany-a2", **kw)]
+    name = "mtx2-smoke-detany-raunav"
+    return name, v2_job(name, scripts, ANY_GPUS, tag,
+                        "v2 SMOKE, deterministic resume check on any free 24 GB GPU: A, B (kill + resume), A2.",
+                        pre=f"mkdir -p {SMOKE_ROOT}\n")
 
 
 def v2_dryrun_spec(tag: str, full_columns: bool = False, label: str = "") -> tuple:
