@@ -541,12 +541,13 @@ V2_LOADER = "--num-workers 5 --fetch-step 1.0 --data-split-num 200 --data-fracti
 # --data-fraction 0.2: an epoch reads a random fifth of EVERY file (stream_v2.cycle_of).
 # A full pass over the training files yields ~52.8M jets (dry run, 52,800 per fetch x
 # 200 splits x 5 workers), so a fifth, ~10.6M, covers the 10,240,000-jet epoch.
-# Measured at mtx-s1.69 (RUNS.csv mtx2-loader-memprobe, mtx2-smoke-3090): the loader alone,
-# 5 workers over a full 10,240,000-jet epoch, peaks at 29.0 GB anon and delivers 4,716
-# jets/s on 8 CPUs; training on an RTX 3090 is GPU-bound at ~2,300 jets/s. 64Gi leaves
-# ~2x over loader + trainer and stays within the ~94Gi nodes (CLAUDE memory note).
+# Measured (RUNS.csv): the loader alone over a full 10,240,000-jet epoch, 5 workers, 8 CPUs,
+# at mtx-s1.72 (--data-fraction 0.2) peaks at 18.8 GB anon and delivers 3,457 jets/s
+# (mtx2-loader-memprobe-s172; 29.0 GB and 4,716 jets/s without the window, mtx-s1.69);
+# training on an RTX 3090 is GPU-bound at 2,190-2,320 jets/s and the whole pod peaked at
+# 28.3 GB in the smoke (mtx2-smoke-3090, larger fetches). 48Gi is 1.7x that peak.
 V2_CPU = "8"
-V2_MEM = "64Gi"
+V2_MEM = "48Gi"
 V2_BACKOFF = 20                     # counted failures; evictions are ignored
 EXIT_HALT = 42
 V2_BAD_NODES = ("ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net",
