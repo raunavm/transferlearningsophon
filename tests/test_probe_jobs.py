@@ -377,7 +377,8 @@ def test_v1err_jobs_parse_carry_the_retry_policy_and_are_committed():
                                                       "values": [42]}} in rules
         assert {"action": "Ignore", "onPodConditions": [{"type": "DisruptionTarget"}]} in rules
         assert d["spec"]["template"]["spec"]["containers"][0]["name"] == "main"
-        assert f'--branch "{bp.V1ERR_PIN}"' in text and "|| halt" in text
+        pin = bp.V1ERR_PIN2 if ("labelrec-curve" in fname or "paired-ft" in fname) else bp.V1ERR_PIN
+        assert f'--branch "{pin}"' in text and "|| halt" in text
         assert "/data/results/eval/v1err/" in text
         assert (bp.K8S / fname).read_text() == text, f"{fname} not committed as built"
 

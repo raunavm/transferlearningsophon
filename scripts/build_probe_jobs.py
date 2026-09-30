@@ -318,6 +318,11 @@ TAIL = """        volumeMounts:
 # failure is deterministic and exits 42, which fails the Job at once instead of
 # burning the retries. Every step skips work a previous attempt finished.
 V1ERR_PIN = "mtx-s1.66"
+# The label-recovery curve and the fine-tuning bootstrap had not been applied when
+# label_recovery_curve.py (summary mode) and paired_errors.py (ratio side) changed
+# after mtx-s1.66, so they take the next tag; the probe and mass reruns, applied
+# from mtx-s1.66 and unchanged since, keep it (tests/test_spec_pins.py).
+V1ERR_PIN2 = "mtx-s1.70"
 V1ERR_BACKOFF = 6
 THREADS_OF = {False: 8, True: 1}   # BLAS threads: the CPUs a spec requests; 1 per worker in the pooled FT job
 V1ERR_ROOT = "/data/results/eval/v1err"
@@ -517,7 +522,7 @@ def v1err_curve_spec(seed: int) -> tuple[str, str]:
     one pod slot instead of four on a cluster whose pod cap is the constraint."""
     specs = " ".join(f"{run_name(stem, seed)}:{rung}" for stem, rung in LADDER)
     name = f"labelrec-curve-v1err-s{seed}-raunav"
-    return name, (ROBUST_HEAD.format(name=name, pin=V1ERR_PIN, backoff=V1ERR_BACKOFF, threads=4)
+    return name, (ROBUST_HEAD.format(name=name, pin=V1ERR_PIN2, backoff=V1ERR_BACKOFF, threads=4)
                   + ARMS_LOOP.format(specs=specs, feat=FEAT)
                   + V1ERR_CURVE.format(out=f"{V1ERR_ROOT}/label_recovery_curve", specs=specs,
                                        feat=FEAT, sizes=" ".join(map(str, CURVE_SIZES)))
@@ -526,7 +531,7 @@ def v1err_curve_spec(seed: int) -> tuple[str, str]:
 
 def v1err_ft_spec() -> tuple[str, str]:
     name = "paired-ft-v1err-raunav"
-    return name, (ROBUST_HEAD.format(name=name, pin=V1ERR_PIN, backoff=V1ERR_BACKOFF, threads=THREADS_OF[name.startswith("paired-ft")])
+    return name, (ROBUST_HEAD.format(name=name, pin=V1ERR_PIN2, backoff=V1ERR_BACKOFF, threads=THREADS_OF[name.startswith("paired-ft")])
                   + V1ERR_FT.format(out=f"{V1ERR_ROOT}/ft", procs=14,
                                     leg1_root=FT_LEGS["leg1"][0], leg1_metrics=FT_LEGS["leg1"][1],
                                     leg2_root=FT_LEGS["leg2"][0], leg2_metrics=FT_LEGS["leg2"][1])

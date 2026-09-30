@@ -736,6 +736,7 @@ def verify_pin(pin: str, needed: list[str], allow_untagged: bool,
 # The retry policy of commit 3cb4d7a in its CPU form, as build_probe_jobs.py's
 # v1err specs: evictions ignored, signals counted, a Python failure halts.
 V1ERR_PIN = "mtx-s1.66"
+V1ERR_PIN2 = "mtx-s1.70"     # class_counts.py changed after mtx-s1.66, before its job ran
 V1ERR_NEEDED = ["experiments/EVAL/extract_v2.py", "experiments/EVAL/extract_features.py",
                 "experiments/EVAL/anomaly.py", "experiments/EVAL/class_counts.py"]
 V1ERR_HEADS = "/data/results/eval/v1err/heads"
@@ -863,7 +864,7 @@ def build_v1err() -> dict[str, str]:
                 node_exclude=NODE_EXCLUDE if gpu else "")
     name = "test-class-counts-raunav"
     out[f"job-{name}.yaml"] = V1ERR_TEMPLATE.format(
-        name=name, image=IMAGE, pin=V1ERR_PIN, mem="8Gi", cpu="2", gpu_req="",
+        name=name, image=IMAGE, pin=V1ERR_PIN2, mem="8Gi", cpu="2", gpu_req="",
         gpu_check="", node_exclude="",
         body=COUNTS_BODY.format(out="/data/results/eval/v1err/class_counts/test_class_counts.json",
                                 files=files))

@@ -162,7 +162,8 @@ def test_v1err_head_specs_cover_every_model_with_the_retry_policy():
         assert "raunav" in d["metadata"]["name"] and fname == f"job-{d['metadata']['name']}.yaml"
         assert d["spec"]["podFailurePolicy"]["rules"][0]["onExitCodes"]["values"] == [42]
         assert d["spec"]["template"]["spec"]["containers"][0]["name"] == "main"
-        assert f'--branch "{bx.V1ERR_PIN}"' in text and "|| halt" in text
+        pin = bx.V1ERR_PIN2 if "class-counts" in fname else bx.V1ERR_PIN
+        assert f'--branch "{pin}"' in text and "|| halt" in text
         assert (bx.OUT_DIR / fname).read_text() == text, f"{fname} not committed as built"
         if "heads-" in fname:
             run = "mtx-" + fname.split("-v1err-")[1].removesuffix("-raunav.yaml")

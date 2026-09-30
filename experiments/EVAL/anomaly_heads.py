@@ -37,7 +37,15 @@ import pathlib
 import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-REPRO_TOL = 1e-3          # |d ln sigma_min| at epoch 79 against the committed run
+# |d ln| of sigma_min and max SIC at epoch 79 against the committed run. The
+# committed class sums came from fc(cached features) on a CPU; these from the
+# model's own forward on a GPU (float32, TF32 off), so scores move in the last
+# digits and a threshold at the n_B > 25 boundary can move by a jet. Measured on
+# the first model (mtx-l162-s3, 24 cells): 2.0e-3. Among the cells a detector
+# detects (seed-mean max SIC >= 1.3), the run-to-run SD of ln sigma_min is at
+# least 1.7e-2 (analysis_v4), so 5e-3 still tells "the same numbers" from "a
+# different model"; below detection sigma_min sits at its ceiling for every run.
+REPRO_TOL = 5e-3
 ROBUST_EPOCHS = tuple(range(70, 80))
 
 
