@@ -154,6 +154,18 @@ def test_every_split_reads_every_family_and_every_file_is_read_once():
         assert rows[f] == set(range(100_000))
 
 
+def test_training_load_ranges_take_random_rows_that_still_tile_each_file():
+    n, pieces = 1000, [(0.0, 0.3), (0.3, 2 / 3), (2 / 3, 1.0)]
+    got = [sv.file_rows(n, lo, hi, 5, 2, 1, 0, 7) for lo, hi in pieces]
+    allrows = np.concatenate(got)
+    assert sorted(allrows.tolist()) == list(range(n))          # each row exactly once per pass
+    assert [len(g) for g in got] == [sv._slice_bounds(n, lo, hi)[1] - sv._slice_bounds(n, lo, hi)[0] for lo, hi in pieces]
+    assert not np.array_equal(got[0], np.arange(300))          # not the contiguous slice
+    assert got[0].mean() == pytest.approx(n / 2, abs=60)       # spread over the file
+    np.testing.assert_array_equal(got[1], sv.file_rows(n, 0.3, 2 / 3, 5, 2, 1, 0, 7))
+    assert not np.array_equal(got[1], sv.file_rows(n, 0.3, 2 / 3, 5, 3, 1, 0, 7))
+
+
 def test_reweighting_draws_equal_weavers_given_the_same_generator():
     from weaver.utils.dataset import _get_reweight_indices
     w = np.random.default_rng(3).uniform(0, 1, 5000) ** 3

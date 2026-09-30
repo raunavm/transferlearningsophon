@@ -65,7 +65,7 @@ except ImportError:  # the dev branch installed on laptops
     from weaver.utils.data.eval_utils import _get_variable_names
 
 ROW_BITS = 20                      # 100,000 rows per file < 2**20
-TAG_FILES, TAG_FETCH = 0, 1        # SeedSequence spawn-key tags
+TAG_FILES, TAG_FETCH, TAG_ROWS = 0, 1, 2   # SeedSequence spawn-key tags
 NATIVE_QCD_FIRST = 161             # jet_label 161..187 are QCD (docs/GROUND_TRUTH.md)
 N_NATIVE = 188
 
@@ -158,6 +158,26 @@ def _slice_bounds(n: int, lo: float, hi: float):
     start = math.trunc(lo * n)
     stop = max(start + 1, math.trunc(hi * n))
     return start, stop
+
+
+def file_rows(n: int, lo: float, hi: float, seed: int, epoch: int, worker: int,
+              pass_idx: int, file_index: int) -> np.ndarray:
+    """The rows a training load range (lo, hi) of a file takes: positions
+    [trunc(lo*n), trunc(hi*n)) of a permutation of the file's rows fixed per
+    (seed, epoch, worker, pass, file), sorted. Consecutive splits of one pass
+    therefore still tile the file exactly, as Sophon's slices do, but each takes
+    a random sample of its rows.
+
+    Why not Sophon's contiguous slice: JetClass-II files are not shuffled
+    inside. Measured 2026-09-29 on Res34P_0100, Res2P_0050 and QCD_0100, the
+    mean jet p_T of consecutive 10,000-row chunks varies by 100-400 GeV, 20-40x
+    its statistical error, so a slice carries the kinematics of whichever
+    generation batch it falls in, and with them the reweighting acceptance.
+    That made the QCD share of a fetch scatter at 3.6x the binomial level
+    (dry run at mtx-s1.69) and the epoch share with it."""
+    start, stop = _slice_bounds(n, lo, hi)
+    perm = np.random.default_rng(seed_seq(seed, TAG_ROWS, epoch, worker, pass_idx, file_index)).permutation(n)
+    return np.sort(perm[start:stop])
 
 
 class _FileCache:
@@ -289,14 +309,22 @@ class StreamDataset(torch.utils.data.IterableDataset):
         self.epoch = int(epoch)
 
     # -- one fetch
-    def _load(self, cache, files, ranges, rng):
+    def _load(self, cache, files, ranges, rng, key=None):
+        """key = (epoch, worker, pass) for the training stream: each file's load
+        range then selects that many rows at random positions of the file
+        (file_rows), not a contiguous slice. None (validation): contiguous."""
         parts = []
         for f, (lo, hi) in zip(files, ranges):
             full = cache.get(f)
-            start, stop = _slice_bounds(len(full), lo, hi)
-            part = full[start:stop]
-            rid = self.file_index[os.path.basename(f)] * 2 ** ROW_BITS + np.arange(start, start + len(part))
-            parts.append(ak.with_field(part, rid, "_rowid"))
+            fidx = self.file_index[os.path.basename(f)]
+            if key is None:
+                start, stop = _slice_bounds(len(full), lo, hi)
+                rows = np.arange(start, stop)
+                part = full[start:stop]
+            else:
+                rows = file_rows(len(full), lo, hi, self.seed, *key, fidx)
+                part = full[rows]
+            parts.append(ak.with_field(part, fidx * 2 ** ROW_BITS + rows, "_rowid"))
         table = parts[0] if len(parts) == 1 else ak.concatenate(parts)
         cfg = self.config
         table = _apply_selection(table, cfg.selection, funcs=cfg.var_funcs)
@@ -326,7 +354,7 @@ class StreamDataset(torch.utils.data.IterableDataset):
         if self.mode == "val":
             flat = sorted(f for v in self.file_dict.values() for f in v)
             for i, f in enumerate(flat[worker::num_workers]):
-                yield i, [f], [(0.0, 1.0)], None
+                yield i, [f], [(0.0, 1.0)], None, None
             return
         p = 0
         while True:  # a new pass only if an epoch outruns one (test-sized inputs)
@@ -334,7 +362,7 @@ class StreamDataset(torch.utils.data.IterableDataset):
                               self.split_num, self.fetch_step, p)
             for f, (files, ranges) in enumerate(plan):
                 rng = np.random.default_rng(seed_seq(self.seed, TAG_FETCH, self.epoch, worker, p, f))
-                yield p * len(plan) + f, files, ranges, rng
+                yield p * len(plan) + f, files, ranges, rng, (self.epoch, worker, p)
             p += 1
 
     def __iter__(self):
@@ -351,10 +379,10 @@ class StreamDataset(torch.utils.data.IterableDataset):
 
         def submit():
             try:
-                fid, files, ranges, rng = next(fetches)
+                fid, files, ranges, rng, key = next(fetches)
             except StopIteration:
                 return None
-            return fid, pool.submit(self._load, cache, files, ranges, rng)
+            return fid, pool.submit(self._load, cache, files, ranges, rng, key)
 
         def take(out, sel, fid):
             X = {k: out["_" + k][sel] for k in xkeys}
