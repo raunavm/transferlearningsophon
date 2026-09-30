@@ -101,10 +101,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help="all: every epoch's state and resume files (default, ~46 MB per epoch). "
                          "states: every state file and the newest resume file (~9 MB per epoch). "
                          "window: the best epoch, the last ten epochs and the newest resume file.")
-    ap.add_argument("--select-on", default="head_top1_acc", choices=["head_top1_acc", "acc"],
-                    help="best-validation metric (first maximum): head_top1_acc = unweighted top-1 on "
-                         "the fixed sample (draft A8, default); acc = top-1 weighted by the training "
-                         "reweighting weights. Both are recorded every epoch. Self-supervised: -val.loss.")
+    ap.add_argument("--select-on", default="acc", choices=["acc", "head_top1_acc"],
+                    help="best-validation metric (first maximum): acc = top-1 weighted by the training "
+                         "reweighting weights, Sophon's rule (draft A8, default); head_top1_acc = "
+                         "unweighted top-1 on the fixed sample. Both are recorded every epoch. "
+                         "Self-supervised: -val.loss.")
     ap.add_argument("--deterministic", action="store_true",
                     help="torch.use_deterministic_algorithms (smoke and numerics checks)")
     ap.add_argument("--device", default=None)
@@ -218,7 +219,7 @@ class Objective:
     step of hybrid_mass.py, or the MPM step of mpm.py, unchanged."""
 
     def __init__(self, kind, data_config, loss_func, model, lam=None, native_map=None,
-                 select_on="head_top1_acc"):
+                 select_on="acc"):
         self.select_on = select_on
         import torch
         self.kind, self.cfg, self.loss_func, self.lam = kind, data_config, loss_func, lam

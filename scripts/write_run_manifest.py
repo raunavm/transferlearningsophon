@@ -197,7 +197,7 @@ def main() -> int:
     ap.add_argument("--val-files", nargs="*", default=None,
                     help="pretrain_v2: the fixed validation sample's files")
     ap.add_argument("--keep-checkpoints", default=None)
-    ap.add_argument("--select-on", default="head_top1_acc")
+    ap.add_argument("--select-on", default="acc")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     if a.driver == "pretrain_v2" and None in (a.num_workers, a.data_split_num, a.fetch_step, a.val_files):

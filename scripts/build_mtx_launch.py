@@ -546,7 +546,11 @@ V2_LOADER = "--num-workers 5 --fetch-step 1.0 --data-split-num 200 --data-fracti
 # (mtx2-loader-memprobe-s172; 29.0 GB and 4,716 jets/s without the window, mtx-s1.69);
 # training on an RTX 3090 is GPU-bound at 2,190-2,320 jets/s and the whole pod peaked at
 # 28.3 GB in the smoke (mtx2-smoke-3090, larger fetches). 48Gi is 1.7x that peak.
-V2_SELECT = "head_top1_acc"       # best-validation metric, draft amendment A8 (2026-09-30)
+# Best-validation metric, draft amendment A8: Sophon's rule, the reweighted accuracy. weaver
+# 0.4.17 train.py:248 and hqucms/weaver-core@c97de3c train.py:289-291 build the training-time
+# validation set with for_training=True (reweighted); c97de3c train.py:1022-1023 defaults
+# --data-config-val to the training config and train_sophon.sh passes none.
+V2_SELECT = "acc"
 V2_CPU = "8"
 V2_MEM = "48Gi"
 V2_BACKOFF = 20                     # counted failures; evictions are ignored
