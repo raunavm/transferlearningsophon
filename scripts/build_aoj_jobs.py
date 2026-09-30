@@ -674,6 +674,12 @@ def _robust(text: str, backoff_old: str) -> str:
     return text
 
 
+# Rescore shards re-created off patternlab (SIM_BAD_NODES): shard 8 was placed there three
+# times in a row, StartError each time (2026-09-30 01:xxZ). The others run on the list they
+# were launched with, which their committed specs record.
+RESCORE_RECREATED = {8}
+
+
 def render_rescore_shard(i: int, files: list[dict]) -> str:
     """Shard i of the first run, again, at RESCORE_PIN into RESCORE_ROOT, every model also
     writing the prong-only score, with the retry policy. Derived by substitution, each
@@ -688,6 +694,9 @@ def render_rescore_shard(i: int, files: list[dict]) -> str:
         (f'--branch "{PIN}"', f'--branch "{RESCORE_PIN}"'),
         ("--structures three_prong ", "--structures three_prong prong_only "),
     ]
+    if i in RESCORE_RECREATED:
+        subs.append(("values: [" + ", ".join(f'"{b}"' for b in BAD_NODES) + "]",
+                     "values: [" + ", ".join(f'"{b}"' for b in SIM_BAD_NODES) + "]"))
     for a, b in subs:
         if t.count(a) != 1:
             raise SystemExit(f"FATAL: the shard template changed; cannot derive the rescore ({a[:50]!r})")

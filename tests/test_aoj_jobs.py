@@ -226,6 +226,15 @@ def test_each_rescore_shard_is_its_first_run_shard_with_only_the_listed_changes(
     for i, fs in enumerate(B.shards()):
         one, two = B.render_shard(i, fs), B.render_rescore_shard(i, fs)
         s1, s2 = _script(one), _script(two)
+        if i in B.RESCORE_RECREATED:
+            one = one.replace("values: [" + ", ".join(f'"{b}"' for b in B.BAD_NODES) + "]",
+                              "values: [" + ", ".join(f'"{b}"' for b in B.SIM_BAD_NODES) + "]")
+            assert "patternlab.calit2.optiputer.net" in two
+        else:
+            assert "patternlab" not in two, "a running shard's spec must stay the one it was launched with"
+        s1, s2 = _script(one), _script(two)
+        assert yaml.safe_load(one)["spec"]["template"]["spec"]["affinity"] == \
+            yaml.safe_load(two)["spec"]["template"]["spec"]["affinity"]
         assert s2.replace(f"OUT={B.RESCORE_ROOT}/shard{i}", f"OUT={B.OUT_ROOT}/shard{i}", 1) \
                  .replace(f'--branch "{B.RESCORE_PIN}"', f'--branch "{B.PIN}"') \
                  .replace("--structures three_prong prong_only", "--structures three_prong") \
