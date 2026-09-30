@@ -209,3 +209,22 @@ def test_storage_estimate_counts_each_row_once():
     assert s["feature_rows_per_checkpoint"] == 3000 + 50 + 300     # class 0 counted once
     assert s["head_rows_per_checkpoint"] == 310
     assert s["bytes_total"] == 2 * (3350 * cc.FEATURE_ROW_BYTES + 11 * 310 * cc.HEAD_ROW_BYTES)
+
+
+def test_sizing_reads_the_measured_counts_and_the_largest_v1_rejection(tmp_path):
+    sz = _load("extraction_v2_sizing", "experiments/EVAL/extraction_v2_sizing.py")
+    sel = np.full(188, 400_000)
+    (tmp_path / "c.json").write_text(json.dumps({"selected_per_class": sel.tolist(),
+                                                 "in_window_per_class": (sel // 50).tolist()}))
+    np.save(tmp_path / "L.npy", np.arange(2000) % 188)
+    probes = sorted((ROOT / "experiments/FIGS/data/probe_ladder_v2_mlp2").glob("s*.json"))
+    out = tmp_path / "o.json"
+    assert sz.main(["--counts", str(tmp_path / "c.json"), "--probe-files", *map(str, probes),
+                    "--prefix-labels", str(tmp_path / "L.npy"), "--free-bytes", "2.3e11",
+                    "--size-bytes", "1e12", "--out", str(out)]) == 0
+    r = json.loads(out.read_text())
+    t = r["tasks_by_test_fraction"]["0.6"]["bvc_resonant"]
+    assert t["n_background_split"] == 400_000 and t["n_background_test"] == 240_000
+    assert t["max_v1_rejection_at_90"] == pytest.approx(11876 / 6)     # 188-class run 3: 6 pass
+    assert t["meets_min_pass"] is (240_000 / (11876 / 6) >= 100)
+    assert set(r["storage"]) == set(sz.PLANS)
