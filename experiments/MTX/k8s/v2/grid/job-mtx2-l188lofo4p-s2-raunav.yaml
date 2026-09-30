@@ -33,7 +33,7 @@ spec:
         - name: REGION
           value: "us-west"
         - name: REPO_REF
-          value: "mtx-s1.72"
+          value: "mtx-s1.76"
         args:
         - |
           set -euo pipefail
