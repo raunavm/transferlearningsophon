@@ -1923,8 +1923,10 @@ STAGE_HERWIG = PREAMBLE + """
 #     variable weaver is given, and each cell checks weaver's own log agrees.
 #   * Every v2 cell loads its pretrained checkpoint by RULE, resolved in the pod
 #     (experiments/FT/ft_v2.py resolve): `bestval`, the primary, the best
-#     validation epoch of the run on the fixed sample; `e79`, the robustness
-#     check, the last epoch of the kept 70-79 window. Each rule has its own tree.
+#     validation epoch of the run on the fixed sample; `wavg`, the robustness
+#     check, the weight average of epochs 70-79 that the v2 pretraining writes
+#     (net_wavg70-79_state.pt; chosen after the output-layer diagnostic,
+#     experiments/FIGS/data/head_epoch_diag). Each rule has its own tree.
 #   * JetClass and the benchmarks keep their subsets and recipe, so the complete
 #     from-scratch cells of v1 are reused; every v2 job first checks that the
 #     subsets it reads have the sha256 on record (V2_SHA_TABLE), the record the
@@ -1937,7 +1939,7 @@ V2_SUBSETS = "/data/finetune/jc2_v2"
 V2_SHA_TABLE = "experiments/FT/data/ft_v2_subsets_sha256.json"
 V2_ROOT = "/data/results/ft_v2"
 MTX_V2 = "/data/results/mtx_v2"
-V2_RULES = ("bestval", "e79")
+V2_RULES = ("bestval", "wavg")
 V2_VAL_JETS = 20_480
 V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
 assert V2_VAL_JETS % 512 == 0

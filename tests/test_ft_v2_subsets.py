@@ -205,7 +205,7 @@ def test_bestval_refuses_disagreeing_records_a_missing_epoch_and_an_unfinished_r
     with pytest.raises(SystemExit, match="no record of epochs"):
         FV.resolve(_run_dir(tmp_path / "b", {e: v for e, v in vals.items() if e != 3}), "bestval")
     with pytest.raises(SystemExit, match="not complete"):
-        FV.resolve(_run_dir(tmp_path / "c", vals, done=False), "e79")
+        FV.resolve(_run_dir(tmp_path / "c", vals, done=False), "wavg")
 
 
 def test_a_selected_epoch_that_was_not_kept_is_fatal_not_substituted(tmp_path):
@@ -213,15 +213,44 @@ def test_a_selected_epoch_that_was_not_kept_is_fatal_not_substituted(tmp_path):
     (run / "net_best_epoch_state.pt").write_bytes(b"whatever")
     with pytest.raises(SystemExit, match="not kept"):
         FV.resolve(run, "bestval")
-    assert FV.resolve(run, "e79")["epoch"] == 79
+
+
+def _wavg(run, epochs=range(70, 80), bad_avg=False):
+    (run / FV.WAVG_STATE).write_bytes(b"average")
+    (run / FV.WAVG_JSON).write_text(json.dumps({
+        "inputs": {str(e): FV.sha256_file(run / f"net_epoch-{e}_state.pt") for e in epochs},
+        "sha256": "0" * 64 if bad_avg else FV.sha256_file(run / FV.WAVG_STATE)}))
+
+
+def test_wavg_is_the_average_of_70_79_whose_inputs_are_the_files_in_the_run(tmp_path):
+    run = _run_dir(tmp_path, {e: 0.5 for e in range(80)}, kept=range(60, 80))
+    with pytest.raises(SystemExit, match="weight average was not written"):
+        FV.resolve(run, "wavg")
+    _wavg(run)
+    rec = FV.resolve(run, "wavg")
+    assert rec["path"].endswith(FV.WAVG_STATE) and rec["epoch"] == "wavg70-79"
+    assert sorted(rec["inputs"], key=int) == [str(e) for e in range(70, 80)]
+    _wavg(run, epochs=range(69, 79))
+    with pytest.raises(SystemExit, match="averages epochs"):
+        FV.resolve(run, "wavg")
+    _wavg(run, bad_avg=True)
+    with pytest.raises(SystemExit, match="not the file"):
+        FV.resolve(run, "wavg")
+    _wavg(run)
+    (run / "net_epoch-75_state.pt").write_bytes(b"changed after averaging")
+    with pytest.raises(SystemExit, match="input epoch 75"):
+        FV.resolve(run, "wavg")
+    with pytest.raises(SystemExit, match="unknown checkpoint rule"):
+        FV.resolve(run, "e79")
 
 
 def test_resolve_links_the_file_and_records_the_choice(tmp_path):
     run = _run_dir(tmp_path, {e: 0.5 for e in range(80)})
+    _wavg(run)
     link = tmp_path / "ws" / "l188-s1.pt"
-    assert FV.main(["resolve", "--run-dir", str(run), "--rule", "e79", "--link", str(link)]) == 0
-    assert link.read_bytes() == b"epoch 79"
-    assert json.loads(pathlib.Path(f"{link}.json").read_text())["epoch"] == 79
+    assert FV.main(["resolve", "--run-dir", str(run), "--rule", "wavg", "--link", str(link)]) == 0
+    assert link.read_bytes() == b"average"
+    assert json.loads(pathlib.Path(f"{link}.json").read_text())["epoch"] == "wavg70-79"
 
 
 def test_hash_then_verify_and_a_changed_byte_is_refused(tmp_path):

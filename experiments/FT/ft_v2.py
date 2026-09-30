@@ -7,9 +7,16 @@
                         argmax of selection.value over metrics/epoch-EEE.json
                         (the first maximum, as the driver's strict `>` keeps
                         it) must agree with best_epoch.json, and the epoch is
-                        loaded by name as net_epoch-<e>_state.pt, which the
-                        driver keeps (--keep-checkpoints window: best + 70-79).
-               e<k>     epoch k by name (e79: the end of the kept window).
+                        loaded by name as net_epoch-<e>_state.pt (the v2
+                        specs keep every epoch, --keep-checkpoints all).
+               wavg     the weight average of epochs 70-79, the robustness
+                        check (audit 2026-09-29; the output-layer diagnostic,
+                        experiments/FIGS/data/head_epoch_diag): WAVG_STATE,
+                        with WAVG_JSON = {"inputs": {"70": <sha256 of
+                        net_epoch-70_state.pt>, ..., "79": ...}, "sha256":
+                        <sha256 of WAVG_STATE>}. Each input's sha256 is checked
+                        against the epoch file in the run, and the average's
+                        against the file itself.
              The run must be complete (its DONE).
              It links the file to --link and writes <link>.json with the rule,
              the epoch and the sha256, which each cell copies beside its result.
@@ -35,6 +42,7 @@ import sys
 
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 ARG = re.compile(r"^\s*- \('(\w+)', (.*)\)\s*$")
+WAVG_STATE, WAVG_JSON, WAVG_EPOCHS = "net_wavg70-79_state.pt", "net_wavg70-79.json", range(70, 80)
 RUN_ARGS = ("batch_size", "num_epochs", "samples_per_epoch", "samples_per_epoch_val",
             "steps_per_epoch", "steps_per_epoch_val", "start_lr", "lr_scheduler", "optimizer")
 
@@ -73,14 +81,37 @@ def resolve(run_dir: pathlib.Path, rule: str, n_epochs: int = 80) -> dict:
             raise SystemExit(f"FATAL: {run_dir}/best_epoch.json says epoch {stated['epoch']}, "
                              f"the per-epoch records say {epoch}")
         rec.update(metric=stated.get("metric"), value=best)
-    elif re.fullmatch(r"e\d+", rule):
-        epoch = int(rule[1:])
+    elif rule == "wavg":
+        return resolve_wavg(run_dir, rec)
     else:
-        raise SystemExit(f"FATAL: unknown checkpoint rule {rule!r} (bestval or e<k>)")
+        raise SystemExit(f"FATAL: unknown checkpoint rule {rule!r} (bestval or wavg)")
     path = run_dir / f"net_epoch-{epoch}_state.pt"
     if not path.exists():
         raise SystemExit(f"FATAL: rule {rule} selects epoch {epoch}, and {path} is not kept")
     rec.update(epoch=epoch, path=str(path), sha256=sha256_file(path))
+    return rec
+
+
+def resolve_wavg(run_dir: pathlib.Path, rec: dict) -> dict:
+    """The weight average of epochs 70-79 and proof of what was averaged."""
+    path, meta = run_dir / WAVG_STATE, run_dir / WAVG_JSON
+    for f in (path, meta):
+        if not f.exists():
+            raise SystemExit(f"FATAL: {f} absent; the weight average was not written")
+    m = json.loads(meta.read_text())
+    inputs = {int(e): sha for e, sha in m["inputs"].items()}
+    if sorted(inputs) != list(WAVG_EPOCHS):
+        raise SystemExit(f"FATAL: {meta} averages epochs {sorted(inputs)}, not "
+                         f"{WAVG_EPOCHS.start}-{WAVG_EPOCHS.stop - 1}")
+    for e, sha in sorted(inputs.items()):
+        f = run_dir / f"net_epoch-{e}_state.pt"
+        if not f.exists() or sha256_file(f) != sha:
+            raise SystemExit(f"FATAL: {meta}: input epoch {e} is not {f} as it is on disk")
+    got = sha256_file(path)
+    if m["sha256"] != got:
+        raise SystemExit(f"FATAL: {path} is not the file {meta} records")
+    rec.update(epoch=f"wavg{WAVG_EPOCHS.start}-{WAVG_EPOCHS.stop - 1}", path=str(path),
+               sha256=got, inputs={str(e): s for e, s in sorted(inputs.items())})
     return rec
 
 
