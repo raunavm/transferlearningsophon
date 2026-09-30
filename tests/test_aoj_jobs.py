@@ -311,7 +311,8 @@ def test_every_job_reading_parquet_through_weaver_installs_pyarrow_first(path):
     """The image has no pyarrow; weaver swallows the ImportError and dies later with
     "Zero entries loaded" (the first simulation launch, 2026-09-29)."""
     s = _script(SPECS[path])
-    uses = [s.find(k) for k in ("extract_features.py", "closure.py", "stage_aoj.py") if k in s]
+    # realdata_checks.py imports scripts/stage_aoj.py, whose imports need pyarrow
+    uses = [s.find(k) for k in ("extract_features.py", "closure.py", "stage_aoj.py", "realdata_checks.py") if k in s]
     if not uses:
         return
     install = s.find("pip install --no-cache-dir -q pyarrow")

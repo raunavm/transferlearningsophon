@@ -49,6 +49,10 @@ spec:
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
           git rev-parse HEAD
+          # the checks import the staging code for its selection, and its imports need
+          # pyarrow, which the image lacks (the first launch died on it, 2026-09-30)
+          pip install --no-cache-dir -q pyarrow || exit 1
+          python3 -c "import pyarrow" || { echo "FATAL: pyarrow does not import"; exit 1; }
           python3 experiments/AOJ/merge_shards.py --shards ${SHARDS} --out /scratch/merged
           # the first run, merged exactly as its fit merged it: its three-prong scores are
           # the ones the main fit saw, and every check reads those (realdata_checks.load_data)
