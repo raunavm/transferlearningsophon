@@ -839,13 +839,15 @@ def v2_smoke_specs(tag: str, deterministic: bool = False) -> dict:
     return out
 
 
-def v2_dryrun_spec(tag: str, full_columns: bool = False) -> tuple:
+def v2_dryrun_spec(tag: str, full_columns: bool = False, label: str = "") -> tuple:
     """The CPU loader-only dry run: 20 epochs x 10,240,000 jets through the v2
     training stream with column projection, or (full_columns) one epoch with every
-    input column finalised, for memory and loader throughput."""
-    name = "mtx2-loader-memprobe-raunav" if full_columns else "mtx2-loader-dryrun-raunav"
+    input column finalised, for memory and loader throughput. `label` names a
+    repeat (job name and output file), e.g. the tag it checks."""
+    kind = "memprobe" if full_columns else "dryrun"
+    name = f"mtx2-loader-{kind}{'-' + label if label else ''}-raunav"
     epochs = 1 if full_columns else 20
-    out = f"{V2_ROOT}/loader_dryrun/{'memprobe' if full_columns else 'dryrun'}_seed1.json"
+    out = f"{V2_ROOT}/loader_dryrun/{kind}{'_' + label if label else ''}_seed1.json"
     cmd = ("CFG=configs/arms/R16_Q1.yaml\n"
            "MD5=$(md5sum ${CFG} | cut -d' ' -f1)\n"
            "cp /data/results/mtx/makeweight/R16_Q1.${MD5}.auto.yaml configs/arms/\n"

@@ -203,3 +203,9 @@ def test_every_new_config_gets_a_checked_make_weight_pass():
         assert subprocess.run(["bash", "-n"], input=_script(spec), text=True).returncode == 0
     grid_cfgs = {a["config"] for a in b.v2_arms()}
     assert grid_cfgs <= b.V1_SIDECAR_CONFIGS | {c for c, _ in new}
+
+
+def test_a_labelled_dry_run_gets_its_own_name_and_output():
+    name, spec = b.v2_dryrun_spec(TAG, False, "s170")
+    assert name == "mtx2-loader-dryrun-s170-raunav"
+    assert "loader_dryrun/dryrun_s170_seed1.json" in _script(spec)
