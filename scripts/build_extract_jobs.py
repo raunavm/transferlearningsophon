@@ -826,7 +826,10 @@ spec:
 GPU_CHECK = """          python3 -c 'import sys, torch; sys.exit(0 if torch.cuda.is_available() else 3)' \\
             || {{ echo "no usable GPU on $(hostname); retried elsewhere"; exit 137; }}
 """
-BAD_GPU_NODES = ("patternlab.calit2.optiputer.net",)
+BAD_GPU_NODES = ("patternlab.calit2.optiputer.net",
+                 # 2026-09-30: eight admissions of two jobs refused in a row,
+                 # UnexpectedAdmissionError, each a counted failure
+                 "nautilus-ext-gpu01.fullerton.edu")
 NODE_EXCLUDE = ("\n              - key: kubernetes.io/hostname\n                operator: NotIn\n"
                 "                values: [" + ", ".join(f'"{n}"' for n in BAD_GPU_NODES) + "]")
 

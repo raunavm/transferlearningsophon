@@ -179,7 +179,7 @@ def test_v1err_head_specs_cover_every_model_with_the_retry_policy():
             assert ("--no-anomaly-rows" in text) == (not gpu)
             # a GPU pod that sees no device must not fall back to the CPU
             assert ("torch.cuda.is_available()" in text and "exit 137" in text) == gpu
-            assert ("patternlab.calit2.optiputer.net" in text) == gpu
+            assert all((n in text) == gpu for n in bx.BAD_GPU_NODES)
 
 
 def test_v2_specs_one_per_classification_run_primary_features_only():

@@ -65,7 +65,7 @@ spec:
                 values: ["us-west"]
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: ["patternlab.calit2.optiputer.net"]
+                values: ["patternlab.calit2.optiputer.net", "nautilus-ext-gpu01.fullerton.edu"]
       volumes:
       - name: jc2
         persistentVolumeClaim:
