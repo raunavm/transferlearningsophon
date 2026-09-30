@@ -214,7 +214,8 @@ def test_the_v3_fit_is_the_first_fit_with_its_checks_appended():
 
 
 # ---- the checks of the real-data section (audit B5, must-fix 9) ----
-RESCORE = sorted(p for p in SPECS if "-rescore-s" in p.name)
+RESCORE = sorted(p for p in SPECS if "-rescore-s" in p.name and "-p" not in p.name.removesuffix("-raunav.yaml")[-3:])
+PARTS = sorted(p for p in SPECS if re.search(r"-rescore-s\d+-p\d+-raunav", p.name))
 SIM = sorted(p for p in SPECS if "-sim-g" in p.name)
 CHECKS = [p for p in SPECS if p.name == "job-aoj-checks-v1-raunav.yaml"]
 
@@ -253,7 +254,7 @@ def test_each_rescore_shard_is_its_first_run_shard_with_only_the_listed_changes(
         assert "two_prong" not in s2, "the withdrawn two-prong channel stays unwritten"
 
 
-@pytest.mark.parametrize("path", RESCORE + SIM + CHECKS, ids=lambda p: p.name)
+@pytest.mark.parametrize("path", RESCORE + PARTS + SIM + CHECKS, ids=lambda p: p.name)
 def test_the_check_jobs_carry_the_retry_policy_of_the_fine_tuning_jobs(path):
     doc = yaml.safe_load(SPECS[path])
     spec = doc["spec"]
@@ -338,3 +339,30 @@ def test_the_simulation_jobs_stay_off_the_node_that_failed_every_container_start
             "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
         hosts = next(t for t in terms if t["key"] == "kubernetes.io/hostname")["values"]
         assert "patternlab.calit2.optiputer.net" in hosts and set(B.BAD_NODES) <= set(hosts)
+
+
+def test_a_split_shard_scores_every_model_once_across_its_parts_and_only_the_last_marks_it_done(tmp_path):
+    for i, n in B.RESCORE_PARTS.items():
+        parts = [p for p in PARTS if f"-rescore-s{i}-p" in p.name]
+        assert len(parts) == n
+        names = [re.findall(r'^\s+scored (\S+) "', SPECS[p], re.M) for p in parts]
+        flat = [x for g in names for x in g]
+        assert sorted(flat) == sorted(m.name for m in B.MODELS[1:]) and len(flat) == len(set(flat)), \
+            "disjoint parts covering every model but the first, which wrote the shard's jets.npz"
+        for p in parts:
+            s = _script(SPECS[p])
+            assert 'touch "${OUT}/DONE"' not in s.replace('touch "${OUT}/DONE"; }', ""), "only done_if_all marks DONE"
+            assert "jets.npz\" ] && [ -f \"${OUT}/closure.json\" ] ||" in s
+            assert f"OUT={B.RESCORE_ROOT}/shard{i}" in s and "attempts_p" in s
+    # done_if_all: DONE appears only once every model of the full list is scored
+    s = _script(SPECS[PARTS[0]])
+    fn = next(ln for ln in s.splitlines() if ln.startswith("done_if_all ()"))
+    all_line = next(ln for ln in s.splitlines() if ln.startswith("ALL_MODELS="))
+    run = lambda: subprocess.run(["bash", "-c", f"OUT={tmp_path}\n{all_line}\n{fn}\ndone_if_all"], check=True)
+    for m in B.MODELS[:-1]:
+        (tmp_path / f"scores_{m.name}.npz").touch()
+    run()
+    assert not (tmp_path / "DONE").exists()
+    (tmp_path / f"scores_{B.MODELS[-1].name}.npz").touch()
+    run()
+    assert (tmp_path / "DONE").exists()

@@ -715,6 +715,59 @@ def render_rescore_shard(i: int, files: list[dict]) -> str:
                       "  # repeats only the ~30 min of download and staging.\n  backoffLimit: 2\n")
 
 
+# SHARD 8 IN THREE PARTS (2026-09-30 07:1xZ). Its third pod only found an 11 GB GPU after
+# two hours Pending, and alone it needed ~7 h more, twice any other shard. So the shard's
+# remaining models are split across RESCORE_PARTS jobs, each staging the same eight files
+# and scoring a DISJOINT third of MODELS[1:] into the same directory (no two jobs ever
+# score one model, so no file has two writers). jets.npz and closure.json were already
+# written by the shard's first attempt and are required, not written; DONE is touched only
+# when every one of the 31 models is scored, by whichever part finishes last.
+RESCORE_PARTS = {8: 3}
+
+
+def rescore_part_models(k: int, n_parts: int) -> list:
+    return MODELS[1:][k::n_parts]
+
+
+def render_rescore_part(i: int, files: list[dict], k: int, n_parts: int) -> str:
+    ft = _ft()
+    t = render_rescore_shard(i, files)
+    part = rescore_part_models(k, n_parts)
+    line = lambda m: f'scored {m.name} "{m.checkpoint}" {m.k} {m.num_reg} {m.arm} {m.rung}'
+    block = []
+    for start in range(0, len(part), PARALLEL):
+        group = part[start:start + PARALLEL]
+        block += [f"          {line(m)} & p{j}=$!" for j, m in enumerate(group)]
+        block.append("          " + "; ".join(f"wait ${{p{j}}}" for j in range(len(group))))
+    first = MODELS[0]
+    old_block_start = f"          {line(first)}\n"
+    s0 = t.index(old_block_start)
+    s1 = t.index('          touch "${OUT}/DONE"\n          ls -la "${OUT}"\n')
+    t = t[:s0] + "\n".join(block) + "\n" + t[s1:]
+    all_names = " ".join(m.name for m in MODELS)
+    subs = [
+        ("  # REAL-DATA CHECKS: THE FIRST RUN RESCORED (+ prong-only score), SHARD",
+         f"  # REAL-DATA CHECKS: SHARD {i}, PART {k} OF {n_parts} (RESCORE_PARTS). THE FIRST RUN RESCORED, SHARD"),
+        (f"name: aoj-rescore-s{i}-raunav", f"name: aoj-rescore-s{i}-p{k}-raunav"),
+        (_failure_accounting("${OUT}", ft.EXIT_HALT), _failure_accounting(f"${{OUT}}/attempts_p{k}", ft.EXIT_HALT)
+         + '          [ -f "${OUT}/jets.npz" ] && [ -f "${OUT}/closure.json" ] || '
+           '{ echo "FATAL: a part needs the jets.npz and closure.json of the shard\'s first attempt"; exit '
+         + f"{ft.EXIT_HALT}; }}\n"
+         + f'          ALL_MODELS="{all_names}"\n'
+         + '          done_if_all () { for m in ${ALL_MODELS}; do [ -f "${OUT}/scores_${m}.npz" ] || return 0; done; '
+           'touch "${OUT}/DONE"; }\n'),
+        (f'          MODELS="{all_names}"\n', f'          MODELS="{" ".join(m.name for m in part)}"\n'),
+        (f'echo "shard {i} complete: every model scored"; touch "${{OUT}}/DONE"; exit 0',
+         f'echo "shard {i} part {k} complete"; done_if_all; exit 0'),
+        ('          touch "${OUT}/DONE"\n          ls -la "${OUT}"\n', '          done_if_all\n          ls -la "${OUT}"\n'),
+    ]
+    for a, b in subs:
+        if t.count(a) != 1:
+            raise SystemExit(f"FATAL: the rescore template changed; cannot derive the part ({a[:60]!r})")
+        t = t.replace(a, b)
+    return t
+
+
 SIM_TEMPLATE = r"""apiVersion: batch/v1
 kind: Job
 metadata:
@@ -955,6 +1008,8 @@ def specs() -> dict[pathlib.Path, str]:
     out[K8S / "job-aoj-full-fit-v3-raunav.yaml"] = render_fit_v3()
     for i, fs in enumerate(shards()):
         out[K8S / f"job-aoj-rescore-s{i}-raunav.yaml"] = render_rescore_shard(i, fs)
+        for k in range(RESCORE_PARTS.get(i, 0)):
+            out[K8S / f"job-aoj-rescore-s{i}-p{k}-raunav.yaml"] = render_rescore_part(i, fs, k, RESCORE_PARTS[i])
     for g, ms in enumerate(sim_groups()):
         out[K8S / f"job-aoj-sim-g{g}-raunav.yaml"] = render_sim(g, ms)
     out[K8S / "job-aoj-checks-v1-raunav.yaml"] = render_checks()
