@@ -71,7 +71,8 @@ def test_v2_code_loader_validation_and_output(grid):
         assert f"OUT={b.V2_ROOT}/${{RUN_ID}}" in s and fn == "job-mtx2-" + run_id[len("mtx-"):] + "-raunav.yaml"
         assert re.fullmatch(r"mtx-[a-z0-9]+-s\d", run_id)
         assert "python3 experiments/MTX/pretrain_v2.py" in s and "seed_weaver" not in s
-        assert "--num-workers 5 --fetch-step 1.0 --data-split-num 200" in s
+        assert "--num-workers 5 --fetch-step 1.0 --data-split-num 200 --data-fraction 0.2" in s
+        assert "--data-fraction 0.2 --keep-checkpoints all" in s             # the manifest records it
         assert "--fetch-by-files" not in s and "--samples-per-epoch 10240000" in s
         assert "--num-epochs 80" in s and "--start-lr 5e-4" in s and "--use-amp" in s
         val = re.search(r"--data-val (.*?) --data-config", s).group(1).split()

@@ -20,6 +20,11 @@ a worker in one fetch, which is what ran out of memory (CLAUDE.md section 8).
 WHAT THIS MODULE DOES
 ---------------------
 * `sophon_splits` is Sophon's schedule, ported line for line (n_div_d_sep).
+* With --data-fraction F = 1/k (Sophon's flag), epoch e reads a window of every
+  file: rows [j F, (j+1) F) of a per-cycle row permutation, j = e % k (cycle_of,
+  file_rows), so every epoch samples every file and every row is read once per
+  k epochs. Without it an epoch reads ~20% of the files, and which 20% moved the
+  epoch's QCD share at 3.7x the binomial level (dry runs at mtx-s1.69/1.70).
 * `StreamDataset(mode="train")` gives each epoch a FRESH stream. For worker w of
   epoch e, the file order within each family, the split schedule and therefore
   the load ranges, the reweighting draws and the row permutation of every fetch
@@ -128,26 +133,40 @@ def worker_files(file_dict: dict, worker: int, num_workers: int) -> dict:
     return out
 
 
+def cycle_of(epoch: int, data_fraction: float):
+    """(cycle, window) of an epoch. With data fraction F = 1/k, epoch e reads the
+    rows at positions [j F, (j+1) F) of each file's row permutation for cycle
+    e // k, j = e % k: every file every epoch, every row once per k epochs."""
+    k = round(1.0 / data_fraction)
+    if abs(k * data_fraction - 1.0) > 1e-9:
+        raise ValueError(f"data fraction {data_fraction} is not 1/k")
+    j = epoch % k
+    return epoch // k, (j * data_fraction, (j + 1) * data_fraction if j + 1 < k else 1.0)
+
+
 def train_plan(file_dict: dict, seed: int, epoch: int, worker: int, num_workers: int,
-               split_num: int, fetch_step: float, pass_idx: int = 0) -> list:
-    """The fetch schedule of one worker in one pass of one epoch."""
+               split_num: int, fetch_step: float, pass_idx: int = 0,
+               data_fraction: float = 1.0) -> list:
+    """The fetch schedule of one worker in one pass of one epoch: Sophon's
+    schedule over the epoch's window of every file (Sophon's --data-fraction)."""
     rng = np.random.default_rng(seed_seq(seed, TAG_FILES, epoch, worker, pass_idx))
     mine = worker_files(file_dict, worker, num_workers)
     shuffled = {name: [files[i] for i in rng.permutation(len(files))]
                 for name, files in sorted(mine.items())}
-    return sophon_splits(shuffled, split_num, fetch_step)
+    return sophon_splits(shuffled, split_num, fetch_step, load_range=cycle_of(epoch, data_fraction)[1])
 
 
 def plan_sha256(file_dict: dict, seed: int, epoch: int, num_workers: int,
-                split_num: int, fetch_step: float) -> str:
+                split_num: int, fetch_step: float, data_fraction: float = 1.0) -> str:
     """sha256 of every worker's first-pass schedule for the epoch: file base
     names and load ranges in read order, plus the worker count and split number
     that shape it. An epoch that runs past its first pass (never at 10.24M jets
     per epoch) is still covered by the row hash."""
     plan = {"num_workers": num_workers, "split_num": split_num, "fetch_step": fetch_step,
+            "data_fraction": data_fraction,
             "workers": [[[[os.path.basename(f) for f in fs], [[round(a, 12), round(b, 12)] for a, b in rs]]
                          for fs, rs in train_plan(file_dict, seed, epoch, w, num_workers,
-                                                  split_num, fetch_step)]
+                                                  split_num, fetch_step, 0, data_fraction)]
                         for w in range(num_workers)]}
     return hashlib.sha256(json.dumps(plan, sort_keys=True).encode()).hexdigest()
 
@@ -160,23 +179,25 @@ def _slice_bounds(n: int, lo: float, hi: float):
     return start, stop
 
 
-def file_rows(n: int, lo: float, hi: float, seed: int, epoch: int, worker: int,
-              pass_idx: int, file_index: int) -> np.ndarray:
+def file_rows(n: int, lo: float, hi: float, seed: int, cycle: int, pass_idx: int,
+              file_index: int) -> np.ndarray:
     """The rows a training load range (lo, hi) of a file takes: positions
     [trunc(lo*n), trunc(hi*n)) of a permutation of the file's rows fixed per
-    (seed, epoch, worker, pass, file), sorted. Consecutive splits of one pass
-    therefore still tile the file exactly, as Sophon's slices do, but each takes
-    a random sample of its rows.
+    (seed, cycle, pass, file), sorted. The splits of one epoch therefore tile
+    that epoch's window of the file, and the k windows of a cycle tile the file,
+    as Sophon's slices do, but each takes a random sample of the file's rows.
 
     Why not Sophon's contiguous slice: JetClass-II files are not shuffled
     inside. Measured 2026-09-29 on Res34P_0100, Res2P_0050 and QCD_0100, the
     mean jet p_T of consecutive 10,000-row chunks varies by 100-400 GeV, 20-40x
     its statistical error, so a slice carries the kinematics of whichever
     generation batch it falls in, and with them the reweighting acceptance.
-    That made the QCD share of a fetch scatter at 3.6x the binomial level
-    (dry run at mtx-s1.69) and the epoch share with it."""
+    Random rows alone did not change the epoch scatter, though (dry run at
+    mtx-s1.70, epoch by epoch within 5e-5 of mtx-s1.69): that comes from which
+    files an epoch reads, fixed by the file order. Hence the window over every
+    file each epoch (cycle_of, --data-fraction)."""
     start, stop = _slice_bounds(n, lo, hi)
-    perm = np.random.default_rng(seed_seq(seed, TAG_ROWS, epoch, worker, pass_idx, file_index)).permutation(n)
+    perm = np.random.default_rng(seed_seq(seed, TAG_ROWS, cycle, pass_idx, file_index)).permutation(n)
     return np.sort(perm[start:stop])
 
 
@@ -254,7 +275,7 @@ class StreamDataset(torch.utils.data.IterableDataset):
     def __init__(self, file_dict: dict, config_file: str, *, mode: str, batch_size: int,
                  seed: int | None = None, split_num: int = 200, fetch_step: float = 1.0,
                  labels_only: bool = False, max_resample: int = 10, cache_per_family: int = 1,
-                 extra_selection: str | None = None):
+                 extra_selection: str | None = None, data_fraction: float = 1.0):
         self.config_file = str(config_file)
         self.extra_selection = extra_selection
         data_config = load_config(self.config_file, extra_selection)
@@ -276,6 +297,8 @@ class StreamDataset(torch.utils.data.IterableDataset):
         self.seed = seed
         self.split_num = int(split_num)
         self.fetch_step = float(fetch_step)
+        self.data_fraction = float(data_fraction)
+        cycle_of(0, self.data_fraction)          # refuses a fraction that is not 1/k
         self.labels_only = labels_only
         self.max_resample = max_resample
         self.cache_size = cache_per_family * len(self.file_dict) + 1
@@ -310,7 +333,7 @@ class StreamDataset(torch.utils.data.IterableDataset):
 
     # -- one fetch
     def _load(self, cache, files, ranges, rng, key=None):
-        """key = (epoch, worker, pass) for the training stream: each file's load
+        """key = (cycle, pass) for the training stream: each file's load
         range then selects that many rows at random positions of the file
         (file_rows), not a contiguous slice. None (validation): contiguous."""
         parts = []
@@ -359,10 +382,11 @@ class StreamDataset(torch.utils.data.IterableDataset):
         p = 0
         while True:  # a new pass only if an epoch outruns one (test-sized inputs)
             plan = train_plan(self.file_dict, self.seed, self.epoch, worker, num_workers,
-                              self.split_num, self.fetch_step, p)
+                              self.split_num, self.fetch_step, p, self.data_fraction)
+            cycle = cycle_of(self.epoch, self.data_fraction)[0]
             for f, (files, ranges) in enumerate(plan):
                 rng = np.random.default_rng(seed_seq(self.seed, TAG_FETCH, self.epoch, worker, p, f))
-                yield p * len(plan) + f, files, ranges, rng, (self.epoch, worker, p)
+                yield p * len(plan) + f, files, ranges, rng, (cycle, p)
             p += 1
 
     def __iter__(self):

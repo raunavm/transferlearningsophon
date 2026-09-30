@@ -90,6 +90,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--num-workers", type=int, default=5)
     ap.add_argument("--fetch-step", type=float, default=1.0)
     ap.add_argument("--data-split-num", type=int, default=200)
+    ap.add_argument("--data-fraction", type=float, default=1.0,
+                    help="1/k: each epoch reads a random 1/k of every file, all rows once per k epochs")
     ap.add_argument("--optimizer", default="ranger", choices=["ranger"])
     ap.add_argument("--lr-scheduler", default="flat+decay", choices=["flat+decay"])
     ap.add_argument("--mass-lambda", type=float, default=None)
@@ -421,7 +423,7 @@ def load_data_config(path: str):
 def recipe_of(a) -> dict:
     keep = ("seed", "data_config", "extra_selection", "network_config", "network_option", "use_amp", "batch_size",
             "start_lr", "num_epochs", "samples_per_epoch", "num_workers", "fetch_step",
-            "data_split_num", "optimizer", "lr_scheduler", "mass_lambda", "mpm", "mpm_mask_rate",
+            "data_split_num", "data_fraction", "optimizer", "lr_scheduler", "mass_lambda", "mpm", "mpm_mask_rate",
             "deterministic")
     r = {k: getattr(a, k) for k in keep}
     r["data_train_n"] = {k: len(v) for k, v in to_file_dict(a.data_train).items()}
@@ -491,7 +493,8 @@ def main(argv=None) -> int:
     val_files = to_file_dict(a.data_val)
     ds_train = sv.StreamDataset(train_files, side, mode="train", batch_size=a.batch_size,
                                 seed=seeds["data_sampling"], split_num=a.data_split_num,
-                                fetch_step=a.fetch_step, extra_selection=a.extra_selection)
+                                fetch_step=a.fetch_step, extra_selection=a.extra_selection,
+                                data_fraction=a.data_fraction)
     ds_val = sv.StreamDataset(val_files, side, mode="val", batch_size=a.batch_size,
                               extra_selection=a.extra_selection)
 
@@ -546,7 +549,8 @@ def main(argv=None) -> int:
         for step in range(steps):
             X, y, Z = next(it)
             if step == 0:
-                t_first, n_first = time.time(), len(Z["_rowid"])
+                t_first, n_first, max_fetch = time.time(), len(Z["_rowid"]), 0
+            max_fetch = max(max_fetch, int(Z["_fetch"].max()))
             rec.update(Z)
             inputs = [X[k].to(dev, non_blocking=True) for k in input_names]
             opt.zero_grad()
@@ -579,7 +583,7 @@ def main(argv=None) -> int:
         train.update(n_jets=rec.n, qcd_share=float(rec.native[161:].sum()) / rec.n,
                      native_counts=rec.native.tolist(), seconds=round(t_train, 1),
                      jets_per_s=round(rec.n / t_train, 1),
-                     startup_seconds=round(t_first - t0, 1),
+                     startup_seconds=round(t_first - t0, 1), max_fetch_id=max_fetch,
                      jets_per_s_after_first_batch=round((rec.n - n_first) / max(t0 + t_train - t_first, 1e-9), 1))
 
         seed_all(epoch_seed(seeds["dropout"], "validation", 0))
@@ -598,7 +602,7 @@ def main(argv=None) -> int:
             best = {"epoch": epoch, "metric": name, "value": value}
 
         files_sha = sv.plan_sha256(train_files, seeds["data_sampling"], epoch, a.num_workers,
-                                   a.data_split_num, a.fetch_step)
+                                   a.data_split_num, a.fetch_step, a.data_fraction)
         stream = rec.record(run, epoch, seeds["data_sampling"], seeds["dropout"], files_sha)
         write_json(out / "metrics" / f"epoch-{epoch:03d}.json", {
             "run": run, "epoch": epoch, "objective": kind, "lr": lr, "train": train, "val": val,

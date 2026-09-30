@@ -537,7 +537,10 @@ V2_GPU = "NVIDIA-GeForce-RTX-3090"
 V2_RATE = "5e-4"                    # RATES: every arm of the ladder trains at 5e-4
 V2_EPOCHS = 80
 V2_SAMPLES = 10_240_000
-V2_LOADER = "--num-workers 5 --fetch-step 1.0 --data-split-num 200"
+V2_LOADER = "--num-workers 5 --fetch-step 1.0 --data-split-num 200 --data-fraction 0.2"
+# --data-fraction 0.2: an epoch reads a random fifth of EVERY file (stream_v2.cycle_of).
+# A full pass over the training files yields ~52.8M jets (dry run, 52,800 per fetch x
+# 200 splits x 5 workers), so a fifth, ~10.6M, covers the 10,240,000-jet epoch.
 # Measured at mtx-s1.69 (RUNS.csv mtx2-loader-memprobe, mtx2-smoke-3090): the loader alone,
 # 5 workers over a full 10,240,000-jet epoch, peaks at 29.0 GB anon and delivers 4,716
 # jets/s on 8 CPUs; training on an RTX 3090 is GPU-bound at ~2,300 jets/s. 64Gi leaves
@@ -705,7 +708,7 @@ MANIFEST=${{OUT}}/run_manifest.json
 python3 scripts/write_run_manifest.py --driver pretrain_v2 --run-id ${{RUN_ID}} --arm {arm['name']} \\
   --num-classes {k} --seed ${{SEED}} --data-config ${{CFG}} --samples-per-epoch {samples} \\
   --num-epochs {epochs} --batch-size 512{f" --lambda-mass {float(arm['mass_lambda'])}" if arm.get('mass_lambda') is not None else ""}{" --mpm-mask-rate 0.40" if obj == "mpm" else ""} \\
-  --num-workers 5 --data-split-num 200 --fetch-step 1.0 --keep-checkpoints all \\
+  --num-workers 5 --data-split-num 200 --fetch-step 1.0 --data-fraction 0.2 --keep-checkpoints all \\
   --val-files "${{VAL_FILES[@]}}" --out ${{MANIFEST}}
 {run_block})
 """
@@ -853,7 +856,7 @@ def v2_dryrun_spec(tag: str, full_columns: bool = False, label: str = "") -> tup
            "cp /data/results/mtx/makeweight/R16_Q1.${MD5}.auto.yaml configs/arms/\n"
            f"mkdir -p {V2_ROOT}/loader_dryrun\n"
            f"PYTHONUNBUFFERED=1 python3 experiments/MTX/loader_dryrun.py --seed 1 --epochs {epochs} "
-           f"--samples-per-epoch {V2_SAMPLES} --num-workers 5 --data-split-num 200 --fetch-step 1.0 "
+           f"--samples-per-epoch {V2_SAMPLES} --num-workers 5 --data-split-num 200 --fetch-step 1.0 --data-fraction 0.2 "
            f"--data-config ${{CFG}} --data-train {' '.join(TRAIN_GLOBS)} "
            f"{'--full-columns ' if full_columns else ''}--out {out} 2>&1 | tee {out[:-5]}.log\n")
     exclude = ", ".join(f'"{n}"' for n in V2_BAD_NODES)

@@ -156,14 +156,35 @@ def test_every_split_reads_every_family_and_every_file_is_read_once():
 
 def test_training_load_ranges_take_random_rows_that_still_tile_each_file():
     n, pieces = 1000, [(0.0, 0.3), (0.3, 2 / 3), (2 / 3, 1.0)]
-    got = [sv.file_rows(n, lo, hi, 5, 2, 1, 0, 7) for lo, hi in pieces]
+    got = [sv.file_rows(n, lo, hi, 5, 2, 0, 7) for lo, hi in pieces]
     allrows = np.concatenate(got)
     assert sorted(allrows.tolist()) == list(range(n))          # each row exactly once per pass
     assert [len(g) for g in got] == [sv._slice_bounds(n, lo, hi)[1] - sv._slice_bounds(n, lo, hi)[0] for lo, hi in pieces]
     assert not np.array_equal(got[0], np.arange(300))          # not the contiguous slice
     assert got[0].mean() == pytest.approx(n / 2, abs=60)       # spread over the file
-    np.testing.assert_array_equal(got[1], sv.file_rows(n, 0.3, 2 / 3, 5, 2, 1, 0, 7))
-    assert not np.array_equal(got[1], sv.file_rows(n, 0.3, 2 / 3, 5, 3, 1, 0, 7))
+    np.testing.assert_array_equal(got[1], sv.file_rows(n, 0.3, 2 / 3, 5, 2, 0, 7))
+    assert not np.array_equal(got[1], sv.file_rows(n, 0.3, 2 / 3, 5, 3, 0, 7))
+
+
+def test_a_data_fraction_reads_every_file_every_epoch_and_every_row_once_per_cycle():
+    fd = {"A": [f"/x/A_{i:04d}.parquet" for i in range(40)], "Q": [f"/x/Q_{i:04d}.parquet" for i in range(14)]}
+    k, n = 5, 1000
+    seen = {}
+    for e in range(k):                          # one cycle
+        cycle, (wlo, whi) = sv.cycle_of(e, 1 / k)
+        assert cycle == 0 and (wlo, whi) == (pytest.approx(e / k), pytest.approx((e + 1) / k))
+        plan = sv.train_plan(fd, 5, e, 0, 2, 20, 1.0, 0, 1 / k)
+        files = {f for fs, _ in plan for f in fs}
+        assert files == set(sv.worker_files(fd, 0, 2)["A"] + sv.worker_files(fd, 0, 2)["Q"])
+        for fs, rs in plan:
+            for f, (lo, hi) in zip(fs, rs):
+                seen.setdefault(f, []).append(sv.file_rows(n, lo, hi, 5, cycle, 0, 3))
+    for f, parts in seen.items():               # file index fixed at 3: same permutation
+        rows = np.concatenate(parts)
+        assert sorted(rows.tolist()) == list(range(n)), f
+    assert sv.cycle_of(5, 0.2)[0] == 1 and sv.cycle_of(7, 0.2)[1] == (pytest.approx(0.4), pytest.approx(0.6))
+    with pytest.raises(ValueError):
+        sv.cycle_of(0, 0.3)
 
 
 def test_reweighting_draws_equal_weavers_given_the_same_generator():
@@ -185,6 +206,13 @@ def test_epoch_stream_is_a_function_of_seed_epoch_and_worker_only(data):
     assert not np.array_equal(_rows(a, 1, 2), e2_direct)
     c = sv.StreamDataset(data["train"], _dc(data, "R16_Q1"), mode="train", batch_size=64, seed=6, split_num=4)
     assert not np.array_equal(_rows(c, 2, 2), e2_direct)
+
+
+def test_consecutive_epochs_of_a_cycle_read_disjoint_rows(data):
+    ds = sv.StreamDataset(data["train"], _dc(data, "R16_Q1"), mode="train", batch_size=64, seed=5,
+                          split_num=4, data_fraction=0.5)
+    r0, r1 = set(_rows(ds, 0, 2).tolist()), set(_rows(ds, 1, 2).tolist())
+    assert r0 and r1 and not r0 & r1
 
 
 def test_labels_only_projection_draws_the_same_rows(data):

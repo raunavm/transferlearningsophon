@@ -152,7 +152,10 @@ def _v2_fields(manifest: dict, a) -> None:
     d["loader"] = {"schedule": "Sophon --data-split-num (hqucms/weaver-core@c97de3c), ported in "
                                "experiments/MTX/stream_v2.py",
                    "fetch_step": a.fetch_step, "data_split_num": a.data_split_num,
-                   "num_workers": a.num_workers, "fresh_stream_every_epoch": True}
+                   "num_workers": a.num_workers, "data_fraction": a.data_fraction,
+                   "window": "each epoch reads a random data_fraction of every file; every row once "
+                             "per 1/data_fraction epochs (stream_v2.cycle_of)",
+                   "fresh_stream_every_epoch": True}
     d["validation"] = {"files": sorted(a.val_files), "n_files": len(a.val_files),
                        "rows": "every row passing the selection, no reweighting, same order every epoch",
                        "metrics": "<run_dir>/metrics/epoch-EEE.json"}
@@ -189,6 +192,7 @@ def main() -> int:
     ap.add_argument("--num-workers", type=int, default=None)
     ap.add_argument("--data-split-num", type=int, default=None)
     ap.add_argument("--fetch-step", type=float, default=None)
+    ap.add_argument("--data-fraction", type=float, default=1.0)
     ap.add_argument("--val-files", nargs="*", default=None,
                     help="pretrain_v2: the fixed validation sample's files")
     ap.add_argument("--keep-checkpoints", default=None)

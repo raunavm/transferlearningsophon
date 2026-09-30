@@ -37,6 +37,7 @@ def main(argv=None) -> int:
     ap.add_argument("--num-workers", type=int, default=5)
     ap.add_argument("--data-split-num", type=int, default=200)
     ap.add_argument("--fetch-step", type=float, default=1.0)
+    ap.add_argument("--data-fraction", type=float, default=1.0)
     ap.add_argument("--check-jets", type=int, default=200_000,
                     help="also hash the stream after this many jets (the smoke runs' epoch)")
     ap.add_argument("--data-config", required=True)
@@ -59,7 +60,8 @@ def main(argv=None) -> int:
     files = pv.to_file_dict(a.data_train)
     ds = sv.StreamDataset(files, pv.sidecar(a.data_config), mode="train", batch_size=a.batch_size,
                           seed=seeds["data_sampling"], split_num=a.data_split_num,
-                          fetch_step=a.fetch_step, labels_only=not a.full_columns)
+                          fetch_step=a.fetch_step, labels_only=not a.full_columns,
+                          data_fraction=a.data_fraction)
     steps = a.samples_per_epoch // a.batch_size
     check_steps = a.check_jets // a.batch_size
     mem = pv.MemMonitor()
@@ -86,7 +88,7 @@ def main(argv=None) -> int:
                 check = rec.h.copy().hexdigest()
         del it
         files_sha = sv.plan_sha256(files, seeds["data_sampling"], e, a.num_workers,
-                                   a.data_split_num, a.fetch_step)
+                                   a.data_split_num, a.fetch_step, a.data_fraction)
         r = rec.record("dryrun", e, seeds["data_sampling"], seeds["dropout"], files_sha)
         n = r["n_jets"]
         q = int(rec.native[sv.NATIVE_QCD_FIRST:].sum())
@@ -96,6 +98,7 @@ def main(argv=None) -> int:
             f"sha256_after_{check_steps * a.batch_size}": hashlib.sha256((files_sha + check).encode()).hexdigest()
             if check else None,
             "per_fetch": [[w, f, c[0], c[1]] for (w, f), c in sorted(per_fetch.items())],
+            "max_fetch_id": max(f for _, f in per_fetch),
             "native_counts": rec.native.tolist(), "peak_anon_gb": mem.take()})
         print(f"epoch {e}: qcd share {q / n:.5f} over {n} jets, {len(per_fetch)} fetches, "
               f"{epochs[-1]['seconds']} s", flush=True)
