@@ -368,7 +368,7 @@ def _v1err():
 
 def test_v1err_jobs_parse_carry_the_retry_policy_and_are_committed():
     base, jobs = _v1err()
-    assert len(jobs) == 14 + 5 + 20 + 1
+    assert len(jobs) == 14 + 5 + 5 + 1
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"] and fname == f"job-{d['metadata']['name']}.yaml"
@@ -400,15 +400,15 @@ def test_v1err_mass_reruns_save_residuals_on_the_same_models():
         assert _models_line(s) == _models_line(r) and "--save-residuals" in r
 
 
-def test_label_recovery_curve_one_model_per_job_five_sizes_to_the_whole_pool():
+def test_label_recovery_curve_one_seed_per_job_five_sizes_to_the_whole_pool():
     _, jobs = _v1err()
     curve = {k: v for k, v in jobs.items() if "labelrec-curve" in k}
-    assert len(curve) == 20
+    assert len(curve) == 5
     assert len(set(bp.CURVE_SIZES)) >= 5 and bp.CURVE_SIZES[-1] == 0
     for text in curve.values():
-        assert len(_models_line(text).split()[3:-1]) == 1
+        assert len(_models_line(text).split()[3:-1]) == 4
         assert "--sizes " + " ".join(map(str, bp.CURVE_SIZES)) in text
-        assert "--mlp-rungs L188" in text
+        assert "--mlp-rungs L188" in text and "wait ${p} || halt" in text
 
 
 def test_v1err_pin_needs_the_flags_it_passes():

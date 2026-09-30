@@ -437,16 +437,24 @@ V1ERR_MASSRES = """
 """
 
 V1ERR_CURVE = """
-          OUT={out}
-          mkdir -p ${{OUT}}
-          # resumable: label_recovery_curve.py keeps every finished cell and skips it
-          python3 experiments/EVAL/label_recovery_curve.py \\
-            --features ${{ARMS}} \\
-            --own-rung ${{RUNGS}} \\
-            --out ${{OUT}} \\
-            --sizes {sizes} \\
-            --mlp-rungs L188 \\
-            --threads {cpu} || halt
+          # the four models side by side, four threads each; resumable, since
+          # label_recovery_curve.py keeps every finished cell and skips it
+          pids=""
+          for spec in {specs}; do
+            a=${{spec%%:*}}; r=${{spec##*:}}; m=${{a#mtx-}}
+            mkdir -p {out}/${{m}}
+            OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4 \\
+            python3 experiments/EVAL/label_recovery_curve.py \\
+              --features ${{m}}=/data/results/eval/${{a}}/{feat} \\
+              --own-rung ${{m}}=${{r}} \\
+              --out {out}/${{m}} \\
+              --sizes {sizes} \\
+              --mlp-rungs L188 \\
+              --threads 4 > {out}/${{m}}.log 2>&1 &
+            pids="${{pids}} $!"
+          done
+          for p in ${{pids}}; do wait ${{p}} || halt; done
+          tail -n 3 {out}/*.log
           date -u +"end %Y-%m-%dT%H:%M:%SZ"
 """
 
@@ -504,15 +512,16 @@ def v1err_massres_spec(text: str) -> str:
             + ROBUST_TAIL.format(mem="32Gi", cpu="8"))
 
 
-def v1err_curve_spec(stem: str, rung: str, seed: int) -> tuple[str, str]:
-    """One model per job: the largest fit (1.4 M jets x 188 classes) is hours."""
-    run = run_name(stem, seed)
-    name = f"labelrec-curve-v1err-{run.removeprefix('mtx-')}-raunav"
-    return name, (ROBUST_HEAD.format(name=name, pin=V1ERR_PIN, backoff=V1ERR_BACKOFF, threads=THREADS_OF[name.startswith("paired-ft")])
-                  + ARMS_LOOP.format(specs=f"{run}:{rung}", feat=FEAT)
-                  + V1ERR_CURVE.format(out=f"{V1ERR_ROOT}/label_recovery_curve/{run.removeprefix('mtx-')}",
-                                       sizes=" ".join(map(str, CURVE_SIZES)), cpu=8)
-                  + ROBUST_TAIL.format(mem="32Gi", cpu="8"))
+def v1err_curve_spec(seed: int) -> tuple[str, str]:
+    """One job per seed index, its four models fitted side by side (16 CPUs):
+    one pod slot instead of four on a cluster whose pod cap is the constraint."""
+    specs = " ".join(f"{run_name(stem, seed)}:{rung}" for stem, rung in LADDER)
+    name = f"labelrec-curve-v1err-s{seed}-raunav"
+    return name, (ROBUST_HEAD.format(name=name, pin=V1ERR_PIN, backoff=V1ERR_BACKOFF, threads=4)
+                  + ARMS_LOOP.format(specs=specs, feat=FEAT)
+                  + V1ERR_CURVE.format(out=f"{V1ERR_ROOT}/label_recovery_curve", specs=specs,
+                                       feat=FEAT, sizes=" ".join(map(str, CURVE_SIZES)))
+                  + ROBUST_TAIL.format(mem="64Gi", cpu="16"))
 
 
 def v1err_ft_spec() -> tuple[str, str]:
@@ -531,9 +540,8 @@ def build_v1err(base: dict[str, str]) -> dict[str, str]:
     for name in V1ERR_MASSRES_SOURCES:
         out[f"job-{v1err_name(name)}.yaml"] = v1err_massres_spec(base[f"job-{name}.yaml"])
     for seed in SEEDS:
-        for stem, rung in LADDER:
-            name, text = v1err_curve_spec(stem, rung, seed)
-            out[f"job-{name}.yaml"] = text
+        name, text = v1err_curve_spec(seed)
+        out[f"job-{name}.yaml"] = text
     name, text = v1err_ft_spec()
     out[f"job-{name}.yaml"] = text
     return out

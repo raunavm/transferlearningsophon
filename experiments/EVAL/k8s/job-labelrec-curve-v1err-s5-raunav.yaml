@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: labelrec-curve-v1err-l162-s3-raunav
+  name: labelrec-curve-v1err-s5-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 6
@@ -31,11 +31,11 @@ spec:
           git rev-parse HEAD
           export PYTHONUNBUFFERED=1
           # BLAS threads = the CPUs requested: nproc reports the node's cores
-          export OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 MKL_NUM_THREADS=8
+          export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
           date -u +"start %Y-%m-%dT%H:%M:%SZ"; nproc; free -g | head -2
 
           ARMS=""; RUNGS=""
-          for spec in mtx-l162-s3:L162; do
+          for spec in mtx-l188-s5:L188 mtx-l162-s5:L162 mtx-r42q1-s5:R42_Q1 mtx-r16q1-s5:R16_Q1; do
             a=${spec%%:*}; r=${spec##*:}
             d=/data/results/eval/${a}/features_e79
             for f in features.npy label188.npy extract_manifest.json; do
@@ -46,22 +46,30 @@ spec:
           done
           echo "arms:${ARMS}"
 
-          OUT=/data/results/eval/v1err/label_recovery_curve/l162-s3
-          mkdir -p ${OUT}
-          # resumable: label_recovery_curve.py keeps every finished cell and skips it
-          python3 experiments/EVAL/label_recovery_curve.py \
-            --features ${ARMS} \
-            --own-rung ${RUNGS} \
-            --out ${OUT} \
-            --sizes 14000 44000 140000 443000 0 \
-            --mlp-rungs L188 \
-            --threads 8 || halt
+          # the four models side by side, four threads each; resumable, since
+          # label_recovery_curve.py keeps every finished cell and skips it
+          pids=""
+          for spec in mtx-l188-s5:L188 mtx-l162-s5:L162 mtx-r42q1-s5:R42_Q1 mtx-r16q1-s5:R16_Q1; do
+            a=${spec%%:*}; r=${spec##*:}; m=${a#mtx-}
+            mkdir -p /data/results/eval/v1err/label_recovery_curve/${m}
+            OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4 \
+            python3 experiments/EVAL/label_recovery_curve.py \
+              --features ${m}=/data/results/eval/${a}/features_e79 \
+              --own-rung ${m}=${r} \
+              --out /data/results/eval/v1err/label_recovery_curve/${m} \
+              --sizes 14000 44000 140000 443000 0 \
+              --mlp-rungs L188 \
+              --threads 4 > /data/results/eval/v1err/label_recovery_curve/${m}.log 2>&1 &
+            pids="${pids} $!"
+          done
+          for p in ${pids}; do wait ${p} || halt; done
+          tail -n 3 /data/results/eval/v1err/label_recovery_curve/*.log
           date -u +"end %Y-%m-%dT%H:%M:%SZ"
         volumeMounts:
         - { name: data, mountPath: /data }
         resources:
-          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
-          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          requests: { memory: "64Gi", cpu: "16", ephemeral-storage: "10Gi" }
+          limits:   { memory: "64Gi", cpu: "16", ephemeral-storage: "10Gi" }
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

@@ -87,8 +87,11 @@ def _sha(p) -> str:
 # ----------------------------------------------------------------- probes
 def reproduction(dirs: list[pathlib.Path], committed: dict) -> dict:
     """The refit against the committed result it repeats: largest |dAUC| per
-    probe, over every task and model. The linear probe is deterministic and must
-    agree exactly; the MLP is refitted with the same seeds and schedule."""
+    probe, over every task and model. Both are refitted with the committed seeds
+    and settings. Measured on the first refit (2026-09-29): the MLP agrees
+    exactly and the linear probe to 1.1e-5 in AUC (<= 0.05 % of 1 - AUC), and
+    only at weak regularisation (C = 10, 100), where L-BFGS's path depends on
+    the BLAS thread count."""
     out = {}
     for d in dirs:
         ref = committed.get(str(d))
