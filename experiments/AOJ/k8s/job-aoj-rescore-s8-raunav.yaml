@@ -192,6 +192,9 @@ spec:
               # product label (ry-gpu-10, 2026-09-23), so the label must exist.
               - key: nvidia.com/gpu.product
                 operator: Exists
+              - key: nvidia.com/gpu.memory
+                operator: Gt
+                values: ["10000"]
               - key: nvidia.com/gpu.product
                 operator: NotIn
                 values: ["NVIDIA-GeForce-RTX-3090"]

@@ -229,9 +229,17 @@ def test_each_rescore_shard_is_its_first_run_shard_with_only_the_listed_changes(
         if i in B.RESCORE_RECREATED:
             one = one.replace("values: [" + ", ".join(f'"{b}"' for b in B.BAD_NODES) + "]",
                               "values: [" + ", ".join(f'"{b}"' for b in B.SIM_BAD_NODES) + "]")
+            gpu_mem = "              - key: nvidia.com/gpu.memory\n                operator: Gt\n"
+            one = one.replace("                operator: Exists\n",
+                              "                operator: Exists\n" + gpu_mem
+                              + f'                values: ["{B.MIN_GPU_MEMORY_MIB}"]\n', 1)
             assert "patternlab.calit2.optiputer.net" in two
+            terms = yaml.safe_load(two)["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
+                "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
+            assert {"key": "nvidia.com/gpu.memory", "operator": "Gt", "values": ["10000"]} in terms
         else:
-            assert "patternlab" not in two, "a running shard's spec must stay the one it was launched with"
+            assert "patternlab" not in two and "gpu.memory" not in two, \
+                "a running shard's spec must stay the one it was launched with"
         s1, s2 = _script(one), _script(two)
         assert yaml.safe_load(one)["spec"]["template"]["spec"]["affinity"] == \
             yaml.safe_load(two)["spec"]["template"]["spec"]["affinity"]

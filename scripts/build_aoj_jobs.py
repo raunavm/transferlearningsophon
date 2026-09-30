@@ -678,7 +678,12 @@ def _robust(text: str, backoff_old: str) -> str:
 # Rescore shards re-created off patternlab (SIM_BAD_NODES): shard 8 was placed there three
 # times in a row, StartError each time (2026-09-30 01:xxZ). The others run on the list they
 # were launched with, which their committed specs record.
+# Its re-created pod then landed on a GTX 1080: three models at ~3 GB each (a batch-norm
+# step asks for 1 GB more) do not fit 8 GB, and l188-s2 died of CUDA out-of-memory
+# (2026-09-30 04:3xZ). The builder's own sizing (PARALLEL) assumed 11 GB, so a re-created
+# shard also requires it, from the node's nvidia.com/gpu.memory label (MiB).
 RESCORE_RECREATED = {8}
+MIN_GPU_MEMORY_MIB = 10000
 
 
 def render_rescore_shard(i: int, files: list[dict]) -> str:
@@ -698,6 +703,10 @@ def render_rescore_shard(i: int, files: list[dict]) -> str:
     if i in RESCORE_RECREATED:
         subs.append(("values: [" + ", ".join(f'"{b}"' for b in BAD_NODES) + "]",
                      "values: [" + ", ".join(f'"{b}"' for b in SIM_BAD_NODES) + "]"))
+        subs.append(("              - key: nvidia.com/gpu.product\n                operator: Exists\n",
+                     "              - key: nvidia.com/gpu.product\n                operator: Exists\n"
+                     "              - key: nvidia.com/gpu.memory\n                operator: Gt\n"
+                     f'                values: ["{MIN_GPU_MEMORY_MIB}"]\n'))
     for a, b in subs:
         if t.count(a) != 1:
             raise SystemExit(f"FATAL: the shard template changed; cannot derive the rescore ({a[:50]!r})")
