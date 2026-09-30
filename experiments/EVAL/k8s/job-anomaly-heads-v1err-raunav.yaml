@@ -23,7 +23,7 @@ spec:
         - |
           set -euo pipefail
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s1.74" \
+          git clone --depth 1 --branch "mtx-s1.75" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon

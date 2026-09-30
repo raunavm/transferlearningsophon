@@ -738,7 +738,7 @@ def verify_pin(pin: str, needed: list[str], allow_untagged: bool,
 V1ERR_PIN = "mtx-s1.66"
 # extract_v2.py gained the windowed feature rule on 2026-09-30, before these specs
 # were applied; the four GPU extractions applied from mtx-s1.66 keep it.
-HEADS_PIN = "mtx-s1.74"
+HEADS_PIN = "mtx-s1.75"
 HEADS_APPLIED_AT_V1ERR_PIN = {f"heads-anomaly-v1err-{r}-raunav"
                               for r in ("l162-s1b", "l162-s2", "l162-s3", "l162-s4")}
 # The v2 probe split (probe.py --split-fractions): train 0.2, validation 0.1,

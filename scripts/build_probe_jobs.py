@@ -582,7 +582,7 @@ def v1err_batch_a(base: dict[str, str]) -> tuple[str, str]:
 # A2 runs the bootstrap at B = 200 (the test-sample SD is then known to ~5 %,
 # enough for an error bar), keeps every finished cell (--cache), and runs the
 # probe reruns beside it. The class count batch A wrote is reused.
-V1ERR_PIN3 = "mtx-s1.74"
+V1ERR_PIN3 = "mtx-s1.75"
 FT_B = 200
 
 
