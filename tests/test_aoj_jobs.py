@@ -308,6 +308,9 @@ def test_the_checks_job_waits_for_every_input_and_reads_the_rescore_against_the_
     merge = "python3 experiments/AOJ/merge_shards.py --shards ${SHARDS} --out /scratch/merged"
     assert merge in s and s.index(merge) < s.index("realdata_checks.py")
     assert "--first-run-shards ${FIRST}" in s and f"{B.OUT_ROOT}/shard${{i}}" in s
+    first = "python3 experiments/AOJ/merge_shards.py --shards ${FIRST} --out /scratch/merged_first"
+    assert first in s and s.index(first) < s.index("realdata_checks.py")
+    assert "--first-run-merged /scratch/merged_first" in s
     assert f"--fit {B.MAIN_FIT} --sim {B.SIM_ROOT}" in s and f"OUT={B.CHECKS_ROOT}" in s
     assert (REPO / B.MAIN_FIT).exists()
 

@@ -114,7 +114,7 @@ RESCORE_NEEDED_FLAGS = {"experiments/AOJ/discriminants.py": "prong_only",
 # The analysis job clones a later tag: realdata_checks.py is finished after the GPU
 # runs were launched, and it reads only what they write.
 CHECKS_PIN = "mtx-s1.70"
-CHECKS_NEEDED_FLAGS = {"experiments/AOJ/realdata_checks.py": "def step_reproduce",
+CHECKS_NEEDED_FLAGS = {"experiments/AOJ/realdata_checks.py": "--first-run-merged",
                        "experiments/AOJ/peak_fit.py": "data_efficiency_sidebands",
                        "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json": "shape_variations"}
 RESCORE_ROOT = "/data/results/aoj/full_v1_rescore"
@@ -884,8 +884,12 @@ spec:
           cd /workspace/transferlearningsophon
           git rev-parse HEAD
           python3 experiments/AOJ/merge_shards.py --shards ${{SHARDS}} --out /scratch/merged
+          # the first run, merged exactly as its fit merged it: its three-prong scores are
+          # the ones the main fit saw, and every check reads those (realdata_checks.load_data)
+          python3 experiments/AOJ/merge_shards.py --shards ${{FIRST}} --out /scratch/merged_first
           PYTHONUNBUFFERED=1 python3 experiments/AOJ/realdata_checks.py \
             --merged /scratch/merged --shards ${{SHARDS}} --first-run-shards ${{FIRST}} \
+            --first-run-merged /scratch/merged_first \
             --fit {main_fit} --sim {sim} --out "${{OUT}}" --workers 15 --toys 200
           cp /scratch/merged/merge_manifest.json "${{OUT}}/"
           ls -la "${{OUT}}"

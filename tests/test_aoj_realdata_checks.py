@@ -142,10 +142,43 @@ def test_the_rescore_is_checked_bit_for_bit_against_the_first_run(tmp_path):
     same = _shard(tmp_path / "b" / "shard0", {"m1": [1, 2, 3, 4, 5], "m2": [0] * 5},
                   [dict(rows[0], quantiles_aoj=[0.0], n_aoj=9)])
     rep = RC.step_reproduce([same], [first])
-    assert rep["all_identical"] and rep["shards"]["shard0"]["same_closure"]
-    other = _shard(tmp_path / "c" / "shard0", {"m1": [1, 2, 3, 4, 6], "m2": [0] * 5}, rows)
+    assert rep["all_identical"] and rep["shards"]["shard0"]["same_closure"] and rep["all_jets_identical"]
+    other = _shard(tmp_path / "c" / "shard0", {"m1": [1, 2, 3, 4, 5.0039], "m2": [0] * 5}, rows)
     rep = RC.step_reproduce([other], [first])
-    assert not rep["all_identical"] and rep["shards"]["shard0"]["three_prong_identical"] == {"m1": False, "m2": True}
+    got = rep["shards"]["shard0"]["three_prong"]
+    assert not rep["all_identical"] and rep["all_jets_identical"]
+    assert (got["m1"]["identical"], got["m1"]["n_differ"], got["m2"]["identical"]) == (False, 1, True)
+    assert got["m1"]["max_diff_float16_ulps"] == 1.0 and got["m1"]["n_over_one_ulp"] == 0
+    assert rep["fraction_of_scores_differing"] == pytest.approx(0.1)
+
+
+def _merged(d, mass, pt, scores, event_shift=0):
+    d.mkdir(parents=True)
+    n = len(mass)
+    np.savez(d / "jets.npz", jet_sdmass=mass.astype(np.float32), aoj_jet_pt=pt.astype(np.float32),
+             aoj_pn_TvsQCD=np.zeros(n, np.float16), run=np.ones(n, np.int64), lumi=np.ones(n, np.int64),
+             event=np.arange(n, dtype=np.int64) + event_shift)
+    for name, kinds in scores.items():
+        np.savez(d / f"scores_{name}.npz", **{f"{k}_logodds": v.astype(np.float16) for k, v in kinds.items()})
+    return d
+
+
+def test_the_checks_read_the_first_runs_three_prong_scores_and_the_rescores_prong_only_ones(tmp_path):
+    mass, pt, rng = jets(n=300_000, seed=8)
+    z_first, z_re, z_p = (rng.normal(size=len(mass)) for _ in range(3))
+    first = _merged(tmp_path / "first", mass, pt, {"m": {"three_prong": z_first}})
+    re = _merged(tmp_path / "re", mass, pt, {"m": {"three_prong": z_re, "prong_only": z_p}})
+    d = RC.load_data(re, first=first)
+    s = d["scores"]["m"]
+    ok = (P.rho_of(mass, pt) > -5.5) & (P.rho_of(mass, pt) < -2.0) & (pt > 500) & (pt < 2500)
+    assert np.array_equal(s["three_prong"], z_first.astype(np.float16)[ok])
+    assert np.array_equal(s["three_prong_rescore"], z_re.astype(np.float16)[ok])
+    assert np.array_equal(s["prong_only"], z_p.astype(np.float16)[ok])
+    flips = RC.step_cut_flips(dict(d, scores={"m": dict(s, three_prong_rescore=s["three_prong"])}), 1)
+    assert flips["max_flipped"] == 0
+    other = _merged(tmp_path / "other", mass, pt, {"m": {"three_prong": z_first}}, event_shift=1)
+    with pytest.raises(SystemExit, match="hold different jets"):
+        RC.load_data(re, first=other)
 
 
 def test_domain_reads_each_models_data_cut_off_the_data_and_applies_it_to_simulation():

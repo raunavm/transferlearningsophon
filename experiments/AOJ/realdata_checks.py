@@ -135,8 +135,17 @@ def _where(fn) -> str:
 
 
 # ---------------------------------------------------------------- loading
-def load_data(merged: pathlib.Path, kinds=("three_prong", "prong_only")) -> dict:
-    """The merged run, restricted to the rho window and pT range the fit uses."""
+IDENTITY = ("run", "lumi", "event", "jet_sdmass", "aoj_jet_pt")
+
+
+def load_data(merged: pathlib.Path, kinds=("three_prong", "prong_only"), first: pathlib.Path | None = None) -> dict:
+    """The merged run, restricted to the rho window and pT range the fit uses.
+
+    `first`: the merged run the MAIN FIT was made from, when `merged` is a rescore of
+    it. Its three-prong scores are then the ones used -- exactly what the fit saw --
+    and the rescore's are kept as three_prong_rescore; the jets must be identical.
+    A rescore on another GPU model differs in the last bit of a few jets' float16
+    scores (reproduce.json quantifies it), so "the same model" is not "the same number"."""
     j = np.load(merged / "jets.npz")
     mass, pt = j["jet_sdmass"].astype(float), j["aoj_jet_pt"].astype(float)
     rho = P.rho_of(mass, pt)
@@ -146,6 +155,16 @@ def load_data(merged: pathlib.Path, kinds=("three_prong", "prong_only")) -> dict
         s = np.load(path)
         scores[path.stem.removeprefix("scores_")] = {k: s[f"{k}_logodds"][ok] for k in kinds
                                                      if f"{k}_logodds" in s.files}
+    if first is not None:
+        jf = np.load(first / "jets.npz")
+        bad = [k for k in IDENTITY if not np.array_equal(jf[k], j[k])]
+        if bad:
+            raise SystemExit(f"FATAL: {first} and {merged} hold different jets ({bad})")
+        for name, sc in scores.items():
+            path = first / f"scores_{name}.npz"
+            if "three_prong" in sc and path.exists():
+                sc["three_prong_rescore"] = sc["three_prong"]
+                sc["three_prong"] = np.load(path)["three_prong_logodds"][ok]
     return dict(mass=mass[ok], pt=pt[ok], pn=np.asarray(j["aoj_pn_TvsQCD"])[ok], n_staged=int(len(ok)),
                 n_window=int(ok.sum()), scores=scores)
 
@@ -287,8 +306,16 @@ def step_reproduce(shards, first_run) -> dict:
         models = {}
         for path in sorted(f.glob("scores_*.npz")):
             new = s / path.name
-            models[path.stem.removeprefix("scores_")] = bool(new.exists() and np.array_equal(
-                np.load(new)["three_prong_logodds"], np.load(path)["three_prong_logodds"]))
+            if not new.exists():
+                models[path.stem.removeprefix("scores_")] = dict(identical=False, missing=True)
+                continue
+            x, y = np.load(new)["three_prong_logodds"], np.load(path)["three_prong_logodds"]
+            d = np.abs(x.astype(float) - y.astype(float))
+            ulp = np.spacing(np.abs(y)).astype(float)
+            models[path.stem.removeprefix("scores_")] = dict(
+                identical=bool(np.array_equal(x, y)), n_differ=int((d > 0).sum()), n=int(len(d)),
+                max_abs_diff=float(d.max()), max_diff_float16_ulps=float((d / ulp).max()),
+                n_over_one_ulp=int((d > 1.0001 * ulp).sum()))
         ca, cb = (json.loads((d / "closure.json").read_text()) for d in (s, f))
         strip = lambda rows_: [{k: v for k, v in r.items() if not k.startswith("quantiles_")
                                 and k not in ("n_aoj", "n_reference")} for r in rows_]
@@ -296,11 +323,39 @@ def step_reproduce(shards, first_run) -> dict:
         common = lambda r, o: {k: v for k, v in r.items() if k in o}
         same_closure = all(common(r, o) == common(o, r) for r, o in zip(strip(ca["rows"]), strip(cb["rows"]))) \
             and len(ca["rows"]) == len(cb["rows"])
+        gpu = lambda d: dict(ln.split(" ", 1) for ln in (d / "gpu_per_model.txt").read_text().splitlines()
+                             if " " in ln) if (d / "gpu_per_model.txt").exists() else {}
         rows[s.name] = dict(first_run=str(f), same_jets=bool(same_jets), same_closure=bool(same_closure),
-                            three_prong_identical=models)
-    ok = all(r["same_jets"] and all(r["three_prong_identical"].values()) for r in rows.values())
+                            three_prong=models, gpu_rescore=gpu(s), gpu_first_run=gpu(f))
+    ok = all(r["same_jets"] and all(m["identical"] for m in r["three_prong"].values()) for r in rows.values())
+    n_all = sum(m.get("n", 0) for r in rows.values() for m in r["three_prong"].values())
     return dict(shards=rows, all_identical=bool(ok),
-                n_models=len({m for r in rows.values() for m in r["three_prong_identical"]}))
+                all_jets_identical=all(r["same_jets"] for r in rows.values()),
+                all_closures_identical=all(r["same_closure"] for r in rows.values()),
+                fraction_of_scores_differing=sum(m.get("n_differ", 0) for r in rows.values()
+                                                 for m in r["three_prong"].values()) / max(n_all, 1),
+                max_diff_float16_ulps=max(m.get("max_diff_float16_ulps", 0.0) for r in rows.values()
+                                          for m in r["three_prong"].values()),
+                n_models=len({m for r in rows.values() for m in r["three_prong"]}))
+
+
+def _flips_one(name):
+    d = _W["data"]
+    z1, z2 = (d["scores"][name][k].astype(float) for k in ("three_prong", "three_prong_rescore"))
+    p1 = P.passes(z1, d["mass"], d["pt"], P.build_map(z1, d["mass"], d["pt"], EFF))
+    p2 = P.passes(z2, d["mass"], d["pt"], P.build_map(z2, d["mass"], d["pt"], EFF))
+    return name, dict(n_pass_first=int(p1.sum()), n_pass_rescore=int(p2.sum()), n_flipped=int((p1 != p2).sum()))
+
+
+def step_cut_flips(data, workers) -> dict:
+    """At the 1 % cut, the jets whose pass/fail status differs between the first run's
+    three-prong score and the rescore's: what the last-bit differences are worth."""
+    _W.update(data=data)
+    names = [n for n, s in sorted(data["scores"].items()) if "three_prong_rescore" in s]
+    rows = dict(_parallel(_flips_one, names, workers))
+    return dict(models=rows, max_flipped=max((r["n_flipped"] for r in rows.values()), default=0),
+                max_flipped_fraction_of_pass=max((r["n_flipped"] / r["n_pass_first"] for r in rows.values()),
+                                                 default=0.0))
 
 
 def step_selection(shards, data, fit) -> dict:
@@ -708,6 +763,8 @@ def main() -> int:
     ap.add_argument("--sim", type=pathlib.Path, default=None)
     ap.add_argument("--first-run-shards", nargs="+", type=pathlib.Path, default=None,
                     help="the shards the main fit was made from, when --shards is a rescore of them")
+    ap.add_argument("--first-run-merged", type=pathlib.Path, default=None,
+                    help="those shards merged: their three-prong scores are the ones every check uses")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--steps", nargs="+", choices=STEPS, default=list(STEPS))
     ap.add_argument("--toys", type=int, default=200)
@@ -724,7 +781,7 @@ def main() -> int:
             raise SystemExit(f"FATAL: {sorted(missing)} not in {a.fit}")
         fit["models"] = {n: fit["models"][n] for n in a.models}
         fit["_partial"] = sorted(a.models)
-    data = load_data(a.merged)
+    data = load_data(a.merged, first=a.first_run_merged)
     sim = load_sim(a.sim) if a.sim and {"sim_closure", "domain"} & set(a.steps) else None
     a.out.mkdir(parents=True, exist_ok=True)
     inputs = {"fit": a.fit, "jets": a.merged / "jets.npz"}
@@ -739,10 +796,11 @@ def main() -> int:
     domain = None
     if "reproduce" in a.steps and a.first_run_shards:
         rep = step_reproduce(a.shards, a.first_run_shards)
+        if a.first_run_merged:
+            rep["cut"] = step_cut_flips(data, a.workers)
         write("reproduce", rep)
-        if not rep["all_identical"]:
-            print("WARNING: the rescore does not reproduce the first run's three-prong scores; the main "
-                  "fit's yields and these checks are not on the same scores (reproduce.json)", flush=True)
+        if not rep["all_jets_identical"]:
+            raise SystemExit("FATAL: the rescore staged other jets than the first run (reproduce.json)")
     if "selection" in a.steps:
         write("selection_chain", step_selection(a.shards, data, fit))
     if "closure" in a.steps:
