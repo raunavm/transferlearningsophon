@@ -123,3 +123,25 @@ def test_reproduction_reports_the_largest_auc_difference(tmp_path):
     r = pe.reproduction([tmp_path / "s1"], {str(tmp_path / "s1"): str(tmp_path / "ref.json")})
     w = r[str(tmp_path / "s1")]["max_abs_dauc"]
     assert w["linear"] == 0.0 and w["mlp"] == pytest.approx(1e-4)
+
+
+def test_ft_cells_are_cached_and_reused(tmp_path, monkeypatch):
+    calls = []
+    real = pe.P.replicates
+
+    def counting(*a, **k):
+        calls.append(1)
+        return real(*a, **k)
+
+    monkeypatch.setattr(pe.P, "replicates", counting)
+    import uproot  # noqa: F401  (leg 2 reader import is lazy; this test uses leg 1)
+    rng = np.random.default_rng(0)
+    d = tmp_path / "leg1" / "l188-s1" / "N1000" / "s1" / "features_v2"
+    d.mkdir(parents=True)
+    lab = rng.integers(0, 188, 4000).astype(np.int16)
+    np.save(d / "label188.npy", lab)
+    np.save(d / "logits.npy", rng.normal(size=(4000, 162)).astype(np.float32))
+    job = ("leg1", "l188-s1", "N1000", d, 4, 20, 1, tmp_path / "cache")
+    k1, v1, m1 = pe._ft_cell(job)
+    k2, v2, m2 = pe._ft_cell(job)
+    assert len(calls) == 1 and k1 == k2 and np.array_equal(v1, v2) and m1 == m2

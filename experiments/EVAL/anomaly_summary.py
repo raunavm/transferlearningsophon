@@ -230,8 +230,8 @@ def check_rerun(doc: dict, rerun: dict) -> dict:
 # the summary reports sigma_min alone -- max SIC carried the same information
 # (sigma_min x max SIC / 5 = 1.01-1.08) and stays only as the detection flag --
 # states the definition exactly as anomaly.py codes it, gives every run's value,
-# flags output layers that are defective against their sibling runs, and adds
-# sigma_min by the checkpoint rule (mean over the epochs 70-79 heads).
+# flags output-layer epoch states that are outliers against the sibling runs at
+# the same checkpoint, and adds sigma_min at every checkpoint the heads carry.
 FLAG_ALPHA = 0.01
 
 
@@ -251,79 +251,109 @@ def definition(doc: dict) -> dict:
             "max_sic": "kept per run only for the not-detected flag"}
 
 
+FLAG_TAGS = ("bestval", "wavg", "e079")   # the rule's two checkpoints, and v1's epoch 79
+
+
 def head_flags(heads: dict) -> dict:
-    """Output layers defective against their siblings: the same label set's other
-    runs. A value is flagged when it falls outside the 99 % prediction interval
-    of the siblings (Student t, n-1 degrees of freedom, sd * sqrt(1 + 1/n)), on
-    the head's top-1 accuracy or on the logit of its mean P(QCD) on resonant
-    jets. Taken at epoch 79 (the checkpoint every v1 result read) and on the
-    mean over epochs 70-79."""
+    """Output layers that are outliers against their siblings AT THE SAME
+    CHECKPOINT: the same label set's other runs. A value is an outlier when it
+    falls outside the 99 % prediction interval of the siblings (Student t, n-1
+    degrees of freedom, sd * sqrt(1 + 1/n)), on the top-1 accuracy or on the
+    logit of the mean P(QCD) on resonant jets. Reported at every checkpoint of
+    FLAG_TAGS that all runs carry (the primary 'bestval' and the robustness
+    'wavg' for v2; epoch 79 for v1), and on v1's mean over epochs 70-79.
+
+    AN OUTLIER IS AN EPOCH STATE, NOT A RUN. In v1, seven of eight runs examined
+    have an epoch in 70-79 whose output layer almost never predicts QCD, and
+    the weight average of epochs 70-79 is normal for all four runs whose
+    epoch-79 layer is an outlier (experiments/FIGS/data/head_epoch_diag)."""
     from scipy.stats import t as student
     groups = {}
     for arm, m in heads["models"].items():
-        key = arm.rsplit("-s", 1)[0]
-        groups.setdefault(key, {})[arm] = m
+        groups.setdefault(arm.rsplit("-s", 1)[0], {})[arm] = m
     logit = lambda p: math.log(max(p, 1e-12) / max(1 - p, 1e-12))
+    wheres = [w for w in FLAG_TAGS if all(w in m["checkpoints"] for m in heads["models"].values())]
+    if all("head_over_70_79" in m for m in heads["models"].values()):
+        wheres.append("mean_70_79")
     out = {}
     for key, ms in groups.items():
         for arm, m in ms.items():
             rec = {}
-            for where in ("e079", "mean_70_79"):
+            for where in wheres:
                 def val(x, q):
-                    if where == "e079":
-                        c = x["checkpoints"].get("e079")
-                        return None if c is None else c["head"][q]
-                    h = x.get("head_over_70_79")
-                    return None if h is None else h[q]["mean"]
+                    if where == "mean_70_79":
+                        return x["head_over_70_79"][q]["mean"]
+                    return x["checkpoints"][where]["head"][q]
                 cell = {}
                 for q, f in (("top1_accuracy", float), ("mean_p_qcd_resonant", logit)):
-                    me, sib = val(m, q), [val(x, q) for a, x in ms.items() if a != arm]
-                    sib = [s for s in sib if s is not None]
-                    if me is None or len(sib) < 3:
+                    sib = [val(x, q) for a, x in ms.items() if a != arm]
+                    if len(sib) < 3:
                         continue
                     y = [f(s) for s in sib]
                     n = len(y)
                     half = (student.ppf(1 - FLAG_ALPHA / 2, n - 1) * np.std(y, ddof=1)
                             * math.sqrt(1 + 1 / n))
+                    me = val(m, q)
                     cell[q] = {"value": me, "siblings": sib,
                                "outside_99pc_prediction_interval": bool(abs(f(me) - np.mean(y)) > half)}
                 if cell:
-                    cell["defective"] = any(v["outside_99pc_prediction_interval"] for v in cell.values())
+                    cell["outlier"] = any(v["outside_99pc_prediction_interval"] for v in cell.values())
                     rec[where] = cell
             out[arm] = rec
     return out
 
 
 def checkpoint_rule(fams: dict, heads: dict) -> dict:
-    """sigma_min by the checkpoint rule: each run's mean of ln sigma_min over the
-    epochs 70-79 heads, then mean and sd over runs, beside the epoch-79 value."""
+    """sigma_min of the output-layer scores at each checkpoint every run carries
+    ('bestval' and 'wavg' in v2, 'e079' in v1), and, for v1, each run's mean of
+    ln sigma_min over epochs 70-79 as a diagnostic of how much the epoch moves it:
+    per run, then mean and sd over runs."""
     parse_arm = _load("seed_level", "experiments/STATS/seed_level.py").parse_arm
-    out = {}
-    for fam in ("class_sum", "class_sum_matched"):
-        for sig in fams.get(fam, {}):
-            for n in (PRIMARY, REFERENCE):
-                per = {}
-                for arm, m in heads["models"].items():
-                    c = m.get("anomaly_mean_70_79", {}).get(fam, {}).get(sig, {}).get(n)
-                    if c is None:
-                        continue
-                    level, seed = parse_arm(arm)
-                    per.setdefault(str(level), {})[seed] = (arm, c)
-                for lv, runs in per.items():
-                    if tuple(sorted(runs)) != SEEDS:
-                        continue
-                    ln = [runs[s][1]["ln_sigma_min_mean"] for s in SEEDS]
-                    out.setdefault(fam, {}).setdefault(sig, {}).setdefault(n, {})[lv] = {
-                        "arms": [runs[s][0] for s in SEEDS], "ln_sigma_min": ln,
-                        "sigma_min": [math.exp(x) for x in ln],
-                        "ln_sigma_min_mean": float(np.mean(ln)),
-                        "ln_sigma_min_sd": float(np.std(ln, ddof=1)),
-                        "ln_sigma_min_per_epoch": [runs[s][1]["ln_sigma_min_per_epoch"]
-                                                   for s in SEEDS]}
-    checks = {a: m["checkpoints"]["e079"]["committed_check"]
-              for a, m in heads["models"].items()
-              if "committed_check" in m.get("checkpoints", {}).get("e079", {})}
-    return {"sigma_min": out, "epoch79_reproduces_committed": checks}
+    tags = [w for w in FLAG_TAGS if all(w in m["checkpoints"] and "anomaly" in m["checkpoints"][w]
+                                        for m in heads["models"].values())]
+
+    def table(get):
+        out = {}
+        for fam in ("class_sum", "class_sum_matched"):
+            for sig in fams.get(fam, {}):
+                for n in (PRIMARY, REFERENCE):
+                    per = {}
+                    for arm, m in heads["models"].items():
+                        c = get(m, fam, sig, n)
+                        if c is None:
+                            continue
+                        level, seed = parse_arm(arm)
+                        per.setdefault(str(level), {})[seed] = (arm, c)
+                    for lv, runs in per.items():
+                        if tuple(sorted(runs)) != SEEDS:
+                            continue
+                        ln = [runs[s][1][0] for s in SEEDS]
+                        e = {"arms": [runs[s][0] for s in SEEDS], "ln_sigma_min": ln,
+                             "sigma_min": [math.exp(x) for x in ln],
+                             "ln_sigma_min_mean": float(np.mean(ln)),
+                             "ln_sigma_min_sd": float(np.std(ln, ddof=1))}
+                        if runs[SEEDS[0]][1][1] is not None:
+                            e["ln_sigma_min_per_epoch"] = [runs[s][1][1] for s in SEEDS]
+                        out.setdefault(fam, {}).setdefault(sig, {}).setdefault(n, {})[lv] = e
+        return out
+
+    def at(tag):
+        def get(m, fam, sig, n):
+            c = m["checkpoints"][tag]["anomaly"].get(sig, {}).get(n, {}).get(fam, {})
+            return (math.log(c["sigma_min"]), None) if c.get("sigma_min") else None
+        return get
+
+    def mean_70_79(m, fam, sig, n):
+        c = m.get("anomaly_mean_70_79", {}).get(fam, {}).get(sig, {}).get(n)
+        return None if c is None else (c["ln_sigma_min_mean"], c["ln_sigma_min_per_epoch"])
+
+    res = {"by_checkpoint": {tag: table(at(tag)) for tag in tags}}
+    if all("anomaly_mean_70_79" in m for m in heads["models"].values()):
+        res["mean_ln_over_epochs_70_79"] = table(mean_70_79)
+    res["epoch79_reproduces_committed"] = {
+        a: m["checkpoints"]["e079"]["committed_check"] for a, m in heads["models"].items()
+        if "committed_check" in m.get("checkpoints", {}).get("e079", {})}
+    return res
 
 
 def sigma_min_only(fams: dict) -> dict:
@@ -390,9 +420,10 @@ def summarise(doc: dict, rerun: dict | None = None, heads: dict | None = None) -
         res["definition"] = definition(doc)
         sigma_min_only(fams)
         res["head_flags"] = {"rule": f"outside the {1 - FLAG_ALPHA:.0%} prediction interval of "
-                                     "the same label set's other runs (Student t, n-1 dof, "
-                                     "sd*sqrt(1+1/n)) on top-1 accuracy or logit mean "
-                                     "P(QCD) on resonant jets",
+                                     "the same label set's other runs at the same checkpoint "
+                                     "(Student t, n-1 dof, sd*sqrt(1+1/n)) on top-1 accuracy or "
+                                     "logit mean P(QCD) on resonant jets; an outlier is an epoch "
+                                     "state of the output layer, not a property of the run",
                              "models": head_flags(heads)}
         res["checkpoint_rule"] = checkpoint_rule(fams, heads)
     return res

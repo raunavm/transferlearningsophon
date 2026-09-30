@@ -736,7 +736,16 @@ def verify_pin(pin: str, needed: list[str], allow_untagged: bool,
 # The retry policy of commit 3cb4d7a in its CPU form, as build_probe_jobs.py's
 # v1err specs: evictions ignored, signals counted, a Python failure halts.
 V1ERR_PIN = "mtx-s1.66"
-V1ERR_PIN2 = "mtx-s1.71"     # class_counts.py changed after mtx-s1.66, before its job ran
+# extract_v2.py gained the windowed feature rule on 2026-09-30, before these specs
+# were applied; the four GPU extractions applied from mtx-s1.66 keep it.
+HEADS_PIN = "mtx-s1.74"
+HEADS_APPLIED_AT_V1ERR_PIN = {f"heads-anomaly-v1err-{r}-raunav"
+                              for r in ("l162-s1b", "l162-s2", "l162-s3", "l162-s4")}
+# The v2 probe split (probe.py --split-fractions): train 0.2, validation 0.1,
+# test 0.7. At 0.7 the whole split's X->cc jets give 228,238 test background, so
+# ~115 pass at 90 % signal efficiency at the largest v1 rejection (1,979); at
+# 0.6 it would be ~99 (experiments/FIGS/data/extraction_v2_sizing/sizing.json).
+V2_SPLIT_FRACTIONS = (0.2, 0.1)
 V1ERR_NEEDED = ["experiments/EVAL/extract_v2.py", "experiments/EVAL/extract_features.py",
                 "experiments/EVAL/anomaly.py", "experiments/EVAL/class_counts.py"]
 V1ERR_HEADS = "/data/results/eval/v1err/heads"
@@ -833,14 +842,6 @@ HEADS_BODY = """          OUT={out}
           date -u +"end %Y-%m-%dT%H:%M:%SZ"
 """
 
-COUNTS_BODY = """          OUT={out}
-          [ -f ${{OUT}} ] && {{ echo "done by an earlier attempt"; exit 0; }}
-          python3 experiments/EVAL/class_counts.py \\
-            --data-test {files} \\
-            --out ${{OUT}} || halt
-"""
-
-
 def build_heads_batch(runs: list, name: str, parallel: int = 5) -> tuple[str, str]:
     """Head diagnostics for several models in ONE CPU pod, `parallel` at a time
     (the pod cap, not the CPU, is the constraint; build_probe_jobs.py BATCH_A)."""
@@ -866,7 +867,7 @@ def build_heads_batch(runs: list, name: str, parallel: int = 5) -> tuple[str, st
         lines.append("          for p in ${P}; do wait ${p} || halt; done")
     body = "\n".join(lines) + "\n"
     return f"job-{name}.yaml", V1ERR_TEMPLATE.format(
-        name=name, image=IMAGE, pin=V1ERR_PIN, body=body, mem="64Gi", cpu="16",
+        name=name, image=IMAGE, pin=HEADS_PIN, body=body, mem="64Gi", cpu="16",
         gpu_req="", gpu_check="", node_exclude="")
 
 
@@ -878,15 +879,18 @@ def build_v1err() -> dict[str, str]:
     for run, arm, k, run_dir in HEAD_RUNS:
         rung, reg = RUNG_OF[arm], NUM_REG.get(run, 0)
         short = run.removeprefix("mtx-")
-        kinds = [("diag", "\\\n            --no-anomaly-rows", False)]
-        if not arm.endswith("_MASS"):
-            kinds.append(("anomaly", "", True))
+        if arm.endswith("_MASS"):
+            continue            # the ten mass models run in heads-diag-mass-v1err (one pod)
+        # the diag spec is the CPU fall-back for a model whose GPU extraction
+        # (which also writes the diagnostic rows) cannot be scheduled
+        kinds = [("diag", "\\\n            --no-anomaly-rows", False), ("anomaly", "", True)]
         for kind, flags, gpu in kinds:
             name = f"heads-{kind}-v1err-{short}-raunav"
             body = HEADS_BODY.format(out=f"{V1ERR_HEADS}/{kind}/{run}", run_dir=run_dir, rung=rung,
                                      k=k, num_reg=reg, flags=flags, run=run, files=files)
             out[f"job-{name}.yaml"] = V1ERR_TEMPLATE.format(
-                name=name, image=IMAGE, pin=V1ERR_PIN, body=body,
+                name=name, image=IMAGE, body=body,
+                pin=V1ERR_PIN if name in HEADS_APPLIED_AT_V1ERR_PIN else HEADS_PIN,
                 mem="48Gi" if gpu else "32Gi", cpu="4" if gpu else "8",
                 gpu_req=', nvidia.com/gpu: "1"' if gpu else "",
                 gpu_check=GPU_CHECK.format() if gpu else "",
@@ -894,26 +898,20 @@ def build_v1err() -> dict[str, str]:
     fname, text = build_heads_batch([r for r in HEAD_RUNS if r[1].endswith("_MASS")],
                                     "heads-diag-mass-v1err-raunav")
     out[fname] = text
-    name = "test-class-counts-raunav"
-    out[f"job-{name}.yaml"] = V1ERR_TEMPLATE.format(
-        name=name, image=IMAGE, pin=V1ERR_PIN2, mem="8Gi", cpu="2", gpu_req="",
-        gpu_check="", node_exclude="",
-        body=COUNTS_BODY.format(out="/data/results/eval/v1err/class_counts/test_class_counts.json",
-                                files=files))
     return out
 
 
 # ========================================================= v2 extraction specs
 # One job per v2 pretraining run of configs/arms/v2_grid.json: the whole test
-# split in one pass, the primary checkpoint (best validation on the fixed sample)
-# and the robustness checkpoints of epochs 70-79. Features (float16) of every
-# probe task's classes over the whole split and of the first 2,000,000 jets are
-# kept at the primary checkpoint only; every checkpoint keeps the per-jet
-# output-layer scores. GPU: the split is 27.4 M jets and the model is scored
-# 11 times on the selected rows. NOT launched until the v2 runs exist; the
+# split in one pass, at the two checkpoints of the rule (draft amendment A8): the
+# primary, best validation on the fixed sample, and the robustness checkpoint,
+# the weight average of epochs 70-79. Both keep float16 features of every probe
+# task's classes (windowed-only classes inside their window) and of the first
+# 2,000,000 jets, and the per-jet output-layer scores. GPU: the split is
+# 27.4 M jets. NOT launched until the v2 runs exist; the
 # storage this needs is estimated by experiments/EVAL/class_counts.py
 # (--storage) against the volume's free space before any launch.
-V2_PIN = "mtx-s1.66"
+V2_PIN = HEADS_PIN
 V2_ROOT = "/data/results/mtx_v2"
 V2_OUT = "/data/results/eval/v2"
 V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
@@ -949,7 +947,7 @@ def build_v2() -> dict[str, str]:
                 f"          python3 experiments/EVAL/extract_v2.py \\\n"
                 f"            --run-dir {V2_ROOT}/{run} --rung {v2_rung(arm)} "
                 f"--num-classes {k} --num-reg {reg} \\\n"
-                f"            --checkpoints best 70-79 --features-at best \\\n"
+                f"            --checkpoints bestval wavg --features-at bestval wavg \\\n"
                 f"            --feature-classes probe --prefix-features 2000000 \\\n"
                 f"            --head-prefix 2000000 --diag-stride 100 \\\n"
                 f"            --data-test {files} \\\n"

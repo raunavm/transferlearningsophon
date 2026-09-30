@@ -199,3 +199,15 @@ def test_v1_runs_pair_by_index_and_say_so(tmp_path):
     _write_stream(tmp_path / "c", ["x"])
     with pytest.raises(SystemExit, match="recorded no training"):
         P.stream_pairing(tmp_path / "a", tmp_path / "c")
+
+
+def test_macro_auc_skips_a_class_absent_from_a_resampling():
+    rng = np.random.default_rng(0)
+    y = np.r_[np.zeros(500, int), np.ones(500, int), [2]]      # class 2: one jet
+    p = rng.random((y.size, 3))
+    p /= p.sum(1, keepdims=True)
+    sc = P.MacroAucScorer(y, p)
+    w = np.ones(y.size)
+    w[-1] = 0                                                  # the resampling missed it
+    assert np.isfinite(sc(w))
+    assert sc.auc(w) == pytest.approx(np.mean([s.auc(w) for s in sc.scorers[:2]]))

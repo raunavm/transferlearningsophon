@@ -1,0 +1,296 @@
+{
+ "inputs": {
+  "counts": {
+   "path": "experiments/FIGS/data/extraction_v2_sizing/test_class_counts.json",
+   "sha256": "59f27a67e98e36b61ea7d1064bfef72942c13a3fdd567424de955169e00dc34b"
+  },
+  "probe_files": [
+   "experiments/FIGS/data/probe_ladder_v2_mlp2/s1.json",
+   "experiments/FIGS/data/probe_ladder_v2_mlp2/s2.json",
+   "experiments/FIGS/data/probe_ladder_v2_mlp2/s3.json",
+   "experiments/FIGS/data/probe_ladder_v2_mlp2/s4.json",
+   "experiments/FIGS/data/probe_ladder_v2_mlp2/s5.json",
+   "experiments/FIGS/data/probe_ladder_mass2x2_mlp2/s1.json",
+   "experiments/FIGS/data/probe_ladder_mass2x2_mlp2/s2.json",
+   "experiments/FIGS/data/probe_ladder_mass2x2_mlp2/s3.json",
+   "experiments/FIGS/data/probe_ladder_mass2x2_mlp2/s4.json",
+   "experiments/FIGS/data/probe_ladder_mass2x2_mlp2/s5.json",
+   "experiments/FIGS/data/probe_ladder_randcontrol_mlp2/sd1.json",
+   "experiments/FIGS/data/probe_ladder_randcontrol_mlp2/sd2.json",
+   "experiments/FIGS/data/probe_ladder_randcontrol_mlp2/sd3.json",
+   "experiments/FIGS/data/probe_ladder_vcbwindow_mlp2/sall.json"
+  ],
+  "prefix_labels_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba"
+ },
+ "min_pass": 100,
+ "eps_s": "0.90",
+ "tasks_by_test_fraction": {
+  "0.2": {
+   "bvc_resonant": {
+    "n_signal_split": 327768,
+    "n_background_split": 326055,
+    "n_background_test": 65211,
+    "max_v1_rejection_at_90": 1979.3333333333335,
+    "v1_cells_with_no_passing_jet": 0,
+    "background_test_needed": 197934,
+    "expected_pass_at_max_rejection": 32.94594139440889,
+    "meets_min_pass": false
+   },
+   "retained_topology": {
+    "n_signal_split": 327768,
+    "n_background_split": 134124,
+    "n_background_test": 26824,
+    "max_v1_rejection_at_90": 98.00000000000001,
+    "v1_cells_with_no_passing_jet": 0,
+    "background_test_needed": 9801,
+    "expected_pass_at_max_rejection": 273.71428571428567,
+    "meets_min_pass": true
+   },
+   "bvc_qcd": {
+    "n_signal_split": 106731,
+    "n_background_split": 236904,
+    "n_background_test": 47380,
+    "max_v1_rejection_at_90": 63.94047619047619,
+    "v1_cells_with_no_passing_jet": 0,
+    "background_test_needed": 6395,
+    "expected_pass_at_max_rejection": 741.0016756656116,
+    "meets_min_pass": true
+   },
+   "bc_vs_rest": {
+    "n_signal_split": 8208,
+    "n_background_split": 96303,
+    "n_background_test": 19260,
+    "max_v1_rejection_at_90": null,
+    "v1_cells_with_no_passing_jet": null,
+    "background_test_needed": null,
+    "expected_pass_at_max_rejection": null,
+    "meets_min_pass": null
+   },
+   "ee_vs_mm": {
+    "n_signal_split": 135245,
+    "n_background_split": 128833,
+    "n_background_test": 25766,
+    "max_v1_rejection_at_90": 1177.0,
+    "v1_cells_with_no_passing_jet": 41,
+    "background_test_needed": 117700,
+    "expected_pass_at_max_rejection": 21.89124893797791,
+    "meets_min_pass": false
+   },
+   "bvc_4prong": {
+    "n_signal_split": 371700,
+    "n_background_split": 385962,
+    "n_background_test": 77192,
+    "max_v1_rejection_at_90": 287.09090909090907,
+    "v1_cells_with_no_passing_jet": 0,
+    "background_test_needed": 28710,
+    "expected_pass_at_max_rejection": 268.8765041165295,
+    "meets_min_pass": true
+   },
+   "visible_content": {
+    "n_signal_split": 371700,
+    "n_background_split": 309064,
+    "n_background_test": 61812,
+    "max_v1_rejection_at_90": 2554.0,
+    "v1_cells_with_no_passing_jet": 26,
+    "background_test_needed": 255400,
+    "expected_pass_at_max_rejection": 24.20203602192639,
+    "meets_min_pass": false
+   }
+  },
+  "0.6": {
+   "bvc_resonant": {
+    "n_signal_split": 327768,
+    "n_background_split": 326055,
+    "n_background_test": 195633,
+    "max_v1_rejection_at_90": 1979.3333333333335,
+    "v1_cells_with_no_passing_jet": 0,
+    "background_test_needed": 197934,
+    "expected_pass_at_max_rejection": 98.83782418322667,
+    "meets_min_pass": false
+   },
+   "retained_topology": {
+    "n_signal_split": 327768,
+    "n_background_split": 134124,
+    "n_background_test": 80474,
+    "max_v1_rejection_at_90": 98.00000000000001,
+    "v1_cells_with_no_passing_jet": 0,
+    "background_test_needed": 9801,
+    "expected_pass_at_max_rejection": 821.1632653061223,
+    "meets_min_pass": true
+   },
+   "bvc_qcd": {
+    "n_signal_split": 106731,
+    "n_background_split": 236904,
+    "n_background_test": 142142,
+    "max_v1_rejection_at_90": 63.94047619047619,
+    "v1_cells_with_no_passing_jet": 0,
+    "background_test_needed": 6395,
+    "expected_pass_at_max_rejection": 2223.036306088252,
+    "meets_min_pass": true
+   },
+   "bc_vs_rest": {
+    "n_signal_split": 8208,
+    "n_background_split": 96303,
+    "n_background_test": 57781,
+    "max_v1_rejection_at_90": null,
+    "v1_cells_with_no_passing_jet": null,
+    "background_test_needed": null,
+    "expected_pass_at_max_rejection": null,
+    "meets_min_pass": null
+   },
+   "ee_vs_mm": {
+    "n_signal_split": 135245,
+    "n_background_split": 128833,
+    "n_background_test": 77299,
+    "max_v1_rejection_at_90": 1177.0,
+    "v1_cells_with_no_passing_jet": 41,
+    "background_test_needed": 117700,
+    "expected_pass_at_max_rejection": 65.67459643160578,
+    "meets_min_pass": false
+   },
+   "bvc_4prong": {
+    "n_signal_split": 371700,
+    "n_background_split": 385962,
+    "n_background_test": 231577,
+    "max_v1_rejection_at_90": 287.09090909090907,
+    "v1_cells_with_no_passing_jet": 0,
+    "background_test_needed": 28710,
+    "expected_pass_at_max_rejection": 806.6329955668145,
+    "meets_min_pass": true
+   },
+   "visible_content": {
+    "n_signal_split": 371700,
+    "n_background_split": 309064,
+    "n_background_test": 185438,
+    "max_v1_rejection_at_90": 2554.0,
+    "v1_cells_with_no_passing_jet": 26,
+    "background_test_needed": 255400,
+    "expected_pass_at_max_rejection": 72.60689115113547,
+    "meets_min_pass": false
+   }
+  },
+  "0.7": {
+   "bvc_resonant": {
+    "n_signal_split": 327768,
+    "n_background_split": 326055,
+    "n_background_test": 228238,
+    "max_v1_rejection_at_90": 1979.3333333333335,
+    "v1_cells_with_no_passing_jet": 0,
+    "background_test_needed": 197934,
+    "expected_pass_at_max_rejection": 115.31054227012461,
+    "meets_min_pass": true
+   },
+   "retained_topology": {
+    "n_signal_split": 327768,
+    "n_background_split": 134124,
+    "n_background_test": 93886,
+    "max_v1_rejection_at_90": 98.00000000000001,
+    "v1_cells_with_no_passing_jet": 0,
+    "background_test_needed": 9801,
+    "expected_pass_at_max_rejection": 958.0204081632652,
+    "meets_min_pass": true
+   },
+   "bvc_qcd": {
+    "n_signal_split": 106731,
+    "n_background_split": 236904,
+    "n_background_test": 165832,
+    "max_v1_rejection_at_90": 63.94047619047619,
+    "v1_cells_with_no_passing_jet": 0,
+    "background_test_needed": 6395,
+    "expected_pass_at_max_rejection": 2593.5371439210576,
+    "meets_min_pass": true
+   },
+   "bc_vs_rest": {
+    "n_signal_split": 8208,
+    "n_background_split": 96303,
+    "n_background_test": 67412,
+    "max_v1_rejection_at_90": null,
+    "v1_cells_with_no_passing_jet": null,
+    "background_test_needed": null,
+    "expected_pass_at_max_rejection": null,
+    "meets_min_pass": null
+   },
+   "ee_vs_mm": {
+    "n_signal_split": 135245,
+    "n_background_split": 128833,
+    "n_background_test": 90183,
+    "max_v1_rejection_at_90": 1177.0,
+    "v1_cells_with_no_passing_jet": 41,
+    "background_test_needed": 117700,
+    "expected_pass_at_max_rejection": 76.62107051826678,
+    "meets_min_pass": false
+   },
+   "bvc_4prong": {
+    "n_signal_split": 371700,
+    "n_background_split": 385962,
+    "n_background_test": 270173,
+    "max_v1_rejection_at_90": 287.09090909090907,
+    "v1_cells_with_no_passing_jet": 0,
+    "background_test_needed": 28710,
+    "expected_pass_at_max_rejection": 941.0712476250792,
+    "meets_min_pass": true
+   },
+   "visible_content": {
+    "n_signal_split": 371700,
+    "n_background_split": 309064,
+    "n_background_test": 216344,
+    "max_v1_rejection_at_90": 2554.0,
+    "v1_cells_with_no_passing_jet": 26,
+    "background_test_needed": 255400,
+    "expected_pass_at_max_rejection": 84.70790916209867,
+    "meets_min_pass": false
+   }
+  }
+ },
+ "n_models_v2_grid": 71,
+ "storage": {
+  "features and heads at bestval and wavg; all classification runs": {
+   "feature_rows_per_checkpoint": 4303745,
+   "head_rows_per_checkpoint": 631587,
+   "bytes_per_model": 2385593564,
+   "bytes_total": 169377143044,
+   "n_models": 71,
+   "checkpoints_with_features": 2,
+   "checkpoints_with_heads": 2,
+   "fits_under_85pc": false,
+   "headroom_to_85pc_bytes": 83879369113.59998
+  },
+  "features and heads at bestval and wavg; tier-1 runs": {
+   "feature_rows_per_checkpoint": 4303745,
+   "head_rows_per_checkpoint": 631587,
+   "bytes_per_model": 2385593564,
+   "bytes_total": 95423742560,
+   "n_models": 40,
+   "checkpoints_with_features": 2,
+   "checkpoints_with_heads": 2,
+   "fits_under_85pc": false,
+   "headroom_to_85pc_bytes": 83879369113.59998
+  },
+  "features at bestval, heads at both; all classification runs": {
+   "feature_rows_per_checkpoint": 4303745,
+   "head_rows_per_checkpoint": 631587,
+   "bytes_per_model": 1240797394,
+   "bytes_total": 88096614974,
+   "n_models": 71,
+   "checkpoints_with_features": 1,
+   "checkpoints_with_heads": 2,
+   "fits_under_85pc": false,
+   "headroom_to_85pc_bytes": 83879369113.59998
+  },
+  "features at bestval, heads at both; tier-1 runs": {
+   "feature_rows_per_checkpoint": 4303745,
+   "head_rows_per_checkpoint": 631587,
+   "bytes_per_model": 1240797394,
+   "bytes_total": 49631895760,
+   "n_models": 40,
+   "checkpoints_with_features": 1,
+   "checkpoints_with_heads": 2,
+   "fits_under_85pc": true,
+   "headroom_to_85pc_bytes": 83879369113.59998
+  }
+ },
+ "volume": {
+  "size_bytes": 1099511627776.0,
+  "free_bytes": 248806113280.0
+ }
+}

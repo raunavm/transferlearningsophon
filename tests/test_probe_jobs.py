@@ -368,7 +368,8 @@ def _v1err():
 
 def test_v1err_jobs_parse_carry_the_retry_policy_and_are_committed():
     base, jobs = _v1err()
-    assert len(jobs) == 14 + 5 + 5 + 1 + 2
+    # the 9 probe reruns applied one per pod, 5 label-recovery curves, batches A, A2 and B
+    assert len(jobs) == 9 + 5 + 3
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"] and fname == f"job-{d['metadata']['name']}.yaml"
@@ -377,7 +378,8 @@ def test_v1err_jobs_parse_carry_the_retry_policy_and_are_committed():
                                                       "values": [42]}} in rules
         assert {"action": "Ignore", "onPodConditions": [{"type": "DisruptionTarget"}]} in rules
         assert d["spec"]["template"]["spec"]["containers"][0]["name"] == "main"
-        pin = (bp.V1ERR_PIN2 if any(k in fname for k in ("labelrec-curve", "paired-ft", "batch-a"))
+        pin = (bp.V1ERR_PIN3 if "batch-a2" in fname
+               else bp.V1ERR_PIN2 if any(k in fname for k in ("labelrec-curve", "batch-a"))
                else bp.V1ERR_PIN)
         assert f'--branch "{pin}"' in text and "|| halt" in text
         assert "/data/results/eval/v1err/" in text
@@ -386,20 +388,15 @@ def test_v1err_jobs_parse_carry_the_retry_policy_and_are_committed():
 
 def test_v1err_probe_reruns_are_their_sources_with_scores_saved():
     base, jobs = _v1err()
-    for src in bp.V1ERR_PROBE_SOURCES:
+    singles = [s for s in bp.V1ERR_PROBE_SOURCES if s not in bp.BATCH_A_PROBES]
+    assert len(singles) == 9
+    for src in singles:
         s, r = base[f"job-{src}.yaml"], jobs[f"job-{bp.v1err_name(src)}.yaml"]
         assert _models_line(s) == _models_line(r)
         for pat in (r"--tasks .+", r"--eps-s .+", r"d=/data/results/eval/\$\{a\}/\S+"):
             assert re.findall(pat, s) == re.findall(pat, r), (src, pat)
         out = re.search(r"OUT=/data/results/eval/(\S+)", s).group(1)
         assert f"OUT=/data/results/eval/v1err/{out}\n" in r and "--save-scores" in r
-
-
-def test_v1err_mass_reruns_save_residuals_on_the_same_models():
-    base, jobs = _v1err()
-    for src in bp.V1ERR_MASSRES_SOURCES:
-        s, r = base[f"job-{src}.yaml"], jobs[f"job-{bp.v1err_name(src)}.yaml"]
-        assert _models_line(s) == _models_line(r) and "--save-residuals" in r
 
 
 def test_label_recovery_curve_one_seed_per_job_five_sizes_to_the_whole_pool():
@@ -427,7 +424,7 @@ def test_batch_a_runs_the_same_probe_reruns_as_the_single_specs():
     assert d["spec"]["podFailurePolicy"]["rules"][0]["onExitCodes"]["values"] == [42]
     assert f'--branch "{bp.V1ERR_PIN2}"' in a and "class_counts.py" in a and "ft-replicates" in a
     for src in bp.BATCH_A_PROBES:
-        single = jobs[f"job-{bp.v1err_name(src)}.yaml"]
+        single = bp.v1err_probe_spec(base[f"job-{src}.yaml"])
         specs = re.search(r"for spec in (.+); do", single).group(1)
         out = re.search(r"OUT=(\S+)", single).group(1)
         tasks = re.search(r"--tasks (.+) \\", single).group(1)
@@ -446,3 +443,13 @@ def test_batch_b_runs_the_five_mass_reruns():
         specs = re.search(r"for spec in (.+); do", base[f"job-{src}.yaml"]).group(1)
         assert f'run_massres "{specs}" ' in b
     assert (bp.K8S / "job-v1err-batch-b-raunav.yaml").read_text() == b
+
+
+def test_batch_a2_runs_the_bootstrap_resumably_beside_the_probe_reruns():
+    base, jobs = _v1err()
+    a2 = jobs["job-v1err-batch-a2-raunav.yaml"]
+    a = jobs["job-v1err-batch-a-raunav.yaml"]
+    assert f"--b {bp.FT_B} --procs 10 --cache ${{FT}}/cells" in a2 and "run_ft &" in a2
+    probe_calls = lambda s: sorted(l for l in s.splitlines() if l.strip().startswith('run_probe "'))
+    assert probe_calls(a2) == probe_calls(a) and len(probe_calls(a2)) == len(bp.BATCH_A_PROBES)
+    assert (bp.K8S / "job-v1err-batch-a2-raunav.yaml").read_text() == a2

@@ -4,9 +4,10 @@ anomaly scores at every checkpoint extract_v2.py scored.
 
 WHY (audit 2026-09-29, B4 and must-fix 3). Every result read from the pretrained
 OUTPUT LAYER -- the class-sum anomaly score, the real-data log-odds -- was read
-from the epoch-79 head alone. Four of 30 such heads are defective (43-class run
-5 almost never predicts QCD; its YY->bbbb class-sum AUC is 0.66 against 0.94 for
-its siblings) while their frozen features probe normally. The rule is now:
+from the epoch-79 head alone. Four of 30 epoch-79 output layers are outliers
+(43-class run 5's almost never predicts QCD; its YY->bbbb class-sum AUC is 0.66
+against 0.94 for its siblings) while the frozen features probe normally -- and
+these are epoch states, not runs: most runs have such an epoch in 70-79. The rule is now:
 primary = the best-validation checkpoint (v2), robustness = the mean over the
 checkpoints of epochs 70-79. For v1, which kept every epoch but recorded no
 fixed validation sample, the robustness form is computed; it is also the test
@@ -60,7 +61,8 @@ an = _load("anomaly", "experiments/EVAL/anomaly.py")
 
 
 def head_diagnostics(h: dict, rung: str, stride: int) -> dict:
-    """The four numbers that expose a defective head, on the stride sample."""
+    """The four numbers that expose an output layer that (almost) never predicts
+    QCD, on the stride sample."""
     node_of, res, qcd = an.node_roles(rung)
     rows, lab = h["rows"], h["label188"].astype(np.int64)
     diag = rows % stride == 0

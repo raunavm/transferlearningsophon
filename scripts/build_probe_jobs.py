@@ -426,21 +426,6 @@ V1ERR_PROBE = """
           date -u +"end %Y-%m-%dT%H:%M:%SZ"
 """
 
-V1ERR_MASSRES = """
-          OBS={obs}
-          OUT={out}
-          if [ -f "${{OUT}}/residuals.npz" ] && [ -f "${{OUT}}/mass_resolution.json" ]; then
-            echo "done by an earlier attempt"; exit 0
-          fi
-          mkdir -p ${{OUT}}
-          python3 experiments/EVAL/mass_resolution.py \\
-            --features ${{ARMS}} \\
-            --observers ${{OBS}} \\
-            --out ${{OUT}} \\
-            --save-residuals || halt
-          date -u +"end %Y-%m-%dT%H:%M:%SZ"
-"""
-
 V1ERR_CURVE = """
           # the four models side by side, four threads each; resumable, since
           # label_recovery_curve.py keeps every finished cell and skips it
@@ -462,20 +447,6 @@ V1ERR_CURVE = """
           tail -n 3 {out}/*.log
           date -u +"end %Y-%m-%dT%H:%M:%SZ"
 """
-
-V1ERR_FT = """
-          OUT={out}
-          if [ -f "${{OUT}}/replicates_ft.npz" ] && [ -f "${{OUT}}/replicates_ft.json" ]; then
-            echo "done by an earlier attempt"; exit 0
-          fi
-          mkdir -p ${{OUT}}
-          python3 experiments/STATS/paired_errors.py ft-replicates \\
-            --leg1-root {leg1_root} --leg1-metrics {leg1_metrics} \\
-            --leg2-root {leg2_root} --leg2-metrics {leg2_metrics} \\
-            --procs {procs} --out ${{OUT}}/replicates_ft.npz || halt
-          date -u +"end %Y-%m-%dT%H:%M:%SZ"
-"""
-
 
 def v1err_name(name: str) -> str:
     """probe-ladder-v2-s1-raunav -> probe-ladder-v2-v1err-s1-raunav."""
@@ -505,18 +476,6 @@ def v1err_probe_spec(text: str) -> str:
             + ROBUST_TAIL.format(mem="32Gi", cpu="8"))
 
 
-def v1err_massres_spec(text: str) -> str:
-    name = _field(text, r"^  name: (\S+)$")
-    specs = _field(text, r"^          for spec in (.+); do$")
-    feat = _field(text, r"^            d=/data/results/eval/\$\{a\}/(\S+)$")
-    out = _field(text, r"^          OUT=/data/results/eval/(\S+)$")
-    obs = _field(text, r"^          OBS=(\S+)$")
-    return (ROBUST_HEAD.format(name=v1err_name(name), pin=V1ERR_PIN, backoff=V1ERR_BACKOFF, threads=THREADS_OF[v1err_name(name).startswith("paired-ft")])
-            + ARMS_LOOP.format(specs=specs, feat=feat)
-            + V1ERR_MASSRES.format(obs=obs, out=f"{V1ERR_ROOT}/{out}")
-            + ROBUST_TAIL.format(mem="32Gi", cpu="8"))
-
-
 def v1err_curve_spec(seed: int) -> tuple[str, str]:
     """One job per seed index, its four models fitted side by side (16 CPUs):
     one pod slot instead of four on a cluster whose pod cap is the constraint."""
@@ -527,15 +486,6 @@ def v1err_curve_spec(seed: int) -> tuple[str, str]:
                   + V1ERR_CURVE.format(out=f"{V1ERR_ROOT}/label_recovery_curve", specs=specs,
                                        feat=FEAT, sizes=" ".join(map(str, CURVE_SIZES)))
                   + ROBUST_TAIL.format(mem="64Gi", cpu="16"))
-
-
-def v1err_ft_spec() -> tuple[str, str]:
-    name = "paired-ft-v1err-raunav"
-    return name, (ROBUST_HEAD.format(name=name, pin=V1ERR_PIN2, backoff=V1ERR_BACKOFF, threads=THREADS_OF[name.startswith("paired-ft")])
-                  + V1ERR_FT.format(out=f"{V1ERR_ROOT}/ft", procs=14,
-                                    leg1_root=FT_LEGS["leg1"][0], leg1_metrics=FT_LEGS["leg1"][1],
-                                    leg2_root=FT_LEGS["leg2"][0], leg2_metrics=FT_LEGS["leg2"][1])
-                  + ROBUST_TAIL.format(mem="48Gi", cpu="16"))
 
 
 # BATCHED, for a cluster whose pod cap is the constraint (2026-09-30: 29-30 raunav
@@ -626,6 +576,47 @@ def v1err_batch_a(base: dict[str, str]) -> tuple[str, str]:
     return name, text + tail
 
 
+# BATCH A2 replaces batch A (applied 2026-09-30 04:18Z, deleted 04:57Z): its
+# fine-tuning bootstrap ran ~40 min per cell at B = 1000 on its node (264 cells,
+# ~12 h), kept nothing until the end, and held the five probe reruns behind it.
+# A2 runs the bootstrap at B = 200 (the test-sample SD is then known to ~5 %,
+# enough for an error bar), keeps every finished cell (--cache), and runs the
+# probe reruns beside it. The class count batch A wrote is reused.
+V1ERR_PIN3 = "mtx-s1.74"
+FT_B = 200
+
+
+def v1err_batch_a2(base: dict[str, str]) -> tuple[str, str]:
+    """The fine-tuning bootstrap (resumable) and the five probe reruns, side by side."""
+    name = "v1err-batch-a2-raunav"
+    L1, L2 = FT_LEGS["leg1"], FT_LEGS["leg2"]
+    ft = (f"\n          FT={V1ERR_ROOT}/ft_b{FT_B}\n"
+          "          run_ft () {   # background\n"
+          '            if [ -f "${FT}/replicates_ft.npz" ] && [ -f "${FT}/replicates_ft.json" ]; then exit 0; fi\n'
+          "            mkdir -p ${FT}/cells\n"
+          "            python3 experiments/STATS/paired_errors.py ft-replicates \\\n"
+          f"              --leg1-root {L1[0]} --leg1-metrics {L1[1]} \\\n"
+          f"              --leg2-root {L2[0]} --leg2-metrics {L2[1]} \\\n"
+          f"              --b {FT_B} --procs 10 --cache ${{FT}}/cells \\\n"
+          "              --out ${FT}/replicates_ft.npz > ${FT}.log 2>&1\n"
+          "          }\n")
+    calls = ['          run_ft &\n          P="$P $!"']
+    for src in BATCH_A_PROBES:
+        s = base[f"job-{src}.yaml"]
+        specs = _field(s, r"^          for spec in (.+); do$")
+        feat = _field(s, r"^            d=/data/results/eval/\$\{a\}/(\S+)$")
+        out = _field(s, r"^          OUT=/data/results/eval/(\S+)$")
+        tasks = _field(s, r"^            --tasks (.+) \\$")
+        eps = _field(s, r"^            --eps-s (.+) \\$")
+        calls.append(f'          run_probe "{specs}" {feat} {V1ERR_ROOT}/{out} "{tasks}" "{eps}" &\n'
+                     f'          P="$P $!"')
+    text = (ROBUST_HEAD.format(name=name, pin=V1ERR_PIN3, backoff=V1ERR_BACKOFF, threads=1)
+            + ft + RUN_PROBE.format() + '          P=""\n' + "\n".join(calls) + "\n"
+            + "          for p in ${P}; do wait ${p} || halt; done\n"
+            + '          date -u +"end %Y-%m-%dT%H:%M:%SZ"\n')
+    return name, text + ROBUST_TAIL.format(mem="80Gi", cpu="24")
+
+
 def v1err_batch_b(base: dict[str, str]) -> tuple[str, str]:
     """The five mass reruns side by side."""
     name = "v1err-batch-b-raunav"
@@ -651,17 +642,18 @@ def _load_builder(name: str):
 
 
 def build_v1err(base: dict[str, str]) -> dict[str, str]:
+    """The v1-error specs. The probe reruns applied one per pod (the ladder and
+    the 2x2 at seed indices 1-4) keep their single specs as their record; the
+    reruns and jobs that never ran singly are emitted only inside batches A and
+    B (the single specs for them were removed 2026-09-30, never applied)."""
     out = {}
     for name in V1ERR_PROBE_SOURCES:
-        out[f"job-{v1err_name(name)}.yaml"] = v1err_probe_spec(base[f"job-{name}.yaml"])
-    for name in V1ERR_MASSRES_SOURCES:
-        out[f"job-{v1err_name(name)}.yaml"] = v1err_massres_spec(base[f"job-{name}.yaml"])
+        if name not in BATCH_A_PROBES:
+            out[f"job-{v1err_name(name)}.yaml"] = v1err_probe_spec(base[f"job-{name}.yaml"])
     for seed in SEEDS:
         name, text = v1err_curve_spec(seed)
         out[f"job-{name}.yaml"] = text
-    name, text = v1err_ft_spec()
-    out[f"job-{name}.yaml"] = text
-    for fn in (v1err_batch_a, v1err_batch_b):
+    for fn in (v1err_batch_a, v1err_batch_a2, v1err_batch_b):
         name, text = fn(base)
         out[f"job-{name}.yaml"] = text
     return out

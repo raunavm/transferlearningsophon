@@ -22,10 +22,11 @@ import pathlib
 import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-TEST_FRACTIONS = (0.2, 0.5, 0.6)            # v1's split, and two v2 candidates
-PLANS = {  # checkpoints with features, checkpoints with head scores
-    "primary features, heads at 11": (1, 11),
-    "features at all 11": (11, 11),
+TEST_FRACTIONS = (0.2, 0.6, 0.7)            # v1's split, and two v2 candidates
+PLANS = {  # checkpoints with features, checkpoints with head scores (amendment A8:
+           # best validation and the weight average of epochs 70-79)
+    "features and heads at bestval and wavg": (2, 2),
+    "features at bestval, heads at both": (1, 2),
 }
 
 
@@ -56,9 +57,25 @@ def main(argv=None) -> int:
     grid = json.loads((REPO / "configs/arms/v2_grid.json").read_text())
     n_models = sum(x["runs"] for x in grid["arms"] if x["num_classes"] is not None)
     qcd, signals = xv.anomaly_classes()
-    storage = {name: cc.storage(counts, prefix, xv.probe_classes(), qcd + list(signals.values()),
-                                n_models, nf, nh)
-               for name, (nf, nh) in PLANS.items()}
+    # Feature rows as extract_v2 keeps them: classes an unwindowed task reads over
+    # the whole split, windowed-only classes inside their window, and every row of
+    # the 2,000,000-jet prefix. The windowed rows inside the prefix are counted
+    # twice, so the figure is an upper bound (by < 0.1 M rows).
+    anywhere, windowed = xv.probe_feature_rules()
+    sel = np.asarray(counts["selected_per_class"])
+    win = np.asarray(counts["in_window_per_class"])
+    n_feat = int(sel[anywhere].sum() + sum(win[c].sum() for c, _ in windowed)
+                 + prefix.sum() - prefix[anywhere].sum())
+    n_head = int(prefix[sorted(set(qcd + list(signals.values())))].sum() + 20_000)
+    tier1 = sum(x["runs"] for x in grid["arms"] if x["num_classes"] is not None and x["tier"] == 1)
+    storage = {}
+    for name, (nf, nh) in PLANS.items():
+        for label, n in (("all classification runs", n_models), ("tier-1 runs", tier1)):
+            per = nf * n_feat * cc.FEATURE_ROW_BYTES + nh * n_head * cc.HEAD_ROW_BYTES
+            storage[f"{name}; {label}"] = {
+                "feature_rows_per_checkpoint": n_feat, "head_rows_per_checkpoint": n_head,
+                "bytes_per_model": per, "bytes_total": per * n, "n_models": n,
+                "checkpoints_with_features": nf, "checkpoints_with_heads": nh}
     used = a.size_bytes - a.free_bytes
     line85 = 0.85 * a.size_bytes
     for s in storage.values():

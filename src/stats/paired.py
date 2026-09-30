@@ -147,7 +147,12 @@ class MacroAucScorer:
             self.scorers = [AucScorer(y == c, P[:, j]) for c, j in zip(present, cols)]
 
     def auc(self, w=None) -> float:
-        return float(np.mean([s.auc(w) for s in self.scorers]))
+        """Mean over the classes present in the (resampled) sample: a rare class
+        can be absent from a resampling, whose macro AUC then averages over the
+        rest, as eval_arm.metrics does for a sample without it. (The present-class
+        renormalisation is kept as on the full sample; the difference is one
+        class's probability mass in a class absent from the resampling.)"""
+        return float(np.nanmean([s.auc(w) for s in self.scorers]))
 
     def __call__(self, w=None) -> float:
         return 1.0 - self.auc(w)

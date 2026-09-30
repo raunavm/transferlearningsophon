@@ -51,15 +51,17 @@ def _write_v2_run(d: pathlib.Path, vals: dict, best: int):
 
 def test_best_checkpoint_is_the_fixed_sample_argmax_ties_to_the_earlier(tmp_path):
     _write_v2_run(tmp_path, {70: 0.5, 71: 0.7, 72: 0.7, 73: 0.6}, best=71)
-    got = xv.resolve_checkpoints(tmp_path, ["best", "72-73"])
-    assert [t for t, _ in got] == ["best", "e072", "e073"]
+    (tmp_path / xv.WAVG_FILE).write_text("x")
+    got = xv.resolve_checkpoints(tmp_path, ["bestval", "wavg", "72-73"])
+    assert [t for t, _ in got] == ["bestval", "wavg", "e072", "e073"]
+    assert got[1][1].name == "net_wavg70-79_state.pt"
     assert got[0][1].name == "net_epoch-71_state.pt"
 
 
 def test_a_stale_best_record_is_refused(tmp_path):
     _write_v2_run(tmp_path, {70: 0.5, 71: 0.7}, best=70)
     with pytest.raises(SystemExit, match="per-epoch records say 71"):
-        xv.resolve_checkpoints(tmp_path, ["best"])
+        xv.resolve_checkpoints(tmp_path, ["bestval"])
 
 
 def test_missing_checkpoint_is_refused(tmp_path):
@@ -156,7 +158,7 @@ def test_v1err_head_specs_cover_every_model_with_the_retry_policy():
     jobs = bx.build_v1err()
     diag = {k for k in jobs if k.startswith("job-heads-diag-") and "diag-mass" not in k}
     anom = {k for k in jobs if k.startswith("job-heads-anomaly-")}
-    assert len(diag) == 30 and len(anom) == 20 and "job-test-class-counts-raunav.yaml" in jobs
+    assert len(diag) == 20 and len(anom) == 20 and not any("mass" in k for k in diag | anom)
     batch = jobs["job-heads-diag-mass-v1err-raunav.yaml"]
     assert batch.count("run_heads mtx-") == 10 and "mass" in batch
     for fname, text in jobs.items():
@@ -164,7 +166,7 @@ def test_v1err_head_specs_cover_every_model_with_the_retry_policy():
         assert "raunav" in d["metadata"]["name"] and fname == f"job-{d['metadata']['name']}.yaml"
         assert d["spec"]["podFailurePolicy"]["rules"][0]["onExitCodes"]["values"] == [42]
         assert d["spec"]["template"]["spec"]["containers"][0]["name"] == "main"
-        pin = bx.V1ERR_PIN2 if "class-counts" in fname else bx.V1ERR_PIN
+        pin = bx.V1ERR_PIN if fname[4:-5] in bx.HEADS_APPLIED_AT_V1ERR_PIN else bx.HEADS_PIN
         assert f'--branch "{pin}"' in text and "|| halt" in text
         assert (bx.OUT_DIR / fname).read_text() == text, f"{fname} not committed as built"
         if "heads-" in fname and "diag-mass" not in fname:
@@ -189,7 +191,7 @@ def test_v2_specs_one_per_classification_run_primary_features_only():
     assert bx.v2_rung("R42_Q1_LOFO4P") == "R42_Q1" and bx.v2_rung("RAND2_p1") == "none"
     for fname, text in jobs.items():
         yaml.safe_load(text)
-        assert "--checkpoints best 70-79 --features-at best" in text
+        assert "--checkpoints bestval wavg --features-at bestval wavg" in text
         assert "--feature-classes probe --prefix-features 2000000" in text
         assert (bx.OUT_DIR / fname).read_text() == text, f"{fname} not committed as built"
 
@@ -229,4 +231,27 @@ def test_sizing_reads_the_measured_counts_and_the_largest_v1_rejection(tmp_path)
     assert t["n_background_split"] == 400_000 and t["n_background_test"] == 240_000
     assert t["max_v1_rejection_at_90"] == pytest.approx(11876 / 6)     # 188-class run 3: 6 pass
     assert t["meets_min_pass"] is (240_000 / (11876 / 6) >= 100)
-    assert set(r["storage"]) == set(sz.PLANS)
+    assert len(r["storage"]) == 2 * len(sz.PLANS)
+    anywhere, windowed = xv.probe_feature_rules()
+    s = next(iter(r["storage"].values()))
+    # windowed-only classes enter with their in-window counts, not the whole split
+    want = (400_000 * len(anywhere) + 8_000 * sum(len(c) for c, _ in windowed)
+            + 2000 - np.isin(np.arange(2000) % 188, anywhere).sum())
+    assert s["feature_rows_per_checkpoint"] == want
+
+
+def test_classes_only_a_windowed_task_reads_are_kept_inside_its_window():
+    anywhere, windowed = xv.probe_feature_rules()
+    qcd, _ = xv.anomaly_classes()
+    assert 169 in anywhere and 181 in anywhere            # b vs c in QCD is unwindowed
+    assert not (set(qcd) - {169, 181}) & set(anywhere)
+    (cls, win), = windowed
+    assert {4, 5, 6, 70} <= set(cls) and set(win) == {"jet_pt", "jet_sdmass", "jet_eta"}
+    s = xv.Selector(anywhere, 0, [], 0, 0, windowed)
+    lab = np.array([4, 4, 170, 0, 170])
+    obs = {"jet_pt": np.array([500., 300., 500., 300., 700.]),
+           "jet_sdmass": np.array([100., 100., 120., 50., 100.]),
+           "jet_eta": np.zeros(5)}
+    assert s.feature_mask(np.arange(5), lab, obs).tolist() == [True, False, True, True, False]
+    with pytest.raises(SystemExit, match="observers"):
+        s.feature_mask(np.arange(5), lab, None)

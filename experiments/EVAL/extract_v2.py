@@ -69,6 +69,26 @@ def probe_classes() -> list[int]:
     return sorted(out)
 
 
+def probe_feature_rules() -> tuple[list[int], list[tuple[list[int], dict]]]:
+    """(classes kept everywhere, [(classes, window)] kept only inside a window).
+
+    A class that only a WINDOWED task reads (bc_vs_rest's background: X->bq,
+    X->cs, X->bqq and all 27 QCD classes) is needed only inside that task's
+    window; keeping it over the whole split stored 3.6 M QCD rows per model for
+    ~0.1 M in-window ones (class_counts.py, 2026-09-30). A class any unwindowed
+    task reads is kept everywhere."""
+    probe = _load("probe", "experiments/EVAL/probe.py")
+    anywhere, windowed = set(), []
+    for spec in probe.TASKS.values():
+        cls = set(spec["signal"]) | set(spec["background"])
+        if spec.get("window"):
+            windowed.append((sorted(cls), dict(spec["window"])))
+        else:
+            anywhere |= cls
+    windowed = [(sorted(set(c) - anywhere), w) for c, w in windowed]
+    return sorted(anywhere), [(c, w) for c, w in windowed if c]
+
+
 def anomaly_classes() -> tuple[list[int], dict[str, int]]:
     """(QCD native labels, {signal name: native label}) of anomaly.py's suite."""
     an = _load("anomaly", "experiments/EVAL/anomaly.py")
@@ -98,13 +118,22 @@ def best_epoch(run_dir: pathlib.Path) -> int:
     return best
 
 
+WAVG_FILE = "net_wavg70-79_state.pt"
+
+
 def resolve_checkpoints(run_dir: pathlib.Path, spec: list[str]) -> list[tuple[str, pathlib.Path]]:
-    """[(tag, path)]: 'best' is best_epoch(); an integer is that epoch; 'A-B' is
-    every epoch from A to B (the robustness window is 70-79)."""
+    """[(tag, path)] under the checkpoint rule (draft amendment A8):
+      'bestval'  primary: the best epoch on the fixed validation sample, best_epoch()
+      'wavg'     robustness: the weight average of epochs 70-79 that v2 pretraining
+                 writes, net_wavg70-79_state.pt
+      N, 'A-B'   single epochs, for diagnostics (v1 has no fixed validation sample
+                 and no weight average of its own)."""
     out = []
     for s in spec:
-        if s == "best":
-            out.append(("best", run_dir / f"net_epoch-{best_epoch(run_dir)}_state.pt"))
+        if s in ("bestval", "best"):
+            out.append(("bestval", run_dir / f"net_epoch-{best_epoch(run_dir)}_state.pt"))
+        elif s == "wavg":
+            out.append(("wavg", run_dir / WAVG_FILE))
         elif "-" in s:
             a, b = (int(x) for x in s.split("-"))
             out += [(f"e{e:03d}", run_dir / f"net_epoch-{e}_state.pt") for e in range(a, b + 1)]
@@ -150,15 +179,25 @@ class Selector:
     """Which stream rows are kept, as features and as head scores."""
 
     def __init__(self, feature_classes, prefix_features: int, head_classes, head_prefix: int,
-                 diag_stride: int):
+                 diag_stride: int, windowed=()):
         self.fc = np.asarray(sorted(feature_classes), dtype=np.int64)
+        self.windowed = [(np.asarray(c, dtype=np.int64), dict(w)) for c, w in windowed]
         self.prefix_features = int(prefix_features)
         self.hc = np.asarray(sorted(head_classes), dtype=np.int64)
         self.head_prefix = int(head_prefix)
         self.diag_stride = int(diag_stride)
 
-    def feature_mask(self, rows: np.ndarray, labels: np.ndarray) -> np.ndarray:
-        return np.isin(labels, self.fc) | (rows < self.prefix_features)
+    def feature_mask(self, rows: np.ndarray, labels: np.ndarray, obs: dict | None = None) -> np.ndarray:
+        m = np.isin(labels, self.fc) | (rows < self.prefix_features)
+        for cls, win in self.windowed:
+            if obs is None or any(k not in obs for k in win):
+                raise SystemExit(f"FATAL: a windowed feature rule needs observers {sorted(win)}")
+            inside = np.isin(labels, cls)
+            for k, (lo, hi) in win.items():
+                v = np.asarray(obs[k])
+                inside &= (v > lo) & (v < hi)
+            m |= inside
+        return m
 
     def head_mask(self, rows: np.ndarray, labels: np.ndarray) -> np.ndarray:
         inside = rows < self.head_prefix
@@ -181,12 +220,14 @@ def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: d
     labels_all, n0 = [], 0
     taps = {t: tap_factory(m) for t, m in models.items()}
     with torch.no_grad():
-        for X, y in batches:
+        for item in batches:
+            X, y = item[0], item[1]
+            obs = item[2] if len(item) > 2 else None
             lab = np.asarray(y, dtype=np.int64)
             rows = np.arange(n0, n0 + lab.size)
             n0 += lab.size
             labels_all.append(lab.astype(np.int16))
-            fm0 = selector.feature_mask(rows, lab)
+            fm0 = selector.feature_mask(rows, lab, obs)
             hm = selector.head_mask(rows, lab)
             need = (fm0 if features_at else np.zeros_like(fm0)) | hm
             if not need.any():
@@ -256,7 +297,7 @@ def main(argv=None) -> int:
     ap.add_argument("--num-classes", type=int, required=True)
     ap.add_argument("--num-reg", type=int, default=0)
     ap.add_argument("--checkpoints", nargs="+", required=True,
-                    help="'best', an epoch, or a range 'A-B' (e.g. best 70-79)")
+                    help="'bestval', 'wavg', an epoch, or a range 'A-B' (e.g. bestval wavg)")
     ap.add_argument("--data-test", nargs="+", required=True)
     ap.add_argument("--data-config", default=str(REPO / "configs/data/JetClassII_base.yaml"))
     ap.add_argument("--max-jets", type=int, default=0, help="0 = the whole split")
@@ -264,7 +305,7 @@ def main(argv=None) -> int:
                     help="native labels whose features are kept everywhere; 'probe' = "
                          "every probe task's classes; nothing = none")
     ap.add_argument("--features-at", nargs="*", default=None,
-                    help="checkpoint tags whose features are kept (e.g. best); "
+                    help="checkpoint tags whose features are kept (e.g. bestval wavg); "
                          "default every checkpoint; the rest keep head scores only")
     ap.add_argument("--prefix-features", type=int, default=0,
                     help="also keep features of every row among the first N jets")
@@ -286,11 +327,14 @@ def main(argv=None) -> int:
     torch.backends.cudnn.allow_tf32 = False
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    fcls = (probe_classes() if a.feature_classes == ["probe"]
-            else [int(x) for x in a.feature_classes])
+    windowed = []
+    if a.feature_classes == ["probe"]:
+        fcls, windowed = probe_feature_rules()
+    else:
+        fcls = [int(x) for x in a.feature_classes]
     qcd, signals = anomaly_classes()
     hcls = [] if a.no_anomaly_rows else qcd + list(signals.values())
-    sel = Selector(fcls, a.prefix_features, hcls, a.head_prefix, a.diag_stride)
+    sel = Selector(fcls, a.prefix_features, hcls, a.head_prefix, a.diag_stride, windowed)
     ckpts = resolve_checkpoints(a.run_dir, a.checkpoints)
     done = [t for t, _ in ckpts if (a.out / t / "manifest.json").exists()]
     if len(done) == len(ckpts):
@@ -303,7 +347,8 @@ def main(argv=None) -> int:
                         "data_config_sha256": hashlib.sha256(
                             pathlib.Path(a.data_config).read_bytes()).hexdigest(),
                         "n_test_files": len(a.data_test), "max_jets": a.max_jets,
-                        "feature_classes": fcls, "prefix_features": a.prefix_features,
+                        "feature_classes": fcls, "feature_windowed": windowed,
+                        "prefix_features": a.prefix_features,
                         "head_classes": hcls, "head_prefix": a.head_prefix,
                         "diag_stride": a.diag_stride, "signals": signals,
                         "device": str(device), "checkpoints": {},
@@ -323,8 +368,8 @@ def main(argv=None) -> int:
     t0, seen = time.time(), [0]
 
     def batches():
-        for X, y, _Z in loader:
-            yield X, y[label_name].cpu().numpy()
+        for X, y, Z in loader:
+            yield X, y[label_name].cpu().numpy(), {k: np.asarray(v) for k, v in Z.items()}
             seen[0] += len(y[label_name])
             if seen[0] % (a.batch_size * 400) < a.batch_size:
                 print(f"  {seen[0]:,} jets  {seen[0] / (time.time() - t0):.0f} jets/s", flush=True)

@@ -88,10 +88,10 @@ def _sha(p) -> str:
 def reproduction(dirs: list[pathlib.Path], committed: dict) -> dict:
     """The refit against the committed result it repeats: largest |dAUC| per
     probe, over every task and model. Both are refitted with the committed seeds
-    and settings. Measured on the first refit (2026-09-29): the MLP agrees
-    exactly and the linear probe to 1.1e-5 in AUC (<= 0.05 % of 1 - AUC), and
-    only at weak regularisation (C = 10, 100), where L-BFGS's path depends on
-    the BLAS thread count."""
+    and settings, and are still not bit-reproducible across machines and BLAS
+    thread counts. Measured over the five four-vocabulary refits (2026-09-30):
+    |dAUC| <= 2.1e-4, which is <= 3 % of 1 - AUC for electron vs muon (the MLP
+    near AUC = 1) and <= 0.5 % of 1 - AUC for every other task."""
     out = {}
     for d in dirs:
         ref = committed.get(str(d))
@@ -191,8 +191,15 @@ def _load(name, rel):
 
 def _ft_cell(job):
     """One fine-tuning cell's replicate vector of 1 - macro AUC, on the rows the
-    committed readout used (leg1_metrics / leg2_metrics, stride 4)."""
-    leg, init, n, path, stride, b, seed = job
+    committed readout used (leg1_metrics / leg2_metrics, stride 4). With a cache
+    directory, a finished cell is written there at once and read back on a
+    retry, so an evicted pod loses at most the cells in flight."""
+    leg, init, n, path, stride, b, seed, cache = job
+    if cache is not None:
+        c = pathlib.Path(cache) / f"{leg}|{n}|{init}"
+        if (c.with_suffix(".json")).exists() and (c.with_suffix(".npy")).exists():
+            return (f"ft|{leg}|{n}|{init}", np.load(c.with_suffix(".npy")),
+                    json.loads(c.with_suffix(".json").read_text()))
     if leg == "leg1":
         lr = _load("label_recovery", "experiments/EVAL/label_recovery.py")
         l1 = _load("leg1_metrics", "experiments/FT/leg1_metrics.py")
@@ -215,13 +222,19 @@ def _ft_cell(job):
         probs, y = probs[idx], truth[idx]
     sc = P.MacroAucScorer(y, probs)
     v = P.replicates(sc, y.size, b, seed)
-    return (f"ft|{leg}|{n}|{init}", v,
-            {"jets": jets_key(idx, y), "n": int(y.size), "source": str(path),
-             "macro_auc": float(1 - v[0])})
+    m = {"jets": jets_key(idx, y), "n": int(y.size), "source": str(path),
+         "macro_auc": float(1 - v[0])}
+    if cache is not None:
+        c.parent.mkdir(parents=True, exist_ok=True)
+        tmp = c.parent / (c.name + ".tmp.npy")
+        np.save(tmp, v)
+        tmp.replace(c.with_suffix(".npy"))
+        c.with_suffix(".json").write_text(json.dumps(m))
+    return (f"ft|{leg}|{n}|{init}", v, m)
 
 
 def ft_replicates(leg1_root, leg2_root, cells_json: dict, b: int = B, seed: int = SEED,
-                  procs: int = 8, stride: int = 4):
+                  procs: int = 8, stride: int = 4, cache=None):
     """Every cell of the committed metrics files at fine-tuning seed s1."""
     jobs = []
     for leg, root in (("leg1", leg1_root), ("leg2", leg2_root)):
@@ -233,7 +246,7 @@ def ft_replicates(leg1_root, leg2_root, cells_json: dict, b: int = B, seed: int 
                     continue
                 cell = pathlib.Path(root) / init / n / "s1"
                 jobs.append((leg, init, n, cell / "features_v2" if leg == "leg1" else cell,
-                             stride, b, seed))
+                             stride, b, seed, cache))
     vec, meta = {}, {}
     with ProcessPoolExecutor(max_workers=procs) as ex:
         for key, v, m in ex.map(_ft_cell, jobs):
@@ -454,6 +467,8 @@ def main(argv=None) -> int:
             s.add_argument("--leg1-metrics", required=True, type=pathlib.Path)
             s.add_argument("--leg2-metrics", required=True, type=pathlib.Path)
             s.add_argument("--procs", type=int, default=8)
+            s.add_argument("--cache", type=pathlib.Path, default=None,
+                           help="per-cell results, kept as they finish and reused on a retry")
     s = sub.add_parser("ratios")
     s.add_argument("--replicates", nargs="+", required=True, type=pathlib.Path)
     s.add_argument("--run-dirs-root", type=pathlib.Path, default=None,
@@ -473,7 +488,8 @@ def main(argv=None) -> int:
               "leg2": json.loads(a.leg2_metrics.read_text())}
         for k, p in (("leg1", a.leg1_metrics), ("leg2", a.leg2_metrics)):
             cj[k]["sha256"] = _sha(p)
-        vec, meta, prov = ft_replicates(a.leg1_root, a.leg2_root, cj, a.b, a.seed, a.procs)
+        vec, meta, prov = ft_replicates(a.leg1_root, a.leg2_root, cj, a.b, a.seed, a.procs,
+                                        cache=a.cache)
         save(a.out, vec, meta, prov, a.b, a.seed)
     else:
         if a.out.exists():

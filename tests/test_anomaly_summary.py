@@ -240,7 +240,7 @@ def test_with_heads_the_summary_reports_sigma_min_only_and_states_the_rule():
     assert len(lv["sigma_min"]) == 5 and len(lv["arms"]) == 5
 
 
-def test_a_head_that_never_predicts_qcd_is_flagged_and_its_siblings_are_not():
+def test_an_output_layer_that_never_predicts_qcd_is_flagged_at_that_checkpoint():
     acc = {a: 0.62 + 0.01 * i for i, a in enumerate(
         ["r42q1-s1", "r42q1-s2", "r42q1-s3", "r42q1-s4"])}
     acc["r42q1-s5"] = 0.550
@@ -248,6 +248,19 @@ def test_a_head_that_never_predicts_qcd_is_flagged_and_its_siblings_are_not():
           "r42q1-s5": 1e-7}
     res = S.summarise(_committed(), None, _heads(acc, pq))
     f = res["head_flags"]["models"]
-    assert f["r42q1-s5"]["e079"]["defective"]
+    assert f["r42q1-s5"]["e079"]["outlier"]
     assert f["r42q1-s5"]["e079"]["mean_p_qcd_resonant"]["outside_99pc_prediction_interval"]
-    assert not any(f[f"r42q1-s{k}"]["e079"]["defective"] for k in (1, 2, 3, 4))
+    assert not any(f[f"r42q1-s{k}"]["e079"]["outlier"] for k in (1, 2, 3, 4))
+    assert "not a property of the run" in res["head_flags"]["rule"]
+
+
+def test_flags_and_sigma_min_are_reported_at_each_checkpoint_of_the_rule():
+    heads = _heads()
+    for m in heads["models"].values():
+        h = m["checkpoints"]["e079"]["head"]
+        m["checkpoints"]["bestval"] = {"head": dict(h)}
+        m["checkpoints"]["wavg"] = {"head": dict(h)}
+    res = S.summarise(_committed(), None, heads)
+    cell = res["head_flags"]["models"]["l188-s1"]
+    assert {"bestval", "wavg", "e079", "mean_70_79"} <= set(cell)
+    assert res["checkpoint_rule"]["by_checkpoint"] == {}     # no anomaly cells in these heads
