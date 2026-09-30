@@ -1,0 +1,49 @@
+{
+ "local_to_remote": {
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s1/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s1/probe_results.json",
+   "sha256": "2d93494282ec48eb14c89cf9fc319bcda8e573a681c6508d899f220d7c5d46d5"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s1/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s1/scores.npz",
+   "sha256": "e42a7e1f9f5ceefe11848b6e77626abf648b25af3ebb89c1b0fe8946cf696c3e"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s2/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s2/probe_results.json",
+   "sha256": "9e5531aa99c6416e4bd793f52f823517cf8a65587563e37eec24b589b5f86373"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s2/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s2/scores.npz",
+   "sha256": "22f948cf612f24156af86ea8615edc8ac4d9f69e58ef7ade1cf5a8a295d9167c"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s3/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s3/probe_results.json",
+   "sha256": "3e0996ad3fe1ec79d8cc3eebe2f001943f50fffee64b5a016db8d322aa020543"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s3/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s3/scores.npz",
+   "sha256": "f4f68ab82d1ad3ff26e4f0123b4f2535522aab9300d4391b7c9e8924907d1280"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s4/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s4/probe_results.json",
+   "sha256": "bea2a45623a254c3c46503aa1ff1d51977d4a78e45a7b866371dcd0b35b0cbd5"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s4/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s4/scores.npz",
+   "sha256": "489bc29dc2768a92cc2e39dcbb4d4e1df0f6cb2aa2228de595c8987597a00d02"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s5/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s5/probe_results.json",
+   "sha256": "29cf893205b67a14ae2af75f4da269773c166b29cd75b0a8acc7c75e8a3bcfd7"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s5/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s5/scores.npz",
+   "sha256": "f8530db44ba547fccaeaebfa9349cd01ddc49a5347e573502c070e2eeee0c53c"
+  }
+ },
+ "how": "the refits ran as jobs probe-ladder-v2-v1err-s1..s5-raunav (tag mtx-s1.66); each file was fetched with its sha256 checked against the pod's sha256sum; replicates and ratios were then computed locally with experiments/STATS/paired_errors.py (probe-replicates, ratios; B = 1000, seed 20260929)",
+ "commands": [
+  "paired_errors.py probe-replicates --probe-dirs <5 dirs> --committed <dir>=experiments/FIGS/data/probe_ladder_v2_mlp2/sN.json --out replicates_probes.npz",
+  "paired_errors.py ratios --replicates replicates_probes.npz --out ratios.json"
+ ]
+}
