@@ -101,6 +101,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="all: every epoch's state and resume files (default, ~46 MB per epoch). "
                          "states: every state file and the newest resume file (~9 MB per epoch). "
                          "window: the best epoch, the last ten epochs and the newest resume file.")
+    ap.add_argument("--select-on", default="head_top1_acc", choices=["head_top1_acc", "acc"],
+                    help="best-validation metric (first maximum): head_top1_acc = unweighted top-1 on "
+                         "the fixed sample (draft A8, default); acc = top-1 weighted by the training "
+                         "reweighting weights. Both are recorded every epoch. Self-supervised: -val.loss.")
     ap.add_argument("--deterministic", action="store_true",
                     help="torch.use_deterministic_algorithms (smoke and numerics checks)")
     ap.add_argument("--device", default=None)
@@ -213,7 +217,9 @@ class Objective:
     is weaver 0.4.17's train_classification step (utils/nn/tools.py), the hybrid
     step of hybrid_mass.py, or the MPM step of mpm.py, unchanged."""
 
-    def __init__(self, kind, data_config, loss_func, model, lam=None, native_map=None):
+    def __init__(self, kind, data_config, loss_func, model, lam=None, native_map=None,
+                 select_on="head_top1_acc"):
+        self.select_on = select_on
         import torch
         self.kind, self.cfg, self.loss_func, self.lam = kind, data_config, loss_func, lam
         self.label = data_config.label_names[0] if kind == "classification" else None
@@ -297,7 +303,9 @@ class Objective:
 
     def selection(self, val: dict):
         """(name, value): higher is better."""
-        return ("-val.loss", -val["loss"]) if self.kind == "mpm" else ("val.acc", val["acc"])
+        if self.kind == "mpm":
+            return "-val.loss", -val["loss"]
+        return f"val.{self.select_on}", val[self.select_on]
 
 
 # ---------------------------------------------------------------- records
@@ -530,7 +538,7 @@ def recipe_of(a) -> dict:
     keep = ("seed", "data_config", "extra_selection", "network_config", "network_option", "use_amp", "batch_size",
             "start_lr", "num_epochs", "samples_per_epoch", "num_workers", "fetch_step",
             "data_split_num", "data_fraction", "optimizer", "lr_scheduler", "mass_lambda", "mpm", "mpm_mask_rate",
-            "deterministic")
+            "deterministic", "select_on")
     r = {k: getattr(a, k) for k in keep}
     r["data_train_n"] = {k: len(v) for k, v in to_file_dict(a.data_train).items()}
     r["data_val"] = sorted(os.path.basename(p) for p in to_file_dict(a.data_val).get("_", []))
@@ -611,7 +619,7 @@ def main(argv=None) -> int:
         options["mask_rate"] = float(os.environ["MPM_MASK_RATE"])
     model, loss_func = build_model(a.network_config, data_config, options, seeds)
     model = model.to(dev)
-    obj = Objective(kind, data_config, loss_func, model, lam=a.mass_lambda,
+    obj = Objective(kind, data_config, loss_func, model, lam=a.mass_lambda, select_on=a.select_on,
                     native_map=sv.native_to_class(data_config) if kind != "mpm" else None)
     opt, sched = make_optimizer(model, a.start_lr, a.num_epochs)
     scaler = torch.cuda.amp.GradScaler(enabled=a.use_amp and dev.type == "cuda")

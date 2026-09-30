@@ -426,8 +426,9 @@ def test_records_are_written_in_the_agreed_format(run_a):
         assert math.isfinite(m["val"][k])
     assert 0 < m["train"]["qcd_share"] < 1 and m["stream_sha256"] == _epochs(run_a, "stream")[2]["sha256"]
     best = json.loads((run_a / "best_epoch.json").read_text())
-    vals = {e: r["val"]["acc"] for e, r in _epochs(run_a, "metrics").items()}
-    assert best["epoch"] == max(vals, key=vals.get)
+    vals = {e: r["val"]["head_top1_acc"] for e, r in _epochs(run_a, "metrics").items()}
+    assert best["epoch"] == max(vals, key=vals.get) and best["metric"] == "val.head_top1_acc"
+    assert all(r["selection"]["value"] == r["val"]["head_top1_acc"] for r in _epochs(run_a, "metrics").values())
     assert _eq(torch.load(run_a / "net_best_epoch_state.pt"), torch.load(run_a / f"net_epoch-{best['epoch']}_state.pt"))
     assert sorted(p.name for p in run_a.glob("net_epoch-*_state.pt")) == [f"net_epoch-{e}_state.pt" for e in range(3)]
 
@@ -462,7 +463,7 @@ def test_the_mass_path_runs(data, tmp_path):
     assert pv.main(_args(data, out, arm="L162_MASS", k=162, epochs=2, extra=mass)) == 0
     m = _epochs(out, "metrics")[1]
     assert math.isfinite(m["val"]["loss_reg"]) and math.isfinite(m["train"]["loss_reg"])
-    assert m["selection"]["metric"] == "val.acc"
+    assert m["selection"]["metric"] == "val.head_top1_acc"
 
 
 @needs_0417
@@ -555,3 +556,13 @@ def test_the_fine_tuning_reader_accepts_the_weight_average(tmp_path):
     rec = ft.resolve_wavg(tmp_path, {})
     assert rec["epoch"] == "wavg70-79" and rec["sha256"] == pretrain_v2.sha256_file(tmp_path / "net_wavg70-79_state.pt")
     assert sorted(rec["inputs"]) == [str(e) for e in range(70, 80)]
+
+
+def test_the_fine_tuning_reader_finds_the_best_epoch_on_the_unweighted_accuracy(run_a):
+    sys.path.insert(0, str(ROOT / "experiments" / "FT"))
+    ft = pytest.importorskip("ft_v2")
+    rec = ft.resolve(run_a, "bestval", n_epochs=3)
+    vals = {e: r["val"]["head_top1_acc"] for e, r in _epochs(run_a, "metrics").items()}
+    assert rec["epoch"] == max(vals, key=vals.get) and rec["metric"] == "val.head_top1_acc"
+    assert rec["sha256"] == pv.sha256_file(
+        run_a / f"net_epoch-{rec['epoch']}_state.pt")

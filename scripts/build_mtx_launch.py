@@ -546,6 +546,7 @@ V2_LOADER = "--num-workers 5 --fetch-step 1.0 --data-split-num 200 --data-fracti
 # (mtx2-loader-memprobe-s172; 29.0 GB and 4,716 jets/s without the window, mtx-s1.69);
 # training on an RTX 3090 is GPU-bound at 2,190-2,320 jets/s and the whole pod peaked at
 # 28.3 GB in the smoke (mtx2-smoke-3090, larger fetches). 48Gi is 1.7x that peak.
+V2_SELECT = "head_top1_acc"       # best-validation metric, draft amendment A8 (2026-09-30)
 V2_CPU = "8"
 V2_MEM = "48Gi"
 V2_BACKOFF = 20                     # counted failures; evictions are ignored
@@ -653,7 +654,7 @@ def v2_script(arm: dict, run: int, *, run_id: str, out_root: str = V2_ROOT,
         f" --data-train {' '.join(TRAIN_GLOBS)} --data-val {' '.join(VAL_GLOBS)}"
         f" --data-config ${{CFG}} --network-config {ARCH[obj]}{head}"
         f" --use-amp --batch-size 512 --start-lr {V2_RATE} --num-epochs {epochs}"
-        f" --samples-per-epoch {samples} {V2_LOADER}{extra} --keep-checkpoints all")
+        f" --samples-per-epoch {samples} {V2_LOADER}{extra} --keep-checkpoints all --select-on {V2_SELECT}")
     if kill_after_epoch is None:
         run_block = f"PYTHONUNBUFFERED=1 {train_cmd} 2>&1 | tee -a ${{OUT}}/train.log\n"
     else:
@@ -710,6 +711,7 @@ python3 scripts/write_run_manifest.py --driver pretrain_v2 --run-id ${{RUN_ID}} 
   --num-classes {k} --seed ${{SEED}} --data-config ${{CFG}} --samples-per-epoch {samples} \\
   --num-epochs {epochs} --batch-size 512{f" --lambda-mass {float(arm['mass_lambda'])}" if arm.get('mass_lambda') is not None else ""}{" --mpm-mask-rate 0.40" if obj == "mpm" else ""} \\
   --num-workers 5 --data-split-num 200 --fetch-step 1.0 --data-fraction 0.2 --keep-checkpoints all \\
+  --select-on {V2_SELECT} \\
   --val-files "${{VAL_FILES[@]}}" --out ${{MANIFEST}}
 {run_block})
 """

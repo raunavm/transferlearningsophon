@@ -161,9 +161,10 @@ def _v2_fields(manifest: dict, a) -> None:
                        "metrics": "<run_dir>/metrics/epoch-EEE.json"}
     d["first_1e6_jet_id_sha256"] = "superseded by the per-epoch stream records"
     manifest["checkpoints"] = {
-        "primary": "best validation accuracy on the fixed sample (net_best_epoch_state.pt, "
-                   "best_epoch.json); accuracy weighted by the training reweighting weights; "
-                   "self-supervised: lowest validation loss",
+        "primary": f"best validation on the fixed sample, first maximum of val.{a.select_on} "
+                   "(head_top1_acc: unweighted top-1; acc: weighted by the training reweighting "
+                   "weights); self-supervised: lowest validation loss (net_best_epoch_state.pt, "
+                   "best_epoch.json, which names the metric)",
         "robustness": f"mean of each result over epochs {a.num_epochs - 10}-{a.num_epochs - 1}",
         "retention": a.keep_checkpoints,
         "resume_restores": ["model", "RAdam state", "Lookahead slow weights and step counter",
@@ -196,6 +197,7 @@ def main() -> int:
     ap.add_argument("--val-files", nargs="*", default=None,
                     help="pretrain_v2: the fixed validation sample's files")
     ap.add_argument("--keep-checkpoints", default=None)
+    ap.add_argument("--select-on", default="head_top1_acc")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     if a.driver == "pretrain_v2" and None in (a.num_workers, a.data_split_num, a.fetch_step, a.val_files):

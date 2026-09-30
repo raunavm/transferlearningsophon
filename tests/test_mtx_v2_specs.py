@@ -81,6 +81,7 @@ def test_v2_code_loader_validation_and_output(grid):
         tr = re.search(r"--data-train (.*?) --data-val", s).group(1).split()
         assert sum(map(_brace_count, tr)) == b.N_TRAIN_FILES
         assert "--driver pretrain_v2" in s and "--keep-checkpoints all" in s
+        assert "--keep-checkpoints all --select-on head_top1_acc" in s and "--select-on head_top1_acc \\" in s
         seed = re.search(r"^SEED=(\d+)$", s, re.M).group(1)
         assert run_id.endswith(f"-s{seed}")
 
@@ -168,6 +169,7 @@ def test_the_v2_manifest_lists_no_inert_seed(tmp_path):
     assert m["data_stream"]["loader"]["data_split_num"] == 200 and m["data_stream"]["loader"]["num_workers"] == 5
     assert m["data_stream"]["validation"]["files"] == ["a.parquet", "b.parquet"]
     assert "70-79" in m["checkpoints"]["robustness"] and m["driver"].endswith("pretrain_v2.py")
+    assert "val.head_top1_acc" in m["checkpoints"]["primary"]
 
 
 def test_the_v1_manifest_is_unchanged_by_default(tmp_path):
