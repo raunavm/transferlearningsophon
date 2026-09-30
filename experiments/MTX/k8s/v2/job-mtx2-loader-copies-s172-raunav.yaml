@@ -1,0 +1,95 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # v2 LOADER COPY-FACTOR CHECK -- CPU only, no training (audit item 2).
+  # One-off, written 2026-09-30 from the v2_dryrun_spec() job (same image, volumes, scheduling):
+  # counts distinct jets per epoch of the mtx-s1.72 stream (weaver's up-sampling repeats rows),
+  # the reference the epoch QCD-share scatter must be compared with.
+  name: mtx2-loader-copies-s172-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  podFailurePolicy:
+    rules:
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        env:
+        - name: REPO_REF
+          value: "mtx-s1.72"
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "${REPO_REF}" https://github.com/raunavm/transferlearningsophon.git /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          pip install --no-cache-dir -q pyarrow || exit 1
+          MD5=$(md5sum configs/arms/R16_Q1.yaml | cut -d' ' -f1)
+          cp /data/results/mtx/makeweight/R16_Q1.${MD5}.auto.yaml configs/arms/
+          cat > /tmp/distinct.py <<'PY'
+          import sys, json, numpy as np
+          from torch.utils.data import DataLoader
+          sys.path.insert(0, "."); sys.path.insert(0, "experiments/MTX")
+          import stream_v2 as sv, pretrain_v2 as pv
+          from src.utils.reproducibility import derive_all
+          files = pv.to_file_dict(sys.argv[1:])
+          ds = sv.StreamDataset(files, pv.sidecar("configs/arms/R16_Q1.yaml"), mode="train", batch_size=512,
+                                seed=derive_all(1)["data_sampling"], split_num=200, fetch_step=1.0,
+                                labels_only=True, data_fraction=0.2)
+          out = []
+          for e in range(20):
+              ds.set_epoch(e)
+              it = iter(DataLoader(ds, batch_size=None, num_workers=5, multiprocessing_context="fork"))
+              rid, lab = [], []
+              for _ in range(20000):
+                  _, _, Z = next(it)
+                  rid.append(Z["_rowid"].numpy()); lab.append(Z["_jet_label"].numpy())
+              del it
+              rid = np.concatenate(rid); q = np.concatenate(lab) >= 161
+              u, c = np.unique(rid, return_counts=True)
+              p = q.mean(); n = len(rid); f = float((c ** 2).sum() / c.sum())
+              out.append({"epoch": e, "n": n, "distinct": int(len(u)), "copy_factor": f, "qcd_share": float(p),
+                          "binomial_sd": float((p * (1 - p) / n) ** .5), "binomial_sd_distinct_equivalent": float((p * (1 - p) * f / n) ** .5)})
+              print(json.dumps(out[-1]), flush=True)
+          s = np.array([o["qcd_share"] for o in out])
+          summ = {"sd_qcd_share": float(s.std(ddof=1)), "mean_binomial_sd": float(np.mean([o["binomial_sd"] for o in out])),
+                  "mean_binomial_sd_with_copies": float(np.mean([o["binomial_sd_distinct_equivalent"] for o in out])),
+                  "mean_copy_factor": float(np.mean([o["copy_factor"] for o in out]))}
+          print(json.dumps(summ), flush=True)
+          json.dump({"summary": summ, "epochs": out}, open("/data/results/mtx_v2/loader_dryrun/distinct_s172_seed1.json", "w"), indent=1)
+          PY
+          PYTHONUNBUFFERED=1 python3 /tmp/distinct.py Res2P:/jc2/jet_data/Res2P_{0000..0199}.parquet Res34P:/jc2/jet_data/Res34P_{0000..0859}.parquet QCD:/jc2/jet_data/QCD_{0000..0279}.parquet
+        resources:
+          requests: { memory: "16Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "16Gi", cpu: "8", ephemeral-storage: "10Gi" }
+        volumeMounts:
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }
