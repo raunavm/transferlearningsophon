@@ -237,3 +237,38 @@ def test_the_selection_chain_counts_each_stage_and_refuses_a_staging_record_that
     (shard / "RunG_batch0.stats.json").write_text(json.dumps(dict(n_jets_read=1, counters=dict(n_jets=7))))
     with pytest.raises(SystemExit, match="staging stats say"):
         RC.step_selection([tmp_path / "shard0"], data, fit)
+
+
+def test_spawned_workers_give_the_same_answers_as_one_process(tmp_path):
+    """The per-model steps run in spawned workers that rebuild their inputs from paths
+    (a forked pool hung, 2026-09-30); the answers must not depend on it."""
+    import subprocess
+    import sys
+    mass, pt, rng = jets(n=300_000, seed=9)
+    n = len(mass)
+    names = ("l188-s1", "r16q1-s1")
+    _merged(tmp_path / "merged", mass, pt,
+            {m: {"three_prong": rng.normal(size=n), "prong_only": rng.normal(size=n)} for m in names})
+    SS = RC._load("sim_scores", RC.HERE / "sim_scores.py")
+    three = sorted(RC.D.native_classes("3P_HAD_3PARTON"))
+    sim = tmp_path / "sim"
+    sim.mkdir()
+    j = dict(jet_pt=pt.astype(np.float32), jet_eta=np.zeros(n, np.float32), jet_sdmass=mass.astype(np.float32),
+             label=np.where(rng.random(n) < 0.7, 170, rng.choice(three, n)).astype(np.int16))
+    np.savez(sim / "jets.npz", **j)
+    for m in names:
+        np.savez(sim / f"scores_{m}.npz", three_prong_logodds=rng.normal(size=n).astype(np.float32))
+        (sim / f"scores_{m}.json").write_text(json.dumps(dict(jets_sha256=SS.jets_digest(j))))
+    top = dict(signal_yield=1000.0, signal_yield_err=100.0, mean=175.0, width=12.0, b_in_window=5000.0,
+               yield_per_pt_bin={})
+    (tmp_path / "fit.json").write_text(json.dumps(dict(n_jets=n, models={m: {"top": top} for m in names})))
+    outs = {}
+    for w in (1, 2):
+        out = tmp_path / f"out{w}"
+        r = subprocess.run([sys.executable, str(RC.HERE / "realdata_checks.py"), "--merged", str(tmp_path / "merged"),
+                            "--shards", str(tmp_path), "--fit", str(tmp_path / "fit.json"), "--sim", str(sim),
+                            "--out", str(out), "--steps", "domain", "--workers", str(w)],
+                           capture_output=True, text=True, timeout=600, cwd=RC.REPO)
+        assert r.returncode == 0, r.stderr[-2000:]
+        outs[w] = json.loads((out / "model_vs_domain.json").read_text())["models"]
+    assert outs[1] == outs[2] and set(outs[1]) == set(names)

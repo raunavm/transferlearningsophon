@@ -43,12 +43,14 @@ Run the first run (v1) or any later one the same way:
 from __future__ import annotations
 
 import argparse
+import functools
 import hashlib
 import importlib.util
 import inspect
 import json
 import multiprocessing
 import pathlib
+from collections.abc import Mapping
 import subprocess
 import sys
 
@@ -104,6 +106,7 @@ def pretrained(names):
 
 
 # ---------------------------------------------------------------- provenance
+@functools.lru_cache(maxsize=None)
 def _sha256(path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -117,7 +120,7 @@ def provenance(inputs: dict) -> dict:
     dirty = subprocess.run(["git", "-C", str(REPO), "status", "--porcelain", "--", "experiments/AOJ"],
                            capture_output=True, text=True)
     return dict(code=head.stdout.strip() or None, code_dirty=bool(dirty.stdout.strip()),
-                inputs={k: dict(path=str(v), sha256=_sha256(v)) for k, v in inputs.items()})
+                inputs={k: dict(path=str(v), sha256=_sha256(str(v))) for k, v in inputs.items()})
 
 
 def _plain(x):
@@ -138,6 +141,46 @@ def _where(fn) -> str:
 IDENTITY = ("run", "lumi", "event", "jet_sdmass", "aoj_jet_pt")
 
 
+class Scores(Mapping):
+    """model -> {kind: its scores for the jets in the window}, each model read from
+    disk the first time it is asked for. The run holds 31 models x two scores x ~9 M
+    jets; a worker needs one model at a time, and none should copy all of them."""
+
+    def __init__(self, names, loader, kinds_of):
+        self._names, self._loader, self._kinds_of, self._cache = sorted(names), loader, kinds_of, {}
+
+    def __getitem__(self, name):
+        if name not in self._names:
+            raise KeyError(name)
+        if name not in self._cache:
+            self._cache[name] = self._loader(name)
+        return self._cache[name]
+
+    def __contains__(self, name):
+        return name in self._names
+
+    def __iter__(self):
+        return iter(self._names)
+
+    def __len__(self):
+        return len(self._names)
+
+    def kinds(self, name) -> set:
+        return self._kinds_of(name)
+
+
+def has_kind(scores, name, kind) -> bool:
+    """Whether `scores` (a Scores or a plain dict) has `kind` for `name`, without reading it."""
+    if name not in scores:
+        return False
+    return kind in (scores.kinds(name) if isinstance(scores, Scores) else scores[name])
+
+
+def _window(mass, pt):
+    rho = P.rho_of(mass, pt)
+    return (rho > P.RHO_RANGE[0]) & (rho < P.RHO_RANGE[1]) & (pt > P.PT_RANGE[0]) & (pt < P.PT_RANGE[1])
+
+
 def load_data(merged: pathlib.Path, kinds=("three_prong", "prong_only"), first: pathlib.Path | None = None) -> dict:
     """The merged run, restricted to the rho window and pT range the fit uses.
 
@@ -146,46 +189,57 @@ def load_data(merged: pathlib.Path, kinds=("three_prong", "prong_only"), first: 
     and the rescore's are kept as three_prong_rescore; the jets must be identical.
     A rescore on another GPU model differs in the last bit of a few jets' float16
     scores (reproduce.json quantifies it), so "the same model" is not "the same number"."""
+    merged = pathlib.Path(merged)
+    first = pathlib.Path(first) if first is not None else None
     j = np.load(merged / "jets.npz")
     mass, pt = j["jet_sdmass"].astype(float), j["aoj_jet_pt"].astype(float)
-    rho = P.rho_of(mass, pt)
-    ok = (rho > P.RHO_RANGE[0]) & (rho < P.RHO_RANGE[1]) & (pt > P.PT_RANGE[0]) & (pt < P.PT_RANGE[1])
-    scores = {}
-    for path in sorted(merged.glob("scores_*.npz")):
-        s = np.load(path)
-        scores[path.stem.removeprefix("scores_")] = {k: s[f"{k}_logodds"][ok] for k in kinds
-                                                     if f"{k}_logodds" in s.files}
+    ok = _window(mass, pt)
     if first is not None:
         jf = np.load(first / "jets.npz")
         bad = [k for k in IDENTITY if not np.array_equal(jf[k], j[k])]
         if bad:
             raise SystemExit(f"FATAL: {first} and {merged} hold different jets ({bad})")
-        for name, sc in scores.items():
-            path = first / f"scores_{name}.npz"
-            if "three_prong" in sc and path.exists():
-                sc["three_prong_rescore"] = sc["three_prong"]
-                sc["three_prong"] = np.load(path)["three_prong_logodds"][ok]
+    files = {path.stem.removeprefix("scores_"): path for path in merged.glob("scores_*.npz")}
+
+    def kinds_of(name):
+        have = {k.removesuffix("_logodds") for k in np.load(files[name]).files} & set(kinds)
+        if first is not None and "three_prong" in have and (first / files[name].name).exists():
+            have.add("three_prong_rescore")
+        return have
+
+    def loader(name):
+        s = np.load(files[name])
+        out = {k: s[f"{k}_logodds"][ok] for k in kinds if f"{k}_logodds" in s.files}
+        f = first / files[name].name if first is not None else None
+        if f is not None and "three_prong" in out and f.exists():
+            out["three_prong_rescore"] = out["three_prong"]
+            out["three_prong"] = np.load(f)["three_prong_logodds"][ok]
+        return out
     return dict(mass=mass[ok], pt=pt[ok], pn=np.asarray(j["aoj_pn_TvsQCD"])[ok], n_staged=int(len(ok)),
-                n_window=int(ok.sum()), scores=scores)
+                n_window=int(ok.sum()), scores=Scores(files, loader, kinds_of),
+                _spec=("data", str(merged), tuple(kinds), None if first is None else str(first)))
 
 
 def load_sim(sim: pathlib.Path) -> dict:
     """sim_scores.py's output, in the same acceptance as the data. A model whose
     jets_sha256 is not that of jets.npz was scored on other jets and is refused."""
+    sim = pathlib.Path(sim)
     SS = _load("sim_scores", HERE / "sim_scores.py")
     j = dict(np.load(sim / "jets.npz"))
     digest = SS.jets_digest(j)
     mass, pt = j["jet_sdmass"].astype(float), j["jet_pt"].astype(float)
-    rho = P.rho_of(mass, pt)
-    ok = (rho > P.RHO_RANGE[0]) & (rho < P.RHO_RANGE[1]) & (pt > P.PT_RANGE[0]) & (pt < P.PT_RANGE[1])
-    scores = {}
+    ok = _window(mass, pt)
+    files = {}
     for path in sorted(sim.glob("scores_*.npz")):
         name = path.stem.removeprefix("scores_")
         meta = json.loads(path.with_suffix(".json").read_text())
         if meta["jets_sha256"] != digest:
             raise SystemExit(f"FATAL: {name} was scored on other jets than {sim / 'jets.npz'}")
-        s = np.load(path)
-        scores[name] = {k.removesuffix("_logodds"): s[k][ok] for k in s.files}
+        files[name] = path
+
+    def loader(name):
+        s = np.load(files[name])
+        return {k.removesuffix("_logodds"): s[k][ok] for k in s.files}
     label = j["label"][ok].astype(int)
     names = {int(r["jet_label"]): r["class_name"] for r in D._anomaly.read_map()}
     three = np.isin(label, sorted(D.native_classes(D.STRUCTURES["three_prong"])))
@@ -193,7 +247,9 @@ def load_sim(sim: pathlib.Path) -> dict:
     return dict(mass=mass[ok], pt=pt[ok], label=label, n_all=int(len(ok)), n_acc=int(ok.sum()),
                 qcd=np.isin(label, QCD_LABELS), three=three,
                 top_like=np.isin(label, [k for k, v in names.items() if v in TOP_LIKE]),
-                three_b=three & has_b, three_nob=three & ~has_b, scores=scores)
+                three_b=three & has_b, three_nob=three & ~has_b,
+                scores=Scores(files, loader, lambda n: {k.removesuffix("_logodds") for k in np.load(files[n]).files}),
+                _spec=("sim", str(sim)))
 
 
 # ---------------------------------------------------------------- helpers
@@ -260,12 +316,30 @@ def _fit_summary(fit: dict) -> dict:
     return out
 
 
+def _init_worker(state):
+    """A worker's _W, rebuilt from paths: each worker reads the jets once and a model's
+    scores when it is given that model."""
+    _W.clear()
+    for key, value in state.items():
+        if isinstance(value, tuple) and value and value[0] == "data":
+            _W[key] = load_data(value[1], value[2], value[3])
+        elif isinstance(value, tuple) and value and value[0] == "sim":
+            _W[key] = load_sim(value[1])
+        else:
+            _W[key] = value
+
+
 def _parallel(fn, items, workers):
-    """fn over items in forked workers (the loaded arrays are shared, not copied)."""
+    """fn over items, in `workers` SPAWNED processes when workers > 1. Not forked: a
+    forked worker inherits the parent's BLAS and thread state and can wait forever on
+    a lock no thread will release -- the first local run of these checks hung that
+    way, every worker at zero CPU for 2.5 h (2026-09-30). A spawned worker starts
+    clean and rebuilds _W from the inputs' paths (_init_worker)."""
     if workers <= 1:
         return [fn(x) for x in items]
-    with multiprocessing.get_context("fork").Pool(workers) as pool:
-        return pool.map(fn, items)
+    state = {k: (v["_spec"] if isinstance(v, dict) and "_spec" in v else v) for k, v in _W.items()}
+    with multiprocessing.get_context("spawn").Pool(workers, initializer=_init_worker, initargs=(state,)) as pool:
+        return pool.map(fn, items, chunksize=1)
 
 
 def spread(values) -> dict:
@@ -350,8 +424,9 @@ def _flips_one(name):
 def step_cut_flips(data, workers) -> dict:
     """At the 1 % cut, the jets whose pass/fail status differs between the first run's
     three-prong score and the rescore's: what the last-bit differences are worth."""
+    _W.clear()
     _W.update(data=data)
-    names = [n for n, s in sorted(data["scores"].items()) if "three_prong_rescore" in s]
+    names = [n for n in sorted(data["scores"]) if has_kind(data["scores"], n, "three_prong_rescore")]
     rows = dict(_parallel(_flips_one, names, workers))
     return dict(models=rows, max_flipped=max((r["n_flipped"] for r in rows.values()), default=0),
                 max_flipped_fraction_of_pass=max((r["n_flipped"] / r["n_pass_first"] for r in rows.values()),
@@ -540,6 +615,7 @@ def _sim_closure_one(name):
 
 def step_sim_closure(sim, fit, workers) -> dict:
     """Item 2a: the map at 1 % on simulated QCD, where there is no signal."""
+    _W.clear()
     _W.update(sim=sim, fit=fit)
     names = [n for n in sorted(fit["models"]) if n in sim["scores"]]
     rows = dict(_parallel(_sim_closure_one, names, workers))
@@ -612,6 +688,7 @@ def inject_asimov(b, centre, width, yield_per_pt_bin):
 
 def step_injection(data, fit, workers) -> dict:
     """Item 2b: signal-free data at the working point."""
+    _W.clear()
     _W.update(data=data, fit=fit)
     names = [n for n in sorted(fit["models"]) if n in data["scores"]]
     rows = dict(_parallel(_injection_one, names, workers))
@@ -669,6 +746,7 @@ def _domain_one(name):
 def step_domain(data, sim, fit, workers) -> dict:
     """Item 4: each model's efficiency on simulation at its own data cut, beside its
     data yield; and the flavour split of the three-prong efficiency."""
+    _W.clear()
     _W.update(data=data, sim=sim, fit=fit,
               class_names={int(r["jet_label"]): r["class_name"] for r in D._anomaly.read_map()})
     names = [n for n in sorted(fit["models"]) if n in sim["scores"] and n in data["scores"]]
@@ -734,8 +812,9 @@ def _prong_one(name):
 
 def step_prong(data, fit, n_toys, workers) -> dict:
     """Item 5: the prong-only score through the whole procedure."""
+    _W.clear()
     _W.update(data=data, fit=fit, n_toys=n_toys)
-    names = [n for n in sorted(fit["models"]) if "prong_only" in data["scores"].get(n, {})]
+    names = [n for n in sorted(fit["models"]) if has_kind(data["scores"], n, "prong_only")]
     rows = dict(_parallel(_prong_one, names, workers))
     runs = pretrained(rows)
     return dict(models=rows,

@@ -113,8 +113,9 @@ RESCORE_NEEDED_FLAGS = {"experiments/AOJ/discriminants.py": "prong_only",
                         "experiments/AOJ/sim_scores.py": "scored on other jets"}
 # The analysis job clones a later tag: realdata_checks.py is finished after the GPU
 # runs were launched, and it reads only what they write.
-CHECKS_PIN = "mtx-s1.73"
-CHECKS_NEEDED_FLAGS = {"experiments/AOJ/realdata_checks.py": "--first-run-merged",
+# mtx-s1.73 had the forked worker pool that hung (realdata_checks._parallel); never launched.
+CHECKS_PIN = "mtx-s1.74"
+CHECKS_NEEDED_FLAGS = {"experiments/AOJ/realdata_checks.py": 'get_context("spawn")',
                        "experiments/AOJ/peak_fit.py": "data_efficiency_sidebands",
                        "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json": "shape_variations"}
 RESCORE_ROOT = "/data/results/aoj/full_v1_rescore"

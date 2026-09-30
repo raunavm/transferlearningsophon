@@ -44,7 +44,7 @@ spec:
           for g in $(seq 0 5); do
             [ -f "/data/results/aoj/sim_v1/attempts/g${g}/DONE" ] || { echo "FATAL: simulation group ${g} has not finished"; exit 42; }
           done
-          git clone --depth 1 --branch "mtx-s1.73" \
+          git clone --depth 1 --branch "mtx-s1.74" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
