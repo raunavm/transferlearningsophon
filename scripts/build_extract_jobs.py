@@ -736,7 +736,7 @@ def verify_pin(pin: str, needed: list[str], allow_untagged: bool,
 # The retry policy of commit 3cb4d7a in its CPU form, as build_probe_jobs.py's
 # v1err specs: evictions ignored, signals counted, a Python failure halts.
 V1ERR_PIN = "mtx-s1.66"
-V1ERR_PIN2 = "mtx-s1.70"     # class_counts.py changed after mtx-s1.66, before its job ran
+V1ERR_PIN2 = "mtx-s1.71"     # class_counts.py changed after mtx-s1.66, before its job ran
 V1ERR_NEEDED = ["experiments/EVAL/extract_v2.py", "experiments/EVAL/extract_features.py",
                 "experiments/EVAL/anomaly.py", "experiments/EVAL/class_counts.py"]
 V1ERR_HEADS = "/data/results/eval/v1err/heads"

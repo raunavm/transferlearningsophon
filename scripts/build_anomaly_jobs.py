@@ -682,7 +682,7 @@ def main_cs(a) -> int:
 # redraws exactly the committed resamplings, so epoch 79 is checked against the
 # committed anomaly run and its class-sum rerun (the /data copies are the files
 # under experiments/FIGS/data, sha256 checked 2026-09-29).
-V1ERR_PIN = "mtx-s1.70"      # anomaly_heads.py's tolerance was set after mtx-s1.66
+V1ERR_PIN = "mtx-s1.71"      # anomaly_heads.py's tolerance was set after mtx-s1.66
 V1ERR_HEADS = "/data/results/eval/v1err/heads"
 V1ERR_LADDER = [f"mtx-{a}-s{s}" if not (a == "l162" and s == 1) else "mtx-l162-s1b"
                 for a in ("l188", "l162", "r42q1", "r16q1") for s in range(1, 6)]

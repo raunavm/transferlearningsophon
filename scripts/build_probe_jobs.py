@@ -322,7 +322,7 @@ V1ERR_PIN = "mtx-s1.66"
 # label_recovery_curve.py (summary mode) and paired_errors.py (ratio side) changed
 # after mtx-s1.66, so they take the next tag; the probe and mass reruns, applied
 # from mtx-s1.66 and unchanged since, keep it (tests/test_spec_pins.py).
-V1ERR_PIN2 = "mtx-s1.70"
+V1ERR_PIN2 = "mtx-s1.71"
 V1ERR_BACKOFF = 6
 THREADS_OF = {False: 8, True: 1}   # BLAS threads: the CPUs a spec requests; 1 per worker in the pooled FT job
 V1ERR_ROOT = "/data/results/eval/v1err"
