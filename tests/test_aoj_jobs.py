@@ -216,6 +216,7 @@ def test_the_v3_fit_is_the_first_fit_with_its_checks_appended():
 # ---- the checks of the real-data section (audit B5, must-fix 9) ----
 RESCORE = sorted(p for p in SPECS if "-rescore-s" in p.name)
 SIM = sorted(p for p in SPECS if "-sim-g" in p.name)
+CHECKS = [p for p in SPECS if p.name == "job-aoj-checks-v1-raunav.yaml"]
 
 
 def test_each_rescore_shard_is_its_first_run_shard_with_only_the_listed_changes():
@@ -235,7 +236,7 @@ def test_each_rescore_shard_is_its_first_run_shard_with_only_the_listed_changes(
         assert "two_prong" not in s2, "the withdrawn two-prong channel stays unwritten"
 
 
-@pytest.mark.parametrize("path", RESCORE + SIM, ids=lambda p: p.name)
+@pytest.mark.parametrize("path", RESCORE + SIM + CHECKS, ids=lambda p: p.name)
 def test_the_check_jobs_carry_the_retry_policy_of_the_fine_tuning_jobs(path):
     doc = yaml.safe_load(SPECS[path])
     spec = doc["spec"]
@@ -247,6 +248,9 @@ def test_the_check_jobs_carry_the_retry_policy_of_the_fine_tuning_jobs(path):
     assert [c["name"] for c in spec["template"]["spec"]["containers"]] == ["main"]
     terms = spec["template"]["spec"]["affinity"]["nodeAffinity"][
         "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
+    if path in CHECKS:
+        assert "nvidia.com/gpu" not in SPECS[path] and f'--branch "{B.CHECKS_PIN}"' in SPECS[path]
+        return
     gpu = [t for t in terms if t["key"] == "nvidia.com/gpu.product"]
     assert {g["operator"] for g in gpu} == {"Exists", "NotIn"}
     assert f'--branch "{B.RESCORE_PIN}"' in SPECS[path]
@@ -294,3 +298,23 @@ def test_every_job_reading_parquet_through_weaver_installs_pyarrow_first(path):
         return
     install = s.find("pip install --no-cache-dir -q pyarrow")
     assert 0 <= install < min(uses), f"{path.name} reads parquet before installing pyarrow"
+
+
+def test_the_checks_job_waits_for_every_input_and_reads_the_rescore_against_the_first_run():
+    s = _script(SPECS[CHECKS[0]])
+    assert f"seq 0 {B.N_SHARDS - 1}" in s and f"{B.RESCORE_ROOT}/shard${{i}}/DONE" in s
+    assert f"seq 0 {B.N_SIM_JOBS - 1}" in s and f"{B.SIM_ROOT}/attempts/g${{g}}/DONE" in s
+    assert s.count(f"exit {FT.EXIT_HALT}; }}") == 2, "a missing input halts; it is not retried"
+    merge = "python3 experiments/AOJ/merge_shards.py --shards ${SHARDS} --out /scratch/merged"
+    assert merge in s and s.index(merge) < s.index("realdata_checks.py")
+    assert "--first-run-shards ${FIRST}" in s and f"{B.OUT_ROOT}/shard${{i}}" in s
+    assert f"--fit {B.MAIN_FIT} --sim {B.SIM_ROOT}" in s and f"OUT={B.CHECKS_ROOT}" in s
+    assert (REPO / B.MAIN_FIT).exists()
+
+
+def test_the_simulation_jobs_stay_off_the_node_that_failed_every_container_start():
+    for p in SIM:
+        terms = yaml.safe_load(SPECS[p])["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
+            "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
+        hosts = next(t for t in terms if t["key"] == "kubernetes.io/hostname")["values"]
+        assert "patternlab.calit2.optiputer.net" in hosts and set(B.BAD_NODES) <= set(hosts)

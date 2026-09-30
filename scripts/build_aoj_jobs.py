@@ -102,13 +102,18 @@ FIT3_NEEDED_FLAGS = {"experiments/AOJ/peak_fit.py": "n_at_floor",
 #             for its signal efficiency there -- what separates model from domain.
 # Both carry the pod failure policy of scripts/build_ft_jobs.py ("retries that survive
 # a flaky cluster"): evictions are not counted, two failed attempts halt the job.
+# Then one CPU job (render_checks) runs experiments/AOJ/realdata_checks.py over both.
+# FOR THE v2 GRID the same chain reruns unchanged except in three places: the checkpoint
+# each Model names (Model.checkpoint -- the v2 rule's epoch under /data/results/mtx_v2/),
+# the output roots (RESCORE_ROOT, SIM_ROOT, CHECKS_ROOT) and the main fit it is read
+# against (MAIN_FIT: that grid's peak_fit.py results.json).
 RESCORE_PIN = "mtx-s1.68"
 RESCORE_NEEDED_FLAGS = {"experiments/AOJ/discriminants.py": "prong_only",
                         "experiments/AOJ/closure.py": "quantiles_aoj",
                         "experiments/AOJ/sim_scores.py": "scored on other jets"}
 # The analysis job clones a later tag: realdata_checks.py is finished after the GPU
 # runs were launched, and it reads only what they write.
-CHECKS_PIN = "mtx-s1.69"
+CHECKS_PIN = "mtx-s1.70"
 CHECKS_NEEDED_FLAGS = {"experiments/AOJ/realdata_checks.py": "def step_reproduce",
                        "experiments/AOJ/peak_fit.py": "data_efficiency_sidebands",
                        "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json": "shape_variations"}
@@ -163,6 +168,11 @@ BAD_NODES = ("ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu",
              # extract_features, 2026-09-23 11:41Z), then both retries were refused at
              # admission with the same NVLink "GPU is lost" error.
              "k8s-haosu-15.sdsc.optiputer.net")
+# patternlab.calit2: every pod placed there ended in StartError, "failed to create
+# containerd task: failed to create shim task: context canceled" (sim g0 and g3 and
+# another agent's job, 2026-09-30 00:2xZ). Kept off the simulation jobs, which were
+# re-created for it; the running rescore shards keep the list they were launched with.
+SIM_BAD_NODES = BAD_NODES + ("patternlab.calit2.optiputer.net",)
 
 SOPHON_URL = "https://huggingface.co/jet-universe/sophon/resolve/main/models/JetClassII_Sophon/model.pt"
 SOPHON_SHA256 = "cc7c33b522e796b5bbf0aa9bb5b01361c964f4ef3acebdd9682d7519c095b824"
@@ -827,7 +837,7 @@ def render_sim(g: int, models: list[Model]) -> str:
         model_names=" ".join(m.name for m in models),
         checkpoints=" ".join(m.checkpoint for m in models if m.spec) or "",
         sophon=sophon, files=" ".join(SIM_FILES), config=SIM_CONFIG, scores="\n".join(scores),
-        parallel=PARALLEL, bad_nodes=", ".join(f'"{b}"' for b in BAD_NODES))
+        parallel=PARALLEL, bad_nodes=", ".join(f'"{b}"' for b in SIM_BAD_NODES))
     return _robust(t, "  backoffLimit: 2\n")
 
 
@@ -924,6 +934,7 @@ def specs() -> dict[pathlib.Path, str]:
         out[K8S / f"job-aoj-rescore-s{i}-raunav.yaml"] = render_rescore_shard(i, fs)
     for g, ms in enumerate(sim_groups()):
         out[K8S / f"job-aoj-sim-g{g}-raunav.yaml"] = render_sim(g, ms)
+    out[K8S / "job-aoj-checks-v1-raunav.yaml"] = render_checks()
     return out
 
 
@@ -931,7 +942,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-only", action="store_true", help="verify, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
-                    help=f"check the working tree instead of {RESCORE_PIN}, which is tagged after the commit")
+                    help=f"check the working tree instead of {CHECKS_PIN}, which is tagged after the commit")
     a = ap.parse_args()
     verify_heads()
     verify_pin(PIN, False)                      # the shards already ran at it
@@ -940,7 +951,8 @@ def main() -> int:
     verify_pin(FIT2_PIN, False, FIT2_NEEDED_FLAGS)
     verify_pin(BINS_PIN, False, BINS_NEEDED_FLAGS)
     verify_pin(FIT3_PIN, False, FIT3_NEEDED_FLAGS)
-    verify_pin(RESCORE_PIN, a.pin_not_yet_tagged, RESCORE_NEEDED_FLAGS)
+    verify_pin(RESCORE_PIN, False, RESCORE_NEEDED_FLAGS)
+    verify_pin(CHECKS_PIN, a.pin_not_yet_tagged, CHECKS_NEEDED_FLAGS)
     for path, text in specs().items():
         if a.check_only:
             print(f"ok   {path.relative_to(ROOT)}")
