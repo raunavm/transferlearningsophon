@@ -1,0 +1,5 @@
+{"job": "v1err-batch-a2-raunav (tag mtx-s1.75), step run_ft",
+ "command": "paired_errors.py ft-replicates --leg1-root /data/results/ft/w2b/leg1 --leg1-metrics /data/results/ft/w2b_leg1_metrics_v2/leg1_metrics.json --leg2-root /data/results/ft/w2b/leg2 --leg2-metrics /data/results/ft/w2b_leg2_metrics_v2/leg2_metrics.json --b 200 --procs 10 --cache <out>/cells --out /data/results/eval/v1err/ft_b200/replicates_ft.npz",
+ "check": "every cell's unresampled 1 - macro AUC reproduced the committed w2b_leg{1,2}_metrics_v2 macro_auc_ovr to 1e-9 (the script stops otherwise); 264 cells",
+ "fetched": "from /data/results/eval/v1err/ft_b200/, sha256 checked against the pod's sha256sum",
+ "ratios": "paired_errors.py ratios --replicates replicates_ft.npz --out ratios.json"}

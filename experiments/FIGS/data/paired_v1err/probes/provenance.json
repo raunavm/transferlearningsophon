@@ -1,0 +1,122 @@
+{
+ "local_to_remote": {
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s1/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s1/probe_results.json",
+   "sha256": "2d93494282ec48eb14c89cf9fc319bcda8e573a681c6508d899f220d7c5d46d5"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s1/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s1/scores.npz",
+   "sha256": "e42a7e1f9f5ceefe11848b6e77626abf648b25af3ebb89c1b0fe8946cf696c3e"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s2/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s2/probe_results.json",
+   "sha256": "9e5531aa99c6416e4bd793f52f823517cf8a65587563e37eec24b589b5f86373"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s2/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s2/scores.npz",
+   "sha256": "22f948cf612f24156af86ea8615edc8ac4d9f69e58ef7ade1cf5a8a295d9167c"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s3/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s3/probe_results.json",
+   "sha256": "3e0996ad3fe1ec79d8cc3eebe2f001943f50fffee64b5a016db8d322aa020543"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s3/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s3/scores.npz",
+   "sha256": "f4f68ab82d1ad3ff26e4f0123b4f2535522aab9300d4391b7c9e8924907d1280"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s4/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s4/probe_results.json",
+   "sha256": "bea2a45623a254c3c46503aa1ff1d51977d4a78e45a7b866371dcd0b35b0cbd5"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s4/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s4/scores.npz",
+   "sha256": "489bc29dc2768a92cc2e39dcbb4d4e1df0f6cb2aa2228de595c8987597a00d02"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s5/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s5/probe_results.json",
+   "sha256": "29cf893205b67a14ae2af75f4da269773c166b29cd75b0a8acc7c75e8a3bcfd7"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_v2/s5/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_v2/s5/scores.npz",
+   "sha256": "f8530db44ba547fccaeaebfa9349cd01ddc49a5347e573502c070e2eeee0c53c"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_mass2x2/s1/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_mass2x2/s1/probe_results.json",
+   "sha256": "818a76e04bd3194a0504c4bfbf279b30a344596d28b3bfa747c272879807a37e"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_mass2x2/s1/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_mass2x2/s1/scores.npz",
+   "sha256": "ef760d49d686beabec2eb9b5fbcb29b911b39674c433e08119382eaad0eee647"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_mass2x2/s2/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_mass2x2/s2/probe_results.json",
+   "sha256": "49ce3655ef6614eaac0e1c862582e5152f7d4148e2cf7f1b33ddd74c48b8c29e"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_mass2x2/s2/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_mass2x2/s2/scores.npz",
+   "sha256": "62fa49da0c20c45c4d40595f63141ae61b724001fcff50fc186ba8acbc2a1b25"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_mass2x2/s3/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_mass2x2/s3/probe_results.json",
+   "sha256": "673390ef09655a9a388927398ef88d32a291184631cb807cb79da0ef8b49cbfc"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_mass2x2/s3/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_mass2x2/s3/scores.npz",
+   "sha256": "2682f59f4c23589e8ae9e421d843cb2cdde3e6c1da429accfe356f7e3db3a9de"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_mass2x2/s4/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_mass2x2/s4/probe_results.json",
+   "sha256": "591ee94863d68e1c6c81d076852b6cffd90498e83aa903a6b284020511b4b301"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_mass2x2/s4/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_mass2x2/s4/scores.npz",
+   "sha256": "39d7343bc4d7fe81374849f1792fae81a4f2e056e1ec69d4cc928e4a86545702"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_mass2x2/s5/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_mass2x2/s5/probe_results.json",
+   "sha256": "484401c555e5fc7f3ef0d4aa04e8d5842e27dfa3541898b04997d4bbc343f12f"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_mass2x2/s5/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_mass2x2/s5/scores.npz",
+   "sha256": "1af0b51f0f65db18548aa762d2058bcc5f05d6805fba8d6d2be600810cc6a3b4"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_randcontrol/sd1/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_randcontrol/sd1/probe_results.json",
+   "sha256": "d959d5ee25ccb3da7814e2beb4ad0eb67977a650f9ec0225a083a760d727bdbf"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_randcontrol/sd1/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_randcontrol/sd1/scores.npz",
+   "sha256": "f9fb58c49735fe9ce1ddd0bff8121556604cd10d33162a817411f5da7a3f639a"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_randcontrol/sd2/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_randcontrol/sd2/probe_results.json",
+   "sha256": "1a56cef513765ab7ea411c6c9409f41291db30a1a4cca0eca4f020c807eb9a1b"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_randcontrol/sd2/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_randcontrol/sd2/scores.npz",
+   "sha256": "08fd6fe45a26b33d9dfd4c926a54fd898c7fe147c859d7db54f29e8efa20eb9f"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_randcontrol/sd3/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_randcontrol/sd3/probe_results.json",
+   "sha256": "41a4a09af92d4cc23c757d37a260b8c77fa5ccff95c9cf6011040e66f2bd532e"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_randcontrol/sd3/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_randcontrol/sd3/scores.npz",
+   "sha256": "02bd1d1ed2a80ff0ae7226eed083f6d56770b817e84273d8b7334e12bc296de7"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_vcbwindow/sall/probe_results.json": {
+   "remote": "/data/results/eval/v1err/probe_ladder_vcbwindow/sall/probe_results.json",
+   "sha256": "a2e4ccac7551d819c2fa10e5c8551dda6c037566a0beb1d9165383b68921082b"
+  },
+  "/private/tmp/claude-501/-Users-raunavmendiratta-transferlearningsophon/7fcf5e46-4297-42d4-83ed-5f152119b398/scratchpad/fix_2026-09-29/v1err_data/probe_ladder_vcbwindow/sall/scores.npz": {
+   "remote": "/data/results/eval/v1err/probe_ladder_vcbwindow/sall/scores.npz",
+   "sha256": "9428023fe3f25399de603d3cb809b3f7f288fa225e3366e047be886b3684256d"
+  }
+ },
+ "jobs": "probe-ladder-v2-v1err-s1..s5 and probe-mass2x2-v1err-s1..s4 (tag mtx-s1.66, one per pod); the random control d1-d3, the V_cb window and the 2x2 at seed index 5 in v1err-batch-a2 (tag mtx-s1.75)",
+ "how": "each file fetched with its sha256 checked against the pod's sha256sum; replicates (B = 1000, seed 20260929) and ratios computed locally with experiments/STATS/paired_errors.py",
+ "commands": [
+  "paired_errors.py probe-replicates --probe-dirs <14 dirs> --committed <dir>=experiments/FIGS/data/<set>_mlp2/<x>.json --out replicates_probes.npz",
+  "paired_errors.py ratios --replicates replicates_probes.npz --out ratios.json"
+ ]
+}
