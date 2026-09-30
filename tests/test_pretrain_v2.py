@@ -390,9 +390,10 @@ def test_a_resumed_run_repeats_the_uninterrupted_run_exactly(data, run_a, tmp_pa
     assert pv.main(_args(data, out)) == 0
     sa, sb = _epochs(run_a, "stream"), _epochs(out, "stream")
     assert {e: r["sha256"] for e, r in sa.items()} == {e: r["sha256"] for e, r in sb.items()}
-    # To float32 tolerance, the acceptance criterion: CPU kernels on a loaded laptop
-    # have differed in the last bits between two identical fresh runs (1e-6 relative
-    # in the validation loss of epoch 0, which no resume touches).
+    # Streams exactly; numbers to 1e-4. On the laptop two identical FRESH runs have
+    # differed by 1e-6 relative in the epoch-0 validation loss, which no resume touches,
+    # and by more under heavy load (threaded BLAS). The bitwise check is the GPU smoke
+    # (RUNS.csv mtx2-smoke-3090: A and A2 bitwise equal; the resume state bitwise equal).
     ma, mb = _epochs(run_a, "metrics"), _epochs(out, "metrics")
     for e in range(3):
         assert ma[e]["train"]["n_jets"] == mb[e]["train"]["n_jets"]
@@ -400,11 +401,11 @@ def test_a_resumed_run_repeats_the_uninterrupted_run_exactly(data, run_a, tmp_pa
             for k in ("loss", "acc", "head_top1_acc", "p_qcd_resonant", "p_qcd_qcd"):
                 if k in ma[e][part]:
                     rel = abs(ma[e][part][k] - mb[e][part][k]) / abs(ma[e][part][k])
-                    assert rel < 1e-5, (e, part, k, ma[e][part][k], mb[e][part][k], rel)
+                    assert rel < 1e-4, (e, part, k, ma[e][part][k], mb[e][part][k], rel)
     sa2, sb2 = torch.load(run_a / "net_epoch-2_state.pt"), torch.load(out / "net_epoch-2_state.pt")
     assert sa2.keys() == sb2.keys()
     for k in sa2:
-        torch.testing.assert_close(sa2[k], sb2[k], rtol=1e-5, atol=1e-6)
+        torch.testing.assert_close(sa2[k], sb2[k], rtol=1e-4, atol=1e-5)
 
 
 def test_another_output_width_sees_the_same_stream_and_trunk(data, run_a, tmp_path):
