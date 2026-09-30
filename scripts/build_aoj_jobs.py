@@ -113,7 +113,7 @@ RESCORE_NEEDED_FLAGS = {"experiments/AOJ/discriminants.py": "prong_only",
                         "experiments/AOJ/sim_scores.py": "scored on other jets"}
 # The analysis job clones a later tag: realdata_checks.py is finished after the GPU
 # runs were launched, and it reads only what they write.
-CHECKS_PIN = "mtx-s1.70"
+CHECKS_PIN = "mtx-s1.73"
 CHECKS_NEEDED_FLAGS = {"experiments/AOJ/realdata_checks.py": "--first-run-merged",
                        "experiments/AOJ/peak_fit.py": "data_efficiency_sidebands",
                        "experiments/FIGS/data/aoj_full_v1/fit_v4/results.json": "shape_variations"}
