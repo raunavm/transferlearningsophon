@@ -473,7 +473,8 @@ def test_the_injection_read_back_mounts_the_volume_read_only_and_writes_nothing(
     assert pod["volumes"][0]["persistentVolumeClaim"]["readOnly"] is True
     assert all(m.get("readOnly") for m in pod["containers"][0]["volumeMounts"])
     s = _script(SPECS[path])
-    assert f'cd "{B.INJECTION_ROOT}"' in s and "toys_*.jsonl" in s and ">" not in s.replace("2>", "")
+    assert f'cp "{B.INJECTION_ROOT}"/toys_*.jsonl /tmp/snap/' in s and "toys_*.jsonl" in s
+    assert s.index("cp ") < s.index("tar czf") and ">" not in s.replace("2>", "")
 
 
 def test_the_v6_fit_is_the_v5_fit_job_with_its_script_and_output_changed():

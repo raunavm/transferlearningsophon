@@ -17,7 +17,9 @@ spec:
         args:
         - |
           set -euo pipefail
-          cd "/data/results/aoj/injection_v1"
+          mkdir -p /tmp/snap
+          cp "/data/results/aoj/injection_v1"/toys_*.jsonl /tmp/snap/
+          cd /tmp/snap
           echo "BEGIN-TAR"
           tar czf - toys_*.jsonl | base64 -w 0
           echo

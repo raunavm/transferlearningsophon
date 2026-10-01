@@ -1435,7 +1435,10 @@ def render_read_injection() -> str:
             ("Prints the\n  # checks' JSON files", "Prints the\n  # toys' JSON lines"),
             ("name: aoj-read-checks-v1-raunav", "name: aoj-read-injection-v1-raunav"),
             (f'          [ -f "{CHECKS_ROOT}/prong_test.json" ] || {{ echo "FATAL: the checks have not finished"; exit 1; }}\n', ""),
-            (f'cd "{CHECKS_ROOT}"', f'cd "{INJECTION_ROOT}"'),
+            # the files grow while the toys run, and tar fails on a file that changes as it is
+            # read (the second read-back, 2026-10-01): a snapshot in the pod's own disk first
+            (f'cd "{CHECKS_ROOT}"', f'mkdir -p /tmp/snap\n          cp "{INJECTION_ROOT}"/toys_*.jsonl /tmp/snap/\n'
+                                    '          cd /tmp/snap'),
             ("tar czf - *.json | base64 -w 0", "tar czf - toys_*.jsonl | base64 -w 0")]
     for a, b in subs:
         if t.count(a) != 1:
