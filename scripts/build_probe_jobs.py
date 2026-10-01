@@ -670,22 +670,61 @@ MASS2_NODE = "cph-dgx-node6.humboldt.edu"
 MASS2_CHECK_PIN = "mtx-s1.85"
 
 
+def _node_term(text: str, key: str, op: str, value: str) -> str:
+    """`text` with one more required node-affinity term beside the region's."""
+    anchor = '                values: ["us-west"]\n'
+    if text.count(anchor) != 1:
+        raise SystemExit("FATAL: no single region term to add a node term beside")
+    return text.replace(anchor, anchor + f"              - key: {key}\n                operator: {op}\n"
+                                         f'                values: ["{value}"]\n')
+
+
+def _massres_seed1(name: str, pin: str, out: str, mem: str = "32Gi", cpu: str = "6") -> str:
+    specs = _field(_BASE["job-massres-s1-raunav.yaml"], r"^          for spec in (.+); do$")
+    return (ROBUST_HEAD.format(name=name, pin=pin, backoff=V1ERR_BACKOFF, threads=1)
+            + RUN_MASSRES.format(feat=FEAT, obs=MASSRES_OBS) + '          P=""\n'
+            + f'          run_massres "{specs}" {V1ERR_ROOT}/{out}/s1 &\n'
+            + '          P="$P $!"\n          for p in ${P}; do wait ${p} || halt; done\n'
+            + '          date -u +"end %Y-%m-%dT%H:%M:%SZ"\n' + ROBUST_TAIL.format(mem=mem, cpu=cpu))
+
+
+_BASE: dict[str, str] = {}
+
+
 def v1err_mass_pinned_check(base: dict[str, str]) -> tuple[str, str]:
     """Seed 1 of batch B2 again, away from B2's node."""
+    _BASE.update(base)
     name = "v1err-mass-pinned-check-raunav"
-    specs = _field(base["job-massres-s1-raunav.yaml"], r"^          for spec in (.+); do$")
-    text = (ROBUST_HEAD.format(name=name, pin=MASS2_CHECK_PIN, backoff=V1ERR_BACKOFF, threads=1)
-            + RUN_MASSRES.format(feat=FEAT, obs=MASSRES_OBS) + '          P=""\n'
-            + f'          run_massres "{specs}" {V1ERR_ROOT}/mass_resolution_pinned_check/s1 &\n'
-            + '          P="$P $!"\n          for p in ${P}; do wait ${p} || halt; done\n'
-            + '          date -u +"end %Y-%m-%dT%H:%M:%SZ"\n')
-    anchor = '                values: ["us-west"]\n'
-    tail = ROBUST_TAIL.format(mem="32Gi", cpu="6")
-    if tail.count(anchor) != 1:
-        raise SystemExit("FATAL: ROBUST_TAIL has no single region term")
-    return name, text + tail.replace(anchor, anchor + "              - key: kubernetes.io/hostname\n"
-                                     "                operator: NotIn\n"
-                                     f'                values: ["{MASS2_NODE}"]\n')
+    return name, _node_term(_massres_seed1(name, MASS2_CHECK_PIN, "mass_resolution_pinned_check"),
+                            "kubernetes.io/hostname", "NotIn", MASS2_NODE)
+
+
+# Batch B3: B2 with the CPU code path fixed as well (latent_scale_probe's
+# CPU_REPRODUCIBLE_ENV), on Intel nodes, into mass_resolution_cpufixed/; its seed 1
+# is repeated on an AMD node (v1err-mass-cpufixed-check) and must agree bit for bit.
+# The pinned check showed a fixed thread count alone does not: Intel B2 and AMD
+# check differed by up to 1.0e-3.
+V1ERR_PIN_MASS3 = "mtx-s1.97"
+VENDOR = "feature.node.kubernetes.io/cpu-model.vendor_id"
+
+
+def v1err_batch_b3(base: dict[str, str]) -> tuple[str, str]:
+    _, text = v1err_batch_b2(base)
+    name = "v1err-batch-b3-raunav"
+    for old, new in (("v1err-batch-b2-raunav", name),
+                     (f'--branch "{V1ERR_PIN_MASS2}"', f'--branch "{V1ERR_PIN_MASS3}"'),
+                     (f"{V1ERR_ROOT}/mass_resolution_pinned/", f"{V1ERR_ROOT}/mass_resolution_cpufixed/")):
+        if old not in text:
+            raise SystemExit(f"FATAL: batch B2 has no {old!r}")
+        text = text.replace(old, new)
+    return name, _node_term(text, VENDOR, "In", "Intel")
+
+
+def v1err_mass_cpufixed_check(base: dict[str, str]) -> tuple[str, str]:
+    _BASE.update(base)
+    name = "v1err-mass-cpufixed-check-raunav"
+    return name, _node_term(_massres_seed1(name, V1ERR_PIN_MASS3, "mass_resolution_cpufixed_check"),
+                            VENDOR, "In", "AMD")
 
 
 def _load_builder(name: str):
@@ -708,7 +747,8 @@ def build_v1err(base: dict[str, str]) -> dict[str, str]:
     for seed in SEEDS:
         name, text = v1err_curve_spec(seed)
         out[f"job-{name}.yaml"] = text
-    for fn in (v1err_batch_a, v1err_batch_a2, v1err_batch_b, v1err_batch_b2, v1err_mass_pinned_check):
+    for fn in (v1err_batch_a, v1err_batch_a2, v1err_batch_b, v1err_batch_b2, v1err_mass_pinned_check,
+               v1err_batch_b3, v1err_mass_cpufixed_check):
         name, text = fn(base)
         out[f"job-{name}.yaml"] = text
     bx = _load_builder("build_extract_jobs")
@@ -792,6 +832,9 @@ def main() -> int:
     verify_pin(MLP2_PIN, False, MLP2_NEEDED)
     verify_pin(V1ERR_PIN, args.pin_not_yet_tagged, V1ERR_NEEDED)
     verify_pin(V1ERR_PIN_MASS2, args.pin_not_yet_tagged, V1ERR_MASS2_NEEDED)
+    verify_pin(V1ERR_PIN_MASS3, args.pin_not_yet_tagged,
+               {"experiments/EVAL/latent_scale_probe.py": "CPU_REPRODUCIBLE_ENV",
+                "experiments/EVAL/mass_resolution.py": "cpu_reproducible()"})
     bad = 0
     jobs = build()
     jobs.update(build_v1err(jobs))

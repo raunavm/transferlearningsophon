@@ -143,3 +143,26 @@ def test_the_mlp_fits_at_a_pinned_thread_count_and_restores_the_callers(monkeypa
     finally:
         torch.set_num_threads(was)
     assert seen == [lsp.MLP_THREADS, lsp.MLP_THREADS]
+
+
+def test_the_mlp_entry_points_fix_the_cpu_code_path_before_torch_loads(monkeypatch):
+    """At a fixed thread count an Intel Broadwell and an AMD EPYC still gave the mass
+    MLP different sigma_eff (MKL's kernels follow the CPU). The settings that fix one
+    code path are read when torch loads MKL: mass_resolution.py must not have torch
+    loaded when its main() sets them, and the fit records what was in force."""
+    import subprocess
+    code = ("import sys; sys.path.insert(0, %r); import experiments.EVAL.mass_resolution as M; "
+            "print('torch' in sys.modules)" % str(ROOT))
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=ROOT)
+    assert out.stdout.strip() == "False", out.stderr
+    for k in lsp.CPU_REPRODUCIBLE_ENV:
+        monkeypatch.delenv(k, raising=False)
+    rec = lsp.cpu_reproducible()
+    assert {k: rec[k] for k in lsp.CPU_REPRODUCIBLE_ENV} == {"MKL_CBWR": "COMPATIBLE",
+                                                             "ATEN_CPU_CAPABILITY": "avx2"}
+    assert all(__import__("os").environ[k] == v for k, v in lsp.CPU_REPRODUCIBLE_ENV.items())
+    assert rec["set_before_torch"] == ("torch" not in sys.modules)
+    src = (ROOT / "experiments" / "EVAL" / "mass_resolution.py").read_text()
+    main = src[src.index("def main("):]
+    assert main.index("cpu_reproducible()") < main.index("probe_arm(")      # the MLP runs in probe_arm
+    assert '"cpu_numerics": cpu' in src

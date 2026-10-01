@@ -368,9 +368,9 @@ def _v1err():
 
 def test_v1err_jobs_parse_carry_the_retry_policy_and_are_committed():
     base, jobs = _v1err()
-    # the 9 probe reruns applied one per pod, 5 label-recovery curves, batches A, A2, B and
-    # B2, and B2's check on another node
-    assert len(jobs) == 9 + 5 + 5
+    # the 9 probe reruns applied one per pod, 5 label-recovery curves, batches A, A2, B,
+    # B2 and B3, and the checks of B2 (another node) and of B3 (another CPU vendor)
+    assert len(jobs) == 9 + 5 + 7
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"] and fname == f"job-{d['metadata']['name']}.yaml"
@@ -382,6 +382,7 @@ def test_v1err_jobs_parse_carry_the_retry_policy_and_are_committed():
         pin = (bp.V1ERR_PIN3 if "batch-a2" in fname
                else bp.V1ERR_PIN_MASS2 if "batch-b2" in fname
                else bp.MASS2_CHECK_PIN if "mass-pinned-check" in fname
+               else bp.V1ERR_PIN_MASS3 if "batch-b3" in fname or "cpufixed-check" in fname
                else bp.V1ERR_PIN2 if any(k in fname for k in ("labelrec-curve", "batch-a"))
                else bp.V1ERR_PIN)
         assert f'--branch "{pin}"' in text and "|| halt" in text
@@ -462,6 +463,16 @@ def test_batch_b_runs_the_five_mass_reruns():
     terms = d["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
         "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
     assert {"key": "kubernetes.io/hostname", "operator": "NotIn", "values": [bp.MASS2_NODE]} in terms
+    # B3: B2 at the CPU-path tag, on Intel; its check: seed 1 on AMD
+    b3 = jobs["job-v1err-batch-b3-raunav.yaml"]
+    assert b3.count("/data/results/eval/v1err/mass_resolution_cpufixed/s") == 5
+    k3 = jobs["job-v1err-mass-cpufixed-check-raunav.yaml"]
+    assert k3.count('run_massres "') == 1 and "mass_resolution_cpufixed_check/s1 &" in k3
+    for text, vendor in ((b3, "Intel"), (k3, "AMD")):
+        t3 = yaml.safe_load(text)["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
+            "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
+        assert {"key": bp.VENDOR, "operator": "In", "values": [vendor]} in t3
+        assert f'--branch "{bp.V1ERR_PIN_MASS3}"' in text and "df --output=pcent /data" in text
 
 
 def test_batch_a2_runs_the_bootstrap_resumably_beside_the_probe_reruns():
