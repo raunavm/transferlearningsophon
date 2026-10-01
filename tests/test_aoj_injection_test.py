@@ -1,6 +1,7 @@
 """experiments/AOJ/injection_test.py: the injection test's bins must be the bins the
 checks and the fit build, from the jets the fit saw, or nothing is written."""
 import importlib.util
+import json
 import pathlib
 
 import numpy as np
@@ -181,3 +182,43 @@ def test_an_ensemble_is_one_task_per_toy_and_reads_out_one_row_per_score():
     g = IT.summarise([rec])[0]
     assert g["variant"] == "ensemble" and g["n"] == 2 and g["ratio"]["mean"] == pytest.approx(1.0)
     assert g["pull"]["mean"] == pytest.approx(0.0) and set(g["per_score"]) == {"a", "b"}
+
+
+# ---- what the toys found (aoj_injection_v1/toys, summary.json) ----
+INJ = ROOT / "experiments/FIGS/data/aoj_injection_v1"
+
+
+@pytest.fixture(scope="module")
+def summary():
+    return {(g["region"], g["mode"], g["size"], g["variant"]): g
+            for g in json.loads((INJ / "summary.json").read_text())["groups"]}
+
+
+def test_the_committed_summary_re_derives_from_the_committed_toys():
+    records = [json.loads(ln) for p in sorted((INJ / "toys").glob("*.jsonl")) for ln in p.read_text().splitlines()]
+    stored = json.loads((INJ / "summary.json").read_text())
+    assert stored["n_records"] == len(records) and stored["groups"] == json.loads(json.dumps(IT.summarise(records)))
+
+
+@pytest.mark.parametrize("size", [1000.0, 2000.0, 4000.0])
+def test_the_pooled_shape_procedure_recovers_an_injected_signal_without_bias(summary, size):
+    """fit_v6's procedure on toys of every pretrained score: pull mean consistent with zero,
+    width about one, the recovered fraction one -- per score toys, and whole ensembles in
+    which the pooled shape is re-derived from the toys themselves."""
+    g = summary[("top", "pooled", size, "fixed_ftest")]
+    assert g["n"] >= 1200
+    assert abs(g["pull"]["mean"]) < 3 * g["pull"]["se"] and 0.9 < g["pull"]["sd"] < 1.15
+    assert abs(g["ratio"]["mean"] - 1) < 3 * g["ratio"]["se"]
+    worst = max(abs(s["pull"]["mean"]) / s["pull"]["se"] for s in g["per_score"].values())
+    assert worst < 3.5 and len(g["per_score"]) == 31
+    e = summary[("top", "ensemble", size, "ensemble")]
+    assert abs(e["pull"]["mean"]) < 3 * e["ensemble_se"]["pull"] and 0.9 < e["pull"]["sd"] < 1.15
+    assert abs(e["ratio"]["mean"] - 1) < 0.02
+
+
+def test_floating_each_scores_shape_was_what_widened_the_pulls(summary):
+    """The cause, as measured: at 1,000 jets the procedure with each score's shape floating
+    (fit_v4's) had pulls twice too wide; at the generator's shape they were not."""
+    floated = summary[("top", "bootstrap", 1000.0, "full")]
+    fixed = summary[("top", "bootstrap", 1000.0, "fixed_ftest")]
+    assert floated["pull"]["sd"] > 1.7 and 0.85 < fixed["pull"]["sd"] < 1.15

@@ -488,6 +488,7 @@ def summarise(records):
             sym, asym = _pull(f["y"], target, f)
             g = groups.setdefault((r["region"], r["mode"], r["size"], v), dict(rows=[], per={}))
             row = dict(ratio=(f["y"] - y0) / r["size"], pull=sym, pull_asym=asym, at_bound=f.get("at_bound"),
+                       ensemble=r["toy"] if r["mode"] == "ensemble" else None,
                        order_moved=f["order"] != r["truth_order"], width=f.get("width"), mean=f.get("mean"),
                        width_ratio=f["width"] / r["truth_width"] if f.get("width") else None)
             g["rows"].append(row)
@@ -502,6 +503,10 @@ def summarise(records):
             width_ratio=_stats(col("width_ratio")),
             at_bound=float(np.mean([bool(x) for x in col("at_bound")])) if any(x is not None for x in col("at_bound")) else None,
             order_moved=float(np.mean(col("order_moved"))),
+            # the scores of one ensemble share its pooled shape: the error of a mean is over ensembles
+            ensemble_se=(None if mode != "ensemble" else {
+                k: float(np.std(m, ddof=1) / np.sqrt(len(m))) for k in ("ratio", "pull")
+                for m in [[np.mean([x[k] for x in rows if x["ensemble"] == e]) for e in sorted({x["ensemble"] for x in rows})]]}),
             per_score={n: dict(ratio=_stats(col("ratio", rs)), pull=_stats(col("pull", rs))) for n, rs in sorted(g["per"].items())}))
     return out
 
