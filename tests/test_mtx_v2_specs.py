@@ -229,6 +229,13 @@ def test_every_new_config_gets_a_checked_make_weight_pass():
     assert grid_cfgs <= b.V1_SIDECAR_CONFIGS | {c for c, _ in new}
 
 
+def test_labelled_make_weight_jobs_get_their_own_names():
+    plain, labelled = b.v2_makeweight_specs(TAG), b.v2_makeweight_specs(TAG, label="-v3")
+    assert sorted(labelled) == [f.replace("mtx2-makeweight-", "mtx2-makeweight-v3-") for f in sorted(plain)]
+    for fn, spec in labelled.items():
+        assert yaml.safe_load(spec)["metadata"]["name"] == fn[len("job-"):-len(".yaml")]
+
+
 def test_a_labelled_dry_run_gets_its_own_name_and_output():
     name, spec = b.v2_dryrun_spec(TAG, False, "s170")
     assert name == "mtx2-loader-dryrun-s170-raunav"

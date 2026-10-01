@@ -1017,7 +1017,7 @@ def v2_new_configs() -> list:
     return out
 
 
-def v2_makeweight_specs(tag: str, pods: int = 2) -> dict:
+def v2_makeweight_specs(tag: str, pods: int = 2, label: str = "") -> dict:
     """CPU jobs running weaver's make_weight (the v1 recipe: weaver --print over the
     1675 train+val files) for each new config, copying each sidecar out as soon as
     it exists, then checking its histograms against HIST_SHA256."""
@@ -1069,7 +1069,7 @@ PY
 }}
 {runs}"""
         body = "\n".join(("          " + ln) if ln else "" for ln in script.splitlines())
-        name = f"mtx2-makeweight-{i + 1}-raunav"
+        name = f"mtx2-makeweight{label}-{i + 1}-raunav"
         out[f"job-{name}.yaml"] = f"""apiVersion: batch/v1
 kind: Job
 metadata:
@@ -1218,6 +1218,10 @@ def main() -> int:
     ap.add_argument("--arm", default="R16_Q1", help="--v2-dryrun: the grid arm")
     ap.add_argument("--epochs", type=int, default=None, help="--v2-dryrun: epochs")
     ap.add_argument("--label", default="", help="--v2-dryrun: names the job and output")
+    ap.add_argument("--v2-makeweight", metavar="DIR", default=None,
+                    help="write the make_weight specs for every grid config without a v1 sidecar "
+                         "into DIR (a config whose sidecar exists is only re-checked); --label "
+                         "names the jobs, since earlier make_weight jobs keep their names")
     ap.add_argument("--v2-smoke", metavar="DIR", default=None,
                     help="write the v2 smoke, GPU-numerics and loader dry-run specs into DIR")
     ap.add_argument("--deterministic", action="store_true", help="--v2-smoke: the -det variants")
@@ -1235,6 +1239,16 @@ def main() -> int:
                 specs[f"job-{n}.yaml"] = sp
             specs.update(v2_makeweight_specs(args.tag))
         for fn, spec in specs.items():
+            (d / fn).write_text(spec)
+            print(d / fn)
+        return 0
+
+    if args.v2_makeweight:
+        if not args.tag:
+            ap.error("--v2-makeweight needs --tag")
+        d = pathlib.Path(args.v2_makeweight)
+        d.mkdir(parents=True, exist_ok=True)
+        for fn, spec in v2_makeweight_specs(args.tag, label=args.label).items():
             (d / fn).write_text(spec)
             print(d / fn)
         return 0
