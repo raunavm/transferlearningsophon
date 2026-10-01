@@ -15,7 +15,7 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
-from test_spec_pins import _launched_stems  # noqa: E402
+from test_spec_pins import _exemption, _names  # noqa: E402
 K8S = ROOT / "experiments" / "EVAL" / "k8s"
 GUARD = re.compile(r"df --output=pcent /data\b")
 WRITE = re.compile(r"mkdir|\btee\b|>>|(?<![<>0-9&])>(?![&=])|python3 +(?:experiments|scripts)/"
@@ -52,11 +52,11 @@ def guarded_before_first_write(text: str) -> bool | None:
 
 
 def _launched(name: str) -> bool:
-    """A run record names the spec: test_spec_pins' rule (run_id or manifest_path,
-    a run_id versioning the spec name as <stem>-v.. or <stem>-s..)."""
-    stem = name.removeprefix("job-").removesuffix("-raunav.yaml")
-    return any(r == stem or r.startswith(stem + "-v") or r.startswith(stem + "-s")
-               for r in _launched_stems())
+    """A run record is the spec's own, by test_spec_pins' rule (_exemption): a
+    sibling spec's launch does not count, and neither does a retirement."""
+    path = K8S / name
+    why = _exemption(_names(path, path.read_text()))
+    return bool(why) and why.startswith("launched:")
 
 
 def test_every_spec_that_writes_to_data_checks_space_first():
