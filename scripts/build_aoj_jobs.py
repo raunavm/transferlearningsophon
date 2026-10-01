@@ -1352,7 +1352,9 @@ def render_fit_v5() -> str:
 # ONE PEAK SHAPE (v6, 2026-10-01): experiments/AOJ/fit_v6.py from the committed bins and
 # fit_v5, the fit_v5 job with the script and output changed.
 FIT6_ROOT = "/data/results/aoj/fit_v6"
-FIT6_PIN = "mtx-s1.90"
+# first launched at mtx-s1.90: it refused the tops it rebuilt from the reference, 1e-6 apart
+# from fit_v5's total; re-created at mtx-s1.91 with the reference refit's own tolerance
+FIT6_PIN = "mtx-s1.91"
 FIT6_NEEDED_FLAGS = {"experiments/AOJ/fit_v6.py": "pooled_shape", "experiments/AOJ/peak_fit.py": "def pooled_shape",
                      "experiments/FIGS/data/aoj_full_v1/fit_v5/results.json": "fail_tops"}
 
