@@ -1,0 +1,97 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Reruns ONLY the analyse step of experiments/DIAG/head_epoch_diag.py, on the
+  # per-jet arrays that job-diag-head-epochs-raunav.yaml (ledger row
+  # diag-head-epochs-v1) left in /data/results/eval/head_epoch_diag/. No
+  # inference, no GPU. What changed since that run (review of 2026-10-01): the
+  # epochs are compared with a paired bootstrap (every epoch scored on the same
+  # resampled jets) for the output layer and the probe; defective heads are
+  # flagged under the rules stated at DEFECT_RULES, with the counts and their
+  # range over the rules; the stream class-mix result is a field of its own.
+  # Runtime: the paired bootstraps take about 2 min per run on one thread
+  # (review measurement per 1,000 replicates: 46 s head top-1, 49 s P(QCD),
+  # 31 s probe), plus the probe refits, so about 20-30 min for the 8 runs.
+  # Output: a NEW directory, /data/results/eval/head_epoch_diag_analyse_v2/. The
+  # arrays directory and its head_epoch_diag.json are only read; the job refuses
+  # to overwrite its own JSON if it already exists.
+  # REPO_REF is the placeholder TAG_PENDING until the coordinator sets the tag
+  # that carries these fixes; with the placeholder the job exits 42 at once.
+  # Retry policy of scripts/build_ft_jobs.py ("retries that survive a flaky
+  # cluster"): evictions ignored, exit 42 fails the job at once, and a second
+  # failed attempt exits 42.
+  name: diag-head-epochs-analyse-v2-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 20
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        env:
+        - name: REPO_REF
+          value: "mtx-s1.94"
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        - name: POD_NAME
+          valueFrom: { fieldRef: { fieldPath: metadata.name } }
+        args:
+        - |
+          set -uo pipefail
+          HALT=42
+          [ "${REPO_REF}" != "TAG_PENDING" ] || { echo "FATAL: REPO_REF is still the placeholder"; exit ${HALT}; }
+          ARRAYS=/data/results/eval/head_epoch_diag
+          OUT=/data/results/eval/head_epoch_diag_analyse_v2
+          JSON=${OUT}/head_epoch_diag_v2.json
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          echo "PVC used: ${USED}%"
+          [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit ${HALT}; }
+          mkdir -p ${OUT}
+          FAILS=${OUT}/FAILED_ATTEMPTS
+          fail () { echo "rc=$1 pod=${POD_NAME} node=${NODE_NAME} $(date -u +%FT%TZ)" >> ${FAILS}
+                     [ "$(wc -l < ${FAILS})" -ge 2 ] && { echo "FATAL: two failed attempts: $(cat ${FAILS})"; exit ${HALT}; }
+                     exit $1; }
+          [ -f ${FAILS} ] && [ "$(wc -l < ${FAILS})" -ge 2 ] && { echo "FATAL: two failed attempts already: $(cat ${FAILS})"; exit ${HALT}; }
+          [ -e ${JSON} ] && { echo "FATAL: ${JSON} exists; not overwritten"; exit ${HALT}; }
+          N_DONE=$(ls ${ARRAYS}/*/DONE 2>/dev/null | wc -l)
+          [ "${N_DONE}" -eq 8 ] || { echo "FATAL: ${N_DONE} finished runs in ${ARRAYS}, expected 8"; exit ${HALT}; }
+          git clone --depth 1 --branch "${REPO_REF}" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon || fail 1
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+          python3 experiments/DIAG/head_epoch_diag.py analyse \
+            --out ${ARRAYS} --json ${JSON} || fail $?
+          sha256sum ${JSON} ${ARRAYS}/head_epoch_diag.json
+          echo "HEAD EPOCH DIAG ANALYSE V2 COMPLETE"
+        resources:
+          requests: { memory: "8Gi", cpu: "2", ephemeral-storage: "5Gi" }
+          limits:   { memory: "8Gi", cpu: "2", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org", "ry-gpu-01.sdsc.optiputer.net"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
