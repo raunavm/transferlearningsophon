@@ -89,6 +89,7 @@ def share_profile(m):
 
 RAND_V2 = ROOT / "configs" / "labelmaps" / "rand_label_map.v2.csv"
 SEL = json.loads((ROOT / "configs" / "labelmaps" / "rand_v2_selection.json").read_text())
+REALISED_COUNTS = v2.realised_counts()
 FLAV = ROOT / "configs" / "labelmaps" / "flavour_pair_map.v2.csv"
 RAND_ARMS = [f"RAND2_p{d}" for d in range(1, 6)]
 
@@ -189,7 +190,7 @@ def test_committed_outputs_are_the_builders_own(tmp_path):
     configs it would write must equal the committed ones."""
     assert v2.main(["--check-only"]) == 0
     base = BASE.read_text()
-    f0, f1, f1r, _ = v2.build_flavour_pair(ROWS, UNITS)
+    f0, f1, f1r, _ = v2.build_flavour_pair(ROWS, UNITS, REALISED_COUNTS)
     lam = json.loads(v2.MASS_JSON.read_text())["lambda_m"]
     for path, text in v2.build_configs(base, ROWS, f0, f1, f1r, lam).items():
         assert path.read_text() == text, path.name
@@ -513,9 +514,11 @@ def test_f1_takes_the_move_back_with_the_fewest_cross_orbit_changes():
 
 
 def test_f1r_is_f1_with_a_random_b_unaligned_cut():
-    """F1r: the same orbit, the same share, the same move back as F1, but the
-    cut is a seeded random 11 of the 22 four-prong hadronic classes with 5 or
-    6 b-containing ones, and X->YY->bbqq stays with X->YY->ccqq."""
+    """F1r: the same orbit, the same nominal share, the same move back as F1,
+    but the cut is a seeded random 11 of the 22 four-prong hadronic classes
+    with 5 or 6 b-containing ones, X->YY->bbqq stays with X->YY->ccqq, and
+    every group's realised share is within 1% of F1's (the 22 classes share
+    one nominal share, but their realised shares are 3x apart)."""
     import random
     f0, f1, f1r = (EXPECTED_MAP[a] for a in ("FLAV_F0", "FLAV_F1", "FLAV_F1R"))
     rec = json.loads(v2.FLAV_JSON.read_text())
@@ -524,15 +527,29 @@ def test_f1r_is_f1_with_a_random_b_unaligned_cut():
     q4 = sorted(ORB[v2.SPLIT_ORBIT])
     cut = sorted(idx[c] for c in r["classes_moved"])
     # replay the sampler
+    back = {n for o in rec["orbits_moved_B_to_A"] for n in ORB[o]}
+
+    def realised_dev(c):
+        m = v2.moved(f0, c, rec["group_B"], rec["group_A"], rec["orbits_moved_B_to_A"], ORB)
+        got, ref = v2.group_sums(m, REALISED_COUNTS), v2.group_sums(f1, REALISED_COUNTS)
+        return max(abs(got[g] / ref[g] - 1) for g in ref)
+
     rng = random.Random(v2.F1R_SEED)
     for k in range(r["samples_drawn"]):
         pick = sorted(rng.sample(q4, 11))
         ok = (sum(v2.has_b(NAMES[n]) for n in pick) in (5, 6)
-              and (idx["label_X_YY_bbqq"] in pick) == (idx["label_X_YY_ccqq"] in pick))
+              and (idx["label_X_YY_bbqq"] in pick) == (idx["label_X_YY_ccqq"] in pick)
+              and realised_dev(pick) <= 0.01)
         assert ok == (k == r["samples_drawn"] - 1)
     assert pick == cut and r["b_classes_moved"] in (5, 6)
+    assert v2.F1R_TOL == (1, 100) and r["realised_tolerance_vs_F1"] == [1, 100]
+    dev = r["largest_realised_deviation"]
+    assert dev["F1R_vs_F1"] == round(realised_dev(cut), 6) <= 0.01
+    assert dev["F1_vs_17_class"] == round(v2.largest_dev(f1, R16, REALISED_COUNTS), 6) < 0.01
+    assert dev["F0_vs_17_class"] == round(v2.largest_dev(f0, R16, REALISED_COUNTS), 6) < 0.01
+    assert dev["F1R_vs_17_class"] == round(v2.largest_dev(f1r, R16, REALISED_COUNTS), 6) < 0.02
+    assert r["realised_shares"]["sha256"] == hashlib.sha256(v2.REALISED.read_bytes()).hexdigest()
     # F1r = F0 + the cut to B + F1's move back to A
-    back = {n for o in rec["orbits_moved_B_to_A"] for n in ORB[o]}
     assert f1r == v2.moved(f0, cut, rec["group_B"], rec["group_A"],
                            rec["orbits_moved_B_to_A"], ORB)
     assert {n for n in f0 if f0[n] != f1r[n]} == set(cut) | back

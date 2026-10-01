@@ -166,12 +166,18 @@ FLAV_SEED = 1
 FLAV_TRIALS = 64
 SPLIT_ORBIT = "X_YY_QQQQ"
 # F1r (PRESPEC A10 corrections, PI 2026-10-01): random.Random(F1R_SEED).sample(
-# sorted SPLIT_ORBIT, 11) repeated until 5 or 6 of the 11 contain a b quark and
-# F1R_TOGETHER stay in one group, so the four-prong b vs c probe is a
-# manipulation check (F1 splits it, F1r does not).
+# SPLIT_ORBIT sorted by jet_label, 11) repeated until 5 or 6 of the 11 contain a
+# b quark, F1R_TOGETHER stay in one group (so the four-prong b vs c probe is a
+# manipulation check: F1 splits it, F1r does not), and every group's REALISED
+# share is within F1R_TOL of F1's. The 22 classes carry one nominal share but
+# realised shares 3x apart, so without the last condition the first cut moved
+# 11.1% of the stream against F1's 9.3% (groups A and B off F1 by -8% and +16%).
+# F1R_TOL holds F1r to F1 as closely as F0 and F1 hold to the 17-class groups
+# (0.6%), so F1 - F1r differs in the cut's alignment with b content only.
 F1R_SEED = 20261001
 F1R_B_MOVED = (5, 6)
 F1R_TOGETHER = ("label_X_YY_bbqq", "label_X_YY_ccqq")
+F1R_TOL = (1, 100)    # |realised / F1's realised - 1| <= 1/100, every group
 
 # The v1 mass runs the lambda is matched on (under /data/results/mtx).
 MASS_RUNS = {"L162": [f"mtx-l162mass-s{i}" for i in range(1, 6)],
@@ -388,6 +394,12 @@ def rule3(mapping: dict[int, int], counts, tgt: dict[int, int]) -> tuple[bool, f
 def realised_ratios(mapping: dict[int, int], counts, tgt: dict[int, int]) -> list[float]:
     c, t = group_sums(mapping, counts), group_sums(tgt, counts)
     return [round(c[g] / t[g], 6) for g in sorted(t)]
+
+
+def largest_dev(mapping: dict[int, int], ref: dict[int, int], counts) -> float:
+    """Largest |realised share of group g / ref's realised share of g - 1|."""
+    c, r = group_sums(mapping, counts), group_sums(ref, counts)
+    return max(abs(c[g] / r[g] - 1) for g in r)
 
 
 # ---------------------------------------- random partitions: the pool
@@ -626,23 +638,29 @@ def pairs_changed(m0, m1, orbit_of) -> dict[str, int]:
     return {"native_pairs": tot, "cross_orbit": tot - same, "same_orbit": same}
 
 
-def f1r_cut(orb, names, k: int) -> tuple[list[int], int]:
-    """F1r's cut: random.Random(F1R_SEED).sample(sorted SPLIT_ORBIT, k) until 5
-    or 6 of it contain a b quark and F1R_TOGETHER are both in it or both out.
-    Returns the cut and the number of samples drawn."""
+def f1r_cut(orb, names, k: int, f1r_of, f1, counts) -> tuple[list[int], int, float]:
+    """F1r's cut: random.Random(F1R_SEED).sample(SPLIT_ORBIT sorted by jet_label,
+    k) until 5 or 6 of it contain a b quark, F1R_TOGETHER are both in it or both
+    out, and every group of the map f1r_of(cut) has a realised share within
+    F1R_TOL of F1's. Returns the cut, the number of samples drawn and the
+    largest |realised / F1's realised - 1|."""
     q4 = sorted(orb[SPLIT_ORBIT])
     idx = {s: n for n, s in names.items()}
     together = [idx[s] for s in F1R_TOGETHER]
+    ref = group_sums(f1, counts)
+    num, den = F1R_TOL
     rng = random.Random(F1R_SEED)
     for n in range(1, MAX_SAMPLES + 1):
         pick = sorted(rng.sample(q4, k))
         if (sum(has_b(names[x]) for x in pick) in F1R_B_MOVED
                 and len({x in pick for x in together}) == 1):
-            return pick, n
+            got = group_sums(f1r_of(pick), counts)
+            if all(den * abs(got[g] - ref[g]) <= num * ref[g] for g in ref):
+                return pick, n, max(abs(got[g] / ref[g] - 1) for g in ref)
     raise SystemExit(f"FATAL: no F1r cut in {MAX_SAMPLES} samples")
 
 
-def build_flavour_pair(rows, units):
+def build_flavour_pair(rows, units, realised):
     names = names_of(rows)
     tgt = column(rows, TARGET)
     orb = orbits(names)
@@ -689,7 +707,8 @@ def build_flavour_pair(rows, units):
                                          o["orbits_moved_B_to_A"], o["group_B"]))
     b_blk, t_orbs = chosen["group_B"], chosen["orbits_moved_B_to_A"]
     f1 = moved(f0, s_nat, b_blk, a_blk, t_orbs, orb)
-    cut_r, n_r = f1r_cut(orb, names, len(s_nat))
+    cut_r, n_r, dev_r = f1r_cut(orb, names, len(s_nat),
+                                lambda c: moved(f0, c, b_blk, a_blk, t_orbs, orb), f1, realised)
     f1r = moved(f0, cut_r, b_blk, a_blk, t_orbs, orb)
 
     def mismatch(m):
@@ -730,10 +749,19 @@ def build_flavour_pair(rows, units):
                                          "F1R": mismatch(f1r)},
         "F1R": {
             "seed": F1R_SEED,
-            "sampler": (f"random.Random({F1R_SEED}).sample(sorted {SPLIT_ORBIT} classes, "
-                        f"{len(s_nat)}) until {F1R_B_MOVED[0]} or {F1R_B_MOVED[1]} contain "
-                        f"a b quark and {' and '.join(F1R_TOGETHER)} are in one group"),
+            "sampler": (f"random.Random({F1R_SEED}).sample({SPLIT_ORBIT} classes sorted by "
+                        f"jet_label, {len(s_nat)}) until {F1R_B_MOVED[0]} or "
+                        f"{F1R_B_MOVED[1]} contain a b quark, "
+                        f"{' and '.join(F1R_TOGETHER)} are in one group, and every "
+                        f"group's realised share is within {F1R_TOL[0]}/{F1R_TOL[1]} "
+                        f"(relative) of F1's"),
             "samples_drawn": n_r,
+            "realised_tolerance_vs_F1": list(F1R_TOL),
+            "largest_realised_deviation": {
+                "F1R_vs_F1": round(dev_r, 6),
+                "F1R_vs_17_class": round(largest_dev(f1r, tgt, realised), 6),
+                "F1_vs_17_class": round(largest_dev(f1, tgt, realised), 6),
+                "F0_vs_17_class": round(largest_dev(f0, tgt, realised), 6)},
             "classes_moved": [names[n] for n in cut_r],
             "b_classes_moved": sum(has_b(names[n]) for n in cut_r),
             "orbit_share_units": sorted({units[n] for n in q4}),
@@ -1057,7 +1085,10 @@ def build_outputs(select_workers=None, mass_logs=None, realised_src=None) -> tup
         runs = json.loads(MASS_JSON.read_text())["runs"]
     lam = mass_lambda(runs)
 
-    f0, f1, f1r, frec = build_flavour_pair(rows, units)
+    f0, f1, f1r, frec = build_flavour_pair(rows, units, realised["native_counts"])
+    frec["F1R"]["realised_shares"] = {
+        "file": str(REALISED.relative_to(REPO)),
+        "sha256": hashlib.sha256((out.get(REALISED) or REALISED.read_text()).encode()).hexdigest()}
     maps = {"FLAV_F0": f0, "FLAV_F1": f1, "FLAV_F1R": f1r}
     for d in range(1, N_PARTITIONS + 1):
         arm = f"{RAND_V2_PREFIX}{d}"
@@ -1080,6 +1111,10 @@ def build_outputs(select_workers=None, mass_logs=None, realised_src=None) -> tup
             print(f"  [FAIL] {RAND_V2_PREFIX}{d}: rule 3 (largest realised deviation "
                   f"{dev:.4f}) or nominal shares group by group")
             failed += 1
+    num, den = F1R_TOL
+    if den * largest_dev(f1r, f1, realised["native_counts"]) > num:
+        print(f"  [FAIL] F1r realised shares off F1's by more than {num}/{den}")
+        failed += 1
     if any(frec["max_abs_share_mismatch_units"].values()):
         print(f"  [FAIL] flavour pair shares {frec['max_abs_share_mismatch_units']}")
         failed += 1
