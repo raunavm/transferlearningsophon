@@ -1016,7 +1016,7 @@ def build_v2() -> dict[str, str]:
 # most between GPU models (r16q1mass-s3, epoch 79: 0.10 in three-prong log-odds,
 # L40 against V100, aoj_checks_v1/reproduce.json), 10,000 jets from one file of
 # each family, on one GPU that has TF32 (Ampere or later).
-TF32_PIN = "mtx-s1.81"
+TF32_PIN = "mtx-s1.82"
 TF32_PRODUCTS = ("NVIDIA-L40", "NVIDIA-L4", "NVIDIA-GeForce-RTX-3090", "NVIDIA-RTX-A6000",
                  "NVIDIA-A40", "NVIDIA-L40S")
 TF32_OUT = "/data/results/eval/tf32_check/r16q1mass-s3_e079.json"
