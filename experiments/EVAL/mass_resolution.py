@@ -171,15 +171,40 @@ def class_center(y: np.ndarray, lab: np.ndarray, train_idx: np.ndarray) -> tuple
         "n_jets_dropped_small_class": int((~usable).sum())}
 
 
+def v2_prefix(d: pathlib.Path) -> np.ndarray | None:
+    """For a v2 cache (extract_v2.py: manifest.json, rows.npy, features on selected
+    stream rows): the positions of its rows inside the uniform prefix -- the first
+    `prefix_features` jets of the stream, every one kept, the jets the v1 analysis
+    regressed. None for a v1 cache, whose rows ARE that prefix."""
+    if (d / "extract_manifest.json").exists() or (d / "observers_manifest.json").exists() \
+            or not (d / "manifest.json").exists():
+        return None
+    n = int(json.loads((d / "manifest.json").read_text()).get("prefix_features") or 0)
+    rows = np.load(d / "rows.npy")
+    sel = np.flatnonzero(rows < n)
+    if not n or sel.size != n or not np.array_equal(rows[sel], np.arange(n)):
+        raise SystemExit(f"FATAL: {d}: a v2 cache that does not hold every row of a "
+                         f"uniform prefix (prefix_features {n:,}) has no unbiased jet sample")
+    return sel
+
+
 def load_observers(path: pathlib.Path) -> dict:
-    """genjet_sdmass, jet_sdmass and the native labels, with their digest."""
+    """genjet_sdmass, jet_sdmass and the native labels, with their digest: from a
+    v1 observers cache (observers_manifest.json) or a v2 feature cache's own
+    observers.npz, restricted to its uniform prefix."""
+    sel = v2_prefix(path)
     obs = dict(np.load(path / "observers.npz"))
     for k in ("genjet_sdmass", "jet_sdmass"):
         if k not in obs:
             raise SystemExit(f"FATAL: {path}/observers.npz lacks {k!r}; present: {sorted(obs)}")
     lab = np.load(path / "label188.npy")
-    man = json.loads((path / "observers_manifest.json").read_text())
-    sha = man.get("label188_sha256")
+    if sel is not None:
+        obs, lab = {k: v[sel] for k, v in obs.items()}, lab[sel]
+        man = json.loads((path / "manifest.json").read_text())
+        sha = hashlib.sha256(lab.tobytes()).hexdigest()
+    else:
+        man = json.loads((path / "observers_manifest.json").read_text())
+        sha = man.get("label188_sha256")
     if not sha:
         raise SystemExit(f"FATAL: {path}/observers_manifest.json has no label188_sha256, "
                          f"so no arm's row alignment can be checked against it.")
@@ -196,6 +221,15 @@ def load_observers(path: pathlib.Path) -> dict:
 
 def check_alignment(arm: str, d: pathlib.Path, obs_sha: str, n: int) -> dict:
     """Refuse unless this arm was scored on the same jets, in the same order."""
+    sel = v2_prefix(d)
+    if sel is not None:
+        man = json.loads((d / "manifest.json").read_text())
+        sha = hashlib.sha256(np.load(d / "label188.npy")[sel].tobytes()).hexdigest()
+        if sha != obs_sha:
+            raise SystemExit(f"FATAL: {arm}: the prefix labels of {d} ({sha[:16]}) are not "
+                             f"the observers' ({obs_sha[:16]})")
+        return {"label188_sha256": sha, "n_jets": n, "cache": "v2",
+                "checkpoint_sha256": man.get("checkpoint_sha256")}
     man_path = d / "extract_manifest.json"
     if not man_path.exists():
         raise SystemExit(f"FATAL: {arm}: no {man_path}")
@@ -245,7 +279,8 @@ def main(argv=None) -> int:
     ap.add_argument("--features", nargs="+", required=True, help="ARM=/path/to/features")
     ap.add_argument("--observers", required=True,
                     help="directory holding observers.npz, label188.npy and "
-                         "observers_manifest.json (the test2m_observers cache)")
+                         "observers_manifest.json (the test2m_observers cache), or a v2 "
+                         "feature cache (extract_v2.py), whose uniform prefix is used")
     ap.add_argument("--out", required=True)
     ap.add_argument("--save-residuals", action="store_true",
                     help="also write residuals.npz: the test rows, their native "
@@ -305,6 +340,9 @@ def main(argv=None) -> int:
         name, path = spec.split("=", 1)
         d = pathlib.Path(path)
         F = np.load(d / "features.npy")
+        sel = v2_prefix(d)
+        if sel is not None:
+            F = F[sel].astype(np.float32)
         if F.shape[0] != obs["n"]:
             raise SystemExit(f"FATAL: {name}: {F.shape[0]} feature rows, "
                              f"observers have {obs['n']}")

@@ -4,6 +4,7 @@ checkpoints on identical rows -- without weaver's data files."""
 import importlib.util
 import json
 import pathlib
+import sys
 
 import numpy as np
 import pytest
@@ -166,7 +167,9 @@ def test_v1err_head_specs_cover_every_model_with_the_retry_policy():
         assert "raunav" in d["metadata"]["name"] and fname == f"job-{d['metadata']['name']}.yaml"
         assert d["spec"]["podFailurePolicy"]["rules"][0]["onExitCodes"]["values"] == [42]
         assert d["spec"]["template"]["spec"]["containers"][0]["name"] == "main"
-        pin = bx.V1ERR_PIN if fname[4:-5] in bx.HEADS_APPLIED_AT_V1ERR_PIN else bx.HEADS_PIN
+        pin = (bx.V1ERR_PIN if fname[4:-5] in bx.HEADS_APPLIED_AT_V1ERR_PIN
+               else bx.HEADS_DIAG_PIN if fname.startswith("job-heads-diag-v1err-")
+               and "diag-mass" not in fname else bx.HEADS_PIN)
         assert f'--branch "{pin}"' in text and "|| halt" in text
         assert (bx.OUT_DIR / fname).read_text() == text, f"{fname} not committed as built"
         if "heads-" in fname and "diag-mass" not in fname:
@@ -219,19 +222,48 @@ def test_the_gpu_fault_rule_refuses_a_template_it_does_not_match():
         bx.gpu_fault_aware("no halt here")
 
 
-def test_v2_specs_one_per_classification_run_primary_features_only():
+def test_v2_specs_one_per_classification_run_and_only_committed_when_the_plan_fits():
     import yaml
     bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
     jobs = bx.build_v2()
     assert len(jobs) == len(bx.v2_runs()) and not any("mpm" in k for k in jobs)
     assert bx.v2_rung("L162_MASS") == "L162" and bx.v2_rung("R16_Q1_MASS_LM") == "R16_Q1"
     assert bx.v2_rung("R42_Q1_LOFO4P") == "R42_Q1" and bx.v2_rung("RAND2_p1") == "none"
+    fits, why = bx.v2_plan_fits()
+    committed = sorted(p.name for p in bx.OUT_DIR.glob("job-extract-v2-*.yaml"))
     for fname, text in jobs.items():
         yaml.safe_load(text)
+        # the plan V2_PLAN names: features and heads at both checkpoints of the rule
         assert "--checkpoints bestval wavg --features-at bestval wavg" in text
         assert "--feature-classes probe --prefix-features 2000000" in text
         assert bx.HALT_GPU in text and "gpu_ok ()" in text and "tee -a ${LOG} || halt" in text
-        assert (bx.OUT_DIR / fname).read_text() == text, f"{fname} not committed as built"
+        if fits:
+            assert (bx.OUT_DIR / fname).read_text() == text, f"{fname} not committed as built"
+    assert committed == (sorted(jobs) if fits else []), why
+
+
+def test_the_v2_plan_is_refused_when_sizing_says_it_does_not_fit(tmp_path, monkeypatch):
+    import json
+    bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
+    s = json.loads(bx.V2_SIZING.read_text())
+    e = s["storage"][bx.V2_PLAN]
+    assert e["bytes_total"] == e["extraction_bytes"] + e["pretraining_checkpoint_bytes"] > 0
+    for fit in (False, True):
+        e["fits_under_85pc"] = fit
+        f = tmp_path / f"sizing_{fit}.json"
+        f.write_text(json.dumps(s))
+        monkeypatch.setattr(bx, "V2_SIZING", f)
+        assert bx.v2_plan_fits()[0] is fit
+    e.pop("pretraining_checkpoint_bytes")
+    f.write_text(json.dumps(s))
+    assert bx.v2_plan_fits()[0] is False          # a sizing without the checkpoints is no answer
+    monkeypatch.setattr(bx, "V2_SIZING", tmp_path / "sizing_False.json")
+    monkeypatch.setattr(sys, "argv", ["build_extract_jobs.py", "--v2"])
+    written = []
+    monkeypatch.setattr(bx.pathlib.Path, "write_text", lambda self, t: written.append(self))
+    with pytest.raises(SystemExit):
+        bx.main()
+    assert not written
 
 
 def test_head_scores_outside_the_tree_keep_only_what_is_defined():
@@ -284,12 +316,15 @@ def test_classes_only_a_windowed_task_reads_are_kept_inside_its_window():
     assert 169 in anywhere and 181 in anywhere            # b vs c in QCD is unwindowed
     assert not (set(qcd) - {169, 181}) & set(anywhere)
     (cls, win), = windowed
-    assert {4, 5, 6, 70} <= set(cls) and set(win) == {"jet_pt", "jet_sdmass", "jet_eta"}
+    assert 70 in cls and set(win) == {"jet_pt", "jet_sdmass", "jet_eta"}
+    # X->bc, X->cs, X->bq everywhere: the single-pair b-vs-c tasks have no window
+    assert set(xv.full_range_classes()) == {4, 5, 6} <= set(anywhere) and not {4, 5, 6} & set(cls)
     s = xv.Selector(anywhere, 0, [], 0, 0, windowed)
-    lab = np.array([4, 4, 170, 0, 170])
-    obs = {"jet_pt": np.array([500., 300., 500., 300., 700.]),
-           "jet_sdmass": np.array([100., 100., 120., 50., 100.]),
-           "jet_eta": np.zeros(5)}
-    assert s.feature_mask(np.arange(5), lab, obs).tolist() == [True, False, True, True, False]
+    lab = np.array([4, 4, 170, 0, 170, 70, 70])
+    obs = {"jet_pt": np.array([500., 300., 500., 300., 700., 500., 300.]),
+           "jet_sdmass": np.array([100., 100., 120., 50., 100., 100., 100.]),
+           "jet_eta": np.zeros(7)}
+    assert s.feature_mask(np.arange(7), lab, obs).tolist() == [True, True, True, True, False,
+                                                              True, False]
     with pytest.raises(SystemExit, match="observers"):
-        s.feature_mask(np.arange(5), lab, None)
+        s.feature_mask(np.arange(7), lab, None)

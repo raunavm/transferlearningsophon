@@ -743,6 +743,9 @@ V1ERR_PIN = "mtx-s1.66"
 HEADS_PIN = "mtx-s1.75"
 HEADS_APPLIED_AT_V1ERR_PIN = {f"heads-anomaly-v1err-{r}-raunav"
                               for r in ("l162-s1b", "l162-s2", "l162-s3", "l162-s4")}
+# The CPU fall-back diag specs were never applied (every GPU extraction ran), so
+# they follow extract_v2.py to the tag that carries its observers and TF32 record.
+HEADS_DIAG_PIN = "mtx-s1.85"
 # The v2 probe split (probe.py --split-fractions): train 0.2, validation 0.1,
 # test 0.7. At 0.7 the whole split's X->cc jets give 228,238 test background, so
 # ~115 pass at 90 % signal efficiency at the largest v1 rejection (1,979); at
@@ -965,7 +968,8 @@ def build_v1err() -> dict[str, str]:
                                      k=k, num_reg=reg, flags=flags, run=run, files=files)
             text = V1ERR_TEMPLATE.format(
                 name=name, image=IMAGE, body=body,
-                pin=V1ERR_PIN if name in HEADS_APPLIED_AT_V1ERR_PIN else HEADS_PIN,
+                pin=(V1ERR_PIN if name in HEADS_APPLIED_AT_V1ERR_PIN
+                     else HEADS_DIAG_PIN if kind == "diag" else HEADS_PIN),
                 mem="48Gi" if gpu else "32Gi", cpu="4" if gpu else "8",
                 gpu_req=', nvidia.com/gpu: "1"' if gpu else "",
                 gpu_check=GPU_CHECK.format() if gpu else "",
@@ -988,10 +992,34 @@ def build_v1err() -> dict[str, str]:
 # 27.4 M jets. NOT launched until the v2 runs exist; the
 # storage this needs is estimated by experiments/EVAL/class_counts.py
 # (--storage) against the volume's free space before any launch.
-V2_PIN = HEADS_PIN
+# extract_v2.py with observers.npz and the full-range b/c rows (2026-10-01); the
+# tag is moved forward when the plan is emitted
+V2_PIN = "mtx-s1.85"
 V2_ROOT = "/data/results/mtx_v2"
 V2_OUT = "/data/results/eval/v2"
 V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
+# THE PLAN MUST FIT. build_v2() emits features and head scores at both checkpoints
+# of the rule for every classification run; experiments/EVAL/extraction_v2_sizing.py
+# sizes that plan with the v2 runs' own pretraining checkpoints, and --v2 refuses
+# to write specs unless it fits under the 85 % line. Picking a smaller plan is the
+# PI's storage decision, not this script's.
+V2_SIZING = ROOT / "experiments" / "FIGS" / "data" / "extraction_v2_sizing" / "sizing.json"
+V2_PLAN = "features and heads at bestval and wavg; all classification runs"
+
+
+def v2_plan_fits() -> tuple[bool, str]:
+    """(whether the plan build_v2 emits fits, why), from the committed sizing."""
+    import json
+    s = json.loads(V2_SIZING.read_text())
+    e = s["storage"].get(V2_PLAN)
+    if e is None or "pretraining_checkpoint_bytes" not in e:
+        return False, f"{V2_SIZING.name} predates the checkpoint footprint; rerun extraction_v2_sizing.py"
+    if e["n_models"] != len(v2_runs()):
+        return False, f"{V2_SIZING.name} sizes {e['n_models']} runs, the grid has {len(v2_runs())}"
+    return bool(e["fits_under_85pc"]), (
+        f"{e['bytes_total'] / 1e9:.1f} GB (extraction {e['extraction_bytes'] / 1e9:.1f} + "
+        f"pretraining checkpoints {e['pretraining_checkpoint_bytes'] / 1e9:.1f}) against "
+        f"{e['headroom_to_85pc_bytes'] / 1e9:.1f} GB to the 85 % line")
 
 
 def v2_rung(arm: str) -> str:
@@ -1201,8 +1229,12 @@ def main() -> int:
         return 0
 
     if args.v2:
+        fits, why = v2_plan_fits()
+        if not fits:
+            sys.exit(f"FATAL: the v2 extraction plan ({V2_PLAN}) does not fit: {why}. "
+                     "Nothing written; the plan waits on the PI's storage decision.")
         verify_pin(V2_PIN, V1ERR_NEEDED, args.pin_not_yet_tagged,
-                   {"experiments/EVAL/extract_v2.py": "--features-at"})
+                   {"experiments/EVAL/extract_v2.py": "V2_OBSERVERS"})
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         for fname, text in build_v2().items():
             yaml.safe_load(text)

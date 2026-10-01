@@ -30,9 +30,15 @@ caches (extract_features.py, 2,000,000 jets from epoch 79):
                     computed from float32 logits with anomaly.py's own function
 
 Output, per checkpoint:  <out>/<tag>/{features.npy, rows.npy, label188.npy,
-head_scores.npz, manifest.json}, tag = "best" or "e079". rows.npy indexes the
-test stream, so any two checkpoints, runs or vocabularies are row-aligned by
-construction and checked by the stream's label sha256.
+observers.npz, head_scores.npz, manifest.json}, tag = "bestval", "wavg" or "e079".
+rows.npy indexes the test stream, so any two checkpoints, runs or vocabularies are
+row-aligned by construction and checked by the stream's label sha256.
+observers.npz holds, for the same rows, the kinematics a windowed probe task cuts
+on (jet_pt, jet_eta, jet_sdmass) and the mass-regression truth (genjet_sdmass):
+without them bc_vs_rest's window cannot be applied and mass_resolution.py has no
+target (verification 2026-10-01). genjet_sdmass is an observer of
+configs/data/JetClassII_massreg.yaml only, which is JetClassII_base.yaml plus that
+one observer, so the default data config is that file.
 
 The model is the same code extract_features.py uses (build_model,
 load_trunk_or_die); only the row selection and the storage differ.
@@ -69,16 +75,30 @@ def probe_classes() -> list[int]:
     return sorted(out)
 
 
+# X->bc, X->cs and X->bq over the WHOLE split, whatever probe.TASKS says today:
+# probe.py is gaining two single-pair b-vs-c tasks, X->bc vs X->bq and X->bc vs
+# X->cs, with no kinematic window (2026-10-01), and a cache made before they land
+# must already hold their rows. bc_vs_rest alone would keep them only inside the
+# |V_cb| window.
+FULL_RANGE_CLASS_NAMES = ("label_X_bc", "label_X_cs", "label_X_bq")
+
+
+def full_range_classes() -> list[int]:
+    an = _load("anomaly", "experiments/EVAL/anomaly.py")
+    by_name = {r["class_name"]: int(r["jet_label"]) for r in an.read_map()}
+    return sorted(by_name[n] for n in FULL_RANGE_CLASS_NAMES)
+
+
 def probe_feature_rules() -> tuple[list[int], list[tuple[list[int], dict]]]:
     """(classes kept everywhere, [(classes, window)] kept only inside a window).
 
-    A class that only a WINDOWED task reads (bc_vs_rest's background: X->bq,
-    X->cs, X->bqq and all 27 QCD classes) is needed only inside that task's
-    window; keeping it over the whole split stored 3.6 M QCD rows per model for
-    ~0.1 M in-window ones (class_counts.py, 2026-09-30). A class any unwindowed
-    task reads is kept everywhere."""
+    A class that only a WINDOWED task reads (bc_vs_rest's background: X->bqq and
+    all 27 QCD classes) is needed only inside that task's window; keeping it over
+    the whole split stored 3.6 M QCD rows per model for ~0.1 M in-window ones
+    (class_counts.py, 2026-09-30). A class any unwindowed task reads, and every
+    FULL_RANGE_CLASS_NAMES class, is kept everywhere."""
     probe = _load("probe", "experiments/EVAL/probe.py")
-    anywhere, windowed = set(), []
+    anywhere, windowed = set(full_range_classes()), []
     for spec in probe.TASKS.values():
         cls = set(spec["signal"]) | set(spec["background"])
         if spec.get("window"):
@@ -119,6 +139,8 @@ def best_epoch(run_dir: pathlib.Path) -> int:
 
 
 WAVG_FILE = "net_wavg70-79_state.pt"
+# kept beside the feature rows: the |V_cb| window's cuts and the mass truth
+V2_OBSERVERS = ("jet_pt", "jet_eta", "jet_sdmass", "genjet_sdmass")
 
 
 def resolve_checkpoints(run_dir: pathlib.Path, spec: list[str]) -> list[tuple[str, pathlib.Path]]:
@@ -206,18 +228,20 @@ class Selector:
 
 
 def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: dict,
-        tap_factory, to_inputs, features_at=None) -> dict:
+        tap_factory, to_inputs, features_at=None, observers=()) -> dict:
     """Stream `batches` (X, y) through every model; keep the selected rows.
 
     `features_at` names the checkpoints whose features are kept (default: all);
     the others keep head scores only, which is what bounds the storage of the
-    robustness checkpoints. Separated from the loader so the selection and the
-    storage are testable without weaver's data files."""
+    robustness checkpoints. `observers` are kept for the feature rows (they are
+    the stream's, so one copy serves every checkpoint). Separated from the loader
+    so the selection and the storage are testable without weaver's data files."""
     features_at = set(models) if features_at is None else set(features_at)
     import torch
     keep = {t: {"feat": [], "frow": [], "flab": [], "hrow": [], "hlab": [], "logits": []}
             for t in models}
     labels_all, n0 = [], 0
+    kept_obs = {o: [] for o in observers}
     taps = {t: tap_factory(m) for t, m in models.items()}
     with torch.no_grad():
         for item in batches:
@@ -229,6 +253,13 @@ def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: d
             labels_all.append(lab.astype(np.int16))
             fm0 = selector.feature_mask(rows, lab, obs)
             hm = selector.head_mask(rows, lab)
+            if features_at and kept_obs:
+                missing = [o for o in kept_obs if obs is None or o not in obs]
+                if missing:
+                    raise SystemExit(f"FATAL: observers {missing} are not in the stream; "
+                                     "the data config must list them")
+                for o in kept_obs:
+                    kept_obs[o].append(np.asarray(obs[o])[fm0].astype(np.float32))
             need = (fm0 if features_at else np.zeros_like(fm0)) | hm
             if not need.any():
                 continue
@@ -251,7 +282,9 @@ def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: d
         tp.close()
     L = np.concatenate(labels_all) if labels_all else np.zeros(0, np.int16)
     res = {"n_stream": int(L.size), "label188_sha256": hashlib.sha256(L.tobytes()).hexdigest(),
-           "labels": L, "checkpoints": {}}
+           "labels": L, "checkpoints": {},
+           "observers": {o: (np.concatenate(v) if v else np.zeros(0, np.float32))
+                         for o, v in kept_obs.items()}}
     for t, kv in keep.items():
         cat = lambda xs, dt, w=None: (np.concatenate(xs) if xs else
                                       np.zeros((0,) if w is None else (0, w), dt))
@@ -276,12 +309,22 @@ def write(out: pathlib.Path, res: dict, meta: dict) -> dict:
         np.save(d / "label188.npy", c["label188"])
         np.savez_compressed(d / "head_scores.npz", rows=c["head_rows"],
                             label188=c["head_label188"], **c["head"])
+        obs = {}
+        if c["rows"].size and res.get("observers"):
+            obs = res["observers"]
+            bad = [o for o, v in obs.items() if v.shape[0] != c["rows"].size]
+            if bad:
+                raise SystemExit(f"FATAL: observers {bad} are not aligned with {tag}'s rows")
+            np.savez(d / "observers.npz", **obs)
         man = {**meta, **meta["checkpoints"][tag], "tag": tag,
                "n_stream": res["n_stream"], "stream_label188_sha256": res["label188_sha256"],
                "n_feature_rows": int(c["rows"].size), "n_head_rows": int(c["head_rows"].size),
                "features_dtype": "float16",
                "rows_sha256": hashlib.sha256(c["rows"].tobytes()).hexdigest(),
-               "head_rows_sha256": hashlib.sha256(c["head_rows"].tobytes()).hexdigest()}
+               "head_rows_sha256": hashlib.sha256(c["head_rows"].tobytes()).hexdigest(),
+               "observers": sorted(obs),
+               "observers_sha256": (hashlib.sha256((d / "observers.npz").read_bytes()).hexdigest()
+                                    if obs else None)}
         man.pop("checkpoints", None)
         (d / "manifest.json").write_text(json.dumps(man, indent=1))
         sizes[tag] = sum(p.stat().st_size for p in d.iterdir())
@@ -299,7 +342,10 @@ def main(argv=None) -> int:
     ap.add_argument("--checkpoints", nargs="+", required=True,
                     help="'bestval', 'wavg', an epoch, or a range 'A-B' (e.g. bestval wavg)")
     ap.add_argument("--data-test", nargs="+", required=True)
-    ap.add_argument("--data-config", default=str(REPO / "configs/data/JetClassII_base.yaml"))
+    ap.add_argument("--data-config", default=str(REPO / "configs/data/JetClassII_massreg.yaml"),
+                    help="JetClassII_massreg.yaml = JetClassII_base.yaml + genjet_sdmass")
+    ap.add_argument("--observers", nargs="*", default=list(V2_OBSERVERS),
+                    help="observers kept beside the feature rows (observers.npz)")
     ap.add_argument("--max-jets", type=int, default=0, help="0 = the whole split")
     ap.add_argument("--feature-classes", nargs="*", default=["probe"],
                     help="native labels whose features are kept everywhere; 'probe' = "
@@ -323,8 +369,7 @@ def main(argv=None) -> int:
     from weaver.utils.dataset import SimpleIterDataset
     from weaver.utils.data.config import DataConfig
     ex = _load("extract_features", "experiments/EVAL/extract_features.py")
-    torch.backends.cuda.matmul.allow_tf32 = False
-    torch.backends.cudnn.allow_tf32 = False
+    tf32 = ex.strict_fp32()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     windowed = []
@@ -341,7 +386,10 @@ def main(argv=None) -> int:
         print("every checkpoint already extracted")
         return 0
 
-    dc = DataConfig.load(a.data_config, load_observers=False)
+    dc = DataConfig.load(a.data_config, load_observers=True)
+    absent = [o for o in a.observers if o not in dc.observer_names]
+    if absent:
+        raise SystemExit(f"FATAL: {a.data_config} does not list the observers {absent}")
     models, meta = {}, {"run_dir": str(a.run_dir), "rung": a.rung, "num_classes": a.num_classes,
                         "num_reg": a.num_reg, "data_config": a.data_config,
                         "data_config_sha256": hashlib.sha256(
@@ -351,7 +399,8 @@ def main(argv=None) -> int:
                         "prefix_features": a.prefix_features,
                         "head_classes": hcls, "head_prefix": a.head_prefix,
                         "diag_stride": a.diag_stride, "signals": signals,
-                        "device": str(device), "checkpoints": {},
+                        "device": str(device), "device_name": ex.device_name(device),
+                        "tf32": tf32, "checkpoints": {},
                         "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest()}
     for tag, path in ckpts:
         m = ex.build_model(dc, a.num_classes + a.num_reg)
@@ -381,7 +430,7 @@ def main(argv=None) -> int:
         return [X[k][idx].to(device, non_blocking=True) for k in dc.input_names]
 
     res = run(batches(), models, sel, a.rung, a.num_classes, signals, ex.ClsTap, to_inputs,
-              features_at=a.features_at)
+              features_at=a.features_at, observers=a.observers)
     meta["features_at"] = sorted(a.features_at) if a.features_at is not None else sorted(models)
     if a.head_prefix and res["n_stream"] < a.head_prefix and not a.max_jets:
         raise SystemExit(f"FATAL: the stream ended at {res['n_stream']:,} jets, inside the "

@@ -1,0 +1,160 @@
+{
+ "gpu": "NVIDIA RTX A4000",
+ "capability": "sm_86",
+ "torch": "2.5.1+cu121",
+ "cuda": "12.1",
+ "cudnn": 90100,
+ "torch_defaults": {
+  "matmul_allow_tf32": false,
+  "cudnn_allow_tf32": true
+ },
+ "settings": {
+  "off": {
+   "device": "cuda",
+   "matmul_allow_tf32": false,
+   "cudnn_allow_tf32": false
+  },
+  "defaults": {
+   "device": "cuda",
+   "matmul_allow_tf32": false,
+   "cudnn_allow_tf32": true
+  },
+  "on": {
+   "device": "cuda",
+   "matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "off_repeat": {
+   "device": "cuda",
+   "matmul_allow_tf32": false,
+   "cudnn_allow_tf32": false
+  },
+  "cpu": {
+   "device": "cpu",
+   "matmul_allow_tf32": false,
+   "cudnn_allow_tf32": false
+  }
+ },
+ "n_jets": 10002,
+ "label188_sha256": "b6cfa1e2293e6d76d3cdb839ae81d42d542d611493a25a5073263729065f2605",
+ "rung": "R16_Q1",
+ "num_classes": 17,
+ "num_reg": 1,
+ "data_test_first": [
+  "/jc2/jet_data/Res2P_0250.parquet",
+  "/jc2/jet_data/Res34P_1075.parquet",
+  "/jc2/jet_data/QCD_0350.parquet"
+ ],
+ "data_config": "/workspace/transferlearningsophon/configs/data/JetClassII_base.yaml",
+ "checkpoint": "/data/results/mtx/mtx-r16q1mass-s3/net_epoch-79_state.pt",
+ "checkpoint_sha256": "a06592d7a28d34cd67c23a422f4b7b278c0a9eac2c22adcc2eb3bbb86feb99d9",
+ "code_commit": "4f598b9cc49e924dacf1bb10750021f9d0f92251",
+ "script_sha256": "b6aa1079e02298a618de2b215a7be63e5bded6147a65a0c41b8287303411ae54",
+ "comparisons": {
+  "defaults_vs_off": {
+   "logits": {
+    "max_abs": 0.07700443267822266,
+    "median_abs": 2.86102294921875e-06,
+    "q99_abs": 0.013880443572998169,
+    "q999_abs": 0.031169639587402376
+   },
+   "logodds_res_qcd": {
+    "max_abs": 0.04467594623565674,
+    "median_abs": 3.5762786865234375e-06,
+    "q99_abs": 0.024500050544738743,
+    "q999_abs": 0.0353259348273277
+   },
+   "three_prong_logodds": {
+    "max_abs": 0.021791696548461914,
+    "median_abs": 2.86102294921875e-06,
+    "q99_abs": 0.014582819342613218,
+    "q999_abs": 0.018302652120590106
+   },
+   "argmax_flips": 13
+  },
+  "on_vs_off": {
+   "logits": {
+    "max_abs": 0.07401657104492188,
+    "median_abs": 0.0017232894897460938,
+    "q99_abs": 0.013995494842529321,
+    "q999_abs": 0.03007013583183306
+   },
+   "logodds_res_qcd": {
+    "max_abs": 0.03892803192138672,
+    "median_abs": 0.003579854965209961,
+    "q99_abs": 0.023318088054656946,
+    "q999_abs": 0.03289172148704521
+   },
+   "three_prong_logodds": {
+    "max_abs": 0.021813392639160156,
+    "median_abs": 0.0023976564407348633,
+    "q99_abs": 0.013884780406951904,
+    "q999_abs": 0.017733196735382054
+   },
+   "argmax_flips": 15
+  },
+  "off_repeat_vs_off": {
+   "logits": {
+    "max_abs": 1.9073486328125e-05,
+    "median_abs": 0.0,
+    "q99_abs": 3.814697265625e-06,
+    "q999_abs": 6.67572021484375e-06
+   },
+   "logodds_res_qcd": {
+    "max_abs": 1.33514404296875e-05,
+    "median_abs": 0.0,
+    "q99_abs": 4.76837158203125e-06,
+    "q999_abs": 9.5367431640625e-06
+   },
+   "three_prong_logodds": {
+    "max_abs": 1.049041748046875e-05,
+    "median_abs": 0.0,
+    "q99_abs": 3.814697265625e-06,
+    "q999_abs": 5.7220458984375e-06
+   },
+   "argmax_flips": 0
+  },
+  "cpu_vs_off": {
+   "logits": {
+    "max_abs": 0.00031566619873046875,
+    "median_abs": 2.86102294921875e-06,
+    "q99_abs": 3.24249267578125e-05,
+    "q999_abs": 0.00010155057907104692
+   },
+   "logodds_res_qcd": {
+    "max_abs": 0.0001964569091796875,
+    "median_abs": 3.948807716369629e-06,
+    "q99_abs": 2.956390380859375e-05,
+    "q999_abs": 8.677768707275255e-05
+   },
+   "three_prong_logodds": {
+    "max_abs": 0.00013256072998046875,
+    "median_abs": 4.0531158447265625e-06,
+    "q99_abs": 2.2886991500854466e-05,
+    "q999_abs": 6.508207321166866e-05
+   },
+   "argmax_flips": 0
+  },
+  "on_vs_defaults": {
+   "logits": {
+    "max_abs": 0.018019676208496094,
+    "median_abs": 0.0013718605041503906,
+    "q99_abs": 0.007143659591674817,
+    "q999_abs": 0.010150689125061063
+   },
+   "logodds_res_qcd": {
+    "max_abs": 0.015171051025390625,
+    "median_abs": 0.0018303394317626953,
+    "q99_abs": 0.008346371650695798,
+    "q999_abs": 0.012535529613494864
+   },
+   "three_prong_logodds": {
+    "max_abs": 0.013721466064453125,
+    "median_abs": 0.001550912857055664,
+    "q99_abs": 0.006823437213897698,
+    "q999_abs": 0.009405066490173326
+   },
+   "argmax_flips": 6
+  }
+ }
+}

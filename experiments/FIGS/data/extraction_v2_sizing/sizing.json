@@ -95,6 +95,26 @@
     "background_test_needed": 255400,
     "expected_pass_at_max_rejection": 24.20203602192639,
     "meets_min_pass": false
+   },
+   "bc_vs_bq": {
+    "n_signal_split": 330559,
+    "n_background_split": 329962,
+    "n_background_test": 65992,
+    "max_v1_rejection_at_90": null,
+    "v1_cells_with_no_passing_jet": null,
+    "background_test_needed": null,
+    "expected_pass_at_max_rejection": null,
+    "meets_min_pass": null
+   },
+   "bc_vs_cs": {
+    "n_signal_split": 330559,
+    "n_background_split": 329555,
+    "n_background_test": 65911,
+    "max_v1_rejection_at_90": null,
+    "v1_cells_with_no_passing_jet": null,
+    "background_test_needed": null,
+    "expected_pass_at_max_rejection": null,
+    "meets_min_pass": null
    }
   },
   "0.6": {
@@ -167,6 +187,26 @@
     "background_test_needed": 255400,
     "expected_pass_at_max_rejection": 72.60689115113547,
     "meets_min_pass": false
+   },
+   "bc_vs_bq": {
+    "n_signal_split": 330559,
+    "n_background_split": 329962,
+    "n_background_test": 197977,
+    "max_v1_rejection_at_90": null,
+    "v1_cells_with_no_passing_jet": null,
+    "background_test_needed": null,
+    "expected_pass_at_max_rejection": null,
+    "meets_min_pass": null
+   },
+   "bc_vs_cs": {
+    "n_signal_split": 330559,
+    "n_background_split": 329555,
+    "n_background_test": 197733,
+    "max_v1_rejection_at_90": null,
+    "v1_cells_with_no_passing_jet": null,
+    "background_test_needed": null,
+    "expected_pass_at_max_rejection": null,
+    "meets_min_pass": null
    }
   },
   "0.7": {
@@ -239,58 +279,157 @@
     "background_test_needed": 255400,
     "expected_pass_at_max_rejection": 84.70790916209867,
     "meets_min_pass": false
+   },
+   "bc_vs_bq": {
+    "n_signal_split": 330559,
+    "n_background_split": 329962,
+    "n_background_test": 230973,
+    "max_v1_rejection_at_90": null,
+    "v1_cells_with_no_passing_jet": null,
+    "background_test_needed": null,
+    "expected_pass_at_max_rejection": null,
+    "meets_min_pass": null
+   },
+   "bc_vs_cs": {
+    "n_signal_split": 330559,
+    "n_background_split": 329555,
+    "n_background_test": 230688,
+    "max_v1_rejection_at_90": null,
+    "v1_cells_with_no_passing_jet": null,
+    "background_test_needed": null,
+    "expected_pass_at_max_rejection": null,
+    "meets_min_pass": null
    }
   }
  },
  "n_models_v2_grid": 71,
+ "n_runs_v2_grid": 74,
+ "checkpoint_bytes_per_run": 150000000.0,
+ "observers": [
+  "jet_pt",
+  "jet_eta",
+  "jet_sdmass",
+  "genjet_sdmass"
+ ],
+ "feature_rules": {
+  "anywhere": [
+   0,
+   1,
+   4,
+   5,
+   6,
+   10,
+   11,
+   15,
+   18,
+   34,
+   158,
+   169,
+   181
+  ],
+  "windowed": [
+   [
+    [
+     70,
+     161,
+     162,
+     163,
+     164,
+     165,
+     166,
+     167,
+     168,
+     170,
+     171,
+     172,
+     173,
+     174,
+     175,
+     176,
+     177,
+     178,
+     179,
+     180,
+     182,
+     183,
+     184,
+     185,
+     186,
+     187
+    ],
+    {
+     "jet_pt": [
+      450.0,
+      600.0
+     ],
+     "jet_sdmass": [
+      90.0,
+      140.0
+     ],
+     "jet_eta": [
+      -2.4,
+      2.4
+     ]
+    }
+   ]
+  ]
+ },
  "storage": {
   "features and heads at bestval and wavg; all classification runs": {
-   "feature_rows_per_checkpoint": 4303745,
+   "feature_rows_per_checkpoint": 5091401,
    "head_rows_per_checkpoint": 631587,
-   "bytes_per_model": 2385593564,
-   "bytes_total": 169377143044,
+   "bytes_per_model": 2967551388,
+   "extraction_bytes": 210696148548,
+   "pretraining_checkpoint_bytes": 11100000000.0,
+   "bytes_total": 221796148548.0,
    "n_models": 71,
    "checkpoints_with_features": 2,
    "checkpoints_with_heads": 2,
    "fits_under_85pc": false,
-   "headroom_to_85pc_bytes": 83879369113.59998
+   "headroom_to_85pc_bytes": 62383561113.599976
   },
   "features and heads at bestval and wavg; tier-1 runs": {
-   "feature_rows_per_checkpoint": 4303745,
+   "feature_rows_per_checkpoint": 5091401,
    "head_rows_per_checkpoint": 631587,
-   "bytes_per_model": 2385593564,
-   "bytes_total": 95423742560,
+   "bytes_per_model": 2967551388,
+   "extraction_bytes": 118702055520,
+   "pretraining_checkpoint_bytes": 11100000000.0,
+   "bytes_total": 129802055520.0,
    "n_models": 40,
    "checkpoints_with_features": 2,
    "checkpoints_with_heads": 2,
    "fits_under_85pc": false,
-   "headroom_to_85pc_bytes": 83879369113.59998
+   "headroom_to_85pc_bytes": 62383561113.599976
   },
   "features at bestval, heads at both; all classification runs": {
-   "feature_rows_per_checkpoint": 4303745,
+   "feature_rows_per_checkpoint": 5091401,
    "head_rows_per_checkpoint": 631587,
-   "bytes_per_model": 1240797394,
-   "bytes_total": 88096614974,
+   "bytes_per_model": 1531776306,
+   "extraction_bytes": 108756117726,
+   "pretraining_checkpoint_bytes": 11100000000.0,
+   "bytes_total": 119856117726.0,
    "n_models": 71,
    "checkpoints_with_features": 1,
    "checkpoints_with_heads": 2,
    "fits_under_85pc": false,
-   "headroom_to_85pc_bytes": 83879369113.59998
+   "headroom_to_85pc_bytes": 62383561113.599976
   },
   "features at bestval, heads at both; tier-1 runs": {
-   "feature_rows_per_checkpoint": 4303745,
+   "feature_rows_per_checkpoint": 5091401,
    "head_rows_per_checkpoint": 631587,
-   "bytes_per_model": 1240797394,
-   "bytes_total": 49631895760,
+   "bytes_per_model": 1531776306,
+   "extraction_bytes": 61271052240,
+   "pretraining_checkpoint_bytes": 11100000000.0,
+   "bytes_total": 72371052240.0,
    "n_models": 40,
    "checkpoints_with_features": 1,
    "checkpoints_with_heads": 2,
-   "fits_under_85pc": true,
-   "headroom_to_85pc_bytes": 83879369113.59998
+   "fits_under_85pc": false,
+   "headroom_to_85pc_bytes": 62383561113.599976
   }
  },
  "volume": {
   "size_bytes": 1099511627776.0,
-  "free_bytes": 248806113280.0
+  "free_bytes": 227310305280.0
  }
 }

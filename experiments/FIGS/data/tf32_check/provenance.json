@@ -1,0 +1,11 @@
+{
+ "job": "eval-tf32-check-raunav (tag mtx-s1.82, commit 4f598b9), experiments/EVAL/tf32_check.py, on ry-gpu-15.sdsc.optiputer.net, NVIDIA RTX A4000 (sm_86)",
+ "checkpoint": "/data/results/mtx/mtx-r16q1mass-s3/net_epoch-79_state.pt (17 classes + mass output)",
+ "jets": "10,002 JetClass-II test jets, 3,334 from each of Res2P_0250, Res34P_1075, QCD_0350",
+ "fetched": {
+  "r16q1mass-s3_e079.json": "e5d414319ff505cedfc4e4ea9768e9d4161afd5c81305f062888b18e8f1917e4",
+  "r16q1mass-s3_e079.log": "07acb9adcff9279daad1b7f0148112131abb5367667913de0bfda37997a57d53",
+  "r16q1mass-s3_e079.npz": "0ff69afe650f904f324a0046378d3a5111a42e4b52da3d91708e4446ba182009"
+ },
+ "fetch": "read-only exec into eval-reader-raunav (scratchpad fetch.sh), sha256 checked against the pod"
+}

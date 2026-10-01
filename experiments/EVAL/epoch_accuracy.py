@@ -82,6 +82,7 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     if a.out.exists():
         raise SystemExit(f"FATAL: {a.out} exists; write a new file")
+    tf32 = XF.strict_fp32()        # the model runs on the CPU here; recorded all the same
     from weaver.utils.data.config import DataConfig
     from weaver.utils.dataset import SimpleIterDataset
 
@@ -112,7 +113,7 @@ def main(argv=None) -> int:
     keep = len(native)
     print(f"{keep:,} test jets held in memory", flush=True)
 
-    out = {"n_jets": keep, "stream_jets": a.max_jets, "stride": a.stride,
+    out = {"n_jets": keep, "stream_jets": a.max_jets, "stride": a.stride, "tf32": tf32,
            "aligned_with": None if a.align_with is None else str(a.align_with),
            "native_label_sha256": hashlib.sha256(native.astype(np.int16).tobytes()).hexdigest(),
            "data_config_sha256": hashlib.sha256(pathlib.Path(a.data_config).read_bytes()).hexdigest(),

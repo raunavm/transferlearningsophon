@@ -10,6 +10,13 @@ split and in its test part at each candidate split, the passing jets expected
 at the largest v1 rejection, whether that reaches MIN_PASS; and the storage the
 extraction writes for the v2 grid (configs/arms/v2_grid.json) under the
 checkpoint plans considered, against the volume's free space.
+
+THE PRETRAINING CHECKPOINTS COUNT TOO. The v2 runs' own checkpoints sit on the same
+volume, so a plan fits only if the extraction AND every run's checkpoints stay
+under the 85 % line (verification 2026-10-01: the model had left them out). The
+per-run figure is --checkpoint-bytes-per-run, 0.15 GB with the window retention
+the training agent's fix leaves. scripts/build_extract_jobs.py refuses to emit a
+plan this file says does not fit.
 """
 from __future__ import annotations
 
@@ -45,6 +52,8 @@ def main(argv=None) -> int:
     ap.add_argument("--free-bytes", type=float, required=True,
                     help="free space on /data now (df)")
     ap.add_argument("--size-bytes", type=float, required=True, help="volume size (df)")
+    ap.add_argument("--checkpoint-bytes-per-run", type=float, default=0.15e9,
+                    help="pretraining checkpoints each v2 run keeps on /data (window retention)")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     a = ap.parse_args(argv)
     cc = _load("class_counts", "experiments/EVAL/class_counts.py")
@@ -56,6 +65,9 @@ def main(argv=None) -> int:
              for f in TEST_FRACTIONS}
     grid = json.loads((REPO / "configs/arms/v2_grid.json").read_text())
     n_models = sum(x["runs"] for x in grid["arms"] if x["num_classes"] is not None)
+    n_runs = sum(x["runs"] for x in grid["arms"])          # the self-supervised runs too
+    ckpt_bytes = a.checkpoint_bytes_per_run * n_runs
+    obs_row_bytes = 4 * len(xv.V2_OBSERVERS)               # float32 per kept observer
     qcd, signals = xv.anomaly_classes()
     # Feature rows as extract_v2 keeps them: classes an unwindowed task reads over
     # the whole split, windowed-only classes inside their window, and every row of
@@ -71,10 +83,13 @@ def main(argv=None) -> int:
     storage = {}
     for name, (nf, nh) in PLANS.items():
         for label, n in (("all classification runs", n_models), ("tier-1 runs", tier1)):
-            per = nf * n_feat * cc.FEATURE_ROW_BYTES + nh * n_head * cc.HEAD_ROW_BYTES
+            per = (nf * n_feat * (cc.FEATURE_ROW_BYTES + obs_row_bytes)
+                   + nh * n_head * cc.HEAD_ROW_BYTES)
             storage[f"{name}; {label}"] = {
                 "feature_rows_per_checkpoint": n_feat, "head_rows_per_checkpoint": n_head,
-                "bytes_per_model": per, "bytes_total": per * n, "n_models": n,
+                "bytes_per_model": per, "extraction_bytes": per * n,
+                "pretraining_checkpoint_bytes": ckpt_bytes,
+                "bytes_total": per * n + ckpt_bytes, "n_models": n,
                 "checkpoints_with_features": nf, "checkpoints_with_heads": nh}
     used = a.size_bytes - a.free_bytes
     line85 = 0.85 * a.size_bytes
@@ -88,7 +103,11 @@ def main(argv=None) -> int:
                           np.load(a.prefix_labels).tobytes()).hexdigest()},
            "min_pass": cc.MIN_PASS, "eps_s": cc.EPS_S,
            "tasks_by_test_fraction": {str(f): t for f, t in tasks.items()},
-           "n_models_v2_grid": n_models, "storage": storage,
+           "n_models_v2_grid": n_models, "n_runs_v2_grid": n_runs,
+           "checkpoint_bytes_per_run": a.checkpoint_bytes_per_run,
+           "observers": list(xv.V2_OBSERVERS),
+           "feature_rules": {"anywhere": anywhere, "windowed": windowed},
+           "storage": storage,
            "volume": {"size_bytes": a.size_bytes, "free_bytes": a.free_bytes}}
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(res, indent=1))

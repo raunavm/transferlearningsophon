@@ -98,6 +98,28 @@ def load_arch():
     return mod
 
 
+def strict_fp32() -> dict:
+    """TF32 OFF, for matmul and for cuDNN, before any model call; returns the
+    setting for the output's provenance.
+
+    torch's defaults leave cuDNN convolutions in TF32 on Ampere and later GPUs
+    (ParT's pair embedding is a 1x1 Conv1d), and V100 / 2080 Ti have no TF32, so
+    the same checkpoint on the same jets gave real-data log-odds up to 0.10 apart
+    between L4/L40 and V100 (aoj_checks_v1/reproduce.json). Measured on one RTX
+    A4000 (experiments/FIGS/data/tf32_check, mtx-r16q1mass-s3 epoch 79, 10,002
+    jets): torch's defaults against TF32 off moved the resonance-vs-QCD log-odds by
+    up to 0.045 (99th percentile 0.025) and flipped 13 argmaxes; with TF32 off the
+    GPU agrees with float32 on the CPU to 2e-4 and with itself to 1e-5."""
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    return {"matmul_allow_tf32": bool(torch.backends.cuda.matmul.allow_tf32),
+            "cudnn_allow_tf32": bool(torch.backends.cudnn.allow_tf32)}
+
+
+def device_name(device) -> str:
+    return torch.cuda.get_device_name(device) if device.type == "cuda" else "cpu"
+
+
 def build_model(data_config, num_classes: int):
     arch = load_arch()
     model, _ = arch.get_model(data_config, num_classes=num_classes,
@@ -346,8 +368,9 @@ def main() -> int:
     from weaver.utils.dataset import SimpleIterDataset
     from weaver.utils.data.config import DataConfig
 
+    tf32 = strict_fp32()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"device: {device}")
+    print(f"device: {device} ({device_name(device)}), TF32 {tf32}")
 
     data_config = DataConfig.load(args.data_config, load_observers=True)
     n_out = args.num_classes + args.num_reg
@@ -513,6 +536,7 @@ def main() -> int:
         "observers": sorted(saved_obs),
         "has_logits": bool(args.save_logits),
         "num_reg": int(args.num_reg),
+        "tf32": tf32, "device": str(device), "device_name": device_name(device),
         **prov,
     }
     if args.save_logits:
