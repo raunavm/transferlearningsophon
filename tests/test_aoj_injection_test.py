@@ -114,6 +114,8 @@ def test_toys_inject_what_they_say_and_the_leak_puts_the_failing_signal_in_the_f
     assert np.mean([t["n_pass"].sum() for t in boot]) == pytest.approx(6.6e5, rel=2e-3)
     leak = [IT.toy_bins(b, tr, 6e4, "leak", rng, eps=0.25) for _ in range(50)]
     assert np.mean([t["n_fail"].sum() for t in leak]) - 6e7 == pytest.approx(6e4 * 3, rel=0.2)
+    told = [IT.toy_bins(b, tr, 6e4, "tops", rng, tops=np.full(6, 3e4)) for _ in range(50)]
+    assert np.mean([t["n_fail"].sum() for t in told]) - 6e7 == pytest.approx(6 * (3e4 - 1e4), rel=0.2)
     data = IT.toy_bins(b, tr, 600.0, "data", rng)
     assert (data["n_fail"] == b["n_fail"]).all() and data["n_pass"].sum() - 60 == pytest.approx(600, abs=100)
 

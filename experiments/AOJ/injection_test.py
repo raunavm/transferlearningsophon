@@ -128,7 +128,12 @@ def export(merged, committed, out, workers):
 # ------------------------------------------------------------------ toys
 DATA = pathlib.Path("experiments/FIGS/data/aoj_full_v1")
 REGIONS = ("top", "band", "pseudo", *(f"top_eff{e:g}" for e in EXTRA_EFF))
-MODES = ("bootstrap", "data", "leak")
+MODES = ("bootstrap", "data", "leak", "tops", "tops_half")
+# THE FIT WITH THE TOPS IN THE FAIL REGION (peak_fit._Model, fit_v5): toys whose fail region
+# holds the tops failing the cut -- the reference's fitted signal per bin over EPS_TRUE --
+# fitted given the reference's signal (EPS_REF = 1, the fewest tops there can be). tops: the
+# fit's assumption holds; tops_half: twice as many tops as the reference passes.
+EPS_TRUE = dict(tops=1.0, tops_half=0.5)
 VARIANTS = ("full", "float", "fixed", "fixed_ftest")
 
 
@@ -149,7 +154,7 @@ def _per_pt(fit):
                      for j in range(len(P.PT_EDGES) - 1)])
 
 
-def truth(region, name, b, top_fit, start):
+def truth(region, name, b, top_fit, start, tops=None):
     """The generator of one score's toys in one region: a background with no signal, and a
     signal template that sums to 1 over the region's bins.
       top       the main fit's own model (top_fit: its order and floated shape), signal removed
@@ -160,7 +165,8 @@ def truth(region, name, b, top_fit, start):
     shape and split fitted there."""
     window = P._peak_cfg(region_peak(region))["window"]
     if region == "top":
-        model = P._Model(b, tuple(top_fit["tf_order"]), P._tf_norm(b, window), top_fit["mean"], top_fit["width"])
+        model = P._Model(b, tuple(top_fit["tf_order"]), P._tf_norm(b, window), top_fit["mean"], top_fit["width"],
+                         tops)
         x, _ = model.fit()
         fit = top_fit
     elif region.startswith("top_eff"):
@@ -176,15 +182,19 @@ def truth(region, name, b, top_fit, start):
                 mean=float(mean), width=float(src["width"]))
 
 
-def toy_bins(b, tr, size, mode, rng, eps=None):
+def toy_bins(b, tr, size, mode, rng, eps=None, tops=None):
     """One pseudo-experiment. bootstrap: Poisson pass and fail around the generator, plus
     the injected signal; data: the real counts plus a Poisson-fluctuated injected signal;
     leak: bootstrap, with the signal that FAILS the cut added to the fail region -- a
-    tagger of signal efficiency eps leaves size * (1 - eps) / eps behind there."""
+    tagger of signal efficiency eps leaves size * (1 - eps) / eps behind there; tops,
+    tops_half: bootstrap with the tops in each bin, `tops`, failing the cut where the
+    injected signal does not pass it."""
     s = size * tr["template"]
     if mode == "data":
         return dict(b, n_pass=b["n_pass"] + rng.poisson(s).astype(float))
     fail = tr["fail"] + (s * (1 - eps) / eps if mode == "leak" else 0.0)
+    if mode in EPS_TRUE:
+        fail = fail + np.maximum(tops - s, 0.0)
     return dict(b, n_pass=rng.poisson(tr["background"] + s).astype(float), n_fail=rng.poisson(fail).astype(float))
 
 
@@ -194,7 +204,7 @@ def _hessian_yield(model, x):
     return float(v @ x[model.n_tf:]), float(np.sqrt(max(v @ cov @ v, 0.0)))
 
 
-def fit_variant(variant, b, region, tr, start):
+def fit_variant(variant, b, region, tr, start, tops=None):
     """One fit of the toy `b`:
       full         the procedure: peak_fit.fit_binned, shape floating, order by F-test
       float        the shape floating at the generator's order, profile error
@@ -203,18 +213,18 @@ def fit_variant(variant, b, region, tr, start):
     peak = region_peak(region)
     window = P._peak_cfg(peak)["window"]
     if variant == "full":
-        f = P.fit_binned(b, peak, *start, float_shape=True)[0]
+        f = P.fit_binned(b, peak, *start, float_shape=True, tops=tops)[0]
         return dict(y=f["signal_yield"], err=f["signal_yield_err"], lo=f["signal_yield_err_lo"],
                     hi=f["signal_yield_err_hi"], mean=f["mean"], width=f["width"], order=f["tf_order"],
                     at_bound=bool(f["mean_at_bound"] or f["width_at_bound"]))
     if variant == "fixed_ftest":
-        f = P.fit_binned(b, peak, tr["mean"], tr["width"])[0]
+        f = P.fit_binned(b, peak, tr["mean"], tr["width"], tops=tops)[0]
         return dict(y=f["signal_yield"], err=f["signal_yield_err"], order=f["tf_order"])
     tf_norm = P._tf_norm(b, window)
     shape = (tr["mean"], tr["width"])
     if variant == "float":
-        shape = P._float_shape(b, tf_norm, tr["order"], window, [shape])
-    model = P._Model(b, tr["order"], tf_norm, *shape)
+        shape = P._float_shape(b, tf_norm, tr["order"], window, [shape], tops)
+    model = P._Model(b, tr["order"], tf_norm, *shape, tops)
     x, _ = model.fit()
     y, err = _hessian_yield(model, x)
     out = dict(y=y, err=err, mean=float(shape[0]), width=float(shape[1]), order=list(tr["order"]))
@@ -254,22 +264,36 @@ def task_key(t):
     return "|".join(map(str, (t["region"], t["mode"], t["name"], t["size"], t["toy"])))
 
 
+def _tops():
+    """The tops per top-fit bin the fit is given: peak_fit.tops_from_reference on the
+    reference's committed bins and its fit_v4 fit (fit_v5's reference is fit_v4's)."""
+    if "tops" not in _T:
+        b_ref = region_bins("top", "reference", _T["committed"], None)
+        _T["tops"] = P.tops_from_reference(b_ref, _T["v4"]["reference"]["top"])
+    return _T["tops"]
+
+
 def _run_task(t):
     region, name = t["region"], t["name"]
     b = region_bins(region, name, _T["committed"], _T["extra"])
-    if (region, name) not in _T["truths"]:
-        _T["truths"][(region, name)] = truth(region, name, b, _top_fit(name), _start(region, name))
-    tr = _T["truths"][(region, name)]
+    told = t["mode"] in EPS_TRUE
+    if told and region != "top":
+        raise SystemExit("FATAL: the tops are known in the top window only")
+    tops = _tops() if told else None
+    if (region, name, told) not in _T["truths"]:
+        _T["truths"][(region, name, told)] = truth(region, name, b, _top_fit(name), _start(region, name), tops)
+    tr = _T["truths"][(region, name, told)]
     eps = None
     if t["mode"] == "leak":
         eps = _T["eps"][name]["three_prong"]["top_like_at_data_cut"]["eff"]
     seq = np.random.SeedSequence([t["seed"], REGIONS.index(region), MODES.index(t["mode"]),
                                   int(t["size"]), t["toy"] + 1, *map(ord, name)])
-    toy = b if t["toy"] < 0 else toy_bins(b, tr, t["size"], t["mode"], np.random.default_rng(seq), eps)
+    toy = b if t["toy"] < 0 else toy_bins(b, tr, t["size"], t["mode"], np.random.default_rng(seq), eps,
+                                          tops / EPS_TRUE[t["mode"]] if told else None)
     out = dict(t, key=task_key(t), truth_order=list(tr["order"]), truth_mean=tr["mean"], truth_width=tr["width"],
                eps=eps, fits={})
     for v in t["variants"]:
-        out["fits"][v] = fit_variant(v, toy, region, tr, _start(region, name))
+        out["fits"][v] = fit_variant(v, toy, region, tr, _start(region, name), tops)
     return out
 
 
