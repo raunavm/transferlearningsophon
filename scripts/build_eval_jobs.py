@@ -5,7 +5,7 @@ WHY THIS IS A SEPARATE JOB
 --------------------------
 The training pods deliberately pass no `--data-test` / `--predict-output`.
 weaver accumulates EVERY test score in RAM and then concatenates: over the
-27,448,839 selected test jets that is 17.8 GB of scores and a ~35.6 GB peak at
+27,469,786 selected test jets that is 17.8 GB of scores and a ~35.6 GB peak at
 K=162, on top of a training process whose measured anon band is 35-58 GB. Doing
 it in-pod would OOM L162 at roughly day 8 -- after the entire budget was spent.
 It is also an I1 hazard, because the failure probability would scale with K,
@@ -143,7 +143,11 @@ def build(gate: str, run_id: str, arm: str, k: int, pin: str,
           python3 -c "import uproot,sys; f=uproot.open('${{OUT}}/pred.root'); t=f[f.keys()[0].split(';')[0]]; print('pred.root OK:', t.name, t.num_entries, 'entries,', len(t.keys()), 'branches'); sys.exit(0 if t.num_entries>0 else 1)" || {{ echo "FATAL: pred.root unreadable or empty"; exit 1; }}
 """
     text = text[:start] + block + text[end:]
-    return f"job-{name}-raunav.yaml", text
+    import importlib.util
+    s = importlib.util.spec_from_file_location("build_extract_jobs", ROOT / "scripts" / "build_extract_jobs.py")
+    bx = importlib.util.module_from_spec(s)
+    s.loader.exec_module(bx)
+    return f"job-{name}-raunav.yaml", bx.storage_guarded(f"job-{name}-raunav.yaml", text)
 
 
 def main() -> int:

@@ -295,7 +295,7 @@ spec:
           #
           # weaver accumulates EVERY test score in RAM and then concatenates
           # (utils/nn/tools.py: per-batch append, then np.concatenate). Over the
-          # 27,448,839 selected test jets that is K-dependent and large:
+          # 27,469,786 selected test jets that is K-dependent and large:
           #     K=162  17.8 GB of scores, ~35.6 GB peak at the concatenate
           #     K=43    4.7 GB                9.4 GB
           #     K=17    1.9 GB                3.7 GB

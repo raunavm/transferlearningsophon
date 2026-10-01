@@ -761,9 +761,14 @@ spec:
 
 
 def v1err_spec() -> str:
+    import importlib.util
     specs = " ".join(f"{r}:{V1ERR_RUNG[r.removeprefix('mtx-').rsplit('-s', 1)[0]]}"
                      for r in V1ERR_LADDER + V1ERR_MASS)
-    return V1ERR_SPEC.format(pin=V1ERR_PIN, specs=specs, heads=V1ERR_HEADS)
+    s = importlib.util.spec_from_file_location("build_extract_jobs", ROOT / "scripts" / "build_extract_jobs.py")
+    bx = importlib.util.module_from_spec(s)
+    s.loader.exec_module(bx)
+    return bx.storage_guarded("job-anomaly-heads-v1err-raunav.yaml",
+                              V1ERR_SPEC.format(pin=V1ERR_PIN, specs=specs, heads=V1ERR_HEADS))
 
 
 def main(argv=None) -> int:

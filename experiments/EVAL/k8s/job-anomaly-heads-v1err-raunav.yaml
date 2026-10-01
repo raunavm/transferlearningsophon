@@ -27,6 +27,9 @@ spec:
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          echo "PVC used: ${USED}%"
+          [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
           git rev-parse HEAD
           export PYTHONUNBUFFERED=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
           OUT=/data/results/eval/v1err/anomaly_heads/anomaly_heads.json

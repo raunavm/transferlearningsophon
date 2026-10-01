@@ -676,7 +676,8 @@ def build_v1err(base: dict[str, str]) -> dict[str, str]:
     for fn in (v1err_batch_a, v1err_batch_a2, v1err_batch_b, v1err_batch_b2):
         name, text = fn(base)
         out[f"job-{name}.yaml"] = text
-    return out
+    bx = _load_builder("build_extract_jobs")
+    return {f: bx.storage_guarded(f, t) for f, t in out.items()}
 
 
 def build() -> dict[str, str]:
@@ -741,7 +742,8 @@ def build() -> dict[str, str]:
     # The MLP re-runs, one per probe spec above whose MLP the paper reads.
     for name in MLP2_SOURCES:
         out[f"job-{mlp2_name(name)}.yaml"] = mlp2_spec(out[f"job-{name}.yaml"])
-    return out
+    bx = _load_builder("build_extract_jobs")
+    return {f: bx.storage_guarded(f, t) for f, t in out.items()}
 
 
 def main() -> int:

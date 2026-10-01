@@ -323,9 +323,11 @@ GPU_AFF = """
 FAMILIES = [("Res2P", 250, 299), ("Res34P", 1075, 1289), ("QCD", 350, 419)]
 
 
-# Selected test jets, docs/GROUND_TRUTH.md. Used only to convert a file count
-# into a jet count for the balance guard below.
-TEST_JETS_SELECTED = 27_448_839
+# Selected test jets: experiments/FIGS/data/extraction_v2_sizing/test_class_counts.json
+# n_selected, and weaver's own pred.root for mtx-r16q1-s2/-s3 (Events.num_entries,
+# RUNS.csv eval-arm-r16q1). docs/GROUND_TRUTH.md's 27,448,839 was wrong. Used only to
+# convert a file count into a jet count for the balance guard below.
+TEST_JETS_SELECTED = 27_469_786
 
 
 def balanced_prefix_jets() -> int:
@@ -833,6 +835,29 @@ BAD_GPU_NODES = ("patternlab.calit2.optiputer.net",
 NODE_EXCLUDE = ("\n              - key: kubernetes.io/hostname\n                operator: NotIn\n"
                 "                values: [" + ", ".join(f'"{n}"' for n in BAD_GPU_NODES) + "]")
 
+# THE STORAGE GUARD. Every spec that writes to /data checks the volume's fill before
+# its first write and refuses at 85 % (CLAUDE.md, compute-cluster rules). The
+# specs listed in experiments/EVAL/k8s/ran_without_storage_guard.txt ran without
+# it; their text is their record, so they are left as they are. Every other spec
+# the builders emit gets the guard right after the clone's cd (tests/test_storage_guard.py).
+STORAGE_GUARD = ('          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)\n'
+                 '          echo "PVC used: ${USED}%"\n'
+                 '          [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }\n')
+RAN_WITHOUT_STORAGE_GUARD = frozenset(
+    l.strip() for l in (OUT_DIR / "ran_without_storage_guard.txt").read_text().splitlines()
+    if l.strip() and not l.startswith("#"))
+
+
+def storage_guarded(fname: str, text: str) -> str:
+    """`text` with the storage guard after its clone, unless it has one or ran without."""
+    if fname in RAN_WITHOUT_STORAGE_GUARD or "df --output=pcent /data" in text:
+        return text
+    anchor = "          cd /workspace/transferlearningsophon\n"
+    if text.count(anchor) != 1:
+        raise SystemExit(f"FATAL: {fname}: no single '{anchor.strip()}' to put the storage guard after")
+    return text.replace(anchor, anchor + STORAGE_GUARD)
+
+
 # A GPU FAULT IS THE NODE'S, NOT THE CODE'S. halt() takes any exit below 128 for a
 # deterministic failure and stops the Job (exit 42). A GPU that fails mid-run
 # surfaces in Python as a CUDA RuntimeError, exit 1, so it was taken for one:
@@ -1204,6 +1229,7 @@ def main() -> int:
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         for seed in range(1, 6):
             fname, text = build_epoch_accuracy(seed)
+            text = storage_guarded(fname, text)
             yaml.safe_load(text)
             (OUT_DIR / fname).write_text(text)
             print(f"  {fname}")
@@ -1214,6 +1240,7 @@ def main() -> int:
                    ["experiments/EVAL/extract_observers.py", OBSERVERS_CONFIG],
                    args.pin_not_yet_tagged)
         fname, text = build_observers_job(args.max_jets)
+        text = storage_guarded(fname, text)
         yaml.safe_load(text)
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         (OUT_DIR / fname).write_text(text)
@@ -1275,6 +1302,7 @@ def main() -> int:
         fname, text = build(run_id, arm, k, ckpt, args.gpu, args.max_jets,
                             epoch, window=args.window,
                             window_full=args.window_full)
+        text = storage_guarded(fname, text)
         d = yaml.safe_load(text)
         body = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
         for must in (f"--num-classes {k} ", f"--arm {arm} ",
