@@ -1,0 +1,62 @@
+PVC used: 80%  free: 207G
+Cloning into '/workspace/transferlearningsophon'...
+Note: switching to '51038e3a1a29499d69cc2d929d5405a00ed8caee'.
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+  git switch -c <new-branch-name>
+Or undo this operation with:
+  git switch -
+Turn off this advice by setting config variable advice.detachedHead to false
+51038e3a1a29499d69cc2d929d5405a00ed8caee
+pooled shape 182.799 / 11.662 GeV after 2 passes; the models' own floated shapes spread by 0.68 / 1.01 GeV
+wrote /scratch/fit_v6/results.json, histograms.npz and fit_quality.json
+== REAL DATA (PRESPEC §6), top peak at 1% data efficiency, 9,441,209 jets ==
+  endpoint: -ln(top signal yield at 1% data efficiency); lower is better
+  reference (shipped CMS ParticleNet): yield 29143 ± 865
+          162 s1  yield   2756.6 ±  198.5  -ln(yield) -7.9218  GO
+          162 s2  yield    884.6 ±  211.3  -ln(yield) -6.7852  GO
+          162 s3  yield   3090.7 ±  199.3  -ln(yield) -8.0362  GO
+          162 s4  yield   2947.5 ±  179.7  -ln(yield) -7.9887  GO
+          162 s5  yield   2265.2 ±  190.9  -ln(yield) -7.7254  GO
+     162+mass s1  yield   2033.0 ±  211.9  -ln(yield) -7.6173  GO
+     162+mass s2  yield   2403.2 ±  191.1  -ln(yield) -7.7846  GO
+     162+mass s3  yield   2567.8 ±  178.6  -ln(yield) -7.8508  GO
+     162+mass s4  yield   2440.0 ±  176.0  -ln(yield) -7.7997  GO
+     162+mass s5  yield   2662.5 ±  175.3  -ln(yield) -7.8870  GO
+           17 s1  yield   2315.6 ±  200.7  -ln(yield) -7.7474  GO
+           17 s2  yield   2685.7 ±  201.0  -ln(yield) -7.8957  GO
+           17 s3  yield   2098.5 ±  211.6  -ln(yield) -7.6490  GO
+           17 s4  yield   2481.3 ±  194.9  -ln(yield) -7.8165  GO
+           17 s5  yield   2170.1 ±  215.5  -ln(yield) -7.6825  GO
+      17+mass s1  yield   2088.8 ±  197.3  -ln(yield) -7.6443  GO
+      17+mass s2  yield   3100.8 ±  183.5  -ln(yield) -8.0394  GO
+      17+mass s3  yield   2888.2 ±  199.6  -ln(yield) -7.9684  GO
+      17+mass s4  yield   1731.7 ±  213.6  -ln(yield) -7.4569  GO
+      17+mass s5  yield   2808.9 ±  216.5  -ln(yield) -7.9405  GO
+          188 s1  yield   2261.9 ±  210.9  -ln(yield) -7.7240  GO
+          188 s2  yield   2617.5 ±  178.7  -ln(yield) -7.8700  GO
+          188 s3  yield   3112.3 ±  181.1  -ln(yield) -8.0431  GO
+          188 s4  yield   2107.9 ±  213.4  -ln(yield) -7.6534  GO
+          188 s5  yield   1762.1 ±  216.1  -ln(yield) -7.4742  GO
+           43 s1  yield   2447.3 ±  203.0  -ln(yield) -7.8027  GO
+           43 s2  yield   2375.4 ±  201.0  -ln(yield) -7.7729  GO
+           43 s3  yield   3506.7 ±  183.5  -ln(yield) -8.1624  GO
+           43 s4  yield   2069.6 ±  177.6  -ln(yield) -7.6351  GO
+           43 s5  yield   1384.5 ±  168.8  -ln(yield) -7.2331  GO
+    sophon-public  yield   1812.7 ±  192.9  (reference row, no seed)
+  top efficiency 188 ~ 162 ~ 43 > 17: not confirmed in clauses 1-2, inconclusive in clause 3
+    clause 1 (performance falls with coarser labels): not confirmed, p = 0.692  -- Holm within the real-data table of 2
+    clause 2 (the step is 43 -> 17): not confirmed  -- arg-max [188] | [162, 43, 17]; localisation only, no separate p
+    clause 3 (188 ~ 162 ~ 43): inconclusive, p = 0.452  -- inconclusive at ±10%; equivalent within ±0.6200 (a factor 1.859 in yield)
+  mass-output 2x2: DiD -0.0448, t = -0.19, p = 0.855
+    Holm (m = 2): trend 188 -> 17: p = 0.692, not rejected
+    Holm (m = 2): mass-output 2x2 interaction: p = 0.855, not rejected
+      188  yield    2372 +-   515  (median stat. error  211)
+      162  yield    2389 +-   897  (median stat. error  199)
+       43  yield    2357 +-   768  (median stat. error  184)
+       17  yield    2350 +-   238  (median stat. error  201)
+ 162+mass  yield    2421 +-   240  (median stat. error  179)
+  17+mass  yield    2524 +-   584  (median stat. error  200)

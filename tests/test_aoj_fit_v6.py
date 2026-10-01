@@ -70,3 +70,41 @@ def test_a_result_is_never_overwritten(sub):
     _, out = sub
     with pytest.raises(SystemExit, match="exists"):
         F6.main(["--out", str(out / "fit"), "--analysis-out", str(out / "an2")])
+
+
+# ---- what the cluster run wrote (aoj_full_v1/fit_v6, analysis_v6) ----
+V6 = DATA / "fit_v6" / "results.json"
+
+
+def test_the_committed_fit_v6_is_what_its_code_and_inputs_make():
+    import hashlib
+    import subprocess
+    res = json.loads(V6.read_text())
+    r = res["refit"]
+    for key, path in (("bins_sha256", r["bins"]), ("previous_sha256", r["previous"])):
+        assert r[key] == hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
+    for key, path in (("peak_fit_sha256", "experiments/AOJ/peak_fit.py"), ("script_sha256", "experiments/AOJ/fit_v6.py")):
+        blob = subprocess.run(["git", "-C", str(ROOT), "show", f"mtx-s1.91:{path}"], capture_output=True).stdout
+        assert r[key] == hashlib.sha256(blob).hexdigest(), f"{path} at mtx-s1.91 is not the code that wrote fit_v6"
+
+
+def test_fit_v6_fits_every_model_at_the_pooled_shape_at_the_order_the_pool_settled_on():
+    res = json.loads(V6.read_text())
+    ps = res["pooled_shape"]
+    last = ps["passes"][-1]
+    assert len(res["models"]) == 31 and len(ps["pool"]) == 30 and F6.PUBLISHED not in ps["pool"]
+    for n, m in res["models"].items():
+        f = m["top"]
+        assert (f["mean"], f["width"]) == (ps["mean"], ps["width"]) and f["converged"]
+        if n in last["orders"]:
+            assert f["tf_order"] == last["orders"][n]
+    assert last["shape"] == pytest.approx([ps["mean"], ps["width"]], abs=1e-9)
+
+
+def test_the_v6_readout_is_the_mean_and_sd_over_seeds_of_the_v6_yields():
+    v6 = json.loads(V6.read_text())
+    an = json.loads((DATA / "analysis_v6/aoj_top.json").read_text())["per_label_set"]["label_sets"]
+    for level, s in an.items():
+        ys = [v6["models"][n]["top"]["signal_yield"] for n in s["models"]]
+        assert len(ys) == 5 and s["signal_yield"]["mean"] == pytest.approx(np.mean(ys))
+        assert s["signal_yield"]["sd"] == pytest.approx(np.std(ys, ddof=1))

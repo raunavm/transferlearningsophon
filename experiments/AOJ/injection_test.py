@@ -128,7 +128,7 @@ def export(merged, committed, out, workers):
 # ------------------------------------------------------------------ toys
 DATA = pathlib.Path("experiments/FIGS/data/aoj_full_v1")
 REGIONS = ("top", "band", "pseudo", *(f"top_eff{e:g}" for e in EXTRA_EFF))
-MODES = ("bootstrap", "data", "leak", "tops", "tops_half", "pooled")
+MODES = ("bootstrap", "data", "leak", "tops", "tops_half", "pooled", "ensemble")
 # THE FIT WITH THE TOPS IN THE FAIL REGION (peak_fit._Model, fit_v5): toys whose fail region
 # holds the tops failing the cut -- the reference's fitted signal per bin over EPS_TRUE --
 # fitted given the reference's signal (EPS_REF = 1, the fewest tops there can be). tops: the
@@ -253,7 +253,7 @@ def _init_toys(committed, extra, fit_path, eps_path, pooled_path=None):
               eps=json.loads(pathlib.Path(eps_path).read_text())["models"] if eps_path else {})
     if pooled_path:
         ps = json.loads(pathlib.Path(pooled_path).read_text())["pooled_shape"]
-        _T["pooled"] = (ps["mean"], ps["width"])
+        _T["pooled"], _T["pool"] = (ps["mean"], ps["width"]), list(ps["pool"])
 
 
 def _top_fit(name):
@@ -284,7 +284,33 @@ def _tops():
     return _T["tops"]
 
 
+def _run_ensemble(t):
+    """One pseudo-experiment of the whole fit_v6 procedure: a toy of every pretrained score
+    (mode pooled's generator, one injected size for all), the pooled shape re-derived from
+    the toys (peak_fit.pooled_shape, started at the true shape), and each toy fitted at it
+    with its F-test order, given the tops. The shape is the toys' own, so its uncertainty is
+    in the yields -- for scores whose toys are independent, unlike the data's passing jets."""
+    pooled, tops = _T["pooled"], _tops()
+    names = _T["pool"]
+    toys = {}
+    for n in names:
+        b = region_bins("top", n, _T["committed"], None)
+        key = ("top", n, True, pooled)
+        if key not in _T["truths"]:
+            _T["truths"][key] = truth("top", n, b, _top_fit(n), _start("top", n), tops, pooled)
+        seq = np.random.SeedSequence([t["seed"], REGIONS.index("top"), MODES.index("ensemble"), int(t["size"]),
+                                      t["toy"] + 1, *map(ord, n)])
+        toys[n] = toy_bins(b, _T["truths"][key], t["size"], "pooled", np.random.default_rng(seq), None, tops)
+    shape, orders, trail = P.pooled_shape(toys, names, P.PEAKS["top"]["window"], pooled, {n: tops for n in names})
+    fits = {n: P.fit_binned(toys[n], "top", *shape, tops=tops)[0] for n in names}
+    return dict(t, key=task_key(t), truth_mean=pooled[0], truth_width=pooled[1], shape=list(shape),
+                n_passes=len(trail), per_score={n: dict(y=f["signal_yield"], err=f["signal_yield_err"],
+                                                        order=f["tf_order"]) for n, f in fits.items()})
+
+
 def _run_task(t):
+    if t["mode"] == "ensemble":
+        return _run_ensemble(t)
     region, name = t["region"], t["name"]
     b = region_bins(region, name, _T["committed"], _T["extra"])
     told = t["mode"] in EPS_TRUE
@@ -320,6 +346,10 @@ def tasks(regions, modes, names, sizes, n_toys, variants, seed, shard, n_shards)
     out = []
     for region in regions:
         for mode in modes:
+            if mode == "ensemble":          # one task per toy: every pooled score at once
+                out += [dict(region=region, mode=mode, name="pool", size=float(size), toy=k)
+                        for size in sizes for k in range(n_toys)]
+                continue
             for name in names:
                 if mode == "data":
                     out.append(dict(region=region, mode=mode, name=name, size=0.0, toy=-1))
@@ -436,6 +466,15 @@ def summarise(records):
                        nothing injected: in the top window that is the real peak, at the same
                        shape. In the band and the pseudo-window the no-injection fit of the
                        FIXED shape is used (a floating shape finds the largest bump anywhere)."""
+    flat = []
+    for r in records:       # an ensemble: one record per score, variant "ensemble"
+        if r["mode"] != "ensemble":
+            flat.append(r)
+            continue
+        flat += [dict(r, name=n, truth_order=f["order"], truth_width=r["truth_width"],
+                      fits={"ensemble": dict(f, width=r["shape"][1], mean=r["shape"][0])})
+                 for n, f in r["per_score"].items()]
+    records = flat
     base = {(r["region"], r["name"], v): f["y"] for r in records if r["toy"] < 0 for v, f in r["fits"].items()}
     groups = {}
     for r in records:

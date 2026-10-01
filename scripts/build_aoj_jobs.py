@@ -1163,7 +1163,8 @@ def render_injection_bins() -> str:
 # top and band launched at mtx-s1.80; pseudo and wp, launched after the bins job's fix,
 # clone mtx-s1.81 (the same toy code, plus the float comparison of the bins)
 TOYS_PIN = "mtx-s1.80"
-TOYS_PINS = {"top": TOYS_PIN, "band": TOYS_PIN, "pseudo": "mtx-s1.81", "wp": "mtx-s1.81", "tops": "mtx-s1.87"}
+TOYS_PINS = {"top": TOYS_PIN, "band": TOYS_PIN, "pseudo": "mtx-s1.81", "wp": "mtx-s1.81", "tops": "mtx-s1.87",
+             "pooled": "mtx-s1.92"}
 TOYS_NEEDED_FLAGS = {"experiments/AOJ/injection_test.py": "def run_toys"}
 TOYS_CPU = 32
 SCORES = ["reference"] + [m.name for m in MODELS]
@@ -1186,6 +1187,12 @@ TOY_STUDIES = {
     # fitted given the reference's signal per bin; tops_half holds twice that many (the
     # one-sided systematic). The reference is fitted with none (EPS_REF = 1), so not here.
     "tops": [("--regions top --modes tops tops_half --toys 20 --variants full fixed", SCORES[1:])],
+    # THE POOLED SHAPE (fit_v6): each score's toys at the pooled shape fitted with fit_v6's
+    # procedure for a given shape (fixed_ftest), and whole ensembles -- every pretrained
+    # score at once, the pooled shape re-derived from the toys -- to put the shape's own
+    # uncertainty into the yields.
+    "pooled": [("--regions top --modes pooled ensemble --toys 40 --variants fixed_ftest fixed "
+                "--pooled experiments/FIGS/data/aoj_full_v1/fit_v6/results.json", SCORES[1:])],
 }
 NEEDS_EXTRA = {"pseudo", "wp"}
 
@@ -1466,7 +1473,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-only", action="store_true", help="verify, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
-                    help=f"check the working tree instead of {FIT6_PIN}, which is tagged after the commit")
+                    help=f"check the working tree instead of {TOYS_PINS['pooled']}, which is tagged after the commit")
     a = ap.parse_args()
     verify_heads()
     verify_pin(PIN, False)                      # the shards already ran at it
@@ -1478,12 +1485,14 @@ def main() -> int:
     verify_pin(RESCORE_PIN, False, RESCORE_NEEDED_FLAGS)
     verify_pin(CHECKS_PIN, False, CHECKS_NEEDED_FLAGS)
     for study, pin in sorted(TOYS_PINS.items()):
-        if study != "tops":
+        if study not in ("tops", "pooled"):
             verify_pin(pin, False, TOYS_NEEDED_FLAGS)
     verify_pin(TOYS_PINS["tops"], False, {"experiments/AOJ/injection_test.py": "EPS_TRUE"})
+    verify_pin(TOYS_PINS["pooled"], a.pin_not_yet_tagged, {"experiments/AOJ/injection_test.py": "def _run_ensemble",
+                                                           "experiments/FIGS/data/aoj_full_v1/fit_v6/results.json": "pooled_shape"})
     verify_pin(INJECTION_PIN, False, INJECTION_NEEDED_FLAGS)
     verify_pin(FIT5_PIN, False, FIT5_NEEDED_FLAGS)
-    verify_pin(FIT6_PIN, a.pin_not_yet_tagged, FIT6_NEEDED_FLAGS)
+    verify_pin(FIT6_PIN, False, FIT6_NEEDED_FLAGS)
     # the checks clone a tag made after fit_v5's results are committed
     if subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--verify", "-q", f"refs/tags/{CHECKS2_PIN}"],
                       capture_output=True).returncode == 0:

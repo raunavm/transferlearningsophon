@@ -170,3 +170,14 @@ def test_the_asymmetric_pull_uses_the_profile_error_on_the_side_of_the_truth():
     f = dict(err=10.0, lo=5.0, hi=20.0)
     assert IT._pull(80.0, 100.0, f) == (-2.0, -1.0)
     assert IT._pull(110.0, 100.0, f) == (1.0, 2.0)
+
+
+def test_an_ensemble_is_one_task_per_toy_and_reads_out_one_row_per_score():
+    every = IT.tasks(["top"], ["ensemble"], ["a", "b"], [1000.0, 2000.0], 3, ["fixed"], 7, 0, 1)
+    assert len(every) == 2 * 3 and {t["name"] for t in every} == {"pool"}
+    rec = dict(region="top", mode="ensemble", name="pool", size=1000.0, toy=0, truth_mean=182.8, truth_width=11.7,
+               shape=[182.5, 11.9], n_passes=2, per_score={"a": dict(y=1100.0, err=100.0, order=[2, 1]),
+                                                          "b": dict(y=900.0, err=100.0, order=[2, 2])})
+    g = IT.summarise([rec])[0]
+    assert g["variant"] == "ensemble" and g["n"] == 2 and g["ratio"]["mean"] == pytest.approx(1.0)
+    assert g["pull"]["mean"] == pytest.approx(0.0) and set(g["per_score"]) == {"a", "b"}
