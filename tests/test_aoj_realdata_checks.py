@@ -289,3 +289,81 @@ def test_spawned_workers_run_one_blas_thread_each_and_the_parent_keeps_its_setti
     workers, parent = json.loads(r.stdout.strip().splitlines()[-1])
     assert workers == [{k: "1" for k in RC.BLAS_THREAD_VARS}] * 2
     assert parent["OMP_NUM_THREADS"] == "8" and parent["OPENBLAS_NUM_THREADS"] is None
+
+
+# ---- the corrections of 2026-10-01 ----
+def test_a_validation_p_at_its_floor_is_a_bound_with_its_toy_count():
+    v = RC.validation_record(dict(toy_p=1 / 201, band_signal_z=2.52), 200)
+    assert v["n_worse"] == 0 and v["p_is_bound"] and v["p_text"] == "p <= 0.005 (0 of 200 toys)"
+    assert v["passes"] is False and v["band_signal_z"] == 2.52
+    w = RC.validation_record(dict(toy_p=111 / 201), 200)
+    assert w["n_worse"] == 110 and not w["p_is_bound"] and w["passes"]
+
+
+def test_the_run_spread_is_measured_overall_without_the_largest_and_per_vocabulary_with_and_without_defects():
+    rows = {f"l188-s{k}": dict(signal_yield=y, signal_yield_err=100.0, label_set="188",
+                               head_defect="x" if k == 5 else None)
+            for k, y in zip(range(1, 6), (1000, 1100, 900, 1050, 400))}
+    rows.update({f"r16q1-s{k}": dict(signal_yield=y, signal_yield_err=100.0, label_set="17", head_defect=None)
+                 for k, y in zip(range(1, 6), (1000, 1000, 1000, 1000, 2000))})
+    rows[P.PUBLISHED] = dict(signal_yield=5000, signal_yield_err=1.0, label_set="published", head_defect=None)
+    eff = {n: 0.3 for n in rows if n != P.PUBLISHED}
+    eff["r16q1-s5"] = 0.6
+    out = RC.run_spread(rows, eff, n_drop=2)
+    y = np.array([rows[n]["signal_yield"] for n in rows if n != P.PUBLISHED], float)
+    assert out["all"]["chi2"] == pytest.approx((((y - y.mean()) / 100) ** 2).sum())
+    assert out["all"]["ndf"] == 9 and set(out["largest"]["runs"]) == {"l188-s5", "r16q1-s5"}
+    assert out["largest"]["without"]["n"] == 8
+    l188 = out["per_label_set"]["188"]
+    assert l188["head_defect_runs"] == ["l188-s5"] and l188["without_head_defects"]["n"] == 4
+    assert l188["without_head_defects"]["chi2"] < l188["all"]["chi2"]
+    assert out["per_label_set"]["17"]["without_head_defects"] is None
+    assert out["vs_simulated_efficiency"]["ndf"] == 8 and out["vs_simulated_efficiency"]["pearson_r"] > 0
+
+
+def test_the_prong_only_power_is_its_expected_yield_over_its_error():
+    rows = {"l188-s1": dict(three_prong_yield=2000.0, signal_yield_err=200.0, signal_yield=50.0),
+            "l188-s2": dict(three_prong_yield=3000.0, signal_yield_err=100.0, signal_yield=900.0)}
+    dom = {"models": {"l188-s1": {"three_prong": {"signal_at_data_cut": {"eff": 0.4}},
+                                  "prong_only": {"signal_at_data_cut": {"eff": 0.02}}},
+                      "l188-s2": {"three_prong": {"signal_at_data_cut": {"eff": 0.3}},
+                                  "prong_only": {"signal_at_data_cut": {"eff": 0.3}}}}}
+    summary = RC.prong_power(rows, dom)
+    assert rows["l188-s1"]["expected_yield"] == pytest.approx(100.0)
+    assert rows["l188-s1"]["expected_z"] == pytest.approx(0.5)
+    assert rows["l188-s1"]["power"] == pytest.approx(stats_norm_sf(2.5))
+    assert rows["l188-s2"]["power"] == pytest.approx(stats_norm_sf(-27.0))
+    assert summary["n_runs"] == 2 and summary["n_runs_power_over_half"] == 1
+
+
+def stats_norm_sf(x):
+    from scipy import stats
+    return float(stats.norm.sf(x))
+
+
+def test_the_injection_recovery_subtracts_the_datas_own_signal_and_scans_the_leak(monkeypatch):
+    """Bookkeeping of _injection_one with the fits stubbed: recovered = (fitted - the
+    data's signal at the injected shape and the procedure's order) / injected."""
+    mass, pt, rng = jets(n=300_000, seed=7)
+    z = rng.normal(size=len(mass))
+    RC._W.clear()
+    RC._W.update(data=dict(mass=mass, pt=pt, scores={"m": {"three_prong": z}}),
+                 fit=dict(models={"m": {"top": dict(width=11.0, yield_per_pt_bin={"750-850": 100.0, "1200-2500": 150.0})}}))
+    calls = []
+
+    def fake(b, peak, mean=None, width=None, float_shape=False, order=None, tops=None):
+        calls.append(dict(float_shape=float_shape, order=order, tops=tops is not None))
+        injected = b["n_pass"].sum() - base_pass
+        y = (-30.0 if not float_shape else 0.9 * injected - 30.0) if order is None or float_shape else -40.0
+        return dict(signal_yield=y, signal_yield_err=20.0, z_wald=y / 20, tf_order=[2, 1], mean=280.0, width=9.0,
+                    profile_error_ok=True), None, None
+    _, b, _, _ = RC._pseudo("m")
+    base_pass = b["n_pass"].sum()
+    monkeypatch.setattr(RC.P, "fit_binned", fake)
+    name, row = RC._injection_one("m")
+    y_inj = row["injected"]["signal_yield"]
+    assert row["spurious"]["at_procedure_order"] == -40.0
+    assert row["injected"]["recovered"] == pytest.approx((0.9 * y_inj - 30.0 + 40.0) / y_inj)
+    assert row["injected"]["recovered_without_subtracting_spurious"] == pytest.approx((0.9 * y_inj - 30.0) / y_inj)
+    assert set(row["leak_scan"]) == {f"{e:g}" for e in RC.LEAK_EFFS}
+    assert sum(c["tops"] for c in calls) == len(RC.LEAK_EFFS), "each leak point fitted once given the tops"

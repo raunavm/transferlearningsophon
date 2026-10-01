@@ -325,3 +325,50 @@ def test_a_hard_closure_flag_vetoes_go_and_a_failed_reference_outranks_both():
     assert pf.decide(bad, [], True) == ("NO-GO", ["W:auc"])
     assert pf.decide(good, ["unit:part_d0 median ratio 9.8"], True)[0] == "NO-GO"
     assert pf.decide(good, [], False)[0] == pf.decide(bad, [], False)[0] == "PIPELINE-INVALID"
+
+
+def _leaky(seed, n_bkg=600_000, n_sig=40_000, eps=0.05):
+    """Top-like signal that a weak tagger mostly FAILS: a fraction eps of it scores like
+    signal, the rest like background -- as these taggers do on data tops."""
+    rng = np.random.default_rng(seed)
+    pt = np.r_[_pt(rng, n_bkg), _pt(rng, n_sig)]
+    mass = np.r_[pt[:n_bkg] * np.exp(rng.uniform(-6.5, -1.5, n_bkg) / 2), rng.normal(*SHAPES["top"], n_sig)]
+    tagged = rng.random(n_sig) < eps
+    score = np.r_[rng.random(n_bkg), np.where(tagged, 1 - rng.random(n_sig) ** 4, rng.random(n_sig))]
+    is_sig = np.r_[np.zeros(n_bkg, bool), np.ones(n_sig, bool)]
+    rho = pf.rho_of(mass, pt)
+    ok = (rho > pf.RHO_RANGE[0]) & (rho < pf.RHO_RANGE[1]) & (pt > pf.PT_RANGE[0]) & (pt < pf.PT_RANGE[1])
+    mass, pt, score, is_sig = mass[ok], pt[ok], score[ok], is_sig[ok]
+    passed = pf.passes(score, mass, pt, pf.build_map(score, mass, pt, EFF))
+    b = pf._bins(mass, pt, passed, pf.PEAKS["top"]["fit_range"])
+    h = lambda sel: np.histogram2d(mass[sel], pt[sel], bins=(b["m_edges"], pf.PT_EDGES))[0][b["i"], b["j"]]
+    return b, h(is_sig), h(is_sig & passed)
+
+
+def test_tops_failing_the_cut_bias_the_pass_only_fit_low_and_the_fit_given_the_tops_recovers_them():
+    """The fail region's tops are absorbed by q and come back as TF * F in the pass
+    background (_Model). Given the tops in each bin, the fit recovers the passing ones."""
+    b, tops, tops_pass = _leaky(31)
+    s_pass = tops_pass.sum()
+    blind = pf.fit_binned(b, "top", *SHAPES["top"])[0]
+    told = pf.fit_binned(b, "top", *SHAPES["top"], tops=tops)[0]
+    tf = pf._tf_norm(b, pf.PEAKS["top"]["window"])
+    assert s_pass - blind["signal_yield"] > 3 * blind["signal_yield_err"], "the fixture must show the leak"
+    assert blind["signal_yield"] == pytest.approx(s_pass - tf * (tops - tops_pass).sum(), abs=2.5 * blind["signal_yield_err"])
+    assert abs(told["signal_yield"] - s_pass) < 2.5 * told["signal_yield_err"], (told["signal_yield"], s_pass)
+    floated = pf.fit_binned(b, "top", 180.0, 17.3, float_shape=True, tops=tops)[0]
+    assert abs(floated["signal_yield"] - s_pass) < 2.5 * floated["signal_yield_err"]
+
+
+def test_the_fit_given_tops_has_the_gradient_of_its_loss_and_without_tops_is_the_pass_only_fit():
+    b, tops, _ = _leaky(32, n_bkg=200_000, n_sig=10_000)
+    m0 = pf._Model(b, (2, 1), pf._tf_norm(b, pf.PEAKS["top"]["window"]), *SHAPES["top"])
+    m1 = pf._Model(b, (2, 1), m0.tf_norm, *SHAPES["top"], tops=tops)
+    x, _ = m1.fit()
+    g = m1.loss(x * 1.01)[1]
+    for k in (0, m1.n_tf + 1):
+        d = np.zeros_like(x); d[k] = 1e-6 * max(1.0, abs(x[k]))
+        num = (m1.loss(x * 1.01 + d)[0] - m1.loss(x * 1.01 - d)[0]) / (2 * d[k])
+        assert g[k] == pytest.approx(num, rel=1e-3, abs=1e-6)
+    zero = pf._Model(b, (2, 1), m0.tf_norm, *SHAPES["top"], tops=np.zeros(len(b["n_pass"])))
+    assert zero.loss(x)[0] == pytest.approx(m0.loss(x)[0], rel=1e-12)

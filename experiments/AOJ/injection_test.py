@@ -317,30 +317,57 @@ def run_toys(a):
 
 # ------------------------------------------------------------------ readout
 REPRODUCE_TOL = 1e-3        # yield shift / error: across machines the minimiser stops a hair apart
+# ...except where the floated shape sits in a flat minimum: there Powell's end point moved by
+# up to 1 GeV in mean between the cluster and a laptop (5 of 31 replays of the checks, 2026-10-01)
+FLAT_TOL = 0.15
 
 
-def reproduce_checks(extra, fit, checks):
+def _replay_one(job):
+    """One score of reproduce_checks."""
+    name, b, top, stored = job
+    centre, width = 0.5 * sum(PSEUDO["window"]), top["width"]
+    spur = P.fit_binned(b, PSEUDO, centre, width)[0]
+    inj, cats = RC.inject_asimov(b, centre, width, top["yield_per_pt_bin"])
+    y = sum(cats.values())
+    got, _, (model, _) = P.fit_binned(inj, PSEUDO, centre, width, float_shape=True)
+    order = tuple(got["tf_order"])
+    # THE DECOMPOSITION, at the order the procedure chose:
+    #   fixed  the injected shape held fixed: what the data's own background does to the yield
+    #   data   nothing injected, the injected shape fixed: the data's spurious signal there
+    #   smooth the procedure on the background-only fit's expectation plus the same Asimov
+    #          signal: the estimator with no fluctuation at all
+    fixed = P.fit_binned(inj, PSEUDO, centre, width, order=order)[0]["signal_yield"]
+    spur_at = P.fit_binned(b, PSEUDO, centre, width, order=order)[0]["signal_yield"]
+    _, _, (bm, bx) = P.fit_binned(b, PSEUDO)
+    t, _, q, _ = bm.expect(bx)
+    smooth_inj, _ = RC.inject_asimov(dict(b, n_pass=t * q, n_fail=q), centre, width, top["yield_per_pt_bin"])
+    smooth = P.fit_binned(smooth_inj, PSEUDO, centre, width, float_shape=True)[0]
+    s, i = stored["spurious"], stored["injected"]
+    shift = dict(spurious=(spur["signal_yield"] - s["signal_yield"]) / s["signal_yield_err"],
+                 fitted=(got["signal_yield"] - i["fitted"]) / i["fitted_err"],
+                 injected=(y - i["signal_yield"]) / i["fitted_err"])
+    worst = max(map(abs, shift.values()))
+    return name, dict(injected=y, fitted=got["signal_yield"], fitted_err=got["signal_yield_err"],
+                      fitted_mean=got["mean"], fitted_width=got["width"], injected_width=width, tf_order=list(order),
+                      spurious=spur["signal_yield"], spurious_err=spur["signal_yield_err"],
+                      shift_over_err=shift, ok=bool(worst <= REPRODUCE_TOL), within_flat_tol=bool(worst <= FLAT_TOL),
+                      recovered=dict(procedure=got["signal_yield"] / y, injected_shape_fixed=fixed / y,
+                                     data_spurious_at_that_order=spur_at / y,
+                                     procedure_on_smooth_background=smooth["signal_yield"] / y,
+                                     smooth_width=smooth["width"]))
+
+
+def reproduce_checks(extra, fit, checks, workers=1):
     """The checks' pseudo-window test replayed from the exported bins, exactly as
     realdata_checks._injection_one runs it: the spurious signal at a fixed shape, and the
-    Asimov injection fitted back with the shape floating. Per score: the replay beside the
-    stored numbers, ok when every yield is within REPRODUCE_TOL of its error."""
-    rows = {}
-    for name, stored in checks["models"].items():
-        top = fit["models"][name]["top"]
-        b = region_bins("pseudo", name, None, extra)
-        centre, width = 0.5 * sum(PSEUDO["window"]), top["width"]
-        spur = P.fit_binned(b, PSEUDO, centre, width)[0]
-        inj, cats = RC.inject_asimov(b, centre, width, top["yield_per_pt_bin"])
-        got = P.fit_binned(inj, PSEUDO, centre, width, float_shape=True)[0]
-        s, i = stored["spurious"], stored["injected"]
-        shift = dict(spurious=(spur["signal_yield"] - s["signal_yield"]) / s["signal_yield_err"],
-                     fitted=(got["signal_yield"] - i["fitted"]) / i["fitted_err"],
-                     injected=(sum(cats.values()) - i["signal_yield"]) / i["fitted_err"])
-        rows[name] = dict(injected=sum(cats.values()), fitted=got["signal_yield"], fitted_err=got["signal_yield_err"],
-                          fitted_mean=got["mean"], fitted_width=got["width"], spurious=spur["signal_yield"],
-                          spurious_err=spur["signal_yield_err"], shift_over_err=shift,
-                          ok=bool(max(map(abs, shift.values())) <= REPRODUCE_TOL))
-    return rows
+    Asimov injection fitted back with the shape floating; with the decomposition of what
+    it recovers (_replay_one). Per score: the replay beside the stored numbers, ok when
+    every yield is within REPRODUCE_TOL of its error, within_flat_tol within FLAT_TOL."""
+    jobs = [(n, region_bins("pseudo", n, None, extra), fit["models"][n]["top"], st) for n, st in checks["models"].items()]
+    if workers > 1:
+        with multiprocessing.get_context("spawn").Pool(workers) as pool:
+            return dict(pool.map(_replay_one, jobs, chunksize=1))
+    return dict(map(_replay_one, jobs))
 
 
 def _pull(y, target, f):
@@ -407,6 +434,7 @@ def main(argv=None) -> int:
     r.add_argument("--checks", default=pathlib.Path("experiments/FIGS/data/aoj_checks_v1/map_injection_data.json"),
                    type=pathlib.Path)
     r.add_argument("--out", required=True, type=pathlib.Path)
+    r.add_argument("--workers", type=int, default=1)
     s = sub.add_parser("summary")
     s.add_argument("--toys", nargs="+", required=True, type=pathlib.Path)
     s.add_argument("--out", required=True, type=pathlib.Path)
@@ -437,8 +465,13 @@ def main(argv=None) -> int:
     elif a.cmd == "toys":
         run_toys(a)
     elif a.cmd == "reproduce":
-        rows = reproduce_checks(np.load(a.extra), json.loads(a.fit.read_text()), json.loads(a.checks.read_text()))
+        z = np.load(a.extra)
+        rows = reproduce_checks({k: z[k] for k in z.files}, json.loads(a.fit.read_text()),
+                                json.loads(a.checks.read_text()), a.workers)
         doc = dict(models=rows, all_ok=all(x["ok"] for x in rows.values()), tol=REPRODUCE_TOL,
+                   all_within_flat_tol=all(x["within_flat_tol"] for x in rows.values()), flat_tol=FLAT_TOL,
+                   n_exact=sum(x["ok"] for x in rows.values()),
+                   max_shift_over_err=max(abs(v) for x in rows.values() for v in x["shift_over_err"].values()),
                    inputs={k: str(v) for k, v in dict(extra=a.extra, fit=a.fit, checks=a.checks).items()})
         a.out.parent.mkdir(parents=True, exist_ok=True)
         a.out.write_text(json.dumps(doc, indent=2))

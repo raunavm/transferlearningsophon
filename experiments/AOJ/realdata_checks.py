@@ -188,8 +188,10 @@ def load_data(merged: pathlib.Path, kinds=("three_prong", "prong_only"), first: 
     `first`: the merged run the MAIN FIT was made from, when `merged` is a rescore of
     it. Its three-prong scores are then the ones used -- exactly what the fit saw --
     and the rescore's are kept as three_prong_rescore; the jets must be identical.
-    A rescore on another GPU model differs in the last bit of a few jets' float16
-    scores (reproduce.json quantifies it), so "the same model" is not "the same number"."""
+    A rescore on another GPU model is NOT the same number: in the shards first scored on
+    a V100 and rescored on an L4 or L40 (2, 6, 7), 36-75 % of the float16 scores differ,
+    by up to 0.10 in log-odds, and at the 1 % cut up to 266 jets change side
+    (reproduce.json, checks_v1); on the same GPU family they agree to a float16 step."""
     merged = pathlib.Path(merged)
     first = pathlib.Path(first) if first is not None else None
     j = np.load(merged / "jets.npz")
@@ -306,7 +308,7 @@ def _fit_summary(fit: dict) -> dict:
             "s_over_sqrt_b", "s_in_window", "b_in_window", "mean", "width", "tf_order", "converged",
             "edm", "n_tf_at_floor", "profile_error_ok", "mean_at_bound", "width_at_bound",
             "delta_deviance_vs_background_only", "data_efficiency", "data_efficiency_sidebands",
-            "data_efficiency_top_window", "yield_per_pt_bin")
+            "data_efficiency_top_window", "yield_per_pt_bin", "leak_systematic", "fit_v4_signal_yield")
     out = {k: fit[k] for k in keys if k in fit}
     if "validation" in fit:
         v = fit["validation"]
@@ -534,6 +536,73 @@ def step_closure(shards) -> dict:
                      "The reference is the same JetClass-II jets in every shard.")
 
 
+def _chi2_about_mean(y, e) -> dict:
+    """chi2 of yields y (errors e) about their weighted mean, its ndf and p."""
+    y, e = np.asarray(y, float), np.asarray(e, float)
+    w = 1 / e ** 2
+    mean = float((w * y).sum() / w.sum())
+    chi2 = float((((y - mean) / e) ** 2).sum())
+    return dict(n=int(len(y)), weighted_mean=mean, chi2=chi2, ndf=int(len(y) - 1),
+                p=float(stats.chi2.sf(chi2, len(y) - 1)) if len(y) > 1 else None)
+
+
+def run_spread(rows, eff=None, n_drop=4) -> dict:
+    """WHAT THE RUN-TO-RUN SPREAD OF THE YIELDS IS, measured, not attributed.
+    rows: name -> {signal_yield, signal_yield_err, label_set, head_defect}; eff: name -> the
+    run's simulated three-prong efficiency at its data cut (step_domain), optional.
+      all            chi2 of the pretrained runs' yields about their weighted mean
+      largest        the n_drop runs contributing most, and the chi2 without them
+      per_label_set  the same within each vocabulary, with and without the runs whose
+                     output layer is defective (HEAD_DEFECTS)
+      vs_simulated_efficiency  the weighted straight-line fit of yield on that efficiency:
+                     its residual chi2 (ndf n - 2) and the correlation. A line that does
+                     not lower the chi2 means the simulated efficiency does not explain
+                     the spread; it does not say what does. (The chi2 of yield /
+                     efficiency, step_domain, uses the data-cut efficiencies of the same
+                     runs and so tests no run-to-run response.)"""
+    runs = [n for n in sorted(rows) if n != P.PUBLISHED]
+    y = {n: rows[n]["signal_yield"] for n in runs}
+    e = {n: rows[n]["signal_yield_err"] for n in runs}
+    every = _chi2_about_mean([y[n] for n in runs], [e[n] for n in runs])
+    contrib = {n: ((y[n] - every["weighted_mean"]) / e[n]) ** 2 for n in runs}
+    top = sorted(runs, key=lambda n: -contrib[n])[:n_drop]
+    rest = [n for n in runs if n not in top]
+    out = dict(all=every, contribution=contrib,
+               largest=dict(runs=top, contributions=[contrib[n] for n in top],
+                            without=_chi2_about_mean([y[n] for n in rest], [e[n] for n in rest])),
+               per_label_set={})
+    for ls in sorted({rows[n]["label_set"] for n in runs}):
+        names = [n for n in runs if rows[n]["label_set"] == ls]
+        clean = [n for n in names if not rows[n].get("head_defect")]
+        out["per_label_set"][ls] = dict(
+            runs=names, all=_chi2_about_mean([y[n] for n in names], [e[n] for n in names]),
+            head_defect_runs=[n for n in names if n not in clean],
+            without_head_defects=(_chi2_about_mean([y[n] for n in clean], [e[n] for n in clean])
+                                  if len(clean) > 1 and len(clean) < len(names) else None))
+    if eff:
+        have = [n for n in runs if n in eff]
+        x, yy, ee = (np.array([d[n] for n in have], float) for d in (eff, y, e))
+        w = 1 / ee ** 2
+        A = np.stack([np.ones_like(x), x], axis=1)
+        coef = np.linalg.solve(A.T @ (A * w[:, None]), A.T @ (w * yy))
+        chi2 = float((((yy - A @ coef) / ee) ** 2).sum())
+        out["vs_simulated_efficiency"] = dict(
+            n=len(have), intercept=float(coef[0]), slope=float(coef[1]), chi2=chi2, ndf=len(have) - 2,
+            p=float(stats.chi2.sf(chi2, len(have) - 2)), pearson_r=float(stats.pearsonr(x, yy)[0]))
+    return out
+
+
+def reference_tops(data, fit):
+    """The tops in each top-fit bin that the main fit gave every score (its fail_tops):
+    the reference's fitted signal, refitted from these jets at its stored order and shape
+    (peak_fit.tops_from_reference). None when the main fit put no tops in the fail region."""
+    if not fit.get("fail_tops"):
+        return None
+    z, m, pt = P.logit(data["pn"]), data["mass"], data["pt"]
+    b = P._bins(m, pt, P.passes(z, m, pt, P.build_map(z, m, pt, fit["eff"])), TOP["fit_range"])
+    return P.tops_from_reference(b, fit["reference"]["top"], fit["fail_tops"]["eps_ref"])
+
+
 def step_per_run(fit, domain=None) -> dict:
     """Item 6: every model's yield with its fit status."""
     rows = {}
@@ -569,7 +638,10 @@ def step_per_run(fit, domain=None) -> dict:
               for ls, v in ybl.items()}
     for v in spread.values():
         v["sd_over_median_stat_err"] = v["sd_over_run"] / v["median_stat_err"] if v["sd_over_run"] else None
+    eff = ({n: r["sim_signal_eff_at_data_cut"] for n, r in rows.items() if r.get("sim_signal_eff_at_data_cut") is not None}
+           or None)
     return dict(models=rows, lowest_yield_per_label_set=lowest,
+                run_spread=run_spread(rows, eff),
                 yield_by_label_set=ybl, run_spread_vs_stat_error=spread,
                 pooled_shape=pooled.get("pooled"),
                 head_defects_source="audit 2026-09-29, report section B4 (head_acc.py on 2M test jets)")
@@ -602,12 +674,37 @@ def step_reference(data, fit, n_toys) -> dict:
     matched = dict(_fit_summary(res), sideband_efficiency_setting=eff_cal, efficiencies=_efficiencies(passed, mass),
                    z_ok=bool(res["z_wald"] >= TOP["reference_z"]))
     ratio = lambda y: {n: f["top"]["signal_yield"] / y for n, f in fit["models"].items()}
+    vside = validation_record(side["validation"], fit["n_toys"])
+    vmatched = validation_record(res["validation"], n_toys)
+    valid = vside["passes"] and vmatched["passes"]
     return dict(
-        at_sideband_1pct=dict(_fit_summary(side), efficiencies=at_side, source="the main fit's results.json:reference.top"),
-        at_overall_1pct=matched,
+        at_sideband_1pct=dict(_fit_summary(side), efficiencies=at_side, validation_record=vside,
+                              source="the main fit's results.json:reference.top"),
+        at_overall_1pct=dict(matched, validation_record=vmatched),
         criterion=f"validation toy p > {P.MIN_VALIDATION_P} (peak_fit.MIN_VALIDATION_P), {n_toys} toys",
+        # A RATIO TO A YIELD WHOSE BACKGROUND MODEL FAILS ITS VALIDATION IS NOT A RESULT:
+        # kept for the record, marked, never to be quoted while `valid` is false.
+        model_over_reference_valid=bool(valid),
+        model_over_reference_invalid_because=(None if valid else
+                                              "the reference's background model fails its validation "
+                                              f"(sidebands: {vside['p_text']}; all jets: {vmatched['p_text']})"),
         model_over_reference_sideband=ratio(side["signal_yield"]),
         model_over_reference_overall=ratio(res["signal_yield"]))
+
+
+def validation_record(v, n_toys) -> dict:
+    """The validation's toy p-value as a count: p = (n_worse + 1) / (n_toys + 1)
+    (peak_fit.toy_p_value), so with no toy worse than the data it is a bound,
+    p <= 1 / (n_toys + 1), and is printed as one."""
+    p = v.get("toy_p")
+    if p is None or not n_toys:
+        return dict(toy_p=p, n_toys=n_toys, n_worse=None, p_text=None, passes=None,
+                    band_signal_z=v.get("band_signal_z"))
+    n_worse = int(round(p * (n_toys + 1))) - 1
+    text = (f"p <= {1 / (n_toys + 1):.3f} (0 of {n_toys} toys)" if n_worse == 0
+            else f"p = {p:.3f} ({n_worse} of {n_toys} toys)")
+    return dict(toy_p=p, n_toys=n_toys, n_worse=n_worse, p_is_bound=n_worse == 0, p_text=text,
+                passes=bool(p > P.MIN_VALIDATION_P), band_signal_z=v.get("band_signal_z"))
 
 
 # ---- per-model workers: they read the module-level _W, set before the fork
@@ -633,7 +730,11 @@ def _sim_closure_one(name):
                       tf_order=spur["tf_order"], shape=[fit["mean"], fit["width"]],
                       scaled_to_data=(frac * fit["b_in_window"] if frac is not None else None),
                       scaled_to_data_over_yield=(frac * fit["b_in_window"] / fit["signal_yield"]
-                                                 if frac is not None else None)))
+                                                 if frac is not None else None),
+                      # its statistical error, the same scaling: the closure holds only to this
+                      scaled_to_data_over_yield_err=(spur["signal_yield_err"] / spur["b_in_window"]
+                                                     * fit["b_in_window"] / fit["signal_yield"]
+                                                     if spur["b_in_window"] > 0 else None)))
 
 
 def step_sim_closure(sim, fit, workers) -> dict:
@@ -651,6 +752,9 @@ def step_sim_closure(sim, fit, workers) -> dict:
         spurious_z=spread([rows[n]["spurious"]["z"] for n in runs]),
         spurious_over_background=spread([rows[n]["spurious"]["over_background_in_window"] for n in runs]),
         spurious_scaled_to_data_over_yield=spread([rows[n]["spurious"]["scaled_to_data_over_yield"] for n in runs]),
+        # "no spurious peak" holds to this, one simulated sample shared by every run
+        spurious_scaled_to_data_over_yield_err=spread([rows[n]["spurious"]["scaled_to_data_over_yield_err"]
+                                                       for n in runs]),
         note="the same simulated QCD jets serve every model, so the models' values are correlated; "
              "the spread is not an independent-sample error")
     return dict(models=rows, summary=summary,
@@ -665,14 +769,41 @@ def step_sim_closure(sim, fit, workers) -> dict:
                        "same rho window")
 
 
-def _injection_one(name):
+# THE INJECTION TEST (corrected 2026-10-01). checks_v1 quoted fitted / injected and the
+# pull (fitted - injected) / error: 0.72 and -1.7. The pseudo-window's data hold a signal
+# of their own there -- the fixed-shape fit of the data with nothing injected, `spurious`,
+# had a median z of -1.06, shared by every score because their passing jets overlap --
+# and it was never subtracted. Replayed from the exported bins (experiments/AOJ/
+# injection_test.py reproduce): the procedure on the background-only fit's smooth
+# expectation plus the same signal recovers 1.000 for every score; held at the injected
+# shape it recovers 0.80 (median), the data's own spurious signal; floating the shape
+# takes it to 0.72. So: recovery = (fitted - the data's signal at the injected shape and
+# the procedure's order) / injected, the spurious signal reported beside it, and the
+# procedure's own bias measured on toys drawn from the background-only fit plus the signal.
+INJECTION_TOYS = 100
+INJECTION_TOY_CHUNK = 10
+# Signal that FAILS the cut: a tagger of efficiency eps on the injected signal leaves
+# injected * (1 - eps) / eps in the fail region; the pass-only fit then recovers about
+# 1 - TF (1 - eps) / eps. Scanned at these efficiencies, the fit given the tops in each
+# bin (peak_fit._Model, `tops`) and not given them.
+LEAK_EFFS = (0.05, 0.1, 0.2, 0.4)
+
+
+def _pseudo(name):
+    """The pseudo-window bins of `name` and the injection's centre and width."""
     d, fit = _W["data"], _W["fit"]["models"][name]["top"]
     z, m, pt = d["scores"][name]["three_prong"].astype(float), d["mass"], d["pt"]
     masked = P.MASKED + (PSEUDO["window"],)
     passed = P.passes(z, m, pt, P.build_map(z, m, pt, EFF, masked=masked))
+    return passed, P._bins(m, pt, passed, PSEUDO["fit_range"]), 0.5 * sum(PSEUDO["window"]), fit["width"]
+
+
+def _injection_one(name):
+    d, fit = _W["data"], _W["fit"]["models"][name]["top"]
+    m, pt = d["mass"], d["pt"]
+    masked = P.MASKED + (PSEUDO["window"],)
+    passed, b, centre, width = _pseudo(name)
     acc = fit_acceptance(m, pt, PSEUDO["fit_range"])
-    b = P._bins(m, pt, passed, PSEUDO["fit_range"])
-    centre, width = 0.5 * sum(PSEUDO["window"]), fit["width"]
     spur, _, _ = P.fit_binned(b, PSEUDO, centre, width)
     # INJECTED: a Gaussian of the model's own fitted width at the pseudo-window's centre,
     # its yield and pT split those of the model's top fit in the pT categories present
@@ -681,18 +812,59 @@ def _injection_one(name):
     inj, cats = inject_asimov(b, centre, width, fit["yield_per_pt_bin"])
     y_inj = float(sum(cats.values()))
     got, _, _ = P.fit_binned(inj, PSEUDO, centre, width, float_shape=True)
+    base = P.fit_binned(b, PSEUDO, centre, width, order=tuple(got["tf_order"]))[0]["signal_yield"]
+    net = got["signal_yield"] - base
+    leak = {}
+    for eps in LEAK_EFFS:
+        # the injected signal also in the fail bins, as a tagger of efficiency eps leaves it
+        add = inj["n_pass"] - b["n_pass"]
+        lk = dict(inj, n_fail=b["n_fail"] + add * (1 - eps) / eps)
+        pass_only = P.fit_binned(lk, PSEUDO, centre, width, float_shape=True)[0]
+        told = P.fit_binned(lk, PSEUDO, centre, width, float_shape=True, tops=add / eps)[0]
+        leak[f"{eps:g}"] = dict(
+            recovered_pass_only=(pass_only["signal_yield"] - base) / y_inj,
+            recovered_with_tops=(told["signal_yield"] - base) / y_inj,
+            expected_pass_only=1 - P._tf_norm(b, PSEUDO["window"]) * (1 - eps) / eps)
     return name, dict(
         efficiencies=dict(all=float(passed.mean()),
                           sidebands=float(passed[~P.in_windows(m, masked)].mean())),
         shape_change_pseudo_window=shape_change(passed, m, acc, PSEUDO["window"]),
         profile=eff_profile(passed, m, acc, PSEUDO["fit_range"]),
         spurious=dict(signal_yield=spur["signal_yield"], signal_yield_err=spur["signal_yield_err"],
-                      z=spur["z_wald"], tf_order=spur["tf_order"], shape=[centre, width]),
+                      z=spur["z_wald"], tf_order=spur["tf_order"], shape=[centre, width],
+                      at_procedure_order=base),
         injected=dict(signal_yield=y_inj, per_pt_bin={f"{P.PT_EDGES[j]:g}-{P.PT_EDGES[j + 1]:g}": v for j, v in cats.items()},
                       fitted=got["signal_yield"], fitted_err=got["signal_yield_err"],
-                      pull=(got["signal_yield"] - y_inj) / got["signal_yield_err"] if got["signal_yield_err"] else None,
+                      recovered=net / y_inj,
+                      pull=(net - y_inj) / got["signal_yield_err"] if got["signal_yield_err"] else None,
+                      recovered_without_subtracting_spurious=got["signal_yield"] / y_inj,
                       fitted_mean=got["mean"], fitted_width=got["width"], tf_order=got["tf_order"],
-                      profile_error_ok=got.get("profile_error_ok")))
+                      profile_error_ok=got.get("profile_error_ok")),
+        leak_scan=leak)
+
+
+def _injection_toys(job):
+    """Toys k0..k1-1 of one score: Poisson pass and fail around the background-only fit of
+    its pseudo-window bins, plus the Asimov signal of _injection_one Poisson-fluctuated,
+    fitted with the procedure. Returns the recovered fractions and pulls."""
+    name, k0, k1 = job
+    if _W.get("_bkg_name") != name:
+        _, b, centre, width = _pseudo(name)
+        _, _, (model, x) = P.fit_binned(b, PSEUDO)
+        t, _, q, _ = model.expect(x)
+        inj, cats = inject_asimov(dict(b, n_pass=np.zeros_like(b["n_pass"])), centre, width,
+                                  _W["fit"]["models"][name]["top"]["yield_per_pt_bin"])
+        _W.update(_bkg_name=name, _bkg=(b, t * q, q, inj["n_pass"], float(sum(cats.values())), centre, width))
+    b, bkg, fail, sig, y_inj, centre, width = _W["_bkg"]
+    out = []
+    for k in range(k0, k1):
+        rng = np.random.default_rng([20261001, k, *map(ord, name)])
+        toy = dict(b, n_pass=rng.poisson(bkg + sig).astype(float), n_fail=rng.poisson(fail).astype(float))
+        f = P.fit_binned(toy, PSEUDO, centre, width, float_shape=True)[0]
+        side = f["signal_yield_err_hi"] if f["signal_yield"] < y_inj else f["signal_yield_err_lo"]
+        out.append(dict(toy=k, recovered=f["signal_yield"] / y_inj, pull=(f["signal_yield"] - y_inj) / f["signal_yield_err"],
+                        pull_asym=(f["signal_yield"] - y_inj) / side if side else None))
+    return name, out
 
 
 def inject_asimov(b, centre, width, yield_per_pt_bin):
@@ -709,30 +881,62 @@ def inject_asimov(b, centre, width, yield_per_pt_bin):
             {j: float(added[b["j"] == j].sum()) for j in norm})
 
 
-def step_injection(data, fit, workers) -> dict:
+def step_injection(data, fit, workers, n_toys=INJECTION_TOYS) -> dict:
     """Item 2b: signal-free data at the working point."""
     _W.clear()
     _W.update(data=data, fit=fit)
     names = [n for n in sorted(fit["models"]) if n in data["scores"]]
     rows = dict(_parallel(_injection_one, names, workers))
+    chunks = [(n, k, min(k + INJECTION_TOY_CHUNK, n_toys)) for n in names for k in range(0, n_toys, INJECTION_TOY_CHUNK)]
+    toys = {}
+    for name, out in _parallel(_injection_toys, chunks, workers):
+        toys.setdefault(name, []).extend(out)
+    for name, out in toys.items():
+        stat = lambda k: spread([o[k] for o in out]) if out else None
+        rows[name]["toys"] = dict(n=len(out), recovered=stat("recovered"), pull=stat("pull"), pull_asym=stat("pull_asym"))
+        r = rows[name]["toys"]["recovered"]
+        r["se"] = r["sd"] / np.sqrt(r["n"]) if r and r["sd"] is not None else None
     runs = pretrained(rows)
+    toy_all = [o for n in runs for o in toys.get(n, [])]
     summary = dict(
         shape_change=spread([rows[n]["shape_change_pseudo_window"]["delta"] for n in runs]),
         shape_change_err=spread([rows[n]["shape_change_pseudo_window"]["err"] for n in runs]),
         shape_change_pull=spread([rows[n]["shape_change_pseudo_window"]["delta"] / rows[n]["shape_change_pseudo_window"]["err"]
                                   for n in runs]),
         spurious_z=spread([rows[n]["spurious"]["z"] for n in runs]),
+        spurious_over_injected=spread([rows[n]["spurious"]["at_procedure_order"] / rows[n]["injected"]["signal_yield"]
+                                       for n in runs]),
+        recovered=spread([rows[n]["injected"]["recovered"] for n in runs]),
+        recovered_without_subtracting_spurious=spread([rows[n]["injected"]["recovered_without_subtracting_spurious"]
+                                                       for n in runs]),
         injection_pull=spread([rows[n]["injected"]["pull"] for n in runs]),
         injected_yield=spread([rows[n]["injected"]["signal_yield"] for n in runs]),
-        note="the same data jets serve every model, so the models' values are correlated")
+        toys=dict(n=len(toy_all), per_score=n_toys,
+                  recovered=spread([o["recovered"] for o in toy_all]) if toy_all else None,
+                  pull=spread([o["pull"] for o in toy_all]) if toy_all else None,
+                  pull_asym=spread([o["pull_asym"] for o in toy_all]) if toy_all else None),
+        leak_scan={e: {k: spread([rows[n]["leak_scan"][e][k] for n in runs])
+                       for k in ("recovered_pass_only", "recovered_with_tops", "expected_pass_only")}
+                   for e in (f"{x:g}" for x in LEAK_EFFS)},
+        note="the same data jets serve every model, so the models' values are correlated; the toys are "
+             "independent draws, so their spread is a statistical error")
+    if summary["toys"]["recovered"]:
+        t = summary["toys"]["recovered"]
+        t["se"] = t["sd"] / np.sqrt(t["n"])
     return dict(models=rows, summary=summary, pseudo=dict(PSEUDO, window=list(PSEUDO["window"]), fit_range=list(PSEUDO["fit_range"])),
                 shape_change_by_label_set=by_label_set({n: dict(v=r["shape_change_pseudo_window"]["delta"])
                                                         for n, r in rows.items()}, "v"),
                 definition="the map built at 1 % with the W, top AND pseudo windows masked, on the data; shape "
                            "change = eff(pseudo window) / eff(rest of its fit range) - 1 of the jets in the fit's "
-                           "bins; spurious = the fitted signal there at a fixed shape (centre, the model's top "
-                           "width); injected = expected counts of a Gaussian added to the passing bins, fitted "
-                           "back with the shape floating (peak_fit.fit_binned, float_shape)")
+                           "bins; spurious = the fitted signal of the data with nothing injected, at a fixed shape "
+                           "(centre, the model's top width), order by F-test and at the order the procedure "
+                           "chose on the injected data; injected = expected counts of a Gaussian added to the "
+                           "passing bins, fitted back with the procedure (peak_fit.fit_binned, float_shape); "
+                           "recovered = (fitted - spurious at that order) / injected; toys = Poisson draws "
+                           "around the background-only fit of the window plus the injected signal, fitted "
+                           "with the procedure: its bias, with the toys' standard error; leak_scan = the "
+                           "injected signal also added to the fail bins as a tagger of efficiency eps leaves "
+                           "it, fitted without and with the tops in each bin given")
 
 
 def _domain_one(name):
@@ -807,7 +1011,11 @@ def step_domain(data, sim, fit, workers) -> dict:
         reading="if every run's data yield were its simulated efficiency times one common number of "
                 "tops, yield / efficiency would be constant (chi2/ndf ~ 1); the yields alone are the "
                 "comparison: the smaller chi2 falls below yield_alone_chi2, the more of the run-to-run "
-                "spread the simulated efficiency explains")
+                "spread the simulated efficiency explains",
+        caution="the efficiencies are each run's simulated efficiency at its own DATA cut, and the "
+                "chi2 of yield / efficiency is far ABOVE that of the yields alone: the simulated "
+                "efficiency does not explain the spread. It is not a test of the runs' response to "
+                "the domain; per_run_yields.json:run_spread gives what is measured")
     return dict(models=rows, summary=summary,
                 signal="JetClass-II test three-prong hadronic decays (native classes of 3P_HAD_3PARTON) "
                        "with 140 < m_SD < 220 GeV in the top fit's bins; top-like = X->YY->qqb and bcs; "
@@ -823,7 +1031,8 @@ def _prong_one(name):
     ref = fit["reference"]["top"]
     zp = d["scores"][name]["prong_only"].astype(float)
     zt = d["scores"][name]["three_prong"].astype(float)
-    res, passed, _ = P.analyse(zp, d["mass"], d["pt"], "top", EFF, _W["n_toys"], shape=(ref["mean"], ref["width"]))
+    res, passed, _ = P.analyse(zp, d["mass"], d["pt"], "top", EFF, _W["n_toys"], shape=(ref["mean"], ref["width"]),
+                               tops=_W.get("tops"))
     three = P.passes(zt, d["mass"], d["pt"], P.build_map(zt, d["mass"], d["pt"], EFF))
     t = fit["models"][name]["top"]
     return name, dict(_fit_summary(res), criteria=P.criteria(dict(res, auc_vs_cms_proxy=1.0), "top", _W["n_toys"]),
@@ -833,14 +1042,46 @@ def _prong_one(name):
                       shared_fraction_of_prong_only=float((passed & three).sum() / passed.sum()))
 
 
-def step_prong(data, fit, n_toys, workers) -> dict:
-    """Item 5: the prong-only score through the whole procedure."""
+Z_FOUND = 3.0     # a peak counts as found at z >= 3 (step_prong's n_runs_peak_found)
+
+
+def prong_power(rows, domain) -> dict:
+    """WHAT THE PRONG-ONLY TEST COULD SEE. Its expected yield is the three-prong score's
+    yield times the ratio of the two scores' simulated efficiencies on three-prong decays
+    at their own data cuts (model_vs_domain.json); its expected significance that over the
+    prong-only fit's error, and its power the chance of z >= Z_FOUND, the fitted z being
+    Gaussian about the expected one. Adds the fields to `rows`; returns the summary."""
+    for n, r in rows.items():
+        dm = (domain or {}).get("models", {}).get(n, {})
+        if "three_prong" not in dm or "prong_only" not in dm:
+            continue
+        e3, ep = dm["three_prong"]["signal_at_data_cut"]["eff"], dm["prong_only"]["signal_at_data_cut"]["eff"]
+        expected = r["three_prong_yield"] * ep / e3 if e3 > 0 else None
+        z = expected / r["signal_yield_err"] if expected is not None and r["signal_yield_err"] else None
+        r.update(sim_eff_three_prong=e3, sim_eff_prong_only=ep, expected_yield=expected, expected_z=z,
+                 power=float(stats.norm.sf(Z_FOUND - z)) if z is not None else None)
+    runs = [n for n in pretrained(rows) if rows[n].get("power") is not None]
+    if not runs:
+        return dict(n_runs=0, verdict="not evaluable: no simulated efficiencies")
+    med = lambda k: float(np.median([rows[n][k] for n in runs]))
+    power = med("power")
+    return dict(n_runs=len(runs), median_sim_eff_three_prong=med("sim_eff_three_prong"),
+                median_sim_eff_prong_only=med("sim_eff_prong_only"), median_expected_yield=med("expected_yield"),
+                median_fit_error=med("signal_yield_err"), median_expected_z=med("expected_z"), median_power=power,
+                n_runs_power_over_half=int(sum(rows[n]["power"] > 0.5 for n in runs)),
+                verdict=("inconclusive: the test had no power to see the peak (median power "
+                         f"{power:.2f} for z >= {Z_FOUND:g})") if power < 0.5 else "the test had power")
+
+
+def step_prong(data, fit, n_toys, workers, domain=None, tops=None) -> dict:
+    """Item 5: the prong-only score through the whole procedure, and what it could see."""
     _W.clear()
-    _W.update(data=data, fit=fit, n_toys=n_toys)
+    _W.update(data=data, fit=fit, n_toys=n_toys, tops=tops)
     names = [n for n in sorted(fit["models"]) if has_kind(data["scores"], n, "prong_only")]
     rows = dict(_parallel(_prong_one, names, workers))
     runs = pretrained(rows)
-    return dict(models=rows,
+    power = prong_power(rows, domain)
+    return dict(models=rows, power=power,
                 yield_by_label_set=by_label_set(rows, "signal_yield"),
                 ratio_by_label_set=by_label_set(rows, "ratio_to_three_prong"),
                 n_runs_peak_found=int(sum(rows[n]["z_wald"] >= 3 and rows[n]["criteria"]["peak_position"] for n in runs)),
@@ -871,6 +1112,8 @@ def main() -> int:
     ap.add_argument("--steps", nargs="+", choices=STEPS, default=list(STEPS))
     ap.add_argument("--toys", type=int, default=200)
     ap.add_argument("--workers", type=int, default=1)
+    ap.add_argument("--injection-toys", type=int, default=INJECTION_TOYS,
+                    help="toys per score in the injection step (the procedure's own bias)")
     ap.add_argument("--models", nargs="+", default=None,
                     help="only these models in the per-model steps (a partial run; the text reads full runs)")
     a = ap.parse_args()
@@ -918,9 +1161,11 @@ def main() -> int:
     if "sim_closure" in a.steps:
         write("map_closure_sim", step_sim_closure(sim, fit, a.workers))
     if "injection" in a.steps:
-        write("map_injection_data", step_injection(data, fit, a.workers))
+        write("map_injection_data", step_injection(data, fit, a.workers, a.injection_toys))
     if "prong" in a.steps:
-        write("prong_test", step_prong(data, fit, a.toys, a.workers))
+        if domain is None and (a.out / "model_vs_domain.json").exists():
+            domain = json.loads((a.out / "model_vs_domain.json").read_text())
+        write("prong_test", step_prong(data, fit, a.toys, a.workers, domain, reference_tops(data, fit)))
     return 0
 
 

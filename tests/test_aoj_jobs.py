@@ -431,3 +431,37 @@ def test_the_leak_study_leaves_out_the_reference_which_has_no_simulated_efficien
     leak = next(ln for ln in s.split("injection_test.py toys")[1:] if "--modes leak" in ln)
     names = re.search(r"--names ([^\\]+)\\", leak).group(1).split()
     assert "reference" not in names and set(names) == {m.name for m in B.MODELS}
+
+
+FIT5 = B.K8S / "job-aoj-fit-v5-raunav.yaml"
+CHECKS2 = B.K8S / "job-aoj-checks-v2-raunav.yaml"
+
+
+@pytest.mark.parametrize("path", [FIT5, CHECKS2], ids=lambda p: p.name)
+def test_the_v5_fit_and_v2_checks_carry_the_retry_policy_and_a_storage_guard_before_writing(path):
+    spec = yaml.safe_load(SPECS[path])["spec"]
+    assert spec["backoffLimit"] == FT.ROBUST_BACKOFF and spec["podFailurePolicy"]["rules"][0]["onExitCodes"][
+        "values"] == [FT.EXIT_HALT]
+    s = _script(SPECS[path])
+    guard = s.index("df --output=pcent /data")
+    assert guard < s.index("git clone") and '-lt 95 ]' in s
+    assert "BEGIN-TAR" in s and "nvidia.com/gpu" not in SPECS[path]
+    assert s.index("export OMP_NUM_THREADS=1") < s.index("python3 experiments/AOJ/" + (
+        "fit_v5.py" if path == FIT5 else "realdata_checks.py"))
+
+
+def test_the_v2_checks_are_the_v1_checks_against_fit_v5_and_nothing_else_changes():
+    one, two = _script(SPECS[CHECKS[0]]), _script(SPECS[CHECKS2])
+    assert f"--fit {B.MAIN_FIT2} " in two and f"OUT={B.CHECKS2_ROOT}" in two and f'--branch "{B.CHECKS2_PIN}"' in two
+    strip = lambda t: "\n".join(ln for ln in t.splitlines()
+                                if not any(k in ln for k in ("OUT=", "--branch", "--fit ", "USED", "FREE_G",
+                                                             "PVC used", "BEGIN-TAR", "END-TAR", "tar czf",
+                                                             'cd "${OUT}"')) and ln.strip() != "echo")
+    assert strip(one) == strip(two).replace(f"--workers {B.CHECKS2_CPU - 1}", "--workers 15")
+
+
+def test_the_v5_fit_runs_from_the_committed_bins_and_writes_its_own_directory():
+    s = _script(SPECS[FIT5])
+    assert f'--branch "{B.FIT5_PIN}"' in s and "merge_shards" not in s
+    assert f"OUT={B.FIT5_ROOT}" in s and "fit_v5.py --workers" in s
+    assert (REPO / "experiments/FIGS/data/aoj_full_v1/fit_v3/bins.npz").exists()
