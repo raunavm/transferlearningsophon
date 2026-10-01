@@ -647,13 +647,16 @@ def analyse(score, mass, pt, peak, eff, n_toys, shape=None, tops=None, float_sha
 
 # ONE PEAK SHAPE FOR THE PRETRAINED MODELS (2026-10-01). Floated per score, the Gaussian's
 # mean and width trade against the transfer factor: on toys around each fit (experiments/AOJ/
-# injection_test.py) the procedure's pulls had a standard deviation of 2.1 at 1,000 injected
-# jets and 1.15 at 2,000-4,000, the shape running to a narrow width on a fluctuation (yield
-# and error both small) or to the window's edge with a negative yield, where it stands in
-# for TF curvature and the F-test stops at too low an order. At the injected shape the same
-# toys gave pulls of mean 0 and width 0.95-1.13. The scores' own floated shapes are
-# consistent with one shape (fit_v4: summed deviance change 45.5 for 62 degrees of freedom),
-# as a property of the top peak and the detector rather than of the tagger would be.
+# injection_test.py; experiments/FIGS/data/aoj_injection_v1/summary.json) the procedure's
+# pulls had a standard deviation of 1.97 at 1,000 injected jets and 1.13-1.19 at 2,000-4,000,
+# the shape running to a narrow width on a fluctuation (yield and error both small) or to the
+# window's edge with a negative yield, where it stands in for TF curvature and the F-test
+# stops at too low an order (on the signal-depleted band: 1.4x the injected signal). At the
+# injected shape the same toys gave pulls of mean 0 and width 0.97-1.15. The scores' own
+# floated shapes are consistent with one shape (fit_v4: summed deviance change 45.5 for 62
+# degrees of freedom), as a property of the top peak and the detector rather than of the
+# tagger would be. At the pooled shape: pulls of mean 0.00-0.03 and width 1.02-1.05 at every
+# size, and 1.02-1.09 with the shape re-derived from each ensemble of toys.
 POOL_MAX_ITERATIONS = 5
 
 
