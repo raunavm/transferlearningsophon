@@ -8,7 +8,8 @@
                         (the first maximum, as the driver's strict `>` keeps
                         it) must agree with best_epoch.json, and the epoch is
                         loaded by name as net_epoch-<e>_state.pt (the v2
-                        specs keep every epoch, --keep-checkpoints all).
+                        specs run --keep-checkpoints window, which keeps the
+                        best epoch's and epochs 70-79's state files).
                wavg     the weight average of epochs 70-79, the robustness
                         check (audit 2026-09-29; the output-layer diagnostic,
                         experiments/FIGS/data/head_epoch_diag): WAVG_STATE,
@@ -128,13 +129,40 @@ def weaver_args(train_log: pathlib.Path) -> dict:
     return out
 
 
+def expected_cells(spec: str, leg: str) -> set[str]:
+    """The cells the generator emitted for one leg, "init/N<N>/s<S>": spec is
+    FILE:PREFIX, FILE written by scripts/build_ft_jobs.py --v2
+    (experiments/FT/data/ft_v2_expected_cells.json), key PREFIX/leg."""
+    path, _, prefix = spec.rpartition(":")
+    cells = json.loads(pathlib.Path(path).read_text())
+    key = f"{prefix}/{leg}"
+    if key not in cells:
+        raise SystemExit(f"FATAL: {path} lists no cells for {key}; it has {sorted(cells)}")
+    return set(cells[key])
+
+
+def require_cells(found: set[str], spec: str | None, leg: str) -> None:
+    """Fail when a cell the generator emitted for this leg was not read: a cell a
+    job left to another job's lock, or never ran, would otherwise just be absent."""
+    if not spec:
+        return
+    missing = sorted(expected_cells(spec, leg) - found)
+    if missing:
+        raise SystemExit(f"FATAL: {len(missing)} expected {leg} cells were not read, e.g. {missing[:5]}")
+
+
 def load_table(path: pathlib.Path) -> dict:
     return json.loads(pathlib.Path(path).read_text())["files"]
 
 
 def ref_cell_problem(cell: pathlib.Path, table: dict) -> str | None:
-    """None when a reused cell's training subset is a file on record with the size
-    the cell recorded when it ran; otherwise what is wrong."""
+    """None when a reused cell trained on files the sha256 record holds as they were
+    when it ran; otherwise what is wrong. Its training subset must be on record with
+    the size the cell recorded, and the subset and its directory's val.parquet must
+    be on record with a modification time no later than the cell's manifest: a file
+    rewritten after the cell ran is not the file it read, whatever its size. A cell
+    whose manifest records the files' sha256 (smoke_checks.py manifest, 2026-10-01)
+    must match the record exactly."""
     man = cell / "ft_manifest.json"
     if not man.exists():
         return f"{cell}: no ft_manifest.json"
@@ -145,20 +173,44 @@ def ref_cell_problem(cell: pathlib.Path, table: dict) -> str | None:
     if str(m.get("subset_bytes")) != str(table[sub]["bytes"]):
         return (f"{cell}: trained on {m.get('subset_bytes')} bytes of {sub}, "
                 f"the record holds {table[sub]['bytes']}")
+    ran = m.get("written_utc")
+    if not ran:
+        return f"{cell}: ft_manifest.json records no written_utc; when it ran is unknown"
+    val = str(pathlib.PurePosixPath(sub).parent / "val.parquet")
+    for f, key in ((sub, "subset_sha256"), (val, "val_sha256")):
+        if f not in table:
+            return f"{cell}: {f} is not in the sha256 record"
+        if table[f]["mtime_utc"] > ran:
+            return (f"{cell}: {f} was modified at {table[f]['mtime_utc']}, after the cell ran "
+                    f"({ran})")
+        if m.get(key) and m[key] != table[f]["sha256"]:
+            return f"{cell}: {f} has sha256 {m[key][:12]} in the cell's manifest, not the record's"
     return None
 
 
-def cmd_hash(files: list[str], out: pathlib.Path) -> int:
+def cmd_hash(files: list[str], out: pathlib.Path, as_dir: tuple[str, str] | None = None) -> int:
+    """The record of `files`, written whole or not at all (a temporary file renamed
+    onto `out`). as_dir = (SRC, DST) records a file under SRC by its path under DST:
+    the staging job hashes its build before moving it into place."""
     rec = {}
     for f in sorted(files):
         st = os.stat(f)
-        rec[f] = {"sha256": sha256_file(f), "bytes": st.st_size,
-                  "mtime_utc": dt.datetime.fromtimestamp(st.st_mtime, dt.timezone.utc)
-                  .strftime("%Y-%m-%dT%H:%M:%SZ")}
-        print(rec[f]["sha256"], rec[f]["bytes"], rec[f]["mtime_utc"], f, flush=True)
-    out.write_text(json.dumps({"written_utc": dt.datetime.now(dt.timezone.utc)
+        key = _recorded_as(f, as_dir)
+        rec[key] = {"sha256": sha256_file(f), "bytes": st.st_size,
+                    "mtime_utc": dt.datetime.fromtimestamp(st.st_mtime, dt.timezone.utc)
+                    .strftime("%Y-%m-%dT%H:%M:%SZ")}
+        print(rec[key]["sha256"], rec[key]["bytes"], rec[key]["mtime_utc"], key, flush=True)
+    tmp = out.with_name(out.name + ".tmp")
+    tmp.write_text(json.dumps({"written_utc": dt.datetime.now(dt.timezone.utc)
                                .strftime("%Y-%m-%dT%H:%M:%SZ"), "files": rec}, indent=1))
+    tmp.replace(out)
     return 0
+
+
+def _recorded_as(f: str, as_dir: tuple[str, str] | None) -> str:
+    if as_dir and (f == as_dir[0] or f.startswith(as_dir[0].rstrip("/") + "/")):
+        return as_dir[1].rstrip("/") + f[len(as_dir[0].rstrip("/")):]
+    return f
 
 
 def cmd_verify(table_path: pathlib.Path, files: list[str]) -> int:
@@ -200,6 +252,8 @@ def main(argv=None) -> int:
     h = sub.add_parser("hash")
     h.add_argument("--out", required=True, type=pathlib.Path)
     h.add_argument("--files", nargs="+", required=True)
+    h.add_argument("--as-dir", nargs=2, metavar=("SRC", "DST"),
+                   help="record files under SRC by their paths under DST")
     v = sub.add_parser("verify")
     v.add_argument("--table", required=True, type=pathlib.Path)
     v.add_argument("--files", nargs="+", required=True)
@@ -207,7 +261,7 @@ def main(argv=None) -> int:
     if a.cmd == "resolve":
         return cmd_resolve(a.run_dir, a.rule, a.link, a.n_epochs)
     if a.cmd == "hash":
-        return cmd_hash(a.files, a.out)
+        return cmd_hash(a.files, a.out, tuple(a.as_dir) if a.as_dir else None)
     return cmd_verify(a.table, a.files)
 
 

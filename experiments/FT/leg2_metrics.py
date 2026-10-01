@@ -162,6 +162,8 @@ def main(argv=None) -> int:
                     help="a reused init directory (<tree>/<init>), checked against --sha-table")
     ap.add_argument("--sha-table", type=pathlib.Path,
                     help="the sha256 record of the subsets (experiments/FT/data/ft_v2_subsets_sha256.json)")
+    ap.add_argument("--expect-cells", metavar="FILE:PREFIX",
+                    help="fail unless every cell FILE lists under PREFIX/leg2 is read (ft_v2.expected_cells)")
     a = ap.parse_args(argv)
     if a.ref_init and not a.sha_table:
         raise SystemExit("FATAL: --ref-init needs --sha-table: a reused cell is only as good "
@@ -180,6 +182,7 @@ def main(argv=None) -> int:
         if any(c[0] == d.name for c in cells):
             raise SystemExit(f"FATAL: init {d.name} is under both {a.root} and {d}")
         cells += ref_cells(d, table)
+    FT_V2.require_cells({f"{i}/{n}/{s}" for i, n, s, _ in cells}, a.expect_cells, "leg2")
     res, shas = {}, {}
     for init, n, seed, log in cells:
         c = {"accuracy": cell_metric(log), **run_record(log.parent)}

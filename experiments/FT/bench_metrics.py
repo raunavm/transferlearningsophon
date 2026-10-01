@@ -274,6 +274,8 @@ def main(argv=None) -> int:
                     help="a reused init directory (<tree>/leg_<set>/<init>), checked against --sha-table")
     ap.add_argument("--sha-table", type=pathlib.Path,
                     help="the sha256 record of the subsets (experiments/FT/data/ft_v2_subsets_sha256.json)")
+    ap.add_argument("--expect-cells", metavar="FILE:PREFIX",
+                    help="fail unless every cell FILE lists under PREFIX/leg_<set> is read (ft_v2.expected_cells)")
     args = ap.parse_args(argv)
     if args.ref_init and not args.sha_table:
         raise SystemExit("FATAL: --ref-init needs --sha-table: a reused cell is only as good "
@@ -300,6 +302,7 @@ def main(argv=None) -> int:
             more, more_skipped = ref_cells(ref, table)
             cells += more
             no_done += more_skipped
+        FT_V2.require_cells({f"{i}/{n}/{s}" for i, n, s, _ in cells}, args.expect_cells, f"leg_{d}")
         skipped += [{"cell": str(p), "reason": "no DONE"} for p in no_done]
         for p in no_done:
             print(f"  SKIPPED (no DONE): {p}", flush=True)

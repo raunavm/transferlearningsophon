@@ -6,6 +6,7 @@ and a sha256 record that covers every subset any v2 job verifies.
 import importlib.util
 import pathlib
 import re
+import subprocess
 
 import pytest
 import yaml
@@ -75,3 +76,58 @@ def test_the_sha256_record_covers_every_reused_file_a_v2_job_reads(stage):
     assert want <= hashed
     assert {"${OUT}/train_N*_s1.parquet", "${OUT}/val.parquet"} <= hashed
 
+
+
+def test_the_staging_spec_on_disk_is_the_job_as_it_ran():
+    assert B.V2_SUBSETS_RAN and "--as-dir" not in _args((K8S / STAGE).read_text())
+
+
+def _stage_run(tmp_path, n, **env_extra):
+    """The fixed staging script under bash: make_subsets writes a build with its
+    DONE, ft_v2.py hash writes its --out (or SIGKILLs the job, as an eviction does)."""
+    T = _load("wave3_harness_stage", "tests/test_wave3_specs.py")
+    stubs = tmp_path / f"pod{n}"
+    env, _ = T._shell_env(stubs, [])
+    py = stubs / "bin" / "python3"
+    old = "case \"$*\" in\n"
+    py.write_text(py.read_text().replace(old, old + (
+        '  *make_subsets.py*)\n'
+        '    O=$(next_after --out "$@"); mkdir -p "$O"\n'
+        '    for f in train_N1000_s1 train_N10000_s1 train_N100000_s1 train_N1000000_s1 val; do echo x > "$O/$f.parquet"; done\n'
+        '    echo "{}" > "$O/manifest.json"; touch "$O/DONE";;\n'
+        '  *ft_v2.py\\ hash*)\n'
+        '    [ -n "${KILL_HASH:-}" ] && { kill -9 $PPID; exit 137; }\n'
+        '    O=$(next_after --out "$@"); echo "{\\"files\\": {}}" > "$O";;\n'), 1))
+    (tmp_path / "jc2/jet_data").mkdir(parents=True, exist_ok=True)
+    pool = subprocess.run(["bash", "-c", "echo " + B.V2_POOL.replace("/jc2/jet_data", str(tmp_path / "jc2/jet_data"))],
+                          capture_output=True, text=True).stdout.split()   # as this bash expands it
+    assert len(pool) == 310
+    for f in pool:
+        pathlib.Path(f).touch()
+    env.update(env_extra)
+    text = B._fill(B._SUBSETS_JC2_V2_FIXED, "test")
+    script = (text.replace("/workspace", str(stubs / "workspace")).replace("/data", str(tmp_path / "data"))
+              .replace("/jc2/jet_data", str(tmp_path / "jc2/jet_data")))
+    return subprocess.run(["bash", "-c", script], capture_output=True, text=True, env=env,
+                          cwd=tmp_path, timeout=300)
+
+
+def test_an_eviction_during_the_hash_no_longer_strands_the_staged_subsets(tmp_path):
+    out = tmp_path / "data/finetune/jc2_v2"
+    r = _stage_run(tmp_path, 1, KILL_HASH="1")
+    assert r.returncode == -9 and not out.exists()          # nothing in place yet
+    r = _stage_run(tmp_path, 2)
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+    assert (out / "DONE").exists() and (out / "ft_v2_subsets_sha256.json").exists()
+    r = _stage_run(tmp_path, 3)                              # complete: never rebuilt
+    assert r.returncode == B.EXIT_HALT and "never rebuilt" in r.stdout
+
+
+def test_a_build_in_place_without_its_record_is_only_hashed(tmp_path):
+    out = tmp_path / "data/finetune/jc2_v2"
+    out.mkdir(parents=True)
+    (out / "DONE").touch()
+    (out / "manifest.json").write_text("{}")
+    r = _stage_run(tmp_path, 1)
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+    assert (out / "ft_v2_subsets_sha256.json").exists() and not (tmp_path / "data/finetune/jc2_v2.staging").exists()

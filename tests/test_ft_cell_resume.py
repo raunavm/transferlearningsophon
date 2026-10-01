@@ -106,7 +106,7 @@ def test_prepare_cuts_the_cell_back_to_its_last_whole_epoch(tmp_path):
     (c / "features").mkdir()
     (c / "net_epoch-3_optimizer.pt").write_bytes(b"PK\x03\x04 cut short")
     (c / "ATTEMPTS").write_text("t pod=p node=n from_epoch=-1\n")
-    assert CR.prepare(c, 3) == 2
+    assert CR.prepare(c) == 2
     log = (c / "train.log").read_text()
     assert log.rstrip().endswith("Epoch #2: Current validation metric: 0.70000 (best: 0)\x1b[0m")
     assert "Epoch #3" in (c / "train.log.cut.1").read_text()
@@ -115,11 +115,32 @@ def test_prepare_cuts_the_cell_back_to_its_last_whole_epoch(tmp_path):
     assert (c / "net_epoch-2_state.pt").exists()
 
 
-def test_prepare_moves_a_failed_attempt_aside(tmp_path):
+def test_prepare_moves_a_failed_attempt_aside_without_its_checkpoints(tmp_path):
     c = _cell(tmp_path, [0.5, 0.6])
     (c / "ATTEMPT_FAILED").write_text("rc=1\n")
-    assert CR.prepare(c, 3) == -1
-    assert not c.exists() and len(list(tmp_path.glob("cell.partial.*"))) == 1
+    assert CR.prepare(c) == -1
+    aside = list(tmp_path.glob("cell.partial.*"))
+    assert not c.exists() and len(aside) == 1
+    assert not list(aside[0].glob("net_epoch-*")) and (aside[0] / "ATTEMPT_FAILED").exists()
+
+
+def test_prepare_keeps_a_trained_cell_whose_read_out_failed(tmp_path):
+    c = _cell(tmp_path, [0.5, 0.6, 0.7])
+    (c / "ATTEMPT_FAILED").write_text("rc=1\n")
+    (c / "TRAINED").touch()
+    (c / "ATTEMPTS").write_text("t pod=p node=n from_epoch=-1\n")
+    assert CR.prepare(c) == 2
+    assert (c / "ATTEMPT_FAILED.1").exists() and not (c / "ATTEMPT_FAILED").exists()
+
+
+def test_the_lock_is_atomic_and_says_who_holds_it(tmp_path):
+    lk = tmp_path / "N1000" / "s1.lock"
+    assert CR.lock(lk, "shard-a") == "acquired" and (lk / "owner").read_text() == "shard-a\n"
+    assert CR.lock(lk, "shard-a") == "reentered"
+    assert CR.lock(lk, "shard-b") == "shard-a"
+    (lk / "owner").unlink()
+    assert CR.lock(lk, "shard-b") == "unknown"
+    assert [p.name for p in lk.parent.iterdir()] == ["s1.lock"]      # no temporary left
 
 
 def test_stalled_counts_only_the_latest_attempts_without_progress():

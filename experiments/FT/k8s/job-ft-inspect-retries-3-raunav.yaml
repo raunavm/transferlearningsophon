@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # READ-ONLY DIAGNOSTIC (2026-10-01), written by hand, third pass: the measured bytes
+  # of each kind of fine-tuning cell and of one epoch's checkpoints (the v2 storage
+  # budget), the branches of a leg-2 pred.root, and the node of every attempt whose
+  # training loss went to NaN. Mounts /data read-only and clones nothing.
+  name: ft-inspect-retries-3-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 3
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -uo pipefail
+          df -h /data; df -B1 --output=size,used,avail,pcent /data
+          sz () { [ -e "$1" ] && echo "$(du -sb "$1" | cut -f1) $1" || echo "absent $1"; }
+          echo "== per-cell output sizes (bytes)"
+          for c in /data/results/ft/w2b/leg1/l188-s1/N1000/s1 /data/results/ft/w2b/leg1/l188-s1/N1000000/s1 /data/results/ft/w2b/leg2/l188-s1/N1000/s1 /data/results/ft/w2b/leg2/l188-s1/N1000000/s1 \
+                   /data/results/ft/bench_v2/leg_top/l188-s1/N1000/s1 /data/results/ft/bench_v2/leg_top/l188-s1/N1200000/s1 /data/results/ft/bench_v2/leg_qg/l188-s1/N1000/s1 /data/results/ft/bench_v2/leg_qg/l188-s1/N1600000/s1 \
+                   /data/results/ft/bench_v3_lastepoch/leg_top/l188-s1/N1200000/s1 /data/results/ft/bench_v3_lastepoch/leg_qg/l188-s1/N1600000/s1; do
+            echo "-- ${c}"; sz ${c}
+            for f in ${c}/* ${c}/features*/*; do [ -f "$f" ] && sz "$f"; done
+          done
+          echo "== one epoch's checkpoint pair (bytes)"
+          for f in $(ls /data/results/ft/bench_v2/leg_qg/mpm-s1-v2/N1600000/s2/net_epoch-0_* /data/results/ft/w2b/leg2/mpm-s1-v2/N1000000/s1/net_epoch-0_* 2>/dev/null); do sz $f; done
+          echo "== pred.root branches"
+          python3 - <<'PY'
+          import uproot
+          t = uproot.open("/data/results/ft/w2b/leg2/l188-s1/N1000000/s1/pred.root")["Events"]
+          tot = 0
+          for b in t.branches:
+              tot += b.compressed_bytes
+              print(f"{b.name:40s} {b.typename:12s} {b.compressed_bytes:>12d} {b.uncompressed_bytes:>12d}")
+          print("total compressed", tot, "entries", t.num_entries)
+          PY
+          echo "== NaN-loss attempts and their nodes"
+          for log in $(find /data/results/ft -name train.log -newer /data/results/ft/w2b 2>/dev/null | xargs grep -l "AvgLoss: nan" 2>/dev/null); do
+            d=$(dirname ${log})
+            n=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('node_name'))" ${d}/ft_manifest.json 2>/dev/null)
+            echo "NAN ${d} node=${n} nan_epochs=$(grep -c 'AvgLoss: nan' ${log})"
+          done
+          for d in /data/results/ft/w2b/leg1/scratch-v2/N1000/s2*; do
+            n=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('node_name'))" ${d}/ft_manifest.json 2>/dev/null)
+            echo "ATTEMPT ${d} node=${n} nan_epochs=$(grep -c 'AvgLoss: nan' ${d}/train.log 2>/dev/null) done=$([ -f ${d}/DONE ] && echo y || echo n)"
+          done
+          echo "INSPECT 3 DONE"
+        volumeMounts:
+        - { name: data, mountPath: /data, readOnly: true }
+        resources:
+          requests: { memory: "1Gi", cpu: "1" }
+          limits:   { memory: "1Gi", cpu: "1" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+          readOnly: true

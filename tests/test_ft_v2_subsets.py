@@ -277,15 +277,85 @@ def test_weaver_args_are_read_from_the_runs_own_dump(tmp_path):
                  "lr_scheduler": "flat+decay"}
 
 
-def test_a_reused_cell_must_have_trained_on_a_recorded_subset_of_the_recorded_size(tmp_path):
+def test_a_reused_cell_must_have_trained_on_recorded_files_as_they_were_when_it_ran(tmp_path):
     cell = tmp_path / "c"
     cell.mkdir()
-    table = {"/data/finetune/top_sub/train_N1000_s1.parquet": {"sha256": "x", "bytes": 1869174}}
-    (cell / "ft_manifest.json").write_text(json.dumps(
-        {"subset": "/data/finetune/top_sub/train_N1000_s1.parquet", "subset_bytes": 1869174}))
-    assert FV.ref_cell_problem(cell, table) is None
-    (cell / "ft_manifest.json").write_text(json.dumps(
-        {"subset": "/data/finetune/top_sub/train_N1000_s1.parquet", "subset_bytes": 5}))
-    assert "bytes" in FV.ref_cell_problem(cell, table)
-    (cell / "ft_manifest.json").write_text(json.dumps({"subset": "/elsewhere.parquet"}))
-    assert "not in the sha256 record" in FV.ref_cell_problem(cell, table)
+    sub, val = "/data/finetune/top_sub/train_N1000_s1.parquet", "/data/finetune/top_sub/val.parquet"
+    table = {sub: {"sha256": "x", "bytes": 1869174, "mtime_utc": "2026-09-07T22:18:07Z"},
+             val: {"sha256": "v", "bytes": 9, "mtime_utc": "2026-09-07T22:18:44Z"}}
+    man = {"subset": sub, "subset_bytes": 1869174, "written_utc": "2026-09-28T21:01:14Z"}
+
+    def problem(**kw):
+        (cell / "ft_manifest.json").write_text(json.dumps({**man, **kw}))
+        return FV.ref_cell_problem(cell, table)
+
+    assert problem() is None
+    assert problem(subset_sha256="x", val_sha256="v") is None
+    assert "bytes" in problem(subset_bytes=5)
+    assert "not in the sha256 record" in problem(subset="/elsewhere.parquet")
+    assert "after the cell ran" in problem(written_utc="2026-09-07T22:18:30Z")   # val rewritten later
+    assert "not the record's" in problem(val_sha256="w")
+    assert "no written_utc" in problem(written_utc=None)
+    del table[val]
+    assert f"{val} is not in the sha256 record" in problem()
+
+
+def test_the_hash_record_is_written_whole_and_can_name_the_final_paths(tmp_path):
+    stage = tmp_path / "jc2_v2.staging"
+    stage.mkdir()
+    (stage / "val.parquet").write_bytes(b"abc")
+    out = stage / "ft_v2_subsets_sha256.json"
+    FV.cmd_hash([str(stage / "val.parquet")], out, (str(stage), "/data/finetune/jc2_v2"))
+    rec = json.loads(out.read_text())["files"]
+    assert list(rec) == ["/data/finetune/jc2_v2/val.parquet"]
+    assert rec["/data/finetune/jc2_v2/val.parquet"]["bytes"] == 3
+    assert not list(stage.glob("*.tmp"))
+
+
+# ------------------------------------------------------------ what was staged
+# experiments/FT/data/jc2_v2_manifest.json and ft_v2_subsets_sha256.json are
+# copies of /data/finetune/jc2_v2/{manifest.json, ft_v2_subsets_sha256.json},
+# written by job-ft-subsets-jc2-v2-raunav.
+
+STAGED = ROOT / "experiments/FT/data/jc2_v2_manifest.json"
+TABLE = ROOT / "experiments/FT/data/ft_v2_subsets_sha256.json"
+
+
+def test_the_staged_subsets_read_only_held_out_files_train_and_val_apart():
+    man = json.loads(STAGED.read_text())
+    assert man["mode"] == "jc2v2" and man["seeds"] == [1]
+    train, val = man["per_seed"]["1"]["files"], man["val"]["files"]
+    assert all(MS.jc2_role(f) == "ft_heldout" for f in train + val)
+    assert not set(train) & set(val)
+    assert man["overlap_files"] == {"pretrain_train": 0, "pretrain_fixed_val": 0,
+                                    "ft_test": 0, "train_vs_val": 0}
+    assert _names(man["pool_files"]) == _names(MS.jc2_role_files("ft_heldout"))
+    assert man["outputs"] == {**{f"train_N{n}_s1.parquet": n for n in (1000, 10000, 100000, 1000000)},
+                              "val.parquet": B.V2_VAL_JETS}
+
+
+def test_the_staged_subsets_record_their_coverage():
+    man = json.loads(STAGED.read_text())
+    assert set(man["class_coverage"]) == set(man["outputs"])
+    for name, cov in man["class_coverage"].items():
+        assert sum(cov["counts"]) == man["outputs"][name]
+        assert cov["n_classes_present"] == sum(c > 0 for c in cov["counts"])
+
+
+def test_the_sha256_record_holds_the_staged_bytes_and_every_reused_file():
+    man = json.loads(STAGED.read_text())
+    table = json.loads(TABLE.read_text())["files"]
+    for name, sha in man["sha256"].items():
+        assert table[f"{B.V2_SUBSETS}/{name}"]["sha256"] == sha, name
+    assert set(B.V2_REUSED) <= set(table)
+
+
+def test_a_readout_fails_when_an_expected_cell_was_not_read(tmp_path):
+    f = tmp_path / "cells.json"
+    f.write_text(json.dumps({"bestval/leg1": ["l188-s1/N1000/s1", "l188-s1/N10000/s1"]}))
+    FV.require_cells({"l188-s1/N1000/s1", "l188-s1/N10000/s1", "extra/N1/s1"}, f"{f}:bestval", "leg1")
+    FV.require_cells(set(), None, "leg1")                    # no list given: nothing to check
+    with pytest.raises(SystemExit, match="1 expected leg1 cells were not read"):
+        FV.require_cells({"l188-s1/N1000/s1"}, f"{f}:bestval", "leg1")
+    with pytest.raises(SystemExit, match="lists no cells for wavg/leg1"):
+        FV.require_cells(set(), f"{f}:wavg", "leg1")

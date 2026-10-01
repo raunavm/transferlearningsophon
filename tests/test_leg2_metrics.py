@@ -102,10 +102,13 @@ def test_a_reused_init_must_have_trained_on_a_recorded_subset(tmp_path):
     _log(tmp_path / "v1", ("scratch-v2", "N1000", "s1"), "Test metric 0.70\n")
     sub = "/data/finetune/jc1/train_N1000_s1.parquet"
     cell = tmp_path / "v1/scratch-v2/N1000/s1"
-    (cell / "ft_manifest.json").write_text(json.dumps({"subset": sub, "subset_bytes": 1292785}))
+    (cell / "ft_manifest.json").write_text(json.dumps({"subset": sub, "subset_bytes": 1292785,
+                                                       "written_utc": "2026-09-28T20:38:06Z"}))
     (cell / "train.log").write_text(" - ('steps_per_epoch', 19)\n")
     table = tmp_path / "t.json"
-    table.write_text(json.dumps({"files": {sub: {"sha256": "x", "bytes": 1292785}}}))
+    table.write_text(json.dumps({"files": {
+        sub: {"sha256": "x", "bytes": 1292785, "mtime_utc": "2026-09-08T01:00:00Z"},
+        "/data/finetune/jc1/val.parquet": {"sha256": "v", "bytes": 9, "mtime_utc": "2026-09-08T01:00:00Z"}}}))
     args = ["--root", str(tmp_path / "v2"), "--out", str(tmp_path / "o"),
             "--ref-init", str(tmp_path / "v1/scratch-v2"), "--sha-table", str(table)]
     assert m.main(args) == 0

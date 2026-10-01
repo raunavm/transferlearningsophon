@@ -154,6 +154,19 @@ def write_manifest(out: str, kv: list[str]) -> None:
     sub = rec.get("subset")
     if sub and os.path.exists(sub):
         rec["subset_bytes"] = os.path.getsize(sub)
+        # The bytes this cell trains and validates on, so a later reuse of the cell
+        # can be checked exactly (experiments/FT/ft_v2.py ref_cell_problem).
+        import hashlib
+        val = pathlib.Path(sub).parent / "val.parquet"
+        for key, f in (("subset_sha256", pathlib.Path(sub)), ("val_sha256", val)):
+            if f.exists():
+                h = hashlib.sha256()
+                with open(f, "rb") as fh:
+                    for chunk in iter(lambda: fh.read(1 << 22), b""):
+                        h.update(chunk)
+                rec[key] = h.hexdigest()
+        if val.exists():
+            rec["val"] = str(val)
     pathlib.Path(out).parent.mkdir(parents=True, exist_ok=True)
     pathlib.Path(out).write_text(json.dumps(rec, indent=2))
     print(f"wrote {out}")

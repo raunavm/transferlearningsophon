@@ -752,6 +752,14 @@ LOST_GPU_NODES = ("ry-gpu-01.sdsc.optiputer.net",)
 EXIT_HALT = 42
 ROBUST_BACKOFF = 20
 STALL_LIMIT = 3
+# A step that fails while the GPU no longer answers (experiments/FT/gpu_probe.py), or
+# whose log holds a CUDA device fault, is the NODE's fault: the cell is not marked
+# failed but resumed, the node is recorded, and the pod exits EXIT_NODE_FAULT, which
+# the policy counts against the retries. NODE_FAULT_LIMIT of them on one cell halt.
+EXIT_NODE_FAULT = 43
+NODE_FAULT_LIMIT = 4
+CUDA_FAULT = ("CUDA error: unknown error|Cannot access accelerator device|GPU is lost|"
+              "CUDA-capable device\\(s\\) is/are busy or unavailable|uncorrectable ECC error")
 GPU_LOST_LATER = ("ry-gpu-10.sdsc.optiputer.net",)
 POD_FAILURE_POLICY = (
     "  podFailurePolicy:\n"
@@ -761,6 +769,12 @@ POD_FAILURE_POLICY = (
     "    - action: Ignore\n"
     "      onPodConditions:\n"
     "      - type: DisruptionTarget\n")
+_FAILJOB = POD_FAILURE_POLICY.index("    - action: Ignore\n")
+POD_FAILURE_POLICY_RESUME = (
+    POD_FAILURE_POLICY[:_FAILJOB]
+    + "    - action: Count\n"
+    f"      onExitCodes: {{ containerName: main, operator: In, values: [{EXIT_NODE_FAULT}] }}\n"
+    + POD_FAILURE_POLICY[_FAILJOB:])
 # Specs that keep the one-retry logic because their job ran to completion, or is
 # running, under it: the committed file is that job's record and must describe
 # the job the cluster ran.
@@ -786,8 +800,9 @@ def robust(name: str) -> bool:
 
 
 def resumable(name: str) -> bool:
-    """Whether the spec called `name` takes the 2026-10-01 logic: cells resume."""
-    return robust(name) and name not in RETRY_0929_RECORDS
+    """Whether the spec called `name` takes the 2026-10-01 logic: cells resume.
+    The subset staging job has no cells; it keeps the plain policy."""
+    return robust(name) and name not in RETRY_0929_RECORDS and not name.startswith("ft-subsets-")
 
 
 _ATTEMPT_OK_OLD = (
@@ -823,29 +838,44 @@ _ATTEMPT_OK_NEW = (
 _TRAP = _ATTEMPT_OK_NEW[_ATTEMPT_OK_NEW.index("          CELL=\"\"\n"):]
 _ATTEMPT_OK_RESUME = (
     f"          HALT={EXIT_HALT}   # the pod failure policy fails the Job at once on this code\n"
+    f"          NODE_FAULT={EXIT_NODE_FAULT}   # ...and counts this one against the retries\n"
     "          [ -f ${FAIL_MARK} ] && { echo \"FATAL: an earlier attempt halted the job: "
-    "$(cat ${FAIL_MARK}). Fix it, then remove ${FAIL_MARK}\"; exit ${HALT}; }\n"
-    "          # A FAILED attempt leaves ATTEMPT_FAILED in its cell (the EXIT trap below)\n"
-    "          # and is moved aside; the cell starts again. An interrupted one (an evicted\n"
-    "          # or lost pod is SIGKILLed and runs no trap) is RESUMED from its last\n"
-    "          # completed epoch (experiments/FT/cell_resume.py prepare). The job stops on\n"
-    f"          # two failed attempts of one cell, or on {STALL_LIMIT} consecutive attempts of one cell\n"
-    "          # that complete no epoch (prepare, from the cell's ATTEMPTS ledger).\n"
-    "          attempt_ok () {\n"
-    "            local o=$1 f=0 p\n"
-    "            for p in ${o}.partial.* ${o}; do\n"
-    "              [ -f \"${p}/ATTEMPT_FAILED\" ] && f=$((f+1))\n"
-    "            done\n"
-    "            if [ \"${f}\" -ge 2 ]; then\n"
-    "              echo \"${o}: ${f} failed attempts\" | tee ${FAIL_MARK}; exit ${HALT}\n"
+    "$(cat ${FAIL_MARK}). Fix the cause, then remove ${FAIL_MARK}; what it counted was renamed "
+    "and is not counted again\"; exit ${HALT}; }\n"
+    "          # Each cell is prepared by experiments/FT/cell_resume.py prepare: an\n"
+    "          # interrupted attempt (an evicted or lost pod is SIGKILLed and runs no trap)\n"
+    "          # is RESUMED from its last completed epoch; a FAILED one (ATTEMPT_FAILED,\n"
+    "          # from the trap below) is moved aside and the cell starts again, unless its\n"
+    "          # training had finished (TRAINED), when only the read-out is redone. The job\n"
+    f"          # halts on two failed attempts of a cell, {NODE_FAULT_LIMIT} node faults of a cell, or {STALL_LIMIT}\n"
+    "          # consecutive attempts of a cell that complete no epoch.\n"
+    "          CELL=\"\"\n"
+    "          NODE_FAULTS=${ROOT_OUT}/NODE_FAULTS.${SHARD}\n"
+    "          on_exit () {\n"
+    "            local rc=$?\n"
+    "            [ ${rc} -ne 0 ] && [ ${rc} -ne ${HALT} ] && [ ${rc} -ne ${NODE_FAULT} ] && [ -n \"${CELL}\" ] "
+    "&& [ -d \"${CELL}\" ] && [ ! -f \"${CELL}/DONE\" ] || return 0\n"
+    "            local why=\"rc=${rc} pod=${POD_NAME} node=${NODE_NAME} $(date -u +%FT%TZ)\"\n"
+    "            # the node's fault, not the cell's: the GPU no longer answers, or the log\n"
+    "            # holds a CUDA device fault\n"
+    "            if ! python3 experiments/FT/gpu_probe.py || grep -qsE \""
+    + CUDA_FAULT + "\" \"${CELL}/stdout.log\" \"${CELL}/predict.log\"; then\n"
+    "              echo \"${why}\" > \"$(mktemp \"${CELL}/NODE_FAULT.XXXXXX\")\"\n"
+    "              echo \"${why} ${CELL}\" >> ${NODE_FAULTS}\n"
+    "              exit ${NODE_FAULT}\n"
     "            fi\n"
-    "            return 0\n"
-    "          }\n") + _TRAP
+    "            echo \"${why}\" > \"${CELL}/ATTEMPT_FAILED\"\n"
+    "          }\n"
+    "          trap on_exit EXIT\n"
+    "          # A node whose GPU does not answer is refused before any cell is touched.\n"
+    "          python3 experiments/FT/gpu_probe.py || {\n"
+    "            echo \"preflight pod=${POD_NAME} node=${NODE_NAME} $(date -u +%FT%TZ)\" >> ${NODE_FAULTS}; exit ${NODE_FAULT}; }\n")
 
 
 def _prepare(p: str) -> str:
     """Put the cell where this attempt starts: resumed, started again, or halted."""
-    return (f"{p}E=$(python3 experiments/FT/cell_resume.py prepare --dir ${{OUT}} --max-stalled {STALL_LIMIT}) || {{\n"
+    return (f"{p}E=$(python3 experiments/FT/cell_resume.py prepare --dir ${{OUT}} --max-failed 2 "
+            f"--max-node-faults {NODE_FAULT_LIMIT} --max-stalled {STALL_LIMIT}) || {{\n"
             f"{p}  echo \"${{OUT}}: ${{E}}\" | tee ${{FAIL_MARK}}; exit ${{HALT}}; }}\n"
             f"{p}mkdir -p ${{OUT}}\n"
             f"{p}CELL=${{OUT}}\n"
@@ -853,10 +883,27 @@ def _prepare(p: str) -> str:
             f"{p}echo \"$(date -u +%FT%TZ) pod=${{POD_NAME}} node=${{NODE_NAME}} from_epoch=${{E}}\" >> ${{OUT}}/ATTEMPTS\n")
 
 
+def _lock_atomic(p: str) -> str:
+    return (f"{p}# ONE CELL, ONE POD. cell_resume.py lock claims the cell atomically (a\n"
+            f"{p}# directory holding the owner, renamed onto the lock). A lock of this shard,\n"
+            f"{p}# left by an evicted pod, is re-entered and its cell resumed below; a lock\n"
+            f"{p}# held by any other job is left alone and counted, and the job halts at the end.\n"
+            f"{p}HELD=$(python3 experiments/FT/cell_resume.py lock --path ${{OUT}}.lock --owner ${{SHARD}})\n"
+            f"{p}case \"${{HELD}}\" in\n"
+            f"{p}  acquired) ;;\n"
+            f"{p}  reentered) echo \"re-entering ${{OUT}}.lock, left by an earlier pod of ${{SHARD}}\";;\n"
+            f"{p}  *) echo \"LOCKED: ${{OUT}} is held by ${{HELD}}, this is ${{SHARD}}; leaving it\"\n"
+            f"{p}     NLOCKED=$((NLOCKED+1)); continue;;\n"
+            f"{p}esac\n")
+
+
 def _best(p: str, epochs: str) -> str:
     return (f"{p}# weaver restarts its best-validation tracking on --load-epoch: the best epoch\n"
             f"{p}# of the whole run, from the exact metric ft_weaver.py logs, as weaver picks it.\n"
             f"{p}python3 experiments/FT/cell_resume.py best --dir ${{OUT}} --epochs {epochs}\n")
+
+
+_TRAINED = "touch ${OUT}/TRAINED   # training passed its checks: a retry redoes only what follows\n"
 
 
 def _nan_guard(p: str) -> str:
@@ -875,9 +922,8 @@ def robust_script(script: str, what: str) -> str:
         nan = _nan_guard(p)
         return _derive(script, [
             (_ATTEMPT_OK_OLD, _ATTEMPT_OK_RESUME, 1),
-            (f"{p}# re-entered (its half-written cell is moved to .partial below, as\n{p}# always); ",
-             f"{p}# re-entered (its interrupted cell is resumed below, from its last\n"
-             f"{p}# completed epoch); ", loops),
+            (_lock(ind), _lock_atomic(p), loops),
+            (f"{p}attempt_ok ${{OUT}}\n", "", loops),
             (f"{p}[ -d ${{OUT}} ] && mv ${{OUT}} ${{OUT}}.partial.$(date -u +%s)\n{p}mkdir -p ${{OUT}}\n",
              _prepare(p), loops),
             # a resumed cell keeps the manifest of the attempt that started it
@@ -889,8 +935,17 @@ def robust_script(script: str, what: str) -> str:
              nan.replace("attempt_ok allows one retry", "the cell starts again once")
              + _best(p, "${EP}" if loops == 2 else "__BENCH_EPOCHS__")
              + f"{p}[ -z \"${{ckpt}}\" ] || python3 experiments/FT/smoke_checks.py load-log", loops),
+            *[(f"{p}{first}", f"{p}{_TRAINED}{p}{first}", 1) for first in (
+                ("python3 experiments/EVAL/extract_features.py --checkpoint ${OUT}/net_best_epoch_state.pt "
+                 "--num-classes 162", "weaver --predict --data-test ${TEST1} ${PRED}") if loops == 2 else
+                ("python3 experiments/EVAL/extract_features.py --checkpoint ${OUT}/net_best_epoch_state.pt "
+                 "--num-classes 2",))],
             (f"{p}touch ${{OUT}}/DONE\n{p}rm -rf ${{OUT}}.lock\n",
              f"{p}touch ${{OUT}}/DONE\n{p}rm -rf ${{OUT}}.lock\n{p}CELL=\"\"\n", loops),
+            ("cells left to another job)\"\n",
+             "cells left to another job)\"\n"
+             "          [ \"${NLOCKED}\" -eq 0 ] || { echo \"FATAL: ${NLOCKED} cells are held by another "
+             "job's lock\"; exit ${HALT}; }\n", 1),
         ], f"resumable retry logic {what}")
     return _derive(script, [
         (_ATTEMPT_OK_OLD, _ATTEMPT_OK_NEW, 1),
@@ -928,7 +983,8 @@ def _retry_kw(name: str, kw: dict) -> dict:
     resumable GPU spec also stays off GPU_LOST_LATER."""
     if not robust(name):
         return kw
-    out = {**kw, "backoff": max(kw["backoff"], ROBUST_BACKOFF), "failure_policy": True}
+    out = {**kw, "backoff": max(kw["backoff"], ROBUST_BACKOFF),
+           "failure_policy": POD_FAILURE_POLICY_RESUME if resumable(name) else POD_FAILURE_POLICY}
     if resumable(name) and kw.get("gpu"):
         out["exclude_hosts"] = tuple(kw.get("exclude_hosts", ())) + GPU_LOST_LATER
     return out
@@ -936,7 +992,7 @@ def _retry_kw(name: str, kw: dict) -> dict:
 
 def job(name: str, script: str, *, gpu: bool, cpu: str, memory: str, shm: str,
         backoff: int, pin: str, header: str, exclude_hosts: tuple = (),
-        failure_policy: bool = False) -> str:
+        failure_policy: str = "") -> str:
     gpu_req = ', nvidia.com/gpu: "1"' if gpu else ""
     gpu_env = ('        - name: GPU_PRODUCT\n          value: "NVIDIA-GeForce-RTX-3090"\n'
                if gpu else "")
@@ -967,7 +1023,7 @@ metadata:
   namespace: cms-ml
 spec:
   backoffLimit: {backoff}
-{POD_FAILURE_POLICY if failure_policy else ""}  template:
+{failure_policy}  template:
     spec:
       restartPolicy: Never
       containers:
@@ -2043,11 +2099,12 @@ STAGE_HERWIG = PREAMBLE + """
 # Nothing here that loads a v2 checkpoint may be applied before the checkpoints
 # exist (no pretraining launches): only the staging job and the from-scratch
 # JetClass-II reference, which load none.
-PIN_V2 = "mtx-s1.66"
+PIN_V2 = "mtx-s1.88"
 # The staging job runs before the sha256 record exists, so it is tagged first.
 PIN_V2_SUBSETS = "mtx-s1.83"
-# The first tag with cell_resume.py and ft_weaver.py: every resumable spec pins it or later.
-PIN_RESUME = "mtx-s1.83"
+# The first tag with the whole resumable logic (cell_resume.py, ft_weaver.py,
+# gpu_probe.py, slim_outputs.py): every resumable spec pins it or later.
+PIN_RESUME = "mtx-s1.88"
 V2_SUBSETS = "/data/finetune/jc2_v2"
 V2_SHA_TABLE = "experiments/FT/data/ft_v2_subsets_sha256.json"
 V2_ROOT = "/data/results/ft_v2"
@@ -2055,6 +2112,18 @@ MTX_V2 = "/data/results/mtx_v2"
 V2_RULES = ("bestval", "wavg")
 V2_VAL_JETS = 20_480
 V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
+V2_EXPECTED = "experiments/FT/data/ft_v2_expected_cells.json"
+# STORAGE BUDGET (coordinator, 2026-10-01). Bytes a DONE v2 cell keeps, measured on
+# the v1 cells by job-ft-inspect-retries-3-raunav (2026-10-01) with the v2 read-outs
+# slimmed (experiments/FT/slim_outputs.py): leg 1 = net_best 9.3 MB + the logits of
+# every LEG1_AUC_STRIDE-th row 81 MB + argmax, labels 2 MB + observers 8 MB + logs
+# 4.4 MB; leg 2 = net_best 8.9 MB + pred.root's label/score branches 80.1 MB + logs
+# 4.9 MB; a benchmark cell 16.6 MB, at the full training set 44.2 MB with its last
+# epoch kept and scored. While a cell trains it also holds one state + optimizer
+# pair per epoch (26.8 MB), so each running spec adds its largest cell's epochs.
+LEG1_AUC_STRIDE = 4
+V2_CELL_BYTES = {"leg1": 105e6, "leg2": 95e6, "bench": 17e6, "bench_nmax": 45e6}
+EPOCH_PAIR_BYTES = 26.8e6
 assert V2_VAL_JETS % 512 == 0
 V2_POOL = ("/jc2/jet_data/Res2P_{0204..0249}.parquet /jc2/jet_data/Res34P_{0876..1074}.parquet "
            "/jc2/jet_data/QCD_{0285..0349}.parquet")
@@ -2173,6 +2242,10 @@ def legs_v2(inits, name: str, rule: str | None) -> str:
          + fixed, 1),
         ("--samples-per-epoch ${SPE} --samples-per-epoch-val 20000 --num-epochs ${EP}",
          "--samples-per-epoch ${SPE} --steps-per-epoch-val -1 --num-epochs ${EP}", 1),
+        # only what leg1_metrics.py reads (storage budget): the logits at its AUC stride
+        (f"{p}rm -f ${{OUT}}/features_v2/features.npy\n",
+         f"{p}rm -f ${{OUT}}/features_v2/features.npy\n"
+         f"{p}python3 experiments/FT/slim_outputs.py leg1 --dir ${{OUT}}/features_v2 --stride {LEG1_AUC_STRIDE}\n", 1),
         (p + _NAN_MARK, _steps_guard(p, "SPE")
          + f"{p}# ...and every epoch validated on the whole fixed sample, {V2_VAL_JETS} jets.\n"
          f"{p}[ \"$(grep -c \"Processed {V2_VAL_JETS} entries\" ${{OUT}}/train.log)\" -eq \"${{EP}}\" ] || {{\n"
@@ -2185,6 +2258,10 @@ def legs_v2(inits, name: str, rule: str | None) -> str:
          "num_classes=10 batch_size=512 samples_per_epoch=${SPE} steps_per_epoch=$((SPE/512)) "
          "samples_per_epoch_val=20000 steps_per_epoch_val=39 val_rule=rotating-stream", 1),
         (p + _NAN_MARK, _steps_guard(p, "SPE") + p + _NAN_MARK, 1),
+        # only the branches leg2_metrics.py reads (storage budget)
+        (f"{p}[ -f ${{OUT}}/pred.root ] || {{ echo \"FATAL: no pred.root in ${{OUT}}\"; exit 1; }}\n",
+         f"{p}[ -f ${{OUT}}/pred.root ] || {{ echo \"FATAL: no pred.root in ${{OUT}}\"; exit 1; }}\n"
+         f"{p}python3 experiments/FT/slim_outputs.py pred --file ${{OUT}}/pred.root\n", 1),
         ('echo "FT LEGS WAVE 3 ${SHARD} COMPLETE',
          f'echo "FT V2 LEGS ({"scratch" if scratch else rule}) ${{SHARD}} COMPLETE', 1),
     ], f"v2 legs {name} leg 2")
@@ -2267,6 +2344,40 @@ SUBSETS_JC2_V2 = PREAMBLE + f"""
           echo "END-TAR"
           echo "SUBSETS JC2 V2 DONE"
 """
+# THE STAGING JOB AS IT RAN (mtx-s1.83, Complete 2026-10-01) moved the build into
+# place, DONE included, BEFORE hashing ~22 GB: a pod evicted during the hash left a
+# complete-looking ${OUT} with no record, which its own DONE check then refused for
+# ever, and the record itself was not written atomically. Its spec stays as the
+# record of that job (V2_SUBSETS_RAN). The fixed order, for any rebuild: hash the
+# build where it is, under its final paths (ft_v2.py hash --as-dir), written to a
+# temporary file and renamed (ft_v2.py), then move it; and a DONE without its
+# record only hashes.
+V2_SUBSETS_RAN = True
+_SUBSETS_JC2_V2_FIXED = _derive(SUBSETS_JC2_V2, [
+    ("          [ -f ${OUT}/DONE ] && { echo \"FATAL: ${OUT} is complete; staged data is never rebuilt\"; exit ${HALT}; }\n",
+     "          [ -f ${OUT}/DONE ] && [ -f ${OUT}/ft_v2_subsets_sha256.json ] && {\n"
+     "            echo \"FATAL: ${OUT} is complete; staged data is never rebuilt\"; exit ${HALT}; }\n"
+     "          if [ ! -f ${OUT}/DONE ]; then\n", 1),
+    ("          mv ${OUT}.staging ${OUT}\n"
+     "          ls -la ${OUT}; du -sh ${OUT}\n"
+     "          # The sha256 record every v2 job checks: the new subsets, and the ones\n"
+     "          # v2 reuses (their builds recorded no sha256). Read-only on the latter.\n"
+     "          python3 experiments/FT/ft_v2.py hash --out ${OUT}/ft_v2_subsets_sha256.json \\\n"
+     "            --files ${OUT}/train_N*_s1.parquet ${OUT}/val.parquet ",
+     "          # The sha256 record every v2 job checks -- the new subsets, under their final\n"
+     "          # paths, and the ones v2 reuses -- written inside the build BEFORE it is moved.\n"
+     "          python3 experiments/FT/ft_v2.py hash --out ${OUT}.staging/ft_v2_subsets_sha256.json \\\n"
+     "            --as-dir ${OUT}.staging ${OUT} \\\n"
+     "            --files ${OUT}.staging/train_N*_s1.parquet ${OUT}.staging/val.parquet " + " ".join(V2_REUSED)
+     + " || exit ${HALT}\n"
+     "          mv ${OUT}.staging ${OUT}\n"
+     "          else\n"
+     "          # DONE without its record: moved into place by the version that hashed after the move.\n"
+     "          python3 experiments/FT/ft_v2.py hash --out ${OUT}/ft_v2_subsets_sha256.json \\\n"
+     "            --files ${OUT}/train_N*_s1.parquet ${OUT}/val.parquet ", 1),
+    (" || exit ${HALT}\n          df -h /data\n          # The two records",
+     " || exit ${HALT}\n          fi\n          ls -la ${OUT}; du -sh ${OUT}\n          df -h /data\n          # The two records", 1),
+], "staging, hash before the move")
 
 
 def v2_groups(cells_of) -> list[tuple[str, list]]:
@@ -2286,15 +2397,43 @@ def v2_groups(cells_of) -> list[tuple[str, list]]:
     return out
 
 
-def _v2_specs(pin: str, subsets: bool, finetune: bool) -> dict:
+def cell_bytes(cell) -> float:
+    leg, _, n, _ = cell
+    if leg in ("leg1", "leg2"):
+        return V2_CELL_BYTES[leg]
+    return V2_CELL_BYTES["bench_nmax" if n == BENCH_SIZES[leg[4:]][-1] else "bench"]
+
+
+def spec_bytes(cells) -> float:
+    """What a spec leaves on /data, plus its largest cell's epoch checkpoints while training."""
+    epochs = max(EPOCHS[n] if leg in ("leg1", "leg2") else BENCH_EPOCHS for leg, _, n, _ in cells)
+    return sum(cell_bytes(c) for c in cells) + epochs * EPOCH_PAIR_BYTES
+
+
+def v2_expected_cells() -> dict:
+    """Every v2 cell the generator emits, "init/N<N>/s<S>" under "<rule>/<leg>", the
+    list the read-outs check they read in full (--expect-cells)."""
+    out = {}
+    for rule in V2_RULES:
+        for kind, cells_of in (("legs", cells_legs), ("bench", cells_bench_v2ckpt)):
+            for _, s in v2_groups(cells_of):
+                for leg, n, N, sd in cells_of(s):
+                    out.setdefault(f"{rule}/{leg}", []).append(f"{n}/N{N}/s{sd}")
+    out["scratch/leg1"] = [f"{SCRATCH_REF}/N{N}/s{sd}" for sd in INITS_LATER[SCRATCH_REF][0][3] for N in SIZES]
+    return {k: sorted(v) for k, v in sorted(out.items())}
+
+
+def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None = None,
+              only: list | None = None) -> dict:
     h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
     gpu = dict(gpu=True, cpu="4", memory="88Gi", shm="8Gi", backoff=1, pin=pin,
                exclude_hosts=BAD_NODES + LOST_GPU_NODES)
-    specs = {}
+    specs, need = {}, {}
     if subsets:
         name = "ft-subsets-jc2-v2-raunav"
         specs[f"job-{name}.yaml"] = job(
-            name, _fill(SUBSETS_JC2_V2, pin), **_retry_kw(name, dict(
+            name, _fill(SUBSETS_JC2_V2 if V2_SUBSETS_RAN else _SUBSETS_JC2_V2_FIXED, pin),
+            **_retry_kw(name, dict(
                 gpu=False, cpu="4", memory="48Gi", shm="4Gi", backoff=1, pin=pin)),
             header=h + RETRY_NOTE_POLICY
             + "  # v2 JetClass-II fine-tuning subsets (audit must-fix 7): 1e3..1e6 jets and a\n"
@@ -2315,6 +2454,7 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool) -> dict:
                         "  # JetClass, wave 3's recipe" if kind == "legs" else
                         "top and quark/gluon (with Herwig) at bench v2's\n"
                         "  # recipe; the full training set also scored at its last epoch")
+                need[f"job-{name}.yaml"] = spec_bytes(cells)
                 specs[f"job-{name}.yaml"] = job(
                     name, _fill(script(s, name, rule), pin, inits=s), **_retry_kw(name, gpu),
                     header=h + _retry_note(name)
@@ -2325,6 +2465,7 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool) -> dict:
                       f"Root {V2_ROOT}/{rule}.\n")
     ref = INITS_LATER[SCRATCH_REF]
     name = "ft-v2-legs-scratch-raunav"
+    need[f"job-{name}.yaml"] = spec_bytes([c for c in cells_legs(ref) if c[0] == "leg1"])
     specs[f"job-{name}.yaml"] = job(
         name, _fill(legs_v2(ref, name, None), pin, inits=ref), **_retry_kw(name, gpu),
         header=h + _retry_note(name)
@@ -2332,7 +2473,17 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool) -> dict:
           "  # from-scratch recipe (BASELINE RECIPES), three fine-tuning seeds on the one\n"
           "  # subset per size, leg 1 only; loads no pretrained checkpoint.\n"
           f"  # 12 fine-tunes, ~12 GPU-h. Root {V2_ROOT}/scratch.\n")
-    return specs
+    # THE STORAGE BUDGET: refuse to emit what does not fit. The decision to make room
+    # is the PI's; headroom_gb is the space below the 85% line, from df in a pod.
+    picked = [n for n in specs if not only or any(k in n for k in only)]
+    total, every = sum(need[n] for n in picked), sum(need.values())
+    print(f"v2 storage: {len(picked)} specs need {total / 1e9:.1f} GB (all {len(specs)}: "
+          f"{every / 1e9:.1f} GB); headroom to the 85% line {headroom_gb} GB")
+    if headroom_gb is None or total > headroom_gb * 1e9:
+        raise SystemExit(f"FATAL: storage budget: {len(picked)} v2 specs need {total / 1e9:.1f} GB "
+                         f"against {headroom_gb} GB below the 85% line (--headroom-gb, from df in a "
+                         f"pod); all {len(specs)} need {every / 1e9:.1f} GB. Making room is the PI's call.")
+    return {n: specs[n] for n in picked}
 
 
 def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
@@ -2447,8 +2598,10 @@ V2_SUBSETS_NEEDED = {"experiments/FT/make_subsets.py": "def build_jc2v2",
                      "experiments/FT/ft_v2.py": "def cmd_hash"}
 V2_NEEDED = {"experiments/FT/make_subsets.py": "def build_jc2v2",
              "experiments/FT/ft_v2.py": "def resolve",
-             "experiments/FT/cell_resume.py": "def prepare",
+             "experiments/FT/cell_resume.py": "def lock",
              "experiments/FT/ft_weaver.py": "exact validation metric",
+             "experiments/FT/gpu_probe.py": "def main",
+             "experiments/FT/slim_outputs.py": "def slim_pred",
              V2_SHA_TABLE: '"files"'}
 
 
@@ -2525,7 +2678,7 @@ def _fill(script: str, pin: str, inits=None) -> str:
 
 def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = False,
           later: list | None = None, bench_v3: bool = False, v2_subsets: bool = False,
-          v2: bool = False) -> dict[str, str]:
+          v2: bool = False, headroom_gb: float | None = None, only: list | None = None) -> dict[str, str]:
     h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
     specs = {
         "job-ft-subsets-jc2-raunav.yaml": job(
@@ -2616,7 +2769,7 @@ def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = F
                        "  # two are reported side by side as the curve.\n")
     if v2_subsets or v2:
         # ONLY the v2 specs.
-        specs = _v2_specs(pin, v2_subsets, v2)
+        specs = _v2_specs(pin, v2_subsets, v2, headroom_gb, only)
         for name, text in specs.items():
             left = re.findall(r"__[A-Z0-9_]+__", text)
             assert not left, f"{name}: unfilled {sorted(set(left))}"
@@ -2670,6 +2823,8 @@ def main() -> int:
                     help=f"emit ONLY the v2 JetClass-II subset staging job (pin {PIN_V2_SUBSETS})")
     ap.add_argument("--v2", action="store_true",
                     help=f"emit ONLY the v2 fine-tuning specs (pin {PIN_V2}); needs {V2_SHA_TABLE}")
+    ap.add_argument("--headroom-gb", type=float,
+                    help="with --v2: GB below /data's 85%% line (df in a pod); specs that do not fit are refused")
     ap.add_argument("--plan", action="store_true",
                     help="print cells and expected GPU-hours per shard, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
@@ -2695,7 +2850,11 @@ def main() -> int:
                    V2_NEEDED if args.v2 else V2_SUBSETS_NEEDED)
     specs = build(args.pin, wave2=args.wave2, wave3=args.wave3, bench_v2=args.bench_v2,
                   later=args.later, bench_v3=args.bench_v3_last,
-                  v2_subsets=args.v2_subsets, v2=args.v2)
+                  v2_subsets=args.v2_subsets, v2=args.v2, headroom_gb=args.headroom_gb,
+                  only=args.only if args.v2 else None)
+    if args.v2 and not args.check_only:
+        (ROOT / V2_EXPECTED).write_text(json.dumps(v2_expected_cells(), indent=1) + "\n")
+        print(f"{V2_EXPECTED} written")
     if args.only:
         keep = {n: t for n, t in specs.items() if any(k in n for k in args.only)}
         missing = [k for k in args.only if not any(k in n for n in specs)]

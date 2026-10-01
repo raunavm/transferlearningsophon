@@ -9,6 +9,13 @@ Pinned here, by running an emitted script under bash with the wave-3 stubs:
   * two FAILED attempts of one cell stop the job with the halt code the pod
     failure policy turns into FailJob, and a failed attempt is never resumed;
   * attempts that complete no epoch stop the job after STALL_LIMIT of them;
+  * a step that fails on a CUDA device fault, or with the GPU no longer
+    answering, is the node's fault: recorded, not counted against the cell,
+    which resumes; NODE_FAULT_LIMIT of them halt; a pod whose GPU does not
+    answer is refused before it touches a cell;
+  * a read-out failure after training redoes only the read-out (TRAINED);
+  * a halt renames what it counted, so removing the marker restarts the job;
+  * cells are claimed atomically and a cell held by another job halts the job;
   * a run whose training loss went to NaN fails its attempt, is retried once
     from the start, and halts the job if it diverges again;
 and, on the specs: which carry the policy, which take the resumable logic, and
@@ -147,8 +154,15 @@ def test_the_unlaunched_self_supervised_groups_resume_and_avoid_the_lost_gpu():
 
 def test_the_resumable_logic_replaces_every_restart_and_cap(spec):
     live = "\n".join(ln for ln in T._args(spec).splitlines() if not ln.lstrip().startswith("#"))
-    for gone in (".partial.$(date", '"${a}" -ge 6', "seed_weaver.py", "^Traceback"):
+    for gone in (".partial.$(date", '"${a}" -ge 6', "seed_weaver.py", "^Traceback", "attempt_ok",
+                 "mkdir ${OUT}.lock"):
         assert gone not in live, gone
+    assert live.count("cell_resume.py lock --path ${OUT}.lock --owner ${SHARD}") == 2
+    assert live.count("touch ${OUT}/TRAINED") == 2
+    assert live.index("python3 experiments/FT/gpu_probe.py ||") < live.index("for spec in ${INITS}")
+    rules = yaml.safe_load(spec)["spec"]["podFailurePolicy"]["rules"]
+    assert rules[1] == {"action": "Count", "onExitCodes": {"containerName": "main", "operator": "In",
+                                                           "values": [B.EXIT_NODE_FAULT]}}
     assert live.count("cell_resume.py prepare --dir ${OUT}") == 2
     assert live.count("cell_resume.py best --dir ${OUT} --epochs ${EP}") == 2
     assert live.count('[ "${E}" -ge 0 ] || python3 experiments/FT/smoke_checks.py manifest') == 2
@@ -259,3 +273,82 @@ def test_an_eviction_after_a_failure_resumes_and_the_failure_still_counts(spec, 
     assert "--load-epoch 8" in _weaver_calls(calls)[0] and r.returncode == 1
     r, _ = _run(spec, tmp_path, 4)
     assert r.returncode == B.EXIT_HALT and "2 failed attempts" in _fail_mark(tmp_path).read_text()
+
+
+def test_a_readout_failure_after_training_redoes_only_the_readout(spec, tmp_path):
+    c = _cell(tmp_path)
+    r, _ = _run(spec, tmp_path, 1, EXTRACT_FAIL_IN=f"{CELL}/features_v2")
+    assert r.returncode == 1 and (c / "ATTEMPT_FAILED").exists() and (c / "TRAINED").exists()
+    r, calls = _run(spec, tmp_path, 2)
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+    assert "--load-epoch 49" in _weaver_calls(calls)[0]          # no epoch trained again
+    assert _exact_epochs(c) == list(range(50)) and (c / "DONE").exists()
+    assert (c / "ATTEMPT_FAILED.1").exists() and not list(c.parent.glob("s1.partial.*"))
+
+
+def test_a_cuda_fault_is_the_nodes_and_the_cell_resumes(spec, tmp_path):
+    c = _cell(tmp_path)
+    r, _ = _run(spec, tmp_path, 1, CUDA_FAULT_IN=CELL, FAULT_AT=5)
+    assert r.returncode == B.EXIT_NODE_FAULT, r.stdout[-2000:] + r.stderr[-2000:]
+    assert len(list(c.glob("NODE_FAULT.*"))) == 1 and not (c / "ATTEMPT_FAILED").exists()
+    faults = (tmp_path / "data/results/ft/w2b" / f"NODE_FAULTS.{SHARD}").read_text()
+    assert "node=n" in faults and CELL in faults
+    r, calls = _run(spec, tmp_path, 2)
+    assert r.returncode == 0 and "--load-epoch 4" in _weaver_calls(calls)[0]
+    assert (c / "DONE").exists()
+
+
+def test_node_faults_halt_at_their_limit(spec, tmp_path):
+    for n in range(1, B.NODE_FAULT_LIMIT + 1):
+        r, _ = _run(spec, tmp_path, n, CUDA_FAULT_IN=CELL, FAULT_AT=3 * n)
+        assert r.returncode == B.EXIT_NODE_FAULT
+    r, _ = _run(spec, tmp_path, 9)
+    assert r.returncode == B.EXIT_HALT
+    assert f"{B.NODE_FAULT_LIMIT} node faults (nodes n)" in _fail_mark(tmp_path).read_text()
+
+
+def test_a_pod_whose_gpu_does_not_answer_is_refused_before_any_cell(spec, tmp_path):
+    r, calls = _run(spec, tmp_path, 1, GPU_DEAD=1)
+    assert r.returncode == B.EXIT_NODE_FAULT
+    root = tmp_path / "data/results/ft/w2b"
+    assert "preflight" in (root / f"NODE_FAULTS.{SHARD}").read_text()
+    assert not (root / "leg1").exists() and "ft_weaver.py" not in calls
+
+
+def test_a_halted_job_restarts_once_its_marker_is_removed(spec, tmp_path):
+    for n in (1, 2):
+        assert _run(spec, tmp_path, n, NAN_IN=CELL)[0].returncode == 1
+    assert _run(spec, tmp_path, 3)[0].returncode == B.EXIT_HALT
+    c = _cell(tmp_path)
+    assert len(list(c.parent.glob("s1.halted.partial.*"))) == 2 and not c.exists()
+    _fail_mark(tmp_path).unlink()                          # the cause is fixed
+    r, _ = _run(spec, tmp_path, 4)
+    assert r.returncode == 0, r.stdout[-2000:]
+    assert (c / "DONE").exists() and _ledger(c) == [-1]
+
+
+def test_a_stalled_job_restarts_once_its_marker_is_removed(spec, tmp_path):
+    for n in range(1, 5):
+        _run(spec, tmp_path, n, KILL_IN=CELL, KILL_AT=3)
+    assert _run(spec, tmp_path, 5)[0].returncode == B.EXIT_HALT
+    _fail_mark(tmp_path).unlink()
+    r, calls = _run(spec, tmp_path, 6)
+    assert r.returncode == 0 and "--load-epoch 2" in _weaver_calls(calls)[0]
+    assert list(_cell(tmp_path).glob("ATTEMPTS.halted.*"))
+
+
+def test_cells_are_claimed_atomically_and_a_foreign_lock_halts_the_job(spec, tmp_path):
+    T._shell_env(tmp_path, INITS)                           # the data tree first
+    root = tmp_path / "data/results/ft/w2b"
+    own, foreign, ownerless = (root / "leg1/scratch-v2/N1000/s1.lock", root / "leg1/scratch-v2/N10000/s1.lock",
+                               root / "leg2/scratch-v2/N1000/s1.lock")
+    for d, owner in ((own, SHARD), (foreign, "ft-v2-legs-bestval-t1a-raunav"), (ownerless, None)):
+        d.mkdir(parents=True)
+        if owner:
+            (d / "owner").write_text(owner + "\n")
+    r, _ = _run(spec, tmp_path, 1)
+    assert r.returncode == B.EXIT_HALT
+    assert "re-entering" in r.stdout and "held by ft-v2-legs-bestval-t1a-raunav" in r.stdout
+    assert "held by unknown" in r.stdout and "2 cells are held by another job's lock" in r.stdout
+    assert (_cell(tmp_path) / "DONE").exists() and not own.exists() and foreign.exists()
+    assert not list(root.rglob("*.lock.partial.*"))

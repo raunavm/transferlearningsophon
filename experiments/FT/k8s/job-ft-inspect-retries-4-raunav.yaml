@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # READ-ONLY DIAGNOSTIC (2026-10-01), written by hand, fourth pass: every fine-tuning
+  # train.log under /data/results/ft scanned for a NaN training loss, with the node of
+  # its attempt, and the node of each C2/C3 cell in bench v2 and bench v3 (whose
+  # best-validation outputs agree bit for bit). Mounts /data read-only, clones nothing.
+  name: ft-inspect-retries-4-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 3
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -uo pipefail
+          python3 - <<'PY'
+          import json, pathlib, collections
+          root = pathlib.Path("/data/results/ft")
+          nan, nodes = [], collections.Counter()
+          for log in root.rglob("train.log"):
+              cell = log.parent
+              try:
+                  node = json.loads((cell / "ft_manifest.json").read_text()).get("node_name")
+              except Exception:
+                  node = None
+              nodes[node] += 1
+              if "AvgLoss: nan" in log.read_text(errors="replace"):
+                  nan.append((str(cell), node))
+          print("train.logs scanned:", sum(nodes.values()))
+          for c, n in nan:
+              print("NAN", c, n)
+          print("attempts per node:", dict(nodes.most_common()))
+          for tree in ("bench_v2", "bench_v3_lastepoch"):
+              for leg, N in (("leg_top", "N1200000"), ("leg_qg", "N1600000")):
+                  for m in sorted((root / tree / leg).glob(f"*/{N}/s1/ft_manifest.json")):
+                      print("NODE", tree, leg, m.parts[-4], json.loads(m.read_text()).get("node_name"))
+          PY
+          echo "INSPECT 4 DONE"
+        volumeMounts:
+        - { name: data, mountPath: /data, readOnly: true }
+        resources:
+          requests: { memory: "1Gi", cpu: "1" }
+          limits:   { memory: "1Gi", cpu: "1" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+          readOnly: true

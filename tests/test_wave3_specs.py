@@ -497,12 +497,15 @@ next_after () { local key=$1; shift; while [ $# -gt 0 ]; do [ "$1" = "$key" ] &&
 case "$*" in
   *cell_resume.py*)
     shift; exec "__PY__" "__ROOT__/experiments/FT/cell_resume.py" "$@";;
+  *gpu_probe.py*)
+    [ -z "${GPU_DEAD:-}" ] || exit 1;;
   *ft_weaver.py*)
     # weaver as the resumable specs run it: epochs from --load-epoch + 1, each
     # one's state and optimizer written as zip archives (as torch.save does),
     # validated, its exact metric logged (METRICS, else 0.5 + e/1000), the best
     # copied with weaver's rule restarted at 0 in this process. KILL_IN/KILL_AT
-    # SIGKILL the job script, as an eviction does, when that epoch starts.
+    # SIGKILL the job script, as an eviction does, when that epoch starts;
+    # CUDA_FAULT_IN/FAULT_AT end it there with a CUDA device fault instead.
     P=$(next_after --model-prefix "$@"); L=$(next_after --log "$@")
     EP=$(next_after --num-epochs "$@"); LE=$(next_after --load-epoch "$@")
     SPE=$(next_after --samples-per-epoch "$@"); SV=$(next_after --steps-per-epoch-val "$@")
@@ -512,10 +515,13 @@ case "$*" in
     { echo "[t] INFO: args:"; echo " - ('steps_per_epoch', ${ST})"
       [ -n "${LE}" ] && echo "[t] INFO: Resume training from epoch ${LE}"; } >> "$L"
     echo "[t] INFO: Parameters with lr multiplied by 50:"
+    for i in $(seq 1 __NMULT__); do echo " - mod.p${i}"; done; echo "[t] INFO: next"
     TOP=0
-    for e in $(seq ${S0} $((EP-1))); do
+    for ((e=S0; e<EP; e++)); do
       echo "[t] INFO: Epoch #${e} training" >> "$L"
       if [ -n "${KILL_IN:-}" ] && [[ "$P" == *"${KILL_IN}"* ]] && [ "${e}" = "${KILL_AT}" ]; then kill -9 $PPID; exit 137; fi
+      if [ -n "${CUDA_FAULT_IN:-}" ] && [[ "$P" == *"${CUDA_FAULT_IN}"* ]] && [ "${e}" = "${FAULT_AT}" ]; then
+        echo "RuntimeError: CUDA error: unknown error"; exit 1; fi
       LOSS=0.5; [ -n "${NAN_IN:-}" ] && [[ "$P" == *"${NAN_IN}"* ]] && LOSS=nan
       echo "[t] INFO: Processed $((ST*512)) entries in total" >> "$L"
       echo "[t] INFO: Train AvgLoss: ${LOSS}, AvgAcc: 0.8" >> "$L"
@@ -533,6 +539,7 @@ case "$*" in
     echo "Parameters with lr multiplied by 50";;
   *extract_features.py*)
     case "$*" in *--self-check-only*) exit 0;; esac
+    if [ -n "${EXTRACT_FAIL_IN:-}" ] && [[ "$*" == *"${EXTRACT_FAIL_IN}"* ]]; then echo "Traceback: read-out failed"; exit 1; fi
     D=$(next_after --out "$@"); mkdir -p "$D"
     touch "$D/features.npy" "$D/logits.npy" "$D/label188.npy" "$D/extract_manifest.json";;
   *mpm_init.py*) touch "$(next_after --out "$@")";;
@@ -540,7 +547,8 @@ case "$*" in
     n=0; for a in "$@"; do case "$a" in *top_test*) n=$((n+404000));; *.parquet) n=$((n+100000));; esac; done; echo $n;;
 esac
 exit 0
-'''.replace("__PY__", sys.executable).replace("__ROOT__", str(ROOT)))
+'''.replace("__PY__", sys.executable).replace("__ROOT__", str(ROOT))
+    .replace("__NMULT__", str(B.MPM_N_MULT)))
     data, jc2, ws = tmp_path / "data", tmp_path / "jc2", tmp_path / "workspace"
     for d in ("finetune/jc2", "finetune/jc1"):
         for s in (1, 2, 3):

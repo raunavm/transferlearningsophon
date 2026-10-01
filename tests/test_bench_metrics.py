@@ -287,9 +287,13 @@ def test_a_reused_init_joins_its_set_only_when_its_subsets_are_on_record(tmp_pat
     _cell(tmp_path / "v2", y, z, init="l188-s1")
     ref = _cell(tmp_path / "v1", y, z, init="scratch-v2")
     sub = "/data/finetune/top_sub/train_N1000_s1.parquet"
-    (ref / "ft_manifest.json").write_text(json.dumps({"subset": sub, "subset_bytes": 1869174}))
+    val = "/data/finetune/top_sub/val.parquet"
+    (ref / "ft_manifest.json").write_text(json.dumps({"subset": sub, "subset_bytes": 1869174,
+                                                      "written_utc": "2026-09-28T21:01:14Z"}))
     table = tmp_path / "t.json"
-    table.write_text(json.dumps({"files": {sub: {"sha256": "x", "bytes": 1869174}}}))
+    rec = {val: {"sha256": "v", "bytes": 9, "mtime_utc": "2026-09-07T22:18:44Z"}}
+    table.write_text(json.dumps({"files": {sub: {"sha256": "x", "bytes": 1869174,
+                                                 "mtime_utc": "2026-09-07T22:18:07Z"}, **rec}}))
     args = ["--root", str(tmp_path / "v2"), "--out", str(tmp_path / "o"), "--datasets", "top",
             "--ref-init", str(tmp_path / "v1/leg_top/scratch-v2")]
     with pytest.raises(SystemExit, match="needs --sha-table"):
@@ -297,7 +301,8 @@ def test_a_reused_init_joins_its_set_only_when_its_subsets_are_on_record(tmp_pat
     assert M.main(args + ["--sha-table", str(table)]) == 0
     res = json.loads((tmp_path / "o" / "bench_metrics.json").read_text())
     assert set(res["cells"]["top"]) == {"l188-s1", "scratch-v2"}
-    table.write_text(json.dumps({"files": {sub: {"sha256": "x", "bytes": 5}}}))
+    table.write_text(json.dumps({"files": {sub: {"sha256": "x", "bytes": 5, "mtime_utc": "2026-09-07T22:18:07Z"},
+                                           **rec}}))
     with pytest.raises(SystemExit, match="reused cell refused"):
         M.main(args + ["--sha-table", str(table)])
     with pytest.raises(SystemExit, match="not <tree>/leg_<set>/<init>"):

@@ -74,6 +74,7 @@ def _load(name: str, rel: str):
 
 
 FT_V2 = _load("ft_v2", "experiments/FT/ft_v2.py")
+SLIM = _load("slim_outputs", "experiments/FT/slim_outputs.py")
 
 
 def softmax(z: np.ndarray) -> np.ndarray:
@@ -100,7 +101,9 @@ def discover(root: pathlib.Path) -> list[tuple[str, str, str, pathlib.Path]]:
                 if ".partial." in seed_dir.name:
                     continue
                 fd = seed_dir / "features_v2"
-                if (fd / "logits.npy").exists() and (fd / "label188.npy").exists():
+                # the full cache, or the v2 slim one (experiments/FT/slim_outputs.py leg1)
+                cached = (fd / "logits.npy").exists() or (fd / "slim.json").exists()
+                if cached and (fd / "label188.npy").exists():
                     if diverged(seed_dir):
                         raise SystemExit(f"FATAL: {seed_dir} trained to a NaN loss; not a result")
                     out.append((init_dir.name, n_dir.name, seed_dir.name, fd))
@@ -159,10 +162,10 @@ def cell_record(cell: pathlib.Path, cov_cache: dict) -> dict:
 def cell_metrics(fd: pathlib.Path, l162: dict[int, int], eval_arm, auc_stride: int):
     lab188 = np.load(fd / "label188.npy")
     sha = hashlib.sha256(lab188.tobytes()).hexdigest()
-    logits = np.load(fd / "logits.npy")
-    if logits.shape[0] != lab188.shape[0]:
-        raise SystemExit(f"FATAL: {fd} has {logits.shape[0]} logits rows and "
-                         f"{lab188.shape[0]} labels")
+    top, logits = SLIM.read_leg1(fd, auc_stride)      # every row's argmax, every stride-th row's logits
+    if top.shape[0] != lab188.shape[0] or logits.shape[0] != len(range(0, lab188.shape[0], auc_stride)):
+        raise SystemExit(f"FATAL: {fd} has {top.shape[0]} rows ({logits.shape[0]} at the AUC "
+                         f"stride) and {lab188.shape[0]} labels")
     if logits.shape[1] != 162:
         raise SystemExit(f"FATAL: {fd} head is {logits.shape[1]}-wide, not 162. "
                          "Leg 1 fine-tunes the 162-way vocabulary; a different "
@@ -184,9 +187,9 @@ def cell_metrics(fd: pathlib.Path, l162: dict[int, int], eval_arm, auc_stride: i
         raise SystemExit(f"FATAL: {fd} holds native labels absent from the "
                          f"committed map: {bad.tolist()}")
 
-    acc = float((logits.argmax(1) == truth).mean())      # full sample, cheap
+    acc = float((top == truth).mean())                   # full sample, cheap
     idx = np.arange(0, truth.shape[0], auc_stride)
-    m = eval_arm.metrics(softmax(logits[idx]), truth[idx], 162, L162_QCD_GROUP)
+    m = eval_arm.metrics(softmax(logits), truth[idx], 162, L162_QCD_GROUP)
     return {
         "accuracy": acc,
         "accuracy_on_auc_subsample": m["accuracy"],
@@ -205,6 +208,8 @@ def main() -> int:
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--auc-stride", type=int, default=4,
                     help="compute the AUC on every k-th row (1 = every row)")
+    ap.add_argument("--expect-cells", metavar="FILE:PREFIX",
+                    help="fail unless every cell FILE lists under PREFIX/leg1 is read (ft_v2.expected_cells)")
     args = ap.parse_args()
 
     lr = _load("label_recovery", "experiments/EVAL/label_recovery.py")
@@ -228,6 +233,7 @@ def main() -> int:
     if not cells:
         raise SystemExit(f"FATAL: no complete cells under {args.root}")
     print(f"{len(cells)} cells", flush=True)
+    FT_V2.require_cells({f"{i}/{n}/{s}" for i, n, s, _ in cells}, args.expect_cells, "leg1")
 
     res, shas, cov_cache = {}, {}, {}
     for init, n, seed, fd in cells:
