@@ -27,20 +27,20 @@ spec:
         - |
           set -euo pipefail
           OUT=/data/results/aoj/injection_v1
-          mkdir -p "${OUT}"
-          echo "$(date -u +%FT%TZ) $(hostname)" >> "${OUT}/ATTEMPTS"
-          NF=$(grep -c . "${OUT}/FAILED_ATTEMPTS" 2>/dev/null || true)
-          NA=$(grep -c . "${OUT}/ATTEMPTS" 2>/dev/null || true)
+          mkdir -p "${OUT}/attempts/bins"
+          echo "$(date -u +%FT%TZ) $(hostname)" >> "${OUT}/attempts/bins/ATTEMPTS"
+          NF=$(grep -c . "${OUT}/attempts/bins/FAILED_ATTEMPTS" 2>/dev/null || true)
+          NA=$(grep -c . "${OUT}/attempts/bins/ATTEMPTS" 2>/dev/null || true)
           if [ "${NF:-0}" -ge 2 ] || [ "${NA:-0}" -gt 8 ]; then
-            echo "FATAL: ${NF} failed attempts, ${NA} in all: fix the cause, then remove ${OUT}/FAILED_ATTEMPTS"; exit 42; fi
-          trap 'rc=$?; if [ ${rc} -ne 0 ] && [ ${rc} -ne 42 ]; then echo "rc=${rc} $(date -u +%FT%TZ) $(hostname)" >> "${OUT}/FAILED_ATTEMPTS"; fi' EXIT
+            echo "FATAL: ${NF} failed attempts, ${NA} in all: fix the cause, then remove ${OUT}/attempts/bins/FAILED_ATTEMPTS"; exit 42; fi
+          trap 'rc=$?; if [ ${rc} -ne 0 ] && [ ${rc} -ne 42 ]; then echo "rc=${rc} $(date -u +%FT%TZ) $(hostname)" >> "${OUT}/attempts/bins/FAILED_ATTEMPTS"; fi' EXIT
           SHARDS=""
           for i in $(seq 0 9); do
             [ -f "/data/results/aoj/full_v1/shard${i}/DONE" ] || { echo "FATAL: shard ${i} has not finished"; exit 42; }
             SHARDS="${SHARDS} /data/results/aoj/full_v1/shard${i}"
           done
           if [ ! -e "${OUT}/injection_bins.npz" ]; then
-            git clone --depth 1 --branch "mtx-s1.79" \
+            git clone --depth 1 --branch "mtx-s1.81" \
               https://github.com/raunavm/transferlearningsophon.git \
               /workspace/transferlearningsophon
             cd /workspace/transferlearningsophon

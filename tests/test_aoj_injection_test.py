@@ -31,7 +31,7 @@ def _merged(tmp_path, n=400_000, seed=3):
     return d
 
 
-def _committed(tmp_path, merged, change=False):
+def _committed(tmp_path, merged, change=False, rho_scale=1.0):
     j = np.load(merged / "jets.npz")
     mass, pt = j["jet_sdmass"].astype(float), j["aoj_jet_pt"].astype(float)
     rho = P.rho_of(mass, pt)
@@ -42,6 +42,7 @@ def _committed(tmp_path, merged, change=False):
         b = IT.top_bins(z[ok], mass[ok], pt[ok], IT.EFF)
         if change and name == "m":
             b = dict(b, n_pass=b["n_pass"] + 1)
+        b = dict(b, rho=b["rho"] * rho_scale)
         out.update({f"{name}|main|{k}": b[k] for k in IT.KEYS})
     np.savez(tmp_path / "committed.npz", **out)
     return tmp_path / "committed.npz"
@@ -66,6 +67,19 @@ def test_nothing_is_written_when_the_one_per_cent_bins_are_not_the_committed_one
     with pytest.raises(SystemExit, match="these are not the jets the fit saw"):
         IT.export(merged, _committed(tmp_path, merged, change=True), tmp_path / "out.npz", workers=1)
     assert not (tmp_path / "out.npz").exists()
+
+
+@pytest.mark.parametrize("scale,ok", [(1 + 1e-14, True), (1 + 1e-6, False)])
+def test_the_mean_rho_of_a_bin_is_compared_to_float_precision_and_the_counts_exactly(tmp_path, scale, ok):
+    """A weighted mean differed in its last bits on the cluster with every count equal."""
+    merged = _merged(tmp_path)
+    committed = _committed(tmp_path, merged, rho_scale=scale)
+    if ok:
+        IT.export(merged, committed, tmp_path / "out.npz", workers=1)
+        assert (tmp_path / "out.npz").exists()
+    else:
+        with pytest.raises(SystemExit, match=r"\(rho\); these are not the jets"):
+            IT.export(merged, committed, tmp_path / "out.npz", workers=1)
 
 
 # ---- the toys ----
@@ -135,3 +149,22 @@ def test_the_same_task_draws_the_same_toy(committed):
     assert a["fits"]["fixed"]["y"] == b["fits"]["fixed"]["y"]
     c = IT._run_task(dict(t, toy=5))
     assert c["fits"]["fixed"]["y"] != a["fits"]["fixed"]["y"]
+
+
+def test_the_summary_measures_recovery_against_the_injected_size_and_in_data_against_the_real_peak_too():
+    rec = lambda mode, size, toy, y, err=10.0: dict(region="top", mode=mode, name="m", size=size, toy=toy,
+                                                    truth_order=[2, 1], truth_width=10.0,
+                                                    fits={"fixed": dict(y=y, err=err, order=[2, 1])})
+    rows = [rec("bootstrap", 100.0, k, 100.0 + d) for k, d in enumerate((-10, 0, 10, 20))]
+    rows += [rec("data", 0.0, -1, 500.0)] + [rec("data", 100.0, k, 590.0 + 10 * k) for k in range(3)]
+    g = {(x["mode"], x["size"]): x for x in IT.summarise(rows)}
+    boot, data = g[("bootstrap", 100.0)], g[("data", 100.0)]
+    assert boot["ratio"]["mean"] == pytest.approx(1.05) and boot["pull"]["mean"] == pytest.approx(0.5)
+    assert data["ratio"]["mean"] == pytest.approx(1.0) and data["pull"]["mean"] == pytest.approx(0.0)
+    assert ("data", 0.0) not in g, "the real data with nothing injected is the baseline, not a toy"
+
+
+def test_the_asymmetric_pull_uses_the_profile_error_on_the_side_of_the_truth():
+    f = dict(err=10.0, lo=5.0, hi=20.0)
+    assert IT._pull(80.0, 100.0, f) == (-2.0, -1.0)
+    assert IT._pull(110.0, 100.0, f) == (1.0, 2.0)

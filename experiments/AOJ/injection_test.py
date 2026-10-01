@@ -43,6 +43,7 @@ P = _load("peak_fit", HERE / "peak_fit.py")
 RC = _load("realdata_checks", HERE / "realdata_checks.py")
 
 KEYS = ("m_edges", "i", "j", "n_pass", "n_fail", "rho", "pt")
+FLOAT_KEYS, FLOAT_RTOL = ("rho", "pt"), 1e-9
 EFF = 0.01
 EXTRA_EFF = (0.005, 0.02)
 PSEUDO = RC.PSEUDO
@@ -93,10 +94,20 @@ def export(merged, committed, out, workers):
     finally:
         for k, v in saved.items():
             os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
-    arrays = {}
+    arrays, worst = {}, dict.fromkeys(FLOAT_KEYS, 0.0)
     for name, parts in rows:
         for k in KEYS:
-            if not np.array_equal(parts["main"][k], c[f"{name}|main|{k}"]):
+            # the counts and bin indices exactly; the per-bin MEAN rho and pT to float
+            # precision -- a weighted sum, it differed in the last bits from the committed
+            # bins on the cluster (first launch, 2026-10-01) with every count identical
+            new, old = parts["main"][k], c[f"{name}|main|{k}"]
+            if k in FLOAT_KEYS and new.shape == old.shape:
+                rel = float(np.max(np.abs(new - old) / np.abs(old)))
+                worst[k] = max(worst[k], rel)
+                same = rel <= FLOAT_RTOL
+            else:
+                same = np.array_equal(new, old)
+            if not same:
                 raise SystemExit(f"FATAL: {name} top bins at 1 % differ from {committed} ({k}); "
                                  "these are not the jets the fit saw; nothing written")
         for part, b in parts.items():
@@ -110,6 +121,7 @@ def export(merged, committed, out, workers):
         raise SystemExit(f"FATAL: {out} exists")
     out.parent.mkdir(parents=True, exist_ok=True)
     np.savez(out, **arrays)
+    print(f"largest relative difference from the committed bins: {worst}", flush=True)
     print(f"wrote {out}: {len(names)} scores x (pseudo, {', '.join(f'main_eff{e:g}' for e in EXTRA_EFF)})")
 
 
@@ -303,9 +315,101 @@ def run_toys(a):
             os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
 
 
+# ------------------------------------------------------------------ readout
+REPRODUCE_TOL = 1e-3        # yield shift / error: across machines the minimiser stops a hair apart
+
+
+def reproduce_checks(extra, fit, checks):
+    """The checks' pseudo-window test replayed from the exported bins, exactly as
+    realdata_checks._injection_one runs it: the spurious signal at a fixed shape, and the
+    Asimov injection fitted back with the shape floating. Per score: the replay beside the
+    stored numbers, ok when every yield is within REPRODUCE_TOL of its error."""
+    rows = {}
+    for name, stored in checks["models"].items():
+        top = fit["models"][name]["top"]
+        b = region_bins("pseudo", name, None, extra)
+        centre, width = 0.5 * sum(PSEUDO["window"]), top["width"]
+        spur = P.fit_binned(b, PSEUDO, centre, width)[0]
+        inj, cats = RC.inject_asimov(b, centre, width, top["yield_per_pt_bin"])
+        got = P.fit_binned(inj, PSEUDO, centre, width, float_shape=True)[0]
+        s, i = stored["spurious"], stored["injected"]
+        shift = dict(spurious=(spur["signal_yield"] - s["signal_yield"]) / s["signal_yield_err"],
+                     fitted=(got["signal_yield"] - i["fitted"]) / i["fitted_err"],
+                     injected=(sum(cats.values()) - i["signal_yield"]) / i["fitted_err"])
+        rows[name] = dict(injected=sum(cats.values()), fitted=got["signal_yield"], fitted_err=got["signal_yield_err"],
+                          fitted_mean=got["mean"], fitted_width=got["width"], spurious=spur["signal_yield"],
+                          spurious_err=spur["signal_yield_err"], shift_over_err=shift,
+                          ok=bool(max(map(abs, shift.values())) <= REPRODUCE_TOL))
+    return rows
+
+
+def _pull(y, target, f):
+    """(symmetric, asymmetric) pull: the asymmetric one divides by the profile error on the
+    side of the truth (hi when the fit is low), the symmetric one by the quoted error."""
+    sym = (y - target) / f["err"] if f["err"] else None
+    side = f.get("hi") if y < target else f.get("lo")
+    return sym, ((y - target) / side if side else sym)
+
+
+def _stats(v):
+    v = np.asarray([x for x in v if x is not None], float)
+    if not len(v):
+        return None
+    return dict(n=int(len(v)), mean=float(v.mean()), se=float(v.std(ddof=1) / np.sqrt(len(v))) if len(v) > 1 else None,
+                sd=float(v.std(ddof=1)) if len(v) > 1 else None, median=float(np.median(v)))
+
+
+def summarise(records):
+    """Per (region, mode, size, variant): the recovered fraction fitted / injected and the
+    pull, over every score and toy, and per score.
+      bootstrap, leak  target = the injected size
+      data             target = the injected size + what the same fit finds in the data with
+                       nothing injected: in the top window that is the real peak, at the same
+                       shape. In the band and the pseudo-window the no-injection fit of the
+                       FIXED shape is used (a floating shape finds the largest bump anywhere)."""
+    base = {(r["region"], r["name"], v): f["y"] for r in records if r["toy"] < 0 for v, f in r["fits"].items()}
+    groups = {}
+    for r in records:
+        if r["toy"] < 0:
+            continue
+        for v, f in r["fits"].items():
+            y0 = 0.0
+            if r["mode"] == "data":
+                y0 = base[(r["region"], r["name"], v if r["region"].startswith("top") else "fixed")]
+            target = r["size"] + y0
+            sym, asym = _pull(f["y"], target, f)
+            g = groups.setdefault((r["region"], r["mode"], r["size"], v), dict(rows=[], per={}))
+            row = dict(ratio=(f["y"] - y0) / r["size"], pull=sym, pull_asym=asym, at_bound=f.get("at_bound"),
+                       order_moved=f["order"] != r["truth_order"], width=f.get("width"), mean=f.get("mean"),
+                       width_ratio=f["width"] / r["truth_width"] if f.get("width") else None)
+            g["rows"].append(row)
+            g["per"].setdefault(r["name"], []).append(row)
+    out = []
+    for (region, mode, size, v), g in sorted(groups.items()):
+        rows = g["rows"]
+        col = lambda k, rs=rows: [x[k] for x in rs]
+        out.append(dict(
+            region=region, mode=mode, size=size, variant=v, n=len(rows),
+            ratio=_stats(col("ratio")), pull=_stats(col("pull")), pull_asym=_stats(col("pull_asym")),
+            width_ratio=_stats(col("width_ratio")),
+            at_bound=float(np.mean([bool(x) for x in col("at_bound")])) if any(x is not None for x in col("at_bound")) else None,
+            order_moved=float(np.mean(col("order_moved"))),
+            per_score={n: dict(ratio=_stats(col("ratio", rs)), pull=_stats(col("pull", rs))) for n, rs in sorted(g["per"].items())}))
+    return out
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
+    r = sub.add_parser("reproduce")
+    r.add_argument("--extra", required=True, type=pathlib.Path)
+    r.add_argument("--fit", default=DATA / "fit_v4/results.json", type=pathlib.Path)
+    r.add_argument("--checks", default=pathlib.Path("experiments/FIGS/data/aoj_checks_v1/map_injection_data.json"),
+                   type=pathlib.Path)
+    r.add_argument("--out", required=True, type=pathlib.Path)
+    s = sub.add_parser("summary")
+    s.add_argument("--toys", nargs="+", required=True, type=pathlib.Path)
+    s.add_argument("--out", required=True, type=pathlib.Path)
     b = sub.add_parser("bins")
     b.add_argument("--merged", required=True, type=pathlib.Path)
     b.add_argument("--committed", required=True, type=pathlib.Path)
@@ -332,6 +436,18 @@ def main(argv=None) -> int:
         export(a.merged, a.committed, a.out, a.workers)
     elif a.cmd == "toys":
         run_toys(a)
+    elif a.cmd == "reproduce":
+        rows = reproduce_checks(np.load(a.extra), json.loads(a.fit.read_text()), json.loads(a.checks.read_text()))
+        doc = dict(models=rows, all_ok=all(x["ok"] for x in rows.values()), tol=REPRODUCE_TOL,
+                   inputs={k: str(v) for k, v in dict(extra=a.extra, fit=a.fit, checks=a.checks).items()})
+        a.out.parent.mkdir(parents=True, exist_ok=True)
+        a.out.write_text(json.dumps(doc, indent=2))
+        print(f"replayed {len(rows)} scores; reproduces the checks: {doc['all_ok']}")
+    elif a.cmd == "summary":
+        records = [json.loads(ln) for p in a.toys for ln in p.read_text().splitlines() if ln.strip()]
+        a.out.parent.mkdir(parents=True, exist_ok=True)
+        a.out.write_text(json.dumps(dict(groups=summarise(records), n_records=len(records),
+                                         toys=[str(p) for p in a.toys]), indent=2))
     return 0
 
 

@@ -1068,8 +1068,11 @@ def render_read() -> str:
 # merged jets (experiments/AOJ/injection_test.py bins, which checks its 1 % top bins
 # against the committed ones), printed on the log as a base64 tar for the repository.
 INJECTION_ROOT = "/data/results/aoj/injection_v1"
-INJECTION_PIN = "mtx-s1.79"
-INJECTION_NEEDED_FLAGS = {"experiments/AOJ/injection_test.py": "these are not the jets the fit saw"}
+# First launched at mtx-s1.79: it refused its own bins, every count equal to the committed
+# ones but the per-bin mean rho not bit-equal (a weighted sum). Re-created at mtx-s1.81,
+# which compares the means to FLOAT_RTOL, with a fresh attempts directory.
+INJECTION_PIN = "mtx-s1.81"
+INJECTION_NEEDED_FLAGS = {"experiments/AOJ/injection_test.py": "FLOAT_RTOL"}
 COMMITTED_BINS = "experiments/FIGS/data/aoj_full_v1/fit_v3/bins.npz"
 
 INJECTION_BINS_TEMPLATE = r"""apiVersion: batch/v1
@@ -1149,7 +1152,7 @@ spec:
 def render_injection_bins() -> str:
     ft = _ft()
     t = INJECTION_BINS_TEMPLATE.format(
-        image=IMAGE, out=INJECTION_ROOT, accounting=_failure_accounting("${OUT}", ft.EXIT_HALT),
+        image=IMAGE, out=INJECTION_ROOT, accounting=_failure_accounting("${OUT}/attempts/bins", ft.EXIT_HALT),
         last=N_SHARDS - 1, first=OUT_ROOT, halt=ft.EXIT_HALT, pin=INJECTION_PIN, committed=COMMITTED_BINS)
     return _robust(t, "  backoffLimit: 2\n")
 
@@ -1279,7 +1282,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-only", action="store_true", help="verify, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
-                    help=f"check the working tree instead of {TOYS_PIN}, which is tagged after the commit")
+                    help=f"check the working tree instead of {INJECTION_PIN}, which is tagged after the commit")
     a = ap.parse_args()
     verify_heads()
     verify_pin(PIN, False)                      # the shards already ran at it
@@ -1290,8 +1293,8 @@ def main() -> int:
     verify_pin(FIT3_PIN, False, FIT3_NEEDED_FLAGS)
     verify_pin(RESCORE_PIN, False, RESCORE_NEEDED_FLAGS)
     verify_pin(CHECKS_PIN, False, CHECKS_NEEDED_FLAGS)
-    verify_pin(INJECTION_PIN, False, INJECTION_NEEDED_FLAGS)
-    verify_pin(TOYS_PIN, a.pin_not_yet_tagged, TOYS_NEEDED_FLAGS)
+    verify_pin(TOYS_PIN, False, TOYS_NEEDED_FLAGS)
+    verify_pin(INJECTION_PIN, a.pin_not_yet_tagged, INJECTION_NEEDED_FLAGS)
     for path, text in specs().items():
         if a.check_only:
             print(f"ok   {path.relative_to(ROOT)}")
