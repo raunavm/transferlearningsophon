@@ -1017,8 +1017,14 @@ def build_v2() -> dict[str, str]:
 # L40 against V100, aoj_checks_v1/reproduce.json), 10,000 jets from one file of
 # each family, on one GPU that has TF32 (Ampere or later).
 TF32_PIN = "mtx-s1.82"
+# every us-west product at or after Ampere that this cu121 build runs on (not the
+# Blackwell cards, sm_120, nor MIG slices); the first six were all it asked for
+# first, and it sat Pending for want of a free one
 TF32_PRODUCTS = ("NVIDIA-L40", "NVIDIA-L4", "NVIDIA-GeForce-RTX-3090", "NVIDIA-RTX-A6000",
-                 "NVIDIA-A40", "NVIDIA-L40S")
+                 "NVIDIA-A40", "NVIDIA-L40S", "NVIDIA-A100-80GB-PCIe", "NVIDIA-A100-SXM4-80GB",
+                 "NVIDIA-A100-PCIE-40GB", "NVIDIA-RTX-A5000", "NVIDIA-RTX-A4000", "NVIDIA-A2",
+                 "NVIDIA-GeForce-RTX-4090", "NVIDIA-RTX-4000-Ada-Generation",
+                 "NVIDIA-RTX-5000-Ada-Generation", "NVIDIA-H100-80GB-HBM3", "NVIDIA-H200-NVL")
 TF32_OUT = "/data/results/eval/tf32_check/r16q1mass-s3_e079.json"
 
 
