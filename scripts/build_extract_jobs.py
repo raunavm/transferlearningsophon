@@ -1011,6 +1011,42 @@ def build_v2() -> dict[str, str]:
     return out
 
 
+# ===================================================================== TF32 check
+# experiments/EVAL/tf32_check.py on the checkpoint whose real-data scores moved
+# most between GPU models (r16q1mass-s3, epoch 79: 0.10 in three-prong log-odds,
+# L40 against V100, aoj_checks_v1/reproduce.json), 10,000 jets from one file of
+# each family, on one GPU that has TF32 (Ampere or later).
+TF32_PIN = "mtx-s1.81"
+TF32_PRODUCTS = ("NVIDIA-L40", "NVIDIA-L4", "NVIDIA-GeForce-RTX-3090", "NVIDIA-RTX-A6000",
+                 "NVIDIA-A40", "NVIDIA-L40S")
+TF32_OUT = "/data/results/eval/tf32_check/r16q1mass-s3_e079.json"
+
+
+def build_tf32_check() -> tuple[str, str]:
+    name = "eval-tf32-check-raunav"
+    body = (f"          OUT={TF32_OUT}\n"
+            "          [ -f ${OUT} ] && { echo \"done by an earlier attempt\"; exit 0; }\n"
+            "          mkdir -p $(dirname ${OUT})\n"
+            "          python3 experiments/EVAL/tf32_check.py \\\n"
+            "            --checkpoint /data/results/mtx/mtx-r16q1mass-s3/net_epoch-79_state.pt \\\n"
+            "            --num-classes 17 --num-reg 1 --rung R16_Q1 --max-jets 10000 \\\n"
+            "            --data-test /jc2/jet_data/Res2P_0250.parquet /jc2/jet_data/Res34P_1075.parquet "
+            "/jc2/jet_data/QCD_0350.parquet \\\n"
+            "            --out ${OUT} 2>&1 | tee ${OUT%.json}.log || halt\n")
+    products = ("\n              - key: nvidia.com/gpu.product\n                operator: In\n"
+                "                values: [" + ", ".join(f'"{p}"' for p in TF32_PRODUCTS) + "]")
+    text = V1ERR_TEMPLATE.format(
+        name=name, image=IMAGE, pin=TF32_PIN, body=body, mem="32Gi", cpu="4",
+        gpu_req=', nvidia.com/gpu: "1"', gpu_check=GPU_CHECK.format(),
+        node_exclude=NODE_EXCLUDE.replace(", ".join(f'"{n}"' for n in BAD_GPU_NODES),
+                                          ", ".join(f'"{n}"' for n in GPU_FAULT_NODES)) + products)
+    for old, new in ((HALT, HALT_GPU), (GPU_CHECK.format(), GPU_OK)):
+        if text.count(old) != 1:
+            raise SystemExit(f"FATAL: {old[:60]!r} not found once")
+        text = text.replace(old, new)
+    return f"job-{name}.yaml", text
+
+
 # A pod that only mounts the volumes read-only and sleeps, for read-only exec
 # (ls, cat, sha256sum) when no other pod of ours that mounts /data is running.
 # Clones nothing and writes nothing; ends itself after twelve hours.
@@ -1066,6 +1102,8 @@ spec:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gpu", action="store_true")
+    ap.add_argument("--tf32-check", action="store_true",
+                    help="emit ONLY the TF32 on/off scoring check (job-eval-tf32-check-raunav.yaml)")
     ap.add_argument("--reader", action="store_true",
                     help="emit ONLY the read-only sleeper pod for exec (job-eval-reader-raunav.yaml)")
     # DEFAULT 2,000,000, not 0. With default=0 the flag is omitted entirely and
@@ -1114,6 +1152,15 @@ def main() -> int:
                     help="emit ONLY the v1 head jobs by the checkpoint rule and the "
                          "test-split class count (audit 2026-09-29)")
     args = ap.parse_args()
+
+    if args.tf32_check:
+        verify_pin(TF32_PIN, ["experiments/EVAL/tf32_check.py", "experiments/EVAL/extract_v2.py",
+                              "experiments/AOJ/discriminants.py"], args.pin_not_yet_tagged)
+        fname, text = build_tf32_check()
+        yaml.safe_load(text)
+        (OUT_DIR / fname).write_text(text)
+        print(f"  {fname}")
+        return 0
 
     if args.reader:
         text = READER_TEMPLATE.format(image=IMAGE)

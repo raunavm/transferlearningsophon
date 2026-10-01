@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: eval-tf32-check-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          # a signal (OOM, lost node) is retried; any other failure is deterministic
+          halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; gpu_ok || { echo "exit $rc with no working GPU on $(hostname): the node failed, not the code; retried elsewhere"; exit 137; }; echo "HALT: exit $rc, not retried"; exit 42; }
+          git clone --depth 1 --branch "mtx-s1.81" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          pip install --no-cache-dir -q pyarrow
+          export PYTHONUNBUFFERED=1
+          # BLAS threads = the CPUs requested: nproc reports the node's cores
+          export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          echo "PVC used: ${USED}%"
+          [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          gpu_ok () { timeout 300 python3 -c 'import torch; torch.ones(8, device="cuda").add_(1).sum().item()' >/dev/null 2>&1; }
+          gpu_ok || { echo "no working GPU on $(hostname); retried elsewhere"; exit 137; }
+          OUT=/data/results/eval/tf32_check/r16q1mass-s3_e079.json
+          [ -f ${OUT} ] && { echo "done by an earlier attempt"; exit 0; }
+          mkdir -p $(dirname ${OUT})
+          python3 experiments/EVAL/tf32_check.py \
+            --checkpoint /data/results/mtx/mtx-r16q1mass-s3/net_epoch-79_state.pt \
+            --num-classes 17 --num-reg 1 --rung R16_Q1 --max-jets 10000 \
+            --data-test /jc2/jet_data/Res2P_0250.parquet /jc2/jet_data/Res34P_1075.parquet /jc2/jet_data/QCD_0350.parquet \
+            --out ${OUT} 2>&1 | tee ${OUT%.json}.log || halt
+        volumeMounts:
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+        resources:
+          requests: { memory: "32Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "32Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["patternlab.calit2.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "ry-gpu-10.sdsc.optiputer.net"]
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: ["NVIDIA-L40", "NVIDIA-L4", "NVIDIA-GeForce-RTX-3090", "NVIDIA-RTX-A6000", "NVIDIA-A40", "NVIDIA-L40S"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }
