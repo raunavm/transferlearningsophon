@@ -178,8 +178,45 @@ def test_v1err_head_specs_cover_every_model_with_the_retry_policy():
             assert gpu == fname.startswith("job-heads-anomaly-")
             assert ("--no-anomaly-rows" in text) == (not gpu)
             # a GPU pod that sees no device must not fall back to the CPU
-            assert ("torch.cuda.is_available()" in text and "exit 137" in text) == gpu
+            check = "gpu_ok ()" if fname[4:-5] in bx.HEADS_RECREATED_AFTER_GPU_FAULT \
+                else "torch.cuda.is_available()"
+            assert (check in text and "exit 137" in text) == gpu
             assert all((n in text) == gpu for n in bx.BAD_GPU_NODES)
+    # the re-created job carries the GPU-fault rule; every job that ran keeps its text
+    for name in bx.HEADS_RECREATED_AFTER_GPU_FAULT:
+        text = jobs[f"job-{name}.yaml"]
+        assert bx.HALT_GPU in text and "tee -a ${LOG} || halt" in text
+        assert all(n in text for n in bx.GPU_FAULT_NODES)
+    assert all(bx.HALT in t for f, t in jobs.items()
+               if f[4:-5] not in bx.HEADS_RECREATED_AFTER_GPU_FAULT)
+
+
+def _halt_exit(halt: str, gpu_works: bool, cmd: str, tmp_path) -> int:
+    """The exit status of a spec's error path: `cmd | tee -a LOG || halt` under the
+    spec's shell options, with gpu_ok stubbed."""
+    import subprocess
+    script = (f"set -euo pipefail\n{halt}\ngpu_ok () {{ return {0 if gpu_works else 1}; }}\n"
+              f"LOG={tmp_path}/a.log\n{cmd} 2>&1 | tee -a ${{LOG}} || halt\necho ok\n")
+    return subprocess.run(["bash", "-c", script], capture_output=True).returncode
+
+
+def test_a_failure_on_a_dead_gpu_is_retried_and_a_failure_on_a_working_one_halts(tmp_path):
+    bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
+    # heads-anomaly-v1err-r16q1-s1, 2026-09-30: a CUDA error is exit 1 from Python
+    assert _halt_exit(bx.HALT_GPU, False, "(exit 1)", tmp_path) == 137     # retried elsewhere
+    assert _halt_exit(bx.HALT_GPU, True, "(exit 1)", tmp_path) == 42       # a code failure halts
+    assert _halt_exit(bx.HALT_GPU, True, "(exit 137)", tmp_path) == 137    # a signal is retried
+    assert _halt_exit(bx.HALT_GPU, True, "true", tmp_path) == 0
+    assert _halt_exit(bx.HALT, False, "(exit 1)", tmp_path) == 42          # the old rule did not ask
+    # the log keeps the failing command's output: tee does not mask its status
+    _halt_exit(bx.HALT_GPU, True, "(echo traceback; exit 1)", tmp_path)
+    assert "traceback" in (tmp_path / "a.log").read_text()
+
+
+def test_the_gpu_fault_rule_refuses_a_template_it_does_not_match():
+    bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
+    with pytest.raises(SystemExit):
+        bx.gpu_fault_aware("no halt here")
 
 
 def test_v2_specs_one_per_classification_run_primary_features_only():
@@ -193,6 +230,7 @@ def test_v2_specs_one_per_classification_run_primary_features_only():
         yaml.safe_load(text)
         assert "--checkpoints bestval wavg --features-at bestval wavg" in text
         assert "--feature-classes probe --prefix-features 2000000" in text
+        assert bx.HALT_GPU in text and "gpu_ok ()" in text and "tee -a ${LOG} || halt" in text
         assert (bx.OUT_DIR / fname).read_text() == text, f"{fname} not committed as built"
 
 

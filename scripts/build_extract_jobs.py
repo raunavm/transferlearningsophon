@@ -833,6 +833,53 @@ BAD_GPU_NODES = ("patternlab.calit2.optiputer.net",
 NODE_EXCLUDE = ("\n              - key: kubernetes.io/hostname\n                operator: NotIn\n"
                 "                values: [" + ", ".join(f'"{n}"' for n in BAD_GPU_NODES) + "]")
 
+# A GPU FAULT IS THE NODE'S, NOT THE CODE'S. halt() takes any exit below 128 for a
+# deterministic failure and stops the Job (exit 42). A GPU that fails mid-run
+# surfaces in Python as a CUDA RuntimeError, exit 1, so it was taken for one:
+# heads-anomaly-v1err-r16q1-s1 started at 09:16:35Z on 2026-09-30 on GPU 6 of
+# ry-gpu-10.sdsc.optiputer.net and halted at 09:17:07Z; that node logged Xid 79
+# ("GPU has fallen off the bus", GPU 5) at 09:17:30, GPUFailed and NVRMRPCFailed
+# from 09:18, and was rebooted by node remediation at 09:26 (NRP Prometheus:
+# DCGM_FI_DEV_XID_ERRORS, kube_node_status_condition). The pod log, the only record
+# of the traceback, went with the pod. So, in the specs built from here on:
+#   - the start-up check runs a kernel in a fresh process (is_available() is True
+#     on a GPU that cannot run one: Blackwell under this cu121 build, a driver in
+#     RPC failure);
+#   - halt() re-runs that check first; no working GPU -> exit 137, retried elsewhere;
+#   - the extraction's output is kept beside its output directory, one log per attempt;
+#   - ry-gpu-10 is excluded: Xid 79 on GPUs 1, 5 and 7 seventeen times 2026-09-25 to
+#     10-01, GPUFailed set most of that time, Xid "GPU stopped processing" on GPU 6.
+# The specs that already ran keep the text they ran with.
+GPU_FAULT_NODES = BAD_GPU_NODES + ("ry-gpu-10.sdsc.optiputer.net",)
+GPU_OK = ("          gpu_ok () { timeout 300 python3 -c 'import torch; "
+          "torch.ones(8, device=\"cuda\").add_(1).sum().item()' >/dev/null 2>&1; }\n"
+          "          gpu_ok || { echo \"no working GPU on $(hostname); retried elsewhere\"; exit 137; }\n")
+HALT = 'halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }'
+HALT_GPU = ('halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; gpu_ok || { echo "exit $rc with no working '
+            'GPU on $(hostname): the node failed, not the code; retried elsewhere"; exit 137; }; '
+            'echo "HALT: exit $rc, not retried"; exit 42; }')
+# the heads job that halted on the ry-gpu-10 fault, re-created with the rule above
+HEADS_RECREATED_AFTER_GPU_FAULT = {"heads-anomaly-v1err-r16q1-s1-raunav"}
+
+
+def gpu_fault_aware(text: str) -> str:
+    """A GPU spec of V1ERR_TEMPLATE with the GPU-fault rule above. Every substitution
+    must hit exactly once, so a template change cannot silently skip one."""
+    subs = [(HALT, HALT_GPU), (GPU_CHECK.format(), GPU_OK),
+            ("          python3 experiments/EVAL/extract_v2.py \\\n",
+             "          mkdir -p $(dirname ${OUT})\n"
+             "          LOG=${OUT}.$(date -u +%Y%m%dT%H%M%SZ).log\n"
+             "          echo \"host $(hostname)\" > ${LOG}\n"
+             "          python3 experiments/EVAL/extract_v2.py \\\n"),
+            ("--out ${OUT} || halt", "--out ${OUT} 2>&1 | tee -a ${LOG} || halt"),
+            (NODE_EXCLUDE, NODE_EXCLUDE.split("values: [")[0] + "values: ["
+             + ", ".join(f'"{n}"' for n in GPU_FAULT_NODES) + "]")]
+    for old, new in subs:
+        if text.count(old) != 1:
+            raise SystemExit(f"FATAL: {old[:60]!r} occurs {text.count(old)} times, not once")
+        text = text.replace(old, new)
+    return text
+
 HEADS_BODY = """          OUT={out}
           ls ${{OUT}}/e0{{70..79}}/manifest.json >/dev/null 2>&1 && {{ echo "done by an earlier attempt"; exit 0; }}
           python3 experiments/EVAL/extract_v2.py \\
@@ -891,13 +938,15 @@ def build_v1err() -> dict[str, str]:
             name = f"heads-{kind}-v1err-{short}-raunav"
             body = HEADS_BODY.format(out=f"{V1ERR_HEADS}/{kind}/{run}", run_dir=run_dir, rung=rung,
                                      k=k, num_reg=reg, flags=flags, run=run, files=files)
-            out[f"job-{name}.yaml"] = V1ERR_TEMPLATE.format(
+            text = V1ERR_TEMPLATE.format(
                 name=name, image=IMAGE, body=body,
                 pin=V1ERR_PIN if name in HEADS_APPLIED_AT_V1ERR_PIN else HEADS_PIN,
                 mem="48Gi" if gpu else "32Gi", cpu="4" if gpu else "8",
                 gpu_req=', nvidia.com/gpu: "1"' if gpu else "",
                 gpu_check=GPU_CHECK.format() if gpu else "",
                 node_exclude=NODE_EXCLUDE if gpu else "")
+            out[f"job-{name}.yaml"] = (gpu_fault_aware(text) if name in HEADS_RECREATED_AFTER_GPU_FAULT
+                                       else text)
     fname, text = build_heads_batch([r for r in HEAD_RUNS if r[1].endswith("_MASS")],
                                     "heads-diag-mass-v1err-raunav")
     out[fname] = text
@@ -955,16 +1004,70 @@ def build_v2() -> dict[str, str]:
                 f"            --head-prefix 2000000 --diag-stride 100 \\\n"
                 f"            --data-test {files} \\\n"
                 f"            --out ${{OUT}} || halt\n")
-        out[f"job-{name}.yaml"] = V1ERR_TEMPLATE.format(
+        out[f"job-{name}.yaml"] = gpu_fault_aware(V1ERR_TEMPLATE.format(
             name=name, image=IMAGE, pin=V2_PIN, body=body, mem="64Gi", cpu="6",
             gpu_req=', nvidia.com/gpu: "1"', gpu_check=GPU_CHECK.format(),
-            node_exclude=NODE_EXCLUDE)
+            node_exclude=NODE_EXCLUDE))
     return out
+
+
+# A pod that only mounts the volumes read-only and sleeps, for read-only exec
+# (ls, cat, sha256sum) when no other pod of ours that mounts /data is running.
+# Clones nothing and writes nothing; ends itself after twelve hours.
+READER_TEMPLATE = """apiVersion: batch/v1
+kind: Job
+metadata:
+  name: eval-reader-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  activeDeadlineSeconds: 43200
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: {{ containerName: main, operator: In, values: [42] }}
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: {image}
+        command: ["/bin/bash", "-c"]
+        args: ["sleep 43000"]
+        volumeMounts:
+        - {{ name: jc2,  mountPath: /jc2,  readOnly: true }}
+        - {{ name: data, mountPath: /data, readOnly: true }}
+        resources:
+          requests: {{ memory: "8Gi", cpu: "1" }}
+          limits:   {{ memory: "8Gi", cpu: "1" }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+          readOnly: true
+"""
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gpu", action="store_true")
+    ap.add_argument("--reader", action="store_true",
+                    help="emit ONLY the read-only sleeper pod for exec (job-eval-reader-raunav.yaml)")
     # DEFAULT 2,000,000, not 0. With default=0 the flag is omitted entirely and
     # the extraction runs UNCAPPED over all 335 files -- days at the observed
     # 64 jets/s, and it has already happened once (RUNS.csv "extract-e79-recap"),
@@ -1011,6 +1114,13 @@ def main() -> int:
                     help="emit ONLY the v1 head jobs by the checkpoint rule and the "
                          "test-split class count (audit 2026-09-29)")
     args = ap.parse_args()
+
+    if args.reader:
+        text = READER_TEMPLATE.format(image=IMAGE)
+        yaml.safe_load(text)
+        (OUT_DIR / "job-eval-reader-raunav.yaml").write_text(text)
+        print("  job-eval-reader-raunav.yaml")
+        return 0
 
     if args.v2:
         verify_pin(V2_PIN, V1ERR_NEEDED, args.pin_not_yet_tagged,
