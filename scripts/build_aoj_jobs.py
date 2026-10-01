@@ -1354,7 +1354,7 @@ def render_fit_v5() -> str:
 # procedure's bias on toys, the leak scan, the prong-only test's power, the run spread as
 # measured, the closure as a fraction with its error, the reference's validation as a count.
 CHECKS2_ROOT = "/data/results/aoj/checks_v2"
-CHECKS2_PIN = "mtx-s1.88"
+CHECKS2_PIN = "mtx-s1.89"
 CHECKS2_NEEDED_FLAGS = {"experiments/AOJ/realdata_checks.py": "def run_spread",
                         "experiments/FIGS/data/aoj_full_v1/fit_v5/results.json": "fail_tops"}
 MAIN_FIT2 = "experiments/FIGS/data/aoj_full_v1/fit_v5/results.json"
