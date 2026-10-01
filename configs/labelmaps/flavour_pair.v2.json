@@ -1,5 +1,5 @@
 {
- "construction": "F0: each of the 16 resonant groups is a union of whole flavour orbits (same decay up to b/c/light-quark exchange), share-exact against the 17-class groups (group g has 17-class group g's share), scrambled by local search against the 17-class partition; QCD is one class. F1: F0 with the b-containing classes of the four-prong hadronic orbit moved to group B and whole orbits of equal share moved from B to that orbit's group A.",
+ "construction": "F0: each of the 16 resonant groups is a union of whole flavour orbits (same decay up to b/c/light-quark exchange), share-exact against the 17-class groups (group g has 17-class group g's share), scrambled by local search against the 17-class partition; QCD is one class. F1: F0 with the b-containing classes of the four-prong hadronic orbit moved to group B and whole orbits of equal share moved from B to that orbit's group A; of the exact options, the one changing the fewest native pairs across orbits. F1r: F1 with a seeded random half of that orbit moved instead of its b-containing half.",
  "seed": 1,
  "trial": 4,
  "trials": 64,
@@ -186,14 +186,129 @@
  "group_A": 9,
  "group_B": 11,
  "orbits_moved_B_to_A": [
-  "X_YY_QQev",
   "X_YY_QQmm",
-  "X_YY_QQtauhtauh"
+  "X_YY_QQtauhtauh",
+  "X_mm"
  ],
+ "f1_options": [
+  {
+   "group_B": 11,
+   "orbits_moved_B_to_A": [
+    "X_YY_QQev",
+    "X_YY_QQmm",
+    "X_YY_QQtauhtauh"
+   ],
+   "classes_moved_B_to_A": 14,
+   "pairs_changed_from_F0": {
+    "native_pairs": 625,
+    "cross_orbit": 504,
+    "same_orbit": 121
+   }
+  },
+  {
+   "group_B": 11,
+   "orbits_moved_B_to_A": [
+    "X_YY_QQev",
+    "X_YY_QQmm",
+    "X_mm"
+   ],
+   "classes_moved_B_to_A": 11,
+   "pairs_changed_from_F0": {
+    "native_pairs": 616,
+    "cross_orbit": 495,
+    "same_orbit": 121
+   }
+  },
+  {
+   "group_B": 11,
+   "orbits_moved_B_to_A": [
+    "X_YY_QQmm",
+    "X_YY_QQtauhtauh",
+    "X_mm"
+   ],
+   "classes_moved_B_to_A": 9,
+   "pairs_changed_from_F0": {
+    "native_pairs": 600,
+    "cross_orbit": 479,
+    "same_orbit": 121
+   }
+  }
+ ],
+ "f1_choice": "the option changing the fewest native pairs across orbits (ties: fewer orbits, then by name)",
  "share_units_denominator": 20573190,
  "moved_share_units": 1900800,
+ "moved_back_share_units": 1900800,
  "max_abs_share_mismatch_units": {
   "F0": 0,
-  "F1": 0
+  "F1": 0,
+  "F1R": 0
+ },
+ "F1R": {
+  "seed": 20261001,
+  "sampler": "random.Random(20261001).sample(sorted X_YY_QQQQ classes, 11) until 5 or 6 contain a b quark and label_X_YY_bbqq and label_X_YY_ccqq are in one group",
+  "samples_drawn": 2,
+  "classes_moved": [
+   "label_X_YY_bbcc",
+   "label_X_YY_bbqq",
+   "label_X_YY_cccc",
+   "label_X_YY_ccss",
+   "label_X_YY_ccqq",
+   "label_X_YY_qqqq",
+   "label_X_YY_qqqs",
+   "label_X_YY_ccbs",
+   "label_X_YY_qqbc",
+   "label_X_YY_qqcs",
+   "label_X_YY_bcsq"
+  ],
+  "b_classes_moved": 5,
+  "orbit_share_units": [
+   172800
+  ],
+  "orbit_b_nonb_pairs_split": {
+   "F1": 121,
+   "F1R": 61,
+   "of": 121
+  }
+ },
+ "pairs_changed_from_F0": {
+  "F1": {
+   "native_pairs": 600,
+   "cross_orbit": 479,
+   "same_orbit": 121
+  },
+  "F1R": {
+   "native_pairs": 600,
+   "cross_orbit": 479,
+   "same_orbit": 121
+  }
+ },
+ "balance_pair_status": {
+  "FLAV_F0": {
+   "bb/cc": "merged",
+   "bbqq/ccqq": "merged",
+   "visible": "split",
+   "bb/bbbb": "split",
+   "ee/mm": "split",
+   "bc/bq": "merged",
+   "bc/cs": "merged"
+  },
+  "FLAV_F1": {
+   "bb/cc": "merged",
+   "bbqq/ccqq": "split",
+   "visible": "split",
+   "bb/bbbb": "split",
+   "ee/mm": "split",
+   "bc/bq": "merged",
+   "bc/cs": "merged"
+  },
+  "FLAV_F1R": {
+   "bb/cc": "merged",
+   "bbqq/ccqq": "merged",
+   "visible": "split",
+   "bb/bbbb": "split",
+   "ee/mm": "split",
+   "bc/bq": "merged",
+   "bc/cs": "merged"
+  }
  }
 }

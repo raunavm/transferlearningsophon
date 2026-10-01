@@ -294,6 +294,26 @@ D8_TASKS = {
 }
 TASKS.update(D8_TASKS)
 
+# --- the two |V_cb| sub-pairs, each as its own probe (PRESPEC A10, 2026-10-01) -
+#
+# A10's P1 is read per probe pair, and two of its seven pairs, X->bc vs X->bq and
+# X->bc vs X->cs, had no probe of their own: bc_vs_rest scores X->bc against
+# their union with X->YY->qqb and 27 QCD classes, inside a published window, so
+# the two pairs were one number. These are the two sub-pairs split out, nothing
+# else in the background, so each pair is a separate readout. They follow
+# bvc_resonant: native labels, no kinematic window, the command-line working
+# points. bc_vs_rest stays as the |V_cb| probe. First merged (derived below):
+#   bc_vs_bq   at R42_Q1, 43 classes        bc_vs_cs   at R29_Q1, 30 classes
+# Counts in the selected test split (extraction_v2_sizing/test_class_counts.json):
+# X->bc 330,559, X->bq 329,962, X->cs 329,555, the size of bvc_resonant's classes.
+PAIR_TASKS = {
+    "bc_vs_bq": {"signal": [4], "background": [6],
+                 "names": ["label_X_bc", "label_X_bq"]},
+    "bc_vs_cs": {"signal": [4], "background": [5],
+                 "names": ["label_X_bc", "label_X_cs"]},
+}
+TASKS.update(PAIR_TASKS)
+
 for _name, _spec in TASKS.items():
     _spec["collapsed_at"] = derive_collapsed_at(_spec["signal"], _spec["background"])
 

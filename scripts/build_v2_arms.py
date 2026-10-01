@@ -12,8 +12,11 @@ WHAT IT WRITES
                                           build_rand_control.py --pool resonant),
                                           drawn under a balance rule recorded in
                                           configs/labelmaps/rand_v2_selection.json
+  configs/labelmaps/realised_native_shares.v2.json   the realised stream shares
+                                          that rule reads (--realised-from)
   configs/labelmaps/flavour_pair_map.v2.csv, flavour_pair.v2.json
-  configs/arms/v2/FLAV_F0.yaml, FLAV_F1.yaml   the decisive pair, see below
+  configs/arms/v2/FLAV_F0.yaml, FLAV_F1.yaml, FLAV_F1R.yaml   the decisive pair
+                                          and its control, see below
   configs/arms/v2/R16_Q1_MASS_LM.yaml     17 classes + mass output at the
                                           loss-share-matched lambda
   configs/arms/v2/mass_lambda.v2.json     that lambda and every input to it
@@ -35,7 +38,12 @@ are the same decay up to exchanging b, c and light (s, u/d) quarks: X->bb, X->cc
       classes (X->YY->bbqq, bbcc, bbbb, ...) move to another group B, and whole
       orbits of exactly equal share move from B back. One boundary now separates
       b from c (bbqq from ccqq); every other boundary stays flavour-blind, and the
-      shares stay exact.
+      shares stay exact. Of the share-exact moves back, the one that changes the
+      fewest native pairs across orbits is used (all options are recorded).
+  F1r F1 with the cut made at random instead: the same move back, but a seeded
+      random 11 of the 22 four-prong hadronic classes go to B, 5 or 6 of them
+      containing a b quark and bbqq kept with ccqq. So F1r cuts the same orbit
+      by the same share without aligning the cut with b content.
   Why that orbit. Every orbit's share is a multiple of 297 (= 27 x 11), so an
   exact swap needs a subset of equal divisibility. The two-prong orbit X->QQ
   admits no proper subset (its classes carry 3^1 only), and a four-prong subset
@@ -63,6 +71,7 @@ Run:
   python3 scripts/build_v2_arms.py [--check-only] [--pairs-out PATH]
   python3 scripts/build_v2_arms.py --mass-logs DIR     # re-parse the log dumps
   python3 scripts/build_v2_arms.py --select-rand 4     # redraw pool, reselect
+  python3 scripts/build_v2_arms.py --realised-from DRYRUN.json  # re-derive shares
   python3 scripts/build_v2_arms.py --lofo-pod-script   # print the pod check
 """
 from __future__ import annotations
@@ -104,22 +113,39 @@ VOCABS = ["L188", "L162", "R42_Q1", "R16_Q1"]
 TARGET = "R16_Q1"
 QCD_LO = brc.QCD_LO
 
-# The v2 random partitions, drawn at random under a BALANCE RULE fixed on
-# 2026-09-29 before any pool draw was made. The first five (seeds 45-49, never
-# run) merged the visible-content pair in none of five, so a prediction "a
-# partition that splits a pair beats one that merges it" could not be tested on
-# the pair C4 was about.
-#   rule       each BALANCE_PAIRS pair is merged in 2 or 3 of the 5 partitions
-#              and split in the rest; shares exact; QCD one class
-#   pool       share-matched draws (build_rand_control.py --pool resonant) for
-#              seeds 100-199; extended by the next block of 100, in order, only
-#              if no 5-subset of the pool meets the rule
-#   selection  random.Random(SELECT_SEED).sample(pool, 5) repeated until a
-#              sample meets the rule: uniform over the 5-subsets that do
-# Recorded in configs/labelmaps/rand_v2_selection.json: the rule, every seed
-# tried with its merge pattern, the number of samples, the accepted seeds.
+# The v2 random partitions, drawn at random under a rule fixed before the draw.
+# The first five (seeds 45-49, never run) merged the visible-content pair in
+# none of five. The second five (seeds SUPERSEDED_SEEDS, rule of 2026-09-29,
+# never run) merged b vs c two-prong and e vs mu in the same partitions, and
+# X->bc vs X->bq and X->bc vs X->cs likewise, and matched the 17-class shares
+# only nominally: realised group shares were off by up to a third. The rule of
+# 2026-10-01 (PRESPEC A10 corrections, PI), fixed before the draw:
+#   rule 1     each BALANCE_PAIRS pair is merged in 2 or 3 of the 5 partitions
+#   rule 2     no two pairs have equal or complementary merge columns (a pair's
+#              5-vector over the partitions): either way one partition effect
+#              enters both pairs' split-minus-merged contrasts, with the same
+#              or the opposite sign
+#   rule 3     every group's REALISED training share is within REALISED_TOL of
+#              the realised share of the 17-class group it was built to match
+#              (share_draw builds group g to 17-class group g's nominal share),
+#              per-native realised shares from the final loader's dry run
+#              (REALISED); QCD is one class in both and matches exactly
+#   pool       share-matched draws (build_rand_control.py --pool resonant),
+#              identified by seed, in blocks of 100 from seed 100, extended
+#              block by block, in order, only while no 5-subset of the draws
+#              meeting rule 3 meets rules 1 and 2
+#   selection  random.Random(SELECT_SEED).sample(the rule-3 draws, 5) repeated
+#              until a sample meets rules 1 and 2: uniform over those 5-subsets
+# Recorded in configs/labelmaps/rand_v2_selection.json: the rule, the pool's
+# range, every rule-3 draw with its merge pattern, largest realised deviation and
+# partition digest, the 5-subsets meeting the rule, the number of samples, the
+# accepted seeds.
 RAND_V2_PREFIX = "RAND2_p"
 RAND_SEL = REPO / "configs" / "labelmaps" / "rand_v2_selection.json"
+REALISED = REPO / "configs" / "labelmaps" / "realised_native_shares.v2.json"
+LOADER_JOB = "mtx2-loader-dryrun-s176"
+LOADER_FILE = "/data/results/mtx_v2/loader_dryrun/dryrun_s176_seed1.json"
+SUPERSEDED_SEEDS = [107, 126, 137, 141, 178]
 BALANCE_PAIRS = {
     "bb/cc": ("label_X_bb", "label_X_cc"),
     "bbqq/ccqq": ("label_X_YY_bbqq", "label_X_YY_ccqq"),
@@ -130,14 +156,22 @@ BALANCE_PAIRS = {
     "bc/cs": ("label_X_bc", "label_X_cs"),
 }
 MERGED_IN = (2, 3)
+REALISED_TOL = (1, 20)    # rule 3: |realised / 17-class realised - 1| <= 1/20
 N_PARTITIONS = 5
-POOL_BLOCKS = [range(100 + 100 * i, 200 + 100 * i) for i in range(4)]
+POOL_BLOCKS = [range(100 + 100 * i, 200 + 100 * i) for i in range(200)]
 SELECT_SEED = 20260929
 MAX_SAMPLES = 10_000_000
 
 FLAV_SEED = 1
 FLAV_TRIALS = 64
 SPLIT_ORBIT = "X_YY_QQQQ"
+# F1r (PRESPEC A10 corrections, PI 2026-10-01): random.Random(F1R_SEED).sample(
+# sorted SPLIT_ORBIT, 11) repeated until 5 or 6 of the 11 contain a b quark and
+# F1R_TOGETHER stay in one group, so the four-prong b vs c probe is a
+# manipulation check (F1 splits it, F1r does not).
+F1R_SEED = 20261001
+F1R_B_MOVED = (5, 6)
+F1R_TOGETHER = ("label_X_YY_bbqq", "label_X_YY_ccqq")
 
 # The v1 mass runs the lambda is matched on (under /data/results/mtx).
 MASS_RUNS = {"L162": [f"mtx-l162mass-s{i}" for i in range(1, 6)],
@@ -149,15 +183,22 @@ EPOCHS = range(0, 80)
 LOFO_MEMBER = "label_X_YY_bbbb"
 LOFO_SAMPLE_FILE = "/jc2/jet_data/Res34P_0000.parquet"   # a training-split file
 
-# probe.py names of the six probe tasks (audit B8, Strand E 3)
+# probe.py names of the probe tasks (audit B8, Strand E 3; the two single-pair
+# |V_cb| tasks, PRESPEC A10 corrections 2026-10-01)
 PROBE_TASKS = {
     "bvc_resonant": "b vs c, two-prong (X->bb vs X->cc)",
     "bvc_4prong": "b vs c, four-prong (X->YY->bbqq vs X->YY->ccqq)",
     "visible_content": "visible decay content (X->YY->bbqq vs X->YY->cq tau_h nu)",
     "retained_topology": "two- vs four-prong (X->bb vs X->YY->bbbb)",
     "ee_vs_mm": "e vs mu (X->ee vs X->mumu)",
+    "bc_vs_bq": "X->bc vs X->bq",
+    "bc_vs_cs": "X->bc vs X->cs",
     "bc_vs_rest": "|Vcb| (X->bc vs X->bq, X->cs, X->YY->qqb, QCD)",
 }
+# the probe task that reads each balance pair alone
+PAIR_TASK = {"bb/cc": "bvc_resonant", "bbqq/ccqq": "bvc_4prong",
+             "visible": "visible_content", "bb/bbbb": "retained_topology",
+             "ee/mm": "ee_vs_mm", "bc/bq": "bc_vs_bq", "bc/cs": "bc_vs_cs"}
 
 
 # ------------------------------------------------------------------ inputs
@@ -231,31 +272,47 @@ def merge_vector(mapping: dict[int, int], names: dict[int, str]) -> tuple[int, .
                  for a, b in BALANCE_PAIRS.values())
 
 
+def column_key(col) -> tuple[int, ...]:
+    """A merge column up to complement: equal and complementary columns share it."""
+    col = tuple(col)
+    return min(col, tuple(1 - x for x in col))
+
+
 def rule_ok(vectors) -> bool:
+    """Rules 1 and 2 on the merge vectors of five partitions."""
     lo, hi = MERGED_IN
-    return all(lo <= sum(col) <= hi for col in zip(*vectors))
+    cols = list(zip(*vectors))
+    return (all(lo <= sum(c) <= hi for c in cols)
+            and len({column_key(c) for c in cols}) == len(cols))
+
+
+def valid_subsets(vectors: dict[int, tuple]) -> list[tuple[int, ...]]:
+    """Every 5-subset of the seeds in `vectors` that meets rules 1 and 2, in
+    seed order: backtracking, pruned by rule 1's bounds on the column sums."""
+    lo, hi = MERGED_IN
+    seeds = sorted(vectors)
+    out = []
+
+    def rec(i, chosen, sums):
+        left = N_PARTITIONS - len(chosen)
+        if max(sums) > hi or min(sums) + left < lo:
+            return
+        if left == 0:
+            if rule_ok([vectors[s] for s in chosen]):
+                out.append(tuple(chosen))
+            return
+        for j in range(i, len(seeds) - left + 1):
+            rec(j + 1, chosen + [seeds[j]],
+                [a + b for a, b in zip(sums, vectors[seeds[j]])])
+
+    rec(0, [], [0] * len(BALANCE_PAIRS))
+    return out
 
 
 def feasible(vectors: dict[int, tuple]) -> bool:
-    """Whether ANY 5 distinct pool seeds meet the rule: backtracking over the
-    distinct merge patterns, so the rejection sampler is known to terminate."""
-    lo, hi = MERGED_IN
-    types = collections.Counter(vectors.values())
-    keys = sorted(types)
-
-    def rec(i, left, sums):
-        if max(sums) > hi or min(sums) + left < lo:
-            return False
-        if left == 0:
-            return True
-        if i == len(keys):
-            return False
-        for m in range(min(left, types[keys[i]]), -1, -1):
-            if rec(i + 1, left - m, [s + m * b for s, b in zip(sums, keys[i])]):
-                return True
-        return False
-
-    return rec(0, N_PARTITIONS, [0] * len(BALANCE_PAIRS))
+    """Whether ANY 5 distinct seeds meet rules 1 and 2, so the rejection sampler
+    is known to terminate."""
+    return bool(valid_subsets(vectors))
 
 
 def select(vectors: dict[int, tuple]) -> tuple[list[int], int]:
@@ -268,60 +325,201 @@ def select(vectors: dict[int, tuple]) -> tuple[list[int], int]:
     raise SystemExit(f"FATAL: no sample of {MAX_SAMPLES} met the rule")
 
 
+# ------------------------------------- random partitions: realised shares
+def realised_from(path: pathlib.Path) -> dict:
+    """The committed derived input REALISED, from the final loader's dry-run
+    record (experiments/MTX/loader_dryrun.py output of LOADER_JOB): jets each
+    native class contributed to the loader's output, weaver's repeated rows
+    included, summed over every epoch."""
+    raw = path.read_bytes()
+    d = json.loads(raw)
+    a = d["args"]
+    if a["out"] != LOADER_FILE or len(d["epochs"]) != a["epochs"]:
+        raise SystemExit(f"FATAL: {path} is not the dry run {LOADER_FILE}")
+    counts = [0] * len(read_map())
+    for e in d["epochs"]:
+        if len(e["native_counts"]) != len(counts) or sum(e["native_counts"]) != e["n_jets"]:
+            raise SystemExit(f"FATAL: {path} epoch {e['epoch']}: native counts do not add up")
+        counts = [c + x for c, x in zip(counts, e["native_counts"])]
+    total = sum(counts)
+    names = names_of(read_map())
+    return {
+        "generated_by": "scripts/build_v2_arms.py --realised-from <dry-run json>",
+        "what": ("per-native realised training shares of the v2 stream: jets each native "
+                 "class contributed to the loader's output (weaver's repeated rows "
+                 "included), summed over every epoch of the final loader's dry run, "
+                 "divided by all jets. Lists are indexed by jet_label. Rule 3 of the "
+                 "random-partition selection reads it (rand_v2_selection.json)."),
+        "source": {"job": LOADER_JOB, "file": LOADER_FILE,
+                   "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)},
+        "loader": {k: a[k] for k in ("seed", "epochs", "samples_per_epoch", "data_fraction",
+                                     "data_split_num", "fetch_step", "num_workers",
+                                     "batch_size", "data_config")},
+        "total_jets": total,
+        "class_name": [names[n] for n in range(len(counts))],
+        "native_counts": counts,
+        "share": [c / total for c in counts],
+    }
+
+
+def realised_counts() -> list[int]:
+    return json.loads(REALISED.read_text())["native_counts"]
+
+
+def group_sums(mapping: dict[int, int], per_native) -> collections.Counter:
+    out = collections.Counter()
+    for n, g in mapping.items():
+        out[g] += per_native[n]
+    return out
+
+
+def rule3(mapping: dict[int, int], counts, tgt: dict[int, int]) -> tuple[bool, float]:
+    """Rule 3, in integers: num_den * |C_g - T_g| <= num * T_g for every group g,
+    C_g the partition's group g's realised jets and T_g the 17-class group g's.
+    Returns (holds, largest |C_g / T_g - 1|)."""
+    c, t = group_sums(mapping, counts), group_sums(tgt, counts)
+    if set(c) != set(t):
+        raise SystemExit(f"FATAL: groups {sorted(c)} against 17-class groups {sorted(t)}")
+    num, den = REALISED_TOL
+    return (all(den * abs(c[g] - t[g]) <= num * t[g] for g in t),
+            max(abs(c[g] / t[g] - 1) for g in t))
+
+
+def realised_ratios(mapping: dict[int, int], counts, tgt: dict[int, int]) -> list[float]:
+    c, t = group_sums(mapping, counts), group_sums(tgt, counts)
+    return [round(c[g] / t[g], 6) for g in sorted(t)]
+
+
+# ---------------------------------------- random partitions: the pool
 def _pool_draw(seed: int):
+    """(seed, merge vector, rule 3 holds, largest realised deviation, sha256 of
+    the partition) of one seed-identified share-matched draw."""
     import contextlib
     import io
     rows = read_map()
+    units = brc.exact_share_units()
+    tgt = column(rows, TARGET)
     with contextlib.redirect_stdout(io.StringIO()):
-        assign = brc.share_draw(rows, brc.exact_share_units(), TARGET, seed, 0,
-                                brc.POOLS["resonant"])
-    return seed, merge_vector(assign, names_of(rows))
+        assign = brc.share_draw(rows, units, TARGET, seed, 0, brc.POOLS["resonant"])
+    if group_sums(assign, units) != group_sums(tgt, units):
+        raise SystemExit(f"FATAL: draw {seed}: group g does not carry 17-class group "
+                         f"g's nominal share, so rule 3 would compare the wrong groups")
+    ok, dev = rule3(assign, realised_counts(), tgt)
+    digest = hashlib.sha256(json.dumps([assign[n] for n in sorted(assign)]).encode())
+    return seed, merge_vector(assign, names_of(rows)), ok, dev, digest.hexdigest()
+
+
+def _fast_available() -> bool:
+    try:
+        import fast_compositions  # noqa: F401  (needs numba)
+    except ImportError:
+        return False
+    return True
+
+
+def _fast_init():
+    import fast_compositions
+    fast_compositions.install()
 
 
 def select_rand(workers: int) -> tuple[dict, str]:
-    """Draw the pool block by block until the rule is feasible, sample the five,
-    and return the selection record and the text of the regenerated
+    """Draw the pool block by block until rules 1-3 are feasible, sample the
+    five, and return the selection record and the text of the regenerated
     rand_label_map.v2.csv. The map is drawn into a temporary directory; nothing
     in the repository is written here (main promotes both once every check
-    has passed)."""
+    has passed).
+
+    The pool is drawn with scripts/fast_compositions.py when numba is
+    importable. Every draw that meets rule 3, the only ones that can reach the
+    selection, is then drawn again by the unmodified pure-Python code and must
+    come back identical."""
     import multiprocessing
-    vectors = {}
-    for block in POOL_BLOCKS:
-        with multiprocessing.Pool(workers) as p:
-            vectors.update(p.imap_unordered(_pool_draw, block))
-        print(f"  pool seeds {min(vectors)}-{max(vectors)}: rule "
-              f"{'feasible' if feasible(vectors) else 'infeasible'}")
-        if feasible(vectors):
-            break
-    else:
-        raise SystemExit("FATAL: the balance rule is infeasible on every pool block")
-    accepted, n = select(vectors)
-    pool = sorted(vectors)
+    fast = _fast_available()
+    if not fast:
+        print("  numba is not importable: the pool is drawn in pure Python, 13-30 s "
+              "per draw; the 2026-10-01 pool took 6,600 draws, about 2.5-5 h on 11 "
+              "workers")
+    draws = {}
+    with multiprocessing.Pool(workers, initializer=_fast_init if fast else None) as p:
+        for block in POOL_BLOCKS:
+            for seed, *rest in p.imap_unordered(_pool_draw, block, chunksize=4):
+                draws[seed] = tuple(rest)
+            cand = {s: v for s, (v, ok, _, _) in draws.items() if ok}
+            subsets = valid_subsets(cand)
+            print(f"  pool seeds {min(draws)}-{max(draws)}: {len(cand)} meet rule 3, "
+                  f"{len(subsets)} five-subsets meet rules 1-3", flush=True)
+            if subsets:
+                break
+        else:
+            raise SystemExit("FATAL: rules 1-3 are infeasible on every pool block")
+    if fast:
+        with multiprocessing.Pool(workers) as p:          # the unmodified code
+            again = {s: tuple(r) for s, *r in p.imap_unordered(_pool_draw, sorted(cand))}
+        bad = sorted(s for s in cand if again[s] != draws[s])
+        if bad:
+            raise SystemExit(f"FATAL: the numba pool scan differs from the pure-Python "
+                             f"draw for seeds {bad}")
+    accepted, n = select(cand)
+    pool = sorted(draws)
+    counts, tgt = realised_counts(), column(read_map(), TARGET)
+    num, den = REALISED_TOL
     record = {
-        "rule": (f"each of the {len(BALANCE_PAIRS)} pairs is merged in "
-                 f"{MERGED_IN[0]} or {MERGED_IN[1]} of the {N_PARTITIONS} partitions "
-                 "and split in the rest; shares exact; QCD one class"),
-        "fixed": "2026-09-29, before any pool draw",
+        "rule": {
+            "1": (f"each of the {len(BALANCE_PAIRS)} pairs is merged in {MERGED_IN[0]} or "
+                  f"{MERGED_IN[1]} of the {N_PARTITIONS} partitions and split in the rest"),
+            "2": ("no two pairs have equal or complementary merge columns (a pair's "
+                  "merged/split pattern over the partitions)"),
+            "3": (f"every group's realised training share is within {num}/{den} (relative) "
+                  "of the realised share of the 17-class group it was built to match "
+                  "(group g against 17-class group g); nominal shares exact; QCD one class"),
+        },
+        "fixed": ("2026-10-01 by the PI (PRESPEC, corrections to A10), before any "
+                  "pool draw under it"),
+        "supersedes": {"accepted_seeds": SUPERSEDED_SEEDS, "rule_fixed": "2026-09-29",
+                       "why": ("two pairs of probe pairs had equal merge columns; "
+                               "realised group shares matched only nominally"),
+                       "run": False},
         "pairs": BALANCE_PAIRS, "merged_in": list(MERGED_IN),
+        "realised_tolerance": [num, den],
+        "realised_shares": {"file": str(REALISED.relative_to(REPO)),
+                            "sha256": hashlib.sha256(REALISED.read_bytes()).hexdigest(),
+                            "source": json.loads(REALISED.read_text())["source"]},
         "draw": "build_rand_control.share_draw, --pool resonant, identified by seed",
-        "selection": (f"random.Random({SELECT_SEED}).sample(sorted pool, "
-                      f"{N_PARTITIONS}) until a sample meets the rule"),
+        "pool_scan": ("scripts/fast_compositions.py (numba transcription of "
+                      "build_rand_control.compositions); every rule-3 draw drawn again "
+                      "by the unmodified code, identical" if fast
+                      else "build_rand_control as is"),
+        "pool": {"first_seed": pool[0], "last_seed": pool[-1], "draws": len(pool),
+                 "block": len(POOL_BLOCKS[0]),
+                 "extension": ("blocks of 100 from seed 100, in order, only while no "
+                               "5-subset of the rule-3 draws meets rules 1 and 2")},
+        "selection": (f"random.Random({SELECT_SEED}).sample(sorted rule-3 draws, "
+                      f"{N_PARTITIONS}) until a sample meets rules 1 and 2"),
         "select_seed": SELECT_SEED,
-        "seeds_tried": pool,
-        "merge_vectors": {str(s): list(vectors[s]) for s in pool},
-        "pool_merge_rate": {k: sum(vectors[s][i] for s in pool) / len(pool)
-                            for i, k in enumerate(BALANCE_PAIRS)},
+        "rule3_seeds": sorted(cand),
+        "merge_vectors": {str(s): list(cand[s]) for s in sorted(cand)},
+        "max_rel_dev": {str(s): round(draws[s][2], 6) for s in sorted(cand)},
+        "partition_sha256": {str(s): draws[s][3] for s in sorted(cand)},
+        "valid_subsets": [list(s) for s in subsets],
         "samples_drawn": n,
         "accepted_seeds": accepted,
-        "accepted_merged_count": {k: sum(vectors[s][i] for s in accepted)
+        "accepted_merged_count": {k: sum(cand[s][i] for s in accepted)
                                   for i, k in enumerate(BALANCE_PAIRS)},
+        "accepted_columns": {k: [cand[s][i] for s in accepted]
+                             for i, k in enumerate(BALANCE_PAIRS)},
     }
     with tempfile.TemporaryDirectory() as d:
         tmp = pathlib.Path(d) / RAND_V2.name
         brc.main(["--pool", "resonant", "--prefix", RAND_V2_PREFIX, "--seeds",
                   *map(str, accepted), "--out", str(tmp)])
         with tmp.open(newline="") as f:      # keep the csv module's \r\n
-            return record, f.read()
+            text = f.read()
+    # realised share / the 17-class group's, per group, of the five as written
+    record["accepted_realised_ratio"] = {
+        str(s): realised_ratios(read_two_col_map(RAND_V2, f"{RAND_V2_PREFIX}{d}", text)[0],
+                                counts, tgt)
+        for d, s in enumerate(accepted, start=1)}
+    return record, text
 
 
 def rand_v2_seeds() -> list[int]:
@@ -385,24 +583,63 @@ def place_orbits(shape, by_value, orb, tgt, tag):
     return place, best
 
 
-def split_move(place, orb, oshare, units, names):
+def has_b(name: str) -> bool:
+    """A four-prong hadronic class with a b quark among its four."""
+    return "b" in name[len("label_X_YY_"):]
+
+
+def split_options(place, orb, oshare, units, names):
     """F1's move: the b-containing half S of SPLIT_ORBIT goes to a block B, and
-    whole orbits T of B with share(T) == share(S) come back. Returns
-    (S, B, T) with the fewest orbits in T, or None if no exact T exists."""
-    s_nat = [n for n in orb[SPLIT_ORBIT] if "b" in names[n][len("label_X_YY_"):]]
+    whole orbits T of B with share(T) == share(S) come back. Returns S and
+    every exact (B, T) with at most four orbits in T."""
+    s_nat = [n for n in orb[SPLIT_ORBIT] if has_b(names[n])]
     s_share = sum(units[n] for n in s_nat)
     a = place[SPLIT_ORBIT]
+    opts = []
     for size in range(1, 5):
-        hits = []
         for b in sorted(set(place.values()) - {a}):
             mine = sorted(o for o in place if place[o] == b)
             for t in itertools.combinations(mine, size):
                 if sum(oshare[o] for o in t) == s_share:
-                    hits.append((b, t))
-        if hits:
-            b, t = min(hits, key=lambda h: (h[1], h[0]))
-            return s_nat, b, list(t)
-    return None
+                    opts.append((b, list(t)))
+    return s_nat, opts
+
+
+def moved(f0, cut, b_blk, a_blk, t_orbs, orb) -> dict[int, int]:
+    """F0 with `cut` moved to block B and the orbits `t_orbs` moved to block A."""
+    m = dict(f0)
+    for n in cut:
+        m[n] = b_blk
+    for o in t_orbs:
+        for n in orb[o]:
+            m[n] = a_blk
+    return m
+
+
+def pairs_changed(m0, m1, orbit_of) -> dict[str, int]:
+    """Native pairs (QCD included) merged in one map and split in the other."""
+    tot = same = 0
+    for a, b in itertools.combinations(sorted(m0), 2):
+        if (m0[a] == m0[b]) != (m1[a] == m1[b]):
+            tot += 1
+            same += orbit_of[a] == orbit_of[b]
+    return {"native_pairs": tot, "cross_orbit": tot - same, "same_orbit": same}
+
+
+def f1r_cut(orb, names, k: int) -> tuple[list[int], int]:
+    """F1r's cut: random.Random(F1R_SEED).sample(sorted SPLIT_ORBIT, k) until 5
+    or 6 of it contain a b quark and F1R_TOGETHER are both in it or both out.
+    Returns the cut and the number of samples drawn."""
+    q4 = sorted(orb[SPLIT_ORBIT])
+    idx = {s: n for n, s in names.items()}
+    together = [idx[s] for s in F1R_TOGETHER]
+    rng = random.Random(F1R_SEED)
+    for n in range(1, MAX_SAMPLES + 1):
+        pick = sorted(rng.sample(q4, k))
+        if (sum(has_b(names[x]) for x in pick) in F1R_B_MOVED
+                and len({x in pick for x in together}) == 1):
+            return pick, n
+    raise SystemExit(f"FATAL: no F1r cut in {MAX_SAMPLES} samples")
 
 
 def build_flavour_pair(rows, units):
@@ -424,30 +661,44 @@ def build_flavour_pair(rows, units):
         if shape is None:
             continue
         place, agree = place_orbits(shape, by_value, orb, tgt, tag)
-        move = split_move(place, orb, oshare, units, names)
-        if move is not None and (best is None or agree < best[0]):
-            best = (agree, t, place, move)
+        s_nat, opts = split_options(place, orb, oshare, units, names)
+        if opts and (best is None or agree < best[0]):
+            best = (agree, t, place, s_nat, opts)
     if best is None:
         raise SystemExit("FATAL: no share-exact flavour-blind partition admits "
                          "the F1 split")
-    agree, trial, place, (s_nat, b_blk, t_orbs) = best
+    agree, trial, place, s_nat, opts = best
     a_blk = place[SPLIT_ORBIT]
     qcd_gid = len(groups)
     f0 = {n: place[o] for o, mem in orb.items() for n in mem}
-    f1 = dict(f0)
-    for n in s_nat:
-        f1[n] = b_blk
-    for o in t_orbs:
-        for n in orb[o]:
-            f1[n] = a_blk
     for n in names:
         if n >= QCD_LO:
-            f0[n] = f1[n] = qcd_gid
+            f0[n] = qcd_gid
+    orbit_of = {n: orbit_key(names[n]) if n < QCD_LO else "QCD" for n in names}
+
+    # Every exact move back changes pairs outside the cut; F1 takes the one that
+    # changes the fewest across orbits (ties: fewer orbits, then by name).
+    options = []
+    for b_blk, t_orbs in opts:
+        ch = pairs_changed(f0, moved(f0, s_nat, b_blk, a_blk, t_orbs, orb), orbit_of)
+        options.append({"group_B": b_blk, "orbits_moved_B_to_A": t_orbs,
+                        "classes_moved_B_to_A": sum(len(orb[o]) for o in t_orbs),
+                        "pairs_changed_from_F0": ch})
+    chosen = min(options, key=lambda o: (o["pairs_changed_from_F0"]["cross_orbit"],
+                                         len(o["orbits_moved_B_to_A"]),
+                                         o["orbits_moved_B_to_A"], o["group_B"]))
+    b_blk, t_orbs = chosen["group_B"], chosen["orbits_moved_B_to_A"]
+    f1 = moved(f0, s_nat, b_blk, a_blk, t_orbs, orb)
+    cut_r, n_r = f1r_cut(orb, names, len(s_nat))
+    f1r = moved(f0, cut_r, b_blk, a_blk, t_orbs, orb)
 
     def mismatch(m):
         got = [sum(units[n] for n in range(QCD_LO) if m[n] == g) for g in range(len(groups))]
         return max(abs(x - y) for x, y in zip(got, targets))
 
+    idx = {s: n for n, s in names.items()}
+    q4 = orb[SPLIT_ORBIT]
+    bpairs = [(x, y) for x in q4 for y in q4 if has_b(names[x]) and not has_b(names[y])]
     record = {
         "construction": (
             "F0: each of the 16 resonant groups is a union of whole flavour orbits "
@@ -456,7 +707,9 @@ def build_flavour_pair(rows, units):
             "local search against the 17-class partition; QCD is one class. F1: F0 "
             "with the b-containing classes of the four-prong hadronic orbit moved "
             "to group B and whole orbits of equal share moved from B to that "
-            "orbit's group A."),
+            "orbit's group A; of the exact options, the one changing the fewest "
+            "native pairs across orbits. F1r: F1 with a seeded random half of that "
+            "orbit moved instead of its b-containing half."),
         "seed": FLAV_SEED, "trial": trial, "trials": FLAV_TRIALS,
         "n_orbits": len(orb),
         "orbit_of_class": {names[n]: orbit_key(names[n]) for n in range(QCD_LO)},
@@ -467,28 +720,55 @@ def build_flavour_pair(rows, units):
         "split_classes_moved": [names[n] for n in s_nat],
         "group_A": a_blk, "group_B": b_blk,
         "orbits_moved_B_to_A": t_orbs,
+        "f1_options": options,
+        "f1_choice": ("the option changing the fewest native pairs across orbits "
+                      "(ties: fewer orbits, then by name)"),
         "share_units_denominator": sum(units.values()),
         "moved_share_units": sum(units[n] for n in s_nat),
-        "max_abs_share_mismatch_units": {"F0": mismatch(f0), "F1": mismatch(f1)},
+        "moved_back_share_units": sum(units[n] for o in t_orbs for n in orb[o]),
+        "max_abs_share_mismatch_units": {"F0": mismatch(f0), "F1": mismatch(f1),
+                                         "F1R": mismatch(f1r)},
+        "F1R": {
+            "seed": F1R_SEED,
+            "sampler": (f"random.Random({F1R_SEED}).sample(sorted {SPLIT_ORBIT} classes, "
+                        f"{len(s_nat)}) until {F1R_B_MOVED[0]} or {F1R_B_MOVED[1]} contain "
+                        f"a b quark and {' and '.join(F1R_TOGETHER)} are in one group"),
+            "samples_drawn": n_r,
+            "classes_moved": [names[n] for n in cut_r],
+            "b_classes_moved": sum(has_b(names[n]) for n in cut_r),
+            "orbit_share_units": sorted({units[n] for n in q4}),
+            "orbit_b_nonb_pairs_split": {
+                "F1": sum(f1[x] != f1[y] for x, y in bpairs),
+                "F1R": sum(f1r[x] != f1r[y] for x, y in bpairs), "of": len(bpairs)},
+        },
+        "pairs_changed_from_F0": {"F1": chosen["pairs_changed_from_F0"],
+                                  "F1R": pairs_changed(f0, f1r, orbit_of)},
+        "balance_pair_status": {
+            arm: {k: "merged" if m[idx[a]] == m[idx[b]] else "split"
+                  for k, (a, b) in BALANCE_PAIRS.items()}
+            for arm, m in (("FLAV_F0", f0), ("FLAV_F1", f1), ("FLAV_F1R", f1r))},
     }
-    return f0, f1, record
+    return f0, f1, f1r, record
 
 
 def group_names(m: dict[int, int], tag: str) -> dict[int, str]:
     return {g: "QCD_ALL" if n >= QCD_LO else f"{tag}_{g:02d}" for n, g in m.items()}
 
 
-def flavour_csv(rows, f0, f1) -> str:
+FLAV_TAGS = {"FLAV_F0": "F0", "FLAV_F1": "F1", "FLAV_F1R": "F1R"}
+
+
+def flavour_csv(rows, f0, f1, f1r) -> str:
     """The text of flavour_pair_map.v2.csv (csv module line ends, \\r\\n)."""
     names = names_of(rows)
     f = io.StringIO(newline="")
     w = csv.writer(f)
-    w.writerow(["jet_label", "class_name", "orbit", "FLAV_F0", "FLAV_F0_name",
-                "FLAV_F1", "FLAV_F1_name"])
+    w.writerow(["jet_label", "class_name", "orbit"]
+               + [c for arm in FLAV_TAGS for c in (arm, f"{arm}_name")])
     for n in sorted(names):
         orb = orbit_key(names[n]) if n < QCD_LO else "QCD"
         row = [n, names[n], orb]
-        for m, tag in ((f0, "F0"), (f1, "F1")):
+        for m, tag in zip((f0, f1, f1r), FLAV_TAGS.values()):
             row += [m[n], group_names(m, tag)[m[n]]]
         w.writerow(row)
     return f.getvalue()
@@ -614,7 +894,7 @@ def arm_text(base, path, mapping, names, source, mass=False, extra_label_lines=(
     return text
 
 
-def build_configs(base, rows, f0, f1, lam, rand_text=None) -> dict[pathlib.Path, str]:
+def build_configs(base, rows, f0, f1, f1r, lam, rand_text=None) -> dict[pathlib.Path, str]:
     tree_src = "configs/labelmaps/rung_label_maps.v1.csv"
     tree_names = lambda lvl: {int(r[lvl]): r[f"{lvl}_name"] for r in rows}  # noqa: E731
     out = {}
@@ -625,9 +905,9 @@ def build_configs(base, rows, f0, f1, lam, rand_text=None) -> dict[pathlib.Path,
         p = V2 / f"{RAND_V2_PREFIX}{d}.yaml"
         m, nm = read_two_col_map(RAND_V2, p.stem, rand_text)
         out[p] = arm_text(base, p, m, nm, "configs/labelmaps/rand_label_map.v2.csv")
-    for arm, m in (("FLAV_F0", f0), ("FLAV_F1", f1)):
+    for (arm, tag), m in zip(FLAV_TAGS.items(), (f0, f1, f1r)):
         p = V2 / f"{arm}.yaml"
-        out[p] = arm_text(base, p, m, group_names(m, arm[-2:]),
+        out[p] = arm_text(base, p, m, group_names(m, tag),
                           "configs/labelmaps/flavour_pair_map.v2.csv")
     p = V2 / "R16_Q1_MASS_LM.yaml"
     out[p] = arm_text(
@@ -715,7 +995,7 @@ def registry(rows, lam, lofo_expr, rand_seeds=None) -> dict:
     for d, seed in enumerate(rand_seeds, start=1):
         add(f"{RAND_V2_PREFIX}{d}", f"configs/arms/v2/{RAND_V2_PREFIX}{d}.yaml",
             k[TARGET], 2, 1, objective="classification", partition_seed=seed)
-    for arm in ("FLAV_F0", "FLAV_F1"):
+    for arm in FLAV_TAGS:
         add(arm, f"configs/arms/v2/{arm}.yaml", k[TARGET], 2, 2,
             objective="classification", partition_seed=FLAV_SEED)
     add("R16_Q1_MASS_LM", "configs/arms/v2/R16_Q1_MASS_LM.yaml", k[TARGET], 5, 2, lam,
@@ -740,7 +1020,7 @@ def registry(rows, lam, lofo_expr, rand_seeds=None) -> dict:
 
 
 # ------------------------------------------------------------------ main
-def build_outputs(select_workers=None, mass_logs=None) -> tuple[dict, int]:
+def build_outputs(select_workers=None, mass_logs=None, realised_src=None) -> tuple[dict, int]:
     """Every output as {path: full text}, and the number of failed checks.
 
     Everything is built and checked in memory and nothing is written here, so a
@@ -748,10 +1028,18 @@ def build_outputs(select_workers=None, mass_logs=None) -> tuple[dict, int]:
     together, and only when this returns no failure. With `select_workers` the
     five random partitions are reselected (select_rand) and their selection
     record and label map join the outputs; otherwise the committed ones are
-    read and checked like everything else.
+    read and checked like everything else. With `realised_src` (a dry-run
+    record) REALISED is re-derived and the committed partitions are checked
+    against it.
     """
     out = {}
     rand_text = None
+    if select_workers and realised_src:
+        raise SystemExit("FATAL: the pool reads the committed realised shares; "
+                         "re-derive them first, then reselect")
+    if realised_src:
+        out[REALISED] = json.dumps(realised_from(realised_src), indent=1) + "\n"
+    realised = json.loads(out.get(REALISED) or REALISED.read_text())
     if select_workers:
         record, rand_text = select_rand(select_workers)
         out[RAND_SEL] = json.dumps(record, indent=1) + "\n"
@@ -769,8 +1057,8 @@ def build_outputs(select_workers=None, mass_logs=None) -> tuple[dict, int]:
         runs = json.loads(MASS_JSON.read_text())["runs"]
     lam = mass_lambda(runs)
 
-    f0, f1, frec = build_flavour_pair(rows, units)
-    maps = {"FLAV_F0": f0, "FLAV_F1": f1}
+    f0, f1, f1r, frec = build_flavour_pair(rows, units)
+    maps = {"FLAV_F0": f0, "FLAV_F1": f1, "FLAV_F1R": f1r}
     for d in range(1, N_PARTITIONS + 1):
         arm = f"{RAND_V2_PREFIX}{d}"
         maps[arm] = read_two_col_map(RAND_V2, arm, rand_text)[0]
@@ -779,14 +1067,25 @@ def build_outputs(select_workers=None, mass_logs=None) -> tuple[dict, int]:
     got = [list(merge_vector(maps[f"{RAND_V2_PREFIX}{d}"], names_of(rows)))
            for d in range(1, N_PARTITIONS + 1)]
     want = [sel["merge_vectors"][str(s)] for s in sel["accepted_seeds"]]
+    failed = 0
     if got != want or not rule_ok(got):
-        print("  [FAIL] rand_label_map.v2.csv is not the recorded selection")
-        failed = 1
-    else:
-        failed = 0
+        print("  [FAIL] rand_label_map.v2.csv is not the recorded selection, or "
+              "breaks rule 1 or 2")
+        failed += 1
+    tgt = column(rows, TARGET)
+    for d in range(1, N_PARTITIONS + 1):
+        m = maps[f"{RAND_V2_PREFIX}{d}"]
+        ok, dev = rule3(m, realised["native_counts"], tgt)
+        if not ok or group_sums(m, units) != group_sums(tgt, units):
+            print(f"  [FAIL] {RAND_V2_PREFIX}{d}: rule 3 (largest realised deviation "
+                  f"{dev:.4f}) or nominal shares group by group")
+            failed += 1
+    if any(frec["max_abs_share_mismatch_units"].values()):
+        print(f"  [FAIL] flavour pair shares {frec['max_abs_share_mismatch_units']}")
+        failed += 1
     maps["R16_Q1_MASS_LM"] = column(rows, TARGET)
 
-    configs = build_configs(base, rows, f0, f1, lam["lambda_m"], rand_text)
+    configs = build_configs(base, rows, f0, f1, f1r, lam["lambda_m"], rand_text)
     for path, text in configs.items():
         fails = check_config(text, maps[path.stem], base_sha)
         print(f"  [{'FAIL' if fails else 'PASS'}] {path.relative_to(REPO)} "
@@ -803,9 +1102,12 @@ def build_outputs(select_workers=None, mass_logs=None) -> tuple[dict, int]:
              "probe_tasks": {t: {"description": PROBE_TASKS[t],
                                  "sub_pairs": [p[0] for p in sub_pairs(tasks[t], names)]}
                              for t in tasks},
+             "balance_pairs": {k: {"classes": list(p), "task": PAIR_TASK[k]}
+                               for k, p in BALANCE_PAIRS.items()},
              "partition_seeds": {**{f"{RAND_V2_PREFIX}{d}": s for d, s in
                                     enumerate(sel["accepted_seeds"], start=1)},
-                                 "FLAV_F0": FLAV_SEED, "FLAV_F1": FLAV_SEED},
+                                 **{arm: FLAV_SEED for arm in FLAV_TAGS}},
+             "flavour_cut_seed": {"FLAV_F1R": F1R_SEED},
              "status": status,
              "tree_first_merge": first_merge_level(rows, tasks, names)}
 
@@ -821,12 +1123,14 @@ def build_outputs(select_workers=None, mass_logs=None) -> tuple[dict, int]:
           f"(pooled, unrounded {lam['variants']['mean_over_epochs_0_79']['lambda_pooled']:.4f})")
     print(f"  F0/F1: trial {frec['trial']}, {frec['native_pairs_shared_with_17_class']} "
           f"native pairs shared with the 17-class groups; share mismatch "
-          f"{frec['max_abs_share_mismatch_units']}")
+          f"{frec['max_abs_share_mismatch_units']}; F1 moves back "
+          f"{frec['orbits_moved_B_to_A']}; F1r cut after "
+          f"{frec['F1R']['samples_drawn']} samples")
 
     out.update(configs)
     out[MASS_JSON] = json.dumps({**lam, "runs": runs}, indent=1) + "\n"
     out[FLAV_JSON] = json.dumps(frec, indent=1) + "\n"
-    out[FLAV_CSV] = flavour_csv(rows, f0, f1)
+    out[FLAV_CSV] = flavour_csv(rows, f0, f1, f1r)
     out[PAIRS] = json.dumps(pairs, indent=1) + "\n"
     out[GRID] = json.dumps(grid, indent=1) + "\n"
     return out, failed
@@ -844,12 +1148,15 @@ def main(argv=None) -> int:
                     help="redraw the pool and select the five random partitions "
                          "(rewrites rand_v2_selection.json and rand_label_map.v2.csv "
                          "with everything else, once every check has passed)")
+    ap.add_argument("--realised-from", type=pathlib.Path, metavar="DRYRUN_JSON",
+                    help=f"the {LOADER_JOB} record; rewrites "
+                         "realised_native_shares.v2.json")
     a = ap.parse_args(argv)
     if a.lofo_pod_script:
         print(lofo_pod_script(read_map()))
         return 0
 
-    outputs, failed = build_outputs(a.select_rand, a.mass_logs)
+    outputs, failed = build_outputs(a.select_rand, a.mass_logs, a.realised_from)
     if failed:
         print(f"\nBUILD FAILED - {failed} check(s), nothing written")
         return 1

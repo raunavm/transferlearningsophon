@@ -4,9 +4,12 @@ What must hold for each v2 arm to be the contrast it is registered as:
   - it is the base config with another `labels:` block and nothing else (I1),
     the `weights:` block byte-identical (I2), the label map materialized and
     reproduced by the expression (I4), jet_label never re-derived (I6);
-  - the random partitions match the 17-class stream shares exactly and now
-    permute two-prong decays too;
-  - F0 is flavour-blind everywhere, F1 differs from it by exactly one b/c cut;
+  - the random partitions match the 17-class stream shares exactly, now
+    permute two-prong decays too, and meet the 2026-10-01 rule: each probe
+    pair merged in 2 or 3 of 5, no two pairs with equal or complementary merge
+    columns, realised group shares within 5% of the 17-class ones;
+  - F0 is flavour-blind everywhere, F1 differs from it by exactly one b/c cut,
+    F1r by the same move with a random, b-unaligned cut;
   - the lambda-matched arm's lambda is the one the v1 logs give;
   - leave-one-family-out removes exactly one 17-class group and keeps the
     parent's reweighting.
@@ -96,6 +99,7 @@ EXPECTED_MAP = {
     "R16_Q1_MASS_LM": R16,
     "FLAV_F0": csv_map(FLAV, "FLAV_F0"),
     "FLAV_F1": csv_map(FLAV, "FLAV_F1"),
+    "FLAV_F1R": csv_map(FLAV, "FLAV_F1R"),
     **{a: csv_map(RAND_V2, a) for a in RAND_ARMS},
 }
 NEW_CONFIGS = sorted([ROOT / "configs" / "arms" / "R63_Q1.yaml",
@@ -109,7 +113,8 @@ def test_registry_holds_the_requested_grid():
         **{a: (1, 5) for a in ["L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS",
                                 "R16_Q1_MASS"]},
         **{a: (1, 2) for a in RAND_ARMS},
-        "FLAV_F0": (2, 2), "FLAV_F1": (2, 2), "R16_Q1_MASS_LM": (2, 5), "MPM": (2, 3),
+        "FLAV_F0": (2, 2), "FLAV_F1": (2, 2), "FLAV_F1R": (2, 2),
+        "R16_Q1_MASS_LM": (2, 5), "MPM": (2, 3),
         "R63_Q1": (3, 5), "R29_Q1": (3, 5),
         **{f"{a}_LOFO4P": (3, 3) for a in ["L188", "L162", "R42_Q1", "R16_Q1"]},
     }
@@ -141,7 +146,9 @@ def test_mass_lambdas_in_the_registry():
 
 def test_partition_seeds_are_recorded():
     assert [ARMS[a]["partition_seed"] for a in RAND_ARMS] == SEL["accepted_seeds"]
-    assert ARMS["FLAV_F0"]["partition_seed"] == ARMS["FLAV_F1"]["partition_seed"]
+    assert (ARMS["FLAV_F0"]["partition_seed"] == ARMS["FLAV_F1"]["partition_seed"]
+            == ARMS["FLAV_F1R"]["partition_seed"] == v2.FLAV_SEED)
+    assert json.loads(v2.FLAV_JSON.read_text())["F1R"]["seed"] == v2.F1R_SEED
 
 
 # ------------------------------------------------------ config invariants
@@ -182,11 +189,11 @@ def test_committed_outputs_are_the_builders_own(tmp_path):
     configs it would write must equal the committed ones."""
     assert v2.main(["--check-only"]) == 0
     base = BASE.read_text()
-    f0, f1, _ = v2.build_flavour_pair(ROWS, UNITS)
+    f0, f1, f1r, _ = v2.build_flavour_pair(ROWS, UNITS)
     lam = json.loads(v2.MASS_JSON.read_text())["lambda_m"]
-    for path, text in v2.build_configs(base, ROWS, f0, f1, lam).items():
+    for path, text in v2.build_configs(base, ROWS, f0, f1, f1r, lam).items():
         assert path.read_text() == text, path.name
-    assert (f0, f1) == (EXPECTED_MAP["FLAV_F0"], EXPECTED_MAP["FLAV_F1"])
+    assert (f0, f1, f1r) == tuple(EXPECTED_MAP[a] for a in ("FLAV_F0", "FLAV_F1", "FLAV_F1R"))
     assert v2.registry(ROWS, lam, v2.lofo_extra_selection(ROWS)) == GRID
 
 
@@ -242,13 +249,16 @@ def test_a_failed_check_writes_nothing(monkeypatch, select):
 def test_select_rand_draws_into_a_temporary_file_and_replays_the_record(monkeypatch):
     """select_rand writes nothing in the repository: the map is drawn into a
     temporary directory and returned as text. Fed the recorded pool, it returns
-    the committed selection record. The pool draws (about 30 s each) and the map
-    writer are stood in for; both are covered by the reproducibility tests above."""
+    the committed selection record. The pool draws (13-30 s each in pure Python)
+    and the map writer are stood in for; both are covered by the
+    reproducibility tests below. A seed that is not a recorded rule-3 draw
+    stands in as one that fails rule 3."""
     import multiprocessing
-    vectors = {int(k): tuple(x) for k, x in SEL["merge_vectors"].items()}
+    cand = {int(k): (tuple(x), True, SEL["max_rel_dev"][k], SEL["partition_sha256"][k])
+            for k, x in SEL["merge_vectors"].items()}
 
     class Pool:
-        def __init__(self, n):
+        def __init__(self, n, initializer=None):
             pass
 
         def __enter__(self):
@@ -257,8 +267,8 @@ def test_select_rand_draws_into_a_temporary_file_and_replays_the_record(monkeypa
         def __exit__(self, *exc):
             return False
 
-        def imap_unordered(self, fn, block):
-            return [(s, vectors[s]) for s in block]
+        def imap_unordered(self, fn, block, chunksize=1):
+            return [(s, *cand.get(s, ((0,) * 7, False, 1.0, ""))) for s in block]
 
     drawn_to = []
 
@@ -273,6 +283,7 @@ def test_select_rand_draws_into_a_temporary_file_and_replays_the_record(monkeypa
     before = {p: p.read_bytes() for p in (v2.RAND_SEL, v2.RAND_V2)}
     monkeypatch.setattr(multiprocessing, "Pool", Pool)
     monkeypatch.setattr(v2.brc, "main", map_writer)
+    monkeypatch.setattr(v2, "_fast_available", lambda: True)
     record, text = v2.select_rand(2)
     assert {p: p.read_bytes() for p in before} == before
     assert drawn_to and not drawn_to[0].is_relative_to(ROOT) and not drawn_to[0].exists()
@@ -320,36 +331,107 @@ def test_random_partition_is_reproducible_from_its_seed(tmp_path):
 
 # -------------------------------------------- balance rule for the five
 def test_balance_rule_holds_on_the_committed_partitions():
-    """Each of the seven probe pairs is merged in 2 or 3 of the 5 partitions."""
+    """Rule 1: each of the seven probe pairs is merged in 2 or 3 of the 5
+    partitions. Rule 2: no two pairs have equal or complementary merge columns."""
     vec = [v2.merge_vector(EXPECTED_MAP[a], NAMES) for a in RAND_ARMS]
-    assert [sum(c) for c in zip(*vec)] == list(SEL["accepted_merged_count"].values())
-    assert all(2 <= sum(c) <= 3 for c in zip(*vec))
+    cols = list(zip(*vec))
+    assert [sum(c) for c in cols] == list(SEL["accepted_merged_count"].values())
+    assert all(2 <= sum(c) <= 3 for c in cols)
+    for i, j in [(i, j) for i in range(7) for j in range(i + 1, 7)]:
+        assert cols[i] != cols[j] and cols[i] != tuple(1 - x for x in cols[j]), (i, j)
+    assert {k: list(c) for k, c in zip(v2.BALANCE_PAIRS, cols)} == SEL["accepted_columns"]
     assert [list(x) for x in vec] == [SEL["merge_vectors"][str(s)]
                                       for s in SEL["accepted_seeds"]]
     assert SEL["pairs"] == {k: list(p) for k, p in v2.BALANCE_PAIRS.items()}
     assert SEL["merged_in"] == [2, 3]
+    assert not set(SEL["accepted_seeds"]) & set(v2.SUPERSEDED_SEEDS)
+
+
+@pytest.mark.parametrize("arm", RAND_ARMS)
+def test_rule_3_realised_shares_on_the_committed_partitions(arm):
+    """Every group's realised share is within 5% of the realised share of the
+    17-class group it was built to match: group g against group g, which is the
+    group carrying the same nominal share."""
+    m = EXPECTED_MAP[arm]
+    counts = REALISED["native_counts"]
+    assert share_profile(m) == share_profile(R16), "group g has 17-class group g's share"
+    c, t = collections.Counter(), collections.Counter()
+    for n in m:
+        c[m[n]] += counts[n]
+        t[R16[n]] += counts[n]
+    assert all(20 * abs(c[g] - t[g]) <= t[g] for g in t), \
+        {g: round(c[g] / t[g], 4) for g in t}
+    seed = str(SEL["accepted_seeds"][RAND_ARMS.index(arm)])
+    assert [round(c[g] / t[g], 6) for g in sorted(t)] == SEL["accepted_realised_ratio"][seed]
+    assert max(abs(c[g] / t[g] - 1) for g in t) == pytest.approx(SEL["max_rel_dev"][seed],
+                                                                 abs=1e-6)
 
 
 def test_selection_replays_from_the_record():
-    """Uniform over the rule-meeting 5-subsets of the pool: the recorded pool
-    and SELECT_SEED give back the accepted seeds after the recorded number of
-    samples, and the pool was extended only while the rule was infeasible."""
+    """Uniform over the 5-subsets of the rule-3 draws that meet rules 1 and 2:
+    the recorded draws and SELECT_SEED give back the accepted seeds after the
+    recorded number of samples, and the pool was extended only while no
+    5-subset met all three rules."""
     vectors = {int(k): tuple(x) for k, x in SEL["merge_vectors"].items()}
+    assert sorted(vectors) == SEL["rule3_seeds"]
     assert v2.select(vectors) == (SEL["accepted_seeds"], SEL["samples_drawn"])
-    blocks = [list(b) for b in v2.POOL_BLOCKS]
-    used = next(i for i in range(len(blocks))
-                if sorted(vectors) == sorted(sum(blocks[:i + 1], [])))
+    assert [list(s) for s in v2.valid_subsets(vectors)] == SEL["valid_subsets"]
+    assert SEL["accepted_seeds"] in SEL["valid_subsets"]
+    pool = SEL["pool"]
+    blocks = v2.POOL_BLOCKS
+    used = next(i for i in range(len(blocks)) if blocks[i][-1] == pool["last_seed"])
+    assert blocks[0][0] == pool["first_seed"] and pool["draws"] == 100 * (used + 1)
     for i in range(used):
-        assert not v2.feasible({s: vectors[s] for s in sum(blocks[:i + 1], [])})
-    assert v2.feasible(vectors)
+        assert not v2.feasible({s: v for s, v in vectors.items() if s <= blocks[i][-1]})
+    assert all(0 <= d <= 0.05 for d in SEL["max_rel_dev"].values())
 
 
 def test_rule_helpers():
+    """rule_ok is rules 1 and 2: column sums in 2-3, no equal or complementary
+    columns."""
+    rows5 = [(1, 1, 0, 1, 1, 1, 1), (0, 0, 0, 1, 1, 1, 0), (1, 1, 0, 0, 0, 0, 0),
+             (0, 0, 1, 0, 1, 0, 0), (1, 0, 1, 0, 0, 1, 1)]
+    cols = list(zip(*rows5))
+    assert all(2 <= sum(c) <= 3 for c in cols)
+    assert v2.rule_ok(rows5)
     one, zero = (1,) * 7, (0,) * 7
-    assert v2.rule_ok([one, one, zero, zero, zero]) and v2.rule_ok([one] * 3 + [zero] * 2)
-    assert not v2.rule_ok([one] * 4 + [zero]) and not v2.rule_ok([one] + [zero] * 4)
-    assert v2.feasible({1: one, 2: one, 3: zero, 4: zero, 5: zero})
-    assert not v2.feasible({1: one, 2: zero, 3: zero, 4: zero, 5: zero, 6: zero})
+    assert not v2.rule_ok([one, one, zero, zero, zero]), "every column equal"
+    swap = [r[:6] + (1 - r[0],) for r in rows5]       # last column = complement of the first
+    assert all(2 <= sum(c) <= 3 for c in zip(*swap)) and not v2.rule_ok(swap)
+    assert v2.column_key((1, 0, 0, 1, 1)) == v2.column_key((0, 1, 1, 0, 0))
+    pool = dict(enumerate(rows5, start=1))
+    assert v2.valid_subsets(pool) == [(1, 2, 3, 4, 5)] and v2.feasible(pool)
+    assert not v2.feasible({**{i: one for i in range(1, 4)}, **{i: zero for i in range(4, 7)}})
+
+
+REALISED = json.loads(v2.REALISED.read_text())
+LOADER_DIR = ROOT / "experiments" / "FIGS" / "data" / "v2_loader"
+
+
+def test_realised_shares_are_the_dry_runs_counts():
+    """The derived input: 20 epochs x 10.24M jets of LOADER_JOB, per native
+    class, with the source file's digest."""
+    r = REALISED
+    assert r["source"]["job"] == v2.LOADER_JOB and r["source"]["file"] == v2.LOADER_FILE
+    assert len(r["source"]["sha256"]) == 64
+    assert r["loader"]["epochs"] == 20 and r["loader"]["samples_per_epoch"] == 10_240_000
+    assert sum(r["native_counts"]) == r["total_jets"] == 20 * 10_240_000
+    assert r["class_name"] == [NAMES[n] for n in range(len(NAMES))]
+    assert r["share"] == [c / r["total_jets"] for c in r["native_counts"]]
+    assert SEL["realised_shares"]["sha256"] == hashlib.sha256(
+        v2.REALISED.read_bytes()).hexdigest()
+
+
+def test_realised_shares_come_from_the_committed_dry_run():
+    """Once the raw dry-run record is committed, it is the file the derived
+    input was made from, and re-deriving gives the committed bytes."""
+    raw = sorted(LOADER_DIR.glob("**/dryrun_s176*.json")) if LOADER_DIR.exists() else []
+    if not raw:
+        pytest.skip(f"{LOADER_DIR.relative_to(ROOT)} does not hold the dry run yet")
+    hits = [p for p in raw
+            if hashlib.sha256(p.read_bytes()).hexdigest() == REALISED["source"]["sha256"]]
+    assert hits, f"no committed dry run has sha256 {REALISED['source']['sha256']}"
+    assert json.dumps(v2.realised_from(hits[0]), indent=1) + "\n" == v2.REALISED.read_text()
 
 
 def test_resonant_pool_is_share_matched_only():
@@ -397,7 +479,75 @@ def test_f1_is_f0_with_one_b_vs_c_cut():
     moved = {idx[s] for s in rec["split_classes_moved"]} | {
         n for o in rec["orbits_moved_B_to_A"] for n in ORB[o]}
     assert {n for n in f0 if f0[n] != f1[n]} == moved
-    assert rec["max_abs_share_mismatch_units"] == {"F0": 0, "F1": 0}
+    assert rec["max_abs_share_mismatch_units"] == {"F0": 0, "F1": 0, "F1R": 0}
+
+
+def _orbit_of():
+    return {n: v2.orbit_key(NAMES[n]) if n < v2.QCD_LO else "QCD" for n in NAMES}
+
+
+def test_f1_takes_the_move_back_with_the_fewest_cross_orbit_changes():
+    """Every share-exact move back is recorded with the native pairs it
+    changes; F1 is the one changing the fewest across orbits (479; the
+    alphabetical tie-break used to take 504). It keeps F0's semileptonic e/mu
+    boundary, which the 504 option lost."""
+    f0, f1 = EXPECTED_MAP["FLAV_F0"], EXPECTED_MAP["FLAV_F1"]
+    rec = json.loads(v2.FLAV_JSON.read_text())
+    idx = {s: n for n, s in NAMES.items()}
+    cut = [idx[c] for c in rec["split_classes_moved"]]
+    for o in rec["f1_options"]:
+        m = v2.moved(f0, cut, o["group_B"], rec["group_A"], o["orbits_moved_B_to_A"], ORB)
+        assert v2.pairs_changed(f0, m, _orbit_of()) == o["pairs_changed_from_F0"]
+        assert sum(UNITS[n] for t in o["orbits_moved_B_to_A"] for n in ORB[t]) == \
+            rec["moved_share_units"]
+    cross = sorted(o["pairs_changed_from_F0"]["cross_orbit"] for o in rec["f1_options"])
+    assert cross == [479, 495, 504]
+    chosen = min(rec["f1_options"], key=lambda o: o["pairs_changed_from_F0"]["cross_orbit"])
+    assert chosen["orbits_moved_B_to_A"] == rec["orbits_moved_B_to_A"]
+    assert chosen["group_B"] == rec["group_B"]
+    assert rec["pairs_changed_from_F0"]["F1"] == {"native_pairs": 600, "cross_orbit": 479,
+                                                  "same_orbit": 121}
+    assert rec["orbits_moved_B_to_A"] == ["X_YY_QQmm", "X_YY_QQtauhtauh", "X_mm"]
+    ev, mv = ORB["X_YY_QQev"][0], ORB["X_YY_QQmv"][0]
+    assert f0[ev] != f0[mv] and f1[ev] != f1[mv], "the semileptonic e/mu boundary stays"
+
+
+def test_f1r_is_f1_with_a_random_b_unaligned_cut():
+    """F1r: the same orbit, the same share, the same move back as F1, but the
+    cut is a seeded random 11 of the 22 four-prong hadronic classes with 5 or
+    6 b-containing ones, and X->YY->bbqq stays with X->YY->ccqq."""
+    import random
+    f0, f1, f1r = (EXPECTED_MAP[a] for a in ("FLAV_F0", "FLAV_F1", "FLAV_F1R"))
+    rec = json.loads(v2.FLAV_JSON.read_text())
+    r = rec["F1R"]
+    idx = {s: n for n, s in NAMES.items()}
+    q4 = sorted(ORB[v2.SPLIT_ORBIT])
+    cut = sorted(idx[c] for c in r["classes_moved"])
+    # replay the sampler
+    rng = random.Random(v2.F1R_SEED)
+    for k in range(r["samples_drawn"]):
+        pick = sorted(rng.sample(q4, 11))
+        ok = (sum(v2.has_b(NAMES[n]) for n in pick) in (5, 6)
+              and (idx["label_X_YY_bbqq"] in pick) == (idx["label_X_YY_ccqq"] in pick))
+        assert ok == (k == r["samples_drawn"] - 1)
+    assert pick == cut and r["b_classes_moved"] in (5, 6)
+    # F1r = F0 + the cut to B + F1's move back to A
+    back = {n for o in rec["orbits_moved_B_to_A"] for n in ORB[o]}
+    assert f1r == v2.moved(f0, cut, rec["group_B"], rec["group_A"],
+                           rec["orbits_moved_B_to_A"], ORB)
+    assert {n for n in f0 if f0[n] != f1r[n]} == set(cut) | back
+    assert {n for n in f1 if f1[n] != f1r[n]} <= set(q4)
+    cut_orbits = [o for o, mem in ORB.items() if len({f1r[n] for n in mem}) > 1]
+    assert cut_orbits == [v2.SPLIT_ORBIT]
+    # shares exact: every class of the orbit carries the same share
+    assert len({UNITS[n] for n in q4}) == 1 == len(r["orbit_share_units"])
+    assert share_profile(f1r) == share_profile(R16)
+    assert f1r[idx["label_X_YY_bbqq"]] == f1r[idx["label_X_YY_ccqq"]]
+    bpairs = [(x, y) for x in q4 for y in q4
+              if v2.has_b(NAMES[x]) and not v2.has_b(NAMES[y])]
+    assert r["orbit_b_nonb_pairs_split"] == {
+        "F1": len(bpairs), "F1R": sum(f1r[x] != f1r[y] for x, y in bpairs), "of": len(bpairs)}
+    assert 0.4 < r["orbit_b_nonb_pairs_split"]["F1R"] / len(bpairs) < 0.6
 
 
 def test_why_the_cut_is_in_the_four_prong_orbit():
@@ -421,7 +571,30 @@ def test_probe_pair_table_is_current():
     for arm, st in pairs["status"].items():
         m = v2.column(ROWS, arm) if arm in v2.TREE else EXPECTED_MAP[arm]
         assert st == v2.pair_status(m, tasks, NAMES), arm
-    assert set(pairs["status"]) == set(v2.VOCABS) | set(RAND_ARMS) | {"FLAV_F0", "FLAV_F1"}
+    assert set(pairs["status"]) == (set(v2.VOCABS) | set(RAND_ARMS)
+                                    | {"FLAV_F0", "FLAV_F1", "FLAV_F1R"})
+    assert pairs["flavour_cut_seed"] == {"FLAV_F1R": v2.F1R_SEED}
+
+
+def test_each_balance_pair_has_a_probe_of_its_own():
+    """PRESPEC A10 (2026-10-01): the seven pairs are seven readouts. Each maps
+    to a task whose only sub-pair is that pair; X->bc vs X->bq and X->bc vs
+    X->cs are no longer read through bc_vs_rest."""
+    pairs = json.loads(v2.PAIRS.read_text())
+    tasks = v2.probe_tasks()
+    short = lambda s: s.replace("label_", "")  # noqa: E731
+    assert set(pairs["balance_pairs"]) == set(v2.BALANCE_PAIRS)
+    used = []
+    for k, (a, b) in v2.BALANCE_PAIRS.items():
+        t = pairs["balance_pairs"][k]["task"]
+        assert pairs["balance_pairs"][k]["classes"] == [a, b]
+        assert [p[0] for p in v2.sub_pairs(tasks[t], NAMES)] == [f"{short(a)}|{short(b)}"]
+        used.append(t)
+    assert len(set(used)) == 7 and "bc_vs_rest" not in used
+    assert pairs["tree_first_merge"]["bc_vs_bq"]["X_bc|X_bq"] == {"level": "R42_Q1",
+                                                                 "num_classes": 43}
+    assert pairs["tree_first_merge"]["bc_vs_cs"]["X_bc|X_cs"] == {"level": "R29_Q1",
+                                                                 "num_classes": 30}
 
 
 def test_first_merge_level_agrees_with_probe_collapsed_at():
@@ -438,11 +611,70 @@ def test_first_merge_level_agrees_with_probe_collapsed_at():
 
 
 def test_the_decisive_pair_differs_on_the_four_prong_pair_only():
+    """F1 differs from F0 on the four-prong b vs c pair only; F1r agrees with
+    F0 on every probe pair, so that pair is the manipulation check."""
     st = json.loads(v2.PAIRS.read_text())["status"]
-    f0, f1 = st["FLAV_F0"], st["FLAV_F1"]
+    f0, f1, f1r = st["FLAV_F0"], st["FLAV_F1"], st["FLAV_F1R"]
     assert "X_YY_bbqq|X_YY_ccqq" in f0["bvc_4prong"]["merged"]
     assert "X_YY_bbqq|X_YY_ccqq" in f1["bvc_4prong"]["split"]
     assert "X_bb|X_cc" in f0["bvc_resonant"]["merged"] and "X_bb|X_cc" in f1["bvc_resonant"]["merged"]
+    assert [t for t in f0 if f0[t] != f1[t]] == ["bvc_4prong"]
+    assert f1r == f0
+    rec = json.loads(v2.FLAV_JSON.read_text())["balance_pair_status"]
+    assert [k for k in v2.BALANCE_PAIRS if rec["FLAV_F0"][k] != rec["FLAV_F1"][k]] == ["bbqq/ccqq"]
+    assert rec["FLAV_F1R"] == rec["FLAV_F0"]
+
+
+# ------------------------------------------- the pool scan's accelerator
+def _pure_draw(seed):
+    import contextlib
+    import io
+    with contextlib.redirect_stdout(io.StringIO()):
+        a = brc.share_draw(ROWS, UNITS, v2.TARGET, seed, 0, brc.POOLS["resonant"])
+    return hashlib.sha256(json.dumps([a[n] for n in sorted(a)]).encode()).hexdigest()
+
+
+def test_the_accepted_partitions_are_the_ones_the_pool_scan_drew():
+    """The five maps are written by the unmodified pure-Python draw
+    (build_rand_control.main); the record's digests come from the pool scan."""
+    for d, s in enumerate(SEL["accepted_seeds"], start=1):
+        m = EXPECTED_MAP[f"RAND2_p{d}"]
+        got = hashlib.sha256(json.dumps([m[n] for n in sorted(m)]).encode()).hexdigest()
+        assert got == SEL["partition_sha256"][str(s)], s
+
+
+def _fast_draw(seed):
+    pytest.importorskip("numba")
+    fc = _load("fast_compositions")
+    pure = brc.compositions
+    try:
+        brc.compositions = fc.compositions
+        return _pure_draw(seed)
+    finally:
+        brc.compositions = pure
+
+
+# Seeds the numba pool scan was compared on against the pure-Python draw when
+# it was written (2026-10-01): 226 consecutive seeds from 100, the 27 rule-3
+# draws of the pool and 70 others, 323 in all, every one identical. By default
+# one rule-3 draw is redrawn both ways (about 30 s); V2_POOL_CROSSCHECK=1 redraws
+# all 27 rule-3 draws and the 70 (pure Python, about 30-60 min single-threaded).
+CROSSCHECK_OTHERS = [  # random.Random(7).sample(the pool's other seeds, 70)
+    408, 484, 498, 509, 578, 587, 592, 610, 618, 676, 697, 808, 847, 875, 902, 949,
+    1069, 1119, 1195, 1286, 1340, 1586, 1645, 1794, 1866, 1919, 1936, 2082, 2485,
+    2641, 2687, 2766, 3111, 3166, 3351, 3367, 3543, 3551, 3595, 3620, 3670, 3830,
+    3932, 4187, 4278, 4477, 4511, 4551, 4610, 4637, 4683, 4712, 4746, 4755, 4799,
+    4802, 4850, 4887, 4897, 4898, 4919, 5193, 5262, 5289, 5356, 5456, 5697, 5710,
+    5958, 6492]
+
+
+@pytest.mark.parametrize("seed", SEL["rule3_seeds"] + CROSSCHECK_OTHERS
+                         if os.environ.get("V2_POOL_CROSSCHECK") else SEL["rule3_seeds"][:1])
+def test_the_numba_pool_scan_draws_what_the_pure_python_draw_does(seed):
+    fast = _fast_draw(seed)
+    assert fast == _pure_draw(seed)
+    if str(seed) in SEL["partition_sha256"]:
+        assert fast == SEL["partition_sha256"][str(seed)]
 
 
 # -------------------------------------------------------------- lambda

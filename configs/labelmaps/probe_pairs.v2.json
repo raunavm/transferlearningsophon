@@ -31,6 +31,18 @@
     "X_ee|X_mm"
    ]
   },
+  "bc_vs_bq": {
+   "description": "X->bc vs X->bq",
+   "sub_pairs": [
+    "X_bc|X_bq"
+   ]
+  },
+  "bc_vs_cs": {
+   "description": "X->bc vs X->cs",
+   "sub_pairs": [
+    "X_bc|X_cs"
+   ]
+  },
   "bc_vs_rest": {
    "description": "|Vcb| (X->bc vs X->bq, X->cs, X->YY->qqb, QCD)",
    "sub_pairs": [
@@ -41,14 +53,69 @@
    ]
   }
  },
+ "balance_pairs": {
+  "bb/cc": {
+   "classes": [
+    "label_X_bb",
+    "label_X_cc"
+   ],
+   "task": "bvc_resonant"
+  },
+  "bbqq/ccqq": {
+   "classes": [
+    "label_X_YY_bbqq",
+    "label_X_YY_ccqq"
+   ],
+   "task": "bvc_4prong"
+  },
+  "visible": {
+   "classes": [
+    "label_X_YY_bbqq",
+    "label_X_YY_cqtauhv"
+   ],
+   "task": "visible_content"
+  },
+  "bb/bbbb": {
+   "classes": [
+    "label_X_bb",
+    "label_X_YY_bbbb"
+   ],
+   "task": "retained_topology"
+  },
+  "ee/mm": {
+   "classes": [
+    "label_X_ee",
+    "label_X_mm"
+   ],
+   "task": "ee_vs_mm"
+  },
+  "bc/bq": {
+   "classes": [
+    "label_X_bc",
+    "label_X_bq"
+   ],
+   "task": "bc_vs_bq"
+  },
+  "bc/cs": {
+   "classes": [
+    "label_X_bc",
+    "label_X_cs"
+   ],
+   "task": "bc_vs_cs"
+  }
+ },
  "partition_seeds": {
-  "RAND2_p1": 107,
-  "RAND2_p2": 126,
-  "RAND2_p3": 137,
-  "RAND2_p4": 141,
-  "RAND2_p5": 178,
+  "RAND2_p1": 431,
+  "RAND2_p2": 590,
+  "RAND2_p3": 925,
+  "RAND2_p4": 4029,
+  "RAND2_p5": 6605,
   "FLAV_F0": 1,
-  "FLAV_F1": 1
+  "FLAV_F1": 1,
+  "FLAV_F1R": 1
+ },
+ "flavour_cut_seed": {
+  "FLAV_F1R": 20261001
  },
  "status": {
   "L188": {
@@ -80,6 +147,18 @@
     "merged": [],
     "split": [
      "X_ee|X_mm"
+    ]
+   },
+   "bc_vs_bq": {
+    "merged": [],
+    "split": [
+     "X_bc|X_bq"
+    ]
+   },
+   "bc_vs_cs": {
+    "merged": [],
+    "split": [
+     "X_bc|X_cs"
     ]
    },
    "bc_vs_rest": {
@@ -123,6 +202,18 @@
      "X_ee|X_mm"
     ]
    },
+   "bc_vs_bq": {
+    "merged": [],
+    "split": [
+     "X_bc|X_bq"
+    ]
+   },
+   "bc_vs_cs": {
+    "merged": [],
+    "split": [
+     "X_bc|X_cs"
+    ]
+   },
    "bc_vs_rest": {
     "merged": [],
     "split": [
@@ -164,6 +255,18 @@
     ],
     "split": []
    },
+   "bc_vs_bq": {
+    "merged": [
+     "X_bc|X_bq"
+    ],
+    "split": []
+   },
+   "bc_vs_cs": {
+    "merged": [],
+    "split": [
+     "X_bc|X_cs"
+    ]
+   },
    "bc_vs_rest": {
     "merged": [
      "X_bc|X_bq"
@@ -203,6 +306,18 @@
    "ee_vs_mm": {
     "merged": [
      "X_ee|X_mm"
+    ],
+    "split": []
+   },
+   "bc_vs_bq": {
+    "merged": [
+     "X_bc|X_bq"
+    ],
+    "split": []
+   },
+   "bc_vs_cs": {
+    "merged": [
+     "X_bc|X_cs"
     ],
     "split": []
    },
@@ -248,6 +363,18 @@
      "X_ee|X_mm"
     ]
    },
+   "bc_vs_bq": {
+    "merged": [
+     "X_bc|X_bq"
+    ],
+    "split": []
+   },
+   "bc_vs_cs": {
+    "merged": [
+     "X_bc|X_cs"
+    ],
+    "split": []
+   },
    "bc_vs_rest": {
     "merged": [
      "X_bc|X_bq",
@@ -290,6 +417,72 @@
      "X_ee|X_mm"
     ]
    },
+   "bc_vs_bq": {
+    "merged": [
+     "X_bc|X_bq"
+    ],
+    "split": []
+   },
+   "bc_vs_cs": {
+    "merged": [
+     "X_bc|X_cs"
+    ],
+    "split": []
+   },
+   "bc_vs_rest": {
+    "merged": [
+     "X_bc|X_bq",
+     "X_bc|X_cs"
+    ],
+    "split": [
+     "X_bc|X_YY_qqb",
+     "X_bc|QCD"
+    ]
+   }
+  },
+  "FLAV_F1R": {
+   "bvc_resonant": {
+    "merged": [
+     "X_bb|X_cc"
+    ],
+    "split": []
+   },
+   "bvc_4prong": {
+    "merged": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ],
+    "split": []
+   },
+   "visible_content": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ]
+   },
+   "retained_topology": {
+    "merged": [],
+    "split": [
+     "X_bb|X_YY_bbbb"
+    ]
+   },
+   "ee_vs_mm": {
+    "merged": [],
+    "split": [
+     "X_ee|X_mm"
+    ]
+   },
+   "bc_vs_bq": {
+    "merged": [
+     "X_bc|X_bq"
+    ],
+    "split": []
+   },
+   "bc_vs_cs": {
+    "merged": [
+     "X_bc|X_cs"
+    ],
+    "split": []
+   },
    "bc_vs_rest": {
     "merged": [
      "X_bc|X_bq",
@@ -309,10 +502,10 @@
     "split": []
    },
    "bvc_4prong": {
-    "merged": [],
-    "split": [
+    "merged": [
      "X_YY_bbqq|X_YY_ccqq"
-    ]
+    ],
+    "split": []
    },
    "visible_content": {
     "merged": [],
@@ -329,6 +522,18 @@
    "ee_vs_mm": {
     "merged": [
      "X_ee|X_mm"
+    ],
+    "split": []
+   },
+   "bc_vs_bq": {
+    "merged": [
+     "X_bc|X_bq"
+    ],
+    "split": []
+   },
+   "bc_vs_cs": {
+    "merged": [
+     "X_bc|X_cs"
     ],
     "split": []
    },
@@ -357,10 +562,10 @@
     ]
    },
    "visible_content": {
-    "merged": [
+    "merged": [],
+    "split": [
      "X_YY_bbqq|X_YY_cqtauhv"
-    ],
-    "split": []
+    ]
    },
    "retained_topology": {
     "merged": [
@@ -369,15 +574,28 @@
     "split": []
    },
    "ee_vs_mm": {
+    "merged": [
+     "X_ee|X_mm"
+    ],
+    "split": []
+   },
+   "bc_vs_bq": {
+    "merged": [
+     "X_bc|X_bq"
+    ],
+    "split": []
+   },
+   "bc_vs_cs": {
     "merged": [],
     "split": [
-     "X_ee|X_mm"
+     "X_bc|X_cs"
     ]
    },
    "bc_vs_rest": {
-    "merged": [],
+    "merged": [
+     "X_bc|X_bq"
+    ],
     "split": [
-     "X_bc|X_bq",
      "X_bc|X_cs",
      "X_bc|X_YY_qqb",
      "X_bc|QCD"
@@ -386,10 +604,10 @@
   },
   "RAND2_p3": {
    "bvc_resonant": {
-    "merged": [],
-    "split": [
+    "merged": [
      "X_bb|X_cc"
-    ]
+    ],
+    "split": []
    },
    "bvc_4prong": {
     "merged": [
@@ -398,21 +616,33 @@
     "split": []
    },
    "visible_content": {
-    "merged": [
+    "merged": [],
+    "split": [
      "X_YY_bbqq|X_YY_cqtauhv"
-    ],
-    "split": []
+    ]
    },
    "retained_topology": {
-    "merged": [
+    "merged": [],
+    "split": [
      "X_bb|X_YY_bbbb"
-    ],
-    "split": []
+    ]
    },
    "ee_vs_mm": {
     "merged": [],
     "split": [
      "X_ee|X_mm"
+    ]
+   },
+   "bc_vs_bq": {
+    "merged": [],
+    "split": [
+     "X_bc|X_bq"
+    ]
+   },
+   "bc_vs_cs": {
+    "merged": [],
+    "split": [
+     "X_bc|X_cs"
     ]
    },
    "bc_vs_rest": {
@@ -427,22 +657,22 @@
   },
   "RAND2_p4": {
    "bvc_resonant": {
-    "merged": [
-     "X_bb|X_cc"
-    ],
-    "split": []
-   },
-   "bvc_4prong": {
-    "merged": [
-     "X_YY_bbqq|X_YY_ccqq"
-    ],
-    "split": []
-   },
-   "visible_content": {
     "merged": [],
     "split": [
-     "X_YY_bbqq|X_YY_cqtauhv"
+     "X_bb|X_cc"
     ]
+   },
+   "bvc_4prong": {
+    "merged": [],
+    "split": [
+     "X_YY_bbqq|X_YY_ccqq"
+    ]
+   },
+   "visible_content": {
+    "merged": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ],
+    "split": []
    },
    "retained_topology": {
     "merged": [],
@@ -456,12 +686,23 @@
     ],
     "split": []
    },
-   "bc_vs_rest": {
-    "merged": [
-     "X_bc|X_bq",
-     "X_bc|X_cs"
-    ],
+   "bc_vs_bq": {
+    "merged": [],
     "split": [
+     "X_bc|X_bq"
+    ]
+   },
+   "bc_vs_cs": {
+    "merged": [],
+    "split": [
+     "X_bc|X_cs"
+    ]
+   },
+   "bc_vs_rest": {
+    "merged": [],
+    "split": [
+     "X_bc|X_bq",
+     "X_bc|X_cs",
      "X_bc|X_YY_qqb",
      "X_bc|QCD"
     ]
@@ -469,22 +710,22 @@
   },
   "RAND2_p5": {
    "bvc_resonant": {
-    "merged": [],
-    "split": [
-     "X_bb|X_cc"
-    ]
-   },
-   "bvc_4prong": {
     "merged": [
-     "X_YY_bbqq|X_YY_ccqq"
+     "X_bb|X_cc"
     ],
     "split": []
    },
-   "visible_content": {
+   "bvc_4prong": {
     "merged": [],
     "split": [
-     "X_YY_bbqq|X_YY_cqtauhv"
+     "X_YY_bbqq|X_YY_ccqq"
     ]
+   },
+   "visible_content": {
+    "merged": [
+     "X_YY_bbqq|X_YY_cqtauhv"
+    ],
+    "split": []
    },
    "retained_topology": {
     "merged": [],
@@ -497,6 +738,18 @@
     "split": [
      "X_ee|X_mm"
     ]
+   },
+   "bc_vs_bq": {
+    "merged": [
+     "X_bc|X_bq"
+    ],
+    "split": []
+   },
+   "bc_vs_cs": {
+    "merged": [
+     "X_bc|X_cs"
+    ],
+    "split": []
    },
    "bc_vs_rest": {
     "merged": [
@@ -539,6 +792,18 @@
    "X_ee|X_mm": {
     "level": "R63_Q1",
     "num_classes": 64
+   }
+  },
+  "bc_vs_bq": {
+   "X_bc|X_bq": {
+    "level": "R42_Q1",
+    "num_classes": 43
+   }
+  },
+  "bc_vs_cs": {
+   "X_bc|X_cs": {
+    "level": "R29_Q1",
+    "num_classes": 30
    }
   },
   "bc_vs_rest": {

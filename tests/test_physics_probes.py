@@ -83,6 +83,29 @@ def test_collapse_rungs_derived_at_all_eight_rungs(task):
         f"{spec['collapsed_at']}")
 
 
+def test_vcb_sub_pairs_are_single_pair_probes():
+    """PRESPEC A10 (2026-10-01): X->bc vs X->bq and X->bc vs X->cs are separate
+    readouts, each the matching sub-pair of bc_vs_rest with nothing else in the
+    background, unwindowed like bvc_resonant; bc_vs_rest is unchanged."""
+    bc = by_name["label_X_bc"]
+    for task, other in (("bc_vs_bq", "label_X_bq"), ("bc_vs_cs", "label_X_cs")):
+        spec = probe.TASKS[task]
+        assert spec["signal"] == [bc] and spec["background"] == [by_name[other]]
+        assert spec["names"] == ["label_X_bc", other]
+        assert "window" not in spec and "eps_s" not in spec
+        assert set(spec["background"]) < set(probe.TASKS["bc_vs_rest"]["background"])
+    assert probe.TASKS["bc_vs_rest"]["signal"] == [bc]
+    assert len(probe.TASKS["bc_vs_rest"]["background"]) == 3 + 27
+
+
+def test_vcb_sub_pairs_first_merge_at_43_and_30_classes():
+    """X_bc|X_bq first merges at R42_Q1 (43 classes), X_bc|X_cs at R29_Q1 (30)."""
+    k = {g: len({r[g] for r in rows.values()}) for g in RUNGS}
+    bq, cs = probe.TASKS["bc_vs_bq"]["collapsed_at"], probe.TASKS["bc_vs_cs"]["collapsed_at"]
+    assert bq == ["R42_Q1", "R29_Q1", "R16_Q1", "R3_VIS", "R1_Q1"] and k[bq[0]] == 43
+    assert cs == ["R29_Q1", "R16_Q1", "R3_VIS", "R1_Q1"] and k[cs[0]] == 30
+
+
 def test_ee_mm_merges_at_r63_not_r42():
     """The correction to docs/PRD_PLAN.md 3.1(b), pinned so it cannot regress."""
     ee, mm = by_name["label_X_ee"], by_name["label_X_mm"]
