@@ -385,3 +385,22 @@ def test_the_read_back_job_mounts_the_volume_read_only_and_writes_nothing():
 
 
 K8S_READ = B.K8S / "job-aoj-read-checks-v1-raunav.yaml"
+
+
+# ---- the injection test (2026-10-01) ----
+INJ_BINS = B.K8S / "job-aoj-injection-bins-v1-raunav.yaml"
+
+
+def test_the_injection_bins_job_merges_the_first_run_as_the_fit_did_and_carries_the_retry_policy():
+    spec = yaml.safe_load(SPECS[INJ_BINS])["spec"]
+    assert spec["backoffLimit"] == FT.ROBUST_BACKOFF and spec["podFailurePolicy"]["rules"][0]["onExitCodes"][
+        "values"] == [FT.EXIT_HALT]
+    s = _script(SPECS[INJ_BINS])
+    assert f"{B.OUT_ROOT}/shard${{i}}/DONE" in s and f"seq 0 {B.N_SHARDS - 1}" in s
+    merge = "python3 experiments/AOJ/merge_shards.py --shards ${SHARDS} --out /scratch/merged"
+    assert merge in s and s.index(merge) < s.index("injection_test.py bins")
+    assert f'--branch "{B.INJECTION_PIN}"' in s and f"--committed {B.COMMITTED_BINS}" in s
+    assert (REPO / B.COMMITTED_BINS).exists()
+    assert s.index("export OMP_NUM_THREADS=1") < s.index("injection_test.py bins")
+    assert s.index("pip install --no-cache-dir -q pyarrow") < s.index("injection_test.py bins")
+    assert f"OUT={B.INJECTION_ROOT}" in s and "BEGIN-TAR" in s and "END-TAR" in s
