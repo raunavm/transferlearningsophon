@@ -12,6 +12,7 @@ completes, produces numbers, and the numbers are wrong.
 """
 from __future__ import annotations
 
+import json
 import pathlib
 import re
 import sys
@@ -172,14 +173,91 @@ def _job_specs() -> list[pathlib.Path]:
     return sorted((ROOT / "experiments").rglob("k8s/job-*.yaml"))
 
 
-def test_gpu_model_node_selector_documented():
-    doc = ROOT / "experiments" / "E1" / "k8s" / "NODE_SELECTOR.md"
-    assert doc.exists(), (
-        "cross-GPU runs are statistically but not bit-identical, so both arms "
-        "of a seed pair must be pinned to one GPU model; NODE_SELECTOR.md "
-        "must document how")
-    text = doc.read_text()
-    assert "nvidia.com/gpu.product" in text
+GPU_KEY = "nvidia.com/gpu.product"
+
+
+def _gpu_products(text: str) -> set[str] | None:
+    """The GPU products a spec's pod can be scheduled on; None if any product can."""
+    import yaml
+    pod = yaml.safe_load(text)["spec"]["template"]["spec"]
+    terms = (((pod.get("affinity") or {}).get("nodeAffinity") or {})
+             .get("requiredDuringSchedulingIgnoredDuringExecution") or {}
+             ).get("nodeSelectorTerms") or []
+    per_term = [{v for e in t.get("matchExpressions") or []
+                 if e["key"] == GPU_KEY and e["operator"] == "In" for v in e["values"]}
+                for t in terms]
+    # Terms are ORed, so one term without a product constraint admits any GPU.
+    allowed = set().union(*per_term) if per_term and all(per_term) else None
+    selected = (pod.get("nodeSelector") or {}).get(GPU_KEY)
+    if selected:
+        allowed = {selected} if allowed is None else allowed & {selected}
+    return allowed
+
+
+def _one_product_per_seed(specs: dict[str, tuple[int, str]]) -> list[str]:
+    """{spec name: (seed, text)} -> violations: a spec not pinned to exactly one
+    product, or a seed whose specs pin different products."""
+    bad, by_seed = [], {}
+    for name, (seed, text) in sorted(specs.items()):
+        products = _gpu_products(text)
+        if not products or len(products) != 1:
+            bad.append(f"{name}: pins {sorted(products) if products else 'no product'}")
+            continue
+        by_seed.setdefault(seed, {}).setdefault(products.pop(), []).append(name)
+    for seed, groups in sorted(by_seed.items()):
+        if len(groups) > 1:
+            bad.append(f"seed {seed} mixes products: {groups}")
+    return bad
+
+
+def test_every_arm_of_a_v2_run_index_pins_one_gpu_product():
+    """Invariant I7b on the v2 pretraining grid.
+
+    Run k of every arm draws master seed k, so the arms at one run index are a
+    seed pair, and cross-GPU runs are statistically but not bit-identical
+    (seed_weaver.py), so a pair split across products silently loses its
+    pairing. The product may differ BETWEEN run indices (PI 2026-10-01: indices
+    4-5 may move to L40 if its numerics check passes), never within one.
+    """
+    grid = sorted((ROOT / "experiments" / "MTX" / "k8s" / "v2" / "grid").glob("*.yaml"))
+    assert grid, "the v2 grid specs are missing"
+    specs = {}
+    for p in grid:
+        text = p.read_text()
+        m = re.search(r"^\s*SEED=(\d+)\s*$", text, re.M)
+        assert m, f"{p.name}: no SEED= line, so its run index is unknown"
+        specs[p.name] = (int(m.group(1)), text)
+    bad = _one_product_per_seed(specs)
+    assert not bad, "v2 seed pairs not on one GPU product:\n  " + "\n  ".join(bad)
+
+
+def test_v1_seed_pairs_share_one_gpu_product():
+    """I7b on the v1 pretraining runs, both as pinned and as run.
+
+    The specs of seed k (job-mtx-<arm>-s<k>[b]-raunav.yaml) must pin one product,
+    and where the repository records the product a run actually landed on (each
+    attempt's manifest, collected in s8_val_by_epoch/val_by_epoch.json), all runs
+    of seed k must have landed on one product.
+    """
+    specs = {}
+    for p in (ROOT / "experiments" / "MTX" / "k8s").glob("job-mtx-*.yaml"):
+        m = re.fullmatch(r"job-mtx-.+-s(\d+)b?-raunav\.yaml", p.name)
+        if m:
+            specs[p.name] = (int(m.group(1)), p.read_text())
+    assert specs, "no v1 pretraining specs found"
+    bad = _one_product_per_seed(specs)
+
+    record = ROOT / "experiments" / "FIGS" / "data" / "s8_val_by_epoch" / "val_by_epoch.json"
+    ran = {}
+    for run, entry in json.loads(record.read_text()).items():
+        m = re.fullmatch(r"mtx-.+-s(\d+)b?", run)
+        assert m, f"unexpected run id {run} in {record.name}"
+        for gpu in entry["gpu"]:
+            ran.setdefault(int(m.group(1)), {}).setdefault(gpu, []).append(run)
+    bad += [f"seed {s} ran on several products: {g}" for s, g in sorted(ran.items())
+            if len(g) > 1]
+    assert ran, f"{record.name} records no GPU product"
+    assert not bad, "v1 seed pairs not on one GPU product:\n  " + "\n  ".join(bad)
 
 
 # ----------------------------------------------- 4/5. data-config preconditions

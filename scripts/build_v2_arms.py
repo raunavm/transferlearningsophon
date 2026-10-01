@@ -72,6 +72,7 @@ import collections
 import csv
 import hashlib
 import importlib.util
+import io
 import itertools
 import json
 import pathlib
@@ -79,6 +80,7 @@ import random
 import re
 import statistics
 import sys
+import tempfile
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "scripts"))
@@ -276,9 +278,12 @@ def _pool_draw(seed: int):
     return seed, merge_vector(assign, names_of(rows))
 
 
-def select_rand(workers: int) -> dict:
+def select_rand(workers: int) -> tuple[dict, str]:
     """Draw the pool block by block until the rule is feasible, sample the five,
-    write the selection record and regenerate rand_label_map.v2.csv."""
+    and return the selection record and the text of the regenerated
+    rand_label_map.v2.csv. The map is drawn into a temporary directory; nothing
+    in the repository is written here (main promotes both once every check
+    has passed)."""
     import multiprocessing
     vectors = {}
     for block in POOL_BLOCKS:
@@ -311,10 +316,12 @@ def select_rand(workers: int) -> dict:
         "accepted_merged_count": {k: sum(vectors[s][i] for s in accepted)
                                   for i, k in enumerate(BALANCE_PAIRS)},
     }
-    RAND_SEL.write_text(json.dumps(record, indent=1) + "\n")
-    brc.main(["--pool", "resonant", "--prefix", RAND_V2_PREFIX, "--seeds",
-              *map(str, accepted), "--out", str(RAND_V2)])
-    return record
+    with tempfile.TemporaryDirectory() as d:
+        tmp = pathlib.Path(d) / RAND_V2.name
+        brc.main(["--pool", "resonant", "--prefix", RAND_V2_PREFIX, "--seeds",
+                  *map(str, accepted), "--out", str(tmp)])
+        with tmp.open(newline="") as f:      # keep the csv module's \r\n
+            return record, f.read()
 
 
 def rand_v2_seeds() -> list[int]:
@@ -471,23 +478,26 @@ def group_names(m: dict[int, int], tag: str) -> dict[int, str]:
     return {g: "QCD_ALL" if n >= QCD_LO else f"{tag}_{g:02d}" for n, g in m.items()}
 
 
-def write_flavour_csv(rows, f0, f1):
+def flavour_csv(rows, f0, f1) -> str:
+    """The text of flavour_pair_map.v2.csv (csv module line ends, \\r\\n)."""
     names = names_of(rows)
-    with FLAV_CSV.open("w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["jet_label", "class_name", "orbit", "FLAV_F0", "FLAV_F0_name",
-                    "FLAV_F1", "FLAV_F1_name"])
-        for n in sorted(names):
-            orb = orbit_key(names[n]) if n < QCD_LO else "QCD"
-            row = [n, names[n], orb]
-            for m, tag in ((f0, "F0"), (f1, "F1")):
-                row += [m[n], group_names(m, tag)[m[n]]]
-            w.writerow(row)
+    f = io.StringIO(newline="")
+    w = csv.writer(f)
+    w.writerow(["jet_label", "class_name", "orbit", "FLAV_F0", "FLAV_F0_name",
+                "FLAV_F1", "FLAV_F1_name"])
+    for n in sorted(names):
+        orb = orbit_key(names[n]) if n < QCD_LO else "QCD"
+        row = [n, names[n], orb]
+        for m, tag in ((f0, "F0"), (f1, "F1")):
+            row += [m[n], group_names(m, tag)[m[n]]]
+        w.writerow(row)
+    return f.getvalue()
 
 
-def read_two_col_map(path, col):
-    with path.open() as f:
-        r = list(csv.DictReader(f))
+def read_two_col_map(path, col, text: str | None = None):
+    """(map, group names) of column `col`; `text`, if given, stands in for the
+    file's content (a map built in memory and not yet written)."""
+    r = list(csv.DictReader((path.read_text() if text is None else text).splitlines()))
     return ({int(x["jet_label"]): int(x[col]) for x in r},
             {int(x[col]): x[f"{col}_name"] for x in r})
 
@@ -604,7 +614,7 @@ def arm_text(base, path, mapping, names, source, mass=False, extra_label_lines=(
     return text
 
 
-def build_configs(base, rows, f0, f1, lam) -> dict[pathlib.Path, str]:
+def build_configs(base, rows, f0, f1, lam, rand_text=None) -> dict[pathlib.Path, str]:
     tree_src = "configs/labelmaps/rung_label_maps.v1.csv"
     tree_names = lambda lvl: {int(r[lvl]): r[f"{lvl}_name"] for r in rows}  # noqa: E731
     out = {}
@@ -613,7 +623,7 @@ def build_configs(base, rows, f0, f1, lam) -> dict[pathlib.Path, str]:
         out[p] = arm_text(base, p, column(rows, lvl), tree_names(lvl), tree_src)
     for d in range(1, N_PARTITIONS + 1):
         p = V2 / f"{RAND_V2_PREFIX}{d}.yaml"
-        m, nm = read_two_col_map(RAND_V2, p.stem)
+        m, nm = read_two_col_map(RAND_V2, p.stem, rand_text)
         out[p] = arm_text(base, p, m, nm, "configs/labelmaps/rand_label_map.v2.csv")
     for arm, m in (("FLAV_F0", f0), ("FLAV_F1", f1)):
         p = V2 / f"{arm}.yaml"
@@ -686,8 +696,9 @@ print(json.dumps(out, indent=1))
 
 
 # -------------------------------------------------------------- registry
-def registry(rows, lam, lofo_expr) -> dict:
+def registry(rows, lam, lofo_expr, rand_seeds=None) -> dict:
     k = {lvl: len(set(column(rows, lvl).values())) for lvl in TREE}
+    rand_seeds = rand_v2_seeds() if rand_seeds is None else rand_seeds
     arms = []
 
     def add(name, config, num_classes, runs, tier, mass_lambda=None, **extra):
@@ -701,7 +712,7 @@ def registry(rows, lam, lofo_expr) -> dict:
         objective="classification+mass")
     add("R16_Q1_MASS", "configs/arms/R16_Q1_MASS.yaml", k[TARGET], 5, 1, LAMBDA_V1,
         objective="classification+mass")
-    for d, seed in enumerate(rand_v2_seeds(), start=1):
+    for d, seed in enumerate(rand_seeds, start=1):
         add(f"{RAND_V2_PREFIX}{d}", f"configs/arms/v2/{RAND_V2_PREFIX}{d}.yaml",
             k[TARGET], 2, 1, objective="classification", partition_seed=seed)
     for arm in ("FLAV_F0", "FLAV_F1"):
@@ -729,45 +740,42 @@ def registry(rows, lam, lofo_expr) -> dict:
 
 
 # ------------------------------------------------------------------ main
-def main(argv=None) -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--check-only", action="store_true")
-    ap.add_argument("--mass-logs", type=pathlib.Path,
-                    help="directory of <run>.txt log dumps; rewrites mass_lambda.v2.json")
-    ap.add_argument("--lofo-pod-script", action="store_true")
-    ap.add_argument("--pairs-out", type=pathlib.Path,
-                    help="also write the probe-pair table here")
-    ap.add_argument("--select-rand", type=int, metavar="WORKERS",
-                    help="redraw the pool and select the five random partitions "
-                         "(rewrites rand_v2_selection.json and rand_label_map.v2.csv)")
-    a = ap.parse_args(argv)
-    if a.select_rand:
-        select_rand(a.select_rand)
+def build_outputs(select_workers=None, mass_logs=None) -> tuple[dict, int]:
+    """Every output as {path: full text}, and the number of failed checks.
+
+    Everything is built and checked in memory and nothing is written here, so a
+    failed check leaves the tree exactly as it was; main writes the outputs
+    together, and only when this returns no failure. With `select_workers` the
+    five random partitions are reselected (select_rand) and their selection
+    record and label map join the outputs; otherwise the committed ones are
+    read and checked like everything else.
+    """
+    out = {}
+    rand_text = None
+    if select_workers:
+        record, rand_text = select_rand(select_workers)
+        out[RAND_SEL] = json.dumps(record, indent=1) + "\n"
+        out[RAND_V2] = rand_text
+    sel = json.loads(out.get(RAND_SEL) or RAND_SEL.read_text())
 
     rows = read_map()
-    if a.lofo_pod_script:
-        print(lofo_pod_script(rows))
-        return 0
     units = brc.exact_share_units()
     base = BASE.read_text()
     base_sha = bac.weights_sha256(base)
 
-    if a.mass_logs:
-        runs = extract_mass_logs(a.mass_logs)
+    if mass_logs:
+        runs = extract_mass_logs(mass_logs)
     else:
         runs = json.loads(MASS_JSON.read_text())["runs"]
     lam = mass_lambda(runs)
 
     f0, f1, frec = build_flavour_pair(rows, units)
-    if not a.check_only:
-        write_flavour_csv(rows, f0, f1)
     maps = {"FLAV_F0": f0, "FLAV_F1": f1}
     for d in range(1, N_PARTITIONS + 1):
         arm = f"{RAND_V2_PREFIX}{d}"
-        maps[arm] = read_two_col_map(RAND_V2, arm)[0]
+        maps[arm] = read_two_col_map(RAND_V2, arm, rand_text)[0]
     for lvl in ("R63_Q1", "R29_Q1"):
         maps[lvl] = column(rows, lvl)
-    sel = json.loads(RAND_SEL.read_text())
     got = [list(merge_vector(maps[f"{RAND_V2_PREFIX}{d}"], names_of(rows)))
            for d in range(1, N_PARTITIONS + 1)]
     want = [sel["merge_vectors"][str(s)] for s in sel["accepted_seeds"]]
@@ -778,7 +786,7 @@ def main(argv=None) -> int:
         failed = 0
     maps["R16_Q1_MASS_LM"] = column(rows, TARGET)
 
-    configs = build_configs(base, rows, f0, f1, lam["lambda_m"])
+    configs = build_configs(base, rows, f0, f1, lam["lambda_m"], rand_text)
     for path, text in configs.items():
         fails = check_config(text, maps[path.stem], base_sha)
         print(f"  [{'FAIL' if fails else 'PASS'}] {path.relative_to(REPO)} "
@@ -796,7 +804,7 @@ def main(argv=None) -> int:
                                  "sub_pairs": [p[0] for p in sub_pairs(tasks[t], names)]}
                              for t in tasks},
              "partition_seeds": {**{f"{RAND_V2_PREFIX}{d}": s for d, s in
-                                    enumerate(rand_v2_seeds(), start=1)},
+                                    enumerate(sel["accepted_seeds"], start=1)},
                                  "FLAV_F0": FLAV_SEED, "FLAV_F1": FLAV_SEED},
              "status": status,
              "tree_first_merge": first_merge_level(rows, tasks, names)}
@@ -807,30 +815,55 @@ def main(argv=None) -> int:
     if {n for n, v in got.items() if v == 0} != fam:
         print("  [FAIL] LOFO extra_selection does not remove exactly the family")
         failed += 1
-    grid = registry(rows, lam["lambda_m"], lofo_expr)
+    grid = registry(rows, lam["lambda_m"], lofo_expr, sel["accepted_seeds"])
 
     print(f"  lambda_m = {lam['lambda_m']}  "
           f"(pooled, unrounded {lam['variants']['mean_over_epochs_0_79']['lambda_pooled']:.4f})")
     print(f"  F0/F1: trial {frec['trial']}, {frec['native_pairs_shared_with_17_class']} "
           f"native pairs shared with the 17-class groups; share mismatch "
           f"{frec['max_abs_share_mismatch_units']}")
+
+    out.update(configs)
+    out[MASS_JSON] = json.dumps({**lam, "runs": runs}, indent=1) + "\n"
+    out[FLAV_JSON] = json.dumps(frec, indent=1) + "\n"
+    out[FLAV_CSV] = flavour_csv(rows, f0, f1)
+    out[PAIRS] = json.dumps(pairs, indent=1) + "\n"
+    out[GRID] = json.dumps(grid, indent=1) + "\n"
+    return out, failed
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--check-only", action="store_true")
+    ap.add_argument("--mass-logs", type=pathlib.Path,
+                    help="directory of <run>.txt log dumps; rewrites mass_lambda.v2.json")
+    ap.add_argument("--lofo-pod-script", action="store_true")
+    ap.add_argument("--pairs-out", type=pathlib.Path,
+                    help="also write the probe-pair table here")
+    ap.add_argument("--select-rand", type=int, metavar="WORKERS",
+                    help="redraw the pool and select the five random partitions "
+                         "(rewrites rand_v2_selection.json and rand_label_map.v2.csv "
+                         "with everything else, once every check has passed)")
+    a = ap.parse_args(argv)
+    if a.lofo_pod_script:
+        print(lofo_pod_script(read_map()))
+        return 0
+
+    outputs, failed = build_outputs(a.select_rand, a.mass_logs)
     if failed:
         print(f"\nBUILD FAILED - {failed} check(s), nothing written")
         return 1
     if a.check_only:
         return 0
 
-    V2.mkdir(parents=True, exist_ok=True)
-    for path, text in configs.items():
-        path.write_text(text)
-    MASS_JSON.write_text(json.dumps({**lam, "runs": runs}, indent=1) + "\n")
-    FLAV_JSON.write_text(json.dumps(frec, indent=1) + "\n")
-    PAIRS.write_text(json.dumps(pairs, indent=1) + "\n")
     if a.pairs_out:
-        a.pairs_out.write_text(json.dumps(pairs, indent=1) + "\n")
-    GRID.write_text(json.dumps(grid, indent=1) + "\n")
-    print(f"wrote {len(configs)} configs, {GRID.relative_to(REPO)}, "
-          f"{PAIRS.relative_to(REPO)}, {FLAV_CSV.relative_to(REPO)}")
+        outputs[a.pairs_out] = outputs[PAIRS]
+    V2.mkdir(parents=True, exist_ok=True)
+    for path, text in outputs.items():
+        path.write_text(text, newline="")   # newline="": the csv files keep \r\n
+    print(f"wrote {len(outputs)} files: "
+          + ", ".join(str(p.relative_to(REPO)) if p.is_relative_to(REPO) else str(p)
+                      for p in outputs))
     return 0
 
 

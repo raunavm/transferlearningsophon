@@ -18,6 +18,7 @@ import csv
 import hashlib
 import importlib.util
 import json
+import os
 import pathlib
 import re
 import sys
@@ -187,6 +188,96 @@ def test_committed_outputs_are_the_builders_own(tmp_path):
         assert path.read_text() == text, path.name
     assert (f0, f1) == (EXPECTED_MAP["FLAV_F0"], EXPECTED_MAP["FLAV_F1"])
     assert v2.registry(ROWS, lam, v2.lofo_extra_selection(ROWS)) == GRID
+
+
+def test_a_rebuild_reproduces_every_committed_output_byte_for_byte():
+    """Every file the builder writes, built in memory, equals the committed bytes
+    (the label-map csv keeps the csv module's \\r\\n)."""
+    outputs, failed = v2.build_outputs()
+    assert failed == 0
+    assert set(outputs) == set(NEW_CONFIGS) | {v2.MASS_JSON, v2.FLAV_JSON, v2.FLAV_CSV,
+                                               v2.PAIRS, v2.GRID}
+    for path, text in outputs.items():
+        assert path.read_bytes() == text.encode(), path.name
+
+
+def _committed_selection():
+    with v2.RAND_V2.open(newline="") as f:
+        return json.loads(v2.RAND_SEL.read_text()), f.read()
+
+
+@pytest.mark.parametrize("select", [False, True])
+def test_a_failed_check_writes_nothing(monkeypatch, select):
+    """A failing rebuild used to leave a rewritten flavour map (and, with
+    --select-rand, a new selection record and label map) while it reported
+    'nothing written'. Now nothing is written unless every check passes, and
+    then everything is written together."""
+    writes = []
+    real_open = pathlib.Path.open
+
+    def guarded_open(p, mode="r", *a, **k):
+        if set(mode) & set("wax+"):
+            writes.append(p)
+            return open(os.devnull, mode, *a, **k)
+        return real_open(p, mode, *a, **k)
+
+    monkeypatch.setattr(pathlib.Path, "write_text", lambda p, *a, **k: writes.append(p))
+    monkeypatch.setattr(pathlib.Path, "write_bytes", lambda p, *a, **k: writes.append(p))
+    monkeypatch.setattr(pathlib.Path, "open", guarded_open)
+    monkeypatch.setattr(v2, "select_rand", lambda workers: _committed_selection())
+    argv = ["--select-rand", "2"] if select else []
+    check = v2.check_config
+    monkeypatch.setattr(v2, "check_config", lambda *a: ["forced failure"])
+    assert v2.main(argv) == 1
+    assert writes == []
+
+    monkeypatch.setattr(v2, "check_config", check)
+    assert v2.main(argv + ["--check-only"]) == 0
+    assert writes == []
+    assert v2.main(argv) == 0
+    expected = set(NEW_CONFIGS) | {v2.MASS_JSON, v2.FLAV_JSON, v2.FLAV_CSV, v2.PAIRS, v2.GRID}
+    assert set(writes) == expected | ({v2.RAND_SEL, v2.RAND_V2} if select else set())
+
+
+def test_select_rand_draws_into_a_temporary_file_and_replays_the_record(monkeypatch):
+    """select_rand writes nothing in the repository: the map is drawn into a
+    temporary directory and returned as text. Fed the recorded pool, it returns
+    the committed selection record. The pool draws (about 30 s each) and the map
+    writer are stood in for; both are covered by the reproducibility tests above."""
+    import multiprocessing
+    vectors = {int(k): tuple(x) for k, x in SEL["merge_vectors"].items()}
+
+    class Pool:
+        def __init__(self, n):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def imap_unordered(self, fn, block):
+            return [(s, vectors[s]) for s in block]
+
+    drawn_to = []
+
+    def map_writer(argv):
+        out = pathlib.Path(argv[argv.index("--out") + 1])
+        assert argv[argv.index("--seeds") + 1:argv.index("--out")] == \
+            [str(s) for s in SEL["accepted_seeds"]]
+        drawn_to.append(out)
+        out.write_bytes(v2.RAND_V2.read_bytes())
+        return 0
+
+    before = {p: p.read_bytes() for p in (v2.RAND_SEL, v2.RAND_V2)}
+    monkeypatch.setattr(multiprocessing, "Pool", Pool)
+    monkeypatch.setattr(v2.brc, "main", map_writer)
+    record, text = v2.select_rand(2)
+    assert {p: p.read_bytes() for p in before} == before
+    assert drawn_to and not drawn_to[0].is_relative_to(ROOT) and not drawn_to[0].exists()
+    assert text.encode() == before[v2.RAND_V2]
+    assert json.loads(json.dumps(record)) == SEL
 
 
 # -------------------------------------------------- random partitions v2
