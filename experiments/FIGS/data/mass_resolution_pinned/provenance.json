@@ -1,0 +1,25 @@
+{
+ "job": "v1err-batch-b2-raunav (tag mtx-s1.84, commit 2199517): experiments/EVAL/mass_resolution.py --save-residuals, the five seeds' six models each, MLP at latent_scale_probe.MLP_THREADS = 4 (recorded per arm in arms.<arm>.mlp.fit.torch_threads)",
+ "why": "batch B (v1err-batch-b, mtx-s1.66, unpinned) did not reproduce the committed massres-s1..s5 MLP sigma_eff (up to 0.0021 in one run; every ridge value to 6e-6): the MLP's CPU matmul reduction order followed the pod's thread count",
+ "fetched_sha256": {
+  "experiments/FIGS/data/mass_resolution_pinned/s1/mass_resolution.json": "88d9c2f4777e9523a4c936086f2971e8bb326ed277977758df6471a598e6dd2b",
+  "experiments/FIGS/data/mass_resolution_pinned/s2/mass_resolution.json": "101458522bc9e58e1703619d43af5817a631a5cb56333612e8d41e05b2f7ef87",
+  "experiments/FIGS/data/mass_resolution_pinned/s3/mass_resolution.json": "97808e68296428df9447db1ffff135b22a94dcd6b84b6fd30d2ea2365b37ad00",
+  "experiments/FIGS/data/mass_resolution_pinned/s4/mass_resolution.json": "9d871c45bfc28a051c978c6ad109b6eb64bf687304dcff903be27c2cc7edc42f",
+  "experiments/FIGS/data/mass_resolution_pinned/s5/mass_resolution.json": "f269e2ab40ff4efdd065b7c80443c5bc14dfee1233e1c2afbcd6935ba73dc9cf"
+ },
+ "residuals_on_data_sha256": {
+  "/data/results/eval/v1err/mass_resolution_pinned/s1/residuals.npz": "117671490415b6e53593d0bcd8dbaf1cd947f8e8eb0c16e0169033ae1ec71dd8",
+  "/data/results/eval/v1err/mass_resolution_pinned/s2/residuals.npz": "6fc4f3d83da418d4f30345d0d3087d0adbdf7c7fabc1e62a1309daa21c467074",
+  "/data/results/eval/v1err/mass_resolution_pinned/s3/residuals.npz": "5f017b96e541d62a9694b654560425b09a713a2f306bbd4c0a4ec51975d2bd29",
+  "/data/results/eval/v1err/mass_resolution_pinned/s4/residuals.npz": "9a5ad6dd0a2d1fa714abc0913af7fd062ea9ed04674d03cf2b94b0ccaed36108",
+  "/data/results/eval/v1err/mass_resolution_pinned/s5/residuals.npz": "a6c7c38fba2496208903f8ee470e400352e299b388ad2c74518d996f0c73a392"
+ },
+ "comparison": {
+  "ridge_vs_batch_b_max_abs": 0.0,
+  "ridge_vs_committed_max_abs": 6.45e-06,
+  "mlp_vs_batch_b_max_abs": 0.00177,
+  "mlp_vs_committed_max_abs": 0.00129
+ },
+ "fetch": "read-only exec into eval-reader-raunav (scratchpad fetch.sh), sha256 checked against the pod; the 37 MB residual files stay on /data"
+}
