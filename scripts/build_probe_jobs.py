@@ -50,6 +50,13 @@ LADDER = [("mtx-l188", "L188"), ("mtx-l162", "L162"),
           ("mtx-r42q1", "R42_Q1"), ("mtx-r16q1", "R16_Q1")]
 TASKS = ["bvc_resonant", "retained_topology", "bvc_qcd", "ee_vs_mm",
          "bvc_4prong", "visible_content"]
+# THE v2 PROBE TASKS: every task of probe.TASKS, on the v2 caches, which keep every
+# task's rows (extract_v2.probe_feature_rules): the v1 ladder's six, the |V_cb|
+# probe inside its window, and the two single-pair b-vs-c tasks (X->bc vs X->bq,
+# X->bc vs X->cs, no window; probe.py, 2026-10-01). No v2 probe spec is emitted
+# before the v2 caches exist; tests/test_probe_jobs.py keeps this list equal to
+# probe.TASKS and covered by the extraction.
+V2_TASKS = TASKS + ["bc_vs_rest", "bc_vs_bq", "bc_vs_cs"]
 
 # THE SEMANTICS-MATCHED RANDOM-LABEL CONTROL (prediction C4). This is the answer
 # to the objection that the whole study is a tautology -- that we merged two

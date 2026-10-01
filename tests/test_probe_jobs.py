@@ -460,3 +460,28 @@ def test_batch_a2_runs_the_bootstrap_resumably_beside_the_probe_reruns():
     probe_calls = lambda s: sorted(l for l in s.splitlines() if l.strip().startswith('run_probe "'))
     assert probe_calls(a2) == probe_calls(a) and len(probe_calls(a2)) == len(bp.BATCH_A_PROBES)
     assert (bp.K8S / "job-v1err-batch-a2-raunav.yaml").read_text() == a2
+
+
+def test_the_v2_probe_tasks_are_every_probe_task_and_the_v2_extraction_keeps_their_rows():
+    """The v2 caches must hold every row a v2 probe task reads: an unwindowed task's
+    classes over the whole split (the single-pair b-vs-c tasks among them), a
+    windowed task's inside its window or everywhere."""
+    import importlib.util
+    def load(name, rel):
+        spec = importlib.util.spec_from_file_location(name, ROOT / rel)
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        return m
+    probe = load("probe", "experiments/EVAL/probe.py")
+    xv = load("extract_v2", "experiments/EVAL/extract_v2.py")
+    assert {"bc_vs_bq", "bc_vs_cs"} <= set(bp.V2_TASKS) and len(set(bp.V2_TASKS)) == len(bp.V2_TASKS)
+    assert set(bp.V2_TASKS) == set(probe.TASKS)
+    anywhere, windowed = xv.probe_feature_rules()
+    for task in bp.V2_TASKS:
+        spec = probe.TASKS[task]
+        cls = set(spec["signal"]) | set(spec["background"])
+        if not spec.get("window"):
+            assert cls <= set(anywhere), task
+        else:
+            inside = {x for cl, w in windowed if w == dict(spec["window"]) for x in cl}
+            assert cls <= set(anywhere) | inside, task
