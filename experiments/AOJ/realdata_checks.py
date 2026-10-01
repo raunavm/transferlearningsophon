@@ -367,8 +367,13 @@ def _blas_threads(_=None) -> dict:
     return {k: os.environ.get(k) for k in BLAS_THREAD_VARS}
 
 
-def spread(values) -> dict:
+def spread(values) -> dict | None:
+    """Median, mean, SD (n - 1), min and max of the values that are not None; None if none
+    is (a fixed-shape fit has no profile-error sides, so no asymmetric pull: checks_v2's
+    first launch against fit_v6 died on that, 2026-10-01)."""
     v = np.asarray([x for x in values if x is not None], float)
+    if not len(v):
+        return None
     return dict(n=int(len(v)), median=float(np.median(v)), mean=float(v.mean()),
                 sd=float(v.std(ddof=1)) if len(v) > 1 else None, min=float(v.min()), max=float(v.max()))
 

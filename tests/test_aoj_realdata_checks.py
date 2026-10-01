@@ -388,3 +388,17 @@ def test_the_checks_fit_the_way_the_main_fit_does_floating_or_at_its_pooled_shap
         seen.clear()
         RC._injection_one("m")
         assert True in seen if floats else not any(seen), (floats, seen)
+
+
+def test_a_spread_of_nothing_is_none_and_the_injection_summary_survives_fixed_shape_toys(monkeypatch):
+    assert RC.spread([None, None]) is None and RC.spread([1.0, None, 3.0])["mean"] == 2.0
+    monkeypatch.setattr(RC, "_parallel", lambda fn, items, workers: [
+        ("l188-s1", dict(shape_change_pseudo_window=dict(delta=0.0, err=1.0), spurious=dict(z=0.1, at_procedure_order=5.0),
+                   injected=dict(signal_yield=250.0, recovered=1.0, recovered_without_subtracting_spurious=1.02,
+                                 pull=0.0),
+                   leak_scan={f"{e:g}": dict(recovered_pass_only=0.9, recovered_with_tops=1.0, expected_pass_only=0.9)
+                              for e in RC.LEAK_EFFS}))] if fn is RC._injection_one else
+        [("l188-s1", [dict(toy=k, recovered=1.0 + 0.01 * k, pull=0.1 * k, pull_asym=None)]) for k in range(len(items))])
+    out = RC.step_injection(dict(scores={"l188-s1": {}}), dict(models={"l188-s1": {"top": {}}}), 1, n_toys=20)
+    assert out["models"]["l188-s1"]["toys"]["pull_asym"] is None and out["models"]["l188-s1"]["toys"]["n"] == 2
+    assert out["summary"]["toys"]["pull_asym"] is None and out["summary"]["toys"]["recovered"]["n"] == 2

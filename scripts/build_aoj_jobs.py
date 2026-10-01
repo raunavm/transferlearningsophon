@@ -1395,8 +1395,10 @@ def render_fit_v6() -> str:
 # measured, the closure as a fraction with its error, the reference's validation as a count.
 CHECKS2_ROOT = "/data/results/aoj/checks_v2"
 # first launched at mtx-s1.89 against fit_v5 (floated shapes); stopped after 25 min when the
-# pooled-shape fit (fit_v6) passed its toys, and re-created against fit_v6 at mtx-s1.93
-CHECKS2_PIN = "mtx-s1.93"
+# pooled-shape fit (fit_v6) passed its toys, and re-created against fit_v6 at mtx-s1.93; that
+# one died in the injection step's summary (no asymmetric pulls at a fixed shape, an empty
+# spread), and the job was re-created at mtx-s1.94
+CHECKS2_PIN = "mtx-s1.94"
 CHECKS2_NEEDED_FLAGS = {"experiments/AOJ/realdata_checks.py": "def _floats",
                         "experiments/FIGS/data/aoj_full_v1/fit_v6/results.json": "pooled_shape"}
 MAIN_FIT2 = "experiments/FIGS/data/aoj_full_v1/fit_v6/results.json"
