@@ -1,0 +1,41 @@
+epoch 0: qcd share 0.14474 over 10240000 jets, 195 fetches, 84.3 s
+epoch 1: qcd share 0.14427 over 10240000 jets, 196 fetches, 85.3 s
+epoch 2: qcd share 0.14409 over 10240000 jets, 195 fetches, 83.0 s
+epoch 3: qcd share 0.14424 over 10240000 jets, 195 fetches, 84.3 s
+epoch 4: qcd share 0.14397 over 10240000 jets, 195 fetches, 82.7 s
+epoch 5: qcd share 0.14489 over 10240000 jets, 195 fetches, 82.9 s
+epoch 6: qcd share 0.14365 over 10240000 jets, 195 fetches, 82.2 s
+epoch 7: qcd share 0.14510 over 10240000 jets, 195 fetches, 82.0 s
+epoch 8: qcd share 0.14501 over 10240000 jets, 195 fetches, 81.8 s
+epoch 9: qcd share 0.14462 over 10240000 jets, 195 fetches, 80.3 s
+epoch 10: qcd share 0.14468 over 10240000 jets, 195 fetches, 79.4 s
+epoch 11: qcd share 0.14457 over 10240000 jets, 195 fetches, 80.5 s
+epoch 12: qcd share 0.14482 over 10240000 jets, 195 fetches, 79.0 s
+epoch 13: qcd share 0.14427 over 10240000 jets, 195 fetches, 76.7 s
+epoch 14: qcd share 0.14497 over 10240000 jets, 195 fetches, 76.6 s
+epoch 15: qcd share 0.14459 over 10240000 jets, 195 fetches, 77.4 s
+epoch 16: qcd share 0.14430 over 10240000 jets, 195 fetches, 78.7 s
+epoch 17: qcd share 0.14497 over 10240000 jets, 195 fetches, 77.9 s
+epoch 18: qcd share 0.14500 over 10240000 jets, 195 fetches, 82.3 s
+epoch 19: qcd share 0.14405 over 10240000 jets, 195 fetches, 78.0 s
+{
+ "epochs": 20,
+ "jets_per_epoch": 10240000,
+ "mean_qcd_share": 0.1445400927734375,
+ "sd_qcd_share": 0.00041156229578718904,
+ "binomial_sd": 0.00010988641790187283,
+ "min": 0.1436529296875,
+ "max": 0.14509697265625,
+ "per_fetch": {
+  "n_fetches_with_10k_jets": 3900,
+  "median_jets": 52794.5,
+  "sd_share": 0.005583270265530364,
+  "binomial_sd_at_median": 0.0015303813134139946,
+  "min": 0.12513297872340426,
+  "max": 0.16563452466463474
+ },
+ "v1_epoch_range_for_reference": [
+  0.08,
+  0.175
+ ]
+}

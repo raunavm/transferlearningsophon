@@ -1,0 +1,22 @@
+epoch 0: qcd share 0.14474 over 10240000 jets, 195 fetches, 2171.4 s
+{
+ "epochs": 1,
+ "jets_per_epoch": 10240000,
+ "mean_qcd_share": 0.144743359375,
+ "sd_qcd_share": null,
+ "binomial_sd": 0.0001099505922828236,
+ "min": 0.144743359375,
+ "max": 0.144743359375,
+ "per_fetch": {
+  "n_fetches_with_10k_jets": 195,
+  "median_jets": 52849.0,
+  "sd_share": 0.005718578510345663,
+  "binomial_sd_at_median": 0.0015304853063594771,
+  "min": 0.1293709571575888,
+  "max": 0.1610103206852477
+ },
+ "v1_epoch_range_for_reference": [
+  0.08,
+  0.175
+ ]
+}

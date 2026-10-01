@@ -1,0 +1,10 @@
+{
+ "run": "smoke-detany-a",
+ "epoch": 1,
+ "seed_data": 6894552784824829812,
+ "seed_dropout": 7247337652555493164,
+ "files_sha256": "dcc7d287aa57d0c8eb093aec129f556518daec6ae5fdf4d0486544e95e590457",
+ "rows_sha256": "9a0fb9effd0485ddea59eca9e26d35154915eb3ec7a14c62dad7d70df7117a02",
+ "sha256": "059db2141ea4af7ab0ffcb15edf430ea6402a1ec55aaff13e084819c33f1e044",
+ "n_jets": 199680
+}

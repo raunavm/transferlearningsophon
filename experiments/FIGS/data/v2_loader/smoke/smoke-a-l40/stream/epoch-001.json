@@ -1,0 +1,10 @@
+{
+ "run": "smoke-a-l40",
+ "epoch": 1,
+ "seed_data": 6894552784824829812,
+ "seed_dropout": 7247337652555493164,
+ "files_sha256": "4a33a01fc9cd4502b8303985fda25a496baad64ecce8e99914f8fef89d25a2e1",
+ "rows_sha256": "2aea8417ac2d16c75a21422e57f672d87bbb2cec4f1e915ea4ba33cb0c45fd95",
+ "sha256": "b20b0f0c270b0c9e63ebdb1af3e7978889612f03a3cacb4a1eb46cda29415e7a",
+ "n_jets": 199680
+}

@@ -1,0 +1,63 @@
+{
+ "seed": 1,
+ "data_config": "configs/arms/R16_Q1.yaml",
+ "extra_selection": null,
+ "network_config": "experiments/MTX/ParT_sophon_arch_mtx.py",
+ "network_option": [
+  [
+   "num_classes",
+   "17"
+  ],
+  [
+   "fc_params",
+   "[(512,0.1)]"
+  ]
+ ],
+ "use_amp": true,
+ "batch_size": 512,
+ "start_lr": 0.0005,
+ "num_epochs": 3,
+ "samples_per_epoch": 200000,
+ "num_workers": 5,
+ "fetch_step": 1.0,
+ "data_split_num": 200,
+ "optimizer": "ranger",
+ "lr_scheduler": "flat+decay",
+ "mass_lambda": null,
+ "mpm": false,
+ "mpm_mask_rate": null,
+ "deterministic": false,
+ "data_train_n": {
+  "Res2P": 200,
+  "Res34P": 860,
+  "QCD": 280
+ },
+ "data_val": [
+  "QCD_0280.parquet",
+  "QCD_0281.parquet",
+  "QCD_0282.parquet",
+  "QCD_0283.parquet",
+  "QCD_0284.parquet",
+  "Res2P_0200.parquet",
+  "Res2P_0201.parquet",
+  "Res2P_0202.parquet",
+  "Res2P_0203.parquet",
+  "Res34P_0860.parquet",
+  "Res34P_0861.parquet",
+  "Res34P_0862.parquet",
+  "Res34P_0863.parquet",
+  "Res34P_0864.parquet",
+  "Res34P_0865.parquet",
+  "Res34P_0866.parquet",
+  "Res34P_0867.parquet",
+  "Res34P_0868.parquet",
+  "Res34P_0869.parquet",
+  "Res34P_0870.parquet",
+  "Res34P_0871.parquet",
+  "Res34P_0872.parquet",
+  "Res34P_0873.parquet",
+  "Res34P_0874.parquet",
+  "Res34P_0875.parquet"
+ ],
+ "device": "NVIDIA GeForce RTX 3090"
+}

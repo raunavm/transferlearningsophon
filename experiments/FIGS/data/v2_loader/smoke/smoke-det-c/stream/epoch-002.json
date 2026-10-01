@@ -1,0 +1,10 @@
+{
+ "run": "smoke-det-c",
+ "epoch": 2,
+ "seed_data": 6894552784824829812,
+ "seed_dropout": 7247337652555493164,
+ "files_sha256": "ece42d69fb25019de3ea7d7df44e2d1545c192ec52c8569567ac235624774965",
+ "rows_sha256": "16109467b29b3fea3ccbf672e01952d5c10aa623f0d739c6e08e8dd22fb8d1f8",
+ "sha256": "86701de8fa536b7d9328c744c391a82abf0cfafc454afc4bac7cd34335a1a55d",
+ "n_jets": 199680
+}

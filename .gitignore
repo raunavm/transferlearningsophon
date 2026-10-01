@@ -86,3 +86,5 @@ research/
 
 # TREE_REVIEW.txt is a review document that happens not to end in .md.
 docs/
+# v2 loader and smoke records are committed whole (PRESPEC A7 correction), logs included
+!experiments/FIGS/data/v2_loader/**/*.log

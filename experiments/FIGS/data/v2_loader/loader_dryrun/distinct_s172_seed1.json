@@ -1,0 +1,190 @@
+{
+ "summary": {
+  "sd_qcd_share": 0.000157594978660159,
+  "mean_binomial_sd": 0.0001098323654479139,
+  "mean_binomial_sd_with_copies": 0.00016486479824511717,
+  "mean_copy_factor": 2.2531764746093748
+ },
+ "epochs": [
+  {
+   "epoch": 0,
+   "n": 10240000,
+   "distinct": 6617969,
+   "copy_factor": 2.2525779296875,
+   "qcd_share": 0.14443408203125,
+   "binomial_sd": 0.00010985291923813695,
+   "binomial_sd_distinct_equivalent": 0.00016487374953431233
+  },
+  {
+   "epoch": 1,
+   "n": 10240000,
+   "distinct": 6616236,
+   "copy_factor": 2.255103515625,
+   "qcd_share": 0.14419208984375,
+   "binomial_sd": 0.00010977637561687994,
+   "binomial_sd_distinct_equivalent": 0.00016485120613089942
+  },
+  {
+   "epoch": 2,
+   "n": 10240000,
+   "distinct": 6617390,
+   "copy_factor": 2.252690234375,
+   "qcd_share": 0.1442375,
+   "binomial_sd": 0.00010979074716683618,
+   "binomial_sd_distinct_equivalent": 0.00016478454561907551
+  },
+  {
+   "epoch": 3,
+   "n": 10240000,
+   "distinct": 6615166,
+   "copy_factor": 2.254444140625,
+   "qcd_share": 0.1445263671875,
+   "binomial_sd": 0.00010988208184972329,
+   "binomial_sd_distinct_equivalent": 0.00016498581961689175
+  },
+  {
+   "epoch": 4,
+   "n": 10240000,
+   "distinct": 6617375,
+   "copy_factor": 2.2525890625,
+   "qcd_share": 0.144338671875,
+   "binomial_sd": 0.0001098227530057849,
+   "binomial_sd_distinct_equivalent": 0.00016482888158266088
+  },
+  {
+   "epoch": 5,
+   "n": 10240000,
+   "distinct": 6619096,
+   "copy_factor": 2.25278046875,
+   "qcd_share": 0.14464541015625,
+   "binomial_sd": 0.00010991967747313875,
+   "binomial_sd_distinct_equivalent": 0.00016498136083152088
+  },
+  {
+   "epoch": 6,
+   "n": 10240000,
+   "distinct": 6618191,
+   "copy_factor": 2.2515865234375,
+   "qcd_share": 0.1442296875,
+   "binomial_sd": 0.00010978827490673719,
+   "binomial_sd_distinct_equivalent": 0.0001647404626858762
+  },
+  {
+   "epoch": 7,
+   "n": 10240000,
+   "distinct": 6618570,
+   "copy_factor": 2.2520689453125,
+   "qcd_share": 0.14441806640625,
+   "binomial_sd": 0.000109847856654088,
+   "binomial_sd_distinct_equivalent": 0.00016484752397674356
+  },
+  {
+   "epoch": 8,
+   "n": 10240000,
+   "distinct": 6616270,
+   "copy_factor": 2.2550755859375,
+   "qcd_share": 0.14449560546875,
+   "binomial_sd": 0.00010987236268031209,
+   "binomial_sd_distinct_equivalent": 0.00016499432817875125
+  },
+  {
+   "epoch": 9,
+   "n": 10240000,
+   "distinct": 6615874,
+   "copy_factor": 2.2537734375,
+   "qcd_share": 0.1442548828125,
+   "binomial_sd": 0.0001097962475510622,
+   "binomial_sd_distinct_equivalent": 0.0001648324165651203
+  },
+  {
+   "epoch": 10,
+   "n": 10240000,
+   "distinct": 6618917,
+   "copy_factor": 2.2516689453125,
+   "qcd_share": 0.1445,
+   "binomial_sd": 0.00010987375123721543,
+   "binomial_sd_distinct_equivalent": 0.00016487173995257567
+  },
+  {
+   "epoch": 11,
+   "n": 10240000,
+   "distinct": 6617304,
+   "copy_factor": 2.2522806640625,
+   "qcd_share": 0.144166015625,
+   "binomial_sd": 0.00010976812188610837,
+   "binomial_sd_distinct_equivalent": 0.0001647356097638026
+  },
+  {
+   "epoch": 12,
+   "n": 10240000,
+   "distinct": 6619069,
+   "copy_factor": 2.252098828125,
+   "qcd_share": 0.14451611328125,
+   "binomial_sd": 0.0001098788423155547,
+   "binomial_sd_distinct_equivalent": 0.0001648951178230333
+  },
+  {
+   "epoch": 13,
+   "n": 10240000,
+   "distinct": 6616555,
+   "copy_factor": 2.2538158203125,
+   "qcd_share": 0.14441455078125,
+   "binomial_sd": 0.00010984674529339826,
+   "binomial_sd_distinct_equivalent": 0.00016490977723308012
+  },
+  {
+   "epoch": 14,
+   "n": 10240000,
+   "distinct": 6616322,
+   "copy_factor": 2.253698046875,
+   "qcd_share": 0.14421708984375,
+   "binomial_sd": 0.00010978428815570317,
+   "binomial_sd_distinct_equivalent": 0.00016481170582116888
+  },
+  {
+   "epoch": 15,
+   "n": 10240000,
+   "distinct": 6614802,
+   "copy_factor": 2.2538345703125,
+   "qcd_share": 0.14435869140625,
+   "binomial_sd": 0.00010982908402346843,
+   "binomial_sd_distinct_equivalent": 0.0001648839487226454
+  },
+  {
+   "epoch": 16,
+   "n": 10240000,
+   "distinct": 6615449,
+   "copy_factor": 2.2549267578125,
+   "qcd_share": 0.144633984375,
+   "binomial_sd": 0.0001099160701375981,
+   "binomial_sd_distinct_equivalent": 0.00016505451645254477
+  },
+  {
+   "epoch": 17,
+   "n": 10240000,
+   "distinct": 6617589,
+   "copy_factor": 2.252478125,
+   "qcd_share": 0.1441310546875,
+   "binomial_sd": 0.00010975705316270934,
+   "binomial_sd_distinct_equivalent": 0.0001647262186928723
+  },
+  {
+   "epoch": 18,
+   "n": 10240000,
+   "distinct": 6616056,
+   "copy_factor": 2.25323828125,
+   "qcd_share": 0.14421015625,
+   "binomial_sd": 0.00010978209377537901,
+   "binomial_sd_distinct_equivalent": 0.00016479159982100524
+  },
+  {
+   "epoch": 19,
+   "n": 10240000,
+   "distinct": 6618409,
+   "copy_factor": 2.252799609375,
+   "qcd_share": 0.1444626953125,
+   "binomial_sd": 0.00010986196282844368,
+   "binomial_sd_distinct_equivalent": 0.0001648954358977626
+  }
+ ]
+}

@@ -1,0 +1,99 @@
+[pretrain_v2] run=smoke-det-b seed=1 objective=classification seeds={'trunk_init': 8776282078640666625, 'head_init': 3727879734504742330, 'data_sampling': 6894552784824829812, 'dropout': 7247337652555493164}
+/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py:508: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=a.use_amp and dev.type == "cuda")
+[pretrain_v2] fresh start
+/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py:553: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=amp):
+/usr/local/lib/python3.10/dist-packages/weaver/nn/model/ParticleTransformer.py:549: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=self.use_amp):
+/usr/local/lib/python3.10/dist-packages/torch/nn/functional.py:5849: UserWarning: Support for mismatched key_padding_mask and attn_mask is deprecated. Use same type for both instead.
+  warnings.warn(
+/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py:591: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=amp):
+[pretrain_v2] epoch 0 done: lr 5.0000e-04 train 1.52739 val val.acc=0.60125 best=0 stream c066e4d86acf 1738 jets/s
+[pretrain_v2] epoch 1 done: lr 5.0000e-04 train 1.05705 val val.acc=0.64414 best=1 stream 0b67efd6466c 1708 jets/s
+[pretrain_v2] run=smoke-det-b seed=1 objective=classification seeds={'trunk_init': 8776282078640666625, 'head_init': 3727879734504742330, 'data_sampling': 6894552784824829812, 'dropout': 7247337652555493164}
+/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py:508: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=a.use_amp and dev.type == "cuda")
+[pretrain_v2] resumed after epoch 1: lr=5.0000e-06 lookahead_counter=5 scale=32768.0 best={'epoch': 1, 'metric': 'val.acc', 'value': 0.6441448369620905}
+/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py:553: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=amp):
+/usr/local/lib/python3.10/dist-packages/weaver/nn/model/ParticleTransformer.py:549: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=self.use_amp):
+/usr/local/lib/python3.10/dist-packages/torch/nn/functional.py:5849: UserWarning: Support for mismatched key_padding_mask and attn_mask is deprecated. Use same type for both instead.
+  warnings.warn(
+/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py:591: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=amp):
+Traceback (most recent call last):
+  File "/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py", line 630, in <module>
+    sys.exit(main())
+  File "/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py", line 589, in main
+    for X, y, Z in DataLoader(ds_val, **loader_kw):
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/dataloader.py", line 701, in __next__
+    data = self._next_data()
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/dataloader.py", line 1465, in _next_data
+    return self._process_data(data)
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/dataloader.py", line 1491, in _process_data
+    data.reraise()
+  File "/usr/local/lib/python3.10/dist-packages/torch/_utils.py", line 715, in reraise
+    raise exception
+RuntimeError: Caught RuntimeError in pin memory thread for device 0.
+Original Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/_utils/pin_memory.py", line 41, in do_one_step
+    data = pin_memory(data, device)
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/_utils/pin_memory.py", line 98, in pin_memory
+    clone[i] = pin_memory(item, device)
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/_utils/pin_memory.py", line 75, in pin_memory
+    {k: pin_memory(sample, device) for k, sample in data.items()}
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/_utils/pin_memory.py", line 75, in <dictcomp>
+    {k: pin_memory(sample, device) for k, sample in data.items()}
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/_utils/pin_memory.py", line 64, in pin_memory
+    return data.pin_memory(device)
+RuntimeError: CUDA error: unknown error
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+Exception in thread Thread-3 (_pin_memory_loop):
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/threading.py", line 1016, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.10/threading.py", line 953, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/_utils/pin_memory.py", line 59, in _pin_memory_loop
+    do_one_step()
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/_utils/pin_memory.py", line 35, in do_one_step
+    r = in_queue.get(timeout=MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/queues.py", line 122, in get
+    return _ForkingPickler.loads(res)
+  File "/usr/local/lib/python3.10/dist-packages/torch/multiprocessing/reductions.py", line 541, in rebuild_storage_fd
+    fd = df.detach()
+  File "/usr/lib/python3.10/multiprocessing/resource_sharer.py", line 57, in detach
+    with _resource_sharer.get_connection(self._id) as conn:
+  File "/usr/lib/python3.10/multiprocessing/resource_sharer.py", line 86, in get_connection
+    c = Client(address, authkey=process.current_process().authkey)
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 508, in Client
+    answer_challenge(c, authkey)
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 757, in answer_challenge
+    response = connection.recv_bytes(256)        # reject large message
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 216, in recv_bytes
+    buf = self._recv_bytes(maxlength)
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 414, in _recv_bytes
+    buf = self._recv(4)
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 379, in _recv
+    chunk = read(handle, remaining)
+ConnectionResetError: [Errno 104] Connection reset by peer
+[pretrain_v2] run=smoke-det-b seed=1 objective=classification seeds={'trunk_init': 8776282078640666625, 'head_init': 3727879734504742330, 'data_sampling': 6894552784824829812, 'dropout': 7247337652555493164}
+/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py:508: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=a.use_amp and dev.type == "cuda")
+[pretrain_v2] resumed after epoch 1: lr=5.0000e-06 lookahead_counter=5 scale=32768.0 best={'epoch': 1, 'metric': 'val.acc', 'value': 0.6441448369620905}
+/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py:553: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=amp):
+/usr/local/lib/python3.10/dist-packages/weaver/nn/model/ParticleTransformer.py:549: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=self.use_amp):
+/usr/local/lib/python3.10/dist-packages/torch/nn/functional.py:5849: UserWarning: Support for mismatched key_padding_mask and attn_mask is deprecated. Use same type for both instead.
+  warnings.warn(
+/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py:591: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=amp):
+[pretrain_v2] epoch 2 done: lr 5.0000e-06 train 0.97576 val val.acc=0.66158 best=2 stream 86701de8fa53 1687 jets/s

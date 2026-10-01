@@ -1,0 +1,10 @@
+{
+ "run": "smoke-a",
+ "epoch": 0,
+ "seed_data": 6894552784824829812,
+ "seed_dropout": 7247337652555493164,
+ "files_sha256": "97c5eae2dddbacb93822d8685d8e5fab7dadaf184ded7fe77483b1266dd33386",
+ "rows_sha256": "8518c21a65403b9af3fede7aa49d2c3bd489baa75287c03395206bfc999f6727",
+ "sha256": "3233dc8393299f8b83d8036e713b73e94555e7af29d51b428970b85ffc6a6068",
+ "n_jets": 199680
+}

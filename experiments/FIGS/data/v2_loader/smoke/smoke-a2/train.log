@@ -1,0 +1,15 @@
+[pretrain_v2] run=smoke-a2 seed=1 objective=classification seeds={'trunk_init': 8776282078640666625, 'head_init': 3727879734504742330, 'data_sampling': 6894552784824829812, 'dropout': 7247337652555493164}
+/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py:508: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=a.use_amp and dev.type == "cuda")
+[pretrain_v2] fresh start
+/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py:553: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=amp):
+/usr/local/lib/python3.10/dist-packages/weaver/nn/model/ParticleTransformer.py:549: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=self.use_amp):
+/usr/local/lib/python3.10/dist-packages/torch/nn/functional.py:5849: UserWarning: Support for mismatched key_padding_mask and attn_mask is deprecated. Use same type for both instead.
+  warnings.warn(
+/workspace/transferlearningsophon/experiments/MTX/pretrain_v2.py:591: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=amp):
+[pretrain_v2] epoch 0 done: lr 5.0000e-04 train 1.53137 val val.acc=0.60828 best=0 stream 3233dc839329 1948 jets/s
+[pretrain_v2] epoch 1 done: lr 5.0000e-04 train 1.05550 val val.acc=0.65323 best=1 stream b20b0f0c270b 1901 jets/s
+[pretrain_v2] epoch 2 done: lr 5.0000e-06 train 0.97066 val val.acc=0.66211 best=2 stream 51ae00642b77 1913 jets/s

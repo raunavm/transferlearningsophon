@@ -1,0 +1,141 @@
+{
+  "run_id": "smoke-det-b",
+  "launched_utc": "2026-09-30T15:29:52.888834+00:00",
+  "finished_utc": null,
+  "status": "launched",
+  "provenance": {
+    "repo_commit": "624516e9d1854c63267cfa66ef71d05172cd2767",
+    "repo_dirty": false,
+    "repo_dirty_detail": null,
+    "weaver_version_installed": null,
+    "weaver_pin_claimed_in_docs": "c97de3c",
+    "sophon_commit_expected": "9dd6dd6",
+    "image_digest": null,
+    "arm_config_sha256": "70a2cc225d413d8f694b29e822a5783243cb038f033dbf3f7b117406219b8791",
+    "weights_block_sha256": "51a31ba239e3cfe553efbafbd88b2e02536e86cbd442efc544d12d328711d20b",
+    "labelmap_sha256": "412f9aa3b58db41243d9913eaa6f392abc761cce220cdf2b21a87acfae754a78",
+    "contraction_tree_sha256": "e8edab49f1cdbf0ad0236d290082de6056dd73dec426b8e1f6147b52bd306c49"
+  },
+  "vocabulary": {
+    "arm": "R16_Q1",
+    "num_classes": 17,
+    "controlled_variable": "num_classes + label map"
+  },
+  "randomness": {
+    "master_seed": 1,
+    "seeds": {
+      "trunk_init": 8776282078640666625,
+      "head_init": 3727879734504742330,
+      "data_sampling": 6894552784824829812,
+      "dropout": 7247337652555493164
+    },
+    "stream_names": [
+      "trunk_init",
+      "head_init",
+      "data_sampling",
+      "dropout"
+    ],
+    "effective_streams": {
+      "trunk_init": "every trunk tensor, class token included, via a trunk-only build (independent of the output width)",
+      "head_init": "the output layer / mass node / self-supervised decoder",
+      "data_sampling": "per (epoch, worker, fetch): file order within each family, the split schedule and load ranges, reweighting draws, row permutation",
+      "dropout": "torch/numpy/python reseeded at every epoch from (seed, epoch): dropout, SequenceTrimmer trimming, self-supervised masks; validation from a fixed value"
+    },
+    "cudnn_deterministic_at_manifest_write": false,
+    "cudnn_benchmark_at_manifest_write": false,
+    "cudnn_deterministic_intended": true,
+    "cudnn_benchmark_intended": false,
+    "epoch_stream_record": "<run_dir>/stream/epoch-EEE.json (experiments/MTX/stream_ids.py)"
+  },
+  "hardware": {
+    "gpu_product_nodelabel": "NVIDIA-GeForce-RTX-3090",
+    "gpu_device_name": "NVIDIA GeForce RTX 3090",
+    "n_gpu": 1,
+    "node_name": "ry-gpu-09.sdsc.optiputer.net",
+    "pod_name": "mtx2-smoke-det-3090-raunav-lchvz",
+    "region": "us-west",
+    "torch_version": "2.5.1+cu121",
+    "cuda_version": "12.1",
+    "cudnn_version": 90100
+  },
+  "data_stream": {
+    "data_config_path": "configs/arms/R16_Q1.yaml",
+    "selection": "200 < jet_pt < 2500 & 20 < jet_sdmass < 500",
+    "batch_size": 512,
+    "samples_per_epoch": 200000,
+    "num_epochs": 3,
+    "examples_seen": 600000,
+    "first_1e6_jet_id_sha256": "superseded by the per-epoch stream records",
+    "loader": {
+      "schedule": "Sophon --data-split-num (hqucms/weaver-core@c97de3c), ported in experiments/MTX/stream_v2.py",
+      "fetch_step": 1.0,
+      "data_split_num": 200,
+      "num_workers": 5,
+      "fresh_stream_every_epoch": true
+    },
+    "validation": {
+      "files": [
+        "/jc2/jet_data/QCD_0280.parquet",
+        "/jc2/jet_data/QCD_0281.parquet",
+        "/jc2/jet_data/QCD_0282.parquet",
+        "/jc2/jet_data/QCD_0283.parquet",
+        "/jc2/jet_data/QCD_0284.parquet",
+        "/jc2/jet_data/Res2P_0200.parquet",
+        "/jc2/jet_data/Res2P_0201.parquet",
+        "/jc2/jet_data/Res2P_0202.parquet",
+        "/jc2/jet_data/Res2P_0203.parquet",
+        "/jc2/jet_data/Res34P_0860.parquet",
+        "/jc2/jet_data/Res34P_0861.parquet",
+        "/jc2/jet_data/Res34P_0862.parquet",
+        "/jc2/jet_data/Res34P_0863.parquet",
+        "/jc2/jet_data/Res34P_0864.parquet",
+        "/jc2/jet_data/Res34P_0865.parquet",
+        "/jc2/jet_data/Res34P_0866.parquet",
+        "/jc2/jet_data/Res34P_0867.parquet",
+        "/jc2/jet_data/Res34P_0868.parquet",
+        "/jc2/jet_data/Res34P_0869.parquet",
+        "/jc2/jet_data/Res34P_0870.parquet",
+        "/jc2/jet_data/Res34P_0871.parquet",
+        "/jc2/jet_data/Res34P_0872.parquet",
+        "/jc2/jet_data/Res34P_0873.parquet",
+        "/jc2/jet_data/Res34P_0874.parquet",
+        "/jc2/jet_data/Res34P_0875.parquet"
+      ],
+      "n_files": 25,
+      "rows": "every row passing the selection, no reweighting, same order every epoch",
+      "metrics": "<run_dir>/metrics/epoch-EEE.json"
+    }
+  },
+  "optimization": {
+    "optimizer": "ranger",
+    "lr_schedule": "flat+decay",
+    "amp_enabled": true,
+    "lambda_mass": null,
+    "mass_head": false,
+    "pretraining_objective": "cross_entropy",
+    "mpm_mask_rate": null
+  },
+  "compute": {
+    "wall_clock_hours": null,
+    "gpu_hours": null,
+    "throughput_entries_per_s": null,
+    "peak_gpu_mem_gb": null,
+    "macs_per_jet_fwd": null,
+    "flops_convention": "MACs, as in ParT Table 4 (PMLR 162:18281)"
+  },
+  "driver": "experiments/MTX/pretrain_v2.py",
+  "checkpoints": {
+    "primary": "best validation accuracy on the fixed sample (net_best_epoch_state.pt, best_epoch.json); accuracy weighted by the training reweighting weights; self-supervised: lowest validation loss",
+    "robustness": "mean of each result over epochs -7-2",
+    "retention": "all",
+    "resume_restores": [
+      "model",
+      "RAdam state",
+      "Lookahead slow weights and step counter",
+      "AMP GradScaler",
+      "LR scheduler",
+      "SequenceTrimmer counters",
+      "best-so-far"
+    ]
+  }
+}

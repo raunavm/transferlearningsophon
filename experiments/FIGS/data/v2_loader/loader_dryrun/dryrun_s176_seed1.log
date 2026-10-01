@@ -1,0 +1,100 @@
+epoch 0: qcd share 0.14443 over 10240000 jets (last 20%: 0.14475), 971 fetches, copy factor 2.253, 281.1 s
+epoch 1: qcd share 0.14419 over 10240000 jets (last 20%: 0.14402), 971 fetches, copy factor 2.255, 249.6 s
+epoch 2: qcd share 0.14424 over 10240000 jets (last 20%: 0.14382), 971 fetches, copy factor 2.253, 238.1 s
+epoch 3: qcd share 0.14453 over 10240000 jets (last 20%: 0.14376), 972 fetches, copy factor 2.254, 249.4 s
+epoch 4: qcd share 0.14434 over 10240000 jets (last 20%: 0.14445), 972 fetches, copy factor 2.253, 243.2 s
+epoch 5: qcd share 0.14465 over 10240000 jets (last 20%: 0.14441), 972 fetches, copy factor 2.253, 241.7 s
+epoch 6: qcd share 0.14423 over 10240000 jets (last 20%: 0.14491), 972 fetches, copy factor 2.252, 243.6 s
+epoch 7: qcd share 0.14442 over 10240000 jets (last 20%: 0.14483), 972 fetches, copy factor 2.252, 244.1 s
+epoch 8: qcd share 0.14450 over 10240000 jets (last 20%: 0.14436), 971 fetches, copy factor 2.255, 239.4 s
+epoch 9: qcd share 0.14425 over 10240000 jets (last 20%: 0.14437), 971 fetches, copy factor 2.254, 250.2 s
+epoch 10: qcd share 0.14450 over 10240000 jets (last 20%: 0.14471), 972 fetches, copy factor 2.252, 246.6 s
+epoch 11: qcd share 0.14417 over 10240000 jets (last 20%: 0.14424), 970 fetches, copy factor 2.252, 243.2 s
+epoch 12: qcd share 0.14452 over 10240000 jets (last 20%: 0.14410), 972 fetches, copy factor 2.252, 260.2 s
+epoch 13: qcd share 0.14441 over 10240000 jets (last 20%: 0.14397), 971 fetches, copy factor 2.254, 261.6 s
+epoch 14: qcd share 0.14422 over 10240000 jets (last 20%: 0.14358), 971 fetches, copy factor 2.254, 244.7 s
+epoch 15: qcd share 0.14436 over 10240000 jets (last 20%: 0.14436), 972 fetches, copy factor 2.254, 245.6 s
+epoch 16: qcd share 0.14463 over 10240000 jets (last 20%: 0.14423), 972 fetches, copy factor 2.255, 248.7 s
+epoch 17: qcd share 0.14413 over 10240000 jets (last 20%: 0.14444), 973 fetches, copy factor 2.252, 248.4 s
+epoch 18: qcd share 0.14421 over 10240000 jets (last 20%: 0.14273), 971 fetches, copy factor 2.253, 247.8 s
+epoch 19: qcd share 0.14446 over 10240000 jets (last 20%: 0.14476), 971 fetches, copy factor 2.253, 251.7 s
+{
+ "epochs": 20,
+ "jets_per_epoch": 10240000,
+ "mean_qcd_share": 0.14436913574218752,
+ "sd_qcd_share": 0.000157594978660159,
+ "binomial_sd": 0.0001098323866754089,
+ "copy_factor": 2.2531764746093748,
+ "epoch": {
+  "two-prong": {
+   "mean": 0.3205669970703125,
+   "sd": 0.00020590571450454772,
+   "binomial_sd": 0.00014584204502017742,
+   "binomial_sd_with_copies": 0.0002189174342513692,
+   "sd_over_binomial_with_copies": 0.9405633462162684,
+   "min": 0.32017802734375,
+   "max": 0.32118720703125
+  },
+  "three/four-prong": {
+   "mean": 0.5350638671875,
+   "sd": 0.0001880775310928864,
+   "binomial_sd": 0.00015586531558787025,
+   "binomial_sd_with_copies": 0.0002339629492479739,
+   "sd_over_binomial_with_copies": 0.8038774160499481,
+   "min": 0.53455791015625,
+   "max": 0.5353044921875
+  },
+  "QCD": {
+   "mean": 0.14436913574218752,
+   "sd": 0.000157594978660159,
+   "binomial_sd": 0.0001098323866754089,
+   "binomial_sd_with_copies": 0.00016486483225984822,
+   "sd_over_binomial_with_copies": 0.9559041579696573,
+   "min": 0.1441310546875,
+   "max": 0.14464541015625
+  }
+ },
+ "last20": {
+  "two-prong": {
+   "mean": 0.3206392333984375,
+   "sd": 0.0006363825692998097,
+   "binomial_sd": 0.0003261321292431307,
+   "binomial_sd_with_copies": 0.0004895433888832564,
+   "sd_over_binomial_with_copies": 1.2999513092220936,
+   "min": 0.31927587890625,
+   "max": 0.3217724609375
+  },
+  "three/four-prong": {
+   "mean": 0.5351212158203124,
+   "sd": 0.0006552825120421364,
+   "binomial_sd": 0.00034852262146873756,
+   "binomial_sd_with_copies": 0.0005231528264701808,
+   "sd_over_binomial_with_copies": 1.2525642200262237,
+   "min": 0.53423046875,
+   "max": 0.53670458984375
+  },
+  "QCD": {
+   "mean": 0.14423955078125,
+   "sd": 0.0005106436421783751,
+   "binomial_sd": 0.00024550102506197617,
+   "binomial_sd_with_copies": 0.0003685113885040031,
+   "sd_over_binomial_with_copies": 1.3856929747853046,
+   "min": 0.14273388671875,
+   "max": 0.1449130859375
+  }
+ },
+ "per_fetch": {
+  "fetches": 19419,
+  "median_jets": 10565.0,
+  "chi2_per_dof_with_copies": 1.1827862848185193
+ },
+ "per_fetch_last20": {
+  "fetches": 3958,
+  "median_jets": 10568.0,
+  "chi2_per_dof_with_copies": 1.1863771275003632
+ },
+ "v1_epoch_range_for_reference": [
+  0.08,
+  0.175
+ ]
+}

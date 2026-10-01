@@ -1,0 +1,2 @@
+20260930T143831Z pod=mtx2-smoke-det-3090-raunav-wq5vq node=ry-gpu-09.sdsc.optiputer.net gpu=NVIDIA-GeForce-RTX-3090 after_epoch=-1 ref=mtx-s1.70
+20260930T152936Z pod=mtx2-smoke-det-3090-raunav-lchvz node=ry-gpu-09.sdsc.optiputer.net gpu=NVIDIA-GeForce-RTX-3090 after_epoch=1 ref=mtx-s1.70

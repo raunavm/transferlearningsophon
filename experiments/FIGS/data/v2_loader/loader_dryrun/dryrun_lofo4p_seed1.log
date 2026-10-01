@@ -1,0 +1,115 @@
+epoch 0: qcd share 0.18598 over 10240000 jets (last 20%: 0.18671), 751 fetches, copy factor 2.380, 172.2 s
+epoch 1: qcd share 0.18606 over 10240000 jets (last 20%: 0.18566), 753 fetches, copy factor 2.379, 156.3 s
+epoch 2: qcd share 0.18580 over 10240000 jets (last 20%: 0.18579), 751 fetches, copy factor 2.379, 155.2 s
+epoch 3: qcd share 0.18581 over 10240000 jets (last 20%: 0.18533), 751 fetches, copy factor 2.379, 158.7 s
+{
+ "epochs": 4,
+ "jets_per_epoch": 10240000,
+ "mean_qcd_share": 0.185911962890625,
+ "sd_qcd_share": 0.0001266443686350691,
+ "binomial_sd": 0.00012157362776220697,
+ "max_fetch_id_over_fetches_per_pass": 0.75,
+ "rows_in_two_fetches": 0,
+ "labels_absent_every_epoch": [
+  15,
+  16,
+  17,
+  18,
+  19,
+  32,
+  33,
+  34,
+  35,
+  48,
+  49,
+  50,
+  63,
+  64,
+  77,
+  115,
+  116,
+  117,
+  118,
+  119,
+  120,
+  121,
+  122,
+  123,
+  124,
+  125,
+  126
+ ],
+ "copy_factor": 2.3791283691406253,
+ "epoch": {
+  "two-prong": {
+   "mean": 0.4129413330078125,
+   "sd": 0.00028885722114130774,
+   "binomial_sd": 0.00015386326763429877,
+   "binomial_sd_with_copies": 0.0002373252184160724,
+   "sd_over_binomial_with_copies": 1.2171366493167648,
+   "min": 0.4126859375,
+   "max": 0.41322236328125
+  },
+  "three/four-prong": {
+   "mean": 0.40114670410156256,
+   "sd": 0.00017126503416648416,
+   "binomial_sd": 0.00015316581914161486,
+   "binomial_sd_with_copies": 0.00023624944433168482,
+   "sd_over_binomial_with_copies": 0.7249330666193435,
+   "min": 0.40097841796875,
+   "max": 0.40133740234375
+  },
+  "QCD": {
+   "mean": 0.185911962890625,
+   "sd": 0.0001266443686350691,
+   "binomial_sd": 0.00012157362776220697,
+   "binomial_sd_with_copies": 0.00018752031076628672,
+   "sd_over_binomial_with_copies": 0.6753634745886834,
+   "min": 0.18579921875,
+   "max": 0.18605859375
+  }
+ },
+ "last20": {
+  "two-prong": {
+   "mean": 0.41264758300781246,
+   "sd": 0.0005906195012934896,
+   "binomial_sd": 0.0003440123680876559,
+   "binomial_sd_with_copies": 0.0005306192416781459,
+   "sd_over_binomial_with_copies": 1.1130759213058046,
+   "min": 0.41187744140625,
+   "max": 0.41329833984375
+  },
+  "three/four-prong": {
+   "mean": 0.4014793701171875,
+   "sd": 0.0004241245481318437,
+   "binomial_sd": 0.00034253598514162034,
+   "binomial_sd_with_copies": 0.0005283420061136028,
+   "sd_over_binomial_with_copies": 0.8027462197292136,
+   "min": 0.4009072265625,
+   "max": 0.40185205078125
+  },
+  "QCD": {
+   "mean": 0.185873046875,
+   "sd": 0.0005885257775066297,
+   "binomial_sd": 0.00027182493910553633,
+   "binomial_sd_with_copies": 0.0004192742948725495,
+   "sd_over_binomial_with_copies": 1.4036772220570524,
+   "min": 0.185333984375,
+   "max": 0.18670703125
+  }
+ },
+ "per_fetch": {
+  "fetches": 3003,
+  "median_jets": 13663.0,
+  "chi2_per_dof_with_copies": 1.326659330274035
+ },
+ "per_fetch_last20": {
+  "fetches": 616,
+  "median_jets": 13667.0,
+  "chi2_per_dof_with_copies": 1.303732683560233
+ },
+ "v1_epoch_range_for_reference": [
+  0.08,
+  0.175
+ ]
+}
