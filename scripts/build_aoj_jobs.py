@@ -1387,6 +1387,23 @@ def render_checks_v2() -> str:
     return t
 
 
+def render_read_injection() -> str:
+    """The injection toys' output so far, read back: the read-back job of the checks,
+    pointed at the toys' JSON lines (complete lines only are read locally)."""
+    t = render_read()
+    subs = [(f"REAL-DATA CHECKS: READ BACK {CHECKS_ROOT}", f"INJECTION TOYS: READ BACK {INJECTION_ROOT}"),
+            ("Prints the\n  # checks' JSON files", "Prints the\n  # toys' JSON lines"),
+            ("name: aoj-read-checks-v1-raunav", "name: aoj-read-injection-v1-raunav"),
+            (f'          [ -f "{CHECKS_ROOT}/prong_test.json" ] || {{ echo "FATAL: the checks have not finished"; exit 1; }}\n', ""),
+            (f'cd "{CHECKS_ROOT}"', f'cd "{INJECTION_ROOT}"'),
+            ("tar czf - *.json | base64 -w 0", "tar czf - toys_*.jsonl | base64 -w 0")]
+    for a, b in subs:
+        if t.count(a) != 1:
+            raise SystemExit(f"FATAL: the read-back template changed ({a[:40]!r})")
+        t = t.replace(a, b)
+    return t
+
+
 def specs() -> dict[pathlib.Path, str]:
     out = {K8S / f"job-aoj-full-s{i}-raunav.yaml": render_shard(i, fs) for i, fs in enumerate(shards())}
     out[K8S / "job-aoj-full-fit-raunav.yaml"] = render_fit()
@@ -1407,6 +1424,7 @@ def specs() -> dict[pathlib.Path, str]:
         out[K8S / f"job-aoj-injection-toys-{study}-v1-raunav.yaml"] = render_injection_toys(study)
     out[K8S / "job-aoj-fit-v5-raunav.yaml"] = render_fit_v5()
     out[K8S / "job-aoj-checks-v2-raunav.yaml"] = render_checks_v2()
+    out[K8S / "job-aoj-read-injection-v1-raunav.yaml"] = render_read_injection()
     return out
 
 

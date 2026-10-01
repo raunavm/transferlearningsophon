@@ -465,3 +465,12 @@ def test_the_v5_fit_runs_from_the_committed_bins_and_writes_its_own_directory():
     assert f'--branch "{B.FIT5_PIN}"' in s and "merge_shards" not in s
     assert f"OUT={B.FIT5_ROOT}" in s and "fit_v5.py --workers" in s
     assert (REPO / "experiments/FIGS/data/aoj_full_v1/fit_v3/bins.npz").exists()
+
+
+def test_the_injection_read_back_mounts_the_volume_read_only_and_writes_nothing():
+    path = B.K8S / "job-aoj-read-injection-v1-raunav.yaml"
+    pod = yaml.safe_load(SPECS[path])["spec"]["template"]["spec"]
+    assert pod["volumes"][0]["persistentVolumeClaim"]["readOnly"] is True
+    assert all(m.get("readOnly") for m in pod["containers"][0]["volumeMounts"])
+    s = _script(SPECS[path])
+    assert f'cd "{B.INJECTION_ROOT}"' in s and "toys_*.jsonl" in s and ">" not in s.replace("2>", "")
