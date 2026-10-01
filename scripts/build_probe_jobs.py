@@ -324,6 +324,13 @@ V1ERR_PIN = "mtx-s1.66"
 # from mtx-s1.66 and unchanged since, keep it (tests/test_spec_pins.py).
 V1ERR_PIN2 = "mtx-s1.71"
 V1ERR_BACKOFF = 6
+# Batch B again, at the tag whose mass-resolution MLP fits at a pinned thread count
+# (latent_scale_probe.MLP_THREADS). Unpinned, batch B's refit did not reproduce the
+# committed MLP sigma_eff (up to 0.0021 in one model; every ridge value agreed to
+# 6e-6). A new output directory: batch B's results stay as they are.
+V1ERR_PIN_MASS2 = "mtx-s1.84"
+V1ERR_MASS2_NEEDED = {"experiments/EVAL/latent_scale_probe.py": "MLP_THREADS",
+                      "experiments/EVAL/mass_resolution.py": "--save-residuals"}
 THREADS_OF = {False: 8, True: 1}   # BLAS threads: the CPUs a spec requests; 1 per worker in the pooled FT job
 V1ERR_ROOT = "/data/results/eval/v1err"
 V1ERR_PROBE_SOURCES = ([f"probe-ladder-v2-s{s}-raunav" for s in SEEDS]
@@ -633,6 +640,19 @@ def v1err_batch_b(base: dict[str, str]) -> tuple[str, str]:
     return name, text + ROBUST_TAIL.format(mem="80Gi", cpu="16")
 
 
+def v1err_batch_b2(base: dict[str, str]) -> tuple[str, str]:
+    """Batch B with the MLP at a pinned thread count, into mass_resolution_pinned/."""
+    _, text = v1err_batch_b(base)
+    name = "v1err-batch-b2-raunav"
+    subs = [("v1err-batch-b-raunav", name), (f'--branch "{V1ERR_PIN}"', f'--branch "{V1ERR_PIN_MASS2}"'),
+            (f"{V1ERR_ROOT}/mass_resolution/", f"{V1ERR_ROOT}/mass_resolution_pinned/")]
+    for old, new in subs:
+        if old not in text:
+            raise SystemExit(f"FATAL: batch B has no {old!r}")
+        text = text.replace(old, new)
+    return name, text
+
+
 def _load_builder(name: str):
     import importlib.util
     spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / f"{name}.py")
@@ -653,7 +673,7 @@ def build_v1err(base: dict[str, str]) -> dict[str, str]:
     for seed in SEEDS:
         name, text = v1err_curve_spec(seed)
         out[f"job-{name}.yaml"] = text
-    for fn in (v1err_batch_a, v1err_batch_a2, v1err_batch_b):
+    for fn in (v1err_batch_a, v1err_batch_a2, v1err_batch_b, v1err_batch_b2):
         name, text = fn(base)
         out[f"job-{name}.yaml"] = text
     return out
@@ -734,6 +754,7 @@ def main() -> int:
     args = ap.parse_args()
     verify_pin(MLP2_PIN, False, MLP2_NEEDED)
     verify_pin(V1ERR_PIN, args.pin_not_yet_tagged, V1ERR_NEEDED)
+    verify_pin(V1ERR_PIN_MASS2, args.pin_not_yet_tagged, V1ERR_MASS2_NEEDED)
     bad = 0
     jobs = build()
     jobs.update(build_v1err(jobs))

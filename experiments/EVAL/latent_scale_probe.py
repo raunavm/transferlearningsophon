@@ -45,6 +45,13 @@ sys.path.insert(0, str(REPO))
 # in the same split for every arm or the comparison is confounded by the split.
 SPLIT_SEED = 20260822
 MLP_SEEDS = (0, 1, 2)
+# PIN TORCH'S INTRA-OP THREADS, as probe.py does (its MLP_THREADS note): the seed
+# fixes weights and dropout, not the order in which a CPU matmul reduces partial
+# sums, which follows the thread count. Unpinned, the mass-resolution MLP refit by
+# v1err-batch-b (3 threads) differed from the committed run (a cpu: 8 pod, torch's
+# default count) by up to 0.0021 in one model's sigma_eff while every ridge value
+# agreed to 6e-6 (experiments/FIGS/data/paired_v1err/mass, 2026-10-01).
+MLP_THREADS = 4
 N_PERM = 10
 ALPHAS = [0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
 
@@ -107,6 +114,17 @@ def fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
     representation holds; a linear null cannot distinguish "absent" from "present
     but not linearly decodable" (D6). The same logic that makes the MLP mandatory
     beside a classification null makes it mandatory here."""
+    import torch
+    prev = torch.get_num_threads()
+    torch.set_num_threads(MLP_THREADS)
+    try:
+        pred, meta = _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds)
+    finally:
+        torch.set_num_threads(prev)
+    return pred, {**meta, "torch_threads": MLP_THREADS}
+
+
+def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds):
     import torch
     from sklearn.preprocessing import StandardScaler
     xs = StandardScaler().fit(Xtr)

@@ -118,3 +118,28 @@ def test_permutation_null_is_near_zero_not_near_one():
     tr, va, te = lsp.make_splits(n)
     out = lsp.probe_one(F, y, tr, va, te, do_null=True)
     assert out["null"]["r2_shuf_mean"] < 0.05, out["null"]
+
+
+def test_the_mlp_fits_at_a_pinned_thread_count_and_restores_the_callers(monkeypatch):
+    """A CPU matmul reduces partial sums in an order set by the thread count, so an
+    unpinned MLP refit on another pod gives another answer (the mass-resolution
+    refit of 2026-10-01 moved one sigma_eff by 0.0021). The fit runs at
+    MLP_THREADS whatever the caller set, records it, and gives the caller's back."""
+    torch = pytest.importorskip("torch")
+    seen = []
+
+    def spy(*a, **k):
+        seen.append(torch.get_num_threads())
+        return np.zeros(len(a[4])), {"per_seed": [], "n_seeds": 0}
+
+    monkeypatch.setattr(lsp, "_fit_mlp", spy)
+    was = torch.get_num_threads()
+    try:
+        for ambient in (1, 3):
+            torch.set_num_threads(ambient)
+            _, meta = lsp.fit_mlp(np.zeros((4, 2)), np.zeros(4), np.zeros((2, 2)), np.zeros(2),
+                                  np.zeros((3, 2)))
+            assert torch.get_num_threads() == ambient and meta["torch_threads"] == lsp.MLP_THREADS
+    finally:
+        torch.set_num_threads(was)
+    assert seen == [lsp.MLP_THREADS, lsp.MLP_THREADS]

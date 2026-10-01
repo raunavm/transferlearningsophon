@@ -368,8 +368,8 @@ def _v1err():
 
 def test_v1err_jobs_parse_carry_the_retry_policy_and_are_committed():
     base, jobs = _v1err()
-    # the 9 probe reruns applied one per pod, 5 label-recovery curves, batches A, A2 and B
-    assert len(jobs) == 9 + 5 + 3
+    # the 9 probe reruns applied one per pod, 5 label-recovery curves, batches A, A2, B and B2
+    assert len(jobs) == 9 + 5 + 4
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"] and fname == f"job-{d['metadata']['name']}.yaml"
@@ -379,6 +379,7 @@ def test_v1err_jobs_parse_carry_the_retry_policy_and_are_committed():
         assert {"action": "Ignore", "onPodConditions": [{"type": "DisruptionTarget"}]} in rules
         assert d["spec"]["template"]["spec"]["containers"][0]["name"] == "main"
         pin = (bp.V1ERR_PIN3 if "batch-a2" in fname
+               else bp.V1ERR_PIN_MASS2 if "batch-b2" in fname
                else bp.V1ERR_PIN2 if any(k in fname for k in ("labelrec-curve", "batch-a"))
                else bp.V1ERR_PIN)
         assert f'--branch "{pin}"' in text and "|| halt" in text
@@ -443,6 +444,12 @@ def test_batch_b_runs_the_five_mass_reruns():
         specs = re.search(r"for spec in (.+); do", base[f"job-{src}.yaml"]).group(1)
         assert f'run_massres "{specs}" ' in b
     assert (bp.K8S / "job-v1err-batch-b-raunav.yaml").read_text() == b
+    # B2 is B at the pinned-thread tag, written elsewhere; nothing else differs
+    b2 = jobs["job-v1err-batch-b2-raunav.yaml"]
+    assert b2.replace("v1err-batch-b2-raunav", "v1err-batch-b-raunav").replace(
+        bp.V1ERR_PIN_MASS2, bp.V1ERR_PIN).replace("/mass_resolution_pinned/", "/mass_resolution/") == b
+    assert b2.count("/data/results/eval/v1err/mass_resolution_pinned/s") == 5
+    assert set(bp.V1ERR_MASS2_NEEDED) >= {"experiments/EVAL/latent_scale_probe.py"}
 
 
 def test_batch_a2_runs_the_bootstrap_resumably_beside_the_probe_reruns():
