@@ -660,6 +660,34 @@ def v1err_batch_b2(base: dict[str, str]) -> tuple[str, str]:
     return name, text
 
 
+# B2's MLP must not depend on the pod either: seed 1's six models again at B2's tag
+# on another node than B2's, into mass_resolution_pinned_check/; every sigma_eff
+# must equal B2's.
+MASS2_NODE = "cph-dgx-node6.humboldt.edu"
+# mtx-s1.85, not B2's mtx-s1.84: mass_resolution.py gained only the v2-cache paths
+# between the two (v2_prefix(), which returns None for these v1 caches), so the
+# computation is B2's, and the spec is not pinned behind a script it runs.
+MASS2_CHECK_PIN = "mtx-s1.85"
+
+
+def v1err_mass_pinned_check(base: dict[str, str]) -> tuple[str, str]:
+    """Seed 1 of batch B2 again, away from B2's node."""
+    name = "v1err-mass-pinned-check-raunav"
+    specs = _field(base["job-massres-s1-raunav.yaml"], r"^          for spec in (.+); do$")
+    text = (ROBUST_HEAD.format(name=name, pin=MASS2_CHECK_PIN, backoff=V1ERR_BACKOFF, threads=1)
+            + RUN_MASSRES.format(feat=FEAT, obs=MASSRES_OBS) + '          P=""\n'
+            + f'          run_massres "{specs}" {V1ERR_ROOT}/mass_resolution_pinned_check/s1 &\n'
+            + '          P="$P $!"\n          for p in ${P}; do wait ${p} || halt; done\n'
+            + '          date -u +"end %Y-%m-%dT%H:%M:%SZ"\n')
+    anchor = '                values: ["us-west"]\n'
+    tail = ROBUST_TAIL.format(mem="32Gi", cpu="6")
+    if tail.count(anchor) != 1:
+        raise SystemExit("FATAL: ROBUST_TAIL has no single region term")
+    return name, text + tail.replace(anchor, anchor + "              - key: kubernetes.io/hostname\n"
+                                     "                operator: NotIn\n"
+                                     f'                values: ["{MASS2_NODE}"]\n')
+
+
 def _load_builder(name: str):
     import importlib.util
     spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / f"{name}.py")
@@ -680,7 +708,7 @@ def build_v1err(base: dict[str, str]) -> dict[str, str]:
     for seed in SEEDS:
         name, text = v1err_curve_spec(seed)
         out[f"job-{name}.yaml"] = text
-    for fn in (v1err_batch_a, v1err_batch_a2, v1err_batch_b, v1err_batch_b2):
+    for fn in (v1err_batch_a, v1err_batch_a2, v1err_batch_b, v1err_batch_b2, v1err_mass_pinned_check):
         name, text = fn(base)
         out[f"job-{name}.yaml"] = text
     bx = _load_builder("build_extract_jobs")
