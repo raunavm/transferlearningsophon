@@ -1,0 +1,30 @@
+{
+ "what": "Readout of bench v3 (the last-epoch rerun of C2 and C3's 40 cells: 20 granularity models x top tagging and quark/gluon, fine-tuning seed 1, each benchmark's full training set). The v1 record for C2, C3 and S5; nothing in the paper reads it yet.",
+ "job": "ft-bench-v3-metrics-raunav (pod ft-bench-v3-metrics-raunav-lnhg7, node k8s-haosu-22.sdsc.optiputer.net), Complete 2026-10-01",
+ "spec": "experiments/FT/k8s/job-ft-bench-v3-metrics-raunav.yaml",
+ "tag": "mtx-s1.83",
+ "repo_commit": "34c0323028505266362e81bc676600384b67be27",
+ "script": "experiments/FT/bench_metrics.py (with the NaN-cell guard, diverged())",
+ "input_root": "/data/results/ft/bench_v3_lastepoch (40 DONE cells, checked by the job; features_last/ = last epoch, features/ = best-validation epoch)",
+ "remote_dir": "/data/results/ft/bench_v3_lastepoch_metrics_v1",
+ "fetched": "printed by the job as a base64 tar between BEGIN-TAR/END-TAR in its log; sha256 below checked against the pod's sha256sum",
+ "files": {
+  "bench_metrics_last.json": {
+   "sha256": "96bb2f911f0b07370945faa5d39a667ddc19ffdc7d9350826acfd0a9729488d5",
+   "content": "Pythia test sets, LAST epoch (epoch 19 of 20): C2 (quark/gluon) and C3 (top), the confirmatory rule (PRESPEC A6)"
+  },
+  "bench_metrics.json": {
+   "sha256": "ddb6f42ca13138db39aaf5abda638d147590f6a917c5f52fc139a356dda48a28",
+   "content": "Pythia test sets, best-validation epoch of the same run: the A6 sensitivity analysis"
+  },
+  "bench_metrics_herwig_last.json": {
+   "sha256": "2ba9e01ae13883daebed74f254498ddda4bf797c9f0677732f2f3f5268abfc19",
+   "content": "Herwig 7.1 quark/gluon test set, LAST epoch: S5, primary (A6)"
+  },
+  "bench_metrics_herwig.json": {
+   "sha256": "1ad2be62a5654860810818c8398d0436825795b0a0f6e2f8105fdc018a056429",
+   "content": "Herwig 7.1 quark/gluon test set, best-validation epoch: S5 sensitivity"
+  }
+ },
+ "check_against_bench_v2": "The best-validation values reproduce the bench v2 readout (experiments/FIGS/data/bench_v2_metrics_v1, 2026-09-25) for all 40 cells and on Herwig: accuracy, AUC, R50 and R30 bit-identical, log(1-AUC) equal to the last floating-point digit. Same seed, same GPU model: the rerun is the same fine-tuning realisation, not an independent one."
+}
