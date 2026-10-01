@@ -33,7 +33,7 @@ spec:
         - name: REGION
           value: "us-west"
         - name: REPO_REF
-          value: "mtx-s1.78"
+          value: "mtx-s1.95"
         args:
         - |
           set -euo pipefail
@@ -54,8 +54,13 @@ spec:
           # A FAILED attempt leaves attempts/failed-* naming the last complete epoch (the
           # EXIT trap; an evicted pod is SIGKILLed, runs no trap and is not counted). Two
           # failed attempts with no epoch completed in between stop the job.
-          LAST=$(ls ${OUT} | sed -n 's/^net_epoch-\([0-9]*\)_resume\.pt$/\1/p' | sort -n | tail -1)
-          LAST=${LAST:--1}
+          # LAST = pretrain_v2.latest_complete_epoch: the newest resume file with its state file beside it.
+          LAST=-1
+          for f in ${OUT}/net_epoch-*_resume.pt; do
+            [ -e "$f" ] || continue
+            n=$(basename "$f" | sed 's/^net_epoch-\([0-9]*\)_resume\.pt$/\1/')
+            if [ -f ${OUT}/net_epoch-${n}_state.pt ] && [ "$n" -gt "${LAST}" ]; then LAST=$n; fi
+          done
           NF=$(ls ${OUT}/attempts | grep -c -- "-e${LAST}$" || true)
           [ "${NF}" -lt 2 ] || { echo "FATAL: ${NF} failed attempts after epoch ${LAST}"; exit ${HALT}; }
           ATTEMPT=$(date -u +%Y%m%dT%H%M%SZ)
@@ -73,6 +78,14 @@ spec:
           SRC=/data/results/mtx/makeweight/$(basename ${SIDECAR})
           [ -f "${SRC}" ] || { echo "FATAL: no reweighting sidecar ${SRC}: run the make_weight job for ${CFG}"; exit ${HALT}; }
           cp "${SRC}" "${SIDECAR}"
+          python3 - "${CFG}" "${SIDECAR}" <<'PY' || { echo "FATAL: ${SIDECAR} is not ${CFG} plus reweighting histograms"; exit ${HALT}; }
+          import sys
+          sys.path.insert(0, "experiments/MTX")
+          import stream_v2 as sv
+          bad = sv.sidecar_mismatch(sys.argv[1], sys.argv[2])
+          print("sidecar check:", "differs in %s" % bad if bad else "its config plus reweight_hists")
+          sys.exit(1 if bad else 0)
+          PY
           cp "${SIDECAR}" ${OUT}/
           sha256sum "${SIDECAR}" > ${OUT}/reweight_sidecar.sha256
           MANIFEST=${OUT}/run_manifest.json
@@ -80,10 +93,10 @@ spec:
           python3 scripts/write_run_manifest.py --driver pretrain_v2 --run-id ${RUN_ID} --arm RAND2_p1 \
             --num-classes 17 --seed ${SEED} --data-config ${CFG} --samples-per-epoch 10240000 \
             --num-epochs 80 --batch-size 512 \
-            --num-workers 5 --data-split-num 200 --fetch-step 1.0 --data-fraction 0.2 --keep-checkpoints all \
+            --num-workers 5 --data-split-num 200 --fetch-step 1.0 --data-fraction 0.2 --keep-checkpoints window \
             --select-on acc \
             --val-files "${VAL_FILES[@]}" --out ${MANIFEST}
-          PYTHONUNBUFFERED=1 python3 experiments/MTX/pretrain_v2.py --seed ${SEED} --out ${OUT} --data-train Res2P:/jc2/jet_data/Res2P_{0000..0199}.parquet Res34P:/jc2/jet_data/Res34P_{0000..0859}.parquet QCD:/jc2/jet_data/QCD_{0000..0279}.parquet --data-val /jc2/jet_data/Res2P_{0200..0203}.parquet /jc2/jet_data/Res34P_{0860..0875}.parquet /jc2/jet_data/QCD_{0280..0284}.parquet --data-config ${CFG} --network-config experiments/MTX/ParT_sophon_arch_mtx.py -o num_classes 17 -o fc_params '[(512,0.1)]' --use-amp --batch-size 512 --start-lr 5e-4 --num-epochs 80 --samples-per-epoch 10240000 --num-workers 5 --fetch-step 1.0 --data-split-num 200 --data-fraction 0.2 --keep-checkpoints all --select-on acc 2>&1 | tee -a ${OUT}/train.log
+          PYTHONUNBUFFERED=1 python3 experiments/MTX/pretrain_v2.py --seed ${SEED} --out ${OUT} --data-train Res2P:/jc2/jet_data/Res2P_{0000..0199}.parquet Res34P:/jc2/jet_data/Res34P_{0000..0859}.parquet QCD:/jc2/jet_data/QCD_{0000..0279}.parquet --data-val /jc2/jet_data/Res2P_{0200..0203}.parquet /jc2/jet_data/Res34P_{0860..0875}.parquet /jc2/jet_data/QCD_{0280..0284}.parquet --data-config ${CFG} --network-config experiments/MTX/ParT_sophon_arch_mtx.py -o num_classes 17 -o fc_params '[(512,0.1)]' --use-amp --batch-size 512 --start-lr 5e-4 --num-epochs 80 --samples-per-epoch 10240000 --num-workers 5 --fetch-step 1.0 --data-split-num 200 --data-fraction 0.2 --keep-checkpoints window --select-on acc 2>&1 | tee -a ${OUT}/train.log
           )
         resources:
           requests: { memory: "48Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
@@ -107,7 +120,7 @@ spec:
                 values: ["NVIDIA-GeForce-RTX-3090"]
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: ["ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org"]
+                values: ["ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org", "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-02.sdsc.optiputer.net"]
       volumes:
       - name: jc2
         persistentVolumeClaim:

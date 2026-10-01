@@ -572,7 +572,11 @@ EXIT_HALT = 42
 V2_BAD_NODES = ("ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net",
                 "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu",
                 "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu",
-                "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org")
+                "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org",
+                # 2026-10-01 (fine-tuning retry diagnosis, d383eb8/f088087): ry-gpu-10's GPU
+                # failed mid-read-out and the node now refuses pods ("no healthy devices");
+                # ry-gpu-02 ran the only two NaN-loss attempts of 1,051, both clean elsewhere.
+                "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-02.sdsc.optiputer.net")
 TRAIN_GLOBS = ("Res2P:/jc2/jet_data/Res2P_{0000..0199}.parquet",
                "Res34P:/jc2/jet_data/Res34P_{0000..0859}.parquet",
                "QCD:/jc2/jet_data/QCD_{0000..0279}.parquet")
