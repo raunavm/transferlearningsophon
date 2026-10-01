@@ -89,6 +89,10 @@ def main(argv=None) -> int:
     ap.add_argument("--data-split-num", type=int, default=200)
     ap.add_argument("--fetch-step", type=float, default=1.0)
     ap.add_argument("--data-fraction", type=float, default=1.0)
+    ap.add_argument("--data-windows", type=int, default=None,
+                    help="k, in place of --data-fraction 1/k (pretrain_v2.py --data-windows)")
+    ap.add_argument("--extra-selection", default=None,
+                    help="ANDed onto the config's selection, as pretrain_v2.py --extra-selection")
     ap.add_argument("--check-jets", type=int, default=200_000,
                     help="also hash the stream after this many jets (the smoke runs' epoch)")
     ap.add_argument("--data-config", required=True)
@@ -109,10 +113,15 @@ def main(argv=None) -> int:
 
     seeds = derive_all(a.seed)
     files = pv.to_file_dict(a.data_train)
+    if a.data_windows is not None:
+        if a.data_fraction != 1.0:
+            ap.error("--data-windows k replaces --data-fraction 1/k")
+        a.data_fraction = 1.0 / a.data_windows
     ds = sv.StreamDataset(files, pv.sidecar(a.data_config), mode="train", batch_size=a.batch_size,
                           seed=seeds["data_sampling"], split_num=a.data_split_num,
                           fetch_step=a.fetch_step, labels_only=not a.full_columns,
-                          data_fraction=a.data_fraction)
+                          extra_selection=a.extra_selection, **pv.stream_window(a))
+    fetches_per_pass = a.data_split_num * math.ceil(1.0 / a.fetch_step)
     steps = a.samples_per_epoch // a.batch_size
     check_steps = a.check_jets // a.batch_size
     mem = pv.MemMonitor()
@@ -121,7 +130,7 @@ def main(argv=None) -> int:
     for e in range(a.epochs):
         ds.set_epoch(e)
         rec = pv.StreamRecord()
-        per_fetch, last_fetches, rids = {}, set(), []
+        per_fetch, last_fetches, rids, fids = {}, set(), [], []
         check = None
         t0 = time.time()
         it = iter(DataLoader(ds, batch_size=None, num_workers=a.num_workers,
@@ -130,6 +139,7 @@ def main(argv=None) -> int:
             _, _, Z = next(it)
             rec.update(Z, last=i >= last_from)
             rids.append(Z["_rowid"].numpy())
+            fids.append(Z["_fetch"].numpy())
             w = i % max(a.num_workers, 1)          # DataLoader takes workers round robin
             fam = np.searchsorted(FAMILY_EDGES, Z["_jet_label"].numpy(), side="right") - 1
             fetch = Z["_fetch"].numpy()
@@ -145,10 +155,15 @@ def main(argv=None) -> int:
                 check = rec.h.copy().hexdigest()
         del it
         files_sha = sv.plan_sha256(files, seeds["data_sampling"], e, a.num_workers,
-                                   a.data_split_num, a.fetch_step, a.data_fraction)
+                                   a.data_split_num, a.fetch_step, a.data_fraction, a.data_windows)
         r = rec.record("dryrun", e, seeds["data_sampling"], seeds["dropout"], files_sha)
         n = r["n_jets"]
-        _, copies = np.unique(np.concatenate(rids), return_counts=True)
+        rid_all = np.concatenate(rids)
+        _, copies = np.unique(rid_all, return_counts=True)
+        # a row read by two fetches of the epoch (weaver's up-sampling repeats rows only
+        # inside one fetch): row ids are unique to a worker, fetch ids to (worker, pass)
+        pairs = np.unique(np.stack([rid_all, np.concatenate(fids).astype(np.int64)]), axis=1)
+        rows_in_two_fetches = int(len(pairs[0]) - len(np.unique(pairs[0])))
         fam_all = family_counts(rec.native)
         fam_last = family_counts(rec.native_last)
         epochs.append({
@@ -161,7 +176,9 @@ def main(argv=None) -> int:
             "last20": {"n_jets": int(sum(fam_last)), "family_shares": [x / max(sum(fam_last), 1) for x in fam_last],
                        "native_counts": rec.native_last.tolist()},
             "per_fetch": [[w, f, *c, int((w, f) in last_fetches)] for (w, f), c in sorted(per_fetch.items())],
-            "max_fetch_id": max(f for _, f in per_fetch),
+            "max_fetch_id": max(f for _, f in per_fetch), "fetches_per_pass": fetches_per_pass,
+            "rows_in_two_fetches": rows_in_two_fetches,
+            "zero_count_labels": [i for i, c in enumerate(rec.native.tolist()) if c == 0],
             "native_counts": rec.native.tolist(), "peak_anon_gb": mem.take()})
         print(f"epoch {e}: qcd share {fam_all[2] / n:.5f} over {n} jets (last 20%: "
               f"{epochs[-1]['last20']['family_shares'][2]:.5f}), {len(per_fetch)} fetches, "
@@ -172,6 +189,9 @@ def main(argv=None) -> int:
                "mean_qcd_share": out_summary["epoch"]["QCD"]["mean"],
                "sd_qcd_share": out_summary["epoch"]["QCD"]["sd"],
                "binomial_sd": out_summary["epoch"]["QCD"]["binomial_sd"],
+               "max_fetch_id_over_fetches_per_pass": max(x["max_fetch_id"] for x in epochs) / fetches_per_pass,
+               "rows_in_two_fetches": sum(x["rows_in_two_fetches"] for x in epochs),
+               "labels_absent_every_epoch": sorted(set.intersection(*(set(x["zero_count_labels"]) for x in epochs))),
                **out_summary, "v1_epoch_range_for_reference": [0.080, 0.175]}
     out = pathlib.Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)

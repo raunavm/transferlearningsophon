@@ -71,8 +71,15 @@ def test_v2_code_loader_validation_and_output(grid):
         assert f"OUT={b.V2_ROOT}/${{RUN_ID}}" in s and fn == "job-mtx2-" + run_id[len("mtx-"):] + "-raunav.yaml"
         assert re.fullmatch(r"mtx-[a-z0-9]+-s\d", run_id)
         assert "python3 experiments/MTX/pretrain_v2.py" in s and "seed_weaver" not in s
-        assert "--num-workers 5 --fetch-step 1.0 --data-split-num 200 --data-fraction 0.2" in s
-        assert "--data-fraction 0.2 --keep-checkpoints all" in s             # the manifest records it
+        # the sidecar must be its config plus histograms before anything trains (exit 42 otherwise)
+        assert s.index("sv.sidecar_mismatch(") < s.index("python3 experiments/MTX/pretrain_v2.py")
+        assert 'is not ${CFG} plus reweighting histograms"; exit ${HALT}; }' in s
+        lofo = "--extra-selection" in s
+        win = "--data-windows 3" if lofo else "--data-fraction 0.2"           # PI 2026-10-01
+        assert f"--num-workers 5 --fetch-step 1.0 --data-split-num 200 {win}" in s
+        assert f"{win} --keep-checkpoints window" in s                      # the manifest records it
+        assert s.count(win) == 2 and ("--data-fraction" in s) != lofo
+        assert s.count("--extra-selection '") == (2 if lofo else 0)          # training and manifest
         assert "--fetch-by-files" not in s and "--samples-per-epoch 10240000" in s
         assert "--num-epochs 80" in s and "--start-lr 5e-4" in s and "--use-amp" in s
         val = re.search(r"--data-val (.*?) --data-config", s).group(1).split()
@@ -80,8 +87,8 @@ def test_v2_code_loader_validation_and_output(grid):
         assert "Res2P_{0200..0203}" in val[0] and "Res34P_{0860..0875}" in val[1] and "QCD_{0280..0284}" in val[2]
         tr = re.search(r"--data-train (.*?) --data-val", s).group(1).split()
         assert sum(map(_brace_count, tr)) == b.N_TRAIN_FILES
-        assert "--driver pretrain_v2" in s and "--keep-checkpoints all" in s
-        assert "--keep-checkpoints all --select-on acc" in s and "--select-on acc \\" in s
+        assert "--driver pretrain_v2" in s and "--keep-checkpoints all" not in s
+        assert "--keep-checkpoints window --select-on acc" in s and re.search(r"--select-on acc( --extra-selection '[^']*')? \\", s)
         seed = re.search(r"^SEED=(\d+)$", s, re.M).group(1)
         assert run_id.endswith(f"-s{seed}")
 
@@ -102,17 +109,24 @@ def test_objectives_map_to_their_flags(grid):
 
 
 def test_scheduling_pins_region_gpu_and_resources(grid):
+    by_run = {}
     for spec in grid.values():
         t = yaml.safe_load(spec)["spec"]["template"]["spec"]
         terms = t["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]
         ex = {e["key"]: e for e in terms["matchExpressions"]}
+        run = int(re.search(r"^SEED=(\d+)$", _script(spec), re.M).group(1))
+        gpu = b.V2_GPU_BY_RUN[run]
+        by_run.setdefault(run, set()).update(ex["nvidia.com/gpu.product"]["values"])
         assert ex["topology.kubernetes.io/region"]["values"] == ["us-west"]
-        assert ex["nvidia.com/gpu.product"]["values"] == [b.V2_GPU]
+        assert ex["nvidia.com/gpu.product"]["values"] == [gpu]
         assert "hcc-chase-shor-c4715.unl.edu" in ex["kubernetes.io/hostname"]["values"]
         env = {e["name"]: e.get("value") for e in t["containers"][0]["env"]}
-        assert env["GPU_PRODUCT"] == b.V2_GPU and env["REPO_REF"] == TAG
+        assert env["GPU_PRODUCT"] == gpu and env["REPO_REF"] == TAG
         res = t["containers"][0]["resources"]
         assert res["requests"] == res["limits"] and res["requests"]["nvidia.com/gpu"] == "1"
+    assert all(len(g) == 1 for g in by_run.values())                    # one product per run index (I7)
+    assert all(by_run[r] == {b.V2_GPU} for r in (1, 2, 3))
+    assert set(b.V2_GPU_BY_RUN.values()) <= {b.V2_GPU, "NVIDIA-L40"}
 
 
 def test_another_gpu_product_gets_its_own_run_directory():
@@ -150,6 +164,13 @@ def test_dry_run_specs_request_no_gpu():
         assert "nvidia.com/gpu" not in t["containers"][0]["resources"]["requests"]
         s = _script(spec)
         assert "loader_dryrun.py" in s and ("--full-columns" in s) == full and "raunav" in name
+        assert s.index('[ "${USE}" -le 85 ]') < s.index("loader_dryrun.py")       # storage guard first
+    name, spec = b.v2_dryrun_spec(TAG, False, "lofo", arm="R16_Q1_LOFO4P", epochs=4)
+    s = _script(spec)
+    arm = b._arm("R16_Q1_LOFO4P")
+    assert name == "mtx2-loader-dryrun-lofo-raunav" and "--epochs 4 " in s and '-le 85 ]' in s
+    assert f"--data-windows 3 --extra-selection '{arm['extra_selection']}'" in s and "--data-fraction" not in s
+    assert subprocess.run(["bash", "-n"], input=s, text=True).returncode == 0
 
 
 def test_the_v2_manifest_lists_no_inert_seed(tmp_path):
@@ -225,3 +246,76 @@ def test_the_any_gpu_resume_check_pins_a_list_and_stays_inside_the_gate():
     for line in re.findall(r"python3 experiments/MTX/pretrain_v2\.py --seed .*", s):
         assert "--deterministic" in line and "--num-epochs 3 " in line and "--samples-per-epoch 200000 " in line
     assert subprocess.run(["bash", "-n"], input=s, text=True).returncode == 0
+
+
+def test_the_job_restarts_from_the_epoch_the_driver_resumes(grid, tmp_path):
+    """The spec's LAST (failed-attempt bookkeeping) is pretrain_v2.latest_complete_epoch:
+    the newest resume file with its state file beside it."""
+    s = _script(next(iter(grid.values())))
+    block = s[s.index("LAST=-1"):]
+    block = block[:block.index("\ndone\n") + len("\ndone\n")]
+    for e, files in ((44, ("net_epoch-40_state.pt", "net_epoch-44_state.pt", "net_epoch-44_resume.pt",
+                           "net_epoch-45_resume.pt")),
+                     (-1, ("net_epoch-3_state.pt", "net_epoch-4_resume.pt")), (-1, ())):
+        d = tmp_path / str(len(files))
+        d.mkdir()
+        for f in files:
+            (d / f).write_text("x")
+        r = subprocess.run(["bash", "-c", f"set -euo pipefail\nOUT={d}\n{block}echo $LAST"],
+                           text=True, capture_output=True)
+        assert r.returncode == 0 and r.stdout.strip() == str(e), (files, r.stdout, r.stderr)
+
+
+def test_a_held_out_family_manifest_records_its_selection_and_window(tmp_path):
+    out, sel = tmp_path / "m.json", "~((jet_label >= 15) & (jet_label < 20))"
+    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "write_run_manifest.py"),
+                        "--driver", "pretrain_v2", "--run-id", "x", "--arm", "R16_Q1_LOFO4P", "--num-classes", "17",
+                        "--seed", "2", "--data-config", "configs/arms/R16_Q1.yaml",
+                        "--samples-per-epoch", "10240000", "--num-epochs", "80", "--batch-size", "512",
+                        "--num-workers", "5", "--data-split-num", "200", "--fetch-step", "1.0",
+                        "--data-windows", "3", "--extra-selection", sel, "--keep-checkpoints", "window",
+                        "--val-files", "a.parquet", "--out", str(out)], cwd=ROOT, capture_output=True, text=True,
+                       env={**os.environ, "PYTHONPATH": str(ROOT)})
+    assert r.returncode == 0, r.stderr
+    m = json.loads(out.read_text())
+    assert m["vocabulary"]["controlled_variable"] == "training selection (LOFO)"
+    assert m["data_stream"]["selection"].endswith(f" & ({sel})") and m["data_stream"]["extra_selection"] == sel
+    ld = m["data_stream"]["loader"]
+    assert ld["data_windows"] == 3 and ld["data_fraction"] == 1 / 3 and "1/3 of every file" in ld["window"]
+    assert m["checkpoints"]["robustness"].startswith("net_wavg70-79_state.pt") and "200,000" in m["checkpoints"]["robustness"]
+    assert m["checkpoints"]["retention"] == "window"
+
+
+def test_every_lofo_spec_hands_the_manifest_its_selection_and_window(grid):
+    lofo = [a for a in b.v2_arms() if a.get("extra_selection")]
+    assert lofo
+    for arm in lofo:
+        s = _script(grid[f"job-{b.v2_job_name(arm['name'], 1)}.yaml"])
+        man = s[s.index("write_run_manifest.py"):s.index("--out ${MANIFEST}")]
+        assert f"--extra-selection '{arm['extra_selection']}'" in man and "--data-windows 3" in man
+
+
+def test_the_pre_launch_check_names_every_missing_sidecar(monkeypatch):
+    import hashlib
+    cfg = "configs/arms/R16_Q1.yaml"
+    monkeypatch.setattr(b, "v2_arms", lambda: [{"name": "R16_Q1", "config": cfg},
+                                               {"name": "R16_Q1_LOFO4P", "config": cfg}])
+    name = f"R16_Q1.{hashlib.md5((ROOT / cfg).read_bytes()).hexdigest()}.auto.yaml"
+    assert b.v2_expected_sidecars("HEAD") == {cfg: name}
+    assert b.v2_missing_sidecars("HEAD", [name, "other.auto.yaml"]) == []
+    assert b.v2_missing_sidecars("HEAD", ["R16_Q1.0000.auto.yaml"]) == [f"{cfg}: {name}"]
+
+
+def test_the_storage_projection_refuses_what_does_not_fit():
+    peak = b.v2_run_peak_gib()
+    assert peak == (14 * b.V2_STATE_MIB + 2 * b.V2_RESUME_MIB + b.V2_RECORDS_MIB) / 1024 < 0.25
+    assert b.v2_storage_problem(74, 74 * peak + 0.1) is None
+    assert "74 runs" in b.v2_storage_problem(74, 74 * peak - 0.1)
+    # every epoch kept (--keep-checkpoints all) would not fit the ~62 GB to the guard (coordinator, 2026-10-01)
+    assert 74 * 80 * (b.V2_STATE_MIB + b.V2_RESUME_MIB) / 1024 > 62
+
+
+def test_the_grid_is_refused_without_the_pre_launch_inputs(tmp_path):
+    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "build_mtx_launch.py"), "--v2", str(tmp_path),
+                        "--tag", "HEAD"], capture_output=True, text=True)
+    assert r.returncode != 0 and "--sidecar-listing" in r.stderr and not list(tmp_path.iterdir())

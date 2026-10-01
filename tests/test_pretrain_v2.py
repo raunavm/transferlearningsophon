@@ -187,6 +187,49 @@ def test_a_data_fraction_reads_every_file_every_epoch_and_every_row_once_per_cyc
         sv.cycle_of(0, 0.3)
 
 
+def test_an_integer_window_count_tiles_every_file_exactly():
+    fd = {"A": [f"/x/A_{i:04d}.parquet" for i in range(40)], "Q": [f"/x/Q_{i:04d}.parquet" for i in range(14)]}
+    for n in (300, 999, 1000):                  # divisible by three and not
+        seen = {}
+        for e in range(3):                      # one cycle
+            cycle, window = sv.window_of(e, 3)
+            assert cycle == 0 and window == (e, 3)
+            per_epoch = {}
+            for fs, rs in sv.train_plan(fd, 5, e, 0, 2, 20, 1.0, 0, windows=3):
+                for f, (lo, hi) in zip(fs, rs):
+                    r = sv.file_rows(n, lo, hi, 5, cycle, 0, 3, window)
+                    per_epoch.setdefault(f, []).append(r)
+                    seen.setdefault(f, []).append(r)
+            for f, parts in per_epoch.items():  # no row twice within an epoch
+                rows = np.concatenate(parts)
+                assert len(rows) == len(set(rows.tolist()))
+        for f, parts in seen.items():           # every row once per cycle
+            assert sorted(np.concatenate(parts).tolist()) == list(range(n)), (n, f)
+    assert sv.window_of(4, 3) == (1, (1, 3))
+    for bad in (0, 2.5):
+        with pytest.raises(ValueError):
+            sv.window_of(0, bad)
+    assert sv.plan_sha256(fd, 5, 0, 2, 20, 1.0, 1 / 3, 3) != sv.plan_sha256(fd, 5, 1, 2, 20, 1.0, 1 / 3, 3)
+
+
+def test_the_fraction_path_is_unchanged_by_integer_windows():
+    """Hashes from the code before integer windows (commit c96fc60): the arms at
+    --data-fraction 0.2 draw the same schedule and rows."""
+    fd = {"Res2P": [f"/jc2/jet_data/Res2P_{i:04d}.parquet" for i in range(200)],
+          "Res34P": [f"/jc2/jet_data/Res34P_{i:04d}.parquet" for i in range(860)],
+          "QCD": [f"/jc2/jet_data/QCD_{i:04d}.parquet" for i in range(280)]}
+    assert sv.plan_sha256(fd, 12345, 0, 5, 200, 1.0, 0.2) == \
+        "6e3d463b7496dfcc8dbaeb43c57bf8f842e4add985bd12539ca250de84d47926"
+    assert sv.plan_sha256(fd, 12345, 7, 5, 200, 1.0, 0.2) == \
+        "2d031b7e28fbc67d1165d2a6d65955393c161120225c054739a41d4ae6b810a7"
+    h = hashlib.sha256()
+    for e in range(5):
+        cyc, (lo, hi) = sv.cycle_of(e, 0.2)
+        for a, b in ((lo, lo + (hi - lo) * 0.37), (lo + (hi - lo) * 0.37, hi)):
+            h.update(sv.file_rows(100000, a, b, 777, cyc, 0, 11).tobytes())
+    assert h.hexdigest() == "9ea34abcef983a671fec5708a8af7dd7c25652ac90e99eba1f8645225212d336"
+
+
 def test_reweighting_draws_equal_weavers_given_the_same_generator():
     from weaver.utils.dataset import _get_reweight_indices
     w = np.random.default_rng(3).uniform(0, 1, 5000) ** 3
@@ -440,6 +483,49 @@ def test_a_different_recipe_in_the_same_directory_halts(data, run_a, tmp_path):
     assert pv.main(_args(data, out, extra=["--start-lr", "1e-3"])) == pv.EXIT_HALT
 
 
+def test_a_resume_under_other_code_halts(data, run_a, tmp_path, monkeypatch):
+    rec = json.loads((run_a / "recipe.json").read_text())["code"]
+    assert set(rec) == {"repo_ref", "commit"} and rec["commit"]
+    out = tmp_path / "t"
+    shutil.copytree(run_a, out)
+    monkeypatch.setenv("REPO_REF", "mtx-s9.99" if rec["repo_ref"] != "mtx-s9.99" else "mtx-s9.98")
+    assert pv.main(_args(data, out)) == pv.EXIT_HALT
+
+
+def test_a_sidecar_that_is_not_its_config_plus_histograms_halts(data, tmp_path):
+    """Another config's sidecar under this config's md5 (stale or renamed) never trains;
+    the arm's own passes."""
+    from weaver.utils.data.config import _md5
+    assert pv.sidecar(data["cfg"]["R16_Q1"]) == sv.sidecar_path(data["cfg"]["R16_Q1"])
+    cfg = tmp_path / "R16_Q1.yaml"
+    shutil.copy(data["cfg"]["R16_Q1"], cfg)
+    shutil.copy(pv.sidecar(data["cfg"]["L188"]), tmp_path / f"R16_Q1.{_md5(str(cfg))}.auto.yaml")
+    assert "labels" in sv.sidecar_mismatch(str(cfg), sv.sidecar_path(str(cfg)))
+    with pytest.raises(SystemExit) as e:
+        pv.sidecar(str(cfg))
+    assert e.value.code == pv.EXIT_HALT
+    lone = tmp_path / "lone" / "R16_Q1.yaml"                  # a config with no sidecar
+    lone.parent.mkdir()
+    shutil.copy(data["cfg"]["R16_Q1"], lone)
+    with pytest.raises(SystemExit) as e:
+        pv.sidecar(str(lone))
+    assert e.value.code == pv.EXIT_HALT
+
+
+def test_a_sidecar_written_as_weavers_make_weight_writes_it_passes(tmp_path):
+    """weaver's training load drops the observers (load_observers=False) and
+    WeightMaker.produce adds weights.reweight_hists before dumping the options."""
+    from weaver.utils.data.config import DataConfig
+    for arm in ("R16_Q1", "L162_MASS"):
+        cfg = tmp_path / f"{arm}.yaml"
+        shutil.copy(ROOT / "configs" / "arms" / f"{arm}.yaml", cfg)
+        dc = DataConfig.load(str(cfg), load_observers=False)
+        dc.options["weights"]["reweight_hists"] = {c: [[0.5] * 3] * 3 for c in dc.reweight_classes}
+        dc.dump(sv.sidecar_path(str(cfg)))
+        assert DataConfig.load(sv.sidecar_path(str(cfg))).options["observers"] == []
+        assert sv.sidecar_mismatch(str(cfg), sv.sidecar_path(str(cfg))) == []
+
+
 def test_window_retention_keeps_best_last_ten_and_newest_resume(tmp_path):
     for e in range(15):
         (tmp_path / f"net_epoch-{e}_state.pt").write_text("s")
@@ -447,6 +533,51 @@ def test_window_retention_keeps_best_last_ten_and_newest_resume(tmp_path):
     pv.prune(tmp_path, {2} | set(range(5, 15)), 14)
     assert sorted(int(p.name.split("-")[1].split("_")[0]) for p in tmp_path.glob("*_state.pt")) == [2] + list(range(5, 15))
     assert [p.name for p in tmp_path.glob("*_resume.pt")] == ["net_epoch-14_resume.pt"]
+
+
+def test_window_retention_keeps_the_newest_resume_epochs_state_outside_the_window(tmp_path):
+    """The driver's order (state, resume, prune) through epoch 44 with the best at 40:
+    the restart point is epoch 44, not none."""
+    keep = lambda best: {best} | set(range(70, 80))
+    for e in range(45):
+        (tmp_path / f"net_epoch-{e}_state.pt").write_text("s")
+        (tmp_path / f"net_epoch-{e}_resume.pt").write_text("r")
+        pv.prune(tmp_path, keep(min(e, 40)), e)
+    assert sorted(p.name for p in tmp_path.glob("*.pt")) == [
+        "net_epoch-40_state.pt", "net_epoch-44_resume.pt", "net_epoch-44_state.pt"]
+    assert pv.latest_complete_epoch(tmp_path) == 44
+
+
+def test_a_window_run_killed_outside_the_window_resumes_there(data, tmp_path, monkeypatch, capsys):
+    """Killed during epoch 2 of 12 (window: best epoch 0 and epochs 2-11), after
+    epoch 1's prune: the restart resumes after epoch 1, not from scratch."""
+    monkeypatch.setattr(pv.Objective, "selection", lambda self, val: ("val.acc", 0.0))  # best stays 0
+    real = pv.torch_save
+
+    def killed(obj, path):
+        if path.name == "net_epoch-2_state.pt":
+            raise KeyboardInterrupt("killed during epoch 2")
+        real(obj, path)
+    out = tmp_path / "w"
+    args = _args(data, out, epochs=12, extra=["--keep-checkpoints", "window"])
+    monkeypatch.setattr(pv, "torch_save", killed)
+    with pytest.raises(KeyboardInterrupt):
+        pv.main(args)
+    assert sorted(p.name for p in out.glob("net_epoch-*.pt")) == [
+        "net_epoch-0_state.pt", "net_epoch-1_resume.pt", "net_epoch-1_state.pt"]
+    assert pv.latest_complete_epoch(out) == 1
+
+    def stop_after_epoch_2(obj, path):
+        real(obj, path)
+        if path.name == "net_epoch-2_resume.pt":
+            raise KeyboardInterrupt("stop")
+    monkeypatch.setattr(pv, "torch_save", stop_after_epoch_2)
+    capsys.readouterr()
+    with pytest.raises(KeyboardInterrupt):
+        pv.main(args)
+    log = capsys.readouterr().out
+    assert "resumed after epoch 1" in log and "fresh start" not in log
+    assert pv.latest_complete_epoch(out) == 2
 
 
 def test_states_retention_keeps_every_state_and_the_newest_resume(tmp_path):
@@ -498,6 +629,29 @@ def test_the_loader_dry_run_draws_the_rows_training_draws(data, run_a, tmp_path)
     for key in ("epoch", "last20"):
         assert set(dry["summary"][key]) == {"two-prong", "three/four-prong", "QCD"}
     assert dry["summary"]["per_fetch"]["fetches"] >= 0
+
+
+def test_a_held_out_family_run_reads_a_third_and_the_dry_run_draws_its_rows(data, tmp_path):
+    """A LOFO arm: --extra-selection with --data-windows 3; recorded as fraction 1/3,
+    and the loader dry run (same flags) draws the training rows, none from two
+    fetches, none of the excluded labels."""
+    import loader_dryrun
+    sel = "~((jet_label >= 100) & (jet_label < 161))"
+    out = tmp_path / "lofo"
+    assert pv.main(_args(data, out, epochs=3, extra=["--extra-selection", sel, "--data-windows", "3"])) == 0
+    rec = json.loads((out / "recipe.json").read_text())
+    assert rec["data_windows"] == 3 and rec["data_fraction"] == 1 / 3 and rec["extra_selection"] == sel
+    dry = tmp_path / "dry.json"
+    assert loader_dryrun.main([
+        "--seed", "3", "--epochs", "3", "--samples-per-epoch", "96", "--batch-size", "32",
+        "--num-workers", "2", "--data-split-num", "4", "--check-jets", "64", "--data-windows", "3",
+        "--extra-selection", sel, "--data-config", data["cfg"]["R16_Q1"], "--out", str(dry),
+        "--data-train", *[f"{fam}:{p}" for fam, ps in data["train"].items() for p in ps]]) == 0
+    d = json.loads(dry.read_text())
+    assert [e["sha256"] for e in d["epochs"]] == [r["sha256"] for r in _epochs(out, "stream").values()]
+    assert d["summary"]["rows_in_two_fetches"] == 0
+    assert set(range(100, 161)) <= set(d["summary"]["labels_absent_every_epoch"])
+    assert all(e["max_fetch_id"] < e["fetches_per_pass"] for e in d["epochs"])
 
 
 def test_the_run_ends_with_the_weight_average_in_the_fine_tuning_format(run_a):

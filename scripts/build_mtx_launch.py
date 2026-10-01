@@ -537,7 +537,13 @@ V2_GPU = "NVIDIA-GeForce-RTX-3090"
 V2_RATE = "5e-4"                    # RATES: every arm of the ladder trains at 5e-4
 V2_EPOCHS = 80
 V2_SAMPLES = 10_240_000
-V2_LOADER = "--num-workers 5 --fetch-step 1.0 --data-split-num 200 --data-fraction 0.2"
+V2_WINDOW = "--data-fraction 0.2"
+V2_LOADER = "--num-workers 5 --fetch-step 1.0 --data-split-num 200 " + V2_WINDOW
+# Held-out-family (LOFO) arms, PI 2026-10-01: the same 10,240,000 jets x 80 epochs, but each
+# epoch reads a third of every file (each row at most once per three epochs), so the epoch fits
+# inside its window with the excluded family's ~22% removed; an integer window count, no float
+# drift (stream_v2.window_of). Every other arm keeps --data-fraction 0.2 unchanged.
+V2_LOFO_WINDOWS = 3
 # --data-fraction 0.2: an epoch reads a random fifth of EVERY file (stream_v2.cycle_of).
 # A full pass over the training files yields ~52.8M jets (dry run, 52,800 per fetch x
 # 200 splits x 5 workers), so a fifth, ~10.6M, covers the 10,240,000-jet epoch.
@@ -551,6 +557,14 @@ V2_LOADER = "--num-workers 5 --fetch-step 1.0 --data-split-num 200 --data-fracti
 # validation set with for_training=True (reweighted); c97de3c train.py:1022-1023 defaults
 # --data-config-val to the training config and train_sophon.sh passes none.
 V2_SELECT = "acc"
+# Checkpoint retention (PI, 2026-10-01): epochs 70-79, the best epoch, the 70-79 weight
+# average and the newest resume file (pretrain_v2.py prune, write_weight_average).
+V2_KEEP = "window"
+# GPU product per run index (PI, 2026-10-01): run k of every arm on one product, so a
+# seed pair never mixes products (I7). Indices 4-5 may move to L40 only if the L40
+# numerics check passes; the run directories keep the contract name mtx-<slug>-s<k>
+# whatever the product.
+V2_GPU_BY_RUN = {1: V2_GPU, 2: V2_GPU, 3: V2_GPU, 4: V2_GPU, 5: V2_GPU}
 V2_CPU = "8"
 V2_MEM = "48Gi"
 V2_BACKOFF = 20                     # counted failures; evictions are ignored
@@ -653,12 +667,14 @@ def v2_script(arm: dict, run: int, *, run_id: str, out_root: str = V2_ROOT,
         extra += " --deterministic"
     k = 0 if obj == "mpm" else int(arm["num_classes"])
     cfg = arm["config"]
+    window = f"--data-windows {V2_LOFO_WINDOWS}" if arm.get("extra_selection") else V2_WINDOW
+    loader = V2_LOADER.replace(V2_WINDOW, window)
     train_cmd = (
         "python3 experiments/MTX/pretrain_v2.py --seed ${SEED} --out ${OUT}"
         f" --data-train {' '.join(TRAIN_GLOBS)} --data-val {' '.join(VAL_GLOBS)}"
         f" --data-config ${{CFG}} --network-config {ARCH[obj]}{head}"
         f" --use-amp --batch-size 512 --start-lr {V2_RATE} --num-epochs {epochs}"
-        f" --samples-per-epoch {samples} {V2_LOADER}{extra} --keep-checkpoints all --select-on {V2_SELECT}")
+        f" --samples-per-epoch {samples} {loader}{extra} --keep-checkpoints {V2_KEEP} --select-on {V2_SELECT}")
     if kill_after_epoch is None:
         run_block = f"PYTHONUNBUFFERED=1 {train_cmd} 2>&1 | tee -a ${{OUT}}/train.log\n"
     else:
@@ -688,8 +704,13 @@ echo "/data at ${{USE}}%"
 # A FAILED attempt leaves attempts/failed-* naming the last complete epoch (the
 # EXIT trap; an evicted pod is SIGKILLed, runs no trap and is not counted). Two
 # failed attempts with no epoch completed in between stop the job.
-LAST=$(ls ${{OUT}} | sed -n 's/^net_epoch-\\([0-9]*\\)_resume\\.pt$/\\1/p' | sort -n | tail -1)
-LAST=${{LAST:--1}}
+# LAST = pretrain_v2.latest_complete_epoch: the newest resume file with its state file beside it.
+LAST=-1
+for f in ${{OUT}}/net_epoch-*_resume.pt; do
+  [ -e "$f" ] || continue
+  n=$(basename "$f" | sed 's/^net_epoch-\\([0-9]*\\)_resume\\.pt$/\\1/')
+  if [ -f ${{OUT}}/net_epoch-${{n}}_state.pt ] && [ "$n" -gt "${{LAST}}" ]; then LAST=$n; fi
+done
 NF=$(ls ${{OUT}}/attempts | grep -c -- "-e${{LAST}}$" || true)
 [ "${{NF}}" -lt 2 ] || {{ echo "FATAL: ${{NF}} failed attempts after epoch ${{LAST}}"; exit ${{HALT}}; }}
 ATTEMPT=$(date -u +%Y%m%dT%H%M%SZ)
@@ -707,6 +728,14 @@ SIDECAR=${{CFG%.yaml}}.${{MD5}}.auto.yaml
 SRC=/data/results/mtx/makeweight/$(basename ${{SIDECAR}})
 [ -f "${{SRC}}" ] || {{ echo "FATAL: no reweighting sidecar ${{SRC}}: run the make_weight job for ${{CFG}}"; exit ${{HALT}}; }}
 cp "${{SRC}}" "${{SIDECAR}}"
+python3 - "${{CFG}}" "${{SIDECAR}}" <<'PY' || {{ echo "FATAL: ${{SIDECAR}} is not ${{CFG}} plus reweighting histograms"; exit ${{HALT}}; }}
+import sys
+sys.path.insert(0, "experiments/MTX")
+import stream_v2 as sv
+bad = sv.sidecar_mismatch(sys.argv[1], sys.argv[2])
+print("sidecar check:", "differs in %s" % bad if bad else "its config plus reweight_hists")
+sys.exit(1 if bad else 0)
+PY
 cp "${{SIDECAR}}" ${{OUT}}/
 sha256sum "${{SIDECAR}}" > ${{OUT}}/reweight_sidecar.sha256
 MANIFEST=${{OUT}}/run_manifest.json
@@ -714,8 +743,8 @@ MANIFEST=${{OUT}}/run_manifest.json
 python3 scripts/write_run_manifest.py --driver pretrain_v2 --run-id ${{RUN_ID}} --arm {arm['name']} \\
   --num-classes {k} --seed ${{SEED}} --data-config ${{CFG}} --samples-per-epoch {samples} \\
   --num-epochs {epochs} --batch-size 512{f" --lambda-mass {float(arm['mass_lambda'])}" if arm.get('mass_lambda') is not None else ""}{" --mpm-mask-rate 0.40" if obj == "mpm" else ""} \\
-  --num-workers 5 --data-split-num 200 --fetch-step 1.0 --data-fraction 0.2 --keep-checkpoints all \\
-  --select-on {V2_SELECT} \\
+  --num-workers 5 --data-split-num 200 --fetch-step 1.0 {window} --keep-checkpoints {V2_KEEP} \\
+  --select-on {V2_SELECT}{f" --extra-selection '{arm['extra_selection']}'" if arm.get('extra_selection') else ""} \\
   --val-files "${{VAL_FILES[@]}}" --out ${{MANIFEST}}
 {run_block})
 """
@@ -871,21 +900,33 @@ def v2_det_any_spec(tag: str) -> tuple:
                         pre=f"mkdir -p {SMOKE_ROOT}\n")
 
 
-def v2_dryrun_spec(tag: str, full_columns: bool = False, label: str = "") -> tuple:
+def v2_dryrun_spec(tag: str, full_columns: bool = False, label: str = "", arm: str = "R16_Q1",
+                   epochs: int | None = None) -> tuple:
     """The CPU loader-only dry run: 20 epochs x 10,240,000 jets through the v2
-    training stream with column projection, or (full_columns) one epoch with every
-    input column finalised, for memory and loader throughput. `label` names a
-    repeat (job name and output file), e.g. the tag it checks."""
+    training stream of `arm` with column projection, or (full_columns) one epoch with
+    every input column finalised, for memory and loader throughput. `label` names a
+    repeat (job name and output file), e.g. the tag it checks. A held-out-family arm
+    runs with its --extra-selection and --data-windows, as its training spec does."""
+    a = _arm(arm)
     kind = "memprobe" if full_columns else "dryrun"
     name = f"mtx2-loader-{kind}{'-' + label if label else ''}-raunav"
-    epochs = 1 if full_columns else 20
+    epochs = epochs or (1 if full_columns else 20)
     out = f"{V2_ROOT}/loader_dryrun/{kind}{'_' + label if label else ''}_seed1.json"
-    cmd = ("CFG=configs/arms/R16_Q1.yaml\n"
+    window = V2_WINDOW
+    if a.get("extra_selection"):
+        if "'" in a["extra_selection"]:
+            raise ValueError("extra_selection must not contain a single quote")
+        window = f"--data-windows {V2_LOFO_WINDOWS} --extra-selection '{a['extra_selection']}'"
+    cmd = (f"CFG={a['config']}\n"
            "MD5=$(md5sum ${CFG} | cut -d' ' -f1)\n"
-           "cp /data/results/mtx/makeweight/R16_Q1.${MD5}.auto.yaml configs/arms/\n"
+           "SIDECAR=${CFG%.yaml}.${MD5}.auto.yaml\n"
+           "cp /data/results/mtx/makeweight/$(basename ${SIDECAR}) ${SIDECAR}\n"
+           "USE=$(df --output=pcent /data | tail -1 | tr -dc 0-9)\n"
+           'echo "/data at ${USE}%"\n'
+           '[ "${USE}" -le 85 ] || { echo "FATAL: /data at ${USE}%, above 85%"; exit 1; }\n'
            f"mkdir -p {V2_ROOT}/loader_dryrun\n"
            f"PYTHONUNBUFFERED=1 python3 experiments/MTX/loader_dryrun.py --seed 1 --epochs {epochs} "
-           f"--samples-per-epoch {V2_SAMPLES} --num-workers 5 --data-split-num 200 --fetch-step 1.0 --data-fraction 0.2 "
+           f"--samples-per-epoch {V2_SAMPLES} --num-workers 5 --data-split-num 200 --fetch-step 1.0 {window} "
            f"--data-config ${{CFG}} --data-train {' '.join(TRAIN_GLOBS)} "
            f"{'--full-columns ' if full_columns else ''}--out {out} 2>&1 | tee {out[:-5]}.log\n")
     exclude = ", ".join(f'"{n}"' for n in V2_BAD_NODES)
@@ -1085,14 +1126,65 @@ spec:
     return out
 
 
-def v2_grid_specs(tag: str, gpu: str = V2_GPU, tiers=None) -> dict:
-    """{file name: spec} for every (arm, run) of the v2 grid."""
+# ------------------------------------------------ pre-launch checks (coordinator, 2026-10-01)
+def v2_expected_sidecars(tag: str) -> dict:
+    """{config: sidecar file name} for every grid config: <name>.<md5>.auto.yaml with the
+    md5 of the config as committed at `tag`, the file the pods clone. A working-tree
+    config that differs from it is refused (the specs would describe another config)."""
+    out = {}
+    for arm in v2_arms():
+        cfg = arm["config"]
+        if cfg in out:
+            continue
+        blob = subprocess.run(["git", "-C", str(ROOT), "show", f"{tag}:{cfg}"], capture_output=True,
+                              check=True).stdout
+        if (ROOT / cfg).read_bytes() != blob:
+            raise SystemExit(f"{cfg}: the working tree differs from {tag}")
+        out[cfg] = pathlib.Path(cfg).name.replace(".yaml", f".{hashlib.md5(blob).hexdigest()}.auto.yaml")
+    return out
+
+
+def v2_missing_sidecars(tag: str, listing) -> list:
+    """Grid sidecars absent from `listing`, the file names in MAKEWEIGHT_ROOT."""
+    have = set(listing)
+    return sorted(f"{cfg}: {name}" for cfg, name in v2_expected_sidecars(tag).items() if name not in have)
+
+
+# Storage under --keep-checkpoints window (pretrain_v2.prune and write_weight_average): at the
+# end of a run, the state files of epochs 70-79, of the best epoch, net_best_epoch_state.pt and
+# the weight average, plus one being written (14), two resume files (the newest and the one being
+# written) and the records. Sizes of the 188-output model, the largest (2,305,136 state elements),
+# written by pretrain_v2's own torch_save of its state and resume dicts (2026-10-01): 8.872 and
+# 35.423 MiB, 44.3 MiB per epoch, so --keep-checkpoints all would hold 3.5 GiB per run. Records:
+# init_trunk.pt (8.2 MiB) plus metrics, stream records and logs, bounded at 0.1 MiB per epoch.
+V2_STATE_MIB = 8.872
+V2_RESUME_MIB = 35.423
+V2_RECORDS_MIB = 16.0
+
+
+def v2_run_peak_gib() -> float:
+    return (14 * V2_STATE_MIB + 2 * V2_RESUME_MIB + V2_RECORDS_MIB) / 1024
+
+
+def v2_storage_problem(n_runs: int, headroom_gib: float):
+    """None if n_runs runs at their peak fit the headroom below the jobs' 85% guard,
+    else the reason."""
+    need = n_runs * v2_run_peak_gib()
+    if need > headroom_gib:
+        return (f"{n_runs} runs x {v2_run_peak_gib():.3f} GiB = {need:.1f} GiB, above the "
+                f"{headroom_gib:.1f} GiB to the 85% guard")
+    return None
+
+
+def v2_grid_specs(tag: str, tiers=None) -> dict:
+    """{file name: spec} for every (arm, run) of the v2 grid, run k on V2_GPU_BY_RUN[k]."""
     out = {}
     for arm in v2_arms():
         if tiers is not None and arm.get("tier", 1) not in tiers:
             continue
         for run in range(1, int(arm["runs"]) + 1):
-            name, spec = v2_spec(arm, run, gpu, tag=tag)
+            name, spec = v2_spec(arm, run, V2_GPU_BY_RUN[run], tag=tag,
+                                 run_id=v2_run_id(arm["name"], run), job=v2_job_name(arm["name"], run))
             out[f"job-{name}.yaml"] = spec
     return out
 
@@ -1113,7 +1205,19 @@ def main() -> int:
                     help="write the v2 pretraining specs (experiments/MTX/pretrain_v2.py) "
                          "for every arm and run of configs/arms/v2_grid.json into DIR; applies nothing")
     ap.add_argument("--tag", default=None, help="--v2: the repository tag the jobs clone")
-    ap.add_argument("--gpu", default=V2_GPU, help="--v2: the GPU product to pin")
+    ap.add_argument("--sidecar-listing", default=None, metavar="FILE",
+                    help="--v2: `ls /data/results/mtx/makeweight` read in a pod; every grid "
+                         "config's sidecar (md5 at --tag) must be in it")
+    ap.add_argument("--headroom-gib", type=float, default=None,
+                    help="--v2: GiB free below 85%% of /data (df -B1 in a pod); the runs to start "
+                         "must fit at their peak")
+    ap.add_argument("--started", nargs="*", default=[], metavar="RUN_ID",
+                    help="--v2: runs already started, not counted against the headroom")
+    ap.add_argument("--v2-dryrun", metavar="DIR", default=None,
+                    help="write the loader dry-run spec of --arm (its selection and window) into DIR")
+    ap.add_argument("--arm", default="R16_Q1", help="--v2-dryrun: the grid arm")
+    ap.add_argument("--epochs", type=int, default=None, help="--v2-dryrun: epochs")
+    ap.add_argument("--label", default="", help="--v2-dryrun: names the job and output")
     ap.add_argument("--v2-smoke", metavar="DIR", default=None,
                     help="write the v2 smoke, GPU-numerics and loader dry-run specs into DIR")
     ap.add_argument("--deterministic", action="store_true", help="--v2-smoke: the -det variants")
@@ -1135,12 +1239,33 @@ def main() -> int:
             print(d / fn)
         return 0
 
-    if args.v2:
+    if args.v2_dryrun:
         if not args.tag:
-            ap.error("--v2 needs --tag")
+            ap.error("--v2-dryrun needs --tag")
+        d = pathlib.Path(args.v2_dryrun)
+        d.mkdir(parents=True, exist_ok=True)
+        n, sp = v2_dryrun_spec(args.tag, False, args.label, arm=args.arm, epochs=args.epochs)
+        (d / f"job-{n}.yaml").write_text(sp)
+        print(d / f"job-{n}.yaml")
+        return 0
+
+    if args.v2:
+        if not args.tag or args.sidecar_listing is None or args.headroom_gib is None:
+            ap.error("--v2 needs --tag, --sidecar-listing and --headroom-gib")
+        missing = v2_missing_sidecars(args.tag, pathlib.Path(args.sidecar_listing).read_text().split())
+        if missing:
+            print("REFUSED: no reweighting sidecar on /data for\n  " + "\n  ".join(missing))
+            return 1
+        specs = v2_grid_specs(args.tag)
+        to_start = [fn for fn in specs if fn[len("job-mtx2-"):-len("-raunav.yaml")]
+                    not in {r[len("mtx-"):] for r in args.started}]
+        why = v2_storage_problem(len(to_start), args.headroom_gib)
+        if why:
+            print(f"REFUSED: {why}")
+            return 1
         d = pathlib.Path(args.v2)
         d.mkdir(parents=True, exist_ok=True)
-        for fn, spec in v2_grid_specs(args.tag, args.gpu).items():
+        for fn, spec in specs.items():
             (d / fn).write_text(spec)
             print(d / fn)
         return 0

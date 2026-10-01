@@ -92,6 +92,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--data-split-num", type=int, default=200)
     ap.add_argument("--data-fraction", type=float, default=1.0,
                     help="1/k: each epoch reads a random 1/k of every file, all rows once per k epochs")
+    ap.add_argument("--data-windows", type=int, default=None,
+                    help="k, in place of --data-fraction 1/k: the same windows in integer arithmetic "
+                         "(stream_v2.window_of); recorded as data_fraction 1/k and data_windows k")
     ap.add_argument("--optimizer", default="ranger", choices=["ranger"])
     ap.add_argument("--lr-scheduler", default="flat+decay", choices=["flat+decay"])
     ap.add_argument("--mass-lambda", type=float, default=None)
@@ -430,8 +433,9 @@ def recompute_bn(model, batches, n_jets: int, dev, amp: bool, input_names) -> in
 
 def write_weight_average(out: pathlib.Path, a, model, ds_train, seeds, dev, amp, loader_kw, input_names):
     """net_wavg<F>-<L>_state.pt: the weight average of the last WAVG_EPOCHS epochs'
-    state files (70-79 of 80), BatchNorm statistics recomputed on BN_JETS jets of the
-    stream of epoch num_epochs (drawn like any epoch, never trained on), and
+    state files (70-79 of 80), BatchNorm statistics recomputed on BN_JETS training jets
+    drawn by the stream of epoch num_epochs (the epoch-80 stream; its rows are training
+    rows, read in earlier epochs too), and
     net_wavg<F>-<L>.json recording the inputs' sha256, the file's sha256 and the
     BatchNorm sample. The format is the one experiments/FT/ft_v2.py resolve_wavg reads."""
     import torch
@@ -500,10 +504,11 @@ def latest_complete_epoch(out: pathlib.Path):
 
 def prune(out: pathlib.Path, keep_epochs, newest_resume: int) -> None:
     """Delete resume files other than the newest and, unless keep_epochs is
-    None, state files of epochs not in keep_epochs."""
+    None, state files of epochs not in keep_epochs. The newest resume epoch's
+    state file always stays: latest_complete_epoch needs both to restart there."""
     for p in out.glob("net_epoch-*_state.pt"):
         e = int(p.name[len("net_epoch-"):-len("_state.pt")])
-        if keep_epochs is not None and e not in keep_epochs:
+        if keep_epochs is not None and e not in keep_epochs and e != newest_resume:
             p.unlink()
     for p in out.glob("net_epoch-*_resume.pt"):
         e = int(p.name[len("net_epoch-"):-len("_resume.pt")])
@@ -522,11 +527,17 @@ def to_file_dict(entries) -> dict:
 
 
 def sidecar(path: str) -> str:
-    """The arm config's reweighting sidecar. Never rebuilt here."""
+    """The arm config's reweighting sidecar, refused (exit 42) unless it is the
+    config plus reweighting histograms. Never rebuilt here."""
     import stream_v2 as sv
     side = sv.sidecar_path(path)
     if not os.path.exists(side):
-        raise SystemExit(f"pretrain_v2: no reweighting sidecar {side}")
+        print(f"FATAL: no reweighting sidecar {side}", flush=True)
+        raise SystemExit(EXIT_HALT)
+    bad = sv.sidecar_mismatch(path, side)
+    if bad:
+        print(f"FATAL: {side} is not {path} plus reweighting histograms: differs in {bad}", flush=True)
+        raise SystemExit(EXIT_HALT)
     return side
 
 
@@ -538,13 +549,34 @@ def load_data_config(path: str):
 def recipe_of(a) -> dict:
     keep = ("seed", "data_config", "extra_selection", "network_config", "network_option", "use_amp", "batch_size",
             "start_lr", "num_epochs", "samples_per_epoch", "num_workers", "fetch_step",
-            "data_split_num", "data_fraction", "optimizer", "lr_scheduler", "mass_lambda", "mpm", "mpm_mask_rate",
+            "data_split_num", "data_fraction", "data_windows", "optimizer", "lr_scheduler", "mass_lambda", "mpm", "mpm_mask_rate",
             "deterministic", "select_on")
     r = {k: getattr(a, k) for k in keep}
     r["data_train_n"] = {k: len(v) for k, v in to_file_dict(a.data_train).items()}
     r["data_val"] = sorted(os.path.basename(p) for p in to_file_dict(a.data_val).get("_", []))
     r["device"] = device_name(a.device)
+    r["code"] = code_version()
     return r
+
+
+def code_version() -> dict:
+    """The tag the job cloned (REPO_REF) and the commit checked out: resuming under
+    other code would blend two programs into one run."""
+    import subprocess
+    try:
+        commit = subprocess.run(["git", "-C", str(REPO), "rev-parse", "HEAD"], capture_output=True,
+                                text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        commit = None
+    return {"repo_ref": os.environ.get("REPO_REF"), "commit": commit}
+
+
+def stream_window(a) -> dict:
+    """The window arguments of the training stream: the integer count when given
+    (data_fraction is then only its record), else the fraction."""
+    if a.data_windows is not None:
+        return {"data_windows": a.data_windows}
+    return {"data_fraction": a.data_fraction}
 
 
 def device_name(device=None) -> str:
@@ -562,6 +594,10 @@ def main(argv=None) -> int:
         raise SystemExit("pretrain_v2: --mpm and --mass-lambda are exclusive")
     if a.mpm_mask_rate is not None and not a.mpm:
         raise SystemExit("pretrain_v2: --mpm-mask-rate without --mpm")
+    if a.data_windows is not None:
+        if a.data_fraction != 1.0 or a.data_windows < 1:
+            raise SystemExit("pretrain_v2: --data-windows k replaces --data-fraction 1/k")
+        a.data_fraction = 1.0 / a.data_windows        # recorded; the stream uses the integer count
     if a.deterministic:
         os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
     import numpy as np
@@ -609,7 +645,7 @@ def main(argv=None) -> int:
     ds_train = sv.StreamDataset(train_files, side, mode="train", batch_size=a.batch_size,
                                 seed=seeds["data_sampling"], split_num=a.data_split_num,
                                 fetch_step=a.fetch_step, extra_selection=a.extra_selection,
-                                data_fraction=a.data_fraction)
+                                **stream_window(a))
     ds_val = sv.StreamDataset(val_files, side, mode="val", batch_size=a.batch_size,
                               extra_selection=a.extra_selection)
 
@@ -719,7 +755,7 @@ def main(argv=None) -> int:
             best = {"epoch": epoch, "metric": name, "value": value}
 
         files_sha = sv.plan_sha256(train_files, seeds["data_sampling"], epoch, a.num_workers,
-                                   a.data_split_num, a.fetch_step, a.data_fraction)
+                                   a.data_split_num, a.fetch_step, a.data_fraction, a.data_windows)
         stream = rec.record(run, epoch, seeds["data_sampling"], seeds["dropout"], files_sha)
         write_json(out / "metrics" / f"epoch-{epoch:03d}.json", {
             "run": run, "epoch": epoch, "objective": kind, "lr": lr, "train": train, "val": val,

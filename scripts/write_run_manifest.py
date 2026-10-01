@@ -153,8 +153,13 @@ def _v2_fields(manifest: dict, a) -> None:
                                "experiments/MTX/stream_v2.py",
                    "fetch_step": a.fetch_step, "data_split_num": a.data_split_num,
                    "num_workers": a.num_workers, "data_fraction": a.data_fraction,
-                   "window": "each epoch reads a random data_fraction of every file; every row once "
-                             "per 1/data_fraction epochs (stream_v2.cycle_of)",
+                   "data_windows": a.data_windows,
+                   "window": (f"each epoch reads a random 1/{a.data_windows} of every file, window "
+                              f"e % {a.data_windows} of the cycle's row permutation in integer arithmetic; "
+                              f"every row once per {a.data_windows} epochs (stream_v2.window_of)"
+                              if a.data_windows else
+                              f"each epoch reads a random {a.data_fraction:g} of every file; every row once "
+                              f"per {round(1 / a.data_fraction)} epochs (stream_v2.cycle_of)"),
                    "fresh_stream_every_epoch": True}
     d["validation"] = {"files": sorted(a.val_files), "n_files": len(a.val_files),
                        "rows": "every row passing the selection, no reweighting, same order every epoch",
@@ -165,7 +170,10 @@ def _v2_fields(manifest: dict, a) -> None:
                    "(head_top1_acc: unweighted top-1; acc: weighted by the training reweighting "
                    "weights); self-supervised: lowest validation loss (net_best_epoch_state.pt, "
                    "best_epoch.json, which names the metric)",
-        "robustness": f"mean of each result over epochs {a.num_epochs - 10}-{a.num_epochs - 1}",
+        "robustness": (f"net_wavg{a.num_epochs - 10}-{a.num_epochs - 1}_state.pt: the mean of the state files "
+                       f"of epochs {a.num_epochs - 10}-{a.num_epochs - 1}, BatchNorm statistics recomputed on "
+                       f"200,000 training jets drawn by the epoch-{a.num_epochs} stream "
+                       f"(net_wavg{a.num_epochs - 10}-{a.num_epochs - 1}.json)"),
         "retention": a.keep_checkpoints,
         "resume_restores": ["model", "RAdam state", "Lookahead slow weights and step counter",
                             "AMP GradScaler", "LR scheduler", "SequenceTrimmer counters",
@@ -194,6 +202,10 @@ def main() -> int:
     ap.add_argument("--data-split-num", type=int, default=None)
     ap.add_argument("--fetch-step", type=float, default=None)
     ap.add_argument("--data-fraction", type=float, default=1.0)
+    ap.add_argument("--data-windows", type=int, default=None,
+                    help="pretrain_v2 --data-windows k: recorded as data_fraction 1/k")
+    ap.add_argument("--extra-selection", default=None,
+                    help="ANDed onto the config's selection (the held-out-family arms)")
     ap.add_argument("--val-files", nargs="*", default=None,
                     help="pretrain_v2: the fixed validation sample's files")
     ap.add_argument("--keep-checkpoints", default=None)
@@ -202,6 +214,10 @@ def main() -> int:
     a = ap.parse_args()
     if a.driver == "pretrain_v2" and None in (a.num_workers, a.data_split_num, a.fetch_step, a.val_files):
         ap.error("--driver pretrain_v2 needs --num-workers, --data-split-num, --fetch-step and --val-files")
+    if a.data_windows is not None:
+        if a.data_fraction != 1.0:
+            ap.error("--data-windows k replaces --data-fraction 1/k")
+        a.data_fraction = 1.0 / a.data_windows
 
     cfg = pathlib.Path(a.data_config)
     if not cfg.is_absolute():
@@ -246,7 +262,8 @@ def main() -> int:
             "arm": a.arm,
             "num_classes": a.num_classes,
             # The ONLY field that may differ within a seed pair.
-            "controlled_variable": "num_classes + label map",
+            "controlled_variable": ("training selection (LOFO)" if a.extra_selection
+                                    else "num_classes + label map"),
         },
 
         "randomness": {
@@ -303,7 +320,9 @@ def main() -> int:
 
         "data_stream": {
             "data_config_path": str(a.data_config),
-            "selection": "200 < jet_pt < 2500 & 20 < jet_sdmass < 500",
+            "selection": "200 < jet_pt < 2500 & 20 < jet_sdmass < 500"
+                         + (f" & ({a.extra_selection})" if a.extra_selection else ""),
+            "extra_selection": a.extra_selection,
             "batch_size": a.batch_size,
             "samples_per_epoch": a.samples_per_epoch,
             "num_epochs": a.num_epochs,

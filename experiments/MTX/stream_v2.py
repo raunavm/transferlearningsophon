@@ -144,30 +144,46 @@ def cycle_of(epoch: int, data_fraction: float):
     return epoch // k, (j * data_fraction, (j + 1) * data_fraction if j + 1 < k else 1.0)
 
 
+def window_of(epoch: int, windows: int):
+    """(cycle, (j, k)) with an integer window count k: epoch e reads window j = e % k
+    of cycle e // k, rows [j n // k, (j+1) n // k) of each file's permutation
+    (file_rows), so the k windows of a cycle tile every file exactly, in integers."""
+    k = int(windows)
+    if k != windows or k < 1:
+        raise ValueError(f"window count {windows} is not a positive integer")
+    return epoch // k, (epoch % k, k)
+
+
 def train_plan(file_dict: dict, seed: int, epoch: int, worker: int, num_workers: int,
                split_num: int, fetch_step: float, pass_idx: int = 0,
-               data_fraction: float = 1.0) -> list:
+               data_fraction: float = 1.0, windows: int | None = None) -> list:
     """The fetch schedule of one worker in one pass of one epoch: Sophon's
-    schedule over the epoch's window of every file (Sophon's --data-fraction)."""
+    schedule over the epoch's window of every file (Sophon's --data-fraction).
+    With an integer window count the load ranges are fractions OF THE WINDOW
+    (file_rows maps them to rows); otherwise of the file (cycle_of)."""
     rng = np.random.default_rng(seed_seq(seed, TAG_FILES, epoch, worker, pass_idx))
     mine = worker_files(file_dict, worker, num_workers)
     shuffled = {name: [files[i] for i in rng.permutation(len(files))]
                 for name, files in sorted(mine.items())}
-    return sophon_splits(shuffled, split_num, fetch_step, load_range=cycle_of(epoch, data_fraction)[1])
+    load_range = (0.0, 1.0) if windows else cycle_of(epoch, data_fraction)[1]
+    return sophon_splits(shuffled, split_num, fetch_step, load_range=load_range)
 
 
 def plan_sha256(file_dict: dict, seed: int, epoch: int, num_workers: int,
-                split_num: int, fetch_step: float, data_fraction: float = 1.0) -> str:
+                split_num: int, fetch_step: float, data_fraction: float = 1.0,
+                windows: int | None = None) -> str:
     """sha256 of every worker's first-pass schedule for the epoch: file base
     names and load ranges in read order, plus the worker count and split number
-    that shape it. An epoch that runs past its first pass (never at 10.24M jets
-    per epoch) is still covered by the row hash."""
+    that shape it (and, with an integer window count, the count and the epoch's
+    window). An epoch that runs past its first pass is still covered by the row hash."""
     plan = {"num_workers": num_workers, "split_num": split_num, "fetch_step": fetch_step,
             "data_fraction": data_fraction,
             "workers": [[[[os.path.basename(f) for f in fs], [[round(a, 12), round(b, 12)] for a, b in rs]]
                          for fs, rs in train_plan(file_dict, seed, epoch, w, num_workers,
-                                                  split_num, fetch_step, 0, data_fraction)]
+                                                  split_num, fetch_step, 0, data_fraction, windows)]
                         for w in range(num_workers)]}
+    if windows:
+        plan["windows"] = list(window_of(epoch, windows)[1])
     return hashlib.sha256(json.dumps(plan, sort_keys=True).encode()).hexdigest()
 
 
@@ -180,7 +196,7 @@ def _slice_bounds(n: int, lo: float, hi: float):
 
 
 def file_rows(n: int, lo: float, hi: float, seed: int, cycle: int, pass_idx: int,
-              file_index: int) -> np.ndarray:
+              file_index: int, window=None) -> np.ndarray:
     """The rows a training load range (lo, hi) of a file takes: positions
     [trunc(lo*n), trunc(hi*n)) of a permutation of the file's rows fixed per
     (seed, cycle, pass, file), sorted. The splits of one epoch therefore tile
@@ -195,10 +211,19 @@ def file_rows(n: int, lo: float, hi: float, seed: int, cycle: int, pass_idx: int
     Random rows alone did not change the epoch scatter, though (dry run at
     mtx-s1.70, epoch by epoch within 5e-5 of mtx-s1.69): that comes from which
     files an epoch reads, fixed by the file order. Hence the window over every
-    file each epoch (cycle_of, --data-fraction)."""
-    start, stop = _slice_bounds(n, lo, hi)
+    file each epoch (cycle_of, --data-fraction).
+
+    window = (j, k), an integer window count: (lo, hi) are fractions of window j,
+    positions [j n // k, (j+1) n // k) of the permutation, so the windows of a
+    cycle tile the file in integer arithmetic (window_of)."""
     perm = np.random.default_rng(seed_seq(seed, TAG_ROWS, cycle, pass_idx, file_index)).permutation(n)
-    return np.sort(perm[start:stop])
+    if window is None:
+        start, stop = _slice_bounds(n, lo, hi)
+        return np.sort(perm[start:stop])
+    j, k = window
+    a, b = j * n // k, (j + 1) * n // k
+    start, stop = _slice_bounds(b - a, lo, hi)
+    return np.sort(perm[a + start:a + stop])
 
 
 class _FileCache:
@@ -246,6 +271,23 @@ def sidecar_path(path: str) -> str:
     return path.replace(".yaml", ".%s.auto.yaml" % _md5(path))
 
 
+def sidecar_mismatch(config_path: str, side_path: str) -> list:
+    """The top-level keys in which the sidecar is not its config plus reweighting
+    histograms: both loaded through weaver's DataConfig as training loads them (same
+    defaults; no observers, which weaver's make_weight drops when it writes the
+    sidecar), compared in everything except weights.reweight_hists. A stale or
+    renamed sidecar (another partition's labels, another selection) is non-empty."""
+    from weaver.utils.data.config import DataConfig
+
+    def opts(p):
+        o = copy.deepcopy(DataConfig.load(p, load_observers=False).options)
+        if isinstance(o.get("weights"), dict):
+            o["weights"].pop("reweight_hists", None)
+        return o
+    a, b = opts(config_path), opts(side_path)
+    return sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
+
+
 def load_config(path: str, extra_selection: str | None = None):
     """A training config as weaver loads it for training (no observers;
     --extra-selection ANDed onto the selection, train.py train_load)."""
@@ -275,7 +317,8 @@ class StreamDataset(torch.utils.data.IterableDataset):
     def __init__(self, file_dict: dict, config_file: str, *, mode: str, batch_size: int,
                  seed: int | None = None, split_num: int = 200, fetch_step: float = 1.0,
                  labels_only: bool = False, max_resample: int = 10, cache_per_family: int = 1,
-                 extra_selection: str | None = None, data_fraction: float = 1.0):
+                 extra_selection: str | None = None, data_fraction: float = 1.0,
+                 data_windows: int | None = None):
         self.config_file = str(config_file)
         self.extra_selection = extra_selection
         data_config = load_config(self.config_file, extra_selection)
@@ -298,7 +341,13 @@ class StreamDataset(torch.utils.data.IterableDataset):
         self.split_num = int(split_num)
         self.fetch_step = float(fetch_step)
         self.data_fraction = float(data_fraction)
-        cycle_of(0, self.data_fraction)          # refuses a fraction that is not 1/k
+        self.data_windows = data_windows
+        if data_windows is None:
+            cycle_of(0, self.data_fraction)      # refuses a fraction that is not 1/k
+        elif data_fraction != 1.0:
+            raise ValueError("data_windows replaces data_fraction")
+        else:
+            window_of(0, data_windows)           # refuses a count that is not a positive integer
         self.labels_only = labels_only
         self.max_resample = max_resample
         self.cache_size = cache_per_family * len(self.file_dict) + 1
@@ -333,7 +382,7 @@ class StreamDataset(torch.utils.data.IterableDataset):
 
     # -- one fetch
     def _load(self, cache, files, ranges, rng, key=None):
-        """key = (cycle, pass) for the training stream: each file's load
+        """key = (cycle, pass, window) for the training stream: each file's load
         range then selects that many rows at random positions of the file
         (file_rows), not a contiguous slice. None (validation): contiguous."""
         parts = []
@@ -345,7 +394,8 @@ class StreamDataset(torch.utils.data.IterableDataset):
                 rows = np.arange(start, stop)
                 part = full[start:stop]
             else:
-                rows = file_rows(len(full), lo, hi, self.seed, *key, fidx)
+                cycle, p, window = key
+                rows = file_rows(len(full), lo, hi, self.seed, cycle, p, fidx, window)
                 part = full[rows]
             parts.append(ak.with_field(part, fidx * 2 ** ROW_BITS + rows, "_rowid"))
         table = parts[0] if len(parts) == 1 else ak.concatenate(parts)
@@ -382,11 +432,14 @@ class StreamDataset(torch.utils.data.IterableDataset):
         p = 0
         while True:  # a new pass only if an epoch outruns one (test-sized inputs)
             plan = train_plan(self.file_dict, self.seed, self.epoch, worker, num_workers,
-                              self.split_num, self.fetch_step, p, self.data_fraction)
-            cycle = cycle_of(self.epoch, self.data_fraction)[0]
+                              self.split_num, self.fetch_step, p, self.data_fraction, self.data_windows)
+            if self.data_windows:
+                cycle, window = window_of(self.epoch, self.data_windows)
+            else:
+                cycle, window = cycle_of(self.epoch, self.data_fraction)[0], None
             for f, (files, ranges) in enumerate(plan):
                 rng = np.random.default_rng(seed_seq(self.seed, TAG_FETCH, self.epoch, worker, p, f))
-                yield p * len(plan) + f, files, ranges, rng, (cycle, p)
+                yield p * len(plan) + f, files, ranges, rng, (cycle, p, window)
             p += 1
 
     def __iter__(self):
