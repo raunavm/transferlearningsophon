@@ -644,6 +644,49 @@ def analyse(score, mass, pt, peak, eff, n_toys, shape=None, tops=None):
     return fit, passed, dict(hist, **{f"validation_{k}": v for k, v in hist_v.items()})
 
 
+# ONE PEAK SHAPE FOR THE PRETRAINED MODELS (2026-10-01). Floated per score, the Gaussian's
+# mean and width trade against the transfer factor: on toys around each fit (experiments/AOJ/
+# injection_test.py) the procedure's pulls had a standard deviation of 2.1 at 1,000 injected
+# jets and 1.15 at 2,000-4,000, the shape running to a narrow width on a fluctuation (yield
+# and error both small) or to the window's edge with a negative yield, where it stands in
+# for TF curvature and the F-test stops at too low an order. At the injected shape the same
+# toys gave pulls of mean 0 and width 0.95-1.13. The scores' own floated shapes are
+# consistent with one shape (fit_v4: summed deviance change 45.5 for 62 degrees of freedom),
+# as a property of the top peak and the detector rather than of the tagger would be.
+POOL_MAX_ITERATIONS = 5
+
+
+def pooled_shape(bins, pool, window, start, tops=None, mapper=map):
+    """(shape, orders, iterations): the one (mean, width) minimising the summed loss of the
+    scores in `pool`, each at its own TF order chosen by F-test AT that shape, alternated
+    until the orders hold (at most POOL_MAX_ITERATIONS). `tops`: name -> tops or None;
+    `mapper` runs the per-score fits (a process pool's map)."""
+    tops = tops or {}
+    norm = {n: _tf_norm(bins[n], window) for n in pool}
+    shape, orders, trail = tuple(map(float, start)), None, []
+    for _ in range(POOL_MAX_ITERATIONS):
+        new = dict(zip(pool, mapper(_order_at, [(bins[n], norm[n], shape, tops.get(n)) for n in pool])))
+        trail.append(dict(shape=list(shape), orders={n: list(o) for n, o in new.items()}))
+        if new == orders:
+            return shape, orders, trail
+        orders = new
+
+        def total(v):
+            return sum(mapper(_loss_at, [(bins[n], orders[n], norm[n], (v[0], v[1]), tops.get(n)) for n in pool]))
+        shape = _minimize_shape(total, shape, total(shape), window, 1e-2, 1e-9)[0]
+    raise SystemExit(f"FATAL: the pooled shape's orders did not settle in {POOL_MAX_ITERATIONS} iterations: {trail}")
+
+
+def _order_at(job):
+    b, tf_norm, shape, tops = job
+    return tuple(_choose_order(b, tf_norm, *shape, tops)[0])
+
+
+def _loss_at(job):
+    b, order, tf_norm, shape, tops = job
+    return _Model(b, tuple(order), tf_norm, *shape, tops).fit()[1]
+
+
 def shape_variations(bins, fits, pool, old_reference, peak, tops=None):
     """The shape systematic, blind to the label set: every fit in `fits` again, at its
     own TF order, with two fixed shapes --

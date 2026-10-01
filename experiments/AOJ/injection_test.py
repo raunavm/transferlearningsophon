@@ -128,12 +128,15 @@ def export(merged, committed, out, workers):
 # ------------------------------------------------------------------ toys
 DATA = pathlib.Path("experiments/FIGS/data/aoj_full_v1")
 REGIONS = ("top", "band", "pseudo", *(f"top_eff{e:g}" for e in EXTRA_EFF))
-MODES = ("bootstrap", "data", "leak", "tops", "tops_half")
+MODES = ("bootstrap", "data", "leak", "tops", "tops_half", "pooled")
 # THE FIT WITH THE TOPS IN THE FAIL REGION (peak_fit._Model, fit_v5): toys whose fail region
 # holds the tops failing the cut -- the reference's fitted signal per bin over EPS_TRUE --
 # fitted given the reference's signal (EPS_REF = 1, the fewest tops there can be). tops: the
 # fit's assumption holds; tops_half: twice as many tops as the reference passes.
-EPS_TRUE = dict(tops=1.0, tops_half=0.5)
+EPS_TRUE = dict(tops=1.0, tops_half=0.5, pooled=1.0)
+# THE POOLED SHAPE (peak_fit.pooled_shape, fit_v6): mode pooled draws the signal and the
+# generator's background at the pooled shape (--pooled: fit_v6's results), the tops in the
+# fail region as in mode tops; variant fixed_ftest is then fit_v6's procedure.
 VARIANTS = ("full", "float", "fixed", "fixed_ftest")
 
 
@@ -154,7 +157,7 @@ def _per_pt(fit):
                      for j in range(len(P.PT_EDGES) - 1)])
 
 
-def truth(region, name, b, top_fit, start, tops=None):
+def truth(region, name, b, top_fit, start, tops=None, pooled=None):
     """The generator of one score's toys in one region: a background with no signal, and a
     signal template that sums to 1 over the region's bins.
       top       the main fit's own model (top_fit: its order and floated shape), signal removed
@@ -164,7 +167,12 @@ def truth(region, name, b, top_fit, start, tops=None):
     top fit's width, as realdata_checks injects) and pT split; at another working point the
     shape and split fitted there."""
     window = P._peak_cfg(region_peak(region))["window"]
-    if region == "top":
+    if region == "top" and pooled is not None:
+        order = P._choose_order(b, P._tf_norm(b, window), *pooled, tops)[0]
+        model = P._Model(b, order, P._tf_norm(b, window), *pooled, tops)
+        x, _ = model.fit()
+        fit = dict(top_fit, mean=pooled[0], width=pooled[1])
+    elif region == "top":
         model = P._Model(b, tuple(top_fit["tf_order"]), P._tf_norm(b, window), top_fit["mean"], top_fit["width"],
                          tops)
         x, _ = model.fit()
@@ -238,11 +246,14 @@ def fit_variant(variant, b, region, tr, start, tops=None):
 _T: dict = {}
 
 
-def _init_toys(committed, extra, fit_path, eps_path):
+def _init_toys(committed, extra, fit_path, eps_path, pooled_path=None):
     _T.clear()
     _T.update(committed=np.load(committed), extra=np.load(extra) if extra else None,
               v4=json.loads(pathlib.Path(fit_path).read_text()), truths={},
               eps=json.loads(pathlib.Path(eps_path).read_text())["models"] if eps_path else {})
+    if pooled_path:
+        ps = json.loads(pathlib.Path(pooled_path).read_text())["pooled_shape"]
+        _T["pooled"] = (ps["mean"], ps["width"])
 
 
 def _top_fit(name):
@@ -280,9 +291,15 @@ def _run_task(t):
     if told and region != "top":
         raise SystemExit("FATAL: the tops are known in the top window only")
     tops = _tops() if told else None
-    if (region, name, told) not in _T["truths"]:
-        _T["truths"][(region, name, told)] = truth(region, name, b, _top_fit(name), _start(region, name), tops)
-    tr = _T["truths"][(region, name, told)]
+    pooled = None
+    if t["mode"] == "pooled":
+        if "pooled" not in _T:
+            raise SystemExit("FATAL: mode pooled needs --pooled (fit_v6's results)")
+        pooled = _T["pooled"]
+    key = (region, name, told, pooled)
+    if key not in _T["truths"]:
+        _T["truths"][key] = truth(region, name, b, _top_fit(name), _start(region, name), tops, pooled)
+    tr = _T["truths"][key]
     eps = None
     if t["mode"] == "leak":
         eps = _T["eps"][name]["three_prong"]["top_like_at_data_cut"]["eff"]
@@ -321,7 +338,8 @@ def run_toys(a):
         done = {json.loads(ln)["key"] for ln in out.read_text().splitlines() if ln.strip()}
     todo = [t for t in todo if task_key(t) not in done]
     print(f"{len(todo)} tasks to run, {len(done)} already written", flush=True)
-    init = (str(a.committed), str(a.extra) if a.extra else None, str(a.fit), str(a.eps) if a.eps else None)
+    init = (str(a.committed), str(a.extra) if a.extra else None, str(a.fit), str(a.eps) if a.eps else None,
+            str(a.pooled) if a.pooled else None)
     saved = {k: os.environ.get(k) for k in BLAS}
     os.environ.update({k: "1" for k in BLAS})
     try:
@@ -472,6 +490,7 @@ def main(argv=None) -> int:
     t.add_argument("--extra", default=None, type=pathlib.Path, help="injection_bins.npz (pseudo, other working points)")
     t.add_argument("--fit", default=DATA / "fit_v4/results.json", type=pathlib.Path)
     t.add_argument("--eps", default=None, type=pathlib.Path, help="model_vs_domain.json (mode leak)")
+    t.add_argument("--pooled", default=None, type=pathlib.Path, help="fit_v6's results.json (mode pooled)")
     t.add_argument("--regions", nargs="+", choices=REGIONS, default=["top"])
     t.add_argument("--modes", nargs="+", choices=MODES, default=["bootstrap"])
     t.add_argument("--names", nargs="+", required=True)

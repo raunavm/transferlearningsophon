@@ -1349,6 +1349,37 @@ def render_fit_v5() -> str:
     return _robust(t, "  backoffLimit: 2\n")
 
 
+# ONE PEAK SHAPE (v6, 2026-10-01): experiments/AOJ/fit_v6.py from the committed bins and
+# fit_v5, the fit_v5 job with the script and output changed.
+FIT6_ROOT = "/data/results/aoj/fit_v6"
+FIT6_PIN = "mtx-s1.90"
+FIT6_NEEDED_FLAGS = {"experiments/AOJ/fit_v6.py": "pooled_shape", "experiments/AOJ/peak_fit.py": "def pooled_shape",
+                     "experiments/FIGS/data/aoj_full_v1/fit_v5/results.json": "fail_tops"}
+
+
+def render_fit_v6() -> str:
+    t = render_fit_v5()
+    subs = [("THE REAL-DATA FITS, v5.", "THE REAL-DATA FITS, v6: ONE PEAK SHAPE FOR THE PRETRAINED MODELS."),
+            ("  # experiments/AOJ/fit_v5.py from the committed bins (no jets): every score's top fit\n"
+             "  # with the tops that fail its cut in the fail region, validation toys, the shape and\n"
+             "  # leak systematics, and the per-vocabulary readout.",
+             "  # experiments/AOJ/fit_v6.py from the committed bins and fit_v5 (no jets): the pooled\n"
+             "  # shape, every model's fit at it given the tops in the fail region, the shape and\n"
+             "  # leak systematics, and the per-vocabulary readout."),
+            ("name: aoj-fit-v5-raunav", "name: aoj-fit-v6-raunav"),
+            (f"OUT={FIT5_ROOT}", f"OUT={FIT6_ROOT}"),
+            (f'--branch "{FIT5_PIN}"', f'--branch "{FIT6_PIN}"'),
+            ("python3 experiments/AOJ/fit_v5.py", "python3 experiments/AOJ/fit_v6.py"),
+            ("--out /scratch/fit_v5 --analysis-out /scratch/fit_v5/analysis_v5", "--out /scratch/fit_v6 --analysis-out /scratch/fit_v6/analysis_v6"),
+            ('cp -r /scratch/fit_v5/. "${OUT}/"', 'cp -r /scratch/fit_v6/. "${OUT}/"'),
+            ("fit_quality.json analysis_v5 | base64", "fit_quality.json analysis_v6 | base64")]
+    for a, b in subs:
+        if t.count(a) != 1:
+            raise SystemExit(f"FATAL: the v5 fit template changed; cannot derive v6 ({a[:50]!r})")
+        t = t.replace(a, b)
+    return t
+
+
 # THE CHECKS AGAIN (v2, 2026-10-01), against fit_v5, with the corrections of the
 # verification of checks_v1: the injection's recovery net of the data's own signal and the
 # procedure's bias on toys, the leak scan, the prong-only test's power, the run spread as
@@ -1425,6 +1456,7 @@ def specs() -> dict[pathlib.Path, str]:
     out[K8S / "job-aoj-fit-v5-raunav.yaml"] = render_fit_v5()
     out[K8S / "job-aoj-checks-v2-raunav.yaml"] = render_checks_v2()
     out[K8S / "job-aoj-read-injection-v1-raunav.yaml"] = render_read_injection()
+    out[K8S / "job-aoj-fit-v6-raunav.yaml"] = render_fit_v6()
     return out
 
 
@@ -1432,7 +1464,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-only", action="store_true", help="verify, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
-                    help=f"check the working tree instead of {TOYS_PINS['tops']}, which is tagged after the commit")
+                    help=f"check the working tree instead of {FIT6_PIN}, which is tagged after the commit")
     a = ap.parse_args()
     verify_heads()
     verify_pin(PIN, False)                      # the shards already ran at it
@@ -1446,9 +1478,10 @@ def main() -> int:
     for study, pin in sorted(TOYS_PINS.items()):
         if study != "tops":
             verify_pin(pin, False, TOYS_NEEDED_FLAGS)
-    verify_pin(TOYS_PINS["tops"], a.pin_not_yet_tagged, {"experiments/AOJ/injection_test.py": "EPS_TRUE"})
+    verify_pin(TOYS_PINS["tops"], False, {"experiments/AOJ/injection_test.py": "EPS_TRUE"})
     verify_pin(INJECTION_PIN, False, INJECTION_NEEDED_FLAGS)
     verify_pin(FIT5_PIN, False, FIT5_NEEDED_FLAGS)
+    verify_pin(FIT6_PIN, a.pin_not_yet_tagged, FIT6_NEEDED_FLAGS)
     # the checks clone a tag made after fit_v5's results are committed
     if subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--verify", "-q", f"refs/tags/{CHECKS2_PIN}"],
                       capture_output=True).returncode == 0:

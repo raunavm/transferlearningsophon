@@ -474,3 +474,10 @@ def test_the_injection_read_back_mounts_the_volume_read_only_and_writes_nothing(
     assert all(m.get("readOnly") for m in pod["containers"][0]["volumeMounts"])
     s = _script(SPECS[path])
     assert f'cd "{B.INJECTION_ROOT}"' in s and "toys_*.jsonl" in s and ">" not in s.replace("2>", "")
+
+
+def test_the_v6_fit_is_the_v5_fit_job_with_its_script_and_output_changed():
+    five, six = _script(SPECS[FIT5]), _script(SPECS[B.K8S / "job-aoj-fit-v6-raunav.yaml"])
+    assert "fit_v6.py --workers" in six and f"OUT={B.FIT6_ROOT}" in six and f'--branch "{B.FIT6_PIN}"' in six
+    back = (six.replace("fit_v6", "fit_v5").replace("analysis_v6", "analysis_v5").replace(B.FIT6_PIN, B.FIT5_PIN))
+    assert back == five
