@@ -19,7 +19,10 @@ test jets, the same for every checkpoint:
          bvc_resonant (label_X_bb vs label_X_cc).
 The softmax averaged over epochs 70-79 ("ens") is scored as a head too.
 `analyse` adds the QCD share of the training stream at each epoch, read from
-the run's train.log (below), and writes one JSON; `figure` draws it.
+the run's train.log (below), compares the epochs with a paired bootstrap
+(paired_swing), flags defective heads under the rules stated at DEFECT_RULES,
+and writes one JSON; `figure` draws it. `summarise` recomputes the defect flags
+and counts and the class-mix result from an existing JSON, without the arrays.
 
 THE SAMPLE. The first --max-jets jets of the test list, every --stride-th, read
 once with configs/data/JetClassII_base.yaml in file order (the stream every
@@ -38,10 +41,12 @@ finer record exists: at INFO level weaver logs only "Restarted DataIter" when a
 worker exhausts its file list, not the files of each fetch, so the class mix of
 the last fetches before a checkpoint cannot be reconstructed.
 
-Usage (the job spec is experiments/DIAG/k8s/job-diag-head-epochs-raunav.yaml):
-    head_epoch_diag.py infer   --runs RUN_DIR:RUNG:K:NUM_REG ... --data-test ... --out DIR
-    head_epoch_diag.py analyse --out DIR --json FILE
-    head_epoch_diag.py figure  --json FILE --outdir DIR
+Usage (the job spec is experiments/DIAG/k8s/job-diag-head-epochs-raunav.yaml;
+the analyse-only rerun is job-diag-head-epochs-analyse-v2-raunav.yaml):
+    head_epoch_diag.py infer     --runs RUN_DIR:RUNG:K:NUM_REG ... --data-test ... --out DIR
+    head_epoch_diag.py analyse   --out DIR --json FILE
+    head_epoch_diag.py summarise --json FILE --out FILE2
+    head_epoch_diag.py figure    --json FILE --outdir DIR
 """
 from __future__ import annotations
 
@@ -61,6 +66,10 @@ import numpy as np
 REPO = pathlib.Path(__file__).resolve().parents[2]
 TASK = "bvc_resonant"
 N_BOOT = 200
+PAIRED_BOOT = 1000          # 9x9 covariance of the epoch deviations: 200 replicates bias chi2 up ~5%
+# The four runs the 2026-09-29 audit flagged for a defective epoch-79 head
+# (B4: 2,000,000 test jets, against the same vocabulary's other runs).
+AUDIT_FLAGGED = ("mtx-l188-s5", "mtx-l162-s5", "mtx-r42q1-s5", "mtx-r16q1mass-s4")
 
 
 def is_epoch(tag: str) -> bool:
@@ -124,8 +133,9 @@ def head_summary(correct, p_qcd, log_odds, is_qcd) -> dict:
             "res_vs_qcd_auc": float(roc_auc_score(~is_qcd, log_odds))}
 
 
-def probe_summary(F: np.ndarray, y: np.ndarray, seed: int = 0) -> dict:
-    """probe.py's linear probe on one task, plus a bootstrap SE of log(1-AUC)."""
+def probe_summary(F: np.ndarray, y: np.ndarray, seed: int = 0) -> tuple[dict, np.ndarray]:
+    """probe.py's linear probe on one task, plus a bootstrap SE of log(1-AUC);
+    also the probe's scores on the test split, for the paired epoch comparison."""
     tr, va, te = P.make_splits(len(y))
     s, meta = P.fit_linear(F[tr], y[tr], F[va], y[va], F[te])
     l1m, censored, auc = P.log1m_auc(y[te], s)
@@ -135,7 +145,7 @@ def probe_summary(F: np.ndarray, y: np.ndarray, seed: int = 0) -> dict:
         boot.append(P.log1m_auc(yt[i], s[i])[0])
     return {"auc": auc, "log1m_auc": l1m, "censored": censored,
             "log1m_auc_boot_se": float(np.std(boot, ddof=1)), "C": meta["C"],
-            "n_train": int(len(tr)), "n_test": int(len(te))}
+            "n_train": int(len(tr)), "n_test": int(len(te))}, s
 
 
 def parse_train_log(text: str) -> tuple[dict, dict]:
@@ -159,14 +169,31 @@ def qcd_share(counts: dict, qcd: list) -> float:
     return sum(counts.get(c, 0) for c in qcd) / tot
 
 
-def swing_test(values, se) -> dict:
-    """Between-epoch spread against sampling noise: chi2 = sum((v - mean)/se)^2."""
+def paired_swing(stat, n: int, n_boot: int = PAIRED_BOOT, seed: int = 0) -> dict:
+    """Between-epoch spread of one metric against its sampling noise, when every
+    epoch is scored on the SAME n jets. stat(idx) returns the metric of each of
+    the K epochs on jets idx.
+
+    Each bootstrap replicate draws the jets once and scores every epoch on them,
+    so the noise the epochs share (which jets happen to be in the sample) cancels
+    in each epoch's deviation from the epoch mean. Dividing by each epoch's own
+    sampling error instead counts that shared noise as if the epochs had been
+    scored on independent samples, and hides real differences between them.
+    chi2 = d' S^+ d, with d the epochs' deviations from their mean and S the
+    bootstrap covariance of those deviations (rank K-1, hence the pseudo-inverse);
+    K-1 degrees of freedom. paired_se is the median over epochs of the bootstrap
+    SD of an epoch's deviation from the epoch mean.
+    """
     from scipy.stats import chi2
-    v, se = np.asarray(values, float), np.asarray(se, float)
-    c2 = float((((v - v.mean()) / se) ** 2).sum())
-    return {"sd": float(v.std(ddof=1)), "median_se": float(np.median(se)),
-            "sd_over_se": float(v.std(ddof=1) / np.median(se)),
-            "chi2": c2, "dof": int(v.size - 1), "p": float(chi2.sf(c2, v.size - 1))}
+    v = np.asarray(stat(np.arange(n)), float)
+    rng = np.random.default_rng(seed)
+    boot = np.array([stat(rng.integers(0, n, n)) for _ in range(n_boot)], float)
+    dev = boot - boot.mean(1, keepdims=True)
+    d = v - v.mean()
+    c2 = float(d @ np.linalg.pinv(np.atleast_2d(np.cov(dev, rowvar=False)), hermitian=True) @ d)
+    se = float(np.median(dev.std(0, ddof=1)))
+    return {"sd": float(v.std(ddof=1)), "paired_se": se, "sd_over_paired_se": float(v.std(ddof=1) / se),
+            "chi2": c2, "dof": int(v.size - 1), "p": float(chi2.sf(c2, v.size - 1)), "n_boot": n_boot}
 
 
 def within_run_correlation(series: list[tuple], n_perm: int = 10_000, seed: int = 0) -> dict:
@@ -359,6 +386,138 @@ def infer(a) -> int:
     return 0
 
 
+# ---------------------------------------------------------------- defective heads
+# WHAT "DEFECTIVE" MEANS -- the primary rule was fixed 2026-10-01, before any
+# count was computed with it. A checkpoint's output layer is defective when its
+# top-1 accuracy on the sample is more than 10% below the median top-1 accuracy
+# of the run's epochs 70-79.
+#  * Top-1 accuracy is what the audit flagged the four heads on, and what the v2
+#    checkpoint rule maximises.
+#  * The reference is built from the epochs alone, never from averaged weights,
+#    so the weight average and the best-validation checkpoint are judged against
+#    the same reference as the epochs. A reference built from the weight average
+#    would make "the weight average removes the defect" true by construction.
+#  * 10% is twice the largest distance of a normal epoch-79 head from the middle
+#    of its vocabulary's normal heads in the audit (2,000,000 jets; normal heads
+#    0.463-0.490, 0.501-0.545, 0.605-0.671, 0.682-0.719: half-widths 2.8, 4.2,
+#    5.2 and 2.6%). The binomial error on 500,000 jets is 0.1-0.2% of the
+#    accuracy, so sampling noise cannot trigger the rule. It is a magnitude rule
+#    because it has to be: every run's epochs spread over 52-152 binomial errors,
+#    so a rule on significance alone would flag a large share of every run's epochs.
+# THE MEDIAN IS NOT ALWAYS A SOUND HEAD. It is the level of a normal head only
+# while at most four of the ten epochs are defective low. Two runs break that:
+# in l188-s5 six epochs are low, and the median, 0.406, is the accuracy of
+# epochs 71 and 78, whose heads never predict QCD; in r16q1mass-s4 five are,
+# and the median, 0.632, lies between a never-QCD epoch (0.607) and the run's
+# sound epochs at 0.66-0.70. So the counts are also given against two other
+# references (review of 2026-10-01): the 75th percentile of epochs 70-79, sound
+# while at most six epochs are low, and the most accurate of epochs 70-79, sound
+# while any one is. From the median to the most accurate epoch the reference
+# moves from the middle to the top of a run's sound epochs, so the rule gets
+# stricter; the three bracket the choice.
+# The other rules give the range of the counts: each reference at 5%, 10% and
+# 15%, and a rule on the QCD-vs-resonance decision, the median resonance-vs-QCD
+# log-odds on QCD jets more than 2.8 from the reference, either way, against the
+# median and against the most accurate epoch's value (a percentile is no
+# reference for a two-sided rule). The audit's defective heads erred both ways
+# (one never predicts QCD, three over-predict it); 2.8 is twice the half-width
+# of its normal 43-class heads (-1.5 to +1.3).
+REFERENCES = {"median": "the median of the run's epochs 70-79",
+              "q75": "the 75th percentile of the run's epochs 70-79",
+              "most_accurate_epoch": "its value at the most accurate of the run's epochs 70-79"}
+DEFECT_RULES = {   # name: (head metric, reference, direction, threshold, definition)
+    **{f"top1_{p}pct_vs_{ref}": ("top1_accuracy", ref, "below", p / 100,
+                                 f"top-1 accuracy more than {p}% below {REFERENCES[ref]}")
+       for p in (10, 5, 15) for ref in ("median", "q75", "most_accurate_epoch")},
+    **{f"qcd_log_odds_2p8_vs_{ref}": ("median_log_odds_qcd", ref, "either", 2.8,
+                                      "median resonance-vs-QCD log-odds on QCD jets more than "
+                                      f"2.8 from {REFERENCES[ref]}, either way")
+       for ref in ("median", "most_accurate_epoch")},
+}
+PRIMARY_RULE = "top1_10pct_vs_median"
+
+
+def is_defective(value: float, ref: float, direction: str, threshold: float) -> bool:
+    if direction == "below":
+        return value < (1 - threshold) * ref
+    return abs(value - ref) > threshold
+
+
+def reference_value(cks: dict, epochs: list, metric: str, how: str) -> float:
+    """A run's reference for one head metric, from its epoch checkpoints only."""
+    if how == "most_accurate_epoch":
+        return float(cks[max(epochs, key=lambda t: cks[t]["head"]["top1_accuracy"])]["head"][metric])
+    v = [cks[t]["head"][metric] for t in epochs]
+    return float({"median": np.median, "q75": lambda x: np.percentile(x, 75)}[how](v))
+
+
+def summarise(res: dict) -> dict:
+    """From an analysis JSON's head summaries: every checkpoint's defect flag
+    under each rule, the counts, their range over the rules, and the stream
+    class-mix result."""
+    runs = {}
+    for run, r in res["runs"].items():
+        cks = r["checkpoints"]
+        ep = [t for t in cks if is_epoch(t)]
+        ref = {name: reference_value(cks, ep, m, how) for name, (m, how, *_) in DEFECT_RULES.items()}
+        runs[run] = {"reference": ref,
+                     "best": r.get("best_is") or ("best" if "best" in cks else None),
+                     "last_epoch": max(ep, key=lambda t: int(t[1:])),
+                     "flags": {t: {name: is_defective(c["head"][m], ref[name], d, thr)
+                                   for name, (m, _, d, thr, _) in DEFECT_RULES.items()}
+                               for t, c in cks.items()}}
+
+    def bad(run, tag, rule):
+        return tag is None or runs[run]["flags"][tag][rule]   # no best checkpoint: not a fix
+
+    counts = {}
+    for rule in DEFECT_RULES:
+        hit = [run for run, f in runs.items() if any(f["flags"][t][rule] for t in f["flags"] if is_epoch(t))]
+        audit = [run for run in AUDIT_FLAGGED if run in runs]
+        c = {"runs_with_a_defective_epoch": hit,
+             "of_those_weight_average_sound": [x for x in hit if not bad(x, "wavg", rule)],
+             "of_those_best_validation_sound": [x for x in hit if not bad(x, runs[x]["best"], rule)],
+             "defective_at_last_epoch": [x for x in runs if bad(x, runs[x]["last_epoch"], rule)],
+             "audit_flagged": {"runs": audit,
+                               "defective_at_last_epoch": [x for x in audit if bad(x, runs[x]["last_epoch"], rule)],
+                               "weight_average_sound": [x for x in audit if not bad(x, "wavg", rule)],
+                               "best_validation_sound": [x for x in audit if not bad(x, runs[x]["best"], rule)]}}
+        c["weight_average_defective"] = [x for x in runs if bad(x, "wavg", rule)]
+        c["best_validation_defective"] = [x for x in runs if bad(x, runs[x]["best"], rule)]
+        c["n"] = {"runs": len(runs), "runs_with_a_defective_epoch": len(hit),
+                  "weight_average_fixes": len(c["of_those_weight_average_sound"]),
+                  "best_validation_fixes": len(c["of_those_best_validation_sound"]),
+                  "weight_average_defective": len(c["weight_average_defective"]),
+                  "best_validation_defective": len(c["best_validation_defective"]),
+                  "audit_flagged_weight_average_fixes": len(c["audit_flagged"]["weight_average_sound"]),
+                  "audit_flagged_best_validation_fixes": len(c["audit_flagged"]["best_validation_sound"])}
+        counts[rule] = c
+
+    span = {}                          # each count's range over the rules, and which rules give the ends
+    for k in counts[PRIMARY_RULE]["n"]:
+        v = {rule: c["n"][k] for rule, c in counts.items()}
+        lo, hi = min(v.values()), max(v.values())
+        span[k] = {"min": lo, "max": hi, "rules_at_min": [x for x in v if v[x] == lo],
+                   "rules_at_max": [x for x in v if v[x] == hi]}
+
+    pw = res["pooled_within_run"]
+    per_run = [r["epochs_70_79"] for r in res["runs"].values() if "pearson_share_vs_top1" in r["epochs_70_79"]]
+    return {"defect": {"primary_rule": PRIMARY_RULE,
+                       "rules": {name: rule[4] for name, rule in DEFECT_RULES.items()},
+                       "runs": runs, "counts": counts, "range_over_rules": span},
+            "class_mix": {
+                "description": "whether the QCD share of an epoch's training stream tracks that "
+                               "epoch's output layer: Pearson r over epochs 70-79, pooled over runs "
+                               "after z-scoring each run's epochs; p from permuting epochs within runs",
+                "share_vs_mean_p_qcd_resonant": pw["share_vs_p_qcd_resonant"],
+                "share_vs_top1": pw["share_vs_top1"],
+                "per_run_r_range_share_vs_mean_p_qcd_resonant":
+                    [min(x["pearson_share_vs_p_qcd_resonant"] for x in per_run),
+                     max(x["pearson_share_vs_p_qcd_resonant"] for x in per_run)],
+                "per_run_r_range_share_vs_top1": [min(x["pearson_share_vs_top1"] for x in per_run),
+                                                  max(x["pearson_share_vs_top1"] for x in per_run)]}}
+
+
 # ---------------------------------------------------------------- analyse (CPU)
 def analyse(a) -> int:
     out = a.out
@@ -375,9 +534,12 @@ def analyse(a) -> int:
                "ens": "softmax averaged over the epoch checkpoints, then scored",
                "wavg": "weights (and BatchNorm buffers) averaged over the epoch checkpoints",
                "stream_qcd_share": "QCD classes' share of weaver's per-epoch 'Train class distribution' in train.log",
-               "swing_test": "chi2 of the epoch values about their mean with the per-epoch sampling SE "
-                             "(binomial for accuracy, bootstrap of the probe test split for log(1-AUC))"},
+               "swing_test": "spread of the epoch values against a paired bootstrap: each replicate resamples "
+                             "the jets once and scores every epoch on them (all 500,000 jets for the head; the "
+                             "probe's test split, fits held fixed, for log(1-AUC)); chi2 of the deviations from "
+                             "the epoch mean with their bootstrap covariance, K-1 dof"},
            "runs": {}}
+    te = P.make_splits(len(y))[2]
     corr_p, corr_a = [], []
     for rd in sorted(p for p in out.iterdir() if (p / "DONE").exists()):
         meta = json.loads((rd / "DONE").read_text())
@@ -390,27 +552,35 @@ def analyse(a) -> int:
         tags = list(meta["checkpoints"]) + ["ens"]
         if meta["best_epoch"] is not None and "best" not in tags:
             r["best_is"] = f"e{meta['best_epoch']}"
+        correct, p_qcd, scores = [], [], []          # per jet, epochs only: the paired bootstrap
         for tag in tags:
             d = np.load(rd / f"{tag}.npz")
-            c = {"head": head_summary(d["correct"], d["p_qcd"], d["log_odds"], is_qcd)}
+            c, s = {"head": head_summary(d["correct"], d["p_qcd"], d["log_odds"], is_qcd)}, None
             if "feat_bvc" in d.files:
-                c["probe"] = probe_summary(d["feat_bvc"], y)
+                c["probe"], s = probe_summary(d["feat_bvc"], y)
             if tag in meta["checkpoints"]:
                 c["sha256"] = meta["checkpoints"][tag]["sha256"]
             if is_epoch(tag):
                 e = int(tag[1:])
                 c["stream_qcd_share"] = qcd_share(dist[e], qcd) if e in dist else None
                 c["logged_val_metric"] = val.get(e)
+                if s is None:
+                    raise SystemExit(f"FATAL: {rd.name} {tag} has no probe features")
+                correct.append(d["correct"])
+                p_qcd.append(d["p_qcd"])
+                scores.append(s)
             r["checkpoints"][tag] = c
         ep = [t for t in r["checkpoints"] if is_epoch(t)]
         H = [r["checkpoints"][t]["head"] for t in ep]
-        Pr = [r["checkpoints"][t]["probe"] for t in ep]
+        C = np.stack(correct, 1).astype(np.float32)
+        Q = np.stack(p_qcd, 1)
+        S, yt = np.stack(scores, 1), y[te]
         sh = [r["checkpoints"][t]["stream_qcd_share"] for t in ep]
         r["epochs_70_79"] = {
-            "head_top1": swing_test([h["top1_accuracy"] for h in H], [h["top1_binomial_se"] for h in H]),
-            "head_p_qcd_resonant": swing_test([h["mean_p_qcd_resonant"] for h in H],
-                                              [h["mean_p_qcd_resonant_se"] for h in H]),
-            "probe_log1m_auc": swing_test([p["log1m_auc"] for p in Pr], [p["log1m_auc_boot_se"] for p in Pr]),
+            "head_top1": paired_swing(lambda i: C[i].mean(0), len(C)),
+            "head_p_qcd_resonant": paired_swing(lambda i: Q[i][~is_qcd[i]].mean(0), len(Q)),
+            "probe_log1m_auc": paired_swing(
+                lambda i: [P.log1m_auc(yt[i], S[i, j])[0] for j in range(S.shape[1])], len(yt)),
             "mean_of_epoch_top1": float(np.mean([h["top1_accuracy"] for h in H]))}
         if None not in sh:
             pq_ = [h["mean_p_qcd_resonant"] for h in H]
@@ -423,8 +593,22 @@ def analyse(a) -> int:
         res["runs"][rd.name] = r
     res["pooled_within_run"] = {"share_vs_p_qcd_resonant": within_run_correlation(corr_p),
                                 "share_vs_top1": within_run_correlation(corr_a)}
+    res.update(summarise(res))
     a.json.write_text(json.dumps(res, indent=1))
     print(f"wrote {a.json}")
+    return 0
+
+
+def summarise_json(a) -> int:
+    """summarise() on an existing analysis JSON, written to a separate file: the
+    defect counts and the class-mix result need only the head summaries, so they
+    are recomputed from the committed JSON without the per-jet arrays."""
+    if a.out.resolve() == a.json.resolve():
+        raise SystemExit("FATAL: --out would overwrite the analysis JSON")
+    doc = {"source": {"file": a.json.name, "sha256": sha256(a.json)},
+           **summarise(json.loads(a.json.read_text()))}
+    a.out.write_text(json.dumps(doc, indent=1) + "\n")
+    print(f"wrote {a.out}")
     return 0
 
 
@@ -442,8 +626,9 @@ def figure(a) -> int:
         x = [e for e, _ in ep]
         kw = {"color": style.LEVEL_COLOURS[r["num_classes"]], "marker": style.LEVEL_MARKERS[r["num_classes"]],
               "markersize": 3, "linewidth": 1, "linestyle": "-" if run in defective else ":"}
-        tag = (f"{r['num_classes']} classes{' + mass' if r['num_reg'] else ''}, run "
-               f"{re.search(r'-s(\d+)', run).group(1)}" + (" (defective at 79)" if run in defective else ""))
+        seed = re.search(r"-s(\d+)", run).group(1)       # outside the f-string: Python 3.10 (the image)
+        tag = (f"{r['num_classes']} classes{' + mass' if r['num_reg'] else ''}, run {seed}"
+               + (" (defective at 79)" if run in defective else ""))
         ax[0].plot(x, [c["head"]["top1_accuracy"] for _, c in ep], label=tag, **kw)
         ax[0].plot([x[-1] + 2], [r["checkpoints"]["wavg"]["head"]["top1_accuracy"]],
                    **{**kw, "linestyle": "none", "fillstyle": "none"})
@@ -485,13 +670,15 @@ def main(argv=None) -> int:
     n = sub.add_parser("analyse")
     n.add_argument("--out", type=pathlib.Path, required=True)
     n.add_argument("--json", type=pathlib.Path, required=True)
+    s = sub.add_parser("summarise")
+    s.add_argument("--json", type=pathlib.Path, required=True, help="an analysis JSON (read only)")
+    s.add_argument("--out", type=pathlib.Path, required=True)
     f = sub.add_parser("figure")
     f.add_argument("--json", type=pathlib.Path, required=True)
     f.add_argument("--outdir", type=pathlib.Path, required=True)
-    f.add_argument("--defective", nargs="+", default=["mtx-l188-s5", "mtx-l162-s5",
-                                                       "mtx-r42q1-s5", "mtx-r16q1mass-s4"])
+    f.add_argument("--defective", nargs="+", default=list(AUDIT_FLAGGED))
     a = ap.parse_args(argv)
-    return {"infer": infer, "analyse": analyse, "figure": figure}[a.cmd](a)
+    return {"infer": infer, "analyse": analyse, "summarise": summarise_json, "figure": figure}[a.cmd](a)
 
 
 if __name__ == "__main__":
