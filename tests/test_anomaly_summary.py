@@ -264,3 +264,23 @@ def test_flags_and_sigma_min_are_reported_at_each_checkpoint_of_the_rule():
     cell = res["head_flags"]["models"]["l188-s1"]
     assert {"bestval", "wavg", "e079", "mean_70_79"} <= set(cell)
     assert res["checkpoint_rule"]["by_checkpoint"] == {}     # no anomaly cells in these heads
+
+
+def test_the_checkpoint_rule_table_is_built_from_the_models_the_anomaly_study_scores():
+    """v1's anomaly_heads.json holds the 20 anomaly models with anomaly cells and the
+    ten mass-output models with head diagnostics only; the table must not come out
+    empty because the latter have no anomaly cells (it did, 2026-10-01)."""
+    heads = _heads()
+    for arm, m in heads["models"].items():
+        cell = {"sigma_min": 2.0 + 0.1 * int(arm.rsplit("-s", 1)[1].rstrip("b"))}
+        m["checkpoints"]["e079"]["anomaly"] = {"label_X_bb": {S.PRIMARY: {"class_sum": cell}}}
+        m["anomaly_mean_70_79"] = {"class_sum": {"label_X_bb": {S.PRIMARY: {
+            "ln_sigma_min_mean": math.log(cell["sigma_min"]),
+            "ln_sigma_min_per_epoch": [math.log(cell["sigma_min"])] * 10}}}}
+    full = S.checkpoint_rule({"class_sum": {"label_X_bb": {}}}, heads)
+    heads["models"]["l162mass-s1"] = {"rung": "L162", "checkpoints": {"e079": {"head": {}}}}
+    res = S.checkpoint_rule({"class_sum": {"label_X_bb": {}}}, heads)
+    assert res["by_checkpoint"] and res["by_checkpoint"] == full["by_checkpoint"]
+    e = res["by_checkpoint"]["e079"]["class_sum"]["label_X_bb"][S.PRIMARY]
+    assert set(e) == {"188", "162", "43", "17"} and len(e["188"]["ln_sigma_min"]) == 5
+    assert res["mean_ln_over_epochs_70_79"] == full["mean_ln_over_epochs_70_79"]

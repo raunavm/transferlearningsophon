@@ -309,8 +309,13 @@ def checkpoint_rule(fams: dict, heads: dict) -> dict:
     ln sigma_min over epochs 70-79 as a diagnostic of how much the epoch moves it:
     per run, then mean and sd over runs."""
     parse_arm = _load("seed_level", "experiments/STATS/seed_level.py").parse_arm
-    tags = [w for w in FLAG_TAGS if all(w in m["checkpoints"] and "anomaly" in m["checkpoints"][w]
-                                        for m in heads["models"].values())]
+    # Only the models the anomaly study scores: v1's ten mass-output models carry
+    # head diagnostics but no anomaly cells, and requiring them of every model left
+    # this table empty (2026-10-01).
+    models = {a: m for a, m in heads["models"].items()
+              if any("anomaly" in c for c in m["checkpoints"].values())}
+    tags = [w for w in FLAG_TAGS if models and all(
+        w in m["checkpoints"] and "anomaly" in m["checkpoints"][w] for m in models.values())]
 
     def table(get):
         out = {}
@@ -318,7 +323,7 @@ def checkpoint_rule(fams: dict, heads: dict) -> dict:
             for sig in fams.get(fam, {}):
                 for n in (PRIMARY, REFERENCE):
                     per = {}
-                    for arm, m in heads["models"].items():
+                    for arm, m in models.items():
                         c = get(m, fam, sig, n)
                         if c is None:
                             continue
@@ -348,7 +353,7 @@ def checkpoint_rule(fams: dict, heads: dict) -> dict:
         return None if c is None else (c["ln_sigma_min_mean"], c["ln_sigma_min_per_epoch"])
 
     res = {"by_checkpoint": {tag: table(at(tag)) for tag in tags}}
-    if all("anomaly_mean_70_79" in m for m in heads["models"].values()):
+    if models and all("anomaly_mean_70_79" in m for m in models.values()):
         res["mean_ln_over_epochs_70_79"] = table(mean_70_79)
     res["epoch79_reproduces_committed"] = {
         a: m["checkpoints"]["e079"]["committed_check"] for a, m in heads["models"].items()

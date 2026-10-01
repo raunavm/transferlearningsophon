@@ -1,0 +1,9 @@
+{
+ "anomaly_heads.json": {
+  "job": "anomaly-heads-v1err-raunav (tag mtx-s1.75): experiments/EVAL/anomaly_heads.py over the output-layer scores of epochs 70-79 of 30 models (/data/results/eval/v1err/heads: the 20 anomaly models' GPU extractions, mtx-r16q1-s1 re-created after the ry-gpu-10 GPU fault; the ten mass-output models' diagnostics), redrawing the committed resamplings",
+  "remote": "/data/results/eval/v1err/anomaly_heads/anomaly_heads.json",
+  "sha256": "305d21e701a1b51321aecf245912ce1fbc91073d46755f84a4c614c5662ff77a",
+  "fetch": "read-only exec into eval-reader-raunav (scratchpad fetch.sh), sha256 checked against the pod"
+ },
+ "analysis": "python3 experiments/EVAL/anomaly_summary.py --anomaly experiments/FIGS/data/anomaly_merged_v4/anomaly_results.json --class-sum-rerun experiments/FIGS/data/anomaly_cs_merged_v1/anomaly_results.json --heads experiments/FIGS/data/anomaly_v1err/anomaly_heads.json --out experiments/FIGS/data/anomaly_v1err/analysis (with the checkpoint-rule fix of this commit)"
+}
