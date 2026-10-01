@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # v2 LOADER THROUGHPUT AT 8 CPUs, the twin of mtx2-loader-probe-cpu6 -- CPU only, no training (2026-10-01). mtx2-loader-memprobe-s172 run on the
+  # suncave RTX 3090 nodes, which hold 15 of the 24 grid slots, at 6 CPUs/46Gi, beside its twin
+  # mtx2-loader-probe-cpu8 at 8 CPUs/48Gi (the grid's pod shape). Two 6-CPU pods fit a 94 GiB suncave node.
+  # Criterion, written before either runs: v2 pods move to 6 CPUs/46Gi if this probe's loader throughput is at
+  # least 0.9 of the 8-CPU twin's.
+  # Written by hand from that generated spec; only the name, tag, output, resources, node choice and storage
+  # guard differ.
+  name: mtx2-loader-probe-cpu8-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  podFailurePolicy:
+    rules:
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        env:
+        - name: REPO_REF
+          value: "mtx-s1.95"
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "${REPO_REF}" https://github.com/raunavm/transferlearningsophon.git /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          pip install --no-cache-dir -q pyarrow || exit 1
+          CFG=configs/arms/R16_Q1.yaml
+          MD5=$(md5sum ${CFG} | cut -d' ' -f1)
+          cp /data/results/mtx/makeweight/R16_Q1.${MD5}.auto.yaml configs/arms/
+          USE=$(df --output=pcent /data | tail -1 | tr -dc 0-9); [ "${USE}" -le 85 ] || { echo "FATAL: /data at ${USE}%"; exit 1; }
+          mkdir -p /data/results/mtx_v2/loader_dryrun
+          PYTHONUNBUFFERED=1 python3 experiments/MTX/loader_dryrun.py --seed 1 --epochs 1 --samples-per-epoch 10240000 --num-workers 5 --data-split-num 200 --fetch-step 1.0 --data-fraction 0.2 --data-config ${CFG} --data-train Res2P:/jc2/jet_data/Res2P_{0000..0199}.parquet Res34P:/jc2/jet_data/Res34P_{0000..0859}.parquet QCD:/jc2/jet_data/QCD_{0000..0279}.parquet --full-columns --out /data/results/mtx_v2/loader_dryrun/memprobe_cpu8_seed1.json 2>&1 | tee /data/results/mtx_v2/loader_dryrun/memprobe_cpu8_seed1.log
+        resources:
+          requests: { memory: "48Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "48Gi", cpu: "8", ephemeral-storage: "10Gi" }
+        volumeMounts:
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      tolerations:
+      - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: In
+                values: ["suncave-1", "suncave-2", "suncave-3", "suncave-4", "suncave-5", "suncave-6", "suncave-7", "suncave-8", "suncave-9", "suncave-10"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }
