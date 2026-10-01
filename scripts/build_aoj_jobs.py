@@ -1160,7 +1160,10 @@ def render_injection_bins() -> str:
 # THE INJECTION TEST'S TOYS: experiments/AOJ/injection_test.py toys, one CPU job per study,
 # each worker one toy at a time; the output (JSON lines) is resumable, so an evicted pod
 # picks up where it stopped, and printed on the log as a base64 tar at the end.
+# top and band launched at mtx-s1.80; pseudo and wp, launched after the bins job's fix,
+# clone mtx-s1.81 (the same toy code, plus the float comparison of the bins)
 TOYS_PIN = "mtx-s1.80"
+TOYS_PINS = {"top": TOYS_PIN, "band": TOYS_PIN, "pseudo": "mtx-s1.81", "wp": "mtx-s1.81"}
 TOYS_NEEDED_FLAGS = {"experiments/AOJ/injection_test.py": "def run_toys"}
 TOYS_CPU = 32
 SCORES = ["reference"] + [m.name for m in MODELS]
@@ -1252,7 +1255,7 @@ def render_injection_toys(study: str) -> str:
     t = INJECTION_TOYS_TEMPLATE.format(
         study=study, image=IMAGE, out=INJECTION_ROOT,
         accounting=_failure_accounting(f"${{OUT}}/attempts/toys_{study}", ft.EXIT_HALT),
-        precondition=pre, pin=TOYS_PIN, runs=runs, cpu=TOYS_CPU,
+        precondition=pre, pin=TOYS_PINS[study], runs=runs, cpu=TOYS_CPU,
         extra_note=" and the exported injection bins" if extra else "")
     return _robust(t, "  backoffLimit: 2\n")
 
@@ -1293,7 +1296,8 @@ def main() -> int:
     verify_pin(FIT3_PIN, False, FIT3_NEEDED_FLAGS)
     verify_pin(RESCORE_PIN, False, RESCORE_NEEDED_FLAGS)
     verify_pin(CHECKS_PIN, False, CHECKS_NEEDED_FLAGS)
-    verify_pin(TOYS_PIN, False, TOYS_NEEDED_FLAGS)
+    for pin in sorted(set(TOYS_PINS.values())):
+        verify_pin(pin, False, TOYS_NEEDED_FLAGS)
     verify_pin(INJECTION_PIN, a.pin_not_yet_tagged, INJECTION_NEEDED_FLAGS)
     for path, text in specs().items():
         if a.check_only:

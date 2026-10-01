@@ -417,7 +417,7 @@ def test_the_toy_jobs_carry_the_retry_policy_and_count_their_own_attempts(path):
     study = path.name.removeprefix("job-aoj-injection-toys-").removesuffix("-v1-raunav.yaml")
     s = _script(SPECS[path])
     assert f'"${{OUT}}/attempts/toys_{study}/ATTEMPTS"' in s, "attempts are counted per job, not shared"
-    assert f'--branch "{B.TOYS_PIN}"' in s and "nvidia.com/gpu" not in SPECS[path]
+    assert f'--branch "{B.TOYS_PINS[study]}"' in s and "nvidia.com/gpu" not in SPECS[path]
     assert s.index("export OMP_NUM_THREADS=1") < s.index("injection_test.py toys")
     assert s.count("injection_test.py toys") == len(B.TOY_STUDIES[study])
     assert s.count("--out \"${OUT}/toys_") == len(B.TOY_STUDIES[study])

@@ -34,7 +34,7 @@ spec:
             echo "FATAL: ${NF} failed attempts, ${NA} in all: fix the cause, then remove ${OUT}/attempts/toys_wp/FAILED_ATTEMPTS"; exit 42; fi
           trap 'rc=$?; if [ ${rc} -ne 0 ] && [ ${rc} -ne 42 ]; then echo "rc=${rc} $(date -u +%FT%TZ) $(hostname)" >> "${OUT}/attempts/toys_wp/FAILED_ATTEMPTS"; fi' EXIT
           [ -f "${OUT}/injection_bins.npz" ] || { echo "FATAL: no injection bins"; exit 42; }
-          git clone --depth 1 --branch "mtx-s1.80" \
+          git clone --depth 1 --branch "mtx-s1.81" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
