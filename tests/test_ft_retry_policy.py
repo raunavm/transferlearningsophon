@@ -129,7 +129,8 @@ def test_no_other_spec_on_disk_carries_the_policy():
     # every v2 spec carries it (audit 2026-09-29): its name says so; and every
     # hand-written read-only job since (inspection, read-outs)
     v2 = {p.name for p in K8S.glob("job-ft-v2-*.yaml")} | {"job-ft-subsets-jc2-v2-raunav.yaml"}
-    hand = {p.name for p in K8S.glob("job-ft-inspect-*.yaml")} | {"job-ft-bench-v3-metrics-raunav.yaml"}
+    hand = ({p.name for p in K8S.glob("job-ft-inspect-*.yaml")}
+            | {"job-ft-bench-v3-metrics-raunav.yaml", "job-ft-coverage-jc2-v1-raunav.yaml"})
     assert v2 <= have and hand <= have
     assert have - v2 - hand == {"job-ft-legs-baseline-scratch-v2-raunav.yaml",
                                 "job-ft-legs-baseline-mpm-s1-v2-raunav.yaml",

@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # READ-ONLY (2026-10-01), written by hand: the native-class coverage of the FIRST grid's
+  # 10^3-jet JetClass-II fine-tuning subsets, /data/finetune/jc2/train_N1000_s{1,2,3}.parquet
+  # (experiments/FT/make_subsets.py class_coverage), which the v1 manifests never recorded;
+  # for the paper's FtCoverageVoneEThree* slots. Mounts /data read-only; clones mtx-s1.88;
+  # prints the counts and file sha256 to the log, writes nothing.
+  name: ft-coverage-jc2-v1-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 3
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          git clone --depth 1 --branch "mtx-s1.88" https://github.com/raunavm/transferlearningsophon.git /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          pip install --no-cache-dir -q pyarrow || exit 1
+          python3 - <<'PY'
+          import hashlib, importlib.util, json, pathlib
+          import pyarrow.parquet as pq
+          spec = importlib.util.spec_from_file_location("make_subsets", "experiments/FT/make_subsets.py")
+          ms = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(ms)
+          out = {}
+          for s in (1, 2, 3):
+              f = pathlib.Path(f"/data/finetune/jc2/train_N1000_s{s}.parquet")
+              if not f.exists():
+                  print("ABSENT", f, flush=True)
+                  continue
+              lab = pq.read_table(f, columns=["jet_label"]).column("jet_label").to_numpy()
+              h = hashlib.sha256(f.read_bytes()).hexdigest()
+              cov = ms.class_coverage(lab)
+              out[f.name] = {**cov, "file": str(f), "sha256": h, "bytes": f.stat().st_size}
+              print(f.name, cov["n_jets"], "jets,", cov["n_classes_present"], "classes, median",
+                    cov["median_per_present_class"], ",", cov["n_classes_with_one_jet"], "with one jet", flush=True)
+          print("BEGIN-JSON")
+          print(json.dumps(out))
+          print("END-JSON")
+          PY
+          echo "COVERAGE DONE"
+        volumeMounts:
+        - { name: data, mountPath: /data, readOnly: true }
+        resources:
+          requests: { memory: "4Gi", cpu: "1", ephemeral-storage: "5Gi" }
+          limits:   { memory: "4Gi", cpu: "1", ephemeral-storage: "5Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+          readOnly: true

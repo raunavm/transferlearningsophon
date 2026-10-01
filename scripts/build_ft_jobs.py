@@ -760,7 +760,12 @@ EXIT_NODE_FAULT = 43
 NODE_FAULT_LIMIT = 4
 CUDA_FAULT = ("CUDA error: unknown error|Cannot access accelerator device|GPU is lost|"
               "CUDA-capable device\\(s\\) is/are busy or unavailable|uncorrectable ECC error")
-GPU_LOST_LATER = ("ry-gpu-10.sdsc.optiputer.net",)
+# ry-gpu-02: the only two of 1,051 fine-tuning attempts whose training loss went to
+# NaN ran there (w2b/leg1/scratch-v2/N1000/s2, bench_v2/leg_qg/r42q1-s2/N10000/s1),
+# and both cells converged on their retries elsewhere, in a training that is bit-
+# reproducible at a fixed seed (bench v3 reproduced bench v2's 40 cells exactly).
+# job-ft-inspect-retries-4-raunav, 2026-10-01.
+GPU_LOST_LATER = ("ry-gpu-10.sdsc.optiputer.net", "ry-gpu-02.sdsc.optiputer.net")
 POD_FAILURE_POLICY = (
     "  podFailurePolicy:\n"
     "    rules:\n"
