@@ -23,12 +23,6 @@
 %   v2 the mass-output models with the loss weight matched in loss share -- experiments/FIGS/data/v2/mass_lambda_matched/
 %   v2 anomaly detection on the rerun models, per-run values -- experiments/FIGS/data/v2/anomaly/
 %   v2 the open-data fits on the rerun models -- experiments/FIGS/data/v2/real_data/
-%   AojChainDataset -- experiments/FIGS/data/aoj_*/selection_chain.json :: n_dataset
-%   AojChainStaged -- experiments/FIGS/data/aoj_*/selection_chain.json :: n_staged
-%   AojChainRhoWindow -- experiments/FIGS/data/aoj_*/selection_chain.json :: n_rho_window
-%   AojNJetsFit -- experiments/FIGS/data/aoj_*/selection_chain.json :: n_fit
-%   AojChainPtBins -- experiments/FIGS/data/aoj_*/selection_chain.json :: n_pt_bins
-%   AojChainEtaMax -- experiments/FIGS/data/aoj_*/selection_chain.json :: abs_eta_max
 %   MassLossShareOnesixtwoMass -- experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.162+mass
 %   MassLossShareOnesevenMass -- experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass
 %   MassLambdaMatched -- experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: lambda_matched
@@ -51,12 +45,12 @@
 \newcommand{\PendingAnomaly}{\pending{pending v2: anomaly detection on the rerun models, per-run values}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Anomaly'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
 \newcommand{\PendingRealData}{\pending{pending v2: the open-data fits on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['RealData'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
 \newcommand{\PendingConclusion}{\pending{pending v2: written once every input above is in}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Conclusion'] :: sha256 c53cfb86c2b9122f :: a marker, not a number: red in the draft until the input exists
-\newcommand{\AojChainDataset}{\pending{pending: jets in the open-data sample}}  % experiments/FIGS/make_tables.py :: SLOTS[AojChainDataset] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/aoj_*/selection_chain.json :: n_dataset does not exist yet
-\newcommand{\AojChainStaged}{\pending{pending: jets after the kinematic selection}}  % experiments/FIGS/make_tables.py :: SLOTS[AojChainStaged] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/aoj_*/selection_chain.json :: n_staged does not exist yet
-\newcommand{\AojChainRhoWindow}{\pending{pending: jets inside the rho window}}  % experiments/FIGS/make_tables.py :: SLOTS[AojChainRhoWindow] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/aoj_*/selection_chain.json :: n_rho_window does not exist yet
-\newcommand{\AojNJetsFit}{\pending{pending: jets in the mass fit}}  % experiments/FIGS/make_tables.py :: SLOTS[AojNJetsFit] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/aoj_*/selection_chain.json :: n_fit does not exist yet
-\newcommand{\AojChainPtBins}{\pending{pending: pT categories of the fit}}  % experiments/FIGS/make_tables.py :: SLOTS[AojChainPtBins] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/aoj_*/selection_chain.json :: n_pt_bins does not exist yet
-\newcommand{\AojChainEtaMax}{\pending{pending: the pseudorapidity cut}}  % experiments/FIGS/make_tables.py :: SLOTS[AojChainEtaMax] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/aoj_*/selection_chain.json :: abs_eta_max does not exist yet
+\newcommand{\AojChainDataset}{178}  % experiments/FIGS/data/aoj_checks_v1/selection_chain.json :: n_dataset :: sha256 1d1179a17b551274
+\newcommand{\AojChainStaged}{12{,}589{,}467}  % experiments/FIGS/data/aoj_checks_v1/selection_chain.json :: n_staged :: sha256 1d1179a17b551274
+\newcommand{\AojChainRhoWindow}{9{,}441{,}209}  % experiments/FIGS/data/aoj_checks_v1/selection_chain.json :: n_rho_window :: sha256 1d1179a17b551274
+\newcommand{\AojNJetsFit}{4{,}194{,}846}  % experiments/FIGS/data/aoj_checks_v1/selection_chain.json :: n_fit :: sha256 1d1179a17b551274
+\newcommand{\AojChainPtBins}{8}  % experiments/FIGS/data/aoj_checks_v1/selection_chain.json :: n_pt_bins :: sha256 1d1179a17b551274
+\newcommand{\AojChainEtaMax}{2.40}  % experiments/FIGS/data/aoj_checks_v1/selection_chain.json :: abs_eta_max :: sha256 1d1179a17b551274
 \newcommand{\MassLossShareOnesixtwoMass}{\pending{pending: mass-loss share, 162 classes}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareOnesixtwoMass] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.162+mass does not exist yet
 \newcommand{\MassLossShareOnesevenMass}{\pending{pending: mass-loss share, 17 classes}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareOnesevenMass] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass does not exist yet
 \newcommand{\MassLambdaMatched}{\pending{pending: the share-matched loss weight}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLambdaMatched] :: sha256 c53cfb86c2b9122f :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: lambda_matched does not exist yet
@@ -470,13 +464,13 @@
 \newcommand{\VocabSizeRonesixQone}{17}  % configs/labelmaps/rung_label_maps.v1.csv :: column R16_Q1 (distinct group count) :: sha256 412f9aa3b58db412
 \newcommand{\VocabSizeRthreeVIS}{4}  % configs/labelmaps/rung_label_maps.v1.csv :: column R3_VIS (distinct group count) :: sha256 412f9aa3b58db412
 \newcommand{\VocabSizeRoneQone}{2}  % configs/labelmaps/rung_label_maps.v1.csv :: column R1_Q1 (distinct group count) :: sha256 412f9aa3b58db412
-\newcommand{\ProbeSplitTrain}{60\%}  % experiments/EVAL/probe.py :: SPLIT_FRACTIONS :: sha256 7abe4635bd6bbb3e :: share of the probe sample; the same jets for every model
-\newcommand{\ProbeSplitVal}{20\%}  % experiments/EVAL/probe.py :: SPLIT_FRACTIONS :: sha256 7abe4635bd6bbb3e :: share of the probe sample; the same jets for every model
-\newcommand{\ProbeSplitTest}{20\%}  % experiments/EVAL/probe.py :: SPLIT_FRACTIONS :: sha256 7abe4635bd6bbb3e :: share of the probe sample; the same jets for every model
-\newcommand{\ProbeMlpHidden}{256}  % experiments/EVAL/probe.py :: _fit_mlp :: sha256 7abe4635bd6bbb3e :: hidden width of the MLP probe
-\newcommand{\ProbeMlpInits}{3}  % experiments/EVAL/probe.py :: MLP_SEEDS :: sha256 7abe4635bd6bbb3e :: MLP initialisations whose scores are averaged per cell
-\newcommand{\ProbeCMin}{\ensuremath{10^{-2}}}  % experiments/EVAL/probe.py :: C_GRID :: sha256 7abe4635bd6bbb3e :: end of the logistic-regression inverse-regularisation grid
-\newcommand{\ProbeCMax}{\ensuremath{10^{2}}}  % experiments/EVAL/probe.py :: C_GRID :: sha256 7abe4635bd6bbb3e :: end of the logistic-regression inverse-regularisation grid
+\newcommand{\ProbeSplitTrain}{60\%}  % experiments/EVAL/probe.py :: SPLIT_FRACTIONS :: sha256 39fc8b72d516d75c :: share of the probe sample; the same jets for every model
+\newcommand{\ProbeSplitVal}{20\%}  % experiments/EVAL/probe.py :: SPLIT_FRACTIONS :: sha256 39fc8b72d516d75c :: share of the probe sample; the same jets for every model
+\newcommand{\ProbeSplitTest}{20\%}  % experiments/EVAL/probe.py :: SPLIT_FRACTIONS :: sha256 39fc8b72d516d75c :: share of the probe sample; the same jets for every model
+\newcommand{\ProbeMlpHidden}{256}  % experiments/EVAL/probe.py :: _fit_mlp :: sha256 39fc8b72d516d75c :: hidden width of the MLP probe
+\newcommand{\ProbeMlpInits}{3}  % experiments/EVAL/probe.py :: MLP_SEEDS :: sha256 39fc8b72d516d75c :: MLP initialisations whose scores are averaged per cell
+\newcommand{\ProbeCMin}{\ensuremath{10^{-2}}}  % experiments/EVAL/probe.py :: C_GRID :: sha256 39fc8b72d516d75c :: end of the logistic-regression inverse-regularisation grid
+\newcommand{\ProbeCMax}{\ensuremath{10^{2}}}  % experiments/EVAL/probe.py :: C_GRID :: sha256 39fc8b72d516d75c :: end of the logistic-regression inverse-regularisation grid
 \newcommand{\ProbeNBkgTestBvcFourprong}{3{,}158}  % experiments/FIGS/data/probe_ladder_v2_mlp2/s1.json :: tasks.bvc_4prong.n_background_test :: sha256 f7e1de0e43be89b8 :: test-sample background jets
 \newcommand{\ProbeNBkgTestBvcQcd}{5{,}371}  % experiments/FIGS/data/probe_ladder_v2_mlp2/s1.json :: tasks.bvc_qcd.n_background_test :: sha256 f7e1de0e43be89b8 :: test-sample background jets
 \newcommand{\ProbeNBkgTestBvcResonant}{11{,}876}  % experiments/FIGS/data/probe_ladder_v2_mlp2/s1.json :: tasks.bvc_resonant.n_background_test :: sha256 f7e1de0e43be89b8 :: test-sample background jets

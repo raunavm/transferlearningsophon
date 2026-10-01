@@ -1422,34 +1422,34 @@
     "value": "20\\%"
   },
   "AojChainDataset": {
-    "json_path": "SLOTS[AojChainDataset]",
-    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
-    "source_file": "experiments/FIGS/make_tables.py",
-    "value": "\\pending{pending: jets in the open-data sample}"
+    "json_path": "n_dataset",
+    "sha256": "1d1179a17b551274a9d29431de1f5d1ce104223f997db7321e46a17e3f2d8140",
+    "source_file": "experiments/FIGS/data/aoj_checks_v1/selection_chain.json",
+    "value": "178"
   },
   "AojChainEtaMax": {
-    "json_path": "SLOTS[AojChainEtaMax]",
-    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
-    "source_file": "experiments/FIGS/make_tables.py",
-    "value": "\\pending{pending: the pseudorapidity cut}"
+    "json_path": "abs_eta_max",
+    "sha256": "1d1179a17b551274a9d29431de1f5d1ce104223f997db7321e46a17e3f2d8140",
+    "source_file": "experiments/FIGS/data/aoj_checks_v1/selection_chain.json",
+    "value": "2.40"
   },
   "AojChainPtBins": {
-    "json_path": "SLOTS[AojChainPtBins]",
-    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
-    "source_file": "experiments/FIGS/make_tables.py",
-    "value": "\\pending{pending: pT categories of the fit}"
+    "json_path": "n_pt_bins",
+    "sha256": "1d1179a17b551274a9d29431de1f5d1ce104223f997db7321e46a17e3f2d8140",
+    "source_file": "experiments/FIGS/data/aoj_checks_v1/selection_chain.json",
+    "value": "8"
   },
   "AojChainRhoWindow": {
-    "json_path": "SLOTS[AojChainRhoWindow]",
-    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
-    "source_file": "experiments/FIGS/make_tables.py",
-    "value": "\\pending{pending: jets inside the rho window}"
+    "json_path": "n_rho_window",
+    "sha256": "1d1179a17b551274a9d29431de1f5d1ce104223f997db7321e46a17e3f2d8140",
+    "source_file": "experiments/FIGS/data/aoj_checks_v1/selection_chain.json",
+    "value": "9{,}441{,}209"
   },
   "AojChainStaged": {
-    "json_path": "SLOTS[AojChainStaged]",
-    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
-    "source_file": "experiments/FIGS/make_tables.py",
-    "value": "\\pending{pending: jets after the kinematic selection}"
+    "json_path": "n_staged",
+    "sha256": "1d1179a17b551274a9d29431de1f5d1ce104223f997db7321e46a17e3f2d8140",
+    "source_file": "experiments/FIGS/data/aoj_checks_v1/selection_chain.json",
+    "value": "12{,}589{,}467"
   },
   "AojClosureCharged": {
     "json_path": "rows[part_isChargedHadron].ratio",
@@ -1542,10 +1542,10 @@
     "value": "0.11"
   },
   "AojNJetsFit": {
-    "json_path": "SLOTS[AojNJetsFit]",
-    "sha256": "c53cfb86c2b9122f06125c6873343157215431ec56a1277f0b1c90f74e28d4ea",
-    "source_file": "experiments/FIGS/make_tables.py",
-    "value": "\\pending{pending: jets in the mass fit}"
+    "json_path": "n_fit",
+    "sha256": "1d1179a17b551274a9d29431de1f5d1ce104223f997db7321e46a17e3f2d8140",
+    "source_file": "experiments/FIGS/data/aoj_checks_v1/selection_chain.json",
+    "value": "4{,}194{,}846"
   },
   "AojNJetsRhoWindow": {
     "json_path": "n_jets",
@@ -4711,13 +4711,13 @@
   },
   "ProbeCMax": {
     "json_path": "C_GRID",
-    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
+    "sha256": "39fc8b72d516d75c665c677db3546e64cb57d654f239cac496e98b2aeca06c9c",
     "source_file": "experiments/EVAL/probe.py",
     "value": "\\ensuremath{10^{2}}"
   },
   "ProbeCMin": {
     "json_path": "C_GRID",
-    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
+    "sha256": "39fc8b72d516d75c665c677db3546e64cb57d654f239cac496e98b2aeca06c9c",
     "source_file": "experiments/EVAL/probe.py",
     "value": "\\ensuremath{10^{-2}}"
   },
@@ -5305,13 +5305,13 @@
   },
   "ProbeMlpHidden": {
     "json_path": "_fit_mlp",
-    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
+    "sha256": "39fc8b72d516d75c665c677db3546e64cb57d654f239cac496e98b2aeca06c9c",
     "source_file": "experiments/EVAL/probe.py",
     "value": "256"
   },
   "ProbeMlpInits": {
     "json_path": "MLP_SEEDS",
-    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
+    "sha256": "39fc8b72d516d75c665c677db3546e64cb57d654f239cac496e98b2aeca06c9c",
     "source_file": "experiments/EVAL/probe.py",
     "value": "3"
   },
@@ -6319,19 +6319,19 @@
   },
   "ProbeSplitTest": {
     "json_path": "SPLIT_FRACTIONS",
-    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
+    "sha256": "39fc8b72d516d75c665c677db3546e64cb57d654f239cac496e98b2aeca06c9c",
     "source_file": "experiments/EVAL/probe.py",
     "value": "20\\%"
   },
   "ProbeSplitTrain": {
     "json_path": "SPLIT_FRACTIONS",
-    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
+    "sha256": "39fc8b72d516d75c665c677db3546e64cb57d654f239cac496e98b2aeca06c9c",
     "source_file": "experiments/EVAL/probe.py",
     "value": "60\\%"
   },
   "ProbeSplitVal": {
     "json_path": "SPLIT_FRACTIONS",
-    "sha256": "7abe4635bd6bbb3ef8deff101e96f4e14a70dc5dadff3b51502efa4365eeccc2",
+    "sha256": "39fc8b72d516d75c665c677db3546e64cb57d654f239cac496e98b2aeca06c9c",
     "source_file": "experiments/EVAL/probe.py",
     "value": "20\\%"
   },
