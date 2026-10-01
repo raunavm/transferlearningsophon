@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # READ-ONLY (2026-10-01), written by hand: copies the v2 loader dry-run and smoke records
+  # (JSON and text only, no checkpoints) out of /data so they can be committed under
+  # experiments/FIGS/data/v2_loader/ (PRESPEC A7 correction: "The dry-run and smoke records are
+  # committed"). Mounts /data read-only, clones nothing, writes only to the pod's /tmp; the
+  # records leave as one base64 tarball in the log, with a sha256 of every file.
+  name: mtx2-read-v2-records-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 3
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          cd /data/results/mtx_v2
+          echo "BEGIN-LISTING"; find . -maxdepth 4 -type f -printf '%s %p\n' | sort -k2; echo "END-LISTING"
+          find loader_dryrun smoke -type f \( -name '*.json' -o -name '*.txt' -o -name '*.log' \) -size -8M | sort > /tmp/files
+          echo "BEGIN-SHA256"; xargs -a /tmp/files sha256sum; echo "END-SHA256"
+          tar czf /tmp/records.tgz -T /tmp/files
+          SIZE=$(stat -c %s /tmp/records.tgz)
+          echo "tarball ${SIZE} bytes, $(wc -l < /tmp/files) files"
+          [ "${SIZE}" -le 40000000 ] || { echo "FATAL: tarball over 40 MB, not printed"; exit 42; }
+          sha256sum /tmp/records.tgz
+          echo "BEGIN-TGZ-BASE64"; base64 -w 0 /tmp/records.tgz; echo; echo "END-TGZ-BASE64"
+          echo "READ DONE"
+        volumeMounts:
+        - { name: data, mountPath: /data, readOnly: true }
+        resources:
+          requests: { memory: "1Gi", cpu: "1", ephemeral-storage: "1Gi" }
+          limits:   { memory: "1Gi", cpu: "1", ephemeral-storage: "1Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+          readOnly: true
