@@ -1,0 +1,107 @@
+{
+  "n_dataset": 177620029,
+  "n_staged": 12589467,
+  "n_rho_window": 9441209,
+  "n_fit": 4194846,
+  "n_pt_bins": 8,
+  "abs_eta_max": 2.4,
+  "steps": [
+    {
+      "stage": "dataset",
+      "n": 177620029,
+      "n_quoted": "178M",
+      "definition": "AspenOpenJets: CMS 2016 JetHT Run G+H open data, AK8 PUPPI jets, pT > 300 GeV, |eta| < 2.5 (arXiv:2412.10504, pp. 3-4)",
+      "n_in_the_80_files": 177620029,
+      "source": "sum over the 80 files of shard*/staging/<file>.stats.json:n_jets_read"
+    },
+    {
+      "stage": "staged",
+      "n": 12589467,
+      "definition": "500 < pT < 2500 GeV, |eta| < 2.4, 20 < m_SD < 500 GeV on the stored jet: pT = FatJet_pt (JEC-corrected), m_SD = FatJet_msoftdrop",
+      "code": "scripts/stage_aoj.py:145",
+      "source": "sum of shard*/staging/<file>.stats.json:counters.n_jets = merge_manifest.json:n_jets = len(jets.npz)"
+    },
+    {
+      "stage": "rho window",
+      "n": 9441209,
+      "definition": "-5.5 < rho < -2.0 and 500 < pT < 2500 GeV; the map is built on these jets",
+      "code": "experiments/AOJ/peak_fit.py:95",
+      "source": "experiments/FIGS/data/aoj_full_v1/fit_v6/results.json:n_jets",
+      "n_in_results": 9441209
+    },
+    {
+      "stage": "fit",
+      "n": 4194846,
+      "definition": "(m_SD, pT) bins lying fully inside the rho window, 105-300 GeV in 5 GeV bins, 8 pT categories: 225 bins",
+      "code": "experiments/AOJ/peak_fit.py:162",
+      "source": "results.json:models.<m>.top.n_pass + n_fail (identical for every score)",
+      "n_in_results_every_model": [
+        4194846
+      ],
+      "n_in_results_reference": 4194846
+    }
+  ],
+  "rho": {
+    "definition": "rho = 2 ln(m_SD / pT)",
+    "code": "experiments/AOJ/peak_fit.py:95",
+    "m_sd": "jet_sdmass = FatJet_msoftdrop (stored)",
+    "pt": "aoj_jet_pt = FatJet_pt (JEC-corrected, stored)"
+  },
+  "pt_categories_gev": [
+    500.0,
+    550.0,
+    600.0,
+    675.0,
+    750.0,
+    850.0,
+    1000.0,
+    1200.0,
+    2500.0
+  ],
+  "fit_jets_per_pt_category": [
+    1493095,
+    961739,
+    816419,
+    420822,
+    276248,
+    158181,
+    56179,
+    12163
+  ],
+  "mass_bin_gev": 5.0,
+  "fit_range_gev": [
+    105.0,
+    300.0
+  ],
+  "n_fit_bins": 225,
+  "masked_windows_gev": [
+    [
+      65.0,
+      105.0
+    ],
+    [
+      140.0,
+      220.0
+    ]
+  ],
+  "n_files": 80,
+  "provenance": {
+    "code": "ca255f8ee14ebebdf5e421e7c2a806ef331490b1",
+    "code_dirty": false,
+    "inputs": {
+      "fit": {
+        "path": "experiments/FIGS/data/aoj_full_v1/fit_v6/results.json",
+        "sha256": "2416fc21f93fcfa6442b53104e8a66850788fdbd8df6b0d0e0ae8ee35e8a87ba"
+      },
+      "jets": {
+        "path": "/scratch/merged/jets.npz",
+        "sha256": "538ecf0c3d3d0df2185e1a235054d8dfeda1fb6ff088bdd5da1a560441e08be2"
+      },
+      "sim_jets": {
+        "path": "/data/results/aoj/sim_v1/jets.npz",
+        "sha256": "2523d94a93b123e08fcc73dafd462681f05decf073a231bc5ec0a5d5fd2bb414"
+      }
+    },
+    "partial_models": null
+  }
+}

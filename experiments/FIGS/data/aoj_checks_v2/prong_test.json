@@ -1,0 +1,2019 @@
+{
+  "models": {
+    "l162-s1b": {
+      "signal_yield": 383.00790328717966,
+      "signal_yield_err": 238.15152464831777,
+      "z_wald": 1.6082529971318624,
+      "s_over_sqrt_b": 2.855476305591057,
+      "s_in_window": 382.936589921149,
+      "b_in_window": 17984.42717145569,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        4,
+        2
+      ],
+      "converged": true,
+      "edm": 5.212429183078596e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 16.585404833791785,
+      "data_efficiency": 0.009374434990264488,
+      "data_efficiency_sidebands": 0.01001020555134423,
+      "data_efficiency_top_window": 0.008451594663053091,
+      "yield_per_pt_bin": {
+        "500-550": 346.6809314211026,
+        "550-600": 59.695814912701294,
+        "600-675": 33.83550637105576,
+        "675-750": 10.631780683252025,
+        "750-850": -5.442528600755162,
+        "850-1000": -19.374889369689257,
+        "1000-1200": -10.954645730279765,
+        "1200-2500": -32.064066400207864
+      },
+      "validation": {
+        "toy_p": 0.6467661691542289,
+        "asymptotic_p": 0.5665934201296077,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.0138158625945055,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2756.6433313790367,
+      "three_prong_yield_err": 198.54979701183612,
+      "ratio_to_three_prong": 0.13893995604269063,
+      "overlap_jaccard": 0.002615955173508879,
+      "shared_fraction_of_prong_only": 0.005491153142159854,
+      "sim_eff_three_prong": 0.3622648537902775,
+      "sim_eff_prong_only": 0.004656360588563979,
+      "expected_yield": 35.432433565283254,
+      "expected_z": 0.14878104861015232,
+      "power": 0.0021775984235208406
+    },
+    "l162-s2": {
+      "signal_yield": 96.53871927357713,
+      "signal_yield_err": 151.73830347632875,
+      "z_wald": 0.6362185226925067,
+      "s_over_sqrt_b": 0.6946552623658333,
+      "s_in_window": 96.46922114669081,
+      "b_in_window": 19285.854427413768,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 1.398669139474945e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 74.63894172416758,
+      "data_efficiency": 0.009515518616312805,
+      "data_efficiency_sidebands": 0.00999963441486337,
+      "data_efficiency_top_window": 0.008725250432120593,
+      "yield_per_pt_bin": {
+        "500-550": 354.74936171062905,
+        "550-600": -68.4016514110442,
+        "600-675": -180.39890107990817,
+        "675-750": -15.047656977524582,
+        "750-850": 42.71224469367975,
+        "850-1000": 10.263511799207425,
+        "1000-1200": -28.206274462729432,
+        "1200-2500": -19.131914998732686
+      },
+      "validation": {
+        "toy_p": 0.527363184079602,
+        "asymptotic_p": 0.46058019621562346,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -1.4356540882553137,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 884.6220696861883,
+      "three_prong_yield_err": 211.3366472945457,
+      "ratio_to_three_prong": 0.10912990143669304,
+      "overlap_jaccard": 0.00046454846969091324,
+      "shared_fraction_of_prong_only": 0.0009572786571384047,
+      "sim_eff_three_prong": 0.2479977649469175,
+      "sim_eff_prong_only": 0.006798286459303408,
+      "expected_yield": 24.24987273266682,
+      "expected_z": 0.15981378582138828,
+      "power": 0.002254360299678159
+    },
+    "l162-s3": {
+      "signal_yield": -4.177960472171705,
+      "signal_yield_err": 176.07804613843163,
+      "z_wald": -0.023727889784096165,
+      "s_over_sqrt_b": -0.029239825123906344,
+      "s_in_window": -4.181228114632468,
+      "b_in_window": 20448.34585861613,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 1.316596529906151e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 12.799035845956382,
+      "data_efficiency": 0.00974419695613136,
+      "data_efficiency_sidebands": 0.010000955806923478,
+      "data_efficiency_top_window": 0.009332321136693529,
+      "yield_per_pt_bin": {
+        "500-550": 152.02758649434512,
+        "550-600": -74.58682016056166,
+        "600-675": -47.5280895922151,
+        "675-750": -2.4476441163592293,
+        "750-850": -5.584285268825955,
+        "850-1000": 9.241278040185508,
+        "1000-1200": -19.271555945242156,
+        "1200-2500": -16.02842992349823
+      },
+      "validation": {
+        "toy_p": 0.2885572139303483,
+        "asymptotic_p": 0.24861327649614215,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.3677044470486617,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 3090.70525780182,
+      "three_prong_yield_err": 199.3308496701354,
+      "ratio_to_three_prong": -0.0013517822385765653,
+      "overlap_jaccard": 0.0022863209679284354,
+      "shared_fraction_of_prong_only": 0.0047284150570127284,
+      "sim_eff_three_prong": 0.5535481467684857,
+      "sim_eff_prong_only": 0.004516669770907059,
+      "expected_yield": 25.21857419303302,
+      "expected_z": 0.14322384162081347,
+      "power": 0.0021398376600358948
+    },
+    "l162-s4": {
+      "signal_yield": 418.7788673343467,
+      "signal_yield_err": 176.41283419916468,
+      "z_wald": 2.3738571472728465,
+      "s_over_sqrt_b": 2.9292349029536022,
+      "s_in_window": 418.6259827969491,
+      "b_in_window": 20424.148510449922,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 2.044670145282235e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 7.480526471375356,
+      "data_efficiency": 0.009767287219253382,
+      "data_efficiency_sidebands": 0.010005360447123836,
+      "data_efficiency_top_window": 0.009263082930061993,
+      "yield_per_pt_bin": {
+        "500-550": 158.47704090722976,
+        "550-600": 97.2069351224728,
+        "600-675": 60.96748689483091,
+        "675-750": 55.84765823281944,
+        "750-850": 25.82028025518563,
+        "850-1000": 16.495064931129345,
+        "1000-1200": 7.210154144504589,
+        "1200-2500": -3.245753153825789
+      },
+      "validation": {
+        "toy_p": 0.8756218905472637,
+        "asymptotic_p": 0.8449147732591697,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.5940291632695538,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2947.496051947369,
+      "three_prong_yield_err": 179.6517114134432,
+      "ratio_to_three_prong": 0.1420795346130033,
+      "overlap_jaccard": 0.017138312748855133,
+      "shared_fraction_of_prong_only": 0.034820799219215964,
+      "sim_eff_three_prong": 0.3946731234866828,
+      "sim_eff_prong_only": 0.018439187930713353,
+      "expected_yield": 137.70746066200542,
+      "expected_z": 0.780597745550292,
+      "power": 0.013229685213167768
+    },
+    "l162-s5": {
+      "signal_yield": -124.26855698222059,
+      "signal_yield_err": 299.4440092907712,
+      "z_wald": -0.41499763938022627,
+      "s_over_sqrt_b": -0.9188178217681955,
+      "s_in_window": -124.20899214281175,
+      "b_in_window": 18274.573709285054,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        4,
+        3
+      ],
+      "converged": true,
+      "edm": 1.5569229590018295e-08,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 5.6268519582423835,
+      "data_efficiency": 0.009284510066454412,
+      "data_efficiency_sidebands": 0.010017913671694858,
+      "data_efficiency_top_window": 0.008090566871331509,
+      "yield_per_pt_bin": {
+        "500-550": 2.9806228397591576,
+        "550-600": -66.79261595664998,
+        "600-675": 5.56684879028758,
+        "675-750": 6.710461965372005,
+        "750-850": -19.262201740296913,
+        "850-1000": -14.461599317111606,
+        "1000-1200": -14.123097937762816,
+        "1200-2500": -24.886975625818017
+      },
+      "validation": {
+        "toy_p": 0.5074626865671642,
+        "asymptotic_p": 0.4132797036738403,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.2374828886627974,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2265.167513867934,
+      "three_prong_yield_err": 190.93744127213827,
+      "ratio_to_three_prong": -0.05486064770990082,
+      "overlap_jaccard": 0.0030169450839616363,
+      "shared_fraction_of_prong_only": 0.006308680424837719,
+      "sim_eff_three_prong": 0.3582603836841125,
+      "sim_eff_prong_only": 0.016530080089402124,
+      "expected_yield": 104.51448757773804,
+      "expected_z": 0.349028480567299,
+      "power": 0.0040130304531139195
+    },
+    "l162mass-s1": {
+      "signal_yield": 110.78313198899505,
+      "signal_yield_err": 316.01595189616216,
+      "z_wald": 0.3505618350095081,
+      "s_over_sqrt_b": 0.7943597288966229,
+      "s_in_window": 110.80953070655161,
+      "b_in_window": 19458.96752737314,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        4,
+        3
+      ],
+      "converged": true,
+      "edm": 1.138262888424483e-07,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 5.873543208778699,
+      "data_efficiency": 0.009630122582817518,
+      "data_efficiency_sidebands": 0.010004259287073746,
+      "data_efficiency_top_window": 0.00900220325864674,
+      "yield_per_pt_bin": {
+        "500-550": -7.395318909521412,
+        "550-600": 64.15081548639215,
+        "600-675": 110.08151583071844,
+        "675-750": -21.014756686244752,
+        "750-850": 9.345806435052802,
+        "850-1000": -29.662313039071922,
+        "1000-1200": -7.252144300790578,
+        "1200-2500": -7.470472827539678
+      },
+      "validation": {
+        "toy_p": 0.13432835820895522,
+        "asymptotic_p": 0.13161059017366275,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -2.27939862463379,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2033.0304401436845,
+      "three_prong_yield_err": 211.91301301548347,
+      "ratio_to_three_prong": 0.05449162481854696,
+      "overlap_jaccard": 0.0008695513857149674,
+      "shared_fraction_of_prong_only": 0.001803783545974483,
+      "sim_eff_three_prong": 0.3245948966287949,
+      "sim_eff_prong_only": 0.002793816353138387,
+      "expected_yield": 17.498468857928717,
+      "expected_z": 0.05537210622734145,
+      "power": 0.0016167163981390226
+    },
+    "l162mass-s2": {
+      "signal_yield": 1348.7857940148592,
+      "signal_yield_err": 228.67917932167194,
+      "z_wald": 5.898157401192994,
+      "s_over_sqrt_b": 9.218234512012646,
+      "s_in_window": 1348.188977815778,
+      "b_in_window": 21389.766303996847,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        3,
+        2
+      ],
+      "converged": true,
+      "edm": 3.728829459141561e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 81.29220650863331,
+      "data_efficiency": 0.010193080144714517,
+      "data_efficiency_sidebands": 0.010001396270943513,
+      "data_efficiency_top_window": 0.010802396631066689,
+      "yield_per_pt_bin": {
+        "500-550": 400.94862754614104,
+        "550-600": 177.90619698445977,
+        "600-675": 262.4400880978457,
+        "675-750": 201.86812604567967,
+        "750-850": 171.9623142226064,
+        "850-1000": 103.29754223142284,
+        "1000-1200": 22.23081489025534,
+        "1200-2500": 8.13208399644847
+      },
+      "validation": {
+        "toy_p": 0.35323383084577115,
+        "asymptotic_p": 0.3087737129404958,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.682068080134873,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2403.2256282092844,
+      "three_prong_yield_err": 191.09950409329699,
+      "ratio_to_three_prong": 0.5612397679946015,
+      "overlap_jaccard": 0.03613253050704256,
+      "shared_fraction_of_prong_only": 0.07021353977243207,
+      "sim_eff_three_prong": 0.3007077668094617,
+      "sim_eff_prong_only": 0.04758800521512386,
+      "expected_yield": 380.31845649270497,
+      "expected_z": 1.6631092416058106,
+      "power": 0.09062914894523472
+    },
+    "l162mass-s3": {
+      "signal_yield": 309.71438531374173,
+      "signal_yield_err": 153.964040487515,
+      "z_wald": 2.0116020879489493,
+      "s_over_sqrt_b": 2.2320897453902684,
+      "s_in_window": 309.6369626936061,
+      "b_in_window": 19243.421515041322,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 8.649464581701887e-10,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 58.09316330175551,
+      "data_efficiency": 0.009608197424715414,
+      "data_efficiency_sidebands": 0.010012628103454426,
+      "data_efficiency_top_window": 0.008864138977565997,
+      "yield_per_pt_bin": {
+        "500-550": 404.1535786170189,
+        "550-600": 72.20890092389583,
+        "600-675": -117.5701547683473,
+        "675-750": -37.29067097017329,
+        "750-850": 27.13112303562278,
+        "850-1000": 9.394891463572455,
+        "1000-1200": -27.151349417007793,
+        "1200-2500": -21.161933570839874
+      },
+      "validation": {
+        "toy_p": 0.6467661691542289,
+        "asymptotic_p": 0.5626855090203575,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -1.062631800014259,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2567.768145416237,
+      "three_prong_yield_err": 178.6139828080262,
+      "ratio_to_three_prong": 0.12061618019002911,
+      "overlap_jaccard": 0.004165203791771727,
+      "shared_fraction_of_prong_only": 0.00863161840089072,
+      "sim_eff_three_prong": 0.36277705345501954,
+      "sim_eff_prong_only": 0.005867014341590613,
+      "expected_yield": 41.527247634763945,
+      "expected_z": 0.2697204327924312,
+      "power": 0.003164031836152983
+    },
+    "l162mass-s4": {
+      "signal_yield": 422.59085098774557,
+      "signal_yield_err": 180.43241692315672,
+      "z_wald": 2.3421004839042876,
+      "s_over_sqrt_b": 2.907147773763068,
+      "s_in_window": 422.40862164722876,
+      "b_in_window": 21112.095009967026,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 2.0759602488352755e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 15.025627102113589,
+      "data_efficiency": 0.009815268362346391,
+      "data_efficiency_sidebands": 0.009995229774663012,
+      "data_efficiency_top_window": 0.009631529101065527,
+      "yield_per_pt_bin": {
+        "500-550": 186.28310463685784,
+        "550-600": 83.39037789248192,
+        "600-675": 16.672800292081217,
+        "675-750": 33.21176143577392,
+        "750-850": 88.18048936404105,
+        "850-1000": 0.16584506197226384,
+        "1000-1200": 15.864123874723752,
+        "1200-2500": -1.177651570186414
+      },
+      "validation": {
+        "toy_p": 0.5223880597014925,
+        "asymptotic_p": 0.5043612646882654,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.1529740095466436,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2439.9549069850764,
+      "three_prong_yield_err": 175.97404997047985,
+      "ratio_to_three_prong": 0.17319617251038413,
+      "overlap_jaccard": 0.005400302712280943,
+      "shared_fraction_of_prong_only": 0.011050200716536453,
+      "sim_eff_three_prong": 0.3922052523747439,
+      "sim_eff_prong_only": 0.012479046377351461,
+      "expected_yield": 77.63361214199222,
+      "expected_z": 0.43026421452335323,
+      "power": 0.005088805272548649
+    },
+    "l162mass-s5": {
+      "signal_yield": 332.6791007315949,
+      "signal_yield_err": 221.8006379679075,
+      "z_wald": 1.4999014600658203,
+      "s_over_sqrt_b": 2.270657492866417,
+      "s_in_window": 332.45418129003417,
+      "b_in_window": 21436.81889968048,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        3,
+        2
+      ],
+      "converged": true,
+      "edm": 4.187320065683269e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 22.227890539477244,
+      "data_efficiency": 0.010053055705047945,
+      "data_efficiency_sidebands": 0.010006681839183943,
+      "data_efficiency_top_window": 0.010094353541822762,
+      "yield_per_pt_bin": {
+        "500-550": 147.8244463954515,
+        "550-600": -0.7782871048257378,
+        "600-675": -36.90241975092724,
+        "675-750": 84.5441487731429,
+        "750-850": 44.34642136924493,
+        "850-1000": 72.90639579646039,
+        "1000-1200": 20.19485953748478,
+        "1200-2500": 0.5435357155633251
+      },
+      "validation": {
+        "toy_p": 0.31840796019900497,
+        "asymptotic_p": 0.2756410590115691,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.4255381597184085,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2662.4974805197166,
+      "three_prong_yield_err": 175.344573309903,
+      "ratio_to_three_prong": 0.12495001522655198,
+      "overlap_jaccard": 0.02356009817150264,
+      "shared_fraction_of_prong_only": 0.046727002623455166,
+      "sim_eff_three_prong": 0.5038182156826224,
+      "sim_eff_prong_only": 0.018066679083628235,
+      "expected_yield": 95.47588007778651,
+      "expected_z": 0.43045809494741394,
+      "power": 0.0050916537401793265
+    },
+    "l188-s1": {
+      "signal_yield": 183.80744145660492,
+      "signal_yield_err": 201.90582863874832,
+      "z_wald": 0.9103622351857648,
+      "s_over_sqrt_b": 1.2279875567968377,
+      "s_in_window": 183.74631714374948,
+      "b_in_window": 22389.75566233368,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        3
+      ],
+      "converged": true,
+      "edm": 2.5446135680596884e-08,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 7.008217679985563,
+      "data_efficiency": 0.010056974694660398,
+      "data_efficiency_sidebands": 0.010007562767224015,
+      "data_efficiency_top_window": 0.010232829955085834,
+      "yield_per_pt_bin": {
+        "500-550": -69.81809689750087,
+        "550-600": 133.2498579482322,
+        "600-675": 48.67786596229458,
+        "675-750": 22.92468238329906,
+        "750-850": 34.26727869629124,
+        "850-1000": 8.864870384039312,
+        "1000-1200": -3.7671573511923677,
+        "1200-2500": 9.408140331141723
+      },
+      "validation": {
+        "toy_p": 0.44776119402985076,
+        "asymptotic_p": 0.3510659591962579,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.5124715751810498,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2261.916730419359,
+      "three_prong_yield_err": 210.88866782647497,
+      "ratio_to_three_prong": 0.08126180729143245,
+      "overlap_jaccard": 0.006743144643584096,
+      "shared_fraction_of_prong_only": 0.013607161664033703,
+      "sim_eff_three_prong": 0.38265971316818775,
+      "sim_eff_prong_only": 0.017833861054200036,
+      "expected_yield": 105.4166594975194,
+      "expected_z": 0.5221080550682458,
+      "power": 0.0066080581575855
+    },
+    "l188-s2": {
+      "signal_yield": 795.2439310778898,
+      "signal_yield_err": 228.80017440216716,
+      "z_wald": 3.475713832630529,
+      "s_over_sqrt_b": 5.189677248569984,
+      "s_in_window": 794.9381287651598,
+      "b_in_window": 23463.13057043805,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        3,
+        2
+      ],
+      "converged": true,
+      "edm": 2.8556819459302108e-08,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 38.28466767077708,
+      "data_efficiency": 0.010076993317275362,
+      "data_efficiency_sidebands": 0.009998973718833317,
+      "data_efficiency_top_window": 0.010707606229130657,
+      "yield_per_pt_bin": {
+        "500-550": -17.748927180405413,
+        "550-600": 165.58238325589642,
+        "600-675": 352.82389649923977,
+        "675-750": 174.62496006411737,
+        "750-850": 84.86255111080575,
+        "850-1000": 37.472863452369666,
+        "1000-1200": 11.247062689640098,
+        "1200-2500": -13.62085881377383
+      },
+      "validation": {
+        "toy_p": 0.07960199004975124,
+        "asymptotic_p": 0.06568083448886898,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.6229303246682908,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2617.4767336358896,
+      "three_prong_yield_err": 178.67822343595097,
+      "ratio_to_three_prong": 0.30382082135004534,
+      "overlap_jaccard": 0.0287537729031161,
+      "shared_fraction_of_prong_only": 0.05687467810256572,
+      "sim_eff_three_prong": 0.3434997206183647,
+      "sim_eff_prong_only": 0.06169677779847271,
+      "expected_yield": 470.1310386427482,
+      "expected_z": 2.0547669592960554,
+      "power": 0.17226995730744732
+    },
+    "l188-s3": {
+      "signal_yield": 223.16455074379678,
+      "signal_yield_err": 151.67008765358048,
+      "z_wald": 1.471381431871471,
+      "s_over_sqrt_b": 1.600498917066664,
+      "s_in_window": 223.05813531682986,
+      "b_in_window": 19423.40498352211,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 1.40643425531179e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 10.74206822133462,
+      "data_efficiency": 0.009564770783063906,
+      "data_efficiency_sidebands": 0.010011526943404337,
+      "data_efficiency_top_window": 0.008742559983778478,
+      "yield_per_pt_bin": {
+        "500-550": 143.31523927889393,
+        "550-600": 19.535086743268145,
+        "600-675": -14.171748945858345,
+        "675-750": 68.42591293427769,
+        "750-850": -1.4481767559432563,
+        "850-1000": 19.675013338817134,
+        "1000-1200": -5.6646767941638005,
+        "1200-2500": -6.5020990554947256
+      },
+      "validation": {
+        "toy_p": 0.8706467661691543,
+        "asymptotic_p": 0.8256746490163138,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.9746450386453045,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 3112.2827111010274,
+      "three_prong_yield_err": 181.09470235403842,
+      "ratio_to_three_prong": 0.07170445986407456,
+      "overlap_jaccard": 0.005185582276667003,
+      "shared_fraction_of_prong_only": 0.010819131147359445,
+      "sim_eff_three_prong": 0.5143881542186627,
+      "sim_eff_prong_only": 0.002374743900167629,
+      "expected_yield": 14.36828263475626,
+      "expected_z": 0.09473379264851416,
+      "power": 0.0018347043275078311
+    },
+    "l188-s4": {
+      "signal_yield": 439.7966883500998,
+      "signal_yield_err": 184.38967875703278,
+      "z_wald": 2.3851480804932286,
+      "s_over_sqrt_b": 2.9785764784596607,
+      "s_in_window": 439.63292157949553,
+      "b_in_window": 21785.267770172577,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 1.995616359754283e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 12.32734480351786,
+      "data_efficiency": 0.009799274647982054,
+      "data_efficiency_sidebands": 0.01000712230320398,
+      "data_efficiency_top_window": 0.00997112601930592,
+      "yield_per_pt_bin": {
+        "500-550": 124.98236637758687,
+        "550-600": 93.77007877596209,
+        "600-675": 99.87644680536947,
+        "675-750": 42.62570600119681,
+        "750-850": 34.733404941023025,
+        "850-1000": 37.53385657448157,
+        "1000-1200": 17.084262903981564,
+        "1200-2500": -10.80943402950156
+      },
+      "validation": {
+        "toy_p": 0.21890547263681592,
+        "asymptotic_p": 0.16813055458604068,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.17213482701989063,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2107.8693579594815,
+      "three_prong_yield_err": 213.42011585228562,
+      "ratio_to_three_prong": 0.20864513575729574,
+      "overlap_jaccard": 0.013318729696247894,
+      "shared_fraction_of_prong_only": 0.02707610493206654,
+      "sim_eff_three_prong": 0.3351182715589495,
+      "sim_eff_prong_only": 0.0170888433600298,
+      "expected_yield": 107.48757181758089,
+      "expected_z": 0.5829370306524341,
+      "power": 0.0078231550691445
+    },
+    "l188-s5": {
+      "signal_yield": -107.66419501717438,
+      "signal_yield_err": 249.41781389105597,
+      "z_wald": -0.43166201057395753,
+      "s_over_sqrt_b": -0.7779412652920178,
+      "s_in_window": -107.63365127224719,
+      "b_in_window": 19142.670699889706,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        4,
+        2
+      ],
+      "converged": true,
+      "edm": 5.111414712409981e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 13.453560235005199,
+      "data_efficiency": 0.00958192960244816,
+      "data_efficiency_sidebands": 0.010002056966973568,
+      "data_efficiency_top_window": 0.008695576914992792,
+      "yield_per_pt_bin": {
+        "500-550": 70.55830579638572,
+        "550-600": -74.53309082777356,
+        "600-675": -58.46562461743708,
+        "675-750": 11.600817003703227,
+        "750-850": 1.1428384807710792,
+        "850-1000": -32.04099184384003,
+        "1000-1200": 1.4317357254476506,
+        "1200-2500": -27.358184734431386
+      },
+      "validation": {
+        "toy_p": 0.5870646766169154,
+        "asymptotic_p": 0.5108861057590727,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -2.018620800288659,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 1762.0567896018429,
+      "three_prong_yield_err": 216.12820082471447,
+      "ratio_to_three_prong": -0.061101433082359595,
+      "overlap_jaccard": 0.0012500264836119409,
+      "shared_fraction_of_prong_only": 0.0026087437130381916,
+      "sim_eff_three_prong": 0.32077668094617245,
+      "sim_eff_prong_only": 0.011268392624324828,
+      "expected_yield": 61.898351441957615,
+      "expected_z": 0.24817133337955724,
+      "power": 0.0029631758925493914
+    },
+    "r16q1-s1": {
+      "signal_yield": 355.3436319439784,
+      "signal_yield_err": 271.83412893925004,
+      "z_wald": 1.3072075729806216,
+      "s_over_sqrt_b": 2.386542841144671,
+      "s_in_window": 355.16135136286,
+      "b_in_window": 22146.899243845386,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        4,
+        2
+      ],
+      "converged": true,
+      "edm": 2.6496833467294843e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 10.64425831520083,
+      "data_efficiency": 0.01009182192661978,
+      "data_efficiency_sidebands": 0.010000515342903442,
+      "data_efficiency_top_window": 0.010499891609236048,
+      "yield_per_pt_bin": {
+        "500-550": 49.60333683336507,
+        "550-600": -0.5776224274006166,
+        "600-675": 122.74637582018963,
+        "675-750": 90.55977424171279,
+        "750-850": 55.56733940199287,
+        "850-1000": 30.959955092113496,
+        "1000-1200": 4.0606248411217845,
+        "1200-2500": 2.423848140883352
+      },
+      "validation": {
+        "toy_p": 0.05472636815920398,
+        "asymptotic_p": 0.04141618925597512,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -1.0575446129705461,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2315.59175623567,
+      "three_prong_yield_err": 200.69956724683357,
+      "ratio_to_three_prong": 0.15345694291192372,
+      "overlap_jaccard": 0.021886610018970146,
+      "shared_fraction_of_prong_only": 0.04371372495513177,
+      "sim_eff_three_prong": 0.34359284783013594,
+      "sim_eff_prong_only": 0.033712050661203204,
+      "expected_yield": 227.1972396686035,
+      "expected_z": 0.8357936531191708,
+      "power": 0.015224258204624414
+    },
+    "r16q1-s2": {
+      "signal_yield": 1236.6498615935611,
+      "signal_yield_err": 170.32075107945988,
+      "z_wald": 7.26071164996581,
+      "s_over_sqrt_b": 8.448445650520252,
+      "s_in_window": 1236.1168464822556,
+      "b_in_window": 21407.473811077034,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 9.799876707750664e-10,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 89.25993812504896,
+      "data_efficiency": 0.010055703671002305,
+      "data_efficiency_sidebands": 0.010006902071193962,
+      "data_efficiency_top_window": 0.01023653914472681,
+      "yield_per_pt_bin": {
+        "500-550": 265.0533388476538,
+        "550-600": 245.85807546560858,
+        "600-675": 255.1906228856314,
+        "675-750": 141.49006029314447,
+        "750-850": 162.50051085865698,
+        "850-1000": 93.11988785314391,
+        "1000-1200": 61.92486958317055,
+        "1200-2500": 11.512495806551417
+      },
+      "validation": {
+        "toy_p": 0.5870646766169154,
+        "asymptotic_p": 0.5731665322500709,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.7997762094788606,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2685.736135292482,
+      "three_prong_yield_err": 201.00827726666589,
+      "ratio_to_three_prong": 0.46045098970934,
+      "overlap_jaccard": 0.04033666570231551,
+      "shared_fraction_of_prong_only": 0.07930438812698815,
+      "sim_eff_three_prong": 0.40570869808157944,
+      "sim_eff_prong_only": 0.03422425032594524,
+      "expected_yield": 226.55985991506645,
+      "expected_z": 1.330195284363027,
+      "power": 0.04747900355084457
+    },
+    "r16q1-s3": {
+      "signal_yield": 234.63271658426675,
+      "signal_yield_err": 165.5864327922093,
+      "z_wald": 1.4169803203545188,
+      "s_over_sqrt_b": 1.5858123580230317,
+      "s_in_window": 234.6049196955055,
+      "b_in_window": 21886.2136446006,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 8.314094927096572e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 13.206579350397902,
+      "data_efficiency": 0.009877972196145642,
+      "data_efficiency_sidebands": 0.010013949495514535,
+      "data_efficiency_top_window": 0.010017284823726944,
+      "yield_per_pt_bin": {
+        "500-550": 226.04437774346718,
+        "550-600": 9.615318202340791,
+        "600-675": 58.17579547920743,
+        "675-750": -8.741118345451467,
+        "750-850": -29.35762891110669,
+        "850-1000": -6.745545155233943,
+        "1000-1200": -3.3926478759605034,
+        "1200-2500": -10.965834552996037
+      },
+      "validation": {
+        "toy_p": 0.7114427860696517,
+        "asymptotic_p": 0.6775745821113914,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.9397183730284913,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2098.4676198464463,
+      "three_prong_yield_err": 211.6131806960422,
+      "ratio_to_three_prong": 0.11181145439901323,
+      "overlap_jaccard": 0.004276539001720084,
+      "shared_fraction_of_prong_only": 0.008717563800128673,
+      "sim_eff_three_prong": 0.2497671819705718,
+      "sim_eff_prong_only": 0.004749487800335258,
+      "expected_yield": 39.90374668611811,
+      "expected_z": 0.24098439717094713,
+      "power": 0.0028987883403376186
+    },
+    "r16q1-s4": {
+      "signal_yield": 530.6239190895801,
+      "signal_yield_err": 304.1390720737155,
+      "z_wald": 1.744675274609145,
+      "s_over_sqrt_b": 3.9337781433257497,
+      "s_in_window": 530.4488038238524,
+      "b_in_window": 18183.070509291214,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        4,
+        3
+      ],
+      "converged": true,
+      "edm": 8.316681651812137e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 18.83211879117968,
+      "data_efficiency": 0.009566147725360174,
+      "data_efficiency_sidebands": 0.010006241375163908,
+      "data_efficiency_top_window": 0.00850063839275043,
+      "yield_per_pt_bin": {
+        "500-550": 183.88719194300276,
+        "550-600": 49.99159899947282,
+        "600-675": 184.97090297752186,
+        "675-750": 116.93616393854437,
+        "750-850": 6.454560291213723,
+        "850-1000": -11.244167986825298,
+        "1000-1200": -19.45702647490343,
+        "1200-2500": 19.0846954015533
+      },
+      "validation": {
+        "toy_p": 0.31343283582089554,
+        "asymptotic_p": 0.24654786805187084,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.9459581859121107,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2481.2580748263526,
+      "three_prong_yield_err": 194.9389007733953,
+      "ratio_to_three_prong": 0.2138527727014914,
+      "overlap_jaccard": 0.0016967148825371757,
+      "shared_fraction_of_prong_only": 0.0035209708135878473,
+      "sim_eff_three_prong": 0.34401192028310673,
+      "sim_eff_prong_only": 0.005028869435649097,
+      "expected_yield": 36.27177478089416,
+      "expected_z": 0.1192604900566765,
+      "power": 0.0019837169314614977
+    },
+    "r16q1-s5": {
+      "signal_yield": 1152.6913430948262,
+      "signal_yield_err": 260.6868285639139,
+      "z_wald": 4.421747540697919,
+      "s_over_sqrt_b": 7.668539462016359,
+      "s_in_window": 1152.2234042487653,
+      "b_in_window": 22576.055881219552,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        3,
+        3
+      ],
+      "converged": true,
+      "edm": 5.7658821798248514e-08,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 41.8409697837169,
+      "data_efficiency": 0.010214369790987573,
+      "data_efficiency_sidebands": 0.010006241375163908,
+      "data_efficiency_top_window": 0.01107564026795186,
+      "yield_per_pt_bin": {
+        "500-550": 355.56052036689533,
+        "550-600": 206.8329111000157,
+        "600-675": 221.57217232589193,
+        "675-750": 145.33103345033095,
+        "750-850": 159.96283140630328,
+        "850-1000": 54.80632736204356,
+        "1000-1200": 14.572486288970692,
+        "1200-2500": -5.946939205625199
+      },
+      "validation": {
+        "toy_p": 0.06467661691542288,
+        "asymptotic_p": 0.034277121978176124,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.80946520161546,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2170.09234139916,
+      "three_prong_yield_err": 215.49795752028385,
+      "ratio_to_three_prong": 0.5311715640412021,
+      "overlap_jaccard": 0.03280199609045977,
+      "shared_fraction_of_prong_only": 0.06420838690945291,
+      "sim_eff_three_prong": 0.42074874278264107,
+      "sim_eff_prong_only": 0.04092940957347737,
+      "expected_yield": 211.10128022242827,
+      "expected_z": 0.8097888235679369,
+      "power": 0.014254462529099166
+    },
+    "r16q1mass-s1": {
+      "signal_yield": 367.90178469736003,
+      "signal_yield_err": 186.40834773866194,
+      "z_wald": 1.9736336336886886,
+      "s_over_sqrt_b": 2.4733662414547637,
+      "s_in_window": 367.65994525745083,
+      "b_in_window": 22096.107728984887,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 1.0638256677663189e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 21.157033695962525,
+      "data_efficiency": 0.010116500969314417,
+      "data_efficiency_sidebands": 0.009997872558783228,
+      "data_efficiency_top_window": 0.010298358972076396,
+      "yield_per_pt_bin": {
+        "500-550": 115.06082190433499,
+        "550-600": 29.29208589718871,
+        "600-675": -24.66840621824809,
+        "675-750": 126.80672165168255,
+        "750-850": 90.1273613799949,
+        "850-1000": 19.466468645184708,
+        "1000-1200": 10.650264579205569,
+        "1200-2500": 1.1664668580167
+      },
+      "validation": {
+        "toy_p": 0.3781094527363184,
+        "asymptotic_p": 0.3521598197818934,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.09445590667516397,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2088.7546241336154,
+      "three_prong_yield_err": 197.28167006796164,
+      "ratio_to_three_prong": 0.1761345159678391,
+      "overlap_jaccard": 0.007429775135157571,
+      "shared_fraction_of_prong_only": 0.014992880475751738,
+      "sim_eff_three_prong": 0.25074501769417024,
+      "sim_eff_prong_only": 0.01722853417768672,
+      "expected_yield": 143.51703081326605,
+      "expected_z": 0.7699066729268582,
+      "power": 0.012870623869490717
+    },
+    "r16q1mass-s2": {
+      "signal_yield": 1055.48456283637,
+      "signal_yield_err": 166.6195251352837,
+      "z_wald": 6.334699141528512,
+      "s_over_sqrt_b": 7.252541991671668,
+      "s_in_window": 1055.008376144452,
+      "b_in_window": 21160.762425933513,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 9.970072524795692e-10,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 71.58282451088394,
+      "data_efficiency": 0.00992521190877143,
+      "data_efficiency_sidebands": 0.00999963441486337,
+      "data_efficiency_top_window": 0.010053964587954366,
+      "yield_per_pt_bin": {
+        "500-550": 244.40022720561365,
+        "550-600": 168.291039694527,
+        "600-675": 215.23483513133206,
+        "675-750": 159.03995696937147,
+        "750-850": 180.34314406216663,
+        "850-1000": 71.67134973104838,
+        "1000-1200": 6.129060211545171,
+        "1200-2500": 10.374949830765782
+      },
+      "validation": {
+        "toy_p": 0.04477611940298507,
+        "asymptotic_p": 0.024052801417464,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.48428219209263806,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": false
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": true,
+        "validation_p": false,
+        "auc": true
+      },
+      "three_prong_yield": 3100.789987174994,
+      "three_prong_yield_err": 183.46607235833514,
+      "ratio_to_three_prong": 0.3403921475501086,
+      "overlap_jaccard": 0.030293010207891116,
+      "shared_fraction_of_prong_only": 0.06061511536080934,
+      "sim_eff_three_prong": 0.2879959024026821,
+      "sim_eff_prong_only": 0.024911529148817283,
+      "expected_yield": 268.21708053979336,
+      "expected_z": 1.609757801926391,
+      "power": 0.08222767173988921
+    },
+    "r16q1mass-s3": {
+      "signal_yield": 774.4583072210659,
+      "signal_yield_err": 318.1185573233141,
+      "z_wald": 2.434495848772378,
+      "s_over_sqrt_b": 5.720070770275851,
+      "s_in_window": 774.2336735671465,
+      "b_in_window": 18320.668142744005,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        4,
+        3
+      ],
+      "converged": true,
+      "edm": 1.4384663873155231e-08,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 11.376468179196422,
+      "data_efficiency": 0.00975330595901436,
+      "data_efficiency_sidebands": 0.010006681839183943,
+      "data_efficiency_top_window": 0.009172825982131597,
+      "yield_per_pt_bin": {
+        "500-550": 514.1398282307348,
+        "550-600": 68.59612933991902,
+        "600-675": 136.43752408137956,
+        "675-750": 45.65574894997828,
+        "750-850": 8.096020553944987,
+        "850-1000": -0.5227031093013791,
+        "1000-1200": -5.617285015885686,
+        "1200-2500": 7.673044190296252
+      },
+      "validation": {
+        "toy_p": 0.8208955223880597,
+        "asymptotic_p": 0.8074681803892475,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": -0.6155858679805412,
+        "tf_order": [
+          3,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2888.20784340698,
+      "three_prong_yield_err": 199.5802204234331,
+      "ratio_to_three_prong": 0.26814493596399264,
+      "overlap_jaccard": 0.001784795640899117,
+      "shared_fraction_of_prong_only": 0.0036923210581757764,
+      "sim_eff_three_prong": 0.4546936114732725,
+      "sim_eff_prong_only": 0.0008381449059415161,
+      "expected_yield": 5.323885425634987,
+      "expected_z": 0.01673553869485253,
+      "power": 0.0014259572586074985
+    },
+    "r16q1mass-s4": {
+      "signal_yield": 121.17222713402144,
+      "signal_yield_err": 247.74968707219338,
+      "z_wald": 0.48909134282261385,
+      "s_over_sqrt_b": 0.8803845404244374,
+      "s_in_window": 121.13872142026752,
+      "b_in_window": 18933.075013072732,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        4,
+        2
+      ],
+      "converged": true,
+      "edm": 1.124634715457077e-08,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 15.389622980328738,
+      "data_efficiency": 0.009652047740919621,
+      "data_efficiency_sidebands": 0.010002056966973568,
+      "data_efficiency_top_window": 0.008727311093032247,
+      "yield_per_pt_bin": {
+        "500-550": 163.18434979894434,
+        "550-600": -63.00771916551283,
+        "600-675": 37.468410875146475,
+        "675-750": 61.26268525689261,
+        "750-850": -37.33391880488415,
+        "850-1000": -26.71031731771353,
+        "1000-1200": 6.290655016744726,
+        "1200-2500": -19.981918525596186
+      },
+      "validation": {
+        "toy_p": 0.3283582089552239,
+        "asymptotic_p": 0.23977281266621342,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.3222242780040703,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 1731.7308973722602,
+      "three_prong_yield_err": 213.59746815341347,
+      "ratio_to_three_prong": 0.06997174175149787,
+      "overlap_jaccard": 0.0011339135989778806,
+      "shared_fraction_of_prong_only": 0.0023373972587707264,
+      "sim_eff_three_prong": 0.16660458185881916,
+      "sim_eff_prong_only": 0.005447941888619854,
+      "expected_yield": 56.627309947611636,
+      "expected_z": 0.2285666255195335,
+      "power": 0.0027905046162990084
+    },
+    "r16q1mass-s5": {
+      "signal_yield": 136.06500861986342,
+      "signal_yield_err": 272.01579654472846,
+      "z_wald": 0.5002099523197719,
+      "s_over_sqrt_b": 0.9166436760898535,
+      "s_in_window": 135.96859957485242,
+      "b_in_window": 22002.709042709903,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        4,
+        2
+      ],
+      "converged": true,
+      "edm": 3.3501416902405988e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 12.416078495578518,
+      "data_efficiency": 0.00991006554351249,
+      "data_efficiency_sidebands": 0.010008003231244051,
+      "data_efficiency_top_window": 0.010073334800523902,
+      "yield_per_pt_bin": {
+        "500-550": -177.7819079067304,
+        "550-600": 22.954785710873548,
+        "600-675": 133.57799943919173,
+        "675-750": 35.887668435452966,
+        "750-850": 58.181675999023284,
+        "850-1000": 36.970814244710645,
+        "1000-1200": 20.599093982611564,
+        "1200-2500": 5.674878714730098
+      },
+      "validation": {
+        "toy_p": 0.1044776119402985,
+        "asymptotic_p": 0.0779004156953235,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.8489072087770225,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2808.8697589292246,
+      "three_prong_yield_err": 216.53197483117708,
+      "ratio_to_three_prong": 0.048441195319690815,
+      "overlap_jaccard": 0.01880559085133418,
+      "shared_fraction_of_prong_only": 0.037963724976753634,
+      "sim_eff_three_prong": 0.3954647047867387,
+      "sim_eff_prong_only": 0.00856770348295772,
+      "expected_yield": 60.853883862354564,
+      "expected_z": 0.2237145218599397,
+      "power": 0.0027491953182390604
+    },
+    "r42q1-s1": {
+      "signal_yield": 70.71396392115363,
+      "signal_yield_err": 213.37702112246058,
+      "z_wald": 0.33140383884434177,
+      "s_over_sqrt_b": 0.4837266820089998,
+      "s_in_window": 70.74367745444721,
+      "b_in_window": 21388.246316732315,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        3,
+        2
+      ],
+      "converged": true,
+      "edm": 4.360114899856216e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 3.977028488125484,
+      "data_efficiency": 0.009733075499123047,
+      "data_efficiency_sidebands": 0.009999414182853352,
+      "data_efficiency_top_window": 0.009548690532417081,
+      "yield_per_pt_bin": {
+        "500-550": 124.48187896310237,
+        "550-600": 17.05911091838247,
+        "600-675": 13.731876237781675,
+        "675-750": -36.20371180404686,
+        "750-850": -23.78863362353899,
+        "850-1000": -22.91686487793494,
+        "1000-1200": -6.013380212506412,
+        "1200-2500": 4.3636883199143
+      },
+      "validation": {
+        "toy_p": 0.4079601990049751,
+        "asymptotic_p": 0.3883893368565706,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 2.0178121902065964,
+        "tf_order": [
+          3,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2447.281440703341,
+      "three_prong_yield_err": 203.03173095180748,
+      "ratio_to_three_prong": 0.028894904666473775,
+      "overlap_jaccard": 0.004345906859911505,
+      "shared_fraction_of_prong_only": 0.008999695294476124,
+      "sim_eff_three_prong": 0.6666045818588191,
+      "sim_eff_prong_only": 0.007077668094617247,
+      "expected_yield": 25.983988473519688,
+      "expected_z": 0.12177500809052466,
+      "power": 0.001999599001438911
+    },
+    "r42q1-s2": {
+      "signal_yield": 316.51050212909354,
+      "signal_yield_err": 185.09276486706887,
+      "z_wald": 1.7100101257680553,
+      "s_over_sqrt_b": 2.1481117433971053,
+      "s_in_window": 316.4601618875749,
+      "b_in_window": 21703.22901468398,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 8.011099348229892e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 21.33698809720022,
+      "data_efficiency": 0.010110781362852999,
+      "data_efficiency_sidebands": 0.010000295110893424,
+      "data_efficiency_top_window": 0.010311135069728644,
+      "yield_per_pt_bin": {
+        "500-550": 420.5427234061299,
+        "550-600": 32.74692202341437,
+        "600-675": -48.308835348413446,
+        "675-750": -60.27489761841895,
+        "750-850": -3.219782898557268,
+        "850-1000": -19.04934636285288,
+        "1000-1200": -8.537170073919919,
+        "1200-2500": 2.6108890017118203
+      },
+      "validation": {
+        "toy_p": 0.2885572139303483,
+        "asymptotic_p": 0.26685219315173125,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.4567927776056724,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2375.4486486972773,
+      "three_prong_yield_err": 201.00348460436444,
+      "ratio_to_three_prong": 0.1332424097244415,
+      "overlap_jaccard": 0.005819777949909631,
+      "shared_fraction_of_prong_only": 0.011806239393241007,
+      "sim_eff_three_prong": 0.2856677221084001,
+      "sim_eff_prong_only": 0.00856770348295772,
+      "expected_yield": 71.24409965123048,
+      "expected_z": 0.3849102351590946,
+      "power": 0.004460200407065624
+    },
+    "r42q1-s3": {
+      "signal_yield": 507.3278548074776,
+      "signal_yield_err": 218.43109709422848,
+      "z_wald": 2.322599032630517,
+      "s_over_sqrt_b": 3.475938038684852,
+      "s_in_window": 507.14949590777843,
+      "b_in_window": 21287.660916472058,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        3,
+        2
+      ],
+      "converged": true,
+      "edm": 1.3612745039989166e-08,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 7.931288651596361,
+      "data_efficiency": 0.009875112392914933,
+      "data_efficiency_sidebands": 0.010012187639434391,
+      "data_efficiency_top_window": 0.00972714376736622,
+      "yield_per_pt_bin": {
+        "500-550": 264.1777902014681,
+        "550-600": 124.13083910729465,
+        "600-675": 20.9333391238806,
+        "675-750": 30.220639314636742,
+        "750-850": 20.140314410923935,
+        "850-1000": 25.105548465791045,
+        "1000-1200": 11.750926272445078,
+        "1200-2500": 10.868457911037455
+      },
+      "validation": {
+        "toy_p": 0.11940298507462686,
+        "asymptotic_p": 0.047904008411355795,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 1.2133029466888208,
+        "tf_order": [
+          2,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 3506.7055898352082,
+      "three_prong_yield_err": 183.5406366971535,
+      "ratio_to_three_prong": 0.14467363792331325,
+      "overlap_jaccard": 0.01779258000327244,
+      "shared_fraction_of_prong_only": 0.036156725622901766,
+      "sim_eff_three_prong": 0.398398211957534,
+      "sim_eff_prong_only": 0.018578878748370272,
+      "expected_yield": 163.5315019102674,
+      "expected_z": 0.7486640138959789,
+      "power": 0.012182132602169505
+    },
+    "r42q1-s4": {
+      "signal_yield": 381.1191435461066,
+      "signal_yield_err": 158.46802609745467,
+      "z_wald": 2.4050223438242737,
+      "s_over_sqrt_b": 2.6707615238359455,
+      "s_in_window": 380.9936690870977,
+      "b_in_window": 20350.041364185923,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        1
+      ],
+      "converged": true,
+      "edm": 2.696821509715455e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 8.120332906979968,
+      "data_efficiency": 0.009727673648576152,
+      "data_efficiency_sidebands": 0.0100049199831038,
+      "data_efficiency_top_window": 0.00922434250492292,
+      "yield_per_pt_bin": {
+        "500-550": 135.68152333732053,
+        "550-600": 123.91090707572694,
+        "600-675": 44.83679902168439,
+        "675-750": 9.314559268988377,
+        "750-850": 23.756859408644054,
+        "850-1000": 20.65513007882171,
+        "1000-1200": 17.147457584408254,
+        "1200-2500": 5.81590777051238
+      },
+      "validation": {
+        "toy_p": 0.19402985074626866,
+        "asymptotic_p": 0.1654802574652945,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.3236592761634496,
+        "tf_order": [
+          2,
+          1
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 2069.551120449024,
+      "three_prong_yield_err": 177.60905066864996,
+      "ratio_to_three_prong": 0.1841554623996997,
+      "overlap_jaccard": 0.012087601817668462,
+      "shared_fraction_of_prong_only": 0.024705741444452912,
+      "sim_eff_three_prong": 0.32883218476438814,
+      "sim_eff_prong_only": 0.022723039672192216,
+      "expected_yield": 143.01061268466776,
+      "expected_z": 0.9024572098646518,
+      "power": 0.017972776705882237
+    },
+    "r42q1-s5": {
+      "signal_yield": 1054.7382238085052,
+      "signal_yield_err": 189.38521859769943,
+      "z_wald": 5.569274263420882,
+      "s_over_sqrt_b": 7.120073510747631,
+      "s_in_window": 1054.3549205613592,
+      "b_in_window": 21928.286832772064,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        2,
+        2
+      ],
+      "converged": true,
+      "edm": 1.7163952597580263e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 40.52071702199032,
+      "data_efficiency": 0.010112899735616488,
+      "data_efficiency_sidebands": 0.010007562767224015,
+      "data_efficiency_top_window": 0.010605397447912675,
+      "yield_per_pt_bin": {
+        "500-550": 340.4673564240954,
+        "550-600": 273.6209558758458,
+        "600-675": 170.24142409311952,
+        "675-750": 124.48885383528746,
+        "750-850": 82.98779601723068,
+        "850-1000": 29.33906233337905,
+        "1000-1200": 32.46875411640466,
+        "1200-2500": 1.124021113142633
+      },
+      "validation": {
+        "toy_p": 0.3383084577114428,
+        "asymptotic_p": 0.2825313389813875,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.07941059783032853,
+        "tf_order": [
+          3,
+          2
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": true,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 1384.4718867351671,
+      "three_prong_yield_err": 168.76791135920408,
+      "ratio_to_three_prong": 0.7618343383597098,
+      "overlap_jaccard": 0.010919843700496357,
+      "shared_fraction_of_prong_only": 0.02165943987096504,
+      "sim_eff_three_prong": 0.9768113242689513,
+      "sim_eff_prong_only": 0.036971503073197985,
+      "expected_yield": 52.40111917569466,
+      "expected_z": 0.2766906496911328,
+      "power": 0.0032315753544821693
+    },
+    "sophon-public": {
+      "signal_yield": 366.1182909499305,
+      "signal_yield_err": 210.9546799297489,
+      "z_wald": 1.7355305465223783,
+      "s_over_sqrt_b": 2.535868277298156,
+      "s_in_window": 365.99352636720715,
+      "b_in_window": 20830.199323166773,
+      "mean": 182.79925174394566,
+      "width": 11.661845263002157,
+      "tf_order": [
+        3,
+        2
+      ],
+      "converged": true,
+      "edm": 4.082533623089857e-09,
+      "n_tf_at_floor": 0,
+      "delta_deviance_vs_background_only": 12.878818484602021,
+      "data_efficiency": 0.009754894738586975,
+      "data_efficiency_sidebands": 0.010006241375163908,
+      "data_efficiency_top_window": 0.009530144584212205,
+      "yield_per_pt_bin": {
+        "500-550": 337.0746123536135,
+        "550-600": 64.52991270824937,
+        "600-675": -64.28253837009004,
+        "675-750": -12.26085829369142,
+        "750-850": 48.993565716423355,
+        "850-1000": -10.629167173692839,
+        "1000-1200": -4.29546865871177,
+        "1200-2500": 6.988232667830388
+      },
+      "validation": {
+        "toy_p": 0.9950248756218906,
+        "asymptotic_p": 0.9912836186358142,
+        "band": [
+          0.5,
+          0.51
+        ],
+        "band_signal_z": 0.16625486891344263,
+        "tf_order": [
+          3,
+          1
+        ],
+        "passes": true
+      },
+      "criteria": {
+        "peak_position": true,
+        "s_over_sqrt_b": false,
+        "validation_p": true,
+        "auc": true
+      },
+      "three_prong_yield": 1812.6923461693932,
+      "three_prong_yield_err": 192.90030049069358,
+      "ratio_to_three_prong": 0.20197486447361948,
+      "overlap_jaccard": 0.007684816101924929,
+      "shared_fraction_of_prong_only": 0.01567895068296814,
+      "sim_eff_three_prong": 0.3730210467498603,
+      "sim_eff_prong_only": 0.021652076736822498,
+      "expected_yield": 105.21806777790137,
+      "expected_z": 0.49877095788033987,
+      "power": 0.006188155374321117
+    }
+  },
+  "power": {
+    "n_runs": 30,
+    "median_sim_eff_three_prong": 0.360262618737195,
+    "median_sim_eff_prong_only": 0.014504563233376792,
+    "median_expected_yield": 74.43885589661136,
+    "median_fit_error": 207.64142488060446,
+    "median_expected_z": 0.36696935786319684,
+    "median_power": 0.004236615430089772,
+    "n_runs_power_over_half": 0,
+    "verdict": "inconclusive: the test had no power to see the peak (median power 0.00 for z >= 3)"
+  },
+  "yield_by_label_set": {
+    "162": {
+      "n": 5,
+      "mean": 153.9757944881422,
+      "sd": 238.90789082413113,
+      "min": -124.26855698222059,
+      "max": 418.7788673343467
+    },
+    "162+mass": {
+      "n": 5,
+      "mean": 504.91065260738725,
+      "sd": 485.2843487997257,
+      "min": 110.78313198899505,
+      "max": 1348.7857940148592
+    },
+    "188": {
+      "n": 5,
+      "mean": 306.8696833222434,
+      "sd": 335.4728735012194,
+      "min": -107.66419501717438,
+      "max": 795.2439310778898
+    },
+    "17": {
+      "n": 5,
+      "mean": 701.9882944612425,
+      "sd": 462.8568182459191,
+      "min": 234.63271658426675,
+      "max": 1236.6498615935611
+    },
+    "17+mass": {
+      "n": 5,
+      "mean": 491.01637810173617,
+      "sd": 411.3684578852976,
+      "min": 121.17222713402144,
+      "max": 1055.48456283637
+    },
+    "43": {
+      "n": 5,
+      "mean": 466.0819376424673,
+      "sd": 365.41879202918136,
+      "min": 70.71396392115363,
+      "max": 1054.7382238085052
+    }
+  },
+  "ratio_by_label_set": {
+    "162": {
+      "n": 5,
+      "mean": 0.06678739242878191,
+      "sd": 0.08959489379111477,
+      "min": -0.05486064770990082,
+      "max": 0.1420795346130033
+    },
+    "162+mass": {
+      "n": 5,
+      "mean": 0.20689875214802272,
+      "sd": 0.20253495349750777,
+      "min": 0.05449162481854696,
+      "max": 0.5612397679946015
+    },
+    "188": {
+      "n": 5,
+      "mean": 0.1208661582360977,
+      "sd": 0.13988847266717166,
+      "min": -0.061101433082359595,
+      "max": 0.30382082135004534
+    },
+    "17": {
+      "n": 5,
+      "mean": 0.2941487447525941,
+      "sd": 0.18929128824873692,
+      "min": 0.11181145439901323,
+      "max": 0.5311715640412021
+    },
+    "17+mass": {
+      "n": 5,
+      "mean": 0.18061690731062582,
+      "sd": 0.12542143609407083,
+      "min": 0.048441195319690815,
+      "max": 0.3403921475501086
+    },
+    "43": {
+      "n": 5,
+      "mean": 0.2505601506147276,
+      "sd": 0.291514049760074,
+      "min": 0.028894904666473775,
+      "max": 0.7618343383597098
+    }
+  },
+  "n_runs_peak_found": 6,
+  "n_runs_validation_passes": 29,
+  "n_runs": 30,
+  "score": "log[ sum P(three-prong hadronic) / sum P(two- and four-prong hadronic) ] (discriminants.SCORES['prong_only']): no QCD node, so the resonance-vs-QCD information cancels and only the prong count is left",
+  "procedure": "peak_fit.analyse at 1 % data efficiency: the map (windows masked), the main fit's procedure (its pooled shape held fixed, or the shape floated from the reference's), the tops in the fail region as the main fit takes them, the validation band; the criteria's AUC term is not applicable and is set to pass",
+  "tests": "whether the prong count alone, with the resonance-vs-QCD part of the score removed and the mass decorrelated by the same map, selects the top peak, and how many of the three-prong-vs-QCD score's tops it keeps",
+  "provenance": {
+    "code": "ca255f8ee14ebebdf5e421e7c2a806ef331490b1",
+    "code_dirty": false,
+    "inputs": {
+      "fit": {
+        "path": "experiments/FIGS/data/aoj_full_v1/fit_v6/results.json",
+        "sha256": "2416fc21f93fcfa6442b53104e8a66850788fdbd8df6b0d0e0ae8ee35e8a87ba"
+      },
+      "jets": {
+        "path": "/scratch/merged/jets.npz",
+        "sha256": "538ecf0c3d3d0df2185e1a235054d8dfeda1fb6ff088bdd5da1a560441e08be2"
+      },
+      "sim_jets": {
+        "path": "/data/results/aoj/sim_v1/jets.npz",
+        "sha256": "2523d94a93b123e08fcc73dafd462681f05decf073a231bc5ec0a5d5fd2bb414"
+      }
+    },
+    "partial_models": null
+  }
+}
