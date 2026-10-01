@@ -1067,7 +1067,7 @@ def build_tf32_check() -> tuple[str, str]:
     products = ("\n              - key: nvidia.com/gpu.product\n                operator: In\n"
                 "                values: [" + ", ".join(f'"{p}"' for p in TF32_PRODUCTS) + "]")
     text = V1ERR_TEMPLATE.format(
-        name=name, image=IMAGE, pin=TF32_PIN, body=body, mem="32Gi", cpu="4",
+        name=name, image=IMAGE, pin=TF32_PIN, body=body, mem="12Gi", cpu="2",
         gpu_req=', nvidia.com/gpu: "1"', gpu_check=GPU_CHECK.format(),
         node_exclude=NODE_EXCLUDE.replace(", ".join(f'"{n}"' for n in BAD_GPU_NODES),
                                           ", ".join(f'"{n}"' for n in GPU_FAULT_NODES)) + products)
