@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # READ-ONLY (2026-10-01), written by hand: the inputs the v2 grid generator needs before it
+  # writes any spec (build_mtx_launch.py --v2 --sidecar-listing --headroom-gib), plus the
+  # output of diag-head-epochs-analyse-v2. Mounts /data read-only, clones nothing, writes nothing;
+  # everything goes to the log.
+  name: mtx2-read-launch-inputs-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 3
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          echo "BEGIN-SIDECARS"; ls -1 /data/results/mtx/makeweight; echo "END-SIDECARS"
+          echo "BEGIN-DF"; df -B1 --output=size,used,avail,pcent /data; echo "END-DF"
+          J=/data/results/eval/head_epoch_diag_analyse_v2/head_epoch_diag_v2.json
+          sha256sum ${J}
+          echo "BEGIN-DIAG-JSON"; cat ${J}; echo; echo "END-DIAG-JSON"
+          echo "READ DONE"
+        volumeMounts:
+        - { name: data, mountPath: /data, readOnly: true }
+        resources:
+          requests: { memory: "1Gi", cpu: "1", ephemeral-storage: "1Gi" }
+          limits:   { memory: "1Gi", cpu: "1", ephemeral-storage: "1Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+          readOnly: true
