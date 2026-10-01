@@ -145,24 +145,12 @@ def test_the_mlp_fits_at_a_pinned_thread_count_and_restores_the_callers(monkeypa
     assert seen == [lsp.MLP_THREADS, lsp.MLP_THREADS]
 
 
-def test_the_mlp_entry_points_fix_the_cpu_code_path_before_torch_loads(monkeypatch):
-    """At a fixed thread count an Intel Broadwell and an AMD EPYC still gave the mass
-    MLP different sigma_eff (MKL's kernels follow the CPU). The settings that fix one
-    code path are read when torch loads MKL: mass_resolution.py must not have torch
-    loaded when its main() sets them, and the fit records what was in force."""
-    import subprocess
-    code = ("import sys; sys.path.insert(0, %r); import experiments.EVAL.mass_resolution as M; "
-            "print('torch' in sys.modules)" % str(ROOT))
-    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=ROOT)
-    assert out.stdout.strip() == "False", out.stderr
-    for k in lsp.CPU_REPRODUCIBLE_ENV:
-        monkeypatch.delenv(k, raising=False)
-    rec = lsp.cpu_reproducible()
-    assert {k: rec[k] for k in lsp.CPU_REPRODUCIBLE_ENV} == {"MKL_CBWR": "COMPATIBLE",
-                                                             "ATEN_CPU_CAPABILITY": "avx2"}
-    assert all(__import__("os").environ[k] == v for k, v in lsp.CPU_REPRODUCIBLE_ENV.items())
-    assert rec["set_before_torch"] == ("torch" not in sys.modules)
-    src = (ROOT / "experiments" / "EVAL" / "mass_resolution.py").read_text()
-    main = src[src.index("def main("):]
-    assert main.index("cpu_reproducible()") < main.index("probe_arm(")      # the MLP runs in probe_arm
-    assert '"cpu_numerics": cpu' in src
+
+def test_the_fit_and_the_mass_output_record_the_cpu_model(monkeypatch):
+    """The MLP's numbers depend on the CPU model even at a fixed thread count (an
+    Intel Broadwell and an AMD EPYC Rome gave the mass MLP sigma_eff up to 1.0e-3
+    apart), so the fit records it and mass_resolution.py writes it."""
+    monkeypatch.setattr(lsp, "_fit_mlp", lambda *a, **k: (np.zeros(len(a[4])), {"per_seed": [], "n_seeds": 0}))
+    _, meta = lsp.fit_mlp(np.zeros((4, 2)), np.zeros(4), np.zeros((2, 2)), np.zeros(2), np.zeros((3, 2)))
+    assert meta["cpu_model"] == lsp.cpu_model() and meta["cpu_model"]
+    assert '"cpu_model": cpu_model()' in (ROOT / "experiments" / "EVAL" / "mass_resolution.py").read_text()

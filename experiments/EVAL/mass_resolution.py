@@ -86,7 +86,7 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
 from experiments.EVAL.latent_scale_probe import (  # noqa: E402
-    SPLIT_SEED, cpu_reproducible, fit_mlp, fit_ridge, make_splits)
+    SPLIT_SEED, cpu_model, fit_mlp, fit_ridge, make_splits)
 
 TAIL_AT = 1.0          # |residual| > 1 in the log-ratio: choice 4, reported not trimmed
 MIN_TRAIN_PER_CLASS = 50   # below this a class mean is noise; see drop_small_classes
@@ -286,7 +286,6 @@ def main(argv=None) -> int:
                     help="also write residuals.npz: the test rows, their native "
                          "labels and every arm's per-jet residual, per probe")
     a = ap.parse_args(argv)
-    cpu = cpu_reproducible()          # before the MLP imports torch
 
     out = pathlib.Path(a.out)
     saved = {}
@@ -309,7 +308,7 @@ def main(argv=None) -> int:
            "centering": "per-188-native-class mean of the target, fitted on the "
                         "training split only; subsumes family-mean removal",
            "tail": f"reported as the share with |residual| > {TAIL_AT}, never trimmed",
-           "split_seed": SPLIT_SEED, "tail_at": TAIL_AT, "cpu_numerics": cpu,
+           "split_seed": SPLIT_SEED, "tail_at": TAIL_AT, "cpu_model": cpu_model(),
            "row_alignment_sha256": obs["label188_sha256"],
            "n_jets_total": obs["n"], "n_jets_valid": obs["n_valid"],
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),

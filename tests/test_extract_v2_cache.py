@@ -126,6 +126,7 @@ def test_mass_resolution_reads_the_cache_and_its_prefix(cache, tmp_path):
     assert res["n_jets_total"] == PREFIX
     assert res["row_alignment_sha256"] == res["arms"]["A"]["provenance"]["label188_sha256"]
     assert res["arms"]["A"]["provenance"]["cache"] == "v2"
+    assert res["cpu_model"] and res["arms"]["A"]["mlp"]["fit"]["cpu_model"] == res["cpu_model"]
     assert res["arms"]["A"]["ridge"]["sigma_eff"] < res["arms"]["A"]["target"]["sigma_eff"]
 
 

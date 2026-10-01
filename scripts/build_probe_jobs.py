@@ -699,11 +699,12 @@ def v1err_mass_pinned_check(base: dict[str, str]) -> tuple[str, str]:
                             "kubernetes.io/hostname", "NotIn", MASS2_NODE)
 
 
-# Batch B3: B2 with the CPU code path fixed as well (latent_scale_probe's
-# CPU_REPRODUCIBLE_ENV), on Intel nodes, into mass_resolution_cpufixed/; its seed 1
-# is repeated on an AMD node (v1err-mass-cpufixed-check) and must agree bit for bit.
-# The pinned check showed a fixed thread count alone does not: Intel B2 and AMD
-# check differed by up to 1.0e-3.
+# Batch B3: B2 with MKL's conditional numerical reproducibility and torch's AVX2
+# kernels (mtx-s1.97), on Intel nodes, with its seed 1 repeated on an AMD node
+# (v1err-mass-cpufixed-check). Both were stopped after the first model: l188-s1's
+# MLP sigma_eff was 0.2473 on Intel and 0.2478 on AMD, so the settings do not make
+# the MLP vendor-independent and were taken out again (the outputs now record the
+# CPU model instead). The specs stay as the record of what ran.
 V1ERR_PIN_MASS3 = "mtx-s1.97"
 VENDOR = "feature.node.kubernetes.io/cpu-model.vendor_id"
 

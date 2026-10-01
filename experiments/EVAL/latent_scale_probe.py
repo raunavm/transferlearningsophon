@@ -33,7 +33,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import pathlib
 import sys
 
@@ -53,23 +52,22 @@ MLP_SEEDS = (0, 1, 2)
 # default count) by up to 0.0021 in one model's sigma_eff while every ridge value
 # agreed to 6e-6 (experiments/FIGS/data/paired_v1err/mass, 2026-10-01).
 MLP_THREADS = 4
-# THE SAME NUMBERS ON EVERY CPU. A fixed thread count is not enough: MKL picks its
-# GEMM kernels by CPU vendor and model, and torch its vector kernels by instruction
-# set. At 4 threads, seed 1's mass MLP on an Intel Broadwell (v1err-batch-b2, node
-# cph-dgx-node6) and on an AMD EPYC Rome (v1err-mass-pinned-check, node-1-1) differed
-# by up to 1.0e-3 in sigma_eff; the AMD run equalled the committed values bit for bit.
-# MKL's conditional numerical reproducibility on its COMPATIBLE path and torch's AVX2
-# kernels fix one code path for every x86 CPU the jobs land on. Both are read when
-# torch loads MKL, so an entry script calls cpu_reproducible() before importing torch.
-CPU_REPRODUCIBLE_ENV = {"MKL_CBWR": "COMPATIBLE", "ATEN_CPU_CAPABILITY": "avx2"}
-
-
-def cpu_reproducible() -> dict:
-    """Set CPU_REPRODUCIBLE_ENV; record whether it was set before torch loaded
-    (only then does it bind)."""
-    before = "torch" not in sys.modules
-    os.environ.update(CPU_REPRODUCIBLE_ENV)
-    return {**CPU_REPRODUCIBLE_ENV, "set_before_torch": before}
+# THE CPU MODEL IS PART OF THE RESULT. At a fixed thread count the MLP still depends
+# on the CPU: seed 1's mass MLP gave sigma_eff up to 1.0e-3 apart on an Intel
+# Broadwell (v1err-batch-b2) and an AMD EPYC Rome (v1err-mass-pinned-check, which
+# equalled the committed values bit for bit), and MKL's conditional numerical
+# reproducibility with torch's AVX2 kernels did not remove it (0.2473 against
+# 0.2478, v1err-batch-b3 / v1err-mass-cpufixed-check, 2026-10-01). The fit records
+# the CPU it ran on, so a number is reproduced on the same CPU model.
+def cpu_model() -> str:
+    try:
+        for line in pathlib.Path("/proc/cpuinfo").read_text().splitlines():
+            if line.startswith("model name"):
+                return line.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    import platform
+    return platform.processor() or platform.machine()
 N_PERM = 10
 ALPHAS = [0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
 
@@ -139,8 +137,7 @@ def fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
         pred, meta = _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds)
     finally:
         torch.set_num_threads(prev)
-    return pred, {**meta, "torch_threads": MLP_THREADS,
-                  "cpu_env": {k: os.environ.get(k) for k in CPU_REPRODUCIBLE_ENV}}
+    return pred, {**meta, "torch_threads": MLP_THREADS, "cpu_model": cpu_model()}
 
 
 def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds):
