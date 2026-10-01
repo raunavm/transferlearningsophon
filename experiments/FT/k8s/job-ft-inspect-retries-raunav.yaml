@@ -1,0 +1,84 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # READ-ONLY DIAGNOSTIC (2026-10-01), written by hand: why the two self-supervised
+  # baseline jobs (ft-legs-baseline-mpm-s1-v2, ft-legs-bench-baseline-mpm-s1-v2)
+  # halted with exit 42. Prints, for every cell of theirs that is not DONE or has
+  # moved-aside attempts, each attempt directory's files with times, its
+  # ATTEMPT_FAILED marker, the epochs its train.log reached and how its stdout.log
+  # ends; the FAILED markers; the bench v3 DONE count; /data usage. Mounts /data
+  # read-only and clones nothing. Retry policy as every FT job.
+  name: ft-inspect-retries-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 3
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -uo pipefail
+          df -h /data
+          for f in /data/results/ft/bench_v2/FAILED_BENCH* /data/results/ft/w2b/FAILED*; do
+            [ -f "$f" ] && { echo "== MARKER $f ($(date -u -r "$f" +%FT%TZ))"; cat "$f"; }
+          done
+          for t in /data/results/ft/bench_v2/leg_top /data/results/ft/bench_v2/leg_qg /data/results/ft/w2b/leg1 /data/results/ft/w2b/leg2; do
+            for N in $(ls -d ${t}/mpm-s1-v2/N* 2>/dev/null | sort -V); do
+              for c in $(ls -d ${N}/s? 2>/dev/null); do
+                np=$(ls -d ${c}.partial.* 2>/dev/null | wc -l)
+                if [ -f ${c}/DONE ] && [ "${np}" -eq 0 ]; then echo "DONE ${c}"; continue; fi
+                echo "=================== CELL ${c}  DONE=$([ -f ${c}/DONE ] && echo y || echo n)  partials=${np}"
+                ls -ld --time-style=+%FT%T ${c}.lock 2>/dev/null; cat ${c}.lock/owner 2>/dev/null
+                for p in $(ls -d ${c}.partial.* 2>/dev/null | sort -V) ${c}; do
+                  [ -d "${p}" ] || continue
+                  echo "----- ATTEMPT ${p}"
+                  ls -la --time-style=+%FT%T ${p} | grep -v -E "net_epoch-[0-9]+_optimizer" | tail -n 30
+                  [ -f ${p}/ATTEMPT_FAILED ] && { echo "ATTEMPT_FAILED:"; cat ${p}/ATTEMPT_FAILED; }
+                  if [ -f ${p}/train.log ]; then
+                    echo "train.log first: $(head -1 ${p}/train.log | cut -c1-160)"
+                    echo "train.log epochs trained: $(grep -c 'Train AvgLoss' ${p}/train.log)  validated: $(grep -c -E 'Epoch #[0-9]+: Current validation metric' ${p}/train.log)"
+                    echo "train.log last: $(tail -1 ${p}/train.log | cut -c1-200)"
+                  fi
+                  if [ -f ${p}/stdout.log ]; then
+                    echo "stdout.log size $(stat -c %s ${p}/stdout.log), mtime $(date -u -r ${p}/stdout.log +%FT%TZ)"
+                    grep -n -E "Traceback|Error|error:|Killed|CUDA|nan|NaN|FATAL|signal" ${p}/stdout.log | grep -v FutureWarning | tail -n 8 | cut -c1-240
+                    echo "stdout.log tail:"; tail -c 1500 ${p}/stdout.log | tr '\r' '\n' | tail -n 6 | cut -c1-240
+                  fi
+                done
+              done
+            done
+          done
+          echo "bench v3 DONE cells: $(find /data/results/ft/bench_v3_lastepoch -name DONE -not -path '*.partial.*' | wc -l)"
+          echo "bench v3 partial dirs: $(find /data/results/ft/bench_v3_lastepoch -maxdepth 4 -name '*.partial.*' | wc -l)"
+          ls -la /data/results/ft/bench_v3_lastepoch/ 2>&1 | head
+          ls -la /data/finetune/jc2_v2 2>&1 | head -5
+          echo "INSPECT DONE"
+        volumeMounts:
+        - { name: data, mountPath: /data, readOnly: true }
+        resources:
+          requests: { memory: "1Gi", cpu: "1" }
+          limits:   { memory: "1Gi", cpu: "1" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+          readOnly: true

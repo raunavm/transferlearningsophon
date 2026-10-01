@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # READ-ONLY DIAGNOSTIC (2026-10-01), written by hand, second pass of
+  # job-ft-inspect-retries-raunav.yaml: for the two halted cells and the cells with
+  # moved-aside attempts, each attempt's node and GPU (ft_manifest.json) and how its
+  # predict.log ends. Mounts /data read-only and clones nothing.
+  name: ft-inspect-retries-2-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 3
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -uo pipefail
+          for c in /data/results/ft/bench_v2/leg_qg/mpm-s1-v2/N1600000/s2 /data/results/ft/w2b/leg2/mpm-s1-v2/N1000000/s1 /data/results/ft/bench_v2/leg_top/mpm-s1-v2/N1200000/s3 /data/results/ft/w2b/leg1/mpm-s1-v2/N1000000/s1 /data/results/ft/w2b/leg1/mpm-s1-v2/N1000000/s3; do
+            for p in $(ls -d ${c}.partial.* 2>/dev/null | sort -V) ${c}; do
+              [ -d "${p}" ] || continue
+              echo "----- ATTEMPT ${p}"
+              python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print({k: d.get(k) for k in ('written_utc','node_name','gpu_device_name','repo_commit')})" ${p}/ft_manifest.json
+              grep -m3 -n -E "Resume|Using device|cuda" ${p}/train.log | cut -c1-200
+              if [ -f ${p}/predict.log ]; then
+                echo "predict.log: $(stat -c %s ${p}/predict.log) bytes"
+                grep -n -E "Traceback|Error|error|CUDA|Killed|RuntimeError|FATAL|Exception" ${p}/predict.log | head -n 12 | cut -c1-300
+                echo "predict.log tail:"; tail -n 25 ${p}/predict.log | cut -c1-300
+              fi
+            done
+          done
+          echo "INSPECT 2 DONE"
+        volumeMounts:
+        - { name: data, mountPath: /data, readOnly: true }
+        resources:
+          requests: { memory: "1Gi", cpu: "1" }
+          limits:   { memory: "1Gi", cpu: "1" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+          readOnly: true

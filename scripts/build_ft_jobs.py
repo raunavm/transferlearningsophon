@@ -726,8 +726,33 @@ LOST_GPU_NODES = ("ry-gpu-01.sdsc.optiputer.net",)
 # only those -- two failed attempts stop the job, as before, and six attempts of
 # any kind stop it too, so a cell cannot be retried forever.
 # Kubernetes 1.33 on Nautilus (podFailurePolicy is GA from 1.31).
+#
+# THE CAP OF SIX HALTED A CELL THAT NEVER FAILED (2026-09-30; fixed 2026-10-01).
+# bench_v2/leg_qg/mpm-s1-v2/N1600000/s2 (20 epochs of ~9 min) was interrupted in
+# mid-epoch six times -- five of them on ry-gpu-10, whose GPU was failing -- after
+# 9, 5, 13, 4, 3 and 8 epochs. No attempt failed, but each one started again at
+# epoch 0, so 42 epochs bought nothing and "six in all" stopped the job: the cap
+# counted the evictions the policy was written not to count. Read off the cell's
+# six attempt directories by job-ft-inspect-retries-raunav (RUNS.csv). The cause
+# is that a cell could not resume. Specs emitted from now on (resumable() below):
+#   * an interrupted cell RESUMES from its last completed epoch with weaver
+#     --load-epoch on its own checkpoints (experiments/FT/cell_resume.py
+#     prepare), so an interruption costs at most the epoch in progress;
+#   * the best-validation epoch is recomputed over the whole run from the exact
+#     metric experiments/FT/ft_weaver.py logs (weaver restarts its tracking on
+#     every --load-epoch), and net_best_epoch_state.pt made that epoch's copy;
+#   * a FAILED attempt is moved aside and the cell starts again; the job halts on
+#     two failed attempts of one cell, or on STALL_LIMIT consecutive attempts of
+#     one cell that complete no epoch. There is no cap on attempts otherwise.
+# The other halted job, ft-legs-baseline-mpm-s1-v2, stopped correctly on two real
+# failures of leg2/mpm-s1-v2/N1000000/s1, both on ry-gpu-10 ("CUDA error: unknown
+# error" in weaver --predict, then "Cannot access accelerator device"); that node
+# now refuses pods ("no healthy devices"). GPU_LOST_LATER excludes it from every
+# resumable spec.
 EXIT_HALT = 42
 ROBUST_BACKOFF = 20
+STALL_LIMIT = 3
+GPU_LOST_LATER = ("ry-gpu-10.sdsc.optiputer.net",)
 POD_FAILURE_POLICY = (
     "  podFailurePolicy:\n"
     "    rules:\n"
@@ -746,6 +771,10 @@ ONE_RETRY_RECORDS = {"ft-legs-bench-baseline-scratch-v2-raunav"}   # Complete 20
 # 2026-09-29) finished, so that its last cell runs under the fix. Shards a, b
 # and d are Complete; their files stay their record.
 ROBUST_LATE = {"ft-legs-bench-v3-last-c-raunav", "ft-legs-bench-v3-last-e-raunav"}
+# Specs whose jobs ran under the 2026-09-29 logic (restart at epoch 0; halt on two
+# failed attempts or six in all): their committed files are those jobs' records.
+RETRY_0929_RECORDS = {"ft-legs-baseline-scratch-v2-raunav", "ft-legs-baseline-mpm-s1-v2-raunav",
+                      "ft-legs-bench-baseline-mpm-s1-v2-raunav"} | ROBUST_LATE
 
 
 def robust(name: str) -> bool:
@@ -754,6 +783,11 @@ def robust(name: str) -> bool:
         return False
     return (name.startswith(("ft-legs-baseline-", "ft-legs-bench-baseline-", "ft-v2-",
                              "ft-subsets-jc2-v2-")) or name in ROBUST_LATE)
+
+
+def resumable(name: str) -> bool:
+    """Whether the spec called `name` takes the 2026-10-01 logic: cells resume."""
+    return robust(name) and name not in RETRY_0929_RECORDS
 
 
 _ATTEMPT_OK_OLD = (
@@ -786,6 +820,43 @@ _ATTEMPT_OK_NEW = (
     "          trap 'rc=$?; if [ ${rc} -ne 0 ] && [ ${rc} -ne ${HALT} ] && [ -n \"${CELL}\" ] && [ -d \"${CELL}\" ] "
     "&& [ ! -f \"${CELL}/DONE\" ]; then echo \"rc=${rc} pod=${POD_NAME} node=${NODE_NAME} "
     "$(date -u +%FT%TZ)\" > \"${CELL}/ATTEMPT_FAILED\"; fi' EXIT\n")
+_TRAP = _ATTEMPT_OK_NEW[_ATTEMPT_OK_NEW.index("          CELL=\"\"\n"):]
+_ATTEMPT_OK_RESUME = (
+    f"          HALT={EXIT_HALT}   # the pod failure policy fails the Job at once on this code\n"
+    "          [ -f ${FAIL_MARK} ] && { echo \"FATAL: an earlier attempt halted the job: "
+    "$(cat ${FAIL_MARK}). Fix it, then remove ${FAIL_MARK}\"; exit ${HALT}; }\n"
+    "          # A FAILED attempt leaves ATTEMPT_FAILED in its cell (the EXIT trap below)\n"
+    "          # and is moved aside; the cell starts again. An interrupted one (an evicted\n"
+    "          # or lost pod is SIGKILLed and runs no trap) is RESUMED from its last\n"
+    "          # completed epoch (experiments/FT/cell_resume.py prepare). The job stops on\n"
+    f"          # two failed attempts of one cell, or on {STALL_LIMIT} consecutive attempts of one cell\n"
+    "          # that complete no epoch (prepare, from the cell's ATTEMPTS ledger).\n"
+    "          attempt_ok () {\n"
+    "            local o=$1 f=0 p\n"
+    "            for p in ${o}.partial.* ${o}; do\n"
+    "              [ -f \"${p}/ATTEMPT_FAILED\" ] && f=$((f+1))\n"
+    "            done\n"
+    "            if [ \"${f}\" -ge 2 ]; then\n"
+    "              echo \"${o}: ${f} failed attempts\" | tee ${FAIL_MARK}; exit ${HALT}\n"
+    "            fi\n"
+    "            return 0\n"
+    "          }\n") + _TRAP
+
+
+def _prepare(p: str) -> str:
+    """Put the cell where this attempt starts: resumed, started again, or halted."""
+    return (f"{p}E=$(python3 experiments/FT/cell_resume.py prepare --dir ${{OUT}} --max-stalled {STALL_LIMIT}) || {{\n"
+            f"{p}  echo \"${{OUT}}: ${{E}}\" | tee ${{FAIL_MARK}}; exit ${{HALT}}; }}\n"
+            f"{p}mkdir -p ${{OUT}}\n"
+            f"{p}CELL=${{OUT}}\n"
+            f"{p}RESUME=(); [ \"${{E}}\" -lt 0 ] || RESUME=(--load-epoch ${{E}})\n"
+            f"{p}echo \"$(date -u +%FT%TZ) pod=${{POD_NAME}} node=${{NODE_NAME}} from_epoch=${{E}}\" >> ${{OUT}}/ATTEMPTS\n")
+
+
+def _best(p: str, epochs: str) -> str:
+    return (f"{p}# weaver restarts its best-validation tracking on --load-epoch: the best epoch\n"
+            f"{p}# of the whole run, from the exact metric ft_weaver.py logs, as weaver picks it.\n"
+            f"{p}python3 experiments/FT/cell_resume.py best --dir ${{OUT}} --epochs {epochs}\n")
 
 
 def _nan_guard(p: str) -> str:
@@ -800,6 +871,27 @@ def robust_script(script: str, what: str) -> str:
     loops, indent 16) or benchmark (one loop, indent 18) script."""
     ind, loops = (16, 2) if "ROOT_OUT=/data/results/ft/w2b\n" in script else (18, 1)
     p = " " * ind
+    if resumable(what):
+        nan = _nan_guard(p)
+        return _derive(script, [
+            (_ATTEMPT_OK_OLD, _ATTEMPT_OK_RESUME, 1),
+            (f"{p}# re-entered (its half-written cell is moved to .partial below, as\n{p}# always); ",
+             f"{p}# re-entered (its interrupted cell is resumed below, from its last\n"
+             f"{p}# completed epoch); ", loops),
+            (f"{p}[ -d ${{OUT}} ] && mv ${{OUT}} ${{OUT}}.partial.$(date -u +%s)\n{p}mkdir -p ${{OUT}}\n",
+             _prepare(p), loops),
+            # a resumed cell keeps the manifest of the attempt that started it
+            (f"{p}python3 experiments/FT/smoke_checks.py manifest",
+             f"{p}[ \"${{E}}\" -ge 0 ] || python3 experiments/FT/smoke_checks.py manifest", loops),
+            ("python3 experiments/E1/seed_weaver.py --seed ${S} ",
+             "python3 experiments/FT/ft_weaver.py --seed ${S} ${RESUME[@]+\"${RESUME[@]}\"} ", loops),
+            (f"{p}[ -z \"${{ckpt}}\" ] || python3 experiments/FT/smoke_checks.py load-log",
+             nan.replace("attempt_ok allows one retry", "the cell starts again once")
+             + _best(p, "${EP}" if loops == 2 else "__BENCH_EPOCHS__")
+             + f"{p}[ -z \"${{ckpt}}\" ] || python3 experiments/FT/smoke_checks.py load-log", loops),
+            (f"{p}touch ${{OUT}}/DONE\n{p}rm -rf ${{OUT}}.lock\n",
+             f"{p}touch ${{OUT}}/DONE\n{p}rm -rf ${{OUT}}.lock\n{p}CELL=\"\"\n", loops),
+        ], f"resumable retry logic {what}")
     return _derive(script, [
         (_ATTEMPT_OK_OLD, _ATTEMPT_OK_NEW, 1),
         (f"{p}[ -d ${{OUT}} ] && mv ${{OUT}} ${{OUT}}.partial.$(date -u +%s)\n{p}mkdir -p ${{OUT}}\n",
@@ -815,14 +907,31 @@ def robust_script(script: str, what: str) -> str:
 RETRY_NOTE = ("  # RETRIES (2026-09-29): pod failure policy -- evictions are not counted, exit\n"
               f"  # {EXIT_HALT} (a cell that failed twice) fails the Job at once; see \"retries that\n"
               "  # survive a flaky cluster\" in scripts/build_ft_jobs.py.\n")
+RETRY_NOTE_RESUME = (
+    f"  # RETRIES (2026-10-01): pod failure policy -- evictions are not counted, exit {EXIT_HALT}\n"
+    "  # fails the Job at once. An interrupted cell resumes from its last completed epoch;\n"
+    f"  # the job halts on two failed attempts of a cell or {STALL_LIMIT} attempts without progress.\n"
+    "  # See \"retries that survive a flaky cluster\" in scripts/build_ft_jobs.py.\n")
+RETRY_NOTE_POLICY = (
+    f"  # RETRIES (2026-10-01): pod failure policy -- evictions are not counted, exit {EXIT_HALT}\n"
+    "  # fails the Job at once; see \"retries that survive a flaky cluster\" in\n"
+    "  # scripts/build_ft_jobs.py.\n")
+
+
+def _retry_note(name: str) -> str:
+    return RETRY_NOTE_RESUME if resumable(name) else RETRY_NOTE
 
 
 def _retry_kw(name: str, kw: dict) -> dict:
     """job() keyword arguments for `name`: the policy and at least ROBUST_BACKOFF
-    retries when it carries the retry logic, `kw` untouched otherwise."""
+    retries when it carries the retry logic, `kw` untouched otherwise. A
+    resumable GPU spec also stays off GPU_LOST_LATER."""
     if not robust(name):
         return kw
-    return {**kw, "backoff": max(kw["backoff"], ROBUST_BACKOFF), "failure_policy": True}
+    out = {**kw, "backoff": max(kw["backoff"], ROBUST_BACKOFF), "failure_policy": True}
+    if resumable(name) and kw.get("gpu"):
+        out["exclude_hosts"] = tuple(kw.get("exclude_hosts", ())) + GPU_LOST_LATER
+    return out
 
 
 def job(name: str, script: str, *, gpu: bool, cpu: str, memory: str, shm: str,
@@ -1485,7 +1594,7 @@ def _refs_note(name: str) -> str:
     old = ("backoffLimit 1: every cell resumes from its\n"
            "  # DONE marker, so a failed job is re-applied, not retried in a loop.\n")
     assert REFS_NOTE.count(old) == 1
-    return REFS_NOTE.replace(old, "Every cell resumes from its DONE\n  # marker.\n") + RETRY_NOTE
+    return REFS_NOTE.replace(old, "Every cell resumes from its DONE\n  # marker.\n") + _retry_note(name)
 
 
 def _mult_count(indent: int) -> str:
@@ -1935,6 +2044,10 @@ STAGE_HERWIG = PREAMBLE + """
 # exist (no pretraining launches): only the staging job and the from-scratch
 # JetClass-II reference, which load none.
 PIN_V2 = "mtx-s1.66"
+# The staging job runs before the sha256 record exists, so it is tagged first.
+PIN_V2_SUBSETS = "mtx-s1.83"
+# The first tag with cell_resume.py and ft_weaver.py: every resumable spec pins it or later.
+PIN_RESUME = "mtx-s1.83"
 V2_SUBSETS = "/data/finetune/jc2_v2"
 V2_SHA_TABLE = "experiments/FT/data/ft_v2_subsets_sha256.json"
 V2_ROOT = "/data/results/ft_v2"
@@ -2147,6 +2260,11 @@ SUBSETS_JC2_V2 = PREAMBLE + f"""
           python3 experiments/FT/ft_v2.py hash --out ${{OUT}}/ft_v2_subsets_sha256.json \\
             --files ${{OUT}}/train_N*_s1.parquet ${{OUT}}/val.parquet {' '.join(V2_REUSED)} || exit ${{HALT}}
           df -h /data
+          # The two records the repository keeps (experiments/FT/data/), read back from this log.
+          echo "BEGIN-TAR"
+          tar czf - -C ${{OUT}} manifest.json ft_v2_subsets_sha256.json | base64 -w 0
+          echo
+          echo "END-TAR"
           echo "SUBSETS JC2 V2 DONE"
 """
 
@@ -2178,7 +2296,7 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool) -> dict:
         specs[f"job-{name}.yaml"] = job(
             name, _fill(SUBSETS_JC2_V2, pin), **_retry_kw(name, dict(
                 gpu=False, cpu="4", memory="48Gi", shm="4Gi", backoff=1, pin=pin)),
-            header=h + RETRY_NOTE
+            header=h + RETRY_NOTE_POLICY
             + "  # v2 JetClass-II fine-tuning subsets (audit must-fix 7): 1e3..1e6 jets and a\n"
               f"  # {V2_VAL_JETS:,}-jet validation set, from the fine-tuning held-out files only.\n"
               "  # CPU, ~5 GB written. Then the sha256 record of these and of the reused subsets.\n")
@@ -2199,7 +2317,7 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool) -> dict:
                         "  # recipe; the full training set also scored at its last epoch")
                 specs[f"job-{name}.yaml"] = job(
                     name, _fill(script(s, name, rule), pin, inits=s), **_retry_kw(name, gpu),
-                    header=h + RETRY_NOTE
+                    header=h + _retry_note(name)
                     + f"  # v2 FINE-TUNING ({kind}), pretrained checkpoint rule {rule}: {what}.\n"
                       "  # DO NOT APPLY before these v2 checkpoints exist.\n"
                       f"  # inits: {' '.join(n for n, *_ in s)}\n"
@@ -2209,7 +2327,7 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool) -> dict:
     name = "ft-v2-legs-scratch-raunav"
     specs[f"job-{name}.yaml"] = job(
         name, _fill(legs_v2(ref, name, None), pin, inits=ref), **_retry_kw(name, gpu),
-        header=h + RETRY_NOTE
+        header=h + _retry_note(name)
         + "  # v2 FROM-SCRATCH REFERENCE on the held-out JetClass-II subsets: ParT's own\n"
           "  # from-scratch recipe (BASELINE RECIPES), three fine-tuning seeds on the one\n"
           "  # subset per size, leg 1 only; loads no pretrained checkpoint.\n"
@@ -2228,6 +2346,10 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
     if refs and _tag_index(pin) < _tag_index(PIN_REFS):
         raise SystemExit(f"FATAL: {refs} carry the baseline recipes, first emitted at "
                          f"{PIN_REFS}; {pin} predates them")
+    unrec = [g for g in later or [] if g in REFS_GROUPS and g not in LAUNCHED_LATER]
+    if unrec and _tag_index(pin) < _tag_index(PIN_RESUME):
+        raise SystemExit(f"FATAL: {unrec} resume their cells (cell_resume.py, ft_weaver.py), "
+                         f"first at {PIN_RESUME}; {pin} predates them")
     h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
     gpu = dict(gpu=True, cpu="4", memory="88Gi", shm="8Gi", backoff=50, pin=pin,
                exclude_hosts=BAD_NODES)
@@ -2293,7 +2415,7 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
             specs[f"job-{name}.yaml"] = job(
                 name, _fill(robust_script(script, name) if robust(name) else script, pin, inits=inits),
                 **_retry_kw(name, {**gpu, "exclude_hosts": BAD_NODES + LOST_GPU_NODES}),
-                header=h + (RETRY_NOTE if robust(name) else "")
+                header=h + (_retry_note(name) if robust(name) else "")
                          + "  # BENCHMARKS v3, LAST EPOCH: the 40 cells behind C2 and C3 (20 granularity\n"
                            "  # models x top and q/g, fine-tuning seed 1, full training set), rerun\n"
                            "  # with bench v2's script and scored at BOTH the last epoch (PRESPEC 2.8,\n"
@@ -2321,8 +2443,12 @@ REFS_NEEDED = {"scripts/build_ft_jobs.py": "MPM_LR_MULT",
 # What a v2 spec's tag must carry: the builder of the held-out subsets and the
 # resolver / verifier every v2 job calls; the fine-tuning specs also the sha256
 # record they verify against.
+V2_SUBSETS_NEEDED = {"experiments/FT/make_subsets.py": "def build_jc2v2",
+                     "experiments/FT/ft_v2.py": "def cmd_hash"}
 V2_NEEDED = {"experiments/FT/make_subsets.py": "def build_jc2v2",
              "experiments/FT/ft_v2.py": "def resolve",
+             "experiments/FT/cell_resume.py": "def prepare",
+             "experiments/FT/ft_weaver.py": "exact validation metric",
              V2_SHA_TABLE: '"files"'}
 
 
@@ -2541,7 +2667,7 @@ def main() -> int:
                     help="with --wave3/--bench-v2: emit the not-yet-launchable group(s) "
                          f"{sorted(INITS_LATER)} instead of the shards")
     ap.add_argument("--v2-subsets", action="store_true",
-                    help=f"emit ONLY the v2 JetClass-II subset staging job (pin {PIN_V2})")
+                    help=f"emit ONLY the v2 JetClass-II subset staging job (pin {PIN_V2_SUBSETS})")
     ap.add_argument("--v2", action="store_true",
                     help=f"emit ONLY the v2 fine-tuning specs (pin {PIN_V2}); needs {V2_SHA_TABLE}")
     ap.add_argument("--plan", action="store_true",
@@ -2564,9 +2690,9 @@ def main() -> int:
         verify_pin(args.pin, args.pin_not_yet_tagged)
     if args.v2_subsets or args.v2:
         if args.pin == PIN:
-            args.pin = PIN_V2
+            args.pin = PIN_V2 if args.v2 else PIN_V2_SUBSETS
         verify_pin(args.pin, args.pin_not_yet_tagged,
-                   V2_NEEDED if args.v2 else {k: V2_NEEDED[k] for k in list(V2_NEEDED)[:2]})
+                   V2_NEEDED if args.v2 else V2_SUBSETS_NEEDED)
     specs = build(args.pin, wave2=args.wave2, wave3=args.wave3, bench_v2=args.bench_v2,
                   later=args.later, bench_v3=args.bench_v3_last,
                   v2_subsets=args.v2_subsets, v2=args.v2)

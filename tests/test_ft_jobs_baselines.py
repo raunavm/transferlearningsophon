@@ -232,7 +232,7 @@ def test_self_supervised_cells_run_and_stop_if_weaver_multiplies_the_head_alone(
 
 
 def test_mpm_s2_and_s3_get_the_fix_and_stay_off_disk_until_their_pretraining_is_complete():
-    later = B.build(B.PIN_REFS, wave3=True, bench_v2=True, later=["mpm-s2", "mpm-s3"])
+    later = B.build(B.PIN_RESUME, wave3=True, bench_v2=True, later=["mpm-s2", "mpm-s3"])
     assert len(later) == 4
     for name, text in later.items():
         assert f"(r'{B.MPM_LR_MULT}', 50)" in text and "-eq 43 ]" in text, name

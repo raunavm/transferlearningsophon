@@ -22,6 +22,7 @@ import pathlib
 import re
 import stat
 import subprocess
+import sys
 
 import pytest
 import yaml
@@ -494,6 +495,38 @@ def _shell_env(tmp_path: pathlib.Path, inits) -> tuple[dict, pathlib.Path]:
     _stub(bindir, "python3", f'echo "PY $*" >> {calls}\n' + r'''
 next_after () { local key=$1; shift; while [ $# -gt 0 ]; do [ "$1" = "$key" ] && { echo "$2"; return; }; shift; done; }
 case "$*" in
+  *cell_resume.py*)
+    shift; exec "__PY__" "__ROOT__/experiments/FT/cell_resume.py" "$@";;
+  *ft_weaver.py*)
+    # weaver as the resumable specs run it: epochs from --load-epoch + 1, each
+    # one's state and optimizer written as zip archives (as torch.save does),
+    # validated, its exact metric logged (METRICS, else 0.5 + e/1000), the best
+    # copied with weaver's rule restarted at 0 in this process. KILL_IN/KILL_AT
+    # SIGKILL the job script, as an eviction does, when that epoch starts.
+    P=$(next_after --model-prefix "$@"); L=$(next_after --log "$@")
+    EP=$(next_after --num-epochs "$@"); LE=$(next_after --load-epoch "$@")
+    SPE=$(next_after --samples-per-epoch "$@"); SV=$(next_after --steps-per-epoch-val "$@")
+    ST=$((SPE/512)); [ -n "${BAD_STEPS:-}" ] && ST=1
+    VAL=19968; [ "${SV}" = "-1" ] && VAL=20480; [ -n "${NO_VAL:-}" ] && VAL=0
+    S0=0; [ -n "${LE}" ] && S0=$((LE+1))
+    { echo "[t] INFO: args:"; echo " - ('steps_per_epoch', ${ST})"
+      [ -n "${LE}" ] && echo "[t] INFO: Resume training from epoch ${LE}"; } >> "$L"
+    echo "[t] INFO: Parameters with lr multiplied by 50:"
+    TOP=0
+    for e in $(seq ${S0} $((EP-1))); do
+      echo "[t] INFO: Epoch #${e} training" >> "$L"
+      if [ -n "${KILL_IN:-}" ] && [[ "$P" == *"${KILL_IN}"* ]] && [ "${e}" = "${KILL_AT}" ]; then kill -9 $PPID; exit 137; fi
+      LOSS=0.5; [ -n "${NAN_IN:-}" ] && [[ "$P" == *"${NAN_IN}"* ]] && LOSS=nan
+      echo "[t] INFO: Processed $((ST*512)) entries in total" >> "$L"
+      echo "[t] INFO: Train AvgLoss: ${LOSS}, AvgAcc: 0.8" >> "$L"
+      for f in state optimizer; do rm -f ${P}_epoch-${e}_${f}.pt; echo "${f} ${e}" | zip -q ${P}_epoch-${e}_${f}.pt -; done
+      echo "[t] INFO: Epoch #${e} validating" >> "$L"
+      [ "${VAL}" -eq 0 ] || echo "[t] INFO: Processed ${VAL} entries in total" >> "$L"
+      M=$(echo "${METRICS:-}" | awk -v e=${e} '{ if (e < NF) print $(e+1); else print 0.5 + e / 1000 }')
+      echo "[t] INFO: Epoch #${e}: exact validation metric ${M}" >> "$L"
+      if awk -v m=${M} -v t=${TOP} 'BEGIN { exit !(m > t) }'; then TOP=${M}; cp ${P}_epoch-${e}_state.pt ${P}_best_epoch_state.pt; fi
+      echo "[t] INFO: Epoch #${e}: Current validation metric: ${M} (best: ${TOP})" >> "$L"
+    done;;
   *seed_weaver.py*)
     P=$(next_after --model-prefix "$@")
     touch ${P}_epoch-0_state.pt ${P}_epoch-0_optimizer.pt ${P}_best_epoch_state.pt
@@ -507,7 +540,7 @@ case "$*" in
     n=0; for a in "$@"; do case "$a" in *top_test*) n=$((n+404000));; *.parquet) n=$((n+100000));; esac; done; echo $n;;
 esac
 exit 0
-''')
+'''.replace("__PY__", sys.executable).replace("__ROOT__", str(ROOT)))
     data, jc2, ws = tmp_path / "data", tmp_path / "jc2", tmp_path / "workspace"
     for d in ("finetune/jc2", "finetune/jc1"):
         for s in (1, 2, 3):

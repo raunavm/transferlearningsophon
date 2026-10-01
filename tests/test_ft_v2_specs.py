@@ -27,7 +27,7 @@ STAGE = "job-ft-subsets-jc2-v2-raunav.yaml"
 
 @pytest.fixture(scope="module")
 def stage():
-    return B.build(B.PIN_V2, v2_subsets=True)[STAGE]
+    return B.build(B.PIN_V2_SUBSETS, v2_subsets=True)[STAGE]
 
 
 def _args(text):
@@ -48,7 +48,7 @@ def test_the_staging_job_is_a_cpu_job_of_mine_with_the_retry_policy(stage):
     assert rules[0]["action"] == "FailJob" and rules[0]["onExitCodes"]["values"] == [B.EXIT_HALT]
     assert rules[1]["action"] == "Ignore"
     env = {e["name"]: e.get("value") for e in c["env"]}
-    assert env["REPO_REF"] == B.PIN_V2
+    assert env["REPO_REF"] == B.PIN_V2_SUBSETS
     assert "us-west" in stage
 
 

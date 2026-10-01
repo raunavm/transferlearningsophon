@@ -1,0 +1,92 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # READOUT OF BENCH v3 (the last-epoch rerun of C2 and C3's 40 cells), written by
+  # hand after job-ft-bench-v2-metrics-raunav.yaml. PRESPEC amendment A6: the 20
+  # granularity models x top tagging and quark/gluon, fine-tuning seed 1, each
+  # benchmark's full training set, scored at the LAST epoch (features_last/, the
+  # confirmatory rule) and at the best-validation epoch of the same run
+  # (features/, the sensitivity analysis); S5 is the Herwig quark/gluon pair, last
+  # epoch primary. experiments/FT/bench_metrics.py, four times:
+  #   bench_metrics_last.json          Pythia, last epoch
+  #   bench_metrics.json               Pythia, best-validation epoch
+  #   bench_metrics_herwig_last.json   Herwig q/g, last epoch
+  #   bench_metrics_herwig.json        Herwig q/g, best-validation epoch
+  # At a tag with the readouts' NaN guard (bench_metrics.py diverged()). All 40
+  # cells must be DONE. A new output directory is refused if it holds a result.
+  # The four JSONs (a few hundred kB) are printed at the end as a base64 tar
+  # between markers, to be copied into the repository from the log.
+  name: ft-bench-v3-metrics-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 3
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT=/data/results/ft/bench_v3_lastepoch_metrics_v1
+          [ ! -e "${OUT}/bench_metrics_last.json" ] || { echo "FATAL: ${OUT} holds a result; use a new output directory"; exit 42; }
+          git clone --depth 1 --branch "mtx-s1.83" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+          grep -q "def diverged" experiments/FT/bench_metrics.py || { echo "FATAL: no NaN guard at this tag"; exit 42; }
+
+          ROOT=/data/results/ft/bench_v3_lastepoch
+          missing=0
+          for a in l188 l162 r42q1 r16q1; do for s in 1 2 3 4 5; do
+            init=${a}-s${s}; [ "${init}" = "l162-s1" ] && init=l162-s1b
+            for c in leg_top/${init}/N1200000/s1 leg_qg/${init}/N1600000/s1; do
+              [ -f "${ROOT}/${c}/DONE" ] || { echo "MISSING cell ${c}"; missing=$((missing+1)); }
+              [ -f "${ROOT}/${c}/features_last/logits.npy" ] || { echo "NO LAST-EPOCH SCORES ${c}"; missing=$((missing+1)); }
+            done
+          done; done
+          [ "${missing}" -eq 0 ] || { echo "FATAL: ${missing} cells incomplete"; exit 42; }
+          n=$(find ${ROOT} -name DONE -not -path "*.partial.*" | wc -l)
+          [ "${n}" -eq 40 ] || { echo "FATAL: ${n} DONE cells under ${ROOT}, expected 40"; exit 42; }
+
+          mkdir -p ${OUT}
+          python3 experiments/FT/bench_metrics.py --root ${ROOT} --out ${OUT} --features-dir features_last
+          python3 experiments/FT/bench_metrics.py --root ${ROOT} --out ${OUT}
+          python3 experiments/FT/bench_metrics.py --root ${ROOT} --out ${OUT} --herwig --features-dir features_last
+          python3 experiments/FT/bench_metrics.py --root ${ROOT} --out ${OUT} --herwig
+          ls -la ${OUT}
+          sha256sum ${OUT}/*.json
+          cd ${OUT}
+          echo "BEGIN-TAR"
+          tar czf - bench_metrics_last.json bench_metrics.json bench_metrics_herwig_last.json bench_metrics_herwig.json | base64 -w 0
+          echo
+          echo "END-TAR"
+          echo "BENCH V3 METRICS DONE"
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "16Gi", cpu: "4", ephemeral-storage: "10Gi" }
+          limits:   { memory: "16Gi", cpu: "4", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

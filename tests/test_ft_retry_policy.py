@@ -1,17 +1,24 @@
-"""Retries that survive a flaky cluster (scripts/build_ft_jobs.py, 2026-09-29).
+"""Retries that survive a flaky cluster (scripts/build_ft_jobs.py, 2026-09-29;
+cells resume since 2026-10-01).
 
-Pinned here, by running the emitted scripts under bash with the wave-3 stubs:
-  * an attempt killed with its pod (eviction, a lost node) is not a failure;
-  * two FAILED attempts of one cell, or six attempts of any kind, stop the job
-    with the halt code the pod failure policy turns into FailJob;
-  * a run whose training loss went to NaN fails its attempt instead of being
-    marked DONE, and one retry is allowed;
-and, on the specs: which carry the policy, and that every other launched spec
-is untouched.
+Pinned here, by running an emitted script under bash with the wave-3 stubs:
+  * an attempt killed with its pod (eviction, a lost node) is not a failure, and
+    the cell RESUMES from its last completed epoch: six evictions no longer halt;
+  * the resumed cell continues from its epoch and its best-validation checkpoint
+    is the best over the whole run, not of the last attempt;
+  * two FAILED attempts of one cell stop the job with the halt code the pod
+    failure policy turns into FailJob, and a failed attempt is never resumed;
+  * attempts that complete no epoch stop the job after STALL_LIMIT of them;
+  * a run whose training loss went to NaN fails its attempt, is retried once
+    from the start, and halts the job if it diverges again;
+and, on the specs: which carry the policy, which take the resumable logic, and
+that the specs of jobs that ran under the 2026-09-29 logic are their records.
 """
 import importlib.util
+import json
 import pathlib
 import subprocess
+import zipfile
 
 import pytest
 import yaml
@@ -29,9 +36,21 @@ def _load(name, rel):
 
 T = _load("wave3_harness_retry", "tests/test_wave3_specs.py")
 B = T.B
-LEGS = "job-ft-legs-baseline-scratch-v2-raunav.yaml"
-SHARD = "ft-legs-baseline-scratch-v2-raunav"
-INITS = B.INITS_LATER["scratch-v2"]
+# A resumable legs spec: the scratch-v2 baseline group's script, one seed, under a
+# name the 2026-09-29 records do not hold -- exactly how a new spec is emitted.
+SHARD = "ft-legs-baseline-scratch-resume-raunav"
+INITS = [("scratch-v2", "", 0, [1])]
+CELL = "leg1/scratch-v2/N1000/s1"              # 50 epochs, the first cell
+
+
+@pytest.fixture(scope="module")
+def spec():
+    assert B.resumable(SHARD)
+    gpu = dict(gpu=True, cpu="4", memory="88Gi", shm="8Gi", backoff=1, pin=B.PIN_RESUME,
+               exclude_hosts=B.BAD_NODES + B.LOST_GPU_NODES)
+    script = B.robust_script(B.legs_w3(INITS, SHARD), SHARD)
+    return B.job(SHARD, B._fill(script, B.PIN_RESUME, inits=INITS), **B._retry_kw(SHARD, gpu),
+                 header=B._retry_note(SHARD))
 
 
 @pytest.fixture(scope="module")
@@ -39,39 +58,37 @@ def refs():
     return B.build(B.PIN_REFS, wave3=True, bench_v2=True, later=["scratch-v2", "mpm-s1-v2"])
 
 
-def _run(text, tmp_path, nan_in=None, pod=None):
-    """The emitted script under bash on the data tree in `tmp_path`; the weaver
-    stub writes train.log, with a NaN loss for the cells whose model prefix
-    contains `nan_in`. A later pod of the same job gets its own stubs, `pod`."""
-    stubs = tmp_path / pod if pod else tmp_path
-    env, _ = T._shell_env(stubs, INITS)
-    py = stubs / "bin" / "python3"
-    old = "    P=$(next_after --model-prefix \"$@\")\n"
-    assert old in py.read_text()
-    py.write_text(py.read_text().replace(old, old + (
-        '    L=$(next_after --log "$@")\n'
-        '    if [ -n "${NAN_IN:-}" ] && [[ "$P" == *"${NAN_IN}"* ]]; then\n'
-        '      echo "INFO: Train AvgLoss: nan, AvgAcc: 0.137" > "$L"\n'
-        '    else echo "INFO: Train AvgLoss: 0.5, AvgAcc: 0.8" > "$L"; fi\n')))
-    if nan_in:
-        env["NAN_IN"] = nan_in
-    return subprocess.run(["bash", "-c", T._redirect(text, stubs, tmp_path)], capture_output=True,
-                          text=True, env=env, cwd=tmp_path, timeout=600)
+def _run(text, tmp_path, n, **env_extra):
+    """Pod number n of the job: its own stubs, the shared data tree in tmp_path."""
+    if not (tmp_path / "data").exists():
+        T._shell_env(tmp_path, INITS)                       # the data tree, once
+    stubs = tmp_path / f"pod{n}"
+    env, calls = T._shell_env(stubs, INITS)
+    env.update({k: str(v) for k, v in env_extra.items()})
+    r = subprocess.run(["bash", "-c", T._redirect(text, stubs, tmp_path)], capture_output=True,
+                       text=True, env=env, cwd=tmp_path, timeout=600)
+    return r, calls.read_text() if calls.exists() else ""
 
 
-def _cell(tmp_path, n=1000, s=1):
-    return tmp_path / "data/results/ft/w2b/leg1/scratch-v2" / f"N{n}" / f"s{s}"
-
-
-def _attempt(path: pathlib.Path, failed=False, traceback=False):
-    path.mkdir(parents=True)
-    (path / "stdout.log").write_text("epoch 3 ...\n" + ("Traceback (most recent call last):\n" if traceback else ""))
-    if failed:
-        (path / "ATTEMPT_FAILED").write_text("rc=1 pod=p node=n\n")
+def _cell(tmp_path, rel=CELL):
+    return tmp_path / "data/results/ft/w2b" / rel
 
 
 def _fail_mark(tmp_path):
     return tmp_path / "data/results/ft/w2b" / f"FAILED.{SHARD}"
+
+
+def _ledger(cell):
+    return [int(ln.rsplit("from_epoch=", 1)[1]) for ln in (cell / "ATTEMPTS").read_text().splitlines()]
+
+
+def _exact_epochs(cell):
+    return [int(ln.split("Epoch #")[1].split(":")[0])
+            for ln in (cell / "train.log").read_text().splitlines() if "exact validation metric" in ln]
+
+
+def _weaver_calls(calls, rel=CELL):
+    return [ln for ln in calls.splitlines() if "ft_weaver.py" in ln and f"/{rel}/net" in ln]
 
 
 # ------------------------------------------------------------------ the specs
@@ -92,91 +109,153 @@ def test_the_policy_is_on_exactly_the_specs_being_re_created(refs):
              "onExitCodes": {"containerName": "main", "operator": "In", "values": [B.EXIT_HALT]}},
             {"action": "Ignore", "onPodConditions": [{"type": "DisruptionTarget"}]}]
         assert d["template"]["spec"]["restartPolicy"] == "Never"   # the policy requires it
-    # a job that ran, or is running, under the old logic keeps its record
-    for name in ("job-ft-legs-bench-baseline-scratch-v2-raunav.yaml",
+    # every job that ran, or is running, keeps its record byte for byte -- the five
+    # that ran under the 2026-09-29 logic included
+    for name in (*robust, "job-ft-legs-bench-baseline-scratch-v2-raunav.yaml",
                  *(f"job-ft-legs-bench-v3-last-{s}-raunav.yaml" for s in "abd")):
         assert (K8S / name).read_text() == {**refs, **v3}[name], name
+        assert not B.resumable(yaml.safe_load({**refs, **v3}[name])["metadata"]["name"])
 
 
 def test_no_other_spec_on_disk_carries_the_policy():
     have = {p.name for p in K8S.glob("job-*.yaml") if "podFailurePolicy" in p.read_text()}
-    # every v2 spec carries it (audit 2026-09-29): its name says so
+    # every v2 spec carries it (audit 2026-09-29): its name says so; and every
+    # hand-written read-only job since (inspection, read-outs)
     v2 = {p.name for p in K8S.glob("job-ft-v2-*.yaml")} | {"job-ft-subsets-jc2-v2-raunav.yaml"}
-    assert v2 <= have
-    assert have - v2 == {"job-ft-legs-baseline-scratch-v2-raunav.yaml",
-                    "job-ft-legs-baseline-mpm-s1-v2-raunav.yaml",
-                    "job-ft-legs-bench-baseline-mpm-s1-v2-raunav.yaml",
-                    "job-ft-legs-bench-v3-last-c-raunav.yaml",
-                    "job-ft-legs-bench-v3-last-e-raunav.yaml"}
+    hand = {p.name for p in K8S.glob("job-ft-inspect-*.yaml")} | {"job-ft-bench-v3-metrics-raunav.yaml"}
+    assert v2 <= have and hand <= have
+    assert have - v2 - hand == {"job-ft-legs-baseline-scratch-v2-raunav.yaml",
+                                "job-ft-legs-baseline-mpm-s1-v2-raunav.yaml",
+                                "job-ft-legs-bench-baseline-mpm-s1-v2-raunav.yaml",
+                                "job-ft-legs-bench-v3-last-c-raunav.yaml",
+                                "job-ft-legs-bench-v3-last-e-raunav.yaml"}
+    for name in hand:
+        assert "readOnly: true" in (K8S / name).read_text() or "metrics" in name, name
 
 
-def test_the_unlaunched_self_supervised_groups_get_it_too():
-    later = B.build(B.PIN_REFS, wave3=True, bench_v2=True, later=["mpm-s2", "mpm-s3"])
-    assert all("podFailurePolicy" in t and f"HALT={B.EXIT_HALT}" in t for t in later.values())
+def test_the_unlaunched_self_supervised_groups_resume_and_avoid_the_lost_gpu():
+    later = B.build(B.PIN_RESUME, wave3=True, bench_v2=True, later=["mpm-s2", "mpm-s3"])
+    assert len(later) == 4
+    for text in later.values():
+        assert "podFailurePolicy" in text and f"HALT={B.EXIT_HALT}" in text
+        assert "cell_resume.py prepare" in text and "ft_weaver.py --seed" in text
+        assert "seed_weaver.py" not in T._args(text)
+        assert set(B.GPU_LOST_LATER) <= T._excluded(text)
+    with pytest.raises(SystemExit, match="predates"):
+        B.build(B.PIN_REFS, wave3=True, later=["mpm-s2"])
+
+
+def test_the_resumable_logic_replaces_every_restart_and_cap(spec):
+    live = "\n".join(ln for ln in T._args(spec).splitlines() if not ln.lstrip().startswith("#"))
+    for gone in (".partial.$(date", '"${a}" -ge 6', "seed_weaver.py", "^Traceback"):
+        assert gone not in live, gone
+    assert live.count("cell_resume.py prepare --dir ${OUT}") == 2
+    assert live.count("cell_resume.py best --dir ${OUT} --epochs ${EP}") == 2
+    assert live.count('[ "${E}" -ge 0 ] || python3 experiments/FT/smoke_checks.py manifest') == 2
+    assert live.count("tee ${OUT}/stdout.log") == 2
+    # the best epoch is fixed before anything reads net_best_epoch_state.pt
+    assert live.index("cell_resume.py best") < live.index("net_best_epoch_state.pt")
+    assert B.RETRY_NOTE_RESUME in spec and set(B.GPU_LOST_LATER) <= T._excluded(spec)
 
 
 # ------------------------------------------------------------------ the shell
 
-def test_evicted_attempts_do_not_count_and_the_cell_finishes(refs, tmp_path):
-    c = _cell(tmp_path)
-    for i in range(4):
-        _attempt(c.parent / f"s1.partial.{100 + i}")        # killed pods: no marker, no traceback
-    _attempt(c)                                              # and the one in place
-    r = _run(refs[LEGS], tmp_path)
+def test_a_complete_run_keeps_weavers_own_best_epoch(spec, tmp_path):
+    r, calls = _run(spec, tmp_path, 1)
     assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+    c = _cell(tmp_path)
+    assert (c / "DONE").exists() and _ledger(c) == [-1]
+    rec = json.loads((c / "best_epoch.json").read_text())
+    assert rec["epoch"] == 49 and not rec["resumed"] and not rec["restored"]
+    assert T._done_cells(tmp_path / "data/results/ft/w2b") == set(B.cells_legs(INITS))
+    assert "--load-epoch" not in calls
+
+
+def test_six_evictions_no_longer_halt_and_the_cell_finishes(spec, tmp_path):
+    for n, kill in enumerate((5, 12, 20, 27, 35, 44), start=1):       # six pods, each evicted
+        r, _ = _run(spec, tmp_path, n, KILL_IN=CELL, KILL_AT=kill)
+        assert r.returncode == -9, r.stdout[-2000:] + r.stderr[-2000:]
+    r, calls = _run(spec, tmp_path, 7)
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+    c = _cell(tmp_path)
     assert (c / "DONE").exists() and not _fail_mark(tmp_path).exists()
+    assert not list(c.parent.glob("s1.partial.*"))
+    assert _ledger(c) == [-1, 4, 11, 19, 26, 34, 43]
+    assert _exact_epochs(c) == list(range(50))            # one trajectory, every epoch once
+    assert "--load-epoch 43" in _weaver_calls(calls)[0]
 
 
-def test_two_failed_attempts_halt_with_the_policy_code(refs, tmp_path):
+def test_a_resumed_cell_continues_from_its_epoch_and_keeps_the_runs_best(spec, tmp_path):
+    # epoch 2 is the best of the run; the attempt that resumes after epoch 6
+    # never sees it, and weaver (restarted at 0) would keep epoch 7
+    metrics = " ".join(["0.3", "0.4", "0.9"] + ["0.5"] * 47)
+    r, _ = _run(spec, tmp_path, 1, KILL_IN=CELL, KILL_AT=7, METRICS=metrics)
+    assert r.returncode == -9
     c = _cell(tmp_path)
-    _attempt(c.parent / "s1.partial.100", failed=True)
-    _attempt(c.parent / "s1.partial.101", traceback=True)   # failed before the marker existed
-    r = _run(refs[LEGS], tmp_path)
+    assert _exact_epochs(c) == list(range(7))
+    r, calls = _run(spec, tmp_path, 2, METRICS=metrics)
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+    run = _weaver_calls(calls)
+    assert len(run) == 1 and "--load-epoch 6" in run[0]
+    assert _ledger(c) == [-1, 6] and _exact_epochs(c) == list(range(50))
+    assert (c / "train.log.cut.1").read_text().strip() == "[t] INFO: Epoch #7 training"
+    assert (c / "stdout.log.1").exists() and (c / "stdout.log").exists()
+    rec = json.loads((c / "best_epoch.json").read_text())
+    assert rec["epoch"] == 2 and rec["resumed"] and rec["restored"]
+    with zipfile.ZipFile(c / "net_best_epoch_state.pt") as z:
+        assert z.read("-") == b"state 2\n"
+    assert not list(c.glob("net_epoch-*"))                 # pruned as before
+
+
+def test_a_checkpoint_cut_short_is_not_resumed_from(spec, tmp_path):
+    r, _ = _run(spec, tmp_path, 1, KILL_IN=CELL, KILL_AT=7)
+    c = _cell(tmp_path)
+    (c / "net_epoch-6_optimizer.pt").write_bytes((c / "net_epoch-6_optimizer.pt").read_bytes()[:20])
+    r, calls = _run(spec, tmp_path, 2)
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+    assert "--load-epoch 5" in _weaver_calls(calls)[0] and _exact_epochs(c) == list(range(50))
+
+
+def test_attempts_without_progress_halt_with_the_policy_code(spec, tmp_path):
+    r, _ = _run(spec, tmp_path, 1, KILL_IN=CELL, KILL_AT=3)
+    for n in (2, 3, 4):                                    # each dies in the epoch it resumes into
+        r, _ = _run(spec, tmp_path, n, KILL_IN=CELL, KILL_AT=3)
+        assert r.returncode == -9
+    r, _ = _run(spec, tmp_path, 5)
     assert r.returncode == B.EXIT_HALT, r.stdout[-2000:]
-    assert "2 failed attempts" in _fail_mark(tmp_path).read_text()
-    assert not (c / "DONE").exists()
+    assert f"no epoch completed in the last {B.STALL_LIMIT} attempts" in _fail_mark(tmp_path).read_text()
+    assert not (_cell(tmp_path) / "DONE").exists()
+    r, _ = _run(spec, tmp_path, 6)                         # and the marker stops every later pod
+    assert r.returncode == B.EXIT_HALT
 
 
-def test_the_attempt_in_place_counts_as_well(refs, tmp_path):
+def test_two_real_failures_still_halt_and_a_failure_is_never_resumed(spec, tmp_path):
     c = _cell(tmp_path)
-    _attempt(c.parent / "s1.partial.100", failed=True)
-    _attempt(c, failed=True)
-    assert _run(refs[LEGS], tmp_path).returncode == B.EXIT_HALT
-
-
-def test_six_attempts_of_any_kind_halt(refs, tmp_path):
-    c = _cell(tmp_path)
-    for i in range(5):
-        _attempt(c.parent / f"s1.partial.{100 + i}")
-    _attempt(c)
-    r = _run(refs[LEGS], tmp_path)
-    assert r.returncode == B.EXIT_HALT and "6 in all" in _fail_mark(tmp_path).read_text()
-
-
-def test_a_failed_marker_from_an_earlier_pod_halts_at_the_top(refs, tmp_path):
-    _fail_mark(tmp_path).parent.mkdir(parents=True)
-    _fail_mark(tmp_path).write_text("x: 2 failed attempts\n")
-    r = _run(refs[LEGS], tmp_path)
-    assert r.returncode == B.EXIT_HALT and not list((tmp_path / "data/results/ft/w2b").rglob("DONE"))
-
-
-def test_a_nan_run_fails_its_attempt_is_retried_once_then_halts(refs, tmp_path):
-    c = _cell(tmp_path, 1000, 2)
-    r = _run(refs[LEGS], tmp_path, nan_in="N1000/s2")
+    r, _ = _run(spec, tmp_path, 1, NAN_IN=CELL)
     assert r.returncode == 1 and "diverged (NaN training loss)" in r.stdout
     assert (c / "ATTEMPT_FAILED").read_text().startswith("rc=1 ") and not (c / "DONE").exists()
-    assert (_cell(tmp_path, 1000, 1) / "DONE").exists()      # the cells before it are kept
-    # the next pod retries it once; a second divergence stops the job
-    r = _run(refs[LEGS], tmp_path, nan_in="N1000/s2", pod="pod2")
-    assert r.returncode == 1 and len(list(c.parent.glob("s2.partial.*"))) == 1
-    r = _run(refs[LEGS], tmp_path, nan_in="N1000/s2", pod="pod3")
+    r, calls = _run(spec, tmp_path, 2, NAN_IN=CELL)
+    assert r.returncode == 1
+    assert "--load-epoch" not in _weaver_calls(calls)[0]   # started again, not resumed
+    assert len(list(c.parent.glob("s1.partial.*"))) == 1
+    r, _ = _run(spec, tmp_path, 3, NAN_IN=CELL)
     assert r.returncode == B.EXIT_HALT and "2 failed attempts" in _fail_mark(tmp_path).read_text()
 
 
-def test_a_nan_run_that_converges_on_its_retry_is_kept(refs, tmp_path):
-    c = _cell(tmp_path, 1000, 2)
-    assert _run(refs[LEGS], tmp_path, nan_in="N1000/s2").returncode == 1
-    r = _run(refs[LEGS], tmp_path, pod="pod2")
+def test_a_nan_run_that_converges_on_its_retry_is_kept(spec, tmp_path):
+    c = _cell(tmp_path)
+    assert _run(spec, tmp_path, 1, NAN_IN=CELL)[0].returncode == 1
+    r, _ = _run(spec, tmp_path, 2)
     assert r.returncode == 0, r.stdout[-2000:]
     assert (c / "DONE").exists() and not (c / "ATTEMPT_FAILED").exists()
-    assert [p for p in c.parent.glob("s2.partial.*") if (p / "ATTEMPT_FAILED").exists()]
+    assert [p for p in c.parent.glob("s1.partial.*") if (p / "ATTEMPT_FAILED").exists()]
+
+
+def test_an_eviction_after_a_failure_resumes_and_the_failure_still_counts(spec, tmp_path):
+    c = _cell(tmp_path)
+    assert _run(spec, tmp_path, 1, NAN_IN=CELL)[0].returncode == 1          # failure 1
+    assert _run(spec, tmp_path, 2, KILL_IN=CELL, KILL_AT=9)[0].returncode == -9
+    r, calls = _run(spec, tmp_path, 3, NAN_IN=CELL)                        # resumes, diverges
+    assert "--load-epoch 8" in _weaver_calls(calls)[0] and r.returncode == 1
+    r, _ = _run(spec, tmp_path, 4)
+    assert r.returncode == B.EXIT_HALT and "2 failed attempts" in _fail_mark(tmp_path).read_text()
