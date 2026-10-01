@@ -798,6 +798,13 @@ def _pseudo(name):
     return passed, P._bins(m, pt, passed, PSEUDO["fit_range"]), 0.5 * sum(PSEUDO["window"]), fit["width"]
 
 
+def _floats() -> bool:
+    """Does the main fit float the peak shape? Not when it holds one pooled shape for the
+    pretrained models (fit_v6, peak_fit.pooled_shape): the checks then fit at the shape given
+    -- in the pseudo-window the injected one, the main fit's width at the window's centre."""
+    return not _W["fit"].get("pooled_shape")
+
+
 def _injection_one(name):
     d, fit = _W["data"], _W["fit"]["models"][name]["top"]
     m, pt = d["mass"], d["pt"]
@@ -811,7 +818,7 @@ def _injection_one(name):
     # the shape floating, exactly as the top peak is fitted.
     inj, cats = inject_asimov(b, centre, width, fit["yield_per_pt_bin"])
     y_inj = float(sum(cats.values()))
-    got, _, _ = P.fit_binned(inj, PSEUDO, centre, width, float_shape=True)
+    got, _, _ = P.fit_binned(inj, PSEUDO, centre, width, float_shape=_floats())
     base = P.fit_binned(b, PSEUDO, centre, width, order=tuple(got["tf_order"]))[0]["signal_yield"]
     net = got["signal_yield"] - base
     leak = {}
@@ -819,8 +826,8 @@ def _injection_one(name):
         # the injected signal also in the fail bins, as a tagger of efficiency eps leaves it
         add = inj["n_pass"] - b["n_pass"]
         lk = dict(inj, n_fail=b["n_fail"] + add * (1 - eps) / eps)
-        pass_only = P.fit_binned(lk, PSEUDO, centre, width, float_shape=True)[0]
-        told = P.fit_binned(lk, PSEUDO, centre, width, float_shape=True, tops=add / eps)[0]
+        pass_only = P.fit_binned(lk, PSEUDO, centre, width, float_shape=_floats())[0]
+        told = P.fit_binned(lk, PSEUDO, centre, width, float_shape=_floats(), tops=add / eps)[0]
         leak[f"{eps:g}"] = dict(
             recovered_pass_only=(pass_only["signal_yield"] - base) / y_inj,
             recovered_with_tops=(told["signal_yield"] - base) / y_inj,
@@ -860,8 +867,9 @@ def _injection_toys(job):
     for k in range(k0, k1):
         rng = np.random.default_rng([20261001, k, *map(ord, name)])
         toy = dict(b, n_pass=rng.poisson(bkg + sig).astype(float), n_fail=rng.poisson(fail).astype(float))
-        f = P.fit_binned(toy, PSEUDO, centre, width, float_shape=True)[0]
-        side = f["signal_yield_err_hi"] if f["signal_yield"] < y_inj else f["signal_yield_err_lo"]
+        f = P.fit_binned(toy, PSEUDO, centre, width, float_shape=_floats())[0]
+        # a fixed-shape fit quotes one (Hessian) error: no profile sides
+        side = f.get("signal_yield_err_hi") if f["signal_yield"] < y_inj else f.get("signal_yield_err_lo")
         out.append(dict(toy=k, recovered=f["signal_yield"] / y_inj, pull=(f["signal_yield"] - y_inj) / f["signal_yield_err"],
                         pull_asym=(f["signal_yield"] - y_inj) / side if side else None))
     return name, out
@@ -1031,8 +1039,10 @@ def _prong_one(name):
     ref = fit["reference"]["top"]
     zp = d["scores"][name]["prong_only"].astype(float)
     zt = d["scores"][name]["three_prong"].astype(float)
-    res, passed, _ = P.analyse(zp, d["mass"], d["pt"], "top", EFF, _W["n_toys"], shape=(ref["mean"], ref["width"]),
-                               tops=_W.get("tops"))
+    ps = fit.get("pooled_shape")
+    shape = (ps["mean"], ps["width"]) if ps else (ref["mean"], ref["width"])
+    res, passed, _ = P.analyse(zp, d["mass"], d["pt"], "top", EFF, _W["n_toys"], shape=shape,
+                               tops=_W.get("tops"), float_shape=not ps)
     three = P.passes(zt, d["mass"], d["pt"], P.build_map(zt, d["mass"], d["pt"], EFF))
     t = fit["models"][name]["top"]
     return name, dict(_fit_summary(res), criteria=P.criteria(dict(res, auc_vs_cms_proxy=1.0), "top", _W["n_toys"]),
@@ -1091,7 +1101,8 @@ def step_prong(data, fit, n_toys, workers, domain=None, tops=None) -> dict:
                       "(discriminants.SCORES['prong_only']): no QCD node, so the resonance-vs-QCD "
                       "information cancels and only the prong count is left",
                 procedure="peak_fit.analyse at 1 % data efficiency: the map (windows masked), the "
-                          "floated-shape fit started from the reference's shape, the validation band; "
+                          "main fit's procedure (its pooled shape held fixed, or the shape floated from the "
+                          "reference's), the tops in the fail region as the main fit takes them, the validation band; "
                           "the criteria's AUC term is not applicable and is set to pass",
                 tests="whether the prong count alone, with the resonance-vs-QCD part of the score "
                       "removed and the mass decorrelated by the same map, selects the top peak, and "

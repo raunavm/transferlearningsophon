@@ -372,3 +372,10 @@ def test_the_fit_given_tops_has_the_gradient_of_its_loss_and_without_tops_is_the
         assert g[k] == pytest.approx(num, rel=1e-3, abs=1e-6)
     zero = pf._Model(b, (2, 1), m0.tf_norm, *SHAPES["top"], tops=np.zeros(len(b["n_pass"])))
     assert zero.loss(x)[0] == pytest.approx(m0.loss(x)[0], rel=1e-12)
+
+
+def test_analyse_at_a_given_shape_holds_it_and_chooses_the_order_by_f_test():
+    mass, pt, score, _ = sample(51, n_sig=5000, peak="top")
+    fit, _, _ = pf.analyse(score, mass, pt, "top", EFF, 0, shape=SHAPES["top"], float_shape=False)
+    assert (fit["mean"], fit["width"]) == SHAPES["top"] and not fit["shape_floated"]
+    assert fit["f_test"] and fit["floated_mean"] == SHAPES["top"][0]

@@ -49,7 +49,7 @@ spec:
           for g in $(seq 0 5); do
             [ -f "/data/results/aoj/sim_v1/attempts/g${g}/DONE" ] || { echo "FATAL: simulation group ${g} has not finished"; exit 42; }
           done
-          git clone --depth 1 --branch "mtx-s1.89" \
+          git clone --depth 1 --branch "mtx-s1.93" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -70,7 +70,7 @@ spec:
           PYTHONUNBUFFERED=1 python3 experiments/AOJ/realdata_checks.py \
             --merged /scratch/merged --shards ${SHARDS} --first-run-shards ${FIRST} \
             --first-run-merged /scratch/merged_first \
-            --fit experiments/FIGS/data/aoj_full_v1/fit_v5/results.json --sim /data/results/aoj/sim_v1 --out "${OUT}" --workers 19 --toys 200
+            --fit experiments/FIGS/data/aoj_full_v1/fit_v6/results.json --sim /data/results/aoj/sim_v1 --out "${OUT}" --workers 19 --toys 200
           cp /scratch/merged/merge_manifest.json "${OUT}/"
           ls -la "${OUT}"
           cd "${OUT}"

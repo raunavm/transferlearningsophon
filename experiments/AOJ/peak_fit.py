@@ -621,14 +621,15 @@ def auc(score, label):
     return float((stats.rankdata(score)[label].sum() - n1 * (n1 + 1) / 2) / (n1 * n0))
 
 
-def analyse(score, mass, pt, peak, eff, n_toys, shape=None, tops=None):
+def analyse(score, mass, pt, peak, eff, n_toys, shape=None, tops=None, float_shape=True):
     """Map -> cut -> fit with the shape floating -> validation, for one score given on
     a log-odds-like scale. `shape` also starts the shape search (the reference's
     fitted shape); None for the reference itself, whose search also starts from its
-    own shape floated at START_ORDER. `tops`: the tops in each bin (tops_from_reference)."""
+    own shape floated at START_ORDER. `tops`: the tops in each bin (tops_from_reference).
+    float_shape False: the fit holds `shape` (a pooled shape, pooled_shape), order by F-test."""
     z = np.asarray(score, float)
     passed = passes(z, mass, pt, build_map(z, mass, pt, eff))
-    fit, hist, _ = fit_peak(mass, pt, passed, peak, *(shape or (None, None)), float_shape=True, tops=tops)
+    fit, hist, _ = fit_peak(mass, pt, passed, peak, *(shape or (None, None)), float_shape=float_shape, tops=tops)
     # floated_* was a second fit, at START_ORDER, until 2026-09-28; now it is this fit's
     fit["floated_mean"], fit["floated_width"] = fit["mean"], fit["width"]
     fit["data_efficiency"] = float(passed.mean())

@@ -367,3 +367,24 @@ def test_the_injection_recovery_subtracts_the_datas_own_signal_and_scans_the_lea
     assert row["injected"]["recovered_without_subtracting_spurious"] == pytest.approx((0.9 * y_inj - 30.0) / y_inj)
     assert set(row["leak_scan"]) == {f"{e:g}" for e in RC.LEAK_EFFS}
     assert sum(c["tops"] for c in calls) == len(RC.LEAK_EFFS), "each leak point fitted once given the tops"
+
+
+def test_the_checks_fit_the_way_the_main_fit_does_floating_or_at_its_pooled_shape(monkeypatch):
+    mass, pt, rng = jets(n=300_000, seed=8)
+    z = rng.normal(size=len(mass))
+    seen = []
+
+    def fake(b, peak, mean=None, width=None, float_shape=False, order=None, tops=None):
+        seen.append(float_shape)
+        return dict(signal_yield=10.0, signal_yield_err=5.0, z_wald=2.0, tf_order=[2, 1], mean=mean, width=width,
+                    profile_error_ok=None), None, None
+    top = dict(width=11.66, yield_per_pt_bin={"1200-2500": 150.0})
+    for fit, floats in ((dict(models={"m": {"top": top}}), True),
+                        (dict(models={"m": {"top": top}}, pooled_shape=dict(mean=182.8, width=11.66)), False)):
+        RC._W.clear()
+        RC._W.update(data=dict(mass=mass, pt=pt, scores={"m": {"three_prong": z}}), fit=fit)
+        _, b, _, _ = RC._pseudo("m")
+        monkeypatch.setattr(RC.P, "fit_binned", fake)
+        seen.clear()
+        RC._injection_one("m")
+        assert True in seen if floats else not any(seen), (floats, seen)

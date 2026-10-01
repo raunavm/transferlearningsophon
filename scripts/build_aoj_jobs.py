@@ -1389,15 +1389,17 @@ def render_fit_v6() -> str:
     return t
 
 
-# THE CHECKS AGAIN (v2, 2026-10-01), against fit_v5, with the corrections of the
+# THE CHECKS AGAIN (v2, 2026-10-01), against the main fit, with the corrections of the
 # verification of checks_v1: the injection's recovery net of the data's own signal and the
 # procedure's bias on toys, the leak scan, the prong-only test's power, the run spread as
 # measured, the closure as a fraction with its error, the reference's validation as a count.
 CHECKS2_ROOT = "/data/results/aoj/checks_v2"
-CHECKS2_PIN = "mtx-s1.89"
-CHECKS2_NEEDED_FLAGS = {"experiments/AOJ/realdata_checks.py": "def run_spread",
-                        "experiments/FIGS/data/aoj_full_v1/fit_v5/results.json": "fail_tops"}
-MAIN_FIT2 = "experiments/FIGS/data/aoj_full_v1/fit_v5/results.json"
+# first launched at mtx-s1.89 against fit_v5 (floated shapes); stopped after 25 min when the
+# pooled-shape fit (fit_v6) passed its toys, and re-created against fit_v6 at mtx-s1.93
+CHECKS2_PIN = "mtx-s1.93"
+CHECKS2_NEEDED_FLAGS = {"experiments/AOJ/realdata_checks.py": "def _floats",
+                        "experiments/FIGS/data/aoj_full_v1/fit_v6/results.json": "pooled_shape"}
+MAIN_FIT2 = "experiments/FIGS/data/aoj_full_v1/fit_v6/results.json"
 # 19 spawned workers, each holding the jets of the rho window and one model's scores: the
 # v1 job held 15 in 48Gi
 CHECKS2_CPU = 20
@@ -1476,7 +1478,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-only", action="store_true", help="verify, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
-                    help=f"check the working tree instead of {TOYS_PINS['pooled']}, which is tagged after the commit")
+                    help=f"check the working tree instead of {CHECKS2_PIN}, which is tagged after the commit")
     a = ap.parse_args()
     verify_heads()
     verify_pin(PIN, False)                      # the shards already ran at it
@@ -1491,17 +1493,12 @@ def main() -> int:
         if study not in ("tops", "pooled"):
             verify_pin(pin, False, TOYS_NEEDED_FLAGS)
     verify_pin(TOYS_PINS["tops"], False, {"experiments/AOJ/injection_test.py": "EPS_TRUE"})
-    verify_pin(TOYS_PINS["pooled"], a.pin_not_yet_tagged, {"experiments/AOJ/injection_test.py": "def _run_ensemble",
+    verify_pin(TOYS_PINS["pooled"], False, {"experiments/AOJ/injection_test.py": "def _run_ensemble",
                                                            "experiments/FIGS/data/aoj_full_v1/fit_v6/results.json": "pooled_shape"})
     verify_pin(INJECTION_PIN, False, INJECTION_NEEDED_FLAGS)
     verify_pin(FIT5_PIN, False, FIT5_NEEDED_FLAGS)
     verify_pin(FIT6_PIN, False, FIT6_NEEDED_FLAGS)
-    # the checks clone a tag made after fit_v5's results are committed
-    if subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--verify", "-q", f"refs/tags/{CHECKS2_PIN}"],
-                      capture_output=True).returncode == 0:
-        verify_pin(CHECKS2_PIN, False, CHECKS2_NEEDED_FLAGS)
-    else:
-        print(f"note: {CHECKS2_PIN} (the v2 checks) is not tagged yet")
+    verify_pin(CHECKS2_PIN, a.pin_not_yet_tagged, CHECKS2_NEEDED_FLAGS)
     for path, text in specs().items():
         if a.check_only:
             print(f"ok   {path.relative_to(ROOT)}")
