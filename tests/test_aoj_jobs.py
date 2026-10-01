@@ -404,3 +404,30 @@ def test_the_injection_bins_job_merges_the_first_run_as_the_fit_did_and_carries_
     assert s.index("export OMP_NUM_THREADS=1") < s.index("injection_test.py bins")
     assert s.index("pip install --no-cache-dir -q pyarrow") < s.index("injection_test.py bins")
     assert f"OUT={B.INJECTION_ROOT}" in s and "BEGIN-TAR" in s and "END-TAR" in s
+
+
+TOYS = sorted(p for p in SPECS if "-injection-toys-" in p.name)
+
+
+@pytest.mark.parametrize("path", TOYS, ids=lambda p: p.name)
+def test_the_toy_jobs_carry_the_retry_policy_and_count_their_own_attempts(path):
+    spec = yaml.safe_load(SPECS[path])["spec"]
+    assert spec["backoffLimit"] == FT.ROBUST_BACKOFF and spec["podFailurePolicy"]["rules"][0]["onExitCodes"][
+        "values"] == [FT.EXIT_HALT]
+    study = path.name.removeprefix("job-aoj-injection-toys-").removesuffix("-v1-raunav.yaml")
+    s = _script(SPECS[path])
+    assert f'"${{OUT}}/attempts/toys_{study}/ATTEMPTS"' in s, "attempts are counted per job, not shared"
+    assert f'--branch "{B.TOYS_PIN}"' in s and "nvidia.com/gpu" not in SPECS[path]
+    assert s.index("export OMP_NUM_THREADS=1") < s.index("injection_test.py toys")
+    assert s.count("injection_test.py toys") == len(B.TOY_STUDIES[study])
+    assert s.count("--out \"${OUT}/toys_") == len(B.TOY_STUDIES[study])
+    if study in B.NEEDS_EXTRA:
+        pre = '[ -f "${OUT}/injection_bins.npz" ] || { echo "FATAL: no injection bins"; exit 42; }'
+        assert pre in s and s.index(pre) < s.index("injection_test.py toys")
+
+
+def test_the_leak_study_leaves_out_the_reference_which_has_no_simulated_efficiency():
+    s = _script(SPECS[B.K8S / "job-aoj-injection-toys-top-v1-raunav.yaml"])
+    leak = next(ln for ln in s.split("injection_test.py toys")[1:] if "--modes leak" in ln)
+    names = re.search(r"--names ([^\\]+)\\", leak).group(1).split()
+    assert "reference" not in names and set(names) == {m.name for m in B.MODELS}
