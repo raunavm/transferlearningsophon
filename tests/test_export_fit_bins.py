@@ -55,11 +55,15 @@ def test_a_fit_rebuilt_from_the_exported_bins_reproduces_the_stored_yield(run, t
     assert _export(run, tmp_path / "bins.npz") == 0
     z = np.load(tmp_path / "bins.npz")
     res = json.loads((run / "results.json").read_text())
+    # the scores' fits take the tops failing their cut, the reference's fitted signal (peak_fit.main)
+    ref_bins = {k: z[f"reference|main|{k}"] for k in E.KEYS}
+    tops = P.tops_from_reference(ref_bins, res["reference"]["top"]) if res.get("fail_tops") else None
     for name, stored in (("reference", res["reference"]["top"]), ("m", res["models"]["m"]["top"])):
         b = {k: z[f"{name}|main|{k}"] for k in E.KEYS}
         side = ~P.in_windows(P._bin_centres(b), [P.PEAKS["top"]["window"]])
         tf_norm = b["n_pass"][side].sum() / max(b["n_fail"][side].sum(), 1.0)
-        model = P._Model(b, tuple(stored["tf_order"]), tf_norm, stored["mean"], stored["width"])
+        model = P._Model(b, tuple(stored["tf_order"]), tf_norm, stored["mean"], stored["width"],
+                         None if name == "reference" else tops)
         x, _ = model.fit()
         y = float(model.G.sum(axis=0) @ x[model.n_tf:])
         assert abs(y - stored["signal_yield"]) <= 1e-9 * abs(stored["signal_yield"])
