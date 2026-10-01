@@ -1,0 +1,226 @@
+{
+ "version": "v2",
+ "doc": "The comparisons experiments/STATS/paired_errors.py forms for the v2 runs (amendments A7-A13). Models are the runs of configs/arms/v2_grid.json, named as the runs are (<arm lower-cased, underscores dropped>-s<run>; the self-supervised arm's runs mpm-v2-s<run>), each at a checkpoint: bestval (the primary) or wavg (the weight average of epochs 70-79). Every contrast is formed at each checkpoint, and run k of one arm is paired with run k of another only where their training streams agree up to that checkpoint (A7). Every ratio is coarse over fine: above 1 = the coarser, merged, unseen or control side is worse. Every contrast is also formed between the checkpoints (A8: the result at wavg over the result at bestval). A new arm needs its grid entry and one line here; labels are optional (the arm name stands in). An arm decided but not yet in the grid is listed under pending_arms, and its contrasts form no row until it is; an arm named here that is neither is fatal.",
+ "models": {
+  "from_grid": "configs/arms/v2_grid.json"
+ },
+ "baselines": [
+  "scratch-v2"
+ ],
+ "checkpoints": [
+  "bestval",
+  "wavg"
+ ],
+ "pending_arms": {},
+ "stream_check": true,
+ "probe_pairs": "configs/labelmaps/probe_pairs.v2.json",
+ "partition_merges": "configs/labelmaps/rand_v2_selection.json",
+ "labels": {
+  "L188": "188",
+  "L162": "162",
+  "R63_Q1": "64",
+  "R42_Q1": "43",
+  "R29_Q1": "30",
+  "R16_Q1": "17",
+  "L162_MASS": "162+mass",
+  "R16_Q1_MASS": "17+mass",
+  "R16_Q1_MASS_LM": "17+mass, matched lambda",
+  "RAND2_p1": "random partition 1",
+  "RAND2_p2": "random partition 2",
+  "RAND2_p3": "random partition 3",
+  "RAND2_p4": "random partition 4",
+  "RAND2_p5": "random partition 5",
+  "FLAV_F0": "flavour-blind 17 (F0)",
+  "FLAV_F1": "F0 with the four-prong b/c cut (F1)",
+  "MPM": "self-supervised",
+  "L188_LOFO4P": "188, family unseen",
+  "L162_LOFO4P": "162, family unseen",
+  "R42_Q1_LOFO4P": "43, family unseen",
+  "R16_Q1_LOFO4P": "17, family unseen",
+  "FLAV_F1R": "F1 with a random four-prong cut (F1r)"
+ },
+ "contrasts": [
+  {
+   "id": "ladder",
+   "amendment": "A12",
+   "kind": "all_pairs",
+   "arms": [
+    "L188",
+    "L162",
+    "R63_Q1",
+    "R42_Q1",
+    "R29_Q1",
+    "R16_Q1"
+   ]
+  },
+  {
+   "id": "mass_output",
+   "amendment": "A11",
+   "kind": "pairs",
+   "pairs": [
+    [
+     "L162",
+     "L162_MASS"
+    ],
+    [
+     "R16_Q1",
+     "R16_Q1_MASS"
+    ],
+    [
+     "R16_Q1",
+     "R16_Q1_MASS_LM"
+    ]
+   ]
+  },
+  {
+   "id": "mass_lambda",
+   "amendment": "A11",
+   "kind": "pairs",
+   "pairs": [
+    [
+     "R16_Q1_MASS",
+     "R16_Q1_MASS_LM"
+    ]
+   ]
+  },
+  {
+   "id": "mass_cost_vs_162",
+   "amendment": "A11",
+   "kind": "linear",
+   "fine": "162 classes: mass output over none, lambda 5",
+   "coarse": "17 classes: mass output over none, matched lambda",
+   "weights": {
+    "R16_Q1_MASS_LM": 1,
+    "R16_Q1": -1,
+    "L162_MASS": -1,
+    "L162": 1
+   }
+  },
+  {
+   "id": "partition_split_vs_merged",
+   "amendment": "A10",
+   "kind": "partition_split_vs_merged",
+   "arms": [
+    "RAND2_p1",
+    "RAND2_p2",
+    "RAND2_p3",
+    "RAND2_p4",
+    "RAND2_p5"
+   ]
+  },
+  {
+   "id": "partition_joint",
+   "amendment": "A10",
+   "kind": "partition_joint",
+   "arms": [
+    "RAND2_p1",
+    "RAND2_p2",
+    "RAND2_p3",
+    "RAND2_p4",
+    "RAND2_p5"
+   ]
+  },
+  {
+   "id": "flavour_pair",
+   "amendment": "A10",
+   "kind": "pairs",
+   "pairs": [
+    [
+     "FLAV_F1",
+     "FLAV_F0"
+    ]
+   ]
+  },
+  {
+   "id": "flavour_cut_alignment",
+   "amendment": "A10 (2026-10-01)",
+   "kind": "pairs",
+   "pairs": [
+    [
+     "FLAV_F1",
+     "FLAV_F1R"
+    ]
+   ],
+   "note": "P2 extended: F1 beats F1r on b vs c in two-prong decays; on the four-prong probe, the manipulation check (F1 splits bbqq/ccqq, F1r merges it)"
+  },
+  {
+   "id": "flavour_random_cut_vs_blind",
+   "amendment": "A10 (2026-10-01)",
+   "kind": "pairs",
+   "pairs": [
+    [
+     "FLAV_F1R",
+     "FLAV_F0"
+    ]
+   ],
+   "note": "descriptive"
+  },
+  {
+   "id": "flavour_blind_vs_17",
+   "amendment": "A10",
+   "kind": "pairs",
+   "pairs": [
+    [
+     "R16_Q1",
+     "FLAV_F0"
+    ]
+   ],
+   "fine_run_spread": true
+  },
+  {
+   "id": "flavour_pair_vs_half_gap",
+   "amendment": "A10",
+   "kind": "linear",
+   "fine": "half the 43- to 17-class ratio",
+   "coarse": "F0 over F1",
+   "weights": {
+    "FLAV_F0": 1,
+    "FLAV_F1": -1,
+    "R16_Q1": -0.5,
+    "R42_Q1": 0.5
+   }
+  },
+  {
+   "id": "family_unseen_vs_seen",
+   "amendment": "A13",
+   "kind": "unpaired",
+   "pairs": [
+    [
+     "L188",
+     "L188_LOFO4P"
+    ],
+    [
+     "L162",
+     "L162_LOFO4P"
+    ],
+    [
+     "R42_Q1",
+     "R42_Q1_LOFO4P"
+    ],
+    [
+     "R16_Q1",
+     "R16_Q1_LOFO4P"
+    ]
+   ],
+   "stream_exempt": "a run that leaves the family out draws a different stream by construction (a selection on the stored label), so it cannot be stream-matched to its parent; the two arms are compared unpaired"
+  },
+  {
+   "id": "family_unseen_ladder",
+   "amendment": "A13",
+   "kind": "all_pairs",
+   "arms": [
+    "L188_LOFO4P",
+    "L162_LOFO4P",
+    "R42_Q1_LOFO4P",
+    "R16_Q1_LOFO4P"
+   ]
+  },
+  {
+   "id": "checkpoint",
+   "amendment": "A8",
+   "kind": "checkpoint",
+   "primary": "bestval",
+   "robustness": "wavg"
+  }
+ ]
+}

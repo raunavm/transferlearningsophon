@@ -1,0 +1,215 @@
+{
+ "version": "v1",
+ "doc": "The comparisons experiments/STATS/paired_errors.py forms for the v1 runs, which recorded no training stream: runs pair by index (shared initialisation only), random draw K with run K. Every ratio is coarse over fine (above 1 = the coarser or control model is worse). l162-s1b and rand-d1-s1b are the reruns of run 1 (mtx-l162-s1 and mtx-rand-d1-s1 are superseded and never read). A model name not listed here, or in baselines, is fatal.",
+ "models": {
+  "l188-s1": [
+   "L188",
+   1
+  ],
+  "l188-s2": [
+   "L188",
+   2
+  ],
+  "l188-s3": [
+   "L188",
+   3
+  ],
+  "l188-s4": [
+   "L188",
+   4
+  ],
+  "l188-s5": [
+   "L188",
+   5
+  ],
+  "l162-s2": [
+   "L162",
+   2
+  ],
+  "l162-s3": [
+   "L162",
+   3
+  ],
+  "l162-s4": [
+   "L162",
+   4
+  ],
+  "l162-s5": [
+   "L162",
+   5
+  ],
+  "r42q1-s1": [
+   "R42_Q1",
+   1
+  ],
+  "r42q1-s2": [
+   "R42_Q1",
+   2
+  ],
+  "r42q1-s3": [
+   "R42_Q1",
+   3
+  ],
+  "r42q1-s4": [
+   "R42_Q1",
+   4
+  ],
+  "r42q1-s5": [
+   "R42_Q1",
+   5
+  ],
+  "r16q1-s1": [
+   "R16_Q1",
+   1
+  ],
+  "r16q1-s2": [
+   "R16_Q1",
+   2
+  ],
+  "r16q1-s3": [
+   "R16_Q1",
+   3
+  ],
+  "r16q1-s4": [
+   "R16_Q1",
+   4
+  ],
+  "r16q1-s5": [
+   "R16_Q1",
+   5
+  ],
+  "l162mass-s1": [
+   "L162_MASS",
+   1
+  ],
+  "l162mass-s2": [
+   "L162_MASS",
+   2
+  ],
+  "l162mass-s3": [
+   "L162_MASS",
+   3
+  ],
+  "l162mass-s4": [
+   "L162_MASS",
+   4
+  ],
+  "l162mass-s5": [
+   "L162_MASS",
+   5
+  ],
+  "r16q1mass-s1": [
+   "R16_Q1_MASS",
+   1
+  ],
+  "r16q1mass-s2": [
+   "R16_Q1_MASS",
+   2
+  ],
+  "r16q1mass-s3": [
+   "R16_Q1_MASS",
+   3
+  ],
+  "r16q1mass-s4": [
+   "R16_Q1_MASS",
+   4
+  ],
+  "r16q1mass-s5": [
+   "R16_Q1_MASS",
+   5
+  ],
+  "l162-s1b": [
+   "L162",
+   1
+  ],
+  "rand-d1-s1b": [
+   "RAND",
+   1
+  ],
+  "rand-d2-s2": [
+   "RAND",
+   2
+  ],
+  "rand-d3-s3": [
+   "RAND",
+   3
+  ]
+ },
+ "baselines": [
+  "scratch",
+  "scratch-v2",
+  "sophon-public",
+  "mpm-s1",
+  "mpm-s1-v2",
+  "mpm-s2",
+  "mpm-s3",
+  "ref_e1arms-s1",
+  "ref_e1arms-s2",
+  "ref_e1arms-s3"
+ ],
+ "labels": {
+  "L188": "188",
+  "L162": "162",
+  "R42_Q1": "43",
+  "R16_Q1": "17",
+  "L162_MASS": "162+mass",
+  "R16_Q1_MASS": "17+mass",
+  "RAND": "random"
+ },
+ "stream_check": false,
+ "audit_b3": true,
+ "contrasts": [
+  {
+   "id": "ladder",
+   "kind": "all_pairs",
+   "arms": [
+    "L188",
+    "L162",
+    "R42_Q1",
+    "R16_Q1"
+   ]
+  },
+  {
+   "id": "mass_output",
+   "kind": "pairs",
+   "pairs": [
+    [
+     "L162",
+     "L162_MASS"
+    ],
+    [
+     "R16_Q1",
+     "R16_Q1_MASS"
+    ]
+   ]
+  },
+  {
+   "id": "random_vs_vocabulary",
+   "kind": "pairs",
+   "pairs": [
+    [
+     "L188",
+     "RAND"
+    ],
+    [
+     "L162",
+     "RAND"
+    ],
+    [
+     "R42_Q1",
+     "RAND"
+    ],
+    [
+     "R16_Q1",
+     "RAND"
+    ]
+   ]
+  },
+  {
+   "id": "random_draws",
+   "kind": "draws",
+   "arm": "RAND",
+   "proxy": "R16_Q1"
+  }
+ ]
+}
