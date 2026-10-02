@@ -338,7 +338,8 @@ def test_the_analyse_rerun_reads_the_arrays_and_writes_somewhere_new():
     assert c["name"] == "main" and "gpu" not in json.dumps(c["resources"])
     terms = pod["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"]
     assert {"key": "topology.kubernetes.io/region", "operator": "In", "values": ["us-west"]} in terms[0]["matchExpressions"]
-    assert {"name": "REPO_REF", "value": "TAG_PENDING"} in c["env"]
+    # the tag it ran at (ledger row diag-head-epochs-analyse-v2, commit 9b66e5f)
+    assert {"name": "REPO_REF", "value": "mtx-s1.94"} in c["env"]
     sh = c["args"][0]
     assert subprocess.run(["bash", "-n"], input=sh, text=True).returncode == 0
     # the placeholder and a full /data stop the job before it clones or writes anything
