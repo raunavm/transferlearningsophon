@@ -205,6 +205,14 @@ def _autoresume():
     return mod
 
 
+def _ft_jobs():
+    spec = importlib.util.spec_from_file_location(
+        "build_ft_jobs", ROOT / "scripts" / "build_ft_jobs.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def patch(path: pathlib.Path, arm: str, k: int, rate: str) -> str:
     """Transform the spec ATOMICALLY: build it in a temp file, verify the temp,
     and only then move it into place.
@@ -532,7 +540,13 @@ def derive_draw(draw: int, seed: int) -> list[str]:
 # GPU product); nothing here applies a spec.
 V2_ROOT = "/data/results/mtx_v2"
 V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
-V2_IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
+# The image by digest, not by its tag (:cu121), so that every pod of a run gets the same
+# runtime even if the tag moves; the digest is the one the cu121 tag resolved to on every
+# GPU node in us-west on 2026-10-01 (the nodes' image lists). IMAGE_DIGEST puts it in each
+# run manifest (scripts/write_run_manifest.py). pyarrow, which the image lacks, stays
+# unpinned: no installed version is recorded anywhere in the repository.
+V2_IMAGE_DIGEST = "sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7"
+V2_IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@" + V2_IMAGE_DIGEST
 V2_GPU = "NVIDIA-GeForce-RTX-3090"
 V2_RATE = "5e-4"                    # RATES: every arm of the ladder trains at 5e-4
 V2_EPOCHS = 80
@@ -561,14 +575,31 @@ V2_SELECT = "acc"
 # average and the newest resume file (pretrain_v2.py prune, write_weight_average).
 V2_KEEP = "window"
 # GPU product per run index (PI, 2026-10-01): run k of every arm on one product, so a
-# seed pair never mixes products (I7). Indices 4-5 may move to L40 only if the L40
-# numerics check passes; the run directories keep the contract name mtx-<slug>-s<k>
-# whatever the product.
-V2_GPU_BY_RUN = {1: V2_GPU, 2: V2_GPU, 3: V2_GPU, 4: V2_GPU, 5: V2_GPU}
+# seed pair never mixes products (I7). Indices 4-5 train on L40 (PRESPEC A14 design change 7;
+# the L40 check passed, "Outcomes and corrections recorded with A14"). The run directories
+# keep the contract name mtx-<slug>-s<k> whatever the product. This table is the only place
+# the product of a run index is set: the grid specs are built from it, and
+# experiments/FIGS/make_tables.py reads the products from those specs.
+V2_L40 = "NVIDIA-L40"
+V2_GPU_BY_RUN = {1: V2_GPU, 2: V2_GPU, 3: V2_GPU, 4: V2_L40, 5: V2_L40}
 V2_CPU = "8"
 V2_MEM = "48Gi"
-V2_BACKOFF = 20                     # counted failures; evictions are ignored
+# Retries (PI, 2026-10-01). Evictions are ignored; exit EXIT_HALT fails the Job at once;
+# every other failure counts against V2_BACKOFF. A failed attempt of the run (a failed-*
+# marker) is one count, and two at one epoch halt; a node fault (EXIT_NODE_FAULT) is a
+# count too but no marker, since it costs no training, and NODE_FAULT_LIMIT of them halt.
+V2_BACKOFF = 60
 EXIT_HALT = 42
+EXIT_NODE_FAULT = 43
+NODE_FAULT_LIMIT = 6
+EXIT_NONFINITE = 3                  # pretrain_v2 on a non-finite training loss
+EXIT_NO_GPU = 4                     # pretrain_v2 and finalize_v2 with no usable GPU: a node fault
+# A failed attempt whose log holds a CUDA device fault is the node's fault: the
+# fine-tuning jobs' patterns (scripts/build_ft_jobs.py).
+CUDA_FAULT = _ft_jobs().CUDA_FAULT
+# Storage guard on /data, checked before the run writes anything: a fresh start refuses
+# above V2_FRESH_CEIL % use, a run that resumes only above V2_RESUME_CEIL %.
+V2_FRESH_CEIL, V2_RESUME_CEIL = 85, 95
 V2_BAD_NODES = ("ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net",
                 "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu",
                 "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu",
@@ -638,22 +669,29 @@ def v2_spec(arm: dict, run: int, gpu: str = V2_GPU, *, tag: str, **kw) -> tuple:
 
     `arm` is one entry of configs/arms/v2_grid.json ("name", "config",
     "num_classes", "mass_lambda", "objective", "extra_selection"). The run index
-    is the master seed, so run k of every arm draws the same stream.
+    is the master seed, so run k of every arm draws the same stream. The Job is
+    created suspended and started by scripts/release_v2.py.
     """
     run_id = kw.pop("run_id", None) or v2_run_id(arm["name"], run, gpu)
     job = kw.pop("job", None) or v2_job_name(arm["name"], run, gpu)
     cpu, mem = kw.pop("cpu", V2_CPU), kw.pop("mem", V2_MEM)
     script = v2_script(arm, run, run_id=run_id, **kw)
     title = f"v2 PRETRAINING -- {arm['name']}, run {run} (master seed {run}), {gpu}."
-    return job, v2_job(job, [script], gpu, tag, title, cpu=cpu, mem=mem)
+    return job, v2_job(job, [script], gpu, tag, title, cpu=cpu, mem=mem, suspend=True)
 
 
 def v2_script(arm: dict, run: int, *, run_id: str, out_root: str = V2_ROOT,
               epochs: int = V2_EPOCHS, samples: int = V2_SAMPLES, deterministic: bool = False,
-              kill_after_epoch: int | None = None) -> str:
+              kill_after_epoch: int | None = None, finalize: bool = False) -> str:
     """The bash for one run, after the clone. It runs in a subshell of the pod
     script, so `exit` leaves this run only. kill_after_epoch (smoke only)
-    SIGKILLs the trainer during the epoch after that one, then restarts it."""
+    SIGKILLs the trainer during the epoch after that one, then restarts it.
+
+    finalize (v2_finalize_spec) runs experiments/MTX/finalize_v2.py on the run's
+    directory in place of the trainer, behind the same guards. It writes no manifest,
+    checks the sidecar against the run's record of it rather than rewriting the record,
+    and counts its failed attempts and node faults apart from the run's: a run whose
+    end step failed twice has already used its own two."""
     obj = arm["objective"]
     head = ""
     if obj != "mpm":
@@ -674,12 +712,14 @@ def v2_script(arm: dict, run: int, *, run_id: str, out_root: str = V2_ROOT,
     window = f"--data-windows {V2_LOFO_WINDOWS}" if arm.get("extra_selection") else V2_WINDOW
     loader = V2_LOADER.replace(V2_WINDOW, window)
     train_cmd = (
-        "python3 experiments/MTX/pretrain_v2.py --seed ${SEED} --out ${OUT}"
+        "python3 experiments/MTX/pretrain_v2.py --seed ${SEED} --out ${OUT} --device cuda"
         f" --data-train {' '.join(TRAIN_GLOBS)} --data-val {' '.join(VAL_GLOBS)}"
         f" --data-config ${{CFG}} --network-config {ARCH[obj]}{head}"
         f" --use-amp --batch-size 512 --start-lr {V2_RATE} --num-epochs {epochs}"
         f" --samples-per-epoch {samples} {loader}{extra} --keep-checkpoints {V2_KEEP} --select-on {V2_SELECT}")
-    if kill_after_epoch is None:
+    if finalize:
+        run_block = "PYTHONUNBUFFERED=1 python3 experiments/MTX/finalize_v2.py --out ${OUT} 2>&1 | tee -a ${OUT}/train.log\n"
+    elif kill_after_epoch is None:
         run_block = f"PYTHONUNBUFFERED=1 {train_cmd} 2>&1 | tee -a ${{OUT}}/train.log\n"
     else:
         e = int(kill_after_epoch)
@@ -694,32 +734,86 @@ def v2_script(arm: dict, run: int, *, run_id: str, out_root: str = V2_ROOT,
             f"  echo \"killed during epoch {e + 1} at $(date -u +%FT%TZ)\" | tee ${{OUT}}/KILLED\n"
             "fi\n"
             f"PYTHONUNBUFFERED=1 {train_cmd} 2>&1 | tee -a ${{OUT}}/train.log\n")
+    if finalize:
+        exists = '[ -f ${OUT}/recipe.json ] || { echo "FATAL: ${OUT} holds no run to finish"; exit ${HALT}; }\n'
+        mark, faults, what = "finalize", "FINALIZE_NODE_FAULTS", " finalize"
+        counted = ("# A FAILED attempt leaves attempts/failed-*-finalize (the EXIT trap; an evicted\n"
+                   "# pod is SIGKILLed, runs no trap and is not counted). Two stop the job; the\n"
+                   "# run's own failed attempts do not count.\n"
+                   'NF=$(ls ${OUT}/attempts | grep -c -- "-finalize$" || true)\n'
+                   '[ "${NF}" -lt 2 ] || { echo "FATAL: ${NF} failed attempts to finalize"; exit ${HALT}; }\n')
+        record = ('sha256sum -c ${OUT}/reweight_sidecar.sha256 || '
+                  '{ echo "FATAL: ${SIDECAR} is not the sidecar the run trained with"; exit ${HALT}; }\n')
+        manifest = ""
+    else:
+        exists = ""
+        mark, faults, what = "e${LAST}", "NODE_FAULTS", ""
+        counted = ("# A FAILED attempt leaves attempts/failed-* naming the last complete epoch (the\n"
+                   "# EXIT trap; an evicted pod is SIGKILLed, runs no trap and is not counted). Two\n"
+                   "# failed attempts with no epoch completed in between stop the job.\n"
+                   'NF=$(ls ${OUT}/attempts | grep -c -- "-e${LAST}$" || true)\n'
+                   '[ "${NF}" -lt 2 ] || { echo "FATAL: ${NF} failed attempts after epoch ${LAST}"; exit ${HALT}; }\n')
+        record = 'cp "${SIDECAR}" ${OUT}/\nsha256sum "${SIDECAR}" > ${OUT}/reweight_sidecar.sha256\n'
+        manifest = f"""MANIFEST=${{OUT}}/run_manifest.json
+[ -f ${{MANIFEST}} ] && MANIFEST=${{OUT}}/run_manifest.${{ATTEMPT}}.json
+python3 scripts/write_run_manifest.py --driver pretrain_v2 --run-id ${{RUN_ID}} --arm {arm['name']} \\
+  --num-classes {k} --seed ${{SEED}} --data-config ${{CFG}} --samples-per-epoch {samples} \\
+  --num-epochs {epochs} --batch-size 512{f" --lambda-mass {float(arm['mass_lambda'])}" if arm.get('mass_lambda') is not None else ""}{" --mpm-mask-rate 0.40" if obj == "mpm" else ""} \\
+  --num-workers 5 --data-split-num 200 --fetch-step 1.0 {window} --keep-checkpoints {V2_KEEP} \\
+  --select-on {V2_SELECT}{f" --extra-selection '{arm['extra_selection']}'" if arm.get('extra_selection') else ""} \\
+  --val-files "${{VAL_FILES[@]}}" --out ${{MANIFEST}}
+"""
     return f"""(
 set -euo pipefail
 HALT={EXIT_HALT}
+NODE_FAULT={EXIT_NODE_FAULT}
 RUN_ID={run_id}
 SEED={int(run)}
 OUT={out_root}/${{RUN_ID}}
-mkdir -p ${{OUT}}/attempts
 if [ -f ${{OUT}}/DONE ]; then echo "${{RUN_ID}} is DONE"; exit 0; fi
-USE=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
-echo "/data at ${{USE}}%"
-[ "${{USE}}" -le 85 ] || {{ echo "FATAL: /data at ${{USE}}%, above 85%"; exit ${{HALT}}; }}
-# A FAILED attempt leaves attempts/failed-* naming the last complete epoch (the
-# EXIT trap; an evicted pod is SIGKILLed, runs no trap and is not counted). Two
-# failed attempts with no epoch completed in between stop the job.
-# LAST = pretrain_v2.latest_complete_epoch: the newest resume file with its state file beside it.
+{exists}# LAST = pretrain_v2.latest_complete_epoch: the newest resume file with its state file beside it.
 LAST=-1
 for f in ${{OUT}}/net_epoch-*_resume.pt; do
   [ -e "$f" ] || continue
   n=$(basename "$f" | sed 's/^net_epoch-\\([0-9]*\\)_resume\\.pt$/\\1/')
   if [ -f ${{OUT}}/net_epoch-${{n}}_state.pt ] && [ "$n" -gt "${{LAST}}" ]; then LAST=$n; fi
 done
-NF=$(ls ${{OUT}}/attempts | grep -c -- "-e${{LAST}}$" || true)
-[ "${{NF}}" -lt 2 ] || {{ echo "FATAL: ${{NF}} failed attempts after epoch ${{LAST}}"; exit ${{HALT}}; }}
+# Before anything is written: a fresh start needs /data at most {V2_FRESH_CEIL}% full; a run that
+# resumes goes on up to {V2_RESUME_CEIL}%, so that the epochs it has are not stranded.
+CEIL={V2_FRESH_CEIL}; [ "${{LAST}}" -lt 0 ] || CEIL={V2_RESUME_CEIL}
+USE=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+echo "/data at ${{USE}}%"
+[ "${{USE}}" -le "${{CEIL}}" ] || {{ echo "FATAL: /data at ${{USE}}%, above ${{CEIL}}%"; exit ${{HALT}}; }}
+mkdir -p ${{OUT}}/attempts
+{counted}# A NODE FAULT is the node's failure, not the run's: the GPU does not answer
+# (experiments/FT/gpu_probe.py) at pod start or after a failed attempt, the driver finds
+# no usable GPU (rc {EXIT_NO_GPU}), or the attempt's part of train.log holds a CUDA device
+# fault. It leaves no failed-* marker; the node is recorded in attempts.log and
+# {faults} and the pod exits NODE_FAULT, which the Job counts against its retries.
+# {NODE_FAULT_LIMIT} node faults stop the job.
+NNF=$(cat ${{OUT}}/{faults} 2>/dev/null | grep -c "" || true)
+[ "${{NNF}}" -lt {NODE_FAULT_LIMIT} ] || {{ echo "FATAL: ${{NNF}} node faults"; exit ${{HALT}}; }}
 ATTEMPT=$(date -u +%Y%m%dT%H%M%SZ)
-trap 'rc=$?; if [ ${{rc}} -ne 0 ] && [ ${{rc}} -ne ${{HALT}} ]; then echo "rc=${{rc}} pod=${{POD_NAME}} node=${{NODE_NAME}}" > ${{OUT}}/attempts/failed-${{ATTEMPT}}-e${{LAST}}; fi' EXIT
-echo "${{ATTEMPT}} pod=${{POD_NAME}} node=${{NODE_NAME}} gpu=${{GPU_PRODUCT}} after_epoch=${{LAST}} ref=${{REPO_REF}}" >> ${{OUT}}/attempts.log
+node_fault () {{
+  echo "${{ATTEMPT}} NODE_FAULT $1 pod=${{POD_NAME}} node=${{NODE_NAME}} after_epoch=${{LAST}}" | tee -a ${{OUT}}/attempts.log ${{OUT}}/{faults}
+  exit ${{NODE_FAULT}}
+}}
+python3 experiments/FT/gpu_probe.py || node_fault preflight
+LOG0=$(cat ${{OUT}}/train.log 2>/dev/null | grep -c "" || true)
+# rc {EXIT_NONFINITE} is pretrain_v2's non-finite training loss: always a failed attempt of the run.
+# rc {EXIT_NO_GPU} is a driver's "no usable GPU": always a node fault, whatever the probe says.
+on_exit () {{
+  local rc=$?
+  [ ${{rc}} -ne 0 ] && [ ${{rc}} -ne ${{HALT}} ] && [ ${{rc}} -ne ${{NODE_FAULT}} ] || return 0
+  [ ${{rc}} -ne {EXIT_NO_GPU} ] || node_fault "rc=${{rc}}"
+  if [ ${{rc}} -ne {EXIT_NONFINITE} ] && {{ ! python3 experiments/FT/gpu_probe.py ||
+      grep -qE "{CUDA_FAULT}" <(tail -n +$((LOG0 + 1)) ${{OUT}}/train.log 2>/dev/null); }}; then
+    node_fault "rc=${{rc}}"
+  fi
+  echo "rc=${{rc}} pod=${{POD_NAME}} node=${{NODE_NAME}}" > ${{OUT}}/attempts/failed-${{ATTEMPT}}-{mark}
+}}
+trap on_exit EXIT
+echo "${{ATTEMPT}}{what} pod=${{POD_NAME}} node=${{NODE_NAME}} gpu=${{GPU_PRODUCT}} after_epoch=${{LAST}} ref=${{REPO_REF}}" >> ${{OUT}}/attempts.log
 TRAIN_FILES=({' '.join(g.split(':', 1)[1] for g in TRAIN_GLOBS)})
 VAL_FILES=({' '.join(VAL_GLOBS)})
 n_present () {{ local n=0; for f in "$@"; do [ -f "$f" ] && n=$((n+1)); done; echo $n; }}
@@ -740,25 +834,16 @@ bad = sv.sidecar_mismatch(sys.argv[1], sys.argv[2])
 print("sidecar check:", "differs in %s" % bad if bad else "its config plus reweight_hists")
 sys.exit(1 if bad else 0)
 PY
-cp "${{SIDECAR}}" ${{OUT}}/
-sha256sum "${{SIDECAR}}" > ${{OUT}}/reweight_sidecar.sha256
-MANIFEST=${{OUT}}/run_manifest.json
-[ -f ${{MANIFEST}} ] && MANIFEST=${{OUT}}/run_manifest.${{ATTEMPT}}.json
-python3 scripts/write_run_manifest.py --driver pretrain_v2 --run-id ${{RUN_ID}} --arm {arm['name']} \\
-  --num-classes {k} --seed ${{SEED}} --data-config ${{CFG}} --samples-per-epoch {samples} \\
-  --num-epochs {epochs} --batch-size 512{f" --lambda-mass {float(arm['mass_lambda'])}" if arm.get('mass_lambda') is not None else ""}{" --mpm-mask-rate 0.40" if obj == "mpm" else ""} \\
-  --num-workers 5 --data-split-num 200 --fetch-step 1.0 {window} --keep-checkpoints {V2_KEEP} \\
-  --select-on {V2_SELECT}{f" --extra-selection '{arm['extra_selection']}'" if arm.get('extra_selection') else ""} \\
-  --val-files "${{VAL_FILES[@]}}" --out ${{MANIFEST}}
-{run_block})
+{record}{manifest}{run_block})
 """
 
 
 def v2_job(name: str, scripts: list, gpu, tag: str, title: str, *,
-           cpu: str = V2_CPU, mem: str = V2_MEM, pre: str = "") -> str:
+           cpu: str = V2_CPU, mem: str = V2_MEM, pre: str = "", suspend: bool = False) -> str:
     """A Job that clones `tag` and runs each script in turn, with the retry policy
-    of scripts/build_ft_jobs.py (commit 3cb4d7a): evictions ignored, exit 42 fails
-    the Job at once, other failures counted up to V2_BACKOFF."""
+    of scripts/build_ft_jobs.py's resumable specs: evictions ignored, exit 42 fails
+    the Job at once, node faults (43) and other failures counted up to V2_BACKOFF.
+    A suspended Job starts no pod until it is released (scripts/release_v2.py)."""
     if len(name) > 63:
         raise ValueError(f"{name}: longer than a Kubernetes name allows")
     exclude = ", ".join(f'"{n}"' for n in V2_BAD_NODES)
@@ -778,11 +863,13 @@ metadata:
   name: {name}
   namespace: cms-ml
 spec:
-  backoffLimit: {V2_BACKOFF}
+{"  suspend: true" + chr(10) if suspend else ""}  backoffLimit: {V2_BACKOFF}
   podFailurePolicy:
     rules:
     - action: FailJob
       onExitCodes: {{ containerName: main, operator: In, values: [{EXIT_HALT}] }}
+    - action: Count
+      onExitCodes: {{ containerName: main, operator: In, values: [{EXIT_NODE_FAULT}] }}
     - action: Ignore
       onPodConditions:
       - type: DisruptionTarget
@@ -794,6 +881,8 @@ spec:
         image: {V2_IMAGE}
         command: ["/bin/bash", "-c"]
         env:
+        - name: IMAGE_DIGEST
+          value: "{V2_IMAGE_DIGEST}"
         - name: GPU_PRODUCT
           value: "{gpu if isinstance(gpu, str) else ','.join(gpu)}"
         - name: NODE_NAME
@@ -1161,22 +1250,33 @@ def v2_missing_sidecars(tag: str, listing) -> list:
 # written by pretrain_v2's own torch_save of its state and resume dicts (2026-10-01): 8.872 and
 # 35.423 MiB, 44.3 MiB per epoch, so --keep-checkpoints all would hold 3.5 GiB per run. Records:
 # init_trunk.pt (8.2 MiB) plus metrics, stream records and logs, bounded at 0.1 MiB per epoch.
+# pretrain_v2 also keeps V2_EARLY_STATES state files of early epochs (EARLY_KEEP), the same size,
+# and the gradient diagnostic's batch (pretrain_v2.DIAG_FILE): 4,096 jets x 24 x 128 float32.
 V2_STATE_MIB = 8.872
 V2_RESUME_MIB = 35.423
 V2_RECORDS_MIB = 16.0
+V2_EARLY_STATES = 11
+V2_DIAG_BATCH_MIB = 48.0
 
 
 def v2_run_peak_gib() -> float:
-    return (14 * V2_STATE_MIB + 2 * V2_RESUME_MIB + V2_RECORDS_MIB) / 1024
+    return ((14 + V2_EARLY_STATES) * V2_STATE_MIB + 2 * V2_RESUME_MIB + V2_RECORDS_MIB
+            + V2_DIAG_BATCH_MIB) / 1024
+
+
+# Space every run of the grid can take at its peak. scripts/build_ft_jobs.py and
+# scripts/build_extract_jobs.py hold it back from /data's headroom until they are told
+# that v2 pretraining has finished (--v2-pretraining-done).
+V2_GRID_RESERVE_GIB = sum(int(a["runs"]) for a in v2_arms()) * v2_run_peak_gib()
 
 
 def v2_storage_problem(n_runs: int, headroom_gib: float):
-    """None if n_runs runs at their peak fit the headroom below the jobs' 85% guard,
-    else the reason."""
+    """None if n_runs runs at their peak fit the headroom below a fresh start's storage
+    guard (V2_FRESH_CEIL), else the reason."""
     need = n_runs * v2_run_peak_gib()
     if need > headroom_gib:
         return (f"{n_runs} runs x {v2_run_peak_gib():.3f} GiB = {need:.1f} GiB, above the "
-                f"{headroom_gib:.1f} GiB to the 85% guard")
+                f"{headroom_gib:.1f} GiB to the {V2_FRESH_CEIL}% guard")
     return None
 
 
@@ -1191,6 +1291,34 @@ def v2_grid_specs(tag: str, tiers=None) -> dict:
                                  run_id=v2_run_id(arm["name"], run), job=v2_job_name(arm["name"], run))
             out[f"job-{name}.yaml"] = spec
     return out
+
+
+# ------------------------------------------------ finishing a run whose end step failed
+V2_FINALIZE_DIR = K8S / "v2" / "finalize"
+
+
+def v2_grid_run(run_id: str) -> tuple:
+    """(arm, run index) of the grid run whose directory is V2_ROOT/run_id."""
+    for arm in v2_arms():
+        for run in range(1, int(arm["runs"]) + 1):
+            if v2_run_id(arm["name"], run) == run_id:
+                return arm, run
+    raise SystemExit(f"{run_id}: not a run of the v2 grid (mtx-<arm>-s<k>, as under {V2_ROOT})")
+
+
+def v2_finalize_spec(run_id: str, tag: str) -> tuple:
+    """(job name, spec text) of the job that runs experiments/MTX/finalize_v2.py on one grid
+    run, written on demand when every epoch finished but the end step (window best, weight
+    average, DONE) failed. It is the run's grid spec in all but the name, the script's
+    driver and that it is not suspended: the same image, mounts, data files, resources,
+    retry policy and GPU product, since the weight average's BatchNorm pass must run on the
+    product the run trained on (finalize_v2 refuses any other)."""
+    arm, run = v2_grid_run(run_id)
+    gpu = V2_GPU_BY_RUN[run]
+    job = "mtx2-finalize-" + run_id[len("mtx-"):] + "-raunav"
+    script = v2_script(arm, run, run_id=run_id, finalize=True)
+    title = f"v2 FINALIZE -- {arm['name']}, run {run}: redo the end step of {V2_ROOT}/{run_id}, {gpu}."
+    return job, v2_job(job, [script], gpu, tag, title)
 
 
 def main() -> int:
@@ -1217,6 +1345,9 @@ def main() -> int:
                          "must fit at their peak")
     ap.add_argument("--started", nargs="*", default=[], metavar="RUN_ID",
                     help="--v2: runs already started, not counted against the headroom")
+    ap.add_argument("--v2-finalize", metavar="RUN_ID", default=None,
+                    help="write the finalize_v2 job of one grid run (its directory name under "
+                         f"{V2_ROOT}, e.g. mtx-r16q1-s4) into {V2_FINALIZE_DIR.relative_to(ROOT)}")
     ap.add_argument("--v2-dryrun", metavar="DIR", default=None,
                     help="write the loader dry-run spec of --arm (its selection and window) into DIR")
     ap.add_argument("--arm", default="R16_Q1", help="--v2-dryrun: the grid arm")
@@ -1245,6 +1376,15 @@ def main() -> int:
         for fn, spec in specs.items():
             (d / fn).write_text(spec)
             print(d / fn)
+        return 0
+
+    if args.v2_finalize:
+        if not args.tag:
+            ap.error("--v2-finalize needs --tag")
+        n, sp = v2_finalize_spec(args.v2_finalize, args.tag)
+        V2_FINALIZE_DIR.mkdir(parents=True, exist_ok=True)
+        (V2_FINALIZE_DIR / f"job-{n}.yaml").write_text(sp)
+        print(V2_FINALIZE_DIR / f"job-{n}.yaml")
         return 0
 
     if args.v2_makeweight:

@@ -680,14 +680,17 @@ def test_only_a_launch_or_a_retirement_exempts_a_spec(tmp_path, monkeypatch):
 def test_a_sibling_specs_launch_does_not_exempt_a_spec():
     """The real cases. job-ft-legs-bench-raunav.yaml was never applied (kubectl:
     NotFound, 2026-09-18) and was once exempted by bench-v3-lastepoch, a row
-    whose manifest_path is job-ft-legs-bench-v3-last-a-raunav.yaml. The three
+    whose manifest_path is job-ft-legs-bench-v3-last-a-raunav.yaml; since
+    2026-10-01 its own row retires it, and that row, not the sibling's, is what
+    exempts it. The three
     extraction specs were exempted by their -vcbwindow-full siblings until their
     own launch rows were written. probe-bvc ran as probe-bvc-v1, which is no
     spec's name, so that row is its own."""
     def why(path):
         spec = REPO / "experiments" / path
         return _exemption(_names(spec, spec.read_text()))
-    assert why("FT/k8s/job-ft-legs-bench-raunav.yaml") is None
+    assert why("FT/k8s/job-ft-legs-bench-raunav.yaml").startswith(
+        "retired: ledger row ft-legs-bench: never launched")
     for arm in ("l162-s4", "l162-s5", "r16q1-s1"):
         assert why(f"EVAL/k8s/job-extract-mtx-{arm}-raunav.yaml").startswith(
             f"launched: ledger row extract-mtx-{arm} (launched)")
