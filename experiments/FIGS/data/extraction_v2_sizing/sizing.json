@@ -302,15 +302,41 @@
    }
   }
  },
- "n_models_v2_grid": 73,
- "n_runs_v2_grid": 76,
- "checkpoint_bytes_per_run": 150000000.0,
+ "n_runs_v2_grid": 88,
+ "checkpoint_bytes_per_run": 327523762.176,
+ "checkpoint_bytes_per_run_from": {
+  "source": "retained_bytes_per_run",
+  "state_files": 24,
+  "state_mib": 8.872,
+  "early_keep": [
+   0,
+   2,
+   4,
+   9,
+   19,
+   29,
+   39,
+   49,
+   55,
+   62,
+   69
+  ],
+  "resume_files": 1,
+  "resume_mib": 35.423,
+  "records_mib": 16.0,
+  "diag_batch_mib": 48.0
+ },
+ "fine_tuning_bytes_from": {
+  "source": "v2_need",
+  "specs": 69
+ },
  "observers": [
   "jet_pt",
   "jet_eta",
   "jet_sdmass",
   "genjet_sdmass"
  ],
+ "pooled_row_bytes": 256,
  "feature_rules": {
   "anywhere": [
    0,
@@ -375,61 +401,45 @@
   ]
  },
  "storage": {
-  "features and heads at bestval and wavg; all classification runs": {
+  "features, pooled and heads at best70, wavg and bestval; every run and the init references": {
    "feature_rows_per_checkpoint": 5091401,
    "head_rows_per_checkpoint": 631587,
-   "bytes_per_model": 2967551388,
-   "extraction_bytes": 216631251324,
-   "pretraining_checkpoint_bytes": 11400000000.0,
-   "bytes_total": 228031251324.0,
-   "n_models": 73,
-   "checkpoints_with_features": 2,
-   "checkpoints_with_heads": 2,
+   "bytes_per_checkpoint_features": 2739173738,
+   "bytes_per_checkpoint_heads": 48000612,
+   "checkpoints_per_run": 3,
+   "n_classification_runs": 82,
+   "n_self_supervised_runs": 6,
+   "n_init_references": 5,
+   "n_models": 93,
+   "extraction_bytes": 748645886074,
+   "pretraining_checkpoint_bytes": 28822091071.488,
+   "fine_tuning_bytes": 240976000000.0,
+   "bytes_total": 1018443977145.488,
+   "batchnorm_twins_bytes": 489966678256,
    "fits_under_85pc": false,
-   "headroom_to_85pc_bytes": 57132292505.599976
+   "headroom_to_85pc_bytes": 991641678643.2
   },
-  "features and heads at bestval and wavg; tier-1 runs": {
+  "features, pooled and heads at best70, wavg and bestval; tier-1 runs and the init references": {
    "feature_rows_per_checkpoint": 5091401,
    "head_rows_per_checkpoint": 631587,
-   "bytes_per_model": 2967551388,
-   "extraction_bytes": 118702055520,
-   "pretraining_checkpoint_bytes": 11400000000.0,
-   "bytes_total": 130102055520.0,
-   "n_models": 40,
-   "checkpoints_with_features": 2,
-   "checkpoints_with_heads": 2,
-   "fits_under_85pc": false,
-   "headroom_to_85pc_bytes": 57132292505.599976
-  },
-  "features at bestval, heads at both; all classification runs": {
-   "feature_rows_per_checkpoint": 5091401,
-   "head_rows_per_checkpoint": 631587,
-   "bytes_per_model": 1531776306,
-   "extraction_bytes": 111819670338,
-   "pretraining_checkpoint_bytes": 11400000000.0,
-   "bytes_total": 123219670338.0,
-   "n_models": 73,
-   "checkpoints_with_features": 1,
-   "checkpoints_with_heads": 2,
-   "fits_under_85pc": false,
-   "headroom_to_85pc_bytes": 57132292505.599976
-  },
-  "features at bestval, heads at both; tier-1 runs": {
-   "feature_rows_per_checkpoint": 5091401,
-   "head_rows_per_checkpoint": 631587,
-   "bytes_per_model": 1531776306,
-   "extraction_bytes": 61271052240,
-   "pretraining_checkpoint_bytes": 11400000000.0,
-   "bytes_total": 72671052240.0,
-   "n_models": 40,
-   "checkpoints_with_features": 1,
-   "checkpoints_with_heads": 2,
-   "fits_under_85pc": false,
-   "headroom_to_85pc_bytes": 57132292505.599976
+   "bytes_per_checkpoint_features": 2739173738,
+   "bytes_per_checkpoint_heads": 48000612,
+   "checkpoints_per_run": 3,
+   "n_classification_runs": 55,
+   "n_self_supervised_runs": 0,
+   "n_init_references": 5,
+   "n_models": 60,
+   "extraction_bytes": 473579636440,
+   "pretraining_checkpoint_bytes": 28822091071.488,
+   "fine_tuning_bytes": 240976000000.0,
+   "bytes_total": 743377727511.488,
+   "batchnorm_twins_bytes": 306589178500,
+   "fits_under_85pc": true,
+   "headroom_to_85pc_bytes": 991641678643.2
   }
  },
  "volume": {
-  "size_bytes": 1099511627776.0,
-  "free_bytes": 222059036672.0
+  "size_bytes": 2199023255552.0,
+  "free_bytes": 1321495166976.0
  }
 }

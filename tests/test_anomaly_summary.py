@@ -258,11 +258,12 @@ def test_flags_and_sigma_min_are_reported_at_each_checkpoint_of_the_rule():
     heads = _heads()
     for m in heads["models"].values():
         h = m["checkpoints"]["e079"]["head"]
-        m["checkpoints"]["bestval"] = {"head": dict(h)}
-        m["checkpoints"]["wavg"] = {"head": dict(h)}
+        for tag in ("best70", "wavg", "bestval"):    # A14: primary, robustness, global best
+            m["checkpoints"][tag] = {"head": dict(h)}
     res = S.summarise(_committed(), None, heads)
     cell = res["head_flags"]["models"]["l188-s1"]
-    assert {"bestval", "wavg", "e079", "mean_70_79"} <= set(cell)
+    assert {"best70", "bestval", "wavg", "e079", "mean_70_79"} <= set(cell)
+    assert S.FLAG_TAGS[0] == "best70"
     assert res["checkpoint_rule"]["by_checkpoint"] == {}     # no anomaly cells in these heads
 
 

@@ -1,6 +1,6 @@
 {
  "version": "v2",
- "doc": "The comparisons experiments/STATS/paired_errors.py forms for the v2 runs (amendments A7-A13). Models are the runs of configs/arms/v2_grid.json, named as the runs are (<arm lower-cased, underscores dropped>-s<run>; the self-supervised arm's runs mpm-v2-s<run>), each at a checkpoint: bestval (the primary) or wavg (the weight average of epochs 70-79). Every contrast is formed at each checkpoint, and run k of one arm is paired with run k of another only where their training streams agree up to that checkpoint (A7). Every ratio is coarse over fine: above 1 = the coarser, merged, unseen or control side is worse. Every contrast is also formed between the checkpoints (A8: the result at wavg over the result at bestval). A new arm needs its grid entry and one line here; labels are optional (the arm name stands in). An arm decided but not yet in the grid is listed under pending_arms, and its contrasts form no row until it is; an arm named here that is neither is fatal.",
+ "doc": "The comparisons experiments/STATS/paired_errors.py forms for the v2 runs (amendments A7-A14). Models are the runs of configs/arms/v2_grid.json, named as the runs are (<arm lower-cased, underscores dropped>-s<run>; a self-supervised arm's runs <arm>-v2-s<run>: mpm-v2-s<run>, mpmlofo4p-v2-s<run>), each at a checkpoint (A14): best70 (the primary: the first maximum of the reweighted top-1 accuracy within epochs 70-79; self-supervised, the first minimum of the validation loss), wavg (the weight average of epochs 70-79, the robustness check) or bestval (the global first maximum, the sensitivity check). Every contrast is formed at each checkpoint, and run k of one arm is paired with run k of another only where their training streams agree up to that checkpoint (A7). Every ratio is coarse over fine: above 1 = the coarser, merged, unseen or control side is worse. Every contrast is also formed between the checkpoints (wavg/best70 and bestval/best70) and labelled by the A14 rule. small_sample_rule: the A14 small-sample errors (two runs: the error is never below the observed spread, at one degree of freedom; one run pair: not computed). A new arm needs its grid entry and one line here; labels are optional (the arm name stands in). An arm decided but not yet in the grid is listed under pending_arms, and its contrasts form no row until it is; an arm named here that is neither is fatal.",
  "models": {
   "from_grid": "configs/arms/v2_grid.json"
  },
@@ -8,13 +8,16 @@
   "scratch-v2"
  ],
  "checkpoints": [
-  "bestval",
-  "wavg"
+  "best70",
+  "wavg",
+  "bestval"
  ],
  "pending_arms": {},
  "stream_check": true,
+ "small_sample_rule": true,
  "probe_pairs": "configs/labelmaps/probe_pairs.v2.json",
  "partition_merges": "configs/labelmaps/rand_v2_selection.json",
+ "axis_doses": "configs/labelmaps/axis_doses.v2.json",
  "labels": {
   "L188": "188",
   "L162": "162",
@@ -37,7 +40,8 @@
   "L162_LOFO4P": "162, family unseen",
   "R42_Q1_LOFO4P": "43, family unseen",
   "R16_Q1_LOFO4P": "17, family unseen",
-  "FLAV_F1R": "F1 with a random four-prong cut (F1r)"
+  "FLAV_F1R": "F1 with a random four-prong cut (F1r)",
+  "MPM_LOFO4P": "self-supervised, family unseen"
  },
  "contrasts": [
   {
@@ -97,6 +101,22 @@
    }
   },
   {
+   "id": "mass_lambda_fraction",
+   "amendment": "A11, A14",
+   "kind": "fraction",
+   "estimand": "the fraction of the excess 17-class mass-output cost that the matched lambda removes, (cost17(lambda 5) - cost17(matched lambda)) / (cost17(lambda 5) - cost162(lambda 5)), cost = ln metric with the mass output minus without, paired by run; 95 % Fieller interval",
+   "numerator": {
+    "R16_Q1_MASS": 1,
+    "R16_Q1_MASS_LM": -1
+   },
+   "denominator": {
+    "R16_Q1_MASS": 1,
+    "R16_Q1": -1,
+    "L162_MASS": -1,
+    "L162": 1
+   }
+  },
+  {
    "id": "partition_split_vs_merged",
    "amendment": "A10",
    "kind": "partition_split_vs_merged",
@@ -119,6 +139,41 @@
     "RAND2_p4",
     "RAND2_p5"
    ]
+  },
+  {
+   "id": "partition_joint_dose",
+   "amendment": "A14",
+   "kind": "partition_joint",
+   "arms": [
+    "RAND2_p1",
+    "RAND2_p2",
+    "RAND2_p3",
+    "RAND2_p4",
+    "RAND2_p5"
+   ],
+   "dose_terms": true,
+   "note": "secondary reading: the joint fit with one term per axis in each partition's realised dose of the probe pair's axis, the pair's own classes left out (axis_doses)"
+  },
+  {
+   "id": "random_vs_semantic",
+   "amendment": "A14",
+   "kind": "random_vs_semantic",
+   "arms": [
+    "RAND2_p1",
+    "RAND2_p2",
+    "RAND2_p3",
+    "RAND2_p4",
+    "RAND2_p5"
+   ],
+   "references": [
+    "R16_Q1",
+    "R42_Q1"
+   ],
+   "runs": [
+    1,
+    2
+   ],
+   "account_reference": "R16_Q1"
   },
   {
    "id": "flavour_pair",
@@ -165,7 +220,7 @@
      "FLAV_F0"
     ]
    ],
-   "fine_run_spread": true
+   "note": "descriptive; P2 (c), the paired equivalence of F0 and the 17-class model, is read in p2"
   },
   {
    "id": "flavour_pair_vs_half_gap",
@@ -178,6 +233,21 @@
     "FLAV_F1": -1,
     "R16_Q1": -0.5,
     "R42_Q1": 0.5
+   }
+  },
+  {
+   "id": "p2",
+   "amendment": "A14",
+   "kind": "p2_verdict",
+   "metric": "1-auc",
+   "two_prong_pair": "bb/cc",
+   "four_prong_pair": "bbqq/ccqq",
+   "roles": {
+    "F0": "FLAV_F0",
+    "F1": "FLAV_F1",
+    "F1R": "FLAV_F1R",
+    "R16": "R16_Q1",
+    "R42": "R42_Q1"
    }
   },
   {
@@ -200,9 +270,19 @@
     [
      "R16_Q1",
      "R16_Q1_LOFO4P"
+    ],
+    [
+     "MPM",
+     "MPM_LOFO4P"
     ]
    ],
-   "stream_exempt": "a run that leaves the family out draws a different stream by construction (a selection on the stored label), so it cannot be stream-matched to its parent; the two arms are compared unpaired"
+   "stream_exempt": "a run that leaves the family out draws a different stream by construction (a selection on the stored label), so it cannot be stream-matched to its parent; the two arms are compared unpaired",
+   "runs": [
+    1,
+    2,
+    3
+   ],
+   "note": "A14: Welch, parent runs 1-3 only, so both sides train on one GPU product (run indices 4-5 train on L40)"
   },
   {
    "id": "family_unseen_ladder",
@@ -213,14 +293,88 @@
     "L162_LOFO4P",
     "R42_Q1_LOFO4P",
     "R16_Q1_LOFO4P"
-   ]
+   ],
+   "descriptive": "A14: paired, descriptive at three runs, no null read"
+  },
+  {
+   "id": "self_supervised_vs_vocabulary",
+   "amendment": "A14",
+   "kind": "unpaired",
+   "families": [
+    "ft"
+   ],
+   "runs": [
+    1,
+    2,
+    3
+   ],
+   "pairs": [
+    [
+     "L188",
+     "MPM"
+    ],
+    [
+     "L162",
+     "MPM"
+    ],
+    [
+     "R63_Q1",
+     "MPM"
+    ],
+    [
+     "R42_Q1",
+     "MPM"
+    ],
+    [
+     "R29_Q1",
+     "MPM"
+    ],
+    [
+     "R16_Q1",
+     "MPM"
+    ]
+   ],
+   "stream_exempt": "A14: the self-supervised model is compared with each vocabulary unpaired (Welch); runs 1-3 only, so both sides train on one GPU product"
+  },
+  {
+   "id": "self_supervised_family_unseen_vs_vocabulary",
+   "amendment": "A14",
+   "kind": "unpaired",
+   "families": [
+    "ft"
+   ],
+   "runs": [
+    1,
+    2,
+    3
+   ],
+   "pairs": [
+    [
+     "L188_LOFO4P",
+     "MPM_LOFO4P"
+    ],
+    [
+     "L162_LOFO4P",
+     "MPM_LOFO4P"
+    ],
+    [
+     "R42_Q1_LOFO4P",
+     "MPM_LOFO4P"
+    ],
+    [
+     "R16_Q1_LOFO4P",
+     "MPM_LOFO4P"
+    ]
+   ],
+   "stream_exempt": "A14: as self_supervised_vs_vocabulary, among the models that leave the family out"
   },
   {
    "id": "checkpoint",
-   "amendment": "A8",
+   "amendment": "A14",
    "kind": "checkpoint",
-   "primary": "bestval",
-   "robustness": "wavg"
+   "primary": "best70",
+   "robustness": "wavg",
+   "sensitivity": "bestval"
   }
  ]
 }

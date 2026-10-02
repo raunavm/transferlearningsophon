@@ -984,42 +984,102 @@ def build_v1err() -> dict[str, str]:
 
 # ========================================================= v2 extraction specs
 # One job per v2 pretraining run of configs/arms/v2_grid.json: the whole test
-# split in one pass, at the two checkpoints of the rule (draft amendment A8): the
-# primary, best validation on the fixed sample, and the robustness checkpoint,
-# the weight average of epochs 70-79. Both keep float16 features of every probe
-# task's classes (windowed-only classes inside their window) and of the first
-# 2,000,000 jets, and the per-jet output-layer scores. GPU: the split is
-# 27.4 M jets. NOT launched until the v2 runs exist; the
-# storage this needs is estimated by experiments/EVAL/class_counts.py
-# (--storage) against the volume's free space before any launch.
-# extract_v2.py with observers.npz and the full-range b/c rows (2026-10-01); the
-# tag is moved forward when the plan is emitted
-V2_PIN = "mtx-s1.85"
+# split in one pass, at the three checkpoints of amendment A14: the primary,
+# best70 (the first maximum on the fixed validation sample within epochs 70-79),
+# the robustness checkpoint, the weight average of epochs 70-79, and the
+# sensitivity check, the global best epoch (bestval; extracted once and linked
+# where it is best70's epoch). Each keeps float16 features of every probe task's
+# classes (windowed-only classes inside their window) and of the first 2,000,000
+# jets, the pooled embedding of the same rows, and, for a model with an output
+# layer, the per-jet output-layer scores. The self-supervised runs are extracted
+# too (no output layer; the pooled embedding is their readout), and the untrained
+# trunk of run indices 1-5 (V2_INIT_ARM's init_trunk.pt; amendment A7 makes it
+# the same for every vocabulary) is extracted as a reference row, tag init.
+# GPU: the split is 27.4 M jets. NOT launched until the v2 runs exist.
+V2_PIN = "mtx-s1.98"
 V2_ROOT = "/data/results/mtx_v2"
 V2_OUT = "/data/results/eval/v2"
 V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
-# THE PLAN MUST FIT. build_v2() emits features and head scores at both checkpoints
-# of the rule for every classification run; experiments/EVAL/extraction_v2_sizing.py
-# sizes that plan with the v2 runs' own pretraining checkpoints, and --v2 refuses
-# to write specs unless it fits under the 85 % line. Picking a smaller plan is the
-# PI's storage decision, not this script's.
+V2_CHECKPOINTS = ("best70", "bestval", "wavg")
+V2_INIT_ARM, V2_INIT_RUNS = "L188", range(1, 6)
+# THE PLAN MUST FIT. build_v2() emits that plan for every run and the five init
+# references; experiments/EVAL/extraction_v2_sizing.py sizes it (bestval counted
+# as a checkpoint of its own for every run, the upper bound) with the v2 runs' own
+# pretraining checkpoints and every v2 fine-tuning spec (scripts/build_ft_jobs.py
+# v2_need), and --v2 refuses to write specs unless all of it fits under the 85 %
+# line. One budget: build_ft_jobs.py holds this plan's extraction back from its
+# own headroom in turn, because each plan fitted alone and both together did not
+# (verification 2026-10-02). There is no smaller plan: A8 and A14 need every
+# checkpoint's features. Making room is the PI's storage decision, not this script's.
 V2_SIZING = ROOT / "experiments" / "FIGS" / "data" / "extraction_v2_sizing" / "sizing.json"
-V2_PLAN = "features and heads at bestval and wavg; all classification runs"
+V2_PLAN = "features, pooled and heads at best70, wavg and bestval; every run and the init references"
+# THE PLAN IS NOT FINAL UNTIL A14's BATCHNORM RULE HAS READ OUT ("Batch
+# normalisation, decomposition on v1", fixed before the job runs): if recomputing
+# BatchNorm alone repairs at least half of the stored v1 epochs that are defective
+# under the primary defect rule, over the eight runs, every reported v2 checkpoint
+# also gets a BatchNorm-recomputed twin, reported beside it. This plan extracts no
+# twin and the sizing leaves it out of bytes_total (batchnorm_twins_bytes is the
+# contingency). --v2 refuses until experiments/DIAG/head_bn_diag.py's readout
+# (job diag-head-bn-raunav, /data/results/eval/head_epoch_diag_bn/head_bn_diag.json)
+# is committed here and says the rule does not fire.
+V2_BN_DIAG = ROOT / "experiments" / "FIGS" / "data" / "head_epoch_diag" / "head_bn_diag.json"
 
 
-def v2_plan_fits() -> tuple[bool, str]:
-    """(whether the plan build_v2 emits fits, why), from the committed sizing."""
+def _script(name: str):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / f"{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def v2_plan_fits(v2_pretraining_done: bool = False) -> tuple[bool, str]:
+    """(whether the plan build_v2 emits fits, with the v2 fine-tuning, why), from the
+    committed sizing. Until v2 pretraining has finished, the grid's peak
+    (scripts/build_mtx_launch.py V2_GRID_RESERVE_GIB) is held back from the headroom; it
+    covers the checkpoints the runs keep at the end, which the sizing counts, so those are
+    not counted twice."""
     import json
     s = json.loads(V2_SIZING.read_text())
     e = s["storage"].get(V2_PLAN)
-    if e is None or "pretraining_checkpoint_bytes" not in e:
-        return False, f"{V2_SIZING.name} predates the checkpoint footprint; rerun extraction_v2_sizing.py"
-    if e["n_models"] != len(v2_runs()):
-        return False, f"{V2_SIZING.name} sizes {e['n_models']} runs, the grid has {len(v2_runs())}"
-    return bool(e["fits_under_85pc"]), (
-        f"{e['bytes_total'] / 1e9:.1f} GB (extraction {e['extraction_bytes'] / 1e9:.1f} + "
-        f"pretraining checkpoints {e['pretraining_checkpoint_bytes'] / 1e9:.1f}) against "
-        f"{e['headroom_to_85pc_bytes'] / 1e9:.1f} GB to the 85 % line")
+    if e is None or "pretraining_checkpoint_bytes" not in e or "fine_tuning_bytes" not in e:
+        return False, f"{V2_SIZING.name} does not size the plan {V2_PLAN!r}; rerun extraction_v2_sizing.py"
+    n = len(v2_runs()) + len(v2_init_refs())
+    if e["n_models"] != n:
+        return False, f"{V2_SIZING.name} sizes {e['n_models']} models, the grid has {n}"
+    if s.get("fine_tuning_bytes_from", {}).get("source") == "v2_need":
+        now = sum(_script("build_ft_jobs").v2_need().values())
+        if abs(now - e["fine_tuning_bytes"]) > 1:
+            return False, (f"{V2_SIZING.name} counts {e['fine_tuning_bytes'] / 1e9:.1f} GB of v2 "
+                           f"fine-tuning, scripts/build_ft_jobs.py now emits {now / 1e9:.1f} GB; "
+                           "rerun extraction_v2_sizing.py")
+    why = (f"{e['bytes_total'] / 1e9:.1f} GB (extraction {e['extraction_bytes'] / 1e9:.1f} + "
+           f"pretraining checkpoints {e['pretraining_checkpoint_bytes'] / 1e9:.1f} + "
+           f"v2 fine-tuning {e['fine_tuning_bytes'] / 1e9:.1f}) against "
+           f"{e['headroom_to_85pc_bytes'] / 1e9:.1f} GB to the 85 % line")
+    if v2_pretraining_done:
+        return bool(e["fits_under_85pc"]), why
+    launch = _script("build_mtx_launch")
+    reserve = max(launch.V2_GRID_RESERVE_GIB * 2**30 - e["pretraining_checkpoint_bytes"], 0)
+    return (bool(e["fits_under_85pc"]) and e["bytes_total"] < e["headroom_to_85pc_bytes"] - reserve,
+            f"{why}, less {reserve / 1e9:.1f} GB more held for v2 pretraining at its peak "
+            f"(--v2-pretraining-done releases it)")
+
+
+def v2_bn_twins_needed() -> tuple[bool | None, str]:
+    """(whether A14's BatchNorm rule fires, why), from the committed readout
+    (V2_BN_DIAG); None while there is no readout over the eight runs."""
+    import json
+    if not V2_BN_DIAG.exists():
+        return None, (f"{V2_BN_DIAG.relative_to(ROOT)} is absent: experiments/DIAG/head_bn_diag.py "
+                      "has not read out amendment A14's BatchNorm rule")
+    r = json.loads(V2_BN_DIAG.read_text())
+    c = r["counts"][r["primary_rule"]]
+    if c["runs"] != 8:
+        return None, f"{V2_BN_DIAG.name} covers {c['runs']} runs; A14's BatchNorm rule counts over eight"
+    return 2 * c["repaired_by_bn"] >= c["defective_stored_epochs"], (
+        f"recomputing BatchNorm alone repairs {c['repaired_by_bn']} of the "
+        f"{c['defective_stored_epochs']} defective stored epochs ({r['primary_rule']})")
 
 
 def v2_rung(arm: str) -> str:
@@ -1029,30 +1089,41 @@ def v2_rung(arm: str) -> str:
 
 
 def v2_runs() -> list[tuple[str, str, int, int, int]]:
-    """(run name, arm, K, num_reg, seed) for every classification run of the grid."""
+    """(run name, arm, K, num_reg, seed) for every run of the grid; K = 0 for a
+    self-supervised run, which has no output layer."""
     import json
     grid = json.loads(V2_GRID.read_text())
     out = []
     for a in grid["arms"]:
-        if a["num_classes"] is None:            # the self-supervised run has no output layer
-            continue
         stem = a["name"].lower().replace("_", "")
         for s in range(1, a["runs"] + 1):
-            out.append((f"mtx-{stem}-s{s}", a["name"], a["num_classes"],
+            out.append((f"mtx-{stem}-s{s}", a["name"], a["num_classes"] or 0,
                         1 if a["mass_lambda"] else 0, s))
+    return out
+
+
+def v2_init_refs() -> list[tuple[str, str]]:
+    """(reference name, run whose init_trunk.pt it extracts) for run indices 1-5."""
+    runs = {r for r, *_ in v2_runs()}
+    stem = V2_INIT_ARM.lower().replace("_", "")
+    out = [(f"init-s{s}", f"mtx-{stem}-s{s}") for s in V2_INIT_RUNS]
+    assert all(r in runs for _, r in out), out
     return out
 
 
 def build_v2() -> dict[str, str]:
     out = {}
     files = interleaved_files()
-    for run, arm, k, reg, _s in v2_runs():
-        name = f"extract-v2-{run.removeprefix('mtx-')}-raunav"
-        body = (f"          OUT={V2_OUT}/{run}\n"
+    jobs = [(run.removeprefix("mtx-"), run, f"{V2_OUT}/{run}", v2_rung(arm), k, reg,
+             " ".join(V2_CHECKPOINTS)) for run, arm, k, reg, _s in v2_runs()]
+    jobs += [(ref, run, f"{V2_OUT}/{ref}", "none", 0, 0, "init") for ref, run in v2_init_refs()]
+    for stem, run, dest, rung, k, reg, ckpts in jobs:
+        name = f"extract-v2-{stem}-raunav"
+        body = (f"          OUT={dest}\n"
                 f"          python3 experiments/EVAL/extract_v2.py \\\n"
-                f"            --run-dir {V2_ROOT}/{run} --rung {v2_rung(arm)} "
+                f"            --run-dir {V2_ROOT}/{run} --rung {rung} "
                 f"--num-classes {k} --num-reg {reg} \\\n"
-                f"            --checkpoints bestval wavg --features-at bestval wavg \\\n"
+                f"            --checkpoints {ckpts} \\\n"
                 f"            --feature-classes probe --prefix-features 2000000 \\\n"
                 f"            --head-prefix 2000000 --diag-stride 100 \\\n"
                 f"            --data-test {files} \\\n"
@@ -1206,7 +1277,10 @@ def main() -> int:
                          "for the caches' 2,000,000 jets (see OBSERVERS_TEMPLATE)")
     ap.add_argument("--v2", action="store_true",
                     help="emit ONLY the v2 extraction specs (one per run of "
-                         "configs/arms/v2_grid.json); not launchable before the runs exist")
+                         "configs/arms/v2_grid.json, and the five init references); "
+                         "not launchable before the runs exist")
+    ap.add_argument("--v2-pretraining-done", action="store_true",
+                    help="with --v2: v2 pretraining has finished, so its peak is no longer held back")
     ap.add_argument("--v1err", action="store_true",
                     help="emit ONLY the v1 head jobs by the checkpoint rule and the "
                          "test-split class count (audit 2026-09-29)")
@@ -1229,12 +1303,21 @@ def main() -> int:
         return 0
 
     if args.v2:
-        fits, why = v2_plan_fits()
-        if not fits:
-            sys.exit(f"FATAL: the v2 extraction plan ({V2_PLAN}) does not fit: {why}. "
-                     "Nothing written; the plan waits on the PI's storage decision.")
-        verify_pin(V2_PIN, V1ERR_NEEDED, args.pin_not_yet_tagged,
-                   {"experiments/EVAL/extract_v2.py": "V2_OBSERVERS"})
+        fits, why = v2_plan_fits(args.v2_pretraining_done)
+        twins, bn_why = v2_bn_twins_needed()
+        problems = [] if fits else [f"does not fit: {why}"]
+        if twins is None:
+            problems.append(f"is not final: {bn_why}")
+        elif twins:
+            problems.append(f"lacks the BatchNorm-recomputed twins A14 now requires ({bn_why}); "
+                            f"they are not extracted, and {V2_SIZING.name} batchnorm_twins_bytes "
+                            "is their size")
+        if problems:
+            sys.exit(f"FATAL: the v2 extraction plan ({V2_PLAN}) " + "; and it ".join(problems)
+                     + ". Nothing written; the plan waits on the PI's storage decision.")
+        verify_pin(V2_PIN, V1ERR_NEEDED + ["experiments/FT/ft_v2.py"], args.pin_not_yet_tagged,
+                   {"experiments/EVAL/extract_v2.py": "PooledTap",
+                    "experiments/FT/ft_v2.py": "def window_best"})
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         for fname, text in build_v2().items():
             yaml.safe_load(text)

@@ -14,8 +14,9 @@ src/stats/paired.py; this file only feeds it. Three steps:
   ratios       every comparison of a contrasts file (configs/analysis/), plus a
                Garwood interval on every rejection (per run, and pooled over runs
                with the caveat that pooling runs scored on the same jets
-               understates the error). v2: every comparison also at the weight
-               average over the best-validation checkpoint (A8).
+               understates the error). v2: every comparison also between the
+               checkpoints, the weight average and the global best over the
+               primary, each labelled by the A14 rule.
 
 Metrics are all "lower is better" -- 1 - AUC, eps_B at a fixed signal
 efficiency, sigma_eff, 1 - macro AUC, sigma_min -- and every ratio is coarse over fine, so
@@ -24,8 +25,9 @@ eps_B is the inverse ratio of rejections.
 
 MODELS. A replicate key is family|task|probe|model|metric. A v1 model is a run
 name of configs/analysis/contrasts.v1.json; a v2 model is a run of
-configs/arms/v2_grid.json at a checkpoint, '<run>@bestval' or '<run>@wavg', so
-the two checkpoints of one run never collide. A v2 probe or mass-probe arm is
+configs/arms/v2_grid.json at a checkpoint (A14), '<run>@best70' (the primary),
+'<run>@wavg' (robustness) or '<run>@bestval' (sensitivity), so the checkpoints
+of one run never collide. A v2 probe or mass-probe arm is
 named through the checkpoint its features came from (the extract_v2.py
 manifests, --extract-root), a v2 fine-tuning cell through the rule its
 init_checkpoint.json records. A name that is neither a model nor a listed
@@ -36,6 +38,22 @@ An arm a contrast names must be a model arm, or listed under pending_arms there.
 A replicate vector is comparable with another only if both were computed on the
 same jets in the same order with the same B and seed; the key `jets` (sha256 of
 the row indices and labels) is checked before any pair is formed.
+
+A14 (v2 only; the v1 results do not change). Two runs: the error is never below
+the observed spread, at one degree of freedom; one run pair: not computed.
+Checkpoints: every result between the checkpoints is labelled 'depends on the
+checkpoint', 'robust' or 'inconclusive' ('depends on the checkpoint, under 10%'
+where both of the first two rules hold), and the dependent results are counted
+against their 5 % null expectation, the two-run results also apart
+(checkpoint_dependence). P1 per pair: Welch,
+each side's run variance from the runs that replicate one partition, labelled;
+the joint fit weights each task by its run-plus-test variance, leaves out a task
+with a censored unit, and has a reading with one axis-dose term per axis.
+Random against semantic: each partition and each merge-status group against
+the 17- and 43-class runs 1-2, with the axis and pair accounts. P2 restated: one
+verdict block (p2_verdict). A11: the fraction of the excess cost the matched
+lambda removes, with a Fieller interval, and the realised loss and gradient
+shares (a11_shares). A13 and the self-supervised model: Welch on runs 1-3.
 
 Usage:
   paired_errors.py probe-replicates --probe-dirs DIR... [--extract-root D] --out R.npz
@@ -70,14 +88,19 @@ CONTRASTS = {"v1": REPO / "configs" / "analysis" / "contrasts.v1.json",
 def grid_models(grid: pathlib.Path) -> dict[str, tuple[str, int, str]]:
     """{model: (arm, run, run directory name)} for every run of the v2 grid. A model
     is named as scripts/build_ft_jobs.v2_runs names the run's fine-tuning init: the
-    arm lower-cased without underscores, then -s<run>; the self-supervised arm's
-    runs are mpm-v2-s<run>. Every run's directory is mtx-<arm slug>-s<run>."""
+    arm lower-cased without underscores, then -s<run>; a self-supervised arm's runs
+    are <slug>-v2-s<run> (MPM: mpm-v2-s<run>; MPM_LOFO4P: mpmlofo4p-v2-s<run>).
+    Every run's directory is mtx-<arm slug>-s<run>. Two runs with one name are
+    fatal: until 2026-10-02 every self-supervised arm was mpm-v2-s<run>, and the
+    leave-one-family-out arm's runs silently replaced the self-supervised arm's."""
     out = {}
     for a in json.loads(grid.read_text())["arms"]:
         slug = a["name"].lower().replace("_", "")
         for k in range(1, a["runs"] + 1):
-            out[f"mpm-v2-s{k}" if a["objective"] == "mpm" else f"{slug}-s{k}"] = \
-                (a["name"], k, f"mtx-{slug}-s{k}")
+            name = f"{slug}-v2-s{k}" if a["objective"] == "mpm" else f"{slug}-s{k}"
+            if name in out:
+                raise SystemExit(f"FATAL: {name} names a run of {out[name][0]} and of {a['name']}")
+            out[name] = (a["name"], k, f"mtx-{slug}-s{k}")
     return out
 
 
@@ -88,6 +111,9 @@ def load_spec(path) -> dict:
     m = spec["models"]
     spec["models"] = (grid_models(REPO / m["from_grid"]) if "from_grid" in m
                       else {k: (a, int(r), None) for k, (a, r) in m.items()})
+    if "from_grid" in m:            # the arms' records (the mass-output lambda, A11)
+        spec["grid_arms"] = {a["name"]: a for a in
+                             json.loads((REPO / m["from_grid"]).read_text())["arms"]}
     full = path.resolve()
     spec["path"] = str(full.relative_to(REPO)) if full.is_relative_to(REPO) else str(full)
     spec["sha256"] = _sha(path)
@@ -97,9 +123,11 @@ def load_spec(path) -> dict:
     pending = spec.setdefault("pending_arms", {})
     named = set()
     for c in spec["contrasts"]:
-        named |= set(c.get("arms", [])) | set(c.get("weights", {}))
+        named |= set(c.get("arms", [])) | set(c.get("weights", {})) | set(c.get("references", []))
+        named |= set(c.get("numerator", {})) | set(c.get("denominator", {}))
+        named |= set(c.get("roles", {}).values())
         named |= {a for pr in c.get("pairs", []) for a in pr}
-        named |= {c[k] for k in ("arm", "proxy") if k in c}
+        named |= {c[k] for k in ("arm", "proxy", "account_reference") if k in c}
     if set(pending) & arms:
         raise SystemExit(f"FATAL: {sorted(set(pending) & arms)} are model arms now; remove them "
                          f"from pending_arms in {spec['path']}")
@@ -123,31 +151,42 @@ def parse_model(name: str, spec: dict) -> tuple[str, int, str | None]:
     return arm, run, tag or None
 
 
-def extraction_index(root: pathlib.Path, spec: dict) -> dict[str, str]:
-    """{checkpoint sha256: 'model@checkpoint'} from every extract_v2.py manifest
-    under root (<root>/<run>/<checkpoint>/manifest.json): the model from the
-    manifest's run_dir, the checkpoint from its tag. A v2 probe arm is named
-    through the checkpoint its features came from, never through its label."""
+def extraction_index(root: pathlib.Path, spec: dict) -> dict[str, list[str]]:
+    """{checkpoint sha256: ['model@checkpoint', ...]} from every extract_v2.py
+    manifest under root (<root>/<run>/<checkpoint>/manifest.json): the model from
+    the manifest's run_dir, the checkpoints from its tags. Where a run's best70
+    and bestval select one epoch, extract_v2.py extracts it once, links the
+    second tag's directory to the first and lists both tags, so that checkpoint
+    is a model under both names: '<run>@bestval' exists for every run, and its
+    ratio to '<run>@best70' is then exactly 1. A v2 probe arm is named through
+    the checkpoint its features came from, never through its label."""
     by_dir = {d: m for m, (_, _, d) in spec["models"].items()}
-    out = {}
+    out, owner = {}, {}
     for f in sorted(pathlib.Path(root).glob("*/*/manifest.json")):
         man = json.loads(f.read_text())
         run = pathlib.Path(man["run_dir"]).name
         if run not in by_dir:
             raise SystemExit(f"FATAL: {f}: {run} is not a run of {spec['path']}")
-        name = f"{by_dir[run]}@{man['tag']}"
-        if out.setdefault(man["checkpoint_sha256"], name) != name:
-            raise SystemExit(f"FATAL: checkpoint {man['checkpoint_sha256'][:16]} is both "
-                             f"{out[man['checkpoint_sha256']]} and {name}")
+        sha = man["checkpoint_sha256"]
+        names = out.setdefault(sha, [])
+        for tag in man.get("tags", [man["tag"]]):
+            name = f"{by_dir[run]}@{tag}"
+            if names and names[0].partition("@")[0] != by_dir[run]:
+                raise SystemExit(f"FATAL: checkpoint {sha[:16]} is both {names[0]} and {name}")
+            if owner.setdefault(name, sha) != sha:
+                raise SystemExit(f"FATAL: {name} is both checkpoint {owner[name][:16]} and {sha[:16]}")
+            if name not in names:
+                names.append(name)
     if not out:
         raise SystemExit(f"FATAL: no extraction manifest under {root}")
     return out
 
 
-def _named(index: dict | None, arm: str, sha: str | None, where) -> str:
-    """The model name of a probe arm: its label for v1, its checkpoint's for v2."""
+def _names(index: dict | None, arm: str, sha: str | None, where) -> list[str]:
+    """The model names of a probe arm: its label for v1; for v2, every name of
+    the checkpoint it was fitted on (extraction_index)."""
     if index is None:
-        return arm
+        return [arm]
     if sha not in index:
         raise SystemExit(f"FATAL: {where}: arm {arm!r} was fitted on checkpoint "
                          f"{str(sha)[:16]}, which no extraction manifest holds")
@@ -194,9 +233,11 @@ def probe_replicates(dirs: list[pathlib.Path], b: int = B, seed: int = SEED,
     """Replicates of 1 - AUC and eps_B at every working point, per task x probe x model.
 
     `index` (v2, extraction_index) names each arm by the checkpoint it was fitted
-    on, so a run's bestval and wavg features are two models. A model scored in
-    two jobs (the 162-class run 1 is in the ladder and in the 2x2) is kept once,
-    from the first directory given, and the other copy's AUC is recorded as a
+    on, so a run's bestval and wavg features are two models; a checkpoint with
+    two names (best70 and bestval one epoch) is one replicate vector under both.
+    A model scored in two jobs (the 162-class run 1 is in the ladder and in the
+    2x2), or a checkpoint probed under both its names, is kept once, from the
+    first directory given, and the other copy's AUC is recorded as a
     reproducibility check."""
     vec, meta, dup = {}, {}, []
     inputs = []
@@ -213,30 +254,33 @@ def probe_replicates(dirs: list[pathlib.Path], b: int = B, seed: int = SEED,
             y, rows = z[f"{task}|y"].astype(bool), z[f"{task}|rows"]
             jk = jets_key(rows, y)
             for arm, A in T["arms"].items():
-                model = _named(index, arm, J.get("arm_checkpoints", {}).get(arm), d)
+                models = _names(index, arm, J.get("arm_checkpoints", {}).get(arm), d)
                 for kind in ("linear", "mlp"):
                     s = z[f"{task}|{kind}|{arm}"]
-                    base = f"probe|{task}|{kind}|{model}"
-                    if f"{base}|1-auc" in vec:
-                        dup.append({"model": base, "dir": str(d),
+                    bases = [f"probe|{task}|{kind}|{m}" for m in models]
+                    if f"{bases[0]}|1-auc" in vec:
+                        dup.append({"model": bases[0], "dir": str(d),
                                     "auc_here": A[kind]["auc"],
-                                    "auc_kept": 1 - vec[f"{base}|1-auc"][0]})
+                                    "auc_kept": 1 - vec[f"{bases[0]}|1-auc"][0]})
                         continue
                     sc = P.AucScorer(y, s)
                     if abs(sc.auc() - A[kind]["auc"]) > 1e-12:
-                        raise SystemExit(f"FATAL: {base}: AUC from scores {sc.auc()} "
+                        raise SystemExit(f"FATAL: {bases[0]}: AUC from scores {sc.auc()} "
                                          f"!= reported {A[kind]['auc']}")
-                    vec[f"{base}|1-auc"] = P.replicates(sc, y.size, b, seed)
-                    meta[f"{base}|1-auc"] = {"jets": jk, "n": int(y.size),
-                                             "censored": bool(A[kind]["log1m_auc_censored"])}
+                    v = P.replicates(sc, y.size, b, seed)
+                    m = {"jets": jk, "n": int(y.size), "censored": bool(A[kind]["log1m_auc_censored"])}
+                    eps = {}
                     for e in T["eps_s"]:
                         es = P.EpsBScorer(y, s, float(e))
-                        key = f"{base}|eps_b@{float(e):.2f}"
-                        vec[key] = P.replicates(es, y.size, b, seed)
+                        ve = P.replicates(es, y.size, b, seed)
                         nb = int((~y).sum())
-                        meta[key] = {"jets": jk, "n": int(y.size), "n_bkg": nb,
-                                     "k_pass": float(vec[key][0] * nb)}
-                print(f"  {base}", flush=True)
+                        eps[f"eps_b@{float(e):.2f}"] = (ve, {"jets": jk, "n": int(y.size), "n_bkg": nb,
+                                                             "k_pass": float(ve[0] * nb)})
+                    for base in bases:
+                        vec[f"{base}|1-auc"], meta[f"{base}|1-auc"] = v, dict(m)
+                        for metric, (ve, me) in eps.items():
+                            vec[f"{base}|{metric}"], meta[f"{base}|{metric}"] = ve, dict(me)
+                        print(f"  {base}", flush=True)
     return vec, meta, {"inputs": inputs, "duplicates": dup}
 
 
@@ -244,8 +288,10 @@ def probe_replicates(dirs: list[pathlib.Path], b: int = B, seed: int = SEED,
 def mass_replicates(dirs: list[pathlib.Path], b: int = B, seed: int = SEED,
                     index: dict | None = None):
     """Replicates of sigma_eff of the within-class mass residual, per probe x model
-    (`index` as for probe_replicates)."""
-    vec, meta, inputs = {}, {}, []
+    (`index` as for probe_replicates). A v2 checkpoint scored twice (best70 and
+    bestval one epoch, each directory given as an arm) is kept once and the
+    other copy recorded; a v1 model given twice is fatal."""
+    vec, meta, inputs, dup = {}, {}, [], []
     for d in dirs:
         J = json.loads((d / "mass_resolution.json").read_text())
         z = np.load(d / "residuals.npz")
@@ -254,20 +300,26 @@ def mass_replicates(dirs: list[pathlib.Path], b: int = B, seed: int = SEED,
         rows, lab = z["rows"], z["label188"]
         jk = jets_key(rows, lab)
         for arm, A in J["arms"].items():
-            model = _named(index, arm, A.get("provenance", {}).get("checkpoint_sha256"), d)
+            models = _names(index, arm, A.get("provenance", {}).get("checkpoint_sha256"), d)
             for kind in ("ridge", "mlp"):
                 res = z[f"{kind}|{arm}"].astype(np.float64)
                 sc = P.SigmaEffScorer(res)
                 if abs(sc() - A[kind]["sigma_eff"]) > 1e-6:
                     raise SystemExit(f"FATAL: {arm}/{kind}: sigma_eff from residuals "
                                      f"{sc()} != reported {A[kind]['sigma_eff']}")
-                key = f"mass|resolution|{kind}|{model}|sigma_eff"
-                if key in vec:
-                    raise SystemExit(f"FATAL: {key} appears twice among the mass-probe inputs")
-                vec[key] = P.replicates(sc, res.size, b, seed)
-                meta[key] = {"jets": jk, "n": int(res.size)}
-                print(f"  {key}", flush=True)
-    return vec, meta, {"inputs": inputs}
+                keys = [f"mass|resolution|{kind}|{m}|sigma_eff" for m in models]
+                if keys[0] in vec:
+                    if index is None:
+                        raise SystemExit(f"FATAL: {keys[0]} appears twice among the mass-probe inputs")
+                    dup.append({"model": keys[0], "dir": str(d), "arm": arm,
+                                "sigma_eff_here": A[kind]["sigma_eff"],
+                                "sigma_eff_kept": float(vec[keys[0]][0])})
+                    continue
+                v = P.replicates(sc, res.size, b, seed)
+                for key in keys:
+                    vec[key], meta[key] = v, {"jets": jk, "n": int(res.size)}
+                    print(f"  {key}", flush=True)
+    return vec, meta, {"inputs": inputs, **({"duplicates": dup} if dup else {})}
 
 
 # ------------------------------------------------------- anomaly detection
@@ -284,9 +336,15 @@ def anomaly_replicates(paths: list[pathlib.Path], index: dict):
     settings (`jets`). A value is a bound, not a measurement, when its max SIC is
     at the background-statistics ceiling (at_ceiling) or below the detection
     threshold (anomaly_summary.NOT_DETECTED_MAX_SIC: sigma_min then sits near
-    sigma_t)."""
+    sigma_t).
+
+    anomaly_heads.py names a result by its checkpoint directory, so where best70
+    and bestval are one epoch (bestval a link to best70, extract_v2.py) it
+    reports both, with one checkpoint and the same values. Each is kept under
+    its own name; a directory whose checkpoint has no such name is fatal, and a
+    name of the checkpoint that no result gives takes the value of another."""
     nd = _load("anomaly_summary", "experiments/EVAL/anomaly_summary.py").NOT_DETECTED_MAX_SIC
-    vec, meta, inputs = {}, {}, []
+    vec, meta, inputs, alias_of = {}, {}, [], {}
     for p in paths:
         J = json.loads(pathlib.Path(p).read_text())
         inputs.append({"path": str(p), "sha256": _sha(p)})
@@ -296,9 +354,11 @@ def anomaly_replicates(paths: list[pathlib.Path], index: dict):
             for tag, c in M["checkpoints"].items():
                 if "anomaly" not in c:
                     continue
-                model = _named(index, arm, c.get("checkpoint_sha256"), p)
-                if model.partition("@")[2] != tag:
-                    raise SystemExit(f"FATAL: {p}: {arm}/{tag} is the checkpoint of {model}")
+                models = _names(index, arm, c.get("checkpoint_sha256"), p)
+                model = f"{models[0].partition('@')[0]}@{tag}"
+                if model not in models:
+                    raise SystemExit(f"FATAL: {p}: {arm}/{tag} is the checkpoint of "
+                                     f"{' and '.join(models)}")
                 for sig, per_n in c["anomaly"].items():
                     for n_sig, fams in per_n.items():
                         for fam, rec in fams.items():
@@ -307,6 +367,8 @@ def anomaly_replicates(paths: list[pathlib.Path], index: dict):
                             key = f"anomaly|{sig}|{fam}|{model}|sigma_min@{n_sig}"
                             if key in vec:
                                 raise SystemExit(f"FATAL: {key} appears twice among the inputs")
+                            alias_of[key] = [f"anomaly|{sig}|{fam}|{m}|sigma_min@{n_sig}"
+                                             for m in models if m != model]
                             vec[key] = np.array([float(rec["sigma_min"])])
                             meta[key] = {"jets": jk, "n": int(J["n_bkg"]),
                                          "max_sic": rec.get("max_sic")}
@@ -316,6 +378,10 @@ def anomaly_replicates(paths: list[pathlib.Path], index: dict):
                             if why:
                                 meta[key].update(censored=True, censor_note=(
                                     why + "; sigma_min is a bound and so is the ratio"))
+    for key, others in alias_of.items():
+        for k in others:
+            if k not in vec:
+                vec[k], meta[k] = vec[key], dict(meta[key])
     return vec, meta, {"inputs": inputs}
 
 
@@ -434,26 +500,31 @@ def _group(meta: dict):
     return out
 
 
-def between_checkpoints(spec: dict) -> str | None:
-    """The tag of the A8 comparison, '<robustness>/<primary>' ('wavg/bestval'),
-    when the contrasts file has a checkpoint contrast; else None."""
+def between_checkpoints(spec: dict) -> list[str]:
+    """The tags of the comparisons between checkpoints, '<other>/<primary>': A14's
+    robustness ('wavg/best70') and sensitivity ('bestval/best70') checks, when the
+    contrasts file has a checkpoint contrast; else none."""
     c = next((c for c in spec["contrasts"] if c["kind"] == "checkpoint"), None)
-    return None if c is None else f"{c['robustness']}/{c['primary']}"
+    return [] if c is None else [f"{c[k]}/{c['primary']}" for k in ("robustness", "sensitivity")
+                                 if k in c]
 
 
 class _Cell:
     """One family x task x probe x metric: its models by (arm, checkpoint) and run.
 
-    A8 asks for every result at the robustness checkpoint beside the primary
-    one. So, when the contrasts file has a checkpoint contrast, each run with both
-    checkpoints also enters as '<run>@wavg/bestval', whose replicate vector is
-    the ratio of the two (one run, one resampling of the test jets), and every
-    contrast is formed at that tag too: the double ratio, the result at the
-    weight average over the result at the best-validation checkpoint."""
+    A8 and A14 ask for every result at the robustness checkpoint (the weight
+    average) and the sensitivity one (the global best) beside the primary one.
+    So, when the contrasts file has a checkpoint contrast, each run with both
+    checkpoints of a comparison also enters as '<run>@wavg/best70' (and
+    '<run>@bestval/best70'), whose replicate vector is the ratio of the two (one
+    run, one resampling of the test jets), and every contrast is formed at that
+    tag too: the double ratio, the result at the other checkpoint over the result
+    at the primary."""
 
     def __init__(self, group: tuple, by_model: dict, vec: dict, meta: dict, spec: dict, root):
         self.fam, self.task, self.kind, self.metric = group
         self.key, self.spec, self.root = by_model, spec, root
+        self.rule = bool(spec.get("small_sample_rule"))
         self.vecs = {m: vec[k] for m, k in by_model.items()}
         self.metas = {m: meta[k] for m, k in by_model.items()}
         self.arms = {}
@@ -464,9 +535,9 @@ class _Cell:
                 raise SystemExit(f"FATAL: {'/'.join(group)}: {runs[run]} and {model} are both "
                                  f"run {run} of {arm}")
             runs[run] = model
-        self.both = between_checkpoints(spec)
-        if self.both is not None:
-            q, p = self.both.split("/")
+        self.between = between_checkpoints(spec)
+        for both in self.between:
+            q, p = both.split("/")
             for (arm, tag), runs in list(self.arms.items()):
                 other = self.arms.get((arm, q), {}) if tag == p else {}
                 for run in sorted(set(runs) & set(other)):
@@ -475,19 +546,19 @@ class _Cell:
                         raise SystemExit(f"FATAL: {'/'.join(group)}: {mp} and {mq} were not "
                                          "scored on the same jets")
                     a, b = self.vecs[mq], self.vecs[mp]
-                    m = f"{mp.partition('@')[0]}@{self.both}"
+                    m = f"{mp.partition('@')[0]}@{both}"
                     self.vecs[m] = np.divide(a, b, out=np.zeros_like(a, dtype=np.float64),
                                              where=(a > 0) & (b > 0) & np.isfinite(a) & np.isfinite(b))
                     cens = next((self.metas[x] for x in (mp, mq) if self.metas[x].get("censored")), None)
                     self.metas[m] = {"jets": self.metas[mp]["jets"], "censored": cens is not None}
                     if cens is not None and "censor_note" in cens:
                         self.metas[m]["censor_note"] = cens["censor_note"]
-                    self.arms.setdefault((arm, self.both), {})[run] = m
+                    self.arms.setdefault((arm, both), {})[run] = m
         self.tags = sorted({t for _, t in self.arms}, key=lambda t: (t is not None, t or ""))
 
     def ck(self, tag):
         """The checkpoint(s) a stream check at `tag` covers."""
-        return tuple(tag.split("/")) if self.both is not None and tag == self.both else tag
+        return tuple(tag.split("/")) if tag in self.between else tag
 
     def runs(self, arm, tag) -> dict:
         return self.arms.get((arm, tag), {})
@@ -534,7 +605,9 @@ ANOMALY_UNDEFINED = "{} have sigma_min 0 or infinite; the ratio is undefined"
 
 
 def _pairs(cell: _Cell, c: dict) -> list[dict]:
-    """Run k of the fine arm against run k of the coarse arm, at each checkpoint."""
+    """Run k of the fine arm against run k of the coarse arm, at each checkpoint.
+    A contrast marked `descriptive` carries that reading on every row (A13: the
+    ladder among the models that leave a family out, no null read)."""
     pairs = (c["pairs"] if c["kind"] == "pairs" else
              [(a, b) for i, a in enumerate(c["arms"]) for b in c["arms"][i + 1:]])
     rows = []
@@ -547,19 +620,15 @@ def _pairs(cell: _Cell, c: dict) -> list[dict]:
             fm, cm = [fr[r] for r in common], [cr[r] for r in common]
             row = cell.row(c["id"], cell.label(fa), cell.label(ca), tag, fine_arm=fa,
                            coarse_arm=ca, fine_models=fm, coarse_models=cm)
+            if c.get("descriptive"):
+                row["reading"] = "descriptive: " + c["descriptive"]
             zero = cell.check(fm + cm, f"{fa} vs {ca}")
             if zero:
                 row["not_computed"] = cell.undefined(zero)
             else:
                 row.update(P.paired_ratio({m: cell.v(m) for m in fm}, {m: cell.v(m) for m in cm},
                                           pairs=dict(zip(cm, fm)), run_dirs=cell.dirs(fm + cm),
-                                          checkpoint=cell.ck(tag)))
-            if c.get("fine_run_spread") and all(cell.v(m)[0] > 0 for m in fr.values()):
-                pts = np.log([cell.v(m)[0] for m in fr.values()])
-                row["fine_run_spread"] = {"arm": fa, "n_runs": len(pts),
-                                          "ln_run_sd": float(np.std(pts, ddof=1)) if len(pts) > 1 else None,
-                                          "range": [float(np.exp(pts.min())), float(np.exp(pts.max()))]}
-                row["coarse_values"] = [float(cell.v(m)[0]) for m in cm]
+                                          checkpoint=cell.ck(tag), small_sample_rule=cell.rule))
             cell.censor(row, fm + cm)
             rows.append(row)
     return rows
@@ -569,16 +638,25 @@ def _unpaired(cell: _Cell, c: dict) -> list[dict]:
     """Every run of the coarse arm against every run of the fine arm, unpaired:
     exp(mean ln m_coarse - mean ln m_fine), each arm with its own spread over
     runs (Welch): the runs that leave a family out need not vary as much as their
-    parent's, and five runs against three do not let one spread stand for both."""
+    parent's, and five runs against three do not let one spread stand for both.
+    `runs` keeps those run indices only (A14: runs 1-3, one GPU product on both
+    sides); `families` keeps those families only (the self-supervised model is
+    compared in fine-tuning)."""
+    if c.get("families") and cell.fam not in c["families"]:
+        return []
+    keep = c.get("runs")
     rows = []
     for tag in cell.tags:
         for fa, ca in c["pairs"]:
-            fm, cm = list(cell.runs(fa, tag).values()), list(cell.runs(ca, tag).values())
+            fm, cm = ([m for r, m in sorted(cell.runs(a, tag).items()) if keep is None or r in keep]
+                      for a in (fa, ca))
             if not fm or not cm:
                 continue
             row = cell.row(c["id"], cell.label(fa), cell.label(ca), tag, fine_arm=fa,
                            coarse_arm=ca, fine_models=fm, coarse_models=cm,
                            stream_pairing="exempt: " + c["stream_exempt"])
+            if keep is not None:
+                row["runs"] = keep
             zero = cell.check(fm + cm, f"{fa} vs {ca}")
             if zero:
                 row["not_computed"] = cell.undefined(zero)
@@ -587,7 +665,7 @@ def _unpaired(cell: _Cell, c: dict) -> list[dict]:
                 w = [1 / len(cm)] * len(cm) + [-1 / len(fm)] * len(fm)
                 groups = [range(len(cm)), range(len(cm), len(cm) + len(fm))]
                 row.update(n_fine_runs=len(fm), n_coarse_runs=len(cm),
-                           **P.contrast(L, w, groups, separate=True))
+                           **P.contrast(L, w, groups, separate=True, small_sample_rule=cell.rule))
             cell.censor(row, fm + cm)
             rows.append(row)
     return rows
@@ -614,36 +692,37 @@ def _linear(cell: _Cell, c: dict) -> list[dict]:
             ln = {r: sum(x * np.log(cell.v(member[r][a])) for a, x in w.items()) for r in runs}
             d = cell.dirs(fm + cm)
             row.update(P.paired_log(ln, checkpoint=cell.ck(tag), run_dirs=None if d is None else
-                                    {r: [d[m] for m in member[r].values()] for r in runs}))
+                                    {r: [d[m] for m in member[r].values()] for r in runs},
+                                    small_sample_rule=cell.rule))
         cell.censor(row, fm + cm)
         rows.append(row)
     return rows
 
 
 def _checkpoint(cell: _Cell, c: dict) -> list[dict]:
-    """A8: every model at the robustness checkpoint against itself at the primary
-    one, paired by run (one run, one stream). Robust = the two agree within
-    their combined error."""
-    p, q = c["primary"], c["robustness"]
+    """A8 and A14: every model at the robustness checkpoint (and at the
+    sensitivity one) against itself at the primary one, paired by run (one run,
+    one stream). The A14 label is added with every other result's (ratios)."""
     rows = []
-    for arm in dict.fromkeys(a for a, _ in cell.arms):
-        fr, cr = cell.runs(arm, p), cell.runs(arm, q)
-        common = [r for r in cr if r in fr]
-        if not common:
-            continue
-        fm, cm = [fr[r] for r in common], [cr[r] for r in common]
-        row = cell.row(c["id"], f"{cell.label(arm)} at {p}", f"{cell.label(arm)} at {q}",
-                       cell.both, fine_arm=arm, coarse_arm=arm, fine_models=fm, coarse_models=cm)
-        zero = cell.check(fm + cm, f"{arm} {q} vs {p}")
-        if zero:
-            row["not_computed"] = cell.undefined(zero)
-        else:
-            row.update(P.paired_ratio({m: cell.v(m) for m in fm}, {m: cell.v(m) for m in cm},
-                                      pairs=dict(zip(cm, fm))))
-            row["stream_pairing"] = "same run"
-            row["robust_to_checkpoint"] = bool(abs(row["ln_ratio"]) <= row["ln_combined_se"])
-        cell.censor(row, fm + cm)
-        rows.append(row)
+    for both in cell.between:
+        q, p = both.split("/")
+        for arm in dict.fromkeys(a for a, _ in cell.arms):
+            fr, cr = cell.runs(arm, p), cell.runs(arm, q)
+            common = [r for r in cr if r in fr]
+            if not common:
+                continue
+            fm, cm = [fr[r] for r in common], [cr[r] for r in common]
+            row = cell.row(c["id"], f"{cell.label(arm)} at {p}", f"{cell.label(arm)} at {q}",
+                           both, fine_arm=arm, coarse_arm=arm, fine_models=fm, coarse_models=cm)
+            zero = cell.check(fm + cm, f"{arm} {q} vs {p}")
+            if zero:
+                row["not_computed"] = cell.undefined(zero)
+            else:
+                row.update(P.paired_ratio({m: cell.v(m) for m in fm}, {m: cell.v(m) for m in cm},
+                                          pairs=dict(zip(cm, fm)), small_sample_rule=cell.rule))
+                row["stream_pairing"] = "same run"
+            cell.censor(row, fm + cm)
+            rows.append(row)
     return rows
 
 
@@ -747,12 +826,37 @@ def _partition_runs(cell: _Cell, arms, tag):
     return runs, excluded
 
 
+def axis_doses(spec: dict) -> dict:
+    """configs/labelmaps/axis_doses.v2.json (A14): each probe pair's axis, each
+    vocabulary's dose of every axis, and the cells of the axis account."""
+    return json.loads((REPO / spec["axis_doses"]).read_text())
+
+
+def pair_doses(doses: dict, pairs, arms) -> dict:
+    """{pair: {axis, realised: {partition: dose}}}: each partition's realised dose
+    of the pair's axis with the pair's own classes left out; an empty dose for a
+    pair on no axis."""
+    out = {}
+    for name in pairs:
+        axis = doses["probe_pairs"][name]["axis"]
+        out[name] = {"axis": axis, "realised": {} if axis is None else
+                     {a: doses["doses"][a][axis]["excluding"][name]["realised"] for a in arms}}
+    return out
+
+
 def _partition_split_vs_merged(cell: _Cell, c: dict) -> list[dict]:
-    """A10 P1, per probe pair: exp(mean over merging partitions - mean over
-    splitting ones) of the run-averaged ln metric, the partitions the units, the
-    spread pooled within the two groups."""
+    """A10 P1 as A14 reads it, per probe pair: exp(mean over merging partitions -
+    mean over splitting ones) of the run-averaged ln metric. The units are the
+    runs; each side keeps its own run variance, measured by the runs that
+    replicate one partition (their spread about the partition's mean, pooled over
+    the side's partitions), and the interval is Welch's. The partitions are taken
+    as drawn: how good a partition is overall is not error here, and the joint
+    fit's partition effect is what separates it from the merge. Labelled
+    'merging costs nothing', 'merging costs', 'merging costs, under 10%' or
+    'inconclusive' (P.p1_label), with each partition's axis dose beside it."""
     if cell.fam != "probe":
         return []
+    doses = axis_doses(cell.spec) if "axis_doses" in cell.spec else None
     rows = []
     for d in partition_design(cell.spec, c["arms"]):
         if d["task"] != cell.task:
@@ -769,6 +873,8 @@ def _partition_split_vs_merged(cell: _Cell, c: dict) -> list[dict]:
                            probe_pairs=d["pairs"], merged_partitions=d["merged"],
                            split_partitions=d["split"], runs=runs,
                            fine_models=fm, coarse_models=cm)
+            if doses is not None:
+                row["axis_doses"] = pair_doses(doses, d["pairs"], c["arms"])
             if excluded is not None:
                 row.update(stream_pairing="identical", excluded_runs=excluded)
             zero = cell.check(fm + cm, c["id"])
@@ -777,53 +883,100 @@ def _partition_split_vs_merged(cell: _Cell, c: dict) -> list[dict]:
             elif not d["merged"] or not d["split"]:
                 row["not_computed"] = "every partition merges, or every one splits, this pair"
             else:
-                L = np.array([np.mean([np.log(cell.v(cell.runs(a, tag)[r])) for r in runs], axis=0)
-                              for a in units])
-                nm, ns = len(d["merged"]), len(d["split"])
-                row.update(P.contrast(L, [1 / nm] * nm + [-1 / ns] * ns,
-                                      [range(nm), range(nm, nm + ns)]))
+                R, nm, ns = len(runs), len(d["merged"]), len(d["split"])
+                L = np.log([cell.v(cell.runs(a, tag)[r]) for a in units for r in runs])
+                row.update(P.contrast(L, [1 / (nm * R)] * (nm * R) + [-1 / (ns * R)] * (ns * R),
+                                      [range(i * R, (i + 1) * R) for i in range(nm + ns)],
+                                      pools=[list(range(nm)), list(range(nm, nm + ns))],
+                                      small_sample_rule=cell.rule))
+                if "ln_combined_se" in row and tag not in cell.between:
+                    row["p1_label"] = P.p1_label(*P.bounds(row["ln_ratio"], row["ln_combined_se"],
+                                                           row["dof"]))
             cell.censor(row, fm + cm)
             rows.append(row)
     return rows
 
 
+def _within_partition_run_var(cell: _Cell, arms, runs, tag) -> float | None:
+    """A14: one task's run variance from the runs that replicate one partition:
+    their spread about the partition's mean, pooled over the partitions, less
+    the test noise each run has alone (combined_error's v_run with one group per
+    partition). None without two runs of every partition."""
+    if len(runs) < 2:
+        return None
+    R = len(runs)
+    L = np.log([cell.v(cell.runs(a, tag)[r]) for a in arms for r in runs])
+    return P.combined_error(L, np.full(len(L), 1 / len(L)),
+                            [range(i * R, (i + 1) * R) for i in range(len(arms))])["v_run"]
+
+
 def _partition_joint(cells: dict, c: dict) -> list[dict]:
-    """A10 P1, all probe pairs at once: the run-averaged ln metric of every task x
-    partition on a task intercept, a partition effect shared by every task (how
-    good a partition is overall), and one merge effect per task and merge
-    pattern (P.fixed_effects). A merge effect is the cost of merging the pair
-    with each partition's overall quality held fixed. Pairs that share a merge
-    pattern in different tasks stay separate effects; in one task they are one."""
+    """A10 P1, all probe pairs at once, the secondary reading of A14: the
+    run-averaged ln metric of every task x partition on a task intercept, a
+    partition effect shared by every task (how good a partition is overall), and
+    one merge effect per task and merge pattern (P.fixed_effects). A merge
+    effect is the cost of merging the pair with each partition's overall quality
+    held fixed. Pairs that share a merge pattern in different tasks stay separate
+    effects; in one task they are one.
+
+    A14: each task is weighted by 1 / (its run variance / runs + its test
+    variance), the run variance from the runs that replicate one partition; a
+    task with a censored unit is left out of the fit, and its row says so (the
+    pair is reported alone, as a bound, by partition_split_vs_merged). With
+    `dose_terms`, the fit also has one term per axis in (1 - the partition's
+    realised dose of the probe pair's axis, the pair's own classes left out;
+    axis_doses.v2.json), shared by the tasks on that axis: exp of it is the
+    metric with the axis merged throughout over the metric with it kept
+    throughout."""
     arms = c["arms"]
-    design = partition_design(next(iter(cells.values())).spec, arms)
+    spec = next(iter(cells.values())).spec
+    design = partition_design(spec, arms)
     tasks = list(dict.fromkeys(d["task"] for d in design))
+    doses = axis_doses(spec) if c.get("dose_terms") else None
+    task_axis = {}                                    # {task: (axis, pair)}
+    if doses is not None:
+        for t in tasks:
+            on = [(doses["probe_pairs"][n]["axis"], n) for d in design if d["task"] == t
+                  for n in d["pairs"] if doses["probe_pairs"][n]["axis"] is not None]
+            if len(on) > 1:
+                raise SystemExit(f"FATAL: task {t} holds {len(on)} pairs on an axis; its dose "
+                                 "term is not defined")
+            if on:
+                task_axis[t] = on[0]
     by_km = {}
     for (fam, task, kind, metric), cell in cells.items():
         if fam == "probe" and task in tasks:
             by_km.setdefault((kind, metric), {})[task] = cell
     rows = []
     for (kind, metric), per_task in sorted(by_km.items()):
-        ts = [t for t in tasks if t in per_task]
-        effects = [d for d in design if d["task"] in ts]
+        present = [t for t in tasks if t in per_task]
         for tag in sorted({t for cell in per_task.values() for t in cell.tags},
                           key=lambda t: (t is not None, t or "")):
-            first = per_task[ts[0]]
+            first = per_task[present[0]]
             runs, excluded = _partition_runs(first, arms, tag)
             runs = [r for r in runs if all(all(r in per_task[t].runs(a, tag) for a in arms)
-                                           for t in ts)]
+                                           for t in present)]
             if not runs:
                 continue
+            per = {t: [per_task[t].runs(a, tag)[r] for a in arms for r in runs] for t in present}
+            left_out = [t for t in present if any(per_task[t].metas[m].get("censored") for m in per[t])]
+            ts = [t for t in present if t not in left_out]
+            effects = [d for d in design if d["task"] in ts]
+            axes = list(dict.fromkeys(task_axis[t][0] for t in ts if t in task_axis))
             base = {"contrast": c["id"], "family": "probe", "kind": kind, "metric": metric,
-                    "checkpoint": tag, "tasks_in_fit": ts, "runs": runs}
+                    "checkpoint": tag, "tasks_in_fit": ts, "tasks_left_out": left_out, "runs": runs}
             if excluded is not None:
                 base.update(stream_pairing="identical", excluded_runs=excluded)
-            per = {t: [per_task[t].runs(a, tag)[r] for a in arms for r in runs] for t in ts}
             models = list(dict.fromkeys(m for t in ts for m in per[t]))
-            censored = sorted({m for t in ts for m in per[t]
-                               if per_task[t].metas[m].get("censored")})
-            n, p = len(ts) * len(arms), len(ts) + len(arms) - 1 + len(effects)
+            n = len(ts) * len(arms)
+            p = len(ts) + len(arms) - 1 + len(effects) + len(axes)
             zero = sorted({m for t in ts for m in per_task[t].check(per[t], c["id"])})
+            v_run = ({} if zero or len(runs) < 2 else
+                     {t: _within_partition_run_var(per_task[t], arms, runs, tag) for t in ts})
             why = (first.undefined(zero) if zero else
+                   "no task is left once the tasks with a censored unit are left out" if not ts else
+                   "one run per partition: no replicate to measure the run variance that weights "
+                   "each task (A14)" if len(runs) < 2 else
                    f"{n} task x partition units for {p} coefficients" if n - p < 1 else None)
             X = np.zeros((n, p))
             for i, (t, a) in enumerate((t, a) for t in ts for a in arms):
@@ -832,14 +985,20 @@ def _partition_joint(cells: dict, c: dict) -> list[dict]:
                     X[i, len(ts) + arms.index(a) - 1] = 1.0
                 for j, d in enumerate(effects):
                     X[i, len(ts) + len(arms) - 1 + j] = float(d["task"] == t and a in d["merged"])
+                if t in task_axis:
+                    ax, pair = task_axis[t]
+                    X[i, p - len(axes) + axes.index(ax)] = \
+                        1.0 - doses["doses"][a][ax]["excluding"][pair]["realised"]
             if why is None and np.linalg.matrix_rank(X) < p:
                 why = "the merge patterns are confounded with the partition effects"
             if why is None:
                 L = np.array([np.mean([np.log(per_task[t].v(per_task[t].runs(a, tag)[r]))
                                        for r in runs], axis=0) for t in ts for a in arms])
-                fit = P.fixed_effects(L, X, [t for t in ts for _ in arms],
-                                      {f"{d['task']}|{'+'.join(d['pairs'])}": p - len(effects) + j
-                                       for j, d in enumerate(effects)})
+                j0 = len(ts) + len(arms) - 1
+                report = {f"{d['task']}|{'+'.join(d['pairs'])}": j0 + j for j, d in enumerate(effects)}
+                report.update({f"dose|{ax}": p - len(axes) + k for k, ax in enumerate(axes)})
+                fit = P.fixed_effects(L, X, [t for t in ts for _ in arms], report,
+                                      run_var=[v_run[t] / len(runs) for t in ts for _ in arms])
                 why = fit.get("not_computed")
             for d in effects:
                 row = {**base, "task": d["task"],
@@ -852,25 +1011,391 @@ def _partition_joint(cells: dict, c: dict) -> list[dict]:
                 else:
                     row.update(resid_dof=fit["resid_dof"], dispersion=fit["dispersion"],
                                v_run_task=fit["v_run"][d["task"]],
+                               v_run_within_partition=v_run[d["task"]],
                                task_dof=fit["stratum_dof"][d["task"]],
                                **fit["coefficients"][f"{d['task']}|{'+'.join(d['pairs'])}"])
-                if censored:
-                    row["censored_models"] = censored
-                    row["note"] = ("an AUC of 1 is floored at one discordant pair; the "
-                                   "effect is a bound, not a value")
                 rows.append(row)
+            for ax in axes:
+                on = [t for t in ts if task_axis.get(t, (None,))[0] == ax]
+                row = {**base, "task": None, "axis": ax, "tasks": on,
+                       "fine": f"{ax} kept throughout (dose 1)",
+                       "coarse": f"{ax} merged throughout (dose 0)", "models": models}
+                if why is not None:
+                    row["not_computed"] = why
+                else:
+                    row.update(resid_dof=fit["resid_dof"], dispersion=fit["dispersion"],
+                               **fit["coefficients"][f"dose|{ax}"])
+                rows.append(row)
+            for d in design:
+                if d["task"] in left_out:
+                    cens = sorted(m for m in per[d["task"]] if per_task[d["task"]].metas[m].get("censored"))
+                    rows.append({**base, "task": d["task"],
+                                 "fine": "partitions that split " + " and ".join(d["pairs"]),
+                                 "coarse": "partitions that merge " + " and ".join(d["pairs"]),
+                                 "probe_pairs": d["pairs"], "models": per[d["task"]],
+                                 "censored_models": cens,
+                                 "not_computed": "left out of the joint fit (A14): a unit is "
+                                                 "censored, so the pair is reported alone, as a "
+                                                 "bound, by partition_split_vs_merged"})
     return rows
+
+
+def _vs_reference(cell: _Cell, c: dict, tag, ref: str, members: list, runs: list, name: str,
+                  **kw) -> dict:
+    """ln m_ref,k - mean over `members` of ln m_k, paired over runs k."""
+    per = {r: [cell.runs(ref, tag)[r]] + [cell.runs(a, tag)[r] for a in members] for r in runs}
+    fm = [m for r in runs for m in per[r][1:]]
+    cm = [per[r][0] for r in runs]
+    row = cell.row(c["id"], name, cell.label(ref), tag, reference=ref, partitions=members,
+                   fine_models=fm, coarse_models=cm, **kw)
+    zero = cell.check(fm + cm, c["id"])
+    if zero:
+        row["not_computed"] = cell.undefined(zero)
+    else:
+        ln = {r: np.log(cell.v(ms[0])) - np.mean([np.log(cell.v(m)) for m in ms[1:]], axis=0)
+              for r, ms in per.items()}
+        d = cell.dirs(fm + cm)
+        row.update(P.paired_log(ln, checkpoint=cell.ck(tag), small_sample_rule=cell.rule,
+                                run_dirs=None if d is None else
+                                {r: [d[m] for m in ms] for r, ms in per.items()}))
+    cell.censor(row, fm + cm)
+    return row
+
+
+def _random_vs_semantic(cell: _Cell, c: dict) -> list[dict]:
+    """A14, random against semantic: on each probe pair's own task, each random
+    partition, the partitions that merge the pair and those that split it,
+    against each reference (the 17- and 43-class models), paired over `runs`
+    (1-2). The ratio is the reference over the random side: above 1 = the random
+    partitions beat it. Against the account reference (17 classes), the cells of
+    axis_doses.v2.json -- partitions that merge a pair the 17-class model also
+    merges while keeping its axis elsewhere -- are read for the two registered
+    accounts, at each checkpoint: axis account 'beats' when the 95 % lower bound
+    is above 0, pair account 'equal' when the 90 % interval lies within
+    +-ln 1.1, each 'inconclusive' otherwise. Each cell alone, and the cells of a
+    pair together."""
+    if cell.fam != "probe":
+        return []
+    arms = c["arms"]
+    design = [d for d in partition_design(cell.spec, arms) if d["task"] == cell.task]
+    if not design:
+        return []
+    doses = axis_doses(cell.spec)
+    cells_of = {}
+    for x in doses["cells"]:
+        cells_of.setdefault(x["pair"], []).append(x["partition"])
+    rows = []
+    for tag in cell.tags:
+        for ref in c["references"]:
+            runs = [r for r in c["runs"] if r in cell.runs(ref, tag)
+                    and all(r in cell.runs(a, tag) for a in arms)]
+            if not runs:
+                continue
+            account = ref == c["account_reference"]
+            for d in design:
+                what = " and ".join(d["pairs"])
+                for pair in d["pairs"]:
+                    if set(cells_of.get(pair, [])) - set(d["merged"]):
+                        raise SystemExit(f"FATAL: axis_doses.v2.json lists cells of {pair} that "
+                                         "the partition merge table says do not merge it")
+                groups = [(cell.label(a), [a], {"merges": a in d["merged"],
+                                                "account_cells": [p for p in d["pairs"]
+                                                                  if account and a in cells_of.get(p, [])]})
+                          for a in arms]
+                groups += [(f"partitions that {s} {what}", g, {"merges": s == "merge"})
+                           for s, g in (("merge", d["merged"]), ("split", d["split"])) if g]
+                groups += [(f"the cells of {p}: partitions that merge it and keep its axis elsewhere",
+                            cells_of[p], {"merges": True, "account_cells": [p]})
+                           for p in d["pairs"] if account and cells_of.get(p)]
+                for name, members, kw in groups:
+                    row = _vs_reference(cell, c, tag, ref, members, runs, name, probe_pairs=d["pairs"],
+                                        axis_doses=pair_doses(doses, d["pairs"], members), **kw)
+                    if not row.get("account_cells"):
+                        row.pop("account_cells", None)
+                    elif "ln_combined_se" in row and tag not in cell.between:
+                        est, se, dof = row["ln_ratio"], row["ln_combined_se"], row["dof"]
+                        row["axis_account"] = P.beats_label(P.bounds(est, se, dof)[0])
+                        row["pair_account"] = P.equal_label(*P.bounds(est, se, dof, 0.90))
+                    rows.append(row)
+    return rows
+
+
+def _fraction(cell: _Cell, c: dict) -> list[dict]:
+    """A11 as A14 reads it: f = mean_k N_k / mean_k D_k over runs k, with N_k and
+    D_k the sums of weight x ln m over the arms of `numerator` and
+    `denominator`, paired by run, and its 95 % Fieller interval (P.fieller: the
+    paper's run + test error and Student t, with the denominator's error inside
+    the interval). At each checkpoint, not between them: a fraction is not a
+    ratio, and its two checkpoint values are reported side by side."""
+    nw, dw = c["numerator"], c["denominator"]
+    arms = list(dict.fromkeys([*nw, *dw]))
+    rows = []
+    for tag in cell.tags:
+        if tag in cell.between:
+            continue
+        runs = sorted(r for r in cell.runs(arms[0], tag) if all(r in cell.runs(a, tag) for a in arms))
+        if not runs:
+            continue
+        member = {r: {a: cell.runs(a, tag)[r] for a in arms} for r in runs}
+        models = [m for r in runs for m in member[r].values()]
+        row = cell.row(c["id"], None, None, tag, estimand=c["estimand"], numerator=nw,
+                       denominator=dw, models=models)
+        zero = cell.check(models, c["id"])
+        if zero:
+            row["not_computed"] = cell.undefined(zero)
+        else:
+            d = cell.dirs(models)
+            kept, excluded = P._stream_filter(runs, None if d is None else
+                                              {r: [d[m] for m in member[r].values()] for r in runs},
+                                              cell.ck(tag))
+            if excluded is not None:
+                row.update(stream_pairing="identical",
+                           excluded_runs=[{"run": r, **bad} for r, bad in excluded])
+            row["runs"] = kept
+            if not kept:
+                row["not_computed"] = "every run failed the stream check (A7)"
+            else:
+                def side(r, w):
+                    return sum(x * np.log(cell.v(member[r][a])) for a, x in w.items())
+                row.update(P.fieller([side(r, nw) for r in kept], [side(r, dw) for r in kept],
+                                     small_sample_rule=cell.rule))
+        cell.censor(row, models)
+        rows.append(row)
+    return rows
+
+
+def _p2_clause(runs: list, per_run: list, what: str, rule: bool) -> dict:
+    """One paired contrast of the P2 block, in ln(1 - AUC): the per-run values, the
+    mean, its run + test error, and its 95 % and 90 % intervals."""
+    e = P.paired_log(dict(zip(runs, per_run)), small_sample_rule=rule)
+    out = {"contrast": what, "per_run": [float(v[0]) for v in per_run]}
+    if "not_computed" in e:
+        return {**out, "not_computed": e["not_computed"]}
+    est, se, dof = e["ln_ratio"], e["ln_combined_se"], e["dof"]
+    return {**out, "estimate": est, "ln_test_se": e["ln_test_se"], "ln_combined_se": se, "dof": dof,
+            "ci95": list(P.bounds(est, se, dof)), "ci90": list(P.bounds(est, se, dof, 0.90))}
+
+
+def _p2_verdict(cells: dict, c: dict) -> list[dict]:
+    """A14, P2 restated, one block per probe and checkpoint with every number it
+    used, in ln(1 - AUC) (lower is better), paired over the runs every role has
+    on both tasks (the stream check over all five runs of an index). gap = R16_Q1
+    - R42_Q1 on two-prong b vs c, run by run.
+      (a) manipulation check, four-prong b vs c: F0 - F1, holds when its 95 % lower
+          bound is above 0;
+      (b) two-prong: (F0 - F1) - gap/2, holds when its 95 % lower bound is above 0;
+      (c) two-prong: F0 - R16_Q1, holds when its 90 % interval lies within +-gap/4.
+          The margin is a quarter of the point estimate of the gap over the same
+          runs, taken as fixed: its own uncertainty is not carried into (c) or the
+          withdrawal clause, and the gap's interval is recorded beside it;
+      (d) alignment, two-prong: F1R - F1, holds when its 95 % lower bound is above 0.
+    Each fails when its interval lies wholly on the other side, and is
+    inconclusive when it spans both. Withdrawal: when (b) holds and the 95 %
+    upper bound of F1R - F1 is below gap/4, the axis-specific rule is withdrawn;
+    when its lower bound is above gap/4, it is not; an interval spanning gap/4
+    is inconclusive, never a withdrawal."""
+    spec = next(iter(cells.values())).spec
+    own = json.loads((REPO / spec["probe_pairs"]).read_text())["balance_pairs"]
+    two, four = own[c["two_prong_pair"]]["task"], own[c["four_prong_pair"]]["task"]
+    ro = c["roles"]
+    by_kind = {}
+    for (fam, task, kind, metric), cell in cells.items():
+        if fam == "probe" and metric == c["metric"] and task in (two, four):
+            by_kind.setdefault(kind, {})[task] = cell
+    out = []
+    for kind, per in sorted(by_kind.items()):
+        if two not in per or four not in per:
+            continue
+        T, F = per[two], per[four]
+        for tag in T.tags:
+            if tag in T.between:
+                continue
+            runs = sorted(r for r in T.runs(ro["F0"], tag) if all(r in T.runs(a, tag) for a in ro.values())
+                          and all(r in F.runs(ro[x], tag) for x in ("F0", "F1")))
+            if not runs:
+                continue
+            tm = {r: [T.runs(a, tag)[r] for a in ro.values()] for r in runs}
+            fm = {r: [F.runs(ro[x], tag)[r] for x in ("F0", "F1")] for r in runs}
+            block = {"contrast": c["id"], "kind": kind, "metric": c["metric"], "checkpoint": tag,
+                     "two_prong_task": two, "four_prong_task": four, "roles": ro,
+                     "units": "ln(1 - AUC), lower is better"}
+            if T.root is not None:
+                bad = {r: P.stream_check(list(T.dirs(tm[r]).values()), T.ck(tag)) for r in runs}
+                block["excluded_runs"] = [{"run": r, **b} for r, b in bad.items() if b]
+                runs = [r for r in runs if not bad[r]]
+            block["runs"] = runs
+            zero = T.check([m for r in runs for m in tm[r]], c["id"]) + \
+                F.check([m for r in runs for m in fm[r]], c["id"])
+            cens = [m for cl, ms in ((T, tm), (F, fm)) for r in runs for m in ms[r]
+                    if cl.metas[m].get("censored")]
+            if cens:
+                block.update(censored_models=cens, note=AUC_FLOOR)
+            if not runs or zero:
+                block["not_computed"] = (T.undefined(zero) if zero else
+                                         "every run failed the stream check (A7)")
+                out.append(block)
+                continue
+
+            def lt(x, r):
+                return np.log(T.v(T.runs(ro[x], tag)[r]))
+
+            def lf(x, r):
+                return np.log(F.v(F.runs(ro[x], tag)[r]))
+            gap = _p2_clause(runs, [lt("R16", r) - lt("R42", r) for r in runs],
+                             "R16_Q1 - R42_Q1, two-prong b vs c: the 43- to 17-class gap", T.rule)
+            cl = {"a": _p2_clause(runs, [lf("F0", r) - lf("F1", r) for r in runs],
+                                  "F0 - F1, four-prong b vs c (manipulation check)", T.rule),
+                  "b": _p2_clause(runs, [lt("F0", r) - lt("F1", r) - (lt("R16", r) - lt("R42", r)) / 2
+                                         for r in runs], "(F0 - F1) - gap/2, two-prong b vs c", T.rule),
+                  "c": _p2_clause(runs, [lt("F0", r) - lt("R16", r) for r in runs],
+                                  "F0 - R16_Q1, two-prong b vs c (equivalence)", T.rule),
+                  "d": _p2_clause(runs, [lt("F1R", r) - lt("F1", r) for r in runs],
+                                  "F1R - F1, two-prong b vs c (alignment)", T.rule)}
+            block.update(gap=gap, clauses=cl)
+            failed = [x for x in [gap, *cl.values()] if "not_computed" in x]
+            if failed:
+                block["not_computed"] = failed[0]["not_computed"]
+                out.append(block)
+                continue
+            m = gap["estimate"] / 4
+            block["margin"] = {"value": m, "is": "a quarter of the point estimate of the gap over the "
+                               "same runs, taken as fixed; the gap's own 95 % interval is gap.ci95"}
+            for k in ("a", "b", "d"):
+                cl[k].update(threshold=0.0, interval="ci95", label=P.threshold_label(*cl[k]["ci95"]))
+            cl["c"].update(margin=m, interval="ci90", label=P.equivalence_label(*cl["c"]["ci90"], m))
+            if not m > 0:
+                w = "not evaluable: the 43- to 17-class gap is not positive"
+            elif cl["b"]["label"] != "holds":
+                w = f"not reached: (b) is {cl['b']['label']}"
+            else:
+                w = {"holds": "not withdrawn", "fails": "withdrawn", "inconclusive": "inconclusive"}[
+                    P.threshold_label(*cl["d"]["ci95"], m)]
+            block["withdrawal"] = {"label": w, "reads": "(d)'s 95 % interval against gap/4, when (b) holds"}
+            out.append(block)
+    return out
 
 
 KINDS = {"pairs": _pairs, "all_pairs": _pairs, "unpaired": _unpaired, "linear": _linear,
          "checkpoint": _checkpoint, "draws": _draws,
-         "partition_split_vs_merged": _partition_split_vs_merged}
+         "partition_split_vs_merged": _partition_split_vs_merged,
+         "random_vs_semantic": _random_vs_semantic, "fraction": _fraction}
+ACROSS = {"partition_joint": _partition_joint}   # contrasts that read several cells at once
+
+
+def selected_epochs(spec: dict, root) -> dict:
+    """A14: every finished run's selected epochs, by vocabulary: {arm: {run: {best70,
+    bestval}}}, from best_window_epoch.json and best_epoch.json. A run without
+    DONE is left out."""
+    out = {}
+    for arm, run, d in sorted(spec["models"].values()):
+        rd = pathlib.Path(root) / d
+        if not (rd / "DONE").exists():
+            continue
+        out.setdefault(arm, {})[run] = {
+            ck: json.loads((rd / f).read_text())["epoch"] if (rd / f).exists() else None
+            for ck, (f, _) in P.SELECTED_EPOCH.items()}
+    return out
+
+
+def mass_shares(spec: dict, root) -> dict:
+    """A11 (A14): the realised loss and gradient shares of every finished run of a
+    mass-output arm (the grid's mass_lambda), from its metrics/epoch-EEE.json. Per
+    epoch, the loss ratio x = lambda L_reg / L_cls of the training means (A11's
+    basis) and, where the epoch records grad_diag, the trunk-gradient norm ratio
+    rho = |grad lambda L_reg| / |grad L_cls| on the fixed validation batch and the
+    cosine of the two gradients. Each is averaged over the run's epochs; the
+    shares are x / (1 + x) and rho / (1 + rho) of those averages; then mean and
+    SD over runs per arm. Runs without DONE give nothing, so before any run has
+    finished the result is empty."""
+    out = {}
+    for model, (arm, run, d) in sorted(spec["models"].items()):
+        lam = spec.get("grid_arms", {}).get(arm, {}).get("mass_lambda")
+        rd = pathlib.Path(root) / d
+        if not lam or not (rd / "DONE").exists():
+            continue
+        x, rho, cos = [], [], []
+        files = sorted((rd / "metrics").glob("epoch-*.json"))
+        for f in files:
+            rec = json.loads(f.read_text())
+            x.append(lam * rec["train"]["loss_reg"] / rec["train"]["loss_cls"])
+            g = rec.get("grad_diag")
+            if g:
+                rho.append(g["grad_norm"]["lambda_loss_reg"] / g["grad_norm"]["loss_cls"])
+                cos.append(g["cosine"])
+        r = {"model": model, "epochs": len(files)}
+        if x:
+            r.update(loss_ratio=float(np.mean(x)), loss_share=float(np.mean(x) / (1 + np.mean(x))))
+        if rho:
+            r.update(grad_epochs=len(rho), grad_norm_ratio=float(np.mean(rho)),
+                     grad_share=float(np.mean(rho) / (1 + np.mean(rho))), grad_cosine=float(np.mean(cos)))
+        out.setdefault(arm, {"lambda": lam, "runs": {}})["runs"][run] = r
+    for a in out.values():
+        for k in ("loss_ratio", "loss_share", "grad_norm_ratio", "grad_share", "grad_cosine"):
+            v = [r[k] for r in a["runs"].values() if k in r]
+            if v:
+                a[k] = {"mean": float(np.mean(v)), "sd": float(np.std(v, ddof=1)) if len(v) > 1 else None,
+                        "n_runs": len(v)}
+    return out
+
+
+def checkpoint_dependence(rows: list, between: list) -> dict:
+    """A14: per comparison between checkpoints, the number of dependent results
+    (95 % interval excluding 0: 'depends on the checkpoint', or 'depends on the
+    checkpoint, under 10%' when it also lies within +-ln 1.1, counted apart as
+    well) against its 5 % null expectation, with the binomial tail P(X >= count)
+    at N and 0.05. The results share models and test jets, so they are not
+    independent and the tail is a reference, not a test. 'results' are the
+    contrasts; 'models' the checkpoint contrast, one model's own metric.
+
+    The 5 % is the nominal rate. A result left with two runs takes A14's floor
+    (the error never below the observed spread) and Student t at 1 degree of
+    freedom, and under the null excludes 0 far less often than 5 %
+    (src/stats/tests/test_paired.py measures it), so 5 % of all results
+    overstates what the null gives. Those results are also counted on their own
+    (two_run_rule, no expectation) and the others with their own 5 % expectation
+    and tail (other).
+
+    A result whose two checkpoints are one file in every run (the global best is
+    the run's selected epoch within 70-79, so bestval links to best70) has a ratio
+    of exactly 1 with no error: it cannot depend on the checkpoint, so it is
+    counted apart (identical_checkpoint) and left out of every count above."""
+    from scipy.stats import binom
+
+    def tally(sel):
+        k, n = sum(r["checkpoint_label"] in P.DEPENDENT for r in sel), len(sel)
+        return {"dependent": k, "n": n, "expected_under_null": 0.05 * n,
+                "binomial_tail_p": float(binom.sf(k - 1, n, 0.05)) if n else None}
+
+    def identical(r):
+        return r.get("ln_ratio") == 0.0 and r.get("ln_combined_se") == 0.0
+
+    def count(sel):
+        same = [r for r in sel if identical(r)]
+        sel = [r for r in sel if not identical(r)]
+        two = [r for r in sel if r.get("two_run_rule")]
+        return {**tally(sel),
+                "dependent_under_10pc": sum(r["checkpoint_label"] == P.DEPENDS_UNDER_10 for r in sel),
+                "robust": sum(r["checkpoint_label"] == "robust" for r in sel),
+                "inconclusive": sum(r["checkpoint_label"] == "inconclusive" for r in sel),
+                "censored": sum(bool(r.get("censored_models")) for r in sel),
+                "identical_checkpoint": len(same),
+                "two_run_rule": {"dependent": sum(r["checkpoint_label"] in P.DEPENDENT for r in two),
+                                 "n": len(two)},
+                "other": tally([r for r in sel if not r.get("two_run_rule")])}
+    out = {}
+    for tag in between:
+        lab = [r for r in rows if r["checkpoint"] == tag and "checkpoint_label" in r]
+        out[tag] = {"results": count([r for r in lab if r["contrast"] != "checkpoint"]),
+                    "models": count([r for r in lab if r["contrast"] == "checkpoint"]),
+                    "by_contrast": {cid: count([r for r in lab if r["contrast"] == cid])
+                                    for cid in dict.fromkeys(r["contrast"] for r in lab)}}
+    return out
 
 
 def _rejections(cell: _Cell) -> list[dict]:
     out = []
     for (arm, tag), runs in cell.arms.items():
-        if tag is not None and tag == cell.both:
+        if tag in cell.between:
             continue
         per_run = []
         for run, model in sorted(runs.items()):
@@ -893,7 +1418,10 @@ def ratios(vec: dict, meta: dict, run_dirs_root: pathlib.Path | None = None,
     checkpoint, contrasts.v1.json when none does) in every family x task x probe
     x metric. With `run_dirs_root` (v2), run k of two arms is a pair only where
     their training streams agree up to the compared checkpoint; a run that does
-    not is reported and left out (A7)."""
+    not is reported and left out (A7). v2 adds the A14 checkpoint label to every
+    result between checkpoints and their count (checkpoint_dependence), the P2
+    verdict blocks, and, from the run directories, each run's selected epochs
+    and the A11 shares."""
     groups = _group(meta)
     if spec is None:
         tagged = {"@" in m for g in groups.values() for m in g}
@@ -910,26 +1438,36 @@ def ratios(vec: dict, meta: dict, run_dirs_root: pathlib.Path | None = None,
     for g, cell in cells.items():
         points["|".join(g)] = {m: float(vec[k][0]) for m, k in cell.key.items()}
         for c in spec["contrasts"]:
-            if c["kind"] != "partition_joint":
+            if c["kind"] in KINDS:
                 rows += KINDS[c["kind"]](cell, c)
         if cell.metric.startswith("eps_b@"):
             rej += _rejections(cell)
     for c in spec["contrasts"]:
-        if c["kind"] == "partition_joint":
-            rows += _partition_joint(cells, c)
-    both = between_checkpoints(spec)
-    for r in rows:                  # A8: every result at the weight average over the primary
-        if both is not None and r["checkpoint"] == both and "ln_combined_se" in r:
-            r["robust_to_checkpoint"] = bool(abs(r["ln_ratio"]) <= r["ln_combined_se"])
+        if c["kind"] in ACROSS:
+            rows += ACROSS[c["kind"]](cells, c)
+    between = between_checkpoints(spec)
+    for r in rows:                  # A14: every result at another checkpoint over the primary
+        if r["checkpoint"] in between and "ln_combined_se" in r:
+            r["checkpoint_label"] = P.checkpoint_label(*P.bounds(r["ln_ratio"], r["ln_combined_se"],
+                                                                 r["dof"]))
     used = {m for r in rows for k in ("fine_models", "coarse_models", "models") for m in r.get(k, [])}
     unused = sorted({m for cell in cells.values() for m in cell.key} - used)
     if unused:
         print(f"WARNING: {len(unused)} models enter no contrast, e.g. {unused[:3]}")
-    return {"ratios": rows, "rejections": rej, "point_values": points,
-            "models_in_no_contrast": unused,
-            "contrasts": {"path": spec["path"], "sha256": spec["sha256"],
-                          "version": spec["version"], "pending_arms": spec["pending_arms"]},
-            "audit_b3": bool(spec.get("audit_b3"))}
+    out = {"ratios": rows, "rejections": rej, "point_values": points,
+           "models_in_no_contrast": unused,
+           "contrasts": {"path": spec["path"], "sha256": spec["sha256"],
+                         "version": spec["version"], "pending_arms": spec["pending_arms"]},
+           "audit_b3": bool(spec.get("audit_b3"))}
+    if between:
+        out["checkpoint_dependence"] = checkpoint_dependence(rows, between)
+    p2 = [c for c in spec["contrasts"] if c["kind"] == "p2_verdict"]
+    if p2 and cells:
+        out["p2_verdict"] = [b for c in p2 for b in _p2_verdict(cells, c)]
+    if "grid_arms" in spec:
+        out["selected_epochs"] = None if run_dirs_root is None else selected_epochs(spec, run_dirs_root)
+        out["a11_shares"] = {} if run_dirs_root is None else mass_shares(spec, run_dirs_root)
+    return out
 
 
 # ----------------------------------------------------- audit B3, the check
@@ -1042,7 +1580,7 @@ def main(argv=None) -> int:
             s.add_argument("--procs", type=int, default=8)
             s.add_argument("--cache", type=pathlib.Path, default=None,
                            help="per-cell results, kept as they finish and reused on a retry")
-            s.add_argument("--checkpoint-rule", choices=("bestval", "wavg"), default=None,
+            s.add_argument("--checkpoint-rule", choices=("best70", "wavg", "bestval"), default=None,
                            help="v2: the rule of the tree under the roots, which every "
                                 "cell's init_checkpoint.json must record")
     s = sub.add_parser("ratios")
@@ -1137,11 +1675,33 @@ def main(argv=None) -> int:
                                          "passing background jets"},
                **res}
         if v2:
-            res["method"]["robust_to_checkpoint"] = (
-                "A8: every contrast is also formed at checkpoint 'wavg/bestval', the result "
-                "at the weight average over the result at the best-validation checkpoint, run "
-                "by run on the same test resamplings (contrast 'checkpoint': one model); "
-                "robust_to_checkpoint = |ln of that ratio| <= its combined error")
+            res["method"]["checkpoint_label"] = (
+                "A14: every contrast is also formed at checkpoints 'wavg/best70' (robustness) "
+                "and 'bestval/best70' (sensitivity), the result at the weight average, or at "
+                "the global best, over the result at the primary checkpoint, run by run on the "
+                "same test resamplings (contrast 'checkpoint': one model). From its 95% "
+                "interval: 'depends on the checkpoint' when it excludes 0, 'robust' when it "
+                "lies within +-ln 1.1, 'depends on the checkpoint, under 10%' when both hold "
+                "(A14 does not order them), else 'inconclusive'; checkpoint_dependence counts "
+                "the results whose interval excludes 0 against 5% of them, and also apart "
+                "the results with two runs (two_run_rule: their floor and 1 degree of "
+                "freedom exclude 0 far less often than 5% under the null) and the others")
+            res["method"]["small_samples"] = (
+                "A14: with two runs the error is never below the observed spread and the "
+                "interval takes Student t at 1 degree of freedom; a paired contrast left with "
+                "one run pair is not computed")
+            res["method"]["p1"] = (
+                "A14: per pair, the runs of the merging and splitting partitions, each side "
+                "with its own run variance from the runs that replicate one partition (Welch); "
+                "p1_label 'merging costs nothing' (95% upper bound below ln 1.1), 'merging "
+                "costs' (lower bound above 0), 'merging costs, under 10%' when both hold (A14 "
+                "does not order them), else 'inconclusive'. The joint fit "
+                "weights each task by 1 / (run variance / runs + test variance) and leaves out "
+                "a task with a censored unit; partition_joint_dose adds one term per axis")
+            res["method"]["fraction"] = (
+                "A11: f = mean N / mean D over paired runs with a 95% Fieller interval, the "
+                "error of mean(N - f D) by the combined error; no interval when the "
+                "denominator's own 95% interval holds 0")
             res["method"]["anomaly"] = (
                 "sigma_min, no resampling: a run's value is the median over its detector "
                 "trainings on draws seeded by the model's name, so that noise is in the spread "

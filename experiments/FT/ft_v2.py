@@ -3,7 +3,14 @@
 
     resolve  which pretrained checkpoint a v2 cell loads, by rule, in the pod,
              from the records experiments/MTX/pretrain_v2.py writes in the run:
-               bestval  the best epoch on the fixed validation sample. The
+               best70   the primary (amendment A14): the first maximum of
+                        selection.value within epochs 70-79 (self-supervised:
+                        minus the validation loss, so its first minimum), from
+                        metrics/epoch-070..079.json, which must agree with
+                        best_window_epoch.json; loaded by name as
+                        net_epoch-<e>_state.pt.
+               bestval  the global best epoch on the fixed validation sample,
+                        A14's sensitivity check. The
                         argmax of selection.value over metrics/epoch-EEE.json
                         (the first maximum, as the driver's strict `>` keeps
                         it) must agree with best_epoch.json, and the epoch is
@@ -65,11 +72,42 @@ def epoch_selection(run_dir: pathlib.Path) -> dict[int, float]:
     return out
 
 
+def window_best(run_dir: pathlib.Path, n_epochs: int = 80) -> dict:
+    """The primary checkpoint of amendment A14: the first maximum of selection.value
+    within the last ten epochs (70-79 of 80), recomputed from metrics/epoch-EEE.json and
+    checked against the run's own best_window_epoch.json, which a restart could leave
+    stale. Higher is better, so for the self-supervised run (value = minus the validation
+    loss) it is the first minimum of the loss."""
+    window = range(max(0, n_epochs - len(WAVG_EPOCHS)), n_epochs)
+    sel = epoch_selection(run_dir)
+    missing = [e for e in window if e not in sel]
+    if missing:
+        raise SystemExit(f"FATAL: {run_dir}/metrics has no record of epochs {missing}")
+    top = max(sel[e] for e in window)
+    epoch = min(e for e in window if sel[e] == top)
+    path = run_dir / "best_window_epoch.json"
+    if not path.exists():
+        raise SystemExit(f"FATAL: {path} absent; the run did not record its window checkpoint")
+    stated = json.loads(path.read_text())
+    if stated.get("window") != [window[0], window[-1]]:
+        raise SystemExit(f"FATAL: {path} is over epochs {stated.get('window')}, not "
+                         f"{window[0]}-{window[-1]}")
+    if int(stated["epoch"]) != epoch:
+        raise SystemExit(f"FATAL: {path} says epoch {stated['epoch']}, the per-epoch records "
+                         f"say {epoch}")
+    return {"epoch": epoch, "metric": stated.get("metric"), "value": top,
+            "window": [window[0], window[-1]]}
+
+
 def resolve(run_dir: pathlib.Path, rule: str, n_epochs: int = 80) -> dict:
     if not (run_dir / "DONE").exists():
         raise SystemExit(f"FATAL: {run_dir} has no DONE; the run is not complete")
     rec = {"rule": rule, "run_dir": str(run_dir)}
-    if rule == "bestval":
+    if rule == "best70":
+        w = window_best(run_dir, n_epochs)
+        epoch = w.pop("epoch")
+        rec.update(w)
+    elif rule == "bestval":
         sel = epoch_selection(run_dir)
         missing = sorted(set(range(n_epochs)) - set(sel))
         if missing:
@@ -85,7 +123,7 @@ def resolve(run_dir: pathlib.Path, rule: str, n_epochs: int = 80) -> dict:
     elif rule == "wavg":
         return resolve_wavg(run_dir, rec)
     else:
-        raise SystemExit(f"FATAL: unknown checkpoint rule {rule!r} (bestval or wavg)")
+        raise SystemExit(f"FATAL: unknown checkpoint rule {rule!r} (best70, bestval or wavg)")
     path = run_dir / f"net_epoch-{epoch}_state.pt"
     if not path.exists():
         raise SystemExit(f"FATAL: rule {rule} selects epoch {epoch}, and {path} is not kept")

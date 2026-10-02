@@ -53,6 +53,7 @@ Run:  python3 scripts/build_ft_jobs.py [--pin TAG]
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import pathlib
 import re
@@ -1413,6 +1414,14 @@ assert LAUNCHED_LATER <= set(INITS_LATER), LAUNCHED_LATER - set(INITS_LATER)
 # head are the ONLY missing keys. Measured on the architecture, 2026-09-18.
 MPM_FRESH = ("mod.cls_token", "mod.cls_blocks.", "mod.norm.")
 MPM_N_FRESH = 39
+# Init names that are self-supervised: v1's mpm-s<k>, v2's mpm-v2-s<k>, and the
+# self-supervised leave-one-family-out runs, mpmlofo4p-v2-s<k> (v2_runs).
+MPM_PREFIXES = ("mpm-", "mpmlofo4p-")
+
+
+def _is_mpm(name: str) -> bool:
+    return name.startswith(MPM_PREFIXES)
+
 
 _all_new = INITS_W3 + [i for g in INITS_LATER.values() for i in g]
 _names = [n for n, *_ in INITS + _all_new]
@@ -1586,7 +1595,7 @@ def _mpm_convert(inits, src: dict | None = None) -> str:
            "          # token and final norm were never trained by masked-particle modelling\n"
            "          # and start fresh, seeded by the fine-tuning seed like the head.\n")
     for n, c, k, _ in inits:
-        if n.startswith("mpm-"):
+        if _is_mpm(n):
             out += (f"          [ -f {src[n]} ] || {{ echo \"FATAL: no {src[n]}\"; exit 1; }}\n"
                     f"          python3 experiments/FT/mpm_init.py --src {src[n]} --out {c}\n")
     return out
@@ -1634,7 +1643,7 @@ def _baseline(name: str) -> str | None:
     """'scratch' or 'mpm' for an init that takes a baseline recipe above, else None."""
     if name == SCRATCH_REF:
         return "scratch"
-    if name.startswith("mpm-") and name not in MPM_HEAD_ONLY:
+    if _is_mpm(name) and name not in MPM_HEAD_ONLY:
         return "mpm"
     return None
 
@@ -1720,10 +1729,16 @@ def _refs_subs(inits, bench: bool) -> list:
     return []
 
 
+def _mpm_glob(inits) -> str:
+    """The shell case pattern of the self-supervised prefixes `inits` use: `mpm-*` for
+    every spec before the leave-one-family-out runs, so their text is unchanged."""
+    return "|".join(f"{p}*" for p in MPM_PREFIXES if any(n.startswith(p) for n, *_ in inits))
+
+
 def legs_w3(inits, shard_name: str, mpm_src: dict | None = None) -> str:
     """Wave 3 = wave 2's script over `inits`, by asserted substitution."""
-    has_mpm = any(n.startswith("mpm-") for n, *_ in inits)
-    assert not has_mpm or all(n.startswith("mpm-") for n, *_ in inits), (
+    has_mpm = any(_is_mpm(n) for n, *_ in inits)
+    assert not has_mpm or all(_is_mpm(n) for n, *_ in inits), (
         "a self-supervised init shares a spec only with other self-supervised "
         "inits: the load-log check below is substituted for the whole spec")
     seeds = sorted({s for *_, ss in inits for s in ss})
@@ -1828,7 +1843,7 @@ def legs_w3(inits, shard_name: str, mpm_src: dict | None = None) -> str:
             ("            [ -f \"${ckpt}\" ] || { echo \"FATAL: ${name}: no ${ckpt}\"; exit 1; }\n"
              "            python3 experiments/EVAL/extract_features.py --checkpoint ${ckpt} --num-classes ${k}",
              "            [ -f \"${ckpt}\" ] || { echo \"FATAL: ${name}: no ${ckpt}\"; exit 1; }\n"
-             "            case ${name} in mpm-*) continue;; esac   # no head: verified by mpm_init.py\n"
+             f"            case ${{name}} in {_mpm_glob(inits)}) continue;; esac   # no head: verified by mpm_init.py\n"
              "            python3 experiments/EVAL/extract_features.py --checkpoint ${ckpt} --num-classes ${k}", 1),
             ("load-log --log ${OUT}/stdout.log", _MPM_LOADLOG, 2),
         ]
@@ -1847,8 +1862,8 @@ def legs_bench_v2(inits, shard_name: str, mpm_src: dict | None = None) -> str:
     cells; the per-cell lock and per-shard halt marker. The recipe constants,
     the 85% guard and the constant-LR scheduler are untouched.
     """
-    has_mpm = any(n.startswith("mpm-") for n, *_ in inits)
-    assert not has_mpm or all(n.startswith("mpm-") for n, *_ in inits)
+    has_mpm = any(_is_mpm(n) for n, *_ in inits)
+    assert not has_mpm or all(_is_mpm(n) for n, *_ in inits)
     has_public = any(c == "/workspace/sophon_public.pt" for _, c, *_ in inits)
     spe = "".join(f"{n}) echo {v};; " for n, v in BENCH_SAMPLES_PER_EPOCH.items())
     subs = [
@@ -2092,11 +2107,12 @@ STAGE_HERWIG = PREAMBLE + """
 #     ran samples_per_epoch // 512 (19). v2 records the samples and steps from the
 #     variable weaver is given, and each cell checks weaver's own log agrees.
 #   * Every v2 cell loads its pretrained checkpoint by RULE, resolved in the pod
-#     (experiments/FT/ft_v2.py resolve): `bestval`, the primary, the best
-#     validation epoch of the run on the fixed sample; `wavg`, the robustness
-#     check, the weight average of epochs 70-79 that the v2 pretraining writes
-#     (net_wavg70-79_state.pt; chosen after the output-layer diagnostic,
-#     experiments/FIGS/data/head_epoch_diag). Each rule has its own tree.
+#     (experiments/FT/ft_v2.py resolve): `best70`, the primary (amendment A14),
+#     the first maximum on the fixed validation sample within epochs 70-79;
+#     `wavg`, the robustness check, the weight average of epochs 70-79 that the
+#     v2 pretraining writes (net_wavg70-79_state.pt; chosen after the
+#     output-layer diagnostic, experiments/FIGS/data/head_epoch_diag). Each rule
+#     has its own tree. The self-supervised runs resolve by the same rules.
 #   * JetClass and the benchmarks keep their subsets and recipe, so the complete
 #     from-scratch cells of v1 are reused; every v2 job first checks that the
 #     subsets it reads have the sha256 on record (V2_SHA_TABLE), the record the
@@ -2104,7 +2120,11 @@ STAGE_HERWIG = PREAMBLE + """
 # Nothing here that loads a v2 checkpoint may be applied before the checkpoints
 # exist (no pretraining launches): only the staging job and the from-scratch
 # JetClass-II reference, which load none.
-PIN_V2 = "mtx-s1.88"
+# The specs that load a v2 checkpoint: the tag with the best70 resolver.
+PIN_V2 = "mtx-s1.98"
+# The from-scratch reference loads none; it was launched at this tag
+# (ledger ft-v2-legs-scratch), and its spec is the record of that run.
+PIN_V2_SCRATCH = "mtx-s1.88"
 # The staging job runs before the sha256 record exists, so it is tagged first.
 PIN_V2_SUBSETS = "mtx-s1.83"
 # The first tag with the whole resumable logic (cell_resume.py, ft_weaver.py,
@@ -2114,7 +2134,13 @@ V2_SUBSETS = "/data/finetune/jc2_v2"
 V2_SHA_TABLE = "experiments/FT/data/ft_v2_subsets_sha256.json"
 V2_ROOT = "/data/results/ft_v2"
 MTX_V2 = "/data/results/mtx_v2"
-V2_RULES = ("bestval", "wavg")
+# The primary and A8's robustness check, which A8 requires for every result,
+# fine-tuning included. The global best epoch (`bestval`) is not fine-tuned: A14
+# lists it as a sensitivity check without A8's "fine-tuning included", and a third
+# rule would add half again to the fine-tuning cost (~1,370 GPU-h by cost_h on the
+# 88-run grid of 2026-10-02). It is read out frozen only
+# (scripts/build_extract_jobs.py, V2_CHECKPOINTS).
+V2_RULES = ("best70", "wavg")
 V2_VAL_JETS = 20_480
 V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
 V2_EXPECTED = "experiments/FT/data/ft_v2_expected_cells.json"
@@ -2147,10 +2173,10 @@ def v2_runs() -> list[tuple[str, str, int, int]]:
     configs/arms/v2_grid.json. The run directory is mtx-<arm, lower case, no
     underscores>-s<seed>, as v1 named the same arms (L162_MASS -> mtx-l162mass-s1),
     and the init name drops the mtx-. K is the checkpoint's head: the classes, plus
-    the mass node, 0 for the self-supervised arm. That arm's inits are named
-    mpm-v2-s<seed>: the name routes them through the self-supervised recipe
-    (_baseline, BASELINE RECIPES), and mpm-s1 would not -- it is v1's head-only
-    record (MPM_HEAD_ONLY)."""
+    the mass node, 0 for a self-supervised arm. The arm named MPM's inits are
+    mpm-v2-s<seed> and MPM_LOFO4P's mpmlofo4p-v2-s<seed>: the prefix routes them
+    through the self-supervised recipe (MPM_PREFIXES, _baseline, BASELINE RECIPES),
+    and mpm-s1 would not -- it is v1's head-only record (MPM_HEAD_ONLY)."""
     if not V2_GRID.exists():
         raise SystemExit(f"FATAL: {V2_GRID.relative_to(ROOT)} does not exist; it lists the v2 runs")
     out = []
@@ -2159,7 +2185,7 @@ def v2_runs() -> list[tuple[str, str, int, int]]:
         mpm = arm["objective"] == "mpm"
         k = 0 if mpm else arm["num_classes"] + (1 if arm["mass_lambda"] else 0)
         for s in range(1, arm["runs"] + 1):
-            out.append((f"mpm-v2-s{s}" if mpm else f"{slug}-s{s}",
+            out.append((f"{slug}-v2-s{s}" if mpm else f"{slug}-s{s}",
                         f"{MTX_V2}/mtx-{slug}-s{s}", k, arm["tier"]))
     names = [n for n, *_ in out]
     assert len(names) == len(set(names)), names
@@ -2188,7 +2214,7 @@ _MPM_MARK = "          # THE SELF-SUPERVISED INIT IS CONVERTED, NOT LOADED RAW. 
 
 def _v2_mpm_src(inits) -> dict | None:
     """The conversion's source for v2 self-supervised inits: the file resolve links."""
-    src = {n: f"/workspace/ckpt/{n}.src.pt" for n, *_ in inits if n.startswith("mpm-")}
+    src = {n: f"/workspace/ckpt/{n}.src.pt" for n, *_ in inits if _is_mpm(n)}
     return src or None
 _NAN_MARK = "# A run whose loss went to NaN is not a result even if it finishes: weaver\n"
 
@@ -2208,10 +2234,10 @@ def _resolve_block(inits, rule: str) -> str:
            "          # selected epoch to /workspace/ckpt/<init>.pt and records the choice in\n"
            "          # <init>.pt.json, which every cell copies beside its result.\n")
     for n, *_ in inits:
-        link = f"/workspace/ckpt/{n}.src.pt" if n.startswith("mpm-") else f"/workspace/ckpt/{n}.pt"
+        link = f"/workspace/ckpt/{n}.src.pt" if _is_mpm(n) else f"/workspace/ckpt/{n}.pt"
         out += (f"          python3 experiments/FT/ft_v2.py resolve --run-dir {run[n]} "
                 f"--rule {rule} --link {link} || exit ${{HALT}}\n")
-        if n.startswith("mpm-"):
+        if _is_mpm(n):
             out += f"          cp {link}.json /workspace/ckpt/{n}.pt.json\n"
     return out + "\n"
 
@@ -2415,6 +2441,22 @@ def spec_bytes(cells) -> float:
     return sum(cell_bytes(c) for c in cells) + epochs * EPOCH_PAIR_BYTES
 
 
+def v2_need() -> dict[str, float]:
+    """{spec: bytes it leaves on /data} for every v2 fine-tuning spec _v2_specs emits. The
+    v2 extraction's sizing (experiments/EVAL/extraction_v2_sizing.py) counts the same total,
+    so the two plans are checked against one /data budget."""
+    need = {f"job-ft-v2-{kind}-{rule}-{suffix}-raunav.yaml": spec_bytes(cells_of(s))
+            for rule in V2_RULES
+            for kind, cells_of in (("legs", cells_legs), ("bench", cells_bench_v2ckpt))
+            for suffix, s in v2_groups(cells_of)}
+    # The from-scratch reference is already running (ledger ft-v2-legs-scratch), so the df
+    # the budget is checked against may already hold part of its output: counting it in
+    # full is an upper bound, conservative by at most its 2.6 GB.
+    need["job-ft-v2-legs-scratch-raunav.yaml"] = spec_bytes(
+        [c for c in cells_legs(INITS_LATER[SCRATCH_REF]) if c[0] == "leg1"])
+    return need
+
+
 def v2_expected_cells() -> dict:
     """Every v2 cell the generator emits, "init/N<N>/s<S>" under "<rule>/<leg>", the
     list the read-outs check they read in full (--expect-cells)."""
@@ -2428,12 +2470,38 @@ def v2_expected_cells() -> dict:
     return {k: sorted(v) for k, v in sorted(out.items())}
 
 
+def v2_grid_reserve_gb() -> float:
+    """GB of /data the v2 pretraining grid can take at its peak (scripts/build_mtx_launch.py
+    V2_GRID_RESERVE_GIB): held back from the headroom until v2 pretraining has finished."""
+    spec = importlib.util.spec_from_file_location("build_mtx_launch", ROOT / "scripts" / "build_mtx_launch.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.V2_GRID_RESERVE_GIB * 2**30 / 1e9
+
+
+def v2_extraction_gb() -> float:
+    """GB the v2 extraction plan writes (scripts/build_extract_jobs.py V2_PLAN, from its
+    committed sizing). It shares /data with these specs, so it is held back from their
+    headroom until the extraction has finished (--v2-extraction-done)."""
+    spec = importlib.util.spec_from_file_location("build_extract_jobs", ROOT / "scripts" / "build_extract_jobs.py")
+    bx = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bx)
+    e = json.loads(bx.V2_SIZING.read_text())["storage"].get(bx.V2_PLAN)
+    if e is None:
+        raise SystemExit(f"FATAL: {bx.V2_SIZING.name} does not size the extraction plan {bx.V2_PLAN!r}")
+    return e["extraction_bytes"] / 1e9
+
+
 def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None = None,
-              only: list | None = None) -> dict:
+              only: list | None = None, v2_pretraining_done: bool = False,
+              v2_extraction_done: bool = False) -> dict:
+    # Unlike the extraction, fine-tuning does not wait on A14's BatchNorm readout
+    # (experiments/DIAG/head_bn_diag.py): the BatchNorm-recomputed variant is for frozen
+    # readouts only, since fine-tuning re-estimates BatchNorm statistics on its own data.
     h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
     gpu = dict(gpu=True, cpu="4", memory="88Gi", shm="8Gi", backoff=1, pin=pin,
                exclude_hosts=BAD_NODES + LOST_GPU_NODES)
-    specs, need = {}, {}
+    specs = {}
     if subsets:
         name = "ft-subsets-jc2-v2-raunav"
         specs[f"job-{name}.yaml"] = job(
@@ -2449,6 +2517,7 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
     if not (ROOT / V2_SHA_TABLE).exists():
         raise SystemExit(f"FATAL: {V2_SHA_TABLE} is not in the tree: copy it from "
                          f"{V2_SUBSETS}/ft_v2_subsets_sha256.json after the staging job")
+    need = v2_need()
     for rule in V2_RULES:
         for kind, cells_of, script in (("legs", cells_legs, legs_v2),
                                        ("bench", cells_bench_v2ckpt, bench_v2ckpt)):
@@ -2459,7 +2528,6 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
                         "  # JetClass, wave 3's recipe" if kind == "legs" else
                         "top and quark/gluon (with Herwig) at bench v2's\n"
                         "  # recipe; the full training set also scored at its last epoch")
-                need[f"job-{name}.yaml"] = spec_bytes(cells)
                 specs[f"job-{name}.yaml"] = job(
                     name, _fill(script(s, name, rule), pin, inits=s), **_retry_kw(name, gpu),
                     header=h + _retry_note(name)
@@ -2470,24 +2538,33 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
                       f"Root {V2_ROOT}/{rule}.\n")
     ref = INITS_LATER[SCRATCH_REF]
     name = "ft-v2-legs-scratch-raunav"
-    need[f"job-{name}.yaml"] = spec_bytes([c for c in cells_legs(ref) if c[0] == "leg1"])
     specs[f"job-{name}.yaml"] = job(
-        name, _fill(legs_v2(ref, name, None), pin, inits=ref), **_retry_kw(name, gpu),
+        name, _fill(legs_v2(ref, name, None), PIN_V2_SCRATCH, inits=ref),
+        **_retry_kw(name, {**gpu, "pin": PIN_V2_SCRATCH}),
         header=h + _retry_note(name)
         + "  # v2 FROM-SCRATCH REFERENCE on the held-out JetClass-II subsets: ParT's own\n"
           "  # from-scratch recipe (BASELINE RECIPES), three fine-tuning seeds on the one\n"
           "  # subset per size, leg 1 only; loads no pretrained checkpoint.\n"
           f"  # 12 fine-tunes, ~12 GPU-h. Root {V2_ROOT}/scratch.\n")
+    assert set(need) == {n for n in specs if n != "job-ft-subsets-jc2-v2-raunav.yaml"}
     # THE STORAGE BUDGET: refuse to emit what does not fit. The decision to make room
-    # is the PI's; headroom_gb is the space below the 85% line, from df in a pod.
+    # is the PI's; headroom_gb is the space below the 85% line, from df in a pod, less
+    # what v2 pretraining may still take until --v2-pretraining-done, and less the v2
+    # extraction until --v2-extraction-done: one budget for both plans, whose own
+    # check (scripts/build_extract_jobs.py v2_plan_fits) counts these specs in turn.
     picked = [n for n in specs if not only or any(k in n for k in only)]
     total, every = sum(need[n] for n in picked), sum(need.values())
+    reserve = 0.0 if v2_pretraining_done else v2_grid_reserve_gb()
+    extraction = 0.0 if v2_extraction_done else v2_extraction_gb()
     print(f"v2 storage: {len(picked)} specs need {total / 1e9:.1f} GB (all {len(specs)}: "
-          f"{every / 1e9:.1f} GB); headroom to the 85% line {headroom_gb} GB")
-    if headroom_gb is None or total > headroom_gb * 1e9:
+          f"{every / 1e9:.1f} GB); headroom to the 85% line {headroom_gb} GB, "
+          f"{reserve:.1f} GB of it held for v2 pretraining and {extraction:.1f} GB for the v2 extraction")
+    if headroom_gb is None or total > (headroom_gb - reserve - extraction) * 1e9:
         raise SystemExit(f"FATAL: storage budget: {len(picked)} v2 specs need {total / 1e9:.1f} GB "
                          f"against {headroom_gb} GB below the 85% line (--headroom-gb, from df in a "
-                         f"pod); all {len(specs)} need {every / 1e9:.1f} GB. Making room is the PI's call.")
+                         f"pod) less {reserve:.1f} GB held for v2 pretraining (--v2-pretraining-done "
+                         f"releases it) and {extraction:.1f} GB for the v2 extraction (--v2-extraction-done "
+                         f"releases it); all {len(specs)} need {every / 1e9:.1f} GB. Making room is the PI's call.")
     return {n: specs[n] for n in picked}
 
 
@@ -2602,7 +2679,7 @@ REFS_NEEDED = {"scripts/build_ft_jobs.py": "MPM_LR_MULT",
 V2_SUBSETS_NEEDED = {"experiments/FT/make_subsets.py": "def build_jc2v2",
                      "experiments/FT/ft_v2.py": "def cmd_hash"}
 V2_NEEDED = {"experiments/FT/make_subsets.py": "def build_jc2v2",
-             "experiments/FT/ft_v2.py": "def resolve",
+             "experiments/FT/ft_v2.py": "def window_best",
              "experiments/FT/cell_resume.py": "def lock",
              "experiments/FT/ft_weaver.py": "exact validation metric",
              "experiments/FT/gpu_probe.py": "def main",
@@ -2683,7 +2760,8 @@ def _fill(script: str, pin: str, inits=None) -> str:
 
 def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = False,
           later: list | None = None, bench_v3: bool = False, v2_subsets: bool = False,
-          v2: bool = False, headroom_gb: float | None = None, only: list | None = None) -> dict[str, str]:
+          v2: bool = False, headroom_gb: float | None = None, only: list | None = None,
+          v2_pretraining_done: bool = False, v2_extraction_done: bool = False) -> dict[str, str]:
     h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
     specs = {
         "job-ft-subsets-jc2-raunav.yaml": job(
@@ -2774,7 +2852,8 @@ def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = F
                        "  # two are reported side by side as the curve.\n")
     if v2_subsets or v2:
         # ONLY the v2 specs.
-        specs = _v2_specs(pin, v2_subsets, v2, headroom_gb, only)
+        specs = _v2_specs(pin, v2_subsets, v2, headroom_gb, only, v2_pretraining_done,
+                          v2_extraction_done)
         for name, text in specs.items():
             left = re.findall(r"__[A-Z0-9_]+__", text)
             assert not left, f"{name}: unfilled {sorted(set(left))}"
@@ -2830,6 +2909,10 @@ def main() -> int:
                     help=f"emit ONLY the v2 fine-tuning specs (pin {PIN_V2}); needs {V2_SHA_TABLE}")
     ap.add_argument("--headroom-gb", type=float,
                     help="with --v2: GB below /data's 85%% line (df in a pod); specs that do not fit are refused")
+    ap.add_argument("--v2-pretraining-done", action="store_true",
+                    help="with --v2: v2 pretraining has finished, so its reserve is no longer held back")
+    ap.add_argument("--v2-extraction-done", action="store_true",
+                    help="with --v2: the v2 extraction has finished, so it is in df and no longer held back")
     ap.add_argument("--plan", action="store_true",
                     help="print cells and expected GPU-hours per shard, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
@@ -2856,6 +2939,8 @@ def main() -> int:
     specs = build(args.pin, wave2=args.wave2, wave3=args.wave3, bench_v2=args.bench_v2,
                   later=args.later, bench_v3=args.bench_v3_last,
                   v2_subsets=args.v2_subsets, v2=args.v2, headroom_gb=args.headroom_gb,
+                  v2_pretraining_done=args.v2_pretraining_done,
+                  v2_extraction_done=args.v2_extraction_done,
                   only=args.only if args.v2 else None)
     if args.v2 and not args.check_only:
         (ROOT / V2_EXPECTED).write_text(json.dumps(v2_expected_cells(), indent=1) + "\n")

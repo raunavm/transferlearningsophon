@@ -29,10 +29,19 @@ caches (extract_features.py, 2,000,000 jets from epoch 79):
                     class), and the two class-sum anomaly scores per signal,
                     computed from float32 logits with anomaly.py's own function
 
-Output, per checkpoint:  <out>/<tag>/{features.npy, rows.npy, label188.npy,
-observers.npz, head_scores.npz, manifest.json}, tag = "bestval", "wavg" or "e079".
+Output, per checkpoint:  <out>/<tag>/{features.npy, pooled.npy, rows.npy,
+label188.npy, observers.npz, head_scores.npz, manifest.json}, tag = "best70",
+"bestval", "wavg", "init" or "e079" (resolve_checkpoints). Two tags that resolve
+to the same file are extracted once: the first tag's directory holds the files,
+the other is a symlink to it, and the manifest lists both under "tags".
 rows.npy indexes the test stream, so any two checkpoints, runs or vocabularies are
 row-aligned by construction and checked by the stream's label sha256.
+pooled.npy (amendment A14) is the pooled-embedding readout, for the same rows as
+features.npy: the mean over real particles of the trunk output after the eight
+particle-attention blocks, before the class-attention blocks (PooledTap). It is
+the readout of the self-supervised models, whose class token is never trained.
+A checkpoint without an output layer -- the untrained trunk (init_trunk.pt) or
+a self-supervised model -- keeps features and pooled rows and no head_scores.npz.
 observers.npz holds, for the same rows, the kinematics a windowed probe task cuts
 on (jet_pt, jet_eta, jet_sdmass) and the mass-regression truth (genjet_sdmass):
 without them bc_vs_rest's window cannot be applied and mass_resolution.py has no
@@ -118,7 +127,8 @@ def anomaly_classes() -> tuple[list[int], dict[str, int]]:
 
 
 def best_epoch(run_dir: pathlib.Path) -> int:
-    """The v2 primary checkpoint: the epoch with the highest validation selection
+    """The global best epoch, amendment A14's sensitivity check (tag bestval; the primary
+    is best_window_epoch): the epoch with the highest validation selection
     metric on the fixed sample (experiments/MTX/pretrain_v2.py writes it per epoch
     to metrics/epoch-EEE.json; strict improvement, so ties go to the earlier
     epoch). Recomputed from the per-epoch files and checked against the run's
@@ -138,24 +148,39 @@ def best_epoch(run_dir: pathlib.Path) -> int:
     return best
 
 
+def best_window_epoch(run_dir: pathlib.Path) -> int:
+    """The v2 primary checkpoint (amendment A14): the first maximum of the selection
+    metric within epochs 70-79, recomputed from metrics/epoch-070..079.json and checked
+    against best_window_epoch.json by the fine-tuning resolver's own function."""
+    return _load("ft_v2", "experiments/FT/ft_v2.py").window_best(run_dir)["epoch"]
+
+
 WAVG_FILE = "net_wavg70-79_state.pt"
+INIT_FILE = "init_trunk.pt"
 # kept beside the feature rows: the |V_cb| window's cuts and the mass truth
 V2_OBSERVERS = ("jet_pt", "jet_eta", "jet_sdmass", "genjet_sdmass")
 
 
 def resolve_checkpoints(run_dir: pathlib.Path, spec: list[str]) -> list[tuple[str, pathlib.Path]]:
-    """[(tag, path)] under the checkpoint rule (draft amendment A8):
-      'bestval'  primary: the best epoch on the fixed validation sample, best_epoch()
+    """[(tag, path)] under the checkpoint rule (amendment A14):
+      'best70'   primary: the first maximum on the fixed validation sample within
+                 epochs 70-79, best_window_epoch()
+      'bestval'  sensitivity check: the global best epoch, best_epoch()
       'wavg'     robustness: the weight average of epochs 70-79 that v2 pretraining
                  writes, net_wavg70-79_state.pt
+      'init'     the untrained trunk the run started from, init_trunk.pt
       N, 'A-B'   single epochs, for diagnostics (v1 has no fixed validation sample
                  and no weight average of its own)."""
     out = []
     for s in spec:
-        if s in ("bestval", "best"):
+        if s == "best70":
+            out.append(("best70", run_dir / f"net_epoch-{best_window_epoch(run_dir)}_state.pt"))
+        elif s in ("bestval", "best"):
             out.append(("bestval", run_dir / f"net_epoch-{best_epoch(run_dir)}_state.pt"))
         elif s == "wavg":
             out.append(("wavg", run_dir / WAVG_FILE))
+        elif s == "init":
+            out.append(("init", run_dir / INIT_FILE))
         elif "-" in s:
             a, b = (int(x) for x in s.split("-"))
             out += [(f"e{e:03d}", run_dir / f"net_epoch-{e}_state.pt") for e in range(a, b + 1)]
@@ -165,6 +190,80 @@ def resolve_checkpoints(run_dir: pathlib.Path, spec: list[str]) -> list[tuple[st
     if missing:
         raise SystemExit(f"FATAL: checkpoints missing: {missing[:3]}")
     return out
+
+
+def aliases(ckpts: list[tuple[str, pathlib.Path]]) -> dict[str, str]:
+    """{tag: the first tag resolving to the same file}: where best70 and bestval select
+    the same epoch, the file is extracted once and both tags point at it."""
+    first = {}
+    return {t: first.setdefault(p.resolve(), t) for t, p in ckpts}
+
+
+def pooled_mean(x, padding_mask, x_cls):
+    """The mean over real particles of x, the input of the first class-attention block.
+
+    weaver 0.4.17 (the image) passes x sequence-first, (P, N, C), with the class token
+    (1, N, C); later weavers batch-first, (N, P, C), with (N, 1, C). padding_mask is
+    (N, P) in both, True on padded particles: ParticleTransformer.forward sets
+    padding_mask = ~mask.squeeze(1) after the trimmer, with mask 1 on real particles.
+    The particle-attention blocks also write the padded positions (the mask hides them
+    as keys, not as queries), so they are excluded here, not assumed zero."""
+    import torch
+    n, p = padding_mask.shape
+    seq_first = tuple(x_cls.shape[:2]) == (1, n) and tuple(x.shape[:2]) == (p, n)
+    if not seq_first and not (tuple(x_cls.shape[:2]) == (n, 1) and tuple(x.shape[:2]) == (n, p)):
+        raise SystemExit(f"FATAL: class-attention input {tuple(x.shape)} with class token "
+                         f"{tuple(x_cls.shape)} fits neither layout of padding mask {(n, p)}")
+    if seq_first:
+        x = x.transpose(0, 1)
+    real = ~padding_mask.bool()
+    s = x.float().masked_fill(~real.unsqueeze(-1), 0.0).sum(1)
+    return s / real.sum(1, keepdim=True).clamp(min=1).to(s.dtype)
+
+
+class PooledTap:
+    """The pooled-embedding readout (amendment A14), captured where the first
+    class-attention block reads the trunk output, by a forward pre-hook."""
+
+    def __init__(self, model):
+        mod = getattr(model, "mod", model)
+        self.buf = None
+        self.handle = mod.cls_blocks[0].register_forward_pre_hook(self._hook, with_kwargs=True)
+
+    def _hook(self, _module, args, kwargs):
+        self.buf = pooled_mean(args[0], kwargs["padding_mask"], kwargs["x_cls"]).detach()
+
+    def close(self):
+        self.handle.remove()
+
+
+def load_headless(model, path: pathlib.Path) -> dict:
+    """Load a checkpoint that has no output layer into the classifier: the untrained
+    trunk (init_trunk.pt, {"trunk": state} in ParticleTransformer's own names, from
+    pretrain_v2.trunk_state) or a self-supervised model (MPMNet: trunk.mod.*, and a
+    decoder.* that is dropped). All of it except the classifier's head must load, and
+    nothing may be left over: strict=False would otherwise leave a random trunk."""
+    import torch
+    raw = torch.load(str(path), map_location="cpu", weights_only=True)
+    if set(raw) == {"trunk"}:
+        state, kind = {f"mod.{k}": v for k, v in raw["trunk"].items()}, "init_trunk"
+    elif any(k.startswith("decoder.") for k in raw):
+        stray = [k for k in raw if not k.startswith(("trunk.", "decoder."))]
+        if stray:
+            raise SystemExit(f"FATAL: {path}: keys outside trunk.* and decoder.*: {stray[:5]}")
+        state, kind = {k[len("trunk."):]: v for k, v in raw.items() if k.startswith("trunk.")}, "mpm"
+    else:
+        raise SystemExit(f"FATAL: {path} is neither an initial trunk nor a self-supervised "
+                         "checkpoint; a classifier checkpoint needs its --num-classes")
+    if any(k.startswith("mod.fc.") for k in state):
+        raise SystemExit(f"FATAL: {path} carries an output layer")
+    missing, unexpected = model.load_state_dict(state, strict=False)
+    bad = sorted(k for k in missing if not k.startswith("mod.fc.")) + sorted(unexpected)
+    if bad:
+        raise SystemExit(f"FATAL: {path} did not load cleanly into the trunk: {bad[:10]} "
+                         f"({len(bad)} keys)")
+    return {"checkpoint": str(path), "format": kind, "trunk_tensors_loaded": len(state),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
 
 
 def head_score_columns(logits: np.ndarray, rung: str, signals: dict[str, int]) -> dict:
@@ -228,21 +327,26 @@ class Selector:
 
 
 def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: dict,
-        tap_factory, to_inputs, features_at=None, observers=()) -> dict:
+        tap_factory, to_inputs, features_at=None, observers=(), pooled_factory=None,
+        heads_at=None) -> dict:
     """Stream `batches` (X, y) through every model; keep the selected rows.
 
     `features_at` names the checkpoints whose features are kept (default: all);
-    the others keep head scores only, which is what bounds the storage of the
-    robustness checkpoints. `observers` are kept for the feature rows (they are
-    the stream's, so one copy serves every checkpoint). Separated from the loader
-    so the selection and the storage are testable without weaver's data files."""
+    the others keep head scores only. `heads_at` names the checkpoints that have
+    an output layer (default: all); the others keep no head scores. `pooled_factory`
+    taps the pooled embedding (PooledTap), kept for the feature rows. `observers`
+    are kept for the feature rows (they are the stream's, so one copy serves every
+    checkpoint). Separated from the loader so the selection and the storage are
+    testable without weaver's data files."""
     features_at = set(models) if features_at is None else set(features_at)
+    heads_at = set(models) if heads_at is None else set(heads_at)
     import torch
-    keep = {t: {"feat": [], "frow": [], "flab": [], "hrow": [], "hlab": [], "logits": []}
-            for t in models}
+    keep = {t: {"feat": [], "pooled": [], "frow": [], "flab": [], "hrow": [], "hlab": [],
+                "logits": []} for t in models}
     labels_all, n0 = [], 0
     kept_obs = {o: [] for o in observers}
     taps = {t: tap_factory(m) for t, m in models.items()}
+    ptaps = {t: pooled_factory(m) for t, m in models.items()} if pooled_factory else {}
     with torch.no_grad():
         for item in batches:
             X, y = item[0], item[1]
@@ -252,7 +356,7 @@ def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: d
             n0 += lab.size
             labels_all.append(lab.astype(np.int16))
             fm0 = selector.feature_mask(rows, lab, obs)
-            hm = selector.head_mask(rows, lab)
+            hm0 = selector.head_mask(rows, lab) if heads_at else np.zeros_like(fm0)
             if features_at and kept_obs:
                 missing = [o for o in kept_obs if obs is None or o not in obs]
                 if missing:
@@ -260,12 +364,13 @@ def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: d
                                      "the data config must list them")
                 for o in kept_obs:
                     kept_obs[o].append(np.asarray(obs[o])[fm0].astype(np.float32))
-            need = (fm0 if features_at else np.zeros_like(fm0)) | hm
+            need = (fm0 if features_at else np.zeros_like(fm0)) | hm0
             if not need.any():
                 continue
             inputs = to_inputs(X, need)
             for t, model in models.items():
                 fm = fm0 if t in features_at else np.zeros_like(fm0)
+                hm = hm0 if t in heads_at else np.zeros_like(fm0)
                 if not (fm | hm).any():
                     continue
                 out = model(*inputs)
@@ -273,12 +378,17 @@ def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: d
                 z = out.float().cpu().numpy()[:, :k]
                 sub_f, sub_h = fm[need], hm[need]
                 keep[t]["feat"].append(f[sub_f].astype(np.float16))
+                if t in ptaps:
+                    if ptaps[t].buf is None:
+                        raise SystemExit(f"FATAL: {t}: the pooled-embedding tap did not fire")
+                    keep[t]["pooled"].append(ptaps[t].buf.float().cpu().numpy()[sub_f].astype(np.float16))
+                    ptaps[t].buf = None
                 keep[t]["frow"].append(rows[fm])
                 keep[t]["flab"].append(lab[fm].astype(np.int16))
                 keep[t]["hrow"].append(rows[hm])
                 keep[t]["hlab"].append(lab[hm].astype(np.int16))
                 keep[t]["logits"].append(z[sub_h].astype(np.float32))
-    for tp in taps.values():
+    for tp in [*taps.values(), *ptaps.values()]:
         tp.close()
     L = np.concatenate(labels_all) if labels_all else np.zeros(0, np.int16)
     res = {"n_stream": int(L.size), "label188_sha256": hashlib.sha256(L.tobytes()).hexdigest(),
@@ -291,24 +401,31 @@ def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: d
         logits = cat(kv["logits"], np.float32, k)
         res["checkpoints"][t] = {
             "features": cat(kv["feat"], np.float16, 128),
+            "pooled": cat(kv["pooled"], np.float16, 128) if t in ptaps else None,
             "rows": cat(kv["frow"], np.int64), "label188": cat(kv["flab"], np.int16),
+            "has_head": t in heads_at,
             "head_rows": cat(kv["hrow"], np.int64), "head_label188": cat(kv["hlab"], np.int16),
             "head": head_score_columns(logits, rung, signals) if logits.shape[0] else {}}
     return res
 
 
-def write(out: pathlib.Path, res: dict, meta: dict) -> dict:
-    """One directory per checkpoint; the manifest is written last, so a directory
-    with a manifest is complete."""
+def write(out: pathlib.Path, res: dict, meta: dict, alias: dict | None = None) -> dict:
+    """One directory per checkpoint file; the manifest is written last, so a directory
+    with a manifest is complete. `alias` ({tag: tag holding its files}, aliases())
+    adds a symlink for each tag that resolved to a file another tag holds."""
+    alias = alias or {}
     sizes = {}
     for tag, c in res["checkpoints"].items():
         d = out / tag
         d.mkdir(parents=True, exist_ok=True)
         np.save(d / "features.npy", c["features"])
+        if c.get("pooled") is not None:
+            np.save(d / "pooled.npy", c["pooled"])
         np.save(d / "rows.npy", c["rows"])
         np.save(d / "label188.npy", c["label188"])
-        np.savez_compressed(d / "head_scores.npz", rows=c["head_rows"],
-                            label188=c["head_label188"], **c["head"])
+        if c.get("has_head", True):
+            np.savez_compressed(d / "head_scores.npz", rows=c["head_rows"],
+                                label188=c["head_label188"], **c["head"])
         obs = {}
         if c["rows"].size and res.get("observers"):
             obs = res["observers"]
@@ -317,8 +434,13 @@ def write(out: pathlib.Path, res: dict, meta: dict) -> dict:
                 raise SystemExit(f"FATAL: observers {bad} are not aligned with {tag}'s rows")
             np.savez(d / "observers.npz", **obs)
         man = {**meta, **meta["checkpoints"][tag], "tag": tag,
+               "tags": [tag] + sorted(a for a, t in alias.items() if t == tag and a != tag),
                "n_stream": res["n_stream"], "stream_label188_sha256": res["label188_sha256"],
                "n_feature_rows": int(c["rows"].size), "n_head_rows": int(c["head_rows"].size),
+               "has_head": bool(c.get("has_head", True)),
+               "pooled": None if c.get("pooled") is None else (
+                   "mean over real particles of the trunk output after the particle-attention "
+                   "blocks, before the class-attention blocks (amendment A14)"),
                "features_dtype": "float16",
                "rows_sha256": hashlib.sha256(c["rows"].tobytes()).hexdigest(),
                "head_rows_sha256": hashlib.sha256(c["head_rows"].tobytes()).hexdigest(),
@@ -328,6 +450,16 @@ def write(out: pathlib.Path, res: dict, meta: dict) -> dict:
         man.pop("checkpoints", None)
         (d / "manifest.json").write_text(json.dumps(man, indent=1))
         sizes[tag] = sum(p.stat().st_size for p in d.iterdir())
+    for a, t in sorted(alias.items()):
+        if a == t:
+            continue
+        link = out / a
+        if link.is_symlink():
+            link.unlink()
+        elif link.exists():
+            raise SystemExit(f"FATAL: {link} holds an extraction of its own; {a} now resolves "
+                             f"to the file {t} holds")
+        link.symlink_to(t, target_is_directory=True)
     return sizes
 
 
@@ -337,10 +469,12 @@ def main(argv=None) -> int:
     ap.add_argument("--rung", required=True,
                     help="the vocabulary the model was trained on, a column of the "
                          "contraction-tree map, or 'none' for a vocabulary outside it")
-    ap.add_argument("--num-classes", type=int, required=True)
+    ap.add_argument("--num-classes", type=int, required=True,
+                    help="the output layer's classes; 0 for a run without one (self-supervised)")
     ap.add_argument("--num-reg", type=int, default=0)
     ap.add_argument("--checkpoints", nargs="+", required=True,
-                    help="'bestval', 'wavg', an epoch, or a range 'A-B' (e.g. bestval wavg)")
+                    help="'best70', 'bestval', 'wavg', 'init', an epoch, or a range 'A-B' "
+                         "(e.g. best70 bestval wavg)")
     ap.add_argument("--data-test", nargs="+", required=True)
     ap.add_argument("--data-config", default=str(REPO / "configs/data/JetClassII_massreg.yaml"),
                     help="JetClassII_massreg.yaml = JetClassII_base.yaml + genjet_sdmass")
@@ -385,6 +519,9 @@ def main(argv=None) -> int:
     if len(done) == len(ckpts):
         print("every checkpoint already extracted")
         return 0
+    alias = aliases(ckpts)
+    # no output layer: the untrained trunk, and every checkpoint of a self-supervised run
+    headless = {t for t, _ in ckpts if t == "init" or a.num_classes == 0}
 
     dc = DataConfig.load(a.data_config, load_observers=True)
     absent = [o for o in a.observers if o not in dc.observer_names]
@@ -403,11 +540,18 @@ def main(argv=None) -> int:
                         "tf32": tf32, "checkpoints": {},
                         "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest()}
     for tag, path in ckpts:
-        m = ex.build_model(dc, a.num_classes + a.num_reg)
-        prov = ex.load_trunk_or_die(m, path, a.num_classes, a.num_reg)
+        if alias[tag] != tag:
+            continue                    # the same file as an earlier tag: extracted once
+        # a checkpoint without an output layer gets a one-wide one, never read, so the
+        # class-token tap on its input fires
+        m = ex.build_model(dc, a.num_classes + a.num_reg if a.num_classes else 1)
+        prov = (load_headless(m, path) if tag in headless
+                else ex.load_trunk_or_die(m, path, a.num_classes, a.num_reg))
         models[tag] = m.to(device).eval()
-        meta["checkpoints"][tag] = {"checkpoint": str(path), "checkpoint_sha256": prov["sha256"]}
-    print(f"{len(models)} checkpoints on {device}: {list(models)}", flush=True)
+        meta["checkpoints"][tag] = {"checkpoint": str(path), "checkpoint_sha256": prov["sha256"],
+                                    **({"checkpoint_format": prov["format"]} if tag in headless else {})}
+    print(f"{len(models)} checkpoints on {device}: {list(models)}"
+          f"{''.join(f', {t} = {s}' for t, s in alias.items() if t != s)}", flush=True)
 
     ds = SimpleIterDataset({"_": list(a.data_test)}, a.data_config, for_training=False,
                            fetch_by_files=True, fetch_step=1, name="extract_v2")
@@ -429,9 +573,11 @@ def main(argv=None) -> int:
         idx = torch.from_numpy(np.flatnonzero(need))
         return [X[k][idx].to(device, non_blocking=True) for k in dc.input_names]
 
+    features_at = None if a.features_at is None else {alias.get(t, t) for t in a.features_at}
     res = run(batches(), models, sel, a.rung, a.num_classes, signals, ex.ClsTap, to_inputs,
-              features_at=a.features_at, observers=a.observers)
-    meta["features_at"] = sorted(a.features_at) if a.features_at is not None else sorted(models)
+              features_at=features_at, observers=a.observers, pooled_factory=PooledTap,
+              heads_at=set(models) - headless)
+    meta["features_at"] = sorted(features_at) if features_at is not None else sorted(models)
     if a.head_prefix and res["n_stream"] < a.head_prefix and not a.max_jets:
         raise SystemExit(f"FATAL: the stream ended at {res['n_stream']:,} jets, inside the "
                          f"head prefix of {a.head_prefix:,}")
@@ -444,7 +590,7 @@ def main(argv=None) -> int:
                              f"{a.align_with}; not the same jets in the same order")
         meta["aligned_with"] = {"cache": str(a.align_with), "n": int(v1.size),
                                 "label188_sha256": hashlib.sha256(v1.tobytes()).hexdigest()}
-    sizes = write(a.out, res, meta)
+    sizes = write(a.out, res, meta, alias)
     print(json.dumps({t: f"{s / 1e9:.3f} GB" for t, s in sizes.items()}))
     return 0
 

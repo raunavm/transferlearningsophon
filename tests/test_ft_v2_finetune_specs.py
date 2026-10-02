@@ -1,5 +1,6 @@
 """The v2 fine-tuning specs (scripts/build_ft_jobs.py, audit 2026-09-29): every v2
-run fine-tuned once per checkpoint rule on every leg, resolved from its own run,
+run fine-tuned once per checkpoint rule (amendment A14: best70, the primary, and
+the weight average) on every leg, resolved from its own run,
 on subsets verified against the sha256 record; JetClass-II on the held-out draw
 with a fixed validation sample; manifests that record the steps weaver runs; and
 each spec run under bash with stubs.
@@ -61,8 +62,8 @@ def test_the_v2_specs_on_disk_are_the_generators(v2):
         assert (K8S / name).read_text() == v2[name], name
 
 
-# Measured 2026-10-01 (job-ft-inspect-retries-3-raunav): 1,099,511,627,776 B, 876,915,720,192 used.
-HEADROOM_GB = (0.85 * 1099511627776 - 876915720192) / 1e9
+# /data, 2026-10-02T01:05Z: 2,199,023,255,552 B, 877,528,088,576 used.
+HEADROOM_GB = (0.85 * 2199023255552 - 877528088576) / 1e9
 
 
 def test_the_storage_budget_admits_the_scratch_reference_and_refuses_the_rest(v2, capsys):
@@ -70,15 +71,65 @@ def test_the_storage_budget_admits_the_scratch_reference_and_refuses_the_rest(v2
                              B.cells_bench_v2ckpt(_inits(t)) if "-bench-" in n else
                              [c for c in B.cells_legs(B.INITS_LATER["scratch-v2"]) if c[0] == "leg1"])
                 for n, t in v2.items())
-    assert every > HEADROOM_GB * 1e9                      # the whole v2 set does not fit today
-    with pytest.raises(SystemExit, match="Making room is the PI's call"):
+    assert every == sum(B.v2_need().values()) and set(B.v2_need()) == set(v2)
+    held = B.v2_grid_reserve_gb() + B.v2_extraction_gb()
+    # ONE BUDGET (verification 2026-10-02): today the whole v2 set does not fit once v2
+    # pretraining's peak and the v2 extraction are held back; alone it would have fitted
+    assert (HEADROOM_GB - held) * 1e9 < every < (HEADROOM_GB - B.v2_grid_reserve_gb()) * 1e9
+    with pytest.raises(SystemExit, match="for the v2 extraction"):
         B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB)
+    assert set(B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB, v2_extraction_done=True)) == set(v2)
+    # the scratch reference, launched already, fits beside everything else
     got = B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB, only=["ft-v2-legs-scratch"])
     assert set(got) == {SCRATCH} and got[SCRATCH] == v2[SCRATCH]
-    assert "all 65: " in capsys.readouterr().out
+    # ...and on a volume with room for the scratch reference only, the rest is refused
+    room = held + 2 * B.spec_bytes(
+        [c for c in B.cells_legs(B.INITS_LATER["scratch-v2"]) if c[0] == "leg1"]) / 1e9
+    with pytest.raises(SystemExit, match="Making room is the PI's call"):
+        B.build(B.PIN_V2, v2=True, headroom_gb=room)
+    got = B.build(B.PIN_V2, v2=True, headroom_gb=room, only=["ft-v2-legs-scratch"])
+    assert set(got) == {SCRATCH} and got[SCRATCH] == v2[SCRATCH]
+    assert f"all {len(v2)}: " in capsys.readouterr().out
     # 12 leg-1 cells and one cell's 50 epochs of checkpoints
     assert B.spec_bytes([c for c in B.cells_legs(B.INITS_LATER["scratch-v2"]) if c[0] == "leg1"]) == \
         12 * B.V2_CELL_BYTES["leg1"] + 50 * B.EPOCH_PAIR_BYTES
+
+
+def test_the_budget_holds_back_the_v2_extraction_the_sizing_counts():
+    bx = _load("build_extract_jobs_ft", "scripts/build_extract_jobs.py")
+    s = json.loads(bx.V2_SIZING.read_text())
+    e = s["storage"][bx.V2_PLAN]
+    # what this generator holds back is the extraction plan's own figure, and what the
+    # extraction's sizing counts for fine-tuning is this generator's: one budget
+    assert B.v2_extraction_gb() == e["extraction_bytes"] / 1e9 > 0
+    assert e["fine_tuning_bytes"] == sum(B.v2_need().values())
+    assert s["fine_tuning_bytes_from"] == {"source": "v2_need", "specs": len(B.v2_need())}
+
+
+def test_the_budget_holds_back_the_v2_pretraining_peak_until_pretraining_is_done(tmp_path, monkeypatch):
+    launch = _load("build_mtx_launch_ft", "scripts/build_mtx_launch.py")
+    reserve = B.v2_grid_reserve_gb()
+    assert reserve == launch.V2_GRID_RESERVE_GIB * 2**30 / 1e9 > 0
+    # the budget does not depend on which runs are fine-tuned: the tier-1 runs suffice here
+    grid = json.loads(B.V2_GRID.read_text())
+    grid["arms"] = [a for a in grid["arms"] if a["tier"] == 1]
+    (tmp_path / "grid.json").write_text(json.dumps(grid))
+    monkeypatch.setattr(B, "V2_GRID", tmp_path / "grid.json")
+    need = B.spec_bytes([c for c in B.cells_legs(B.INITS_LATER["scratch-v2"]) if c[0] == "leg1"]) / 1e9
+    ex = B.v2_extraction_gb()
+    room = ex + need + reserve / 2               # fits the scratch reference, not with the reserve held back
+    with pytest.raises(SystemExit, match="held for v2 pretraining"):
+        B.build(B.PIN_V2, v2=True, headroom_gb=room, only=["ft-v2-legs-scratch"])
+    assert set(B.build(B.PIN_V2, v2=True, headroom_gb=room, only=["ft-v2-legs-scratch"],
+                       v2_pretraining_done=True)) == {SCRATCH}
+    assert set(B.build(B.PIN_V2, v2=True, headroom_gb=ex + need + reserve + 0.1,
+                       only=["ft-v2-legs-scratch"])) == {SCRATCH}
+    # the extraction likewise, until it has finished
+    room = need + reserve + ex / 2
+    with pytest.raises(SystemExit, match="for the v2 extraction"):
+        B.build(B.PIN_V2, v2=True, headroom_gb=room, only=["ft-v2-legs-scratch"])
+    assert set(B.build(B.PIN_V2, v2=True, headroom_gb=room, only=["ft-v2-legs-scratch"],
+                       v2_extraction_done=True)) == {SCRATCH}
 
 
 def test_the_expected_cell_list_on_disk_is_the_generators_and_covers_every_spec(v2):
@@ -87,7 +138,7 @@ def test_the_expected_cell_list_on_disk_is_the_generators_and_covers_every_spec(
     for name, t in v2.items():
         if name == SCRATCH:
             continue
-        rule = re.search(r"-(bestval|wavg)-", name).group(1)
+        rule = re.search(r"-(best70|wavg)-", name).group(1)
         cells = B.cells_legs(_inits(t)) if "-legs-" in name else B.cells_bench_v2ckpt(_inits(t))
         for leg, n, N, s in cells:
             assert f"{n}/N{N}/s{s}" in on_disk[f"{rule}/{leg}"]
@@ -103,7 +154,35 @@ def test_every_v2_run_is_fine_tuned_once_per_rule_on_every_leg(v2):
             assert sorted(got) == sorted(runs), (rule, kind)
     for name, t in v2.items():
         names = [n for n, *_ in _inits(t)]
-        assert all(n.startswith("mpm-v2-") for n in names) or not any(n.startswith("mpm-") for n in names)
+        assert all(B._is_mpm(n) for n in names) or not any(B._is_mpm(n) for n in names)
+
+
+def test_the_rules_are_best70_and_the_weight_average_and_the_global_best_is_not_fine_tuned(v2):
+    assert B.V2_RULES == ("best70", "wavg")
+    assert not any("bestval" in n or "--rule bestval" in t for n, t in v2.items())
+    assert {re.search(r"-(best70|wavg)-", n).group(1) for n in v2 if n != SCRATCH} == {"best70", "wavg"}
+    assert set(json.loads((ROOT / B.V2_EXPECTED).read_text())) == {
+        f"{r}/{leg}" for r in B.V2_RULES for leg in ("leg1", "leg2", "leg_top", "leg_qg")} | {"scratch/leg1"}
+
+
+def test_each_self_supervised_arm_has_its_own_init_names_and_the_self_supervised_recipe(v2):
+    grid = json.loads(B.V2_GRID.read_text())["arms"]
+    runs = {n: (d, k, t) for n, d, k, t in B.v2_runs()}
+    for arm in (a for a in grid if a["objective"] == "mpm"):
+        slug = arm["name"].lower().replace("_", "")
+        for s in range(1, arm["runs"] + 1):
+            name = {"MPM": f"mpm-v2-s{s}", "MPM_LOFO4P": f"mpmlofo4p-v2-s{s}"}[arm["name"]]
+            assert runs[name] == (f"{B.MTX_V2}/mtx-{slug}-s{s}", 0, arm["tier"])
+            assert B._is_mpm(name) and B._baseline(name) == "mpm"
+    for rule in B.V2_RULES:
+        t = v2[f"job-ft-v2-legs-{rule}-t3mpm-raunav.yaml"]
+        assert [n for n, *_ in _inits(t)] == [f"mpmlofo4p-v2-s{s}" for s in (1, 2, 3)]
+        live = _live(t)
+        assert "case ${name} in mpmlofo4p-*) continue;; esac" in live
+        assert live.count("experiments/FT/mpm_init.py --src /workspace/ckpt/mpmlofo4p-v2-s") == 3
+        assert live.count("--expect-fresh 39") == 2 and "lr_mult_prefixes=mod.fc.,mod.cls_token" in live
+        # the earlier specs keep their text: the pattern is the prefix their inits use
+        assert "case ${name} in mpm-*) continue;; esac" in _live(v2[f"job-ft-v2-legs-{rule}-t2mpm-raunav.yaml"])
 
 
 def test_every_v2_gpu_job_is_mine_pinned_to_the_3090_with_the_retry_policy(v2):
@@ -116,7 +195,9 @@ def test_every_v2_gpu_job_is_mine_pinned_to_the_3090_with_the_retry_policy(v2):
         assert d["spec"]["backoffLimit"] == B.ROBUST_BACKOFF and "podFailurePolicy" in d["spec"]
         assert 'values: ["NVIDIA-GeForce-RTX-3090"]' in t and 'values: ["us-west"]' in t
         env = {e["name"]: e.get("value") for e in d["spec"]["template"]["spec"]["containers"][0]["env"]}
-        assert env["REPO_REF"] == B.PIN_V2 and B._tag_index(B.PIN_V2) >= B._tag_index(B.PIN_RESUME)
+        # the scratch reference keeps the tag it was launched at (ledger ft-v2-legs-scratch)
+        assert env["REPO_REF"] == (B.PIN_V2_SCRATCH if name == SCRATCH else B.PIN_V2)
+        assert B._tag_index(env["REPO_REF"]) >= B._tag_index(B.PIN_RESUME)
         assert '[ "$p" -lt 85 ] && [ "$g" -ge 50 ]' in t and "-lt 92" not in t
 
 
@@ -126,10 +207,10 @@ def test_each_pretrained_init_is_resolved_by_its_rule_from_its_own_run(v2):
         if name == SCRATCH:
             assert "ft_v2.py resolve" not in t
             continue
-        rule = re.match(r"job-ft-v2-\w+-(bestval|wavg)-", name).group(1)
+        rule = re.match(r"job-ft-v2-\w+-(best70|wavg)-", name).group(1)
         live = _live(t)
         for n, *_ in _inits(t):
-            link = f"/workspace/ckpt/{n}.src.pt" if n.startswith("mpm-") else f"/workspace/ckpt/{n}.pt"
+            link = f"/workspace/ckpt/{n}.src.pt" if B._is_mpm(n) else f"/workspace/ckpt/{n}.pt"
             line = f"ft_v2.py resolve --run-dir {run[n]} --rule {rule} --link {link} || exit ${{HALT}}"
             assert line in live, (name, n)
             assert live.index(line) < live.index("INITS=")
@@ -227,17 +308,20 @@ def _first(v2, prefix):
     return next(n for n in sorted(v2) if n.startswith(prefix))
 
 
-@pytest.mark.parametrize("pick", ["scratch", "legs", "bench", "legs-mpm", "bench-mpm"])
+@pytest.mark.parametrize("pick", ["scratch", "legs", "bench", "legs-mpm", "bench-mpm",
+                                  "legs-mpmlofo4p", "bench-mpmlofo4p"])
 def test_a_v2_spec_runs_under_bash_and_leaves_its_cells(v2, tmp_path, pick):
     name = {"scratch": SCRATCH,
-            "legs": _first(v2, "job-ft-v2-legs-bestval-t1"),
+            "legs": _first(v2, "job-ft-v2-legs-best70-t1"),
             "bench": _first(v2, "job-ft-v2-bench-wavg-t1"),
-            "legs-mpm": "job-ft-v2-legs-bestval-t2mpm-raunav.yaml",
-            "bench-mpm": "job-ft-v2-bench-wavg-t2mpm-raunav.yaml"}[pick]
+            "legs-mpm": "job-ft-v2-legs-best70-t2mpm-raunav.yaml",
+            "bench-mpm": "job-ft-v2-bench-wavg-t2mpm-raunav.yaml",
+            "legs-mpmlofo4p": "job-ft-v2-legs-wavg-t3mpm-raunav.yaml",
+            "bench-mpmlofo4p": "job-ft-v2-bench-best70-t3mpm-raunav.yaml"}[pick]
     inits = _inits(v2[name])
     r, calls = _v2_run(v2[name], tmp_path, inits)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
-    rule = "scratch" if name == SCRATCH else re.search(r"-(bestval|wavg)-", name).group(1)
+    rule = "scratch" if name == SCRATCH else re.search(r"-(best70|wavg)-", name).group(1)
     root = tmp_path / "data/results/ft_v2" / rule
     if name == SCRATCH:
         want = {("leg1", "scratch-v2", n, s) for n in B.SIZES for s in (1, 2, 3)}

@@ -661,3 +661,261 @@ def test_joint_fit_degrees_of_freedom_stay_above_one():
         lo_prev += [d for _, _, d in prev.values()]
     assert min(lo_new) >= 1.0
     assert sum(d < 1 for d in lo_prev) >= 10
+
+
+# ------------------------------------------------------------------- A14 (v2)
+def test_two_runs_take_one_degree_of_freedom_and_never_fall_below_their_spread():
+    # Two runs at ln 0 and 0.2 (s^2 = 0.02), replicates anticorrelated with variance
+    # 0.01 each: the contrast's test variance is 0, v_ind = 0.01, so the clipped
+    # form gives 0.5 (0.02 - 0.01) = 0.005, below the observed 0.5 s^2 = 0.01.
+    k = 200
+    a = math.sqrt(0.01 * (2 * k - 1) / (2 * k))          # sample variance exactly 0.01
+    z = np.r_[np.full(k, a), np.full(k, -a)]
+    L = np.c_[[0.0, 0.2], np.vstack([z, -z])]
+    old = P.combined_error(L, [0.5, 0.5])
+    assert old["v_ind"] == pytest.approx(0.01) and old["ln_combined_se"] ** 2 == pytest.approx(0.005)
+    assert old["dof"] == pytest.approx(0.25)
+    new = P.combined_error(L, [0.5, 0.5], small_sample_rule=True)
+    assert new["ln_combined_se"] ** 2 == pytest.approx(0.01) and new["dof"] == 1.0
+    # without resampling: var = s^2 / 2 at one degree of freedom, as before
+    e = P.combined_error(np.array([[0.1], [0.3]]), [0.5, 0.5], small_sample_rule=True)
+    assert e["ln_combined_se"] == pytest.approx(0.1) and e["dof"] == 1.0
+    # the rule leaves three runs alone
+    L3 = np.c_[[0.0, 0.2, 0.1], np.vstack([z, -z, z])]
+    assert P.combined_error(L3, [1 / 3] * 3, small_sample_rule=True) == P.combined_error(L3, [1 / 3] * 3)
+
+
+def test_a_two_run_group_of_a_welch_error_takes_the_floor_and_one_degree_of_freedom():
+    # Group 1: two runs at ln 0 and 0.2 (s^2 = 0.02), replicates anticorrelated with
+    # variance 0.01 each, so v_ind = 0.01 and the clipped term 0.5 (0.02 - 0.01) =
+    # 0.005 is below the observed 0.5 s^2 = 0.01. Group 2: three runs at 1.0, 1.1, 1.2
+    # with no test noise (s^2 = 0.01, term 0.01 / 3). The contrast's test variance is 0.
+    k = 200
+    a = math.sqrt(0.01 * (2 * k - 1) / (2 * k))          # sample variance exactly 0.01
+    z = np.r_[np.full(k, a), np.full(k, -a)]
+    zero = np.zeros(2 * k)
+    L = np.c_[[0.0, 0.2, 1.0, 1.1, 1.2], np.vstack([z, -z, zero, zero, zero])]
+    w, groups = [0.5, 0.5, -1 / 3, -1 / 3, -1 / 3], [[0, 1], [2, 3, 4]]
+    for kw in ({"separate": True}, {"pools": [[0], [1]]}):
+        old = P.combined_error(L, w, groups, **kw)
+        assert old["ln_combined_se"] ** 2 == pytest.approx(0.005 + 0.01 / 3)
+        assert "two_run_rule" not in old
+        new = P.combined_error(L, w, groups, small_sample_rule=True, **kw)
+        assert new["ln_combined_se"] ** 2 == pytest.approx(0.01 + 0.01 / 3)
+        assert new["dof"] == 1.0 and new["two_run_rule"] is True     # Satterthwaite gives 1.68
+    # groups of three and more are left alone
+    L3 = np.c_[[0.0, 0.2, 0.1, 1.0, 1.1, 1.2], np.vstack([z, -z, z, zero, zero, zero])]
+    g3 = [[0, 1, 2], [3, 4, 5]]
+    w3 = [1 / 3] * 3 + [-1 / 3] * 3
+    assert (P.combined_error(L3, w3, g3, separate=True, small_sample_rule=True)
+            == P.combined_error(L3, w3, g3, separate=True))
+
+
+def test_two_run_coverage_is_at_most_six_percent_excluded():
+    # Null data, two runs: run SD 1, each run's own test SD 0.1 to 1 of it and a
+    # tenth of that variance shared by both runs. The form without the rule
+    # excluded 7-11 % at 0.1-0.7 (measured 2026-10-02); with it, at most 6 %.
+    rng = np.random.default_rng(7)
+    trials, b = 2000, 200
+    for ratio in (0.1, 0.3, 0.5, 1.0):
+        vek, ve = ratio ** 2, 0.1 * ratio ** 2
+        excl = {False: 0, True: 0}
+        for _ in range(trials):
+            pt = rng.normal(0, 1, 2) + rng.normal(0, math.sqrt(ve)) + rng.normal(0, math.sqrt(vek), 2)
+            L = _replicate_matrix(rng, pt, math.sqrt(ve), math.sqrt(vek), b)
+            for rule in excl:
+                r = P.paired_log({1: L[0], 2: L[1]}, small_sample_rule=rule)
+                lo, hi = r["ci95"]
+                excl[rule] += not lo <= 1.0 <= hi
+        assert excl[True] / trials <= 0.06, (ratio, excl)
+        if ratio == 0.3:
+            assert excl[False] / trials > 0.075, excl            # the check bites
+
+
+def test_one_run_pair_is_not_computed_under_the_small_sample_rule(tmp_path):
+    v = np.r_[0.2, 0.2 + np.random.default_rng(5).normal(size=50) * 0.03]
+    assert P.paired_log({1: v}, small_sample_rule=True)["not_computed"] == P.ONE_PAIR
+    assert "not_computed" not in P.paired_log({1: v})          # v1: the test error alone
+    # left with one pair by the stream check (pair 2 diverges at epoch 30, inside 0-45)
+    d = {}
+    for k, div in ((1, None), (2, 30)):
+        _write_stream(tmp_path / f"f{k}", _rows(), 40)
+        _write_stream(tmp_path / f"c{k}", _rows(div), 45)
+        d[f"f{k}"], d[f"c{k}"] = tmp_path / f"f{k}", tmp_path / f"c{k}"
+    fine = {f"f{k}": v * 0.5 for k in (1, 2)}
+    coarse = {f"c{k}": v for k in (1, 2)}
+    r = P.paired_ratio(fine, coarse, pairs={"c1": "f1", "c2": "f2"}, run_dirs=d,
+                       checkpoint="bestval", small_sample_rule=True)
+    assert r["n_runs"] == 1 and r["not_computed"] == P.ONE_PAIR
+    assert [x["first_bad_epoch"] for x in r["excluded_pairs"]] == [30]
+
+
+def test_best70_reads_the_selected_epoch_within_70_to_79(tmp_path):
+    _write_stream(tmp_path / "a", _rows(), 40)
+    _write_stream(tmp_path / "b", _rows(74), 41)
+    for d, e in (("a", 72), ("b", 73)):
+        (tmp_path / d / "best_window_epoch.json").write_text(json.dumps({"epoch": e}))
+    assert P.checkpoint_epoch(tmp_path / "a", "best70") == 72
+    assert P.stream_check([tmp_path / "a", tmp_path / "b"], "best70") is None       # up to 73
+    assert P.stream_check([tmp_path / "a", tmp_path / "b"], ("best70", "bestval")) is None
+    assert P.stream_check([tmp_path / "a", tmp_path / "b"], ("wavg", "best70"))["first_bad_epoch"] == 74
+    (tmp_path / "a" / "best_window_epoch.json").unlink()
+    with pytest.raises(SystemExit, match="selected epoch within 70-79 is unknown"):
+        P.checkpoint_epoch(tmp_path / "a", "best70")
+
+
+def test_pools_keep_each_sides_run_variance_from_the_replicate_runs():
+    # P1 as A14 reads it, without resampling: two merging partitions and three
+    # splitting ones, two runs each. Each side's run variance is its runs' spread
+    # about their partition's mean, pooled over its partitions.
+    y = np.array([[0.10, 0.14], [0.30, 0.26], [0.0, 0.05], [0.02, 0.01], [-0.03, -0.01]])
+    L = y.reshape(-1, 1)
+    w = [1 / 4] * 4 + [-1 / 6] * 6
+    e = P.combined_error(L, w, [range(2 * i, 2 * i + 2) for i in range(5)],
+                         pools=[[0, 1], [2, 3, 4]])
+    within = ((y[:, 0] - y[:, 1]) ** 2 / 2)                   # one degree of freedom each
+    s2m, s2s = within[:2].sum() / 2, within[2:].sum() / 3
+    cm, cs = 4 / 16, 6 / 36
+    var = cm * s2m + cs * s2s
+    assert e["estimate"] == pytest.approx(y[:2].mean() - y[2:].mean())
+    assert e["ln_combined_se"] ** 2 == pytest.approx(var)
+    assert e["dof"] == pytest.approx(var ** 2 / ((cm * s2m) ** 2 / 2 + (cs * s2s) ** 2 / 3))
+    assert e["pool_dof"] == [2, 3] and e["ln_spread_sd"] == pytest.approx([math.sqrt(s2m), math.sqrt(s2s)])
+    # one run per partition leaves no replicate: not computed
+    assert "not_computed" in P.combined_error(y[:, :1], [1 / 2] * 2 + [-1 / 3] * 3,
+                                              [[i] for i in range(5)], pools=[[0, 1], [2, 3, 4]])
+
+
+def test_p1_welch_covers_with_run_or_test_noise_dominant():
+    # null merge effect, five partitions x two runs, test noise shared within the
+    # task: the v1 run-dominated case (b vs c two-prong) and an equal one
+    rng = np.random.default_rng(9)
+    for vr, vi in ((2.5e-2, 1.26e-3), (1.0, 1.0)):
+        for nm in (2, 3):
+            hit, trials = 0, 1500
+            for _ in range(trials):
+                sh = rng.normal(0, math.sqrt(vi / 2), 201)
+                pt = rng.normal(0, math.sqrt(vr), 10) + rng.normal(0, math.sqrt(vi), 10) + sh[0]
+                L = np.c_[pt, pt[:, None] + sh[None, 1:] + rng.normal(0, math.sqrt(vi), (10, 200))]
+                w = [1 / (2 * nm)] * (2 * nm) + [-1 / (2 * (5 - nm))] * (2 * (5 - nm))
+                e = P.combined_error(L, w, [range(2 * i, 2 * i + 2) for i in range(5)],
+                                     pools=[list(range(nm)), list(range(nm, 5))])
+                hit += abs(e["estimate"]) <= P._t975(e["dof"]) * e["ln_combined_se"]
+            assert 0.935 <= hit / trials <= 0.99, (vr, vi, nm, hit / trials)
+
+
+def _fieller_closed_form(N, D, t):
+    """Roots of (Nbar - f Dbar)^2 = t^2 (s_NN - 2 f s_ND + f^2 s_DD) / n."""
+    n = len(N)
+    S = np.cov(np.vstack([N, D]))
+    a = D.mean() ** 2 - t ** 2 * S[1, 1] / n
+    b = -2 * (N.mean() * D.mean() - t ** 2 * S[0, 1] / n)
+    c = N.mean() ** 2 - t ** 2 * S[0, 0] / n
+    return sorted(np.roots([a, b, c]).real)
+
+
+def test_fieller_is_the_closed_form_without_resampling():
+    from scipy.stats import t as student
+    N = np.array([0.30, 0.33, 0.30, 0.33, 0.30])
+    D = np.array([0.36, 0.38, 0.40, 0.42, 0.44])
+    f = P.fieller(N[:, None], D[:, None])
+    assert f["fraction"] == pytest.approx(N.mean() / D.mean())
+    assert f["ci95"] == pytest.approx(_fieller_closed_form(N, D, student.ppf(0.975, 4)), abs=1e-9)
+    assert f["denominator"]["dof"] == pytest.approx(4) and f["n_runs"] == 5
+    # a denominator whose interval holds 0: no interval
+    u = P.fieller(N[:, None], (D - D.mean() + 0.01)[:, None])
+    assert u["ci95"] is None and "unbounded" in u["note"]
+    # two runs under the rule: t at one degree of freedom
+    two = P.fieller(N[:2, None], D[:2, None], small_sample_rule=True)
+    assert two["ci95"] == pytest.approx(_fieller_closed_form(N[:2], D[:2], student.ppf(0.975, 1)), abs=1e-9)
+    assert P.fieller(N[:1, None], D[:1, None], small_sample_rule=True)["not_computed"] == P.ONE_PAIR
+
+
+def test_fieller_with_resampling_inverts_the_combined_error():
+    rng = np.random.default_rng(4)
+    N = _replicate_matrix(rng, [0.30, 0.35, 0.28, 0.33, 0.31], 0.01, 0.02, 300)
+    D = _replicate_matrix(rng, [0.40, 0.42, 0.39, 0.45, 0.41], 0.01, 0.02, 300)
+    f = P.fieller(N, D)
+    for x in f["ci95"]:                       # on each edge the contrast is at its 95 % bound
+        e = P.combined_error(N - x * D, np.full(5, 0.2))
+        assert abs(e["estimate"]) == pytest.approx(P._t975(e["dof"]) * e["ln_combined_se"], rel=1e-6)
+    assert f["ci95"][0] < f["fraction"] < f["ci95"][1]
+
+
+def test_the_a14_labels():
+    ln11 = math.log(1.1)
+    # an interval that excludes 0 and lies within +-ln 1.1 meets two rules A14 does
+    # not order: labelled for both, in both labels, and counted as dependent
+    assert P.checkpoint_label(0.01, 0.05) == P.DEPENDS_UNDER_10
+    assert P.checkpoint_label(0.01, ln11 + 1e-9) == P.DEPENDS
+    assert P.checkpoint_label(-0.2, -0.01) == P.DEPENDS
+    assert set(P.DEPENDENT) == {P.DEPENDS, P.DEPENDS_UNDER_10}
+    assert P.checkpoint_label(-0.05, 0.05) == "robust"
+    assert P.checkpoint_label(-0.05, ln11 + 1e-9) == "inconclusive"
+    assert P.p1_label(-0.3, 0.09) == "merging costs nothing"
+    assert P.p1_label(0.01, 0.05) == "merging costs, under 10%"
+    assert P.p1_label(0.01, 0.30) == "merging costs"
+    assert P.p1_label(-0.01, 0.30) == "inconclusive"
+    assert P.beats_label(0.001) == "beats" and P.beats_label(-0.001) == "inconclusive"
+    assert P.equal_label(-0.09, 0.09) == "equal" and P.equal_label(-0.09, 0.1) == "inconclusive"
+    assert [P.threshold_label(*x) for x in ((0.1, 0.2), (-0.2, -0.1), (-0.1, 0.1), (0.1, 0.3, 0.2))] == \
+        ["holds", "fails", "inconclusive", "inconclusive"]
+    assert [P.equivalence_label(*x) for x in ((-0.1, 0.1, 0.2), (0.3, 0.4, 0.2), (-0.1, 0.3, 0.2),
+                                              (-0.1, 0.1, 0.0))] == \
+        ["holds", "fails", "inconclusive", "not evaluable"]
+    lo, hi = P.bounds(1.0, 0.1, 4)
+    assert (lo, hi) == pytest.approx((1 - 0.27764451, 1 + 0.27764451), abs=1e-7)   # t(0.975, 4) = 2.776
+    assert P.bounds(0.0, 1.0, math.inf, 0.90)[1] == pytest.approx(1.6448536, abs=1e-6)
+
+
+def test_two_runs_under_the_a14_rule_exclude_0_far_less_often_than_5_percent():
+    # Why checkpoint_dependence counts the two-run results apart: with no true
+    # difference, two runs (run SD 1, test SD `ratio` of it, a tenth of the test
+    # variance shared by both runs) under the A14 floor and Student t at 1 degree
+    # of freedom exclude 0 well under 5 % of the time, so 5 % of them would
+    # overstate the dependent results the null gives.
+    rng = np.random.default_rng(7)
+    b, trials = 50, 2000
+    for ratio, below in ((0.1, 0.03), (1.0, 0.005)):
+        vk, vs = 0.9 * ratio ** 2, 0.1 * ratio ** 2
+        hits = 0
+        for _ in range(trials):
+            sh = rng.normal(0, math.sqrt(vs), b + 1)
+            pt = rng.normal(0, 1, 2) + sh[0] + rng.normal(0, math.sqrt(vk), 2)
+            L = np.c_[pt, pt[:, None] + sh[None, 1:] + rng.normal(0, math.sqrt(vk), (2, b))]
+            r = P.paired_log({1: L[0], 2: L[1]}, small_sample_rule=True)
+            assert r["two_run_rule"] and r["dof"] == 1.0
+            lo, hi = P.bounds(r["ln_ratio"], r["ln_combined_se"], r["dof"])
+            hits += lo > 0 or hi < 0
+        assert hits / trials < below, ratio
+
+
+def test_fixed_effects_weights_each_unit_by_its_run_plus_test_variance():
+    # the six-stratum design above; run variances given apart from the fit
+    rng = np.random.default_rng(12)
+    merged = np.array([[1, 0, 0, 1, 0], [0, 1, 1, 1, 1], [0, 1, 1, 0, 0],
+                       [1, 1, 1, 0, 0], [1, 0, 0, 1, 0], [1, 0, 0, 1, 1]])
+    X, strata = np.zeros((30, 16)), []
+    for i in range(30):
+        s, u = divmod(i, 5)
+        X[i, s] = 1.0
+        if u:
+            X[i, 5 + u] = 1.0
+        X[i, 10 + s] = merged[s, u]
+        strata.append(s)
+    pt = X @ rng.normal(0, 0.3, 16) + rng.normal(0, 0.05, 30)
+    L = np.c_[pt, pt[:, None] + rng.normal(0, 0.02, (30, 300))]
+    rv = np.repeat([1e-3, 4e-3, 1e-4, 2e-3, 5e-4, 3e-3], 5)
+    f = P.fixed_effects(L, X, strata, {"e0": 10, "e3": 13}, run_var=rv)
+    v_ind = np.empty(30)
+    for s in range(6):
+        C = np.cov(L[5 * s:5 * s + 5, 1:])
+        v_ind[5 * s:5 * s + 5] = np.trace(C) / 5 - max((C.sum() - np.trace(C)) / 20, 0.0)
+    W = 1 / (v_ind + rv)
+    beta = np.linalg.solve(X.T @ (W[:, None] * X), X.T @ (W * pt))
+    assert f["coefficients"]["e0"]["ln_ratio"] == pytest.approx(beta[10], abs=1e-12)
+    assert f["coefficients"]["e3"]["ln_ratio"] == pytest.approx(beta[13], abs=1e-12)
+    # without run_var: 1 / v_ind, as before
+    g = P.fixed_effects(L, X, strata, {"e0": 10})
+    b0 = np.linalg.solve(X.T @ (X / v_ind[:, None]), X.T @ (pt / v_ind))
+    assert g["coefficients"]["e0"]["ln_ratio"] == pytest.approx(b0[10], abs=1e-12)

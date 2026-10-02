@@ -85,14 +85,31 @@ background jets, so every rejection also gets a Poisson interval on that count
 PAIRING OF v2 RUNS (amendment A7). Two v2 runs are a pair for a checkpoint only
 if the sha256 of their realised training stream (<run>/stream/epoch-EEE.json,
 written by the training code) agrees at every epoch that checkpoint was trained
-on: up to the later of the two best-validation epochs (best_epoch.json) for
-`bestval`, up to epoch 79 for `wavg`, the average of epochs 70-79; up to the
-later of the two for a comparison between checkpoints (A8). With
+on: up to the later of the two selected epochs within 70-79
+(best_window_epoch.json) for `best70`, the primary (A14); up to the later of the
+two global best-validation epochs (best_epoch.json) for `bestval`; up to epoch 79
+for `wavg`, the average of epochs 70-79; up to the latest of them for a
+comparison between checkpoints (A8). With
 `run_dirs`, every directory and its stream records must exist; a pair that
 fails is excluded, reported with its first differing epoch, and the ratio is
 formed from the others. Without `run_dirs` (v1, which recorded no stream) runs
 pair by index for their shared initialisation only, and the result says
 "unchecked".
+
+SMALL SAMPLES (A14, v2 only: `small_sample_rule`). With two runs the spread
+between runs has one degree of freedom, and the error above can fall to the
+test variance alone when the two runs happen to agree (v_run clipped at 0), with
+a large Welch-Satterthwaite degrees of freedom: a true null was excluded 7-11 %
+of the time at a test SD of 0.1-0.7 times the run SD. So a spread with one
+degree of freedom gives var >= sum(w^2) s^2 and the interval takes Student t at
+1 degree of freedom (n - 1); and a paired contrast left with one run pair is not
+computed. In a one-group contrast the error already exceeds s^2 / n unless the
+shared test covariance is negative, so the degrees of freedom are what change
+the coverage (src/stats/tests/test_paired.py). The rule is conservative: under
+the null it excluded 0 in at most 2.5 % of the trials of that test, and in none
+once each run's own test SD is 0.3 of the run SD or more, so a result formed
+under it carries two_run_rule and is counted apart from the 5 % reference. The
+v1 results are formed without the rule and do not change.
 """
 from __future__ import annotations
 
@@ -298,18 +315,23 @@ def load_stream(run_dir) -> dict[int, str]:
 WAVG_EPOCHS = range(70, 80)     # net_wavg70-79_state.pt, written by experiments/MTX/pretrain_v2.py
 
 
+SELECTED_EPOCH = {"best70": ("best_window_epoch.json", "selected epoch within 70-79"),
+                  "bestval": ("best_epoch.json", "best-validation epoch")}
+
+
 def checkpoint_epoch(run_dir, checkpoint: str) -> int:
-    """The last training epoch a v2 checkpoint was trained on: the best-validation
-    epoch of the run (best_epoch.json) for 'bestval', the last averaged epoch for
-    'wavg'."""
+    """The last training epoch a v2 checkpoint was trained on: the selected epoch
+    within 70-79 (best_window_epoch.json) for 'best70', the global best-validation
+    epoch (best_epoch.json) for 'bestval', the last averaged epoch for 'wavg'."""
     if checkpoint == "wavg":
         return WAVG_EPOCHS[-1]
-    if checkpoint == "bestval":
-        f = pathlib.Path(run_dir) / "best_epoch.json"
+    if checkpoint in SELECTED_EPOCH:
+        name, what = SELECTED_EPOCH[checkpoint]
+        f = pathlib.Path(run_dir) / name
         if not f.exists():
-            raise SystemExit(f"FATAL: {f} does not exist; the best-validation epoch is unknown")
+            raise SystemExit(f"FATAL: {f} does not exist; the {what} is unknown")
         return int(json.loads(f.read_text())["epoch"])
-    raise SystemExit(f"FATAL: unknown checkpoint {checkpoint!r} (bestval or wavg)")
+    raise SystemExit(f"FATAL: unknown checkpoint {checkpoint!r} (best70, bestval or wavg)")
 
 
 def stream_check(run_dirs, checkpoint) -> dict | None:
@@ -344,7 +366,7 @@ def _stream_filter(keys, run_dirs: Mapping | None, checkpoint: str | None):
     if run_dirs is None:
         return list(keys), None
     if checkpoint is None:
-        raise SystemExit("FATAL: a stream check needs the checkpoint compared (bestval or wavg)")
+        raise SystemExit("FATAL: a stream check needs the checkpoint compared (best70, bestval or wavg)")
     kept, excluded = [], []
     for k in keys:
         bad = stream_check(run_dirs[k], checkpoint)
@@ -364,8 +386,30 @@ def _t975(dof: float) -> float:
     return float(t.ppf(0.975, dof)) if math.isfinite(dof) else 1.959963984540054
 
 
+def bounds(est: float, se: float, dof: float, level: float = 0.95) -> tuple[float, float]:
+    """The central `level` Student-t interval est -/+ t se (normal at infinite dof)."""
+    from scipy.stats import norm, t
+    q = 0.5 + level / 2
+    k = float(t.ppf(q, dof)) if math.isfinite(dof) else float(norm.ppf(q))
+    return est - k * se, est + k * se
+
+
 # ------------------------------------------------------------------ the error
-def combined_error(ln, w, groups=None, separate: bool = False) -> dict:
+def _small_sample_floor(terms: list, observed: list, rule: bool) -> bool:
+    """A14's two-run rule for the groups (separate) or pools of a Welch error: a group
+    whose spread has one degree of freedom keeps its term at least its observed term
+    (sum w^2) s^2. Changes `terms` in place; True when any group was floored, and the
+    caller then takes dof = min(dof, 1)."""
+    if not rule:
+        return False
+    small = [i for i, (d, _) in enumerate(observed) if d == 1]
+    for i in small:
+        terms[i] = max(terms[i], observed[i][1])
+    return bool(small)
+
+
+def combined_error(ln, w, groups=None, separate: bool = False, pools=None,
+                   small_sample_rule: bool = False) -> dict:
     """The contrast w . ln[:, 0] over units and its error, by the decomposition in
     the module docstring.
 
@@ -395,7 +439,22 @@ def combined_error(ln, w, groups=None, separate: bool = False) -> dict:
     group g's observed term (sum w_u^2) s_g^2 carrying k_g - 1; ln_spread_sd,
     v_ind and v_run are then lists, one per group. A pooled spread with five
     runs against three, the three's run variance three times the five's, covered
-    0.91 (verification of 2026-10-01)."""
+    0.91 (verification of 2026-10-01).
+
+    pools     lists of group indices (A14, P1): the spread is taken about each
+              group's own mean and pooled within each pool, and each pool keeps
+              its own run variance (Welch). For the random partitions: a group is
+              one partition's runs, a pool the partitions that merge a pair (or
+              those that split it), so each side's run variance comes from the
+              runs that replicate one partition. Each pool needs one group of two
+              units. ln_spread_sd, v_ind, v_run and pool_dof are lists, one per
+              pool; with one group per pool this is `separate`.
+
+    small_sample_rule  (A14) when the pooled spread has one degree of freedom
+              (two runs), var >= sum(w^2) s^2 and dof = 1, and the result
+              carries two_run_rule: the module docstring. With `separate` or
+              `pools`, the same holds per group (pool) whose spread has one degree
+              of freedom: its term is at least its observed term, and dof <= 1."""
     L = np.atleast_2d(np.asarray(ln, dtype=np.float64))
     w = np.asarray(w, dtype=np.float64)
     n, nb = L.shape[0], L.shape[1] - 1
@@ -434,33 +493,62 @@ def combined_error(ln, w, groups=None, separate: bool = False) -> dict:
            if C is not None else math.nan)
     tv = test_var if nb > 1 else 0.0
     shared = {"v_shared": max(off, 0.0) if nb > 1 else math.nan, "v_shared_unclipped": off}
+    if pools is not None:
+        pool = []                  # (degrees of freedom, s^2, v_ind, sum w^2)
+        for p in pools:
+            d = sum(per[i][0] - 1 for i in p)
+            if d < 1:
+                return {**out, "not_computed": "a pool holds no group of two units, so its "
+                                               "run variance cannot be measured"}
+            pool.append((d, sum(per[i][1] for i in p) / d,
+                         sum((per[i][0] - 1) * per[i][2] for i in p) / d,
+                         sum(per[i][4] for i in p)))
+        v_run = [max(s2 - vi, 0.0) for _, s2, vi, _ in pool]
+        terms = [c * vr for (*_, c), vr in zip(pool, v_run)]
+        small = _small_sample_floor(terms, [(d, c * s2) for d, s2, _, c in pool], small_sample_rule)
+        var = sum(terms) + tv
+        obs2 = sum((c * s2) ** 2 / d for d, s2, _, c in pool)
+        dof = var ** 2 / obs2 if obs2 > 0 else math.inf
+        return {**out, "ln_spread_sd": [math.sqrt(x[1]) for x in pool], **shared,
+                "v_ind": [x[2] for x in pool], "v_run": v_run, "pool_dof": [x[0] for x in pool],
+                "ln_combined_se": math.sqrt(var), "dof": min(dof, 1.0) if small else dof,
+                **({"two_run_rule": True} if small else {})}
     if separate:
         s2g = [ss / (k - 1) for k, ss, *_ in per]
         v_run = [max(x - vig, 0.0) for x, (_, _, vig, _, _) in zip(s2g, per)]
-        var = sum(cg * vr for (*_, cg), vr in zip(per, v_run)) + tv
+        terms = [cg * vr for (*_, cg), vr in zip(per, v_run)]
+        small = _small_sample_floor(terms, [(k - 1, cg * x) for x, (k, *_, cg) in zip(s2g, per)],
+                                    small_sample_rule)
+        var = sum(terms) + tv
         obs2 = sum((cg * x) ** 2 / (k - 1) for x, (k, _, _, _, cg) in zip(s2g, per))
+        dof = var ** 2 / obs2 if obs2 > 0 else math.inf
         return {**out, "ln_spread_sd": [math.sqrt(x) for x in s2g], **shared,
                 "v_ind": [x[2] for x in per], "v_run": v_run,
-                "ln_combined_se": math.sqrt(var),
-                "dof": var ** 2 / obs2 if obs2 > 0 else math.inf}
+                "ln_combined_se": math.sqrt(var), "dof": min(dof, 1.0) if small else dof,
+                **({"two_run_rule": True} if small else {})}
     s2 = sum(ss for _, ss, *_ in per) / dof_s
     v_ind = sum((k - 1) * vig for k, _, vig, _, _ in per) / dof_s
     v_run = max(s2 - v_ind, 0.0)
     c = float((w ** 2).sum())
     var = c * v_run + tv
     obs = c * s2
+    if small_sample_rule and dof_s == 1:
+        var = max(var, obs)
+        return {**out, "ln_spread_sd": math.sqrt(s2), **shared, "v_ind": v_ind, "v_run": v_run,
+                "ln_combined_se": math.sqrt(var), "dof": 1.0, "two_run_rule": True}
     return {**out, "ln_spread_sd": math.sqrt(s2), **shared, "v_ind": v_ind, "v_run": v_run,
             "ln_combined_se": math.sqrt(var),
             "dof": var ** 2 / (obs ** 2 / dof_s) if obs > 0 else math.inf}
 
 
-def contrast(ln, w, groups=None, separate: bool = False) -> dict:
+def contrast(ln, w, groups=None, separate: bool = False, pools=None,
+             small_sample_rule: bool = False) -> dict:
     """exp of the contrast with its error, 95 % interval and test-only percentile
     interval: the fields every ratio row carries."""
     L = np.atleast_2d(np.asarray(ln, dtype=np.float64))
     if not np.all(np.isfinite(L)):
         raise SystemExit("FATAL: a metric is zero or negative; its log is undefined")
-    e = combined_error(L, w, groups, separate)
+    e = combined_error(L, w, groups, separate, pools, small_sample_rule)
     if "not_computed" in e:
         return {"ln_test_se": e["ln_test_se"], "not_computed": e["not_computed"]}
     mean, comb, t = e["estimate"], e["ln_combined_se"], _t975(e["dof"])
@@ -468,15 +556,20 @@ def contrast(ln, w, groups=None, separate: bool = False) -> dict:
     lo_b, hi_b = np.quantile(reps, [0.025, 0.975]) if reps.size > 1 else (math.nan, math.nan)
     return {"ratio": math.exp(mean), "ln_ratio": mean,
             **{k: e[k] for k in ("ln_test_se", "v_shared", "v_ind", "v_shared_unclipped",
-                                 "v_run", "ln_combined_se", "dof")},
+                                 "v_run", "pool_dof", "ln_combined_se", "dof", "two_run_rule")
+               if k in e},
             "ci95": [math.exp(mean - t * comb), math.exp(mean + t * comb)],
             "ci95_test_only_percentile": [float(math.exp(lo_b)), float(math.exp(hi_b))],
             "z": mean / comb if comb > 0 else math.inf,
             "n_boot": int(L.shape[1] - 1)}
 
 
+ONE_PAIR = ("one run pair (after the stream check): a paired contrast needs two, and is "
+            "not computed from one (A14)")
+
+
 def paired_log(ln: Mapping, *, run_dirs: Mapping | None = None,
-               checkpoint: str | None = None) -> dict:
+               checkpoint: str | None = None, small_sample_rule: bool = False) -> dict:
     """The paired mean over runs of a per-run log contrast (for a ratio,
     ln m_coarse,k - ln m_fine,k; for a ratio of ratios, the difference of two),
     and its errors.
@@ -484,7 +577,9 @@ def paired_log(ln: Mapping, *, run_dirs: Mapping | None = None,
     ln          {run: replicate vector of that run's log contrast}
     run_dirs    {run: the run directories the contrast reads} (v2): they must
                 share their training stream up to `checkpoint` (stream_check); a
-                run that does not is excluded, reported, and the rest are used."""
+                run that does not is excluded, reported, and the rest are used.
+    small_sample_rule  (A14) one run pair is not computed; two take the floor
+                and the one degree of freedom of combined_error."""
     if not ln:
         raise SystemExit("FATAL: no paired runs")
     if len({len(np.asarray(v)) for v in ln.values()}) != 1:
@@ -495,6 +590,8 @@ def paired_log(ln: Mapping, *, run_dirs: Mapping | None = None,
         out["excluded_runs"] = [{"run": str(k), **bad} for k, bad in excluded]
     if not keys:
         return {**out, "n_runs": 0, "not_computed": "every run failed the stream check (A7)"}
+    if small_sample_rule and len(keys) < 2:
+        return {**out, "n_runs": len(keys), "not_computed": ONE_PAIR}
     L = np.array([np.asarray(ln[k], dtype=np.float64) for k in keys])
     n = len(keys)
     point = L[:, 0]
@@ -504,11 +601,12 @@ def paired_log(ln: Mapping, *, run_dirs: Mapping | None = None,
             "run_range": [float(math.exp(point.min())), float(math.exp(point.max()))],
             "ln_run_sd": run_sd,
             "ln_run_se": run_sd / math.sqrt(n) if n > 1 else math.nan,
-            **contrast(L, np.full(n, 1.0 / n))}
+            **contrast(L, np.full(n, 1.0 / n), small_sample_rule=small_sample_rule)}
 
 
 def paired_ratio(fine: Mapping, coarse: Mapping, *, pairs: Mapping | None = None,
-                 run_dirs: Mapping | None = None, checkpoint: str | None = None) -> dict:
+                 run_dirs: Mapping | None = None, checkpoint: str | None = None,
+                 small_sample_rule: bool = False) -> dict:
     """The paired geometric-mean ratio coarse/fine over runs, and its errors.
 
     fine, coarse  {run: replicate vector}, vectors from `replicates` with the same
@@ -516,9 +614,10 @@ def paired_ratio(fine: Mapping, coarse: Mapping, *, pairs: Mapping | None = None
     pairs         {coarse run: fine run}; default: the runs both sides share.
     run_dirs      {run: run directory, or a list of them} (v2). Each pair's
                   directories must share their training stream up to
-                  `checkpoint` ('bestval' or 'wavg'); a pair that does not is
-                  excluded and listed in `excluded_pairs` with its first
+                  `checkpoint` ('best70', 'bestval' or 'wavg'); a pair that does
+                  not is excluded and listed in `excluded_pairs` with its first
                   differing epoch, and the ratio is formed from the others.
+    small_sample_rule  as for paired_log (A14).
     """
     if pairs is None:
         pairs = {k: k for k in coarse if k in fine}
@@ -539,14 +638,14 @@ def paired_ratio(fine: Mapping, coarse: Mapping, *, pairs: Mapping | None = None
                 "not_computed": "every pair failed the stream check (A7)"}
     ln = {c: np.log(np.asarray(coarse[c], float)) - np.log(np.asarray(fine[pairs[c]], float))
           for c in kept}
-    res = paired_log(ln)
+    res = paired_log(ln, small_sample_rule=small_sample_rule)
     res["stream_pairing"] = "unchecked" if run_dirs is None else "identical"
     fm = np.array([np.asarray(fine[pairs[c]], float)[0] for c in kept])
     cm = np.array([np.asarray(coarse[c], float)[0] for c in kept])
     return {**out, **res, "ratio_of_means": float(cm.mean() / fm.mean())}
 
 
-def fixed_effects(ln, X, strata, report: Mapping[str, int]) -> dict:
+def fixed_effects(ln, X, strata, report: Mapping[str, int], run_var=None) -> dict:
     """Weighted least squares of the units' log metrics on the design X, with an
     error for every coefficient by the decomposition of the module docstring.
 
@@ -558,10 +657,15 @@ def fixed_effects(ln, X, strata, report: Mapping[str, int]) -> dict:
             retained-topology probes share X->bb jets, the four-prong and
             visible-content probes X->YY->bbqq, and the two X->bc probes X->bc)
     report  {name: column of X} of the coefficients to report
+    run_var each unit's run variance, measured apart from this fit (A14: from
+            the runs that replicate one partition); a unit is then weighted by
+            1 / (run_var + v_ind), its run-plus-test variance
 
     Each unit is weighted by 1 / v_ind of its stratum, the independent test
     variance of one unit there (bootstrap covariance among the stratum's
-    units), so a noisier metric counts for less. The run variance is each
+    units), so a noisier metric counts for less; with run_var, by
+    1 / (run_var + v_ind). The weights only set the estimator: the error
+    below holds for any fixed weights. The run variance is each
     stratum's own: it differs between probe tasks by about 35x on the v1
     17-class runs, and one value pooled over the tasks covered 0.77 to 0.998
     task by task (verification of 2026-10-01). With L the least-squares rows,
@@ -638,6 +742,7 @@ def fixed_effects(ln, X, strata, report: Mapping[str, int]) -> dict:
     if n - p < 1:
         raise SystemExit(f"FATAL: {n} units for {p} coefficients leave no residual")
     v_ind = np.empty(n)
+    rv = np.zeros(n) if run_var is None else np.asarray(run_var, dtype=np.float64)
     for s in dict.fromkeys(strata):
         idx = [i for i, x in enumerate(strata) if x == s]
         if len(idx) < 2:
@@ -648,10 +753,10 @@ def fixed_effects(ln, X, strata, report: Mapping[str, int]) -> dict:
         diag = float(np.trace(C)) / k
         off = (float(C.sum()) - k * diag) / (k * (k - 1))
         v_ind[idx] = diag - max(off, 0.0)
-        if not v_ind[idx[0]] > 0:
+        if not v_ind[idx[0]] + rv[idx[0]] > 0:
             return {"not_computed": f"the units of stratum {s!r} carry no independent test "
                                     "noise, so they cannot be weighted"}
-    W = 1.0 / v_ind
+    W = 1.0 / (v_ind if run_var is None else v_ind + rv)
     A = np.linalg.inv(X.T @ (W[:, None] * X))
     rows = A @ (X.T * W)                                   # p x n least-squares rows
     beta = rows @ Lm[:, 0]
@@ -692,6 +797,133 @@ def fixed_effects(ln, X, strata, report: Mapping[str, int]) -> dict:
             "ci95": [math.exp(b - t * comb), math.exp(b + t * comb)],
             "z": b / comb if comb > 0 else math.inf}
     return out
+
+
+def fieller(num, den, small_sample_rule: bool = False) -> dict:
+    """The ratio of two paired means, f = mean_k N_k / mean_k D_k over runs k, with
+    its 95 % Fieller interval: every f for which the contrast mean_k (N_k - f D_k)
+    lies within its own 95 % interval of 0, that error formed by combined_error
+    (run + test, Student t at its degrees of freedom) like every other contrast.
+    The denominator's error so enters the interval, which a ratio of the two
+    point values would drop, and the interval does not rest on resampling five
+    runs, which a bootstrap over runs would (126 distinct resamples, no
+    small-sample correction). When the denominator's own 95 % interval holds 0
+    the set is unbounded and no interval is given.
+
+    num, den   runs x (1 + B) replicate vectors of each run's numerator and
+               denominator (log contrasts), on one resampling of the test jets.
+    The edges are found by bisection; the set is taken to be one interval about f."""
+    N = np.atleast_2d(np.asarray(num, dtype=np.float64))
+    D = np.atleast_2d(np.asarray(den, dtype=np.float64))
+    if N.shape != D.shape:
+        raise SystemExit(f"FATAL: numerator {N.shape} and denominator {D.shape} differ in shape")
+    n = N.shape[0]
+    if small_sample_rule and n < 2:
+        return {"n_runs": n, "not_computed": ONE_PAIR}
+    w = np.full(n, 1.0 / n)
+    out = {"n_runs": n}
+    for name, M in (("numerator", N), ("denominator", D)):
+        e = combined_error(M, w, small_sample_rule=small_sample_rule)
+        if "not_computed" in e:
+            return {**out, "not_computed": f"{name}: {e['not_computed']}"}
+        out[name] = {k: e[k] for k in ("estimate", "ln_test_se", "ln_combined_se", "dof")}
+        out[name]["ci95"] = list(bounds(e["estimate"], e["ln_combined_se"], e["dof"]))
+    den_e = out["denominator"]
+    if den_e["estimate"] == 0:
+        return {**out, "not_computed": "the denominator is 0"}
+    f = out["numerator"]["estimate"] / den_e["estimate"]
+    out["fraction"] = f
+    if den_e["ci95"][0] <= 0 <= den_e["ci95"][1]:
+        return {**out, "ci95": None,
+                "note": "the denominator's 95 % interval holds 0, so the Fieller set is unbounded"}
+
+    def inside(x):
+        e = combined_error(N - x * D, w, small_sample_rule=small_sample_rule)
+        return abs(e["estimate"]) <= _t975(e["dof"]) * e["ln_combined_se"]
+
+    def edge(sign):
+        a, step = f, 1e-3 * max(abs(f), 1.0)          # a inside, b outside
+        b = f + sign * step
+        while inside(b):
+            if step > 1e12:
+                raise SystemExit("FATAL: the Fieller set does not close although the "
+                                 "denominator's interval excludes 0")
+            a, step = b, 2 * step
+            b = f + sign * step
+        for _ in range(200):
+            m = 0.5 * (a + b)
+            if m in (a, b):
+                break
+            a, b = (m, b) if inside(m) else (a, m)
+        return 0.5 * (a + b)
+
+    return {**out, "ci95": [edge(-1), edge(+1)], "interval": "Fieller, 95 %"}
+
+
+# --------------------------------------------------------- decision labels (A14)
+LN_1P1 = math.log(1.1)
+DEPENDS = "depends on the checkpoint"
+DEPENDS_UNDER_10 = "depends on the checkpoint, under 10%"
+DEPENDENT = (DEPENDS, DEPENDS_UNDER_10)
+
+
+def checkpoint_label(lo: float, hi: float) -> str:
+    """A14, the 95 % interval [lo, hi] of ln(result at the other checkpoint / result
+    at the primary): 'depends on the checkpoint' when it excludes 0; 'robust' when
+    it lies within +-ln 1.1; 'inconclusive' otherwise. An interval that excludes 0
+    and lies within +-ln 1.1 meets both rules, which A14 does not order, and is
+    labelled for both: 'depends on the checkpoint, under 10%'. It counts as
+    dependent (DEPENDENT), so the dependent results are the intervals that exclude
+    0, 5 % of them under the null. p1_label treats its overlap the same way."""
+    dep, small = lo > 0 or hi < 0, -LN_1P1 < lo and hi < LN_1P1
+    if dep:
+        return DEPENDS_UNDER_10 if small else DEPENDS
+    return "robust" if small else "inconclusive"
+
+
+def p1_label(lo: float, hi: float) -> str:
+    """A14 P1, the 95 % interval [lo, hi] of the merging cost ln(merged / split):
+    'merging costs nothing' when the upper bound is below ln 1.1; 'merging costs'
+    when the lower bound is above 0; 'inconclusive' otherwise. An interval inside
+    (0, ln 1.1) meets both rules, which A14 does not order, and is labelled for
+    both: 'merging costs, under 10%' (a cost, and below the 10 % margin), as
+    checkpoint_label treats its overlap."""
+    if lo > 0:
+        return "merging costs, under 10%" if hi < LN_1P1 else "merging costs"
+    return "merging costs nothing" if hi < LN_1P1 else "inconclusive"
+
+
+def beats_label(lo95: float) -> str:
+    """A14, random against semantic: 'beats' when the 95 % lower bound is above 0."""
+    return "beats" if lo95 > 0 else "inconclusive"
+
+
+def equal_label(lo90: float, hi90: float) -> str:
+    """A14, random against semantic: 'equal' when the 90 % interval lies within
+    +-ln 1.1."""
+    return "equal" if -LN_1P1 < lo90 and hi90 < LN_1P1 else "inconclusive"
+
+
+def threshold_label(lo: float, hi: float, threshold: float = 0.0) -> str:
+    """'holds' when the interval lies above `threshold`, 'fails' when it lies below,
+    'inconclusive' when it spans both outcomes."""
+    if lo > threshold:
+        return "holds"
+    if hi < threshold:
+        return "fails"
+    return "inconclusive"
+
+
+def equivalence_label(lo: float, hi: float, margin: float) -> str:
+    """'holds' when the interval lies within +-margin, 'fails' when it lies wholly
+    outside it, 'inconclusive' when it spans both; 'not evaluable' when margin <= 0."""
+    if not margin > 0:
+        return "not evaluable"
+    if -margin < lo and hi < margin:
+        return "holds"
+    if lo > margin or hi < -margin:
+        return "fails"
+    return "inconclusive"
 
 
 # -------------------------------------------------------------- rejections

@@ -215,6 +215,56 @@ def test_a_selected_epoch_that_was_not_kept_is_fatal_not_substituted(tmp_path):
         FV.resolve(run, "bestval")
 
 
+# best70, the primary of amendment A14; the window record is written by the driver's own code
+PV = _load("pretrain_v2_for_ft", "experiments/MTX/pretrain_v2.py")
+
+
+def test_best70_is_the_first_maximum_within_70_79_loaded_by_name(tmp_path):
+    vals = {e: 0.5 + e / 1000 for e in range(80)}
+    vals[40] = 0.99                              # the global best, before the window
+    vals[72] = vals[75] = 0.9                    # a tie inside it: the first
+    run = _run_dir(tmp_path, vals, kept=[40, *range(70, 80)])
+    PV.write_window_best(run, 80, {"driver": "test"})
+    rec = FV.resolve(run, "best70")
+    assert rec["epoch"] == 72 and rec["path"].endswith("net_epoch-72_state.pt")
+    assert rec["value"] == 0.9 and rec["window"] == [70, 79] and rec["metric"] == "val.acc"
+    assert rec["sha256"] == FV.sha256_file(run / "net_epoch-72_state.pt")
+    assert FV.resolve(run, "bestval")["epoch"] == 40          # the sensitivity check differs
+    link = tmp_path / "ws" / "l188-s1.pt"
+    assert FV.main(["resolve", "--run-dir", str(run), "--rule", "best70", "--link", str(link)]) == 0
+    assert link.read_bytes() == b"epoch 72"
+    assert json.loads(pathlib.Path(f"{link}.json").read_text())["rule"] == "best70"
+
+
+def test_best70_of_a_self_supervised_run_is_the_first_minimum_of_its_loss(tmp_path):
+    loss = {e: 1.0 - e / 1000 for e in range(80)}
+    loss[77] = loss[78] = 0.5
+    run = _run_dir(tmp_path, {e: -v for e, v in loss.items()})   # selection value = -val.loss
+    PV.write_window_best(run, 80, {"driver": "test"})
+    assert FV.resolve(run, "best70")["epoch"] == 77
+
+
+def test_best70_refuses_a_stale_or_foreign_window_record_and_a_missing_epoch(tmp_path):
+    vals = {e: 0.7 if e == 74 else 0.5 for e in range(80)}
+    run = _run_dir(tmp_path / "a", vals)
+    with pytest.raises(SystemExit, match="did not record its window checkpoint"):
+        FV.resolve(run, "best70")
+    PV.write_window_best(run, 80, {"driver": "test"})
+    (run / "metrics" / "epoch-071.json").write_text(json.dumps(
+        {"epoch": 71, "selection": {"metric": "val.acc", "value": 0.8}}))
+    with pytest.raises(SystemExit, match="best_window_epoch.json says epoch 74, the per-epoch records say 71"):
+        FV.resolve(run, "best70")
+    run = _run_dir(tmp_path / "b", vals)
+    PV.write_window_best(run, 80, {"driver": "test"})
+    rec = json.loads((run / "best_window_epoch.json").read_text())
+    (run / "best_window_epoch.json").write_text(json.dumps({**rec, "window": [69, 78]}))
+    with pytest.raises(SystemExit, match="is over epochs"):
+        FV.resolve(run, "best70")
+    run = _run_dir(tmp_path / "c", {e: v for e, v in vals.items() if e != 76})
+    with pytest.raises(SystemExit, match=r"no record of epochs \[76\]"):
+        FV.resolve(run, "best70")
+
+
 def _wavg(run, epochs=range(70, 80), bad_avg=False):
     (run / FV.WAVG_STATE).write_bytes(b"average")
     (run / FV.WAVG_JSON).write_text(json.dumps({

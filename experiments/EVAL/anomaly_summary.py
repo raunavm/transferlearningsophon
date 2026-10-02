@@ -251,7 +251,7 @@ def definition(doc: dict) -> dict:
             "max_sic": "kept per run only for the not-detected flag"}
 
 
-FLAG_TAGS = ("bestval", "wavg", "e079")   # the rule's two checkpoints, and v1's epoch 79
+FLAG_TAGS = ("best70", "wavg", "bestval", "e079")   # v2: primary, robustness, global-best check; v1: epoch 79
 
 
 def head_flags(heads: dict) -> dict:
@@ -260,8 +260,10 @@ def head_flags(heads: dict) -> dict:
     falls outside the 99 % prediction interval of the siblings (Student t, n-1
     degrees of freedom, sd * sqrt(1 + 1/n)), on the top-1 accuracy or on the
     logit of the mean P(QCD) on resonant jets. Reported at every checkpoint of
-    FLAG_TAGS that all runs carry (the primary 'bestval' and the robustness
-    'wavg' for v2; epoch 79 for v1), and on v1's mean over epochs 70-79.
+    FLAG_TAGS that all runs carry (for v2 the primary 'best70', the first maximum
+    within epochs 70-79, the robustness 'wavg' and the global best 'bestval' as a
+    sensitivity check, amendment A14; epoch 79 for v1), and on v1's mean over
+    epochs 70-79.
 
     AN OUTLIER IS AN EPOCH STATE, NOT A RUN. In v1, seven of eight runs examined
     have an epoch in 70-79 whose output layer almost never predicts QCD, and
@@ -305,7 +307,7 @@ def head_flags(heads: dict) -> dict:
 
 def checkpoint_rule(fams: dict, heads: dict) -> dict:
     """sigma_min of the output-layer scores at each checkpoint every run carries
-    ('bestval' and 'wavg' in v2, 'e079' in v1), and, for v1, each run's mean of
+    ('best70', 'wavg' and 'bestval' in v2, 'e079' in v1), and, for v1, each run's mean of
     ln sigma_min over epochs 70-79 as a diagnostic of how much the epoch moves it:
     per run, then mean and sd over runs."""
     parse_arm = _load("seed_level", "experiments/STATS/seed_level.py").parse_arm
