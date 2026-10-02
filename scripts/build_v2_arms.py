@@ -22,6 +22,10 @@ WHAT IT WRITES
   configs/arms/v2/mass_lambda.v2.json     that lambda and every input to it
   configs/labelmaps/probe_pairs.v2.json   which probe pairs each vocabulary
                                           merges or splits
+  configs/labelmaps/axis_doses.v2.json    how much of each flavour axis every
+                                          grid vocabulary keeps, and where the
+                                          pair rule and the axis rule each put
+                                          the loss of every probe pair
   configs/arms/v2_grid.json               the registry of every v2 arm
 
 Every config is the base config with a different `labels:` block and nothing
@@ -42,8 +46,9 @@ are the same decay up to exchanging b, c and light (s, u/d) quarks: X->bb, X->cc
       fewest native pairs across orbits is used (all options are recorded).
   F1r F1 with the cut made at random instead: the same move back, but a seeded
       random 11 of the 22 four-prong hadronic classes go to B, 5 or 6 of them
-      containing a b quark and bbqq kept with ccqq. So F1r cuts the same orbit
-      by the same share without aligning the cut with b content.
+      containing a b quark, bbqq kept with ccqq, and no two classes that differ
+      only by b <-> c (bbbb/cccc, bbqq/qqbc, ...) on opposite sides. So F1r
+      cuts the same orbit by the same share with no boundary between b and c.
   Why that orbit. Every orbit's share is a multiple of 297 (= 27 x 11), so an
   exact swap needs a subset of equal divisibility. The two-prong orbit X->QQ
   admits no proper subset (its classes carry 3^1 only), and a four-prong subset
@@ -102,6 +107,7 @@ RAND_V2 = REPO / "configs" / "labelmaps" / "rand_label_map.v2.csv"
 FLAV_CSV = REPO / "configs" / "labelmaps" / "flavour_pair_map.v2.csv"
 FLAV_JSON = REPO / "configs" / "labelmaps" / "flavour_pair.v2.json"
 PAIRS = REPO / "configs" / "labelmaps" / "probe_pairs.v2.json"
+AXIS_JSON = REPO / "configs" / "labelmaps" / "axis_doses.v2.json"
 ARMS = REPO / "configs" / "arms"
 V2 = ARMS / "v2"
 MASS_JSON = V2 / "mass_lambda.v2.json"
@@ -165,15 +171,18 @@ MAX_SAMPLES = 10_000_000
 FLAV_SEED = 1
 FLAV_TRIALS = 64
 SPLIT_ORBIT = "X_YY_QQQQ"
-# F1r (PRESPEC A10 corrections, PI 2026-10-01): random.Random(F1R_SEED).sample(
-# SPLIT_ORBIT sorted by jet_label, 11) repeated until 5 or 6 of the 11 contain a
-# b quark, F1R_TOGETHER stay in one group (so the four-prong b vs c probe is a
-# manipulation check: F1 splits it, F1r does not), and every group's REALISED
-# share is within F1R_TOL of F1's. The 22 classes carry one nominal share but
-# realised shares 3x apart, so without the last condition the first cut moved
-# 11.1% of the stream against F1's 9.3% (groups A and B off F1 by -8% and +16%).
-# F1R_TOL holds F1r to F1 as closely as F0 and F1 hold to the 17-class groups
-# (0.6%), so F1 - F1r differs in the cut's alignment with b content only.
+# F1r (PRESPEC A10 corrections and A14, 2026-10-01): random.Random(F1R_SEED).
+# sample(SPLIT_ORBIT sorted by jet_label, 11) repeated until 5 or 6 of the 11
+# contain a b quark, F1R_TOGETHER stay in one group (so the four-prong b vs c
+# probe is a manipulation check: F1 splits it, F1r does not), no b <-> c pair of
+# the orbit (two classes that differ only by b <-> c, see AXES) is split, and
+# every group's REALISED share is within F1R_TOL of F1's. The 22 classes carry
+# one nominal share but realised shares 3x apart, so without the share condition
+# the first cut moved 11.1% of the stream against F1's 9.3% (groups A and B off
+# F1 by -8% and +16%). F1R_TOL holds F1r to F1 as closely as F0 and F1 hold to
+# the 17-class groups (0.6%). The cut drawn without the b <-> c condition split
+# 4 of the orbit's 11 b <-> c pairs (F1 splits 8), so it kept part of the very
+# boundary F1r is there to lack; now F1 - F1r is a b <-> c boundary against none.
 F1R_SEED = 20261001
 F1R_B_MOVED = (5, 6)
 F1R_TOGETHER = ("label_X_YY_bbqq", "label_X_YY_ccqq")
@@ -538,6 +547,70 @@ def rand_v2_seeds() -> list[int]:
     return json.loads(RAND_SEL.read_text())["accepted_seeds"]
 
 
+# ------------------------------------------------------------------ axes
+# A resonant class name is X_ or X_YY_ and its decay products, read as tokens:
+# b, c, s, q (u or d), g, e, m (mu), v (neutrino), tauh, taue, taum (so tauev is
+# taue + v). An axis is a list of slots (one side, other side). Two resonant
+# classes differ only along an axis when they have the same prefix and one turns
+# into the other by replacing, slot by slot, one or more products of one side
+# with as many of the other side, and nothing else. So X_bb, X_bc and X_cc are
+# pairwise b <-> c, and so are X_YY_bbqq, X_YY_ccqq and X_YY_qqbc; X_ee/X_mm and
+# X_tauhtaue/X_tauhtaum are e <-> mu. Light quarks are s and q; the strict
+# variants take s only. QCD classes are on no axis.
+PRODUCT_RE = re.compile(r"tauh|taue|taum|[bcsqgemv]")
+AXES = {"b<->c": [(("b",), ("c",))],
+        "c<->light": [(("c",), ("s", "q"))],
+        "b<->light": [(("b",), ("s", "q"))],
+        "e<->mu": [(("e",), ("m",)), (("taue",), ("taum",))],
+        "c<->s": [(("c",), ("s",))],
+        "b<->s": [(("b",), ("s",))]}
+STRICT = {"c<->light": "c<->s", "b<->light": "b<->s"}
+LADDER = TREE[:6]       # the tree levels the grid trains, finest first
+
+
+def products(name: str) -> tuple[str, collections.Counter]:
+    """(prefix, decay products) of a resonant class name."""
+    pre = "X_YY" if name.startswith("label_X_YY_") else "X"
+    body = name[len(f"label_{pre}_"):]
+    toks = PRODUCT_RE.findall(body)
+    if "".join(toks) != body:
+        raise SystemExit(f"FATAL: {name}: decay products not read")
+    return pre, collections.Counter(toks)
+
+
+def on_axis(p, r, slots) -> bool:
+    """Whether the classes with (prefix, products) p and r differ only along
+    the axis `slots`."""
+    if p[0] != r[0] or p[1] == r[1]:
+        return False
+    x, y = p[1] - r[1], r[1] - p[1]
+    one = {t for s, _ in slots for t in s}
+    other = {t for _, s in slots for t in s}
+    return any(set(a) <= one and set(b) <= other
+               and all(sum(a[t] for t in s) == sum(b[t] for t in o) for s, o in slots)
+               for a, b in ((x, y), (y, x)))
+
+
+def axis_pairs(names, axis) -> list[tuple[int, int]]:
+    """Native pairs (i < j) that differ only along `axis`."""
+    pr = {n: products(names[n]) for n in sorted(names) if n < QCD_LO}
+    return [(i, j) for i, j in itertools.combinations(pr, 2)
+            if on_axis(pr[i], pr[j], AXES[axis])]
+
+
+def dose(mapping, pairs, weight, leave_out=()) -> float | None:
+    """Share-weighted fraction of `pairs` that `mapping` puts in different
+    classes, a pair (i, j) weighing weight[i] * weight[j], with every pair that
+    has a class in `leave_out` left out; None if no pair is left."""
+    tot = split = 0
+    for i, j in pairs:
+        if i not in leave_out and j not in leave_out:
+            w = weight[i] * weight[j]
+            tot += w
+            split += w * (mapping[i] != mapping[j])
+    return split / tot if tot else None
+
+
 # ------------------------------------------------------------- F0 / F1
 def orbit_key(class_name: str) -> str:
     """Same decay up to b <-> c <-> light-quark exchange. Only quark letters
@@ -641,19 +714,22 @@ def pairs_changed(m0, m1, orbit_of) -> dict[str, int]:
 def f1r_cut(orb, names, k: int, f1r_of, f1, counts) -> tuple[list[int], int, float]:
     """F1r's cut: random.Random(F1R_SEED).sample(SPLIT_ORBIT sorted by jet_label,
     k) until 5 or 6 of it contain a b quark, F1R_TOGETHER are both in it or both
-    out, and every group of the map f1r_of(cut) has a realised share within
-    F1R_TOL of F1's. Returns the cut, the number of samples drawn and the
-    largest |realised / F1's realised - 1|."""
+    out, every b <-> c pair of the orbit is both in it or both out, and every
+    group of the map f1r_of(cut) has a realised share within F1R_TOL of F1's.
+    Returns the cut, the number of samples drawn and the largest |realised /
+    F1's realised - 1|."""
     q4 = sorted(orb[SPLIT_ORBIT])
     idx = {s: n for n, s in names.items()}
     together = [idx[s] for s in F1R_TOGETHER]
+    twins = [(x, y) for x, y in axis_pairs(names, "b<->c") if x in q4 and y in q4]
     ref = group_sums(f1, counts)
     num, den = F1R_TOL
     rng = random.Random(F1R_SEED)
     for n in range(1, MAX_SAMPLES + 1):
         pick = sorted(rng.sample(q4, k))
         if (sum(has_b(names[x]) for x in pick) in F1R_B_MOVED
-                and len({x in pick for x in together}) == 1):
+                and len({x in pick for x in together}) == 1
+                and all((x in pick) == (y in pick) for x, y in twins)):
             got = group_sums(f1r_of(pick), counts)
             if all(den * abs(got[g] - ref[g]) <= num * ref[g] for g in ref):
                 return pick, n, max(abs(got[g] / ref[g] - 1) for g in ref)
@@ -718,6 +794,10 @@ def build_flavour_pair(rows, units, realised):
     idx = {s: n for n, s in names.items()}
     q4 = orb[SPLIT_ORBIT]
     bpairs = [(x, y) for x in q4 for y in q4 if has_b(names[x]) and not has_b(names[y])]
+    flav = {"FLAV_F0": f0, "FLAV_F1": f1, "FLAV_F1R": f1r}
+    quark_axes = ("b<->c", "b<->light", "c<->light")
+    ap = {ax: axis_pairs(names, ax) for ax in quark_axes}
+    in_orbit = {ax: [(x, y) for x, y in p if x in q4 and y in q4] for ax, p in ap.items()}
     record = {
         "construction": (
             "F0: each of the 16 resonant groups is a union of whole flavour orbits "
@@ -728,7 +808,8 @@ def build_flavour_pair(rows, units, realised):
             "to group B and whole orbits of equal share moved from B to that "
             "orbit's group A; of the exact options, the one changing the fewest "
             "native pairs across orbits. F1r: F1 with a seeded random half of that "
-            "orbit moved instead of its b-containing half."),
+            "orbit moved instead of its b-containing half, splitting no two classes "
+            "that differ only by b <-> c."),
         "seed": FLAV_SEED, "trial": trial, "trials": FLAV_TRIALS,
         "n_orbits": len(orb),
         "orbit_of_class": {names[n]: orbit_key(names[n]) for n in range(QCD_LO)},
@@ -752,9 +833,14 @@ def build_flavour_pair(rows, units, realised):
             "sampler": (f"random.Random({F1R_SEED}).sample({SPLIT_ORBIT} classes sorted by "
                         f"jet_label, {len(s_nat)}) until {F1R_B_MOVED[0]} or "
                         f"{F1R_B_MOVED[1]} contain a b quark, "
-                        f"{' and '.join(F1R_TOGETHER)} are in one group, and every "
-                        f"group's realised share is within {F1R_TOL[0]}/{F1R_TOL[1]} "
-                        f"(relative) of F1's"),
+                        f"{' and '.join(F1R_TOGETHER)} are in one group, no b<->c "
+                        f"pair of the orbit (b_c_pairs_in_split_orbit) is split, and "
+                        f"every group's realised share is within {F1R_TOL[0]}/"
+                        f"{F1R_TOL[1]} (relative) of F1's; then its merged/split "
+                        f"status on the {len(BALANCE_PAIRS)} balance pairs must "
+                        f"equal F0's"),
+            "rule_fixed": ("2026-10-01 (PRESPEC A10 corrections; the b<->c condition "
+                           "A14), before any v2 run"),
             "samples_drawn": n_r,
             "realised_tolerance_vs_F1": list(F1R_TOL),
             "largest_realised_deviation": {
@@ -768,6 +854,21 @@ def build_flavour_pair(rows, units, realised):
             "orbit_b_nonb_pairs_split": {
                 "F1": sum(f1[x] != f1[y] for x, y in bpairs),
                 "F1R": sum(f1r[x] != f1r[y] for x, y in bpairs), "of": len(bpairs)},
+        },
+        "b_c_pairs_in_split_orbit": [[names[x], names[y]] for x, y in in_orbit["b<->c"]],
+        "quark_axis_pairs": {
+            "what": ("native pairs that differ only along each quark axis (rule in "
+                     "axis_doses.v2.json; light = s or q): how many lie in the split "
+                     "orbit, and how many each arm splits (no arm splits one outside "
+                     "that orbit). b<->c dose: the share-weighted fraction of all "
+                     "native b<->c pairs that the arm splits, a pair weighing the "
+                     "product of its two classes' realised (or nominal) shares"),
+            "in_split_orbit": {ax: len(p) for ax, p in in_orbit.items()},
+            "split": {arm: {ax: sum(m[x] != m[y] for x, y in p) for ax, p in ap.items()}
+                      for arm, m in flav.items()},
+            "b<->c_dose": {arm: {"realised": dose(m, ap["b<->c"], realised),
+                                 "nominal": dose(m, ap["b<->c"], units)}
+                           for arm, m in flav.items()},
         },
         "pairs_changed_from_F0": {"F1": chosen["pairs_changed_from_F0"],
                                   "F1R": pairs_changed(f0, f1r, orbit_of)},
@@ -808,6 +909,113 @@ def read_two_col_map(path, col, text: str | None = None):
     r = list(csv.DictReader((path.read_text() if text is None else text).splitlines()))
     return ({int(x["jet_label"]): int(x[col]) for x in r},
             {int(x[col]): x[f"{col}_name"] for x in r})
+
+
+# ------------------------------------------------------------ axis doses
+def axis_doses(rows, maps, tasks, names, counts, units, realised_src) -> dict:
+    """axis_doses.v2.json: for every grid vocabulary and axis, the dose (the
+    share-weighted fraction of the axis's native pairs it splits), overall and
+    with each probe pair's own classes left out; for every probe pair, the
+    first level of LADDER at which the pair rule (its classes share a class)
+    and the axis rule (the dose of its axis, its classes left out, is 0) each
+    predict its loss; and the cells where a random partition merges a pair the
+    17-class vocabulary merges but keeps the pair's axis elsewhere."""
+    idx = {s: n for n, s in names.items()}
+    pr = {n: products(names[n]) for n in names if n < QCD_LO}
+    main_axes = [ax for ax in AXES if ax not in STRICT.values()]
+    members = {k: ([idx[a]], [idx[b]]) for k, (a, b) in BALANCE_PAIRS.items()}
+    task_of = dict(PAIR_TASK)
+    sub = {}
+    for label, a, b in sub_pairs(tasks["bc_vs_rest"], names):
+        key = next((k for k, m in members.items() if m == (a, b)), label)
+        if key == label:
+            members[key], task_of[key] = (a, b), "bc_vs_rest"
+        sub[label] = key
+
+    pairs = {}
+    for k, (a, b) in members.items():
+        hit = [ax for ax in main_axes if len(a) == len(b) == 1 and a[0] in pr
+               and b[0] in pr and on_axis(pr[a[0]], pr[b[0]], AXES[ax])]
+        if len(hit) > 1:
+            raise SystemExit(f"FATAL: probe pair {k} is on two axes {hit}")
+        ax = hit[0] if hit else None
+        pairs[k] = {"task": task_of[k], "signal": [names[n] for n in a],
+                    "background": [names[n] for n in b],
+                    "axis": ax, "strict_axis": STRICT.get(ax)}
+
+    ap = {ax: axis_pairs(names, ax) for ax in AXES}
+    weights = {"realised": counts, "nominal": units}
+    vocabs = {**{lvl: column(rows, lvl) for lvl in LADDER},
+              **{a: maps[a] for a in [f"{RAND_V2_PREFIX}{d}" for d in
+                                      range(1, N_PARTITIONS + 1)] + list(FLAV_TAGS)}}
+    doses = {}
+    for v, m in vocabs.items():
+        doses[v] = {}
+        for ax in AXES:
+            own = [k for k, p in pairs.items() if ax in (p["axis"], p["strict_axis"])]
+            doses[v][ax] = {
+                "all": {w: dose(m, ap[ax], x) for w, x in weights.items()},
+                "excluding": {k: {w: dose(m, ap[ax], x, set(sum(members[k], [])))
+                                  for w, x in weights.items()} for k in own}}
+
+    for k, p in pairs.items():
+        p["pair_rule_level"] = next(
+            (lvl for lvl in LADDER if merged(vocabs[lvl], *members[k])), None)
+        for key, ax in (("axis_rule_level", p["axis"]),
+                        ("strict_axis_rule_level", p["strict_axis"])):
+            p[key] = None if ax is None else next(
+                (lvl for lvl in LADDER
+                 if doses[lvl][ax]["excluding"][k]["realised"] == 0), None)
+
+    tgt = vocabs[TARGET]
+    cells = [{"partition": arm, "pair": k, "axis": p["axis"],
+              "dose": doses[arm][p["axis"]]["excluding"][k],
+              "strict_dose": (doses[arm][p["strict_axis"]]["excluding"][k]
+                              if p["strict_axis"] else None)}
+             for k, p in pairs.items() if p["axis"]
+             for arm in vocabs if arm.startswith(RAND_V2_PREFIX)
+             if merged(vocabs[arm], *members[k]) and merged(tgt, *members[k])
+             and doses[arm][p["axis"]]["excluding"][k]["realised"] > 0]
+
+    return {
+        "generated_by": "scripts/build_v2_arms.py",
+        "fixed": "2026-10-01 (PRESPEC A14), before any v2 number exists",
+        "rule": {
+            "products": ("a resonant class name is X_ or X_YY_ and its decay products, "
+                         "read as tokens b, c, s, q (u or d), g, e, m (mu), v (neutrino), "
+                         "tauh, taue, taum (tauev is taue + v); QCD classes are on no axis"),
+            "axis": ("two resonant classes differ only along an axis when they have the "
+                     "same prefix and one turns into the other by replacing, slot by "
+                     "slot, one or more products of one side of the axis with as many "
+                     "of the other side, and nothing else (slots below); e<->mu "
+                     "exchanges e with m and taue with taum"),
+            "light": "light quarks are s and q; the strict variants c<->s and b<->s take s only",
+            "dose": ("the share-weighted fraction of the axis's native pairs that the "
+                     "vocabulary puts in different classes, a pair weighing the product "
+                     "of its two classes' shares (realised: the final loader's stream; "
+                     "nominal: the configured stream)"),
+            "excluding": ("the same with every pair that contains a class of the probe "
+                          "pair left out, for each probe pair on that axis"),
+            "pair_rule_level": ("the first level (finest first) at which the probe "
+                                "pair's classes share a class; null if none does"),
+            "axis_rule_level": ("the first level at which the dose of the probe pair's "
+                                "axis, its classes left out, is 0; null if none"),
+            "cells": ("random partitions that merge a probe pair that the 17-class "
+                      "vocabulary also merges while their dose of its axis, its "
+                      "classes left out, is above 0"),
+        },
+        "weights": {"realised": realised_src,
+                    "nominal": "build_rand_control.exact_share_units (integer share units)"},
+        "levels": LADDER,
+        "axes": {ax: {"slots": [[list(a), list(b)] for a, b in s],
+                      "native_pairs": len(ap[ax]),
+                      "strict_variant_of": next((k for k, v in STRICT.items() if v == ax), None)}
+                 for ax, s in AXES.items()},
+        "probe_pairs": pairs,
+        "bc_vs_rest_sub_pairs": sub,
+        "doses": doses,
+        "cells": cells,
+    }
 
 
 # ---------------------------------------------------------- mass lambda
@@ -1024,7 +1232,7 @@ def registry(rows, lam, lofo_expr, rand_seeds=None) -> dict:
         add(f"{RAND_V2_PREFIX}{d}", f"configs/arms/v2/{RAND_V2_PREFIX}{d}.yaml",
             k[TARGET], 2, 1, objective="classification", partition_seed=seed)
     for arm in FLAV_TAGS:
-        add(arm, f"configs/arms/v2/{arm}.yaml", k[TARGET], 2, 2,
+        add(arm, f"configs/arms/v2/{arm}.yaml", k[TARGET], 5, 1,
             objective="classification", partition_seed=FLAV_SEED)
     add("R16_Q1_MASS_LM", "configs/arms/v2/R16_Q1_MASS_LM.yaml", k[TARGET], 5, 2, lam,
         objective="classification+mass")
@@ -1034,6 +1242,8 @@ def registry(rows, lam, lofo_expr, rand_seeds=None) -> dict:
     for v in VOCABS:
         add(f"{v}_LOFO4P", f"configs/arms/{v}.yaml", k[v], 3, 3,
             objective="classification", extra_selection=lofo_expr, parent=v)
+    add("MPM_LOFO4P", "configs/arms/L188.yaml", None, 3, 3, objective="mpm",
+        extra_selection=lofo_expr, parent="MPM")
     return {"generated_by": "scripts/build_v2_arms.py",
             "fields": {
                 "config": "weaver --data-config; its make_weight sidecar is keyed "
@@ -1086,9 +1296,10 @@ def build_outputs(select_workers=None, mass_logs=None, realised_src=None) -> tup
     lam = mass_lambda(runs)
 
     f0, f1, f1r, frec = build_flavour_pair(rows, units, realised["native_counts"])
-    frec["F1R"]["realised_shares"] = {
+    realised_src = {
         "file": str(REALISED.relative_to(REPO)),
         "sha256": hashlib.sha256((out.get(REALISED) or REALISED.read_text()).encode()).hexdigest()}
+    frec["F1R"]["realised_shares"] = realised_src
     maps = {"FLAV_F0": f0, "FLAV_F1": f1, "FLAV_F1R": f1r}
     for d in range(1, N_PARTITIONS + 1):
         arm = f"{RAND_V2_PREFIX}{d}"
@@ -1118,6 +1329,11 @@ def build_outputs(select_workers=None, mass_logs=None, realised_src=None) -> tup
     if any(frec["max_abs_share_mismatch_units"].values()):
         print(f"  [FAIL] flavour pair shares {frec['max_abs_share_mismatch_units']}")
         failed += 1
+    st = frec["balance_pair_status"]
+    if st["FLAV_F1R"] != st["FLAV_F0"] or frec["quark_axis_pairs"]["split"]["FLAV_F1R"]["b<->c"]:
+        print("  [FAIL] F1r splits a b<->c pair, or its merged/split status on the "
+              "balance pairs is not F0's")
+        failed += 1
     maps["R16_Q1_MASS_LM"] = column(rows, TARGET)
 
     configs = build_configs(base, rows, f0, f1, f1r, lam["lambda_m"], rand_text)
@@ -1145,6 +1361,8 @@ def build_outputs(select_workers=None, mass_logs=None, realised_src=None) -> tup
              "flavour_cut_seed": {"FLAV_F1R": F1R_SEED},
              "status": status,
              "tree_first_merge": first_merge_level(rows, tasks, names)}
+    doses = axis_doses(rows, maps, tasks, names, realised["native_counts"], units,
+                       realised_src)
 
     lofo_expr = lofo_extra_selection(rows)
     got = bac.evaluate(f"1 * ({lofo_expr})")
@@ -1167,6 +1385,7 @@ def build_outputs(select_workers=None, mass_logs=None, realised_src=None) -> tup
     out[FLAV_JSON] = json.dumps(frec, indent=1) + "\n"
     out[FLAV_CSV] = flavour_csv(rows, f0, f1, f1r)
     out[PAIRS] = json.dumps(pairs, indent=1) + "\n"
+    out[AXIS_JSON] = json.dumps(doses, indent=1) + "\n"
     out[GRID] = json.dumps(grid, indent=1) + "\n"
     return out, failed
 

@@ -1,5 +1,5 @@
 {
- "construction": "F0: each of the 16 resonant groups is a union of whole flavour orbits (same decay up to b/c/light-quark exchange), share-exact against the 17-class groups (group g has 17-class group g's share), scrambled by local search against the 17-class partition; QCD is one class. F1: F0 with the b-containing classes of the four-prong hadronic orbit moved to group B and whole orbits of equal share moved from B to that orbit's group A; of the exact options, the one changing the fewest native pairs across orbits. F1r: F1 with a seeded random half of that orbit moved instead of its b-containing half.",
+ "construction": "F0: each of the 16 resonant groups is a union of whole flavour orbits (same decay up to b/c/light-quark exchange), share-exact against the 17-class groups (group g has 17-class group g's share), scrambled by local search against the 17-class partition; QCD is one class. F1: F0 with the b-containing classes of the four-prong hadronic orbit moved to group B and whole orbits of equal share moved from B to that orbit's group A; of the exact options, the one changing the fewest native pairs across orbits. F1r: F1 with a seeded random half of that orbit moved instead of its b-containing half, splitting no two classes that differ only by b <-> c.",
  "seed": 1,
  "trial": 4,
  "trials": 64,
@@ -245,32 +245,33 @@
  },
  "F1R": {
   "seed": 20261001,
-  "sampler": "random.Random(20261001).sample(X_YY_QQQQ classes sorted by jet_label, 11) until 5 or 6 contain a b quark, label_X_YY_bbqq and label_X_YY_ccqq are in one group, and every group's realised share is within 1/100 (relative) of F1's",
-  "samples_drawn": 18,
+  "sampler": "random.Random(20261001).sample(X_YY_QQQQ classes sorted by jet_label, 11) until 5 or 6 contain a b quark, label_X_YY_bbqq and label_X_YY_ccqq are in one group, no b<->c pair of the orbit (b_c_pairs_in_split_orbit) is split, and every group's realised share is within 1/100 (relative) of F1's; then its merged/split status on the 7 balance pairs must equal F0's",
+  "rule_fixed": "2026-10-01 (PRESPEC A10 corrections; the b<->c condition A14), before any v2 run",
+  "samples_drawn": 11276,
   "realised_tolerance_vs_F1": [
    1,
    100
   ],
   "largest_realised_deviation": {
-   "F1R_vs_F1": 0.005766,
-   "F1R_vs_17_class": 0.008772,
+   "F1R_vs_F1": 0.007711,
+   "F1R_vs_17_class": 0.010723,
    "F1_vs_17_class": 0.005825,
    "F0_vs_17_class": 0.005825
   },
   "classes_moved": [
-   "label_X_YY_bbbb",
-   "label_X_YY_bbcc",
    "label_X_YY_bbss",
-   "label_X_YY_cccc",
+   "label_X_YY_bbqq",
    "label_X_YY_ccss",
-   "label_X_YY_ssqq",
-   "label_X_YY_qqqq",
+   "label_X_YY_ccqq",
+   "label_X_YY_ssss",
+   "label_X_YY_qqqb",
    "label_X_YY_qqqc",
-   "label_X_YY_qqqs",
-   "label_X_YY_qqbc",
-   "label_X_YY_qqbs"
+   "label_X_YY_bbcq",
+   "label_X_YY_ccbq",
+   "label_X_YY_sscq",
+   "label_X_YY_qqbc"
   ],
-  "b_classes_moved": 5,
+  "b_classes_moved": 6,
   "orbit_share_units": [
    172800
   ],
@@ -282,6 +283,91 @@
   "realised_shares": {
    "file": "configs/labelmaps/realised_native_shares.v2.json",
    "sha256": "5728c12e88fa368345244b0fddb74cf71e98aa049948893fc9f870e25770a32b"
+  }
+ },
+ "b_c_pairs_in_split_orbit": [
+  [
+   "label_X_YY_bbbb",
+   "label_X_YY_bbcc"
+  ],
+  [
+   "label_X_YY_bbbb",
+   "label_X_YY_cccc"
+  ],
+  [
+   "label_X_YY_bbcc",
+   "label_X_YY_cccc"
+  ],
+  [
+   "label_X_YY_bbss",
+   "label_X_YY_ccss"
+  ],
+  [
+   "label_X_YY_bbqq",
+   "label_X_YY_ccqq"
+  ],
+  [
+   "label_X_YY_bbqq",
+   "label_X_YY_qqbc"
+  ],
+  [
+   "label_X_YY_ccqq",
+   "label_X_YY_qqbc"
+  ],
+  [
+   "label_X_YY_qqqb",
+   "label_X_YY_qqqc"
+  ],
+  [
+   "label_X_YY_bbcq",
+   "label_X_YY_ccbq"
+  ],
+  [
+   "label_X_YY_ccsq",
+   "label_X_YY_bcsq"
+  ],
+  [
+   "label_X_YY_qqbs",
+   "label_X_YY_qqcs"
+  ]
+ ],
+ "quark_axis_pairs": {
+  "what": "native pairs that differ only along each quark axis (rule in axis_doses.v2.json; light = s or q): how many lie in the split orbit, and how many each arm splits (no arm splits one outside that orbit). b<->c dose: the share-weighted fraction of all native b<->c pairs that the arm splits, a pair weighing the product of its two classes' realised (or nominal) shares",
+  "in_split_orbit": {
+   "b<->c": 11,
+   "b<->light": 37,
+   "c<->light": 40
+  },
+  "split": {
+   "FLAV_F0": {
+    "b<->c": 0,
+    "b<->light": 0,
+    "c<->light": 0
+   },
+   "FLAV_F1": {
+    "b<->c": 8,
+    "b<->light": 27,
+    "c<->light": 0
+   },
+   "FLAV_F1R": {
+    "b<->c": 0,
+    "b<->light": 20,
+    "c<->light": 20
+   }
+  },
+  "b<->c_dose": {
+   "FLAV_F0": {
+    "realised": 0.0,
+    "nominal": 0.0
+   },
+   "FLAV_F1": {
+    "realised": 0.19357597939326635,
+    "nominal": 0.14503621154544635
+   },
+   "FLAV_F1R": {
+    "realised": 0.0,
+    "nominal": 0.0
+   }
   }
  },
  "pairs_changed_from_F0": {

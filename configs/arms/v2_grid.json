@@ -129,8 +129,8 @@
    "config": "configs/arms/v2/FLAV_F0.yaml",
    "num_classes": 17,
    "mass_lambda": null,
-   "runs": 2,
-   "tier": 2,
+   "runs": 5,
+   "tier": 1,
    "extra_selection": null,
    "objective": "classification",
    "partition_seed": 1
@@ -140,8 +140,8 @@
    "config": "configs/arms/v2/FLAV_F1.yaml",
    "num_classes": 17,
    "mass_lambda": null,
-   "runs": 2,
-   "tier": 2,
+   "runs": 5,
+   "tier": 1,
    "extra_selection": null,
    "objective": "classification",
    "partition_seed": 1
@@ -151,8 +151,8 @@
    "config": "configs/arms/v2/FLAV_F1R.yaml",
    "num_classes": 17,
    "mass_lambda": null,
-   "runs": 2,
-   "tier": 2,
+   "runs": 5,
+   "tier": 1,
    "extra_selection": null,
    "objective": "classification",
    "partition_seed": 1
@@ -240,6 +240,17 @@
    "extra_selection": "~(((jet_label >= 15) & (jet_label < 20)) | ((jet_label >= 32) & (jet_label < 36)) | ((jet_label >= 48) & (jet_label < 51)) | ((jet_label >= 63) & (jet_label < 65)) | (jet_label == 77) | ((jet_label >= 115) & (jet_label < 127)))",
    "objective": "classification",
    "parent": "R16_Q1"
+  },
+  {
+   "name": "MPM_LOFO4P",
+   "config": "configs/arms/L188.yaml",
+   "num_classes": null,
+   "mass_lambda": null,
+   "runs": 3,
+   "tier": 3,
+   "extra_selection": "~(((jet_label >= 15) & (jet_label < 20)) | ((jet_label >= 32) & (jet_label < 36)) | ((jet_label >= 48) & (jet_label < 51)) | ((jet_label >= 63) & (jet_label < 65)) | (jet_label == 77) | ((jet_label >= 115) & (jet_label < 127)))",
+   "objective": "mpm",
+   "parent": "MPM"
   }
  ]
 }

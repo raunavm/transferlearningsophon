@@ -9,7 +9,10 @@ What must hold for each v2 arm to be the contrast it is registered as:
     pair merged in 2 or 3 of 5, no two pairs with equal or complementary merge
     columns, realised group shares within 5% of the 17-class ones;
   - F0 is flavour-blind everywhere, F1 differs from it by exactly one b/c cut,
-    F1r by the same move with a random, b-unaligned cut;
+    F1r by the same move with a random cut that separates no two classes
+    differing only by b <-> c;
+  - the axis doses and the levels where the pair and axis rules put each
+    probe pair's loss are recomputed from the class names and the maps;
   - the lambda-matched arm's lambda is the one the v1 logs give;
   - leave-one-family-out removes exactly one 17-class group and keeps the
     parent's reweighting.
@@ -20,6 +23,7 @@ import collections
 import csv
 import hashlib
 import importlib.util
+import itertools
 import json
 import os
 import pathlib
@@ -114,10 +118,10 @@ def test_registry_holds_the_requested_grid():
         **{a: (1, 5) for a in ["L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS",
                                 "R16_Q1_MASS"]},
         **{a: (1, 2) for a in RAND_ARMS},
-        "FLAV_F0": (2, 2), "FLAV_F1": (2, 2), "FLAV_F1R": (2, 2),
+        "FLAV_F0": (1, 5), "FLAV_F1": (1, 5), "FLAV_F1R": (1, 5),
         "R16_Q1_MASS_LM": (2, 5), "MPM": (2, 3),
         "R63_Q1": (3, 5), "R29_Q1": (3, 5),
-        **{f"{a}_LOFO4P": (3, 3) for a in ["L188", "L162", "R42_Q1", "R16_Q1"]},
+        **{f"{a}_LOFO4P": (3, 3) for a in ["L188", "L162", "R42_Q1", "R16_Q1", "MPM"]},
     }
     got = {a["name"]: (a["tier"], a["runs"]) for a in GRID["arms"]}
     assert got == want
@@ -204,7 +208,7 @@ def test_a_rebuild_reproduces_every_committed_output_byte_for_byte():
     outputs, failed = v2.build_outputs()
     assert failed == 0
     assert set(outputs) == set(NEW_CONFIGS) | {v2.MASS_JSON, v2.FLAV_JSON, v2.FLAV_CSV,
-                                               v2.PAIRS, v2.GRID}
+                                               v2.PAIRS, v2.AXIS_JSON, v2.GRID}
     for path, text in outputs.items():
         assert path.read_bytes() == text.encode(), path.name
 
@@ -243,7 +247,8 @@ def test_a_failed_check_writes_nothing(monkeypatch, select):
     assert v2.main(argv + ["--check-only"]) == 0
     assert writes == []
     assert v2.main(argv) == 0
-    expected = set(NEW_CONFIGS) | {v2.MASS_JSON, v2.FLAV_JSON, v2.FLAV_CSV, v2.PAIRS, v2.GRID}
+    expected = set(NEW_CONFIGS) | {v2.MASS_JSON, v2.FLAV_JSON, v2.FLAV_CSV, v2.PAIRS,
+                                   v2.AXIS_JSON, v2.GRID}
     assert set(writes) == expected | ({v2.RAND_SEL, v2.RAND_V2} if select else set())
 
 
@@ -513,12 +518,32 @@ def test_f1_takes_the_move_back_with_the_fewest_cross_orbit_changes():
     assert f0[ev] != f0[mv] and f1[ev] != f1[mv], "the semileptonic e/mu boundary stays"
 
 
+def _b_is_c(n):
+    """A class name with b and c both read as one heavy flavour, for finding
+    b <-> c pairs a second way: two classes of one prefix with equal keys
+    differ only by b <-> c. (Fine for b and c, single letters in every name;
+    the light axes would also merge s with q this way.)"""
+    pre, body = re.match(r"label_(X_YY|X)_(.*)", NAMES[n]).groups()
+    return pre, "".join(sorted(body.replace("b", "H").replace("c", "H")))
+
+
+def _q4_b_c_pairs():
+    q4 = sorted(ORB[v2.SPLIT_ORBIT])
+    return [(x, y) for i, x in enumerate(q4) for y in q4[i + 1:] if _b_is_c(x) == _b_is_c(y)]
+
+
+# The F1r cut of commit f0f0b80, drawn without the b <-> c condition.
+OLD_F1R_CUT = ["bbbb", "bbcc", "bbss", "cccc", "ccss", "ssqq", "qqqq", "qqqc", "qqqs",
+               "qqbc", "qqbs"]
+
+
 def test_f1r_is_f1_with_a_random_b_unaligned_cut():
     """F1r: the same orbit, the same nominal share, the same move back as F1,
     but the cut is a seeded random 11 of the 22 four-prong hadronic classes
-    with 5 or 6 b-containing ones, X->YY->bbqq stays with X->YY->ccqq, and
-    every group's realised share is within 1% of F1's (the 22 classes share
-    one nominal share, but their realised shares are 3x apart)."""
+    with 5 or 6 b-containing ones, X->YY->bbqq stays with X->YY->ccqq, no two
+    classes that differ only by b <-> c are separated, and every group's
+    realised share is within 1% of F1's (the 22 classes share one nominal
+    share, but their realised shares are 3x apart)."""
     import random
     f0, f1, f1r = (EXPECTED_MAP[a] for a in ("FLAV_F0", "FLAV_F1", "FLAV_F1R"))
     rec = json.loads(v2.FLAV_JSON.read_text())
@@ -526,6 +551,7 @@ def test_f1r_is_f1_with_a_random_b_unaligned_cut():
     idx = {s: n for n, s in NAMES.items()}
     q4 = sorted(ORB[v2.SPLIT_ORBIT])
     cut = sorted(idx[c] for c in r["classes_moved"])
+    twins = _q4_b_c_pairs()
     # replay the sampler
     back = {n for o in rec["orbits_moved_B_to_A"] for n in ORB[o]}
 
@@ -539,9 +565,11 @@ def test_f1r_is_f1_with_a_random_b_unaligned_cut():
         pick = sorted(rng.sample(q4, 11))
         ok = (sum(v2.has_b(NAMES[n]) for n in pick) in (5, 6)
               and (idx["label_X_YY_bbqq"] in pick) == (idx["label_X_YY_ccqq"] in pick)
+              and all((x in pick) == (y in pick) for x, y in twins)
               and realised_dev(pick) <= 0.01)
         assert ok == (k == r["samples_drawn"] - 1)
     assert pick == cut and r["b_classes_moved"] in (5, 6)
+    assert r["samples_drawn"] == 11276
     assert v2.F1R_TOL == (1, 100) and r["realised_tolerance_vs_F1"] == [1, 100]
     dev = r["largest_realised_deviation"]
     assert dev["F1R_vs_F1"] == round(realised_dev(cut), 6) <= 0.01
@@ -565,6 +593,63 @@ def test_f1r_is_f1_with_a_random_b_unaligned_cut():
     assert r["orbit_b_nonb_pairs_split"] == {
         "F1": len(bpairs), "F1R": sum(f1r[x] != f1r[y] for x, y in bpairs), "of": len(bpairs)}
     assert 0.4 < r["orbit_b_nonb_pairs_split"]["F1R"] / len(bpairs) < 0.6
+
+
+def test_f1r_separates_no_two_classes_that_differ_only_by_b_c():
+    """PRESPEC A14: the F1r cut of commit f0f0b80 split 4 of the four-prong
+    orbit's 11 b <-> c pairs (F1 splits 8), so it kept part of the boundary it
+    is there to lack. The cut now splits none, and of the 705,432 ways to cut
+    11 of the 22 classes, 67 meet every condition of the sampler; all 67 keep
+    F0's merged/split status on the seven balance pairs."""
+    f0, f1, f1r = (EXPECTED_MAP[a] for a in ("FLAV_F0", "FLAV_F1", "FLAV_F1R"))
+    rec = json.loads(v2.FLAV_JSON.read_text())
+    idx = {s: n for n, s in NAMES.items()}
+    twins = _q4_b_c_pairs()
+    assert len(twins) == 11
+    assert rec["b_c_pairs_in_split_orbit"] == [[NAMES[x], NAMES[y]] for x, y in twins]
+    split = lambda m: sum(m[x] != m[y] for x, y in twins)  # noqa: E731
+    assert (split(f0), split(f1), split(f1r)) == (0, 8, 0)
+    old = {idx[f"label_X_YY_{c}"] for c in OLD_F1R_CUT}
+    assert sum((x in old) != (y in old) for x, y in twins) == 4
+
+    q4 = sorted(ORB[v2.SPLIT_ORBIT])
+    move = lambda c: v2.moved(f0, c, rec["group_B"], rec["group_A"],  # noqa: E731
+                              rec["orbits_moved_B_to_A"], ORB)
+    ref = v2.group_sums(f1, REALISED_COUNTS)
+    status = lambda m: [m[idx[a]] == m[idx[b]] for a, b in v2.BALANCE_PAIRS.values()]  # noqa: E731
+    ok = []
+    for c in itertools.combinations(q4, 11):
+        c = set(c)
+        if (sum(v2.has_b(NAMES[n]) for n in c) in (5, 6)
+                and all((x in c) == (y in c) for x, y in twins)):
+            got = v2.group_sums(move(c), REALISED_COUNTS)
+            if all(100 * abs(got[g] - ref[g]) <= ref[g] for g in ref):
+                ok.append(sorted(c))
+    assert len(ok) == 67 and sorted(idx[c] for c in rec["F1R"]["classes_moved"]) in ok
+    assert all(status(move(c)) == status(f0) for c in ok)
+
+    q = rec["quark_axis_pairs"]
+    assert q["in_split_orbit"] == {"b<->c": 11, "b<->light": 37, "c<->light": 40}
+    assert q["split"] == {"FLAV_F0": {"b<->c": 0, "b<->light": 0, "c<->light": 0},
+                          "FLAV_F1": {"b<->c": 8, "b<->light": 27, "c<->light": 0},
+                          "FLAV_F1R": {"b<->c": 0, "b<->light": 20, "c<->light": 20}}
+    assert q["b<->c_dose"]["FLAV_F0"] == q["b<->c_dose"]["FLAV_F1R"] == {
+        "realised": 0.0, "nominal": 0.0}
+    assert round(q["b<->c_dose"]["FLAV_F1"]["realised"], 3) == 0.194
+
+
+def test_a_flavour_pair_off_f0_on_a_balance_pair_fails_the_build(monkeypatch):
+    """F1r's merged/split status on the seven balance pairs must be F0's; the
+    build fails if it is not."""
+    real = v2.build_flavour_pair
+
+    def off(*a):
+        f0, f1, f1r, rec = real(*a)
+        rec["balance_pair_status"]["FLAV_F1R"]["visible"] = "merged"
+        return f0, f1, f1r, rec
+
+    monkeypatch.setattr(v2, "build_flavour_pair", off)
+    assert v2.build_outputs()[1] == 1
 
 
 def test_why_the_cut_is_in_the_four_prong_orbit():
@@ -640,6 +725,204 @@ def test_the_decisive_pair_differs_on_the_four_prong_pair_only():
     rec = json.loads(v2.FLAV_JSON.read_text())["balance_pair_status"]
     assert [k for k in v2.BALANCE_PAIRS if rec["FLAV_F0"][k] != rec["FLAV_F1"][k]] == ["bbqq/ccqq"]
     assert rec["FLAV_F1R"] == rec["FLAV_F0"]
+
+
+# ------------------------------------------------------- axes and doses
+AXIS = json.loads(v2.AXIS_JSON.read_text())
+IDX = {s: n for n, s in NAMES.items()}
+GRID_VOCABS = {**{lvl: v2.column(ROWS, lvl) for lvl in
+                  ["L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1"]},
+               **{a: EXPECTED_MAP[a] for a in RAND_ARMS + ["FLAV_F0", "FLAV_F1", "FLAV_F1R"]}}
+
+
+def test_class_names_read_as_decay_products():
+    """Every resonant name is a prefix and a run of decay products, and no two
+    classes of one prefix have the same products."""
+    from collections import Counter
+    assert v2.products("label_X_YY_bctauev") == ("X_YY", Counter(["b", "c", "taue", "v"]))
+    assert v2.products("label_X_tauhtaue") == ("X", Counter(["tauh", "taue"]))
+    assert v2.products("label_X_YY_qqmv") == ("X_YY", Counter(["q", "q", "m", "v"]))
+    with pytest.raises(SystemExit):
+        v2.products("label_X_YY_bbxy")
+    keys = {(p, tuple(sorted(c.elements())))
+            for p, c in (v2.products(NAMES[n]) for n in range(v2.QCD_LO))}
+    assert len(keys) == v2.QCD_LO == 161
+
+
+def _replacement_pairs(axis):
+    """The pairs on `axis` found the other way round from the builder: every
+    way of replacing one or more products on one side of the axis with
+    products on the other, looked up among the class names."""
+    slots = v2.AXES[axis]
+    key = {}
+    for n in range(v2.QCD_LO):
+        pre, c = v2.products(NAMES[n])
+        key[(pre, tuple(sorted(c.elements())))] = n
+    out = set()
+    for (pre, toks), n in key.items():
+        options = [[t] + [o for one, other in slots if t in one for o in other] for t in toks]
+        for combo in itertools.product(*options):
+            m = key.get((pre, tuple(sorted(combo))))
+            if m is not None and m != n:
+                out.add((min(n, m), max(n, m)))
+    return sorted(out)
+
+
+@pytest.mark.parametrize("axis", list(v2.AXES))
+def test_axis_pairs_are_found_the_same_two_ways(axis):
+    pairs = v2.axis_pairs(NAMES, axis)
+    assert pairs == _replacement_pairs(axis)
+    assert AXIS["axes"][axis]["native_pairs"] == len(pairs)
+    assert AXIS["axes"][axis]["slots"] == [[list(a), list(b)] for a, b in v2.AXES[axis]]
+
+
+def test_b_c_pairs_are_the_flavour_exchange_pairs():
+    """The b <-> c pairs hold the decision's examples, every pair that a full
+    exchange of b with c in the name maps one onto the other, and exactly the
+    pairs whose names agree once b and c are read as one flavour. Quark axes
+    never leave a flavour orbit, the strict axes are parts of the light ones,
+    and e <-> mu exchanges e with m and tau_e with tau_mu, not e with tau_mu."""
+    bc = set(v2.axis_pairs(NAMES, "b<->c"))
+    two = lambda a, b: tuple(sorted((IDX[f"label_{a}"], IDX[f"label_{b}"])))  # noqa: E731
+    for a, b in [("bbbb", "cccc"), ("bbss", "ccss"), ("bbqq", "ccqq"), ("qqqb", "qqqc"),
+                 ("qqbs", "qqcs"), ("bbcq", "ccbq"), ("bbbb", "bbcc"), ("bbqq", "qqbc")]:
+        assert two(f"X_YY_{a}", f"X_YY_{b}") in bc
+    swap = str.maketrans("bc", "cb")
+    full = set()
+    for n in range(v2.QCD_LO):
+        pre, body = re.match(r"label_(X_YY|X)_(.*)", NAMES[n]).groups()
+        m = IDX.get(f"label_{pre}_{body.translate(swap)}")
+        if m is not None and m != n:
+            full.add(tuple(sorted((n, m))))
+    assert len(full) == 35 and full < bc and len(bc) == 50
+    assert bc == {(i, j) for i in range(v2.QCD_LO) for j in range(i + 1, v2.QCD_LO)
+                  if _b_is_c(i) == _b_is_c(j)}
+    for ax in ("b<->c", "c<->light", "b<->light", "c<->s", "b<->s"):
+        assert all(v2.orbit_key(NAMES[i]) == v2.orbit_key(NAMES[j])
+                   for i, j in v2.axis_pairs(NAMES, ax)), ax
+    for light, strict in v2.STRICT.items():
+        assert set(v2.axis_pairs(NAMES, strict)) < set(v2.axis_pairs(NAMES, light))
+    em = set(v2.axis_pairs(NAMES, "e<->mu"))
+    for a, b in [("X_ee", "X_mm"), ("X_tauhtaue", "X_tauhtaum"), ("X_YY_bcev", "X_YY_bcmv"),
+                 ("X_YY_bctauev", "X_YY_bctaumv"), ("X_YY_bbee", "X_YY_bbmm")]:
+        assert two(a, b) in em
+    assert two("X_YY_bcev", "X_YY_bctaumv") not in em
+
+
+def _frac(m, pairs, w, out=()):
+    from fractions import Fraction
+    tot = sum(w[i] * w[j] for i, j in pairs if not {i, j} & set(out))
+    split = sum(w[i] * w[j] for i, j in pairs if not {i, j} & set(out) and m[i] != m[j])
+    return float(Fraction(split, tot)) if tot else None
+
+
+def test_dose_leaves_out_every_pair_touching_the_left_out_classes():
+    m = {0: 0, 1: 1, 2: 0, 3: 0, 4: 1}
+    pairs, w = [(0, 1), (0, 2), (3, 4)], [1, 2, 3, 4, 5]
+    assert v2.dose(m, pairs, w) == 22 / 25
+    assert v2.dose(m, pairs, w, {0}) == 1.0
+    assert v2.dose(m, pairs, w, {0, 3}) is None
+
+
+def test_axis_doses_are_recomputed_from_the_maps():
+    """Every dose, overall and with each probe pair's classes left out, on
+    realised and nominal weights, recomputed exactly; each axis is left out
+    for the probe pairs on it (or on its light parent)."""
+    weights = {"realised": REALISED_COUNTS, "nominal": UNITS}
+    assert list(AXIS["doses"]) == list(GRID_VOCABS)
+    assert AXIS["weights"]["realised"] == {
+        "file": "configs/labelmaps/realised_native_shares.v2.json",
+        "sha256": hashlib.sha256(v2.REALISED.read_bytes()).hexdigest()}
+    for ax in v2.AXES:
+        pairs = _replacement_pairs(ax)
+        own = [k for k, p in AXIS["probe_pairs"].items() if ax in (p["axis"], p["strict_axis"])]
+        assert own, ax
+        for v, m in GRID_VOCABS.items():
+            d = AXIS["doses"][v][ax]
+            assert list(d["excluding"]) == own
+            for w, x in weights.items():
+                assert d["all"][w] == _frac(m, pairs, x), (v, ax, w)
+                for k in own:
+                    p = AXIS["probe_pairs"][k]
+                    out = {IDX[s] for s in p["signal"] + p["background"]}
+                    assert d["excluding"][k][w] == _frac(m, pairs, x, out), (v, ax, k, w)
+                    assert (d["excluding"][k][w] == 0) == (d["excluding"][k]["realised"] == 0)
+
+
+def test_what_the_doses_say_about_the_tree_and_the_flavour_pair():
+    """The two finest levels keep every axis whole, the 17-class vocabulary
+    keeps none, F0 keeps no quark axis, F1r no b <-> c, and the random
+    partitions keep part of every axis."""
+    D = AXIS["doses"]
+    for ax in v2.AXES:
+        assert D["L188"][ax]["all"]["realised"] == D["L162"][ax]["all"]["realised"] == 1.0
+        assert D["R16_Q1"][ax]["all"]["realised"] == 0.0
+        assert all(0 < D[a][ax]["all"]["realised"] < 1 for a in RAND_ARMS)
+    for ax in ("b<->c", "c<->light", "b<->light", "c<->s", "b<->s"):
+        assert D["FLAV_F0"][ax]["all"]["realised"] == 0.0
+    bc = {a: D[a]["b<->c"]["all"]["realised"] for a in ("FLAV_F1", "FLAV_F1R")}
+    assert bc["FLAV_F1R"] == 0.0 < bc["FLAV_F1"]
+
+
+def test_pair_rule_and_axis_rule_levels():
+    """Pair rule: the first level at which a probe pair's classes share a class
+    (probe_pairs.v2.json's tree_first_merge, within the levels the grid
+    trains). Axis rule: the first level at which the dose of its axis, its
+    classes left out, is 0. They agree on the two b vs c pairs (30 classes)
+    and on e vs mu (64); X->bc vs X->bq and X->bc vs X->cs are where they part:
+    the pair rule puts the loss at 43 and 30 classes, the axis rule at 17."""
+    tfm = json.loads(v2.PAIRS.read_text())["tree_first_merge"]
+    P = AXIS["probe_pairs"]
+    assert AXIS["levels"] == ["L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1"]
+    assert AXIS["bc_vs_rest_sub_pairs"] == {"X_bc|X_bq": "bc/bq", "X_bc|X_cs": "bc/cs",
+                                            "X_bc|X_YY_qqb": "X_bc|X_YY_qqb",
+                                            "X_bc|QCD": "X_bc|QCD"}
+    assert list(P) == list(v2.BALANCE_PAIRS) + ["X_bc|X_YY_qqb", "X_bc|QCD"]
+    for k, p in P.items():
+        label = next(l for l, key in AXIS["bc_vs_rest_sub_pairs"].items() if key == k) \
+            if p["task"] == "bc_vs_rest" else next(iter(tfm[p["task"]]))
+        lvl = tfm[p["task"]][label]["level"]
+        assert p["pair_rule_level"] == (lvl if lvl in AXIS["levels"] else None), k
+        for key, ax in (("axis_rule_level", p["axis"]),
+                        ("strict_axis_rule_level", p["strict_axis"])):
+            assert p[key] == (None if ax is None else next(
+                (l for l in AXIS["levels"]
+                 if AXIS["doses"][l][ax]["excluding"][k]["realised"] == 0), None)), (k, key)
+    got = {k: (p["axis"], p["pair_rule_level"], p["axis_rule_level"]) for k, p in P.items()}
+    assert got == {"bb/cc": ("b<->c", "R29_Q1", "R29_Q1"),
+                   "bbqq/ccqq": ("b<->c", "R29_Q1", "R29_Q1"),
+                   "visible": (None, None, None), "bb/bbbb": (None, None, None),
+                   "ee/mm": ("e<->mu", "R63_Q1", "R63_Q1"),
+                   "bc/bq": ("c<->light", "R42_Q1", "R16_Q1"),
+                   "bc/cs": ("b<->light", "R29_Q1", "R16_Q1"),
+                   "X_bc|X_YY_qqb": (None, None, None), "X_bc|QCD": (None, None, None)}
+    assert {k: (p["strict_axis"], p["strict_axis_rule_level"]) for k, p in P.items()
+            if p["strict_axis"]} == {"bc/bq": ("c<->s", "R16_Q1"), "bc/cs": ("b<->s", "R16_Q1")}
+
+
+def test_cells_where_a_random_partition_merges_a_pair_but_keeps_its_axis():
+    """A random partition merges a probe pair that the 17-class vocabulary also
+    merges, yet splits some other pair on that pair's axis: the axis account
+    predicts it beats the 17-class model there, the pair account that it ties.
+    Statuses from probe_pairs.v2.json; 13 cells."""
+    st = json.loads(v2.PAIRS.read_text())["status"]
+    want = []
+    for k, p in AXIS["probe_pairs"].items():
+        if not p["axis"]:
+            continue
+        label = "|".join(s.replace("label_", "") for s in p["signal"] + p["background"])
+        for arm in RAND_ARMS:
+            d = AXIS["doses"][arm][p["axis"]]["excluding"][k]
+            if (label in st[arm][p["task"]]["merged"]
+                    and label in st["R16_Q1"][p["task"]]["merged"] and d["realised"] > 0):
+                want.append({"partition": arm, "pair": k, "axis": p["axis"], "dose": d,
+                             "strict_dose": (AXIS["doses"][arm][p["strict_axis"]]["excluding"][k]
+                                             if p["strict_axis"] else None)})
+    assert AXIS["cells"] == want
+    assert [(c["pair"], c["partition"][-2:]) for c in want] == [
+        ("bb/cc", "p1"), ("bb/cc", "p3"), ("bb/cc", "p5"), ("bbqq/ccqq", "p1"),
+        ("bbqq/ccqq", "p3"), ("ee/mm", "p1"), ("ee/mm", "p2"), ("ee/mm", "p4"),
+        ("bc/bq", "p1"), ("bc/bq", "p2"), ("bc/bq", "p5"), ("bc/cs", "p1"), ("bc/cs", "p5")]
 
 
 # ------------------------------------------- the pool scan's accelerator
@@ -754,12 +1037,18 @@ def test_lofo_selection_removes_exactly_the_family():
 
 
 def test_lofo_registry_uses_the_parent_config_and_width():
-    for v in v2.VOCABS:
+    """Each leave-one-family-out arm is its parent's config, width and
+    objective with the family removed; the self-supervised one (PRESPEC A14)
+    is the label-free reference for the unseen-family test."""
+    for v in v2.VOCABS + ["MPM"]:
         a = ARMS[f"{v}_LOFO4P"]
-        assert a["config"] == ARMS[v]["config"] and a["num_classes"] == ARMS[v]["num_classes"]
+        assert a["parent"] == v
+        assert all(a[k] == ARMS[v][k] for k in ("config", "num_classes", "objective",
+                                                "mass_lambda"))
         assert a["extra_selection"] == v2.lofo_extra_selection(ROWS)
+    assert ARMS["MPM_LOFO4P"]["objective"] == "mpm"
     assert [a["name"] for a in GRID["arms"] if a["extra_selection"]] == \
-        [f"{v}_LOFO4P" for v in v2.VOCABS]
+        [f"{v}_LOFO4P" for v in v2.VOCABS + ["MPM"]]
 
 
 def test_lofo_sample_file_check_from_the_pod():
