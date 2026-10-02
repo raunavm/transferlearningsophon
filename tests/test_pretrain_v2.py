@@ -535,49 +535,69 @@ def test_window_retention_keeps_best_last_ten_and_newest_resume(tmp_path):
     assert [p.name for p in tmp_path.glob("*_resume.pt")] == ["net_epoch-14_resume.pt"]
 
 
+def _kept(path, kind="state"):
+    return sorted(int(p.name.split("-")[1].split("_")[0]) for p in path.glob(f"net_epoch-*_{kind}.pt"))
+
+
+def test_window_retention_keeps_the_early_states_the_last_ten_and_nothing_else():
+    assert pv.window_epochs(80) == [0, 2, 4, 9, 19, 29, 39, 49, 55, 62, 69] + list(range(70, 80))
+    assert pv.window_epochs(16) == [0, 2, 4] + list(range(6, 16))     # 9 falls inside the last ten
+    assert pv.window_epochs(3) == [0, 1, 2]
+
+
 def test_window_retention_keeps_the_newest_resume_epochs_state_outside_the_window(tmp_path):
-    """The driver's order (state, resume, prune) through epoch 44 with the best at 40:
-    the restart point is epoch 44, not none."""
-    keep = lambda best: {best} | set(range(70, 80))
+    """The driver's order (state, resume, prune) through epoch 44 of 80 with the best at
+    40: the early states so far, the best, and the restart point at epoch 44."""
+    keep = lambda best: {best} | set(pv.window_epochs(80))
     for e in range(45):
         (tmp_path / f"net_epoch-{e}_state.pt").write_text("s")
         (tmp_path / f"net_epoch-{e}_resume.pt").write_text("r")
         pv.prune(tmp_path, keep(min(e, 40)), e)
-    assert sorted(p.name for p in tmp_path.glob("*.pt")) == [
-        "net_epoch-40_state.pt", "net_epoch-44_resume.pt", "net_epoch-44_state.pt"]
+    assert _kept(tmp_path) == [0, 2, 4, 9, 19, 29, 39, 40, 44]
+    assert _kept(tmp_path, "resume") == [44]
     assert pv.latest_complete_epoch(tmp_path) == 44
 
 
 def test_a_window_run_killed_outside_the_window_resumes_there(data, tmp_path, monkeypatch, capsys):
-    """Killed during epoch 2 of 12 (window: best epoch 0 and epochs 2-11), after
-    epoch 1's prune: the restart resumes after epoch 1, not from scratch."""
+    """Killed during epoch 4 of 16 (window: best epoch 0, early epochs 0, 2, 4 and epochs
+    6-15), after epoch 3's prune: epoch 2's state is kept, epoch 1's is not, and the
+    restart resumes after epoch 3, not from scratch. The kept set is in the recipe, so a
+    restart under another one halts."""
     monkeypatch.setattr(pv.Objective, "selection", lambda self, val: ("val.acc", 0.0))  # best stays 0
+    monkeypatch.setattr(pv, "_GRAD_DIAG", False)
     real = pv.torch_save
 
     def killed(obj, path):
-        if path.name == "net_epoch-2_state.pt":
-            raise KeyboardInterrupt("killed during epoch 2")
+        if path.name == "net_epoch-4_state.pt":
+            raise KeyboardInterrupt("killed during epoch 4")
         real(obj, path)
     out = tmp_path / "w"
-    args = _args(data, out, epochs=12, extra=["--keep-checkpoints", "window"])
+    args = _args(data, out, epochs=16, extra=["--keep-checkpoints", "window"])
     monkeypatch.setattr(pv, "torch_save", killed)
     with pytest.raises(KeyboardInterrupt):
         pv.main(args)
-    assert sorted(p.name for p in out.glob("net_epoch-*.pt")) == [
-        "net_epoch-0_state.pt", "net_epoch-1_resume.pt", "net_epoch-1_state.pt"]
-    assert pv.latest_complete_epoch(out) == 1
+    assert _kept(out) == [0, 2, 3] and _kept(out, "resume") == [3]
+    assert pv.latest_complete_epoch(out) == 3
+    rec = json.loads((out / "recipe.json").read_text())
+    assert rec["keep_checkpoints"] == "window" and rec["keep_epochs"] == pv.window_epochs(16)
 
-    def stop_after_epoch_2(obj, path):
+    early = pv.EARLY_KEEP
+    monkeypatch.setattr(pv, "torch_save", real)
+    monkeypatch.setattr(pv, "EARLY_KEEP", (0, 1))
+    assert pv.main(args) == pv.EXIT_HALT
+    monkeypatch.setattr(pv, "EARLY_KEEP", early)
+
+    def stop_after_epoch_4(obj, path):
         real(obj, path)
-        if path.name == "net_epoch-2_resume.pt":
+        if path.name == "net_epoch-4_resume.pt":
             raise KeyboardInterrupt("stop")
-    monkeypatch.setattr(pv, "torch_save", stop_after_epoch_2)
+    monkeypatch.setattr(pv, "torch_save", stop_after_epoch_4)
     capsys.readouterr()
     with pytest.raises(KeyboardInterrupt):
         pv.main(args)
     log = capsys.readouterr().out
-    assert "resumed after epoch 1" in log and "fresh start" not in log
-    assert pv.latest_complete_epoch(out) == 2
+    assert "resumed after epoch 3" in log and "fresh start" not in log
+    assert pv.latest_complete_epoch(out) == 4
 
 
 def test_states_retention_keeps_every_state_and_the_newest_resume(tmp_path):
@@ -589,17 +609,51 @@ def test_states_retention_keeps_every_state_and_the_newest_resume(tmp_path):
     assert [p.name for p in tmp_path.glob("*_resume.pt")] == ["net_epoch-4_resume.pt"]
 
 
-def test_the_mass_path_runs(data, tmp_path):
+def test_the_mass_path_runs(data, tmp_path, monkeypatch):
+    """The run, then its epoch-1 gradient diagnostic recomputed by hand: lambda = 5 times
+    the mean log-cosh of the mass node against its target over the matched jets, and the
+    norm of the summed loss's gradient, |g1 + g2|."""
+    monkeypatch.setattr(pv, "DIAG_STRIDE", 2)               # two pieces of the batch size
+    monkeypatch.setattr(pv, "DIAG_JETS", 64)
     mass = ["--network-config", str(MTX / "ParT_sophon_arch_mass.py"), "--mass-lambda", "5.0"]
     out = tmp_path / "m"
     assert pv.main(_args(data, out, arm="L162_MASS", k=162, epochs=2, extra=mass)) == 0
     m = _epochs(out, "metrics")[1]
     assert math.isfinite(m["val"]["loss_reg"]) and math.isfinite(m["train"]["loss_reg"])
     assert m["selection"]["metric"] == "val.acc"
+    g = m["grad_diag"]
+    assert set(g["grad_norm"]) == {"loss_cls", "lambda_loss_reg", "loss"} and -1 <= g["cosine"] <= 1
+    assert g["value"]["loss"] == pytest.approx(g["value"]["loss_cls"] + g["value"]["lambda_loss_reg"])
+    assert all(v > 0 and math.isfinite(v) for v in g["grad_norm"].values())
+
+    def terms(o, y):
+        d = o[:, 162].double() - y["mass_target"].double()
+        valid = y["mass_valid"].bool()
+        return {"loss_cls": torch.nn.functional.cross_entropy(o[:, :162], y["truth_label"].long()),
+                "lambda_loss_reg": 5.0 * (torch.log(torch.cosh(d)) * valid).sum() / valid.sum().clamp(min=1)}
+    monkeypatch.setenv("HYBRID_MASS_INSTALLED", "1")
+    model = _build(data, "L162_MASS", 162, {"trunk_init": 1, "head_init": 2}, "ParT_sophon_arch_mass.py")
+    pieces = pv.diag_batch(sv.StreamDataset({"_": data["val"]}, _dc(data, "L162_MASS"), mode="val",
+                                            batch_size=32), 32, 0)["pieces"]
+    vals, grads = _by_hand(model, out, 1, pieces, pv.load_data_config(data["cfg"]["L162_MASS"]).input_names, terms)
+    for name in ("loss_cls", "lambda_loss_reg"):
+        assert g["value"][name] == pytest.approx(vals[name], rel=1e-5), name
+        assert g["grad_norm"][name] == pytest.approx(grads[name].norm().item(), rel=1e-5), name
+    g1, g2 = grads.values()
+    assert len(pieces) == 2 and g["batch"]["n_jets"] == 64
+    assert g["cosine"] == pytest.approx((g1 @ g2 / (g1.norm() * g2.norm())).item(), abs=1e-5)
+    assert g["grad_norm"]["loss"] == pytest.approx((g1 + g2).norm().item(), rel=1e-5)
+    assert g["value"]["loss"] == pytest.approx(vals["loss_cls"] + vals["lambda_loss_reg"], rel=1e-5)
 
 
 @needs_0417
-def test_the_self_supervised_path_runs(data, tmp_path):
+def test_the_self_supervised_path_runs(data, tmp_path, monkeypatch):
+    """The run, then its epoch-1 gradient diagnostic recomputed by hand: the masks drawn by
+    torch seeded once with the recorded fixed seed (the run's dropout seed, tag grad-diag,
+    epoch 0) before the pieces, the L1 and identity terms, and the norm of the summed loss's
+    gradient, |g1 + g2|."""
+    monkeypatch.setattr(pv, "DIAG_STRIDE", 2)               # two pieces of the batch size
+    monkeypatch.setattr(pv, "DIAG_JETS", 64)
     ssl = ["--network-config", str(MTX / "ParT_sophon_arch_mpm.py"), "--mpm"]
     out2 = tmp_path / "s"
     assert pv.main(_args(data, out2, arm="L188", k=0, epochs=2, extra=ssl)) == 0
@@ -607,6 +661,38 @@ def test_the_self_supervised_path_runs(data, tmp_path):
     assert s[1]["selection"]["metric"] == "-val.loss" and math.isfinite(s[1]["val"]["loss"])
     # the self-supervised stream is the supervised stream
     assert _epochs(out2, "stream")[0]["n_jets"] == 96
+    g = s[1]["grad_diag"]
+    assert set(g["grad_norm"]) == {"loss_l1", "id_weight_loss_ce", "loss"} and -1 <= g["cosine"] <= 1
+    win = json.loads((out2 / "best_window_epoch.json").read_text())
+    losses = [s[e]["val"]["loss"] for e in (0, 1)]
+    assert win["metric"] == "-val.loss" and win["epoch"] == losses.index(min(losses))
+    assert (out2 / "net_wavg0-1_state.pt").exists() and (out2 / "DONE").exists()
+
+    from src.utils.reproducibility import derive_all
+    seed = pv.epoch_seed(derive_all(3)["dropout"], "grad-diag", 0)
+    assert g["batch"]["torch_seed"] == s[0]["grad_diag"]["batch"]["torch_seed"] == seed
+    monkeypatch.setenv("MPM_INSTALLED", "1")
+    from mpm import DEFAULT_ID_WEIGHT, DEFAULT_MASK_RATE
+    model = _build(data, "L188", 188, {"trunk_init": 1, "head_init": 2}, "ParT_sophon_arch_mpm.py",
+                   {"mask_rate": DEFAULT_MASK_RATE})
+    pieces = pv.diag_batch(sv.StreamDataset({"_": data["val"]}, _dc(data, "L188"), mode="val",
+                                            batch_size=32), 32, seed)["pieces"]
+    assert len(pieces) == 2 and g["batch"]["n_jets"] == 64
+
+    def terms(o, y):
+        pred_cont, pred_id, tgt_cont, tgt_id = o
+        return {"loss_l1": (pred_cont.float() - tgt_cont.float()).abs().mean(),
+                "id_weight_loss_ce": DEFAULT_ID_WEIGHT * torch.nn.functional.cross_entropy(pred_id.float(), tgt_id)}
+    vals, grads = _by_hand(model, out2, 1, pieces, pv.load_data_config(data["cfg"]["L188"]).input_names, terms,
+                           skip="decoder.", torch_seed=seed)
+    for name in ("loss_l1", "id_weight_loss_ce"):
+        assert g["value"][name] == pytest.approx(vals[name], rel=1e-5), name
+        assert g["grad_norm"][name] == pytest.approx(grads[name].norm().item(), rel=1e-5), name
+    g1, g2 = grads.values()
+    assert g["grad_norm"]["loss"] == pytest.approx((g1 + g2).norm().item(), rel=1e-5)
+    # the two gradients are close to orthogonal here: the check above still tells |g1 + g2| from |g1 - g2|
+    assert abs((g1 + g2).norm() - (g1 - g2).norm()) > 1e-4 * (g1 + g2).norm()
+    assert g["cosine"] == pytest.approx((g1 @ g2 / (g1.norm() * g2.norm())).item(), abs=1e-5)
 
 
 def test_the_loader_dry_run_draws_the_rows_training_draws(data, run_a, tmp_path):
@@ -721,3 +807,345 @@ def test_the_fine_tuning_reader_finds_the_best_epoch_on_the_reweighted_accuracy(
     assert rec["epoch"] == max(vals, key=vals.get) and rec["metric"] == "val.acc"
     assert rec["sha256"] == pv.sha256_file(
         run_a / f"net_epoch-{rec['epoch']}_state.pt")
+
+
+# ------------------------------------------------------------------ failures, the window checkpoint, the gradient diagnostic
+def test_a_non_finite_loss_fails_the_attempt_for_a_retry_before_its_epoch_writes(data, tmp_path, monkeypatch, capsys):
+    """A NaN loss returns EXIT_RETRY naming the epoch and step, caught mid-epoch at a
+    --log-every boundary or at the epoch end, before any file of that epoch is written;
+    the retry resumes after the last complete epoch."""
+    monkeypatch.setattr(pv, "_GRAD_DIAG", False)
+    monkeypatch.setattr(pv, "BN_JETS", 64)
+    real = pv.Objective.train_loss
+
+    def nan_at(call):
+        calls = []
+
+        def train_loss(self, model, inputs, y, dev):
+            loss, parts, corr = real(self, model, inputs, y, dev)
+            calls.append(1)
+            if len(calls) == call:
+                loss = loss * float("nan")
+                parts = {k: v * float("nan") for k, v in parts.items()}
+            return loss, parts, corr
+        return train_loss
+
+    out = tmp_path / "n1"
+    monkeypatch.setattr(pv.Objective, "train_loss", nan_at(2))          # epoch 0, step 2
+    assert pv.main(_args(data, out, epochs=2, extra=["--log-every", "1"])) == pv.EXIT_RETRY
+    assert "FATAL: non-finite training loss at epoch 0 step 2:" in capsys.readouterr().out
+    assert not list(out.glob("net_epoch-*")) and not (out / "metrics").exists() and not (out / "stream").exists()
+
+    out = tmp_path / "n2"
+    monkeypatch.setattr(pv.Objective, "train_loss", nan_at(5))          # epoch 1, step 2: seen at its end
+    args = _args(data, out, epochs=2)
+    assert pv.main(args) == pv.EXIT_RETRY
+    assert "FATAL: non-finite training loss at epoch 1 step 3:" in capsys.readouterr().out
+    assert sorted(p.name for p in (out / "metrics").iterdir()) == ["epoch-000.json"]
+    assert pv.latest_complete_epoch(out) == 0 and not (out / "net_epoch-1_state.pt").exists()
+
+    monkeypatch.setattr(pv.Objective, "train_loss", real)                # the retry
+    assert pv.main(args) == 0
+    assert "resumed after epoch 0" in capsys.readouterr().out and (out / "DONE").exists()
+
+
+def test_a_run_asked_for_cuda_without_a_usable_gpu_fails_before_writing(data, tmp_path, monkeypatch, capsys):
+    """--device cuda never falls back to the CPU: no GPU, or a device that fails to
+    start, returns EXIT_NO_GPU (not EXIT_HALT) with nothing written to the run directory."""
+    out = tmp_path / "g"
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    assert pv.main(_args(data, out, extra=["--device", "cuda"])) == pv.EXIT_NO_GPU != pv.EXIT_HALT
+    assert "FATAL: --device cuda and no usable GPU" in capsys.readouterr().out and not out.exists()
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)       # the device itself fails to start
+    assert pv.main(_args(data, out, extra=["--device", "cuda:999"])) == pv.EXIT_NO_GPU
+    assert not out.exists()
+
+
+def test_the_window_checkpoint_is_the_first_maximum_within_the_last_ten_epochs(tmp_path):
+    vals = {e: 0.5 + 0.001 * e for e in range(80)}
+    vals[40] = 0.99                         # the global best lies before the window
+    vals[72] = vals[75] = 0.9               # a tie inside it: the first
+    for e, v in vals.items():
+        pv.write_json(tmp_path / "metrics" / f"epoch-{e:03d}.json",
+                      {"epoch": e, "selection": {"metric": "val.acc", "value": v}})
+    rec = pv.write_window_best(tmp_path, 80, {"driver": "x"})
+    assert json.loads((tmp_path / "best_window_epoch.json").read_text()) == rec
+    assert rec["epoch"] == 72 and rec["value"] == 0.9 and rec["window"] == [70, 79] and rec["metric"] == "val.acc"
+    assert rec["values"] == {str(e): vals[e] for e in range(70, 80)} and rec["code"] == {"driver": "x"}
+
+
+def _diag_direct(data, arm, extra_selection=None):
+    """The diagnostic batch computed here from the validation sample: the rows at positions
+    0, DIAG_STRIDE, 2 DIAG_STRIDE, ... of the sample in its fixed order, accepted by
+    stream_v2.reweight_indices with a generator seeded DIAG_SEED, which then permutes them,
+    and the first DIAG_JETS."""
+    ds = sv.StreamDataset({"_": data["val"]}, _dc(data, arm), mode="val", batch_size=32,
+                          extra_selection=extra_selection)
+    batches = list(torch.utils.data.DataLoader(ds, batch_size=None, num_workers=0))
+    X = {k: torch.cat([b[0][k] for b in batches]) for k in batches[0][0]}
+    Z = {k: np.concatenate([b[2][k].numpy() for b in batches]) for k in ("_rowid", "_jet_label", "_weight")}
+    cand = np.arange(0, len(Z["_rowid"]), pv.DIAG_STRIDE)
+    rng = np.random.default_rng(pv.DIAG_SEED)
+    acc = sv.reweight_indices(Z["_weight"][cand], rng)
+    rng.shuffle(acc)
+    rows = cand[acc[:pv.DIAG_JETS]]
+    return {"rowid": Z["_rowid"][rows], "label": Z["_jet_label"][rows], "X": {k: v[rows] for k, v in X.items()},
+            "candidates": len(cand), "accepted": len(acc), "first_labels": Z["_jet_label"][:pv.DIAG_JETS]}
+
+
+def test_the_run_records_its_window_checkpoint_and_gradient_diagnostic(data, run_a):
+    """A 3-epoch run: the window is its last ten epochs, all three. The diagnostic batch
+    is the one computed here from the validation sample (_diag_direct; at the default stride
+    of 64 a few jets of this small sample); with --log-every 0 epoch 0's file holds the
+    initial point only."""
+    win = json.loads((run_a / "best_window_epoch.json").read_text())
+    m = _epochs(run_a, "metrics")
+    sel = {e: r["selection"]["value"] for e, r in m.items()}
+    assert win["window"] == [0, 2] and win["epoch"] == max(sel, key=sel.get)
+    assert win["code"]["driver"] == "experiments/MTX/pretrain_v2.py" and set(win["code"]) >= {"repo_ref", "commit"}
+    ref = _diag_direct(data, "R16_Q1")
+    for e in range(3):
+        g = m[e]["grad_diag"]
+        assert set(g["grad_norm"]) == {"loss_cls"} and g["grad_norm"]["loss_cls"] > 0 and "cosine" not in g
+        assert g["batch"]["n_jets"] == len(ref["rowid"]) > 0 and g["batch"]["piece_jets"] == 32
+        assert g["batch"]["rows_sha256"] == hashlib.sha256(ref["rowid"].astype("<i8").tobytes()).hexdigest()
+        assert (g["batch"]["stride"], g["batch"]["seed"]) == (64, pv.DIAG_SEED)
+    d0 = json.loads((run_a / "metrics" / "grad_diag-000.json").read_text())
+    assert [p["step"] for p in d0["points"]] == [0] and d0["batch"] == m[0]["grad_diag"]["batch"]
+    assert not (run_a / "metrics" / "grad_diag-001.json").exists()
+
+
+def test_the_diagnostic_batch_is_built_once_and_reloaded_on_a_restart(tmp_path, monkeypatch):
+    """The batch is saved at the first start, so a restart does not read the whole
+    validation sample again; a saved batch built otherwise halts the start."""
+    calls = []
+
+    def build(ds, piece, torch_seed):
+        calls.append(piece)
+        return {"pieces": [({"x": torch.arange(6.0).reshape(2, 3)}, {"y": torch.zeros(2)})],
+                "definition": {"stride": pv.DIAG_STRIDE, "seed": pv.DIAG_SEED, "piece_jets": piece,
+                               "torch_seed": torch_seed, "extra_selection": ds.extra_selection,
+                               "rows_sha256": "r"}}
+    monkeypatch.setattr(pv, "diag_batch", build)
+    ds = type("DS", (), {"extra_selection": None})()
+    first = pv.load_or_build_diag(tmp_path, ds, 32, 7)
+    again = pv.load_or_build_diag(tmp_path, ds, 32, 7)
+    assert calls == [32] and (tmp_path / pv.DIAG_FILE).exists() and _same(first, again)
+    for piece, seed in ((64, 7), (32, 8)):          # another piece size or torch seed
+        with pytest.raises(SystemExit) as e:
+            pv.load_or_build_diag(tmp_path, ds, piece, seed)
+        assert e.value.code == pv.EXIT_HALT
+    assert calls == [32]
+
+
+def _same(a, b):
+    if isinstance(a, dict):
+        return a.keys() == b.keys() and all(_same(a[k], b[k]) for k in a)
+    if isinstance(a, (list, tuple)):
+        return len(a) == len(b) and all(_same(x, y) for x, y in zip(a, b))
+    if torch.is_tensor(a):
+        return a.dtype == b.dtype and a.shape == b.shape and torch.equal(a, b)
+    return a == b
+
+
+@pytest.mark.parametrize("objective", ["classification", pytest.param("mpm", marks=needs_0417)])
+def test_the_gradient_diagnostic_leaves_the_run_bitwise_unchanged(data, tmp_path, monkeypatch, objective):
+    """Two short epochs with the diagnostic at initialisation, after every step and at
+    each epoch end, against the same run without it: the same weights, optimizer state
+    (slow weights and counter included), scheduler, trimmer counters and streams, bit
+    for bit. One CPU thread, so the arithmetic itself is reproducible. The recorded
+    classification value is then recomputed by hand from the saved epoch."""
+    monkeypatch.setattr(pv, "DIAG_JETS", 64)                # two pieces of the batch size
+    monkeypatch.setattr(pv, "DIAG_STRIDE", 2)
+    monkeypatch.setattr(pv, "BN_JETS", 64)
+    arm, k, extra = "R16_Q1", 17, ["--log-every", "1"]
+    if objective == "mpm":
+        arm, k = "L188", 0
+        extra += ["--network-config", str(MTX / "ParT_sophon_arch_mpm.py"), "--mpm"]
+    runs, threads = {}, torch.get_num_threads()
+    torch.set_num_threads(1)
+    try:
+        for on in (True, False):
+            monkeypatch.setattr(pv, "_GRAD_DIAG", on)
+            runs[on] = tmp_path / ("on" if on else "off")
+            assert pv.main(_args(data, runs[on], arm=arm, k=k, epochs=2, extra=extra)) == 0
+    finally:
+        torch.set_num_threads(threads)
+    on, off = runs[True], runs[False]
+    for e in (0, 1):
+        assert _same(torch.load(on / f"net_epoch-{e}_state.pt"), torch.load(off / f"net_epoch-{e}_state.pt"))
+        assert _same(*(torch.load(r / f"net_epoch-{e}_resume.pt", weights_only=False) for r in (on, off)))
+    assert {e: r["sha256"] for e, r in _epochs(on, "stream").items()} == \
+        {e: r["sha256"] for e, r in _epochs(off, "stream").items()}
+    steps = {e: [p["step"] for p in json.loads((on / "metrics" / f"grad_diag-{e:03d}.json").read_text())["points"]]
+             for e in (0, 1)}
+    assert steps == {0: [0, 1, 2, 3], 1: [1, 2, 3]}
+    assert "grad_diag" in _epochs(on, "metrics")[1] and "grad_diag" not in _epochs(off, "metrics")[1]
+    assert not list((off / "metrics").glob("grad_diag-*"))
+    if objective != "classification":
+        return
+    rec = _epochs(on, "metrics")[1]["grad_diag"]
+    dc = pv.load_data_config(data["cfg"][arm])
+    batch = pv.diag_batch(sv.StreamDataset({"_": data["val"]}, _dc(data, arm), mode="val", batch_size=32), 32, 0)
+    assert batch["definition"]["rows_sha256"] == rec["batch"]["rows_sha256"] and len(batch["pieces"]) == 2
+    model = _build(data, arm, k, {"trunk_init": 1, "head_init": 2})
+    vals, grads = _by_hand(model, on, 1, batch["pieces"], dc.input_names, lambda out, y: {
+        "loss_cls": torch.nn.functional.cross_entropy(out, y[dc.label_names[0]].long())})
+    assert rec["grad_norm"]["loss_cls"] == pytest.approx(grads["loss_cls"].norm().item(), rel=1e-6)
+    assert rec["value"]["loss_cls"] == pytest.approx(vals["loss_cls"], rel=1e-6)
+
+
+def _by_hand(model, out, epoch, pieces, input_names, terms, skip="mod.fc.1.", torch_seed=None):
+    """The diagnostic recomputed here from a run's saved epoch: each term's value and its
+    gradient over every parameter not named skip* (default the output layer mod.fc.1: the
+    class nodes and the mass node; the hidden layer mod.fc.0 is included), averaged over the
+    pieces. torch_seed: torch seeded once before the pieces (the self-supervised masks)."""
+    model.load_state_dict(torch.load(out / f"net_epoch-{epoch}_state.pt"))
+    resume = torch.load(out / f"net_epoch-{epoch}_resume.pt", weights_only=False)
+    pv.set_trimmer_counters(model, resume["trimmer_counters"])
+    model.eval()
+    trunk = [p for n, p in model.named_parameters() if not n.startswith(skip)]
+    assert len(trunk) == len(list(model.parameters())) - (2 if skip == "mod.fc.1." else
+                                                         len(list(model.get_submodule(skip[:-1]).parameters())))
+    vals, grads = {}, {}
+    with torch.random.fork_rng(devices=[]):
+        if torch_seed is not None:
+            torch.manual_seed(torch_seed)
+        for X, y in pieces:
+            for name, t in terms(model(*[X[n] for n in input_names]), y).items():
+                g = torch.cat([(x if x is not None else torch.zeros_like(p)).double().flatten()
+                               for x, p in zip(torch.autograd.grad(t, trunk, retain_graph=True, allow_unused=True),
+                                               trunk)])
+                grads[name] = grads.get(name, 0.0) + g / len(pieces)
+                vals[name] = vals.get(name, 0.0) + t.item() / len(pieces)
+    return vals, grads
+
+
+@pytest.mark.parametrize("arch", ["classification", "mass", pytest.param("mpm", marks=needs_0417)])
+def test_the_diagnostic_differentiates_all_but_the_output_layer_and_the_decoder(data, monkeypatch, arch):
+    monkeypatch.setenv("HYBRID_MASS_INSTALLED", "1")
+    monkeypatch.setenv("MPM_INSTALLED", "1")
+    s = {"trunk_init": 1, "head_init": 2}
+    model = {"classification": lambda: _build(data, "R16_Q1", 17, s),
+             "mass": lambda: _build(data, "L162_MASS", 162, s, "ParT_sophon_arch_mass.py"),
+             "mpm": lambda: _build(data, "L188", 188, s, "ParT_sophon_arch_mpm.py", {"mask_rate": 0.4})}[arch]()
+    kept = {id(p) for p in pv.diag_params(model)}
+    left_out = {n for n, p in model.named_parameters() if id(p) not in kept}
+    if arch == "mpm":
+        assert left_out == {n for n, _ in model.named_parameters() if n.startswith("decoder.")} != set()
+    else:
+        assert left_out == {"mod.fc.1.weight", "mod.fc.1.bias"}
+        assert {"mod.fc.0.0.weight", "mod.fc.0.0.bias", "mod.cls_token"} <= \
+            {n for n, p in model.named_parameters() if id(p) in kept}
+
+
+def test_the_diagnostic_batch_has_the_training_class_mix(data, monkeypatch):
+    """The sorted validation files start with an all-QCD file, so the first jets of the sample
+    (the batch as first built) are all QCD. The batch is instead the one computed here: every
+    second row a candidate, weaver's reweighting draw with its own seed, the first 64 of the
+    accepted rows permuted. All three families are in it, in the mix that draw gives."""
+    monkeypatch.setattr(pv, "DIAG_STRIDE", 2)
+    monkeypatch.setattr(pv, "DIAG_JETS", 64)
+    ref = _diag_direct(data, "R16_Q1")
+    assert pathlib.Path(sorted(data["val"])[0]).name.startswith("QCD_") and (ref["first_labels"] >= 161).all()
+    b = pv.diag_batch(sv.StreamDataset({"_": data["val"]}, _dc(data, "R16_Q1"), mode="val", batch_size=32), 32, 0)
+    d = b["definition"]
+    fam = np.bincount(np.searchsorted((0, 15, 161), ref["label"], side="right") - 1, minlength=3)
+    assert d["family_counts"] == {"two-prong": fam[0], "three/four-prong": fam[1], "QCD": fam[2]}
+    assert d["qcd_share"] == fam[2] / 64 and 0 < d["qcd_share"] < 1 and (fam > 0).all()
+    assert d["rows_sha256"] == hashlib.sha256(ref["rowid"].astype("<i8").tobytes()).hexdigest()
+    assert (d["n_jets"], d["candidates"], d["accepted"], d["stride"], d["seed"]) == \
+        (64, ref["candidates"], ref["accepted"], 2, pv.DIAG_SEED)
+    assert d["files"] == sorted(pathlib.Path(f).name for f in data["val"]) and d["extra_selection"] is None
+    assert len(b["pieces"]) == 2
+    for k, v in ref["X"].items():
+        assert torch.equal(torch.cat([X[k] for X, _ in b["pieces"]]), v), k
+
+
+def test_the_diagnostic_batch_is_the_same_for_every_vocabulary_and_run_index(data, monkeypatch):
+    """Two vocabularies at one run index, another run index and a mass-output model give the
+    same jets, inputs and definition (only torch_seed, the masks' seed, follows the run), and
+    building the batch draws from none of the global generators. A held-out-family run's
+    sample lacks the family: its batch differs and records the selection."""
+    import random
+    from src.utils.reproducibility import derive_all
+    monkeypatch.setattr(pv, "DIAG_STRIDE", 2)
+    monkeypatch.setattr(pv, "DIAG_JETS", 64)
+    states = torch.get_rng_state(), np.random.get_state(), random.getstate()
+    b = {(arm, run): pv.diag_batch(sv.StreamDataset({"_": data["val"]}, _dc(data, arm), mode="val", batch_size=32),
+                                   32, pv.epoch_seed(derive_all(run)["dropout"], "grad-diag", 0))
+         for arm, run in (("R16_Q1", 1), ("L188", 1), ("R16_Q1", 2), ("L162_MASS", 4))}
+    assert torch.equal(states[0], torch.get_rng_state()) and random.getstate() == states[2]
+    np_now = np.random.get_state()
+    assert np_now[0] == states[1][0] and np.array_equal(np_now[1], states[1][1]) and np_now[2:] == states[1][2:]
+    ref = b["R16_Q1", 1]
+    for other in b.values():
+        assert {k: v for k, v in other["definition"].items() if k != "torch_seed"} == \
+            {k: v for k, v in ref["definition"].items() if k != "torch_seed"}
+        assert len(other["pieces"]) == len(ref["pieces"]) == 2
+        assert all(_same(xa, xb) for (xa, _), (xb, _) in zip(ref["pieces"], other["pieces"]))
+    assert ref["definition"]["torch_seed"] != b["R16_Q1", 2]["definition"]["torch_seed"]
+    sel = "~((jet_label >= 100) & (jet_label < 161))"
+    lofo = pv.diag_batch(sv.StreamDataset({"_": data["val"]}, _dc(data, "R16_Q1"), mode="val", batch_size=32,
+                                          extra_selection=sel), 32, 0)["definition"]
+    assert lofo["extra_selection"] == sel and lofo["rows_sha256"] != ref["definition"]["rows_sha256"]
+    assert lofo["rows_sha256"] == hashlib.sha256(_diag_direct(data, "R16_Q1", sel)["rowid"].astype("<i8")
+                                                 .tobytes()).hexdigest()
+
+
+def test_within_epoch_points_are_recorded_in_epochs_0_to_4_only(data, tmp_path, monkeypatch):
+    """Six epochs of three steps with --log-every 3: a point at step 3 of epochs 0-4 (and the
+    initial point in epoch 0), none in epoch 5, whose end-of-epoch value is still recorded."""
+    monkeypatch.setattr(pv, "DIAG_JETS", 32)
+    monkeypatch.setattr(pv, "DIAG_STRIDE", 2)
+    monkeypatch.setattr(pv, "BN_JETS", 64)
+    out = tmp_path / "p"
+    assert pv.main(_args(data, out, epochs=6, extra=["--log-every", "3"])) == 0
+    steps = {int(p.stem.split("-")[1]): [q["step"] for q in json.loads(p.read_text())["points"]]
+             for p in (out / "metrics").glob("grad_diag-*.json")}
+    assert steps == {0: [0, 3], 1: [3], 2: [3], 3: [3], 4: [3]}
+    assert all("grad_diag" in r for r in _epochs(out, "metrics").values())
+
+
+def test_the_diagnostic_runs_in_float32_without_autocast_and_restores_use_amp(data, tmp_path, monkeypatch):
+    """--use-amp without a GPU: torch's CUDA autocast, which the model opens itself when its
+    use_amp flag is on, is replaced by CPU bfloat16 autocast, so the flag acts on the CPU.
+    Every training step then runs with the flag on and a bfloat16 loss; every diagnostic call
+    in evaluation mode with the flag off, no autocast open and float32 terms; and the step
+    after a diagnostic call has the flag on again."""
+    real = torch.autocast
+
+    def cpu_bf16(*args, enabled=True, **kw):
+        return real("cpu", dtype=torch.bfloat16, enabled=enabled)
+    monkeypatch.setattr(torch, "autocast", cpu_bf16)
+    monkeypatch.setattr(torch.cuda.amp, "autocast", cpu_bf16)
+    monkeypatch.setattr(pv, "DIAG_JETS", 32)
+    monkeypatch.setattr(pv, "DIAG_STRIDE", 2)
+    monkeypatch.setattr(pv, "BN_JETS", 64)
+    train_loss, grad_terms, seen = pv.Objective.train_loss, pv.Objective.grad_terms, []
+
+    def state(where, model, losses):
+        seen.append({"where": where, "use_amp": pv.part_of(model).use_amp, "training": model.training,
+                     "autocast": torch.is_autocast_enabled("cpu") or torch.is_autocast_enabled("cuda"),
+                     "dtypes": {t.dtype for t in losses}})
+
+    def tl(self, model, inputs, y, dev):
+        r = train_loss(self, model, inputs, y, dev)
+        state("train", model, [r[0]])
+        return r
+
+    def gt(self, model, inputs, y, dev):
+        r = grad_terms(self, model, inputs, y, dev)
+        state("diag", model, r.values())
+        return r
+    monkeypatch.setattr(pv.Objective, "train_loss", tl)
+    monkeypatch.setattr(pv.Objective, "grad_terms", gt)
+    out = tmp_path / "amp"
+    assert pv.main(_args(data, out, epochs=1, extra=["--use-amp", "--log-every", "1"])) == 0
+    assert json.loads((out / "recipe.json").read_text())["use_amp"] is True
+    # one piece per diagnostic call: initial, after each of the three steps, at the epoch end
+    assert [r["where"] for r in seen] == ["diag", "train", "diag", "train", "diag", "train", "diag", "diag"]
+    for r in seen:
+        on = r.pop("where") == "train"
+        assert r == {"use_amp": on, "training": on, "autocast": False,
+                     "dtypes": {torch.bfloat16 if on else torch.float32}}, (on, r)

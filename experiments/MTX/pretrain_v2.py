@@ -33,7 +33,19 @@ preprocessing, and replaces the loop around them:
     Lookahead slow weights and counter, GradScaler, scheduler, trimmer counters,
     best-so-far). A restart resumes from the newest complete epoch.
   * the best epoch on the fixed validation sample is copied to
-    net_best_epoch_state.pt; --keep-checkpoints decides what else stays.
+    net_best_epoch_state.pt; --keep-checkpoints decides what else stays
+    (window: the best epoch, EARLY_KEEP, the last ten epochs, the newest resume file).
+  * a gradient diagnostic on one fixed batch of validation jets with the training class
+    mix (diag_batch, grad_diag) is recorded at initialisation, every epoch, and every
+    --log-every steps in epochs 0-4. It leaves the weights, the optimizer and the streams
+    bitwise unchanged.
+  * the run ends with best_window_epoch.json (the first maximum of the selection
+    metric within the last ten epochs), the weight average, and DONE.
+    experiments/MTX/finalize_v2.py redoes that end step for a run whose epochs all
+    finished.
+Exit codes: EXIT_RETRY (a non-finite loss: the attempt failed, a retry resumes from
+the last complete epoch), EXIT_NO_GPU (--device cuda without a usable GPU, nothing
+written), EXIT_HALT (do not retry: recipe mismatch, sidecar).
 
 Run (in the job spec):
   python3 experiments/MTX/pretrain_v2.py --seed S --out /data/results/mtx_v2/RUN \\
@@ -66,6 +78,8 @@ HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(REPO))
 
 EXIT_HALT = 42          # the job's pod failure policy fails the Job on this code
+EXIT_RETRY = 3          # a non-finite training loss: a counted failure that may be retried
+EXIT_NO_GPU = 4         # --device cuda and no usable GPU: a fault of the node, not of the run
 _MASK63 = (1 << 63) - 1
 OBJECTIVES = ("classification", "mass", "mpm")
 
@@ -103,7 +117,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--keep-checkpoints", default="all", choices=["all", "states", "window"],
                     help="all: every epoch's state and resume files (default, ~46 MB per epoch). "
                          "states: every state file and the newest resume file (~9 MB per epoch). "
-                         "window: the best epoch, the last ten epochs and the newest resume file.")
+                         "window: the best epoch, the epochs in EARLY_KEEP, the last ten epochs "
+                         "and the newest resume file.")
     ap.add_argument("--select-on", default="acc", choices=["acc", "head_top1_acc"],
                     help="best-validation metric (first maximum): acc = top-1 weighted by the training "
                          "reweighting weights, Sophon's rule (draft A8, default); head_top1_acc = "
@@ -251,6 +266,17 @@ class Objective:
         pc, pi, tc, ti = model(*inputs)
         loss, lc, li = net.loss(pc, pi, tc, ti)
         return loss, {"loss": loss.detach(), "loss_l1": lc.detach(), "loss_ce": li.detach()}, None
+
+    def grad_terms(self, model, inputs, y, dev) -> dict:
+        """The terms of the training loss as they enter it (weights applied), with their
+        graphs, for the gradient diagnostic: {name: scalar}, summing to the loss."""
+        if self.kind == "classification":
+            return {"loss_cls": self.loss_func(model(*inputs), y[self.label].long().to(dev))}
+        if self.kind == "mass":
+            _, lc, lr_, _, _ = self.hm.hybrid_loss(self.loss_func, model(*inputs), y, self.k, self.lam, dev)
+            return {"loss_cls": lc, "lambda_loss_reg": self.lam * lr_}
+        _, lc, li = model.loss(*model(*inputs))
+        return {"loss_l1": lc, "id_weight_loss_ce": model.id_weight * li}
 
     def val_batch(self, model, inputs, y, Z, dev, acc: dict):
         import torch
@@ -431,13 +457,15 @@ def recompute_bn(model, batches, n_jets: int, dev, amp: bool, input_names) -> in
     return len(bns)
 
 
-def write_weight_average(out: pathlib.Path, a, model, ds_train, seeds, dev, amp, loader_kw, input_names):
+def write_weight_average(out: pathlib.Path, a, model, ds_train, seeds, dev, amp, loader_kw, input_names,
+                         code=None):
     """net_wavg<F>-<L>_state.pt: the weight average of the last WAVG_EPOCHS epochs'
     state files (70-79 of 80), BatchNorm statistics recomputed on BN_JETS training jets
     drawn by the stream of epoch num_epochs (the epoch-80 stream; its rows are training
     rows, read in earlier epochs too), and
-    net_wavg<F>-<L>.json recording the inputs' sha256, the file's sha256 and the
-    BatchNorm sample. The format is the one experiments/FT/ft_v2.py resolve_wavg reads."""
+    net_wavg<F>-<L>.json recording the inputs' sha256, the file's sha256, the
+    BatchNorm sample and the code that wrote it (`code`, else this driver). The format
+    is the one experiments/FT/ft_v2.py resolve_wavg reads."""
     import torch
     from torch.utils.data import DataLoader
     first = max(0, a.num_epochs - WAVG_EPOCHS)
@@ -473,9 +501,178 @@ def write_weight_average(out: pathlib.Path, a, model, ds_train, seeds, dev, amp,
                          "files": sorted(names[i] for i in rec.files),
                          "dropout_seed": epoch_seed(seeds["dropout"], "bn-recompute", 0),
                          "mode": "train, no gradient, cumulative average (momentum None)"},
-        "code": {"repo_ref": os.environ.get("REPO_REF"), "driver": "experiments/MTX/pretrain_v2.py"}})
+        "code": code or {"repo_ref": os.environ.get("REPO_REF"), "driver": "experiments/MTX/pretrain_v2.py"}})
     print(f"[pretrain_v2] {state.name}: mean of epochs {first}-{a.num_epochs - 1}, "
           f"{n_bn} BatchNorm layers recomputed on {rec.n} jets", flush=True)
+
+
+def last_epochs(num_epochs: int) -> range:
+    """The last WAVG_EPOCHS epochs (70-79 of 80): the weight average's inputs and the window
+    of the primary checkpoint."""
+    return range(max(0, num_epochs - WAVG_EPOCHS), num_epochs)
+
+
+def write_window_best(out: pathlib.Path, num_epochs: int, code: dict) -> dict:
+    """best_window_epoch.json: the first maximum of the selection value within the last ten
+    epochs, read from metrics/epoch-EEE.json. Higher is better, so for the self-supervised
+    run (value = -validation loss) it is the first minimum of the validation loss."""
+    window = list(last_epochs(num_epochs))
+    sel = {e: json.loads((out / "metrics" / f"epoch-{e:03d}.json").read_text())["selection"] for e in window}
+    top = max(s["value"] for s in sel.values())
+    epoch = min(e for e in window if sel[e]["value"] == top)
+    rec = {"epoch": epoch, "metric": sel[epoch]["metric"], "value": top, "window": [window[0], window[-1]],
+           "values": {str(e): sel[e]["value"] for e in window}, "code": code}
+    write_json(out / "best_window_epoch.json", rec)
+    return rec
+
+
+# ---------------------------------------------------------------- gradient diagnostic (amendment A14)
+DIAG_JETS = 4096          # jets in the diagnostic's fixed batch
+DIAG_EPOCHS = 5           # within-epoch points, every --log-every steps, in epochs 0-4
+# Every DIAG_STRIDE-th row of the fixed validation sample is a candidate for the batch. The
+# sample holds 2,058,293 selected jets whose reweighting weights sum to 99,360.8, a mean of
+# 0.048 (val.n_jets and val.sum_weights of experiments/FIGS/data/v2_loader/smoke/*/metrics/
+# epoch-000.json; the weights block is the same in every arm). reweight_indices keeps a mean
+# below 1/10, so it repeats each candidate max_resample = 10 times and accepts about
+# 10 x 99,360.8 / 64 = 15,500 rows: 3.8 times DIAG_JETS, and about 2.9 times for a
+# leave-one-family-out run, whose sample loses the four-prong family's 22% of the weight.
+# The 32,161 candidates' inputs (24 x 128 float32 per jet, 12 KiB) take 395 MB at most.
+DIAG_STRIDE = 64
+DIAG_SEED = 20261002      # the batch's reweighting draw: its own generator, never a run's seeds
+_GRAD_DIAG = True         # tests only: False gives the same run without the diagnostic
+DIAG_FILE = "grad_diag_batch.pt"   # the batch, saved at the first start (about 48 MiB)
+
+
+def diag_batch(ds_val, piece: int, torch_seed: int) -> dict:
+    """The diagnostic's fixed batch, drawn from the fixed validation sample as training
+    draws its jets. One pass over the sample in its own order (files in sorted order, rows
+    in file order, after the selection) by one loader worker, so no reading thread outlives
+    it in this process, keeps every DIAG_STRIDE-th row as a candidate. weaver's reweighting
+    (stream_v2.reweight_indices) then accepts candidates by their weights with a generator
+    seeded by DIAG_SEED, the accepted rows are permuted by the same generator and the first
+    DIAG_JETS taken: the training class mix, and the same batch for every vocabulary and run
+    index. No global generator is drawn from. `torch_seed` seeds torch during the diagnostic
+    (the self-supervised masks). Kept on the CPU in pieces of the training batch size."""
+    import numpy as np
+    import torch
+    from torch.utils.data import DataLoader
+    import stream_v2 as sv
+    cands, pos = [], 0               # the candidates of each loader batch, copied out of it
+    for X, y, Z in DataLoader(ds_val, batch_size=None, num_workers=1, multiprocessing_context="fork",
+                              generator=torch.Generator()):    # its worker seed: not from the global generator
+        n = len(Z["_rowid"])
+        at = torch.nonzero(torch.arange(pos, pos + n) % DIAG_STRIDE == 0).flatten()   # multiples of the stride
+        if len(at):
+            cands.append(tuple({k: v[at] for k, v in d.items()} for d in (X, y, Z)))
+        pos += n
+    rng = np.random.default_rng(DIAG_SEED)
+    idx = sv.reweight_indices(torch.cat([c[2]["_weight"] for c in cands]).numpy(), rng)
+    rng.shuffle(idx)
+    take = idx[:DIAG_JETS]
+    starts = np.cumsum([0] + [len(c[2]["_rowid"]) for c in cands])
+    rows = [(cands[b], int(t - starts[b])) for t, b in zip(take, np.searchsorted(starts, take, side="right") - 1)]
+    X, y, Z = ({k: torch.stack([c[j][k][r] for c, r in rows]) for k in cands[0][j]} for j in range(3))
+    n = len(take)
+    rid = Z["_rowid"].numpy().astype("<i8")
+    family = np.bincount(np.searchsorted((0, 15, 161), Z["_jet_label"].numpy(), side="right") - 1, minlength=3)
+    names = {v: k for k, v in ds_val.file_index.items()}
+    pieces = [({k: v[i:i + piece] for k, v in X.items()}, {k: v[i:i + piece] for k, v in y.items()})
+              for i in range(0, n, piece)]
+    return {"pieces": pieces, "definition": {
+        "jets": f"{n} jets of the fixed validation sample, drawn as training draws: the rows at positions "
+                f"0, {DIAG_STRIDE}, {2 * DIAG_STRIDE}, ... of the sample (files in sorted order, rows in file "
+                f"order, after the selection) are the candidates; weaver's reweighting "
+                f"(stream_v2.reweight_indices) accepts candidates, with repeats as it upsamples, by a "
+                f"generator of its own seeded by `seed`, which then permutes the accepted rows; the first "
+                f"{DIAG_JETS} are taken. The same for every vocabulary and run index; a leave-one-family-out "
+                f"run's sample (extra_selection) lacks the family, so its batch differs",
+        "stride": DIAG_STRIDE, "seed": DIAG_SEED, "candidates": int(starts[-1]), "accepted": len(idx),
+        "n_jets": n, "qcd_share": float(family[2]) / n,
+        "family_counts": dict(zip(("two-prong", "three/four-prong", "QCD"), family.tolist())),
+        "extra_selection": ds_val.extra_selection,
+        "files": sorted({names[i] for i in np.unique(rid >> 20).tolist()}),
+        "rows_sha256": hashlib.sha256(np.ascontiguousarray(rid).tobytes()).hexdigest(),
+        "pieces": len(pieces), "piece_jets": piece,
+        "loss": "each training-loss term, averaged over the pieces",
+        "mode": "evaluation mode, float32, no autocast", "torch_seed": torch_seed,
+        "parameters": "every parameter except the output layer (the class nodes and the mass node) "
+                      "and the self-supervised decoder"}}
+
+
+def load_or_build_diag(out: pathlib.Path, ds_val, piece: int, torch_seed: int) -> dict:
+    """The diagnostic's batch, built once per run by diag_batch and saved in the run
+    directory, so a restart reloads it instead of reading the whole validation sample again
+    with one loader worker (minutes of an idle GPU at every start). The saved batch is used
+    only if its definition is what this start would build (stride, seed, piece size, torch
+    seed, extra selection); the files and the rows' hash travel with it. Anything else halts,
+    as a changed recipe does."""
+    import torch
+    path = out / DIAG_FILE
+    if path.exists():
+        saved = torch.load(path, map_location="cpu", weights_only=False)
+        want = {"stride": DIAG_STRIDE, "seed": DIAG_SEED, "piece_jets": piece, "torch_seed": torch_seed,
+                "extra_selection": ds_val.extra_selection}
+        got = {k: saved["definition"].get(k) for k in want}
+        if got != want:
+            print(f"FATAL: {path} was built as {got}, this start would build {want}", flush=True)
+            raise SystemExit(EXIT_HALT)
+        return saved
+    diag = diag_batch(ds_val, piece, torch_seed)
+    torch_save(diag, path)
+    return diag
+
+
+def diag_params(model) -> list:
+    """The trunk the gradient diagnostic differentiates: every parameter of the model except
+    the output layer (the last layer of the fc head, whose rows are the class nodes and, in
+    the mass-output model, the mass node) and, for the self-supervised model, its decoder.
+    The fc head's hidden layer, which the class nodes and the mass node share, is included."""
+    fc = part_of(model).fc
+    skip = set() if fc is None else {id(p) for p in fc[-1].parameters()}
+    decoder = getattr(model, "decoder", None)
+    if decoder is not None:
+        skip |= {id(p) for p in decoder.parameters()}
+    return [p for p in model.parameters() if id(p) not in skip]
+
+
+def grad_diag(model, obj, diag: dict, dev, input_names) -> dict:
+    """Trunk-gradient L2 norm of each loss term on the diagnostic batch, of their sum and,
+    for two terms, their cosine. Evaluation mode (no BatchNorm update, no dropout; the
+    trimmer's evaluation path is deterministic), float32 without autocast, and
+    torch.autograd.grad, so .grad, the optimizer and the GradScaler are untouched. The
+    torch generators (the self-supervised masks draw from them), the trimmer counters,
+    the train mode and the model's own autocast flag are restored: the run is bitwise
+    the same with or without it."""
+    import torch
+    part = part_of(model)
+    params = diag_params(model)
+    was_training, own_amp = model.training, part.use_amp
+    counters = copy.deepcopy(trimmer_counters(model))     # a tensor updated in place in some weaver versions
+    grads, values = {}, {}
+    model.eval()
+    part.use_amp = False                                   # the ParticleTransformer opens its own autocast
+    try:
+        with torch.random.fork_rng(devices=[dev] if dev.type == "cuda" else []):
+            torch.manual_seed(diag["definition"]["torch_seed"])
+            for X, y in diag["pieces"]:
+                terms = obj.grad_terms(model, [X[k].to(dev) for k in input_names], y, dev)
+                for i, (name, t) in enumerate(terms.items()):
+                    g = torch.autograd.grad(t, params, retain_graph=i + 1 < len(terms), allow_unused=True)
+                    flat = torch.cat([(gi if gi is not None else torch.zeros_like(p)).double().flatten()
+                                      for gi, p in zip(g, params)])
+                    grads[name] = grads.get(name, 0.0) + flat / len(diag["pieces"])
+                    values[name] = values.get(name, 0.0) + t.item() / len(diag["pieces"])
+    finally:
+        part.use_amp = own_amp
+        set_trimmer_counters(model, counters)
+        model.train(was_training)
+    rec = {"value": dict(values), "grad_norm": {k: g.norm().item() for k, g in grads.items()}}
+    if len(grads) == 2:
+        g1, g2 = grads.values()
+        rec["value"]["loss"] = sum(values.values())
+        rec["grad_norm"]["loss"] = (g1 + g2).norm().item()
+        rec["cosine"] = (g1 @ g2 / (g1.norm() * g2.norm())).item()
+    return rec
 
 
 def write_json(path: pathlib.Path, obj) -> None:
@@ -500,6 +697,15 @@ def latest_complete_epoch(out: pathlib.Path):
         if (out / f"net_epoch-{e}_state.pt").exists() and (best is None or e > best):
             best = e
     return best
+
+
+EARLY_KEEP = (0, 2, 4, 9, 19, 29, 39, 49, 55, 62, 69)   # early states --keep-checkpoints window keeps
+
+
+def window_epochs(num_epochs: int) -> list:
+    """The fixed epochs whose state files --keep-checkpoints window keeps (the best epoch
+    comes on top): EARLY_KEEP, for the training phase, and the last ten epochs."""
+    return sorted({e for e in EARLY_KEEP if e < num_epochs} | set(last_epochs(num_epochs)))
 
 
 def prune(out: pathlib.Path, keep_epochs, newest_resume: int) -> None:
@@ -546,12 +752,16 @@ def load_data_config(path: str):
     return sv.load_config(sidecar(path))
 
 
+RECIPE_ARGS = ("seed", "data_config", "extra_selection", "network_config", "network_option", "use_amp", "batch_size",
+               "start_lr", "num_epochs", "samples_per_epoch", "num_workers", "fetch_step",
+               "data_split_num", "data_fraction", "data_windows", "optimizer", "lr_scheduler", "mass_lambda", "mpm",
+               "mpm_mask_rate", "deterministic", "select_on", "keep_checkpoints")
+
+
 def recipe_of(a) -> dict:
-    keep = ("seed", "data_config", "extra_selection", "network_config", "network_option", "use_amp", "batch_size",
-            "start_lr", "num_epochs", "samples_per_epoch", "num_workers", "fetch_step",
-            "data_split_num", "data_fraction", "data_windows", "optimizer", "lr_scheduler", "mass_lambda", "mpm", "mpm_mask_rate",
-            "deterministic", "select_on")
-    r = {k: getattr(a, k) for k in keep}
+    r = {k: getattr(a, k) for k in RECIPE_ARGS}
+    r["keep_epochs"] = window_epochs(a.num_epochs) if a.keep_checkpoints == "window" else None
+    r["data_train"] = list(a.data_train)          # finalize_v2 rebuilds the training stream from it
     r["data_train_n"] = {k: len(v) for k, v in to_file_dict(a.data_train).items()}
     r["data_val"] = sorted(os.path.basename(p) for p in to_file_dict(a.data_val).get("_", []))
     r["device"] = device_name(a.device)
@@ -587,6 +797,68 @@ def device_name(device=None) -> str:
     return "cpu"
 
 
+def gpu_missing(device: str):
+    """None if the CUDA device can be used, else the reason. Nothing falls back to the CPU."""
+    import torch
+    try:
+        if not torch.cuda.is_available():
+            return "torch.cuda.is_available() is False"
+        torch.zeros(1, device=device)
+    except Exception as e:      # any failure to start the device is a fault of the node
+        return f"{type(e).__name__}: {e}"
+    return None
+
+
+def set_numerics(a) -> None:
+    import torch
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    if a.deterministic:
+        torch.use_deterministic_algorithms(True, warn_only=True)
+
+
+def objective_kind(a) -> str:
+    """classification, mass or mpm, with the environment the mass and self-supervised
+    arch files and losses require."""
+    kind = "mpm" if a.mpm else ("mass" if a.mass_lambda is not None else "classification")
+    if kind == "mass":
+        os.environ["HYBRID_MASS_INSTALLED"] = "1"
+    if kind == "mpm":
+        mpm = _import(str(HERE / "mpm.py"), "_mpm_v2")
+        rate = a.mpm_mask_rate if a.mpm_mask_rate is not None else mpm.DEFAULT_MASK_RATE
+        if not 0.0 < rate < 1.0:
+            raise SystemExit("pretrain_v2: --mpm-mask-rate must be in (0, 1)")
+        os.environ[mpm.ENV_FLAG] = "1"
+        os.environ["MPM_MASK_RATE"] = repr(float(rate))
+    return kind
+
+
+def train_stream(a, side: str, seeds: dict):
+    import stream_v2 as sv
+    return sv.StreamDataset(to_file_dict(a.data_train), side, mode="train", batch_size=a.batch_size,
+                            seed=seeds["data_sampling"], split_num=a.data_split_num,
+                            fetch_step=a.fetch_step, extra_selection=a.extra_selection,
+                            **stream_window(a))
+
+
+def make_model(a, kind: str, data_config, seeds: dict, dev):
+    options = {k: ast.literal_eval(v) for k, v in a.network_option}
+    if a.use_amp:
+        options["use_amp"] = True
+    if kind == "mpm":
+        options["mask_rate"] = float(os.environ["MPM_MASK_RATE"])
+    model, loss_func = build_model(a.network_config, data_config, options, seeds)
+    return model.to(dev), loss_func
+
+
+def loader_kwargs(a, dev) -> dict:
+    kw = dict(batch_size=None, num_workers=a.num_workers, pin_memory=dev.type == "cuda",
+              persistent_workers=False)
+    if a.num_workers:
+        kw["multiprocessing_context"] = "fork"    # Linux's default, explicit for laptops
+    return kw
+
+
 # ---------------------------------------------------------------- main
 def main(argv=None) -> int:
     a = build_parser().parse_args(argv)
@@ -608,21 +880,14 @@ def main(argv=None) -> int:
     sys.path.insert(0, str(HERE))
     import stream_v2 as sv
 
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    if a.deterministic:
-        torch.use_deterministic_algorithms(True, warn_only=True)
+    set_numerics(a)
+    if a.device and a.device.startswith("cuda"):
+        why = gpu_missing(a.device)
+        if why:
+            print(f"FATAL: --device {a.device} and no usable GPU ({why}); nothing written", flush=True)
+            return EXIT_NO_GPU
 
-    kind = "mpm" if a.mpm else ("mass" if a.mass_lambda is not None else "classification")
-    if kind == "mass":
-        os.environ["HYBRID_MASS_INSTALLED"] = "1"
-    if kind == "mpm":
-        mpm = _import(str(HERE / "mpm.py"), "_mpm_v2")
-        rate = a.mpm_mask_rate if a.mpm_mask_rate is not None else mpm.DEFAULT_MASK_RATE
-        if not 0.0 < rate < 1.0:
-            raise SystemExit("pretrain_v2: --mpm-mask-rate must be in (0, 1)")
-        os.environ[mpm.ENV_FLAG] = "1"
-        os.environ["MPM_MASK_RATE"] = repr(float(rate))
+    kind = objective_kind(a)
 
     out = pathlib.Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -642,20 +907,14 @@ def main(argv=None) -> int:
     data_config = sv.load_config(side, a.extra_selection)
     train_files = to_file_dict(a.data_train)
     val_files = to_file_dict(a.data_val)
-    ds_train = sv.StreamDataset(train_files, side, mode="train", batch_size=a.batch_size,
-                                seed=seeds["data_sampling"], split_num=a.data_split_num,
-                                fetch_step=a.fetch_step, extra_selection=a.extra_selection,
-                                **stream_window(a))
     ds_val = sv.StreamDataset(val_files, side, mode="val", batch_size=a.batch_size,
                               extra_selection=a.extra_selection)
+    diag = None                     # read before the training stream exists; its draw has its own generator
+    if _GRAD_DIAG:
+        diag = load_or_build_diag(out, ds_val, a.batch_size, epoch_seed(seeds["dropout"], "grad-diag", 0))
+    ds_train = train_stream(a, side, seeds)
 
-    options = {k: ast.literal_eval(v) for k, v in a.network_option}
-    if a.use_amp:
-        options["use_amp"] = True
-    if kind == "mpm":
-        options["mask_rate"] = float(os.environ["MPM_MASK_RATE"])
-    model, loss_func = build_model(a.network_config, data_config, options, seeds)
-    model = model.to(dev)
+    model, loss_func = make_model(a, kind, data_config, seeds, dev)
     obj = Objective(kind, data_config, loss_func, model, lam=a.mass_lambda, select_on=a.select_on,
                     native_map=sv.native_to_class(data_config) if kind != "mpm" else None)
     opt, sched = make_optimizer(model, a.start_lr, a.num_epochs)
@@ -684,10 +943,7 @@ def main(argv=None) -> int:
         torch_save({"trunk": trunk_state(model)}, out / "init_trunk.pt")
 
     mem = MemMonitor()
-    loader_kw = dict(batch_size=None, num_workers=a.num_workers, pin_memory=dev.type == "cuda",
-                     persistent_workers=False)
-    if a.num_workers:
-        loader_kw["multiprocessing_context"] = "fork"    # Linux's default, explicit for laptops
+    loader_kw = loader_kwargs(a, dev)
     input_names = list(data_config.input_names)
     for epoch in range(start, a.num_epochs):
         lr = opt.param_groups[0]["lr"]
@@ -695,7 +951,10 @@ def main(argv=None) -> int:
         ds_train.set_epoch(epoch)
         rec = StreamRecord()
         model.train()
-        sums, n_correct, t0 = {}, 0, time.time()
+        points = []                                     # the diagnostic within the epoch
+        if diag is not None and epoch == 0:
+            points.append({"step": 0, **grad_diag(model, obj, diag, dev, input_names)})   # before any step
+        sums, n_correct, t0, t_diag = {}, 0, time.time(), 0.0
         it = iter(DataLoader(ds_train, **loader_kw))
         for step in range(steps):
             X, y, Z = next(it)
@@ -719,16 +978,25 @@ def main(argv=None) -> int:
             if corr is not None:
                 n_correct = n_correct + corr
             if a.log_every and (step + 1) % a.log_every == 0:
+                avg = {k: v.item() / (step + 1) for k, v in sums.items()}
+                if not all(math.isfinite(v) for v in avg.values()):
+                    print(f"FATAL: non-finite training loss at epoch {epoch} step {step + 1}: {avg}", flush=True)
+                    return EXIT_RETRY
                 print(f"[pretrain_v2] epoch {epoch} step {step + 1}/{steps} "
-                      f"avg loss {sums['loss'].item() / (step + 1):.5f} "
-                      f"{rec.n / (time.time() - t0):.0f} jets/s", flush=True)
+                      f"avg loss {avg['loss']:.5f} "
+                      f"{rec.n / (time.time() - t0 - t_diag):.0f} jets/s", flush=True)
+                if diag is not None and epoch < DIAG_EPOCHS:
+                    t2 = time.time()
+                    points.append({"step": step + 1, **grad_diag(model, obj, diag, dev, input_names)})
+                    t_diag += time.time() - t2
         del it
         sched.step()
-        t_train = time.time() - t0
+        t_train = time.time() - t0 - t_diag
         train = {k: v.item() / steps for k, v in sums.items()}
         if not all(math.isfinite(v) for v in train.values()):
-            print(f"FATAL: non-finite training loss at epoch {epoch}: {train}", flush=True)
-            return EXIT_HALT
+            print(f"FATAL: non-finite training loss at epoch {epoch} step {steps}: {train}", flush=True)
+            return EXIT_RETRY
+        epoch_diag = grad_diag(model, obj, diag, dev, input_names) if diag is not None else None
         if kind != "mpm":
             train["acc"] = float(n_correct) / rec.n
         train.update(n_jets=rec.n, qcd_share=float(rec.native[161:].sum()) / rec.n,
@@ -757,11 +1025,18 @@ def main(argv=None) -> int:
         files_sha = sv.plan_sha256(train_files, seeds["data_sampling"], epoch, a.num_workers,
                                    a.data_split_num, a.fetch_step, a.data_fraction, a.data_windows)
         stream = rec.record(run, epoch, seeds["data_sampling"], seeds["dropout"], files_sha)
-        write_json(out / "metrics" / f"epoch-{epoch:03d}.json", {
+        metrics = {
             "run": run, "epoch": epoch, "objective": kind, "lr": lr, "train": train, "val": val,
             "selection": {"metric": name, "value": value, "is_best": is_best, "best": best},
             "stream_sha256": stream["sha256"], "peak_anon_gb": mem.take(),
-            "device": torch.cuda.get_device_name(0) if dev.type == "cuda" else "cpu"})
+            "device": torch.cuda.get_device_name(0) if dev.type == "cuda" else "cpu"}
+        if diag is not None:
+            metrics["grad_diag"] = {**epoch_diag, "batch": diag["definition"]}
+            if points:
+                write_json(out / "metrics" / f"grad_diag-{epoch:03d}.json", {
+                    "run": run, "epoch": epoch, "log_every": a.log_every, "batch": diag["definition"],
+                    "points": points})
+        write_json(out / "metrics" / f"epoch-{epoch:03d}.json", metrics)
         write_json(out / "stream" / f"epoch-{epoch:03d}.json", stream)
         torch_save(model.state_dict(), out / f"net_epoch-{epoch}_state.pt")
         if is_best:
@@ -773,12 +1048,13 @@ def main(argv=None) -> int:
                     "trimmer_counters": trimmer_counters(model), "best": best},
                    out / f"net_epoch-{epoch}_resume.pt")
         if a.keep_checkpoints == "window":
-            prune(out, {best["epoch"]} | set(range(a.num_epochs - 10, a.num_epochs)), epoch)
+            prune(out, {best["epoch"]} | set(window_epochs(a.num_epochs)), epoch)
         elif a.keep_checkpoints == "states":
             prune(out, None, epoch)
         print(f"[pretrain_v2] epoch {epoch} done: lr {lr:.4e} train {train['loss']:.5f} "
               f"val {name}={value:.5f} best={best['epoch']} stream {stream['sha256'][:12]} "
               f"{train['jets_per_s']:.0f} jets/s", flush=True)
+    write_window_best(out, a.num_epochs, {**code_version(), "driver": "experiments/MTX/pretrain_v2.py"})
     write_weight_average(out, a, model, ds_train, seeds, dev, amp, loader_kw, input_names)
     (out / "DONE").write_text(json.dumps(best) + "\n")
     return 0
