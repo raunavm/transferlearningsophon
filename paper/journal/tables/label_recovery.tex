@@ -2,21 +2,21 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Linear decodability of each level of the label tree: balanced accuracy of a frozen linear probe trained to recover that level (rows, finest first) from each pretrained model (columns), mean $\pm$ standard deviation over the five pretraining runs.}
+\caption{Linear decodability of each level of the label tree: balanced accuracy of a class-weighted logistic regression on the frozen features, trained to recover that level (rows, finest first) from each pretrained model (columns) on 1{,}400{,}000 jets, mean $\pm$ standard deviation over the five pretraining runs.}
 \label{tab:recovery}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l rrrr}
 \toprule
 level recovered & 188-class model & 162-class model & 43-class model & 17-class model \\
 \midrule
-188 classes & 0.3434\,$\pm$\,0.0010 & 0.3427\,$\pm$\,0.0019 & 0.290\,$\pm$\,0.008 & 0.242\,$\pm$\,0.007 \\
-162 classes & 0.3824\,$\pm$\,0.0008 & 0.3828\,$\pm$\,0.0024 & 0.322\,$\pm$\,0.010 & 0.270\,$\pm$\,0.008 \\
-64 classes & 0.5339\,$\pm$\,0.0019 & 0.534\,$\pm$\,0.004 & 0.5272\,$\pm$\,0.0024 & 0.464\,$\pm$\,0.007 \\
-43 classes & 0.6117\,$\pm$\,0.0017 & 0.6117\,$\pm$\,0.0019 & 0.6128\,$\pm$\,0.0018 & 0.563\,$\pm$\,0.008 \\
-30 classes & 0.6344\,$\pm$\,0.0020 & 0.6344\,$\pm$\,0.0019 & 0.6353\,$\pm$\,0.0019 & 0.610\,$\pm$\,0.007 \\
-17 classes & 0.7160\,$\pm$\,0.0016 & 0.7160\,$\pm$\,0.0031 & 0.7176\,$\pm$\,0.0018 & 0.7199\,$\pm$\,0.0007 \\
-4 classes & 0.7413\,$\pm$\,0.0011 & 0.7432\,$\pm$\,0.0020 & 0.7456\,$\pm$\,0.0015 & 0.7485\,$\pm$\,0.0013 \\
-2 classes & 0.8253\,$\pm$\,0.0020 & 0.8269\,$\pm$\,0.0007 & 0.8281\,$\pm$\,0.0027 & 0.8285\,$\pm$\,0.0011 \\
+188 classes & 0.4123\,$\pm$\,0.0011 & 0.4090\,$\pm$\,0.0012 & 0.356\,$\pm$\,0.008 & 0.306\,$\pm$\,0.008 \\
+162 classes & 0.4623\,$\pm$\,0.0006 & 0.4622\,$\pm$\,0.0007 & 0.402\,$\pm$\,0.009 & 0.348\,$\pm$\,0.010 \\
+64 classes & 0.5979\,$\pm$\,0.0008 & 0.5973\,$\pm$\,0.0013 & 0.5881\,$\pm$\,0.0007 & 0.531\,$\pm$\,0.006 \\
+43 classes & 0.6770\,$\pm$\,0.0006 & 0.6766\,$\pm$\,0.0008 & 0.6751\,$\pm$\,0.0011 & 0.633\,$\pm$\,0.006 \\
+30 classes & 0.7001\,$\pm$\,0.0005 & 0.7004\,$\pm$\,0.0007 & 0.6998\,$\pm$\,0.0008 & 0.6778\,$\pm$\,0.0030 \\
+17 classes & 0.7675\,$\pm$\,0.0010 & 0.7681\,$\pm$\,0.0009 & 0.7680\,$\pm$\,0.0010 & 0.76810\,$\pm$\,0.00028 \\
+4 classes & 0.75261\,$\pm$\,0.00022 & 0.7538\,$\pm$\,0.0017 & 0.7557\,$\pm$\,0.0015 & 0.7586\,$\pm$\,0.0008 \\
+2 classes & 0.8688\,$\pm$\,0.0005 & 0.8703\,$\pm$\,0.0008 & 0.8709\,$\pm$\,0.0011 & 0.87131\,$\pm$\,0.00019 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

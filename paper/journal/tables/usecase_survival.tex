@@ -2,7 +2,7 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Published discriminants built from sums of Sophon's output scores, against the number of classes in the vocabulary (columns, finest first). $\bullet$: the discriminant can be built exactly from that vocabulary's outputs; ---: it cannot. By Sophon's class-division property (Property~1, Eq.~(2) of Ref.~\cite{sophon}), the score of a merged class is the sum of the scores of the classes it merges, so a discriminant survives a merge only if its numerator and its denominator each contain every merged class or none of them. This is a property of the partition and needs no training and no data.}
+\caption{Published discriminants built from sums of Sophon's output scores, against the number of classes in the vocabulary (columns, finest first). $\bullet$: the discriminant can be built exactly from that vocabulary's outputs; ---: it cannot. By Sophon's class-division property (Property~1, Eq.~(2) of Ref.~\cite{sophon}), which holds for an ideally trained classifier, the score of a merged class is the sum of the scores of the classes it merges, so a discriminant survives a merge only if its numerator and its denominator each contain every merged class or none of them. The table states which sums a vocabulary's outputs can form, a property of the partition that needs no training and no data, not that a trained coarse model reproduces them.}
 \label{tab:usecase}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l l cccccccc}

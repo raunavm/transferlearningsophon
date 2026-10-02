@@ -42,17 +42,22 @@ INPUTS = {
     # fine-tunes) is appended to its task's list and named in FT_REFERENCES.
     "finetune": {"JetClass-II, 162 classes": [DATA / "w2b_leg1_metrics_v2.json"],
                  "JetClass, 10 classes": [DATA / "w2b_leg2_metrics_v2.json"]},
-    "anomaly": DATA / "anomaly_merged_v4/analysis_v4/anomaly_summary.json",
+    # The same per-model results as anomaly_merged_v4/analysis_v4 (its epoch-79 cells
+    # reproduce them) plus each run's checkpoints of epochs 70-79; the tables read this file.
+    "anomaly": DATA / "anomaly_v1err/analysis/anomaly_summary.json",
     "mass": DATA / "mass_resolution/analysis_holm/s7_mass_resolution.json",
     "mass2x2": sorted((DATA / "probe_ladder_mass2x2_mlp2").glob("s*.json")),
-    "realdata": DATA / "aoj_full_v1/analysis_v4/aoj_top.json",
+    # fit_v6: one peak shape shared by the pretrained models, the tops that fail the cut
+    # included (experiments/AOJ/fit_v6.py); the tables read the same file.
+    "realdata": DATA / "aoj_full_v1/analysis_v6/aoj_top.json",
 }
 LEVELS = [188, 162, 43, 17]
 ARMS = {"l188": 188, "l162": 162, "r42q1": 43, "r16q1": 17}
 ARM_ALIAS = {"l162-s1b": "l162-s1"}      # seed index 1 of the 162-class model is a rerun
 FT_SEED = "s1"                           # the pre-specified fine-tuning seed
-# References drawn as a dashed line with seed-spread error bars: label, colour,
-# marker, the pretrained models averaged.
+# References with too few runs for a spread: each run is drawn on its own (label,
+# colour, marker, the pretrained models). The random-label control has three random
+# partitions, one pretraining run each.
 FT_REFERENCES = {"random-label control": ("#CC79A7", "P", ("rand-d1-s1b", "rand-d2-s2", "rand-d3-s3"))}
 # The models drawn in the ratio panel beside the four vocabularies, each paired
 # with the 188-class model of the same pretraining run: the mass-output models
@@ -146,27 +151,19 @@ def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
                 bottom.plot(xs, [np.mean(per[n]) for n in xs], color=style.LEVEL_COLOURS[lv],
                             marker=style.LEVEL_MARKERS[lv], fillstyle=fill, linestyle=":",
                             label=f"{label} output")
-        per = {}
-        for (i, n), v in cells.items():
-            if i in RAND_RUN:
-                per.setdefault(n_of(n), []).append(v / by[LEVELS[0]][n_of(n)][RAND_RUN[i]])
-        xs = sorted(n for n in per if len(per[n]) == len(RAND_RUN))
-        if xs:
-            colour, marker, _ = FT_REFERENCES["random-label control"]
-            bottom.errorbar(xs, [np.mean(per[n]) for n in xs],
-                            yerr=[np.std(per[n], ddof=1) for n in xs], color=colour,
-                            marker=marker, linestyle="--", capsize=2)
-        for label, (colour, marker, inits) in FT_REFERENCES.items():
-            per = {}
-            for (i, n), v in cells.items():
-                if i in inits:
-                    per.setdefault(n_of(n), []).append(v)
-            xs = sorted(n for n in per if len(per[n]) == len(inits))
-            if xs:
-                top.errorbar(xs, [np.mean(per[n]) for n in xs],
-                             yerr=[np.std(per[n], ddof=1) for n in xs], color=colour,
-                             marker=marker, linestyle="--", capsize=2,
-                             label=f"{label} ({len(inits)} partitions)")
+        # The random partitions, one run each: every partition on its own, never a mean
+        # and spread of three values; in the ratio panel each over the 188-class model of
+        # the pretraining run whose random streams it shares.
+        colour, marker, inits = FT_REFERENCES["random-label control"]
+        for j, init in enumerate(inits):
+            xs = sorted(n_of(n) for (i, n) in cells if i == init)
+            if not xs:
+                continue
+            ys = [cells[(init, f"N{n}")] for n in xs]
+            top.plot(xs, ys, color=colour, marker=marker, markersize=3, linestyle="--", linewidth=0.8,
+                     label=f"random-label control ({len(inits)} partitions, one run each)" if j == 0 else None)
+            bottom.plot(xs, [y / by[LEVELS[0]][n][RAND_RUN[init]] for n, y in zip(xs, ys)], color=colour,
+                        marker=marker, markersize=3, linestyle="--", linewidth=0.8)
         bottom.axhline(1, color="#999999", linewidth=0.8)
         top.set_title(title)
         top.set_xscale("log")
@@ -275,7 +272,8 @@ def fig_mass(M: dict, pts2x2: dict, outdir: pathlib.Path) -> None:
 
 def fig_realdata(J: dict, outdir: pathlib.Path) -> None:
     """Fitted top yield per pretrained model with its fit error (light), and the
-    mean +- SD over the five seeds of each label set (bold)."""
+    mean +- SD over the five seeds of each label set (bold), all at the peak shape the
+    pretrained models share (fit_v6)."""
     fig, ax = plt.subplots(figsize=(style.FIG_W_ONE_COLUMN * 1.4, 3.0))
     pub = J["reference_models"]["sophon-public"]
     ax.axhspan(pub["signal_yield"] - pub["signal_yield_err"],

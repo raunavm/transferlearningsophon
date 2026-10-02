@@ -7,9 +7,10 @@ chain stops at `results_generated.tex` -- every macro in that file carries its
 source file, the path inside it and a sha256, and then a person types "about
 1300" into a sentence and none of that machinery is load-bearing any more.
 
-The rule enforced here: every numeric literal in hand-written manuscript prose
-is either (a) a `\\ProbeFoo`-style macro from the generator, or (b) listed in
-ALLOWED below with a reason. Generated files are exempt because they ARE the
+The rule enforced here: every numeric literal in hand-written manuscript prose,
+digits or a number word ("five", "a quarter"), is either (a) a `\\ProbeFoo`-style
+macro from the generator, or (b) listed in ALLOWED (digits) or ALLOWED_WORDS
+(phrases) below with a reason. Generated files are exempt because they ARE the
 provenance; they are checked by tests/test_make_tables.py instead.
 
 Deliberately a literal scan rather than a LaTeX parse. A parser would need to
@@ -51,7 +52,8 @@ GENERATED = {"results_generated.tex",
 # A number earns a line here only if it cannot change when a job finishes.
 ALLOWED = {
     "0": "LaTeX lengths and counters",
-    "1": "LaTeX lengths, counters, and \\linewidth fractions",
+    "1": "LaTeX lengths, counters, \\linewidth fractions, and the 1 of a definition "
+         "(1-AUC, x/(1+x), +-1 standard deviation)",
     "2": "column counts in table preambles",
     "5": "column counts in table preambles",
     "10": "font sizes and \\pt lengths",
@@ -75,6 +77,53 @@ STRIP = [
 ]
 
 NUMBER = re.compile(r"(?<![A-Za-z\\])-?\d[\d,]*(?:\.\d+)?")
+
+# A count spelled out is as much a typed number as its digits: "pretrained five
+# times" goes stale exactly like "pretrained 5 times" when a row has two runs.
+# The generator emits the word forms the prose needs (\ProbeNSeedsWord,
+# \RandNDraws, ...). Macro names spell digits too (\VocabSizeLonesixtwo), but
+# inside one word, so the word boundaries never match there.
+NUMBER_WORD = re.compile(
+    r"\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|"
+    r"fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|hundreds?|"
+    r"thousands?|quarters?|half|halves|dozens?)\b", re.I)
+
+# Number words that are structure, not a count of anything run or measured, each
+# with the reason it cannot change. Matched as PHRASES and removed before the
+# scan, so the allowance never extends to the bare word.
+ALLOWED_WORDS = [
+    (r"\b(?:one|two|three|four)-(?=[^.;]{0,40}?prong)",
+     "prong counts name decay topologies (two-prong, three- and four-prong)"),
+    (r"\b(?:two|three|four)-quark\b",
+     "parton counts name decay topologies (the four-quark decays X->YY->QQQQ)"),
+    (r"\binto\s+four\s+quarks\s+or\s+gluons\b",
+     "names the decay topology of the left-out family, X->YY->QQQQ with gluons included "
+     "(the appendix's 'four-prong: four quarks or gluons' group)"),
+    (r"\btwo-by-two\b", "the name of the vocabulary-by-mass-output design"),
+    (r"\bleave-one-family-out\b", "the name of the method"),
+    (r"\bone-versus-rest\b", "the definition of the macro AUC"),
+    (r"\bmax SIC of one\b",
+     "an identity: with no discrimination eps_S = eps_B, so eps_S/sqrt(eps_B) <= 1"),
+    (r"\bhalf the smallest interval\b", "the definition of sigma_eff"),
+]
+
+
+def without_allowed_words(text: str) -> str:
+    """The prose with every ALLOWED_WORDS phrase blanked; applied to the whole text,
+    since a phrase can break across lines, and keeping every newline."""
+    for pattern, _ in ALLOWED_WORDS:
+        text = re.sub(pattern, " ", text, flags=re.I)
+    return text
+
+
+def number_words(line: str) -> list[str]:
+    return [m.group() for m in NUMBER_WORD.finditer(line)]
+
+
+# Macros that hold a ratio of seed means with no error: kept in the generated
+# file, never quoted. Every ratio the text quotes is a \Paired... macro, the
+# paired geometric mean with its 95 % interval (Sec. 3.5).
+RATIO_OF_MEANS = re.compile(r"\\(\w*OmaRatio\w*|Rand(?:Sem)?CostFactor\w*|VcbFactor\w*)")
 
 
 def manuscript_files() -> list[pathlib.Path]:
@@ -104,16 +153,31 @@ def test_no_hand_typed_number_in_the_manuscript(path):
     if path is None:
         pytest.skip("no hand-written manuscript yet; the guard binds when there is one")
     bad = []
-    for line_no, line in enumerate(prose_of(path).splitlines(), 1):
+    prose = prose_of(path)
+    for line_no, (line, words) in enumerate(zip(prose.splitlines(),
+                                                without_allowed_words(prose).splitlines()), 1):
         for m in NUMBER.finditer(line):
             if m.group().lstrip("-") in ALLOWED:
                 continue
             bad.append(f"{path.relative_to(REPO)}:{line_no}: {m.group()!r} in {line.strip()[:90]!r}")
+        for w in number_words(words):
+            bad.append(f"{path.relative_to(REPO)}:{line_no}: {w!r} in {line.strip()[:90]!r}")
     assert not bad, (
         "numbers in the manuscript that the table generator did not produce:\n  "
         + "\n  ".join(bad)
-        + "\n\nUse a macro from paper/journal/results_generated.tex, or add the "
-          "literal to ALLOWED in this file with the reason it cannot change.")
+        + "\n\nUse a macro from paper/journal/results_generated.tex (word forms exist for "
+          "the counts the prose spells out), or add the literal to ALLOWED, or the "
+          "phrase to ALLOWED_WORDS, in this file with the reason it cannot change.")
+
+
+@pytest.mark.parametrize("path", manuscript_files() or [None])
+def test_no_ratio_of_means_is_quoted(path):
+    """A ratio of seed means carries no error and is not the point the paired
+    interval belongs to; the text quotes the paired ratio instead."""
+    if path is None:
+        pytest.skip("no hand-written manuscript yet")
+    used = sorted(set(RATIO_OF_MEANS.findall(prose_of(path))))
+    assert not used, f"{path.relative_to(REPO)} quotes ratios of means: {used}; use \\Paired..."
 
 
 @pytest.mark.parametrize("path", manuscript_files() or [None])
@@ -148,6 +212,17 @@ def test_the_guard_would_catch_a_typed_number(tmp_path):
     found = [m.group() for line in prose_of(f).splitlines()
              for m in NUMBER.finditer(line) if m.group().lstrip("-") not in ALLOWED]
     assert found == ["1320"]
+
+
+def test_the_guard_would_catch_a_spelled_out_count(tmp_path):
+    """Number words are numbers; structure words are allowed only as phrases."""
+    f = tmp_path / "fake.tex"
+    f.write_text("Each vocabulary is pretrained five times and saw a quarter of the jets.\n"
+                 "The two-prong and three- and four-prong decays, a two-by-two design.\n"
+                 "\\VocabSizeLonesixtwo{} classes, \\ProbeNSeedsWord{} runs, two runs.\n")
+    found = [w for line in without_allowed_words(prose_of(f)).splitlines()
+             for w in number_words(line)]
+    assert found == ["five", "quarter", "two"], found
 
 
 def test_the_guard_does_not_fire_on_a_macro_or_a_comment(tmp_path):

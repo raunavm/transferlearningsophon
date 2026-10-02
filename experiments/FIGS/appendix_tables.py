@@ -31,13 +31,15 @@ SHOWN = ["R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1"]      # coarser than 162, finer 
 PRETRAINED = {"L188", "L162", "R42_Q1", "R16_Q1"}
 PRETRAINED_V2 = {"R63_Q1", "R29_Q1"}                  # the 64- and 30-class rerun arms
 
-_TOKENS = re.compile(r"tauh|taue|taum|[bcsqgemv]")
+_TOKENS = re.compile(r"tauh|taue|taum|[bcsqgemvQ]")
 _TOKEN_TEX = {"tauh": r"\tau_h", "taue": r"\tau_e", "taum": r"\tau_\mu", "e": "e",
               "m": r"\mu", "v": r"\nu"}
 
 
 def native_tex(name: str) -> str:
-    """label_X_YY_bctauhv -> $X\\to YY\\to bc\\tau_h\\nu$; label_QCD_bbc -> QCD, $bbc$."""
+    """label_X_YY_bctauhv -> $X\\to YY\\to bc\\tau_h\\nu$; label_QCD_bbc -> QCD, $bbc$.
+    Also a flavour orbit of flavour_pair.v2.json, with Q for any quark:
+    X_YY_QQmm -> $X\\to YY\\to QQ\\mu\\mu$."""
     body = name.removeprefix("label_")
     if body.startswith("QCD_"):
         rest = body[4:]
@@ -77,26 +79,49 @@ def read_map(path: pathlib.Path) -> list[dict]:
 
 def partitions(maps_dir: pathlib.Path, rows: list[dict]) -> list[tuple[str, str, dict]]:
     """[(heading, column, {class_name: group id})] from every partition map in
-    configs/labelmaps (any *label_map.v*.csv but the tree's own), each file's
-    partitions in column order. The first grid's random partitions (v1) are
-    numbered from 1; a later file's are headed by version and number (v2.3), or by
-    their own name when it is not a numbered random partition (F0)."""
+    configs/labelmaps (any *_map*.v*.csv but the tree's own: the random partitions'
+    rand_label_map.v*.csv and the flavour pair's flavour_pair_map.v2.csv), each
+    file's partitions in column order. The first grid's random partitions (v1) are
+    numbered from 1; the rerun's (v2) are headed R and their number (R3), a later
+    version's by version and number (v3.2), and a map that is not a numbered random
+    partition by its own name (F0)."""
     out = []
     names = {r["class_name"] for r in rows}
-    for f in sorted(maps_dir.glob("*label_map*.v*.csv")):
+    version_of = lambda f: re.search(r"\.v(\d+)\.csv$", f.name).group(1)
+    # By version, the random partitions of each version before its other maps.
+    for f in sorted(maps_dir.glob("*_map*.v*.csv"),
+                    key=lambda f: (int(version_of(f)), not f.name.startswith("rand_"), f.name)):
         if f.name.startswith("rung_label_maps"):
             continue
-        version = re.search(r"\.v(\d+)\.csv$", f.name).group(1)
+        version = version_of(f)
         prows = read_map(f)
         if {r["class_name"] for r in prows} != names:
             raise SystemExit(f"FATAL: {f} does not cover the native classes of the label map")
         cols = [c for c in prows[0] if re.fullmatch(r"(RAND|FLAV)\w*", c) and not c.endswith("_name")]
         for i, c in enumerate(cols, 1):
             m = re.fullmatch(r"RAND\d*_p(\d+)", c)
-            head = (str(i) if version == "1" else f"v{version}.{m.group(1)}" if m
-                    else c.split("_", 1)[-1])
+            # FLAV_F1R is headed F1r, the name the text gives the random-cut control
+            head = (str(i) if version == "1" else f"R{m.group(1)}" if m and version == "2"
+                    else f"v{version}.{m.group(1)}" if m
+                    else re.sub(r"(?<=\d)R$", "r", c.split("_", 1)[-1]))
             out.append((head, c, {r["class_name"]: r[c] for r in prows}))
     return out
+
+
+def check_grid_covered(grid_path: pathlib.Path, parts: list) -> None:
+    """Every classification arm of the rerun grid trains on a tree level or on a
+    partition the appendix prints; anything else would be a vocabulary the paper
+    reports without defining. An arm's vocabulary is its config's name, less the
+    mass-output suffixes (the leave-one-family-out arms reuse their parents'
+    configs, the self-supervised arm has no classes)."""
+    printed = {c for _, c, _ in parts}
+    for arm in json.loads(grid_path.read_text())["arms"]:
+        if arm.get("num_classes") is None:
+            continue
+        vocab = re.sub(r"(_MASS)?(_LM)?$", "", pathlib.Path(arm["config"]).stem)
+        if vocab not in RUNGS and vocab not in printed:
+            raise SystemExit(f"FATAL: {grid_path} trains {arm['name']} on {vocab}, which no "
+                             f"partition map in configs/labelmaps prints in the appendix")
 
 
 def _longtable(colspec: str, head: str, rows: list[str], caption: str, label: str) -> str:
@@ -125,37 +150,85 @@ def table_vocabulary(rows: list[dict], parts: list) -> str:
         last = r["R16_Q1"]
         body.append(native_tex(r["class_name"]) + " & " + " & ".join(r[g] for g in SHOWN)
                     + "".join(f" & {p[r['class_name']]}" for _, _, p in parts) + " \\\\")
-    first = [h for h, _, _ in parts if h.isdigit()]
-    later = [h for h, _, _ in parts if not h.isdigit()]
+    first = [h for h, c, _ in parts if h.isdigit()]
+    later = [h for h, c, _ in parts if not h.isdigit() and not c.startswith("FLAV")]
+    flav = [h for h, c, _ in parts if c.startswith("FLAV")]
     caption = ("Every native JetClass-II class and the group it belongs to at each coarser level "
                f"of the label tree (columns headed by the number of classes at that level: "
-               f"{', '.join(str(sizes[r]) for r in SHOWN)}) and in each random partition. "
+               f"{', '.join(str(sizes[r]) for r in SHOWN)}), in each random partition and in "
+               "each vocabulary of the flavour pair. "
                "Group numbers are those of the released label maps; classes that share a number "
                "in a column share a class in that vocabulary. At the "
                f"{sizes['L162']}-class level every resonant class keeps its own label and the "
-               f"QCD classes share one; at {sizes['R3_VIS']} classes the groups are the two-, "
-               "three- and four-prong decays and QCD. Rows are ordered by the "
+               f"QCD classes share one; at {sizes['R3_VIS']} classes the groups are decays with "
+               f"{visible_prongs(rows)} visible prongs (a neutrino is not counted) and QCD. "
+               "Rows are ordered by the "
                f"{sizes['R16_Q1']}-class group (Table~\\ref{{tab:app-levels}}), with a gap between "
                "groups. $q$ is a $u$ or $d$ quark; $\\tau_h$ a hadronic and $\\tau_e$, $\\tau_\\mu$ "
                "leptonic $\\tau$ decays.")
     if first:
         caption += (f" Random partitions {', '.join(first)} are those of Sec.~\\ref{{sec:controls}}")
         caption += (f"; {', '.join(later)} those of the rerun." if later else ".")
+    if flav:
+        names = ", ".join(flav[:-1]) + " and " + flav[-1] if len(flav) > 1 else flav[0]
+        caption += (f" {names} are the rerun's flavour-pair vocabularies "
+                    "(Sec.~\\ref{sec:controls}).")
     ncol = len(SHOWN) + len(parts)
     return _longtable("l " + "r" * ncol, head, body, caption, "tab:app-vocabulary")
 
 
-def table_levels(rows: list[dict], v2_levels: bool) -> str:
-    """The levels of the tree, and the coarsest pretrained vocabulary in words."""
-    sizes = {rung: len({r[rung] for r in rows}) for rung in RUNGS}
-    rule = {"L188": "native classes",
+_WORD = {2: "two", 3: "three", 4: "four"}
+
+
+def visible_prongs(rows: list[dict]) -> str:
+    """The 4-class level in words, from its group names (2P_VIS, 3P_VIS, ...): it
+    counts VISIBLE prongs, so a four-body decay with a neutrino sits with the
+    three-prong decays."""
+    names = {r["R3_VIS_name"] for r in rows} - {"QCD_ALL"}
+    k = sorted(int(m.group(1)) for n in names for m in [re.fullmatch(r"(\d)P_VIS", n)] if m)
+    if len(k) != len(names) or not k:
+        raise SystemExit(f"FATAL: the 4-class level's groups {sorted(names)} are not n-prong "
+                         "visible-content groups")
+    w = [_WORD[n] for n in k]
+    return ", ".join(w[:-1]) + " or " + w[-1] if len(w) > 1 else w[0]
+
+
+def level_rules(rows: list[dict]) -> dict:
+    """What each level of the tree labels, in words, each checked against the
+    group names of the label map so that a description cannot drift from it: the
+    flavour tag a level's names carry (|nb2_nc0, |B, |HF), none at the 17-class
+    level, the visible-prong count at the 4-class level."""
+    names = {r: {row[f"{r}_name"] for row in rows} for r in RUNGS}
+    qcd = {row["L162"] for row in rows if row["class_name"].startswith("label_QCD_")}
+    n_res = sum(not row["class_name"].startswith("label_QCD_") for row in rows)
+    tags = {r: {n.split("|", 1)[1] for n in names[r] if "|" in n} for r in RUNGS}
+    checks = {
+        "L188": len(names["L188"]) == len(rows),
+        "L162": len(qcd) == 1 and len(names["L162"]) == n_res + 1,
+        "R63_Q1": bool(tags["R63_Q1"]) and all(re.fullmatch(r"nb\d_nc\d", t) for t in tags["R63_Q1"]),
+        "R42_Q1": bool(tags["R42_Q1"]) and tags["R42_Q1"] <= {"B", "C", "LG"},
+        "R29_Q1": bool(tags["R29_Q1"]) and tags["R29_Q1"] <= {"HF", "LG"},
+        "R16_Q1": not tags["R16_Q1"],
+        "R3_VIS": bool(visible_prongs(rows)),
+        "R1_Q1": names["R1_Q1"] == {"RESONANT_ALL", "QCD_ALL"}}
+    bad = [r for r, ok in checks.items() if not ok]
+    if bad:
+        raise SystemExit(f"FATAL: the appendix's description of {bad} no longer matches the "
+                         "group names of the label map")
+    return {"L188": "native classes",
             "L162": "one QCD class; every resonant class kept",
             "R63_Q1": "each decay topology by its numbers of $b$ and $c$ quarks",
             "R42_Q1": "each decay topology by whether it holds a $b$ quark, else a $c$, else neither",
             "R29_Q1": "each decay topology by whether it holds a $b$ or $c$ quark",
             "R16_Q1": "decay topology: prongs, and quarks or gluons and leptons, without flavour",
-            "R3_VIS": "two-, three- or four-prong decay, or QCD",
+            "R3_VIS": f"{visible_prongs(rows)} visible prongs (a neutrino is not counted), or QCD",
             "R1_Q1": "resonance decay or QCD"}
+
+
+def table_levels(rows: list[dict], v2_levels: bool) -> str:
+    """The levels of the tree, and the coarsest pretrained vocabulary in words."""
+    sizes = {rung: len({r[rung] for r in rows}) for rung in RUNGS}
+    rule = level_rules(rows)
     pre = lambda r: ("yes" if r in PRETRAINED else
                      ("yes (rerun)" if v2_levels else "\\pending{rerun}") if r in PRETRAINED_V2 else "no")
     body = [f"{sizes[r]} & {rule[r]} & {pre(r)} \\\\" for r in RUNGS]
@@ -265,8 +338,12 @@ def build(root: pathlib.Path, ladder_path: pathlib.Path, vcb_path: pathlib.Path 
     rows = read_map(maps / "rung_label_maps.v1.csv")
     if not all(r["class_name"].startswith("label_") for r in rows):
         return {}                                   # a synthetic map: no JetClass-II names to print
+    parts = partitions(maps, rows)
+    grid = root / "configs" / "arms" / "v2_grid.json"
+    if grid.exists():
+        check_grid_covered(grid, parts)
     out = {"tables/appendix_levels.tex": table_levels(rows, v2_levels),
-           "tables/appendix_vocabulary.tex": table_vocabulary(rows, partitions(maps, rows))}
+           "tables/appendix_vocabulary.tex": table_vocabulary(rows, parts)}
     if (root / "experiments" / "EVAL" / "probe.py").exists():
         load = lambda p: json.loads(pathlib.Path(p).read_text()) if p and pathlib.Path(p).exists() else None
         out["tables/appendix_tasks.tex"] = table_tasks(root, rows, load(ladder_path), load(vcb_path),
