@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Re-run in the v2 image (Python 3.10) of the tests that failed there at 247e399
+  # (ledger mtx2-tests-247e399) for want of `zip` (the fake checkpoints of the
+  # fine-tuning retry and v2 spec tests), for Python 3.12's compensated sum() (fixed at
+  # 5047589: math.fsum in scripts/build_ft_jobs.py) and for a leaked sleeping thread
+  # (fixed: tests/test_release_v2.py), plus the two reproduction tests that differ in
+  # the last digits under the image's numpy/scipy. Installs zip. CPU only; writes the
+  # pytest output (kilobytes) to /data/results/tests/5047589.
+  name: mtx2-tests-ft-5047589-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7
+        command: ["/bin/bash", "-c"]
+        env:
+        - name: COMMIT
+          value: "5047589890be7e8e624195755ee923bc873cecdd"
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        args:
+        - |
+          set -uo pipefail
+          OUT=/data/results/tests/${COMMIT:0:7}
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          echo "PVC used: ${USED}%  node: ${NODE_NAME}"
+          [ "${USED}" -le 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          mkdir -p ${OUT}
+          git clone -q https://github.com/raunavm/transferlearningsophon.git /workspace/repo || exit 1
+          cd /workspace/repo && git checkout -q ${COMMIT} || exit 1
+          git rev-parse HEAD
+          (apt-get update -qq && apt-get install -y -qq zip >/dev/null) || exit 1; zip -v | head -2
+          pip install --no-cache-dir -q pytest pyarrow==25.0.1 || exit 1
+          python3 -c "import sys, torch, weaver; print(sys.version.split()[0], torch.__version__, weaver.__file__)"
+          python3 -m pytest tests/test_ft_retry_policy.py tests/test_ft_v2_finetune_specs.py tests/test_ft_jobs_baselines.py tests/test_wave3_specs.py tests/test_release_v2.py tests/test_spec_pins.py tests/test_v2_arms.py tests/test_aoj_refit_from_bins.py -q -p no:cacheprovider -rfE > ${OUT}/pytest.txt 2>&1
+          echo "pytest rc=$?"
+          grep -E '^(FAILED|ERROR) ' ${OUT}/pytest.txt | cut -c1-400 | head -300
+          tail -3 ${OUT}/pytest.txt
+          echo "TESTS COMPLETE"
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "20Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "4Gi" }
