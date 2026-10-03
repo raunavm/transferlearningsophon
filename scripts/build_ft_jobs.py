@@ -55,6 +55,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import math
 import pathlib
 import re
 import subprocess
@@ -1524,7 +1525,7 @@ def shard(inits, cells_of, n=N_SHARDS) -> list[list]:
     """Split inits into n disjoint subsets: heaviest init first, onto the
     lightest shard. Equal costs deal round-robin, so no shard holds one
     granularity alone. Each subset keeps the inits' original order."""
-    cost = {i[0]: sum(cost_h(c) for c in cells_of([i])) for i in inits}
+    cost = {i[0]: math.fsum(cost_h(c) for c in cells_of([i])) for i in inits}
     order = sorted(range(len(inits)), key=lambda k: (-cost[inits[k][0]], k))
     load, out = [0.0] * n, [[] for _ in range(n)]
     for k in order:
@@ -2534,7 +2535,7 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
                     + f"  # v2 FINE-TUNING ({kind}), pretrained checkpoint rule {rule}: {what}.\n"
                       "  # DO NOT APPLY before these v2 checkpoints exist.\n"
                       f"  # inits: {' '.join(n for n, *_ in s)}\n"
-                      f"  # {len(cells)} fine-tunes, ~{sum(cost_h(c) for c in cells):.0f} GPU-h. "
+                      f"  # {len(cells)} fine-tunes, ~{math.fsum(cost_h(c) for c in cells):.0f} GPU-h. "
                       f"Root {V2_ROOT}/{rule}.\n")
     ref = INITS_LATER[SCRATCH_REF]
     name = "ft-v2-legs-scratch-raunav"
@@ -2611,7 +2612,7 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
                            "  # checkpoints wave 2 does not cover, ONE fine-tuning seed per pretrained\n"
                            "  # checkpoint (the pretraining seed is the unit of replication), same tree.\n"
                            f"  # inits: {' '.join(n for n, *_ in inits)}\n"
-                           f"  # {len(cells)} fine-tunes, ~{sum(cost_h(c) for c in cells):.0f} GPU-h. "
+                           f"  # {len(cells)} fine-tunes, ~{math.fsum(cost_h(c) for c in cells):.0f} GPU-h. "
                            "Per-cell mkdir lock; per-shard halt markers.\n")
     if bench_v2:
         shards = [] if later else [(chr(ord("a") + i), s)
@@ -2632,7 +2633,7 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
                            "  # loop order; the Herwig read-out on every q/g cell. Supersedes\n"
                            "  # job-ft-legs-bench-raunav.yaml, which never ran.\n"
                            f"  # inits: {' '.join(n for n, *_ in inits)}\n"
-                           f"  # {len(cells)} fine-tunes, ~{sum(cost_h(c) for c in cells):.0f} GPU-h.\n")
+                           f"  # {len(cells)} fine-tunes, ~{math.fsum(cost_h(c) for c in cells):.0f} GPU-h.\n")
         if not later:
             specs["job-ft-stage-qg-herwig-raunav.yaml"] = job(
                 "ft-stage-qg-herwig-raunav", _fill(STAGE_HERWIG, pin), gpu=False, cpu="4",
@@ -2655,7 +2656,7 @@ def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
                            "  # features_last/) and the best-validation epoch (features/). Bench v2\n"
                            "  # kept only the best epoch, so the registered rule was not computable.\n"
                            f"  # inits: {' '.join(n for n, *_ in inits)}\n"
-                           f"  # {len(cells)} fine-tunes, ~{sum(cost_h(c) for c in cells):.0f} GPU-h. Root {BENCH_V3_ROOT}.\n")
+                           f"  # {len(cells)} fine-tunes, ~{math.fsum(cost_h(c) for c in cells):.0f} GPU-h. Root {BENCH_V3_ROOT}.\n")
     return specs
 
 
@@ -2715,7 +2716,7 @@ def plan(later: list | None = None) -> str:
         total = 0.0
         for i, s in enumerate(shard(inits, cells_of)):
             cells = cells_of(s)
-            h = sum(cost_h(c) for c in cells)
+            h = math.fsum(cost_h(c) for c in cells)
             total += h
             lines.append(f"{what} shard {chr(ord('a') + i)}: {len(s):2d} inits "
                          f"{len(cells):3d} cells {h:6.1f} GPU-h  "
@@ -2725,7 +2726,7 @@ def plan(later: list | None = None) -> str:
         for what, cells_of in (("wave 3", cells_legs), ("bench v2", cells_bench)):
             cells = cells_of(INITS_LATER[g])
             lines.append(f"{what} later {g}: {len(cells)} cells "
-                         f"{sum(cost_h(c) for c in cells):.1f} GPU-h")
+                         f"{math.fsum(cost_h(c) for c in cells):.1f} GPU-h")
     return "\n".join(lines)
 
 

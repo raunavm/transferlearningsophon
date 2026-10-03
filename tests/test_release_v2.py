@@ -10,6 +10,7 @@ import os
 import pathlib
 import subprocess
 import sys
+import types
 
 import pytest
 
@@ -108,7 +109,9 @@ def test_the_order_is_tier_then_run_index_then_the_registry():
 def test_apply_releases_in_order_until_the_pending_cap(kube, monkeypatch, capsys):
     names, log = kube
     sleeps = []
-    monkeypatch.setattr(R.time, "sleep", sleeps.append)
+    # the script's own `time`, not the module every thread shares: a daemon thread an
+    # earlier test left in this process (pretrain_v2's MemMonitor) also calls time.sleep
+    monkeypatch.setattr(R, "time", types.SimpleNamespace(sleep=sleeps.append))
     assert R.main(["--apply"]) == 0
     # one grid pod pending, cap 3: two releases, the first suspended jobs in grid order
     assert _patched(log) == names[3:5] and sleeps == [R.RELEASE_GAP_S] * 2
