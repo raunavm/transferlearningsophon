@@ -44,7 +44,7 @@ spec:
           set -euo pipefail
           git clone --depth 1 --branch "${REPO_REF}" https://github.com/raunavm/transferlearningsophon.git /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
-          pip install --no-cache-dir -q pyarrow || exit 1
+          pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
           (
           set -euo pipefail
           HALT=42

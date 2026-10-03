@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # The full test suite (tests/ and src/stats/tests/) at commit 247e399, run in the v2
+  # image (weaver 0.4.17, Python 3.10), so the tests marked needs_0417 run too. Run on the
+  # cluster rather than the laptop (PI, 2026-10-02). CPU only; writes the pytest output
+  # (kilobytes) to /data/results/tests/247e399 and prints the failures and the summary.
+  name: mtx2-tests-247e399-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7
+        command: ["/bin/bash", "-c"]
+        env:
+        - name: COMMIT
+          value: "247e39923bb43892de6ca60c945bcc6cc87dcd8d"
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        args:
+        - |
+          set -uo pipefail
+          OUT=/data/results/tests/${COMMIT:0:7}
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          echo "PVC used: ${USED}%  node: ${NODE_NAME}"
+          [ "${USED}" -le 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          mkdir -p ${OUT}
+          git clone -q https://github.com/raunavm/transferlearningsophon.git /workspace/repo || exit 1
+          cd /workspace/repo && git checkout -q ${COMMIT} || exit 1
+          git rev-parse HEAD
+          pip install --no-cache-dir -q pytest pyarrow || exit 1
+          python3 -c "import sys, torch, weaver; print(sys.version.split()[0], torch.__version__, weaver.__file__)"
+          python3 -m pytest tests/ src/stats/tests/ -q -p no:cacheprovider -rfE > ${OUT}/pytest.txt 2>&1
+          echo "pytest rc=$?"
+          grep -E '^(FAILED|ERROR) ' ${OUT}/pytest.txt | cut -c1-400 | head -300
+          tail -3 ${OUT}/pytest.txt
+          echo "TESTS COMPLETE"
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "20Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "4Gi" }

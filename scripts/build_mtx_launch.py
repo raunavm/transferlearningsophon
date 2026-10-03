@@ -543,9 +543,12 @@ V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
 # The image by digest, not by its tag (:cu121), so that every pod of a run gets the same
 # runtime even if the tag moves; the digest is the one the cu121 tag resolved to on every
 # GPU node in us-west on 2026-10-01 (the nodes' image lists). IMAGE_DIGEST puts it in each
-# run manifest (scripts/write_run_manifest.py). pyarrow, which the image lacks, stays
-# unpinned: no installed version is recorded anywhere in the repository.
+# run manifest (scripts/write_run_manifest.py). pyarrow, which the image lacks, is pinned to
+# the version pip installed into this image on 2026-10-02 (job mtx2-tests-247e399, beside
+# numpy 1.26.4 and typing_extensions 4.15.0), so a release during the grid cannot change the
+# runtime between runs.
 V2_IMAGE_DIGEST = "sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7"
+V2_PYARROW = "pyarrow==25.0.1"
 V2_IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@" + V2_IMAGE_DIGEST
 V2_GPU = "NVIDIA-GeForce-RTX-3090"
 V2_RATE = "5e-4"                    # RATES: every arm of the ladder trains at 5e-4
@@ -851,7 +854,7 @@ def v2_job(name: str, scripts: list, gpu, tag: str, title: str, *,
               'git clone --depth 1 --branch "${REPO_REF}" '
               "https://github.com/raunavm/transferlearningsophon.git /workspace/transferlearningsophon\n"
               "cd /workspace/transferlearningsophon\n"
-              "pip install --no-cache-dir -q pyarrow || exit 1\n" + pre + "".join(scripts))
+              f"pip install --no-cache-dir -q {V2_PYARROW} || exit 1\n" + pre + "".join(scripts))
     body = "\n".join(("          " + ln) if ln else "" for ln in script.splitlines())
     return f"""apiVersion: batch/v1
 kind: Job
@@ -971,6 +974,60 @@ def v2_smoke_specs(tag: str, deterministic: bool = False) -> dict:
     return out
 
 
+ENDRUN_ROOT = SMOKE_ROOT + "/endrun"
+# What a finished smoke run must hold (3 epochs: every epoch is in the window, so the
+# weight average is of epochs 0-2), checked in the pod after the runs.
+ENDRUN_CHECK = r"""python3 - "$@" <<'PY'
+import json, pathlib, sys
+bad = []
+for d in map(pathlib.Path, sys.argv[1:]):
+    need = ["DONE", "best_window_epoch.json", "best_epoch.json", "net_wavg0-2_state.pt",
+            "net_wavg0-2.json", "init_trunk.pt", "grad_diag_batch.pt", "metrics/grad_diag-000.json"]
+    need += [f"net_epoch-{e}_state.pt" for e in range(3)]
+    miss = [n for n in need if not (d / n).exists()]
+    w = json.loads((d / "best_window_epoch.json").read_text()) if (d / "best_window_epoch.json").exists() else {}
+    g = json.loads((d / "metrics/epoch-002.json").read_text()).get("grad_diag", {}) if (d / "metrics/epoch-002.json").exists() else {}
+    a = json.loads((d / "net_wavg0-2.json").read_text()) if (d / "net_wavg0-2.json").exists() else {}
+    print(f"{d.name}: missing {miss or 'nothing'}; window best epoch {w.get('epoch')} ({w.get('metric')}); "
+          f"grad norms {g.get('grad_norm')}; cosine {g.get('cosine')}; batch qcd share "
+          f"{g.get('batch', {}).get('qcd_share')}; BN recompute {a.get('bn_recompute', {}).get('n_jets')} jets"
+          + (f"; killed: {(d / 'KILLED').read_text().strip()}" if (d / "KILLED").exists() else ""))
+    bad += [d.name] * bool(miss)
+print("END-OF-RUN CHECK", "FAILED: " + ", ".join(bad) if bad else "PASSED")
+sys.exit(42 if bad else 0)        # 42 fails the Job at once: a retry would only repeat the check
+PY
+"""
+
+
+def v2_endrun_smoke_specs(tag: str) -> dict:
+    """The end of a run, on the GPUs the grid uses, for the objectives the first smoke
+    (v2_smoke_specs: 17 and 188 classes) never ran (audit 2026-10-01, CKPT-3): the
+    self-supervised model (its weight average and BatchNorm recompute had never run in
+    the image), the mass-output model, killed during epoch 2 and resumed, and a
+    leave-one-family-out model, on one RTX 3090; and the self-supervised model on an L40,
+    the product of run indices 4-5. 3 epochs x 200,000 jets each, run 1, under
+    ENDRUN_ROOT; each pod then checks what every finished run must hold (ENDRUN_CHECK)."""
+    kw = dict(out_root=ENDRUN_ROOT, epochs=SMOKE_EPOCHS, samples=SMOKE_SAMPLES)
+    mpm, mass, lofo = _arm("MPM"), _arm("R16_Q1_MASS"), _arm("R16_Q1_LOFO4P")
+    check = lambda ids: ENDRUN_CHECK.replace('"$@"', " ".join(f"{ENDRUN_ROOT}/{i}" for i in ids))
+    out = {}
+    ids = ["endrun-mpm", "endrun-mass-b", "endrun-lofo"]
+    scripts = [v2_script(mpm, 1, run_id=ids[0], **kw),
+               v2_script(mass, 1, run_id=ids[1], kill_after_epoch=1, **kw),
+               v2_script(lofo, 1, run_id=ids[2], **kw), check(ids)]
+    name = "mtx2-endrun-3090-raunav"
+    out[f"job-{name}.yaml"] = v2_job(name, scripts, V2_GPU, tag,
+                                     "v2 END-OF-RUN SMOKE on RTX 3090: self-supervised, mass output "
+                                     "(kill + resume), leave-one-family-out.", pre=f"mkdir -p {ENDRUN_ROOT}\n")
+    l40 = V2_GPU_BY_RUN[4]
+    name = f"mtx2-endrun-{gpu_short(l40)}-raunav"
+    rid = f"endrun-mpm-{gpu_short(l40)}"
+    out[f"job-{name}.yaml"] = v2_job(name, [v2_script(mpm, 1, run_id=rid, **kw), check([rid])], l40, tag,
+                                     f"v2 END-OF-RUN SMOKE on {l40}: self-supervised.",
+                                     pre=f"mkdir -p {ENDRUN_ROOT}\n")
+    return out
+
+
 # GPUs of 24 GB or more in us-west that the cu121 image supports (not Blackwell).
 ANY_GPUS = ("NVIDIA-GeForce-RTX-3090", "NVIDIA-L40", "NVIDIA-RTX-A6000", "NVIDIA-A40", "NVIDIA-L4",
             "NVIDIA-A100-SXM4-80GB", "NVIDIA-A100-80GB-PCIe", "NVIDIA-H100-80GB-HBM3",
@@ -1028,7 +1085,7 @@ def v2_dryrun_spec(tag: str, full_columns: bool = False, label: str = "", arm: s
         'git clone --depth 1 --branch "${REPO_REF}" '
         "https://github.com/raunavm/transferlearningsophon.git /workspace/transferlearningsophon\n"
         "cd /workspace/transferlearningsophon\n"
-        "pip install --no-cache-dir -q pyarrow || exit 1\n" + cmd).splitlines())
+        f"pip install --no-cache-dir -q {V2_PYARROW} || exit 1\n" + cmd).splitlines())
     mem = V2_MEM if full_columns else "16Gi"
     return name, f"""apiVersion: batch/v1
 kind: Job
@@ -1125,7 +1182,7 @@ def v2_makeweight_specs(tag: str, pods: int = 2, label: str = "") -> dict:
         script = f"""set -euo pipefail
 git clone --depth 1 --branch "${{REPO_REF}}" https://github.com/raunavm/transferlearningsophon.git /workspace/transferlearningsophon
 cd /workspace/transferlearningsophon
-pip install --no-cache-dir -q pyarrow || exit 1
+pip install --no-cache-dir -q {V2_PYARROW} || exit 1
 OUT={MAKEWEIGHT_ROOT}
 mkdir -p ${{OUT}}
 USE=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
@@ -1360,6 +1417,9 @@ def main() -> int:
     ap.add_argument("--v2-smoke", metavar="DIR", default=None,
                     help="write the v2 smoke, GPU-numerics and loader dry-run specs into DIR")
     ap.add_argument("--deterministic", action="store_true", help="--v2-smoke: the -det variants")
+    ap.add_argument("--v2-endrun-smoke", metavar="DIR", default=None,
+                    help="write the end-of-run smoke specs (self-supervised, mass output, leave-one-"
+                         "family-out; RTX 3090 and the run 4-5 product) into DIR")
     args = ap.parse_args()
 
     if args.v2_smoke:
@@ -1385,6 +1445,16 @@ def main() -> int:
         V2_FINALIZE_DIR.mkdir(parents=True, exist_ok=True)
         (V2_FINALIZE_DIR / f"job-{n}.yaml").write_text(sp)
         print(V2_FINALIZE_DIR / f"job-{n}.yaml")
+        return 0
+
+    if args.v2_endrun_smoke:
+        if not args.tag:
+            ap.error("--v2-endrun-smoke needs --tag")
+        d = pathlib.Path(args.v2_endrun_smoke)
+        d.mkdir(parents=True, exist_ok=True)
+        for fn, spec in v2_endrun_smoke_specs(args.tag).items():
+            (d / fn).write_text(spec)
+            print(d / fn)
         return 0
 
     if args.v2_makeweight:

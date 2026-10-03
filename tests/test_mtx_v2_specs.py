@@ -206,6 +206,30 @@ def test_smoke_specs_stay_inside_the_gate():
     assert "-o num_classes 188 " in s and "-o num_classes 17 " in s
 
 
+def test_end_of_run_smoke_covers_the_objectives_the_first_smoke_did_not():
+    specs = b.v2_endrun_smoke_specs(TAG)
+    assert set(specs) == {"job-mtx2-endrun-3090-raunav.yaml", "job-mtx2-endrun-l40-raunav.yaml"}
+    for f, spec in specs.items():
+        y = yaml.safe_load(spec)
+        assert "raunav" in y["metadata"]["name"] and not y["spec"].get("suspend")
+        s = _script(spec)
+        assert subprocess.run(["bash", "-n"], input=s, text=True).returncode == 0
+        for line in re.findall(r"python3 experiments/MTX/pretrain_v2\.py --seed .*", s):
+            assert int(re.search(r"--num-epochs (\d+)", line).group(1)) == 3
+            assert int(re.search(r"--samples-per-epoch (\d+)", line).group(1)) == 200_000
+            assert "--device cuda" in line
+        assert f"OUT={b.ENDRUN_ROOT}/" in s and "/mtx_v2/mtx-" not in s     # never a grid run's directory
+        assert "END-OF-RUN CHECK" in s and s.index("END-OF-RUN CHECK") > s.rindex("pretrain_v2.py --seed")
+    s = _script(specs["job-mtx2-endrun-3090-raunav.yaml"])
+    assert [m.group(1) for m in re.finditer(r"^RUN_ID=(\S+)$", s, re.M)] == ["endrun-mpm", "endrun-mass-b", "endrun-lofo"]
+    assert s.count("kill -9 ${BG}") == 1 and "--mpm " in s and "--mass-lambda 5.0" in s
+    assert "--data-windows 3" in s and "--extra-selection" in s
+    prod = lambda f: yaml.safe_load(specs[f])["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
+        "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
+    assert {"key": "nvidia.com/gpu.product", "operator": "In", "values": [b.V2_GPU_BY_RUN[4]]} in prod(
+        "job-mtx2-endrun-l40-raunav.yaml")
+
+
 def test_dry_run_specs_request_no_gpu():
     for full in (False, True):
         name, spec = b.v2_dryrun_spec(TAG, full)

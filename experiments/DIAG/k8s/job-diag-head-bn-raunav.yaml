@@ -31,6 +31,8 @@ metadata:
   # as a failed attempt, as in the v2 fine-tuning specs. Finished runs are skipped on
   # a retry (their DONE file).
   # The analysis JSON and its sha256 are printed at the end, to be read from the log.
+  # Image by digest, the one the v1 job's :cu121 tag resolves to (pods of 2026-10-02), and
+  # pyarrow pinned as in the v2 grid (scripts/build_mtx_launch.py V2_PYARROW).
   name: diag-head-bn-raunav
   namespace: cms-ml
 spec:
@@ -49,7 +51,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: main
-        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7
         command: ["/bin/bash", "-c"]
         env:
         - name: REPO_REF
@@ -79,7 +81,7 @@ spec:
             /workspace/transferlearningsophon || fail 1
           cd /workspace/transferlearningsophon
           git rev-parse HEAD
-          pip install --no-cache-dir -q pyarrow || fail 1
+          pip install --no-cache-dir -q pyarrow==25.0.1 || fail 1
           python3 experiments/FT/gpu_probe.py || {
             echo "preflight pod=${POD_NAME} node=${NODE_NAME} $(date -u +%FT%TZ)" >> ${OUT}/NODE_FAULTS; exit ${NODE_FAULT}; }
           nvidia-smi --query-gpu=name,memory.total --format=csv,noheader || true

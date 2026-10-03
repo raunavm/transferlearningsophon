@@ -281,8 +281,11 @@ def test_the_job_spec_is_the_v1_diagnostics_with_the_batchnorm_step():
     committed = json.loads((REPO / "experiments/FIGS/data/head_epoch_diag/head_epoch_diag_v2.json").read_text())
     assert committed["sample"]["gpu"] == "NVIDIA L40"
     cn, co = pn["containers"][0], po["containers"][0]
-    for k in ("name", "image", "command", "volumeMounts"):
+    for k in ("name", "command", "volumeMounts"):
         assert cn[k] == co[k]
+    # the image by digest: what the v1 job's tag resolves to (pods of 2026-10-02)
+    ml = _load("build_mtx_launch", "scripts/build_mtx_launch.py")
+    assert co["image"].endswith(":cu121") and cn["image"] == ml.V2_IMAGE
     assert cn["resources"]["limits"]["nvidia.com/gpu"] == co["resources"]["limits"]["nvidia.com/gpu"]
     assert {"name": "REPO_REF", "value": "mtx-s1.98"} in cn["env"]
     sh = cn["args"][0]
