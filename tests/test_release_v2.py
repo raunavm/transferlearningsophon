@@ -1,6 +1,6 @@
 """scripts/release_v2.py against a fake kubectl on PATH: it releases suspended grid
-jobs in grid order while fewer than --max-pending grid pods are pending, one patch
-per job; with --create-tier it creates a tier's missing jobs, suspended, from the
+jobs in grid order while fewer than --max-pending grid pods are pending on the job's
+GPU product, one patch per job; with --create-tier it creates a tier's missing jobs, suspended, from the
 committed specs with `kubectl create`; and it calls kubectl for nothing else."""
 from __future__ import annotations
 
@@ -122,7 +122,7 @@ def test_apply_releases_in_order_until_the_pending_cap(kube, monkeypatch, capsys
 
 def test_kubectl_is_asked_for_nothing_but_reads_and_unsuspending_grid_jobs(kube, monkeypatch):
     names, log = kube
-    monkeypatch.setattr(R.time, "sleep", lambda s: None)
+    monkeypatch.setattr(R, "time", types.SimpleNamespace(sleep=lambda s: None))
     R.main(["--apply", "--max-pending", "10"])
     assert _patched(log) == names[3:7]                      # every suspended grid job, none other
     for c in _calls(log):
@@ -135,9 +135,30 @@ def test_kubectl_is_asked_for_nothing_but_reads_and_unsuspending_grid_jobs(kube,
 
 def test_nothing_is_released_at_the_cap(kube, monkeypatch):
     names, log = kube
-    monkeypatch.setattr(R.time, "sleep", lambda s: pytest.fail("slept without releasing"))
+    monkeypatch.setattr(R, "time", types.SimpleNamespace(sleep=lambda s: pytest.fail("slept without releasing")))
     assert R.main(["--apply", "--max-pending", "1"]) == 0
     assert _patched(log) == []
+
+
+def test_the_cap_is_per_gpu_product(kube, monkeypatch):
+    """Three 3090 pods pending stop the 3090 jobs, not the first L40 job (run index 4)."""
+    names, log = kube
+    gpu = R.gpu_of()
+    l40 = [n for n in names if gpu[n] != gpu[names[0]]]
+    assert l40 and all(gpu[n] == gpu[l40[0]] for n in l40)
+    path = log.parent / "state.json"
+    st = json.loads(path.read_text())
+    st["pods"] += [_pod(names[3], "Pending"), _pod(names[4], "Pending")]   # with names[7]: three on 3090
+    for j in st["jobs"]:
+        if j["metadata"]["name"] in (names[3], names[4]):
+            j["spec"]["suspend"] = False
+    st["jobs"] += [_job(l40[0], True), _job(l40[1], True)]
+    path.write_text(json.dumps(st))
+    sleeps = []
+    monkeypatch.setattr(R, "time", types.SimpleNamespace(sleep=sleeps.append))
+    assert R.main(["--apply", "--max-pending", "3"]) == 0
+    assert _patched(log) == l40[:2] and sleeps == [R.RELEASE_GAP_S] * 2   # names[5], names[6] wait
+    assert R.main(["--apply", "--max-pending", "3"]) == 0 and _patched(log) == l40[:2]
 
 
 def test_the_default_is_a_dry_run(kube):
