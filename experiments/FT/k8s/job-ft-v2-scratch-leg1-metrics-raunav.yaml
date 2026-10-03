@@ -1,0 +1,82 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # V2 FROM-SCRATCH REFERENCE, LEG 1 READOUT, 2026-10-03.
+  #
+  # Reads the 12 cells of ft-v2-legs-scratch (ParT's own from-scratch recipe on
+  # the held-out JetClass-II subsets, 1e3..1e6 jets x fine-tuning seeds 1-3) with
+  # experiments/FT/leg1_metrics.py, as the v2 rules' leg-1 readouts will read
+  # theirs: accuracy on every test row, macro one-vs-rest AUC at stride 4, the
+  # training subset's class coverage and weaver's own run arguments per cell.
+  # --expect-cells fails the job unless every cell the generator emitted for
+  # scratch/leg1 (experiments/FT/data/ft_v2_expected_cells.json) is read.
+  #
+  # Derived from job-ft-w2b-leg1-metrics-v2-raunav.yaml. Differences: the pin
+  # (mtx-s1.98, which has the v2 cell checks), the image pinned by digest and
+  # pyarrow==25.0.1 as in every v2 spec, the root and a new output directory,
+  # which is refused if it exists, and backoffLimit 1. Output: one JSON of a few
+  # tens of kB.
+  name: ft-v2-scratch-leg1-metrics-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: readout
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT=/data/results/ft_v2/scratch_leg1_metrics
+          [ ! -e "${OUT}/leg1_metrics.json" ] || { echo "FATAL: ${OUT}/leg1_metrics.json exists; use a new output directory"; exit 1; }
+          pip install --no-cache-dir -q pyarrow==25.0.1
+          git clone --depth 1 --branch "mtx-s1.98" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1
+
+          ROOT=/data/results/ft_v2/scratch/leg1
+          [ -d "${ROOT}" ] || { echo "FATAL: no ${ROOT}"; exit 1; }
+          n=$(find ${ROOT} -name DONE | wc -l)
+          echo "complete leg1 cells: ${n}"
+
+          mkdir -p ${OUT}
+          python3 experiments/FT/leg1_metrics.py \
+            --root ${ROOT} \
+            --out ${OUT} \
+            --auc-stride 4 \
+            --expect-cells experiments/FT/data/ft_v2_expected_cells.json:scratch
+
+          echo "=== summary ==="
+          python3 -c "
+          import json
+          d=json.load(open('${OUT}/leg1_metrics.json'))
+          for init,per in sorted(d['summary'].items()):
+              for N,s in sorted(per.items()):
+                  sd=s['accuracy_sd']
+                  print(f\"{init:16} {N:10} acc={s['accuracy_mean']:.5f}\" +
+                        (f\" +-{sd:.5f}\" if sd is not None else '') +
+                        f\" macroAUC={s['macro_auc_mean']:.5f} n={s['n_seeds']}\")
+          "
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
