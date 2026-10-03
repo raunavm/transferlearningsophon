@@ -31,7 +31,7 @@ caches (extract_features.py, 2,000,000 jets from epoch 79):
 
 Output, per checkpoint:  <out>/<tag>/{features.npy, pooled.npy, rows.npy,
 label188.npy, observers.npz, head_scores.npz, manifest.json}, tag = "best70",
-"bestval", "wavg", "init" or "e079" (resolve_checkpoints). Two tags that resolve
+"bestval", "wavg", "best70_bn", "bestval_bn", "init" or "e079" (resolve_checkpoints). Two tags that resolve
 to the same file are extracted once: the first tag's directory holds the files,
 the other is a symlink to it, and the manifest lists both under "tags".
 rows.npy indexes the test stream, so any two checkpoints, runs or vocabularies are
@@ -157,6 +157,30 @@ def best_window_epoch(run_dir: pathlib.Path) -> int:
 
 WAVG_FILE = "net_wavg70-79_state.pt"
 INIT_FILE = "init_trunk.pt"
+
+
+def _sha256(path: pathlib.Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def bn_twin(run_dir: pathlib.Path, epoch: int) -> pathlib.Path:
+    """net_epoch-<e>_bn_state.pt, the epoch's state file with BatchNorm statistics
+    recomputed on the weight average's sample (experiments/MTX/bn_twins_v2.py; PRESPEC
+    A14's BatchNorm rule fired), checked against its record: the epoch, the input's
+    sha256 against the epoch's state file, and its own sha256."""
+    state, meta = run_dir / f"net_epoch-{epoch}_bn_state.pt", run_dir / f"net_epoch-{epoch}_bn.json"
+    if not meta.exists() or not state.exists():
+        raise SystemExit(f"FATAL: {run_dir} has no BatchNorm twin of epoch {epoch}: "
+                         "run experiments/MTX/bn_twins_v2.py on it")
+    m = json.loads(meta.read_text())
+    src = run_dir / f"net_epoch-{epoch}_state.pt"
+    if int(m["epoch"]) != epoch or m["inputs"] != {str(epoch): _sha256(src)} or m["sha256"] != _sha256(state):
+        raise SystemExit(f"FATAL: {meta} does not record {state.name} as the twin of {src.name}")
+    return state
 # kept beside the feature rows: the |V_cb| window's cuts and the mass truth
 V2_OBSERVERS = ("jet_pt", "jet_eta", "jet_sdmass", "genjet_sdmass")
 
@@ -169,6 +193,9 @@ def resolve_checkpoints(run_dir: pathlib.Path, spec: list[str]) -> list[tuple[st
       'wavg'     robustness: the weight average of epochs 70-79 that v2 pretraining
                  writes, net_wavg70-79_state.pt
       'init'     the untrained trunk the run started from, init_trunk.pt
+      'best70_bn', 'bestval_bn'
+                 best70 and bestval with BatchNorm statistics recomputed on the weight
+                 average's sample (PRESPEC A14's BatchNorm rule), bn_twin()
       N, 'A-B'   single epochs, for diagnostics (v1 has no fixed validation sample
                  and no weight average of its own)."""
     out = []
@@ -181,6 +208,10 @@ def resolve_checkpoints(run_dir: pathlib.Path, spec: list[str]) -> list[tuple[st
             out.append(("wavg", run_dir / WAVG_FILE))
         elif s == "init":
             out.append(("init", run_dir / INIT_FILE))
+        elif s == "best70_bn":
+            out.append(("best70_bn", bn_twin(run_dir, best_window_epoch(run_dir))))
+        elif s == "bestval_bn":
+            out.append(("bestval_bn", bn_twin(run_dir, best_epoch(run_dir))))
         elif "-" in s:
             a, b = (int(x) for x in s.split("-"))
             out += [(f"e{e:03d}", run_dir / f"net_epoch-{e}_state.pt") for e in range(a, b + 1)]
@@ -473,8 +504,8 @@ def main(argv=None) -> int:
                     help="the output layer's classes; 0 for a run without one (self-supervised)")
     ap.add_argument("--num-reg", type=int, default=0)
     ap.add_argument("--checkpoints", nargs="+", required=True,
-                    help="'best70', 'bestval', 'wavg', 'init', an epoch, or a range 'A-B' "
-                         "(e.g. best70 bestval wavg)")
+                    help="'best70', 'bestval', 'wavg', 'init', 'best70_bn', 'bestval_bn', an "
+                         "epoch, or a range 'A-B' (e.g. best70 bestval wavg best70_bn bestval_bn)")
     ap.add_argument("--data-test", nargs="+", required=True)
     ap.add_argument("--data-config", default=str(REPO / "configs/data/JetClassII_massreg.yaml"),
                     help="JetClassII_massreg.yaml = JetClassII_base.yaml + genjet_sdmass")

@@ -33,13 +33,13 @@ volume; each plan fitted alone and both together did not (verification
 already holds some of it; build_ft_jobs.py holds this plan's extraction_bytes back
 from its own headroom in turn.
 
-THE BOUND LEAVES OUT A14's BATCHNORM CONTINGENCY. If experiments/DIAG/head_bn_diag.py
-finds that recomputing BatchNorm alone repairs at least half of the defective stored
-v1 epochs, every reported v2 checkpoint gets a BatchNorm-recomputed twin: best70 and
-bestval (the weight average has its statistics recomputed already). Extracting those
-twins would add batchnorm_twins_bytes, which is not in bytes_total;
-scripts/build_extract_jobs.py emits no plan until that readout says the rule does
-not fire.
+THE BATCHNORM TWINS ARE IN THE PLAN. A14's BatchNorm rule fired (2026-10-03,
+experiments/FIGS/data/head_epoch_diag/head_bn_diag.json: recomputing BatchNorm alone
+repairs 21 of the 22 defective stored v1 epochs), so every reported v2 checkpoint has a
+BatchNorm-recomputed twin, best70_bn and bestval_bn (the weight average has its
+statistics recomputed already), extracted beside it: five checkpoints a run.
+batchnorm_twins_bytes is their part of extraction_bytes, and each run keeps the twins'
+two state files (experiments/MTX/bn_twins_v2.py) beside its own.
 """
 from __future__ import annotations
 
@@ -53,11 +53,11 @@ import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 TEST_FRACTIONS = (0.2, 0.6, 0.7)            # v1's split, and two v2 candidates
-PLAN = "features, pooled and heads at best70, wavg and bestval"
-N_CHECKPOINTS = 3                           # best70, wavg, bestval: per run of the grid
+PLAN = "features, pooled and heads at best70, wavg, bestval and the BatchNorm twins of best70 and bestval"
+N_CHECKPOINTS = 5                           # best70, wavg, bestval, best70_bn, bestval_bn: per run
 POOLED_ROW_BYTES = 128 * 2                  # float16 pooled embedding per feature row
 N_EPOCHS = 80
-N_BN_TWINS = 2                              # best70, bestval: A14's BatchNorm contingency
+N_BN_TWINS = 2                              # best70_bn, bestval_bn: A14's BatchNorm rule fired
 
 
 def _load(name, rel):
@@ -73,13 +73,15 @@ def retained_bytes_per_run() -> tuple[float, dict]:
     window_epochs (EARLY_KEEP and the last ten epochs), of the best epoch when it is
     neither (counted always, the upper bound), net_best_epoch_state.pt and the weight
     average; the newest resume file; the records, init_trunk.pt included; and the
-    gradient diagnostic's saved batch (pretrain_v2.DIAG_FILE). Sizes of the 188-output
+    gradient diagnostic's saved batch (pretrain_v2.DIAG_FILE); and the BatchNorm twins'
+    state files (experiments/MTX/bn_twins_v2.py, two at most). Sizes of the 188-output
     model, the largest (scripts/build_mtx_launch.py V2_STATE_MIB)."""
     pv = _load("pretrain_v2", "experiments/MTX/pretrain_v2.py")
     ml = _load("build_mtx_launch", "scripts/build_mtx_launch.py")
-    n_states = len(pv.window_epochs(N_EPOCHS)) + 3
+    n_states = len(pv.window_epochs(N_EPOCHS)) + 3 + N_BN_TWINS
     mib = n_states * ml.V2_STATE_MIB + ml.V2_RESUME_MIB + ml.V2_RECORDS_MIB + ml.V2_DIAG_BATCH_MIB
-    return mib * 2**20, {"state_files": n_states, "state_mib": ml.V2_STATE_MIB,
+    return mib * 2**20, {"state_files": n_states, "bn_twin_state_files": N_BN_TWINS,
+                         "state_mib": ml.V2_STATE_MIB,
                          "early_keep": list(pv.EARLY_KEEP), "resume_files": 1,
                          "resume_mib": ml.V2_RESUME_MIB, "records_mib": ml.V2_RECORDS_MIB,
                          "diag_batch_mib": ml.V2_DIAG_BATCH_MIB}

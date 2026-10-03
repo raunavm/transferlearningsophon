@@ -685,7 +685,7 @@ def v2_spec(arm: dict, run: int, gpu: str = V2_GPU, *, tag: str, **kw) -> tuple:
 
 def v2_script(arm: dict, run: int, *, run_id: str, out_root: str = V2_ROOT,
               epochs: int = V2_EPOCHS, samples: int = V2_SAMPLES, deterministic: bool = False,
-              kill_after_epoch: int | None = None, finalize: bool = False) -> str:
+              kill_after_epoch: int | None = None, finalize: bool = False, bn_twins: bool = False) -> str:
     """The bash for one run, after the clone. It runs in a subshell of the pod
     script, so `exit` leaves this run only. kill_after_epoch (smoke only)
     SIGKILLs the trainer during the epoch after that one, then restarts it.
@@ -694,7 +694,11 @@ def v2_script(arm: dict, run: int, *, run_id: str, out_root: str = V2_ROOT,
     directory in place of the trainer, behind the same guards. It writes no manifest,
     checks the sidecar against the run's record of it rather than rewriting the record,
     and counts its failed attempts and node faults apart from the run's: a run whose
-    end step failed twice has already used its own two."""
+    end step failed twice has already used its own two.
+
+    bn_twins (v2_bn_twins_specs) runs experiments/MTX/bn_twins_v2.py on a run that is DONE,
+    behind the same guards as finalize and with its own counts; a run not DONE yet is
+    skipped, so one job can serve every run of a run index as they finish."""
     obj = arm["objective"]
     head = ""
     if obj != "mpm":
@@ -720,8 +724,12 @@ def v2_script(arm: dict, run: int, *, run_id: str, out_root: str = V2_ROOT,
         f" --data-config ${{CFG}} --network-config {ARCH[obj]}{head}"
         f" --use-amp --batch-size 512 --start-lr {V2_RATE} --num-epochs {epochs}"
         f" --samples-per-epoch {samples} {loader}{extra} --keep-checkpoints {V2_KEEP} --select-on {V2_SELECT}")
+    if finalize and bn_twins:
+        raise ValueError("finalize and bn_twins are different jobs")
     if finalize:
         run_block = "PYTHONUNBUFFERED=1 python3 experiments/MTX/finalize_v2.py --out ${OUT} 2>&1 | tee -a ${OUT}/train.log\n"
+    elif bn_twins:
+        run_block = "PYTHONUNBUFFERED=1 python3 experiments/MTX/bn_twins_v2.py --out ${OUT} 2>&1 | tee -a ${OUT}/train.log\n"
     elif kill_after_epoch is None:
         run_block = f"PYTHONUNBUFFERED=1 {train_cmd} 2>&1 | tee -a ${{OUT}}/train.log\n"
     else:
@@ -737,14 +745,16 @@ def v2_script(arm: dict, run: int, *, run_id: str, out_root: str = V2_ROOT,
             f"  echo \"killed during epoch {e + 1} at $(date -u +%FT%TZ)\" | tee ${{OUT}}/KILLED\n"
             "fi\n"
             f"PYTHONUNBUFFERED=1 {train_cmd} 2>&1 | tee -a ${{OUT}}/train.log\n")
-    if finalize:
-        exists = '[ -f ${OUT}/recipe.json ] || { echo "FATAL: ${OUT} holds no run to finish"; exit ${HALT}; }\n'
-        mark, faults, what = "finalize", "FINALIZE_NODE_FAULTS", " finalize"
-        counted = ("# A FAILED attempt leaves attempts/failed-*-finalize (the EXIT trap; an evicted\n"
+    if finalize or bn_twins:
+        step = "finalize" if finalize else "bntwins"
+        exists = ('[ -f ${OUT}/recipe.json ] || { echo "FATAL: ${OUT} holds no run to finish"; exit ${HALT}; }\n'
+                  if finalize else "")
+        mark, faults, what = step, f"{step.upper()}_NODE_FAULTS", f" {step}"
+        counted = (f"# A FAILED attempt leaves attempts/failed-*-{step} (the EXIT trap; an evicted\n"
                    "# pod is SIGKILLed, runs no trap and is not counted). Two stop the job; the\n"
                    "# run's own failed attempts do not count.\n"
-                   'NF=$(ls ${OUT}/attempts | grep -c -- "-finalize$" || true)\n'
-                   '[ "${NF}" -lt 2 ] || { echo "FATAL: ${NF} failed attempts to finalize"; exit ${HALT}; }\n')
+                   f'NF=$(ls ${{OUT}}/attempts | grep -c -- "-{step}$" || true)\n'
+                   f'[ "${{NF}}" -lt 2 ] || {{ echo "FATAL: ${{NF}} failed attempts to {step}"; exit ${{HALT}}; }}\n')
         record = ('sha256sum -c ${OUT}/reweight_sidecar.sha256 || '
                   '{ echo "FATAL: ${SIDECAR} is not the sidecar the run trained with"; exit ${HALT}; }\n')
         manifest = ""
@@ -766,6 +776,8 @@ python3 scripts/write_run_manifest.py --driver pretrain_v2 --run-id ${{RUN_ID}} 
   --select-on {V2_SELECT}{f" --extra-selection '{arm['extra_selection']}'" if arm.get('extra_selection') else ""} \\
   --val-files "${{VAL_FILES[@]}}" --out ${{MANIFEST}}
 """
+    gate = ('if [ ! -f ${OUT}/DONE ]; then echo "${RUN_ID} is not DONE yet: no BatchNorm twins"; exit 0; fi'
+            if bn_twins else 'if [ -f ${OUT}/DONE ]; then echo "${RUN_ID} is DONE"; exit 0; fi')
     return f"""(
 set -euo pipefail
 HALT={EXIT_HALT}
@@ -773,7 +785,7 @@ NODE_FAULT={EXIT_NODE_FAULT}
 RUN_ID={run_id}
 SEED={int(run)}
 OUT={out_root}/${{RUN_ID}}
-if [ -f ${{OUT}}/DONE ]; then echo "${{RUN_ID}} is DONE"; exit 0; fi
+{gate}
 {exists}# LAST = pretrain_v2.latest_complete_epoch: the newest resume file with its state file beside it.
 LAST=-1
 for f in ${{OUT}}/net_epoch-*_resume.pt; do
@@ -1378,6 +1390,33 @@ def v2_finalize_spec(run_id: str, tag: str) -> tuple:
     return job, v2_job(job, [script], gpu, tag, title)
 
 
+# ------------------------------------------------ BatchNorm twins (PRESPEC A14's rule fired)
+V2_BN_TWINS_DIR = K8S / "v2" / "bn_twins"
+
+
+def v2_bn_twins_specs(tag: str, tier: int) -> dict:
+    """{file name: spec}: one job per run index of `tier`, on that run index's GPU product
+    (the weight average's BatchNorm pass ran there), running experiments/MTX/bn_twins_v2.py
+    on each of the index's runs in grid order: the BatchNorm-recomputed twins of best70
+    and bestval that A14's BatchNorm rule requires since it fired (2026-10-03). A run not
+    DONE yet is skipped and a run whose twins exist is left alone, so a job is re-created
+    and run again as its runs finish. Each job is the grid's in all but the driver and
+    that it is not suspended: the same image, mounts, data files, resources, retry policy."""
+    arms = [a for a in v2_arms() if int(a.get("tier", 1)) == tier]
+    if not arms:
+        raise SystemExit(f"the grid has no tier {tier}")
+    out = {}
+    for run in range(1, max(int(a["runs"]) for a in arms) + 1):
+        todo = [a for a in arms if run <= int(a["runs"])]
+        gpu = V2_GPU_BY_RUN[run]
+        scripts = [v2_script(a, run, run_id=v2_run_id(a["name"], run), bn_twins=True) for a in todo]
+        name = f"mtx2-bntwins-t{tier}-s{run}-raunav"
+        title = (f"v2 BATCHNORM TWINS -- tier {tier}, run {run}: experiments/MTX/bn_twins_v2.py on its "
+                 f"{len(todo)} runs, {gpu}.")
+        out[f"job-{name}.yaml"] = v2_job(name, scripts, gpu, tag, title)
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--allow-unbracketed", action="store_true",
@@ -1405,6 +1444,9 @@ def main() -> int:
     ap.add_argument("--v2-finalize", metavar="RUN_ID", default=None,
                     help="write the finalize_v2 job of one grid run (its directory name under "
                          f"{V2_ROOT}, e.g. mtx-r16q1-s4) into {V2_FINALIZE_DIR.relative_to(ROOT)}")
+    ap.add_argument("--v2-bn-twins", metavar="TIER", type=int, default=None,
+                    help="write the BatchNorm-twin jobs of one grid tier (one per run index, "
+                         f"experiments/MTX/bn_twins_v2.py) into {V2_BN_TWINS_DIR.relative_to(ROOT)}")
     ap.add_argument("--v2-dryrun", metavar="DIR", default=None,
                     help="write the loader dry-run spec of --arm (its selection and window) into DIR")
     ap.add_argument("--arm", default="R16_Q1", help="--v2-dryrun: the grid arm")
@@ -1445,6 +1487,15 @@ def main() -> int:
         V2_FINALIZE_DIR.mkdir(parents=True, exist_ok=True)
         (V2_FINALIZE_DIR / f"job-{n}.yaml").write_text(sp)
         print(V2_FINALIZE_DIR / f"job-{n}.yaml")
+        return 0
+
+    if args.v2_bn_twins is not None:
+        if not args.tag:
+            ap.error("--v2-bn-twins needs --tag")
+        V2_BN_TWINS_DIR.mkdir(parents=True, exist_ok=True)
+        for fn, spec in v2_bn_twins_specs(args.tag, args.v2_bn_twins).items():
+            (V2_BN_TWINS_DIR / fn).write_text(spec)
+            print(V2_BN_TWINS_DIR / fn)
         return 0
 
     if args.v2_endrun_smoke:

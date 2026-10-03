@@ -1000,7 +1000,7 @@ V2_PIN = "mtx-s1.98"
 V2_ROOT = "/data/results/mtx_v2"
 V2_OUT = "/data/results/eval/v2"
 V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
-V2_CHECKPOINTS = ("best70", "bestval", "wavg")
+V2_CHECKPOINTS = ("best70", "bestval", "wavg", "best70_bn", "bestval_bn")
 V2_INIT_ARM, V2_INIT_RUNS = "L188", range(1, 6)
 # THE PLAN MUST FIT. build_v2() emits that plan for every run and the five init
 # references; experiments/EVAL/extraction_v2_sizing.py sizes it (bestval counted
@@ -1012,16 +1012,17 @@ V2_INIT_ARM, V2_INIT_RUNS = "L188", range(1, 6)
 # (verification 2026-10-02). There is no smaller plan: A8 and A14 need every
 # checkpoint's features. Making room is the PI's storage decision, not this script's.
 V2_SIZING = ROOT / "experiments" / "FIGS" / "data" / "extraction_v2_sizing" / "sizing.json"
-V2_PLAN = "features, pooled and heads at best70, wavg and bestval; every run and the init references"
-# THE PLAN IS NOT FINAL UNTIL A14's BATCHNORM RULE HAS READ OUT ("Batch
-# normalisation, decomposition on v1", fixed before the job runs): if recomputing
-# BatchNorm alone repairs at least half of the stored v1 epochs that are defective
-# under the primary defect rule, over the eight runs, every reported v2 checkpoint
-# also gets a BatchNorm-recomputed twin, reported beside it. This plan extracts no
-# twin and the sizing leaves it out of bytes_total (batchnorm_twins_bytes is the
-# contingency). --v2 refuses until experiments/DIAG/head_bn_diag.py's readout
-# (job diag-head-bn-raunav, /data/results/eval/head_epoch_diag_bn/head_bn_diag.json)
-# is committed here and says the rule does not fire.
+V2_PLAN = ("features, pooled and heads at best70, wavg, bestval and the BatchNorm twins of best70 "
+           "and bestval; every run and the init references")
+# A14's BATCHNORM RULE ("Batch normalisation, decomposition on v1", fixed before the job
+# ran) FIRED, 2026-10-03: recomputing BatchNorm alone repairs 21 of the 22 stored v1
+# epochs that are defective under the primary defect rule, over the eight runs
+# (experiments/DIAG/head_bn_diag.py, job diag-head-bn-raunav). So every reported v2
+# checkpoint also gets a BatchNorm-recomputed twin, reported beside it: best70_bn and
+# bestval_bn, written into the run by experiments/MTX/bn_twins_v2.py on the run's own GPU
+# product and checked by extract_v2.bn_twin. The plan extracts them and the sizing counts
+# them. --v2 refuses while the readout is absent, and if a readout said the rule does not
+# fire, since the plan would then extract twins nothing requires.
 V2_BN_DIAG = ROOT / "experiments" / "FIGS" / "data" / "head_epoch_diag" / "head_bn_diag.json"
 
 
@@ -1308,10 +1309,8 @@ def main() -> int:
         problems = [] if fits else [f"does not fit: {why}"]
         if twins is None:
             problems.append(f"is not final: {bn_why}")
-        elif twins:
-            problems.append(f"lacks the BatchNorm-recomputed twins A14 now requires ({bn_why}); "
-                            f"they are not extracted, and {V2_SIZING.name} batchnorm_twins_bytes "
-                            "is their size")
+        elif not twins:
+            problems.append(f"extracts BatchNorm-recomputed twins A14's rule does not require ({bn_why})")
         if problems:
             sys.exit(f"FATAL: the v2 extraction plan ({V2_PLAN}) " + "; and it ".join(problems)
                      + ". Nothing written; the plan waits on the PI's storage decision.")

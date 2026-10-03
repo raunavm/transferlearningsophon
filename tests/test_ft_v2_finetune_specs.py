@@ -73,14 +73,20 @@ def test_the_storage_budget_admits_the_scratch_reference_and_refuses_the_rest(v2
                 for n, t in v2.items())
     assert every == sum(B.v2_need().values()) and set(B.v2_need()) == set(v2)
     held = B.v2_grid_reserve_gb() + B.v2_extraction_gb()
-    # ONE BUDGET (verification 2026-10-02): today the whole v2 set does not fit once v2
+    # ONE BUDGET (verification 2026-10-02): the whole v2 set does not fit once v2
     # pretraining's peak and the v2 extraction are held back; alone it would have fitted
     assert (HEADROOM_GB - held) * 1e9 < every < (HEADROOM_GB - B.v2_grid_reserve_gb()) * 1e9
     with pytest.raises(SystemExit, match="for the v2 extraction"):
         B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB)
     assert set(B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB, v2_extraction_done=True)) == set(v2)
-    # the scratch reference, launched already, fits beside everything else
-    got = B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB, only=["ft-v2-legs-scratch"])
+    # With the BatchNorm twins (A14's rule fired, 2026-10-03) the v2 extraction alone holds
+    # back more than the headroom, so even the scratch reference (launched and finished
+    # already) is refused until the PI's storage decision; with the extraction released it fits
+    assert B.v2_extraction_gb() > HEADROOM_GB
+    with pytest.raises(SystemExit, match="for the v2 extraction"):
+        B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB, only=["ft-v2-legs-scratch"])
+    got = B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB, only=["ft-v2-legs-scratch"],
+                  v2_extraction_done=True)
     assert set(got) == {SCRATCH} and got[SCRATCH] == v2[SCRATCH]
     # ...and on a volume with room for the scratch reference only, the rest is refused
     room = held + 2 * B.spec_bytes(

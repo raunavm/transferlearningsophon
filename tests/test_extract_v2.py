@@ -108,6 +108,43 @@ def test_a_checkpoint_two_rules_select_is_extracted_once_and_both_tags_point_at_
         xv.write(out, res, {"checkpoints": {"best70": {"checkpoint_sha256": "a"}}}, alias)
 
 
+def _write_twin(d: pathlib.Path, e: int, tags: list):
+    """A BatchNorm twin as experiments/MTX/bn_twins_v2.py writes it."""
+    import hashlib
+    src, state = d / f"net_epoch-{e}_state.pt", d / f"net_epoch-{e}_bn_state.pt"
+    state.write_text(f"bn{e}")
+    sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+    (d / f"net_epoch-{e}_bn.json").write_text(json.dumps(
+        {"epoch": e, "tags": tags, "inputs": {str(e): sha(src)}, "sha256": sha(state)}))
+
+
+def test_the_batchnorm_twins_resolve_to_the_twin_of_each_rules_epoch(tmp_path):
+    _write_80(tmp_path, {40: 0.9, 73: 0.8, 76: 0.8})
+    _write_twin(tmp_path, 73, ["best70"])
+    _write_twin(tmp_path, 40, ["bestval"])
+    got = dict(xv.resolve_checkpoints(tmp_path, ["best70", "bestval", "best70_bn", "bestval_bn"]))
+    assert got["best70_bn"].name == "net_epoch-73_bn_state.pt"
+    assert got["bestval_bn"].name == "net_epoch-40_bn_state.pt"
+    assert xv.aliases(list(got.items())) == {t: t for t in got}
+
+
+def test_one_epoch_both_rules_select_has_one_twin_both_tags_point_at(tmp_path):
+    _write_80(tmp_path, {74: 0.9})
+    _write_twin(tmp_path, 74, ["best70", "bestval"])
+    ckpts = xv.resolve_checkpoints(tmp_path, ["best70_bn", "bestval_bn"])
+    assert xv.aliases(ckpts) == {"best70_bn": "best70_bn", "bestval_bn": "best70_bn"}
+
+
+def test_a_missing_or_mismatched_twin_is_refused(tmp_path):
+    _write_80(tmp_path, {74: 0.9})
+    with pytest.raises(SystemExit, match="no BatchNorm twin of epoch 74: run experiments/MTX/bn_twins_v2.py"):
+        xv.resolve_checkpoints(tmp_path, ["best70_bn"])
+    _write_twin(tmp_path, 74, ["best70", "bestval"])
+    (tmp_path / "net_epoch-74_state.pt").write_text("another state")
+    with pytest.raises(SystemExit, match="does not record net_epoch-74_bn_state.pt as the twin"):
+        xv.resolve_checkpoints(tmp_path, ["best70_bn"])
+
+
 def test_a_stale_best_record_is_refused(tmp_path):
     _write_v2_run(tmp_path, {70: 0.5, 71: 0.7}, best=70)
     with pytest.raises(SystemExit, match="per-epoch records say 71"):
@@ -413,15 +450,17 @@ def test_v2_specs_one_per_run_and_init_reference_and_only_committed_when_the_pla
     assert bx.v2_rung("MPM") == bx.v2_rung("MPM_LOFO4P") == "none"
     fits, why = bx.v2_plan_fits()
     twins, bn_why = bx.v2_bn_twins_needed()
-    final = fits and twins is False             # fits with the fine-tuning, and A14's BatchNorm rule read
+    final = fits and twins is True              # fits with the fine-tuning; A14's BatchNorm rule fired
     committed = sorted(p.name for p in bx.OUT_DIR.glob("job-extract-v2-*.yaml"))
     for run, arm, k, reg, s in bx.v2_runs():
         text = jobs[f"job-extract-v2-{run.removeprefix('mtx-')}-raunav.yaml"]
-        # amendment A14: the primary, the robustness check and the sensitivity check, all
-        # with features (and the pooled readout); --num-classes 0 = no output layer
+        # amendment A14: the primary, the robustness check and the sensitivity check, and the
+        # BatchNorm twins of the primary and the sensitivity check (A14's BatchNorm rule fired),
+        # all with features (and the pooled readout); --num-classes 0 = no output layer
         assert (f"--run-dir {bx.V2_ROOT}/{run} --rung {bx.v2_rung(arm)} --num-classes {k} "
                 f"--num-reg {reg}") in text and f"OUT={bx.V2_OUT}/{run}\n" in text
-        assert "--checkpoints best70 bestval wavg \\\n" in text and "--features-at" not in text
+        assert ("--checkpoints best70 bestval wavg best70_bn bestval_bn \\\n" in text
+                and "--features-at" not in text)
         assert (k == 0) == (arm in ("MPM", "MPM_LOFO4P"))
     for s in range(1, 6):
         text = jobs[f"job-extract-v2-init-s{s}-raunav.yaml"]
@@ -543,9 +582,10 @@ def test_sizing_reads_the_measured_counts_and_the_largest_v1_rejection(tmp_path)
     want = (400_000 * len(anywhere) + 8_000 * sum(len(c) for c, _ in windowed)
             + 2000 - np.isin(np.arange(2000) % 188, anywhere).sum())
     assert s["feature_rows_per_checkpoint"] == want
-    # amendment A14: every run at three checkpoints, features with their pooled rows and
-    # observers; head scores only where there is an output layer; five init references
-    # at one checkpoint. No plan drops the weight average.
+    # amendment A14: every run at five checkpoints (best70, wavg, bestval and the BatchNorm
+    # twins of best70 and bestval), features with their pooled rows and observers; head
+    # scores only where there is an output layer; five init references at one checkpoint.
+    # No plan drops the weight average.
     cc = _load("class_counts", "experiments/EVAL/class_counts.py")
     bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
     feat = want * (cc.FEATURE_ROW_BYTES + 128 * 2 + 4 * len(xv.V2_OBSERVERS))
@@ -555,21 +595,21 @@ def test_sizing_reads_the_measured_counts_and_the_largest_v1_rejection(tmp_path)
     e = r["storage"][bx.V2_PLAN]
     assert (e["n_classification_runs"], e["n_self_supervised_runs"], e["n_init_references"]) == (n_cls, n_ssl, 5)
     assert e["n_models"] == len(runs) + 5 and n_ssl == 6
-    assert e["extraction_bytes"] == 3 * n_cls * (feat + head) + 3 * n_ssl * feat + 5 * feat
+    assert e["extraction_bytes"] == 5 * n_cls * (feat + head) + 5 * n_ssl * feat + 5 * feat
     # one budget with the v2 fine-tuning (verification 2026-10-02): every spec it emits
     bf = _load("build_ft_jobs", "scripts/build_ft_jobs.py")
     assert e["fine_tuning_bytes"] == sum(bf.v2_need().values()) > 0
     assert r["fine_tuning_bytes_from"] == {"source": "v2_need", "specs": len(bf.v2_need())}
     assert e["bytes_total"] == e["extraction_bytes"] + e["pretraining_checkpoint_bytes"] + e["fine_tuning_bytes"]
-    # A14's BatchNorm contingency, outside the total: twins of best70 and bestval
+    # A14's BatchNorm rule fired: the twins of best70 and bestval, inside the total
     assert e["batchnorm_twins_bytes"] == 2 * (n_cls * (feat + head) + n_ssl * feat)
     assert set(r["storage"]) == {bx.V2_PLAN, bx.V2_PLAN.replace("every run", "tier-1 runs")}
-    assert all("best70, wavg and bestval" in k and v["checkpoints_per_run"] == 3
+    assert all("BatchNorm twins of best70 and bestval" in k and v["checkpoints_per_run"] == 5
                for k, v in r["storage"].items())
     # the pretraining checkpoints: what a finished run keeps (pretrain_v2 prune), all runs
     ml = _load("build_mtx_launch", "scripts/build_mtx_launch.py")
-    per_run = ((21 + 3) * ml.V2_STATE_MIB + ml.V2_RESUME_MIB + ml.V2_RECORDS_MIB
-               + ml.V2_DIAG_BATCH_MIB) * 2**20
+    per_run = ((21 + 3 + 2) * ml.V2_STATE_MIB + ml.V2_RESUME_MIB + ml.V2_RECORDS_MIB
+               + ml.V2_DIAG_BATCH_MIB) * 2**20                    # + the two BatchNorm twins
     assert r["checkpoint_bytes_per_run"] == pytest.approx(per_run)
     assert e["pretraining_checkpoint_bytes"] == pytest.approx(per_run * len(runs))
     # the early states amendment A14 added: about 98 MiB a run
@@ -584,12 +624,16 @@ def test_the_committed_sizing_is_the_plan_the_generator_emits_on_this_grid():
     # df of /data, 2026-10-02T01:05Z
     assert s["volume"] == {"size_bytes": 2199023255552, "free_bytes": 1321495166976}
     assert e["headroom_to_85pc_bytes"] == pytest.approx(0.85 * 2199023255552 - 877528088576)
-    # ONE BUDGET: the extraction fits on its own and not beside the v2 fine-tuning, so the
-    # plan waits on the PI's storage decision (verification 2026-10-02)
+    # ONE BUDGET: with the BatchNorm twins (A14's rule fired, 2026-10-03) the extraction
+    # does not fit even on its own, and the tier-1 plan not beside the v2 fine-tuning, so the
+    # plan waits on the PI's storage decision
     bf = _load("build_ft_jobs", "scripts/build_ft_jobs.py")
     assert e["fine_tuning_bytes"] == sum(bf.v2_need().values())
     assert e["fits_under_85pc"] is (e["bytes_total"] < e["headroom_to_85pc_bytes"]) is False
-    assert e["bytes_total"] - e["fine_tuning_bytes"] < e["headroom_to_85pc_bytes"]
+    assert e["bytes_total"] - e["fine_tuning_bytes"] > e["headroom_to_85pc_bytes"]
+    t1 = s["storage"][bx.V2_PLAN.replace("every run", "tier-1 runs")]
+    assert t1["fits_under_85pc"] is False
+    assert t1["bytes_total"] - t1["fine_tuning_bytes"] < t1["headroom_to_85pc_bytes"]
     assert bx.v2_plan_fits()[0] is False
     assert s["checkpoint_bytes_per_run_from"]["early_keep"] == [0, 2, 4, 9, 19, 29, 39, 49, 55, 62, 69]
 
@@ -597,7 +641,9 @@ def test_the_committed_sizing_is_the_plan_the_generator_emits_on_this_grid():
 def test_the_v2_plan_is_not_final_until_the_batchnorm_rule_has_read_out(tmp_path, monkeypatch):
     """Amendment A14, "Batch normalisation, decomposition on v1": if recomputing BatchNorm
     alone repairs at least half of the defective stored epochs (primary rule, eight runs),
-    every reported v2 checkpoint gets a BatchNorm-recomputed twin, which the plan lacks."""
+    every reported v2 checkpoint gets a BatchNorm-recomputed twin. The rule fired
+    (2026-10-03), so the plan extracts the twins; a readout that did not fire would make
+    them superfluous, and no readout leaves the plan unfinal."""
     bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
     monkeypatch.setattr(bx, "V2_BN_DIAG", tmp_path / "head_bn_diag.json")
     monkeypatch.setattr(bx, "ROOT", tmp_path)
@@ -612,16 +658,23 @@ def test_the_v2_plan_is_not_final_until_the_batchnorm_rule_has_read_out(tmp_path
     assert readout(5, 10) is True and readout(6, 11) is True        # at least half: twins
     assert readout(4, 9) is False and readout(0, 12) is False
     assert readout(10, 10, runs=7) is None                          # not over the eight runs
-    # --v2 writes nothing while the rule is unread or fires, even when the plan fits
+    # --v2 writes nothing while the rule is unread or does not fire, even when the plan fits
     monkeypatch.setattr(bx, "v2_plan_fits", lambda done=False: (True, "fits"))
     monkeypatch.setattr(sys, "argv", ["build_extract_jobs.py", "--v2"])
     written = []
     monkeypatch.setattr(bx.pathlib.Path, "write_text", lambda self, t: written.append(self))
-    for state in (None, True):
+    for state in (None, False):
         monkeypatch.setattr(bx, "v2_bn_twins_needed", lambda s=state: (s, "why"))
-        with pytest.raises(SystemExit, match="BatchNorm" if state else "not final"):
+        with pytest.raises(SystemExit, match="not final" if state is None else "does not require"):
             bx.main()
     assert not written
+
+
+def test_the_committed_batchnorm_readout_fires_the_rule():
+    bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
+    fires, why = bx.v2_bn_twins_needed()
+    assert fires is True and why.startswith("recomputing BatchNorm alone repairs 21 of the 22 ")
+    assert {"best70_bn", "bestval_bn"} <= set(bx.V2_CHECKPOINTS)
 
 
 def test_classes_only_a_windowed_task_reads_are_kept_inside_its_window():

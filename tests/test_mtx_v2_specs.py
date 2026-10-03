@@ -479,6 +479,39 @@ def test_a_finalize_spec_is_written_only_for_a_run_of_the_grid():
     assert r.returncode != 0 and "--tag" in r.stderr
 
 
+def test_the_batchnorm_twin_jobs_run_bn_twins_v2_on_each_run_of_a_run_index_on_its_product(grid):
+    """PRESPEC A14's BatchNorm rule fired (2026-10-03): one job per run index of a tier, on
+    the index's GPU product, running experiments/MTX/bn_twins_v2.py on each of its runs,
+    behind the grid script's guards; a run not DONE yet is skipped."""
+    specs = b.v2_bn_twins_specs(TAG, 1)
+    tier1 = [a for a in b.v2_arms() if int(a.get("tier", 1)) == 1]
+    assert sorted(specs) == [f"job-mtx2-bntwins-t1-s{k}-raunav.yaml" for k in range(1, 6)]
+    for k in range(1, 6):
+        spec = specs[f"job-mtx2-bntwins-t1-s{k}-raunav.yaml"]
+        d = yaml.safe_load(spec)
+        assert "raunav" in d["metadata"]["name"] and "suspend" not in d["spec"]
+        ex = d["spec"]["template"]["spec"]["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"][
+            "nodeSelectorTerms"][0]["matchExpressions"][1]
+        assert ex["key"] == "nvidia.com/gpu.product" and ex["values"] == [b.V2_GPU_BY_RUN[k]]
+        g = grid[f"job-{b.v2_job_name(tier1[0]['name'], k)}.yaml"]
+        assert _outside_script(spec) == _outside_script(g)       # image, mounts, resources, retries
+        s = _script(spec)
+        assert subprocess.run(["bash", "-n"], input=s, text=True).returncode == 0
+        runs = [b.v2_run_id(a["name"], k) for a in tier1 if k <= int(a["runs"])]
+        assert [ln.split("=", 1)[1] for ln in s.splitlines() if ln.startswith("RUN_ID=")] == runs
+        assert s.count("PYTHONUNBUFFERED=1 python3 experiments/MTX/bn_twins_v2.py --out ${OUT} 2>&1 | "
+                       "tee -a ${OUT}/train.log") == len(runs)
+        assert s.count('if [ ! -f ${OUT}/DONE ]; then echo "${RUN_ID} is not DONE yet: no BatchNorm twins"; '
+                       "exit 0; fi") == len(runs)
+        assert "pretrain_v2.py" not in s and "write_run_manifest" not in s and 'cp "${SIDECAR}" ${OUT}/' not in s
+        assert s.count("sha256sum -c ${OUT}/reweight_sidecar.sha256 ||") == len(runs)
+        assert s.count('grep -c -- "-bntwins$"') == len(runs) and "BNTWINS_NODE_FAULTS" in s
+    with pytest.raises(SystemExit, match="no tier 9"):
+        b.v2_bn_twins_specs(TAG, 9)
+    with pytest.raises(ValueError, match="different jobs"):
+        b.v2_script(tier1[0], 1, run_id="mtx-l188-s1", finalize=True, bn_twins=True)
+
+
 # ------------------------------------------------ the run script under bash, with stubs
 # python3 stands in for the GPU probe (GPU=ok, bad, or first: answers only the first
 # call of an attempt) and the trainer or finalize_v2 (notes itself in RAN, prints
@@ -490,7 +523,7 @@ case "$1" in
   experiments/FT/gpu_probe.py)
     n=$(cat "$PROBES" 2>/dev/null || echo 0); echo $((n + 1)) > "$PROBES"
     [ "$GPU" = ok ] || { [ "$GPU" = first ] && [ "$n" -eq 0 ]; } ;;
-  experiments/MTX/pretrain_v2.py|experiments/MTX/finalize_v2.py)
+  experiments/MTX/pretrain_v2.py|experiments/MTX/finalize_v2.py|experiments/MTX/bn_twins_v2.py)
     echo "$1" >> "$RAN"; echo "$TRAIN_SAYS"; exit "$TRAIN_RC" ;;
   *) exit 0 ;;
 esac
@@ -519,9 +552,11 @@ def sim(tmp_path_factory):
     return d
 
 
-def _attempt(sim, out_root, finalize=False, **env) -> int:
-    """One pod's run script for R16_Q1 run 1 (or its finalize script), with OUT under out_root."""
-    s = b.v2_script(b._arm("R16_Q1"), 1, run_id="r", out_root=str(out_root), finalize=finalize)
+def _attempt(sim, out_root, finalize=False, bn_twins=False, **env) -> int:
+    """One pod's run script for R16_Q1 run 1 (or its finalize or BatchNorm-twin script), with
+    OUT under out_root."""
+    s = b.v2_script(b._arm("R16_Q1"), 1, run_id="r", out_root=str(out_root), finalize=finalize,
+                    bn_twins=bn_twins)
     s = s.replace("/jc2/jet_data/", f"{sim}/jc2/").replace("/data/results/mtx/makeweight/", f"{sim}/mw/")
     (out_root / "probes").unlink(missing_ok=True)
     e = {"PATH": f"{sim}/bin{os.pathsep}{os.environ['PATH']}", "PROBES": str(out_root / "probes"),
@@ -615,6 +650,27 @@ def test_a_resume_may_go_further_than_a_fresh_start(sim, tmp_path):
     _resumable(resume / "r", 9)
     assert _attempt(sim, resume, USE_PCT="96") == 42 and not (resume / "r" / "attempts").exists()
     assert _attempt(sim, resume, USE_PCT="95") == 0
+
+
+def test_the_batchnorm_twin_script_skips_a_run_not_done_and_counts_its_own_failures(sim, tmp_path):
+    out = tmp_path / "r"
+    _resumable(out, 40)
+    assert _attempt(sim, tmp_path, bn_twins=True) == 0                              # not DONE: skipped
+    assert not _probed(tmp_path) and not (tmp_path / "ran").exists()
+    _resumable(out, 79)
+    (out / "DONE").write_text("{}\n")
+    (out / "NODE_FAULTS").write_text("earlier\n" * 5)                                # the run's own
+    assert _attempt(sim, tmp_path) == 0 and not (tmp_path / "ran").exists()         # the training script: DONE
+    assert _attempt(sim, tmp_path, bn_twins=True, GPU="bad") == 43                 # a node fault of its own
+    assert len((out / "BNTWINS_NODE_FAULTS").read_text().splitlines()) == 1
+    assert (out / "NODE_FAULTS").read_text() == "earlier\n" * 5
+    assert _attempt(sim, tmp_path, bn_twins=True) == 0
+    assert (tmp_path / "ran").read_text() == "experiments/MTX/bn_twins_v2.py\n"
+    assert " bntwins pod=pod " in (out / "attempts.log").read_text() and not list(out.glob("run_manifest*"))
+    for _ in range(2):
+        assert _attempt(sim, tmp_path, bn_twins=True, TRAIN_RC="1", TRAIN_SAYS="ValueError: bad") == 1
+    assert sorted(os.listdir(out / "attempts")) == ["failed-T2-bntwins", "failed-T3-bntwins"]
+    assert _attempt(sim, tmp_path, bn_twins=True) == 42                             # two failures of its own halt
 
 
 def test_finalize_runs_where_the_runs_own_failures_stop_it(sim, tmp_path):

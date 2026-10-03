@@ -303,10 +303,11 @@
   }
  },
  "n_runs_v2_grid": 88,
- "checkpoint_bytes_per_run": 327523762.176,
+ "checkpoint_bytes_per_run": 346129694.72,
  "checkpoint_bytes_per_run_from": {
   "source": "retained_bytes_per_run",
-  "state_files": 24,
+  "state_files": 26,
+  "bn_twin_state_files": 2,
   "state_mib": 8.872,
   "early_keep": [
    0,
@@ -401,40 +402,40 @@
   ]
  },
  "storage": {
-  "features, pooled and heads at best70, wavg and bestval; every run and the init references": {
+  "features, pooled and heads at best70, wavg, bestval and the BatchNorm twins of best70 and bestval; every run and the init references": {
    "feature_rows_per_checkpoint": 5091401,
    "head_rows_per_checkpoint": 631587,
    "bytes_per_checkpoint_features": 2739173738,
    "bytes_per_checkpoint_heads": 48000612,
-   "checkpoints_per_run": 3,
+   "checkpoints_per_run": 5,
    "n_classification_runs": 82,
    "n_self_supervised_runs": 6,
    "n_init_references": 5,
    "n_models": 93,
-   "extraction_bytes": 748645886074,
-   "pretraining_checkpoint_bytes": 28822091071.488,
+   "extraction_bytes": 1238612564330,
+   "pretraining_checkpoint_bytes": 30459413135.36,
    "fine_tuning_bytes": 240976000000.0,
-   "bytes_total": 1018443977145.488,
+   "bytes_total": 1510047977465.36,
    "batchnorm_twins_bytes": 489966678256,
    "fits_under_85pc": false,
    "headroom_to_85pc_bytes": 991641678643.2
   },
-  "features, pooled and heads at best70, wavg and bestval; tier-1 runs and the init references": {
+  "features, pooled and heads at best70, wavg, bestval and the BatchNorm twins of best70 and bestval; tier-1 runs and the init references": {
    "feature_rows_per_checkpoint": 5091401,
    "head_rows_per_checkpoint": 631587,
    "bytes_per_checkpoint_features": 2739173738,
    "bytes_per_checkpoint_heads": 48000612,
-   "checkpoints_per_run": 3,
+   "checkpoints_per_run": 5,
    "n_classification_runs": 55,
    "n_self_supervised_runs": 0,
    "n_init_references": 5,
    "n_models": 60,
-   "extraction_bytes": 473579636440,
-   "pretraining_checkpoint_bytes": 28822091071.488,
+   "extraction_bytes": 780168814940,
+   "pretraining_checkpoint_bytes": 30459413135.36,
    "fine_tuning_bytes": 240976000000.0,
-   "bytes_total": 743377727511.488,
+   "bytes_total": 1051604228075.36,
    "batchnorm_twins_bytes": 306589178500,
-   "fits_under_85pc": true,
+   "fits_under_85pc": false,
    "headroom_to_85pc_bytes": 991641678643.2
   }
  },
