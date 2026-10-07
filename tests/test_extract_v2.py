@@ -448,9 +448,13 @@ def test_v2_specs_one_per_run_and_init_reference_and_only_committed_when_the_pla
     assert bx.v2_rung("L162_MASS") == "L162" and bx.v2_rung("R16_Q1_MASS_LM") == "R16_Q1"
     assert bx.v2_rung("R42_Q1_LOFO4P") == "R42_Q1" and bx.v2_rung("RAND2_p1") == "none"
     assert bx.v2_rung("MPM") == bx.v2_rung("MPM_LOFO4P") == "none"
-    fits, why = bx.v2_plan_fits()
     twins, bn_why = bx.v2_bn_twins_needed()
-    final = fits and twins is True              # fits with the fine-tuning; A14's BatchNorm rule fired
+    # committed: the specs of every tier whose plan fits with the fine-tuning (A14: "sized and
+    # emitted tier by tier"), once A14's BatchNorm rule has fired
+    tiers = sorted({int(a["tier"]) for a in grid})
+    fitting = [t for t in tiers if bx.v2_plan_fits(tier=t)[0]] if twins is True else []
+    why = {t: bx.v2_plan_fits(tier=t)[1] for t in tiers}
+    expected = sorted(f for t in fitting for f in bx.build_v2(t))
     committed = sorted(p.name for p in bx.OUT_DIR.glob("job-extract-v2-*.yaml"))
     for run, arm, k, reg, s in bx.v2_runs():
         text = jobs[f"job-extract-v2-{run.removeprefix('mtx-')}-raunav.yaml"]
@@ -471,9 +475,14 @@ def test_v2_specs_one_per_run_and_init_reference_and_only_committed_when_the_pla
         assert "--feature-classes probe --prefix-features 2000000" in text
         assert bx.HALT_GPU in text and "gpu_ok ()" in text and "tee -a ${LOG} || halt" in text
         assert f'--branch "{bx.V2_PIN}"' in text and bx.V2_PIN == "mtx-s1.99"
-        if final:
+        assert '[ "${USED}" -lt 90 ]' in text and '-lt 85 ]' not in text      # the PI's line
+        for node in ("ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu",
+                     "patternlab.calit2.optiputer.net"):
+            assert f'"{node}"' in text
+        if fname in expected:
             assert (bx.OUT_DIR / fname).read_text() == text, f"{fname} not committed as built"
-    assert committed == (sorted(jobs) if final else []), (why, bn_why)
+    assert committed == expected, (why, bn_why)
+    assert fitting == [1]       # the PI's 90 % line (2026-10-07) fits tier 1 only, so far
 
 
 def test_v2_extraction_is_emitted_and_sized_tier_by_tier(tmp_path, monkeypatch):
@@ -523,8 +532,9 @@ def test_the_v2_plan_is_refused_when_sizing_says_it_does_not_fit(tmp_path, monke
     assert e["bytes_total"] == (e["extraction_bytes"] + e["pretraining_checkpoint_bytes"]
                                 + e["fine_tuning_bytes"]) > 0
     e["n_models"] = len(bx.v2_runs()) + len(bx.v2_init_refs())   # the flag, whatever grid it was run on
+    extra = (bx.V2_LINE_PC - 85) / 100 * s["volume"]["size_bytes"]   # the PI's line, 2026-10-07
     for fit in (False, True):
-        e["fits_under_85pc"] = fit
+        e["headroom_to_85pc_bytes"] = e["bytes_total"] - extra + (1 if fit else -1)
         f = tmp_path / f"sizing_{fit}.json"
         f.write_text(json.dumps(s))
         monkeypatch.setattr(bx, "V2_SIZING", f)
@@ -566,8 +576,9 @@ def test_the_v2_plan_holds_back_the_pretraining_peak_until_pretraining_is_done(t
     assert peak > e["pretraining_checkpoint_bytes"]  # the peak covers what the runs keep at the end
     # fits with room to spare, but not once the peak beyond the kept checkpoints is held back
     spare = (peak - e["pretraining_checkpoint_bytes"]) / 2
-    e.update(n_models=len(bx.v2_runs()) + len(bx.v2_init_refs()), fits_under_85pc=True,
-             headroom_to_85pc_bytes=e["bytes_total"] + spare)
+    extra = (bx.V2_LINE_PC - 85) / 100 * s["volume"]["size_bytes"]   # the PI's line, 2026-10-07
+    e.update(n_models=len(bx.v2_runs()) + len(bx.v2_init_refs()),
+             headroom_to_85pc_bytes=e["bytes_total"] + spare - extra)
     f = tmp_path / "sizing.json"
     f.write_text(json.dumps(s))
     monkeypatch.setattr(bx, "V2_SIZING", f)
@@ -575,7 +586,7 @@ def test_the_v2_plan_holds_back_the_pretraining_peak_until_pretraining_is_done(t
     fits, why = bx.v2_plan_fits()
     assert fits is False and "held for v2 pretraining" in why
     e["headroom_to_85pc_bytes"] = (e["extraction_bytes"] + e["fine_tuning_bytes"]
-                                   + peak + 1)    # the extraction, the fine-tuning and the peak
+                                   + peak + 1 - extra)    # the extraction, the fine-tuning and the peak
     f.write_text(json.dumps(s))
     assert bx.v2_plan_fits()[0] is True
 
@@ -674,6 +685,9 @@ def test_the_committed_sizing_is_the_plan_the_generator_emits_on_this_grid():
     assert t1["fits_under_85pc"] is False
     assert t1["bytes_total"] - t1["fine_tuning_bytes"] < t1["headroom_to_85pc_bytes"]
     assert bx.v2_plan_fits()[0] is False
+    # the PI's 90 % line (2026-10-07): tier 1 with the v2 fine-tuning fits, the whole grid not
+    assert bx.V2_LINE_PC == 90
+    assert bx.v2_plan_fits(tier=1)[0] is True and bx.v2_plan_fits(v2_pretraining_done=True)[0] is False
     assert s["checkpoint_bytes_per_run_from"]["early_keep"] == [0, 2, 4, 9, 19, 29, 39, 49, 55, 62, 69]
 
 

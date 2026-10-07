@@ -879,6 +879,10 @@ def storage_guarded(fname: str, text: str) -> str:
 #     10-01, GPUFailed set most of that time, Xid "GPU stopped processing" on GPU 6.
 # The specs that already ran keep the text they ran with.
 GPU_FAULT_NODES = BAD_GPU_NODES + ("ry-gpu-10.sdsc.optiputer.net",)
+# The v2 extraction also keeps off the nodes the PI excluded from the v2 grid, 2026-10-07
+# (scripts/build_mtx_launch.py V2_BAD_NODES); specs that already ran keep their list.
+V2_GPU_FAULT_NODES = GPU_FAULT_NODES + ("ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net",
+                                        "nrp-01.laccd.edu")
 GPU_OK = ("          gpu_ok () { timeout 300 python3 -c 'import torch; "
           "torch.ones(8, device=\"cuda\").add_(1).sum().item()' >/dev/null 2>&1; }\n"
           "          gpu_ok || { echo \"no working GPU on $(hostname); retried elsewhere\"; exit 137; }\n")
@@ -1026,6 +1030,11 @@ V2_PLAN = ("features, pooled and heads at best70, wavg, bestval and the BatchNor
 # them. --v2 refuses while the readout is absent, and if a readout said the rule does not
 # fire, since the plan would then extract twins nothing requires.
 V2_BN_DIAG = ROOT / "experiments" / "FIGS" / "data" / "head_epoch_diag" / "head_bn_diag.json"
+# THE LINE: the PI raised it from 85 % to 90 % of /data for this plan (with the v2
+# fine-tuning it budgets for), 2026-10-07, nothing deleted, because the twins took the
+# tier-1 plan 60 GB past 85 %. The plan check and the specs' in-pod guard both use it;
+# every other spec keeps 85 %.
+V2_LINE_PC = 90
 
 
 def _script(name: str):
@@ -1063,15 +1072,16 @@ def v2_plan_fits(v2_pretraining_done: bool = False, tier: int | None = None) -> 
             return False, (f"{V2_SIZING.name} counts {e['fine_tuning_bytes'] / 1e9:.1f} GB of v2 "
                            f"fine-tuning, scripts/build_ft_jobs.py now emits {now / 1e9:.1f} GB; "
                            "rerun extraction_v2_sizing.py")
+    headroom = e["headroom_to_85pc_bytes"] + (V2_LINE_PC - 85) / 100 * s["volume"]["size_bytes"]
     why = (f"{e['bytes_total'] / 1e9:.1f} GB (extraction {e['extraction_bytes'] / 1e9:.1f} + "
            f"pretraining checkpoints {e['pretraining_checkpoint_bytes'] / 1e9:.1f} + "
            f"v2 fine-tuning {e['fine_tuning_bytes'] / 1e9:.1f}) against "
-           f"{e['headroom_to_85pc_bytes'] / 1e9:.1f} GB to the 85 % line")
+           f"{headroom / 1e9:.1f} GB to the {V2_LINE_PC} % line")
     if v2_pretraining_done:
-        return bool(e["fits_under_85pc"]), why
+        return e["bytes_total"] < headroom, why
     launch = _script("build_mtx_launch")
     reserve = max(launch.V2_GRID_RESERVE_GIB * 2**30 - e["pretraining_checkpoint_bytes"], 0)
-    return (bool(e["fits_under_85pc"]) and e["bytes_total"] < e["headroom_to_85pc_bytes"] - reserve,
+    return (e["bytes_total"] < headroom - reserve,
             f"{why}, less {reserve / 1e9:.1f} GB more held for v2 pretraining at its peak "
             f"(--v2-pretraining-done releases it)")
 
@@ -1143,10 +1153,17 @@ def build_v2(tier: int | None = None) -> dict[str, str]:
                 f"            --head-prefix 2000000 --diag-stride 100 \\\n"
                 f"            --data-test {files} \\\n"
                 f"            --out ${{OUT}} || halt\n")
-        out[f"job-{name}.yaml"] = gpu_fault_aware(V1ERR_TEMPLATE.format(
+        text = V1ERR_TEMPLATE.format(
             name=name, image=IMAGE, pin=V2_PIN, body=body, mem="64Gi", cpu="6",
             gpu_req=', nvidia.com/gpu: "1"', gpu_check=GPU_CHECK.format(),
-            node_exclude=NODE_EXCLUDE))
+            node_exclude=NODE_EXCLUDE)
+        text = gpu_fault_aware(text)
+        for old, new in (('[ "${USED}" -lt 85 ]', f'[ "${{USED}}" -lt {V2_LINE_PC} ]'),
+                         (", ".join(f'"{n}"' for n in GPU_FAULT_NODES),
+                          ", ".join(f'"{n}"' for n in V2_GPU_FAULT_NODES))):
+            assert text.count(old) == 1, (name, old)
+            text = text.replace(old, new)
+        out[f"job-{name}.yaml"] = text
     return out
 
 
