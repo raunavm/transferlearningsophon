@@ -43,6 +43,7 @@ import importlib.util
 import json
 import os
 import pathlib
+import re
 import sys
 from concurrent.futures import ProcessPoolExecutor
 
@@ -176,22 +177,28 @@ def reproduction(old, stored):
     return rows
 
 
-def per_label_set(res, S):
+def per_label_set(res, S=None, group=None, levels=LABEL_SETS):
     """Mean +- sd (n - 1) over the pretraining seeds of each label set -- how the paper
     reports every result, with no test -- of the yield under the fitted shape and under
     each shape variation, and of the fitted mean and width; the median per-model
-    statistical error; the reference and the published checkpoint as single rows."""
+    statistical error; the reference and the published checkpoint as single rows.
+    `group`: model name -> (label set, seed), or None outside every label set; by default
+    the first run's names, read by seed_level.AOJ_ARM_RE (the v2 grid's: per_arm_v2)."""
     msd = lambda v: dict(mean=float(np.mean(v)), sd=float(np.std(v, ddof=1)), n=len(v))
     row = lambda f: dict(signal_yield=f["signal_yield"], signal_yield_err=f["signal_yield_err"],
                          mean_gev=f["mean"], width_gev=f["width"],
                          by_shape={k: v["signal_yield"] for k, v in f["shape_variations"].items()})
+    if group is None:
+        def group(name):
+            m = S.AOJ_ARM_RE.match(name)
+            return (str(S.AOJ_CELL[m.group(1)]), int(m.group(2))) if m else None
     groups = {}
     for name, per_peak in res["models"].items():
-        m = S.AOJ_ARM_RE.match(name)
-        if m:
-            groups.setdefault(str(S.AOJ_CELL[m.group(1)]), []).append((int(m.group(2)), name, per_peak[PEAK]))
+        g = group(name)
+        if g:
+            groups.setdefault(g[0], []).append((g[1], name, per_peak[PEAK]))
     out = {}
-    for level in LABEL_SETS:
+    for level in levels:
         g = sorted(groups[level])
         f = [x for _, _, x in g]
         out[level] = dict(models=[n for _, n, _ in g], signal_yields=[x["signal_yield"] for x in f],
@@ -218,6 +225,43 @@ def write_analysis(results_path, out_dir):
     doc["per_label_set"] = per_label_set(json.loads(pathlib.Path(results_path).read_text()), S)
     path.write_text(json.dumps(doc, indent=2))
     return doc["per_label_set"]
+
+
+# THE v2 GRID (scripts/build_aoj_jobs.py --v2) names a model <run directory less "mtx-">-<checkpoint>,
+# the run directory mtx-<grid arm, lower case, no underscores>-s<run> (build_mtx_launch.v2_run_id)
+V2_GRID = REPO / "configs" / "arms" / "v2_grid.json"
+V2_NAME = re.compile(r"^([a-z0-9]+)-s([1-9]\d*)-(\w+)$")
+
+
+def per_arm_v2(res, grid=V2_GRID):
+    """per_label_set for the v2 grid, at each checkpoint separately: the mean +- sd (n - 1)
+    over the runs of each grid arm, the arms in grid order."""
+    order = [a["name"] for a in json.loads(pathlib.Path(grid).read_text())["arms"]]
+    arm_of = {re.sub(r"[^a-z0-9]", "", a.lower()): a for a in order}
+    key = {}
+    for name in res["models"]:
+        m = V2_NAME.match(name)
+        if m and m[1] not in arm_of:
+            raise SystemExit(f"FATAL: {name} names no arm of {grid}")
+        if m:
+            key[name] = (arm_of[m[1]], int(m[2]), m[3])
+    out = {}
+    for tag in dict.fromkeys(t for _, _, t in key.values()):
+        arms = {a for a, _, t in key.values() if t == tag}
+        out[tag] = per_label_set(res, group=lambda n, tag=tag: key[n][:2] if n in key and key[n][2] == tag else None,
+                                 levels=[a for a in order if a in arms])
+    return out
+
+
+def write_analysis_v2(results_path, out_dir):
+    """per_arm_v2 into out_dir/aoj_top.json. No test: seed_level.py --real-data reads the
+    first run's names, and the paper reports the mean and sd over runs."""
+    doc = dict(provenance=dict(input=str(results_path), input_sha256=_sha(results_path)),
+               per_checkpoint=per_arm_v2(json.loads(pathlib.Path(results_path).read_text())))
+    path = pathlib.Path(out_dir) / "aoj_top.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(doc, indent=2))
+    return doc["per_checkpoint"]
 
 
 def main(argv=None) -> int:

@@ -37,10 +37,12 @@ PERSISTED: jets.npz (~50 B/jet) and one float16 score per model per jet -- about
 logits live and die in scratch.
 
 Run:  python3 scripts/build_aoj_jobs.py [--check-only] [--pin-not-yet-tagged]
+      python3 scripts/build_aoj_jobs.py --v2 TIER [TIER ...] [--check-only] [--pin-not-yet-tagged]
 """
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import pathlib
 import re
@@ -103,10 +105,10 @@ FIT3_NEEDED_FLAGS = {"experiments/AOJ/peak_fit.py": "n_at_floor",
 # Both carry the pod failure policy of scripts/build_ft_jobs.py ("retries that survive
 # a flaky cluster"): evictions are not counted, two failed attempts halt the job.
 # Then one CPU job (render_checks) runs experiments/AOJ/realdata_checks.py over both.
-# FOR THE v2 GRID the same chain reruns unchanged except in three places: the checkpoint
-# each Model names (Model.checkpoint -- the v2 rule's epoch under /data/results/mtx_v2/),
-# the output roots (RESCORE_ROOT, SIM_ROOT, CHECKS_ROOT) and the main fit it is read
-# against (MAIN_FIT: that grid's peak_fit.py results.json).
+# FOR THE v2 GRID the shards and the fits are built by --v2 (the v2 section at the end); its
+# shards also write the prong-only score, so they serve the checks as both the first run and
+# the rescore. The simulation and checks jobs are not built for it yet: they would change
+# their output roots (SIM_ROOT, CHECKS_ROOT), their models and the main fit (MAIN_FIT2).
 RESCORE_PIN = "mtx-s1.68"
 RESCORE_NEEDED_FLAGS = {"experiments/AOJ/discriminants.py": "prong_only",
                         "experiments/AOJ/closure.py": "quantiles_aoj",
@@ -200,6 +202,10 @@ class Model(NamedTuple):
         return (f"/data/results/mtx/mtx-{self.name}/net_epoch-79_state.pt"
                 if self.spec else "/workspace/sophon_public.pt")
 
+    @property
+    def run_id(self) -> str:
+        return f"mtx-{self.name}"
+
 
 def _ladder(rung, k, seeds, stem):
     return [Model(f"{stem}-s{s}", rung, k, 0, f"job-mtx-{rung.lower()}-s{s}-raunav.yaml")
@@ -219,17 +225,20 @@ MODELS = [
 ]
 
 
-def verify_heads() -> None:
-    """K from each model's own training spec, never assumed (R42_Q1 is 43)."""
-    for m in MODELS:
+def verify_heads(models: list | None = None) -> None:
+    """K from each model's own training spec, never assumed (R42_Q1 is 43); for a v2 model
+    also the mass output, from the spec's --mass-lambda."""
+    for m in MODELS if models is None else models:
         if not m.spec:
             continue
         text = (MTX_K8S / m.spec).read_text()
         ks = {int(x) for x in re.findall(r"(?:--num-classes|num_classes) (\d+)", text)}
         if ks != {m.k}:
             raise SystemExit(f"FATAL: {m.spec} says num_classes {ks}, this builder says {m.k}")
-        if f"mtx-{m.name}" not in text:
-            raise SystemExit(f"FATAL: {m.spec} does not train run mtx-{m.name}")
+        if m.run_id not in text:
+            raise SystemExit(f"FATAL: {m.spec} does not train run {m.run_id}")
+        if isinstance(m, V2Model) and ("--mass-lambda" in text) != bool(m.num_reg):
+            raise SystemExit(f"FATAL: {m.spec} and this builder disagree on {m.run_id}'s mass output")
 
 
 def shards() -> list[list[dict]]:
@@ -485,25 +494,26 @@ spec:
 """
 
 
-def render_shard(i: int, files: list[dict]) -> str:
+def render_shard(i: int, files: list[dict], models: list | None = None) -> str:
+    models = MODELS if models is None else models
     g = [f for f in files if f["key"].startswith("RunG")]
     h = [f for f in files if f["key"].startswith("RunH")]
     pairs = "\n".join(f"          pair {a['key']} {a['md5']} {b['key']} {b['md5']}" for a, b in zip(g, h))
     staged = " ".join(f"${{STAGED}}/{f['key'].removesuffix('.h5')}.parquet"
                       for a, b in zip(g, h) for f in (a, b))
     line = lambda m: f'scored {m.name} "{m.checkpoint}" {m.k} {m.num_reg} {m.arm} {m.rung}'
-    first, rest = MODELS[0], MODELS[1:]
+    first, rest = models[0], models[1:]
     scores = [f"          {line(first)}"]
     for start in range(0, len(rest), PARALLEL):
         group = rest[start:start + PARALLEL]
         scores += [f"          {line(m)} & p{k}=$!" for k, m in enumerate(group)]
         scores.append("          " + "; ".join(f"wait ${{p{k}}}" for k in range(len(group))))
     scores = "\n".join(scores)
-    checkpoints = " ".join(m.checkpoint for m in MODELS if m.spec)
+    checkpoints = " ".join(m.checkpoint for m in models if m.spec)
     return SHARD_TEMPLATE.format(
         i=i, n=N_SHARDS, image=IMAGE, pin=PIN, out=OUT_ROOT,
         files_short=f"{g[0]['key']}..{g[-1]['key']} and {h[0]['key']}..{h[-1]['key']}",
-        model_names=" ".join(m.name for m in MODELS), checkpoints=checkpoints,
+        model_names=" ".join(m.name for m in models), checkpoints=checkpoints,
         ref=" ".join(REF_QCD), sophon_url=SOPHON_URL, sophon_sha=SOPHON_SHA256,
         pairs=pairs, staged=staged, observers=OBSERVERS, scores=scores, parallel=PARALLEL,
         bad_nodes=", ".join(f'"{b}"' for b in BAD_NODES))
@@ -1451,6 +1461,289 @@ def render_read_injection() -> str:
     return t
 
 
+# ============================================================ the v2 grid (PRESPEC A7-A14)
+# THE SAME RUN FOR THE v2 GRID (configs/arms/v2_grid.json), one run per set of tiers, emitted
+# when their runs have finished (--v2 TIER ...): V2_OUT_ROOT/t<tiers>/shard<i> are the first
+# run's shards (render_shard) on v2_models(), with three changes. Each checkpoint is resolved
+# in the pod by experiments/EVAL/extract_v2.py's own rule (experiments/AOJ/v2_checkpoints.py);
+# the prong-only score is written beside the three-prong one (as the rescore), so the checks
+# need no rescore; and the GPU is never a v2 grid product. Then one CPU job fits them all.
+# Two runs: tiers 1 and 2 (the freeze, t12), then tier 3 (t3) at the freeze run's shape.
+#
+# CHECKPOINTS (decided 2026-10-07). PRESPEC A7-A14 name none for the real data. It is a frozen
+# readout of each model's own output layer, so every checkpoint A14 reports for those: the
+# primary (best70), the weight average (A8: every result), the global best (A14's sensitivity
+# check of the frozen readouts), and the BatchNorm twins of best70 and the global best (A14's
+# rule, fired 2026-10-03). A name whose file another name of the run already holds -- bestval
+# at best70's epoch -- is not scored again: its scores are linked (v2_checkpoints.py), as the
+# extraction links its directory. The pooled peak shape is built from best70 alone
+# (fit_v6.V2_PRIMARY) and every checkpoint is fitted at it.
+V2_CHECKPOINTS = ("best70", "wavg", "bestval", "best70_bn", "bestval_bn")
+# THE FREEZE (A14 item 8): tiers 1 and 2 are fitted together and derive the pooled shape; any
+# other tier set (tier 3) holds that run's shape, so its results change no frozen number.
+V2_FREEZE = (1, 2)
+# THE GPU IS NOT PINNED to the run index's product. Inference runs with TF32 off
+# (extract_features.strict_fp32), where the GPU agrees with float32 on the CPU to 2e-4 in
+# log-odds (experiments/FIGS/data/tf32_check), under the float16 spacing the scores are
+# stored at for |log-odds| >= 0.5; and every model of a shard runs on the shard's one GPU, as
+# in the first run. A pin would stage each shard once per product and queue for the GPUs the
+# grid trains on. So: any GPU but those products, with the 11 GB PARALLEL is sized for.
+# THE MODELS. discriminants.py defines the scores on a column of the contraction-tree label
+# map, so the random partitions and flavour pairs (no column) are not scored; nor the
+# self-supervised arms (no output layer), nor the leave-one-family-out arms (A13: anomaly).
+V2_TREE_RUNGS = ("L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1")
+V2_PIN = "mtx-s2.00"
+V2_NEEDED_FLAGS = {"experiments/AOJ/v2_checkpoints.py": "resolve_checkpoints",
+                   "experiments/EVAL/extract_v2.py": "def bn_twin",
+                   "experiments/EVAL/extract_features.py": "def strict_fp32",
+                   "experiments/AOJ/discriminants.py": "prong_only",
+                   "experiments/AOJ/peak_fit.py": "def tops_from_reference",
+                   "experiments/AOJ/export_fit_bins.py": "these are not the bins that run fitted",
+                   "experiments/AOJ/fit_v6.py": "--v2",
+                   "experiments/AOJ/refit_from_bins.py": "def write_analysis_v2"}
+V2_OUT_ROOT = "/data/results/aoj/full_v2"
+V2_K8S = K8S / "v2"
+# the fit job: peak_fit.py and export_fit_bins.py run on one core, fit_v6.py on the rest
+V2_FIT_CPU = 16
+
+
+@functools.cache
+def _launch():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("build_mtx_launch", ROOT / "scripts" / "build_mtx_launch.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+class V2Model(NamedTuple):
+    """One checkpoint of one v2 grid run, with the fields the templates read from a Model."""
+    name: str      # <run directory less "mtx-">-<tag>, e.g. r16q1mass-s4-best70_bn
+    arm: str       # the grid arm, recorded in the extraction manifest
+    rung: str      # label-map column the head realises
+    k: int
+    num_reg: int
+    run_id: str    # mtx-<arm slug>-s<run> (build_mtx_launch.v2_run_id)
+    run_dir: str
+    tag: str       # the checkpoint, as extract_v2.resolve_checkpoints names it
+    spec: str      # its grid training spec, under experiments/MTX/k8s
+
+    @property
+    def checkpoint(self) -> str:
+        """The link experiments/AOJ/v2_checkpoints.py makes in the pod to the resolved file."""
+        return f"/workspace/ckpt/{self.name}.pt"
+
+
+def v2_models(tiers) -> list:
+    """The public checkpoint (the reference row of every run), then V2_CHECKPOINTS of every
+    run of the arms of `tiers` the scores are defined on, in grid order."""
+    launch = _launch()
+    out = [MODELS[0]]
+    for arm in launch.v2_arms():
+        rung = arm["name"].removesuffix("_MASS_LM").removesuffix("_MASS")
+        if int(arm["tier"]) not in tiers or rung not in V2_TREE_RUNGS or arm.get("parent"):
+            continue
+        for run in range(1, int(arm["runs"]) + 1):
+            rid = launch.v2_run_id(arm["name"], run)
+            out += [V2Model(f"{rid.removeprefix('mtx-')}-{tag}", arm["name"], rung, int(arm["num_classes"]),
+                            int(arm["mass_lambda"] is not None), rid, f"{launch.V2_ROOT}/{rid}", tag,
+                            f"v2/grid/job-{launch.v2_job_name(arm['name'], run)}.yaml")
+                    for tag in V2_CHECKPOINTS]
+    if len(out) == 1:
+        raise SystemExit(f"FATAL: tiers {sorted(tiers)} hold no arm the scores are defined on")
+    return out
+
+
+def v2_label(tiers) -> str:
+    """The run of tiers 1 and 2 is t12: its shards and fits are under V2_OUT_ROOT/t12."""
+    return "".join(str(t) for t in sorted(set(tiers)))
+
+
+def v2_shape_from(tiers) -> str | None:
+    """None for the freeze run, which derives the pooled shape; for a run of tiers outside it,
+    the freeze run's fit, whose shape it holds. A run of some but not all freeze tiers, or of
+    them and more, would be a second freeze, and is refused."""
+    if set(tiers) == set(V2_FREEZE):
+        return None
+    if set(tiers) & set(V2_FREEZE):
+        raise SystemExit(f"FATAL: tiers {sorted(set(tiers))}: the freeze run is --v2 "
+                         f"{' '.join(map(str, V2_FREEZE))}, and any other run holds its pooled shape")
+    return f"{V2_OUT_ROOT}/t{v2_label(V2_FREEZE)}/fit_v6/results.json"
+
+
+def render_v2_shard(i: int, files: list[dict], tiers) -> str:
+    """Shard i of the v2 run of `tiers`: the first run's shard on v2_models(tiers), the
+    checkpoints resolved in the pod before any download, with the prong-only score, the v2
+    image and pyarrow, the retry policy, and a GPU off the grid's products. Derived by
+    substitution, each asserted, so staging, row alignment and scoring are the first run's."""
+    ft, launch = _ft(), _launch()
+    models = v2_models(tiers)
+    label = v2_label(tiers)
+    resolve = ('          python3 experiments/AOJ/v2_checkpoints.py --links /workspace/ckpt '
+               '--record "${OUT}/checkpoints.json" \\\n'
+               + "".join(f"            {m.name}={m.run_dir}:{m.tag} \\\n" for m in models if isinstance(m, V2Model))
+               + f"            || exit {ft.EXIT_HALT}\n")
+    products = ", ".join(f'"{p}"' for p in sorted(set(launch.V2_GPU_BY_RUN.values())))
+    exists = "              - key: nvidia.com/gpu.product\n                operator: Exists\n"
+    skip = '[ -f "${OUT}/scores_$1.npz" ] && { echo "skip $1 (scored)"; return 0; }\n'
+    done = '          touch "${OUT}/DONE"\n          ls -la "${OUT}"\n'
+    t = render_shard(i, files, models)
+    subs = [
+        (skip, skip + '            [ -f "/workspace/ckpt/$1.same" ] && '
+                      '{ echo "skip $1 (the file of $(cat /workspace/ckpt/$1.same))"; return 0; }\n'),
+        (done, "          # a name whose file another name holds gets that name's scores (v2_checkpoints.py)\n"
+               "          for f in /workspace/ckpt/*.same; do\n"
+               '            [ -f "${f}" ] || continue\n'
+               '            m=$(basename "${f}" .same); first=$(cat "${f}")\n'
+               '            [ -f "${OUT}/scores_${first}.npz" ] || { echo "FATAL: ${first} is not scored"; exit 1; }\n'
+               '            ln -sfn "scores_${first}.npz" "${OUT}/scores_${m}.npz"\n'
+               '            ln -sfn "scores_${first}.json" "${OUT}/scores_${m}.json"\n'
+               "          done\n" + done),
+        ("  # FULL REAL-DATA RUN, SHARD", f"  # v2 GRID, TIERS {', '.join(label)}: FULL REAL-DATA RUN, SHARD"),
+        (f"name: aoj-full-s{i}-raunav", f"name: aoj-v2-t{label}-s{i}-raunav"),
+        (f"image: {IMAGE}", f"image: {launch.V2_IMAGE}"),
+        (f"          OUT={OUT_ROOT}/shard{i}\n",
+         f"          OUT={V2_OUT_ROOT}/t{label}/shard{i}\n" + _failure_accounting("${OUT}", ft.EXIT_HALT)),
+        ('[ "${USED}" -lt 95 ]', '[ "${USED}" -lt 85 ]'),
+        (f'--branch "{PIN}"', f'--branch "{V2_PIN}"'),
+        ("pip install --no-cache-dir -q pyarrow h5py", f"pip install --no-cache-dir -q {launch.V2_PYARROW} h5py"),
+        ("          for c in ", resolve + "          for c in "),
+        ("--structures three_prong ", "--structures three_prong prong_only "),
+        ("              # never the 3090 pool: the benchmark wave is Pending for it. NotIn\n",
+         "              # never a v2 grid product (V2_GPU_BY_RUN): the grid waits for them. NotIn\n"),
+        (exists, exists + "              - key: nvidia.com/gpu.memory\n                operator: Gt\n"
+                          f'                values: ["{MIN_GPU_MEMORY_MIB}"]\n'),
+        ('values: ["NVIDIA-GeForce-RTX-3090"]', f"values: [{products}]"),
+        ("values: [" + ", ".join(f'"{b}"' for b in BAD_NODES) + "]",
+         "values: [" + ", ".join(f'"{b}"' for b in dict.fromkeys(SIM_BAD_NODES + launch.V2_BAD_NODES)) + "]"),
+    ]
+    for a, b in subs:
+        if t.count(a) != 1:
+            raise SystemExit(f"FATAL: the shard template changed; cannot derive the v2 shard ({a[:50]!r})")
+        t = t.replace(a, b)
+    return _robust(t, "  # 2, not 1: the shard resumes model by model, so a retry after a lost node\n"
+                      "  # repeats only the ~30 min of download and staging.\n  backoffLimit: 2\n")
+
+
+V2_FIT_TEMPLATE = r"""apiVersion: batch/v1
+kind: Job
+metadata:
+  # v2 GRID, TIERS {tiers}: THE REAL-DATA FITS. GENERATED by scripts/build_aoj_jobs.py --v2.
+  # Joins the {n} shards (merge_shards.py refuses a partial or inconsistent set); fits every
+  # score with its own floated shape and the tops failing its cut (peak_fit.py: fit_v5's
+  # fits, on the jets) and exports the bins it fitted (export_fit_bins.py); then the main
+  # fit at one pooled shape (fit_v6.py --v2), {shape_note},
+  # and its per-arm readout at each checkpoint. Into {out}/fit, fit_v6 and analysis_v6, and on the log.
+  name: aoj-v2-t{label}-fit-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: aoj
+        image: {image}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT={out}
+{accounting}{storage}          SHARDS=""
+          for i in $(seq 0 {last}); do
+            [ -f "${{OUT}}/shard${{i}}/DONE" ] || {{ echo "FATAL: shard ${{i}} has not finished"; exit {halt}; }}
+            SHARDS="${{SHARDS}} ${{OUT}}/shard${{i}}"
+          done
+{held}          git clone --depth 1 --branch "{pin}" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONUNBUFFERED=1
+          SCORES=""
+          for m in {model_names}; do SCORES="${{SCORES}} ${{m}}=/scratch/merged/scores_${{m}}.npz"; done
+          # A step's output reaches the volume only when the step is complete, its marker file
+          # last, so a retry redoes only the steps that did not finish.
+          if [ ! -e "${{OUT}}/fit/bins.npz" ]; then
+            python3 experiments/AOJ/merge_shards.py --shards ${{SHARDS}} --out /scratch/merged
+            python3 experiments/AOJ/peak_fit.py --peaks top \
+              --jets /scratch/merged/jets.npz --closure /scratch/merged/closure.json \
+              --scores ${{SCORES}} --shape-pool {pool_names} \
+              --eff 0.01 --toys 200 --out /scratch/fit
+            python3 experiments/AOJ/export_fit_bins.py --peak top --jets /scratch/merged/jets.npz \
+              --results /scratch/fit/results.json --histograms /scratch/fit/histograms.npz \
+              --scores ${{SCORES}} --out /scratch/fit/bins.npz
+            mkdir -p "${{OUT}}/fit"
+            cp /scratch/merged/merge_manifest.json /scratch/merged/closure.json /scratch/fit/results.json \
+              /scratch/fit/histograms.npz "${{OUT}}/fit/"
+            cp /scratch/fit/bins.npz "${{OUT}}/fit/bins.npz"
+          fi
+          if [ ! -e "${{OUT}}/analysis_v6/aoj_top.json" ]; then
+            python3 experiments/AOJ/fit_v6.py --v2 --bins "${{OUT}}/fit/bins.npz" \
+              --previous "${{OUT}}/fit/results.json" --out /scratch/fit_v6 \
+              --analysis-out /scratch/analysis_v6 --workers {workers}{shape_from}
+            mkdir -p "${{OUT}}/fit_v6" "${{OUT}}/analysis_v6"
+            cp /scratch/fit_v6/* "${{OUT}}/fit_v6/"
+            cp /scratch/analysis_v6/aoj_top.json "${{OUT}}/analysis_v6/aoj_top.json"
+          fi
+          cd "${{OUT}}"
+          echo "BEGIN-TAR"
+          tar czf - fit fit_v6 analysis_v6 | base64 -w 0
+          echo
+          echo "END-TAR"
+        volumeMounts:
+        - {{ name: data,    mountPath: /data }}
+        - {{ name: scratch, mountPath: /scratch }}
+        resources:
+          # every score in float64 over the ~9.4 M jets of the fit region (~75 MB a model) in
+          # peak_fit.py and again in export_fit_bins.py; fit_v6.py's workers hold bins only
+          requests: {{ memory: "32Gi", cpu: "{cpu}", ephemeral-storage: "16Gi" }}
+          limits:   {{ memory: "32Gi", cpu: "{cpu}", ephemeral-storage: "16Gi" }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: scratch
+        emptyDir: {{ sizeLimit: "16Gi" }}
+"""
+
+
+def render_v2_fit(tiers) -> str:
+    ft, launch = _ft(), _launch()
+    label = v2_label(tiers)
+    held = v2_shape_from(tiers)
+    models = v2_models(tiers)
+    t = V2_FIT_TEMPLATE.format(
+        tiers=", ".join(label), label=label, n=N_SHARDS, out=f"{V2_OUT_ROOT}/t{label}", image=launch.V2_IMAGE,
+        accounting=_failure_accounting("${OUT}/attempts/fit", ft.EXIT_HALT), storage=_storage_guard("/data", 1),
+        last=N_SHARDS - 1, halt=ft.EXIT_HALT, pin=V2_PIN, model_names=" ".join(m.name for m in models),
+        pool_names=" ".join(m.name for m in models if getattr(m, "tag", None) == "best70"),
+        held=(f'          [ -f "{held}" ] || {{ echo "FATAL: no freeze fit {held}; its shape is held here"; '
+              f"exit {ft.EXIT_HALT}; }}\n" if held else ""),
+        shape_from=f" \\\n              --shape-from {held}" if held else "",
+        shape_note=("the freeze run's, held from its fit_v6" if held else
+                    "built from the best70 entries: the freeze's shape"),
+        workers=V2_FIT_CPU - 1, cpu=V2_FIT_CPU)
+    return _robust(t, "  backoffLimit: 2\n")
+
+
+def v2_specs(tiers) -> dict[pathlib.Path, str]:
+    v2_shape_from(tiers)
+    label = v2_label(tiers)
+    out = {V2_K8S / f"job-aoj-v2-t{label}-s{i}-raunav.yaml": render_v2_shard(i, fs, tiers)
+           for i, fs in enumerate(shards())}
+    out[V2_K8S / f"job-aoj-v2-t{label}-fit-raunav.yaml"] = render_v2_fit(tiers)
+    return out
+
+
 def specs() -> dict[pathlib.Path, str]:
     out = {K8S / f"job-aoj-full-s{i}-raunav.yaml": render_shard(i, fs) for i, fs in enumerate(shards())}
     out[K8S / "job-aoj-full-fit-raunav.yaml"] = render_fit()
@@ -1480,8 +1773,16 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-only", action="store_true", help="verify, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
-                    help=f"check the working tree instead of {CHECKS2_PIN}, which is tagged after the commit")
+                    help=f"check the working tree instead of {CHECKS2_PIN} ({V2_PIN} with --v2), which is "
+                         "tagged after the commit")
+    ap.add_argument("--v2", nargs="+", type=int, metavar="TIER", default=None,
+                    help="emit ONLY the v2 grid's real-data run of these tiers (configs/arms/v2_grid.json) into "
+                         f"{V2_K8S.relative_to(ROOT)}, once their runs and BatchNorm twins exist")
     a = ap.parse_args()
+    if a.v2:
+        verify_heads(v2_models(a.v2))
+        verify_pin(V2_PIN, a.pin_not_yet_tagged, V2_NEEDED_FLAGS)
+        return write(v2_specs(a.v2), a.check_only)
     verify_heads()
     verify_pin(PIN, False)                      # the shards already ran at it
     verify_pin(FIT_PIN, False, FIT_NEEDED_FLAGS)
@@ -1501,10 +1802,15 @@ def main() -> int:
     verify_pin(FIT5_PIN, False, FIT5_NEEDED_FLAGS)
     verify_pin(FIT6_PIN, False, FIT6_NEEDED_FLAGS)
     verify_pin(CHECKS2_PIN, a.pin_not_yet_tagged, CHECKS2_NEEDED_FLAGS)
-    for path, text in specs().items():
-        if a.check_only:
+    return write(specs(), a.check_only)
+
+
+def write(out: dict[pathlib.Path, str], check_only: bool) -> int:
+    for path, text in out.items():
+        if check_only:
             print(f"ok   {path.relative_to(ROOT)}")
         else:
+            path.parent.mkdir(exist_ok=True)
             path.write_text(text)
             print(f"wrote {path.relative_to(ROOT)}")
     return 0
