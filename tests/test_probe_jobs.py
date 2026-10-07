@@ -508,3 +508,218 @@ def test_the_v2_probe_tasks_are_every_probe_task_and_the_v2_extraction_keeps_the
         else:
             inside = {x for cl, w in windowed if w == dict(spec["window"]) for x in cl}
             assert cls <= set(anywhere) | inside, task
+
+
+# ---------------------------------------------------------------------------
+# The v2 grid (--v2): one job per run and untrained-trunk reference, every frozen
+# readout of every extracted checkpoint, written beside the extraction's run
+# directories (/data/results/eval/v2/<analysis>/<run>/<tag>/<readout>).
+# ---------------------------------------------------------------------------
+
+def _bx():
+    return bp._load_builder("build_extract_jobs")
+
+
+def _script(text):
+    return yaml.safe_load(text)["spec"]["template"]["spec"]["containers"][0]["args"][0]
+
+
+def test_v2_one_job_per_run_and_reference_with_the_retry_policy_and_the_pin():
+    bx, jobs = _bx(), bp.build_v2()
+    runs = [r for r, *_ in bx.v2_runs()] + [ref for ref, _ in bx.v2_init_refs()]
+    assert sorted(jobs) == sorted(f"job-frozen-v2-{r.removeprefix('mtx-')}-raunav.yaml" for r in runs)
+    assert len(jobs) == 93
+    for fname, text in jobs.items():
+        d = yaml.safe_load(text)
+        assert "raunav" in d["metadata"]["name"] and fname == f"job-{d['metadata']['name']}.yaml"
+        assert d["spec"]["backoffLimit"] == bp.V1ERR_BACKOFF
+        rules = d["spec"]["podFailurePolicy"]["rules"]
+        assert {"action": "FailJob", "onExitCodes": {"containerName": "main", "operator": "In",
+                                                      "values": [42]}} in rules
+        assert {"action": "Ignore", "onPodConditions": [{"type": "DisruptionTarget"}]} in rules
+        assert f'--branch "{bp.V2_GRID_PIN}"' in text and "df --output=pcent /data" in text
+        assert "nvidia.com/gpu" not in text
+
+
+def test_v2_pin_is_refused_until_tagged_unless_declared():
+    assert bp.V2_GRID_PIN == "mtx-s2.00"
+    with pytest.raises(SystemExit):
+        bp.verify_pin(bp.V2_GRID_PIN, False, bp.V2_GRID_NEEDED)
+    bp.verify_pin(bp.V2_GRID_PIN, True, bp.V2_GRID_NEEDED)     # the working tree has every flag
+
+
+def test_v2_every_checkpoint_and_readout_the_prespec_names():
+    """best70, wavg, bestval and both BatchNorm twins for every run (A8, A14); the
+    class token and the pooled embedding for every model, the pooled one only for
+    the self-supervised runs (section 4); init for the untrained-trunk references."""
+    bx, jobs = _bx(), bp.build_v2()
+    for run, arm, k, _, _ in bx.v2_runs() + [(ref, None, None, 0, 0) for ref, _ in bx.v2_init_refs()]:
+        s = _script(jobs[f"job-frozen-v2-{run.removeprefix('mtx-')}-raunav.yaml"])
+        tags = re.search(r"^for t in (.+); do$", s, re.M).group(1).split()
+        readouts = re.search(r'READOUTS="([^"]+)"', s).group(1).split()
+        if arm is None:
+            assert tags == ["init"] and readouts == ["features", "pooled"]
+        else:
+            assert tags == list(bx.V2_CHECKPOINTS) and set(tags) >= {"best70", "wavg", "bestval",
+                                                                     "best70_bn", "bestval_bn"}
+            assert readouts == (["pooled"] if k == 0 else ["features", "pooled"]), run
+        files = re.search(r"^  for f in (.+); do$", s, re.M).group(1).split()
+        assert set(files) == {"label188.npy", "manifest.json", "rows.npy", "observers.npz"} | {
+            f"{r}.npy" for r in readouts}
+        assert f"CACHE={bx.V2_OUT}/{run};" in s and f"RUN={run};" in s
+
+
+def test_v2_runs_every_task_at_the_v2_split_and_keeps_the_per_jet_outputs():
+    bx = _bx()
+    s = _script(bp.build_v2(only=["mtx-r16q1-s2"])["job-frozen-v2-r16q1-s2-raunav.yaml"])
+    assert f"--tasks {' '.join(bp.V2_TASKS)} " in s and "--eps-s 0.5 0.7 0.9 " in s
+    assert f"--split-fractions {' '.join(map(str, bx.V2_SPLIT_FRACTIONS))} " in s
+    assert "--save-scores" in s and "--save-residuals" in s
+    assert f"--sizes {' '.join(map(str, bp.CURVE_SIZES))} --mlp-rungs L188" in s
+    assert "--own-rung r16q1-s2@$1=R16_Q1 " in s and "--features r16q1-s2@$1=${CACHE}/$1" in s
+    assert "--observers ${CACHE}/$1" in s
+    # probes first (the headline), the slowest last; one arm per call
+    assert s.index("each do_probe") < s.index("each do_mass") < s.index("each do_curve")
+    assert s.count("--features ") == 3 and "--no-mlp" not in s
+
+
+def test_v2_outputs_sit_beside_the_runs_never_on_one_and_disjoint_per_run(monkeypatch, capsys):
+    """<root>/<analysis>/<run>/<tag>/<readout>: an analysis directory is never a run's
+    name (paired_errors.py indexes <root>/<run>/<tag>/manifest.json), and the specs go
+    to experiments/EVAL/k8s/v2/frozen/, as the anomaly specs go to .../v2/anomaly/."""
+    import sys
+    bx, jobs = _bx(), bp.build_v2()
+    runs = [re.search(r"^RUN=(\S+);", _script(t), re.M).group(1) for t in jobs.values()]
+    assert len(runs) == len(set(runs)) and not set(bp.V2_GRID_ANALYSES) & set(runs)
+    s = _script(jobs["job-frozen-v2-l188-s1-raunav.yaml"])
+    assert f"OUT={bx.V2_OUT};" in s
+    for a in bp.V2_GRID_ANALYSES:
+        assert f"local o=${{OUT}}/{a}/${{RUN}}/$1/$2" in s
+    monkeypatch.setattr(sys, "argv", ["x", "--v2", "--pin-not-yet-tagged", "--check", "--only", "init-s1"])
+    assert bp.main() == 1          # not written: --check names where it would go
+    assert "DRIFT: experiments/EVAL/k8s/v2/frozen/job-frozen-v2-init-s1-raunav.yaml" in capsys.readouterr().out
+
+
+def test_v2_resources_follow_the_calls_run_side_by_side():
+    for fname, text in bp.build_v2().items():
+        s = _script(text)
+        par = int(re.search(r"(\d+) calls at a time", s).group(1))
+        n = len(re.search(r"^for t in (.+); do$", s, re.M).group(1).split()) * len(
+            re.search(r'READOUTS="([^"]+)"', s).group(1).split())
+        assert par == min(bp.V2_GRID_PAR, n), fname
+        lim = yaml.safe_load(text)["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]
+        assert lim == {"memory": f"{16 * par}Gi", "cpu": str(4 * par), "ephemeral-storage": "10Gi"}
+        assert "export OMP_NUM_THREADS=4 " in s and "--threads 4" in s
+
+
+def test_v2_filters_by_tier_and_run():
+    bx = _bx()
+    tiers = {a["name"]: a["tier"] for a in __import__("json").loads(bx.V2_GRID.read_text())["arms"]}
+    want = [r for r, arm, *_ in bx.v2_runs() if tiers[arm] == 1] + [ref for ref, _ in bx.v2_init_refs()]
+    assert sorted(bp.build_v2([1])) == sorted(f"job-frozen-v2-{r.removeprefix('mtx-')}-raunav.yaml"
+                                              for r in want)
+    assert sum(len(bp.build_v2([t])) for t in (1, 2, 3)) == len(bp.build_v2())
+    assert sorted(bp.build_v2(only=["mtx-l188-s1", "init-s1"])) == [
+        "job-frozen-v2-init-s1-raunav.yaml", "job-frozen-v2-l188-s1-raunav.yaml"]
+    assert bp.build_v2([2], only=["mtx-l188-s1"]) == {}
+    with pytest.raises(SystemExit):
+        bp.build_v2(only=["mtx-l188-s9"])
+
+
+STUB = '''#!{python}
+import json, os, pathlib, sys
+a = sys.argv[1:]
+with open(os.environ["CALLS"], "a") as f:
+    f.write(json.dumps(a) + "\\n")
+if os.environ.get("FAIL") and os.environ["FAIL"] in " ".join(a):
+    sys.exit(int(os.environ["FAIL_RC"]))
+out = pathlib.Path(a[a.index("--out") + 1])
+for name in {{"probe.py": ["probe_results.json", "scores.npz"],
+             "mass_resolution.py": ["mass_resolution.json", "residuals.npz"],
+             "label_recovery_curve.py": ["label_recovery_curve.json"]}}[pathlib.Path(a[0]).name]:
+    (out / name).write_text("x")
+'''
+
+
+def _run_v2_body(tmp, run, tags, links, env=None, missing=None):
+    """The job's script from RUN= on, its paths moved under tmp, against a stub
+    python3 that records each call and writes the outputs the script checks for."""
+    import json
+    import os
+    import subprocess
+    import sys
+    bx = _bx()
+    s = _script(bp.build_v2(only=[run])[f"job-frozen-v2-{run.removeprefix('mtx-')}-raunav.yaml"])
+    body = s[s.index("RUN="):].replace(bx.V2_OUT, str(tmp / "v2"))
+    halt = s[s.index("halt () "):].splitlines()[0]
+    cache = tmp / "v2" / run
+    files = re.search(r"^  for f in (.+); do$", s, re.M).group(1).split()
+    for t in tags:
+        (cache / t).mkdir(parents=True, exist_ok=True)
+        for f in files:
+            if (t, f) != missing:
+                (cache / t / f).write_text("x")
+    for t, target in links.items():
+        if not (cache / t).is_symlink():
+            (cache / t).symlink_to(target, target_is_directory=True)
+    stub = tmp / "bin" / "python3"
+    stub.parent.mkdir(exist_ok=True)
+    stub.write_text(STUB.format(python=sys.executable))
+    stub.chmod(0o755)
+    calls = tmp / "calls.jsonl"
+    calls.write_text("")
+    r = subprocess.run(["bash", "-c", "set -euo pipefail\n" + halt + "\n" + body],
+                       env={**os.environ, "PATH": f"{stub.parent}:{os.environ['PATH']}",
+                            "CALLS": str(calls), **(env or {})},
+                       capture_output=True, text=True)
+    return r, [json.loads(l) for l in calls.read_text().splitlines()]
+
+
+def test_v2_script_fits_each_checkpoint_once_links_aliases_and_resumes(tmp_path):
+    """Run the generated shell: bestval and bestval_bn are links (the same epochs as
+    best70 and best70_bn), so 3 tags x 2 readouts x 3 analyses are fitted, and each
+    link reappears in every analysis. A second attempt redoes only the curve,
+    which resumes itself."""
+    run = "mtx-l188-s1"
+    links = {"bestval": "best70", "bestval_bn": "best70_bn"}
+    r, calls = _run_v2_body(tmp_path, run, ["best70", "wavg", "best70_bn"], links)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert len(calls) == 18
+    got = {(pathlib.Path(c[0]).name, c[c.index("--readout") + 1],
+            c[c.index("--features") + 1].split("=")[0]) for c in calls}
+    assert got == {(s, ro, f"l188-s1@{t}") for s in ("probe.py", "mass_resolution.py",
+                                                    "label_recovery_curve.py")
+                   for ro in ("features", "pooled") for t in ("best70", "wavg", "best70_bn")}
+    analysis = {"probe.py": "probe", "mass_resolution.py": "mass_resolution",
+                "label_recovery_curve.py": "label_recovery_curve"}
+    for c in calls:
+        tag = c[c.index("--features") + 1].split("@")[1].split("=")[0]
+        assert c[c.index("--features") + 1] == f"l188-s1@{tag}={tmp_path}/v2/{run}/{tag}"
+        assert c[c.index("--out") + 1] == (f"{tmp_path}/v2/{analysis[pathlib.Path(c[0]).name]}/"
+                                           f"{run}/{tag}/{c[c.index('--readout') + 1]}")
+    for a in bp.V2_GRID_ANALYSES:
+        for t, target in links.items():
+            p = tmp_path / "v2" / a / run / t
+            assert p.is_symlink() and p.resolve() == (tmp_path / "v2" / a / run / target).resolve()
+    r, calls = _run_v2_body(tmp_path, run, ["best70", "wavg", "best70_bn"], links)
+    assert r.returncode == 0 and len(calls) == 6
+    assert {pathlib.Path(c[0]).name for c in calls} == {"label_recovery_curve.py"}
+
+
+def test_v2_script_reads_the_self_supervised_runs_pooled_embedding_only(tmp_path):
+    r, calls = _run_v2_body(tmp_path, "mtx-mpm-s1", list(_bx().V2_CHECKPOINTS), {})
+    assert r.returncode == 0, r.stderr
+    assert len(calls) == 15 and {c[c.index("--readout") + 1] for c in calls} == {"pooled"}
+
+
+def test_v2_script_refuses_an_incomplete_cache_and_halts_on_a_failed_call(tmp_path):
+    r, calls = _run_v2_body(tmp_path / "a", "init-s2", ["init"], {}, missing=("init", "pooled.npy"))
+    assert r.returncode == 42 and not calls and "FATAL: no" in r.stdout
+    r, _ = _run_v2_body(tmp_path / "b", "init-s2", ["init"], {},
+                        env={"FAIL": "mass_resolution.py", "FAIL_RC": "1"})
+    assert r.returncode == 42 and "HALT: exit 1" in r.stdout          # deterministic: not retried
+    r, calls = _run_v2_body(tmp_path / "c", "init-s2", ["init"], {},
+                            env={"FAIL": "label_recovery_curve.py", "FAIL_RC": "137"})
+    assert r.returncode == 137                                          # a signal: retried
+    assert {pathlib.Path(c[0]).name for c in calls} == {"probe.py", "mass_resolution.py",
+                                                       "label_recovery_curve.py"}

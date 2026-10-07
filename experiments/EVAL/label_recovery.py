@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import importlib.util
 import json
 import math
@@ -88,6 +89,26 @@ def _probe():
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     return m
+
+
+def load_prefix(probe, d: pathlib.Path, readout: str = "features") -> dict:
+    """probe.load_arm, restricted for a v2 cache (extract_v2.py) to its uniform
+    prefix: the first prefix_features jets of the stream, every one kept, the jets a
+    v1 cache holds (mass_resolution.v2_prefix). The rest of a v2 cache is chosen BY
+    LABEL -- every jet of the probe tasks' classes over the whole split -- so a label
+    read off it would be scored on a class mix the selection set. A v1 cache is that
+    prefix already and is returned as it is."""
+    spec = importlib.util.spec_from_file_location(
+        "mass_resolution", REPO / "experiments" / "EVAL" / "mass_resolution.py")
+    mr = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mr)
+    arm = probe.load_arm(d, readout)
+    sel = mr.v2_prefix(d)
+    if sel is None:
+        return arm
+    L = arm["L"][sel]
+    return {**arm, "F": arm["F"][sel], "L": L, "obs": {k: v[sel] for k, v in arm["obs"].items()},
+            "label_sha": hashlib.sha256(L.tobytes()).hexdigest(), "v2_prefix": int(sel.size)}
 
 
 def rung_maps() -> dict[str, dict[int, int]]:
@@ -176,6 +197,8 @@ def main(argv=None) -> int:
                     help="jets subsampled per cell; a 188-way fit on 2M x 128 is "
                          "not worth its wall clock and the probe saturates far below it")
     ap.add_argument("--rungs", nargs="+", default=RUNGS)
+    ap.add_argument("--readout", choices=("features", "pooled"), default="features",
+                    help="class token (features.npy) or a v2 cache's pooled embedding")
     a = ap.parse_args(argv)
 
     probe = _probe()
@@ -185,7 +208,7 @@ def main(argv=None) -> int:
         name, d = s.split("=", 1)
         if name not in own:
             raise SystemExit(f"FATAL: no --own-rung entry for {name}")
-        arms[name] = probe.load_arm(pathlib.Path(d))
+        arms[name] = load_prefix(probe, pathlib.Path(d), a.readout)
     align = probe.check_alignment(arms)
     maps = rung_maps()
 
@@ -197,7 +220,8 @@ def main(argv=None) -> int:
 
     res = {"row_alignment_sha256": align, "n_used": int(take.size),
            "n_train": int(tr.size), "n_test": int(te.size),
-           "chance_sigma": CHANCE_SIGMA, "arms": {}}
+           "chance_sigma": CHANCE_SIGMA, "readout": a.readout,
+           "v2_prefix": next(iter(arms.values())).get("v2_prefix"), "arms": {}}
 
     for arm, d in sorted(arms.items()):
         F, L = d["F"], d["L"]

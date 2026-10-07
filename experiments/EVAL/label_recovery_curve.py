@@ -210,6 +210,8 @@ def main(argv=None) -> int:
     ap.add_argument("--mlp-rungs", nargs="*", default=["L188"],
                     help="rungs that get the MLP capacity check at the largest size")
     ap.add_argument("--threads", type=int, default=8)
+    ap.add_argument("--readout", choices=("features", "pooled"), default="features",
+                    help="class token (features.npy) or a v2 cache's pooled embedding")
     ap.add_argument("--summarise", nargs="+", type=pathlib.Path, default=None,
                     help="instead of fitting: summarise these label_recovery_curve.json "
                          "files into <out>/label_recovery_curve_summary.json")
@@ -237,7 +239,8 @@ def main(argv=None) -> int:
         name, d = s.split("=", 1)
         if name not in own:
             raise SystemExit(f"FATAL: no --own-rung for {name}")
-        arms[name] = probe.load_arm(pathlib.Path(d))
+        # a v2 cache: its uniform prefix only (label_recovery.load_prefix)
+        arms[name] = lrm.load_prefix(probe, pathlib.Path(d), a.readout)
     align = probe.check_alignment(arms)
     maps = lrm.rung_maps()
     n = next(iter(arms.values()))["L"].shape[0]
@@ -245,9 +248,11 @@ def main(argv=None) -> int:
 
     out_file = a.out / "label_recovery_curve.json"
     res = json.loads(out_file.read_text()) if out_file.exists() else None
-    if res and (res["row_alignment_sha256"] != align or res["sizes"] != sizes):
-        raise SystemExit(f"FATAL: {out_file} was written for other jets or sizes")
+    if res and (res["row_alignment_sha256"] != align or res["sizes"] != sizes
+                or res.get("readout", "features") != a.readout):
+        raise SystemExit(f"FATAL: {out_file} was written for other jets or sizes, or another readout")
     res = res or {"row_alignment_sha256": align, "n_jets": int(n), "split_seed": SPLIT_SEED,
+                  "readout": a.readout, "v2_prefix": next(iter(arms.values())).get("v2_prefix"),
                   "n_test": int(te.size), "n_val": int(va.size), "n_pool": int(pool.size),
                   "sizes": sizes, "linear": {"C": C, "class_weight": "balanced",
                                              "max_iter": LR_MAX_ITER, "solver": "lbfgs"},

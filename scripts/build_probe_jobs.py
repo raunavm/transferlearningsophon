@@ -29,6 +29,30 @@ Two further blocks answer predictions of their own rather than the ladder: the
 random-label control (C4) and the granularity x mass-output 2x2 (C5). Each
 writes to its own output directory and neither shares a cell key with the
 ladder, so no analysis can mistake one for the other.
+
+THE v2 GRID (--v2, specs under experiments/EVAL/k8s/v2/frozen/; PRESPEC
+amendments A7-A14). One CPU job per run of configs/arms/v2_grid.json and per
+untrained-trunk reference, reading that run's extraction
+(/data/results/eval/v2/<run>/<tag>, scripts/build_extract_jobs.py build_v2) and
+writing every frozen readout of it beside the anomaly results
+(scripts/build_anomaly_jobs.py, /data/results/eval/v2/anomaly/<run>/<tag>/<readout>):
+
+    /data/results/eval/v2/<analysis>/<run>/<tag>/<readout>/
+      analysis  probe                 probe_results.json, scores.npz
+                                      (linear and MLP, every task of V2_TASKS)
+                mass_resolution       mass_resolution.json, residuals.npz
+                label_recovery_curve  label_recovery_curve.json
+      run       the extraction's directory: mtx-<arm lower, no underscores>-s<k>,
+                or init-s<k> for the untrained trunk of run index k
+      tag       best70 (primary), wavg, bestval, best70_bn, bestval_bn; init
+      readout   features  the class token (features.npy)
+                pooled    the pooled embedding (pooled.npy, A14)
+
+with each leaf's log beside it (<readout>.log). A tag the extraction holds as a
+link to another (bestval selecting best70's epoch) is the same link here, so a
+reader finds every tag at its path and nothing is fitted twice. No output is a
+manifest.json, so experiments/STATS/paired_errors.py, which indexes the
+extraction by <root>/<run>/<tag>/manifest.json, sees none of it.
 """
 from __future__ import annotations
 
@@ -822,30 +846,181 @@ def build() -> dict[str, str]:
     return {f: bx.storage_guarded(f, t) for f, t in out.items()}
 
 
+# ======================================================================= v2 grid
+# THE FROZEN READOUTS OF THE v2 GRID (layout: module docstring). What runs on what
+# is the PRESPEC's:
+#   checkpoints  every tag the extraction holds (build_extract_jobs.V2_CHECKPOINTS):
+#                best70 the primary (A14), wavg beside every result (A8), bestval
+#                the sensitivity check of the frozen readouts (A14, 2026-10-02), the
+#                BatchNorm twins of both, frozen readouts only (A14, fired
+#                2026-10-03); init, the untrained trunk (A14, frozen references)
+#   readouts     the class token and the pooled embedding of every model (A14); the
+#                self-supervised runs the pooled one only, their class token being
+#                untrained (section 4)
+#   probes       linear and MLP, which probe.py always fits together (D6), on every
+#                task of V2_TASKS at the v2 split and the working points of the v1
+#                rerun, per-jet scores kept (paired_errors.py forms the errors)
+#   recovery     the learning curve the paper reads (label_recovery_curve.py, the
+#                v1err sizes, the MLP at L188), and the mass probe, both on the
+#                uniform 2,000,000-jet prefix
+#
+# ONE JOB PER RUN, not per run index as in v1. v1 put a seed index's models in one
+# job because probe.check_alignment gates only the arms of one call; v2's paired
+# errors are formed across calls from the per-jet outputs (paired_errors.py checks
+# the jets of every pair), and the tiers finish days apart. ONE ARM PER CALL: a call
+# bootstraps every pair of its arms (2,000 resamples, two ROC curves each on up to
+# 530,000 test jets), a number v2 never reads. Calls run V2_GRID_PAR at a time on
+# four threads each (probe.MLP_THREADS, latent_scale_probe.MLP_THREADS, the v1err
+# curve's --threads): probes, the headline, first; the curve, the slowest (about
+# 3 h a call on four threads, from the v1err curve's timings), last. Memory per
+# call: the cache in float32 is 5.1 M x 128 x 4 B = 2.6 GB, and the curve's 188-way
+# fit on 1.4 M jets needs an estimated 12 GB (float64 data, n x 188 logits and
+# gradient; not measured): 16 GiB a call.
+V2_GRID_PIN = "mtx-s2.00"       # tagged after the commit: build with --pin-not-yet-tagged
+V2_GRID_NEEDED = {"experiments/EVAL/probe.py": "--readout",
+                  "experiments/EVAL/label_recovery.py": "def load_prefix",
+                  "experiments/EVAL/label_recovery_curve.py": "--readout",
+                  "experiments/EVAL/mass_resolution.py": "--readout"}
+V2_GRID_K8S = K8S / "v2" / "frozen"
+V2_GRID_ANALYSES = ("probe", "mass_resolution", "label_recovery_curve")
+V2_GRID_PAR = 5
+
+V2_GRID_BODY = """
+          RUN={run}; CACHE={cache}; OUT={out}; READOUTS="{readouts}"
+          # a tag extract_v2.py holds as a link to another (one checkpoint file) is the
+          # same link in every analysis; every other tag must be complete
+          TAGS=""
+          for t in {tags}; do
+            d=${{CACHE}}/${{t}}
+            if [ -L "${{d}}" ]; then
+              for a in {analyses}; do
+                mkdir -p ${{OUT}}/${{a}}/${{RUN}}
+                ln -sfn "$(readlink "${{d}}")" ${{OUT}}/${{a}}/${{RUN}}/${{t}}
+              done
+              continue
+            fi
+            for f in {files}; do
+              [ -f "${{d}}/${{f}}" ] || {{ echo "FATAL: no ${{d}}/${{f}}"; exit 42; }}
+            done
+            TAGS="${{TAGS}} ${{t}}"
+          done
+          echo "${{RUN}}: tags${{TAGS}}; readouts ${{READOUTS}}"
+
+          # TAG READOUT; run in the background, so its exit is its status. A call whose
+          # outputs exist was finished by an earlier attempt; the curve resumes itself.
+          do_probe () {{
+            local o=${{OUT}}/probe/${{RUN}}/$1/$2
+            if [ -f "${{o}}/scores.npz" ] && [ -f "${{o}}/probe_results.json" ]; then exit 0; fi
+            mkdir -p ${{o}}
+            python3 experiments/EVAL/probe.py --features {arm}@$1=${{CACHE}}/$1 --readout $2 \\
+              --out ${{o}} --tasks {tasks} --eps-s {eps} \\
+              --split-fractions {split} --bootstrap 2000 --save-scores >> ${{o}}.log 2>&1
+          }}
+          do_mass () {{
+            local o=${{OUT}}/mass_resolution/${{RUN}}/$1/$2
+            if [ -f "${{o}}/residuals.npz" ] && [ -f "${{o}}/mass_resolution.json" ]; then exit 0; fi
+            mkdir -p ${{o}}
+            python3 experiments/EVAL/mass_resolution.py --features {arm}@$1=${{CACHE}}/$1 \\
+              --observers ${{CACHE}}/$1 --readout $2 --out ${{o}} --save-residuals >> ${{o}}.log 2>&1
+          }}
+          do_curve () {{
+            local o=${{OUT}}/label_recovery_curve/${{RUN}}/$1/$2
+            mkdir -p ${{o}}
+            python3 experiments/EVAL/label_recovery_curve.py --features {arm}@$1=${{CACHE}}/$1 \\
+              --own-rung {arm}@$1={rung} --readout $2 --out ${{o}} \\
+              --sizes {sizes} --mlp-rungs L188 --threads 4 >> ${{o}}.log 2>&1
+          }}
+          each () {{   # FUNCTION: every tag and readout through it, {par} calls at a time
+            local P="" n=0
+            for t in ${{TAGS}}; do
+              for r in ${{READOUTS}}; do
+                $1 ${{t}} ${{r}} &
+                P="${{P}} $!"; n=$((n + 1))
+                if [ ${{n}} -eq {par} ]; then
+                  for p in ${{P}}; do wait ${{p}} || halt; done
+                  P=""; n=0
+                fi
+              done
+            done
+            for p in ${{P}}; do wait ${{p}} || halt; done
+          }}
+          each do_probe
+          each do_mass
+          each do_curve
+          date -u +"end %Y-%m-%dT%H:%M:%SZ"
+"""
+
+
+def build_v2(tiers=None, only=None) -> dict[str, str]:
+    """{file: spec}, one per run of the v2 grid and per untrained-trunk reference, or
+    those of `tiers` and named in `only` (as the extraction names them: mtx-l188-s1,
+    init-s1). A reference belongs to the tier of the runs it was saved by."""
+    import json
+    bx = _load_builder("build_extract_jobs")
+    tier_of = {a["name"]: a["tier"] for a in json.loads(bx.V2_GRID.read_text())["arms"]}
+    runs = [(run, tier_of[arm], bx.V2_CHECKPOINTS, ("pooled",) if k == 0 else ("features", "pooled"),
+             bx.v2_rung(arm)) for run, arm, k, _reg, _s in bx.v2_runs()]
+    runs += [(ref, tier_of[bx.V2_INIT_ARM], ("init",), ("features", "pooled"), "none")
+             for ref, _ in bx.v2_init_refs()]
+    unknown = set(only or ()) - {r[0] for r in runs}
+    if unknown:
+        raise SystemExit(f"FATAL: unknown run(s) {sorted(unknown)}; known: {sorted(r[0] for r in runs)}")
+    out = {}
+    for run, tier, tags, readouts, rung in runs:
+        if (tiers and tier not in tiers) or (only and run not in only):
+            continue
+        name = f"frozen-v2-{run.removeprefix('mtx-')}-raunav"
+        par = min(V2_GRID_PAR, len(tags) * len(readouts))
+        body = V2_GRID_BODY.format(
+            run=run, cache=f"{bx.V2_OUT}/{run}", out=bx.V2_OUT, readouts=" ".join(readouts),
+            tags=" ".join(tags), arm=run.removeprefix("mtx-"), rung=rung, par=par,
+            analyses=" ".join(V2_GRID_ANALYSES),
+            files=" ".join(["label188.npy", "manifest.json", "rows.npy", "observers.npz"]
+                           + [f"{r}.npy" for r in readouts]),
+            tasks=" ".join(V2_TASKS), eps=" ".join(str(e) for e in EPS_S_V2),
+            split=" ".join(str(x) for x in bx.V2_SPLIT_FRACTIONS),
+            sizes=" ".join(map(str, CURVE_SIZES)))
+        text = (ROBUST_HEAD.format(name=name, pin=V2_GRID_PIN, backoff=V1ERR_BACKOFF, threads=4)
+                + body + ROBUST_TAIL.format(mem=f"{16 * par}Gi", cpu=str(4 * par)))
+        out[f"job-{name}.yaml"] = bx.storage_guarded(f"job-{name}.yaml", text)
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true",
                     help="exit 1 if a committed spec differs from the generated one")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
-                    help=f"check the working tree instead of {V1ERR_PIN}, which is "
-                         f"tagged after the commit")
+                    help="check a pin that is tagged after the commit in the working tree")
+    ap.add_argument("--v2", action="store_true",
+                    help="emit ONLY the v2 grid's frozen-readout specs (one per run and "
+                         "untrained-trunk reference); not launchable before its extraction")
+    ap.add_argument("--tier", nargs="+", type=int, default=None,
+                    help="with --v2: only the runs of these tiers of configs/arms/v2_grid.json")
+    ap.add_argument("--only", nargs="+", default=None, metavar="RUN",
+                    help="with --v2: only these runs (mtx-l188-s1, init-s1, ...)")
     args = ap.parse_args()
-    verify_pin(MLP2_PIN, False, MLP2_NEEDED)
-    verify_pin(V1ERR_PIN, args.pin_not_yet_tagged, V1ERR_NEEDED)
-    verify_pin(V1ERR_PIN_MASS2, args.pin_not_yet_tagged, V1ERR_MASS2_NEEDED)
-    verify_pin(V1ERR_PIN_MASS3, args.pin_not_yet_tagged,
-               {"experiments/EVAL/latent_scale_probe.py": "CPU_REPRODUCIBLE_ENV",
-                "experiments/EVAL/mass_resolution.py": "cpu_reproducible()"})
+    if args.v2:
+        verify_pin(V2_GRID_PIN, args.pin_not_yet_tagged, V2_GRID_NEEDED)
+        jobs = build_v2(args.tier, args.only)
+    else:
+        verify_pin(MLP2_PIN, False, MLP2_NEEDED)
+        verify_pin(V1ERR_PIN, args.pin_not_yet_tagged, V1ERR_NEEDED)
+        verify_pin(V1ERR_PIN_MASS2, args.pin_not_yet_tagged, V1ERR_MASS2_NEEDED)
+        verify_pin(V1ERR_PIN_MASS3, args.pin_not_yet_tagged,
+                   {"experiments/EVAL/latent_scale_probe.py": "CPU_REPRODUCIBLE_ENV",
+                    "experiments/EVAL/mass_resolution.py": "cpu_reproducible()"})
+        jobs = build()
+        jobs.update(build_v1err(jobs))
     bad = 0
-    jobs = build()
-    jobs.update(build_v1err(jobs))
     for fname, text in jobs.items():
-        p = K8S / fname
+        p = (V2_GRID_K8S if args.v2 else K8S) / fname
         if args.check:
             if not p.exists() or p.read_text() != text:
                 print(f"DRIFT: {p.relative_to(ROOT)}")
                 bad += 1
         else:
+            p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(text)
             print(f"wrote {p.relative_to(ROOT)}")
     return 1 if bad else 0

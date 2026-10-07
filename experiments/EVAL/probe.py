@@ -350,10 +350,12 @@ MLP_SCHEDULE = {"max_epochs": 500, "lr": 1e-3, "lr_factor": 0.1, "lr_patience": 
 SPLIT_SEED = 20260822
 
 
-def load_arm(d: pathlib.Path) -> dict:
+def load_arm(d: pathlib.Path, readout: str = "features") -> dict:
     """A feature cache: v1 (extract_features.py, extract_manifest.json, float32)
-    or v2 (extract_v2.py, manifest.json, float16 on the rows rows.npy names)."""
-    F = np.load(d / "features.npy")
+    or v2 (extract_v2.py, manifest.json, float16 on the rows rows.npy names).
+    `readout` 'pooled' reads a v2 cache's pooled.npy, the pooled-embedding readout
+    of amendment A14, for the same rows; 'features' the class token, features.npy."""
+    F = np.load(d / ("pooled.npy" if readout == "pooled" else "features.npy"))
     if F.dtype != np.float32:
         F = F.astype(np.float32)
     L = np.load(d / "label188.npy")
@@ -628,6 +630,9 @@ def main() -> int:
     ap.add_argument("--mlp-rerun-of", metavar="PROBE_RESULTS_JSON",
                     help="re-fit only the MLP probe; copy every other field, "
                          "linear numbers included, from this earlier output")
+    ap.add_argument("--readout", choices=("features", "pooled"), default="features",
+                    help="the embedding probed: the class token (features.npy, every "
+                         "committed result) or a v2 cache's pooled embedding (pooled.npy)")
     args = ap.parse_args()
     # np.interp CLAMPS outside the ROC's range, so `--eps-s 50 70 90` would not
     # error -- it would return eps_B = 1 and a rejection of 1.0 in every cell.
@@ -640,7 +645,7 @@ def main() -> int:
         if "=" not in spec:
             raise SystemExit(f"FATAL: --features wants ARM=path, got {spec!r}")
         name, path = spec.split("=", 1)
-        arms[name] = load_arm(pathlib.Path(path))
+        arms[name] = load_arm(pathlib.Path(path), args.readout)
     if len(arms) < 1:
         raise SystemExit("FATAL: no arms given")
 
@@ -683,11 +688,15 @@ def main() -> int:
                "min_per_class_test": MIN_PER_CLASS,
                "mlp_threads": MLP_THREADS,
                "split_fractions": [float(x) for x in args.split_fractions],
+               # the checkpoint digests above are the same for both readouts of
+               # one checkpoint, so the readout travels on its own
+               "readout": args.readout,
                "tasks": {}}
     if src:
         for k in ("n_jets_total", "row_alignment_sha256", "arm_checkpoints",
-                  "min_per_class_test", "mlp_threads"):
-            if results[k] != src.get(k):
+                  "min_per_class_test", "mlp_threads", "readout"):
+            # an output written before the readout was recorded probed the class token
+            if results[k] != src.get(k, "features" if k == "readout" else None):
                 raise SystemExit(f"FATAL: {k} is {results[k]!r} here and "
                                  f"{src.get(k)!r} in {src_path}; its linear "
                                  f"numbers were measured on something else")

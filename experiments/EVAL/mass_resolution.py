@@ -285,6 +285,9 @@ def main(argv=None) -> int:
     ap.add_argument("--save-residuals", action="store_true",
                     help="also write residuals.npz: the test rows, their native "
                          "labels and every arm's per-jet residual, per probe")
+    ap.add_argument("--readout", choices=("features", "pooled"), default="features",
+                    help="class token (features.npy) or a v2 cache's pooled embedding "
+                         "(pooled.npy, amendment A14)")
     a = ap.parse_args(argv)
 
     out = pathlib.Path(a.out)
@@ -309,6 +312,7 @@ def main(argv=None) -> int:
                         "training split only; subsumes family-mean removal",
            "tail": f"reported as the share with |residual| > {TAIL_AT}, never trimmed",
            "split_seed": SPLIT_SEED, "tail_at": TAIL_AT, "cpu_model": cpu_model(),
+           "readout": a.readout,
            "row_alignment_sha256": obs["label188_sha256"],
            "n_jets_total": obs["n"], "n_jets_valid": obs["n_valid"],
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),
@@ -339,7 +343,7 @@ def main(argv=None) -> int:
             raise SystemExit(f"FATAL: --features wants ARM=path, got {spec!r}")
         name, path = spec.split("=", 1)
         d = pathlib.Path(path)
-        F = np.load(d / "features.npy")
+        F = np.load(d / ("pooled.npy" if a.readout == "pooled" else "features.npy"))
         sel = v2_prefix(d)
         if sel is not None:
             F = F[sel].astype(np.float32)
