@@ -15,10 +15,16 @@ builder cannot: someone hand-editing one of the twelve files afterwards.
 """
 import csv
 import importlib.util
+import json
+import os
 import pathlib
 import re
+import subprocess
+import sys
 
+import numpy as np
 import pytest
+import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 K8S = ROOT / "experiments" / "EVAL" / "k8s"
@@ -460,3 +466,195 @@ def test_the_rerun_deadline_covers_two_attempts_at_the_measured_rate():
     assert B.CS_DEADLINE >= 2 * 8.5 * 3600
     for m in B.CS_MODELS:
         assert f"activeDeadlineSeconds: {B.CS_DEADLINE}\n" in m.job_spec.read_text()
+
+
+# ------------------------------------------------------------------------- v2
+# scripts/build_anomaly_jobs.py --v2: every v2 run, every extracted checkpoint,
+# both readouts; specs under experiments/EVAL/k8s/v2/anomaly (module docstring).
+V2 = B.v2_specs()
+BX = B._bx()
+GRID = json.loads(BX.V2_GRID.read_text())
+PER_RUN = {p: t for p, t in V2.items() if not re.search(r"-(heads|merge)-t\d+-raunav", p.name)}
+
+
+def _spec(model):
+    return V2[B.V2_K8S / f"job-eval-anomaly-v2-{model}-raunav.yaml"]
+
+
+def test_the_committed_v2_specs_are_exactly_what_the_builder_renders():
+    assert {p: p.read_text() for p in B.V2_K8S.glob("*.yaml")} == V2
+
+
+def test_v2_jobs_are_the_summarys_cells_one_per_model():
+    """The jobs come from anomaly_summary.v2_ladder, so they are its cells exactly:
+    the selected arms' runs and the five untrained-trunk references."""
+    cells, parse = B._summary().v2_ladder(BX.V2_GRID)
+    ms = B.v2_models()
+    assert sorted(parse(m.model) for m in ms) == sorted(
+        (c, s) for c, (_r, seeds) in cells.items() for s in seeds)
+    assert all(cells[parse(m.model)[0]][0] == m.rung for m in ms)
+    runs = [f"mtx-{a['name'].lower().replace('_', '')}-s{s}" for a in GRID["arms"]
+            if a["name"] in cells for s in range(1, a["runs"] + 1)]
+    runs += [f"init-s{s}" for s in range(1, 6)]
+    assert len(PER_RUN) == len(runs) == 53
+    assert sorted(re.search(r"dst=(\S+)", t).group(1) for t in PER_RUN.values()) == sorted(
+        f"{B.V2_ANOMALY}/{r}" for r in runs), "one output directory per model, its own"
+    assert len(V2) == 53 + 2 * len(B.V2_TIER_SETS)
+    assert sum(len(m.tags) * len(m.readouts) for m in ms) == 42 * 10 + 6 * 5 + 5 * 2
+    assert not any(re.search(r"-v2-(l162mass|r16q1mass|rand2|flav)", p.name) for p in V2)
+    names = [yaml.safe_load(t)["metadata"]["name"] for t in V2.values()]
+    assert len(set(names)) == len(names) and all(n.endswith("-raunav") for n in names)
+    assert all(f"job-{yaml.safe_load(t)['metadata']['name']}.yaml" == p.name for p, t in V2.items())
+
+
+def test_v2_scores_every_extracted_checkpoint_on_both_readouts():
+    tags = " ".join(BX.V2_CHECKPOINTS)
+    assert tags == "best70 bestval wavg best70_bn bestval_bn"
+    for model, rung, readouts in (("l188-s1", "L188", "features pooled"),
+                                  ("r29q1-s4", "R29_Q1", "features pooled"),
+                                  ("l188lofo4p-s3", "L188", "features pooled"),
+                                  ("mpm-s1", "none", "pooled"), ("mpmlofo4p-s3", "none", "pooled"),
+                                  ("init-s2", "none", "features pooled")):
+        t = _spec(model)
+        run, ts = (model, "init") if model.startswith("init") else (f"mtx-{model}", tags)
+        assert f"a={model}; r={rung}; src={BX.V2_OUT}/{run};" in t
+        assert t.count(f"for tag in {ts}; do") == 2 and f"for ro in {readouts}; do" in t
+        files = "label188.npy rows.npy manifest.json " + " ".join(f"{r}.npy" for r in readouts.split())
+        assert f"for f in {files}; do" in t
+        assert ("--families knn mahalanobis --n-sig 2000 4000" in t
+                and "--n-bkg 200000 --n-template 200000 --trainings 10" in t)
+        assert "OMP_NUM_THREADS=8 " in t and 'cpu: "8"' in t
+
+
+def test_v2_preconditions_are_exactly_the_files_load_cache_needs(tmp_path):
+    """The loop's list against the code: without any listed file load_cache fails,
+    and without observers.npz (optional, unlisted) it does not."""
+    an = _mod("anomaly", "experiments/EVAL/anomaly.py")
+    xv = _mod("extract_v2", "experiments/EVAL/extract_v2.py")
+    lab = np.arange(300) % 188
+    rows = np.arange(300)
+    res = {"n_stream": 300, "label188_sha256": "x", "labels": lab,
+           "observers": {"jet_pt": np.ones(300, np.float32)},
+           "checkpoints": {"best70": {"features": np.ones((300, 4), np.float16),
+                                      "pooled": np.ones((300, 4), np.float16), "rows": rows,
+                                      "label188": lab.astype(np.int16), "has_head": False,
+                                      "head_rows": rows[:0], "head_label188": lab[:0], "head": {}}}}
+    listed = re.search(r"for f in ([^;]+); do", _spec("l188-s1")).group(1).split()
+    for f in [*listed, "observers.npz"]:
+        d = tmp_path / f
+        xv.write(d, res, {"rung": "L188", "prefix_features": 200, "checkpoints": {"best70": {}}})
+        (d / "best70" / f).unlink()
+        if f == "observers.npz":
+            assert an.load_cache(d / "best70")["obs"] == {}
+            continue
+        readout = "pooled" if f == "pooled.npy" else "features"
+        with pytest.raises((FileNotFoundError, SystemExit)):
+            an.load_cache(d / "best70", readout)
+
+
+def test_v2_specs_check_storage_first_and_carry_the_retry_policy():
+    sys.path.insert(0, str(ROOT / "tests"))
+    from test_storage_guard import guarded_before_first_write
+    for p, t in V2.items():
+        d = yaml.safe_load(t)
+        assert guarded_before_first_write(t) is True, p.name
+        assert d["spec"]["backoffLimit"] == 6, p.name
+        rules = d["spec"]["podFailurePolicy"]["rules"]
+        assert rules[0] == {"action": "FailJob", "onExitCodes": {
+            "containerName": "main", "operator": "In", "values": [42]}}
+        assert rules[1]["action"] == "Ignore"
+        assert rules[1]["onPodConditions"] == [{"type": "DisruptionTarget"}]
+        assert "|| halt" in t and 'exit 42; }' in t
+        aff = d["spec"]["template"]["spec"]["affinity"]["nodeAffinity"]
+        assert "us-west" in json.dumps(aff) and "nvidia.com/gpu" not in t
+
+
+def test_v2_specs_clone_a_pin_that_has_to_be_declared_not_yet_tagged():
+    assert B.V2_PIN == "mtx-s2.00"
+    assert all(f'--branch "{B.V2_PIN}"' in t for t in V2.values())
+    tagged = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "-q", "--verify",
+                             f"refs/tags/{B.V2_PIN}"], capture_output=True).returncode == 0
+    if not tagged:
+        with pytest.raises(SystemExit, match="does not exist"):
+            B.verify_pin(B.V2_PIN, False, B.V2_NEEDED_AT_PIN)
+        B.verify_pin(B.V2_PIN, True, B.V2_NEEDED_AT_PIN)
+    for script in ("anomaly.py", "anomaly_merge.py", "anomaly_heads.py"):
+        assert f"experiments/EVAL/{script}" in B.V2_NEEDED_AT_PIN
+
+
+def _script(text, root):
+    """The container script from its `git rev-parse HEAD` on, against `root` for
+    /data/results/eval/v2, with python3 a stub that logs and writes a complete result."""
+    args = yaml.safe_load(text)["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    halt = next(ln for ln in args.splitlines() if ln.strip().startswith("halt ()"))
+    stub = ('python3 () { echo "$*" >> "%s/calls"; o=""; p=""; for x in "$@"; do '
+            '[ "$p" = --out ] && o=$x; p=$x; done; mkdir -p "$o"; '
+            'echo \'{"null_unmeasured": []}\' > "$o/anomaly_results.json"; }\n') % root
+    body = args.split("git rev-parse HEAD\n", 1)[1].replace(BX.V2_OUT, str(root))
+    return "set -euo pipefail\n" + halt + "\n" + stub + body
+
+
+def _bash(script, root):
+    r = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+    calls = (root / "calls").read_text().splitlines() if (root / "calls").exists() else []
+    return r.returncode, calls
+
+
+def test_v2_run_script_scores_each_file_once_links_aliases_and_resumes(tmp_path):
+    src = tmp_path / "mtx-l188-s1"
+    for tag in ("best70", "wavg", "best70_bn"):
+        (src / tag).mkdir(parents=True)
+        for f in ("label188.npy", "rows.npy", "manifest.json", "features.npy", "pooled.npy"):
+            (src / tag / f).touch()
+    (src / "bestval").symlink_to("best70")         # extract_v2.write's alias
+    (src / "bestval_bn").symlink_to("best70_bn")
+    script = _script(_spec("l188-s1"), tmp_path)
+    rc, calls = _bash(script, tmp_path)
+    assert rc == 0 and len(calls) == 6, calls        # 3 files x 2 readouts
+    assert all("--features l188-s1=" in c and "--rungs l188-s1=L188" in c for c in calls)
+    dst = tmp_path / "anomaly" / "mtx-l188-s1"
+    assert os.readlink(dst / "bestval") == "best70" and os.readlink(dst / "bestval_bn") == "best70_bn"
+    assert (dst / "bestval" / "pooled" / "anomaly_results.json").exists()
+    assert _bash(script, tmp_path) == (0, calls), "a complete unit is never rescored"
+    (dst / "wavg" / "pooled" / "anomaly_results.json").write_text('{"arms": {}}')   # partial
+    rc, again = _bash(script, tmp_path)
+    assert rc == 0 and again[6:] == [c for c in calls if "/wavg " in c and "pooled" in c]
+    (src / "wavg" / "rows.npy").unlink()
+    assert _bash(script, tmp_path) == (42, again), "a missing input halts before scoring"
+
+
+def test_v2_merge_script_waits_for_every_unit_then_merges_each_tag_and_readout(tmp_path):
+    t12 = [m for m in B.v2_models() if m.tier <= 2]
+    assert len(t12) == 28 and sum(1 for m in t12 if "features" in m.readouts) == 25
+    for m in t12:
+        for tag in m.tags:
+            for ro in m.readouts:
+                d = tmp_path / "anomaly" / m.run / tag / ro
+                d.mkdir(parents=True)
+                (d / "anomaly_results.json").write_text('{"null_unmeasured": []}')
+    partial = tmp_path / "anomaly" / "mtx-mpm-s3" / "wavg" / "pooled" / "anomaly_results.json"
+    partial.write_text("{}")
+    script = _script(V2[B.V2_K8S / "job-eval-anomaly-v2-merge-t12-raunav.yaml"], tmp_path)
+    assert _bash(script, tmp_path) == (42, [])
+    partial.write_text('{"null_unmeasured": []}')
+    rc, calls = _bash(script, tmp_path)
+    assert rc == 0 and len(calls) == 10
+    for c in calls:
+        tag, ro = re.search(r"--out \S+/anomaly_merged_t12/(\w+)/(\w+)$", c).groups()
+        ins = c.split("--inputs ")[1].split(" --out")[0].split()
+        assert len(ins) == (25 if ro == "features" else 28)
+        assert sorted(i for i in ins if "/init-s" in i) == [
+            f"{tmp_path}/anomaly/init-s{k}/init/{ro}" for k in range(1, 6)], "the reference rows"
+        assert all(i.endswith(f"/{tag}/{ro}") for i in ins if "/init-s" not in i)
+    assert _bash(script, tmp_path) == (0, calls), "a written merge is not redone"
+
+
+def test_v2_heads_jobs_read_every_run_on_the_tree_with_an_output_layer():
+    for tset, n in (("t12", 20), ("t123", 42)):
+        t = V2[B.V2_K8S / f"job-eval-anomaly-v2-heads-{tset}-raunav.yaml"]
+        specs = re.search(r"for spec in ([^;]+); do", t).group(1).split()
+        assert len(specs) == n and not any(s.endswith(":none") for s in specs)
+        assert "mtx-l188lofo4p-s3:L188" in specs if tset == "t123" else "mtx-r16q1-s5:R16_Q1" in specs
+        assert f"--labels {BX.V2_OUT}/mtx-l188-s1/best70" in t
+        assert "--n-sig 2000 4000 --procs 15" in t and "OMP_NUM_THREADS=1 " in t
+        assert f"OUT={BX.V2_OUT}/anomaly_heads_{tset}/anomaly_heads.json" in t

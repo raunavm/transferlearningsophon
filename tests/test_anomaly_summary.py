@@ -285,3 +285,128 @@ def test_the_checkpoint_rule_table_is_built_from_the_models_the_anomaly_study_sc
     e = res["by_checkpoint"]["e079"]["class_sum"]["label_X_bb"][S.PRIMARY]
     assert set(e) == {"188", "162", "43", "17"} and len(e["188"]["ln_sigma_min"]) == 5
     assert res["mean_ln_over_epochs_70_79"] == full["mean_ln_over_epochs_70_79"]
+
+
+def test_the_committed_checkpoint_rule_summary_is_what_the_script_computes():
+    """anomaly_v1err/analysis (with --heads) is exactly what this script writes:
+    the v2 generalisation leaves every v1 output unchanged."""
+    d = ROOT / "experiments/FIGS/data"
+    got = json.loads((d / "anomaly_v1err/analysis/anomaly_summary.json").read_text())
+    heads = json.loads((d / "anomaly_v1err/anomaly_heads.json").read_text())
+    fresh = json.loads(json.dumps(S.summarise(_committed(), json.loads(RERUN.read_text()), heads)))
+    assert set(got) - set(fresh) == {"provenance", "conventions"}
+    for k, v in fresh.items():
+        assert got[k] == v, k
+
+
+# ------------------------------------------------------------- v2 (the grid)
+GRID = ROOT / "configs/arms/v2_grid.json"
+# arm -> (model stem, label set, runs): both run counts, the tree, the self-supervised
+# arm off it, and the untrained-trunk reference
+V2_ARMS = {"L188": ("l188", "L188", 5), "R29_Q1": ("r29q1", "R29_Q1", 5),
+           "MPM": ("mpm", "none", 3), "L188_LOFO4P": ("l188lofo4p", "L188", 3),
+           "init": ("init", "none", 5)}
+
+
+def _v2_doc(arms=V2_ARMS, readout="pooled"):
+    """One v2 merge (one checkpoint, one readout), knn and mahalanobis."""
+    out = {}
+    for stem, rung, runs in arms.values():
+        for s in range(1, runs + 1):
+            per_n = {n: {**{f: {"sigma_min": 2.0 + 0.1 * s, "max_sic": 1.5 + s / 10,
+                                "at_ceiling": False} for f in S.V2_FAMILIES},
+                         "rng_seeds": [s, int(n)]} for n in (S.PRIMARY, S.REFERENCE)}
+            out[f"{stem}-s{s}"] = {"rung": rung, "cache": {"readout": readout},
+                                   "signals": {"label_X_bb": per_n}}
+    return {**{k: v for k, v in _doc().items() if k != "arms"}, "arms": out}
+
+
+def test_v2_levels_are_the_grid_arms_each_with_its_own_runs():
+    res = S.summarise(_v2_doc(), grid=GRID)
+    assert set(res["families"]) == set(S.V2_FAMILIES) and res["readout"] == "pooled"
+    lv = res["families"]["knn"]["label_X_bb"][S.PRIMARY]["levels"]
+    assert list(lv) == ["L188", "MPM", "R29_Q1", "L188_LOFO4P", "init"], "the grid's order"
+    assert {k: len(e["arms"]) for k, e in lv.items()} == {
+        "L188": 5, "MPM": 3, "R29_Q1": 5, "L188_LOFO4P": 3, "init": 5}
+    e = lv["L188_LOFO4P"]
+    assert e["arms"] == [f"l188lofo4p-s{s}" for s in (1, 2, 3)]
+    want = [math.log(2.0 + 0.1 * s) for s in (1, 2, 3)]
+    assert e["ln_sigma_min"] == want
+    assert e["ln_sigma_min_sd"] == pytest.approx(np.std(want, ddof=1), rel=1e-12)
+    assert "classes_removed_by_level" not in res, "no class sum in a v2 merge"
+
+
+def test_v2_a_missing_run_of_a_three_run_arm_is_fatal():
+    doc = _v2_doc()
+    del doc["arms"]["l188lofo4p-s2"]
+    with pytest.raises(SystemExit, match="seeds"):
+        S.summarise(doc, grid=GRID)
+
+
+def test_v2_a_model_the_study_does_not_score_is_fatal():
+    for name in ("l189-s1", "l162mass-s1", "r16q1masslm-s1", "rand2p1-s1", "flavf1-s1"):
+        doc = _v2_doc()
+        doc["arms"][name] = doc["arms"]["l188-s1"]
+        with pytest.raises(SystemExit, match="anomaly study scores"):
+            S.summarise(doc, grid=GRID)
+
+
+def test_v2_the_study_is_the_ladder_its_left_out_family_and_the_self_supervised_arms():
+    """V2_ANOMALY_ARMS read off the grid, against the arms written out here."""
+    cells = S.v2_ladder(GRID)[0]
+    ladder = ["L188", "L162", "R42_Q1", "R16_Q1", "R63_Q1", "R29_Q1"]
+    assert sorted(cells) == sorted(ladder + [f"{a}_LOFO4P" for a in ladder[:4]]
+                                   + ["MPM", "MPM_LOFO4P", "init"])
+    assert cells["init"] == ("none", (1, 2, 3, 4, 5))
+    assert cells["MPM_LOFO4P"] == ("none", (1, 2, 3)) and cells["R16_Q1_LOFO4P"] == ("R16_Q1", (1, 2, 3))
+
+
+def test_v2_a_model_scored_on_the_wrong_label_set_is_fatal():
+    doc = _v2_doc()
+    doc["arms"]["l188lofo4p-s1"]["rung"] = "L162"
+    with pytest.raises(SystemExit, match="label set"):
+        S.summarise(doc, grid=GRID)
+    doc = _v2_doc()
+    doc["arms"]["mpm-s2"]["rung"] = "R16_Q1"     # off the tree is 'none'
+    with pytest.raises(SystemExit, match="label set"):
+        S.summarise(doc, grid=GRID)
+
+
+def test_v2_a_merge_mixing_readouts_is_fatal():
+    doc = _v2_doc()
+    doc["arms"]["mpm-s1"]["cache"]["readout"] = "features"
+    with pytest.raises(SystemExit, match="readouts"):
+        S.summarise(doc, grid=GRID)
+    with pytest.raises(SystemExit, match="v1's"):
+        S.summarise(_v2_doc(), rerun=_v2_doc(), grid=GRID)
+
+
+def test_v2_the_output_ratio_is_read_at_every_checkpoint_and_twin():
+    """--heads at best70, wavg, bestval and the BatchNorm twins: class_sum_matched per
+    grid arm over that arm's runs; a tag is read only where every model carries it."""
+    tags = ("best70", "wavg", "bestval", "best70_bn", "bestval_bn")
+    models = {}
+    for stem, rung, runs in (("l188", "L188", 5), ("l188lofo4p", "L188", 3)):
+        for s in range(1, runs + 1):
+            cell = {"class_sum_matched": {"sigma_min": 3.0 + 0.1 * s}}
+            h = {"top1_accuracy": 0.6 + 0.01 * s, "mean_p_qcd_resonant": 0.05 + 0.01 * s}
+            models[f"{stem}-s{s}"] = {"rung": rung, "checkpoints": {
+                t: {"head": h, "anomaly": {"label_X_bb": {S.PRIMARY: cell}}} for t in tags}}
+    res = S.summarise(_v2_doc(), heads={"models": models}, grid=GRID)
+    by = res["checkpoint_rule"]["by_checkpoint"]
+    assert list(by) == list(S.FLAG_TAGS[:5]) and set(by) == set(tags)
+    e = by["best70_bn"]["class_sum_matched"]["label_X_bb"][S.PRIMARY]
+    assert set(e) == {"L188", "L188_LOFO4P"} and len(e["L188_LOFO4P"]["ln_sigma_min"]) == 3
+    assert set(res["head_flags"]["models"]["l188-s1"]) == set(tags)
+    del models["l188lofo4p-s3"]["checkpoints"]["wavg"]["anomaly"]
+    res = S.summarise(_v2_doc(), heads={"models": models}, grid=GRID)
+    assert "wavg" not in res["checkpoint_rule"]["by_checkpoint"], "a tag every run carries"
+
+
+def test_v2_main_records_the_grid_it_read(tmp_path):
+    p = tmp_path / "ad.json"
+    p.write_text(json.dumps(_v2_doc()))
+    assert S.main(["--anomaly", str(p), "--grid", str(GRID), "--out", str(tmp_path / "o")]) == 0
+    got = json.loads((tmp_path / "o" / "anomaly_summary.json").read_text())
+    assert got["provenance"]["inputs"]["grid"]["sha256"] == S._sha(GRID)
+    assert "each grid arm's runs" in got["conventions"]["across_seeds"]

@@ -67,7 +67,10 @@ DEFINITIONS, taken from the papers and not invented:
            the answer.
 
 Zero GPU: every input is a cached feature directory written by
-experiments/EVAL/extract_features.py.
+experiments/EVAL/extract_features.py (v1) or experiments/EVAL/extract_v2.py (v2,
+one directory per checkpoint). A v2 cache is read on its uniform prefix only, the
+same first 2,000,000 jets a v1 cache holds (load_cache), and --readout picks its
+class-token features or its pooled embedding (amendment A14).
 """
 from __future__ import annotations
 
@@ -103,6 +106,11 @@ NULL_ARGOS_MAX = 0.05
 # in the D3 run matrix, so every finer label set can express it exactly.
 MATCH_RUNG = "R16_Q1"
 FAMILIES = ("class_sum", "class_sum_matched", "knn", "mahalanobis", "iad_hgb")
+# A vocabulary outside the contraction tree (random and flavour partitions, the
+# self-supervised model): extract_v2.py's --rung none. No QCD node is defined, so
+# only the feature-space families can be scored.
+NO_TREE = "none"
+READOUTS = ("features", "pooled")
 
 
 def _probe():
@@ -112,6 +120,66 @@ def _probe():
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     return m
+
+
+def _v2_prefix(d: pathlib.Path) -> tuple[dict, int]:
+    """(manifest, n) for a v2 cache whose first n rows are stream rows 0..n-1.
+
+    A v2 cache holds every row of the first --prefix-features jets AND every
+    probe task's classes over the whole split, in stream order. Drawing from all
+    of it would take background and signal from a class-selected sample instead
+    of the uniform prefix, and nothing would error; so the prefix is required to
+    be there, complete and in order."""
+    man = json.loads((d / "manifest.json").read_text())
+    n = int(man.get("prefix_features") or 0)
+    rows = np.load(d / "rows.npy", mmap_mode="r")
+    if n <= 0 or rows.shape[0] < n or not np.array_equal(rows[:n], np.arange(n)):
+        raise SystemExit(f"FATAL: {d} does not hold stream rows 0..{n - 1} as its "
+                         f"first rows (prefix_features {n:,}); no uniform prefix")
+    return man, n
+
+
+def prefix_labels(path) -> np.ndarray:
+    """Native labels of the uniform prefix: a label188.npy file (v1), or a v2
+    checkpoint directory cut to its prefix."""
+    p = pathlib.Path(path)
+    if not p.is_dir():
+        return np.load(p)
+    _, n = _v2_prefix(p)
+    return np.array(np.load(p / "label188.npy", mmap_mode="r")[:n])
+
+
+def load_cache(d: pathlib.Path, readout: str = "features") -> dict:
+    """probe.load_arm's dict for one cache. A v1 cache is read whole (it IS the
+    first 2,000,000 jets); a v2 cache only on its uniform prefix, from features.npy
+    (the class token) or pooled.npy (the pooled embedding), with a "cache" record
+    of what was read."""
+    if (d / "extract_manifest.json").exists():
+        if readout != "features":
+            raise SystemExit(f"FATAL: {d} is a v1 cache; it has no {readout} readout")
+        return _probe().load_arm(d)
+    man, n = _v2_prefix(d)
+    n_rows = np.load(d / "rows.npy", mmap_mode="r").shape[0]
+    F = np.load(d / f"{readout}.npy", mmap_mode="r")
+    L = np.load(d / "label188.npy", mmap_mode="r")
+    if F.shape[0] != n_rows or L.shape[0] != n_rows:
+        raise SystemExit(f"FATAL: {d} has {F.shape[0]} {readout} rows and {L.shape[0]} "
+                         f"labels for {n_rows} rows")
+    L = np.array(L[:n])
+    obs = {}
+    if (d / "observers.npz").exists():
+        z = np.load(d / "observers.npz")
+        obs = {k: z[k] for k in z.files}
+        if any(v.shape[0] != n_rows for v in obs.values()):
+            raise SystemExit(f"FATAL: {d} observers are not aligned with its rows")
+        obs = {k: v[:n] for k, v in obs.items()}
+    # rows_sha256 hashes ALL of the cache's rows, which depend on probe.TASKS at
+    # extraction time; the draws read only the prefix, whose identity is its labels.
+    return {"F": np.asarray(F[:n], dtype=np.float32), "L": L, "obs": obs,
+            "manifest": {k: v for k, v in man.items() if k != "rows_sha256"},
+            "label_sha": hashlib.sha256(L.tobytes()).hexdigest(),
+            "cache": {"readout": readout, "prefix_rows": n, "tags": man.get("tags"),
+                      "checkpoint_sha256": man.get("checkpoint_sha256")}}
 
 
 def read_map() -> list[dict]:
@@ -442,15 +510,16 @@ def run_one(arm, rung, F, L, logits, obs, sig_lab, sig_node, n_sig, rng,
     # different estimator per arm; recorded so a reader can see the
     # substitution instead of reading it as a vocabulary effect.
     # class_sum_matched removes the signal's MATCH_RUNG group instead, so its
-    # count is the same integer at every rung by construction.
-    node_of, _res, _q = node_roles(rung)
-    classes_removed = int(sum(1 for lab, nd in node_of.items() if nd == sig_node))
-    out = {"classes_removed": classes_removed}
-    matched = None
-    if "class_sum_matched" in families:
-        matched = matched_nodes(rung, sig_lab)
-        out["classes_removed_matched"] = int(sum(1 for nd in node_of.values()
-                                                 if nd in matched))
+    # count is the same integer at every rung by construction. Off the tree
+    # (NO_TREE) there is no node to remove and no class sum to remove it from.
+    out, matched = {}, None
+    if rung != NO_TREE:
+        node_of, _res, _q = node_roles(rung)
+        out["classes_removed"] = int(sum(1 for lab, nd in node_of.items() if nd == sig_node))
+        if "class_sum_matched" in families:
+            matched = matched_nodes(rung, sig_lab)
+            out["classes_removed_matched"] = int(sum(1 for nd in node_of.values()
+                                                     if nd in matched))
     if logits is None and not precomputed:
         # Absent, and WHY -- otherwise anomaly_results.json simply has no
         # class_sum for any cell, exit 0, with nothing recording that the
@@ -668,7 +737,7 @@ def rung_balanced_regret(results: dict) -> dict:
     cells: dict = {}
     for arm, ad in results["arms"].items():
         rung = ad.get("rung")
-        if rung is None:
+        if rung in (None, NO_TREE):        # off the tree: not a rung of this ladder
             continue
         for sig, per_n in ad["signals"].items():
             for n_sig, agg in per_n.items():
@@ -763,17 +832,23 @@ def main(argv=None) -> int:
     ap.add_argument("--n-sig", type=int, nargs="+", default=N_SIG_SCAN)
     ap.add_argument("--families", nargs="+", choices=FAMILIES, default=list(FAMILIES),
                     help="score only these; the draws do not depend on the choice")
+    ap.add_argument("--readout", choices=READOUTS, default="features",
+                    help="v2 caches: the class-token features or the pooled embedding")
     a = ap.parse_args(argv)
 
     probe = _probe()
     rung_of = dict(s.split("=", 1) for s in a.rungs)
+    off_tree = sorted(n for n, r in rung_of.items() if r == NO_TREE)
+    if off_tree and {"class_sum", "class_sum_matched"} & set(a.families):
+        raise SystemExit(f"FATAL: {off_tree} have no QCD node (rung {NO_TREE}); "
+                         "score them with --families knn mahalanobis")
     arms = {}
     for s in a.features:
         name, d = s.split("=", 1)
         if name not in rung_of:
             raise SystemExit(f"FATAL: no --rungs entry for arm {name}")
         p_arm = pathlib.Path(d)
-        arms[name] = probe.load_arm(p_arm)
+        arms[name] = load_cache(p_arm, a.readout)
         # probe.load_arm reads features/labels/observers but NOT logits, so the
         # vocabulary-defined score has to load them here -- and validate the row
         # count, or class_sum would be computed against a different sample.
@@ -800,16 +875,17 @@ def main(argv=None) -> int:
 
     for arm, d in sorted(arms.items()):
         rung = rung_of[arm]
-        node_of, _, _ = node_roles(rung)
+        node_of = node_roles(rung)[0] if rung != NO_TREE else {}
         F, L, obs = d["F"], d["L"], d["obs"]
         logits = d.get("logits")
         if logits is None:
             print(f"  {arm}: no logits.npy -- the vocabulary-defined score "
                   f"cannot be built, only the vocabulary-free ones")
-        results["arms"][arm] = {"rung": rung, "signals": {}}
+        results["arms"][arm] = {"rung": rung, "signals": {},
+                                **({"cache": d["cache"]} if "cache" in d else {})}
         for sig in a.signals:
             lab = by_name[sig]
-            snode = node_of[lab]
+            snode = node_of.get(lab)
             per_n = {}
             for n_sig in a.n_sig:
                 reps = []

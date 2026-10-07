@@ -50,14 +50,46 @@ of what merges v1..v3 actually read. NOT versioning the model name is what stops
 the re-run reading as a sixth 162-class seed in the merged table, which is
 precisely the miscount the seed-balanced regret exists to prevent.
 
+v2 (--v2, specs under experiments/EVAL/k8s/v2/anomaly/)
+-------------------------------------------------------
+Every run of configs/arms/v2_grid.json that anomaly_summary.V2_ANOMALY_ARMS
+selects (the vocabulary ladder, its leave-one-family-out arms, the self-supervised
+arms; not the mass-output, random-partition or flavour arms), at every checkpoint
+extract_v2.py extracts (build_extract_jobs.V2_CHECKPOINTS: best70 primary, wavg,
+bestval, best70_bn, bestval_bn), each read two ways, the class-token features and
+the pooled embedding (amendment A14; a self-supervised run has only the pooled
+one); and the untrained trunk of run indices 1-5 (init-s1..5, tag init, both
+readouts) as a reference row in every merge. Model name = run without "mtx-"
+(l188lofo4p-s2), v1's names and so v1's resampling draws.
+
+  eval-anomaly-v2-<model>-raunav     one per model, 8 CPUs: anomaly.py, Mahalanobis
+      and kNN, on the uniform 2,000,000-jet prefix of each checkpoint's cache:
+        /data/results/eval/v2/anomaly/<run>/<tag>/<readout>/anomaly_results.json
+      (<run> = mtx-<model>, or init-s<k> for the references)
+      A tag extract_v2.py linked to another (the same checkpoint file) is linked
+      here too, not rescored. A unit already complete (its file carries
+      null_unmeasured, written last) is skipped, so a retry loses one unit.
+  eval-anomaly-v2-heads-<set>-raunav one per tier set: anomaly_heads.py, the output
+      ratio (class_sum, class_sum_matched) of every model with an output layer:
+        /data/results/eval/v2/anomaly_heads_<set>/anomaly_heads.json
+  eval-anomaly-v2-merge-<set>-raunav one per tier set: anomaly_merge.py per (tag,
+      readout), once every unit of the set is complete:
+        /data/results/eval/v2/anomaly_merged_<set>/<tag>/<readout>/anomaly_results.json
+  <set> = t12 (tiers 1-2, the analysis freeze of A14) or t123 (every tier).
+  The table step: anomaly_summary.py --grid configs/arms/v2_grid.json --anomaly
+  <merged>/<tag>/<readout>/anomaly_results.json [--heads <heads>] --out <dir>.
+
 Run:  python3 scripts/build_anomaly_jobs.py [--check-only] [--only RUN_ID ...]
       python3 scripts/build_anomaly_jobs.py --pin-not-yet-tagged
       python3 scripts/build_anomaly_jobs.py --class-sum-rerun --pin-not-yet-tagged
+      python3 scripts/build_anomaly_jobs.py --v2 --pin-not-yet-tagged [--check-only]
 """
 from __future__ import annotations
 
 import argparse
 import difflib
+import functools
+import json
 import pathlib
 import re
 import subprocess
@@ -771,6 +803,268 @@ def v1err_spec() -> str:
                               V1ERR_SPEC.format(pin=V1ERR_PIN, specs=specs, heads=V1ERR_HEADS))
 
 
+# =============================================================== v2 (2026-10-07)
+# Layout and jobs: the module docstring. What PRESPEC fixes and this follows:
+# the paper reports v2 (A7-A13); best70 is primary (A14); "every result" is also
+# computed from wavg (A8); bestval is the frozen readouts' sensitivity check and
+# best70_bn / bestval_bn sit beside them (A14, rule fired 2026-10-03); the pooled
+# embedding is given to every model in the anomaly section (A14 design 5).
+# Mahalanobis and kNN only (iad_hgb is dropped from the paper; the output ratio
+# comes from the stored head scores, anomaly_heads.py), and N_sig 2000 (primary)
+# and 4000 (reference), the injections anomaly_summary.py and anomaly_heads.py
+# read; the N_sig = 0 ARGOS null is not rerun (+55 % cost, not reported).
+#
+# COST, MEASURED (2026-10-07, Apple M4 Pro, 8 threads, production sizes: 200,000
+# + 200,000 QCD, 2,000 injected, 128-d Gaussian features, anomaly.run_one): kNN
+# 42.3 s + Mahalanobis 8.9 s per resampling, 49 s for the null. One (run, tag,
+# readout) unit is 6 signals x 2 injections x 10 resamplings, X->YY->bbb having
+# too few jets at 4000: 110 x 51 s = 1.6 h here, 4.4 h at the 2.8x pod/laptop
+# ratio measured for v1 (CS_DEADLINE above) -- an upper estimate, since the v1
+# pods did not cap OpenMP at the CPUs requested and these do. The v2 prefix is
+# the v1 cache's 2,000,000 jets and the draws are the same sizes, so the cost per
+# resampling is v1's without IAD and the class sums: v1's ~50 h per model was
+# 6 signals x 6 injections x 10 resamplings x four families.
+# Per job (one run): 10 units (5 tags x 2 readouts; 6 where bestval is best70's
+# epoch), 16-44 h; self-supervised 5 units, 8-22 h; an untrained trunk 2 units,
+# 3-9 h. The study (V2_ANOMALY_ARMS: 42 runs with a head, 6 self-supervised, 5
+# references): 42 x 10 + 6 x 5 + 5 x 2 = 460 units at most, 740-2,000 pod-hours
+# at 8 CPUs (5,900-16,200 CPU-hours).
+# Sharded by RUN: 53 specs rather than 460, and every unit resumable, so an
+# eviction (ignored by the retry policy) or a recreated job costs at most one
+# unit. The retry policy is V1ERR_SPEC's, which sets no deadline.
+V2_PIN = "mtx-s2.00"
+V2_NEEDED_AT_PIN = ["experiments/EVAL/anomaly.py", "experiments/EVAL/probe.py",
+                    "experiments/EVAL/anomaly_merge.py", "experiments/EVAL/anomaly_heads.py",
+                    "configs/labelmaps/rung_label_maps.v1.csv"]
+V2_K8S = K8S / "v2" / "anomaly"
+V2_ANOMALY = "/data/results/eval/v2/anomaly"
+V2_TIER_SETS = (("t12", 2), ("t123", 3))
+
+
+def _script_module(name: str, rel: str):
+    import importlib.util
+    s = importlib.util.spec_from_file_location(name, ROOT / rel)
+    m = importlib.util.module_from_spec(s)
+    s.loader.exec_module(m)
+    return m
+
+
+@functools.cache
+def _bx():
+    return _script_module("build_extract_jobs", "scripts/build_extract_jobs.py")
+
+
+@functools.cache
+def _summary():
+    return _script_module("anomaly_summary", "experiments/EVAL/anomaly_summary.py")
+
+
+class V2Model(NamedTuple):
+    model: str        # anomaly.py's arm name: the run without "mtx-" (v1's names, v1's draws)
+    run: str          # its directory under build_extract_jobs.V2_OUT
+    rung: str
+    readouts: tuple
+    head: bool        # an output layer on the tree: the output ratio is scored
+    tier: int
+    tags: tuple
+
+
+def v2_models() -> list[V2Model]:
+    """Every model the v2 anomaly study scores: the grid's runs of the arms
+    anomaly_summary.v2_ladder selects (V2_ANOMALY_ARMS), so the jobs and the
+    summary's cells are one list, and the untrained-trunk references (tag init)."""
+    bx = _bx()
+    S = _summary()
+    cells = S.v2_ladder(bx.V2_GRID)[0]
+    tier = {a["name"]: a["tier"] for a in json.loads(bx.V2_GRID.read_text())["arms"]}
+    out = [V2Model(run.removeprefix("mtx-"), run, bx.v2_rung(arm),
+                   ("features", "pooled") if k else ("pooled",),
+                   bool(k) and bx.v2_rung(arm) != "none", tier[arm], tuple(bx.V2_CHECKPOINTS))
+           for run, arm, k, _reg, _s in bx.v2_runs() if arm in cells]
+    out += [V2Model(ref, ref, "none", ("features", "pooled"), False, tier[bx.V2_INIT_ARM],
+                    (S.V2_INIT,)) for ref, _run in bx.v2_init_refs()]
+    return out
+
+
+V2_HEAD = """apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {name}
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: {{ containerName: main, operator: In, values: [42] }}
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          halt () {{ rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }}
+          git clone --depth 1 --branch "{pin}" \\
+            https://github.com/raunavm/transferlearningsophon.git \\
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1 OMP_NUM_THREADS={threads} OPENBLAS_NUM_THREADS={threads} MKL_NUM_THREADS={threads}
+"""
+V2_TAIL = """        volumeMounts:
+        - {{ name: data, mountPath: /data }}
+        resources:
+          requests: {{ memory: "{mem}", cpu: "{cpu}", ephemeral-storage: "10Gi" }}
+          limits:   {{ memory: "{mem}", cpu: "{cpu}", ephemeral-storage: "10Gi" }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+"""
+# The files anomaly.load_cache opens in a v2 cache; observers.npz is optional there.
+V2_RUN_BODY = """          a={model}; r={rung}; src={src}/{run}; dst={dst}/{run}
+          for tag in {tags}; do
+            d=${{src}}/${{tag}}
+            for f in label188.npy rows.npy manifest.json {files}; do
+              [ -f "${{d}}/${{f}}" ] || {{ echo "FATAL: no ${{d}}/${{f}}"; exit 42; }}
+            done
+          done
+          mkdir -p ${{dst}}
+          for tag in {tags}; do
+            d=${{src}}/${{tag}}
+            if [ -L "${{d}}" ]; then ln -sfn "$(readlink ${{d}})" ${{dst}}/${{tag}}; continue; fi
+            for ro in {readouts}; do
+              OUT=${{dst}}/${{tag}}/${{ro}}
+              grep -qs '"null_unmeasured"' ${{OUT}}/anomaly_results.json && {{ echo "done: ${{OUT}}"; continue; }}
+              python3 experiments/EVAL/anomaly.py \\
+                --features ${{a}}=${{d}} --rungs ${{a}}=${{r}} --readout ${{ro}} \\
+                --families knn mahalanobis --n-sig 2000 4000 \\
+                --n-bkg 200000 --n-template 200000 --trainings 10 \\
+                --out ${{OUT}} || halt
+            done
+          done
+          echo "=== done: ${{dst}} ==="
+"""
+V2_HEADS_BODY = """          OUT={out}
+          [ -f ${{OUT}} ] && {{ echo "done by an earlier attempt"; exit 0; }}
+          MODELS=""
+          for spec in {specs}; do
+            run=${{spec%%:*}}; rung=${{spec##*:}}
+            for tag in {tags}; do
+              [ -f "{src}/${{run}}/${{tag}}/head_scores.npz" ] || {{ echo "FATAL: no heads for ${{run}} at ${{tag}}"; exit 42; }}
+            done
+            MODELS="${{MODELS}} ${{run#mtx-}}=${{rung}}={src}/${{run}}"
+          done
+          mkdir -p $(dirname ${{OUT}})
+          python3 experiments/EVAL/anomaly_heads.py \\
+            --models ${{MODELS}} \\
+            --labels {labels} \\
+            --n-sig 2000 4000 --procs 15 \\
+            --out ${{OUT}} || halt
+"""
+# Every merge (one tag, one readout) also carries the untrained-trunk references,
+# scored once at tag init: the reference row beside each checkpoint's table.
+V2_MERGE_BODY = """          units () {{ for r in $1; do echo {dst}/${{r}}/$2/$3; done; for r in {refs}; do echo {dst}/${{r}}/$3; done; }}
+          for tag in {tags}; do
+            for ro in features pooled; do
+              [ ${{ro}} = features ] && runs="{feat}" || runs="{pool}"
+              for u in $(units "${{runs}}" ${{tag}} ${{ro}}); do
+                grep -qs '"null_unmeasured"' ${{u}}/anomaly_results.json || {{ echo "FATAL: ${{u}} absent or partial"; exit 42; }}
+              done
+            done
+          done
+          for tag in {tags}; do
+            for ro in features pooled; do
+              [ ${{ro}} = features ] && runs="{feat}" || runs="{pool}"
+              OUT={out}/${{tag}}/${{ro}}
+              [ -f ${{OUT}}/anomaly_results.json ] && {{ echo "done: ${{OUT}}"; continue; }}
+              python3 experiments/EVAL/anomaly_merge.py --inputs $(units "${{runs}}" ${{tag}} ${{ro}}) --out ${{OUT}} || halt
+            done
+          done
+"""
+
+
+def _v2_spec(name: str, body: str, pin: str, mem: str, cpu: str, threads: int) -> str:
+    """BLAS/OpenMP threads = the CPUs each process may use: nproc reports the node's."""
+    text = (V2_HEAD.format(name=name, pin=pin, threads=threads) + body
+            + V2_TAIL.format(mem=mem, cpu=cpu))
+    return _bx().storage_guarded(f"job-{name}.yaml", text)
+
+
+def render_v2_run(m: V2Model, pin: str = V2_PIN) -> str:
+    """One model's anomaly.py units: each of its tags on each of its readouts."""
+    body = V2_RUN_BODY.format(model=m.model, run=m.run, rung=m.rung, src=_bx().V2_OUT,
+                              dst=V2_ANOMALY, tags=" ".join(m.tags), readouts=" ".join(m.readouts),
+                              files=" ".join(f"{r}.npy" for r in m.readouts))
+    return _v2_spec(f"eval-anomaly-v2-{m.model}-raunav", body, pin, "32Gi", "8", 8)
+
+
+def render_v2_heads(tset: str, max_tier: int, pin: str = V2_PIN) -> str:
+    """The output ratio of every model with an output layer on the tree, tiers <= max_tier."""
+    ms = [m for m in v2_models() if m.head and m.tier <= max_tier]
+    body = V2_HEADS_BODY.format(
+        out=f"{_bx().V2_OUT}/anomaly_heads_{tset}/anomaly_heads.json", src=_bx().V2_OUT,
+        specs=" ".join(f"{m.run}:{m.rung}" for m in ms), tags=" ".join(_bx().V2_CHECKPOINTS),
+        labels=f"{_bx().V2_OUT}/{ms[0].run}/best70")
+    return _v2_spec(f"eval-anomaly-v2-heads-{tset}-raunav", body, pin, "64Gi", "16", 1)
+
+
+def render_v2_merge(tset: str, max_tier: int, pin: str = V2_PIN) -> str:
+    """One merge per (tag, readout) over every model of tiers <= max_tier."""
+    ms = [m for m in v2_models() if m.tier <= max_tier]
+    runs = [m for m in ms if m.tags == tuple(_bx().V2_CHECKPOINTS)]
+    refs = [m for m in ms if m not in runs]
+    assert all(m.readouts == ("features", "pooled") for m in refs), refs
+    body = V2_MERGE_BODY.format(
+        tags=" ".join(_bx().V2_CHECKPOINTS), dst=V2_ANOMALY,
+        out=f"{_bx().V2_OUT}/anomaly_merged_{tset}",
+        refs=" ".join(f"{m.run}/{m.tags[0]}" for m in refs),
+        feat=" ".join(m.run for m in runs if "features" in m.readouts),
+        pool=" ".join(m.run for m in runs))
+    return _v2_spec(f"eval-anomaly-v2-merge-{tset}-raunav", body, pin, "8Gi", "2", 1)
+
+
+def v2_specs(pin: str = V2_PIN) -> dict[pathlib.Path, str]:
+    out = {V2_K8S / f"job-eval-anomaly-v2-{m.model}-raunav.yaml": render_v2_run(m, pin)
+           for m in v2_models()}
+    for tset, max_tier in V2_TIER_SETS:
+        out[V2_K8S / f"job-eval-anomaly-v2-heads-{tset}-raunav.yaml"] = render_v2_heads(tset, max_tier, pin)
+        out[V2_K8S / f"job-eval-anomaly-v2-merge-{tset}-raunav.yaml"] = render_v2_merge(tset, max_tier, pin)
+    return out
+
+
+def main_v2(a) -> int:
+    pin = a.pin or V2_PIN
+    verify_pin(pin, a.pin_not_yet_tagged, V2_NEEDED_AT_PIN)
+    if not a.check_only:
+        V2_K8S.mkdir(parents=True, exist_ok=True)
+    specs = v2_specs(pin)
+    done = {p: _write(p, t, a.check_only) for p, t in specs.items()}
+    stale = sorted(set(V2_K8S.glob("*.yaml")) - set(specs))
+    for p, s in [*done.items(), *((p, "NOT RENDERED (stale)") for p in stale)]:
+        print(f"  {p.name:52s} {s}")
+    ms = v2_models()
+    units = sum(len(m.tags) * len(m.readouts) for m in ms)
+    print(f"\n{len(ms)} per-model jobs, {units} units at most (8 CPUs, 1.6-4.4 h per unit); "
+          f"then, per tier set, the heads job (any time after extraction) and the merge")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-only", action="store_true",
@@ -784,7 +1078,11 @@ def main(argv=None) -> int:
     ap.add_argument("--pin-not-yet-tagged", action="store_true")
     ap.add_argument("--v1err", action="store_true",
                     help="emit ONLY the v1 anomaly-by-checkpoint-rule job (audit 2026-09-29)")
+    ap.add_argument("--v2", action="store_true",
+                    help=f"emit the v2 specs under {V2_K8S.relative_to(ROOT)} (default pin {V2_PIN})")
     a = ap.parse_args(argv)
+    if a.v2:
+        return main_v2(a)
     if a.v1err:
         out = ROOT / "experiments" / "EVAL" / "k8s" / "job-anomaly-heads-v1err-raunav.yaml"
         out.write_text(v1err_spec())

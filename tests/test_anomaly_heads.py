@@ -153,3 +153,31 @@ def test_the_v1err_analysis_spec_reads_all_thirty_models_with_the_retry_policy()
     models = line.split("for spec in ")[1].rstrip("; do").split()
     assert len(models) == 30 and "mtx-l162-s1b:L162" in models and "mtx-r16q1mass-s4:R16_Q1" in models
     assert (ROOT / "experiments/EVAL/k8s/job-anomaly-heads-v1err-raunav.yaml").read_text() == text
+
+
+def test_a_v2_checkpoint_directory_serves_as_the_labels(tmp_path):
+    """v2 has no 2,000,000-jet label file: --labels takes a v2 checkpoint directory
+    and reads its uniform prefix, and the result equals the one from the file."""
+    import json
+    L, z, signals = _world()
+    np.save(tmp_path / "labels.npy", L.astype(np.int16))
+    rows = np.flatnonzero(np.isin(L, an._probe().qcd_indices() + list(signals.values()))
+                          | (np.arange(L.size) % 100 == 0))
+    feat_rows = np.concatenate([np.arange(L.size), L.size + np.arange(50)])
+    lab = np.concatenate([L, np.full(50, 5)]).astype(np.int16)
+    res = {"n_stream": int(lab.size), "label188_sha256": "x", "labels": lab, "checkpoints": {
+        "best70": {"features": np.zeros((feat_rows.size, 4), np.float16), "rows": feat_rows,
+                   "label188": lab, "head_rows": rows, "head_label188": L[rows].astype(np.int16),
+                   "head": xv.head_score_columns(z[rows], RUNG, signals)}}}
+    meta = {"rung": RUNG, "diag_stride": 100, "prefix_features": int(L.size),
+            "checkpoints": {"best70": {"checkpoint_sha256": "a"}}}
+    xv.write(tmp_path / "m", res, meta)
+    got = {}
+    for name, labels in (("file", tmp_path / "labels.npy"), ("dir", tmp_path / "m" / "best70")):
+        out = tmp_path / f"{name}.json"
+        assert ah.main(["--models", f"r42q1-s5={RUNG}={tmp_path / 'm'}", "--labels", str(labels),
+                        "--signals", "label_X_bb", "--n-sig", "150", "--trainings", "2",
+                        "--n-bkg", "1000", "--n-template", "1000", "--out", str(out)]) == 0
+        got[name] = json.loads(out.read_text())
+    assert got["dir"] == got["file"]
+    assert "anomaly" in got["dir"]["models"]["r42q1-s5"]["checkpoints"]["best70"]

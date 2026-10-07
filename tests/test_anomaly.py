@@ -629,3 +629,128 @@ def test_a_family_subset_reproduces_the_full_runs_cells(tmp_path):
     assert cs["400"]["classes_removed"] == 1
     assert cs["400"]["classes_removed_matched"] == 10, (
         "label_X_bb's 17-class group holds ten native classes")
+
+
+# ------------------------------------------------ v2 caches (2026-10-07)
+
+def _xv():
+    s = importlib.util.spec_from_file_location(
+        "extract_v2", ROOT / "experiments" / "EVAL" / "extract_v2.py")
+    m = importlib.util.module_from_spec(s)
+    s.loader.exec_module(m)
+    return m
+
+
+def _v2_world(n=6000, extra=4000, seed=7):
+    """n prefix jets (QCD, with 900 separable X->bb) and `extra` class-selected
+    rows after them, as extract_v2 keeps: QCD and X->bb with features unlike the
+    prefix's, which would move every draw if they were read."""
+    rng = np.random.default_rng(seed)
+    qcd = sorted(an._probe().qcd_indices())
+    lab = np.array(rng.choice(qcd, size=n + extra))
+    lab[:900] = 0
+    lab[n:n + 500] = 0
+    F = rng.normal(size=(n + extra, 16)).astype(np.float16)
+    F[:900] += 3.0
+    F[n:] += 1.5
+    return lab, F
+
+
+def _v2_cache(out, lab, F, n, tags=("best70",), drop_row=None):
+    """A v2 checkpoint directory written by extract_v2.write itself."""
+    rows = np.arange(lab.size)
+    if drop_row is not None:
+        rows = np.delete(rows, drop_row)
+    res = {"n_stream": int(lab.size), "label188_sha256": "x", "labels": lab,
+           "observers": {"jet_sdmass": np.linspace(20, 500, rows.size).astype(np.float32)},
+           "checkpoints": {t: {"features": F[rows], "pooled": -F[rows], "rows": rows,
+                               "label188": lab[rows].astype(np.int16), "has_head": False,
+                               "head_rows": np.zeros(0, np.int64),
+                               "head_label188": np.zeros(0, np.int16), "head": {}}
+                           for t in tags}}
+    meta = {"rung": "L188", "prefix_features": n,
+            "checkpoints": {t: {"checkpoint_sha256": f"sha-{t}"} for t in tags}}
+    _xv().write(out, res, meta)
+    return out
+
+
+def _run(d, out, rung="L188", extra=()):
+    import json as _json
+    an.main(["--features", f"a={d}", "--rungs", f"a={rung}", "--out", str(out),
+             "--n-bkg", "1500", "--n-template", "1500", "--trainings", "2",
+             "--signals", "label_X_bb", "--n-sig", "400", "--families", "knn",
+             "mahalanobis", *extra])
+    return _json.loads((out / "anomaly_results.json").read_text())
+
+
+def test_a_v2_cache_is_read_on_its_uniform_prefix_only(tmp_path):
+    lab, F = _v2_world()
+    d = _v2_cache(tmp_path / "v2", lab, F, 6000) / "best70"
+    got = an.load_cache(d)
+    np.testing.assert_array_equal(got["L"], lab[:6000])
+    np.testing.assert_array_equal(got["F"], F[:6000].astype(np.float32))
+    assert got["F"].dtype == np.float32 and got["obs"]["jet_sdmass"].shape == (6000,)
+    assert got["cache"] == {"readout": "features", "prefix_rows": 6000, "tags": ["best70"],
+                            "checkpoint_sha256": "sha-best70"}
+    assert "rows_sha256" not in got["manifest"], "the rows beyond the prefix do not enter"
+    pooled = an.load_cache(d, "pooled")
+    np.testing.assert_array_equal(pooled["F"], -F[:6000].astype(np.float32))
+    assert pooled["cache"]["readout"] == "pooled"
+    np.testing.assert_array_equal(an.prefix_labels(d), lab[:6000])
+
+
+def test_a_v2_cache_missing_a_prefix_row_is_refused(tmp_path):
+    lab, F = _v2_world()
+    d = _v2_cache(tmp_path / "v2", lab, F, 6000, drop_row=17) / "best70"
+    with pytest.raises(SystemExit, match="no uniform prefix"):
+        an.load_cache(d)
+
+
+def test_a_v1_cache_is_read_by_probe_load_arm_unchanged(tmp_path):
+    rng = np.random.default_rng(3)
+    lab = np.array(rng.choice(sorted(an._probe().qcd_indices()), size=500))
+    _cache(tmp_path / "v1", 500, lab, rng, k=188)
+    got, ref = an.load_cache(tmp_path / "v1"), an._probe().load_arm(tmp_path / "v1")
+    assert set(got) == set(ref) and "cache" not in got
+    np.testing.assert_array_equal(got["F"], ref["F"])
+    assert got["label_sha"] == ref["label_sha"]
+    np.testing.assert_array_equal(an.prefix_labels(tmp_path / "v1" / "label188.npy"), lab)
+    with pytest.raises(SystemExit, match="v1 cache"):
+        an.load_cache(tmp_path / "v1", "pooled")
+
+
+def test_a_v2_cache_draws_exactly_what_a_v1_cache_of_its_prefix_draws(tmp_path):
+    """The v2 numbers are the v1 procedure on the same jets: a v1 cache holding
+    the prefix gives identical cells, and one holding every row does not."""
+    lab, F = _v2_world()
+    v2 = _run(_v2_cache(tmp_path / "v2", lab, F, 6000) / "best70", tmp_path / "o2")
+    for name, m in (("prefix", 6000), ("all", lab.size)):
+        d = tmp_path / name
+        d.mkdir()
+        np.save(d / "features.npy", F[:m].astype(np.float32))
+        np.save(d / "label188.npy", lab[:m].astype(np.int16))
+        np.savez(d / "observers.npz",
+                 jet_sdmass=np.linspace(20, 500, lab.size).astype(np.float32)[:m])
+        (d / "extract_manifest.json").write_text('{"arm": "t"}')
+    v1 = _run(tmp_path / "prefix", tmp_path / "o1")
+    every = _run(tmp_path / "all", tmp_path / "oa")
+    assert v2["row_alignment_sha256"] == v1["row_alignment_sha256"]
+    assert v2["arms"]["a"]["signals"] == v1["arms"]["a"]["signals"]
+    assert v2["arms"]["a"]["cache"]["readout"] == "features" and "cache" not in v1["arms"]["a"]
+    assert every["arms"]["a"]["signals"] != v1["arms"]["a"]["signals"], "the test can fail"
+
+
+def test_a_vocabulary_off_the_tree_scores_the_feature_families_only(tmp_path):
+    """Random and flavour partitions and the self-supervised model have no QCD
+    node (rung 'none'): no class sum, no classes_removed, no rung-level regret."""
+    lab, F = _v2_world()
+    d = _v2_cache(tmp_path / "v2", lab, F, 6000) / "best70"
+    res = _run(d, tmp_path / "o", rung="none", extra=("--readout", "pooled"))
+    cell = res["arms"]["a"]["signals"]["label_X_bb"]["400"]
+    assert res["arms"]["a"]["rung"] == "none" and res["arms"]["a"]["cache"]["readout"] == "pooled"
+    assert {k for k, v in cell.items() if isinstance(v, dict)} == {"knn", "mahalanobis"}
+    assert "classes_removed" not in cell
+    assert "regret_rung_balanced" not in cell["knn"]
+    with pytest.raises(SystemExit, match="no QCD node"):
+        an.main(["--features", f"a={d}", "--rungs", "a=none", "--out", str(tmp_path / "x"),
+                 "--families", "class_sum_matched", "knn"])

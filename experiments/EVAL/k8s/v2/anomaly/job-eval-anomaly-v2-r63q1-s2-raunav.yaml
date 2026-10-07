@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: eval-anomaly-v2-r63q1-s2-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 6
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
+          git clone --depth 1 --branch "mtx-s2.00" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          echo "PVC used: ${USED}%"
+          [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          git rev-parse HEAD
+          export PYTHONUNBUFFERED=1 OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 MKL_NUM_THREADS=8
+          a=r63q1-s2; r=R63_Q1; src=/data/results/eval/v2/mtx-r63q1-s2; dst=/data/results/eval/v2/anomaly/mtx-r63q1-s2
+          for tag in best70 bestval wavg best70_bn bestval_bn; do
+            d=${src}/${tag}
+            for f in label188.npy rows.npy manifest.json features.npy pooled.npy; do
+              [ -f "${d}/${f}" ] || { echo "FATAL: no ${d}/${f}"; exit 42; }
+            done
+          done
+          mkdir -p ${dst}
+          for tag in best70 bestval wavg best70_bn bestval_bn; do
+            d=${src}/${tag}
+            if [ -L "${d}" ]; then ln -sfn "$(readlink ${d})" ${dst}/${tag}; continue; fi
+            for ro in features pooled; do
+              OUT=${dst}/${tag}/${ro}
+              grep -qs '"null_unmeasured"' ${OUT}/anomaly_results.json && { echo "done: ${OUT}"; continue; }
+              python3 experiments/EVAL/anomaly.py \
+                --features ${a}=${d} --rungs ${a}=${r} --readout ${ro} \
+                --families knn mahalanobis --n-sig 2000 4000 \
+                --n-bkg 200000 --n-template 200000 --trainings 10 \
+                --out ${OUT} || halt
+            done
+          done
+          echo "=== done: ${dst} ==="
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        resources:
+          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "10Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

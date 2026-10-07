@@ -119,6 +119,8 @@ def backfill_classes_removed(merged: dict, an) -> int:
         if rung is None:
             skipped.append(arm)
             continue
+        if rung == an.NO_TREE:
+            continue        # off the tree: no class sum, so no estimator to describe
         if rung not in roles:
             roles[rung] = an.node_roles(rung)[0]
         node_of = roles[rung]
@@ -168,7 +170,7 @@ def stamp_signal_provenance(merged: dict, an) -> dict:
     """
     by_name = {r["class_name"]: int(r["jet_label"]) for r in an.read_map()}
     rungs = sorted({ad["rung"] for ad in merged["arms"].values()
-                    if ad.get("rung")})
+                    if ad.get("rung") not in (None, "", an.NO_TREE)})
     sigs = sorted({s for ad in merged["arms"].values() for s in ad["signals"]
                    if s in by_name})
     per_sig = {}

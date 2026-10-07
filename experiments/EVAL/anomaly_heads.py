@@ -144,7 +144,7 @@ def one_checkpoint(job) -> tuple[str, str, dict]:
     """(arm, tag, result) for one extracted checkpoint; run in a worker process."""
     arm, rung, cdir, labels, committed, rerun, signals, n_sigs, trainings, n_bkg, n_template = job
     cdir = pathlib.Path(cdir)
-    L = np.load(labels).astype(np.int64)
+    L = an.prefix_labels(labels).astype(np.int64)
     man = json.loads((cdir / "manifest.json").read_text())
     if man["rung"] != rung:
         raise SystemExit(f"FATAL: {cdir} was extracted at {man['rung']}, not {rung}")
@@ -168,7 +168,8 @@ def main(argv=None) -> int:
     ap.add_argument("--models", nargs="+", required=True,
                     help="arm=RUNG=DIR, DIR holding extract_v2.py's checkpoint directories")
     ap.add_argument("--labels", required=True, type=pathlib.Path,
-                    help="label188.npy of the 2,000,000-jet v1 caches (the anomaly draws index it)")
+                    help="label188.npy of the 2,000,000-jet v1 caches (the anomaly draws index it), "
+                         "or a v2 checkpoint directory, read on its uniform prefix")
     ap.add_argument("--committed", type=pathlib.Path, default=None,
                     help="the committed anomaly_results.json (class_sum), for the epoch-79 check")
     ap.add_argument("--committed-rerun", type=pathlib.Path, default=None,
@@ -184,7 +185,7 @@ def main(argv=None) -> int:
     if a.out.exists():
         raise SystemExit(f"FATAL: {a.out} exists; refusing to overwrite")
 
-    res = {"labels_sha256": hashlib.sha256(np.load(a.labels).tobytes()).hexdigest(),
+    res = {"labels_sha256": hashlib.sha256(an.prefix_labels(a.labels).tobytes()).hexdigest(),
            "n_bkg": a.n_bkg, "n_template": a.n_template, "trainings": a.trainings,
            "sigma_min": "Asimov, arXiv:2604.20965 Eqs. 3-4, sigma_t = 5, B = n_bkg; thresholds "
                         f"with more than {an.MIN_BKG_PASS} background jets passing (n_B > "

@@ -45,11 +45,23 @@ kept beside it for reproducibility; the rerun must reproduce the committed
 draws (rng seeds) and, at 17 classes, where the two estimators coincide, the
 committed class_sum values, or nothing is written.
 
+v2 (--grid configs/arms/v2_grid.json). The ladder is the grid's arms that
+V2_ANOMALY_ARMS selects, plus the untrained-trunk reference V2_INIT: one cell per
+such arm the artifact reaches (L188 ... R16_Q1_LOFO4P, MPM, init), keyed by the
+arm's name, each requiring that arm's runs 1..runs (5 or 3) and recording the
+label set build_extract_jobs.v2_rung gives it ('none' off the tree). The artifact is
+one merge of scripts/build_anomaly_jobs.py --v2 (one checkpoint, one readout;
+families knn and mahalanobis, every arm read the same way); the output ratio
+comes from --heads at every checkpoint.
+
 Usage:
     python3 experiments/EVAL/anomaly_summary.py \
         --anomaly experiments/FIGS/data/anomaly_merged_v4/anomaly_results.json \
         [--class-sum-rerun <anomaly_cs_merged_v1>/anomaly_results.json] \
         --out experiments/FIGS/data/anomaly_merged_v4/analysis_v3
+    python3 experiments/EVAL/anomaly_summary.py --grid configs/arms/v2_grid.json \
+        --anomaly <anomaly_merged_t12>/best70/features/anomaly_results.json \
+        [--heads <anomaly_heads_t12>/anomaly_heads.json] --out <dir>
 """
 from __future__ import annotations
 
@@ -69,6 +81,7 @@ LEVELS = {"L188": 188, "L162": 162, "R42_Q1": 43, "R16_Q1": 17}
 SEEDS = (1, 2, 3, 4, 5)
 PRIMARY, REFERENCE = "2000", "4000"
 FAMILIES = ("class_sum", "knn", "mahalanobis")
+V2_FAMILIES = ("knn", "mahalanobis")      # the output ratio comes from --heads in v2
 RERUN_FAMILY = "class_sum_matched"
 NOT_DETECTED_MAX_SIC = 1.3
 EXCLUDED = {"iad_hgb": (
@@ -94,21 +107,66 @@ def _sha(path) -> str:
     return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
 
 
-def _level_seed(arm: str, ad: dict, parse_arm) -> tuple[int, int]:
+def v1_ladder() -> tuple[dict, object]:
+    """({level: (label set, seeds)}, parse_arm): the four levels at five seeds."""
+    parse_arm = _load("seed_level", "experiments/STATS/seed_level.py").parse_arm
+    return {lv: (rung, SEEDS) for rung, lv in LEVELS.items()}, parse_arm
+
+
+# THE MODELS THE v2 ANOMALY STUDY SCORES, read off the grid by v2_anomaly_arm: the
+# vocabulary ladder (every contraction-tree level without a mass output: L188, L162,
+# R42_Q1, R16_Q1 and A12's R63_Q1, R29_Q1), its leave-one-family-out arms (A13), and
+# the self-supervised arms (MPM, MPM_LOFO4P; A14 design 5, pooled readout only). No
+# anomaly readout is pre-registered for the mass-output, random-partition or flavour
+# arms (decided 2026-10-07). Beside them, the untrained trunk of run indices 1-5 as a
+# reference row (A14 "Frozen references"): extract_v2.py's tag `init`, models init-s<k>.
+V2_ANOMALY_ARMS = "on the contraction tree without a mass output, or self-supervised"
+V2_INIT = "init"
+
+
+def v2_anomaly_arm(a: dict, v2_rung) -> bool:
+    """Whether grid arm `a` is one V2_ANOMALY_ARMS selects."""
+    return a["objective"] == "mpm" or (a["mass_lambda"] is None and v2_rung(a["name"]) != "none")
+
+
+def v2_ladder(grid: pathlib.Path) -> tuple[dict, object]:
+    """({arm: (label set, run indices)}, parse) for the grid arms V2_ANOMALY_ARMS
+    selects and the V2_INIT reference. A model is named <arm name lower, no
+    underscores>-s<run index>, as scripts/build_anomaly_jobs.py --v2 names it;
+    any other model is refused."""
+    bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
+    arms = [a for a in json.loads(pathlib.Path(grid).read_text())["arms"]
+            if v2_anomaly_arm(a, bx.v2_rung)]
+    cells = {a["name"]: (bx.v2_rung(a["name"]), tuple(range(1, a["runs"] + 1))) for a in arms}
+    cells[V2_INIT] = ("none", tuple(bx.V2_INIT_RUNS))
+    by_stem = {k.lower().replace("_", ""): k for k in cells}
+
+    def parse(arm: str) -> tuple[str, int]:
+        stem, _, s = arm.rpartition("-s")
+        if stem not in by_stem or not s.isdigit():
+            raise SystemExit(f"FATAL: {arm!r} is not <arm>-s<run index> of a model the v2 "
+                             f"anomaly study scores ({V2_ANOMALY_ARMS}; {grid})")
+        return by_stem[stem], int(s)
+    return cells, parse
+
+
+def _level_seed(arm: str, ad: dict, parse_arm, level_spec: dict) -> tuple:
     """(level, seed) from the arm name (seed_level's convention, l162-s1b = seed
     1), cross-checked against the label set the artifact records."""
     level, seed = parse_arm(arm)
-    if LEVELS.get(ad.get("rung")) != level:
+    if level_spec.get(level, (None,))[0] != ad.get("rung"):
         raise SystemExit(f"FATAL: {arm} records label set {ad.get('rung')!r}, "
                          f"which is not the {level}-class set its name says")
     return level, seed
 
 
-def family_block(doc: dict, fam: str, parse_arm) -> dict:
-    """{signal: {injection: {...}}} for one family, per level over the five seeds."""
+def family_block(doc: dict, fam: str, parse_arm, level_spec: dict | None = None) -> dict:
+    """{signal: {injection: {...}}} for one family, per level over its seeds;
+    `level_spec` ({level: (label set, seeds)}, every one required) defaults to v1's."""
+    level_spec = level_spec if level_spec is not None else v1_ladder()[0]
     by = {}
     for arm, ad in doc["arms"].items():
-        level, seed = _level_seed(arm, ad, parse_arm)
+        level, seed = _level_seed(arm, ad, parse_arm, level_spec)
         for sig, per_n in ad["signals"].items():
             for n in (PRIMARY, REFERENCE):
                 by.setdefault(sig, {}).setdefault(n, {}).setdefault(level, {})[seed] = (
@@ -122,13 +180,13 @@ def family_block(doc: dict, fam: str, parse_arm) -> dict:
                 out[sig][n] = {"skipped": cells[0]["skipped"]}
                 continue
             levels = {}
-            for level in LEVELS.values():
+            for level, (_rung, seeds) in level_spec.items():
                 got = per_level.get(level, {})
-                if tuple(sorted(got)) != SEEDS:
+                if tuple(sorted(got)) != seeds:
                     raise SystemExit(f"FATAL: {fam}/{sig}/N={n} at {level} classes "
-                                     f"has seeds {sorted(got)}, not {list(SEEDS)}")
-                arms = [got[s][0] for s in SEEDS]
-                vals = [got[s][1].get(fam) for s in SEEDS]
+                                     f"has seeds {sorted(got)}, not {list(seeds)}")
+                arms = [got[s][0] for s in seeds]
+                vals = [got[s][1].get(fam) for s in seeds]
                 if not all(v and "sigma_min" in v for v in vals):
                     raise SystemExit(f"FATAL: {fam}/{sig}/N={n} has no sigma_min "
                                      f"for some of {arms}")
@@ -251,7 +309,9 @@ def definition(doc: dict) -> dict:
             "max_sic": "kept per run only for the not-detected flag"}
 
 
-FLAG_TAGS = ("best70", "wavg", "bestval", "e079")   # v2: primary, robustness, global-best check; v1: epoch 79
+# v2: primary, robustness, global-best check, and the BatchNorm twins of the primary
+# and the global best (A14, the rule fired 2026-10-03); v1: epoch 79
+FLAG_TAGS = ("best70", "wavg", "bestval", "best70_bn", "bestval_bn", "e079")
 
 
 def head_flags(heads: dict) -> dict:
@@ -305,12 +365,17 @@ def head_flags(heads: dict) -> dict:
     return out
 
 
-def checkpoint_rule(fams: dict, heads: dict) -> dict:
+def checkpoint_rule(fams: dict, heads: dict, ladder: tuple | None = None,
+                    signals: list | None = None) -> dict:
     """sigma_min of the output-layer scores at each checkpoint every run carries
-    ('best70', 'wavg' and 'bestval' in v2, 'e079' in v1), and, for v1, each run's mean of
-    ln sigma_min over epochs 70-79 as a diagnostic of how much the epoch moves it:
-    per run, then mean and sd over runs."""
-    parse_arm = _load("seed_level", "experiments/STATS/seed_level.py").parse_arm
+    (FLAG_TAGS: 'best70', 'wavg', 'bestval' and the twins in v2, 'e079' in v1), and,
+    for v1, each run's mean of ln sigma_min over epochs 70-79 as a diagnostic of how
+    much the epoch moves it: per run, then mean and sd over runs. `ladder` is
+    (cells, parse) of v1_ladder or v2_ladder; a level lacking any of its runs is left out.
+    The signals are each class-sum family's in `fams` (v1), or `signals` (v2, where
+    the merged artifact carries no class sum)."""
+    cells, parse_arm = ladder or v1_ladder()
+    seeds_of = {str(lv): seeds for lv, (_r, seeds) in cells.items()}
     # Only the models the anomaly study scores: v1's ten mass-output models carry
     # head diagnostics but no anomaly cells, and requiring them of every model left
     # this table empty (2026-10-01).
@@ -322,7 +387,7 @@ def checkpoint_rule(fams: dict, heads: dict) -> dict:
     def table(get):
         out = {}
         for fam in ("class_sum", "class_sum_matched"):
-            for sig in fams.get(fam, {}):
+            for sig in (fams.get(fam, {}) if signals is None else signals):
                 for n in (PRIMARY, REFERENCE):
                     per = {}
                     for arm, m in models.items():
@@ -332,15 +397,16 @@ def checkpoint_rule(fams: dict, heads: dict) -> dict:
                         level, seed = parse_arm(arm)
                         per.setdefault(str(level), {})[seed] = (arm, c)
                     for lv, runs in per.items():
-                        if tuple(sorted(runs)) != SEEDS:
+                        seeds = seeds_of[lv]
+                        if tuple(sorted(runs)) != seeds:
                             continue
-                        ln = [runs[s][1][0] for s in SEEDS]
-                        e = {"arms": [runs[s][0] for s in SEEDS], "ln_sigma_min": ln,
+                        ln = [runs[s][1][0] for s in seeds]
+                        e = {"arms": [runs[s][0] for s in seeds], "ln_sigma_min": ln,
                              "sigma_min": [math.exp(x) for x in ln],
                              "ln_sigma_min_mean": float(np.mean(ln)),
                              "ln_sigma_min_sd": float(np.std(ln, ddof=1))}
-                        if runs[SEEDS[0]][1][1] is not None:
-                            e["ln_sigma_min_per_epoch"] = [runs[s][1][1] for s in SEEDS]
+                        if runs[seeds[0]][1][1] is not None:
+                            e["ln_sigma_min_per_epoch"] = [runs[s][1][1] for s in seeds]
                         out.setdefault(fam, {}).setdefault(sig, {}).setdefault(n, {})[lv] = e
         return out
 
@@ -375,11 +441,27 @@ def sigma_min_only(fams: dict) -> dict:
     return fams
 
 
-def summarise(doc: dict, rerun: dict | None = None, heads: dict | None = None) -> dict:
-    parse_arm = _load("seed_level", "experiments/STATS/seed_level.py").parse_arm
-    fams = {f: family_block(doc, f, parse_arm) for f in FAMILIES}
+def summarise(doc: dict, rerun: dict | None = None, heads: dict | None = None,
+              grid: pathlib.Path | None = None) -> dict:
+    """v1 without `grid`; v2 with it: the cells are the grid arms the artifact
+    reaches, each requiring all its runs, and the families V2_FAMILIES."""
+    ladder = v1_ladder() if grid is None else v2_ladder(grid)
+    cells, parse_arm = ladder
+    if grid is not None:
+        if rerun is not None:
+            raise SystemExit("FATAL: the class-sum rerun is v1's; v2 reads the output ratio from --heads")
+        reached = {parse_arm(a)[0] for a in doc["arms"]}
+        cells = {k: v for k, v in cells.items() if k in reached}
+    fams = {f: family_block(doc, f, parse_arm, cells)
+            for f in (FAMILIES if grid is None else V2_FAMILIES)}
     res = {"families": fams, "excluded_families": dict(EXCLUDED), "superseded": {}}
-    cr = {"class_sum": classes_removed(doc, "classes_removed")}
+    if grid is not None:
+        # one merge is one readout; a mixed artifact would put two readouts in one row
+        ro = {(ad.get("cache") or {}).get("readout") for ad in doc["arms"].values()}
+        if len(ro) != 1 or None in ro:
+            raise SystemExit(f"FATAL: the arms record readouts {sorted(map(str, ro))}, not one")
+        res["readout"] = ro.pop()
+    cr = {"class_sum": classes_removed(doc, "classes_removed")} if grid is None else None
     if rerun is not None:
         res["reproduction"] = check_rerun(doc, rerun)
         fams[RERUN_FAMILY] = family_block(rerun, RERUN_FAMILY, parse_arm)
@@ -393,7 +475,8 @@ def summarise(doc: dict, rerun: dict | None = None, heads: dict | None = None) -
             "reason": "class_sum removes a different number of native classes at "
                       "each label set (classes_removed_by_level); class_sum_matched "
                       "removes the same ones everywhere. Kept for reproducibility."}
-    res["classes_removed_by_level"] = cr
+    if cr is not None:
+        res["classes_removed_by_level"] = cr
 
     # How much the primary-injection choice matters, measured rather than asserted.
     diffs = [abs(b["levels"][lv]["ln_sigma_min_mean"] - a["levels"][lv]["ln_sigma_min_mean"])
@@ -432,7 +515,8 @@ def summarise(doc: dict, rerun: dict | None = None, heads: dict | None = None) -
                                      "logit mean P(QCD) on resonant jets; an outlier is an epoch "
                                      "state of the output layer, not a property of the run",
                              "models": head_flags(heads)}
-        res["checkpoint_rule"] = checkpoint_rule(fams, heads)
+        res["checkpoint_rule"] = checkpoint_rule(
+            fams, heads, ladder, None if grid is None else list(fams[V2_FAMILIES[0]]))
     return res
 
 
@@ -443,6 +527,8 @@ def main(argv=None) -> int:
     ap.add_argument("--heads", type=pathlib.Path, default=None,
                     help="anomaly_heads.py's output: sigma_min only, head flags, and "
                          "the checkpoint rule")
+    ap.add_argument("--grid", type=pathlib.Path, default=None,
+                    help="v2: configs/arms/v2_grid.json, whose arms and run counts are the ladder")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     a = ap.parse_args(argv)
     out_file = a.out / "anomaly_summary.json"
@@ -453,7 +539,7 @@ def main(argv=None) -> int:
     rerun = (json.loads(a.class_sum_rerun.read_text())
              if a.class_sum_rerun else None)
     heads = json.loads(a.heads.read_text()) if a.heads else None
-    res = summarise(doc, rerun, heads)
+    res = summarise(doc, rerun, heads, a.grid)
     res = {"provenance": {
                "inputs": {"anomaly": {"path": str(a.anomaly), "sha256": _sha(a.anomaly)},
                           "class_sum_rerun": (
@@ -461,14 +547,17 @@ def main(argv=None) -> int:
                                "sha256": _sha(a.class_sum_rerun)}
                               if a.class_sum_rerun else None),
                           **({"heads": {"path": str(a.heads), "sha256": _sha(a.heads)}}
-                             if a.heads else {})},
+                             if a.heads else {}),
+                          **({"grid": {"path": str(a.grid), "sha256": _sha(a.grid)}}
+                             if a.grid else {})},
                "script_sha256": _sha(__file__),
                "row_alignment_sha256": doc["row_alignment_sha256"],
                "resamplings_per_seed": doc["trainings"],
                "argv": list(argv if argv is not None else sys.argv[1:])},
            "conventions": {
                "within_seed": "stored median over the resamplings (anomaly.py)",
-               "across_seeds": "mean and sd (ddof=1) over seeds 1-5; no tests",
+               "across_seeds": ("mean and sd (ddof=1) over seeds 1-5; no tests" if a.grid is None
+                                else "mean and sd (ddof=1) over each grid arm's runs; no tests"),
                "primary_injection": PRIMARY, "reference_injection": REFERENCE,
                "ln": "natural log of sigma_min; lower is better"},
            **res}

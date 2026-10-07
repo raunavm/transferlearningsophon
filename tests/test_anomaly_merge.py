@@ -338,3 +338,23 @@ def test_the_stamp_carries_the_per_rung_estimator_table():
     assert tbl["L162"] != tbl["R16_Q1"], (
         "if these were equal the estimator would be rung-invariant and the "
         "whole caveat would be unnecessary")
+
+
+def test_a_model_off_the_tree_merges_without_a_class_sum_estimator(tmp_path):
+    """v2 merges random and flavour partitions and the self-supervised model
+    (rung 'none') beside the tree's models: no classes_removed is written for
+    them, they are not a rung of the estimator table, and the merge completes."""
+    mg = _mod("anomaly_merge", "experiments/EVAL/anomaly_merge.py")
+    for name, p in (("t", _payload_with_rung("l188-s1", "L188")),
+                    ("n", _payload_with_rung("rand2p1-s1", "none"))):
+        (tmp_path / name).mkdir()
+        (tmp_path / name / "anomaly_results.json").write_text(json.dumps(p))
+    assert mg.main(["--inputs", str(tmp_path / "t"), str(tmp_path / "n"),
+                    "--out", str(tmp_path / "o")]) == 0
+    m = json.loads((tmp_path / "o" / "anomaly_results.json").read_text())
+    assert "classes_removed" not in m["arms"]["rand2p1-s1"]["signals"]["label_X_bb"]["100"]
+    assert m["arms"]["l188-s1"]["signals"]["label_X_bb"]["100"]["classes_removed"] == 1
+    sp = m["signal_provenance"]["signals"]["label_X_bb"]["classes_removed_by_rung"]
+    assert sp == {"L188": 1}
+    knn = m["arms"]["rand2p1-s1"]["signals"]["label_X_bb"]["100"]["knn"]
+    assert "regret" in knn and "regret_rung_balanced" not in knn
