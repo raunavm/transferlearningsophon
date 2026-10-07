@@ -32,6 +32,7 @@ T12, T3 = B.v2_specs([1, 2]), B.v2_specs([3])
 SHARDS = [T12[B.V2_K8S / f"job-aoj-v2-t12-s{i}-raunav.yaml"] for i in range(B.N_SHARDS)]
 FIT = T12[B.V2_K8S / "job-aoj-v2-t12-fit-raunav.yaml"]
 FIT3 = T3[B.V2_K8S / "job-aoj-v2-t3-fit-raunav.yaml"]
+INJ = T12[B.V2_K8S / "job-aoj-v2-t12-injection-raunav.yaml"]
 FREEZE_FIT = f"{B.V2_OUT_ROOT}/t12/fit_v6/results.json"
 
 
@@ -348,10 +349,47 @@ def test_the_builder_emits_the_v2_runs_and_leaves_the_first_run_alone():
                             "--check-only", "--pin-not-yet-tagged"], capture_output=True, text=True)
         assert r.returncode == 0, r.stdout + r.stderr
         listed = [ln.split()[1] for ln in r.stdout.splitlines() if ln.startswith("ok ")]
-        assert sorted(listed) == sorted(str(p.relative_to(REPO)) for p in specs) and len(listed) == B.N_SHARDS + 1
+        assert sorted(listed) == sorted(str(p.relative_to(REPO)) for p in specs)
+        assert len(listed) == B.N_SHARDS + (2 if tiers == "1 2" else 1), "shards, the fit, the freeze's injection"
         assert all(p.startswith("experiments/AOJ/k8s/v2/") for p in listed)
     r = subprocess.run([sys.executable, str(REPO / "scripts/build_aoj_jobs.py"), "--v2", "1", "--check-only",
                         "--pin-not-yet-tagged"], capture_output=True, text=True)
     assert r.returncode != 0 and "the freeze run is --v2 1 2" in r.stderr
     for path, text in B.specs().items():
         assert path.read_text() == text, f"{path.name}: the first run's spec changed"
+
+
+# ---- the injection test of the freeze run ----
+def test_the_injection_runs_the_first_runs_two_studies_on_the_freeze_fit_for_best70_alone():
+    s = _script(INJ)
+    root = f"{B.V2_OUT_ROOT}/t12"
+    calls = re.findall(r"injection_test.py toys (.+?) \\\n\s+--committed (\S+) --fit (\S+) \\\n"
+                       r"(?:\s+--pooled (\S+) \\\n)?\s+--names ([^\\]+)\\\n\s+--workers (\d+) --out (\S+)", s)
+    assert [c[0] for c in calls] == list(B.V2_INJECTION_STUDIES.values())
+    v1 = {study: args for study, ((args, _),) in ((k, v[:1]) for k, v in B.TOY_STUDIES.items())}
+    assert B.V2_INJECTION_STUDIES == {"top": v1["top"] + " --variants float", "pooled": v1["pooled"][0:v1["pooled"].index(" --pooled")]}
+    best = [m.name for m in B.v2_models([1, 2]) if getattr(m, "tag", None) == "best70"]
+    assert len(best) == 35
+    for (args, committed, fit, pooled, names, workers, out), study in zip(calls, B.V2_INJECTION_STUDIES):
+        assert (committed, fit) == (f"{root}/fit/bins.npz", f"{root}/fit/results.json")
+        assert pooled == (f"{root}/fit_v6/results.json" if study == "pooled" else "")
+        assert names.split() == (["reference"] if study == "top" else []) + ["sophon-public", *best]
+        assert out == f'"${{OUT}}/toys_{study}_0.jsonl"' and int(workers) == B.TOYS_CPU - 1
+    summary = 'injection_test.py summary --toys "${OUT}/toys_top_0.jsonl" "${OUT}/toys_pooled_0.jsonl" --out "${OUT}/summary.json"'
+    assert summary in s and s.index(summary) > s.index("toys_pooled_0.jsonl")
+    wait = f'[ -f "{root}/analysis_v6/aoj_top.json" ] || {{ echo "FATAL: the freeze fit has not finished"; exit {FT.EXIT_HALT}; }}'
+    assert s.index("df --output=pcent /data") < s.index(wait) < s.index("git clone")
+    assert s.index("export OMP_NUM_THREADS=1") < s.index("injection_test.py toys")
+    assert f"pip install --no-cache-dir -q {LAUNCH.V2_PYARROW}" in s and "nvidia.com/gpu" not in INJ
+    assert f"OUT={root}/injection" in s and "tar czf - summary.json toys_*.jsonl" in s
+    assert not any("injection" in p.name for p in T3), "the injection test validates the freeze run's fit only"
+
+
+def test_the_first_runs_injection_specs_regenerate_byte_identical():
+    k8s = B.K8S
+    want = {k8s / "job-aoj-injection-bins-v1-raunav.yaml": B.render_injection_bins(),
+            k8s / "job-aoj-read-injection-v1-raunav.yaml": B.render_read_injection(),
+            **{k8s / f"job-aoj-injection-toys-{s}-v1-raunav.yaml": B.render_injection_toys(s) for s in B.TOY_STUDIES}}
+    assert len(want) == 2 + len(B.TOY_STUDIES)
+    for path, text in want.items():
+        assert path.read_text() == text, path.name

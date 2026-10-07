@@ -241,3 +241,27 @@ def test_a_shape_from_other_jets_is_refused(freeze, tmp_path):
     with pytest.raises(SystemExit, match="not the same jets"):
         F6.main([*args, "--shape-from", str(tmp_path / "other.json")])
     assert not (tmp_path / "t3/fit_v6").exists()
+
+
+def test_the_injection_test_runs_on_the_freeze_runs_fit_and_reads_its_pooled_shape(freeze, tmp_path):
+    """scripts/build_aoj_jobs.py's v2 injection job, in miniature: injection_test.py on the
+    freeze run's bins (--committed), its own fit (--fit) and its fit_v6 (--pooled), and the
+    summary of both studies holds the two groups the paper reads."""
+    I = RB._load("injection_test", ROOT / "experiments/AOJ/injection_test.py")
+    d, _ = freeze
+    common = ["--committed", str(d / "bins.npz"), "--fit", str(d / "previous.json"), "--sizes", "2000", "--toys", "1"]
+    I.main(["toys", "--regions", "top", "--modes", "bootstrap", "--variants", "float", "--names", "l162-s2-best70",
+            *common, "--out", str(tmp_path / "toys_top_0.jsonl")])
+    I.main(["toys", "--regions", "top", "--modes", "pooled", "ensemble", "--variants", "fixed_ftest", "fixed",
+            "--pooled", str(d / "fit_v6/results.json"), "--names", "l162-s2-best70", "l162-s4-best70", *common,
+            "--out", str(tmp_path / "toys_pooled_0.jsonl")])
+    I.main(["summary", "--toys", str(tmp_path / "toys_top_0.jsonl"), str(tmp_path / "toys_pooled_0.jsonl"),
+            "--out", str(tmp_path / "summary.json")])
+    ps = json.loads((d / "fit_v6/results.json").read_text())["pooled_shape"]
+    ens = [json.loads(ln) for ln in (tmp_path / "toys_pooled_0.jsonl").read_text().splitlines()
+           if json.loads(ln)["mode"] == "ensemble"]
+    assert len(ens) == 1 and (ens[0]["truth_mean"], ens[0]["truth_width"]) == (ps["mean"], ps["width"])
+    assert sorted(ens[0]["per_score"]) == sorted(ps["pool"]) == ["l162-s2-best70", "l162-s4-best70"]
+    groups = {(g["region"], g["mode"], g["variant"]): g for g in json.loads((tmp_path / "summary.json").read_text())["groups"]}
+    assert {("top", "bootstrap", "float"), ("top", "ensemble", "ensemble")} <= set(groups)
+    assert groups[("top", "ensemble", "ensemble")]["n"] == 2 and groups[("top", "bootstrap", "float")]["n"] == 1
