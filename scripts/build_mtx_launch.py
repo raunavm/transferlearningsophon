@@ -610,7 +610,12 @@ V2_BAD_NODES = ("ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net",
                 # 2026-10-01 (fine-tuning retry diagnosis, d383eb8/f088087): ry-gpu-10's GPU
                 # failed mid-read-out and the node now refuses pods ("no healthy devices");
                 # ry-gpu-02 ran the only two NaN-loss attempts of 1,051, both clean elsewhere.
-                "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-02.sdsc.optiputer.net")
+                "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-02.sdsc.optiputer.net",
+                # 2026-10-07 (PI): ry-gpu-04's card gave mtx2-rand2p1-s1 a non-finite loss that
+                # the same state did not repeat on suncave-10, and the node rejects GPU
+                # allocations at admission; ry-gpu-09 and nrp-01 go NotReady and refuse pods
+                # ("no healthy devices"), each refusal a counted failure (RUNS.csv).
+                "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu")
 TRAIN_GLOBS = ("Res2P:/jc2/jet_data/Res2P_{0000..0199}.parquet",
                "Res34P:/jc2/jet_data/Res34P_{0000..0859}.parquet",
                "QCD:/jc2/jet_data/QCD_{0000..0279}.parquet")
