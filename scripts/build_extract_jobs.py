@@ -996,7 +996,9 @@ def build_v1err() -> dict[str, str]:
 # trunk of run indices 1-5 (V2_INIT_ARM's init_trunk.pt; amendment A7 makes it
 # the same for every vocabulary) is extracted as a reference row, tag init.
 # GPU: the split is 27.4 M jets. NOT launched until the v2 runs exist.
-V2_PIN = "mtx-s1.98"
+# mtx-s1.99: the first tag with extract_v2.bn_twin (the BatchNorm twins); at mtx-s1.98
+# resolve_checkpoints reads "best70_bn" as an epoch number and the job crashes.
+V2_PIN = "mtx-s1.99"
 V2_ROOT = "/data/results/mtx_v2"
 V2_OUT = "/data/results/eval/v2"
 V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
@@ -1034,18 +1036,25 @@ def _script(name: str):
     return mod
 
 
-def v2_plan_fits(v2_pretraining_done: bool = False) -> tuple[bool, str]:
-    """(whether the plan build_v2 emits fits, with the v2 fine-tuning, why), from the
+def v2_plan_key(tier: int | None = None) -> str:
+    """The sizing's name for the plan of the whole grid, or of one tier (amendment A14:
+    the extraction is "sized and emitted tier by tier")."""
+    return V2_PLAN if tier is None else V2_PLAN.replace("every run", f"tier-{tier} runs")
+
+
+def v2_plan_fits(v2_pretraining_done: bool = False, tier: int | None = None) -> tuple[bool, str]:
+    """(whether the plan build_v2(tier) emits fits, with the v2 fine-tuning, why), from the
     committed sizing. Until v2 pretraining has finished, the grid's peak
     (scripts/build_mtx_launch.py V2_GRID_RESERVE_GIB) is held back from the headroom; it
     covers the checkpoints the runs keep at the end, which the sizing counts, so those are
     not counted twice."""
     import json
     s = json.loads(V2_SIZING.read_text())
-    e = s["storage"].get(V2_PLAN)
+    plan = v2_plan_key(tier)
+    e = s["storage"].get(plan)
     if e is None or "pretraining_checkpoint_bytes" not in e or "fine_tuning_bytes" not in e:
-        return False, f"{V2_SIZING.name} does not size the plan {V2_PLAN!r}; rerun extraction_v2_sizing.py"
-    n = len(v2_runs()) + len(v2_init_refs())
+        return False, f"{V2_SIZING.name} does not size the plan {plan!r}; rerun extraction_v2_sizing.py"
+    n = len(v2_runs(tier)) + (len(v2_init_refs()) if tier in (None, 1) else 0)
     if e["n_models"] != n:
         return False, f"{V2_SIZING.name} sizes {e['n_models']} models, the grid has {n}"
     if s.get("fine_tuning_bytes_from", {}).get("source") == "v2_need":
@@ -1089,13 +1098,15 @@ def v2_rung(arm: str) -> str:
     return base if base in ("L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1") else "none"
 
 
-def v2_runs() -> list[tuple[str, str, int, int, int]]:
-    """(run name, arm, K, num_reg, seed) for every run of the grid; K = 0 for a
-    self-supervised run, which has no output layer."""
+def v2_runs(tier: int | None = None) -> list[tuple[str, str, int, int, int]]:
+    """(run name, arm, K, num_reg, seed) for every run of the grid, or of one tier; K = 0
+    for a self-supervised run, which has no output layer."""
     import json
     grid = json.loads(V2_GRID.read_text())
     out = []
     for a in grid["arms"]:
+        if tier is not None and int(a["tier"]) != tier:
+            continue
         stem = a["name"].lower().replace("_", "")
         for s in range(1, a["runs"] + 1):
             out.append((f"mtx-{stem}-s{s}", a["name"], a["num_classes"] or 0,
@@ -1112,12 +1123,15 @@ def v2_init_refs() -> list[tuple[str, str]]:
     return out
 
 
-def build_v2() -> dict[str, str]:
+def build_v2(tier: int | None = None) -> dict[str, str]:
+    """The extraction specs of every run and the init references, or of one tier's runs
+    (the init references go with tier 1, as the sizing counts them)."""
     out = {}
     files = interleaved_files()
     jobs = [(run.removeprefix("mtx-"), run, f"{V2_OUT}/{run}", v2_rung(arm), k, reg,
-             " ".join(V2_CHECKPOINTS)) for run, arm, k, reg, _s in v2_runs()]
-    jobs += [(ref, run, f"{V2_OUT}/{ref}", "none", 0, 0, "init") for ref, run in v2_init_refs()]
+             " ".join(V2_CHECKPOINTS)) for run, arm, k, reg, _s in v2_runs(tier)]
+    if tier in (None, 1):
+        jobs += [(ref, run, f"{V2_OUT}/{ref}", "none", 0, 0, "init") for ref, run in v2_init_refs()]
     for stem, run, dest, rung, k, reg, ckpts in jobs:
         name = f"extract-v2-{stem}-raunav"
         body = (f"          OUT={dest}\n"
@@ -1280,6 +1294,9 @@ def main() -> int:
                     help="emit ONLY the v2 extraction specs (one per run of "
                          "configs/arms/v2_grid.json, and the five init references); "
                          "not launchable before the runs exist")
+    ap.add_argument("--v2-tier", type=int, default=None, metavar="TIER",
+                    help="with --v2: only that tier's runs (tier 1 with the init references), "
+                         "against that tier's plan in the sizing")
     ap.add_argument("--v2-pretraining-done", action="store_true",
                     help="with --v2: v2 pretraining has finished, so its peak is no longer held back")
     ap.add_argument("--v1err", action="store_true",
@@ -1304,7 +1321,7 @@ def main() -> int:
         return 0
 
     if args.v2:
-        fits, why = v2_plan_fits(args.v2_pretraining_done)
+        fits, why = v2_plan_fits(args.v2_pretraining_done, args.v2_tier)
         twins, bn_why = v2_bn_twins_needed()
         problems = [] if fits else [f"does not fit: {why}"]
         if twins is None:
@@ -1312,13 +1329,13 @@ def main() -> int:
         elif not twins:
             problems.append(f"extracts BatchNorm-recomputed twins A14's rule does not require ({bn_why})")
         if problems:
-            sys.exit(f"FATAL: the v2 extraction plan ({V2_PLAN}) " + "; and it ".join(problems)
+            sys.exit(f"FATAL: the v2 extraction plan ({v2_plan_key(args.v2_tier)}) " + "; and it ".join(problems)
                      + ". Nothing written; the plan waits on the PI's storage decision.")
         verify_pin(V2_PIN, V1ERR_NEEDED + ["experiments/FT/ft_v2.py"], args.pin_not_yet_tagged,
-                   {"experiments/EVAL/extract_v2.py": "PooledTap",
+                   {"experiments/EVAL/extract_v2.py": "def bn_twin",
                     "experiments/FT/ft_v2.py": "def window_best"})
         OUT_DIR.mkdir(parents=True, exist_ok=True)
-        for fname, text in build_v2().items():
+        for fname, text in build_v2(args.v2_tier).items():
             yaml.safe_load(text)
             (OUT_DIR / fname).write_text(text)
             print(f"  {fname}")

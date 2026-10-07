@@ -470,10 +470,49 @@ def test_v2_specs_one_per_run_and_init_reference_and_only_committed_when_the_pla
         yaml.safe_load(text)
         assert "--feature-classes probe --prefix-features 2000000" in text
         assert bx.HALT_GPU in text and "gpu_ok ()" in text and "tee -a ${LOG} || halt" in text
-        assert f'--branch "{bx.V2_PIN}"' in text and bx.V2_PIN == "mtx-s1.98"
+        assert f'--branch "{bx.V2_PIN}"' in text and bx.V2_PIN == "mtx-s1.99"
         if final:
             assert (bx.OUT_DIR / fname).read_text() == text, f"{fname} not committed as built"
     assert committed == (sorted(jobs) if final else []), (why, bn_why)
+
+
+def test_v2_extraction_is_emitted_and_sized_tier_by_tier(tmp_path, monkeypatch):
+    # amendment A14: the extraction is "sized and emitted tier by tier"
+    import json
+    bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
+    grid = json.loads(bx.V2_GRID.read_text())["arms"]
+    tiers = sorted({int(a["tier"]) for a in grid})
+    assert sum(len(bx.v2_runs(t)) for t in tiers) == len(bx.v2_runs())
+    every = bx.build_v2()
+    for t in tiers:
+        jobs = bx.build_v2(t)
+        assert set(jobs) <= set(every) and all(jobs[f] == every[f] for f in jobs)
+        inits = [f for f in jobs if "-init-s" in f]
+        assert len(inits) == (5 if t == 1 else 0)     # the init references go with tier 1
+        assert len(jobs) == len(bx.v2_runs(t)) + len(inits)
+    assert sum(len(bx.build_v2(t)) for t in tiers) == len(every)
+    assert bx.v2_plan_key(1) == bx.V2_PLAN.replace("every run", "tier-1 runs")
+    s = json.loads(bx.V2_SIZING.read_text())
+    assert s["storage"][bx.v2_plan_key(1)]["n_models"] == len(bx.build_v2(1))
+    fits, why = bx.v2_plan_fits(tier=2)
+    assert fits is False and "does not size the plan" in why     # no tier-2 sizing committed
+    e = s["storage"][bx.v2_plan_key(1)]
+    e.update(fits_under_85pc=True, headroom_to_85pc_bytes=e["bytes_total"] + 1)
+    f = tmp_path / "sizing.json"
+    f.write_text(json.dumps(s))
+    monkeypatch.setattr(bx, "V2_SIZING", f)
+    assert bx.v2_plan_fits(v2_pretraining_done=True, tier=1)[0] is True
+    assert bx.v2_plan_fits(v2_pretraining_done=True)[0] is False     # the whole grid still does not
+
+
+def test_the_v2_extraction_pin_carries_the_batchnorm_twins():
+    import subprocess
+    bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
+    r = subprocess.run(["git", "show", f"{bx.V2_PIN}:experiments/EVAL/extract_v2.py"],
+                       cwd=bx.ROOT, capture_output=True, text=True)
+    if r.returncode != 0:
+        pytest.skip(f"tag {bx.V2_PIN} not in this clone")
+    assert "def bn_twin" in r.stdout and '"best70_bn"' in r.stdout
 
 
 def test_the_v2_plan_is_refused_when_sizing_says_it_does_not_fit(tmp_path, monkeypatch):
@@ -659,7 +698,7 @@ def test_the_v2_plan_is_not_final_until_the_batchnorm_rule_has_read_out(tmp_path
     assert readout(4, 9) is False and readout(0, 12) is False
     assert readout(10, 10, runs=7) is None                          # not over the eight runs
     # --v2 writes nothing while the rule is unread or does not fire, even when the plan fits
-    monkeypatch.setattr(bx, "v2_plan_fits", lambda done=False: (True, "fits"))
+    monkeypatch.setattr(bx, "v2_plan_fits", lambda done=False, tier=None: (True, "fits"))
     monkeypatch.setattr(sys, "argv", ["build_extract_jobs.py", "--v2"])
     written = []
     monkeypatch.setattr(bx.pathlib.Path, "write_text", lambda self, t: written.append(self))
