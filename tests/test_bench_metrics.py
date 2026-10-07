@@ -307,3 +307,28 @@ def test_a_reused_init_joins_its_set_only_when_its_subsets_are_on_record(tmp_pat
         M.main(args + ["--sha-table", str(table)])
     with pytest.raises(SystemExit, match="not <tree>/leg_<set>/<init>"):
         M.main(args[:-1] + [str(tmp_path / "v1/scratch-v2"), "--sha-table", str(table)])
+
+
+def test_the_v2_last_epoch_table_reads_the_full_set_only_and_still_expects_every_cell(tmp_path):
+    """v2 scores the last epoch at each benchmark's full training set only: --sizes
+    reads those cells, while --expect-cells still requires the whole grid to be DONE."""
+    y, z = _separable()
+    for n in ("N1000", "N1200000"):
+        _cell(tmp_path, y, z, n=n)
+    fl = tmp_path / "leg_top/l162-s1b/N1200000/s1/features_last"
+    fl.mkdir()
+    np.save(fl / "label188.npy", np.asarray(y).astype(np.int16))
+    np.save(fl / "logits.npy", np.stack([np.zeros(len(z)), z], axis=1).astype(np.float32))
+    cells = tmp_path / "cells.json"
+    cells.write_text(json.dumps({"best70/leg_top": ["l162-s1b/N1000/s1", "l162-s1b/N1200000/s1"]}))
+    args = ["--root", str(tmp_path), "--out", str(tmp_path / "o"), "--datasets", "top",
+            "--features-dir", "features_last", "--expect-cells", f"{cells}:best70"]
+    with pytest.raises(SystemExit, match="marked DONE"):          # N1000 has no last epoch
+        M.main(args)
+    assert M.main(args + ["--sizes", "1200000", "1600000"]) == 0
+    d = _strict(tmp_path / "o" / "bench_metrics_last.json")
+    assert list(d["cells"]["top"]["l162-s1b"]) == ["N1200000"] and d["sizes"] == [1200000, 1600000]
+    cells.write_text(json.dumps({"best70/leg_top": ["l162-s1b/N1000/s1", "l162-s1b/N1000/s2",
+                                                    "l162-s1b/N1200000/s1"]}))
+    with pytest.raises(SystemExit, match="1 expected leg_top cells were not read"):
+        M.main(args + ["--sizes", "1200000"])

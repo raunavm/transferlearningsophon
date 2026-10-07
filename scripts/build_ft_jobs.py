@@ -49,6 +49,7 @@ fine-tune, not the sweep.
 Run:  python3 scripts/build_ft_jobs.py [--pin TAG]
       python3 scripts/build_ft_jobs.py --wave3 --bench-v2 --later scratch-v2 mpm-s1-v2 \\
           --pin-not-yet-tagged          # the baselines' own recipes (BASELINE RECIPES)
+      python3 scripts/build_ft_jobs.py --v2-readouts --pin-not-yet-tagged   # the v2 read-outs
 """
 from __future__ import annotations
 
@@ -2458,26 +2459,41 @@ def v2_need() -> dict[str, float]:
     return need
 
 
+# A14, item 8: "The analysis freeze moves to when tiers 1 and 2 have finished. Tier-3
+# results follow when they exist." So each rule's cells are also listed for tiers 1-2
+# alone ("<rule>@t12/<leg>"), and each read-out is emitted for them and for every tier.
+V2_FREEZE_TIERS = (1, 2)
+V2_READOUT_SCOPES = ("t12", "")
+
+
 def v2_expected_cells() -> dict:
-    """Every v2 cell the generator emits, "init/N<N>/s<S>" under "<rule>/<leg>", the
-    list the read-outs check they read in full (--expect-cells)."""
+    """Every v2 cell the generator emits, "init/N<N>/s<S>" under "<rule>/<leg>", and those of
+    tiers 1-2 under "<rule>@t12/<leg>": the lists the read-outs check they read in full
+    (--expect-cells)."""
     out = {}
     for rule in V2_RULES:
         for kind, cells_of in (("legs", cells_legs), ("bench", cells_bench_v2ckpt)):
-            for _, s in v2_groups(cells_of):
+            for suffix, s in v2_groups(cells_of):
                 for leg, n, N, sd in cells_of(s):
                     out.setdefault(f"{rule}/{leg}", []).append(f"{n}/N{N}/s{sd}")
+                    if int(suffix[1]) in V2_FREEZE_TIERS:
+                        out.setdefault(f"{rule}@t12/{leg}", []).append(f"{n}/N{N}/s{sd}")
     out["scratch/leg1"] = [f"{SCRATCH_REF}/N{N}/s{sd}" for sd in INITS_LATER[SCRATCH_REF][0][3] for N in SIZES]
     return {k: sorted(v) for k, v in sorted(out.items())}
+
+
+def _mtx_launch():
+    """scripts/build_mtx_launch.py, loaded by path: the v2 grid's reserve and runtime pins."""
+    spec = importlib.util.spec_from_file_location("build_mtx_launch", ROOT / "scripts" / "build_mtx_launch.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def v2_grid_reserve_gb() -> float:
     """GB of /data the v2 pretraining grid can take at its peak (scripts/build_mtx_launch.py
     V2_GRID_RESERVE_GIB): held back from the headroom until v2 pretraining has finished."""
-    spec = importlib.util.spec_from_file_location("build_mtx_launch", ROOT / "scripts" / "build_mtx_launch.py")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod.V2_GRID_RESERVE_GIB * 2**30 / 1e9
+    return _mtx_launch().V2_GRID_RESERVE_GIB * 2**30 / 1e9
 
 
 def v2_extraction_gb() -> float:
@@ -2567,6 +2583,183 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
                          f"releases it) and {extraction:.1f} GB for the v2 extraction (--v2-extraction-done "
                          f"releases it); all {len(specs)} need {every / 1e9:.1f} GB. Making room is the PI's call.")
     return {n: specs[n] for n in picked}
+
+
+# ===================================================================== v2 read-outs
+# THE READ-OUTS OF THE v2 FINE-TUNING, derived from the one that ran,
+# job-ft-scratch-v2-leg1-metrics-raunav.yaml (written by hand; ledger
+# ft-v2-scratch-leg1-metrics, complete 2026-10-03): v2_readout(None, "leg1", ...)
+# reproduces it, and tests/test_ft_v2_readout_specs.py states each difference. One
+# spec per rule in V2_RULES (A14: fine-tuning starts from the primary and the weight
+# average only) and per leg:
+#   leg1   JetClass-II, best-validation epoch (A6), beside the v2 from-scratch reference
+#   leg2   JetClass, best-validation epoch, macro AUC from pred.root, beside v1's
+#          from-scratch cells, whose subsets v2 kept (--ref-init checks each against
+#          the sha256 record)
+#   bench  top tagging and quark/gluon at every size, best-validation epoch, beside
+#          v1's from-scratch cells, and the Herwig quark/gluon; then the full training
+#          set at its last epoch, A6's rule for C2, C3 and S5 (v1's from-scratch cells
+#          kept no last epoch, so those two tables have no reference row)
+# Each fails unless every cell the generator emitted for its rule is read
+# (--expect-cells) and every reference cell is DONE, and the scripts refuse a cell
+# trained to a NaN loss (diverged()). The JSONs are copied to
+# experiments/FIGS/data/ft_v2/<rule>_<file>, as the scratch reference's was. They
+# write ~10 MB to /data in all, so neither the storage budget nor space_ok applies.
+PIN_V2_READOUT = "mtx-s2.00"
+V2_READOUT_LEGS = ("leg1", "leg2", "bench")
+V2_READOUT_FILES = {"leg1": ("leg1_metrics.json",), "leg2": ("leg2_metrics.json",),
+                    "bench": ("bench_metrics.json", "bench_metrics_herwig.json",
+                              "bench_metrics_last.json", "bench_metrics_herwig_last.json")}
+# What the read-outs' tag must carry: each script's NaN guard, the full-set-only
+# last-epoch read, and the two records the read-outs check against.
+V2_READOUT_NEEDED = {"experiments/FT/leg1_metrics.py": "def diverged",
+                     "experiments/FT/leg2_metrics.py": "def diverged",
+                     "experiments/FT/bench_metrics.py": "--sizes",
+                     V2_EXPECTED: '"wavg/leg_qg"',
+                     V2_SHA_TABLE: '"files"'}
+_LEG1_SUMMARY = r'''
+          echo "=== summary ==="
+          python3 -c "
+          import json
+          d=json.load(open('${OUT}/leg1_metrics.json'))
+          for init,per in sorted(d['summary'].items()):
+              for N,s in sorted(per.items()):
+                  sd=s['accuracy_sd']
+                  print(f\"{init:16} {N:10} acc={s['accuracy_mean']:.5f}\" +
+                        (f\" +-{sd:.5f}\" if sd is not None else '') +
+                        f\" macroAUC={s['macro_auc_mean']:.5f} n={s['n_seeds']}\")
+          "
+'''
+
+
+def _brace(xs) -> str:
+    return "{" + ",".join(map(str, xs)) + "}"
+
+
+def _v2_readout_script(rule: str | None, leg: str, scope: str = "") -> str:
+    """One read-out's script (see above); rule None is the from-scratch reference's leg 1;
+    scope "t12" expects the cells of tiers 1-2 only (V2_FREEZE_TIERS), "" those of every tier."""
+    prefix = rule or "scratch"
+    expect = f"--expect-cells {V2_EXPECTED}:{prefix}{'@' + scope if scope else ''}"
+    sha = f"--sha-table {V2_SHA_TABLE}"
+    # bench writes four tables into a directory of the attempt, moved into place whole
+    target = "${OUT}" if leg == "bench" else f"${{OUT}}/{V2_READOUT_FILES[leg][0]}"
+    text = ("          set -euo pipefail\n"
+            f"          HALT={EXIT_HALT}   # the pod failure policy fails the Job at once on this code\n"
+            f"          OUT={V2_ROOT}/{prefix}{'_' + scope if scope else ''}_{leg}_metrics\n"
+            f'          [ ! -e "{target}" ] || {{ echo "FATAL: {target} exists; use a new output directory"; '
+            "exit ${HALT}; }\n"
+            f"          pip install --no-cache-dir -q {_mtx_launch().V2_PYARROW}\n"
+            '          git clone --depth 1 --branch "${REPO_REF}" \\\n'
+            "            https://github.com/raunavm/transferlearningsophon.git \\\n"
+            "            /workspace/transferlearningsophon\n"
+            "          cd /workspace/transferlearningsophon\n"
+            "          git rev-parse HEAD\n"
+            "          export PYTHONUNBUFFERED=1\n\n")
+    if leg == "bench":
+        text += (f"          ROOT={V2_ROOT}/{rule}\n"
+                 f"          for d in {' '.join(f'leg_{d}' for d in BENCH_SETS)}; do\n"
+                 '            [ -d "${ROOT}/${d}" ] || { echo "FATAL: no ${ROOT}/${d}"; exit ${HALT}; }\n'
+                 "          done\n"
+                 f"          n=$(find {' '.join(f'${{ROOT}}/leg_{d}' for d in BENCH_SETS)} -name DONE | wc -l)\n"
+                 '          echo "complete benchmark cells: ${n}"\n')
+    else:
+        text += (f"          ROOT={V2_ROOT}/{prefix}/{leg}\n"
+                 '          [ -d "${ROOT}" ] || { echo "FATAL: no ${ROOT}"; exit ${HALT}; }\n'
+                 "          n=$(find ${ROOT} -name DONE | wc -l)\n"
+                 f'          echo "complete {leg} cells: ${{n}}"\n')
+    # The from-scratch reference: (init directory, its sizes) per tree read.
+    refs = ([] if rule is None else
+            [(f"{BENCH_V2_ROOT}/leg_{d}/{SCRATCH_REF}", BENCH_SIZES[d]) for d in BENCH_SETS] if leg == "bench" else
+            [(f"{V2_ROOT}/scratch/leg1/{SCRATCH_REF}" if leg == "leg1" else f"{W3_ROOT}/leg2/{SCRATCH_REF}", SIZES)])
+    if refs:
+        seeds = _brace(INITS_LATER[SCRATCH_REF][0][3])
+        text += ("          # The from-scratch reference is read beside the rule's cells, and\n"
+                 "          # --expect-cells covers the rule's cells only: every reference cell must be DONE.\n"
+                 "          missing=0\n"
+                 f"          for c in {' '.join(f'{d}/N{_brace(n)}/s{seeds}' for d, n in refs)}; do\n"
+                 '            [ -f "${c}/DONE" ] || { echo "MISSING reference cell ${c}"; missing=$((missing+1)); }\n'
+                 "          done\n"
+                 '          [ "${missing}" -eq 0 ] || { echo "FATAL: ${missing} reference cells not DONE"; exit ${HALT}; }\n')
+    if leg == "leg1":
+        roots = " ".join(["${ROOT}"] + [d.rsplit("/", 1)[0] for d, _ in refs])
+        return text + ("\n          mkdir -p ${OUT}\n"
+                       "          python3 experiments/FT/leg1_metrics.py \\\n"
+                       f"            --root {roots} \\\n"
+                       "            --out ${OUT} \\\n"
+                       f"            --auc-stride {LEG1_AUC_STRIDE} \\\n"
+                       f"            {expect}\n" + _LEG1_SUMMARY)
+    if leg == "leg2":
+        return text + (
+            "          # A cell with a log but no DONE stops the job rather than being read half-written.\n"
+            "          open=0\n"
+            '          for f in $(find ${ROOT} -name predict.log -not -path "*.partial.*"); do\n'
+            '            [ -f "$(dirname ${f})/DONE" ] || { echo "NOT DONE: $(dirname ${f})"; open=$((open+1)); }\n'
+            "          done\n"
+            '          [ "${open}" -eq 0 ] || { echo "FATAL: ${open} cells have a log but no DONE"; exit ${HALT}; }\n'
+            "\n          mkdir -p ${OUT}\n"
+            "          python3 experiments/FT/leg2_metrics.py \\\n"
+            "            --root ${ROOT} \\\n"
+            "            --out ${OUT} \\\n"
+            f"            --macro-auc --auc-stride {LEG1_AUC_STRIDE} \\\n"
+            f"            --ref-init {refs[0][0]} {sha} \\\n"
+            f"            {expect}\n"
+            "          ls -la ${OUT}\n")
+    run = "          python3 experiments/FT/bench_metrics.py --root ${ROOT} --out ${TMP} " + expect
+    nmax = " ".join(str(BENCH_SIZES[d][-1]) for d in BENCH_SETS)
+    return text + (
+        "\n          # Written into a directory of this attempt and moved into place whole: an\n"
+        "          # attempt that dies part-way leaves no partial ${OUT} for the next one to refuse.\n"
+        "          TMP=${OUT}.staging.$(date -u +%s)\n"
+        "          mkdir -p ${TMP}\n"
+        "          # The best-validation epoch at every size (A6), beside v1's from-scratch cells.\n"
+        f"{run} \\\n            {' '.join(f'--ref-init {d}' for d, _ in refs)} {sha}\n"
+        f"{run} --herwig \\\n            --ref-init {BENCH_V2_ROOT}/leg_qg/{SCRATCH_REF} {sha}\n"
+        "          # The full training set at its last epoch, A6's rule for C2, C3 and S5.\n"
+        f"{run} \\\n            --features-dir features_last --sizes {nmax}\n"
+        f"{run} --herwig \\\n            --features-dir features_last --sizes {nmax}\n"
+        "          mv ${TMP} ${OUT}\n"
+        "          ls -la ${OUT}\n")
+
+
+def v2_readout(rule: str | None, leg: str, pin: str, scope: str = "") -> tuple[str, str]:
+    """(file name, spec) of one v2 read-out: job()'s CPU pod on /data alone, the image
+    by digest as in the v2 grid, and the plain pod failure policy (no cells to resume)."""
+    prefix = rule or "scratch"
+    tag = prefix + (f"_{scope}" if scope else "")
+    name = f"ft-v2-{prefix}{'-' + scope if scope else ''}-{leg}-metrics-raunav"
+    what = {"leg1": "leg 1 (JetClass-II), experiments/FT/leg1_metrics.py",
+            "leg2": "leg 2 (JetClass), experiments/FT/leg2_metrics.py --macro-auc",
+            "bench": "top tagging and quark/gluon (Pythia and Herwig), experiments/FT/bench_metrics.py:\n"
+                     "  # the best-validation epoch at every size, and the full training set at its last epoch"}[leg]
+    header = ("  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
+              + RETRY_NOTE_POLICY
+              + f"  # v2 READ-OUT, {f'pretrained checkpoint rule {rule}' if rule else 'the from-scratch reference'}: "
+              f"{what}.\n"
+              f"  # Fails unless every cell {V2_EXPECTED} lists under {prefix}{'@' + scope if scope else ''}/ is read"
+              + (" (tiers 1-2, the analysis freeze).\n" if scope else ".\n")
+              + "  # DO NOT APPLY before the v2 fine-tuning it reads has finished. CPU.\n"
+              f"  # Output {V2_ROOT}/{tag}_{leg}_metrics; copy each JSON to\n"
+              + "".join(f"  #   experiments/FIGS/data/ft_v2/{tag}_{f}\n" for f in V2_READOUT_FILES[leg]))
+    memory, cpu = ("16Gi", "4") if leg == "bench" else ("32Gi", "8")
+    text = job(name, _v2_readout_script(rule, leg, scope), gpu=False, cpu=cpu, memory=memory, shm="1Gi",
+               backoff=1, pin=pin, header=header, failure_policy=POD_FAILURE_POLICY)
+    return f"job-{name}.yaml", _derive(text, [
+        (f"        image: {IMAGE}\n", f"        image: {_mtx_launch().V2_IMAGE}\n", 1),
+        ('ephemeral-storage: "20Gi"', 'ephemeral-storage: "10Gi"', 2),
+        ("        - { name: jc2,  mountPath: /jc2, readOnly: true }\n", "", 1),
+        ("        - { name: dshm, mountPath: /dev/shm }\n", "", 1),
+        ("      - name: jc2\n        persistentVolumeClaim:\n          claimName: tn-pvc-base-jetclass2\n"
+         "          readOnly: true\n", "", 1),
+        ('      - name: dshm\n        emptyDir: { medium: Memory, sizeLimit: "1Gi" }\n', "", 1),
+    ], f"v2 read-out {name}")
+
+
+def _v2_readout_specs(pin: str) -> dict:
+    """Two rules x three legs x two scopes (tiers 1-2, every tier). The from-scratch
+    reference's leg 1 is not emitted: it ran from its own file, which stays its record."""
+    return dict(v2_readout(rule, leg, pin, scope) for rule in V2_RULES for leg in V2_READOUT_LEGS
+                for scope in V2_READOUT_SCOPES)
 
 
 def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
@@ -2762,7 +2955,8 @@ def _fill(script: str, pin: str, inits=None) -> str:
 def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = False,
           later: list | None = None, bench_v3: bool = False, v2_subsets: bool = False,
           v2: bool = False, headroom_gb: float | None = None, only: list | None = None,
-          v2_pretraining_done: bool = False, v2_extraction_done: bool = False) -> dict[str, str]:
+          v2_pretraining_done: bool = False, v2_extraction_done: bool = False,
+          v2_readouts: bool = False) -> dict[str, str]:
     h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
     specs = {
         "job-ft-subsets-jc2-raunav.yaml": job(
@@ -2858,6 +3052,8 @@ def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = F
         for name, text in specs.items():
             left = re.findall(r"__[A-Z0-9_]+__", text)
             assert not left, f"{name}: unfilled {sorted(set(left))}"
+    elif v2_readouts:
+        specs = _v2_readout_specs(pin)
     elif wave3 or bench_v2 or bench_v3:
         # ONLY the new specs, so a --wave3 / --bench-v2 run can never rewrite a
         # launched wave-1 or wave-2 file.
@@ -2914,6 +3110,8 @@ def main() -> int:
                     help="with --v2: v2 pretraining has finished, so its reserve is no longer held back")
     ap.add_argument("--v2-extraction-done", action="store_true",
                     help="with --v2: the v2 extraction has finished, so it is in df and no longer held back")
+    ap.add_argument("--v2-readouts", action="store_true",
+                    help=f"emit ONLY the v2 read-out specs (pin {PIN_V2_READOUT}), alone")
     ap.add_argument("--plan", action="store_true",
                     help="print cells and expected GPU-hours per shard, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
@@ -2925,6 +3123,9 @@ def main() -> int:
         return 0
     if args.later and not (args.wave3 or args.bench_v2):
         sys.exit("FATAL: --later needs --wave3 and/or --bench-v2")
+    if args.v2_readouts and (args.v2 or args.v2_subsets or args.wave2 or args.wave3 or args.bench_v2
+                             or args.bench_v3_last):
+        sys.exit("FATAL: --v2-readouts is emitted alone; it pins its own tag")
     refs = set(args.later or []) & REFS_GROUPS
     if refs and args.pin == PIN:
         args.pin = PIN_REFS
@@ -2937,11 +3138,15 @@ def main() -> int:
             args.pin = PIN_V2 if args.v2 else PIN_V2_SUBSETS
         verify_pin(args.pin, args.pin_not_yet_tagged,
                    V2_NEEDED if args.v2 else V2_SUBSETS_NEEDED)
+    if args.v2_readouts:
+        if args.pin == PIN:
+            args.pin = PIN_V2_READOUT
+        verify_pin(args.pin, args.pin_not_yet_tagged, V2_READOUT_NEEDED)
     specs = build(args.pin, wave2=args.wave2, wave3=args.wave3, bench_v2=args.bench_v2,
                   later=args.later, bench_v3=args.bench_v3_last,
                   v2_subsets=args.v2_subsets, v2=args.v2, headroom_gb=args.headroom_gb,
                   v2_pretraining_done=args.v2_pretraining_done,
-                  v2_extraction_done=args.v2_extraction_done,
+                  v2_extraction_done=args.v2_extraction_done, v2_readouts=args.v2_readouts,
                   only=args.only if args.v2 else None)
     if args.v2 and not args.check_only:
         (ROOT / V2_EXPECTED).write_text(json.dumps(v2_expected_cells(), indent=1) + "\n")

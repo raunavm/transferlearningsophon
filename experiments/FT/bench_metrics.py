@@ -276,6 +276,10 @@ def main(argv=None) -> int:
                     help="the sha256 record of the subsets (experiments/FT/data/ft_v2_subsets_sha256.json)")
     ap.add_argument("--expect-cells", metavar="FILE:PREFIX",
                     help="fail unless every cell FILE lists under PREFIX/leg_<set> is read (ft_v2.expected_cells)")
+    # v2 scores the last epoch at each benchmark's full training set only (scripts/build_ft_jobs.py
+    # bench_v2ckpt), so its last-epoch table reads those cells; --expect-cells still covers every size.
+    ap.add_argument("--sizes", nargs="+", type=int, metavar="N",
+                    help="read only the cells at these training-set sizes (directories N<N>)")
     args = ap.parse_args(argv)
     if args.ref_init and not args.sha_table:
         raise SystemExit("FATAL: --ref-init needs --sha-table: a reused cell is only as good "
@@ -303,6 +307,10 @@ def main(argv=None) -> int:
             cells += more
             no_done += more_skipped
         FT_V2.require_cells({f"{i}/{n}/{s}" for i, n, s, _ in cells}, args.expect_cells, f"leg_{d}")
+        if args.sizes:
+            keep = {f"N{n}" for n in args.sizes}
+            cells = [c for c in cells if c[1] in keep]
+            no_done = [p for p in no_done if p.parent.name in keep]
         skipped += [{"cell": str(p), "reason": "no DONE"} for p in no_done]
         for p in no_done:
             print(f"  SKIPPED (no DONE): {p}", flush=True)
@@ -351,6 +359,7 @@ def main(argv=None) -> int:
                         "signal_logit_column": SIGNAL_COLUMN} for d in res},
          "row_alignment_sha256": alignment,
          "reused_inits": [str(r) for r in args.ref_init],
+         "sizes": args.sizes,
          "skipped": skipped,
          "cells": res, "summary": summary}, indent=1, allow_nan=False))
     print(f"\nwrote {out_json}")

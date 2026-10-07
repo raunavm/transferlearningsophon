@@ -56,7 +56,8 @@ def _inits(text):
 
 
 def test_the_v2_specs_on_disk_are_the_generators(v2):
-    on_disk = {p.name for p in K8S.glob("job-ft-v2-*.yaml")}
+    # the read-outs are --v2-readouts' (tests/test_ft_v2_readout_specs.py)
+    on_disk = {p.name for p in K8S.glob("job-ft-v2-*.yaml") if not p.name.endswith("-metrics-raunav.yaml")}
     assert SCRATCH in on_disk and on_disk <= set(v2)
     for name in on_disk:
         assert (K8S / name).read_text() == v2[name], name
@@ -168,7 +169,8 @@ def test_the_rules_are_best70_and_the_weight_average_and_the_global_best_is_not_
     assert not any("bestval" in n or "--rule bestval" in t for n, t in v2.items())
     assert {re.search(r"-(best70|wavg)-", n).group(1) for n in v2 if n != SCRATCH} == {"best70", "wavg"}
     assert set(json.loads((ROOT / B.V2_EXPECTED).read_text())) == {
-        f"{r}/{leg}" for r in B.V2_RULES for leg in ("leg1", "leg2", "leg_top", "leg_qg")} | {"scratch/leg1"}
+        f"{r}{sc}/{leg}" for r in B.V2_RULES for sc in ("", "@t12")
+        for leg in ("leg1", "leg2", "leg_top", "leg_qg")} | {"scratch/leg1"}      # @t12: A14's freeze
 
 
 def test_each_self_supervised_arm_has_its_own_init_names_and_the_self_supervised_recipe(v2):
