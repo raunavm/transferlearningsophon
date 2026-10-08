@@ -41,6 +41,7 @@ import hashlib
 import importlib.util
 import json
 import math
+import os
 import pathlib
 import re
 import sys
@@ -64,6 +65,9 @@ TASK_LABELS = {
     "bvc_4prong": "$b$ vs $c$, four-prong",
     "visible_content": "$bbqq$ vs $cq\\tau_h\\nu$, four-prong",
     "bc_vs_rest": "$X\\to bc$ vs its backgrounds",
+    # the second grid's single-pair probes (A10, 2026-10-01)
+    "bc_vs_bq": "$X\\to bc$ vs $X\\to bq$",
+    "bc_vs_cs": "$X\\to bc$ vs $X\\to cs$",
 }
 INIT_LABELS = {"scratch": "random initialisation",
                "sophon-public": "published 188-class checkpoint",
@@ -117,6 +121,74 @@ V2_PENDING = {
     "RealData": ("the open-data fits on the rerun models", "real_data"),
     "Conclusion": ("written once every input above is in", None),
 }
+
+# THE COMMITTED v2 LAYOUT. Every v2 input sits under experiments/FIGS/data/v2/<sub>/, one
+# <sub> per V2_PENDING entry, as small JSONs copied from /data unchanged (no npz),
+# mirroring the first grid's probe_ladder_*/, mass_resolution/, label_recovery_curve_v1err/,
+# paired_v1err/<family>/ and w2b_leg*_metrics files. A <sub> is copied whole, once every run
+# it holds has finished: a section is read only complete (v2_section_runs). Names:
+#   <run>      the extraction's directory, mtx-<arm lower-cased, no underscores>-s<k>, or
+#              init-s<k> for the untrained trunk of run index k (A14's reference)
+#   <tag>      best70 (the primary, A14), wavg (robustness, A8), bestval (sensitivity),
+#              best70_bn and bestval_bn (the BatchNorm twins, frozen readouts only), init
+#   <readout>  features (the class token) or pooled (the pooled embedding, A14)
+#
+#   pretraining/<run>/best_window_epoch.json, best_epoch.json
+#       from /data/results/mtx_v2/<run>/: the run's primary epoch (first maximum within
+#       70-79) and its global best, for every run of every grid arm
+#   probe_ladder/          the four vocabularies (L188, L162, R42_Q1, R16_Q1), the two
+#                          mass-output arms (L162_MASS, R16_Q1_MASS), init-s1..5:
+#       probe/<run>/<tag>/<readout>/probe_results.json
+#       mass_resolution/<run>/<tag>/<readout>/mass_resolution.json
+#           from /data/results/eval/v2/{probe,mass_resolution}/<run>/<tag>/<readout>/
+#           (scripts/build_probe_jobs.py --v2); a tag the readouts hold as a link to
+#           another (bestval at best70's epoch) stays a link, or a byte-identical copy
+#       analysis*/<tag>/<readout>/{seed_level_results.json, mass_resolution_table.json,
+#           label_recovery_curve_summary.json}: experiments/STATS/seed_level.py --v2 over
+#           every frozen-readout section present (V2_FROZEN) and label_recovery/, into a
+#           new directory each time they grow; the one whose inputs are the files present
+#           is read (v2_analysis)
+#   levels_64_30/          the same probe/ and mass_resolution/ trees, R63_Q1 and R29_Q1
+#   leave_one_family_out/  the same, the four *_LOFO4P arms and MPM_LOFO4P
+#   random_partitions/     the same, RAND2_p1..5, FLAV_F0, FLAV_F1, FLAV_F1R
+#   self_supervised/       the same, MPM (the pooled readout only)
+#   mass_lambda_matched/   the same, R16_Q1_MASS_LM; and loss_share.json (SLOTS)
+#   label_recovery/label_recovery_curve/<run>/<tag>/<readout>/label_recovery_curve.json
+#       from /data/results/eval/v2/label_recovery_curve/..., every run on the tree
+#   paired_errors/<family>/ratios.json, <family> probes, mass, finetune, anomaly
+#       experiments/STATS/paired_errors.py ratios over the v2 replicates of every model
+#       present (configs/analysis/contrasts.v2.json, with --run-dirs-root: the A7 check)
+#   finetune/<rule>[_t12]_leg1_metrics.json, <rule>[_t12]_leg2_metrics.json
+#       from /data/results/ft_v2/<rule>[_t12]_<leg>_metrics/ (scripts/build_ft_jobs.py,
+#       v2 read-outs, whose headers say experiments/FIGS/data/ft_v2/: this layout moves
+#       them here), <rule> best70 or wavg; _t12 the analysis freeze (tiers 1-2, A14),
+#       the plain name every tier, read in its place once it exists (v2_ft_files)
+#   finetune_references/scratch_leg1_metrics.json   the v2 from-scratch reference
+#   benchmarks/<rule>[_t12]_bench_metrics{,_herwig}{,_last}.json  (same read-outs)
+#   anomaly/<set>/...      anomaly_summary.py over /data/results/eval/v2/anomaly_merged_<set>/
+#                          and anomaly_heads_<set>/ (scripts/build_anomaly_jobs.py --v2)
+#   real_data/t<tiers>/{fit_v6/results.json, analysis_v6/aoj_top.json}
+#                          from /data/results/aoj/full_v2/t<tiers>/ (scripts/build_aoj_jobs.py)
+V2_DATA = ("experiments", "FIGS", "data", "v2")
+# The sections whose v2 inputs this script prints, by V2_PENDING key. A section whose v2
+# directory exists and is not listed keeps its first-grid numbers, and its marker says so.
+V2_READ = {"Pretrain", "Probes", "Paired", "Levels", "Recovery", "FtHeldout"}
+# The frozen-readout sections: probe/ and mass_resolution/ trees, all read by one analysis.
+V2_FROZEN = ("probe_ladder", "levels_64_30", "leave_one_family_out", "random_partitions",
+             "self_supervised", "mass_lambda_matched")
+# {analysis: (per-run file, seed_level.py --v2 output)}
+V2_ANALYSES = {"probe": ("probe_results.json", "seed_level_results.json"),
+               "mass_resolution": ("mass_resolution.json", "mass_resolution_table.json"),
+               "label_recovery_curve": ("label_recovery_curve.json",
+                                        "label_recovery_curve_summary.json")}
+V2_PRIMARY, V2_TWIN, V2_INIT = "best70", "best70_bn", "init"
+V2_CLASS_TOKEN, V2_POOLED = "features", "pooled"
+# The readouts the frozen tables print (A14): the primary, its BatchNorm twin beside it,
+# and the reference rows, the pooled embedding of every model and the untrained trunk.
+V2_FROZEN_NEEDED = ((V2_PRIMARY, V2_CLASS_TOKEN), (V2_TWIN, V2_CLASS_TOKEN),
+                    (V2_PRIMARY, V2_POOLED), (V2_INIT, V2_CLASS_TOKEN), (V2_INIT, V2_POOLED))
+V2_FT_RULE = "best70"            # fine-tuning starts from the primary (A14, 2026-10-02)
+V2_PAIRED_FAMILIES = ("probes", "mass", "finetune")
 
 _DIGITS = {"0": "zero", "1": "one", "2": "two", "3": "three", "4": "four",
            "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "nine"}
@@ -512,6 +584,8 @@ def input_paths(root: pathlib.Path) -> dict:
             # The rerun's design, read where it is fixed: the grid, the partition and
             # flavour-pair maps and the matched mass weight.
             "v2_grid": root / "configs" / "arms" / "v2_grid.json",
+            # the rerun's statistics: its contrasts, labels and untrained-trunk references
+            "contrasts_v2": root / "configs" / "analysis" / "contrasts.v2.json",
             "mass_lambda": root / "configs" / "arms" / "v2" / "mass_lambda.v2.json",
             "rand_v1_map": maps / "rand_label_map.v1.csv",
             "rand_v2_map": maps / "rand_label_map.v2.csv",
@@ -1009,7 +1083,10 @@ def emit_pending(em: Emitter, missing: list) -> None:
     for key, (what, sub) in V2_PENDING.items():
         here = (v2_present(em.root, sub) if sub else
                 all(v2_present(em.root, x) for _, x in V2_PENDING.values() if x))
-        text = (f"v2 input present ({sub}): rewrite this from it" if here
+        text = ((f"v2 numbers in place ({sub}): rewrite the text around them" if key in V2_READ
+                 else f"v2 input present ({sub}) but not printed yet: the numbers here are "
+                      "the first grid's") if here and sub
+                else "v2 input present: rewrite this from it" if here
                 else f"pending v2: {what}")
         if not here and sub:
             missing.append(f"v2 {what} -- experiments/FIGS/data/v2/{sub}/")
@@ -1666,11 +1743,12 @@ def emit_training_design(em: Emitter, spec: pathlib.Path, arch: pathlib.Path,
 
 def recovery_acc(R: dict, probe: str = "linear") -> dict:
     """{(rung, model level): {run: balanced accuracy}} at the largest training set of the
-    label-recovery learning curve."""
+    label-recovery learning curve. A model off the tree (level None: a second-grid model
+    without a vocabulary of the ladder, or the untrained trunk) has no level and no cell."""
     n = max(R["sizes"])
     out = {}
     for r in R["table"]:
-        if r["probe"] == probe and r["n_train"] == n:
+        if r["probe"] == probe and r["n_train"] == n and r.get("level") is not None:
             out.setdefault((r["rung"], r["level"]), {})[r["seed"]] = r["accuracy"]
     return out
 
@@ -1865,10 +1943,17 @@ def ft_n_test(cells: dict, rows: list, field: str) -> int:
     return n.pop()
 
 
-def emit_finetune(em: Emitter, ft: dict, sizes: dict) -> None:
+def emit_finetune(em: Emitter, ft: dict, sizes: dict, rows: list | None = None,
+                  keys: dict | None = None, restrict=None) -> None:
     """Fine-tuning every pretrained model on JetClass-II and JetClass: macro AUC and
-    accuracy at the best-validation-accuracy epoch, fine-tuning seed s1."""
-    rows = ft_rows(sizes)
+    accuracy at the best-validation-accuracy epoch, fine-tuning seed s1.
+
+    `rows` default to the first grid's (ft_rows); `keys` name the rows of the 188-, 162-
+    and 17-class models ({rung: row key}, default from `sizes`); `restrict(a, b)` returns
+    the initialisations of two rows a ratio of their means may use (I7, the second grid:
+    v2_one_product), or None to print none."""
+    rows = rows or ft_rows(sizes)
+    keys = keys or {r: texname(sizes[r]) for r in ("L188", "L162", "R16_Q1")}
     for ds, F in ft.items():
         c, src, ns = F["cells"], F["path"], ft_sizes(F["cells"], rows)
         for metric, name in (("macro_auc_ovr", "FtAuc"), ("accuracy", "FtAcc")):
@@ -1881,20 +1966,29 @@ def emit_finetune(em: Emitter, ft: dict, sizes: dict) -> None:
                              else f"mean +- SD over the row's {len(inits)} pretrained models")
         oma = {key: {n: np.mean([1 - c[i][n]["s1"]["macro_auc_ovr"] for i in inits]) for n in ns}
                for key, _, inits in rows}
+        by_key = {key: inits for key, _, inits in rows}
         for n in ns:
-            for fine in (texname(sizes["L188"]), texname(sizes["L162"])):
+            for fine in (keys["L188"], keys["L162"]):
                 for key in oma:
                     if key == fine:
                         continue
+                    if restrict is None:
+                        r = oma[key][n] / oma[fine][n]
+                    else:
+                        pair = restrict(by_key[key], by_key[fine])
+                        if pair is None:
+                            continue
+                        r = (np.mean([1 - c[i][n]["s1"]["macro_auc_ovr"] for i in pair[0]])
+                             / np.mean([1 - c[i][n]["s1"]["macro_auc_ovr"] for i in pair[1]]))
                     em.macro("FtOmaRatio" + ds + n_tag(n) + key + "Over" + fine,
-                             fmt_ratio(oma[key][n] / oma[fine][n]), src,
-                             f"cells.*.{n}.s1.macro_auc_ovr",
-                             "ratio of the seed means of 1 - macro AUC, this row over the reference")
+                             fmt_ratio(r), src, f"cells.*.{n}.s1.macro_auc_ovr",
+                             "ratio of the seed means of 1 - macro AUC, this row over the reference"
+                             + ("" if restrict is None else
+                                "; runs of one GPU product where the two rows' runs differ (I7)"))
         # The accuracy has no bootstrap interval in the paired files; the coarse-minus-fine
         # difference paired by run, with a Student-t interval over the runs, is what the
         # text may read in words.
-        by_key = {key: inits for key, _, inits in rows}
-        fine, coarse = texname(sizes["L188"]), texname(sizes["R16_Q1"])
+        fine, coarse = keys["L188"], keys["R16_Q1"]
         for n in ns:
             acc = {k: {run_index(i): c[i][n]["s1"]["accuracy"] for i in by_key[k]} for k in (fine, coarse)}
             em.macro("PairedFtAcc" + ds + n_tag(n) + coarse + "Minus" + fine,
@@ -2097,8 +2191,9 @@ def mass_n_test(M: dict, root: pathlib.Path) -> tuple[int, pathlib.Path]:
     return n.pop(), files[0]
 
 
-def emit_mass_resolution(em: Emitter, M: dict, src: pathlib.Path) -> None:
-    """Frozen-feature jet-mass regression: sigma_eff per label set and probe."""
+def emit_mass_resolution(em: Emitter, M: dict, src: pathlib.Path, cells=MASS_CELLS) -> None:
+    """Frozen-feature jet-mass regression: sigma_eff per label set and probe, over `cells`
+    (the first grid's six by default)."""
     n_test, first = mass_n_test(M, em.root)
     em.macro("MassResNTest", fmt_int(n_test), first, "centering_detail.split[2]",
              "test jets sigma_eff is computed on, the same in every per-seed file and arm")
@@ -2106,7 +2201,7 @@ def emit_mass_resolution(em: Emitter, M: dict, src: pathlib.Path) -> None:
              "provenance.n_classes_used", "native classes with enough training jets to centre")
     for probe in ("ridge", "mlp"):
         k = texname(probe)
-        for cell in MASS_CELLS:
+        for cell in cells:
             v = mass_values(M, cell, probe)
             em.macro("MassResSigmaEff" + k + texname(cell.replace("+mass", " mass")),
                      fmt_pm(np.mean(v), np.std(v, ddof=1)), src,
@@ -2545,7 +2640,14 @@ def table_probe_ladder(A: dict, probe: str, nbkg: dict) -> str:
                f"{eps * 100:.0f}\\% signal efficiency, mean {tex('±')} standard deviation over the "
                f"{words(min(n_seeds))} pretraining runs. Rows are the number of classes in the "
                f"pretraining vocabulary, finest first and coarsest last.")
-    cells = " ".join(auc_all + rej_all)
+    return _table(head + body, caption, f"tab:probes-{probe}",
+                  "r l " + "r" * len(tasks), _probe_notes(" ".join(auc_all + rej_all), tasks, nbkg),
+                  wide=True)
+
+
+def _probe_notes(cells: str, tasks: list, nbkg: dict) -> list:
+    """The footnotes a probe table needs, from the text of its cells: what a bound and a
+    saturated AUC mean, and the background test jets per task."""
     notes = []
     if "$>$" in cells:
         notes.append("$>$ at most one background jet passed the cut in every run; the entry is "
@@ -2561,8 +2663,7 @@ def table_probe_ladder(A: dict, probe: str, nbkg: dict) -> str:
     if nbkg:
         notes.insert(0, "Background test jets $N_B$ per task: " + "; ".join(
             f"{TASK_LABELS.get(t, tex(t))}, {fmt_int(nbkg[t])}" for t in tasks if t in nbkg) + ".")
-    return _table(head + body, caption, f"tab:probes-{probe}",
-                  "r l " + "r" * len(tasks), notes, wide=True)
+    return notes
 
 
 def table_usecase(surv: dict, sizes: dict, pretrained: list) -> str:
@@ -2637,10 +2738,12 @@ FAMILY_LABELS = {"class_sum": "output ratio", "class_sum_matched": "output ratio
                  "knn": "$k$-nearest neighbours", "iad_hgb": "classifier-based (HGB)"}
 
 
-def table_finetune(ft: dict, sizes: dict, metric: str) -> str:
+def table_finetune(ft: dict, sizes: dict, metric: str, rows: list | None = None,
+                   v2: bool = False) -> str:
     """Fine-tuning on JetClass-II and JetClass, one metric, per pretrained model
-    (rows) and fine-tuning set size (columns)."""
-    rows = ft_rows(sizes)
+    (rows) and fine-tuning set size (columns). `rows` default to the first grid's;
+    `v2` writes the second grid's caption."""
+    rows = rows or ft_rows(sizes)
     ns = ft_sizes(next(iter(ft.values()))["cells"], rows)
     head = ["training jets & " + " & ".join(fmt_n_jets(n) for n in ns) + " \\\\", "\\midrule"]
     body = []
@@ -2667,6 +2770,16 @@ def table_finetune(ft: dict, sizes: dict, metric: str) -> str:
                "each random partition of the random-label control is one pretraining run and is shown "
                "on its own. Rows are the pretraining vocabulary, "
                "columns the number of fine-tuning training jets.")
+    if v2:
+        caption = ("Fine-tuning every pretrained model of the second set of runs, from its primary "
+                   "checkpoint (the first maximum of the validation accuracy within epochs 70--79), on "
+                   + " and on ".join(f"{F['name']}'s {F['classes']}-class task" for F in ft.values())
+                   + ", the JetClass-II jets drawn from files held out from pretraining: "
+                   + ("macro-averaged one-vs-rest AUC" if auc else "accuracy")
+                   + f" on {n_test} test jets, at the epoch of best validation accuracy. Mean "
+                   f"{tex('±')} standard deviation over each row's pretraining runs ($n$ where it is "
+                   f"not {words(max(len(i) for *_, i in rows))}), each fine-tuned once. Rows are the "
+                   "pretraining vocabulary, columns the number of fine-tuning training jets.")
     return _table(head + body, caption, "tab:finetune" if auc else "tab:finetune-accuracy",
                   "l " + "r" * len(ns), [])
 
@@ -2812,27 +2925,27 @@ def table_recovery(R: dict, sizes: dict) -> str:
     return _table(head + body, caption, "tab:recovery", "l " + "r" * len(levels), [])
 
 
-def table_mass(M: dict, root: pathlib.Path) -> str:
-    """Jet-mass resolution from frozen features, both probes."""
+def table_mass(M: dict, root: pathlib.Path, cells=MASS_CELLS) -> str:
+    """Jet-mass resolution from frozen features, both probes, over `cells`."""
     tgt = {round(r["target_sigma_eff"], 12) for r in M["table"] if r["probe"] == "ridge"}
     tgt = fmt(tgt.pop(), 4) if len(tgt) == 1 else "---"
-    head = ["& " + " & ".join(c.replace("+mass", " + mass") for c in MASS_CELLS)
+    head = ["& " + " & ".join(c.replace("+mass", " + mass") for c in cells)
             + " & true-class mean \\\\", "\\midrule"]
     body = []
     for probe, name in (("mlp", "nonlinear (MLP) probe"), ("ridge", "linear (ridge) probe")):
-        cells = [fmt_pm(np.mean(v), np.std(v, ddof=1))
-                 for v in (mass_values(M, c, probe) for c in MASS_CELLS)]
-        body.append(f"{name} & " + " & ".join(cells) + f" & {tgt} \\\\")
+        text = [fmt_pm(np.mean(v), np.std(v, ddof=1))
+                for v in (mass_values(M, c, probe) for c in cells)]
+        body.append(f"{name} & " + " & ".join(text) + f" & {tgt} \\\\")
     caption = ("Jet-mass regression from frozen features: $\\sigma_{\\mathrm{eff}}$ of the residual. "
                "The residual is $\\ln(m_{\\mathrm{pred}}/m_{\\mathrm{true}})$ after removing each "
                "native class's training-set mean; $\\sigma_{\\mathrm{eff}}$ is half the smallest "
                f"interval holding 68\\% of it. Mean {tex('±')} standard deviation over the "
-               f"{words(len(mass_values(M, MASS_CELLS[0], 'ridge')))} pretraining runs, on "
+               f"{words(len(mass_values(M, cells[0], 'ridge')))} pretraining runs, on "
                f"{fmt_int(mass_n_test(M, root)[0])} test jets. Columns are the number of classes "
                "in the pretraining vocabulary, with or without the added mass output; the last is "
                "an oracle that knows each jet's true native class and returns that class's mean, "
                "the same for both probes.")
-    return _table(head + body, caption, "tab:mass", "l " + "r" * (len(MASS_CELLS) + 1), [],
+    return _table(head + body, caption, "tab:mass", "l " + "r" * (len(cells) + 1), [],
                   wide=True)
 
 
@@ -2867,6 +2980,651 @@ def table_realdata(J: dict, root: pathlib.Path) -> str:
                "second column is the median statistical error of a single fit; the last column refits every "
                "model with its own floated peak shape. The CMS score's peak shape is its own throughout.")
     return _table(head + body, caption, "tab:realdata", "l r r r", [])
+
+
+# ------------------------------------------------------------------ the second grid (v2)
+#
+# The paper reports v2 (PRESPEC A7-A14: "Every v1 result stays in the record. The paper
+# reports v2"). A section prints from its v2 directory (the layout under V2_PENDING) when
+# that exists and V2_READ lists it, under the first grid's macro names, so the text needs
+# no renaming; otherwise from the first grid's files. The reporting rules are A14's:
+#   * every number under a first-grid name is the primary checkpoint's (best70, the first
+#     maximum within epochs 70-79; self-supervised: the first minimum of the validation
+#     loss), through the class token;
+#   * robustness: beside each paired ratio, the result at the weight average and the
+#     paired ln(weight average / primary) with its 95 % interval, labelled 'depends on the
+#     checkpoint' (excludes 0), 'robust' (within +-ln 1.1), 'depends on the checkpoint,
+#     under 10%' (both) or 'inconclusive' -- re-derived here from the interval and checked
+#     against paired_errors.py's label -- and the dependent results counted against 5 %;
+#   * sensitivity: the same at the global best epoch (bestval);
+#   * the BatchNorm twin beside the primary, for the frozen readouts only;
+#   * reference rows in the frozen tables: the pooled embedding of every model and the
+#     untrained trunk;
+#   * the freeze (A14 item 8): a section is read once its directory holds every run of its
+#     arms; tiers 1-2 come first, and the tier-3 rows (64 and 30 classes) join the same
+#     tables when their directory exists;
+#   * I7: a comparison not paired by run index uses runs of one GPU product only.
+
+def v2_dir(root: pathlib.Path, sub: str) -> pathlib.Path:
+    return pathlib.Path(root).joinpath(*V2_DATA, sub)
+
+
+def _v2_rel(root: pathlib.Path, p) -> str:
+    """A path relative to the root, not resolved: a tag held as a link to another keeps
+    its own path (seed_level.py records it so)."""
+    p = pathlib.Path(p)
+    p = p if p.is_absolute() else pathlib.Path(root) / p
+    return os.path.relpath(os.path.abspath(p), os.path.abspath(root))
+
+
+def v2_frozen_files(root: pathlib.Path, analysis: str) -> dict:
+    """{(tag, readout): {file relative to the root}} of one frozen readout over every
+    section present that holds it (V2_FROZEN; label_recovery for the curve)."""
+    name = V2_ANALYSES[analysis][0]
+    subs = ("label_recovery",) if analysis == "label_recovery_curve" else V2_FROZEN
+    out = {}
+    for sub in subs:
+        if v2_present(root, sub):
+            for p in sorted(v2_dir(root, sub).glob(f"{analysis}/*/*/*/{name}")):
+                out.setdefault((p.parents[1].name, p.parent.name), set()).add(_v2_rel(root, p))
+    return out
+
+
+def v2_analysis_dir(root: pathlib.Path) -> pathlib.Path:
+    """The one probe_ladder/analysis*/ (experiments/STATS/seed_level.py --v2's output) that
+    read exactly the frozen readouts present now, every analysis, tag and readout of them
+    and nothing else. One that read fewer would drop the rows added since (tier 3 follows
+    the freeze); one that read others describes files no longer here. None or two is fatal."""
+    want = {(a, key): files for a in V2_ANALYSES for key, files in v2_frozen_files(root, a).items()}
+    hits = []
+    for d in sorted(p for p in v2_dir(root, "probe_ladder").glob("analysis*") if p.is_dir()):
+        got = {}
+        for a, (_, out_name) in V2_ANALYSES.items():
+            for p in d.glob(f"*/*/{out_name}"):
+                doc = json.loads(p.read_text())
+                got[(a, (p.parents[1].name, p.parent.name))] = {
+                    _v2_rel(root, x["path"]) for x in doc["provenance"]["inputs"]}
+        if got == want:
+            hits.append(d)
+    if len(hits) != 1:
+        raise SystemExit(f"FATAL: {len(hits)} v2 analyses under "
+                         f"{v2_dir(root, 'probe_ladder').relative_to(root)}/analysis*/ read exactly "
+                         "the frozen readouts present; run experiments/STATS/seed_level.py --v2 over "
+                         "the v2 sections into a new directory")
+    return hits[0]
+
+
+def v2_analysis(root: pathlib.Path, analysis: str, grid: pathlib.Path) -> dict:
+    """{(tag, readout): (path, document)} of `analysis` from v2_analysis_dir, each built on
+    this grid (another has other levels and run counts) and holding every run of the arms
+    it holds (a section is copied whole), its inputs unchanged since."""
+    out = {}
+    d = v2_analysis_dir(root)
+    for p in sorted(d.glob(f"*/*/{V2_ANALYSES[analysis][1]}")):
+        doc = json.loads(p.read_text())
+        if doc["provenance"]["grid"]["sha256"] != hashlib.sha256(grid.read_bytes()).hexdigest():
+            raise SystemExit(f"FATAL: {p} was built on another {grid.name}; rerun seed_level.py --v2")
+        if doc.get("missing_runs"):
+            raise SystemExit(f"FATAL: {p}: runs missing {doc['missing_runs']}; a v2 section is "
+                             "copied once every run of its arms has finished")
+        check_analysis_is_current(doc, root)
+        out[(p.parents[1].name, p.parent.name)] = (p, doc)
+    return out
+
+
+# A14's labels of a result between two checkpoints, written here again rather than read
+# from src/stats/paired.py: the labels paired_errors.py stored are re-derived from the
+# interval each result stores and must agree.
+CKPT_DEPENDS = "depends on the checkpoint"
+CKPT_DEPENDS_UNDER_10 = "depends on the checkpoint, under 10%"
+CKPT_DEPENDENT = (CKPT_DEPENDS, CKPT_DEPENDS_UNDER_10)
+CKPT_BAND = math.log(1.1)        # the smallest effect of interest (src/stats/mde.py MEI_LOG)
+
+
+def checkpoint_class(lo: float, hi: float) -> str:
+    """A14's label from the 95 % interval [lo, hi] of a ratio (the result at another
+    checkpoint over the result at the primary): 'depends on the checkpoint' when it
+    excludes 1, 'robust' when it lies within [1/1.1, 1.1] (+-ln 1.1), both rules at once
+    'depends on the checkpoint, under 10%' (counted as dependent), else 'inconclusive'."""
+    a, b = math.log(lo), math.log(hi)
+    dep, small = a > 0 or b < 0, -CKPT_BAND < a and b < CKPT_BAND
+    if dep:
+        return CKPT_DEPENDS_UNDER_10 if small else CKPT_DEPENDS
+    return "robust" if small else "inconclusive"
+
+
+def checkpoint_tally(rows: list, tag: str) -> dict:
+    """{results, models}: per A14, the results between `tag`'s checkpoints (the contrasts;
+    'models' the checkpoint contrast, one model's own metric), each {dependent, n, robust,
+    inconclusive, identical}, a result whose two checkpoints are one file (ratio exactly 1,
+    no error) counted apart from n. The same rules as paired_errors.checkpoint_dependence,
+    applied again to the labels re-derived by checkpoint_class."""
+    out = {}
+    for what, sel in (("results", lambda r: r["contrast"] != "checkpoint"),
+                      ("models", lambda r: r["contrast"] == "checkpoint")):
+        rs = [r for r in rows if r["checkpoint"] == tag and "checkpoint_label" in r and sel(r)]
+        same = [r for r in rs if r.get("ln_ratio") == 0.0 and r.get("ln_combined_se") == 0.0]
+        rs = [r for r in rs if not (r.get("ln_ratio") == 0.0 and r.get("ln_combined_se") == 0.0)]
+        lab = [checkpoint_class(*r["ci95"]) for r in rs]
+        out[what] = {"dependent": sum(x in CKPT_DEPENDENT for x in lab), "n": len(lab),
+                     "robust": lab.count("robust"), "inconclusive": lab.count("inconclusive"),
+                     "identical": len(same)}
+    return out
+
+
+def check_checkpoint_labels(R: dict, path: pathlib.Path) -> None:
+    """Refuse a ratios file whose stored A14 labels or counts the intervals beside them
+    do not give."""
+    for i, r in enumerate(R["ratios"]):
+        if "checkpoint_label" in r and checkpoint_class(*r["ci95"]) != r["checkpoint_label"]:
+            raise SystemExit(f"FATAL: {path} ratios[{i}] is labelled {r['checkpoint_label']!r}; its "
+                             f"interval {r['ci95']} gives {checkpoint_class(*r['ci95'])!r}")
+    for tag, dep in R.get("checkpoint_dependence", {}).items():
+        mine = checkpoint_tally(R["ratios"], tag)
+        for what in ("results", "models"):
+            got = (dep[what]["dependent"], dep[what]["n"], dep[what]["identical_checkpoint"])
+            want = (mine[what]["dependent"], mine[what]["n"], mine[what]["identical"])
+            if got != want:
+                raise SystemExit(f"FATAL: {path} counts {got} dependent/n/identical {what} at {tag}; "
+                                 f"its labelled rows give {want}")
+
+
+def v2_products(specs: list) -> dict | None:
+    """{run index: GPU product} of the second grid, from its job specs (gpu_by_run); None
+    without specs. A run index on two products is fatal: no comparison could be read."""
+    if not specs:
+        return None
+    by_run = gpu_by_run(specs)
+    mixed = {r: sorted(p) for r, p in by_run.items() if len(p) > 1}
+    if mixed:
+        raise SystemExit(f"FATAL: the grid's job specs put run indices {mixed} on several GPU "
+                         "products; no v2 comparison can keep to one (I7)")
+    return {r: next(iter(p)) for r, p in by_run.items()}
+
+
+def v2_run(model: str) -> int:
+    """'l188-s3@best70' or 'l188-s3' -> 3: the run index of a v2 model or fine-tuning init."""
+    return int(re.search(r"-s(\d+)(?:@|$)", model).group(1))
+
+
+def v2_one_product(products: dict):
+    """I7 for a comparison that is not paired by run index: (a, b) -> the initialisations of
+    two rows it may use. Two rows with the same run indices hold the same products in the
+    same proportion and keep every run; otherwise both keep only the runs on the product
+    of run index 1 (RTX 3090 in the grid), and a row left with none gives None."""
+    first = products[min(products)]
+
+    def restrict(a, b):
+        if sorted(map(v2_run, a)) == sorted(map(v2_run, b)):
+            return a, b
+        a, b = ([i for i in x if products[v2_run(i)] == first] for x in (a, b))
+        return (a, b) if a and b else None
+    return restrict
+
+
+def check_one_product(rows: list, products: dict, path: pathlib.Path) -> None:
+    """I7: every contrast paired_errors.py formed unpaired (stream_pairing 'exempt': A13's
+    unseen against seen, the self-supervised model against the vocabularies) reads runs
+    of one GPU product."""
+    for i, r in enumerate(rows):
+        if not str(r.get("stream_pairing", "")).startswith("exempt"):
+            continue
+        runs = {v2_run(m.split("/")[0]) for m in r.get("fine_models", []) + r.get("coarse_models", [])}
+        prods = {products[k] for k in runs}
+        if len(prods) > 1:
+            raise SystemExit(f"FATAL: {path} ratios[{i}] ({r['contrast']}) is unpaired over runs "
+                             f"{sorted(runs)} on {sorted(prods)}; I7 keeps such a contrast to one "
+                             "GPU product (contrasts.v2.json `runs`)")
+
+
+def _v2_rows(A: dict, task: str, probe: str, arm: str) -> list:
+    return sorted((r for r in A["table"] if (r["task"], r["probe"], r["arm"]) == (task, probe, arm)),
+                  key=lambda r: r["seed"])
+
+
+def emit_v2_probes(em: Emitter, V: dict) -> dict:
+    """The frozen probes of the second grid beyond emit_design and emit_levels (which build
+    calls on the primary checkpoint's class token): the background test jets per task, and
+    beside each 1-AUC its BatchNorm twin (...Twin), its pooled-embedding reference
+    (...Pooled), and the untrained trunk's (ProbeOma<task><probe>Untrained,
+    ...UntrainedPooled). Returns {task: background test jets}."""
+    src, A = V[(V2_PRIMARY, V2_CLASS_TOKEN)]
+    nbkg = {}
+    for task in sorted(A["tasks"]):
+        n = A["tasks"][task]["n_background_test"]
+        if n is not None:
+            nbkg[task] = n
+            em.macro("ProbeNBkgTest" + texname(task), fmt_int(n), src,
+                     f"tasks.{task}.n_background_test", "test-sample background jets")
+
+    def oma(rows):
+        if not rows or any(r["censored"] for r in rows):
+            return None
+        x = [1.0 - r["auc"] for r in rows]
+        return fmt_pm_sci(np.mean(x), np.std(x, ddof=1)) if len(x) > 1 else fmt_one_sci(x[0])
+    for (tag, ro), suffix in (((V2_TWIN, V2_CLASS_TOKEN), "Twin"), ((V2_PRIMARY, V2_POOLED), "Pooled")):
+        s2, B = V[(tag, ro)]
+        for task in ordered_tasks(B["levels"]):
+            for probe in sorted(B["levels"][task]):
+                for lv in B["levels_fine_to_coarse"]:
+                    text = oma(seed_rows(B["table"], task, probe, lv))
+                    if text is not None:
+                        em.macro("ProbeOma" + texname(task, probe, lv) + suffix, text, s2,
+                                 f"table[{task},{probe},{lv}].auc",
+                                 f"1-AUC at {tag}, {ro}; mean +- SD over runs")
+    for ro, suffix in ((V2_CLASS_TOKEN, ""), (V2_POOLED, "Pooled")):
+        s2, I = V[(V2_INIT, ro)]
+        for task in sorted({r["task"] for r in I["table"]}):
+            for probe in ("linear", "mlp"):
+                text = oma(_v2_rows(I, task, probe, "INIT"))
+                if text is not None:
+                    em.macro("ProbeOma" + texname(task, probe) + "Untrained" + suffix, text, s2,
+                             f"table[{task},{probe},arm=INIT].auc",
+                             f"1-AUC of the untrained trunk, {ro}; mean +- SD over its initialisations")
+    return nbkg
+
+
+def table_probe_ladder_v2(V: dict, probe: str, nbkg: dict) -> str:
+    """The frozen-probe table of the second grid: per vocabulary the primary checkpoint's
+    AUC and rejection and its BatchNorm twin's AUC beside them; then the reference rows,
+    each vocabulary's pooled embedding and the untrained trunk through both readouts."""
+    A, T, P = (V[k][1] for k in ((V2_PRIMARY, V2_CLASS_TOKEN), (V2_TWIN, V2_CLASS_TOKEN),
+                                 (V2_PRIMARY, V2_POOLED)))
+    # the tasks measured at the headline working point; one that pins its own (the |V_cb|
+    # window probe, 60 and 40 %) is given in the text (emit_vcb_v2)
+    every = ordered_tasks(A["levels"])
+    tasks = [t for t in every if headline_rejection(A["levels"][t][probe][0])[0] is not None]
+    own = [t for t in every if t not in tasks]
+    levels = A["levels_fine_to_coarse"]
+    key, eps = headline_rejection(A["levels"][tasks[0]][probe][0])
+    head = ["classes & quantity & " + " & ".join(TASK_LABELS.get(t, tex(t)) for t in tasks)
+            + " \\\\", "\\midrule"]
+    body, cells, n_runs = [], [], set()
+
+    def auc(rows):
+        n_runs.add(len(rows))
+        return "---" if not rows else fmt_auc_pm([r["auc"] for r in rows], [r["censored"] for r in rows])
+    for i, lv in enumerate(levels):
+        a = [auc(seed_rows(A["table"], t, probe, lv)) for t in tasks]
+        rj = [fmt_rejection(*seed_rejections(A["table"], t, probe, lv, key)) for t in tasks]
+        tw = [auc(seed_rows(T["table"], t, probe, lv)) for t in tasks]
+        cells += a + rj + tw
+        body += [f"{lv} & AUC & " + " & ".join(a) + " \\\\",
+                 f"     & $1/\\epsilon_B$ at {eps * 100:.0f}\\% & " + " & ".join(rj) + " \\\\",
+                 "     & AUC, BatchNorm recomputed & " + " & ".join(tw) + " \\\\"]
+        if i < len(levels) - 1:
+            body.append("\\addlinespace")
+    body += ["\\midrule", f"\\multicolumn{{{2 + len(tasks)}}}{{@{{}}l}}{{\\itshape reference rows}} \\\\"]
+    for lv in levels:
+        p = [auc(seed_rows(P["table"], t, probe, lv)) for t in tasks]
+        cells += p
+        body.append(f"{lv} & AUC, pooled embedding & " + " & ".join(p) + " \\\\")
+    n_init = set()
+    for ro, what in ((V2_CLASS_TOKEN, "AUC"), (V2_POOLED, "AUC, pooled embedding")):
+        I = V[(V2_INIT, ro)][1]
+        u = []
+        for t in tasks:
+            rows = _v2_rows(I, t, probe, "INIT")
+            n_init.add(len(rows))
+            u.append("---" if not rows else fmt_auc_pm([r["auc"] for r in rows], [r["censored"] for r in rows]))
+        cells += u
+        body.append(f"untrained & {what} & " + " & ".join(u) + " \\\\")
+    n_runs.discard(0)
+    caption = (f"Frozen {'linear' if probe == 'linear' else 'nonlinear (MLP)'} probes on the "
+               f"{words(len(levels))} pretraining vocabularies of the second set of runs, at each "
+               "run's primary checkpoint (the first maximum of the validation accuracy within epochs "
+               f"70--79): AUC and the background rejection $1/\\epsilon_B$ at {eps * 100:.0f}\\% signal "
+               f"efficiency, mean {tex('±')} standard deviation over the {words(min(n_runs))} "
+               "pretraining runs, and beside them the AUC of the same checkpoint with its BatchNorm "
+               "statistics recomputed on training jets. Reference rows: the pooled embedding of each "
+               "model in place of the class token, and the untrained network the runs started from "
+               f"({words(max(n_init))} initialisations). Rows are the number of classes in the "
+               "pretraining vocabulary, finest first and coarsest last.")
+    notes = _probe_notes(" ".join(cells), tasks, nbkg)
+    if own:
+        notes.append("Not shown, having working points of their own: "
+                     + ", ".join(TASK_LABELS.get(t, tex(t)) for t in own) + ".")
+    return _table(head + body, caption, f"tab:probes-{probe}", "r l " + "r" * len(tasks),
+                  notes, wide=True)
+
+
+def emit_mass_output_v2(em: Emitter, A: dict, src: pathlib.Path, restrict=None) -> None:
+    """MassOma* of the second grid (emit_mass_output's names): 1-AUC on b vs c two-prong
+    with and without the mass output at 162 and 17 classes, and with the matched weight
+    (A11, ...MassMatched) once its runs are in, at the primary checkpoint."""
+    task = "bvc_resonant"
+    have = A["runs_by_arm"]
+    if "L162_MASS" not in have and "R16_Q1_MASS" not in have:
+        return
+    em.macro("MassNRunsWord", words(len(have.get("L162_MASS") or have["R16_Q1_MASS"])), src,
+             "runs_by_arm.L162_MASS (count)", "pretraining runs of each mass-output configuration")
+    for probe in ("linear", "mlp"):
+        k = texname(probe)
+        done = set()
+        for plain, mass, suffix in (("L162", "L162_MASS", "Mass"), ("R16_Q1", "R16_Q1_MASS", "Mass"),
+                                    ("R16_Q1", "R16_Q1_MASS_LM", "MassMatched")):
+            if mass not in have or plain not in have:
+                continue
+            lv = next(int(x) for x, a in A["level_arms"].items() if a == plain)
+            p_rows, m_rows = _v2_rows(A, task, probe, plain), _v2_rows(A, task, probe, mass)
+            if any(r["censored"] for r in p_rows + m_rows):
+                raise SystemExit(f"FATAL: a {task} cell reached AUC=1; its 1-AUC is only a bound")
+            x0, x1 = [1 - r["auc"] for r in p_rows], [1 - r["auc"] for r in m_rows]
+            if plain not in done:
+                em.macro("MassOma" + k + texname(lv), fmt_pm_sci(np.mean(x0), np.std(x0, ddof=1)), src,
+                         f"table[{task},{probe},arm={plain}].auc", f"1-AUC, mean +- SD over {len(x0)} runs")
+                done.add(plain)
+            em.macro("MassOma" + k + texname(lv) + suffix, fmt_pm_sci(np.mean(x1), np.std(x1, ddof=1)),
+                     src, f"table[{task},{probe},arm={mass}].auc", f"1-AUC, mean +- SD over {len(x1)} runs")
+            if restrict is not None:
+                pair = restrict([r["model"] for r in m_rows], [r["model"] for r in p_rows])
+                if pair is None:
+                    continue
+                x1 = [1 - r["auc"] for r in m_rows if r["model"] in pair[0]]
+                x0 = [1 - r["auc"] for r in p_rows if r["model"] in pair[1]]
+            em.macro("MassOmaRatio" + k + texname(lv) + suffix.removeprefix("Mass"),
+                     fmt_ratio(np.mean(x1) / np.mean(x0)), src,
+                     f"table[{task},{probe},arm={mass}/{plain}].auc",
+                     "run mean of 1-AUC with the mass output over without")
+
+
+def emit_vcb_v2(em: Emitter, A: dict, src: pathlib.Path) -> None:
+    """The |V_cb| window probe (bc_vs_rest) of the second grid under emit_vcb's names: the
+    162- and 17-class models at the primary checkpoint, from seed_level.py --v2's table."""
+    task, eps = "bc_vs_rest", "0.60"
+    if task not in A["tasks"]:
+        return
+    T = A["tasks"][task]
+    em.macro("VcbNSignal", fmt_int(T["n_signal_test"]), src, f"tasks.{task}.n_signal_test",
+             "X->bc test jets in the window")
+    em.macro("VcbNBackground", fmt_int(T["n_background_test"]), src, f"tasks.{task}.n_background_test",
+             "bq, cs, bqq and QCD test jets in the window")
+    em.macro("VcbEpsSixty", f"{100 * float(eps):.0f}", src, f"tasks.{task}.eps_s", "signal efficiency, percent")
+    arm_of = {int(lv): a for lv, a in A["level_arms"].items()}
+    hi, lo = 162, 17
+    for probe in ("linear", "mlp"):
+        k, oma, logs = texname(probe), {}, {}
+        for lv in (hi, lo):
+            rows = _v2_rows(A, task, probe, arm_of[lv])
+            jp = f"table[{task},{probe},{lv}]"
+            if any(r["censored"] for r in rows):
+                raise SystemExit(f"FATAL: a {task} cell reached AUC=1; its 1-AUC is only a bound")
+            logs[lv] = [r["log1m_auc"] for r in rows]
+            x = np.exp(logs[lv])
+            oma[lv] = float(np.mean(x))
+            em.macro("VcbOma" + k + texname(lv), fmt_pm_sci(np.mean(x), np.std(x, ddof=1)), src,
+                     jp + ".log1m_auc", f"1-AUC = exp of it, mean +- SD over {len(x)} runs")
+            em.macro("VcbLogOma" + k + texname(lv), fmt(np.mean(logs[lv]), 3, sign=True), src,
+                     jp + ".log1m_auc", "mean over runs")
+            pts = [r["rejection_points"][eps] for r in rows]
+            em.macro("VcbRej" + k + "Sixty" + texname(lv),
+                     fmt_rejection([p["rejection"] for p in pts], [p["is_bound"] for p in pts],
+                                   [p["n_bkg_pass"] for p in pts]),
+                     src, jp + f".rejection_points['{eps}'].rejection",
+                     "background rejection at this signal efficiency, mean +- SD over runs")
+            em.macro("VcbBkgLeft" + k + "Sixty" + texname(lv), fmt(np.mean([p["n_bkg_pass"] for p in pts]), 1),
+                     src, jp + f".rejection_points['{eps}'].n_bkg_pass",
+                     "background jets passing the cut, mean over runs")
+        em.macro("VcbOmaRatio" + k, fmt_ratio(oma[lo] / oma[hi]), src, f"table[{task},{probe},*].log1m_auc",
+                 f"run mean of 1-AUC, {lo} classes over {hi}")
+        em.macro("VcbFactor" + k, fmt(np.exp(np.mean(logs[lo]) - np.mean(logs[hi])), 2), src,
+                 f"table[{task},{probe},*].log1m_auc",
+                 f"exp of the difference of the run means of log(1-AUC), {lo} classes over {hi}")
+
+
+# The results paired_errors.py stores beside each primary ratio and what each is (A8, A14):
+# (macro suffix, checkpoint tag, the families it exists for, labelled by A14's rule).
+V2_BESIDE = (("Wavg", "wavg", None, False), ("WavgShift", "wavg/best70", None, True),
+             ("Bestval", "bestval", ("probe", "mass"), False),
+             ("BestvalShift", "bestval/best70", ("probe", "mass"), True),
+             ("Twin", "best70_bn", ("probe", "mass"), False),
+             ("Pooled", "best70:pooled", ("probe", "mass"), False))
+CKPT_LABEL_TEX = {"robust": "robust", "inconclusive": "inconclusive", CKPT_DEPENDS: CKPT_DEPENDS,
+                  CKPT_DEPENDS_UNDER_10: "depends on the checkpoint, under 10\\%"}
+
+
+def emit_paired_v2(em: Emitter, files: list, ft: dict | None, products: dict | None) -> dict:
+    """The second grid's paired ratios under emit_paired's names, at the primary
+    checkpoint through the class token: every ratio of two arms (pairs, all_pairs and
+    unpaired contrasts; P1, P2, A11 and the joint fit are other sections'), and beside each
+    the results V2_BESIDE lists -- at the weight average (...Wavg) and the paired shift to
+    it (...WavgShift, labelled ...WavgLabel), at the global best (...Bestval, ...BestvalShift,
+    ...BestvalLabel), at the BatchNorm twin (...Twin) and through the pooled embedding
+    (...Pooled). Each file's labels and counts are re-derived first (check_checkpoint_labels)
+    and its unpaired contrasts checked against I7. Returns {family file: its document}."""
+    for leg, ds in PAIRED_FT_DATASET.items():
+        if ft and ds in ft and leg not in ft[ds]["path"].name:
+            raise SystemExit(f"FATAL: the paired file's {leg} is not {ft[ds]['path'].name}")
+    name = lambda x: texname(str(x).replace("+mass", " mass"))
+    out = {}
+    for path in files:
+        R = json.loads(path.read_text())
+        rows = R["ratios"]
+        check_checkpoint_labels(R, path)
+        if products is not None:
+            check_one_product(rows, products, path)
+        elif any(str(r.get("stream_pairing", "")).startswith("exempt") for r in rows):
+            raise SystemExit(f"FATAL: {path} holds unpaired contrasts and the grid's job specs, "
+                             "which give each run's GPU product (I7), are missing")
+        at = {}
+        for i, r in enumerate(rows):
+            if "fine_arm" in r and "coarse_arm" in r and r["fine_arm"] != r["coarse_arm"]:
+                at[(r["contrast"], r["family"], r["task"], r["kind"], r["metric"], r["fine"], r["coarse"],
+                    r["checkpoint"])] = i
+        for key, i in at.items():
+            r = rows[i]
+            if (key[-1] != V2_PRIMARY or r["metric"] != PAIRED_METRIC.get(r["family"])
+                    or r.get("censored_models") or r.get("ratio") is None or r.get("ci95") is None):
+                continue
+            fam = r["family"]
+            head = {"probe": lambda: "PairedProbe" + texname(r["task"], r["kind"]),
+                    "ft": lambda: "PairedFt" + PAIRED_FT_DATASET[r["task"]] + n_tag(r["kind"]),
+                    "mass": lambda: "PairedMassRes" + texname(r["kind"])}[fam]()
+            base = head + name(r["coarse"]) + "Over" + name(r["fine"])
+            what = f"{r['coarse']} over {r['fine']}, {r['task']} {r['kind']} {r['metric']}"
+            em.macro(base, fmt_paired(r["ratio"], *r["ci95"]), path, f"ratios[{i}].ratio, ratios[{i}].ci95",
+                     f"{what}, primary checkpoint: paired geometric mean [95% interval]")
+            for suffix, tag, fams, labelled in V2_BESIDE:
+                j = at.get(key[:-1] + (tag,))
+                s = None if j is None else rows[j]
+                if (fams and fam not in fams) or s is None or s.get("censored_models") \
+                        or s.get("ratio") is None or s.get("ci95") is None:
+                    continue
+                em.macro(base + suffix, fmt_paired(s["ratio"], *s["ci95"]), path,
+                         f"ratios[{j}].ratio, ratios[{j}].ci95", f"{what}, at {tag} [95% interval]")
+                if labelled:
+                    em.macro(base + suffix.removesuffix("Shift") + "Label", CKPT_LABEL_TEX[s["checkpoint_label"]],
+                             path, f"ratios[{j}].checkpoint_label",
+                             "A14's label of the shift, re-derived from its 95% interval")
+        out[path] = R
+    return out
+
+
+def emit_checkpoint_counts(em: Emitter, docs: dict) -> str:
+    """A14: the number of results that depend on the checkpoint against its 5 % null
+    expectation, at the weight average (Wavg) and the global best (Bestval), through the
+    class token: per family file and summed (CkptWavgDependent, ...N, ...Expected, ...Robust,
+    ...Inconclusive; ...Models... for each model's own metric), and the table of them.
+    The results share models and test jets, so the count is a reference, not a test."""
+    lines, total = [], {}
+    for path, R in docs.items():
+        fam = path.parent.name
+        for tag, word in (("wavg/best70", "Wavg"), ("bestval/best70", "Bestval")):
+            if tag not in R.get("checkpoint_dependence", {}):
+                continue
+            t = checkpoint_tally(R["ratios"], tag)
+            for what, mw in (("results", ""), ("models", "Models")):
+                c = t[what]
+                for k in ("dependent", "n", "robust", "inconclusive"):
+                    total.setdefault((word, mw, k), [0, []])[0] += c[k]
+                    total[(word, mw, k)][1].append(path)
+                key = "Ckpt" + word + mw + texname(fam)
+                em.macro(key + "Dependent", str(c["dependent"]), path, f"checkpoint_dependence['{tag}'].{what}.dependent",
+                         "results whose 95% interval excludes 0 (re-derived from the labelled rows)")
+                em.macro(key + "N", str(c["n"]), path, f"checkpoint_dependence['{tag}'].{what}.n",
+                         "results counted (two checkpoints that are one file left out)")
+                em.macro(key + "Expected", fmt(0.05 * c["n"], 1), path, f"0.05 x checkpoint_dependence['{tag}'].{what}.n",
+                         "the dependent count expected under the null")
+                lines.append((fam, "each model" if mw else "every result", word, c))
+    for (word, mw, k), (v, srcs) in total.items():
+        em.macro("Ckpt" + word + mw + texname(k), str(v), srcs[0],
+                 f"sum over the v2 paired_errors families of checkpoint_dependence.{k}",
+                 f"summed over {len(srcs)} family files")
+        if k == "n":
+            em.macro("Ckpt" + word + mw + "Expected", fmt(0.05 * v, 1), srcs[0],
+                     "0.05 x the summed n", "the dependent count expected under the null")
+    if not lines:
+        return ""
+    body = [f"{tex(f)} & {who} & {'weight average' if w == 'Wavg' else 'global best'} & "
+            f"{c['dependent']} & {fmt(0.05 * c['n'], 1)} & {c['n']} & {c['robust']} & {c['inconclusive']} \\\\"
+            for f, who, w, c in lines]
+    head = ["family & compared & checkpoint & dependent & expected (5\\%) & results & robust & inconclusive \\\\",
+            "\\midrule"]
+    caption = ("Robustness of the second set of runs to the checkpoint (A14): every paired result at "
+               "another checkpoint over the same result at the primary checkpoint, run by run on the "
+               "same test resamplings. A result depends on the checkpoint when its 95\\% interval "
+               "excludes 1 (the count includes those within a factor 1.1 as well), is robust when "
+               "the interval lies within a factor 1.1, and is inconclusive otherwise. The expected "
+               "count is 5\\% of the results; the results share models and test jets, so it is a "
+               "reference rather than a test. Two checkpoints that are one file are not counted.")
+    return _table(head + body, caption, "tab:checkpoint-robustness", "l l l r r r r r", [])
+
+
+def v2_ft_files(root: pathlib.Path, rule: str = V2_FT_RULE) -> list:
+    """The fine-tuning read-outs of `rule`: every tier's (<rule>_<leg>_metrics.json) once it
+    exists, else the freeze's (<rule>_t12_<leg>_metrics.json). Both present: every cell of
+    the freeze's must be the full one's, value for value (the same runs read out twice)."""
+    d, out = v2_dir(root, "finetune"), []
+    for leg in ("leg1", "leg2"):
+        full, t12 = d / f"{rule}_{leg}_metrics.json", d / f"{rule}_t12_{leg}_metrics.json"
+        if full.exists() and t12.exists():
+            F, T = (json.loads(p.read_text())["cells"] for p in (full, t12))
+            bad = sorted(i for i in T if T[i] != F.get(i))
+            if bad:
+                raise SystemExit(f"FATAL: {t12.name} and {full.name} disagree on {bad[:3]}")
+        p = full if full.exists() else t12 if t12.exists() else None
+        if p is None:
+            raise SystemExit(f"FATAL: {d.relative_to(root)} holds no {rule} read-out of {leg}")
+        out.append(p)
+    return out
+
+
+# The order of the second grid's fine-tuning rows after the vocabularies, and each
+# row's key; the vocabularies are keyed by their class count, as the first grid's.
+V2_FT_EXTRA = {"L162_MASS": "Mass", "R16_Q1_MASS": "Mass", "R16_Q1_MASS_LM": "MassMatched"}
+
+
+def ft_rows_v2(grid: list, labels: dict, cells: dict) -> list:
+    """(macro key, label, initialisations) of the second grid's fine-tuning rows: the
+    vocabularies on the tree, fine to coarse, the mass-output models, the flavour pair and
+    the random partitions, each with every run the grid gives it. The models that leave a
+    family out (Lofo) and the self-supervised model (FtRefs) are their sections' rows. An arm
+    with some runs in `cells` and not all is fatal; one with none is not yet read out."""
+    arms = {a["name"]: a for a in grid}
+    tree = sorted((a for a in grid if a["name"] in RUNGS), key=lambda a: -a["num_classes"])
+    rest = ([arms[n] for n in V2_FT_EXTRA if n in arms]
+            + sorted((a for a in grid if a["name"].startswith("FLAV_")), key=lambda a: a["name"])
+            + sorted((a for a in grid if a["name"].startswith("RAND2_")), key=lambda a: a["name"]))
+    rows = []
+    for a in tree + rest:
+        slug = a["name"].lower().replace("_", "")
+        inits = [f"{slug}-s{k}" for k in range(1, a["runs"] + 1)]
+        have = [i for i in inits if i in cells]
+        if not have:
+            continue
+        if have != inits:
+            raise SystemExit(f"FATAL: the fine-tuning read-out holds {have} of {a['name']}'s {inits}")
+        n = a["num_classes"]
+        if a["name"] in RUNGS:
+            key, label = texname(n), f"{n} classes"
+        elif a["name"] in V2_FT_EXTRA:
+            base = arms[a["name"].removesuffix("_LM").removesuffix("_MASS")]["num_classes"]
+            key = texname(base) + V2_FT_EXTRA[a["name"]]
+            label = f"{base} classes + mass output" + (", matched weight" if a["name"].endswith("_LM") else "")
+        else:
+            key, label = texname(labels.get(a["name"], a["name"])), tex(labels.get(a["name"], a["name"]))
+        rows.append((key, label, inits))
+    return rows
+
+
+def emit_v2_pretraining(em: Emitter, root: pathlib.Path, grid: list, labels: dict) -> str:
+    """A14: each run's selected epochs, by vocabulary -- the primary (first maximum within
+    70-79) and the global best -- from the copies of best_window_epoch.json and
+    best_epoch.json, per run (PretrainEpoch<arm>Run<k>, PretrainBestvalEpoch...) and per arm
+    the runs whose global best is another epoch (PretrainBestvalElsewhere<arm>); and the
+    table of them. An arm with some runs and not all is fatal."""
+    d = v2_dir(root, "pretraining")
+    body = []
+    for a in grid:
+        slug = a["name"].lower().replace("_", "")
+        runs = [(k, d / f"mtx-{slug}-s{k}") for k in range(1, a["runs"] + 1)]
+        have = [k for k, r in runs if (r / "best_window_epoch.json").exists() and (r / "best_epoch.json").exists()]
+        if not have:
+            continue
+        if len(have) != a["runs"]:
+            raise SystemExit(f"FATAL: {d.relative_to(root)} holds runs {have} of {a['name']}'s {a['runs']}")
+        key = texname(labels.get(a["name"], a["name"]).replace("+mass", " mass"))
+        e70, eg = [], []
+        for k, r in runs:
+            for name, lst, macro in (("best_window_epoch.json", e70, "PretrainEpoch"),
+                                     ("best_epoch.json", eg, "PretrainBestvalEpoch")):
+                e = int(json.loads((r / name).read_text())["epoch"])
+                lst.append(e)
+                em.macro(macro + key + "Run" + texname(k), str(e), r / name, "epoch",
+                         "epochs count from 0")
+        moved = sum(x != y for x, y in zip(e70, eg))
+        em.macro("PretrainBestvalElsewhere" + key, of(moved, len(e70)), runs[-1][1] / "best_epoch.json",
+                 "best_epoch.json != best_window_epoch.json, over every run's own pair",
+                 "runs whose global best is not the primary epoch")
+        body.append(f"{tex(labels.get(a['name'], a['name']))} & {', '.join(map(str, e70))} & "
+                    f"{', '.join(map(str, eg))} \\\\")
+    if not body:
+        return ""
+    head = ["pretraining model & primary epoch per run & global best per run \\\\", "\\midrule"]
+    caption = ("The checkpoint of each pretraining run of the second set (runs in order, epochs from 0): "
+               "the primary, the first maximum of the reweighted validation accuracy within epochs "
+               "70--79, and the global best, reported as a sensitivity check.")
+    return _table(head + body, caption, "tab:selected-epochs", "l l l", [])
+
+
+def v2_inputs(root: pathlib.Path, paths: dict, have: dict) -> dict:
+    """The second grid's inputs of every section V2_READ lists whose directory exists:
+    {"probe", "mass_resolution", "label_recovery_curve": {(tag, readout): (path, doc)},
+     "ft": [leg files], "paired": [family files], "pretraining": True, "grid": [arms],
+     "labels": {arm: label}, "products": {run: GPU product} or None}. Nothing for a root
+    without the grid (a first-grid fixture)."""
+    present = {k for k, (_, sub) in V2_PENDING.items() if sub and v2_present(root, sub)}
+    if not present & V2_READ:
+        return {}
+    for k in ("v2_grid", "contrasts_v2"):
+        if k not in have:
+            raise SystemExit(f"FATAL: v2 inputs exist and {paths[k]} does not; it names their arms")
+    out = {"grid": json.loads(paths["v2_grid"].read_text())["arms"],
+           "labels": json.loads(paths["contrasts_v2"].read_text()).get("labels", {}),
+           "products": v2_products(paths.get("v2_grid_specs") or [])}
+    frozen = [s for s in V2_FROZEN if v2_present(root, s)]
+    if frozen and "probe_ladder" not in frozen:
+        raise SystemExit(f"FATAL: v2 frozen readouts {frozen} without probe_ladder, the tiers that "
+                         "come first (A14) and the directory that holds their analysis")
+    if "Probes" in present:
+        for analysis in ("probe", "mass_resolution"):
+            out[analysis] = v2_analysis(root, analysis, paths["v2_grid"])
+        lack = [k for k in V2_FROZEN_NEEDED if k not in out["probe"]]
+        if lack:
+            raise SystemExit(f"FATAL: the v2 frozen probes lack {lack}: A14 prints the primary, its "
+                             "BatchNorm twin and the reference rows together")
+    if "Recovery" in present:
+        out["label_recovery_curve"] = v2_analysis(root, "label_recovery_curve", paths["v2_grid"])
+        if (V2_PRIMARY, V2_CLASS_TOKEN) not in out["label_recovery_curve"]:
+            raise SystemExit("FATAL: the v2 label-recovery curves lack the primary checkpoint's class token")
+    if "FtHeldout" in present:
+        out["ft"] = v2_ft_files(root)
+    if "Paired" in present:
+        out["paired"] = [p for p in (v2_dir(root, "paired_errors") / f / "ratios.json"
+                                     for f in V2_PAIRED_FAMILIES) if p.exists()]
+    if "Pretrain" in present:
+        out["pretraining"] = True
+    return out
 
 
 # ------------------------------------------------------------------ assembly
@@ -2914,27 +3672,44 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     check_analysis_is_current(A, root)
     sizes = vocabulary_sizes(paths["rung_map"])
 
+    # The second grid (v2_inputs): each section it holds replaces the first grid's below.
+    V2 = v2_inputs(root, paths, have)
+    restrict = v2_one_product(V2["products"]) if V2.get("products") else None
     em = Emitter(root)
     emit_pending(em, missing)
     emit_slots(em, missing)
-    emit_design(em, A, paths["analysis"])
-    emit_levels(em, A, paths["analysis"])
+    if "probe" in V2:
+        src2, A2 = V2["probe"][(V2_PRIMARY, V2_CLASS_TOKEN)]
+        emit_design(em, A2, src2)
+        emit_levels(em, A2, src2)
+    else:
+        emit_design(em, A, paths["analysis"])
+        emit_levels(em, A, paths["analysis"])
     emit_vocabulary(em, sizes, paths["rung_map"])
     if "probe_code" in have:
         emit_probe_settings(em, paths["probe_code"])
-    # The test-sample background count, which bounds every rejection: the same
-    # jets in every ladder file, or the files were not scored on the same sample.
-    ladders = [json.loads(pathlib.Path(f).read_text()) for f in paths["ladder"]]
-    nbkg = {}
-    for task in sorted(ladders[0]["tasks"]):
-        counts = {d["tasks"][task].get("n_background_test") for d in ladders if task in d["tasks"]}
-        if len(counts) == 1 and None not in counts:
-            nbkg[task] = counts.pop()
-            em.macro("ProbeNBkgTest" + texname(task), fmt_int(nbkg[task]), paths["ladder"][0],
-                     f"tasks.{task}.n_background_test", "test-sample background jets")
+    if "probe" in V2:
+        nbkg = emit_v2_probes(em, V2["probe"])
+        out = {f"tables/probes_{p}.tex": table_probe_ladder_v2(V2["probe"], p, nbkg)
+               for p in ("linear", "mlp")}
+    else:
+        # The test-sample background count, which bounds every rejection: the same
+        # jets in every ladder file, or the files were not scored on the same sample.
+        ladders = [json.loads(pathlib.Path(f).read_text()) for f in paths["ladder"]]
+        nbkg = {}
+        for task in sorted(ladders[0]["tasks"]):
+            counts = {d["tasks"][task].get("n_background_test") for d in ladders if task in d["tasks"]}
+            if len(counts) == 1 and None not in counts:
+                nbkg[task] = counts.pop()
+                em.macro("ProbeNBkgTest" + texname(task), fmt_int(nbkg[task]), paths["ladder"][0],
+                         f"tasks.{task}.n_background_test", "test-sample background jets")
 
-    out = {"tables/probes_linear.tex": table_probe_ladder(A, "linear", nbkg),
-           "tables/probes_mlp.tex": table_probe_ladder(A, "mlp", nbkg)}
+        out = {"tables/probes_linear.tex": table_probe_ladder(A, "linear", nbkg),
+               "tables/probes_mlp.tex": table_probe_ladder(A, "mlp", nbkg)}
+    if V2.get("pretraining"):
+        t = emit_v2_pretraining(em, root, V2["grid"], V2["labels"])
+        if t:
+            out["tables/v2_selected_epochs.tex"] = t
 
     if "survival" in have:
         surv = json.loads(pathlib.Path(paths["survival"]).read_text())
@@ -2966,7 +3741,26 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
              ("mass_resolution", emit_mass_resolution, lambda d: table_mass(d, root), "mass"),
              ("real_data", lambda em, d, src: emit_real_data(em, d, src, paths),
               lambda d: table_realdata(d, root), "realdata"))
+    v2_later = {}
+    if "label_recovery_curve" in V2:
+        v2_later["recovery"] = (V2["label_recovery_curve"][(V2_PRIMARY, V2_CLASS_TOKEN)],
+                                lambda em, d, src: emit_recovery(em, d, src, sizes),
+                                lambda d: table_recovery(d, sizes))
+    if "mass_resolution" in V2:
+        M2 = V2["mass_resolution"][(V2_PRIMARY, V2_CLASS_TOKEN)][1]
+        order = ([c for c, _ in sorted({(r["cell"], r["level"]) for r in M2["table"] if r["level"]},
+                                       key=lambda x: -x[1])]
+                 + [c for c in ("162+mass", "17+mass", "17+mass, matched lambda")
+                    if c in {r["cell"] for r in M2["table"]}])
+        v2_later["mass_resolution"] = (V2["mass_resolution"][(V2_PRIMARY, V2_CLASS_TOKEN)],
+                                       lambda em, d, src: emit_mass_resolution(em, d, src, order),
+                                       lambda d: table_mass(d, root, order))
     for key, emit, table, name in later:
+        if key in v2_later:
+            (src, d), emit2, table2 = v2_later[key]
+            emit2(em, d, src)
+            out[f"tables/{name}.tex"] = table2(d)
+            continue
         if key not in have:
             missing.append(f"{key} -- {paths[key]}")
             continue
@@ -2988,23 +3782,45 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     if all(k in have for k in ("design_spec_v2", "lofo_spec_v2", "pretrain_v2", "v2_dryrun",
                                "v2_dryrun_lofo", "v2_grid_specs")):
         emit_v2_recipe(em, paths, missing)
-    if "mass2x2" in have:
+    if "probe" in V2:
+        emit_mass_output_v2(em, A2, src2, restrict)
+    elif "mass2x2" in have:
         emit_mass_output(em, A, paths["analysis"], paths["mass2x2"], sizes)
     else:
         missing.append("mass-output probes -- experiments/FIGS/data/probe_ladder_mass2x2/s*.json")
     ft = None
-    if "ft_legs" in have:
+    if "ft" in V2:
+        ft = ft_load(V2["ft"])
+        cells = next(iter(ft.values()))["cells"]
+        rows = ft_rows_v2(V2["grid"], V2["labels"], cells)
+        for F in ft.values():
+            if {i for *_, inits in rows for i in inits} - set(F["cells"]):
+                raise SystemExit(f"FATAL: {F['path'].name} lacks rows the other fine-tuning file has")
+        lv = {a["name"]: texname(a["num_classes"]) for a in V2["grid"] if a["name"] in RUNGS}
+        emit_finetune(em, ft, sizes, rows, {r: lv[r] for r in ("L188", "L162", "R16_Q1")}, restrict)
+        out["tables/finetune.tex"] = table_finetune(ft, sizes, "macro_auc_ovr", rows, v2=True)
+        out["tables/finetune_accuracy.tex"] = table_finetune(ft, sizes, "accuracy", rows, v2=True)
+        skipped.append("finetune_recipe: the settings of the first grid's fine-tuning runs; the "
+                       "second grid's recipe is not tabulated yet")
+    elif "ft_legs" in have:
         ft = ft_load(paths["ft_legs"])
         emit_finetune(em, ft, sizes)
         out["tables/finetune.tex"] = table_finetune(ft, sizes, "macro_auc_ovr")
         out["tables/finetune_accuracy.tex"] = table_finetune(ft, sizes, "accuracy")
     else:
         missing.append(f"fine-tuning metrics -- {', '.join(map(str, paths['ft_legs']))}")
-    if "paired" in have:
+    if "paired" in V2:
+        docs = emit_paired_v2(em, V2["paired"], ft, V2["products"])
+        t = emit_checkpoint_counts(em, docs)
+        if t:
+            out["tables/checkpoint_robustness.tex"] = t
+    elif "paired" in have:
         emit_paired(em, paths["paired"], ft)
     else:
         missing.append(f"paired ratios -- {', '.join(map(str, paths['paired']))}")
-    if "vcb" in have:
+    if "probe" in V2:
+        emit_vcb_v2(em, A2, src2)
+    elif "vcb" in have:
         emit_vcb(em, json.loads(pathlib.Path(paths["vcb"]).read_text()), paths["vcb"], sizes)
     else:
         missing.append(f"vcb window probe -- {paths['vcb']}")

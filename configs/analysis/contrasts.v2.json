@@ -1,6 +1,6 @@
 {
  "version": "v2",
- "doc": "The comparisons experiments/STATS/paired_errors.py forms for the v2 runs (amendments A7-A14). Models are the runs of configs/arms/v2_grid.json, named as the runs are (<arm lower-cased, underscores dropped>-s<run>; a self-supervised arm's runs <arm>-v2-s<run>: mpm-v2-s<run>, mpmlofo4p-v2-s<run>), each at a checkpoint (A14): best70 (the primary: the first maximum of the reweighted top-1 accuracy within epochs 70-79; self-supervised, the first minimum of the validation loss), wavg (the weight average of epochs 70-79, the robustness check) or bestval (the global first maximum, the sensitivity check). Every contrast is formed at each checkpoint, and run k of one arm is paired with run k of another only where their training streams agree up to that checkpoint (A7). Every ratio is coarse over fine: above 1 = the coarser, merged, unseen or control side is worse. Every contrast is also formed between the checkpoints (wavg/best70 and bestval/best70) and labelled by the A14 rule. small_sample_rule: the A14 small-sample errors (two runs: the error is never below the observed spread, at one degree of freedom; one run pair: not computed). A new arm needs its grid entry and one line here; labels are optional (the arm name stands in). An arm decided but not yet in the grid is listed under pending_arms, and its contrasts form no row until it is; an arm named here that is neither is fatal.",
+ "doc": "The comparisons experiments/STATS/paired_errors.py forms for the v2 runs (amendments A7-A14). Models are the runs of configs/arms/v2_grid.json, named as the runs are (<arm lower-cased, underscores dropped>-s<run>; a self-supervised arm's runs <arm>-v2-s<run>: mpm-v2-s<run>, mpmlofo4p-v2-s<run>), each at a checkpoint (A14): best70 (the primary: the first maximum of the reweighted top-1 accuracy within epochs 70-79; self-supervised, the first minimum of the validation loss), wavg (the weight average of epochs 70-79, the robustness check) or bestval (the global first maximum, the sensitivity check); the frozen readouts also at the BatchNorm twins best70_bn and bestval_bn (A14, the BatchNorm rule fired 2026-10-03: the same weights with BatchNorm statistics recomputed on the epoch-80 draw; `twins` names each one's parent, whose training the stream check reads). A frozen readout is the class token (`readouts`' first, a plain name) or the pooled embedding ('<run>@<checkpoint>:pooled', A14), so the two readouts of one checkpoint are two models; every contrast is formed within one readout. `references` are models outside the grid, kept apart and in no contrast: the untrained trunk of run index k (A14's frozen reference row), init-s<k>@init. Every contrast is formed at each checkpoint, and run k of one arm is paired with run k of another only where their training streams agree up to that checkpoint (A7). Every ratio is coarse over fine: above 1 = the coarser, merged, unseen or control side is worse. Every contrast is also formed between the checkpoints (wavg/best70 and bestval/best70) and labelled by the A14 rule. small_sample_rule: the A14 small-sample errors (two runs: the error is never below the observed spread, at one degree of freedom; one run pair: not computed). A new arm needs its grid entry and one line here; labels are optional (the arm name stands in). An arm decided but not yet in the grid is listed under pending_arms, and its contrasts form no row until it is; an arm named here that is neither is fatal.",
  "models": {
   "from_grid": "configs/arms/v2_grid.json"
  },
@@ -10,8 +10,26 @@
  "checkpoints": [
   "best70",
   "wavg",
-  "bestval"
+  "bestval",
+  "best70_bn",
+  "bestval_bn"
  ],
+ "twins": {
+  "best70_bn": "best70",
+  "bestval_bn": "bestval"
+ },
+ "readouts": [
+  "features",
+  "pooled"
+ ],
+ "references": {
+  "INIT": {
+   "model": "init-s{run}",
+   "runs": 5,
+   "tag": "init",
+   "note": "the untrained trunk of run index k (init_trunk.pt, identical across vocabularies by A7), extracted as init-s<k> (scripts/build_extract_jobs.py v2_init_refs); A14's frozen reference row"
+  }
+ },
  "pending_arms": {},
  "stream_check": true,
  "small_sample_rule": true,
@@ -41,7 +59,8 @@
   "R42_Q1_LOFO4P": "43, family unseen",
   "R16_Q1_LOFO4P": "17, family unseen",
   "FLAV_F1R": "F1 with a random four-prong cut (F1r)",
-  "MPM_LOFO4P": "self-supervised, family unseen"
+  "MPM_LOFO4P": "self-supervised, family unseen",
+  "INIT": "untrained trunk"
  },
  "contrasts": [
   {

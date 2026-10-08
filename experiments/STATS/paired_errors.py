@@ -27,13 +27,21 @@ MODELS. A replicate key is family|task|probe|model|metric. A v1 model is a run
 name of configs/analysis/contrasts.v1.json; a v2 model is a run of
 configs/arms/v2_grid.json at a checkpoint (A14), '<run>@best70' (the primary),
 '<run>@wavg' (robustness) or '<run>@bestval' (sensitivity), so the checkpoints
-of one run never collide. A v2 probe or mass-probe arm is
-named through the checkpoint its features came from (the extract_v2.py
-manifests, --extract-root), a v2 fine-tuning cell through the rule its
-init_checkpoint.json records. A name that is neither a model nor a listed
-baseline is fatal. The contrasts -- which arms are compared, how they are paired
--- are data in configs/analysis/contrasts.v{1,2}.json; this file only forms them.
-An arm a contrast names must be a model arm, or listed under pending_arms there.
+of one run never collide; the BatchNorm twins of the frozen readouts (A14,
+fired 2026-10-03) are '<run>@best70_bn' and '<run>@bestval_bn'. A v2 probe or
+mass-probe arm is named through the checkpoint its features came from (the
+extract_v2.py manifests, --extract-root), a v2 fine-tuning cell through the rule
+its init_checkpoint.json records. One checkpoint has two frozen readouts (A14):
+the class token, the plain name, and the pooled embedding, '<run>@<checkpoint>:
+pooled' (the readout each probe_results.json and mass_resolution.json records),
+so the two never share a key although they share a checkpoint digest. The
+untrained trunk of run index k (A14's frozen reference, extracted as init-s<k>)
+is the reference model 'init-s<k>@init' of the contrasts file's `references`; it
+enters no contrast and is kept apart. A name that is neither a model, a
+reference nor a listed baseline is fatal. The contrasts -- which arms are
+compared, how they are paired -- are data in configs/analysis/contrasts.v{1,2}
+.json; this file only forms them. An arm a contrast names must be a model arm,
+or listed under pending_arms there.
 
 A replicate vector is comparable with another only if both were computed on the
 same jets in the same order with the same B and seed; the key `jets` (sha256 of
@@ -114,6 +122,22 @@ def load_spec(path) -> dict:
     if "from_grid" in m:            # the arms' records (the mass-output lambda, A11)
         spec["grid_arms"] = {a["name"]: a for a in
                              json.loads((REPO / m["from_grid"]).read_text())["arms"]}
+    # reference models outside the grid (A14: the untrained trunk of run indices 1-5),
+    # {model: (arm, run, None)}; each has the one tag its entry names and no run directory
+    refs = spec.get("references", {})
+    spec["reference_models"] = {r["model"].format(run=k): (arm, k, None)
+                                for arm, r in refs.items() for k in range(1, r["runs"] + 1)}
+    if set(spec["reference_models"]) & set(spec["models"]):
+        raise SystemExit(f"FATAL: {sorted(set(spec['reference_models']) & set(spec['models']))} "
+                         f"are both models and references in {path}")
+    if spec.get("readouts", [CLASS_TOKEN])[0] != CLASS_TOKEN:
+        raise SystemExit(f"FATAL: {path}: the first readout, the one names carry without a "
+                         f"suffix, must be {CLASS_TOKEN!r}")
+    ck = spec.get("checkpoints", [])
+    if any(t not in ck or p not in ck for t, p in spec.get("twins", {}).items()) or \
+            any(r["tag"] in ck for r in refs.values()):
+        raise SystemExit(f"FATAL: {path}: a twin or its parent is not a checkpoint, or a "
+                         "reference's tag is a model checkpoint")
     full = path.resolve()
     spec["path"] = str(full.relative_to(REPO)) if full.is_relative_to(REPO) else str(full)
     spec["sha256"] = _sha(path)
@@ -138,17 +162,45 @@ def load_spec(path) -> dict:
 
 
 def parse_model(name: str, spec: dict) -> tuple[str, int, str | None]:
-    """(arm, run, checkpoint) of a replicate key's model: 'l162-s1b' (v1) or
-    'l188-s1@bestval' (v2). An unknown model or checkpoint is fatal."""
+    """(arm, run, tag) of a replicate key's model: 'l162-s1b' (v1), 'l188-s1@bestval'
+    (v2), 'l188-s1@best70:pooled' (v2, the pooled-embedding readout) or 'init-s1@init'
+    (a reference). The tag is the checkpoint, with ':<readout>' for every readout but
+    the contrasts file's first. An unknown model, checkpoint or readout, or a reference
+    at a tag other than its own, is fatal."""
     model, _, tag = name.partition("@")
-    if model not in spec["models"]:
+    ck, colon, readout = tag.partition(":")
+    refs = spec.get("reference_models", {})
+    if model in refs:
+        arm, run, _ = refs[model]
+        ok = [spec["references"][arm]["tag"]]
+    elif model in spec["models"]:
+        arm, run, _ = spec["models"][model]
+        ok = spec.get("checkpoints", [""])
+    else:
         raise SystemExit(f"FATAL: model {model!r} is not a model of {spec['path']}")
-    ok = spec.get("checkpoints", [""])
-    if (tag or "") not in ok:
+    if ck not in ok:
         raise SystemExit(f"FATAL: model {name!r}: its checkpoint must be one of {ok} "
                          f"under {spec['path']}")
-    arm, run, _ = spec["models"][model]
+    others = spec.get("readouts", [])[1:]
+    if colon and readout not in others:
+        raise SystemExit(f"FATAL: model {name!r}: a readout suffix must be one of {others} "
+                         f"under {spec['path']} (the first readout takes none)")
     return arm, run, tag or None
+
+
+def base_checkpoint(tag: str, spec: dict) -> str:
+    """The checkpoint whose training a tag's model carries, which the stream check (A7)
+    reads: the readout dropped (one checkpoint, two readouts), and a BatchNorm twin read
+    as its parent -- the same weights, whose statistics are recomputed on the epoch-80
+    draw, seeded alike for every vocabulary of a run index (A7, A14)."""
+    ck = tag.partition(":")[0]
+    return spec.get("twins", {}).get(ck, ck)
+
+
+def readouts_of(models) -> list[str]:
+    """The readout suffixes (':pooled'; '' for the first readout) the models carry."""
+    return sorted({":" + m.partition("@")[2].partition(":")[2]
+                   if ":" in m.partition("@")[2] else "" for m in models})
 
 
 def extraction_index(root: pathlib.Path, spec: dict) -> dict[str, list[str]]:
@@ -159,19 +211,33 @@ def extraction_index(root: pathlib.Path, spec: dict) -> dict[str, list[str]]:
     second tag's directory to the first and lists both tags, so that checkpoint
     is a model under both names: '<run>@bestval' exists for every run, and its
     ratio to '<run>@best70' is then exactly 1. A v2 probe arm is named through
-    the checkpoint its features came from, never through its label."""
+    the checkpoint its features came from, never through its label.
+
+    A reference's checkpoint (the untrained trunk, tag init) is extracted from a
+    run's init_trunk.pt into its own directory (<root>/init-s<k>/init) and is named
+    by that directory, init-s<k>@init, which must be a reference model of the spec
+    with the run's index: it is not that run's vocabulary at another checkpoint."""
     by_dir = {d: m for m, (_, _, d) in spec["models"].items()}
+    ref_tags = {r["tag"] for r in spec.get("references", {}).values()}
     out, owner = {}, {}
     for f in sorted(pathlib.Path(root).glob("*/*/manifest.json")):
         man = json.loads(f.read_text())
         run = pathlib.Path(man["run_dir"]).name
         if run not in by_dir:
             raise SystemExit(f"FATAL: {f}: {run} is not a run of {spec['path']}")
+        model, tags = by_dir[run], man.get("tags", [man["tag"]])
+        if set(tags) & ref_tags:
+            ref = f.parent.parent.name
+            if (ref not in spec["reference_models"] or tags != [man["tag"]]
+                    or spec["reference_models"][ref][1] != spec["models"][model][1]):
+                raise SystemExit(f"FATAL: {f}: the {man['tag']} checkpoint of {run} sits in {ref}, "
+                                 f"which is not that run index's reference of {spec['path']}")
+            model = ref
         sha = man["checkpoint_sha256"]
         names = out.setdefault(sha, [])
-        for tag in man.get("tags", [man["tag"]]):
-            name = f"{by_dir[run]}@{tag}"
-            if names and names[0].partition("@")[0] != by_dir[run]:
+        for tag in tags:
+            name = f"{model}@{tag}"
+            if names and names[0].partition("@")[0] != model:
                 raise SystemExit(f"FATAL: checkpoint {sha[:16]} is both {names[0]} and {name}")
             if owner.setdefault(name, sha) != sha:
                 raise SystemExit(f"FATAL: {name} is both checkpoint {owner[name][:16]} and {sha[:16]}")
@@ -180,6 +246,21 @@ def extraction_index(root: pathlib.Path, spec: dict) -> dict[str, list[str]]:
     if not out:
         raise SystemExit(f"FATAL: no extraction manifest under {root}")
     return out
+
+
+CLASS_TOKEN = "features"     # the readout every v1 result and a file that records none reads
+
+
+def _with_readout(names: list[str], readout: str | None, where) -> list[str]:
+    """The model names of an arm read through `readout` (A14): unchanged for the class
+    token; '<name>:<readout>' otherwise, so the two readouts of one checkpoint, which
+    share its digest, are two models. v1 models have the class token only."""
+    if readout in (None, CLASS_TOKEN):
+        return names
+    if any("@" not in n for n in names):
+        raise SystemExit(f"FATAL: {where}: readout {readout!r} of a v1 model; v1 has the class "
+                         "token only")
+    return [f"{n}:{readout}" for n in names]
 
 
 def _names(index: dict | None, arm: str, sha: str | None, where) -> list[str]:
@@ -235,6 +316,8 @@ def probe_replicates(dirs: list[pathlib.Path], b: int = B, seed: int = SEED,
     `index` (v2, extraction_index) names each arm by the checkpoint it was fitted
     on, so a run's bestval and wavg features are two models; a checkpoint with
     two names (best70 and bestval one epoch) is one replicate vector under both.
+    The file's `readout` (A14) suffixes the names (_with_readout): the class token
+    and the pooled embedding of one checkpoint are two models.
     A model scored in two jobs (the 162-class run 1 is in the ladder and in the
     2x2), or a checkpoint probed under both its names, is kept once, from the
     first directory given, and the other copy's AUC is recorded as a
@@ -254,7 +337,8 @@ def probe_replicates(dirs: list[pathlib.Path], b: int = B, seed: int = SEED,
             y, rows = z[f"{task}|y"].astype(bool), z[f"{task}|rows"]
             jk = jets_key(rows, y)
             for arm, A in T["arms"].items():
-                models = _names(index, arm, J.get("arm_checkpoints", {}).get(arm), d)
+                models = _with_readout(_names(index, arm, J.get("arm_checkpoints", {}).get(arm), d),
+                                       J.get("readout"), d)
                 for kind in ("linear", "mlp"):
                     s = z[f"{task}|{kind}|{arm}"]
                     bases = [f"probe|{task}|{kind}|{m}" for m in models]
@@ -288,7 +372,7 @@ def probe_replicates(dirs: list[pathlib.Path], b: int = B, seed: int = SEED,
 def mass_replicates(dirs: list[pathlib.Path], b: int = B, seed: int = SEED,
                     index: dict | None = None):
     """Replicates of sigma_eff of the within-class mass residual, per probe x model
-    (`index` as for probe_replicates). A v2 checkpoint scored twice (best70 and
+    (`index` and the readout as for probe_replicates). A v2 checkpoint scored twice (best70 and
     bestval one epoch, each directory given as an arm) is kept once and the
     other copy recorded; a v1 model given twice is fatal."""
     vec, meta, inputs, dup = {}, {}, [], []
@@ -300,7 +384,8 @@ def mass_replicates(dirs: list[pathlib.Path], b: int = B, seed: int = SEED,
         rows, lab = z["rows"], z["label188"]
         jk = jets_key(rows, lab)
         for arm, A in J["arms"].items():
-            models = _names(index, arm, A.get("provenance", {}).get("checkpoint_sha256"), d)
+            models = _with_readout(_names(index, arm, A.get("provenance", {}).get("checkpoint_sha256"), d),
+                                   J.get("readout"), d)
             for kind in ("ridge", "mlp"):
                 res = z[f"{kind}|{arm}"].astype(np.float64)
                 sc = P.SigmaEffScorer(res)
@@ -500,13 +585,15 @@ def _group(meta: dict):
     return out
 
 
-def between_checkpoints(spec: dict) -> list[str]:
+def between_checkpoints(spec: dict, readouts=("",)) -> list[str]:
     """The tags of the comparisons between checkpoints, '<other>/<primary>': A14's
     robustness ('wavg/best70') and sensitivity ('bestval/best70') checks, when the
-    contrasts file has a checkpoint contrast; else none."""
+    contrasts file has a checkpoint contrast; else none. Each within every readout
+    suffix of `readouts` ('' the class token; ':pooled' gives 'wavg:pooled/
+    best70:pooled'): a checkpoint is compared with the primary through one readout."""
     c = next((c for c in spec["contrasts"] if c["kind"] == "checkpoint"), None)
-    return [] if c is None else [f"{c[k]}/{c['primary']}" for k in ("robustness", "sensitivity")
-                                 if k in c]
+    return [] if c is None else [f"{c[k]}{s}/{c['primary']}{s}" for s in readouts
+                                 for k in ("robustness", "sensitivity") if k in c]
 
 
 class _Cell:
@@ -535,7 +622,7 @@ class _Cell:
                 raise SystemExit(f"FATAL: {'/'.join(group)}: {runs[run]} and {model} are both "
                                  f"run {run} of {arm}")
             runs[run] = model
-        self.between = between_checkpoints(spec)
+        self.between = between_checkpoints(spec, readouts_of(by_model))
         for both in self.between:
             q, p = both.split("/")
             for (arm, tag), runs in list(self.arms.items()):
@@ -557,8 +644,12 @@ class _Cell:
         self.tags = sorted({t for _, t in self.arms}, key=lambda t: (t is not None, t or ""))
 
     def ck(self, tag):
-        """The checkpoint(s) a stream check at `tag` covers."""
-        return tuple(tag.split("/")) if tag in self.between else tag
+        """The checkpoint(s) a stream check at `tag` covers (base_checkpoint)."""
+        if tag is None:
+            return None
+        if tag in self.between:
+            return tuple(base_checkpoint(t, self.spec) for t in tag.split("/"))
+        return base_checkpoint(tag, self.spec)
 
     def runs(self, arm, tag) -> dict:
         return self.arms.get((arm, tag), {})
@@ -1445,7 +1536,7 @@ def ratios(vec: dict, meta: dict, run_dirs_root: pathlib.Path | None = None,
     for c in spec["contrasts"]:
         if c["kind"] in ACROSS:
             rows += ACROSS[c["kind"]](cells, c)
-    between = between_checkpoints(spec)
+    between = between_checkpoints(spec, readouts_of(m for g in groups.values() for m in g))
     for r in rows:                  # A14: every result at another checkpoint over the primary
         if r["checkpoint"] in between and "ln_combined_se" in r:
             r["checkpoint_label"] = P.checkpoint_label(*P.bounds(r["ln_ratio"], r["ln_combined_se"],

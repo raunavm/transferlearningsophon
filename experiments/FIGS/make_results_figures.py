@@ -14,12 +14,21 @@ standard deviation over the five pretraining seeds (ddof=1): a band around a
 mean line, or an error bar on a mean marker with the per-seed points beside it.
 No figure carries a test result or an interval over seeds; those are in the tables.
 
+THE SECOND GRID. The fine-tuning and mass figures read it where the tables do
+(make_tables.v2_ft_files, make_tables.v2_analysis_dir): once
+experiments/FIGS/data/v2/finetune/ or .../probe_ladder/ exists, with the levels and
+run counts of configs/arms/v2_grid.json, at the primary checkpoint. A level with no
+colour in style.LEVEL_COLOURS stops the figure: the palette is a choice, not a
+default. The anomaly and real-data figures read the first grid until their v2
+readouts are in.
+
 Usage:
-    python3 experiments/FIGS/make_results_figures.py [--outdir figures]
+    python3 experiments/FIGS/make_results_figures.py [--outdir figures] [--root REPO]
 """
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import pathlib
 import sys
@@ -106,24 +115,83 @@ def ft_cells(paths) -> dict:
     return out
 
 
-def ft_by_seed(cells: dict) -> dict:
+def ft_by_seed(cells: dict, levels=LEVELS, arms=ARMS) -> dict:
     """{label set: {training jets: {pretraining seed: 1 - macro AUC}}}."""
-    out = {lv: {} for lv in LEVELS}
+    out = {lv: {} for lv in levels}
     for (init, n), v in cells.items():
         arm, _, seed = ARM_ALIAS.get(init, init).partition("-s")
-        if arm in ARMS and seed.isdigit():
-            out[ARMS[arm]].setdefault(n_of(n), {})[int(seed)] = v
+        if arm in arms and seed.isdigit():
+            out[arms[arm]].setdefault(n_of(n), {})[int(seed)] = v
     return out
 
 
-def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
+def _make_tables():
+    spec = importlib.util.spec_from_file_location("make_tables", HERE / "make_tables.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def v2_levels(root: pathlib.Path) -> tuple[list, dict]:
+    """The second grid's vocabularies on the tree, fine -> coarse, and {init stem: classes},
+    from configs/arms/v2_grid.json."""
+    grid = json.loads((root / "configs/arms/v2_grid.json").read_text())["arms"]
+    arms = {a["name"].lower().replace("_", ""): a["num_classes"] for a in grid
+            if a["name"] in _make_tables().RUNGS}
+    return sorted(set(arms.values()), reverse=True), arms
+
+
+def coloured(levels) -> list:
+    """The levels drawn, each of which must have its colour in style.LEVEL_COLOURS."""
+    missing = sorted(set(levels) - set(style.LEVEL_COLOURS), reverse=True)
+    if missing:
+        raise SystemExit(f"FATAL: style.LEVEL_COLOURS has no colour for {missing} classes; "
+                         "choose them (tests/test_ladder_figures.py checks the greyscale gaps)")
+    return list(levels)
+
+
+def v2_finetune(root: pathlib.Path) -> tuple[dict, list, dict] | None:
+    """(legs, levels, arms) of the second grid's fine-tuning, the files the tables read,
+    or None before they exist. Only the levels with runs in the files are drawn: the
+    64- and 30-class rows join with the read-out of every tier."""
+    mt = _make_tables()
+    if not mt.v2_present(root, "finetune"):
+        return None
+    leg1, leg2 = mt.v2_ft_files(root)
+    levels, arms = v2_levels(root)
+    inits = set(json.loads(leg1.read_text())["cells"])
+    arms = {a: lv for a, lv in arms.items() if f"{a}-s1" in inits}
+    return ({"JetClass-II, 162 classes": [leg1], "JetClass, 10 classes": [leg2]},
+            coloured([lv for lv in levels if lv in arms.values()]), arms)
+
+
+def v2_mass(root: pathlib.Path) -> tuple[dict, dict, list] | None:
+    """(mass-regression table, the 2x2 corners' per-run ln(1 - AUC), the groups drawn) of
+    the second grid at the primary checkpoint, class token, or None before they exist."""
+    mt = _make_tables()
+    if not mt.v2_present(root, "probe_ladder"):
+        return None
+    d = mt.v2_analysis_dir(root) / mt.V2_PRIMARY / mt.V2_CLASS_TOKEN
+    M = json.loads((d / "mass_resolution_table.json").read_text())
+    A = json.loads((d / "seed_level_results.json").read_text())
+    pts = {g: [r["log1m_auc"] for r in sorted(A["table"], key=lambda r: r["seed"])
+               if (r["task"], r["probe"], r["cell"]) == ("bvc_resonant", "linear", g)]
+           for g in ("162", "162+mass", "17", "17+mass")}
+    cells = {r["cell"] for r in M["table"]}
+    tree = sorted({(r["cell"], r["level"]) for r in M["table"] if r["level"]}, key=lambda x: -x[1])
+    coloured([lv for _, lv in tree])
+    return M, pts, [c for c, _ in tree] + [g for g in ("162+mass", "17+mass") if g in cells]
+
+
+def fig_finetune(legs: dict, outdir: pathlib.Path, levels=LEVELS, arms=ARMS,
+                 references=FT_REFERENCES) -> None:
     fig, axes = plt.subplots(2, 2, figsize=(style.FIG_W_TWO_COLUMN, 5.6), sharex=True,
                              gridspec_kw={"height_ratios": (2, 1)})
     for col, (title, paths) in enumerate(legs.items()):
         cells = ft_cells(paths)
-        by = ft_by_seed(cells)
+        by = ft_by_seed(cells, levels, arms)
         top, bottom = axes[0, col], axes[1, col]
-        for lv in LEVELS:
+        for lv in levels:
             x = sorted(by[lv])
             y = [list(by[lv][n].values()) for n in x]
             m = np.array([np.mean(v) for v in y])
@@ -131,11 +199,11 @@ def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
             kw = {"color": style.LEVEL_COLOURS[lv], "marker": style.LEVEL_MARKERS[lv]}
             top.plot(x, m, label=f"{lv} classes", **kw)
             top.fill_between(x, m - sd, m + sd, color=kw["color"], alpha=0.2, lw=0)
-            if lv == LEVELS[0]:
+            if lv == levels[0]:
                 continue
             # Ratio to the 188-class model of the same pretraining seed, then
             # mean and spread of the ratio over seeds.
-            r = [[by[lv][n][s] / by[LEVELS[0]][n][s] for s in by[lv][n]] for n in x]
+            r = [[by[lv][n][s] / by[levels[0]][n][s] for s in by[lv][n]] for n in x]
             m = np.array([np.mean(v) for v in r])
             sd = np.array([np.std(v, ddof=1) for v in r])
             bottom.plot(x, m, **kw)
@@ -144,8 +212,8 @@ def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
             per = {}
             for (i, n), v in cells.items():
                 arm, _, seed = i.partition("-s")
-                if arm == stem and seed.isdigit() and int(seed) in by[LEVELS[0]].get(n_of(n), {}):
-                    per.setdefault(n_of(n), []).append(v / by[LEVELS[0]][n_of(n)][int(seed)])
+                if arm == stem and seed.isdigit() and int(seed) in by[levels[0]].get(n_of(n), {}):
+                    per.setdefault(n_of(n), []).append(v / by[levels[0]][n_of(n)][int(seed)])
             xs = sorted(per)
             if xs:
                 bottom.plot(xs, [np.mean(per[n]) for n in xs], color=style.LEVEL_COLOURS[lv],
@@ -154,7 +222,7 @@ def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
         # The random partitions, one run each: every partition on its own, never a mean
         # and spread of three values; in the ratio panel each over the 188-class model of
         # the pretraining run whose random streams it shares.
-        colour, marker, inits = FT_REFERENCES["random-label control"]
+        colour, marker, inits = references.get("random-label control", (None, None, ()))
         for j, init in enumerate(inits):
             xs = sorted(n_of(n) for (i, n) in cells if i == init)
             if not xs:
@@ -162,7 +230,7 @@ def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
             ys = [cells[(init, f"N{n}")] for n in xs]
             top.plot(xs, ys, color=colour, marker=marker, markersize=3, linestyle="--", linewidth=0.8,
                      label=f"random-label control ({len(inits)} partitions, one run each)" if j == 0 else None)
-            bottom.plot(xs, [y / by[LEVELS[0]][n][RAND_RUN[init]] for n, y in zip(xs, ys)], color=colour,
+            bottom.plot(xs, [y / by[levels[0]][n][RAND_RUN[init]] for n, y in zip(xs, ys)], color=colour,
                         marker=marker, markersize=3, linestyle="--", linewidth=0.8)
         bottom.axhline(1, color="#999999", linewidth=0.8)
         top.set_title(title)
@@ -172,7 +240,7 @@ def fig_finetune(legs: dict, outdir: pathlib.Path) -> None:
         top.set_xlim(x[0] / margin, x[-1] * margin)
         bottom.set_xlabel("fine-tuning jets")
     axes[0, 0].set_ylabel(r"$1-$macro AUC (one-vs-rest)")
-    axes[1, 0].set_ylabel(f"ratio to {LEVELS[0]} classes\n(same pretraining run)")
+    axes[1, 0].set_ylabel(f"ratio to {levels[0]} classes\n(same pretraining run)")
     axes[1, 0].legend(fontsize="x-small", loc="upper right")
     axes[0, 0].legend(fontsize="x-small", loc="upper right")
     fig.tight_layout()
@@ -237,10 +305,10 @@ def seeds_and_mean(ax, x: float, y, g: str) -> None:
     ax.errorbar([x], [np.mean(y)], yerr=[np.std(y, ddof=1)], capsize=3, **group_style(g))
 
 
-def fig_mass(M: dict, pts2x2: dict, outdir: pathlib.Path) -> None:
+def fig_mass(M: dict, pts2x2: dict, outdir: pathlib.Path, groups=GROUPS) -> None:
     corners, gap = ["162", "162+mass", "17", "17+mass"], 0.4
     fig, (left, right) = plt.subplots(1, 2, figsize=(style.FIG_W_TWO_COLUMN, 3.2),
-                                      gridspec_kw={"width_ratios": (len(corners), len(GROUPS))})
+                                      gridspec_kw={"width_ratios": (len(corners), len(groups))})
     pos = [i // 2 + (i % 2) * gap for i in range(len(corners))]
     for x, g in zip(pos, corners):
         seeds_and_mean(left, x, np.exp(pts2x2[g]), g)      # stored as ln(1 - AUC)
@@ -251,7 +319,7 @@ def fig_mass(M: dict, pts2x2: dict, outdir: pathlib.Path) -> None:
     left.set_xticklabels([g.replace("+mass", "\n+ mass") for g in corners], fontsize="x-small")
     left.set_ylabel(r"$b$ vs $c$ probe, $1-$AUC")
     left.set_title("classification (frozen linear probe)", fontsize="small")
-    for i, g in enumerate(GROUPS):
+    for i, g in enumerate(groups):
         y = [r["sigma_eff"] for r in M["table"] if r["cell"] == g and r["probe"] == "mlp"]
         seeds_and_mean(right, i, y, g)
     target = {r["target_sigma_eff"] for r in M["table"]}
@@ -262,8 +330,8 @@ def fig_mass(M: dict, pts2x2: dict, outdir: pathlib.Path) -> None:
     right.annotate("class mean only", xy=(1, target), xycoords=("axes fraction", "data"),
                    xytext=(-3, -3), textcoords="offset points", ha="right", va="top",
                    fontsize="x-small", color="#777777")
-    right.set_xticks(np.arange(len(GROUPS)))
-    right.set_xticklabels([g.replace("+mass", "\n+ mass") for g in GROUPS], fontsize="x-small")
+    right.set_xticks(np.arange(len(groups)))
+    right.set_xticklabels([g.replace("+mass", "\n+ mass") for g in groups], fontsize="x-small")
     right.set_ylabel(r"$\sigma_{\mathrm{eff}}$ of $\ln(m_{\mathrm{pred}}/m_{\mathrm{true}})$")
     right.set_title("jet-mass regression (frozen nonlinear (MLP) probe)", fontsize="small")
     fig.tight_layout()
@@ -298,12 +366,22 @@ def fig_realdata(J: dict, outdir: pathlib.Path) -> None:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--outdir", type=pathlib.Path, default=style.FIGURES)
+    ap.add_argument("--root", type=pathlib.Path, default=HERE.parents[1],
+                    help="the repository whose experiments/FIGS/data/v2/ is looked for")
     a = ap.parse_args(argv)
     load = lambda p: json.loads(pathlib.Path(p).read_text())           # noqa: E731
     style.use_style()
-    fig_finetune(INPUTS["finetune"], a.outdir)
+    ft = v2_finetune(a.root)
+    if ft is None:
+        fig_finetune(INPUTS["finetune"], a.outdir)
+    else:
+        fig_finetune(ft[0], a.outdir, ft[1], ft[2], references={})
     fig_anomaly(load(INPUTS["anomaly"]), a.outdir)
-    fig_mass(load(INPUTS["mass"]), mass2x2_points(INPUTS["mass2x2"]), a.outdir)
+    mass = v2_mass(a.root)
+    if mass is None:
+        fig_mass(load(INPUTS["mass"]), mass2x2_points(INPUTS["mass2x2"]), a.outdir)
+    else:
+        fig_mass(*mass[:2], a.outdir, mass[2])
     fig_realdata(load(INPUTS["realdata"]), a.outdir)
     print(f"wrote four figures to {a.outdir}")
     return 0

@@ -23,6 +23,13 @@ task does this at the two finest vocabularies. Those cells are drawn as
 downward carets at the floor, outside the mean line, so nobody reads a bound as
 a value or a flat segment as an equality.
 
+THE SECOND GRID. When experiments/FIGS/data/v2/probe_ladder/ exists, the
+default analysis is the one the tables read there (make_tables.v2_analysis_dir):
+the primary checkpoint through the class token, its levels and run counts the
+grid's, so the x-axis carries the 64- and 30-class levels once they are in. It
+holds no test, so F2 -- whose bars are a test's interval -- is not drawn from it;
+the paired intervals of the second grid are paired_errors.py's, in the tables.
+
 Usage:
     python3 experiments/FIGS/make_ladder_figures.py
 """
@@ -30,6 +37,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import importlib.util
 import json
 import pathlib
 import sys
@@ -55,6 +63,8 @@ TASK_LABELS = {
     "ee_vs_mm": "electron vs muon pair",
     "bvc_4prong": "b vs c, four-prong",
     "visible_content": "bbqq vs cq$\\tau_h\\nu$, four-prong",
+    "bc_vs_bq": "$X\\to bc$ vs $X\\to bq$",
+    "bc_vs_cs": "$X\\to bc$ vs $X\\to cs$",
 }
 
 
@@ -115,8 +125,11 @@ def cells(A: dict, task: str, probe: str, level: int) -> list[dict]:
 
 
 def plotted_tasks(A: dict) -> list:
-    """Every task the analysis summarises by level, in TASK_LABELS order."""
-    keys = set(A["levels"])
+    """Every task the analysis summarises by level, in TASK_LABELS order; of the second
+    grid's, those measured at the headline working point, as the table shows them (the
+    |V_cb| window probe pins its own and is given in the text)."""
+    keys = {t for t in A["levels"] if "tasks" not in A
+            or A["levels"][t]["linear"][0]["headline_eps_s"] in A["levels"][t]["linear"][0]["rejection_points"]}
     return [t for t in TASK_LABELS if t in keys] + sorted(keys - set(TASK_LABELS))
 
 
@@ -313,17 +326,35 @@ def fig2_paired(A: dict, reference: int, probe: str = "linear", outdir=None):
 
 # ------------------------------------------------------------------ main
 
+def default_analysis(root: pathlib.Path = REPO) -> pathlib.Path:
+    """The analysis the tables read: the second grid's primary checkpoint, class token,
+    once its frozen probes exist (make_tables.v2_analysis_dir), else the first grid's."""
+    spec = importlib.util.spec_from_file_location("make_tables", pathlib.Path(__file__).resolve().parent
+                                                  / "make_tables.py")
+    mt = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mt)
+    if not mt.v2_present(root, "probe_ladder"):
+        return ANALYSIS
+    return mt.v2_analysis_dir(root) / mt.V2_PRIMARY / mt.V2_CLASS_TOKEN / "seed_level_results.json"
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--analysis", type=pathlib.Path, default=ANALYSIS)
+    ap.add_argument("--analysis", type=pathlib.Path, default=None,
+                    help="default: the second grid's when present, else the first grid's")
     ap.add_argument("--rung-map", type=pathlib.Path, default=RUNG_MAP)
     ap.add_argument("--outdir", type=pathlib.Path, default=None)
     a = ap.parse_args(argv)
+    a.analysis = a.analysis or default_analysis()
 
     style.use_style()
     A = load(a.analysis)
     sizes = vocabulary_sizes(a.rung_map)
-    names, collapsed = task_names(pathlib.Path(a.analysis).parent.parent)
+    if "tasks" in A:            # the second grid's analysis states each task's classes itself
+        names = {t: T["names"] for t, T in A["tasks"].items()}
+        collapsed = {t: T["collapsed_at"] for t, T in A["tasks"].items()}
+    else:
+        names, collapsed = task_names(pathlib.Path(a.analysis).parent.parent)
     merges = merge_levels(a.rung_map, names, sizes)
     for task, m in merges.items():
         # The probe file recorded the same merge from its own reading of the tree.
@@ -335,7 +366,7 @@ def main(argv=None) -> int:
 
     written = fig1_granularity(A, merges, a.outdir)
     reference = A["levels_fine_to_coarse"][1]
-    for probe in style.PROBE_LINESTYLES:
+    for probe in style.PROBE_LINESTYLES if "pairwise_exploratory" in A else ():
         written += fig2_paired(A, reference, probe, a.outdir)
     for p in written:
         print(f"wrote {p.relative_to(REPO) if p.is_relative_to(REPO) else p}")

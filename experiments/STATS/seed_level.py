@@ -59,6 +59,7 @@ import hashlib
 import itertools
 import json
 import math
+import os
 import pathlib
 import re
 import sys
@@ -309,9 +310,9 @@ def mde_row(cells, task, kind, seeds) -> dict:
             "mde_as_ratio_of_1m_auc": LOG_BASE ** mde}
 
 
-def level_summary(cells, task, kind, seeds) -> list[dict]:
+def level_summary(cells, task, kind, seeds, levels=LEVELS) -> list[dict]:
     out = []
-    for lv in LEVELS:
+    for lv in levels:
         rs = [cells[(task, kind, lv, s)] for s in seeds if (task, kind, lv, s) in cells]
         y = [r[ENDPOINT] for r in rs]
         rej = [r["rejection"] for r in rs]
@@ -769,13 +770,14 @@ def parse_massres_arm(name: str) -> tuple[str, int]:
     return MASSRES_CELL[m.group(1)], int(m.group(2))
 
 
-def load_mass_resolution(src) -> dict:
+def load_mass_resolution(src, parse=parse_massres_arm) -> dict:
     """Tidy table: one row per (cell, seed, probe) of the mass-regression readout.
 
     Refuses on a disagreeing row alignment, an unparseable arm or a duplicated
     cell, exactly as the probe loader does. Also refuses if the files disagree
     on the resolution statistic or the centering, because two files that
-    measured resolution differently cannot be paired.
+    measured resolution differently cannot be paired. `parse` maps an arm name to
+    (cell, seed index), as for load_ladder; the second grid passes its own.
     """
     paths = [pathlib.Path(p) for p in ([src] if isinstance(src, (str, pathlib.Path)) else src)]
     if len(paths) == 1 and paths[0].is_dir():
@@ -792,7 +794,7 @@ def load_mass_resolution(src) -> dict:
     rows, keys = [], set()
     for p, d in docs.items():
         for arm, entry in d["arms"].items():
-            cell, seed = parse_massres_arm(arm)
+            cell, seed = parse(arm)
             for kind in MASSRES_PROBES:
                 if (cell, kind, seed) in keys:
                     raise SystemExit(f"FATAL: duplicated cell {cell} probe={kind} "
@@ -2735,10 +2737,321 @@ def run_s10(a, argv=None) -> int:
     return 0
 
 
+# ======================================================================= v2 grid
+# THE SECOND PRETRAINING GRID (configs/arms/v2_grid.json; PRESPEC A7-A14). Nothing
+# above runs on it: the paper reports every result as mean +- SD over runs, and every
+# v2 statistic -- paired ratios with run and test errors, A14's checkpoint labels, P1,
+# P2, A11, A13 -- is experiments/STATS/paired_errors.py's. This is the DESCRIPTIVE
+# table of the v2 frozen readouts in the shape the first grid's has, so the table
+# generator and the figures read the two alike: per checkpoint tag and readout, one row
+# per task x probe x model, the per-level summary of the vocabulary ladder, and one
+# summary per arm. The levels and the run counts are the grid's, never this file's: a
+# level is a grid arm on the contraction tree (RUNGS) at its class count, an arm's runs
+# are its `runs`, and the untrained-trunk references are the contrasts file's.
+#
+# INPUT: directories laid out as the v2 frozen readouts write them
+# (scripts/build_probe_jobs.py --v2), one per section of experiments/FIGS/data/v2/:
+#     <dir>/probe/<run>/<tag>/<readout>/probe_results.json
+#     <dir>/mass_resolution/<run>/<tag>/<readout>/mass_resolution.json
+#     <dir>/label_recovery_curve/<run>/<tag>/<readout>/label_recovery_curve.json
+# <run> mtx-<arm, lower case, no underscores>-s<k> or init-s<k>; <tag> best70, wavg,
+# bestval, best70_bn, bestval_bn, init; <readout> features or pooled.
+# OUTPUT: <out>/<tag>/<readout>/{seed_level_results.json, mass_resolution_table.json,
+# label_recovery_curve_summary.json}, each from the files of that tag and readout.
+V2_GRID = REPO / "configs" / "arms" / "v2_grid.json"
+V2_CONTRASTS = REPO / "configs" / "analysis" / "contrasts.v2.json"
+V2_ANALYSES = {"probe": "probe_results.json", "mass_resolution": "mass_resolution.json",
+               "label_recovery_curve": "label_recovery_curve.json"}
+V2_OUTPUT = {"probe": "seed_level_results.json", "mass_resolution": "mass_resolution_table.json",
+             "label_recovery_curve": "label_recovery_curve_summary.json"}
+
+
+def _rel(p) -> str:
+    """A path as an analysis records it: relative to the repository when inside it. Not
+    resolved: a tag held as a link to another is recorded at its own path."""
+    p = pathlib.Path(os.path.abspath(p))
+    return str(p.relative_to(REPO)) if p.is_relative_to(REPO) else str(p)
+
+
+def v2_design(grid=V2_GRID, contrasts=V2_CONTRASTS) -> dict:
+    """The grid as the v2 readouts name it. runs: {run directory: (arm, run index, level
+    or None, label)} for every run of every arm (mtx-<arm lower-cased, no underscores>
+    -s<k>) and every reference of the contrasts file (init-s<k>); n_runs: {arm: runs};
+    level_of: {arm: classes} for the arms on the contraction tree; label: the contrasts
+    file's name of each arm ("162+mass", "untrained trunk")."""
+    G = json.loads(pathlib.Path(grid).read_text())["arms"]
+    C = json.loads(pathlib.Path(contrasts).read_text())
+    labels = C.get("labels", {})
+    runs, n_runs, level_of = {}, {}, {}
+    for a in G:
+        if a["name"] in RUNGS:
+            level_of[a["name"]] = int(a["num_classes"])
+        n_runs[a["name"]] = int(a["runs"])
+        slug = a["name"].lower().replace("_", "")
+        for k in range(1, a["runs"] + 1):
+            runs[f"mtx-{slug}-s{k}"] = (a["name"], k, level_of.get(a["name"]),
+                                        labels.get(a["name"], a["name"]))
+    for arm, r in C.get("references", {}).items():
+        n_runs[arm] = int(r["runs"])
+        for k in range(1, r["runs"] + 1):
+            name = r["model"].format(run=k)
+            if name in runs:
+                raise SystemExit(f"FATAL: {name} is a run of the grid and a reference")
+            runs[name] = (arm, k, None, labels.get(arm, arm))
+    if len(set(level_of.values())) != len(level_of):
+        raise SystemExit(f"FATAL: two arms of {grid} on the tree have one class count: {level_of}")
+    return {"runs": runs, "n_runs": n_runs, "level_of": level_of,
+            "label": {a: labels.get(a, a) for a in n_runs},
+            "grid": {"path": _rel(grid), "sha256": _sha(grid)},
+            "contrasts": {"path": _rel(contrasts), "sha256": _sha(contrasts)}}
+
+
+def v2_files(dirs, analysis: str, design: dict) -> dict:
+    """{(tag, readout): [file, ...]} of one analysis under the section directories,
+    every run a run (or reference) of the design. A tag that the readouts hold as a
+    link to another (bestval selecting best70's epoch, extract_v2.py) is read as the
+    tag it is: its file names the other tag's model and must be that file's bytes."""
+    out = {}
+    name = V2_ANALYSES[analysis]
+    for d in dirs:
+        for p in sorted(pathlib.Path(d).glob(f"{analysis}/*/*/*/{name}")):
+            run, tag, readout = p.parents[2].name, p.parents[1].name, p.parent.name
+            if run not in design["runs"]:
+                raise SystemExit(f"FATAL: {p}: {run} is not a run or reference of the v2 design")
+            out.setdefault((tag, readout), []).append(p)
+    return out
+
+
+def _v2_check_file(p: pathlib.Path, doc: dict, design: dict) -> None:
+    """The file is the run, tag and readout its path says: one arm, named
+    <run without mtx->@<tag> as the readout jobs name it (or the tag it links to, with
+    that tag's bytes), and the readout it records."""
+    run, tag, readout = p.parents[2].name, p.parents[1].name, p.parent.name
+    if doc.get("readout", "features") != readout:
+        raise SystemExit(f"FATAL: {p} records readout {doc.get('readout')!r}, its path {readout!r}")
+    arms = list(doc["arms"]) if "arms" in doc else sorted({a for t in doc["tasks"].values()
+                                                          for a in t.get("arms", {})})
+    stem = run.removeprefix("mtx-")
+    if len(arms) != 1 or arms[0].partition("@")[0] != stem:
+        raise SystemExit(f"FATAL: {p} holds {arms}, not the one model of {run}")
+    at = arms[0].partition("@")[2]
+    if at != tag:
+        twin = p.parents[2] / at / readout / p.name
+        if not twin.exists() or twin.read_bytes() != p.read_bytes():
+            raise SystemExit(f"FATAL: {p} is the {at} model of {run}, and not a link to it")
+
+
+def _v2_parse(design: dict):
+    """arm name in a v2 readout ('l188-s1@best70', 'init-s2@init') -> (grid arm, run)."""
+    def parse(name):
+        model = name.partition("@")[0]
+        run = model if model in design["runs"] else f"mtx-{model}"
+        if run not in design["runs"]:
+            raise SystemExit(f"FATAL: {name!r} is not a model of the v2 design")
+        arm, k, _, _ = design["runs"][run]
+        return arm, k
+    return parse
+
+
+def _arm_summary(rows: list, key: str, probes) -> dict:
+    """{task: {probe: {arm: summary}}}: level_summary over each arm's runs."""
+    cells = {(r["task"], r["probe"], r[key], r["seed"]): r for r in rows}
+    out = {}
+    for task in sorted({r["task"] for r in rows}):
+        for kind in probes:
+            for arm in sorted({r[key] for r in rows if r["task"] == task}):
+                runs = sorted(r["seed"] for r in rows
+                              if (r["task"], r["probe"], r[key]) == (task, kind, arm))
+                s = level_summary(cells, task, kind, runs, [arm])[0]
+                s["arm"] = s.pop("level")
+                out.setdefault(task, {}).setdefault(kind, {})[arm] = {**s, "runs": runs}
+    return out
+
+
+def ladder_v2(paths: list, design: dict, tag: str, readout: str) -> dict:
+    """The descriptive table of one tag and readout of the v2 frozen probes (above), and
+    each task's test sample (`tasks`), which every file must give alike."""
+    task_keys = ("n", "n_signal", "n_signal_test", "n_background_test", "names", "collapsed_at", "eps_s")
+    task_info = {}
+    for p in paths:
+        doc = json.loads(p.read_text())
+        _v2_check_file(p, doc, design)
+        for t, T in doc["tasks"].items():
+            got = {k: T.get(k) for k in task_keys}
+            if task_info.setdefault(t, got) != got:
+                raise SystemExit(f"FATAL: {p}: task {t} is not the task the other files measured "
+                                 f"({task_info[t]} vs {got})")
+    data = load_ladder(paths, parse=_v2_parse(design))
+    rows = []
+    for r in data["rows"]:
+        arm = r["level"]
+        rows.append({**r, "model": r["arm"], "arm": arm, "level": design["level_of"].get(arm),
+                     "cell": design["label"][arm], "file": _rel(r["file"])})
+    present = sorted({r["arm"] for r in rows})
+    levels = sorted({design["level_of"][a] for a in present if a in design["level_of"]}, reverse=True)
+    runs = {a: sorted({r["seed"] for r in rows if r["arm"] == a}) for a in present}
+    ladder = [r for r in rows if r["level"] is not None]
+    seeds = sorted({r["seed"] for r in ladder})
+    cells = index_cells(ladder)
+    tasks = sorted({r["task"] for r in rows}, key=lambda t: (t in CONTROL_TASKS, t))
+    return {"version": "v2", "checkpoint": tag, "readout": readout,
+            "provenance": {"inputs": [{"path": _rel(f["path"]), "sha256": f["sha256"]}
+                                      for f in data["files"]],
+                           "script_sha256": _sha(__file__), "grid": design["grid"],
+                           "contrasts": design["contrasts"],
+                           "row_alignment_sha256": data["row_alignment_sha256"],
+                           "n_jets_total": data["n_jets_total"],
+                           "arm_checkpoints": data["arm_checkpoints"]},
+            "endpoint": {"field": ENDPOINT, "log_base": "e (natural log, probe.py np.log)",
+                         "lower_is_better": True},
+            "levels_fine_to_coarse": levels, "seeds_used": seeds,
+            "level_arms": {str(lv): a for a, lv in design["level_of"].items() if lv in levels},
+            "runs_by_arm": runs,
+            "expected_runs": {a: design["n_runs"][a] for a in present},
+            "missing_runs": {a: [k for k in range(1, design["n_runs"][a] + 1) if k not in runs[a]]
+                             for a in present if len(runs[a]) != design["n_runs"][a]},
+            "skipped_tasks": [{**s, "file": _rel(s["file"])} for s in data["skipped_tasks"]],
+            "tasks": task_info, "table": rows,
+            "levels": {t: {k: level_summary(cells, t, k, seeds, levels) for k in PROBES}
+                       for t in tasks},
+            "arms": _arm_summary(rows, "arm", PROBES)}
+
+
+def mass_v2(paths: list, design: dict, tag: str, readout: str) -> dict:
+    """The jet-mass regression of one tag and readout, rows as load_mass_resolution
+    writes them, `cell` the arm's label ("162", "17+mass") and `arm` the grid arm."""
+    for p in paths:
+        _v2_check_file(p, json.loads(p.read_text()), design)
+    data = load_mass_resolution(paths, parse=_v2_parse(design))
+    rows = [{**r, "model": r["arm"], "arm": r["cell"], "cell": design["label"][r["cell"]],
+             "level": design["level_of"].get(r["cell"]), "file": _rel(r["file"])}
+            for r in data["rows"]]
+    return {"version": "v2", "checkpoint": tag, "readout": readout,
+            "provenance": {"inputs": [{"path": _rel(f["path"]), "sha256": f["sha256"]}
+                                      for f in data["files"]],
+                           "script_sha256": _sha(__file__), "grid": design["grid"],
+                           "contrasts": design["contrasts"],
+                           **{k: data[k] for k in ("row_alignment_sha256", "resolution_statistic",
+                                                   "centering", "n_jets_valid", "n_classes_used")}},
+            "table": rows}
+
+
+def recovery_v2(paths: list, design: dict, tag: str, readout: str) -> dict:
+    """The label-recovery learning curve of one tag and readout, in the schema of
+    experiments/EVAL/label_recovery_curve.py summarise (the first grid's), with `level`
+    the model's class count from the grid, `arm` the grid arm and `seed` the run. The
+    summaries by level cover the arms on the tree; `by_arm` covers every arm, the
+    untrained trunk and the models off the tree included (A14's reference rows)."""
+    parse = _v2_parse(design)
+    rows, prov = [], []
+    for f in paths:
+        d = json.loads(f.read_text())
+        _v2_check_file(f, d, design)
+        prov.append({"path": _rel(f), "sha256": _sha(f)})
+        for name, ad in d["arms"].items():
+            arm, seed = parse(name)
+            level = design["level_of"].get(arm)
+            for rung, cell in ad["rungs"].items():
+                if "skipped" in cell:
+                    continue
+                base = {"rung": rung, "level": level, "arm": arm, "seed": seed, "model": name,
+                        "own_rung": ad["own_rung"], "n_groups": cell["n_groups"],
+                        "chance": cell["chance"], "file": _rel(f)}
+                for c in cell["curve"]:
+                    rows.append({**base, "probe": "linear", "n_train": c["n_train"],
+                                 "accuracy": c["balanced_accuracy"], "converged": c["converged"]})
+                if "mlp" in cell:
+                    rows.append({**base, "probe": "mlp", "n_train": cell["mlp"]["n_train"],
+                                 "accuracy": cell["mlp"]["balanced_accuracy"],
+                                 "converged": cell["mlp"]["converged"]})
+    by_arm = {}
+    for r in rows:
+        key = (r["rung"], r["arm"], r["probe"], r["n_train"])
+        if r["seed"] in by_arm.setdefault(key, {}):
+            raise SystemExit(f"FATAL: duplicated recovery cell {key} run {r['seed']}")
+        by_arm[key][r["seed"]] = r["accuracy"]
+    cells = {}
+    for r in rows:
+        if r["level"] is not None:
+            cells.setdefault((r["rung"], r["level"], r["probe"], r["n_train"]), {})[r["seed"]] = r["accuracy"]
+
+    def stats(v):
+        return {"seeds": sorted(v), "accuracy": [v[s] for s in sorted(v)],
+                "mean": float(np.mean(list(v.values()))),
+                "sd": float(np.std(list(v.values()), ddof=1)) if len(v) > 1 else None}
+    agg = [{"rung": k[0], "level": k[1], "probe": k[2], "n_train": k[3], **stats(v)}
+           for k, v in sorted(cells.items(), key=lambda kv: (kv[0][0], -kv[0][1], kv[0][2], kv[0][3]))]
+    gains, capacity = [], []
+    sizes = sorted({r["n_train"] for r in rows if r["probe"] == "linear"})
+    for (rung, level) in sorted({(r["rung"], r["level"]) for r in rows if r["level"] is not None}):
+        lin = {s: cells.get((rung, level, "linear", s), {}) for s in sizes}
+        if len(sizes) >= 2 and lin[sizes[-1]] and lin[sizes[-2]]:
+            d = [lin[sizes[-1]][s] - lin[sizes[-2]][s] for s in lin[sizes[-1]] if s in lin[sizes[-2]]]
+            gains.append({"rung": rung, "level": level, "from": sizes[-2], "to": sizes[-1],
+                          "per_run": d, "mean": float(np.mean(d)),
+                          "sd": float(np.std(d, ddof=1)) if len(d) > 1 else None})
+        mlp = cells.get((rung, level, "mlp", sizes[-1]), {})
+        if mlp:
+            d = [mlp[s] - lin[sizes[-1]][s] for s in mlp if s in lin[sizes[-1]]]
+            capacity.append({"rung": rung, "level": level, "n_train": sizes[-1], "per_run": d,
+                             "mean": float(np.mean(d)),
+                             "sd": float(np.std(d, ddof=1)) if len(d) > 1 else None})
+    return {"version": "v2", "checkpoint": tag, "readout": readout,
+            "provenance": {"inputs": prov, "script_sha256": _sha(__file__), "grid": design["grid"],
+                           "contrasts": design["contrasts"]},
+            "sizes": sizes, "table": rows, "summary": agg, "data_gain_last_step": gains,
+            "mlp_minus_linear_at_largest": capacity,
+            "by_arm": [{"rung": k[0], "arm": k[1], "probe": k[2], "n_train": k[3], **stats(v)}
+                       for k, v in sorted(by_arm.items())],
+            "unconverged": [r for r in rows if not r["converged"]]}
+
+
+V2_ANALYSE = {"probe": ladder_v2, "mass_resolution": mass_v2, "label_recovery_curve": recovery_v2}
+
+
+def run_v2(a, argv=None) -> int:
+    """Every analysis of every tag and readout under the --v2 directories, into a new
+    --out (never overwritten: an analysis that read other files is a different one)."""
+    out = pathlib.Path(a.out)
+    if out.exists() and any(out.iterdir()):
+        raise SystemExit(f"FATAL: {out} exists; write the v2 analysis of other inputs to a new "
+                         "directory")
+    design = v2_design(a.grid, a.contrasts)
+    n = 0
+    for analysis, fn in V2_ANALYSE.items():
+        groups = v2_files(a.v2, analysis, design)
+        aligns = set()
+        for (tag, readout), paths in sorted(groups.items()):
+            res = fn(paths, design, tag, readout)
+            res["provenance"]["argv"] = list(argv or sys.argv[1:])
+            aligns |= {json.loads(p.read_text())["row_alignment_sha256"] for p in paths}
+            dest = out / tag / readout / V2_OUTPUT[analysis]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(json.dumps(res, indent=2))
+            missing = res.get("missing_runs") or {}
+            print(f"wrote {dest}: {len(paths)} file(s)"
+                  + (f"; runs missing {missing}" if missing else ""))
+            n += 1
+        if len(aligns) > 1:
+            raise SystemExit(f"FATAL: the v2 {analysis} files were scored on {len(aligns)} "
+                             "different sets of jets; no table compares them")
+    if not n:
+        raise SystemExit(f"FATAL: no v2 readout under {a.v2}")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("inputs", nargs="*",
                     help="a directory holding s*/probe_results.json, or the files")
+    ap.add_argument("--v2", nargs="+", default=None, metavar="DIR",
+                    help="the second grid: section directories of experiments/FIGS/data/v2/ "
+                         "(probe/, mass_resolution/, label_recovery_curve/ under each); the "
+                         "descriptive tables per checkpoint and readout, no test, into --out")
+    ap.add_argument("--grid", type=pathlib.Path, default=V2_GRID,
+                    help="with --v2: the grid whose arms, levels and run counts are read")
+    ap.add_argument("--contrasts", type=pathlib.Path, default=V2_CONTRASTS,
+                    help="with --v2: the contrasts file whose labels and references are read")
     ap.add_argument("--out", required=True, help="directory for seed_level_results.json")
     ap.add_argument("--drop-pairs", nargs="*", type=int, default=[],
                     help="seed indices to exclude from every contrast (hardware-mismatched pairs)")
@@ -2804,6 +3117,11 @@ def main(argv=None) -> int:
     if a.drop_pairs and not a.drop_reason:
         raise SystemExit("FATAL: --drop-pairs needs --drop-reason; a dropped pair is reported "
                          "with why it was dropped (PRESPEC 2.2)")
+    if a.v2:
+        if a.inputs or a.drop_pairs:
+            ap.error("--v2 reads the second grid alone: no first-grid inputs, and no pair is "
+                     "dropped by hand (paired_errors.py's stream check does that)")
+        return run_v2(a, argv)
     if not (a.inputs or a.label_recovery or a.mass_resolution or a.real_data
             or a.finetune_jetclass2 or a.finetune_jetclass or a.random_control or a.anomaly
             or a.s8 or a.s10):

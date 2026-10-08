@@ -991,3 +991,137 @@ def test_the_selected_epochs_and_the_a11_shares_are_read_from_finished_runs(tmp_
     # no run yet: nothing
     (tmp_path / "empty").mkdir()
     assert pe.mass_shares(V2, tmp_path / "empty") == {} and pe.selected_epochs(V2, tmp_path / "empty") == {}
+
+
+# ------------------------------------------- A14 frozen readouts: twins, pooled, untrained
+def test_the_twins_the_pooled_readout_and_the_untrained_trunk_are_named_apart():
+    # the BatchNorm twins are checkpoints of every run; the pooled embedding is a
+    # readout suffix; the untrained trunk is a reference model at its own tag only
+    assert pe.parse_model("l188-s1@best70_bn", V2) == ("L188", 1, "best70_bn")
+    assert pe.parse_model("r16q1-s4@bestval_bn:pooled", V2) == ("R16_Q1", 4, "bestval_bn:pooled")
+    assert pe.parse_model("mpm-v2-s2@best70:pooled", V2) == ("MPM", 2, "best70:pooled")
+    assert pe.parse_model("init-s3@init", V2) == ("INIT", 3, "init")
+    assert pe.parse_model("init-s5@init:pooled", V2) == ("INIT", 5, "init:pooled")
+    assert V2["reference_models"]["init-s1"] == ("INIT", 1, None) and "init-s1" not in V2["models"]
+    for bad in ("l188-s1@init",            # a reference tag on a grid run
+                "init-s1@best70",          # a model checkpoint on a reference
+                "init-s6@init",            # run index 6 has no untrained trunk
+                "l188-s1@best70:mlp",      # not a readout
+                "l188-s1@best70:features", # the first readout takes no suffix
+                "l188-s1@best70:",
+                "l188-s1@wavg_bn"):        # the weight average has its statistics already
+        with pytest.raises(SystemExit):
+            pe.parse_model(bad, V2)
+    # v1 has the class token only
+    with pytest.raises(SystemExit, match="class token only"):
+        pe._with_readout(["l162-s1b"], "pooled", "x")
+    assert pe._with_readout(["l162-s1b"], "features", "x") == ["l162-s1b"]
+    assert pe.base_checkpoint("bestval_bn:pooled", V2) == "bestval"
+    assert pe.base_checkpoint("wavg", V2) == "wavg"
+    assert pe.readouts_of(["l188-s1@best70", "l188-s1@wavg:pooled", "l162-s1b"]) == ["", ":pooled"]
+    assert pe.between_checkpoints(V2, ["", ":pooled"]) == [
+        "wavg/best70", "bestval/best70", "wavg:pooled/best70:pooled", "bestval:pooled/best70:pooled"]
+
+
+def test_the_untrained_trunk_is_named_by_its_extraction_directory(tmp_path):
+    def man(d, run_dir, tag, sha):
+        d.mkdir(parents=True)
+        (d / "manifest.json").write_text(json.dumps(
+            {"run_dir": f"/data/results/mtx_v2/{run_dir}", "tag": tag, "tags": [tag],
+             "checkpoint_sha256": sha}))
+    man(tmp_path / "e" / "init-s2" / "init", "mtx-l188-s2", "init", "i" * 64)
+    man(tmp_path / "e" / "mtx-l188-s2" / "best70", "mtx-l188-s2", "best70", "b" * 64)
+    man(tmp_path / "e" / "mtx-l188-s2" / "best70_bn", "mtx-l188-s2", "best70_bn", "n" * 64)
+    assert pe.extraction_index(tmp_path / "e", V2) == {
+        "i" * 64: ["init-s2@init"], "b" * 64: ["l188-s2@best70"], "n" * 64: ["l188-s2@best70_bn"]}
+    # the untrained trunk of run 2 filed as run 3's reference is refused
+    man(tmp_path / "f" / "init-s3" / "init", "mtx-l188-s2", "init", "i" * 64)
+    with pytest.raises(SystemExit, match="not that run index's reference"):
+        pe.extraction_index(tmp_path / "f", V2)
+
+
+def test_the_two_readouts_of_one_checkpoint_are_two_models(tmp_path):
+    # probe.py writes one directory per readout; the arm and its checkpoint digest are
+    # the same in both, and only the recorded readout tells them apart
+    d = tmp_path / "e" / "mtx-r16q1-s1" / "best70"
+    d.mkdir(parents=True)
+    (d / "manifest.json").write_text(json.dumps(
+        {"run_dir": "/data/results/mtx_v2/mtx-r16q1-s1", "tag": "best70", "checkpoint_sha256": "a" * 64}))
+    index = pe.extraction_index(tmp_path / "e", V2)
+    for readout, sep in (("features", 2.0), ("pooled", 1.5)):
+        _probe_dir(tmp_path / readout, {"r16q1-s1@best70": sep}, 1)
+        J = json.loads((tmp_path / readout / "probe_results.json").read_text())
+        J.update(arm_checkpoints={"r16q1-s1@best70": "a" * 64}, readout=readout)
+        (tmp_path / readout / "probe_results.json").write_text(json.dumps(J))
+    vec, _, prov = pe.probe_replicates([tmp_path / "features", tmp_path / "pooled"], b=5, seed=1,
+                                       index=index)
+    assert {k.split("|")[3] for k in vec} == {"r16q1-s1@best70", "r16q1-s1@best70:pooled"}
+    assert prov["duplicates"] == []
+    assert not np.array_equal(vec["probe|bvc_resonant|linear|r16q1-s1@best70|1-auc"],
+                              vec["probe|bvc_resonant|linear|r16q1-s1@best70:pooled|1-auc"])
+
+
+def _frozen_replicates(b: int = 30, seed: int = 0):
+    """Replicates of one probe task for the 188- and 17-class runs 1-3 at the primary,
+    the weight average and the primary's BatchNorm twin, through both readouts, and
+    the untrained trunk of runs 1-3 through both. ln m = level + 0.02 run (+0.3 at 17
+    classes) (+0.1 through the pooled embedding) (+0.15 at the twin of 17 classes)."""
+    rng = np.random.default_rng(seed)
+    shared = rng.normal(0, 0.02, b)
+    vec, meta = {}, {}
+    models = [(f"{a}-s{k}", tag, ro, -3.0 + 0.02 * k + (0.3 if a == "r16q1" else 0.0)
+               + (0.1 if ro else 0.0) + (0.15 if a == "r16q1" and tag == "best70_bn" else 0.0))
+              for a in ("l188", "r16q1") for k in (1, 2, 3)
+              for tag in ("best70", "wavg", "best70_bn") for ro in ("", ":pooled")]
+    models += [(f"init-s{k}", "init", ro, -1.0 + 0.02 * k) for k in (1, 2, 3) for ro in ("", ":pooled")]
+    for m, tag, ro, mu in models:
+        key = f"probe|bvc_resonant|linear|{m}@{tag}{ro}|1-auc"
+        point = mu + rng.normal(0, 0.003)
+        vec[key] = np.exp(np.r_[point, point + shared + rng.normal(0, 0.005, b)])
+        meta[key] = {"jets": "j", "n": 1000}
+    return vec, meta
+
+
+def test_contrasts_are_formed_within_one_readout_and_at_the_twins():
+    vec, meta = _frozen_replicates()
+    res = pe.ratios(vec, meta)
+    rows = res["ratios"]
+    lad = {r["checkpoint"]: r for r in rows if r["contrast"] == "ladder"}
+    # every checkpoint, through each readout, and between the checkpoints within one readout
+    assert set(lad) == {"best70", "wavg", "best70_bn", "best70:pooled", "wavg:pooled",
+                        "best70_bn:pooled", "wavg/best70", "wavg:pooled/best70:pooled"}
+    for tag, r in lad.items():
+        ro = ":pooled" in tag
+        assert all(m.endswith(":pooled") == ro for m in r["fine_models"] + r["coarse_models"]), tag
+    # the 17-over-188 ratio: exp(0.3) at the primary in either readout, exp(0.45) at the twin
+    assert lad["best70"]["ln_ratio"] == pytest.approx(0.3, abs=0.01)
+    assert lad["best70:pooled"]["ln_ratio"] == pytest.approx(0.3, abs=0.01)
+    assert lad["best70_bn"]["ln_ratio"] == pytest.approx(0.45, abs=0.01)
+    # the A14 label within each readout, and the count of each readout apart
+    assert lad["wavg:pooled/best70:pooled"]["checkpoint_label"] == "robust"
+    assert "checkpoint_label" not in lad["best70_bn"]
+    dep = res["checkpoint_dependence"]
+    assert set(dep) == {"wavg/best70", "bestval/best70", "wavg:pooled/best70:pooled",
+                        "bestval:pooled/best70:pooled"}
+    assert dep["wavg:pooled/best70:pooled"]["results"]["n"] == 1
+    assert dep["wavg:pooled/best70:pooled"]["models"]["n"] == 2          # 188 and 17
+    # the untrained trunk enters no contrast, says so, and still has its points
+    assert res["models_in_no_contrast"] == sorted(f"init-s{k}@init{ro}" for k in (1, 2, 3)
+                                                  for ro in ("", ":pooled"))
+    assert res["point_values"]["probe|bvc_resonant|linear|1-auc"]["init-s1@init"] > 0
+
+
+def test_a_twin_is_stream_checked_through_its_parent(tmp_path):
+    # run 2 of 17 classes diverges at epoch 73, after the 188-class selected epoch 72
+    # and at the 17-class one: at best70 and at its twin the pair is left out alike
+    v, m = _frozen_replicates()
+    v = {k: x for k, x in v.items() if "init" not in k and ":pooled" not in k}
+    for k in (1, 2, 3):
+        _stream(tmp_path / f"mtx-l188-s{k}", [f"x{e}" for e in range(80)], 40, 72)
+        _stream(tmp_path / f"mtx-r16q1-s{k}", [f"x{e}" if k != 2 or e < 73 else f"y{e}" for e in range(80)],
+                45, 73)
+    res = pe.ratios(v, {k: m[k] for k in v}, tmp_path)
+    lad = {r["checkpoint"]: r for r in res["ratios"] if r["contrast"] == "ladder"}
+    for t in ("best70", "best70_bn"):
+        assert lad[t]["n_runs"] == 2, t
+        assert [(x["first_bad_epoch"], x["upto_epoch"]) for x in lad[t]["excluded_pairs"]] == [(73, 73)], t
