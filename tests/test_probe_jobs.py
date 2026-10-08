@@ -541,10 +541,16 @@ def test_v2_one_job_per_run_and_reference_with_the_retry_policy_and_the_pin():
         assert "nvidia.com/gpu" not in text
 
 
-def test_v2_pin_is_refused_until_tagged_unless_declared():
+def test_v2_pin_carries_what_the_jobs_run_or_is_refused_until_tagged():
+    import subprocess
     assert bp.V2_GRID_PIN == "mtx-s2.00"
-    with pytest.raises(SystemExit):
+    tagged = subprocess.run(["git", "rev-parse", "-q", "--verify", f"refs/tags/{bp.V2_GRID_PIN}"],
+                            cwd=ROOT, capture_output=True).returncode == 0
+    if tagged:                                                  # tagged 2026-10-08 (e635a5c)
         bp.verify_pin(bp.V2_GRID_PIN, False, bp.V2_GRID_NEEDED)
+    else:
+        with pytest.raises(SystemExit):
+            bp.verify_pin(bp.V2_GRID_PIN, False, bp.V2_GRID_NEEDED)
     bp.verify_pin(bp.V2_GRID_PIN, True, bp.V2_GRID_NEEDED)     # the working tree has every flag
 
 
