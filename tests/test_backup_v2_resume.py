@@ -113,3 +113,27 @@ def test_main_reports_problems_by_exit_code(tmp_path, capsys):
     torch.save({"epoch": 1}, run / "net_epoch-1_resume.pt")           # loads, but lacks the model
     assert B.main(["--root", str(tmp_path)]) == 1
     assert "PROBLEM mtx-l162-s1/net_epoch-1_resume.pt lacks" in capsys.readouterr().out
+
+
+def test_a_file_the_run_prunes_mid_copy_is_skipped_quietly_and_taken_next_time(tmp_path, monkeypatch):
+    # 2026-10-08 17:03Z: mtx-flavf1r-s1 finished epoch 48 while epoch 47's pair was being
+    # read, and pruned it (FileNotFoundError). That is the run moving on, not a problem.
+    run = _run(tmp_path)
+    _epoch(run, 0)
+    _epoch(run, 1)
+    real = B.shutil.copyfileobj
+
+    def prune_after_copy(fi, fo, n):
+        real(fi, fo, n)
+        if fi.name.endswith("net_epoch-1_state.pt"):
+            _epoch(run, 2)                                # the run's next epoch...
+            (run / "net_epoch-1_state.pt").unlink()       # ...and its prune of epoch 1
+    monkeypatch.setattr(B.shutil, "copyfileobj", prune_after_copy)
+    assert B.backup_run(run) == []
+    assert not list((run / "backup").rglob("*.tmp"))
+    assert not (run / "backup/resume/net_epoch-1_state.pt").exists()
+    man = json.loads((run / "backup/manifest.json").read_text())["copies"]
+    assert not any(k.startswith("resume/net_epoch-1") for k in man)
+    monkeypatch.setattr(B.shutil, "copyfileobj", real)
+    assert B.backup_run(run) == []                        # next time: epoch 2's pair
+    assert (run / "backup/resume/net_epoch-2_resume.pt").exists()

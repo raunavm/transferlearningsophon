@@ -20,8 +20,10 @@ the run directory, so nothing there is read as the run's own):
 
 Every copy is written to a temporary name, fsynced, renamed and read back against the
 source's sha256. Nothing in the run's own directory is changed. A file that does not
-load is not copied and is reported (exit 1), so the job's log names it. Restoring from a
-backup is the PI's decision and is not done here.
+load is not copied and is reported (exit 1), so the job's log names it. The run goes on
+while this reads it: a file it prunes or replaces mid-copy (a new epoch finished) is
+skipped and taken next time, not reported. Restoring from a backup is the PI's decision
+and is not done here.
 
     python3 experiments/MTX/backup_v2_resume.py [--root /data/results/mtx_v2] [--runs RUN ...]
 """
@@ -39,6 +41,10 @@ import time
 
 EARLY_KEEP = (0, 2, 4, 9, 19, 29, 39, 49, 55, 62, 69)   # pretrain_v2.EARLY_KEEP
 WINDOW = range(70, 80)                                   # pretrain_v2.last_epochs(80)
+class Moved(Exception):
+    """The run pruned or replaced a source file while it was being read."""
+
+
 RESUME_KEYS = {"epoch", "model", "optimizer", "scheduler", "scaler", "trimmer_counters", "best"}
 N_RESUME_KEPT = 2
 
@@ -53,13 +59,20 @@ def sha256(p: pathlib.Path) -> str:
 
 def copy_verified(src: pathlib.Path, dst: pathlib.Path) -> str:
     """Copy src to dst through a temporary name with fsync; return the sha256 both share."""
-    want = sha256(src)
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    tmp = dst.with_name(dst.name + ".tmp")
-    with open(src, "rb") as fi, open(tmp, "wb") as fo:
-        shutil.copyfileobj(fi, fo, 1 << 20)
-        fo.flush()
-        os.fsync(fo.fileno())
+    try:
+        want = sha256(src)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dst.with_name(dst.name + ".tmp")
+        with open(src, "rb") as fi, open(tmp, "wb") as fo:
+            shutil.copyfileobj(fi, fo, 1 << 20)
+            fo.flush()
+            os.fsync(fo.fileno())
+        if sha256(src) != want:                  # replaced while it was copied
+            tmp.unlink()
+            raise Moved(src.name)
+    except FileNotFoundError:
+        dst.with_name(dst.name + ".tmp").unlink(missing_ok=True)
+        raise Moved(src.name)
     os.replace(tmp, dst)
     got = sha256(dst)
     if got != want:
@@ -84,6 +97,8 @@ def check_resume(resume: pathlib.Path, state: pathlib.Path, epoch: int) -> str |
     try:
         r = torch.load(resume, map_location="cpu", weights_only=False)
         s = torch.load(state, map_location="cpu", weights_only=False)
+    except FileNotFoundError:
+        raise Moved(resume.name)
     except Exception as e:                       # a zero-filled or truncated file
         return f"does not load: {type(e).__name__}: {str(e)[:80]}"
     missing = RESUME_KEYS - set(r)
@@ -120,13 +135,21 @@ def backup_run(run: pathlib.Path) -> list[str]:
     n = latest_complete_epoch(run)
     if n is not None and f"resume/net_epoch-{n}_resume.pt" not in copies:
         resume, state = run / f"net_epoch-{n}_resume.pt", run / f"net_epoch-{n}_state.pt"
-        why = check_resume(resume, state, n)
-        if why:
-            problems.append(f"{run.name}/{resume.name} {why}")
-        else:
-            for src in (state, resume):          # the resume file last, as the run writes them
-                rel = f"resume/{src.name}"
-                record(rel, src, copy_verified(src, bdir / rel))
+        try:
+            why = check_resume(resume, state, n)
+            if why:
+                problems.append(f"{run.name}/{resume.name} {why}")
+            else:
+                for src in (state, resume):      # the resume file last, as the run writes them
+                    rel = f"resume/{src.name}"
+                    record(rel, src, copy_verified(src, bdir / rel))
+        except Moved:                            # a newer epoch replaced the pair: next time
+            why = "moved"
+            for kind in ("resume", "state"):
+                rel = f"resume/net_epoch-{n}_{kind}.pt"
+                (bdir / rel).unlink(missing_ok=True)
+                copies.pop(rel, None)
+        if not why:
             # keep the newest N_RESUME_KEPT backed-up epochs: older copies are superseded
             kept = sorted({int(re.search(r"net_epoch-(\d+)_", k).group(1)) for k in copies
                            if k.startswith("resume/")}, reverse=True)
@@ -147,10 +170,11 @@ def backup_run(run: pathlib.Path) -> list[str]:
             continue
         try:
             torch.load(src, map_location="cpu", weights_only=False)
+            record(rel, src, copy_verified(src, bdir / rel))
+        except (FileNotFoundError, Moved):      # a superseded best epoch, pruned meanwhile
+            continue
         except Exception as ex:
             problems.append(f"{run.name}/{src.name} does not load: {type(ex).__name__}")
-            continue
-        record(rel, src, copy_verified(src, bdir / rel))
 
     if copies:
         bdir.mkdir(parents=True, exist_ok=True)

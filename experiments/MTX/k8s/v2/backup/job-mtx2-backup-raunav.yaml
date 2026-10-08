@@ -24,7 +24,7 @@ spec:
             command: ["/bin/bash", "-c"]
             env:
             - name: REPO_REF
-              value: "mtx-s2.01"
+              value: "mtx-s2.02"
             args:
             - |
               set -euo pipefail
