@@ -51,7 +51,7 @@ def test_the_levels_and_runs_come_from_the_grid(root):
         assert lv[int(arm)]["n_seeds"] == 3 and lv[int(arm)]["seed_sd"] == pytest.approx(0.01)
     # every arm has its summary, the mass-output and self-supervised arms included, by label
     arms = A["arms"]["bvc_resonant"]["linear"]
-    assert set(arms) == {"L188", "L162", "R63_Q1", "R42_Q1", "R16_Q1", "L162_MASS", "R16_Q1_MASS"}
+    assert set(arms) == {n for n, *_, o, _ in FX.ARMS if o != "mpm"}       # MPM: pooled only
     assert {r["cell"] for r in A["table"] if r["arm"] == "L162_MASS"} == {"162+mass"}
     assert A["tasks"]["bc_vs_rest"]["eps_s"] == [0.6, 0.4]
     assert A["tasks"]["bvc_resonant"]["n_background_test"] == FX.N_BKG
@@ -76,7 +76,8 @@ def test_every_tag_and_readout_has_its_table_and_the_references_theirs(root):
     assert {r["model"] for r in T["table"] if r["arm"] == "L188"} == {f"l188-s{k}@best70_bn" for k in (1, 2, 3)}
     # mass regression and label recovery, the same way
     M = _read(dest, "best70", "features", "mass_resolution_table.json")
-    assert {r["cell"] for r in M["table"]} == {"188", "162", "64", "43", "17", "162+mass", "17+mass"}
+    assert {r["cell"] for r in M["table"]} == {FX.LABELS[n] for n, *_, o, _ in FX.ARMS if o != "mpm"}
+    assert {"188", "64", "162+mass", "17+mass, matched lambda"} <= {r["cell"] for r in M["table"]}
     assert M["provenance"]["n_classes_used"] == 150
     R = _read(dest, "best70", "features", "label_recovery_curve_summary.json")
     assert sorted({r["level"] for r in R["table"]}) == [17, 43, 64, 162, 188]

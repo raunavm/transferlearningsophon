@@ -152,7 +152,9 @@ V2_PENDING = {
 #   leave_one_family_out/  the same, the four *_LOFO4P arms and MPM_LOFO4P
 #   random_partitions/     the same, RAND2_p1..5, FLAV_F0, FLAV_F1, FLAV_F1R
 #   self_supervised/       the same, MPM (the pooled readout only)
-#   mass_lambda_matched/   the same, R16_Q1_MASS_LM; and loss_share.json (SLOTS)
+#   mass_lambda_matched/   the same, R16_Q1_MASS_LM; and loss_share.json (SLOTS, A11's realised
+#                          shares): experiments/STATS/paired_errors.py a11-shares
+#                          --run-dirs-root /data/results/mtx_v2
 #   label_recovery/label_recovery_curve/<run>/<tag>/<readout>/label_recovery_curve.json
 #       from /data/results/eval/v2/label_recovery_curve/..., every run on the tree
 #   paired_errors/<family>/ratios.json, <family> probes, mass, finetune, anomaly
@@ -163,16 +165,25 @@ V2_PENDING = {
 #       v2 read-outs, whose headers say experiments/FIGS/data/ft_v2/: this layout moves
 #       them here), <rule> best70 or wavg; _t12 the analysis freeze (tiers 1-2, A14),
 #       the plain name every tier, read in its place once it exists (v2_ft_files)
-#   finetune_references/scratch_leg1_metrics.json   the v2 from-scratch reference
+#   finetune_references/scratch_leg1_metrics.json   the v2 from-scratch reference's standalone
+#                          read-out; the rule read-outs carry the same cells beside their own
 #   benchmarks/<rule>[_t12]_bench_metrics{,_herwig}{,_last}.json  (same read-outs)
-#   anomaly/<set>/...      anomaly_summary.py over /data/results/eval/v2/anomaly_merged_<set>/
-#                          and anomaly_heads_<set>/ (scripts/build_anomaly_jobs.py --v2)
-#   real_data/t<tiers>/{fit_v6/results.json, analysis_v6/aoj_top.json}
-#                          from /data/results/aoj/full_v2/t<tiers>/ (scripts/build_aoj_jobs.py)
+#   anomaly/<set>/         <set> t12 (the freeze) or t123 (every tier; read in its place, the
+#                          runs both hold equal), from scripts/build_anomaly_jobs.py --v2:
+#       merged/<tag>/<readout>/anomaly_results.json   /data/results/eval/v2/anomaly_merged_<set>/
+#       anomaly_heads.json                            /data/results/eval/v2/anomaly_heads_<set>/
+#       summary/<tag>/<readout>/anomaly_summary.json  experiments/EVAL/anomaly_summary.py --grid
+#                          configs/arms/v2_grid.json --anomaly merged/<tag>/<readout>/
+#                          anomaly_results.json --heads anomaly_heads.json, run on these copies
+#   real_data/t12/, t3/    from /data/results/aoj/full_v2/t12/ and t3/ (scripts/build_aoj_jobs.py
+#                          --v2): fit_v6/results.json, analysis_v6/aoj_top.json (refit_from_bins.
+#                          write_analysis_v2, per_checkpoint), and t12's injection/summary.json; t12
+#                          (the freeze) gives the rows of tiers 1-2, t3 (at t12's shape) tier 3's
 V2_DATA = ("experiments", "FIGS", "data", "v2")
 # The sections whose v2 inputs this script prints, by V2_PENDING key. A section whose v2
 # directory exists and is not listed keeps its first-grid numbers, and its marker says so.
-V2_READ = {"Pretrain", "Probes", "Paired", "Levels", "Recovery", "FtHeldout"}
+V2_READ = {"Pretrain", "Probes", "Paired", "Levels", "Recovery", "FtHeldout", "Random", "Lofo", "Ssl",
+           "FtRefs", "Bench", "MassLambda", "Anomaly", "RealData"}
 # The frozen-readout sections: probe/ and mass_resolution/ trees, all read by one analysis.
 V2_FROZEN = ("probe_ladder", "levels_64_30", "leave_one_family_out", "random_partitions",
              "self_supervised", "mass_lambda_matched")
@@ -188,7 +199,7 @@ V2_CLASS_TOKEN, V2_POOLED = "features", "pooled"
 V2_FROZEN_NEEDED = ((V2_PRIMARY, V2_CLASS_TOKEN), (V2_TWIN, V2_CLASS_TOKEN),
                     (V2_PRIMARY, V2_POOLED), (V2_INIT, V2_CLASS_TOKEN), (V2_INIT, V2_POOLED))
 V2_FT_RULE = "best70"            # fine-tuning starts from the primary (A14, 2026-10-02)
-V2_PAIRED_FAMILIES = ("probes", "mass", "finetune")
+V2_PAIRED_FAMILIES = ("probes", "mass", "finetune", "anomaly")
 
 _DIGITS = {"0": "zero", "1": "one", "2": "two", "3": "three", "4": "four",
            "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "nine"}
@@ -1070,6 +1081,19 @@ def v2_present(root: pathlib.Path, sub: str) -> bool:
     return d.is_dir() and any(d.iterdir())
 
 
+# A section V2_READ lists whose readout lives in another section's files waits for it: the
+# models that leave a family out are read in the anomaly study (A13), which is merged after
+# their frozen readouts are copied.
+V2_READ_WITH = {"Lofo": "Anomaly"}
+
+
+def v2_printed(root: pathlib.Path) -> set:
+    """The V2_PENDING keys this script prints from v2 now: read (V2_READ), present, and not
+    waiting for the section V2_READ_WITH names."""
+    present = {k for k, (_, sub) in V2_PENDING.items() if sub and v2_present(root, sub)}
+    return {k for k in present & V2_READ if V2_READ_WITH.get(k, k) in present}
+
+
 def emit_pending(em: Emitter, missing: list) -> None:
     """One red marker per v2 input the text waits for, from V2_PENDING (this file).
 
@@ -1080,10 +1104,11 @@ def emit_pending(em: Emitter, missing: list) -> None:
     me = pathlib.Path(__file__).resolve()
     if not me.is_relative_to(em.root.resolve()):
         return
+    printed = v2_printed(em.root)
     for key, (what, sub) in V2_PENDING.items():
         here = (v2_present(em.root, sub) if sub else
                 all(v2_present(em.root, x) for _, x in V2_PENDING.values() if x))
-        text = ((f"v2 numbers in place ({sub}): rewrite the text around them" if key in V2_READ
+        text = ((f"v2 numbers in place ({sub}): rewrite the text around them" if key in printed
                  else f"v2 input present ({sub}) but not printed yet: the numbers here are "
                       "the first grid's") if here and sub
                 else "v2 input present: rewrite this from it" if here
@@ -2353,7 +2378,8 @@ def aoj_fits(root: pathlib.Path, J: dict) -> tuple[pathlib.Path, dict]:
     return p, json.loads(p.read_text())
 
 
-def emit_real_data(em: Emitter, J: dict, src: pathlib.Path, paths: dict | None = None) -> None:
+def emit_real_data(em: Emitter, J: dict, src: pathlib.Path, paths: dict | None = None,
+                   fits: tuple | None = None) -> None:
     """The top peak in CMS open data (AspenOpenJets) at 1% data efficiency, from fit_v6:
     one Gaussian peak shape shared by the pretrained models (pooled over them) and the
     tops that fail each cut taken from the CMS reference's fit (experiments/AOJ/fit_v6.py).
@@ -2361,7 +2387,7 @@ def emit_real_data(em: Emitter, J: dict, src: pathlib.Path, paths: dict | None =
     own floated shape, the shape and fail-region systematics, the working-point fit
     quality and the passing-jet residual below the top window are the checks."""
     paths = paths or {}
-    res_path, res = aoj_fits(em.root, J)
+    res_path, res = fits or aoj_fits(em.root, J)
     em.macro("AojEffPercent", fmt_one(100 * float(res["eff"]), 0) + "\\%", res_path, "eff",
              "the score cut's pass fraction outside the mass windows")
     code = em.root / "experiments" / "AOJ" / "peak_fit.py"
@@ -2949,10 +2975,10 @@ def table_mass(M: dict, root: pathlib.Path, cells=MASS_CELLS) -> str:
                   wide=True)
 
 
-def table_realdata(J: dict, root: pathlib.Path) -> str:
+def table_realdata(J: dict, root: pathlib.Path, fits: tuple | None = None) -> str:
     """Fitted top-quark yield in CMS open data at the working point the fits record (fit_v6)."""
     P = J["per_label_set"]
-    _, res = aoj_fits(root, J)
+    _, res = fits or aoj_fits(root, J)
     head = ["pretraining vocabulary & yield & statistical error per fit & yield, each model's own peak shape "
             "\\\\", "\\midrule"]
     body = []
@@ -3182,12 +3208,13 @@ def _v2_rows(A: dict, task: str, probe: str, arm: str) -> list:
                   key=lambda r: r["seed"])
 
 
-def emit_v2_probes(em: Emitter, V: dict) -> dict:
+def emit_v2_probes(em: Emitter, V: dict, ssl: bool = False) -> dict:
     """The frozen probes of the second grid beyond emit_design and emit_levels (which build
     calls on the primary checkpoint's class token): the background test jets per task, and
     beside each 1-AUC its BatchNorm twin (...Twin), its pooled-embedding reference
     (...Pooled), and the untrained trunk's (ProbeOma<task><probe>Untrained,
-    ...UntrainedPooled). Returns {task: background test jets}."""
+    ...UntrainedPooled), and with `ssl` (the self-supervised model past PRESPEC 4's bar) its
+    pooled embedding (...SelfSupervised). Returns {task: background test jets}."""
     src, A = V[(V2_PRIMARY, V2_CLASS_TOKEN)]
     nbkg = {}
     for task in sorted(A["tasks"]):
@@ -3221,10 +3248,19 @@ def emit_v2_probes(em: Emitter, V: dict) -> dict:
                     em.macro("ProbeOma" + texname(task, probe) + "Untrained" + suffix, text, s2,
                              f"table[{task},{probe},arm=INIT].auc",
                              f"1-AUC of the untrained trunk, {ro}; mean +- SD over its initialisations")
+    if ssl:
+        s2, P = V[(V2_PRIMARY, V2_POOLED)]
+        for task in sorted({r["task"] for r in P["table"] if r["arm"] == "MPM"}):
+            for probe in ("linear", "mlp"):
+                text = oma(_v2_rows(P, task, probe, "MPM"))
+                if text is not None:
+                    em.macro("ProbeOma" + texname(task, probe) + "SelfSupervised", text, s2,
+                             f"table[{task},{probe},arm=MPM].auc",
+                             "1-AUC of the self-supervised model, pooled embedding; mean +- SD over runs")
     return nbkg
 
 
-def table_probe_ladder_v2(V: dict, probe: str, nbkg: dict) -> str:
+def table_probe_ladder_v2(V: dict, probe: str, nbkg: dict, ssl: bool = False) -> str:
     """The frozen-probe table of the second grid: per vocabulary the primary checkpoint's
     AUC and rejection and its BatchNorm twin's AUC beside them; then the reference rows,
     each vocabulary's pooled embedding and the untrained trunk through both readouts."""
@@ -3259,6 +3295,11 @@ def table_probe_ladder_v2(V: dict, probe: str, nbkg: dict) -> str:
         p = [auc(seed_rows(P["table"], t, probe, lv)) for t in tasks]
         cells += p
         body.append(f"{lv} & AUC, pooled embedding & " + " & ".join(p) + " \\\\")
+    if ssl:
+        x = [fmt_auc_pm([r["auc"] for r in rs], [r["censored"] for r in rs]) if rs else "---"
+             for rs in (_v2_rows(P, t, probe, "MPM") for t in tasks)]
+        cells += x
+        body.append("self-supervised & AUC, pooled embedding & " + " & ".join(x) + " \\\\")
     n_init = set()
     for ro, what in ((V2_CLASS_TOKEN, "AUC"), (V2_POOLED, "AUC, pooled embedding")):
         I = V[(V2_INIT, ro)][1]
@@ -3375,15 +3416,19 @@ def emit_vcb_v2(em: Emitter, A: dict, src: pathlib.Path) -> None:
 # The results paired_errors.py stores beside each primary ratio and what each is (A8, A14):
 # (macro suffix, checkpoint tag, the families it exists for, labelled by A14's rule).
 V2_BESIDE = (("Wavg", "wavg", None, False), ("WavgShift", "wavg/best70", None, True),
-             ("Bestval", "bestval", ("probe", "mass"), False),
-             ("BestvalShift", "bestval/best70", ("probe", "mass"), True),
-             ("Twin", "best70_bn", ("probe", "mass"), False),
+             ("Bestval", "bestval", ("probe", "mass", "anomaly"), False),
+             ("BestvalShift", "bestval/best70", ("probe", "mass", "anomaly"), True),
+             ("Twin", "best70_bn", ("probe", "mass", "anomaly"), False),
              ("Pooled", "best70:pooled", ("probe", "mass"), False))
+# the metric each v2 family's ratios are read in: the first grid's, and for the output
+# ratio of the anomaly study sigma_min at the primary injection (anomaly_summary.PRIMARY)
+V2_PAIRED_METRIC = {**PAIRED_METRIC, "anomaly": "sigma_min@2000"}
 CKPT_LABEL_TEX = {"robust": "robust", "inconclusive": "inconclusive", CKPT_DEPENDS: CKPT_DEPENDS,
                   CKPT_DEPENDS_UNDER_10: "depends on the checkpoint, under 10\\%"}
 
 
-def emit_paired_v2(em: Emitter, files: list, ft: dict | None, products: dict | None) -> dict:
+def emit_paired_v2(em: Emitter, files: list, ft: dict | None, products: dict | None,
+                   skip_arms: set = frozenset()) -> dict:
     """The second grid's paired ratios under emit_paired's names, at the primary
     checkpoint through the class token: every ratio of two arms (pairs, all_pairs and
     unpaired contrasts; P1, P2, A11 and the joint fit are other sections'), and beside each
@@ -3391,7 +3436,9 @@ def emit_paired_v2(em: Emitter, files: list, ft: dict | None, products: dict | N
     it (...WavgShift, labelled ...WavgLabel), at the global best (...Bestval, ...BestvalShift,
     ...BestvalLabel), at the BatchNorm twin (...Twin) and through the pooled embedding
     (...Pooled). Each file's labels and counts are re-derived first (check_checkpoint_labels)
-    and its unpaired contrasts checked against I7. Returns {family file: its document}."""
+    and its unpaired contrasts checked against I7. A ratio with an arm of `skip_arms` is
+    not printed (the self-supervised model before its validity bar, A14). Returns
+    {family file: its document}."""
     for leg, ds in PAIRED_FT_DATASET.items():
         if ft and ds in ft and leg not in ft[ds]["path"].name:
             raise SystemExit(f"FATAL: the paired file's {leg} is not {ft[ds]['path'].name}")
@@ -3413,13 +3460,15 @@ def emit_paired_v2(em: Emitter, files: list, ft: dict | None, products: dict | N
                     r["checkpoint"])] = i
         for key, i in at.items():
             r = rows[i]
-            if (key[-1] != V2_PRIMARY or r["metric"] != PAIRED_METRIC.get(r["family"])
-                    or r.get("censored_models") or r.get("ratio") is None or r.get("ci95") is None):
+            if (key[-1] != V2_PRIMARY or r["metric"] != V2_PAIRED_METRIC.get(r["family"])
+                    or r.get("censored_models") or r.get("ratio") is None or r.get("ci95") is None
+                    or {r["fine_arm"], r["coarse_arm"]} & set(skip_arms)):
                 continue
             fam = r["family"]
             head = {"probe": lambda: "PairedProbe" + texname(r["task"], r["kind"]),
                     "ft": lambda: "PairedFt" + PAIRED_FT_DATASET[r["task"]] + n_tag(r["kind"]),
-                    "mass": lambda: "PairedMassRes" + texname(r["kind"])}[fam]()
+                    "mass": lambda: "PairedMassRes" + texname(r["kind"]),
+                    "anomaly": lambda: "PairedAnomaly" + texname(r["kind"]) + anomaly_signal_key(r["task"])}[fam]()
             base = head + name(r["coarse"]) + "Over" + name(r["fine"])
             what = f"{r['coarse']} over {r['fine']}, {r['task']} {r['kind']} {r['metric']}"
             em.macro(base, fmt_paired(r["ratio"], *r["ci95"]), path, f"ratios[{i}].ratio, ratios[{i}].ci95",
@@ -3440,12 +3489,15 @@ def emit_paired_v2(em: Emitter, files: list, ft: dict | None, products: dict | N
     return out
 
 
-def emit_checkpoint_counts(em: Emitter, docs: dict) -> str:
+def emit_checkpoint_counts(em: Emitter, docs: dict, extra: dict | None = None) -> str:
     """A14: the number of results that depend on the checkpoint against its 5 % null
     expectation, at the weight average (Wavg) and the global best (Bestval), through the
     class token: per family file and summed (CkptWavgDependent, ...N, ...Expected, ...Robust,
     ...Inconclusive; ...Models... for each model's own metric), and the table of them.
-    The results share models and test jets, so the count is a reference, not a test."""
+    The results share models and test jets, so the count is a reference, not a test.
+    `extra` ({(section, word): [(label, source)]}, CheckpointLabels.rows) adds the per-model
+    labels this script derives (Ckpt<word>Models<section>...), and every per-model label of
+    both into Ckpt<word>ModelsAll...; the class token only (pooled rows are references)."""
     lines, total = [], {}
     for path, R in docs.items():
         fam = path.parent.name
@@ -3473,6 +3525,29 @@ def emit_checkpoint_counts(em: Emitter, docs: dict) -> str:
         if k == "n":
             em.macro("Ckpt" + word + mw + "Expected", fmt(0.05 * v, 1), srcs[0],
                      "0.05 x the summed n", "the dependent count expected under the null")
+    every = {}
+    for (word, mw, k), (v, srcs) in total.items():
+        if mw:
+            every[(word, k)] = [v, srcs[0]]
+    for (section, word), labs in sorted((extra or {}).items()):
+        c = {"dependent": sum(x in CKPT_DEPENDENT for x, _ in labs), "n": len(labs),
+             "robust": sum(x == "robust" for x, _ in labs), "inconclusive": sum(x == "inconclusive" for x, _ in labs)}
+        key = "Ckpt" + word + "Models" + texname(section)
+        src = labs[0][1]
+        for k in ("dependent", "n"):
+            em.macro(key + {"dependent": "Dependent", "n": "N"}[k], str(c[k]), src,
+                     f"A14 labels of the {section} results this script derives", "per model, paired over runs")
+        em.macro(key + "Expected", fmt(0.05 * c["n"], 1), src, "0.05 x n", "expected under the null")
+        for k, v in c.items():
+            every.setdefault((word, k), [0, src])[0] += v
+        lines.append((section, "each model", word, c))
+    if extra:
+        for (word, k), (v, src) in every.items():
+            em.macro("Ckpt" + word + "ModelsAll" + texname(k), str(v), src,
+                     "the per-model labels of paired_errors.py and of this script", "summed")
+            if k == "n":
+                em.macro("Ckpt" + word + "ModelsAllExpected", fmt(0.05 * v, 1), src, "0.05 x the summed n",
+                         "expected under the null")
     if not lines:
         return ""
     body = [f"{tex(f)} & {who} & {'weight average' if w == 'Wavg' else 'global best'} & "
@@ -3586,6 +3661,897 @@ def emit_v2_pretraining(em: Emitter, root: pathlib.Path, grid: list, labels: dic
                "70--79, and the global best, reported as a sensitivity check.")
     return _table(head + body, caption, "tab:selected-epochs", "l l l", [])
 
+# ------------------------------------------------------------------ v2: the readouts of A10-A14
+#
+# Each emitter below prints one section's v2 numbers under new names in the first grid's
+# style; every label it prints is re-derived here from the interval stored beside it and
+# must agree with the label paired_errors.py stored. Units: a paired ratio as fmt_paired
+# prints it (coarse, merged, unseen or control over the other; above 1 = that side worse),
+# a difference of ln(1 - AUC) as fmt_diff prints it.
+
+def _ln_bounds(est: float, se: float, dof: float, level: float = 0.95) -> tuple[float, float]:
+    """The central Student-t interval est -/+ t se (normal at infinite dof), in logs."""
+    from scipy import stats
+    q = 0.5 + level / 2
+    k = float(stats.t.ppf(q, dof)) if math.isfinite(dof) else float(stats.norm.ppf(q))
+    return est - k * se, est + k * se
+
+
+P1_TEX = {"merging costs": "merging costs", "merging costs nothing": "merging costs nothing",
+          "merging costs, under 10%": "merging costs, under 10\\%", "inconclusive": "inconclusive"}
+
+
+def p1_class(lo: float, hi: float) -> str:
+    """A14 P1 from the 95 % interval [lo, hi] of merged over split: 'merging costs' when it
+    lies above 1, 'merging costs nothing' when its upper end is below 1.1, both at once
+    'merging costs, under 10%', else 'inconclusive'."""
+    a, b = math.log(lo), math.log(hi)
+    if a > 0:
+        return "merging costs, under 10%" if b < CKPT_BAND else "merging costs"
+    return "merging costs nothing" if b < CKPT_BAND else "inconclusive"
+
+
+def threshold_class(lo: float, hi: float, threshold: float = 0.0) -> str:
+    """A14 P2: 'holds' above the threshold, 'fails' below it, 'inconclusive' across."""
+    return "holds" if lo > threshold else "fails" if hi < threshold else "inconclusive"
+
+
+def equivalence_class(lo: float, hi: float, margin: float) -> str:
+    """A14 P2 (c): 'holds' within +-margin, 'fails' wholly outside, else 'inconclusive'."""
+    if not margin > 0:
+        return "not evaluable"
+    if -margin < lo and hi < margin:
+        return "holds"
+    return "fails" if lo > margin or hi < -margin else "inconclusive"
+
+
+def _partition_no(arm: str) -> int:
+    return int(re.fullmatch(r"RAND2_p(\d+)", arm).group(1))
+
+
+def emit_v2_random(em: Emitter, R: dict, path: pathlib.Path, A: dict, a_src: pathlib.Path) -> list:
+    """A10 and A14, at the primary checkpoint through the class token, every probe kind:
+      P1 per probe pair: RandPone<pair><probe> merging over splitting partitions (Welch, the
+        run variance from the runs replicating a partition) [95%], ...Label; RandPone<pair>
+        Merging/Splitting, the partitions; RandDose<pair>P<k>, each partition's realised dose
+        of the pair's axis, the pair's own classes left out (the reading beside P1);
+      the joint fit, secondary: RandJoint<pair><probe>, RandJointDose<pair><probe> and
+        RandJointDoseAxis<axis><probe> (exp of the per-axis term: axis merged over kept);
+      random against semantic, runs 1-2 paired: RandVsSem<ref><pair><probe><group> =
+        reference over the random side (above 1 = the random side beats it), <group> each
+        partition, Merging, Splitting, or Cells (A14's axis-account cells), the last with
+        ...AxisAccount and ...PairAccount;
+      P2 restated: RandPtwoGap<probe> (17 minus 43 classes on two-prong b vs c), RandPtwo
+        <A..D><probe> with ...Label, RandPtwoMargin<probe>, RandPtwoWithdrawal<probe>,
+        RandPtwoRuns<probe>, every difference in ln(1 - AUC).
+    Returns the tables (descriptive: each partition's and each flavour model's 1-AUC)."""
+    rows = R["ratios"]
+    prim = lambda r: r["checkpoint"] == V2_PRIMARY and r["family"] == "probe" and r["metric"] == "1-auc"
+    once = set()
+    p1 = {}
+    for i, r in enumerate(rows):
+        if r["contrast"] != "partition_split_vs_merged" or not prim(r):
+            continue
+        pk, kind = texname(*r["probe_pairs"]), texname(r["kind"])
+        if pk not in once:
+            once.add(pk)
+            for side, key in (("Merging", "merged_partitions"), ("Splitting", "split_partitions")):
+                em.macro("RandPone" + pk + side, word_list(sorted(map(_partition_no, r[key]))), path,
+                         f"ratios[{i}].{key}", f"the random partitions listed as {key.split('_')[0]}")
+            for pair, d in (r.get("axis_doses") or {}).items():
+                for arm, dose in sorted(d["realised"].items()):
+                    em.macro("RandDose" + texname(pair) + "P" + texname(_partition_no(arm)), fmt(dose, 2), path,
+                             f"ratios[{i}].axis_doses['{pair}'].realised.{arm}",
+                             f"realised dose of the {d['axis']} axis, the pair's classes left out")
+        if "not_computed" in r or r.get("censored_models") or r.get("ci95") is None:
+            continue
+        lab = p1_class(*r["ci95"])
+        if r.get("p1_label") != lab:
+            raise SystemExit(f"FATAL: {path} ratios[{i}] P1 label {r.get('p1_label')!r}; its interval gives {lab!r}")
+        p1[(tuple(r["probe_pairs"]), r["kind"])] = r
+        em.macro("RandPone" + pk + kind, fmt_paired(r["ratio"], *r["ci95"]), path,
+                 f"ratios[{i}].ratio, ratios[{i}].ci95",
+                 "merging partitions over splitting ones, Welch [95% interval]; above 1 = merging costs")
+        em.macro("RandPone" + pk + kind + "Label", P1_TEX[lab], path, f"ratios[{i}].p1_label",
+                 "A14's P1 label, re-derived from the interval")
+    for i, r in enumerate(rows):
+        if r["contrast"] not in ("partition_joint", "partition_joint_dose") or not prim(r) \
+                or "not_computed" in r or r.get("ci95") is None:
+            continue
+        head = "RandJoint" + ("Dose" if r["contrast"].endswith("dose") else "")
+        what = texname(*r["probe_pairs"]) if r.get("task") else "Axis" + texname(r["axis"])
+        em.macro(head + what + texname(r["kind"]), fmt_paired(r["ratio"], *r["ci95"]), path,
+                 f"ratios[{i}].ratio, ratios[{i}].ci95",
+                 "joint fit, secondary (A14): " + ("the merge effect" if r.get("task") else
+                                                   "the axis merged throughout over kept throughout"))
+    for i, r in enumerate(rows):
+        if r["contrast"] != "random_vs_semantic" or not prim(r) or "not_computed" in r \
+                or r.get("censored_models") or r.get("ci95") is None:
+            continue
+        if r["fine"].startswith("partitions that merge"):
+            group = "Merging"
+        elif r["fine"].startswith("partitions that split"):
+            group = "Splitting"
+        elif r["fine"].startswith("the cells of"):
+            group = "Cells" + (texname(*r["account_cells"]) if len(r["probe_pairs"]) > 1 else "")
+        else:
+            group = "P" + texname(_partition_no(r["partitions"][0]))
+        name = "RandVsSem" + texname(r["coarse"]) + texname(*r["probe_pairs"]) + texname(r["kind"]) + group
+        em.macro(name, fmt_paired(r["ratio"], *r["ci95"]), path, f"ratios[{i}].ratio, ratios[{i}].ci95",
+                 f"{r['coarse']}-class model over {r['fine']}, {r.get('n_runs')} runs paired; "
+                 "above 1 = the random side beats it")
+        if "axis_account" in r:
+            lo95 = math.log(r["ci95"][0])
+            lo90, hi90 = _ln_bounds(r["ln_ratio"], r["ln_combined_se"], r["dof"], 0.90)
+            axis = "beats" if lo95 > 0 else "inconclusive"
+            pair = "equal" if -CKPT_BAND < lo90 and hi90 < CKPT_BAND else "inconclusive"
+            if (axis, pair) != (r["axis_account"], r["pair_account"]):
+                raise SystemExit(f"FATAL: {path} ratios[{i}] reads {r['axis_account']}/{r['pair_account']}; "
+                                 f"its intervals give {axis}/{pair}")
+            em.macro(name + "AxisAccount", axis, path, f"ratios[{i}].axis_account",
+                     "A14: 'beats' when the 95% lower bound is above 1")
+            em.macro(name + "PairAccount", pair, path, f"ratios[{i}].pair_account",
+                     "A14: 'equal' when the 90% interval lies within a factor 1.1")
+    for j, b in enumerate(R.get("p2_verdict", [])):
+        if b["checkpoint"] != V2_PRIMARY or "not_computed" in b:
+            continue
+        k = texname(b["kind"])
+        src = f"p2_verdict[{j}]"
+        g = b["gap"]
+        em.macro("RandPtwoGap" + k, fmt_diff(g["estimate"], *g["ci95"], nd=3), path, src + ".gap",
+                 "17 minus 43 classes, two-prong b vs c, ln(1-AUC) [95%]")
+        m = b["margin"]["value"]
+        em.macro("RandPtwoMargin" + k, fmt(m, 3), path, src + ".margin.value", "a quarter of the gap")
+        em.macro("RandPtwoRuns" + k, word_list(b["runs"]), path, src + ".runs", "runs paired in P2")
+        for c, cl in b["clauses"].items():
+            iv = cl["ci90"] if c == "c" else cl["ci95"]
+            lab = equivalence_class(*iv, m) if c == "c" else threshold_class(*iv)
+            if lab != cl["label"]:
+                raise SystemExit(f"FATAL: {path} {src} clause ({c}) is {cl['label']!r}; its interval gives {lab!r}")
+            em.macro("RandPtwo" + texname(c) + k, fmt_diff(cl["estimate"], *iv, nd=3), path,
+                     f"{src}.clauses.{c}", cl["contrast"] + (" [90%]" if c == "c" else " [95%]"))
+            em.macro("RandPtwo" + texname(c) + k + "Label", lab, path, f"{src}.clauses.{c}.label",
+                     "A14 P2, re-derived from the interval")
+        lab_b = b["clauses"]["b"]["label"]
+        w = ("not evaluable: the 43- to 17-class gap is not positive" if not m > 0
+             else f"not reached: (b) is {lab_b}" if lab_b != "holds"
+             else {"holds": "not withdrawn", "fails": "withdrawn", "inconclusive": "inconclusive"}[
+                 threshold_class(*b["clauses"]["d"]["ci95"], m)])
+        if w != b["withdrawal"]["label"]:
+            raise SystemExit(f"FATAL: {path} {src} withdrawal {b['withdrawal']['label']!r}; the clauses give {w!r}")
+        em.macro("RandPtwoWithdrawal" + k, w, path, src + ".withdrawal.label", "A14 P2's withdrawal rule")
+    return [table_v2_random(A, p1), table_v2_flavour(A, R)]
+
+
+def _mean_oma(A: dict, task: str, arm: str, probe: str = "linear", runs=None) -> list:
+    return [1e3 * (1 - r["auc"]) for r in _v2_rows(A, task, probe, arm) if runs is None or r["seed"] in runs]
+
+
+def table_v2_random(A: dict, p1: dict) -> str:
+    """Each random partition's 1-AUC (x 10^3, the mean of its runs) on each probe pair's own
+    task, merged (m) or split (s), beside the 17- and 43-class models (runs 1-2) and P1."""
+    parts = sorted({r["arm"] for r in A["table"] if r["arm"].startswith("RAND2_")}, key=_partition_no)
+    head = ["probe pair & task & " + " & ".join(f"p{_partition_no(a)}" for a in parts)
+            + " & 17 & 43 & merging over splitting \\\\", "\\midrule"]
+    body = []
+    for (pairs, kind), r in sorted(p1.items()):
+        if kind != "linear":
+            continue
+        cells = []
+        for a in parts:
+            x = _mean_oma(A, r["task"], a)
+            cells.append(("---" if not x else fmt_one(np.mean(x))) + ("$^m$" if a in r["merged_partitions"] else ""))
+        for a in ("R16_Q1", "R42_Q1"):
+            x = _mean_oma(A, r["task"], a, runs=(1, 2))
+            cells.append("---" if len(x) < 2 else fmt_pm(np.mean(x), np.std(x, ddof=1)))
+        body.append(f"{tex(' and '.join(pairs))} & {TASK_LABELS.get(r['task'], tex(r['task']))} & "
+                    + " & ".join(cells) + f" & {fmt_paired(r['ratio'], *r['ci95'])} ({P1_TEX[r['p1_label']]}) \\\\")
+    caption = ("The five random partitions of the second set of runs, frozen linear probe: $1-$AUC in "
+               "units of $10^{-3}$ on each probe pair's own task, the mean of each partition's two runs "
+               "($^m$: the partition merges the pair), beside the 17- and 43-class models (runs one and "
+               f"two, mean {tex('±')} standard deviation); last, the paired ratio of the partitions that "
+               "merge the pair over those that split it, with its 95\\% interval and A14's reading.")
+    return _table(head + body, caption, "tab:random-partitions", "l l " + "r" * (len(parts) + 3), [], wide=True)
+
+
+def table_v2_flavour(A: dict, R: dict) -> str:
+    """The flavour pair F0, F1, F1r beside the 17- and 43-class models: 1-AUC (x 10^3,
+    mean +- SD over runs) on b vs c in two- and four-prong decays, and P2's clauses."""
+    tasks = [t for t in ("bvc_resonant", "bvc_4prong") if t in A["tasks"]]
+    labels = {"FLAV_F0": "F0", "FLAV_F1": "F1", "FLAV_F1R": "F1r", "R16_Q1": "17 classes", "R42_Q1": "43 classes"}
+    head = ["model & " + " & ".join(TASK_LABELS[t] for t in tasks) + " \\\\", "\\midrule"]
+    body = []
+    for arm, lab in labels.items():
+        cells = []
+        for t in tasks:
+            x = _mean_oma(A, t, arm)
+            cells.append("---" if len(x) < 2 else fmt_pm(np.mean(x), np.std(x, ddof=1)))
+        body.append(f"{lab} & " + " & ".join(cells) + " \\\\")
+    notes = []
+    for b in R.get("p2_verdict", []):
+        if b["checkpoint"] == V2_PRIMARY and b["kind"] == "linear" and "not_computed" not in b:
+            notes.append("P2, linear probe, runs " + word_list(b["runs"]) + ": " + "; ".join(
+                f"({c}) {cl['label']}" for c, cl in b["clauses"].items())
+                + f"; withdrawal rule: {b['withdrawal']['label']}.")
+    caption = ("The flavour pair of the second set of runs, frozen linear probe: $1-$AUC in units of "
+               f"$10^{{-3}}$, mean {tex('±')} standard deviation over each model's runs. F0 merges b and c "
+               "everywhere; F1 adds one cut that splits b from c in four-prong decays; F1r moves a random "
+               "half of the same orbit without any b-to-c boundary.")
+    return _table(head + body, caption, "tab:flavour-pair", "l " + "r" * len(tasks), notes)
+
+
+def emit_v2_mass_lambda(em: Emitter, R: dict, path: pathlib.Path, shares: pathlib.Path | None) -> None:
+    """A11 as A14 reads it: MassLambdaFraction<probe> (and ...Wavg), the fraction of the
+    excess 17-class mass-output cost on b vs c two-prong that the matched weight removes,
+    and MassLambdaFractionInterval<probe>, its 95% Fieller interval, or 'unbounded' when the
+    denominator's own interval holds 0. Beside it the realised gradient shares and cosines
+    (MassGradShareVtwo<model>, MassGradCosineVtwo<model>) from loss_share.json, whose loss
+    shares fill SLOTS."""
+    for i, r in enumerate(R["ratios"]):
+        if (r["contrast"] != "mass_lambda_fraction" or r["family"] != "probe" or r["task"] != "bvc_resonant"
+                or r["metric"] != "1-auc" or r["checkpoint"] not in (V2_PRIMARY, "wavg")
+                or "not_computed" in r or "fraction" not in r):
+            continue
+        k = texname(r["kind"]) + ("Wavg" if r["checkpoint"] == "wavg" else "")
+        em.macro("MassLambdaFraction" + k, fmt(r["fraction"], 2), path, f"ratios[{i}].fraction",
+                 "the fraction of the excess 17-class mass-output cost the matched weight removes (A11)")
+        iv = r.get("ci95")
+        em.macro("MassLambdaFractionInterval" + k, "unbounded" if iv is None else f"[{fmt(iv[0], 2)}, {fmt(iv[1], 2)}]",
+                 path, f"ratios[{i}].ci95", "95% Fieller interval; unbounded when the denominator's interval holds 0")
+    if shares is None:
+        return
+    S = json.loads(shares.read_text())
+    for key, per in S.get("grad_shares", {}).items():
+        k = texname(key.replace("+mass", " mass").replace("_", " "))
+        em.macro("MassGradShareVtwo" + k, fmt_pm(100 * np.mean(per), 100 * np.std(per, ddof=1)) + "\\%"
+                 if len(per) > 1 else fmt_one(100 * per[0]) + "\\%", shares, f"grad_shares['{key}']",
+                 "realised trunk-gradient share of the mass term, rho/(1+rho), mean +- SD over runs")
+        c = S["grad_cosine"][key]
+        em.macro("MassGradCosineVtwo" + k, fmt_pm(np.mean(c), np.std(c, ddof=1)) if len(c) > 1 else fmt_one(c[0]),
+                 shares, f"grad_cosine['{key}']", "cosine of the two trunk gradients, mean +- SD over runs")
+
+
+def welch_ratio(x: list, y: list) -> tuple[float, float, float]:
+    """y's runs over x's, unpaired: exp(mean ln y - mean ln x) with Welch's 95 % interval
+    (each side its own spread over runs, Student t at the Welch-Satterthwaite degrees of
+    freedom): A13's unseen against seen, A14's self-supervised against a vocabulary."""
+    from scipy import stats
+    lx, ly = np.log(x), np.log(y)
+    vx, vy = np.var(lx, ddof=1) / len(lx), np.var(ly, ddof=1) / len(ly)
+    d, se = float(ly.mean() - lx.mean()), math.sqrt(vx + vy)
+    dof = (vx + vy) ** 2 / (vx ** 2 / (len(lx) - 1) + vy ** 2 / (len(ly) - 1))
+    h = float(stats.t.ppf(0.975, dof)) * se
+    return math.exp(d), math.exp(d - h), math.exp(d + h)
+
+
+class CheckpointLabels:
+    """The A14 robustness and sensitivity labels this script derives itself, where
+    paired_errors.py has no replicates (the anomaly detectors on the features, the
+    benchmarks, the real-data yields): the paired ratio over runs of the result at the
+    other checkpoint over the primary, Student t at n - 1 (paired_ratio), labelled by
+    checkpoint_class. Kept per section, then counted (emit_checkpoint_counts)."""
+
+    def __init__(self):
+        self.rows = {}                  # (section, word) -> [(label, source file)]
+
+    def emit(self, em, name, primary: dict, other: dict, word: str, section: str, src, json_path):
+        runs = sorted(set(primary) & set(other))
+        if len(runs) < 3:
+            return
+        r, lo, hi = paired_ratio({k: primary[k] for k in runs}, {k: other[k] for k in runs})
+        lab = checkpoint_class(lo, hi)
+        identical = all(primary[k] == other[k] for k in runs)
+        em.macro(name + word + "Shift", fmt_paired(r, lo, hi), src, json_path,
+                 f"paired over runs {runs}, Student t: the result at {word.lower()} over the primary")
+        em.macro(name + word + "Label", CKPT_LABEL_TEX[lab], src, json_path,
+                 "A14's label from that interval" + ("; one checkpoint file, not counted" if identical else ""))
+        if not identical:
+            self.rows.setdefault((section, word), []).append((lab, src))
+
+
+V2_SCRATCH = "scratch-v2"
+
+
+def v2_ft_refs(root: pathlib.Path, ft: dict) -> dict:
+    """{dataset key: (file, {N: {fine-tuning seed: cell}})} of the from-scratch reference,
+    read where the v2 read-outs put it beside the rule's cells (both legs); the standalone
+    JetClass-II readout in finetune_references/ must be the same cells."""
+    out = {ds: (F["path"], F["cells"][V2_SCRATCH]) for ds, F in ft.items() if V2_SCRATCH in F["cells"]}
+    alone = v2_dir(root, "finetune_references") / "scratch_leg1_metrics.json"
+    if alone.exists():
+        cells = json.loads(alone.read_text())["cells"][V2_SCRATCH]
+        if "Jcii" in out and out["Jcii"][1] != cells:
+            raise SystemExit(f"FATAL: {alone.name} and {out['Jcii'][0].name} hold different from-scratch cells")
+        out.setdefault("Jcii", (alone, cells))
+    return out
+
+
+def ssl_validity(em: Emitter, ft: dict, refs: dict, grid: list) -> bool:
+    """PRESPEC 4 re-evaluated on the second grid (A14), on the inferential endpoint 2.3 fixes
+    for these tasks, ln(1 - macro AUC), as its outcome of 2026-09-24 read it:
+      (1) at 10^3 and 10^4 training jets, on JetClass-II and JetClass, the self-supervised
+          runs beat training from scratch by more than the spread: SslMargin<ds><N> = the
+          scratch mean over its fine-tuning seeds minus the self-supervised mean over its runs
+          (fine-tuning seed 1), SslSpread<ds><N> = the larger of the two standard deviations
+          (SslScratchSd, SslRunSd; SslSpreadSource names which), SslClauseOne<ds><N> 'holds'
+          when the margin exceeds it; SslClauseOne over the four;
+      (2) at 10^6 jets on JetClass-II its macro AUC is within 0.02 of the supervised-
+          pretrained models': SslGap (the supervised mean minus the self-supervised mean over
+          every run on the tree), SslClauseTwo.
+    SslValid: 'valid' when both hold; the model then enters the tables."""
+    mpm = next(a for a in grid if a["name"] == "MPM")
+    inits = [f"mpm-v2-s{k}" for k in range(1, mpm["runs"] + 1)]
+    sup = [f"{a['name'].lower().replace('_', '')}-s{k}" for a in grid if a["name"] in RUNGS
+           for k in range(1, a["runs"] + 1)]
+    lnoma = lambda c: math.log(1 - c["macro_auc_ovr"])
+    if ({"Jcii", "Jc"} - set(refs) or {"Jcii", "Jc"} - set(ft)
+            or any(i not in ft[ds]["cells"] for ds in ("Jcii", "Jc") for i in inits)):
+        raise SystemExit("FATAL: PRESPEC 4's bar needs the self-supervised and the from-scratch fine-tuning "
+                         "on JetClass-II and JetClass")
+    ok1 = True
+    for ds in ("Jcii", "Jc"):
+        F, (rsrc, ref) = ft[ds], refs[ds]
+        for n in ("N1000", "N10000"):
+            s = [lnoma(F["cells"][i][n]["s1"]) for i in inits]
+            z = [lnoma(c) for c in ref[n].values()]
+            sd_z, sd_s = float(np.std(z, ddof=1)), float(np.std(s, ddof=1))
+            margin, spread = float(np.mean(z) - np.mean(s)), max(sd_z, sd_s)
+            key = ds + n_tag(n)
+            em.macro("SslScratchSd" + key, fmt(sd_z, 3), F["path"], f"cells.scratch-v2.{n}.*.macro_auc_ovr",
+                     "SD of ln(1-macro AUC) over the from-scratch fine-tuning seeds")
+            em.macro("SslRunSd" + key, fmt(sd_s, 3), F["path"], f"cells.mpm-v2-s*.{n}.s1.macro_auc_ovr",
+                     "SD of ln(1-macro AUC) over the self-supervised runs")
+            em.macro("SslSpreadSource" + key, "the from-scratch fine-tuning seeds" if sd_z >= sd_s
+                     else "the self-supervised runs", F["path"], "max(SslScratchSd, SslRunSd)",
+                     "which spread clause 1 is judged against (the larger)")
+            em.macro("SslMargin" + key, fmt(margin, 3), F["path"], f"cells.{{scratch-v2,mpm-v2-s*}}.{n}.macro_auc_ovr",
+                     "ln(1-macro AUC): from scratch (mean over fine-tuning seeds) minus self-supervised (mean over runs)")
+            em.macro("SslSpread" + key, fmt(spread, 3), F["path"], f"cells.{{scratch-v2,mpm-v2-s*}}.{n}.macro_auc_ovr",
+                     "the larger standard deviation: scratch over fine-tuning seeds, self-supervised over runs")
+            em.macro("SslClauseOne" + key, "holds" if margin > spread else "fails", F["path"],
+                     f"cells.*.{n}", "PRESPEC 4 clause 1 at this size and task")
+            ok1 &= margin > spread
+    J = ft["Jcii"]
+    sup_auc = [J["cells"][i]["N1000000"]["s1"]["macro_auc_ovr"] for i in sup if i in J["cells"]]
+    gap = float(np.mean(sup_auc) - np.mean([J["cells"][i]["N1000000"]["s1"]["macro_auc_ovr"] for i in inits]))
+    ok2 = abs(gap) <= 0.02
+    em.macro("SslClauseOne", "holds" if ok1 else "fails", J["path"], "the four cells of clause 1")
+    em.macro("SslGap", fmt(gap, 4), J["path"], "cells.*.N1000000.s1.macro_auc_ovr",
+             f"supervised mean over {len(sup_auc)} runs minus self-supervised mean, macro AUC")
+    em.macro("SslClauseTwo", "holds" if ok2 else "fails", J["path"], "|SslGap| <= 0.02", "PRESPEC 4 clause 2")
+    em.macro("SslValid", "valid" if ok1 and ok2 else "not valid", J["path"], "clauses 1 and 2", "PRESPEC 4")
+    return ok1 and ok2
+
+
+def ft_with_refs(ft: dict, refs: dict, ssl_inits: list | None) -> tuple[dict, list]:
+    """The fine-tuning files with the from-scratch reference as one pseudo-model per
+    fine-tuning seed ('scratch-v2#s<k>', each at s1), and the reference rows: random
+    initialisation, and the self-supervised model when it is valid."""
+    out = {}
+    seeds = None
+    for ds, F in ft.items():
+        cells = dict(F["cells"])
+        if ds in refs:
+            ref = refs[ds][1]
+            seeds = sorted({s for per in ref.values() for s in per})
+            for s in seeds:
+                cells[f"{V2_SCRATCH}#{s}"] = {n: {"s1": per[s]} for n, per in ref.items() if s in per}
+        out[ds] = {**F, "cells": cells}
+    rows = []
+    if seeds and all(ds in refs for ds in ft):
+        rows.append(("Scratch", "random initialisation, over fine-tuning seeds",
+                     [f"{V2_SCRATCH}#{s}" for s in seeds]))
+    if ssl_inits:
+        rows.append(("SelfSupervised", "self-supervised", ssl_inits))
+    return out, rows
+
+
+def emit_v2_ft_refs(em: Emitter, ft: dict, rows: list, ref_rows: list) -> None:
+    """FtAuc<ds><N><row>, FtAcc<ds><N><row> of the reference rows (Scratch, SelfSupervised),
+    mean +- SD over the from-scratch fine-tuning seeds or the self-supervised runs, printed
+    to the places the vocabulary rows fix (ft_text)."""
+    for ds, F in ft.items():
+        for metric, name in (("macro_auc_ovr", "FtAuc"), ("accuracy", "FtAcc")):
+            text = ft_text(F["cells"], rows + ref_rows, metric)
+            for key, _, inits in ref_rows:
+                for n in ft_sizes(F["cells"], rows):
+                    em.macro(name + ds + n_tag(n) + key, text[(key, n)], F["path"],
+                             f"cells.{{{','.join(inits)}}}.{n}.s1.{metric}",
+                             f"mean +- SD over {len(inits)} " + ("fine-tuning seeds" if key == "Scratch" else "runs"))
+
+
+# The benchmark read-outs (scripts/build_ft_jobs.py, v2 read-outs): {macro part: (file kind,
+# set)}, best validation at every size and the last epoch at the full set (A6).
+V2_BENCH = {"Top": ("bench_metrics", "top"), "Qg": ("bench_metrics", "qg"),
+            "QgHerwig": ("bench_metrics_herwig", "qg")}
+BENCH_METRICS = (("Rfifty", "r50"), ("Rthirty", "r30"), ("Auc", "auc"), ("Acc", "accuracy"))
+
+
+def v2_bench_files(root: pathlib.Path, rule: str) -> dict:
+    """{file kind: path} of `rule`'s benchmark read-outs, every tier's in place of the
+    freeze's once it exists, each freeze cell then the same in both; None for a rule not
+    read out."""
+    d, out = v2_dir(root, "benchmarks"), {}
+    for kind in ("bench_metrics", "bench_metrics_herwig", "bench_metrics_last", "bench_metrics_herwig_last"):
+        full, t12 = d / f"{rule}_{kind}.json", d / f"{rule}_t12_{kind}.json"
+        if full.exists() and t12.exists():
+            F, T = (json.loads(p.read_text())["cells"] for p in (full, t12))
+            bad = [(s, i) for s in T for i in T[s] if T[s][i] != F.get(s, {}).get(i)]
+            if bad:
+                raise SystemExit(f"FATAL: {t12.name} and {full.name} disagree on {bad[:3]}")
+        p = full if full.exists() else t12 if t12.exists() else None
+        if p is not None:
+            out[kind] = p
+    return out
+
+
+def _bench_values(cells: dict, inits: list, n: str, metric: str) -> tuple:
+    """(values, bound flags, passing counts) of one metric over a row's models or the
+    from-scratch fine-tuning seeds (an init 'scratch-v2#s<k>')."""
+    cs = [cells[i.split("#")[0]][n][i.split("#")[1] if "#" in i else "s1"] for i in inits]
+    if metric in ("r50", "r30"):
+        return [c[metric] for c in cs], [c[f"{metric}_is_bound"] for c in cs], [c[f"{metric}_n_bkg_pass"] for c in cs]
+    if metric == "auc":
+        return [c["auc"] for c in cs], [c["log1m_auc_censored"] for c in cs], None
+    return [c[metric] for c in cs], None, None
+
+
+def _bench_text(vals, bounds, n_pass, metric) -> str:
+    if metric in ("r50", "r30"):
+        return fmt_rejection(vals, bounds, n_pass)
+    if metric == "auc":
+        return fmt_auc_pm(vals, bounds) if len(vals) > 1 else fmt_one(vals[0])
+    return fmt_pm(np.mean(vals), np.std(vals, ddof=1)) if len(vals) > 1 else fmt_one(vals[0])
+
+
+def emit_v2_bench(em: Emitter, files: dict, rows: list, labels: CheckpointLabels) -> list:
+    """The benchmarks (top tagging, quark/gluon on Pythia and on Herwig) fine-tuned from every
+    model, PRESPEC 2.3's metrics, mean +- SD over each row's runs (the from-scratch row over
+    its fine-tuning seeds):
+      Bench<set><metric><N><row>       best validation epoch, every training size (A6);
+      BenchLast<set><metric><row>      the last epoch at the full training set (A6's rule for
+                                       C2, C3 and S5);
+      ...Wavg                          the same from the weight average (A8);
+      BenchLast<set>Rfifty<row>WavgShift, ...WavgLabel   paired over runs, A14's label.
+    metric Rfifty, Rthirty (rejection at 50 and 30 % signal efficiency), Auc, Acc."""
+    out = []
+    for rule, suffix in (("best70", ""), ("wavg", "Wavg")):
+        for set_key, (kind, s) in V2_BENCH.items():
+            for last in (False, True):
+                p = files.get(rule, {}).get(kind + ("_last" if last else ""))
+                if p is None:
+                    continue
+                cells = json.loads(p.read_text())["cells"][s]
+                use = [(k, lab, i) for k, lab, i in rows if all(x.split("#")[0] in cells for x in i)]
+                for key, _, inits in use:
+                    for n in sorted(cells[inits[0].split("#")[0]], key=lambda x: int(x[1:])):
+                        for mk, metric in BENCH_METRICS:
+                            v, b, k = _bench_values(cells, inits, n, metric)
+                            size = n_tag(n) if re.fullmatch(r"N10*", n) else "Full"   # 1.2M, 1.6M: the full set
+                            name = ("BenchLast" + texname(set_key) + mk if last
+                                    else "Bench" + texname(set_key) + mk + size) + key + suffix
+                            em.macro(name, _bench_text(v, b, k, metric), p,
+                                     f"cells.{s}.{{{','.join(inits)}}}.{n}.{metric}",
+                                     ("last epoch" if last else "best validation epoch") + f", {rule}, mean +- SD")
+    # A14's label of the C2/C3/S5 quantity, the last-epoch rejection at 50 % on the full set
+    for set_key, (kind, s) in V2_BENCH.items():
+        pb, pw = (files.get(r, {}).get(kind + "_last") for r in ("best70", "wavg"))
+        if pb is None or pw is None:
+            continue
+        cb, cw = (json.loads(p.read_text())["cells"][s] for p in (pb, pw))
+        for key, _, inits in rows:
+            if any("#" in i for i in inits) or not all(i in cb and i in cw for i in inits):
+                continue
+            n = next(iter(cb[inits[0]]))
+            get = lambda c: {v2_run(i): c[i][n]["s1"]["r50"] for i in inits if not c[i][n]["s1"]["r50_is_bound"]}
+            labels.emit(em, "BenchLast" + texname(set_key) + "Rfifty" + key, get(cb), get(cw), "Wavg", "benchmarks",
+                        pw, f"cells.{s}.*.{n}.s1.r50 over {pb.name}")
+    for rule in ("best70",):
+        p = files.get(rule, {}).get("bench_metrics_last")
+        if p is not None:
+            out.append(table_v2_bench_last(files[rule], rows))
+    return out
+
+
+def table_v2_bench_last(files: dict, rows: list) -> str:
+    """The benchmarks at the last epoch on the full training sets (A6), primary checkpoint."""
+    sets = [(k, kind, s) for k, (kind, s) in V2_BENCH.items() if kind + "_last" in files]
+    head = ["& " + " & ".join(f"\\multicolumn{{2}}{{c}}{{{t}}}" for t in
+                              ("top tagging" if k == "Top" else "quark/gluon, Herwig" if k == "QgHerwig"
+                               else "quark/gluon" for k, _, _ in sets)) + " \\\\",
+            "pretraining & " + " & ".join("$1/\\epsilon_B$ at 50\\% & AUC" for _ in sets) + " \\\\", "\\midrule"]
+    body, n_used, scratch_row = [], set(), False
+    docs = {k: json.loads(files[kind + "_last"].read_text())["cells"][s] for k, kind, s in sets}
+    for key, label, inits in rows:
+        cells = []
+        for k, _, _ in sets:
+            c = docs[k]
+            if not all(i.split("#")[0] in c for i in inits):
+                cells += ["---", "---"]
+                continue
+            n = next(iter(c[inits[0].split("#")[0]]))
+            n_used.add(n)
+            for metric in ("r50", "auc"):
+                cells.append(_bench_text(*_bench_values(c, inits, n, metric), metric))
+        if set(cells) != {"---"}:          # a row read out at no set: the from-scratch reference
+            body.append(f"{label} & " + " & ".join(cells) + " \\\\")
+            scratch_row |= any("#" in i for i in inits)
+    caption = ("Top tagging and quark/gluon tagging (trained on Pythia, tested on Pythia and on Herwig) "
+               "fine-tuned from every model of the second set of runs, from its primary checkpoint, on the "
+               "full training sets at the last epoch (amendment A6): background rejection at 50\\% signal "
+               f"efficiency and AUC, mean {tex('±')} standard deviation over each row's pretraining runs"
+               + (" (the random initialisation over its fine-tuning seeds)." if scratch_row else "."))
+    return _table(head + body, caption, "tab:benchmarks-last", "l " + "rr" * len(sets), [], wide=True)
+
+
+V2_ANOMALY_FEATURE_FAMILIES = ("knn", "mahalanobis")   # anomaly_summary.V2_FAMILIES
+
+
+def v2_anomaly_inputs(root: pathlib.Path) -> dict:
+    """{(tag, readout): (path, summary)}: anomaly_summary.py --grid's output for every tag and
+    readout of the anomaly set read, v2/anomaly/<set>/summary/<tag>/<readout>/, the set of
+    every tier (t123) in place of the freeze's (t12) once it exists; then each run's value
+    common to both must be the same, and each summary's inputs unchanged since."""
+    d = v2_dir(root, "anomaly")
+    sets = sorted((p for p in d.iterdir() if p.is_dir() and (p / "summary").is_dir()), key=lambda p: len(p.name))
+    if not sets:
+        raise SystemExit(f"FATAL: {d.relative_to(root)} holds no <set>/summary/")
+    load = lambda s: {(p.parents[1].name, p.parent.name): (p, json.loads(p.read_text()))
+                      for p in sorted((s / "summary").glob("*/*/anomaly_summary.json"))}
+    out = load(sets[-1])
+    for s in sets[:-1]:
+        for key, (p, S) in load(s).items():
+            T = out.get(key, (None, None))[1]
+            for fam, blk in S["families"].items():
+                for sig, per_n in blk.items():
+                    for arm, e in per_n.get("2000", {}).get("levels", {}).items():
+                        other = (((T or {}).get("families", {}).get(fam, {}).get(sig, {}).get("2000", {})
+                                  .get("levels", {}).get(arm)))
+                        if other is None or other["ln_sigma_min"] != e["ln_sigma_min"]:
+                            raise SystemExit(f"FATAL: {p} and {sets[-1].name}'s summary disagree on {fam}/{sig}/{arm}")
+    for p, _ in out.values():
+        check_inputs_unchanged(p, root)
+    return out
+
+
+def _anomaly_runs(e: dict) -> dict:
+    """{run index: sigma_min} of one anomaly cell (a summary level or a checkpoint_rule entry)."""
+    return {v2_run(a): math.exp(x) for a, x in zip(e["arms"], e["ln_sigma_min"])}
+
+
+def lofo_signals(root: pathlib.Path, grid: list, v1_summary: dict | None, fam: str) -> list:
+    """A14's A13 signals: X->YY->bbbb, and every other anomaly signal of the left-out family
+    (a native class the models that leave the family out never see: the grid's
+    extra_selection on its jet_label) that met the first grid's detection rule for the
+    detector `fam` when seen (its not_detected list)."""
+    sel = {a["extra_selection"] for a in grid if a.get("extra_selection")}
+    if len(sel) != 1:
+        raise SystemExit(f"FATAL: the grid's family-out arms leave out {len(sel)} different selections")
+    expr = sel.pop()
+    pairs = re.findall(r"\(jet_label >= (\d+)\) & \(jet_label < (\d+)\)", expr)
+    singles = re.findall(r"\(jet_label == (\d+)\)", expr)
+    ranges = [(int(a), int(b)) for a, b in pairs] + [(int(a), int(a) + 1) for a in singles]
+    if not expr.startswith("~(") or expr.count("jet_label") != 2 * len(pairs) + len(singles):
+        raise SystemExit(f"FATAL: the family-out selection {expr!r} is not ~(ranges of jet_label)")
+    rows = {r["class_name"]: int(r["jet_label"]) for r in
+            csv.DictReader((root / "configs/labelmaps/rung_label_maps.v1.csv").open())}
+    out_of = lambda jl: any(a <= jl < b for a, b in ranges)
+    nd = set((v1_summary or {}).get("not_detected_rule", {}).get("not_detected", []))
+    return [s for s in SIGNAL_LABELS if s in rows and out_of(rows[s])
+            and (s == "label_X_YY_bbbb" or f"{fam}|{s}" not in nd)]
+
+
+def emit_v2_anomaly(em: Emitter, V: dict, grid: list, labels_of: dict, root: pathlib.Path,
+                    products: dict | None, v1_summary: dict | None, ck: CheckpointLabels) -> list:
+    """Section 5 on the second grid under the first grid's names, at the primary checkpoint
+    through the class token: AnomalySigmaMin<fam><signal><level> and AnomalyMaxSic... for the
+    k-nearest-neighbour and Mahalanobis detectors (anomaly_summary.py --grid), and
+    AnomalySigmaMinClassSumMatched<signal><level>, the output ratio, from the output layers at
+    best70 (its checkpoint_rule); the settings; PairedAnomaly<fam><signal><coarse>Over<fine>,
+    paired by run, Student t (the output ratio's are paired_errors.py's), and
+    PairedAnomalyOutputOverMahalanobis<signal><level>. Beside the detectors: ...Wavg,
+    ...Bestval, ...Twin and ...Pooled, the shifts to the weight average and the global best
+    with A14's labels, and the reference rows ...SelfSupervised (pooled) and ...Untrained
+    [Pooled]. A13 (Lofo): LofoUnseen<fam><signal><level> = unseen over seen, Welch on runs
+    1-3 of both (one GPU product, I7), LofoSigmaMin<fam><signal><level> the family-out runs,
+    and PairedAnomaly<fam>Unseen<signal><coarse>Over<fine>, the ladder among them, paired,
+    descriptive. Returns the tables."""
+    src, S = V[(V2_PRIMARY, V2_CLASS_TOKEN)]
+    inj = S["conventions"]["primary_injection"]
+    R = json.loads((em.root / S["provenance"]["inputs"]["anomaly"]["path"]).read_text())
+    res_path = em.root / S["provenance"]["inputs"]["anomaly"]["path"]
+    em.macro("AnomalyInjection", fmt_int(inj), src, "conventions.primary_injection", "injected signal jets")
+    em.macro("AnomalyNResamplings", str(S["provenance"]["resamplings_per_seed"]), src,
+             "provenance.resamplings_per_seed", "resamplings per model, median taken")
+    em.macro("AnomalyNBkg", fmt_int(R["n_bkg"]), res_path, "n_bkg", "background jets in the data sample")
+    em.macro("AnomalyNTemplate", fmt_int(R["n_template"]), res_path, "n_template", "jets in the background template")
+    em.macro("AnomalyStatCut", f"{100 * R['stat_cut']:.0f}\\%", res_path, "stat_cut",
+             "largest relative statistical error on eps_B at a usable threshold")
+    em.macro("AnomalyMinBkgPass", str(int(np.ceil(1 / R["stat_cut"] ** 2))), res_path, "stat_cut",
+             "background jets that must pass a threshold, 1/stat_cut^2")
+    em.macro("AnomalySigmaT", fmt(R["sigma_t"], 0), res_path, "sigma_t", "target significance")
+    code = em.root / "experiments" / "EVAL" / "anomaly.py"
+    if code.exists():
+        k = re.findall(r"^KNN_K = (\d+)", code.read_text(), re.M)
+        if len(k) != 1:
+            raise SystemExit(f"FATAL: {code} sets KNN_K {len(k)} times")
+        em.macro("AnomalyKnnK", k[0], code, "KNN_K", "the k of the nearest-neighbour distance")
+    nd = set(S["not_detected_rule"]["not_detected"])
+    em.macro("AnomalyNdThreshold", fmt(S["not_detected_rule"]["threshold_max_sic"], 1), src,
+             "not_detected_rule.threshold_max_sic", "max SIC below this at every model")
+    level_of = {a["name"]: a["num_classes"] for a in grid if a["name"] in RUNGS}
+    tree = sorted((a for a in S["families"]["knn"][next(iter(S["families"]["knn"]))][inj]["levels"]
+                   if a in level_of), key=lambda a: -level_of[a])
+    cell = lambda T, fam, sig, arm: T["families"][fam][sig][inj]["levels"].get(arm)
+    n_runs = {len(cell(S, "knn", next(iter(S["families"]["knn"])), a)["arms"]) for a in tree}
+    if len(n_runs) != 1:
+        raise SystemExit(f"FATAL: the v2 anomaly levels hold {sorted(n_runs)} runs; the text states one")
+    em.macro("AnomalyNRunsWord", words(n_runs.pop()), src, f"families.knn.*.{inj}.levels.*.arms (count)",
+             "pretraining runs per vocabulary")
+    heads = S.get("checkpoint_rule", {}).get("by_checkpoint", {})
+    cs = lambda tag, sig, arm: heads.get(tag, {}).get("class_sum_matched", {}).get(sig, {}).get(inj, {}).get(arm)
+    pm = lambda v: fmt_pm(np.mean(v), np.std(v, ddof=1)) if len(v) > 1 else fmt_one(v[0])
+    for fam in V2_ANOMALY_FEATURE_FAMILIES:
+        for sig in S["families"][fam]:
+            for arm in tree:
+                c = cell(S, fam, sig, arm)
+                key = texname(fam) + anomaly_signal_key(sig) + texname(level_of[arm])
+                jp = f"families.{fam}.{sig}.{inj}.levels.{arm}"
+                em.macro("AnomalySigmaMin" + key, pm(c["sigma_min"]), src, jp + ".sigma_min", "mean +- SD over runs")
+                em.macro("AnomalyMaxSic" + key, pm(c["max_sic"]), src, jp + ".max_sic", "mean +- SD over runs")
+                for (tag, ro), word in (((V2_TWIN, V2_CLASS_TOKEN), "Twin"), ((V2_PRIMARY, V2_POOLED), "Pooled"),
+                                        (("wavg", V2_CLASS_TOKEN), "Wavg"), (("bestval", V2_CLASS_TOKEN), "Bestval")):
+                    if (tag, ro) not in V:
+                        continue
+                    s2, T = V[(tag, ro)]
+                    o = cell(T, fam, sig, arm)
+                    if o is None:
+                        continue
+                    em.macro("AnomalySigmaMin" + key + word, pm(o["sigma_min"]), s2, jp + ".sigma_min",
+                             f"at {tag}, {ro}; mean +- SD over runs")
+                    if word in ("Wavg", "Bestval"):
+                        ck.emit(em, "AnomalySigmaMin" + key, _anomaly_runs(c), _anomaly_runs(o), word, "anomaly detectors",
+                                s2, jp + ".ln_sigma_min")
+            for (tag, ro), word in (((V2_INIT, V2_CLASS_TOKEN), "Untrained"), ((V2_INIT, V2_POOLED), "UntrainedPooled"),
+                                    ((V2_PRIMARY, V2_POOLED), "SelfSupervised")):
+                arm = "init" if word.startswith("Untrained") else "MPM"
+                if (tag, ro) in V and (o := cell(V[(tag, ro)][1], fam, sig, arm)) is not None:
+                    em.macro("AnomalySigmaMin" + texname(fam) + anomaly_signal_key(sig) + word, pm(o["sigma_min"]),
+                             V[(tag, ro)][0], f"families.{fam}.{sig}.{inj}.levels.{arm}.sigma_min",
+                             "reference row, mean +- SD over runs")
+    for sig in SIGNAL_LABELS:
+        for arm in tree:
+            c = cs(V2_PRIMARY, sig, arm)
+            if c is not None:
+                em.macro("AnomalySigmaMinClassSumMatched" + anomaly_signal_key(sig) + texname(level_of[arm]),
+                         pm([math.exp(x) for x in c["ln_sigma_min"]]), src,
+                         f"checkpoint_rule.by_checkpoint.best70.class_sum_matched.{sig}.{inj}.{arm}",
+                         "the output ratio at the primary checkpoint; mean +- SD over runs")
+    # paired by run between vocabularies, as the first grid's (Student t over runs)
+    for fam in V2_ANOMALY_FEATURE_FAMILIES:
+        for sig in S["families"][fam]:
+            if f"{fam}|{sig}" in nd:
+                continue
+            for i, fine in enumerate(tree):
+                for coarse in tree[i + 1:]:
+                    em.macro("PairedAnomaly" + texname(fam) + anomaly_signal_key(sig) + texname(level_of[coarse])
+                             + "Over" + texname(level_of[fine]),
+                             fmt_paired(*paired_ratio(_anomaly_runs(cell(S, fam, sig, fine)),
+                                                      _anomaly_runs(cell(S, fam, sig, coarse)))), src,
+                             f"families.{fam}.{sig}.{inj}.levels.{{{coarse},{fine}}}.ln_sigma_min",
+                             "sigma_min ratio paired by run [95% Student-t interval]; above 1 = less sensitive")
+    for sig in S["families"]["mahalanobis"]:
+        for arm in tree:
+            c, m = cs(V2_PRIMARY, sig, arm), cell(S, "mahalanobis", sig, arm)
+            if c is None or m is None or {f"class_sum_matched|{sig}", f"mahalanobis|{sig}"} & nd:
+                continue
+            em.macro("PairedAnomalyOutputOverMahalanobis" + anomaly_signal_key(sig) + texname(level_of[arm]),
+                     fmt_paired(*paired_ratio(_anomaly_runs(m), _anomaly_runs(c))), src,
+                     f"checkpoint_rule.by_checkpoint.best70.class_sum_matched.{sig}.{inj}.{arm} over "
+                     f"families.mahalanobis.{sig}.{inj}.levels.{arm}",
+                     "output ratio over Mahalanobis distance, paired by run [95% Student-t interval]")
+    tables = [table_v2_anomaly(S, tree, level_of, cs, inj, nd), table_v2_anomaly_per_run(S, tree, level_of, cs, inj, nd)]
+    # A13: the family left out, against the same vocabulary seen (Welch, runs 1-3)
+    lofo = {a["parent"]: a for a in grid if a.get("extra_selection") and a.get("parent")}
+    body = []
+    for fam in V2_ANOMALY_FEATURE_FAMILIES:
+        for sig in lofo_signals(root, grid, v1_summary, fam):
+            if sig not in S["families"][fam]:
+                continue
+            for parent, a in lofo.items():
+                (s2, T) = V[(V2_PRIMARY, V2_POOLED if parent == "MPM" else V2_CLASS_TOKEN)] \
+                    if (V2_PRIMARY, V2_POOLED if parent == "MPM" else V2_CLASS_TOKEN) in V else (None, None)
+                if T is None or cell(T, fam, sig, a["name"]) is None or cell(T, fam, sig, parent) is None:
+                    continue
+                runs = list(range(1, a["runs"] + 1))
+                seen = {k: v for k, v in _anomaly_runs(cell(T, fam, sig, parent)).items() if k in runs}
+                unseen = {k: v for k, v in _anomaly_runs(cell(T, fam, sig, a["name"])).items() if k in runs}
+                if products is not None and len({products[k] for k in set(seen) | set(unseen)}) > 1:
+                    raise SystemExit(f"FATAL: A13 {a['name']} against {parent} spans two GPU products (I7)")
+                lv = "SelfSupervised" if parent == "MPM" else texname(level_of[parent])
+                key = texname(fam) + anomaly_signal_key(sig) + lv
+                r, lo, hi = welch_ratio(list(seen.values()), list(unseen.values()))
+                em.macro("LofoUnseen" + key, fmt_paired(r, lo, hi), s2,
+                         f"families.{fam}.{sig}.{inj}.levels.{{{a['name']},{parent}}}.ln_sigma_min, runs {runs}",
+                         "sigma_min unseen over seen, Welch [95% interval]; above 1 = less sensitive unseen")
+                em.macro("LofoSigmaMin" + key, pm(list(unseen.values())), s2,
+                         f"families.{fam}.{sig}.{inj}.levels.{a['name']}.sigma_min", "mean +- SD over its runs")
+                body.append(f"{SIGNAL_LABELS[sig]} & {FAMILY_LABELS[fam]} & {tex(labels_of.get(parent, parent))} & "
+                            f"{pm(list(seen.values()))} & {pm(list(unseen.values()))} & {fmt_paired(r, lo, hi)} \\\\")
+            ladder = sorted((a["name"] for p, a in lofo.items() if p in level_of), key=lambda n: -level_of[lofo_parent(n, lofo)])
+            for i, fine in enumerate(ladder):
+                for coarse in ladder[i + 1:]:
+                    f, c = cell(S, fam, sig, fine), cell(S, fam, sig, coarse)
+                    if f is None or c is None:
+                        continue
+                    em.macro("PairedAnomaly" + texname(fam) + "Unseen" + anomaly_signal_key(sig)
+                             + texname(level_of[lofo_parent(coarse, lofo)]) + "Over" + texname(level_of[lofo_parent(fine, lofo)]),
+                             fmt_paired(*paired_ratio(_anomaly_runs(f), _anomaly_runs(c))), src,
+                             f"families.{fam}.{sig}.{inj}.levels.{{{coarse},{fine}}}.ln_sigma_min",
+                             "family-out models, paired by run [95% Student-t interval]; descriptive (A14)")
+    if body:
+        head = ["signal & detector & vocabulary & seen & unseen & unseen over seen \\\\", "\\midrule"]
+        caption = ("The family of $X\\to YY\\to bbbb$ left out of pretraining (amendment A13): "
+                   "$\\sigma_{\\min}$ of the models that never saw it against the same vocabulary seen, "
+                   f"mean {tex('±')} standard deviation over runs one to three, and their ratio with Welch's 95\\% "
+                   "interval. Leaving the family out changes the exposure to every other class as stated in the "
+                   "text.")
+        tables.append(_table(head + body, caption, "tab:lofo", "l l l r r r", []))
+    return tables
+
+
+def lofo_parent(name: str, lofo: dict) -> str:
+    return next(p for p, a in lofo.items() if a["name"] == name)
+
+
+def table_v2_anomaly(S, tree, level_of, cs, inj, nd) -> str:
+    """sigma_min and max SIC per signal, detector and vocabulary of the second grid."""
+    sigs = [g for g in SIGNAL_LABELS if all(g in S["families"][f] for f in V2_ANOMALY_FEATURE_FAMILIES)
+            and any(f"{f}|{g}" not in nd for f in V2_ANOMALY_FEATURE_FAMILIES)]
+    head = ["& detector & " + " & ".join(f"{level_of[a]} classes" for a in tree) + " \\\\", "\\midrule"]
+    body = []
+    for qty, name in (("sigma_min", "$\\sigma_{\\min}$"), ("max_sic", "max SIC")):
+        body.append(f"\\multicolumn{{{2 + len(tree)}}}{{@{{}}l}}{{\\itshape {name}}} \\\\")
+        for g in sigs:
+            fams = list(V2_ANOMALY_FEATURE_FAMILIES) + (["class_sum_matched"] if qty == "sigma_min" else [])
+            for i, f in enumerate(fams):
+                cells = []
+                for a in tree:
+                    if f == "class_sum_matched":
+                        c = cs(V2_PRIMARY, g, a)
+                        v = None if c is None else [math.exp(x) for x in c["ln_sigma_min"]]
+                    else:
+                        v = S["families"][f][g][inj]["levels"][a][qty]
+                    cells.append("---" if not v else fmt_pm(np.mean(v), np.std(v, ddof=1)))
+                body.append((SIGNAL_LABELS[g] if i == 0 else "") + f" & {FAMILY_LABELS[f]} & " + " & ".join(cells) + " \\\\")
+        if qty == "sigma_min":
+            body.append("\\addlinespace")
+    caption = ("Anomaly detection with the models of the second set of runs at their primary checkpoint: "
+               "two detectors on the frozen features and the resonance-to-QCD probability ratio from the "
+               f"model's own outputs (output ratio), {fmt_int(inj)} signal jets injected. $\\sigma_{{\\min}}$ "
+               "is the smallest initial significance from which a discovery is still reached (lower is more "
+               f"sensitive). Mean {tex('±')} standard deviation over each vocabulary's runs of each run's median "
+               "over resamplings.")
+    return _table(head + body, caption, "tab:anomaly", "l l " + "r" * len(tree), [])
+
+
+def table_v2_anomaly_per_run(S: dict, tree: list, level_of: dict, cs, inj: str, nd: set) -> str:
+    """sigma_min of every run of the second grid, for the signals and scores of the anomaly
+    table, runs in order: the values behind its mean +- SD."""
+    sigs = [g for g in SIGNAL_LABELS if all(g in S["families"][f] for f in V2_ANOMALY_FEATURE_FAMILIES)
+            and any(f"{f}|{g}" not in nd for f in V2_ANOMALY_FEATURE_FAMILIES)]
+    body = []
+    for g in sigs:
+        for i, f in enumerate([*V2_ANOMALY_FEATURE_FAMILIES, "class_sum_matched"]):
+            cells = []
+            for a in tree:
+                e = cs(V2_PRIMARY, g, a) if f == "class_sum_matched" else S["families"][f][g][inj]["levels"][a]
+                cells.append("---" if e is None else ", ".join(fmt(v, 2) for _, v in sorted(_anomaly_runs(e).items())))
+            body.append((SIGNAL_LABELS[g] if i == 0 else "") + f" & {FAMILY_LABELS[f]} & " + " & ".join(cells) + " \\\\")
+        body.append("\\addlinespace")
+    head = ["& score & " + " & ".join(f"{level_of[a]} classes" for a in tree) + " \\\\", "\\midrule"]
+    caption = ("$\\sigma_{\\min}$ of each pretraining run of the second set, runs in order, for the signals and "
+               "scores of Table~\\ref{tab:anomaly}: each value is that run's median over resamplings at "
+               f"{fmt_int(inj)} injected signal jets.")
+    return _table(head + body[:-1], caption, "tab:anomaly-per-run", "l l " + "r" * len(tree), [], wide=True)
+
+
+V2_AOJ_FREEZE, V2_AOJ_LATER = "t12", "t3"     # scripts/build_aoj_jobs.py v2_label of tiers (1, 2) and (3,)
+
+
+def _v2_aoj_run(root: pathlib.Path, d: pathlib.Path) -> tuple:
+    """(analysis, (fit file, fit)) of one v2 real-data run; the fit must be the file of the
+    hash its analysis recorded."""
+    src = d / "analysis_v6" / "aoj_top.json"
+    if not src.exists():
+        raise SystemExit(f"FATAL: {src.relative_to(root)} does not exist")
+    J = json.loads(src.read_text())
+    res_path = d / "fit_v6" / "results.json"
+    if not res_path.exists() or hashlib.sha256(res_path.read_bytes()).hexdigest() != J["provenance"]["input_sha256"]:
+        raise SystemExit(f"FATAL: {res_path.relative_to(root)} is not the fit {d.name}'s analysis read")
+    return J, (res_path, json.loads(res_path.read_text()))
+
+
+def v2_real_data(root: pathlib.Path) -> dict:
+    """The real-data fits of the second grid, as scripts/build_aoj_jobs.py --v2 runs them:
+    real_data/t12/ (the freeze, tiers 1-2, which derives the pooled peak shape) for every row
+    of tiers 1-2, and real_data/t3/ (tier 3, fitted at t12's shape: experiments/AOJ/fit_v6.py
+    --v2 --shape-from) only for the rows of tier-3 arms. Each: analysis_v6/aoj_top.json, the
+    fit it read (fit_v6/results.json) and, for t12, injection/summary.json. Refused: no t12, a
+    t12 that holds another fit's shape, a t3 whose fit does not hold t12's (its pooled_shape's
+    held_from and held_from_sha256), and any other directory."""
+    d = v2_dir(root, "real_data")
+    dirs = {p.name for p in d.iterdir() if p.is_dir()}
+    if V2_AOJ_FREEZE not in dirs or dirs - {V2_AOJ_FREEZE, V2_AOJ_LATER}:
+        raise SystemExit(f"FATAL: {d.relative_to(root)} holds {sorted(dirs)}; the second grid's real data "
+                         f"is {V2_AOJ_FREEZE}/ and, for tier 3, {V2_AOJ_LATER}/")
+    J, fits = _v2_aoj_run(root, d / V2_AOJ_FREEZE)
+    if "held_from" in fits[1]["pooled_shape"]:
+        raise SystemExit(f"FATAL: the freeze fit holds the shape of {fits[1]['pooled_shape']['held_from']}; "
+                         "it derives its own")
+    inj = d / V2_AOJ_FREEZE / "injection" / "summary.json"
+    out = {"src": d / V2_AOJ_FREEZE / "analysis_v6" / "aoj_top.json", "J": J, "fits": fits,
+           "injection": inj if inj.exists() else None, "t3": None}
+    if V2_AOJ_LATER in dirs:
+        J3, fits3 = _v2_aoj_run(root, d / V2_AOJ_LATER)
+        ps = fits3[1]["pooled_shape"]
+        if (ps.get("held_from_sha256") != hashlib.sha256(fits[0].read_bytes()).hexdigest()
+                or not str(ps.get("held_from", "")).endswith(f"/{V2_AOJ_FREEZE}/fit_v6/results.json")):
+            raise SystemExit(f"FATAL: {V2_AOJ_LATER}/'s fit holds the shape of {ps.get('held_from')!r} "
+                             f"({str(ps.get('held_from_sha256'))[:16]}), not the freeze fit's")
+        out["t3"] = {"src": d / V2_AOJ_LATER / "analysis_v6" / "aoj_top.json", "J": J3, "fits": fits3}
+    return out
+
+
+def emit_v2_real_data(em: Emitter, RD: dict, labels_of: dict, grid: list, paths: dict,
+                      ck: CheckpointLabels) -> str:
+    """Section 6 on the second grid under the first grid's names (emit_real_data) at the
+    primary checkpoint, from the freeze fit (t12): the per-checkpoint label sets relabelled
+    by the contrasts file's labels, the injection test from its own summary; beside each yield
+    AojYield<set>Wavg, ...Bestval, ...Twin and the shifts to the weight average and the global
+    best with A14's labels; and the levels the first grid lacks as AojYield<set> and
+    AojStatErr<set>: the matched mass weight from t12, the 64- and 30-class levels from t3,
+    fitted at t12's shape. A run that holds an arm of the other's tiers is refused. Returns
+    the table."""
+    tier = {labels_of.get(a["name"], a["name"]): int(a["tier"]) for a in grid}
+    runs_of = {V2_AOJ_FREEZE: RD, V2_AOJ_LATER: RD["t3"]}
+    for name, R in runs_of.items():
+        for tag, blk in ((R or {}).get("J", {}).get("per_checkpoint") or {}).items():
+            wrong = [labels_of.get(a, a) for a in blk["label_sets"]
+                     if (tier.get(labels_of.get(a, a), 0) == 3) != (name == V2_AOJ_LATER)]
+            if wrong:
+                raise SystemExit(f"FATAL: real_data/{name}/ holds {wrong} at {tag}, rows of the other run's tiers")
+    rel = lambda per, tag: {**per[tag], "label_sets": {labels_of.get(a, a): v for a, v in per[tag]["label_sets"].items()}}
+    per12 = RD["J"]["per_checkpoint"]
+    J = {"provenance": RD["J"]["provenance"], "per_label_set": rel(per12, V2_PRIMARY)}
+    emit_real_data(em, J, RD["src"], {**paths, "aoj_injection": RD["injection"]}, RD["fits"])
+    extra = [labels_of.get(a["name"], a["name"]) for a in grid
+             if (a["name"] in RUNGS or a["name"] == "R16_Q1_MASS_LM")
+             and labels_of.get(a["name"], a["name"]) not in AOJ_SETS]
+    runs = lambda c: {run_index(m): y for m, y in zip(c["models"], c["signal_yields"])}
+    for lv in [*AOJ_SETS, *extra]:
+        R = RD if tier.get(lv, 0) < 3 else RD["t3"]
+        if R is None or lv not in rel(R["J"]["per_checkpoint"], V2_PRIMARY)["label_sets"]:
+            continue
+        per, src = R["J"]["per_checkpoint"], R["src"]
+        c = rel(per, V2_PRIMARY)["label_sets"][lv]
+        k = texname(lv.replace("+mass", " mass"))
+        if lv in extra:
+            em.macro("AojYield" + k, fmt_pm(c["signal_yield"]["mean"], c["signal_yield"]["sd"]), src,
+                     f"per_checkpoint.best70.label_sets.{lv}.signal_yield", f"mean +- SD over {c['signal_yield']['n']} runs")
+            em.macro("AojStatErr" + k, fmt_int(c["median_stat_err"]), src,
+                     f"per_checkpoint.best70.label_sets.{lv}.median_stat_err", "median per-fit statistical error")
+        for tag, word in (("wavg", "Wavg"), ("bestval", "Bestval"), (V2_TWIN, "Twin")):
+            o = rel(per, tag)["label_sets"].get(lv) if tag in per else None
+            if o is None:
+                continue
+            em.macro("AojYield" + k + word, fmt_pm(o["signal_yield"]["mean"], o["signal_yield"]["sd"]), src,
+                     f"per_checkpoint.{tag}.label_sets.{lv}.signal_yield", f"at {tag}; mean +- SD over runs")
+            if word in ("Wavg", "Bestval"):
+                ck.emit(em, "AojYield" + k, runs(c), runs(o), word, "real data", src,
+                        f"per_checkpoint.{{best70,{tag}}}.label_sets.{lv}.signal_yields")
+    return table_realdata(J, em.root, RD["fits"])
+
 
 def v2_inputs(root: pathlib.Path, paths: dict, have: dict) -> dict:
     """The second grid's inputs of every section V2_READ lists whose directory exists:
@@ -3624,7 +4590,68 @@ def v2_inputs(root: pathlib.Path, paths: dict, have: dict) -> dict:
                                      for f in V2_PAIRED_FAMILIES) if p.exists()]
     if "Pretrain" in present:
         out["pretraining"] = True
+    probes_ratios = v2_dir(root, "paired_errors") / "probes" / "ratios.json"
+    for key, need in (("Random", ("Probes", "Paired")), ("MassLambda", ("Probes", "Paired")),
+                      ("Ssl", ("FtHeldout",)), ("FtRefs", ("FtHeldout",)), ("Bench", ("FtHeldout",))):
+        if key in present and (set(need) - present or ("Paired" in need and not probes_ratios.exists())):
+            raise SystemExit(f"FATAL: v2 {V2_PENDING[key][1]}/ is present and its readout needs "
+                             f"{sorted(V2_PENDING[k][1] for k in need)}" + (" with paired_errors/probes/ratios.json"
+                                                                          if "Paired" in need else ""))
+    if "Random" in present:
+        out["random"] = probes_ratios
+    if "MassLambda" in present:
+        shares = v2_dir(root, "mass_lambda_matched") / "loss_share.json"
+        out["mass_lambda"] = (probes_ratios, shares if shares.exists() else None)
+    out["ssl"] = "Ssl" in present
+    out["ft_refs"] = "FtRefs" in present
+    if "Bench" in present:
+        out["bench"] = {rule: v2_bench_files(root, rule) for rule in ("best70", "wavg")}
+        if not out["bench"]["best70"]:
+            raise SystemExit("FATAL: v2 benchmarks/ holds no best70 read-out")
+    if "Anomaly" in present:
+        out["anomaly"] = v2_anomaly_inputs(root)
+        if (V2_PRIMARY, V2_CLASS_TOKEN) not in out["anomaly"]:
+            raise SystemExit("FATAL: the v2 anomaly summaries lack the primary checkpoint's class token")
+    if "RealData" in present:
+        out["real_data"] = v2_real_data(root)
     return out
+
+
+def v2_not_computed(docs: dict, root: pathlib.Path) -> list:
+    """Every result the v2 paired files hold without a value, the joint fit's included, with
+    paired_errors.py's reason: none is skipped silently. Written beside provenance.json as
+    v2_not_computed.json and printed on every run."""
+    out = []
+    for path, R in docs.items():
+        rel = _v2_rel(root, path)
+        for i, r in enumerate(R["ratios"]):
+            if "not_computed" in r:
+                out.append({"file": rel, "where": f"ratios[{i}]", "contrast": r["contrast"],
+                            **{k: r.get(k) for k in ("family", "task", "axis", "kind", "metric", "checkpoint",
+                                                     "fine", "coarse")}, "reason": r["not_computed"]})
+        for j, b in enumerate(R.get("p2_verdict", [])):
+            if "not_computed" in b:
+                out.append({"file": rel, "where": f"p2_verdict[{j}]", "contrast": b["contrast"],
+                            "kind": b.get("kind"), "checkpoint": b.get("checkpoint"), "reason": b["not_computed"]})
+    return out
+
+
+def emit_unprinted(em: Emitter, root: pathlib.Path, missing: list) -> None:
+    """A macro the text uses, which the paper's last generation defined
+    (paper/journal/provenance.json) and this one does not: a section now printed from the
+    second grid has no such number (the first grid's output-layer mean over epochs 70-79,
+    its random-label draws, ...). It becomes a red marker, so the draft still compiles and
+    shows each sentence to rewrite; never the first grid's number under the second grid's
+    text. Nothing when every name is defined, as with the first grid alone."""
+    tex_, prov = root / "paper" / "journal" / "main.tex", root / "paper" / "journal" / "provenance.json"
+    me = pathlib.Path(__file__).resolve()
+    if not (tex_.exists() and prov.exists() and me.is_relative_to(em.root.resolve())):
+        return
+    used = set(re.findall(r"\\([A-Za-z]+)", tex_.read_text()))
+    for name in sorted(used & set(json.loads(prov.read_text())) - set(em.provenance)):
+        em.macro(name, "\\pending{no v2 number: rewrite this}", tex_, "used in the text",
+                 "a marker, not a number: its section reads the second grid, which has no such number")
+        missing.append(f"{name} -- used in the text, no v2 number")
 
 
 # ------------------------------------------------------------------ assembly
@@ -3678,6 +4705,11 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     em = Emitter(root)
     emit_pending(em, missing)
     emit_slots(em, missing)
+    ck = CheckpointLabels()
+    # The self-supervised model enters a table only once PRESPEC 4's bar passes on v2 (A14).
+    ft_v2 = ft_load(V2["ft"]) if "ft" in V2 else None
+    refs = v2_ft_refs(root, ft_v2) if ft_v2 and (V2["ssl"] or V2["ft_refs"]) else {}
+    ssl_ok = bool(V2.get("ssl")) and ssl_validity(em, ft_v2, refs, V2["grid"])
     if "probe" in V2:
         src2, A2 = V2["probe"][(V2_PRIMARY, V2_CLASS_TOKEN)]
         emit_design(em, A2, src2)
@@ -3689,8 +4721,8 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     if "probe_code" in have:
         emit_probe_settings(em, paths["probe_code"])
     if "probe" in V2:
-        nbkg = emit_v2_probes(em, V2["probe"])
-        out = {f"tables/probes_{p}.tex": table_probe_ladder_v2(V2["probe"], p, nbkg)
+        nbkg = emit_v2_probes(em, V2["probe"], ssl_ok)
+        out = {f"tables/probes_{p}.tex": table_probe_ladder_v2(V2["probe"], p, nbkg, ssl_ok)
                for p in ("linear", "mlp")}
     else:
         # The test-sample background count, which bounds every rejection: the same
@@ -3755,7 +4787,17 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
         v2_later["mass_resolution"] = (V2["mass_resolution"][(V2_PRIMARY, V2_CLASS_TOKEN)],
                                        lambda em, d, src: emit_mass_resolution(em, d, src, order),
                                        lambda d: table_mass(d, root, order))
+    v1_anomaly = json.loads(paths["anomaly"].read_text()) if "anomaly" in have else None
     for key, emit, table, name in later:
+        if key == "anomaly" and "anomaly" in V2:
+            t = emit_v2_anomaly(em, V2["anomaly"], V2["grid"], V2["labels"], root, V2["products"],
+                                v1_anomaly, ck)
+            out.update(zip(("tables/anomaly.tex", "tables/anomaly_per_run.tex", "tables/v2_lofo.tex"), t))
+            continue
+        if key == "real_data" and "real_data" in V2:
+            out["tables/realdata.tex"] = emit_v2_real_data(em, V2["real_data"], V2["labels"], V2["grid"],
+                                                           paths, ck)
+            continue
         if key in v2_later:
             (src, d), emit2, table2 = v2_later[key]
             emit2(em, d, src)
@@ -3790,7 +4832,7 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
         missing.append("mass-output probes -- experiments/FIGS/data/probe_ladder_mass2x2/s*.json")
     ft = None
     if "ft" in V2:
-        ft = ft_load(V2["ft"])
+        ft = ft_v2
         cells = next(iter(ft.values()))["cells"]
         rows = ft_rows_v2(V2["grid"], V2["labels"], cells)
         for F in ft.values():
@@ -3798,8 +4840,15 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
                 raise SystemExit(f"FATAL: {F['path'].name} lacks rows the other fine-tuning file has")
         lv = {a["name"]: texname(a["num_classes"]) for a in V2["grid"] if a["name"] in RUNGS}
         emit_finetune(em, ft, sizes, rows, {r: lv[r] for r in ("L188", "L162", "R16_Q1")}, restrict)
-        out["tables/finetune.tex"] = table_finetune(ft, sizes, "macro_auc_ovr", rows, v2=True)
-        out["tables/finetune_accuracy.tex"] = table_finetune(ft, sizes, "accuracy", rows, v2=True)
+        mpm = next((a for a in V2["grid"] if a["name"] == "MPM"), None)
+        ft2, ref_rows = ft_with_refs(ft, refs if V2["ft_refs"] else {},
+                                     [f"mpm-v2-s{k}" for k in range(1, mpm["runs"] + 1)] if ssl_ok else None)
+        if ref_rows:
+            emit_v2_ft_refs(em, ft2, rows, ref_rows)
+        out["tables/finetune.tex"] = table_finetune(ft2, sizes, "macro_auc_ovr", rows + ref_rows, v2=True)
+        out["tables/finetune_accuracy.tex"] = table_finetune(ft2, sizes, "accuracy", rows + ref_rows, v2=True)
+        if "bench" in V2:
+            out.update(zip(("tables/v2_benchmarks_last.tex",), emit_v2_bench(em, V2["bench"], rows + ref_rows, ck)))
         skipped.append("finetune_recipe: the settings of the first grid's fine-tuning runs; the "
                        "second grid's recipe is not tabulated yet")
     elif "ft_legs" in have:
@@ -3810,10 +4859,17 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     else:
         missing.append(f"fine-tuning metrics -- {', '.join(map(str, paths['ft_legs']))}")
     if "paired" in V2:
-        docs = emit_paired_v2(em, V2["paired"], ft, V2["products"])
-        t = emit_checkpoint_counts(em, docs)
+        docs = emit_paired_v2(em, V2["paired"], ft, V2["products"],
+                              set() if ssl_ok else {"MPM", "MPM_LOFO4P"})
+        t = emit_checkpoint_counts(em, docs, ck.rows)
         if t:
             out["tables/checkpoint_robustness.tex"] = t
+        out["v2_not_computed.json"] = json.dumps(v2_not_computed(docs, root), indent=1) + "\n"
+        if "random" in V2:
+            out.update(zip(("tables/v2_random_partitions.tex", "tables/v2_flavour_pair.tex"),
+                           emit_v2_random(em, json.loads(V2["random"].read_text()), V2["random"], A2, src2)))
+        if "mass_lambda" in V2:
+            emit_v2_mass_lambda(em, json.loads(V2["mass_lambda"][0].read_text()), *V2["mass_lambda"])
     elif "paired" in have:
         emit_paired(em, paths["paired"], ft)
     else:
@@ -3849,6 +4905,7 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
                               paths["anomaly"] if "anomaly" in have else None,
                               TASK_LABELS, v2_present(root, "levels_64_30")))
 
+    emit_unprinted(em, root, missing)
     out["results_generated.tex"] = render_macros(em, missing, skipped)
     out["provenance.json"] = json.dumps(em.provenance, indent=2, sort_keys=True) + "\n"
     return out, missing, skipped
@@ -3866,6 +4923,12 @@ def main(argv=None) -> int:
     out_dir = a.out or (a.root / "paper" / "journal")
 
     built, missing, skipped = build(a.root)
+    nc = json.loads(built.get("v2_not_computed.json", "[]"))
+    for r in nc:
+        print(f"NOT COMPUTED  {r['file']} {r['where']} {r['contrast']} "
+              f"{r.get('task') or r.get('axis') or ''} {r.get('kind') or ''} {r.get('checkpoint')}: {r['reason']}")
+    if nc:
+        print(f"{len(nc)} v2 result(s) paired_errors.py did not compute; listed in v2_not_computed.json\n")
 
     if a.check:
         drift = []

@@ -35,8 +35,14 @@ FIGURES = REPO / "figures"
 
 # Okabe--Ito, ordered fine -> coarse with rising luminance. Keyed by the number
 # of classes in the pretraining vocabulary, which is what the axis ticks say.
-LEVEL_COLOURS = {188: "#000000", 162: "#0072B2", 43: "#009E73", 17: "#E69F00"}
-LEVEL_MARKERS = {188: "o", 162: "s", 43: "^", 17: "D"}
+# The second grid's 64- and 30-class levels (A12) come after them, lighter than
+# all four: no colour-blind-safe colour fits between the first four with a
+# greyscale gap above 0.08, and changing those four would change the first grid's
+# figures. 64: Paul Tol's muted cyan (luminance 0.55, beside 162's blue); 30:
+# Okabe--Ito yellow (0.74, between 43's green and 17's orange). Smallest gap 0.10.
+LEVEL_COLOURS = {188: "#000000", 162: "#0072B2", 43: "#009E73", 17: "#E69F00",
+                 64: "#88CCEE", 30: "#F0E442"}
+LEVEL_MARKERS = {188: "o", 162: "s", 43: "^", 17: "D", 64: "v", 30: "P"}
 
 # The probe kind is a linestyle, never a colour: a task's two probes must read as
 # the same task. Open markers for the nonlinear probe so overlapping points at

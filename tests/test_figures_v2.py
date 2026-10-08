@@ -64,7 +64,13 @@ def test_the_results_figures_read_the_v2_fine_tuning_and_mass_of_the_freeze(tmp_
         assert (out / f"{stem}.pdf").stat().st_size > 5000
 
 
-def test_a_level_without_a_colour_stops_the_figure(tmp_path):
+def test_the_tier_three_levels_have_colours_and_a_level_without_one_stops_the_figure(tmp_path):
+    # 64 and 30 classes (A12) have their own colour and marker, every greyscale gap above 0.08
+    S = _mod("figs_style_v2", REPO / "experiments/FIGS/style.py")
+    assert {64, 30} <= set(S.LEVEL_COLOURS) and {64, 30} <= set(S.LEVEL_MARKERS)
+    lums = sorted(S.relative_luminance(c) for c in S.LEVEL_COLOURS.values())
+    assert min(b - a for a, b in zip(lums, lums[1:])) > 0.08
     root = _root(tmp_path / "r", tier3=True)
-    with pytest.raises(SystemExit, match="no colour for \\[64\\]"):
-        R.v2_mass(root)
+    assert R.v2_mass(root)[2][:5] == ["188", "162", "64", "43", "17"]
+    with pytest.raises(SystemExit, match="no colour for \\[99\\]"):
+        R.coloured([188, 99])

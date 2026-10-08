@@ -47,6 +47,9 @@ def _rung_map(root):
     """A 188-class map with the tree's real group counts: the first grid's synthetic map has
     two rungs of two groups, which label recovery, read at every rung, would name alike."""
     names = {v: k for k, v in T1.CLASS_ROW.items()}
+    # the anomaly signals at their real jet_label, which A13's family-out selection reads
+    names.update({3: "label_X_qq", 15: "label_X_YY_bbbb", 25: "label_X_YY_bbb", 63: "label_X_YY_qqqq",
+                  73: "label_X_YY_qqq"})
     head = ["jet_label", "class_name"] + [c for r in T1.M.RUNGS for c in (r, f"{r}_name")]
     lines = [",".join(head)]
     for i in range(188):
@@ -103,12 +106,12 @@ def test_the_v2_files_reach_the_paper_under_the_first_grid_names(v2_root):
     # the markers: read sections ask for the text around their numbers; a section whose
     # files exist but are not printed says so; the rest still wait
     assert m["PendingProbes"] == "\\pending{v2 numbers in place (probe_ladder): rewrite the text around them}"
-    for key in ("PendingPaired", "PendingFtHeldout", "PendingPretrain"):
+    for key in ("PendingPaired", "PendingFtHeldout", "PendingPretrain", "PendingSsl", "PendingRandom",
+                "PendingMassLambda", "PendingFtRefs"):
         assert m[key].startswith("\\pending{v2 numbers in place"), key
-    assert m["PendingSsl"].startswith("\\pending{v2 input present (self_supervised) but not printed yet")
-    assert m["PendingRandom"].startswith("\\pending{pending v2:")
+    assert m["PendingAnomaly"].startswith("\\pending{pending v2:")
     assert not any(x.startswith("v2 ") and "probe_ladder" in x for x in missing)
-    assert any("v2/random_partitions/" in x for x in missing)
+    assert any("v2/anomaly/" in x for x in missing)
     # the frozen probes at the primary checkpoint, class token, under the first grid's names:
     # the 17-class model's 1 - AUC is exp(BASE + 4 STEP + 0.01 run) over runs 1-3
     x = [math.exp(FX.log1m("R16_Q1", k, "best70", "features", "bvc_resonant")) for k in (1, 2, 3)]
@@ -142,7 +145,7 @@ def test_the_v2_files_reach_the_paper_under_the_first_grid_names(v2_root):
     # fine-tuning, from the freeze's read-out (tiers 1-2): the rows the grid gives
     ft = [1 - FX.ft_value("R16_Q1", k, "N1000", 1) for k in (1, 2, 3)]
     assert m["FtAucJciiEThreeOneseven"] == M.math_safe(M.fmt_pm(np.mean(ft), np.std(ft, ddof=1)))
-    assert "FtAucJciiEThreeOnesevenMass" in m and "FtAucJciiEThreeSelfSupervised" not in m
+    assert "FtAucJciiEThreeOnesevenMass" in m and "FtAucJciiEThreeSelfSupervised" in m
     assert "second set of runs" in built["tables/finetune.tex"]
     assert any(s.startswith("finetune_recipe") for s in skipped)
     # the selected epochs by vocabulary
@@ -222,7 +225,7 @@ def test_a_label_or_count_the_intervals_do_not_give_is_refused(v2_root):
 
 
 def test_an_unpaired_contrast_keeps_to_one_gpu_product(v2_root):
-    # runs 1-2 train on an RTX 3090 and run 3 on an L40 in the fixture's job specs
+    # runs 1-3 train on an RTX 3090 in the fixture's job specs, as the grid's do; then run 3 moves
     root, M = v2_root
     p = FX.v2(root, "paired_errors") / "probes/ratios.json"
     R = json.loads(p.read_text())
@@ -237,6 +240,8 @@ def test_an_unpaired_contrast_keeps_to_one_gpu_product(v2_root):
     assert "PairedProbeBvcResonantLinearOneeighteightFamilyUnseenOverOneeighteight" in m
     row["fine_models"].append("l188-s3@best70")
     p.write_text(json.dumps(R))
+    assert "PairedProbeBvcResonantLinearOneeighteightFamilyUnseenOverOneeighteight" in macros(M.build(root)[0])
+    FX.write_specs(root, {1: "NVIDIA-GeForce-RTX-3090", 2: "NVIDIA-GeForce-RTX-3090", 3: "NVIDIA-L40"})
     with pytest.raises(SystemExit, match="I7"):
         M.build(root)
 

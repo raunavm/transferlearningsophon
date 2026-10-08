@@ -69,6 +69,7 @@ Usage:
   paired_errors.py ft-replicates    --leg1-root D --leg2-root D [--checkpoint-rule R] --out R.npz
   paired_errors.py anomaly-replicates --anomaly F... --extract-root D --out R.npz
   paired_errors.py ratios --replicates R.npz... [--contrasts F] [--run-dirs-root D] --out ratios.json
+  paired_errors.py a11-shares --run-dirs-root D --out loss_share.json
 """
 from __future__ import annotations
 
@@ -1429,6 +1430,31 @@ def mass_shares(spec: dict, root) -> dict:
     return out
 
 
+# A11's three mass-output arms, keyed as make_tables.py's SLOTS read loss_share.json
+A11_SHARE_KEYS = {"L162_MASS": "162+mass", "R16_Q1_MASS": "17+mass", "R16_Q1_MASS_LM": "17+mass_matched"}
+
+
+def a11_share_file(spec: dict, root) -> dict:
+    """experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json (A11, A14): per mass-output
+    arm the per-run realised loss share x/(1+x), trunk-gradient share rho/(1+rho) and gradient
+    cosine of mass_shares, runs in order. An arm with some runs finished and not all is
+    fatal: the shares are reported over every run of it."""
+    sh = mass_shares(spec, root)
+    out = {"shares": {}, "grad_shares": {}, "grad_cosine": {}, "a11_shares": sh}
+    for arm, key in A11_SHARE_KEYS.items():
+        if arm not in sh:
+            continue
+        runs = sh[arm]["runs"]
+        if sorted(runs) != list(range(1, spec["grid_arms"][arm]["runs"] + 1)):
+            raise SystemExit(f"FATAL: {arm} has finished runs {sorted(runs)} of "
+                             f"{spec['grid_arms'][arm]['runs']}")
+        out["shares"][key] = [runs[k]["loss_share"] for k in sorted(runs)]
+        if all("grad_share" in r for r in runs.values()):
+            out["grad_shares"][key] = [runs[k]["grad_share"] for k in sorted(runs)]
+            out["grad_cosine"][key] = [runs[k]["grad_cosine"] for k in sorted(runs)]
+    return out
+
+
 def checkpoint_dependence(rows: list, between: list) -> dict:
     """A14: per comparison between checkpoints, the number of dependent results
     (95 % interval excluding 0: 'depends on the checkpoint', or 'depends on the
@@ -1674,6 +1700,9 @@ def main(argv=None) -> int:
             s.add_argument("--checkpoint-rule", choices=("best70", "wavg", "bestval"), default=None,
                            help="v2: the rule of the tree under the roots, which every "
                                 "cell's init_checkpoint.json must record")
+    s = sub.add_parser("a11-shares", help="loss_share.json of the mass-output runs (A11)")
+    s.add_argument("--run-dirs-root", type=pathlib.Path, required=True)
+    s.add_argument("--out", required=True, type=pathlib.Path)
     s = sub.add_parser("ratios")
     s.add_argument("--replicates", nargs="+", required=True, type=pathlib.Path)
     s.add_argument("--contrasts", type=pathlib.Path, default=None,
@@ -1685,6 +1714,15 @@ def main(argv=None) -> int:
     s.add_argument("--out", required=True, type=pathlib.Path)
     a = ap.parse_args(argv)
 
+    if a.cmd == "a11-shares":
+        if a.out.exists():
+            raise SystemExit(f"FATAL: {a.out} exists; refusing to overwrite")
+        a.out.parent.mkdir(parents=True, exist_ok=True)
+        a.out.write_text(json.dumps({**a11_share_file(load_spec(CONTRASTS["v2"]), a.run_dirs_root),
+                                     "provenance": {"run_dirs_root": str(a.run_dirs_root),
+                                                    "script_sha256": _sha(__file__)}}, indent=1))
+        print(f"wrote {a.out}")
+        return 0
     index = None
     if getattr(a, "extract_root", None) is not None:
         index = extraction_index(a.extract_root, load_spec(CONTRASTS["v2"]))
