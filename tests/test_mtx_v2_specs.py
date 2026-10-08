@@ -697,3 +697,26 @@ def test_finalize_runs_where_the_runs_own_failures_stop_it(sim, tmp_path):
     assert " finalize pod=pod " in (out / "attempts.log").read_text() and not list(out.glob("run_manifest*"))
     _attempt(sim, tmp_path, finalize=True, TRAIN_RC="1")
     assert _attempt(sim, tmp_path, finalize=True) == 42                             # two failures of its own halt
+
+
+def test_the_backup_cronjob_is_cpu_only_mine_one_at_a_time_and_runs_the_backup_script():
+    fn, text = b.v2_backup_spec("mtx-s2.01")
+    d = yaml.safe_load(text)
+    assert fn == "job-mtx2-backup-raunav.yaml" and d["kind"] == "CronJob"
+    assert d["metadata"]["name"] == "mtx2-backup-raunav" and d["metadata"]["namespace"] == "cms-ml"
+    s = d["spec"]
+    assert s["schedule"] == "*/30 * * * *" and s["concurrencyPolicy"] == "Forbid"
+    job = s["jobTemplate"]["spec"]
+    assert job["backoffLimit"] == 0 and job["activeDeadlineSeconds"] < 30 * 60
+    pod = job["template"]["spec"]
+    c = pod["containers"][0]
+    assert c["image"] == b.V2_IMAGE and "nvidia.com/gpu" not in c["resources"]["limits"]
+    assert [v["persistentVolumeClaim"]["claimName"] for v in pod["volumes"]] == ["transfer-learning-vol"]
+    assert {e["name"]: e["value"] for e in c["env"]}["REPO_REF"] == "mtx-s2.01"
+    assert f"python3 experiments/MTX/backup_v2_resume.py --root {b.V2_ROOT}" in c["args"][0]
+    assert "rm " not in c["args"][0] and "tolerations" not in pod
+    committed = b.V2_BACKUP_DIR / fn
+    if committed.exists():
+        tag = yaml.safe_load(committed.read_text())["spec"]["jobTemplate"]["spec"]["template"]["spec"][
+            "containers"][0]["env"][0]["value"]
+        assert committed.read_text() == b.v2_backup_spec(tag)[1]

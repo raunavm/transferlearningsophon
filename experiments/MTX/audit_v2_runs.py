@@ -10,9 +10,14 @@ listed under "notes". Checks:
               sha256 is the one the epoch's metrics name, and n_jets is 10,240,000
   finite      every epoch's training and validation loss is finite
   qcd_share   every epoch's QCD share of the training stream (the v1 loader swung it
-              8-18 %, amendment A7) within 0.5 % (absolute) of 14.436 %
-  streams     within a run index, every run of the shared stream (all but the
-              leave-one-family-out arms) has the same stream sha256 at every epoch
+              8-18 %, amendment A7) within 0.5 % (absolute) of 14.436 %; a
+              leave-one-family-out run (whose share is higher by design) within 0.5 % of
+              its own median
+  streams     within a run index, every run of the shared stream has the same stream
+              sha256 at every epoch, and so has every leave-one-family-out run (A13 pairs them)
+  lr          every epoch's learning rate is weaver's flat+decay: 5e-4 to epoch 55, then
+              x 0.01^(1/24) per epoch (79 at 5e-6)
+  fetch       every epoch's max_fetch_id is below 200, the fetches of one pass of its window
   init        within a run index, init_trunk.pt holds the same trunk for every run (A7),
               bit for bit, or else within 2 units in the last place of float32: the class
               token is drawn through erfinv, whose last bit depends on the node's CPU
@@ -30,6 +35,8 @@ listed under "notes". Checks:
               newest epoch) are there and load; no other state file, no .tmp debris
   best        best_epoch.json is the first maximum of the selection metric so far
   text        every .json in the run parses (no zero-filled file)
+  limits      (notes) runs whose job would stop soon: NODE_FAULTS at 4 or more of the 6 that
+              stop it, or a failed-attempt marker at the newest epoch (2 stop it)
 """
 import glob
 import hashlib
@@ -94,7 +101,7 @@ def main():
         s_eps = sorted(int(f[-8:-5]) for f in glob.glob(f"{d}/stream/epoch-*.json"))
         if s_eps != eps:
             fail("epochs", f"{run}: stream epochs {len(s_eps)} != metrics epochs {len(eps)}")
-        best_so_far = None
+        best_so_far, qs = None, []
         for f in m:
             e = int(f[-8:-5])
             r = json.load(open(f))
@@ -106,15 +113,33 @@ def main():
             if not all(math.isfinite(v) for v in (r["train"]["loss"], r["val"]["loss"])):
                 fail("finite", f"{run} epoch {e}: non-finite loss")
             q = r["train"].get("qcd_share")
-            if q is None or abs(q - QCD_SHARE) > QCD_TOL:
+            if q is None or (not lofo and abs(q - QCD_SHARE) > QCD_TOL):
                 fail("qcd_share", f"{run} epoch {e}: {q}")
+            qs.append(q)
+            lr = 5e-4 * (0.01 ** (1 / 24)) ** max(0, e - 55)
+            if abs(r["lr"] - lr) > 1e-9 * lr:
+                fail("lr", f"{run} epoch {e}: {r['lr']} != {lr}")
+            if not r["train"].get("max_fetch_id", 0) < 200:
+                fail("fetch", f"{run} epoch {e}: max_fetch_id {r['train'].get('max_fetch_id')}")
             if r.get("device") != PRODUCT[k]:
                 fail("device", f"{run} epoch {e}: {r.get('device')} (run index {k})")
-            if not lofo:
-                streams.setdefault((k, e), {})[run] = r["stream_sha256"]
+            streams.setdefault((k, lofo, e), {})[run] = r["stream_sha256"]
             v = r["selection"]["value"]
             if best_so_far is None or v > best_so_far[1]:
                 best_so_far = (e, v)
+        if lofo and qs:
+            med = sorted(qs)[len(qs) // 2]
+            for e, q in enumerate(qs):
+                if abs(q - med) > QCD_TOL:
+                    fail("qcd_share", f"{run} epoch {e}: {q} (run median {med})")
+        # limits
+        nnf = sum(1 for _ in open(f"{d}/NODE_FAULTS")) if os.path.exists(f"{d}/NODE_FAULTS") else 0
+        if nnf >= 4:
+            notes.append(f"{run}: {nnf} NODE_FAULTS of the 6 that stop its job")
+        if m and os.path.isdir(f"{d}/attempts"):
+            nf = sum(1 for x in os.listdir(f"{d}/attempts") if x.endswith(f"-e{eps[-1]}"))
+            if nf:
+                notes.append(f"{run}: {nf} failed-attempt marker(s) at epoch {eps[-1]} (2 stop its job)")
         # best
         if m:
             b = json.load(open(f"{d}/best_epoch.json"))
@@ -177,7 +202,13 @@ def main():
             except Exception as e:
                 fail("resume", f"{run}: {os.path.basename(p)} does not load: {type(e).__name__}")
         want = {e for e in keep_epochs(best_so_far[0], newest) if e <= newest}
-        have = {epoch_of(p, "_state.pt") for p in glob.glob(f"{d}/net_epoch-*_state.pt")}
+        have = {epoch_of(p, "_state.pt") for p in glob.glob(f"{d}/net_epoch-*_state.pt")
+                if not p.endswith("_bn_state.pt")}
+        for p in glob.glob(f"{d}/net_epoch-*_bn_state.pt"):      # BatchNorm twins (bn_twins_v2.py)
+            try:
+                torch.load(p, map_location="cpu", weights_only=False)
+            except Exception as ex:
+                fail("states", f"{run}: {os.path.basename(p)} does not load: {type(ex).__name__}")
         if want - have:
             fail("states", f"{run}: missing state files for epochs {sorted(want - have)}")
         if have - want:
@@ -190,9 +221,9 @@ def main():
         for t in glob.glob(f"{d}/**/*.tmp", recursive=True):
             fail("states", f"{run}: leftover {t}")
     # cross-run checks
-    for (k, e), dd in sorted(streams.items()):
+    for (k, lofo, e), dd in sorted(streams.items()):
         if len(set(dd.values())) > 1:
-            fail("streams", f"run index {k} epoch {e}: {dd}")
+            fail("streams", f"run index {k}{' (leave-one-family-out)' if lofo else ''} epoch {e}: {dd}")
     eps32 = float(torch.finfo(torch.float32).eps)
     for k, dd in sorted(inits.items()):
         hashes = [h for h, _ in dd.values()]
