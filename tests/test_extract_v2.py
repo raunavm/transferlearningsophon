@@ -474,7 +474,7 @@ def test_v2_specs_one_per_run_and_init_reference_and_only_committed_when_the_pla
         yaml.safe_load(text)
         assert "--feature-classes probe --prefix-features 2000000" in text
         assert bx.HALT_GPU in text and "gpu_ok ()" in text and "tee -a ${LOG} || halt" in text
-        assert f'--branch "{bx.V2_PIN}"' in text and bx.V2_PIN == "mtx-s1.99"
+        assert f'--branch "{bx.V2_PIN}"' in text and bx.V2_PIN == "mtx-s2.00"
         assert '[ "${USED}" -lt 90 ]' in text and '-lt 85 ]' not in text      # the PI's line
         for node in ("ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu",
                      "patternlab.calit2.optiputer.net"):

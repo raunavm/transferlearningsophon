@@ -24,7 +24,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; gpu_ok || { echo "exit $rc with no working GPU on $(hostname): the node failed, not the code; retried elsewhere"; exit 137; }; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s1.99" \
+          git clone --depth 1 --branch "mtx-s2.00" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon

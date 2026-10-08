@@ -1000,9 +1000,11 @@ def build_v1err() -> dict[str, str]:
 # trunk of run indices 1-5 (V2_INIT_ARM's init_trunk.pt; amendment A7 makes it
 # the same for every vocabulary) is extracted as a reference row, tag init.
 # GPU: the split is 27.4 M jets. NOT launched until the v2 runs exist.
-# mtx-s1.99: the first tag with extract_v2.bn_twin (the BatchNorm twins); at mtx-s1.98
-# resolve_checkpoints reads "best70_bn" as an epoch number and the job crashes.
-V2_PIN = "mtx-s1.99"
+# mtx-s1.99 was the first tag with extract_v2.bn_twin (the BatchNorm twins; at mtx-s1.98
+# resolve_checkpoints reads "best70_bn" as an epoch number and the job crashes). mtx-s2.00
+# carries it and the v2 read-outs' changes to probe.py, which the extraction imports, so
+# every v2 analysis job runs one tag.
+V2_PIN = "mtx-s2.00"
 V2_ROOT = "/data/results/mtx_v2"
 V2_OUT = "/data/results/eval/v2"
 V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
