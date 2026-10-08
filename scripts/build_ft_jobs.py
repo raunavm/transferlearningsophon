@@ -2603,10 +2603,12 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
 # Each fails unless every cell the generator emitted for its rule is read
 # (--expect-cells) and every reference cell is DONE, and the scripts refuse a cell
 # trained to a NaN loss (diverged()). The JSONs are copied to
-# experiments/FIGS/data/ft_v2/<rule>_<file>, as the scratch reference's was. They
+# experiments/FIGS/data/v2/{finetune,benchmarks}/<rule>[_t12]_<file> (make_tables.py's v2 layout). They
 # write ~10 MB to /data in all, so neither the storage budget nor space_ok applies.
 PIN_V2_READOUT = "mtx-s2.00"
 V2_READOUT_LEGS = ("leg1", "leg2", "bench")
+# where each read-out's JSONs are committed: make_tables.py's v2 layout (experiments/FIGS/data/v2/)
+V2_READOUT_COPY = {"leg1": "finetune", "leg2": "finetune", "bench": "benchmarks"}
 V2_READOUT_FILES = {"leg1": ("leg1_metrics.json",), "leg2": ("leg2_metrics.json",),
                     "bench": ("bench_metrics.json", "bench_metrics_herwig.json",
                               "bench_metrics_last.json", "bench_metrics_herwig_last.json")}
@@ -2740,7 +2742,8 @@ def v2_readout(rule: str | None, leg: str, pin: str, scope: str = "") -> tuple[s
               + (" (tiers 1-2, the analysis freeze).\n" if scope else ".\n")
               + "  # DO NOT APPLY before the v2 fine-tuning it reads has finished. CPU.\n"
               f"  # Output {V2_ROOT}/{tag}_{leg}_metrics; copy each JSON to\n"
-              + "".join(f"  #   experiments/FIGS/data/ft_v2/{tag}_{f}\n" for f in V2_READOUT_FILES[leg]))
+              + "".join(f"  #   experiments/FIGS/data/v2/{V2_READOUT_COPY[leg]}/{tag}_{f}\n"
+                        for f in V2_READOUT_FILES[leg]))
     memory, cpu = ("16Gi", "4") if leg == "bench" else ("32Gi", "8")
     text = job(name, _v2_readout_script(rule, leg, scope), gpu=False, cpu=cpu, memory=memory, shm="1Gi",
                backoff=1, pin=pin, header=header, failure_policy=POD_FAILURE_POLICY)

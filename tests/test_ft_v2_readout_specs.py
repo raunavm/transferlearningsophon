@@ -151,7 +151,7 @@ def test_each_readout_reads_its_rule_and_expects_every_cell_emitted_for_it(ro):
             assert f"OUT={out}\n" in _args(t) and out not in outs
             outs.add(out)
             for f in B.V2_READOUT_FILES[leg]:
-                assert f"#   experiments/FIGS/data/ft_v2/{tag}_{f}\n" in t
+                assert f"#   experiments/FIGS/data/v2/{B.V2_READOUT_COPY[leg]}/{tag}_{f}\n" in t
             calls = _calls(t)
             for script, argv in calls:
                 src = (ROOT / f"experiments/FT/{script}.py").read_text()
