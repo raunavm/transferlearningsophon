@@ -2494,16 +2494,14 @@ def v2_grid_reserve_gb() -> float:
 
 
 def v2_extraction_gb() -> float:
-    """GB the v2 extraction plan writes (scripts/build_extract_jobs.py V2_PLAN, from its
-    committed sizing). It shares /data with these specs, so it is held back from their
-    headroom until the extraction has finished (--v2-extraction-done)."""
-    spec = importlib.util.spec_from_file_location("build_extract_jobs", ROOT / "scripts" / "build_extract_jobs.py")
-    bx = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(bx)
-    e = json.loads(bx.V2_SIZING.read_text())["storage"].get(bx.V2_PLAN)
-    if e is None:
-        raise SystemExit(f"FATAL: {bx.V2_SIZING.name} does not size the extraction plan {bx.V2_PLAN!r}")
-    return e["extraction_bytes"] / 1e9
+    """GB the v2 extraction writes: since the scope of 2026-10-09, the downstream linear
+    probes' features (scripts/build_linprobe_jobs.py planned_bytes). It shares /data with
+    these specs, so it is held back from their headroom until the extraction has finished
+    (--v2-extraction-done)."""
+    spec = importlib.util.spec_from_file_location("build_linprobe_jobs", ROOT / "scripts" / "build_linprobe_jobs.py")
+    bl = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bl)
+    return bl.planned_bytes() / 1e9
 
 
 def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None = None,

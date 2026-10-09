@@ -438,6 +438,7 @@ def test_the_gpu_fault_rule_refuses_a_template_it_does_not_match():
         bx.gpu_fault_aware("no halt here")
 
 
+@pytest.mark.skip(reason="the JetClass-II extraction plan for the probe battery, anomaly and label recovery is superseded by the downstream linear probes (PI scope 2026-10-09; scripts/build_linprobe_jobs.py)")
 def test_v2_specs_one_per_run_and_init_reference_and_only_committed_when_the_plan_fits():
     import yaml
     bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
@@ -485,6 +486,7 @@ def test_v2_specs_one_per_run_and_init_reference_and_only_committed_when_the_pla
     assert fitting == [1]       # the PI's 90 % line (2026-10-07) fits tier 1 only, so far
 
 
+@pytest.mark.skip(reason="the JetClass-II extraction plan for the probe battery, anomaly and label recovery is superseded by the downstream linear probes (PI scope 2026-10-09; scripts/build_linprobe_jobs.py)")
 def test_v2_extraction_is_emitted_and_sized_tier_by_tier(tmp_path, monkeypatch):
     # amendment A14: the extraction is "sized and emitted tier by tier"
     import json
@@ -524,6 +526,7 @@ def test_the_v2_extraction_pin_carries_the_batchnorm_twins():
     assert "def bn_twin" in r.stdout and '"best70_bn"' in r.stdout
 
 
+@pytest.mark.skip(reason="the JetClass-II extraction plan for the probe battery, anomaly and label recovery is superseded by the downstream linear probes (PI scope 2026-10-09; scripts/build_linprobe_jobs.py)")
 def test_the_v2_plan_is_refused_when_sizing_says_it_does_not_fit(tmp_path, monkeypatch):
     import json
     bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
@@ -566,6 +569,7 @@ def test_the_v2_plan_is_refused_when_sizing_says_it_does_not_fit(tmp_path, monke
     assert not written
 
 
+@pytest.mark.skip(reason="the JetClass-II extraction plan for the probe battery, anomaly and label recovery is superseded by the downstream linear probes (PI scope 2026-10-09; scripts/build_linprobe_jobs.py)")
 def test_the_v2_plan_holds_back_the_pretraining_peak_until_pretraining_is_done(tmp_path, monkeypatch):
     import json
     bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
@@ -610,6 +614,7 @@ def test_storage_estimate_counts_each_row_once():
     assert s["bytes_total"] == 2 * (3350 * cc.FEATURE_ROW_BYTES + 11 * 310 * cc.HEAD_ROW_BYTES)
 
 
+@pytest.mark.skip(reason="the JetClass-II extraction plan for the probe battery, anomaly and label recovery is superseded by the downstream linear probes (PI scope 2026-10-09; scripts/build_linprobe_jobs.py)")
 def test_sizing_reads_the_measured_counts_and_the_largest_v1_rejection(tmp_path):
     sz = _load("extraction_v2_sizing", "experiments/EVAL/extraction_v2_sizing.py")
     sel = np.full(188, 400_000)
@@ -666,6 +671,7 @@ def test_sizing_reads_the_measured_counts_and_the_largest_v1_rejection(tmp_path)
     assert 11 * ml.V2_STATE_MIB == pytest.approx(98, abs=1)
 
 
+@pytest.mark.skip(reason="the JetClass-II extraction plan for the probe battery, anomaly and label recovery is superseded by the downstream linear probes (PI scope 2026-10-09; scripts/build_linprobe_jobs.py)")
 def test_the_committed_sizing_is_the_plan_the_generator_emits_on_this_grid():
     bx = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
     s = json.loads(bx.V2_SIZING.read_text())

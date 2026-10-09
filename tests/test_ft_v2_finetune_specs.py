@@ -67,50 +67,35 @@ def test_the_v2_specs_on_disk_are_the_generators(v2):
 HEADROOM_GB = (0.85 * 2199023255552 - 877528088576) / 1e9
 
 
-def test_the_storage_budget_admits_the_scratch_reference_and_refuses_the_rest(v2, capsys):
+def test_the_storage_budget_holds_back_pretraining_and_the_extraction(v2, capsys):
     every = sum(B.spec_bytes(B.cells_legs(_inits(t)) if "-legs-" in n and n != SCRATCH else
                              B.cells_bench_v2ckpt(_inits(t)) if "-bench-" in n else
                              [c for c in B.cells_legs(B.INITS_LATER["scratch-v2"]) if c[0] == "leg1"])
                 for n, t in v2.items())
     assert every == sum(B.v2_need().values()) and set(B.v2_need()) == set(v2)
     held = B.v2_grid_reserve_gb() + B.v2_extraction_gb()
-    # ONE BUDGET (verification 2026-10-02): the whole v2 set does not fit once v2
-    # pretraining's peak and the v2 extraction are held back; alone it would have fitted
-    assert (HEADROOM_GB - held) * 1e9 < every < (HEADROOM_GB - B.v2_grid_reserve_gb()) * 1e9
-    with pytest.raises(SystemExit, match="for the v2 extraction"):
-        B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB)
-    assert set(B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB, v2_extraction_done=True)) == set(v2)
-    # With the BatchNorm twins (A14's rule fired, 2026-10-03) the v2 extraction alone holds
-    # back more than the headroom, so even the scratch reference (launched and finished
-    # already) is refused until the PI's storage decision; with the extraction released it fits
-    assert B.v2_extraction_gb() > HEADROOM_GB
-    with pytest.raises(SystemExit, match="for the v2 extraction"):
-        B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB, only=["ft-v2-legs-scratch"])
-    got = B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB, only=["ft-v2-legs-scratch"],
-                  v2_extraction_done=True)
-    assert set(got) == {SCRATCH} and got[SCRATCH] == v2[SCRATCH]
-    # ...and on a volume with room for the scratch reference only, the rest is refused
-    room = held + 2 * B.spec_bytes(
-        [c for c in B.cells_legs(B.INITS_LATER["scratch-v2"]) if c[0] == "leg1"]) / 1e9
-    with pytest.raises(SystemExit, match="Making room is the PI's call"):
-        B.build(B.PIN_V2, v2=True, headroom_gb=room)
-    got = B.build(B.PIN_V2, v2=True, headroom_gb=room, only=["ft-v2-legs-scratch"])
-    assert set(got) == {SCRATCH} and got[SCRATCH] == v2[SCRATCH]
+    # ONE BUDGET: on the 37-run grid with one rule (2026-10-09) the whole v2 set fits beside
+    # pretraining's peak and the linear-probe features
+    assert every < (HEADROOM_GB - held) * 1e9
+    assert set(B.build(B.PIN_V2, v2=True, headroom_gb=HEADROOM_GB)) == set(v2)
     assert f"all {len(v2)}: " in capsys.readouterr().out
+    # a volume with room for half of it refuses, until the extraction's hold is released
+    tight = held + every / 2e9
+    with pytest.raises(SystemExit, match="Making room is the PI's call"):
+        B.build(B.PIN_V2, v2=True, headroom_gb=tight)
+    assert set(B.build(B.PIN_V2, v2=True, headroom_gb=tight, v2_extraction_done=True)) == set(v2)
+    got = B.build(B.PIN_V2, v2=True, headroom_gb=tight, only=["ft-v2-legs-scratch"])
+    assert set(got) == {SCRATCH} and got[SCRATCH] == v2[SCRATCH]
     # 12 leg-1 cells and one cell's 50 epochs of checkpoints
     assert B.spec_bytes([c for c in B.cells_legs(B.INITS_LATER["scratch-v2"]) if c[0] == "leg1"]) == \
         12 * B.V2_CELL_BYTES["leg1"] + 50 * B.EPOCH_PAIR_BYTES
 
 
-def test_the_budget_holds_back_the_v2_extraction_the_sizing_counts():
-    bx = _load("build_extract_jobs_ft", "scripts/build_extract_jobs.py")
-    s = json.loads(bx.V2_SIZING.read_text())
-    e = s["storage"][bx.V2_PLAN]
-    # what this generator holds back is the extraction plan's own figure, and what the
-    # extraction's sizing counts for fine-tuning is this generator's: one budget
-    assert B.v2_extraction_gb() == e["extraction_bytes"] / 1e9 > 0
-    assert e["fine_tuning_bytes"] == sum(B.v2_need().values())
-    assert s["fine_tuning_bytes_from"] == {"source": "v2_need", "specs": len(B.v2_need())}
+def test_the_budget_holds_back_the_linear_probe_extraction():
+    # since 2026-10-09 the v2 extraction is the downstream linear probes' (one budget)
+    bl = _load("build_linprobe_jobs_ft", "scripts/build_linprobe_jobs.py")
+    assert B.v2_extraction_gb() == bl.planned_bytes() / 1e9
+    assert 150 < B.v2_extraction_gb() < 300                  # ~2.8 GB a checkpoint, 77 checkpoints
 
 
 def test_the_budget_holds_back_the_v2_pretraining_peak_until_pretraining_is_done(tmp_path, monkeypatch):

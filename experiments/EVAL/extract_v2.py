@@ -527,6 +527,9 @@ def main(argv=None) -> int:
     ap.add_argument("--align-with", type=pathlib.Path, default=None,
                     help="a v1 cache whose label188.npy must equal this stream's first rows")
     ap.add_argument("--batch-size", type=int, default=512)
+    ap.add_argument("--no-pooled", action="store_true",
+                    help="keep the class-token features only, not the pooled embedding (the "
+                         "downstream linear probes read the class token)")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     a = ap.parse_args(argv)
 
@@ -606,7 +609,8 @@ def main(argv=None) -> int:
 
     features_at = None if a.features_at is None else {alias.get(t, t) for t in a.features_at}
     res = run(batches(), models, sel, a.rung, a.num_classes, signals, ex.ClsTap, to_inputs,
-              features_at=features_at, observers=a.observers, pooled_factory=PooledTap,
+              features_at=features_at, observers=a.observers,
+              pooled_factory=None if a.no_pooled else PooledTap,
               heads_at=set(models) - headless)
     meta["features_at"] = sorted(features_at) if features_at is not None else sorted(models)
     if a.head_prefix and res["n_stream"] < a.head_prefix and not a.max_jets:
