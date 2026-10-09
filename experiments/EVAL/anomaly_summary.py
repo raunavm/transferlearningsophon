@@ -118,7 +118,7 @@ def v1_ladder() -> tuple[dict, object]:
 # R42_Q1, R16_Q1 and A12's R63_Q1, R29_Q1), its leave-one-family-out arms (A13), and
 # the self-supervised arms (MPM, MPM_LOFO4P; A14 design 5, pooled readout only). No
 # anomaly readout is pre-registered for the mass-output, random-partition or flavour
-# arms (decided 2026-10-07). Beside them, the untrained trunk of run indices 1-5 as a
+# arms (decided 2026-10-07). Beside them, the untrained trunk of run indices 1-3 as a
 # reference row (A14 "Frozen references"): extract_v2.py's tag `init`, models init-s<k>.
 V2_ANOMALY_ARMS = "on the contraction tree without a mass output, or self-supervised"
 V2_INIT = "init"

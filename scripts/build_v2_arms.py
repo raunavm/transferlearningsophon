@@ -1212,6 +1212,15 @@ print(json.dumps(out, indent=1))
 
 
 # -------------------------------------------------------------- registry
+# Pretraining runs per configuration. Five at launch (A14); runs 4-5 (NVIDIA L40) cut by the PI on
+# 2026-10-09 ("we can do 3 seeds each all 3090s"): RUNS.csv mtx2-cut-s45-1009.
+N_RUNS = 3
+# The tiers the grid keeps. Tiers 2 (the lambda-matched mass model, the self-supervised model) and 3
+# (the 64- and 30-class levels, the leave-one-family-out models) cut by the PI on 2026-10-09, before
+# any of their runs started: RUNS.csv mtx2-cut-tiers23-1009.
+V2_TIERS = (1,)
+
+
 def registry(rows, lam, lofo_expr, rand_seeds=None) -> dict:
     k = {lvl: len(set(column(rows, lvl).values())) for lvl in TREE}
     rand_seeds = rand_v2_seeds() if rand_seeds is None else rand_seeds
@@ -1223,27 +1232,28 @@ def registry(rows, lam, lofo_expr, rand_seeds=None) -> dict:
                      "extra_selection": extra.pop("extra_selection", None), **extra})
 
     for v in VOCABS:
-        add(v, f"configs/arms/{v}.yaml", k[v], 5, 1, objective="classification")
-    add("L162_MASS", "configs/arms/L162_MASS.yaml", k["L162"], 5, 1, LAMBDA_V1,
+        add(v, f"configs/arms/{v}.yaml", k[v], N_RUNS, 1, objective="classification")
+    add("L162_MASS", "configs/arms/L162_MASS.yaml", k["L162"], N_RUNS, 1, LAMBDA_V1,
         objective="classification+mass")
-    add("R16_Q1_MASS", "configs/arms/R16_Q1_MASS.yaml", k[TARGET], 5, 1, LAMBDA_V1,
+    add("R16_Q1_MASS", "configs/arms/R16_Q1_MASS.yaml", k[TARGET], N_RUNS, 1, LAMBDA_V1,
         objective="classification+mass")
     for d, seed in enumerate(rand_seeds, start=1):
         add(f"{RAND_V2_PREFIX}{d}", f"configs/arms/v2/{RAND_V2_PREFIX}{d}.yaml",
             k[TARGET], 2, 1, objective="classification", partition_seed=seed)
     for arm in FLAV_TAGS:
-        add(arm, f"configs/arms/v2/{arm}.yaml", k[TARGET], 5, 1,
+        add(arm, f"configs/arms/v2/{arm}.yaml", k[TARGET], N_RUNS, 1,
             objective="classification", partition_seed=FLAV_SEED)
-    add("R16_Q1_MASS_LM", "configs/arms/v2/R16_Q1_MASS_LM.yaml", k[TARGET], 5, 2, lam,
+    add("R16_Q1_MASS_LM", "configs/arms/v2/R16_Q1_MASS_LM.yaml", k[TARGET], N_RUNS, 2, lam,
         objective="classification+mass")
     add("MPM", "configs/arms/L188.yaml", None, 3, 2, objective="mpm")
     for lvl in ("R63_Q1", "R29_Q1"):
-        add(lvl, f"configs/arms/{lvl}.yaml", k[lvl], 5, 3, objective="classification")
+        add(lvl, f"configs/arms/{lvl}.yaml", k[lvl], N_RUNS, 3, objective="classification")
     for v in VOCABS:
         add(f"{v}_LOFO4P", f"configs/arms/{v}.yaml", k[v], 3, 3,
             objective="classification", extra_selection=lofo_expr, parent=v)
     add("MPM_LOFO4P", "configs/arms/L188.yaml", None, 3, 3, objective="mpm",
         extra_selection=lofo_expr, parent="MPM")
+    arms = [a for a in arms if a["tier"] in V2_TIERS]
     return {"generated_by": "scripts/build_v2_arms.py",
             "fields": {
                 "config": "weaver --data-config; its make_weight sidecar is keyed "

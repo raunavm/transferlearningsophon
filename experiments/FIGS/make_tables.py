@@ -137,7 +137,7 @@ V2_PENDING = {
 #       from /data/results/mtx_v2/<run>/: the run's primary epoch (first maximum within
 #       70-79) and its global best, for every run of every grid arm
 #   probe_ladder/          the four vocabularies (L188, L162, R42_Q1, R16_Q1), the two
-#                          mass-output arms (L162_MASS, R16_Q1_MASS), init-s1..5:
+#                          mass-output arms (L162_MASS, R16_Q1_MASS), init-s1..3:
 #       probe/<run>/<tag>/<readout>/probe_results.json
 #       mass_resolution/<run>/<tag>/<readout>/mass_resolution.json
 #           from /data/results/eval/v2/{probe,mass_resolution}/<run>/<tag>/<readout>/

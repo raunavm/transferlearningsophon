@@ -24,6 +24,7 @@ def _load(rel, name):
     return m
 
 
+pytest.skip("AspenOpenJets real data: " + 'Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING "Paper scope for MLST")', allow_module_level=True)
 B = _load("scripts/build_aoj_jobs.py", "build_aoj_jobs")
 FT = _load("scripts/build_ft_jobs.py", "build_ft_jobs")
 LAUNCH = B._launch()

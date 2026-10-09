@@ -103,19 +103,21 @@ def test_the_generated_scratch_readout_is_the_one_that_ran_but_for_the_listed_di
 
 
 def test_one_readout_per_rule_leg_and_scope(ro):
-    # A14 item 8: the analysis freeze is when tiers 1 and 2 have finished, tier 3 follows
-    assert B.V2_RULES == ("best70", "wavg") and B.V2_READOUT_LEGS == LEGS
-    assert B.V2_FREEZE_TIERS == (1, 2) and B.V2_READOUT_SCOPES == ("t12", "")
-    assert set(ro) == {_name(r, leg, sc) for r in B.V2_RULES for leg in LEGS for sc in ("t12", "")}
+    # PI, 2026-10-09: one fine-tuning per pretrained model, from the primary; the grid is
+    # tier 1 alone, so each read-out covers every cell once
+    assert B.V2_RULES == ("best70",) and B.V2_READOUT_LEGS == LEGS
+    assert B.V2_READOUT_SCOPES == ("",)
+    assert set(ro) == {_name(r, leg, "") for r in B.V2_RULES for leg in LEGS}
 
 
-def test_the_freeze_scope_lists_exactly_the_tier_1_and_2_cells():
+def test_the_expected_cells_are_every_grid_run_at_every_size():
     expected = json.loads((ROOT / B.V2_EXPECTED).read_text())
-    tier = {n: t for n, _, _, t in B.v2_runs()}
-    for rule in B.V2_RULES:
-        for leg in ("leg1", "leg2", "leg_top", "leg_qg"):
-            every, t12 = set(expected[f"{rule}/{leg}"]), set(expected[f"{rule}@t12/{leg}"])
-            assert t12 == {c for c in every if tier[c.split("/")[0]] in (1, 2)} and t12 < every
+    runs = {n for n, *_ in B.v2_runs()}
+    assert len(runs) == 37
+    assert set(expected) == {f"best70/{leg}" for leg in ("leg1", "leg2", "leg_top", "leg_qg")} | {"scratch/leg1"}
+    for key, cells in expected.items():
+        if key != "scratch/leg1":
+            assert {c.split("/")[0] for c in cells} == runs and len(cells) == 4 * len(runs)
 
 
 def test_the_readout_specs_on_disk_are_the_generators(ro):
@@ -144,7 +146,7 @@ def test_every_readout_is_a_cpu_job_of_mine_at_its_own_pin_with_the_retry_policy
 def test_each_readout_reads_its_rule_and_expects_every_cell_emitted_for_it(ro):
     expected = json.loads((ROOT / B.V2_EXPECTED).read_text())
     outs = {"/data/results/ft_v2/scratch_leg1_metrics"}            # the scratch reference's
-    for rule, leg, scope in [(r, leg, sc) for r in B.V2_RULES for leg in LEGS for sc in ("t12", "")]:
+    for rule, leg, scope in [(r, leg, sc) for r in B.V2_RULES for leg in LEGS for sc in B.V2_READOUT_SCOPES]:
             t = ro[_name(rule, leg, scope)]
             tag = rule + (f"_{scope}" if scope else "")
             out = f"/data/results/ft_v2/{tag}_{leg}_metrics"
@@ -265,7 +267,7 @@ def _run(text, tmp_path, **env_extra):
     return r, calls.read_text() if calls.exists() else ""
 
 
-@pytest.mark.parametrize("rule,leg", [("best70", "leg1"), ("wavg", "leg2"), ("wavg", "bench")])
+@pytest.mark.parametrize("rule,leg", [("best70", "leg1"), ("best70", "leg2"), ("best70", "bench")])
 def test_a_readout_runs_under_bash_writes_its_tables_and_refuses_a_second_run(ro, tmp_path, rule, leg):
     data = _tree(tmp_path, rule, leg)
     r, calls = _run(ro[_name(rule, leg)], tmp_path)
@@ -333,6 +335,6 @@ def test_the_readouts_pin_a_tag_still_to_be_made_and_the_tree_carries_what_they_
     cli = [sys.executable, str(ROOT / "scripts/build_ft_jobs.py"), "--v2-readouts", "--check-only"]
     r = subprocess.run(cli + ["--pin-not-yet-tagged"], capture_output=True, text=True, cwd=ROOT)
     assert r.returncode == 0, r.stderr
-    assert r.stdout.count(f"checked (pin {B.PIN_V2_READOUT})") == 12     # 2 rules x 3 legs x 2 scopes
+    assert r.stdout.count(f"checked (pin {B.PIN_V2_READOUT})") == 3      # 1 rule x 3 legs
     r = subprocess.run(cli + ["--pin-not-yet-tagged", "--v2"], capture_output=True, text=True, cwd=ROOT)
     assert r.returncode != 0 and "emitted alone" in r.stderr

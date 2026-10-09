@@ -2142,7 +2142,9 @@ MTX_V2 = "/data/results/mtx_v2"
 # rule would add half again to the fine-tuning cost (~1,370 GPU-h by cost_h on the
 # 88-run grid of 2026-10-02). It is read out frozen only
 # (scripts/build_extract_jobs.py, V2_CHECKPOINTS).
-V2_RULES = ("best70", "wavg")
+# PI, 2026-10-09: one fine-tuning per pretrained model ("one per seed"), from the primary
+# checkpoint; the weight average stays a check of the frozen readouts only.
+V2_RULES = ("best70",)
 V2_VAL_JETS = 20_480
 V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
 V2_EXPECTED = "experiments/FT/data/ft_v2_expected_cells.json"
@@ -2459,25 +2461,20 @@ def v2_need() -> dict[str, float]:
     return need
 
 
-# A14, item 8: "The analysis freeze moves to when tiers 1 and 2 have finished. Tier-3
-# results follow when they exist." So each rule's cells are also listed for tiers 1-2
-# alone ("<rule>@t12/<leg>"), and each read-out is emitted for them and for every tier.
-V2_FREEZE_TIERS = (1, 2)
-V2_READOUT_SCOPES = ("t12", "")
+# The grid is tier 1 alone since 2026-10-09 (tiers 2-3 cut before they started), so the
+# freeze is the whole grid and each read-out is emitted once, over every cell.
+V2_READOUT_SCOPES = ("",)
 
 
 def v2_expected_cells() -> dict:
-    """Every v2 cell the generator emits, "init/N<N>/s<S>" under "<rule>/<leg>", and those of
-    tiers 1-2 under "<rule>@t12/<leg>": the lists the read-outs check they read in full
-    (--expect-cells)."""
+    """Every v2 cell the generator emits, "init/N<N>/s<S>" under "<rule>/<leg>": the lists
+    the read-outs check they read in full (--expect-cells)."""
     out = {}
     for rule in V2_RULES:
         for kind, cells_of in (("legs", cells_legs), ("bench", cells_bench_v2ckpt)):
             for suffix, s in v2_groups(cells_of):
                 for leg, n, N, sd in cells_of(s):
                     out.setdefault(f"{rule}/{leg}", []).append(f"{n}/N{N}/s{sd}")
-                    if int(suffix[1]) in V2_FREEZE_TIERS:
-                        out.setdefault(f"{rule}@t12/{leg}", []).append(f"{n}/N{N}/s{sd}")
     out["scratch/leg1"] = [f"{SCRATCH_REF}/N{N}/s{sd}" for sd in INITS_LATER[SCRATCH_REF][0][3] for N in SIZES]
     return {k: sorted(v) for k, v in sorted(out.items())}
 
@@ -2617,7 +2614,7 @@ V2_READOUT_FILES = {"leg1": ("leg1_metrics.json",), "leg2": ("leg2_metrics.json"
 V2_READOUT_NEEDED = {"experiments/FT/leg1_metrics.py": "def diverged",
                      "experiments/FT/leg2_metrics.py": "def diverged",
                      "experiments/FT/bench_metrics.py": "--sizes",
-                     V2_EXPECTED: '"wavg/leg_qg"',
+                     V2_EXPECTED: '"best70/leg_qg"',
                      V2_SHA_TABLE: '"files"'}
 _LEG1_SUMMARY = r'''
           echo "=== summary ==="

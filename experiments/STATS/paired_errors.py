@@ -123,7 +123,7 @@ def load_spec(path) -> dict:
     if "from_grid" in m:            # the arms' records (the mass-output lambda, A11)
         spec["grid_arms"] = {a["name"]: a for a in
                              json.loads((REPO / m["from_grid"]).read_text())["arms"]}
-    # reference models outside the grid (A14: the untrained trunk of run indices 1-5),
+    # reference models outside the grid (A14: the untrained trunk of run indices 1-3),
     # {model: (arm, run, None)}; each has the one tag its entry names and no run directory
     refs = spec.get("references", {})
     spec["reference_models"] = {r["model"].format(run=k): (arm, k, None)

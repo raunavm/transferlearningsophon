@@ -997,7 +997,7 @@ def build_v1err() -> dict[str, str]:
 # jets, the pooled embedding of the same rows, and, for a model with an output
 # layer, the per-jet output-layer scores. The self-supervised runs are extracted
 # too (no output layer; the pooled embedding is their readout), and the untrained
-# trunk of run indices 1-5 (V2_INIT_ARM's init_trunk.pt; amendment A7 makes it
+# trunk of run indices 1-3 (V2_INIT_ARM's init_trunk.pt; amendment A7 makes it
 # the same for every vocabulary) is extracted as a reference row, tag init.
 # GPU: the split is 27.4 M jets. NOT launched until the v2 runs exist.
 # mtx-s1.99 was the first tag with extract_v2.bn_twin (the BatchNorm twins; at mtx-s1.98
@@ -1009,8 +1009,8 @@ V2_ROOT = "/data/results/mtx_v2"
 V2_OUT = "/data/results/eval/v2"
 V2_GRID = ROOT / "configs" / "arms" / "v2_grid.json"
 V2_CHECKPOINTS = ("best70", "bestval", "wavg", "best70_bn", "bestval_bn")
-V2_INIT_ARM, V2_INIT_RUNS = "L188", range(1, 6)
-# THE PLAN MUST FIT. build_v2() emits that plan for every run and the five init
+V2_INIT_ARM, V2_INIT_RUNS = "L188", range(1, 4)   # run indices 1-3 (runs 4-5 cut 2026-10-09)
+# THE PLAN MUST FIT. build_v2() emits that plan for every run and the three init
 # references; experiments/EVAL/extraction_v2_sizing.py sizes it (bestval counted
 # as a checkpoint of its own for every run, the upper bound) with the v2 runs' own
 # pretraining checkpoints and every v2 fine-tuning spec (scripts/build_ft_jobs.py
@@ -1127,7 +1127,7 @@ def v2_runs(tier: int | None = None) -> list[tuple[str, str, int, int, int]]:
 
 
 def v2_init_refs() -> list[tuple[str, str]]:
-    """(reference name, run whose init_trunk.pt it extracts) for run indices 1-5."""
+    """(reference name, run whose init_trunk.pt it extracts) for run indices 1-3."""
     runs = {r for r, *_ in v2_runs()}
     stem = V2_INIT_ARM.lower().replace("_", "")
     out = [(f"init-s{s}", f"mtx-{stem}-s{s}") for s in V2_INIT_RUNS]

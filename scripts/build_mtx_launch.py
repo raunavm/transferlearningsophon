@@ -957,8 +957,14 @@ SMOKE_EPOCHS, SMOKE_SAMPLES = 3, 200_000        # the gate: at most 3 epochs x 2
 NUMERICS_GPUS = ("NVIDIA-L40", "NVIDIA-RTX-A6000", "NVIDIA-A40")
 
 
+# The grid as launched (mtx-s1.98, 88 runs): the one-off smoke and dry-run jobs below were built
+# from it and have run. The grid itself was cut to 37 runs on 2026-10-09 (configs/arms/v2_grid.json).
+V2_GRID_LAUNCHED = ROOT / "configs" / "arms" / "v2_grid.launched.json"
+
+
 def _arm(name: str) -> dict:
-    return next(a for a in v2_arms() if a["name"] == name)
+    import json
+    return next(a for a in json.loads(V2_GRID_LAUNCHED.read_text())["arms"] if a["name"] == name)
 
 
 def v2_smoke_specs(tag: str, deterministic: bool = False) -> dict:

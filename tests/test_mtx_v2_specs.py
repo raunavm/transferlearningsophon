@@ -166,7 +166,8 @@ def test_scheduling_pins_region_gpu_and_resources(grid):
     # A14 design change 7 (the L40 check passed): runs 1-3 on the RTX 3090, 4-5 on L40,
     # every arm, so each run index is on one product (I7)
     assert b.V2_GPU_BY_RUN == {1: b.V2_GPU, 2: b.V2_GPU, 3: b.V2_GPU, 4: "NVIDIA-L40", 5: "NVIDIA-L40"}
-    assert by_run == {r: {g} for r, g in b.V2_GPU_BY_RUN.items()}
+    # runs 4-5 (the L40 runs) cut 2026-10-09: every run of the grid is on the RTX 3090
+    assert by_run == {r: {b.V2_GPU} for r in (1, 2, 3)}
 
 
 def test_there_is_one_way_to_build_the_grid():
@@ -366,11 +367,17 @@ def test_a_held_out_family_manifest_records_its_selection_and_window(tmp_path):
     assert m["checkpoints"]["retention"] == "window"
 
 
-def test_every_lofo_spec_hands_the_manifest_its_selection_and_window(grid):
-    lofo = [a for a in b.v2_arms() if a.get("extra_selection")]
-    assert lofo
+def _cut_spec(name: str) -> str:
+    """A grid spec of a run cut on 2026-10-09 (launched at mtx-s1.98, deleted before it started),
+    kept as the record in experiments/MTX/k8s/v2/cut/grid/."""
+    return (ROOT / "experiments/MTX/k8s/v2/cut/grid" / f"job-{name}.yaml").read_text()
+
+
+def test_every_lofo_spec_hands_the_manifest_its_selection_and_window():
+    lofo = [a for a in json.loads(b.V2_GRID_LAUNCHED.read_text())["arms"] if a.get("extra_selection")]
+    assert lofo and not [a for a in b.v2_arms() if a.get("extra_selection")]
     for arm in lofo:
-        s = _script(grid[f"job-{b.v2_job_name(arm['name'], 1)}.yaml"])
+        s = _script(_cut_spec(b.v2_job_name(arm['name'], 1)))
         man = s[s.index("write_run_manifest.py"):s.index("--out ${MANIFEST}")]
         assert f"--extra-selection '{arm['extra_selection']}'" in man and "--data-windows 3" in man
 
@@ -400,12 +407,12 @@ def test_the_storage_projection_refuses_what_does_not_fit():
     assert n * 80 * (b.V2_STATE_MIB + b.V2_RESUME_MIB) / 1024 > 62
 
 
-def test_the_self_supervised_held_out_family_run_reads_a_third_of_each_file(grid):
+def test_the_self_supervised_held_out_family_run_reads_a_third_of_each_file():
     arm, parent = b._arm("MPM_LOFO4P"), b._arm("MPM")
     assert arm["objective"] == "mpm" and arm["config"] == parent["config"]
     assert arm["extra_selection"] == b._arm("L188_LOFO4P")["extra_selection"]
     for r in range(1, int(arm["runs"]) + 1):
-        s = _script(grid[f"job-{b.v2_job_name('MPM_LOFO4P', r)}.yaml"])
+        s = _script(_cut_spec(b.v2_job_name('MPM_LOFO4P', r)))
         train = re.search(r"python3 experiments/MTX/pretrain_v2\.py .*", s).group(0)
         assert "--data-windows 3" in train and "--data-fraction" not in s
         assert f"--extra-selection '{arm['extra_selection']}'" in train
@@ -439,7 +446,7 @@ def _outside_script(spec: str) -> dict:
     return d
 
 
-@pytest.mark.parametrize("run_id", ["mtx-r16q1-s4", "mtx-l162mass-s1", "mtx-mpmlofo4p-s3"])
+@pytest.mark.parametrize("run_id", ["mtx-r16q1-s3", "mtx-l162mass-s1", "mtx-rand2p4-s2"])
 def test_a_finalize_spec_is_its_runs_grid_spec_running_finalize_v2(grid, run_id):
     name, spec = b.v2_finalize_spec(run_id, TAG)
     g = grid[f"job-mtx2-{run_id[len('mtx-'):]}-raunav.yaml"]
@@ -485,8 +492,8 @@ def test_the_batchnorm_twin_jobs_run_bn_twins_v2_on_each_run_of_a_run_index_on_i
     behind the grid script's guards; a run not DONE yet is skipped."""
     specs = b.v2_bn_twins_specs(TAG, 1)
     tier1 = [a for a in b.v2_arms() if int(a.get("tier", 1)) == 1]
-    assert sorted(specs) == [f"job-mtx2-bntwins-t1-s{k}-raunav.yaml" for k in range(1, 6)]
-    for k in range(1, 6):
+    assert sorted(specs) == [f"job-mtx2-bntwins-t1-s{k}-raunav.yaml" for k in range(1, 4)]
+    for k in range(1, 4):
         spec = specs[f"job-mtx2-bntwins-t1-s{k}-raunav.yaml"]
         d = yaml.safe_load(spec)
         assert "raunav" in d["metadata"]["name"] and "suspend" not in d["spec"]

@@ -58,7 +58,7 @@ arms; not the mass-output, random-partition or flavour arms), at every checkpoin
 extract_v2.py extracts (build_extract_jobs.V2_CHECKPOINTS: best70 primary, wavg,
 bestval, best70_bn, bestval_bn), each read two ways, the class-token features and
 the pooled embedding (amendment A14; a self-supervised run has only the pooled
-one); and the untrained trunk of run indices 1-5 (init-s1..5, tag init, both
+one); and the untrained trunk of run indices 1-3 (init-s1..3, tag init, both
 readouts) as a reference row in every merge. Model name = run without "mtx-"
 (l188lofo4p-s2), v1's names and so v1's resampling draws.
 

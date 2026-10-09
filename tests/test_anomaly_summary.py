@@ -321,6 +321,7 @@ def _v2_doc(arms=V2_ARMS, readout="pooled"):
     return {**{k: v for k, v in _doc().items() if k != "arms"}, "arms": out}
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_levels_are_the_grid_arms_each_with_its_own_runs():
     res = S.summarise(_v2_doc(), grid=GRID)
     assert set(res["families"]) == set(S.V2_FAMILIES) and res["readout"] == "pooled"
@@ -336,6 +337,7 @@ def test_v2_levels_are_the_grid_arms_each_with_its_own_runs():
     assert "classes_removed_by_level" not in res, "no class sum in a v2 merge"
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_a_missing_run_of_a_three_run_arm_is_fatal():
     doc = _v2_doc()
     del doc["arms"]["l188lofo4p-s2"]
@@ -343,6 +345,7 @@ def test_v2_a_missing_run_of_a_three_run_arm_is_fatal():
         S.summarise(doc, grid=GRID)
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_a_model_the_study_does_not_score_is_fatal():
     for name in ("l189-s1", "l162mass-s1", "r16q1masslm-s1", "rand2p1-s1", "flavf1-s1"):
         doc = _v2_doc()
@@ -351,6 +354,7 @@ def test_v2_a_model_the_study_does_not_score_is_fatal():
             S.summarise(doc, grid=GRID)
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_the_study_is_the_ladder_its_left_out_family_and_the_self_supervised_arms():
     """V2_ANOMALY_ARMS read off the grid, against the arms written out here."""
     cells = S.v2_ladder(GRID)[0]
@@ -361,6 +365,7 @@ def test_v2_the_study_is_the_ladder_its_left_out_family_and_the_self_supervised_
     assert cells["MPM_LOFO4P"] == ("none", (1, 2, 3)) and cells["R16_Q1_LOFO4P"] == ("R16_Q1", (1, 2, 3))
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_a_model_scored_on_the_wrong_label_set_is_fatal():
     doc = _v2_doc()
     doc["arms"]["l188lofo4p-s1"]["rung"] = "L162"
@@ -372,6 +377,7 @@ def test_v2_a_model_scored_on_the_wrong_label_set_is_fatal():
         S.summarise(doc, grid=GRID)
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_a_merge_mixing_readouts_is_fatal():
     doc = _v2_doc()
     doc["arms"]["mpm-s1"]["cache"]["readout"] = "features"
@@ -381,6 +387,7 @@ def test_v2_a_merge_mixing_readouts_is_fatal():
         S.summarise(_v2_doc(), rerun=_v2_doc(), grid=GRID)
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_the_output_ratio_is_read_at_every_checkpoint_and_twin():
     """--heads at best70, wavg, bestval and the BatchNorm twins: class_sum_matched per
     grid arm over that arm's runs; a tag is read only where every model carries it."""
@@ -403,6 +410,7 @@ def test_v2_the_output_ratio_is_read_at_every_checkpoint_and_twin():
     assert "wavg" not in res["checkpoint_rule"]["by_checkpoint"], "a tag every run carries"
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_main_records_the_grid_it_read(tmp_path):
     p = tmp_path / "ad.json"
     p.write_text(json.dumps(_v2_doc()))

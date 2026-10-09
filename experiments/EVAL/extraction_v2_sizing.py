@@ -15,7 +15,7 @@ THE PLAN (amendment A14). Every run of the grid at best70, wavg and bestval (cou
 as a checkpoint of its own for every run, the upper bound: where it is best70's epoch
 it is extracted once), with float16 features, the pooled embedding and the observers
 of the same rows, and head scores for a model with an output layer; the
-self-supervised runs without head scores; and the untrained trunk of run indices 1-5
+self-supervised runs without head scores; and the untrained trunk of run indices 1-3
 (scripts/build_extract_jobs.py v2_init_refs) at one checkpoint without head scores.
 There is no smaller plan: A8 and A14 need every checkpoint's features.
 

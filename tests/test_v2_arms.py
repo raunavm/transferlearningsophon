@@ -114,17 +114,16 @@ NEW_CONFIGS = sorted([ROOT / "configs" / "arms" / "R63_Q1.yaml",
 
 # ----------------------------------------------------------------- registry
 def test_registry_holds_the_requested_grid():
+    # PI, 2026-10-09: three runs per configuration, tier 1 only (RUNS.csv mtx2-cut-s45-1009,
+    # mtx2-cut-tiers23-1009): 37 runs.
     want = {
-        **{a: (1, 5) for a in ["L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS",
+        **{a: (1, 3) for a in ["L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS",
                                 "R16_Q1_MASS"]},
         **{a: (1, 2) for a in RAND_ARMS},
-        "FLAV_F0": (1, 5), "FLAV_F1": (1, 5), "FLAV_F1R": (1, 5),
-        "R16_Q1_MASS_LM": (2, 5), "MPM": (2, 3),
-        "R63_Q1": (3, 5), "R29_Q1": (3, 5),
-        **{f"{a}_LOFO4P": (3, 3) for a in ["L188", "L162", "R42_Q1", "R16_Q1", "MPM"]},
+        "FLAV_F0": (1, 3), "FLAV_F1": (1, 3), "FLAV_F1R": (1, 3),
     }
     got = {a["name"]: (a["tier"], a["runs"]) for a in GRID["arms"]}
-    assert got == want
+    assert got == want and sum(a["runs"] for a in GRID["arms"]) == 37
     assert len(GRID["arms"]) == len(ARMS), "arm names must be unique"
 
 
@@ -141,8 +140,8 @@ def test_registry_configs_exist_and_state_the_right_width():
 def test_mass_lambdas_in_the_registry():
     lam = json.loads((ROOT / "configs" / "arms" / "v2" / "mass_lambda.v2.json").read_text())
     assert ARMS["L162_MASS"]["mass_lambda"] == ARMS["R16_Q1_MASS"]["mass_lambda"] == 5.0
-    assert ARMS["R16_Q1_MASS_LM"]["mass_lambda"] == lam["lambda_m"]
-    text = (ROOT / ARMS["R16_Q1_MASS_LM"]["config"]).read_text()
+    assert "R16_Q1_MASS_LM" not in ARMS                     # tier 2, cut 2026-10-09
+    text = (ROOT / "configs/arms/v2/R16_Q1_MASS_LM.yaml").read_text()
     assert f"--mass-lambda {lam['lambda_m']}\n" in text
     no_mass = [a["name"] for a in GRID["arms"] if a["mass_lambda"] is None
                and "mass_target:" in (ROOT / a["config"]).read_text()]
@@ -1036,10 +1035,18 @@ def test_lofo_selection_removes_exactly_the_family():
     assert set(re.findall(r"[A-Za-z_]\w*", expr)) == {"jet_label"}
 
 
-def test_lofo_registry_uses_the_parent_config_and_width():
+def test_lofo_registry_uses_the_parent_config_and_width(monkeypatch):
     """Each leave-one-family-out arm is its parent's config, width and
     objective with the family removed; the self-supervised one (PRESPEC A14)
-    is the label-free reference for the unseen-family test."""
+    is the label-free reference for the unseen-family test. Tier 3 is cut from the
+    grid (2026-10-09), so this reads the registry before the tier filter."""
+    monkeypatch.setattr(v2, "V2_TIERS", (1, 2, 3))
+    lam = json.loads((ROOT / "configs" / "arms" / "v2" / "mass_lambda.v2.json").read_text())
+    full = v2.registry(ROWS, lam["lambda_m"], v2.lofo_extra_selection(ROWS))["arms"]
+    committed = json.loads((ROOT / "configs" / "arms" / "v2_grid.json").read_text())["arms"]
+    assert [a["name"] for a in full if a["tier"] > 1] and not [a for a in committed if a["tier"] > 1]
+    ARMS = {a["name"]: a for a in full}
+    GRID = {"arms": full}
     for v in v2.VOCABS + ["MPM"]:
         a = ARMS[f"{v}_LOFO4P"]
         assert a["parent"] == v

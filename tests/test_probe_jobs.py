@@ -528,7 +528,7 @@ def test_v2_one_job_per_run_and_reference_with_the_retry_policy_and_the_pin():
     bx, jobs = _bx(), bp.build_v2()
     runs = [r for r, *_ in bx.v2_runs()] + [ref for ref, _ in bx.v2_init_refs()]
     assert sorted(jobs) == sorted(f"job-frozen-v2-{r.removeprefix('mtx-')}-raunav.yaml" for r in runs)
-    assert len(jobs) == 93
+    assert len(jobs) == 37 + 3            # the grid (cut 2026-10-09) and init-s1..3
     for fname, text in jobs.items():
         d = yaml.safe_load(text)
         assert "raunav" in d["metadata"]["name"] and fname == f"job-{d['metadata']['name']}.yaml"
@@ -712,6 +712,7 @@ def test_v2_script_fits_each_checkpoint_once_links_aliases_and_resumes(tmp_path)
     assert {pathlib.Path(c[0]).name for c in calls} == {"label_recovery_curve.py"}
 
 
+@pytest.mark.skip(reason="the self-supervised runs (tiers 2-3) were cut from the grid by the PI on 2026-10-09")
 def test_v2_script_reads_the_self_supervised_runs_pooled_embedding_only(tmp_path):
     r, calls = _run_v2_body(tmp_path, "mtx-mpm-s1", list(_bx().V2_CHECKPOINTS), {})
     assert r.returncode == 0, r.stderr

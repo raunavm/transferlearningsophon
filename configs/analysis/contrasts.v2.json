@@ -39,13 +39,10 @@
  "labels": {
   "L188": "188",
   "L162": "162",
-  "R63_Q1": "64",
   "R42_Q1": "43",
-  "R29_Q1": "30",
   "R16_Q1": "17",
   "L162_MASS": "162+mass",
   "R16_Q1_MASS": "17+mass",
-  "R16_Q1_MASS_LM": "17+mass, matched lambda",
   "RAND2_p1": "random partition 1",
   "RAND2_p2": "random partition 2",
   "RAND2_p3": "random partition 3",
@@ -53,13 +50,7 @@
   "RAND2_p5": "random partition 5",
   "FLAV_F0": "flavour-blind 17 (F0)",
   "FLAV_F1": "F0 with the four-prong b/c cut (F1)",
-  "MPM": "self-supervised",
-  "L188_LOFO4P": "188, family unseen",
-  "L162_LOFO4P": "162, family unseen",
-  "R42_Q1_LOFO4P": "43, family unseen",
-  "R16_Q1_LOFO4P": "17, family unseen",
   "FLAV_F1R": "F1 with a random four-prong cut (F1r)",
-  "MPM_LOFO4P": "self-supervised, family unseen",
   "INIT": "untrained trunk"
  },
  "contrasts": [
@@ -70,9 +61,7 @@
    "arms": [
     "L188",
     "L162",
-    "R63_Q1",
     "R42_Q1",
-    "R29_Q1",
     "R16_Q1"
    ]
   },
@@ -88,52 +77,8 @@
     [
      "R16_Q1",
      "R16_Q1_MASS"
-    ],
-    [
-     "R16_Q1",
-     "R16_Q1_MASS_LM"
     ]
    ]
-  },
-  {
-   "id": "mass_lambda",
-   "amendment": "A11",
-   "kind": "pairs",
-   "pairs": [
-    [
-     "R16_Q1_MASS",
-     "R16_Q1_MASS_LM"
-    ]
-   ]
-  },
-  {
-   "id": "mass_cost_vs_162",
-   "amendment": "A11",
-   "kind": "linear",
-   "fine": "162 classes: mass output over none, lambda 5",
-   "coarse": "17 classes: mass output over none, matched lambda",
-   "weights": {
-    "R16_Q1_MASS_LM": 1,
-    "R16_Q1": -1,
-    "L162_MASS": -1,
-    "L162": 1
-   }
-  },
-  {
-   "id": "mass_lambda_fraction",
-   "amendment": "A11, A14",
-   "kind": "fraction",
-   "estimand": "the fraction of the excess 17-class mass-output cost that the matched lambda removes, (cost17(lambda 5) - cost17(matched lambda)) / (cost17(lambda 5) - cost162(lambda 5)), cost = ln metric with the mass output minus without, paired by run; 95 % Fieller interval",
-   "numerator": {
-    "R16_Q1_MASS": 1,
-    "R16_Q1_MASS_LM": -1
-   },
-   "denominator": {
-    "R16_Q1_MASS": 1,
-    "R16_Q1": -1,
-    "L162_MASS": -1,
-    "L162": 1
-   }
   },
   {
    "id": "partition_split_vs_merged",
@@ -268,124 +213,6 @@
     "R16": "R16_Q1",
     "R42": "R42_Q1"
    }
-  },
-  {
-   "id": "family_unseen_vs_seen",
-   "amendment": "A13",
-   "kind": "unpaired",
-   "pairs": [
-    [
-     "L188",
-     "L188_LOFO4P"
-    ],
-    [
-     "L162",
-     "L162_LOFO4P"
-    ],
-    [
-     "R42_Q1",
-     "R42_Q1_LOFO4P"
-    ],
-    [
-     "R16_Q1",
-     "R16_Q1_LOFO4P"
-    ],
-    [
-     "MPM",
-     "MPM_LOFO4P"
-    ]
-   ],
-   "stream_exempt": "a run that leaves the family out draws a different stream by construction (a selection on the stored label), so it cannot be stream-matched to its parent; the two arms are compared unpaired",
-   "runs": [
-    1,
-    2,
-    3
-   ],
-   "note": "A14: Welch, parent runs 1-3 only, so both sides train on one GPU product (run indices 4-5 train on L40)"
-  },
-  {
-   "id": "family_unseen_ladder",
-   "amendment": "A13",
-   "kind": "all_pairs",
-   "arms": [
-    "L188_LOFO4P",
-    "L162_LOFO4P",
-    "R42_Q1_LOFO4P",
-    "R16_Q1_LOFO4P"
-   ],
-   "descriptive": "A14: paired, descriptive at three runs, no null read"
-  },
-  {
-   "id": "self_supervised_vs_vocabulary",
-   "amendment": "A14",
-   "kind": "unpaired",
-   "families": [
-    "ft"
-   ],
-   "runs": [
-    1,
-    2,
-    3
-   ],
-   "pairs": [
-    [
-     "L188",
-     "MPM"
-    ],
-    [
-     "L162",
-     "MPM"
-    ],
-    [
-     "R63_Q1",
-     "MPM"
-    ],
-    [
-     "R42_Q1",
-     "MPM"
-    ],
-    [
-     "R29_Q1",
-     "MPM"
-    ],
-    [
-     "R16_Q1",
-     "MPM"
-    ]
-   ],
-   "stream_exempt": "A14: the self-supervised model is compared with each vocabulary unpaired (Welch); runs 1-3 only, so both sides train on one GPU product"
-  },
-  {
-   "id": "self_supervised_family_unseen_vs_vocabulary",
-   "amendment": "A14",
-   "kind": "unpaired",
-   "families": [
-    "ft"
-   ],
-   "runs": [
-    1,
-    2,
-    3
-   ],
-   "pairs": [
-    [
-     "L188_LOFO4P",
-     "MPM_LOFO4P"
-    ],
-    [
-     "L162_LOFO4P",
-     "MPM_LOFO4P"
-    ],
-    [
-     "R42_Q1_LOFO4P",
-     "MPM_LOFO4P"
-    ],
-    [
-     "R16_Q1_LOFO4P",
-     "MPM_LOFO4P"
-    ]
-   ],
-   "stream_exempt": "A14: as self_supervised_vs_vocabulary, among the models that leave the family out"
   },
   {
    "id": "checkpoint",

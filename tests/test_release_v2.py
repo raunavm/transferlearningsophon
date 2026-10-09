@@ -27,6 +27,23 @@ def _load(name, rel):
 R = _load("release_v2", "scripts/release_v2.py")
 B = _load("build_mtx_launch_release", "scripts/build_mtx_launch.py")
 
+
+@pytest.fixture(autouse=True)
+def launched_grid(monkeypatch, tmp_path_factory):
+    """The script released the grid as launched (mtx-s1.98: 88 runs, three tiers, RTX 3090
+    and L40); every one of its jobs exists. The grid was cut to 37 runs on 2026-10-09, so the
+    release logic is tested on the launched grid and its specs (kept, and cut/grid/)."""
+    launched = json.loads(B.V2_GRID_LAUNCHED.read_text())["arms"]
+    b = R._builder()
+    for m in (b, B):
+        monkeypatch.setattr(m, "v2_arms", lambda: launched)
+    monkeypatch.setattr(R, "_builder", lambda: b)
+    d = tmp_path_factory.mktemp("grid")
+    for src in (R.GRID_DIR, R.GRID_DIR.parent / "cut" / "grid"):
+        for f in src.glob("job-*.yaml"):
+            (d / f.name).write_text(f.read_text())
+    monkeypatch.setattr(R, "GRID_DIR", d)
+
 # Answers `get jobs|pods -n NS -o json` from a state file; a patch updates the job's
 # spec and gives it a Pending pod, as the Job controller would; `create -f` adds the
 # file's job (no pod while it is suspended) and fails if it exists. Anything else fails.
@@ -195,15 +212,16 @@ def test_create_makes_a_tiers_missing_jobs_suspended_in_grid_order(kube):
     assert R.main(["--create-tier", "1", "--apply"]) == 0 and len(_created(log)) == len(want)
 
 
-def test_create_without_apply_only_prints(kube, capsys):
+def test_create_without_apply_only_prints(kube, capsys, monkeypatch):
     names, log = kube
+    monkeypatch.setattr(R, "GRID_DIR", ROOT / "experiments/MTX/k8s/v2/cut/grid")   # tier 2's specs
     assert R.main(["--create-tier", "2"]) == 0
     assert {c[0] for c in _calls(log)} == {"get"}
     out = capsys.readouterr().out
     tier2 = _tier(2)
     assert f"tier 2: 0 of {len(tier2)} jobs exist; would create {len(tier2)}, suspended:" in out
     assert [ln.strip() for ln in out.splitlines() if ln.strip().startswith("experiments/")] == [
-        f"experiments/MTX/k8s/v2/grid/job-{n}.yaml" for n in tier2]
+        f"experiments/MTX/k8s/v2/cut/grid/job-{n}.yaml" for n in tier2]
 
 
 def test_create_refuses_the_tier_if_any_spec_would_start_its_job(kube, monkeypatch, tmp_path):

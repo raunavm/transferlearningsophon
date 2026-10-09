@@ -481,10 +481,12 @@ def _spec(model):
     return V2[B.V2_K8S / f"job-eval-anomaly-v2-{model}-raunav.yaml"]
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_the_committed_v2_specs_are_exactly_what_the_builder_renders():
     assert {p: p.read_text() for p in B.V2_K8S.glob("*.yaml")} == V2
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_jobs_are_the_summarys_cells_one_per_model():
     """The jobs come from anomaly_summary.v2_ladder, so they are its cells exactly:
     the selected arms' runs and the five untrained-trunk references."""
@@ -507,6 +509,7 @@ def test_v2_jobs_are_the_summarys_cells_one_per_model():
     assert all(f"job-{yaml.safe_load(t)['metadata']['name']}.yaml" == p.name for p, t in V2.items())
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_scores_every_extracted_checkpoint_on_both_readouts():
     tags = " ".join(BX.V2_CHECKPOINTS)
     assert tags == "best70 bestval wavg best70_bn bestval_bn"
@@ -526,6 +529,7 @@ def test_v2_scores_every_extracted_checkpoint_on_both_readouts():
         assert "OMP_NUM_THREADS=8 " in t and 'cpu: "8"' in t
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_preconditions_are_exactly_the_files_load_cache_needs(tmp_path):
     """The loop's list against the code: without any listed file load_cache fails,
     and without observers.npz (optional, unlisted) it does not."""
@@ -552,6 +556,7 @@ def test_v2_preconditions_are_exactly_the_files_load_cache_needs(tmp_path):
             an.load_cache(d / "best70", readout)
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_specs_check_storage_first_and_carry_the_retry_policy():
     sys.path.insert(0, str(ROOT / "tests"))
     from test_storage_guard import guarded_before_first_write
@@ -569,6 +574,7 @@ def test_v2_specs_check_storage_first_and_carry_the_retry_policy():
         assert "us-west" in json.dumps(aff) and "nvidia.com/gpu" not in t
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_specs_clone_a_pin_that_has_to_be_declared_not_yet_tagged():
     assert B.V2_PIN == "mtx-s2.00"
     assert all(f'--branch "{B.V2_PIN}"' in t for t in V2.values())
@@ -600,6 +606,7 @@ def _bash(script, root):
     return r.returncode, calls
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_run_script_scores_each_file_once_links_aliases_and_resumes(tmp_path):
     src = tmp_path / "mtx-l188-s1"
     for tag in ("best70", "wavg", "best70_bn"):
@@ -623,6 +630,7 @@ def test_v2_run_script_scores_each_file_once_links_aliases_and_resumes(tmp_path)
     assert _bash(script, tmp_path) == (42, again), "a missing input halts before scoring"
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_merge_script_waits_for_every_unit_then_merges_each_tag_and_readout(tmp_path):
     t12 = [m for m in B.v2_models() if m.tier <= 2]
     assert len(t12) == 28 and sum(1 for m in t12 if "features" in m.readouts) == 25
@@ -649,6 +657,7 @@ def test_v2_merge_script_waits_for_every_unit_then_merges_each_tag_and_readout(t
     assert _bash(script, tmp_path) == (0, calls), "a written merge is not redone"
 
 
+@pytest.mark.skip(reason="v2 anomaly detection: Dropped from the paper by the PI on 2026-10-09 (DECISIONS_PENDING, Paper scope for MLST)")
 def test_v2_heads_jobs_read_every_run_on_the_tree_with_an_output_layer():
     for tset, n in (("t12", 20), ("t123", 42)):
         t = V2[B.V2_K8S / f"job-eval-anomaly-v2-heads-{tset}-raunav.yaml"]

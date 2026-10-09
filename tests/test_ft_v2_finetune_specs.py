@@ -164,15 +164,18 @@ def test_every_v2_run_is_fine_tuned_once_per_rule_on_every_leg(v2):
         assert all(B._is_mpm(n) for n in names) or not any(B._is_mpm(n) for n in names)
 
 
-def test_the_rules_are_best70_and_the_weight_average_and_the_global_best_is_not_fine_tuned(v2):
-    assert B.V2_RULES == ("best70", "wavg")
-    assert not any("bestval" in n or "--rule bestval" in t for n, t in v2.items())
-    assert {re.search(r"-(best70|wavg)-", n).group(1) for n in v2 if n != SCRATCH} == {"best70", "wavg"}
+def test_one_fine_tuning_per_pretrained_model_from_the_primary(v2):
+    # PI, 2026-10-09: "one per seed": the primary (best70) only; the weight average and the
+    # global best are not fine-tuned
+    assert B.V2_RULES == ("best70",)
+    assert not any("bestval" in n or "--rule bestval" in t or "wavg" in n or "--rule wavg" in t
+                   for n, t in v2.items())
+    assert {re.search(r"-(best70|wavg)-", n).group(1) for n in v2 if n != SCRATCH} == {"best70"}
     assert set(json.loads((ROOT / B.V2_EXPECTED).read_text())) == {
-        f"{r}{sc}/{leg}" for r in B.V2_RULES for sc in ("", "@t12")
-        for leg in ("leg1", "leg2", "leg_top", "leg_qg")} | {"scratch/leg1"}      # @t12: A14's freeze
+        f"best70/{leg}" for leg in ("leg1", "leg2", "leg_top", "leg_qg")} | {"scratch/leg1"}
 
 
+@pytest.mark.skip(reason="the self-supervised runs (tiers 2-3) were cut from the grid by the PI on 2026-10-09")
 def test_each_self_supervised_arm_has_its_own_init_names_and_the_self_supervised_recipe(v2):
     grid = json.loads(B.V2_GRID.read_text())["arms"]
     runs = {n: (d, k, t) for n, d, k, t in B.v2_runs()}
@@ -316,16 +319,11 @@ def _first(v2, prefix):
     return next(n for n in sorted(v2) if n.startswith(prefix))
 
 
-@pytest.mark.parametrize("pick", ["scratch", "legs", "bench", "legs-mpm", "bench-mpm",
-                                  "legs-mpmlofo4p", "bench-mpmlofo4p"])
+@pytest.mark.parametrize("pick", ["scratch", "legs", "bench"])
 def test_a_v2_spec_runs_under_bash_and_leaves_its_cells(v2, tmp_path, pick):
-    name = {"scratch": SCRATCH,
-            "legs": _first(v2, "job-ft-v2-legs-best70-t1"),
-            "bench": _first(v2, "job-ft-v2-bench-wavg-t1"),
-            "legs-mpm": "job-ft-v2-legs-best70-t2mpm-raunav.yaml",
-            "bench-mpm": "job-ft-v2-bench-wavg-t2mpm-raunav.yaml",
-            "legs-mpmlofo4p": "job-ft-v2-legs-wavg-t3mpm-raunav.yaml",
-            "bench-mpmlofo4p": "job-ft-v2-bench-best70-t3mpm-raunav.yaml"}[pick]
+    name = {"scratch": lambda: SCRATCH,
+            "legs": lambda: _first(v2, "job-ft-v2-legs-best70-t1"),
+            "bench": lambda: _first(v2, "job-ft-v2-bench-best70-t1")}[pick]()
     inits = _inits(v2[name])
     r, calls = _v2_run(v2[name], tmp_path, inits)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
