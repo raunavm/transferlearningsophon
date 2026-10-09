@@ -88,8 +88,8 @@ spec:
         - { name: data, mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
         resources:
-          requests: { memory: "32Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
-          limits:   { memory: "32Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          requests: { memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

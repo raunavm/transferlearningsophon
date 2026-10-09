@@ -76,7 +76,11 @@ def test_every_dataset_and_size_is_probed_and_scored_with_fine_tuning_metrics(ro
                     "--out", str(out)]) == 0
     doc = json.loads((out / "mtx-l188-s1.json").read_text())
     cells = doc["cells"]["best70"]
-    assert set(cells) == {"top", "qg", "qg_herwig", "jc1", "jc2"}
+    assert set(cells) == {"top", "qg", "qg_herwig", "jc1", "jc2", "jc2_pairs"}
+    pairs = cells.pop("jc2_pairs")
+    assert set(pairs) == {"3000"} and set(pairs["3000"]) == set(LP.PAIRS)      # the largest subset only
+    for c in pairs["3000"].values():
+        assert c["auc"] > 0.8 and c["C"] in LP.C_GRID and 10 <= c["n_train"] < 3000
     for ds in cells:
         assert set(cells[ds]) == {"300", "3000"}
         for n, c in cells[ds].items():
@@ -138,7 +142,8 @@ def test_two_jobs_per_model_for_every_run_and_untrained_trunk():
         assert d["metadata"]["name"].endswith("-raunav") and name == f"job-{d['metadata']['name']}.yaml"
         a = _args(spec)
         assert subprocess.run(["bash", "-n"], input=a, text=True).returncode == 0, name
-        assert f'--branch "{L.LP_PIN}"' in a and '[ "${USED}" -lt 85 ]' in a
+        pin = L.LP_PIN if "-x-" in name else L.FIT_PIN
+        assert f'--branch "{pin}"' in a and '[ "${USED}" -lt 85 ]' in a
         assert d["spec"]["podFailurePolicy"]["rules"][0]["onExitCodes"]["values"] == [42]
 
 
@@ -155,6 +160,8 @@ def test_extraction_reads_every_split_fine_tuning_reads_and_never_takes_a_3090()
         assert f"--checkpoints {' '.join(ckpts)} " in a
         assert ckpts == (("init",) if model.startswith("init-") else ("best70", "best70_bn"))
         assert "--no-pooled" in a and "--prefix-features 2000000000" in a and "--head-prefix 0" in a
+        res = yaml.safe_load(spec)["spec"]["template"]["spec"]["containers"][0]["resources"]
+        assert res["requests"]["memory"] == res["limits"]["memory"] == "88Gi"   # fine-tuning's, same files
         assert f"OUT={L.LP_ROOT}/{model}/$1/$2" in a
         got = re.findall(r"^extract (\w+) (\w+) (\S+) (\d+) (.+)$", a, re.M)
         want = {"jc2": L.BF.SIZES, "jc1": L.BF.SIZES, "top": L.BF.BENCH_SIZES["top"], "qg": L.BF.BENCH_SIZES["qg"]}
@@ -184,5 +191,31 @@ def test_the_extraction_can_leave_out_the_pooled_embedding():
     src = (ROOT / "experiments/EVAL/extract_v2.py").read_text()
     assert '"--no-pooled", action="store_true"' in src
     assert "pooled_factory=None if a.no_pooled else PooledTap" in src
-    for path, text in L.NEEDED.items():
+    for path, text in {**L.NEEDED, **L.FIT_NEEDED}.items():
         assert text in (ROOT / path).read_text(), path
+
+
+def test_the_summary_is_in_the_fine_tuning_read_outs_format(root, monkeypatch, tmp_path):
+    S = _load("linear_probe_summary", "experiments/EVAL/linear_probe_summary.py")
+    monkeypatch.setattr(LP, "TEST_FIRST", {"jc2": 4000})
+    fits = root / "fits"
+    for c in ("best70",):
+        assert LP.main(["--root", str(root), "--model", "mtx-l188-s1", "--checkpoints", c, "--out", str(fits)]) == 0
+    doc = json.loads((fits / "mtx-l188-s1.json").read_text())
+    doc["cells"]["best70_bn"] = doc["cells"]["best70"]          # the twin, as a second rule
+    (fits / "mtx-l188-s1.json").write_text(json.dumps(doc))
+    monkeypatch.setattr(S, "expected_models", lambda: ["mtx-l188-s1"])
+    assert S.main(["--fits", str(fits), "--out", str(tmp_path / "v2")]) == 0
+    leg1 = json.loads((tmp_path / "v2/finetune/linprobe_leg1_metrics.json").read_text())
+    assert set(leg1["cells"]) == {"l188-s1"} and set(leg1["cells"]["l188-s1"]) == {"300", "3000"}
+    assert leg1["cells"]["l188-s1"]["3000"]["s1"]["macro_auc_ovr"] == doc["cells"]["best70"]["jc2"]["3000"]["macro_auc_ovr"]
+    bench = json.loads((tmp_path / "v2/benchmarks/linprobe_bn_bench_metrics.json").read_text())
+    assert set(bench["cells"]) == {"top", "qg"} and bench["checkpoint"] == "best70_bn"
+    pairs = json.loads((tmp_path / "v2/finetune/linprobe_pair_metrics.json").read_text())
+    assert set(pairs["cells"]) == {"bc_vs_bq_cs", "bb_vs_cc", "bbqq_vs_ccqq"}
+    assert set(pairs["cells"]["bb_vs_cc"]["l188-s1"]) == {"3000"}
+    her = json.loads((tmp_path / "v2/benchmarks/linprobe_bench_metrics_herwig.json").read_text())
+    assert set(her["cells"]) == {"qg"} and "r50" in her["cells"]["qg"]["l188-s1"]["3000"]["s1"]
+    monkeypatch.setattr(S, "expected_models", lambda: ["mtx-l188-s1", "mtx-l188-s2"])
+    with pytest.raises(SystemExit, match="no linear-probe fit"):
+        S.main(["--fits", str(fits), "--out", str(tmp_path / "v2")])

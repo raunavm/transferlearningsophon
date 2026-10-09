@@ -31,6 +31,7 @@ Output: <out>/<model>.json, written last and atomically:
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import importlib.util
 import json
@@ -50,6 +51,13 @@ P_FLOOR = 1e-12
 # dataset -> (number of classes, the class index that is QCD/background for eval_arm.metrics)
 DATASETS = {"jc2": (162, 161), "jc1": (10, 0), "top": (2, 0), "qg": (2, 0)}
 SIGNAL_COLUMN = 1                    # top and quark, as experiments/FT/bench_metrics.py
+# Binary probes on the JetClass-II features between classes the coarser vocabularies merge (the
+# X->bc probe; the flavour pair's b vs c in two- and four-prong decays), signal first, by native
+# class name: trained on the largest training subset's jets of those classes, C chosen on the
+# validation set's, scored on the first 2M TEST2M jets' (dataset "jc2_pairs").
+PAIRS = {"bc_vs_bq_cs": (("label_X_bc",), ("label_X_bq", "label_X_cs")),
+         "bb_vs_cc": (("label_X_bb",), ("label_X_cc",)),
+         "bbqq_vs_ccqq": (("label_X_YY_bbqq",), ("label_X_YY_ccqq",))}
 # leg 1 scores the first 2,000,000 jets of TEST2M (extract_features.py --max-jets keeps exactly
 # that many); extract_v2.py stops at the end of the batch that crosses its --max-jets
 TEST_FIRST = {"jc2": 2_000_000}
@@ -165,8 +173,38 @@ def jc2_truth(y_native: np.ndarray, l162: dict) -> np.ndarray:
     return t
 
 
+def pair_groups(names: dict, l162: dict) -> dict:
+    """{pair: (signal L162 groups, background L162 groups)}; each class must be a group of its own."""
+    nat = {n: i for i, n in names.items()}
+    out = {}
+    for pair, sides in PAIRS.items():
+        groups = tuple(tuple(l162[nat[c]] for c in side) for side in sides)
+        for side in sides:
+            for c in side:
+                if sum(1 for v in l162.values() if v == l162[nat[c]]) != 1:
+                    raise SystemExit(f"FATAL: {c} shares its 162-way group; {pair} needs it alone")
+        out[pair] = groups
+    return out
+
+
+def pair_probes(xtr, ytr, xva, yva, xte, yte, groups: dict, probe) -> dict:
+    """The PAIRS probes on group-labelled jets: binary, signal = 1."""
+    cells = {}
+    for pair, (sig, bkg) in groups.items():
+        sel = lambda y: np.isin(y, sig + bkg)
+        b = lambda y: np.isin(y, sig).astype(np.int64)
+        (mtr, mva, mte) = (sel(ytr), sel(yva), sel(yte))
+        if min(np.isin(ytr[mtr], sig).sum(), np.isin(ytr[mtr], bkg).sum()) < 10:
+            raise SystemExit(f"FATAL: {pair}: fewer than 10 training jets of a side")
+        sc, clf, rec = fit(xtr[mtr], b(ytr[mtr]), xva[mva], b(yva[mva]), 2)
+        p = full_proba(clf, sc.transform(xte[mte]), 2)
+        cells[pair] = {**binary_metrics(p, b(yte[mte]), probe), **rec, "n_train": int(mtr.sum()),
+                       "n_val": int(mva.sum())}
+    return cells
+
+
 def probe_cells(model_dir: pathlib.Path, checkpoint: str, datasets, helpers) -> dict:
-    eval_arm, probe, l162 = helpers
+    eval_arm, probe, l162, names = helpers
     cells = {}
     for ds in datasets:
         k, qcd = DATASETS[ds]
@@ -208,6 +246,9 @@ def probe_cells(model_dir: pathlib.Path, checkpoint: str, datasets, helpers) -> 
                   + " ".join(f"{key}={m[key]:.5f}" for key in ("accuracy", "macro_auc_ovr", "auc")
                              if key in m and m[key] is not None)
                   + f" ({cell['seconds']} s)", flush=True)
+            if ds == "jc2" and n == max(train_sizes(model_dir, ds)):
+                cells["jc2_pairs"] = {str(n): pair_probes(xtr, ytr, xva, yva, xte, yte,
+                                                          pair_groups(names, l162), probe)}
     return cells
 
 
@@ -223,9 +264,11 @@ def main(argv=None) -> int:
     if out.exists():
         print(f"{out} exists: every probe of {a.model} is fitted")
         return 0
+    lr = _load("label_recovery", "experiments/EVAL/label_recovery.py")
+    with lr.MAP.open() as f:
+        names = {int(r["jet_label"]): r["class_name"] for r in csv.DictReader(f)}
     helpers = (_load("eval_arm", "experiments/EVAL/eval_arm.py"),
-               _load("probe", "experiments/EVAL/probe.py"),
-               _load("label_recovery", "experiments/EVAL/label_recovery.py").rung_maps()["L162"])
+               _load("probe", "experiments/EVAL/probe.py"), lr.rung_maps()["L162"], names)
     model_dir = a.root / a.model
     doc = {"model": a.model, "root": str(a.root), "checkpoints": a.checkpoints,
            "datasets": a.datasets, "c_grid": list(C_GRID), "max_iter": MAX_ITER,

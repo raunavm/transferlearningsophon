@@ -25,14 +25,19 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "linprobe"
-LP_PIN = "mtx-s2.03"
+LP_PIN = "mtx-s2.03"         # extraction (extract_v2.py --no-pooled)
+FIT_PIN = "mtx-s2.04"        # fitting (linear_probe_v2.py with the JetClass-II pair probes)
 LP_ROOT = "/data/results/eval/v2_linprobe"
 RUN_CHECKPOINTS = ("best70", "best70_bn")
 INIT_CHECKPOINTS = ("init",)
 NOT_ON = ("NVIDIA-GeForce-RTX-3090",)      # the v2 grid's and fine-tuning's product
-# What the tag must carry for the flags these jobs pass.
-NEEDED = {"experiments/EVAL/extract_v2.py": "--no-pooled",
-          "experiments/EVAL/linear_probe_v2.py": "def probe_cells"}
+# weaver loads a whole file per fetch, and a 1M-jet training subset is one file: fine-tuning
+# reads the same files at 88Gi; at 32Gi the first smoke test (2026-10-09) was OOM-killed
+# twice on JetClass-II train_N1000000
+X_MEM = "88Gi"
+# What each tag must carry for what its jobs run.
+NEEDED = {"experiments/EVAL/extract_v2.py": "--no-pooled"}
+FIT_NEEDED = {"experiments/EVAL/linear_probe_v2.py": "def pair_probes"}
 
 
 def _load(name: str, rel: str):
@@ -129,7 +134,7 @@ def x_spec(model, run, rung, k, reg, ckpts) -> str:
             + "".join(calls())
             + '          echo "every split of ' + model + ' extracted"\n')
     text = BX.V1ERR_TEMPLATE.format(name=f"linprobe-x-{model.removeprefix('mtx-')}-raunav", image=BX.IMAGE,
-                                    pin=LP_PIN, body=body, mem="32Gi", cpu="4",
+                                    pin=LP_PIN, body=body, mem=X_MEM, cpu="4",
                                     gpu_req=', nvidia.com/gpu: "1"', gpu_check=BX.GPU_CHECK.format(),
                                     node_exclude=BX.NODE_EXCLUDE)
     text = BX.gpu_fault_aware(text)
@@ -146,7 +151,7 @@ def fit_spec(model, ckpts) -> str:
     body = (f"          python3 experiments/EVAL/linear_probe_v2.py --root {LP_ROOT} --model {model} \\\n"
             f"            --checkpoints {' '.join(ckpts)} --out {LP_ROOT}/fits || halt\n")
     return BX.V1ERR_TEMPLATE.format(name=f"linprobe-fit-{model.removeprefix('mtx-')}-raunav", image=BX.IMAGE,
-                                    pin=LP_PIN, body=body, mem="32Gi", cpu="8", gpu_req="", gpu_check="",
+                                    pin=FIT_PIN, body=body, mem="32Gi", cpu="8", gpu_req="", gpu_check="",
                                     node_exclude=BX.NODE_EXCLUDE)
 
 
@@ -167,7 +172,8 @@ def main(argv=None) -> int:
     ap.add_argument("--only", nargs="*", default=None)
     ap.add_argument("--check-only", action="store_true")
     a = ap.parse_args(argv)
-    BX.verify_pin(LP_PIN, list(NEEDED), a.pin_not_yet_tagged, NEEDED)
+    BX.verify_pin(LP_PIN, list(NEEDED), False, NEEDED)
+    BX.verify_pin(FIT_PIN, list(FIT_NEEDED), a.pin_not_yet_tagged, FIT_NEEDED)
     specs = build(a.only)
     if not a.check_only:
         OUT_DIR.mkdir(parents=True, exist_ok=True)
