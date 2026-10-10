@@ -28,7 +28,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "linprobe"
 LP_PIN = "mtx-s2.03"         # extraction (extract_v2.py --no-pooled)
-FIT_PIN = "mtx-s2.07"        # fitting (linear_probe_v2.py, torch L-BFGS to 3000 iterations; mass_resolution.py)
+FIT_PIN = "mtx-s2.08"        # fitting (linear_probe_v2.py, torch L-BFGS to 3000 iterations, TF32 recorded; mass_resolution.py)
 LP_ROOT = "/data/results/eval/v2_linprobe"
 FITS = "fits3000"   # fits at MAX_ITER 3000; LP_ROOT/fits holds the mtx-s2.06 smoke fit (1000, short of convergence)
 MASS_OBS = "/data/results/eval/test2m_observers"   # generator-level groomed mass of TEST2M
@@ -41,7 +41,7 @@ NOT_ON = ("NVIDIA-GeForce-RTX-3090",)      # the v2 grid's and fine-tuning's pro
 X_MEM = "88Gi"
 # What each tag must carry for what its jobs run.
 NEEDED = {"experiments/EVAL/extract_v2.py": "--no-pooled"}
-FIT_NEEDED = {"experiments/EVAL/linear_probe_v2.py": "MAX_ITER = 3000",
+FIT_NEEDED = {"experiments/EVAL/linear_probe_v2.py": "\"tf32\": tf32",
               "experiments/EVAL/mass_resolution.py": "n_max: int | None = None"}
 
 

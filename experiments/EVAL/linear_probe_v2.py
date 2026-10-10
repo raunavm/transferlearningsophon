@@ -320,6 +320,8 @@ def main(argv=None) -> int:
     if out.exists():
         print(f"{out} exists: every probe of {a.model} is fitted")
         return 0
+    # the fits are float64, which TF32 never touches; switched off and recorded all the same
+    tf32 = _load("extract_features", "experiments/EVAL/extract_features.py").strict_fp32()
     lr = _load("label_recovery", "experiments/EVAL/label_recovery.py")
     with lr.MAP.open() as f:
         names = {int(r["jet_label"]): r["class_name"] for r in csv.DictReader(f)}
@@ -329,7 +331,7 @@ def main(argv=None) -> int:
     doc = {"model": a.model, "root": str(a.root), "checkpoints": a.checkpoints,
            "datasets": a.datasets, "c_grid": list(C_GRID), "max_iter": MAX_ITER,
            "auc_stride": AUC_STRIDE, "selection": "validation cross-entropy",
-           "threads": os.environ.get("OMP_NUM_THREADS"),
+           "threads": os.environ.get("OMP_NUM_THREADS"), "tf32": tf32,
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),
            "cells": {c: probe_cells(model_dir, c, a.datasets, helpers) for c in a.checkpoints}}
     a.out.mkdir(parents=True, exist_ok=True)
