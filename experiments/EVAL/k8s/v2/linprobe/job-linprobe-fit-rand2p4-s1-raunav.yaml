@@ -24,7 +24,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.04" \
+          git clone --depth 1 --branch "mtx-s2.05" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -38,6 +38,9 @@ spec:
           [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
           python3 experiments/EVAL/linear_probe_v2.py --root /data/results/eval/v2_linprobe --model mtx-rand2p4-s1 \
             --checkpoints best70 best70_bn --out /data/results/eval/v2_linprobe/fits || halt
+          python3 experiments/EVAL/mass_resolution.py --observers /data/results/eval/test2m_observers \
+            --features best70=/data/results/eval/v2_linprobe/mtx-rand2p4-s1/jc2/test/best70 best70_bn=/data/results/eval/v2_linprobe/mtx-rand2p4-s1/jc2/test/best70_bn \
+            --out /data/results/eval/v2_linprobe/mass/mtx-rand2p4-s1 || halt
         volumeMounts:
         - { name: jc2,  mountPath: /jc2, readOnly: true }
         - { name: data, mountPath: /data }
