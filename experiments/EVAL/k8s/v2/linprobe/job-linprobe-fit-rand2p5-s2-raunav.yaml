@@ -24,7 +24,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; gpu_ok || { echo "exit $rc with no working GPU on $(hostname): the node failed, not the code; retried elsewhere"; exit 137; }; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.06" \
+          git clone --depth 1 --branch "mtx-s2.07" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -39,7 +39,7 @@ spec:
           gpu_ok () { timeout 300 python3 -c 'import torch; torch.ones(8, device="cuda").add_(1).sum().item()' >/dev/null 2>&1; }
           gpu_ok || { echo "no working GPU on $(hostname); retried elsewhere"; exit 137; }
           python3 experiments/EVAL/linear_probe_v2.py --root /data/results/eval/v2_linprobe --model mtx-rand2p5-s2 \
-            --checkpoints best70 best70_bn --out /data/results/eval/v2_linprobe/fits || halt
+            --checkpoints best70 best70_bn --out /data/results/eval/v2_linprobe/fits3000 || halt
           python3 experiments/EVAL/mass_resolution.py --observers /data/results/eval/test2m_observers \
             --features best70=/data/results/eval/v2_linprobe/mtx-rand2p5-s2/jc2/test/best70 best70_bn=/data/results/eval/v2_linprobe/mtx-rand2p5-s2/jc2/test/best70_bn \
             --out /data/results/eval/v2_linprobe/mass/mtx-rand2p5-s2 || halt
