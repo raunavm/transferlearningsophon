@@ -8,7 +8,9 @@ Per model (every run of configs/arms/v2_grid.json, and the untrained trunks init
       checkpoint and its BatchNorm twin (best70 best70_bn; the untrained trunk: init) for every
       split fine-tuning reads: the seed-1 training subsets at fine-tuning's sizes, validation,
       test, and the Herwig quark/gluon test. One pass per split serves both checkpoints.
-  linprobe-fit-<model> CPU. experiments/EVAL/linear_probe_v2.py fits and scores the probes.
+  linprobe-fit-<model> CPU. experiments/EVAL/linear_probe_v2.py fits and scores the probes;
+      experiments/EVAL/mass_resolution.py regresses the jet mass from the JetClass-II test
+      features (the first 2M jets are test2m_observers' jets, label digest checked).
 
 A run's x job needs its BatchNorm twin, so it is applied after the run's twin job; the fit
 job after its x job. Features go to LP_ROOT/<model>/<dataset>/<split>/<checkpoint>/ (float16,
@@ -26,8 +28,9 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "linprobe"
 LP_PIN = "mtx-s2.03"         # extraction (extract_v2.py --no-pooled)
-FIT_PIN = "mtx-s2.04"        # fitting (linear_probe_v2.py with the JetClass-II pair probes)
+FIT_PIN = "mtx-s2.05"        # fitting (linear_probe_v2.py with the pair probes; mass_resolution.py)
 LP_ROOT = "/data/results/eval/v2_linprobe"
+MASS_OBS = "/data/results/eval/test2m_observers"   # generator-level groomed mass of TEST2M
 RUN_CHECKPOINTS = ("best70", "best70_bn")
 INIT_CHECKPOINTS = ("init",)
 NOT_ON = ("NVIDIA-GeForce-RTX-3090",)      # the v2 grid's and fine-tuning's product
@@ -37,7 +40,8 @@ NOT_ON = ("NVIDIA-GeForce-RTX-3090",)      # the v2 grid's and fine-tuning's pro
 X_MEM = "88Gi"
 # What each tag must carry for what its jobs run.
 NEEDED = {"experiments/EVAL/extract_v2.py": "--no-pooled"}
-FIT_NEEDED = {"experiments/EVAL/linear_probe_v2.py": "def pair_probes"}
+FIT_NEEDED = {"experiments/EVAL/linear_probe_v2.py": "def pair_probes",
+              "experiments/EVAL/mass_resolution.py": "n_max: int | None = None"}
 
 
 def _load(name: str, rel: str):
@@ -149,7 +153,10 @@ def x_spec(model, run, rung, k, reg, ckpts) -> str:
 
 def fit_spec(model, ckpts) -> str:
     body = (f"          python3 experiments/EVAL/linear_probe_v2.py --root {LP_ROOT} --model {model} \\\n"
-            f"            --checkpoints {' '.join(ckpts)} --out {LP_ROOT}/fits || halt\n")
+            f"            --checkpoints {' '.join(ckpts)} --out {LP_ROOT}/fits || halt\n"
+            f"          python3 experiments/EVAL/mass_resolution.py --observers {MASS_OBS} \\\n"
+            f"            --features {' '.join(f'{c}={LP_ROOT}/{model}/jc2/test/{c}' for c in ckpts)} \\\n"
+            f"            --out {LP_ROOT}/mass/{model} || halt\n")
     return BX.V1ERR_TEMPLATE.format(name=f"linprobe-fit-{model.removeprefix('mtx-')}-raunav", image=BX.IMAGE,
                                     pin=FIT_PIN, body=body, mem="32Gi", cpu="8", gpu_req="", gpu_check="",
                                     node_exclude=BX.NODE_EXCLUDE)

@@ -271,3 +271,21 @@ def test_saved_residuals_are_the_ones_the_summary_describes():
     for p in mr.PROBES:
         assert rs[p].shape == (te.size,)
         assert mr.sigma_eff(rs[p])[0] == r[p]["sigma_eff"]
+
+
+def test_a_cache_that_kept_its_whole_stream_is_cut_to_the_observers_jets(tmp_path):
+    """The linear-probe caches keep every row (prefix_features above the stream) and
+    run a few hundred jets past TEST2M's 2M; the regression reads the first n."""
+    d = tmp_path / "arm"
+    d.mkdir()
+    lab = np.arange(N + 384, dtype=np.int16) % 188
+    np.save(d / "rows.npy", np.arange(N + 384))
+    np.save(d / "label188.npy", lab)
+    (d / "manifest.json").write_text(json.dumps({"prefix_features": 2_000_000_000,
+                                                 "n_stream": N + 384}))
+    assert np.array_equal(mr.v2_prefix(d, N), np.arange(N))
+    assert mr.v2_prefix(d).size == N + 384
+    sha = hashlib.sha256(lab[:N].tobytes()).hexdigest()
+    assert mr.check_alignment("l162mass-s1", d, sha, N)["label188_sha256"] == sha
+    with pytest.raises(SystemExit, match="are not the observers"):
+        mr.check_alignment("l162mass-s1", d, hashlib.sha256(lab[1:N + 1].tobytes()).hexdigest(), N)

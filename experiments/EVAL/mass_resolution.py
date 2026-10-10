@@ -171,15 +171,19 @@ def class_center(y: np.ndarray, lab: np.ndarray, train_idx: np.ndarray) -> tuple
         "n_jets_dropped_small_class": int((~usable).sum())}
 
 
-def v2_prefix(d: pathlib.Path) -> np.ndarray | None:
+def v2_prefix(d: pathlib.Path, n_max: int | None = None) -> np.ndarray | None:
     """For a v2 cache (extract_v2.py: manifest.json, rows.npy, features on selected
     stream rows): the positions of its rows inside the uniform prefix -- the first
     `prefix_features` jets of the stream, every one kept, the jets the v1 analysis
-    regressed. None for a v1 cache, whose rows ARE that prefix."""
+    regressed. A cache that kept every row (prefix_features above its stream, the
+    linear-probe caches) is a prefix of its whole stream; `n_max` cuts the prefix to
+    the observers' jets. None for a v1 cache, whose rows ARE that prefix."""
     if (d / "extract_manifest.json").exists() or (d / "observers_manifest.json").exists() \
             or not (d / "manifest.json").exists():
         return None
-    n = int(json.loads((d / "manifest.json").read_text()).get("prefix_features") or 0)
+    man = json.loads((d / "manifest.json").read_text())
+    n = int(man.get("prefix_features") or 0)
+    n = min(n, int(man.get("n_stream") or n), n_max or n)
     rows = np.load(d / "rows.npy")
     sel = np.flatnonzero(rows < n)
     if not n or sel.size != n or not np.array_equal(rows[sel], np.arange(n)):
@@ -221,7 +225,7 @@ def load_observers(path: pathlib.Path) -> dict:
 
 def check_alignment(arm: str, d: pathlib.Path, obs_sha: str, n: int) -> dict:
     """Refuse unless this arm was scored on the same jets, in the same order."""
-    sel = v2_prefix(d)
+    sel = v2_prefix(d, n)
     if sel is not None:
         man = json.loads((d / "manifest.json").read_text())
         sha = hashlib.sha256(np.load(d / "label188.npy")[sel].tobytes()).hexdigest()
@@ -344,7 +348,7 @@ def main(argv=None) -> int:
         name, path = spec.split("=", 1)
         d = pathlib.Path(path)
         F = np.load(d / ("pooled.npy" if a.readout == "pooled" else "features.npy"))
-        sel = v2_prefix(d)
+        sel = v2_prefix(d, obs["n"])
         if sel is not None:
             F = F[sel].astype(np.float32)
         if F.shape[0] != obs["n"]:

@@ -185,6 +185,9 @@ def test_the_fit_job_is_a_cpu_job_reading_the_features_the_extraction_writes():
         a = _args(spec)
         assert (f"linear_probe_v2.py --root {L.LP_ROOT} --model {model}" in a
                 and f"--checkpoints {' '.join(ckpts)} --out {L.LP_ROOT}/fits" in a)
+        feats = " ".join(f"{c}={L.LP_ROOT}/{model}/jc2/test/{c}" for c in ckpts)
+        assert (f"mass_resolution.py --observers {L.MASS_OBS}" in a and f"--features {feats} " in a
+                and f"--out {L.LP_ROOT}/mass/{model} || halt" in a)
 
 
 def test_the_extraction_can_leave_out_the_pooled_embedding():
