@@ -23,8 +23,8 @@ spec:
         - |
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
-          halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.05" \
+          halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; gpu_ok || { echo "exit $rc with no working GPU on $(hostname): the node failed, not the code; retried elsewhere"; exit 137; }; echo "HALT: exit $rc, not retried"; exit 42; }
+          git clone --depth 1 --branch "mtx-s2.06" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -36,6 +36,8 @@ spec:
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           echo "PVC used: ${USED}%"
           [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          gpu_ok () { timeout 300 python3 -c 'import torch; torch.ones(8, device="cuda").add_(1).sum().item()' >/dev/null 2>&1; }
+          gpu_ok || { echo "no working GPU on $(hostname); retried elsewhere"; exit 137; }
           python3 experiments/EVAL/linear_probe_v2.py --root /data/results/eval/v2_linprobe --model mtx-l162-s3 \
             --checkpoints best70 best70_bn --out /data/results/eval/v2_linprobe/fits || halt
           python3 experiments/EVAL/mass_resolution.py --observers /data/results/eval/test2m_observers \
@@ -46,8 +48,8 @@ spec:
         - { name: data, mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
         resources:
-          requests: { memory: "32Gi", cpu: "8", ephemeral-storage: "20Gi" }
-          limits:   { memory: "32Gi", cpu: "8", ephemeral-storage: "20Gi" }
+          requests: { memory: "32Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "32Gi", cpu: "8", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -58,7 +60,10 @@ spec:
                 values: ["us-west"]
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: ["patternlab.calit2.optiputer.net", "nautilus-ext-gpu01.fullerton.edu"]
+                values: ["patternlab.calit2.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu"]
+              - key: nvidia.com/gpu.product
+                operator: NotIn
+                values: ["NVIDIA-GeForce-RTX-3090"]
       volumes:
       - name: jc2
         persistentVolumeClaim:
