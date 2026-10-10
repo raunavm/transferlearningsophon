@@ -51,7 +51,10 @@ import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 C_GRID = (0.001, 0.01, 0.1, 1.0, 10.0)
-MAX_ITER = 1000
+# 2026-10-10: at 1000 the 162- and 10-class probes at 1e5-1e6 jets stopped short of the
+# tolerance (untrained trunk, JetClass-II 1e5, C=1: objective 4e-5 above its minimum,
+# reached at ~1900 iterations); 3000 lets them converge
+MAX_ITER = 3000
 AUC_STRIDE = 4                       # leg 1 and leg 2: macro AUC on every 4th test jet
 P_FLOOR = 1e-12
 # dataset -> (number of classes, the class index that is QCD/background for eval_arm.metrics)

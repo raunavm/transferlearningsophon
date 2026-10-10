@@ -14,7 +14,7 @@ Per model (every run of configs/arms/v2_grid.json, and the untrained trunks init
 
 A run's x job needs its BatchNorm twin, so it is applied after the run's twin job; the fit
 job after its x job. Features go to LP_ROOT/<model>/<dataset>/<split>/<checkpoint>/ (float16,
-about 2.9 GB a checkpoint of a run), fits to LP_ROOT/fits/<model>.json.
+about 2.9 GB a checkpoint of a run), fits to LP_ROOT/FITS/<model>.json.
 
     python3 scripts/build_linprobe_jobs.py [--pin-not-yet-tagged] [--only mtx-l188-s1 ...]
 """
@@ -28,8 +28,9 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "linprobe"
 LP_PIN = "mtx-s2.03"         # extraction (extract_v2.py --no-pooled)
-FIT_PIN = "mtx-s2.06"        # fitting (linear_probe_v2.py, torch L-BFGS; mass_resolution.py)
+FIT_PIN = "mtx-s2.07"        # fitting (linear_probe_v2.py, torch L-BFGS to 3000 iterations; mass_resolution.py)
 LP_ROOT = "/data/results/eval/v2_linprobe"
+FITS = "fits3000"   # fits at MAX_ITER 3000; LP_ROOT/fits holds the mtx-s2.06 smoke fit (1000, short of convergence)
 MASS_OBS = "/data/results/eval/test2m_observers"   # generator-level groomed mass of TEST2M
 RUN_CHECKPOINTS = ("best70", "best70_bn")
 INIT_CHECKPOINTS = ("init",)
@@ -40,7 +41,7 @@ NOT_ON = ("NVIDIA-GeForce-RTX-3090",)      # the v2 grid's and fine-tuning's pro
 X_MEM = "88Gi"
 # What each tag must carry for what its jobs run.
 NEEDED = {"experiments/EVAL/extract_v2.py": "--no-pooled"}
-FIT_NEEDED = {"experiments/EVAL/linear_probe_v2.py": "class Logit:",
+FIT_NEEDED = {"experiments/EVAL/linear_probe_v2.py": "MAX_ITER = 3000",
               "experiments/EVAL/mass_resolution.py": "n_max: int | None = None"}
 
 
@@ -165,7 +166,7 @@ def x_spec(model, run, rung, k, reg, ckpts) -> str:
 
 def fit_spec(model, ckpts) -> str:
     body = (f"          python3 experiments/EVAL/linear_probe_v2.py --root {LP_ROOT} --model {model} \\\n"
-            f"            --checkpoints {' '.join(ckpts)} --out {LP_ROOT}/fits || halt\n"
+            f"            --checkpoints {' '.join(ckpts)} --out {LP_ROOT}/{FITS} || halt\n"
             f"          python3 experiments/EVAL/mass_resolution.py --observers {MASS_OBS} \\\n"
             f"            --features {' '.join(f'{c}={LP_ROOT}/{model}/jc2/test/{c}' for c in ckpts)} \\\n"
             f"            --out {LP_ROOT}/mass/{model} || halt\n")

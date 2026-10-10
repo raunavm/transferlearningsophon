@@ -14,7 +14,7 @@ fine-tuning seed; s1 is the seed-1 training subset it was fitted on):
 An init is the model name without "mtx-" (l188-s1, init-s1), as the fine-tuning read-outs name
 it. Every model of the grid and every untrained trunk must have a fit; a missing one is fatal.
 
-    python3 experiments/EVAL/linear_probe_summary.py --fits /data/results/eval/v2_linprobe/fits \\
+    python3 experiments/EVAL/linear_probe_summary.py --fits /data/results/eval/v2_linprobe/fits3000 \\
         --out experiments/FIGS/data/v2
 """
 from __future__ import annotations
