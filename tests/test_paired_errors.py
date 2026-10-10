@@ -19,6 +19,8 @@ _s.loader.exec_module(pe)
 
 
 V1 = pe.load_spec(pe.CONTRASTS["v1"])
+# the analysis as launched: the 88-run grid and its contrasts (the grid was cut on 2026-10-09)
+pe.CONTRASTS["v2"] = ROOT / "configs" / "analysis" / "contrasts.v2.launched.json"
 V2 = pe.load_spec(pe.CONTRASTS["v2"])
 RAND = [f"RAND2_p{i}" for i in range(1, 6)]
 
@@ -70,6 +72,7 @@ def test_two_runs_with_one_name_are_fatal(tmp_path):
         pe.grid_models(tmp_path / "g.json")
 
 
+@pytest.mark.skip(reason="cut from the grid and the paper on 2026-10-09 (configs/arms/v2_grid.launched.json keeps the design)")
 def test_every_v2_run_name_is_a_model_of_the_contrasts_file():
     # the fine-tuning inits and the extraction runs, as their builders name them
     ft = _load("build_ft_jobs_paired", "scripts/build_ft_jobs.py")
@@ -514,7 +517,7 @@ def test_every_v2_model_is_formed_into_the_contrasts_of_the_amendments():
             "best70") in got
     # every model at the weight average, and at the global best, against the primary
     a8 = [r for r in rows if r["contrast"] == "checkpoint" and r["family"] == "ft"]
-    grid = {c["name"] for c in json.loads((ROOT / "configs/arms/v2_grid.json").read_text())["arms"]}
+    grid = {c["name"] for c in json.loads((ROOT / "configs/arms/v2_grid.launched.json").read_text())["arms"]}
     for t in BETWEEN:
         assert {r["fine_arm"] for r in a8 if r["checkpoint"] == t} == grid
     assert {r["checkpoint_label"] for r in a8} <= {*pe.P.DEPENDENT, "robust", "inconclusive"}
@@ -752,7 +755,7 @@ def _probe_one(tmp_path):
 
 
 def test_a_contrast_names_only_grid_arms_or_pending_ones(tmp_path):
-    spec = json.loads((ROOT / "configs/analysis/contrasts.v2.json").read_text())
+    spec = json.loads(pe.CONTRASTS["v2"].read_text())
     bad = {**spec, "contrasts": spec["contrasts"] + [{"id": "x", "kind": "pairs",
                                                        "pairs": [["L188", "L118"]]}]}
     (tmp_path / "bad.json").write_text(json.dumps(bad))

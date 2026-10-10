@@ -606,7 +606,8 @@ def input_paths(root: pathlib.Path) -> dict:
             "realised_shares": maps / "realised_native_shares.v2.json",
             "design_spec_v2": root / "experiments" / "MTX" / "k8s" / "v2" / "grid"
                               / "job-mtx2-l188-s1-raunav.yaml",
-            "lofo_spec_v2": root / "experiments" / "MTX" / "k8s" / "v2" / "grid"
+            # cut from the grid 2026-10-09; its launched spec is kept in cut/grid
+            "lofo_spec_v2": root / "experiments" / "MTX" / "k8s" / "v2" / "cut" / "grid"
                             / "job-mtx2-l188lofo4p-s1-raunav.yaml",
             "pretrain_v2": root / "experiments" / "MTX" / "pretrain_v2.py",
             # The smallest effect of interest, fixed in the plan: the band within which a
@@ -1181,6 +1182,10 @@ def emit_mass_lambda(em: Emitter, specs: list) -> None:
              "identical in all ten mass-output pretraining specs")
 
 
+def v2_arm_names(paths: dict) -> set:
+    return {a["name"] for a in json.loads(paths["v2_grid"].read_text())["arms"]}
+
+
 def emit_mass_lambda_matched(em: Emitter, path: pathlib.Path, grid_path: pathlib.Path) -> None:
     """The matched mass-loss weight and the first-grid shares it was matched on
     (PRESPEC A11 and its correction): per first-grid run, x = lambda * L_reg / L_cls
@@ -1233,6 +1238,34 @@ def emit_paired(em: Emitter, files: list, ft: dict | None) -> None:
                      "paired geometric mean [95% interval]")
 
 
+def emit_mlst(em: Emitter, grid_path: pathlib.Path, probe_code: pathlib.Path) -> None:
+    """The cut grid's run counts (configs/arms/v2_grid.json, PI 2026-10-09) and the settings
+    of the downstream linear probes (experiments/EVAL/linear_probe_v2.py)."""
+    grid = {a["name"]: a for a in json.loads(grid_path.read_text())["arms"]}
+    for name, arms in (("MlstNRunsWord", ("L188", "L162", "R42_Q1", "R16_Q1")),
+                       ("MlstMassNRunsWord", ("L162_MASS", "R16_Q1_MASS"))):
+        runs = {grid[a]["runs"] for a in arms}
+        if len(runs) != 1:
+            raise SystemExit(f"FATAL: {grid_path} gives {arms} different run counts {runs}")
+        em.macro(name, words(runs.pop()), grid_path, f"arms[{'/'.join(arms)}].runs",
+                 "pretraining runs per configuration")
+    c = probe_code.read_text()
+
+    def one(pat):
+        m = re.findall(pat, c, re.M)
+        if len(m) != 1:
+            raise SystemExit(f"FATAL: {probe_code}: {pat} matches {len(m)} times")
+        return m[0]
+    grid_c = [float(v) for v in one(r"^C_GRID = \(([^)]*)\)").split(",")]
+    em.macro("LpCMin", fmt_sci(min(grid_c)), probe_code, "C_GRID", "smallest inverse regularisation")
+    em.macro("LpCMax", f"{max(grid_c):g}", probe_code, "C_GRID", "largest inverse regularisation")
+    n_test = int(one(r'^TEST_FIRST = \{"jc2": ([\d_]+)\}').replace("_", ""))
+    stride = int(one(r"^AUC_STRIDE = (\d+)"))
+    em.macro("LpNTestJcii", fmt_int(n_test), probe_code, "TEST_FIRST.jc2", "JetClass-II test jets")
+    em.macro("LpNTestAucJcii", fmt_int(n_test // stride), probe_code, "TEST_FIRST.jc2 / AUC_STRIDE",
+             "JetClass-II test jets of the macro AUC")
+
+
 def emit_rand_design(em: Emitter, paths: dict, C: dict, missing: list | None = None) -> None:
     """What the random partitions and the flavour pair merge, read from the maps
     that define them. First grid: which partitions merge each control task's pair.
@@ -1277,17 +1310,21 @@ def emit_rand_design(em: Emitter, paths: dict, C: dict, missing: list | None = N
              "random partitions in the rerun")
     em.macro("RandVtwoRuns", words(runs.pop()), src, "arms[RAND2_*].runs", "runs per partition")
     em.macro("RandFlavRuns", words(frun.pop()), src, "arms[FLAV_*].runs", "runs per flavour-pair model")
+    # the leave-one-family-out and self-supervised models were cut from the grid on 2026-10-09
+    # (tiers 2-3): their run counts are printed only while the grid has them
     lofo = {a["runs"] for a in grid if a.get("extra_selection")}
-    if len(lofo) != 1:
+    if len(lofo) > 1:
         raise SystemExit(f"FATAL: {paths['v2_grid']} gives the models trained without a family {lofo} runs")
-    em.macro("DesignLofoRuns", words(lofo.pop()), src, "arms[extra_selection set].runs",
-             "runs per model trained without the left-out family")
+    if lofo:
+        em.macro("DesignLofoRuns", words(lofo.pop()), src, "arms[extra_selection set].runs",
+                 "runs per model trained without the left-out family")
     ssl = [a["runs"] for a in grid if a.get("num_classes") is None and not a.get("extra_selection")]
-    if len(ssl) != 1:
+    if len(ssl) > 1:
         raise SystemExit(f"FATAL: {paths['v2_grid']} has {len(ssl)} self-supervised configurations "
                          f"trained on the full stream; the text describes one")
-    em.macro("DesignSslRuns", words(ssl[0]), src, "arms[num_classes null, no extra_selection].runs",
-             "self-supervised pretraining runs in the rerun")
+    if ssl:
+        em.macro("DesignSslRuns", words(ssl[0]), src, "arms[num_classes null, no extra_selection].runs",
+                 "self-supervised pretraining runs in the rerun")
     em.macro("RandVtwoNPairs", words(len(rule["pairs"])), paths["rand_v2_rule"], "pairs (count)",
              "probe pairs the balance rule covers")
     for name, n in (("RandVtwoMergedMin", lo), ("RandVtwoMergedMax", hi)):
@@ -4817,7 +4854,10 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     if "random_control" in have and all(k in have for k in rand_maps):
         emit_rand_design(em, paths, json.loads(pathlib.Path(paths["random_control"]).read_text()),
                          missing)
-    if all(k in have for k in ("mass_lambda", "v2_grid")):
+    if "v2_grid" in have:
+        emit_mlst(em, paths["v2_grid"], root / "experiments" / "EVAL" / "linear_probe_v2.py")
+    # The loss-share-matched mass model is not in the cut grid (PI, 2026-10-09).
+    if all(k in have for k in ("mass_lambda", "v2_grid")) and "R16_Q1_MASS_LM" in v2_arm_names(paths):
         emit_mass_lambda_matched(em, paths["mass_lambda"], paths["v2_grid"])
     if all(k in have for k in ("design_spec_v2", "pretrain_v2")):
         emit_v2_training(em, paths["design_spec_v2"], paths["pretrain_v2"])

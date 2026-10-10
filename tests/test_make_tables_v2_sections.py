@@ -4,6 +4,10 @@ against semantic), the matched mass weight (A11), the self-supervised model's va
 (PRESPEC 4, A14) and the fine-tuning references, the benchmarks (A6), anomaly detection
 and the family left out (A13), and the real data. Each label printed is re-derived from its
 interval; a stored label the interval does not give stops the build."""
+import pytest
+
+pytestmark = pytest.mark.skip(reason="the second grid's sections of the manuscript drafted before the cut; main.tex was rewritten to the MLST scope on 2026-10-10 and its results are generated afresh")
+
 import importlib.util
 import json
 import math

@@ -1,5 +1,5 @@
 {
-  "about": "Numbers the manuscript quotes from other papers. Each is transcribed from the source with the verbatim passage it rests on, checked against the PDF text on 2026-09-27 (Sophon arXiv:2405.12972v1; ATL-PHYS-PUB-2026-013 as mirrored on INSPIRE, recid 3177039); seven added 2026-10-01 from the PDF texts of Sophon App. B, the Li thesis, ParT, Mehta and Bonner v2 and Hong et al.; the last eleven added 2026-10-01 (later) from the PDF texts of Sophon App. B.1, ATLAS GN2 (arXiv:2505.19689v2), CMS PaRT (arXiv:2604.09809v1), Huh et al. (arXiv:1608.08614v2), RS3L (arXiv:2403.07066v2) and the CMS public page of CMS-DP-2026-104. An optional 'tex' field is how the value prints when the source's typography (a superscript) cannot appear in a macro body; the 'value' must still occur in the quote. make_tables.py emits each as a \\Lit... macro so the manuscript quotes none of them by hand. Two added 2026-10-01 (later still): Sophon's parameter count from the PDF text of App. B.1 (it matches the 2,304,688 trainable parameters of the released checkpoint), and GloParT v1's class count from the 'Model generations' table of the CMS public page of CMS-DP-2026-104, read live on 2026-10-01.",
+  "about": "Numbers the manuscript quotes from other papers. Each is transcribed from the source with the verbatim passage it rests on, checked against the PDF text on 2026-09-27 (Sophon arXiv:2405.12972v1; ATL-PHYS-PUB-2026-013 as mirrored on INSPIRE, recid 3177039); seven added 2026-10-01 from the PDF texts of Sophon App. B, the Li thesis, ParT, Mehta and Bonner v2 and Hong et al.; the last eleven added 2026-10-01 (later) from the PDF texts of Sophon App. B.1, ATLAS GN2 (arXiv:2505.19689v2), CMS PaRT (arXiv:2604.09809v1), Huh et al. (arXiv:1608.08614v2), RS3L (arXiv:2403.07066v2) and the CMS public page of CMS-DP-2026-104. An optional 'tex' field is how the value prints when the source's typography (a superscript) cannot appear in a macro body; the 'value' must still occur in the quote. make_tables.py emits each as a \\Lit... macro so the manuscript quotes none of them by hand. Two added 2026-10-01 (later still): Sophon's parameter count from the PDF text of App. B.1 (it matches the 2,304,688 trainable parameters of the released checkpoint), and GloParT v1's class count from the 'Model generations' table of the CMS public page of CMS-DP-2026-104, read live on 2026-10-01. Eight Sophon facts for the X->bb/X->bs protocol added 2026-10-10 from the same PDF text.",
   "facts": [
     {"macro": "LitJetClassTwoNJetsMillion", "value": "139",
      "source": "arXiv:2405.12972v1", "location": "App. A, p. 11",
@@ -93,6 +93,30 @@
      "quote": "The Sophon model includes 2.3 M parameters in total."},
     {"macro": "LitGlopartVoneNClasses", "value": "37",
      "source": "CMS-DP-2026-104 (CMS public page)", "location": "Model generations",
-     "quote": "GloParT v1 September 2022-May 2023 37 First Particle-Transformer-based global model with unified mass regression"}
+     "quote": "GloParT v1 September 2022-May 2023 37 First Particle-Transformer-based global model with unified mass regression"},
+    {"macro": "LitSophonXMass", "value": "200",
+     "source": "arXiv:2405.12972v1", "location": "Sec. III, p. 3",
+     "quote": "The BSM signal process originates from a hypothetical heavy spin- 0 (Higgs-boson-like) resonance X0 with a mass equal to 200 GeV, decaying to bb or bs."},
+    {"macro": "LitSophonXLumi", "value": "40",
+     "source": "arXiv:2405.12972v1", "location": "Sec. III, Fig. 2",
+     "quote": "Figure 2 shows the tagging performance in terms of the discovery significance Z [60] as a function of the SM background selection efficiency, using 40 fb−1 of data and considering events within the mass window 150 < mSD < 230 GeV."},
+    {"macro": "LitSophonXWindowLo", "value": "150",
+     "source": "arXiv:2405.12972v1", "location": "Sec. III, Fig. 2",
+     "quote": "Figure 2 shows the tagging performance in terms of the discovery significance Z [60] as a function of the SM background selection efficiency, using 40 fb−1 of data and considering events within the mass window 150 < mSD < 230 GeV."},
+    {"macro": "LitSophonXWindowHi", "value": "230",
+     "source": "arXiv:2405.12972v1", "location": "Sec. III, Fig. 2",
+     "quote": "Figure 2 shows the tagging performance in terms of the discovery significance Z [60] as a function of the SM background selection efficiency, using 40 fb−1 of data and considering events within the mass window 150 < mSD < 230 GeV."},
+    {"macro": "LitSophonAblationNClasses", "value": "42",
+     "source": "arXiv:2405.12972v1", "location": "Sec. III",
+     "quote": "we conduct an ablation study by training the model only on 42 classes (denoted Sophon*), including all 2-prong resonant-jet classes and the QCD classes."},
+    {"macro": "LitSophonTransferSamplesMillion", "value": "2.5",
+     "source": "arXiv:2405.12972v1", "location": "App. B.5, p. 13",
+     "quote": "The training is performed in 1 epoch, which iterates only 2.5 M samples to reach a convergence."},
+    {"macro": "LitSophonTransferBatch", "value": "1024",
+     "source": "arXiv:2405.12972v1", "location": "App. B.5, p. 13",
+     "quote": "A batch size of 1024 and a constant LR of 5 × 10−4 is adopted."},
+    {"macro": "LitSophonScratchEpochs", "value": "50",
+     "source": "arXiv:2405.12972v1", "location": "App. B.3",
+     "quote": "Compared to the Sophon model training, it is trained over 50 epochs, with each epoch iterating 2.5 M samples. A weight decay of 0.01 is adopted to achieve better per- formance."}
   ]
 }

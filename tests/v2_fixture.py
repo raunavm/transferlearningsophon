@@ -24,7 +24,9 @@ import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 RUNS = 3
-_GRID = {a["name"]: a for a in json.loads((REPO / "configs/arms/v2_grid.json").read_text())["arms"]}
+# the grid as launched: its leave-one-family-out arms were cut on 2026-10-09, and this synthetic
+# design still covers the code paths that read them
+_GRID = {a["name"]: a for a in json.loads((REPO / "configs/arms/v2_grid.launched.json").read_text())["arms"]}
 LOFO_SELECTION = _GRID["L188_LOFO4P"]["extra_selection"]
 # name, classes, mass weight, runs, tier, objective, section of experiments/FIGS/data/v2/
 ARMS = [("L188", 188, None, RUNS, 1, "classification", "probe_ladder"),
@@ -41,7 +43,8 @@ ARMS = [("L188", 188, None, RUNS, 1, "classification", "probe_ladder"),
         *[(f"{p}_LOFO4P", c, None, RUNS, 3, "classification", "leave_one_family_out")
           for p, c in (("L188", 188), ("L162", 162), ("R42_Q1", 43), ("R16_Q1", 17))],
         ("MPM_LOFO4P", None, None, 2, 3, "mpm", "leave_one_family_out")]
-_real = json.loads((REPO / "configs/analysis/contrasts.v2.json").read_text())
+# the contrasts as launched, beside the grid as launched (the cut models lost theirs on 2026-10-09)
+_real = json.loads((REPO / "configs/analysis/contrasts.v2.launched.json").read_text())
 LABELS = {n: _real["labels"][n] for n, *_ in ARMS} | {"INIT": "untrained trunk"}
 RANK = {"L188": 0, "L162": 1, "R63_Q1": 2, "R42_Q1": 3, "R16_Q1": 4, "L162_MASS": 1.5,
         "R16_Q1_MASS": 5.0, "R16_Q1_MASS_LM": 4.75, "MPM": 5, "INIT": 8,
@@ -76,6 +79,7 @@ def _pe():
     s = importlib.util.spec_from_file_location("paired_errors_fx", REPO / "experiments/STATS/paired_errors.py")
     m = importlib.util.module_from_spec(s)
     s.loader.exec_module(m)
+    m.CONTRASTS["v2"] = REPO / "configs/analysis/contrasts.v2.launched.json"   # the design as launched
     return m
 
 

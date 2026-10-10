@@ -769,6 +769,7 @@ def test_the_matched_weight_is_the_one_the_grid_trains_and_the_shares_are_x_over
         M.emit_mass_lambda_matched(M.Emitter(tmp_path), L, G)
 
 
+@pytest.mark.skip(reason="cut from the grid and the paper on 2026-10-09 (configs/arms/v2_grid.launched.json keeps the design)")
 def test_the_paper_prints_the_trained_weight_from_its_committed_source():
     got, prov = _repo_macros()
     grid = {a["name"]: a for a in _load("configs/arms/v2_grid.json")["arms"]}
@@ -1237,6 +1238,7 @@ def test_the_gpu_of_each_run_index_is_read_from_the_job_specs(tmp_path):
         M.gpu_by_run([tmp_path / "job-mtx2-x-s2-raunav.yaml"])
 
 
+@pytest.mark.skip(reason="cut from the grid and the paper on 2026-10-09 (configs/arms/v2_grid.launched.json keeps the design)")
 def test_the_self_supervised_runs_and_the_robustness_band_are_read_where_they_are_fixed():
     got, _ = _repo_macros()
     grid = _load("configs/arms/v2_grid.json")["arms"]

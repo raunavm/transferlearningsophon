@@ -27,35 +27,36 @@
 %   MassLossShareVtwoOnesixtwoMass -- experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.162+mass
 %   MassLossShareVtwoOnesevenMass -- experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass
 %   MassLossShareVtwoOnesevenMassMatched -- experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass_matched
+%   DesignVtwoSecondGpu, DesignVtwoSecondGpuRuns -- the grid's job specs put every run index on one product
 %   per-arm parameters and MACs -- flops_by_arm.json (see docs/RECORD.md 2.1)
 %
 % SKIPPED TABLES:
 %   T4 compute/parameters: no machine-readable source in the repository; docs/RECORD.md 2.1 names /data/results/mtx/flops/flops_by_arm.json, which is not committed
 
-\newcommand{\PendingPretrain}{\pending{pending v2: pretraining rerun: data order and dropout fixed by seed and epoch, identical initial trunk weights, each epoch reading one of five disjoint random parts of the rows of nearly every file, fixed validation sample, checkpoint at the first maximum within the last ten epochs}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Pretrain'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingProbes}{\pending{pending v2: frozen probes on the rerun models, at the first maximum within the last ten epochs and on the model whose weights are the average of the last ten epochs, BatchNorm statistics recomputed, with untrained-network and pooled-embedding reference rows}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Probes'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingPaired}{\pending{pending v2: paired ratios with run and test-sample errors on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Paired'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingLevels}{\pending{pending v2: the 64- and 30-class vocabularies}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Levels'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingLofo}{\pending{pending v2: the leave-one-family-out vocabularies}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Lofo'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingRecovery}{\pending{pending v2: label-tree recovery on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Recovery'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingRandom}{\pending{pending v2: the rerun's random partitions and flavour pair}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Random'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingFtHeldout}{\pending{pending v2: JetClass-II fine-tuning on files held out from pretraining}}  % experiments/FIGS/make_tables.py :: V2_PENDING['FtHeldout'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingFtRefs}{\pending{pending v2: fine-tuning from random initialisation and from the self-supervised model}}  % experiments/FIGS/make_tables.py :: V2_PENDING['FtRefs'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingBench}{\pending{pending v2: top tagging and quark/gluon tagging (Pythia and Herwig) fine-tuned from every rerun model}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Bench'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingSsl}{\pending{pending v2: the second and third self-supervised pretraining runs}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Ssl'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingMassLambda}{\pending{pending v2: the mass-output models with the loss weight matched in loss share}}  % experiments/FIGS/make_tables.py :: V2_PENDING['MassLambda'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingAnomaly}{\pending{pending v2: anomaly detection on the rerun models, per-run values}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Anomaly'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingRealData}{\pending{pending v2: the open-data fits on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['RealData'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingConclusion}{\pending{pending v2: written once every input above is in}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Conclusion'] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingPretrain}{\pending{pending v2: pretraining rerun: data order and dropout fixed by seed and epoch, identical initial trunk weights, each epoch reading one of five disjoint random parts of the rows of nearly every file, fixed validation sample, checkpoint at the first maximum within the last ten epochs}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Pretrain'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingProbes}{\pending{pending v2: frozen probes on the rerun models, at the first maximum within the last ten epochs and on the model whose weights are the average of the last ten epochs, BatchNorm statistics recomputed, with untrained-network and pooled-embedding reference rows}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Probes'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingPaired}{\pending{pending v2: paired ratios with run and test-sample errors on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Paired'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingLevels}{\pending{pending v2: the 64- and 30-class vocabularies}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Levels'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingLofo}{\pending{pending v2: the leave-one-family-out vocabularies}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Lofo'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingRecovery}{\pending{pending v2: label-tree recovery on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Recovery'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingRandom}{\pending{pending v2: the rerun's random partitions and flavour pair}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Random'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingFtHeldout}{\pending{pending v2: JetClass-II fine-tuning on files held out from pretraining}}  % experiments/FIGS/make_tables.py :: V2_PENDING['FtHeldout'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingFtRefs}{\pending{pending v2: fine-tuning from random initialisation and from the self-supervised model}}  % experiments/FIGS/make_tables.py :: V2_PENDING['FtRefs'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingBench}{\pending{pending v2: top tagging and quark/gluon tagging (Pythia and Herwig) fine-tuned from every rerun model}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Bench'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingSsl}{\pending{pending v2: the second and third self-supervised pretraining runs}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Ssl'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingMassLambda}{\pending{pending v2: the mass-output models with the loss weight matched in loss share}}  % experiments/FIGS/make_tables.py :: V2_PENDING['MassLambda'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingAnomaly}{\pending{pending v2: anomaly detection on the rerun models, per-run values}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Anomaly'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingRealData}{\pending{pending v2: the open-data fits on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['RealData'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingConclusion}{\pending{pending v2: written once every input above is in}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Conclusion'] :: sha256 46cdb2be1cde8252 :: a marker, not a number: red in the draft until the input exists
 \newcommand{\AojChainDataset}{178}  % experiments/FIGS/data/aoj_checks_v2/selection_chain_v2.json :: n_dataset :: sha256 729d83085aba25f8
 \newcommand{\AojChainStaged}{12{,}589{,}467}  % experiments/FIGS/data/aoj_checks_v2/selection_chain_v2.json :: n_staged :: sha256 729d83085aba25f8
 \newcommand{\AojChainRhoWindow}{9{,}441{,}209}  % experiments/FIGS/data/aoj_checks_v2/selection_chain_v2.json :: n_rho_window :: sha256 729d83085aba25f8
 \newcommand{\AojNJetsFit}{4{,}194{,}846}  % experiments/FIGS/data/aoj_checks_v2/selection_chain_v2.json :: n_fit :: sha256 729d83085aba25f8
 \newcommand{\AojChainPtBins}{8}  % experiments/FIGS/data/aoj_checks_v2/selection_chain_v2.json :: n_pt_bins :: sha256 729d83085aba25f8
 \newcommand{\AojChainEtaMax}{2.40}  % experiments/FIGS/data/aoj_checks_v2/selection_chain_v2.json :: abs_eta_max :: sha256 729d83085aba25f8
-\newcommand{\MassLossShareVtwoOnesixtwoMass}{\pending{pending: realised mass-loss share in the rerun, 162 classes}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareVtwoOnesixtwoMass] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.162+mass does not exist yet
-\newcommand{\MassLossShareVtwoOnesevenMass}{\pending{pending: realised mass-loss share in the rerun, 17 classes}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareVtwoOnesevenMass] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass does not exist yet
-\newcommand{\MassLossShareVtwoOnesevenMassMatched}{\pending{pending: realised mass-loss share in the rerun, 17 classes, matched weight}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareVtwoOnesevenMassMatched] :: sha256 8531b3a26cc0d4f3 :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass_matched does not exist yet
+\newcommand{\MassLossShareVtwoOnesixtwoMass}{\pending{pending: realised mass-loss share in the rerun, 162 classes}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareVtwoOnesixtwoMass] :: sha256 46cdb2be1cde8252 :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.162+mass does not exist yet
+\newcommand{\MassLossShareVtwoOnesevenMass}{\pending{pending: realised mass-loss share in the rerun, 17 classes}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareVtwoOnesevenMass] :: sha256 46cdb2be1cde8252 :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass does not exist yet
+\newcommand{\MassLossShareVtwoOnesevenMassMatched}{\pending{pending: realised mass-loss share in the rerun, 17 classes, matched weight}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareVtwoOnesevenMassMatched] :: sha256 46cdb2be1cde8252 :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass_matched does not exist yet
 \newcommand{\FtCoverageEThreeNClasses}{160}  % experiments/FT/data/jc2_v2_manifest.json :: class_coverage['train_N1000_s1.parquet'].n_classes_present :: sha256 4bd68655919b14e9
 \newcommand{\FtCoverageEThreeMedian}{4}  % experiments/FT/data/jc2_v2_manifest.json :: class_coverage['train_N1000_s1.parquet'].median_per_present_class :: sha256 4bd68655919b14e9
 \newcommand{\FtCoverageEThreeOneJet}{23}  % experiments/FT/data/jc2_v2_manifest.json :: class_coverage['train_N1000_s1.parquet'].n_classes_with_one_jet :: sha256 4bd68655919b14e9
@@ -515,37 +516,45 @@
 \newcommand{\DesignPtMax}{2{,}500}  % configs/arms/L188.yaml :: selection :: sha256 d5a188dc80885515 :: GeV
 \newcommand{\DesignMsdMin}{20}  % configs/arms/L188.yaml :: selection :: sha256 d5a188dc80885515 :: GeV
 \newcommand{\DesignMsdMax}{500}  % configs/arms/L188.yaml :: selection :: sha256 d5a188dc80885515 :: GeV
-\newcommand{\LitJetClassTwoNJetsMillion}{139}  % experiments/FIGS/data/literature_facts.json :: facts[0].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. A, p. 11
-\newcommand{\LitJetClassTwoNResonantClasses}{161}  % experiments/FIGS/data/literature_facts.json :: facts[1].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. A, p. 11
-\newcommand{\LitJetClassTwoNQcdClasses}{27}  % experiments/FIGS/data/literature_facts.json :: facts[2].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. A, p. 11
-\newcommand{\LitJetClassTwoMaxResonanceMass}{500}  % experiments/FIGS/data/literature_facts.json :: facts[3].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 Sec. II, p. 2
-\newcommand{\LitMadgraphVersion}{2.9.18}  % experiments/FIGS/data/literature_facts.json :: facts[4].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. A, p. 11
-\newcommand{\LitPythiaVersion}{8.3}  % experiments/FIGS/data/literature_facts.json :: facts[5].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. A, p. 11
-\newcommand{\LitDelphesVersion}{3}  % experiments/FIGS/data/literature_facts.json :: facts[6].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. A, p. 11
-\newcommand{\LitJetClassTwoPileupMean}{50}  % experiments/FIGS/data/literature_facts.json :: facts[7].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 Sec. II, p. 2
-\newcommand{\LitJetClassTwoJetRadius}{0.8}  % experiments/FIGS/data/literature_facts.json :: facts[8].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 Sec. II, p. 2
-\newcommand{\LitAtlasUnifiedEffDropPercent}{10}  % experiments/FIGS/data/literature_facts.json :: facts[9].value :: sha256 9ca3658e0c770595 :: ATL-PHYS-PUB-2026-013 Sec. 6.5, p. 22
-\newcommand{\LitSophonPaperParticleBlocks}{6}  % experiments/FIGS/data/literature_facts.json :: facts[10].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitSophonSamplesPerEpochMillion}{10}  % experiments/FIGS/data/literature_facts.json :: facts[11].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitSophonSubsetSamplesPerEpochMillion}{2.5}  % experiments/FIGS/data/literature_facts.json :: facts[12].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. B.2, p. 12
-\newcommand{\LitGlopartNClasses}{314}  % experiments/FIGS/data/literature_facts.json :: facts[13].value :: sha256 9ca3658e0c770595 :: C. Li, PhD thesis, CERN-THESIS-2024-281 Sec. 11.2.1, p. 188
-\newcommand{\LitPartFtEpochs}{20}  % experiments/FIGS/data/literature_facts.json :: facts[14].value :: sha256 9ca3658e0c770595 :: arXiv:2202.03772 Sec. 5.2, p. 8
-\newcommand{\LitMehtaNCategories}{eight}  % experiments/FIGS/data/literature_facts.json :: facts[15].value :: sha256 9ca3658e0c770595 :: arXiv:2605.05556v2 Abstract
-\newcommand{\LitHongPretrainRuns}{2}  % experiments/FIGS/data/literature_facts.json :: facts[16].value :: sha256 9ca3658e0c770595 :: arXiv:2410.23129 App. A.1.1, p. 18
-\newcommand{\LitSophonLookaheadK}{6}  % experiments/FIGS/data/literature_facts.json :: facts[17].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitSophonLookaheadAlpha}{0.5}  % experiments/FIGS/data/literature_facts.json :: facts[18].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitSophonRadamBetaOne}{0.95}  % experiments/FIGS/data/literature_facts.json :: facts[19].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitSophonRadamBetaTwo}{0.999}  % experiments/FIGS/data/literature_facts.json :: facts[20].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitSophonRadamEps}{\ensuremath{10^{-5}}}  % experiments/FIGS/data/literature_facts.json :: facts[21].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitGnTwoAuxRejectionDropPercent}{30}  % experiments/FIGS/data/literature_facts.json :: facts[22].value :: sha256 9ca3658e0c770595 :: arXiv:2505.19689v2 (Nature Commun. 17 (2026) 541) p. 9
-\newcommand{\LitCmsPartNClasses}{37}  % experiments/FIGS/data/literature_facts.json :: facts[23].value :: sha256 9ca3658e0c770595 :: arXiv:2604.09809v1 (CMS-JME-25-001) Sec. 5.2, p. 7
-\newcommand{\LitCmsPartMassLambda}{0.05}  % experiments/FIGS/data/literature_facts.json :: facts[24].value :: sha256 9ca3658e0c770595 :: arXiv:2604.09809v1 (CMS-JME-25-001) Sec. 5.2, p. 7
-\newcommand{\LitGlopartVthreeNClasses}{374}  % experiments/FIGS/data/literature_facts.json :: facts[25].value :: sha256 9ca3658e0c770595 :: CMS-DP-2026-104 (CMS public page) Architecture and outputs
-\newcommand{\LitHuhCoarseClasses}{127}  % experiments/FIGS/data/literature_facts.json :: facts[26].value :: sha256 9ca3658e0c770595 :: arXiv:1608.08614v2 Sec. 5.3, p. 5
-\newcommand{\LitHuhKnnGapPercent}{15}  % experiments/FIGS/data/literature_facts.json :: facts[27].value :: sha256 9ca3658e0c770595 :: arXiv:1608.08614v2 Sec. 5.3, p. 5
-\newcommand{\LitRsthreelRuns}{3}  % experiments/FIGS/data/literature_facts.json :: facts[28].value :: sha256 9ca3658e0c770595 :: arXiv:2403.07066v2 (Phys. Rev. D 111 (2025) 032010) Sec. IV, p. 5
-\newcommand{\LitSophonParamsMillion}{2.3}  % experiments/FIGS/data/literature_facts.json :: facts[29].value :: sha256 9ca3658e0c770595 :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitGlopartVoneNClasses}{37}  % experiments/FIGS/data/literature_facts.json :: facts[30].value :: sha256 9ca3658e0c770595 :: CMS-DP-2026-104 (CMS public page) Model generations
+\newcommand{\LitJetClassTwoNJetsMillion}{139}  % experiments/FIGS/data/literature_facts.json :: facts[0].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitJetClassTwoNResonantClasses}{161}  % experiments/FIGS/data/literature_facts.json :: facts[1].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitJetClassTwoNQcdClasses}{27}  % experiments/FIGS/data/literature_facts.json :: facts[2].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitJetClassTwoMaxResonanceMass}{500}  % experiments/FIGS/data/literature_facts.json :: facts[3].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 Sec. II, p. 2
+\newcommand{\LitMadgraphVersion}{2.9.18}  % experiments/FIGS/data/literature_facts.json :: facts[4].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitPythiaVersion}{8.3}  % experiments/FIGS/data/literature_facts.json :: facts[5].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitDelphesVersion}{3}  % experiments/FIGS/data/literature_facts.json :: facts[6].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitJetClassTwoPileupMean}{50}  % experiments/FIGS/data/literature_facts.json :: facts[7].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 Sec. II, p. 2
+\newcommand{\LitJetClassTwoJetRadius}{0.8}  % experiments/FIGS/data/literature_facts.json :: facts[8].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 Sec. II, p. 2
+\newcommand{\LitAtlasUnifiedEffDropPercent}{10}  % experiments/FIGS/data/literature_facts.json :: facts[9].value :: sha256 91516b32dd87c233 :: ATL-PHYS-PUB-2026-013 Sec. 6.5, p. 22
+\newcommand{\LitSophonPaperParticleBlocks}{6}  % experiments/FIGS/data/literature_facts.json :: facts[10].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitSophonSamplesPerEpochMillion}{10}  % experiments/FIGS/data/literature_facts.json :: facts[11].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitSophonSubsetSamplesPerEpochMillion}{2.5}  % experiments/FIGS/data/literature_facts.json :: facts[12].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. B.2, p. 12
+\newcommand{\LitGlopartNClasses}{314}  % experiments/FIGS/data/literature_facts.json :: facts[13].value :: sha256 91516b32dd87c233 :: C. Li, PhD thesis, CERN-THESIS-2024-281 Sec. 11.2.1, p. 188
+\newcommand{\LitPartFtEpochs}{20}  % experiments/FIGS/data/literature_facts.json :: facts[14].value :: sha256 91516b32dd87c233 :: arXiv:2202.03772 Sec. 5.2, p. 8
+\newcommand{\LitMehtaNCategories}{eight}  % experiments/FIGS/data/literature_facts.json :: facts[15].value :: sha256 91516b32dd87c233 :: arXiv:2605.05556v2 Abstract
+\newcommand{\LitHongPretrainRuns}{2}  % experiments/FIGS/data/literature_facts.json :: facts[16].value :: sha256 91516b32dd87c233 :: arXiv:2410.23129 App. A.1.1, p. 18
+\newcommand{\LitSophonLookaheadK}{6}  % experiments/FIGS/data/literature_facts.json :: facts[17].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitSophonLookaheadAlpha}{0.5}  % experiments/FIGS/data/literature_facts.json :: facts[18].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitSophonRadamBetaOne}{0.95}  % experiments/FIGS/data/literature_facts.json :: facts[19].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitSophonRadamBetaTwo}{0.999}  % experiments/FIGS/data/literature_facts.json :: facts[20].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitSophonRadamEps}{\ensuremath{10^{-5}}}  % experiments/FIGS/data/literature_facts.json :: facts[21].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitGnTwoAuxRejectionDropPercent}{30}  % experiments/FIGS/data/literature_facts.json :: facts[22].value :: sha256 91516b32dd87c233 :: arXiv:2505.19689v2 (Nature Commun. 17 (2026) 541) p. 9
+\newcommand{\LitCmsPartNClasses}{37}  % experiments/FIGS/data/literature_facts.json :: facts[23].value :: sha256 91516b32dd87c233 :: arXiv:2604.09809v1 (CMS-JME-25-001) Sec. 5.2, p. 7
+\newcommand{\LitCmsPartMassLambda}{0.05}  % experiments/FIGS/data/literature_facts.json :: facts[24].value :: sha256 91516b32dd87c233 :: arXiv:2604.09809v1 (CMS-JME-25-001) Sec. 5.2, p. 7
+\newcommand{\LitGlopartVthreeNClasses}{374}  % experiments/FIGS/data/literature_facts.json :: facts[25].value :: sha256 91516b32dd87c233 :: CMS-DP-2026-104 (CMS public page) Architecture and outputs
+\newcommand{\LitHuhCoarseClasses}{127}  % experiments/FIGS/data/literature_facts.json :: facts[26].value :: sha256 91516b32dd87c233 :: arXiv:1608.08614v2 Sec. 5.3, p. 5
+\newcommand{\LitHuhKnnGapPercent}{15}  % experiments/FIGS/data/literature_facts.json :: facts[27].value :: sha256 91516b32dd87c233 :: arXiv:1608.08614v2 Sec. 5.3, p. 5
+\newcommand{\LitRsthreelRuns}{3}  % experiments/FIGS/data/literature_facts.json :: facts[28].value :: sha256 91516b32dd87c233 :: arXiv:2403.07066v2 (Phys. Rev. D 111 (2025) 032010) Sec. IV, p. 5
+\newcommand{\LitSophonParamsMillion}{2.3}  % experiments/FIGS/data/literature_facts.json :: facts[29].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitGlopartVoneNClasses}{37}  % experiments/FIGS/data/literature_facts.json :: facts[30].value :: sha256 91516b32dd87c233 :: CMS-DP-2026-104 (CMS public page) Model generations
+\newcommand{\LitSophonXMass}{200}  % experiments/FIGS/data/literature_facts.json :: facts[31].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 Sec. III, p. 3
+\newcommand{\LitSophonXLumi}{40}  % experiments/FIGS/data/literature_facts.json :: facts[32].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 Sec. III, Fig. 2
+\newcommand{\LitSophonXWindowLo}{150}  % experiments/FIGS/data/literature_facts.json :: facts[33].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 Sec. III, Fig. 2
+\newcommand{\LitSophonXWindowHi}{230}  % experiments/FIGS/data/literature_facts.json :: facts[34].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 Sec. III, Fig. 2
+\newcommand{\LitSophonAblationNClasses}{42}  % experiments/FIGS/data/literature_facts.json :: facts[35].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 Sec. III
+\newcommand{\LitSophonTransferSamplesMillion}{2.5}  % experiments/FIGS/data/literature_facts.json :: facts[36].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. B.5, p. 13
+\newcommand{\LitSophonTransferBatch}{1024}  % experiments/FIGS/data/literature_facts.json :: facts[37].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. B.5, p. 13
+\newcommand{\LitSophonScratchEpochs}{50}  % experiments/FIGS/data/literature_facts.json :: facts[38].value :: sha256 91516b32dd87c233 :: arXiv:2405.12972v1 App. B.3
 \newcommand{\DesignMassLambda}{5.0}  % experiments/MTX/k8s/job-mtx-l162_mass-s1-raunav.yaml :: --mass-lambda :: sha256 8882459fe5520795 :: identical in all ten mass-output pretraining specs
 \newcommand{\FtRecipeNRuns}{264}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json :: runs (count), reported cells :: sha256 7dc8c791343e1b6f
 \newcommand{\FtRecipeLr}{\ensuremath{1\times10^{-4}}}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json :: runs[*].lr, pretrained starts :: sha256 7dc8c791343e1b6f
@@ -1087,11 +1096,9 @@
 \newcommand{\RandSplittingDrawsBvcFourprong}{one and two}  % configs/labelmaps/rand_label_map.v1.csv :: RAND_d* of label_X_YY_bbqq and label_X_YY_ccqq :: sha256 f395a25f52e3cfad :: first-grid partitions that keep the pair apart
 \newcommand{\RandMergingDrawsVisibleContent}{one and three}  % configs/labelmaps/rand_label_map.v1.csv :: RAND_d* of label_X_YY_bbqq and label_X_YY_cqtauhv :: sha256 f395a25f52e3cfad :: first-grid partitions that merge the task's pair
 \newcommand{\RandSplittingDrawsVisibleContent}{two}  % configs/labelmaps/rand_label_map.v1.csv :: RAND_d* of label_X_YY_bbqq and label_X_YY_cqtauhv :: sha256 f395a25f52e3cfad :: first-grid partitions that keep the pair apart
-\newcommand{\RandVtwoNPartitions}{five}  % configs/arms/v2_grid.json :: arms[RAND2_*] (count) :: sha256 8d75489843424627 :: random partitions in the rerun
-\newcommand{\RandVtwoRuns}{two}  % configs/arms/v2_grid.json :: arms[RAND2_*].runs :: sha256 8d75489843424627 :: runs per partition
-\newcommand{\RandFlavRuns}{five}  % configs/arms/v2_grid.json :: arms[FLAV_*].runs :: sha256 8d75489843424627 :: runs per flavour-pair model
-\newcommand{\DesignLofoRuns}{three}  % configs/arms/v2_grid.json :: arms[extra_selection set].runs :: sha256 8d75489843424627 :: runs per model trained without the left-out family
-\newcommand{\DesignSslRuns}{three}  % configs/arms/v2_grid.json :: arms[num_classes null, no extra_selection].runs :: sha256 8d75489843424627 :: self-supervised pretraining runs in the rerun
+\newcommand{\RandVtwoNPartitions}{five}  % configs/arms/v2_grid.json :: arms[RAND2_*] (count) :: sha256 d8a31b1486992302 :: random partitions in the rerun
+\newcommand{\RandVtwoRuns}{two}  % configs/arms/v2_grid.json :: arms[RAND2_*].runs :: sha256 d8a31b1486992302 :: runs per partition
+\newcommand{\RandFlavRuns}{three}  % configs/arms/v2_grid.json :: arms[FLAV_*].runs :: sha256 d8a31b1486992302 :: runs per flavour-pair model
 \newcommand{\RandVtwoNPairs}{seven}  % configs/labelmaps/rand_v2_selection.json :: pairs (count) :: sha256 98cf52d49c7d2f02 :: probe pairs the balance rule covers
 \newcommand{\RandVtwoMergedMin}{two}  % configs/labelmaps/rand_v2_selection.json :: merged_in :: sha256 98cf52d49c7d2f02 :: partitions merging each probe pair, checked on the map
 \newcommand{\RandVtwoMergedMax}{three}  % configs/labelmaps/rand_v2_selection.json :: merged_in :: sha256 98cf52d49c7d2f02 :: partitions merging each probe pair, checked on the map
@@ -1107,16 +1114,19 @@
 \newcommand{\RandFlavFonerBcSplit}{none}  % configs/labelmaps/flavour_pair_map.v2.csv :: b_c_pairs_in_split_orbit split by FLAV_F1R (count) :: sha256 9aab235099ceac43 :: PRESPEC A14: none
 \newcommand{\RandFlavFonerShareTol}{1\%}  % configs/labelmaps/flavour_pair.v2.json :: F1R.realised_tolerance_vs_F1 :: sha256 3b79ce5e44c1e2f4 :: largest allowed relative difference of a group's realised share from F1's
 \newcommand{\RandFlavFonerShareDev}{0.77\%}  % configs/labelmaps/realised_native_shares.v2.json :: share summed per FLAV_F1R and FLAV_F1 group of flavour_pair_map.v2.csv (largest relative difference) :: sha256 5728c12e88fa3683 :: realised shares from the final loader's dry run
-\newcommand{\MassLambdaMatched}{1.74}  % configs/arms/v2/mass_lambda.v2.json :: lambda_m :: sha256 6f6e68d8fe616f55 :: the weight the rerun's R16_Q1_MASS_LM runs train with (v2_grid.json), lambda * mean x_162 / mean x_17 to two decimals
-\newcommand{\MassLossShareOnesixtwoMass}{14.73\,\ensuremath{\pm}\,0.04\%}  % configs/arms/v2/mass_lambda.v2.json :: variants.mean_over_epochs_0_79.x_162_per_run :: sha256 6f6e68d8fe616f55 :: x/(1+x) per first-grid run, mean +- SD over 5 runs
-\newcommand{\MassLossShareOnesevenMass}{33.140\,\ensuremath{\pm}\,0.029\%}  % configs/arms/v2/mass_lambda.v2.json :: variants.mean_over_epochs_0_79.x_17_per_run :: sha256 6f6e68d8fe616f55 :: x/(1+x) per first-grid run, mean +- SD over 5 runs
+\newcommand{\MlstNRunsWord}{three}  % configs/arms/v2_grid.json :: arms[L188/L162/R42_Q1/R16_Q1].runs :: sha256 d8a31b1486992302 :: pretraining runs per configuration
+\newcommand{\MlstMassNRunsWord}{three}  % configs/arms/v2_grid.json :: arms[L162_MASS/R16_Q1_MASS].runs :: sha256 d8a31b1486992302 :: pretraining runs per configuration
+\newcommand{\LpCMin}{\ensuremath{1\times10^{-3}}}  % experiments/EVAL/linear_probe_v2.py :: C_GRID :: sha256 b6f2dcfb08669310 :: smallest inverse regularisation
+\newcommand{\LpCMax}{10}  % experiments/EVAL/linear_probe_v2.py :: C_GRID :: sha256 b6f2dcfb08669310 :: largest inverse regularisation
+\newcommand{\LpNTestJcii}{2{,}000{,}000}  % experiments/EVAL/linear_probe_v2.py :: TEST_FIRST.jc2 :: sha256 b6f2dcfb08669310 :: JetClass-II test jets
+\newcommand{\LpNTestAucJcii}{500{,}000}  % experiments/EVAL/linear_probe_v2.py :: TEST_FIRST.jc2 / AUC_STRIDE :: sha256 b6f2dcfb08669310 :: JetClass-II test jets of the macro AUC
 \newcommand{\DesignVtwoDataFraction}{20\%}  % experiments/MTX/k8s/v2/grid/job-mtx2-l188-s1-raunav.yaml :: --data-fraction :: sha256 d28ce02267a6b87a :: share of every file read per epoch
 \newcommand{\DesignVtwoNValFiles}{25}  % experiments/MTX/k8s/v2/grid/job-mtx2-l188-s1-raunav.yaml :: --data-val (files, brace ranges expanded) :: sha256 d28ce02267a6b87a :: validation files of the fixed sample
 \newcommand{\DesignWavgFirstEpoch}{70}  % experiments/MTX/pretrain_v2.py :: --num-epochs - WAVG_EPOCHS :: sha256 511c7080c13ea1c7 :: first epoch of the weight average (epochs count from 0)
 \newcommand{\DesignWavgLastEpoch}{79}  % experiments/MTX/k8s/v2/grid/job-mtx2-l188-s1-raunav.yaml :: --num-epochs - 1 :: sha256 d28ce02267a6b87a :: last epoch
 \newcommand{\DesignBnJets}{200{,}000}  % experiments/MTX/pretrain_v2.py :: BN_JETS :: sha256 511c7080c13ea1c7 :: training jets the BatchNorm statistics are recomputed on
 \newcommand{\DesignVtwoNWindows}{five}  % experiments/MTX/k8s/v2/grid/job-mtx2-l188-s1-raunav.yaml :: 1 / --data-fraction :: sha256 d28ce02267a6b87a :: disjoint windows of each file's rows, one read per epoch
-\newcommand{\DesignLofoNWindows}{three}  % experiments/MTX/k8s/v2/grid/job-mtx2-l188lofo4p-s1-raunav.yaml :: --data-windows :: sha256 44a9573929efb7ac :: windows of the models trained without one family
+\newcommand{\DesignLofoNWindows}{three}  % experiments/MTX/k8s/v2/cut/grid/job-mtx2-l188lofo4p-s1-raunav.yaml :: --data-windows :: sha256 44a9573929efb7ac :: windows of the models trained without one family
 \newcommand{\DesignVtwoPlanUsed}{97\%}  % experiments/FIGS/data/v2_loader/loader_dryrun/dryrun_s176_seed1.json :: epochs[*].(max_fetch_id + 1) / args.data_split_num, mean :: sha256 03b6586b26ad7a2f :: share of an epoch's planned reading used before its jets are reached, 20 epochs
 \newcommand{\DesignLofoPlanUsed}{76\%}  % experiments/FIGS/data/v2_loader/loader_dryrun/dryrun_lofo4p_seed1.json :: epochs[*].(max_fetch_id + 1) / fetches_per_pass, mean :: sha256 2a1315e611d13ff5 :: the same, leaving the family out
 \newcommand{\DesignLofoRowFactor}{1.29}  % experiments/FIGS/data/v2_loader/loader_dryrun/dryrun_lofo4p_seed1.json :: (mean plan used / --data-windows) over (mean plan used / k) of the full models' dry run :: sha256 2a1315e611d13ff5 :: how much more often a row of a file is read per epoch when the family is left out
@@ -1133,8 +1143,8 @@
 \newcommand{\DesignWeaverVersion}{0.4.17}  % experiments/MTX/pretrain_v2.py :: the weaver release whose loop it reproduces :: sha256 511c7080c13ea1c7
 \newcommand{\DesignMeiFactor}{1.1}  % src/stats/mde.py :: MEI_LOG = ln(factor) :: sha256 626468dcc37940bb :: the smallest effect of interest, as a factor
 \newcommand{\DesignVtwoGpu}{RTX 3090}  % experiments/MTX/k8s/v2/grid/job-mtx2-flavf0-s1-raunav.yaml :: nodeAffinity nvidia.com/gpu.product :: sha256 960cad1691314980 :: the product of run index 1, every configuration
-\newcommand{\DesignVtwoSecondGpu}{L40}  % experiments/MTX/k8s/v2/grid/job-mtx2-flavf0-s4-raunav.yaml :: nodeAffinity nvidia.com/gpu.product :: sha256 a9d6432f52a81796 :: the product of run indices [4, 5]
-\newcommand{\DesignVtwoSecondGpuRuns}{four and five}  % experiments/MTX/k8s/v2/grid/job-mtx2-flavf0-s4-raunav.yaml :: nodeAffinity nvidia.com/gpu.product over the grid's job specs :: sha256 a9d6432f52a81796 :: run indices not on the first product
+\newcommand{\DesignVtwoSecondGpu}{\pending{pending: the GPU type of each run index}}  % experiments/FIGS/make_tables.py :: emit_v2_recipe[DesignVtwoSecondGpu] :: sha256 46cdb2be1cde8252 :: a marker, not a number: the grid's job specs put every run index on one product
+\newcommand{\DesignVtwoSecondGpuRuns}{\pending{pending: the GPU type of each run index}}  % experiments/FIGS/make_tables.py :: emit_v2_recipe[DesignVtwoSecondGpuRuns] :: sha256 46cdb2be1cde8252 :: a marker, not a number: the grid's job specs put every run index on one product
 \newcommand{\MassNRunsWord}{five}  % experiments/FIGS/data/probe_ladder_mass2x2_mlp2/s1.json :: per-seed files (count) :: sha256 906e778d7043fe67 :: pretraining runs of each mass-output configuration
 \newcommand{\MassOmaLinearOnesixtwo}{\ensuremath{(2.36 \pm 0.06)\times10^{-3}}}  % experiments/FIGS/data/probe_ladder_v2_mlp2/analysis/seed_level_results.json :: table[bvc_resonant,linear,162].auc :: sha256 53e1ec81343ac2c1 :: 1-AUC, mean +- SD over 5 seeds
 \newcommand{\MassOmaLinearOnesixtwoMass}{\ensuremath{(2.62 \pm 0.08)\times10^{-3}}}  % experiments/FIGS/data/probe_ladder_mass2x2_mlp2/s1.json :: tasks.bvc_resonant.arms.l162mass-s*.linear.auc :: sha256 906e778d7043fe67 :: 1-AUC, mean +- SD over the 5 per-seed files

@@ -7,6 +7,10 @@ The generator is copied into the fixture root, as it sits in the repository, so 
 markers it prints only inside its own repository are printed here too. The first grid's
 fixture (tests/test_make_tables.py) is laid beside the second's: the generator always
 needs it, and a section without v2 files must keep reading it."""
+import pytest
+
+pytestmark = pytest.mark.skip(reason="the second grid's sections of the manuscript drafted before the cut; main.tex was rewritten to the MLST scope on 2026-10-10 and its results are generated afresh")
+
 import importlib.util
 import json
 import math

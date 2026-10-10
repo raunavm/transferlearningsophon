@@ -206,6 +206,7 @@ def test_a_v2_pooled_shape_is_built_from_the_primary_entries_alone_and_every_che
         assert (f["top"]["mean"], f["top"]["width"]) == (ps["mean"], ps["width"])
 
 
+@pytest.mark.skip(reason="cut from the grid and the paper on 2026-10-09 (configs/arms/v2_grid.launched.json keeps the design)")
 def test_tier_three_holds_the_freeze_shape_and_changes_no_frozen_file(freeze, tmp_path):
     d, _ = freeze
     frozen = {p: p.read_bytes() for p in sorted(d.rglob("*")) if p.is_file()}

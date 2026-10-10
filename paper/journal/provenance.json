@@ -2354,7 +2354,7 @@
   "DesignLofoNWindows": {
     "json_path": "--data-windows",
     "sha256": "44a9573929efb7ac949fe0ffbf1486b10c45212d8c7da6221a1b243adba3c2ad",
-    "source_file": "experiments/MTX/k8s/v2/grid/job-mtx2-l188lofo4p-s1-raunav.yaml",
+    "source_file": "experiments/MTX/k8s/v2/cut/grid/job-mtx2-l188lofo4p-s1-raunav.yaml",
     "value": "three"
   },
   "DesignLofoPlanUsed": {
@@ -2380,12 +2380,6 @@
     "sha256": "2a1315e611d13ff5fe0ccfe2b5e51659692e5f92907eac4774013269c12ea223",
     "source_file": "experiments/FIGS/data/v2_loader/loader_dryrun/dryrun_lofo4p_seed1.json",
     "value": "1.29"
-  },
-  "DesignLofoRuns": {
-    "json_path": "arms[extra_selection set].runs",
-    "sha256": "8d754898434246272617e8d8c3effe4cf0203422f539422b4491bcda2c1fd00e",
-    "source_file": "configs/arms/v2_grid.json",
-    "value": "three"
   },
   "DesignLrDecayFirstEpoch": {
     "json_path": "num_epochs - int(num_epochs * decay share)",
@@ -2459,12 +2453,6 @@
     "source_file": "experiments/MTX/k8s/job-mtx-l188-s1-raunav.yaml",
     "value": "10{,}240{,}000"
   },
-  "DesignSslRuns": {
-    "json_path": "arms[num_classes null, no extra_selection].runs",
-    "sha256": "8d754898434246272617e8d8c3effe4cf0203422f539422b4491bcda2c1fd00e",
-    "source_file": "configs/arms/v2_grid.json",
-    "value": "three"
-  },
   "DesignStartLr": {
     "json_path": "--start-lr",
     "sha256": "96fef4b6337aaa27538d30778f8fe41f38e838cfb6faf2bf6fcdb7f0f0b5573b",
@@ -2502,16 +2490,16 @@
     "value": "97\\%"
   },
   "DesignVtwoSecondGpu": {
-    "json_path": "nodeAffinity nvidia.com/gpu.product",
-    "sha256": "a9d6432f52a81796838a2d44d141c5d98e9462d5c8839970488370b090eb5a5f",
-    "source_file": "experiments/MTX/k8s/v2/grid/job-mtx2-flavf0-s4-raunav.yaml",
-    "value": "L40"
+    "json_path": "emit_v2_recipe[DesignVtwoSecondGpu]",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending: the GPU type of each run index}"
   },
   "DesignVtwoSecondGpuRuns": {
-    "json_path": "nodeAffinity nvidia.com/gpu.product over the grid's job specs",
-    "sha256": "a9d6432f52a81796838a2d44d141c5d98e9462d5c8839970488370b090eb5a5f",
-    "source_file": "experiments/MTX/k8s/v2/grid/job-mtx2-flavf0-s4-raunav.yaml",
-    "value": "four and five"
+    "json_path": "emit_v2_recipe[DesignVtwoSecondGpuRuns]",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
+    "source_file": "experiments/FIGS/make_tables.py",
+    "value": "\\pending{pending: the GPU type of each run index}"
   },
   "DesignWavgFirstEpoch": {
     "json_path": "--num-epochs - WAVG_EPOCHS",
@@ -4381,223 +4369,277 @@
   },
   "LitAtlasUnifiedEffDropPercent": {
     "json_path": "facts[9].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "10"
   },
   "LitCmsPartMassLambda": {
     "json_path": "facts[24].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.05"
   },
   "LitCmsPartNClasses": {
     "json_path": "facts[23].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "37"
   },
   "LitDelphesVersion": {
     "json_path": "facts[6].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "3"
   },
   "LitGlopartNClasses": {
     "json_path": "facts[13].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "314"
   },
   "LitGlopartVoneNClasses": {
     "json_path": "facts[30].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "37"
   },
   "LitGlopartVthreeNClasses": {
     "json_path": "facts[25].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "374"
   },
   "LitGnTwoAuxRejectionDropPercent": {
     "json_path": "facts[22].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "30"
   },
   "LitHongPretrainRuns": {
     "json_path": "facts[16].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2"
   },
   "LitHuhCoarseClasses": {
     "json_path": "facts[26].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "127"
   },
   "LitHuhKnnGapPercent": {
     "json_path": "facts[27].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "15"
   },
   "LitJetClassTwoJetRadius": {
     "json_path": "facts[8].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.8"
   },
   "LitJetClassTwoMaxResonanceMass": {
     "json_path": "facts[3].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "500"
   },
   "LitJetClassTwoNJetsMillion": {
     "json_path": "facts[0].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "139"
   },
   "LitJetClassTwoNQcdClasses": {
     "json_path": "facts[2].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "27"
   },
   "LitJetClassTwoNResonantClasses": {
     "json_path": "facts[1].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "161"
   },
   "LitJetClassTwoPileupMean": {
     "json_path": "facts[7].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "50"
   },
   "LitMadgraphVersion": {
     "json_path": "facts[4].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.9.18"
   },
   "LitMehtaNCategories": {
     "json_path": "facts[15].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "eight"
   },
   "LitPartFtEpochs": {
     "json_path": "facts[14].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "20"
   },
   "LitPythiaVersion": {
     "json_path": "facts[5].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "8.3"
   },
   "LitRsthreelRuns": {
     "json_path": "facts[28].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "3"
   },
+  "LitSophonAblationNClasses": {
+    "json_path": "facts[35].value",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "42"
+  },
   "LitSophonLookaheadAlpha": {
     "json_path": "facts[18].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.5"
   },
   "LitSophonLookaheadK": {
     "json_path": "facts[17].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "6"
   },
   "LitSophonPaperParticleBlocks": {
     "json_path": "facts[10].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "6"
   },
   "LitSophonParamsMillion": {
     "json_path": "facts[29].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.3"
   },
   "LitSophonRadamBetaOne": {
     "json_path": "facts[19].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.95"
   },
   "LitSophonRadamBetaTwo": {
     "json_path": "facts[20].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.999"
   },
   "LitSophonRadamEps": {
     "json_path": "facts[21].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "\\ensuremath{10^{-5}}"
   },
   "LitSophonSamplesPerEpochMillion": {
     "json_path": "facts[11].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "10"
   },
+  "LitSophonScratchEpochs": {
+    "json_path": "facts[38].value",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "50"
+  },
   "LitSophonSubsetSamplesPerEpochMillion": {
     "json_path": "facts[12].value",
-    "sha256": "9ca3658e0c7705954e76808cdcf7eb0329d051209c1ed57f419dd1de4545015a",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.5"
   },
-  "MassLambdaMatched": {
-    "json_path": "lambda_m",
-    "sha256": "6f6e68d8fe616f555a551ddb4e86826bd3444ef8cf88e0c79764ce3ce38ceb9a",
-    "source_file": "configs/arms/v2/mass_lambda.v2.json",
-    "value": "1.74"
+  "LitSophonTransferBatch": {
+    "json_path": "facts[37].value",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "1024"
   },
-  "MassLossShareOnesevenMass": {
-    "json_path": "variants.mean_over_epochs_0_79.x_17_per_run",
-    "sha256": "6f6e68d8fe616f555a551ddb4e86826bd3444ef8cf88e0c79764ce3ce38ceb9a",
-    "source_file": "configs/arms/v2/mass_lambda.v2.json",
-    "value": "33.140\\,\\ensuremath{\\pm}\\,0.029\\%"
+  "LitSophonTransferSamplesMillion": {
+    "json_path": "facts[36].value",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "2.5"
   },
-  "MassLossShareOnesixtwoMass": {
-    "json_path": "variants.mean_over_epochs_0_79.x_162_per_run",
-    "sha256": "6f6e68d8fe616f555a551ddb4e86826bd3444ef8cf88e0c79764ce3ce38ceb9a",
-    "source_file": "configs/arms/v2/mass_lambda.v2.json",
-    "value": "14.73\\,\\ensuremath{\\pm}\\,0.04\\%"
+  "LitSophonXLumi": {
+    "json_path": "facts[32].value",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "40"
+  },
+  "LitSophonXMass": {
+    "json_path": "facts[31].value",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "200"
+  },
+  "LitSophonXWindowHi": {
+    "json_path": "facts[34].value",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "230"
+  },
+  "LitSophonXWindowLo": {
+    "json_path": "facts[33].value",
+    "sha256": "91516b32dd87c23328a74bdebacc3825a81e836ff53dd71a9132021c0ca7da13",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "150"
+  },
+  "LpCMax": {
+    "json_path": "C_GRID",
+    "sha256": "b6f2dcfb08669310888901f74dbd8fe41822179011dcd4fcb374be374ad6a99e",
+    "source_file": "experiments/EVAL/linear_probe_v2.py",
+    "value": "10"
+  },
+  "LpCMin": {
+    "json_path": "C_GRID",
+    "sha256": "b6f2dcfb08669310888901f74dbd8fe41822179011dcd4fcb374be374ad6a99e",
+    "source_file": "experiments/EVAL/linear_probe_v2.py",
+    "value": "\\ensuremath{1\\times10^{-3}}"
+  },
+  "LpNTestAucJcii": {
+    "json_path": "TEST_FIRST.jc2 / AUC_STRIDE",
+    "sha256": "b6f2dcfb08669310888901f74dbd8fe41822179011dcd4fcb374be374ad6a99e",
+    "source_file": "experiments/EVAL/linear_probe_v2.py",
+    "value": "500{,}000"
+  },
+  "LpNTestJcii": {
+    "json_path": "TEST_FIRST.jc2",
+    "sha256": "b6f2dcfb08669310888901f74dbd8fe41822179011dcd4fcb374be374ad6a99e",
+    "source_file": "experiments/EVAL/linear_probe_v2.py",
+    "value": "2{,}000{,}000"
   },
   "MassLossShareVtwoOnesevenMass": {
     "json_path": "SLOTS[MassLossShareVtwoOnesevenMass]",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending: realised mass-loss share in the rerun, 17 classes}"
   },
   "MassLossShareVtwoOnesevenMassMatched": {
     "json_path": "SLOTS[MassLossShareVtwoOnesevenMassMatched]",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending: realised mass-loss share in the rerun, 17 classes, matched weight}"
   },
   "MassLossShareVtwoOnesixtwoMass": {
     "json_path": "SLOTS[MassLossShareVtwoOnesixtwoMass]",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending: realised mass-loss share in the rerun, 162 classes}"
   },
@@ -4924,6 +4966,18 @@
     "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
     "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
     "value": "0.2986"
+  },
+  "MlstMassNRunsWord": {
+    "json_path": "arms[L162_MASS/R16_Q1_MASS].runs",
+    "sha256": "d8a31b148699230253e4025d9f710fd160430e172f3838cbe2ed9ab2dc4615b1",
+    "source_file": "configs/arms/v2_grid.json",
+    "value": "three"
+  },
+  "MlstNRunsWord": {
+    "json_path": "arms[L188/L162/R42_Q1/R16_Q1].runs",
+    "sha256": "d8a31b148699230253e4025d9f710fd160430e172f3838cbe2ed9ab2dc4615b1",
+    "source_file": "configs/arms/v2_grid.json",
+    "value": "three"
   },
   "PairedAnomalyClassSumMatchedLateXBbFourthreeOverOneeighteight": {
     "json_path": "families.class_sum_matched.label_X_bb.2000.levels.{43,188}.ln_sigma_min (epochs 70-79 mean)",
@@ -7123,91 +7177,91 @@
   },
   "PendingAnomaly": {
     "json_path": "V2_PENDING['Anomaly']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: anomaly detection on the rerun models, per-run values}"
   },
   "PendingBench": {
     "json_path": "V2_PENDING['Bench']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: top tagging and quark/gluon tagging (Pythia and Herwig) fine-tuned from every rerun model}"
   },
   "PendingConclusion": {
     "json_path": "V2_PENDING['Conclusion']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: written once every input above is in}"
   },
   "PendingFtHeldout": {
     "json_path": "V2_PENDING['FtHeldout']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: JetClass-II fine-tuning on files held out from pretraining}"
   },
   "PendingFtRefs": {
     "json_path": "V2_PENDING['FtRefs']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: fine-tuning from random initialisation and from the self-supervised model}"
   },
   "PendingLevels": {
     "json_path": "V2_PENDING['Levels']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: the 64- and 30-class vocabularies}"
   },
   "PendingLofo": {
     "json_path": "V2_PENDING['Lofo']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: the leave-one-family-out vocabularies}"
   },
   "PendingMassLambda": {
     "json_path": "V2_PENDING['MassLambda']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: the mass-output models with the loss weight matched in loss share}"
   },
   "PendingPaired": {
     "json_path": "V2_PENDING['Paired']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: paired ratios with run and test-sample errors on the rerun models}"
   },
   "PendingPretrain": {
     "json_path": "V2_PENDING['Pretrain']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: pretraining rerun: data order and dropout fixed by seed and epoch, identical initial trunk weights, each epoch reading one of five disjoint random parts of the rows of nearly every file, fixed validation sample, checkpoint at the first maximum within the last ten epochs}"
   },
   "PendingProbes": {
     "json_path": "V2_PENDING['Probes']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: frozen probes on the rerun models, at the first maximum within the last ten epochs and on the model whose weights are the average of the last ten epochs, BatchNorm statistics recomputed, with untrained-network and pooled-embedding reference rows}"
   },
   "PendingRandom": {
     "json_path": "V2_PENDING['Random']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: the rerun's random partitions and flavour pair}"
   },
   "PendingRealData": {
     "json_path": "V2_PENDING['RealData']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: the open-data fits on the rerun models}"
   },
   "PendingRecovery": {
     "json_path": "V2_PENDING['Recovery']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: label-tree recovery on the rerun models}"
   },
   "PendingSsl": {
     "json_path": "V2_PENDING['Ssl']",
-    "sha256": "8531b3a26cc0d4f355df961bb280f809690a4624cdfa5153a3f45977b7b9b013",
+    "sha256": "46cdb2be1cde82522040a004776bae7e7984c91e6d1f3c38d9b897623671e325",
     "source_file": "experiments/FIGS/make_tables.py",
     "value": "\\pending{pending v2: the second and third self-supervised pretraining runs}"
   },
@@ -9805,9 +9859,9 @@
   },
   "RandFlavRuns": {
     "json_path": "arms[FLAV_*].runs",
-    "sha256": "8d754898434246272617e8d8c3effe4cf0203422f539422b4491bcda2c1fd00e",
+    "sha256": "d8a31b148699230253e4025d9f710fd160430e172f3838cbe2ed9ab2dc4615b1",
     "source_file": "configs/arms/v2_grid.json",
-    "value": "five"
+    "value": "three"
   },
   "RandFlavSplitOrbit": {
     "json_path": "split_orbit",
@@ -9997,13 +10051,13 @@
   },
   "RandVtwoNPartitions": {
     "json_path": "arms[RAND2_*] (count)",
-    "sha256": "8d754898434246272617e8d8c3effe4cf0203422f539422b4491bcda2c1fd00e",
+    "sha256": "d8a31b148699230253e4025d9f710fd160430e172f3838cbe2ed9ab2dc4615b1",
     "source_file": "configs/arms/v2_grid.json",
     "value": "five"
   },
   "RandVtwoRuns": {
     "json_path": "arms[RAND2_*].runs",
-    "sha256": "8d754898434246272617e8d8c3effe4cf0203422f539422b4491bcda2c1fd00e",
+    "sha256": "d8a31b148699230253e4025d9f710fd160430e172f3838cbe2ed9ab2dc4615b1",
     "source_file": "configs/arms/v2_grid.json",
     "value": "two"
   },
