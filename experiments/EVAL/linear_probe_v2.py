@@ -16,8 +16,14 @@ fine-tuning uses and scored on the same test jets with the same metric code:
 Training sizes and subsets are fine-tuning's (seed-1 subsets). Features are standardised on
 the training subset; the L2 strength C is chosen from C_GRID on the validation set by its
 cross-entropy (probabilities floored at 1e-12, so a class absent from a small training subset
-costs every C the same); lbfgs, warm-started upward in C. No test jet is seen before scoring.
+costs every C the same); warm-started upward in C. No test jet is seen before scoring.
 A class absent from the training subset gets probability 0.
+
+The objective is scikit-learn's LogisticRegression (lbfgs, L2): C x the summed log-loss plus
+||W||^2 / 2, intercept unpenalised, softmax over the classes present for k > 2 and one sigmoid
+logit for two classes. It is minimised by full-batch L-BFGS in float64 with torch (on the GPU
+when there is one): scikit-learn took ~0.13 s per iteration at 10^4 jets on the cluster's CPUs,
+hours per checkpoint at 10^6 (2026-10-10). tests/test_linprobe_v2.py checks the two agree.
 
 Input (scripts/build_linprobe_jobs.py writes it with experiments/EVAL/extract_v2.py):
     <root>/<model>/<dataset>/<split>/<checkpoint>/{features.npy, label188.npy, manifest.json}
@@ -114,28 +120,75 @@ def cross_entropy(p: np.ndarray, y: np.ndarray) -> float:
     return float(-np.log(np.maximum(p[np.arange(y.size), y], P_FLOOR)).mean())
 
 
+class Logit:
+    """A fitted L2 logistic regression with scikit-learn's attributes (classes_, coef_,
+    intercept_, predict_proba) and objective, minimised by full-batch L-BFGS in torch."""
+
+    def __init__(self, classes: np.ndarray, device: str):
+        self.classes_, self.device = classes, device
+        m = 1 if classes.size == 2 else classes.size
+        self.coef_, self.intercept_ = np.zeros((m, 128)), np.zeros(m)
+
+    def fit(self, x, y, c: float, tol: float = 1e-6) -> int:
+        """Minimise mean log-loss + ||W||^2 / (2 C N) (scikit-learn's objective over N) from the
+        current weights; returns the iterations used."""
+        import torch
+        dev, f64 = self.device, torch.float64
+        X = torch.as_tensor(x, dtype=f64, device=dev)
+        idx = torch.as_tensor(np.searchsorted(self.classes_, y), device=dev)
+        W = torch.tensor(self.coef_, dtype=f64, device=dev, requires_grad=True)
+        b = torch.tensor(self.intercept_, dtype=f64, device=dev, requires_grad=True)
+        lam = 1.0 / (2.0 * c * X.shape[0])
+        binary = self.classes_.size == 2
+        opt = torch.optim.LBFGS([W, b], lr=1, max_iter=MAX_ITER, tolerance_grad=tol,
+                                tolerance_change=1e-12, history_size=10,
+                                line_search_fn="strong_wolfe")
+
+        def closure():
+            opt.zero_grad()
+            z = X @ W.T + b
+            loss = (torch.nn.functional.binary_cross_entropy_with_logits(z[:, 0], idx.to(f64))
+                    if binary else torch.nn.functional.cross_entropy(z, idx)) + lam * (W * W).sum()
+            loss.backward()
+            return loss
+        opt.step(closure)
+        self.coef_, self.intercept_ = W.detach().cpu().numpy(), b.detach().cpu().numpy()
+        return int(opt.state[opt._params[0]]["n_iter"])
+
+    def predict_proba(self, x) -> np.ndarray:
+        z = np.asarray(x, dtype=np.float64) @ self.coef_.T + self.intercept_
+        if self.classes_.size == 2:
+            p1 = 1.0 / (1.0 + np.exp(-z[:, 0]))
+            return np.stack([1.0 - p1, p1], axis=1)
+        z -= z.max(axis=1, keepdims=True)
+        e = np.exp(z)
+        return e / e.sum(axis=1, keepdims=True)
+
+
+def device() -> str:
+    import torch
+    return "cuda" if torch.cuda.is_available() else "cpu"
+
+
 def fit(xtr, ytr, xva, yva, k: int) -> tuple[object, object, dict]:
     """(scaler, classifier at the chosen C, record of the search)."""
-    from sklearn.linear_model import LogisticRegression
     from sklearn.preprocessing import StandardScaler
     if np.unique(ytr).size < 2:
         raise SystemExit("FATAL: the training subset holds one class")
     sc = StandardScaler().fit(xtr)
     xtr_s, xva_s = sc.transform(xtr), sc.transform(xva)
-    clf = LogisticRegression(C=C_GRID[0], max_iter=MAX_ITER, warm_start=True, tol=1e-6)
+    clf = Logit(np.unique(ytr), device())
     search, best = {}, None
     for c in C_GRID:
-        clf.set_params(C=c)
-        clf.fit(xtr_s, ytr)
+        n_iter = clf.fit(xtr_s, ytr, c)
         ce = cross_entropy(full_proba(clf, xva_s, k), yva)
-        n_iter = int(np.max(clf.n_iter_))
         search[str(c)] = {"val_cross_entropy": ce, "n_iter": n_iter, "converged": n_iter < MAX_ITER}
         if best is None or ce < best[0]:
             best = (ce, c, clf.coef_.copy(), clf.intercept_.copy())
     _, c, coef, icpt = best
-    clf.set_params(C=c)
     clf.coef_, clf.intercept_ = coef, icpt
-    return sc, clf, {"C": c, "search": search, "converged": search[str(c)]["converged"]}
+    return sc, clf, {"C": c, "search": search, "converged": search[str(c)]["converged"],
+                     "device": clf.device}
 
 
 def multiclass_metrics(p: np.ndarray, y: np.ndarray, k: int, qcd: int, eval_arm) -> dict:

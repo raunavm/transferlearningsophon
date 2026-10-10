@@ -177,11 +177,9 @@ def test_extraction_reads_every_split_fine_tuning_reads_and_never_takes_a_3090()
         assert a.count("python3 experiments/EVAL/extract_v2.py") == 1      # one function, every call
 
 
-def test_the_fit_job_is_a_cpu_job_reading_the_features_the_extraction_writes():
+def test_the_fit_job_reads_the_features_the_extraction_writes():
     for model, *_, ckpts in L.models():
         spec = SPECS[f"job-linprobe-fit-{model.removeprefix('mtx-')}-raunav.yaml"]
-        c = yaml.safe_load(spec)["spec"]["template"]["spec"]["containers"][0]
-        assert "nvidia.com/gpu" not in c["resources"]["limits"]
         a = _args(spec)
         assert (f"linear_probe_v2.py --root {L.LP_ROOT} --model {model}" in a
                 and f"--checkpoints {' '.join(ckpts)} --out {L.LP_ROOT}/fits" in a)
@@ -222,3 +220,40 @@ def test_the_summary_is_in_the_fine_tuning_read_outs_format(root, monkeypatch, t
     monkeypatch.setattr(S, "expected_models", lambda: ["mtx-l188-s1", "mtx-l188-s2"])
     with pytest.raises(SystemExit, match="no linear-probe fit"):
         S.main(["--fits", str(fits), "--out", str(tmp_path / "v2")])
+
+
+@pytest.mark.parametrize("k, absent", [(12, (3, 7)), (2, ())])
+def test_the_torch_fit_reaches_scikit_learns_minimum(k, absent):
+    """The probe minimises scikit-learn's LogisticRegression objective (lbfgs, L2, unpenalised
+    intercept; softmax over the classes present, one sigmoid logit for two); at a C where both
+    converge, the probabilities agree, including a class absent from training."""
+    from sklearn.linear_model import LogisticRegression
+    rng = np.random.default_rng(3)
+    y = rng.integers(0, k, 4000)
+    y = y[~np.isin(y, absent)]
+    x = _jets(rng, y, k, sep=0.3)
+    xt = _jets(rng, rng.integers(0, k, 1000), k, sep=0.3)
+    sk = LogisticRegression(C=0.1, max_iter=5000, tol=1e-10).fit(x, y)
+    ours = LP.Logit(np.unique(y), "cpu")
+    assert ours.fit(x, y, 0.1, tol=1e-10) < LP.MAX_ITER
+    idx = np.searchsorted(np.unique(y), y)
+
+    def objective(m):     # scikit-learn's, over N: mean log-loss + ||W||^2 / (2 C N)
+        p = np.clip(m.predict_proba(x)[np.arange(y.size), idx], 1e-300, None)
+        return -np.log(p).mean() + (m.coef_ ** 2).sum() / (2 * 0.1 * y.size)
+    # the same minimum (it is flat: 1e-11 in the objective moves probabilities by ~1e-5)
+    assert abs(objective(ours) - objective(sk)) < 1e-9
+    np.testing.assert_allclose(ours.predict_proba(xt), sk.predict_proba(xt), atol=1e-4)
+    p = LP.full_proba(ours, xt, k)
+    assert np.allclose(p.sum(1), 1) and (p[:, list(absent)] == 0).all()
+
+
+def test_the_fit_job_runs_on_a_gpu_that_is_not_the_grids():
+    for model, *_ in L.models():
+        spec = SPECS[f"job-linprobe-fit-{model.removeprefix('mtx-')}-raunav.yaml"]
+        c = yaml.safe_load(spec)["spec"]["template"]["spec"]
+        assert c["containers"][0]["resources"]["limits"]["nvidia.com/gpu"] == "1"
+        ex = {e["key"]: e for e in c["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"][
+            "nodeSelectorTerms"][0]["matchExpressions"]}
+        assert ex["nvidia.com/gpu.product"]["operator"] == "NotIn"
+        assert ex["nvidia.com/gpu.product"]["values"] == list(L.NOT_ON)
