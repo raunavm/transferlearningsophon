@@ -20,7 +20,10 @@ released it sets suspend back to true, and the Job controller kills the running 
 It reads, creates missing grid jobs and unsuspends grid jobs; it never deletes or
 changes anything else. Without --apply it only prints.
 
-Run:  python3 scripts/release_v2.py [--max-pending 3] [--apply]
+With --order FILE only the jobs FILE names are released, in FILE's order; every other
+suspended job stays held (2026-10-15: the runs the paper needs first, the rest held).
+
+Run:  python3 scripts/release_v2.py [--max-pending 3] [--order FILE] [--apply]
       python3 scripts/release_v2.py --create-tier 1 [--apply]
 """
 from __future__ import annotations
@@ -172,13 +175,24 @@ def main(argv=None) -> int:
                     help="release only while fewer grid pods than this are pending on the job's GPU product")
     ap.add_argument("--create-tier", type=int, default=None, metavar="N",
                     help="create the missing jobs of tier N (suspended) instead of releasing")
+    ap.add_argument("--order", type=pathlib.Path, default=None, metavar="FILE",
+                    help="release only the jobs named in FILE (one per line, # comments), in "
+                         "that order; every other suspended job stays held")
     ap.add_argument("--apply", action="store_true", help="create or patch; without it, only print")
     a = ap.parse_args(argv)
     if a.create_tier is not None:
         create_missing(a.create_tier, a.apply)
         return 0
     names, gpu = grid_order(), gpu_of()
+    order = None
+    if a.order is not None:
+        order = [ln.split("#")[0].strip() for ln in a.order.read_text().splitlines()]
+        order = [n for n in order if n]
+        if unknown := set(order) - set(names):
+            raise SystemExit(f"{a.order}: not grid jobs: {sorted(unknown)}")
     pending, queue = survey(names, gpu)
+    if order is not None:
+        queue = [n for n in order if n in queue]
     if not a.apply:
         print(f"would release, {RELEASE_GAP_S} s apart, while fewer than {a.max_pending} pods "
               "per GPU product are pending:")
@@ -191,6 +205,8 @@ def main(argv=None) -> int:
         release(todo[0])
         time.sleep(RELEASE_GAP_S)
         pending, queue = survey(names, gpu)
+        if order is not None:
+            queue = [n for n in order if n in queue]
     return 0
 
 

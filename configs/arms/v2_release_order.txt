@@ -1,0 +1,19 @@
+# Release order of the v2 grid while RTX 3090s are scarce (PI, 2026-10-15).
+# scripts/release_v2.py --order releases only these, in this order; every other
+# suspended grid job is held (nothing deleted; held runs keep their progress).
+# Runs first: four label sets x3, mass output x2, random partitions x1, flavour pair x2.
+# Already released when this was written: l188-s1 l162-s1 l162-s2 l162mass-s1
+# r16q1mass-s1 rand2p1-s1; running: r16q1-s1.
+mtx2-l188-s2-raunav
+mtx2-r42q1-s2-raunav
+mtx2-r16q1-s2-raunav
+mtx2-l162mass-s2-raunav
+mtx2-l162-s3-raunav
+mtx2-r42q1-s3-raunav
+mtx2-r16q1-s3-raunav
+mtx2-flavf1-s1-raunav
+mtx2-flavf1r-s2-raunav
+# Held (release after the above have all started, if GPUs allow):
+# mtx2-l162mass-s3 mtx2-r16q1mass-s3 mtx2-rand2p1-s2 mtx2-rand2p2-s1 mtx2-rand2p3-s2
+# mtx2-rand2p4-s1 (epoch 19 done) mtx2-rand2p5-s1 mtx2-flavf0-s3 (epoch 44 done)
+# mtx2-flavf1-s3 mtx2-flavf1r-s3

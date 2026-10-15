@@ -150,6 +150,20 @@ def test_kubectl_is_asked_for_nothing_but_reads_and_unsuspending_grid_jobs(kube,
                          "-p", '{"spec":{"suspend":false}}'] and "raunav" in c[2] and c[2] in names
 
 
+def test_an_order_file_releases_only_its_jobs_in_its_order(kube, monkeypatch, tmp_path):
+    names, log = kube
+    monkeypatch.setattr(R, "time", types.SimpleNamespace(sleep=lambda s: None))
+    (tmp_path / "order.txt").write_text(f"# first\n{names[6]}\n{names[4]}  # then\n{names[1]}\n")
+    R.main(["--apply", "--max-pending", "10", "--order", str(tmp_path / "order.txt")])
+    assert _patched(log) == [names[6], names[4]]            # names[3], names[5] held; names[1] not suspended
+
+
+def test_an_order_file_naming_a_job_outside_the_grid_is_refused(kube, tmp_path):
+    (tmp_path / "order.txt").write_text("mtx2-nope-s9-raunav\n")
+    with pytest.raises(SystemExit):
+        R.main(["--order", str(tmp_path / "order.txt")])
+
+
 def test_nothing_is_released_at_the_cap(kube, monkeypatch):
     names, log = kube
     monkeypatch.setattr(R, "time", types.SimpleNamespace(sleep=lambda s: pytest.fail("slept without releasing")))
