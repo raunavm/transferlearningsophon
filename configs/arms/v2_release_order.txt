@@ -8,11 +8,15 @@ mtx2-l188-s2-raunav
 mtx2-r42q1-s2-raunav
 mtx2-r16q1-s2-raunav
 mtx2-l162mass-s2-raunav
-mtx2-l162-s3-raunav
-mtx2-r42q1-s3-raunav
-mtx2-r16q1-s3-raunav
 mtx2-flavf1-s1-raunav
 mtx2-flavf1r-s2-raunav
+# 2026-10-21 (PI): the label sets' third run also trains on L40s as run 5
+# (mtx2-{l162,r16q1,l188,r42q1}-s5, released by hand: not in the 3090 grid). Run 3 stays
+# queued here last; whichever of run 3 / run 5 finishes first is the third run and the
+# other is then suspended.
+mtx2-r42q1-s3-raunav
+mtx2-l162-s3-raunav
+mtx2-r16q1-s3-raunav
 # Held (release after the above have all started, if GPUs allow):
 # mtx2-l162mass-s3 mtx2-r16q1mass-s3 mtx2-rand2p1-s2 mtx2-rand2p2-s1 mtx2-rand2p3-s2
 # mtx2-rand2p4-s1 (epoch 19 done) mtx2-rand2p5-s1 mtx2-flavf0-s3 (epoch 44 done)
