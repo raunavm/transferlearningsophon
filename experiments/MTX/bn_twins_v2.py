@@ -147,9 +147,6 @@ def main(argv=None) -> int:
         if why:
             print(f"FATAL: the run trained on {rec['device']} and there is no usable GPU ({why})", flush=True)
             return pv.EXIT_NO_GPU
-        if torch.cuda.get_device_name(0) != rec["device"]:
-            print(f"FATAL: the run trained on {rec['device']}, this is {torch.cuda.get_device_name(0)}", flush=True)
-            return pv.EXIT_HALT
     model, seeds, side, data_config = build(out, a, dev)
     code = {**pv.code_version(), "driver": DRIVER}
     amp = a.use_amp and dev.type == "cuda"
@@ -166,7 +163,7 @@ def main(argv=None) -> int:
         pv.torch_save(model.state_dict(), state)
         pv.write_json(meta, {"epoch": e, "tags": by_epoch[e], "inputs": {str(e): pv.sha256_file(src)},
                              "sha256": pv.sha256_file(state), "bn_recompute": bn,
-                             "device": rec["device"], "code": code})
+                             "device": pv.device_name(dev.type), "trained_on": rec["device"], "code": code})
         print(f"[bn_twins_v2] {out.name}: {state.name} ({'+'.join(by_epoch[e])}), "
               f"{bn['batchnorm_layers']} BatchNorm layers recomputed on {bn['n_jets']} jets, "
               f"the weight average's sample", flush=True)

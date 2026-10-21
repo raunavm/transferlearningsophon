@@ -483,13 +483,28 @@ def test_a_different_recipe_in_the_same_directory_halts(data, run_a, tmp_path):
     assert pv.main(_args(data, out, extra=["--start-lr", "1e-3"])) == pv.EXIT_HALT
 
 
-def test_a_resume_under_other_code_halts(data, run_a, tmp_path, monkeypatch):
+def test_a_resume_under_other_code_halts(data, run_a, tmp_path):
     rec = json.loads((run_a / "recipe.json").read_text())["code"]
     assert set(rec) == {"repo_ref", "commit"} and rec["commit"]
     out = tmp_path / "t"
     shutil.copytree(run_a, out)
-    monkeypatch.setenv("REPO_REF", "mtx-s9.99" if rec["repo_ref"] != "mtx-s9.99" else "mtx-s9.98")
+    r = json.loads((out / "recipe.json").read_text())
+    r["code"] = {"repo_ref": "mtx-s0.01", "commit": "0" * 40}
+    (out / "recipe.json").write_text(json.dumps(r))
     assert pv.main(_args(data, out)) == pv.EXIT_HALT
+
+
+def test_which_recipe_changes_allow_a_resume():
+    """Another GPU product, or a commit with the same training code, may resume a run;
+    any training setting or other code may not (PI, 2026-10-21)."""
+    base = {"seed": 1, "start_lr": 5e-4, "device": "NVIDIA GeForce RTX 3090",
+            "code": {"repo_ref": "mtx-s1.98", "commit": next(iter(pv.SAME_TRAINING_AS))}}
+    now = {**base, "device": "NVIDIA L40", "code": {"repo_ref": "mtx-s9.99", "commit": "f" * 40}}
+    assert pv.recipe_change(base, now) == []
+    assert pv.recipe_change(now, {**now, "device": "Tesla V100-SXM2-32GB"}) == []
+    assert pv.recipe_change(base, {**now, "start_lr": 1e-3}) == ["start_lr"]
+    assert pv.recipe_change(now, {**now, "code": {"repo_ref": "x", "commit": "e" * 40}}) == ["code"]
+    assert pv.recipe_change(base, {k: v for k, v in now.items() if k != "seed"}) == ["seed"]
 
 
 def test_a_sidecar_that_is_not_its_config_plus_histograms_halts(data, tmp_path):
@@ -1149,3 +1164,23 @@ def test_the_diagnostic_runs_in_float32_without_autocast_and_restores_use_amp(da
         on = r.pop("where") == "train"
         assert r == {"use_amp": on, "training": on, "autocast": False,
                      "dtypes": {torch.bfloat16 if on else torch.float32}}, (on, r)
+
+
+def test_a_commit_allowed_to_resume_has_this_training_code():
+    """SAME_TRAINING_AS is a claim about the code: every file the trainer runs, bar this
+    script's resume check, is byte-identical to that commit's."""
+    import subprocess
+    root = pathlib.Path(pv.__file__).resolve().parents[2]
+    files = ["experiments/MTX/stream_v2.py", "experiments/MTX/ParT_sophon_arch_mtx.py",
+             "experiments/MTX/hybrid_mass.py", "experiments/MTX/mpm.py", "configs/arms", "configs/data"]
+    for commit in pv.SAME_TRAINING_AS:
+        if subprocess.run(["git", "-C", str(root), "cat-file", "-e", commit], capture_output=True).returncode:
+            pytest.skip(f"{commit} not in this clone")
+        out = subprocess.run(["git", "-C", str(root), "diff", "--name-only", commit, "--", *files],
+                             capture_output=True, text=True, check=True).stdout.split()
+        assert [f for f in out if f.endswith((".py", ".yaml", ".yml"))] == []
+        diff = subprocess.run(["git", "-C", str(root), "diff", "-U0", commit, "--",
+                               "experiments/MTX/pretrain_v2.py"], capture_output=True, text=True, check=True).stdout
+        removed = [ln for ln in diff.splitlines() if ln.startswith("-") and not ln.startswith("---")]
+        assert all(("recipe" in ln or "numerics" in ln or "write_json(rpath" in ln or "return EXIT_HALT" in ln
+                    or ln.strip() == "-") for ln in removed), removed

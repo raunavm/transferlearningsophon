@@ -727,3 +727,23 @@ def test_the_backup_cronjob_is_cpu_only_mine_one_at_a_time_and_runs_the_backup_s
         tag = yaml.safe_load(committed.read_text())["spec"]["jobTemplate"]["spec"]["template"]["spec"][
             "containers"][0]["env"][0]["value"]
         assert committed.read_text() == b.v2_backup_spec(tag)[1]
+
+
+def test_an_any_gpu_spec_is_its_launched_spec_but_for_the_gpu_list_and_the_tag():
+    """PI, 2026-10-21: queued runs may train on any 24 GB+ GPU. Nothing else changes: same
+    run directory, job name, image, data, seeds, resources and retry policy."""
+    import difflib
+    for job, launched in (("mtx2-l162-s1-raunav", "grid"), ("mtx2-l162-s5-raunav", "cut/grid")):
+        new = b.v2_anygpu_specs([job], "mtx-s9.99")[f"job-{job}.yaml"]
+        old = (ROOT / "experiments/MTX/k8s/v2" / launched / f"job-{job}.yaml").read_text()
+        changed = [ln for ln in difflib.unified_diff(old.splitlines(), new.splitlines(), n=0, lineterm="")
+                   if ln[:1] in "+-" and ln[:3] not in ("+++", "---")]
+        assert len(changed) == 8, changed
+        assert all("PRETRAINING" in ln or "NVIDIA" in ln or "mtx-s" in ln for ln in changed)
+        d = yaml.safe_load(new)
+        terms = d["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
+            "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
+        assert next(t for t in terms if t["key"] == "nvidia.com/gpu.product")["values"] == list(b.V2_ANY_GPU)
+        assert d["spec"]["suspend"] is True
+    with pytest.raises(SystemExit):
+        b.v2_anygpu_specs(["mtx2-nope-s1-raunav"], "mtx-s9.99")

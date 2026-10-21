@@ -585,6 +585,12 @@ V2_KEEP = "window"
 # experiments/FIGS/make_tables.py reads the products from those specs.
 V2_L40 = "NVIDIA-L40"
 V2_GPU_BY_RUN = {1: V2_GPU, 2: V2_GPU, 3: V2_GPU, 4: V2_L40, 5: V2_L40}
+# Any GPU with at least 24 GB (PI, 2026-10-21, after the RTX 3090s ran out): a run may train
+# and resume on any of these (pretrain_v2.recipe_change); every epoch's metrics record the
+# product, and the paper reports each run's products and hours. A100/H100 are left out: the
+# namespace has no quota for them. Specs on this list go to V2_ANYGPU_DIR (v2_anygpu_specs).
+V2_ANY_GPU = ("NVIDIA-GeForce-RTX-3090", "NVIDIA-L40", "NVIDIA-L40S", "NVIDIA-RTX-A6000", "NVIDIA-A40",
+              "NVIDIA-GeForce-RTX-4090", "NVIDIA-RTX-A5000", "NVIDIA-L4", "Tesla-V100-SXM2-32GB")
 V2_CPU = "8"
 V2_MEM = "48Gi"
 # Retries (PI, 2026-10-01). Evictions are ignored; exit EXIT_HALT fails the Job at once;
@@ -684,7 +690,8 @@ def v2_spec(arm: dict, run: int, gpu: str = V2_GPU, *, tag: str, **kw) -> tuple:
     job = kw.pop("job", None) or v2_job_name(arm["name"], run, gpu)
     cpu, mem = kw.pop("cpu", V2_CPU), kw.pop("mem", V2_MEM)
     script = v2_script(arm, run, run_id=run_id, **kw)
-    title = f"v2 PRETRAINING -- {arm['name']}, run {run} (master seed {run}), {gpu}."
+    gpus = gpu if isinstance(gpu, str) else "any of " + ", ".join(gpu)
+    title = f"v2 PRETRAINING -- {arm['name']}, run {run} (master seed {run}), {gpus}."
     return job, v2_job(job, [script], gpu, tag, title, cpu=cpu, mem=mem, suspend=True)
 
 
@@ -1373,6 +1380,24 @@ def v2_grid_specs(tag: str, tiers=None) -> dict:
     return out
 
 
+V2_ANYGPU_DIR = K8S / "v2" / "grid_anygpu"
+
+
+def v2_anygpu_specs(jobs: list, tag: str) -> dict:
+    """{file name: spec}: each named pretraining job (mtx2-<arm>-s<k>-raunav; run index 1-5
+    of a grid arm) as its grid spec, but on any of V2_ANY_GPU and at `tag`, suspended. The
+    run directory and job name are the grid's, so a run resumes where it stopped."""
+    by_job = {v2_job_name(a["name"], k): (a, k) for a in v2_arms() for k in range(1, 6)}
+    out = {}
+    for job in jobs:
+        if job not in by_job:
+            raise SystemExit(f"{job}: not a pretraining job of a grid arm, run 1-5")
+        arm, run = by_job[job]
+        name, spec = v2_spec(arm, run, V2_ANY_GPU, tag=tag, run_id=v2_run_id(arm["name"], run), job=job)
+        out[f"job-{name}.yaml"] = spec
+    return out
+
+
 # ------------------------------------------------ finishing a run whose end step failed
 V2_FINALIZE_DIR = K8S / "v2" / "finalize"
 
@@ -1405,25 +1430,26 @@ def v2_finalize_spec(run_id: str, tag: str) -> tuple:
 V2_BN_TWINS_DIR = K8S / "v2" / "bn_twins"
 
 
-def v2_bn_twins_specs(tag: str, tier: int) -> dict:
+def v2_bn_twins_specs(tag: str, tier: int, gpus=None) -> dict:
     """{file name: spec}: one job per run index of `tier`, on that run index's GPU product
     (the weight average's BatchNorm pass ran there), running experiments/MTX/bn_twins_v2.py
     on each of the index's runs in grid order: the BatchNorm-recomputed twins of best70
     and bestval that A14's BatchNorm rule requires since it fired (2026-10-03). A run not
     DONE yet is skipped and a run whose twins exist is left alone, so a job is re-created
     and run again as its runs finish. Each job is the grid's in all but the driver and
-    that it is not suspended: the same image, mounts, data files, resources, retry policy."""
+    that it is not suspended: the same image, mounts, data files, resources, retry policy.
+    `gpus` (V2_ANY_GPU) puts every job on that list instead (PI, 2026-10-21)."""
     arms = [a for a in v2_arms() if int(a.get("tier", 1)) == tier]
     if not arms:
         raise SystemExit(f"the grid has no tier {tier}")
     out = {}
     for run in range(1, max(int(a["runs"]) for a in arms) + 1):
         todo = [a for a in arms if run <= int(a["runs"])]
-        gpu = V2_GPU_BY_RUN[run]
+        gpu = gpus or V2_GPU_BY_RUN[run]
         scripts = [v2_script(a, run, run_id=v2_run_id(a["name"], run), bn_twins=True) for a in todo]
         name = f"mtx2-bntwins-t{tier}-s{run}-raunav"
         title = (f"v2 BATCHNORM TWINS -- tier {tier}, run {run}: experiments/MTX/bn_twins_v2.py on its "
-                 f"{len(todo)} runs, {gpu}.")
+                 f"{len(todo)} runs, {gpu if isinstance(gpu, str) else 'any of ' + ', '.join(gpu)}.")
         out[f"job-{name}.yaml"] = v2_job(name, scripts, gpu, tag, title)
     return out
 
@@ -1530,6 +1556,11 @@ def main() -> int:
     ap.add_argument("--v2-bn-twins", metavar="TIER", type=int, default=None,
                     help="write the BatchNorm-twin jobs of one grid tier (one per run index, "
                          f"experiments/MTX/bn_twins_v2.py) into {V2_BN_TWINS_DIR.relative_to(ROOT)}")
+    ap.add_argument("--v2-anygpu", nargs="+", metavar="JOB", default=None,
+                    help="write the named pretraining jobs on any 24 GB+ GPU (V2_ANY_GPU) into "
+                         f"{V2_ANYGPU_DIR.relative_to(ROOT)}; needs --tag")
+    ap.add_argument("--any-gpu", action="store_true",
+                    help="--v2-bn-twins: on any 24 GB+ GPU, into bn_twins_anygpu/")
     ap.add_argument("--v2-dryrun", metavar="DIR", default=None,
                     help="write the loader dry-run spec of --arm (its selection and window) into DIR")
     ap.add_argument("--arm", default="R16_Q1", help="--v2-dryrun: the grid arm")
@@ -1584,10 +1615,21 @@ def main() -> int:
     if args.v2_bn_twins is not None:
         if not args.tag:
             ap.error("--v2-bn-twins needs --tag")
-        V2_BN_TWINS_DIR.mkdir(parents=True, exist_ok=True)
-        for fn, spec in v2_bn_twins_specs(args.tag, args.v2_bn_twins).items():
-            (V2_BN_TWINS_DIR / fn).write_text(spec)
-            print(V2_BN_TWINS_DIR / fn)
+        d = V2_BN_TWINS_DIR.with_name("bn_twins_anygpu") if args.any_gpu else V2_BN_TWINS_DIR
+        d.mkdir(parents=True, exist_ok=True)
+        for fn, spec in v2_bn_twins_specs(args.tag, args.v2_bn_twins,
+                                          V2_ANY_GPU if args.any_gpu else None).items():
+            (d / fn).write_text(spec)
+            print(d / fn)
+        return 0
+
+    if args.v2_anygpu:
+        if not args.tag:
+            ap.error("--v2-anygpu needs --tag")
+        V2_ANYGPU_DIR.mkdir(parents=True, exist_ok=True)
+        for fn, spec in v2_anygpu_specs(args.v2_anygpu, args.tag).items():
+            (V2_ANYGPU_DIR / fn).write_text(spec)
+            print(V2_ANYGPU_DIR / fn)
         return 0
 
     if args.v2_endrun_smoke:

@@ -769,6 +769,24 @@ def recipe_of(a) -> dict:
     return r
 
 
+# Commits whose training code is byte-identical to this one: `git diff <commit> HEAD` touches
+# none of stream_v2.py, the network configs or the data configs, and in this file only
+# recipe_change. A run started under one of them may resume under this code.
+SAME_TRAINING_AS = {"c521c8634a7c564ef8607d6fad84bbeebf9154c8"}      # mtx-s1.98, the v2 grid
+
+
+def recipe_change(saved: dict, now: dict) -> list:
+    """The recipe keys that forbid resuming `saved` as `now`. The GPU product may change
+    (PI, 2026-10-21: any GPU type, reported per run; every epoch's metrics record its
+    device). The code may change only to a commit with the same training code."""
+    bad = sorted(k for k in set(saved) | set(now)
+                 if k not in ("device", "code") and saved.get(k) != now.get(k))
+    old, new = (saved.get("code") or {}).get("commit"), (now.get("code") or {}).get("commit")
+    if old != new and old not in SAME_TRAINING_AS:
+        bad.append("code")
+    return bad
+
+
 def code_version() -> dict:
     """The tag the job cloned (REPO_REF) and the commit checked out: resuming under
     other code would blend two programs into one run."""
@@ -790,7 +808,8 @@ def stream_window(a) -> dict:
 
 
 def device_name(device=None) -> str:
-    """Resuming on another GPU product would blend two numerics into one run."""
+    """The GPU product, recorded in the recipe and in every epoch's metrics (a run may
+    resume on another product: recipe_change)."""
     import torch
     if (device or ("cuda" if torch.cuda.is_available() else "cpu")).startswith("cuda"):
         return torch.cuda.get_device_name(0)
@@ -894,11 +913,14 @@ def main(argv=None) -> int:
     run = out.name
     recipe = recipe_of(a)
     rpath = out / "recipe.json"
-    if rpath.exists() and json.loads(rpath.read_text()) != recipe:
-        print(f"FATAL: {out} holds a different recipe:\n  on disk {rpath.read_text()}\n"
-              f"  this run {json.dumps(recipe)}", flush=True)
-        return EXIT_HALT
-    write_json(rpath, recipe)
+    if rpath.exists():
+        bad = recipe_change(json.loads(rpath.read_text()), recipe)
+        if bad:
+            print(f"FATAL: {out} holds a different recipe ({', '.join(bad)}):\n  on disk "
+                  f"{rpath.read_text()}\n  this run {json.dumps(recipe)}", flush=True)
+            return EXIT_HALT
+    else:
+        write_json(rpath, recipe)
 
     seeds = derive_all(a.seed)
     print(f"[pretrain_v2] run={run} seed={a.seed} objective={kind} seeds={seeds}", flush=True)

@@ -67,9 +67,6 @@ def main(argv=None) -> int:
         if why:
             print(f"FATAL: the run trained on {rec['device']} and there is no usable GPU ({why})", flush=True)
             return pv.EXIT_NO_GPU
-        if torch.cuda.get_device_name(0) != rec["device"]:
-            print(f"FATAL: the run trained on {rec['device']}, this is {torch.cuda.get_device_name(0)}", flush=True)
-            return pv.EXIT_HALT
     kind = pv.objective_kind(a)
     seeds = derive_all(a.seed)
     side = pv.sidecar(a.data_config)

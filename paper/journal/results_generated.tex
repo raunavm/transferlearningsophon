@@ -1116,15 +1116,15 @@
 \newcommand{\RandFlavFonerShareDev}{0.77\%}  % configs/labelmaps/realised_native_shares.v2.json :: share summed per FLAV_F1R and FLAV_F1 group of flavour_pair_map.v2.csv (largest relative difference) :: sha256 5728c12e88fa3683 :: realised shares from the final loader's dry run
 \newcommand{\MlstNRunsWord}{three}  % configs/arms/v2_grid.json :: arms[L188/L162/R42_Q1/R16_Q1].runs :: sha256 d8a31b1486992302 :: pretraining runs per configuration
 \newcommand{\MlstMassNRunsWord}{three}  % configs/arms/v2_grid.json :: arms[L162_MASS/R16_Q1_MASS].runs :: sha256 d8a31b1486992302 :: pretraining runs per configuration
-\newcommand{\LpCMin}{\ensuremath{1\times10^{-3}}}  % experiments/EVAL/linear_probe_v2.py :: C_GRID :: sha256 b6f2dcfb08669310 :: smallest inverse regularisation
-\newcommand{\LpCMax}{10}  % experiments/EVAL/linear_probe_v2.py :: C_GRID :: sha256 b6f2dcfb08669310 :: largest inverse regularisation
-\newcommand{\LpNTestJcii}{2{,}000{,}000}  % experiments/EVAL/linear_probe_v2.py :: TEST_FIRST.jc2 :: sha256 b6f2dcfb08669310 :: JetClass-II test jets
-\newcommand{\LpNTestAucJcii}{500{,}000}  % experiments/EVAL/linear_probe_v2.py :: TEST_FIRST.jc2 / AUC_STRIDE :: sha256 b6f2dcfb08669310 :: JetClass-II test jets of the macro AUC
+\newcommand{\LpCMin}{\ensuremath{1\times10^{-3}}}  % experiments/EVAL/linear_probe_v2.py :: C_GRID :: sha256 6096b83d8e6f9483 :: smallest inverse regularisation
+\newcommand{\LpCMax}{10}  % experiments/EVAL/linear_probe_v2.py :: C_GRID :: sha256 6096b83d8e6f9483 :: largest inverse regularisation
+\newcommand{\LpNTestJcii}{2{,}000{,}000}  % experiments/EVAL/linear_probe_v2.py :: TEST_FIRST.jc2 :: sha256 6096b83d8e6f9483 :: JetClass-II test jets
+\newcommand{\LpNTestAucJcii}{500{,}000}  % experiments/EVAL/linear_probe_v2.py :: TEST_FIRST.jc2 / AUC_STRIDE :: sha256 6096b83d8e6f9483 :: JetClass-II test jets of the macro AUC
 \newcommand{\DesignVtwoDataFraction}{20\%}  % experiments/MTX/k8s/v2/grid/job-mtx2-l188-s1-raunav.yaml :: --data-fraction :: sha256 d28ce02267a6b87a :: share of every file read per epoch
 \newcommand{\DesignVtwoNValFiles}{25}  % experiments/MTX/k8s/v2/grid/job-mtx2-l188-s1-raunav.yaml :: --data-val (files, brace ranges expanded) :: sha256 d28ce02267a6b87a :: validation files of the fixed sample
-\newcommand{\DesignWavgFirstEpoch}{70}  % experiments/MTX/pretrain_v2.py :: --num-epochs - WAVG_EPOCHS :: sha256 511c7080c13ea1c7 :: first epoch of the weight average (epochs count from 0)
+\newcommand{\DesignWavgFirstEpoch}{70}  % experiments/MTX/pretrain_v2.py :: --num-epochs - WAVG_EPOCHS :: sha256 95da5a6e029855ee :: first epoch of the weight average (epochs count from 0)
 \newcommand{\DesignWavgLastEpoch}{79}  % experiments/MTX/k8s/v2/grid/job-mtx2-l188-s1-raunav.yaml :: --num-epochs - 1 :: sha256 d28ce02267a6b87a :: last epoch
-\newcommand{\DesignBnJets}{200{,}000}  % experiments/MTX/pretrain_v2.py :: BN_JETS :: sha256 511c7080c13ea1c7 :: training jets the BatchNorm statistics are recomputed on
+\newcommand{\DesignBnJets}{200{,}000}  % experiments/MTX/pretrain_v2.py :: BN_JETS :: sha256 95da5a6e029855ee :: training jets the BatchNorm statistics are recomputed on
 \newcommand{\DesignVtwoNWindows}{five}  % experiments/MTX/k8s/v2/grid/job-mtx2-l188-s1-raunav.yaml :: 1 / --data-fraction :: sha256 d28ce02267a6b87a :: disjoint windows of each file's rows, one read per epoch
 \newcommand{\DesignLofoNWindows}{three}  % experiments/MTX/k8s/v2/cut/grid/job-mtx2-l188lofo4p-s1-raunav.yaml :: --data-windows :: sha256 44a9573929efb7ac :: windows of the models trained without one family
 \newcommand{\DesignVtwoPlanUsed}{97\%}  % experiments/FIGS/data/v2_loader/loader_dryrun/dryrun_s176_seed1.json :: epochs[*].(max_fetch_id + 1) / args.data_split_num, mean :: sha256 03b6586b26ad7a2f :: share of an epoch's planned reading used before its jets are reached, 20 epochs
@@ -1136,11 +1136,11 @@
 \newcommand{\DesignLofoExposureFactor}{1.29}  % experiments/FIGS/data/v2_loader/loader_dryrun/dryrun_s176_seed1.json :: 1 / (1 - family share) :: sha256 03b6586b26ad7a2f :: how much more often every other class is seen
 \newcommand{\DesignLofoQcdShareFull}{14.4\%}  % experiments/FIGS/data/v2_loader/loader_dryrun/dryrun_s176_seed1.json :: summary.mean_qcd_share :: sha256 03b6586b26ad7a2f :: QCD share of the realised stream
 \newcommand{\DesignLofoQcdShareLofo}{18.6\%}  % experiments/FIGS/data/v2_loader/loader_dryrun/dryrun_lofo4p_seed1.json :: summary.mean_qcd_share :: sha256 2a1315e611d13ff5 :: QCD share of the realised stream
-\newcommand{\DesignLrFlatPercent}{70\%}  % experiments/MTX/pretrain_v2.py :: make_optimizer: 1 - the decay share :: sha256 511c7080c13ea1c7 :: share of the epochs at the initial rate
-\newcommand{\DesignLrDecayFirstEpoch}{56}  % experiments/MTX/pretrain_v2.py :: num_epochs - int(num_epochs * decay share) :: sha256 511c7080c13ea1c7 :: first epoch at a reduced rate (epochs from 0)
-\newcommand{\DesignLrEndPercent}{1\%}  % experiments/MTX/pretrain_v2.py :: make_optimizer: gamma ** n_decay :: sha256 511c7080c13ea1c7 :: the last epoch's rate over the initial rate
+\newcommand{\DesignLrFlatPercent}{70\%}  % experiments/MTX/pretrain_v2.py :: make_optimizer: 1 - the decay share :: sha256 95da5a6e029855ee :: share of the epochs at the initial rate
+\newcommand{\DesignLrDecayFirstEpoch}{56}  % experiments/MTX/pretrain_v2.py :: num_epochs - int(num_epochs * decay share) :: sha256 95da5a6e029855ee :: first epoch at a reduced rate (epochs from 0)
+\newcommand{\DesignLrEndPercent}{1\%}  % experiments/MTX/pretrain_v2.py :: make_optimizer: gamma ** n_decay :: sha256 95da5a6e029855ee :: the last epoch's rate over the initial rate
 \newcommand{\DesignEndLr}{\ensuremath{5\times10^{-6}}}  % experiments/MTX/k8s/v2/grid/job-mtx2-l188-s1-raunav.yaml :: --start-lr x the final factor :: sha256 d28ce02267a6b87a :: the rate of the last epoch
-\newcommand{\DesignWeaverVersion}{0.4.17}  % experiments/MTX/pretrain_v2.py :: the weaver release whose loop it reproduces :: sha256 511c7080c13ea1c7
+\newcommand{\DesignWeaverVersion}{0.4.17}  % experiments/MTX/pretrain_v2.py :: the weaver release whose loop it reproduces :: sha256 95da5a6e029855ee
 \newcommand{\DesignMeiFactor}{1.1}  % src/stats/mde.py :: MEI_LOG = ln(factor) :: sha256 626468dcc37940bb :: the smallest effect of interest, as a factor
 \newcommand{\DesignVtwoGpu}{RTX 3090}  % experiments/MTX/k8s/v2/grid/job-mtx2-flavf0-s1-raunav.yaml :: nodeAffinity nvidia.com/gpu.product :: sha256 960cad1691314980 :: the product of run index 1, every configuration
 \newcommand{\DesignVtwoSecondGpu}{\pending{pending: the GPU type of each run index}}  % experiments/FIGS/make_tables.py :: emit_v2_recipe[DesignVtwoSecondGpu] :: sha256 46cdb2be1cde8252 :: a marker, not a number: the grid's job specs put every run index on one product

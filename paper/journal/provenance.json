@@ -2281,7 +2281,7 @@
   },
   "DesignBnJets": {
     "json_path": "BN_JETS",
-    "sha256": "511c7080c13ea1c74478bb44c06c508f90b4a6f328fbc93535161b8e489214a7",
+    "sha256": "95da5a6e029855ee0a952ae65ef908e946bc66bbc1409cb1af9637c3e5a9c282",
     "source_file": "experiments/MTX/pretrain_v2.py",
     "value": "200{,}000"
   },
@@ -2383,19 +2383,19 @@
   },
   "DesignLrDecayFirstEpoch": {
     "json_path": "num_epochs - int(num_epochs * decay share)",
-    "sha256": "511c7080c13ea1c74478bb44c06c508f90b4a6f328fbc93535161b8e489214a7",
+    "sha256": "95da5a6e029855ee0a952ae65ef908e946bc66bbc1409cb1af9637c3e5a9c282",
     "source_file": "experiments/MTX/pretrain_v2.py",
     "value": "56"
   },
   "DesignLrEndPercent": {
     "json_path": "make_optimizer: gamma ** n_decay",
-    "sha256": "511c7080c13ea1c74478bb44c06c508f90b4a6f328fbc93535161b8e489214a7",
+    "sha256": "95da5a6e029855ee0a952ae65ef908e946bc66bbc1409cb1af9637c3e5a9c282",
     "source_file": "experiments/MTX/pretrain_v2.py",
     "value": "1\\%"
   },
   "DesignLrFlatPercent": {
     "json_path": "make_optimizer: 1 - the decay share",
-    "sha256": "511c7080c13ea1c74478bb44c06c508f90b4a6f328fbc93535161b8e489214a7",
+    "sha256": "95da5a6e029855ee0a952ae65ef908e946bc66bbc1409cb1af9637c3e5a9c282",
     "source_file": "experiments/MTX/pretrain_v2.py",
     "value": "70\\%"
   },
@@ -2503,7 +2503,7 @@
   },
   "DesignWavgFirstEpoch": {
     "json_path": "--num-epochs - WAVG_EPOCHS",
-    "sha256": "511c7080c13ea1c74478bb44c06c508f90b4a6f328fbc93535161b8e489214a7",
+    "sha256": "95da5a6e029855ee0a952ae65ef908e946bc66bbc1409cb1af9637c3e5a9c282",
     "source_file": "experiments/MTX/pretrain_v2.py",
     "value": "70"
   },
@@ -2515,7 +2515,7 @@
   },
   "DesignWeaverVersion": {
     "json_path": "the weaver release whose loop it reproduces",
-    "sha256": "511c7080c13ea1c74478bb44c06c508f90b4a6f328fbc93535161b8e489214a7",
+    "sha256": "95da5a6e029855ee0a952ae65ef908e946bc66bbc1409cb1af9637c3e5a9c282",
     "source_file": "experiments/MTX/pretrain_v2.py",
     "value": "0.4.17"
   },
@@ -4603,25 +4603,25 @@
   },
   "LpCMax": {
     "json_path": "C_GRID",
-    "sha256": "b6f2dcfb08669310888901f74dbd8fe41822179011dcd4fcb374be374ad6a99e",
+    "sha256": "6096b83d8e6f94833f28361b5677bd28d7a563144e9d0c54d823074a78e8886f",
     "source_file": "experiments/EVAL/linear_probe_v2.py",
     "value": "10"
   },
   "LpCMin": {
     "json_path": "C_GRID",
-    "sha256": "b6f2dcfb08669310888901f74dbd8fe41822179011dcd4fcb374be374ad6a99e",
+    "sha256": "6096b83d8e6f94833f28361b5677bd28d7a563144e9d0c54d823074a78e8886f",
     "source_file": "experiments/EVAL/linear_probe_v2.py",
     "value": "\\ensuremath{1\\times10^{-3}}"
   },
   "LpNTestAucJcii": {
     "json_path": "TEST_FIRST.jc2 / AUC_STRIDE",
-    "sha256": "b6f2dcfb08669310888901f74dbd8fe41822179011dcd4fcb374be374ad6a99e",
+    "sha256": "6096b83d8e6f94833f28361b5677bd28d7a563144e9d0c54d823074a78e8886f",
     "source_file": "experiments/EVAL/linear_probe_v2.py",
     "value": "500{,}000"
   },
   "LpNTestJcii": {
     "json_path": "TEST_FIRST.jc2",
-    "sha256": "b6f2dcfb08669310888901f74dbd8fe41822179011dcd4fcb374be374ad6a99e",
+    "sha256": "6096b83d8e6f94833f28361b5677bd28d7a563144e9d0c54d823074a78e8886f",
     "source_file": "experiments/EVAL/linear_probe_v2.py",
     "value": "2{,}000{,}000"
   },
