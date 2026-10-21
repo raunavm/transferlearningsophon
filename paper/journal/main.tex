@@ -239,8 +239,12 @@ epochs well beyond its binomial level. The data order and the dropout masks of
 each epoch are derived from the run index and the epoch number alone, so run $k$ of
 every vocabulary sees the same training examples in the same order, also when a
 job is resumed after a node failure, and every run records the examples it saw.
-Runs with the same index also start from the same trunk weights. Every run trains
-on \DesignVtwoGpu{} GPUs.
+Runs with the same index also start from the same trunk weights. Runs trained on
+whichever of several GPU types was free, and a run that was resumed
+could continue on another GPU type. The examples a run reads do not depend on the
+GPU; only the floating-point rounding does. Appendix~\ref{app:compute} lists the
+GPU types and hours of every run. \pending{the GPU types used and the check that no
+vocabulary trained mostly on a single GPU type}
 
 The network is the ParT configuration of Sophon's released
 code\footnote{Sophon's paper states \LitSophonPaperParticleBlocks{}
@@ -539,6 +543,14 @@ flavour vocabularies. Both are generated from the label maps.
 % ============================================================================
 
 \pending{the fine-tuning settings of the rerun}
+
+% ============================================================================
+\section{Compute}\label{app:compute}
+% ============================================================================
+
+\pending{per run: the GPU types it trained on, the hours on each and the total GPU-hours,
+read from every epoch's record of its device; and whether any vocabulary trained mostly
+on a single GPU type}
 
 % ============================================================================
 \section{Linear probes with BatchNorm statistics recomputed}\label{app:bn}
