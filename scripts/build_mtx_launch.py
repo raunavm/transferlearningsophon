@@ -590,10 +590,11 @@ V2_GPU_BY_RUN = {1: V2_GPU, 2: V2_GPU, 3: V2_GPU, 4: V2_L40, 5: V2_L40}
 # product, and the paper reports each run's products and hours. A100/H100 are left out: the
 # namespace has no quota for them. Specs on this list go to V2_ANYGPU_DIR (v2_anygpu_specs).
 V2_ANY_GPU = ("NVIDIA-GeForce-RTX-3090", "NVIDIA-L40", "NVIDIA-L40S", "NVIDIA-RTX-A6000", "NVIDIA-A40",
-              "NVIDIA-GeForce-RTX-4090", "NVIDIA-RTX-A5000", "NVIDIA-L4", "Tesla-V100-SXM2-32GB",
+              "NVIDIA-GeForce-RTX-4090", "NVIDIA-RTX-A5000", "Tesla-V100-SXM2-32GB",
               "NVIDIA-A10", "NVIDIA-RTX-5000-Ada-Generation")
 # Not the Turing cards (TITAN RTX, Quadro RTX 6000/8000): mtx-l162mass-s2 trained at 447 jets/s
-# on a TITAN RTX, a quarter of a V100, GPU-bound (1.5 of its 4 cores busy), 2026-10-22.
+# on a TITAN RTX, a quarter of a V100, GPU-bound (1.5 of its 4 cores busy), 2026-10-22. Not the
+# L4 either: about 1,020 jets/s, half a V100 (mtx-l162-s3, mtx-r16q1-s3), 2026-10-22.
 # 2026-10-22: the request of these specs is sized to what a training pod uses (kubectl top on
 # four running pods: 2.6 cores, 21-25 GiB; the loader probe's peak anon was 29 GB), so they
 # fit beside other users' pods; 8 CPUs / 48Gi fit almost nowhere a GPU was free.
