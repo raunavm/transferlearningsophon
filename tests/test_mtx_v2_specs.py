@@ -738,12 +738,17 @@ def test_an_any_gpu_spec_is_its_launched_spec_but_for_the_gpu_list_and_the_tag()
         old = (ROOT / "experiments/MTX/k8s/v2" / launched / f"job-{job}.yaml").read_text()
         changed = [ln for ln in difflib.unified_diff(old.splitlines(), new.splitlines(), n=0, lineterm="")
                    if ln[:1] in "+-" and ln[:3] not in ("+++", "---")]
-        assert len(changed) == 8, changed
-        assert all("PRETRAINING" in ln or "NVIDIA" in ln or "mtx-s" in ln for ln in changed)
+        assert len(changed) == 12, changed
+        assert all("PRETRAINING" in ln or "NVIDIA" in ln or "mtx-s" in ln or "nvidia.com/gpu: \"1\"" in ln
+                   for ln in changed)
         d = yaml.safe_load(new)
         terms = d["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
             "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
         assert next(t for t in terms if t["key"] == "nvidia.com/gpu.product")["values"] == list(b.V2_ANY_GPU)
+        assert next(t for t in terms if t["key"] == "topology.kubernetes.io/region")["values"] == ["us-west"]
+        res = d["spec"]["template"]["spec"]["containers"][0]["resources"]
+        assert res["requests"]["cpu"] == res["limits"]["cpu"] == b.V2_ANY_CPU
+        assert res["requests"]["memory"] == res["limits"]["memory"] == b.V2_ANY_MEM
         assert d["spec"]["suspend"] is True
     with pytest.raises(SystemExit):
         b.v2_anygpu_specs(["mtx2-nope-s1-raunav"], "mtx-s9.99")

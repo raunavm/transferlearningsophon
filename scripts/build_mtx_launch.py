@@ -590,7 +590,13 @@ V2_GPU_BY_RUN = {1: V2_GPU, 2: V2_GPU, 3: V2_GPU, 4: V2_L40, 5: V2_L40}
 # product, and the paper reports each run's products and hours. A100/H100 are left out: the
 # namespace has no quota for them. Specs on this list go to V2_ANYGPU_DIR (v2_anygpu_specs).
 V2_ANY_GPU = ("NVIDIA-GeForce-RTX-3090", "NVIDIA-L40", "NVIDIA-L40S", "NVIDIA-RTX-A6000", "NVIDIA-A40",
-              "NVIDIA-GeForce-RTX-4090", "NVIDIA-RTX-A5000", "NVIDIA-L4", "Tesla-V100-SXM2-32GB")
+              "NVIDIA-GeForce-RTX-4090", "NVIDIA-RTX-A5000", "NVIDIA-L4", "Tesla-V100-SXM2-32GB",
+              "NVIDIA-A10", "NVIDIA-RTX-5000-Ada-Generation", "NVIDIA-TITAN-RTX", "Quadro-RTX-6000",
+              "Quadro-RTX-8000")
+# 2026-10-22: the request of these specs is sized to what a training pod uses (kubectl top on
+# four running pods: 2.6 cores, 21-25 GiB; the loader probe's peak anon was 29 GB), so they
+# fit beside other users' pods; 8 CPUs / 48Gi fit almost nowhere a GPU was free.
+V2_ANY_CPU, V2_ANY_MEM = "4", "40Gi"
 V2_CPU = "8"
 V2_MEM = "48Gi"
 # Retries (PI, 2026-10-01). Evictions are ignored; exit EXIT_HALT fails the Job at once;
@@ -1393,7 +1399,8 @@ def v2_anygpu_specs(jobs: list, tag: str) -> dict:
         if job not in by_job:
             raise SystemExit(f"{job}: not a pretraining job of a grid arm, run 1-5")
         arm, run = by_job[job]
-        name, spec = v2_spec(arm, run, V2_ANY_GPU, tag=tag, run_id=v2_run_id(arm["name"], run), job=job)
+        name, spec = v2_spec(arm, run, V2_ANY_GPU, tag=tag, run_id=v2_run_id(arm["name"], run), job=job,
+                             cpu=V2_ANY_CPU, mem=V2_ANY_MEM)
         out[f"job-{name}.yaml"] = spec
     return out
 
