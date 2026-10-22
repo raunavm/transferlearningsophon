@@ -22,7 +22,5 @@ mtx2-l162-s3-raunav
 mtx2-r16q1-s3-raunav
 mtx2-flavf1-s1-raunav
 mtx2-flavf1r-s2-raunav
-# Held (release after the above have all started, if GPUs allow):
-# mtx2-l162mass-s3 mtx2-r16q1mass-s3 mtx2-rand2p1-s2 mtx2-rand2p2-s1 mtx2-rand2p3-s2
-# mtx2-rand2p4-s1 (epoch 27 saved) mtx2-rand2p5-s1 mtx2-flavf0-s3 (epoch 63 saved)
-# mtx2-flavf1-s3 mtx2-flavf1r-s3
+# 2026-10-22 (PI): the held runs and the run-5 jobs are cut (configs/arms/v2_paper_runs.txt);
+# every run above was released at once.

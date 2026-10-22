@@ -1,0 +1,32 @@
+# The 27 v2 pretraining runs the paper reports (PI, 2026-10-22: "cut the useless runs").
+# Four label sets x 3 runs, mass output x 2, five random partitions x 1, flavour pair x 2.
+# Cut on 2026-10-22 (jobs deleted, run folders kept): l162mass-s3 r16q1mass-s3 rand2p1-s2
+# rand2p2-s1 rand2p3-s2 rand2p4-s1 rand2p5-s1 flavf0-s3 flavf1-s3 flavf1r-s3 and the
+# run-5 duplicates l162-s5 r16q1-s5 l188-s5 r42q1-s5.
+mtx-l188-s1
+mtx-l188-s2
+mtx-l188-s3
+mtx-l162-s1
+mtx-l162-s2
+mtx-l162-s3
+mtx-r42q1-s1
+mtx-r42q1-s2
+mtx-r42q1-s3
+mtx-r16q1-s1
+mtx-r16q1-s2
+mtx-r16q1-s3
+mtx-l162mass-s1
+mtx-l162mass-s2
+mtx-r16q1mass-s1
+mtx-r16q1mass-s2
+mtx-rand2p1-s1
+mtx-rand2p2-s2
+mtx-rand2p3-s1
+mtx-rand2p4-s2
+mtx-rand2p5-s2
+mtx-flavf0-s1
+mtx-flavf0-s2
+mtx-flavf1-s1
+mtx-flavf1-s2
+mtx-flavf1r-s1
+mtx-flavf1r-s2
