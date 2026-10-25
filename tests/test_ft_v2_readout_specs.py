@@ -128,7 +128,7 @@ def test_the_readout_specs_on_disk_are_the_generators(ro):
 
 
 def test_every_readout_is_a_cpu_job_of_mine_at_its_own_pin_with_the_retry_policy(ro):
-    assert B.PIN_V2_READOUT == "mtx-s2.00"
+    assert B.PIN_V2_READOUT == "mtx-s2.10"
     for name, t in ro.items():
         d = yaml.safe_load(t)
         assert name == f"job-{d['metadata']['name']}.yaml" and name.endswith("-raunav.yaml")

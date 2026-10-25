@@ -2612,7 +2612,7 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
 # trained to a NaN loss (diverged()). The JSONs are copied to
 # experiments/FIGS/data/v2/{finetune,benchmarks}/<rule>[_t12]_<file> (make_tables.py's v2 layout). They
 # write ~10 MB to /data in all, so neither the storage budget nor space_ok applies.
-PIN_V2_READOUT = "mtx-s2.00"
+PIN_V2_READOUT = "mtx-s2.10"   # the 27 paper runs' expected cells (82998f2)
 V2_READOUT_LEGS = ("leg1", "leg2", "bench")
 # where each read-out's JSONs are committed: make_tables.py's v2 layout (experiments/FIGS/data/v2/)
 V2_READOUT_COPY = {"leg1": "finetune", "leg2": "finetune", "bench": "benchmarks"}
