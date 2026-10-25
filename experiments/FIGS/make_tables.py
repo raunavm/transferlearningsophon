@@ -595,6 +595,7 @@ def input_paths(root: pathlib.Path) -> dict:
             # The rerun's design, read where it is fixed: the grid, the partition and
             # flavour-pair maps and the matched mass weight.
             "v2_grid": root / "configs" / "arms" / "v2_grid.json",
+            "v2_paper_runs": root / "configs" / "arms" / "v2_paper_runs.txt",
             # the rerun's statistics: its contrasts, labels and untrained-trunk references
             "contrasts_v2": root / "configs" / "analysis" / "contrasts.v2.json",
             "mass_lambda": root / "configs" / "arms" / "v2" / "mass_lambda.v2.json",
@@ -1238,16 +1239,32 @@ def emit_paired(em: Emitter, files: list, ft: dict | None) -> None:
                      "paired geometric mean [95% interval]")
 
 
+def paper_runs(grid_path: pathlib.Path) -> tuple[pathlib.Path, dict]:
+    """(configs/arms/v2_paper_runs.txt, {arm: [run directories]}): the runs the paper reports
+    (PI, 2026-10-22: 27 of the grid's 37), by the grid's arm names."""
+    path = grid_path.parent / "v2_paper_runs.txt"
+    slug = {a["name"].lower().replace("_", ""): a["name"]
+            for a in json.loads(grid_path.read_text())["arms"]}
+    out: dict = {}
+    for ln in path.read_text().splitlines():
+        if ln.strip() and not ln.startswith("#"):
+            m = re.fullmatch(r"mtx-([a-z0-9]+)-s(\d+)", ln.strip())
+            if not m or m.group(1) not in slug:
+                raise SystemExit(f"FATAL: {path}: {ln!r} is not a run of {grid_path}")
+            out.setdefault(slug[m.group(1)], []).append(ln.strip())
+    return path, out
+
+
 def emit_mlst(em: Emitter, grid_path: pathlib.Path, probe_code: pathlib.Path) -> None:
-    """The cut grid's run counts (configs/arms/v2_grid.json, PI 2026-10-09) and the settings
-    of the downstream linear probes (experiments/EVAL/linear_probe_v2.py)."""
-    grid = {a["name"]: a for a in json.loads(grid_path.read_text())["arms"]}
+    """The run counts of the runs the paper reports (configs/arms/v2_paper_runs.txt) and the
+    settings of the downstream linear probes (experiments/EVAL/linear_probe_v2.py)."""
+    path, runs_of = paper_runs(grid_path)
     for name, arms in (("MlstNRunsWord", ("L188", "L162", "R42_Q1", "R16_Q1")),
                        ("MlstMassNRunsWord", ("L162_MASS", "R16_Q1_MASS"))):
-        runs = {grid[a]["runs"] for a in arms}
+        runs = {len(runs_of[a]) for a in arms}
         if len(runs) != 1:
-            raise SystemExit(f"FATAL: {grid_path} gives {arms} different run counts {runs}")
-        em.macro(name, words(runs.pop()), grid_path, f"arms[{'/'.join(arms)}].runs",
+            raise SystemExit(f"FATAL: {path} gives {arms} different run counts {runs}")
+        em.macro(name, words(runs.pop()), path, f"runs of {'/'.join(arms)}",
                  "pretraining runs per configuration")
     c = probe_code.read_text()
 
@@ -1287,10 +1304,11 @@ def emit_rand_design(em: Emitter, paths: dict, C: dict, missing: list | None = N
     grid = json.loads(paths["v2_grid"].read_text())["arms"]
     rand = [a for a in grid if a["name"].startswith("RAND2_")]
     flav = [a for a in grid if a["name"].startswith("FLAV_")]
-    runs = {a["runs"] for a in rand}
-    frun = {a["runs"] for a in flav}
+    ppath, runs_of = paper_runs(paths["v2_grid"])
+    runs = {len(runs_of.get(a["name"], [])) for a in rand}
+    frun = {len(runs_of.get(a["name"], [])) for a in flav}
     if len(runs) != 1 or len(frun) != 1:
-        raise SystemExit(f"FATAL: {paths['v2_grid']} gives the partitions {runs} and the flavour "
+        raise SystemExit(f"FATAL: {ppath} gives the partitions {runs} and the flavour "
                          f"pair {frun} runs; the text states one number for each")
     rule = json.loads(paths["rand_v2_rule"].read_text())
     lo, hi = rule["merged_in"]
@@ -1308,8 +1326,8 @@ def emit_rand_design(em: Emitter, paths: dict, C: dict, missing: list | None = N
     src = paths["v2_grid"]
     em.macro("RandVtwoNPartitions", words(len(rand)), src, "arms[RAND2_*] (count)",
              "random partitions in the rerun")
-    em.macro("RandVtwoRuns", words(runs.pop()), src, "arms[RAND2_*].runs", "runs per partition")
-    em.macro("RandFlavRuns", words(frun.pop()), src, "arms[FLAV_*].runs", "runs per flavour-pair model")
+    em.macro("RandVtwoRuns", words(runs.pop()), ppath, "runs of RAND2_*", "runs per partition")
+    em.macro("RandFlavRuns", words(frun.pop()), ppath, "runs of FLAV_*", "runs per flavour-pair model")
     # the leave-one-family-out and self-supervised models were cut from the grid on 2026-10-09
     # (tiers 2-3): their run counts are printed only while the grid has them
     lofo = {a["runs"] for a in grid if a.get("extra_selection")}
@@ -4944,6 +4962,11 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     out.update(appendix_module().build(root, paths["ladder"][0], paths["vcb"] if "vcb" in have else None,
                               paths["anomaly"] if "anomaly" in have else None,
                               TASK_LABELS, v2_present(root, "levels_64_30")))
+
+    spec = importlib.util.spec_from_file_location("mlst_results", pathlib.Path(__file__).resolve().parent / "mlst_results.py")
+    mlst = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mlst)
+    out.update(mlst.build(em, root, missing, fmt_pm, fmt_int, words))
 
     emit_unprinted(em, root, missing)
     out["results_generated.tex"] = render_macros(em, missing, skipped)

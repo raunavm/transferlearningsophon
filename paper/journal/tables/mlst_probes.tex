@@ -1,0 +1,22 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Linear probes on the frozen class token at the largest training set of each task: macro AUC (one-versus-rest) on JetClass-II and JetClass, AUC on top and quark/gluon tagging, the latter also on Herwig jets. Mean $\pm$ standard deviation over the pretraining runs. $^{*}$: a probe of the untrained network stopped at the iteration limit.}
+\label{tab:probes}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lccccc}
+\toprule
+pretraining & JetClass-II & JetClass & top & q/g & q/g, Herwig \\
+ & 1{,}000{,}000 jets & 1{,}000{,}000 jets & 1{,}200{,}000 jets & 1{,}600{,}000 jets & 1{,}600{,}000 jets \\
+\midrule
+\Kfull{} classes & 0.98066 \pending{1 of 3} & 0.96747 \pending{1 of 3} & 0.94769 \pending{1 of 3} & 0.87957 \pending{1 of 3} & 0.80315 \pending{1 of 3} \\
+\Kres{} classes & 0.98059 \pending{1 of 3} & 0.96802 \pending{1 of 3} & 0.94391 \pending{1 of 3} & 0.86918 \pending{1 of 3} & 0.80002 \pending{1 of 3} \\
+\Kmid{} classes & 0.9782 \pending{1 of 3} & 0.96777 \pending{1 of 3} & 0.93907 \pending{1 of 3} & 0.87233 \pending{1 of 3} & 0.80349 \pending{1 of 3} \\
+\Kcoarse{} classes & 0.97256 \pending{1 of 3} & 0.9658 \pending{1 of 3} & 0.94176 \pending{1 of 3} & 0.863 \pending{1 of 3} & 0.79994 \pending{1 of 3} \\
+\Kres{} classes, mass output & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
+\Kcoarse{} classes, mass output & 0.97198 \pending{1 of 2} & 0.96511 \pending{1 of 2} & 0.94823 \pending{1 of 2} & 0.87195 \pending{1 of 2} & 0.80083 \pending{1 of 2} \\
+untrained network & 0.81751$^{*}$ \pending{1 of 3} & 0.82675 \pending{1 of 3} & 0.93951 \pending{1 of 3} & 0.8628 \pending{1 of 3} & 0.79695 \pending{1 of 3} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}

@@ -1,0 +1,26 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Binary linear probes between JetClass-II classes on the largest training subset: $(1-\mathrm{AUC})\times10^{3}$, lower is better. $^{\dagger}$: the vocabulary merges the two sides into one class; $^{\ddagger}$: it merges the first side with part of the second. Mean $\pm$ standard deviation over the pretraining runs; each random partition has one run.}
+\label{tab:pairs}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lccc}
+\toprule
+pretraining & $X\to bc$ vs $bq$, $cs$ & $X\to b\bar b$ vs $c\bar c$ & $X\to YY\to bbqq$ vs $ccqq$ \\
+\midrule
+\Kfull{} classes & 59.27 \pending{1 of 3} & 2.5732 \pending{1 of 3} & 6.3941 \pending{1 of 3} \\
+\Kres{} classes & 59.614 \pending{1 of 3} & 2.6219 \pending{1 of 3} & 6.7425 \pending{1 of 3} \\
+\Kmid{} classes & 69.438 \pending{1 of 3}$^{\ddagger}$ & 2.7897 \pending{1 of 3} & 6.9313 \pending{1 of 3} \\
+\Kcoarse{} classes & 121.59 \pending{1 of 3}$^{\dagger}$ & 11.289 \pending{1 of 3}$^{\dagger}$ & 26.582 \pending{1 of 3}$^{\dagger}$ \\
+random partition 1 & 69.542$^{\dagger}$ & 3.9336$^{\dagger}$ & 9.1846$^{\dagger}$ \\
+random partition 2 & 71.291$^{\ddagger}$ & 4.2225 & 9.0961 \\
+random partition 3 & 63.842 & 4.1155$^{\dagger}$ & 8.8035$^{\dagger}$ \\
+random partition 4 & 64.151 & 3.4804 & 8.2648 \\
+random partition 5 & 73.554$^{\dagger}$ & 4.5308$^{\dagger}$ & 9.5781 \\
+F0 & 126\,$\pm$\,8$^{\dagger}$ & 24\,$\pm$\,12$^{\dagger}$ & 52\,$\pm$\,15$^{\dagger}$ \\
+F1 & 92.518 \pending{1 of 2}$^{\dagger}$ & 4.4885 \pending{1 of 2}$^{\dagger}$ & 8.9726 \pending{1 of 2} \\
+F1r & 92.147 \pending{1 of 2}$^{\dagger}$ & 6.6249 \pending{1 of 2}$^{\dagger}$ & 14.198 \pending{1 of 2}$^{\dagger}$ \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

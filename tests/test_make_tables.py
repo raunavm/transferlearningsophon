@@ -892,7 +892,7 @@ def test_the_flavour_pair_text_is_read_from_its_definition_and_checked_on_the_ma
     C = _load("experiments/FIGS/data/probe_ladder_randcontrol_mlp2/analysis/c4_random_control.json")
     root = tmp_path / "root"
     linked = {k: v for k, v in paths.items() if k in (
-        "rand_v1_map", "v2_grid", "rand_v2_map", "rand_v2_rule", "realised_shares")}
+        "rand_v1_map", "v2_grid", "v2_paper_runs", "rand_v2_map", "rand_v2_rule", "realised_shares")}
     linked["ladder"] = REPO / C["provenance"]["inputs"][0]["path"]
     for src in linked.values():
         dst = root / pathlib.Path(src).relative_to(REPO)

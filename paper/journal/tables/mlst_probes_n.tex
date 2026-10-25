@@ -1,0 +1,33 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Linear probes against the training-set size: macro AUC on JetClass-II and AUC on top tagging. Mean $\pm$ standard deviation over the pretraining runs.}
+\label{tab:probesn}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccc}
+\toprule
+JetClass-II & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\
+\midrule
+\Kfull{} classes & 0.91618 \pending{1 of 3} & 0.97106 \pending{1 of 3} & 0.97902 \pending{1 of 3} & 0.98066 \pending{1 of 3} \\
+\Kres{} classes & 0.91396 \pending{1 of 3} & 0.97121 \pending{1 of 3} & 0.979 \pending{1 of 3} & 0.98059 \pending{1 of 3} \\
+\Kmid{} classes & 0.91045 \pending{1 of 3} & 0.96822 \pending{1 of 3} & 0.9762 \pending{1 of 3} & 0.9782 \pending{1 of 3} \\
+\Kcoarse{} classes & 0.88067 \pending{1 of 3} & 0.95632 \pending{1 of 3} & 0.96954 \pending{1 of 3} & 0.97256 \pending{1 of 3} \\
+untrained network & 0.59787 \pending{1 of 3} & 0.70827 \pending{1 of 3} & 0.79515 \pending{1 of 3} & 0.81751$^{*}$ \pending{1 of 3} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccc}
+\toprule
+top & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}200{,}000 \\
+\midrule
+\Kfull{} classes & 0.93171 \pending{1 of 3} & 0.94495 \pending{1 of 3} & 0.94755 \pending{1 of 3} & 0.94769 \pending{1 of 3} \\
+\Kres{} classes & 0.92741 \pending{1 of 3} & 0.9417 \pending{1 of 3} & 0.94382 \pending{1 of 3} & 0.94391 \pending{1 of 3} \\
+\Kmid{} classes & 0.92322 \pending{1 of 3} & 0.93615 \pending{1 of 3} & 0.93892 \pending{1 of 3} & 0.93907 \pending{1 of 3} \\
+\Kcoarse{} classes & 0.92916 \pending{1 of 3} & 0.9396 \pending{1 of 3} & 0.94153 \pending{1 of 3} & 0.94176 \pending{1 of 3} \\
+untrained network & 0.92784 \pending{1 of 3} & 0.93799 \pending{1 of 3} & 0.93933 \pending{1 of 3} & 0.93951 \pending{1 of 3} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}

@@ -1,0 +1,565 @@
+{
+ "run": "mtx-l162-s1",
+ "epochs": [
+  {
+   "epoch": 0,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4240.0,
+   "val_seconds": 332.6,
+   "jets_per_s": 2415.1
+  },
+  {
+   "epoch": 1,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5356.6,
+   "val_seconds": 497.7,
+   "jets_per_s": 1911.7
+  },
+  {
+   "epoch": 2,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5178.6,
+   "val_seconds": 410.4,
+   "jets_per_s": 1977.4
+  },
+  {
+   "epoch": 3,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4858.4,
+   "val_seconds": 480.8,
+   "jets_per_s": 2107.7
+  },
+  {
+   "epoch": 4,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5209.1,
+   "val_seconds": 482.4,
+   "jets_per_s": 1965.8
+  },
+  {
+   "epoch": 5,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5183.0,
+   "val_seconds": 491.3,
+   "jets_per_s": 1975.7
+  },
+  {
+   "epoch": 6,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5201.4,
+   "val_seconds": 477.5,
+   "jets_per_s": 1968.7
+  },
+  {
+   "epoch": 7,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5158.6,
+   "val_seconds": 481.5,
+   "jets_per_s": 1985.1
+  },
+  {
+   "epoch": 8,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4886.3,
+   "val_seconds": 460.0,
+   "jets_per_s": 2095.7
+  },
+  {
+   "epoch": 9,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5191.9,
+   "val_seconds": 500.5,
+   "jets_per_s": 1972.3
+  },
+  {
+   "epoch": 10,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5240.8,
+   "val_seconds": 514.4,
+   "jets_per_s": 1953.9
+  },
+  {
+   "epoch": 11,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5294.5,
+   "val_seconds": 481.0,
+   "jets_per_s": 1934.1
+  },
+  {
+   "epoch": 12,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5255.0,
+   "val_seconds": 503.0,
+   "jets_per_s": 1948.6
+  },
+  {
+   "epoch": 13,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5200.7,
+   "val_seconds": 503.7,
+   "jets_per_s": 1969.0
+  },
+  {
+   "epoch": 14,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5117.7,
+   "val_seconds": 523.5,
+   "jets_per_s": 2000.9
+  },
+  {
+   "epoch": 15,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5169.9,
+   "val_seconds": 539.9,
+   "jets_per_s": 1980.7
+  },
+  {
+   "epoch": 16,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5225.5,
+   "val_seconds": 529.1,
+   "jets_per_s": 1959.6
+  },
+  {
+   "epoch": 17,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5266.6,
+   "val_seconds": 571.8,
+   "jets_per_s": 1944.3
+  },
+  {
+   "epoch": 18,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4982.4,
+   "val_seconds": 518.9,
+   "jets_per_s": 2055.2
+  },
+  {
+   "epoch": 19,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4816.7,
+   "val_seconds": 496.3,
+   "jets_per_s": 2126.0
+  },
+  {
+   "epoch": 20,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4817.6,
+   "val_seconds": 543.3,
+   "jets_per_s": 2125.5
+  },
+  {
+   "epoch": 21,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 8307.4,
+   "val_seconds": 815.9,
+   "jets_per_s": 1232.6
+  },
+  {
+   "epoch": 22,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5068.7,
+   "val_seconds": 397.5,
+   "jets_per_s": 2020.2
+  },
+  {
+   "epoch": 23,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4942.5,
+   "val_seconds": 489.1,
+   "jets_per_s": 2071.8
+  },
+  {
+   "epoch": 24,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5225.2,
+   "val_seconds": 489.6,
+   "jets_per_s": 1959.7
+  },
+  {
+   "epoch": 25,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4669.2,
+   "val_seconds": 384.1,
+   "jets_per_s": 2193.1
+  },
+  {
+   "epoch": 26,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4647.1,
+   "val_seconds": 375.5,
+   "jets_per_s": 2203.5
+  },
+  {
+   "epoch": 27,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4630.1,
+   "val_seconds": 376.4,
+   "jets_per_s": 2211.6
+  },
+  {
+   "epoch": 28,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4632.3,
+   "val_seconds": 382.1,
+   "jets_per_s": 2210.6
+  },
+  {
+   "epoch": 29,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4606.1,
+   "val_seconds": 375.4,
+   "jets_per_s": 2223.1
+  },
+  {
+   "epoch": 30,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4595.1,
+   "val_seconds": 374.0,
+   "jets_per_s": 2228.4
+  },
+  {
+   "epoch": 31,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4591.0,
+   "val_seconds": 372.9,
+   "jets_per_s": 2230.4
+  },
+  {
+   "epoch": 32,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4699.3,
+   "val_seconds": 376.3,
+   "jets_per_s": 2179.0
+  },
+  {
+   "epoch": 33,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4630.2,
+   "val_seconds": 377.7,
+   "jets_per_s": 2211.6
+  },
+  {
+   "epoch": 34,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4598.6,
+   "val_seconds": 389.1,
+   "jets_per_s": 2226.8
+  },
+  {
+   "epoch": 35,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5576.0,
+   "val_seconds": 382.5,
+   "jets_per_s": 1836.4
+  },
+  {
+   "epoch": 36,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5592.9,
+   "val_seconds": 383.6,
+   "jets_per_s": 1830.9
+  },
+  {
+   "epoch": 37,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5671.5,
+   "val_seconds": 384.5,
+   "jets_per_s": 1805.5
+  },
+  {
+   "epoch": 38,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5627.0,
+   "val_seconds": 386.1,
+   "jets_per_s": 1819.8
+  },
+  {
+   "epoch": 39,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5607.0,
+   "val_seconds": 385.5,
+   "jets_per_s": 1826.3
+  },
+  {
+   "epoch": 40,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5632.8,
+   "val_seconds": 384.5,
+   "jets_per_s": 1817.9
+  },
+  {
+   "epoch": 41,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5593.5,
+   "val_seconds": 384.8,
+   "jets_per_s": 1830.7
+  },
+  {
+   "epoch": 42,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5611.8,
+   "val_seconds": 383.2,
+   "jets_per_s": 1824.7
+  },
+  {
+   "epoch": 43,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5630.7,
+   "val_seconds": 383.8,
+   "jets_per_s": 1818.6
+  },
+  {
+   "epoch": 44,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5641.4,
+   "val_seconds": 384.1,
+   "jets_per_s": 1815.2
+  },
+  {
+   "epoch": 45,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5628.8,
+   "val_seconds": 383.8,
+   "jets_per_s": 1819.2
+  },
+  {
+   "epoch": 46,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5620.3,
+   "val_seconds": 382.6,
+   "jets_per_s": 1822.0
+  },
+  {
+   "epoch": 47,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5626.8,
+   "val_seconds": 384.0,
+   "jets_per_s": 1819.9
+  },
+  {
+   "epoch": 48,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5597.2,
+   "val_seconds": 383.7,
+   "jets_per_s": 1829.5
+  },
+  {
+   "epoch": 49,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5648.4,
+   "val_seconds": 384.4,
+   "jets_per_s": 1812.9
+  },
+  {
+   "epoch": 50,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5663.1,
+   "val_seconds": 385.8,
+   "jets_per_s": 1808.2
+  },
+  {
+   "epoch": 51,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5666.7,
+   "val_seconds": 385.0,
+   "jets_per_s": 1807.1
+  },
+  {
+   "epoch": 52,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5619.8,
+   "val_seconds": 384.2,
+   "jets_per_s": 1822.1
+  },
+  {
+   "epoch": 53,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5663.3,
+   "val_seconds": 384.4,
+   "jets_per_s": 1808.1
+  },
+  {
+   "epoch": 54,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5626.1,
+   "val_seconds": 384.1,
+   "jets_per_s": 1820.1
+  },
+  {
+   "epoch": 55,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5611.9,
+   "val_seconds": 383.7,
+   "jets_per_s": 1824.7
+  },
+  {
+   "epoch": 56,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5612.8,
+   "val_seconds": 384.6,
+   "jets_per_s": 1824.4
+  },
+  {
+   "epoch": 57,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5644.7,
+   "val_seconds": 385.1,
+   "jets_per_s": 1814.1
+  },
+  {
+   "epoch": 58,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5605.4,
+   "val_seconds": 383.3,
+   "jets_per_s": 1826.8
+  },
+  {
+   "epoch": 59,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5625.3,
+   "val_seconds": 383.4,
+   "jets_per_s": 1820.4
+  },
+  {
+   "epoch": 60,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5639.3,
+   "val_seconds": 383.2,
+   "jets_per_s": 1815.8
+  },
+  {
+   "epoch": 61,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5623.3,
+   "val_seconds": 382.9,
+   "jets_per_s": 1821.0
+  },
+  {
+   "epoch": 62,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5650.4,
+   "val_seconds": 385.2,
+   "jets_per_s": 1812.3
+  },
+  {
+   "epoch": 63,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5641.7,
+   "val_seconds": 382.7,
+   "jets_per_s": 1815.1
+  },
+  {
+   "epoch": 64,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5613.9,
+   "val_seconds": 380.9,
+   "jets_per_s": 1824.0
+  },
+  {
+   "epoch": 65,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5626.3,
+   "val_seconds": 385.8,
+   "jets_per_s": 1820.0
+  },
+  {
+   "epoch": 66,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5637.9,
+   "val_seconds": 382.5,
+   "jets_per_s": 1816.3
+  },
+  {
+   "epoch": 67,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5631.1,
+   "val_seconds": 382.5,
+   "jets_per_s": 1818.5
+  },
+  {
+   "epoch": 68,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5636.0,
+   "val_seconds": 383.5,
+   "jets_per_s": 1816.9
+  },
+  {
+   "epoch": 69,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5654.5,
+   "val_seconds": 382.5,
+   "jets_per_s": 1811.0
+  },
+  {
+   "epoch": 70,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5635.5,
+   "val_seconds": 383.8,
+   "jets_per_s": 1817.1
+  },
+  {
+   "epoch": 71,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5689.0,
+   "val_seconds": 384.1,
+   "jets_per_s": 1800.0
+  },
+  {
+   "epoch": 72,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5634.3,
+   "val_seconds": 385.6,
+   "jets_per_s": 1817.4
+  },
+  {
+   "epoch": 73,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5690.5,
+   "val_seconds": 386.1,
+   "jets_per_s": 1799.5
+  },
+  {
+   "epoch": 74,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5654.5,
+   "val_seconds": 385.4,
+   "jets_per_s": 1811.0
+  },
+  {
+   "epoch": 75,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5614.9,
+   "val_seconds": 385.4,
+   "jets_per_s": 1823.7
+  },
+  {
+   "epoch": 76,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5631.3,
+   "val_seconds": 383.8,
+   "jets_per_s": 1818.4
+  },
+  {
+   "epoch": 77,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5601.0,
+   "val_seconds": 389.9,
+   "jets_per_s": 1828.2
+  },
+  {
+   "epoch": 78,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5609.3,
+   "val_seconds": 383.7,
+   "jets_per_s": 1825.5
+  },
+  {
+   "epoch": 79,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5620.3,
+   "val_seconds": 382.7,
+   "jets_per_s": 1822.0
+  }
+ ]
+}

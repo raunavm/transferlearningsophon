@@ -1,0 +1,41 @@
+\begin{table}[t]
+\centering
+\small
+\caption{GPU types and GPU-hours of every pretraining run, summed over the training and validation passes of its completed epochs as each epoch recorded them.}
+\label{tab:compute}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llr}
+\toprule
+run & GPU types (hours) & GPU-hours \\
+\midrule
+\Kfull{} classes, run 1 & \pending{training} & \\
+\Kfull{} classes, run 2 & \pending{training} & \\
+\Kfull{} classes, run 3 & RTX 3090 (116) & 116 \\
+\Kres{} classes, run 1 & V100 (75), RTX 3090 (54) & 129 \\
+\Kres{} classes, run 2 & V100 (86), RTX 3090 (40) & 126 \\
+\Kres{} classes, run 3 & \pending{training} & \\
+\Kmid{} classes, run 1 & RTX 3090 (113) & 113 \\
+\Kmid{} classes, run 2 & \pending{training} & \\
+\Kmid{} classes, run 3 & \pending{training} & \\
+\Kcoarse{} classes, run 1 & RTX 3090 (108), L4 (3) & 111 \\
+\Kcoarse{} classes, run 2 & \pending{training} & \\
+\Kcoarse{} classes, run 3 & \pending{training} & \\
+\Kres{} classes, mass output, run 1 & \pending{training} & \\
+\Kres{} classes, mass output, run 2 & \pending{training} & \\
+\Kcoarse{} classes, mass output, run 1 & \pending{training} & \\
+\Kcoarse{} classes, mass output, run 2 & RTX 3090 (101) & 101 \\
+random partition 1, run 1 & RTX 3090 (78), V100 (38) & 116 \\
+random partition 2, run 2 & RTX 3090 (110) & 110 \\
+random partition 3, run 1 & RTX 3090 (109) & 109 \\
+random partition 4, run 2 & RTX 3090 (107) & 107 \\
+random partition 5, run 2 & RTX 3090 (98) & 98 \\
+F0, run 1 & RTX 3090 (99) & 99 \\
+F0, run 2 & RTX 3090 (130) & 130 \\
+F1, run 1 & \pending{training} & \\
+F1, run 2 & RTX 3090 (137) & 137 \\
+F1r, run 1 & RTX 3090 (125) & 125 \\
+F1r, run 2 & \pending{training} & \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

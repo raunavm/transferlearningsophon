@@ -476,8 +476,11 @@ rest on few background jets, and the tables give how many.
 % ============================================================================
 
 \subsection{Linear probes}\label{sec:probes}
-\pending{linear probes on JetClass-II, JetClass, top and quark/gluon tagging against
-the training-set size, every vocabulary, with the untrained network}
+\input{tables/mlst_probes}
+\input{tables/mlst_probes_n}
+\pending{text: linear probes on JetClass-II, JetClass, top and quark/gluon tagging against
+the training-set size, every vocabulary, with the untrained network (Tables~\ref{tab:probes}
+and~\ref{tab:probesn})}
 
 \subsection{Fine-tuning}\label{sec:finetune}
 \pending{fine-tuning against the training-set size on every dataset, with
@@ -491,11 +494,14 @@ tagging, transfer, from scratch; regressed-mass window for the mass-output model
 \pending{anomaly detection on the held-out signals}
 
 \subsection{What merging classes costs}\label{sec:merge}
-\pending{the pairs of classes at every vocabulary; random partitions that merge a
-pair against those that keep it apart; F0, F1 and F1r}
+\input{tables/mlst_pairs}
+\pending{text: the pairs of classes at every vocabulary; random partitions that merge a
+pair against those that keep it apart; F0, F1 and F1r (Table~\ref{tab:pairs})}
 
 \subsection{The mass output}\label{sec:mass}
-\pending{mass resolution from frozen features; the two-by-two on every task}
+\input{tables/mlst_mass}
+\pending{text: mass resolution from frozen features (Table~\ref{tab:mass}); the two-by-two on
+every task (Table~\ref{tab:probes})}
 
 % ============================================================================
 \section{Discussion}\label{sec:discussion}
@@ -548,9 +554,12 @@ flavour vocabularies. Both are generated from the label maps.
 \section{Compute}\label{app:compute}
 % ============================================================================
 
-\pending{per run: the GPU types it trained on, the hours on each and the total GPU-hours,
-read from every epoch's record of its device; and whether any vocabulary trained mostly
-on a single GPU type}
+Table~\ref{tab:compute} gives, for every pretraining run, the GPU types it trained on and
+the hours on each, read from the record each epoch keeps of its device. The label sets of the
+tree put between \ComputeMainGpuShareMin{} and \ComputeMainGpuShareMax{} of their GPU-hours on the
+\ComputeMainGpu, the type they used most. \pending{final once every run is in}
+
+\input{tables/compute}
 
 % ============================================================================
 \section{Linear probes with BatchNorm statistics recomputed}\label{app:bn}

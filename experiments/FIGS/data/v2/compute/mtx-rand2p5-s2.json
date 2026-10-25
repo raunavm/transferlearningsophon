@@ -1,0 +1,565 @@
+{
+ "run": "mtx-rand2p5-s2",
+ "epochs": [
+  {
+   "epoch": 0,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4103.0,
+   "val_seconds": 322.3,
+   "jets_per_s": 2495.7
+  },
+  {
+   "epoch": 1,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4142.6,
+   "val_seconds": 322.4,
+   "jets_per_s": 2471.9
+  },
+  {
+   "epoch": 2,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4136.7,
+   "val_seconds": 322.1,
+   "jets_per_s": 2475.4
+  },
+  {
+   "epoch": 3,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4131.7,
+   "val_seconds": 321.6,
+   "jets_per_s": 2478.4
+  },
+  {
+   "epoch": 4,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4131.9,
+   "val_seconds": 321.2,
+   "jets_per_s": 2478.3
+  },
+  {
+   "epoch": 5,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4136.0,
+   "val_seconds": 321.0,
+   "jets_per_s": 2475.8
+  },
+  {
+   "epoch": 6,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4132.7,
+   "val_seconds": 320.4,
+   "jets_per_s": 2477.8
+  },
+  {
+   "epoch": 7,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4129.7,
+   "val_seconds": 321.8,
+   "jets_per_s": 2479.6
+  },
+  {
+   "epoch": 8,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4132.0,
+   "val_seconds": 320.4,
+   "jets_per_s": 2478.2
+  },
+  {
+   "epoch": 9,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4126.4,
+   "val_seconds": 321.0,
+   "jets_per_s": 2481.6
+  },
+  {
+   "epoch": 10,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4125.9,
+   "val_seconds": 320.8,
+   "jets_per_s": 2481.9
+  },
+  {
+   "epoch": 11,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4132.4,
+   "val_seconds": 321.0,
+   "jets_per_s": 2478.0
+  },
+  {
+   "epoch": 12,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4128.5,
+   "val_seconds": 321.0,
+   "jets_per_s": 2480.3
+  },
+  {
+   "epoch": 13,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4119.7,
+   "val_seconds": 320.8,
+   "jets_per_s": 2485.6
+  },
+  {
+   "epoch": 14,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4128.4,
+   "val_seconds": 320.2,
+   "jets_per_s": 2480.4
+  },
+  {
+   "epoch": 15,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4131.0,
+   "val_seconds": 320.3,
+   "jets_per_s": 2478.8
+  },
+  {
+   "epoch": 16,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4119.8,
+   "val_seconds": 320.2,
+   "jets_per_s": 2485.6
+  },
+  {
+   "epoch": 17,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4086.9,
+   "val_seconds": 319.8,
+   "jets_per_s": 2505.6
+  },
+  {
+   "epoch": 18,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4060.2,
+   "val_seconds": 320.0,
+   "jets_per_s": 2522.1
+  },
+  {
+   "epoch": 19,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4069.7,
+   "val_seconds": 320.1,
+   "jets_per_s": 2516.1
+  },
+  {
+   "epoch": 20,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4043.2,
+   "val_seconds": 319.6,
+   "jets_per_s": 2532.7
+  },
+  {
+   "epoch": 21,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4038.2,
+   "val_seconds": 320.1,
+   "jets_per_s": 2535.8
+  },
+  {
+   "epoch": 22,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4027.9,
+   "val_seconds": 312.5,
+   "jets_per_s": 2542.2
+  },
+  {
+   "epoch": 23,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4061.8,
+   "val_seconds": 320.2,
+   "jets_per_s": 2521.0
+  },
+  {
+   "epoch": 24,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4036.0,
+   "val_seconds": 320.3,
+   "jets_per_s": 2537.2
+  },
+  {
+   "epoch": 25,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4020.8,
+   "val_seconds": 309.1,
+   "jets_per_s": 2546.8
+  },
+  {
+   "epoch": 26,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4006.0,
+   "val_seconds": 308.9,
+   "jets_per_s": 2556.2
+  },
+  {
+   "epoch": 27,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4030.7,
+   "val_seconds": 311.9,
+   "jets_per_s": 2540.5
+  },
+  {
+   "epoch": 28,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4013.5,
+   "val_seconds": 312.3,
+   "jets_per_s": 2551.4
+  },
+  {
+   "epoch": 29,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4007.9,
+   "val_seconds": 310.4,
+   "jets_per_s": 2554.9
+  },
+  {
+   "epoch": 30,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4014.1,
+   "val_seconds": 311.2,
+   "jets_per_s": 2551.0
+  },
+  {
+   "epoch": 31,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4018.6,
+   "val_seconds": 310.4,
+   "jets_per_s": 2548.2
+  },
+  {
+   "epoch": 32,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4028.5,
+   "val_seconds": 311.2,
+   "jets_per_s": 2541.9
+  },
+  {
+   "epoch": 33,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4020.2,
+   "val_seconds": 310.8,
+   "jets_per_s": 2547.1
+  },
+  {
+   "epoch": 34,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4015.0,
+   "val_seconds": 312.0,
+   "jets_per_s": 2550.4
+  },
+  {
+   "epoch": 35,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4021.2,
+   "val_seconds": 311.4,
+   "jets_per_s": 2546.5
+  },
+  {
+   "epoch": 36,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4018.6,
+   "val_seconds": 310.5,
+   "jets_per_s": 2548.2
+  },
+  {
+   "epoch": 37,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4019.1,
+   "val_seconds": 312.8,
+   "jets_per_s": 2547.8
+  },
+  {
+   "epoch": 38,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4023.9,
+   "val_seconds": 311.2,
+   "jets_per_s": 2544.8
+  },
+  {
+   "epoch": 39,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4031.3,
+   "val_seconds": 310.9,
+   "jets_per_s": 2540.1
+  },
+  {
+   "epoch": 40,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4028.6,
+   "val_seconds": 311.4,
+   "jets_per_s": 2541.8
+  },
+  {
+   "epoch": 41,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4021.5,
+   "val_seconds": 311.5,
+   "jets_per_s": 2546.3
+  },
+  {
+   "epoch": 42,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4034.2,
+   "val_seconds": 313.1,
+   "jets_per_s": 2538.3
+  },
+  {
+   "epoch": 43,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4043.5,
+   "val_seconds": 311.6,
+   "jets_per_s": 2532.4
+  },
+  {
+   "epoch": 44,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4031.5,
+   "val_seconds": 312.1,
+   "jets_per_s": 2540.0
+  },
+  {
+   "epoch": 45,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4034.1,
+   "val_seconds": 316.7,
+   "jets_per_s": 2538.4
+  },
+  {
+   "epoch": 46,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4043.3,
+   "val_seconds": 320.4,
+   "jets_per_s": 2532.6
+  },
+  {
+   "epoch": 47,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4088.0,
+   "val_seconds": 320.1,
+   "jets_per_s": 2504.9
+  },
+  {
+   "epoch": 48,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4060.7,
+   "val_seconds": 321.1,
+   "jets_per_s": 2521.7
+  },
+  {
+   "epoch": 49,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4073.7,
+   "val_seconds": 321.2,
+   "jets_per_s": 2513.7
+  },
+  {
+   "epoch": 50,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4078.1,
+   "val_seconds": 321.8,
+   "jets_per_s": 2511.0
+  },
+  {
+   "epoch": 51,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4081.8,
+   "val_seconds": 320.9,
+   "jets_per_s": 2508.7
+  },
+  {
+   "epoch": 52,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4090.1,
+   "val_seconds": 321.0,
+   "jets_per_s": 2503.6
+  },
+  {
+   "epoch": 53,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4107.4,
+   "val_seconds": 327.3,
+   "jets_per_s": 2493.0
+  },
+  {
+   "epoch": 54,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4114.3,
+   "val_seconds": 323.0,
+   "jets_per_s": 2488.9
+  },
+  {
+   "epoch": 55,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4147.5,
+   "val_seconds": 323.1,
+   "jets_per_s": 2469.0
+  },
+  {
+   "epoch": 56,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4192.1,
+   "val_seconds": 323.6,
+   "jets_per_s": 2442.7
+  },
+  {
+   "epoch": 57,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4500.8,
+   "val_seconds": 310.5,
+   "jets_per_s": 2275.1
+  },
+  {
+   "epoch": 58,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4207.7,
+   "val_seconds": 314.7,
+   "jets_per_s": 2433.6
+  },
+  {
+   "epoch": 59,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4508.8,
+   "val_seconds": 342.2,
+   "jets_per_s": 2271.1
+  },
+  {
+   "epoch": 60,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4483.7,
+   "val_seconds": 325.1,
+   "jets_per_s": 2283.8
+  },
+  {
+   "epoch": 61,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4149.4,
+   "val_seconds": 316.3,
+   "jets_per_s": 2467.8
+  },
+  {
+   "epoch": 62,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4019.0,
+   "val_seconds": 309.9,
+   "jets_per_s": 2547.9
+  },
+  {
+   "epoch": 63,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4023.4,
+   "val_seconds": 310.0,
+   "jets_per_s": 2545.1
+  },
+  {
+   "epoch": 64,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4016.9,
+   "val_seconds": 311.3,
+   "jets_per_s": 2549.2
+  },
+  {
+   "epoch": 65,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4100.2,
+   "val_seconds": 309.0,
+   "jets_per_s": 2497.4
+  },
+  {
+   "epoch": 66,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4023.8,
+   "val_seconds": 309.5,
+   "jets_per_s": 2544.9
+  },
+  {
+   "epoch": 67,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4105.1,
+   "val_seconds": 320.1,
+   "jets_per_s": 2494.5
+  },
+  {
+   "epoch": 68,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4153.9,
+   "val_seconds": 309.3,
+   "jets_per_s": 2465.1
+  },
+  {
+   "epoch": 69,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 5012.5,
+   "val_seconds": 310.0,
+   "jets_per_s": 2042.9
+  },
+  {
+   "epoch": 70,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4104.0,
+   "val_seconds": 312.9,
+   "jets_per_s": 2495.1
+  },
+  {
+   "epoch": 71,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4047.9,
+   "val_seconds": 316.7,
+   "jets_per_s": 2529.7
+  },
+  {
+   "epoch": 72,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4280.6,
+   "val_seconds": 311.0,
+   "jets_per_s": 2392.2
+  },
+  {
+   "epoch": 73,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4398.0,
+   "val_seconds": 309.9,
+   "jets_per_s": 2328.3
+  },
+  {
+   "epoch": 74,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4026.2,
+   "val_seconds": 310.2,
+   "jets_per_s": 2543.3
+  },
+  {
+   "epoch": 75,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4030.2,
+   "val_seconds": 311.7,
+   "jets_per_s": 2540.8
+  },
+  {
+   "epoch": 76,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4019.7,
+   "val_seconds": 310.4,
+   "jets_per_s": 2547.5
+  },
+  {
+   "epoch": 77,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4025.9,
+   "val_seconds": 310.7,
+   "jets_per_s": 2543.5
+  },
+  {
+   "epoch": 78,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4031.1,
+   "val_seconds": 310.4,
+   "jets_per_s": 2540.3
+  },
+  {
+   "epoch": 79,
+   "device": "NVIDIA GeForce RTX 3090",
+   "train_seconds": 4034.2,
+   "val_seconds": 309.8,
+   "jets_per_s": 2538.3
+  }
+ ]
+}
