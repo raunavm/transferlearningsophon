@@ -137,13 +137,17 @@ def test_the_expected_cell_list_on_disk_is_the_generators_and_covers_every_spec(
     assert len(on_disk["scratch/leg1"]) == 12
 
 
-def test_every_v2_run_is_fine_tuned_once_per_rule_on_every_leg(v2):
-    runs = {n for n, *_ in B.v2_runs()}
+def test_every_paper_run_is_fine_tuned_once_per_rule_on_every_leg_in_a_spec_of_its_own(v2):
+    runs = {n for n, d, *_ in B.v2_runs() if d.rsplit("/", 1)[1] in B.v2_paper_runs()}
+    assert len(runs) == len(B.v2_paper_runs()) == 27
     for rule in B.V2_RULES:
         for kind in ("legs", "bench"):
             got = [n for name, t in v2.items() if name.startswith(f"job-ft-v2-{kind}-{rule}-")
                    for n, *_ in _inits(t)]
             assert sorted(got) == sorted(runs), (rule, kind)
+            for name, t in v2.items():
+                if name.startswith(f"job-ft-v2-{kind}-{rule}-"):
+                    assert [n for n, *_ in _inits(t)] == [name[len(f"job-ft-v2-{kind}-{rule}-"):-len("-raunav.yaml")]]
     for name, t in v2.items():
         names = [n for n, *_ in _inits(t)]
         assert all(B._is_mpm(n) for n in names) or not any(B._is_mpm(n) for n in names)
@@ -181,7 +185,8 @@ def test_each_self_supervised_arm_has_its_own_init_names_and_the_self_supervised
         assert "case ${name} in mpm-*) continue;; esac" in _live(v2[f"job-ft-v2-legs-{rule}-t2mpm-raunav.yaml"])
 
 
-def test_every_v2_gpu_job_is_mine_pinned_to_the_3090_with_the_retry_policy(v2):
+def test_every_v2_gpu_job_is_mine_on_the_v2_gpus_with_the_retry_policy(v2):
+    mtx = _load("build_mtx_launch_v2ft", "scripts/build_mtx_launch.py")
     for name, t in v2.items():
         assert B.resumable(yaml.safe_load(t)["metadata"]["name"]) and B.RETRY_NOTE_RESUME in t
         assert "cell_resume.py prepare" in t and "seed_weaver.py" not in _live(t)
@@ -189,7 +194,12 @@ def test_every_v2_gpu_job_is_mine_pinned_to_the_3090_with_the_retry_policy(v2):
         d = yaml.safe_load(t)
         assert d["metadata"]["name"].endswith("-raunav")
         assert d["spec"]["backoffLimit"] == B.ROBUST_BACKOFF and "podFailurePolicy" in d["spec"]
-        assert 'values: ["NVIDIA-GeForce-RTX-3090"]' in t and 'values: ["us-west"]' in t
+        assert 'values: ["us-west"]' in t
+        # the scratch reference keeps the spec it ran under; the rest train on any v2 GPU (PI, 2026-10-24)
+        gpus = ("NVIDIA-GeForce-RTX-3090",) if name == SCRATCH else mtx.V2_ANY_GPU
+        assert "values: [" + ", ".join(f'"{g}"' for g in gpus) + "]" in t
+        if name != SCRATCH:
+            assert set(mtx.V2_BAD_NODES) | set(B.V2_FAULT_NODES) <= T._excluded(t)
         env = {e["name"]: e.get("value") for e in d["spec"]["template"]["spec"]["containers"][0]["env"]}
         # the scratch reference keeps the tag it was launched at (ledger ft-v2-legs-scratch)
         assert env["REPO_REF"] == (B.PIN_V2_SCRATCH if name == SCRATCH else B.PIN_V2)
@@ -307,8 +317,8 @@ def _first(v2, prefix):
 @pytest.mark.parametrize("pick", ["scratch", "legs", "bench"])
 def test_a_v2_spec_runs_under_bash_and_leaves_its_cells(v2, tmp_path, pick):
     name = {"scratch": lambda: SCRATCH,
-            "legs": lambda: _first(v2, "job-ft-v2-legs-best70-t1"),
-            "bench": lambda: _first(v2, "job-ft-v2-bench-best70-t1")}[pick]()
+            "legs": lambda: _first(v2, "job-ft-v2-legs-best70-"),
+            "bench": lambda: _first(v2, "job-ft-v2-bench-best70-")}[pick]()
     inits = _inits(v2[name])
     r, calls = _v2_run(v2[name], tmp_path, inits)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]

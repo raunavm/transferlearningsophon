@@ -994,15 +994,15 @@ def _retry_kw(name: str, kw: dict) -> dict:
     out = {**kw, "backoff": max(kw["backoff"], ROBUST_BACKOFF),
            "failure_policy": POD_FAILURE_POLICY_RESUME if resumable(name) else POD_FAILURE_POLICY}
     if resumable(name) and kw.get("gpu"):
-        out["exclude_hosts"] = tuple(kw.get("exclude_hosts", ())) + GPU_LOST_LATER
+        out["exclude_hosts"] = tuple(dict.fromkeys(tuple(kw.get("exclude_hosts", ())) + GPU_LOST_LATER))
     return out
 
 
 def job(name: str, script: str, *, gpu: bool, cpu: str, memory: str, shm: str,
         backoff: int, pin: str, header: str, exclude_hosts: tuple = (),
-        failure_policy: str = "") -> str:
+        failure_policy: str = "", gpus: tuple = ("NVIDIA-GeForce-RTX-3090",)) -> str:
     gpu_req = ', nvidia.com/gpu: "1"' if gpu else ""
-    gpu_env = ('        - name: GPU_PRODUCT\n          value: "NVIDIA-GeForce-RTX-3090"\n'
+    gpu_env = (f'        - name: GPU_PRODUCT\n          value: "{",".join(gpus)}"\n'
                if gpu else "")
     gpu_sched = ""
     if gpu:
@@ -1011,7 +1011,7 @@ def job(name: str, script: str, *, gpu: bool, cpu: str, memory: str, shm: str,
             '      - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }\n')
     product = ("              - key: nvidia.com/gpu.product\n"
                "                operator: In\n"
-               '                values: ["NVIDIA-GeForce-RTX-3090"]\n' if gpu else "")
+               '                values: [' + ", ".join(f'"{g}"' for g in gpus) + ']\n' if gpu else "")
     # NODES THAT ADVERTISE FREE GPUs AND THEN REJECT THE POD. Kubernetes tells
     # the scheduler nothing about a broken node until an admin taints it, so the
     # spec has to say so -- the reason scripts/exclude_node.py exists (38 pods
@@ -2415,21 +2415,27 @@ _SUBSETS_JC2_V2_FIXED = _derive(SUBSETS_JC2_V2, [
 ], "staging, hash before the move")
 
 
-def v2_groups(cells_of) -> list[tuple[str, list]]:
-    """(suffix, inits) per spec: every tier's supervised runs in up to N_SHARDS
-    balanced shards, its self-supervised runs in a spec of their own (the
-    conversion and their recipe are substituted per spec). One fine-tuning seed."""
-    runs = v2_runs()
-    out = []
-    for tier in sorted({r[3] for r in runs}):
-        sup = [(n, f"/workspace/ckpt/{n}.pt", k, [1]) for n, _, k, t in runs if t == tier and k]
-        ssl = [(n, f"/workspace/ckpt/{n}.pt", 0, [1]) for n, _, k, t in runs if t == tier and not k]
-        if sup:
-            out += [(f"t{tier}{chr(ord('a') + i)}", s)
-                    for i, s in enumerate(shard(sup, cells_of, min(N_SHARDS, len(sup)))) if s]
-        if ssl:
-            out.append((f"t{tier}mpm", ssl))
-    return out
+# Nodes whose GPU faulted under the v2 jobs (scripts/build_extract_jobs.py V2_GPU_FAULT_NODES).
+V2_FAULT_NODES = ("ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net",
+                  "nrp-01.laccd.edu", "k8s-chase-ci-01.calit2.optiputer.net")
+V2_PAPER_RUNS = ROOT / "configs" / "arms" / "v2_paper_runs.txt"
+
+
+def v2_paper_runs() -> list[str]:
+    """The run directories the paper reports (PI, 2026-10-22), in file order."""
+    return [ln.strip() for ln in V2_PAPER_RUNS.read_text().splitlines()
+            if ln.strip() and not ln.startswith("#")]
+
+
+def v2_groups() -> list[tuple[str, list]]:
+    """(suffix, inits) per spec: one spec per run the paper reports, named by its init,
+    so each run is fine-tuned as soon as it is DONE (PI, 2026-10-24) rather than in
+    shards that wait for their slowest run. All are supervised. One fine-tuning seed."""
+    runs = {d.rsplit("/", 1)[1]: (n, k) for n, d, k, _ in v2_runs()}
+    paper = v2_paper_runs()
+    assert set(paper) <= set(runs) and all(runs[d][1] for d in paper), paper
+    return [(runs[d][0], [(runs[d][0], f"/workspace/ckpt/{runs[d][0]}.pt", runs[d][1], [1])])
+            for d in paper]
 
 
 def cell_bytes(cell) -> float:
@@ -2452,7 +2458,7 @@ def v2_need() -> dict[str, float]:
     need = {f"job-ft-v2-{kind}-{rule}-{suffix}-raunav.yaml": spec_bytes(cells_of(s))
             for rule in V2_RULES
             for kind, cells_of in (("legs", cells_legs), ("bench", cells_bench_v2ckpt))
-            for suffix, s in v2_groups(cells_of)}
+            for suffix, s in v2_groups()}
     # The from-scratch reference is already running (ledger ft-v2-legs-scratch), so the df
     # the budget is checked against may already hold part of its output: counting it in
     # full is an upper bound, conservative by at most its 2.6 GB.
@@ -2472,7 +2478,7 @@ def v2_expected_cells() -> dict:
     out = {}
     for rule in V2_RULES:
         for kind, cells_of in (("legs", cells_legs), ("bench", cells_bench_v2ckpt)):
-            for suffix, s in v2_groups(cells_of):
+            for suffix, s in v2_groups():
                 for leg, n, N, sd in cells_of(s):
                     out.setdefault(f"{rule}/{leg}", []).append(f"{n}/N{N}/s{sd}")
     out["scratch/leg1"] = [f"{SCRATCH_REF}/N{N}/s{sd}" for sd in INITS_LATER[SCRATCH_REF][0][3] for N in SIZES]
@@ -2513,6 +2519,12 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
     h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
     gpu = dict(gpu=True, cpu="4", memory="88Gi", shm="8Gi", backoff=1, pin=pin,
                exclude_hosts=BAD_NODES + LOST_GPU_NODES)
+    # The fine-tuning of each run trains on any GPU the v2 pretraining may use (PI,
+    # 2026-10-21 and 2026-10-24; build_mtx_launch.V2_ANY_GPU), off every node the v2 jobs
+    # exclude. Each cell records its GPU. The from-scratch reference keeps its spec.
+    mtx = _mtx_launch()
+    off = tuple(dict.fromkeys(BAD_NODES + LOST_GPU_NODES + mtx.V2_BAD_NODES + V2_FAULT_NODES))
+    any_gpu = {**gpu, "gpus": mtx.V2_ANY_GPU, "exclude_hosts": off}
     specs = {}
     if subsets:
         name = "ft-subsets-jc2-v2-raunav"
@@ -2533,7 +2545,7 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
     for rule in V2_RULES:
         for kind, cells_of, script in (("legs", cells_legs, legs_v2),
                                        ("bench", cells_bench_v2ckpt, bench_v2ckpt)):
-            for suffix, s in v2_groups(cells_of):
+            for suffix, s in v2_groups():
                 name = f"ft-v2-{kind}-{rule}-{suffix}-raunav"
                 cells = cells_of(s)
                 what = ("JetClass-II on the held-out subsets (fixed-sample validation) and\n"
@@ -2541,7 +2553,7 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
                         "top and quark/gluon (with Herwig) at bench v2's\n"
                         "  # recipe; the full training set also scored at its last epoch")
                 specs[f"job-{name}.yaml"] = job(
-                    name, _fill(script(s, name, rule), pin, inits=s), **_retry_kw(name, gpu),
+                    name, _fill(script(s, name, rule), pin, inits=s), **_retry_kw(name, any_gpu),
                     header=h + _retry_note(name)
                     + f"  # v2 FINE-TUNING ({kind}), pretrained checkpoint rule {rule}: {what}.\n"
                       "  # DO NOT APPLY before these v2 checkpoints exist.\n"

@@ -110,10 +110,12 @@ def test_one_readout_per_rule_leg_and_scope(ro):
     assert set(ro) == {_name(r, leg, "") for r in B.V2_RULES for leg in LEGS}
 
 
-def test_the_expected_cells_are_every_grid_run_at_every_size():
+def test_the_expected_cells_are_every_paper_run_at_every_size():
+    # the 27 runs the paper reports (configs/arms/v2_paper_runs.txt), of the 37 in the grid
     expected = json.loads((ROOT / B.V2_EXPECTED).read_text())
-    runs = {n for n, *_ in B.v2_runs()}
-    assert len(runs) == 37
+    assert len(B.v2_runs()) == 37
+    runs = {n for n, d, *_ in B.v2_runs() if d.rsplit("/", 1)[1] in B.v2_paper_runs()}
+    assert len(runs) == 27
     assert set(expected) == {f"best70/{leg}" for leg in ("leg1", "leg2", "leg_top", "leg_qg")} | {"scratch/leg1"}
     for key, cells in expected.items():
         if key != "scratch/leg1":
