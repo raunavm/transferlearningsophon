@@ -886,7 +886,9 @@ GPU_FAULT_NODES = BAD_GPU_NODES + ("ry-gpu-10.sdsc.optiputer.net",)
 V2_GPU_FAULT_NODES = GPU_FAULT_NODES + ("ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net",
                                         "nrp-01.laccd.edu", "k8s-chase-ci-01.calit2.optiputer.net",
                                         # 2026-10-26: refused 5 attempts of linprobe-fit-init-s3 ("GPU is lost")
-                                        "k8s-haosu-15.sdsc.optiputer.net")
+                                        "k8s-haosu-15.sdsc.optiputer.net",
+                                        # 2026-10-26: one NaN batch in linprobe-x-flavf1-s1, then the node went silent
+                                        "ucm-fiona01.ucmerced.edu")
 GPU_OK = ("          gpu_ok () { timeout 300 python3 -c 'import torch; "
           "torch.ones(8, device=\"cuda\").add_(1).sum().item()' >/dev/null 2>&1; }\n"
           "          gpu_ok || { echo \"no working GPU on $(hostname); retried elsewhere\"; exit 137; }\n")
