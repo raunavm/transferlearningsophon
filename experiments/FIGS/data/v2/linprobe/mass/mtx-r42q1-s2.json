@@ -1,0 +1,180 @@
+{
+  "prediction": "S7: resolution improves with the mass output at both granularities; larger gain at 17 classes; without the mass output, finer labels give equal or better resolution",
+  "target": "log(genjet_sdmass / jet_sdmass), the groomed log mass-ratio",
+  "resolution_statistic": "sigma_eff = half the SMALLEST interval containing 68% of the residual area (CMS-DP-2021-017 p.5; CERN-THESIS-2024-281 p.172). The central 68% half-width and the standard deviation are reported beside it and carry no prediction.",
+  "residual": "log(m_predicted / m_true); exponentiating gives the mass response ratio the field quantifies",
+  "centering": "per-188-native-class mean of the target, fitted on the training split only; subsumes family-mean removal",
+  "tail": "reported as the share with |residual| > 1.0, never trimmed",
+  "split_seed": 20260822,
+  "tail_at": 1.0,
+  "cpu_model": "Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz",
+  "readout": "features",
+  "row_alignment_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba",
+  "n_jets_total": 2000000,
+  "n_jets_valid": 1993321,
+  "script_sha256": "8b852f7091c0ace81d4bddae657ccc93a00ebc6bc3267561767a59c082a2a5a0",
+  "arms": {
+    "best70": {
+      "ridge": {
+        "sigma_eff": 0.33115585126613767,
+        "sigma_eff_interval": [
+          -0.3668113298224055,
+          0.2955003727098698
+        ],
+        "sigma68_central": 0.3337625751400908,
+        "sd": 0.6232021431001022,
+        "median": -0.032918245631207994,
+        "mode_of_eff_interval": -0.035655478556267856,
+        "fractional": 0.39257681025556634,
+        "tail_fraction": 0.06162935089369708,
+        "tail_at": 1.0,
+        "n": 398625,
+        "alpha": 0.01,
+        "val_r2": 0.22775453447443628
+      },
+      "mlp": {
+        "sigma_eff": 0.24621514198287364,
+        "sigma_eff_interval": [
+          -0.26301284908519296,
+          0.22941743488055433
+        ],
+        "sigma68_central": 0.2500803730683906,
+        "sd": 0.5561516564032395,
+        "median": -0.008306211830002908,
+        "mode_of_eff_interval": -0.016797707102319315,
+        "fractional": 0.2791747481316283,
+        "tail_fraction": 0.04724741298212606,
+        "tail_at": 1.0,
+        "n": 398625,
+        "fit": {
+          "per_seed": [
+            {
+              "seed": 0,
+              "val_mse": 0.6088806986808777
+            },
+            {
+              "seed": 1,
+              "val_mse": 0.6103436946868896
+            },
+            {
+              "seed": 2,
+              "val_mse": 0.6117215156555176
+            }
+          ],
+          "n_seeds": 3,
+          "torch_threads": 4,
+          "cpu_model": "Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz"
+        }
+      },
+      "target": {
+        "sigma_eff": 0.2986301355609203,
+        "sigma_eff_interval": [
+          -0.19555031628123337,
+          0.4017099548406072
+        ],
+        "sigma68_central": 0.30177445558271,
+        "sd": 0.7072900698298847,
+        "median": 0.047202968513377824,
+        "mode_of_eff_interval": 0.1030798192796869,
+        "fractional": 0.3480109499439186,
+        "tail_fraction": 0.08325117591721543,
+        "tail_at": 1.0,
+        "n": 398625
+      },
+      "provenance": {
+        "label188_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba",
+        "n_jets": 2000000,
+        "cache": "v2",
+        "checkpoint_sha256": "ecabf6d20d595d888e8e90e16303b4a8c8cde2794187ee831dc9396fea1a967f"
+      }
+    },
+    "best70_bn": {
+      "ridge": {
+        "sigma_eff": 0.33138924806164544,
+        "sigma_eff_interval": [
+          -0.36535496048140925,
+          0.2974235356418816
+        ],
+        "sigma68_central": 0.33393391906028147,
+        "sd": 0.6234203587463665,
+        "median": -0.032723946857148745,
+        "mode_of_eff_interval": -0.033965712419763816,
+        "fractional": 0.39290187115318875,
+        "tail_fraction": 0.06166447162119787,
+        "tail_at": 1.0,
+        "n": 398625,
+        "alpha": 10.0,
+        "val_r2": 0.22723459464627194
+      },
+      "mlp": {
+        "sigma_eff": 0.24607770616454866,
+        "sigma_eff_interval": [
+          -0.25904495057329546,
+          0.23311046175580186
+        ],
+        "sigma68_central": 0.24946860342066904,
+        "sd": 0.5559848893127487,
+        "median": -0.008959358884675375,
+        "mode_of_eff_interval": -0.012967244408746803,
+        "fractional": 0.2789989557836975,
+        "tail_fraction": 0.04723486986516149,
+        "tail_at": 1.0,
+        "n": 398625,
+        "fit": {
+          "per_seed": [
+            {
+              "seed": 0,
+              "val_mse": 0.6092531085014343
+            },
+            {
+              "seed": 1,
+              "val_mse": 0.6103929281234741
+            },
+            {
+              "seed": 2,
+              "val_mse": 0.6109032034873962
+            }
+          ],
+          "n_seeds": 3,
+          "torch_threads": 4,
+          "cpu_model": "Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz"
+        }
+      },
+      "target": {
+        "sigma_eff": 0.2986301355609203,
+        "sigma_eff_interval": [
+          -0.19555031628123337,
+          0.4017099548406072
+        ],
+        "sigma68_central": 0.30177445558271,
+        "sd": 0.7072900698298847,
+        "median": 0.047202968513377824,
+        "mode_of_eff_interval": 0.1030798192796869,
+        "fractional": 0.3480109499439186,
+        "tail_fraction": 0.08325117591721543,
+        "tail_at": 1.0,
+        "n": 398625
+      },
+      "provenance": {
+        "label188_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba",
+        "n_jets": 2000000,
+        "cache": "v2",
+        "checkpoint_sha256": "eb2a91d4d77c14d148ae8dc914cd06170993e1a71a0bc743bd3962f9c0e4f6e4"
+      }
+    }
+  },
+  "centering_detail": {
+    "n_classes_present": 188,
+    "n_classes_used": 184,
+    "min_train_per_class": 50,
+    "n_jets_dropped_small_class": 196,
+    "n_jets_used": 1993125,
+    "split": [
+      1195875,
+      398625,
+      398625
+    ]
+  },
+  "n_classes_used": 184,
+  "labels_used_sha256": "08f4501f5bec77cdb190c2d10bdc785afcb14cfc2d8ba131f0bb10ec6f791220"
+}

@@ -2301,7 +2301,7 @@
     "json_path": "runs with a compute record (count)",
     "sha256": "c003997fb7b9ea68110b05222281c1f1754a6fdf5a3381e077c801a7af7077a3",
     "source_file": "experiments/FIGS/data/v2/compute/mtx-flavf0-s1.json",
-    "value": "16"
+    "value": "18"
   },
   "DesignBatchSize": {
     "json_path": "--batch-size",
@@ -5019,7 +5019,7 @@
     "json_path": "runs with a linear-probe fit (count)",
     "sha256": "eeb9745cbb642a4ff96a0f3466149080dde5f68967b50699791bc7def3b0d096",
     "source_file": "experiments/FIGS/data/v2/linprobe/fits3000/mtx-l188-s3.json",
-    "value": "15"
+    "value": "18"
   },
   "PairedAnomalyClassSumMatchedLateXBbFourthreeOverOneeighteight": {
     "json_path": "families.class_sum_matched.label_X_bb.2000.levels.{43,188}.ln_sigma_min (epochs 70-79 mean)",
