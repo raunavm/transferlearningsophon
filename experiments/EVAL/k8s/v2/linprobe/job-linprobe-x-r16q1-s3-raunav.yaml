@@ -100,7 +100,7 @@ spec:
                 values: ["us-west"]
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: ["patternlab.calit2.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu", "k8s-chase-ci-01.calit2.optiputer.net"]
+                values: ["patternlab.calit2.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu", "k8s-chase-ci-01.calit2.optiputer.net", "k8s-haosu-15.sdsc.optiputer.net"]
               - key: nvidia.com/gpu.product
                 operator: NotIn
                 values: ["NVIDIA-GeForce-RTX-3090"]

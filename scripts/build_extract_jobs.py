@@ -884,7 +884,9 @@ GPU_FAULT_NODES = BAD_GPU_NODES + ("ry-gpu-10.sdsc.optiputer.net",)
 # 2026-10-22: k8s-chase-ci-01 rejected all 7 attempts of linprobe-fit-rand2p5-s2 at admission
 # ("GPU is lost": the device plugin's NVLink query fails, as on ry-gpu-01 in September).
 V2_GPU_FAULT_NODES = GPU_FAULT_NODES + ("ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net",
-                                        "nrp-01.laccd.edu", "k8s-chase-ci-01.calit2.optiputer.net")
+                                        "nrp-01.laccd.edu", "k8s-chase-ci-01.calit2.optiputer.net",
+                                        # 2026-10-26: refused 5 attempts of linprobe-fit-init-s3 ("GPU is lost")
+                                        "k8s-haosu-15.sdsc.optiputer.net")
 GPU_OK = ("          gpu_ok () { timeout 300 python3 -c 'import torch; "
           "torch.ones(8, device=\"cuda\").add_(1).sum().item()' >/dev/null 2>&1; }\n"
           "          gpu_ok || { echo \"no working GPU on $(hostname); retried elsewhere\"; exit 137; }\n")
