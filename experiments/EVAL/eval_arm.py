@@ -159,7 +159,11 @@ def metrics(probs, truth, k, qcd):
         if c == qcd:
             continue
         m = (truth == c) | (truth == qcd)
-        d = probs[m, c] / (probs[m, c] + probs[m, qcd])
+        # A jet the network puts wholly on a third class can have both probabilities
+        # rounded to exactly 0 (float32): it prefers neither side, so it scores the tie
+        # 0.5 rather than 0/0. Every other jet's discriminant is unchanged.
+        num, den = probs[m, c], probs[m, c] + probs[m, qcd]
+        d = np.divide(num, den, out=np.full_like(num, 0.5, dtype=np.float64), where=den > 0)
         y = (truth[m] == c).astype(int)
         fpr, tpr, _ = roc_curve(y, d)
         f = float(np.interp(EPS_S, tpr, fpr))

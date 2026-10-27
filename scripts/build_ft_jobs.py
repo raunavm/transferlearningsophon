@@ -2654,7 +2654,10 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
 # trained to a NaN loss (diverged()). The JSONs are copied to
 # experiments/FIGS/data/v2/{finetune,benchmarks}/<rule>[_t12]_<file> (make_tables.py's v2 layout). They
 # write ~10 MB to /data in all, so neither the storage budget nor space_ok applies.
-PIN_V2_READOUT = "mtx-s2.10"   # the 27 paper runs' expected cells (82998f2)
+# mtx-s2.10: the 27 paper runs' expected cells (82998f2); mtx-s2.12: eval_arm's tie for a jet
+# whose two probabilities round to 0, which stopped the JetClass read-out of the finished runs
+PIN_V2_READOUT = "mtx-s2.12"
+EVAL_ARM_TIE = {"experiments/EVAL/eval_arm.py": "scores the tie"}
 V2_READOUT_LEGS = ("leg1", "leg2", "bench")
 # where each read-out's JSONs are committed: make_tables.py's v2 layout (experiments/FIGS/data/v2/)
 V2_READOUT_COPY = {"leg1": "finetune", "leg2": "finetune", "bench": "benchmarks"}
@@ -2663,7 +2666,7 @@ V2_READOUT_FILES = {"leg1": ("leg1_metrics.json",), "leg2": ("leg2_metrics.json"
                               "bench_metrics_last.json", "bench_metrics_herwig_last.json")}
 # What the read-outs' tag must carry: each script's NaN guard, the full-set-only
 # last-epoch read, and the two records the read-outs check against.
-V2_READOUT_NEEDED = {"experiments/FT/leg1_metrics.py": "def diverged",
+V2_READOUT_NEEDED = {**EVAL_ARM_TIE, "experiments/FT/leg1_metrics.py": "def diverged",
                      "experiments/FT/leg2_metrics.py": "def diverged",
                      "experiments/FT/bench_metrics.py": "--sizes",
                      V2_EXPECTED: '"best70/leg_qg"',
@@ -2816,7 +2819,9 @@ def v2_readout(rule: str | None, leg: str, pin: str, scope: str = "") -> tuple[s
 # the read-outs above are unchanged.
 V2_TRIAL = "done18"
 V2_TRIAL_EXPECTED = "experiments/FT/data/ft_v2_expected_cells_done18.json"
-PIN_V2_TRIAL = "mtx-s2.11"     # the metric scripts' --inits
+# per leg, as each ran: mtx-s2.11 the metric scripts' --inits; leg 2 stopped there on a 0/0
+# (ledger ft-v2-best70-done18-metrics) and ran again at mtx-s2.12, which has eval_arm's tie
+PIN_V2_TRIAL = {"leg1": "mtx-s2.11", "leg2": "mtx-s2.12", "bench": "mtx-s2.11"}
 V2_TRIAL_NEEDED = {**{f"experiments/FT/{s}_metrics.py": '"--inits"' for s in ("leg1", "leg2", "bench")},
                    V2_TRIAL_EXPECTED: '"best70/leg_qg"', V2_SHA_TABLE: '"files"'}
 
@@ -3154,7 +3159,7 @@ def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = F
     elif v2_readouts:
         specs = _v2_readout_specs(pin)
     elif v2_trial_readouts:
-        specs = dict(v2_trial_readout(leg, pin) for leg in V2_READOUT_LEGS)
+        specs = dict(v2_trial_readout(leg, PIN_V2_TRIAL[leg]) for leg in V2_READOUT_LEGS)
     elif wave3 or bench_v2 or bench_v3:
         # ONLY the new specs, so a --wave3 / --bench-v2 run can never rewrite a
         # launched wave-1 or wave-2 file.
@@ -3214,7 +3219,7 @@ def main() -> int:
     ap.add_argument("--v2-readouts", action="store_true",
                     help=f"emit ONLY the v2 read-out specs (pin {PIN_V2_READOUT}), alone")
     ap.add_argument("--v2-trial-readouts", action="store_true",
-                    help=f"emit ONLY the read-outs of the runs finished before the split (pin {PIN_V2_TRIAL}) "
+                    help=f"emit ONLY the read-outs of the runs finished before the split (pins {PIN_V2_TRIAL}) "
                          f"and {V2_TRIAL_EXPECTED}, alone")
     ap.add_argument("--plan", action="store_true",
                     help="print cells and expected GPU-hours per shard, write nothing")
@@ -3246,12 +3251,13 @@ def main() -> int:
                                    or args.wave3 or args.bench_v2 or args.bench_v3_last):
         sys.exit("FATAL: --v2-trial-readouts is emitted alone; it pins its own tag")
     if args.v2_trial_readouts:
-        if args.pin == PIN:
-            args.pin = PIN_V2_TRIAL
+        if args.pin != PIN:
+            sys.exit("FATAL: --v2-trial-readouts pins each leg itself (PIN_V2_TRIAL)")
         if not args.check_only:
             (ROOT / V2_TRIAL_EXPECTED).write_text(json.dumps(v2_trial_expected_cells(), indent=1) + "\n")
             print(f"{V2_TRIAL_EXPECTED} written")
-        verify_pin(args.pin, args.pin_not_yet_tagged, V2_TRIAL_NEEDED)
+        for leg, pin in PIN_V2_TRIAL.items():
+            verify_pin(pin, args.pin_not_yet_tagged, {**V2_TRIAL_NEEDED, **(EVAL_ARM_TIE if leg == "leg2" else {})})
     if args.v2_readouts:
         if args.pin == PIN:
             args.pin = PIN_V2_READOUT
@@ -3298,7 +3304,8 @@ def main() -> int:
     for name, text in specs.items():
         if not args.check_only:
             (OUT_DIR / name).write_text(text)
-        print(f"{name:34s} {'checked' if args.check_only else 'written'} (pin {args.pin})")
+        ref = re.search(r'REPO_REF\n\s+value: "([^"]+)"', text)
+        print(f"{name:34s} {'checked' if args.check_only else 'written'} (pin {ref.group(1) if ref else args.pin})")
     return 0
 
 

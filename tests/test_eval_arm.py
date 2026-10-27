@@ -93,3 +93,24 @@ def test_metrics_rejects_unnormalised_scores():
     probs = np.full((4, 2), 3.0)
     with pytest.raises(SystemExit):
         ea.metrics(probs, truth, 2, qcd=1)
+
+
+def test_a_jet_wholly_on_a_third_class_scores_the_tie_not_nan():
+    """Two of the v2 JetClass fine-tunes at 1,000 jets (2026-10-27) put a few jets wholly on
+    a third class, both the class's and QCD's probability rounding to exactly 0: the
+    discriminant was 0/0 and the read-out stopped. Such a jet scores 0.5; the others are
+    exactly as before."""
+    rng = np.random.default_rng(1)
+    n = 4000
+    truth = rng.integers(0, 3, n)
+    probs = rng.dirichlet([1, 1, 1], n)
+    clean = ea.metrics(probs, truth, 3, qcd=2)
+    zero = probs.copy()
+    k = np.flatnonzero(truth == 0)[:3]
+    zero[k] = [0.0, 1.0, 0.0]
+    m = ea.metrics(zero, truth, 3, qcd=2)
+    key = f"rejection_vs_qcd_eff{ea.EPS_S}"
+    assert all(np.isfinite(v["rejection"]) for v in m[key].values())
+    assert m[key][1] == clean[key][1]                  # class 1 vs QCD has no 0/0 jet
+    d = np.divide(zero[:, 0], zero[:, 0] + zero[:, 2])
+    assert np.isnan(d[k]).all()                         # the case is real

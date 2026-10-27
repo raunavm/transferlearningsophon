@@ -43,7 +43,7 @@ def ro():
 
 @pytest.fixture(scope="module")
 def trial():
-    return B.build(B.PIN_V2_TRIAL, v2_trial_readouts=True)
+    return B.build(B.PIN, v2_trial_readouts=True)
 
 
 def _name(rule, leg, scope=""):
@@ -135,7 +135,7 @@ def test_the_readout_specs_on_disk_are_the_generators(ro, trial):
 
 
 def test_every_readout_is_a_cpu_job_of_mine_at_its_own_pin_with_the_retry_policy(ro):
-    assert B.PIN_V2_READOUT == "mtx-s2.10"
+    assert B.PIN_V2_READOUT == "mtx-s2.12"
     for name, t in ro.items():
         d = yaml.safe_load(t)
         assert name == f"job-{d['metadata']['name']}.yaml" and name.endswith("-raunav.yaml")
@@ -372,11 +372,11 @@ def test_the_trial_reads_the_runs_fine_tuned_before_the_split_and_expects_all_th
         assert B.V2_EXPECTED + ":" not in a
         env = {e["name"]: e.get("value") for e in
                yaml.safe_load(trial[name])["spec"]["template"]["spec"]["containers"][0]["env"]}
-        assert env["REPO_REF"] == B.PIN_V2_TRIAL
+        assert env["REPO_REF"] == B.PIN_V2_TRIAL[leg]
 
 
 def _final(leg):
-    return B.v2_readout("best70", leg, B.PIN_V2_TRIAL)[1]
+    return B.v2_readout("best70", leg, B.PIN_V2_TRIAL[leg])[1]
 
 
 def test_the_trial_differs_from_the_final_readout_only_where_it_must(trial):
@@ -411,10 +411,14 @@ def test_a_split_run_still_fine_tuning_does_not_stop_the_trial(trial, tmp_path):
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
     assert "NOT DONE" not in r.stdout and "--inits l188-s3 " in calls
     assert (data / "results/ft_v2/best70_done18_leg2_metrics").is_dir()
-    r, _ = _run(B.v2_readout("best70", "leg2", B.PIN_V2_TRIAL)[1], tmp_path)   # the final one still halts
+    r, _ = _run(B.v2_readout("best70", "leg2", B.PIN_V2_READOUT)[1], tmp_path)   # the final one still halts
     assert r.returncode == B.EXIT_HALT and f"NOT DONE: {half}" in r.stdout
 
 
 def test_the_trial_pins_a_tag_whose_tree_carries_inits():
-    assert B.PIN_V2_TRIAL == "mtx-s2.11" and B.PIN_V2_READOUT == "mtx-s2.10"
-    B.verify_pin(B.PIN_V2_TRIAL, True, B.V2_TRIAL_NEEDED)
+    # each leg as it ran; leg 2 again after eval_arm's tie (as the final read-outs)
+    assert B.PIN_V2_TRIAL == {"leg1": "mtx-s2.11", "leg2": "mtx-s2.12", "bench": "mtx-s2.11"}
+    assert B.PIN_V2_READOUT == "mtx-s2.12" and B.EVAL_ARM_TIE.items() <= B.V2_READOUT_NEEDED.items()
+    for leg, pin in B.PIN_V2_TRIAL.items():
+        B.verify_pin(pin, True, B.V2_TRIAL_NEEDED)
+    B.verify_pin(B.PIN_V2_READOUT, True, B.V2_READOUT_NEEDED)
