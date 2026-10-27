@@ -172,18 +172,18 @@ def test_each_readout_reads_its_rule_and_expects_every_cell_emitted_for_it(ro):
                 [(script, argv)] = calls
                 assert script == "leg1_metrics" and expected[f"{rule}/leg1"]
                 assert f"ROOT={B.V2_ROOT}/{rule}/leg1\n" in _args(t)
-                assert _flag(argv, "--root") == [f"${{ROOT}} {B.V2_ROOT}/scratch/leg1"]
+                assert _flag(argv, "--root") == [f"${{ROOT}} {B.V2_REF_ROOT}/jc2/leg1"]   # the V100 references
                 assert _flag(argv, "--auc-stride") == [str(B.LEG1_AUC_STRIDE)]
             elif leg == "leg2":
                 [(script, argv)] = calls
                 assert script == "leg2_metrics" and expected[f"{rule}/leg2"]
                 assert f"ROOT={B.V2_ROOT}/{rule}/leg2\n" in _args(t) and _flag(argv, "--macro-auc") == [True]
-                assert _flag(argv, "--ref-init") == [f"{B.W3_ROOT}/leg2/scratch-v2"]
+                assert _flag(argv, "--ref-init") == [f"{B.V2_REF_ROOT}/jc1/leg2/scratch-v2"]
                 assert _flag(argv, "--sha-table") == [B.V2_SHA_TABLE]
             else:
                 assert expected[f"{rule}/leg_top"] and expected[f"{rule}/leg_qg"]
                 assert f"ROOT={B.V2_ROOT}/{rule}\n" in _args(t)
-                refs = {d: f"{B.BENCH_V2_ROOT}/leg_{d}/scratch-v2" for d in ("top", "qg")}
+                refs = {d: f"{B.V2_REF_ROOT}/bench/leg_{d}/scratch-v2" for d in ("top", "qg")}
                 nmax = f"{B.BENCH_SIZES['top'][-1]} {B.BENCH_SIZES['qg'][-1]}"
                 got = {(bool(_flag(a, "--herwig")), tuple(_flag(a, "--features-dir"))):
                        (tuple(_flag(a, "--ref-init")), tuple(_flag(a, "--sizes"))) for s, a in calls}
@@ -196,9 +196,9 @@ def test_each_readout_reads_its_rule_and_expects_every_cell_emitted_for_it(ro):
 
 def test_the_reference_cells_checked_are_exactly_the_from_scratch_cells_read(ro):
     ref = B.INITS_LATER[B.SCRATCH_REF]
-    want = {"leg1": {f"{B.V2_ROOT}/scratch/leg1/{n}/N{N}/s{s}" for leg, n, N, s in B.cells_legs(ref) if leg == "leg1"},
-            "leg2": {f"{B.W3_ROOT}/leg2/{n}/N{N}/s{s}" for leg, n, N, s in B.cells_legs(ref) if leg == "leg2"},
-            "bench": {f"{B.BENCH_V2_ROOT}/{leg}/{n}/N{N}/s{s}" for leg, n, N, s in B.cells_bench(ref)}}
+    want = {"leg1": {f"{B.V2_REF_ROOT}/jc2/leg1/{n}/N{N}/s{s}" for leg, n, N, s in B.cells_legs(ref) if leg == "leg1"},
+            "leg2": {f"{B.V2_REF_ROOT}/jc1/leg2/{n}/N{N}/s{s}" for leg, n, N, s in B.cells_legs(ref) if leg == "leg2"},
+            "bench": {f"{B.V2_REF_ROOT}/bench/{leg}/{n}/N{N}/s{s}" for leg, n, N, s in B.cells_bench(ref)}}
     assert {k: len(v) for k, v in want.items()} == {"leg1": 12, "leg2": 12, "bench": 24}
     for rule in B.V2_RULES:
         for leg in LEGS:
@@ -286,7 +286,7 @@ def test_a_readout_runs_under_bash_writes_its_tables_and_refuses_a_second_run(ro
     assert calls.count("_metrics.py") == len(B.V2_READOUT_FILES[leg])
     assert not list((data / "results/ft_v2").glob("*.staging.*"))
     if leg == "leg1":
-        assert f"--root {data}/results/ft_v2/{rule}/leg1 {data}/results/ft_v2/scratch/leg1 " in calls
+        assert f"--root {data}/results/ft_v2/{rule}/leg1 {data}/results/ft_v2/ref_v100/jc2/leg1 " in calls
     # applied again, it refuses at once (exit 42 fails the Job) and reads nothing
     (tmp_path / "calls.log").unlink()
     r, calls = _run(ro[_name(rule, leg)], tmp_path)
@@ -376,7 +376,7 @@ def test_the_trial_reads_the_runs_fine_tuned_before_the_split_and_expects_all_th
 
 
 def _final(leg):
-    return B.v2_readout("best70", leg, B.PIN_V2_TRIAL[leg])[1]
+    return B.v2_readout("best70", leg, B.PIN_V2_TRIAL[leg], v100_refs=False)[1]
 
 
 def test_the_trial_differs_from_the_final_readout_only_where_it_must(trial):
@@ -398,7 +398,7 @@ def test_a_split_run_still_fine_tuning_does_not_stop_the_trial(trial, tmp_path):
         cell.mkdir(parents=True)
         (cell / "DONE").touch()
         (cell / "predict.log").touch()
-    words = re.search(r"for c in (.*); do", B._v2_readout_script("best70", "leg2")).group(1)
+    words = re.search(r"for c in (.*); do", B._v2_readout_script("best70", "leg2", v100_refs=False)).group(1)
     for c in subprocess.run(["bash", "-c", f"echo {words}"], capture_output=True, text=True).stdout.split():
         (data / c[len("/data/"):]).mkdir(parents=True)
         (data / c[len("/data/"):] / "DONE").touch()
@@ -411,7 +411,7 @@ def test_a_split_run_still_fine_tuning_does_not_stop_the_trial(trial, tmp_path):
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
     assert "NOT DONE" not in r.stdout and "--inits l188-s3 " in calls
     assert (data / "results/ft_v2/best70_done18_leg2_metrics").is_dir()
-    r, _ = _run(B.v2_readout("best70", "leg2", B.PIN_V2_READOUT)[1], tmp_path)   # the final one still halts
+    r, _ = _run(B.v2_readout("best70", "leg2", B.PIN_V2_READOUT, v100_refs=False)[1], tmp_path)   # the final one still halts
     assert r.returncode == B.EXIT_HALT and f"NOT DONE: {half}" in r.stdout
 
 
