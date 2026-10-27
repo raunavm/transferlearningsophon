@@ -9,10 +9,11 @@ metadata:
   # See "retries that survive a flaky cluster" in scripts/build_ft_jobs.py.
   # v2 FINE-TUNING (bench), pretrained checkpoint rule best70: top and quark/gluon (with Herwig) at bench v2's
   # recipe; the full training set also scored at its last epoch.
+  # This job: data set top only (V2_SPLIT_RUNS).
   # DO NOT APPLY before these v2 checkpoints exist.
   # inits: r16q1mass-s1
-  # 8 fine-tunes, ~8 GPU-h. Root /data/results/ft_v2/best70.
-  name: ft-v2-bench-best70-r16q1mass-s1-raunav
+  # 4 fine-tunes, ~3 GPU-h. Root /data/results/ft_v2/best70.
+  name: ft-v2-bench-best70-r16q1mass-s1-top-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 20
@@ -56,7 +57,7 @@ spec:
           export PYTHONUNBUFFERED=1
 
           ROOT_OUT=/data/results/ft_v2/best70
-          SHARD=ft-v2-bench-best70-r16q1mass-s1-raunav
+          SHARD=ft-v2-bench-best70-r16q1mass-s1-top-raunav
           NLOCKED=0
           mkdir -p ${ROOT_OUT}
           src_for () { case $1 in
@@ -188,7 +189,7 @@ spec:
           # check below, so the passes cannot duplicate work.
           SMOKE_NAME=$(set -- ${INITS}; echo ${1%%:*})
           for PASS in smoke nmax rest; do
-          for D in top qg; do
+          for D in top; do
             SUB=$(src_for ${D})_sub; CFG=$(cfg_for ${D}); TEST=$(test_for ${D})
             NMAX=$(nmax_for ${D})
             for spec in ${INITS}; do

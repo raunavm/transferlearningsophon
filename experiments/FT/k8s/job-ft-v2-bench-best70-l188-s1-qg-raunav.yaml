@@ -9,10 +9,11 @@ metadata:
   # See "retries that survive a flaky cluster" in scripts/build_ft_jobs.py.
   # v2 FINE-TUNING (bench), pretrained checkpoint rule best70: top and quark/gluon (with Herwig) at bench v2's
   # recipe; the full training set also scored at its last epoch.
+  # This job: data set qg only (V2_SPLIT_RUNS).
   # DO NOT APPLY before these v2 checkpoints exist.
-  # inits: l162mass-s1
-  # 8 fine-tunes, ~8 GPU-h. Root /data/results/ft_v2/best70.
-  name: ft-v2-bench-best70-l162mass-s1-raunav
+  # inits: l188-s1
+  # 4 fine-tunes, ~4 GPU-h. Root /data/results/ft_v2/best70.
+  name: ft-v2-bench-best70-l188-s1-qg-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 20
@@ -56,7 +57,7 @@ spec:
           export PYTHONUNBUFFERED=1
 
           ROOT_OUT=/data/results/ft_v2/best70
-          SHARD=ft-v2-bench-best70-l162mass-s1-raunav
+          SHARD=ft-v2-bench-best70-l188-s1-qg-raunav
           NLOCKED=0
           mkdir -p ${ROOT_OUT}
           src_for () { case $1 in
@@ -153,9 +154,9 @@ spec:
           # v2 PRETRAINED CHECKPOINTS, rule best70: ft_v2.py resolve links each run's
           # selected epoch to /workspace/ckpt/<init>.pt and records the choice in
           # <init>.pt.json, which every cell copies beside its result.
-          python3 experiments/FT/ft_v2.py resolve --run-dir /data/results/mtx_v2/mtx-l162mass-s1 --rule best70 --link /workspace/ckpt/l162mass-s1.pt || exit ${HALT}
+          python3 experiments/FT/ft_v2.py resolve --run-dir /data/results/mtx_v2/mtx-l188-s1 --rule best70 --link /workspace/ckpt/l188-s1.pt || exit ${HALT}
 
-          INITS="l162mass-s1:/workspace/ckpt/l162mass-s1.pt:163:1"
+          INITS="l188-s1:/workspace/ckpt/l188-s1.pt:188:1"
           for spec in ${INITS}; do
             name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}; k=${rest#*:}
             [ "${name}" = "scratch" ] && continue
@@ -188,7 +189,7 @@ spec:
           # check below, so the passes cannot duplicate work.
           SMOKE_NAME=$(set -- ${INITS}; echo ${1%%:*})
           for PASS in smoke nmax rest; do
-          for D in top qg; do
+          for D in qg; do
             SUB=$(src_for ${D})_sub; CFG=$(cfg_for ${D}); TEST=$(test_for ${D})
             NMAX=$(nmax_for ${D})
             for spec in ${INITS}; do

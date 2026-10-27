@@ -55,6 +55,19 @@ def _inits(text):
     return [(x.split(":")[0], x.split(":")[1], int(x.split(":")[2]), [1]) for x in s]
 
 
+def _cells(name, text):
+    """The cells a spec runs, read from its own loops: every training size (legs) or data
+    set (bench) it walks, so a run split over several jobs (V2_SPLIT_RUNS) is checked from
+    the specs rather than from the generator's split."""
+    a = _args(text)
+    if "-legs-" in name:
+        loops = re.findall(r"^ +for N in ([0-9 ]+); do$", a, re.M)
+        assert len(loops) == 2 and loops[0] == loops[1], name
+        return [c for c in B.cells_legs(_inits(text)) if str(c[2]) in loops[0].split()]
+    sets = re.search(r"for PASS in smoke nmax rest; do\n *for D in ([a-z ]+); do\n", a).group(1).split()
+    return [c for c in B.cells_bench_v2ckpt(_inits(text)) if c[0][4:] in sets]
+
+
 def test_the_v2_specs_on_disk_are_the_generators(v2):
     # the read-outs are --v2-readouts' (tests/test_ft_v2_readout_specs.py)
     on_disk = {p.name for p in K8S.glob("job-ft-v2-*.yaml") if not p.name.endswith("-metrics-raunav.yaml")}
@@ -68,8 +81,7 @@ HEADROOM_GB = (0.85 * 2199023255552 - 877528088576) / 1e9
 
 
 def test_the_storage_budget_holds_back_pretraining_and_the_extraction(v2, capsys):
-    every = sum(B.spec_bytes(B.cells_legs(_inits(t)) if "-legs-" in n and n != SCRATCH else
-                             B.cells_bench_v2ckpt(_inits(t)) if "-bench-" in n else
+    every = sum(B.spec_bytes(_cells(n, t) if n != SCRATCH else
                              [c for c in B.cells_legs(B.INITS_LATER["scratch-v2"]) if c[0] == "leg1"])
                 for n, t in v2.items())
     assert every == sum(B.v2_need().values()) and set(B.v2_need()) == set(v2)
@@ -142,12 +154,22 @@ def test_every_paper_run_is_fine_tuned_once_per_rule_on_every_leg_in_a_spec_of_i
     assert len(runs) == len(B.v2_paper_runs()) == 27
     for rule in B.V2_RULES:
         for kind in ("legs", "bench"):
-            got = [n for name, t in v2.items() if name.startswith(f"job-ft-v2-{kind}-{rule}-")
-                   for n, *_ in _inits(t)]
-            assert sorted(got) == sorted(runs), (rule, kind)
-            for name, t in v2.items():
-                if name.startswith(f"job-ft-v2-{kind}-{rule}-"):
-                    assert [n for n, *_ in _inits(t)] == [name[len(f"job-ft-v2-{kind}-{rule}-"):-len("-raunav.yaml")]]
+            specs = {name: t for name, t in v2.items() if name.startswith(f"job-ft-v2-{kind}-{rule}-")}
+            per_run = {}
+            for name, t in specs.items():
+                (init, *_), = _inits(t)
+                part = name[len(f"job-ft-v2-{kind}-{rule}-{init}"):-len("-raunav.yaml")]
+                assert name.startswith(f"job-ft-v2-{kind}-{rule}-{init}") and \
+                    re.fullmatch(r"(-n[0-9]+)?" if kind == "legs" else r"(-top|-qg)?", part), name
+                per_run.setdefault(init, []).append(_cells(name, t))
+            assert sorted(per_run) == sorted(runs), (rule, kind)
+            # each run's cells once, over one job or its split: none missing, none in two jobs
+            for init, parts in per_run.items():
+                every = [c for cells in parts for c in cells]
+                whole = (B.cells_legs if kind == "legs" else B.cells_bench_v2ckpt)(
+                    [(init, "", 1, [1])])
+                assert sorted(every) == sorted(whole), (kind, init)
+                assert len(parts) == (1 if init not in B.V2_SPLIT_RUNS else 4 if kind == "legs" else 2)
     for name, t in v2.items():
         names = [n for n, *_ in _inits(t)]
         assert all(B._is_mpm(n) for n in names) or not any(B._is_mpm(n) for n in names)

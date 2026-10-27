@@ -2438,6 +2438,39 @@ def v2_groups() -> list[tuple[str, list]]:
             for d in paper]
 
 
+# THE LAST RUNS' FINE-TUNING, SPLIT (2026-10-26). These runs were still pretraining when
+# the others' fine-tuning was nearly done. One job does a run's fine-tunes one after another
+# (the first 18 runs: ~17 h legs, ~11 h bench), so these would be the last thing the results
+# wait for. Each of their jobs is split over disjoint cells: legs one job per training size
+# (~4.4 h), bench one per data set (~5-6 h). Same cells, commands and seeds; only how many
+# run at once differs.
+V2_SPLIT_RUNS = ("r16q1mass-s1", "l162mass-s1", "l162mass-s2", "l188-s1", "r16q1-s2",
+                 "flavf1r-s2", "l188-s2", "l162-s3", "r16q1-s3")
+
+
+def v2_parts(kind: str, suffix: str) -> list:
+    """[(name part, what the job keeps)] of one run's legs or bench fine-tuning: the one
+    job, or for V2_SPLIT_RUNS one job per training size (legs) or data set (bench)."""
+    if suffix not in V2_SPLIT_RUNS:
+        return [("", None)]
+    return [(f"-n{n}", n) for n in SIZES] if kind == "legs" else [(f"-{d}", d) for d in BENCH_SETS]
+
+
+def _part_cells(cells, kind: str, part) -> list:
+    return cells if part is None else [c for c in cells
+                                       if (c[2] == part if kind == "legs" else c[0] == f"leg_{part}")]
+
+
+def _part_script(text: str, kind: str, part, what: str) -> str:
+    if part is None:
+        return text
+    if kind == "legs":
+        loop = f"              for N in {' '.join(map(str, SIZES))}; do\n"
+        return _derive(text, [(loop, f"              for N in {part}; do\n", 2)], what)
+    loop = f"          for PASS in smoke nmax rest; do\n          for D in {' '.join(BENCH_SETS)}; do\n"
+    return _derive(text, [(loop, f"          for PASS in smoke nmax rest; do\n          for D in {part}; do\n", 1)], what)
+
+
 def cell_bytes(cell) -> float:
     leg, _, n, _ = cell
     if leg in ("leg1", "leg2"):
@@ -2455,10 +2488,10 @@ def v2_need() -> dict[str, float]:
     """{spec: bytes it leaves on /data} for every v2 fine-tuning spec _v2_specs emits. The
     v2 extraction's sizing (experiments/EVAL/extraction_v2_sizing.py) counts the same total,
     so the two plans are checked against one /data budget."""
-    need = {f"job-ft-v2-{kind}-{rule}-{suffix}-raunav.yaml": spec_bytes(cells_of(s))
+    need = {f"job-ft-v2-{kind}-{rule}-{suffix}{p}-raunav.yaml": spec_bytes(_part_cells(cells_of(s), kind, part))
             for rule in V2_RULES
             for kind, cells_of in (("legs", cells_legs), ("bench", cells_bench_v2ckpt))
-            for suffix, s in v2_groups()}
+            for suffix, s in v2_groups() for p, part in v2_parts(kind, suffix)}
     # The from-scratch reference is already running (ledger ft-v2-legs-scratch), so the df
     # the budget is checked against may already hold part of its output: counting it in
     # full is an upper bound, conservative by at most its 2.6 GB.
@@ -2542,21 +2575,26 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
         raise SystemExit(f"FATAL: {V2_SHA_TABLE} is not in the tree: copy it from "
                          f"{V2_SUBSETS}/ft_v2_subsets_sha256.json after the staging job")
     need = v2_need()
+    assert set(V2_SPLIT_RUNS) <= {s for s, _ in v2_groups()}, V2_SPLIT_RUNS
     for rule in V2_RULES:
         for kind, cells_of, script in (("legs", cells_legs, legs_v2),
                                        ("bench", cells_bench_v2ckpt, bench_v2ckpt)):
             for suffix, s in v2_groups():
-                name = f"ft-v2-{kind}-{rule}-{suffix}-raunav"
-                cells = cells_of(s)
+              for p, part in v2_parts(kind, suffix):
+                name = f"ft-v2-{kind}-{rule}-{suffix}{p}-raunav"
+                cells = _part_cells(cells_of(s), kind, part)
                 what = ("JetClass-II on the held-out subsets (fixed-sample validation) and\n"
                         "  # JetClass, wave 3's recipe" if kind == "legs" else
                         "top and quark/gluon (with Herwig) at bench v2's\n"
                         "  # recipe; the full training set also scored at its last epoch")
                 specs[f"job-{name}.yaml"] = job(
-                    name, _fill(script(s, name, rule), pin, inits=s), **_retry_kw(name, any_gpu),
+                    name, _part_script(_fill(script(s, name, rule), pin, inits=s), kind, part, name),
+                    **_retry_kw(name, any_gpu),
                     header=h + _retry_note(name)
                     + f"  # v2 FINE-TUNING ({kind}), pretrained checkpoint rule {rule}: {what}.\n"
-                      "  # DO NOT APPLY before these v2 checkpoints exist.\n"
+                    + (f"  # This job: {'training size N=' if kind == 'legs' else 'data set '}{part} only "
+                       "(V2_SPLIT_RUNS).\n" if part is not None else "")
+                    + "  # DO NOT APPLY before these v2 checkpoints exist.\n"
                       f"  # inits: {' '.join(n for n, *_ in s)}\n"
                       f"  # {len(cells)} fine-tunes, ~{math.fsum(cost_h(c) for c in cells):.0f} GPU-h. "
                       f"Root {V2_ROOT}/{rule}.\n")

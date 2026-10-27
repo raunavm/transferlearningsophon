@@ -9,10 +9,11 @@ metadata:
   # See "retries that survive a flaky cluster" in scripts/build_ft_jobs.py.
   # v2 FINE-TUNING (legs), pretrained checkpoint rule best70: JetClass-II on the held-out subsets (fixed-sample validation) and
   # JetClass, wave 3's recipe.
+  # This job: training size N=1000000 only (V2_SPLIT_RUNS).
   # DO NOT APPLY before these v2 checkpoints exist.
-  # inits: r16q1-s3
-  # 8 fine-tunes, ~8 GPU-h. Root /data/results/ft_v2/best70.
-  name: ft-v2-legs-best70-r16q1-s3-raunav
+  # inits: l188-s1
+  # 2 fine-tunes, ~2 GPU-h. Root /data/results/ft_v2/best70.
+  name: ft-v2-legs-best70-l188-s1-n1000000-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 20
@@ -58,7 +59,7 @@ spec:
           SUB2=/data/finetune/jc2_v2
           SUB1=/data/finetune/jc1
           ROOT_OUT=/data/results/ft_v2/best70
-          SHARD=ft-v2-legs-best70-r16q1-s3-raunav
+          SHARD=ft-v2-legs-best70-l188-s1-n1000000-raunav
           NLOCKED=0
           mkdir -p ${ROOT_OUT}
 
@@ -126,9 +127,9 @@ spec:
           # v2 PRETRAINED CHECKPOINTS, rule best70: ft_v2.py resolve links each run's
           # selected epoch to /workspace/ckpt/<init>.pt and records the choice in
           # <init>.pt.json, which every cell copies beside its result.
-          python3 experiments/FT/ft_v2.py resolve --run-dir /data/results/mtx_v2/mtx-r16q1-s3 --rule best70 --link /workspace/ckpt/r16q1-s3.pt || exit ${HALT}
+          python3 experiments/FT/ft_v2.py resolve --run-dir /data/results/mtx_v2/mtx-l188-s1 --rule best70 --link /workspace/ckpt/l188-s1.pt || exit ${HALT}
 
-          INITS="r16q1-s3:/workspace/ckpt/r16q1-s3.pt:17:1"
+          INITS="l188-s1:/workspace/ckpt/l188-s1.pt:188:1"
           for spec in ${INITS}; do
             name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}; k=${rest#*:}; k=${k%%:*}
             [ "${name}" = "scratch" ] && continue
@@ -169,7 +170,7 @@ spec:
           for spec in ${INITS}; do
             name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}; seeds=${spec##*:}
             for S in ${seeds//,/ }; do
-              for N in 1000 10000 100000 1000000; do
+              for N in 1000000; do
                 OUT=${ROOT_OUT}/leg1/${name}/N${N}/s${S}
                 [ -f ${OUT}/DONE ] && { echo "skip ${OUT} (DONE)"; continue; }
                 # ONE CELL, ONE POD. cell_resume.py lock claims the cell atomically (a
@@ -258,7 +259,7 @@ spec:
           for spec in ${INITS}; do
             name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}; seeds=${spec##*:}
             for S in ${seeds//,/ }; do
-              for N in 1000 10000 100000 1000000; do
+              for N in 1000000; do
                 OUT=${ROOT_OUT}/leg2/${name}/N${N}/s${S}
                 [ -f ${OUT}/DONE ] && { echo "skip ${OUT} (DONE)"; continue; }
                 # ONE CELL, ONE POD. cell_resume.py lock claims the cell atomically (a

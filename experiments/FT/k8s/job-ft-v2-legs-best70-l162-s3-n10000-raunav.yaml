@@ -9,10 +9,11 @@ metadata:
   # See "retries that survive a flaky cluster" in scripts/build_ft_jobs.py.
   # v2 FINE-TUNING (legs), pretrained checkpoint rule best70: JetClass-II on the held-out subsets (fixed-sample validation) and
   # JetClass, wave 3's recipe.
+  # This job: training size N=10000 only (V2_SPLIT_RUNS).
   # DO NOT APPLY before these v2 checkpoints exist.
   # inits: l162-s3
-  # 8 fine-tunes, ~8 GPU-h. Root /data/results/ft_v2/best70.
-  name: ft-v2-legs-best70-l162-s3-raunav
+  # 2 fine-tunes, ~2 GPU-h. Root /data/results/ft_v2/best70.
+  name: ft-v2-legs-best70-l162-s3-n10000-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 20
@@ -58,7 +59,7 @@ spec:
           SUB2=/data/finetune/jc2_v2
           SUB1=/data/finetune/jc1
           ROOT_OUT=/data/results/ft_v2/best70
-          SHARD=ft-v2-legs-best70-l162-s3-raunav
+          SHARD=ft-v2-legs-best70-l162-s3-n10000-raunav
           NLOCKED=0
           mkdir -p ${ROOT_OUT}
 
@@ -169,7 +170,7 @@ spec:
           for spec in ${INITS}; do
             name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}; seeds=${spec##*:}
             for S in ${seeds//,/ }; do
-              for N in 1000 10000 100000 1000000; do
+              for N in 10000; do
                 OUT=${ROOT_OUT}/leg1/${name}/N${N}/s${S}
                 [ -f ${OUT}/DONE ] && { echo "skip ${OUT} (DONE)"; continue; }
                 # ONE CELL, ONE POD. cell_resume.py lock claims the cell atomically (a
@@ -258,7 +259,7 @@ spec:
           for spec in ${INITS}; do
             name=${spec%%:*}; rest=${spec#*:}; ckpt=${rest%%:*}; seeds=${spec##*:}
             for S in ${seeds//,/ }; do
-              for N in 1000 10000 100000 1000000; do
+              for N in 10000; do
                 OUT=${ROOT_OUT}/leg2/${name}/N${N}/s${S}
                 [ -f ${OUT}/DONE ] && { echo "skip ${OUT} (DONE)"; continue; }
                 # ONE CELL, ONE POD. cell_resume.py lock claims the cell atomically (a
