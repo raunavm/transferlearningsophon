@@ -28,7 +28,10 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "linprobe"
 LP_PIN = "mtx-s2.03"         # extraction (extract_v2.py --no-pooled)
-FIT_PIN = "mtx-s2.08"        # fitting (linear_probe_v2.py, torch L-BFGS to 3000 iterations, TF32 recorded; mass_resolution.py)
+# fitting (linear_probe_v2.py, torch L-BFGS to 3000 iterations, TF32 recorded; mass_resolution.py):
+# mtx-s2.08 for every fit run before 2026-10-27; mtx-s2.12 adds only eval_arm's tie for a jet whose
+# two probabilities round to 0 (which would have stopped a fit), so its fits equal mtx-s2.08's
+FIT_PIN = "mtx-s2.12"
 LP_ROOT = "/data/results/eval/v2_linprobe"
 FITS = "fits3000"   # fits at MAX_ITER 3000; LP_ROOT/fits holds the mtx-s2.06 smoke fit (1000, short of convergence)
 MASS_OBS = "/data/results/eval/test2m_observers"   # generator-level groomed mass of TEST2M
@@ -42,7 +45,8 @@ X_MEM = "88Gi"
 # What each tag must carry for what its jobs run.
 NEEDED = {"experiments/EVAL/extract_v2.py": "--no-pooled"}
 FIT_NEEDED = {"experiments/EVAL/linear_probe_v2.py": "\"tf32\": tf32",
-              "experiments/EVAL/mass_resolution.py": "n_max: int | None = None"}
+              "experiments/EVAL/mass_resolution.py": "n_max: int | None = None",
+              "experiments/EVAL/eval_arm.py": "scores the tie"}
 
 
 def _load(name: str, rel: str):
