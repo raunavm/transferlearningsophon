@@ -7,12 +7,15 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
   compute/<run>.json               per epoch of every finished run: the GPU it trained on and
                                    the seconds of its training and validation passes, read from
                                    <run>/metrics/epoch-NNN.json
+  index.json                       {path: sha256} of every file above: the single source the
+                                   macros counted over many files cite (mlst_results.py checks it)
 
 Only finished runs (a DONE marker) are taken, so a run is never read half-trained.
 
     kubectl exec -i -n cms-ml <pod> -- python3 - < experiments/FIGS/pull_mlst_data.py \\
         | tar xzf - -C experiments/FIGS/data/v2
 """
+import hashlib
 import io
 import json
 import pathlib
@@ -37,11 +40,13 @@ def compute(run: pathlib.Path) -> dict:
 
 def main() -> int:
     buf = io.BytesIO()
+    index = {}
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:
         def add(name: str, data: bytes):
             info = tarfile.TarInfo(name)
             info.size = len(data)
             tar.addfile(info, io.BytesIO(data))
+            index[name] = hashlib.sha256(data).hexdigest()
         for f in sorted((LP / "fits3000").glob("*.json")):
             add(f"linprobe/fits3000/{f.name}", f.read_bytes())
         for f in sorted((LP / "mass").glob("*/mass_resolution.json")):
@@ -49,6 +54,7 @@ def main() -> int:
         for run in sorted(MTX.glob("mtx-*")):
             if (run / "DONE").exists():
                 add(f"compute/{run.name}.json", (json.dumps(compute(run), indent=1) + "\n").encode())
+        add("index.json", (json.dumps(dict(sorted(index.items())), indent=1) + "\n").encode())
     sys.stdout.buffer.write(buf.getvalue())
     return 0
 

@@ -8,6 +8,8 @@ Inputs, under experiments/FIGS/data/v2/ (experiments/FIGS/pull_mlst_data.py):
   linprobe/fits3000/<model>.json   linear probes (experiments/EVAL/linear_probe_v2.py)
   linprobe/mass/<model>.json       jet-mass regression (experiments/EVAL/mass_resolution.py)
   compute/<run>.json               per epoch: the GPU and the seconds of training and validation
+  index.json                       {path: sha256} of every file above, as pulled: checked against
+                                   them, and the source the macros counted over many files cite
 
 Outputs:
   tables/mlst_probes.tex     linear probes at the largest training set, every task
@@ -80,7 +82,8 @@ def _cell(values: list, n_expected: int, fmt_pm, scale: float = 1.0) -> str:
     v = [x * scale for x in values if x is not None]
     if not v:
         return r"\pending{no run yet}"
-    body = fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1))) if len(v) > 1 else f"{v[0]:.5g}"
+    # a lone run keeps its trailing zeros (0.96580, not 0.9658)
+    body = fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1))) if len(v) > 1 else f"{v[0]:#.5g}"
     if flag:
         body += UNCONVERGED
     if len(v) < n_expected:
@@ -227,20 +230,48 @@ CAPTIONS = {
               "of the second. Mean $\\pm$ standard deviation over the pretraining runs; each random "
               "partition has one run."),
     "mass": ("tab:mass", "Resolution $\\sigma_{\\mathrm{eff}}$ of the jet mass regressed from frozen "
-             "features with a ridge and a small nonlinear (MLP) probe; lower is better. Mean $\\pm$ "
-             "standard deviation over the pretraining runs."),
+             "features with a ridge and a small nonlinear (MLP) probe; lower is better. The MLP has one "
+             "hidden layer, stops early on a validation split and is averaged over __MLP_SEEDS__ seeds. "
+             "Mean $\\pm$ standard deviation over the pretraining runs."),
     "compute": ("tab:compute", "GPU types and GPU-hours of every pretraining run, summed over the "
                 "training and validation passes of its completed epochs as each epoch recorded them."),
 }
 
 
-def _float(key: str, body: str, wide: bool = False) -> str:
+def _float(key: str, body: str, wide: bool = False, fill: dict | None = None) -> str:
     env = "table*" if wide else "table"
     label, cap = CAPTIONS[key]
+    for k, v in (fill or {}).items():
+        cap = cap.replace(k, v)
+    assert "__" not in cap, cap
     boxes = [r"\begin{adjustbox}{max width=\linewidth}" + "\n" + b.strip() + "\n" + r"\end{adjustbox}"
              for b in body.split("%SPLIT%")]
     return "\n".join([rf"\begin{{{env}}}[t]", r"\centering", r"\small", rf"\caption{{{cap}}}",
                       rf"\label{{{label}}}", "\n\\par\\medskip\n".join(boxes), rf"\end{{{env}}}", ""])
+
+
+def check_index(data: pathlib.Path) -> pathlib.Path:
+    """index.json against the files beside it: every file listed, with the bytes pulled."""
+    import hashlib
+    index = data / "index.json"
+    if not index.exists():
+        raise SystemExit(f"FATAL: no {index}; pull with experiments/FIGS/pull_mlst_data.py")
+    want = json.loads(index.read_text())
+    have = {str(p.relative_to(data)) for p in data.rglob("*.json") if p != index}
+    if have != set(want):
+        raise SystemExit(f"FATAL: {index} lists {len(want)} files, {data} holds {len(have)}: "
+                         f"{sorted(have ^ set(want))[:5]}")
+    bad = [k for k, h in want.items() if hashlib.sha256((data / k).read_bytes()).hexdigest() != h]
+    if bad:
+        raise SystemExit(f"FATAL: {len(bad)} files differ from {index}: {bad[:5]}")
+    return index
+
+
+def mlp_seeds(mass: dict) -> str:
+    n = {d["arms"][ck]["mlp"]["fit"]["n_seeds"] for d in mass.values() for ck in d["arms"]}
+    if len(n) != 1:
+        raise SystemExit(f"FATAL: the mass MLPs average different numbers of seeds: {sorted(n)}")
+    return str(n.pop())
 
 
 def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict:
@@ -249,11 +280,11 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     if not fits:
         missing.append("linear probes -- experiments/FIGS/data/v2/linprobe/fits3000/")
         return {}
+    index = check_index(data)
     runs = _paper(root)
     n_paper = sum(len(v) for k, v in runs.items() if k != INIT)
     done = [m for k, v in runs.items() if k != INIT for m in v if m in fits]
-    src = data / "linprobe/fits3000" / f"{done[0]}.json"
-    em.macro("MlstProbeRunsDone", str(len(done)), src, "runs with a linear-probe fit (count)",
+    em.macro("MlstProbeRunsDone", str(len(done)), index, "runs with a linear-probe fit (count)",
              "of the paper's runs")
     em.macro("MlstPaperRuns", str(n_paper), root / "configs/arms/v2_paper_runs.txt", "runs (count)")
     if len(done) < n_paper:
@@ -262,11 +293,11 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
            "tables/mlst_probes_n.tex": _float("probes_n", table_probes_n(fits, runs, fmt_pm, MAIN + (INIT,)), True),
            "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, runs, fmt_pm, merge_status(root),
                                                                 MAIN + RAND + FLAV)),
-           "tables/mlst_mass.tex": _float("mass", table_mass(mass, runs, fmt_pm, MAIN + MASS + (INIT,)))}
+           "tables/mlst_mass.tex": _float("mass", table_mass(mass, runs, fmt_pm, MAIN + MASS + (INIT,)),
+                                          fill={"__MLP_SEEDS__": words(int(mlp_seeds(mass)))})}
     if comp:
         body, hours = table_compute(comp, runs, fmt_int)
         out["tables/compute.tex"] = _float("compute", body)
-        any_comp = data / "compute" / f"{sorted(comp)[0]}.json"
         # Whether a label set is confounded with a GPU type: each label set's share of its
         # GPU-hours on the type the four label sets used most, lowest and highest.
         total = collections.Counter()
@@ -274,15 +305,15 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
             total.update(hours.get(arm, {}))
         top = max(total, key=total.get)
         shares = [hours[a][top] / sum(hours[a].values()) for a in MAIN if a in hours]
-        em.macro("ComputeMainGpu", top, any_comp, "GPU type with the most hours over the four label sets")
-        em.macro("ComputeMainGpuShareMin", f"{100 * min(shares):.0f}\\%", any_comp,
+        em.macro("ComputeMainGpu", top, index, "GPU type with the most hours over the four label sets")
+        em.macro("ComputeMainGpuShareMin", f"{100 * min(shares):.0f}\\%", index,
                  "lowest share of a label set's GPU-hours on that type")
-        em.macro("ComputeMainGpuShareMax", f"{100 * max(shares):.0f}\\%", any_comp,
+        em.macro("ComputeMainGpuShareMax", f"{100 * max(shares):.0f}\\%", index,
                  "highest share of a label set's GPU-hours on that type")
-        em.macro("ComputeRunsDone", str(len(comp)), any_comp, "runs with a compute record (count)")
+        em.macro("ComputeRunsDone", str(len(comp)), index, "runs with a compute record (count)")
         types = sorted({gpu_name(e["device"]) for c in comp.values() for e in c["epochs"]})
         em.macro("ComputeGpuTypes", ", ".join(types[:-1]) + " and " + types[-1] if len(types) > 1 else types[0],
-                 any_comp, "GPU types any finished run trained on")
+                 index, "GPU types any finished run trained on")
         if len(comp) < n_paper:
             missing.append(f"compute records: {len(comp)} of {n_paper} paper runs")
     return out

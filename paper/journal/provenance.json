@@ -2275,32 +2275,32 @@
   },
   "ComputeGpuTypes": {
     "json_path": "GPU types any finished run trained on",
-    "sha256": "c003997fb7b9ea68110b05222281c1f1754a6fdf5a3381e077c801a7af7077a3",
-    "source_file": "experiments/FIGS/data/v2/compute/mtx-flavf0-s1.json",
+    "sha256": "b09897ba72fa9782df0ba4ac7fcbfdf1f3a8bb8900681bdbd7ea08c0efdb23f3",
+    "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "L4, RTX 3090 and V100"
   },
   "ComputeMainGpu": {
     "json_path": "GPU type with the most hours over the four label sets",
-    "sha256": "c003997fb7b9ea68110b05222281c1f1754a6fdf5a3381e077c801a7af7077a3",
-    "source_file": "experiments/FIGS/data/v2/compute/mtx-flavf0-s1.json",
+    "sha256": "b09897ba72fa9782df0ba4ac7fcbfdf1f3a8bb8900681bdbd7ea08c0efdb23f3",
+    "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "RTX 3090"
   },
   "ComputeMainGpuShareMax": {
     "json_path": "highest share of a label set's GPU-hours on that type",
-    "sha256": "c003997fb7b9ea68110b05222281c1f1754a6fdf5a3381e077c801a7af7077a3",
-    "source_file": "experiments/FIGS/data/v2/compute/mtx-flavf0-s1.json",
+    "sha256": "b09897ba72fa9782df0ba4ac7fcbfdf1f3a8bb8900681bdbd7ea08c0efdb23f3",
+    "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "100\\%"
   },
   "ComputeMainGpuShareMin": {
     "json_path": "lowest share of a label set's GPU-hours on that type",
-    "sha256": "c003997fb7b9ea68110b05222281c1f1754a6fdf5a3381e077c801a7af7077a3",
-    "source_file": "experiments/FIGS/data/v2/compute/mtx-flavf0-s1.json",
+    "sha256": "b09897ba72fa9782df0ba4ac7fcbfdf1f3a8bb8900681bdbd7ea08c0efdb23f3",
+    "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "37\\%"
   },
   "ComputeRunsDone": {
     "json_path": "runs with a compute record (count)",
-    "sha256": "c003997fb7b9ea68110b05222281c1f1754a6fdf5a3381e077c801a7af7077a3",
-    "source_file": "experiments/FIGS/data/v2/compute/mtx-flavf0-s1.json",
+    "sha256": "b09897ba72fa9782df0ba4ac7fcbfdf1f3a8bb8900681bdbd7ea08c0efdb23f3",
+    "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "18"
   },
   "DesignBatchSize": {
@@ -5017,8 +5017,8 @@
   },
   "MlstProbeRunsDone": {
     "json_path": "runs with a linear-probe fit (count)",
-    "sha256": "eeb9745cbb642a4ff96a0f3466149080dde5f68967b50699791bc7def3b0d096",
-    "source_file": "experiments/FIGS/data/v2/linprobe/fits3000/mtx-l188-s3.json",
+    "sha256": "b09897ba72fa9782df0ba4ac7fcbfdf1f3a8bb8900681bdbd7ea08c0efdb23f3",
+    "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "18"
   },
   "PairedAnomalyClassSumMatchedLateXBbFourthreeOverOneeighteight": {
