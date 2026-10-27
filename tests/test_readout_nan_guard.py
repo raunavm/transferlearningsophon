@@ -82,3 +82,24 @@ def test_a_diverged_interrupted_attempt_beside_a_clean_cell_is_ignored(tmp_path)
     old.mkdir()
     (old / "train.log").write_text(NAN)
     assert [c[3] for c in BM.discover(tmp_path, "top")[0]] == [cell]
+
+
+@pytest.mark.parametrize("make, read", [
+    (_leg1, lambda r, i: L1.discover(r, i)),
+    (_leg2, lambda r, i: L2.discover(r, i)),
+    (_bench, lambda r, i: BM.discover(r, "top", i)[0]),
+])
+def test_inits_restricts_discovery_so_an_unfinished_run_is_never_opened(tmp_path, make, read):
+    # --inits: a read-out of the runs finished so far does not open the cells of a run still
+    # fine-tuning (here a diverged one, which would stop it), and reads the finished runs as before
+    import shutil
+    for name, log in (("run-a", NAN), ("run-b", GOOD)):
+        shutil.rmtree(tmp_path / "a" / "ref_e1arms-s1", ignore_errors=True)   # _leg2 makes it each time
+        make(tmp_path / "a", log)
+        init = next(d for d in (tmp_path / "a").rglob("scratch-v2") if d.is_dir())
+        init.rename(init.with_name(name))
+    with pytest.raises(SystemExit, match="NaN loss"):
+        read(tmp_path / "a", None)
+    got = read(tmp_path / "a", {"run-b", "ref_e1arms-s1"})
+    assert {c[0] for c in got} <= {"run-b", "ref_e1arms-s1"} and "run-b" in {c[0] for c in got}
+    assert read(tmp_path / "a", {"nothing"}) == []

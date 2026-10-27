@@ -99,12 +99,13 @@ def pred_root_metrics(path: pathlib.Path, eval_arm, stride: int) -> dict:
             "auc_stride": stride, "label_sha256": hashlib.sha256(truth.astype(np.int64).tobytes()).hexdigest()}
 
 
-def discover(root: pathlib.Path):
-    """(init, N, seed, predict.log). Reference runs sit one level shallower."""
+def discover(root: pathlib.Path, inits: set | None = None):
+    """(init, N, seed, predict.log). Reference runs sit one level shallower. Only the init
+    directories in inits when it is given."""
     out = []
     for log in sorted(root.rglob("predict.log")):
         rel = log.relative_to(root).parts[:-1]
-        if any(".partial." in p for p in rel):
+        if any(".partial." in p for p in rel) or (inits is not None and rel[0] not in inits):
             continue
         if len(rel) == 3:
             if diverged(log.parent):
@@ -164,6 +165,8 @@ def main(argv=None) -> int:
                     help="the sha256 record of the subsets (experiments/FT/data/ft_v2_subsets_sha256.json)")
     ap.add_argument("--expect-cells", metavar="FILE:PREFIX",
                     help="fail unless every cell FILE lists under PREFIX/leg2 is read (ft_v2.expected_cells)")
+    ap.add_argument("--inits", nargs="+", metavar="INIT",
+                    help="read only these init directories under --root (a read-out of the runs finished so far); default every one")
     a = ap.parse_args(argv)
     if a.ref_init and not a.sha_table:
         raise SystemExit("FATAL: --ref-init needs --sha-table: a reused cell is only as good "
@@ -174,7 +177,7 @@ def main(argv=None) -> int:
         eval_arm = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(eval_arm)
 
-    cells = discover(a.root)
+    cells = discover(a.root, set(a.inits) if a.inits else None)
     if not cells:
         raise SystemExit(f"FATAL: no predict.log under {a.root}")
     table = FT_V2.load_table(a.sha_table) if a.ref_init else {}

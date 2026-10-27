@@ -41,6 +41,11 @@ def ro():
     return B.build(B.PIN_V2_READOUT, v2_readouts=True)
 
 
+@pytest.fixture(scope="module")
+def trial():
+    return B.build(B.PIN_V2_TRIAL, v2_trial_readouts=True)
+
+
 def _name(rule, leg, scope=""):
     return f"job-ft-v2-{rule}{'-' + scope if scope else ''}-{leg}-metrics-raunav.yaml"
 
@@ -122,9 +127,11 @@ def test_the_expected_cells_are_every_paper_run_at_every_size():
             assert {c.split("/")[0] for c in cells} == runs and len(cells) == 4 * len(runs)
 
 
-def test_the_readout_specs_on_disk_are_the_generators(ro):
+def test_the_readout_specs_on_disk_are_the_generators(ro, trial):
+    want = {**ro, **trial}
     for p in K8S.glob("job-ft-v2-*-metrics-raunav.yaml"):
-        assert p.read_text() == ro[p.name], p.name
+        assert p.read_text() == want[p.name], p.name
+    assert set(trial) <= {p.name for p in K8S.glob("job-ft-v2-*-metrics-raunav.yaml")}
 
 
 def test_every_readout_is_a_cpu_job_of_mine_at_its_own_pin_with_the_retry_policy(ro):
@@ -340,3 +347,74 @@ def test_the_readouts_pin_a_tag_still_to_be_made_and_the_tree_carries_what_they_
     assert r.stdout.count(f"checked (pin {B.PIN_V2_READOUT})") == 3      # 1 rule x 3 legs
     r = subprocess.run(cli + ["--pin-not-yet-tagged", "--v2"], capture_output=True, text=True, cwd=ROOT)
     assert r.returncode != 0 and "emitted alone" in r.stderr
+
+
+# ------------------------------------------------------------------ the read-out of the finished runs
+
+def test_the_trial_reads_the_runs_fine_tuned_before_the_split_and_expects_all_their_cells(trial):
+    paper = [s for s, _ in B.v2_groups()]
+    assert B.v2_trial_inits() == [s for s in paper if s not in B.V2_SPLIT_RUNS] and len(B.v2_trial_inits()) == 18
+    full = json.loads((ROOT / B.V2_EXPECTED).read_text())
+    got = json.loads((ROOT / B.V2_TRIAL_EXPECTED).read_text())
+    assert got == B.v2_trial_expected_cells()
+    assert set(got) == {k for k in full if k.startswith("best70/")}
+    for k, cells in got.items():
+        assert cells == [c for c in full[k] if c.split("/")[0] in B.v2_trial_inits()] and len(cells) == 18 * 4
+    for leg in LEGS:
+        name = f"job-ft-v2-best70-done18-{leg}-metrics-raunav.yaml"
+        a = _args(trial[name])
+        assert f"OUT={B.V2_ROOT}/best70_done18_{leg}_metrics\n" in a
+        runs = re.findall(r"python3 experiments/FT/\w+_metrics\.py[^\n]*", a.replace("\\\n", " "))
+        assert len(runs) == len(B.V2_READOUT_FILES[leg])
+        for r in runs:
+            want = B.v2_trial_inits() + ([B.SCRATCH_REF] if leg == "leg1" else [])
+            assert "--inits " + " ".join(want) + " --expect-cells " + B.V2_TRIAL_EXPECTED + ":best70" in r, r
+        assert B.V2_EXPECTED + ":" not in a
+        env = {e["name"]: e.get("value") for e in
+               yaml.safe_load(trial[name])["spec"]["template"]["spec"]["containers"][0]["env"]}
+        assert env["REPO_REF"] == B.PIN_V2_TRIAL
+
+
+def _final(leg):
+    return B.v2_readout("best70", leg, B.PIN_V2_TRIAL)[1]
+
+
+def test_the_trial_differs_from_the_final_readout_only_where_it_must(trial):
+    import difflib
+    for leg in LEGS:
+        a = _final(leg).splitlines()
+        b = trial[f"job-ft-v2-best70-done18-{leg}-metrics-raunav.yaml"].splitlines()
+        changed = [l for l in difflib.unified_diff(a, b, lineterm="", n=0)
+                   if l[:1] in "+-" and not l.startswith(("+++", "---"))]
+        for l in changed:
+            assert ("done18" in l or "ft_v2_expected_cells.json" in l or "best70_" in l
+                    or "ft-v2-best70-" in l or "--expect-cells" in l or "find ${ROOT}" in l), l
+
+
+def test_a_split_run_still_fine_tuning_does_not_stop_the_trial(trial, tmp_path):
+    data = tmp_path / "data"
+    for t in ("leg2",):
+        cell = data / f"results/ft_v2/best70/{t}/l188-s3/N1000/s1"
+        cell.mkdir(parents=True)
+        (cell / "DONE").touch()
+        (cell / "predict.log").touch()
+    words = re.search(r"for c in (.*); do", B._v2_readout_script("best70", "leg2")).group(1)
+    for c in subprocess.run(["bash", "-c", f"echo {words}"], capture_output=True, text=True).stdout.split():
+        (data / c[len("/data/"):]).mkdir(parents=True)
+        (data / c[len("/data/"):] / "DONE").touch()
+    for i in B.v2_trial_inits():
+        (data / f"results/ft_v2/best70/leg2/{i}").mkdir(parents=True, exist_ok=True)
+    half = data / "results/ft_v2/best70/leg2/l188-s1/N1000/s1"       # a split run, mid-way
+    half.mkdir(parents=True)
+    (half / "predict.log").touch()
+    r, calls = _run(trial["job-ft-v2-best70-done18-leg2-metrics-raunav.yaml"], tmp_path)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    assert "NOT DONE" not in r.stdout and "--inits l188-s3 " in calls
+    assert (data / "results/ft_v2/best70_done18_leg2_metrics").is_dir()
+    r, _ = _run(B.v2_readout("best70", "leg2", B.PIN_V2_TRIAL)[1], tmp_path)   # the final one still halts
+    assert r.returncode == B.EXIT_HALT and f"NOT DONE: {half}" in r.stdout
+
+
+def test_the_trial_pins_a_tag_whose_tree_carries_inits():
+    assert B.PIN_V2_TRIAL == "mtx-s2.11" and B.PIN_V2_READOUT == "mtx-s2.10"
+    B.verify_pin(B.PIN_V2_TRIAL, True, B.V2_TRIAL_NEEDED)

@@ -85,8 +85,9 @@ def softmax(z: np.ndarray) -> np.ndarray:
     return z
 
 
-def discover(root: pathlib.Path) -> list[tuple[str, str, str, pathlib.Path]]:
-    """(init, N, seed, features_dir) for every complete cell, sorted.
+def discover(root: pathlib.Path, inits: set | None = None) -> list[tuple[str, str, str, pathlib.Path]]:
+    """(init, N, seed, features_dir) for every complete cell, sorted; only the init
+    directories in inits when it is given.
 
     A `.partial.<timestamp>` directory is an interrupted attempt that a later
     attempt superseded; ft-legs leaves them beside the finished cell on purpose.
@@ -95,7 +96,7 @@ def discover(root: pathlib.Path) -> list[tuple[str, str, str, pathlib.Path]]:
     interruption.
     """
     out = []
-    for init_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+    for init_dir in sorted(p for p in root.iterdir() if p.is_dir() and (inits is None or p.name in inits)):
         for n_dir in sorted(p for p in init_dir.iterdir() if p.is_dir()):
             for seed_dir in sorted(p for p in n_dir.iterdir() if p.is_dir()):
                 if ".partial." in seed_dir.name:
@@ -210,6 +211,8 @@ def main() -> int:
                     help="compute the AUC on every k-th row (1 = every row)")
     ap.add_argument("--expect-cells", metavar="FILE:PREFIX",
                     help="fail unless every cell FILE lists under PREFIX/leg1 is read (ft_v2.expected_cells)")
+    ap.add_argument("--inits", nargs="+", metavar="INIT",
+                    help="read only these init directories under --root (a read-out of the runs finished so far); default every one")
     args = ap.parse_args()
 
     lr = _load("label_recovery", "experiments/EVAL/label_recovery.py")
@@ -226,7 +229,7 @@ def main() -> int:
 
     cells, seen = [], {}
     for root in args.root:
-        for c in discover(root):
+        for c in discover(root, set(args.inits) if args.inits else None):
             if seen.setdefault(c[0], root) != root:
                 raise SystemExit(f"FATAL: init {c[0]} is under both {seen[c[0]]} and {root}")
             cells.append(c)

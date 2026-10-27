@@ -121,8 +121,9 @@ def check_label_order(dataset: str) -> None:
                          "inverts every number here without an error.")
 
 
-def discover(root: pathlib.Path, dataset: str):
-    """([(init, N, seed, cell_dir)] for every DONE cell, [cell_dir without DONE]).
+def discover(root: pathlib.Path, dataset: str, inits: set | None = None):
+    """([(init, N, seed, cell_dir)] for every DONE cell, [cell_dir without DONE]); only the
+    init directories in inits when it is given.
 
     `.partial.<timestamp>` directories are skipped by name, as in leg 1. A cell
     without DONE is still training or died; it is REPORTED, not dropped quietly,
@@ -130,7 +131,7 @@ def discover(root: pathlib.Path, dataset: str):
     """
     done, skipped = [], []
     leg = root / f"leg_{dataset}"
-    for init_dir in sorted(p for p in leg.iterdir() if p.is_dir()):
+    for init_dir in sorted(p for p in leg.iterdir() if p.is_dir() and (inits is None or p.name in inits)):
         for n_dir in sorted(p for p in init_dir.iterdir() if p.is_dir()):
             for seed_dir in sorted(p for p in n_dir.iterdir() if p.is_dir()):
                 # <cell>.lock is the v2 shards' per-cell mutex, not a cell
@@ -280,6 +281,9 @@ def main(argv=None) -> int:
     # bench_v2ckpt), so its last-epoch table reads those cells; --expect-cells still covers every size.
     ap.add_argument("--sizes", nargs="+", type=int, metavar="N",
                     help="read only the cells at these training-set sizes (directories N<N>)")
+    ap.add_argument("--inits", nargs="+", metavar="INIT",
+                    help="read only these init directories under --root (a read-out of the runs "
+                         "finished so far); default every one")
     args = ap.parse_args(argv)
     if args.ref_init and not args.sha_table:
         raise SystemExit("FATAL: --ref-init needs --sha-table: a reused cell is only as good "
@@ -299,7 +303,7 @@ def main(argv=None) -> int:
             print(f"{d}: no {args.root / f'leg_{d}'}, nothing read", flush=True)
             continue
         check_label_order(d)
-        cells, no_done = discover(args.root, d)
+        cells, no_done = discover(args.root, d, set(args.inits) if args.inits else None)
         for ref in (r for r in args.ref_init if r.parent.name == f"leg_{d}"):
             if any(c[0] == ref.name for c in cells):
                 raise SystemExit(f"FATAL: init {ref.name} is under both {args.root} and {ref}")
