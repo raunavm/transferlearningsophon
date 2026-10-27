@@ -121,3 +121,53 @@ def test_a_rejection_that_is_only_a_bound_stops_the_table(tmp_path):
 
 def test_no_fine_tuning_read_out_is_no_table(tmp_path):
     assert M.load_ft(tmp_path) == (None, {})
+
+
+class _Em:
+    def __init__(self):
+        self.m = {}
+
+    def macro(self, name, body, *a, **k):
+        self.m[name] = body
+
+
+def _recipe_tree(tmp, cells, spec_text="weaver --data-train x\n"):
+    data = tmp / "experiments/FIGS/data/v2"
+    (data / "ft_mlst").mkdir(parents=True)
+    (data / "ft_mlst/manifests.json").write_text(json.dumps(cells))
+    spec = tmp / M.LEGS_SPEC
+    spec.parent.mkdir(parents=True)
+    spec.write_text(spec_text)
+    return data
+
+
+def _cell(leg, init, n, **kw):
+    c = {"leg": leg, "init": init, "n_train": n, "ft_seed": "1", "lr": "1e-4", "head_lr_mult": "50",
+         "weight_decay": "0.01", "epochs": "20" if leg in ("top", "qg") else {"1000": "50", "1000000": "10"}[n],
+         "lr_schedule": "constant" if leg in ("top", "qg") else None, "recipe": None, "batch_size": "512",
+         "ckpt_rule": "best70", "gpu_device_name": "Tesla V100-SXM2-32GB"}
+    c.update(kw)
+    return c
+
+
+def test_the_recipe_macros_come_from_every_cell_and_one_stray_value_stops_the_build(tmp_path):
+    cells = {f"best70/leg1/l188-s1/N{n}/s1": _cell("1", "l188-s1", n) for n in ("1000", "1000000")}
+    cells["best70/leg_top/l188-s1/N1000/s1"] = _cell("top", "l188-s1", "1000")
+    cells["best70/leg1/not-a-paper-run/N1000/s1"] = _cell("1", "not-a-paper-run", "1000", lr="9")   # ignored
+    em, missing = _Em(), []
+    M.ft_recipe(em, _recipe_tree(tmp_path / "a", cells), {"l188-s1"}, str, missing, MT.words)
+    assert em.m["MlstFtLr"] == "1e-4" and em.m["MlstFtHeadMult"] == "50" and em.m["MlstFtBenchEpochs"] == "20"
+    assert em.m["MlstFtEpochsEThree"] == "50" and em.m["MlstFtEpochsESix"] == "10"
+    assert em.m["MlstFtGpuTypes"] == "V100" and em.m["MlstFtCellsDone"] == "3"
+    assert em.m["MlstFtRefLr"].startswith(r"\pending") and any("V100" in x for x in missing)
+    cells["best70/leg1/l188-s1/N1000/s1"]["lr"] = "2e-4"
+    with pytest.raises(SystemExit, match="expected one value"):
+        M.ft_recipe(_Em(), _recipe_tree(tmp_path / "b", cells), {"l188-s1"}, str, [], MT.words)
+    cells["best70/leg1/l188-s1/N1000/s1"]["lr"] = "1e-4"
+    with pytest.raises(SystemExit, match="sets a scheduler"):
+        M.ft_recipe(_Em(), _recipe_tree(tmp_path / "c", cells, "--lr-scheduler none\n"), {"l188-s1"}, str, [], MT.words)
+    cells.update({f"ref_v100/jc2/leg1/scratch-v2/N1000/s{s}": _cell("1", "scratch-v2", "1000", lr="1e-3", ft_seed=str(s),
+                                                                       recipe="part-from-scratch") for s in (1, 2, 3)})
+    em = _Em()
+    M.ft_recipe(em, _recipe_tree(tmp_path / "d", cells), {"l188-s1"}, str, [], MT.words)
+    assert em.m["MlstFtRefLr"] == "1e-3" and em.m["MlstFtRefSeedsWord"] == "three"

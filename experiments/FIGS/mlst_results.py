@@ -233,6 +233,70 @@ def table_ft_rej(per, runs, fmt_pm, rows) -> tuple:
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""]), min(fewest)
 
 
+def _one(cells: list, key: str, what: str):
+    vals = {c[key] for c in cells}
+    if len(vals) != 1:
+        raise SystemExit(f"FATAL: {what}: {key} takes {sorted(map(str, vals))}, expected one value")
+    return vals.pop()
+
+
+# weaver 0.4.17's default --lr-scheduler flat+decay with an lr_mult group (train.py optim): the
+# 1x groups keep their rate, the multiplied ones (the new head) fall by 0.01 over the last
+# max(1, int(0.3 * epochs)) epochs. The JetClass fine-tuning sets no scheduler, so it runs this.
+FLAT_DECAY = {"share": "30\\%", "to": "1\\%"}
+LEGS_SPEC = "experiments/FT/k8s/job-ft-v2-legs-best70-l188-s3-raunav.yaml"
+
+
+def ft_recipe(em, data: pathlib.Path, paper_inits: set, fmt_int, missing: list, words=str) -> None:
+    """The fine-tuning recipe and GPUs the paper states, from every DONE cell's own manifest
+    (ft_mlst/manifests.json): one value across the cells that share it, or the build stops."""
+    src = data / "ft_mlst/manifests.json"
+    if not src.exists():
+        missing.append("fine-tuning manifests -- experiments/FIGS/data/v2/ft_mlst/manifests.json")
+        return
+    m = json.loads(src.read_text())
+    pre = [c for k, c in m.items() if k.startswith("best70/") and c["init"] in paper_inits]
+    ref = [c for k, c in m.items() if k.startswith("ref_v100/")]
+    legs = [c for c in pre if c["leg"] in ("1", "2")]
+    bench = [c for c in pre if c["leg"] in ("top", "qg")]
+    for c in pre:
+        if c["ckpt_rule"] != PRIMARY or c["ft_seed"] != "1":
+            raise SystemExit(f"FATAL: a paper cell is not {PRIMARY} seed 1: {c}")
+    em.macro("MlstFtLr", _one(pre, "lr", "pretrained fine-tuning"), src, "cells[best70].lr")
+    em.macro("MlstFtHeadMult", _one(pre, "head_lr_mult", "pretrained fine-tuning"), src, "cells[best70].head_lr_mult")
+    em.macro("MlstFtWeightDecay", _one(pre, "weight_decay", "pretrained fine-tuning"), src, "cells[best70].weight_decay")
+    em.macro("MlstFtBatch", _one(pre, "batch_size", "pretrained fine-tuning"), src, "cells[best70].batch_size")
+    if bench:
+        em.macro("MlstFtBenchEpochs", _one(bench, "epochs", "top and q/g"), src, "cells[best70, top/qg].epochs")
+        if _one(bench, "lr_schedule", "top and q/g") != "constant":
+            raise SystemExit("FATAL: the benchmark fine-tuning is not at a constant rate")
+    for n, w in (("1000", "EThree"), ("10000", "EFour"), ("100000", "EFive"), ("1000000", "ESix")):
+        cells = [c for c in legs if c["n_train"] == n]
+        if cells:
+            em.macro(f"MlstFtEpochs{w}", _one(cells, "epochs", f"JetClass legs at N={n}"), src,
+                     f"cells[best70, leg 1/2, n_train {n}].epochs")
+    spec = data.parents[3] / LEGS_SPEC
+    if "--lr-scheduler" in spec.read_text():
+        raise SystemExit(f"FATAL: {LEGS_SPEC} sets a scheduler; the flat+decay macros assume weaver's default")
+    em.macro("MlstFtHeadDecayShare", FLAT_DECAY["share"], spec, "no --lr-scheduler: weaver 0.4.17 flat+decay, "
+             "the head's last epochs")
+    em.macro("MlstFtHeadDecayTo", FLAT_DECAY["to"], spec, "no --lr-scheduler: weaver 0.4.17 flat+decay, final factor")
+    gpus = sorted({c["gpu_device_name"] for c in pre})
+    em.macro("MlstFtGpuTypes", " and ".join(gpu_name(g) for g in gpus), src, "cells[best70].gpu_device_name")
+    em.macro("MlstFtCellsDone", fmt_int(len(pre)), src, "DONE paper-run fine-tuning cells (count)")
+    if ref:
+        em.macro("MlstFtRefLr", _one(ref, "lr", "from-scratch references"), src, "cells[ref_v100].lr")
+        em.macro("MlstFtRefSeedsWord", words(len({c["ft_seed"] for c in ref})), src, "cells[ref_v100].ft_seed (count)")
+        em.macro("MlstFtRefGpuTypes", " and ".join(gpu_name(g) for g in sorted({c["gpu_device_name"] for c in ref})),
+                 src, "cells[ref_v100].gpu_device_name")
+        if _one(ref, "recipe", "from-scratch references") != "part-from-scratch":
+            raise SystemExit("FATAL: a reference cell is not at ParT's from-scratch recipe")
+    else:
+        missing.append("from-scratch references on V100 -- ref_v100 cells")
+        for k in ("MlstFtRefLr", "MlstFtRefGpuTypes", "MlstFtRefSeedsWord"):
+            em.macro(k, r"\pending{V100 references}", src, "no ref_v100 cell yet")
+
+
 def merge_status(root: pathlib.Path) -> dict:
     """{arm: {pair: "merged" | "partly" | "apart"}} from the label maps: merged when every class
     of the pair's first side shares a group with every class of its second side."""
@@ -400,6 +464,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                                                                 MAIN + RAND + FLAV)),
            "tables/mlst_mass.tex": _float("mass", table_mass(mass, runs, fmt_pm, MAIN + MASS + (INIT,)),
                                           fill={"__MLP_SEEDS__": words(int(mlp_seeds(mass)))})}
+    ft_recipe(em, data, {m[len("mtx-"):] for k, v in runs.items() if k != INIT for m in v}, fmt_int, missing, words)
     tag, per = load_ft(data)
     if tag is None:
         missing.append("fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/")

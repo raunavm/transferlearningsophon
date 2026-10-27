@@ -30,6 +30,7 @@
 %   DesignVtwoSecondGpu, DesignVtwoSecondGpuRuns -- the grid's job specs put every run index on one product
 %   per-arm parameters and MACs -- flops_by_arm.json (see docs/RECORD.md 2.1)
 %   linear probes: 18 of 27 paper runs
+%   from-scratch references on V100 -- ref_v100 cells
 %   fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/
 %   compute records: 18 of 27 paper runs
 %
@@ -1803,10 +1804,26 @@
 \newcommand{\AccSdLegTwoSophonPublicEFive}{0.00049}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N100000.accuracy_sd :: sha256 701c58c3240274bb :: wave 1, superseded
 \newcommand{\AccLegTwoSophonPublicESix}{0.84632}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N1000000.accuracy_mean :: sha256 701c58c3240274bb :: wave 1, superseded; 3 fine-tuning seeds
 \newcommand{\AccSdLegTwoSophonPublicESix}{0.00031}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N1000000.accuracy_sd :: sha256 701c58c3240274bb :: wave 1, superseded
-\newcommand{\MlstProbeRunsDone}{18}  % experiments/FIGS/data/v2/index.json :: runs with a linear-probe fit (count) :: sha256 b09897ba72fa9782 :: of the paper's runs
+\newcommand{\MlstProbeRunsDone}{18}  % experiments/FIGS/data/v2/index.json :: runs with a linear-probe fit (count) :: sha256 60ae01505e475e6f :: of the paper's runs
 \newcommand{\MlstPaperRuns}{27}  % configs/arms/v2_paper_runs.txt :: runs (count) :: sha256 b04562b14ea8cbc7
-\newcommand{\ComputeMainGpu}{RTX 3090}  % experiments/FIGS/data/v2/index.json :: GPU type with the most hours over the four label sets :: sha256 b09897ba72fa9782
-\newcommand{\ComputeMainGpuShareMin}{37\%}  % experiments/FIGS/data/v2/index.json :: lowest share of a label set's GPU-hours on that type :: sha256 b09897ba72fa9782
-\newcommand{\ComputeMainGpuShareMax}{100\%}  % experiments/FIGS/data/v2/index.json :: highest share of a label set's GPU-hours on that type :: sha256 b09897ba72fa9782
-\newcommand{\ComputeRunsDone}{18}  % experiments/FIGS/data/v2/index.json :: runs with a compute record (count) :: sha256 b09897ba72fa9782
-\newcommand{\ComputeGpuTypes}{L4, RTX 3090 and V100}  % experiments/FIGS/data/v2/index.json :: GPU types any finished run trained on :: sha256 b09897ba72fa9782
+\newcommand{\MlstFtLr}{1e-4}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].lr :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtHeadMult}{50}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].head_lr_mult :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtWeightDecay}{0.01}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].weight_decay :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtBatch}{512}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].batch_size :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtBenchEpochs}{20}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, top/qg].epochs :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtEpochsEThree}{50}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, leg 1/2, n_train 1000].epochs :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtEpochsEFour}{50}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, leg 1/2, n_train 10000].epochs :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtEpochsEFive}{30}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, leg 1/2, n_train 100000].epochs :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtEpochsESix}{10}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, leg 1/2, n_train 1000000].epochs :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtHeadDecayShare}{30\%}  % experiments/FT/k8s/job-ft-v2-legs-best70-l188-s3-raunav.yaml :: no --lr-scheduler: weaver 0.4.17 flat+decay, the head's last epochs :: sha256 19f59aa54a385c11
+\newcommand{\MlstFtHeadDecayTo}{1\%}  % experiments/FT/k8s/job-ft-v2-legs-best70-l188-s3-raunav.yaml :: no --lr-scheduler: weaver 0.4.17 flat+decay, final factor :: sha256 19f59aa54a385c11
+\newcommand{\MlstFtGpuTypes}{V100}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].gpu_device_name :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtCellsDone}{288}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: DONE paper-run fine-tuning cells (count) :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtRefLr}{\pending{V100 references}}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: no ref_v100 cell yet :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtRefGpuTypes}{\pending{V100 references}}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: no ref_v100 cell yet :: sha256 dbc8f8565d8e2ec9
+\newcommand{\MlstFtRefSeedsWord}{\pending{V100 references}}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: no ref_v100 cell yet :: sha256 dbc8f8565d8e2ec9
+\newcommand{\ComputeMainGpu}{RTX 3090}  % experiments/FIGS/data/v2/index.json :: GPU type with the most hours over the four label sets :: sha256 60ae01505e475e6f
+\newcommand{\ComputeMainGpuShareMin}{37\%}  % experiments/FIGS/data/v2/index.json :: lowest share of a label set's GPU-hours on that type :: sha256 60ae01505e475e6f
+\newcommand{\ComputeMainGpuShareMax}{100\%}  % experiments/FIGS/data/v2/index.json :: highest share of a label set's GPU-hours on that type :: sha256 60ae01505e475e6f
+\newcommand{\ComputeRunsDone}{18}  % experiments/FIGS/data/v2/index.json :: runs with a compute record (count) :: sha256 60ae01505e475e6f
+\newcommand{\ComputeGpuTypes}{L4, RTX 3090 and V100}  % experiments/FIGS/data/v2/index.json :: GPU types any finished run trained on :: sha256 60ae01505e475e6f

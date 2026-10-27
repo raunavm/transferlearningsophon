@@ -243,8 +243,10 @@ Runs with the same index also start from the same trunk weights. Runs trained on
 whichever of several GPU types was free, and a run that was resumed
 could continue on another GPU type. The examples a run reads do not depend on the
 GPU; only the floating-point rounding does. Appendix~\ref{app:compute} lists the
-GPU types and hours of every run. \pending{the GPU types used and the check that no
-vocabulary trained mostly on a single GPU type}
+GPU types and hours of every run: the runs trained on the \ComputeGpuTypes{}, and each
+label set of the tree put between \ComputeMainGpuShareMin{} and \ComputeMainGpuShareMax{}
+of its GPU-hours on the \ComputeMainGpu{}, the type used most.
+\pending{final once every run is in}
 
 The network is the ParT configuration of Sophon's released
 code\footnote{Sophon's paper states \LitSophonPaperParticleBlocks{}
@@ -377,13 +379,16 @@ fitted on the same training subsets as fine-tuning, of \FtSizeEThree{} to
 \FtSizeESix{} jets, and scored on the same test jets with the same metrics.
 
 \paragraph{Fine-tuning.} Every pretrained model is fine-tuned end to end, with a
-freshly initialised head, from its selected checkpoint. The pretrained weights
-train at a constant learning rate of \FtRecipeLr{} and the new head at
-\FtRecipeHeadMult{} times that, the rates ParT uses for
-fine-tuning~\cite{part} (Appendix~\ref{app:ftrecipe}). At every training-set size
-the same network is also trained from random initialisation with the same recipe.
-\pending{CHECK: the fine-tuning recipe macros are read from the first set's runs;
-read them from the rerun's fine-tuning jobs}
+freshly initialised head, from its selected checkpoint, once. The pretrained weights
+train at a constant learning rate of \MlstFtLr{} and the new head at
+\MlstFtHeadMult{} times that, the rates ParT uses for fine-tuning~\cite{part}, with
+weight decay \MlstFtWeightDecay{} and batches of \MlstFtBatch{} jets. On top and
+quark/gluon tagging both rates stay constant; on JetClass-II and JetClass the head's
+rate falls to \MlstFtHeadDecayTo{} of its value over the last \MlstFtHeadDecayShare{} of
+the epochs, the default schedule of the training framework (Appendix~\ref{app:ftrecipe}).
+At every training-set size the same network is also trained from random
+initialisation \MlstFtRefSeedsWord{} times, with ParT's own from-scratch recipe at a learning rate of
+\MlstFtRefLr{}. All fine-tuning ran on the \MlstFtGpuTypes{}.
 
 \paragraph{Downstream datasets.}
 \begin{itemize}
@@ -550,7 +555,15 @@ flavour vocabularies. Both are generated from the label maps.
 \section{Fine-tuning settings}\label{app:ftrecipe}
 % ============================================================================
 
-\pending{the fine-tuning settings of the rerun}
+Every value here is read from the record each fine-tuning cell writes when it starts
+(\MlstFtCellsDone{} cells so far). On JetClass-II and JetClass a model is fine-tuned for
+\MlstFtEpochsEThree{}, \MlstFtEpochsEFour{}, \MlstFtEpochsEFive{} and \MlstFtEpochsESix{} epochs at
+\FtSizeEThree{}, \FtSizeEFour{}, \FtSizeEFive{} and \FtSizeESix{} training jets, and on top and quark/gluon
+tagging for \MlstFtBenchEpochs{} epochs at every size.
+The learning rates and their schedule are those of Section~\ref{sec:eval}. The new head is
+initialised afresh for every fine-tune; the pretrained weights are loaded from the checkpoint
+the selection rule picked, whose hash every cell records.
+% CHECK: state the epoch each fine-tune is scored at (best validation) once verified in cell_resume.py best
 
 % ============================================================================
 \section{Compute}\label{app:compute}
