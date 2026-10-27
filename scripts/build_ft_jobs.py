@@ -2446,6 +2446,9 @@ def v2_groups() -> list[tuple[str, list]]:
 # run at once differs.
 V2_SPLIT_RUNS = ("r16q1mass-s1", "l162mass-s1", "l162mass-s2", "l188-s1", "r16q1-s2",
                  "flavf1r-s2", "l188-s2", "l162-s3", "r16q1-s3")
+# ...and on V100 only (PI, 2026-10-27): every fine-tune of the 18 runs before them ran on a
+# V100 (gpu_device_name of all 288 cells), so the paper's fine-tuning is on one GPU type.
+V2_SPLIT_GPUS = ("Tesla-V100-SXM2-32GB",)
 
 
 def v2_parts(kind: str, suffix: str) -> list:
@@ -2589,7 +2592,8 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
                         "  # recipe; the full training set also scored at its last epoch")
                 specs[f"job-{name}.yaml"] = job(
                     name, _part_script(_fill(script(s, name, rule), pin, inits=s), kind, part, name),
-                    **_retry_kw(name, any_gpu),
+                    **_retry_kw(name, {**any_gpu, "gpus": V2_SPLIT_GPUS} if suffix in V2_SPLIT_RUNS
+                                else any_gpu),
                     header=h + _retry_note(name)
                     + f"  # v2 FINE-TUNING ({kind}), pretrained checkpoint rule {rule}: {what}.\n"
                     + (f"  # This job: {'training size N=' if kind == 'legs' else 'data set '}{part} only "

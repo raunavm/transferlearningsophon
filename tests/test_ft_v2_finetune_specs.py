@@ -217,12 +217,17 @@ def test_every_v2_gpu_job_is_mine_on_the_v2_gpus_with_the_retry_policy(v2):
         assert d["metadata"]["name"].endswith("-raunav")
         assert d["spec"]["backoffLimit"] == B.ROBUST_BACKOFF and "podFailurePolicy" in d["spec"]
         assert 'values: ["us-west"]' in t
-        # the scratch reference keeps the spec it ran under; the rest train on any v2 GPU (PI, 2026-10-24)
-        gpus = ("NVIDIA-GeForce-RTX-3090",) if name == SCRATCH else mtx.V2_ANY_GPU
+        # the scratch reference keeps the spec it ran under; the rest train on any v2 GPU (PI,
+        # 2026-10-24), except the split runs' jobs, on V100 only (PI, 2026-10-27)
+        split = any(name.startswith(f"job-ft-v2-{k}-best70-{r}-") for k in ("legs", "bench")
+                    for r in B.V2_SPLIT_RUNS)
+        gpus = (("NVIDIA-GeForce-RTX-3090",) if name == SCRATCH else
+                ("Tesla-V100-SXM2-32GB",) if split else mtx.V2_ANY_GPU)
         assert "values: [" + ", ".join(f'"{g}"' for g in gpus) + "]" in t
         if name != SCRATCH:
             assert set(mtx.V2_BAD_NODES) | set(B.V2_FAULT_NODES) <= T._excluded(t)
         env = {e["name"]: e.get("value") for e in d["spec"]["template"]["spec"]["containers"][0]["env"]}
+        assert env["GPU_PRODUCT"] == ",".join(gpus)
         # the scratch reference keeps the tag it was launched at (ledger ft-v2-legs-scratch)
         assert env["REPO_REF"] == (B.PIN_V2_SCRATCH if name == SCRATCH else B.PIN_V2)
         assert B._tag_index(env["REPO_REF"]) >= B._tag_index(B.PIN_RESUME)
@@ -365,6 +370,25 @@ def test_a_v2_spec_runs_under_bash_and_leaves_its_cells(v2, tmp_path, pick):
     # every cell ran the resumable logic: one attempt, its best epoch recorded
     assert len(list(root.rglob("best_epoch.json"))) == len(want)
     assert len(list(root.rglob("ATTEMPTS"))) == len(want) and "--load-epoch" not in calls
+
+
+def test_a_split_run_s_jobs_run_under_bash_and_leave_each_of_its_cells_once(v2, tmp_path):
+    # V2_SPLIT_RUNS: the jobs of one run, each run on its own, leave disjoint cells whose union
+    # is the run's whole fine-tuning, and none leaves a cell to another job
+    run = B.V2_SPLIT_RUNS[0]
+    got = {"legs": [], "bench": []}
+    for name in sorted(n for n in v2 if re.match(rf"job-ft-v2-(legs|bench)-best70-{run}-(n[0-9]+|top|qg)-raunav\.yaml$", n)):
+        kind = "legs" if "-legs-" in name else "bench"
+        r, _ = _v2_run(v2[name], tmp_path / name, _inits(v2[name]))
+        assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+        assert "(0 cells left to another job)" in r.stdout, name
+        cells = T._done_cells(tmp_path / name / "data/results/ft_v2/best70")
+        assert cells == set(_cells(name, v2[name])), name
+        got[kind].append(cells)
+    assert [len(got[k]) for k in ("legs", "bench")] == [len(B.SIZES), len(B.BENCH_SETS)]
+    inits = [(run, "", 1, [1])]
+    for kind, whole in (("legs", B.cells_legs(inits)), ("bench", B.cells_bench_v2ckpt(inits))):
+        assert sum(map(len, got[kind])) == len(whole) and set().union(*got[kind]) == set(whole), kind
 
 
 @pytest.mark.parametrize("bad", ["bad_steps", "no_val"])
