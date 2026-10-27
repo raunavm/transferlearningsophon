@@ -89,6 +89,15 @@ class Unconverged(float):
     pass
 
 
+def _lone(x: float) -> str:
+    """Five significant figures with their trailing zeros, thousands separated as fmt_pm does."""
+    s = f"{x:#.5g}".rstrip(".")
+    head, dot, tail = s.partition(".")
+    if "e" in s or len(head.lstrip("-")) <= 3:
+        return s
+    return f"{int(head):,}".replace(",", "{,}") + dot + tail
+
+
 def _cell(values: list, n_expected: int, fmt_pm, scale: float = 1.0) -> str:
     """mean +- SD over the runs present; a lone run prints alone; missing runs add a red marker."""
     flag = any(isinstance(x, Unconverged) for x in values)
@@ -96,7 +105,7 @@ def _cell(values: list, n_expected: int, fmt_pm, scale: float = 1.0) -> str:
     if not v:
         return r"\pending{no run yet}"
     # a lone run keeps its trailing zeros (0.96580, not 0.9658)
-    body = fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1))) if len(v) > 1 else f"{v[0]:#.5g}"
+    body = fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1))) if len(v) > 1 else _lone(v[0])
     if flag:
         body += UNCONVERGED
     if len(v) < n_expected:

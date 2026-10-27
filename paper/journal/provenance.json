@@ -2275,31 +2275,31 @@
   },
   "ComputeGpuTypes": {
     "json_path": "GPU types any finished run trained on",
-    "sha256": "60ae01505e475e6fbbe0b9f8359184fc168a1676aeaaa3d4e7d71b089e3a359f",
+    "sha256": "0dc444b1c3dcac3ba99be082388ce8f9b28de618af757097e99848c69367d151",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "L4, RTX 3090 and V100"
   },
   "ComputeMainGpu": {
     "json_path": "GPU type with the most hours over the four label sets",
-    "sha256": "60ae01505e475e6fbbe0b9f8359184fc168a1676aeaaa3d4e7d71b089e3a359f",
+    "sha256": "0dc444b1c3dcac3ba99be082388ce8f9b28de618af757097e99848c69367d151",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "RTX 3090"
   },
   "ComputeMainGpuShareMax": {
     "json_path": "highest share of a label set's GPU-hours on that type",
-    "sha256": "60ae01505e475e6fbbe0b9f8359184fc168a1676aeaaa3d4e7d71b089e3a359f",
+    "sha256": "0dc444b1c3dcac3ba99be082388ce8f9b28de618af757097e99848c69367d151",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "100\\%"
   },
   "ComputeMainGpuShareMin": {
     "json_path": "lowest share of a label set's GPU-hours on that type",
-    "sha256": "60ae01505e475e6fbbe0b9f8359184fc168a1676aeaaa3d4e7d71b089e3a359f",
+    "sha256": "0dc444b1c3dcac3ba99be082388ce8f9b28de618af757097e99848c69367d151",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "37\\%"
   },
   "ComputeRunsDone": {
     "json_path": "runs with a compute record (count)",
-    "sha256": "60ae01505e475e6fbbe0b9f8359184fc168a1676aeaaa3d4e7d71b089e3a359f",
+    "sha256": "0dc444b1c3dcac3ba99be082388ce8f9b28de618af757097e99848c69367d151",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "18"
   },
@@ -5113,7 +5113,7 @@
   },
   "MlstProbeRunsDone": {
     "json_path": "runs with a linear-probe fit (count)",
-    "sha256": "60ae01505e475e6fbbe0b9f8359184fc168a1676aeaaa3d4e7d71b089e3a359f",
+    "sha256": "0dc444b1c3dcac3ba99be082388ce8f9b28de618af757097e99848c69367d151",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "18"
   },

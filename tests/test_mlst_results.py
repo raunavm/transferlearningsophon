@@ -37,6 +37,7 @@ def test_a_lone_run_keeps_its_trailing_zeros():
     assert M._cell([0.86300], 3, MT.fmt_pm) == r"0.86300 \pending{1 of 3}"
     assert M._cell([0.96579654592], 1, MT.fmt_pm) == "0.96580"
     assert M._cell([0.0593], 1, MT.fmt_pm, 1e3) == "59.300"
+    assert M._cell([1802.83], 1, MT.fmt_pm) == "1{,}802.8" and M._cell([42589.4], 1, MT.fmt_pm) == "42{,}589"
 
 
 def test_an_unconverged_probe_stops_a_trained_run_and_marks_the_untrained_network():

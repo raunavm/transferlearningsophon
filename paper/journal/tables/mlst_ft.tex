@@ -1,0 +1,85 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Full fine-tuning against the training-set size: macro AUC (one-versus-rest) on JetClass-II and JetClass, AUC on top and quark/gluon tagging, the latter also on Herwig jets. Mean $\pm$ standard deviation over the pretraining runs, one fine-tuning each; from scratch, over its fine-tuning seeds.}
+\label{tab:ft}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccc}
+\toprule
+JetClass-II & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\
+\midrule
+\Kfull{} classes & 0.91286 \pending{1 of 3} & 0.97260 \pending{1 of 3} & 0.97964 \pending{1 of 3} & 0.98112 \pending{1 of 3} \\
+\Kres{} classes & 0.9199\,$\pm$\,0.0010 \pending{2 of 3} & 0.9738\,$\pm$\,0.0005 \pending{2 of 3} & 0.97943\,$\pm$\,0.00027 \pending{2 of 3} & 0.98096\,$\pm$\,0.00025 \pending{2 of 3} \\
+\Kmid{} classes & 0.9291\,$\pm$\,0.0018 & 0.9678\,$\pm$\,0.0012 & 0.97810\,$\pm$\,0.00004 & 0.98037\,$\pm$\,0.00004 \\
+\Kcoarse{} classes & 0.89433 \pending{1 of 3} & 0.96390 \pending{1 of 3} & 0.97615 \pending{1 of 3} & 0.97866 \pending{1 of 3} \\
+\Kres{} classes, mass output & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
+\Kcoarse{} classes, mass output & 0.89590 \pending{1 of 2} & 0.96483 \pending{1 of 2} & 0.97519 \pending{1 of 2} & 0.97796 \pending{1 of 2} \\
+from scratch & 0.762\,$\pm$\,0.025 & 0.9239\,$\pm$\,0.0027 & 0.9625\,$\pm$\,0.0007 & 0.97483\,$\pm$\,0.00004 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccc}
+\toprule
+JetClass & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\
+\midrule
+\Kfull{} classes & 0.95246 \pending{1 of 3} & 0.97558 \pending{1 of 3} & 0.98371 \pending{1 of 3} & 0.98588 \pending{1 of 3} \\
+\Kres{} classes & 0.9543\,$\pm$\,0.0013 \pending{2 of 3} & 0.977047\,$\pm$\,0.000015 \pending{2 of 3} & 0.98372\,$\pm$\,0.00006 \pending{2 of 3} & 0.98593\,$\pm$\,0.00005 \pending{2 of 3} \\
+\Kmid{} classes & 0.949\,$\pm$\,0.004 & 0.9764\,$\pm$\,0.0005 & 0.98322\,$\pm$\,0.00028 & 0.98568\,$\pm$\,0.00010 \\
+\Kcoarse{} classes & 0.94175 \pending{1 of 3} & 0.97410 \pending{1 of 3} & 0.98248 \pending{1 of 3} & 0.98489 \pending{1 of 3} \\
+\Kres{} classes, mass output & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
+\Kcoarse{} classes, mass output & 0.95019 \pending{1 of 2} & 0.97453 \pending{1 of 2} & 0.98226 \pending{1 of 2} & 0.98470 \pending{1 of 2} \\
+from scratch & 0.8852\,$\pm$\,0.0017 & 0.9480\,$\pm$\,0.0007 & 0.9721\,$\pm$\,0.0009 & 0.9818\,$\pm$\,0.0004 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccc}
+\toprule
+top & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}200{,}000 \\
+\midrule
+\Kfull{} classes & 0.95036 \pending{1 of 3} & 0.96931 \pending{1 of 3} & 0.98271 \pending{1 of 3} & 0.98599 \pending{1 of 3} \\
+\Kres{} classes & 0.9526\,$\pm$\,0.0019 \pending{2 of 3} & 0.9686\,$\pm$\,0.0015 \pending{2 of 3} & 0.982521\,$\pm$\,0.000026 \pending{2 of 3} & 0.986143\,$\pm$\,0.000034 \pending{2 of 3} \\
+\Kmid{} classes & 0.946\,$\pm$\,0.006 & 0.966\,$\pm$\,0.005 & 0.98194\,$\pm$\,0.00031 & 0.98610\,$\pm$\,0.00005 \\
+\Kcoarse{} classes & 0.94986 \pending{1 of 3} & 0.96597 \pending{1 of 3} & 0.98186 \pending{1 of 3} & 0.98589 \pending{1 of 3} \\
+\Kres{} classes, mass output & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
+\Kcoarse{} classes, mass output & 0.94429 \pending{1 of 2} & 0.96112 \pending{1 of 2} & 0.98102 \pending{1 of 2} & 0.98587 \pending{1 of 2} \\
+from scratch & 0.936\,$\pm$\,0.010 & 0.972\,$\pm$\,0.004 & 0.98087\,$\pm$\,0.00034 & 0.98518\,$\pm$\,0.00007 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccc}
+\toprule
+q/g & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\
+\midrule
+\Kfull{} classes & 0.86743 \pending{1 of 3} & 0.88663 \pending{1 of 3} & 0.90903 \pending{1 of 3} & 0.91471 \pending{1 of 3} \\
+\Kres{} classes & 0.8693\,$\pm$\,0.0008 \pending{2 of 3} & 0.8871\,$\pm$\,0.0032 \pending{2 of 3} & 0.9087\,$\pm$\,0.0006 \pending{2 of 3} & 0.91476\,$\pm$\,0.00010 \pending{2 of 3} \\
+\Kmid{} classes & 0.8668\,$\pm$\,0.0009 & 0.8838\,$\pm$\,0.0013 & 0.9082\,$\pm$\,0.0004 & 0.91456\,$\pm$\,0.00032 \\
+\Kcoarse{} classes & 0.86434 \pending{1 of 3} & 0.88215 \pending{1 of 3} & 0.90786 \pending{1 of 3} & 0.91440 \pending{1 of 3} \\
+\Kres{} classes, mass output & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
+\Kcoarse{} classes, mass output & 0.86731 \pending{1 of 2} & 0.88417 \pending{1 of 2} & 0.90672 \pending{1 of 2} & 0.91400 \pending{1 of 2} \\
+from scratch & 0.852\,$\pm$\,0.004 & 0.8812\,$\pm$\,0.0016 & 0.9013\,$\pm$\,0.0011 & 0.91206\,$\pm$\,0.00024 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccc}
+\toprule
+q/g, Herwig & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\
+\midrule
+\Kfull{} classes & 0.79176 \pending{1 of 3} & 0.81006 \pending{1 of 3} & 0.80539 \pending{1 of 3} & 0.80707 \pending{1 of 3} \\
+\Kres{} classes & 0.79326\,$\pm$\,0.00022 \pending{2 of 3} & 0.8105\,$\pm$\,0.0011 \pending{2 of 3} & 0.80504\,$\pm$\,0.00027 \pending{2 of 3} & 0.8075\,$\pm$\,0.0014 \pending{2 of 3} \\
+\Kmid{} classes & 0.7949\,$\pm$\,0.0023 & 0.8089\,$\pm$\,0.0004 & 0.80403\,$\pm$\,0.00035 & 0.809\,$\pm$\,0.005 \\
+\Kcoarse{} classes & 0.79255 \pending{1 of 3} & 0.80954 \pending{1 of 3} & 0.80826 \pending{1 of 3} & 0.81147 \pending{1 of 3} \\
+\Kres{} classes, mass output & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
+\Kcoarse{} classes, mass output & 0.79573 \pending{1 of 2} & 0.80912 \pending{1 of 2} & 0.80952 \pending{1 of 2} & 0.80521 \pending{1 of 2} \\
+from scratch & 0.7833\,$\pm$\,0.0016 & 0.8019\,$\pm$\,0.0017 & 0.8041\,$\pm$\,0.0015 & 0.8070\,$\pm$\,0.0019 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
