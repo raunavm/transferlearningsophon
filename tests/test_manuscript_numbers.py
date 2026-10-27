@@ -49,7 +49,8 @@ GENERATED = {"results_generated.tex",
              "tables/anomaly_per_run.tex",
              # the MLST results (experiments/FIGS/mlst_results.py)
              "tables/mlst_probes.tex", "tables/mlst_probes_n.tex", "tables/mlst_pairs.tex",
-             "tables/mlst_mass.tex", "tables/compute.tex"}
+             "tables/mlst_mass.tex", "tables/compute.tex",
+             "tables/mlst_ft.tex", "tables/mlst_ft_rej.tex"}
 
 # Numbers allowed in prose, each with the reason it is not a result.
 # A number earns a line here only if it cannot change when a job finishes.

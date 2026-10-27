@@ -78,4 +78,46 @@ def test_the_pulled_data_is_checked_against_its_index(tmp_path):
 def test_the_index_covers_every_kind_of_pulled_file():
     kinds = {k.split("/")[0] + ("/" + k.split("/")[1] if k.startswith("linprobe") else "")
              for k in json.loads((DATA / "index.json").read_text())}
-    assert kinds == {"compute", "linprobe/fits3000", "linprobe/mass"}
+    assert {"compute", "linprobe/fits3000", "linprobe/mass"} <= kinds <= {
+        "compute", "linprobe/fits3000", "linprobe/mass", "ft_mlst"}
+
+
+def _ft_tree(d, inits, n_seeds_scratch=3, bound=False):
+    rec = lambda v: {"macro_auc_ovr": v, "auc": v, "r50": 100 * v, "r30": 300 * v,
+                     "r50_is_bound": bound, "r30_is_bound": False, "r50_n_bkg_pass": 400, "r30_n_bkg_pass": 120}
+    def by_init(sizes):
+        out = {i: {f"N{n}": {"s1": rec(0.9 + 0.01 * k)} for n in sizes} for k, i in enumerate(inits)}
+        out[M.SCRATCH] = {f"N{n}": {f"s{s}": rec(0.8) for s in range(1, n_seeds_scratch + 1)} for n in sizes}
+        return out
+    (d / "ft_mlst").mkdir(parents=True)
+    w = lambda name, cells: (d / "ft_mlst" / f"best70_done18_{name}.json").write_text(json.dumps({"cells": cells}))
+    w("leg1_metrics", by_init([1000, 1000000]))
+    w("leg2_metrics", by_init([1000, 1000000]))
+    w("bench_metrics", {"top": by_init([1000, 1200000]), "qg": by_init([1000, 1600000])})
+    w("bench_metrics_herwig", {"qg": by_init([1000, 1600000])})
+
+
+def test_the_fine_tuning_tables_read_one_seed_per_run_and_the_scratch_seeds(tmp_path):
+    _ft_tree(tmp_path, ["l188-s1", "l188-s2"])
+    tag, per = M.load_ft(tmp_path)
+    assert tag == "best70_done18" and per["jc2"]["l188-s1"][1000][0]["macro_auc_ovr"] == 0.9
+    runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"]}
+    t = M.table_ft(per, runs, MT.fmt_pm, ("L188",))
+    assert t.count("%SPLIT%") == len(M.FT_TASKS) - 1 and r"\pending{2 of 3}" in t and "from scratch" in t
+    assert "1{,}200{,}000" in t and "1{,}600{,}000" in t
+    body, fewest = M.table_ft_rej(per, runs, MT.fmt_pm, ("L188",))
+    assert fewest == 120 and r"\pending{2 of 3}" in body and body.count(r"\\") == 4
+    per["jc2"]["l188-s1"][1000].append(per["jc2"]["l188-s1"][1000][0])
+    with pytest.raises(SystemExit, match="fine-tuning seeds"):
+        M.table_ft(per, runs, MT.fmt_pm, ("L188",))
+
+
+def test_a_rejection_that_is_only_a_bound_stops_the_table(tmp_path):
+    _ft_tree(tmp_path, ["l188-s1"], bound=True)
+    _, per = M.load_ft(tmp_path)
+    with pytest.raises(SystemExit, match="only a bound"):
+        M.table_ft_rej(per, {"L188": ["mtx-l188-s1"]}, MT.fmt_pm, ("L188",))
+
+
+def test_no_fine_tuning_read_out_is_no_table(tmp_path):
+    assert M.load_ft(tmp_path) == (None, {})

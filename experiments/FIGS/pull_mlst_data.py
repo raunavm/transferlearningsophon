@@ -7,6 +7,10 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
   compute/<run>.json               per epoch of every finished run: the GPU it trained on and
                                    the seconds of its training and validation passes, read from
                                    <run>/metrics/epoch-NNN.json
+  ft_mlst/<tag>_<file>.json        the fine-tuning read-outs (scripts/build_ft_jobs.py, v2 read-outs):
+                                   <tag> best70 (every paper run) or best70_done18 (the 18 runs
+                                   finished before the split), <file> leg1_metrics, leg2_metrics,
+                                   bench_metrics, bench_metrics_herwig; each must parse
   index.json                       {path: sha256} of every file above: the single source the
                                    macros counted over many files cite (mlst_results.py checks it)
 
@@ -23,6 +27,10 @@ import sys
 import tarfile
 
 LP = pathlib.Path("/data/results/eval/v2_linprobe")
+FT = pathlib.Path("/data/results/ft_v2")
+FT_TAGS = ("best70", "best70_done18")
+FT_FILES = {"leg1": ("leg1_metrics",), "leg2": ("leg2_metrics",),
+            "bench": ("bench_metrics", "bench_metrics_herwig")}
 MTX = pathlib.Path("/data/results/mtx_v2")
 N_EPOCHS = 80
 
@@ -51,6 +59,14 @@ def main() -> int:
             add(f"linprobe/fits3000/{f.name}", f.read_bytes())
         for f in sorted((LP / "mass").glob("*/mass_resolution.json")):
             add(f"linprobe/mass/{f.parent.name}.json", f.read_bytes())
+        for tag in FT_TAGS:
+            for leg, names in FT_FILES.items():
+                for n in names:
+                    f = FT / f"{tag}_{leg}_metrics" / f"{n}.json"
+                    if f.exists():
+                        b = f.read_bytes()
+                        json.loads(b)                       # a file still being written stops the pull
+                        add(f"ft_mlst/{tag}_{n}.json", b)
         for run in sorted(MTX.glob("mtx-*")):
             if (run / "DONE").exists():
                 add(f"compute/{run.name}.json", (json.dumps(compute(run), indent=1) + "\n").encode())

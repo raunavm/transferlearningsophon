@@ -8,6 +8,8 @@ Inputs, under experiments/FIGS/data/v2/ (experiments/FIGS/pull_mlst_data.py):
   linprobe/fits3000/<model>.json   linear probes (experiments/EVAL/linear_probe_v2.py)
   linprobe/mass/<model>.json       jet-mass regression (experiments/EVAL/mass_resolution.py)
   compute/<run>.json               per epoch: the GPU and the seconds of training and validation
+  ft_mlst/<tag>_<file>.json        fine-tuning read-outs: best70 (every run) or, until it exists,
+                                   best70_done18 (the runs finished before the split)
   index.json                       {path: sha256} of every file above, as pulled: checked against
                                    them, and the source the macros counted over many files cite
 
@@ -16,6 +18,8 @@ Outputs:
   tables/mlst_probes_n.tex   the same at every training-set size, JetClass-II and top tagging
   tables/mlst_pairs.tex      binary probes between JetClass-II classes, merged or kept apart
   tables/mlst_mass.tex       mass resolution from frozen features, with and without the mass output
+  tables/mlst_ft.tex         full fine-tuning against the training-set size, every dataset
+  tables/mlst_ft_rej.tex     background rejection after fine-tuning on the full training set
   tables/compute.tex         GPU types and hours of every run
 and the macros the text quotes (Mlst*, Compute*).
 """
@@ -48,6 +52,15 @@ PAIRS = (("bc_vs_bq_cs", r"$X\to bc$ vs $bq$, $cs$", ("label_X_bc",), ("label_X_
          ("bb_vs_cc", r"$X\to b\bar b$ vs $c\bar c$", ("label_X_bb",), ("label_X_cc",)),
          ("bbqq_vs_ccqq", r"$X\to YY\to bbqq$ vs $ccqq$", ("label_X_YY_bbqq",), ("label_X_YY_ccqq",)))
 PAIR_N = "1000000"
+# Fine-tuning: (task, read-out file, data set inside it, metric, column heading)
+FT_TAGS = ("best70", "best70_done18")
+FT_TASKS = (("jc2", "leg1_metrics", None, "macro_auc_ovr", "JetClass-II"),
+            ("jc1", "leg2_metrics", None, "macro_auc_ovr", "JetClass"),
+            ("top", "bench_metrics", "top", "auc", "top"),
+            ("qg", "bench_metrics", "qg", "auc", "q/g"),
+            ("qg_herwig", "bench_metrics_herwig", "qg", "auc", "q/g, Herwig"))
+FT_REJ = (("top", "r50"), ("top", "r30"), ("qg", "r50"), ("qg", "r30"), ("qg_herwig", "r50"), ("qg_herwig", "r30"))
+SCRATCH = "scratch-v2"
 
 
 def _paper(root: pathlib.Path) -> dict:
@@ -134,6 +147,90 @@ def table_probes_n(fits, runs, fmt_pm, rows) -> str:
                 for n in sizes) + r" \\")
         out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
     return "\n".join(out[:-1])
+
+
+def load_ft(data: pathlib.Path) -> tuple:
+    """(tag, {task: {init: {N: [record per fine-tuning seed]}}}) of the first read-out tag
+    whose files are all present, or (None, {})."""
+    d = data / "ft_mlst"
+    for tag in FT_TAGS:
+        files = {f for _, f, *_ in FT_TASKS}
+        if all((d / f"{tag}_{f}.json").exists() for f in files):
+            break
+    else:
+        return None, {}
+    per = {}
+    for key, f, ds, _, _ in FT_TASKS:
+        cells = json.loads((d / f"{tag}_{f}.json").read_text())["cells"]
+        cells = cells if ds is None else cells[ds]
+        per[key] = {init: {int(n[1:]): [rec for _, rec in sorted(seeds.items())]
+                           for n, seeds in by_n.items() if re.fullmatch(r"N\d+", n)}
+                    for init, by_n in cells.items()}
+    return tag, per
+
+
+def _ft(per: dict, key: str, model: str, n: int, metric: str):
+    """One pretraining run's fine-tuned value: its one fine-tuning seed."""
+    recs = per[key].get(model[len("mtx-"):], {}).get(n)
+    if recs is None:
+        return None
+    if len(recs) != 1:
+        raise SystemExit(f"FATAL: {model} {key} N={n}: {len(recs)} fine-tuning seeds, expected one")
+    return recs[0][metric]
+
+
+def _sizes(per: dict, key: str) -> list:
+    return sorted({n for init, by_n in per[key].items() if init != SCRATCH for n in by_n})
+
+
+def table_ft(per, runs, fmt_pm, rows) -> str:
+    out = []
+    for key, _, _, met, title in FT_TASKS:
+        sizes = _sizes(per, key)
+        out += [r"\begin{tabular}{l" + "c" * len(sizes) + "}", r"\toprule",
+                rf"{title} & " + " & ".join(f"{n:,}".replace(",", "{,}") for n in sizes) + r" \\",
+                r"\midrule"]
+        for arm in rows:
+            out.append(LABEL[arm] + " & " + " & ".join(
+                _cell([_ft(per, key, m, n, met) for m in runs[arm]], len(runs[arm]), fmt_pm)
+                for n in sizes) + r" \\")
+        ref = per[key].get(SCRATCH, {})
+        out.append("from scratch & " + " & ".join(
+            _cell([r[met] for r in ref[n]], len(ref[n]), fmt_pm) if n in ref else "--" for n in sizes) + r" \\")
+        out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
+    return "\n".join(out[:-1])
+
+
+def table_ft_rej(per, runs, fmt_pm, rows) -> tuple:
+    """Background rejection 1/eps_B at 50 % and 30 % signal efficiency, full training set;
+    and the fewest background jets passing behind any value."""
+    heads = {"top": "top", "qg": "q/g", "qg_herwig": "q/g, Herwig"}
+    fewest = []
+
+    def rej(rec, k):
+        if rec[f"{k}_is_bound"]:
+            raise SystemExit(f"FATAL: a rejection {k} is only a bound: {rec.get('run', rec)}")
+        fewest.append(rec[f"{k}_n_bkg_pass"])
+        return rec[k]
+
+    lines = [r"\begin{tabular}{l" + "c" * len(FT_REJ) + "}", r"\toprule",
+             "pretraining & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{heads[t]}}}" for t in heads) + r" \\",
+             " & " + " & ".join(rf"$R_{{{k[1:]}}}$" for _, k in FT_REJ) + r" \\", r"\midrule"]
+    for arm in rows + (SCRATCH,):
+        cells = []
+        for key, k in FT_REJ:
+            n = _sizes(per, key)[-1]
+            if arm == SCRATCH:
+                ref = per[key].get(SCRATCH, {}).get(n, [])
+                cells.append(_cell([rej(r, k) for r in ref], len(ref), fmt_pm) if ref else "--")
+            else:
+                vals = []
+                for m in runs[arm]:
+                    recs = per[key].get(m[len("mtx-"):], {}).get(n)
+                    vals.append(None if recs is None else rej(recs[0], k))
+                cells.append(_cell(vals, len(runs[arm]), fmt_pm))
+        lines.append(("from scratch" if arm == SCRATCH else LABEL[arm]) + " & " + " & ".join(cells) + r" \\")
+    return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""]), min(fewest)
 
 
 def merge_status(root: pathlib.Path) -> dict:
@@ -233,6 +330,14 @@ CAPTIONS = {
              "features with a ridge and a small nonlinear (MLP) probe; lower is better. The MLP has one "
              "hidden layer, stops early on a validation split and is averaged over __MLP_SEEDS__ seeds. "
              "Mean $\\pm$ standard deviation over the pretraining runs."),
+    "ft": ("tab:ft", "Full fine-tuning against the training-set size: macro AUC (one-versus-rest) on "
+           "JetClass-II and JetClass, AUC on top and quark/gluon tagging, the latter also on Herwig jets. "
+           "Mean $\\pm$ standard deviation over the pretraining runs, one fine-tuning each; from "
+           "scratch, over its fine-tuning seeds."),
+    "ft_rej": ("tab:ftrej", "Background rejection $R_{50}$ and $R_{30}$ ($1/\\varepsilon_B$ at 50\\% and "
+               "30\\% signal efficiency) after full fine-tuning on the whole training set. Mean $\\pm$ "
+               "standard deviation over the pretraining runs; from scratch, over its fine-tuning seeds. "
+               "Every value rests on at least __FEWEST__ background jets passing the cut."),
     "compute": ("tab:compute", "GPU types and GPU-hours of every pretraining run, summed over the "
                 "training and validation passes of its completed epochs as each epoch recorded them."),
 }
@@ -295,6 +400,15 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                                                                 MAIN + RAND + FLAV)),
            "tables/mlst_mass.tex": _float("mass", table_mass(mass, runs, fmt_pm, MAIN + MASS + (INIT,)),
                                           fill={"__MLP_SEEDS__": words(int(mlp_seeds(mass)))})}
+    tag, per = load_ft(data)
+    if tag is None:
+        missing.append("fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/")
+    else:
+        if tag != FT_TAGS[0]:
+            missing.append(f"fine-tuning: the read-out of the runs finished so far ({tag}), not every run")
+        out["tables/mlst_ft.tex"] = _float("ft", table_ft(per, runs, fmt_pm, MAIN + MASS), True)
+        body, fewest = table_ft_rej(per, runs, fmt_pm, MAIN + MASS)
+        out["tables/mlst_ft_rej.tex"] = _float("ft_rej", body, True, fill={"__FEWEST__": fmt_int(fewest)})
     if comp:
         body, hours = table_compute(comp, runs, fmt_int)
         out["tables/compute.tex"] = _float("compute", body)
