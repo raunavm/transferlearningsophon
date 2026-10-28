@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Staging for X->bb and X->bs (docs/PRESPEC_2026-09.md A5, docs/SOPHON_XBB_XBS_PROTOCOL.md).
 
-Every output is parquet holding the branches configs/data/JetClassII_xbx.yaml reads, in
+Every output is parquet holding the branches configs/xbx/JetClassII_xbx.yaml reads, in
 JetClass-II's types, plus xbx_class (1 signal, 0 QCD). Under --root (/data/xbx/v1):
 
   qcd/eval/        JetClass-II QCD of the test files (make_subsets role ft_test), m_SD in
@@ -47,7 +47,7 @@ import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-CONFIG = REPO / "configs/data/JetClassII_xbx.yaml"
+CONFIG = REPO / "configs/xbx/JetClassII_xbx.yaml"
 ROOT_DEFAULT = "/data/xbx/v1"
 JC2 = "/jc2/jet_data"
 # m_SD of the staged evaluation jets: holds Sophon's 150-230 GeV and a window about 125 GeV;

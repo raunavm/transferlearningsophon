@@ -1,5 +1,5 @@
 """X->bb / X->bs staging (experiments/XBS/stage_xbx.py) and its data config
-(configs/data/JetClassII_xbx.yaml), on synthetic JetClass-II-like files."""
+(configs/xbx/JetClassII_xbx.yaml), on synthetic JetClass-II-like files."""
 import importlib.util
 import json
 import pathlib
@@ -18,7 +18,7 @@ spec.loader.exec_module(ST)
 
 def test_the_config_is_the_base_config_but_for_its_label_and_reweighting():
     a = yaml.safe_load((ROOT / "configs/data/JetClassII_base.yaml").read_text())
-    b = yaml.safe_load((ROOT / "configs/data/JetClassII_xbx.yaml").read_text())
+    b = yaml.safe_load((ROOT / "configs/xbx/JetClassII_xbx.yaml").read_text())
     for k in ("selection", "preprocess", "inputs"):
         assert b[k] == a[k], k
     kept = {k: v for k, v in a["new_variables"].items() if not k.startswith("label_")}

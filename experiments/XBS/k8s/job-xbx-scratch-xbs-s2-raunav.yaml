@@ -34,7 +34,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s2.14" \
+          git clone --depth 1 --branch "mtx-s2.16" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -81,9 +81,9 @@ spec:
           TRAIN=$(ls ${PAIR}/train_*.parquet | sort | tr '\n' ' ')
           N=$(python3 -c "import json; print(json.load(open('${PAIR}/manifest.json'))['train_draw']['n_per_class'])")
           SPE=$((2 * N))
-          [ "${E}" -ge 0 ] || python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json leg=xbx_xbs init=scratch checkpoint= n_train=${SPE} ft_seed=2 lr=5e-4 head_lr_mult=1 weight_decay=0.01 epochs=50 lr_schedule=flat+decay recipe=sophon-b3 data_config=configs/data/JetClassII_xbx.yaml num_classes=2 batch_size=512 samples_per_epoch=${SPE} steps_per_epoch=$((SPE/512)) val_rule=fixed-sample-whole-pass
+          [ "${E}" -ge 0 ] || python3 experiments/FT/smoke_checks.py manifest --out ${OUT}/ft_manifest.json leg=xbx_xbs init=scratch checkpoint= n_train=${SPE} ft_seed=2 lr=5e-4 head_lr_mult=1 weight_decay=0.01 epochs=50 lr_schedule=flat+decay recipe=sophon-b3 data_config=configs/xbx/JetClassII_xbx.yaml num_classes=2 batch_size=512 samples_per_epoch=${SPE} steps_per_epoch=$((SPE/512)) val_rule=fixed-sample-whole-pass
           python3 experiments/FT/ft_weaver.py --seed 2 ${RESUME[@]+"${RESUME[@]}"} --lean-val-metrics \
-            --data-train ${TRAIN} --data-val ${PAIR}/val.parquet --data-config configs/data/JetClassII_xbx.yaml \
+            --data-train ${TRAIN} --data-val ${PAIR}/val.parquet --data-config configs/xbx/JetClassII_xbx.yaml \
             --network-config experiments/MTX/ParT_sophon_arch_mtx.py -o num_classes 2 -o fc_params '[(512,0.1)]' \
             --use-amp --batch-size 512 --num-workers 2 --fetch-by-files --fetch-step 1 --optimizer ranger \
             --optimizer-option weight_decay 0.01 --start-lr 5e-4 --num-epochs 50 \
@@ -98,7 +98,7 @@ spec:
           for P in sig qcd; do
             case ${P} in sig) D=/data/xbx/v1/xbs/eval;; qcd) D=/data/xbx/v1/qcd/eval;; esac
             python3 experiments/EVAL/extract_features.py --checkpoint ${OUT}/net_best_epoch_state.pt \
-              --num-classes 2 --arm XBX_xbs_scratch_s2_${P} --data-config configs/data/JetClassII_xbx.yaml \
+              --num-classes 2 --arm XBX_xbs_scratch_s2_${P} --data-config configs/xbx/JetClassII_xbx.yaml \
               --data-test $(ls ${D}/*.parquet | sort) --observers jet_sdmass --out ${OUT}/features_${P} \
               --batch-size 512 --num-workers 1 --fetch-step 1 --save-logits
             rm -f ${OUT}/features_${P}/features.npy

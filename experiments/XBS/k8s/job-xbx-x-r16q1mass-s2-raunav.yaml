@@ -24,7 +24,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; gpu_ok || { echo "exit $rc with no working GPU on $(hostname): the node failed, not the code; retried elsewhere"; exit 137; }; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.14" \
+          git clone --depth 1 --branch "mtx-s2.16" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -44,7 +44,7 @@ spec:
           extract () {
             OUT=/data/results/eval/xbx/mtx-r16q1mass-s2/$1; shift
             python3 experiments/XBS/extract_xbx.py --arm R16_Q1_MASS --run-dir /data/results/mtx_v2/mtx-r16q1mass-s2 --rung R16_Q1 \
-              --num-classes 17 --num-reg 1 --checkpoints best70 --data-config configs/data/JetClassII_xbx.yaml \
+              --num-classes 17 --num-reg 1 --checkpoints best70 --data-config configs/xbx/JetClassII_xbx.yaml \
               --observers jet_pt jet_eta jet_sdmass --no-pooled \
               --data-test "$@" --out ${OUT} || halt
           }

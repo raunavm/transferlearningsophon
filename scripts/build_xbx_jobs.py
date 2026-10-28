@@ -30,7 +30,10 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "XBS" / "k8s"
-PIN = "mtx-s2.14"
+PIN = "mtx-s2.16"
+# mtx-s2.15: a commit that held the config move without the code that reads the new path; never cloned
+# mtx-s2.14: the data config sat in configs/data, which tests/test_pretrain_v2.py holds byte-identical
+# to the commits pretraining may resume from; moved to configs/xbx, its content unchanged
 # mtx-s2.13: the first staging attempt halted on its own ROOT test fixture (uproot cannot write
 # option types); the code it tested was unchanged
 # what the tag must carry for what the jobs run
@@ -38,9 +41,9 @@ NEEDED = {"experiments/XBS/extract_xbx.py": "FLAGS = ",
           "experiments/XBS/stage_xbx.py": "def pair(",
           "experiments/XBS/fit_xbx.py": "def scratch(",
           "experiments/XBS/xbx.py": "def matched_draw(",
-          "configs/data/JetClassII_xbx.yaml": "truth_label: xbx_class",
+          "configs/xbx/JetClassII_xbx.yaml": "truth_label: xbx_class",
           "tests/test_xbx_stage.py": "_outside_sample"}
-CFG = "configs/data/JetClassII_xbx.yaml"
+CFG = "configs/xbx/JetClassII_xbx.yaml"
 STAGE = "/data/xbx/v1"
 EX_ROOT = "/data/results/eval/xbx"
 FITS = f"{EX_ROOT}/fits"

@@ -53,7 +53,7 @@ def test_an_extraction_scores_its_own_vocabulary_from_its_primary_checkpoint(mod
         assert ckpt == "best70" and X.node_groups(arm)["k"] == k
     for sig in B.SIGNALS:
         assert f"/data/xbx/v1/pairs/{sig}/DONE ]" in s and f"extract {sig}/train " in s and f"extract {sig}/eval " in s
-    assert "extract qcd/eval " in s and "--data-config configs/data/JetClassII_xbx.yaml" in s
+    assert "extract qcd/eval " in s and "--data-config configs/xbx/JetClassII_xbx.yaml" in s
 
 
 def test_every_spec_is_ours_retries_only_what_a_retry_can_fix_and_parses_as_bash(tmp_path):
