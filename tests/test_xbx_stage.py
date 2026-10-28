@@ -123,12 +123,16 @@ def _outside_sample(path, rng, n, drop=()):
         return
     import awkward as ak
     import uproot
-    arr = ak.from_arrow(t)
-    part = ak.zip({c[len("part_"):]: arr[c] for c in t.column_names if c.startswith("part_")})
+    # plain (non-nullable) arrays: uproot cannot write awkward's option types
+    lists = {c: t.column(c).combine_chunks() for c in t.column_names if c.startswith("part_")}
+    counts = np.diff(next(iter(lists.values())).offsets.to_numpy())
+    part = ak.zip({c[len("part_"):]: ak.unflatten(v.values.to_numpy(), counts) for c, v in lists.items()})
+    jets = {c: t.column(c).to_numpy() for c in t.column_names if c.startswith("jet_")}
+    data = {"part": part, **jets, "event_weight": np.ones(n)}
     try:
-        with uproot.recreate(path) as f:
-            f["tree"] = {"part": part, **{c: arr[c] for c in t.column_names if c.startswith("jet_")},
-                         "event_weight": np.ones(n)}
+        with uproot.recreate(path) as f:     # a TTree, as the n-tupliser writes (newer uproot defaults to RNTuple)
+            tree = f.mktree("tree", {k: v.type if isinstance(v, ak.Array) else v.dtype for k, v in data.items()})
+            tree.extend(data)
     except AttributeError as e:                      # uproot 5.1 cannot write under numpy 2
         pytest.skip(f"uproot cannot write ROOT here: {e}")
 
