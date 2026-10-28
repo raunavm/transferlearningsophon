@@ -359,6 +359,72 @@ def table_mass(mass, runs, fmt_pm, rows) -> str:
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
+# What the text compares, as (configuration, reference): the ratio of their 1 - AUC, or of their
+# sigma_eff, taken run by run between runs of the same index -- they share the training stream
+# and the initial trunk -- as mean +- SD over the indices both have (Sec. Uncertainties).
+CMP_PROBES = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("L188", INIT), ("R16_Q1", INIT),
+              ("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))
+CMP_PAIRS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("FLAV_F1", "FLAV_F0"),
+             ("FLAV_F1R", "FLAV_F1"), ("FLAV_F1R", "FLAV_F0"))
+CMP_MASS = (("R16_Q1", "L188"), ("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))
+WORD = {"L188": "Full", "L162": "Res", "R42_Q1": "Mid", "R16_Q1": "Coarse", "L162_MASS": "ResMass",
+        "R16_Q1_MASS": "CoarseMass", INIT: "Init", "FLAV_F0": "Fzero", "FLAV_F1": "Fone", "FLAV_F1R": "Foner"}
+TASK_WORD = {"jc2": "JcTwo", "jc1": "JcOne", "top": "Top", "qg": "Qg", "qg_herwig": "QgHerwig"}
+PAIR_WORD = {"bc_vs_bq_cs": "Bc", "bb_vs_cc": "Bb", "bbqq_vs_ccqq": "Bbqq"}
+
+
+def _oma(x):
+    """1 - AUC, keeping the mark of a probe that stopped at the iteration limit."""
+    return None if x is None else Unconverged(1 - x) if isinstance(x, Unconverged) else 1 - x
+
+
+def _ratio(runs, arm, ref, value, fmt_pm) -> str:
+    """value(arm) / value(ref) run by run over the run indices both configurations have."""
+    a = {m.rsplit("-s", 1)[1]: value(m) for m in runs[arm]}
+    b = {m.rsplit("-s", 1)[1]: value(m) for m in runs[ref]}
+    both = sorted(set(a) & set(b))
+    r = []
+    for k in both:
+        if a[k] is None or b[k] is None:
+            r.append(None)
+        else:
+            x = a[k] / b[k]
+            r.append(Unconverged(x) if isinstance(a[k], Unconverged) or isinstance(b[k], Unconverged) else x)
+    return _cell(r, len(both), fmt_pm)
+
+
+def comparisons(em, fits, mass, runs, status, index, fmt_pm) -> None:
+    """The macros the results text quotes: MlstCmp<task or pair or mass probe><arm>Over<ref>, and
+    MlstPairRand{Merged,Apart}<pair>, the binary probes' (1 - AUC) x 10^3 over the random
+    partitions that merge the pair and over those that keep it apart (one run each)."""
+    for ds, met, _ in TASKS:
+        n = _largest(fits, ds)
+        for arm, ref in CMP_PROBES:
+            em.macro(f"MlstCmp{TASK_WORD[ds]}{WORD[arm]}Over{WORD[ref]}",
+                     _ratio(runs, arm, ref, lambda m: _oma(_probe(fits, m, ds, n, met)), fmt_pm), index,
+                     f"linear probe {ds} N={n}: (1 - {met}) of {arm} over {ref}, run by run")
+
+    def pair(m, key):
+        c = fits.get(m, {}).get("cells", {}).get(PRIMARY, {}).get("jc2_pairs", {}).get(PAIR_N, {}).get(key)
+        return None if c is None else 1 - c["auc"]
+    for key, _, _, _ in PAIRS:
+        for arm, ref in CMP_PAIRS:
+            em.macro(f"MlstCmp{PAIR_WORD[key]}{WORD[arm]}Over{WORD[ref]}",
+                     _ratio(runs, arm, ref, lambda m: pair(m, key), fmt_pm), index,
+                     f"binary probe {key}: (1 - AUC) of {arm} over {ref}, run by run")
+        for side in ("merged", "apart"):
+            ms = [m for arm in RAND if status[arm][key] == side for m in runs[arm]]
+            em.macro(f"MlstPairRand{side.title()}{PAIR_WORD[key]}", _cell([pair(m, key) for m in ms], len(ms), fmt_pm, 1e3),
+                     index, f"binary probe {key}: (1 - AUC) x 10^3 over the random partitions that "
+                     + {"merged": "merge it", "apart": "keep it apart"}[side])
+    for probe in ("ridge", "mlp"):
+        for arm, ref in CMP_MASS:
+            em.macro(f"MlstCmp{probe.title()}{WORD[arm]}Over{WORD[ref]}",
+                     _ratio(runs, arm, ref, lambda m: None if m not in mass else
+                            mass[m]["arms"][PRIMARY][probe]["sigma_eff"], fmt_pm), index,
+                     f"mass resolution, {probe}: sigma_eff of {arm} over {ref}, run by run")
+
+
 def gpu_name(device: str) -> str:
     return device.replace("NVIDIA ", "").replace("GeForce ", "").replace("Tesla ", "").replace("-SXM2-32GB", "")
 
@@ -473,6 +539,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                                                                 MAIN + RAND + FLAV)),
            "tables/mlst_mass.tex": _float("mass", table_mass(mass, runs, fmt_pm, MAIN + MASS + (INIT,)),
                                           fill={"__MLP_SEEDS__": words(int(mlp_seeds(mass)))})}
+    comparisons(em, fits, mass, runs, merge_status(root), index, fmt_pm)
     ft_recipe(em, data, {m[len("mtx-"):] for k, v in runs.items() if k != INIT for m in v}, fmt_int, missing, words)
     tag, per = load_ft(data)
     if tag is None:

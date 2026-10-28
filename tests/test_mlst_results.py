@@ -50,6 +50,20 @@ def test_an_unconverged_probe_stops_a_trained_run_and_marks_the_untrained_networ
     assert isinstance(v, M.Unconverged) and M._cell([v], 1, MT.fmt_pm).endswith(M.UNCONVERGED)
 
 
+def test_a_comparison_is_taken_run_by_run_between_runs_of_the_same_index():
+    runs = {"A": ["mtx-a-s1", "mtx-a-s2", "mtx-a-s3"], "B": ["mtx-b-s1", "mtx-b-s3"], M.INIT: ["init-s1", "init-s2"]}
+    v = {"mtx-a-s1": 2.0, "mtx-a-s2": 9.0, "mtx-a-s3": 3.0, "mtx-b-s1": 1.0, "mtx-b-s3": 1.0}
+    seen = []
+    fmt = lambda m, s: seen.append((m, s)) or "X"
+    assert M._ratio(runs, "A", "B", v.get, fmt) == "X"            # s2 has no partner: not a missing run
+    assert seen[0][0] == pytest.approx(2.5) and seen[0][1] == pytest.approx(0.5 ** 0.5)   # 2/1, 3/1
+    v["mtx-b-s3"] = None
+    assert M._ratio(runs, "A", "B", v.get, fmt) == r"2.0000 \pending{1 of 2}"
+    v.update({"init-s1": M.Unconverged(4.0), "init-s2": 3.0})                # 2/4 marked, 9/3
+    assert M._ratio(runs, "A", M.INIT, v.get, fmt) == "X" + M.UNCONVERGED and seen[-1][0] == pytest.approx(1.75)
+    assert M._oma(M.Unconverged(0.9)) == pytest.approx(0.1) and isinstance(M._oma(M.Unconverged(0.9)), M.Unconverged)
+
+
 def test_the_merge_marks_follow_the_label_maps():
     s = M.merge_status(ROOT)
     assert set(s["L188"].values()) == set(s["L162"].values()) == {"apart"}

@@ -483,9 +483,32 @@ rest on few background jets, and the tables give how many.
 \subsection{Linear probes}\label{sec:probes}
 \input{tables/mlst_probes}
 \input{tables/mlst_probes_n}
-\pending{text: linear probes on JetClass-II, JetClass, top and quark/gluon tagging against
-the training-set size, every vocabulary, with the untrained network (Tables~\ref{tab:probes}
-and~\ref{tab:probesn})}
+On JetClass-II, the pretraining dataset's own task, the linear probe follows the label
+tree (Table~\ref{tab:probes}). Merging the QCD subclasses costs nothing: $\oma$ of the
+\Kres-class models is \MlstCmpJcTwoResOverFull{} times that of the \Kfull-class models of
+the same run index. Merging quark flavour costs at each further level: $\oma$ grows by a
+factor of \MlstCmpJcTwoMidOverFull{} at \Kmid{} classes and \MlstCmpJcTwoCoarseOverFull{} at
+\Kcoarse{} classes. The order is the same at every training-set size
+(Table~\ref{tab:probesn}), and every pretrained model is far ahead of the untrained network.
+On JetClass, a different simulation with a label space of its own, the \Kmid-class models
+are level with the \Kfull-class ones (\MlstCmpJcOneMidOverFull) and only the coarsest
+vocabulary falls behind, by a factor of \MlstCmpJcOneCoarseOverFull.
+% CHECK: with every run in, re-read: 162 level with 188 on JetClass-II; the order at every
+% size in tab:probesn; 43 level with 188 on JetClass; 17 behind on JetClass.
+
+On top tagging, a linear probe on the pretrained features gains little or nothing over a
+probe on the untrained network: their ratio of $\oma$ is \MlstCmpTopFullOverInit{} for the
+\Kfull-class models and \MlstCmpTopCoarseOverInit{} for the \Kcoarse-class ones, at every
+training-set size (Table~\ref{tab:probesn}), and it scatters far more between pretraining
+runs than between untrained networks. The mass output gains more (Sec.~\ref{sec:mass}). On
+quark/gluon tagging pretraining helps a little, \MlstCmpQgFullOverInit{} for the
+\Kfull-class models, and the vocabularies whose resonant classes keep decays to gluons
+apart from decays to light quarks are not ahead of those that merge them: the \Kmid-class models reach \MlstCmpQgMidOverFull{} of the
+\Kfull-class models' $\oma$. On the Herwig sample every pretrained model is within a few per
+cent of the untrained network (\MlstCmpQgHerwigFullOverInit{} for \Kfull{} classes).
+% CHECK: with every run in, re-read: top "little or nothing" (162-class now 0.91 of the
+% untrained network, not quoted), the spread between pretraining runs; q/g no order by whether
+% the vocabulary names gluons (162 is the lowest row now); Herwig.
 
 \subsection{Fine-tuning}\label{sec:finetune}
 \IfFileExists{tables/mlst_ft.tex}{\input{tables/mlst_ft}\input{tables/mlst_ft_rej}}{}
@@ -502,13 +525,70 @@ tagging, transfer, from scratch; regressed-mass window for the mass-output model
 
 \subsection{What merging classes costs}\label{sec:merge}
 \input{tables/mlst_pairs}
-\pending{text: the pairs of classes at every vocabulary; random partitions that merge a
-pair against those that keep it apart; F0, F1 and F1r (Table~\ref{tab:pairs})}
+The \Kcoarse-class vocabulary, which merges all of the pairs of Table~\ref{tab:pairs},
+loses much of each distinction: it multiplies $\oma$ by \MlstCmpBcCoarseOverFull,
+\MlstCmpBbCoarseOverFull{} and \MlstCmpBbqqCoarseOverFull{} relative to the \Kfull-class
+models, in the order of the table. The \Kmid-class vocabulary merges $X\to bc$ with
+$X\to bq$ but keeps $X\to cs$ and the other pairs apart, and costs much less, and about the
+same on every pair, merged in part or not: \MlstCmpBcMidOverFull{} on the first and
+\MlstCmpBbMidOverFull{} and \MlstCmpBbqqMidOverFull{} on the others.
+
+The random partitions have the class structure of the \Kcoarse-class vocabulary but not its
+physics, and for them it hardly matters whether a pair is merged. In the units of
+Table~\ref{tab:pairs}, $\oma$ for $X\to b\bar b$ against $X\to c\bar c$ is
+\MlstPairRandMergedBb{} over the partitions that merge the pair and \MlstPairRandApartBb{}
+over those that keep it apart, and \MlstPairRandMergedBbqq{} against
+\MlstPairRandApartBbqq{} for the four-prong pair; only $X\to bc$ is somewhat worse when
+merged, \MlstPairRandMergedBc{} against \MlstPairRandApartBc. Every random partition
+separates every pair better than the \Kcoarse-class vocabulary does. What the
+\Kcoarse-class vocabulary loses is therefore not the merged pair but the flavour axis: in a
+random partition other class boundaries still depend on quark flavour, and a network that
+learns them can tell $b$ from $c$ quarks wherever they occur.
+% CHECK: with every run in, re-read "every random partition better than the 17-class
+% vocabulary on every pair" (now: bc 64-74 vs 120, bb 3.5-4.5 vs 10.9, bbqq 8.3-9.6 vs 30).
+
+The flavour vocabularies test this reading. F0, in which no class boundary depends on quark
+flavour, separates $X\to bc$ from $X\to bq$ and $X\to cs$ as badly as the \Kcoarse-class
+vocabulary and the other pairs worse. F1 adds a
+boundary between $b$ and $c$ quarks in four-prong decays and still merges $X\to b\bar b$
+with $X\to c\bar c$, yet relative to F0 it multiplies $\oma$ by \MlstCmpBbFoneOverFzero{} on
+that two-prong pair and by \MlstCmpBbqqFoneOverFzero{} on the four-prong pair it cuts, which
+brings both to the level of the random partitions. F1r, whose random cut through the same
+decays separates \RandFlavFonerBcSplit{} of the pairs that differ only by exchanging $b$ and
+$c$ quarks and merges $X\to YY\to bbqq$ with $ccqq$, recovers much of F1's gain but not
+all of it: relative to F0 its $\oma$ is \MlstCmpBbFonerOverFzero{} and
+\MlstCmpBbqqFonerOverFzero{} on the same pairs, and relative to F1
+\MlstCmpBbFonerOverFone{} and \MlstCmpBbqqFonerOverFone. A boundary between $b$ and $c$
+quarks in four-prong decays is thus enough to keep the distinction in two-prong decays, but
+not shown to be needed: the other flavour boundaries of F1r's cut do much of the same work.
+For $X\to bc$ against $X\to bq$ and $X\to cs$, F1 gains less over F0
+(\MlstCmpBcFoneOverFzero) and F1r loses nothing against F1 (\MlstCmpBcFonerOverFone).
+% CHECK: F0 level with the 17-class vocabulary on bc and worse on bb and bbqq (now 126 vs
+% 120, 24 vs 10.9, 52 vs 30); F1 "at the level of the random partitions" on bb and bbqq (now
+% 4.6 and 9.0; bb at the top edge of the partitions' range); F1r "much of F1's gain".
 
 \subsection{The mass output}\label{sec:mass}
 \input{tables/mlst_mass}
-\pending{text: mass resolution from frozen features (Table~\ref{tab:mass}); the two-by-two on
-every task (Table~\ref{tab:probes})}
+The mass output puts more mass information into the frozen features
+(Table~\ref{tab:mass}). Relative to the same vocabulary without it, $\sigma_{\mathrm{eff}}$
+falls to \MlstCmpRidgeResMassOverRes{} and \MlstCmpRidgeCoarseMassOverCoarse{} of its value
+for the ridge regression at \Kres{} and \Kcoarse{} classes, and to
+\MlstCmpMlpResMassOverRes{} and \MlstCmpMlpCoarseMassOverCoarse{} for the MLP: much the
+same gain at both vocabularies. Without the mass output the coarser vocabularies keep a
+little more mass information, the \Kcoarse-class models reaching
+\MlstCmpRidgeCoarseOverFull{} (ridge) and \MlstCmpMlpCoarseOverFull{} (MLP) of the
+\Kfull-class models' $\sigma_{\mathrm{eff}}$. The untrained network's features carry less
+than any pretrained model's for the MLP, but about as much as those of the finer
+vocabularies for the ridge regression.
+
+In the two-by-two (Table~\ref{tab:probes}), the mass output changes the classification
+probes on JetClass-II and JetClass by at most a few per cent (on JetClass-II, $\oma$ is
+\MlstCmpJcTwoResMassOverRes{} and \MlstCmpJcTwoCoarseMassOverCoarse{} times its value
+without it) and helps on top tagging, where pretraining without it gains little or nothing:
+$\oma$ falls to \MlstCmpTopResMassOverRes{} and \MlstCmpTopCoarseMassOverCoarse{} of its
+value without the mass output, at \Kres{} and \Kcoarse{} classes.
+% CHECK: with every run in, re-read: "much the same gain" (MLP now 0.78 vs 0.81); coarser
+% keeps more mass information; untrained vs ridge; "at most a few per cent" on JetClass-II/JetClass.
 
 % ============================================================================
 \section{Discussion}\label{sec:discussion}

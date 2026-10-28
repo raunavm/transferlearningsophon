@@ -4997,6 +4997,360 @@
     "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
     "value": "0.2986"
   },
+  "MlstCmpBbCoarseOverFull": {
+    "json_path": "binary probe bb_vs_cc: (1 - AUC) of R16_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "4.4614 \\pending{1 of 3}"
+  },
+  "MlstCmpBbFoneOverFzero": {
+    "json_path": "binary probe bb_vs_cc: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.22\\,\\ensuremath{\\pm}\\,0.12"
+  },
+  "MlstCmpBbFonerOverFone": {
+    "json_path": "binary probe bb_vs_cc: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.63\\,\\ensuremath{\\pm}\\,0.34"
+  },
+  "MlstCmpBbFonerOverFzero": {
+    "json_path": "binary probe bb_vs_cc: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.34\\,\\ensuremath{\\pm}\\,0.12"
+  },
+  "MlstCmpBbMidOverFull": {
+    "json_path": "binary probe bb_vs_cc: (1 - AUC) of R42_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.1000\\,\\ensuremath{\\pm}\\,0.0035 \\pending{2 of 3}"
+  },
+  "MlstCmpBbResOverFull": {
+    "json_path": "binary probe bb_vs_cc: (1 - AUC) of L162 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.0362 \\pending{1 of 3}"
+  },
+  "MlstCmpBbqqCoarseOverFull": {
+    "json_path": "binary probe bbqq_vs_ccqq: (1 - AUC) of R16_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "4.3201 \\pending{1 of 3}"
+  },
+  "MlstCmpBbqqFoneOverFzero": {
+    "json_path": "binary probe bbqq_vs_ccqq: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.18\\,\\ensuremath{\\pm}\\,0.05"
+  },
+  "MlstCmpBbqqFonerOverFone": {
+    "json_path": "binary probe bbqq_vs_ccqq: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.60\\,\\ensuremath{\\pm}\\,0.05"
+  },
+  "MlstCmpBbqqFonerOverFzero": {
+    "json_path": "binary probe bbqq_vs_ccqq: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.29\\,\\ensuremath{\\pm}\\,0.08"
+  },
+  "MlstCmpBbqqMidOverFull": {
+    "json_path": "binary probe bbqq_vs_ccqq: (1 - AUC) of R42_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.09\\,\\ensuremath{\\pm}\\,0.05 \\pending{2 of 3}"
+  },
+  "MlstCmpBbqqResOverFull": {
+    "json_path": "binary probe bbqq_vs_ccqq: (1 - AUC) of L162 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.0958 \\pending{1 of 3}"
+  },
+  "MlstCmpBcCoarseOverFull": {
+    "json_path": "binary probe bc_vs_bq_cs: (1 - AUC) of R16_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "2.0423 \\pending{1 of 3}"
+  },
+  "MlstCmpBcFoneOverFzero": {
+    "json_path": "binary probe bc_vs_bq_cs: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.73\\,\\ensuremath{\\pm}\\,0.04"
+  },
+  "MlstCmpBcFonerOverFone": {
+    "json_path": "binary probe bc_vs_bq_cs: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.997\\,\\ensuremath{\\pm}\\,0.011"
+  },
+  "MlstCmpBcFonerOverFzero": {
+    "json_path": "binary probe bc_vs_bq_cs: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.73\\,\\ensuremath{\\pm}\\,0.05"
+  },
+  "MlstCmpBcMidOverFull": {
+    "json_path": "binary probe bc_vs_bq_cs: (1 - AUC) of R42_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.171\\,\\ensuremath{\\pm}\\,0.007 \\pending{2 of 3}"
+  },
+  "MlstCmpBcResOverFull": {
+    "json_path": "binary probe bc_vs_bq_cs: (1 - AUC) of L162 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.0013 \\pending{1 of 3}"
+  },
+  "MlstCmpJcOneCoarseMassOverCoarse": {
+    "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R16_Q1_MASS over R16_Q1, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.991\\,\\ensuremath{\\pm}\\,0.023"
+  },
+  "MlstCmpJcOneCoarseOverFull": {
+    "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.0755 \\pending{1 of 3}"
+  },
+  "MlstCmpJcOneCoarseOverInit": {
+    "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over INIT, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.203\\,\\ensuremath{\\pm}\\,0.008 \\pending{2 of 3}"
+  },
+  "MlstCmpJcOneFullOverInit": {
+    "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of L188 over INIT, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.187\\,\\ensuremath{\\pm}\\,0.005 \\pending{2 of 3}"
+  },
+  "MlstCmpJcOneMidOverFull": {
+    "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R42_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.991\\,\\ensuremath{\\pm}\\,0.031 \\pending{2 of 3}"
+  },
+  "MlstCmpJcOneResMassOverRes": {
+    "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of L162_MASS over L162, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.974\\,\\ensuremath{\\pm}\\,0.021"
+  },
+  "MlstCmpJcOneResOverFull": {
+    "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of L162 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.0055 \\pending{1 of 3}"
+  },
+  "MlstCmpJcTwoCoarseMassOverCoarse": {
+    "json_path": "linear probe jc2 N=1000000: (1 - macro_auc_ovr) of R16_Q1_MASS over R16_Q1, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.017\\,\\ensuremath{\\pm}\\,0.031"
+  },
+  "MlstCmpJcTwoCoarseOverFull": {
+    "json_path": "linear probe jc2 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.4211 \\pending{1 of 3}"
+  },
+  "MlstCmpJcTwoCoarseOverInit": {
+    "json_path": "linear probe jc2 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over INIT, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.1526\\,\\ensuremath{\\pm}\\,0.0031\\ensuremath{^{*}} \\pending{2 of 3}"
+  },
+  "MlstCmpJcTwoFullOverInit": {
+    "json_path": "linear probe jc2 N=1000000: (1 - macro_auc_ovr) of L188 over INIT, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.1068\\,\\ensuremath{\\pm}\\,0.0014\\ensuremath{^{*}} \\pending{2 of 3}"
+  },
+  "MlstCmpJcTwoMidOverFull": {
+    "json_path": "linear probe jc2 N=1000000: (1 - macro_auc_ovr) of R42_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.1315\\,\\ensuremath{\\pm}\\,0.0035 \\pending{2 of 3}"
+  },
+  "MlstCmpJcTwoResMassOverRes": {
+    "json_path": "linear probe jc2 N=1000000: (1 - macro_auc_ovr) of L162_MASS over L162, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.020\\,\\ensuremath{\\pm}\\,0.004"
+  },
+  "MlstCmpJcTwoResOverFull": {
+    "json_path": "linear probe jc2 N=1000000: (1 - macro_auc_ovr) of L162 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.0051 \\pending{1 of 3}"
+  },
+  "MlstCmpMlpCoarseMassOverCoarse": {
+    "json_path": "mass resolution, mlp: sigma_eff of R16_Q1_MASS over R16_Q1, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.806\\,\\ensuremath{\\pm}\\,0.009"
+  },
+  "MlstCmpMlpCoarseOverFull": {
+    "json_path": "mass resolution, mlp: sigma_eff of R16_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.95352 \\pending{1 of 3}"
+  },
+  "MlstCmpMlpResMassOverRes": {
+    "json_path": "mass resolution, mlp: sigma_eff of L162_MASS over L162, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.78085\\,\\ensuremath{\\pm}\\,0.00025"
+  },
+  "MlstCmpQgCoarseMassOverCoarse": {
+    "json_path": "linear probe qg N=1600000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.99\\,\\ensuremath{\\pm}\\,0.09"
+  },
+  "MlstCmpQgCoarseOverFull": {
+    "json_path": "linear probe qg N=1600000: (1 - auc) of R16_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.0659 \\pending{1 of 3}"
+  },
+  "MlstCmpQgCoarseOverInit": {
+    "json_path": "linear probe qg N=1600000: (1 - auc) of R16_Q1 over INIT, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.94\\,\\ensuremath{\\pm}\\,0.09 \\pending{2 of 3}"
+  },
+  "MlstCmpQgFullOverInit": {
+    "json_path": "linear probe qg N=1600000: (1 - auc) of L188 over INIT, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.90\\,\\ensuremath{\\pm}\\,0.06 \\pending{2 of 3}"
+  },
+  "MlstCmpQgHerwigCoarseMassOverCoarse": {
+    "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.005\\,\\ensuremath{\\pm}\\,0.011"
+  },
+  "MlstCmpQgHerwigCoarseOverFull": {
+    "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of R16_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.0133 \\pending{1 of 3}"
+  },
+  "MlstCmpQgHerwigCoarseOverInit": {
+    "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of R16_Q1 over INIT, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.973\\,\\ensuremath{\\pm}\\,0.017 \\pending{2 of 3}"
+  },
+  "MlstCmpQgHerwigFullOverInit": {
+    "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of L188 over INIT, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.9711\\,\\ensuremath{\\pm}\\,0.0018 \\pending{2 of 3}"
+  },
+  "MlstCmpQgHerwigMidOverFull": {
+    "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of R42_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.007\\,\\ensuremath{\\pm}\\,0.017 \\pending{2 of 3}"
+  },
+  "MlstCmpQgHerwigResMassOverRes": {
+    "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of L162_MASS over L162, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.970\\,\\ensuremath{\\pm}\\,0.004"
+  },
+  "MlstCmpQgHerwigResOverFull": {
+    "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of L162 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.0129 \\pending{1 of 3}"
+  },
+  "MlstCmpQgMidOverFull": {
+    "json_path": "linear probe qg N=1600000: (1 - auc) of R42_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.011\\,\\ensuremath{\\pm}\\,0.025 \\pending{2 of 3}"
+  },
+  "MlstCmpQgResMassOverRes": {
+    "json_path": "linear probe qg N=1600000: (1 - auc) of L162_MASS over L162, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.920\\,\\ensuremath{\\pm}\\,0.035"
+  },
+  "MlstCmpQgResOverFull": {
+    "json_path": "linear probe qg N=1600000: (1 - auc) of L162 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.0179 \\pending{1 of 3}"
+  },
+  "MlstCmpRidgeCoarseMassOverCoarse": {
+    "json_path": "mass resolution, ridge: sigma_eff of R16_Q1_MASS over R16_Q1, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.705\\,\\ensuremath{\\pm}\\,0.030"
+  },
+  "MlstCmpRidgeCoarseOverFull": {
+    "json_path": "mass resolution, ridge: sigma_eff of R16_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.89102 \\pending{1 of 3}"
+  },
+  "MlstCmpRidgeResMassOverRes": {
+    "json_path": "mass resolution, ridge: sigma_eff of L162_MASS over L162, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.683\\,\\ensuremath{\\pm}\\,0.012"
+  },
+  "MlstCmpTopCoarseMassOverCoarse": {
+    "json_path": "linear probe top N=1200000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.78\\,\\ensuremath{\\pm}\\,0.08"
+  },
+  "MlstCmpTopCoarseOverFull": {
+    "json_path": "linear probe top N=1200000: (1 - auc) of R16_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.85607 \\pending{1 of 3}"
+  },
+  "MlstCmpTopCoarseOverInit": {
+    "json_path": "linear probe top N=1200000: (1 - auc) of R16_Q1 over INIT, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.984\\,\\ensuremath{\\pm}\\,0.029 \\pending{2 of 3}"
+  },
+  "MlstCmpTopFullOverInit": {
+    "json_path": "linear probe top N=1200000: (1 - auc) of L188 over INIT, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.99\\,\\ensuremath{\\pm}\\,0.19 \\pending{2 of 3}"
+  },
+  "MlstCmpTopMidOverFull": {
+    "json_path": "linear probe top N=1200000: (1 - auc) of R42_Q1 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.96\\,\\ensuremath{\\pm}\\,0.09 \\pending{2 of 3}"
+  },
+  "MlstCmpTopResMassOverRes": {
+    "json_path": "linear probe top N=1200000: (1 - auc) of L162_MASS over L162, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.886\\,\\ensuremath{\\pm}\\,0.032"
+  },
+  "MlstCmpTopResOverFull": {
+    "json_path": "linear probe top N=1200000: (1 - auc) of L162 over L188, run by run",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.82444 \\pending{1 of 3}"
+  },
   "MlstFtBatch": {
     "json_path": "cells[best70].batch_size",
     "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
@@ -5104,6 +5458,42 @@
     "sha256": "b04562b14ea8cbc7dc7facbbd753be1c974b752d0280be3c4f8da4ebea61ad56",
     "source_file": "configs/arms/v2_paper_runs.txt",
     "value": "three"
+  },
+  "MlstPairRandApartBb": {
+    "json_path": "binary probe bb_vs_cc: (1 - AUC) x 10^3 over the random partitions that keep it apart",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "3.9\\,\\ensuremath{\\pm}\\,0.5"
+  },
+  "MlstPairRandApartBbqq": {
+    "json_path": "binary probe bbqq_vs_ccqq: (1 - AUC) x 10^3 over the random partitions that keep it apart",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "9.0\\,\\ensuremath{\\pm}\\,0.7"
+  },
+  "MlstPairRandApartBc": {
+    "json_path": "binary probe bc_vs_bq_cs: (1 - AUC) x 10^3 over the random partitions that keep it apart",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "64.00\\,\\ensuremath{\\pm}\\,0.22"
+  },
+  "MlstPairRandMergedBb": {
+    "json_path": "binary probe bb_vs_cc: (1 - AUC) x 10^3 over the random partitions that merge it",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "4.19\\,\\ensuremath{\\pm}\\,0.31"
+  },
+  "MlstPairRandMergedBbqq": {
+    "json_path": "binary probe bbqq_vs_ccqq: (1 - AUC) x 10^3 over the random partitions that merge it",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "8.99\\,\\ensuremath{\\pm}\\,0.27"
+  },
+  "MlstPairRandMergedBc": {
+    "json_path": "binary probe bc_vs_bq_cs: (1 - AUC) x 10^3 over the random partitions that merge it",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "71.5\\,\\ensuremath{\\pm}\\,2.8"
   },
   "MlstPaperRuns": {
     "json_path": "runs (count)",
