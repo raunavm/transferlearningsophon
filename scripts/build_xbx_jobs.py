@@ -30,7 +30,9 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "XBS" / "k8s"
-PIN = "mtx-s2.16"
+PIN = "mtx-s2.17"
+# mtx-s2.16: the staged files carried the source's awkward description without xbx_class, which
+# awkward (so weaver) refuses; both dry-run extractions failed on their first file
 # mtx-s2.15: a commit that held the config move without the code that reads the new path; never cloned
 # mtx-s2.14: the data config sat in configs/data, which tests/test_pretrain_v2.py holds byte-identical
 # to the commits pretraining may resume from; moved to configs/xbx, its content unchanged
@@ -44,7 +46,7 @@ NEEDED = {"experiments/XBS/extract_xbx.py": "FLAGS = ",
           "configs/xbx/JetClassII_xbx.yaml": "truth_label: xbx_class",
           "tests/test_xbx_stage.py": "_outside_sample"}
 CFG = "configs/xbx/JetClassII_xbx.yaml"
-STAGE = "/data/xbx/v1"
+STAGE = "/data/xbx/v2"   # v1 (2026-10-28) holds files awkward cannot read; kept, not reused
 EX_ROOT = "/data/results/eval/xbx"
 FITS = f"{EX_ROOT}/fits"
 SCRATCH_ROOT = "/data/results/xbx/scratch"

@@ -52,6 +52,43 @@ def _jets(rng, n, label, msd=None):
     return pa.table(data)
 
 
+def _plain(t):
+    """{column: awkward array} without option types: part_* jagged, the rest flat."""
+    import awkward as ak
+    out = {}
+    for c in t.column_names:
+        col = t.column(c).combine_chunks()
+        if pa.types.is_list(col.type):
+            out[c] = ak.unflatten(col.values.to_numpy(), np.diff(col.offsets.to_numpy()))
+        else:
+            out[c] = ak.Array(col.to_numpy())
+    return out
+
+
+def _write_like_jc2(path, t):
+    """Written by awkward, as the JetClass-II release files are."""
+    import awkward as ak
+    ak.to_parquet(ak.zip(_plain(t), depth_limit=1), path)
+
+
+def _readable_by_weaver(files):
+    """Every staged file loads as weaver loads parquet (ak.from_parquet on the config's branches
+    and the label), as plain arrays: no option type anywhere. With weaver installed (the image),
+    through weaver's own reader too."""
+    import awkward as ak
+    cols = ST.config_branches() + ["xbx_class"]
+    for f in files:
+        a = ak.from_parquet(f, columns=cols)
+        assert "?" not in str(a.type), (f, str(a.type)[:200])
+        assert len(a) == pq.read_metadata(f).num_rows
+    try:
+        from weaver.utils.data.fileio import _read_files
+    except ImportError:
+        return
+    for f in files:
+        assert len(_read_files([f], cols, (0, 1))) == pq.read_metadata(f).num_rows
+
+
 @pytest.fixture
 def jc2(tmp_path, monkeypatch):
     """Two QCD and two Res2P files per role, QCD with mixed QCD labels, Res2P with X->bb and other
@@ -65,9 +102,12 @@ def jc2(tmp_path, monkeypatch):
             fam = "QCD" if i >= 285 else "Res2P"
             lab = rng.integers(161, 188, 6000) if fam == "QCD" else rng.choice([0, 1, 4, 6], 6000)
             p = d / f"{fam}_{i:04d}.parquet"
-            pq.write_table(_jets(rng, 6000, lab), p)
+            _write_like_jc2(p, _jets(rng, 6000, lab))
             files.setdefault((role, "qcd" if fam == "QCD" else "xbb_jc2"), []).append(str(p))
     monkeypatch.setattr(ST, "jc2_files", lambda role, cls: files[(role, cls)])
+    # as the release's files are: non-nullable fields, awkward's description in the metadata
+    s = pq.read_schema(files[("ft_test", "qcd")][0])
+    assert b"awkward_array_metadata" in s.metadata and not s.field("part_px").nullable
     return files
 
 
@@ -82,6 +122,7 @@ def test_the_evaluation_jets_are_the_test_files_jets_of_the_class_in_the_window(
     want = s[(s.jet_label == 0) & (s.jet_pt > 200) & (s.jet_pt < 2500) & (s.jet_sdmass > 50) & (s.jet_sdmass < 300)]
     assert t.num_rows == len(want) and set(np.asarray(t.column("xbx_class"))) == {1}
     assert "jet_label" not in t.column_names and "aux_unused" not in t.column_names
+    _readable_by_weaver(sorted(str(p) for p in out.glob("*.parquet")))
     with pytest.raises(SystemExit, match="never rebuilt"):
         ST.jc2_eval("xbb_jc2", root)
 
@@ -106,6 +147,7 @@ def test_the_pairs_are_matched_balanced_disjoint_and_from_held_out_jets_only(jc2
         assert np.array_equal(np.bincount(c[y == 1], minlength=700), np.bincount(c[y == 0], minlength=700))
     # disjoint: no jet in both training and validation (the energies are continuous, so unique)
     assert not set(np.asarray(tr.column("jet_energy"))) & set(np.asarray(va.column("jet_energy")))
+    _readable_by_weaver([str(out / s) for s in man["train_shards"]] + [str(out / "val.parquet")])
     # the same draw again, bit for bit
     man2 = ST.pair("xbb_jc2", tmp_path / "again", n_train=600, n_val=100)
     assert man2["sha256"] == man["sha256"]
@@ -124,10 +166,9 @@ def _outside_sample(path, rng, n, drop=()):
     import awkward as ak
     import uproot
     # plain (non-nullable) arrays: uproot cannot write awkward's option types
-    lists = {c: t.column(c).combine_chunks() for c in t.column_names if c.startswith("part_")}
-    counts = np.diff(next(iter(lists.values())).offsets.to_numpy())
-    part = ak.zip({c[len("part_"):]: ak.unflatten(v.values.to_numpy(), counts) for c, v in lists.items()})
-    jets = {c: t.column(c).to_numpy() for c in t.column_names if c.startswith("jet_")}
+    arr = _plain(t)
+    part = ak.zip({c[len("part_"):]: v for c, v in arr.items() if c.startswith("part_")})
+    jets = {c: ak.to_numpy(v) for c, v in arr.items() if c.startswith("jet_")}
     data = {"part": part, **jets, "event_weight": np.ones(n)}
     try:
         with uproot.recreate(path) as f:     # a TTree, as the n-tupliser writes (newer uproot defaults to RNTuple)
@@ -160,6 +201,7 @@ def test_an_outside_sample_is_checked_then_split_per_jet(jc2, tmp_path, ext):
     ref = ST.reference_schema(ST.config_branches())
     assert pool.schema.remove_metadata() == ref.remove_metadata()
     assert set(np.asarray(pool.column("xbx_class"))) == {1}
+    _readable_by_weaver([str(root / "xbs/pool/Xbs_0.parquet"), str(root / "xbs/eval/Xbs_0.parquet")])
     # a pod that died between pool/ and eval/: redone to the same bytes; a finished one is refused
     man_pool = json.loads((root / "xbs/pool/manifest.json").read_text())["sha256"]
     (root / "xbs/eval/DONE").unlink()
@@ -170,3 +212,4 @@ def test_an_outside_sample_is_checked_then_split_per_jet(jc2, tmp_path, ext):
     # pairs draw from the converted pool against the held-out QCD
     man = ST.pair("xbs", root, n_train=300, n_val=50)
     assert man["signal_files"] == [str(root / "xbs/pool/Xbs_0.parquet")] and man["train_draw"]["n_per_class"] <= 300
+    _readable_by_weaver([str(root / "pairs/xbs" / s) for s in man["train_shards"]])

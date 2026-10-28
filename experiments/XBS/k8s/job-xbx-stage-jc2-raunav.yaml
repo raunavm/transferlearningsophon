@@ -24,7 +24,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.16" \
+          git clone --depth 1 --branch "mtx-s2.17" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -39,10 +39,10 @@ spec:
           pip install --no-cache-dir -q pytest || exit 1
           python3 -m pytest -q -p no:cacheprovider -rs tests/test_xbx.py tests/test_xbx_stage.py tests/test_xbx_fit.py 2>&1 | tee /tmp/xbx_tests.log || halt
           if grep -q "skipped" /tmp/xbx_tests.log; then echo "FATAL: an X->bx test was skipped in the image"; exit 42; fi
-          [ -f /data/xbx/v1/qcd/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v1 jc2-eval --name qcd || halt
-          [ -f /data/xbx/v1/xbb_jc2/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v1 jc2-eval --name xbb_jc2 || halt
-          [ -f /data/xbx/v1/pairs/xbb_jc2/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v1 pair --signal xbb_jc2 || halt
-          du -sh /data/xbx/v1/*
+          [ -f /data/xbx/v2/qcd/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 jc2-eval --name qcd || halt
+          [ -f /data/xbx/v2/xbb_jc2/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 jc2-eval --name xbb_jc2 || halt
+          [ -f /data/xbx/v2/pairs/xbb_jc2/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 pair --signal xbb_jc2 || halt
+          du -sh /data/xbx/v2/*
         volumeMounts:
         - { name: jc2,  mountPath: /jc2, readOnly: true }
         - { name: data, mountPath: /data }

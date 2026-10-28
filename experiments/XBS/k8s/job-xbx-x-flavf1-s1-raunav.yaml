@@ -24,7 +24,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; gpu_ok || { echo "exit $rc with no working GPU on $(hostname): the node failed, not the code; retried elsewhere"; exit 137; }; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.16" \
+          git clone --depth 1 --branch "mtx-s2.17" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -38,9 +38,9 @@ spec:
           [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
           gpu_ok () { timeout 300 python3 -c 'import torch; torch.ones(8, device="cuda").add_(1).sum().item()' >/dev/null 2>&1; }
           gpu_ok || { echo "no working GPU on $(hostname); retried elsewhere"; exit 137; }
-          [ -f /data/xbx/v1/pairs/xbb_jc2/DONE ] || { echo "FATAL: /data/xbx/v1/pairs/xbb_jc2/DONE absent: stage first"; exit 42; }
-          [ -f /data/xbx/v1/xbb_jc2/eval/DONE ] || { echo "FATAL: /data/xbx/v1/xbb_jc2/eval/DONE absent: stage first"; exit 42; }
-          [ -f /data/xbx/v1/qcd/eval/DONE ] || { echo "FATAL: /data/xbx/v1/qcd/eval/DONE absent: stage first"; exit 42; }
+          [ -f /data/xbx/v2/pairs/xbb_jc2/DONE ] || { echo "FATAL: /data/xbx/v2/pairs/xbb_jc2/DONE absent: stage first"; exit 42; }
+          [ -f /data/xbx/v2/xbb_jc2/eval/DONE ] || { echo "FATAL: /data/xbx/v2/xbb_jc2/eval/DONE absent: stage first"; exit 42; }
+          [ -f /data/xbx/v2/qcd/eval/DONE ] || { echo "FATAL: /data/xbx/v2/qcd/eval/DONE absent: stage first"; exit 42; }
           extract () {
             OUT=/data/results/eval/xbx/mtx-flavf1-s1/$1; shift
             python3 experiments/XBS/extract_xbx.py --arm FLAV_F1 --run-dir /data/results/mtx_v2/mtx-flavf1-s1 --rung none \
@@ -48,10 +48,10 @@ spec:
               --observers jet_pt jet_eta jet_sdmass --no-pooled \
               --data-test "$@" --out ${OUT} || halt
           }
-          extract xbb_jc2/train $(ls /data/xbx/v1/pairs/xbb_jc2/train_*.parquet | sort)
-          extract xbb_jc2/val /data/xbx/v1/pairs/xbb_jc2/val.parquet
-          extract xbb_jc2/eval $(ls /data/xbx/v1/xbb_jc2/eval/*.parquet | sort)
-          extract qcd/eval $(ls /data/xbx/v1/qcd/eval/*.parquet | sort)
+          extract xbb_jc2/train $(ls /data/xbx/v2/pairs/xbb_jc2/train_*.parquet | sort)
+          extract xbb_jc2/val /data/xbx/v2/pairs/xbb_jc2/val.parquet
+          extract xbb_jc2/eval $(ls /data/xbx/v2/xbb_jc2/eval/*.parquet | sort)
+          extract qcd/eval $(ls /data/xbx/v2/qcd/eval/*.parquet | sort)
           echo "every X->bx split of mtx-flavf1-s1 extracted"
         volumeMounts:
         - { name: jc2,  mountPath: /jc2, readOnly: true }

@@ -163,8 +163,16 @@ def window(t: pa.Table, lo: float, hi: float) -> pa.Table:
 
 
 def with_class(t: pa.Table, cls: int, columns: list[str]) -> pa.Table:
+    """The columns and xbx_class, as weaver can read them. The JetClass-II files are written by
+    awkward: every field non-nullable, and awkward's description of each column in the schema
+    metadata. awkward -- and so weaver, which reads parquet with ak.from_parquet -- refuses a
+    file whose description misses a column (the first extraction, 2026-10-28), and without any
+    description reads a nullable field as an option type. So the description is dropped and
+    xbx_class is non-nullable like the rest."""
     t = t.select(columns)
-    return t.append_column("xbx_class", pa.array(np.full(t.num_rows, cls, np.int32)))
+    t = t.append_column(pa.field("xbx_class", pa.int32(), nullable=False),
+                        pa.array(np.full(t.num_rows, cls, np.int32)))
+    return t.replace_schema_metadata(None)
 
 
 def conform(t: pa.Table, schema: pa.Schema) -> pa.Table:

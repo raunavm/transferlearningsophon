@@ -52,7 +52,7 @@ def test_an_extraction_scores_its_own_vocabulary_from_its_primary_checkpoint(mod
     else:
         assert ckpt == "best70" and X.node_groups(arm)["k"] == k
     for sig in B.SIGNALS:
-        assert f"/data/xbx/v1/pairs/{sig}/DONE ]" in s and f"extract {sig}/train " in s and f"extract {sig}/eval " in s
+        assert f"{B.STAGE}/pairs/{sig}/DONE ]" in s and f"extract {sig}/train " in s and f"extract {sig}/eval " in s
     assert "extract qcd/eval " in s and "--data-config configs/xbx/JetClassII_xbx.yaml" in s
 
 
