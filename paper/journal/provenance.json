@@ -2275,31 +2275,31 @@
   },
   "ComputeGpuTypes": {
     "json_path": "GPU types any finished run trained on",
-    "sha256": "d6246a99b55375eb86f8a55b9d2d068aeee22af3ae21038bec33eda8f4e16b4d",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "L4, RTX 3090 and V100"
   },
   "ComputeMainGpu": {
     "json_path": "GPU type with the most hours over the four label sets",
-    "sha256": "d6246a99b55375eb86f8a55b9d2d068aeee22af3ae21038bec33eda8f4e16b4d",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "V100"
   },
   "ComputeMainGpuShareMax": {
     "json_path": "highest share of a label set's GPU-hours on that type",
-    "sha256": "d6246a99b55375eb86f8a55b9d2d068aeee22af3ae21038bec33eda8f4e16b4d",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "63\\%"
   },
   "ComputeMainGpuShareMin": {
     "json_path": "lowest share of a label set's GPU-hours on that type",
-    "sha256": "d6246a99b55375eb86f8a55b9d2d068aeee22af3ae21038bec33eda8f4e16b4d",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "54\\%"
   },
   "ComputeRunsDone": {
     "json_path": "runs with a compute record (count)",
-    "sha256": "d6246a99b55375eb86f8a55b9d2d068aeee22af3ae21038bec33eda8f4e16b4d",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "24"
   },
@@ -4999,49 +4999,49 @@
   },
   "MlstFtBatch": {
     "json_path": "cells[best70].batch_size",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "512"
   },
   "MlstFtBenchEpochs": {
     "json_path": "cells[best70, top/qg].epochs",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "20"
   },
   "MlstFtCellsDone": {
     "json_path": "DONE paper-run fine-tuning cells (count)",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
-    "value": "355"
+    "value": "360"
   },
   "MlstFtEpochsEFive": {
     "json_path": "cells[best70, leg 1/2, n_train 100000].epochs",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "30"
   },
   "MlstFtEpochsEFour": {
     "json_path": "cells[best70, leg 1/2, n_train 10000].epochs",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "50"
   },
   "MlstFtEpochsESix": {
     "json_path": "cells[best70, leg 1/2, n_train 1000000].epochs",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "10"
   },
   "MlstFtEpochsEThree": {
     "json_path": "cells[best70, leg 1/2, n_train 1000].epochs",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "50"
   },
   "MlstFtGpuTypes": {
     "json_path": "cells[best70].gpu_device_name",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "V100"
   },
@@ -5059,37 +5059,37 @@
   },
   "MlstFtHeadMult": {
     "json_path": "cells[best70].head_lr_mult",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "50"
   },
   "MlstFtLr": {
     "json_path": "cells[best70].lr",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "1e-4"
   },
   "MlstFtRefGpuTypes": {
     "json_path": "cells[ref_v100].gpu_device_name",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "V100"
   },
   "MlstFtRefLr": {
     "json_path": "cells[ref_v100].lr",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "1e-3"
   },
   "MlstFtRefSeedsWord": {
     "json_path": "cells[ref_v100].ft_seed (count)",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "three"
   },
   "MlstFtWeightDecay": {
     "json_path": "cells[best70].weight_decay",
-    "sha256": "e4e458228f4707aaf29baf92401e12253e9b58ec41e8f8e5b176b570027040ef",
+    "sha256": "43f667f9b8f1b23c51428808abd2157970b057bb24f53e4c195b5a06b332a249",
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "0.01"
   },
@@ -5113,9 +5113,9 @@
   },
   "MlstProbeRunsDone": {
     "json_path": "runs with a linear-probe fit (count)",
-    "sha256": "d6246a99b55375eb86f8a55b9d2d068aeee22af3ae21038bec33eda8f4e16b4d",
+    "sha256": "a7bab6d85b848c71fa49d6d2c9a3c2eee7a6795b54b7b2fae60493f2da5d859d",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "21"
+    "value": "24"
   },
   "PairedAnomalyClassSumMatchedLateXBbFourthreeOverOneeighteight": {
     "json_path": "families.class_sum_matched.label_X_bb.2000.levels.{43,188}.ln_sigma_min (epochs 70-79 mean)",
