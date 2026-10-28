@@ -129,6 +129,12 @@ def test_no_other_spec_on_disk_carries_the_policy():
     # every v2 spec carries it (audit 2026-09-29): its name says so; and every
     # hand-written read-only job since (inspection, read-outs)
     v2 = {p.name for p in K8S.glob("job-ft-v2-*.yaml")} | {"job-ft-subsets-jc2-v2-raunav.yaml"}
+    # except the V100 rerun of the top/quark-gluon references: a copy of the spec it replaces,
+    # which ran without the policy (backoffLimit 1, DONE cells skipped; a failed job is re-applied)
+    ref_bench = "job-ft-v2-ref-v100-bench-raunav.yaml"
+    assert "podFailurePolicy" not in (K8S / "job-ft-legs-bench-baseline-scratch-v2-raunav.yaml").read_text()
+    v2.discard(ref_bench)
+    assert ref_bench not in have
     hand = ({p.name for p in K8S.glob("job-ft-inspect-*.yaml")}
             | {"job-ft-bench-v3-metrics-raunav.yaml", "job-ft-coverage-jc2-v1-raunav.yaml"})
     assert v2 <= have and hand <= have
