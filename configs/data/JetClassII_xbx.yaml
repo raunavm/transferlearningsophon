@@ -1,0 +1,98 @@
+# X->bb and X->bs (experiments/XBS/): configs/data/JetClassII_base.yaml with ITS selection,
+# new variables, preprocessing and inputs copied verbatim (tests/test_xbx_stage.py checks
+# they are identical), the class taken from the staged column xbx_class (1 signal, 0 QCD)
+# instead of jet_label, which a non-JetClass-II sample need not have, and NO weights block:
+# the staged training sets are balanced and matched in (pT, m_SD) by construction
+# (experiments/XBS/stage_xbx.py). The base config's label_* variables served only its
+# reweighting and are left out with it.
+
+selection:
+   ### use `&`, `|`, `~` for logical operations on numpy arrays
+   ### can use functions from `math`, `np` (numpy), and `awkward` in the expression
+   (jet_pt > 200) & (jet_pt < 2500) & (jet_sdmass > 20) & (jet_sdmass < 500)
+
+new_variables:
+   ### [format] name: formula
+   ### can use functions from `math`, `np` (numpy), and `awkward` in the expression
+   part_mask: ak.ones_like(part_energy)
+
+   ## calculating scaled vectors
+   part_px_scale: part_px / jet_pt * 500
+   part_py_scale: part_py / jet_pt * 500
+   part_pz_scale: part_pz / jet_pt * 500
+   part_energy_scale: part_energy / jet_pt * 500
+
+   part_pt: np.hypot(part_px, part_py)
+   part_pt_scale: np.hypot(part_px_scale, part_py_scale)
+   part_pt_scale_log: np.log(part_pt_scale)
+   part_e_scale_log: np.log(part_energy_scale)
+   part_logptrel: np.log(part_pt/jet_pt)
+   part_logerel: np.log(part_energy/jet_energy)
+   part_deltaR: np.hypot(part_deta, part_dphi)
+   part_d0: np.tanh(part_d0val)
+   part_dz: np.tanh(part_dzval)
+
+preprocess:
+  ### method: [manual, auto] - whether to use manually specified parameters for variable standardization
+  method: manual
+  ### data_fraction: fraction of events to use when calculating the mean/scale for the standardization
+  data_fraction: 0.5
+
+inputs:
+   pf_points:
+      length: 128
+      pad_mode: wrap
+      vars: 
+         - [part_deta, null]
+         - [part_dphi, null]
+   pf_features:
+      length: 128
+      pad_mode: wrap
+      vars: 
+      ### [format 1]: var_name (no transformation)
+      ### [format 2]: [var_name, 
+      ###              subtract_by(optional, default=None, no transf. if preprocess.method=manual, auto transf. if preprocess.method=auto), 
+      ###              multiply_by(optional, default=1), 
+      ###              clip_min(optional, default=-5), 
+      ###              clip_max(optional, default=5), 
+      ###              pad_value(optional, default=0)]
+         - [part_pt_scale_log, 1.7, 0.7]
+         - [part_e_scale_log, 2.0, 0.7]
+         - [part_logptrel, -4.7, 0.7]
+         - [part_logerel, -4.7, 0.7]
+         - [part_deltaR, 0.2, 4.0]
+         - [part_charge, null]
+         - [part_isChargedHadron, null]
+         - [part_isNeutralHadron, null]
+         - [part_isPhoton, null]
+         - [part_isElectron, null]
+         - [part_isMuon, null]
+         - [part_d0, null]
+         - [part_d0err, 0, 1, 0, 1]
+         - [part_dz, null]
+         - [part_dzerr, 0, 1, 0, 1]
+         - [part_deta, null]
+         - [part_dphi, null]
+   pf_vectors:
+      length: 128
+      pad_mode: wrap
+      vars: 
+         - [part_px_scale, null]
+         - [part_py_scale, null]
+         - [part_pz_scale, null]
+         - [part_energy_scale, null]
+   pf_mask:
+      length: 128
+      pad_mode: constant
+      vars: 
+         - [part_mask, null]
+
+labels:
+   type: custom
+   value:
+      truth_label: xbx_class
+
+observers:
+   - jet_pt
+   - jet_eta
+   - jet_sdmass
