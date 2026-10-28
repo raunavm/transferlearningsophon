@@ -563,7 +563,9 @@ tagging for \MlstFtBenchEpochs{} epochs at every size.
 The learning rates and their schedule are those of Section~\ref{sec:eval}. The new head is
 initialised afresh for every fine-tune; the pretrained weights are loaded from the checkpoint
 the selection rule picked, whose hash every cell records.
-% CHECK: state the epoch each fine-tune is scored at (best validation) once verified in cell_resume.py best
+Every fine-tune is scored at its epoch of highest validation accuracy, the earliest on a tie;
+a fine-tune that resumed after an interruption takes that epoch over all of its epochs, not
+only those after the resume.
 
 % ============================================================================
 \section{Compute}\label{app:compute}
