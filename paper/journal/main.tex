@@ -70,7 +70,13 @@ recent comparison of pretraining objectives found pure classifier pretraining
 the best choice when downstream labels and model capacity are
 plentiful~\cite{objectives}. Sophon~\cite{sophon} pretrains on the JetClass-II
 dataset with \Kfull{} labels that name the decay products of every simulated
-resonance and the parton content of every QCD jet.
+resonance and the parton content of every QCD jet. Fine labels pay off at the
+output: summing output nodes gives a tagging discriminant for any coarser class,
+so a single model serves many searches~\cite{sophon}. That they also improve the
+learned representation is assumed; Sophon credits its representation to the
+breadth of its training data~\cite{sophon}.
+% CHECK: Sophon Sec. I ("as wide a range of jet signatures as possible ... comprehensive
+% latent representation") and Sec. III (discriminants from the output nodes).
 
 If classification is the objective, the label vocabulary is the design choice
 that matters, and in particle physics it has not been varied with everything
@@ -99,8 +105,9 @@ the objective~\cite{objectives,rieck,reprlearn}, the data
 composition~\cite{datacomp} and the scale~\cite{scaling,viglscaling}. None of
 these varies the label vocabulary with the training examples held fixed.
 
-We ask which physical distinctions a vocabulary must preserve for the
-representation to remain transferable. The vocabularies of \Kfull, \Kres,
+We ask what fine-grained labels buy the representation once the training data are
+fixed, and which physical distinctions a vocabulary must keep for the
+representation to transfer. The vocabularies of \Kfull, \Kres,
 \Kmid{} and \Kcoarse{} classes are nested levels of a single label tree, so every
 coarser vocabulary merges classes of the finer ones. Run $k$ of every vocabulary
 sees the same training examples in the same order and starts from the same trunk
