@@ -1,20 +1,22 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Resolution $\sigma_{\mathrm{eff}}$ of the jet mass regressed from frozen features with a ridge and a small nonlinear (MLP) probe; lower is better. The MLP has one hidden layer, stops early on a validation split and is averaged over three seeds. Mean $\pm$ standard deviation over the pretraining runs.}
+\caption{Resolution $\sigma_{\mathrm{eff}}$ of the mass-correction target $y$ of Eq.~(\ref{eq:masstarget}) regressed from the frozen features by a small multilayer perceptron (MLP); lower is better. The MLP has one hidden layer and stops early on a validation split; it is trained with three seeds whose predictions are averaged. Mean $\pm$ standard deviation over the pretraining runs. The last row is the $\sigma_{\mathrm{eff}}$ of the target itself, which a constant prediction gives.}
 \label{tab:mass}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lcc}
+\begin{tabular}{lc}
 \toprule
-pretraining & ridge & MLP \\
+pretraining & $\sigma_{\mathrm{eff}}$ \\
 \midrule
-\Kfull{} classes & 0.3382\,$\pm$\,0.0033 & 0.2491\,$\pm$\,0.0014 \\
-\Kres{} classes & 0.3311\,$\pm$\,0.0028 \pending{2 of 3} & 0.2480\,$\pm$\,0.0012 \pending{2 of 3} \\
-\Kmid{} classes & 0.323\,$\pm$\,0.012 & 0.2443\,$\pm$\,0.0024 \\
-\Kcoarse{} classes & 0.311\,$\pm$\,0.011 \pending{2 of 3} & 0.2402\,$\pm$\,0.0016 \pending{2 of 3} \\
-\Kres{} classes, mass regression & 0.2260\,$\pm$\,0.0019 & 0.1936\,$\pm$\,0.0009 \\
-\Kcoarse{} classes, mass regression & 0.2189\,$\pm$\,0.0014 & 0.1935\,$\pm$\,0.0008 \\
-randomly initialized network & 0.334\,$\pm$\,0.005 & 0.2885\,$\pm$\,0.0015 \\
+\Kfull{} classes & 0.2491\,$\pm$\,0.0014 \\
+\Kres{} classes & 0.2480\,$\pm$\,0.0012 \pending{2 of 3} \\
+\Kmid{} classes & 0.2443\,$\pm$\,0.0024 \\
+\Kcoarse{} classes & 0.2402\,$\pm$\,0.0016 \pending{2 of 3} \\
+\Kres{} classes, mass regression & 0.1936\,$\pm$\,0.0009 \\
+\Kcoarse{} classes, mass regression & 0.1935\,$\pm$\,0.0008 \\
+randomly initialized network & 0.2885\,$\pm$\,0.0015 \\
+\midrule
+constant prediction & 0.29863 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

@@ -28,6 +28,7 @@ from __future__ import annotations
 import collections
 import csv
 import json
+import math
 import pathlib
 import re
 
@@ -114,6 +115,14 @@ def _cell(values: list, n_expected: int, fmt_pm, scale: float = 1.0) -> str:
     return body
 
 
+def _row(arm: str, runs: dict) -> str:
+    """The row label; a random partition, pretrained with a single seed, also names that seed,
+    since its comparisons with other partitions are not paired by seed."""
+    if arm in RAND and len(runs[arm]) == 1:
+        return f"{LABEL[arm]}, seed {runs[arm][0].rsplit('-s', 1)[1]}"
+    return LABEL[arm]
+
+
 def _probe(fits: dict, model: str, ds: str, n: str, metric: str):
     ck = "init" if model.startswith("init-") else PRIMARY
     c = fits.get(model, {}).get("cells", {}).get(ck, {}).get(ds, {}).get(n)
@@ -140,7 +149,7 @@ def table_probes(fits, runs, fmt_pm, rows) -> str:
     for arm in rows:
         cells = [_cell([_oma(_probe(fits, m, ds, _largest(fits, ds), met)) for m in runs[arm]],
                        len(runs[arm]), fmt_pm, 1e3) for ds, met, _ in TASKS]
-        lines.append(LABEL[arm] + " & " + " & ".join(cells) + r" \\")
+        lines.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -244,6 +253,14 @@ def table_ft_rej(per, runs, fmt_pm, rows) -> tuple:
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""]), min(fewest)
 
 
+def _power(v: str) -> str:
+    """A learning rate as the paper prints it: 1e-4 -> 10^{-4}, 5e-4 -> 5 x 10^{-4}."""
+    x = float(v)
+    e = math.floor(math.log10(x))
+    m = round(x / 10 ** e, 6)
+    return rf"\ensuremath{{10^{{{e}}}}}" if m == 1 else rf"\ensuremath{{{m:g}\times10^{{{e}}}}}"
+
+
 def _one(cells: list, key: str, what: str):
     vals = {c[key] for c in cells}
     if len(vals) != 1:
@@ -273,7 +290,7 @@ def ft_recipe(em, data: pathlib.Path, paper_inits: set, fmt_int, missing: list, 
     for c in pre:
         if c["ckpt_rule"] != PRIMARY or c["ft_seed"] != "1":
             raise SystemExit(f"FATAL: a paper cell is not {PRIMARY} seed 1: {c}")
-    em.macro("MlstFtLr", _one(pre, "lr", "pretrained fine-tuning"), src, "cells[best70].lr")
+    em.macro("MlstFtLr", _power(_one(pre, "lr", "pretrained fine-tuning")), src, "cells[best70].lr")
     em.macro("MlstFtHeadMult", _one(pre, "head_lr_mult", "pretrained fine-tuning"), src, "cells[best70].head_lr_mult")
     em.macro("MlstFtWeightDecay", _one(pre, "weight_decay", "pretrained fine-tuning"), src, "cells[best70].weight_decay")
     em.macro("MlstFtBatch", _one(pre, "batch_size", "pretrained fine-tuning"), src, "cells[best70].batch_size")
@@ -296,7 +313,7 @@ def ft_recipe(em, data: pathlib.Path, paper_inits: set, fmt_int, missing: list, 
     em.macro("MlstFtGpuTypes", " and ".join(gpu_name(g) for g in gpus), src, "cells[best70].gpu_device_name")
     em.macro("MlstFtCellsDone", fmt_int(len(pre)), src, "DONE paper-run fine-tuning cells (count)")
     if ref:
-        em.macro("MlstFtRefLr", _one(ref, "lr", "from-scratch references"), src, "cells[ref_v100].lr")
+        em.macro("MlstFtRefLr", _power(_one(ref, "lr", "from-scratch references")), src, "cells[ref_v100].lr")
         em.macro("MlstFtRefSeedsWord", words(len({c["ft_seed"] for c in ref})), src, "cells[ref_v100].ft_seed (count)")
         em.macro("MlstFtRefGpuTypes", " and ".join(gpu_name(g) for g in sorted({c["gpu_device_name"] for c in ref})),
                  src, "cells[ref_v100].gpu_device_name")
@@ -341,23 +358,30 @@ def table_pairs(fits, runs, fmt_pm, status, rows) -> str:
                 c = fits.get(m, {}).get("cells", {}).get(PRIMARY, {}).get("jc2_pairs", {}).get(PAIR_N, {}).get(key)
                 vals.append(None if c is None else 1 - c["auc"])
             cells.append(_cell(vals, len(runs[arm]), fmt_pm, 1e3) + mark[status.get(arm, {}).get(key, "apart")])
-        lines.append(LABEL[arm] + " & " + " & ".join(cells) + r" \\")
+        lines.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
 def table_mass(mass, runs, fmt_pm, rows) -> str:
-    lines = [r"\begin{tabular}{lcc}", r"\toprule",
-             r"pretraining & ridge & MLP \\", r"\midrule"]
+    """sigma_eff of the MLP mass regression per configuration, and that of the target itself:
+    the value a constant prediction gives, against which any information in the features is
+    measured. The ridge regression is not shown: for every model pretrained without the mass
+    regression its residuals are wider than the target's (the MSE fit widens the 68 % core)."""
+    lines = [r"\begin{tabular}{lc}", r"\toprule",
+             r"pretraining & $\sigma_{\mathrm{eff}}$ \\", r"\midrule"]
+    targets = set()
     for arm in rows:
-        cells = []
-        for probe in ("ridge", "mlp"):
-            vals = []
-            for m in runs[arm]:
-                d = mass.get(m)
-                ck = "init" if m.startswith("init-") else PRIMARY
-                vals.append(None if d is None else d["arms"][ck][probe]["sigma_eff"])
-            cells.append(_cell(vals, len(runs[arm]), fmt_pm))
-        lines.append(LABEL[arm] + " & " + " & ".join(cells) + r" \\")
+        vals = []
+        for m in runs[arm]:
+            d = mass.get(m)
+            ck = "init" if m.startswith("init-") else PRIMARY
+            vals.append(None if d is None else d["arms"][ck]["mlp"]["sigma_eff"])
+            if d is not None:
+                targets.add(round(d["arms"][ck]["target"]["sigma_eff"], 12))
+        lines.append(LABEL[arm] + " & " + _cell(vals, len(runs[arm]), fmt_pm) + r" \\")
+    if len(targets) != 1:
+        raise SystemExit(f"FATAL: the mass target's sigma_eff differs between runs: {sorted(targets)}")
+    lines += [r"\midrule", "constant prediction & " + _lone(targets.pop()) + r" \\"]
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -441,14 +465,14 @@ def table_compute(comp, runs, fmt_int) -> tuple[str, dict]:
         per = collections.Counter()
         for m in ms:
             if m not in comp:
-                lines.append(rf"{LABEL[arm]}, run {m[-1]} & \pending{{training}} & \\")
+                lines.append(rf"{LABEL[arm]}, seed {m[-1]} & \pending{{training}} & \\")
                 continue
             h = collections.Counter()
             for e in comp[m]["epochs"]:
                 h[gpu_name(e["device"])] += (e["train_seconds"] + e["val_seconds"]) / 3600
             per.update(h)
             types = ", ".join(f"{g} ({h[g]:.0f})" for g in sorted(h, key=lambda g: -h[g]))
-            lines.append(rf"{LABEL[arm]}, run {m[-1]} & {types} & {fmt_int(round(sum(h.values())))} \\")
+            lines.append(rf"{LABEL[arm]}, seed {m[-1]} & {types} & {fmt_int(round(sum(h.values())))} \\")
         if per:
             hours[arm] = per
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""]), hours
@@ -458,30 +482,33 @@ CAPTIONS = {
     "probes": ("tab:probes", "Linear probes on the frozen class token at the largest training set of each "
                "task: $(1-\\mathrm{AUC})\\times10^{3}$, lower is better, with the macro AUC "
                "(one-versus-rest) on JetClass-II and JetClass and the AUC on top and quark/gluon "
-               "tagging, the latter also on Herwig jets. Mean $\\pm$ standard deviation "
+               "tagging (q/g), and q/g also on jets generated with Herwig. Mean $\\pm$ standard deviation "
                "over the pretraining runs. $^{*}$: a probe of the randomly initialized network stopped "
                "at the iteration limit."),
     "probes_n": ("tab:probesn", "Linear probes against the training-set size: "
                  "$(1-\\mathrm{AUC})\\times10^{3}$, lower is better, with the macro AUC on "
                  "JetClass-II and the AUC on top tagging. Mean $\\pm$ standard deviation over the "
-                 "pretraining runs."),
+                 "pretraining runs. $^{*}$: a probe of the randomly initialized network stopped at the "
+                 "iteration limit."),
     "pairs": ("tab:pairs", "Binary linear probes between JetClass-II classes on the largest training "
               "subset: $(1-\\mathrm{AUC})\\times10^{3}$, lower is better. $^{\\dagger}$: the label set "
               "merges the two sides into one class; $^{\\ddagger}$: it merges the first side with part "
               "of the second. Mean $\\pm$ standard deviation over the pretraining runs; random partitions 1 to 5 have a "
               "single pretraining run each. The $b$-quark boundary and the random flavor boundary lie "
-              "only in the four-quark decays $X\\to YY\\to QQQQ$, and the random flavor boundary keeps "
+              "only in the four-quark decays $X\\to YY\\to QQQQ$, and the random partition with a random flavor boundary keeps "
               "apart no decays that differ only by exchanging $b$ and $c$ quarks."),
-    "mass": ("tab:mass", "Resolution $\\sigma_{\\mathrm{eff}}$ of the jet mass regressed from frozen "
-             "features with a ridge and a small nonlinear (MLP) probe; lower is better. The MLP has one "
-             "hidden layer, stops early on a validation split and is averaged over __MLP_SEEDS__ seeds. "
-             "Mean $\\pm$ standard deviation over the pretraining runs."),
+    "mass": ("tab:mass", "Resolution $\\sigma_{\\mathrm{eff}}$ of the mass-correction target $y$ of "
+             "Eq.~(\\ref{eq:masstarget}) regressed from the frozen features by a small multilayer "
+             "perceptron (MLP); lower is better. The MLP has one hidden layer and stops early on a "
+             "validation split; it is trained with __MLP_SEEDS__ seeds whose predictions are averaged. "
+             "Mean $\\pm$ standard deviation over the pretraining runs. The last row is the "
+             "$\\sigma_{\\mathrm{eff}}$ of the target itself, which a constant prediction gives."),
     "ft": ("tab:ft", "Full fine-tuning against the training-set size: $(1-\\mathrm{AUC})\\times10^{3}$, "
            "lower is better, with the macro AUC (one-versus-rest) on JetClass-II and JetClass and the AUC "
-           "on top and quark/gluon tagging, the latter also on Herwig jets. "
+           "on top and quark/gluon (q/g) tagging, and q/g also on jets generated with Herwig. "
            "Mean $\\pm$ standard deviation over the pretraining runs, one fine-tuning each; from "
            "scratch, over its fine-tuning seeds."),
-    "ft_rej": ("tab:ftrej", "Background rejection $R_{50}$ and $R_{30}$ ($1/\\varepsilon_B$ at 50\\% and "
+    "ft_rej": ("tab:ftrej", "Background rejection $R_{50}$ and $R_{30}$ ($1/\\epsilon_B$ at 50\\% and "
                "30\\% signal efficiency) after full fine-tuning on the whole training set. Mean $\\pm$ "
                "standard deviation over the pretraining runs; from scratch, over its fine-tuning seeds. "
                "Every value rests on at least __FEWEST__ background jets passing the cut."),
@@ -541,7 +568,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     em.macro("MlstPaperRuns", str(n_paper), root / "configs/arms/v2_paper_runs.txt", "runs (count)")
     if len(done) < n_paper:
         missing.append(f"linear probes: {len(done)} of {n_paper} paper runs")
-    out = {"tables/mlst_probes.tex": _float("probes", table_probes(fits, runs, fmt_pm, MAIN + MASS + (INIT,)), True),
+    out = {"tables/mlst_probes.tex": _float("probes", table_probes(fits, runs, fmt_pm, MAIN + MASS + RAND + FLAV + (INIT,)), True),
            "tables/mlst_probes_n.tex": _float("probes_n", table_probes_n(fits, runs, fmt_pm, MAIN + (INIT,)), True),
            "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, runs, fmt_pm, merge_status(root),
                                                                 MAIN + RAND + FLAV)),

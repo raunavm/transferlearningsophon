@@ -2762,9 +2762,9 @@ def table_usecase(surv: dict, sizes: dict, pretrained: list) -> str:
     caption = ("Published discriminants built from sums of Sophon's output scores, against the "
                "number of classes in the label set (columns, finest first). $\\bullet$: the "
                "discriminant can be built exactly from that label set's outputs; ---: it cannot. "
-               "This is a property of the partition (Section~\\ref{sec:tree}), not of a trained model.")
+               "This is a property of the label set (Section~\\ref{sec:tree}), not of a trained model.")
     notes = ["Pretrained in this study: the "
-             + ", ".join(str(sizes[r]) for r in pretrained[:-1])
+             + ", ".join(f"{sizes[r]}-" for r in pretrained[:-1])
              + f" and {sizes[pretrained[-1]]}-class label sets."]
     return _table(head + rows, caption, "tab:usecase", "l l " + "c" * len(cols), notes,
                   wide=True)

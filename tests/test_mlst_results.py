@@ -174,7 +174,7 @@ def test_the_recipe_macros_come_from_every_cell_and_one_stray_value_stops_the_bu
     cells["best70/leg1/not-a-paper-run/N1000/s1"] = _cell("1", "not-a-paper-run", "1000", lr="9")   # ignored
     em, missing = _Em(), []
     M.ft_recipe(em, _recipe_tree(tmp_path / "a", cells), {"l188-s1"}, str, missing, MT.words)
-    assert em.m["MlstFtLr"] == "1e-4" and em.m["MlstFtHeadMult"] == "50" and em.m["MlstFtBenchEpochs"] == "20"
+    assert em.m["MlstFtLr"] == r"\ensuremath{10^{-4}}" and em.m["MlstFtHeadMult"] == "50" and em.m["MlstFtBenchEpochs"] == "20"
     assert em.m["MlstFtEpochsEThree"] == "50" and em.m["MlstFtEpochsESix"] == "10"
     assert em.m["MlstFtGpuTypes"] == "V100" and em.m["MlstFtCellsDone"] == "3"
     assert em.m["MlstFtRefLr"].startswith(r"\pending") and any("V100" in x for x in missing)
@@ -188,4 +188,22 @@ def test_the_recipe_macros_come_from_every_cell_and_one_stray_value_stops_the_bu
                                                                        recipe="part-from-scratch") for s in (1, 2, 3)})
     em = _Em()
     M.ft_recipe(em, _recipe_tree(tmp_path / "d", cells), {"l188-s1"}, str, [], MT.words)
-    assert em.m["MlstFtRefLr"] == "1e-3" and em.m["MlstFtRefSeedsWord"] == "three"
+    assert em.m["MlstFtRefLr"] == r"\ensuremath{10^{-3}}" and em.m["MlstFtRefSeedsWord"] == "three"
+
+
+def test_the_mass_table_shows_the_mlp_and_the_constant_prediction():
+    """The ridge column is gone (its residuals are wider than the target's for every model
+    without the mass regression); the last row is the target's own sigma_eff."""
+    rec = lambda mlp: {"arms": {"best70": {"mlp": {"sigma_eff": mlp}, "ridge": {"sigma_eff": 0.33},
+                                           "target": {"sigma_eff": 0.2986301355609203}}}}
+    mass = {"mtx-l188-s1": rec(0.25), "mtx-l188-s2": rec(0.26)}
+    t = M.table_mass(mass, {"L188": ["mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"]}, MT.fmt_pm, ("L188",))
+    assert "ridge" not in t and "0.33" not in t
+    assert "constant prediction & 0.29863" in t and r"\pending{2 of 3}" in t
+    mass["mtx-l188-s2"]["arms"]["best70"]["target"]["sigma_eff"] = 0.31
+    with pytest.raises(SystemExit, match="differs between runs"):
+        M.table_mass(mass, {"L188": ["mtx-l188-s1", "mtx-l188-s2"]}, MT.fmt_pm, ("L188",))
+
+
+def test_learning_rates_print_as_powers_of_ten():
+    assert M._power("1e-4") == r"\ensuremath{10^{-4}}" and M._power("5e-4") == r"\ensuremath{5\times10^{-4}}"

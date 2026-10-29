@@ -222,7 +222,7 @@ def level_rules(rows: list[dict]) -> dict:
             "R63_Q1": "each decay topology by its numbers of $b$ and $c$ quarks",
             "R42_Q1": "each decay topology by whether it holds a $b$ quark, else a $c$, else neither",
             "R29_Q1": "each decay topology by whether it holds a $b$ or $c$ quark",
-            "R16_Q1": "decay topology: prongs, and quarks or gluons and leptons, without flavor",
+            "R16_Q1": "the number of prongs and whether each comes from a quark or gluon, a charged lepton, a $\\tau$ lepton or a neutrino, without flavor",
             "R3_VIS": f"{visible_prongs(rows)} visible prongs (a neutrino is not counted), or QCD",
             "R1_Q1": "resonance decay or QCD"}
 
@@ -246,7 +246,8 @@ def table_levels(rows: list[dict], v2_levels: bool) -> str:
                "level labels, and whether models were pretrained on it. Below, the groups of the "
                f"{sizes['R16_Q1']}-class label set, by the group number used in "
                "Table~\\ref{tab:app-vocabulary}, with the number of JetClass-II classes each merges. "
-               "$\\ell$ is an electron or a muon; $\\tau_\\ell$ a leptonic $\\tau$ decay.")
+               "$\\ell$ is an electron or a muon; $\\tau_\\ell$ a leptonic $\\tau$ decay. A four-prong "
+               "group with a neutrino has three visible prongs.")
     lines = ["\\begin{table}[p]", "\\centering", "\\small", f"\\caption{{{caption}}}",
              "\\label{tab:app-levels}", "\\begin{tabular}{r p{0.62\\linewidth} l}", "\\toprule",
              "classes & labels & pretrained \\\\", "\\midrule", *body, "\\bottomrule",
