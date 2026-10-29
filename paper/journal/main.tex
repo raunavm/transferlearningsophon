@@ -476,12 +476,14 @@ defined in Ref.~\cite[Sec.~8.2.2]{glopart}.
 
 \subsection{Uncertainties}\label{sec:stats}
 
-Every number is the mean over the \MlstNRunsWord{} independently pretrained models
-of a configuration, and the uncertainty is the standard deviation between them,
+Every number is the mean over the independently pretrained models of a
+configuration (\MlstNRunsWord{} for each vocabulary of the label tree,
+\MlstMassNRunsWord{} for the mass-output models and \RandFlavRuns{} for the flavour
+vocabularies), and the uncertainty is the standard deviation between them,
 rounded following the Particle Data Group~\cite{pdg}. Each pretrained model is
 probed or fine-tuned once, so the spread contains the pretraining and the
 downstream training variation together. The random partitions, with
-\RandVtwoRuns{} runs each, are shown partition by partition. Where
+\RandVtwoRuns{} pretraining run each, are shown partition by partition. Where
 configurations are compared, the ratio is taken run by run between runs of the
 same index, which share their training stream, and its mean and standard
 deviation over the runs are given. Background rejections at tight working points
@@ -613,7 +615,21 @@ value without the mass output, at \Kres{} and \Kcoarse{} classes.
 
 All pretraining and all evaluations but the Herwig quark/gluon sample use a single
 simulation family, so an effect of the vocabulary that is specific to it cannot be
-excluded. \pending{limitations}
+excluded. A single architecture and size is studied, Sophon's Particle
+Transformer; whether fine labels help can depend on how far a network is
+overparameterised~\cite{pirovano}, so a smaller or larger model may weigh the
+vocabularies differently. The vocabularies are levels of a single label tree, and
+other groupings enter only through the random partitions and the flavour
+vocabularies. Every model is trained on the same number of examples, so the study
+does not say whether a finer vocabulary pays off on a longer schedule. Each
+vocabulary of the tree is pretrained \MlstNRunsWord{} times, the mass-output models
+\MlstMassNRunsWord{} times, the flavour vocabularies \RandFlavRuns{} times and each
+random partition \RandVtwoRuns{} time, so the quoted spreads are themselves
+uncertain, and differences between vocabularies smaller than them are not
+resolved. Fine-tuning follows a single recipe per dataset, not tuned per
+vocabulary. \pending{the $X\to b\bar b$ and $X\to bs$ samples, once they are in}
+% CHECK: re-read once every result is in; the last sentence of the pending part names
+% the samples' mass and the JetClass-II QCD background.
 
 % ============================================================================
 \section{Conclusion}
