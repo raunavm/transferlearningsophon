@@ -29,7 +29,11 @@ import re
 RUNGS = ["L188", "L162", "R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1", "R3_VIS", "R1_Q1"]
 SHOWN = ["R63_Q1", "R42_Q1", "R29_Q1", "R16_Q1"]      # coarser than 162, finer than 4
 PRETRAINED = {"L188", "L162", "R42_Q1", "R16_Q1"}
-PRETRAINED_V2 = {"R63_Q1", "R29_Q1"}                  # the 64- and 30-class rerun arms
+# The 64- and 30-class rerun arms were cut from the grid on 2026-10-09, so the paper
+# pretrains no level outside PRETRAINED.
+PRETRAINED_V2: set = set()
+# Column headings of the flavor control label sets, under a "flavor control" heading.
+FLAV_HEAD = {"FLAV_F0": "blind", "FLAV_F1": "$b$", "FLAV_F1R": "random"}
 
 _TOKENS = re.compile(r"tauh|taue|taum|[bcsqgemvQ]")
 _TOKEN_TEX = {"tauh": r"\tau_h", "taue": r"\tau_e", "taum": r"\tau_\mu", "e": "e",
@@ -81,31 +85,30 @@ def partitions(maps_dir: pathlib.Path, rows: list[dict]) -> list[tuple[str, str,
     """[(heading, column, {class_name: group id})] from every partition map in
     configs/labelmaps (any *_map*.v*.csv but the tree's own: the random partitions'
     rand_label_map.v*.csv and the flavour pair's flavour_pair_map.v2.csv), each
-    file's partitions in column order. The first grid's random partitions (v1) are
-    numbered from 1; the rerun's (v2) are headed R and their number (R3), a later
-    version's by version and number (v3.2), and a map that is not a numbered random
-    partition by its own name (F0)."""
+    file's partitions in column order, random partitions first. The first grid's
+    random partitions (v1) belong to the retired first set of runs and are not
+    printed. The rerun's (v2) are headed by their number, as in the paper's
+    "random partition 3"; a later version's by version and number (v3.2); the
+    flavor control label sets by FLAV_HEAD."""
     out = []
     names = {r["class_name"] for r in rows}
     version_of = lambda f: re.search(r"\.v(\d+)\.csv$", f.name).group(1)
     # By version, the random partitions of each version before its other maps.
     for f in sorted(maps_dir.glob("*_map*.v*.csv"),
                     key=lambda f: (int(version_of(f)), not f.name.startswith("rand_"), f.name)):
-        if f.name.startswith("rung_label_maps"):
+        if f.name.startswith("rung_label_maps") or version_of(f) == "1":
             continue
         version = version_of(f)
         prows = read_map(f)
         if {r["class_name"] for r in prows} != names:
             raise SystemExit(f"FATAL: {f} does not cover the native classes of the label map")
         cols = [c for c in prows[0] if re.fullmatch(r"(RAND|FLAV)\w*", c) and not c.endswith("_name")]
-        for i, c in enumerate(cols, 1):
+        for c in cols:
             m = re.fullmatch(r"RAND\d*_p(\d+)", c)
-            # FLAV_F1R is headed F1r, the name the text gives the random-cut control
-            head = (str(i) if version == "1" else f"R{m.group(1)}" if m and version == "2"
-                    else f"v{version}.{m.group(1)}" if m
-                    else re.sub(r"(?<=\d)R$", "r", c.split("_", 1)[-1]))
+            head = (m.group(1) if m and version == "2" else f"v{version}.{m.group(1)}" if m
+                    else FLAV_HEAD.get(c, c.split("_", 1)[-1]))
             out.append((head, c, {r["class_name"]: r[c] for r in prows}))
-    return out
+    return sorted(out, key=lambda p: not p[1].startswith("RAND"))
 
 
 def check_grid_covered(grid_path: pathlib.Path, parts: list) -> None:
@@ -141,7 +144,13 @@ def table_vocabulary(rows: list[dict], parts: list) -> str:
             order[rung].setdefault(r[rung], len(order[rung]))
     key = lambda r: tuple(order[g][r[g]] for g in ("R16_Q1", "R42_Q1", "R63_Q1")) + (int(r["jet_label"]),)
     sizes = {rung: len({r[rung] for r in rows}) for rung in RUNGS}
-    head = ("native class & " + " & ".join(str(sizes[r]) for r in SHOWN)
+    rand = [h for h, c, _ in parts if c.startswith("RAND")]
+    flav = [h for h, c, _ in parts if not c.startswith("RAND")]
+    head = (f" & \\multicolumn{{{len(SHOWN)}}}{{c}}{{level of the hierarchy}}"
+            + (f" & \\multicolumn{{{len(rand)}}}{{c}}{{random partition}}" if rand else "")
+            + (f" & \\multicolumn{{{len(flav)}}}{{c}}{{flavor control}}" if flav else "")
+            + " \\\\\n"
+            + "JetClass-II class & " + " & ".join(str(sizes[r]) for r in SHOWN)
             + "".join(f" & {h}" for h, _, _ in parts) + " \\\\")
     body, last = [], None
     for r in sorted(rows, key=key):
@@ -150,15 +159,13 @@ def table_vocabulary(rows: list[dict], parts: list) -> str:
         last = r["R16_Q1"]
         body.append(native_tex(r["class_name"]) + " & " + " & ".join(r[g] for g in SHOWN)
                     + "".join(f" & {p[r['class_name']]}" for _, _, p in parts) + " \\\\")
-    first = [h for h, c, _ in parts if h.isdigit()]
-    later = [h for h, c, _ in parts if not h.isdigit() and not c.startswith("FLAV")]
-    flav = [h for h, c, _ in parts if c.startswith("FLAV")]
-    caption = ("Every native JetClass-II class and the group it belongs to at each coarser level "
-               f"of the label tree (columns headed by the number of classes at that level: "
-               f"{', '.join(str(sizes[r]) for r in SHOWN)}), in each random partition and in "
-               "each vocabulary of the flavour pair. "
+    caption = ("Every JetClass-II class and its group at each coarser level of the class "
+               f"hierarchy (columns headed by the number of classes at that level: "
+               f"{', '.join(str(sizes[r]) for r in SHOWN)}), in each random partition, numbered as "
+               "in Table~\\ref{tab:pairs}, and in each flavor control label set: flavor-blind, "
+               "$b$ boundary and random boundary (Section~\\ref{sec:controls}). "
                "Group numbers are those of the released label maps; classes that share a number "
-               "in a column share a class in that vocabulary. At the "
+               "in a column share a class in that label set. At the "
                f"{sizes['L162']}-class level every resonant class keeps its own label and the "
                f"QCD classes share one; at {sizes['R3_VIS']} classes the groups are decays with "
                f"{visible_prongs(rows)} visible prongs (a neutrino is not counted) and QCD. "
@@ -166,13 +173,6 @@ def table_vocabulary(rows: list[dict], parts: list) -> str:
                f"{sizes['R16_Q1']}-class group (Table~\\ref{{tab:app-levels}}), with a gap between "
                "groups. $q$ is a $u$ or $d$ quark; $\\tau_h$ a hadronic and $\\tau_e$, $\\tau_\\mu$ "
                "leptonic $\\tau$ decays.")
-    if first:
-        caption += (f" Random partitions {', '.join(first)} are those of Sec.~\\ref{{sec:controls}}")
-        caption += (f"; {', '.join(later)} those of the rerun." if later else ".")
-    if flav:
-        names = ", ".join(flav[:-1]) + " and " + flav[-1] if len(flav) > 1 else flav[0]
-        caption += (f" {names} are the rerun's flavour-pair vocabularies "
-                    "(Sec.~\\ref{sec:controls}).")
     ncol = len(SHOWN) + len(parts)
     return _longtable("l " + "r" * ncol, head, body, caption, "tab:app-vocabulary")
 
@@ -215,12 +215,12 @@ def level_rules(rows: list[dict]) -> dict:
     if bad:
         raise SystemExit(f"FATAL: the appendix's description of {bad} no longer matches the "
                          "group names of the label map")
-    return {"L188": "native classes",
+    return {"L188": "the JetClass-II classes",
             "L162": "one QCD class; every resonant class kept",
             "R63_Q1": "each decay topology by its numbers of $b$ and $c$ quarks",
             "R42_Q1": "each decay topology by whether it holds a $b$ quark, else a $c$, else neither",
             "R29_Q1": "each decay topology by whether it holds a $b$ or $c$ quark",
-            "R16_Q1": "decay topology: prongs, and quarks or gluons and leptons, without flavour",
+            "R16_Q1": "decay topology: prongs, and quarks or gluons and leptons, without flavor",
             "R3_VIS": f"{visible_prongs(rows)} visible prongs (a neutrino is not counted), or QCD",
             "R1_Q1": "resonance decay or QCD"}
 
@@ -237,13 +237,13 @@ def table_levels(rows: list[dict], v2_levels: bool) -> str:
     for r in rows:
         groups.setdefault((r["R16_Q1"], r["R16_Q1_name"]), []).append(r)
     body.append(f"\\multicolumn{{3}}{{@{{}}l}}{{\\itshape the {sizes['R16_Q1']} classes of the "
-                f"{sizes['R16_Q1']}-class vocabulary}} \\\\")
+                f"{sizes['R16_Q1']}-class label set}} \\\\")
     for (gid, name), members in groups.items():
-        body.append(f"{gid} & {group_tex(name)} & {len(members)} native \\\\")
-    caption = ("The levels of the label tree, finest first: the number of classes, what each level "
-               "labels, and whether models were pretrained on it. Below, the groups of the "
-               f"{sizes['R16_Q1']}-class vocabulary, by the group number used in "
-               "Table~\\ref{tab:app-vocabulary}, with the number of native classes each merges. "
+        body.append(f"{gid} & {group_tex(name)} & {len(members)} {'class' if len(members) == 1 else 'classes'} \\\\")
+    caption = ("The levels of the class hierarchy, finest first: the number of classes, what each "
+               "level labels, and whether models were pretrained on it. Below, the groups of the "
+               f"{sizes['R16_Q1']}-class label set, by the group number used in "
+               "Table~\\ref{tab:app-vocabulary}, with the number of JetClass-II classes each merges. "
                "$\\ell$ is an electron or a muon; $\\tau_\\ell$ a leptonic $\\tau$ decay.")
     lines = ["\\begin{table}[p]", "\\centering", "\\small", f"\\caption{{{caption}}}",
              "\\label{tab:app-levels}", "\\begin{tabular}{r p{0.62\\linewidth} l}", "\\toprule",

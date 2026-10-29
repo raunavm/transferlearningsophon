@@ -1,7 +1,7 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Linear probes on the frozen class token at the largest training set of each task: macro AUC (one-versus-rest) on JetClass-II and JetClass, AUC on top and quark/gluon tagging, the latter also on Herwig jets. Mean $\pm$ standard deviation over the pretraining runs. $^{*}$: a probe of the untrained network stopped at the iteration limit.}
+\caption{Linear probes on the frozen class token at the largest training set of each task: macro AUC (one-versus-rest) on JetClass-II and JetClass, AUC on top and quark/gluon tagging, the latter also on Herwig jets. Mean $\pm$ standard deviation over the pretraining runs. $^{*}$: a probe of the randomly initialized network stopped at the iteration limit.}
 \label{tab:probes}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lccccc}
@@ -13,9 +13,9 @@ pretraining & JetClass-II & JetClass & top & q/g & q/g, Herwig \\
 \Kres{} classes & 0.98071\,$\pm$\,0.00016 \pending{2 of 3} & 0.96815\,$\pm$\,0.00017 \pending{2 of 3} & 0.9446\,$\pm$\,0.0010 \pending{2 of 3} & 0.865\,$\pm$\,0.006 \pending{2 of 3} & 0.797\,$\pm$\,0.004 \pending{2 of 3} \\
 \Kmid{} classes & 0.97811\,$\pm$\,0.00008 & 0.9680\,$\pm$\,0.0004 & 0.938\,$\pm$\,0.009 & 0.871\,$\pm$\,0.006 & 0.8004\,$\pm$\,0.0027 \\
 \Kcoarse{} classes & 0.9722\,$\pm$\,0.0005 \pending{2 of 3} & 0.9650\,$\pm$\,0.0011 \pending{2 of 3} & 0.9400\,$\pm$\,0.0025 \pending{2 of 3} & 0.871\,$\pm$\,0.011 \pending{2 of 3} & 0.8017\,$\pm$\,0.0025 \pending{2 of 3} \\
-\Kres{} classes, mass output & 0.98032\,$\pm$\,0.00023 & 0.9690\,$\pm$\,0.0009 & 0.9510\,$\pm$\,0.0027 & 0.8756\,$\pm$\,0.0011 & 0.8032\,$\pm$\,0.0033 \\
-\Kcoarse{} classes, mass output & 0.97174\,$\pm$\,0.00034 & 0.96532\,$\pm$\,0.00031 & 0.953\,$\pm$\,0.007 & 0.8727\,$\pm$\,0.0011 & 0.80064\,$\pm$\,0.00027 \\
-untrained network & 0.8187\,$\pm$\,0.0017$^{*}$ & 0.8278\,$\pm$\,0.0010 & 0.9389\,$\pm$\,0.0005 & 0.8612\,$\pm$\,0.0016 & 0.7965\,$\pm$\,0.0009 \\
+\Kres{} classes, mass regression & 0.98032\,$\pm$\,0.00023 & 0.9690\,$\pm$\,0.0009 & 0.9510\,$\pm$\,0.0027 & 0.8756\,$\pm$\,0.0011 & 0.8032\,$\pm$\,0.0033 \\
+\Kcoarse{} classes, mass regression & 0.97174\,$\pm$\,0.00034 & 0.96532\,$\pm$\,0.00031 & 0.953\,$\pm$\,0.007 & 0.8727\,$\pm$\,0.0011 & 0.80064\,$\pm$\,0.00027 \\
+randomly initialized network & 0.8187\,$\pm$\,0.0017$^{*}$ & 0.8278\,$\pm$\,0.0010 & 0.9389\,$\pm$\,0.0005 & 0.8612\,$\pm$\,0.0016 & 0.7965\,$\pm$\,0.0009 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
