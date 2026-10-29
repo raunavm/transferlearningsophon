@@ -389,7 +389,8 @@ def table_mass(mass, runs, fmt_pm, rows) -> str:
 # sigma_eff, taken run by run between runs of the same index -- they share the training stream
 # and the initial trunk -- as mean +- SD over the indices both have (Sec. Uncertainties).
 CMP_PROBES = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("L188", INIT), ("R16_Q1", INIT),
-              ("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))
+              ("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"),
+              ("FLAV_F0", "L188"), ("FLAV_F1", "L188"), ("FLAV_F1R", "L188"))
 CMP_PAIRS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("FLAV_F1", "FLAV_F0"),
              ("FLAV_F1R", "FLAV_F1"), ("FLAV_F1R", "FLAV_F0"))
 CMP_MASS = (("R16_Q1", "L188"), ("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))
@@ -420,15 +421,27 @@ def _ratio(runs, arm, ref, value, fmt_pm) -> str:
 
 
 def comparisons(em, fits, mass, runs, status, index, fmt_pm) -> None:
-    """The macros the results text quotes: MlstCmp<task or pair or mass probe><arm>Over<ref>, and
-    MlstPairRand{Merged,Apart}<pair>, the binary probes' (1 - AUC) x 10^3 over the random
-    partitions that merge the pair and over those that keep it apart (one run each)."""
+    """The macros the results text quotes: MlstCmp<task or pair or mass probe><arm>Over<ref>;
+    MlstCmp<task>RandOverFull, each random partition (one run) over the 188-class run of its
+    run index, as mean +- SD over the partitions; MlstPairRand{Merged,Apart}<pair>, the binary
+    probes' (1 - AUC) x 10^3 over the random partitions that merge the pair and over those that
+    keep it apart (one run each); and MlstMassInitOverConstant, the randomly initialized
+    network's sigma_eff over the target's own (a constant prediction)."""
     for ds, met, _ in TASKS:
         n = _largest(fits, ds)
         for arm, ref in CMP_PROBES:
             em.macro(f"MlstCmp{TASK_WORD[ds]}{WORD[arm]}Over{WORD[ref]}",
                      _ratio(runs, arm, ref, lambda m: _oma(_probe(fits, m, ds, n, met)), fmt_pm), index,
                      f"linear probe {ds} N={n}: (1 - {met}) of {arm} over {ref}, run by run")
+        full = {m.rsplit("-s", 1)[1]: _oma(_probe(fits, m, ds, n, met)) for m in runs["L188"]}
+        r = []
+        for arm in RAND:
+            for m in runs[arm]:
+                a, b = _oma(_probe(fits, m, ds, n, met)), full.get(m.rsplit("-s", 1)[1])
+                r.append(None if a is None or b is None else a / b)
+        em.macro(f"MlstCmp{TASK_WORD[ds]}RandOverFull", _cell(r, len(r), fmt_pm), index,
+                 f"linear probe {ds} N={n}: (1 - {met}) of each random partition over the 188-class "
+                 "run of the same index, mean +- SD over the partitions")
 
     def pair(m, key):
         c = fits.get(m, {}).get("cells", {}).get(PRIMARY, {}).get("jc2_pairs", {}).get(PAIR_N, {}).get(key)
@@ -443,6 +456,10 @@ def comparisons(em, fits, mass, runs, status, index, fmt_pm) -> None:
             em.macro(f"MlstPairRand{side.title()}{PAIR_WORD[key]}", _cell([pair(m, key) for m in ms], len(ms), fmt_pm, 1e3),
                      index, f"binary probe {key}: (1 - AUC) x 10^3 over the random partitions that "
                      + {"merged": "merge it", "apart": "keep it apart"}[side])
+    init = [mass[m]["arms"]["init"]["mlp"]["sigma_eff"] / mass[m]["arms"]["init"]["target"]["sigma_eff"]
+            if m in mass else None for m in runs[INIT]]
+    em.macro("MlstMassInitOverConstant", _cell(init, len(init), fmt_pm), index,
+             "mass resolution, MLP: sigma_eff of the randomly initialized network over the target's own")
     for probe in ("ridge", "mlp"):
         for arm, ref in CMP_MASS:
             em.macro(f"MlstCmp{probe.title()}{WORD[arm]}Over{WORD[ref]}",
