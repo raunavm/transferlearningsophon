@@ -1,0 +1,180 @@
+{
+  "prediction": "S7: resolution improves with the mass output at both granularities; larger gain at 17 classes; without the mass output, finer labels give equal or better resolution",
+  "target": "log(genjet_sdmass / jet_sdmass), the groomed log mass-ratio",
+  "resolution_statistic": "sigma_eff = half the SMALLEST interval containing 68% of the residual area (CMS-DP-2021-017 p.5; CERN-THESIS-2024-281 p.172). The central 68% half-width and the standard deviation are reported beside it and carry no prediction.",
+  "residual": "log(m_predicted / m_true); exponentiating gives the mass response ratio the field quantifies",
+  "centering": "per-188-native-class mean of the target, fitted on the training split only; subsumes family-mean removal",
+  "tail": "reported as the share with |residual| > 1.0, never trimmed",
+  "split_seed": 20260822,
+  "tail_at": 1.0,
+  "cpu_model": "AMD EPYC 7551P 32-Core Processor",
+  "readout": "features",
+  "row_alignment_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba",
+  "n_jets_total": 2000000,
+  "n_jets_valid": 1993321,
+  "script_sha256": "8b852f7091c0ace81d4bddae657ccc93a00ebc6bc3267561767a59c082a2a5a0",
+  "arms": {
+    "best70": {
+      "ridge": {
+        "sigma_eff": 0.3437094433764638,
+        "sigma_eff_interval": [
+          -0.3801414697065099,
+          0.30727741704641776
+        ],
+        "sigma68_central": 0.34637752497769314,
+        "sd": 0.6321404375683812,
+        "median": -0.02955266329855828,
+        "mode_of_eff_interval": -0.03643202633004608,
+        "fractional": 0.4101688420790935,
+        "tail_fraction": 0.06418563813107557,
+        "tail_at": 1.0,
+        "n": 398625,
+        "alpha": 100.0,
+        "val_r2": 0.20560012756829438
+      },
+      "mlp": {
+        "sigma_eff": 0.24872939926954146,
+        "sigma_eff_interval": [
+          -0.2652426343600281,
+          0.23221616417905486
+        ],
+        "sigma68_central": 0.2523321843983796,
+        "sd": 0.5565373486607806,
+        "median": -0.010847462042852613,
+        "mode_of_eff_interval": -0.01651323509048662,
+        "fractional": 0.2823949690986726,
+        "tail_fraction": 0.047197240514267796,
+        "tail_at": 1.0,
+        "n": 398625,
+        "fit": {
+          "per_seed": [
+            {
+              "seed": 0,
+              "val_mse": 0.6112388372421265
+            },
+            {
+              "seed": 1,
+              "val_mse": 0.6110954284667969
+            },
+            {
+              "seed": 2,
+              "val_mse": 0.6144005656242371
+            }
+          ],
+          "n_seeds": 3,
+          "torch_threads": 4,
+          "cpu_model": "AMD EPYC 7551P 32-Core Processor"
+        }
+      },
+      "target": {
+        "sigma_eff": 0.2986301355609203,
+        "sigma_eff_interval": [
+          -0.19555031628123337,
+          0.4017099548406072
+        ],
+        "sigma68_central": 0.30177445558271,
+        "sd": 0.7072900698298847,
+        "median": 0.047202968513377824,
+        "mode_of_eff_interval": 0.1030798192796869,
+        "fractional": 0.3480109499439186,
+        "tail_fraction": 0.08325117591721543,
+        "tail_at": 1.0,
+        "n": 398625
+      },
+      "provenance": {
+        "label188_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba",
+        "n_jets": 2000000,
+        "cache": "v2",
+        "checkpoint_sha256": "c34ea935dd256a5e9e457954b7da18ce999a7001bf2754df54c3ae3a57658385"
+      }
+    },
+    "best70_bn": {
+      "ridge": {
+        "sigma_eff": 0.3438709636576377,
+        "sigma_eff_interval": [
+          -0.3722284931615506,
+          0.31551343415372474
+        ],
+        "sigma68_central": 0.34623914065338357,
+        "sd": 0.6322109865448404,
+        "median": -0.029503012552389712,
+        "mode_of_eff_interval": -0.02835752950391293,
+        "fractional": 0.4103966313427665,
+        "tail_fraction": 0.06420821574161178,
+        "tail_at": 1.0,
+        "n": 398625,
+        "alpha": 100.0,
+        "val_r2": 0.2054440391098774
+      },
+      "mlp": {
+        "sigma_eff": 0.24786935638110827,
+        "sigma_eff_interval": [
+          -0.2641094126701435,
+          0.23162930009207305
+        ],
+        "sigma68_central": 0.25189852545604036,
+        "sd": 0.5567215892992071,
+        "median": -0.010727508988742751,
+        "mode_of_eff_interval": -0.016240056289035215,
+        "fractional": 0.28129252856636056,
+        "tail_fraction": 0.0471219818124804,
+        "tail_at": 1.0,
+        "n": 398625,
+        "fit": {
+          "per_seed": [
+            {
+              "seed": 0,
+              "val_mse": 0.6119604706764221
+            },
+            {
+              "seed": 1,
+              "val_mse": 0.6113878488540649
+            },
+            {
+              "seed": 2,
+              "val_mse": 0.6145694255828857
+            }
+          ],
+          "n_seeds": 3,
+          "torch_threads": 4,
+          "cpu_model": "AMD EPYC 7551P 32-Core Processor"
+        }
+      },
+      "target": {
+        "sigma_eff": 0.2986301355609203,
+        "sigma_eff_interval": [
+          -0.19555031628123337,
+          0.4017099548406072
+        ],
+        "sigma68_central": 0.30177445558271,
+        "sd": 0.7072900698298847,
+        "median": 0.047202968513377824,
+        "mode_of_eff_interval": 0.1030798192796869,
+        "fractional": 0.3480109499439186,
+        "tail_fraction": 0.08325117591721543,
+        "tail_at": 1.0,
+        "n": 398625
+      },
+      "provenance": {
+        "label188_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba",
+        "n_jets": 2000000,
+        "cache": "v2",
+        "checkpoint_sha256": "dad4fd322718e34ff9a96a0185d1ee0dd6a1165dec30bc7737acbb01ca8137b1"
+      }
+    }
+  },
+  "centering_detail": {
+    "n_classes_present": 188,
+    "n_classes_used": 184,
+    "min_train_per_class": 50,
+    "n_jets_dropped_small_class": 196,
+    "n_jets_used": 1993125,
+    "split": [
+      1195875,
+      398625,
+      398625
+    ]
+  },
+  "n_classes_used": 184,
+  "labels_used_sha256": "08f4501f5bec77cdb190c2d10bdc785afcb14cfc2d8ba131f0bb10ec6f791220"
+}

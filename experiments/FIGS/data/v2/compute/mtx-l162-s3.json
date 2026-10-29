@@ -1,0 +1,565 @@
+{
+ "run": "mtx-l162-s3",
+ "epochs": [
+  {
+   "epoch": 0,
+   "device": "NVIDIA L4",
+   "train_seconds": 9963.9,
+   "val_seconds": 868.6,
+   "jets_per_s": 1027.7
+  },
+  {
+   "epoch": 1,
+   "device": "NVIDIA L4",
+   "train_seconds": 9995.0,
+   "val_seconds": 866.1,
+   "jets_per_s": 1024.5
+  },
+  {
+   "epoch": 2,
+   "device": "NVIDIA L4",
+   "train_seconds": 9962.8,
+   "val_seconds": 866.7,
+   "jets_per_s": 1027.8
+  },
+  {
+   "epoch": 3,
+   "device": "NVIDIA L4",
+   "train_seconds": 9995.1,
+   "val_seconds": 866.6,
+   "jets_per_s": 1024.5
+  },
+  {
+   "epoch": 4,
+   "device": "NVIDIA L4",
+   "train_seconds": 10021.7,
+   "val_seconds": 866.6,
+   "jets_per_s": 1021.8
+  },
+  {
+   "epoch": 5,
+   "device": "NVIDIA L4",
+   "train_seconds": 9977.4,
+   "val_seconds": 865.8,
+   "jets_per_s": 1026.3
+  },
+  {
+   "epoch": 6,
+   "device": "NVIDIA L4",
+   "train_seconds": 9977.5,
+   "val_seconds": 865.4,
+   "jets_per_s": 1026.3
+  },
+  {
+   "epoch": 7,
+   "device": "NVIDIA L4",
+   "train_seconds": 9982.1,
+   "val_seconds": 866.4,
+   "jets_per_s": 1025.8
+  },
+  {
+   "epoch": 8,
+   "device": "NVIDIA L4",
+   "train_seconds": 10003.3,
+   "val_seconds": 866.2,
+   "jets_per_s": 1023.7
+  },
+  {
+   "epoch": 9,
+   "device": "NVIDIA L4",
+   "train_seconds": 10006.7,
+   "val_seconds": 865.8,
+   "jets_per_s": 1023.3
+  },
+  {
+   "epoch": 10,
+   "device": "NVIDIA L4",
+   "train_seconds": 9990.0,
+   "val_seconds": 865.5,
+   "jets_per_s": 1025.0
+  },
+  {
+   "epoch": 11,
+   "device": "NVIDIA L4",
+   "train_seconds": 9987.5,
+   "val_seconds": 866.6,
+   "jets_per_s": 1025.3
+  },
+  {
+   "epoch": 12,
+   "device": "NVIDIA L4",
+   "train_seconds": 9977.1,
+   "val_seconds": 866.7,
+   "jets_per_s": 1026.3
+  },
+  {
+   "epoch": 13,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6334.8,
+   "val_seconds": 413.2,
+   "jets_per_s": 1616.5
+  },
+  {
+   "epoch": 14,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6501.4,
+   "val_seconds": 433.3,
+   "jets_per_s": 1575.0
+  },
+  {
+   "epoch": 15,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6922.9,
+   "val_seconds": 419.2,
+   "jets_per_s": 1479.1
+  },
+  {
+   "epoch": 16,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6016.9,
+   "val_seconds": 416.7,
+   "jets_per_s": 1701.9
+  },
+  {
+   "epoch": 17,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6116.2,
+   "val_seconds": 414.9,
+   "jets_per_s": 1674.2
+  },
+  {
+   "epoch": 18,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6205.1,
+   "val_seconds": 412.6,
+   "jets_per_s": 1650.3
+  },
+  {
+   "epoch": 19,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6256.8,
+   "val_seconds": 419.0,
+   "jets_per_s": 1636.6
+  },
+  {
+   "epoch": 20,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6030.4,
+   "val_seconds": 413.2,
+   "jets_per_s": 1698.1
+  },
+  {
+   "epoch": 21,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6102.9,
+   "val_seconds": 415.5,
+   "jets_per_s": 1677.9
+  },
+  {
+   "epoch": 22,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6301.3,
+   "val_seconds": 420.1,
+   "jets_per_s": 1625.1
+  },
+  {
+   "epoch": 23,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6131.9,
+   "val_seconds": 429.2,
+   "jets_per_s": 1669.9
+  },
+  {
+   "epoch": 24,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6257.0,
+   "val_seconds": 431.7,
+   "jets_per_s": 1636.6
+  },
+  {
+   "epoch": 25,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6111.5,
+   "val_seconds": 433.8,
+   "jets_per_s": 1675.5
+  },
+  {
+   "epoch": 26,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6329.0,
+   "val_seconds": 421.4,
+   "jets_per_s": 1617.9
+  },
+  {
+   "epoch": 27,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6214.9,
+   "val_seconds": 421.8,
+   "jets_per_s": 1647.6
+  },
+  {
+   "epoch": 28,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5864.6,
+   "val_seconds": 433.4,
+   "jets_per_s": 1746.1
+  },
+  {
+   "epoch": 29,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6463.0,
+   "val_seconds": 429.9,
+   "jets_per_s": 1584.4
+  },
+  {
+   "epoch": 30,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6536.4,
+   "val_seconds": 420.8,
+   "jets_per_s": 1566.6
+  },
+  {
+   "epoch": 31,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6349.3,
+   "val_seconds": 418.1,
+   "jets_per_s": 1612.8
+  },
+  {
+   "epoch": 32,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6364.5,
+   "val_seconds": 415.5,
+   "jets_per_s": 1608.9
+  },
+  {
+   "epoch": 33,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5855.5,
+   "val_seconds": 419.0,
+   "jets_per_s": 1748.8
+  },
+  {
+   "epoch": 34,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5927.2,
+   "val_seconds": 419.9,
+   "jets_per_s": 1727.6
+  },
+  {
+   "epoch": 35,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6412.8,
+   "val_seconds": 414.7,
+   "jets_per_s": 1596.8
+  },
+  {
+   "epoch": 36,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6143.8,
+   "val_seconds": 419.2,
+   "jets_per_s": 1666.7
+  },
+  {
+   "epoch": 37,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6330.7,
+   "val_seconds": 413.9,
+   "jets_per_s": 1617.5
+  },
+  {
+   "epoch": 38,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6267.4,
+   "val_seconds": 420.2,
+   "jets_per_s": 1633.8
+  },
+  {
+   "epoch": 39,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5952.3,
+   "val_seconds": 418.2,
+   "jets_per_s": 1720.3
+  },
+  {
+   "epoch": 40,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6104.4,
+   "val_seconds": 416.8,
+   "jets_per_s": 1677.5
+  },
+  {
+   "epoch": 41,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6122.3,
+   "val_seconds": 415.9,
+   "jets_per_s": 1672.6
+  },
+  {
+   "epoch": 42,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6285.2,
+   "val_seconds": 412.9,
+   "jets_per_s": 1629.2
+  },
+  {
+   "epoch": 43,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6177.3,
+   "val_seconds": 418.4,
+   "jets_per_s": 1657.7
+  },
+  {
+   "epoch": 44,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6191.2,
+   "val_seconds": 414.2,
+   "jets_per_s": 1654.0
+  },
+  {
+   "epoch": 45,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6013.2,
+   "val_seconds": 414.6,
+   "jets_per_s": 1702.9
+  },
+  {
+   "epoch": 46,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6132.8,
+   "val_seconds": 417.9,
+   "jets_per_s": 1669.7
+  },
+  {
+   "epoch": 47,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5943.6,
+   "val_seconds": 415.6,
+   "jets_per_s": 1722.9
+  },
+  {
+   "epoch": 48,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6195.1,
+   "val_seconds": 414.0,
+   "jets_per_s": 1652.9
+  },
+  {
+   "epoch": 49,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6028.6,
+   "val_seconds": 414.9,
+   "jets_per_s": 1698.6
+  },
+  {
+   "epoch": 50,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6030.0,
+   "val_seconds": 412.2,
+   "jets_per_s": 1698.2
+  },
+  {
+   "epoch": 51,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6183.4,
+   "val_seconds": 413.4,
+   "jets_per_s": 1656.1
+  },
+  {
+   "epoch": 52,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6041.7,
+   "val_seconds": 405.9,
+   "jets_per_s": 1694.9
+  },
+  {
+   "epoch": 53,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6639.9,
+   "val_seconds": 544.5,
+   "jets_per_s": 1542.2
+  },
+  {
+   "epoch": 54,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6237.8,
+   "val_seconds": 410.3,
+   "jets_per_s": 1641.6
+  },
+  {
+   "epoch": 55,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5798.7,
+   "val_seconds": 438.6,
+   "jets_per_s": 1765.9
+  },
+  {
+   "epoch": 56,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5908.6,
+   "val_seconds": 421.5,
+   "jets_per_s": 1733.1
+  },
+  {
+   "epoch": 57,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5875.1,
+   "val_seconds": 436.6,
+   "jets_per_s": 1743.0
+  },
+  {
+   "epoch": 58,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5928.5,
+   "val_seconds": 413.7,
+   "jets_per_s": 1727.2
+  },
+  {
+   "epoch": 59,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5935.1,
+   "val_seconds": 413.6,
+   "jets_per_s": 1725.3
+  },
+  {
+   "epoch": 60,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6118.2,
+   "val_seconds": 419.9,
+   "jets_per_s": 1673.7
+  },
+  {
+   "epoch": 61,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6166.5,
+   "val_seconds": 419.0,
+   "jets_per_s": 1660.6
+  },
+  {
+   "epoch": 62,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6031.0,
+   "val_seconds": 411.2,
+   "jets_per_s": 1697.9
+  },
+  {
+   "epoch": 63,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6064.7,
+   "val_seconds": 412.7,
+   "jets_per_s": 1688.5
+  },
+  {
+   "epoch": 64,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6081.2,
+   "val_seconds": 407.2,
+   "jets_per_s": 1683.9
+  },
+  {
+   "epoch": 65,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6290.3,
+   "val_seconds": 418.5,
+   "jets_per_s": 1627.9
+  },
+  {
+   "epoch": 66,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6390.4,
+   "val_seconds": 412.9,
+   "jets_per_s": 1602.4
+  },
+  {
+   "epoch": 67,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6314.9,
+   "val_seconds": 418.2,
+   "jets_per_s": 1621.6
+  },
+  {
+   "epoch": 68,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6463.2,
+   "val_seconds": 415.8,
+   "jets_per_s": 1584.4
+  },
+  {
+   "epoch": 69,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6347.2,
+   "val_seconds": 428.9,
+   "jets_per_s": 1613.3
+  },
+  {
+   "epoch": 70,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6276.6,
+   "val_seconds": 427.6,
+   "jets_per_s": 1631.5
+  },
+  {
+   "epoch": 71,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6566.8,
+   "val_seconds": 422.6,
+   "jets_per_s": 1559.4
+  },
+  {
+   "epoch": 72,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6326.5,
+   "val_seconds": 417.3,
+   "jets_per_s": 1618.6
+  },
+  {
+   "epoch": 73,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6354.5,
+   "val_seconds": 442.8,
+   "jets_per_s": 1611.4
+  },
+  {
+   "epoch": 74,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6222.2,
+   "val_seconds": 434.2,
+   "jets_per_s": 1645.7
+  },
+  {
+   "epoch": 75,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6181.5,
+   "val_seconds": 424.9,
+   "jets_per_s": 1656.6
+  },
+  {
+   "epoch": 76,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6194.4,
+   "val_seconds": 413.9,
+   "jets_per_s": 1653.1
+  },
+  {
+   "epoch": 77,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6188.0,
+   "val_seconds": 416.0,
+   "jets_per_s": 1654.8
+  },
+  {
+   "epoch": 78,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 5930.2,
+   "val_seconds": 415.5,
+   "jets_per_s": 1726.8
+  },
+  {
+   "epoch": 79,
+   "device": "Tesla V100-SXM2-32GB",
+   "train_seconds": 6405.0,
+   "val_seconds": 419.3,
+   "jets_per_s": 1598.8
+  }
+ ]
+}
