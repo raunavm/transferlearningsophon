@@ -293,9 +293,9 @@ partitions under a balance rule that was fixed before the draw, so that each pai
 classes compared in Section~\ref{sec:merge} is merged in some partitions and kept apart in
 others (Appendix~\ref{app:vocab}). Each partition is pretrained with \RandVtwoRuns{} seed.
 
-\paragraph{Random partitions with controlled flavor boundaries.} Two decays differ only in
-quark flavor if exchanging $b$, $c$, $s$, $u$ and $d$ quarks turns one into the other, with
-gluons and leptons unchanged, as for $X\to b\bar b$ and $X\to c\bar c$. A label set has a
+\paragraph{Random partitions with controlled flavor boundaries.} A pair of decays differs
+only in quark flavor if exchanging $b$, $c$, $s$, $u$ and $d$ quarks turns the first into the
+second, with gluons and leptons unchanged, as for $X\to b\bar b$ and $X\to c\bar c$. A label set has a
 flavor boundary wherever it keeps such decays in different classes. The \Kcoarse-class label
 set has groups defined by physics and no flavor boundary; the random partitions have random
 groups and many flavor boundaries. To separate the effect of random grouping from that of
@@ -315,7 +315,8 @@ four-quark decays chosen at random, under rules fixed before the draw. Of the
 quarks, the random partition with a $b$-quark boundary keeps \RandFlavFoneBcSplit{} apart and
 the random partition with a random flavor boundary \RandFlavFonerBcSplit; the latter keeps
 apart instead some four-quark decays that differ by exchanging a $b$ or $c$ quark with an
-$s$, $u$ or $d$ quark. Comparing these two partitions distinguishes a gain that requires a
+$s$, $u$ or $d$ quark. Comparing the partitions with a $b$-quark boundary and with a random
+flavor boundary distinguishes a gain that requires a
 boundary between $b$ and $c$ quarks from a gain that any flavor boundary in the same decays
 provides. Each is pretrained with \RandFlavRuns{} seeds.
 
