@@ -426,27 +426,32 @@ keeps others apart, so the cost of merging a pair can be told apart from the cos
 of having \Kcoarse{} classes.
 
 \paragraph{$X\to b\bar b$ and $X\to bs$ in a search setting.}\label{sec:xbb}
-We follow Sophon's benchmark~\cite[Sec.~III, App.~B]{sophon}. A spin-0 resonance
-decays to $b\bar b$ or to $bs$; signal and Standard Model background jets are the
-leading large-radius jet of an event passing the trigger, and the score is
-evaluated in a window of the soft-drop mass around the resonance mass. Sophon used
-a resonance of \LitSophonXMass~GeV, the window
-$\LitSophonXWindowLo < m_{\mathrm{SD}} < \LitSophonXWindowHi$~GeV and
-\LitSophonXLumi~fb$^{-1}$; \pending{signal mass, window and background sample of
-our inference samples}. $X\to b\bar b$ is tagged directly with Sophon's
-discriminant~\cite[Eq.~(4)]{sophon}, the $X\to b\bar b$ output over itself plus the
-QCD outputs, at the vocabularies that keep an $X\to b\bar b$ class; at the others
-the closest class, the merged group that contains it, is used and named as such.
-This repeats Sophon's own comparison with a \LitSophonAblationNClasses-class
-model across the pretrained vocabularies. $X\to bs$, which no vocabulary names, is tagged
-by transfer: a linear probe on the frozen features, Sophon's head on the frozen
-features trained in a single pass over \LitSophonTransferSamplesMillion{} million
-jets with batch size \LitSophonTransferBatch~\cite[App.~B.5]{sophon}, and full
-fine-tuning, against a ParT trained from scratch on the same jets for
-\LitSophonScratchEpochs{} epochs as in Sophon~\cite[App.~B.3]{sophon}. For the
-mass-output models the window is also set on the model's own regressed mass. The
-metric is Sophon's: the discovery significance~\cite{cowan} against the background
-efficiency.
+We follow Sophon's benchmark~\cite[Sec.~III, App.~B]{sophon} with its samples of a
+spin-0 resonance decaying to $b\bar b$ or to $bs$, \pending{resonance mass and
+sample sizes}, against QCD jets of the JetClass-II test files, which no
+pretraining run saw; every score is evaluated in Sophon's window of the soft-drop
+mass, $\LitSophonXWindowLo < m_{\mathrm{SD}} < \LitSophonXWindowHi$~GeV.
+$X\to b\bar b$ is tagged directly with Sophon's discriminant~\cite[Eq.~(4)]{sophon},
+the $X\to b\bar b$ output over itself plus the QCD outputs, at the vocabularies that
+keep an $X\to b\bar b$ class; at the others the closest class, the merged group
+that contains it, is used and named as such. This repeats Sophon's own comparison
+with a \LitSophonAblationNClasses-class model across the pretrained vocabularies.
+$X\to bs$, which no vocabulary names, is tagged by transfer: a linear probe on the
+frozen features, and Sophon's head on them, its first layer taken from the model's
+own output layer, trained in a single pass over \LitSophonTransferSamplesMillion{}
+million jets with batch size \LitSophonTransferBatch~\cite[App.~B.5]{sophon}. Both
+train on the same jets, in the same order, for every model: signal jets from a
+per-jet split of the signal sample, kept apart from the jets evaluated, and QCD
+jets of held-out JetClass-II files, drawn in equal numbers in every bin of
+transverse momentum and soft-drop mass. Sophon's control, the output that holds
+$X\to bq$ against the QCD outputs, shows how much the outputs carry without
+training, and a ParT trained from scratch on the same jets for
+\LitSophonScratchEpochs{} epochs as in Sophon~\cite[App.~B.3]{sophon} is the
+reference. The metric is the signal efficiency at a fixed background efficiency,
+from which Sophon's discovery significance~\cite{cowan} against the background
+efficiency follows.
+% CHECK: on arrival, the resonance mass of the IHEP samples (125 GeV per the PI's note,
+% Sophon's Fig. 2 uses 200 GeV): if 125, the window moves and this text with it.
 
 \paragraph{Signals outside the vocabulary.} \pending{signals and background
 sample} Signal jets that no pretraining class contains are injected into
