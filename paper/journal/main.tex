@@ -136,7 +136,7 @@ depends on the label set.
 
 We evaluate each pretrained model with linear probes on its frozen features and with full
 fine-tuning, with training sets from \FtSizeEThree{} jets to the full training set, on
-JetClass-II, on JetClass~\cite{part}, and on top~\cite{toptag} and quark/gluon~\cite{efn}
+JetClass-II, on JetClass~\cite{part}, and on top~\cite{toptag} and quark\slash gluon~\cite{efn}
 tagging. Following Sophon, we also tag jets from decays of a hypothetical heavy particle $X$
 into a $b$ quark and antiquark ($X\to b\bar b$), which the \Kfull- and \Kres-class label sets
 contain as a class, directly from the output scores, and decays $X\to bs$, which no label set
@@ -469,7 +469,7 @@ Particle Data Group~\cite{pdg}. Each pretrained model is probed or fine-tuned on
 same fine-tuning seed and training subset (the mass regression averages the predictions of
 several MLP seeds), so the spread measures the variation between
 pretraining runs, which uncertainties quoted for fine-tuned jet foundation models usually leave
-out~\cite{part,mpm}. The other random partitions, with \RandVtwoRuns{} seed each, are shown
+out~\cite{part,mpm}. The \RandVtwoNPartitions{} random partitions, with \RandVtwoRuns{} seed each, are shown
 individually. When configurations are compared, the ratio is taken between models with the
 same seed, which share their training examples, and its mean and standard deviation over seeds
 are given; averages over random partitions are not paired in this way, and their uncertainty
@@ -615,13 +615,13 @@ mass regression at \Kres{} and \Kcoarse{} classes.
 \subsection{Fine-tuning}\label{sec:finetune}
 \IfFileExists{tables/mlst_ft.tex}{\input{tables/mlst_ft}\input{tables/mlst_ft_rej}}{}
 \pending{fine-tuning against the training-set size on every task, compared with training
-from random initialization, and quark/gluon tagging on the Herwig sample (Tables~\ref{tab:ft}
+from scratch, and quark/gluon tagging on the Herwig sample (Tables~\ref{tab:ft}
 and~\ref{tab:ftrej})}
 
 \subsection{Resonance tagging}\label{sec:xbbres}
-\pending{signal efficiency at fixed background efficiency and discovery significance for
-every label set: direct tagging of $X\to b\bar b$, transfer to $X\to bs$, and the reference
-trained from random initialization}
+\pending{signal efficiency at fixed QCD efficiency and $\epsilon_S/\sqrt{\epsilon_B}$ for every
+label set: direct tagging of $X\to b\bar b$, transfer to $X\to bs$, and the network trained from
+scratch}
 
 \subsection{Anomaly detection}\label{sec:anomaly}
 \pending{anomaly detection on the held-out signals}
