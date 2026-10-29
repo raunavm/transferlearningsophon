@@ -229,8 +229,8 @@ training sets, and never helped for the grouping that follows a taxonomy, animal
 vehicles~\cite{pirovano}. With about a billion web images labeled by hashtags, pretraining on a larger hashtag
 vocabulary raised the accuracy of a linear classifier on the frozen features by about
 \LitMahajanLinearGapPercent{} percentage points on the ImageNet target task with the most
-classes, but it changed the accuracy on that task after full fine-tuning by less than
-1 percentage point; the set of images changed together with the
+classes. After full fine-tuning, it changed the accuracy on that task by less than
+1 percentage point. The set of images changed together with the
 vocabulary~\cite[Sec.~3.1]{mahajan}. Hong et~al.~\cite{hong} also pretrained on random class
 labels, which gave a higher error on the \LitHongSuperclasses{} superclasses than pretraining
 on any level of the taxonomy, including the superclasses themselves.
@@ -330,8 +330,8 @@ every label set.
 
 All models with the same seed are trained on the same examples in the same order. The
 order of the training examples and the seeds of the dropout masks in each epoch are derived
-from the seed and the epoch number alone, also when a run is resumed after an interruption,
-and every run records a hash of the examples it read in each epoch
+from the seed and the epoch number alone, also when a run is resumed after an interruption.
+Every run records a hash of the examples it read in each epoch
 (Appendix~\ref{app:pretrain}). Models with the same seed also start from the same initial
 weights, except for those of the output layer, whose width is the number of classes. Models with different label sets and
 the same seed therefore differ in their labels and their output layer, but not in their
@@ -439,7 +439,7 @@ and many flavor boundaries. To distinguish the effect of random grouping from th
 boundaries, we construct further random partitions whose flavor boundaries are fixed in
 advance, each with the nominal group shares of the \Kcoarse-class label set
 (Appendix~\ref{app:vocab}). The random partition with no flavor boundary places all decays
-that differ only in quark flavor in the same group; its groups are drawn at random and then
+that differ only in quark flavor in the same group. Its groups are drawn at random and then
 rearranged by a search that reduces the number of class pairs merged both in it and in the
 \Kcoarse-class label set. The random partition with a $b$-quark boundary starts from the
 partition with no flavor boundary. It moves to another group the four-quark decays
@@ -545,10 +545,10 @@ The $X\to bs$ decay, which no label set contains, is tagged by transfer learning
 probe and Sophon's transfer classifier are trained on the frozen class token. The transfer
 classifier is a network with a single hidden layer whose first layer is initialized from the
 first layer of the pretrained classification head~\cite[App.~B.5]{sophon}. Both are trained on the
-same jets in the same order for every model: signal jets from a per-jet split of the signal
-sample, disjoint from the evaluation jets, and QCD jets from held-out JetClass-II files, drawn
-to match the number of signal jets in each bin of $p_{\mathrm T}$ and $m_{\mathrm{SD}}$ over
-the full mass range. As in Sophon, a control shows what the output scores provide
+same jets, in the same order, for every model. The signal jets come from a per-jet split of
+the signal sample, disjoint from the evaluation jets. The QCD jets come from held-out
+JetClass-II files and are drawn to match the number of signal jets in each bin of
+$p_{\mathrm T}$ and $m_{\mathrm{SD}}$ over the full mass range. As in Sophon, a control shows what the output scores provide
 without training: the discriminant of the class that contains $X\to bq$, which at \Kfull{} and
 \Kres{} classes is the $X\to bq$ class itself. The same network trained from scratch on these jets
 (Appendix~\ref{app:ftrecipe}) shows what training without pretraining reaches. We report the
@@ -659,7 +659,7 @@ pretrained models do not pull ahead on smaller training sets either (Fig.~\ref{f
 between pretraining seeds is larger than the spread between random initializations. The
 auxiliary mass regression does improve top tagging (Section~\ref{sec:mass}). On quark/gluon
 tagging, the \Kfull-class models reduce $\oma$ to \MlstCmpQgFullOverInit{} of its value for the
-randomly initialized network, but keeping gluons apart from light quarks in the labels gives no
+randomly initialized network. Keeping gluons apart from light quarks in the labels gives no
 consistent advantage: relative to the \Kfull-class models, $\oma$ is \MlstCmpQgResOverFull{} at
 \Kres{} classes, which also keep them apart, and \MlstCmpQgMidOverFull{} and
 \MlstCmpQgCoarseOverFull{} at \Kmid{} and \Kcoarse{} classes, which merge them. On the Herwig
@@ -703,7 +703,7 @@ apart share another, so for this pair the effect of merging cannot be separated 
 seed. After pretraining on
 any of these partitions, the probes separate every pair better than after pretraining on the
 \Kcoarse-class label set. This suggests that the \Kcoarse-class models separate these pairs poorly not because the
-pairs are merged but because the \Kcoarse-class label set has no flavor boundary: the random
+pairs are merged but because the \Kcoarse-class label set has no flavor boundary. The random
 partitions have flavor boundaries elsewhere, and a network trained on them also separates $b$
 from $c$ quarks in decays that share a label.
 
@@ -830,15 +830,16 @@ script that records the hash of each file beside the number.
 \section{Pretraining details}\label{app:pretrain}
 % ============================================================================
 
-\paragraph{Training examples.} Epochs are counted from zero. In each cycle of
-\DesignVtwoNWindows{} epochs, the rows of every training file are divided at random into
-\DesignVtwoNWindows{} disjoint parts, and each epoch loads a different part of nearly every
-file, so that a row is loaded in a single epoch per cycle; within that epoch, the reweighting
-can draw it several times. The order of the training examples and the seeds of the dropout
-masks in each epoch are derived from the seed and the epoch number alone, and every run
-records, for each epoch, a hash of the identifiers of the jets it read, in order. In our
-implementation of Sophon's loading scheme, which reads whole files, the fraction of QCD jets
-varied between epochs far more than random sampling would.
+\paragraph{Training examples.} Epochs are counted from zero. Training proceeds in
+cycles of \DesignVtwoNWindows{} epochs. In each cycle, the rows of every training file are
+divided at random into \DesignVtwoNWindows{} disjoint parts, and each epoch loads a different
+part of nearly every file. A row is therefore loaded in a single epoch per cycle, and within
+that epoch the reweighting can draw it several times. The order of the training examples and
+the seeds of the dropout masks in each epoch are derived from the seed and the epoch number
+alone. Every run records, for each epoch, a hash of the identifiers of the jets it read, in
+order. We use this scheme because in our implementation of Sophon's loading scheme, which
+reads whole files, the fraction of QCD jets varied between epochs far more than random
+sampling would.
 
 \paragraph{Network.} The network is the ParticleTransformer of weaver-core
 \DesignWeaverVersion{}, the training framework of ParT and Sophon, in the configuration of Sophon's released code:
@@ -877,22 +878,23 @@ Table~\ref{tab:app-levels} lists the levels of the class hierarchy and the group
 JetClass-II class at each coarser level, in every random partition and in every random
 partition with controlled flavor boundaries. Both are generated from the label maps.
 
-The random partitions are drawn under a balance rule fixed before the draw: each of
+The random partitions are drawn under a balance rule fixed before the draw. Each of
 \RandVtwoNPairs{} pairs of classes, including those compared in Section~\ref{sec:merge}, is
 merged in \RandVtwoMergedMin{} or \RandVtwoMergedMax{} of the partitions and kept apart in the
-others; the realized share of each group lies within \RandVtwoShareTol{} of that of its matched
-group. In the random
-partition with a $b$-quark boundary, the \RandFlavCutClasses{} of the
-\RandFlavSplitOrbitClasses{} four-quark decays \RandFlavSplitOrbit{} that contain a $b$
-quark move to another group, and to keep the shares exact, the \RandFlavOrbitClassesMoved{}
-decays of the forms \RandFlavOrbitsMovedList{} move the other way. The random partition
-with a random flavor boundary moves \RandFlavCutClasses{} of the same four-quark decays,
-\RandFlavFonerCutWithB{} of them with a $b$ quark, and makes the same compensating move,
-under rules fixed before the draw: roughly as many of the moved decays contain a $b$ quark as do not, no pair
-of these decays that differ only by exchanging $b$ and $c$ quarks is kept apart, the pairs of
-the balance rule are merged or kept apart as in the partition with no flavor boundary, and
-the share of the training examples in each group stays within \RandFlavFonerShareTol{} of
-that in the partition with a $b$-quark boundary.
+others. The realized share of each group lies within \RandVtwoShareTol{} of that of its
+matched group.
+
+In the random partition with a $b$-quark boundary, the \RandFlavCutClasses{} of the
+\RandFlavSplitOrbitClasses{} four-quark decays \RandFlavSplitOrbit{} that contain a $b$ quark
+move to another group. To keep the shares exact, the \RandFlavOrbitClassesMoved{} decays of
+the forms \RandFlavOrbitsMovedList{} move the other way. The random partition with a random
+flavor boundary moves \RandFlavCutClasses{} of the same four-quark decays,
+\RandFlavFonerCutWithB{} of them with a $b$ quark, and makes the same compensating move. Its
+moved decays are drawn under rules fixed before the draw: about as many of them contain a $b$
+quark as do not; no pair of them that differ only by exchanging $b$ and $c$ quarks is kept
+apart; the pairs of the balance rule are merged or kept apart as in the partition with no
+flavor boundary; and the share of the training examples in each group stays within
+\RandFlavFonerShareTol{} of that in the partition with a $b$-quark boundary.
 
 \input{tables/appendix_levels}
 \clearpage
@@ -905,10 +907,10 @@ that in the partition with a $b$-quark boundary.
 The inverse regularization strength of the linear probes is chosen from a logarithmic grid
 between \LpCMin{} and \LpCMax. The JetClass-II macro AUC is computed on \LpNTestAucJcii{} test
 jets. The smallest JetClass-II training subset contains jets of \FtCoverageEThreeNClasses{} of
-the \Kfull{} JetClass-II classes, with a median of \FtCoverageEThreeMedian{} jets per class,
-and not every class of the \Kres-class task; a class absent from training contributes the AUC
-of a random guess to the macro average, which raises $\oma$ at the smallest size for every
-model alike.
+the \Kfull{} JetClass-II classes, with a median of \FtCoverageEThreeMedian{} jets per class, so
+not every class of the \Kres-class task is present. A class absent from training contributes
+the AUC of a random guess to the macro average, which raises $\oma$ at the smallest size for
+every model alike.
 
 Every fine-tuning setting below, except the schedule of the head's learning rate, is read
 from the record that each fine-tuning run writes when it starts. The pretrained weights are
@@ -946,7 +948,7 @@ Sophon's larger sample.
 
 Each pretraining run used whichever of several GPU types was available, and a resumed run
 could continue on another type. Table~\ref{tab:compute} gives the GPU types and hours of every
-pretraining run, read from the record that each epoch keeps of its device; the hours count the
+pretraining run, read from the record that each epoch keeps of its device. The hours count the
 training and validation passes of the epochs of the final runs and leave out restarted epochs
 and the computation of the BatchNorm statistics. The runs used \ComputeGpuTypes{} GPUs, and
 each level of the hierarchy spent between \ComputeMainGpuShareMin{} and
