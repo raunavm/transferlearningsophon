@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Commit 19df861 (figure text in Computer Modern, after the 7307741
+  # compile): the manuscript, table-generator and figure
+  # tests and the tectonic compile. The full suite at 42fc8b7 is done (only the image's known failures); the code this
+  # commit changes is covered by the tests named here. Output in /data/results/tests/19df861.
+  name: mtx2-texcheck-19df861-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7
+        command: ["/bin/bash", "-c"]
+        env:
+        - name: COMMIT
+          value: "19df861001930c3c28dcf340f3520afcdc183078"
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        args:
+        - |
+          set -uo pipefail
+          OUT=/data/results/tests/${COMMIT:0:7}
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          echo "PVC used: ${USED}%  node: ${NODE_NAME}"
+          [ "${USED}" -le 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          mkdir -p ${OUT}
+          git clone -q https://github.com/raunavm/transferlearningsophon.git /workspace/repo || exit 1
+          cd /workspace/repo && git checkout -q ${COMMIT} || exit 1
+          git rev-parse HEAD
+          pip install --no-cache-dir -q pytest pyarrow mplhep==0.4.1 || exit 1
+          python3 -c "import sys, torch, weaver; print(sys.version.split()[0], torch.__version__, weaver.__file__)"
+          python3 -m pytest tests/test_manuscript_numbers.py tests/test_appendix_tables.py tests/test_mlst_results.py tests/test_make_tables.py tests/test_make_tables_v2.py tests/test_mlst_figures.py -q -p no:cacheprovider -rfE > ${OUT}/pytest_manuscript.txt 2>&1
+          echo "manuscript pytest rc=$?"; tail -3 ${OUT}/pytest_manuscript.txt; grep -E '^(FAILED|ERROR) ' ${OUT}/pytest_manuscript.txt | cut -c1-400
+          mkdir -p /workspace/tectonic && python3 -c "import urllib.request,sys; urllib.request.urlretrieve(sys.argv[1], '/workspace/tectonic/t.tgz')" \
+            "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz" \
+            && tar -xzf /workspace/tectonic/t.tgz -C /workspace/tectonic \
+            && (cd paper/journal && /workspace/tectonic/tectonic -X compile main.tex > ${OUT}/tectonic.txt 2>&1; echo "tectonic rc=$?"; cp -f main.pdf ${OUT}/main.pdf) \
+            || echo "tectonic: could not fetch or run"
+          grep -i -E 'undefined|multiply defined|error' ${OUT}/tectonic.txt | head -20
+          echo "MANUSCRIPT COMPLETE"
+          echo "TESTS COMPLETE"
+        resources:
+          requests: { memory: "8Gi", cpu: "4", ephemeral-storage: "10Gi" }
+          limits:   { memory: "8Gi", cpu: "4", ephemeral-storage: "10Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "4Gi" }

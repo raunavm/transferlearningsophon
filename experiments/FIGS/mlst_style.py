@@ -15,8 +15,8 @@ it. Matplotlib ships Computer Modern (cmr10) and draws mathematics in it (mathte
 no LaTeX installation is needed on the laptop or in the cluster image.
 
 The encoding is fixed here: the label sets of the hierarchy take the first four colours of
-the sequence, finest first, and the randomly initialized network its grey. A panel is the
-style's 10 x 10 in; the paper scales a figure to the text width.
+the sequence, finest first, and the randomly initialized network its grey. A panel is 7 in
+(PANEL); the paper scales a figure to the text width.
 
 experiments/FIGS/style.py stays as it is: the earlier figure scripts and their tests use it.
 """
@@ -36,7 +36,10 @@ PETROFF6 = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
 LEVEL_COLOURS = {188: PETROFF6[0], 162: PETROFF6[1], 43: PETROFF6[2], 17: PETROFF6[3]}
 LEVEL_MARKERS = {188: "o", 162: "s", 43: "^", 17: "v"}
 INIT_STYLE = {"color": PETROFF6[4], "marker": "X", "linestyle": "--"}
-PANEL = 10.0
+# The style's text is 26 pt. A figure is printed at the text width (360 pt in the draft's
+# 11-pt article class), so two panels of 7 in print that text at about 9 pt, the size of the
+# caption; the style's own 10 in panels would print it at about 6.5 pt.
+PANEL = 7.0
 # Line width of the MPGAN paper's final figures (mnist_graph_gan jets/final_plots.py,
 # line_opts linewidth 3); the style leaves it at matplotlib's default.
 LINEWIDTH = 3

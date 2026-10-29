@@ -88,7 +88,7 @@ def figure(root: pathlib.Path, outdir: pathlib.Path) -> list[pathlib.Path]:
         ax.text(0.05, 0.95, title, transform=ax.transAxes, ha="left", va="top")
     axes[0].set_ylabel(r"$1-\mathrm{AUC}$")
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncol=len(labels), bbox_to_anchor=(0.5, 0.97),
+    fig.legend(handles, labels, loc="lower center", ncol=3, bbox_to_anchor=(0.5, 0.97),
                frameon=False)
     fig.tight_layout()
     return style.save(fig, NAME, outdir)
