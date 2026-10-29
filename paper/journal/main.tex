@@ -24,6 +24,7 @@
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{hyperref}
+\graphicspath{{../../figures/}}
 
 % \pending{} renders in red, so a placeholder for a result that has not landed
 % cannot reach a compiled draft unnoticed.
@@ -40,7 +41,7 @@
 \newcommand{\Kcoarse}{\VocabSizeRonesixQone}
 \newcommand{\oma}{\ensuremath{1-\mathrm{AUC}}}
 
-\title{What do fine-grained labels buy a jet foundation model?}
+\title{Label granularity in supervised pretraining of jet foundation models}
 \author{\pending{author list}}
 \date{}
 
@@ -48,13 +49,13 @@
 \maketitle
 
 \begin{abstract}
-Jet foundation models are often pretrained to classify simulated jets, with more classes in
-each new model. Fine-grained classes let a single model form a discriminant for any coarser
+Foundation models for particle physics are often pretrained to classify simulated jets,
+and the number of classes has grown with each new model. Fine-grained classes let a single model form a discriminant for any coarser
 signal definition by summing its output scores, but whether they also improve the learned
-representation has not been tested with the training data held fixed. We pretrain Particle
-Transformer models on JetClass-II with label sets of \Kfull, \Kres, \Kmid{} and \Kcoarse{}
-classes from a single class hierarchy, with \MlstNRunsWord{} seeds each; models with the
-same seed share their training examples, the order of these examples and their initial
+representation has not been tested with the training data held fixed. We retrain the
+Sophon model, a Particle Transformer classifier for the JetClass-II dataset, with its
+\Kfull{} classes and with label sets of \Kres, \Kmid{} and \Kcoarse{} classes obtained by
+merging them, with \MlstNRunsWord{} seeds each; models with the same seed share their training examples, the order of these examples and their initial
 weights below the classification head. Random partitions of the classes and label sets
 that differ in a single quark-flavor boundary serve as controls. In linear probes on
 JetClass-II, merging the QCD classes has no measurable effect, while removing quark flavor
@@ -72,11 +73,23 @@ results imply for the design of pretraining datasets}
 \section{Introduction}
 % ============================================================================
 
-Jet foundation models are pretrained once on a large simulated dataset and then adapted
-to many downstream tasks~\cite{part,sophon,omnilearn,omnijet,mpm}. A recent comparison of
+Foundation models are pretrained once on large and diverse data and then adapted to many
+downstream tasks~\cite{bommasani}. In computer vision, a common route is supervised
+pretraining: a network is trained to classify images into many classes, and the features it
+learns are reused for other tasks~\cite{huh,mahajan}. The pretraining classes are then a
+design choice, and their granularity affects which features the network learns. Studies
+that vary it find that finer labels improve transfer to some tasks and not to
+others~\cite{huh,chen,pirovano,hong}. Natural images, however, carry labels only at the
+granularities that annotators or existing taxonomies provide.
+
+Particle physics has adopted the same approach. Jet foundation models are pretrained on
+large simulated datasets of jets, the collimated sprays of particles produced by quarks and
+gluons in high-energy collisions, and then adapted to tasks such as identifying the particle
+that initiated a jet~\cite{part,sophon,omnilearn,omnijet,mpm}. A recent comparison of
 pretraining objectives found classification of the simulated jets to be the best choice
-when downstream labels and model capacity are plentiful~\cite{objectives}. The number of
-classes used for this classification has grown. Sophon~\cite{sophon} pretrains a Particle
+when downstream labels and model capacity are plentiful~\cite{objectives}. Because the
+simulation records the full decay of every particle, the classes can be defined at any
+granularity, and their number has grown. Sophon~\cite{sophon} pretrains a Particle
 Transformer (ParT)~\cite{part} on the JetClass-II dataset with \Kfull{} classes, which name
 the decay products of each simulated resonance and the quark content of each jet from
 quantum chromodynamics (QCD) multijet production. The CMS Global Particle Transformer
@@ -84,29 +97,30 @@ quantum chromodynamics (QCD) multijet production. The CMS Global Particle Transf
 \LitGlopartVthreeNClasses{} in its third, while its training data and network also
 changed~\cite{glopartdp}.
 
-Fine-grained classes have a known benefit at the output of the model. The score of a
-merged class is the sum of the scores of the classes it contains, so a single model
-provides a discriminant for any coarser signal definition~\cite{sophon}. Whether
-fine-grained classes also improve the learned representation, the features that are used
-when the model is adapted to a new task, has not been tested with the training data held
-fixed. Sophon compared its \Kfull-class model with a \LitSophonAblationNClasses-class model
-that was trained only on two-prong resonance decays and QCD jets, and on fewer training
-examples per epoch~\cite{sophon}, so the comparison changed the data together with the
-labels. Controlled studies of jet pretraining have varied the training
-objective~\cite{objectives,rieck,reprlearn}, the composition of the training
-data~\cite{datacomp}, and the model and dataset size~\cite{scaling,viglscaling}, but not
-the label set. In image classification, finer pretraining labels improve transfer to some
-tasks and not to others~\cite{huh,chen,pirovano,hong}. The question matters for the design
-of future datasets, because every additional class needs a truth definition and enough
-simulated jets to train on.
+Fine-grained classes have a known benefit at the output of the model. The score of a merged
+class is the sum of the scores of the classes it contains, so a single model provides a
+discriminant for any coarser signal definition~\cite{sophon}. Whether fine-grained classes
+also improve the learned representation, the features that are used when the model is
+adapted to a new task, has not been tested with the training data held fixed. Sophon
+compared its \Kfull-class model with a \LitSophonAblationNClasses-class model that was
+trained only on two-prong resonance decays and QCD jets, and on fewer training examples per
+epoch~\cite{sophon}, so the comparison changed the data together with the labels. Controlled
+studies of jet pretraining have varied the training objective~\cite{objectives,rieck,reprlearn},
+the composition of the training data~\cite{datacomp}, and the model and dataset
+size~\cite{scaling,viglscaling}, but not the label set. Simulated jets allow this test: the
+same jets can be labeled exactly at every level of a known class hierarchy. The answer also
+matters for the design of future datasets, because every additional class needs a truth
+definition and enough simulated jets to train on.
 
-In this paper, we pretrain ParT models on JetClass-II with label sets of \Kfull, \Kres,
-\Kmid{} and \Kcoarse{} classes, which are levels of a single class hierarchy: each coarser
-label set merges classes of the finer ones. Each label set is pretrained with
-\MlstNRunsWord{} random seeds. The seed fixes the initial weights below the classification
-head and the order of the training examples, so models with the same seed differ only in their labels and in the
-width of their output layer. Controls separate the information carried by the labels from
-their number: random partitions of the classes into groups matched to the
+In this paper, we retrain the Sophon model on JetClass-II with its \Kfull{} classes and with
+label sets of \Kres, \Kmid{} and \Kcoarse{} classes, which are levels of a single class
+hierarchy: each coarser label set merges classes of the finer ones. Each label set is
+pretrained with \MlstNRunsWord{} random seeds, so that differences between label sets can be
+compared with the variation between pretraining runs, as advocated for language
+models~\cite{multiberts}. The seed fixes the initial weights below the classification head
+and the order of the training examples, so models with the same seed differ only in their
+labels and in the width of their output layer. Controls separate the information carried by
+the labels from their number: random partitions of the classes into groups matched to the
 \Kcoarse-class label set, and label sets with the same group structure in which either no
 class boundary or a single boundary depends on quark flavor. The \Kres- and \Kcoarse-class
 models are also pretrained with an auxiliary jet-mass regression, to test whether its
@@ -221,7 +235,8 @@ their labels and in the width of their output layer. The runs trained on several
 types, which change the floating-point rounding but not the training examples
 (Appendix~\ref{app:compute}).
 
-The network is ParT~\cite{part} in the configuration of Sophon's released code, with
+The network is the Sophon model~\cite{sophon}: ParT~\cite{part} in the configuration of
+Sophon's released code, with
 \DesignParticleBlocks{} particle-attention blocks, \DesignClassBlocks{} class-attention
 blocks and embedding dimension \DesignEmbedDim, followed by a classification head with a
 single hidden layer of \DesignHeadHidden{} units and an output for each class. The input to
@@ -418,16 +433,26 @@ rest on few background jets, and the tables state how many.
 
 \subsection{Linear probes}\label{sec:probes}
 \input{tables/mlst_probes}
-\input{tables/mlst_probes_n}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{probes_vs_training_size.pdf}
+\caption{Linear-probe $\oma$ against the number of training jets on JetClass-II (macro
+AUC, left) and top tagging (right), for each label set and for the randomly initialized
+network. Points are the mean over the pretraining runs and error bars the standard
+deviation; the series are offset slightly along the horizontal axis so that coinciding
+points remain visible. Table~\ref{tab:probesn} gives the values.}
+\label{fig:probesn}
+\end{figure*}
+% CHECK: the figure averages the runs finished so far, as the tables do (they mark the count).
 Table~\ref{tab:probes} gives the linear-probe performance of every configuration on the
-largest training set of each task, and Table~\ref{tab:probesn} its dependence on the
+largest training set of each task, and Figure~\ref{fig:probesn} its dependence on the
 training-set size. On JetClass-II, the probe performance depends on the quark-flavor
 content of the labels. Merging the QCD classes leaves it unchanged: the ratio of $\oma$
 between the \Kres- and \Kfull-class models is \MlstCmpJcTwoResOverFull. Merging quark
 flavors increases $\oma$, by a factor of \MlstCmpJcTwoMidOverFull{} at \Kmid{} classes and
 \MlstCmpJcTwoCoarseOverFull{} at \Kcoarse{} classes. The order of the label sets is the same
-at every training-set size, and every pretrained model is well above the randomly
-initialized network.
+at every training-set size, and every pretrained model has a much lower $\oma$ than the
+randomly initialized network.
 
 On JetClass, which differs from JetClass-II in simulation and label space, the dependence
 is weaker. The \Kmid-class models match the \Kfull-class models, with a ratio of $\oma$ of
@@ -440,7 +465,7 @@ On top and quark/gluon tagging, the pretrained features improve little or not at
 those of the randomly initialized network. On top tagging, the ratio of $\oma$ between the
 \Kfull-class models and the randomly initialized network is \MlstCmpTopFullOverInit{} on
 the largest training set, the pretrained models are not better at smaller training sets
-(Table~\ref{tab:probesn}), and the spread between pretraining seeds is larger than the
+(Figure~\ref{fig:probesn}), and the spread between pretraining seeds is larger than the
 spread between random initializations. The auxiliary mass regression improves top
 tagging (Section~\ref{sec:mass}). On quark/gluon tagging, the \Kfull-class models reduce
 $\oma$ to \MlstCmpQgFullOverInit{} of its value for the randomly initialized network. Label
@@ -536,8 +561,8 @@ trained from random initialization}
 \section{Discussion and conclusion}\label{sec:conclusion}
 % ============================================================================
 
-We pretrained ParT models on JetClass-II with label sets of \Kfull, \Kres, \Kmid{} and
-\Kcoarse{} classes from a single class hierarchy, with the training examples, their order
+We retrained the Sophon model on JetClass-II with its \Kfull{} classes and with label sets
+of \Kres, \Kmid{} and \Kcoarse{} classes from a single class hierarchy, with the training examples, their order
 and the initial backbone weights fixed by the seed, so that the models differ only in their
 labels. Linear probes indicate that the representation depends on the quark-flavor content of the
 labels rather than on the number of classes. Merging the QCD classes has no measurable
@@ -552,7 +577,7 @@ anomaly detection}
 
 % CHECK: 162 vs 188 on quark/gluon (0.865 vs 0.878 with two of three runs) before keeping
 % "matches the 188-class probes" out of the claim; fine-tuning may change this paragraph.
-For the design of pretraining datasets, these results suggest that the subdivision of QCD
+For the design of pretraining datasets, the linear probes suggest that the subdivision of QCD
 jets by quark content can be removed: the \Kres-class label set matches the \Kfull-class
 probes on JetClass-II and in the separation of merged classes, and it still forms every
 discriminant of Table~\ref{tab:usecase}. Class boundaries that depend on quark flavor should
@@ -689,6 +714,14 @@ used \ComputeGpuTypes{} GPUs, and each level of the hierarchy spent between
 \ComputeMainGpu, the type used most. \pending{final once every run is in}
 
 \input{tables/compute}
+
+% ============================================================================
+\section{Linear probes against the training-set size}\label{app:probesn}
+% ============================================================================
+
+Table~\ref{tab:probesn} gives the values shown in Figure~\ref{fig:probesn}.
+
+\input{tables/mlst_probes_n}
 
 % ============================================================================
 \section{Linear probes with BatchNorm statistics recomputed}\label{app:bn}

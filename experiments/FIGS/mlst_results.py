@@ -138,8 +138,8 @@ def table_probes(fits, runs, fmt_pm, rows) -> str:
              r" & " + " & ".join(f"{int(_largest(fits, ds)):,}".replace(",", "{,}") + " jets"
                                 for ds, _, _ in TASKS) + r" \\", r"\midrule"]
     for arm in rows:
-        cells = [_cell([_probe(fits, m, ds, _largest(fits, ds), met) for m in runs[arm]],
-                       len(runs[arm]), fmt_pm) for ds, met, _ in TASKS]
+        cells = [_cell([_oma(_probe(fits, m, ds, _largest(fits, ds), met)) for m in runs[arm]],
+                       len(runs[arm]), fmt_pm, 1e3) for ds, met, _ in TASKS]
         lines.append(LABEL[arm] + " & " + " & ".join(cells) + r" \\")
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
@@ -153,7 +153,7 @@ def table_probes_n(fits, runs, fmt_pm, rows) -> str:
                 r"\midrule"]
         for arm in rows:
             out.append(LABEL[arm] + " & " + " & ".join(
-                _cell([_probe(fits, m, ds, n, met) for m in runs[arm]], len(runs[arm]), fmt_pm)
+                _cell([_oma(_probe(fits, m, ds, n, met)) for m in runs[arm]], len(runs[arm]), fmt_pm, 1e3)
                 for n in sizes) + r" \\")
         out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
     return "\n".join(out[:-1])
@@ -202,11 +202,12 @@ def table_ft(per, runs, fmt_pm, rows) -> str:
                 r"\midrule"]
         for arm in rows:
             out.append(LABEL[arm] + " & " + " & ".join(
-                _cell([_ft(per, key, m, n, met) for m in runs[arm]], len(runs[arm]), fmt_pm)
+                _cell([_oma(_ft(per, key, m, n, met)) for m in runs[arm]], len(runs[arm]), fmt_pm, 1e3)
                 for n in sizes) + r" \\")
         ref = per[key].get(SCRATCH, {})
         out.append("from scratch & " + " & ".join(
-            _cell([r[met] for r in ref[n]], len(ref[n]), fmt_pm) if n in ref else "--" for n in sizes) + r" \\")
+            _cell([1 - r[met] for r in ref[n]], len(ref[n]), fmt_pm, 1e3) if n in ref else "--"
+            for n in sizes) + r" \\")
         out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
     return "\n".join(out[:-1])
 
@@ -455,12 +456,15 @@ def table_compute(comp, runs, fmt_int) -> tuple[str, dict]:
 
 CAPTIONS = {
     "probes": ("tab:probes", "Linear probes on the frozen class token at the largest training set of each "
-               "task: macro AUC (one-versus-rest) on JetClass-II and JetClass, AUC on top and "
-               "quark/gluon tagging, the latter also on Herwig jets. Mean $\\pm$ standard deviation "
+               "task: $(1-\\mathrm{AUC})\\times10^{3}$, lower is better, with the macro AUC "
+               "(one-versus-rest) on JetClass-II and JetClass and the AUC on top and quark/gluon "
+               "tagging, the latter also on Herwig jets. Mean $\\pm$ standard deviation "
                "over the pretraining runs. $^{*}$: a probe of the randomly initialized network stopped "
                "at the iteration limit."),
-    "probes_n": ("tab:probesn", "Linear probes against the training-set size: macro AUC on JetClass-II "
-                 "and AUC on top tagging. Mean $\\pm$ standard deviation over the pretraining runs."),
+    "probes_n": ("tab:probesn", "Linear probes against the training-set size: "
+                 "$(1-\\mathrm{AUC})\\times10^{3}$, lower is better, with the macro AUC on "
+                 "JetClass-II and the AUC on top tagging. Mean $\\pm$ standard deviation over the "
+                 "pretraining runs."),
     "pairs": ("tab:pairs", "Binary linear probes between JetClass-II classes on the largest training "
               "subset: $(1-\\mathrm{AUC})\\times10^{3}$, lower is better. $^{\\dagger}$: the label set "
               "merges the two sides into one class; $^{\\ddagger}$: it merges the first side with part "
@@ -470,8 +474,9 @@ CAPTIONS = {
              "features with a ridge and a small nonlinear (MLP) probe; lower is better. The MLP has one "
              "hidden layer, stops early on a validation split and is averaged over __MLP_SEEDS__ seeds. "
              "Mean $\\pm$ standard deviation over the pretraining runs."),
-    "ft": ("tab:ft", "Full fine-tuning against the training-set size: macro AUC (one-versus-rest) on "
-           "JetClass-II and JetClass, AUC on top and quark/gluon tagging, the latter also on Herwig jets. "
+    "ft": ("tab:ft", "Full fine-tuning against the training-set size: $(1-\\mathrm{AUC})\\times10^{3}$, "
+           "lower is better, with the macro AUC (one-versus-rest) on JetClass-II and JetClass and the AUC "
+           "on top and quark/gluon tagging, the latter also on Herwig jets. "
            "Mean $\\pm$ standard deviation over the pretraining runs, one fine-tuning each; from "
            "scratch, over its fine-tuning seeds."),
     "ft_rej": ("tab:ftrej", "Background rejection $R_{50}$ and $R_{30}$ ($1/\\varepsilon_B$ at 50\\% and "

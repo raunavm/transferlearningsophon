@@ -1,18 +1,18 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Linear probes against the training-set size: macro AUC on JetClass-II and AUC on top tagging. Mean $\pm$ standard deviation over the pretraining runs.}
+\caption{Linear probes against the training-set size: $(1-\mathrm{AUC})\times10^{3}$, lower is better, with the macro AUC on JetClass-II and the AUC on top tagging. Mean $\pm$ standard deviation over the pretraining runs.}
 \label{tab:probesn}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcccc}
 \toprule
 JetClass-II & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\
 \midrule
-\Kfull{} classes & 0.9168\,$\pm$\,0.0010 & 0.97138\,$\pm$\,0.00032 & 0.97919\,$\pm$\,0.00015 & 0.980689\,$\pm$\,0.000031 \\
-\Kres{} classes & 0.9149\,$\pm$\,0.0014 \pending{2 of 3} & 0.97138\,$\pm$\,0.00024 \pending{2 of 3} & 0.97912\,$\pm$\,0.00017 \pending{2 of 3} & 0.98071\,$\pm$\,0.00016 \pending{2 of 3} \\
-\Kmid{} classes & 0.9079\,$\pm$\,0.0022 & 0.9673\,$\pm$\,0.0008 & 0.97599\,$\pm$\,0.00018 & 0.97811\,$\pm$\,0.00008 \\
-\Kcoarse{} classes & 0.8792\,$\pm$\,0.0021 \pending{2 of 3} & 0.9559\,$\pm$\,0.0006 \pending{2 of 3} & 0.9691\,$\pm$\,0.0006 \pending{2 of 3} & 0.9722\,$\pm$\,0.0005 \pending{2 of 3} \\
-randomly initialized network & 0.603\,$\pm$\,0.007 & 0.713\,$\pm$\,0.005 & 0.7969\,$\pm$\,0.0019 & 0.8187\,$\pm$\,0.0017$^{*}$ \\
+\Kfull{} classes & 83.2\,$\pm$\,1.0 & 28.62\,$\pm$\,0.32 & 20.81\,$\pm$\,0.15 & 19.311\,$\pm$\,0.031 \\
+\Kres{} classes & 85.1\,$\pm$\,1.4 \pending{2 of 3} & 28.62\,$\pm$\,0.24 \pending{2 of 3} & 20.88\,$\pm$\,0.17 \pending{2 of 3} & 19.29\,$\pm$\,0.16 \pending{2 of 3} \\
+\Kmid{} classes & 92.1\,$\pm$\,2.2 & 32.7\,$\pm$\,0.8 & 24.01\,$\pm$\,0.18 & 21.89\,$\pm$\,0.08 \\
+\Kcoarse{} classes & 120.8\,$\pm$\,2.1 \pending{2 of 3} & 44.1\,$\pm$\,0.6 \pending{2 of 3} & 30.9\,$\pm$\,0.6 \pending{2 of 3} & 27.8\,$\pm$\,0.5 \pending{2 of 3} \\
+randomly initialized network & 397\,$\pm$\,7 & 287\,$\pm$\,5 & 203.1\,$\pm$\,1.9 & 181.3\,$\pm$\,1.7$^{*}$ \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -22,11 +22,11 @@ randomly initialized network & 0.603\,$\pm$\,0.007 & 0.713\,$\pm$\,0.005 & 0.796
 \toprule
 top & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}200{,}000 \\
 \midrule
-\Kfull{} classes & 0.923\,$\pm$\,0.009 & 0.939\,$\pm$\,0.008 & 0.941\,$\pm$\,0.008 & 0.941\,$\pm$\,0.008 \\
-\Kres{} classes & 0.92764\,$\pm$\,0.00032 \pending{2 of 3} & 0.9424\,$\pm$\,0.0009 \pending{2 of 3} & 0.9446\,$\pm$\,0.0011 \pending{2 of 3} & 0.9446\,$\pm$\,0.0010 \pending{2 of 3} \\
-\Kmid{} classes & 0.922\,$\pm$\,0.010 & 0.935\,$\pm$\,0.009 & 0.938\,$\pm$\,0.009 & 0.938\,$\pm$\,0.009 \\
-\Kcoarse{} classes & 0.926\,$\pm$\,0.004 \pending{2 of 3} & 0.9374\,$\pm$\,0.0032 \pending{2 of 3} & 0.9399\,$\pm$\,0.0023 \pending{2 of 3} & 0.9400\,$\pm$\,0.0025 \pending{2 of 3} \\
-randomly initialized network & 0.9267\,$\pm$\,0.0011 & 0.9373\,$\pm$\,0.0007 & 0.9388\,$\pm$\,0.0005 & 0.9389\,$\pm$\,0.0005 \\
+\Kfull{} classes & 77\,$\pm$\,9 & 61\,$\pm$\,8 & 59\,$\pm$\,8 & 59\,$\pm$\,8 \\
+\Kres{} classes & 72.36\,$\pm$\,0.32 \pending{2 of 3} & 57.6\,$\pm$\,0.9 \pending{2 of 3} & 55.4\,$\pm$\,1.1 \pending{2 of 3} & 55.4\,$\pm$\,1.0 \pending{2 of 3} \\
+\Kmid{} classes & 78\,$\pm$\,10 & 65\,$\pm$\,9 & 62\,$\pm$\,9 & 62\,$\pm$\,9 \\
+\Kcoarse{} classes & 74\,$\pm$\,4 \pending{2 of 3} & 62.6\,$\pm$\,3.2 \pending{2 of 3} & 60.1\,$\pm$\,2.3 \pending{2 of 3} & 60.0\,$\pm$\,2.5 \pending{2 of 3} \\
+randomly initialized network & 73.3\,$\pm$\,1.1 & 62.7\,$\pm$\,0.7 & 61.2\,$\pm$\,0.5 & 61.1\,$\pm$\,0.5 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

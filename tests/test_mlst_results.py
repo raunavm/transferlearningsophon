@@ -120,6 +120,9 @@ def test_the_fine_tuning_tables_read_one_seed_per_run_and_the_scratch_seeds(tmp_
     t = M.table_ft(per, runs, MT.fmt_pm, ("L188",))
     assert t.count("%SPLIT%") == len(M.FT_TASKS) - 1 and r"\pending{2 of 3}" in t and "from scratch" in t
     assert "1{,}200{,}000" in t and "1{,}600{,}000" in t
+    # the tables report (1 - AUC) x 10^3, the quantity the text compares: AUCs of 0.90 and
+    # 0.91 are 100 and 90, mean 95 +- 7; the scratch seeds' 0.80 is 200
+    assert r"95\,$\pm$\,7" in t and "0.9" not in t.split("from scratch")[0]
     body, fewest = M.table_ft_rej(per, runs, MT.fmt_pm, ("L188",))
     assert fewest == 120 and r"\pending{2 of 3}" in body and body.count(r"\\") == 4
     per["jc2"]["l188-s1"][1000].append(per["jc2"]["l188-s1"][1000][0])
