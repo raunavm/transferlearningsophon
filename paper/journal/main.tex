@@ -355,7 +355,23 @@ and it also merges electrons with muons. The \Kcoarse-class label set further re
 it keeps, for each decay, the number of prongs and whether each prong is a quark or gluon
 (without distinguishing them), an electron or muon, a $\tau$ lepton or a neutrino. Each of these levels
 keeps QCD jets, decays into quarks and gluons only, and decays with leptons in separate
-classes.
+classes. Figure~\ref{fig:labelsets} shows the classes of a selection of decays at each level
+and in the random partitions described below.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\linewidth]{label_sets.pdf}
+\caption{Classes of a selection of decays in the label sets of the class hierarchy (left) and
+in random partitions (right): random partition~1 and the random partitions with no flavor
+boundary, with a $b$-quark boundary and with a random flavor boundary. In each column, decays
+of the same color share a class, and adjacent decays of the same class form a single box; colors
+are compared only within a column. In the \Kfull- and \Kres-class label sets, every resonant
+decay is its own class, and the \Kfull-class label set divides the QCD jets into
+\LitJetClassTwoNQcdClasses{} classes by their quark content. The brackets mark decays that
+differ only in quark flavor, so a change of color inside a bracket is a flavor boundary. The
+figure is drawn from the label maps.}
+\label{fig:labelsets}
+\end{figure}
 
 The score of a merged class is the sum of the scores of the classes it contains. This is
 the class-division property of Sophon~\cite[Property~1]{sophon}, which holds for an
@@ -573,7 +589,20 @@ labels rather than their number. With the group shares of the \Kcoarse-class lab
 random partitions, which have many flavor boundaries, reach an $\oma$ close to that of the
 \Kmid-class models, the random partition with no flavor boundary stays close to the
 \Kcoarse-class models, and the partitions with a single flavor boundary lie in between
-(Table~\ref{tab:probes}).
+(Table~\ref{tab:probes} and Fig.~\ref{fig:labelsetprobes}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{probes_vs_label_set.pdf}
+\caption{Linear-probe $\oma$ on the largest training set of each task for every pretraining
+configuration of Table~\ref{tab:probes} except those with the auxiliary mass regression,
+scaled as in that table; JetClass-II and JetClass use the macro-averaged AUC. Markers are the
+mean over the pretraining runs of a configuration and error bars their standard deviation;
+short vertical ticks mark the individual runs, and each random partition has a single run.
+Dashed lines mark the mean of each level of the hierarchy. Where the randomly initialized
+network lies beyond the axis, its value is printed at the edge of the panel.}
+\label{fig:labelsetprobes}
+\end{figure}
 
 On JetClass, which differs from JetClass-II in simulation and label space, the dependence on
 quark flavor is weaker. The \Kmid-class models match the \Kfull-class models, with a ratio of
@@ -603,7 +632,19 @@ the randomly initialized network by more than a few percent (Table~\ref{tab:prob
 
 \subsection{Separation of merged classes}\label{sec:merge}
 \input{tables/mlst_pairs}
-Table~\ref{tab:pairs} gives the binary probes between pairs of JetClass-II classes.
+Table~\ref{tab:pairs} and Fig.~\ref{fig:pairs} give the binary probes between pairs of
+JetClass-II classes.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{pairs.pdf}
+\caption{Binary linear-probe $\oma$ between pairs of JetClass-II classes on the largest
+training set, scaled as in Table~\ref{tab:pairs}, for every pretraining configuration of that
+table. Open markers show label sets that merge the pair, and partly filled markers label sets
+that merge part of it; markers, ticks and lines are otherwise as in
+Fig.~\ref{fig:labelsetprobes}. Panels whose values span a wide range use a logarithmic axis.}
+\label{fig:pairs}
+\end{figure}
 Pretraining on the \Kcoarse-class label set, which merges every pair in the table, loses much
 of each distinction: relative to the \Kfull-class models, it increases $\oma$ by factors of
 \MlstCmpBcCoarseOverFull, \MlstCmpBbCoarseOverFull{} and \MlstCmpBbqqCoarseOverFull{} for

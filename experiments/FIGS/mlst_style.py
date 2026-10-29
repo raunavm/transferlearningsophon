@@ -12,7 +12,8 @@ drawn: these are not CMS results.
 One change to the style: the text is set in Computer Modern, the font of the paper (LaTeX's
 default), instead of the style's TeX Gyre Heros, so that a figure reads like the text around
 it. Matplotlib ships Computer Modern (cmr10) and draws mathematics in it (mathtext 'cm'), so
-no LaTeX installation is needed on the laptop or in the cluster image.
+no LaTeX installation is needed on the laptop or in the cluster image. Mathematical symbols are
+italic, as in LaTeX, where the style sets them upright.
 
 The encoding is fixed here: the label sets of the hierarchy take the first four colours of
 the sequence, finest first, and the randomly initialized network its grey. A panel is 6 in
@@ -50,6 +51,8 @@ def use_style() -> None:
     """mplhep's CMS style in Computer Modern. Called by the figure scripts, never on import."""
     plt.style.use(hep.style.CMS)
     plt.rcParams.update({"font.family": "serif", "font.serif": ["cmr10"], "mathtext.fontset": "cm",
+                         # symbols in italic as in LaTeX (the style sets them upright)
+                         "mathtext.default": "it",
                          # cmr10 has no minus sign: tick labels go through mathtext
                          "axes.formatter.use_mathtext": True})
 
