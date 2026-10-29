@@ -2762,13 +2762,7 @@ def table_usecase(surv: dict, sizes: dict, pretrained: list) -> str:
     caption = ("Published discriminants built from sums of Sophon's output scores, against the "
                "number of classes in the label set (columns, finest first). $\\bullet$: the "
                "discriminant can be built exactly from that label set's outputs; ---: it cannot. "
-               "By Sophon's class-division property (Property~1, Eq.~(2) of "
-               "Ref.~\\cite{sophon}), which holds for an ideally trained classifier, the score of a "
-               "merged class is the sum of the scores of the classes it merges, so a discriminant "
-               "survives a merge only if its numerator and its denominator each contain every merged "
-               "class or none of them. The table states which sums a label set's outputs can form, a "
-               "property of the partition that needs no training and no data, not that a trained "
-               "coarse model reproduces them.")
+               "This is a property of the partition (Section~\\ref{sec:tree}), not of a trained model.")
     notes = ["Pretrained in this study: the "
              + ", ".join(str(sizes[r]) for r in pretrained[:-1])
              + f" and {sizes[pretrained[-1]]}-class label sets."]

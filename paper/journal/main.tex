@@ -296,9 +296,12 @@ seeds.
 
 \paragraph{Auxiliary mass regression.} The \Kres- and \Kcoarse-class models are also
 pretrained, with \MlstMassNRunsWord{} seeds each, with an additional output that regresses
-$\ln(m_{\mathrm{SD}}^{\mathrm{gen}}/m_{\mathrm{SD}}^{\mathrm{reco}})$, the logarithm of the
-ratio of the soft-drop mass of the matched generator-level jet to that of the
-reconstructed jet, for jets that have a generator-level match. Its log-cosh loss is added
+the logarithm of the ratio of the soft-drop mass of the matched generator-level jet to that
+of the reconstructed jet,
+\begin{equation}\label{eq:masstarget}
+  y = \ln\bigl(m_{\mathrm{SD}}^{\mathrm{gen}} / m_{\mathrm{SD}}^{\mathrm{reco}}\bigr),
+\end{equation}
+for jets that have a generator-level match. Its log-cosh loss is added
 to the classification loss with weight $\lambda = \DesignMassLambda$, the value used by
 GloParT~\cite[Eq.~(11.7)]{glopart}, fixed in advance and not tuned. Together with the
 models without it, this gives a factorial design of label set and mass regression.
@@ -312,8 +315,8 @@ as the pretrained models and serves as the lower reference for the linear probes
 
 All pretrained models are evaluated on the same training and test jets.
 
-\paragraph{Downstream tasks.} The first task is the \Kres-class classification of
-JetClass-II, with training and validation jets from files held out from pretraining and
+\paragraph{Downstream tasks.} The first task is to classify JetClass-II jets into \Kres{}
+classes, with training and validation jets from files held out from pretraining and
 test jets from separate files: the label space of pretraining, on jets that no model has
 seen. The second is the \FtNClassesJc-class classification of JetClass~\cite{part}, which
 uses a different simulation, without pileup, and a different label space. The others are
@@ -389,8 +392,8 @@ reached after the best selection~\cite{sigmamin,argos}, in a mass window around 
 
 \paragraph{Mass resolution.} The jet mass is regressed from the frozen features of the
 JetClass-II test jets with a ridge regression and with a small multilayer perceptron (MLP).
-The target is $\ln(m_{\mathrm{SD}}^{\mathrm{gen}}/m_{\mathrm{SD}}^{\mathrm{reco}})$ with the
-mean of each JetClass-II class subtracted, so that a better classifier is not credited as a
+The target is $y$ of Eq.~(\ref{eq:masstarget}) with the mean of each JetClass-II class
+subtracted, so that a better classifier is not credited as a
 better mass regressor. The resolution is $\sigma_{\mathrm{eff}}$,
 half the smallest interval containing 68\% of the residuals~\cite[Sec.~8.2.2]{glopart}.
 

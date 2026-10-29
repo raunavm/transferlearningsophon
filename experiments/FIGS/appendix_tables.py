@@ -146,7 +146,7 @@ def table_vocabulary(rows: list[dict], parts: list) -> str:
     sizes = {rung: len({r[rung] for r in rows}) for rung in RUNGS}
     rand = [h for h, c, _ in parts if c.startswith("RAND")]
     flav = [h for h, c, _ in parts if not c.startswith("RAND")]
-    head = (f" & \\multicolumn{{{len(SHOWN)}}}{{c}}{{level of the hierarchy}}"
+    head = (f" & \\multicolumn{{{len(SHOWN)}}}{{c}}{{level}}"
             + (f" & \\multicolumn{{{len(rand)}}}{{c}}{{random partition}}" if rand else "")
             + (f" & \\multicolumn{{{len(flav)}}}{{c}}{{flavor control}}" if flav else "")
             + " \\\\\n"
