@@ -41,9 +41,9 @@ INIT = "INIT"
 INIT_MODELS = ("init-s1", "init-s2", "init-s3")
 LABEL = {"L188": r"\Kfull{} classes", "L162": r"\Kres{} classes", "R42_Q1": r"\Kmid{} classes",
          "R16_Q1": r"\Kcoarse{} classes", "L162_MASS": r"\Kres{} classes, mass regression",
-         "R16_Q1_MASS": r"\Kcoarse{} classes, mass regression", "FLAV_F0": "flavor-blind",
-         "FLAV_F1": r"$b$ boundary",
-         "FLAV_F1R": "random boundary", INIT: "randomly initialized network",
+         "R16_Q1_MASS": r"\Kcoarse{} classes, mass regression", "FLAV_F0": "random partition, no flavor boundary",
+         "FLAV_F1": r"random partition, $b$-quark boundary",
+         "FLAV_F1R": "random partition, random flavor boundary", INIT: "randomly initialized network",
          **{f"RAND2_p{k}": f"random partition {k}" for k in range(1, 6)}}
 PRIMARY = "best70"
 # (dataset key, metric, column heading)
@@ -468,8 +468,10 @@ CAPTIONS = {
     "pairs": ("tab:pairs", "Binary linear probes between JetClass-II classes on the largest training "
               "subset: $(1-\\mathrm{AUC})\\times10^{3}$, lower is better. $^{\\dagger}$: the label set "
               "merges the two sides into one class; $^{\\ddagger}$: it merges the first side with part "
-              "of the second. Mean $\\pm$ standard deviation over the pretraining runs; each random "
-              "partition has a single pretraining run."),
+              "of the second. Mean $\\pm$ standard deviation over the pretraining runs; random partitions 1 to 5 have a "
+              "single pretraining run each. The $b$-quark boundary and the random flavor boundary lie "
+              "only in the four-quark decays $X\\to YY\\to QQQQ$, and the random flavor boundary keeps "
+              "apart no decays that differ only by exchanging $b$ and $c$ quarks."),
     "mass": ("tab:mass", "Resolution $\\sigma_{\\mathrm{eff}}$ of the jet mass regressed from frozen "
              "features with a ridge and a small nonlinear (MLP) probe; lower is better. The MLP has one "
              "hidden layer, stops early on a validation split and is averaged over __MLP_SEEDS__ seeds. "

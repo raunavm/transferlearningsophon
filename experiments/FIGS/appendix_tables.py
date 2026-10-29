@@ -32,8 +32,9 @@ PRETRAINED = {"L188", "L162", "R42_Q1", "R16_Q1"}
 # The 64- and 30-class rerun arms were cut from the grid on 2026-10-09, so the paper
 # pretrains no level outside PRETRAINED.
 PRETRAINED_V2: set = set()
-# Column headings of the flavor control label sets, under a "flavor control" heading.
-FLAV_HEAD = {"FLAV_F0": "blind", "FLAV_F1": "$b$", "FLAV_F1R": "random"}
+# Column headings of the random partitions with controlled flavor boundaries, under a
+# "flavor boundary" heading.
+FLAV_HEAD = {"FLAV_F0": "none", "FLAV_F1": "$b$ quark", "FLAV_F1R": "random"}
 
 _TOKENS = re.compile(r"tauh|taue|taum|[bcsqgemvQ]")
 _TOKEN_TEX = {"tauh": r"\tau_h", "taue": r"\tau_e", "taum": r"\tau_\mu", "e": "e",
@@ -148,7 +149,7 @@ def table_vocabulary(rows: list[dict], parts: list) -> str:
     flav = [h for h, c, _ in parts if not c.startswith("RAND")]
     head = (f" & \\multicolumn{{{len(SHOWN)}}}{{c}}{{level}}"
             + (f" & \\multicolumn{{{len(rand)}}}{{c}}{{random partition}}" if rand else "")
-            + (f" & \\multicolumn{{{len(flav)}}}{{c}}{{flavor control}}" if flav else "")
+            + (f" & \\multicolumn{{{len(flav)}}}{{c}}{{flavor boundary}}" if flav else "")
             + " \\\\\n"
             + "JetClass-II class & " + " & ".join(str(sizes[r]) for r in SHOWN)
             + "".join(f" & {h}" for h, _, _ in parts) + " \\\\")
@@ -162,8 +163,9 @@ def table_vocabulary(rows: list[dict], parts: list) -> str:
     caption = ("Every JetClass-II class and its group at each coarser level of the class "
                f"hierarchy (columns headed by the number of classes at that level: "
                f"{', '.join(str(sizes[r]) for r in SHOWN)}), in each random partition, numbered as "
-               "in Table~\\ref{tab:pairs}, and in each flavor control label set: flavor-blind, "
-               "$b$ boundary and random boundary (Section~\\ref{sec:controls}). "
+               "in Table~\\ref{tab:pairs}, and in each random partition with controlled flavor "
+               "boundaries: no flavor boundary, a $b$-quark boundary and a random flavor boundary "
+               "(Section~\\ref{sec:controls}). "
                "Group numbers are those of the released label maps; classes that share a number "
                "in a column share a class in that label set. At the "
                f"{sizes['L162']}-class level every resonant class keeps its own label and the "

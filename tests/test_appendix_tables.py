@@ -44,7 +44,7 @@ def test_the_papers_partitions_are_printed_flavour_controls_included():
     heads = [h for h, _, _ in parts]
     assert heads == [str(k) for k in range(1, len(rand) + 1)] + [A.FLAV_HEAD[c] for c in flav]
     table = A.table_vocabulary(ROWS, parts)
-    assert "{random partition}" in table and "{flavor control}" in table
+    assert "{random partition}" in table and "{flavor boundary}" in table
     assert "RAND_d" not in table and "rerun" not in table
 
 

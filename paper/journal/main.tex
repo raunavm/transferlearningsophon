@@ -56,8 +56,9 @@ representation has not been tested with the training data held fixed. We retrain
 Sophon model, a Particle Transformer classifier for the JetClass-II dataset, with its
 \Kfull{} classes and with label sets of \Kres, \Kmid{} and \Kcoarse{} classes obtained by
 merging them, with \MlstNRunsWord{} seeds each; models with the same seed share their training examples, the order of these examples and their initial
-weights below the classification head. Random partitions of the classes and label sets
-that differ in a single quark-flavor boundary serve as controls. In linear probes on
+weights below the classification head. Random partitions of the classes serve as controls,
+including partitions in which either no class boundary or a single boundary depends on quark
+flavor. In linear probes on
 JetClass-II, merging the QCD classes has no measurable effect, while removing quark flavor
 from the labels increases $\oma$ by a factor of \MlstCmpJcTwoCoarseOverFull. In binary
 probes between classes that differ in quark flavor, label sets in which some class boundary
@@ -121,8 +122,8 @@ models~\cite{multiberts}. The seed fixes the initial weights below the classific
 and the order of the training examples, so models with the same seed differ only in their
 labels and in the width of their output layer. Controls separate the information carried by
 the labels from their number: random partitions of the classes into groups matched to the
-\Kcoarse-class label set, and label sets with the same group structure in which either no
-class boundary or a single boundary depends on quark flavor. The \Kres- and \Kcoarse-class
+\Kcoarse-class label set, including partitions in which either no class boundary or a single
+boundary depends on quark flavor. The \Kres- and \Kcoarse-class
 models are also pretrained with an auxiliary jet-mass regression, to test whether its
 effect depends on the label set.
 
@@ -292,22 +293,31 @@ partitions under a balance rule that was fixed before the draw, so that each pai
 classes compared in Section~\ref{sec:merge} is merged in some partitions and kept apart in
 others (Appendix~\ref{app:vocab}). Each partition is pretrained with \RandVtwoRuns{} seed.
 
-\paragraph{Flavor control label sets.} These label sets have the group structure
-of the \Kcoarse-class label set, with the shares of the groups matched exactly, and differ
-in how their class boundaries depend on quark flavor. In the flavor-blind label set, every
-group that contains a decay also contains all decays obtained from it by exchanging $b$,
-$c$ and light quarks, so no class boundary depends on quark flavor. The $b$-boundary label
-set adds a single flavor boundary: the decays \RandFlavSplitOrbit{} that contain a $b$
-quark, with $Q$ any quark, move to another group, and a compensating move of other decays
-keeps the shares exact (Appendix~\ref{app:vocab}). It therefore separates $b$ from $c$
-quarks in four-prong decays and, like the flavor-blind label set, merges them in two-prong
-decays. The random-boundary label set moves the same number of these decays, chosen at
-random under conditions fixed before the draw. Of the \RandFlavBcPairs{} pairs of these
-decays that differ only by exchanging $b$ and $c$ quarks, the $b$-boundary label set separates \RandFlavFoneBcSplit{} and the
-random-boundary label set \RandFlavFonerBcSplit. Comparing them distinguishes a gain
-that requires a boundary between $b$ and $c$ quarks from a gain that any boundary through
-these decays provides. Each flavor control label set is pretrained with \RandFlavRuns{}
-seeds.
+\paragraph{Random partitions with controlled flavor boundaries.} Two decays differ only in
+quark flavor if exchanging $b$, $c$, $s$, $u$ and $d$ quarks turns one into the other, with
+gluons and leptons unchanged, as for $X\to b\bar b$ and $X\to c\bar c$. A label set has a
+flavor boundary wherever it keeps such decays in different classes. The \Kcoarse-class label
+set has groups defined by physics and no flavor boundary; the random partitions have random
+groups and many flavor boundaries. To separate the effect of random grouping from that of
+flavor boundaries, we construct further random partitions whose flavor boundaries are set by
+construction, each with the group shares of the \Kcoarse-class label set
+(Appendix~\ref{app:vocab}). The random partition with no flavor boundary places all decays
+that differ only in quark flavor in the same group; its groups are drawn at random and then
+rearranged by a search that minimizes the pairs of classes they share with the
+\Kcoarse-class groups. The random partition with a $b$-quark boundary starts from it and moves
+the four-quark decays \RandFlavSplitOrbit{} that contain a $b$ quark, with $Q$ any quark, to
+another group, while whole sets of other decays with the same total share move the other way.
+Its only flavor boundary therefore lies between the four-quark decays with and without a $b$
+quark, and it merges $b$ with $c$ quarks in all other decays. The random partition with a
+random flavor boundary makes the same compensating move but moves the same number of
+four-quark decays chosen at random, under rules fixed before the draw. Of the
+\RandFlavBcPairs{} pairs of four-quark decays that differ only by exchanging $b$ and $c$
+quarks, the random partition with a $b$-quark boundary keeps \RandFlavFoneBcSplit{} apart and
+the random partition with a random flavor boundary \RandFlavFonerBcSplit; the latter keeps
+apart instead some four-quark decays that differ by exchanging a $b$ or $c$ quark with an
+$s$, $u$ or $d$ quark. Comparing these two partitions distinguishes a gain that requires a
+boundary between $b$ and $c$ quarks from a gain that any flavor boundary in the same decays
+provides. Each is pretrained with \RandFlavRuns{} seeds.
 
 \paragraph{Auxiliary mass regression.} The \Kres- and \Kcoarse-class models are also
 pretrained, with \MlstMassNRunsWord{} seeds each, with an additional output that regresses
@@ -363,9 +373,10 @@ reference. Appendix~\ref{app:ftrecipe} lists all settings.
 subset measure distinctions that the label sets merge at different levels: $X\to bc$
 against $X\to bq$ and $X\to cs$, the separation needed for a measurement of $|V_{cb}|$ with
 boosted jets~\cite{vcbboosted}; $X\to b\bar b$ against $X\to c\bar c$; and $X\to YY\to bbqq$
-against $X\to YY\to ccqq$, which the $b$-boundary label set places in different groups.
-Because each random partition merges some of these pairs and keeps others apart, the effect
-of merging a pair can be distinguished from the effect of having \Kcoarse{} classes.
+against $X\to YY\to ccqq$, which the random partition with a $b$-quark boundary keeps
+apart. Because each of the \RandVtwoNPartitions{} random partitions merges some of these
+pairs and keeps others apart, the effect of merging a pair can be distinguished from the
+effect of having \Kcoarse{} classes.
 
 \paragraph{Resonance tagging.}\label{sec:xbb} We follow Sophon's
 benchmark~\cite[Sec.~III]{sophon}: a spin-0 resonance decaying to $b\bar b$ or to $bs$,
@@ -416,13 +427,14 @@ half the smallest interval containing 68\% of the residuals~\cite[Sec.~8.2.2]{gl
 
 Each result is the mean over the independently pretrained models of a configuration:
 \MlstNRunsWord{} for each level of the hierarchy, \MlstMassNRunsWord{} for the models with
-mass regression, and \RandFlavRuns{} for the flavor control label sets. Its uncertainty is
+mass regression, and \RandFlavRuns{} for the random partitions with controlled flavor
+boundaries. Its uncertainty is
 the standard deviation between them, rounded following the Particle Data
 Group~\cite{pdg}. Each pretrained model is probed or fine-tuned once, so the spread
 contains the variation of both pretraining and downstream training; uncertainties quoted
 for fine-tuned jet foundation models usually cover only the fine-tuning of a single
-pretrained model~\cite{part,omnilearn,mpm}. The random partitions, with \RandVtwoRuns{}
-seed each, are shown individually. When configurations are compared, the ratio is
+pretrained model~\cite{part,omnilearn,mpm}. The other random partitions, with
+\RandVtwoRuns{} seed each, are shown individually. When configurations are compared, the ratio is
 taken between models with the same seed, which share their training examples, and its mean
 and standard deviation over seeds are given. Background rejections at tight working points
 rest on few background jets, and the tables state how many.
@@ -487,39 +499,42 @@ the pairs in the order of the table. The \Kmid-class label set merges $X\to bc$ 
 $X\to bq$ but keeps the other pairs apart, and increases $\oma$ by at most a factor of
 \MlstCmpBcMidOverFull, by a similar amount for merged and unmerged pairs.
 
-For the random partitions, which have the group structure of the \Kcoarse-class label set
-but keep class boundaries that depend on quark flavor, it matters little whether a pair is
-merged. In the units of Table~\ref{tab:pairs}, $\oma$ for $X\to b\bar b$ against $X\to c\bar c$ is
-\MlstPairRandMergedBb{} averaged over the partitions that merge the pair and
-\MlstPairRandApartBb{} over those that keep it apart, and the four-prong pair behaves in the
-same way. Only $X\to bc$ is separated somewhat worse when it is merged
-(\MlstPairRandMergedBc{} against \MlstPairRandApartBc). Every random partition separates
-every pair better than the \Kcoarse-class label set does. This suggests that what the
-\Kcoarse-class label set loses is not the separation of the merged pairs themselves but
-every class boundary that depends on quark flavor: in a random partition, other
-boundaries still depend on flavor, and a network that learns them also separates $b$ from
-$c$ quarks in decays where its labels do not.
+For the \RandVtwoNPartitions{} random partitions, which have the group shares of the
+\Kcoarse-class label set but random groups with many flavor boundaries, it matters little
+whether a pair is merged. In the units of Table~\ref{tab:pairs}, $\oma$ for $X\to b\bar b$
+against $X\to c\bar c$ is \MlstPairRandMergedBb{} averaged over the partitions that merge the
+pair and \MlstPairRandApartBb{} over those that keep it apart, and the pair $X\to YY\to bbqq$
+against $X\to YY\to ccqq$ behaves in the same way. Only $X\to bc$ is separated somewhat worse
+when it is merged (\MlstPairRandMergedBc{} against \MlstPairRandApartBc). After pretraining on
+any of these partitions, the probes separate every pair better than after pretraining on the
+\Kcoarse-class label set. This suggests that what the \Kcoarse-class label set loses is not
+the separation of the merged pairs themselves but every flavor boundary: the random partitions
+have flavor boundaries elsewhere, and a network that learns them also separates $b$ from $c$
+quarks in decays whose labels merge them.
 % CHECK: with every run in, re-read "every random partition better than the 17-class
 % label set on every pair" (now: bc 64-74 vs 120, bb 3.5-4.5 vs 10.9, bbqq 8.3-9.6 vs 30).
 
-The flavor control label sets test this interpretation. The flavor-blind label set, in
-which no class boundary depends on quark flavor, separates $X\to bc$ from $X\to bq$ and
-$X\to cs$ as poorly as the \Kcoarse-class label set, and the other pairs worse. The
-$b$-boundary label set adds a boundary between $b$ and $c$ quarks in four-prong decays
-only. It still merges $X\to b\bar b$ with $X\to c\bar c$, yet it reduces $\oma$ for this
-two-prong pair to \MlstCmpBbFoneOverFzero{} of its value for the flavor-blind label set,
-which brings it to the level of the random partitions. The random-boundary label set,
-which separates none of the pairs that differ only by exchanging $b$ and $c$ quarks,
+The random partitions with controlled flavor boundaries test this interpretation. After
+pretraining on the random partition with no flavor boundary, the probes separate $X\to bc$
+from $X\to bq$ and $X\to cs$ as poorly as after pretraining on the \Kcoarse-class label set,
+and the other pairs worse. The random partition with a $b$-quark boundary adds a single flavor
+boundary, in the four-quark decays, and still merges $X\to b\bar b$ with $X\to c\bar c$; yet
+pretraining on it reduces $\oma$ for this two-prong pair to \MlstCmpBbFoneOverFzero{} of its
+value for the partition with no flavor boundary, which brings it to the level of the
+\RandVtwoNPartitions{} random partitions. The random partition with a random flavor boundary,
+which keeps apart no four-quark decays that differ only by exchanging $b$ and $c$ quarks,
 recovers much of this gain but not all of it: its $\oma$ for the same pair is
-\MlstCmpBbFonerOverFone{} times that of the $b$-boundary label set. A boundary between $b$
-and $c$ quarks in four-prong decays is therefore sufficient to preserve the distinction in
-two-prong decays, but not necessary, because other flavor-dependent boundaries provide
-much of the same information. For $X\to bc$ against $X\to bq$ and $X\to cs$, the
-$b$-boundary label set gains less over the flavor-blind label set, and the random-boundary label
-set matches it (Table~\ref{tab:pairs}).
-% CHECK: flavor-blind level with the 17-class label set on bc and worse on bb and bbqq (now
-% 126 vs 120, 24 vs 10.9, 52 vs 30); b-boundary "at the level of the random partitions" on bb
-% (now 4.6; at the top edge of the partitions' range); random boundary "much of the gain".
+\MlstCmpBbFonerOverFone{} times that of the partition with a $b$-quark boundary. A boundary
+between the four-quark decays with and without a $b$ quark is therefore sufficient to
+preserve the distinction between $b$ and $c$ quarks in two-prong decays, but not necessary,
+because other flavor boundaries provide much of the same information. For $X\to bc$ against
+$X\to bq$ and $X\to cs$, the partition with a $b$-quark boundary gains less over the
+partition with no flavor boundary, and the partition with a random flavor boundary matches it
+(Table~\ref{tab:pairs}).
+% CHECK: no-flavor-boundary partition level with the 17-class label set on bc and worse on
+% bb and bbqq (now 126 vs 120, 24 vs 10.9, 52 vs 30); b-quark boundary "at the level of the
+% random partitions" on bb (now 4.6; at the top edge of their range); random flavor boundary
+% "much of the gain".
 
 \subsection{Auxiliary mass regression}\label{sec:mass}
 \input{tables/mlst_mass}
@@ -591,7 +606,7 @@ specific to it cannot be excluded. A single architecture and model size is studi
 whether fine labels help can depend on how strongly a network is
 overparameterized~\cite{pirovano}, so a smaller or larger model may respond differently.
 The label sets are levels of a single hierarchy, and other groupings enter only through
-the random partitions and the flavor control label sets. Every model is trained on the
+the random partitions. Every model is trained on the
 same number of examples, so the study does not determine whether a finer label set
 benefits from a longer schedule. With \MlstNRunsWord{} seeds per level of the hierarchy
 and fewer for the other configurations, the standard deviations are themselves uncertain,
@@ -652,19 +667,22 @@ on \DesignBnJets{} training jets.
 
 Table~\ref{tab:app-levels} lists the levels of the class hierarchy and the groups of the
 \Kcoarse-class label set, and Table~\ref{tab:app-vocabulary} gives the group of every
-JetClass-II class at each coarser level, in every random partition and in the flavor control
-label sets. Both are generated from the label maps.
+JetClass-II class at each coarser level and in every random partition, including those
+with controlled flavor boundaries. Both are generated from the label maps.
 
 The random partitions are drawn under a balance rule fixed before the draw: each of
 \RandVtwoNPairs{} pairs of classes is merged in \RandVtwoMergedMin{} or
-\RandVtwoMergedMax{} of the partitions and kept apart in the others. In the $b$-boundary
-label set, the \RandFlavCutClasses{} of the \RandFlavSplitOrbitClasses{} decays
-\RandFlavSplitOrbit{} that contain a $b$ quark move to another group, and to keep the
-shares exact, the \RandFlavOrbitClassesMoved{} decays of the forms
-\RandFlavOrbitsMovedList{} move the other way. The random-boundary label set moves
-\RandFlavCutClasses{} of the same decays, \RandFlavFonerCutWithB{} of them with a $b$ quark,
-makes the same compensating move, and keeps the share of the training examples in each of
-its groups within \RandFlavFonerShareTol{} of that in the $b$-boundary label set.
+\RandVtwoMergedMax{} of the partitions and kept apart in the others. In the random
+partition with a $b$-quark boundary, the \RandFlavCutClasses{} of the
+\RandFlavSplitOrbitClasses{} four-quark decays \RandFlavSplitOrbit{} that contain a $b$
+quark move to another group, and to keep the shares exact, the \RandFlavOrbitClassesMoved{}
+decays of the forms \RandFlavOrbitsMovedList{} move the other way. The random partition
+with a random flavor boundary moves \RandFlavCutClasses{} of the same four-quark decays,
+\RandFlavFonerCutWithB{} of them with a $b$ quark, and makes the same compensating move,
+under rules fixed before the draw: it keeps apart no pair of these decays that differ only by
+exchanging $b$ and $c$ quarks, and the share of the training examples in each of its groups
+stays within \RandFlavFonerShareTol{} of that in the partition with a $b$-quark
+boundary.
 
 \input{tables/appendix_levels}
 \clearpage
