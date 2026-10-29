@@ -602,6 +602,8 @@ def input_paths(root: pathlib.Path) -> dict:
             "rand_v1_map": maps / "rand_label_map.v1.csv",
             "rand_v2_map": maps / "rand_label_map.v2.csv",
             "rand_v2_rule": maps / "rand_v2_selection.json",
+            # the draw itself: its TRIALS constant is the number of assignments per partition
+            "rand_draw_code": root / "scripts" / "build_rand_control.py",
             "flavour_pair": maps / "flavour_pair.v2.json",
             "flavour_map": maps / "flavour_pair_map.v2.csv",
             "realised_shares": maps / "realised_native_shares.v2.json",
@@ -1351,7 +1353,7 @@ def emit_rand_design(em: Emitter, paths: dict, C: dict, missing: list | None = N
     num, den = rule["realised_tolerance"]
     em.macro("RandVtwoShareTol", f"{100 * num / den:g}\\%", paths["rand_v2_rule"], "realised_tolerance",
              "largest relative deviation of a realised group share from its target (rule 3)")
-    draw_src = paths["rand_v2_rule"].parents[2] / "scripts" / "build_rand_control.py"
+    draw_src = paths["rand_draw_code"]
     trials = re.search(r"^TRIALS = (\d+)", draw_src.read_text(), re.M)
     if trials is None:
         raise SystemExit(f"FATAL: no TRIALS constant in {draw_src}")
