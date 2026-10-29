@@ -7,7 +7,8 @@ different numbers) and draws 1 - AUC against the number of training jets: JetCla
 (macro AUC) and top tagging, each label set of the hierarchy and the randomly initialized
 network. Points are the mean over the pretraining runs present, error bars their standard
 deviation; the series are offset slightly along x so that coinciding points stay visible.
-The encoding is style.py's (colour and marker = label-set size).
+The style and the encoding are mlst_style.py's (mplhep's CMS style; colour and marker =
+label-set size).
 
     python3 experiments/FIGS/mlst_figures.py [--outdir figures]
 """
@@ -21,11 +22,10 @@ import sys
 import numpy as np
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-import style  # noqa: E402
+import mlst_style as style  # noqa: E402
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 CLASSES = {"L188": 188, "L162": 162, "R42_Q1": 43, "R16_Q1": 17}
-INIT_STYLE = {"color": "#7F7F7F", "marker": "x", "linestyle": "--"}
 NAME = "probes_vs_training_size"
 
 
@@ -59,34 +59,38 @@ def figure(root: pathlib.Path, outdir: pathlib.Path) -> list[pathlib.Path]:
     style.use_style()
     import matplotlib.pyplot as plt
     from matplotlib import ticker
-    panels = ((M.TASKS[0], "JetClass-II (macro AUC)"), (M.TASKS[2], "top tagging"))
-    fig, axes = plt.subplots(1, len(panels), figsize=(style.FIG_W_TWO_COLUMN, 2.8))
+    panels = ((M.TASKS[0], "JetClass-II, macro AUC"), (M.TASKS[2], "Top tagging"))
+    fig, axes = plt.subplots(1, len(panels), figsize=(style.PANEL * len(panels), style.PANEL))
     for ax, ((ds, metric, _), title) in zip(axes, panels):
         rows = series(M, fits, runs, ds, metric)
         for k, (row, pts) in enumerate(rows.items()):
             if not pts:
                 continue
             dodge = 10 ** (0.03 * (k - (len(rows) - 1) / 2))
-            kw = (INIT_STYLE if row == M.INIT else
+            kw = (style.INIT_STYLE if row == M.INIT else
                   {"color": style.LEVEL_COLOURS[CLASSES[row]], "marker": style.LEVEL_MARKERS[CLASSES[row]],
                    "linestyle": "-"})
-            label = "randomly initialized network" if row == M.INIT else f"{CLASSES[row]} classes"
+            label = "Randomly initialized" if row == M.INIT else f"{CLASSES[row]} classes"
             x, y, e = zip(*pts)
             ax.errorbar([xi * dodge for xi in x], y, yerr=[s or 0.0 for s in e], label=label,
-                        capsize=2, **kw)
+                        markersize=12, linewidth=style.LINEWIDTH, elinewidth=style.LINEWIDTH - 1,
+                        **kw)
         ax.set_xscale("log")
         ax.set_yscale("log")
         lo, hi = ax.get_ylim()
+        hi = hi * (hi / lo) ** 0.25  # headroom for the panel label
+        ax.set_ylim(lo, hi)
         ax.yaxis.set_major_locator(ticker.LogLocator(subs=(1.0, 2.0, 5.0) if hi / lo > 3 else
                                                      tuple(range(1, 10))))
         ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}"))
         ax.yaxis.set_minor_formatter(ticker.NullFormatter())
-        ax.set_xlabel("training jets")
-        ax.set_title(title)
+        ax.set_xlabel("Training jets")
+        ax.text(0.05, 0.95, title, transform=ax.transAxes, ha="left", va="top")
     axes[0].set_ylabel(r"$1-\mathrm{AUC}$")
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncol=len(labels), bbox_to_anchor=(0.5, -0.06))
-    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    fig.legend(handles, labels, loc="lower center", ncol=len(labels), bbox_to_anchor=(0.5, 0.97),
+               frameon=False)
+    fig.tight_layout()
     return style.save(fig, NAME, outdir)
 
 
