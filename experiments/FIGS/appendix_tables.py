@@ -222,7 +222,7 @@ def level_rules(rows: list[dict]) -> dict:
             "R63_Q1": "each decay topology by its numbers of $b$ and $c$ quarks",
             "R42_Q1": "each decay topology by whether it holds a $b$ quark, else a $c$, else neither",
             "R29_Q1": "each decay topology by whether it holds a $b$ or $c$ quark",
-            "R16_Q1": "the number of prongs and whether each comes from a quark or gluon, a charged lepton, a $\\tau$ lepton or a neutrino, without flavor",
+            "R16_Q1": "the number of prongs and whether each is a quark or gluon (without distinguishing them), an electron or muon, a $\\tau$ lepton or a neutrino, without flavor",
             "R3_VIS": f"{visible_prongs(rows)} visible prongs (a neutrino is not counted), or QCD",
             "R1_Q1": "resonance decay or QCD"}
 

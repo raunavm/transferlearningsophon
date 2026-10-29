@@ -50,21 +50,21 @@
 \maketitle
 
 \begin{abstract}
-Foundation models for particle physics are often pretrained to classify simulated jets,
-and the number of classes has grown with each new model. Fine-grained classes let a single
-model form a discriminant for any coarser signal definition by summing its output scores, but
-whether they also improve the learned representation has not been tested with the training
-data held fixed. We retrain the Sophon model, a Particle Transformer classifier for the
-JetClass-II dataset, with its \Kfull{} classes and with label sets of \Kres, \Kmid{} and
-\Kcoarse{} classes obtained by merging them, with \MlstNRunsWord{} seeds each; models with the
-same seed share their training examples, the order of these examples and all initial weights
-except those of the output layer. Random partitions of the classes serve as controls, together
-with random partitions in which no class boundary, or only a single boundary, depends on quark
-flavor. In linear probes on JetClass-II, merging the classes of background jets from quantum
-chromodynamics has no measurable effect, while removing quark flavor from the labels increases
-$\oma$ by a factor of \MlstCmpJcTwoCoarseOverFull. In binary probes between classes that
-differ only in quark flavor, models pretrained on random partitions, which keep many such
-classes apart, recover most of the separation lost at \Kcoarse{} classes.
+Foundation models for particle physics are often pretrained to classify simulated jets, the
+sprays of particles from quarks and gluons, and the number of classes has grown.
+Fine-grained classes let a single model serve any coarser signal definition, but whether
+they also improve the learned representation is untested with the training data fixed.
+We retrain the Sophon model, a Particle Transformer for the JetClass-II dataset, with its
+\Kfull{} classes and with merged label sets of \Kres, \Kmid{} and \Kcoarse{} classes,
+\MlstNRunsWord{} seeds each; models with the same seed share their training examples, their
+order and all initial weights except those of the output layer. Random partitions of the
+classes are controls, including partitions with no class boundary, or a single boundary,
+that depends on quark flavor, the type of quark. In linear probes on JetClass-II, merging the background classes
+has no measurable effect, while removing quark flavor from the labels increases $\oma$, where
+AUC is the area under the receiver operating characteristic curve, by a factor of
+\MlstCmpJcTwoCoarseOverFull. In binary probes between classes that differ only in quark
+flavor, models pretrained on random partitions, which keep many such classes apart, recover
+most of the separation lost at \Kcoarse{} classes.
 \pending{fine-tuning, $X\to b\bar b$ and $X\to bs$ tagging, anomaly detection, and what the
 results imply for the design of pretraining datasets}
 \end{abstract}
@@ -83,41 +83,72 @@ learns are reused for other tasks~\cite{huh,mahajan}. The pretraining classes ar
 design choice, and their granularity affects which features the network learns. Studies
 that vary it find that finer labels help in some settings and not in
 others~\cite{huh,chen,pirovano,hong}. Natural images, however, carry labels only at the
-granularities that annotators or existing taxonomies provide.
+granularities that annotators or existing taxonomies provide. Particle physics offers a
+setting in which the granularity of the labels is not limited in this way.
 
-Particle physics has adopted supervised pretraining as well. Jet foundation models are pretrained on
-large simulated datasets of jets, the collimated sprays of particles produced by quarks and
-gluons in high-energy collisions, and then adapted to tasks such as identifying the particle
-that initiated a jet~\cite{part,sophon,omnilearn,omnijet,mpm}. A recent comparison of
-pretraining objectives found classification of the simulated jets to be the best choice
-when downstream labels and model capacity are plentiful~\cite{objectives}. Because the
-simulation records the full decay of every particle, the classes can be defined at any
-granularity, and their number has grown. Sophon~\cite{sophon} pretrains a Particle
-Transformer (ParT)~\cite{part} on the JetClass-II dataset with \Kfull{} classes, which name
-the decay products of each simulated resonance and the quark content of each jet from
-quantum chromodynamics (QCD) multijet production. The CMS Global Particle Transformer
-(GloParT) grew from \LitGlopartVoneNClasses{} classes in its first version to
+At the Large Hadron Collider (LHC) at CERN, the European laboratory for particle
+physics~\cite{lhc}, the ATLAS~\cite{atlasdet} and CMS~\cite{cmsdet} experiments record the
+particles produced in proton--proton collisions. Quarks are bound together by the strong
+interaction, which gluons carry, and neither quarks nor gluons produced in a collision are
+observed directly: apart from the top quark, which decays first, each forms a jet, a collimated
+spray of particles, mostly hadrons (bound states of quarks), that the detector measures. Heavy
+particles, such as the top quark, the $W$, $Z$ and Higgs bosons, and hypothetical particles
+beyond the Standard Model, the theory of the known elementary particles and their
+interactions, can decay, directly or through other particles, into quarks or gluons. When such
+a particle is produced with large momentum, its decay products merge into a single jet whose
+internal structure reflects the decay~\cite{larkoski,kogler}.
+
+Identifying the particle that initiated a jet, known as jet tagging, is therefore central to measurements of the Higgs boson
+and to searches for new particles~\cite{cmshbb,cmszprime}, which must select the jets of the
+process sought, the signal, from a much larger background of jets from other processes. Jet
+tagging includes identifying the flavor, or type, of the quarks in the jet: hadrons that
+contain a bottom ($b$) or charm ($c$) quark decay a short but measurable distance from the
+collision point, so that some of their decay products emerge from a common point away from the
+collision, a displaced vertex. This helps to distinguish their jets from those of the lighter
+up ($u$), down ($d$) and strange ($s$) quarks and of gluons~\cite{cmsbtag}. Current jet taggers
+are deep neural networks that take the measured particles of a jet as
+input~\cite{particlenet,part}; the ATLAS and CMS experiments use such networks on the
+charged-particle tracks of a jet~\cite{gntwo} or on all its measured particles~\cite{cmspart}. They are trained on simulated jets, whose origin is known from the
+simulation.
+
+Jet foundation models extend this approach: a network is pretrained on a large simulated
+dataset of jets and then adapted to tasks such as jet
+tagging~\cite{part,sophon,omnilearn,omnijet,mpm}. A recent comparison of pretraining
+objectives found classification of the simulated jets to be the best choice when downstream
+labels and model capacity are plentiful~\cite{objectives}. Unlike natural images, simulated
+jets can be labeled at many granularities, because the simulation records the decays that
+produced each jet, and the number of classes has grown. Sophon~\cite{sophon} pretrains a Particle
+Transformer (ParT)~\cite{part}, a transformer network that operates on the set of particles in
+a jet, on the JetClass-II dataset with \Kfull{} classes. These classes name the particles from
+the decay of a hypothetical particle $X$, directly or through a pair of intermediate particles,
+and, for jets from quantum chromodynamics (QCD) multijet production, the numbers of $b$, $c$
+and $s$ quarks in the jet. QCD is the theory of the strong interaction, and QCD
+multijet production, the production of quarks and gluons through this interaction, is the main
+background in searches for new particles that decay into quarks or gluons. The Global Particle
+Transformer (GloParT), a jet tagger of the CMS experiment based on ParT, grew from \LitGlopartVoneNClasses{} classes in its first version to
 \LitGlopartVthreeNClasses{} in its third, while its training data and network also
 changed~\cite{glopartdp}.
 
 Fine-grained classes have a known benefit at the output of the model. For an ideally
 trained classifier, the score of a merged class is the sum of the scores of the classes it
-contains, so a single model provides a discriminant for any coarser signal
-definition~\cite{sophon}. Whether fine-grained classes
+contains, so a single model provides a discriminant, a score that separates signal from
+background jets, for any coarser signal definition~\cite{sophon}. Whether fine-grained classes
 also improve the learned representation, the features that are used when the model is
 adapted to a new task, has not been tested with the training data held fixed. Sophon
-compared the $X\to b\bar b$ discriminant built from the output scores of its \Kfull-class
-model with that of a \LitSophonAblationNClasses-class model, which was trained only on
-two-prong resonance decays and QCD jets, and on fewer training examples per
-epoch~\cite{sophon}; the comparison changed the data together with the labels and measured
-the output scores rather than the representation. Controlled studies of jet foundation models
-and jet classifiers have varied the training objective~\cite{objectives,rieck,reprlearn}, the
-composition of the training data~\cite{datacomp}, and the model and dataset
-size~\cite{scaling,viglscaling}, but none has varied the label set with the training data held
-fixed. Simulated jets allow this test: the
+compared the discriminant for decays $X\to b\bar b$, into a $b$ quark and antiquark, between
+its \Kfull-class model and a \LitSophonAblationNClasses-class model~\cite{sophon}. The
+\LitSophonAblationNClasses-class model was trained on fewer examples per epoch, and only on QCD
+jets and on two-prong decays, in which $X$ decays directly into a pair of particles. The
+comparison therefore changed the data together with the labels, and it measured the output
+scores rather than the representation. Controlled studies of jet
+foundation models and jet classifiers have varied the training
+objective~\cite{objectives,rieck,reprlearn}, the composition of the training
+data~\cite{datacomp}, and the model and dataset size~\cite{scaling,viglscaling}, but none has
+varied the label set with the training data held fixed. Simulated jets allow this test: the
 same jets can be labeled exactly at every level of a known class hierarchy. The answer also
 matters for the design of future datasets, because every additional class needs a truth
-definition and enough simulated jets to train on.
+definition, a rule that assigns the class from the simulation record, and enough simulated jets
+to train on.
 
 In this paper, we retrain the Sophon model on JetClass-II with its \Kfull{} classes and with
 label sets of \Kres, \Kmid{} and \Kcoarse{} classes, which are levels of a single class
@@ -131,16 +162,17 @@ information carried by the labels from their number: random partitions of the cl
 groups matched to those of the \Kcoarse-class label set, and random partitions in which no
 class boundary, or only a single boundary, depends on quark flavor; we call such boundaries
 flavor boundaries. The \Kres- and \Kcoarse-class models are also pretrained with an auxiliary
-jet-mass regression, as used in CMS taggers~\cite{cmspart,glopart}, to test whether its effect
+regression of a correction to the jet mass, as used in CMS taggers~\cite{cmspart,glopart}, to test whether its effect
 depends on the label set.
 
 We evaluate each pretrained model with linear probes on its frozen features and with full
 fine-tuning, with training sets from \FtSizeEThree{} jets to the full training set, on
-JetClass-II, on JetClass~\cite{part}, and on top~\cite{toptag} and quark\slash gluon~\cite{efn}
-tagging. Following Sophon, we also tag jets from decays of a hypothetical heavy particle $X$
-into a $b$ quark and antiquark ($X\to b\bar b$), which the \Kfull- and \Kres-class label sets
-contain as a class, directly from the output scores, and decays $X\to bs$, which no label set
-contains, with a classifier trained on the frozen features. Finally, we test whether
+JetClass-II, on the earlier JetClass dataset~\cite{part}, on top tagging~\cite{toptag}, which
+identifies jets from top-quark decays, and on quark\slash gluon tagging~\cite{efn}, which
+separates jets initiated by light quarks from those initiated by gluons. Following Sophon, we
+also tag $X\to b\bar b$ decays, which the \Kfull- and \Kres-class label sets contain as a
+class, directly from the output scores, and $X\to bs$ decays, into a $b$ and an $s$ quark, which no label set contains,
+with a classifier trained on the frozen features. Finally, we test whether
 the frozen features help to detect signals that are absent from pretraining.
 \pending{the main results, once fine-tuning and the benchmarks are in}
 
@@ -160,7 +192,8 @@ other tasks. OmniLearn~\cite{omnilearn} and OmniLearned~\cite{omnilearned} fine-
 single pretrained model on many jet tasks, including tasks on CMS open data.
 Self-supervised alternatives include masked particle modeling, first with tokenized
 targets~\cite{mpm} and then without tokenization~\cite{mpmtok}, generative
-pretraining~\cite{omnijet}, contrastive learning with re-simulated jets~\cite{rs3l} and
+pretraining~\cite{omnijet}, contrastive learning on jets whose parton shower and hadronization are simulated
+again~\cite{rs3l} and
 joint-embedding predictive architectures~\cite{hepjepa,jpjepa}. On top and quark/gluon tagging,
 supervised pretraining on JetClass matched or exceeded joint-embedding
 pretraining~\cite{hepjepa,jpjepa}. The comparison of pretraining objectives cited above
@@ -193,15 +226,17 @@ is fully fine-tuned~\cite{kornblith}. We therefore compare linear probes with fu
 fine-tuning.
 
 \paragraph{Auxiliary targets.} Auxiliary training objectives have both improved and
-degraded jet taggers. Removing the auxiliary classification objectives of the ATLAS GN2
-flavor tagger, which predict the origin of each track and whether pairs of tracks come from a
-common vertex, reduced its rejection of $c$ and light jets by up to
+degraded jet taggers. Removing the auxiliary classification objectives of GN2, the ATLAS tagger
+of $b$- and $c$-quark jets, which predict the origin of each track and whether pairs of tracks
+come from a common vertex, reduced its background rejection, the inverse of the fraction of
+background jets accepted, for jets from $c$ quarks and for jets from light quarks and gluons by
+up to
 \LitGnTwoAuxRejectionDropPercent\%~\cite{gntwo}. CMS taggers based on ParT combine
 classification with a jet-mass regression~\cite{cmspart,glopart}, and Ref.~\cite{glopart}
 argues that, because the classification and regression terms do not interfere, a model at the
 minimum of the combined loss is optimal for both tasks~\cite[Sec.~11.2.1]{glopart}. In
-contrast, ATLAS did not pursue a single network that combined classification with jet mass
-and $p_{\mathrm T}$ regression for its boosted Higgs-boson tagger: the regression loss
+contrast, ATLAS did not pursue a single network that combined classification with regression of the jet mass
+and transverse momentum for its tagger of Higgs bosons with large momentum: the regression loss
 dominated early training, and the combined network lost about
 \LitAtlasUnifiedEffDropPercent\% in classification efficiency relative to a dedicated
 classifier~\cite{atlasgnx}. Whether the effect of an auxiliary mass target depends on the
@@ -210,9 +245,12 @@ label set has not been tested.
 \paragraph{Transfer to new signals.} Sophon tagged $X\to bs$ decays, for which it has no
 class, with a small classifier trained on its frozen features, and this classifier
 outperformed the discriminant built from its most similar output class~\cite{sophon}.
-Weakly supervised anomaly detectors are compared by the improvement in significance that a
-selection on their score reaches for a given injected signal~\cite{argos} and by the smallest
-initial signal significance from which a discovery is still possible~\cite{sigmamin}.
+Weakly supervised anomaly detectors are trained to separate a region of the data that may
+contain a signal from a reference sample of background, without labels for individual
+collisions. They are compared by the improvement in significance, the size of an excess over
+the expected background in units of its standard deviation, that keeping only the collisions
+with high scores reaches for a given signal added to the background~\cite{argos}, and by the
+smallest initial significance from which a discovery is still possible~\cite{sigmamin}.
 
 % ============================================================================
 \section{Methods}\label{sec:methods}
@@ -221,25 +259,36 @@ initial signal significance from which a discovery is still possible~\cite{sigma
 \subsection{Dataset, model and pretraining}\label{sec:design}
 
 JetClass-II~\cite{sophon} contains about \LitJetClassTwoNJetsMillion{} million simulated
-large-radius jets in \Kfull{} classes. The \LitJetClassTwoNResonantClasses{} resonant classes
-cover decays of a hypothetical spin-0 particle $X$, a resonance, into quarks, gluons or
-leptons, whose showers form localized clusters of particles, or prongs, inside the jet:
-two-prong decays of $X$, and three- and four-prong decays $X\to YY$ through a pair of
-secondary resonances. Each class is labeled by the particles of the decay, where $q$ denotes a
+large-radius jets, which can contain all decay products of a heavy particle with large
+momentum, in \Kfull{} classes. The \LitJetClassTwoNResonantClasses{} resonant classes cover
+decays of a hypothetical spin-0 particle $X$, a short-lived particle or resonance: two-prong
+decays of $X$, and three- and four-prong decays $X\to YY$ through a pair of intermediate
+resonances $Y$. A prong is a decay product that initiates part of the jet: a quark or gluon,
+which forms a localized cluster of particles, or a lepton, that is, an electron ($e$), a muon
+($\mu$), a $\tau$ lepton, which decays further into an electron, a muon or hadrons ($\tau_h$),
+or a neutrino ($\nu$), which leaves the detector unseen. The masses of $X$ and $Y$ vary over
+wide ranges~\cite[App.~A]{sophon}. Each class is labeled by the particles of the decay, where $q$ denotes a
 $u$ or $d$ quark and light quarks are $u$, $d$ and $s$ quarks. The
-\LitJetClassTwoNQcdClasses{} QCD classes contain jets from quantum chromodynamics (QCD)
-multijet production, the main background in searches, and are defined by the numbers of $b$,
-$c$ and $s$ quarks in the jet. The events are generated with
-MadGraph5\_aMC@NLO~\cite{madgraph} and Pythia~\cite{pythia}, and the detector response is
-simulated with Delphes~\cite{delphes} in a configuration adapted from CMS. Each event contains
+\LitJetClassTwoNQcdClasses{} QCD classes contain jets from QCD
+multijet production, the main background in searches with jets, and are defined by the numbers of $b$,
+$c$ and $s$ quarks in the jet. The simulated collisions, or events, that
+contain a resonance are generated with MadGraph5\_aMC@NLO~\cite{madgraph} and the QCD multijet events with
+Pythia~\cite{pythia}; Pythia also simulates the decays of the resonances and the parton
+shower and hadronization, the radiation of further quarks and gluons, together called
+partons, and their binding into hadrons.
+The detector response is simulated with the fast detector simulation Delphes~\cite{delphes},
+in a configuration based on the CMS detector. Each event contains
 on average \LitJetClassTwoPileupMean{} additional proton--proton interactions (pileup), whose
-particles are suppressed with the PUPPI algorithm~\cite{puppi}. Jets are clustered with the
+particles are suppressed with the pileup per particle identification (PUPPI)
+algorithm~\cite{puppi}. Jets are clustered with the
 anti-$k_{\mathrm T}$ algorithm~\cite{antikt} with distance parameter
-$R = \LitJetClassTwoJetRadius$.
+$R = \LitJetClassTwoJetRadius$, which sets the angular size of the jet.
 
-We select jets with transverse momentum $\DesignPtMin < p_{\mathrm T} < \DesignPtMax$~GeV
-and soft-drop mass $\DesignMsdMin < m_{\mathrm{SD}} < \DesignMsdMax$~GeV, the jet mass after
-soft, wide-angle radiation is removed~\cite{softdrop}. As in
+We select jets with transverse momentum, the component of the momentum perpendicular to the
+beam, $\DesignPtMin < p_{\mathrm T} < \DesignPtMax$~GeV,
+and soft-drop mass $\DesignMsdMin < m_{\mathrm{SD}} < \DesignMsdMax$~GeV, the invariant mass
+of the jet's particles after low-energy, wide-angle radiation is removed~\cite{softdrop}, with
+momenta and masses in giga-electronvolts (GeV). As in
 Sophon~\cite[App.~B.1]{sophon}, the training jets are reweighted so that each of Sophon's
 reweighting classes, which are groups of JetClass-II classes, has the same distribution in
 $(p_{\mathrm T}, m_{\mathrm{SD}})$, approximately uniform as in Sophon's released
@@ -260,13 +309,16 @@ training examples or their order.
 
 The network is the Sophon model~\cite{sophon}: ParT~\cite{part} in the configuration of
 Sophon's released code, with
-\DesignParticleBlocks{} particle-attention blocks, \DesignClassBlocks{} class-attention
-blocks and embedding dimension \DesignEmbedDim, followed by a classification head with a
+\DesignParticleBlocks{} particle-attention blocks, which apply self-attention over the
+particles with a bias computed from the features of each pair of particles,
+\DesignClassBlocks{} class-attention blocks, in which a class token attends to the particles,
+and embedding dimension \DesignEmbedDim, followed by a classification head with a
 single hidden layer of \DesignHeadHidden{} units and an output for each class. The input to
 the head, the \DesignEmbedDim-dimensional class token after the class-attention blocks and
 the final layer normalization, is the representation that we evaluate. Every model is
 trained with Sophon's recipe~\cite[App.~B.1]{sophon} for \DesignEpochs{} epochs of
-\DesignSamplesPerEpoch{} jets, with the Ranger optimizer~\cite{lookahead,radam} and a
+\DesignSamplesPerEpoch{} jets, with the Ranger optimizer, which combines RAdam with
+Lookahead~\cite{lookahead,radam}, and a
 learning rate that is constant for the first \DesignLrFlatPercent{} of the epochs and then
 decreases exponentially. The initial weights follow PyTorch's default initialization rather
 than that of Sophon's training code, a difference common to all label sets.
@@ -276,7 +328,8 @@ We evaluate the checkpoint with the highest validation accuracy among epochs
 \DesignWavgFirstEpoch--\DesignWavgLastEpoch, where the learning rate is lowest, the earliest
 in case of a tie, so that every label set is compared after the same schedule. As in
 Sophon's training code, the validation accuracy is weighted by the training reweighting. As a
-check that the probes do not depend on the BatchNorm statistics accumulated during training,
+check that the probes do not depend on the batch normalization (BatchNorm) statistics
+accumulated during training,
 every linear probe on the downstream tasks is repeated with the BatchNorm statistics of the checkpoint recomputed on
 training jets (Appendix~\ref{app:bn}).
 
@@ -288,13 +341,14 @@ trained (Appendix~\ref{app:vocab}). We pretrain on the levels with \Kfull, \Kres
 and \Kcoarse{} classes. The \Kfull-class label set is that of Sophon, which also divides
 QCD jets by their quark content. The \Kres-class label set merges the QCD classes into a
 single class and keeps every resonant class. The \Kmid-class label set is reached through a
-level with \VocabSizeRsixthreeQone{} classes and labels each decay by its topology and by
+level with \VocabSizeRsixthreeQone{} classes and labels each decay by its topology, the pattern of intermediate resonances and prongs, and by
 whether it contains a $b$ quark, else a $c$ quark, else only light quarks or gluons; it
 merges gluons with light quarks and decays that differ in their numbers of $b$ or $c$ quarks,
 and it also merges electrons with muons. The \Kcoarse-class label set further removes quark flavor:
-it keeps, for each decay, the number of prongs and whether they come from quarks or gluons,
-charged leptons, $\tau$ leptons or neutrinos. Each of these levels keeps QCD jets, hadronic
-decays and decays with leptons in separate classes.
+it keeps, for each decay, the number of prongs and whether each prong is a quark or gluon
+(without distinguishing them), an electron or muon, a $\tau$ lepton or a neutrino. Each of these levels
+keeps QCD jets, decays into quarks and gluons only, and decays with leptons in separate
+classes.
 
 The score of a merged class is the sum of the scores of the classes it contains. This is
 the class-division property of Sophon~\cite[Property~1]{sophon}, which holds for an
@@ -355,7 +409,7 @@ boundaries is pretrained with \RandFlavRuns{} seeds.
 pretrained, with \MlstMassNRunsWord{} seeds each, with an additional output that regresses
 the logarithm of the ratio of the soft-drop mass of the matched generator-level jet, built
 from the simulated particles before the detector simulation, to that of the reconstructed
-jet,
+jet, built from the simulated detector response,
 \begin{equation}\label{eq:masstarget}
   y = \ln\bigl(m_{\mathrm{SD}}^{\mathrm{gen}} / m_{\mathrm{SD}}^{\mathrm{reco}}\bigr),
 \end{equation}
@@ -380,7 +434,7 @@ from separate files: the classes of pretraining with the QCD classes merged, on 
 model has seen. The second is the \FtNClassesJc-class classification of JetClass~\cite{part},
 which is simulated with a different configuration of the same simulation chain, without
 pileup, and has a different label space. The others are top tagging~\cite{toptag}, which
-separates jets from hadronic top-quark decays from QCD jets and depends on the number of
+separates jets from top quarks whose decay products are all quarks from QCD jets and depends on the number of
 prongs, which every label set keeps, and on the jet mass, and quark/gluon
 tagging~\cite{efn}, which separates jets initiated by light quarks from jets initiated by
 gluons, a distinction that, among the levels of the hierarchy, only the \Kfull- and
@@ -389,7 +443,9 @@ with Herwig~\cite{herwig,qgherwig} instead of Pythia, which differs in its model
 parton shower and hadronization. On JetClass-II and JetClass, we report the macro-averaged area
 under the receiver operating characteristic curve (AUC), the mean of the one-versus-rest AUC
 over the classes. On top and quark/gluon tagging, we report the AUC and, after fine-tuning, the
-background rejection $1/\epsilon_B$ at fixed signal efficiency. Because many AUC values are
+background rejection $1/\epsilon_B$ at a fixed signal efficiency $\epsilon_S$, where
+$\epsilon_S$ and $\epsilon_B$ are the fractions of signal and background jets that a selection
+on the score accepts. Because many AUC values are
 close to unity, configurations are compared by the ratio of their $\oma$, which for a binary
 task is the fraction of signal--background pairs that the classifier ranks in the wrong
 order.
@@ -409,8 +465,8 @@ the reference. Appendix~\ref{app:ftrecipe} lists all settings.
 
 \paragraph{Pairs of classes.} Binary linear probes on the largest JetClass-II training
 subset measure distinctions that the label sets merge at different levels: $X\to bc$
-against $X\to bq$ and $X\to cs$, the separation needed to measure the quark-mixing matrix
-element $|V_{cb}|$ with high-momentum jets~\cite{vcbboosted}; $X\to b\bar b$ against $X\to c\bar c$; and $X\to YY\to bbqq$
+against $X\to bq$ and $X\to cs$, the separation needed to measure the element $|V_{cb}|$ of
+the quark-mixing matrix, which sets the rate of transitions between $b$ and $c$ quarks, with high-momentum jets~\cite{vcbboosted}; $X\to b\bar b$ against $X\to c\bar c$; and $X\to YY\to bbqq$
 against $X\to YY\to ccqq$, which the random partition with a $b$-quark boundary keeps
 apart. Because each of these pairs is merged in some random
 partitions and kept apart in others, the effect of merging a pair can be distinguished from the
@@ -699,7 +755,7 @@ implementation of Sophon's loading scheme, which reads whole files, the fraction
 varied between epochs far more than random sampling would.
 
 \paragraph{Network.} The network is the ParticleTransformer of weaver-core
-\DesignWeaverVersion{} in the configuration of Sophon's released code:
+\DesignWeaverVersion{}, the training framework of ParT and Sophon, in the configuration of Sophon's released code:
 \DesignParticleBlocks{} particle-attention blocks, \DesignClassBlocks{} class-attention
 blocks, embedding dimension \DesignEmbedDim{} and \DesignHeads{} attention heads, followed
 by a head with a single hidden layer of \DesignHeadHidden{} units. Sophon's paper states
