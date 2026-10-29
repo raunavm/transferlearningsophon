@@ -54,10 +54,11 @@ Foundation models for particle physics are often pretrained to classify simulate
 sprays of particles from quarks and gluons, and the number of classes has grown.
 Fine-grained classes let a single model serve any coarser signal definition, but whether
 they also improve the learned representation is untested with the training data fixed.
-We retrain the Sophon model, a Particle Transformer for the JetClass-II dataset, with its
+We retrain the Sophon model, a Particle Transformer variant pretrained on the
+JetClass-II dataset, with its
 \Kfull{} classes and with merged label sets of \Kres, \Kmid{} and \Kcoarse{} classes,
 \MlstNRunsWord{} seeds each; models with the same seed share their training examples, their
-order and all initial weights except those of the output layer. Random partitions of the
+order and all initial weights outside the output layer. Random partitions of the
 classes are controls, including partitions with no class boundary, or a single boundary,
 that depends on quark flavor, the type of quark. In linear probes on JetClass-II, merging the background classes
 has no measurable effect, while removing quark flavor from the labels increases $\oma$, where
@@ -117,9 +118,12 @@ tagging~\cite{part,sophon,omnilearn,omnijet,mpm}. A recent comparison of pretrai
 objectives found classification of the simulated jets to be the best choice when downstream
 labels and model capacity are plentiful~\cite{objectives}. Unlike natural images, simulated
 jets can be labeled at many granularities, because the simulation records the decays that
-produced each jet, and the number of classes has grown. Sophon~\cite{sophon} pretrains a Particle
-Transformer (ParT)~\cite{part}, a transformer network that operates on the set of particles in
-a jet, on the JetClass-II dataset with \Kfull{} classes. These classes name the particles from
+produced each jet, and the number of classes has grown. The Sophon model~\cite{sophon} is built on
+the Particle Transformer (ParT)~\cite{part}, a transformer network that operates on the set of
+particles in a jet. It keeps the attention blocks of ParT, adds a hidden layer to the classification
+head and rescales the momenta of the input particles so that every jet has the same momentum
+transverse to the beam, and it is pretrained on the JetClass-II dataset with \Kfull{}
+classes. These classes name the particles from
 the decay of a hypothetical particle $X$, directly or through a pair of intermediate particles,
 and, for jets from quantum chromodynamics (QCD) multijet production, the numbers of $b$, $c$
 and $s$ quarks in the jet. QCD is the theory of the strong interaction, and QCD
@@ -185,8 +189,8 @@ Section~\ref{sec:conclusion} discusses them together with the limitations of the
 \section{Related work}\label{sec:related}
 % ============================================================================
 
-\paragraph{Jet foundation models.} Supervised pretraining of ParT on JetClass and
-JetClass-II~\cite{part,sophon}, and the fine-tuning of such models for downstream
+\paragraph{Jet foundation models.} Supervised pretraining of ParT on JetClass~\cite{part} and
+of the ParT-based Sophon model on JetClass-II~\cite{sophon}, and the fine-tuning of such models for downstream
 analyses~\cite{vigl}, showed that features learned by jet classification transfer to
 other tasks. OmniLearn~\cite{omnilearn} and OmniLearned~\cite{omnilearned} fine-tuned a
 single pretrained model on many jet tasks, including tasks on CMS open data.
@@ -307,13 +311,16 @@ several GPU types (Appendix~\ref{app:compute}); the GPU type changes the floatin
 rounding and the random numbers drawn on the GPU, such as the dropout masks, but not the
 training examples or their order.
 
-The network is the Sophon model~\cite{sophon}: ParT~\cite{part} in the configuration of
+The network is the Sophon model~\cite{sophon}, which differs from ParT~\cite{part} in its
+classification head and its inputs. It has the ParT architecture in the configuration of
 Sophon's released code, with
 \DesignParticleBlocks{} particle-attention blocks, which apply self-attention over the
 particles with a bias computed from the features of each pair of particles,
 \DesignClassBlocks{} class-attention blocks, in which a class token attends to the particles,
-and embedding dimension \DesignEmbedDim, followed by a classification head with a
-single hidden layer of \DesignHeadHidden{} units and an output for each class. The input to
+and embedding dimension \DesignEmbedDim. Where ParT has a linear classification head, Sophon's
+head has a single hidden layer of \DesignHeadHidden{} units, followed by an output for each
+class. The input features are those of ParT, except that the momenta of the particles are
+rescaled so that every jet has the same transverse momentum~\cite[App.~B.1]{sophon}. The input to
 the head, the \DesignEmbedDim-dimensional class token after the class-attention blocks and
 the final layer normalization, is the representation that we evaluate. Every model is
 trained with Sophon's recipe~\cite[App.~B.1]{sophon} for \DesignEpochs{} epochs of
