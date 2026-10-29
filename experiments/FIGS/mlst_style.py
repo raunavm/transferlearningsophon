@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Figure style of the MLST paper: mplhep's CMS style, unchanged.
+"""Figure style of the MLST paper: mplhep's CMS style, with the paper's font.
 
 The style is scikit-hep's mplhep (pinned at 0.4.1), the one the Duarte group's papers use:
 the MPGAN figure code (rkansal47/MPGAN plotting.py, rkansal47/mnist_graph_gan
@@ -8,6 +8,11 @@ repositories. It sets TeX Gyre Heros, ticks inside on all four sides with minor 
 axis labels at the ends of the axes, and Petroff's six-colour sequence (arXiv:2107.02270),
 chosen for colour-vision deficiencies and recommended by CMS. No experiment label is
 drawn: these are not CMS results.
+
+One change to the style: the text is set in Computer Modern, the font of the paper (LaTeX's
+default), instead of the style's TeX Gyre Heros, so that a figure reads like the text around
+it. Matplotlib ships Computer Modern (cmr10) and draws mathematics in it (mathtext 'cm'), so
+no LaTeX installation is needed on the laptop or in the cluster image.
 
 The encoding is fixed here: the label sets of the hierarchy take the first four colours of
 the sequence, finest first, and the randomly initialized network its grey. A panel is the
@@ -38,8 +43,11 @@ LINEWIDTH = 3
 
 
 def use_style() -> None:
-    """mplhep's CMS style. Called by the figure scripts, never on import."""
+    """mplhep's CMS style in Computer Modern. Called by the figure scripts, never on import."""
     plt.style.use(hep.style.CMS)
+    plt.rcParams.update({"font.family": "serif", "font.serif": ["cmr10"], "mathtext.fontset": "cm",
+                         # cmr10 has no minus sign: tick labels go through mathtext
+                         "axes.formatter.use_mathtext": True})
 
 
 def save(fig, name: str, outdir: pathlib.Path | None = None) -> list[pathlib.Path]:
