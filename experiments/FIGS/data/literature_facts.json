@@ -155,7 +155,13 @@
      "source": "arXiv:2012.03515", "location": "Table 2, LIVING-17 all-way",
      "quote": "Fine (upper-bound) 91.10 ± 0.47 58.95 ± 0.16"},
     {"macro": "LitKornblithRho", "value": "−0.93", "tex": "$-0.93$",
-     "source": "arXiv:2010.16402", "location": "Sec. 4.1",
-     "quote": "We observe a significant negative correlation (Spearman’s ρ = −0.93, p = 0.002)."}
+     "source": "arXiv:2010.16402", "location": "Sec. 3.4",
+     "quote": "We observe a significant negative correlation (Spearman’s ρ = −0.93, p = 0.002)."},
+    {"macro": "LitPartTopSigEffPercent", "value": "30",
+     "source": "arXiv:2202.03772", "location": "Table 5 (column Rej30%)",
+     "quote": "Accuracy AUC Rej50% Rej30%"},
+    {"macro": "LitBukchinAncor", "value": "45.14",
+     "source": "arXiv:2012.03515", "location": "Table 2, LIVING-17 all-way",
+     "quote": "ANCOR (ours) 89.23 ± 0.55 45.14 ± 0.12"}
   ]
 }

@@ -451,6 +451,15 @@ def comparisons(em, fits, mass, runs, status, index, fmt_pm) -> None:
             em.macro(f"MlstCmp{PAIR_WORD[key]}{WORD[arm]}Over{WORD[ref]}",
                      _ratio(runs, arm, ref, lambda m: pair(m, key), fmt_pm), index,
                      f"binary probe {key}: (1 - AUC) of {arm} over {ref}, run by run")
+        full = {m.rsplit("-s", 1)[1]: pair(m, key) for m in runs["L188"]}
+        r = []
+        for arm in RAND:
+            for m in runs[arm]:
+                x, y = pair(m, key), full.get(m.rsplit("-s", 1)[1])
+                r.append(None if x is None or y is None else x / y)
+        em.macro(f"MlstCmp{PAIR_WORD[key]}RandOverFull", _cell(r, len(r), fmt_pm), index,
+                 f"binary probe {key}: (1 - AUC) of each random partition over the 188-class run "
+                 "of the same index, mean +- SD over the partitions")
         for side in ("merged", "apart"):
             ms = [m for arm in RAND if status[arm][key] == side for m in runs[arm]]
             em.macro(f"MlstPairRand{side.title()}{PAIR_WORD[key]}", _cell([pair(m, key) for m in ms], len(ms), fmt_pm, 1e3),

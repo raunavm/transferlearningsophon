@@ -1348,6 +1348,16 @@ def emit_rand_design(em: Emitter, paths: dict, C: dict, missing: list | None = N
     for name, n in (("RandVtwoMergedMin", lo), ("RandVtwoMergedMax", hi)):
         em.macro(name, words(n), paths["rand_v2_rule"], "merged_in",
                  "partitions merging each probe pair, checked on the map")
+    num, den = rule["realised_tolerance"]
+    em.macro("RandVtwoShareTol", f"{100 * num / den:g}\\%", paths["rand_v2_rule"], "realised_tolerance",
+             "largest relative deviation of a realised group share from its target (rule 3)")
+    draw_src = paths["rand_v2_rule"].parents[2] / "scripts" / "build_rand_control.py"
+    trials = re.search(r"^TRIALS = (\d+)", draw_src.read_text(), re.M)
+    if trials is None:
+        raise SystemExit(f"FATAL: no TRIALS constant in {draw_src}")
+    em.macro("RandVtwoTrials", trials.group(1), draw_src, "TRIALS",
+             "share-matched assignments drawn per random partition; the one sharing the fewest "
+             "merged pairs with the 17-class label set is kept")
 
     # The flavour pair, every statement the text makes about it checked on the map:
     # F1's cut is exactly the b-containing classes of the split orbit, and the
