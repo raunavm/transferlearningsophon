@@ -82,3 +82,9 @@ ft-v2-legs-best70-l162-s3-n1000-raunav
 ft-v2-legs-best70-l162-s3-n10000-raunav
 ft-v2-legs-best70-l162-s3-n100000-raunav
 ft-v2-legs-best70-l162-s3-n1000000-raunav
+ft-v2-bench-best70-r16q1-s3-qg-raunav
+ft-v2-bench-best70-r16q1-s3-top-raunav
+ft-v2-legs-best70-r16q1-s3-n1000-raunav
+ft-v2-legs-best70-r16q1-s3-n10000-raunav
+ft-v2-legs-best70-r16q1-s3-n100000-raunav
+ft-v2-legs-best70-r16q1-s3-n1000000-raunav
