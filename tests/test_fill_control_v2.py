@@ -65,8 +65,8 @@ def test_each_mask_extracts_the_three_splits_and_fits_the_188_class_probe():
                            ("jc2", "test", f"configs/finetune/JetClassII_base_mask{m}.yaml", "2000000",
                             FC.BF.test2m_list())]
             assert (f"linear_probe_v2.py --root {FC.FC_ROOT}/{m} --model {model} \\\n"
-                    f"            --checkpoints {ckpt} --datasets jc2_188 --jc2-parquet /data/finetune/jc2_v2 \\\n"
-                    f"            --out {FC.FC_ROOT}/{m}/fits || halt") in b
+                    f"  --checkpoints {ckpt} --datasets jc2_188 --jc2-parquet /data/finetune/jc2_v2 \\\n"
+                    f"  --out {FC.FC_ROOT}/{m}/fits || halt") in b
 
 
 def test_the_test_split_is_the_unmasked_probes_test_split():
