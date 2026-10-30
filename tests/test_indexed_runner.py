@@ -23,8 +23,7 @@ def test_each_index_runs_the_script_of_its_spec_under_the_first_specs_template()
     assert job["metadata"]["name"] == "head-x-raunav" and sp["completionMode"] == "Indexed"
     assert sp["completions"] == len(HEAD) and sp["parallelism"] == 3 and "backoffLimit" not in sp
     assert all(r["action"] != "FailJob" for r in sp["podFailurePolicy"]["rules"])
-    first = yaml.safe_load(HEAD[0].read_text())["spec"]["template"]
-    assert R.template_of(job) == R.template_of(first)
+    assert R.template_of(job) == R.template_of(yaml.safe_load(HEAD[0].read_text()))
     script = sp["template"]["spec"]["containers"][0]["args"][0]
     assert subprocess.run(["bash", "-n"], input=script, text=True).returncode == 0
     listed = script.split("SPECS=(")[1].split(")")[0].split()
