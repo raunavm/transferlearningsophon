@@ -45,6 +45,8 @@ MASS_OBS = "/data/results/eval/test2m_observers"   # generator-level groomed mas
 V3_PIN = "mtx-s2.18"
 FITS_V3, PROBS_V3, MLP_V3 = "fits_v3", "fits_v3_probs", "fits_v3_mlp"
 V3_DATASETS = ("jc2_188", "jc1", "top", "qg")
+# the refit may take any GPU, the RTX 3090 included: the grid it was kept free for has finished
+# (2026-10-29), and fine-tuning runs on V100s
 V3_NEEDED = {"experiments/EVAL/linear_probe_v2.py": "def native_metrics"}
 OUT_DIR_V3 = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "linprobe_v3"
 RUN_CHECKPOINTS = ("best70", "best70_bn")
@@ -148,7 +150,7 @@ def calls() -> list[str]:
     return lines
 
 
-def off_grid_gpu(text: str, extract: bool = True) -> str:
+def off_grid_gpu(text: str, extract: bool = True, not_on: tuple = NOT_ON) -> str:
     """A GPU job spec moved off the grid's product, with build_extract_jobs' GPU-fault rule
     (for a job that runs no extraction, its GPU check, halt and node exclusions only)."""
     if extract:
@@ -162,8 +164,10 @@ def off_grid_gpu(text: str, extract: bool = True) -> str:
     old = ", ".join(f'"{n}"' for n in BX.GPU_FAULT_NODES)
     assert text.count(old) == 1
     text = text.replace(old, ", ".join(f'"{n}"' for n in BX.V2_GPU_FAULT_NODES))
+    if not not_on:
+        return text
     product = ("\n              - key: nvidia.com/gpu.product\n                operator: NotIn\n"
-               "                values: [" + ", ".join(f'"{p}"' for p in NOT_ON) + "]")
+               "                values: [" + ", ".join(f'"{p}"' for p in not_on) + "]")
     assert text.count("\n      volumes:\n") == 1
     return text.replace("\n      volumes:\n", product + "\n      volumes:\n")
 
@@ -229,7 +233,7 @@ def fit_v3_spec(ms) -> str:
     return indexed(off_grid_gpu(BX.V1ERR_TEMPLATE.format(
         name="linprobe-fit3-raunav", image=BX.IMAGE, pin=V3_PIN, body=body,
         mem="48Gi", cpu="8", gpu_req=', nvidia.com/gpu: "1"', gpu_check=BX.GPU_CHECK.format(),
-        node_exclude=BX.NODE_EXCLUDE), extract=False), len(ms), V3_PARALLEL["fit3"])
+        node_exclude=BX.NODE_EXCLUDE), extract=False, not_on=()), len(ms), V3_PARALLEL["fit3"])
 
 
 def mlp_spec(ms) -> str:

@@ -187,10 +187,10 @@ def test_the_extraction_reads_the_probe_test_jets_and_the_analyses_read_its_outp
         assert re.search(r"--data-test (.*?) \\\n", a).group(1) == lp_test[2] == HB.BF.test2m_list()
         assert f"OUT={HB.HEAD_ROOT}/{model}/test\n" in a and a.count("--out ${OUT} 2>&1 | tee") == 1
         assert f"FEAT={HB.LP.LP_ROOT}/{model}/jc2/test/best70\n" in a
-        assert (f"mass_resolution.py --observers ${{OUT}}/best70 \\\n            --features best70=${{FEAT}}"
+        assert (f"mass_resolution.py --observers ${{OUT}}/best70 \\\n  --features best70=${{FEAT}}"
                 in a and f"--out {HB.HEAD_ROOT}/{model} || halt" in a)
         assert ("--head best70=${OUT}/best70" in a) == bool(reg)
-        assert f"mass_sculpting.py --head ${{OUT}}/best70 \\\n            --out {HB.HEAD_ROOT}/{model}/sculpting.json" in a
+        assert f"mass_sculpting.py --head ${{OUT}}/best70 \\\n  --out {HB.HEAD_ROOT}/{model}/sculpting.json" in a
         # sculpting needs only the head outputs: a mass_resolution failure must not lose it
         assert a.index("mass_sculpting.py") < a.index("mass_resolution.py")
         ex = {e["key"]: e for e in yaml.safe_load(spec)["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
@@ -210,7 +210,7 @@ def test_the_untrained_trunks_get_the_frozen_feature_mass_regression_on_the_cpu(
         assert f"OBS={HB.HEAD_ROOT}/{HB.OBS_MODEL}/test/best70\n" in a and HB.OBS_MODEL in HB.RUNS
         # applied before the observers' head job finished, it stops rather than retrying
         assert '[ -f ${OBS}/manifest.json ] || { echo "FATAL' in a and "exit 42; }" in a
-        assert (f"mass_resolution.py --observers ${{OBS}} \\\n            --features init=${{FEAT}} "
+        assert (f"mass_resolution.py --observers ${{OBS}} \\\n  --features init=${{FEAT}} "
                 f"--out {HB.HEAD_ROOT}/{model} || halt") in a
         assert (HB.OUT_DIR / f"job-head-mass-{model}-raunav.yaml").read_text() == spec
 

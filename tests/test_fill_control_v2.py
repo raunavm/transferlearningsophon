@@ -55,10 +55,10 @@ def test_each_mask_extracts_the_three_splits_and_fits_the_188_class_probe():
         assert f"--run-dir {FC.BX.V2_ROOT}/{run} --rung {rung} --num-classes {k} --num-reg {reg}" in a
         assert f"--checkpoints {ckpt} " in a and "--prefix-features 2000000000" in a and "--no-pooled" in a
         assert a.count("python3 experiments/EVAL/extract_v2.py") == 1
-        blocks = re.split(r"^          MASK=", a, flags=re.M)[1:]
+        blocks = re.split(r"^MASK=", a, flags=re.M)[1:]
         assert [b.split("\n")[0] for b in blocks] == list(FC.MASKS)
         for m, b in zip(FC.MASKS, blocks):
-            got = re.findall(r"^          extract (\w+) (\w+) (\S+) (\d+) (.+)$", b, re.M)
+            got = re.findall(r"^extract (\w+) (\w+) (\S+) (\d+) (.+)$", b, re.M)
             ft = f"configs/finetune/JetClassII_L162_mask{m}.yaml"
             assert got == [("jc2", "train_N1000000", ft, "0", "/data/finetune/jc2_v2/train_N1000000_s1.parquet"),
                            ("jc2", "val", ft, "0", "/data/finetune/jc2_v2/val.parquet"),

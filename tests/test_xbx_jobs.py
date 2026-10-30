@@ -72,7 +72,7 @@ def test_every_spec_is_ours_retries_only_what_a_retry_can_fix_and_parses_as_bash
     for name, text in SPECS.items():
         d = yaml.safe_load(text)
         assert d["metadata"]["name"].endswith("-raunav") and d["metadata"]["namespace"] == "cms-ml"
-        new = "-ihep-" in name or "dryrun" in name
+        new = name.startswith("job-xbx-ihep-") or "dryrun" in name
         assert f"--branch \"{B.PIN_IHEP if new else B.PIN}\"" in text
         rules = d["spec"]["podFailurePolicy"]["rules"]
         assert {"action": "FailJob", "onExitCodes": {"containerName": "main", "operator": "In", "values": [42]}} in rules
@@ -105,7 +105,7 @@ def test_the_from_scratch_baseline_is_sophons_recipe_and_resumes(name, out):
 
 
 def test_the_real_sample_jobs_have_their_own_names_and_write_somewhere_new():
-    old = {n for n in SPECS if "-ihep-" not in n and "dryrun" not in n}
+    old = {n for n in SPECS if not n.startswith("job-xbx-ihep-") and "dryrun" not in n}
     new = set(SPECS) - old
     names = lambda ns: {yaml.safe_load(SPECS[n])["metadata"]["name"] for n in ns}
     assert not names(old) & names(new) and all(n.startswith("xbx-ihep-") for n in names(new) - {"xbx-scratch-dryrun-raunav"})
@@ -133,7 +133,8 @@ def test_the_real_sample_staging_inspects_and_checks_first():
     s = _script(SPECS["job-xbx-ihep-stage-raunav.yaml"])
     for sig in B.SAMPLE_DIRS:
         i = s.index(f"inspect --file \"${{F_{sig}%%")
-        assert i < s.index(f"stage_xbx.py check --window") < s.index(f"convert --name {sig}") < s.index(f"pair --signal {sig}")
+        j = s.index("stage_xbx.py check --window", i)
+        assert i < j < s.index(f"convert --name {sig}", j) < s.index(f"pair --signal {sig}", j)
 
 
 def _run_stage(tmp_path, present, failing=()):
