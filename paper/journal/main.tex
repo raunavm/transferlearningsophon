@@ -472,8 +472,8 @@ to the classification loss with weight $\lambda = \DesignMassLambda$, the value 
 GloParT~\cite[Eq.~(11.7)]{glopart}, fixed in advance and not tuned. Together with the
 models without it, this gives a factorial design of label set and mass regression.
 The same $\lambda$ does not give the mass term the same weight at both label sets: averaged over
-the epochs of training, it makes up \MlstMassLossShareResMass\% of the training loss in the two
-\Kres-class runs and \MlstMassLossShareCoarseMass\% in the two \Kcoarse-class runs, because the
+the epochs of training, it makes up \MlstMassLossShareResMass\% of the training loss in the
+\Kres-class runs and \MlstMassLossShareCoarseMass\% in the \Kcoarse-class runs, because the
 classification loss is smaller with fewer classes while the mass term is about the same.
 
 \paragraph{Randomly initialized network.} For each seed, the saved initial weights of the

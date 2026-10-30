@@ -905,7 +905,7 @@ def _pct(x) -> str:
     if x is None:
         return "--"
     v = 100 * x
-    return f"{v:.0f}" if v >= 10 else f"{v:.2g}"
+    return f"{v:.0f}" if v >= 10 else f"{v:#.2g}"
 
 
 def table_boot(boot: dict, runs: dict) -> tuple[str, dict]:
