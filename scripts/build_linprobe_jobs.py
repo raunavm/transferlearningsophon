@@ -277,6 +277,8 @@ V4_NEEDED = {"experiments/EVAL/linear_probe_v2.py": '"v4": ("jc2_188", "jc1", "t
              "experiments/EVAL/probe.py": "Xte, seeds=MLP_SEEDS, n_classes=2"}
 OUT_DIR_V4 = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "linprobe_v4"
 V4_PARALLEL = {"mlp4": 2, "initbn": 1, "mlp4bn": 2}
+# the V100s, which the 188-class fine-tuning waits for (2026-10-30: every one in use), stay free
+INITBN_NOT_ON = ("Tesla-V100-SXM2-32GB",)
 
 
 def v4_mlp_models() -> list[tuple[str, tuple]]:
@@ -308,7 +310,7 @@ def initbn_spec(ms) -> str:
     return indexed(off_grid_gpu(BX.V1ERR_TEMPLATE.format(
         name="linprobe-initbn-raunav", image=BX.IMAGE, pin=V4_PIN, body=body,
         mem="48Gi", cpu="8", gpu_req=', nvidia.com/gpu: "1"', gpu_check=BX.GPU_CHECK.format(),
-        node_exclude=BX.NODE_EXCLUDE), extract=False, not_on=()), len(ms), V4_PARALLEL["initbn"])
+        node_exclude=BX.NODE_EXCLUDE), extract=False, not_on=INITBN_NOT_ON), len(ms), V4_PARALLEL["initbn"])
 
 
 def build_v4(only=None) -> dict[str, str]:
