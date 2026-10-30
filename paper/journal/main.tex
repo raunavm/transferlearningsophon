@@ -61,13 +61,16 @@ and all initial weights outside the output layer. Controls are random partitions
 classes, some with no or a single class boundary between decays that differ only in quark
 flavor. Linear probes are scored by $\oma$ (AUC: area under the receiver
 operating characteristic curve). On
-JetClass-II, merging the classes of background jets leaves $\oma$ unchanged, while removing
-quark flavor from the labels raises it by a factor of \MlstCmpJcTwoCoarseOverFull. Between
-decays into $b\bar b$ and $c\bar c$, $\oma$ rises by a factor of \MlstCmpBbCoarseOverFull{} at
-\Kcoarse{} classes but only \MlstCmpBbRandOverFull{} for random partitions into \Kcoarse{}
-classes, which keep many such decays apart.
-\pending{fine-tuning, $X\to b\bar b$ and $X\to bs$ tagging, anomaly detection, and what the
-results imply for the design of pretraining datasets}
+JetClass-II, merging the classes of background jets raises $\oma$ only on background jets, by a
+factor of \MlstCmpJcTwoQcdResOverFull, while removing quark flavor from the labels raises it
+by \MlstCmpJcTwoCoarseOverFull{} over all classes. Between decays into $b\bar b$ and
+$c\bar c$, $\oma$ rises by a factor of \MlstCmpBbCoarseOverFull{} at \Kcoarse{} classes but only
+\MlstCmpBbRandOverFull{} for random partitions into \Kcoarse{} classes, which keep many such
+decays apart. On top and quark/gluon tagging, frozen features gain little over those of a
+randomly initialized network. Fine-tuning improves on training from scratch on both, and on the
+full training sets the label set changes its result by about a per cent. For dataset design,
+boundaries between quark flavors matter more than the number of classes.
+\pending{fine-tuning on JetClass-II and JetClass; $X\to b\bar b$ and $X\to bs$ tagging}
 \end{abstract}
 
 % ============================================================================
@@ -190,7 +193,16 @@ output scores of the label sets that contain them as a class, those with \Kfull{
 classes, and for every label set with classifiers trained on the frozen features. Decays
 $X\to bs$ into a $b$ and an $s$ quark, which no label set contains, are tagged with these
 classifiers only.
-\pending{the main results, once fine-tuning and the benchmarks are in}
+
+On JetClass-II, the linear probes degrade steadily as classes are merged. Merging the QCD
+classes costs only on QCD jets, while removing quark flavor costs on every class. The random
+partitions, which keep many flavor boundaries, lose about as much as the level of the hierarchy
+with \Kmid{} classes, and the random partition with no flavor boundary about as much as the
+\Kcoarse-class level, so the flavor boundaries of a label set matter more than its number of
+classes. On top and quark/gluon tagging, whose inputs lack features that every pretraining jet
+has, frozen features gain little over those of a randomly initialized network. Fine-tuning improves on
+training from scratch on both tasks, and there the label set matters much less than for the
+frozen features. \pending{fine-tuning on JetClass-II and JetClass; resonance tagging}
 
 This paper is organized as follows. Section~\ref{sec:related} reviews related work.
 Section~\ref{sec:methods} describes the dataset, the model and its pretraining, the label
@@ -706,28 +718,35 @@ its caption, and marks where a run is still missing.}
 \label{fig:probesn}
 \end{figure*}
 Table~\ref{tab:probes} gives the linear-probe performance on the largest training set of each
-task for every pretrained configuration and for the randomly initialized network, and
-Fig.~\ref{fig:probesn} its dependence on the training-set size. On JetClass-II, merging the
-QCD classes leaves the probe performance unchanged: the ratio of $\oma$ between the \Kres- and
-\Kfull-class models is \MlstCmpJcTwoResOverFull. Merging quark flavors increases $\oma$, by a
-factor of \MlstCmpJcTwoMidOverFull{} at \Kmid{} classes and \MlstCmpJcTwoCoarseOverFull{} at
-\Kcoarse{} classes. The \Kres-class models agree with the \Kfull-class models at every
-training-set size, and the \Kmid- and \Kcoarse-class models stay behind them at every size
-(Fig.~\ref{fig:probesn}). Every pretrained model is far better than the randomly initialized
-network: the \Kfull-class models reach \MlstCmpJcTwoFullOverInit{} of its $\oma$, where the
-asterisk marks that the probe of the randomly initialized network stopped at its iteration
-limit (Table~\ref{tab:probes}).
+task for every pretrained configuration and for the randomly initialized network,
+Table~\ref{tab:mlp} the nonlinear probes, and Fig.~\ref{fig:probesn} the dependence on the
+training-set size. On JetClass-II, $\oma$ grows as the label set becomes coarser. Relative to
+the \Kfull-class models, it is \MlstCmpJcTwoResOverFull{} at \Kres{} classes,
+\MlstCmpJcTwoMidOverFull{} at \Kmid{} classes and \MlstCmpJcTwoCoarseOverFull{} at \Kcoarse{}
+classes, and the label sets keep this order at every training-set size
+(Fig.~\ref{fig:probesn}). The cost of merging the QCD classes lies in the QCD classes alone. On
+the resonant classes, the ratio of $\oma$ between the \Kres- and \Kfull-class models is
+\MlstCmpJcTwoResResOverFull, and on the QCD classes it is \MlstCmpJcTwoQcdResOverFull; the
+nonlinear probes give \MlstMlpCmpJcTwoResResOverFull{} and \MlstMlpCmpJcTwoQcdResOverFull.
+Merging quark flavors raises $\oma$ on both parts: on the resonant classes by factors of
+\MlstCmpJcTwoResMidOverFull{} and \MlstCmpJcTwoResCoarseOverFull{} at \Kmid{} and \Kcoarse{}
+classes, and on the QCD classes by \MlstCmpJcTwoQcdMidOverFull{} and
+\MlstCmpJcTwoQcdCoarseOverFull. Every pretrained model is far better than the randomly
+initialized network: the \Kfull-class models reach \MlstCmpJcTwoFullOverInit{} of its $\oma$.
 
 The random partitions show that on JetClass-II the probes depend on the flavor boundaries of
-the labels rather than on the number of classes (Fig.~\ref{fig:labelsetprobes}). Every
+the labels more than on the number of classes (Fig.~\ref{fig:labelsetprobes}). Every
 partition in this comparison has \Kcoarse{} classes with the group shares of the
 \Kcoarse-class label set. Relative to the \Kfull-class models, $\oma$ is
 \MlstCmpJcTwoRandOverFull{} for the random partitions, which have many flavor boundaries. This
-is lower than the \MlstCmpJcTwoMidOverFull{} of the \Kmid-class models, which have more
-classes. It is \MlstCmpJcTwoFzeroOverFull{} for the random partition with no flavor boundary,
-lower than the \MlstCmpJcTwoCoarseOverFull{} of the \Kcoarse-class models, and it lies between
-these values for the partitions with a $b$-quark boundary (\MlstCmpJcTwoFoneOverFull) and with
-a random flavor boundary (\MlstCmpJcTwoFonerOverFull).
+is close to the \MlstCmpJcTwoMidOverFull{} of the \Kmid-class models, which have more
+classes, and on the resonant classes alone the random partitions are closer to the
+\Kfull-class models (\MlstCmpJcTwoResRandOverFull) than the \Kmid-class models are
+(\MlstCmpJcTwoResMidOverFull). The ratio is \MlstCmpJcTwoFzeroOverFull{} for the random
+partition with no flavor boundary, below the \MlstCmpJcTwoCoarseOverFull{} of the
+\Kcoarse-class models in both of its runs, and it lies between these values for the partitions
+with a $b$-quark boundary (\MlstCmpJcTwoFoneOverFull) and with a random flavor boundary
+(\MlstCmpJcTwoFonerOverFull).
 
 \begin{figure}[t]
 \centering
@@ -743,34 +762,37 @@ network lies beyond the axis, its value is printed at the edge of the panel.}
 \end{figure}
 
 On JetClass, which is simulated differently and has different classes, merging quark flavors
-costs less. The \Kmid-class models match the \Kfull-class models, with a ratio of $\oma$ of
-\MlstCmpJcOneMidOverFull, and only the \Kcoarse-class models are worse, by a factor of
-\MlstCmpJcOneCoarseOverFull. The random partitions, despite their many flavor boundaries, are no
-better than the \Kcoarse-class models, with a ratio of \MlstCmpJcOneRandOverFull, and the random
-partition with no flavor boundary has \MlstCmpJcOneFzeroOverFull. On JetClass, the flavor
-boundaries of the random partitions therefore bring no improvement over the \Kcoarse-class
-label set.
+costs less. The \Kres- and \Kmid-class models match the \Kfull-class models, with ratios of
+$\oma$ of \MlstCmpJcOneResOverFull{} and \MlstCmpJcOneMidOverFull, and only the \Kcoarse-class
+models are worse, by a factor of \MlstCmpJcOneCoarseOverFull. The random partitions, despite
+their many flavor boundaries, are worse than the \Kcoarse-class models, with a ratio of
+\MlstCmpJcOneRandOverFull, and so is the random partition with no flavor boundary
+(\MlstCmpJcOneFzeroOverFull). This partition differs from the \Kcoarse-class label set only in
+how it groups the decays, at random rather than by topology, and its ratio to the
+\Kcoarse-class models is \MlstCmpJcOneFzeroOverCoarse{} on JetClass. On JetClass, the flavor
+boundaries of the random partitions therefore do not make up for their random grouping.
 
-On top tagging, the linear probes of the pretrained models are no better than those of the
-randomly initialized network. On the largest training set, the ratio of $\oma$ between the
-\Kfull-class models and the randomly initialized network is \MlstCmpTopFullOverInit, the
-pretrained models do not pull ahead on smaller training sets either (Fig.~\ref{fig:probesn}), and the spread
-between pretraining seeds is larger than the spread between random initializations. A possible
-reason, which we have not tested, is the zero filling of Section~\ref{sec:eval}: in pretraining
-every particle has a particle-type flag set, whereas in the top-tagging inputs all of these flags
-are zero, an input the network never saw. The
-auxiliary mass regression does improve top tagging (Section~\ref{sec:mass}).
-% CHECK: all three 162-class runs lie below the randomly initialized network on top tagging
-% (ratio 0.85 +- 0.10, figures/deck/deck_numbers.json probe_over_init); "no better ... for any
-% label set" in the conclusion may need hedging (asked the PI 2026-10-29). On quark/gluon
-tagging, the \Kfull-class models reduce $\oma$ to \MlstCmpQgFullOverInit{} of its value for the
-randomly initialized network. Keeping gluons apart from light quarks in the labels gives no
-consistent advantage: relative to the \Kfull-class models, $\oma$ is \MlstCmpQgResOverFull{} at
-\Kres{} classes, which also keep them apart, and \MlstCmpQgMidOverFull{} and
-\MlstCmpQgCoarseOverFull{} at \Kmid{} and \Kcoarse{} classes, which merge them. On the Herwig
-sample, the gain from pretraining nearly vanishes: $\oma$ of the \Kfull- and \Kcoarse-class
-models is \MlstCmpQgHerwigFullOverInit{} and \MlstCmpQgHerwigCoarseOverInit{} of that of the
-randomly initialized network.
+On top tagging, no label set gives frozen features that are better than those of the randomly
+initialized network by more than the spread between pretraining runs. On the largest training
+set, the ratio of $\oma$ to the randomly initialized network is \MlstCmpTopFullOverInit{} for
+the \Kfull-class models and between \MlstCmpTopResOverInit{} and \MlstCmpTopMidOverInit{} for
+the other levels; the nonlinear probes give \MlstMlpCmpTopFullOverInit{} for the \Kfull-class
+models. The pretrained models do not pull ahead on smaller training sets either
+(Fig.~\ref{fig:probesn}), and the spread between pretraining runs is larger than that between
+random initializations. Each of the \Kres-class runs lies below the randomly initialized
+network, but by less than our threshold for a difference. On quark/gluon tagging, the
+\Kfull-class models reduce $\oma$ to \MlstCmpQgFullOverInit{} of its value for the randomly
+initialized network, and to \MlstMlpCmpQgFullOverInit{} with the nonlinear probes; for the
+coarser label sets the reduction is smaller than the spread between runs. Keeping gluons apart
+from light quarks in the labels gives no consistent advantage: relative to the \Kfull-class
+models, $\oma$ is \MlstCmpQgResOverFull{} at \Kres{} classes, which also keep them apart, and
+\MlstCmpQgMidOverFull{} and \MlstCmpQgCoarseOverFull{} at \Kmid{} and \Kcoarse{} classes, which
+merge them. On the Herwig sample, the gain from pretraining vanishes once the probe is
+nonlinear: $\oma$ of the \Kfull-class models is \MlstCmpQgHerwigFullOverInit{} of that of the
+randomly initialized network with the linear probes and \MlstMlpCmpQgHerwigFullOverInit{} with
+the nonlinear probes. On both benchmarks, the inputs lack features that every pretraining jet
+has (Section~\ref{sec:eval}); Section~\ref{sec:fill} measures what this costs on JetClass-II,
+and Section~\ref{sec:finetune} shows that fine-tuning recovers a gain from pretraining.
 
 \subsection{Separation of merged classes}\label{sec:merge}
 \input{tables/mlst_pairs}
@@ -789,11 +811,19 @@ Fig.~\ref{fig:labelsetprobes}. Panels whose values span a wide range use a logar
 \end{figure}
 Pretraining on the \Kcoarse-class label set, which merges every pair in the table, increases
 $\oma$ relative to the \Kfull-class models by factors of \MlstCmpBcCoarseOverFull,
-\MlstCmpBbCoarseOverFull{} and \MlstCmpBbqqCoarseOverFull{} for the pairs in the order of the
-table. The \Kmid-class label set merges $X\to bc$ with
-$X\to bq$ but keeps the other pairs apart; pretraining on it increases $\oma$ most for the
-pair it partly merges, by a factor of \MlstCmpBcMidOverFull, and by \MlstCmpBbMidOverFull{} and
-\MlstCmpBbqqMidOverFull{} for the pairs it keeps apart.
+\MlstCmpBbCoarseOverFull{} and \MlstCmpBbqqCoarseOverFull{} for the resonant pairs in the order
+of the table, and by \MlstCmpQcdBbCoarseOverFull, \MlstCmpQcdBCoarseOverFull{} and
+\MlstCmpQcdCCoarseOverFull{} for the QCD pairs. The \Kmid-class label set merges $X\to bc$ with
+$X\to bq$ but keeps the other resonant pairs apart; pretraining on it increases $\oma$ most for
+the pair it partly merges, by a factor of \MlstCmpBcMidOverFull, and by \MlstCmpBbMidOverFull{}
+and \MlstCmpBbqqMidOverFull{} for the pairs it keeps apart. The \Kres-class label set keeps
+every resonant pair apart and separates them as the \Kfull-class models do
+(\MlstCmpBcResOverFull, \MlstCmpBbResOverFull{} and \MlstCmpBbqqResOverFull). It merges the QCD
+classes, and the QCD pairs are separated slightly worse: by factors of
+\MlstCmpQcdBbResOverFull, \MlstCmpQcdBResOverFull{} and \MlstCmpQcdCResOverFull{} with the
+linear probes and \MlstMlpCmpQcdBbResOverFull, \MlstMlpCmpQcdBResOverFull{} and
+\MlstMlpCmpQcdCResOverFull{} with the nonlinear probes. The nonlinear probes reproduce the
+effects of the \Kcoarse-class label set on every pair (Table~\ref{tab:mlp}).
 
 For the \RandVtwoNPartitions{} random partitions, which have the group shares of the
 \Kcoarse-class label set but random groups with many flavor boundaries, merging a pair changes
@@ -807,20 +837,22 @@ $X\to YY\to ccqq$, the partitions that merge the pair share a seed and those tha
 apart share another, so for this pair the effect of merging cannot be separated from that of the
 seed. After pretraining on
 any of these partitions, the probes separate every pair better than after pretraining on the
-\Kcoarse-class label set. This suggests that the \Kcoarse-class models separate these pairs poorly not because the
+\Kcoarse-class label set, including the QCD pairs, which every random partition merges into a
+single QCD class. This suggests that the \Kcoarse-class models separate these pairs poorly not because the
 pairs are merged but because the \Kcoarse-class label set has no flavor boundary. The random
 partitions have flavor boundaries elsewhere, and a network trained on them also separates $b$
 from $c$ quarks in decays that share a label.
 
 The random partitions with controlled flavor boundaries test this interpretation. After
 pretraining on the random partition with no flavor boundary, the probes separate $X\to bc$
-from $X\to bq$ and $X\to cs$ as poorly as after pretraining on the \Kcoarse-class label set,
-and they separate the other pairs worse than the \Kcoarse-class models do, in both of its runs.
+from $X\to bq$ and $X\to cs$ about as poorly as after pretraining on the \Kcoarse-class label
+set, and they separate the other resonant pairs and the QCD $bb$ and $cc$ classes worse than
+the \Kcoarse-class models do, in both of its runs.
 The random partition with a $b$-quark boundary adds a single flavor boundary, in the four-quark
 decays, together with a compensating move of other decays, and it still merges $X\to b\bar b$
 with $X\to c\bar c$. Pretraining on it reduces $\oma$ for this two-prong pair to
-\MlstCmpBbFoneOverFzero{} of its value for the partition with no flavor boundary, to a value
-just above the range of the \RandVtwoNPartitions{} random partitions. The random partition with
+\MlstCmpBbFoneOverFzero{} of its value for the partition with no flavor boundary, to the
+upper edge of the range of the \RandVtwoNPartitions{} random partitions. The random partition with
 a random flavor boundary makes the same compensating move but keeps apart no four-quark decays
 that differ only by exchanging $b$ and $c$ quarks. It reduces $\oma$ for the same pair to
 \MlstCmpBbFonerOverFzero{} of its value for the partition with no flavor boundary, so a boundary
@@ -840,30 +872,97 @@ network}
 \subsection{Auxiliary mass regression}\label{sec:mass}
 \input{tables/mlst_mass}
 \input{tables/mlst_sculpt}
-The auxiliary mass regression improves the mass resolution of the frozen features by a similar
-amount at both label sets (Table~\ref{tab:mass}): relative to the same label set without it,
-$\sigma_{\mathrm{eff}}$ falls to \MlstCmpMlpResMassOverRes{} at \Kres{} classes and
-\MlstCmpMlpCoarseMassOverCoarse{} at \Kcoarse{} classes. Without the mass regression, the
-\Kcoarse-class models resolve the mass slightly better than the \Kfull-class models, with a
-ratio of $\sigma_{\mathrm{eff}}$ of \MlstCmpMlpCoarseOverFull. The features of the randomly
-initialized network give \MlstMassInitOverConstant{} of the $\sigma_{\mathrm{eff}}$ of a constant
-prediction, so almost all of the mass information in the frozen features comes from
-pretraining.
+Table~\ref{tab:mass} gives the mass resolution. The uncorrected soft-drop mass has
+$\sigma_{\mathrm{eff}} = \MlstMassUncorrected$ and a median response of
+\MlstMassUncorrectedResponse. The mass output of the models pretrained with the mass regression
+reduces $\sigma_{\mathrm{eff}}$ to \MlstMassHeadResMassOverUncorr{} of this value at \Kres{}
+classes and \MlstMassHeadCoarseMassOverUncorr{} at \Kcoarse{} classes, and brings the median
+response to \MlstMassHeadResMassResponse{} and \MlstMassHeadCoarseMassResponse. Frozen features
+carry less of this information. For the \Kfull-class models, the nonlinear regression on the
+frozen features reaches \MlstMassMlpFullOverTarget{} of the $\sigma_{\mathrm{eff}}$ of a
+prediction by the class median alone, and for the randomly initialized network
+\MlstMassMlpInitOverTarget. Without the mass regression, the \Kcoarse-class models resolve the
+mass slightly better than the \Kfull-class models, with a ratio of $\sigma_{\mathrm{eff}}$ of
+\MlstCmpMlpCoarseOverFull. With it, $\sigma_{\mathrm{eff}}$ of the regression on the frozen
+features falls to \MlstCmpMlpResMassOverRes{} of its value without it at \Kres{} classes and
+\MlstCmpMlpCoarseMassOverCoarse{} at \Kcoarse{} classes. The gain is similar at both label sets,
+although the mass term makes up a larger share of the training loss at \Kcoarse{} classes
+(Section~\ref{sec:labels}).
 
-The mass regression leaves the probes on JetClass-II and JetClass nearly unchanged: $\oma$
-changes by factors of \MlstCmpJcTwoResMassOverRes{} and \MlstCmpJcTwoCoarseMassOverCoarse{} on
-JetClass-II at \Kres{} and \Kcoarse{} classes, and by \MlstCmpJcOneResMassOverRes{} and
-\MlstCmpJcOneCoarseMassOverCoarse{} on JetClass. It improves top tagging at both label sets, where
-pretraining without it gives no consistent gain over random initialization
-(Section~\ref{sec:probes}): $\oma$ falls to \MlstCmpTopResMassOverRes{} and
-\MlstCmpTopCoarseMassOverCoarse{} of its value without the mass regression at \Kres{} and
-\Kcoarse{} classes.
+The mass regression changes the probes on JetClass-II and JetClass little: $\oma$ changes by
+factors of \MlstCmpJcTwoResMassOverRes{} and \MlstCmpJcTwoCoarseMassOverCoarse{} on JetClass-II
+at \Kres{} and \Kcoarse{} classes, and by \MlstCmpJcOneResMassOverRes{} and
+\MlstCmpJcOneCoarseMassOverCoarse{} on JetClass. On top tagging, $\oma$ falls in both runs at
+both label sets, to \MlstCmpTopResMassOverRes{} and \MlstCmpTopCoarseMassOverCoarse{} of its
+value without the mass regression at \Kres{} and \Kcoarse{} classes. With \MlstMassNRunsWord{} runs
+and the spread of the top-tagging probes between runs, this is an observation rather than an
+established difference.
+
+Table~\ref{tab:sculpt} gives the mass sculpting. A cut on the score of every model reshapes the
+soft-drop mass distribution of the QCD jets it accepts, and at a QCD efficiency of
+\SculptEffHigh{} the label set makes no difference: the ratio of the divergence between the
+\Kcoarse- and \Kfull-class models is \MlstSculptCoarseOverFullTen. At \SculptEffLow{}, only
+\MlstSculptNPassOne{} QCD jets pass, and a random selection of as many jets already gives a divergence of
+\MlstSculptFloorOne{} in the units of the table, against \MlstSculptFloorTen{} at
+\SculptEffHigh. Above this level, the \Kcoarse-class models sculpt more than the \Kfull-class
+models, by a factor of \MlstSculptCoarseOverFullOne{} before the level is subtracted. The mass
+regression reduces the sculpting at \SculptEffHigh{} in both runs at both label sets, by factors
+of \MlstSculptResMassOverResTen{} at \Kres{} classes and \MlstSculptCoarseMassOverCoarseTen{} at
+\Kcoarse{} classes; at \SculptEffLow, it brings the \Kcoarse-class models to about the level of the \Kfull-class
+models (\MlstSculptCoarseMassOverCoarseOne).
 
 \subsection{Fine-tuning}\label{sec:finetune}
-\IfFileExists{tables/mlst_ft.tex}{\input{tables/mlst_ft}\input{tables/mlst_ft_rej}}{}
-\pending{fine-tuning against the training-set size on every task, compared with training
-from scratch, and quark/gluon tagging on the Herwig sample (Tables~\ref{tab:ft}
-and~\ref{tab:ftrej})}
+\input{tables/mlst_ft}
+\input{tables/mlst_ft_rej}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{finetune_vs_training_size.pdf}
+\caption{Fine-tuned $\oma$ against the number of training jets for each level of the hierarchy,
+the models with the auxiliary mass regression and the network trained from scratch (top), and
+its ratio to the network trained from scratch (bottom). Points are the mean over the pretraining
+runs and error bars their standard deviation; Table~\ref{tab:ft} gives the values.}
+\label{fig:ftn}
+\end{figure*}
+Tables~\ref{tab:ft} and~\ref{tab:ftrej} and Fig.~\ref{fig:ftn} give the fine-tuned models
+against the training-set size. On the full training sets, the network trained from scratch
+reproduces ParT trained from scratch on quark/gluon tagging, with an AUC of
+\MlstFtQgAucScratch{} against \LitPartQgAucScratch{}~\cite[Table~6]{part}, and is slightly below
+it on top tagging, with \MlstFtTopAucScratch{} against \LitPartTopAucScratch{}~\cite[Table~5]{part}.
+Fine-tuning the \Kfull-class models gives \MlstFtQgAucFull{} and \MlstFtTopAucFull, against
+\LitPartQgAucFt{} and \LitPartTopAucFt{} for ParT pretrained on JetClass. On top tagging the gain
+from pretraining is smaller than ParT's: the background rejection at \LitPartTopSigEffPercent\%
+signal efficiency rises from \MlstFtTopRthirtyScratch{} to \MlstFtTopRthirtyFull, against
+\LitPartTopRejScratch{} to \LitPartTopRejFt{} for ParT. ParT pretrained a separate model on the
+kinematic features alone for top tagging, whereas our models were pretrained on all features
+and receive the missing ones as zeros (Section~\ref{sec:eval}), and they were pretrained on
+JetClass-II, with pileup, rather than on JetClass.
+
+Fine-tuning a pretrained model beats training from scratch at every training-set size of
+quark/gluon tagging. For the \Kfull-class models, $\oma$ is \MlstFtCmpQgFullOverScratchEThree{}
+of that of the network trained from scratch at \FtSizeEThree{} jets and
+\MlstFtCmpQgFullOverScratchMax{} on the full training set. On top tagging, the ratio is
+\MlstFtCmpTopFullOverScratchEThree{} at \FtSizeEThree{} jets, \MlstFtCmpTopFullOverScratchEFive{}
+at \FtSizeEFive{} and \MlstFtCmpTopFullOverScratchMax{} on the full training set, but
+\MlstFtCmpTopFullOverScratchEFour{} at \FtSizeEFour{} jets. At \FtSizeEThree{} and
+\FtSizeEFour{} jets, every model is trained for the same small number of steps, the pretrained
+weights at a learning rate of \MlstFtLr{} and the network trained from scratch at
+\MlstFtRefLr{} (Appendix~\ref{app:ftrecipe}). Fine-tuned for longer at \FtSizeEFour{} jets, the \Kfull-class
+models reach \MlstTopCheckFullLong{} in the units of Table~\ref{tab:ft} and the network trained
+from scratch \MlstTopCheckScratchLong.
+
+After fine-tuning, the label set matters little. Coarser label sets fine-tune slightly worse
+at every size of both tasks: the ratio of $\oma$ between the \Kcoarse- and \Kfull-class models
+is at most \MlstFtCmpTopCoarseOverFullEFour{} (top tagging, \FtSizeEFour{} jets), and on the full
+training sets it is \MlstFtCmpTopCoarseOverFullMax{} on top and \MlstFtCmpQgCoarseOverFullMax{}
+on quark/gluon tagging. On the Herwig sample, the models fine-tuned on Pythia jets keep little of
+the gain from pretraining: on the full training set, the ratio to the network trained from
+scratch is \MlstFtCmpQgHerwigFullOverScratchMax{} for the \Kfull-class models. The improvement of
+the frozen top-tagging features by the auxiliary mass regression (Section~\ref{sec:mass}) does
+not survive fine-tuning: on the full training set, $\oma$ with the mass regression is
+\MlstFtCmpTopResMassOverResMax{} and \MlstFtCmpTopCoarseMassOverCoarseMax{} of its value without
+it at \Kres{} and \Kcoarse{} classes.
+
+\pending{fine-tuning on JetClass-II at its \Kfull{} classes and on JetClass}
 
 \subsection{Resonance tagging}\label{sec:xbbres}
 \pending{signal efficiency at fixed QCD efficiency and $\epsilon_S/\sqrt{\epsilon_B}$ for every
@@ -879,34 +978,38 @@ We retrained the Sophon model on JetClass-II with its \Kfull{} classes and with 
 \Kres, \Kmid{} and \Kcoarse{} classes from a single class hierarchy, with the training
 examples, their order and the initial weights fixed by the seed, so that models with the same
 seed differ in their labels and output layer but not in their data or initialization. On
-JetClass-II, the linear probes indicate that the representation depends on the flavor
-boundaries of the labels rather than on the number of classes. Merging the QCD classes leaves the
-probes unchanged, with a ratio of $\oma$ of \MlstCmpJcTwoResOverFull. Removing quark flavor from
-the labels raises $\oma$ by a factor of \MlstCmpJcTwoCoarseOverFull{} at \Kcoarse{} classes and
-degrades the separation of classes that differ only in flavor. Random partitions into \Kcoarse{}
-groups with many flavor boundaries give a ratio of \MlstCmpJcTwoRandOverFull, below the
-\MlstCmpJcTwoMidOverFull{} of the \Kmid-class label set. A random partition with no flavor
-boundary gives \MlstCmpJcTwoFzeroOverFull, and adding a single flavor boundary to it gives
-\MlstCmpJcTwoFoneOverFull. On JetClass, the random partitions are no better than the
-\Kcoarse-class label set. On top tagging, the linear probes of the pretrained models are no
-better than those of a randomly initialized network for any label set. On quark/gluon tagging,
-pretraining reduces $\oma$ to \MlstCmpQgFullOverInit{} of that of the randomly initialized
-network, with no consistent advantage from labels that keep gluons apart from light quarks. An
-auxiliary mass regression improves the mass resolution of the frozen features by a similar
-amount at both label sets tested, and it improves top tagging at both. \pending{fine-tuning, resonance tagging and anomaly
-detection}
-% CHECK: re-read once every result is in.
+JetClass-II, the linear probes degrade steadily as the label set is coarsened, and the random
+partitions indicate that the representation depends on the flavor boundaries of the labels more
+than on the number of classes. Merging the QCD classes leaves the probes of the resonant classes
+unchanged, with a ratio of $\oma$ of \MlstCmpJcTwoResResOverFull, and raises $\oma$ on the QCD
+classes by \MlstCmpJcTwoQcdResOverFull; the nonlinear probes confirm both. Removing quark flavor
+from the labels raises $\oma$ by a factor of \MlstCmpJcTwoCoarseOverFull{} at \Kcoarse{} classes
+and degrades the separation of classes that differ only in flavor, QCD classes included. Random
+partitions into \Kcoarse{} groups with many flavor boundaries give a ratio of
+\MlstCmpJcTwoRandOverFull, close to the \MlstCmpJcTwoMidOverFull{} of the \Kmid-class label set.
+A random partition with no flavor boundary gives \MlstCmpJcTwoFzeroOverFull, and adding a single
+flavor boundary to it gives \MlstCmpJcTwoFoneOverFull. On JetClass, the random partitions are
+worse than the \Kcoarse-class label set, so there the random grouping of decays costs more than
+their flavor boundaries gain. On top and quark/gluon tagging, the frozen features of no label set
+are better than those of a randomly initialized network by more than the spread between
+pretraining runs, except for the \Kfull-class models on both quark/gluon samples, and the
+nonlinear probes reduce that gain further. Fine-tuning does improve on training from scratch on both tasks,
+reproducing ParT's quark/gluon results; after fine-tuning, the label set changes $\oma$ by about
+a per cent on the full training sets and by more on the smallest. An auxiliary mass regression
+improves the mass resolution of the frozen features by a similar amount at both label sets
+tested and, in both runs at both label sets, reduces mass sculpting; its improvement of the frozen top-tagging features does not
+survive fine-tuning. \pending{fine-tuning on JetClass-II and JetClass; resonance tagging}
 
-% CHECK: fine-tuning may change the next paragraph.
-For the design of pretraining datasets, the linear probes suggest that the subdivision of QCD
-jets by quark content can be removed: probes of the \Kres-class models match those of the
-\Kfull-class models on JetClass-II and on the pairs of Table~\ref{tab:pairs}. On quark/gluon
-tagging, their ratio of $\oma$, \MlstCmpQgResOverFull, is too uncertain to show a difference.
-The \Kres-class label set also still forms every discriminant of Table~\ref{tab:usecase}.
-Flavor boundaries should be kept: on JetClass-II, many flavor
-boundaries bring $\oma$ to \MlstCmpJcTwoRandOverFull{} of its value for the \Kfull-class models,
-against \MlstCmpJcTwoCoarseOverFull{} for the \Kcoarse-class label set, and a single flavor
-boundary recovers only part of the difference. \pending{implications of fine-tuning and the benchmarks}
+For the design of pretraining datasets, our results suggest the following. Boundaries between
+quark flavors should be kept: on JetClass-II, many flavor boundaries bring $\oma$ to
+\MlstCmpJcTwoRandOverFull{} of its value for the \Kfull-class models, against
+\MlstCmpJcTwoCoarseOverFull{} for the \Kcoarse-class label set, and a single flavor boundary
+recovers only part of the difference. Dividing the QCD jets by their quark content improves
+only the separation of QCD jets by quark content, in the probes on JetClass-II and its QCD
+pairs; it leaves the resonant classes, JetClass, top and quark/gluon tagging unchanged within the
+spread between runs. Whether a dataset needs it therefore depends on whether its downstream tasks
+separate QCD jets by flavor. Both the \Kfull- and \Kres-class label sets form every discriminant
+of Table~\ref{tab:usecase}. \pending{implications of fine-tuning on JetClass-II}
 
 The study has several limitations. All pretraining and all evaluations except the Herwig
 quark/gluon sample use a single simulation family, so an effect of the label set that is
@@ -921,9 +1024,14 @@ same number of examples, so the study does not determine whether a finer label s
 benefits from a longer schedule. With \MlstNRunsWord{} seeds per level of the hierarchy
 and fewer for the other configurations, the standard deviations are themselves uncertain,
 differences between label sets smaller than them are not resolved, and comparisons between
-random partitions are not paired by seed. Fine-tuning follows
-a single recipe per dataset, which is not tuned per label set. \pending{the $X\to b\bar b$
-and $X\to bs$ samples, once they are in}
+random partitions are not paired by seed. The GPU type differs within most pairs of runs that
+are compared, and its effect on a trained model was not measured. The JetClass-II task uses the
+\Kfull{} pretraining classes themselves, which favors the finest label set; the comparisons
+between label sets with the same number of classes and the other tasks do not have this
+advantage. On top and quark/gluon tagging, the features that the data lack are set to zero
+rather than learned without, as in ParT's reduced-input pretraining. Fine-tuning follows
+a single recipe per dataset, which is not tuned per label set, and its step budget at the smaller
+training sets is short. \pending{the $X\to b\bar b$ and $X\to bs$ samples, once they are in}
 % CHECK: re-read once every result is in; the pending part names the samples' mass and the
 % JetClass-II QCD background.
 

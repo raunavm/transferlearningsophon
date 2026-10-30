@@ -461,7 +461,7 @@ def main(argv=None) -> int:
     M = MF._mlst()
     fits = M._load(DATA / M.FITS)
     runs = M._paper(REPO)
-    tag, per = M.load_ft(DATA)
+    tag, per, _ = M.load_ft(DATA)
     out = {"fine_tuning_readout": tag}
     figures = (("probes_n_jc", lambda: probe_lines(M, fits, runs, ("jc2_188", "jc1"), "probes_n_jc", a.outdir, out)),
                ("probes_n_bench", lambda: probe_lines(M, fits, runs, ("top", "qg"), "probes_n_bench", a.outdir, out)),

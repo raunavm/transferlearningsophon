@@ -359,15 +359,16 @@ def figure_per_class(root, outdir) -> list:
 # ------------------------------------------------------------------ fine-tuning
 def figure_finetune(root, outdir) -> list:
     M = _mlst()
-    tag, per = M.load_ft(DATA)
+    tag, per, _ = M.load_ft(DATA)
     if tag is None:
         return []
     runs = M._paper(root)
     style.use_style()
     import matplotlib.pyplot as plt
-    tasks = [t for t in M.FT_TASKS if t[0] in ("jc2", "jc1", "top", "qg")]
+    # a task not yet read out has no sizes and no panel
+    tasks = [t for t in M.FT_TASKS if t[0] in ("jc2", "jc1", "top", "qg") and M._sizes(per, t[0])]
     fig, axes = plt.subplots(2, len(tasks), figsize=(style.PANEL * len(tasks), 1.35 * style.PANEL),
-                             gridspec_kw={"height_ratios": [3, 1.2]}, sharex="col")
+                             gridspec_kw={"height_ratios": [3, 1.2]}, sharex="col", squeeze=False)
     for j, (key, _, _, met, title) in enumerate(tasks):
         ax, rx = axes[0, j], axes[1, j]
         sizes = M._sizes(per, key)

@@ -251,24 +251,28 @@ def table_probes_n(fits, runs, fmt_pm, rows) -> str:
 
 
 def load_ft(data: pathlib.Path) -> tuple:
-    """(tag, {task: {init: {N: [record per fine-tuning seed]}}}) of the first read-out tag
-    whose files are all present, or (None, {})."""
+    """(tag, {task: {init: {N: [record per fine-tuning seed]}}}, tasks not yet read out) of the
+    first read-out tag with any of its files present, or (None, {}, all tasks). A task whose file
+    is missing has no cells, and its table prints a red marker."""
     d = data / "ft_mlst"
     for tag in FT_TAGS:
-        files = {f for _, f, *_ in FT_TASKS}
-        if all((d / f"{tag}_{f}.json").exists() for f in files):
+        if any((d / f"{tag}_{f}.json").exists() for _, f, *_ in FT_TASKS):
             break
     else:
-        return None, {}
-    per = {}
+        return None, {}, [k for k, *_ in FT_TASKS]
+    per, absent = {}, []
     for key, f, ds, _, _ in FT_TASKS:
+        if not (d / f"{tag}_{f}.json").exists():
+            per[key] = {}
+            absent.append(key)
+            continue
         doc = json.loads((d / f"{tag}_{f}.json").read_text())
         cells = doc["cells"]
         cells = cells if ds is None else cells[ds]
         per[key] = {init: {int(n[1:]): [rec for _, rec in sorted(seeds.items())]
                            for n, seeds in by_n.items() if re.fullmatch(r"N\d+", n)}
                     for init, by_n in cells.items()}
-    return tag, per
+    return tag, per, absent
 
 
 def _ft(per: dict, key: str, model: str, n: int, metric: str):
@@ -289,6 +293,10 @@ def table_ft(per, runs, fmt_pm, rows) -> str:
     out = []
     for key, _, _, met, title in FT_TASKS:
         sizes = _sizes(per, key)
+        if not sizes:
+            out += [r"\begin{tabular}{lc}", r"\toprule", rf"{title} & \pending{{not yet read out}} \\",
+                    r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
+            continue
         out += [r"\begin{tabular}{l" + "c" * len(sizes) + "}", r"\toprule",
                 rf"{title} & " + " & ".join(f"{n:,}".replace(",", "{,}") for n in sizes) + r" \\",
                 r"\midrule"]
@@ -801,9 +809,22 @@ def _sculpt(sculpt: dict, model: str, eff: str):
     return None if d is None else d["working_points"][eff]["jsd"]
 
 
+def _sculpt_floor(sculpt: dict, eff: str) -> float:
+    """The divergence a cut that does not sculpt still shows: the expected Jensen-Shannon divergence
+    (base 2) between a histogram of n jets drawn at random from the QCD mass distribution and that
+    distribution, (k - 1) / (8 n ln 2) to leading order (chi^2 / (8 n ln 2), E[chi^2] = k - 1), with k
+    the occupied bins and n the jets passing the cut. One value across every run, or the build stops."""
+    vals = {round((int(np.count_nonzero(d["hist_before"])) - 1)
+                  / (8 * d["working_points"][eff]["n_pass"] * math.log(2)), 12) for d in sculpt.values()}
+    if len(vals) != 1:
+        raise SystemExit(f"FATAL: sculpting floor at {eff} takes {sorted(vals)} across the runs")
+    return vals.pop()
+
+
 def table_sculpt(sculpt, runs, fmt_pm, rows) -> str:
     """Jensen-Shannon divergence (x 10^3) between the soft-drop mass distributions of all QCD test
-    jets and of those passing a cut on 1 - p_QCD at the stated QCD efficiency."""
+    jets and of those passing a cut on 1 - p_QCD at the stated QCD efficiency, and below the runs the
+    divergence that a random selection of as many QCD jets shows (_sculpt_floor)."""
     lines = [r"\begin{tabular}{lcc}", r"\toprule",
              r"pretraining & " + " & ".join(rf"$\epsilon_{{\mathrm{{QCD}}}} = {float(e):g}$" for e in SCULPT_EFFS)
              + r" \\", r"\midrule"]
@@ -811,6 +832,9 @@ def table_sculpt(sculpt, runs, fmt_pm, rows) -> str:
         lines.append(LABEL[arm] + " & " + " & ".join(
             _cell([_sculpt(sculpt, m, e) for m in runs[arm]], len(runs[arm]), fmt_pm, 1e3) for e in SCULPT_EFFS)
             + r" \\")
+    if sculpt:
+        lines += [r"\midrule", "random selection of as many QCD jets & "
+                  + " & ".join(_lone(1e3 * _sculpt_floor(sculpt, e)) for e in SCULPT_EFFS) + r" \\"]
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -881,6 +905,14 @@ def method_macros(em, root: pathlib.Path, words=str) -> None:
 
 def sculpt_macros(em, sculpt, runs, index, fmt_pm) -> None:
     for e, ew in zip(SCULPT_EFFS, ("Ten", "One")):
+        n_pass = {d["working_points"][e]["n_pass"] for d in sculpt.values()}
+        if len(n_pass) != 1:
+            raise SystemExit(f"FATAL: {sorted(n_pass)} QCD jets pass at {e} across the runs")
+        em.macro(f"MlstSculptNPass{ew}", f"{n_pass.pop():,}".replace(",", "{,}"), index,
+                 f"QCD test jets passing the cut at QCD efficiency {e}, every run")
+        em.macro(f"MlstSculptFloor{ew}", _lone(1e3 * _sculpt_floor(sculpt, e)), index,
+                 f"JSD x 10^3 expected for a random selection of as many QCD jets as pass the cut at QCD "
+                 f"efficiency {e}: (k - 1) / (8 n ln 2), k occupied mass bins, n jets passing")
         for arm in MAIN + MASS:
             em.macro(f"MlstSculpt{WORD[arm]}{ew}", _cell([_sculpt(sculpt, m, e) for m in runs[arm]],
                                                         len(runs[arm]), fmt_pm, 1e3, sep=TEXT_SEP), index,
@@ -913,6 +945,20 @@ def ft_macros(em, per, runs, index, fmt_pm) -> None:
                          f"MlstFtCmp{FT_WORD[key]}{WORD[arm]}Over{WORD[refa]}{sw}",
                          _ratio(runs, arm, refa, lambda m: _oma(_ft(per, key, m, n, met)), fmt_pm), index,
                          f"fine-tuning {key} N={n}: (1 - {met}) of {arm} over {refa}, run by run")
+    # the values ParT reports (Tables 5 and 6), on the full training set: the AUC and R_30 of the
+    # 188-class models and of the network trained from scratch, for the comparison in the text
+    for key in ("top", "qg"):
+        if not _sizes(per, key):
+            continue
+        n = _sizes(per, key)[-1]
+        ref = per[key].get(SCRATCH, {}).get(n, [])
+        for what, ww in (("auc", "Auc"), ("r30", "Rthirty")):
+            em.macro(f"MlstFt{FT_WORD[key]}{ww}Full",
+                     _cell([_ft(per, key, m, n, what) for m in runs["L188"]], len(runs["L188"]), fmt_pm,
+                           sep=TEXT_SEP), index, f"fine-tuning {key} N={n}: {what} of the 188-class runs")
+            em.macro(f"MlstFt{FT_WORD[key]}{ww}Scratch",
+                     _cell([r[what] for r in ref], len(ref), fmt_pm, sep=TEXT_SEP) if ref else r"\pending{scratch}",
+                     index, f"fine-tuning {key} N={n}: {what} of the network trained from scratch, every seed")
 
 
 def topcheck_macros(em, data: pathlib.Path, per, index, fmt_pm, missing: list) -> None:
@@ -1081,7 +1127,9 @@ CAPTIONS = {
              + SPREAD),
     "sculpt": ("tab:sculpt", "Mass sculpting: Jensen--Shannon divergence $\\times10^{3}$ between the "
                "$m_{\\mathrm{SD}}$ distributions of all QCD test jets and of those passing a cut on "
-               "$1-p_{\\mathrm{QCD}}$ at the QCD efficiency given; lower is less sculpting. " + SPREAD),
+               "$1-p_{\\mathrm{QCD}}$ at the QCD efficiency given; lower is less sculpting. The last row is the "
+               "divergence expected for a random selection of as many QCD jets, which a cut that does not "
+               "sculpt the mass still shows because of the finite number of jets passing it. " + SPREAD),
     "ft": ("tab:ft", "Full fine-tuning against the training-set size: $(1-\\mathrm{AUC})\\times10^{3}$, "
            "lower is better, with the macro AUC (one-versus-rest) on JetClass-II, over all and over its QCD "
            "classes, and on JetClass, and the AUC on top and quark/gluon (q/g) tagging, q/g also on jets "
@@ -1224,10 +1272,10 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     size_macros(em, fits, fmt_int, index)
     method_macros(em, root, words)
     ft_recipe(em, data, {m[len("mtx-"):] for k, v in runs.items() if k not in (INIT, INIT_BN) for m in v}, fmt_int, missing, words)
-    tag, per = load_ft(data)
-    if tag is None:
-        missing.append("fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/ (best70 and leg188)")
-    else:
+    tag, per, absent = load_ft(data)
+    if absent:
+        missing.append("fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/: " + ", ".join(absent))
+    if tag is not None:
         out["tables/mlst_ft.tex"] = _float("ft", table_ft(per, runs, fmt_pm, MAIN + MASS), True)
         body, fewest = table_ft_rej(per, runs, fmt_pm, MAIN + MASS)
         out["tables/mlst_ft_rej.tex"] = _float("ft_rej", body, True, fill={"__FEWEST__": fmt_int(fewest)})

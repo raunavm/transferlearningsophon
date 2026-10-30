@@ -133,7 +133,8 @@ def _ft_tree(d, inits, n_seeds_scratch=3, bound=False):
 
 def test_the_fine_tuning_tables_read_one_seed_per_run_and_the_scratch_seeds(tmp_path):
     _ft_tree(tmp_path, ["l188-s1", "l188-s2"])
-    tag, per = M.load_ft(tmp_path)
+    tag, per, absent = M.load_ft(tmp_path)
+    assert absent == []
     assert tag == "best70" and per["jc2"]["l188-s1"][1000][0]["macro_auc_ovr"] == 0.9
     runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"]}
     t = M.table_ft(per, runs, MT.fmt_pm, ("L188",))
@@ -151,13 +152,23 @@ def test_the_fine_tuning_tables_read_one_seed_per_run_and_the_scratch_seeds(tmp_
 
 def test_a_rejection_that_is_only_a_bound_stops_the_table(tmp_path):
     _ft_tree(tmp_path, ["l188-s1"], bound=True)
-    _, per = M.load_ft(tmp_path)
+    _, per, _ = M.load_ft(tmp_path)
     with pytest.raises(SystemExit, match="only a bound"):
         M.table_ft_rej(per, {"L188": ["mtx-l188-s1"]}, MT.fmt_pm, ("L188",))
 
 
 def test_no_fine_tuning_read_out_is_no_table(tmp_path):
-    assert M.load_ft(tmp_path) == (None, {})
+    assert M.load_ft(tmp_path) == (None, {}, [k for k, *_ in M.FT_TASKS])
+
+
+def test_a_task_not_yet_read_out_prints_a_marker_and_the_others_print(tmp_path):
+    _ft_tree(tmp_path, ["l188-s1"])
+    (tmp_path / "ft_mlst" / "best70_leg2_metrics.json").unlink()
+    tag, per, absent = M.load_ft(tmp_path)
+    assert tag == "best70" and absent == ["jc1"] and per["jc1"] == {}
+    t = M.table_ft(per, {"L188": ["mtx-l188-s1"]}, MT.fmt_pm, ("L188",))
+    assert "JetClass & \\pending{not yet read out}" in t and t.count("%SPLIT%") == len(M.FT_TASKS) - 1
+    assert "from scratch" in t
 
 
 class _Em:
@@ -281,3 +292,22 @@ def test_the_batchnorm_recomputed_random_network_is_its_own_row_read_at_init_bn(
     assert M._mlp(mlp, "initbn-s1", "top") == pytest.approx(0.03)
     assert M._mlp(mlp, "initbn-s1", "jc2_188_qcd") == pytest.approx(0.1)
     assert M._mlp(mlp, "init-s1", "top") is None
+
+
+def test_the_sculpting_floor_is_the_divergence_of_a_random_selection():
+    """_sculpt_floor's (k - 1) / (8 n ln 2) against a Monte Carlo of the same draw: n jets at random
+    from the QCD mass histogram, compared with it by the script's own divergence."""
+    import numpy as np
+    sc = _load("mass_sculpting_t", "experiments/EVAL/mass_sculpting.py")
+    rng = np.random.default_rng(1)
+    p = rng.random(24)
+    p[3] = 0.0
+    p /= p.sum()
+    doc = {"hist_before": p.tolist(), "working_points": {"0.01": {"n_pass": 4103}}}
+    floor = M._sculpt_floor({"a": doc, "b": doc}, "0.01")
+    assert floor == pytest.approx(22 / (8 * 4103 * math.log(2)))
+    sims = [sc.jsd(rng.multinomial(4103, p) / 4103, p) for _ in range(4000)]
+    assert floor == pytest.approx(float(np.mean(sims)), rel=0.05)
+    other = {"hist_before": p.tolist(), "working_points": {"0.01": {"n_pass": 4000}}}
+    with pytest.raises(SystemExit):
+        M._sculpt_floor({"a": doc, "b": other}, "0.01")

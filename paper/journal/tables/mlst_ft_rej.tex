@@ -1,9 +1,22 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Background rejection $R_{50}$ and $R_{30}$ ($1/\epsilon_B$ at 50\% and 30\% signal efficiency) after full fine-tuning on the whole training set. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run. From scratch: over its seeds. Every value rests on at least \pending{n} background jets passing the cut.}
+\caption{Background rejection $R_{50}$ and $R_{30}$ ($1/\epsilon_B$ at 50\% and 30\% signal efficiency) after full fine-tuning on the whole training set. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run. From scratch: over its seeds. Every value rests on at least 104 background jets passing the cut.}
 \label{tab:ftrej}
 \begin{adjustbox}{max width=\linewidth}
-\pending{no result yet}
+\begin{tabular}{lcccccc}
+\toprule
+pretraining & \multicolumn{2}{c}{top} & \multicolumn{2}{c}{q/g} & \multicolumn{2}{c}{q/g, Herwig} \\
+ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ \\
+\midrule
+\Kfull{} classes & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 & 12.3\,$\pm$\,0.4 & 35.2\,$\pm$\,2.1 \\
+\Kres{} classes & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 & 12.33\,$\pm$\,0.28 & 34.6\,$\pm$\,2.0 \\
+\Kmid{} classes & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 & 42.2\,$\pm$\,0.8 & 108.3\,$\pm$\,1.0 & 12.5\,$\pm$\,0.6 & 36.1\,$\pm$\,2.7 \\
+\Kcoarse{} classes & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 & 12.79\,$\pm$\,0.20 & 36.9\,$\pm$\,0.9 \\
+\Kres{} classes, mass regression & 420, 436 & 1{,}941, 1{,}590 & 42.46, 42.21 & 106.95, 106.61 & 12.99, 12.21 & 37.8, 34.4 \\
+\Kcoarse{} classes, mass regression & 435, 421 & 1{,}683, 1{,}628 & 41.77, 41.39 & 104.93, 105.60 & 12.58, 11.96 & 37.7, 32.9 \\
+from scratch & 358\,$\pm$\,11 & 1{,}412\,$\pm$\,20 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 & 12.18\,$\pm$\,0.11 & 35.5\,$\pm$\,1.2 \\
+\bottomrule
+\end{tabular}
 \end{adjustbox}
 \end{table*}

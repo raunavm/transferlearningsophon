@@ -99,7 +99,7 @@ def test_every_figure_is_drawn_from_the_papers_selections(tmp_path, monkeypatch,
     got = next(p for p in nums["probes_n_jc"]["jc2_188"]["L188"] if p["n"] == n)
     assert got["oma"] == pytest.approx(want) and got["runs"] == len(runs["L188"])
     # fine-tuning on JetClass-II: the 188-class read-out (leg188), the hierarchy and from scratch
-    tag, per = M.load_ft(data)
+    tag, per, _ = M.load_ft(data)
     want = np.mean([1 - M._ft(per, "jc2", m, n, "macro_auc_ovr") for m in runs["R16_Q1"]])
     got = next(p for p in nums["ft_n_jc"]["jc2"]["values"]["R16_Q1"] if p["n"] == n)
     assert got["oma"] == pytest.approx(want)

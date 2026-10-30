@@ -1,19 +1,21 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Mass sculpting: Jensen--Shannon divergence $\times10^{3}$ between the $m_{\mathrm{SD}}$ distributions of all QCD test jets and of those passing a cut on $1-p_{\mathrm{QCD}}$ at the QCD efficiency given; lower is less sculpting. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run.}
+\caption{Mass sculpting: Jensen--Shannon divergence $\times10^{3}$ between the $m_{\mathrm{SD}}$ distributions of all QCD test jets and of those passing a cut on $1-p_{\mathrm{QCD}}$ at the QCD efficiency given; lower is less sculpting. The last row is the divergence expected for a random selection of as many QCD jets, which a cut that does not sculpt the mass still shows because of the finite number of jets passing it. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run.}
 \label{tab:sculpt}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcc}
 \toprule
 pretraining & $\epsilon_{\mathrm{QCD}} = 0.1$ & $\epsilon_{\mathrm{QCD}} = 0.01$ \\
 \midrule
-\Kfull{} classes & 3.16 \pending{1 of 3} & 2.16 \pending{1 of 3} \\
+\Kfull{} classes & 2.8\,$\pm$\,0.4 & 1.93\,$\pm$\,0.21 \\
 \Kres{} classes & 2.83\,$\pm$\,0.10 & 1.84\,$\pm$\,0.24 \\
-\Kmid{} classes & \pending{no run yet} & \pending{no run yet} \\
-\Kcoarse{} classes & \pending{no run yet} & \pending{no run yet} \\
+\Kmid{} classes & 3.14\,$\pm$\,0.30 & 2.6\,$\pm$\,0.7 \\
+\Kcoarse{} classes & 2.95\,$\pm$\,0.11 & 3.15\,$\pm$\,0.20 \\
 \Kres{} classes, mass regression & 1.78, 2.15 & 1.80, 1.95 \\
-\Kcoarse{} classes, mass regression & \pending{no run yet} & \pending{no run yet} \\
+\Kcoarse{} classes, mass regression & 2.72, 1.79 & 1.64, 2.04 \\
+\midrule
+random selection of as many QCD jets & 0.101 & 1.01 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
