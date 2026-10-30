@@ -50,6 +50,7 @@ PROBE_PANELS = (("jc2_188", "macro_auc_ovr", "JetClass-II"), ("jc2_188", "macro_
                 ("jc1", "macro_auc_ovr", "JetClass"), ("top", "auc", "Top tagging"),
                 ("qg", "auc", "Quark/gluon tagging"), ("qg_herwig", "auc", "Quark/gluon, Herwig"))
 SIZE_PANELS = (PROBE_PANELS[0], PROBE_PANELS[2], PROBE_PANELS[3], PROBE_PANELS[4])
+FT_TITLE = {"jc2": "JetClass-II", "jc1": "JetClass", "top": "Top tagging", "qg": "Quark/gluon tagging"}
 FILL = {"apart": "full", "partly": "left", "merged": "none"}
 # The schematic's classes, top to bottom, and the columns: (label map, column, heading).
 SCHEMATIC_CLASSES = (("X_bb", r"$X\to b\bar b$"), ("X_bc", r"$X\to bc$"), ("X_bq", r"$X\to bq$"),
@@ -102,7 +103,10 @@ def _look(M, row: str) -> dict:
 
 def _log_axis(axis, lo: float, hi: float) -> None:
     """A logarithmic axis with 1-2-5 ticks over [lo, hi], tick labels as plain numbers."""
-    loc = ticker.LogLocator(subs=(1.0, 2.0, 5.0)) if hi / lo > 3 else ticker.LogLocator(subs=tuple(range(1, 10)))
+    # a wide span: 1-2-5 ticks; a narrow one: a few round values, so the labels do not run together
+    loc = (ticker.LogLocator(subs=(1.0, 2.0, 5.0)) if hi / lo > 3 else
+           ticker.FixedLocator([v for v in ticker.MaxNLocator(nbins=4, steps=[1, 2, 2.5, 5, 10]).tick_values(lo, hi)
+                                if lo <= v <= hi]))
     axis.set_major_locator(loc)
     axis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}"))
     axis.set_minor_formatter(ticker.NullFormatter())
@@ -397,13 +401,13 @@ def figure_finetune(root, outdir) -> list:
         ax.set_yscale("log")
         ys = [1e3 * p[1] for pts in rows.values() for p in pts]
         _log_axis(ax.yaxis, min(ys), max(ys))
-        rx.set_yscale("log")
         rs = [p[1] / sc[p[0]] for row, pts in rows.items() if row != M.SCRATCH for p in pts if p[0] in sc]
         if rs:
-            rx.set_ylim(min(rs) / 1.15, max(max(rs), 1.0) * 1.15)
-            _log_axis(rx.yaxis, min(rs) / 1.15, max(max(rs), 1.0) * 1.15)
+            # a linear ratio axis with a few ticks, 1 included
+            rx.set_ylim(min(min(rs), 1.0) - 0.05, max(max(rs), 1.0) + 0.05)
+            rx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 2.5, 5, 10]))
         rx.set_xlabel("Training jets")
-        ax.set_title(title, loc="left", fontsize="medium")
+        ax.set_title(FT_TITLE.get(key, title), loc="left", fontsize="medium")
     axes[0, 0].set_ylabel(r"$(1-\mathrm{AUC})\times10^{3}$")
     axes[1, 0].set_ylabel("Ratio to\nfrom scratch")
     handles, labels = axes[0, 0].get_legend_handles_labels()
