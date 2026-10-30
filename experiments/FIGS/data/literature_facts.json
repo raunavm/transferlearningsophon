@@ -160,6 +160,9 @@
     {"macro": "LitPartTopSigEffPercent", "value": "30",
      "source": "arXiv:2202.03772", "location": "Table 5 (column Rej30%)",
      "quote": "Accuracy AUC Rej50% Rej30%"},
+    {"macro": "LitPartTopKinFeatures", "value": "7",
+     "source": "arXiv:2202.03772", "location": "Sec. 5.2",
+     "quote": "Therefore, we pre-train a ParT model on the JETCLASS dataset using only the kinematic features, and then fine-tune it on the top quark tagging dataset. The particle input features are the 7 kinematic features listed in Table 2"},
     {"macro": "LitBukchinAncor", "value": "45.14",
      "source": "arXiv:2012.03515", "location": "Table 2, LIVING-17 all-way",
      "quote": "ANCOR (ours) 89.23 ± 0.55 45.14 ± 0.12"}

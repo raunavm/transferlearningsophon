@@ -496,6 +496,16 @@ distinction. The quark/gluon models are also evaluated on a sample generated wit
 Herwig~\cite{herwig,qgherwig} instead of Pythia, which models the parton shower and
 hadronization differently.
 
+The network takes \FillNFeatures{} features per particle, and features that a data set does
+not provide are set to zero. The top-tagging data provide only the energy and momentum of each
+particle, from which \FillTopNPresent{} of the features are computed; the other
+\FillTopNZero, the charge, the particle-type flags and the track-displacement variables, are
+zero. The quark/gluon data are generated without a detector simulation and lack the
+\FillQgNZero{} track-displacement variables. The same zeros enter every pretrained model and
+the network trained from scratch. ParT instead pretrained a separate model on the
+\LitPartTopKinFeatures{} kinematic features alone before fine-tuning it on top
+tagging~\cite[Sec.~5.2]{part}.
+
 On JetClass-II and JetClass, we report the macro-averaged area under the receiver operating
 characteristic curve (AUC), the mean of the one-versus-rest AUC over the classes. On top and
 quark/gluon tagging, we report the AUC and, after fine-tuning, the background rejection
@@ -513,8 +523,9 @@ subsets from \FtSizeEThree{} jets to the full training set of each task, the sam
 used for fine-tuning, and evaluated on the same test jets with the same metrics.
 
 \paragraph{Fine-tuning.} Each pretrained model is fine-tuned once, end to end, from its
-selected checkpoint with a newly initialized classification head, using ParT's
-fine-tuning learning rates~\cite{part}. The same network trained from random
+selected pretraining checkpoint with a newly initialized classification head, using ParT's
+fine-tuning learning rates~\cite{part}. Each fine-tuning run is then evaluated at its own
+epoch of highest validation accuracy. The same network trained from random
 initialization (from scratch), with \MlstFtRefSeedsWord{} seeds at each training-set size, is
 the reference. Appendix~\ref{app:ftrecipe} lists all settings.
 
@@ -656,8 +667,15 @@ On top tagging, the linear probes of the pretrained models are no better than th
 randomly initialized network. On the largest training set, the ratio of $\oma$ between the
 \Kfull-class models and the randomly initialized network is \MlstCmpTopFullOverInit, the
 pretrained models do not pull ahead on smaller training sets either (Fig.~\ref{fig:probesn}), and the spread
-between pretraining seeds is larger than the spread between random initializations. The
-auxiliary mass regression does improve top tagging (Section~\ref{sec:mass}). On quark/gluon
+between pretraining seeds is larger than the spread between random initializations. A possible
+reason, which we have not tested, is the zero filling of Section~\ref{sec:eval}: in pretraining
+every particle has a particle-type flag set, whereas in the top-tagging inputs all of these flags
+are zero, an input the network never saw. The
+auxiliary mass regression does improve top tagging (Section~\ref{sec:mass}).
+% CHECK: verify on JetClass-II that exactly one particle-type flag is set for every particle.
+% CHECK: all three 162-class runs lie below the randomly initialized network on top tagging
+% (ratio 0.85 +- 0.10, figures/deck/deck_numbers.json probe_over_init); "no better ... for any
+% label set" in the conclusion may need hedging (asked the PI 2026-10-29). On quark/gluon
 tagging, the \Kfull-class models reduce $\oma$ to \MlstCmpQgFullOverInit{} of its value for the
 randomly initialized network. Keeping gluons apart from light quarks in the labels gives no
 consistent advantage: relative to the \Kfull-class models, $\oma$ is \MlstCmpQgResOverFull{} at

@@ -604,6 +604,9 @@ def input_paths(root: pathlib.Path) -> dict:
             "rand_v2_rule": maps / "rand_v2_selection.json",
             # the draw itself: its TRIALS constant is the number of assignments per partition
             "rand_draw_code": root / "scripts" / "build_rand_control.py",
+            # the downstream data configs: which per-particle inputs each data set lacks
+            "fill_top": root / "configs" / "finetune" / "TopReference.yaml",
+            "fill_qg": root / "configs" / "finetune" / "EnergyFlowQG.yaml",
             "flavour_pair": maps / "flavour_pair.v2.json",
             "flavour_map": maps / "flavour_pair_map.v2.csv",
             "realised_shares": maps / "realised_native_shares.v2.json",
@@ -1283,6 +1286,28 @@ def emit_mlst(em: Emitter, grid_path: pathlib.Path, probe_code: pathlib.Path) ->
     em.macro("LpNTestJcii", fmt_int(n_test), probe_code, "TEST_FIRST.jc2", "JetClass-II test jets")
     em.macro("LpNTestAucJcii", fmt_int(n_test // stride), probe_code, "TEST_FIRST.jc2 / AUC_STRIDE",
              "JetClass-II test jets of the macro AUC")
+
+
+def emit_fills(em: Emitter, top: pathlib.Path, qg: pathlib.Path) -> None:
+    """The per-particle input features of the downstream data configs, and how many of them
+    each data set lacks: the part_zero_* inputs, which feed zeros in their place."""
+    counts = {}
+    for name, path in (("Top", top), ("Qg", qg)):
+        block = re.search(r"^   pf_features:\n(.*?)^   pf_vectors:", path.read_text(), re.M | re.S)
+        if block is None:
+            raise SystemExit(f"FATAL: {path}: no pf_features block")
+        feats = re.findall(r"^\s+- \[(\w+),", block.group(1), re.M)
+        counts[name] = (len(feats), sum(f.startswith("part_zero_") for f in feats))
+    if counts["Top"][0] != counts["Qg"][0]:
+        raise SystemExit(f"FATAL: the downstream configs have different numbers of features: {counts}")
+    em.macro("FillNFeatures", str(counts["Top"][0]), top, "inputs.pf_features.vars (count)",
+             "per-particle input features of the network")
+    for name, path in (("Top", top), ("Qg", qg)):
+        total, zero = counts[name]
+        em.macro(f"Fill{name}NZero", str(zero), path, "inputs.pf_features.vars, part_zero_* (count)",
+                 "features the data set lacks, set to zero")
+        em.macro(f"Fill{name}NPresent", str(total - zero), path,
+                 "inputs.pf_features.vars, not part_zero_* (count)", "features the data set provides")
 
 
 def emit_rand_design(em: Emitter, paths: dict, C: dict, missing: list | None = None) -> None:
@@ -4880,6 +4905,8 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
                          missing)
     if "v2_grid" in have:
         emit_mlst(em, paths["v2_grid"], root / "experiments" / "EVAL" / "linear_probe_v2.py")
+    if all(k in have for k in ("fill_top", "fill_qg")):
+        emit_fills(em, paths["fill_top"], paths["fill_qg"])
     # The loss-share-matched mass model is not in the cut grid (PI, 2026-10-09).
     if all(k in have for k in ("mass_lambda", "v2_grid")) and "R16_Q1_MASS_LM" in v2_arm_names(paths):
         emit_mass_lambda_matched(em, paths["mass_lambda"], paths["v2_grid"])

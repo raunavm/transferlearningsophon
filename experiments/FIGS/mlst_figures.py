@@ -41,6 +41,7 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 CLASSES = {"L188": 188, "L162": 162, "R42_Q1": 43, "R16_Q1": 17}
 NAME = "probes_vs_training_size"
 ROW_NAME = {**{k: f"{v} classes" for k, v in CLASSES.items()},
+            "L162_MASS": "162 classes, mass regr.", "R16_Q1_MASS": "17 classes, mass regr.",
             **{f"RAND2_p{k}": f"Random partition {k}" for k in range(1, 6)},
             "FLAV_F0": "No flavor boundary", "FLAV_F1": r"$b$-quark boundary",
             "FLAV_F1R": "Random flavor boundary", "INIT": "Randomly initialized"}
@@ -148,6 +149,9 @@ def _positions(groups) -> dict:
 def _look(M, row: str) -> tuple:
     if row in CLASSES:
         return style.LEVEL_COLOURS[CLASSES[row]], style.LEVEL_MARKERS[CLASSES[row]]
+    if row in M.MASS:
+        # the colour of its label set, a plus for the added regression
+        return style.LEVEL_COLOURS[CLASSES[row[:-len("_MASS")]]], "P"
     if row in M.RAND:
         return style.PETROFF6[5], "o"
     if row in M.FLAV:
