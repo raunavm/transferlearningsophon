@@ -4,8 +4,9 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
 
   linprobe/fits3000/<model>.json   the linear-probe fits, unchanged (scripts/build_linprobe_jobs.py)
   linprobe/mass/<model>.json       the jet-mass regressions, unchanged (mass_resolution.json)
-  compute/<run>.json               per epoch of every finished run: the GPU it trained on and
-                                   the seconds of its training and validation passes, read from
+  compute/<run>.json               per epoch of every finished run: the GPU it trained on, the
+                                   seconds of its training and validation passes and, with a mass
+                                   output, the mass term's share of the training loss, read from
                                    <run>/metrics/epoch-NNN.json
   ft_mlst/<tag>_<file>.json        the fine-tuning read-outs (scripts/build_ft_jobs.py, v2 read-outs):
                                    <tag> best70 (every paper run) or best70_done18 (the 18 runs
@@ -73,8 +74,12 @@ def compute(run: pathlib.Path) -> dict:
         d = json.loads((run / "metrics" / f"epoch-{e:03d}.json").read_text())
         if d["epoch"] != e or "device" not in d:
             raise SystemExit(f"FATAL: {run.name} epoch {e}: no device record")
-        epochs.append({"epoch": e, "device": d["device"], "train_seconds": d["train"]["seconds"],
-                       "val_seconds": d["val"]["seconds"], "jets_per_s": d["train"]["jets_per_s"]})
+        rec = {"epoch": e, "device": d["device"], "train_seconds": d["train"]["seconds"],
+               "val_seconds": d["val"]["seconds"], "jets_per_s": d["train"]["jets_per_s"]}
+        if "loss_reg" in d["train"]:
+            # the mass term's share of the training loss: loss = loss_cls + lambda * loss_reg
+            rec["loss_share_reg"] = (d["train"]["loss"] - d["train"]["loss_cls"]) / d["train"]["loss"]
+        epochs.append(rec)
     return {"run": run.name, "epochs": epochs}
 
 

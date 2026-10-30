@@ -4,20 +4,32 @@ Every value is the mean +- standard deviation over the pretraining runs of a con
 that the paper reports (configs/arms/v2_paper_runs.txt), PDG-rounded (make_tables.fmt_pm). A
 configuration with runs still missing prints the runs it has and a red marker "n of N runs".
 
+Configurations with two runs print both values: a standard deviation from two runs has one
+degree of freedom (plan 2026-10-29, statistics). A lone run prints three significant figures.
+
 Inputs, under experiments/FIGS/data/v2/ (experiments/FIGS/pull_mlst_data.py):
-  linprobe/fits3000/<model>.json   linear probes (experiments/EVAL/linear_probe_v2.py)
-  linprobe/mass/<model>.json       jet-mass regression (experiments/EVAL/mass_resolution.py)
-  compute/<run>.json               per epoch: the GPU and the seconds of training and validation
-  ft_mlst/<tag>_<file>.json        fine-tuning read-outs: best70 (every run) or, until it exists,
-                                   best70_done18 (the runs finished before the split)
-  index.json                       {path: sha256} of every file above, as pulled: checked against
-                                   them, and the source the macros counted over many files cite
+  linprobe/fits_v3/<model>.json      linear probes, JetClass-II at its 188 classes
+                                     (experiments/EVAL/linear_probe_v2.py, 2026-10-29 refit)
+  linprobe/fits_v3_mlp/<model>.json  the nonlinear probes beside the linear nulls
+  head/<model>_mass.json             mass node, MLP mass regression, the uncorrected mass
+  head/<model>_sculpting.json        QCD mass sculpting (experiments/EVAL/mass_sculpting.py)
+  fillcontrol/<mask>/<model>.json    JetClass-II probes with the downstream data's missing
+                                     features zeroed
+  compute/<run>.json                 per epoch: the GPU and the seconds of training and validation
+  ft_mlst/<tag>_<file>.json          fine-tuning read-outs (best70: every run, with the V100
+                                     from-scratch references); best70_leg188_leg1_metrics:
+                                     JetClass-II at 188 classes; topcheck_bench_metrics
+  index.json                         {path: sha256} of every file above, as pulled: checked against
+                                     them, and the source the macros counted over many files cite
 
 Outputs:
   tables/mlst_probes.tex     linear probes at the largest training set, every task
-  tables/mlst_probes_n.tex   the same at every training-set size, JetClass-II and top tagging
+  tables/mlst_probes_n.tex   the same at every training-set size
   tables/mlst_pairs.tex      binary probes between JetClass-II classes, merged or kept apart
-  tables/mlst_mass.tex       mass resolution from frozen features, with and without the mass output
+  tables/mlst_mlp.tex        nonlinear probes on the binary tasks
+  tables/mlst_fill.tex       JetClass-II probes with the downstream data's missing features zeroed
+  tables/mlst_mass.tex       mass resolution: mass node, frozen features, uncorrected mass
+  tables/mlst_sculpt.tex     QCD mass sculpting
   tables/mlst_ft.tex         full fine-tuning against the training-set size, every dataset
   tables/mlst_ft_rej.tex     background rejection after fine-tuning on the full training set
   tables/compute.tex         GPU types and hours of every run
@@ -47,16 +59,31 @@ LABEL = {"L188": r"\Kfull{} classes", "L162": r"\Kres{} classes", "R42_Q1": r"\K
          "FLAV_F1R": "random partition, random flavor boundary", INIT: "randomly initialized network",
          **{f"RAND2_p{k}": f"random partition {k}" for k in range(1, 6)}}
 PRIMARY = "best70"
+FITS, MLP_FITS = "linprobe/fits_v3", "linprobe/fits_v3_mlp"
 # (dataset key, metric, column heading)
-TASKS = (("jc2", "macro_auc_ovr", "JetClass-II"), ("jc1", "macro_auc_ovr", "JetClass"),
+TASKS = (("jc2_188", "macro_auc_ovr", "JetClass-II"), ("jc2_188", "macro_auc_resonant", "resonant"),
+         ("jc2_188", "macro_auc_qcd", "QCD"), ("jc1", "macro_auc_ovr", "JetClass"),
          ("top", "auc", "top"), ("qg", "auc", "q/g"), ("qg_herwig", "auc", "q/g, Herwig"))
+# the training-size table: these tasks and the JetClass-II macro over the classes present in training
+TASKS_N = (TASKS[0], ("jc2_188", "macro_auc_trained", "JetClass-II, classes present in training"),
+           TASKS[2], TASKS[3], TASKS[4], TASKS[5])
+# (key, heading, first side, second side): a side is native class names, or "qcd_with_b" /
+# "qcd_with_c_no_b" (QCD classes by quark content, from the label map)
 PAIRS = (("bc_vs_bq_cs", r"$X\to bc$ vs $bq$, $cs$", ("label_X_bc",), ("label_X_bq", "label_X_cs")),
          ("bb_vs_cc", r"$X\to b\bar b$ vs $c\bar c$", ("label_X_bb",), ("label_X_cc",)),
-         ("bbqq_vs_ccqq", r"$X\to YY\to bbqq$ vs $ccqq$", ("label_X_YY_bbqq",), ("label_X_YY_ccqq",)))
-PAIR_N = "1000000"
+         ("bbqq_vs_ccqq", r"$X\to YY\to bbqq$ vs $ccqq$", ("label_X_YY_bbqq",), ("label_X_YY_ccqq",)),
+         ("qcd_bb_vs_cc", r"QCD $bb$ vs $cc$", ("label_QCD_bb",), ("label_QCD_cc",)),
+         ("qcd_b_vs_light", r"QCD with $b$ vs light", "qcd_with_b", ("label_QCD_light",)),
+         ("qcd_c_vs_light", r"QCD with $c$, no $b$, vs light", "qcd_with_c_no_b", ("label_QCD_light",)))
+PAIR_DS, PAIR_N = "jc2_188_pairs", "1000000"
+MLP_TASKS = (("qcd_bb_vs_cc", r"QCD $bb$ vs $cc$"), ("qcd_b_vs_light", r"QCD with $b$ vs light"),
+             ("bb_vs_cc", r"$X\to b\bar b$ vs $c\bar c$"), ("top", "top"), ("qg", "q/g"),
+             ("qg_herwig", "q/g, Herwig"))
+MASKS = ("TopReference", "EnergyFlowQG")
 # Fine-tuning: (task, read-out file, data set inside it, metric, column heading)
-FT_TAGS = ("best70", "best70_done18")
-FT_TASKS = (("jc2", "leg1_metrics", None, "macro_auc_ovr", "JetClass-II"),
+FT_TAGS = ("best70",)
+FT_TASKS = (("jc2", "leg188_leg1_metrics", None, "macro_auc_ovr", "JetClass-II"),
+            ("jc2_qcd", "leg188_leg1_metrics", None, "macro_auc_qcd", "JetClass-II, QCD classes"),
             ("jc1", "leg2_metrics", None, "macro_auc_ovr", "JetClass"),
             ("top", "bench_metrics", "top", "auc", "top"),
             ("qg", "bench_metrics", "qg", "auc", "q/g"),
@@ -82,8 +109,8 @@ def _load(d: pathlib.Path) -> dict:
     return {p.stem: json.loads(p.read_text()) for p in sorted(d.glob("*.json"))} if d.is_dir() else {}
 
 
-# a probe of the untrained network that stopped at the iteration limit (linear_probe_v2.py
-# MAX_ITER) carries this mark; a trained run's probe that did not converge stops the build
+# a probe that did not converge (linear_probe_v2.py: its gradient did not fall below
+# CONVERGED_GRAD within MAX_ITER) carries this mark, and the build counts them (MlstProbeUnconverged)
 UNCONVERGED = r"$^{*}$"
 
 
@@ -142,14 +169,16 @@ def _row(arm: str, runs: dict) -> str:
     return LABEL[arm]
 
 
+UNCONVERGED_SEEN: set = set()
+
+
 def _probe(fits: dict, model: str, ds: str, n: str, metric: str):
     ck = "init" if model.startswith("init-") else PRIMARY
     c = fits.get(model, {}).get("cells", {}).get(ck, {}).get(ds, {}).get(n)
     if c is None:
         return None
     if not c["converged"]:
-        if ck != "init":
-            raise SystemExit(f"FATAL: {model} {ds} N={n}: the probe did not converge")
+        UNCONVERGED_SEEN.add((model, ds, n))
         return Unconverged(c[metric])
     return c[metric]
 
@@ -174,7 +203,7 @@ def table_probes(fits, runs, fmt_pm, rows) -> str:
 
 def table_probes_n(fits, runs, fmt_pm, rows) -> str:
     out = []
-    for ds, met, title in (TASKS[0], TASKS[2]):
+    for ds, met, title in TASKS_N:
         sizes = sorted({n for f in fits.values() for ck in f["cells"].values() for n in ck.get(ds, {})}, key=int)
         out += [r"\begin{tabular}{l" + "c" * len(sizes) + "}", r"\toprule",
                 rf"{title} & " + " & ".join(f"{int(n):,}".replace(",", "{,}") for n in sizes) + r" \\",
@@ -199,7 +228,8 @@ def load_ft(data: pathlib.Path) -> tuple:
         return None, {}
     per = {}
     for key, f, ds, _, _ in FT_TASKS:
-        cells = json.loads((d / f"{tag}_{f}.json").read_text())["cells"]
+        doc = json.loads((d / f"{tag}_{f}.json").read_text())
+        cells = doc["cells"]
         cells = cells if ds is None else cells[ds]
         per[key] = {init: {int(n[1:]): [rec for _, rec in sorted(seeds.items())]
                            for n, seeds in by_n.items() if re.fullmatch(r"N\d+", n)}
@@ -355,13 +385,25 @@ def merge_status(root: pathlib.Path) -> dict:
             for c in cols:
                 group[c][r["class_name"]] = r[c]
     group["L162_MASS"], group["R16_Q1_MASS"] = group["L162"], group["R16_Q1"]
+    names = list(group["L188"])
     out = {}
     for arm, g in group.items():
         out[arm] = {}
         for key, _, a, b in PAIRS:
-            same = [g[x] == g[y] for x in a for y in b]
+            same = [g[x] == g[y] for x in _side(names, a) for y in _side(names, b)]
             out[arm][key] = "merged" if all(same) else "partly" if any(same) else "apart"
     return out
+
+
+def _side(names: list, side) -> tuple:
+    """A pair's side as native class names: QCD classes by quark content, or the names given."""
+    qcd = [n for n in names if n.startswith("label_QCD_") and n != "label_QCD_light"]
+    flav = lambda n: n.removeprefix("label_QCD_")
+    if side == "qcd_with_b":
+        return tuple(n for n in qcd if "b" in flav(n))
+    if side == "qcd_with_c_no_b":
+        return tuple(n for n in qcd if "c" in flav(n) and "b" not in flav(n))
+    return side
 
 
 def table_pairs(fits, runs, fmt_pm, status, rows) -> str:
@@ -374,7 +416,7 @@ def table_pairs(fits, runs, fmt_pm, status, rows) -> str:
         for key, _, _, _ in PAIRS:
             vals = []
             for m in runs[arm]:
-                c = fits.get(m, {}).get("cells", {}).get(PRIMARY, {}).get("jc2_pairs", {}).get(PAIR_N, {}).get(key)
+                c = fits.get(m, {}).get("cells", {}).get(PRIMARY, {}).get(PAIR_DS, {}).get(PAIR_N, {}).get(key)
                 vals.append(None if c is None else 1 - c["auc"])
             cells.append(_cell(vals, len(runs[arm]), fmt_pm, 1e3) + mark[status.get(arm, {}).get(key, "apart")])
         lines.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
@@ -407,24 +449,37 @@ def table_mass(mass, runs, fmt_pm, rows) -> str:
 # What the text compares, as (configuration, reference): the ratio of their 1 - AUC, or of their
 # sigma_eff, taken run by run between runs of the same index -- they share the training stream
 # and the initial trunk -- as mean +- SD over the indices both have (Sec. Uncertainties).
-CMP_PROBES = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("L188", INIT), ("R16_Q1", INIT),
+CMP_PROBES = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("L188", INIT), ("L162", INIT),
+              ("R42_Q1", INIT), ("R16_Q1", INIT), ("L162_MASS", INIT), ("R16_Q1_MASS", INIT),
               ("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"),
-              ("FLAV_F0", "L188"), ("FLAV_F1", "L188"), ("FLAV_F1R", "L188"))
+              ("FLAV_F0", "L188"), ("FLAV_F1", "L188"), ("FLAV_F1R", "L188"), ("FLAV_F0", "R16_Q1"))
 CMP_PAIRS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("FLAV_F1", "FLAV_F0"),
-             ("FLAV_F1R", "FLAV_F1"), ("FLAV_F1R", "FLAV_F0"))
+             ("FLAV_F1R", "FLAV_F1"), ("FLAV_F1R", "FLAV_F0"), ("FLAV_F0", "R16_Q1"))
+CMP_MLP = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("L188", INIT), ("L162", INIT),
+           ("R42_Q1", INIT), ("R16_Q1", INIT))
 CMP_MASS = (("R16_Q1", "L188"), ("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))
 WORD = {"L188": "Full", "L162": "Res", "R42_Q1": "Mid", "R16_Q1": "Coarse", "L162_MASS": "ResMass",
-        "R16_Q1_MASS": "CoarseMass", INIT: "Init", "FLAV_F0": "Fzero", "FLAV_F1": "Fone", "FLAV_F1R": "Foner"}
-TASK_WORD = {"jc2": "JcTwo", "jc1": "JcOne", "top": "Top", "qg": "Qg", "qg_herwig": "QgHerwig"}
-PAIR_WORD = {"bc_vs_bq_cs": "Bc", "bb_vs_cc": "Bb", "bbqq_vs_ccqq": "Bbqq"}
+        "R16_Q1_MASS": "CoarseMass", INIT: "Init", "FLAV_F0": "Fzero", "FLAV_F1": "Fone", "FLAV_F1R": "Foner",
+        SCRATCH: "Scratch"}
+TASK_WORD = {("jc2_188", "macro_auc_ovr"): "JcTwo", ("jc2_188", "macro_auc_resonant"): "JcTwoRes",
+             ("jc2_188", "macro_auc_qcd"): "JcTwoQcd", ("jc2_188", "macro_auc_trained"): "JcTwoTrained",
+             ("jc1", "macro_auc_ovr"): "JcOne", ("top", "auc"): "Top", ("qg", "auc"): "Qg",
+             ("qg_herwig", "auc"): "QgHerwig"}
+PAIR_WORD = {"bc_vs_bq_cs": "Bc", "bb_vs_cc": "Bb", "bbqq_vs_ccqq": "Bbqq", "qcd_bb_vs_cc": "QcdBb",
+             "qcd_b_vs_light": "QcdB", "qcd_c_vs_light": "QcdC", "top": "Top", "qg": "Qg",
+             "qg_herwig": "QgHerwig"}
+FT_WORD = {"jc2": "JcTwo", "jc2_qcd": "JcTwoQcd", "jc1": "JcOne", "top": "Top", "qg": "Qg",
+           "qg_herwig": "QgHerwig"}
+SIZE_WORD = {1000: "EThree", 10000: "EFour", 100000: "EFive", 1000000: "ESix"}
+TEXT_SEP = " and "      # two runs in a sentence: "1.165 and 1.166"
 
 
 def _oma(x):
-    """1 - AUC, keeping the mark of a probe that stopped at the iteration limit."""
+    """1 - AUC, keeping the mark of a probe that did not converge."""
     return None if x is None else Unconverged(1 - x) if isinstance(x, Unconverged) else 1 - x
 
 
-def _ratio(runs, arm, ref, value, fmt_pm) -> str:
+def _ratio(runs, arm, ref, value, fmt_pm, sep=TEXT_SEP) -> str:
     """value(arm) / value(ref) run by run over the run indices both configurations have."""
     a = {m.rsplit("-s", 1)[1]: value(m) for m in runs[arm]}
     b = {m.rsplit("-s", 1)[1]: value(m) for m in runs[ref]}
@@ -436,64 +491,319 @@ def _ratio(runs, arm, ref, value, fmt_pm) -> str:
         else:
             x = a[k] / b[k]
             r.append(Unconverged(x) if isinstance(a[k], Unconverged) or isinstance(b[k], Unconverged) else x)
-    return _cell(r, len(both), fmt_pm)
+    return _cell(r, len(both), fmt_pm, sep=sep)
 
 
-def comparisons(em, fits, mass, runs, status, index, fmt_pm) -> None:
-    """The macros the results text quotes: MlstCmp<task or pair or mass probe><arm>Over<ref>;
-    MlstCmp<task>RandOverFull, each random partition (one run) over the 188-class run of its
-    run index, as mean +- SD over the partitions; MlstPairRand{Merged,Apart}<pair>, the binary
+def comparisons(em, fits, runs, status, index, fmt_pm) -> None:
+    """The probe macros the results text quotes: MlstCmp<task or pair><arm>Over<ref>, run by run;
+    MlstCmp<task or pair>RandOverFull, each random partition (one run) over the 188-class run of
+    its run index, mean +- SD over the partitions; MlstPairRand{Merged,Apart}<pair>, the binary
     probes' (1 - AUC) x 10^3 over the random partitions that merge the pair and over those that
-    keep it apart (one run each); and MlstMassInitOverConstant, the randomly initialized
-    network's sigma_eff over the target's own (a constant prediction)."""
-    for ds, met, _ in TASKS:
+    keep it apart (one run each; the resonant pairs only, since every partition merges QCD)."""
+    for ds, met, _ in TASKS + (TASKS_N[1],):
         n = _largest(fits, ds)
+        w = TASK_WORD[(ds, met)]
         for arm, ref in CMP_PROBES:
-            em.macro(f"MlstCmp{TASK_WORD[ds]}{WORD[arm]}Over{WORD[ref]}",
+            em.macro(f"MlstCmp{w}{WORD[arm]}Over{WORD[ref]}",
                      _ratio(runs, arm, ref, lambda m: _oma(_probe(fits, m, ds, n, met)), fmt_pm), index,
                      f"linear probe {ds} N={n}: (1 - {met}) of {arm} over {ref}, run by run")
         full = {m.rsplit("-s", 1)[1]: _oma(_probe(fits, m, ds, n, met)) for m in runs["L188"]}
         r = []
         for arm in RAND:
             for m in runs[arm]:
-                a, b = _oma(_probe(fits, m, ds, n, met)), full.get(m.rsplit("-s", 1)[1])
-                r.append(None if a is None or b is None else a / b)
-        em.macro(f"MlstCmp{TASK_WORD[ds]}RandOverFull", _cell(r, len(r), fmt_pm), index,
+                x, y = _oma(_probe(fits, m, ds, n, met)), full.get(m.rsplit("-s", 1)[1])
+                r.append(None if x is None or y is None else x / y)
+        em.macro(f"MlstCmp{w}RandOverFull", _cell(r, len(r), fmt_pm, sep=TEXT_SEP), index,
                  f"linear probe {ds} N={n}: (1 - {met}) of each random partition over the 188-class "
                  "run of the same index, mean +- SD over the partitions")
 
     def pair(m, key):
-        c = fits.get(m, {}).get("cells", {}).get(PRIMARY, {}).get("jc2_pairs", {}).get(PAIR_N, {}).get(key)
+        c = fits.get(m, {}).get("cells", {}).get(PRIMARY, {}).get(PAIR_DS, {}).get(PAIR_N, {}).get(key)
         return None if c is None else 1 - c["auc"]
     for key, _, _, _ in PAIRS:
         for arm, ref in CMP_PAIRS:
             em.macro(f"MlstCmp{PAIR_WORD[key]}{WORD[arm]}Over{WORD[ref]}",
                      _ratio(runs, arm, ref, lambda m: pair(m, key), fmt_pm), index,
                      f"binary probe {key}: (1 - AUC) of {arm} over {ref}, run by run")
+        if key.startswith("qcd_"):
+            continue
         full = {m.rsplit("-s", 1)[1]: pair(m, key) for m in runs["L188"]}
         r = []
         for arm in RAND:
             for m in runs[arm]:
                 x, y = pair(m, key), full.get(m.rsplit("-s", 1)[1])
                 r.append(None if x is None or y is None else x / y)
-        em.macro(f"MlstCmp{PAIR_WORD[key]}RandOverFull", _cell(r, len(r), fmt_pm), index,
+        em.macro(f"MlstCmp{PAIR_WORD[key]}RandOverFull", _cell(r, len(r), fmt_pm, sep=TEXT_SEP), index,
                  f"binary probe {key}: (1 - AUC) of each random partition over the 188-class run "
                  "of the same index, mean +- SD over the partitions")
         for side in ("merged", "apart"):
             ms = [m for arm in RAND if status[arm][key] == side for m in runs[arm]]
-            em.macro(f"MlstPairRand{side.title()}{PAIR_WORD[key]}", _cell([pair(m, key) for m in ms], len(ms), fmt_pm, 1e3),
-                     index, f"binary probe {key}: (1 - AUC) x 10^3 over the random partitions that "
+            em.macro(f"MlstPairRand{side.title()}{PAIR_WORD[key]}",
+                     _cell([pair(m, key) for m in ms], len(ms), fmt_pm, 1e3, sep=TEXT_SEP),
+                     index, f"binary probe {key}: (1 - AUC) x 10^3 over the {len(ms)} random partitions that "
                      + {"merged": "merge it", "apart": "keep it apart"}[side])
-    init = [mass[m]["arms"]["init"]["mlp"]["sigma_eff"] / mass[m]["arms"]["init"]["target"]["sigma_eff"]
-            if m in mass else None for m in runs[INIT]]
-    em.macro("MlstMassInitOverConstant", _cell(init, len(init), fmt_pm), index,
-             "mass resolution, MLP: sigma_eff of the randomly initialized network over the target's own")
-    for probe in ("ridge", "mlp"):
-        for arm, ref in CMP_MASS:
-            em.macro(f"MlstCmp{probe.title()}{WORD[arm]}Over{WORD[ref]}",
-                     _ratio(runs, arm, ref, lambda m: None if m not in mass else
-                            mass[m]["arms"][PRIMARY][probe]["sigma_eff"], fmt_pm), index,
-                     f"mass resolution, {probe}: sigma_eff of {arm} over {ref}, run by run")
+            em.macro(f"MlstPairRand{side.title()}{PAIR_WORD[key]}N", str(len(ms)), index,
+                     f"random partitions that {'merge' if side == 'merged' else 'keep apart'} {key} (count)")
+
+
+# ------------------------------------------------------------------ nonlinear probes
+def _mlp(mlp: dict, model: str, task: str):
+    ck = "init" if model.startswith("init-") else PRIMARY
+    c = mlp.get(model, {}).get("cells", {}).get(ck, {}).get(task)
+    return None if c is None else 1 - c["auc"]
+
+
+def table_mlp(mlp, runs, fmt_pm, rows) -> str:
+    """(1 - AUC) x 10^3 of the nonlinear probe (one hidden layer, three seeds averaged) on the
+    binary tasks at their largest training set."""
+    lines = [r"\begin{tabular}{l" + "c" * len(MLP_TASKS) + "}", r"\toprule",
+             r"pretraining & " + " & ".join(h for _, h in MLP_TASKS) + r" \\", r"\midrule"]
+    for arm in rows:
+        cells = [_cell([_mlp(mlp, m, t) for m in runs[arm]], len(runs[arm]), fmt_pm, 1e3) for t, _ in MLP_TASKS]
+        lines.append(LABEL[arm] + " & " + " & ".join(cells) + r" \\")
+    return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
+
+
+def mlp_macros(em, mlp, runs, index, fmt_pm) -> None:
+    unconverged = [(m, t) for m, d in mlp.items() for ck in d["cells"].values() for t, c in ck.items()
+                   if not c["mlp"]["all_converged"]]
+    em.macro("MlstMlpUnconverged", str(len(unconverged)), index, "nonlinear probes that did not reach "
+             "their plateau within the epoch cap (count)")
+    for t, _ in MLP_TASKS:
+        for arm, ref in CMP_MLP:
+            em.macro(f"MlstMlpCmp{PAIR_WORD[t]}{WORD[arm]}Over{WORD[ref]}",
+                     _ratio(runs, arm, ref, lambda m: _mlp(mlp, m, t), fmt_pm), index,
+                     f"nonlinear probe {t}: (1 - AUC) of {arm} over {ref}, run by run")
+
+
+# ------------------------------------------------------------------ masked inputs
+def _fill(fill: dict, mask: str, model: str, met: str = "macro_auc_ovr"):
+    ck = "init" if model.startswith("init-") else PRIMARY
+    c = fill.get(mask, {}).get(model, {}).get("cells", {}).get(ck, {}).get("jc2_188", {}).get(PAIR_N)
+    return None if c is None else 1 - c[met]
+
+
+def table_fill(fits, fill, runs, fmt_pm, rows) -> str:
+    """JetClass-II (188 classes) at 10^6 training jets: the probe on the features as computed,
+    and with the features the top-tagging and the quark/gluon data lack set to zero."""
+    heads = ("all features", "top-tagging features", "quark/gluon features")
+    lines = [r"\begin{tabular}{lccc}", r"\toprule", r"pretraining & " + " & ".join(heads) + r" \\",
+             r"\midrule"]
+    for arm in rows:
+        base = [_oma(_probe(fits, m, "jc2_188", PAIR_N, "macro_auc_ovr")) for m in runs[arm]]
+        masked = [[_fill(fill, k, m) for m in runs[arm]] for k in MASKS]
+        lines.append(LABEL[arm] + " & " + " & ".join(_cell(v, len(runs[arm]), fmt_pm, 1e3)
+                                                     for v in [base] + masked) + r" \\")
+    return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
+
+
+def fill_macros(em, fits, fill, runs, index, fmt_pm) -> None:
+    """MlstFill<mask><arm>: (1 - AUC) masked over unmasked, run by run; MlstFill<mask><arm>Over<ref>:
+    masked over masked between label sets, run by run."""
+    for k, kw in zip(MASKS, ("Top", "Qg")):
+        for arm in MAIN + (INIT,):
+            r = [None if (x := _fill(fill, k, m)) is None or (y := _oma(_probe(fits, m, "jc2_188", PAIR_N,
+                                                                              "macro_auc_ovr"))) is None
+                 else x / y for m in runs[arm]]
+            em.macro(f"MlstFill{kw}{WORD[arm]}", _cell(r, len(runs[arm]), fmt_pm, sep=TEXT_SEP), index,
+                     f"JetClass-II 188 at 1e6: (1 - AUC) with the {k} features zeroed over without, {arm}")
+        for arm, ref in (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("L188", INIT)):
+            em.macro(f"MlstFill{kw}{WORD[arm]}Over{WORD[ref]}",
+                     _ratio(runs, arm, ref, lambda m: _fill(fill, k, m), fmt_pm), index,
+                     f"JetClass-II 188 at 1e6, {k} features zeroed: (1 - AUC) of {arm} over {ref}")
+
+
+# ------------------------------------------------------------------ mass
+def _mass(mass: dict, model: str, what: str, key: str = "sigma_eff", group: str | None = None):
+    """what: 'mlp' (frozen features, median-centred target), 'head' (the mass node, raw target),
+    'uncorrected' (the soft-drop mass), 'target' (the centred target's own spread)."""
+    d = mass.get(model)
+    if d is None:
+        return None
+    ck = "init" if model.startswith("init-") else PRIMARY
+    if what == "uncorrected":
+        r = d["uncorrected"]
+    elif what == "head":
+        r = d.get("heads", {}).get(ck)
+        if r is None:
+            return None
+    elif what == "mlp":
+        r = d["arms"][ck]["mlp"]
+        if group:
+            return d["arms"][ck]["binned"]["mlp"]["group"][group].get(key)
+    else:
+        r = d["arms"][ck]["target"]
+    if group:
+        return r["binned"]["group"][group].get(key)
+    return r[key]
+
+
+def table_mass(mass, runs, fmt_pm, rows) -> str:
+    """sigma_eff of ln(m_reg / m_gen) on all, resonant and QCD test jets, and the median response
+    m_reg / m_gen: the uncorrected soft-drop mass, the mass node of the models pretrained with
+    the mass regression, and the MLP on frozen features (against the class-median-centred target,
+    so its response is centred by construction)."""
+    cols = ((None, "sigma_eff"), ("resonant", "sigma_eff"), ("qcd", "sigma_eff"), (None, "median_response"))
+    head = (r"pretraining & $\sigma_{\mathrm{eff}}$ & resonant & QCD & "
+            r"$m_{\mathrm{reg}}/m_{\mathrm{SD}}^{\mathrm{gen}}$ \\")
+    lines = [r"\begin{tabular}{lcccc}", r"\toprule", head, r"\midrule"]
+    unc = {round(_mass(mass, m, "uncorrected"), 12) for m in mass}
+    if len(unc) != 1:
+        raise SystemExit(f"FATAL: the uncorrected mass's sigma_eff differs between files: {sorted(unc)}")
+    any_m = next(iter(mass))
+    lines.append("uncorrected soft-drop mass & " + " & ".join(
+        _lone(_mass(mass, any_m, "uncorrected", k, g)) for g, k in cols) + r" \\")
+    lines.append(r"\midrule \multicolumn{5}{l}{mass node} \\")
+    for arm in [a for a in rows if a in MASS]:
+        lines.append(LABEL[arm] + " & " + " & ".join(
+            _cell([_mass(mass, m, "head", k, g) for m in runs[arm]], len(runs[arm]), fmt_pm) for g, k in cols)
+            + r" \\")
+    lines.append(r"\midrule \multicolumn{5}{l}{MLP on frozen features} \\")
+    for arm in rows:
+        vals = [_cell([_mass(mass, m, "mlp", k, g) for m in runs[arm]], len(runs[arm]), fmt_pm)
+                for g, k in cols[:3]]
+        lines.append(LABEL[arm] + " & " + " & ".join(vals) + r" & -- \\")
+    return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
+
+
+def mass_macros(em, mass, comp, runs, index, fmt_pm) -> None:
+    any_m = next(iter(mass))
+    em.macro("MlstMassUncorrected", _lone(_mass(mass, any_m, "uncorrected")), index,
+             "sigma_eff of the uncorrected soft-drop mass, ln(m_SD / m_gen), test jets")
+    for g in ("resonant", "qcd"):
+        em.macro(f"MlstMassUncorrected{g.title()}", _lone(_mass(mass, any_m, "uncorrected", group=g)), index,
+                 f"sigma_eff of the uncorrected soft-drop mass, {g} jets")
+    em.macro("MlstMassUncorrectedResponse", _lone(_mass(mass, any_m, "uncorrected", "median_response")),
+             index, "median m_SD / m_gen of the uncorrected soft-drop mass")
+    unc = _mass(mass, any_m, "uncorrected")
+    for arm in MASS:
+        em.macro(f"MlstMassHead{WORD[arm]}OverUncorr",
+                 _cell([None if (h := _mass(mass, m, "head")) is None else h / unc for m in runs[arm]],
+                       len(runs[arm]), fmt_pm, sep=TEXT_SEP), index,
+                 f"sigma_eff of the mass node of {arm} over the uncorrected soft-drop mass's")
+        em.macro(f"MlstMassHead{WORD[arm]}Response",
+                 _cell([_mass(mass, m, "head", "median_response") for m in runs[arm]], len(runs[arm]),
+                       fmt_pm, sep=TEXT_SEP), index, f"median m_reg / m_gen of the mass node of {arm}")
+        for g in ("resonant", "qcd"):
+            em.macro(f"MlstMassHead{WORD[arm]}{g.title()}",
+                     _cell([_mass(mass, m, "head", group=g) for m in runs[arm]], len(runs[arm]), fmt_pm,
+                           sep=TEXT_SEP), index, f"sigma_eff of the mass node of {arm}, {g} jets")
+    for arm, ref in CMP_MASS:
+        em.macro(f"MlstCmpMlp{WORD[arm]}Over{WORD[ref]}",
+                 _ratio(runs, arm, ref, lambda m: _mass(mass, m, "mlp"), fmt_pm), index,
+                 f"mass resolution, MLP on frozen features: sigma_eff of {arm} over {ref}, run by run")
+    for arm in (INIT, "L188", "R16_Q1"):
+        em.macro(f"MlstMassMlp{WORD[arm]}OverTarget",
+                 _cell([None if m not in mass else _mass(mass, m, "mlp") / _mass(mass, m, "target")
+                        for m in runs[arm]], len(runs[arm]), fmt_pm, sep=TEXT_SEP), index,
+                 f"MLP sigma_eff of {arm} over the spread of the class-median-centred target")
+    # the realised share of the mass-regression term in the training loss, lambda * L_reg /
+    # (L_cls + lambda * L_reg), mean over the epochs of each run (compute/<run>.json)
+    for arm in MASS:
+        sh = []
+        for m in runs[arm]:
+            ep = comp.get(m, {}).get("epochs", [])
+            v = [e["loss_share_reg"] for e in ep if e.get("loss_share_reg") is not None]
+            sh.append(100 * float(np.mean(v)) if v else None)
+        em.macro(f"MlstMassLossShare{WORD[arm]}", _cell(sh, len(runs[arm]), fmt_pm, sep=TEXT_SEP), index,
+                 f"share of the mass-regression term in the training loss of {arm}, mean over epochs, percent")
+
+
+# ------------------------------------------------------------------ sculpting
+SCULPT_EFFS = ("0.1", "0.01")
+
+
+def _sculpt(sculpt: dict, model: str, eff: str):
+    d = sculpt.get(model)
+    return None if d is None else d["working_points"][eff]["jsd"]
+
+
+def table_sculpt(sculpt, runs, fmt_pm, rows) -> str:
+    """Jensen-Shannon divergence (x 10^3) between the soft-drop mass distributions of all QCD test
+    jets and of those passing a cut on 1 - p_QCD at the stated QCD efficiency."""
+    lines = [r"\begin{tabular}{lcc}", r"\toprule",
+             r"pretraining & " + " & ".join(rf"$\epsilon_{{\mathrm{{QCD}}}} = {float(e):g}$" for e in SCULPT_EFFS)
+             + r" \\", r"\midrule"]
+    for arm in rows:
+        lines.append(LABEL[arm] + " & " + " & ".join(
+            _cell([_sculpt(sculpt, m, e) for m in runs[arm]], len(runs[arm]), fmt_pm, 1e3) for e in SCULPT_EFFS)
+            + r" \\")
+    return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
+
+
+def method_macros(em, root: pathlib.Path) -> None:
+    """Settings the methods text states, read from the scripts that use them."""
+    sc = root / "experiments/EVAL/mass_sculpting.py"
+    m = re.search(r"^WORKING_POINTS = \(([^)]*)\)", sc.read_text(), re.M)
+    effs = sorted((float(x) for x in m.group(1).split(",") if x.strip()), reverse=True)
+    if [str(e) for e in effs] != list(SCULPT_EFFS):
+        raise SystemExit(f"FATAL: {sc} WORKING_POINTS {effs} are not the table's {SCULPT_EFFS}")
+    for name, e in zip(("SculptEffHigh", "SculptEffLow"), effs):
+        em.macro(name, f"{100 * e:g}\\%", sc, "WORKING_POINTS", "QCD efficiency of a sculpting cut")
+    mr = root / "experiments/EVAL/mass_resolution.py"
+    m = re.search(r"^MIN_TRAIN_PER_CLASS = (\d+)", mr.read_text(), re.M)
+    em.macro("MassMinTrainPerClass", m.group(1), mr, "MIN_TRAIN_PER_CLASS",
+             "fewest training jets of a class the mass regression keeps")
+
+
+def sculpt_macros(em, sculpt, runs, index, fmt_pm) -> None:
+    for e, ew in zip(SCULPT_EFFS, ("Ten", "One")):
+        for arm in MAIN + MASS:
+            em.macro(f"MlstSculpt{WORD[arm]}{ew}", _cell([_sculpt(sculpt, m, e) for m in runs[arm]],
+                                                        len(runs[arm]), fmt_pm, 1e3, sep=TEXT_SEP), index,
+                     f"JSD x 10^3 of the QCD m_SD distribution at QCD efficiency {e}, {arm}")
+        for arm, ref in (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"), ("R16_Q1", "L188"), ("L162", "L188")):
+            em.macro(f"MlstSculpt{WORD[arm]}Over{WORD[ref]}{ew}",
+                     _ratio(runs, arm, ref, lambda m: _sculpt(sculpt, m, e), fmt_pm), index,
+                     f"JSD at QCD efficiency {e}: {arm} over {ref}, run by run")
+
+
+# ------------------------------------------------------------------ fine-tuning comparisons
+def ft_macros(em, per, runs, index, fmt_pm) -> None:
+    """MlstFtCmp<task><arm>OverScratch<size>: each run's (1 - AUC) over the mean of the
+    from-scratch seeds, mean +- SD over the runs; MlstFtCmp<task><arm>OverFull<size>: run by run."""
+    for key, _, _, met, _ in FT_TASKS:
+        sizes = _sizes(per, key)
+        for n in sizes:
+            sw = SIZE_WORD.get(n, "Max") if n != sizes[-1] or n in SIZE_WORD else "Max"
+            ref = per[key].get(SCRATCH, {}).get(n)
+            sc = float(np.mean([1 - r[met] for r in ref])) if ref else None
+            for arm in MAIN + MASS:
+                v = [_oma(_ft(per, key, m, n, met)) for m in runs[arm]]
+                em.macro(f"MlstFtCmp{FT_WORD[key]}{WORD[arm]}OverScratch{sw}",
+                         _cell([None if x is None or sc is None else x / sc for x in v], len(runs[arm]), fmt_pm,
+                               sep=TEXT_SEP), index,
+                         f"fine-tuning {key} N={n}: (1 - {met}) of each {arm} run over the from-scratch mean")
+            for arm, refa in (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"),
+                              ("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1")):
+                em.macro(f"MlstFtCmp{FT_WORD[key]}{WORD[arm]}OverFull{sw}" if refa == "L188" else
+                         f"MlstFtCmp{FT_WORD[key]}{WORD[arm]}Over{WORD[refa]}{sw}",
+                         _ratio(runs, arm, refa, lambda m: _oma(_ft(per, key, m, n, met)), fmt_pm), index,
+                         f"fine-tuning {key} N={n}: (1 - {met}) of {arm} over {refa}, run by run")
+
+
+def topcheck_macros(em, data: pathlib.Path, per, index, fmt_pm, missing: list) -> None:
+    """The recipe check at 10^4 top-tagging jets: (1 - AUC) x 10^3 after 100 epochs, the
+    188-class runs and the reference from scratch, beside the 20 epochs of the main read-out."""
+    f = data / "ft_mlst" / "topcheck_bench_metrics.json"
+    if not f.exists():
+        missing.append("top-tagging recipe check -- ft_mlst/topcheck_bench_metrics.json")
+        return
+    cells = json.loads(f.read_text())["cells"]["top"]
+    full = [1 - c["N10000"]["s1"]["auc"] for i, c in cells.items() if i.startswith("l188-")]
+    sc = [1 - r["auc"] for s, r in sorted(cells.get(SCRATCH, {}).get("N10000", {}).items())]
+    em.macro("MlstTopCheckFullLong", _cell(full, 3, fmt_pm, 1e3, sep=TEXT_SEP), f,
+             "top tagging at 1e4 jets, 100 epochs: (1 - AUC) x 10^3 of the 188-class runs")
+    em.macro("MlstTopCheckScratchLong", _cell(sc, 3, fmt_pm, 1e3, sep=TEXT_SEP), f,
+             "top tagging at 1e4 jets, 100 epochs: (1 - AUC) x 10^3 from scratch, three seeds")
+    short = per.get("top", {})
+    em.macro("MlstTopCheckFullShort", _cell([None if (r := short.get(f"l188-s{k}", {}).get(10000)) is None
+                                             else 1 - r[0]["auc"] for k in (1, 2, 3)], 3, fmt_pm, 1e3,
+                                            sep=TEXT_SEP), index,
+             "top tagging at 1e4 jets, the main read-out's epochs: (1 - AUC) x 10^3 of the 188-class runs")
+    em.macro("MlstTopCheckScratchShort", _cell([1 - r["auc"] for r in short.get(SCRATCH, {}).get(10000, [])], 3,
+                                               fmt_pm, 1e3, sep=TEXT_SEP), index,
+             "top tagging at 1e4 jets, the main read-out's epochs: (1 - AUC) x 10^3 from scratch")
 
 
 def gpu_name(device: str) -> str:
@@ -523,40 +833,51 @@ def table_compute(comp, runs, fmt_int) -> tuple[str, dict]:
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""]), hours
 
 
+SPREAD = ("Mean $\\pm$ standard deviation over \\MlstNRunsWord{} pretraining runs; for "
+          "configurations with \\RandFlavRuns{} runs both values are given, and a random partition has a "
+          "single run.")
 CAPTIONS = {
     "probes": ("tab:probes", "Linear probes on the frozen class token at the largest training set of each "
-               "task: $(1-\\mathrm{AUC})\\times10^{3}$, lower is better, with the macro AUC "
-               "(one-versus-rest) on JetClass-II and JetClass and the AUC on top and quark/gluon "
-               "tagging (q/g), and q/g also on jets generated with Herwig. Mean $\\pm$ standard deviation "
-               "over the pretraining runs. $^{*}$: a probe of the randomly initialized network stopped "
-               "at the iteration limit."),
+               "task: $(1-\\mathrm{AUC})\\times10^{3}$, lower is better. JetClass-II: the macro AUC over its "
+               "\\Kfull{} classes, and over its resonant and QCD classes separately; JetClass: the macro AUC; "
+               "top and quark/gluon (q/g) tagging: the AUC, q/g also on jets generated with Herwig. " + SPREAD +
+               " $^{*}$: a probe that did not converge."),
     "probes_n": ("tab:probesn", "Linear probes against the training-set size: "
-                 "$(1-\\mathrm{AUC})\\times10^{3}$, lower is better, with the macro AUC on "
-                 "JetClass-II and the AUC on top tagging. Mean $\\pm$ standard deviation over the "
-                 "pretraining runs. $^{*}$: a probe of the randomly initialized network stopped at the "
-                 "iteration limit."),
+                 "$(1-\\mathrm{AUC})\\times10^{3}$, lower is better; the JetClass-II macro AUC is also "
+                 "given over the classes present in the training subset. " + SPREAD +
+                 " $^{*}$: a probe that did not converge."),
     "pairs": ("tab:pairs", "Binary linear probes between JetClass-II classes on the largest training "
               "subset: $(1-\\mathrm{AUC})\\times10^{3}$, lower is better. $^{\\dagger}$: the label set "
               "merges the two sides into one class; $^{\\ddagger}$: it merges the first side with part "
-              "of the second. Mean $\\pm$ standard deviation over the pretraining runs; random partitions 1 to 5 have a "
-              "single pretraining run each. The $b$-quark boundary and the random flavor boundary lie "
-              "only in the four-quark decays $X\\to YY\\to QQQQ$, and the random partition with a random flavor boundary keeps "
-              "apart no decays that differ only by exchanging $b$ and $c$ quarks."),
-    "mass": ("tab:mass", "Resolution $\\sigma_{\\mathrm{eff}}$ of the mass-correction target $y$ of "
-             "Eq.~(\\ref{eq:masstarget}) regressed from the frozen features by a small multilayer "
-             "perceptron (MLP); lower is better. The MLP has one hidden layer and stops early on a "
-             "validation split; it is trained with __MLP_SEEDS__ seeds whose predictions are averaged. "
-             "Mean $\\pm$ standard deviation over the pretraining runs. The last row is the "
-             "$\\sigma_{\\mathrm{eff}}$ of the target itself, which a constant prediction gives."),
+              "of the second. " + SPREAD + " The $b$-quark boundary and the random flavor boundary lie "
+              "only in the four-quark decays $X\\to YY\\to QQQQ$; every label set but the \\Kfull-class one "
+              "merges all QCD classes."),
+    "mlp": ("tab:mlp", "Nonlinear probes (a multilayer perceptron with one hidden layer, trained to a "
+            "plateau with several seeds whose scores are averaged) on the binary tasks at their largest "
+            "training set: $(1-\\mathrm{AUC})\\times10^{3}$, lower is better. " + SPREAD),
+    "fill": ("tab:fill", "Linear probes on the \\Kfull-class JetClass-II task with \\FtSizeESix{} training jets: "
+             "$(1-\\mathrm{AUC})\\times10^{3}$ on the features as computed, and with the input features "
+             "that the top-tagging and the quark/gluon data lack set to zero, as in those data. " + SPREAD),
+    "mass": ("tab:mass", "Mass resolution $\\sigma_{\\mathrm{eff}}$ of $\\ln(m_{\\mathrm{reg}}/"
+             "m_{\\mathrm{SD}}^{\\mathrm{gen}})$ on the JetClass-II test jets with a generator-level match, "
+             "on all, resonant and QCD jets, and the median $m_{\\mathrm{reg}}/m_{\\mathrm{SD}}^{\\mathrm{gen}}$; "
+             "lower $\\sigma_{\\mathrm{eff}}$ is better. The mass node of the models pretrained with the mass "
+             "regression is scored on the target itself; the multilayer perceptron (MLP) on frozen features, "
+             "averaged over __MLP_SEEDS__ seeds, on the target with the median of each class subtracted. "
+             + SPREAD),
+    "sculpt": ("tab:sculpt", "Mass sculpting: Jensen--Shannon divergence $\\times10^{3}$ between the "
+               "$m_{\\mathrm{SD}}$ distributions of all QCD test jets and of those passing a cut on "
+               "$1-p_{\\mathrm{QCD}}$ at the QCD efficiency given; lower is less sculpting. " + SPREAD),
     "ft": ("tab:ft", "Full fine-tuning against the training-set size: $(1-\\mathrm{AUC})\\times10^{3}$, "
-           "lower is better, with the macro AUC (one-versus-rest) on JetClass-II and JetClass and the AUC "
-           "on top and quark/gluon (q/g) tagging, and q/g also on jets generated with Herwig. "
-           "Mean $\\pm$ standard deviation over the pretraining runs, one fine-tuning each; from "
-           "scratch, over its fine-tuning seeds."),
+           "lower is better, with the macro AUC (one-versus-rest) on JetClass-II, over all and over its QCD "
+           "classes, and on JetClass, and the AUC on top and quark/gluon (q/g) tagging, q/g also on jets "
+           "generated with Herwig. " + SPREAD + " Each pretrained run is fine-tuned once. From scratch: mean "
+           "$\\pm$ standard deviation over \\MlstFtRefSeedsWord{} seeds, which below the largest training set "
+           "of JetClass, top and q/g tagging also use different training subsets."),
     "ft_rej": ("tab:ftrej", "Background rejection $R_{50}$ and $R_{30}$ ($1/\\epsilon_B$ at 50\\% and "
-               "30\\% signal efficiency) after full fine-tuning on the whole training set. Mean $\\pm$ "
-               "standard deviation over the pretraining runs; from scratch, over its fine-tuning seeds. "
-               "Every value rests on at least __FEWEST__ background jets passing the cut."),
+               "30\\% signal efficiency) after full fine-tuning on the whole training set. " + SPREAD +
+               " From scratch: over its seeds. Every value rests on at least __FEWEST__ background jets "
+               "passing the cut."),
     "compute": ("tab:compute", "GPU types and GPU-hours of every pretraining run, summed over the "
                 "training and validation passes of its completed epochs as each epoch recorded them."),
 }
@@ -600,9 +921,9 @@ def mlp_seeds(mass: dict) -> str:
 
 def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict:
     data = root / "experiments/FIGS/data/v2"
-    fits, mass, comp = _load(data / "linprobe/fits3000"), _load(data / "linprobe/mass"), _load(data / "compute")
+    fits, comp = _load(data / FITS), _load(data / "compute")
     if not fits:
-        missing.append("linear probes -- experiments/FIGS/data/v2/linprobe/fits3000/")
+        missing.append(f"linear probes -- experiments/FIGS/data/v2/{FITS}/")
         return {}
     index = check_index(data)
     runs = _paper(root)
@@ -613,23 +934,54 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     em.macro("MlstPaperRuns", str(n_paper), root / "configs/arms/v2_paper_runs.txt", "runs (count)")
     if len(done) < n_paper:
         missing.append(f"linear probes: {len(done)} of {n_paper} paper runs")
+    status = merge_status(root)
+    UNCONVERGED_SEEN.clear()
     out = {"tables/mlst_probes.tex": _float("probes", table_probes(fits, runs, fmt_pm, MAIN + MASS + RAND + FLAV + (INIT,)), True),
            "tables/mlst_probes_n.tex": _float("probes_n", table_probes_n(fits, runs, fmt_pm, MAIN + (INIT,)), True),
-           "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, runs, fmt_pm, merge_status(root),
-                                                                MAIN + RAND + FLAV)),
-           "tables/mlst_mass.tex": _float("mass", table_mass(mass, runs, fmt_pm, MAIN + MASS + (INIT,)),
-                                          fill={"__MLP_SEEDS__": words(int(mlp_seeds(mass)))})}
-    comparisons(em, fits, mass, runs, merge_status(root), index, fmt_pm)
+           "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, runs, fmt_pm, status, MAIN + RAND + FLAV), True)}
+    comparisons(em, fits, runs, status, index, fmt_pm)
+    trained = {(m, ds, n) for (m, ds, n) in UNCONVERGED_SEEN if not m.startswith("init-")}
+    em.macro("MlstProbeUnconverged", str(len(trained)), index,
+             "linear probes of pretrained models that did not converge (count)")
+    em.macro("MlstProbeUnconvergedInit", str(len(UNCONVERGED_SEEN) - len(trained)), index,
+             "linear probes of the randomly initialized networks that did not converge (count)")
+    mlp = _load(data / MLP_FITS)
+    if mlp:
+        out["tables/mlst_mlp.tex"] = _float("mlp", table_mlp(mlp, runs, fmt_pm, MAIN + (INIT,)))
+        mlp_macros(em, mlp, runs, index, fmt_pm)
+    else:
+        missing.append(f"nonlinear probes -- experiments/FIGS/data/v2/{MLP_FITS}/")
+    fill = {k: _load(data / "fillcontrol" / k) for k in MASKS}
+    if all(fill.values()):
+        out["tables/mlst_fill.tex"] = _float("fill", table_fill(fits, fill, runs, fmt_pm, MAIN + (INIT,)))
+        fill_macros(em, fits, fill, runs, index, fmt_pm)
+    else:
+        missing.append("masked-input probes -- experiments/FIGS/data/v2/fillcontrol/")
+    head = _load(data / "head")
+    mass = {k.removesuffix("_mass"): v for k, v in head.items() if k.endswith("_mass")}
+    sculpt = {k.removesuffix("_sculpting"): v for k, v in head.items() if k.endswith("_sculpting")}
+    if mass:
+        out["tables/mlst_mass.tex"] = _float("mass", table_mass(mass, runs, fmt_pm, MAIN + MASS + (INIT,)),
+                                             fill={"__MLP_SEEDS__": words(int(mlp_seeds(mass)))})
+        mass_macros(em, mass, comp, runs, index, fmt_pm)
+    else:
+        missing.append("mass regression -- experiments/FIGS/data/v2/head/*_mass.json")
+    if sculpt:
+        out["tables/mlst_sculpt.tex"] = _float("sculpt", table_sculpt(sculpt, runs, fmt_pm, MAIN + MASS))
+        sculpt_macros(em, sculpt, runs, index, fmt_pm)
+    else:
+        missing.append("mass sculpting -- experiments/FIGS/data/v2/head/*_sculpting.json")
+    method_macros(em, root)
     ft_recipe(em, data, {m[len("mtx-"):] for k, v in runs.items() if k != INIT for m in v}, fmt_int, missing, words)
     tag, per = load_ft(data)
     if tag is None:
-        missing.append("fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/")
+        missing.append("fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/ (best70 and leg188)")
     else:
-        if tag != FT_TAGS[0]:
-            missing.append(f"fine-tuning: the read-out of the runs finished so far ({tag}), not every run")
         out["tables/mlst_ft.tex"] = _float("ft", table_ft(per, runs, fmt_pm, MAIN + MASS), True)
         body, fewest = table_ft_rej(per, runs, fmt_pm, MAIN + MASS)
         out["tables/mlst_ft_rej.tex"] = _float("ft_rej", body, True, fill={"__FEWEST__": fmt_int(fewest)})
+        ft_macros(em, per, runs, index, fmt_pm)
+        topcheck_macros(em, data, per, index, fmt_pm, missing)
     if comp:
         body, hours = table_compute(comp, runs, fmt_int)
         out["tables/compute.tex"] = _float("compute", body)
