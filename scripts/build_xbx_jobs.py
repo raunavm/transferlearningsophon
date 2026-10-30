@@ -100,6 +100,9 @@ SIGNALS = ("xbb_jc2",)
 # off the grid's RTX 3090s and, while the last fine-tunes queue for them, the V100s (2026-10-28)
 NOT_ON = ("NVIDIA-GeForce-RTX-3090", "Tesla-V100-SXM2-32GB")
 SCRATCH_GPU = "Tesla-V100-SXM2-32GB"
+# the dry run proves the plumbing only, so it does not wait for a V100 behind the fine-tuning
+# (2026-10-30: every V100 in use): any of these, which the fine-tunes do not use
+DRYRUN_GPUS = ("NVIDIA-A10", "NVIDIA-L40", "NVIDIA-RTX-A6000", "NVIDIA-A100-SXM4-80GB", "NVIDIA-L40S")
 SCRATCH_SIGNALS = ("xbs",)
 SCRATCH_SEEDS = (1, 2, 3)
 B3 = {"lr": "5e-4", "epochs": 50, "weight_decay": "0.01"}     # Sophon App. B.3
@@ -361,7 +364,7 @@ spec:
                 values: ["us-west"]
               - key: nvidia.com/gpu.product
                 operator: In
-                values: ["{gpu}"]
+                values: [{gpu}]
               - key: kubernetes.io/hostname
                 operator: NotIn
                 values: [{bad_nodes}]
@@ -375,13 +378,13 @@ spec:
 
 
 def scratch_spec(sig: str, seed: int, name=None, pin=PIN, out_root=SCRATCH_ROOT, epochs=B3["epochs"],
-                 mx=None, extract_args="") -> str:
+                 mx=None, extract_args="", gpus=(SCRATCH_GPU,)) -> str:
     """mx None: the superseded spec as it was written; else the window and mX are passed, the
     examples seen recorded, and an endpoints.json already written is not redone."""
     name = name or f"xbx-scratch-{sig.replace('_', '')}-s{seed}-raunav"
     new = mx is not None
     return SCRATCH_TEMPLATE.format(
-        sig=sig, seed=seed, name=name, image=BX.IMAGE, pin=pin, stage=STAGE, cfg=CFG, gpu=SCRATCH_GPU,
+        sig=sig, seed=seed, name=name, image=BX.IMAGE, pin=pin, stage=STAGE, cfg=CFG, gpu=", ".join(f'"{g}"' for g in gpus),
         out=f"{out_root}/{sig}/s{seed}", lr=B3["lr"], wd=B3["weight_decay"], epochs=epochs,
         need=_need(f"{STAGE}/pairs/{sig}/DONE", f"{STAGE}/{sig}/eval/DONE", f"{STAGE}/qcd/eval/DONE"),
         bad_nodes=", ".join(f'"{n}"' for n in BX.V2_GPU_FAULT_NODES),
@@ -423,7 +426,7 @@ def build(signals=SIGNALS, mx=MX) -> dict[str, str]:
     # the from-scratch chain proven on the stand-in: Sophon's own window (mX = 200)
     specs["job-xbx-scratch-dryrun-raunav.yaml"] = scratch_spec(
         "xbb_jc2", 1, name="xbx-scratch-dryrun-raunav", pin=PIN_IHEP, out_root=DRYRUN_ROOT, epochs=2,
-        mx=X.SOPHON_MX, extract_args=" --max-jets 200000")
+        mx=X.SOPHON_MX, extract_args=" --max-jets 200000", gpus=DRYRUN_GPUS)
     return specs
 
 
