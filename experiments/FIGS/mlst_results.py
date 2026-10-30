@@ -235,6 +235,27 @@ def table_probes(fits, runs, fmt_pm, rows) -> str:
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
+def bn_macros(em, fits, runs, index) -> None:
+    """MlstBnMaxDev: the largest |ratio - 1|, in per cent, of (1 - AUC) with the BatchNorm statistics
+    recomputed (best70_bn) over the checkpoint as trained (best70), over every pretrained run of the
+    paper and every task of Table probes at its largest training set."""
+    dev = []
+    for arm, ms in runs.items():
+        if arm in (INIT, INIT_BN):
+            continue
+        for m in ms:
+            cells = fits.get(m, {}).get("cells", {})
+            for ds, met, _ in TASKS:
+                n = _largest(fits, ds)
+                a, b = (cells.get(ck, {}).get(ds, {}).get(n) for ck in (PRIMARY, "best70_bn"))
+                if a is None or b is None:
+                    raise SystemExit(f"FATAL: {m} {ds} N={n}: no fit at {PRIMARY} or best70_bn")
+                dev.append(abs((1 - b[met]) / (1 - a[met]) - 1))
+    em.macro("MlstBnMaxDev", f"{100 * max(dev):.1f}\\%", index,
+             "largest |(1 - AUC) at best70_bn / (1 - AUC) at best70 - 1| over the paper's pretrained runs and "
+             "the tasks of Table probes, per cent")
+
+
 def table_probes_n(fits, runs, fmt_pm, rows) -> str:
     out = []
     for ds, met, title in TASKS_N:
@@ -981,6 +1002,9 @@ def topcheck_macros(em, data: pathlib.Path, per, index, fmt_pm, missing: list) -
     f = data / "ft_mlst" / "topcheck_bench_metrics.json"
     if not f.exists():
         missing.append("top-tagging recipe check -- ft_mlst/topcheck_bench_metrics.json")
+        for k in ("MlstTopCheckFullLong", "MlstTopCheckScratchLong", "MlstTopCheckFullShort",
+                  "MlstTopCheckScratchShort"):
+            em.macro(k, r"\pending{recipe check}", index, "the recipe check is not read out yet")
         return
     cells = json.loads(f.read_text())["cells"]["top"]
     full = [1 - c["N10000"]["s1"]["auc"] for i, c in cells.items() if i.startswith("l188-")]
@@ -1234,6 +1258,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
            "tables/mlst_probes_n.tex": _float("probes_n", table_probes_n(fits, runs, fmt_pm, MAIN + (INIT, INIT_BN)), True),
            "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, runs, fmt_pm, status, MAIN + RAND + FLAV), True)}
     comparisons(em, fits, runs, status, index, fmt_pm)
+    bn_macros(em, fits, runs, index)
     trained = {(m, ds, n) for (m, ds, n) in UNCONVERGED_SEEN if not m.startswith(("init-", "initbn-"))}
     em.macro("MlstProbeUnconverged", str(len(trained)), index,
              "linear probes of pretrained models that did not converge (count)")

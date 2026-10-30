@@ -311,3 +311,19 @@ def test_the_sculpting_floor_is_the_divergence_of_a_random_selection():
     other = {"hist_before": p.tolist(), "working_points": {"0.01": {"n_pass": 4000}}}
     with pytest.raises(SystemExit):
         M._sculpt_floor({"a": doc, "b": other}, "0.01")
+
+
+def test_the_batchnorm_check_reports_the_largest_change_and_needs_both_checkpoints():
+    def cell(auc):
+        return {"1000": {met: auc for _, met, _ in M.TASKS} | {"converged": True}}
+    def fit(a, b):
+        return {"cells": {M.PRIMARY: {ds: cell(a) for ds, _, _ in M.TASKS},
+                          "best70_bn": {ds: cell(b) for ds, _, _ in M.TASKS}}}
+    fits = {"mtx-l188-s1": fit(0.98, 0.98), "mtx-l188-s2": fit(0.98, 0.979), "init-s1": fit(0.5, 0.9)}
+    runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2"], M.INIT: ["init-s1"]}
+    em = _Em()
+    M.bn_macros(em, fits, runs, None)
+    assert em.m["MlstBnMaxDev"] == "5.0\\%"           # 0.021 / 0.020; the untrained trunk is left out
+    del fits["mtx-l188-s2"]["cells"]["best70_bn"]["top"]
+    with pytest.raises(SystemExit, match="best70_bn"):
+        M.bn_macros(_Em(), fits, runs, None)

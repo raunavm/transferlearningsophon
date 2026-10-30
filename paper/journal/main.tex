@@ -502,7 +502,10 @@ from the weight of the mass term.
 \Kfull-class run give a randomly initialized network with the same architecture. It is
 evaluated by the same linear probes and mass regression as the pretrained models and serves
 as their lower reference. Its batch normalization layers keep their initial statistics, so its
-inputs are not rescaled the way a pretrained model's are.
+inputs are not rescaled the way a pretrained model's are. A second version of each randomly
+initialized network has these statistics recomputed on training jets, as in the check of
+Section~\ref{sec:design}, so that a comparison with it does not rest on the scaling of the
+inputs alone.
 
 \subsection{Evaluation}\label{sec:eval}
 
@@ -711,12 +714,15 @@ difference near this threshold is not interpreted.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{probes_vs_training_size.pdf}
-\caption{Linear-probe $\oma$ against the number of training jets on JetClass-II (macro
-AUC, left) and top tagging (right), for each level of the hierarchy and for the randomly
-initialized network. Points are the mean over the pretraining runs available and error bars
-the standard deviation; the series are offset slightly along the horizontal axis so that
-coinciding points remain visible. Table~\ref{tab:probesn} gives the values, scaled as stated in
-its caption, and marks where a run is still missing.}
+\caption{Linear-probe $\oma$ against the number of training jets for each level of the
+hierarchy and for the randomly initialized network, scaled as in Table~\ref{tab:probesn}: from
+left, JetClass-II (macro AUC over all classes), JetClass (macro AUC), top tagging and
+quark/gluon tagging. Both axes are logarithmic. Points are the mean over the pretraining runs
+and error bars the standard deviation; the series are offset slightly along the horizontal axis
+so that coinciding points remain visible. At \FtSizeEThree{} and \FtSizeEFour{} training jets,
+the JetClass-II macro AUC includes classes absent from the training subset, which score as a
+random guess for every model (Appendix~\ref{app:ftrecipe}); Table~\ref{tab:probesn} also gives
+the average over the classes present, in which the label sets keep the same order.}
 \label{fig:probesn}
 \end{figure*}
 Table~\ref{tab:probes} gives the linear-probe performance on the largest training set of each
@@ -755,11 +761,14 @@ with a $b$-quark boundary (\MlstCmpJcTwoFoneOverFull) and with a random flavor b
 \includegraphics[width=\linewidth]{probes_vs_label_set.pdf}
 \caption{Linear-probe $\oma$ on the largest training set of each task for every pretraining
 configuration of Table~\ref{tab:probes} except those with the auxiliary mass regression,
-scaled as in that table; JetClass-II and JetClass use the macro-averaged AUC. Markers are the
-mean over the pretraining runs of a configuration and error bars their standard deviation;
-short vertical ticks mark the individual runs, and each random partition has a single run.
-Dashed lines mark the mean of each level of the hierarchy. Where the randomly initialized
-network lies beyond the axis, its value is printed at the edge of the panel.}
+scaled as in that table: the JetClass-II macro AUC over all classes and over its QCD classes,
+the JetClass macro AUC, and the AUC of top tagging and of quark/gluon tagging on Pythia and on
+Herwig jets. Markers are the mean over the pretraining runs of a configuration, and error bars
+the standard deviation over \MlstNRunsWord{} runs or the range of \RandFlavRuns; small dots
+just below each marker show the individual runs, and each random partition has a single run.
+Dashed lines mark the mean of each level of the hierarchy. Horizontal axes are logarithmic, so
+equal ratios appear as equal distances. Where the randomly initialized network lies beyond the
+axis, an arrow at the edge of the panel gives its value.}
 \label{fig:labelsetprobes}
 \end{figure}
 
@@ -807,8 +816,8 @@ JetClass-II classes.
 \caption{Binary linear-probe $\oma$ between pairs of JetClass-II classes on the largest
 training set, scaled as in Table~\ref{tab:pairs}, for every pretraining configuration of that
 table. Open markers show label sets that merge the pair, and partly filled markers label sets
-that merge part of it; markers, ticks and lines are otherwise as in
-Fig.~\ref{fig:labelsetprobes}. Panels whose values span a wide range use a logarithmic axis.}
+that merge part of it; markers, dots, error bars, lines and axes are otherwise as in
+Fig.~\ref{fig:labelsetprobes}.}
 \label{fig:pairs}
 \end{figure}
 Pretraining on the \Kcoarse-class label set, which merges every pair in the table, increases
@@ -1239,7 +1248,10 @@ Table~\ref{tab:probesn} gives the values shown in Fig.~\ref{fig:probesn}.
 \section{Linear probes with BatchNorm statistics recomputed}\label{app:bn}
 % ============================================================================
 
-\pending{every linear probe on the checkpoint with recomputed BatchNorm statistics}
+Every linear probe of Table~\ref{tab:probes} was repeated on the selected checkpoint with its
+BatchNorm statistics recomputed on \DesignBnJets{} training jets. For every pretrained run and
+every task of that table, $\oma$ changes by at most \MlstBnMaxDev, far less than the differences
+between label sets, so no result depends on the BatchNorm statistics accumulated in training.
 
 % ============================================================================
 \section{Test-sample uncertainty}\label{app:boot}

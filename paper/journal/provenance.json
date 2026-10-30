@@ -5321,6 +5321,12 @@
     "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
     "value": "0.2986"
   },
+  "MlstBnMaxDev": {
+    "json_path": "largest |(1 - AUC) at best70_bn / (1 - AUC) at best70 - 1| over the paper's pretrained runs and the tasks of Table probes, per cent",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.5\\%"
+  },
   "MlstBootResamples": {
     "json_path": "no bootstrap pulled yet",
     "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
@@ -9820,6 +9826,30 @@
     "sha256": "b04562b14ea8cbc7dc7facbbd753be1c974b752d0280be3c4f8da4ebea61ad56",
     "source_file": "configs/arms/v2_paper_runs.txt",
     "value": "50\\%"
+  },
+  "MlstTopCheckFullLong": {
+    "json_path": "the recipe check is not read out yet",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "\\pending{recipe check}"
+  },
+  "MlstTopCheckFullShort": {
+    "json_path": "the recipe check is not read out yet",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "\\pending{recipe check}"
+  },
+  "MlstTopCheckScratchLong": {
+    "json_path": "the recipe check is not read out yet",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "\\pending{recipe check}"
+  },
+  "MlstTopCheckScratchShort": {
+    "json_path": "the recipe check is not read out yet",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "\\pending{recipe check}"
   },
   "PairedAnomalyClassSumMatchedLateXBbFourthreeOverOneeighteight": {
     "json_path": "families.class_sum_matched.label_X_bb.2000.levels.{43,188}.ln_sigma_min (epochs 70-79 mean)",

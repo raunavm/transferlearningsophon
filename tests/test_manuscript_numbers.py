@@ -203,7 +203,8 @@ def test_every_macro_the_manuscript_uses_is_one_the_generator_defines(path):
                    if m.startswith(("Probe", "Test", "Recovery", "Bench", "Anomaly",
                                     "Mass", "Aoj", "Survival", "Leg",
                                     "Acc", "Mde", "Pair", "SignAgree", "Tost",
-                                    "Trend", "Use", "Vocab", "Design", "Rand", "Ft", "Lit", "Vcb"))}
+                                    "Trend", "Use", "Vocab", "Design", "Rand", "Ft", "Lit", "Vcb",
+                                    "Mlst", "Lp", "Fill", "Sculpt", "Compute"))}
     # NOT "- local": a result macro defined by hand in this file is precisely the
     # hazard named above, so a local definition aggravates it, never excuses it.
     undefined = sorted((result_like - defined) | (result_like & local))

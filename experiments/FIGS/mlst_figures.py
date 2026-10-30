@@ -158,14 +158,14 @@ def figure_sizes(root, outdir) -> list:
     fig, axes = plt.subplots(1, len(SIZE_PANELS), figsize=(style.PANEL * len(SIZE_PANELS), style.PANEL))
     for ax, (ds, met, title) in zip(axes, SIZE_PANELS):
         rows = series(M, fits, runs, ds, met, tuple(CLASSES) + (M.INIT,))
-        _lines(ax, M, rows)
+        _lines(ax, M, rows, 1e3)          # (1 - AUC) x 10^3, the scale of every table
         ax.set_xscale("log")
         ax.set_yscale("log")
-        ys = [p[1] for pts in rows.values() for p in pts]
+        ys = [1e3 * p[1] for pts in rows.values() for p in pts]
         _log_axis(ax.yaxis, min(ys), max(ys))
         ax.set_xlabel("Training jets")
         ax.set_title(title, loc="left", fontsize="medium")
-    axes[0].set_ylabel(r"$1-\mathrm{AUC}$")
+    axes[0].set_ylabel(r"$(1-\mathrm{AUC})\times10^{3}$")
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=5, bbox_to_anchor=(0.5, 1.0), frameon=False)
     fig.tight_layout()
@@ -383,7 +383,7 @@ def figure_finetune(root, outdir) -> list:
                     pts.append((n, *_spread(v), v))
             rows[row] = pts
         rows[M.SCRATCH] = [(n, *_spread([1 - r[met] for r in ref[n]]), None) for n in sizes if n in ref]
-        _lines(ax, M, rows)
+        _lines(ax, M, rows, 1e3)
         for k, (row, pts) in enumerate(rows.items()):
             if row == M.SCRATCH or not pts:
                 continue
@@ -395,7 +395,7 @@ def figure_finetune(root, outdir) -> list:
         for a in (ax, rx):
             a.set_xscale("log")
         ax.set_yscale("log")
-        ys = [p[1] for pts in rows.values() for p in pts]
+        ys = [1e3 * p[1] for pts in rows.values() for p in pts]
         _log_axis(ax.yaxis, min(ys), max(ys))
         rx.set_yscale("log")
         rs = [p[1] / sc[p[0]] for row, pts in rows.items() if row != M.SCRATCH for p in pts if p[0] in sc]
@@ -404,7 +404,7 @@ def figure_finetune(root, outdir) -> list:
             _log_axis(rx.yaxis, min(rs) / 1.15, max(max(rs), 1.0) * 1.15)
         rx.set_xlabel("Training jets")
         ax.set_title(title, loc="left", fontsize="medium")
-    axes[0, 0].set_ylabel(r"$1-\mathrm{AUC}$")
+    axes[0, 0].set_ylabel(r"$(1-\mathrm{AUC})\times10^{3}$")
     axes[1, 0].set_ylabel("Ratio to\nfrom scratch")
     handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=4, bbox_to_anchor=(0.5, 1.0), frameon=False)
