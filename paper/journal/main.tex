@@ -991,9 +991,9 @@ framework. On JetClass-II and JetClass, a model is fine-tuned for \MlstFtEpochsE
 tagging for \MlstFtBenchEpochs{} epochs at every size. An epoch draws at least
 \MlstFtMinEpochJets{} training jets, so at \FtSizeEThree{} jets it passes over the training set
 several times. The epoch with the highest validation accuracy is selected on the same
-\MlstFtValJcii{} jets in every epoch on JetClass-II, and on \MlstFtValSmall{} jets drawn anew in
-each epoch at \FtSizeEThree{} and \FtSizeEFour{} jets and \MlstFtValLarge{} at the larger sizes on
-the other tasks.
+\MlstFtValJcii{} jets in every epoch on JetClass-II, and on jets drawn anew in each epoch on the
+other tasks: \MlstFtValSmall{} on JetClass, and on top and quark/gluon tagging \MlstFtValSmall{}
+at \FtSizeEThree{} and \FtSizeEFour{} training jets and \MlstFtValLarge{} at the larger sizes.
 The new head is initialized afresh for every fine-tuning run, and the pretrained weights are
 loaded from the selected checkpoint, whose hash every run records. Each fine-tuning run is
 evaluated at its epoch of highest validation accuracy, the earliest in case of a tie; a run that

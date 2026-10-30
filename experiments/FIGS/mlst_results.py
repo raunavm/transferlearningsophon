@@ -325,6 +325,7 @@ def _one(cells: list, key: str, what: str):
 # max(1, int(0.3 * epochs)) epochs. The JetClass fine-tuning sets no scheduler, so it runs this.
 FLAT_DECAY = {"share": "30\\%", "to": "1\\%"}
 LEGS_SPEC = "experiments/FT/k8s/job-ft-v2-legs-best70-l188-s3-raunav.yaml"
+BENCH_SPEC = "experiments/FT/k8s/job-ft-v2-bench-best70-l188-s1-top-raunav.yaml"
 
 
 def ft_recipe(em, data: pathlib.Path, paper_inits: set, fmt_int, missing: list, words=str) -> None:
@@ -361,6 +362,23 @@ def ft_recipe(em, data: pathlib.Path, paper_inits: set, fmt_int, missing: list, 
     em.macro("MlstFtHeadDecayShare", FLAT_DECAY["share"], spec, "no --lr-scheduler: weaver 0.4.17 flat+decay, "
              "the head's last epochs")
     em.macro("MlstFtHeadDecayTo", FLAT_DECAY["to"], spec, "no --lr-scheduler: weaver 0.4.17 flat+decay, final factor")
+    em.macro("MlstFtMinEpochJets", fmt_int(min(int(c["samples_per_epoch"]) for c in pre)), src,
+             "cells[best70].samples_per_epoch (smallest)")
+    jc2 = [c for c in legs if c["leg"] == "1"]
+    if jc2:
+        if _one(jc2, "val_rule", "JetClass-II fine-tuning") != "fixed-sample-whole-pass":
+            raise SystemExit("FATAL: the JetClass-II fine-tuning does not validate on one fixed sample")
+        em.macro("MlstFtValJcii", fmt_int(int(_one(jc2, "val_jets", "JetClass-II fine-tuning"))), src,
+                 "cells[best70, leg 1].val_jets")
+    # JetClass draws its validation jets anew each epoch at one size; top and q/g at two (val_for)
+    val = set(re.findall(r"--samples-per-epoch-val (\d+)", spec.read_text()))
+    bench_spec = data.parents[3] / BENCH_SPEC
+    vf = re.search(r'val_for \(\) \{ if \[ "\$1" -le 10000 \]; then echo (\d+); else echo (\d+); fi; \}',
+                   bench_spec.read_text())
+    if len(val) != 1 or not vf or vf.group(1) not in val:
+        raise SystemExit(f"FATAL: the validation sizes in {LEGS_SPEC} and {BENCH_SPEC} are not the ones the paper states")
+    em.macro("MlstFtValSmall", fmt_int(int(vf.group(1))), spec, "JetClass --samples-per-epoch-val; top and q/g at N <= 1e4")
+    em.macro("MlstFtValLarge", fmt_int(int(vf.group(2))), bench_spec, "top and q/g --samples-per-epoch-val at N > 1e4")
     gpus = sorted({c["gpu_device_name"] for c in pre})
     em.macro("MlstFtGpuTypes", " and ".join(gpu_name(g) for g in gpus), src, "cells[best70].gpu_device_name")
     em.macro("MlstFtCellsDone", fmt_int(len(pre)), src, "DONE paper-run fine-tuning cells (count)")
@@ -371,9 +389,14 @@ def ft_recipe(em, data: pathlib.Path, paper_inits: set, fmt_int, missing: list, 
                  src, "cells[ref_v100].gpu_device_name")
         if _one(ref, "recipe", "from-scratch references") != "part-from-scratch":
             raise SystemExit("FATAL: a reference cell is not at ParT's from-scratch recipe")
+        if any(c["weight_decay"] != "0" for c in ref if c["leg"] in ("1", "2")):
+            raise SystemExit("FATAL: a JetClass or JetClass-II reference has weight decay; the paper says none")
+        bref = [c for c in ref if c["leg"] in ("top", "qg")]
+        em.macro("MlstFtRefWeightDecayBench", _one(bref, "weight_decay", "top and q/g references") if bref
+                 else r"\pending{V100 references}", src, "cells[ref_v100, top/qg].weight_decay")
     else:
         missing.append("from-scratch references on V100 -- ref_v100 cells")
-        for k in ("MlstFtRefLr", "MlstFtRefGpuTypes", "MlstFtRefSeedsWord"):
+        for k in ("MlstFtRefLr", "MlstFtRefGpuTypes", "MlstFtRefSeedsWord", "MlstFtRefWeightDecayBench"):
             em.macro(k, r"\pending{V100 references}", src, "no ref_v100 cell yet")
 
 

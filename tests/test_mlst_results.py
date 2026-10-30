@@ -165,13 +165,17 @@ class _Em:
         self.m[name] = body
 
 
-def _recipe_tree(tmp, cells, spec_text="weaver --data-train x\n"):
+BENCH_VAL = 'val_for () { if [ "$1" -le 10000 ]; then echo 20000; else echo 200000; fi; }\n'
+
+
+def _recipe_tree(tmp, cells, spec_text="weaver --data-train x --samples-per-epoch-val 20000\n"):
     data = tmp / "experiments/FIGS/data/v2"
     (data / "ft_mlst").mkdir(parents=True)
     (data / "ft_mlst/manifests.json").write_text(json.dumps(cells))
     spec = tmp / M.LEGS_SPEC
     spec.parent.mkdir(parents=True)
     spec.write_text(spec_text)
+    (tmp / M.BENCH_SPEC).write_text(BENCH_VAL)
     return data
 
 
@@ -179,7 +183,9 @@ def _cell(leg, init, n, **kw):
     c = {"leg": leg, "init": init, "n_train": n, "ft_seed": "1", "lr": "1e-4", "head_lr_mult": "50",
          "weight_decay": "0.01", "epochs": "20" if leg in ("top", "qg") else {"1000": "50", "1000000": "10"}[n],
          "lr_schedule": "constant" if leg in ("top", "qg") else None, "recipe": None, "batch_size": "512",
-         "ckpt_rule": "best70", "gpu_device_name": "Tesla V100-SXM2-32GB"}
+         "ckpt_rule": "best70", "gpu_device_name": "Tesla V100-SXM2-32GB",
+         "samples_per_epoch": "10000" if n == "1000" else n,
+         "val_jets": "20480" if leg == "1" else None, "val_rule": "fixed-sample-whole-pass" if leg == "1" else "rotating-stream"}
     c.update(kw)
     return c
 
@@ -194,6 +200,8 @@ def test_the_recipe_macros_come_from_every_cell_and_one_stray_value_stops_the_bu
     assert em.m["MlstFtEpochsEThree"] == "50" and em.m["MlstFtEpochsESix"] == "10"
     assert em.m["MlstFtGpuTypes"] == "V100" and em.m["MlstFtCellsDone"] == "3"
     assert em.m["MlstFtRefLr"].startswith(r"\pending") and any("V100" in x for x in missing)
+    assert em.m["MlstFtMinEpochJets"] == "10000" and em.m["MlstFtValJcii"] == "20480"
+    assert em.m["MlstFtValSmall"] == "20000" and em.m["MlstFtValLarge"] == "200000"
     cells["best70/leg1/l188-s1/N1000/s1"]["lr"] = "2e-4"
     with pytest.raises(SystemExit, match="expected one value"):
         M.ft_recipe(_Em(), _recipe_tree(tmp_path / "b", cells), {"l188-s1"}, str, [], MT.words)
@@ -201,10 +209,17 @@ def test_the_recipe_macros_come_from_every_cell_and_one_stray_value_stops_the_bu
     with pytest.raises(SystemExit, match="sets a scheduler"):
         M.ft_recipe(_Em(), _recipe_tree(tmp_path / "c", cells, "--lr-scheduler none\n"), {"l188-s1"}, str, [], MT.words)
     cells.update({f"ref_v100/jc2/leg1/scratch-v2/N1000/s{s}": _cell("1", "scratch-v2", "1000", lr="1e-3", ft_seed=str(s),
-                                                                       recipe="part-from-scratch") for s in (1, 2, 3)})
+                                                                       recipe="part-from-scratch", weight_decay="0")
+                  for s in (1, 2, 3)})
+    cells.update({f"ref_v100/bench/leg_top/scratch-v2/N1000/s{s}": _cell("top", "scratch-v2", "1000", lr="1e-3", ft_seed=str(s),
+                                                                         recipe="part-from-scratch") for s in (1, 2, 3)})
     em = _Em()
     M.ft_recipe(em, _recipe_tree(tmp_path / "d", cells), {"l188-s1"}, str, [], MT.words)
     assert em.m["MlstFtRefLr"] == r"\ensuremath{10^{-3}}" and em.m["MlstFtRefSeedsWord"] == "three"
+    assert em.m["MlstFtRefWeightDecayBench"] == "0.01"
+    cells["ref_v100/jc2/leg1/scratch-v2/N1000/s1"]["weight_decay"] = "0.01"
+    with pytest.raises(SystemExit, match="has weight decay"):
+        M.ft_recipe(_Em(), _recipe_tree(tmp_path / "e", cells), {"l188-s1"}, str, [], MT.words)
 
 
 def test_the_mass_table_shows_the_uncorrected_mass_the_mass_node_and_the_mlp():

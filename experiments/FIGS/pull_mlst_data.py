@@ -53,7 +53,7 @@ EVAL = pathlib.Path("/data/results/eval")
 MTX = pathlib.Path("/data/results/mtx_v2")
 N_EPOCHS = 80
 MANIFEST_KEYS = ("leg", "init", "n_train", "ft_seed", "lr", "head_lr_mult", "weight_decay", "epochs",
-                 "lr_schedule", "recipe", "batch_size", "samples_per_epoch", "ckpt_rule",
+                 "lr_schedule", "recipe", "batch_size", "samples_per_epoch", "val_jets", "val_rule", "ckpt_rule",
                  "gpu_device_name", "node_name", "repo_commit", "checkpoint_sha256")
 
 
