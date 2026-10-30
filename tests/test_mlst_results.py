@@ -271,3 +271,13 @@ def test_the_bootstrap_table_gives_the_spread_over_runs_and_from_the_test_sample
     boot["probe"]["qg_N1600000"]["b"] = 100
     with pytest.raises(SystemExit, match="different numbers of resamples"):
         M.boot_macros(_Em(), boot, worst, None)
+
+
+def test_the_batchnorm_recomputed_random_network_is_its_own_row_read_at_init_bn():
+    assert M._ck("init-s2") == "init" and M._ck("initbn-s2") == "init_bn" and M._ck("mtx-l188-s2") == M.PRIMARY
+    runs = M._paper(ROOT)
+    assert runs[M.INIT_BN] == ["initbn-s1", "initbn-s2", "initbn-s3"]
+    mlp = {"initbn-s1": {"cells": {"init_bn": {"top": {"auc": 0.97}, "jc2_188": {"macro_auc_qcd": 0.9}}}}}
+    assert M._mlp(mlp, "initbn-s1", "top") == pytest.approx(0.03)
+    assert M._mlp(mlp, "initbn-s1", "jc2_188_qcd") == pytest.approx(0.1)
+    assert M._mlp(mlp, "init-s1", "top") is None

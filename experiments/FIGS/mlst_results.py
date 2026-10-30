@@ -26,7 +26,7 @@ Outputs:
   tables/mlst_probes.tex     linear probes at the largest training set, every task
   tables/mlst_probes_n.tex   the same at every training-set size
   tables/mlst_pairs.tex      binary probes between JetClass-II classes, merged or kept apart
-  tables/mlst_mlp.tex        nonlinear probes on the binary tasks
+  tables/mlst_mlp.tex        nonlinear probes on every task a conclusion rests on
   tables/mlst_fill.tex       JetClass-II probes with the downstream data's missing features zeroed
   tables/mlst_mass.tex       mass resolution: mass node, frozen features, uncorrected mass
   tables/mlst_sculpt.tex     QCD mass sculpting
@@ -52,14 +52,28 @@ RAND = tuple(f"RAND2_p{k}" for k in range(1, 6))
 FLAV = ("FLAV_F0", "FLAV_F1", "FLAV_F1R")
 INIT = "INIT"
 INIT_MODELS = ("init-s1", "init-s2", "init-s3")
+# the randomly initialized networks with their BatchNorm statistics recomputed on the training jets
+# of the best70 twins (experiments/MTX/bn_twins_v2.py --init): fits_v3_initbn, checkpoint init_bn
+INIT_BN = "INIT_BN"
+INIT_BN_MODELS = ("initbn-s1", "initbn-s2", "initbn-s3")
+
+
+def _ck(model: str) -> str:
+    """The checkpoint a model is reported at."""
+    return "init" if model.startswith("init-") else "init_bn" if model.startswith("initbn-") else PRIMARY
 LABEL = {"L188": r"\Kfull{} classes", "L162": r"\Kres{} classes", "R42_Q1": r"\Kmid{} classes",
          "R16_Q1": r"\Kcoarse{} classes", "L162_MASS": r"\Kres{} classes, mass regression",
          "R16_Q1_MASS": r"\Kcoarse{} classes, mass regression", "FLAV_F0": "random partition, no flavor boundary",
          "FLAV_F1": r"random partition, $b$-quark boundary",
          "FLAV_F1R": "random partition, random flavor boundary", INIT: "randomly initialized network",
+         INIT_BN: "randomly initialized network, BatchNorm recomputed",
          **{f"RAND2_p{k}": f"random partition {k}" for k in range(1, 6)}}
 PRIMARY = "best70"
 FITS, MLP_FITS = "linprobe/fits_v3", "linprobe/fits_v3_mlp"
+# 2026-10-30: the nonlinear probe of every run on every task a conclusion rests on (supersedes
+# MLP_FITS model by model), and the BatchNorm-recomputed random networks, linear and nonlinear
+MLP_FITS_V4, FITS_INITBN, MLP_FITS_INITBN = ("linprobe/fits_v3_mlp2", "linprobe/fits_v3_initbn",
+                                             "linprobe/fits_v3_mlp2_initbn")
 # (dataset key, metric, column heading)
 TASKS = (("jc2_188", "macro_auc_ovr", "JetClass-II"), ("jc2_188", "macro_auc_resonant", "resonant"),
          ("jc2_188", "macro_auc_qcd", "QCD"), ("jc1", "macro_auc_ovr", "JetClass"),
@@ -76,9 +90,14 @@ PAIRS = (("bc_vs_bq_cs", r"$X\to bc$ vs $bq$, $cs$", ("label_X_bc",), ("label_X_
          ("qcd_b_vs_light", r"QCD with $b$ vs light", "qcd_with_b", ("label_QCD_light",)),
          ("qcd_c_vs_light", r"QCD with $c$, no $b$, vs light", "qcd_with_c_no_b", ("label_QCD_light",)))
 PAIR_DS, PAIR_N = "jc2_188_pairs", "1000000"
-MLP_TASKS = (("qcd_bb_vs_cc", r"QCD $bb$ vs $cc$"), ("qcd_b_vs_light", r"QCD with $b$ vs light"),
-             ("bb_vs_cc", r"$X\to b\bar b$ vs $c\bar c$"), ("top", "top"), ("qg", "q/g"),
-             ("qg_herwig", "q/g, Herwig"))
+# (task, heading, metric): the nonlinear probe's tasks, the multi-class ones from cell set v4
+MLP_TASKS = (("jc2_188", "JetClass-II", "macro_auc_ovr"), ("jc2_188_res", "resonant", "macro_auc_resonant"),
+             ("jc2_188_qcd", "QCD", "macro_auc_qcd"), ("jc1", "JetClass", "macro_auc_ovr"),
+             ("top", "top", "auc"), ("qg", "q/g", "auc"), ("qg_herwig", "q/g, Herwig", "auc"),
+             ("bc_vs_bq_cs", r"$X\to bc$ vs $bq$, $cs$", "auc"), ("bb_vs_cc", r"$X\to b\bar b$ vs $c\bar c$", "auc"),
+             ("bbqq_vs_ccqq", r"$X\to YY\to bbqq$ vs $ccqq$", "auc"), ("qcd_bb_vs_cc", r"QCD $bb$ vs $cc$", "auc"),
+             ("qcd_b_vs_light", r"QCD with $b$ vs light", "auc"),
+             ("qcd_c_vs_light", r"QCD with $c$, no $b$, vs light", "auc"))
 MASKS = ("TopReference", "EnergyFlowQG")
 # Fine-tuning: (task, read-out file, data set inside it, metric, column heading)
 FT_TAGS = ("best70",)
@@ -102,6 +121,7 @@ def _paper(root: pathlib.Path) -> dict:
             arm = slug[re.fullmatch(r"mtx-([a-z0-9]+)-s\d+", ln.strip()).group(1)]
             out.setdefault(arm, []).append(ln.strip())
     out[INIT] = list(INIT_MODELS)
+    out[INIT_BN] = list(INIT_BN_MODELS)
     return out
 
 
@@ -187,7 +207,7 @@ UNCONVERGED_SEEN: set = set()
 
 
 def _probe(fits: dict, model: str, ds: str, n: str, metric: str):
-    ck = "init" if model.startswith("init-") else PRIMARY
+    ck = _ck(model)
     c = fits.get(model, {}).get("cells", {}).get(ck, {}).get(ds, {}).get(n)
     if c is None:
         return None
@@ -476,7 +496,7 @@ def table_mass(mass, runs, fmt_pm, rows) -> str:
         vals = []
         for m in runs[arm]:
             d = mass.get(m)
-            ck = "init" if m.startswith("init-") else PRIMARY
+            ck = _ck(m)
             vals.append(None if d is None else d["arms"][ck]["mlp"]["sigma_eff"])
             if d is not None:
                 targets.add(round(d["arms"][ck]["target"]["sigma_eff"], 12))
@@ -493,22 +513,28 @@ def table_mass(mass, runs, fmt_pm, rows) -> str:
 CMP_PROBES = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("L188", INIT), ("L162", INIT),
               ("R42_Q1", INIT), ("R16_Q1", INIT), ("L162_MASS", INIT), ("R16_Q1_MASS", INIT),
               ("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"),
-              ("FLAV_F0", "L188"), ("FLAV_F1", "L188"), ("FLAV_F1R", "L188"), ("FLAV_F0", "R16_Q1"))
+              ("FLAV_F0", "L188"), ("FLAV_F1", "L188"), ("FLAV_F1R", "L188"), ("FLAV_F0", "R16_Q1"),
+              ("L188", INIT_BN), ("L162", INIT_BN), ("R42_Q1", INIT_BN), ("R16_Q1", INIT_BN),
+              ("L162_MASS", INIT_BN), ("R16_Q1_MASS", INIT_BN), (INIT_BN, INIT))
 CMP_PAIRS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("FLAV_F1", "FLAV_F0"),
              ("FLAV_F1R", "FLAV_F1"), ("FLAV_F1R", "FLAV_F0"), ("FLAV_F0", "R16_Q1"))
 CMP_MLP = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("L188", INIT), ("L162", INIT),
-           ("R42_Q1", INIT), ("R16_Q1", INIT))
+           ("R42_Q1", INIT), ("R16_Q1", INIT), ("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"),
+           ("FLAV_F0", "L188"), ("FLAV_F1", "FLAV_F0"), ("FLAV_F1R", "FLAV_F1"), ("FLAV_F1R", "FLAV_F0"),
+           ("FLAV_F0", "R16_Q1"), ("L188", INIT_BN), ("L162", INIT_BN), ("R42_Q1", INIT_BN), ("R16_Q1", INIT_BN),
+           (INIT_BN, INIT))
 CMP_MASS = (("R16_Q1", "L188"), ("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))
 WORD = {"L188": "Full", "L162": "Res", "R42_Q1": "Mid", "R16_Q1": "Coarse", "L162_MASS": "ResMass",
-        "R16_Q1_MASS": "CoarseMass", INIT: "Init", "FLAV_F0": "Fzero", "FLAV_F1": "Fone", "FLAV_F1R": "Foner",
-        SCRATCH: "Scratch"}
+        "R16_Q1_MASS": "CoarseMass", INIT: "Init", INIT_BN: "InitBn", "FLAV_F0": "Fzero", "FLAV_F1": "Fone",
+        "FLAV_F1R": "Foner", SCRATCH: "Scratch"}
 TASK_WORD = {("jc2_188", "macro_auc_ovr"): "JcTwo", ("jc2_188", "macro_auc_resonant"): "JcTwoRes",
              ("jc2_188", "macro_auc_qcd"): "JcTwoQcd", ("jc2_188", "macro_auc_trained"): "JcTwoTrained",
              ("jc1", "macro_auc_ovr"): "JcOne", ("top", "auc"): "Top", ("qg", "auc"): "Qg",
              ("qg_herwig", "auc"): "QgHerwig"}
 PAIR_WORD = {"bc_vs_bq_cs": "Bc", "bb_vs_cc": "Bb", "bbqq_vs_ccqq": "Bbqq", "qcd_bb_vs_cc": "QcdBb",
              "qcd_b_vs_light": "QcdB", "qcd_c_vs_light": "QcdC", "top": "Top", "qg": "Qg",
-             "qg_herwig": "QgHerwig"}
+             "qg_herwig": "QgHerwig", "jc2_188": "JcTwo", "jc2_188_res": "JcTwoRes", "jc2_188_qcd": "JcTwoQcd",
+             "jc1": "JcOne"}
 FT_WORD = {"jc2": "JcTwo", "jc2_qcd": "JcTwoQcd", "jc1": "JcOne", "top": "Top", "qg": "Qg",
            "qg_herwig": "QgHerwig"}
 SIZE_WORD = {1000: "EThree", 10000: "EFour", 100000: "EFive", 1000000: "ESix"}
@@ -589,37 +615,50 @@ def comparisons(em, fits, runs, status, index, fmt_pm) -> None:
 
 # ------------------------------------------------------------------ nonlinear probes
 def _mlp(mlp: dict, model: str, task: str):
-    ck = "init" if model.startswith("init-") else PRIMARY
-    c = mlp.get(model, {}).get("cells", {}).get(ck, {}).get(task)
-    return None if c is None else 1 - c["auc"]
+    """1 - AUC of the nonlinear probe; jc2_188_res / jc2_188_qcd are parts of the jc2_188 cell."""
+    met = {t: m for t, _, m in MLP_TASKS}[task]
+    c = mlp.get(model, {}).get("cells", {}).get(_ck(model), {}).get(task.removesuffix("_res").removesuffix("_qcd"))
+    return None if c is None else 1 - c[met]
 
 
 def table_mlp(mlp, runs, fmt_pm, rows) -> str:
     """(1 - AUC) x 10^3 of the nonlinear probe (one hidden layer, three seeds averaged) on the
     binary tasks at their largest training set."""
-    lines = [r"\begin{tabular}{l" + "c" * len(MLP_TASKS) + "}", r"\toprule",
-             r"pretraining & " + " & ".join(h for _, h in MLP_TASKS) + r" \\", r"\midrule"]
-    for arm in rows:
-        cells = [_cell([_mlp(mlp, m, t) for m in runs[arm]], len(runs[arm]), fmt_pm, 1e3) for t, _ in MLP_TASKS]
-        lines.append(LABEL[arm] + " & " + " & ".join(cells) + r" \\")
-    return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
+    out = []
+    for part in (MLP_TASKS[:7], MLP_TASKS[7:]):
+        out += [r"\begin{tabular}{l" + "c" * len(part) + "}", r"\toprule",
+                r"pretraining & " + " & ".join(h for _, h, _ in part) + r" \\", r"\midrule"]
+        for arm in rows:
+            cells = [_cell([_mlp(mlp, m, t) for m in runs[arm]], len(runs[arm]), fmt_pm, 1e3) for t, _, _ in part]
+            out.append(LABEL[arm] + " & " + " & ".join(cells) + r" \\")
+        out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
+    return "\n".join(out[:-1])
 
 
 def mlp_macros(em, mlp, runs, index, fmt_pm) -> None:
+    """As comparisons(), for the nonlinear probe; MlstMlpCmp<task>RandOverFull over the partitions."""
     unconverged = [(m, t) for m, d in mlp.items() for ck in d["cells"].values() for t, c in ck.items()
                    if not c["mlp"]["all_converged"]]
     em.macro("MlstMlpUnconverged", str(len(unconverged)), index, "nonlinear probes that did not reach "
              "their plateau within the epoch cap (count)")
-    for t, _ in MLP_TASKS:
+    for t, _, _ in MLP_TASKS:
         for arm, ref in CMP_MLP:
             em.macro(f"MlstMlpCmp{PAIR_WORD[t]}{WORD[arm]}Over{WORD[ref]}",
                      _ratio(runs, arm, ref, lambda m: _mlp(mlp, m, t), fmt_pm), index,
                      f"nonlinear probe {t}: (1 - AUC) of {arm} over {ref}, run by run")
+        full = {m.rsplit("-s", 1)[1]: _mlp(mlp, m, t) for m in runs["L188"]}
+        r = []
+        for arm in RAND:
+            for m in runs[arm]:
+                x, y = _mlp(mlp, m, t), full.get(m.rsplit("-s", 1)[1])
+                r.append(None if x is None or y is None else x / y)
+        em.macro(f"MlstMlpCmp{PAIR_WORD[t]}RandOverFull", _cell(r, len(r), fmt_pm, sep=TEXT_SEP), index,
+                 f"nonlinear probe {t}: (1 - AUC) of each random partition over the 188-class run of its index")
 
 
 # ------------------------------------------------------------------ masked inputs
 def _fill(fill: dict, mask: str, model: str, met: str = "macro_auc_ovr"):
-    ck = "init" if model.startswith("init-") else PRIMARY
+    ck = _ck(model)
     c = fill.get(mask, {}).get(model, {}).get("cells", {}).get(ck, {}).get("jc2_188", {}).get(PAIR_N)
     return None if c is None else 1 - c[met]
 
@@ -661,7 +700,7 @@ def _mass(mass: dict, model: str, what: str, key: str = "sigma_eff", group: str 
     d = mass.get(model)
     if d is None:
         return None
-    ck = "init" if model.startswith("init-") else PRIMARY
+    ck = _ck(model)
     if what == "uncorrected":
         r = d["uncorrected"]
     elif what == "head":
@@ -780,8 +819,8 @@ def size_macros(em, fits: dict, fmt_int, index) -> None:
     across every model, or the build stops)."""
     def one(ds, key, n=None):
         vals = set()
-        for d in fits.values():
-            cells = d["cells"].get("init" if d["model"].startswith("init-") else PRIMARY, {}).get(ds, {})
+        for m, d in fits.items():
+            cells = d["cells"].get(_ck(m), {}).get(ds, {})
             if cells:
                 vals.add(cells[n or max(cells, key=int)][key])
         if len(vals) != 1:
@@ -909,7 +948,7 @@ def table_compute(comp, runs, fmt_int) -> tuple[str, dict]:
     lines = [r"\begin{tabular}{llr}", r"\toprule", r"run & GPU types (hours) & GPU-hours \\", r"\midrule"]
     hours = {}
     for arm, ms in runs.items():
-        if arm == INIT:
+        if arm in (INIT, INIT_BN):
             continue
         per = collections.Counter()
         for m in ms:
@@ -1024,9 +1063,10 @@ CAPTIONS = {
               "of the second. " + SPREAD + " The $b$-quark boundary and the random flavor boundary lie "
               "only in the four-quark decays $X\\to YY\\to QQQQ$; every label set but the \\Kfull-class one "
               "merges all QCD classes."),
-    "mlp": ("tab:mlp", "Nonlinear probes (a multilayer perceptron with one hidden layer, trained to a "
-            "plateau with several seeds whose scores are averaged) on the binary tasks at their largest "
-            "training set: $(1-\\mathrm{AUC})\\times10^{3}$, lower is better. " + SPREAD),
+    "mlp": ("tab:mlp", "Nonlinear probes (a multilayer perceptron with a single hidden layer, trained until its "
+            "validation AUC stops improving, with \\LpMlpSeedsWord{} seeds whose scores are averaged) at the largest "
+            "training set of each task: $(1-\\mathrm{AUC})\\times10^{3}$, lower is better, with the macro AUC on "
+            "JetClass-II and JetClass. " + SPREAD),
     "fill": ("tab:fill", "Linear probes on the \\Kfull-class JetClass-II task with \\FtSizeESix{} training jets: "
              "$(1-\\mathrm{AUC})\\times10^{3}$ on the features as computed, and with the input features "
              "that the top-tagging and the quark/gluon data lack set to zero, as in those data. Mean $\\pm$ "
@@ -1109,13 +1149,14 @@ def mlp_seeds(mass: dict) -> str:
 def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict:
     data = root / "experiments/FIGS/data/v2"
     fits, comp = _load(data / FITS), _load(data / "compute")
+    fits.update({"initbn" + m.removeprefix("init"): d for m, d in _load(data / FITS_INITBN).items()})
     if not fits:
         missing.append(f"linear probes -- experiments/FIGS/data/v2/{FITS}/")
         return {}
     index = check_index(data)
     runs = _paper(root)
-    n_paper = sum(len(v) for k, v in runs.items() if k != INIT)
-    done = [m for k, v in runs.items() if k != INIT for m in v if m in fits]
+    n_paper = sum(len(v) for k, v in runs.items() if k not in (INIT, INIT_BN))
+    done = [m for k, v in runs.items() if k not in (INIT, INIT_BN) for m in v if m in fits]
     em.macro("MlstProbeRunsDone", str(len(done)), index, "runs with a linear-probe fit (count)",
              "of the paper's runs")
     em.macro("MlstPaperRuns", str(n_paper), root / "configs/arms/v2_paper_runs.txt", "runs (count)")
@@ -1127,24 +1168,25 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         missing.append(f"linear probes: {len(done)} of {n_paper} paper runs")
     status = merge_status(root)
     UNCONVERGED_SEEN.clear()
-    out = {"tables/mlst_probes.tex": _float("probes", table_probes(fits, runs, fmt_pm, MAIN + MASS + RAND + FLAV + (INIT,)), True),
-           "tables/mlst_probes_n.tex": _float("probes_n", table_probes_n(fits, runs, fmt_pm, MAIN + (INIT,)), True),
+    out = {"tables/mlst_probes.tex": _float("probes", table_probes(fits, runs, fmt_pm, MAIN + MASS + RAND + FLAV + (INIT, INIT_BN)), True),
+           "tables/mlst_probes_n.tex": _float("probes_n", table_probes_n(fits, runs, fmt_pm, MAIN + (INIT, INIT_BN)), True),
            "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, runs, fmt_pm, status, MAIN + RAND + FLAV), True)}
     comparisons(em, fits, runs, status, index, fmt_pm)
-    trained = {(m, ds, n) for (m, ds, n) in UNCONVERGED_SEEN if not m.startswith("init-")}
+    trained = {(m, ds, n) for (m, ds, n) in UNCONVERGED_SEEN if not m.startswith(("init-", "initbn-"))}
     em.macro("MlstProbeUnconverged", str(len(trained)), index,
              "linear probes of pretrained models that did not converge (count)")
     em.macro("MlstProbeUnconvergedInit", str(len(UNCONVERGED_SEEN) - len(trained)), index,
              "linear probes of the randomly initialized networks that did not converge (count)")
-    cells = [c for m, d in fits.items() for c in _fit_cells(d["cells"].get("init" if m.startswith("init-") else PRIMARY, {}))]
-    edge = [c for m, d in fits.items() for c in _fit_cells(d["cells"].get("init" if m.startswith("init-") else PRIMARY, {}))
+    cells = [c for m, d in fits.items() for c in _fit_cells(d["cells"].get(_ck(m), {}))]
+    edge = [c for m, d in fits.items() for c in _fit_cells(d["cells"].get(_ck(m), {}))
             if c["C"] == max(d["c_grid"])]
     em.macro("MlstProbeFits", str(len(cells)), index, "selected linear-probe fits of the reported checkpoints (count)")
     em.macro("MlstProbeEdgeC", str(len(edge)), index,
              "of these, fits whose selected C is the largest of the grid (count)")
-    mlp = _load(data / MLP_FITS)
+    mlp = {**_load(data / MLP_FITS), **_load(data / MLP_FITS_V4)}
+    mlp.update({"initbn" + m.removeprefix("init"): d for m, d in _load(data / MLP_FITS_INITBN).items()})
     if mlp:
-        out["tables/mlst_mlp.tex"] = _float("mlp", table_mlp(mlp, runs, fmt_pm, MAIN + (INIT,)))
+        out["tables/mlst_mlp.tex"] = _float("mlp", table_mlp(mlp, runs, fmt_pm, MAIN + MASS + RAND + FLAV + (INIT, INIT_BN)), True)
         mlp_macros(em, mlp, runs, index, fmt_pm)
     else:
         missing.append(f"nonlinear probes -- experiments/FIGS/data/v2/{MLP_FITS}/")
@@ -1181,7 +1223,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     composition_macros(em, data, root, missing)
     size_macros(em, fits, fmt_int, index)
     method_macros(em, root, words)
-    ft_recipe(em, data, {m[len("mtx-"):] for k, v in runs.items() if k != INIT for m in v}, fmt_int, missing, words)
+    ft_recipe(em, data, {m[len("mtx-"):] for k, v in runs.items() if k not in (INIT, INIT_BN) for m in v}, fmt_int, missing, words)
     tag, per = load_ft(data)
     if tag is None:
         missing.append("fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/ (best70 and leg188)")

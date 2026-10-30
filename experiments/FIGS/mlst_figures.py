@@ -304,7 +304,7 @@ def heat_matrix(M, fits, runs, root) -> tuple[list, list, np.ndarray]:
     n = M.PAIR_N
 
     def oma(m):
-        ck = "init" if m.startswith("init-") else M.PRIMARY
+        ck = M._ck(m)
         c = fits.get(m, {}).get("cells", {}).get(ck, {}).get("jc2_188", {}).get(n)
         return None if c is None else {int(k): 1 - v for k, v in c["per_class_auc"].items()}
     full = {m.rsplit("-s", 1)[1]: oma(m) for m in runs["L188"]}
