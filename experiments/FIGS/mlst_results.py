@@ -127,7 +127,10 @@ def _sep(s: str) -> str:
 
 
 def _lone(x: float) -> str:
-    """A single run: three significant figures (make_tables.fmt_one's rule), trailing zeros kept."""
+    """A single run: three significant figures (make_tables.fmt_one's rule), trailing zeros kept;
+    from 100 on an integer (1,800, not 1.80e+03)."""
+    if abs(x) >= 100:
+        return _sep(str(int(round(x, 2 - int(math.floor(math.log10(abs(x))))))))
     return _sep(f"{x:#.3g}".rstrip("."))
 
 

@@ -29,25 +29,32 @@ def test_a_cell_is_the_mean_and_sample_sd_with_missing_runs_marked():
     fmt = lambda m, s: seen.append((m, s)) or "X"
     assert M._cell([0.1, 0.2, 0.3], 3, fmt) == "X"
     assert seen[0][0] == pytest.approx(0.2) and seen[0][1] == pytest.approx(0.1)   # ddof=1
-    assert M._cell([0.1, None, 0.3], 3, fmt) == r"X \pending{2 of 3}"
+    assert M._cell([0.1, None, 0.3], 3, fmt) == r"0.10, 0.30 \pending{2 of 3}"
     assert M._cell([None, None], 2, fmt) == r"\pending{no run yet}"
 
 
-def test_a_lone_run_keeps_its_trailing_zeros():
-    assert M._cell([0.86300], 3, MT.fmt_pm) == r"0.86300 \pending{1 of 3}"
-    assert M._cell([0.96579654592], 1, MT.fmt_pm) == "0.96580"
-    assert M._cell([0.0593], 1, MT.fmt_pm, 1e3) == "59.300"
-    assert M._cell([1802.83], 1, MT.fmt_pm) == "1{,}802.8" and M._cell([42589.4], 1, MT.fmt_pm) == "42{,}589"
+def test_two_runs_print_both_values_to_the_digit_of_their_difference():
+    assert M._cell([1.1661, 1.1652], 2, MT.fmt_pm) == "1.16610, 1.16520"
+    assert M._cell([22.515, 22.467], 2, MT.fmt_pm, sep=" and ") == "22.515 and 22.467"
+    assert M._cell([0.5, 0.5], 2, MT.fmt_pm) == "0.500, 0.500"
 
 
-def test_an_unconverged_probe_stops_a_trained_run_and_marks_the_untrained_network():
+def test_a_lone_run_prints_three_significant_figures():
+    assert M._cell([0.86300], 3, MT.fmt_pm) == r"0.863 \pending{1 of 3}"
+    assert M._cell([0.96579654592], 1, MT.fmt_pm) == "0.966"
+    assert M._cell([0.0593], 1, MT.fmt_pm, 1e3) == "59.3"
+    assert M._cell([1802.83], 1, MT.fmt_pm) == "1{,}800" and M._cell([42589.4], 1, MT.fmt_pm) == "42{,}600"
+
+
+def test_an_unconverged_probe_is_marked_and_counted():
     cell = {"converged": False, "auc": 0.7}
     fits = {"mtx-l188-s1": {"cells": {"best70": {"top": {"1000": cell}}}},
             "init-s1": {"cells": {"init": {"top": {"1000": cell}}}}}
-    with pytest.raises(SystemExit, match="did not converge"):
-        M._probe(fits, "mtx-l188-s1", "top", "1000", "auc")
-    v = M._probe(fits, "init-s1", "top", "1000", "auc")
-    assert isinstance(v, M.Unconverged) and M._cell([v], 1, MT.fmt_pm).endswith(M.UNCONVERGED)
+    M.UNCONVERGED_SEEN.clear()
+    for m in fits:
+        v = M._probe(fits, m, "top", "1000", "auc")
+        assert isinstance(v, M.Unconverged) and M._cell([v], 1, MT.fmt_pm).endswith(M.UNCONVERGED)
+    assert M.UNCONVERGED_SEEN == {("mtx-l188-s1", "top", "1000"), ("init-s1", "top", "1000")}
 
 
 def test_a_comparison_is_taken_run_by_run_between_runs_of_the_same_index():
@@ -55,20 +62,28 @@ def test_a_comparison_is_taken_run_by_run_between_runs_of_the_same_index():
     v = {"mtx-a-s1": 2.0, "mtx-a-s2": 9.0, "mtx-a-s3": 3.0, "mtx-b-s1": 1.0, "mtx-b-s3": 1.0}
     seen = []
     fmt = lambda m, s: seen.append((m, s)) or "X"
-    assert M._ratio(runs, "A", "B", v.get, fmt) == "X"            # s2 has no partner: not a missing run
-    assert seen[0][0] == pytest.approx(2.5) and seen[0][1] == pytest.approx(0.5 ** 0.5)   # 2/1, 3/1
+    # s2 has no partner: not a missing run; two pairs print both ratios, 2/1 and 3/1
+    assert M._ratio(runs, "A", "B", v.get, fmt) == "2.0 and 3.0"
     v["mtx-b-s3"] = None
-    assert M._ratio(runs, "A", "B", v.get, fmt) == r"2.0000 \pending{1 of 2}"
+    assert M._ratio(runs, "A", "B", v.get, fmt) == r"2.00 \pending{1 of 2}"
+    runs["B"] = ["mtx-b-s1", "mtx-b-s2", "mtx-b-s3"]
+    v.update({"mtx-b-s2": 3.0, "mtx-b-s3": 1.0})
+    assert M._ratio(runs, "A", "B", v.get, fmt) == "X"                       # 2/1, 9/3, 3/1
+    assert seen[-1][0] == pytest.approx(8 / 3) and seen[-1][1] == pytest.approx((1 / 3) ** 0.5)
     v.update({"init-s1": M.Unconverged(4.0), "init-s2": 3.0})                # 2/4 marked, 9/3
-    assert M._ratio(runs, "A", M.INIT, v.get, fmt) == "X" + M.UNCONVERGED and seen[-1][0] == pytest.approx(1.75)
+    assert M._ratio(runs, "A", M.INIT, v.get, fmt) == "0.5 and 3.0" + M.UNCONVERGED
     assert M._oma(M.Unconverged(0.9)) == pytest.approx(0.1) and isinstance(M._oma(M.Unconverged(0.9)), M.Unconverged)
 
 
 def test_the_merge_marks_follow_the_label_maps():
     s = M.merge_status(ROOT)
-    assert set(s["L188"].values()) == set(s["L162"].values()) == {"apart"}
-    assert s["R42_Q1"] == {"bc_vs_bq_cs": "partly", "bb_vs_cc": "apart", "bbqq_vs_ccqq": "apart"}
+    qcd = {"qcd_bb_vs_cc", "qcd_b_vs_light", "qcd_c_vs_light"}
+    assert set(s["L188"].values()) == {"apart"}
+    assert {k for k, v in s["L162"].items() if v == "merged"} == qcd     # 162 classes merge only QCD
+    assert s["R42_Q1"] == {"bc_vs_bq_cs": "partly", "bb_vs_cc": "apart", "bbqq_vs_ccqq": "apart",
+                           **{k: "merged" for k in qcd}}
     assert set(s["R16_Q1"].values()) == {"merged"}
+    assert all(s[a][k] == "merged" for a in M.RAND + M.FLAV for k in qcd)
     assert s["L162_MASS"] == s["L162"] and s["R16_Q1_MASS"] == s["R16_Q1"]
 
 
@@ -77,7 +92,7 @@ def test_the_pulled_data_is_checked_against_its_index(tmp_path):
     assert M.check_index(DATA) == DATA / "index.json"
     d = tmp_path / "v2"
     shutil.copytree(DATA, d)
-    f = next((d / "linprobe/fits3000").glob("*.json"))
+    f = next((d / "linprobe/fits_v3").glob("*.json"))
     f.write_bytes(f.read_bytes() + b" ")
     with pytest.raises(SystemExit, match="differ from"):
         M.check_index(d)
@@ -93,20 +108,21 @@ def test_the_pulled_data_is_checked_against_its_index(tmp_path):
 def test_the_index_covers_every_kind_of_pulled_file():
     kinds = {k.split("/")[0] + ("/" + k.split("/")[1] if k.startswith("linprobe") else "")
              for k in json.loads((DATA / "index.json").read_text())}
-    assert {"compute", "linprobe/fits3000", "linprobe/mass"} <= kinds <= {
-        "compute", "linprobe/fits3000", "linprobe/mass", "ft_mlst"}
+    assert {"compute", "linprobe/fits_v3"} <= kinds <= {
+        "compute", "linprobe/fits3000", "linprobe/mass", "linprobe/fits_v3", "linprobe/fits_v3_mlp", "ft_mlst",
+        "head", "fillcontrol", "curves", "bootstrap", "xbx"}
 
 
 def _ft_tree(d, inits, n_seeds_scratch=3, bound=False):
-    rec = lambda v: {"macro_auc_ovr": v, "auc": v, "r50": 100 * v, "r30": 300 * v,
+    rec = lambda v: {"macro_auc_ovr": v, "macro_auc_qcd": v, "auc": v, "r50": 100 * v, "r30": 300 * v,
                      "r50_is_bound": bound, "r30_is_bound": False, "r50_n_bkg_pass": 400, "r30_n_bkg_pass": 120}
     def by_init(sizes):
         out = {i: {f"N{n}": {"s1": rec(0.9 + 0.01 * k)} for n in sizes} for k, i in enumerate(inits)}
         out[M.SCRATCH] = {f"N{n}": {f"s{s}": rec(0.8) for s in range(1, n_seeds_scratch + 1)} for n in sizes}
         return out
     (d / "ft_mlst").mkdir(parents=True)
-    w = lambda name, cells: (d / "ft_mlst" / f"best70_done18_{name}.json").write_text(json.dumps({"cells": cells}))
-    w("leg1_metrics", by_init([1000, 1000000]))
+    w = lambda name, cells: (d / "ft_mlst" / f"best70_{name}.json").write_text(json.dumps({"cells": cells}))
+    w("leg188_leg1_metrics", by_init([1000, 1000000]))
     w("leg2_metrics", by_init([1000, 1000000]))
     w("bench_metrics", {"top": by_init([1000, 1200000]), "qg": by_init([1000, 1600000])})
     w("bench_metrics_herwig", {"qg": by_init([1000, 1600000])})
@@ -115,14 +131,14 @@ def _ft_tree(d, inits, n_seeds_scratch=3, bound=False):
 def test_the_fine_tuning_tables_read_one_seed_per_run_and_the_scratch_seeds(tmp_path):
     _ft_tree(tmp_path, ["l188-s1", "l188-s2"])
     tag, per = M.load_ft(tmp_path)
-    assert tag == "best70_done18" and per["jc2"]["l188-s1"][1000][0]["macro_auc_ovr"] == 0.9
+    assert tag == "best70" and per["jc2"]["l188-s1"][1000][0]["macro_auc_ovr"] == 0.9
     runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"]}
     t = M.table_ft(per, runs, MT.fmt_pm, ("L188",))
     assert t.count("%SPLIT%") == len(M.FT_TASKS) - 1 and r"\pending{2 of 3}" in t and "from scratch" in t
     assert "1{,}200{,}000" in t and "1{,}600{,}000" in t
     # the tables report (1 - AUC) x 10^3, the quantity the text compares: AUCs of 0.90 and
     # 0.91 are 100 and 90, mean 95 +- 7; the scratch seeds' 0.80 is 200
-    assert r"95\,$\pm$\,7" in t and "0.9" not in t.split("from scratch")[0]
+    assert "100, 90" in t and "0.9" not in t.split("from scratch")[0]
     body, fewest = M.table_ft_rej(per, runs, MT.fmt_pm, ("L188",))
     assert fewest == 120 and r"\pending{2 of 3}" in body and body.count(r"\\") == 4
     per["jc2"]["l188-s1"][1000].append(per["jc2"]["l188-s1"][1000][0])
@@ -191,18 +207,23 @@ def test_the_recipe_macros_come_from_every_cell_and_one_stray_value_stops_the_bu
     assert em.m["MlstFtRefLr"] == r"\ensuremath{10^{-3}}" and em.m["MlstFtRefSeedsWord"] == "three"
 
 
-def test_the_mass_table_shows_the_mlp_and_the_constant_prediction():
-    """The ridge column is gone (its residuals are wider than the target's for every model
-    without the mass regression); the last row is the target's own sigma_eff."""
-    rec = lambda mlp: {"arms": {"best70": {"mlp": {"sigma_eff": mlp}, "ridge": {"sigma_eff": 0.33},
-                                           "target": {"sigma_eff": 0.2986301355609203}}}}
-    mass = {"mtx-l188-s1": rec(0.25), "mtx-l188-s2": rec(0.26)}
-    t = M.table_mass(mass, {"L188": ["mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"]}, MT.fmt_pm, ("L188",))
-    assert "ridge" not in t and "0.33" not in t
-    assert "constant prediction & 0.29863" in t and r"\pending{2 of 3}" in t
-    mass["mtx-l188-s2"]["arms"]["best70"]["target"]["sigma_eff"] = 0.31
-    with pytest.raises(SystemExit, match="differs between runs"):
-        M.table_mass(mass, {"L188": ["mtx-l188-s1", "mtx-l188-s2"]}, MT.fmt_pm, ("L188",))
+def test_the_mass_table_shows_the_uncorrected_mass_the_mass_node_and_the_mlp():
+    grp = lambda v: {"group": {"resonant": {"sigma_eff": v - 0.1}, "qcd": {"sigma_eff": v + 0.1}}}
+    unc = {"sigma_eff": 0.2534, "median_response": 1.076, "binned": grp(0.2534)}
+    rec = lambda mlp, head=None: {"uncorrected": unc,
+                                  "heads": {} if head is None else {"best70": {"sigma_eff": head, "median_response": 1.0,
+                                                                              "binned": grp(head)}},
+                                  "arms": {"best70": {"mlp": {"sigma_eff": mlp}, "target": {"sigma_eff": 0.25},
+                                                      "binned": {"mlp": grp(mlp)}}}}
+    mass = {"mtx-l188-s1": rec(0.249), "mtx-l188-s2": rec(0.248), "mtx-l162mass-s1": rec(0.19, 0.146)}
+    runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"], "L162_MASS": ["mtx-l162mass-s1", "mtx-l162mass-s2"]}
+    t = M.table_mass(mass, runs, MT.fmt_pm, ("L188", "L162_MASS"))
+    assert "uncorrected soft-drop mass & 0.253 & 0.153 & 0.353 & 1.08" in t
+    assert "mass node" in t and r"0.146 \pending{1 of 2}" in t
+    assert r"0.2490, 0.2480 \pending{2 of 3}" in t
+    mass["mtx-l188-s2"]["uncorrected"] = {**unc, "sigma_eff": 0.3}
+    with pytest.raises(SystemExit, match="differs between files"):
+        M.table_mass(mass, runs, MT.fmt_pm, ("L188",))
 
 
 def test_learning_rates_print_as_powers_of_ten():
