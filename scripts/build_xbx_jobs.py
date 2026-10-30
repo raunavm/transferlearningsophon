@@ -55,7 +55,8 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "XBS" / "k8s"
 PIN = "mtx-s2.17"     # the stand-in chain as it ran
-PIN_IHEP = "mtx-s2.19"   # mtx-s2.18 is the 188-class probe refit (4f92021), without this code
+PIN_IHEP = "mtx-s2.20"   # NOT YET TAGGED; mtx-s2.18 is the 188-class probe refit (4f92021), without this code
+# mtx-s2.20: linear_probe_v2.py and probe.py changed after mtx-s2.19 (da6e0be); no IHEP spec had run
 # mtx-s2.16: the staged files carried the source's awkward description without xbx_class, which
 # awkward (so weaver) refuses; both dry-run extractions failed on their first file
 # mtx-s2.15: a commit that held the config move without the code that reads the new path; never cloned

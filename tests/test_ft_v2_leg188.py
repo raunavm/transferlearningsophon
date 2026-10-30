@@ -226,7 +226,7 @@ def test_each_readout_waits_for_exactly_its_cells_then_reads_them(specs):
     for t in (l188, top):
         d = yaml.safe_load(t)
         assert d["spec"]["backoffLimit"] == 1 and "nvidia.com/gpu" not in d["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]
-        assert {e["name"]: e.get("value") for e in d["spec"]["template"]["spec"]["containers"][0]["env"]}["REPO_REF"] == B.PIN_V2_LEG188
+        assert {e["name"]: e.get("value") for e in d["spec"]["template"]["spec"]["containers"][0]["env"]}["REPO_REF"] == B.PIN_V2_LEG188_READOUT
         assert "sleep 1800" in _args(t) and f"-lt {6 * 86400} ]" in _args(t)
 
 
@@ -261,11 +261,14 @@ def test_the_final_readouts_wait_for_every_cell_of_their_rule_the_four_running_o
 
 def test_the_pin_is_a_tag_still_to_be_made_and_the_tree_carries_what_the_specs_run():
     assert B.PIN_V2_LEG188 == B.PIN_V2_READOUT == "mtx-s2.19"
+    assert B.PIN_V2_LEG188_READOUT == "mtx-s2.20"      # the read-outs had not run when probe.py changed
     B.verify_pin(B.PIN_V2_LEG188, True, B.V2_LEG188_NEEDED)
+    B.verify_pin(B.PIN_V2_LEG188_READOUT, True, B.V2_LEG188_NEEDED)
     cli = [sys.executable, str(ROOT / "scripts/build_ft_jobs.py"), "--v2-leg188", "--check-only", "--pin-not-yet-tagged"]
     r = subprocess.run(cli, capture_output=True, text=True, cwd=ROOT)
     assert r.returncode == 0, r.stderr
-    assert r.stdout.count(f"checked (pin {B.PIN_V2_LEG188})") == 4
+    assert r.stdout.count(f"checked (pin {B.PIN_V2_LEG188})") == 2
+    assert r.stdout.count(f"checked (pin {B.PIN_V2_LEG188_READOUT})") == 2
     r = subprocess.run(cli + ["--v2-readouts"], capture_output=True, text=True, cwd=ROOT)
     assert r.returncode != 0 and "emitted alone" in r.stderr
 

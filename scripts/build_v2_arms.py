@@ -89,6 +89,7 @@ import importlib.util
 import io
 import itertools
 import json
+import math
 import pathlib
 import random
 import re
@@ -1082,9 +1083,11 @@ def mass_lambda(runs: dict) -> dict:
         "mean_over_epochs_0_79": per_run(lambda es: statistics.fmean(x_of(e) for e in es)),
         "epoch_0": per_run(lambda es: x_of(es[0])),
         "epoch_79": per_run(lambda es: x_of(es[79])),
+        # math.fsum, not sum(): sum() of floats is compensated only from Python 3.12, so the
+        # cluster image (3.10) differed from the committed bytes in the last digit
         "ratio_of_epoch_sums": per_run(
-            lambda es: LAMBDA_V1 * sum(e["loss_reg"] for e in es)
-            / sum(e["loss_cls"] for e in es)),
+            lambda es: LAMBDA_V1 * math.fsum(e["loss_reg"] for e in es)
+            / math.fsum(e["loss_cls"] for e in es)),
     }
     out = {}
     for name, x in variants.items():

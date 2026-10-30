@@ -1386,7 +1386,7 @@ def main() -> int:
                          "test-split class count (audit 2026-09-29)")
     ap.add_argument("--v2-init-bn", action="store_true",
                     help="emit ONLY the BatchNorm twins of the untrained trunks init-s1..3 and "
-                         f"their extraction (tag init_bn) into {INIT_BN_DIR.relative_to(ROOT)}")
+                         "their extraction (tag init_bn) into experiments/EVAL/k8s/v2/init_bn")
     args = ap.parse_args()
 
     if args.v2_init_bn:

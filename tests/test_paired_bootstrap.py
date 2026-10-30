@@ -203,9 +203,12 @@ def test_the_probe_bootstrap_reads_every_probe_at_its_checkpoint(tmp_path):
 
 def test_the_bootstrap_specs_cover_every_task_and_size():
     ft, jc2, probe = (BC.boot_ft_body("ft"), BC.boot_ft_body("jc2"), BC.boot_probe_body())
-    for task, n in [("jc1", 1000), ("top", 1200000), ("qg", 1600000), ("qg_herwig", 1000)]:
-        assert f"boot {task} " in ft and f" {n}\n" in ft
     calls = [ln for ln in ft.splitlines() if ln.startswith("          boot ") and "()" not in ln]
+    # boot TASK PRETRAINED_TREE REFERENCE_TREE N S1_TREE
+    called = {(c.split()[1], int(c.split()[4])) for c in calls}
+    assert all(len(c.split()) == 6 for c in calls)
+    for task, n in [("jc1", 1000), ("top", 1200000), ("qg", 1600000), ("qg_herwig", 1000)]:
+        assert (task, n) in called
     assert len(calls) == 16 and jc2.count("\n          boot jc2_188 ") == 4
     assert "--pair l162mass-s1/l162-s1" in ft and "--pair l188-s1/l188-s1" not in ft
     assert f"--pair r16q1-s3/{BC.BASELINE}-3 " in ft

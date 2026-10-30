@@ -4,6 +4,17 @@
 \caption{Mass sculpting: Jensen--Shannon divergence $\times10^{3}$ between the $m_{\mathrm{SD}}$ distributions of all QCD test jets and of those passing a cut on $1-p_{\mathrm{QCD}}$ at the QCD efficiency given; lower is less sculpting. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run.}
 \label{tab:sculpt}
 \begin{adjustbox}{max width=\linewidth}
-\pending{no result yet}
+\begin{tabular}{lcc}
+\toprule
+pretraining & $\epsilon_{\mathrm{QCD}} = 0.1$ & $\epsilon_{\mathrm{QCD}} = 0.01$ \\
+\midrule
+\Kfull{} classes & 3.16 \pending{1 of 3} & 2.16 \pending{1 of 3} \\
+\Kres{} classes & 2.83\,$\pm$\,0.10 & 1.84\,$\pm$\,0.24 \\
+\Kmid{} classes & \pending{no run yet} & \pending{no run yet} \\
+\Kcoarse{} classes & \pending{no run yet} & \pending{no run yet} \\
+\Kres{} classes, mass regression & 1.78, 2.15 & 1.80, 1.95 \\
+\Kcoarse{} classes, mass regression & \pending{no run yet} & \pending{no run yet} \\
+\bottomrule
+\end{tabular}
 \end{adjustbox}
 \end{table}

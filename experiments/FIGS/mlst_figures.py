@@ -189,7 +189,10 @@ def _positions(groups) -> dict:
 
 
 def probe_rows(M, fits, runs, ds: str, metric: str) -> dict:
-    """{row: [(1 - AUC) x 10^3 of each run]} on the task's largest training set (Table tab:probes)."""
+    """{row: [(1 - AUC) x 10^3 of each run]} on the task's largest training set (Table tab:probes);
+    every row empty while the task has no fits yet."""
+    if not any(ck.get(ds) for f in fits.values() for ck in f["cells"].values()):
+        return {row: [] for g in _groups(M, True) for row in g}
     n = M._largest(fits, ds)
     return {row: [1e3 * float(v) for v in (M._oma(M._probe(fits, m, ds, n, metric)) for m in runs[row])
                   if v is not None] for g in _groups(M, True) for row in g}

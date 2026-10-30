@@ -176,7 +176,7 @@ some of the random partitions, no class boundary is a flavor boundary, or only a
 boundary is. We also pretrain the \Kres- and \Kcoarse-class models with an
 additional output that regresses a correction to the jet mass, the invariant mass of the jet's
 particles, as CMS taggers do~\cite{cmspart,glopart}. This compares the effect of such a
-target on the learned features, at a fixed weight in the loss, between two label sets.
+target on the learned features, at a fixed weight in the loss, between the \Kres- and \Kcoarse-class label sets.
 
 We evaluate each pretrained model both with linear probes on its frozen features and
 with full fine-tuning, each on training sets from \FtSizeEThree{} jets up to \FtSizeESix{} jets on
@@ -557,7 +557,7 @@ subsets pass the selection of Section~\ref{sec:design}; the other datasets are u
 published selections, so that their results can be compared with the literature.
 
 \paragraph{Nonlinear probes.} A linear probe measures only the information that a linear
-function of the features can read, so two label sets that it cannot tell apart may still differ in
+function of the features can read, so label sets that it cannot tell apart may still differ in
 information that is not linearly decodable. Wherever a conclusion rests on such a match, or on a
 comparison with the randomly initialized network, we also train a nonlinear probe: a multilayer
 perceptron (MLP) with a single hidden layer of \LpMlpHidden{} units on the same standardized
@@ -674,15 +674,15 @@ are then taken over seeds or partitions. For the random partitions, this standar
 includes the differences between partitions as well as between seeds. The GPU type, which
 changes the floating-point rounding and the dropout masks, differs within most of these pairs
 (Appendix~\ref{app:compute}). In particular, the random partitions and the random partition with
-no flavor boundary trained mostly on one GPU type and two of the three \Kfull-class runs on
-another, so for these comparisons a difference between GPU types cannot be separated from the
+no flavor boundary trained mostly on a single GPU type and the \Kfull-class runs with the same seeds
+on another, so for these comparisons a difference between GPU types cannot be separated from the
 effect of the labels. All models are scored on the same test jets, so the finite test sample
 shifts them together; its contribution, from a bootstrap over the test jets shared by all
 models, is given in Appendix~\ref{app:boot}. Background rejections at low background
 efficiency rest on few background jets; Table~\ref{tab:ftrej} gives the smallest number behind
 any of its values.
 
-The results are descriptive: no hypothesis tests are made. We describe two configurations as
+The results are descriptive: no hypothesis tests are made. We describe configurations as
 different only when their ratio differs from unity by more than twice its standard deviation
 and by more than its test-sample uncertainty. Given the number of comparisons, an isolated
 difference near this threshold is not interpreted.
@@ -1025,8 +1025,8 @@ of the \MlstProbeFits{} selected fits chose the largest value of the grid, so fo
 best regularization on the validation jets may lie beyond it. The frozen features are stored in half precision. The JetClass-II
 probes and fine-tuned models are scored on the first \LpNTestJcii{} JetClass-II test jets, and
 their macro AUCs on every fourth of these, \LpNTestAucJcii{} jets, to bound the cost of
-\Kfull{} ROC curves per model; the binary probes of Table~\ref{tab:pairs} use every jet of their
-two sides among the \LpNTestJcii. These jets come from the first files of the test split, which
+\Kfull{} ROC curves per model; the binary probes of Table~\ref{tab:pairs} use every jet of both
+sides among the \LpNTestJcii. These jets come from the first files of the test split, which
 alternate between the decay families file by file, so they hold \LpJciiTestQcdPercent{} QCD and
 \LpJciiTestTwoProngPercent{} two-prong jets, against \LpJciiTrainQcdPercent{} and
 \LpJciiTrainTwoProngPercent{} in the largest training subset. A one-versus-rest AUC compares the
@@ -1059,10 +1059,10 @@ framework. On JetClass-II and JetClass, a model is fine-tuned for \MlstFtEpochsE
 tagging for \MlstFtBenchEpochs{} epochs at every size. An epoch draws at least
 \MlstFtMinEpochJets{} training jets, so at \FtSizeEThree{} jets it passes over the training set
 several times; on JetClass-II and JetClass an epoch is \FtRecipeStepsEThree, \FtRecipeStepsEFour,
-\FtRecipeStepsEFive{} and \FtRecipeStepsESix{} steps at the four sizes. The pretrained models and
+\FtRecipeStepsEFive{} and \FtRecipeStepsESix{} steps at these sizes. The pretrained models and
 the network trained from scratch get the same number of steps, so they are compared at equal
 training compute. This budget is small: ParT, trained from scratch on \LitPartSmallSetPercent\%
-of JetClass, needed about \LitPartSmallSetIterThousand{} thousand steps to
+of JetClass, needed about \LitPartSmallSetIters{} steps to
 converge~\cite[Sec.~5.1]{part}, more than our largest JetClass subset receives.
 Section~\ref{sec:finetune} therefore repeats the largest JetClass size with
 longer training. The epoch with the highest validation accuracy is selected on the same

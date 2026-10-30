@@ -1,12 +1,14 @@
-"""The figure of the linear probes against the training-set size draws the numbers of
-Table tab:probesn: it selects them with mlst_results.py's own functions."""
+"""The figures of the linear probes draw the numbers of their tables (tab:probes, tab:probesn,
+tab:pairs): they select them with mlst_results.py's own functions. The fits are a small
+synthetic tree in tmp_path, so the tests do not depend on how much has been pulled."""
 import importlib.util
+import json
 import pathlib
 
 import pytest
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
-DATA = REPO / "experiments/FIGS/data/v2/linprobe/fits3000"
+SIZES = ("1000", "1000000")
 
 
 def _mod(name, rel):
@@ -16,53 +18,80 @@ def _mod(name, rel):
     return m
 
 
-@pytest.mark.skipif(not DATA.is_dir(), reason="no linear-probe fits in this checkout")
-def test_the_figure_is_drawn_from_the_tables_numbers(tmp_path):
+def _fits_tree(M, runs, root: pathlib.Path) -> pathlib.Path:
+    """One fits file per paper run and untrained trunk under root/linprobe/fits_v3, in the layout
+    of linear_probe_v2.py: every task of M.TASKS at SIZES, and the pairs at M.PAIR_N."""
+    d = root / "linprobe/fits_v3"
+    d.mkdir(parents=True)
+    models = [m for ms in runs.values() for m in ms]
+    for i, m in enumerate(models):
+        base = 0.80 if m.startswith("init-") else 0.99 - 1e-3 * i
+        cell = {}
+        for ds, metric, _ in M.TASKS:
+            for k, n in enumerate(SIZES):
+                c = cell.setdefault(ds, {}).setdefault(n, {"C": 1.0, "converged": True})
+                c[metric] = base - 1e-2 * (len(SIZES) - 1 - k) - 1e-4 * len(c)
+        cell[M.PAIR_DS] = {M.PAIR_N: {key: {"auc": base - 2e-4 * j} for j, (key, _, _, _) in enumerate(M.PAIRS)}}
+        ck = "init" if m.startswith("init-") else M.PRIMARY
+        (d / f"{m}.json").write_text(json.dumps({"cells": {ck: cell}}))
+    return d
+
+
+def test_the_figure_is_drawn_from_the_tables_numbers(tmp_path, monkeypatch):
     F = _mod("mlst_figures", "experiments/FIGS/mlst_figures.py")
     M = F._mlst()
-    fits, runs = M._load(DATA), M._paper(REPO)
+    runs = M._paper(REPO)
+    monkeypatch.setattr(F, "DATA", tmp_path)
+    fits = M._load(_fits_tree(M, runs, tmp_path))
     ds, metric, _ = M.TASKS[0]
-    pts = F.series(M, fits, runs, ds, metric)
+    pts = F.series(M, fits, runs, ds, metric, tuple(F.CLASSES) + (M.INIT,))
     n = max((p[0] for p in pts["L188"]), default=None)
     assert n is not None
     vals = [1 - M._probe(fits, m, ds, str(n), metric) for m in runs["L188"] if m in fits]
     mean = next(p[1] for p in pts["L188"] if p[0] == n)
     assert mean == pytest.approx(sum(vals) / len(vals))
-    paths = F.figure(REPO, tmp_path)
+    # a task with no fits yet: every row empty, no failure
+    assert all(v == [] for v in F.series(M, fits, runs, "no_fits_yet", metric, tuple(F.CLASSES)).values())
+    paths = F.figure_sizes(REPO, tmp_path / "out")
     assert sorted(p.suffix for p in paths) == [".pdf", ".png"] and all(p.stat().st_size > 0 for p in paths)
 
 
-@pytest.mark.skipif(not DATA.is_dir(), reason="no linear-probe fits in this checkout")
-def test_the_configuration_figure_draws_the_probe_tables_numbers(tmp_path):
+def test_the_configuration_figure_draws_the_probe_tables_numbers(tmp_path, monkeypatch):
     F = _mod("mlst_figures", "experiments/FIGS/mlst_figures.py")
     M = F._mlst()
-    fits, runs = M._load(DATA), M._paper(REPO)
+    runs = M._paper(REPO)
+    monkeypatch.setattr(F, "DATA", tmp_path)
+    fits = M._load(_fits_tree(M, runs, tmp_path))
     for ds, metric, _ in M.TASKS[:4]:
         rows = F.probe_rows(M, fits, runs, ds, metric)
         assert set(rows) == set(F.CLASSES) | set(M.RAND) | set(M.FLAV) | {M.INIT}
         n = M._largest(fits, ds)
-        for arm in ("L188", "RAND2_p1", "FLAV_F1"):
+        for arm in ("L188", "RAND2_p1", "FLAV_F1", M.INIT):
             want = [1e3 * (1 - M._probe(fits, m, ds, n, metric)) for m in runs[arm] if m in fits]
-            assert rows[arm] == pytest.approx(want)
-    paths = F.figure_label_sets(REPO, tmp_path)
+            assert want and rows[arm] == pytest.approx(want)
+    # a task with no fits yet: every row empty, no failure
+    empty = F.probe_rows(M, fits, runs, "no_fits_yet", "auc")
+    assert set(empty) == set(rows) and all(v == [] for v in empty.values())
+    paths = F.figure_label_sets(REPO, tmp_path / "out")
     assert sorted(p.suffix for p in paths) == [".pdf", ".png"] and all(p.stat().st_size > 0 for p in paths)
 
 
-@pytest.mark.skipif(not DATA.is_dir(), reason="no linear-probe fits in this checkout")
-def test_the_pairs_figure_draws_the_pairs_table_and_its_merge_marks(tmp_path):
+def test_the_pairs_figure_draws_the_pairs_table_and_its_merge_marks(tmp_path, monkeypatch):
     F = _mod("mlst_figures", "experiments/FIGS/mlst_figures.py")
     M = F._mlst()
-    fits, runs = M._load(DATA), M._paper(REPO)
+    runs = M._paper(REPO)
+    monkeypatch.setattr(F, "DATA", tmp_path)
+    fits = M._load(_fits_tree(M, runs, tmp_path))
     status = M.merge_status(REPO)
     for key, _, _, _ in M.PAIRS:
         rows = F.pair_rows(M, fits, runs, key)
         assert M.INIT not in rows
-        want = [1e3 * (1 - fits[m]["cells"][M.PRIMARY]["jc2_pairs"][M.PAIR_N][key]["auc"])
+        want = [1e3 * (1 - fits[m]["cells"][M.PRIMARY][M.PAIR_DS][M.PAIR_N][key]["auc"])
                 for m in runs["L188"] if m in fits]
-        assert rows["L188"] == pytest.approx(want)
+        assert want and rows["L188"] == pytest.approx(want)
         # the 17-class label set merges every pair: open markers
         assert F.FILL[status["R16_Q1"][key]] == "none" and F.FILL[status["L188"][key]] == "full"
-    paths = F.figure_pairs(REPO, tmp_path)
+    paths = F.figure_pairs(REPO, tmp_path / "out")
     assert sorted(p.suffix for p in paths) == [".pdf", ".png"] and all(p.stat().st_size > 0 for p in paths)
 
 

@@ -1178,7 +1178,11 @@ def test_a_commit_allowed_to_resume_has_this_training_code():
             pytest.skip(f"{commit} not in this clone")
         out = subprocess.run(["git", "-C", str(root), "diff", "--name-only", commit, "--", *files],
                              capture_output=True, text=True, check=True).stdout.split()
-        assert [f for f in out if f.endswith((".py", ".yaml", ".yml"))] == []
+        # evaluation-only data configs added since, never read by pretraining (pretrain_v2 trains
+        # on configs/arms/<ARM>.yaml): JetClassII_massreg_obs.yaml is the mass-head extraction's
+        # (extract_v2.py --keep-head-outputs, scripts/build_head_jobs.py; 2026-10-29)
+        eval_only = {"configs/data/JetClassII_massreg_obs.yaml"}
+        assert [f for f in out if f.endswith((".py", ".yaml", ".yml")) and f not in eval_only] == []
         diff = subprocess.run(["git", "-C", str(root), "diff", "-U0", commit, "--",
                                "experiments/MTX/pretrain_v2.py"], capture_output=True, text=True, check=True).stdout
         removed = [ln for ln in diff.splitlines() if ln.startswith("-") and not ln.startswith("---")]

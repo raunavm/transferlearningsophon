@@ -18,6 +18,8 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
                                    from each cell's ft_manifest.json
   linprobe/fits_v3/<model>.json    the 2026-10-29 refit (JetClass-II at 188 classes), and
   linprobe/fits_v3_mlp/<model>.json  the nonlinear probes (scripts/build_linprobe_jobs.py --v3)
+  linprobe/fits_v3_mlp2/<model>.json, fits_v3_mlp2_initbn/, fits_v3_initbn/  the nonlinear probes on
+                                   every null task and the BatchNorm-recomputed random networks (--v4)
   ft_mlst/best70_leg188_leg1_metrics.json  JetClass-II fine-tuning at 188 classes with its reference
   ft_mlst/topcheck_bench_metrics.json      the top-tagging recipe check (100 epochs at 1e4)
   head/<model>_{mass,sculpting}.json  mass node, mass regressions and QCD mass sculpting
@@ -129,7 +131,9 @@ def main() -> int:
                 b = f.read_bytes()
                 json.loads(b)
                 add(f"ft_mlst/{name}.json", b)
-        for sub in ("fits_v3", "fits_v3_mlp"):
+        for f in sorted((LP / "fits_v3_mlp2" / "init_bn").glob("*.json")):
+            add(f"linprobe/fits_v3_mlp2_initbn/{f.name}", f.read_bytes())
+        for sub in ("fits_v3", "fits_v3_mlp", "fits_v3_mlp2", "fits_v3_initbn"):
             for f in sorted((LP / sub).glob("*.json")):
                 add(f"linprobe/{sub}/{f.name}", f.read_bytes())
         for f in sorted((EVAL / "v2_head").glob("*/mass_v3.json")):

@@ -37,7 +37,7 @@ spec:
         - name: POD_NAME
           valueFrom: { fieldRef: { fieldPath: metadata.name } }
         - name: REPO_REF
-          value: "mtx-s2.19"
+          value: "mtx-s2.20"
         args:
         - |
           set -euo pipefail

@@ -476,8 +476,8 @@
    "quote": "ParT (2 M) 0.836"
   },
   {
-   "macro": "LitPartSmallSetIterThousand",
-   "value": "100",
+   "macro": "LitPartSmallSetIters",
+   "value": "100 k",
    "source": "arXiv:2202.03772",
    "location": "Sec. 5.1 (training dataset size)",
    "quote": "For the former, the training is performed for only 100 k iterations, as it is already converged by then."
