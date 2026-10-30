@@ -16,7 +16,14 @@ A run's x job needs its BatchNorm twin, so it is applied after the run's twin jo
 job after its x job. Features go to LP_ROOT/<model>/<dataset>/<split>/<checkpoint>/ (float16,
 about 2.9 GB a checkpoint of a run), fits to LP_ROOT/FITS/<model>.json.
 
-    python3 scripts/build_linprobe_jobs.py [--pin-not-yet-tagged] [--only mtx-l188-s1 ...]
+--v3 (2026-10-29, the JetClass-II task at 188 classes) writes two Indexed Jobs, whose pods the
+Job controller releases PARALLEL at a time (no release loop), one pod per model:
+  linprobe-fit3-raunav  the refit of the 27 paper runs and the 3 untrained trunks: jc2_188 jc1
+      top qg into LP_ROOT/FITS_V3, each cell's probe and test outputs into LP_ROOT/PROBS_V3
+  linprobe-mlp3-raunav  CPU, the hierarchy's 12 runs and the untrained trunks: the nonlinear
+      probe on the binary tasks at their largest training set (D6) into LP_ROOT/MLP_V3
+
+    python3 scripts/build_linprobe_jobs.py [--pin-not-yet-tagged] [--only mtx-l188-s1 ...] [--v3]
 """
 from __future__ import annotations
 
@@ -35,6 +42,11 @@ FIT_PIN = "mtx-s2.12"
 LP_ROOT = "/data/results/eval/v2_linprobe"
 FITS = "fits3000"   # fits at MAX_ITER 3000; LP_ROOT/fits holds the mtx-s2.06 smoke fit (1000, short of convergence)
 MASS_OBS = "/data/results/eval/test2m_observers"   # generator-level groomed mass of TEST2M
+V3_PIN = "mtx-s2.18"
+FITS_V3, PROBS_V3, MLP_V3 = "fits_v3", "fits_v3_probs", "fits_v3_mlp"
+V3_DATASETS = ("jc2_188", "jc1", "top", "qg")
+V3_NEEDED = {"experiments/EVAL/linear_probe_v2.py": "def native_metrics"}
+OUT_DIR_V3 = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "linprobe_v3"
 RUN_CHECKPOINTS = ("best70", "best70_bn")
 INIT_CHECKPOINTS = ("init",)
 NOT_ON = ("NVIDIA-GeForce-RTX-3090",)      # the v2 grid's and fine-tuning's product
@@ -181,6 +193,67 @@ def fit_spec(model, ckpts) -> str:
         node_exclude=BX.NODE_EXCLUDE), extract=False)
 
 
+V3_PARALLEL = {"fit3": 6, "mlp3": 5}
+
+
+def indexed(text: str, n: int, parallel: int) -> str:
+    """A V1ERR_TEMPLATE job made Indexed: n completions, at most `parallel` pods at a time,
+    each index retried on its own (a signal) and failed alone on exit 42."""
+    old_b, old_p = "  backoffLimit: 6\n", "    - action: FailJob\n"
+    assert text.count(old_b) == 1 and text.count(old_p) == 1
+    return (text.replace(old_b, f"  completionMode: Indexed\n  completions: {n}\n  parallelism: {parallel}\n"
+                                f"  backoffLimitPerIndex: 6\n  maxFailedIndexes: {n}\n")
+                .replace(old_p, "    - action: FailIndex\n"))
+
+
+def pick(models: list[tuple[str, tuple]]) -> str:
+    """Bash that sets MODEL and CKPTS from the pod's completion index."""
+    return ("          MODELS=(" + " ".join(m for m, _ in models) + ")\n"
+            "          CKPTS=(" + " ".join('"' + " ".join(c) + '"' for _, c in models) + ")\n"
+            "          MODEL=${MODELS[$JOB_COMPLETION_INDEX]}; CKPT=${CKPTS[$JOB_COMPLETION_INDEX]}\n"
+            '          echo "index $JOB_COMPLETION_INDEX: $MODEL ($CKPT)"\n')
+
+
+def v3_models() -> list[tuple[str, tuple]]:
+    """The 27 paper runs and the untrained trunks, in the paper's order."""
+    paper = BF.v2_paper_runs()
+    have = {m: c for m, *_, c in models()}
+    return [(m, have[m]) for m in paper] + [(m, c) for m, c in have.items() if m.startswith("init-")]
+
+
+def fit_v3_spec(ms) -> str:
+    body = (pick(ms)
+            + f"          python3 experiments/EVAL/linear_probe_v2.py --root {LP_ROOT} --model $MODEL \\\n"
+            f"            --checkpoints $CKPT --datasets {' '.join(V3_DATASETS)} \\\n"
+            f"            --out {LP_ROOT}/{FITS_V3} --probs-out {LP_ROOT}/{PROBS_V3} || halt\n")
+    return indexed(off_grid_gpu(BX.V1ERR_TEMPLATE.format(
+        name="linprobe-fit3-raunav", image=BX.IMAGE, pin=V3_PIN, body=body,
+        mem="48Gi", cpu="8", gpu_req=', nvidia.com/gpu: "1"', gpu_check=BX.GPU_CHECK.format(),
+        node_exclude=BX.NODE_EXCLUDE), extract=False), len(ms), V3_PARALLEL["fit3"])
+
+
+def mlp_spec(ms) -> str:
+    """CPU only: probe.fit_mlp pins torch to its own 4 threads."""
+    body = (pick([(m, c[:1]) for m, c in ms])
+            + f"          python3 experiments/EVAL/linear_probe_v2.py --root {LP_ROOT} --model $MODEL \\\n"
+            f"            --checkpoints $CKPT --mlp --out {LP_ROOT}/{MLP_V3} || halt\n")
+    return indexed(BX.V1ERR_TEMPLATE.format(
+        name="linprobe-mlp3-raunav", image=BX.IMAGE, pin=V3_PIN, body=body,
+        mem="48Gi", cpu="4", gpu_req="", gpu_check="", node_exclude=BX.NODE_EXCLUDE),
+        len(ms), V3_PARALLEL["mlp3"])
+
+
+def hierarchy(model: str) -> bool:
+    """The four levels of the class hierarchy and the untrained trunks (not mass, partitions)."""
+    return model.startswith("init-") or (model.split("-")[1] in ("l188", "l162", "r42q1", "r16q1"))
+
+
+def build_v3(only=None) -> dict[str, str]:
+    ms = [x for x in v3_models() if not only or x[0] in only]
+    return {"job-linprobe-fit3-raunav.yaml": fit_v3_spec(ms),
+            "job-linprobe-mlp3-raunav.yaml": mlp_spec([x for x in ms if hierarchy(x[0])])}
+
+
 def build(only=None) -> dict[str, str]:
     specs = {}
     for model, run, rung, k, reg, ckpts in models():
@@ -197,15 +270,20 @@ def main(argv=None) -> int:
     ap.add_argument("--pin-not-yet-tagged", action="store_true")
     ap.add_argument("--only", nargs="*", default=None)
     ap.add_argument("--check-only", action="store_true")
+    ap.add_argument("--v3", action="store_true", help="the 2026-10-29 refit and MLP probes")
     a = ap.parse_args(argv)
-    BX.verify_pin(LP_PIN, list(NEEDED), False, NEEDED)
-    BX.verify_pin(FIT_PIN, list(FIT_NEEDED), a.pin_not_yet_tagged, FIT_NEEDED)
-    specs = build(a.only)
+    if a.v3:
+        BX.verify_pin(V3_PIN, list(V3_NEEDED), a.pin_not_yet_tagged, V3_NEEDED)
+        specs, out_dir = build_v3(a.only), OUT_DIR_V3
+    else:
+        BX.verify_pin(LP_PIN, list(NEEDED), False, NEEDED)
+        BX.verify_pin(FIT_PIN, list(FIT_NEEDED), a.pin_not_yet_tagged, FIT_NEEDED)
+        specs, out_dir = build(a.only), OUT_DIR
     if not a.check_only:
-        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        out_dir.mkdir(parents=True, exist_ok=True)
         for name, text in specs.items():
-            (OUT_DIR / name).write_text(text)
-    print(f"{len(specs)} specs {'checked' if a.check_only else 'written to ' + str(OUT_DIR.relative_to(ROOT))}")
+            (out_dir / name).write_text(text)
+    print(f"{len(specs)} specs {'checked' if a.check_only else 'written to ' + str(out_dir.relative_to(ROOT))}")
     return 0
 
 

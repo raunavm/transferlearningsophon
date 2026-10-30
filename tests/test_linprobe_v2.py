@@ -257,3 +257,127 @@ def test_the_fit_job_runs_on_a_gpu_that_is_not_the_grids():
             "nodeSelectorTerms"][0]["matchExpressions"]}
         assert ex["nvidia.com/gpu.product"]["operator"] == "NotIn"
         assert ex["nvidia.com/gpu.product"]["values"] == list(L.NOT_ON)
+
+
+# ------------------------------------------------------------------ the 188-class task (v3)
+@pytest.fixture
+def root188(tmp_path):
+    """jc2 features whose cached training/validation labels are the 162 groups (as the L162
+    extraction wrote them), native labels in the subsets' parquet files, a native test stream,
+    and top/qg for the nonlinear probe."""
+    pa = pytest.importorskip("pyarrow")
+    import pyarrow.parquet as pq
+    rng = np.random.default_rng(11)
+    m = tmp_path / "mtx-l188-s1"
+    pq_dir = tmp_path / "jc2_v2"
+    pq_dir.mkdir()
+    l162 = _load("label_recovery", "experiments/EVAL/label_recovery.py").rung_maps()["L162"]
+    means = rng.normal(size=(188, 128))
+    mk = lambda y: 2.0 * means[y] + rng.normal(size=(y.size, 128))
+    grp = lambda y: np.array([l162[a] for a in y])
+    for split, n in (("train_N300", 300), ("train_N4000", 4000), ("val", 2000)):
+        nat = rng.permutation(np.resize(np.arange(188), n))
+        _split(m / "jc2" / split / "best70", mk(nat), grp(nat))
+        name = "val.parquet" if split == "val" else f"{split}_s1.parquet"
+        pq.write_table(pa.table({"jet_label": nat.astype(np.int64)}), pq_dir / name)
+    nat = rng.permutation(np.resize(np.arange(188), 6000))
+    _split(m / "jc2" / "test" / "best70", mk(nat), nat)
+    for ds in ("top", "qg"):
+        mb = rng.normal(size=(2, 128))
+        mkb = lambda y: 1.0 * mb[y] + rng.normal(size=(y.size, 128))
+        for split, n in (("train_N300", 300), ("train_N3000", 3000), ("val", 2000), ("test", 3000)):
+            y = rng.integers(0, 2, n)
+            _split(m / ds / split / "best70", mkb(y), y)
+        if ds == "qg":
+            y = rng.integers(0, 2, 2000)
+            _split(m / ds / "herwig" / "best70", mkb(y) + 0.3, y)
+    return tmp_path, pq_dir
+
+
+def test_the_188_class_task_reads_native_labels_and_reports_resonant_and_qcd_parts(root188, monkeypatch):
+    root, pq_dir = root188
+    monkeypatch.setattr(LP, "TEST_FIRST", {"jc2": 6000})
+    out, probs = root / "fits", root / "probs"
+    assert LP.main(["--root", str(root), "--model", "mtx-l188-s1", "--checkpoints", "best70",
+                    "--datasets", "jc2_188", "top", "--out", str(out), "--probs-out", str(probs),
+                    "--jc2-parquet", str(pq_dir)]) == 0
+    cells = json.loads((out / "mtx-l188-s1.json").read_text())["cells"]["best70"]
+    assert set(cells) == {"jc2_188", "jc2_188_pairs", "top"}
+    c = cells["jc2_188"]["4000"]
+    assert c["n_classes_in_train"] == 188 and c["n_classes_absent_train"] == 0
+    assert c["macro_auc_ovr"] > 0.9 and c["macro_auc_qcd"] > 0.9 and c["macro_auc_resonant"] > 0.9
+    assert len(c["per_class_auc"]) == 188 and len(c["rejection_vs_qcd"]) == 161
+    assert c["macro_auc_ovr"] == pytest.approx(np.mean(list(c["per_class_auc"].values())))
+    assert c["n_jets_auc"] == 1500 and c["auc_stride"] == 4
+    small = cells["jc2_188"]["300"]                       # every class seen at 300 jets here
+    assert small["macro_auc_trained"] == small["macro_auc_ovr"]
+    assert set(cells["jc2_188_pairs"]) == {"4000"}
+    assert set(cells["jc2_188_pairs"]["4000"]) == set(LP.PAIRS) | set(LP.QCD_PAIRS)
+    for name in ("jc2_188_N4000", "top_N300", "top_N3000", "jc2_188_pairs_qcd_bb_vs_cc_N4000"):
+        z = np.load(probs / "mtx-l188-s1" / "best70" / f"{name}.npz")
+        assert {"rows", "y", "coef", "intercept", "scaler_mean", "scaler_scale", "C"} <= set(z.files)
+    z = np.load(probs / "mtx-l188-s1" / "best70" / "jc2_188_N4000.npz")
+    assert z["p"].shape == (1500, 188) and z["p"].dtype == np.float16
+    assert not (probs / "mtx-l188-s1" / "best70" / "jc2_188_N300.npz").exists()   # largest N only
+    # every search records the final gradient and calls a fit converged only below it
+    for s in c["search"].values():
+        assert s["converged"] == (s["n_iter"] < LP.MAX_ITER and s["grad_max"] <= LP.CONVERGED_GRAD)
+
+
+def test_a_parquet_that_does_not_match_the_cached_groups_is_fatal(root188, monkeypatch, tmp_path):
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    root, pq_dir = root188
+    y = pq.read_table(pq_dir / "val.parquet").column(0).to_numpy()
+    pq.write_table(pa.table({"jet_label": np.roll(y, 1)}), pq_dir / "val.parquet")
+    with pytest.raises(SystemExit, match="row for row"):
+        LP.main(["--root", str(root), "--model", "mtx-l188-s1", "--checkpoints", "best70",
+                 "--datasets", "jc2_188", "--out", str(tmp_path / "f"), "--jc2-parquet", str(pq_dir)])
+
+
+def test_the_qcd_flavour_pairs_are_defined_on_quark_content():
+    lr = _load("label_recovery", "experiments/EVAL/label_recovery.py")
+    import csv
+    with lr.MAP.open() as f:
+        names = {int(r["jet_label"]): r["class_name"] for r in csv.DictReader(f)}
+    g = LP.native_pair_groups(names)
+    assert g["qcd_bb_vs_cc"] == ((169,), (181,))
+    assert g["qcd_b_vs_light"] == (tuple(range(161, 179)), (187,))
+    assert g["qcd_c_vs_light"] == (tuple(range(179, 185)), (187,))
+    assert LP.QCD_NATIVE == tuple(range(161, 188))
+
+
+def test_the_nonlinear_probe_scores_the_binary_tasks_at_their_largest_training_set(root188, monkeypatch):
+    pytest.importorskip("torch")
+    root, pq_dir = root188
+    monkeypatch.setattr(LP, "TEST_FIRST", {"jc2": 6000})
+    out = root / "mlp"
+    assert LP.main(["--root", str(root), "--model", "mtx-l188-s1", "--checkpoints", "best70", "--mlp",
+                    "--out", str(out), "--jc2-parquet", str(pq_dir)]) == 0
+    doc = json.loads((out / "mtx-l188-s1.json").read_text())
+    cells = doc["cells"]["best70"]
+    assert doc["probe"] == "mlp"
+    assert set(cells) == set(LP.PAIRS) | set(LP.QCD_PAIRS) | {"top", "qg", "qg_herwig"}
+    assert cells["top"]["train_size"] == 3000 and cells["top"]["auc"] > 0.8
+    assert cells["qcd_bb_vs_cc"]["train_size"] == 4000
+
+
+def test_the_v3_jobs_cover_the_paper_runs_and_the_untrained_trunks():
+    specs = L.build_v3()
+    assert set(specs) == {"job-linprobe-fit3-raunav.yaml", "job-linprobe-mlp3-raunav.yaml"}
+    fit = yaml.safe_load(specs["job-linprobe-fit3-raunav.yaml"])
+    mlp = yaml.safe_load(specs["job-linprobe-mlp3-raunav.yaml"])
+    paper = L.BF.v2_paper_runs()
+    for doc, n in ((fit, 27 + 3), (mlp, 12 + 3)):
+        sp = doc["spec"]
+        assert sp["completionMode"] == "Indexed" and sp["completions"] == n
+        assert "backoffLimit" not in sp and sp["parallelism"] <= 6
+        assert sp["podFailurePolicy"]["rules"][0]["action"] == "FailIndex"
+    a = fit["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    models = re.search(r"MODELS=\(([^)]*)\)", a).group(1).split()
+    assert models == paper + ["init-s1", "init-s2", "init-s3"]
+    assert "--datasets jc2_188 jc1 top qg" in a and f"--probs-out {L.LP_ROOT}/{L.PROBS_V3}" in a
+    m = mlp["spec"]["template"]["spec"]["containers"][0]
+    assert "nvidia.com/gpu" not in m["resources"]["limits"] and "--mlp" in m["args"][0]
+    assert all(x.split("-")[1] in ("l188", "l162", "r42q1", "r16q1", "s1", "s2", "s3")
+               for x in re.search(r"MODELS=\(([^)]*)\)", m["args"][0]).group(1).split())

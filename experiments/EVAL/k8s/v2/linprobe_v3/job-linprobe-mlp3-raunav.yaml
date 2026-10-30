@@ -1,0 +1,76 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: linprobe-mlp3-raunav
+  namespace: cms-ml
+spec:
+  completionMode: Indexed
+  completions: 15
+  parallelism: 5
+  backoffLimitPerIndex: 6
+  maxFailedIndexes: 15
+  podFailurePolicy:
+    rules:
+    - action: FailIndex
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          # a signal (OOM, lost node) is retried; any other failure is deterministic
+          halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
+          git clone --depth 1 --branch "mtx-s2.18" \
+            https://github.com/raunavm/transferlearningsophon.git \
+            /workspace/transferlearningsophon
+          cd /workspace/transferlearningsophon
+          git rev-parse HEAD
+          pip install --no-cache-dir -q pyarrow
+          export PYTHONUNBUFFERED=1
+          # BLAS threads = the CPUs requested: nproc reports the node's cores
+          export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          echo "PVC used: ${USED}%"
+          [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          MODELS=(mtx-l188-s1 mtx-l188-s2 mtx-l188-s3 mtx-l162-s1 mtx-l162-s2 mtx-l162-s3 mtx-r42q1-s1 mtx-r42q1-s2 mtx-r42q1-s3 mtx-r16q1-s1 mtx-r16q1-s2 mtx-r16q1-s3 init-s1 init-s2 init-s3)
+          CKPTS=("best70" "best70" "best70" "best70" "best70" "best70" "best70" "best70" "best70" "best70" "best70" "best70" "init" "init" "init")
+          MODEL=${MODELS[$JOB_COMPLETION_INDEX]}; CKPT=${CKPTS[$JOB_COMPLETION_INDEX]}
+          echo "index $JOB_COMPLETION_INDEX: $MODEL ($CKPT)"
+          python3 experiments/EVAL/linear_probe_v2.py --root /data/results/eval/v2_linprobe --model $MODEL \
+            --checkpoints $CKPT --mlp --out /data/results/eval/v2_linprobe/fits_v3_mlp || halt
+        volumeMounts:
+        - { name: jc2,  mountPath: /jc2, readOnly: true }
+        - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+        resources:
+          requests: { memory: "48Gi", cpu: "4", ephemeral-storage: "20Gi" }
+          limits:   { memory: "48Gi", cpu: "4", ephemeral-storage: "20Gi" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["patternlab.calit2.optiputer.net", "nautilus-ext-gpu01.fullerton.edu"]
+      volumes:
+      - name: jc2
+        persistentVolumeClaim:
+          claimName: tn-pvc-base-jetclass2
+          readOnly: true
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }
