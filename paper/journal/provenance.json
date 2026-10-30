@@ -4973,6 +4973,18 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "200{,}000"
   },
+  "LpPairNValMax": {
+    "json_path": "validation jets of the pair probe with the most",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "2{,}108"
+  },
+  "LpPairNValMin": {
+    "json_path": "validation jets of the pair probe with the fewest",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "302"
+  },
   "MassLossShareVtwoOnesevenMass": {
     "json_path": "SLOTS[MassLossShareVtwoOnesevenMass]",
     "sha256": "ed3d825c4e8185889ec055d6813f9ecc7a7a4e83d418ec0fcf3be08238dff0b3",
@@ -5525,6 +5537,12 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpJcOneCoarseOverRes": {
+    "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.102\\,\\ensuremath{\\pm}\\,0.030"
+  },
   "MlstCmpJcOneFoneOverFull": {
     "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of FLAV_F1 over L188, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
@@ -5585,11 +5603,29 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpJcOneMidOverRes": {
+    "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R42_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.007\\,\\ensuremath{\\pm}\\,0.008"
+  },
+  "MlstCmpJcOneRandOverCoarse": {
+    "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of each random partition over the R16_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.032\\,\\ensuremath{\\pm}\\,0.028"
+  },
   "MlstCmpJcOneRandOverFull": {
     "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of each random partition over the 188-class run of the same index, mean +- SD over the partitions",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.152\\,\\ensuremath{\\pm}\\,0.011"
+  },
+  "MlstCmpJcOneRandOverMid": {
+    "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of each random partition over the R42_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.126\\,\\ensuremath{\\pm}\\,0.006"
   },
   "MlstCmpJcOneResMassOverInit": {
     "json_path": "linear probe jc1 N=1000000: (1 - macro_auc_ovr) of L162_MASS over INIT, run by run",
@@ -5663,6 +5699,12 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpJcTwoCoarseOverRes": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.47\\,\\ensuremath{\\pm}\\,0.04"
+  },
   "MlstCmpJcTwoFoneOverFull": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of FLAV_F1 over L188, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
@@ -5723,6 +5765,12 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpJcTwoMidOverRes": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of R42_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.12\\,\\ensuremath{\\pm}\\,0.04"
+  },
   "MlstCmpJcTwoQcdCoarseMassOverCoarse": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of R16_Q1_MASS over R16_Q1, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
@@ -5758,6 +5806,12 @@
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
+  },
+  "MlstCmpJcTwoQcdCoarseOverRes": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of R16_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.50\\,\\ensuremath{\\pm}\\,0.11"
   },
   "MlstCmpJcTwoQcdFoneOverFull": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of FLAV_F1 over L188, run by run",
@@ -5819,11 +5873,29 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpJcTwoQcdMidOverRes": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of R42_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.08\\,\\ensuremath{\\pm}\\,0.10"
+  },
+  "MlstCmpJcTwoQcdRandOverCoarse": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of each random partition over the R16_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.772\\,\\ensuremath{\\pm}\\,0.014"
+  },
   "MlstCmpJcTwoQcdRandOverFull": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of each random partition over the 188-class run of the same index, mean +- SD over the partitions",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.298\\,\\ensuremath{\\pm}\\,0.018"
+  },
+  "MlstCmpJcTwoQcdRandOverMid": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of each random partition over the R42_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.07\\,\\ensuremath{\\pm}\\,0.04"
   },
   "MlstCmpJcTwoQcdResMassOverInit": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of L162_MASS over INIT, run by run",
@@ -5861,11 +5933,23 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpJcTwoRandOverCoarse": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of each random partition over the R16_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.762\\,\\ensuremath{\\pm}\\,0.007"
+  },
   "MlstCmpJcTwoRandOverFull": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of each random partition over the 188-class run of the same index, mean +- SD over the partitions",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.161\\,\\ensuremath{\\pm}\\,0.009"
+  },
+  "MlstCmpJcTwoRandOverMid": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of each random partition over the R42_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.000\\,\\ensuremath{\\pm}\\,0.016"
   },
   "MlstCmpJcTwoResCoarseMassOverCoarse": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of R16_Q1_MASS over R16_Q1, run by run",
@@ -5902,6 +5986,12 @@
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
+  },
+  "MlstCmpJcTwoResCoarseOverRes": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of R16_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.447\\,\\ensuremath{\\pm}\\,0.027"
   },
   "MlstCmpJcTwoResFoneOverFull": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of FLAV_F1 over L188, run by run",
@@ -5981,6 +6071,12 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpJcTwoResMidOverRes": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of R42_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.138\\,\\ensuremath{\\pm}\\,0.011"
+  },
   "MlstCmpJcTwoResOverFull": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of L162 over L188, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
@@ -5999,11 +6095,23 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpJcTwoResRandOverCoarse": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of each random partition over the R16_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.756\\,\\ensuremath{\\pm}\\,0.011"
+  },
   "MlstCmpJcTwoResRandOverFull": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of each random partition over the 188-class run of the same index, mean +- SD over the partitions",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.097\\,\\ensuremath{\\pm}\\,0.008"
+  },
+  "MlstCmpJcTwoResRandOverMid": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of each random partition over the R42_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.963\\,\\ensuremath{\\pm}\\,0.007"
   },
   "MlstCmpJcTwoResResMassOverInit": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of L162_MASS over INIT, run by run",
@@ -6077,6 +6185,12 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpJcTwoTrainedCoarseOverRes": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of R16_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.47\\,\\ensuremath{\\pm}\\,0.04"
+  },
   "MlstCmpJcTwoTrainedFoneOverFull": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of FLAV_F1 over L188, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
@@ -6137,11 +6251,29 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpJcTwoTrainedMidOverRes": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of R42_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.12\\,\\ensuremath{\\pm}\\,0.04"
+  },
+  "MlstCmpJcTwoTrainedRandOverCoarse": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of each random partition over the R16_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.762\\,\\ensuremath{\\pm}\\,0.007"
+  },
   "MlstCmpJcTwoTrainedRandOverFull": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of each random partition over the 188-class run of the same index, mean +- SD over the partitions",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.161\\,\\ensuremath{\\pm}\\,0.009"
+  },
+  "MlstCmpJcTwoTrainedRandOverMid": {
+    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of each random partition over the R42_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.000\\,\\ensuremath{\\pm}\\,0.016"
   },
   "MlstCmpJcTwoTrainedResMassOverInit": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of L162_MASS over INIT, run by run",
@@ -6359,6 +6491,12 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpQgCoarseOverRes": {
+    "json_path": "linear probe qg N=1600000: (1 - auc) of R16_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.03\\,\\ensuremath{\\pm}\\,0.15"
+  },
   "MlstCmpQgFoneOverFull": {
     "json_path": "linear probe qg N=1600000: (1 - auc) of FLAV_F1 over L188, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
@@ -6431,6 +6569,12 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpQgHerwigCoarseOverRes": {
+    "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of R16_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.01\\,\\ensuremath{\\pm}\\,0.05"
+  },
   "MlstCmpQgHerwigFoneOverFull": {
     "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of FLAV_F1 over L188, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
@@ -6491,11 +6635,29 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpQgHerwigMidOverRes": {
+    "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of R42_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.998\\,\\ensuremath{\\pm}\\,0.030"
+  },
+  "MlstCmpQgHerwigRandOverCoarse": {
+    "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of each random partition over the R16_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.020\\,\\ensuremath{\\pm}\\,0.024"
+  },
   "MlstCmpQgHerwigRandOverFull": {
     "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of each random partition over the 188-class run of the same index, mean +- SD over the partitions",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.032\\,\\ensuremath{\\pm}\\,0.024"
+  },
+  "MlstCmpQgHerwigRandOverMid": {
+    "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of each random partition over the R42_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.012\\,\\ensuremath{\\pm}\\,0.010"
   },
   "MlstCmpQgHerwigResMassOverInit": {
     "json_path": "linear probe qg_herwig N=1600000: (1 - auc) of L162_MASS over INIT, run by run",
@@ -6557,11 +6719,29 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpQgMidOverRes": {
+    "json_path": "linear probe qg N=1600000: (1 - auc) of R42_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.990\\,\\ensuremath{\\pm}\\,0.028"
+  },
+  "MlstCmpQgRandOverCoarse": {
+    "json_path": "linear probe qg N=1600000: (1 - auc) of each random partition over the R16_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.04\\,\\ensuremath{\\pm}\\,0.12"
+  },
   "MlstCmpQgRandOverFull": {
     "json_path": "linear probe qg N=1600000: (1 - auc) of each random partition over the 188-class run of the same index, mean +- SD over the partitions",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.09\\,\\ensuremath{\\pm}\\,0.11"
+  },
+  "MlstCmpQgRandOverMid": {
+    "json_path": "linear probe qg N=1600000: (1 - auc) of each random partition over the R42_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.992\\,\\ensuremath{\\pm}\\,0.029"
   },
   "MlstCmpQgResMassOverInit": {
     "json_path": "linear probe qg N=1600000: (1 - auc) of L162_MASS over INIT, run by run",
@@ -6635,6 +6815,12 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpTopCoarseOverRes": {
+    "json_path": "linear probe top N=1200000: (1 - auc) of R16_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.11\\,\\ensuremath{\\pm}\\,0.07"
+  },
   "MlstCmpTopFoneOverFull": {
     "json_path": "linear probe top N=1200000: (1 - auc) of FLAV_F1 over L188, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
@@ -6695,11 +6881,29 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{no run yet}"
   },
+  "MlstCmpTopMidOverRes": {
+    "json_path": "linear probe top N=1200000: (1 - auc) of R42_Q1 over L162, run by run",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.20\\,\\ensuremath{\\pm}\\,0.11"
+  },
+  "MlstCmpTopRandOverCoarse": {
+    "json_path": "linear probe top N=1200000: (1 - auc) of each random partition over the R16_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.07\\,\\ensuremath{\\pm}\\,0.19"
+  },
   "MlstCmpTopRandOverFull": {
     "json_path": "linear probe top N=1200000: (1 - auc) of each random partition over the 188-class run of the same index, mean +- SD over the partitions",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.07\\,\\ensuremath{\\pm}\\,0.22"
+  },
+  "MlstCmpTopRandOverMid": {
+    "json_path": "linear probe top N=1200000: (1 - auc) of each random partition over the R42_Q1 run of the same index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.97\\,\\ensuremath{\\pm}\\,0.19"
   },
   "MlstCmpTopResMassOverInit": {
     "json_path": "linear probe top N=1200000: (1 - auc) of L162_MASS over INIT, run by run",
@@ -6888,25 +7092,25 @@
     "value": "1.0026 and 1.0049"
   },
   "MlstFtCmpQgCoarseMassOverScratchEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=100000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9387 and 0.9467"
   },
   "MlstFtCmpQgCoarseMassOverScratchEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=10000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.97323 and 0.97342"
   },
   "MlstFtCmpQgCoarseMassOverScratchEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=1000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.8931 and 0.8965"
   },
   "MlstFtCmpQgCoarseMassOverScratchMax": {
-    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9766 and 0.9786"
@@ -6936,52 +7140,52 @@
     "value": "1.0049\\,\\ensuremath{\\pm}\\,0.0013"
   },
   "MlstFtCmpQgCoarseOverScratchEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each R16_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=100000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9352\\,\\ensuremath{\\pm}\\,0.0015"
+    "value": "0.935\\,\\ensuremath{\\pm}\\,0.005"
   },
   "MlstFtCmpQgCoarseOverScratchEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each R16_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=10000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.985\\,\\ensuremath{\\pm}\\,0.017"
+    "value": "0.985\\,\\ensuremath{\\pm}\\,0.018"
   },
   "MlstFtCmpQgCoarseOverScratchEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each R16_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=1000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.910\\,\\ensuremath{\\pm}\\,0.010"
+    "value": "0.910\\,\\ensuremath{\\pm}\\,0.013"
   },
   "MlstFtCmpQgCoarseOverScratchMax": {
-    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each R16_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9741\\,\\ensuremath{\\pm}\\,0.0004"
+    "value": "0.9741\\,\\ensuremath{\\pm}\\,0.0015"
   },
   "MlstFtCmpQgFullOverScratchEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each L188 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=100000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9230\\,\\ensuremath{\\pm}\\,0.0009"
+    "value": "0.923\\,\\ensuremath{\\pm}\\,0.005"
   },
   "MlstFtCmpQgFullOverScratchEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each L188 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=10000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.965\\,\\ensuremath{\\pm}\\,0.012"
+    "value": "0.965\\,\\ensuremath{\\pm}\\,0.013"
   },
   "MlstFtCmpQgFullOverScratchEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each L188 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=1000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.892\\,\\ensuremath{\\pm}\\,0.004"
+    "value": "0.892\\,\\ensuremath{\\pm}\\,0.009"
   },
   "MlstFtCmpQgFullOverScratchMax": {
-    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each L188 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9693\\,\\ensuremath{\\pm}\\,0.0016"
+    "value": "0.9693\\,\\ensuremath{\\pm}\\,0.0021"
   },
   "MlstFtCmpQgHerwigCoarseMassOverCoarseEFive": {
     "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
@@ -7008,25 +7212,25 @@
     "value": "1.007 and 1.032"
   },
   "MlstFtCmpQgHerwigCoarseMassOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9774 and 0.9733"
   },
   "MlstFtCmpQgHerwigCoarseMassOverScratchEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9540 and 0.9635"
   },
   "MlstFtCmpQgHerwigCoarseMassOverScratchEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.93275 and 0.93355"
   },
   "MlstFtCmpQgHerwigCoarseMassOverScratchMax": {
-    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.980 and 1.005"
@@ -7056,49 +7260,49 @@
     "value": "0.987\\,\\ensuremath{\\pm}\\,0.013"
   },
   "MlstFtCmpQgHerwigCoarseOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each R16_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.979\\,\\ensuremath{\\pm}\\,0.004"
   },
   "MlstFtCmpQgHerwigCoarseOverScratchEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each R16_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9595\\,\\ensuremath{\\pm}\\,0.0019"
+    "value": "0.9595\\,\\ensuremath{\\pm}\\,0.0032"
   },
   "MlstFtCmpQgHerwigCoarseOverScratchEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each R16_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.947\\,\\ensuremath{\\pm}\\,0.005"
+    "value": "0.947\\,\\ensuremath{\\pm}\\,0.013"
   },
   "MlstFtCmpQgHerwigCoarseOverScratchMax": {
-    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each R16_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.978\\,\\ensuremath{\\pm}\\,0.009"
+    "value": "0.978\\,\\ensuremath{\\pm}\\,0.010"
   },
   "MlstFtCmpQgHerwigFullOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each L188 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.996\\,\\ensuremath{\\pm}\\,0.010"
   },
   "MlstFtCmpQgHerwigFullOverScratchEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each L188 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.957\\,\\ensuremath{\\pm}\\,0.006"
+    "value": "0.957\\,\\ensuremath{\\pm}\\,0.007"
   },
   "MlstFtCmpQgHerwigFullOverScratchEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each L188 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.942\\,\\ensuremath{\\pm}\\,0.011"
+    "value": "0.942\\,\\ensuremath{\\pm}\\,0.016"
   },
   "MlstFtCmpQgHerwigFullOverScratchMax": {
-    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each L188 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.991\\,\\ensuremath{\\pm}\\,0.012"
@@ -7128,28 +7332,52 @@
     "value": "0.996\\,\\ensuremath{\\pm}\\,0.019"
   },
   "MlstFtCmpQgHerwigMidOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each R42_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.0014\\,\\ensuremath{\\pm}\\,0.0018"
+    "value": "1.0014\\,\\ensuremath{\\pm}\\,0.0024"
   },
   "MlstFtCmpQgHerwigMidOverScratchEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each R42_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9645\\,\\ensuremath{\\pm}\\,0.0018"
+    "value": "0.9645\\,\\ensuremath{\\pm}\\,0.0031"
   },
   "MlstFtCmpQgHerwigMidOverScratchEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each R42_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.937\\,\\ensuremath{\\pm}\\,0.010"
+    "value": "0.937\\,\\ensuremath{\\pm}\\,0.016"
   },
   "MlstFtCmpQgHerwigMidOverScratchMax": {
-    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each R42_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.987\\,\\ensuremath{\\pm}\\,0.024"
+  },
+  "MlstFtCmpQgHerwigRandOverCoarseEFive": {
+    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.016\\,\\ensuremath{\\pm}\\,0.008"
+  },
+  "MlstFtCmpQgHerwigRandOverCoarseEFour": {
+    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.012\\,\\ensuremath{\\pm}\\,0.015"
+  },
+  "MlstFtCmpQgHerwigRandOverCoarseEThree": {
+    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.021\\,\\ensuremath{\\pm}\\,0.035"
+  },
+  "MlstFtCmpQgHerwigRandOverCoarseMax": {
+    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.019\\,\\ensuremath{\\pm}\\,0.004"
   },
   "MlstFtCmpQgHerwigRandOverFullEFive": {
     "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
@@ -7200,25 +7428,25 @@
     "value": "0.977 and 1.006"
   },
   "MlstFtCmpQgHerwigResMassOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each L162_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9881 and 0.9944"
   },
   "MlstFtCmpQgHerwigResMassOverScratchEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each L162_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.95215 and 0.95293"
   },
   "MlstFtCmpQgHerwigResMassOverScratchEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each L162_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.929 and 0.942"
   },
   "MlstFtCmpQgHerwigResMassOverScratchMax": {
-    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each L162_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.975 and 0.993"
@@ -7248,28 +7476,28 @@
     "value": "1.002\\,\\ensuremath{\\pm}\\,0.006"
   },
   "MlstFtCmpQgHerwigResOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each L162 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.002\\,\\ensuremath{\\pm}\\,0.009"
   },
   "MlstFtCmpQgHerwigResOverScratchEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each L162 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.956\\,\\ensuremath{\\pm}\\,0.004"
+    "value": "0.956\\,\\ensuremath{\\pm}\\,0.005"
   },
   "MlstFtCmpQgHerwigResOverScratchEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each L162 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9449\\,\\ensuremath{\\pm}\\,0.0007"
+    "value": "0.945\\,\\ensuremath{\\pm}\\,0.012"
   },
   "MlstFtCmpQgHerwigResOverScratchMax": {
-    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each L162 run over the from-scratch mean",
+    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.993\\,\\ensuremath{\\pm}\\,0.005"
+    "value": "0.993\\,\\ensuremath{\\pm}\\,0.006"
   },
   "MlstFtCmpQgMidOverFullEFive": {
     "json_path": "fine-tuning qg N=100000: (1 - auc) of R42_Q1 over L188, run by run",
@@ -7296,28 +7524,52 @@
     "value": "1.0030\\,\\ensuremath{\\pm}\\,0.0034"
   },
   "MlstFtCmpQgMidOverScratchEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each R42_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=100000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.932\\,\\ensuremath{\\pm}\\,0.004"
+    "value": "0.932\\,\\ensuremath{\\pm}\\,0.006"
   },
   "MlstFtCmpQgMidOverScratchEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each R42_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=10000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.977\\,\\ensuremath{\\pm}\\,0.011"
+    "value": "0.977\\,\\ensuremath{\\pm}\\,0.013"
   },
   "MlstFtCmpQgMidOverScratchEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each R42_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=1000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.900\\,\\ensuremath{\\pm}\\,0.006"
+    "value": "0.900\\,\\ensuremath{\\pm}\\,0.010"
   },
   "MlstFtCmpQgMidOverScratchMax": {
-    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each R42_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.972\\,\\ensuremath{\\pm}\\,0.004"
+  },
+  "MlstFtCmpQgRandOverCoarseEFive": {
+    "json_path": "fine-tuning qg N=100000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.000\\,\\ensuremath{\\pm}\\,0.006"
+  },
+  "MlstFtCmpQgRandOverCoarseEFour": {
+    "json_path": "fine-tuning qg N=10000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.995\\,\\ensuremath{\\pm}\\,0.025"
+  },
+  "MlstFtCmpQgRandOverCoarseEThree": {
+    "json_path": "fine-tuning qg N=1000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.036\\,\\ensuremath{\\pm}\\,0.029"
+  },
+  "MlstFtCmpQgRandOverCoarseMax": {
+    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.9980\\,\\ensuremath{\\pm}\\,0.0010"
   },
   "MlstFtCmpQgRandOverFullEFive": {
     "json_path": "fine-tuning qg N=100000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
@@ -7368,25 +7620,25 @@
     "value": "1.00156 and 1.00183"
   },
   "MlstFtCmpQgResMassOverScratchEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each L162_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=100000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9301 and 0.9328"
   },
   "MlstFtCmpQgResMassOverScratchEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each L162_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=10000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9633 and 0.9603"
   },
   "MlstFtCmpQgResMassOverScratchEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each L162_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=1000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.877 and 0.889"
   },
   "MlstFtCmpQgResMassOverScratchMax": {
-    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each L162_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9707 and 0.9726"
@@ -7416,28 +7668,28 @@
     "value": "1.0004\\,\\ensuremath{\\pm}\\,0.0026"
   },
   "MlstFtCmpQgResOverScratchEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each L162 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=100000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.926\\,\\ensuremath{\\pm}\\,0.005"
+    "value": "0.926\\,\\ensuremath{\\pm}\\,0.007"
   },
   "MlstFtCmpQgResOverScratchEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each L162 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=10000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.956\\,\\ensuremath{\\pm}\\,0.023"
   },
   "MlstFtCmpQgResOverScratchEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each L162 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=1000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.887\\,\\ensuremath{\\pm}\\,0.008"
+    "value": "0.887\\,\\ensuremath{\\pm}\\,0.011"
   },
   "MlstFtCmpQgResOverScratchMax": {
-    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each L162 run over the from-scratch mean",
+    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9697\\,\\ensuremath{\\pm}\\,0.0009"
+    "value": "0.9697\\,\\ensuremath{\\pm}\\,0.0017"
   },
   "MlstFtCmpTopCoarseMassOverCoarseEFive": {
     "json_path": "fine-tuning top N=100000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
@@ -7464,25 +7716,25 @@
     "value": "1.0075 and 1.0065"
   },
   "MlstFtCmpTopCoarseMassOverScratchEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning top N=100000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.970 and 0.994"
   },
   "MlstFtCmpTopCoarseMassOverScratchEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning top N=10000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.493 and 1.404"
   },
   "MlstFtCmpTopCoarseMassOverScratchEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning top N=1000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.944 and 0.855"
   },
   "MlstFtCmpTopCoarseMassOverScratchMax": {
-    "json_path": "fine-tuning top N=1200000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning top N=1200000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9633 and 0.9569"
@@ -7512,52 +7764,52 @@
     "value": "1.0120\\,\\ensuremath{\\pm}\\,0.0015"
   },
   "MlstFtCmpTopCoarseOverScratchEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each R16_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=100000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.944\\,\\ensuremath{\\pm}\\,0.018"
+    "value": "0.944\\,\\ensuremath{\\pm}\\,0.020"
   },
   "MlstFtCmpTopCoarseOverScratchEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each R16_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=10000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.29\\,\\ensuremath{\\pm}\\,0.10"
+    "value": "1.29\\,\\ensuremath{\\pm}\\,0.13"
   },
   "MlstFtCmpTopCoarseOverScratchEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each R16_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=1000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.803\\,\\ensuremath{\\pm}\\,0.030"
+    "value": "0.80\\,\\ensuremath{\\pm}\\,0.08"
   },
   "MlstFtCmpTopCoarseOverScratchMax": {
-    "json_path": "fine-tuning top N=1200000: (1 - auc) of each R16_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=1200000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.955\\,\\ensuremath{\\pm}\\,0.004"
+    "value": "0.955\\,\\ensuremath{\\pm}\\,0.005"
   },
   "MlstFtCmpTopFullOverScratchEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each L188 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=100000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.899\\,\\ensuremath{\\pm}\\,0.006"
+    "value": "0.899\\,\\ensuremath{\\pm}\\,0.010"
   },
   "MlstFtCmpTopFullOverScratchEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each L188 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=10000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.086\\,\\ensuremath{\\pm}\\,0.035"
+    "value": "1.09\\,\\ensuremath{\\pm}\\,0.08"
   },
   "MlstFtCmpTopFullOverScratchEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each L188 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=1000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.730\\,\\ensuremath{\\pm}\\,0.035"
+    "value": "0.73\\,\\ensuremath{\\pm}\\,0.07"
   },
   "MlstFtCmpTopFullOverScratchMax": {
-    "json_path": "fine-tuning top N=1200000: (1 - auc) of each L188 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=1200000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.944\\,\\ensuremath{\\pm}\\,0.005"
+    "value": "0.944\\,\\ensuremath{\\pm}\\,0.006"
   },
   "MlstFtCmpTopMidOverFullEFive": {
     "json_path": "fine-tuning top N=100000: (1 - auc) of R42_Q1 over L188, run by run",
@@ -7584,28 +7836,52 @@
     "value": "0.9975\\,\\ensuremath{\\pm}\\,0.0014"
   },
   "MlstFtCmpTopMidOverScratchEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each R42_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=100000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.946\\,\\ensuremath{\\pm}\\,0.016"
+    "value": "0.946\\,\\ensuremath{\\pm}\\,0.018"
   },
   "MlstFtCmpTopMidOverScratchEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each R42_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=10000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.24\\,\\ensuremath{\\pm}\\,0.18"
+    "value": "1.24\\,\\ensuremath{\\pm}\\,0.20"
   },
   "MlstFtCmpTopMidOverScratchEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each R42_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=1000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.83\\,\\ensuremath{\\pm}\\,0.09"
+    "value": "0.83\\,\\ensuremath{\\pm}\\,0.12"
   },
   "MlstFtCmpTopMidOverScratchMax": {
-    "json_path": "fine-tuning top N=1200000: (1 - auc) of each R42_Q1 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=1200000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9416\\,\\ensuremath{\\pm}\\,0.0035"
+    "value": "0.942\\,\\ensuremath{\\pm}\\,0.005"
+  },
+  "MlstFtCmpTopRandOverCoarseEFive": {
+    "json_path": "fine-tuning top N=100000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.019\\,\\ensuremath{\\pm}\\,0.020"
+  },
+  "MlstFtCmpTopRandOverCoarseEFour": {
+    "json_path": "fine-tuning top N=10000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.16\\,\\ensuremath{\\pm}\\,0.12"
+  },
+  "MlstFtCmpTopRandOverCoarseEThree": {
+    "json_path": "fine-tuning top N=1000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.11\\,\\ensuremath{\\pm}\\,0.12"
+  },
+  "MlstFtCmpTopRandOverCoarseMax": {
+    "json_path": "fine-tuning top N=1200000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.996\\,\\ensuremath{\\pm}\\,0.005"
   },
   "MlstFtCmpTopRandOverFullEFive": {
     "json_path": "fine-tuning top N=100000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
@@ -7656,25 +7932,25 @@
     "value": "1.00777 and 1.00868"
   },
   "MlstFtCmpTopResMassOverScratchEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each L162_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning top N=100000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.959 and 0.925"
   },
   "MlstFtCmpTopResMassOverScratchEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each L162_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning top N=10000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.176 and 1.111"
   },
   "MlstFtCmpTopResMassOverScratchEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each L162_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning top N=1000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.774 and 0.693"
   },
   "MlstFtCmpTopResMassOverScratchMax": {
-    "json_path": "fine-tuning top N=1200000: (1 - auc) of each L162_MASS run over the from-scratch mean",
+    "json_path": "fine-tuning top N=1200000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9476 and 0.9451"
@@ -7704,28 +7980,28 @@
     "value": "0.9975\\,\\ensuremath{\\pm}\\,0.0007"
   },
   "MlstFtCmpTopResOverScratchEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each L162 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=100000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.922\\,\\ensuremath{\\pm}\\,0.013"
+    "value": "0.922\\,\\ensuremath{\\pm}\\,0.015"
   },
   "MlstFtCmpTopResOverScratchEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each L162 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=10000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.17\\,\\ensuremath{\\pm}\\,0.08"
+    "value": "1.17\\,\\ensuremath{\\pm}\\,0.11"
   },
   "MlstFtCmpTopResOverScratchEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each L162 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=1000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.741\\,\\ensuremath{\\pm}\\,0.031"
+    "value": "0.74\\,\\ensuremath{\\pm}\\,0.07"
   },
   "MlstFtCmpTopResOverScratchMax": {
-    "json_path": "fine-tuning top N=1200000: (1 - auc) of each L162 run over the from-scratch mean",
+    "json_path": "fine-tuning top N=1200000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.942\\,\\ensuremath{\\pm}\\,0.005"
+    "value": "0.942\\,\\ensuremath{\\pm}\\,0.006"
   },
   "MlstFtEpochsEFive": {
     "json_path": "cells[best70, leg 1/2, n_train 100000].epochs",

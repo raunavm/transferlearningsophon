@@ -1,7 +1,7 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Mass resolution $\sigma_{\mathrm{eff}}$ of $\ln(m_{\mathrm{reg}}/m_{\mathrm{SD}}^{\mathrm{gen}})$ on the JetClass-II test jets with a generator-level match, on all, resonant and QCD jets, and the median $m_{\mathrm{reg}}/m_{\mathrm{SD}}^{\mathrm{gen}}$; lower $\sigma_{\mathrm{eff}}$ is better. The mass node of the models pretrained with the mass regression is scored on the target itself; the multilayer perceptron (MLP) on frozen features, averaged over three seeds, on the target with the median of each class subtracted. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run.}
+\caption{Mass resolution $\sigma_{\mathrm{eff}}$ of $\ln(m_{\mathrm{reg}}/m_{\mathrm{SD}}^{\mathrm{gen}})$ on the JetClass-II test jets with a generator-level match, on all, resonant and QCD jets, and the median $m_{\mathrm{reg}}/m_{\mathrm{SD}}^{\mathrm{gen}}$; lower $\sigma_{\mathrm{eff}}$ is better. The mass node of the models pretrained with the mass regression is scored on the target itself. The multilayer perceptron (MLP) on frozen features, averaged over three seeds, regresses the target minus the median of the jet's true class and is scored with that median added back, so its rows are read against the class median alone, not against the uncorrected mass or the mass node. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; the models with the mass regression have \MlstMassNRunsWord{} runs, and both values are given.}
 \label{tab:mass}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcccc}
@@ -12,7 +12,8 @@ uncorrected soft-drop mass & 0.253 & 0.221 & 0.478 & 0.929 \\
 \midrule \multicolumn{5}{l}{mass node} \\
 \Kres{} classes, mass regression & 0.14726, 0.14643 & 0.13228, 0.13147 & 0.22570, 0.22471 & 0.9953, 1.0031 \\
 \Kcoarse{} classes, mass regression & 0.1451, 0.1462 & 0.13036, 0.13124 & 0.22280, 0.22335 & 1.00537, 1.00510 \\
-\midrule \multicolumn{5}{l}{MLP on frozen features} \\
+\midrule \multicolumn{5}{l}{MLP on frozen features, with the true class's median added back} \\
+class median alone & 0.251 & -- & -- & -- \\
 \Kfull{} classes & 0.2212\,$\pm$\,0.0008 & 0.1993\,$\pm$\,0.0011 & 0.3394\,$\pm$\,0.0030 & -- \\
 \Kres{} classes & 0.2203\,$\pm$\,0.0024 & 0.1986\,$\pm$\,0.0018 & 0.336\,$\pm$\,0.004 & -- \\
 \Kmid{} classes & 0.2161\,$\pm$\,0.0025 & 0.1944\,$\pm$\,0.0019 & 0.333\,$\pm$\,0.006 & -- \\

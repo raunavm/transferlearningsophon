@@ -1,7 +1,7 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Nonlinear probes (a multilayer perceptron with a single hidden layer, trained until its validation AUC stops improving, with \LpMlpSeedsWord{} seeds whose scores are averaged) at the largest training set of each task: $(1-\mathrm{AUC})\times10^{3}$, lower is better, with the macro AUC on JetClass-II and JetClass. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run.}
+\caption{Nonlinear probes (a multilayer perceptron with a single hidden layer, trained until its validation AUC stops improving, with \LpMlpSeedsWord{} seeds whose scores are averaged) at the largest training set of each task: $(1-\mathrm{AUC})\times10^{3}$, lower is better, with the macro AUC on JetClass-II and JetClass. Upper part: the tasks of Table~\ref{tab:probes}. Lower part: the binary probes between pairs of JetClass-II classes of Table~\ref{tab:pairs}, on the same jets; which label sets merge each pair is marked there. The three \Kfull-class runs agree on $X\to bc$ to a few $10^{-6}$ in AUC although their scores differ; the value was re-derived from their features. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run.}
 \label{tab:mlp}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lccccccc}
