@@ -1,23 +1,9 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Resolution $\sigma_{\mathrm{eff}}$ of the mass-correction target $y$ of Eq.~(\ref{eq:masstarget}) regressed from the frozen features by a small multilayer perceptron (MLP); lower is better. The MLP has one hidden layer and stops early on a validation split; it is trained with three seeds whose predictions are averaged. Mean $\pm$ standard deviation over the pretraining runs. The last row is the $\sigma_{\mathrm{eff}}$ of the target itself, which a constant prediction gives.}
+\caption{Mass resolution $\sigma_{\mathrm{eff}}$ of $\ln(m_{\mathrm{reg}}/m_{\mathrm{SD}}^{\mathrm{gen}})$ on the JetClass-II test jets with a generator-level match, on all, resonant and QCD jets, and the median $m_{\mathrm{reg}}/m_{\mathrm{SD}}^{\mathrm{gen}}$; lower $\sigma_{\mathrm{eff}}$ is better. The mass node of the models pretrained with the mass regression is scored on the target itself; the multilayer perceptron (MLP) on frozen features, averaged over \pending{n} seeds, on the target with the median of each class subtracted. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run.}
 \label{tab:mass}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lc}
-\toprule
-pretraining & $\sigma_{\mathrm{eff}}$ \\
-\midrule
-\Kfull{} classes & 0.2491\,$\pm$\,0.0014 \\
-\Kres{} classes & 0.2482\,$\pm$\,0.0010 \\
-\Kmid{} classes & 0.2443\,$\pm$\,0.0024 \\
-\Kcoarse{} classes & 0.2404\,$\pm$\,0.0012 \\
-\Kres{} classes, mass regression & 0.1936\,$\pm$\,0.0009 \\
-\Kcoarse{} classes, mass regression & 0.1935\,$\pm$\,0.0008 \\
-randomly initialized network & 0.2885\,$\pm$\,0.0015 \\
-\midrule
-constant prediction & 0.29863 \\
-\bottomrule
-\end{tabular}
+\pending{no result yet}
 \end{adjustbox}
 \end{table}

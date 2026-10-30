@@ -692,7 +692,7 @@ def table_mass(mass, runs, fmt_pm, rows) -> str:
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
-def mass_macros(em, mass, comp, runs, index, fmt_pm) -> None:
+def mass_macros(em, mass, runs, index, fmt_pm) -> None:
     any_m = next(iter(mass))
     em.macro("MlstMassUncorrected", _lone(_mass(mass, any_m, "uncorrected")), index,
              "sigma_eff of the uncorrected soft-drop mass, ln(m_SD / m_gen), test jets")
@@ -723,8 +723,11 @@ def mass_macros(em, mass, comp, runs, index, fmt_pm) -> None:
                  _cell([None if m not in mass else _mass(mass, m, "mlp") / _mass(mass, m, "target")
                         for m in runs[arm]], len(runs[arm]), fmt_pm, sep=TEXT_SEP), index,
                  f"MLP sigma_eff of {arm} over the spread of the class-median-centred target")
-    # the realised share of the mass-regression term in the training loss, lambda * L_reg /
-    # (L_cls + lambda * L_reg), mean over the epochs of each run (compute/<run>.json)
+
+
+def loss_share_macros(em, comp, runs, index, fmt_pm) -> None:
+    """The realised share of the mass-regression term in the training loss, lambda * L_reg /
+    (L_cls + lambda * L_reg), mean over the epochs of each run (compute/<run>.json)."""
     for arm in MASS:
         sh = []
         for m in runs[arm]:
@@ -859,6 +862,84 @@ def table_compute(comp, runs, fmt_int) -> tuple[str, dict]:
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""]), hours
 
 
+# ------------------------------------------------------------------ test-sample uncertainty
+# (heading, bootstrap family, task, metric, model-name prefix, baseline of run index k): the
+# bootstrap files of scripts/build_curve_jobs.py, bootstrap/<family>/<task>_N<N>.json
+BOOT_COLS = (("JetClass-II", "probe", "jc2_188", "macro", "mtx-", "init-s{k}"),
+             ("JetClass", "probe", "jc1", "macro", "mtx-", "init-s{k}"),
+             ("top", "probe", "top", "auc", "mtx-", "init-s{k}"),
+             ("q/g", "probe", "qg", "auc", "mtx-", "init-s{k}"),
+             ("JetClass-II", "jc2", "jc2_188", "macro", "", "scratch-v2-s1"),
+             ("JetClass", "ft", "jc1", "macro", "", "scratch-v2-s1"),
+             ("top", "ft", "top", "auc", "", "scratch-v2-s1"),
+             ("q/g", "ft", "qg", "auc", "", "scratch-v2-s1"))
+BOOT_ROWS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("L188", None))
+
+
+def _boot_largest(boot: dict, family: str, task: str):
+    """The family's bootstrap document at the task's largest training set, or None."""
+    docs = {int(k.rsplit("_N", 1)[1]): d for k, d in boot.get(family, {}).items() if k.rsplit("_N", 1)[0] == task}
+    return docs[max(docs)] if docs else None
+
+
+def boot_spreads(boot: dict, runs: dict, col: tuple, arm: str, ref) -> tuple:
+    """(SD over runs of ln ratio, mean over runs of its test-sample SD) of (1 - AUC) of arm over
+    ref (None: the column's baseline) at the largest training set; None where a run is missing."""
+    _, fam, task, met, pre, base = col
+    doc = _boot_largest(boot, fam, task)
+    ln, test = [], []
+    for m in runs[arm]:
+        k = m.rsplit("-s", 1)[1]
+        r = m[len("mtx-"):]
+        b = base.format(k=k) if ref is None else f"{pre}{runs[ref][0][len('mtx-'):].rsplit('-s', 1)[0]}-s{k}"
+        c = None if doc is None else doc["pairs"].get(f"{pre}{r}/{b}", {}).get(met)
+        if c is None or c["ratio"] is None or c["ln_ratio_sd"] is None:
+            return None, None
+        ln.append(math.log(c["ratio"]))
+        test.append(c["ln_ratio_sd"])
+    return (float(np.std(ln, ddof=1)) if len(ln) > 1 else None), float(np.mean(test))
+
+
+def _pct(x) -> str:
+    """A relative SD in per cent to two significant figures."""
+    if x is None:
+        return "--"
+    v = 100 * x
+    return f"{v:.0f}" if v >= 10 else f"{v:.2g}"
+
+
+def table_boot(boot: dict, runs: dict) -> tuple[str, dict]:
+    """Per comparison and task, at the largest training set: the SD of ln((1 - AUC) ratio) over
+    the pretraining runs and from the test sample, in per cent; and the largest test-sample SD of
+    a label-set comparison, for linear probes and for fine-tuning."""
+    heads = [h for h, *_ in BOOT_COLS]
+    lines = [r"\begin{tabular}{l" + "c" * len(BOOT_COLS) + "}", r"\toprule",
+             r" & \multicolumn{4}{c}{linear probe} & \multicolumn{4}{c}{fine-tuning} \\",
+             r"\cmidrule(lr){2-5}\cmidrule(lr){6-9}",
+             "ratio & " + " & ".join(heads) + r" \\", r"\midrule"]
+    worst = {"probe": [], "ft": []}
+    for arm, ref in BOOT_ROWS:
+        cells = []
+        for col in BOOT_COLS:
+            between, test = boot_spreads(boot, runs, col, arm, ref)
+            cells.append(f"{_pct(between)} / {_pct(test)}")
+            if ref is not None and test is not None:
+                worst["probe" if col[1] == "probe" else "ft"].append(test)
+        name = LABEL[arm] + " / " + (LABEL[ref] if ref else "baseline")
+        lines.append(name + " & " + " & ".join(cells) + r" \\")
+    return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""]), worst
+
+
+def boot_macros(em, boot: dict, worst: dict, index) -> None:
+    b = {d["b"] for fam in boot.values() for d in fam.values()}
+    if len(b) != 1:
+        raise SystemExit(f"FATAL: the bootstraps use different numbers of resamples: {sorted(b)}")
+    em.macro("MlstBootResamples", str(b.pop()), index, "bootstrap resamples of the test jets")
+    for k, w in (("probe", "Probe"), ("ft", "Ft")):
+        em.macro(f"MlstBootTestMax{w}", _pct(max(worst[k])) if worst[k] else r"\pending{bootstrap}", index,
+                 f"largest test-sample SD of ln(1 - AUC ratio) of a label set over the 188 classes, {k}, per cent")
+
+
 SPREAD = ("Mean $\\pm$ standard deviation over \\MlstNRunsWord{} pretraining runs; for "
           "configurations with \\RandFlavRuns{} runs both values are given, and a random partition has a "
           "single run.")
@@ -904,9 +985,22 @@ CAPTIONS = {
                "30\\% signal efficiency) after full fine-tuning on the whole training set. " + SPREAD +
                " From scratch: over its seeds. Every value rests on at least __FEWEST__ background jets "
                "passing the cut."),
+    "boot": ("tab:boot", "Relative uncertainty of the ratios of $(1-\\mathrm{AUC})$ at the largest training "
+             "set of each task, in per cent: the standard deviation of the logarithm of the ratio over the "
+             "pretraining runs, then that from the finite test sample (a bootstrap of the test jets with "
+             "\\MlstBootResamples{} resamples, averaged over the runs). The baseline is the randomly "
+             "initialized network of the same seed for the linear probes and the network trained from "
+             "scratch on the same subset for fine-tuning. The macro AUC is used for JetClass-II and JetClass."),
     "compute": ("tab:compute", "GPU types and GPU-hours of every pretraining run, summed over the "
                 "training and validation passes of its completed epochs as each epoch recorded them."),
 }
+
+
+# (caption key, table file, wide, caption fill) of the tables build() writes as placeholders
+PLACEHOLDERS = (("mlp", "mlst_mlp", False, None), ("fill", "mlst_fill", False, None),
+                ("mass", "mlst_mass", False, {"__MLP_SEEDS__": r"\pending{n}"}),
+                ("sculpt", "mlst_sculpt", False, None), ("ft", "mlst_ft", True, None),
+                ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, None))
 
 
 def _float(key: str, body: str, wide: bool = False, fill: dict | None = None) -> str:
@@ -983,13 +1077,14 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         fill_macros(em, fits, fill, runs, index, fmt_pm)
     else:
         missing.append("masked-input probes -- experiments/FIGS/data/v2/fillcontrol/")
+    loss_share_macros(em, comp, runs, index, fmt_pm)
     head = _load(data / "head")
     mass = {k.removesuffix("_mass"): v for k, v in head.items() if k.endswith("_mass")}
     sculpt = {k.removesuffix("_sculpting"): v for k, v in head.items() if k.endswith("_sculpting")}
     if mass:
         out["tables/mlst_mass.tex"] = _float("mass", table_mass(mass, runs, fmt_pm, MAIN + MASS + (INIT,)),
                                              fill={"__MLP_SEEDS__": words(int(mlp_seeds(mass)))})
-        mass_macros(em, mass, comp, runs, index, fmt_pm)
+        mass_macros(em, mass, runs, index, fmt_pm)
     else:
         missing.append("mass regression -- experiments/FIGS/data/v2/head/*_mass.json")
     if sculpt:
@@ -997,6 +1092,15 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         sculpt_macros(em, sculpt, runs, index, fmt_pm)
     else:
         missing.append("mass sculpting -- experiments/FIGS/data/v2/head/*_sculpting.json")
+    boot = {d.name: _load(d) for d in sorted((data / "bootstrap").glob("*")) if d.is_dir()}
+    if boot:
+        body, worst = table_boot(boot, runs)
+        out["tables/mlst_boot.tex"] = _float("boot", body, True)
+        boot_macros(em, boot, worst, index)
+    else:
+        missing.append("test-sample bootstrap -- experiments/FIGS/data/v2/bootstrap/")
+        for k in ("MlstBootResamples", "MlstBootTestMaxProbe", "MlstBootTestMaxFt"):
+            em.macro(k, r"\pending{bootstrap}", index, "no bootstrap pulled yet")
     method_macros(em, root)
     ft_recipe(em, data, {m[len("mtx-"):] for k, v in runs.items() if k != INIT for m in v}, fmt_int, missing, words)
     tag, per = load_ft(data)
@@ -1029,4 +1133,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                  index, "GPU types any finished run trained on")
         if len(comp) < n_paper:
             missing.append(f"compute records: {len(comp)} of {n_paper} paper runs")
+    # a table whose data is not pulled yet is a marked placeholder, never the file an older
+    # generator left behind
+    for key, name, wide, fill in PLACEHOLDERS:
+        out.setdefault(f"tables/{name}.tex", _float(key, r"\pending{no result yet}", wide, fill))
     return out

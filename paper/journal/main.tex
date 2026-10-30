@@ -471,7 +471,10 @@ reconstructed jet, which is built from the simulated detector response. Its log-
 to the classification loss with weight $\lambda = \DesignMassLambda$, the value used by
 GloParT~\cite[Eq.~(11.7)]{glopart}, fixed in advance and not tuned. Together with the
 models without it, this gives a factorial design of label set and mass regression.
-\pending{the realized share of the mass-regression term in the loss}
+The same $\lambda$ does not give the mass term the same weight at both label sets: averaged over
+the epochs of training, it makes up \MlstMassLossShareResMass\% of the training loss in the two
+\Kres-class runs and \MlstMassLossShareCoarseMass\% in the two \Kcoarse-class runs, because the
+classification loss is smaller with fewer classes while the mass term is about the same.
 
 \paragraph{Randomly initialized network.} For each seed, the saved initial weights of the
 \Kfull-class run give a randomly initialized network with the same architecture. It is
@@ -715,7 +718,6 @@ reason, which we have not tested, is the zero filling of Section~\ref{sec:eval}:
 every particle has a particle-type flag set, whereas in the top-tagging inputs all of these flags
 are zero, an input the network never saw. The
 auxiliary mass regression does improve top tagging (Section~\ref{sec:mass}).
-% CHECK: verify on JetClass-II that exactly one particle-type flag is set for every particle.
 % CHECK: all three 162-class runs lie below the randomly initialized network on top tagging
 % (ratio 0.85 +- 0.10, figures/deck/deck_numbers.json probe_over_init); "no better ... for any
 % label set" in the conclusion may need hedging (asked the PI 2026-10-29). On quark/gluon
@@ -1046,6 +1048,22 @@ Table~\ref{tab:probesn} gives the values shown in Fig.~\ref{fig:probesn}.
 % ============================================================================
 
 \pending{every linear probe on the checkpoint with recomputed BatchNorm statistics}
+
+% ============================================================================
+\section{Test-sample uncertainty}\label{app:boot}
+% ============================================================================
+
+Every model is scored on the same test jets, so the finite test sample moves all of them
+together, and much of its effect cancels in a ratio between two models. Its size is estimated
+with a bootstrap: the test jets are resampled with replacement within each class
+\MlstBootResamples{} times, every model is scored on each resample, and the standard deviation of
+the logarithm of a ratio over the resamples is its relative uncertainty from the test sample.
+Table~\ref{tab:boot} compares it with the spread over pretraining runs for the ratios that
+Section~\ref{sec:results} quotes. For a label set against the \Kfull{} classes, the test sample
+contributes at most \MlstBootTestMaxProbe\% for the linear probes and \MlstBootTestMaxFt\% after
+fine-tuning.
+
+\input{tables/mlst_boot}
 
 % Every float of the appendix is placed before the references.
 \clearpage

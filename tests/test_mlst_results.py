@@ -5,7 +5,9 @@ pulled data checked against its index."""
 import importlib.util
 import json
 import pathlib
+import math
 import shutil
+import statistics
 
 import pytest
 
@@ -243,3 +245,27 @@ def test_the_mass_table_shows_the_uncorrected_mass_the_mass_node_and_the_mlp():
 
 def test_learning_rates_print_as_powers_of_ten():
     assert M._power("1e-4") == r"\ensuremath{10^{-4}}" and M._power("5e-4") == r"\ensuremath{5\times10^{-4}}"
+
+
+def test_the_bootstrap_table_gives_the_spread_over_runs_and_from_the_test_sample():
+    runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"], "L162": ["mtx-l162-s1", "mtx-l162-s2", "mtx-l162-s3"],
+            "R42_Q1": ["mtx-r42q1-s1"], "R16_Q1": ["mtx-r16q1-s1"]}
+    ratios = {"1": 1.10, "2": 1.20, "3": 1.00}
+    pairs = {f"mtx-l162-s{k}/mtx-l188-s{k}": {"auc": {"ratio": r, "sd": 0.0, "ln_ratio_sd": 0.02}} for k, r in ratios.items()}
+    pairs.update({f"mtx-l188-s{k}/init-s{k}": {"auc": {"ratio": 0.5, "sd": 0.0, "ln_ratio_sd": 0.01}} for k in "123"})
+    boot = {"probe": {"top_N1000": {"b": 200, "pairs": {}}, "top_N1200000": {"b": 200, "pairs": pairs},
+                      "qg_N1600000": {"b": 200, "pairs": {}}}}
+    col = next(c for c in M.BOOT_COLS if c[1] == "probe" and c[2] == "top")
+    between, test = M.boot_spreads(boot, runs, col, "L162", "L188")
+    assert between == pytest.approx(statistics.stdev(math.log(r) for r in ratios.values())) and test == pytest.approx(0.02)
+    assert M.boot_spreads(boot, runs, col, "L188", None) == (pytest.approx(0.0), pytest.approx(0.01))
+    assert M.boot_spreads(boot, runs, col, "R42_Q1", "L188") == (None, None)   # no pair: a dash
+    body, worst = M.table_boot(boot, runs)
+    assert "9.1 / 2.0" in body and "-- / --" in body and worst == {"probe": [pytest.approx(0.02)], "ft": []}
+    em = _Em()
+    M.boot_macros(em, boot, worst, None)
+    assert em.m["MlstBootResamples"] == "200" and em.m["MlstBootTestMaxProbe"] == "2.0"
+    assert em.m["MlstBootTestMaxFt"].startswith(r"\pending")
+    boot["probe"]["qg_N1600000"]["b"] = 100
+    with pytest.raises(SystemExit, match="different numbers of resamples"):
+        M.boot_macros(_Em(), boot, worst, None)

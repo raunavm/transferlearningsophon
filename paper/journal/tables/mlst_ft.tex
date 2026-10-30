@@ -1,85 +1,9 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Full fine-tuning against the training-set size: $(1-\mathrm{AUC})\times10^{3}$, lower is better, with the macro AUC (one-versus-rest) on JetClass-II and JetClass and the AUC on top and quark/gluon (q/g) tagging, and q/g also on jets generated with Herwig. Mean $\pm$ standard deviation over the pretraining runs, one fine-tuning each; from scratch, over its fine-tuning seeds.}
+\caption{Full fine-tuning against the training-set size: $(1-\mathrm{AUC})\times10^{3}$, lower is better, with the macro AUC (one-versus-rest) on JetClass-II, over all and over its QCD classes, and on JetClass, and the AUC on top and quark/gluon (q/g) tagging, q/g also on jets generated with Herwig. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run. Each pretrained run is fine-tuned once. From scratch: mean $\pm$ standard deviation over \MlstFtRefSeedsWord{} seeds, which below the largest training set of JetClass, top and q/g tagging also use different training subsets.}
 \label{tab:ft}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lcccc}
-\toprule
-JetClass-II & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\
-\midrule
-\Kfull{} classes & 87.136 \pending{1 of 3} & 27.399 \pending{1 of 3} & 20.358 \pending{1 of 3} & 18.882 \pending{1 of 3} \\
-\Kres{} classes & 80.1\,$\pm$\,1.0 \pending{2 of 3} & 26.2\,$\pm$\,0.5 \pending{2 of 3} & 20.57\,$\pm$\,0.27 \pending{2 of 3} & 19.04\,$\pm$\,0.25 \pending{2 of 3} \\
-\Kmid{} classes & 70.9\,$\pm$\,1.8 & 32.2\,$\pm$\,1.2 & 21.90\,$\pm$\,0.04 & 19.63\,$\pm$\,0.04 \\
-\Kcoarse{} classes & 105.67 \pending{1 of 3} & 36.099 \pending{1 of 3} & 23.846 \pending{1 of 3} & 21.337 \pending{1 of 3} \\
-\Kres{} classes, mass regression & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-\Kcoarse{} classes, mass regression & 104.10 \pending{1 of 2} & 35.171 \pending{1 of 2} & 24.814 \pending{1 of 2} & 22.043 \pending{1 of 2} \\
-from scratch & 238\,$\pm$\,25 & 76.1\,$\pm$\,2.7 & 37.5\,$\pm$\,0.7 & 25.17\,$\pm$\,0.04 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\par\medskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lcccc}
-\toprule
-JetClass & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\
-\midrule
-\Kfull{} classes & 47.544 \pending{1 of 3} & 24.422 \pending{1 of 3} & 16.290 \pending{1 of 3} & 14.118 \pending{1 of 3} \\
-\Kres{} classes & 45.7\,$\pm$\,1.3 \pending{2 of 3} & 22.953\,$\pm$\,0.015 \pending{2 of 3} & 16.28\,$\pm$\,0.06 \pending{2 of 3} & 14.07\,$\pm$\,0.05 \pending{2 of 3} \\
-\Kmid{} classes & 51\,$\pm$\,4 & 23.6\,$\pm$\,0.5 & 16.78\,$\pm$\,0.28 & 14.32\,$\pm$\,0.10 \\
-\Kcoarse{} classes & 58.254 \pending{1 of 3} & 25.895 \pending{1 of 3} & 17.519 \pending{1 of 3} & 15.110 \pending{1 of 3} \\
-\Kres{} classes, mass regression & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-\Kcoarse{} classes, mass regression & 49.807 \pending{1 of 2} & 25.473 \pending{1 of 2} & 17.737 \pending{1 of 2} & 15.301 \pending{1 of 2} \\
-from scratch & 114.8\,$\pm$\,1.7 & 52.0\,$\pm$\,0.7 & 27.9\,$\pm$\,0.9 & 18.2\,$\pm$\,0.4 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\par\medskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lcccc}
-\toprule
-top & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}200{,}000 \\
-\midrule
-\Kfull{} classes & 49.645 \pending{1 of 3} & 30.694 \pending{1 of 3} & 17.288 \pending{1 of 3} & 14.014 \pending{1 of 3} \\
-\Kres{} classes & 47.4\,$\pm$\,1.9 \pending{2 of 3} & 31.4\,$\pm$\,1.5 \pending{2 of 3} & 17.479\,$\pm$\,0.026 \pending{2 of 3} & 13.857\,$\pm$\,0.034 \pending{2 of 3} \\
-\Kmid{} classes & 54\,$\pm$\,6 & 34\,$\pm$\,5 & 18.06\,$\pm$\,0.31 & 13.90\,$\pm$\,0.05 \\
-\Kcoarse{} classes & 50.144 \pending{1 of 3} & 34.027 \pending{1 of 3} & 18.138 \pending{1 of 3} & 14.115 \pending{1 of 3} \\
-\Kres{} classes, mass regression & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-\Kcoarse{} classes, mass regression & 55.712 \pending{1 of 2} & 38.881 \pending{1 of 2} & 18.980 \pending{1 of 2} & 14.127 \pending{1 of 2} \\
-from scratch & 64\,$\pm$\,10 & 28\,$\pm$\,4 & 19.13\,$\pm$\,0.34 & 14.82\,$\pm$\,0.07 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\par\medskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lcccc}
-\toprule
-q/g & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\
-\midrule
-\Kfull{} classes & 132.57 \pending{1 of 3} & 113.37 \pending{1 of 3} & 90.967 \pending{1 of 3} & 85.290 \pending{1 of 3} \\
-\Kres{} classes & 130.7\,$\pm$\,0.8 \pending{2 of 3} & 112.9\,$\pm$\,3.2 \pending{2 of 3} & 91.3\,$\pm$\,0.6 \pending{2 of 3} & 85.24\,$\pm$\,0.10 \pending{2 of 3} \\
-\Kmid{} classes & 133.2\,$\pm$\,0.9 & 116.2\,$\pm$\,1.3 & 91.8\,$\pm$\,0.4 & 85.44\,$\pm$\,0.32 \\
-\Kcoarse{} classes & 135.66 \pending{1 of 3} & 117.85 \pending{1 of 3} & 92.138 \pending{1 of 3} & 85.596 \pending{1 of 3} \\
-\Kres{} classes, mass regression & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-\Kcoarse{} classes, mass regression & 132.69 \pending{1 of 2} & 115.83 \pending{1 of 2} & 93.277 \pending{1 of 2} & 85.998 \pending{1 of 2} \\
-from scratch & 148\,$\pm$\,4 & 118.8\,$\pm$\,1.6 & 98.7\,$\pm$\,1.1 & 87.94\,$\pm$\,0.24 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\par\medskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lcccc}
-\toprule
-q/g, Herwig & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\
-\midrule
-\Kfull{} classes & 208.24 \pending{1 of 3} & 189.94 \pending{1 of 3} & 194.61 \pending{1 of 3} & 192.93 \pending{1 of 3} \\
-\Kres{} classes & 206.74\,$\pm$\,0.22 \pending{2 of 3} & 189.5\,$\pm$\,1.1 \pending{2 of 3} & 194.96\,$\pm$\,0.27 \pending{2 of 3} & 192.5\,$\pm$\,1.4 \pending{2 of 3} \\
-\Kmid{} classes & 205.1\,$\pm$\,2.3 & 191.1\,$\pm$\,0.4 & 195.97\,$\pm$\,0.35 & 191\,$\pm$\,5 \\
-\Kcoarse{} classes & 207.45 \pending{1 of 3} & 190.46 \pending{1 of 3} & 191.74 \pending{1 of 3} & 188.53 \pending{1 of 3} \\
-\Kres{} classes, mass regression & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-\Kcoarse{} classes, mass regression & 204.27 \pending{1 of 2} & 190.88 \pending{1 of 2} & 190.48 \pending{1 of 2} & 194.79 \pending{1 of 2} \\
-from scratch & 216.7\,$\pm$\,1.6 & 198.1\,$\pm$\,1.7 & 195.9\,$\pm$\,1.5 & 193.0\,$\pm$\,1.9 \\
-\bottomrule
-\end{tabular}
+\pending{no result yet}
 \end{adjustbox}
 \end{table*}

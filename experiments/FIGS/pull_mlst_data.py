@@ -23,7 +23,8 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
                                    (scripts/build_head_jobs.py)
   fillcontrol/<mask>/<model>.json  JetClass-II probes with the downstream data's missing
                                    features zeroed (scripts/build_fill_control_v2.py)
-  curves/<name>.json, bootstrap/<name>.json  per-class tables, ROC points, test-sample spreads
+  curves/<name>.json, bootstrap/<family>/<task>_N<N>.json  per-class tables, ROC points,
+                                   test-sample spreads
                                    (scripts/build_curve_jobs.py)
   xbx/<signal>/<model>.json        X->bb / X->bs on the real samples (scripts/build_xbx_jobs.py)
   index.json                       {path: sha256} of every file above: the single source the
@@ -119,11 +120,13 @@ def main() -> int:
             add(f"head/{f.parent.name}_sculpting.json", f.read_bytes())
         for f in sorted((EVAL / "v2_fillcontrol").glob("*/fits/*.json")):
             add(f"fillcontrol/{f.parent.parent.name}/{f.name}", f.read_bytes())
-        for d, name in ((FT / "curves", "curves"), (pathlib.Path("/data/results/bootstrap"), "bootstrap")):
-            for f in sorted(d.glob("*.json")):
+        # curves/<tree>.json; bootstrap/<family>/<task>_N<N>.json (scripts/build_curve_jobs.py)
+        for d, name, pattern in ((FT / "curves", "curves", "*.json"),
+                                 (pathlib.Path("/data/results/bootstrap"), "bootstrap", "*/*.json")):
+            for f in sorted(d.glob(pattern)):
                 b = f.read_bytes()
                 json.loads(b)
-                add(f"{name}/{f.name}", b)
+                add(f"{name}/{f.relative_to(d)}", b)
         for f in sorted((EVAL / "xbx" / "fits_ihep").glob("*/*.json")):
             add(f"xbx/{f.parent.name}/{f.name}", f.read_bytes())
         add("ft_mlst/manifests.json", (json.dumps(manifests(), indent=1) + "\n").encode())
