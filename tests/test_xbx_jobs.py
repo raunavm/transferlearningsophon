@@ -86,6 +86,10 @@ def test_the_gpu_jobs_stay_off_the_grids_and_the_fine_tunes_gpus_and_the_scratch
     for name, text in SPECS.items():
         if "-stage-" in name:
             assert "nvidia.com/gpu" not in text
+        elif "-scratch-dryrun-" in name:
+            # the plumbing check only: any GPU but the fine-tunes' V100s and the grid's RTX 3090s
+            assert _products(text) == {("In", B.DRYRUN_GPUS)}
+            assert not {B.SCRATCH_GPU, "NVIDIA-GeForce-RTX-3090"} & set(B.DRYRUN_GPUS)
         elif "-scratch-" in name:
             assert _products(text) == {("In", (B.SCRATCH_GPU,))}
         else:
@@ -178,7 +182,7 @@ def test_the_dry_run_proves_the_from_scratch_chain_on_the_stand_in():
     text = SPECS["job-xbx-scratch-dryrun-raunav.yaml"]
     s = _script(text)
     assert yaml.safe_load(text)["metadata"]["name"] == "xbx-scratch-dryrun-raunav"
-    assert _products(text) == {("In", ("Tesla-V100-SXM2-32GB",))}
+    assert _products(text) == {("In", B.DRYRUN_GPUS)}
     assert f"PAIR={B.STAGE}/pairs/xbb_jc2\n" in s and f"OUT={B.DRYRUN_ROOT}/xbb_jc2/s1\n" in s
     assert "--num-epochs 2 " in s and "cell_resume.py best --dir ${OUT} --epochs 2" in s
     i, j = s.index("ft_weaver.py"), s.index("extract_features.py")
