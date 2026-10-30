@@ -784,7 +784,8 @@ def test_a_slot_key_may_hold_dots_and_fills_from_its_file(tmp_path):
     d = tmp_path / "experiments/FT/data"
     d.mkdir(parents=True)
     (d / "jc2_v2_manifest.json").write_text(json.dumps({"class_coverage": {"train_N1000_s1.parquet": {
-        "n_classes_present": 150, "median_per_present_class": 4.5, "n_classes_with_one_jet": 30}}}))
+        "n_classes_present": 150, "median_per_present_class": 4.5, "n_classes_with_one_jet": 30},
+        "train_N10000_s1.parquet": {"n_classes_present": 183}}}))
     em, missing = M.Emitter(tmp_path), []
     M.emit_slots(em, missing)
     got = {n: b for n, b, _ in em.macros}
