@@ -1042,6 +1042,9 @@ SLOTS = [
     ("FtCoverageEThreeNClasses", "experiments/FT/data/jc2_v2_manifest.json",
      "class_coverage['train_N1000_s1.parquet'].n_classes_present", "int",
      "native classes present in the smallest held-out fine-tuning subset"),
+    ("FtCoverageEFourNClasses", "experiments/FT/data/jc2_v2_manifest.json",
+     "class_coverage['train_N10000_s1.parquet'].n_classes_present", "int",
+     "native classes present in the second-smallest held-out fine-tuning subset"),
     ("FtCoverageEThreeMedian", "experiments/FT/data/jc2_v2_manifest.json",
      "class_coverage['train_N1000_s1.parquet'].median_per_present_class", "g",
      "median jets per class in the smallest held-out fine-tuning subset"),
@@ -1286,6 +1289,9 @@ def emit_mlst(em: Emitter, grid_path: pathlib.Path, probe_code: pathlib.Path) ->
     em.macro("LpNTestJcii", fmt_int(n_test), probe_code, "TEST_FIRST.jc2", "JetClass-II test jets")
     em.macro("LpNTestAucJcii", fmt_int(n_test // stride), probe_code, "TEST_FIRST.jc2 / AUC_STRIDE",
              "JetClass-II test jets of the macro AUC")
+    conv = float(one(r"^CONVERGED_GRAD = ([0-9.e-]+)"))
+    em.macro("LpConvergedGrad", fmt_sci(conv), probe_code, "CONVERGED_GRAD",
+             "largest gradient component a converged probe ends below")
 
 
 def emit_fills(em: Emitter, top: pathlib.Path, qg: pathlib.Path) -> None:
@@ -1385,6 +1391,10 @@ def emit_rand_design(em: Emitter, paths: dict, C: dict, missing: list | None = N
     em.macro("RandVtwoTrials", trials.group(1), draw_src, "TRIALS",
              "share-matched assignments drawn per random partition; the one sharing the fewest "
              "merged pairs with the 17-class label set is kept")
+    em.macro("RandVtwoPoolDraws", fmt_int(rule["pool"]["draws"]), paths["rand_v2_rule"], "pool.draws",
+             "candidate partitions drawn (seeds) before the realised-share rule")
+    em.macro("RandVtwoPoolPass", fmt_int(len(rule["rule3_seeds"])), paths["rand_v2_rule"], "rule3_seeds (count)",
+             "candidate partitions meeting the realised-share rule (rule 3)")
 
     # The flavour pair, every statement the text makes about it checked on the map:
     # F1's cut is exactly the b-containing classes of the split orbit, and the

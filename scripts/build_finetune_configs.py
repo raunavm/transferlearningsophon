@@ -5,6 +5,7 @@ Each is an existing config with its `weights:` block REMOVED and nothing else
 changed, byte for byte:
 
     JetClassII_L162_noweight.yaml   <- configs/arms/L162.yaml
+    JetClassII_L188_noweight.yaml   <- configs/arms/L188.yaml   (the 188-class task, leg1_188)
     JetClassI_sophon_noweight.yaml  <- experiments/E1/data_arm_s.yaml
 
 WHY NO REWEIGHTING WHEN FINE-TUNING
@@ -36,6 +37,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "configs" / "finetune"
 SOURCES = {
     "JetClassII_L162_noweight.yaml": ROOT / "configs" / "arms" / "L162.yaml",
+    "JetClassII_L188_noweight.yaml": ROOT / "configs" / "arms" / "L188.yaml",
     "JetClassI_sophon_noweight.yaml": ROOT / "experiments" / "E1" / "data_arm_s.yaml",
 }
 

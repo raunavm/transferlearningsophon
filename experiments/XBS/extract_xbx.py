@@ -4,10 +4,11 @@ its class-token features and, for a model with an output layer, the head columns
 experiments/XBS/xbx.py xbx_columns in the model's vocabulary instead of extract_v2's anomaly
 columns.
 
-extract_v2.py is not edited: the probe extractions still to run clone it at an earlier tag,
-and their pins must stay current (tests/test_spec_pins.py). Its own flags select every jet
-(FLAGS), and its head-score function -- which run() looks up at call time -- is replaced by
-xbx_columns for the vocabulary --arm. The vocabulary's nodes are written to <out>/xbx.json.
+extract_v2.py is used as it is, not changed for X->bx: the probe extractions clone it at
+their own tags, and their pins must stay current (tests/test_spec_pins.py). Its own flags
+select every jet (FLAGS), and its head-score function -- which run() looks up at call time --
+is replaced by xbx_columns for the vocabulary --arm. The vocabulary's nodes are written to <out>/xbx.json, once: a split
+extracted before (the QCD evaluation jets every signal shares) keeps its record.
 experiments/XBS/fit_xbx.py refuses a split whose features or head scores are not every jet's,
 in order.
 
@@ -53,8 +54,11 @@ def main(argv=None) -> int:
         raise SystemExit(f"FATAL: {a.arm} has {groups['k']} classes, the model {k}")
     EX.head_score_columns = lambda logits, rung, signals: X.xbx_columns(logits, groups)
     rc = EX.main(rest + FLAGS)
-    out = pathlib.Path(rest[rest.index("--out") + 1])
-    (out / "xbx.json").write_text(json.dumps({"arm": a.arm, "groups": groups}, indent=1))
+    meta = pathlib.Path(rest[rest.index("--out") + 1]) / "xbx.json"
+    if not meta.exists():
+        meta.write_text(json.dumps({"arm": a.arm, "groups": groups}, indent=1))
+    elif json.loads(meta.read_text())["arm"] != a.arm:
+        raise SystemExit(f"FATAL: {meta} records another vocabulary than {a.arm}")
     return rc
 
 

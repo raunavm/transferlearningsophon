@@ -4,22 +4,46 @@ experiments/XBS/).
   xbx-stage-jc2          CPU. JetClass-II QCD and the stand-in X->bb: the evaluation jets of the
                          test files and the matched pair drawn from the held-out files
                          (experiments/XBS/stage_xbx.py). Needs nothing from outside.
-  xbx-stage-ihep         CPU, once the outside samples are in SAMPLE_DIRS: each is checked against
-                         the config (the job stops if a branch is missing or of the wrong kind),
-                         converted, and its pair drawn against the held-out QCD.
   xbx-x-<model>          GPU. experiments/XBS/extract_xbx.py (extract_v2.py, unchanged) over every
                          staged split of every signal; a split already extracted is skipped.
   xbx-fit-<model>        GPU. experiments/XBS/fit_xbx.py model.
-  xbx-scratch-<sig>-s<k> GPU, V100 as every fine-tune of the paper. From scratch as Sophon App. B.3:
-                         ParT on the matched pair, 50 epochs of the whole pair, batch 512, LR 5e-4,
-                         ranger, weight decay 0.01, weaver's flat+decay; resumable (cell_resume.py);
-                         scored by fit_xbx.py scratch. A5: X->bs only, three seeds.
+These ran on the stand-in at PIN, window 150-230 GeV, fits in FITS; they stay as they ran.
+Superseded, never launched, kept only because their files are on disk: xbx-stage-ihep and
+xbx-scratch-xbs-s<k> (PIN; they stop when one sample is missing and score in 150-230 GeV).
+
+The real samples (A5; PRESPEC A15), at PIN_IHEP, mass window xbx.window_for(--mx) passed
+explicitly (Sophon's 150-230 GeV at mX = 200, scaled by mX/200; 93.75-143.75 GeV at 125):
+  xbx-ihep-stage         CPU, once the samples are in SAMPLE_DIRS: stages whichever is there. Each
+                         is inspected (trees, branches, types, entries) and checked (stage_xbx.py
+                         check: branches after BRANCH_MAP, no zero-fill in any file, A5's floor of
+                         10,000 evaluation jets in the window); one that passes is converted and its
+                         pair drawn against the held-out QCD. A sample that fails does not stop the
+                         other; the job exits 42 at the end if any failed.
+  xbx-ihep-<sig>-x-<model>
+                         GPU, as xbx-x on one sample (the QCD evaluation jets, extracted for the
+                         stand-in from the same staged files, are skipped). One job per sample, so
+                         a sample that comes alone or late is extracted and fitted on its own.
+  xbx-ihep-<sig>-fit-<model>
+                         GPU, fit_xbx.py model into FITS_IHEP/<sig> (a fit never overwrites one).
+  xbx-ihep-scratch-xbs-s<k>
+                         GPU, V100 as every fine-tune of the paper. From scratch as Sophon App. B.3
+                         in epochs, batch, LR and weight decay, but the Sophon network (our ParT with
+                         Sophon's (512, 0.1) head) on scaled inputs, where Sophon's reference is ParT
+                         on unscaled inputs: 50 epochs of the whole pair (50 x 2.5 M examples at
+                         1.25 M jets per class), ranger, weaver's flat+decay; resumable
+                         (cell_resume.py); scored by fit_xbx.py scratch with the examples it saw.
+                         A5: X->bs only, three seeds.
+  xbx-scratch-dryrun     the same chain for 2 epochs on the staged stand-in pair (xbb_jc2, window
+                         150-230 GeV, 200,000 evaluation jets of each class), to prove it before the
+                         samples arrive.
 
 Models: the 27 paper runs (configs/arms/v2_paper_runs.txt) from their primary checkpoint best70,
 and the untrained networks init-s1..3 (the linear probe only).
 Order: stage -> x -> fit per model; the scratch jobs after their pair is staged.
 
-    python3 scripts/build_xbx_jobs.py [--signals xbb_jc2] [--pin-not-yet-tagged] [--check-only]
+    python3 scripts/build_xbx_jobs.py [--pin-not-yet-tagged] [--check-only]
+(mX: change MX below once the samples' mass is confirmed; --mx writes specs that differ from
+the default build, which tests/test_xbx_jobs.py holds equal to the files on disk.)
 """
 from __future__ import annotations
 
@@ -30,7 +54,8 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "XBS" / "k8s"
-PIN = "mtx-s2.17"
+PIN = "mtx-s2.17"     # the stand-in chain as it ran
+PIN_IHEP = "mtx-s2.19"   # mtx-s2.18 is the 188-class probe refit (4f92021), without this code
 # mtx-s2.16: the staged files carried the source's awkward description without xbx_class, which
 # awkward (so weaver) refuses; both dry-run extractions failed on their first file
 # mtx-s2.15: a commit that held the config move without the code that reads the new path; never cloned
@@ -45,14 +70,29 @@ NEEDED = {"experiments/XBS/extract_xbx.py": "FLAGS = ",
           "experiments/XBS/xbx.py": "def matched_draw(",
           "configs/xbx/JetClassII_xbx.yaml": "truth_label: xbx_class",
           "tests/test_xbx_stage.py": "_outside_sample"}
+# mtx-s2.19: the real samples: whichever is present staged, zero-fill (per file) and A5 floor
+# enforced, a branch map and inspect; the window and mX explicit and consistent; fits to fits_ihep,
+# never overwritten; Eq. 4 only where X->bb is a class of its own; the scratch fit records the
+# examples seen; xbx.json written once
+NEEDED_IHEP = {**NEEDED,
+               "experiments/XBS/extract_xbx.py": "records another vocabulary",
+               "experiments/XBS/stage_xbx.py": "flagged_charged_without_charge",
+               "experiments/XBS/fit_xbx.py": "X.window_for(a.mx)",
+               "experiments/XBS/xbx.py": "def window_for(",
+               "tests/test_xbx_stage.py": "test_a_partly_zero_filled_file_is_refused"}
 CFG = "configs/xbx/JetClassII_xbx.yaml"
 STAGE = "/data/xbx/v2"   # v1 (2026-10-28) holds files awkward cannot read; kept, not reused
 EX_ROOT = "/data/results/eval/xbx"
 FITS = f"{EX_ROOT}/fits"
+FITS_IHEP = f"{EX_ROOT}/fits_ihep"
 SCRATCH_ROOT = "/data/results/xbx/scratch"
-# where the PI's copy of the IHEP samples goes, one folder per sample as at the source
-# (root://cceos.ihep.ac.cn:1094//eos/ihep/cms/store/user/coli/datasets/JetClassII/sm_ext/)
+SCRATCH_ROOT_IHEP = "/data/results/xbx/scratch_ihep"
+DRYRUN_ROOT = "/data/results/xbx/scratch_dryrun"
+# where the PI's copy of the samples goes, one folder per sample as at the source (UAF
+# /ceph/cms/store/user/woodson/{Xbb,Xbs}_ntuple, 30 ROOT files each)
 SAMPLE_DIRS = {"xbb": "/data/xbx/ihep/Xbb_ntuple", "xbs": "/data/xbx/ihep/Xbs_ntuple"}
+IHEP_SIGNALS = ("xbb", "xbs")
+MX = 125.0     # the PI: "the SM (mX=125) Xbb and Xbs samples"; confirm on arrival (inspect, check's m_SD peak)
 # the stand-in until the samples come; then xbb and xbs (xbb_jc2 in xbb's place if the
 # IHEP folder holds no X->bb sample)
 SIGNALS = ("xbb_jc2",)
@@ -74,6 +114,7 @@ def _load(name: str, rel: str):
 
 BX = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
 LPJ = _load("build_linprobe_jobs", "scripts/build_linprobe_jobs.py")
+X = _load("xbx", "experiments/XBS/xbx.py")
 
 
 def models() -> list[tuple[str, str, str, int, int, str]]:
@@ -98,7 +139,7 @@ def _need(*paths: str) -> str:
     return "".join(f'          [ -f {p} ] || {{ echo "FATAL: {p} absent: stage first"; exit 42; }}\n' for p in paths)
 
 
-def x_spec(model, run, arm, k, reg, ckpt, signals) -> str:
+def x_spec(model, run, arm, k, reg, ckpt, signals, prefix="xbx", pin=PIN) -> str:
     rung = BX.v2_rung(arm) if k else "none"
     body = (_need(*[f"{STAGE}/pairs/{s}/DONE" for s in signals], *[f"{STAGE}/{s}/eval/DONE" for s in signals],
                   f"{STAGE}/qcd/eval/DONE")
@@ -116,22 +157,22 @@ def x_spec(model, run, arm, k, reg, ckpt, signals) -> str:
     body += (f"          extract qcd/eval $(ls {STAGE}/qcd/eval/*.parquet | sort)\n"
              f'          echo "every X->bx split of {model} extracted"\n')
     return gpu_off(BX.V1ERR_TEMPLATE.format(
-        name=f"xbx-x-{model.removeprefix('mtx-')}-raunav", image=BX.IMAGE, pin=PIN, body=body,
+        name=f"{prefix}-x-{model.removeprefix('mtx-')}-raunav", image=BX.IMAGE, pin=pin, body=body,
         mem="48Gi", cpu="4", gpu_req=', nvidia.com/gpu: "1"', gpu_check=BX.GPU_CHECK.format(),
         node_exclude=BX.NODE_EXCLUDE))
 
 
-def fit_spec(model, ckpt, signals) -> str:
+def fit_spec(model, ckpt, signals, prefix="xbx", pin=PIN, out=FITS, window="") -> str:
     body = (f"          python3 experiments/XBS/fit_xbx.py model --root {EX_ROOT} --model {model} \\\n"
-            f"            --signals {' '.join(signals)} --checkpoint {ckpt} --out {FITS} || halt\n")
+            f"            --signals {' '.join(signals)} --checkpoint {ckpt}{window} --out {out} || halt\n")
     return gpu_off(BX.V1ERR_TEMPLATE.format(
-        name=f"xbx-fit-{model.removeprefix('mtx-')}-raunav", image=BX.IMAGE, pin=PIN, body=body,
+        name=f"{prefix}-fit-{model.removeprefix('mtx-')}-raunav", image=BX.IMAGE, pin=pin, body=body,
         mem="48Gi", cpu="8", gpu_req=', nvidia.com/gpu: "1"', gpu_check=BX.GPU_CHECK.format(),
         node_exclude=BX.NODE_EXCLUDE))
 
 
-def _cpu(name: str, body: str) -> str:
-    return BX.V1ERR_TEMPLATE.format(name=name, image=BX.IMAGE, pin=PIN, body=body, mem="32Gi", cpu="4",
+def _cpu(name: str, body: str, pin=PIN) -> str:
+    return BX.V1ERR_TEMPLATE.format(name=name, image=BX.IMAGE, pin=pin, body=body, mem="32Gi", cpu="4",
                                     gpu_req="", gpu_check="", node_exclude=BX.NODE_EXCLUDE)
 
 
@@ -154,6 +195,7 @@ def stage_jc2_spec() -> str:
 
 
 def stage_ihep_spec() -> str:
+    """Superseded by ihep_stage_spec (kept: its file is on disk; never launched)."""
     body = f"          mkdir -p {STAGE}\n"
     for s, d in SAMPLE_DIRS.items():
         body += (f"          F_{s}=$(ls {d}/*.root 2>/dev/null | sort || true)\n"
@@ -164,11 +206,36 @@ def stage_ihep_spec() -> str:
     return _cpu("xbx-stage-ihep-raunav", body + f"          du -sh {STAGE}/*\n")
 
 
+def ihep_stage_spec(window: str) -> str:
+    """Whichever sample is present is inspected and checked; one that passes is converted and
+    paired. A failed check does not stop the other sample; the job exits 42 at the end if any
+    sample failed, or if none is present."""
+    stage = lambda cmd: f"python3 experiments/XBS/stage_xbx.py --root {STAGE} {cmd} || halt"
+    body = f"          mkdir -p {STAGE}\n          STAGED=\"\"; FAILED=\"\"\n"
+    for s, d in SAMPLE_DIRS.items():
+        body += (f"          F_{s}=$(ls {d}/*.root 2>/dev/null | sort || true)\n"
+                 f"          if [ -z \"${{F_{s}}}\" ]; then\n"
+                 f"            echo \"no files in {d}: {s} not staged\"\n"
+                 f"          elif python3 experiments/XBS/stage_xbx.py inspect --file \"${{F_{s}%%[[:space:]]*}}\" && \\\n"
+                 f"               python3 experiments/XBS/stage_xbx.py check {window} --files ${{F_{s}}} --out {STAGE}/check_{s}.json; then\n"
+                 f"            [ -f {STAGE}/{s}/eval/DONE ] || {stage(f'convert --name {s} {window} --files ${{F_{s}}}')}\n"
+                 f"            [ -f {STAGE}/pairs/{s}/DONE ] || {stage(f'pair --signal {s}')}\n"
+                 f"            STAGED=\"${{STAGED}} {s}\"\n"
+                 f"          else\n"
+                 f"            echo \"{s} failed its inspection or check ({STAGE}/check_{s}.json): not staged\"; FAILED=\"${{FAILED}} {s}\"\n"
+                 f"          fi\n")
+    body += (f'          [ -n "${{STAGED}}${{FAILED}}" ] || {{ echo "FATAL: no sample in {" or ".join(SAMPLE_DIRS.values())}"; exit 42; }}\n'
+             f'          echo "staged:${{STAGED}}"\n'
+             f"          du -sh {STAGE}/* || true\n"
+             f'          [ -z "${{FAILED}}" ] || {{ echo "FATAL: failed its check:${{FAILED}}"; exit 42; }}\n')
+    return _cpu("xbx-ihep-stage-raunav", body, pin=PIN_IHEP)
+
+
 SCRATCH_TEMPLATE = """apiVersion: batch/v1
 kind: Job
 metadata:
   # GENERATED by scripts/build_xbx_jobs.py -- do not hand-edit. Regenerate.
-  # X->{sig} FROM SCRATCH, seed {seed} (Sophon App. B.3; docs/PRESPEC_2026-09.md A5): ParT on the
+  # X->{sig} FROM SCRATCH, seed {seed} (Sophon App. B.3; docs/PRESPEC_2026-09.md A5): {what} on the
   # matched pair {stage}/pairs/{sig}, scored on the evaluation jets by fit_xbx.py scratch.
   # RETRIES as the v2 fine-tunes: evictions are not counted, exit 42 fails the Job at once, an
   # interrupted cell resumes from its last completed epoch (experiments/FT/cell_resume.py).
@@ -263,11 +330,11 @@ spec:
             python3 experiments/EVAL/extract_features.py --checkpoint ${{OUT}}/net_best_epoch_state.pt \\
               --num-classes 2 --arm XBX_{sig}_scratch_s{seed}_${{P}} --data-config {cfg} \\
               --data-test $(ls ${{D}}/*.parquet | sort) --observers jet_sdmass --out ${{OUT}}/features_${{P}} \\
-              --batch-size 512 --num-workers 1 --fetch-step 1 --save-logits
+              --batch-size 512 --num-workers 1 --fetch-step 1 --save-logits{extract_args}
             rm -f ${{OUT}}/features_${{P}}/features.npy
           done
-          python3 experiments/XBS/fit_xbx.py scratch --sig ${{OUT}}/features_sig --qcd ${{OUT}}/features_qcd \\
-            --out ${{OUT}}/endpoints.json
+          {fit_guard}python3 experiments/XBS/fit_xbx.py scratch --sig ${{OUT}}/features_sig --qcd ${{OUT}}/features_qcd \\
+            --out ${{OUT}}/endpoints.json{fit_args}
           [ -f ${{OUT}}/net_best_epoch_state.pt ] || {{
             echo "FATAL: no net_best_epoch_state.pt in ${{OUT}}; refusing to prune"; exit 1; }}
           rm -f ${{OUT}}/net_epoch-*_state.pt ${{OUT}}/net_epoch-*_optimizer.pt
@@ -306,16 +373,29 @@ spec:
 """
 
 
-def scratch_spec(sig: str, seed: int) -> str:
-    name = f"xbx-scratch-{sig.replace('_', '')}-s{seed}-raunav"
+def scratch_spec(sig: str, seed: int, name=None, pin=PIN, out_root=SCRATCH_ROOT, epochs=B3["epochs"],
+                 mx=None, extract_args="") -> str:
+    """mx None: the superseded spec as it was written; else the window and mX are passed, the
+    examples seen recorded, and an endpoints.json already written is not redone."""
+    name = name or f"xbx-scratch-{sig.replace('_', '')}-s{seed}-raunav"
+    new = mx is not None
     return SCRATCH_TEMPLATE.format(
-        sig=sig, seed=seed, name=name, image=BX.IMAGE, pin=PIN, stage=STAGE, cfg=CFG, gpu=SCRATCH_GPU,
-        out=f"{SCRATCH_ROOT}/{sig}/s{seed}", lr=B3["lr"], wd=B3["weight_decay"], epochs=B3["epochs"],
+        sig=sig, seed=seed, name=name, image=BX.IMAGE, pin=pin, stage=STAGE, cfg=CFG, gpu=SCRATCH_GPU,
+        out=f"{out_root}/{sig}/s{seed}", lr=B3["lr"], wd=B3["weight_decay"], epochs=epochs,
         need=_need(f"{STAGE}/pairs/{sig}/DONE", f"{STAGE}/{sig}/eval/DONE", f"{STAGE}/qcd/eval/DONE"),
-        bad_nodes=", ".join(f'"{n}"' for n in BX.V2_GPU_FAULT_NODES))
+        bad_nodes=", ".join(f'"{n}"' for n in BX.V2_GPU_FAULT_NODES),
+        what="the Sophon network (scaled inputs)" if new else "ParT", extract_args=extract_args,
+        fit_guard="[ -f ${OUT}/endpoints.json ] || " if new else "",
+        fit_args=f" {window_arg(mx)} --mx {mx:g} --ft-manifest ${{OUT}}/ft_manifest.json" if new else "")
 
 
-def build(signals=SIGNALS) -> dict[str, str]:
+def window_arg(mx: float) -> str:
+    """xbx.window_for(mx) as stage_xbx.py and fit_xbx.py take it."""
+    lo, hi = X.window_for(mx)
+    return f"--window {lo:g} {hi:g}"
+
+
+def build(signals=SIGNALS, mx=MX) -> dict[str, str]:
     specs = {"job-xbx-stage-jc2-raunav.yaml": stage_jc2_spec(),
              "job-xbx-stage-ihep-raunav.yaml": stage_ihep_spec()}
     for model, run, arm, k, reg, ckpt in models():
@@ -325,17 +405,37 @@ def build(signals=SIGNALS) -> dict[str, str]:
     for s in SCRATCH_SIGNALS:
         for seed in SCRATCH_SEEDS:
             specs[f"job-xbx-scratch-{s.replace('_', '')}-s{seed}-raunav.yaml"] = scratch_spec(s, seed)
+    # the real samples
+    specs["job-xbx-ihep-stage-raunav.yaml"] = ihep_stage_spec(window_arg(mx))
+    for sig in IHEP_SIGNALS:
+        for model, run, arm, k, reg, ckpt in models():
+            stem, pre = model.removeprefix("mtx-"), f"xbx-ihep-{sig}"
+            specs[f"job-{pre}-x-{stem}-raunav.yaml"] = x_spec(model, run, arm, k, reg, ckpt, (sig,),
+                                                              prefix=pre, pin=PIN_IHEP)
+            specs[f"job-{pre}-fit-{stem}-raunav.yaml"] = fit_spec(model, ckpt, (sig,), prefix=pre, pin=PIN_IHEP,
+                                                                  out=f"{FITS_IHEP}/{sig}",
+                                                                  window=f" {window_arg(mx)} --mx {mx:g}")
+    for s in SCRATCH_SIGNALS:
+        for seed in SCRATCH_SEEDS:
+            specs[f"job-xbx-ihep-scratch-{s}-s{seed}-raunav.yaml"] = scratch_spec(
+                s, seed, name=f"xbx-ihep-scratch-{s}-s{seed}-raunav", pin=PIN_IHEP, out_root=SCRATCH_ROOT_IHEP, mx=mx)
+    # the from-scratch chain proven on the stand-in: Sophon's own window (mX = 200)
+    specs["job-xbx-scratch-dryrun-raunav.yaml"] = scratch_spec(
+        "xbb_jc2", 1, name="xbx-scratch-dryrun-raunav", pin=PIN_IHEP, out_root=DRYRUN_ROOT, epochs=2,
+        mx=X.SOPHON_MX, extract_args=" --max-jets 200000")
     return specs
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--signals", nargs="+", default=list(SIGNALS))
+    ap.add_argument("--mx", type=float, default=MX, help="the samples' resonance mass, GeV")
     ap.add_argument("--pin-not-yet-tagged", action="store_true")
     ap.add_argument("--check-only", action="store_true")
     a = ap.parse_args(argv)
     BX.verify_pin(PIN, list(NEEDED), a.pin_not_yet_tagged, NEEDED)
-    specs = build(tuple(a.signals))
+    BX.verify_pin(PIN_IHEP, list(NEEDED_IHEP), a.pin_not_yet_tagged, NEEDED_IHEP)
+    specs = build(tuple(a.signals), a.mx)
     if not a.check_only:
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         for name, text in specs.items():

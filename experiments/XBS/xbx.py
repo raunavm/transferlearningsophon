@@ -3,19 +3,22 @@ docs/PRESPEC_2026-09.md amendment A5).
 
 Sophon (arXiv:2405.12972), Sec. III and App. B.5:
   X->bb, direct (Eq. 4): discr = g(X->bb) / (g(X->bb) + sum_l g(QCD_l)) from the model's own
-      softmax outputs; no training. At a vocabulary that merges X->bb with other classes the
-      signal node is the merged group (signal_idx takes several nodes).
+      softmax outputs; no training. It can be formed only where X->bb is a class of its own
+      (node_groups "xbb_own": 188 and 162 classes); a merged group node is a different
+      discriminant (PRESPEC A15, A5).
   X->bs, transfer: the frozen 128-d latent -> MLP (512, 2), ReLU, the first layer preloaded
       from the pretrained model's first output layer (mod.fc.0.0, Linear(128, 512); the paper
-      writes Linear(188, 512)); 1 epoch of 2.5 M jets, batch 1024, constant LR 5e-4.
+      writes Linear(188, 512)); 1 epoch of 2.5 M samples, batch 1024, constant LR 5e-4. A training
+      pair of N jets per class is repeated 2.5 M / 2N times (4.51 on the stand-in).
       Where Sophon states nothing, A5 takes its pretraining optimizer (Lookahead k=6,
       alpha=0.5 over RAdam beta=(0.95, 0.999), eps=1e-5), no weight decay, and the dropout
       of 0.1 the pretrained head has after its first layer.
   Metric (Fig. 2): discovery significance Z (Cowan et al., arXiv:1007.1727: median Z for known b) against the
-      SM background efficiency, 40 fb^-1, jets in an m_SD window.
+      SM background efficiency, 40 fb^-1, jets in 150 < m_SD < 230 GeV for mX = 200 GeV.
 
 A5's per-model number is y = -ln eps_S at a fixed QCD efficiency eps_B* in the window:
-1e-3 if the window holds at least 400,000 QCD jets, else 1e-2 (endpoints()).
+1e-3 if the window holds at least 400,000 QCD jets, else 1e-2 (endpoints()). The window is
+Sophon's scaled by mX/200 (window_for; PRESPEC A15: 93.75-143.75 GeV at mX = 125 GeV).
 """
 from __future__ import annotations
 
@@ -40,13 +43,15 @@ MAPS = (("rung_label_maps.v1.csv", ("L188", "L162", "R42_Q1", "R16_Q1")),
 # merged group at 43 and 17)
 ZERO_SHOT = {"xbb": "label_X_bb", "xbq": "label_X_bq"}
 A5_QCD_FOR_1E3 = 400_000
+A5_EVAL_FLOOR = 10_000      # A5: evaluation signal jets inside the window, a hard floor
+SOPHON_WINDOW, SOPHON_MX = (150.0, 230.0), 200.0     # Sophon Fig. 2
 EPS_B_GRID = np.logspace(-5, 0, 26)
 
 
 def node_groups(arm: str) -> dict:
-    """{"xbb": node, "xbq": node, "qcd": [QCD-only nodes], "k": classes} of one vocabulary; a
-    mass-output arm has its base vocabulary. A node is QCD only if every class in it is QCD
-    (experiments/EVAL/anomaly.py node_roles)."""
+    """{"xbb": node, "xbq": node, "qcd": [QCD-only nodes], "k": classes, "xbb_own": whether the
+    X->bb node holds X->bb alone} of one vocabulary; a mass-output arm has its base vocabulary.
+    A node is QCD only if every class in it is QCD (experiments/EVAL/anomaly.py node_roles)."""
     col = arm.removesuffix("_MASS")
     f = next((f for f, cols in MAPS if col in cols), None)
     if f is None:
@@ -57,7 +62,13 @@ def node_groups(arm: str) -> dict:
     for name, n in node.items():
         members.setdefault(n, []).append(name)
     qcd = sorted(n for n, v in members.items() if all(x.startswith("label_QCD_") for x in v))
-    return {**{k: node[v] for k, v in ZERO_SHOT.items()}, "qcd": qcd, "k": len(members)}
+    return {**{k: node[v] for k, v in ZERO_SHOT.items()}, "qcd": qcd, "k": len(members),
+            "xbb_own": members[node[ZERO_SHOT["xbb"]]] == [ZERO_SHOT["xbb"]]}
+
+
+def window_for(mx: float) -> tuple[float, float]:
+    """The m_SD window for a resonance of mass mx: Sophon's 150-230 GeV at 200 GeV, scaled by mx/200."""
+    return tuple(w * mx / SOPHON_MX for w in SOPHON_WINDOW)
 
 
 def softmax(logits: np.ndarray) -> np.ndarray:

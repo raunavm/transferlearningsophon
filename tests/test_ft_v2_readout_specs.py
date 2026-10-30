@@ -128,14 +128,15 @@ def test_the_expected_cells_are_every_paper_run_at_every_size():
 
 
 def test_the_readout_specs_on_disk_are_the_generators(ro, trial):
-    want = {**ro, **trial}
+    # leg1_188's and the top recipe check's are --v2-leg188's (tests/test_ft_v2_leg188.py)
+    want = {**ro, **trial, **dict([B.leg188_readout(B.PIN_V2_LEG188), B.topcheck_readout(B.PIN_V2_LEG188)])}
     for p in K8S.glob("job-ft-v2-*-metrics-raunav.yaml"):
         assert p.read_text() == want[p.name], p.name
     assert set(trial) <= {p.name for p in K8S.glob("job-ft-v2-*-metrics-raunav.yaml")}
 
 
 def test_every_readout_is_a_cpu_job_of_mine_at_its_own_pin_with_the_retry_policy(ro):
-    assert B.PIN_V2_READOUT == "mtx-s2.12"
+    assert B.PIN_V2_READOUT == "mtx-s2.19"
     for name, t in ro.items():
         d = yaml.safe_load(t)
         assert name == f"job-{d['metadata']['name']}.yaml" and name.endswith("-raunav.yaml")
@@ -247,12 +248,17 @@ exit 0
     return dict(os.environ, PATH=f"{bindir}:{os.environ['PATH']}", REPO_REF="test"), calls
 
 
+def _words(script, var):
+    """The paths a `for <var> in ...; do` loop of the script walks, brace-expanded by bash."""
+    words = re.search(rf"for {var} in (.*); do", script).group(1)
+    return subprocess.run(["bash", "-c", f"echo {words}"], capture_output=True, text=True).stdout.split()
+
+
 def _tree(tmp_path, rule, leg, skip_ref=False):
-    """One DONE cell of the rule per tree the read-out reads, and every reference cell."""
+    """Every cell of the rule the read-out waits for, DONE, and every reference cell."""
     data = tmp_path / "data"
-    trees = {"leg1": ["leg1"], "leg2": ["leg2"], "bench": ["leg_top", "leg_qg"]}[leg]
-    for t in trees:
-        cell = data / f"results/ft_v2/{rule}/{t}/l188-s1/N1000/s1"
+    for c in _words(B._v2_readout_script(rule, leg, wait=B._v2_wait(rule, leg)), "w"):
+        cell = data / c[len("/data/"):]
         cell.mkdir(parents=True)
         (cell / "DONE").touch()
         (cell / "predict.log").touch()
@@ -297,8 +303,9 @@ def test_a_readout_runs_under_bash_writes_its_tables_and_refuses_a_second_run(ro
 @pytest.mark.parametrize("leg", LEGS)
 def test_a_missing_tree_or_reference_cell_halts_and_a_failed_readout_is_counted(ro, tmp_path, leg):
     text = ro[_name("best70", leg)]
-    r, calls = _run(text, tmp_path / "none")
-    assert r.returncode == B.EXIT_HALT and "FATAL: no " in r.stdout and "_metrics.py" not in calls
+    # with nothing on /data it waits in the pod (here for no time at all), then halts
+    r, calls = _run(text.replace(f'-lt {B.WAIT_LIMIT_S} ]', '-lt 0 ]'), tmp_path / "none")
+    assert r.returncode == B.EXIT_HALT and "cells not DONE after" in r.stdout and "_metrics.py" not in calls
     _tree(tmp_path / "ref", "best70", leg, skip_ref=True)
     r, calls = _run(text, tmp_path / "ref")
     assert r.returncode == B.EXIT_HALT and "1 reference cells not DONE" in r.stdout
@@ -312,7 +319,7 @@ def test_a_missing_tree_or_reference_cell_halts_and_a_failed_readout_is_counted(
 
 def test_a_jetclass_cell_with_a_log_but_no_done_halts(ro, tmp_path):
     data = _tree(tmp_path, "best70", "leg2")
-    half = data / "results/ft_v2/best70/leg2/l188-s2/N1000/s1"
+    half = data / "results/ft_v2/best70/leg2/l188-s2/N1000/s2"      # a cell no spec emits
     half.mkdir(parents=True)
     (half / "predict.log").touch()
     r, calls = _run(ro[_name("best70", "leg2")], tmp_path)
@@ -418,7 +425,7 @@ def test_a_split_run_still_fine_tuning_does_not_stop_the_trial(trial, tmp_path):
 def test_the_trial_pins_a_tag_whose_tree_carries_inits():
     # each leg as it ran; leg 2 again after eval_arm's tie (as the final read-outs)
     assert B.PIN_V2_TRIAL == {"leg1": "mtx-s2.11", "leg2": "mtx-s2.12", "bench": "mtx-s2.11"}
-    assert B.PIN_V2_READOUT == "mtx-s2.12" and B.EVAL_ARM_TIE.items() <= B.V2_READOUT_NEEDED.items()
+    assert B.PIN_V2_READOUT == "mtx-s2.19" and B.EVAL_ARM_TIE.items() <= B.V2_READOUT_NEEDED.items()
     for leg, pin in B.PIN_V2_TRIAL.items():
         B.verify_pin(pin, True, B.V2_TRIAL_NEEDED)
     B.verify_pin(B.PIN_V2_READOUT, True, B.V2_READOUT_NEEDED)

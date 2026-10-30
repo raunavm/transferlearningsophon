@@ -112,6 +112,18 @@ def test_the_zero_shot_nodes_merge_as_the_vocabulary_does():
         X.node_groups("R63_Q1")
 
 
+def test_eq4_can_be_formed_only_where_xbb_is_a_class_of_its_own():
+    own = {arm: X.node_groups(arm)["xbb_own"] for arm in ("L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS",
+                                                          "R16_Q1_MASS", "FLAV_F0", "RAND2_p1")}
+    assert own["L188"] and own["L162"] and own["L162_MASS"]
+    assert not any(own[a] for a in ("R42_Q1", "R16_Q1", "R16_Q1_MASS", "FLAV_F0", "RAND2_p1"))
+
+
+def test_the_window_is_sophons_scaled_by_the_resonance_mass():
+    assert X.window_for(200) == pytest.approx((150.0, 230.0))
+    assert X.window_for(125) == pytest.approx((93.75, 143.75))       # PRESPEC A15
+
+
 def test_the_stored_columns_give_eq4():
     rng = np.random.default_rng(3)
     z = rng.normal(0, 3, (500, 188)).astype(np.float32)
@@ -218,3 +230,21 @@ def test_the_extraction_wrapper_swaps_in_the_xbx_columns_for_every_jet():
         want = X.xbx_columns(model(torch.from_numpy(f)).numpy(), g)
     assert set(c["head"]) == set(want) and all(np.allclose(c["head"][k], want[k], atol=1e-6) for k in want)
     assert np.array_equal(c["label188"], y)
+
+
+def test_a_split_extracted_before_keeps_its_record(tmp_path, monkeypatch):
+    pytest.importorskip("weaver")
+    import json
+    E = _extract_xbx()
+    monkeypatch.setattr(E.EX, "main", lambda argv: 0)            # the extraction itself is skipped
+    out = tmp_path / "qcd_eval"
+    out.mkdir()
+    args = ["--arm", "R16_Q1", "--num-classes", "17", "--data-test", "x.parquet", "--out", str(out)]
+    E.main(args)
+    assert json.loads((out / "xbx.json").read_text())["groups"] == X.node_groups("R16_Q1")
+    earlier = json.dumps({"arm": "R16_Q1", "groups": {}})          # a record written at an earlier tag
+    (out / "xbx.json").write_text(earlier)
+    E.main(args)
+    assert (out / "xbx.json").read_text() == earlier                # left as it was
+    with pytest.raises(SystemExit, match="another vocabulary"):
+        E.main(["--arm", "L188", "--num-classes", "188", "--data-test", "x.parquet", "--out", str(out)])

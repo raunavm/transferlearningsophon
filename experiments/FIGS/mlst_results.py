@@ -91,23 +91,42 @@ class Unconverged(float):
     pass
 
 
-def _lone(x: float) -> str:
-    """Five significant figures with their trailing zeros, thousands separated as fmt_pm does."""
-    s = f"{x:#.5g}".rstrip(".")
+def _sep(s: str) -> str:
+    """Thousands separated as fmt_pm does."""
     head, dot, tail = s.partition(".")
     if "e" in s or len(head.lstrip("-")) <= 3:
         return s
     return f"{int(head):,}".replace(",", "{,}") + dot + tail
 
 
-def _cell(values: list, n_expected: int, fmt_pm, scale: float = 1.0) -> str:
-    """mean +- SD over the runs present; a lone run prints alone; missing runs add a red marker."""
+def _lone(x: float) -> str:
+    """A single run: three significant figures (make_tables.fmt_one's rule), trailing zeros kept."""
+    return _sep(f"{x:#.3g}".rstrip("."))
+
+
+def _two(a: float, b: float, sep: str) -> str:
+    """Two runs: both values, to the decimal that shows their difference to two digits. A
+    standard deviation from two runs has one degree of freedom, so it is not printed."""
+    d = abs(a - b)
+    if d == 0:
+        return _lone(a) + sep + _lone(b)
+    dec = max(0, 1 - math.floor(math.log10(d)))
+    return sep.join(_sep(f"{x:.{dec}f}") for x in (a, b))
+
+
+def _cell(values: list, n_expected: int, fmt_pm, scale: float = 1.0, sep: str = ", ") -> str:
+    """mean +- SD over three or more runs present; two runs print both values; a lone run
+    prints alone; missing runs add a red marker."""
     flag = any(isinstance(x, Unconverged) for x in values)
     v = [x * scale for x in values if x is not None]
     if not v:
         return r"\pending{no run yet}"
-    # a lone run keeps its trailing zeros (0.96580, not 0.9658)
-    body = fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1))) if len(v) > 1 else _lone(v[0])
+    if len(v) > 2:
+        body = fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1)))
+    elif len(v) == 2:
+        body = _two(v[0], v[1], sep)
+    else:
+        body = _lone(v[0])
     if flag:
         body += UNCONVERGED
     if len(v) < n_expected:

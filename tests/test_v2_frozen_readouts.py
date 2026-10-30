@@ -153,7 +153,7 @@ def test_mass_resolution_reads_the_pooled_embedding(cache, tmp_path):
     def run(d, out, extra=()):
         assert mr.main(["--features", f"A={d}", "--observers", str(cache), "--out", str(out),
                         *extra]) == 0
-        return json.loads((out / "mass_resolution.json").read_text())
+        return json.loads((out / mr.OUT_JSON).read_text())
     pooled = run(cache, tmp_path / "pooled", ["--readout", "pooled"])
     same = run(_with_features(cache, tmp_path / "swapped", np.load(cache / "pooled.npy")),
                tmp_path / "swapped_out")

@@ -117,7 +117,8 @@ Jet foundation models extend this approach: a network is pretrained on a large s
 dataset of jets and then adapted to tasks such as jet
 tagging~\cite{part,sophon,omnilearn,omnijet,mpm}. A comparison of pretraining objectives on top
 tagging found classification of the simulated jets to be the best single objective when the
-model was fine-tuned on the full training set of \LitObjectivesFullJets{} jets. With
+model was fine-tuned on the full training set of \LitObjectivesFullJets{} jets, for the checkpoint with
+the lowest validation loss in pretraining. With
 \LitObjectivesFewJets{} jets, classification combined with masked particle modeling, in which
 the network predicts particles hidden from its input, was better~\cite{objectives}. Because the
 simulation records the decays that produced each jet, simulated jets, unlike natural images,
@@ -149,7 +150,8 @@ than a \LitSophonAblationNClasses-class model~\cite[Sec.~III]{sophon}. The
 \LitSophonAblationNClasses-class model, however, was trained on fewer examples per epoch, and only on QCD
 jets and on two-prong decays, in which $X$ decays directly into a pair of particles. The
 comparison therefore changed the data together with the labels, and it measured the output
-scores rather than the representation. Controlled studies of jet
+scores rather than the representation. A similar comparison in the GloParT study added classes together
+with their training jets~\cite[Sec.~11.4.1]{glopart}. Controlled studies of jet
 foundation models and jet classifiers have varied the training
 objective~\cite{objectives,rieck,reprlearn}, the composition of the training
 data~\cite{datacomp}, and the model and dataset size~\cite{scaling,viglscaling}, but none has
@@ -177,15 +179,16 @@ particles, as CMS taggers do~\cite{cmspart,glopart}. This tests whether the effe
 target on the learned features depends on the label set.
 
 We evaluate each pretrained model both with linear probes on its frozen features and
-with full fine-tuning, each on training sets from \FtSizeEThree{} jets to the full training set.
-The tasks are the classification of JetClass-II and of the earlier JetClass
+with full fine-tuning, each on training sets from \FtSizeEThree{} jets up to \FtSizeESix{} jets on
+JetClass-II and JetClass and up to the full training set on the other tasks.
+The tasks are the classification of JetClass-II into all of its classes and of the earlier JetClass
 dataset~\cite{part}, top tagging~\cite{toptag}, which identifies jets from top-quark decays,
 and quark\slash gluon tagging~\cite{efn}, which separates jets initiated by light quarks from
-those initiated by gluons. Following Sophon, we also tag $X\to b\bar b$ decays directly from the
+those initiated by gluons. Following Sophon, we also tag $X\to b\bar b$ decays, directly from the
 output scores of the label sets that contain them as a class, those with \Kfull{} and \Kres{}
-classes. Decays $X\to bs$ into a $b$ and an $s$ quark, which no label set contains, are tagged
-with a classifier trained on the frozen features. Finally, we test whether
-the frozen features help to detect signals that are absent from pretraining.
+classes, and for every label set with classifiers trained on the frozen features. Decays
+$X\to bs$ into a $b$ and an $s$ quark, which no label set contains, are tagged with these
+classifiers only.
 \pending{the main results, once fine-tuning and the benchmarks are in}
 
 This paper is organized as follows. Section~\ref{sec:related} reviews related work.
@@ -229,9 +232,9 @@ training sets, and never helped for the grouping that follows a taxonomy, animal
 vehicles~\cite{pirovano}. With about a billion web images labeled by hashtags, pretraining on a larger hashtag
 vocabulary raised the accuracy of a linear classifier on the frozen features by about
 \LitMahajanLinearGapPercent{} percentage points on the ImageNet target task with the most
-classes. After full fine-tuning, it changed the accuracy on that task by less than
-1 percentage point. The set of images changed together with the
-vocabulary~\cite[Sec.~3.1]{mahajan}. Hong et~al.~\cite{hong} also pretrained on random class
+classes~\cite[Sec.~3.1.2]{mahajan}. After full fine-tuning, the accuracies on that task differed by
+\LitMahajanFtGapPp{} percentage points~\cite[Fig.~1]{mahajan}. The set of images changed together
+with the vocabulary. Hong et~al.~\cite{hong} also pretrained on random class
 labels, which gave a higher error on the \LitHongSuperclasses{} superclasses than pretraining
 on any level of the taxonomy, including the superclasses themselves.
 Our random partitions are a different control: they regroup whole decay classes, so every
@@ -269,20 +272,15 @@ tagger of Higgs bosons with large momentum, in contrast, ATLAS tried a single ne
 combines classification with regression of the jet mass and transverse momentum. The
 regression loss dominated early training, and the classification efficiency was about
 \LitAtlasUnifiedEffDropPercent\% lower than that of a dedicated classifier, so the combined
-network was not pursued~\cite{atlasgnx}. Whether the effect of an auxiliary mass target depends
-on the label set has not been tested.
+network was not pursued~\cite{atlasgnx}. Ref.~\cite{glopart} argues that the best regression
+changes when classes are added~\cite[Sec.~11.3]{glopart}, but whether the effect of an auxiliary
+mass target on the learned features depends on the label set has not been measured.
 
 \paragraph{Transfer to new signals.} Sophon has no class for $X\to bs$ decays. It tagged them
 with a classifier that has a single hidden layer, is trained on the frozen features and has its
 first layer initialized from the classification head. This classifier outperformed ParT and
 ParticleNet trained on the task, while the discriminant of the $X\to bq$ output performed
-significantly worse~\cite[Sec.~III]{sophon}. Weakly supervised anomaly detectors are trained to
-separate a region of the data that may contain a signal from a reference sample of background,
-without labels for individual collisions. The significance of a signal is the size of its
-excess over the expected background in units of the background's standard deviation. Anomaly
-detectors are compared by the factor by which keeping only the collisions with high scores
-raises the significance of a given signal added to the background~\cite{argos}, and by the
-smallest initial significance from which a discovery is still possible~\cite{sigmamin}.
+significantly worse~\cite[Sec.~III]{sophon}.
 
 % ============================================================================
 \section{Methods}\label{sec:methods}
@@ -422,9 +420,11 @@ are assigned at random. Each resonant group is matched to a resonant group of th
 \Kcoarse-class label set and holds the same nominal share of the reweighted training examples,
 so that it carries the same weight in the loss as in that label set. The realized share of each
 group lies within \RandVtwoShareTol{} of that of its matched group, and the number of classes
-per group is left free. For each partition, \RandVtwoTrials{} such assignments are drawn, and
-the assignment that merges the fewest pairs of classes that the \Kcoarse-class label set also
-merges is kept. We draw \RandVtwoNPartitions{} partitions under a balance rule fixed before
+per group is left free. For each partition, \RandVtwoTrials{} such assignments are drawn, each
+improved by a local search that reduces the number of pairs of classes it merges that the
+\Kcoarse-class label set also merges, and the assignment with the fewest such pairs is kept. The
+random partitions are therefore built to differ from the \Kcoarse-class grouping as much as the
+matched shares allow, rather than drawn uniformly. We draw \RandVtwoNPartitions{} partitions under a balance rule fixed before
 the draw, so that each pair of classes compared in Section~\ref{sec:merge} is merged in some
 partitions and kept apart in others (Appendix~\ref{app:vocab}). Each partition is pretrained
 with a single seed, which Table~\ref{tab:probes} gives.
@@ -476,38 +476,54 @@ models without it, this gives a factorial design of label set and mass regressio
 \paragraph{Randomly initialized network.} For each seed, the saved initial weights of the
 \Kfull-class run give a randomly initialized network with the same architecture. It is
 evaluated by the same linear probes and mass regression as the pretrained models and serves
-as their lower reference.
+as their lower reference. Its batch normalization layers keep their initial statistics, so its
+inputs are not rescaled the way a pretrained model's are.
 
 \subsection{Evaluation}\label{sec:eval}
 
 All pretrained models are evaluated on the same training and test jets.
 
 \paragraph{Downstream tasks.} The first task is the classification of JetClass-II jets into
-the \Kres{} classes of pretraining with the QCD classes merged. Its training and validation jets
-come from files held out from pretraining and its test jets from separate files, so no model
-has seen them. The second task is the \FtNClassesJc-class classification of JetClass~\cite{part},
+its \Kfull{} classes. Its training and validation jets come from files held out from pretraining
+and its test jets from separate files, so no model has seen them. These classes are the
+pretraining labels of the \Kfull-class models, and every coarser label set merges some of them,
+so this task favors finer label sets by construction; the comparisons between label sets with
+the same number of classes and the other tasks do not. Besides the average over all classes, we
+report the average over the \LitJetClassTwoNResonantClasses{} resonant classes and over the
+\LitJetClassTwoNQcdClasses{} QCD classes separately. Only the \Kfull-class label set divides the
+QCD jets, so the QCD part measures what merging them costs. The second task is the \FtNClassesJc-class classification of JetClass~\cite{part},
 which is simulated with a different configuration of the same simulation chain, without pileup,
 and has a different set of classes. The third is top tagging~\cite{toptag}: separating QCD jets
 from jets of top quarks that decay into quarks only. It depends on the number of
 prongs, which every label set keeps, and on the jet mass. The fourth is quark/gluon
-tagging~\cite{efn}: separating jets initiated by light quarks from jets initiated by gluons.
+tagging~\cite{efn}: separating jets initiated by light quarks from jets initiated by gluons. Its
+jets are clustered with distance parameter $R = \LitQgJetRadius$, have
+$\LitQgPtMin < p_{\mathrm T} < \LitQgPtMax$~GeV and are generated without a detector
+simulation~\cite[Sec.~4.1]{efn}.
 Among the levels of the hierarchy, only the \Kfull- and \Kres-class label sets keep this
 distinction. The quark/gluon models are also evaluated on a sample generated with
-Herwig~\cite{herwig,qgherwig} instead of Pythia, which models the parton shower and
+Herwig~\cite{herwigsevenone,qgherwig} instead of Pythia, which models the parton shower and
 hadronization differently.
 
 The network takes \FillNFeatures{} features per particle, and features that a data set does
 not provide are set to zero. The top-tagging data provide only the energy and momentum of each
 particle, from which \FillTopNPresent{} of the features are computed; the other
 \FillTopNZero, the charge, the particle-type flags and the track-displacement variables, are
-zero. The quark/gluon data are generated without a detector simulation and lack the
-\FillQgNZero{} track-displacement variables. The same zeros enter every pretrained model and
-the network trained from scratch. ParT instead pretrained a separate model on the
-\LitPartTopKinFeatures{} kinematic features alone before fine-tuning it on top
-tagging~\cite[Sec.~5.2]{part}.
+zero. The quark/gluon data lack the \FillQgNZero{} track-displacement variables. In
+JetClass-II, every particle carries a single particle-type flag, and only neutral particles have
+zero displacement variables. The top-tagging inputs, with every flag off, and the charged
+particles of the quark/gluon inputs, with zero displacement, therefore lie outside the inputs
+seen in pretraining. The same zeros enter every pretrained model, the randomly initialized
+network and the network trained from scratch. ParT instead pretrained separate models on
+reduced features before fine-tuning: on the \LitPartTopKinFeatures{} kinematic features alone
+for top tagging, and without the displacement variables for quark/gluon
+tagging~\cite[Sec.~5.2]{part}. To separate the effect of the missing features from that of the
+label set, we also probe the JetClass-II features with the same features set to zero
+(Section~\ref{sec:fill}).
 
 On JetClass-II and JetClass, we report the macro-averaged area under the receiver operating
-characteristic curve (AUC), the mean of the one-versus-rest AUC over the classes. On top and
+characteristic curve (AUC), the mean of the one-versus-rest AUC over the classes (ParT reports the
+average over pairs of classes~\cite{part}), and the AUC of each class. On top and
 quark/gluon tagging, we report the AUC and, after fine-tuning, the background rejection
 $1/\epsilon_B$ at a fixed signal efficiency $\epsilon_S$, where $\epsilon_S$ and $\epsilon_B$
 are the fractions of signal and background jets that a selection on the score accepts. Because
@@ -537,20 +553,24 @@ sets the rate of transitions between $b$ and $c$ quarks. The second pair is $X\t
 against $X\to c\bar c$, and the third is $X\to YY\to bbqq$ against $X\to YY\to ccqq$, which the
 random partition with a $b$-quark boundary keeps apart. Each of these pairs is merged in some
 random partitions and kept apart in others. Comparing these partitions separates the effect of
-merging a pair from the effect of having only \Kcoarse{} classes.
+merging a pair from the effect of having only \Kcoarse{} classes. Further pairs separate QCD
+jets by their quark content, which only the \Kfull-class label set distinguishes: the QCD classes
+$bb$ and $cc$, whose jets contain several $b$ or several $c$ quarks and no other $b$, $c$ or $s$
+quark; and QCD jets with a $b$ quark, and those with a $c$ quark but no $b$ quark, each against
+QCD jets with only light quarks or gluons. The first of these is the QCD counterpart of
+$X\to b\bar b$ against $X\to c\bar c$.
 
 \paragraph{Resonance tagging.}\label{sec:xbb} We follow the benchmark of
 Sophon~\cite[Sec.~III]{sophon}: a spin-0 resonance decaying to $b\bar b$ or to $bs$,
 \pending{resonance mass and sample sizes}. Sophon's background was a dedicated sample of
 Standard Model processes; we use the QCD jets of the JetClass-II test files, which no
 pretraining run used, with the selection of Section~\ref{sec:design}, and evaluate every score
-in Sophon's soft-drop mass window
-$\LitSophonXWindowLo < m_{\mathrm{SD}} < \LitSophonXWindowHi$~GeV. For $X\to b\bar b$, which
+in Sophon's soft-drop mass window, $\LitSophonXWindowLo < m_{\mathrm{SD}} < \LitSophonXWindowHi$~GeV for
+a resonance of mass \LitSophonXMass~GeV, scaled by the ratio of the resonance masses. For $X\to b\bar b$, which
 the \Kfull- and \Kres-class label sets contain as a class, we use Sophon's discriminant~\cite[Eq.~(4)]{sophon},
-the $X\to b\bar b$ score divided by the sum of itself and the QCD scores. Label sets without an
-$X\to b\bar b$ class use the class that contains it. Sophon compared this discriminant between
-its \Kfull-class model and a model trained on fewer classes and fewer jets; we compare it
-between label sets that merge classes of the same jets.
+the $X\to b\bar b$ score divided by the sum of itself and the QCD scores. For the other label
+sets this discriminant cannot be formed (Table~\ref{tab:usecase}), so all label sets are compared
+on $X\to b\bar b$ with the classifiers on the frozen features described next.
 
 The $X\to bs$ decay, which no label set contains, is tagged by transfer learning: a linear
 probe and Sophon's transfer classifier are trained on the frozen class token. The transfer
@@ -564,14 +584,12 @@ without training: the discriminant of the class that contains $X\to bq$, which a
 \Kres{} classes is the $X\to bq$ class itself. The same network trained from scratch on these jets
 (Appendix~\ref{app:ftrecipe}) shows what training without pretraining reaches. We report the
 signal efficiency at a fixed QCD efficiency and the ratio $\epsilon_S/\sqrt{\epsilon_B}$, which
-is proportional to the discovery significance~\cite{cowan} when the signal is small compared
-with the background.
+is proportional to the discovery significance~\cite{cowan}, the excess over the background in
+units of its standard deviation, when the signal is small compared with the background. The
+background is QCD jets only, so the ratio ranks the models on a common background rather than
+estimating a significance.
 % CHECK: on arrival, the resonance mass of the IHEP samples (125 GeV per the PI's note,
 % Sophon's Fig. 2 uses 200 GeV): if 125, the window moves and this text with it.
-
-\paragraph{Anomaly detection.} \pending{signals absent from pretraining, injected into
-background jets; the scores, their settings and the metrics, written once the samples and the
-code exist}
 
 \paragraph{Mass resolution.} The mass-correction target $y$ of Eq.~(\ref{eq:masstarget}) is
 regressed from the frozen features of JetClass-II test jets that have a generator-level match,
@@ -587,18 +605,30 @@ half the smallest interval containing 68\% of the residuals~\cite[Sec.~8.2.2]{gl
 Each result is the mean over the independently pretrained models of a configuration:
 \MlstNRunsWord{} for each level of the hierarchy, \MlstMassNRunsWord{} for the models with
 mass regression, and \RandFlavRuns{} for the random partitions with controlled flavor
-boundaries. Its uncertainty is the standard deviation between them, rounded following the
-Particle Data Group~\cite{pdg}. Each pretrained model is probed or fine-tuned once, with the
-same fine-tuning seed and training subset; only the mass regression averages the predictions of
-several MLP seeds. The spread therefore measures the variation between pretraining runs. The
-uncertainties of Refs.~\cite{part,mpm} come from repeated downstream training of a single
-pretrained model and do not include this variation. The \RandVtwoNPartitions{} random partitions, with \RandVtwoRuns{} seed each, are shown
-individually. When configurations are compared, the ratio is taken between models with the
-same seed, which share their training examples, and its mean and standard deviation over seeds
-are given; averages over random partitions are not paired in this way, and their uncertainty
-is the standard deviation between partitions. Background rejections at low background
-efficiency rest on few background jets; Table~\ref{tab:ftrej} gives the smallest
-number behind any of its values.
+boundaries. For \MlstNRunsWord{} runs, its uncertainty is the standard deviation between them,
+rounded following the Particle Data Group~\cite{pdg}. A standard deviation from \RandFlavRuns{}
+runs has a single degree of freedom, so for these configurations both values are given instead,
+and a difference is described by its direction in both runs. Each pretrained model is probed or
+fine-tuned once, with the same fine-tuning seed and training subset; only the mass regression
+averages the predictions of several MLP seeds. The spread therefore measures the variation
+between pretraining runs. The uncertainties of Refs.~\cite{part,mpm} come from repeated
+downstream training of a single pretrained model and do not include this variation. The network
+trained from scratch is trained with \MlstFtRefSeedsWord{} seeds. Below the largest training set
+of JetClass, top and quark/gluon tagging, each of its seeds also uses a different training
+subset, so its spread includes the choice of subset, whereas every pretrained model is
+fine-tuned on the same subset.
+
+The \RandVtwoNPartitions{} random partitions, with \RandVtwoRuns{} seed each, are shown
+individually. When configurations are compared, the ratio is taken between models with the same
+seed, which share their training examples and initial weights, and for a random partition
+between it and the \Kfull-class model of its seed; the mean and standard deviation of the ratio
+are then taken over seeds or partitions. The GPU type, which changes the floating-point rounding
+and the dropout masks, differs within most of these pairs (Appendix~\ref{app:compute}), so a
+paired comparison does not remove every difference other than the labels. All models are scored
+on the same test jets, so the finite test sample shifts them together; its contribution, from a
+bootstrap over the test jets shared by all models, is given in Appendix~\ref{app:boot}.
+Background rejections at low background efficiency rest on few background jets;
+Table~\ref{tab:ftrej} gives the smallest number behind any of its values.
 
 % ============================================================================
 \section{Results}\label{sec:results}
@@ -776,9 +806,6 @@ and~\ref{tab:ftrej})}
 label set: direct tagging of $X\to b\bar b$, transfer to $X\to bs$, and the network trained from
 scratch}
 
-\subsection{Anomaly detection}\label{sec:anomaly}
-\pending{anomaly detection on the held-out signals}
-
 \FloatBarrier
 % ============================================================================
 \section{Discussion and conclusion}\label{sec:conclusion}
@@ -896,7 +923,10 @@ Table~\ref{tab:app-levels} lists the levels of the class hierarchy and the group
 JetClass-II class at each coarser level, in every random partition and in every random
 partition with controlled flavor boundaries. Both are generated from the label maps.
 
-The random partitions are drawn under a balance rule fixed before the draw. Each of
+Candidate partitions are built as in Section~\ref{sec:controls} from consecutive seeds. Of
+\RandVtwoPoolDraws{} candidates, \RandVtwoPoolPass{} meet the rule on the realized shares below,
+and the \RandVtwoNPartitions{} partitions are a random sample of these that meets a balance rule
+fixed before the draw. Each of
 \RandVtwoNPairs{} pairs of classes, including those compared in Section~\ref{sec:merge}, is
 merged in \RandVtwoMergedMin{} or \RandVtwoMergedMax{} of the partitions and kept apart in the
 others. The realized share of each group lies within \RandVtwoShareTol{} of that of its
@@ -923,42 +953,57 @@ flavor boundary; and the share of the training examples in each group stays with
 % ============================================================================
 
 The inverse regularization strength of the linear probes is chosen from a logarithmic grid
-between \LpCMin{} and \LpCMax. The JetClass-II macro AUC is computed on \LpNTestAucJcii{} test
-jets. The smallest JetClass-II training subset contains jets of \FtCoverageEThreeNClasses{} of
-the \Kfull{} JetClass-II classes, with a median of \FtCoverageEThreeMedian{} jets per class, so
-not every class of the \Kres-class task is present. A class absent from training contributes
-the AUC of a random guess to the macro average, which raises $\oma$ at the smallest size for
-every model alike.
+between \LpCMin{} and \LpCMax. Each probe is minimized by full-batch L-BFGS in double precision;
+a fit counts as converged when the largest component of its gradient ends below
+\LpConvergedGrad, and every probe of a pretrained model converged. The frozen features are stored in half precision. The JetClass-II
+probes and fine-tuned models are scored on the same \LpNTestAucJcii{} test jets, every fourth of
+the first \LpNTestJcii{} JetClass-II test jets. The smallest JetClass-II
+training subset contains jets of \FtCoverageEThreeNClasses{} of the \Kfull{} classes, with a
+median of \FtCoverageEThreeMedian{} jets per class, and the next contains
+\FtCoverageEFourNClasses{}. In a linear probe, a class absent from training receives probability
+zero and the AUC of a random guess, which raises $\oma$ at these sizes for every model alike;
+Table~\ref{tab:probesn} also gives the average over the classes present in training.
 
 Every fine-tuning setting below, except the schedule of the head's learning rate, is read
 from the record that each fine-tuning run writes when it starts. The pretrained weights are
 trained at a constant learning rate of \MlstFtLr{} and the new head at \MlstFtHeadMult{} times
-that, the rates ParT uses for fine-tuning~\cite{part}, with weight decay \MlstFtWeightDecay{}
-and batches of \MlstFtBatch{} jets. On top and quark/gluon tagging both rates stay constant;
-on JetClass-II and JetClass the learning rate of the head falls to \MlstFtHeadDecayTo{} of its
-value over the last \MlstFtHeadDecayShare{} of the epochs, the default schedule of the training
+that, the rates ParT uses for fine-tuning~\cite[Sec.~5.2]{part}, with weight decay
+\MlstFtWeightDecay{} and batches of \MlstFtBatch{} jets. The new head is the whole classification
+head, its hidden layer included. On top and quark/gluon tagging both rates stay constant; on
+JetClass-II and JetClass the learning rate of the head falls to \MlstFtHeadDecayTo{} of its value
+over the last \MlstFtHeadDecayShare{} of the epochs, the default schedule of the training
 framework. On JetClass-II and JetClass, a model is fine-tuned for \MlstFtEpochsEThree{},
 \MlstFtEpochsEFour{}, \MlstFtEpochsEFive{} and \MlstFtEpochsESix{} epochs at \FtSizeEThree{},
 \FtSizeEFour{}, \FtSizeEFive{} and \FtSizeESix{} training jets, and on top and quark/gluon
-tagging for \MlstFtBenchEpochs{} epochs at every size. The new head is initialized afresh for
-every fine-tuning run, and the pretrained weights are loaded from the selected checkpoint,
-whose hash every run records. Each fine-tuning run is evaluated at its epoch of highest
-validation accuracy, the earliest in case of a tie; a run that resumed after an interruption
-takes that epoch over all of its epochs. The reference trained from scratch uses ParT's recipe
-for training from scratch, with a learning rate of \MlstFtRefLr. All fine-tuning of pretrained
-models ran on \MlstFtGpuTypes{} GPUs. \pending{the references from scratch in
-Tables~\ref{tab:ft} and~\ref{tab:ftrej} ran on another GPU type; the final read-out uses
-references trained on the same GPU type}
-% CHECK: off JetClass-II, the seeds of the reference from scratch may also differ in their
-% training subset (methods audit, 2026-10-29); verify in scripts/build_ft_jobs.py.
+tagging for \MlstFtBenchEpochs{} epochs at every size. An epoch draws at least
+\MlstFtMinEpochJets{} training jets, so at \FtSizeEThree{} jets it passes over the training set
+several times. The epoch with the highest validation accuracy is selected on the same
+\MlstFtValJcii{} jets in every epoch on JetClass-II, and on \MlstFtValSmall{} jets drawn anew in
+each epoch at \FtSizeEThree{} and \FtSizeEFour{} jets and \MlstFtValLarge{} at the larger sizes on
+the other tasks.
+The new head is initialized afresh for every fine-tuning run, and the pretrained weights are
+loaded from the selected checkpoint, whose hash every run records. Each fine-tuning run is
+evaluated at its epoch of highest validation accuracy, the earliest in case of a tie; a run that
+resumed after an interruption takes that epoch over all of its epochs.
 
-For $X\to bs$, Sophon's transfer classifier is trained in a single pass over
-\LitSophonTransferSamplesMillion{} million jets with batch size
-\LitSophonTransferBatch~\cite[App.~B.5]{sophon}, with the optimizer of pretraining, dropout in
-its hidden layer, no weight decay and several seeds. The network trained from scratch on the
-same jets follows Sophon's reference~\cite[App.~B.3]{sophon} in its number of epochs,
-\LitSophonScratchEpochs, and in its weight decay, but uses our training jets rather than
-Sophon's larger sample.
+The reference trained from scratch follows ParT's recipe for training from
+scratch~\cite[Secs.~5.1 and~5.2]{part}: a learning rate of \MlstFtRefLr{} for every weight, held
+constant and then lowered to \MlstFtHeadDecayTo{} of its value over the last
+\MlstFtHeadDecayShare{} of the epochs, with weight decay \MlstFtRefWeightDecayBench{} on top and
+quark/gluon tagging and none on JetClass-II and JetClass, and the same epochs and batches as
+fine-tuning. All fine-tuning, including the reference trained from scratch, ran on
+\MlstFtGpuTypes{} GPUs.
+
+For $X\to b\bar b$ and $X\to bs$, Sophon's transfer classifier is trained on
+\LitSophonTransferSamplesMillion{} million jets with batch size \LitSophonTransferBatch{} and a
+constant learning rate of \LitSophonTransferLr~\cite[App.~B.5]{sophon}. Sophon does not state its
+optimizer or regularization; we use the optimizer of pretraining, dropout in the hidden layer, no
+weight decay and several seeds. When our training sample is smaller than these
+\LitSophonTransferSamplesMillion{} million jets, it is repeated \pending{repetition factor of the
+signal samples}. The network trained from scratch on the same jets follows Sophon's
+reference~\cite[App.~B.3]{sophon} in its number of epochs, \LitSophonScratchEpochs, and in the
+number of jets per epoch, but it is the Sophon network on our inputs, rather than ParT, and
+selects its epoch on our validation jets.
 
 % ============================================================================
 \section{Compute}\label{app:compute}

@@ -48,6 +48,12 @@ without them bc_vs_rest's window cannot be applied and mass_resolution.py has no
 target (verification 2026-10-01). genjet_sdmass is an observer of
 configs/data/JetClassII_massreg.yaml only, which is JetClassII_base.yaml plus that
 one observer, so the default data config is that file.
+--keep-head-outputs (plan 2026-10-29, A6: no v2 model's mass-head output was kept)
+adds head_outputs.npz for every checkpoint with an output layer: for every stream
+row (the first --max-jets if set) the K class logits (float16), the regression
+output column K (float32, "mass", with --num-reg 1), the native label, the row, and
+HEAD_OBSERVERS, which need configs/data/JetClassII_massreg_obs.yaml (genjet_pt). It
+is what mass_resolution.py --head and mass_sculpting.py read.
 
 The model is the same code extract_features.py uses (build_model,
 load_trunk_or_die); only the row selection and the storage differ.
@@ -183,6 +189,9 @@ def bn_twin(run_dir: pathlib.Path, epoch: int) -> pathlib.Path:
     return state
 # kept beside the feature rows: the |V_cb| window's cuts and the mass truth
 V2_OBSERVERS = ("jet_pt", "jet_eta", "jet_sdmass", "genjet_sdmass")
+# kept beside the output layer's outputs (--keep-head-outputs): the mass response bins
+# in jet_pt and genjet_sdmass, and the sculpting histograms in jet_sdmass
+HEAD_OBSERVERS = V2_OBSERVERS + ("genjet_pt",)
 
 
 def resolve_checkpoints(run_dir: pathlib.Path, spec: list[str]) -> list[tuple[str, pathlib.Path]]:
@@ -359,7 +368,7 @@ class Selector:
 
 def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: dict,
         tap_factory, to_inputs, features_at=None, observers=(), pooled_factory=None,
-        heads_at=None) -> dict:
+        heads_at=None, keep_head=False, head_max=0, num_reg=0) -> dict:
     """Stream `batches` (X, y) through every model; keep the selected rows.
 
     `features_at` names the checkpoints whose features are kept (default: all);
@@ -367,15 +376,18 @@ def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: d
     an output layer (default: all); the others keep no head scores. `pooled_factory`
     taps the pooled embedding (PooledTap), kept for the feature rows. `observers`
     are kept for the feature rows (they are the stream's, so one copy serves every
-    checkpoint). Separated from the loader so the selection and the storage are
-    testable without weaver's data files."""
+    checkpoint). `keep_head` keeps, for every row (the first `head_max` if set) and
+    every checkpoint in `heads_at`, the K class logits (float16) and regression column
+    K (float32, when `num_reg`), with the HEAD_OBSERVERS of those rows. Separated from
+    the loader so the selection and the storage are testable without weaver's data files."""
     features_at = set(models) if features_at is None else set(features_at)
     heads_at = set(models) if heads_at is None else set(heads_at)
     import torch
     keep = {t: {"feat": [], "pooled": [], "frow": [], "flab": [], "hrow": [], "hlab": [],
-                "logits": []} for t in models}
+                "logits": [], "zrow": [], "zlab": [], "zlog": [], "zreg": []} for t in models}
     labels_all, n0 = [], 0
     kept_obs = {o: [] for o in observers}
+    head_obs = {o: [] for o in HEAD_OBSERVERS} if keep_head else {}
     taps = {t: tap_factory(m) for t, m in models.items()}
     ptaps = {t: pooled_factory(m) for t, m in models.items()} if pooled_factory else {}
     with torch.no_grad():
@@ -388,6 +400,15 @@ def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: d
             labels_all.append(lab.astype(np.int16))
             fm0 = selector.feature_mask(rows, lab, obs)
             hm0 = selector.head_mask(rows, lab) if heads_at else np.zeros_like(fm0)
+            km0 = (rows < head_max if head_max else np.ones_like(fm0)) if keep_head and heads_at \
+                else np.zeros_like(fm0)
+            if km0.any():
+                missing = [o for o in head_obs if obs is None or o not in obs]
+                if missing:
+                    raise SystemExit(f"FATAL: observers {missing} are not in the stream; "
+                                     "--keep-head-outputs needs JetClassII_massreg_obs.yaml")
+                for o in head_obs:
+                    head_obs[o].append(np.asarray(obs[o])[km0].astype(np.float32))
             if features_at and kept_obs:
                 missing = [o for o in kept_obs if obs is None or o not in obs]
                 if missing:
@@ -395,19 +416,30 @@ def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: d
                                      "the data config must list them")
                 for o in kept_obs:
                     kept_obs[o].append(np.asarray(obs[o])[fm0].astype(np.float32))
-            need = (fm0 if features_at else np.zeros_like(fm0)) | hm0
+            need = (fm0 if features_at else np.zeros_like(fm0)) | hm0 | km0
             if not need.any():
                 continue
             inputs = to_inputs(X, need)
             for t, model in models.items():
                 fm = fm0 if t in features_at else np.zeros_like(fm0)
                 hm = hm0 if t in heads_at else np.zeros_like(fm0)
-                if not (fm | hm).any():
+                km = km0 if t in heads_at else np.zeros_like(fm0)
+                if not (fm | hm | km).any():
                     continue
                 out = model(*inputs)
                 f = taps[t].buf.float().cpu().numpy()
-                z = out.float().cpu().numpy()[:, :k]
+                zall = out.float().cpu().numpy()
+                z = zall[:, :k]
                 sub_f, sub_h = fm[need], hm[need]
+                if km.any():
+                    if zall.shape[1] != k + num_reg:
+                        raise SystemExit(f"FATAL: {t}: {zall.shape[1]} outputs, not {k} classes "
+                                         f"+ {num_reg} regression")
+                    sub_k = km[need]
+                    keep[t]["zrow"].append(rows[km])
+                    keep[t]["zlab"].append(lab[km].astype(np.int16))
+                    keep[t]["zlog"].append(z[sub_k].astype(np.float16))
+                    keep[t]["zreg"].append(zall[sub_k, k:].astype(np.float32))
                 keep[t]["feat"].append(f[sub_f].astype(np.float16))
                 if t in ptaps:
                     if ptaps[t].buf is None:
@@ -425,18 +457,27 @@ def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: d
     res = {"n_stream": int(L.size), "label188_sha256": hashlib.sha256(L.tobytes()).hexdigest(),
            "labels": L, "checkpoints": {},
            "observers": {o: (np.concatenate(v) if v else np.zeros(0, np.float32))
-                         for o, v in kept_obs.items()}}
+                         for o, v in kept_obs.items()},
+           "head_observers": {o: (np.concatenate(v) if v else np.zeros(0, np.float32))
+                              for o, v in head_obs.items()}}
     for t, kv in keep.items():
         cat = lambda xs, dt, w=None: (np.concatenate(xs) if xs else
                                       np.zeros((0,) if w is None else (0, w), dt))
         logits = cat(kv["logits"], np.float32, k)
+        ho = None
+        if keep_head and t in heads_at:
+            ho = {"rows": cat(kv["zrow"], np.int64), "label188": cat(kv["zlab"], np.int16),
+                  "logits": cat(kv["zlog"], np.float16, k)}
+            if num_reg:
+                ho["mass"] = cat(kv["zreg"], np.float32, num_reg)[:, 0]
         res["checkpoints"][t] = {
             "features": cat(kv["feat"], np.float16, 128),
             "pooled": cat(kv["pooled"], np.float16, 128) if t in ptaps else None,
             "rows": cat(kv["frow"], np.int64), "label188": cat(kv["flab"], np.int16),
             "has_head": t in heads_at,
             "head_rows": cat(kv["hrow"], np.int64), "head_label188": cat(kv["hlab"], np.int16),
-            "head": head_score_columns(logits, rung, signals) if logits.shape[0] else {}}
+            "head": head_score_columns(logits, rung, signals) if logits.shape[0] else {},
+            "head_outputs": ho}
     return res
 
 
@@ -464,6 +505,14 @@ def write(out: pathlib.Path, res: dict, meta: dict, alias: dict | None = None) -
             if bad:
                 raise SystemExit(f"FATAL: observers {bad} are not aligned with {tag}'s rows")
             np.savez(d / "observers.npz", **obs)
+        ho = c.get("head_outputs")
+        if ho is not None:
+            hobs = res.get("head_observers") or {}
+            bad = [o for o, v in hobs.items() if v.shape[0] != ho["rows"].size]
+            if bad or set(hobs) != set(HEAD_OBSERVERS):
+                raise SystemExit(f"FATAL: head observers {sorted(hobs)} missing or not aligned "
+                                 f"with {tag}'s head outputs")
+            np.savez(d / "head_outputs.npz", **ho, **hobs)
         man = {**meta, **meta["checkpoints"][tag], "tag": tag,
                "tags": [tag] + sorted(a for a, t in alias.items() if t == tag and a != tag),
                "n_stream": res["n_stream"], "stream_label188_sha256": res["label188_sha256"],
@@ -477,7 +526,12 @@ def write(out: pathlib.Path, res: dict, meta: dict, alias: dict | None = None) -
                "head_rows_sha256": hashlib.sha256(c["head_rows"].tobytes()).hexdigest(),
                "observers": sorted(obs),
                "observers_sha256": (hashlib.sha256((d / "observers.npz").read_bytes()).hexdigest()
-                                    if obs else None)}
+                                    if obs else None),
+               "head_outputs": None if ho is None else {
+                   "n": int(ho["rows"].size), "logits": "float16, the K class outputs",
+                   "mass": "mass" in ho, "observers": sorted(HEAD_OBSERVERS),
+                   "label188_sha256": hashlib.sha256(ho["label188"].tobytes()).hexdigest(),
+                   "sha256": hashlib.sha256((d / "head_outputs.npz").read_bytes()).hexdigest()}}
         man.pop("checkpoints", None)
         (d / "manifest.json").write_text(json.dumps(man, indent=1))
         sizes[tag] = sum(p.stat().st_size for p in d.iterdir())
@@ -530,6 +584,9 @@ def main(argv=None) -> int:
     ap.add_argument("--no-pooled", action="store_true",
                     help="keep the class-token features only, not the pooled embedding (the "
                          "downstream linear probes read the class token)")
+    ap.add_argument("--keep-head-outputs", action="store_true",
+                    help="also keep every row's K class logits, regression column K and "
+                         "HEAD_OBSERVERS (head_outputs.npz; needs JetClassII_massreg_obs.yaml)")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     a = ap.parse_args(argv)
 
@@ -558,7 +615,8 @@ def main(argv=None) -> int:
     headless = {t for t, _ in ckpts if t == "init" or a.num_classes == 0}
 
     dc = DataConfig.load(a.data_config, load_observers=True)
-    absent = [o for o in a.observers if o not in dc.observer_names]
+    absent = [o for o in [*a.observers, *(HEAD_OBSERVERS if a.keep_head_outputs else ())]
+              if o not in dc.observer_names]
     if absent:
         raise SystemExit(f"FATAL: {a.data_config} does not list the observers {absent}")
     models, meta = {}, {"run_dir": str(a.run_dir), "rung": a.rung, "num_classes": a.num_classes,
@@ -571,7 +629,7 @@ def main(argv=None) -> int:
                         "head_classes": hcls, "head_prefix": a.head_prefix,
                         "diag_stride": a.diag_stride, "signals": signals,
                         "device": str(device), "device_name": ex.device_name(device),
-                        "tf32": tf32, "checkpoints": {},
+                        "tf32": tf32, "checkpoints": {}, "keep_head_outputs": a.keep_head_outputs,
                         "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest()}
     for tag, path in ckpts:
         if alias[tag] != tag:
@@ -611,7 +669,11 @@ def main(argv=None) -> int:
     res = run(batches(), models, sel, a.rung, a.num_classes, signals, ex.ClsTap, to_inputs,
               features_at=features_at, observers=a.observers,
               pooled_factory=None if a.no_pooled else PooledTap,
-              heads_at=set(models) - headless)
+              heads_at=set(models) - headless, keep_head=a.keep_head_outputs,
+              head_max=a.max_jets, num_reg=a.num_reg)
+    if a.keep_head_outputs and a.max_jets and res["n_stream"] < a.max_jets:
+        raise SystemExit(f"FATAL: the stream ended at {res['n_stream']:,} jets, short of "
+                         f"--max-jets {a.max_jets:,}")
     meta["features_at"] = sorted(features_at) if features_at is not None else sorted(models)
     if a.head_prefix and res["n_stream"] < a.head_prefix and not a.max_jets:
         raise SystemExit(f"FATAL: the stream ended at {res['n_stream']:,} jets, inside the "

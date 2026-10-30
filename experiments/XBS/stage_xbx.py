@@ -10,8 +10,9 @@ JetClass-II's types, plus xbx_class (1 signal, 0 QCD). Under --root (/data/xbx/v
                    that runs the chain end to end before the outside samples arrive, and the
                    X->bb sample if they hold none
   <sig>/pool/, <sig>/eval/
-                   an outside sample: checked against the config, selected, and split per
-                   jet 80 % / 20 % (A5)
+                   an outside sample: checked against the config (check(): every branch, of
+                   the right kind; no zero-filled input in any file; A5's floor of 10,000
+                   evaluation jets in the window), selected, and split per jet 80 % / 20 % (A5)
   pairs/<sig>/train_<k>.parquet, val.parquet
                    A5's draw (experiments/XBS/xbx.py matched_draw): N_TRAIN signal and N_TRAIN
                    QCD jets with the same count in every (pT, m_SD) cell of the base config's
@@ -23,9 +24,10 @@ JetClass-II's types, plus xbx_class (1 signal, 0 QCD). Under --root (/data/xbx/v
 No pretraining jet is staged: QCD comes from the held-out and test files only, and the
 stand-in X->bb likewise (pool from ft_heldout, evaluation from ft_test).
 
-    python3 experiments/XBS/stage_xbx.py check --files F...
+    python3 experiments/XBS/stage_xbx.py inspect --file F        (read only: trees, branches, types, entries)
+    python3 experiments/XBS/stage_xbx.py check --window LO HI --files F...
     python3 experiments/XBS/stage_xbx.py jc2-eval --name qcd|xbb_jc2
-    python3 experiments/XBS/stage_xbx.py convert --name xbs --files F...
+    python3 experiments/XBS/stage_xbx.py convert --name xbs --window LO HI --files F...
     python3 experiments/XBS/stage_xbx.py pair --signal xbb_jc2|xbs|xbb
 
 Each output directory ends with manifest.json (rows and sha256 of every file) and DONE.
@@ -61,6 +63,20 @@ QCD_LABELS = (161, 188)  # jet_label 161..187
 XBB_LABEL = 0
 SALT = 20261028
 NAMESPACES = {"np", "ak", "math", "numpy", "awkward"}
+# an outside sample's branch names -> the config's, applied before the check; filled once the
+# files' listing (inspect) is known, e.g. {"fj_pt": "jet_pt"}
+BRANCH_MAP: dict[str, str] = {}
+# zero-fill signatures (A5: no zero-fill), one per stored part_* branch, each a share of one
+# file's particles where a value is 0 that the physics does not make 0. In JetClass-II exactly
+# one particle-type flag is set for every particle (so none may lack one), and a charged
+# particle has all four displacement values exactly 0 at a rate of 8e-5 (QCD_0100, audit
+# 2026-10-29), against 0.49 in the zero-filled q/g inputs. A particle flagged charged with
+# charge 0, and an exact 0 in any other part_* branch (momenta, energy, deta, dphi), have no
+# such measurement; they get the same limit
+TYPE_FLAGS = ("part_isChargedHadron", "part_isNeutralHadron", "part_isPhoton", "part_isElectron", "part_isMuon")
+CHARGED_FLAGS = ("part_isChargedHadron", "part_isElectron", "part_isMuon")
+DISPLACEMENT = ("part_d0val", "part_dzval", "part_d0err", "part_dzerr")
+ZERO_FILL_MAX = 1e-3
 
 
 def _load(name: str, rel: str):
@@ -93,42 +109,92 @@ def _is_list(t: pa.DataType) -> bool:
     return pa.types.is_list(t) or pa.types.is_large_list(t)
 
 
-def read_table(path: str, columns: list[str]) -> pa.Table:
-    """The columns of one parquet or ROOT file (its single TTree) as an arrow table."""
+def read_table(path: str, columns: list[str], mapping: dict | None = None) -> pa.Table:
+    """The columns of one parquet or ROOT file (its single TTree) as an arrow table, named as
+    the config names them (mapping: the file's name -> the config's)."""
+    mapping = mapping or {}
+    src = {v: k for k, v in mapping.items()}
+    columns = [src.get(c, c) for c in columns]
     if path.endswith(".parquet"):
-        return pq.read_table(path, columns=columns)
-    import awkward as ak
-    import uproot
-    with uproot.open(path) as f:
-        trees = sorted({k.split(";")[0] for k, v in f.classnames().items() if v == "TTree"})
-        if len(trees) != 1:
-            raise SystemExit(f"FATAL: {path} has {len(trees)} TTrees: {trees}")
-        return ak.to_arrow_table(f[trees[0]].arrays(columns), extensionarray=False)
+        t = pq.read_table(path, columns=columns)
+    else:
+        import awkward as ak
+        import uproot
+        with uproot.open(path) as f:
+            trees = sorted({k.split(";")[0] for k, v in f.classnames().items() if v == "TTree"})
+            if len(trees) != 1:
+                raise SystemExit(f"FATAL: {path} has {len(trees)} TTrees: {trees}")
+            t = ak.to_arrow_table(f[trees[0]].arrays(columns), extensionarray=False)
+    return t.rename_columns([mapping.get(c, c) for c in t.column_names])
 
 
-def file_branches(path: str) -> dict[str, str]:
-    """{branch: 'list' | 'scalar' | its type} of one parquet or ROOT file."""
+def file_branches(path: str, mapping: dict | None = None) -> dict[str, str]:
+    """{branch: 'list' | 'scalar' | its type} of one parquet or ROOT file, named as the config
+    names them (mapping: the file's name -> the config's)."""
+    mapping = mapping or {}
     if path.endswith(".parquet"):
         sch = pq.read_schema(path)
-        return {f.name: "list" if _is_list(f.type) else "scalar" if not pa.types.is_nested(f.type)
-                else str(f.type) for f in sch}
+        br = {f.name: "list" if _is_list(f.type) else "scalar" if not pa.types.is_nested(f.type)
+              else str(f.type) for f in sch}
+    else:
+        import uproot
+        with uproot.open(path) as f:
+            tree = next(f[k] for k, v in f.classnames().items() if v == "TTree")
+            br = {k: "list" if ("vector" in b.typename or "[]" in b.typename) else "scalar"
+                  for k, b in tree.items()}
+    return {mapping.get(k, k): v for k, v in br.items()}
+
+
+def inspect(path: str) -> dict:
+    """Read only: every tree of one ROOT file (a parquet file: its one table) with its entries
+    and each branch's type, as stored, before any mapping."""
+    if path.endswith(".parquet"):
+        return {"file": path, "trees": {"parquet": {"entries": pq.read_metadata(path).num_rows,
+                                                    "branches": {f.name: str(f.type) for f in pq.read_schema(path)}}}}
     import uproot
     with uproot.open(path) as f:
-        tree = next(f[k] for k, v in f.classnames().items() if v == "TTree")
-        return {k: "list" if ("vector" in b.typename or "[]" in b.typename) else "scalar"
-                for k, b in tree.items()}
+        return {"file": path, "trees": {k.split(";")[0]: {"entries": int(f[k].num_entries),
+                                                          "branches": {b: br.typename for b, br in f[k].items()}}
+                                        for k, v in f.classnames().items() if v == "TTree"}}
 
 
-def check(files: list[str], required: list[str] | None = None) -> dict:
-    """Does every file carry every branch the config reads, part_* as per-particle lists and
-    the rest as one value per jet? Also what the protocol's open questions need: entries,
-    the share passing the study's selection, the m_SD peak, the branches the config does
-    not read (event-level ones among them), and per part_* branch the share of particles
-    at exactly zero (A5: no zero-fill)."""
+def eval_mask(path: str, n: int) -> np.ndarray:
+    """A5's per-jet split of the n selected jets of one file, fixed by the file's name."""
+    return np.random.default_rng([SALT, zlib.crc32(pathlib.Path(path).name.encode())]).random(n) < EVAL_FRACTION
+
+
+def zero_fill(t: pa.Table) -> dict:
+    """The zero-fill signatures of one table, as shares: of the particles, those with no
+    particle-type flag; of those flagged charged, those with charge 0; of those with a charge,
+    those with all four displacement values exactly 0; and per other part_* branch, the
+    particles where it is exactly 0."""
+    flat = lambda b: np.asarray(pc.list_flatten(t.column(b)))
+    share = lambda m, of: float(m.sum() / max(of.sum(), 1))
+    q = flat("part_charge")
+    every = np.ones(q.size, bool)
+    flagged = sum(flat(b) != 0 for b in CHARGED_FLAGS) > 0
+    no_disp = np.logical_and.reduce([flat(b) == 0 for b in DISPLACEMENT])
+    out = {"no_type_flag": share(sum(flat(b) != 0 for b in TYPE_FLAGS) == 0, every),
+           "flagged_charged_without_charge": share(flagged & (q == 0), flagged),
+           "charged_no_displacement": share((q != 0) & no_disp, q != 0)}
+    return out | {b: share(flat(b) == 0, every) for b in t.column_names if b.startswith("part_")
+                  and b not in (*TYPE_FLAGS, "part_charge", *DISPLACEMENT)}
+
+
+def check(files: list[str], window: tuple[float, float], required: list[str] | None = None) -> dict:
+    """Does every file carry every branch the config reads (after BRANCH_MAP), part_* as
+    per-particle lists and the rest as one value per jet? Then A5's acceptance: in every file
+    on its own, no zero-filled input (zero_fill: no particle without a type flag, every other
+    signature at most ZERO_FILL_MAX), and over all files at least A5_EVAL_FLOOR evaluation jets
+    (convert's split) inside the window.
+    Also what the protocol's open questions need: entries, the share passing the study's
+    selection, the m_SD peak, the branches the config does not read (event-level ones among
+    them), and per part_* branch the share of particles at exactly zero."""
     required = config_branches() if required is None else required
-    report = {"files": len(files), "required": required, "problems": [], "per_file": {}}
+    report = {"files": len(files), "required": required, "branch_map": BRANCH_MAP, "window": list(window),
+              "problems": [], "per_file": {}}
     for f in files:
-        br = file_branches(f)
+        br = file_branches(f, BRANCH_MAP)
         missing = [b for b in required if b not in br]
         kind = [b for b in required if b in br and br[b] != ("list" if b.startswith("part_") else "scalar")]
         if missing:
@@ -138,7 +204,23 @@ def check(files: list[str], required: list[str] | None = None) -> dict:
         report["per_file"][f] = {"extra_branches": sorted(set(br) - set(required))}
     if report["problems"]:
         return report
-    t = read_table(files[0], required)
+    n_eval, worst = 0, {}
+    for f in files:
+        t = select(read_table(f, required, BRANCH_MAP))
+        m = np.asarray(t.column("jet_sdmass"), np.float64)
+        n_eval += int((eval_mask(f, t.num_rows) & X.in_window(m, *window)).sum())
+        report["per_file"][f]["zero_fill"] = zf = zero_fill(t)
+        for k, v in zf.items():
+            limit = 0.0 if k == "no_type_flag" else ZERO_FILL_MAX
+            if v > limit:
+                report["problems"].append(f"{f}: zero-fill: {k} = {v:.3g} (limit {limit:g})")
+            worst[k] = max(worst.get(k, 0.0), v)
+    report["eval_in_window"] = n_eval
+    report["zero_fill"] = worst      # each signature in its worst file
+    if n_eval < X.A5_EVAL_FLOOR:
+        report["problems"].append(f"A5 floor: {n_eval:,} evaluation jets in {window[0]:g}-{window[1]:g} GeV, "
+                                  f"fewer than {X.A5_EVAL_FLOOR:,}")
+    t = read_table(files[0], required, BRANCH_MAP)
     sel = select(t)
     m = np.asarray(sel.column("jet_sdmass"))
     counts, edges = np.histogram(m, bins=np.arange(20, 505, 5))
@@ -211,10 +293,10 @@ def jc2_eval(name: str, root: pathlib.Path) -> dict:
     return man
 
 
-def convert(name: str, files: list[str], root: pathlib.Path) -> dict:
+def convert(name: str, files: list[str], root: pathlib.Path, window: tuple[float, float]) -> dict:
     """An outside sample: refused unless check() passes; then selected and split per jet,
     the split fixed by the file's name, so it never depends on which other files came."""
-    rep = check(files)
+    rep = check(files, window)
     if rep["problems"]:
         raise SystemExit("FATAL: the sample does not carry what the config reads:\n  "
                          + "\n  ".join(rep["problems"]))
@@ -230,8 +312,8 @@ def convert(name: str, files: list[str], root: pathlib.Path) -> dict:
     ref = reference_schema(cols)
     counts = {}
     for f in sorted(files):
-        t = select(read_table(f, cols))
-        to_eval = np.random.default_rng([SALT, zlib.crc32(pathlib.Path(f).name.encode())]).random(t.num_rows) < EVAL_FRACTION
+        t = select(read_table(f, cols, BRANCH_MAP))
+        to_eval = eval_mask(f, t.num_rows)
         stem = pathlib.Path(f).stem
         for d, m in ((pool, ~to_eval), (ev, to_eval)):
             pq.write_table(conform(with_class(t.filter(pa.array(m)), 1, cols), ref), d / f"{stem}.parquet")
@@ -321,6 +403,8 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--root", default=ROOT_DEFAULT, type=pathlib.Path)
     sub = ap.add_subparsers(dest="cmd", required=True)
+    i = sub.add_parser("inspect")
+    i.add_argument("--file", required=True)
     c = sub.add_parser("check")
     c.add_argument("--files", nargs="+", required=True)
     c.add_argument("--out", type=pathlib.Path, default=None)
@@ -329,20 +413,25 @@ def main(argv=None) -> int:
     v = sub.add_parser("convert")
     v.add_argument("--name", required=True)
     v.add_argument("--files", nargs="+", required=True)
+    for q in (c, v):
+        q.add_argument("--window", nargs=2, type=float, required=True, metavar=("LO", "HI"))
     p = sub.add_parser("pair")
     p.add_argument("--signal", required=True)
     a = ap.parse_args(argv)
+    if a.cmd == "inspect":
+        print(json.dumps(inspect(a.file), indent=1))
+        return 0
     if a.cmd == "check":
-        rep = check(a.files)
+        rep = check(a.files, tuple(a.window))
         text = json.dumps(rep, indent=1)
         print(text)
         if a.out:
             a.out.write_text(text)
-        return 1 if rep["problems"] else 0
+        return 42 if rep["problems"] else 0      # the jobs' pod failure policy fails the Job at once on 42
     if a.cmd == "jc2-eval":
         jc2_eval(a.name, a.root)
     elif a.cmd == "convert":
-        convert(a.name, a.files, a.root)
+        convert(a.name, a.files, a.root, tuple(a.window))
     else:
         pair(a.signal, a.root)
     return 0

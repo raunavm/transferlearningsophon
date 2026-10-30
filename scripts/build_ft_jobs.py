@@ -28,7 +28,9 @@ epochs   50 / 30 / 10 at N = 1e4 / 1e5 / 1e6. weaver floors steps at
          is noisiest exactly at the smallest N, which is the headline cell.
          weaver
          keeps the best-validation epoch; every epoch checkpoint is kept
-rate     1e-4 for a pretrained trunk, 5e-4 (the pretraining rate) from scratch
+rate     1e-4 for a pretrained trunk; from scratch 5e-4 (the pretraining rate) in
+         v1, and ParT's own 1e-3 in every v2 from-scratch reference (BASELINE
+         RECIPES below)
 head     re-initialised: --exclude-model-weights 'mod\\.fc\\..*'
 leg 1    R16_Q1 -> the 162-way vocabulary on JetClass-II; readout = frozen
          features on the paper's own 2,000,000-jet test subset, the SAME file
@@ -50,6 +52,7 @@ Run:  python3 scripts/build_ft_jobs.py [--pin TAG]
       python3 scripts/build_ft_jobs.py --wave3 --bench-v2 --later scratch-v2 mpm-s1-v2 \\
           --pin-not-yet-tagged          # the baselines' own recipes (BASELINE RECIPES)
       python3 scripts/build_ft_jobs.py --v2-readouts --pin-not-yet-tagged   # the v2 read-outs
+      python3 scripts/build_ft_jobs.py --v2-leg188 --pin-not-yet-tagged     # 188 classes, top check
 """
 from __future__ import annotations
 
@@ -2529,6 +2532,11 @@ def _mtx_launch():
     return mod
 
 
+def _v2_off_nodes() -> tuple:
+    """Every node a v2 fine-tuning job stays off: this generator's lists and the v2 grid's."""
+    return tuple(dict.fromkeys(BAD_NODES + LOST_GPU_NODES + _mtx_launch().V2_BAD_NODES + V2_FAULT_NODES))
+
+
 def v2_grid_reserve_gb() -> float:
     """GB of /data the v2 pretraining grid can take at its peak (scripts/build_mtx_launch.py
     V2_GRID_RESERVE_GIB): held back from the headroom until v2 pretraining has finished."""
@@ -2558,9 +2566,7 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
     # The fine-tuning of each run trains on any GPU the v2 pretraining may use (PI,
     # 2026-10-21 and 2026-10-24; build_mtx_launch.V2_ANY_GPU), off every node the v2 jobs
     # exclude. Each cell records its GPU. The from-scratch reference keeps its spec.
-    mtx = _mtx_launch()
-    off = tuple(dict.fromkeys(BAD_NODES + LOST_GPU_NODES + mtx.V2_BAD_NODES + V2_FAULT_NODES))
-    any_gpu = {**gpu, "gpus": mtx.V2_ANY_GPU, "exclude_hosts": off}
+    any_gpu = {**gpu, "gpus": _mtx_launch().V2_ANY_GPU, "exclude_hosts": _v2_off_nodes()}
     specs = {}
     if subsets:
         name = "ft-subsets-jc2-v2-raunav"
@@ -2655,8 +2661,10 @@ def _v2_specs(pin: str, subsets: bool, finetune: bool, headroom_gb: float | None
 # experiments/FIGS/data/v2/{finetune,benchmarks}/<rule>[_t12]_<file> (make_tables.py's v2 layout). They
 # write ~10 MB to /data in all, so neither the storage budget nor space_ok applies.
 # mtx-s2.10: the 27 paper runs' expected cells (82998f2); mtx-s2.12: eval_arm's tie for a jet
-# whose two probabilities round to 0, which stopped the JetClass read-out of the finished runs
-PIN_V2_READOUT = "mtx-s2.12"
+# whose two probabilities round to 0, which stopped the JetClass read-out of the finished runs;
+# mtx-s2.19: the final read-outs (2026-10-29), which wait in the pod for the last cells
+# (_wait_done), read the V100 references, and run the leg1_metrics.py of leg1_188's tag
+PIN_V2_READOUT = "mtx-s2.19"   # NOT YET TAGGED (mtx-s2.18 is the 188-class linear probes' tag)
 EVAL_ARM_TIE = {"experiments/EVAL/eval_arm.py": "scores the tie"}
 V2_READOUT_LEGS = ("leg1", "leg2", "bench")
 # where each read-out's JSONs are committed: make_tables.py's v2 layout (experiments/FIGS/data/v2/)
@@ -2688,6 +2696,71 @@ _LEG1_SUMMARY = r'''
 
 def _brace(xs) -> str:
     return "{" + ",".join(map(str, xs)) + "}"
+
+
+def _braces(base: str, cells) -> list[str]:
+    """Bash brace patterns that name exactly `cells` ("init/N<N>/s<S>") under base: one per
+    group of inits sharing their sizes and seeds (each init's cells must be all of them)."""
+    per = {}
+    for c in cells:
+        i, n, s = c.split("/")
+        per.setdefault(i, set()).add((int(n[1:]), int(s[1:])))
+    groups = {}
+    for i, ns in per.items():
+        sizes, seeds = sorted({n for n, _ in ns}), sorted({s for _, s in ns})
+        assert ns == {(n, s) for n in sizes for s in seeds}, f"{i}: not every size x seed"
+        groups.setdefault((tuple(sizes), tuple(seeds)), []).append(i)
+    b = lambda xs: str(xs[0]) if len(xs) == 1 else _brace(xs)    # bash leaves {x} unexpanded
+    return [f"{base}/{b(i)}/N{b(n)}/s{b(s)}" for (n, s), i in groups.items()]
+
+
+# WAITING IN THE POD (plan 2026-10-29, A9). We cannot create Roles, so no job in the cluster
+# can create another, and the laptop loops are retired: a read-out is applied with (or
+# before) the fine-tuning it reads and polls the cells' DONE markers itself.
+WAIT_POLL_S = 1800
+WAIT_LIMIT_S = 6 * 86400
+
+
+def _wait_done(patterns: list[str], what: str) -> str:
+    """Bash that returns once every cell the brace patterns name has DONE; after WAIT_LIMIT_S
+    it exits ${HALT}, which fails the Job at once."""
+    return (f"          # WAIT IN THE POD until every {what} cell is DONE: poll every {WAIT_POLL_S // 60} min,\n"
+            f"          # and after {WAIT_LIMIT_S // 86400} days exit ${{HALT}}, which fails the Job at once.\n"
+            "          waited=0\n"
+            "          while :; do\n"
+            "            left=0\n"
+            f"            for w in {' '.join(patterns)}; do\n"
+            '              [ -f "${w}/DONE" ] || left=$((left+1))\n'
+            "            done\n"
+            '            [ "${left}" -eq 0 ] && break\n'
+            f'            [ "${{waited}}" -lt {WAIT_LIMIT_S} ] || {{ echo "FATAL: ${{left}} {what} cells not DONE after '
+            f'{WAIT_LIMIT_S // 86400} days"; exit ${{HALT}}; }}\n'
+            '            echo "$(date -u +%FT%TZ) waiting for ${left} cells"\n'
+            f"            sleep {WAIT_POLL_S}; waited=$((waited+{WAIT_POLL_S}))\n"
+            "          done\n\n")
+
+
+def _v2_wait(rule: str, leg: str) -> list[str]:
+    """The brace patterns of every cell the generator emitted for this rule and leg."""
+    exp = v2_expected_cells()
+    trees = [f"leg_{d}" for d in BENCH_SETS] if leg == "bench" else [leg]
+    return [p for t in trees for p in _braces(f"{V2_ROOT}/{rule}/{t}", exp[f"{rule}/{t}"])]
+
+
+def _readout_preamble(out: str, target: str) -> str:
+    """A read-out's first lines: refuse an existing output, then clone the tag."""
+    return ("          set -euo pipefail\n"
+            f"          HALT={EXIT_HALT}   # the pod failure policy fails the Job at once on this code\n"
+            f"          OUT={out}\n"
+            f'          [ ! -e "{target}" ] || {{ echo "FATAL: {target} exists; use a new output directory"; '
+            "exit ${HALT}; }\n"
+            f"          pip install --no-cache-dir -q {_mtx_launch().V2_PYARROW}\n"
+            '          git clone --depth 1 --branch "${REPO_REF}" \\\n'
+            "            https://github.com/raunavm/transferlearningsophon.git \\\n"
+            "            /workspace/transferlearningsophon\n"
+            "          cd /workspace/transferlearningsophon\n"
+            "          git rev-parse HEAD\n"
+            "          export PYTHONUNBUFFERED=1\n\n")
 
 
 # THE FROM-SCRATCH REFERENCES AGAIN, ON V100 (PI, 2026-10-27). All 48 reference cells (three
@@ -2740,26 +2813,19 @@ def _v2_refs(leg: str, v100: bool) -> list:
     return [(f"{V2_REF_ROOT}/jc1/leg2/{SCRATCH_REF}" if v100 else f"{W3_ROOT}/leg2/{SCRATCH_REF}", SIZES)]
 
 
-def _v2_readout_script(rule: str | None, leg: str, scope: str = "", v100_refs: bool = True) -> str:
+def _v2_readout_script(rule: str | None, leg: str, scope: str = "", v100_refs: bool = True,
+                       wait: list | None = None) -> str:
     """One read-out's script (see above); rule None is the from-scratch reference's leg 1;
-    scope "t12" expects the cells of tiers 1-2 only (V2_FREEZE_TIERS), "" those of every tier."""
+    scope "t12" expects the cells of tiers 1-2 only (V2_FREEZE_TIERS), "" those of every tier;
+    wait, brace patterns of cells it waits for in the pod (_wait_done) before reading."""
     prefix = rule or "scratch"
     expect = f"--expect-cells {V2_EXPECTED}:{prefix}{'@' + scope if scope else ''}"
     sha = f"--sha-table {V2_SHA_TABLE}"
     # bench writes four tables into a directory of the attempt, moved into place whole
     target = "${OUT}" if leg == "bench" else f"${{OUT}}/{V2_READOUT_FILES[leg][0]}"
-    text = ("          set -euo pipefail\n"
-            f"          HALT={EXIT_HALT}   # the pod failure policy fails the Job at once on this code\n"
-            f"          OUT={V2_ROOT}/{prefix}{'_' + scope if scope else ''}_{leg}_metrics\n"
-            f'          [ ! -e "{target}" ] || {{ echo "FATAL: {target} exists; use a new output directory"; '
-            "exit ${HALT}; }\n"
-            f"          pip install --no-cache-dir -q {_mtx_launch().V2_PYARROW}\n"
-            '          git clone --depth 1 --branch "${REPO_REF}" \\\n'
-            "            https://github.com/raunavm/transferlearningsophon.git \\\n"
-            "            /workspace/transferlearningsophon\n"
-            "          cd /workspace/transferlearningsophon\n"
-            "          git rev-parse HEAD\n"
-            "          export PYTHONUNBUFFERED=1\n\n")
+    text = _readout_preamble(f"{V2_ROOT}/{prefix}{'_' + scope if scope else ''}_{leg}_metrics", target)
+    if wait:
+        text += _wait_done(wait, "expected")
     if leg == "bench":
         text += (f"          ROOT={V2_ROOT}/{rule}\n"
                  f"          for d in {' '.join(f'leg_{d}' for d in BENCH_SETS)}; do\n"
@@ -2824,9 +2890,9 @@ def _v2_readout_script(rule: str | None, leg: str, scope: str = "", v100_refs: b
         "          ls -la ${OUT}\n")
 
 
-def v2_readout(rule: str | None, leg: str, pin: str, scope: str = "", v100_refs: bool = True) -> tuple[str, str]:
-    """(file name, spec) of one v2 read-out: job()'s CPU pod on /data alone, the image
-    by digest as in the v2 grid, and the plain pod failure policy (no cells to resume)."""
+def v2_readout(rule: str | None, leg: str, pin: str, scope: str = "", v100_refs: bool = True,
+               wait: list | None = None) -> tuple[str, str]:
+    """(file name, spec) of one v2 read-out (_readout_spec); wait as _v2_readout_script's."""
     prefix = rule or "scratch"
     tag = prefix + (f"_{scope}" if scope else "")
     name = f"ft-v2-{prefix}{'-' + scope if scope else ''}-{leg}-metrics-raunav"
@@ -2840,14 +2906,23 @@ def v2_readout(rule: str | None, leg: str, pin: str, scope: str = "", v100_refs:
               f"{what}.\n"
               f"  # Fails unless every cell {V2_EXPECTED} lists under {prefix}{'@' + scope if scope else ''}/ is read"
               + (" (tiers 1-2, the analysis freeze).\n" if scope else ".\n")
-              + "  # DO NOT APPLY before the v2 fine-tuning it reads has finished. CPU.\n"
-              f"  # Output {V2_ROOT}/{tag}_{leg}_metrics; copy each JSON to\n"
+              + ("  # It WAITS IN THE POD until every cell it reads is DONE (_wait_done), so it may be\n"
+                 "  # applied while the last fine-tunes run. CPU.\n" if wait else
+                 "  # DO NOT APPLY before the v2 fine-tuning it reads has finished. CPU.\n")
+              + f"  # Output {V2_ROOT}/{tag}_{leg}_metrics; copy each JSON to\n"
               + "".join(f"  #   experiments/FIGS/data/v2/{V2_READOUT_COPY[leg]}/{tag}_{f}\n"
                         for f in V2_READOUT_FILES[leg]))
     memory, cpu = ("16Gi", "4") if leg == "bench" else ("32Gi", "8")
-    text = job(name, _v2_readout_script(rule, leg, scope, v100_refs), gpu=False, cpu=cpu, memory=memory, shm="1Gi",
+    return f"job-{name}.yaml", _readout_spec(name, _v2_readout_script(rule, leg, scope, v100_refs, wait),
+                                             pin, header, memory, cpu)
+
+
+def _readout_spec(name: str, script: str, pin: str, header: str, memory: str, cpu: str) -> str:
+    """A read-out's spec: job()'s CPU pod on /data alone, the image by digest as in the v2
+    grid, and the plain pod failure policy (no cells to resume)."""
+    text = job(name, script, gpu=False, cpu=cpu, memory=memory, shm="1Gi",
                backoff=1, pin=pin, header=header, failure_policy=POD_FAILURE_POLICY)
-    return f"job-{name}.yaml", _derive(text, [
+    return _derive(text, [
         (f"        image: {IMAGE}\n", f"        image: {_mtx_launch().V2_IMAGE}\n", 1),
         ('ephemeral-storage: "20Gi"', 'ephemeral-storage: "10Gi"', 2),
         ("        - { name: jc2,  mountPath: /jc2, readOnly: true }\n", "", 1),
@@ -2909,10 +2984,295 @@ def v2_trial_readout(leg: str, pin: str) -> tuple[str, str]:
 
 
 def _v2_readout_specs(pin: str) -> dict:
-    """Two rules x three legs x two scopes (tiers 1-2, every tier). The from-scratch
-    reference's leg 1 is not emitted: it ran from its own file, which stays its record."""
-    return dict(v2_readout(rule, leg, pin, scope) for rule in V2_RULES for leg in V2_READOUT_LEGS
-                for scope in V2_READOUT_SCOPES)
+    """One per rule, leg and scope: the final read-outs of every paper run, beside the V100
+    references, each waiting in the pod for the cells still fine-tuning (2026-10-29: four of
+    432, l162-s3 at 1e5 and 1e6 and r16q1-s3 at 1e6). The from-scratch reference's leg 1 is
+    not emitted: it ran from its own file, which stays its record."""
+    return dict(v2_readout(rule, leg, pin, scope, wait=_v2_wait(rule, leg)) for rule in V2_RULES
+                for leg in V2_READOUT_LEGS for scope in V2_READOUT_SCOPES)
+
+
+# ================================================ leg1_188 and the top-tagging recipe check
+# THE 188-CLASS JetClass-II TASK (plan 2026-10-29, A1). Leg 1 is the 162-class label set
+# itself, so it cannot see the one distinction between the 188- and 162-class label sets.
+# leg1_188 fine-tunes the 16 runs whose fine-tuning the paper reports on the 188 native
+# classes, with the launched leg-1 cells' recipe and rules (lr 1e-4, head x50, weight decay
+# 0.01, epochs and samples per epoch by size, the fixed validation sample, best70, subset s1,
+# cell_resume and its earliest-best-epoch rule) but -o num_classes 188 and V2_LEG188_DATA;
+# and the V100 from-scratch reference on it at the V100 references' recipe (ParT's: lr 1e-3,
+# no multiplier, no weight decay), seeds 1-3 on subset s1. Its test read-out is leg 1's (every
+# 4th of the first 2M test jets, native labels), and it keeps the logits of all 500,000 of
+# them, the linear probe's AUC jets, so fine-tuning and probe are scored on the same jets.
+#
+# ONE INDEXED JOB EACH, released by the Job controller (no laptop loop; A9): completionMode
+# Indexed, one cell per index in paper order, so many at once; backoffLimitPerIndex with the
+# resumable policy, exit 42 failing that index only (FailIndex). Each index has its own lock
+# owner and halt markers (SHARD), and a DONE cell completes its index at once.
+PIN_V2_LEG188 = PIN_V2_READOUT   # NOT YET TAGGED: tag the commit carrying this block
+V2_LEG188_RUNS = ("l188-s1", "l188-s2", "l188-s3", "l162-s1", "l162-s2", "l162-s3",
+                  "r42q1-s1", "r42q1-s2", "r42q1-s3", "r16q1-s1", "r16q1-s2", "r16q1-s3",
+                  "l162mass-s1", "l162mass-s2", "r16q1mass-s1", "r16q1mass-s2")
+V2_LEG188_DATA = "configs/finetune/JetClassII_L188_noweight.yaml"
+LEG188_TREE = "leg1_188"
+LEG188_PARALLEL = 6
+# A DONE cell keeps a leg-1 cell's files (V2_CELL_BYTES) with all 500,000 x 188 float32
+# logits (376 MB) in place of the stride-4 162-wide ones (81 MB). Measured on the 162-class
+# V100 cells: 1.5-2.5 h per cell (plan, J6).
+LEG188_CELL_BYTES = V2_CELL_BYTES["leg1"] - 81e6 + 376e6
+# The read-out checks that the cells' test jets are the linear probe's AUC jets, in order,
+# against one probe test cache's labels (every model's cache holds the same jets).
+LEG188_PROBE_LABELS = "/data/results/eval/v2_linprobe/init-s1/jc2/test/init/label188.npy"
+# THE TOP-TAGGING RECIPE CHECK (plan A3). At top 1e4 all 18 pretrained fine-tunes are worse
+# than all 3 from-scratch runs: 380 steps at 1e-4, validation still rising at the last of 20
+# epochs. The launched leg_top cells of the 188-class runs at N = 1e4 again, with
+# TOPCHECK_EPOCHS epochs, and the from-scratch reference likewise (the V100 references'
+# recipe), seeds 1-3; every cell on subset s1, so the check holds the data fixed.
+TOPCHECK_RUNS = ("l188-s1", "l188-s2", "l188-s3")
+TOPCHECK_N = 10_000
+TOPCHECK_EPOCHS = 100
+TOPCHECK_ROOT = f"{V2_ROOT}/recipe_check/leg_top_e100"
+TOPCHECK_PARALLEL = 3
+INDEXED_NOTE = (
+    f"  # RETRIES (2026-10-01), PER INDEX: pod failure policy -- evictions are not counted, exit {EXIT_HALT}\n"
+    "  # fails this pod's index (FailIndex) and no other. An interrupted cell resumes from its last\n"
+    f"  # completed epoch; an index halts on two failed attempts of its cell or {STALL_LIMIT} attempts\n"
+    "  # without progress. See \"retries that survive a flaky cluster\" and \"leg1_188\" in\n"
+    "  # scripts/build_ft_jobs.py.\n")
+
+
+def leg188_cells() -> list[tuple]:
+    """(ROOT_OUT, run directory or "" from scratch, init, K, N, seed) per index, in paper
+    order: the 16 runs at every size, then the from-scratch reference."""
+    runs = {n: (d, k) for n, d, k, _ in v2_runs()}
+    return ([(f"{V2_ROOT}/{V2_RULES[0]}", runs[r][0], r, runs[r][1], n, 1) for r in V2_LEG188_RUNS for n in SIZES]
+            + [(f"{V2_REF_ROOT}/jc2", "", SCRATCH_REF, 0, n, s)
+               for s in INITS_LATER[SCRATCH_REF][0][3] for n in SIZES])
+
+
+def topcheck_cells() -> list[tuple]:
+    """As leg188_cells, for the top-tagging recipe check."""
+    runs = {n: (d, k) for n, d, k, _ in v2_runs()}
+    return ([(TOPCHECK_ROOT, runs[r][0], r, runs[r][1], TOPCHECK_N, 1) for r in TOPCHECK_RUNS]
+            + [(TOPCHECK_ROOT, "", SCRATCH_REF, 0, TOPCHECK_N, s) for s in INITS_LATER[SCRATCH_REF][0][3]])
+
+
+def _cell_dirs(cells, tree: str) -> list[str]:
+    return [f"{r}/{tree}/{i}/N{n}/s{s}" for r, _, i, _, n, s in cells]
+
+
+def _cell_patterns(cells, tree: str) -> list[str]:
+    """The brace patterns of these cells' directories, one tree root at a time."""
+    roots = list(dict.fromkeys(r for r, *_ in cells))
+    return [p for root in roots
+            for p in _braces(f"{root}/{tree}", [f"{i}/N{n}/s{s}" for r, _, i, _, n, s in cells if r == root])]
+
+
+def _cell_table(name: str, cells, tree: str, recipe: str) -> str:
+    """Bash that sets this pod's cell from its index, skips it if DONE, then the recipe of its kind."""
+    rows = "".join(f"            {x}) ROOT_OUT={r}; RUN_DIR={d}; "
+                   f"INITS=\"{i}:{'/workspace/ckpt/' + i + '.pt' if d else ''}:{k}:{s}\"; CELL_N={n};;\n"
+                   for x, (r, d, i, k, n, s) in enumerate(cells))
+    return ("          # THE CELL OF THIS POD. An Indexed Job gives each pod its index (JOB_COMPLETION_INDEX),\n"
+            "          # which names one cell below, in paper order; the Job controller starts the next index\n"
+            "          # when a pod finishes. A DONE cell is skipped here, before the GPU checks, and its\n"
+            "          # index completes at once.\n"
+            "          IDX=${JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}\n"
+            "          case ${IDX} in\n" + rows
+            + f"            *) echo \"FATAL: no cell for index ${{IDX}}\"; exit {EXIT_HALT};;\n"
+            "          esac\n"
+            "          # Per index: the lock owner and the halt markers, so a halt stops this index alone.\n"
+            f"          SHARD={name}-i${{IDX}}\n"
+            f"          CELL_DONE=${{ROOT_OUT}}/{tree}/${{INITS%%:*}}/N${{CELL_N}}/s${{INITS##*:}}/DONE\n"
+            "          [ -f ${CELL_DONE} ] && { echo \"skip ${CELL_DONE%/DONE} (DONE)\"; exit 0; }\n" + recipe)
+
+
+_RESOLVE_CELL = (f"          # v2 PRETRAINED CHECKPOINT, rule {V2_RULES[0]} (a pretrained cell only): ft_v2.py resolve\n"
+                 "          # links the run's selected epoch to /workspace/ckpt/<init>.pt and records the choice\n"
+                 "          # in <init>.pt.json, which the cell copies beside its result.\n"
+                 "          [ -z \"${RUN_DIR}\" ] || python3 experiments/FT/ft_v2.py resolve --run-dir ${RUN_DIR} "
+                 f"--rule {V2_RULES[0]} --link /workspace/ckpt/${{INITS%%:*}}.pt || exit ${{HALT}}\n\n")
+_SCRATCH_SKIP = ('            [ "${name}" = "scratch" ] && continue\n',
+                 '            [ -z "${ckpt}" ] && continue   # from scratch: nothing to check\n', 1)
+
+
+def _base_init(run: str) -> list:
+    """The one-init list the per-cell scripts are derived from (its name is replaced at run time)."""
+    k = {n: k for n, _, k, _ in v2_runs()}[run]
+    return [(run, f"/workspace/ckpt/{run}.pt", k, [1])]
+
+
+def leg188_script(name: str) -> str:
+    """legs_v2's leg 1 for one cell, picked by the pod's index, by asserted substitution."""
+    rule, base, p = V2_RULES[0], _base_init(V2_LEG188_RUNS[0]), " " * 16
+    head, tail = legs_v2(base, name, rule).split(_LEG2_MARK)
+    jc2 = [f"{V2_SUBSETS}/train_N{n}_s1.parquet" for n in SIZES] + [f"{V2_SUBSETS}/val.parquet"]
+    head = _between(head, "          # Leg-2 preconditions, checked HERE rather than days later after leg 1.\n",
+                    "          epochs_for () {", _verify_block(jc2), name)
+    recipe = ("          # The recipe of the cell's kind. Pretrained: the launched leg-1 cells' (lr 1e-4, head\n"
+              "          # x50, weight decay 0.01). From scratch: the V100 references' (ParT's own: lr 1e-3, no\n"
+              "          # multiplier, no weight decay; BASELINE RECIPES). Both weaver's flat+decay.\n"
+              "          if [ -n \"${RUN_DIR}\" ]; then\n"
+              f"            WD=\"--optimizer-option weight_decay 0.01\"; RECIPE=\"head_lr_mult=__HEAD_MULT__ "
+              f"weight_decay=0.01\"; RULE={rule}\n"
+              "          else\n"
+              "            WD=\"\"; RECIPE=\"head_lr_mult=1 weight_decay=0 recipe=part-from-scratch\"; RULE=none\n"
+              "          fi\n")
+    head = _derive(head, [
+        ("          SUB1=/data/finetune/jc1\n", "", 1),
+        ("          wait_for ${SUB1}/DONE\n", "", 1),
+        (f"          ROOT_OUT={V2_ROOT}/{rule}\n          SHARD={name}\n", _cell_table(name, leg188_cells(), LEG188_TREE, recipe), 1),
+        (_resolve_block(base, rule), _RESOLVE_CELL, 1),
+        ('          INITS="__INITS__"\n', "", 1),
+        _SCRATCH_SKIP,
+        ('--optimizer ranger --optimizer-option weight_decay 0.01"', '--optimizer ranger ${WD}"', 1),
+        ("          # R16_Q1 (and every other init) -> the 162-way vocabulary. Readout:\n"
+         "          # frozen 128-d features + 162 logits on the paper's 2M-jet test subset.\n",
+         "          # leg1_188: the cell's init -> the 188 native classes. Readout: the 188 logits of every\n"
+         "          # 4th of the paper's first 2M test jets (500,000, the linear probe's AUC jets), all kept.\n", 1),
+        ("              for N in __SIZES__; do\n", "              for N in ${CELL_N}; do\n", 1),
+        ("OUT=${ROOT_OUT}/leg1/${name}/", f"OUT=${{ROOT_OUT}}/{LEG188_TREE}/${{name}}/", 1),
+        (f"{p}cp /workspace/ckpt/${{name}}.pt.json ${{OUT}}/init_checkpoint.json\n",
+         f"{p}[ -z \"${{ckpt}}\" ] || cp /workspace/ckpt/${{name}}.pt.json ${{OUT}}/init_checkpoint.json\n", 1),
+        ("LR=__LR_SCRATCH__; MULT=()", f"LR={LR_SCRATCH_PART}; MULT=()", 1),
+        (f"head_lr_mult=__HEAD_MULT__ weight_decay=0.01 wave=v2 ckpt_rule={rule} ",
+         "${RECIPE} wave=v2 ckpt_rule=${RULE} task=jc2_188 ", 1),
+        ("configs/finetune/JetClassII_L162_noweight.yaml", V2_LEG188_DATA, 2),
+        ("num_classes=162 ", "num_classes=188 ", 1),
+        ("-o num_classes 162 ", "-o num_classes 188 ", 1),
+        ("--num-classes 162 --arm FT1_${name}", "--num-classes 188 --arm FT188_${name}", 1),
+        ("--n 500000 --k 162\n", "--n 500000 --k 188\n", 1),
+        (f"--dir ${{OUT}}/features_v2 --stride {LEG1_AUC_STRIDE}\n", "--dir ${OUT}/features_v2 --stride 1\n", 1),
+    ], name)
+    end = tail[tail.index('          echo "FT V2 LEGS'):]
+    return head + _derive(end, [(f'echo "FT V2 LEGS ({rule}) ${{SHARD}} COMPLETE',
+                                 'echo "FT V2 LEG1 188 ${SHARD} COMPLETE', 1)], name)
+
+
+def topcheck_script(name: str) -> str:
+    """bench_v2ckpt's top-tagging cells for one cell, picked by the pod's index, by asserted
+    substitution: N = TOPCHECK_N only, TOPCHECK_EPOCHS epochs, subset s1, both recipes."""
+    rule, base, p = V2_RULES[0], _base_init(TOPCHECK_RUNS[0]), " " * 18
+    recipe = ("          # The recipe of the cell's kind, the launched cells' but for the epochs. Pretrained:\n"
+              "          # 1e-4, head x50, constant. From scratch: the V100 references' (ParT's own: 1e-3, no\n"
+              "          # multiplier, weaver's flat+decay). Weight decay 0.01 in both.\n"
+              "          if [ -n \"${RUN_DIR}\" ]; then\n"
+              "            SCHED=\"--lr-scheduler none\"; RECIPE=\"head_lr_mult=__HEAD_MULT__ lr_schedule=constant\"; "
+              f"RULE={rule}\n"
+              "          else\n"
+              "            SCHED=\"\"; RECIPE=\"head_lr_mult=1 lr_schedule=flat+decay recipe=part-from-scratch\"; RULE=none\n"
+              "          fi\n")
+    text = _between(bench_v2ckpt(base, name, rule), f'{p}if [ "${{N}}" = "${{NMAX}}" ]; then\n',
+                    f"{p}# Per-epoch checkpoints (state + optimizer, 20 x ~26 MB), read by\n", "", name)
+    return _derive(text, [
+        (f"          ROOT_OUT={V2_ROOT}/{rule}\n          SHARD={name}\n", _cell_table(name, topcheck_cells(), "leg_top", recipe), 1),
+        (_resolve_block(base, rule), _RESOLVE_CELL, 1),
+        ('          INITS="__INITS__"\n', "", 1),
+        _SCRATCH_SKIP,
+        ("          for PASS in smoke nmax rest; do\n          for D in __BENCH_SETS__; do\n",
+         "          for PASS in smoke nmax rest; do\n          for D in top; do\n", 1),
+        ('            top) echo "1000 10000 100000 1200000";;\n', f'            top) echo "{TOPCHECK_N}";;\n', 1),
+        ("--optimizer ranger --lr-scheduler none --num-epochs", "--optimizer ranger ${SCHED} --num-epochs", 1),
+        ("head_lr_mult=__HEAD_MULT__ epochs=__BENCH_EPOCHS__ lr_schedule=constant",
+         f"${{RECIPE}} epochs={TOPCHECK_EPOCHS}", 1),
+        ("__BENCH_EPOCHS__", str(TOPCHECK_EPOCHS), 2),
+        ("LOAD=(); LR=__LR_SCRATCH__; MULT=()", f"LOAD=(); LR={LR_SCRATCH_PART}; MULT=()", 1),
+        (f"{p}DSEED=${{S}}\n", f"{p}DSEED=1   # every cell on subset s1: the check holds the data fixed\n", 1),
+        (f"{p}cp /workspace/ckpt/${{name}}.pt.json ${{OUT}}/init_checkpoint.json\n",
+         f"{p}[ -z \"${{ckpt}}\" ] || cp /workspace/ckpt/${{name}}.pt.json ${{OUT}}/init_checkpoint.json\n", 1),
+        (f"val_rule=rotating-stream wave=v2 ckpt_rule={rule}",
+         "val_rule=rotating-stream wave=v2 ckpt_rule=${RULE} recipe_check=leg_top_e100", 1),
+        (f"FT V2 BENCH ({rule}) ${{SHARD}} COMPLETE", "FT V2 TOP RECIPE CHECK ${SHARD} COMPLETE", 1),
+        (f"{p}# Per-epoch checkpoints (state + optimizer, 20 x ~26 MB), read by\n",
+         f"{p}# Per-epoch checkpoints (state + optimizer, {TOPCHECK_EPOCHS} x ~26 MB), read by\n", 1),
+    ], name)
+
+
+def _indexed(text: str, completions: int, parallelism: int, what: str) -> str:
+    """A resumable GPU spec as an Indexed Job: retries per index, exit 42 failing that index."""
+    return _derive(text, [
+        (f"  backoffLimit: {ROBUST_BACKOFF}\n",
+         f"  completionMode: Indexed\n  completions: {completions}\n  parallelism: {parallelism}\n"
+         f"  backoffLimitPerIndex: {ROBUST_BACKOFF}\n", 1),
+        ("    - action: FailJob\n", "    - action: FailIndex\n", 1),
+        ("   # the pod failure policy fails the Job at once on this code\n",
+         "   # the pod failure policy fails this pod's index at once on this code\n", 1)], what)
+
+
+def leg188_readout(pin: str) -> tuple[str, str]:
+    """The final leg-1 read-out, by asserted substitution, over leg1_188 and its reference:
+    --num-classes 188 on every extracted jet, waiting in the pod for every cell."""
+    rule = V2_RULES[0]
+    name, text = v2_readout(rule, "leg1", pin, wait=_cell_patterns(leg188_cells(), LEG188_TREE))
+    new = "ft-v2-leg188-metrics-raunav"
+    return f"job-{new}.yaml", _derive(text, [
+        (f"ft-v2-{rule}-leg1-metrics-raunav", new, 1),
+        ("leg 1 (JetClass-II), experiments/FT/leg1_metrics.py.\n",
+         "leg1_188 (JetClass-II, 188 classes) and its V100 from-scratch\n"
+         "  # reference, experiments/FT/leg1_metrics.py --num-classes 188, on every extracted jet,\n"
+         "  # checked to be the linear probe's AUC jets (--probe-labels).\n", 1),
+        (f"  # Fails unless every cell {V2_EXPECTED} lists under {rule}/ is read.\n", "", 1),
+        (f"{rule}_leg1_metrics", f"{rule}_leg188_leg1_metrics", 3),
+        (f"ROOT={V2_ROOT}/{rule}/leg1\n", f"ROOT={V2_ROOT}/{rule}/{LEG188_TREE}\n", 1),
+        ('echo "complete leg1 cells', f'echo "complete {LEG188_TREE} cells', 1),
+        (f"{V2_REF_ROOT}/jc2/leg1/", f"{V2_REF_ROOT}/jc2/{LEG188_TREE}/", 1),
+        (f"{V2_REF_ROOT}/jc2/leg1 \\\n", f"{V2_REF_ROOT}/jc2/{LEG188_TREE} \\\n", 1),
+        (f"--auc-stride {LEG1_AUC_STRIDE} \\\n            --expect-cells {V2_EXPECTED}:{rule}\n",
+         f"--auc-stride 1 --num-classes 188 \\\n            --probe-labels {LEG188_PROBE_LABELS}\n", 1),
+        ("          # The from-scratch reference is read beside the rule's cells, and\n"
+         "          # --expect-cells covers the rule's cells only: every reference cell must be DONE.\n",
+         "          # The from-scratch reference is read beside the rule's cells; the wait above\n"
+         "          # covers both, and this check stays as the final read-outs have it.\n", 1),
+    ], new)
+
+
+def topcheck_readout(pin: str) -> tuple[str, str]:
+    """The recipe check's read-out: bench_metrics.py on top tagging, waiting in the pod."""
+    name, out = "ft-v2-topcheck-metrics-raunav", f"{TOPCHECK_ROOT}_bench_metrics"
+    script = (_readout_preamble(out, "${OUT}")
+              + _wait_done(_cell_patterns(topcheck_cells(), "leg_top"), "recipe-check")
+              + "          # Written into a directory of this attempt and moved into place whole.\n"
+                "          TMP=${OUT}.staging.$(date -u +%s)\n"
+                "          mkdir -p ${TMP}\n"
+                f"          python3 experiments/FT/bench_metrics.py --root {TOPCHECK_ROOT} --out ${{TMP}} --datasets top\n"
+                "          mv ${TMP} ${OUT}\n"
+                "          ls -la ${OUT}\n")
+    header = ("  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
+              + RETRY_NOTE_POLICY
+              + f"  # READ-OUT OF THE TOP-TAGGING RECIPE CHECK (job-ft-v2-topcheck-raunav, {TOPCHECK_EPOCHS} epochs\n"
+                f"  # at N={TOPCHECK_N}): experiments/FT/bench_metrics.py --datasets top. It WAITS IN THE POD until\n"
+                "  # every cell is DONE (_wait_done), so it may be applied with the fine-tuning. CPU.\n"
+                f"  # Output {out}/bench_metrics.json.\n"
+                "  # The 20-epoch cells it is compared with are read out by the final benchmark read-out,\n"
+                f"  # {V2_ROOT}/{V2_RULES[0]}_bench_metrics (pretrained and the V100 references).\n")
+    return f"job-{name}.yaml", _readout_spec(name, script, pin, header, "16Gi", "4")
+
+
+def v2_leg188_specs(pin: str) -> dict:
+    """leg1_188 and the top-tagging recipe check: two Indexed Jobs on V100 and their read-outs."""
+    h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
+    kw = dict(gpu=True, cpu="4", memory="88Gi", shm="8Gi", backoff=1, pin=pin, gpus=V2_SPLIT_GPUS,
+              exclude_hosts=_v2_off_nodes())
+    l188, top = leg188_cells(), topcheck_cells()
+    jobs = [("ft-v2-leg188-raunav", leg188_script, l188, LEG188_PARALLEL,
+             f"  # leg1_188: JetClass-II with the 188 native classes, the launched leg-1 recipe, for the\n"
+             f"  # {len(V2_LEG188_RUNS)} runs whose fine-tuning the paper reports, then the V100 from-scratch\n"
+             f"  # reference (ParT's recipe, seeds 1-3); see \"leg1_188\" in scripts/build_ft_jobs.py.\n"
+             f"  # INDEXED JOB: {len(l188)} cells, one per index in paper order, {LEG188_PARALLEL} at once, V100 only;\n"
+             f"  # ~1.5-2.5 V100-h per cell. Roots {V2_ROOT}/{V2_RULES[0]}/{LEG188_TREE} and\n"
+             f"  # {V2_REF_ROOT}/jc2/{LEG188_TREE}; ~{len(l188) * LEG188_CELL_BYTES / 1e9:.0f} GB kept "
+             f"(+{50 * EPOCH_PAIR_BYTES / 1e9:.1f} GB per running cell's epochs).\n"),
+            ("ft-v2-topcheck-raunav", topcheck_script, top, TOPCHECK_PARALLEL,
+             f"  # TOP-TAGGING RECIPE CHECK: the launched leg_top cells of {' '.join(TOPCHECK_RUNS)} at\n"
+             f"  # N={TOPCHECK_N} with {TOPCHECK_EPOCHS} epochs instead of {BENCH_EPOCHS}, and the from-scratch reference\n"
+             f"  # likewise (the V100 references' recipe, seeds 1-3), all on subset s1.\n"
+             f"  # INDEXED JOB: {len(top)} cells, {TOPCHECK_PARALLEL} at once, V100 only. Root {TOPCHECK_ROOT};\n"
+             f"  # ~{len(top) * V2_CELL_BYTES['bench'] / 1e9:.1f} GB kept (+{TOPCHECK_EPOCHS * EPOCH_PAIR_BYTES / 1e9:.1f} GB "
+             f"per running cell's epochs).\n")]
+    specs = {}
+    for name, script, cells, par, what in jobs:
+        text = job(name, _fill(script(name), pin), **_retry_kw(name, kw), header=h + INDEXED_NOTE + what)
+        specs[f"job-{name}.yaml"] = _indexed(text, len(cells), par, name)
+    return {**specs, **dict([leg188_readout(pin), topcheck_readout(pin)])}
 
 
 def _new_specs(pin: str, wave3: bool, bench_v2: bool, later: list | None,
@@ -3032,6 +3392,10 @@ V2_NEEDED = {"experiments/FT/make_subsets.py": "def build_jc2v2",
              "experiments/FT/gpu_probe.py": "def main",
              "experiments/FT/slim_outputs.py": "def slim_pred",
              V2_SHA_TABLE: '"files"'}
+# What the leg1_188 / top-check specs' tag must carry: the v2 fine-tuning's scripts and record,
+# the 188-class data config, and the read-out's 188-class path.
+V2_LEG188_NEEDED = {**V2_NEEDED, V2_LEG188_DATA: "-o num_classes 188",
+                    "experiments/FT/leg1_metrics.py": "--probe-labels"}
 
 
 def verify_pin(pin: str, not_yet_tagged: bool, needed: dict = REFS_NEEDED) -> None:
@@ -3109,7 +3473,8 @@ def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = F
           later: list | None = None, bench_v3: bool = False, v2_subsets: bool = False,
           v2: bool = False, headroom_gb: float | None = None, only: list | None = None,
           v2_pretraining_done: bool = False, v2_extraction_done: bool = False,
-          v2_readouts: bool = False, v2_trial_readouts: bool = False) -> dict[str, str]:
+          v2_readouts: bool = False, v2_trial_readouts: bool = False,
+          v2_leg188: bool = False) -> dict[str, str]:
     h = "  # GENERATED by scripts/build_ft_jobs.py -- do not hand-edit. Regenerate.\n  #\n"
     specs = {
         "job-ft-subsets-jc2-raunav.yaml": job(
@@ -3209,6 +3574,11 @@ def build(pin: str, wave2: bool = False, wave3: bool = False, bench_v2: bool = F
         specs = _v2_readout_specs(pin)
     elif v2_trial_readouts:
         specs = dict(v2_trial_readout(leg, PIN_V2_TRIAL[leg]) for leg in V2_READOUT_LEGS)
+    elif v2_leg188:
+        specs = v2_leg188_specs(pin)
+        for name, text in specs.items():
+            left = re.findall(r"__[A-Z0-9_]+__", text)
+            assert not left, f"{name}: unfilled {sorted(set(left))}"
     elif wave3 or bench_v2 or bench_v3:
         # ONLY the new specs, so a --wave3 / --bench-v2 run can never rewrite a
         # launched wave-1 or wave-2 file.
@@ -3273,6 +3643,9 @@ def main() -> int:
     ap.add_argument("--v2-trial-readouts", action="store_true",
                     help=f"emit ONLY the read-outs of the runs finished before the split (pins {PIN_V2_TRIAL}) "
                          f"and {V2_TRIAL_EXPECTED}, alone")
+    ap.add_argument("--v2-leg188", action="store_true",
+                    help=f"emit ONLY leg1_188 and the top-tagging recipe check, two Indexed Jobs and their "
+                         f"read-outs (pin {PIN_V2_LEG188}), alone")
     ap.add_argument("--plan", action="store_true",
                     help="print cells and expected GPU-hours per shard, write nothing")
     ap.add_argument("--pin-not-yet-tagged", action="store_true",
@@ -3323,12 +3696,19 @@ def main() -> int:
         if args.pin == PIN:
             args.pin = PIN_V2_READOUT
         verify_pin(args.pin, args.pin_not_yet_tagged, V2_READOUT_NEEDED)
+    if args.v2_leg188:
+        if (args.v2_readouts or args.v2_trial_readouts or args.v2 or args.v2_subsets or args.wave2
+                or args.wave3 or args.bench_v2 or args.bench_v3_last):
+            sys.exit("FATAL: --v2-leg188 is emitted alone; it pins its own tag")
+        if args.pin == PIN:
+            args.pin = PIN_V2_LEG188
+        verify_pin(args.pin, args.pin_not_yet_tagged, V2_LEG188_NEEDED)
     specs = build(args.pin, wave2=args.wave2, wave3=args.wave3, bench_v2=args.bench_v2,
                   later=args.later, bench_v3=args.bench_v3_last,
                   v2_subsets=args.v2_subsets, v2=args.v2, headroom_gb=args.headroom_gb,
                   v2_pretraining_done=args.v2_pretraining_done,
                   v2_extraction_done=args.v2_extraction_done, v2_readouts=args.v2_readouts,
-                  v2_trial_readouts=args.v2_trial_readouts,
+                  v2_trial_readouts=args.v2_trial_readouts, v2_leg188=args.v2_leg188,
                   only=args.only if args.v2 else None)
     if args.v2 and not args.check_only:
         (ROOT / V2_EXPECTED).write_text(json.dumps(v2_expected_cells(), indent=1) + "\n")

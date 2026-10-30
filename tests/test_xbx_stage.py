@@ -153,11 +153,25 @@ def test_the_pairs_are_matched_balanced_disjoint_and_from_held_out_jets_only(jc2
     assert man2["sha256"] == man["sha256"]
 
 
-def _outside_sample(path, rng, n, drop=()):
+W125 = (93.75, 143.75)      # Sophon's window scaled to mX = 125 GeV
+
+
+def _zeroed(t, cols):
+    """t with the part_* columns cols set to 0 on every particle, as a zero-filled sample has them."""
+    for c in cols:
+        col = t.column(c).combine_chunks()
+        t = t.set_column(t.schema.get_field_index(c), c,
+                         pa.ListArray.from_arrays(col.offsets, pa.array(np.zeros(len(col.values), np.float32))))
+    return t
+
+
+def _outside_sample(path, rng, n, drop=(), zero=(), rename=None):
     """An outside sample with its own branch layout: ROOT with the particles under one counter, or
     parquet in float64 with an event-level branch."""
     t = _jets(rng, n, 0, msd=rng.normal(125, 10, n)).drop(["jet_label", "aux_unused"])
-    t = t.drop([c for c in drop])
+    t = _zeroed(t.drop([c for c in drop]), zero)
+    if rename:
+        t = t.rename_columns([rename.get(c, c) for c in t.column_names])
     if str(path).endswith(".parquet"):
         t = t.cast(pa.schema([(f.name, pa.list_(pa.float64()) if pa.types.is_list(f.type) else pa.float64())
                               for f in t.schema]))
@@ -179,24 +193,28 @@ def _outside_sample(path, rng, n, drop=()):
 
 
 @pytest.mark.parametrize("ext", ["parquet", "root"])
-def test_an_outside_sample_is_checked_then_split_per_jet(jc2, tmp_path, ext):
+def test_an_outside_sample_is_checked_then_split_per_jet(jc2, tmp_path, monkeypatch, ext):
+    monkeypatch.setattr(ST.X, "A5_EVAL_FLOOR", 100)
     rng = np.random.default_rng(1)
     good, bad = tmp_path / f"Xbs_0.{ext}", tmp_path / f"Xbs_bad.{ext}"
     _outside_sample(good, rng, 3000)
     _outside_sample(bad, rng, 100, drop=("part_d0err",))
-    rep = ST.check([str(good)])
+    rep = ST.check([str(good)], W125)
     assert rep["problems"] == [] and "event_weight" in rep["per_file"][str(good)]["extra_branches"]
     assert 110 < rep["first_file"]["msd_percentiles_5_50_95"][1] < 140
-    assert any("part_d0err" in p for p in ST.check([str(bad)])["problems"])
+    assert any("part_d0err" in p for p in ST.check([str(bad)], W125)["problems"])
     with pytest.raises(SystemExit, match="does not carry"):
-        ST.convert("xbs", [str(bad)], tmp_path / "xbx")
+        ST.convert("xbs", [str(bad)], tmp_path / "xbx", W125)
     root = tmp_path / "xbx"
-    counts = ST.convert("xbs", [str(good)], root)
+    counts = ST.convert("xbs", [str(good)], root, W125)
     pool = pq.read_table(root / "xbs/pool/Xbs_0.parquet")
     ev = pq.read_table(root / "xbs/eval/Xbs_0.parquet")
     c = counts[str(good)]
     assert pool.num_rows + ev.num_rows == c["selected"] and ev.num_rows == c["eval"]
     assert 0.15 < ev.num_rows / c["selected"] < 0.25
+    # the floor counts exactly the evaluation jets convert writes, inside the window
+    m = np.asarray(ev.column("jet_sdmass"))
+    assert rep["eval_in_window"] == int(((m > W125[0]) & (m < W125[1])).sum())
     # the JetClass-II types, whatever the sample's own
     ref = ST.reference_schema(ST.config_branches())
     assert pool.schema.remove_metadata() == ref.remove_metadata()
@@ -205,11 +223,114 @@ def test_an_outside_sample_is_checked_then_split_per_jet(jc2, tmp_path, ext):
     # a pod that died between pool/ and eval/: redone to the same bytes; a finished one is refused
     man_pool = json.loads((root / "xbs/pool/manifest.json").read_text())["sha256"]
     (root / "xbs/eval/DONE").unlink()
-    ST.convert("xbs", [str(good)], root)
+    ST.convert("xbs", [str(good)], root, W125)
     assert json.loads((root / "xbs/pool/manifest.json").read_text())["sha256"] == man_pool
     with pytest.raises(SystemExit, match="never rebuilt"):
-        ST.convert("xbs", [str(good)], root)
+        ST.convert("xbs", [str(good)], root, W125)
     # pairs draw from the converted pool against the held-out QCD
     man = ST.pair("xbs", root, n_train=300, n_val=50)
     assert man["signal_files"] == [str(root / "xbs/pool/Xbs_0.parquet")] and man["train_draw"]["n_per_class"] <= 300
     _readable_by_weaver([str(root / "pairs/xbs" / s) for s in man["train_shards"]])
+
+
+def test_a_sample_below_a5s_floor_is_refused(jc2, tmp_path):
+    good = tmp_path / "Xbs_0.parquet"
+    _outside_sample(good, np.random.default_rng(1), 3000)       # about 600 evaluation jets
+    rep = ST.check([str(good)], W125)
+    assert len(rep["problems"]) == 1 and rep["problems"][0].startswith("A5 floor")
+    assert 0 < rep["eval_in_window"] < ST.X.A5_EVAL_FLOOR == 10_000
+    with pytest.raises(SystemExit, match="A5 floor"):
+        ST.convert("xbs", [str(good)], tmp_path / "xbx", W125)
+    # the window decides it: almost none of a 125 GeV peak lies in Sophon's 150-230 GeV
+    assert ST.check([str(good)], (150.0, 230.0))["eval_in_window"] < rep["eval_in_window"] / 10
+
+
+@pytest.mark.parametrize("zero,why", [
+    (ST.TYPE_FLAGS, "no_type_flag"),                         # the top-tagging inputs: every flag off
+    (ST.DISPLACEMENT, "charged_no_displacement"),            # the q/g inputs: charged, displacement 0
+    (("part_charge",), "flagged_charged_without_charge"),
+    (("part_deta",), "part_deta"),
+])
+def test_a_zero_filled_sample_is_refused(jc2, tmp_path, monkeypatch, zero, why):
+    monkeypatch.setattr(ST.X, "A5_EVAL_FLOOR", 100)
+    f = tmp_path / "Xbs_0.parquet"
+    _outside_sample(f, np.random.default_rng(1), 3000, zero=zero)
+    rep = ST.check([str(f)], W125)
+    assert [p.split(": zero-fill: ")[1].split(" = ")[0] for p in rep["problems"]] == [why]
+    assert rep["zero_fill"][why] == 1.0 and rep["per_file"][str(f)]["zero_fill"][why] == 1.0
+    with pytest.raises(SystemExit, match="does not carry"):
+        ST.convert("xbs", [str(f)], tmp_path / "xbx", W125)
+
+
+def test_a_partly_zero_filled_file_is_refused(jc2, tmp_path, monkeypatch):
+    """Each file on its own: 30 % of one file's part_deta at 0 fails, though over both files
+    no branch is 0 on every particle."""
+    monkeypatch.setattr(ST.X, "A5_EVAL_FLOOR", 100)
+    rng = np.random.default_rng(3)
+    good, bad = tmp_path / "Xbs_0.parquet", tmp_path / "Xbs_1.parquet"
+    _outside_sample(good, rng, 3000)
+    t = _jets(rng, 3000, 0, msd=rng.normal(125, 10, 3000)).drop(["jet_label", "aux_unused"])
+    col = t.column("part_deta").combine_chunks()
+    v = col.values.to_numpy().copy()
+    v[rng.random(v.size) < 0.3] = 0
+    pq.write_table(t.set_column(t.schema.get_field_index("part_deta"), "part_deta",
+                                pa.ListArray.from_arrays(col.offsets, pa.array(v))), bad)
+    rep = ST.check([str(good), str(bad)], W125)
+    assert len(rep["problems"]) == 1 and rep["problems"][0].startswith(f"{bad}: zero-fill: part_deta = ")
+    assert 0.25 < rep["zero_fill"]["part_deta"] < 0.35 and rep["per_file"][str(good)]["zero_fill"]["part_deta"] == 0
+    assert ST.check([str(good)], W125)["problems"] == []
+
+
+def test_a_flag_set_on_every_particle_and_a_few_bare_tracks_pass(jc2, tmp_path, monkeypatch):
+    """JetClass-II itself: exactly one type flag per particle, and a charged particle without
+    displacement at about 8e-5, under the limit."""
+    monkeypatch.setattr(ST.X, "A5_EVAL_FLOOR", 100)
+    rng = np.random.default_rng(2)
+    t = _jets(rng, 3000, 0, msd=rng.normal(125, 10, 3000))
+    n = len(t.column("part_px").combine_chunks().values)
+    kind = rng.integers(0, 5, n)
+    kind[:2] = 0                                             # two charged hadrons with no displacement
+    for i, c in enumerate(ST.TYPE_FLAGS):
+        col = t.column(c).combine_chunks()
+        t = t.set_column(t.schema.get_field_index(c), c,
+                         pa.ListArray.from_arrays(col.offsets, pa.array((kind == i).astype(np.float32))))
+    assert ST.zero_fill(t)["no_type_flag"] == 0
+    d = {c: t.column(c).combine_chunks() for c in ST.DISPLACEMENT}
+    for c, col in d.items():
+        v = col.values.to_numpy().copy()
+        v[:2] = 0
+        t = t.set_column(t.schema.get_field_index(c), c, pa.ListArray.from_arrays(col.offsets, pa.array(v)))
+    zf = ST.zero_fill(t)
+    assert zf["charged_no_displacement"] == pytest.approx(2 / n) and zf["flagged_charged_without_charge"] == 0
+    assert set(zf) == {"no_type_flag", "flagged_charged_without_charge", "charged_no_displacement",
+                       "part_px", "part_py", "part_pz", "part_energy", "part_deta", "part_dphi"}
+    f = tmp_path / "Xbs_0.parquet"
+    pq.write_table(t.drop(["jet_label", "aux_unused"]), f)
+    rep = ST.check([str(f)], W125)
+    assert rep["problems"] == [] and 0 < rep["zero_fill"]["charged_no_displacement"] < ST.ZERO_FILL_MAX
+
+
+def test_other_branch_names_are_mapped_before_the_check(jc2, tmp_path, monkeypatch):
+    monkeypatch.setattr(ST.X, "A5_EVAL_FLOOR", 100)
+    f = tmp_path / "Xbs_0.parquet"
+    _outside_sample(f, np.random.default_rng(1), 3000, rename={"jet_pt": "fj_pt", "part_px": "pfcand_px"})
+    rep = ST.check([str(f)], W125)
+    assert any("'jet_pt'" in p and "'part_px'" in p for p in rep["problems"])
+    monkeypatch.setattr(ST, "BRANCH_MAP", {"fj_pt": "jet_pt", "pfcand_px": "part_px"})
+    assert ST.check([str(f)], W125)["problems"] == []
+    root = tmp_path / "xbx"
+    ST.convert("xbs", [str(f)], root, W125)
+    pool = pq.read_table(root / "xbs/pool/Xbs_0.parquet")
+    assert {"jet_pt", "part_px"} <= set(pool.column_names) and "fj_pt" not in pool.column_names
+    _readable_by_weaver([str(root / "xbs/pool/Xbs_0.parquet")])
+
+
+@pytest.mark.parametrize("ext", ["parquet", "root"])
+def test_inspect_lists_trees_branches_types_and_entries(tmp_path, capsys, ext):
+    f = tmp_path / f"Xbs_0.{ext}"
+    _outside_sample(f, np.random.default_rng(1), 500)
+    assert ST.main(["inspect", "--file", str(f)]) == 0
+    r = json.loads(capsys.readouterr().out)
+    (tree, info), = r["trees"].items()
+    assert info["entries"] == 500 and "jet_pt" in info["branches"] and "event_weight" in info["branches"]
+    assert tree == ("parquet" if ext == "parquet" else "tree")

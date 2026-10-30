@@ -71,10 +71,23 @@ so for them alignment rested on having used the same file list and settings and
 nothing verified it. This script requires every arm's `label188_sha256` to equal
 the observers'. A silent row offset between the features and the target would be
 invisible in every number below.
+
+V3 (plan 2026-10-29, A6), written to mass_v3.json and never over mass_resolution.json:
+  - the UNCORRECTED soft-drop mass is the reference row: y_pred = 0 on the raw target,
+    on the same test jets. The centred target's spread is an oracle class-mean
+    correction, which the uncorrected mass beats (v2: 0.253 against 0.299).
+  - the frozen-feature probes are centred on the per-class MEDIAN of the training
+    split; the mean-centred fit as before is kept beside them (mean_centred).
+  - --head scores the mass head's own output (extract_v2.py --keep-head-outputs,
+    regression column K) on the raw target: no centring, nothing fitted here.
+  - every predictor's residual log(m_reg/m_gen), m_reg = m_reco exp(y_pred), is also
+    given per class group (resonant, QCD, the 17 topology groups of R16_Q1) and in bins
+    of jet_pt and genjet_sdmass: sigma_eff and the median response m_reg/m_gen.
 """
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import pathlib
@@ -91,6 +104,15 @@ from experiments.EVAL.latent_scale_probe import (  # noqa: E402
 TAIL_AT = 1.0          # |residual| > 1 in the log-ratio: choice 4, reported not trimmed
 MIN_TRAIN_PER_CLASS = 50   # below this a class mean is noise; see drop_small_classes
 PROBES = ("ridge", "mlp")
+# new names at mtx-s2.19: scripts/build_probe_jobs.py's skip-if-done checks and
+# experiments/STATS/paired_errors.py read mass_resolution.json / residuals.npz, so they stay
+# pinned to a tag before it
+OUT_JSON, OUT_RESIDUALS = "mass_v3.json", "residuals_v3.npz"
+HEAD_FILE = "head_outputs.npz"       # extract_v2.py --keep-head-outputs
+N_RESONANT = 161                     # native labels 0..160 resonant, 161..187 QCD
+LABEL_MAP = REPO / "configs" / "labelmaps" / "rung_label_maps.v1.csv"
+PT_BINS = ((200, 400), (400, 700), (700, 1000), (1000, 2500))
+MGEN_BINS = ((20, 50), (50, 100), (100, 150), (150, 250), (250, 500))
 
 
 def sigma_eff(res: np.ndarray, frac: float = 0.68) -> tuple[float, float, float]:
@@ -171,6 +193,49 @@ def class_center(y: np.ndarray, lab: np.ndarray, train_idx: np.ndarray) -> tuple
         "n_jets_dropped_small_class": int((~usable).sum())}
 
 
+def class_median(y: np.ndarray, lab: np.ndarray, idx: np.ndarray) -> np.ndarray:
+    """The per-native-class median of the target over the rows `idx` (the training
+    split), NaN for a class absent there. The v3 default centring: the class median sits
+    nearer the core of a skewed response than the mean."""
+    med = np.full(188, np.nan)
+    yi, li = y[idx], lab[idx]
+    for c in np.unique(li):
+        med[c] = np.median(yi[li == c])
+    return med
+
+
+def response(res: np.ndarray) -> dict:
+    """resolution() and the median mass response m_reg/m_gen = exp(median residual)."""
+    r = resolution(res)
+    return {**r, "median_response": float(np.exp(r["median"]))}
+
+
+def topology_names() -> np.ndarray:
+    """The R16_Q1 group name of each native label (17 groups, QCD one of them)."""
+    with LABEL_MAP.open() as f:
+        rows = {int(r["jet_label"]): r["R16_Q1_name"] for r in csv.DictReader(f)}
+    return np.array([rows[i] for i in range(188)])
+
+
+def binned(res: np.ndarray, lab: np.ndarray, obs: dict) -> dict:
+    """sigma_eff and the median response per class group and per jet_pt and
+    genjet_sdmass bin [lo, hi), of one predictor's test residuals. A bin of fewer than
+    two jets carries only its count; a variable the observers lack is left out."""
+    def cell(m):
+        n = int(m.sum())
+        if n < 2:
+            return {"n": n}
+        return {"sigma_eff": sigma_eff(res[m])[0],
+                "median_response": float(np.exp(np.median(res[m]))), "n": n}
+    names = topology_names()[lab]
+    out = {"group": {"resonant": cell(lab < N_RESONANT), "qcd": cell(lab >= N_RESONANT)},
+           "topology_R16_Q1": {g: cell(names == g) for g in sorted(set(names))}}
+    for var, bins in (("jet_pt", PT_BINS), ("genjet_sdmass", MGEN_BINS)):
+        if var in obs:
+            out[var] = {f"{lo}-{hi}": cell((obs[var] >= lo) & (obs[var] < hi)) for lo, hi in bins}
+    return out
+
+
 def v2_prefix(d: pathlib.Path, n_max: int | None = None) -> np.ndarray | None:
     """For a v2 cache (extract_v2.py: manifest.json, rows.npy, features on selected
     stream rows): the positions of its rows inside the uniform prefix -- the first
@@ -194,21 +259,31 @@ def v2_prefix(d: pathlib.Path, n_max: int | None = None) -> np.ndarray | None:
 
 def load_observers(path: pathlib.Path) -> dict:
     """genjet_sdmass, jet_sdmass and the native labels, with their digest: from a
-    v1 observers cache (observers_manifest.json) or a v2 feature cache's own
-    observers.npz, restricted to its uniform prefix."""
-    sel = v2_prefix(path)
-    obs = dict(np.load(path / "observers.npz"))
-    for k in ("genjet_sdmass", "jet_sdmass"):
-        if k not in obs:
-            raise SystemExit(f"FATAL: {path}/observers.npz lacks {k!r}; present: {sorted(obs)}")
-    lab = np.load(path / "label188.npy")
-    if sel is not None:
-        obs, lab = {k: v[sel] for k, v in obs.items()}, lab[sel]
+    v1 observers cache (observers_manifest.json), a v2 feature cache's own
+    observers.npz, restricted to its uniform prefix, or the head outputs of an
+    extract_v2.py --keep-head-outputs checkpoint (every row of its stream)."""
+    if (path / HEAD_FILE).exists():
+        z = np.load(path / HEAD_FILE)
+        if not np.array_equal(z["rows"], np.arange(z["rows"].size)):
+            raise SystemExit(f"FATAL: {path}/{HEAD_FILE}: the rows are not the stream's, in order")
+        obs = {k: z[k] for k in z.files if k not in ("rows", "label188", "logits", "mass")}
+        lab = z["label188"]
         man = json.loads((path / "manifest.json").read_text())
         sha = hashlib.sha256(lab.tobytes()).hexdigest()
     else:
-        man = json.loads((path / "observers_manifest.json").read_text())
-        sha = man.get("label188_sha256")
+        sel = v2_prefix(path)
+        obs = dict(np.load(path / "observers.npz"))
+        lab = np.load(path / "label188.npy")
+        if sel is not None:
+            obs, lab = {k: v[sel] for k, v in obs.items()}, lab[sel]
+            man = json.loads((path / "manifest.json").read_text())
+            sha = hashlib.sha256(lab.tobytes()).hexdigest()
+        else:
+            man = json.loads((path / "observers_manifest.json").read_text())
+            sha = man.get("label188_sha256")
+    for k in ("genjet_sdmass", "jet_sdmass"):
+        if k not in obs:
+            raise SystemExit(f"FATAL: {path} observers lack {k!r}; present: {sorted(obs)}")
     if not sha:
         raise SystemExit(f"FATAL: {path}/observers_manifest.json has no label188_sha256, "
                          f"so no arm's row alignment can be checked against it.")
@@ -220,7 +295,25 @@ def load_observers(path: pathlib.Path) -> dict:
     with np.errstate(divide="ignore", invalid="ignore"):
         y = np.log(np.where(valid, gen, 1.0) / np.where(valid, sd, 1.0))
     return {"y": y, "valid": valid, "label188": lab, "label188_sha256": sha,
-            "n": int(gen.size), "n_valid": int(valid.sum()), "manifest": man}
+            "n": int(gen.size), "n_valid": int(valid.sum()), "manifest": man, "obs": obs}
+
+
+def load_head(arm: str, d: pathlib.Path, n: int, obs_sha: str) -> tuple[np.ndarray, dict]:
+    """The mass head's output (regression column K) on the observers' n jets, refused
+    unless they are the same jets in the same order."""
+    z = np.load(d / HEAD_FILE)
+    if "mass" not in z.files:
+        raise SystemExit(f"FATAL: {arm}: {d}/{HEAD_FILE} has no mass output (no --num-reg 1)")
+    rows = z["rows"]
+    if rows.size < n or not np.array_equal(rows[:n], np.arange(n)):
+        raise SystemExit(f"FATAL: {arm}: {d}/{HEAD_FILE} does not hold the first {n:,} rows")
+    sha = hashlib.sha256(z["label188"][:n].tobytes()).hexdigest()
+    if sha != obs_sha:
+        raise SystemExit(f"FATAL: {arm}: the labels of {d} ({sha[:16]}) are not the "
+                         f"observers' ({obs_sha[:16]})")
+    man = json.loads((d / "manifest.json").read_text())
+    return z["mass"][:n].astype(np.float64), {"label188_sha256": sha, "n_jets": n, "cache": "head",
+                                              "checkpoint_sha256": man.get("checkpoint_sha256")}
 
 
 def check_alignment(arm: str, d: pathlib.Path, obs_sha: str, n: int) -> dict:
@@ -280,21 +373,27 @@ def probe_arm(F: np.ndarray, y: np.ndarray, tr, va, te, residuals: dict | None =
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--features", nargs="+", required=True, help="ARM=/path/to/features")
+    ap.add_argument("--features", nargs="*", default=[], help="ARM=/path/to/features")
+    ap.add_argument("--head", nargs="*", default=[],
+                    help="ARM=dir of an extract_v2.py --keep-head-outputs checkpoint: the mass "
+                         "head's own output, scored on the raw target")
     ap.add_argument("--observers", required=True,
                     help="directory holding observers.npz, label188.npy and "
                          "observers_manifest.json (the test2m_observers cache), or a v2 "
                          "feature cache (extract_v2.py), whose uniform prefix is used")
     ap.add_argument("--out", required=True)
     ap.add_argument("--save-residuals", action="store_true",
-                    help="also write residuals.npz: the test rows, their native "
-                         "labels and every arm's per-jet residual, per probe")
+                    help=f"also write {OUT_RESIDUALS}: the test rows, their native "
+                         "labels and every arm's per-jet residual, per probe and head")
     ap.add_argument("--readout", choices=("features", "pooled"), default="features",
                     help="class token (features.npy) or a v2 cache's pooled embedding "
                          "(pooled.npy, amendment A14)")
     a = ap.parse_args(argv)
 
     out = pathlib.Path(a.out)
+    if (out / OUT_JSON).exists():
+        print(f"{out / OUT_JSON} exists; not overwritten")
+        return 0
     saved = {}
     obs = load_observers(pathlib.Path(a.observers))
     print(f"observers: {obs['n']:,} jets, {obs['n_valid']:,} with a matched "
@@ -312,15 +411,23 @@ def main(argv=None) -> int:
                                    "beside it and carry no prediction.",
            "residual": "log(m_predicted / m_true); exponentiating gives the mass "
                        "response ratio the field quantifies",
-           "centering": "per-188-native-class mean of the target, fitted on the "
-                        "training split only; subsumes family-mean removal",
+           "centering": "per-188-native-class MEDIAN of the target, fitted on the "
+                        "training split (arms[*].ridge, mlp, target); the per-class mean "
+                        "as before, fitted on the first split's training rows, in "
+                        "arms[*].mean_centred; either subsumes family-mean removal",
+           "uncorrected": "the soft-drop mass itself: y_pred = 0 on the raw target, "
+                          "the same test jets",
+           "heads": "the mass head's own output (regression column K) on the raw target",
+           "binned": "sigma_eff and median m_reg/m_gen, m_reg = m_reco exp(y_pred), per "
+                     "class group (native < 161 resonant; R16_Q1 topology) and in jet_pt "
+                     "and genjet_sdmass bins [lo, hi) GeV; the frozen probes' from the MLP",
            "tail": f"reported as the share with |residual| > {TAIL_AT}, never trimmed",
            "split_seed": SPLIT_SEED, "tail_at": TAIL_AT, "cpu_model": cpu_model(),
            "readout": a.readout,
            "row_alignment_sha256": obs["label188_sha256"],
            "n_jets_total": obs["n"], "n_jets_valid": obs["n_valid"],
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),
-           "arms": {}}
+           "arms": {}, "heads": {}}
 
     vidx = np.flatnonzero(obs["valid"])
     y_all, lab_all = obs["y"], obs["label188"]
@@ -331,8 +438,16 @@ def main(argv=None) -> int:
     # sees the identical split either way, which is the property that matters.
     keep = np.flatnonzero(usable)
     tr, va, te = make_splits(keep.size)
-    y_use = y_c[keep]
+    y_mean = y_c[keep]
+    y_raw = y_all[vidx][keep]
     lab_use = lab_all[vidx][keep]
+    med = class_median(y_raw, lab_use, tr)[lab_use]
+    if np.isnan(med).any():
+        raise SystemExit("FATAL: a kept class has no jet in the training split")
+    y_use = y_raw - med
+    obs_te = {k: np.asarray(v)[vidx][keep][te] for k, v in obs["obs"].items()}
+    res["uncorrected"] = {**response(-y_raw[te]),
+                          "binned": binned(-y_raw[te], lab_use[te], obs_te)}
     res["centering_detail"] = {**cinfo, "n_jets_used": int(keep.size),
                                "split": [int(tr.size), int(va.size), int(te.size)]}
     print(f"centering: {cinfo['n_classes_used']} of {cinfo['n_classes_present']} native "
@@ -356,9 +471,11 @@ def main(argv=None) -> int:
                              f"observers have {obs['n']}")
         prov = check_alignment(name, d, obs["label188_sha256"], obs["n"])
         Fu = F[vidx][keep]
-        rs = {} if a.save_residuals else None
+        rs = {}
         r = probe_arm(Fu, y_use, tr, va, te, rs)
-        for kind, v in (rs or {}).items():
+        r["mean_centred"] = probe_arm(Fu, y_mean, tr, va, te)
+        r["binned"] = {"mlp": binned(rs["mlp"], lab_use[te], obs_te)}
+        for kind, v in (rs if a.save_residuals else {}).items():
             saved[f"{kind}|{name}"] = v
         r["provenance"] = prov
         res["arms"][name] = r
@@ -369,17 +486,34 @@ def main(argv=None) -> int:
                   f"central68 {v['sigma68_central']:.4f}  sd {v['sd']:.4f}  "
                   f"median {v['median']:+.4f}  tail(|r|>{TAIL_AT:g}) {v['tail_fraction']:.4f}")
 
+    for spec in a.head:
+        if "=" not in spec:
+            raise SystemExit(f"FATAL: --head wants ARM=path, got {spec!r}")
+        name, path = spec.split("=", 1)
+        m, prov = load_head(name, pathlib.Path(path), obs["n"], obs["label188_sha256"])
+        r = m[vidx][keep][te] - y_raw[te]
+        res["heads"][name] = {**response(r), "binned": binned(r, lab_use[te], obs_te),
+                              "provenance": prov}
+        if a.save_residuals:
+            saved[f"head|{name}"] = r
+        v = res["heads"][name]
+        print(f"\n=== head {name} ===  sigma_eff {v['sigma_eff']:.4f}  median response "
+              f"{v['median_response']:.4f}  (uncorrected {res['uncorrected']['sigma_eff']:.4f})")
+
     res["n_classes_used"] = cinfo["n_classes_used"]
     res["labels_used_sha256"] = hashlib.sha256(lab_use.tobytes()).hexdigest()
     out.mkdir(parents=True, exist_ok=True)
     if a.save_residuals:
         saved["rows"] = vidx[keep][te].astype(np.int64)
         saved["label188"] = lab_use[te].astype(np.int64)
-        np.savez_compressed(out / "residuals.npz", **saved)
+        np.savez_compressed(out / OUT_RESIDUALS, **saved)
         res["residuals_npz_sha256"] = hashlib.sha256(
-            (out / "residuals.npz").read_bytes()).hexdigest()
-    (out / "mass_resolution.json").write_text(json.dumps(res, indent=2))
-    print(f"\nwrote {out}/mass_resolution.json")
+            (out / OUT_RESIDUALS).read_bytes()).hexdigest()
+    # atomic: an existing OUT_JSON means done to a retried pod
+    tmp = out / (OUT_JSON + ".tmp")
+    tmp.write_text(json.dumps(res, indent=2))
+    tmp.replace(out / OUT_JSON)
+    print(f"\nwrote {out}/{OUT_JSON}")
     return 0
 
 

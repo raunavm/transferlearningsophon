@@ -122,7 +122,7 @@ def test_mass_resolution_reads_the_cache_and_its_prefix(cache, tmp_path):
     d, labels, _ = cache
     mr = _load("mass_resolution", "experiments/EVAL/mass_resolution.py")
     assert mr.main(["--features", f"A={d}", "--observers", str(d), "--out", str(tmp_path / "m")]) == 0
-    res = json.loads((tmp_path / "m" / "mass_resolution.json").read_text())
+    res = json.loads((tmp_path / "m" / mr.OUT_JSON).read_text())
     assert res["n_jets_total"] == PREFIX
     assert res["row_alignment_sha256"] == res["arms"]["A"]["provenance"]["label188_sha256"]
     assert res["arms"]["A"]["provenance"]["cache"] == "v2"
