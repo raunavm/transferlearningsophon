@@ -170,7 +170,7 @@ class _Em:
 BENCH_VAL = 'val_for () { if [ "$1" -le 10000 ]; then echo 20000; else echo 200000; fi; }\n'
 
 
-def _recipe_tree(tmp, cells, spec_text="weaver --data-train x --samples-per-epoch-val 20000\n"):
+def _recipe_tree(tmp, cells, spec_text="weaver --data-train x --samples-per-epoch-val 20000 -o fc_params '[(512,0.1)]'\n"):
     data = tmp / "experiments/FIGS/data/v2"
     (data / "ft_mlst").mkdir(parents=True)
     (data / "ft_mlst/manifests.json").write_text(json.dumps(cells))
@@ -203,6 +203,7 @@ def test_the_recipe_macros_come_from_every_cell_and_one_stray_value_stops_the_bu
     assert em.m["MlstFtGpuTypes"] == "V100" and em.m["MlstFtCellsDone"] == "3"
     assert em.m["MlstFtRefLr"].startswith(r"\pending") and any("V100" in x for x in missing)
     assert em.m["MlstFtMinEpochJets"] == "10000" and em.m["MlstFtValJcii"] == "20480"
+    assert em.m["MlstFtHeadDropout"] == "0.1"
     assert em.m["MlstFtValSmall"] == "20000" and em.m["MlstFtValLarge"] == "200000"
     cells["best70/leg1/l188-s1/N1000/s1"]["lr"] = "2e-4"
     with pytest.raises(SystemExit, match="expected one value"):

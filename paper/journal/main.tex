@@ -1048,8 +1048,9 @@ Every fine-tuning setting below, except the schedule of the head's learning rate
 from the record that each fine-tuning run writes when it starts. The pretrained weights are
 trained at a constant learning rate of \MlstFtLr{} and the new head at \MlstFtHeadMult{} times
 that, the rates ParT uses for fine-tuning~\cite[Sec.~5.2]{part}, with weight decay
-\MlstFtWeightDecay{} and batches of \MlstFtBatch{} jets. The new head is the whole classification
-head, its hidden layer included. On top and quark/gluon tagging both rates stay constant; on
+\MlstFtWeightDecay{} and batches of \MlstFtBatch{} jets, with the Ranger optimizer of
+pretraining in mixed precision. The new head is the whole classification head, its hidden layer
+included, with dropout \MlstFtHeadDropout{} after the hidden layer. On top and quark/gluon tagging both rates stay constant; on
 JetClass-II and JetClass the learning rate of the head falls to \MlstFtHeadDecayTo{} of its value
 over the last \MlstFtHeadDecayShare{} of the epochs, the default schedule of the training
 framework. On JetClass-II and JetClass, a model is fine-tuned for \MlstFtEpochsEThree{},
@@ -1057,7 +1058,14 @@ framework. On JetClass-II and JetClass, a model is fine-tuned for \MlstFtEpochsE
 \FtSizeEFour{}, \FtSizeEFive{} and \FtSizeESix{} training jets, and on top and quark/gluon
 tagging for \MlstFtBenchEpochs{} epochs at every size. An epoch draws at least
 \MlstFtMinEpochJets{} training jets, so at \FtSizeEThree{} jets it passes over the training set
-several times. The epoch with the highest validation accuracy is selected on the same
+several times; on JetClass-II and JetClass an epoch is \FtRecipeStepsEThree, \FtRecipeStepsEFour,
+\FtRecipeStepsEFive{} and \FtRecipeStepsESix{} steps at the four sizes. The pretrained models and
+the network trained from scratch get the same number of steps, so they are compared at equal
+training compute. This budget is small: ParT, trained from scratch on \LitPartSmallSetPercent\%
+of JetClass, needed about \LitPartSmallSetIterThousand{} thousand steps to
+converge~\cite[Sec.~5.1]{part}, more than our largest JetClass subset receives.
+Section~\ref{sec:finetune} therefore repeats the largest JetClass size with
+longer training. The epoch with the highest validation accuracy is selected on the same
 \MlstFtValJcii{} jets in every epoch on JetClass-II, and on jets drawn anew in each epoch on the
 other tasks: \MlstFtValSmall{} on JetClass, and on top and quark/gluon tagging \MlstFtValSmall{}
 at \FtSizeEThree{} and \FtSizeEFour{} training jets and \MlstFtValLarge{} at the larger sizes.

@@ -4435,361 +4435,415 @@
   },
   "LitAtlasUnifiedEffDropPercent": {
     "json_path": "facts[9].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "10"
   },
   "LitBukchinAncor": {
     "json_path": "facts[54].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "45.14"
   },
   "LitBukchinCoarse": {
     "json_path": "facts[49].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "33.83"
   },
   "LitBukchinFine": {
     "json_path": "facts[50].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "58.95"
   },
   "LitCmsPartMassLambda": {
     "json_path": "facts[24].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.05"
   },
   "LitCmsPartNClasses": {
     "json_path": "facts[23].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "37"
   },
   "LitDelphesVersion": {
     "json_path": "facts[6].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "3"
   },
   "LitGlopartNClasses": {
     "json_path": "facts[13].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "314"
   },
   "LitGlopartVoneNClasses": {
     "json_path": "facts[30].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "37"
   },
   "LitGlopartVthreeNClasses": {
     "json_path": "facts[25].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "374"
   },
   "LitGnTwoAuxRejectionDropPercent": {
     "json_path": "facts[22].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "30"
   },
   "LitHongDeclineClasses": {
     "json_path": "facts[42].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "\\ensuremath{10^{3}}"
   },
   "LitHongPretrainRuns": {
     "json_path": "facts[16].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2"
   },
   "LitHongSuperclasses": {
     "json_path": "facts[41].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "11"
   },
   "LitHuhCoarseClasses": {
     "json_path": "facts[26].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "127"
   },
   "LitHuhFineClasses": {
     "json_path": "facts[39].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "1000"
   },
   "LitHuhKnnGapPercent": {
     "json_path": "facts[27].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "15"
   },
   "LitHuhPascalDropMap": {
     "json_path": "facts[40].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.8"
   },
   "LitJetClassTwoJetRadius": {
     "json_path": "facts[8].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.8"
   },
   "LitJetClassTwoMaxResonanceMass": {
     "json_path": "facts[3].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "500"
   },
   "LitJetClassTwoNJetsMillion": {
     "json_path": "facts[0].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "139"
   },
   "LitJetClassTwoNQcdClasses": {
     "json_path": "facts[2].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "27"
   },
   "LitJetClassTwoNResonantClasses": {
     "json_path": "facts[1].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "161"
   },
   "LitJetClassTwoPileupMean": {
     "json_path": "facts[7].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "50"
   },
   "LitKornblithRho": {
     "json_path": "facts[51].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "\\ensuremath{-0.93}"
   },
   "LitMadgraphVersion": {
     "json_path": "facts[4].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.9.18"
   },
   "LitMahajanFtGapPp": {
     "json_path": "facts[55].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.1"
   },
   "LitMahajanLinearGapPercent": {
     "json_path": "facts[48].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "7"
   },
   "LitMehtaNCategories": {
     "json_path": "facts[15].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "eight"
   },
   "LitMpmBenefitJets": {
     "json_path": "facts[45].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "10k"
   },
   "LitObjectivesFewJets": {
     "json_path": "facts[44].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "\\ensuremath{10^{4}}"
   },
   "LitObjectivesFullJets": {
     "json_path": "facts[43].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "\\ensuremath{1.2\\times10^{6}}"
   },
   "LitPartFtEpochs": {
     "json_path": "facts[14].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "20"
   },
+  "LitPartJcTwoMAcc": {
+    "json_path": "facts[66].value",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "0.836"
+  },
+  "LitPartQgAucFt": {
+    "json_path": "facts[64].value",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "0.9151"
+  },
+  "LitPartQgAucScratch": {
+    "json_path": "facts[62].value",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "0.9121"
+  },
+  "LitPartQgRejFt": {
+    "json_path": "facts[65].value",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "107.9"
+  },
+  "LitPartQgRejScratch": {
+    "json_path": "facts[63].value",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "101.2"
+  },
+  "LitPartSmallSetIterThousand": {
+    "json_path": "facts[67].value",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "100"
+  },
+  "LitPartSmallSetPercent": {
+    "json_path": "facts[68].value",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "2"
+  },
+  "LitPartTopAucFt": {
+    "json_path": "facts[61].value",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "0.9877"
+  },
+  "LitPartTopAucScratch": {
+    "json_path": "facts[60].value",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "0.9858"
+  },
   "LitPartTopKinFeatures": {
     "json_path": "facts[53].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "7"
   },
   "LitPartTopRejFt": {
     "json_path": "facts[47].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2766"
   },
   "LitPartTopRejScratch": {
     "json_path": "facts[46].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "1602"
   },
   "LitPartTopSigEffPercent": {
     "json_path": "facts[52].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "30"
   },
   "LitPythiaVersion": {
     "json_path": "facts[5].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "8.3"
   },
   "LitQgJetRadius": {
     "json_path": "facts[57].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.4"
   },
   "LitQgPtMax": {
     "json_path": "facts[59].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "550"
   },
   "LitQgPtMin": {
     "json_path": "facts[58].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "500"
   },
   "LitRsthreelRuns": {
     "json_path": "facts[28].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "3"
   },
   "LitSophonAblationNClasses": {
     "json_path": "facts[35].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "42"
   },
   "LitSophonLookaheadAlpha": {
     "json_path": "facts[18].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.5"
   },
   "LitSophonLookaheadK": {
     "json_path": "facts[17].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "6"
   },
   "LitSophonPaperParticleBlocks": {
     "json_path": "facts[10].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "6"
   },
   "LitSophonParamsMillion": {
     "json_path": "facts[29].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.3"
   },
   "LitSophonRadamBetaOne": {
     "json_path": "facts[19].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.95"
   },
   "LitSophonRadamBetaTwo": {
     "json_path": "facts[20].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.999"
   },
   "LitSophonRadamEps": {
     "json_path": "facts[21].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "\\ensuremath{10^{-5}}"
   },
   "LitSophonSamplesPerEpochMillion": {
     "json_path": "facts[11].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "10"
   },
   "LitSophonScratchEpochs": {
     "json_path": "facts[38].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "50"
   },
   "LitSophonSubsetSamplesPerEpochMillion": {
     "json_path": "facts[12].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.5"
   },
   "LitSophonTransferBatch": {
     "json_path": "facts[37].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "1024"
   },
   "LitSophonTransferLr": {
     "json_path": "facts[56].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "5 \u00d7 10\u22124"
   },
   "LitSophonTransferSamplesMillion": {
     "json_path": "facts[36].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.5"
   },
   "LitSophonXLumi": {
     "json_path": "facts[32].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "40"
   },
   "LitSophonXMass": {
     "json_path": "facts[31].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "200"
   },
   "LitSophonXWindowHi": {
     "json_path": "facts[34].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "230"
   },
   "LitSophonXWindowLo": {
     "json_path": "facts[33].value",
-    "sha256": "8962413d3494665e5129a4e8ccbe475cfa81e9409d4ee0cb420844e3baf2e775",
+    "sha256": "7e652667f72ea13e5bcda9e046f7c86cbaf858ddfe89db941e1ffe0e52e04d54",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "150"
   },
@@ -5911,19 +5965,19 @@
   },
   "MlstCmpMlpCoarseMassOverCoarse": {
     "json_path": "used in the text",
-    "sha256": "41832fed5b9c467ff120014dafe41fdc30b3ae24e65aa05829239ab663d72935",
+    "sha256": "6bb44f8a1215f3e38f0fe9311169c120895637c2eedd724741fed1cbc0105e28",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstCmpMlpCoarseOverFull": {
     "json_path": "used in the text",
-    "sha256": "41832fed5b9c467ff120014dafe41fdc30b3ae24e65aa05829239ab663d72935",
+    "sha256": "6bb44f8a1215f3e38f0fe9311169c120895637c2eedd724741fed1cbc0105e28",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstCmpMlpResMassOverRes": {
     "json_path": "used in the text",
-    "sha256": "41832fed5b9c467ff120014dafe41fdc30b3ae24e65aa05829239ab663d72935",
+    "sha256": "6bb44f8a1215f3e38f0fe9311169c120895637c2eedd724741fed1cbc0105e28",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
@@ -6401,6 +6455,12 @@
     "source_file": "experiments/FT/k8s/job-ft-v2-legs-best70-l188-s3-raunav.yaml",
     "value": "1\\%"
   },
+  "MlstFtHeadDropout": {
+    "json_path": "fc_params dropout of the fine-tuning head",
+    "sha256": "19f59aa54a385c1161c33b2759d49b0e3d8f04f311ae5d1b76906c362e495962",
+    "source_file": "experiments/FT/k8s/job-ft-v2-legs-best70-l188-s3-raunav.yaml",
+    "value": "0.1"
+  },
   "MlstFtHeadMult": {
     "json_path": "cells[best70].head_lr_mult",
     "sha256": "871da19540c898ca697b1e0e69bd0b5d8d860095ca3e84b4ba610c33daf06502",
@@ -6469,7 +6529,7 @@
   },
   "MlstMassInitOverConstant": {
     "json_path": "used in the text",
-    "sha256": "41832fed5b9c467ff120014dafe41fdc30b3ae24e65aa05829239ab663d72935",
+    "sha256": "6bb44f8a1215f3e38f0fe9311169c120895637c2eedd724741fed1cbc0105e28",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
