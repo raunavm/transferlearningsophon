@@ -29,36 +29,45 @@
 %   MassLossShareVtwoOnesevenMassMatched -- experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass_matched
 %   DesignVtwoSecondGpu, DesignVtwoSecondGpuRuns -- the grid's job specs put every run index on one product
 %   per-arm parameters and MACs -- flops_by_arm.json (see docs/RECORD.md 2.1)
-%   fine-tuning: the read-out of the runs finished so far (best70_done18), not every run
+%   linear probes: 1 of 27 paper runs
+%   masked-input probes -- experiments/FIGS/data/v2/fillcontrol/
+%   mass regression -- experiments/FIGS/data/v2/head/*_mass.json
+%   mass sculpting -- experiments/FIGS/data/v2/head/*_sculpting.json
+%   fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/ (best70 and leg188)
+%   MlstCmpMlpCoarseMassOverCoarse -- used in the text, no v2 number
+%   MlstCmpMlpCoarseOverFull -- used in the text, no v2 number
+%   MlstCmpMlpResMassOverRes -- used in the text, no v2 number
+%   MlstMassInitOverConstant -- used in the text, no v2 number
 %
 % SKIPPED TABLES:
 %   T4 compute/parameters: no machine-readable source in the repository; docs/RECORD.md 2.1 names /data/results/mtx/flops/flops_by_arm.json, which is not committed
 
-\newcommand{\PendingPretrain}{\pending{pending v2: pretraining rerun: data order and dropout fixed by seed and epoch, identical initial trunk weights, each epoch reading one of five disjoint random parts of the rows of nearly every file, fixed validation sample, checkpoint at the first maximum within the last ten epochs}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Pretrain'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingProbes}{\pending{pending v2: frozen probes on the rerun models, at the first maximum within the last ten epochs and on the model whose weights are the average of the last ten epochs, BatchNorm statistics recomputed, with untrained-network and pooled-embedding reference rows}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Probes'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingPaired}{\pending{pending v2: paired ratios with run and test-sample errors on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Paired'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingLevels}{\pending{pending v2: the 64- and 30-class vocabularies}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Levels'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingLofo}{\pending{pending v2: the leave-one-family-out vocabularies}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Lofo'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingRecovery}{\pending{pending v2: label-tree recovery on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Recovery'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingRandom}{\pending{pending v2: the rerun's random partitions and flavour pair}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Random'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingFtHeldout}{\pending{pending v2: JetClass-II fine-tuning on files held out from pretraining}}  % experiments/FIGS/make_tables.py :: V2_PENDING['FtHeldout'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingFtRefs}{\pending{pending v2: fine-tuning from random initialisation and from the self-supervised model}}  % experiments/FIGS/make_tables.py :: V2_PENDING['FtRefs'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingBench}{\pending{pending v2: top tagging and quark/gluon tagging (Pythia and Herwig) fine-tuned from every rerun model}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Bench'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingSsl}{\pending{pending v2: the second and third self-supervised pretraining runs}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Ssl'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingMassLambda}{\pending{pending v2: the mass-output models with the loss weight matched in loss share}}  % experiments/FIGS/make_tables.py :: V2_PENDING['MassLambda'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingAnomaly}{\pending{pending v2: anomaly detection on the rerun models, per-run values}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Anomaly'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingRealData}{\pending{pending v2: the open-data fits on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['RealData'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
-\newcommand{\PendingConclusion}{\pending{pending v2: written once every input above is in}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Conclusion'] :: sha256 d556c4a3f4ec463e :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingPretrain}{\pending{pending v2: pretraining rerun: data order and dropout fixed by seed and epoch, identical initial trunk weights, each epoch reading one of five disjoint random parts of the rows of nearly every file, fixed validation sample, checkpoint at the first maximum within the last ten epochs}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Pretrain'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingProbes}{\pending{pending v2: frozen probes on the rerun models, at the first maximum within the last ten epochs and on the model whose weights are the average of the last ten epochs, BatchNorm statistics recomputed, with untrained-network and pooled-embedding reference rows}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Probes'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingPaired}{\pending{pending v2: paired ratios with run and test-sample errors on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Paired'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingLevels}{\pending{pending v2: the 64- and 30-class vocabularies}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Levels'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingLofo}{\pending{pending v2: the leave-one-family-out vocabularies}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Lofo'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingRecovery}{\pending{pending v2: label-tree recovery on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Recovery'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingRandom}{\pending{pending v2: the rerun's random partitions and flavour pair}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Random'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingFtHeldout}{\pending{pending v2: JetClass-II fine-tuning on files held out from pretraining}}  % experiments/FIGS/make_tables.py :: V2_PENDING['FtHeldout'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingFtRefs}{\pending{pending v2: fine-tuning from random initialisation and from the self-supervised model}}  % experiments/FIGS/make_tables.py :: V2_PENDING['FtRefs'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingBench}{\pending{pending v2: top tagging and quark/gluon tagging (Pythia and Herwig) fine-tuned from every rerun model}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Bench'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingSsl}{\pending{pending v2: the second and third self-supervised pretraining runs}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Ssl'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingMassLambda}{\pending{pending v2: the mass-output models with the loss weight matched in loss share}}  % experiments/FIGS/make_tables.py :: V2_PENDING['MassLambda'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingAnomaly}{\pending{pending v2: anomaly detection on the rerun models, per-run values}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Anomaly'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingRealData}{\pending{pending v2: the open-data fits on the rerun models}}  % experiments/FIGS/make_tables.py :: V2_PENDING['RealData'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
+\newcommand{\PendingConclusion}{\pending{pending v2: written once every input above is in}}  % experiments/FIGS/make_tables.py :: V2_PENDING['Conclusion'] :: sha256 ed3d825c4e818588 :: a marker, not a number: red in the draft until the input exists
 \newcommand{\AojChainDataset}{178}  % experiments/FIGS/data/aoj_checks_v2/selection_chain_v2.json :: n_dataset :: sha256 729d83085aba25f8
 \newcommand{\AojChainStaged}{12{,}589{,}467}  % experiments/FIGS/data/aoj_checks_v2/selection_chain_v2.json :: n_staged :: sha256 729d83085aba25f8
 \newcommand{\AojChainRhoWindow}{9{,}441{,}209}  % experiments/FIGS/data/aoj_checks_v2/selection_chain_v2.json :: n_rho_window :: sha256 729d83085aba25f8
 \newcommand{\AojNJetsFit}{4{,}194{,}846}  % experiments/FIGS/data/aoj_checks_v2/selection_chain_v2.json :: n_fit :: sha256 729d83085aba25f8
 \newcommand{\AojChainPtBins}{8}  % experiments/FIGS/data/aoj_checks_v2/selection_chain_v2.json :: n_pt_bins :: sha256 729d83085aba25f8
 \newcommand{\AojChainEtaMax}{2.40}  % experiments/FIGS/data/aoj_checks_v2/selection_chain_v2.json :: abs_eta_max :: sha256 729d83085aba25f8
-\newcommand{\MassLossShareVtwoOnesixtwoMass}{\pending{pending: realised mass-loss share in the rerun, 162 classes}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareVtwoOnesixtwoMass] :: sha256 d556c4a3f4ec463e :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.162+mass does not exist yet
-\newcommand{\MassLossShareVtwoOnesevenMass}{\pending{pending: realised mass-loss share in the rerun, 17 classes}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareVtwoOnesevenMass] :: sha256 d556c4a3f4ec463e :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass does not exist yet
-\newcommand{\MassLossShareVtwoOnesevenMassMatched}{\pending{pending: realised mass-loss share in the rerun, 17 classes, matched weight}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareVtwoOnesevenMassMatched] :: sha256 d556c4a3f4ec463e :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass_matched does not exist yet
+\newcommand{\MassLossShareVtwoOnesixtwoMass}{\pending{pending: realised mass-loss share in the rerun, 162 classes}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareVtwoOnesixtwoMass] :: sha256 ed3d825c4e818588 :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.162+mass does not exist yet
+\newcommand{\MassLossShareVtwoOnesevenMass}{\pending{pending: realised mass-loss share in the rerun, 17 classes}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareVtwoOnesevenMass] :: sha256 ed3d825c4e818588 :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass does not exist yet
+\newcommand{\MassLossShareVtwoOnesevenMassMatched}{\pending{pending: realised mass-loss share in the rerun, 17 classes, matched weight}}  % experiments/FIGS/make_tables.py :: SLOTS[MassLossShareVtwoOnesevenMassMatched] :: sha256 ed3d825c4e818588 :: a marker, not a number: experiments/FIGS/data/v2/mass_lambda_matched/loss_share.json :: shares.17+mass_matched does not exist yet
 \newcommand{\FtCoverageEThreeNClasses}{160}  % experiments/FT/data/jc2_v2_manifest.json :: class_coverage['train_N1000_s1.parquet'].n_classes_present :: sha256 4bd68655919b14e9
+\newcommand{\FtCoverageEFourNClasses}{183}  % experiments/FT/data/jc2_v2_manifest.json :: class_coverage['train_N10000_s1.parquet'].n_classes_present :: sha256 4bd68655919b14e9
 \newcommand{\FtCoverageEThreeMedian}{4}  % experiments/FT/data/jc2_v2_manifest.json :: class_coverage['train_N1000_s1.parquet'].median_per_present_class :: sha256 4bd68655919b14e9
 \newcommand{\FtCoverageEThreeOneJet}{23}  % experiments/FT/data/jc2_v2_manifest.json :: class_coverage['train_N1000_s1.parquet'].n_classes_with_one_jet :: sha256 4bd68655919b14e9
 \newcommand{\FtCoverageVoneEThreeNClasses}{161}  % experiments/FT/data/jc2_v1_coverage.json :: class_coverage['train_N1000_s1.parquet'].n_classes_present :: sha256 82652f57f708dc23
@@ -517,61 +526,66 @@
 \newcommand{\DesignPtMax}{2{,}500}  % configs/arms/L188.yaml :: selection :: sha256 d5a188dc80885515 :: GeV
 \newcommand{\DesignMsdMin}{20}  % configs/arms/L188.yaml :: selection :: sha256 d5a188dc80885515 :: GeV
 \newcommand{\DesignMsdMax}{500}  % configs/arms/L188.yaml :: selection :: sha256 d5a188dc80885515 :: GeV
-\newcommand{\LitJetClassTwoNJetsMillion}{139}  % experiments/FIGS/data/literature_facts.json :: facts[0].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. A, p. 11
-\newcommand{\LitJetClassTwoNResonantClasses}{161}  % experiments/FIGS/data/literature_facts.json :: facts[1].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. A, p. 11
-\newcommand{\LitJetClassTwoNQcdClasses}{27}  % experiments/FIGS/data/literature_facts.json :: facts[2].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. A, p. 11
-\newcommand{\LitJetClassTwoMaxResonanceMass}{500}  % experiments/FIGS/data/literature_facts.json :: facts[3].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 Sec. II, p. 2
-\newcommand{\LitMadgraphVersion}{2.9.18}  % experiments/FIGS/data/literature_facts.json :: facts[4].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. A, p. 11
-\newcommand{\LitPythiaVersion}{8.3}  % experiments/FIGS/data/literature_facts.json :: facts[5].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. A, p. 11
-\newcommand{\LitDelphesVersion}{3}  % experiments/FIGS/data/literature_facts.json :: facts[6].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. A, p. 11
-\newcommand{\LitJetClassTwoPileupMean}{50}  % experiments/FIGS/data/literature_facts.json :: facts[7].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 Sec. II, p. 2
-\newcommand{\LitJetClassTwoJetRadius}{0.8}  % experiments/FIGS/data/literature_facts.json :: facts[8].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 Sec. II, p. 2
-\newcommand{\LitAtlasUnifiedEffDropPercent}{10}  % experiments/FIGS/data/literature_facts.json :: facts[9].value :: sha256 06025b2faac0f4ef :: ATL-PHYS-PUB-2026-013 Sec. 6.5, p. 22
-\newcommand{\LitSophonPaperParticleBlocks}{6}  % experiments/FIGS/data/literature_facts.json :: facts[10].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitSophonSamplesPerEpochMillion}{10}  % experiments/FIGS/data/literature_facts.json :: facts[11].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitSophonSubsetSamplesPerEpochMillion}{2.5}  % experiments/FIGS/data/literature_facts.json :: facts[12].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. B.2, p. 12
-\newcommand{\LitGlopartNClasses}{314}  % experiments/FIGS/data/literature_facts.json :: facts[13].value :: sha256 06025b2faac0f4ef :: C. Li, PhD thesis, CERN-THESIS-2024-281 Sec. 11.2.1, p. 188
-\newcommand{\LitPartFtEpochs}{20}  % experiments/FIGS/data/literature_facts.json :: facts[14].value :: sha256 06025b2faac0f4ef :: arXiv:2202.03772 Sec. 5.2, p. 8
-\newcommand{\LitMehtaNCategories}{eight}  % experiments/FIGS/data/literature_facts.json :: facts[15].value :: sha256 06025b2faac0f4ef :: arXiv:2605.05556v2 Abstract
-\newcommand{\LitHongPretrainRuns}{2}  % experiments/FIGS/data/literature_facts.json :: facts[16].value :: sha256 06025b2faac0f4ef :: arXiv:2410.23129 App. A.1.1, p. 18
-\newcommand{\LitSophonLookaheadK}{6}  % experiments/FIGS/data/literature_facts.json :: facts[17].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitSophonLookaheadAlpha}{0.5}  % experiments/FIGS/data/literature_facts.json :: facts[18].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitSophonRadamBetaOne}{0.95}  % experiments/FIGS/data/literature_facts.json :: facts[19].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitSophonRadamBetaTwo}{0.999}  % experiments/FIGS/data/literature_facts.json :: facts[20].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitSophonRadamEps}{\ensuremath{10^{-5}}}  % experiments/FIGS/data/literature_facts.json :: facts[21].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitGnTwoAuxRejectionDropPercent}{30}  % experiments/FIGS/data/literature_facts.json :: facts[22].value :: sha256 06025b2faac0f4ef :: arXiv:2505.19689v2 (Nature Commun. 17 (2026) 541) p. 9
-\newcommand{\LitCmsPartNClasses}{37}  % experiments/FIGS/data/literature_facts.json :: facts[23].value :: sha256 06025b2faac0f4ef :: arXiv:2604.09809v1 (CMS-JME-25-001) Sec. 5.2, p. 7
-\newcommand{\LitCmsPartMassLambda}{0.05}  % experiments/FIGS/data/literature_facts.json :: facts[24].value :: sha256 06025b2faac0f4ef :: arXiv:2604.09809v1 (CMS-JME-25-001) Sec. 5.2, p. 7
-\newcommand{\LitGlopartVthreeNClasses}{374}  % experiments/FIGS/data/literature_facts.json :: facts[25].value :: sha256 06025b2faac0f4ef :: CMS-DP-2026-104 (CMS public page) Architecture and outputs
-\newcommand{\LitHuhCoarseClasses}{127}  % experiments/FIGS/data/literature_facts.json :: facts[26].value :: sha256 06025b2faac0f4ef :: arXiv:1608.08614v2 Sec. 5.3, p. 5
-\newcommand{\LitHuhKnnGapPercent}{15}  % experiments/FIGS/data/literature_facts.json :: facts[27].value :: sha256 06025b2faac0f4ef :: arXiv:1608.08614v2 Sec. 5.3, p. 5
-\newcommand{\LitRsthreelRuns}{3}  % experiments/FIGS/data/literature_facts.json :: facts[28].value :: sha256 06025b2faac0f4ef :: arXiv:2403.07066v2 (Phys. Rev. D 111 (2025) 032010) Sec. IV, p. 5
-\newcommand{\LitSophonParamsMillion}{2.3}  % experiments/FIGS/data/literature_facts.json :: facts[29].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. B.1, p. 12
-\newcommand{\LitGlopartVoneNClasses}{37}  % experiments/FIGS/data/literature_facts.json :: facts[30].value :: sha256 06025b2faac0f4ef :: CMS-DP-2026-104 (CMS public page) Model generations
-\newcommand{\LitSophonXMass}{200}  % experiments/FIGS/data/literature_facts.json :: facts[31].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 Sec. III, p. 3
-\newcommand{\LitSophonXLumi}{40}  % experiments/FIGS/data/literature_facts.json :: facts[32].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 Sec. III, Fig. 2
-\newcommand{\LitSophonXWindowLo}{150}  % experiments/FIGS/data/literature_facts.json :: facts[33].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 Sec. III, Fig. 2
-\newcommand{\LitSophonXWindowHi}{230}  % experiments/FIGS/data/literature_facts.json :: facts[34].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 Sec. III, Fig. 2
-\newcommand{\LitSophonAblationNClasses}{42}  % experiments/FIGS/data/literature_facts.json :: facts[35].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 Sec. III
-\newcommand{\LitSophonTransferSamplesMillion}{2.5}  % experiments/FIGS/data/literature_facts.json :: facts[36].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. B.5, p. 13
-\newcommand{\LitSophonTransferBatch}{1024}  % experiments/FIGS/data/literature_facts.json :: facts[37].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. B.5, p. 13
-\newcommand{\LitSophonScratchEpochs}{50}  % experiments/FIGS/data/literature_facts.json :: facts[38].value :: sha256 06025b2faac0f4ef :: arXiv:2405.12972v1 App. B.3
-\newcommand{\LitHuhFineClasses}{1000}  % experiments/FIGS/data/literature_facts.json :: facts[39].value :: sha256 06025b2faac0f4ef :: arXiv:1608.08614v2 Sec. 1, p. 1
-\newcommand{\LitHuhPascalDropMap}{2.8}  % experiments/FIGS/data/literature_facts.json :: facts[40].value :: sha256 06025b2faac0f4ef :: arXiv:1608.08614v2 Sec. 1, p. 1
-\newcommand{\LitHongSuperclasses}{11}  % experiments/FIGS/data/literature_facts.json :: facts[41].value :: sha256 06025b2faac0f4ef :: arXiv:2410.23129 Sec. 6.2
-\newcommand{\LitHongDeclineClasses}{\ensuremath{10^{3}}}  % experiments/FIGS/data/literature_facts.json :: facts[42].value :: sha256 06025b2faac0f4ef :: arXiv:2410.23129 Sec. 6.2
-\newcommand{\LitObjectivesFullJets}{\ensuremath{1.2\times10^{6}}}  % experiments/FIGS/data/literature_facts.json :: facts[43].value :: sha256 06025b2faac0f4ef :: arXiv:2606.14870 Sec. IV A
-\newcommand{\LitObjectivesFewJets}{\ensuremath{10^{4}}}  % experiments/FIGS/data/literature_facts.json :: facts[44].value :: sha256 06025b2faac0f4ef :: arXiv:2606.14870 Sec. IV A
-\newcommand{\LitMpmBenefitJets}{10k}  % experiments/FIGS/data/literature_facts.json :: facts[45].value :: sha256 06025b2faac0f4ef :: arXiv:2401.13537 Sec. V
-\newcommand{\LitPartTopRejScratch}{1602}  % experiments/FIGS/data/literature_facts.json :: facts[46].value :: sha256 06025b2faac0f4ef :: arXiv:2202.03772 Table 5
-\newcommand{\LitPartTopRejFt}{2766}  % experiments/FIGS/data/literature_facts.json :: facts[47].value :: sha256 06025b2faac0f4ef :: arXiv:2202.03772 Table 5
-\newcommand{\LitMahajanLinearGapPercent}{7}  % experiments/FIGS/data/literature_facts.json :: facts[48].value :: sha256 06025b2faac0f4ef :: arXiv:1805.00932 Sec. 3.1.2
-\newcommand{\LitBukchinCoarse}{33.83}  % experiments/FIGS/data/literature_facts.json :: facts[49].value :: sha256 06025b2faac0f4ef :: arXiv:2012.03515 Table 2, LIVING-17 all-way
-\newcommand{\LitBukchinFine}{58.95}  % experiments/FIGS/data/literature_facts.json :: facts[50].value :: sha256 06025b2faac0f4ef :: arXiv:2012.03515 Table 2, LIVING-17 all-way
-\newcommand{\LitKornblithRho}{\ensuremath{-0.93}}  % experiments/FIGS/data/literature_facts.json :: facts[51].value :: sha256 06025b2faac0f4ef :: arXiv:2010.16402 Sec. 3.4
-\newcommand{\LitPartTopSigEffPercent}{30}  % experiments/FIGS/data/literature_facts.json :: facts[52].value :: sha256 06025b2faac0f4ef :: arXiv:2202.03772 Table 5 (column Rej30%)
-\newcommand{\LitPartTopKinFeatures}{7}  % experiments/FIGS/data/literature_facts.json :: facts[53].value :: sha256 06025b2faac0f4ef :: arXiv:2202.03772 Sec. 5.2
-\newcommand{\LitBukchinAncor}{45.14}  % experiments/FIGS/data/literature_facts.json :: facts[54].value :: sha256 06025b2faac0f4ef :: arXiv:2012.03515 Table 2, LIVING-17 all-way
+\newcommand{\LitJetClassTwoNJetsMillion}{139}  % experiments/FIGS/data/literature_facts.json :: facts[0].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitJetClassTwoNResonantClasses}{161}  % experiments/FIGS/data/literature_facts.json :: facts[1].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitJetClassTwoNQcdClasses}{27}  % experiments/FIGS/data/literature_facts.json :: facts[2].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitJetClassTwoMaxResonanceMass}{500}  % experiments/FIGS/data/literature_facts.json :: facts[3].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 Sec. II, p. 2
+\newcommand{\LitMadgraphVersion}{2.9.18}  % experiments/FIGS/data/literature_facts.json :: facts[4].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitPythiaVersion}{8.3}  % experiments/FIGS/data/literature_facts.json :: facts[5].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitDelphesVersion}{3}  % experiments/FIGS/data/literature_facts.json :: facts[6].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. A, p. 11
+\newcommand{\LitJetClassTwoPileupMean}{50}  % experiments/FIGS/data/literature_facts.json :: facts[7].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 Sec. II, p. 2
+\newcommand{\LitJetClassTwoJetRadius}{0.8}  % experiments/FIGS/data/literature_facts.json :: facts[8].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 Sec. II, p. 2
+\newcommand{\LitAtlasUnifiedEffDropPercent}{10}  % experiments/FIGS/data/literature_facts.json :: facts[9].value :: sha256 b8f1614ee2b733e0 :: ATL-PHYS-PUB-2026-013 Sec. 6.5, p. 22
+\newcommand{\LitSophonPaperParticleBlocks}{6}  % experiments/FIGS/data/literature_facts.json :: facts[10].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitSophonSamplesPerEpochMillion}{10}  % experiments/FIGS/data/literature_facts.json :: facts[11].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitSophonSubsetSamplesPerEpochMillion}{2.5}  % experiments/FIGS/data/literature_facts.json :: facts[12].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.2, p. 12
+\newcommand{\LitGlopartNClasses}{314}  % experiments/FIGS/data/literature_facts.json :: facts[13].value :: sha256 b8f1614ee2b733e0 :: C. Li, PhD thesis, CERN-THESIS-2024-281 Sec. 11.2.1, p. 188
+\newcommand{\LitPartFtEpochs}{20}  % experiments/FIGS/data/literature_facts.json :: facts[14].value :: sha256 b8f1614ee2b733e0 :: arXiv:2202.03772 Sec. 5.2, p. 8
+\newcommand{\LitMehtaNCategories}{eight}  % experiments/FIGS/data/literature_facts.json :: facts[15].value :: sha256 b8f1614ee2b733e0 :: arXiv:2605.05556v2 Abstract
+\newcommand{\LitHongPretrainRuns}{2}  % experiments/FIGS/data/literature_facts.json :: facts[16].value :: sha256 b8f1614ee2b733e0 :: arXiv:2410.23129 App. A.1.1, p. 18
+\newcommand{\LitSophonLookaheadK}{6}  % experiments/FIGS/data/literature_facts.json :: facts[17].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitSophonLookaheadAlpha}{0.5}  % experiments/FIGS/data/literature_facts.json :: facts[18].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitSophonRadamBetaOne}{0.95}  % experiments/FIGS/data/literature_facts.json :: facts[19].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitSophonRadamBetaTwo}{0.999}  % experiments/FIGS/data/literature_facts.json :: facts[20].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitSophonRadamEps}{\ensuremath{10^{-5}}}  % experiments/FIGS/data/literature_facts.json :: facts[21].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitGnTwoAuxRejectionDropPercent}{30}  % experiments/FIGS/data/literature_facts.json :: facts[22].value :: sha256 b8f1614ee2b733e0 :: arXiv:2505.19689v2 (Nature Commun. 17 (2026) 541) p. 9
+\newcommand{\LitCmsPartNClasses}{37}  % experiments/FIGS/data/literature_facts.json :: facts[23].value :: sha256 b8f1614ee2b733e0 :: arXiv:2604.09809v1 (CMS-JME-25-001) Sec. 5.2, p. 7
+\newcommand{\LitCmsPartMassLambda}{0.05}  % experiments/FIGS/data/literature_facts.json :: facts[24].value :: sha256 b8f1614ee2b733e0 :: arXiv:2604.09809v1 (CMS-JME-25-001) Sec. 5.2, p. 7
+\newcommand{\LitGlopartVthreeNClasses}{374}  % experiments/FIGS/data/literature_facts.json :: facts[25].value :: sha256 b8f1614ee2b733e0 :: CMS-DP-2026-104 (CMS public page) Architecture and outputs
+\newcommand{\LitHuhCoarseClasses}{127}  % experiments/FIGS/data/literature_facts.json :: facts[26].value :: sha256 b8f1614ee2b733e0 :: arXiv:1608.08614v2 Sec. 5.3, p. 5
+\newcommand{\LitHuhKnnGapPercent}{15}  % experiments/FIGS/data/literature_facts.json :: facts[27].value :: sha256 b8f1614ee2b733e0 :: arXiv:1608.08614v2 Sec. 5.3, p. 5
+\newcommand{\LitRsthreelRuns}{3}  % experiments/FIGS/data/literature_facts.json :: facts[28].value :: sha256 b8f1614ee2b733e0 :: arXiv:2403.07066v2 (Phys. Rev. D 111 (2025) 032010) Sec. IV, p. 5
+\newcommand{\LitSophonParamsMillion}{2.3}  % experiments/FIGS/data/literature_facts.json :: facts[29].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.1, p. 12
+\newcommand{\LitGlopartVoneNClasses}{37}  % experiments/FIGS/data/literature_facts.json :: facts[30].value :: sha256 b8f1614ee2b733e0 :: CMS-DP-2026-104 (CMS public page) Model generations
+\newcommand{\LitSophonXMass}{200}  % experiments/FIGS/data/literature_facts.json :: facts[31].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 Sec. III, p. 3
+\newcommand{\LitSophonXLumi}{40}  % experiments/FIGS/data/literature_facts.json :: facts[32].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 Sec. III, Fig. 2
+\newcommand{\LitSophonXWindowLo}{150}  % experiments/FIGS/data/literature_facts.json :: facts[33].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 Sec. III, Fig. 2
+\newcommand{\LitSophonXWindowHi}{230}  % experiments/FIGS/data/literature_facts.json :: facts[34].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 Sec. III, Fig. 2
+\newcommand{\LitSophonAblationNClasses}{42}  % experiments/FIGS/data/literature_facts.json :: facts[35].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 Sec. III
+\newcommand{\LitSophonTransferSamplesMillion}{2.5}  % experiments/FIGS/data/literature_facts.json :: facts[36].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.5, p. 13
+\newcommand{\LitSophonTransferBatch}{1024}  % experiments/FIGS/data/literature_facts.json :: facts[37].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.5, p. 13
+\newcommand{\LitSophonScratchEpochs}{50}  % experiments/FIGS/data/literature_facts.json :: facts[38].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.3
+\newcommand{\LitHuhFineClasses}{1000}  % experiments/FIGS/data/literature_facts.json :: facts[39].value :: sha256 b8f1614ee2b733e0 :: arXiv:1608.08614v2 Sec. 1, p. 1
+\newcommand{\LitHuhPascalDropMap}{2.8}  % experiments/FIGS/data/literature_facts.json :: facts[40].value :: sha256 b8f1614ee2b733e0 :: arXiv:1608.08614v2 Sec. 1, p. 1
+\newcommand{\LitHongSuperclasses}{11}  % experiments/FIGS/data/literature_facts.json :: facts[41].value :: sha256 b8f1614ee2b733e0 :: arXiv:2410.23129 Sec. 6.2
+\newcommand{\LitHongDeclineClasses}{\ensuremath{10^{3}}}  % experiments/FIGS/data/literature_facts.json :: facts[42].value :: sha256 b8f1614ee2b733e0 :: arXiv:2410.23129 Sec. 6.2
+\newcommand{\LitObjectivesFullJets}{\ensuremath{1.2\times10^{6}}}  % experiments/FIGS/data/literature_facts.json :: facts[43].value :: sha256 b8f1614ee2b733e0 :: arXiv:2606.14870 Sec. IV A
+\newcommand{\LitObjectivesFewJets}{\ensuremath{10^{4}}}  % experiments/FIGS/data/literature_facts.json :: facts[44].value :: sha256 b8f1614ee2b733e0 :: arXiv:2606.14870 Sec. IV A
+\newcommand{\LitMpmBenefitJets}{10k}  % experiments/FIGS/data/literature_facts.json :: facts[45].value :: sha256 b8f1614ee2b733e0 :: arXiv:2401.13537 Sec. V
+\newcommand{\LitPartTopRejScratch}{1602}  % experiments/FIGS/data/literature_facts.json :: facts[46].value :: sha256 b8f1614ee2b733e0 :: arXiv:2202.03772 Table 5
+\newcommand{\LitPartTopRejFt}{2766}  % experiments/FIGS/data/literature_facts.json :: facts[47].value :: sha256 b8f1614ee2b733e0 :: arXiv:2202.03772 Table 5
+\newcommand{\LitMahajanLinearGapPercent}{7}  % experiments/FIGS/data/literature_facts.json :: facts[48].value :: sha256 b8f1614ee2b733e0 :: arXiv:1805.00932 Sec. 3.1.2
+\newcommand{\LitBukchinCoarse}{33.83}  % experiments/FIGS/data/literature_facts.json :: facts[49].value :: sha256 b8f1614ee2b733e0 :: arXiv:2012.03515 Table 2, LIVING-17 all-way
+\newcommand{\LitBukchinFine}{58.95}  % experiments/FIGS/data/literature_facts.json :: facts[50].value :: sha256 b8f1614ee2b733e0 :: arXiv:2012.03515 Table 2, LIVING-17 all-way
+\newcommand{\LitKornblithRho}{\ensuremath{-0.93}}  % experiments/FIGS/data/literature_facts.json :: facts[51].value :: sha256 b8f1614ee2b733e0 :: arXiv:2010.16402 Sec. 3.4
+\newcommand{\LitPartTopSigEffPercent}{30}  % experiments/FIGS/data/literature_facts.json :: facts[52].value :: sha256 b8f1614ee2b733e0 :: arXiv:2202.03772 Table 5 (column Rej30%)
+\newcommand{\LitPartTopKinFeatures}{7}  % experiments/FIGS/data/literature_facts.json :: facts[53].value :: sha256 b8f1614ee2b733e0 :: arXiv:2202.03772 Sec. 5.2
+\newcommand{\LitBukchinAncor}{45.14}  % experiments/FIGS/data/literature_facts.json :: facts[54].value :: sha256 b8f1614ee2b733e0 :: arXiv:2012.03515 Table 2, LIVING-17 all-way
+\newcommand{\LitMahajanFtGapPp}{0.1}  % experiments/FIGS/data/literature_facts.json :: facts[55].value :: sha256 b8f1614ee2b733e0 :: arXiv:1805.00932 Fig. 1, ImageNet-9k target
+\newcommand{\LitSophonTransferLr}{5 × 10−4}  % experiments/FIGS/data/literature_facts.json :: facts[56].value :: sha256 b8f1614ee2b733e0 :: arXiv:2405.12972v1 App. B.5
+\newcommand{\LitQgJetRadius}{0.4}  % experiments/FIGS/data/literature_facts.json :: facts[57].value :: sha256 b8f1614ee2b733e0 :: arXiv:1810.05165 Sec. 4.1
+\newcommand{\LitQgPtMin}{500}  % experiments/FIGS/data/literature_facts.json :: facts[58].value :: sha256 b8f1614ee2b733e0 :: arXiv:1810.05165 Sec. 4.1
+\newcommand{\LitQgPtMax}{550}  % experiments/FIGS/data/literature_facts.json :: facts[59].value :: sha256 b8f1614ee2b733e0 :: arXiv:1810.05165 Sec. 4.1
 \newcommand{\DesignMassLambda}{5.0}  % experiments/MTX/k8s/job-mtx-l162_mass-s1-raunav.yaml :: --mass-lambda :: sha256 8882459fe5520795 :: identical in all ten mass-output pretraining specs
 \newcommand{\FtRecipeNRuns}{264}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json :: runs (count), reported cells :: sha256 7dc8c791343e1b6f
 \newcommand{\FtRecipeLr}{\ensuremath{1\times10^{-4}}}  % experiments/FIGS/data/ft_recipes/recipes_w2b_bench_v2_v3.json :: runs[*].lr, pretrained starts :: sha256 7dc8c791343e1b6f
@@ -1121,6 +1135,8 @@
 \newcommand{\RandVtwoMergedMax}{three}  % configs/labelmaps/rand_v2_selection.json :: merged_in :: sha256 98cf52d49c7d2f02 :: partitions merging each probe pair, checked on the map
 \newcommand{\RandVtwoShareTol}{5\%}  % configs/labelmaps/rand_v2_selection.json :: realised_tolerance :: sha256 98cf52d49c7d2f02 :: largest relative deviation of a realised group share from its target (rule 3)
 \newcommand{\RandVtwoTrials}{32}  % scripts/build_rand_control.py :: TRIALS :: sha256 5bc91d77a3f2e81f :: share-matched assignments drawn per random partition; the one sharing the fewest merged pairs with the 17-class label set is kept
+\newcommand{\RandVtwoPoolDraws}{6{,}600}  % configs/labelmaps/rand_v2_selection.json :: pool.draws :: sha256 98cf52d49c7d2f02 :: candidate partitions drawn (seeds) before the realised-share rule
+\newcommand{\RandVtwoPoolPass}{27}  % configs/labelmaps/rand_v2_selection.json :: rule3_seeds (count) :: sha256 98cf52d49c7d2f02 :: candidate partitions meeting the realised-share rule (rule 3)
 \newcommand{\RandFlavSplitOrbit}{\ensuremath{X\to YY\to QQQQ}}  % configs/labelmaps/flavour_pair.v2.json :: split_orbit :: sha256 3b79ce5e44c1e2f4 :: the decays F1 cuts, Q any quark
 \newcommand{\RandFlavSplitOrbitClasses}{22}  % configs/labelmaps/flavour_pair_map.v2.csv :: classes whose orbit is split_orbit (count) :: sha256 9aab235099ceac43 :: classes of the split orbit
 \newcommand{\RandFlavCutClasses}{11}  % configs/labelmaps/flavour_pair.v2.json :: split_classes_moved (count) :: sha256 3b79ce5e44c1e2f4 :: classes of the split orbit that F1 moves: those with a b quark
@@ -1135,10 +1151,11 @@
 \newcommand{\RandFlavFonerShareDev}{0.77\%}  % configs/labelmaps/realised_native_shares.v2.json :: share summed per FLAV_F1R and FLAV_F1 group of flavour_pair_map.v2.csv (largest relative difference) :: sha256 5728c12e88fa3683 :: realised shares from the final loader's dry run
 \newcommand{\MlstNRunsWord}{three}  % configs/arms/v2_paper_runs.txt :: runs of L188/L162/R42_Q1/R16_Q1 :: sha256 b04562b14ea8cbc7 :: pretraining runs per configuration
 \newcommand{\MlstMassNRunsWord}{two}  % configs/arms/v2_paper_runs.txt :: runs of L162_MASS/R16_Q1_MASS :: sha256 b04562b14ea8cbc7 :: pretraining runs per configuration
-\newcommand{\LpCMin}{\ensuremath{1\times10^{-3}}}  % experiments/EVAL/linear_probe_v2.py :: C_GRID :: sha256 6096b83d8e6f9483 :: smallest inverse regularisation
-\newcommand{\LpCMax}{10}  % experiments/EVAL/linear_probe_v2.py :: C_GRID :: sha256 6096b83d8e6f9483 :: largest inverse regularisation
-\newcommand{\LpNTestJcii}{2{,}000{,}000}  % experiments/EVAL/linear_probe_v2.py :: TEST_FIRST.jc2 :: sha256 6096b83d8e6f9483 :: JetClass-II test jets
-\newcommand{\LpNTestAucJcii}{500{,}000}  % experiments/EVAL/linear_probe_v2.py :: TEST_FIRST.jc2 / AUC_STRIDE :: sha256 6096b83d8e6f9483 :: JetClass-II test jets of the macro AUC
+\newcommand{\LpCMin}{\ensuremath{1\times10^{-3}}}  % experiments/EVAL/linear_probe_v2.py :: C_GRID :: sha256 982e09acbea2cea4 :: smallest inverse regularisation
+\newcommand{\LpCMax}{100}  % experiments/EVAL/linear_probe_v2.py :: C_GRID :: sha256 982e09acbea2cea4 :: largest inverse regularisation
+\newcommand{\LpNTestJcii}{2{,}000{,}000}  % experiments/EVAL/linear_probe_v2.py :: TEST_FIRST.jc2 :: sha256 982e09acbea2cea4 :: JetClass-II test jets
+\newcommand{\LpNTestAucJcii}{500{,}000}  % experiments/EVAL/linear_probe_v2.py :: TEST_FIRST.jc2 / AUC_STRIDE :: sha256 982e09acbea2cea4 :: JetClass-II test jets of the macro AUC
+\newcommand{\LpConvergedGrad}{\ensuremath{1\times10^{-5}}}  % experiments/EVAL/linear_probe_v2.py :: CONVERGED_GRAD :: sha256 982e09acbea2cea4 :: largest gradient component a converged probe ends below
 \newcommand{\FillNFeatures}{17}  % configs/finetune/TopReference.yaml :: inputs.pf_features.vars (count) :: sha256 501a6ffe5d0a8051 :: per-particle input features of the network
 \newcommand{\FillTopNZero}{10}  % configs/finetune/TopReference.yaml :: inputs.pf_features.vars, part_zero_* (count) :: sha256 501a6ffe5d0a8051 :: features the data set lacks, set to zero
 \newcommand{\FillTopNPresent}{7}  % configs/finetune/TopReference.yaml :: inputs.pf_features.vars, not part_zero_* (count) :: sha256 501a6ffe5d0a8051 :: features the data set provides
@@ -1167,8 +1184,8 @@
 \newcommand{\DesignWeaverVersion}{0.4.17}  % experiments/MTX/pretrain_v2.py :: the weaver release whose loop it reproduces :: sha256 95da5a6e029855ee
 \newcommand{\DesignMeiFactor}{1.1}  % src/stats/mde.py :: MEI_LOG = ln(factor) :: sha256 626468dcc37940bb :: the smallest effect of interest, as a factor
 \newcommand{\DesignVtwoGpu}{RTX 3090}  % experiments/MTX/k8s/v2/grid/job-mtx2-flavf0-s1-raunav.yaml :: nodeAffinity nvidia.com/gpu.product :: sha256 960cad1691314980 :: the product of run index 1, every configuration
-\newcommand{\DesignVtwoSecondGpu}{\pending{pending: the GPU type of each run index}}  % experiments/FIGS/make_tables.py :: emit_v2_recipe[DesignVtwoSecondGpu] :: sha256 d556c4a3f4ec463e :: a marker, not a number: the grid's job specs put every run index on one product
-\newcommand{\DesignVtwoSecondGpuRuns}{\pending{pending: the GPU type of each run index}}  % experiments/FIGS/make_tables.py :: emit_v2_recipe[DesignVtwoSecondGpuRuns] :: sha256 d556c4a3f4ec463e :: a marker, not a number: the grid's job specs put every run index on one product
+\newcommand{\DesignVtwoSecondGpu}{\pending{pending: the GPU type of each run index}}  % experiments/FIGS/make_tables.py :: emit_v2_recipe[DesignVtwoSecondGpu] :: sha256 ed3d825c4e818588 :: a marker, not a number: the grid's job specs put every run index on one product
+\newcommand{\DesignVtwoSecondGpuRuns}{\pending{pending: the GPU type of each run index}}  % experiments/FIGS/make_tables.py :: emit_v2_recipe[DesignVtwoSecondGpuRuns] :: sha256 ed3d825c4e818588 :: a marker, not a number: the grid's job specs put every run index on one product
 \newcommand{\MassNRunsWord}{five}  % experiments/FIGS/data/probe_ladder_mass2x2_mlp2/s1.json :: per-seed files (count) :: sha256 906e778d7043fe67 :: pretraining runs of each mass-output configuration
 \newcommand{\MassOmaLinearOnesixtwo}{\ensuremath{(2.36 \pm 0.06)\times10^{-3}}}  % experiments/FIGS/data/probe_ladder_v2_mlp2/analysis/seed_level_results.json :: table[bvc_resonant,linear,162].auc :: sha256 53e1ec81343ac2c1 :: 1-AUC, mean +- SD over 5 seeds
 \newcommand{\MassOmaLinearOnesixtwoMass}{\ensuremath{(2.62 \pm 0.08)\times10^{-3}}}  % experiments/FIGS/data/probe_ladder_mass2x2_mlp2/s1.json :: tasks.bvc_resonant.arms.l162mass-s*.linear.auc :: sha256 906e778d7043fe67 :: 1-AUC, mean +- SD over the 5 per-seed files
@@ -1824,115 +1841,263 @@
 \newcommand{\AccSdLegTwoSophonPublicEFive}{0.00049}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N100000.accuracy_sd :: sha256 701c58c3240274bb :: wave 1, superseded
 \newcommand{\AccLegTwoSophonPublicESix}{0.84632}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N1000000.accuracy_mean :: sha256 701c58c3240274bb :: wave 1, superseded; 3 fine-tuning seeds
 \newcommand{\AccSdLegTwoSophonPublicESix}{0.00031}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N1000000.accuracy_sd :: sha256 701c58c3240274bb :: wave 1, superseded
-\newcommand{\MlstProbeRunsDone}{27}  % experiments/FIGS/data/v2/index.json :: runs with a linear-probe fit (count) :: sha256 3c51d68a87d41689 :: of the paper's runs
+\newcommand{\MlstProbeRunsDone}{1}  % experiments/FIGS/data/v2/index.json :: runs with a linear-probe fit (count) :: sha256 305c6677da885450 :: of the paper's runs
 \newcommand{\MlstPaperRuns}{27}  % configs/arms/v2_paper_runs.txt :: runs (count) :: sha256 b04562b14ea8cbc7
-\newcommand{\MlstCmpJcTwoResOverFull}{0.999\,\ensuremath{\pm}\,0.005}  % experiments/FIGS/data/v2/index.json :: linear probe jc2 N=1000000: (1 - macro_auc_ovr) of L162 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcTwoMidOverFull}{1.134\,\ensuremath{\pm}\,0.005}  % experiments/FIGS/data/v2/index.json :: linear probe jc2 N=1000000: (1 - macro_auc_ovr) of R42_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcTwoCoarseOverFull}{1.442\,\ensuremath{\pm}\,0.020}  % experiments/FIGS/data/v2/index.json :: linear probe jc2 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcTwoFullOverInit}{0.1065\,\ensuremath{\pm}\,0.0011\ensuremath{^{*}}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2 N=1000000: (1 - macro_auc_ovr) of L188 over INIT, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcTwoCoarseOverInit}{0.1536\,\ensuremath{\pm}\,0.0028\ensuremath{^{*}}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over INIT, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcTwoResMassOverRes}{1.020\,\ensuremath{\pm}\,0.004}  % experiments/FIGS/data/v2/index.json :: linear probe jc2 N=1000000: (1 - macro_auc_ovr) of L162_MASS over L162, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcTwoCoarseMassOverCoarse}{1.017\,\ensuremath{\pm}\,0.031}  % experiments/FIGS/data/v2/index.json :: linear probe jc2 N=1000000: (1 - macro_auc_ovr) of R16_Q1_MASS over R16_Q1, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcTwoFzeroOverFull}{1.372\,\ensuremath{\pm}\,0.024}  % experiments/FIGS/data/v2/index.json :: linear probe jc2 N=1000000: (1 - macro_auc_ovr) of FLAV_F0 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcTwoFoneOverFull}{1.1853\,\ensuremath{\pm}\,0.0034}  % experiments/FIGS/data/v2/index.json :: linear probe jc2 N=1000000: (1 - macro_auc_ovr) of FLAV_F1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcTwoFonerOverFull}{1.1657\,\ensuremath{\pm}\,0.0006}  % experiments/FIGS/data/v2/index.json :: linear probe jc2 N=1000000: (1 - macro_auc_ovr) of FLAV_F1R over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcTwoRandOverFull}{1.093\,\ensuremath{\pm}\,0.007}  % experiments/FIGS/data/v2/index.json :: linear probe jc2 N=1000000: (1 - macro_auc_ovr) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcOneResOverFull}{0.997\,\ensuremath{\pm}\,0.023}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of L162 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcOneMidOverFull}{1.004\,\ensuremath{\pm}\,0.031}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R42_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcOneCoarseOverFull}{1.10\,\ensuremath{\pm}\,0.04}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcOneFullOverInit}{0.185\,\ensuremath{\pm}\,0.004}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of L188 over INIT, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcOneCoarseOverInit}{0.203\,\ensuremath{\pm}\,0.005}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over INIT, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcOneResMassOverRes}{0.974\,\ensuremath{\pm}\,0.021}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of L162_MASS over L162, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcOneCoarseMassOverCoarse}{0.991\,\ensuremath{\pm}\,0.023}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R16_Q1_MASS over R16_Q1, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcOneFzeroOverFull}{1.18\,\ensuremath{\pm}\,0.04}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of FLAV_F0 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcOneFoneOverFull}{1.0699\,\ensuremath{\pm}\,0.0016}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of FLAV_F1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcOneFonerOverFull}{1.112\,\ensuremath{\pm}\,0.033}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of FLAV_F1R over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpJcOneRandOverFull}{1.152\,\ensuremath{\pm}\,0.011}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpTopResOverFull}{0.88\,\ensuremath{\pm}\,0.07}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of L162 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpTopMidOverFull}{1.06\,\ensuremath{\pm}\,0.19}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of R42_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpTopCoarseOverFull}{0.99\,\ensuremath{\pm}\,0.12}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of R16_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpTopFullOverInit}{0.97\,\ensuremath{\pm}\,0.14}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of L188 over INIT, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpTopCoarseOverInit}{0.94\,\ensuremath{\pm}\,0.07}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of R16_Q1 over INIT, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpTopResMassOverRes}{0.886\,\ensuremath{\pm}\,0.032}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of L162_MASS over L162, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpTopCoarseMassOverCoarse}{0.78\,\ensuremath{\pm}\,0.08}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpTopFzeroOverFull}{0.91\,\ensuremath{\pm}\,0.08}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of FLAV_F0 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpTopFoneOverFull}{0.82\,\ensuremath{\pm}\,0.08}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of FLAV_F1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpTopFonerOverFull}{1.04\,\ensuremath{\pm}\,0.23}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of FLAV_F1R over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpTopRandOverFull}{1.07\,\ensuremath{\pm}\,0.22}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgResOverFull}{1.07\,\ensuremath{\pm}\,0.11}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of L162 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgMidOverFull}{1.06\,\ensuremath{\pm}\,0.09}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of R42_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgCoarseOverFull}{1.10\,\ensuremath{\pm}\,0.08}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of R16_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgFullOverInit}{0.88\,\ensuremath{\pm}\,0.05}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of L188 over INIT, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgCoarseOverInit}{0.96\,\ensuremath{\pm}\,0.08}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of R16_Q1 over INIT, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgResMassOverRes}{0.920\,\ensuremath{\pm}\,0.035}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of L162_MASS over L162, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgCoarseMassOverCoarse}{0.99\,\ensuremath{\pm}\,0.09}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgFzeroOverFull}{1.02\,\ensuremath{\pm}\,0.08}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of FLAV_F0 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgFoneOverFull}{1.054\,\ensuremath{\pm}\,0.028}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of FLAV_F1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgFonerOverFull}{1.06\,\ensuremath{\pm}\,0.11}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of FLAV_F1R over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgRandOverFull}{1.09\,\ensuremath{\pm}\,0.11}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgHerwigResOverFull}{1.02\,\ensuremath{\pm}\,0.04}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of L162 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgHerwigMidOverFull}{1.017\,\ensuremath{\pm}\,0.021}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of R42_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgHerwigCoarseOverFull}{1.025\,\ensuremath{\pm}\,0.022}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of R16_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgHerwigFullOverInit}{0.964\,\ensuremath{\pm}\,0.012}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of L188 over INIT, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgHerwigCoarseOverInit}{0.988\,\ensuremath{\pm}\,0.029}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of R16_Q1 over INIT, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgHerwigResMassOverRes}{0.970\,\ensuremath{\pm}\,0.004}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of L162_MASS over L162, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgHerwigCoarseMassOverCoarse}{1.005\,\ensuremath{\pm}\,0.011}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgHerwigFzeroOverFull}{1.010\,\ensuremath{\pm}\,0.025}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of FLAV_F0 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgHerwigFoneOverFull}{1.0220\,\ensuremath{\pm}\,0.0023}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of FLAV_F1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgHerwigFonerOverFull}{1.02\,\ensuremath{\pm}\,0.04}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of FLAV_F1R over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpQgHerwigRandOverFull}{1.032\,\ensuremath{\pm}\,0.024}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBcResOverFull}{1.000\,\ensuremath{\pm}\,0.005}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of L162 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBcMidOverFull}{1.156\,\ensuremath{\pm}\,0.028}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBcCoarseOverFull}{1.98\,\ensuremath{\pm}\,0.06}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBcFoneOverFzero}{0.73\,\ensuremath{\pm}\,0.04}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBcFonerOverFone}{0.997\,\ensuremath{\pm}\,0.011}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBcFonerOverFzero}{0.73\,\ensuremath{\pm}\,0.05}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBcRandOverFull}{1.15\,\ensuremath{\pm}\,0.07}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 3c51d68a87d41689
-\newcommand{\MlstPairRandMergedBc}{71.5\,\ensuremath{\pm}\,2.8}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) x 10^3 over the random partitions that merge it :: sha256 3c51d68a87d41689
-\newcommand{\MlstPairRandApartBc}{64.00\,\ensuremath{\pm}\,0.22}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) x 10^3 over the random partitions that keep it apart :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbResOverFull}{1.017\,\ensuremath{\pm}\,0.029}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of L162 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbMidOverFull}{1.085\,\ensuremath{\pm}\,0.026}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbCoarseOverFull}{4.06\,\ensuremath{\pm}\,0.35}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbFoneOverFzero}{0.22\,\ensuremath{\pm}\,0.12}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbFonerOverFone}{1.63\,\ensuremath{\pm}\,0.34}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbFonerOverFzero}{0.34\,\ensuremath{\pm}\,0.12}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbRandOverFull}{1.55\,\ensuremath{\pm}\,0.15}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 3c51d68a87d41689
-\newcommand{\MlstPairRandMergedBb}{4.19\,\ensuremath{\pm}\,0.31}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) x 10^3 over the random partitions that merge it :: sha256 3c51d68a87d41689
-\newcommand{\MlstPairRandApartBb}{3.9\,\ensuremath{\pm}\,0.5}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) x 10^3 over the random partitions that keep it apart :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbqqResOverFull}{1.02\,\ensuremath{\pm}\,0.06}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of L162 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbqqMidOverFull}{1.095\,\ensuremath{\pm}\,0.032}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbqqCoarseOverFull}{4.7\,\ensuremath{\pm}\,0.5}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbqqFoneOverFzero}{0.18\,\ensuremath{\pm}\,0.05}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbqqFonerOverFone}{1.60\,\ensuremath{\pm}\,0.05}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbqqFonerOverFzero}{0.29\,\ensuremath{\pm}\,0.08}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpBbqqRandOverFull}{1.43\,\ensuremath{\pm}\,0.08}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 3c51d68a87d41689
-\newcommand{\MlstPairRandMergedBbqq}{8.99\,\ensuremath{\pm}\,0.27}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) x 10^3 over the random partitions that merge it :: sha256 3c51d68a87d41689
-\newcommand{\MlstPairRandApartBbqq}{9.0\,\ensuremath{\pm}\,0.7}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) x 10^3 over the random partitions that keep it apart :: sha256 3c51d68a87d41689
-\newcommand{\MlstMassInitOverConstant}{0.966\,\ensuremath{\pm}\,0.005}  % experiments/FIGS/data/v2/index.json :: mass resolution, MLP: sigma_eff of the randomly initialized network over the target's own :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpRidgeCoarseOverFull}{0.928\,\ensuremath{\pm}\,0.033}  % experiments/FIGS/data/v2/index.json :: mass resolution, ridge: sigma_eff of R16_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpRidgeResMassOverRes}{0.683\,\ensuremath{\pm}\,0.012}  % experiments/FIGS/data/v2/index.json :: mass resolution, ridge: sigma_eff of L162_MASS over L162, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpRidgeCoarseMassOverCoarse}{0.705\,\ensuremath{\pm}\,0.030}  % experiments/FIGS/data/v2/index.json :: mass resolution, ridge: sigma_eff of R16_Q1_MASS over R16_Q1, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpMlpCoarseOverFull}{0.965\,\ensuremath{\pm}\,0.010}  % experiments/FIGS/data/v2/index.json :: mass resolution, mlp: sigma_eff of R16_Q1 over L188, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpMlpResMassOverRes}{0.78085\,\ensuremath{\pm}\,0.00025}  % experiments/FIGS/data/v2/index.json :: mass resolution, mlp: sigma_eff of L162_MASS over L162, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstCmpMlpCoarseMassOverCoarse}{0.806\,\ensuremath{\pm}\,0.009}  % experiments/FIGS/data/v2/index.json :: mass resolution, mlp: sigma_eff of R16_Q1_MASS over R16_Q1, run by run :: sha256 3c51d68a87d41689
-\newcommand{\MlstFtLr}{\ensuremath{10^{-4}}}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].lr :: sha256 42b790d5afd94b35
-\newcommand{\MlstFtHeadMult}{50}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].head_lr_mult :: sha256 42b790d5afd94b35
-\newcommand{\MlstFtWeightDecay}{0.01}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].weight_decay :: sha256 42b790d5afd94b35
-\newcommand{\MlstFtBatch}{512}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].batch_size :: sha256 42b790d5afd94b35
-\newcommand{\MlstFtBenchEpochs}{20}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, top/qg].epochs :: sha256 42b790d5afd94b35
-\newcommand{\MlstFtEpochsEThree}{50}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, leg 1/2, n_train 1000].epochs :: sha256 42b790d5afd94b35
-\newcommand{\MlstFtEpochsEFour}{50}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, leg 1/2, n_train 10000].epochs :: sha256 42b790d5afd94b35
-\newcommand{\MlstFtEpochsEFive}{30}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, leg 1/2, n_train 100000].epochs :: sha256 42b790d5afd94b35
-\newcommand{\MlstFtEpochsESix}{10}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, leg 1/2, n_train 1000000].epochs :: sha256 42b790d5afd94b35
+\newcommand{\MlstCmpJcTwoResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of L162_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoCoarseMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of R16_Q1_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResMassOverRes}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of L162_MASS over L162, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoCoarseMassOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of R16_Q1_MASS over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoFzeroOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of FLAV_F0 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoFoneOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of FLAV_F1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoFonerOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of FLAV_F1R over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoRandOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResResMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of L162_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResCoarseMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of R16_Q1_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResResMassOverRes}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of L162_MASS over L162, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResCoarseMassOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of R16_Q1_MASS over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResFzeroOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of FLAV_F0 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResFoneOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of FLAV_F1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResFonerOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of FLAV_F1R over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoResRandOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdResMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of L162_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdCoarseMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of R16_Q1_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdResMassOverRes}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of L162_MASS over L162, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdCoarseMassOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of R16_Q1_MASS over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdFzeroOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of FLAV_F0 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdFoneOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of FLAV_F1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdFonerOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of FLAV_F1R over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoQcdRandOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_qcd) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneResMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of L162_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneCoarseMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R16_Q1_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneResMassOverRes}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of L162_MASS over L162, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneCoarseMassOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of R16_Q1_MASS over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneFzeroOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of FLAV_F0 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneFoneOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of FLAV_F1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneFonerOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of FLAV_F1R over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcOneRandOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc1 N=1000000: (1 - macro_auc_ovr) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopResMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of L162_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopCoarseMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of R16_Q1_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopResMassOverRes}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of L162_MASS over L162, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopCoarseMassOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopFzeroOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of FLAV_F0 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopFoneOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of FLAV_F1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopFonerOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of FLAV_F1R over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpTopRandOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe top N=1200000: (1 - auc) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgResMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of L162_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgCoarseMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of R16_Q1_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgResMassOverRes}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of L162_MASS over L162, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgCoarseMassOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgFzeroOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of FLAV_F0 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgFoneOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of FLAV_F1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgFonerOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of FLAV_F1R over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgRandOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg N=1600000: (1 - auc) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigResMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of L162_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigCoarseMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of R16_Q1_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigResMassOverRes}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of L162_MASS over L162, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigCoarseMassOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigFzeroOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of FLAV_F0 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigFoneOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of FLAV_F1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigFonerOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of FLAV_F1R over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQgHerwigRandOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe qg_herwig N=1600000: (1 - auc) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedResMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of L162_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedCoarseMassOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of R16_Q1_MASS over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedResMassOverRes}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of L162_MASS over L162, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedCoarseMassOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of R16_Q1_MASS over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedFzeroOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of FLAV_F0 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedFoneOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of FLAV_F1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedFonerOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of FLAV_F1R over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpJcTwoTrainedRandOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 305c6677da885450
+\newcommand{\MlstCmpBcResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBcMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBcCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBcFoneOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBcFonerOverFone}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBcFonerOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBcFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBcRandOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 305c6677da885450
+\newcommand{\MlstPairRandMergedBc}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) x 10^3 over the 2 random partitions that merge it :: sha256 305c6677da885450
+\newcommand{\MlstPairRandMergedBcN}{2}  % experiments/FIGS/data/v2/index.json :: random partitions that merge bc_vs_bq_cs (count) :: sha256 305c6677da885450
+\newcommand{\MlstPairRandApartBc}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bc_vs_bq_cs: (1 - AUC) x 10^3 over the 2 random partitions that keep it apart :: sha256 305c6677da885450
+\newcommand{\MlstPairRandApartBcN}{2}  % experiments/FIGS/data/v2/index.json :: random partitions that keep apart bc_vs_bq_cs (count) :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbFoneOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbFonerOverFone}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbFonerOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbRandOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 305c6677da885450
+\newcommand{\MlstPairRandMergedBb}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) x 10^3 over the 3 random partitions that merge it :: sha256 305c6677da885450
+\newcommand{\MlstPairRandMergedBbN}{3}  % experiments/FIGS/data/v2/index.json :: random partitions that merge bb_vs_cc (count) :: sha256 305c6677da885450
+\newcommand{\MlstPairRandApartBb}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bb_vs_cc: (1 - AUC) x 10^3 over the 2 random partitions that keep it apart :: sha256 305c6677da885450
+\newcommand{\MlstPairRandApartBbN}{2}  % experiments/FIGS/data/v2/index.json :: random partitions that keep apart bb_vs_cc (count) :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbqqResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbqqMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbqqCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbqqFoneOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbqqFonerOverFone}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbqqFonerOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbqqFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpBbqqRandOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) of each random partition over the 188-class run of the same index, mean +- SD over the partitions :: sha256 305c6677da885450
+\newcommand{\MlstPairRandMergedBbqq}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) x 10^3 over the 2 random partitions that merge it :: sha256 305c6677da885450
+\newcommand{\MlstPairRandMergedBbqqN}{2}  % experiments/FIGS/data/v2/index.json :: random partitions that merge bbqq_vs_ccqq (count) :: sha256 305c6677da885450
+\newcommand{\MlstPairRandApartBbqq}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: (1 - AUC) x 10^3 over the 3 random partitions that keep it apart :: sha256 305c6677da885450
+\newcommand{\MlstPairRandApartBbqqN}{3}  % experiments/FIGS/data/v2/index.json :: random partitions that keep apart bbqq_vs_ccqq (count) :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBbResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_bb_vs_cc: (1 - AUC) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBbMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_bb_vs_cc: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBbCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_bb_vs_cc: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBbFoneOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_bb_vs_cc: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBbFonerOverFone}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_bb_vs_cc: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBbFonerOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_bb_vs_cc: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBbFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_bb_vs_cc: (1 - AUC) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_b_vs_light: (1 - AUC) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_b_vs_light: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_b_vs_light: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBFoneOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_b_vs_light: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBFonerOverFone}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_b_vs_light: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBFonerOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_b_vs_light: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdBFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_b_vs_light: (1 - AUC) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdCResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_c_vs_light: (1 - AUC) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdCMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_c_vs_light: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdCCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_c_vs_light: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdCFoneOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_c_vs_light: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdCFonerOverFone}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_c_vs_light: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdCFonerOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_c_vs_light: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run :: sha256 305c6677da885450
+\newcommand{\MlstCmpQcdCFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_c_vs_light: (1 - AUC) of FLAV_F0 over R16_Q1, run by run :: sha256 305c6677da885450
+\newcommand{\MlstProbeUnconverged}{0}  % experiments/FIGS/data/v2/index.json :: linear probes of pretrained models that did not converge (count) :: sha256 305c6677da885450
+\newcommand{\MlstProbeUnconvergedInit}{0}  % experiments/FIGS/data/v2/index.json :: linear probes of the randomly initialized networks that did not converge (count) :: sha256 305c6677da885450
+\newcommand{\MlstMlpUnconverged}{0}  % experiments/FIGS/data/v2/index.json :: nonlinear probes that did not reach their plateau within the epoch cap (count) :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBbResOverFull}{1.08\,\ensuremath{\pm}\,0.10}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_bb_vs_cc: (1 - AUC) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBbMidOverFull}{1.154 and 1.072 \pending{2 of 3}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_bb_vs_cc: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBbCoarseOverFull}{2.83 \pending{1 of 3}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_bb_vs_cc: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBbFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_bb_vs_cc: (1 - AUC) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBbResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_bb_vs_cc: (1 - AUC) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBbMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_bb_vs_cc: (1 - AUC) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBbCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_bb_vs_cc: (1 - AUC) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBResOverFull}{1.06\,\ensuremath{\pm}\,0.06}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_b_vs_light: (1 - AUC) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBMidOverFull}{1.07 and 0.96 \pending{2 of 3}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_b_vs_light: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBCoarseOverFull}{1.14 \pending{1 of 3}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_b_vs_light: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_b_vs_light: (1 - AUC) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_b_vs_light: (1 - AUC) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_b_vs_light: (1 - AUC) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQcdBCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qcd_b_vs_light: (1 - AUC) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpBbResOverFull}{1.00\,\ensuremath{\pm}\,0.09}  % experiments/FIGS/data/v2/index.json :: nonlinear probe bb_vs_cc: (1 - AUC) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpBbMidOverFull}{1.1145 and 1.1183 \pending{2 of 3}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe bb_vs_cc: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpBbCoarseOverFull}{3.18 \pending{1 of 3}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe bb_vs_cc: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpBbFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe bb_vs_cc: (1 - AUC) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpBbResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe bb_vs_cc: (1 - AUC) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpBbMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe bb_vs_cc: (1 - AUC) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpBbCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe bb_vs_cc: (1 - AUC) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpTopResOverFull}{1.01\,\ensuremath{\pm}\,0.08}  % experiments/FIGS/data/v2/index.json :: nonlinear probe top: (1 - AUC) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpTopMidOverFull}{1.23 and 1.02 \pending{2 of 3}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe top: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpTopCoarseOverFull}{1.26 \pending{1 of 3}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe top: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpTopFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe top: (1 - AUC) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpTopResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe top: (1 - AUC) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpTopMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe top: (1 - AUC) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpTopCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe top: (1 - AUC) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgResOverFull}{1.05\,\ensuremath{\pm}\,0.06}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg: (1 - AUC) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgMidOverFull}{1.090 and 1.028 \pending{2 of 3}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgCoarseOverFull}{1.03 \pending{1 of 3}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg: (1 - AUC) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg: (1 - AUC) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg: (1 - AUC) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg: (1 - AUC) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgHerwigResOverFull}{1.008\,\ensuremath{\pm}\,0.009}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg_herwig: (1 - AUC) of L162 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgHerwigMidOverFull}{1.0087 and 1.0043 \pending{2 of 3}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg_herwig: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgHerwigCoarseOverFull}{1.00 \pending{1 of 3}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg_herwig: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgHerwigFullOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg_herwig: (1 - AUC) of L188 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgHerwigResOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg_herwig: (1 - AUC) of L162 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgHerwigMidOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg_herwig: (1 - AUC) of R42_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\MlstMlpCmpQgHerwigCoarseOverInit}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: nonlinear probe qg_herwig: (1 - AUC) of R16_Q1 over INIT, run by run :: sha256 305c6677da885450
+\newcommand{\SculptEffHigh}{10\%}  % experiments/EVAL/mass_sculpting.py :: WORKING_POINTS :: sha256 df13e69cdfbcfd86 :: QCD efficiency of a sculpting cut
+\newcommand{\SculptEffLow}{1\%}  % experiments/EVAL/mass_sculpting.py :: WORKING_POINTS :: sha256 df13e69cdfbcfd86 :: QCD efficiency of a sculpting cut
+\newcommand{\MassMinTrainPerClass}{50}  % experiments/EVAL/mass_resolution.py :: MIN_TRAIN_PER_CLASS :: sha256 26acb0e315094bd1 :: fewest training jets of a class the mass regression keeps
+\newcommand{\MlstFtLr}{\ensuremath{10^{-4}}}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].lr :: sha256 c34148c640be4e05
+\newcommand{\MlstFtHeadMult}{50}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].head_lr_mult :: sha256 c34148c640be4e05
+\newcommand{\MlstFtWeightDecay}{0.01}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].weight_decay :: sha256 c34148c640be4e05
+\newcommand{\MlstFtBatch}{512}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].batch_size :: sha256 c34148c640be4e05
+\newcommand{\MlstFtBenchEpochs}{20}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, top/qg].epochs :: sha256 c34148c640be4e05
+\newcommand{\MlstFtEpochsEThree}{50}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, leg 1/2, n_train 1000].epochs :: sha256 c34148c640be4e05
+\newcommand{\MlstFtEpochsEFour}{50}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, leg 1/2, n_train 10000].epochs :: sha256 c34148c640be4e05
+\newcommand{\MlstFtEpochsEFive}{30}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, leg 1/2, n_train 100000].epochs :: sha256 c34148c640be4e05
+\newcommand{\MlstFtEpochsESix}{10}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70, leg 1/2, n_train 1000000].epochs :: sha256 c34148c640be4e05
 \newcommand{\MlstFtHeadDecayShare}{30\%}  % experiments/FT/k8s/job-ft-v2-legs-best70-l188-s3-raunav.yaml :: no --lr-scheduler: weaver 0.4.17 flat+decay, the head's last epochs :: sha256 19f59aa54a385c11
 \newcommand{\MlstFtHeadDecayTo}{1\%}  % experiments/FT/k8s/job-ft-v2-legs-best70-l188-s3-raunav.yaml :: no --lr-scheduler: weaver 0.4.17 flat+decay, final factor :: sha256 19f59aa54a385c11
-\newcommand{\MlstFtGpuTypes}{V100}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].gpu_device_name :: sha256 42b790d5afd94b35
-\newcommand{\MlstFtCellsDone}{414}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: DONE paper-run fine-tuning cells (count) :: sha256 42b790d5afd94b35
-\newcommand{\MlstFtRefLr}{\ensuremath{10^{-3}}}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[ref_v100].lr :: sha256 42b790d5afd94b35
-\newcommand{\MlstFtRefSeedsWord}{three}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[ref_v100].ft_seed (count) :: sha256 42b790d5afd94b35
-\newcommand{\MlstFtRefGpuTypes}{V100}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[ref_v100].gpu_device_name :: sha256 42b790d5afd94b35
-\newcommand{\ComputeMainGpu}{V100}  % experiments/FIGS/data/v2/index.json :: GPU type with the most hours over the four label sets :: sha256 3c51d68a87d41689
-\newcommand{\ComputeMainGpuShareMin}{56\%}  % experiments/FIGS/data/v2/index.json :: lowest share of a label set's GPU-hours on that type :: sha256 3c51d68a87d41689
-\newcommand{\ComputeMainGpuShareMax}{71\%}  % experiments/FIGS/data/v2/index.json :: highest share of a label set's GPU-hours on that type :: sha256 3c51d68a87d41689
-\newcommand{\ComputeRunsDone}{27}  % experiments/FIGS/data/v2/index.json :: runs with a compute record (count) :: sha256 3c51d68a87d41689
-\newcommand{\ComputeGpuTypes}{L4, RTX 3090 and V100}  % experiments/FIGS/data/v2/index.json :: GPU types any finished run trained on :: sha256 3c51d68a87d41689
+\newcommand{\MlstFtGpuTypes}{V100}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[best70].gpu_device_name :: sha256 c34148c640be4e05
+\newcommand{\MlstFtCellsDone}{430}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: DONE paper-run fine-tuning cells (count) :: sha256 c34148c640be4e05
+\newcommand{\MlstFtRefLr}{\ensuremath{10^{-3}}}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[ref_v100].lr :: sha256 c34148c640be4e05
+\newcommand{\MlstFtRefSeedsWord}{three}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[ref_v100].ft_seed (count) :: sha256 c34148c640be4e05
+\newcommand{\MlstFtRefGpuTypes}{V100}  % experiments/FIGS/data/v2/ft_mlst/manifests.json :: cells[ref_v100].gpu_device_name :: sha256 c34148c640be4e05
+\newcommand{\ComputeMainGpu}{V100}  % experiments/FIGS/data/v2/index.json :: GPU type with the most hours over the four label sets :: sha256 305c6677da885450
+\newcommand{\ComputeMainGpuShareMin}{56\%}  % experiments/FIGS/data/v2/index.json :: lowest share of a label set's GPU-hours on that type :: sha256 305c6677da885450
+\newcommand{\ComputeMainGpuShareMax}{71\%}  % experiments/FIGS/data/v2/index.json :: highest share of a label set's GPU-hours on that type :: sha256 305c6677da885450
+\newcommand{\ComputeRunsDone}{27}  % experiments/FIGS/data/v2/index.json :: runs with a compute record (count) :: sha256 305c6677da885450
+\newcommand{\ComputeGpuTypes}{L4, RTX 3090 and V100}  % experiments/FIGS/data/v2/index.json :: GPU types any finished run trained on :: sha256 305c6677da885450
+\newcommand{\MlstCmpMlpCoarseMassOverCoarse}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 f9afcef931825665 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstCmpMlpCoarseOverFull}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 f9afcef931825665 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstCmpMlpResMassOverRes}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 f9afcef931825665 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstMassInitOverConstant}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 f9afcef931825665 :: a marker, not a number: its section reads the second grid, which has no such number

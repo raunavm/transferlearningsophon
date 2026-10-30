@@ -1,26 +1,26 @@
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
-\caption{Binary linear probes between JetClass-II classes on the largest training subset: $(1-\mathrm{AUC})\times10^{3}$, lower is better. $^{\dagger}$: the label set merges the two sides into one class; $^{\ddagger}$: it merges the first side with part of the second. Mean $\pm$ standard deviation over the pretraining runs; random partitions 1 to 5 have a single pretraining run each. The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays $X\to YY\to QQQQ$, and the random partition with a random flavor boundary keeps apart no decays that differ only by exchanging $b$ and $c$ quarks.}
+\caption{Binary linear probes between JetClass-II classes on the largest training subset: $(1-\mathrm{AUC})\times10^{3}$, lower is better. $^{\dagger}$: the label set merges the two sides into one class; $^{\ddagger}$: it merges the first side with part of the second. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run. The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays $X\to YY\to QQQQ$; every label set but the \Kfull-class one merges all QCD classes.}
 \label{tab:pairs}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccccc}
 \toprule
-pretraining & $X\to bc$ vs $bq$, $cs$ & $X\to b\bar b$ vs $c\bar c$ & $X\to YY\to bbqq$ vs $ccqq$ \\
+pretraining & $X\to bc$ vs $bq$, $cs$ & $X\to b\bar b$ vs $c\bar c$ & $X\to YY\to bbqq$ vs $ccqq$ & QCD $bb$ vs $cc$ & QCD with $b$ vs light & QCD with $c$, no $b$, vs light \\
 \midrule
-\Kfull{} classes & 59.46\,$\pm$\,0.17 & 2.59\,$\pm$\,0.07 & 6.30\,$\pm$\,0.13 \\
-\Kres{} classes & 59.49\,$\pm$\,0.16 & 2.634\,$\pm$\,0.018 & 6.44\,$\pm$\,0.27 \\
-\Kmid{} classes & 68.7\,$\pm$\,1.5$^{\ddagger}$ & 2.810\,$\pm$\,0.018 & 6.90\,$\pm$\,0.09 \\
-\Kcoarse{} classes & 118\,$\pm$\,4$^{\dagger}$ & 10.5\,$\pm$\,0.7$^{\dagger}$ & 29.7\,$\pm$\,3.3$^{\dagger}$ \\
-random partition 1, seed 1 & 69.542$^{\dagger}$ & 3.9336$^{\dagger}$ & 9.1846$^{\dagger}$ \\
-random partition 2, seed 2 & 71.291$^{\ddagger}$ & 4.2225 & 9.0961 \\
-random partition 3, seed 1 & 63.842 & 4.1155$^{\dagger}$ & 8.8035$^{\dagger}$ \\
-random partition 4, seed 2 & 64.151 & 3.4804 & 8.2648 \\
-random partition 5, seed 2 & 73.554$^{\dagger}$ & 4.5308$^{\dagger}$ & 9.5781 \\
-random partition, no flavor boundary & 126\,$\pm$\,8$^{\dagger}$ & 24\,$\pm$\,12$^{\dagger}$ & 52\,$\pm$\,15$^{\dagger}$ \\
-random partition, $b$-quark boundary & 92.1\,$\pm$\,0.6$^{\dagger}$ & 4.64\,$\pm$\,0.21$^{\dagger}$ & 9.03\,$\pm$\,0.08 \\
-random partition, random flavor boundary & 91.8\,$\pm$\,0.4$^{\dagger}$ & 7.5\,$\pm$\,1.3$^{\dagger}$ & 14.5\,$\pm$\,0.4$^{\dagger}$ \\
+\Kfull{} classes & 59.5 \pending{1 of 3} & 2.53 \pending{1 of 3} & 6.15 \pending{1 of 3} & 14.6 \pending{1 of 3} & 11.6 \pending{1 of 3} & 68.5 \pending{1 of 3} \\
+\Kres{} classes & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ \\
+\Kmid{} classes & \pending{no run yet}$^{\ddagger}$ & \pending{no run yet} & \pending{no run yet} & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ \\
+\Kcoarse{} classes & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ \\
+random partition 1, seed 1 & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ \\
+random partition 2, seed 2 & \pending{no run yet}$^{\ddagger}$ & \pending{no run yet} & \pending{no run yet} & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ \\
+random partition 3, seed 1 & \pending{no run yet} & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ \\
+random partition 4, seed 2 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ \\
+random partition 5, seed 2 & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet} & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ \\
+random partition, no flavor boundary & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ \\
+random partition, $b$-quark boundary & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet} & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ \\
+random partition, random flavor boundary & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ & \pending{no run yet}$^{\dagger}$ \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{table}
+\end{table*}
