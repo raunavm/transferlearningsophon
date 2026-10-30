@@ -7145,6 +7145,30 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.987\\,\\ensuremath{\\pm}\\,0.024"
   },
+  "MlstFtCmpQgHerwigRandOverFullEFive": {
+    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.997\\,\\ensuremath{\\pm}\\,0.010"
+  },
+  "MlstFtCmpQgHerwigRandOverFullEFour": {
+    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.016\\,\\ensuremath{\\pm}\\,0.016"
+  },
+  "MlstFtCmpQgHerwigRandOverFullEThree": {
+    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.03\\,\\ensuremath{\\pm}\\,0.04"
+  },
+  "MlstFtCmpQgHerwigRandOverFullMax": {
+    "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.004\\,\\ensuremath{\\pm}\\,0.010"
+  },
   "MlstFtCmpQgHerwigResMassOverResEFive": {
     "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of L162_MASS over L162, run by run",
     "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
@@ -7288,6 +7312,30 @@
     "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.972\\,\\ensuremath{\\pm}\\,0.004"
+  },
+  "MlstFtCmpQgRandOverFullEFive": {
+    "json_path": "fine-tuning qg N=100000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.014\\,\\ensuremath{\\pm}\\,0.006"
+  },
+  "MlstFtCmpQgRandOverFullEFour": {
+    "json_path": "fine-tuning qg N=10000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.021\\,\\ensuremath{\\pm}\\,0.026"
+  },
+  "MlstFtCmpQgRandOverFullEThree": {
+    "json_path": "fine-tuning qg N=1000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.054\\,\\ensuremath{\\pm}\\,0.027"
+  },
+  "MlstFtCmpQgRandOverFullMax": {
+    "json_path": "fine-tuning qg N=1600000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.0036\\,\\ensuremath{\\pm}\\,0.0008"
   },
   "MlstFtCmpQgResMassOverResEFive": {
     "json_path": "fine-tuning qg N=100000: (1 - auc) of L162_MASS over L162, run by run",
@@ -7552,6 +7600,30 @@
     "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9416\\,\\ensuremath{\\pm}\\,0.0035"
+  },
+  "MlstFtCmpTopRandOverFullEFive": {
+    "json_path": "fine-tuning top N=100000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.062\\,\\ensuremath{\\pm}\\,0.005"
+  },
+  "MlstFtCmpTopRandOverFullEFour": {
+    "json_path": "fine-tuning top N=10000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.33\\,\\ensuremath{\\pm}\\,0.14"
+  },
+  "MlstFtCmpTopRandOverFullEThree": {
+    "json_path": "fine-tuning top N=1000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.26\\,\\ensuremath{\\pm}\\,0.11"
+  },
+  "MlstFtCmpTopRandOverFullMax": {
+    "json_path": "fine-tuning top N=1200000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
+    "sha256": "342c4dba3071881f317f4b3d4eba8e2644e89aeadd2e0da101b487a9c9af4f7b",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.009\\,\\ensuremath{\\pm}\\,0.005"
   },
   "MlstFtCmpTopResMassOverResEFive": {
     "json_path": "fine-tuning top N=100000: (1 - auc) of L162_MASS over L162, run by run",

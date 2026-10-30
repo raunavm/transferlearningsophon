@@ -1,7 +1,7 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Background rejection $R_{50}$ and $R_{30}$ ($1/\epsilon_B$ at 50\% and 30\% signal efficiency) after full fine-tuning on the whole training set. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run. From scratch: over its seeds. Every value rests on at least 104 background jets passing the cut.}
+\caption{Background rejection $R_{50}$ and $R_{30}$ ($1/\epsilon_B$ at 50\% and 30\% signal efficiency) after full fine-tuning on the whole training set. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run. From scratch: over its seeds. Every value rests on at least 98 background jets passing the cut.}
 \label{tab:ftrej}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcccccc}
@@ -15,6 +15,14 @@ pretraining & \multicolumn{2}{c}{top} & \multicolumn{2}{c}{q/g} & \multicolumn{2
 \Kcoarse{} classes & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 & 12.79\,$\pm$\,0.20 & 36.9\,$\pm$\,0.9 \\
 \Kres{} classes, mass regression & 420, 436 & 1{,}941, 1{,}590 & 42.46, 42.21 & 106.95, 106.61 & 12.99, 12.21 & 37.8, 34.4 \\
 \Kcoarse{} classes, mass regression & 435, 421 & 1{,}683, 1{,}628 & 41.77, 41.39 & 104.93, 105.60 & 12.58, 11.96 & 37.7, 32.9 \\
+random partition 1, seed 1 & 432 & 1{,}660 & 42.1 & 107 & 12.2 & 33.4 \\
+random partition 2, seed 2 & 430 & 1{,}900 & 42.5 & 109 & 12.3 & 35.2 \\
+random partition 3, seed 1 & 421 & 1{,}640 & 42.1 & 106 & 12.2 & 34.8 \\
+random partition 4, seed 2 & 458 & 1{,}820 & 41.8 & 107 & 12.7 & 37.5 \\
+random partition 5, seed 2 & 431 & 1{,}740 & 42.1 & 106 & 12.2 & 35.3 \\
+random partition, no flavor boundary & 427, 463 & 1{,}726, 1{,}852 & 41.67, 41.95 & 108.93, 109.17 & 12.07, 12.92 & 34.1, 39.3 \\
+random partition, $b$-quark boundary & 432, 444 & 1{,}590, 2{,}060 & 42.43, 42.77 & 106.50, 106.84 & 12.93, 12.19 & 38.1, 34.7 \\
+random partition, random flavor boundary & 394, 447 & 1{,}565, 1{,}655 & 42.123, 42.088 & 108.2, 104.4 & 12.18, 12.76 & 34.9, 37.4 \\
 from scratch & 358\,$\pm$\,11 & 1{,}412\,$\pm$\,20 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 & 12.18\,$\pm$\,0.11 & 35.5\,$\pm$\,1.2 \\
 \bottomrule
 \end{tabular}

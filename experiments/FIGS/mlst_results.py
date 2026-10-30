@@ -289,6 +289,13 @@ def _sizes(per: dict, key: str) -> list:
     return sorted({n for init, by_n in per[key].items() if init != SCRATCH for n in by_n})
 
 
+def _ft_rows(per, key, runs, rows) -> tuple:
+    """The rows of a task: the hierarchy and mass-regression runs always (a missing run prints a
+    marker); a random partition only where it was fine-tuned (the benchmarks, not JetClass-II)."""
+    return tuple(a for a in rows if a in MAIN + MASS
+                 or any(per[key].get(m[len("mtx-"):]) for m in runs[a]))
+
+
 def table_ft(per, runs, fmt_pm, rows) -> str:
     out = []
     for key, _, _, met, title in FT_TASKS:
@@ -300,8 +307,8 @@ def table_ft(per, runs, fmt_pm, rows) -> str:
         out += [r"\begin{tabular}{l" + "c" * len(sizes) + "}", r"\toprule",
                 rf"{title} & " + " & ".join(f"{n:,}".replace(",", "{,}") for n in sizes) + r" \\",
                 r"\midrule"]
-        for arm in rows:
-            out.append(LABEL[arm] + " & " + " & ".join(
+        for arm in _ft_rows(per, key, runs, rows):
+            out.append(_row(arm, runs) + " & " + " & ".join(
                 _cell([_oma(_ft(per, key, m, n, met)) for m in runs[arm]], len(runs[arm]), fmt_pm, 1e3)
                 for n in sizes) + r" \\")
         ref = per[key].get(SCRATCH, {})
@@ -327,7 +334,7 @@ def table_ft_rej(per, runs, fmt_pm, rows) -> tuple:
     lines = [r"\begin{tabular}{l" + "c" * len(FT_REJ) + "}", r"\toprule",
              "pretraining & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{heads[t]}}}" for t in heads) + r" \\",
              " & " + " & ".join(rf"$R_{{{k[1:]}}}$" for _, k in FT_REJ) + r" \\", r"\midrule"]
-    for arm in rows + (SCRATCH,):
+    for arm in _ft_rows(per, FT_REJ[0][0], runs, rows) + (SCRATCH,):
         cells = []
         for key, k in FT_REJ:
             n = _sizes(per, key)[-1]
@@ -340,7 +347,7 @@ def table_ft_rej(per, runs, fmt_pm, rows) -> tuple:
                     recs = per[key].get(m[len("mtx-"):], {}).get(n)
                     vals.append(None if recs is None else rej(recs[0], k))
                 cells.append(_cell(vals, len(runs[arm]), fmt_pm))
-        lines.append(("from scratch" if arm == SCRATCH else LABEL[arm]) + " & " + " & ".join(cells) + r" \\")
+        lines.append(("from scratch" if arm == SCRATCH else _row(arm, runs)) + " & " + " & ".join(cells) + r" \\")
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""]), min(fewest)
 
 
@@ -945,6 +952,13 @@ def ft_macros(em, per, runs, index, fmt_pm) -> None:
                          f"MlstFtCmp{FT_WORD[key]}{WORD[arm]}Over{WORD[refa]}{sw}",
                          _ratio(runs, arm, refa, lambda m: _oma(_ft(per, key, m, n, met)), fmt_pm), index,
                          f"fine-tuning {key} N={n}: (1 - {met}) of {arm} over {refa}, run by run")
+            full = {m.rsplit("-s", 1)[1]: _oma(_ft(per, key, m, n, met)) for m in runs["L188"]}
+            r = [None if (x := _oma(_ft(per, key, m, n, met))) is None or full.get(m.rsplit("-s", 1)[1]) is None
+                 else x / full[m.rsplit("-s", 1)[1]] for a in RAND for m in runs[a]]
+            if any(x is not None for x in r):
+                em.macro(f"MlstFtCmp{FT_WORD[key]}RandOverFull{sw}", _cell(r, len(r), fmt_pm, sep=TEXT_SEP), index,
+                         f"fine-tuning {key} N={n}: (1 - {met}) of each random partition over the 188-class run "
+                         "of its run index, mean +- SD over the partitions")
     # the values ParT reports (Tables 5 and 6), on the full training set: the AUC and R_30 of the
     # 188-class models and of the network trained from scratch, for the comparison in the text
     for key in ("top", "qg"):
@@ -1276,8 +1290,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     if absent:
         missing.append("fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/: " + ", ".join(absent))
     if tag is not None:
-        out["tables/mlst_ft.tex"] = _float("ft", table_ft(per, runs, fmt_pm, MAIN + MASS), True)
-        body, fewest = table_ft_rej(per, runs, fmt_pm, MAIN + MASS)
+        out["tables/mlst_ft.tex"] = _float("ft", table_ft(per, runs, fmt_pm, MAIN + MASS + RAND + FLAV), True)
+        body, fewest = table_ft_rej(per, runs, fmt_pm, MAIN + MASS + RAND + FLAV)
         out["tables/mlst_ft_rej.tex"] = _float("ft_rej", body, True, fill={"__FEWEST__": fmt_int(fewest)})
         ft_macros(em, per, runs, index, fmt_pm)
         topcheck_macros(em, data, per, index, fmt_pm, missing)

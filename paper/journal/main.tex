@@ -582,7 +582,9 @@ selected pretraining checkpoint with a newly initialized classification head, us
 fine-tuning learning rates~\cite{part}. Each fine-tuning run is then evaluated at its own
 epoch of highest validation accuracy. The same network trained from random
 initialization (from scratch), with \MlstFtRefSeedsWord{} seeds at each training-set size, is
-the reference. Appendix~\ref{app:ftrecipe} lists all settings.
+the reference. Every pretrained model is fine-tuned on top tagging, quark/gluon tagging and
+JetClass; on JetClass-II, which is the most expensive task, only the levels of the hierarchy
+and the models with the mass regression are. Appendix~\ref{app:ftrecipe} lists all settings.
 
 \paragraph{Pairs of classes.} Binary linear probes on the largest JetClass-II training subset
 measure distinctions that the label sets merge at different levels. The first pair is
@@ -954,7 +956,12 @@ After fine-tuning, the label set matters little. Coarser label sets fine-tune sl
 at every size of both tasks: the ratio of $\oma$ between the \Kcoarse- and \Kfull-class models
 is at most \MlstFtCmpTopCoarseOverFullEFour{} (top tagging, \FtSizeEFour{} jets), and on the full
 training sets it is \MlstFtCmpTopCoarseOverFullMax{} on top and \MlstFtCmpQgCoarseOverFullMax{}
-on quark/gluon tagging. On the Herwig sample, the models fine-tuned on Pythia jets keep little of
+on quark/gluon tagging. The random partitions agree with the \Kfull-class models on the full
+training sets, with ratios of \MlstFtCmpTopRandOverFullMax{} on top and
+\MlstFtCmpQgRandOverFullMax{} on quark/gluon tagging, but fine-tune worse on the small
+top-tagging sets, by factors of \MlstFtCmpTopRandOverFullEThree{} at \FtSizeEThree{} and
+\MlstFtCmpTopRandOverFullEFour{} at \FtSizeEFour{} jets, more than the \Kcoarse-class models.
+On the Herwig sample, the models fine-tuned on Pythia jets keep little of
 the gain from pretraining: on the full training set, the ratio to the network trained from
 scratch is \MlstFtCmpQgHerwigFullOverScratchMax{} for the \Kfull-class models. The improvement of
 the frozen top-tagging features by the auxiliary mass regression (Section~\ref{sec:mass}) does
