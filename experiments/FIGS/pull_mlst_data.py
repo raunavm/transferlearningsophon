@@ -146,6 +146,8 @@ def main() -> int:
         for d, name, pattern in ((FT / "curves", "curves", "*.json"),
                                  (pathlib.Path("/data/results/bootstrap"), "bootstrap", "*/*.json")):
             for f in sorted(d.glob(pattern)):
+                if "." in f.parent.name:
+                    continue        # a job's staging directory (<family>.staging.<n>): not finished
                 b = f.read_bytes()
                 json.loads(b)
                 add(f"{name}/{f.relative_to(d)}", b)

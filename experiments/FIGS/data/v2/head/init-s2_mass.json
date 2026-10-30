@@ -1,0 +1,494 @@
+{
+  "prediction": "S7: resolution improves with the mass output at both granularities; larger gain at 17 classes; without the mass output, finer labels give equal or better resolution",
+  "target": "log(genjet_sdmass / jet_sdmass), the groomed log mass-ratio",
+  "resolution_statistic": "sigma_eff = half the SMALLEST interval containing 68% of the residual area (CMS-DP-2021-017 p.5; CERN-THESIS-2024-281 p.172). The central 68% half-width and the standard deviation are reported beside it and carry no prediction.",
+  "residual": "log(m_predicted / m_true); exponentiating gives the mass response ratio the field quantifies",
+  "centering": "per-188-native-class MEDIAN of the target, fitted on the training split (arms[*].ridge, mlp, target); the per-class mean as before, fitted on the first split's training rows, in arms[*].mean_centred; either subsumes family-mean removal",
+  "uncorrected": {
+    "sigma_eff": 0.2534040583543305,
+    "sigma_eff_interval": [
+      -0.38571861601958074,
+      0.12108950068908024
+    ],
+    "sigma68_central": 0.2557074193827451,
+    "sd": 0.7257931448150692,
+    "median": -0.07324955085754382,
+    "mode_of_eff_interval": -0.13231455766525024,
+    "fractional": 0.2884037619781419,
+    "tail_fraction": 0.08391596111633741,
+    "tail_at": 1.0,
+    "n": 398625,
+    "median_response": 0.9293688762848176,
+    "binned": {
+      "group": {
+        "resonant": {
+          "sigma_eff": 0.22055776139356523,
+          "median_response": 0.9291158762159016,
+          "n": 317089
+        },
+        "qcd": {
+          "sigma_eff": 0.4784109417765787,
+          "median_response": 0.9309034921008372,
+          "n": 81536
+        }
+      },
+      "topology_R16_Q1": {
+        "2P_HAD_2PARTON": {
+          "sigma_eff": 0.23314731110804104,
+          "median_response": 0.9181519279499015,
+          "n": 129781
+        },
+        "2P_HAD_TAUH_TAUH": {
+          "sigma_eff": 0.13567342614556632,
+          "median_response": 1.0048272238350835,
+          "n": 7975
+        },
+        "2P_LEP_LL": {
+          "sigma_eff": 0.028485260763824908,
+          "median_response": 0.9897509597882933,
+          "n": 9763
+        },
+        "2P_SEMILEP_TAUH_TAUL": {
+          "sigma_eff": 0.11555022057424347,
+          "median_response": 0.9947148191233107,
+          "n": 6913
+        },
+        "3P_HAD_1PARTON_TAUH_TAUH": {
+          "sigma_eff": 0.16967938198008053,
+          "median_response": 0.9481084888260671,
+          "n": 1954
+        },
+        "3P_HAD_3PARTON": {
+          "sigma_eff": 0.2078520653337959,
+          "median_response": 0.886553515454216,
+          "n": 28111
+        },
+        "3P_SEMILEP_1PARTON_LL": {
+          "sigma_eff": 0.09701894328899757,
+          "median_response": 0.9556874798444478,
+          "n": 2623
+        },
+        "3P_SEMILEP_1PARTON_TAUH_TAUL": {
+          "sigma_eff": 0.1669404391301798,
+          "median_response": 0.9496729463855,
+          "n": 1971
+        },
+        "3P_SEMILEP_2PARTON_L": {
+          "sigma_eff": 0.15130526221599633,
+          "median_response": 0.9331428823565768,
+          "n": 2930
+        },
+        "4P_HADVIS_NU_2PARTON_TAUH": {
+          "sigma_eff": 0.22572944869481798,
+          "median_response": 0.9425841874863555,
+          "n": 15375
+        },
+        "4P_HAD_2PARTON_TAUH_TAUH": {
+          "sigma_eff": 0.22585701637820138,
+          "median_response": 0.9480147583588304,
+          "n": 9734
+        },
+        "4P_HAD_4PARTON": {
+          "sigma_eff": 0.2686879605911698,
+          "median_response": 0.8828732943326928,
+          "n": 59031
+        },
+        "4P_SEMILEP_2PARTON_LL": {
+          "sigma_eff": 0.1410674292295077,
+          "median_response": 0.957524283378463,
+          "n": 11507
+        },
+        "4P_SEMILEP_2PARTON_TAUH_TAUL": {
+          "sigma_eff": 0.20722602648646105,
+          "median_response": 0.9467447444063157,
+          "n": 9981
+        },
+        "4P_SEMILEP_NU_2PARTON_L": {
+          "sigma_eff": 0.1754454524249705,
+          "median_response": 0.949384285257898,
+          "n": 11960
+        },
+        "4P_SEMILEP_NU_2PARTON_TAUL": {
+          "sigma_eff": 0.21401328926203794,
+          "median_response": 0.9408526991489107,
+          "n": 7480
+        },
+        "QCD_ALL": {
+          "sigma_eff": 0.4784109417765787,
+          "median_response": 0.9309034921008372,
+          "n": 81536
+        }
+      },
+      "jet_pt": {
+        "200-400": {
+          "sigma_eff": 0.2457600931893116,
+          "median_response": 0.8926111990301616,
+          "n": 60919
+        },
+        "400-700": {
+          "sigma_eff": 0.23101853448950507,
+          "median_response": 0.9138303845647039,
+          "n": 84809
+        },
+        "700-1000": {
+          "sigma_eff": 0.24227236256860246,
+          "median_response": 0.9170028517836781,
+          "n": 71311
+        },
+        "1000-2500": {
+          "sigma_eff": 0.27478357863577824,
+          "median_response": 0.9529508393485906,
+          "n": 181586
+        }
+      },
+      "genjet_sdmass": {
+        "20-50": {
+          "sigma_eff": 0.24568413729946303,
+          "median_response": 1.00121746515916,
+          "n": 54477
+        },
+        "50-100": {
+          "sigma_eff": 0.20765286832716012,
+          "median_response": 0.9361713050705258,
+          "n": 80507
+        },
+        "100-150": {
+          "sigma_eff": 0.19639339677904163,
+          "median_response": 0.908076189961361,
+          "n": 62039
+        },
+        "150-250": {
+          "sigma_eff": 0.19532891046117506,
+          "median_response": 0.8898725651810615,
+          "n": 81564
+        },
+        "250-500": {
+          "sigma_eff": 0.20065890075270515,
+          "median_response": 0.8519030848772052,
+          "n": 85298
+        }
+      }
+    }
+  },
+  "heads": {},
+  "binned": "sigma_eff and median m_reg/m_gen, m_reg = m_reco exp(y_pred), per class group (native < 161 resonant; R16_Q1 topology) and in jet_pt and genjet_sdmass bins [lo, hi) GeV; the frozen probes' from the MLP",
+  "tail": "reported as the share with |residual| > 1.0, never trimmed",
+  "split_seed": 20260822,
+  "tail_at": 1.0,
+  "cpu_model": "Intel(R) Xeon(R) CPU E5-2697 v3 @ 2.60GHz",
+  "readout": "features",
+  "row_alignment_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba",
+  "n_jets_total": 2000000,
+  "n_jets_valid": 1993321,
+  "script_sha256": "26acb0e315094bd172c58ff7c438ce7e72cd70b2878194d7cc154dd3fdbe5b48",
+  "arms": {
+    "init": {
+      "ridge": {
+        "sigma_eff": 0.31728395731584613,
+        "sigma_eff_interval": [
+          -0.3896788379163613,
+          0.24488907671533092
+        ],
+        "sigma68_central": 0.3195545969349541,
+        "sd": 0.6635073545143109,
+        "median": -0.05836712319605626,
+        "mode_of_eff_interval": -0.0723948806005152,
+        "fractional": 0.3733925014094774,
+        "tail_fraction": 0.073010975227344,
+        "tail_at": 1.0,
+        "n": 398625,
+        "alpha": 1.0,
+        "val_r2": 0.15630820527082367
+      },
+      "mlp": {
+        "sigma_eff": 0.2446727204835655,
+        "sigma_eff_interval": [
+          -0.2781641246998682,
+          0.21118131626726283
+        ],
+        "sigma68_central": 0.2497455127436664,
+        "sd": 0.6094367504397764,
+        "median": -0.022426268729544376,
+        "mode_of_eff_interval": -0.03349140421630267,
+        "fractional": 0.2772032423360621,
+        "tail_fraction": 0.06448416431483224,
+        "tail_at": 1.0,
+        "n": 398625,
+        "fit": {
+          "per_seed": [
+            {
+              "seed": 0,
+              "val_mse": 0.704120397567749
+            },
+            {
+              "seed": 1,
+              "val_mse": 0.7060745358467102
+            },
+            {
+              "seed": 2,
+              "val_mse": 0.7061505913734436
+            }
+          ],
+          "n_seeds": 3,
+          "torch_threads": 4,
+          "cpu_model": "Intel(R) Xeon(R) CPU E5-2697 v3 @ 2.60GHz"
+        }
+      },
+      "target": {
+        "sigma_eff": 0.2508998494100916,
+        "sigma_eff_interval": [
+          -0.20348796026003127,
+          0.2983117385601519
+        ],
+        "sigma68_central": 0.25359293051567167,
+        "sd": 0.7208756654202477,
+        "median": 3.810037027059121e-05,
+        "mode_of_eff_interval": 0.047411889150060324,
+        "fractional": 0.2851813662137396,
+        "tail_fraction": 0.08327877077453748,
+        "tail_at": 1.0,
+        "n": 398625
+      },
+      "mean_centred": {
+        "ridge": {
+          "sigma_eff": 0.33961811706476086,
+          "sigma_eff_interval": [
+            -0.39371986199128606,
+            0.28551637213823566
+          ],
+          "sigma68_central": 0.34256186694561996,
+          "sd": 0.657492986748836,
+          "median": -0.041807535440385624,
+          "mode_of_eff_interval": -0.0541017449265252,
+          "fractional": 0.40441116748578104,
+          "tail_fraction": 0.07165130134838507,
+          "tail_at": 1.0,
+          "n": 398625,
+          "alpha": 1.0,
+          "val_r2": 0.138847280489389
+        },
+        "mlp": {
+          "sigma_eff": 0.2882952289780426,
+          "sigma_eff_interval": [
+            -0.31185791055197143,
+            0.2647325474041138
+          ],
+          "sigma68_central": 0.2936623577915491,
+          "sd": 0.6121052484096023,
+          "median": -0.0011955872269719912,
+          "mode_of_eff_interval": -0.023562681573928823,
+          "fractional": 0.3341511260602012,
+          "tail_fraction": 0.06311194731890875,
+          "tail_at": 1.0,
+          "n": 398625,
+          "fit": {
+            "per_seed": [
+              {
+                "seed": 0,
+                "val_mse": 0.7372762560844421
+              },
+              {
+                "seed": 1,
+                "val_mse": 0.7410644292831421
+              },
+              {
+                "seed": 2,
+                "val_mse": 0.7390334606170654
+              }
+            ],
+            "n_seeds": 3,
+            "torch_threads": 4,
+            "cpu_model": "Intel(R) Xeon(R) CPU E5-2697 v3 @ 2.60GHz"
+          }
+        },
+        "target": {
+          "sigma_eff": 0.2986301355609203,
+          "sigma_eff_interval": [
+            -0.19555031628123337,
+            0.4017099548406072
+          ],
+          "sigma68_central": 0.30177445558271,
+          "sd": 0.7072900698298847,
+          "median": 0.047202968513377824,
+          "mode_of_eff_interval": 0.1030798192796869,
+          "fractional": 0.3480109499439186,
+          "tail_fraction": 0.08325117591721543,
+          "tail_at": 1.0,
+          "n": 398625
+        }
+      },
+      "binned": {
+        "mlp": {
+          "group": {
+            "resonant": {
+              "sigma_eff": 0.22091178905475956,
+              "median_response": 0.9788072154223076,
+              "n": 317089
+            },
+            "qcd": {
+              "sigma_eff": 0.3843496541851821,
+              "median_response": 0.9722046000975816,
+              "n": 81536
+            }
+          },
+          "topology_R16_Q1": {
+            "2P_HAD_2PARTON": {
+              "sigma_eff": 0.22514635621730258,
+              "median_response": 0.9805122030170859,
+              "n": 129781
+            },
+            "2P_HAD_TAUH_TAUH": {
+              "sigma_eff": 0.2724950337490186,
+              "median_response": 0.8853512522408473,
+              "n": 7975
+            },
+            "2P_LEP_LL": {
+              "sigma_eff": 0.10529066751617243,
+              "median_response": 0.9951700542341433,
+              "n": 9763
+            },
+            "2P_SEMILEP_TAUH_TAUL": {
+              "sigma_eff": 0.2338200004942052,
+              "median_response": 0.8826861196273794,
+              "n": 6913
+            },
+            "3P_HAD_1PARTON_TAUH_TAUH": {
+              "sigma_eff": 0.20178279213348627,
+              "median_response": 0.9496147918429493,
+              "n": 1954
+            },
+            "3P_HAD_3PARTON": {
+              "sigma_eff": 0.19126398625656754,
+              "median_response": 1.0062068140642173,
+              "n": 28111
+            },
+            "3P_SEMILEP_1PARTON_LL": {
+              "sigma_eff": 0.207972711383898,
+              "median_response": 0.9448902471561019,
+              "n": 2623
+            },
+            "3P_SEMILEP_1PARTON_TAUH_TAUL": {
+              "sigma_eff": 0.2240420608454653,
+              "median_response": 0.9494855091359911,
+              "n": 1971
+            },
+            "3P_SEMILEP_2PARTON_L": {
+              "sigma_eff": 0.19340248800613663,
+              "median_response": 0.9758438552831888,
+              "n": 2930
+            },
+            "4P_HADVIS_NU_2PARTON_TAUH": {
+              "sigma_eff": 0.24002602489733998,
+              "median_response": 0.942838078048248,
+              "n": 15375
+            },
+            "4P_HAD_2PARTON_TAUH_TAUH": {
+              "sigma_eff": 0.22570431023711818,
+              "median_response": 0.9530301328350728,
+              "n": 9734
+            },
+            "4P_HAD_4PARTON": {
+              "sigma_eff": 0.21261719052815184,
+              "median_response": 1.0158037702627662,
+              "n": 59031
+            },
+            "4P_SEMILEP_2PARTON_LL": {
+              "sigma_eff": 0.23518015406163426,
+              "median_response": 0.943468431969871,
+              "n": 11507
+            },
+            "4P_SEMILEP_2PARTON_TAUH_TAUL": {
+              "sigma_eff": 0.22561308846597372,
+              "median_response": 0.9622716351433475,
+              "n": 9981
+            },
+            "4P_SEMILEP_NU_2PARTON_L": {
+              "sigma_eff": 0.23602467442445693,
+              "median_response": 0.9437657706501974,
+              "n": 11960
+            },
+            "4P_SEMILEP_NU_2PARTON_TAUL": {
+              "sigma_eff": 0.22696933093460744,
+              "median_response": 0.9590985998234987,
+              "n": 7480
+            },
+            "QCD_ALL": {
+              "sigma_eff": 0.3843496541851821,
+              "median_response": 0.9722046000975816,
+              "n": 81536
+            }
+          },
+          "jet_pt": {
+            "200-400": {
+              "sigma_eff": 0.22419004534437245,
+              "median_response": 0.9654816894362108,
+              "n": 60919
+            },
+            "400-700": {
+              "sigma_eff": 0.21719783972715362,
+              "median_response": 0.9747770627787732,
+              "n": 84809
+            },
+            "700-1000": {
+              "sigma_eff": 0.22666902143320644,
+              "median_response": 0.9749208673318143,
+              "n": 71311
+            },
+            "1000-2500": {
+              "sigma_eff": 0.28063731734226693,
+              "median_response": 0.9857622424473231,
+              "n": 181586
+            }
+          },
+          "genjet_sdmass": {
+            "20-50": {
+              "sigma_eff": 0.3041041154281825,
+              "median_response": 0.9391176409758328,
+              "n": 54477
+            },
+            "50-100": {
+              "sigma_eff": 0.23941710423323748,
+              "median_response": 0.9566402168364523,
+              "n": 80507
+            },
+            "100-150": {
+              "sigma_eff": 0.20513220409001603,
+              "median_response": 0.9679103483033275,
+              "n": 62039
+            },
+            "150-250": {
+              "sigma_eff": 0.18979381197135364,
+              "median_response": 0.9740597062768949,
+              "n": 81564
+            },
+            "250-500": {
+              "sigma_eff": 0.18183845678139632,
+              "median_response": 0.9691051746739875,
+              "n": 85298
+            }
+          }
+        }
+      },
+      "provenance": {
+        "label188_sha256": "a9449fd420c473f666d61bd86c1c9b4fca1835fef59e5d86010b2eed62d77dba",
+        "n_jets": 2000000,
+        "cache": "v2",
+        "checkpoint_sha256": "98fbe4c76f0fab968e6fbd7d05554073ae200c0a5c74b7997d3dc2a4d9b981ab"
+      }
+    }
+  },
+  "centering_detail": {
+    "n_classes_present": 188,
+    "n_classes_used": 184,
+    "min_train_per_class": 50,
+    "n_jets_dropped_small_class": 196,
+    "n_jets_used": 1993125,
+    "split": [
+      1195875,
+      398625,
+      398625
+    ]
+  },
+  "n_classes_used": 184,
+  "labels_used_sha256": "08f4501f5bec77cdb190c2d10bdc785afcb14cfc2d8ba131f0bb10ec6f791220"
+}

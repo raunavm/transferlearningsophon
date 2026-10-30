@@ -1298,7 +1298,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         sculpt_macros(em, sculpt, runs, index, fmt_pm)
     else:
         missing.append("mass sculpting -- experiments/FIGS/data/v2/head/*_sculpting.json")
-    boot = {d.name: _load(d) for d in sorted((data / "bootstrap").glob("*")) if d.is_dir()}
+    # a directory with a dot in its name is a job's unfinished staging directory
+    boot = {d.name: _load(d) for d in sorted((data / "bootstrap").glob("*")) if d.is_dir() and "." not in d.name}
     if boot:
         body, worst = table_boot(boot, runs)
         out["tables/mlst_boot.tex"] = _float("boot", body, True)
