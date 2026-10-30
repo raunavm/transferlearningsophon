@@ -1175,6 +1175,63 @@ def build_v2(tier: int | None = None) -> dict[str, str]:
     return out
 
 
+# ============================================ BatchNorm twins of the untrained trunks
+# The downstream linear probes read each run's best70 and its BatchNorm twin best70_bn
+# (scripts/build_linprobe_jobs.py), but the untrained trunks init-s1..3 only init, whose
+# BatchNorm statistics are the reset ones init_trunk.pt was saved with. So the random-
+# network baseline gets a twin too: one job per init reference writes it into the run
+# (experiments/MTX/bn_twins_v2.py --init: init_trunk.pt in the run's model, the same
+# BatchNorm pass on best70's twin's sample, checked by rows_sha256) and extracts it, tag
+# init_bn, for every split linprobe-x-init-sK extracted at init, on the same GPU rule:
+# build_linprobe_jobs.LP_ROOT/init-sK/<dataset>/<split>/init_bn/.
+INIT_BN_PIN = "mtx-s2.20"
+INIT_BN_DIR = OUT_DIR / "v2" / "init_bn"
+INIT_BN_NEEDED = V1ERR_NEEDED + ["experiments/MTX/bn_twins_v2.py", "experiments/MTX/pretrain_v2.py",
+                                 "experiments/MTX/stream_v2.py", "experiments/MTX/ParT_sophon_arch_mtx.py",
+                                 "src/utils/reproducibility.py", "configs/arms/L188.yaml"]
+INIT_BN_MUST = {"experiments/MTX/bn_twins_v2.py": '"--init"', "experiments/EVAL/extract_v2.py": "def init_bn_twin"}
+
+
+def build_init_bn() -> dict[str, str]:
+    """{file name: spec}: the twin and the init_bn extraction of each init reference."""
+    import json
+    bl, launch = _script("build_linprobe_jobs"), _script("build_mtx_launch")
+    cfg = next(a["config"] for a in json.loads(V2_GRID.read_text())["arms"] if a["name"] == V2_INIT_ARM)
+    out = {}
+    for ref, run in v2_init_refs():
+        run_dir = f"{V2_ROOT}/{run}"
+        body = (f"          RUN_DIR={run_dir}\n"
+                "          if [ ! -f ${RUN_DIR}/init_bn.json ]; then\n"
+                "            # the arm's reweighting sidecar beside its config: the one the run trained with\n"
+                f"            CFG={cfg}\n"
+                "            SIDECAR=${CFG%.yaml}.$(md5sum ${CFG} | cut -d' ' -f1).auto.yaml\n"
+                "            SRC=/data/results/mtx/makeweight/$(basename ${SIDECAR})\n"
+                '            [ -f "${SRC}" ] || { echo "FATAL: no reweighting sidecar ${SRC}"; exit 42; }\n'
+                '            cp "${SRC}" "${SIDECAR}"\n'
+                '            sha256sum -c ${RUN_DIR}/reweight_sidecar.sha256 || { echo "FATAL: not the run\'s sidecar"; exit 42; }\n'
+                f"            TWIN_LOG={bl.LP_ROOT}/{ref}/init_bn_twin.$(date -u +%Y%m%dT%H%M%SZ).log\n"
+                "            mkdir -p $(dirname ${TWIN_LOG})\n"
+                "            python3 experiments/MTX/bn_twins_v2.py --out ${RUN_DIR} --init 2>&1 | tee ${TWIN_LOG} || halt\n"
+                "          fi\n"
+                + bl.LIST_TEST1.format(classes=bl.BF.JC1_CLASSES)
+                + bl.EXTRACT_FN.format(root=bl.LP_ROOT, model=ref, run_dir=run_dir, rung="none", k=0, reg=0,
+                                       ckpts="init_bn")
+                + "".join(bl.calls())
+                + f'          echo "every split of {ref} extracted at init_bn"\n')
+        name = f"init-bn-{ref.removeprefix('init-')}-raunav"
+        # cpu 8, not the extraction's 4: the twin's BatchNorm pass reads the training stream
+        # with the run's five loader workers, as the twin jobs do; and their image and pyarrow
+        text = bl.off_grid_gpu(V1ERR_TEMPLATE.format(
+            name=name, image=launch.V2_IMAGE, pin=INIT_BN_PIN, body=body, mem=bl.X_MEM, cpu="8",
+            gpu_req=', nvidia.com/gpu: "1"', gpu_check=GPU_CHECK.format(), node_exclude=NODE_EXCLUDE))
+        pip = "          pip install --no-cache-dir -q pyarrow\n"
+        assert text.count(pip) == 1, name
+        text = text.replace(pip, f"          pip install --no-cache-dir -q {launch.V2_PYARROW}\n")
+        assert text.count("  backoffLimit: 6\n") == 1, name
+        out[f"job-{name}.yaml"] = text.replace("  backoffLimit: 6\n", "  backoffLimit: 1\n")
+    return out
+
+
 # ===================================================================== TF32 check
 # experiments/EVAL/tf32_check.py on the checkpoint whose real-data scores moved
 # most between GPU models (r16q1mass-s3, epoch 79: 0.10 in three-prong log-odds,
@@ -1327,7 +1384,19 @@ def main() -> int:
     ap.add_argument("--v1err", action="store_true",
                     help="emit ONLY the v1 head jobs by the checkpoint rule and the "
                          "test-split class count (audit 2026-09-29)")
+    ap.add_argument("--v2-init-bn", action="store_true",
+                    help="emit ONLY the BatchNorm twins of the untrained trunks init-s1..3 and "
+                         f"their extraction (tag init_bn) into {INIT_BN_DIR.relative_to(ROOT)}")
     args = ap.parse_args()
+
+    if args.v2_init_bn:
+        verify_pin(INIT_BN_PIN, INIT_BN_NEEDED, args.pin_not_yet_tagged, INIT_BN_MUST)
+        INIT_BN_DIR.mkdir(parents=True, exist_ok=True)
+        for fname, text in build_init_bn().items():
+            yaml.safe_load(text)
+            (INIT_BN_DIR / fname).write_text(text)
+            print(f"  {fname}")
+        return 0
 
     if args.tf32_check:
         verify_pin(TF32_PIN, ["experiments/EVAL/tf32_check.py", "experiments/EVAL/extract_v2.py",

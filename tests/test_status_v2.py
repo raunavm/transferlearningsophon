@@ -72,20 +72,20 @@ BC = _load("build_curve_jobs_status", "scripts/build_curve_jobs.py")
 
 
 def test_the_cronjob_clones_the_tag_runs_the_status_and_nothing_else():
-    text = BC.status_spec(BC.PIN)
+    text = BC.status_spec(BC.STATUS_PIN)
     assert (BC.STATUS_DIR / "cronjob-status-raunav.yaml").read_text() == text
     d = yaml.safe_load(text)
     assert d["kind"] == "CronJob" and d["metadata"]["name"] == "status-raunav"
     assert d["spec"]["schedule"] == "*/30 * * * *" and d["spec"]["concurrencyPolicy"] == "Forbid"
     pod = d["spec"]["jobTemplate"]["spec"]["template"]["spec"]
     c = pod["containers"][0]
-    assert {e["name"]: e["value"] for e in c["env"]} == {"REPO_REF": BC.PIN}
+    assert {e["name"]: e["value"] for e in c["env"]} == {"REPO_REF": BC.STATUS_PIN}
     assert "git clone --depth 1 --branch \"${REPO_REF}\"" in c["args"][0]
     assert "python3 experiments/MTX/status_v2.py --out /data/results/status/status.json" in c["args"][0]
     assert "nvidia.com/gpu" not in c["resources"]["limits"]
     low = text.lower()
     assert "kubectl" not in low and "configmap" not in low and "secret" not in low
     assert "serviceaccount" not in low
-    backup = yaml.safe_load(BC.BF._mtx_launch().v2_backup_spec(BC.PIN)[1])
+    backup = yaml.safe_load(BC.BF._mtx_launch().v2_backup_spec(BC.STATUS_PIN)[1])
     assert c["image"] == backup["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]["image"]
     assert pod["volumes"] == backup["spec"]["jobTemplate"]["spec"]["template"]["spec"]["volumes"]

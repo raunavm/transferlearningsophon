@@ -381,3 +381,173 @@ def test_the_v3_jobs_cover_the_paper_runs_and_the_untrained_trunks():
     assert "nvidia.com/gpu" not in m["resources"]["limits"] and "--mlp" in m["args"][0]
     assert all(x.split("-")[1] in ("l188", "l162", "r42q1", "r16q1", "s1", "s2", "s3")
                for x in re.search(r"MODELS=\(([^)]*)\)", m["args"][0]).group(1).split())
+
+
+# ------------------------------------------------------------------ the nonlinear probe, v4 (2026-10-30)
+def _old_binary_fit_mlp(P, Xtr, ytr, Xva, yva, Xte, seeds):
+    """probe._fit_mlp's scores, and each seed's (best validation AUC, epochs run), as they were
+    before n_classes (mtx-s2.18), for the binary check."""
+    import torch
+    from sklearn.metrics import roc_auc_score
+    from sklearn.preprocessing import StandardScaler
+    S = P.MLP_SCHEDULE
+    sc = StandardScaler().fit(Xtr)
+    tr, va, te = (torch.tensor(sc.transform(x), dtype=torch.float32) for x in (Xtr, Xva, Xte))
+    ytr_t = torch.tensor(ytr, dtype=torch.long)
+    scores, per_seed = [], []
+    for sd in seeds:
+        torch.manual_seed(sd)
+        net = torch.nn.Sequential(torch.nn.Linear(tr.shape[1], 256), torch.nn.ReLU(),
+                                  torch.nn.Dropout(0.1), torch.nn.Linear(256, 2))
+        opt = torch.optim.AdamW(net.parameters(), lr=S["lr"], weight_decay=1e-4)
+        sched = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            opt, mode="min", factor=S["lr_factor"], patience=S["lr_patience"],
+            threshold=S["min_rel_gain"], threshold_mode="rel")
+        lossf = torch.nn.CrossEntropyLoss()
+        best_va, best_state, patience = -1.0, None, 0
+        for epoch in range(S["max_epochs"]):
+            net.train()
+            perm = torch.randperm(tr.shape[0])
+            for i in range(0, tr.shape[0], 4096):
+                idx = perm[i:i + 4096]
+                opt.zero_grad()
+                lossf(net(tr[idx]), ytr_t[idx]).backward()
+                opt.step()
+            net.eval()
+            with torch.no_grad():
+                v = (net(va)[:, 1] - net(va)[:, 0]).numpy()
+            auc = roc_auc_score(yva, v)
+            sched.step(1.0 - auc)
+            if 1.0 - auc < (1.0 - best_va) * (1.0 - S["min_rel_gain"]):
+                best_va, best_state, patience = auc, {k: t.clone() for k, t in net.state_dict().items()}, 0
+            else:
+                patience += 1
+                if patience >= S["stop_patience"]:
+                    break
+        net.load_state_dict(best_state)
+        net.eval()
+        with torch.no_grad():
+            scores.append((net(te)[:, 1] - net(te)[:, 0]).numpy())
+        per_seed.append((float(best_va), epoch + 1))
+    return np.mean(scores, axis=0), per_seed
+
+
+def test_the_binary_mlp_is_bit_identical_to_the_v3_probe(monkeypatch):
+    pytest.importorskip("torch")
+    P = _load("probe", "experiments/EVAL/probe.py")
+    monkeypatch.setitem(P.MLP_SCHEDULE, "max_epochs", 25)
+    rng = np.random.default_rng(5)
+    y = rng.integers(0, 2, 3000)
+    x = _jets(rng, y, 2, sep=0.3)
+    s, meta = P.fit_mlp(x[:2000], y[:2000], x[2000:2500], y[2000:2500], x[2500:], seeds=(0, 1))
+    assert s.shape == (500,) and len(meta["seeds"]) == 2
+    import torch
+    threads = torch.get_num_threads()
+    torch.set_num_threads(P.MLP_THREADS)          # fit_mlp's thread count fixes the sums' order
+    try:
+        old, per_seed = _old_binary_fit_mlp(P, x[:2000], y[:2000], x[2000:2500], y[2000:2500], x[2500:], (0, 1))
+    finally:
+        torch.set_num_threads(threads)
+    np.testing.assert_array_equal(s, old)
+    assert [(m["seed"], m["val_auc"], m["epochs_run"]) for m in meta["seeds"]] == \
+        [(sd, va, ep) for sd, (va, ep) in zip((0, 1), per_seed)]
+
+
+def test_the_mlp_fits_k_classes_with_softmax_and_averages_probabilities(monkeypatch):
+    pytest.importorskip("torch")
+    P = _load("probe", "experiments/EVAL/probe.py")
+    monkeypatch.setitem(P.MLP_SCHEDULE, "max_epochs", 100)
+    rng = np.random.default_rng(6)
+    y = rng.integers(0, 5, 4000)
+    x = _jets(rng, y, 5, sep=1.0)
+    p, meta = P.fit_mlp(x[:2500], y[:2500], x[2500:3000], y[2500:3000], x[3000:], n_classes=5)
+    assert p.shape == (1000, 5) and np.allclose(p.sum(1), 1, atol=1e-5)
+    assert P.macro_auc_ovr(y[3000:], p) > 0.9
+    assert len(meta["seeds"]) == len(P.MLP_SEEDS)
+    for m in meta["seeds"]:          # the plateau rule reads the validation macro AUC
+        assert 0.8 < m["val_auc"] <= 1 and m["epochs_run"] <= 100 and isinstance(m["converged"], bool)
+        assert min(abs(v - m["val_auc"]) for v in m["val_auc_curve"]) < 1e-9
+
+
+def test_the_v4_nonlinear_probe_adds_jetclass_and_the_188_class_task(root188, monkeypatch):
+    pytest.importorskip("torch")
+    root, pq_dir = root188
+    rng = np.random.default_rng(12)
+    means = rng.normal(size=(10, 128))
+    for split, n in (("train_N300", 300), ("train_N3000", 3000), ("val", 2000), ("test", 4000)):
+        y = rng.integers(0, 10, n)
+        _split(root / "mtx-l188-s1" / "jc1" / split / "best70", 2.0 * means[y] + rng.normal(size=(n, 128)), y)
+    monkeypatch.setattr(LP, "TEST_FIRST", {"jc2": 6000})
+    load = LP._load
+
+    def short(name, rel):            # a short schedule: this checks the cells, not the optimum
+        m = load(name, rel)
+        if name == "probe":
+            m.MLP_SCHEDULE["max_epochs"] = 100
+        return m
+    monkeypatch.setattr(LP, "_load", short)
+    out = root / "mlp4"
+    assert LP.main(["--root", str(root), "--model", "mtx-l188-s1", "--checkpoints", "best70",
+                    "--mlp", "v4", "--out", str(out), "--jc2-parquet", str(pq_dir)]) == 0
+    doc = json.loads((out / "mtx-l188-s1.json").read_text())
+    cells = doc["cells"]["best70"]
+    assert doc["probe"] == "mlp" and doc["mlp_set"] == "v4"
+    assert set(cells) == set(LP.PAIRS) | set(LP.QCD_PAIRS) | {"top", "qg", "qg_herwig", "jc1", "jc2_188"}
+    for c in cells.values():
+        assert isinstance(c["converged"], bool) and len(c["epochs"]) == 3
+        assert c["converged"] == c["mlp"]["all_converged"]
+    c = cells["jc2_188"]                   # native_metrics' fields, on the linear probe's jets
+    assert c["train_size"] == 4000 and c["n_classes_in_train"] == 188 and c["n_jets_auc"] == 1500
+    assert {"macro_auc_ovr", "macro_auc_resonant", "macro_auc_qcd", "macro_auc_trained"} <= set(c)
+    assert c["macro_auc_ovr"] > 0.8 and len(c["per_class_auc"]) == 188
+    j = cells["jc1"]                       # multiclass_metrics' fields
+    assert j["train_size"] == 3000 and j["n_jets"] == 4000 and j["auc_stride"] == 4
+    assert j["macro_auc_ovr"] > 0.8
+    assert len(j["per_class_auc"]) == 10 and set(j["rejection_vs_qcd"]) == {str(c) for c in range(1, 10)}
+    assert set(j["eps_s"]) == set(j["rejection_vs_qcd"])        # jc1_per_class, as the linear jc1 cell
+    # the v3 set is unchanged in its cells
+    assert LP.main(["--root", str(root), "--model", "mtx-l188-s1", "--checkpoints", "best70",
+                    "--mlp", "--out", str(root / "mlp3"), "--jc2-parquet", str(pq_dir)]) == 0
+    v3 = json.loads((root / "mlp3" / "mtx-l188-s1.json").read_text())
+    assert v3["mlp_set"] == "v3" and set(v3["cells"]["best70"]) == set(cells) - {"jc1", "jc2_188"}
+
+
+def test_the_v4_jobs_cover_every_model_and_the_init_bn_checkpoint():
+    specs = L.build_v4()
+    assert set(specs) == {"job-linprobe-mlp4-raunav.yaml", "job-linprobe-initbn-raunav.yaml",
+                          "job-linprobe-mlp4bn-raunav.yaml"}
+    paper, inits = L.BF.v2_paper_runs(), ["init-s1", "init-s2", "init-s3"]
+    want = {"job-linprobe-mlp4-raunav.yaml": (paper + inits, ["best70"] * 27 + ["init"] * 3),
+            "job-linprobe-initbn-raunav.yaml": (inits, ["init_bn"] * 3),
+            "job-linprobe-mlp4bn-raunav.yaml": (inits, ["init_bn"] * 3)}
+    for name, spec in specs.items():
+        d = yaml.safe_load(spec)
+        sp, a = d["spec"], _args(spec)
+        models, ckpts = want[name]
+        assert d["metadata"]["name"].endswith("-raunav") and name == f"job-{d['metadata']['name']}.yaml"
+        assert sp["completionMode"] == "Indexed" and sp["completions"] == len(models)
+        assert sp["parallelism"] == L.V4_PARALLEL[d["metadata"]["name"].split("-")[1]] <= 2
+        assert sp["podFailurePolicy"]["rules"][0]["action"] == "FailIndex"
+        assert subprocess.run(["bash", "-n"], input=a, text=True).returncode == 0, name
+        assert f'--branch "{L.V4_PIN}"' in a and L.V4_PIN == "mtx-s2.20"
+        assert re.search(r"MODELS=\(([^)]*)\)", a).group(1).split() == models
+        assert re.findall(r'"(\w+)"', re.search(r"CKPTS=\(([^)]*)\)", a).group(1)) == ckpts
+        # no pod waits for its features: one storage check, then the work
+        assert "sleep" not in a and "manifest.json" not in a and a.count("df --output=pcent /data") == 1
+    for name, out in (("mlp4", "fits_v3_mlp2"), ("mlp4bn", "fits_v3_mlp2/init_bn")):
+        spec = specs[f"job-linprobe-{name}-raunav.yaml"]
+        res = yaml.safe_load(spec)["spec"]["template"]["spec"]["containers"][0]["resources"]
+        assert "nvidia.com/gpu" not in res["limits"]
+        assert f"--mlp v4 --out {L.LP_ROOT}/{out} || halt" in _args(spec)
+    mlp = _args(specs["job-linprobe-mlp4-raunav.yaml"]) + _args(specs["job-linprobe-mlp4bn-raunav.yaml"])
+    assert "only after the init_bn extraction jobs init-bn-s1..s3 have completed" in L.__doc__
+    lin = specs["job-linprobe-initbn-raunav.yaml"]
+    assert yaml.safe_load(lin)["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]["nvidia.com/gpu"] == "1"
+    assert ("--datasets jc2_188 jc1 top qg" in _args(lin)
+            and f"--out {L.LP_ROOT}/fits_v3_initbn --probs-out {L.LP_ROOT}/fits_v3_initbn_probs" in _args(lin))
+    for path, text in L.V4_NEEDED.items():       # what the tag must carry
+        assert text in (ROOT / path).read_text(), path
+    # new directories only: none of the earlier fits' outputs
+    for old in (L.FITS, L.FITS_V3, L.PROBS_V3, L.MLP_V3):
+        assert f"{L.LP_ROOT}/{old} " not in mlp + _args(lin) and f"{L.LP_ROOT}/{old}\n" not in mlp + _args(lin)
+

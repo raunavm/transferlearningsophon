@@ -160,9 +160,11 @@ BC = _load("build_curve_jobs_boot", "scripts/build_curve_jobs.py")
 
 
 def test_ratio_pairs():
-    got = BC.ratio_pairs(["l188-s2", "l162-s2", "l162mass-s1", "rand2p2-s2"], "mtx-", lambda k: f"init-s{k}")
-    assert got == ["mtx-l188-s2/init-s2", "mtx-l162-s2/mtx-l188-s2", "mtx-l162-s2/init-s2",
+    runs = ["l188-s1", "l162-s1", "l162mass-s1", "l188-s2", "l162-s2", "rand2p2-s2"]
+    got = BC.ratio_pairs(runs, "mtx-", lambda k: f"init-s{k}")
+    assert got == ["mtx-l188-s1/init-s1", "mtx-l162-s1/mtx-l188-s1", "mtx-l162-s1/init-s1",
                    "mtx-l162mass-s1/mtx-l188-s1", "mtx-l162mass-s1/mtx-l162-s1", "mtx-l162mass-s1/init-s1",
+                   "mtx-l188-s2/init-s2", "mtx-l162-s2/mtx-l188-s2", "mtx-l162-s2/init-s2",
                    "mtx-rand2p2-s2/mtx-l188-s2", "mtx-rand2p2-s2/init-s2"]
 
 
@@ -177,11 +179,15 @@ def _boot_call(tmp_path, fn: str, call: str) -> list[str]:
 
 
 def test_the_fine_tuning_bootstrap_reads_the_reported_runs_and_the_references(tmp_path):
-    fn = BC.BOOT_FT.format(runs=" ".join(BC.FT_RUNS), seeds="1 2 3", scratch=BC.SCRATCH)
-    argv = _boot_call(tmp_path, fn, "boot top /T /R 1000")
+    fn = BC.BOOT_FT.format(runs=" ".join(BC.FT_RUNS), seeds="2 3", scratch=BC.SCRATCH, base=BC.BASELINE)
+    argv = _boot_call(tmp_path, fn, "boot top /T /R 1000 /S")
     models = [argv[i + 1] for i, a in enumerate(argv) if a == "--model"]
     assert models[0] == "l188-s1=/T/l188-s1/N1000/s1" and len(models) == 19
-    assert models[-1] == f"{BC.SCRATCH}-s3=/R/{BC.SCRATCH}/N1000/s3"
+    # seed 1 from the reference's tree, seeds 2-3 from the subset-s1 tree
+    assert models[-3:] == [f"{BC.BASELINE}-1=/R/{BC.SCRATCH}/N1000/s1",
+                           f"{BC.BASELINE}-2=/S/{BC.SCRATCH}/N1000/s2",
+                           f"{BC.BASELINE}-3=/S/{BC.SCRATCH}/N1000/s3"]
+    assert BC.BASELINE == "scratch-s1"
     assert argv[:3] == ["experiments/STATS/paired_bootstrap.py", "--task", "top"]
     assert argv[-2:] == ["--out", f"{tmp_path}/top_N1000.json"] and "x/y" in argv
 
@@ -202,7 +208,7 @@ def test_the_bootstrap_specs_cover_every_task_and_size():
     calls = [ln for ln in ft.splitlines() if ln.startswith("          boot ") and "()" not in ln]
     assert len(calls) == 16 and jc2.count("\n          boot jc2_188 ") == 4
     assert "--pair l162mass-s1/l162-s1" in ft and "--pair l188-s1/l188-s1" not in ft
-    assert f"--pair r16q1-s3/{BC.BASELINE}" in ft
+    assert f"--pair r16q1-s3/{BC.BASELINE}-3 " in ft
     assert "boot jc2_188_pairs_qcd_bb_vs_cc 1000000" in probe and "boot qg_herwig 100000" in probe
     assert "--pair mtx-flavf1r-s2/init-s2" in probe
     for body, out in ((ft, "ft"), (jc2, "jc2"), (probe, "probe")):

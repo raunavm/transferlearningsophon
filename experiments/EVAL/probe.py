@@ -508,18 +508,29 @@ def fit_linear(Xtr, ytr, Xva, yva, Xte):
     return best.decision_function(Xte_), {"C": best_C, "val_auc": float(best_auc)}
 
 
-def fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
-    """MLPHead([256], dropout 0.1). Mandatory beside every linear null (D6)."""
+def macro_auc_ovr(y: np.ndarray, p: np.ndarray) -> float:
+    """Mean one-vs-rest AUC over the classes present in y, on columns p[:, c]."""
+    from sklearn.metrics import roc_auc_score
+    return float(np.mean([roc_auc_score(y == c, p[:, c]) for c in np.unique(y)]))
+
+
+def fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS, n_classes=2):
+    """MLPHead([256], dropout 0.1). Mandatory beside every linear null (D6).
+
+    Two classes: the score is the logit difference, as it always was. n_classes > 2 (labels
+    0..n_classes-1, 2026-10-30): softmax over n_classes outputs, the same cross-entropy loss and
+    plateau rule, read on the validation macro one-vs-rest AUC (macro_auc_ovr; it is the
+    seeds' val_auc), and the score is the class probabilities, averaged over the seeds."""
     import torch
     prev_threads = torch.get_num_threads()
     torch.set_num_threads(MLP_THREADS)
     try:
-        return _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds)
+        return _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds, n_classes)
     finally:
         torch.set_num_threads(prev_threads)
 
 
-def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
+def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS, n_classes=2):
     import torch
     from sklearn.metrics import roc_auc_score
     from sklearn.preprocessing import StandardScaler
@@ -534,7 +545,7 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
         torch.manual_seed(sd)
         net = torch.nn.Sequential(
             torch.nn.Linear(tr.shape[1], 256), torch.nn.ReLU(),
-            torch.nn.Dropout(0.1), torch.nn.Linear(256, 2))
+            torch.nn.Dropout(0.1), torch.nn.Linear(256, n_classes))
         opt = torch.optim.AdamW(net.parameters(), lr=S["lr"], weight_decay=1e-4)
         sched = torch.optim.lr_scheduler.ReduceLROnPlateau(
             opt, mode="min", factor=S["lr_factor"], patience=S["lr_patience"],
@@ -562,8 +573,11 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
                 opt.step()
             net.eval()
             with torch.no_grad():
-                v = (net(va)[:, 1] - net(va)[:, 0]).numpy()
-            auc = roc_auc_score(yva, v)
+                if n_classes == 2:
+                    v = (net(va)[:, 1] - net(va)[:, 0]).numpy()
+                else:
+                    v = torch.softmax(net(va), 1).numpy()
+            auc = roc_auc_score(yva, v) if n_classes == 2 else macro_auc_ovr(yva, v)
             curve.append(round(float(auc), 10))
             sched.step(1.0 - auc)
             if 1.0 - auc < (1.0 - best_va) * (1.0 - S["min_rel_gain"]):
@@ -577,7 +591,8 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
         net.load_state_dict(best_state)
         net.eval()
         with torch.no_grad():
-            scores.append((net(te)[:, 1] - net(te)[:, 0]).numpy())
+            scores.append((net(te)[:, 1] - net(te)[:, 0]).numpy() if n_classes == 2
+                          else torch.softmax(net(te), 1).numpy())
         meta.append({"seed": sd, "val_auc": float(best_va),
                      "epochs_run": epoch + 1, "converged": stopped_early,
                      "best_epoch": best_epoch, "val_auc_curve": curve})

@@ -12,6 +12,7 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
                                    <tag> best70 (every paper run) or best70_done18 (the 18 runs
                                    finished before the split), <file> leg1_metrics, leg2_metrics,
                                    bench_metrics, bench_metrics_herwig; each must parse
+  jc2_test/counts.json             per-class counts of the 2M JetClass-II test jets (all, and AUC rows)
   ft_mlst/manifests.json           {cell: its recipe, GPU and node} for every DONE fine-tuning cell of
                                    the paper runs (best70) and the V100 references (ref_v100), read
                                    from each cell's ft_manifest.json
@@ -56,6 +57,23 @@ N_EPOCHS = 80
 MANIFEST_KEYS = ("leg", "init", "n_train", "ft_seed", "lr", "head_lr_mult", "weight_decay", "epochs",
                  "lr_schedule", "recipe", "batch_size", "samples_per_epoch", "val_jets", "val_rule", "ckpt_rule",
                  "gpu_device_name", "node_name", "repo_commit", "checkpoint_sha256")
+
+
+# Every model is scored on the same JetClass-II test jets (the fits record one test_label_sha256),
+# so one model's cached labels give the test composition.
+JC2_TEST_LABELS = EVAL / "v2_linprobe/mtx-l188-s1/jc2/test/best70/label188.npy"
+JC2_TEST_N, JC2_AUC_STRIDE = 2_000_000, 4
+
+
+def jc2_test_counts() -> dict:
+    """Per-class counts of the JetClass-II test jets the probes score: all of them (accuracy, pairs)
+    and every JC2_AUC_STRIDE-th (the macro AUC)."""
+    import numpy as np
+    y = np.load(JC2_TEST_LABELS)[:JC2_TEST_N].astype(np.int64)
+    return {"source": str(JC2_TEST_LABELS), "n_jets": int(y.size), "auc_stride": JC2_AUC_STRIDE,
+            "label_sha256": hashlib.sha256(y.astype(np.int64).tobytes()).hexdigest(),
+            "counts": np.bincount(y, minlength=188).tolist(),
+            "counts_auc": np.bincount(y[::JC2_AUC_STRIDE], minlength=188).tolist()}
 
 
 def manifests() -> dict:
@@ -130,6 +148,7 @@ def main() -> int:
         for f in sorted((EVAL / "xbx" / "fits_ihep").glob("*/*.json")):
             add(f"xbx/{f.parent.name}/{f.name}", f.read_bytes())
         add("ft_mlst/manifests.json", (json.dumps(manifests(), indent=1) + "\n").encode())
+        add("jc2_test/counts.json", (json.dumps(jc2_test_counts()) + "\n").encode())
         for run in sorted(MTX.glob("mtx-*")):
             if (run / "DONE").exists():
                 add(f"compute/{run.name}.json", (json.dumps(compute(run), indent=1) + "\n").encode())

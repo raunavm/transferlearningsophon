@@ -26,7 +26,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.19" \
+          git clone --depth 1 --branch "mtx-s2.20" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -51,19 +51,20 @@ spec:
           done
           TMP=/data/results/bootstrap/jc2.staging.$(date -u +%s)
           mkdir -p ${TMP}
-          PAIRS=(--pair l188-s1/scratch-v2-s1 --pair l188-s2/scratch-v2-s1 --pair l188-s3/scratch-v2-s1 --pair l162-s1/l188-s1 --pair l162-s1/scratch-v2-s1 --pair l162-s2/l188-s2 --pair l162-s2/scratch-v2-s1 --pair l162-s3/l188-s3 --pair l162-s3/scratch-v2-s1 --pair r42q1-s1/l188-s1 --pair r42q1-s1/scratch-v2-s1 --pair r42q1-s2/l188-s2 --pair r42q1-s2/scratch-v2-s1 --pair r42q1-s3/l188-s3 --pair r42q1-s3/scratch-v2-s1 --pair r16q1-s1/l188-s1 --pair r16q1-s1/scratch-v2-s1 --pair r16q1-s2/l188-s2 --pair r16q1-s2/scratch-v2-s1 --pair r16q1-s3/l188-s3 --pair r16q1-s3/scratch-v2-s1 --pair l162mass-s1/l188-s1 --pair l162mass-s1/l162-s1 --pair l162mass-s1/scratch-v2-s1 --pair l162mass-s2/l188-s2 --pair l162mass-s2/l162-s2 --pair l162mass-s2/scratch-v2-s1 --pair r16q1mass-s1/l188-s1 --pair r16q1mass-s1/r16q1-s1 --pair r16q1mass-s1/scratch-v2-s1 --pair r16q1mass-s2/l188-s2 --pair r16q1mass-s2/r16q1-s2 --pair r16q1mass-s2/scratch-v2-s1)
+          PAIRS=(--pair l188-s1/scratch-s1-1 --pair l188-s2/scratch-s1-2 --pair l188-s3/scratch-s1-3 --pair l162-s1/l188-s1 --pair l162-s1/scratch-s1-1 --pair l162-s2/l188-s2 --pair l162-s2/scratch-s1-2 --pair l162-s3/l188-s3 --pair l162-s3/scratch-s1-3 --pair r42q1-s1/l188-s1 --pair r42q1-s1/scratch-s1-1 --pair r42q1-s2/l188-s2 --pair r42q1-s2/scratch-s1-2 --pair r42q1-s3/l188-s3 --pair r42q1-s3/scratch-s1-3 --pair r16q1-s1/l188-s1 --pair r16q1-s1/scratch-s1-1 --pair r16q1-s2/l188-s2 --pair r16q1-s2/scratch-s1-2 --pair r16q1-s3/l188-s3 --pair r16q1-s3/scratch-s1-3 --pair l162mass-s1/l188-s1 --pair l162mass-s1/l162-s1 --pair l162mass-s1/scratch-s1-1 --pair l162mass-s2/l188-s2 --pair l162mass-s2/l162-s2 --pair l162mass-s2/scratch-s1-2 --pair r16q1mass-s1/l188-s1 --pair r16q1mass-s1/r16q1-s1 --pair r16q1mass-s1/scratch-s1-1 --pair r16q1mass-s2/l188-s2 --pair r16q1mass-s2/r16q1-s2 --pair r16q1mass-s2/scratch-s1-2)
           RUNS="l188-s1 l188-s2 l188-s3 l162-s1 l162-s2 l162-s3 r42q1-s1 r42q1-s2 r42q1-s3 r16q1-s1 r16q1-s2 r16q1-s3 l162mass-s1 l162mass-s2 r16q1mass-s1 r16q1mass-s2"
           boot () {
             local args=() r s
             for r in ${RUNS}; do args+=(--model "${r}=$2/${r}/N$4/s1"); done
-            for s in 1 2 3; do args+=(--model "scratch-v2-s${s}=$3/scratch-v2/N$4/s${s}"); done
+            args+=(--model "scratch-s1-1=$3/scratch-v2/N$4/s1")
+            for s in 2 3; do args+=(--model "scratch-s1-${s}=$5/scratch-v2/N$4/s${s}"); done
             python3 experiments/STATS/paired_bootstrap.py --task $1 "${args[@]}" "${PAIRS[@]}" \
               --out ${TMP}/$1_N$4.json || halt
           }
-          boot jc2_188 /data/results/ft_v2/best70/leg1_188 /data/results/ft_v2/ref_v100/jc2/leg1_188 1000
-          boot jc2_188 /data/results/ft_v2/best70/leg1_188 /data/results/ft_v2/ref_v100/jc2/leg1_188 10000
-          boot jc2_188 /data/results/ft_v2/best70/leg1_188 /data/results/ft_v2/ref_v100/jc2/leg1_188 100000
-          boot jc2_188 /data/results/ft_v2/best70/leg1_188 /data/results/ft_v2/ref_v100/jc2/leg1_188 1000000
+          boot jc2_188 /data/results/ft_v2/best70/leg1_188 /data/results/ft_v2/ref_v100/jc2/leg1_188 1000 /data/results/ft_v2/ref_v100/jc2/leg1_188
+          boot jc2_188 /data/results/ft_v2/best70/leg1_188 /data/results/ft_v2/ref_v100/jc2/leg1_188 10000 /data/results/ft_v2/ref_v100/jc2/leg1_188
+          boot jc2_188 /data/results/ft_v2/best70/leg1_188 /data/results/ft_v2/ref_v100/jc2/leg1_188 100000 /data/results/ft_v2/ref_v100/jc2/leg1_188
+          boot jc2_188 /data/results/ft_v2/best70/leg1_188 /data/results/ft_v2/ref_v100/jc2/leg1_188 1000000 /data/results/ft_v2/ref_v100/jc2/leg1_188
           [ ! -e /data/results/bootstrap/jc2 ] || { echo "FATAL: /data/results/bootstrap/jc2 appeared while this ran"; exit 42; }
           mv ${TMP} /data/results/bootstrap/jc2
           ls -la /data/results/bootstrap/jc2

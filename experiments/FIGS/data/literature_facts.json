@@ -426,5 +426,54 @@
    "location": "Sec. 4.1",
    "quote": "Jets with pT ∈[500, 550] GeV and |y| < 2.0 were kept."
   }
- ]
+ ],
+ "LitPartTopAucScratch": {
+  "macro": "LitPartTopAucScratch",
+  "value": "0.9858",
+  "source": "arXiv:2202.03772",
+  "location": "Table 5",
+  "quote": "ParT 0.940 0.9858 413 ± 16 1602 ± 81"
+ },
+ "LitPartTopAucFt": {
+  "macro": "LitPartTopAucFt",
+  "value": "0.9877",
+  "source": "arXiv:2202.03772",
+  "location": "Table 5",
+  "quote": "ParT-f.t. 0.944 0.9877 691 ± 15 2766 ± 130"
+ },
+ "LitPartQgAucScratch": {
+  "macro": "LitPartQgAucScratch",
+  "value": "0.9121",
+  "source": "arXiv:2202.03772",
+  "location": "Table 6 (exp)",
+  "quote": "ParTexp 0.840 0.9121 41.3 ± 0.3 101.2 ± 1.1"
+ },
+ "LitPartQgRejScratch": {
+  "macro": "LitPartQgRejScratch",
+  "value": "101.2",
+  "source": "arXiv:2202.03772",
+  "location": "Table 6 (exp)",
+  "quote": "ParTexp 0.840 0.9121 41.3 ± 0.3 101.2 ± 1.1"
+ },
+ "LitPartQgAucFt": {
+  "macro": "LitPartQgAucFt",
+  "value": "0.9151",
+  "source": "arXiv:2202.03772",
+  "location": "Table 6 (exp)",
+  "quote": "ParT-f.t.exp 0.843 0.9151 42.4 ± 0.2 107.9 ± 0.5"
+ },
+ "LitPartQgRejFt": {
+  "macro": "LitPartQgRejFt",
+  "value": "107.9",
+  "source": "arXiv:2202.03772",
+  "location": "Table 6 (exp)",
+  "quote": "ParT-f.t.exp 0.843 0.9151 42.4 ± 0.2 107.9 ± 0.5"
+ },
+ "LitPartJcTwoMAcc": {
+  "macro": "LitPartJcTwoMAcc",
+  "value": "0.836",
+  "source": "arXiv:2202.03772",
+  "location": "Table 3",
+  "quote": "ParT (2 M) 0.836"
+ }
 }

@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""Figures and numbers of the group results deck: the four label sets of the class hierarchy,
-the auxiliary mass regression, the randomly initialized network and training from scratch (no
-random partitions), drawn for 16:9 slides.
+"""Figures and numbers of the group results deck: the four label sets of the class hierarchy
+(188, 162, 43 and 17 classes), the auxiliary mass regression, the randomly initialized network
+and training from scratch (no random partitions), drawn for 16:9 slides.
 
 Reads the paper's inputs through mlst_results.py and draws with mlst_figures.py's helpers, so
-a slide and a paper table cannot disagree. Every value a slide quotes that no paper table or
-macro holds is written to <outdir>/deck_numbers.json, formatted as the slide prints it.
-
-Fine-tuning comes from the interim read-out (mlst_results.load_ft: best70 when it exists, else
-best70_done18), so its labels and the JSON carry the number of runs behind each value.
+a slide and a paper table cannot disagree: the linear probes from linprobe/fits_v3 (JetClass-II
+at its 188 classes), the mass regression from head/<model>_mass.json, the fine-tuning from the
+read-out tag mlst_results.load_ft finds (FT_TAGS; JetClass-II from leg188 at 188 classes), and
+compute/ and ft_mlst/manifests.json. Points are the mean over the runs present, error bars
+mlst_figures' spread (the SD, or the range of two runs); a value quoted as text is the paper
+table's (two runs: both values). Every value a slide quotes that no paper table or macro holds
+is written to <outdir>/deck_numbers.json, formatted as the slide prints it, with the number of
+runs behind it. A figure or number whose data are not pulled yet is skipped, with a line saying so.
 
     python3 experiments/FIGS/deck_figures.py [--outdir figures/deck]
 """
@@ -31,9 +34,14 @@ REPO = MF.REPO
 DATA = REPO / "experiments/FIGS/data/v2"
 BG = "#FBFBF8"  # the slides' background
 DPI = 200
-TITLE = {"jc2": "JetClass-II", "jc1": "JetClass", "top": "Top tagging", "qg": "Quark/gluon tagging",
-         "qg_herwig": "Quark/gluon, Herwig"}
+# probe datasets (jc2_188, ...) and fine-tuning tasks (jc2, ...)
+TITLE = {"jc2_188": "JetClass-II", "jc2": "JetClass-II", "jc1": "JetClass", "top": "Top tagging",
+         "qg": "Quark/gluon tagging", "qg_herwig": "Quark/gluon, Herwig"}
+# the probe metric of each dataset: its first panel in the paper (JetClass-II: all 188 classes)
+METRIC = {ds: met for ds, met, _ in MF.PROBE_PANELS[::-1]}
 LEVELS = tuple(MF.CLASSES)
+# the fine-tuning legs the paper reads (ft_mlst/manifests.json: best70/<leg>/<init>/N<n>/s1), four sizes each
+LEGS = ("leg1_188", "leg2", "leg_top", "leg_qg")
 
 
 def pm(mean, sd=None) -> str:
@@ -42,12 +50,26 @@ def pm(mean, sd=None) -> str:
     return s.replace("{,}", ",").replace("\\,$\\pm$\\,", " ± ")
 
 
-def _stats(v: list):
-    v = [float(x) for x in v if x is not None]
+def _stats(M, v: list):
+    """Mean, SD and the text a paper table prints for these runs (mlst_results._cell, which
+    marks an unconverged value, so it gets the values as they are)."""
+    v = [x for x in v if x is not None]
     if not v:
         return None
-    sd = float(np.std(v, ddof=1)) if len(v) > 1 else None
-    return {"mean": float(np.mean(v)), "sd": sd, "n": len(v), "text": pm(np.mean(v), sd)}
+    f = [float(x) for x in v]
+    sd = float(np.std(f, ddof=1)) if len(f) > 1 else None
+    text = M._cell(v, len(v), MT.fmt_pm).replace("{,}", ",").replace("\\,$\\pm$\\,", " ± ")
+    return {"mean": float(np.mean(f)), "sd": sd, "n": len(f), "text": text}
+
+
+def _point(p) -> dict:
+    """A point (jets, mean, lower error, upper error, values) as deck_numbers.json holds it."""
+    return {"n": p[0], "oma": p[1], "err": [p[2], p[3]], "runs": len(p[4])}
+
+
+def _ready(rows: dict, ref=None) -> bool:
+    """Something to draw: a row other than the reference has points, and so has the reference."""
+    return any(pts for r, pts in rows.items() if r != ref) and (ref is None or bool(rows.get(ref)))
 
 
 def _start():
@@ -71,8 +93,8 @@ def _lines(ax, rows: dict, look: dict, dodge_step=0.03):
         if not pts:
             continue
         dodge = 10 ** (dodge_step * (k - (len(rows) - 1) / 2))
-        x, y, e = zip(*pts)
-        ax.errorbar([xi * dodge for xi in x], y, yerr=[s or 0.0 for s in e], markersize=11,
+        ax.errorbar([p[0] * dodge for p in pts], [p[1] for p in pts],
+                    yerr=[[p[2] or 0.0 for p in pts], [p[3] or 0.0 for p in pts]], markersize=11,
                     linewidth=style.LINEWIDTH, elinewidth=style.LINEWIDTH - 1, **look[row])
 
 
@@ -95,7 +117,9 @@ def _decades(ax, x):
 
 
 def _look(M, row, label):
-    if row in (M.INIT, M.SCRATCH):
+    if row == M.SCRATCH:
+        return {**style.SCRATCH_STYLE, "label": label}
+    if row == M.INIT:
         return {**style.INIT_STYLE, "label": label}
     c = MF.CLASSES[row]
     return {"color": style.LEVEL_COLOURS[c], "marker": style.LEVEL_MARKERS[c], "linestyle": "-", "label": label}
@@ -103,13 +127,20 @@ def _look(M, row, label):
 
 def _ratio_panel(ax, rows: dict, ref_row, look: dict) -> dict:
     """Each label set over the reference row, the reference's spread as a grey band."""
-    ref = {n: (y, s) for n, y, s in rows[ref_row]}
+    ref = {p[0]: p for p in rows[ref_row]}
     x = sorted(ref)
-    ax.fill_between(x, [1 - (ref[n][1] or 0) / ref[n][0] for n in x], [1 + (ref[n][1] or 0) / ref[n][0] for n in x],
+    ax.fill_between(x, [1 - (ref[n][2] or 0) / ref[n][1] for n in x], [1 + (ref[n][3] or 0) / ref[n][1] for n in x],
                     color=style.INIT_STYLE["color"], alpha=0.25, linewidth=0)
     ax.axhline(1, color=style.INIT_STYLE["color"], linestyle="--", linewidth=2)
-    ratio = {r: [(n, y / ref[n][0], (s / ref[n][0]) if s else None) for n, y, s in pts if n in ref]
-             for r, pts in rows.items() if r != ref_row}
+    ratio = {}
+    for r, pts in rows.items():
+        if r == ref_row:
+            continue
+        ratio[r] = []
+        for n, y, lo, hi, v in pts:
+            if n in ref:
+                d = ref[n][1]
+                ratio[r].append((n, y / d, None if lo is None else lo / d, None if hi is None else hi / d, v))
     _lines(ax, ratio, look)
     ax.set_xscale("log")
     ax.set_xlim(x[0] / 1.8, x[-1] * 1.8)
@@ -120,44 +151,52 @@ def _ratio_panel(ax, rows: dict, ref_row, look: dict) -> dict:
 
 
 def probe_series(M, fits, runs, ds):
-    metric = {d: met for d, met, _ in M.TASKS}
-    return MF.series(M, fits, runs, ds, metric[ds])
+    """{row: [(jets, mean 1-AUC, lower err, upper err, values)]}: the hierarchy and random initialization."""
+    return MF.series(M, fits, runs, ds, METRIC[ds], LEVELS + (M.INIT,))
 
 
 def ft_series(M, per, runs, key):
-    """{row: [(jets, mean 1-AUC, sd)]} for the hierarchy and from scratch; and the run counts."""
+    """{row: [(jets, mean 1-AUC, lower err, upper err, values)]} for the hierarchy and from
+    scratch; and the most runs behind a point of each row."""
     met = {k: m for k, _, _, m, _ in M.FT_TASKS}[key]
     sizes = M._sizes(per, key)
-    rows, count = {}, {}
+    rows = {}
     for row in LEVELS:
-        pts, ns = [], set()
+        pts = []
         for n in sizes:
             v = [float(x) for x in (M._oma(M._ft(per, key, m, n, met)) for m in runs[row]) if x is not None]
             if v:
-                pts.append((n, float(np.mean(v)), float(np.std(v, ddof=1)) if len(v) > 1 else None))
-                ns.add(len(v))
-        rows[row], count[row] = pts, max(ns) if ns else 0
+                pts.append((n, *MF._spread(v), v))
+        rows[row] = pts
     ref = per[key].get(M.SCRATCH, {})
-    rows[M.SCRATCH] = [(n, float(np.mean([1 - r[met] for r in ref[n]])), float(np.std([1 - r[met] for r in ref[n]], ddof=1)))
-                       for n in sizes if n in ref and len(ref[n]) > 1]
-    count[M.SCRATCH] = max((len(ref[n]) for n in sizes if n in ref), default=0)
+    rows[M.SCRATCH] = []
+    for n in sizes:
+        if n in ref:
+            v = [1 - r[met] for r in ref[n]]
+            rows[M.SCRATCH].append((n, *MF._spread(v), v))
+    count = {r: max((len(p[4]) for p in pts), default=0) for r, pts in rows.items()}
     return rows, count
 
 
 def probe_lines(M, fits, runs, keys, name, outdir, out):
     """Linear-probe 1 - AUC against the training-set size, hierarchy and random initialization."""
+    if not fits:
+        return None
+    series = {ds: probe_series(M, fits, runs, ds) for ds in keys}
+    if not all(_ready(rows) for rows in series.values()):
+        return None
     plt = _start()
     fig, axes = plt.subplots(1, len(keys), figsize=(4.0 * len(keys), 4.9), squeeze=False)
     out[name] = {}
     for ax, ds in zip(axes[0], keys):
-        rows = probe_series(M, fits, runs, ds)
+        rows = series[ds]
         look = {r: _look(M, r, "Randomly initialized" if r == M.INIT else f"{MF.CLASSES[r]} classes") for r in rows}
         _lines(ax, rows, look)
         _logy(ax)
-        _decades(ax, [n for pts in rows.values() for n, _, _ in pts])
+        _decades(ax, [p[0] for pts in rows.values() for p in pts])
         ax.set_xlabel("Training jets")
         ax.set_title(TITLE[ds], loc="left", fontsize="medium")
-        out[name][ds] = {r: [{"n": n, "oma": y, "sd": s} for n, y, s in pts] for r, pts in rows.items()}
+        out[name][ds] = {r: [_point(p) for p in pts] for r, pts in rows.items()}
     axes[0][0].set_ylabel(r"$1-\mathrm{AUC}$")
     h, lab = axes[0][0].get_legend_handles_labels()
     fig.legend(h, lab, loc="lower center", ncol=3, bbox_to_anchor=(0.5, 0.98), frameon=False, fontsize="small")
@@ -167,20 +206,25 @@ def probe_lines(M, fits, runs, keys, name, outdir, out):
 
 def ft_lines(M, per, runs, keys, name, outdir, out):
     """Fine-tuned 1 - AUC against the training-set size, with its ratio to training from scratch."""
+    if not per:
+        return None
+    series = {key: ft_series(M, per, runs, key) for key in keys}
+    if not all(_ready(rows, M.SCRATCH) for rows, _ in series.values()):
+        return None
     plt = _start()
     fig, axes = plt.subplots(2, len(keys), figsize=(4.0 * len(keys), 6.4), squeeze=False,
                              gridspec_kw={"height_ratios": (2.6, 1)}, sharex="col")
     out[name] = {}
     for j, key in enumerate(keys):
-        rows, count = ft_series(M, per, runs, key)
+        rows, count = series[key]
         look = {r: _look(M, r, f"From scratch ({count[r]} seeds)" if r == M.SCRATCH else
                          f"{MF.CLASSES[r]} classes ({count[r]} of {len(runs[r])} runs)") for r in rows}
         _lines(axes[0][j], rows, look)
         _logy(axes[0][j])
         axes[0][j].set_title(TITLE[key], loc="left", fontsize="medium")
         ratio = _ratio_panel(axes[1][j], rows, M.SCRATCH, look)
-        out[name][key] = {"runs": count, "values": {r: [{"n": n, "oma": y, "sd": s} for n, y, s in pts] for r, pts in rows.items()},
-                          "ratio_to_scratch": {r: [{"n": n, "ratio": y, "text": pm(y)} for n, y, _ in pts]
+        out[name][key] = {"runs": count, "values": {r: [_point(p) for p in pts] for r, pts in rows.items()},
+                          "ratio_to_scratch": {r: [{"n": p[0], "ratio": p[1], "text": pm(p[1])} for p in pts]
                                                for r, pts in ratio.items()}}
     axes[0][0].set_ylabel(r"$1-\mathrm{AUC}$")
     axes[1][0].set_ylabel("Ratio to\nfrom scratch", fontsize="small")
@@ -193,10 +237,14 @@ def ft_lines(M, per, runs, keys, name, outdir, out):
 def herwig(M, fits, per, runs, outdir, out):
     """Quark/gluon tagging on the Herwig sample: linear probes over the randomly initialized
     network (left) and fine-tuning over training from scratch (right), against training-set size."""
-    plt = _start()
-    fig, axes = plt.subplots(2, 2, figsize=(8.0, 6.4), gridspec_kw={"height_ratios": (2.6, 1)}, sharex="col")
+    if not fits or not per:
+        return None
     probe = probe_series(M, fits, runs, "qg_herwig")
     ft, count = ft_series(M, per, runs, "qg_herwig")
+    if not (_ready(probe, M.INIT) and _ready(ft, M.SCRATCH)):
+        return None
+    plt = _start()
+    fig, axes = plt.subplots(2, 2, figsize=(8.0, 6.4), gridspec_kw={"height_ratios": (2.6, 1)}, sharex="col")
     look = {r: _look(M, r, "Reference" if r in (M.INIT, M.SCRATCH) else f"{MF.CLASSES[r]} classes")
             for r in tuple(probe) + (M.SCRATCH,)}
     out["herwig"] = {"ft_runs": count}
@@ -207,7 +255,7 @@ def herwig(M, fits, per, runs, outdir, out):
         axes[0][j].set_title(title, loc="left", fontsize="medium")
         ratio = _ratio_panel(axes[1][j], rows, ref, look)
         axes[1][j].set_ylabel(ylab, fontsize="small")
-        out["herwig"]["probe" if j == 0 else "ft"] = {r: [{"n": n, "ratio": y, "text": pm(y)} for n, y, _ in pts]
+        out["herwig"]["probe" if j == 0 else "ft"] = {r: [{"n": p[0], "ratio": p[1], "text": pm(p[1])} for p in pts]
                                                       for r, pts in ratio.items()}
     axes[0][0].set_ylabel(r"$1-\mathrm{AUC}$")
     h, lab = axes[0][0].get_legend_handles_labels()
@@ -217,15 +265,18 @@ def herwig(M, fits, per, runs, outdir, out):
 
 
 def pairs(M, fits, runs, outdir, out):
-    """Binary probes between pairs of JetClass-II classes (Table tab:pairs), hierarchy only;
-    open markers where the label set merges the pair, half filled where it merges part of it."""
+    """Binary probes between pairs of JetClass-II classes (Table tab:pairs, titles from
+    mlst_results.PAIRS), hierarchy only; open markers where the label set merges the pair, half
+    filled where it merges part of it."""
+    if not fits:
+        return None
+    rows = {k: {r: v for r, v in MF.pair_rows(M, fits, runs, k).items() if r in LEVELS} for k, _, _, _ in M.PAIRS}
+    if not all(any(r.values()) for r in rows.values()):
+        return None
     _start()
     status = M.merge_status(REPO)
-    titles = {"bc_vs_bq_cs": r"$X\to bc$ vs $bq$, $cs$", "bb_vs_cc": r"$X\to b\bar b$ vs $c\bar c$",
-              "bbqq_vs_ccqq": r"$X\to YY\to bbqq$ vs $ccqq$"}
-    fig = MF._dot_figure(M, [(k, titles[k]) for k, _, _, _ in M.PAIRS],
-                         lambda k: {r: v for r, v in MF.pair_rows(M, fits, runs, k).items() if r in LEVELS},
-                         MF._positions((LEVELS,)), ncols=3, width=0.6 * style.PANEL, title_size="small",
+    fig = MF._dot_figure(M, [(k, h) for k, h, _, _ in M.PAIRS], lambda k: rows[k],
+                         MF._positions((LEVELS,)), ncols=3, width=0.6 * style.PANEL,
                          fill=lambda k, row: MF.FILL[status.get(row, {}).get(k, "apart")])
     w, h = fig.get_size_inches()
     fig.set_size_inches(w, 0.55 * h)  # four rows instead of the paper figure's twelve
@@ -236,21 +287,20 @@ def pairs(M, fits, runs, outdir, out):
 def mass_dots(M, runs, outdir, out):
     """sigma_eff of the MLP mass regression from frozen features, hierarchy, mass regression and
     random initialization, with that of a constant prediction (the target's own) as a line."""
-    plt = _start()
-    mass = M._load(DATA / "linprobe/mass")
+    head = M._load(DATA / "head")
+    mass = {k.removesuffix("_mass"): v for k, v in head.items() if k.endswith("_mass")}
     groups = (LEVELS, M.MASS, (M.INIT,))
     rows, target = {}, set()
     for g in groups:
         for row in g:
-            v = []
-            for m in runs[row]:
-                a = mass[m]["arms"]["init" if m.startswith("init-") else M.PRIMARY]
-                v.append(a["mlp"]["sigma_eff"])
-                target.add(round(a["target"]["sigma_eff"], 12))
-            rows[row] = v
+            rows[row] = [M._mass(mass, m, "mlp") for m in runs[row] if m in mass]
+            target |= {round(M._mass(mass, m, "target"), 12) for m in runs[row] if m in mass}
+    if not any(v for r, v in rows.items() if r != M.INIT):
+        return None
     if len(target) != 1:
         raise SystemExit(f"FATAL: the mass target's sigma_eff differs between runs: {sorted(target)}")
     const = target.pop()
+    plt = _start()
     pos = MF._positions(groups)
     fig, ax = plt.subplots(figsize=(0.9 * style.PANEL + 2.5, 0.6 * style.PANEL))
     MF._dots(ax, M, pos, rows)
@@ -261,47 +311,87 @@ def mass_dots(M, runs, outdir, out):
     ax.set_yticklabels([MF.ROW_NAME[r] for r in pos])
     ax.set_xlabel(r"$\sigma_{\mathrm{eff}}$ of $\ln(m_{\mathrm{SD}}^{\mathrm{gen}}/m_{\mathrm{SD}}^{\mathrm{reco}})$")
     fig.tight_layout()
-    out["mass_resolution"] = {"constant_prediction": pm(const), "rows": {row: _stats(v) for row, v in rows.items()}}
+    out["mass_resolution"] = {"constant_prediction": pm(const), "rows": {row: _stats(M, v) for row, v in rows.items()}}
     return _save(fig, "mass_resolution", outdir)
 
 
-def batchnorm(M, fits, runs, out):
+def _has(fits, ds) -> bool:
+    """Some fits file has this dataset (mlst_results._largest needs one)."""
+    return any(ds in ck for f in fits.values() for ck in f["cells"].values())
+
+
+def batchnorm(M, fits, runs, out) -> bool:
     """(1 - AUC) with the BatchNorm statistics recomputed over (1 - AUC) as trained, every run
     of the hierarchy and of the mass regression, largest training set: the range per task."""
+    if not fits:
+        return False
     res = {}
     for ds, met, _ in M.TASKS:
+        if not _has(fits, ds):
+            continue
         n = M._largest(fits, ds)
         r = []
         for arm in LEVELS + M.MASS:
             for m in runs[arm]:
-                a, b = fits[m]["cells"][M.PRIMARY][ds][n], fits[m]["cells"]["best70_bn"][ds][n]
+                cells = fits.get(m, {}).get("cells", {})
+                a, b = cells.get(M.PRIMARY, {}).get(ds, {}).get(n), cells.get("best70_bn", {}).get(ds, {}).get(n)
+                if a is None or b is None:
+                    continue
                 if not b["converged"]:
                     raise SystemExit(f"FATAL: {m} {ds}: the BatchNorm-recomputed probe did not converge")
                 r.append((1 - b[met]) / (1 - a[met]))
-        res[ds] = {"n_runs": len(r), "min": f"{min(r):.3f}", "max": f"{max(r):.3f}"}
-    out["batchnorm_ratio"] = res
+        if r:
+            res[f"{ds}/{met}"] = {"n_runs": len(r), "min": f"{min(r):.3f}", "max": f"{max(r):.3f}"}
+    if res:
+        out["batchnorm_ratio"] = res
+    return bool(res)
 
 
-def probe_over_init(M, fits, runs, out):
+def probe_over_init(M, fits, runs, out) -> bool:
     """Linear-probe (1 - AUC) of each label set over that of the randomly initialized network of
     the same seed, largest training set, top and quark/gluon tagging (the paper quotes only the
     188- and 17-class rows)."""
+    if not fits:
+        return False
     res = {}
-    for ds, met, _ in M.TASKS[2:]:
+    for ds, met, _ in (t for t in M.TASKS if t[0] in ("top", "qg", "qg_herwig")):
+        if not _has(fits, ds):
+            continue
         n = M._largest(fits, ds)
-        init = {m.rsplit("-s", 1)[1]: 1 - fits[m]["cells"]["init"][ds][n][met] for m in runs[M.INIT]}
+        init = {m.rsplit("-s", 1)[1]: M._oma(M._probe(fits, m, ds, n, met)) for m in runs[M.INIT]}
         res[ds] = {}
         for arm in LEVELS + M.MASS:
-            r = [(1 - fits[m]["cells"][M.PRIMARY][ds][n][met]) / init[m.rsplit("-s", 1)[1]] for m in runs[arm]]
-            res[ds][arm] = {**_stats(r), "per_seed": [round(x, 3) for x in r]}
-    out["probe_over_init"] = res
+            r = []
+            for m in runs[arm]:
+                x, y = M._oma(M._probe(fits, m, ds, n, met)), init.get(m.rsplit("-s", 1)[1])
+                if x is not None and y is not None:
+                    unc = isinstance(x, M.Unconverged) or isinstance(y, M.Unconverged)
+                    r.append(M.Unconverged(x / y) if unc else x / y)
+            if r:
+                res[ds][arm] = {**_stats(M, r), "per_seed": [round(x, 3) for x in r]}
+        if not res[ds]:
+            del res[ds]
+    if res:
+        out["probe_over_init"] = res
+    return bool(res)
 
 
-def ft_rejection(M, per, runs, out):
-    """R50 and R30 after fine-tuning on the full training set (Table tab:ftrej), as the slide
-    prints them: mean +- SD, or a lone run to three figures; and the fewest background jets
-    passing behind any value."""
-    res, fewest = {}, []
+def ft_rejection(M, per, runs, out) -> bool:
+    """R50 and R30 after fine-tuning on the full training set (Table tab:ftrej), as the paper
+    table prints them; and the fewest background jets passing behind any value. A rejection that
+    is only a bound (fewer than one background jet passes) is left out and listed in only_a_bound
+    (the paper's table refuses it)."""
+    if not per:
+        return False
+    res, fewest, bound = {}, [], []
+
+    def rej(rec, k, name):
+        if rec[f"{k}_is_bound"]:
+            bound.append(f"{key} {k} {name}")
+            return None
+        fewest.append(rec[f"{k}_n_bkg_pass"])
+        return rec[k]
+
     for key, k in M.FT_REJ:
         n = M._sizes(per, key)[-1]
         col = {}
@@ -310,32 +400,42 @@ def ft_rejection(M, per, runs, out):
             for m in runs[arm]:
                 recs = per[key].get(m[len("mtx-"):], {}).get(n)
                 if recs:
-                    v.append(recs[0][k])
-                    fewest.append(recs[0][f"{k}_n_bkg_pass"])
-            col[arm] = _stats(v)
+                    v.append(rej(recs[0], k, m))
+            col[arm] = _stats(M, v)
         ref = per[key].get(M.SCRATCH, {}).get(n, [])
-        fewest += [r[f"{k}_n_bkg_pass"] for r in ref]
-        col[M.SCRATCH] = _stats([r[k] for r in ref])
+        col[M.SCRATCH] = _stats(M, [rej(r, k, r.get("run", M.SCRATCH)) for r in ref])
         res[f"{key}_{k}"] = col
-    res["fewest_background_jets"] = min(fewest)
+    res["fewest_background_jets"] = min(fewest) if fewest else None
+    res["only_a_bound"] = bound
     out["ft_rejection"] = res
+    return True
 
 
-def ft_status(M, runs, out):
-    """Fine-tuning runs DONE at the last data pull (ft_mlst/manifests.json) for the runs of the
-    hierarchy and the mass regression, out of 16 per pretraining run; and their GPU types."""
-    man = json.loads((DATA / "ft_mlst/manifests.json").read_text())
+def ft_status(M, runs, out) -> bool:
+    """Fine-tuning cells DONE at the last data pull (ft_mlst/manifests.json) for the runs of the
+    hierarchy and the mass regression, counting only the legs the paper reads (LEGS), out of
+    4 legs x 4 training-set sizes = 16 per pretraining run; and their GPU types."""
+    src = DATA / "ft_mlst/manifests.json"
+    if not src.exists():
+        return False
+    man = json.loads(src.read_text())
     models = [m[len("mtx-"):] for arm in LEVELS + M.MASS for m in runs[arm]]
-    cells = [c for k, c in man.items() if k.startswith(f"{M.PRIMARY}/") and c["init"] in models]
+    cells = [c for k, c in man.items() if k.split("/")[0] == M.PRIMARY and k.split("/")[1] in LEGS
+             and c["init"] in models]
     done = collections.Counter(c["init"] for c in cells)
-    out["ft_status"] = {"runs": len(models), "done": len(cells), "expected": 16 * len(models),
-                        "incomplete": {m: done[m] for m in models if done[m] < 16},
+    per_run = 4 * len(LEGS)
+    out["ft_status"] = {"runs": len(models), "done": len(cells), "expected": per_run * len(models),
+                        "incomplete": {m: done[m] for m in models if done[m] < per_run},
                         "gpus": sorted({c["gpu_device_name"] for c in cells})}
+    return True
 
 
-def compute(M, runs, out):
-    """GPU-hours per configuration (training and validation passes of every epoch)."""
+def compute(M, runs, out) -> bool:
+    """GPU-hours per configuration (training and validation passes of every epoch), over the
+    runs with a compute record."""
     comp = M._load(DATA / "compute")
+    if not comp:
+        return False
     _, hours = M.table_compute(comp, runs, MT.fmt_int)
     res, total = {}, collections.Counter()
 
@@ -344,10 +444,14 @@ def compute(M, runs, out):
         return {"runs": n, "gpu_hours": f"{tot:,.0f}", "per_run": f"{tot / n:,.0f}",
                 "types": ", ".join(f"{g} {100 * h / tot:.0f}%" for g, h in sorted(per.items(), key=lambda x: -x[1]))}
     for arm in LEVELS + M.MASS:
-        total.update(hours[arm])
-        res[arm] = row(hours[arm], len(runs[arm]))
-    res["all"] = row(total, sum(len(runs[a]) for a in LEVELS + M.MASS))
+        if arm in hours:
+            total.update(hours[arm])
+            res[arm] = row(hours[arm], sum(m in comp for m in runs[arm]))
+    if not res:
+        return False
+    res["all"] = row(total, sum(m in comp for a in LEVELS + M.MASS for m in runs[a]))
     out["compute"] = res
+    return True
 
 
 def main(argv=None) -> int:
@@ -355,25 +459,32 @@ def main(argv=None) -> int:
     ap.add_argument("--outdir", type=pathlib.Path, default=REPO / "figures/deck")
     a = ap.parse_args(argv)
     M = MF._mlst()
-    fits = M._load(DATA / "linprobe/fits3000")
+    fits = M._load(DATA / M.FITS)
     runs = M._paper(REPO)
     tag, per = M.load_ft(DATA)
     out = {"fine_tuning_readout": tag}
-    paths = [probe_lines(M, fits, runs, ("jc2", "jc1"), "probes_n_jc", a.outdir, out),
-             probe_lines(M, fits, runs, ("top", "qg"), "probes_n_bench", a.outdir, out),
-             pairs(M, fits, runs, a.outdir, out),
-             mass_dots(M, runs, a.outdir, out),
-             ft_lines(M, per, runs, ("jc2", "jc1"), "ft_n_jc", a.outdir, out),
-             ft_lines(M, per, runs, ("top", "qg"), "ft_n_bench", a.outdir, out),
-             herwig(M, fits, per, runs, a.outdir, out)]
-    batchnorm(M, fits, runs, out)
-    probe_over_init(M, fits, runs, out)
-    ft_rejection(M, per, runs, out)
-    ft_status(M, runs, out)
-    compute(M, runs, out)
+    figures = (("probes_n_jc", lambda: probe_lines(M, fits, runs, ("jc2_188", "jc1"), "probes_n_jc", a.outdir, out)),
+               ("probes_n_bench", lambda: probe_lines(M, fits, runs, ("top", "qg"), "probes_n_bench", a.outdir, out)),
+               ("pairs", lambda: pairs(M, fits, runs, a.outdir, out)),
+               ("mass_resolution", lambda: mass_dots(M, runs, a.outdir, out)),
+               ("ft_n_jc", lambda: ft_lines(M, per, runs, ("jc2", "jc1"), "ft_n_jc", a.outdir, out)),
+               ("ft_n_bench", lambda: ft_lines(M, per, runs, ("top", "qg"), "ft_n_bench", a.outdir, out)),
+               ("herwig", lambda: herwig(M, fits, per, runs, a.outdir, out)))
+    numbers = (("batchnorm_ratio", lambda: batchnorm(M, fits, runs, out)),
+               ("probe_over_init", lambda: probe_over_init(M, fits, runs, out)),
+               ("ft_rejection", lambda: ft_rejection(M, per, runs, out)),
+               ("ft_status", lambda: ft_status(M, runs, out)),
+               ("compute", lambda: compute(M, runs, out)))
+    for name, draw in figures:
+        p = draw()
+        if not p:
+            (a.outdir / f"{name}.png").unlink(missing_ok=True)  # a stale figure would look current
+        print(f"{name}: {p if p else 'skipped (no data yet)'}")
+    a.outdir.mkdir(parents=True, exist_ok=True)
+    for name, count in numbers:
+        print(f"{name}: " + ("in deck_numbers.json" if count() else "skipped (no data yet)"))
     (a.outdir / "deck_numbers.json").write_text(json.dumps(out, indent=1, default=str) + "\n")
-    for p in paths + [a.outdir / "deck_numbers.json"]:
-        print(p)
+    print(a.outdir / "deck_numbers.json")
     return 0
 
 

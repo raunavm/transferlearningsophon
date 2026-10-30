@@ -128,8 +128,10 @@ def test_the_expected_cells_are_every_paper_run_at_every_size():
 
 
 def test_the_readout_specs_on_disk_are_the_generators(ro, trial):
-    # leg1_188's and the top recipe check's are --v2-leg188's (tests/test_ft_v2_leg188.py)
-    want = {**ro, **trial, **dict([B.leg188_readout(B.PIN_V2_LEG188), B.topcheck_readout(B.PIN_V2_LEG188)])}
+    # leg1_188's and the top recipe check's are --v2-leg188's (tests/test_ft_v2_leg188.py);
+    # ref-v100-s1's and the 50-epoch leg-2 check's are --v2-extra's (tests/test_ft_v2_extra.py)
+    want = {**ro, **trial, **dict([B.leg188_readout(B.PIN_V2_LEG188), B.topcheck_readout(B.PIN_V2_LEG188)]),
+            **{n: t for n, t in B.v2_extra_specs(B.PIN_V2_EXTRA).items() if n.endswith("-metrics-raunav.yaml")}}
     for p in K8S.glob("job-ft-v2-*-metrics-raunav.yaml"):
         assert p.read_text() == want[p.name], p.name
     assert set(trial) <= {p.name for p in K8S.glob("job-ft-v2-*-metrics-raunav.yaml")}

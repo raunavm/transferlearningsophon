@@ -43,7 +43,8 @@ and, per cell, <probs-out>/<model>/<checkpoint>/<dataset>_N<N>.npz: the fitted p
 y, and s, the signal score of a binary task, or p, the class probabilities on the AUC rows of a
 multi-class task at its largest training set only). --mlp instead fits the nonlinear probe of
 experiments/EVAL/probe.py (decision D6: beside every linear null) on the binary tasks at their
-largest training set.
+largest training set; --mlp v4 (2026-10-30) adds JetClass (jc1) and the 188-class JetClass-II
+task (jc2_188) at their largest training set, with the linear probe's metrics.
 
     python3 experiments/EVAL/linear_probe_v2.py --root /data/results/eval/v2_linprobe \\
         --model mtx-l188-s1 --out /data/results/eval/v2_linprobe/fits
@@ -478,22 +479,51 @@ def probe_cells(model_dir: pathlib.Path, checkpoint: str, datasets, helpers, sav
     return cells
 
 
+MLP_DATASETS = {"v3": ("jc2_188", "top", "qg"), "v4": ("jc2_188", "jc1", "top", "qg")}
+
+
+def mlp_fit_record(meta: dict) -> dict:
+    """Whether every seed's fit reached its plateau, and the epochs each ran."""
+    return {"converged": meta["all_converged"], "epochs": [s["epochs_run"] for s in meta["seeds"]]}
+
+
 def mlp_cells(model_dir: pathlib.Path, checkpoint: str, helpers,
-              parquet: pathlib.Path = pathlib.Path(JC2_PARQUET)) -> dict:
+              parquet: pathlib.Path = pathlib.Path(JC2_PARQUET), cell_set: str = "v3") -> dict:
     """The nonlinear probe (experiments/EVAL/probe.py fit_mlp: one hidden layer of 256, three
     seeds, trained to a plateau) on the binary tasks at their largest training set: the jc2_188
-    pairs, top and quark/gluon (also scored on Herwig). Its score is a logit difference."""
-    _, probe, l162, names = helpers
+    pairs, top and quark/gluon (also scored on Herwig). Its score is a logit difference.
+    Cell set v4 adds the multi-class tasks at their largest training set, jc1 (10 classes) and
+    jc2_188 (188), scored on the linear probe's test jets with its metrics (multiclass_metrics and
+    jc1_per_class, native_metrics) from the class probabilities averaged over the seeds."""
+    eval_arm, probe, l162, names = helpers
     cells = {}
-    for ds in ("jc2_188", "top", "qg"):
+    for ds in MLP_DATASETS[cell_set]:
+        k, qcd = DATASETS[ds]
         xva, yva, _ = load_dataset(model_dir, ds, "val", checkpoint, l162, parquet)
         xte, yte, _ = load_dataset(model_dir, ds, "test", checkpoint, l162, parquet)
         n = max(train_sizes(model_dir, DATA_DIR.get(ds, ds)))
         xtr, ytr, _ = load_dataset(model_dir, ds, f"train_N{n}", checkpoint, l162, parquet)
+        if cell_set == "v4" and k > 2:
+            for y in (ytr, yva, yte):
+                if y.min() < 0 or y.max() >= k:
+                    raise SystemExit(f"FATAL: {model_dir.name}/{ds}: labels outside 0..{k - 1}")
+            t0 = time.time()
+            p, meta = probe.fit_mlp(xtr, ytr, xva, yva, xte, n_classes=k)
+            if ds == "jc2_188":
+                m = native_metrics(p, yte, np.unique(ytr))
+            else:
+                m = multiclass_metrics(p, yte, k, qcd, eval_arm)
+                if ds == "jc1":
+                    m.update(jc1_per_class(p, yte))
+            cells[ds] = {**m, **mlp_fit_record(meta), "mlp": meta, "n_train": int(ytr.size),
+                         "n_classes_in_train": int(np.unique(ytr).size), "n_val": int(yva.size),
+                         "train_size": n, "seconds": round(time.time() - t0, 1)}
+            print(f"  {model_dir.name} {checkpoint} mlp {ds}: macro_auc_ovr={m['macro_auc_ovr']:.5f} "
+                  f"converged={meta['all_converged']} ({cells[ds]['seconds']} s)", flush=True)
         if ds == "jc2_188":
             tasks = {pair: (np.isin, sig, bkg) for pair, (sig, bkg) in native_pair_groups(names).items()}
         else:
-            tasks = {ds: None}
+            tasks = {ds: None} if k == 2 else {}
         for task, spec in tasks.items():
             if spec is None:
                 mtr, mva, mte = (np.ones(y.size, bool) for y in (ytr, yva, yte))
@@ -508,11 +538,12 @@ def mlp_cells(model_dir: pathlib.Path, checkpoint: str, helpers,
             score, meta = probe.fit_mlp(xtr[mtr], b(ytr[mtr]), xva[mva], b(yva[mva]), xs)
             nte = int(mte.sum())
             cells[task] = {**binary_score_metrics(score[:nte], b(yte[mte]), probe, threshold=0.0),
-                           "mlp": meta, "n_train": int(mtr.sum()), "n_val": int(mva.sum()),
-                           "train_size": n, "seconds": round(time.time() - t0, 1)}
+                           **mlp_fit_record(meta), "mlp": meta, "n_train": int(mtr.sum()),
+                           "n_val": int(mva.sum()), "train_size": n, "seconds": round(time.time() - t0, 1)}
             if her is not None:
                 cells["qg_herwig"] = {**binary_score_metrics(score[nte:], her[1], probe, threshold=0.0),
-                                      "mlp": meta, "n_train": int(mtr.sum()), "train_size": n}
+                                      **mlp_fit_record(meta), "mlp": meta, "n_train": int(mtr.sum()),
+                                      "train_size": n}
             print(f"  {model_dir.name} {checkpoint} mlp {task}: auc={cells[task]['auc']:.5f} "
                   f"converged={meta['all_converged']} ({cells[task]['seconds']} s)", flush=True)
     return cells
@@ -529,8 +560,9 @@ def main(argv=None) -> int:
                     help="where each cell's fitted probe and test outputs go (default: none)")
     ap.add_argument("--jc2-parquet", type=pathlib.Path, default=pathlib.Path(JC2_PARQUET),
                     help="the JetClass-II subsets whose native labels jc2_188 reads")
-    ap.add_argument("--mlp", action="store_true",
-                    help="fit the nonlinear probe on the binary tasks at their largest training set")
+    ap.add_argument("--mlp", nargs="?", const="v3", choices=tuple(MLP_DATASETS), default=None,
+                    help="fit the nonlinear probe at the largest training set: on the binary tasks "
+                         "(v3, the default), and also on jc1 and jc2_188 (v4)")
     a = ap.parse_args(argv)
     out = a.out / f"{a.model}.json"
     if out.exists():
@@ -551,8 +583,9 @@ def main(argv=None) -> int:
            "threads": os.environ.get("OMP_NUM_THREADS"), "tf32": tf32,
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest()}
     if a.mlp:
-        doc.update(probe="mlp", datasets=["jc2_188_pairs", "top", "qg", "qg_herwig"],
-                   cells={c: mlp_cells(model_dir, c, helpers, a.jc2_parquet) for c in a.checkpoints})
+        doc.update(probe="mlp", mlp_set=a.mlp, datasets=["jc2_188_pairs", "top", "qg", "qg_herwig"]
+                   + (["jc2_188", "jc1"] if a.mlp == "v4" else []),
+                   cells={c: mlp_cells(model_dir, c, helpers, a.jc2_parquet, a.mlp) for c in a.checkpoints})
     else:
         doc["cells"] = {c: probe_cells(model_dir, c, a.datasets, helpers, saver(a.probs_out, a.model, c),
                                        a.jc2_parquet) for c in a.checkpoints}

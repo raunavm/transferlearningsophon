@@ -31,7 +31,7 @@ caches (extract_features.py, 2,000,000 jets from epoch 79):
 
 Output, per checkpoint:  <out>/<tag>/{features.npy, pooled.npy, rows.npy,
 label188.npy, observers.npz, head_scores.npz, manifest.json}, tag = "best70",
-"bestval", "wavg", "best70_bn", "bestval_bn", "init" or "e079" (resolve_checkpoints). Two tags that resolve
+"bestval", "wavg", "best70_bn", "bestval_bn", "init", "init_bn" or "e079" (resolve_checkpoints). Two tags that resolve
 to the same file are extracted once: the first tag's directory holds the files,
 the other is a symlink to it, and the manifest lists both under "tags".
 rows.npy indexes the test stream, so any two checkpoints, runs or vocabularies are
@@ -40,8 +40,9 @@ pooled.npy (amendment A14) is the pooled-embedding readout, for the same rows as
 features.npy: the mean over real particles of the trunk output after the eight
 particle-attention blocks, before the class-attention blocks (PooledTap). It is
 the readout of the self-supervised models, whose class token is never trained.
-A checkpoint without an output layer -- the untrained trunk (init_trunk.pt) or
-a self-supervised model -- keeps features and pooled rows and no head_scores.npz.
+A checkpoint without an output layer -- the untrained trunk (init_trunk.pt), its
+BatchNorm twin (init_bn_state.pt) or a self-supervised model -- keeps features and
+pooled rows and no head_scores.npz.
 observers.npz holds, for the same rows, the kinematics a windowed probe task cuts
 on (jet_pt, jet_eta, jet_sdmass) and the mass-regression truth (genjet_sdmass):
 without them bc_vs_rest's window cannot be applied and mass_resolution.py has no
@@ -163,6 +164,9 @@ def best_window_epoch(run_dir: pathlib.Path) -> int:
 
 WAVG_FILE = "net_wavg70-79_state.pt"
 INIT_FILE = "init_trunk.pt"
+INIT_BN_FILE, INIT_BN_JSON = "init_bn_state.pt", "init_bn.json"
+# the checkpoints without an output layer whatever the run: the untrained trunk and its twin
+HEADLESS_TAGS = ("init", "init_bn")
 
 
 def _sha256(path: pathlib.Path) -> str:
@@ -187,6 +191,22 @@ def bn_twin(run_dir: pathlib.Path, epoch: int) -> pathlib.Path:
     if int(m["epoch"]) != epoch or m["inputs"] != {str(epoch): _sha256(src)} or m["sha256"] != _sha256(state):
         raise SystemExit(f"FATAL: {meta} does not record {state.name} as the twin of {src.name}")
     return state
+
+
+def init_bn_twin(run_dir: pathlib.Path) -> pathlib.Path:
+    """init_bn_state.pt, the untrained trunk with BatchNorm statistics recomputed on the
+    best70 twin's sample (experiments/MTX/bn_twins_v2.py --init), checked against its
+    record: the input's sha256 against init_trunk.pt, and its own sha256."""
+    state, meta = run_dir / INIT_BN_FILE, run_dir / INIT_BN_JSON
+    if not meta.exists() or not state.exists():
+        raise SystemExit(f"FATAL: {run_dir} has no BatchNorm twin of {INIT_FILE}: "
+                         "run experiments/MTX/bn_twins_v2.py --init on it")
+    m = json.loads(meta.read_text())
+    if m["inputs"] != {"init": _sha256(run_dir / INIT_FILE)} or m["sha256"] != _sha256(state):
+        raise SystemExit(f"FATAL: {meta} does not record {state.name} as the twin of {INIT_FILE}")
+    return state
+
+
 # kept beside the feature rows: the |V_cb| window's cuts and the mass truth
 V2_OBSERVERS = ("jet_pt", "jet_eta", "jet_sdmass", "genjet_sdmass")
 # kept beside the output layer's outputs (--keep-head-outputs): the mass response bins
@@ -202,6 +222,7 @@ def resolve_checkpoints(run_dir: pathlib.Path, spec: list[str]) -> list[tuple[st
       'wavg'     robustness: the weight average of epochs 70-79 that v2 pretraining
                  writes, net_wavg70-79_state.pt
       'init'     the untrained trunk the run started from, init_trunk.pt
+      'init_bn'  init with BatchNorm statistics recomputed on best70_bn's sample, init_bn_twin()
       'best70_bn', 'bestval_bn'
                  best70 and bestval with BatchNorm statistics recomputed on the weight
                  average's sample (PRESPEC A14's BatchNorm rule), bn_twin()
@@ -217,6 +238,8 @@ def resolve_checkpoints(run_dir: pathlib.Path, spec: list[str]) -> list[tuple[st
             out.append(("wavg", run_dir / WAVG_FILE))
         elif s == "init":
             out.append(("init", run_dir / INIT_FILE))
+        elif s == "init_bn":
+            out.append(("init_bn", init_bn_twin(run_dir)))
         elif s == "best70_bn":
             out.append(("best70_bn", bn_twin(run_dir, best_window_epoch(run_dir))))
         elif s == "bestval_bn":
@@ -558,7 +581,7 @@ def main(argv=None) -> int:
                     help="the output layer's classes; 0 for a run without one (self-supervised)")
     ap.add_argument("--num-reg", type=int, default=0)
     ap.add_argument("--checkpoints", nargs="+", required=True,
-                    help="'best70', 'bestval', 'wavg', 'init', 'best70_bn', 'bestval_bn', an "
+                    help="'best70', 'bestval', 'wavg', 'init', 'init_bn', 'best70_bn', 'bestval_bn', an "
                          "epoch, or a range 'A-B' (e.g. best70 bestval wavg best70_bn bestval_bn)")
     ap.add_argument("--data-test", nargs="+", required=True)
     ap.add_argument("--data-config", default=str(REPO / "configs/data/JetClassII_massreg.yaml"),
@@ -611,8 +634,8 @@ def main(argv=None) -> int:
         print("every checkpoint already extracted")
         return 0
     alias = aliases(ckpts)
-    # no output layer: the untrained trunk, and every checkpoint of a self-supervised run
-    headless = {t for t, _ in ckpts if t == "init" or a.num_classes == 0}
+    # no output layer: the untrained trunk and its twin, and every checkpoint of a self-supervised run
+    headless = {t for t, _ in ckpts if t in HEADLESS_TAGS or a.num_classes == 0}
 
     dc = DataConfig.load(a.data_config, load_observers=True)
     absent = [o for o in [*a.observers, *(HEAD_OBSERVERS if a.keep_head_outputs else ())]

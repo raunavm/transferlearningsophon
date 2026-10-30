@@ -23,7 +23,20 @@ Job controller releases PARALLEL at a time (no release loop), one pod per model:
   linprobe-mlp3-raunav  CPU, the hierarchy's 12 runs and the untrained trunks: the nonlinear
       probe on the binary tasks at their largest training set (D6) into LP_ROOT/MLP_V3
 
-    python3 scripts/build_linprobe_jobs.py [--pin-not-yet-tagged] [--only mtx-l188-s1 ...] [--v3]
+--v4 (2026-10-30: the nonlinear probe beside every null; the untrained trunk with its BatchNorm
+statistics recomputed, init_bn) writes three more Indexed Jobs:
+  linprobe-mlp4-raunav  CPU, as mlp3: the nonlinear probe's v4 cells (the binary tasks, jc1 and
+      jc2_188 at their largest training set) of the 27 paper runs at best70 and the untrained
+      trunks at init, into LP_ROOT/MLP_V4/<model>.json. Applied now: its features exist.
+  linprobe-initbn-raunav  GPU, any product: fit3's linear probes of init-s1..3 at init_bn into
+      LP_ROOT/FITS_INITBN, probes and test outputs into LP_ROOT/PROBS_INITBN
+  linprobe-mlp4bn-raunav  CPU, as mlp4: the nonlinear probe of init-s1..3 at init_bn into
+      LP_ROOT/MLP_V4/init_bn/<model>.json (its own job, so no GPU waits on CPU fits)
+Apply initbn and mlp4bn only after the init_bn extraction jobs init-bn-s1..s3 have completed:
+neither waits for its features (a pod waiting would hold its node), and linear_probe_v2.py
+stops on a missing split.
+
+    python3 scripts/build_linprobe_jobs.py [--pin-not-yet-tagged] [--only mtx-l188-s1 ...] [--v3 | --v4]
 """
 from __future__ import annotations
 
@@ -258,6 +271,54 @@ def build_v3(only=None) -> dict[str, str]:
             "job-linprobe-mlp3-raunav.yaml": mlp_spec([x for x in ms if hierarchy(x[0])])}
 
 
+V4_PIN = "mtx-s2.20"
+MLP_V4, FITS_INITBN, PROBS_INITBN = "fits_v3_mlp2", "fits_v3_initbn", "fits_v3_initbn_probs"
+V4_NEEDED = {"experiments/EVAL/linear_probe_v2.py": '"v4": ("jc2_188", "jc1", "top", "qg")',
+             "experiments/EVAL/probe.py": "Xte, seeds=MLP_SEEDS, n_classes=2"}
+OUT_DIR_V4 = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "linprobe_v4"
+V4_PARALLEL = {"mlp4": 2, "initbn": 1, "mlp4bn": 2}
+
+
+def v4_mlp_models() -> list[tuple[str, tuple]]:
+    """The 27 paper runs at best70 and the untrained trunks at init."""
+    return [(m, c[:1]) for m, c in v3_models()]
+
+
+def initbn_models() -> list[tuple[str, tuple]]:
+    return [(m, ("init_bn",)) for m, _ in BX.v2_init_refs()]
+
+
+def mlp_v4_spec(ms, name: str = "mlp4", out: str = MLP_V4) -> str:
+    """CPU only, as mlp_spec: probe.fit_mlp pins torch to its own 4 threads."""
+    body = (pick(ms)
+            + f"          python3 experiments/EVAL/linear_probe_v2.py --root {LP_ROOT} --model $MODEL \\\n"
+            f"            --checkpoints $CKPT --mlp v4 --out {LP_ROOT}/{out} || halt\n")
+    return indexed(BX.V1ERR_TEMPLATE.format(
+        name=f"linprobe-{name}-raunav", image=BX.IMAGE, pin=V4_PIN, body=body,
+        mem="48Gi", cpu="4", gpu_req="", gpu_check="", node_exclude=BX.NODE_EXCLUDE),
+        len(ms), V4_PARALLEL[name])
+
+
+def initbn_spec(ms) -> str:
+    """fit_v3_spec's fits of the init_bn checkpoint, into their own directories."""
+    body = (pick(ms)
+            + f"          python3 experiments/EVAL/linear_probe_v2.py --root {LP_ROOT} --model $MODEL \\\n"
+            f"            --checkpoints $CKPT --datasets {' '.join(V3_DATASETS)} \\\n"
+            f"            --out {LP_ROOT}/{FITS_INITBN} --probs-out {LP_ROOT}/{PROBS_INITBN} || halt\n")
+    return indexed(off_grid_gpu(BX.V1ERR_TEMPLATE.format(
+        name="linprobe-initbn-raunav", image=BX.IMAGE, pin=V4_PIN, body=body,
+        mem="48Gi", cpu="8", gpu_req=', nvidia.com/gpu: "1"', gpu_check=BX.GPU_CHECK.format(),
+        node_exclude=BX.NODE_EXCLUDE), extract=False, not_on=()), len(ms), V4_PARALLEL["initbn"])
+
+
+def build_v4(only=None) -> dict[str, str]:
+    keep = lambda ms: [x for x in ms if not only or x[0] in only]
+    return {"job-linprobe-mlp4-raunav.yaml": mlp_v4_spec(keep(v4_mlp_models())),
+            "job-linprobe-initbn-raunav.yaml": initbn_spec(keep(initbn_models())),
+            "job-linprobe-mlp4bn-raunav.yaml": mlp_v4_spec(keep(initbn_models()), "mlp4bn",
+                                                           f"{MLP_V4}/init_bn")}
+
+
 def build(only=None) -> dict[str, str]:
     specs = {}
     for model, run, rung, k, reg, ckpts in models():
@@ -275,10 +336,14 @@ def main(argv=None) -> int:
     ap.add_argument("--only", nargs="*", default=None)
     ap.add_argument("--check-only", action="store_true")
     ap.add_argument("--v3", action="store_true", help="the 2026-10-29 refit and MLP probes")
+    ap.add_argument("--v4", action="store_true", help="the 2026-10-30 MLP probes and init_bn fits")
     a = ap.parse_args(argv)
     if a.v3:
         BX.verify_pin(V3_PIN, list(V3_NEEDED), a.pin_not_yet_tagged, V3_NEEDED)
         specs, out_dir = build_v3(a.only), OUT_DIR_V3
+    elif a.v4:
+        BX.verify_pin(V4_PIN, list(V4_NEEDED), a.pin_not_yet_tagged, V4_NEEDED)
+        specs, out_dir = build_v4(a.only), OUT_DIR_V4
     else:
         BX.verify_pin(LP_PIN, list(NEEDED), False, NEEDED)
         BX.verify_pin(FIT_PIN, list(FIT_NEEDED), a.pin_not_yet_tagged, FIT_NEEDED)

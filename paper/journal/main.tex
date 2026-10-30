@@ -175,12 +175,13 @@ A class boundary that separates decays differing only in quark flavor is a flavo
 some of the random partitions, no class boundary is a flavor boundary, or only a single
 boundary is. We also pretrain the \Kres- and \Kcoarse-class models with an
 additional output that regresses a correction to the jet mass, the invariant mass of the jet's
-particles, as CMS taggers do~\cite{cmspart,glopart}. This tests whether the effect of such a
-target on the learned features depends on the label set.
+particles, as CMS taggers do~\cite{cmspart,glopart}. This compares the effect of such a
+target on the learned features, at a fixed weight in the loss, between two label sets.
 
 We evaluate each pretrained model both with linear probes on its frozen features and
 with full fine-tuning, each on training sets from \FtSizeEThree{} jets up to \FtSizeESix{} jets on
-JetClass-II and JetClass and up to the full training set on the other tasks.
+JetClass-II and JetClass, \LpNTrainMaxTop{} on top tagging and \LpNTrainMaxQg{} on quark/gluon
+tagging.
 The tasks are the classification of JetClass-II into all of its classes and of the earlier JetClass
 dataset~\cite{part}, top tagging~\cite{toptag}, which identifies jets from top-quark decays,
 and quark\slash gluon tagging~\cite{efn}, which separates jets initiated by light quarks from
@@ -370,16 +371,22 @@ training jets (Appendix~\ref{app:bn}).
 \subsection{Label sets}\label{sec:labels}
 
 \paragraph{Class hierarchy.}\label{sec:tree} The \Kfull{} JetClass-II classes are
-organized in a hierarchy of successive merges, which was fixed before any model was
-trained (Appendix~\ref{app:vocab}). We pretrain on the levels with \Kfull, \Kres, \Kmid{}
-and \Kcoarse{} classes. The \Kfull-class label set is that of Sophon, which also divides
+organized in a hierarchy of successive merges, which was fixed before any of the models
+reported here was trained (Appendix~\ref{app:vocab}). An earlier set of pretraining runs, whose
+loading of the training data differed between label sets, suggested that boundaries between
+quark flavors matter; the partitions with controlled flavor boundaries described below were
+built afterwards to test this. The hierarchy removes quark flavor before decay structure, so
+that the coarsest level still describes the decay topology. We pretrain on the levels with
+\Kfull, \Kres, \Kmid{} and \Kcoarse{} classes. The \Kfull-class label set is that of Sophon, which also divides
 QCD jets by their quark content. The \Kres-class label set merges the QCD classes into a
 single class and keeps every resonant class. The \Kmid-class label set is reached through a
 level with \VocabSizeRsixthreeQone{} classes. It labels each decay by its topology, which is the
 pattern of intermediate resonances and prongs, and by whether it contains a $b$ quark, else a
 $c$ quark, else only light quarks or gluons. It therefore merges gluons with light quarks,
 merges decays that differ in their numbers of $b$ or $c$ quarks, and merges electrons with
-muons. The \Kcoarse-class label set further removes quark flavor. For each decay, it keeps the
+muons; both of the last merges already happen at the first level below \Kres{} classes.
+Treating a gluon as a light-flavor parton is our choice: Sophon's classes keep decays into
+gluons apart from those into light quarks. The \Kcoarse-class label set further removes quark flavor. For each decay, it keeps the
 number of prongs and the type of each prong: quark or gluon, electron or muon, $\tau$ lepton,
 or neutrino. At each of these levels, every class contains only QCD jets, only decays into
 quarks and gluons, or only decays with leptons. Figure~\ref{fig:labelsets} shows the classes of a selection of decays at each level
@@ -475,6 +482,9 @@ The same $\lambda$ does not give the mass term the same weight at both label set
 the epochs of training, it makes up \MlstMassLossShareResMass\% of the training loss in the
 \Kres-class runs and \MlstMassLossShareCoarseMass\% in the \Kcoarse-class runs, because the
 classification loss is smaller with fewer classes while the mass term is about the same.
+\Kcoarse-class runs with $\lambda$ lowered to match the share of the \Kres-class runs were
+planned but not run, so the comparison between the label sets does not separate the label set
+from the weight of the mass term.
 
 \paragraph{Randomly initialized network.} For each seed, the saved initial weights of the
 \Kfull-class run give a randomly initialized network with the same architecture. It is
@@ -520,8 +530,9 @@ seen in pretraining. The same zeros enter every pretrained model, the randomly i
 network and the network trained from scratch. ParT instead pretrained separate models on
 reduced features before fine-tuning: on the \LitPartTopKinFeatures{} kinematic features alone
 for top tagging, and without the displacement variables for quark/gluon
-tagging~\cite[Sec.~5.2]{part}. To separate the effect of the missing features from that of the
-label set, we also probe the JetClass-II features with the same features set to zero
+tagging~\cite[Sec.~5.2]{part}. Doing so here would mean pretraining every configuration again
+for each set of features. To separate the effect of the missing features from that of the
+label set, we instead probe the JetClass-II features with the same features set to zero
 (Section~\ref{sec:fill}).
 
 On JetClass-II and JetClass, we report the macro-averaged area under the receiver operating
@@ -538,8 +549,21 @@ in the wrong order.
 features. For each pretrained model, we extract the class token, standardize it, and fit a
 multinomial logistic regression whose regularization strength is chosen by the
 cross-entropy on validation jets (Appendix~\ref{app:ftrecipe}). The probes are trained on
-subsets from \FtSizeEThree{} jets to the full training set of each task, the same subsets as
-used for fine-tuning, and evaluated on the same test jets with the same metrics.
+the same subsets as used for fine-tuning and evaluated on the same test jets. The training
+subsets keep the composition of the selected jets, without the reweighting used in pretraining,
+whose histograms would be dominated by statistical fluctuations for small subsets; the JetClass
+subsets hold equal numbers of jets of each class, as JetClass itself does. The JetClass-II
+subsets pass the selection of Section~\ref{sec:design}; the other datasets are used with their
+published selections, so that their results can be compared with the literature.
+
+\paragraph{Nonlinear probes.} A linear probe measures only the information that a linear
+function of the features can read, so two label sets that it cannot tell apart may still differ in
+information that is not linearly decodable. Wherever a conclusion rests on such a match, or on a
+comparison with the randomly initialized network, we also train a nonlinear probe: a multilayer
+perceptron (MLP) with a single hidden layer of \LpMlpHidden{} units on the same standardized
+features, trained until its validation AUC stops improving, with \LpMlpSeedsWord{} seeds whose
+scores are averaged (Appendix~\ref{app:ftrecipe}). The nonlinear probes use the largest training
+subset of each task.
 
 \paragraph{Fine-tuning.} Each pretrained model is fine-tuned once, end to end, from its
 selected pretraining checkpoint with a newly initialized classification head, using ParT's
@@ -560,14 +584,17 @@ merging a pair from the effect of having only \Kcoarse{} classes. Further pairs 
 jets by their quark content, which only the \Kfull-class label set distinguishes: the QCD classes
 $bb$ and $cc$, whose jets contain several $b$ or several $c$ quarks and no other $b$, $c$ or $s$
 quark; and QCD jets with a $b$ quark, and those with a $c$ quark but no $b$ quark, each against
-QCD jets with only light quarks or gluons. The first of these is the QCD counterpart of
+the QCD class with no $b$, $c$ or $s$ quark. The first of these is the QCD counterpart of
 $X\to b\bar b$ against $X\to c\bar c$.
 
 \paragraph{Resonance tagging.}\label{sec:xbb} We follow the benchmark of
 Sophon~\cite[Sec.~III]{sophon}: a spin-0 resonance decaying to $b\bar b$ or to $bs$,
 \pending{resonance mass and sample sizes}. Sophon's background was a dedicated sample of
-Standard Model processes; we use the QCD jets of the JetClass-II test files, which no
-pretraining run used, with the selection of Section~\ref{sec:design}, and evaluate every score
+Standard Model processes, which was not available to us; we use the QCD jets of the
+JetClass-II test files, which no pretraining run used, with the selection of
+Section~\ref{sec:design}. These files carry no event-level information, so Sophon's trigger and
+leading-jet selection is not applied, and the background contains no jets from $W$, $Z$ or top
+quarks. We evaluate every score
 in Sophon's soft-drop mass window, $\LitSophonXWindowLo < m_{\mathrm{SD}} < \LitSophonXWindowHi$~GeV for
 a resonance of mass \LitSophonXMass~GeV, scaled by the ratio of the resonance masses. For $X\to b\bar b$, which
 the \Kfull- and \Kres-class label sets contain as a class, we use Sophon's discriminant~\cite[Eq.~(4)]{sophon},
@@ -581,8 +608,9 @@ classifier is a network with a single hidden layer whose first layer is initiali
 first layer of the pretrained classification head~\cite[App.~B.5]{sophon}. Both are trained on the
 same jets, in the same order, for every model. The signal jets come from a per-jet split of
 the signal sample, disjoint from the evaluation jets. The QCD jets come from held-out
-JetClass-II files and are drawn to match the number of signal jets in each bin of
-$p_{\mathrm T}$ and $m_{\mathrm{SD}}$ over the full mass range. As in Sophon, a control shows what the output scores provide
+JetClass-II files. Signal and QCD jets are drawn in equal numbers in every bin of
+$p_{\mathrm T}$ and $m_{\mathrm{SD}}$ over the full mass range, as uniformly over the bins as the
+samples allow, as in Sophon's reweighting~\cite[App.~B.5]{sophon}. As in Sophon, a control shows what the output scores provide
 without training: the discriminant of the class that contains $X\to bq$, which at \Kfull{} and
 \Kres{} classes is the $X\to bq$ class itself. The same network trained from scratch on these jets
 (Appendix~\ref{app:ftrecipe}) shows what training without pretraining reaches. We report the
@@ -621,30 +649,43 @@ distribution of the accepted QCD jets with that of all QCD jets by their Jensen-
 Each result is the mean over the independently pretrained models of a configuration:
 \MlstNRunsWord{} for each level of the hierarchy, \MlstMassNRunsWord{} for the models with
 mass regression, and \RandFlavRuns{} for the random partitions with controlled flavor
-boundaries. For \MlstNRunsWord{} runs, its uncertainty is the standard deviation between them,
-rounded following the Particle Data Group~\cite{pdg}. A standard deviation from \RandFlavRuns{}
-runs has a single degree of freedom, so for these configurations both values are given instead,
-and a difference is described by its direction in both runs. Each pretrained model is probed or
-fine-tuned once, with the same fine-tuning seed and training subset; only the mass regression
-averages the predictions of several MLP seeds. The spread therefore measures the variation
-between pretraining runs. The uncertainties of Refs.~\cite{part,mpm} come from repeated
-downstream training of a single pretrained model and do not include this variation. The network
-trained from scratch is trained with \MlstFtRefSeedsWord{} seeds. Below the largest training set
-of JetClass, top and quark/gluon tagging, each of its seeds also uses a different training
-subset, so its spread includes the choice of subset, whereas every pretrained model is
-fine-tuned on the same subset.
+boundaries. These numbers were set by the GPU time available; runs of other configurations
+that were stopped before the end of their training are not used. For \MlstNRunsWord{} runs, the
+uncertainty is the standard deviation between them, rounded following the Particle Data
+Group~\cite{pdg}; from \MlstNRunsWord{} runs, this standard deviation is itself uncertain by
+about \MlstSdRelUnc{} of its value. A standard deviation from \RandFlavRuns{} runs has a single degree of freedom, so for
+these configurations both values are given instead, and a difference in the same direction in
+both runs is reported as an observation, not as an established difference. Each pretrained model is
+probed or fine-tuned once, with the same fine-tuning seed and training subset; only the
+nonlinear probes and the mass regression average the predictions of several seeds. For the
+linear probes, which are deterministic, the spread therefore measures the variation between
+pretraining runs. After fine-tuning it also contains the variation of a single fine-tuning run,
+which this design cannot separate from it~\cite{multiberts}. The uncertainties of
+Refs.~\cite{part,mpm} come from repeated downstream training of a single pretrained model and do
+not include the variation between pretraining runs. The network trained from scratch is trained
+with \MlstFtRefSeedsWord{} seeds on the same training subset as the pretrained models, and
+ratios to it divide by the mean over these seeds.
 
 The \RandVtwoNPartitions{} random partitions, with \RandVtwoRuns{} seed each, are shown
 individually. When configurations are compared, the ratio is taken between models with the same
 seed, which share their training examples and initial weights, and for a random partition
 between it and the \Kfull-class model of its seed; the mean and standard deviation of the ratio
-are then taken over seeds or partitions. The GPU type, which changes the floating-point rounding
-and the dropout masks, differs within most of these pairs (Appendix~\ref{app:compute}), so a
-paired comparison does not remove every difference other than the labels. All models are scored
-on the same test jets, so the finite test sample shifts them together; its contribution, from a
-bootstrap over the test jets shared by all models, is given in Appendix~\ref{app:boot}.
-Background rejections at low background efficiency rest on few background jets;
-Table~\ref{tab:ftrej} gives the smallest number behind any of its values.
+are then taken over seeds or partitions. For the random partitions, this standard deviation
+includes the differences between partitions as well as between seeds. The GPU type, which
+changes the floating-point rounding and the dropout masks, differs within most of these pairs
+(Appendix~\ref{app:compute}). In particular, the random partitions and the random partition with
+no flavor boundary trained mostly on one GPU type and two of the three \Kfull-class runs on
+another, so for these comparisons a difference between GPU types cannot be separated from the
+effect of the labels. All models are scored on the same test jets, so the finite test sample
+shifts them together; its contribution, from a bootstrap over the test jets shared by all
+models, is given in Appendix~\ref{app:boot}. Background rejections at low background
+efficiency rest on few background jets; Table~\ref{tab:ftrej} gives the smallest number behind
+any of its values.
+
+The results are descriptive: no hypothesis tests are made. We describe two configurations as
+different only when their ratio differs from unity by more than twice its standard deviation
+and by more than its test-sample uncertainty. Given the number of comparisons, an isolated
+difference near this threshold is not interpreted.
 
 % ============================================================================
 \section{Results}\label{sec:results}
@@ -652,6 +693,7 @@ Table~\ref{tab:ftrej} gives the smallest number behind any of its values.
 
 \subsection{Linear probes}\label{sec:probes}
 \input{tables/mlst_probes}
+\input{tables/mlst_mlp}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{probes_vs_training_size.pdf}
@@ -789,8 +831,15 @@ $X\to cs$, both partitions reduce $\oma$ less, to \MlstCmpBcFoneOverFzero{} and
 \MlstCmpBcFonerOverFzero{} of its value for the partition with no flavor boundary
 (Table~\ref{tab:pairs}).
 
+\subsection{Missing input features}\label{sec:fill}
+\input{tables/mlst_fill}
+\pending{the masking control: JetClass-II probes with the features that the top-tagging and
+quark/gluon data lack set to zero, for every level of the hierarchy and the randomly initialized
+network}
+
 \subsection{Auxiliary mass regression}\label{sec:mass}
 \input{tables/mlst_mass}
+\input{tables/mlst_sculpt}
 The auxiliary mass regression improves the mass resolution of the frozen features by a similar
 amount at both label sets (Table~\ref{tab:mass}): relative to the same label set without it,
 $\sigma_{\mathrm{eff}}$ falls to \MlstCmpMlpResMassOverRes{} at \Kres{} classes and
@@ -970,9 +1019,25 @@ flavor boundary; and the share of the training examples in each group stays with
 The inverse regularization strength of the linear probes is chosen from a logarithmic grid
 between \LpCMin{} and \LpCMax. Each probe is minimized by full-batch L-BFGS in double precision;
 a fit counts as converged when the largest component of its gradient ends below
-\LpConvergedGrad, and every probe of a pretrained model converged. The frozen features are stored in half precision. The JetClass-II
-probes and fine-tuned models are scored on the same \LpNTestAucJcii{} test jets, every fourth of
-the first \LpNTestJcii{} JetClass-II test jets. The smallest JetClass-II
+\LpConvergedGrad. Of the probes of pretrained models, \MlstProbeUnconverged{} did not converge,
+and of those of the randomly initialized networks \MlstProbeUnconvergedInit; \MlstProbeEdgeC{}
+of the \MlstProbeFits{} selected fits chose the largest value of the grid, so for these the
+best regularization on the validation jets may lie beyond it. The frozen features are stored in half precision. The JetClass-II
+probes and fine-tuned models are scored on the first \LpNTestJcii{} JetClass-II test jets, and
+their macro AUCs on every fourth of these, \LpNTestAucJcii{} jets, to bound the cost of
+\Kfull{} ROC curves per model; the binary probes of Table~\ref{tab:pairs} use every jet of their
+two sides among the \LpNTestJcii. These jets come from the first files of the test split, which
+alternate between the decay families file by file, so they hold \LpJciiTestQcdPercent{} QCD and
+\LpJciiTestTwoProngPercent{} two-prong jets, against \LpJciiTrainQcdPercent{} and
+\LpJciiTrainTwoProngPercent{} in the largest training subset. A one-versus-rest AUC compares the
+jets of a class with all other jets and so depends on this mix only through the composition of
+the other jets. The rarest class has \LpJciiTrainMinJets{} jets in the largest training subset and
+\LpJciiTestMinAucJets{} among the jets of the macro AUC, so the AUCs of the rarest classes are
+noisy; the QCD pairs of Table~\ref{tab:pairs}, with many more jets, measure the QCD subdivision
+more precisely. JetClass models are scored on \LpNTestJci{} test jets, the first test files of
+each class with equal numbers of jets per class, and their macro AUC on \LpNTestAucJci{} of
+these; ParT used all of the JetClass test set~\cite{part}. The probes choose their
+regularization on \LpNValJci{} JetClass validation jets. The smallest JetClass-II
 training subset contains jets of \FtCoverageEThreeNClasses{} of the \Kfull{} classes, with a
 median of \FtCoverageEThreeMedian{} jets per class, and the next contains
 \FtCoverageEFourNClasses{}. In a linear probe, a class absent from training receives probability
@@ -1024,14 +1089,18 @@ selects its epoch on our validation jets.
 \section{Compute}\label{app:compute}
 % ============================================================================
 
-Each pretraining run used whichever of several GPU types was available, and a resumed run
-could continue on another type. Table~\ref{tab:compute} gives the GPU types and hours of every
+The pretraining runs started on a single GPU type. When that type became unavailable partway
+through the study, the runs still queued or interrupted were allowed to use any GPU type with
+enough memory, and a resumed run could continue on another type. Runs resumed on another type
+read the same training examples in the same order as the other runs of their seed, which each
+epoch's record of the examples it read confirms; the floating-point rounding and the dropout
+masks do change with the type, and the effect of the type on a trained model was not measured. Table~\ref{tab:compute} gives the GPU types and hours of every
 pretraining run, read from the record that each epoch keeps of its device. The hours count the
 training and validation passes of the epochs of the final runs and leave out restarted epochs
 and the computation of the BatchNorm statistics. The runs used \ComputeGpuTypes{} GPUs, and
 each level of the hierarchy spent between \ComputeMainGpuShareMin{} and
 \ComputeMainGpuShareMax{} of its GPU-hours on the \ComputeMainGpu, the type these levels used
-most. \pending{final once every run is in}
+most.
 
 \input{tables/compute}
 

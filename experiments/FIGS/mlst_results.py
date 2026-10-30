@@ -105,6 +105,17 @@ def _paper(root: pathlib.Path) -> dict:
     return out
 
 
+def _fit_cells(x):
+    """Every selected fit (a dict with C and converged) under a checkpoint's cells."""
+    if isinstance(x, dict):
+        if "C" in x and "converged" in x:
+            yield x
+            return
+        for k, v in x.items():
+            if k != "search":
+                yield from _fit_cells(v)
+
+
 def _load(d: pathlib.Path) -> dict:
     return {p.stem: json.loads(p.read_text()) for p in sorted(d.glob("*.json"))} if d.is_dir() else {}
 
@@ -760,7 +771,48 @@ def table_sculpt(sculpt, runs, fmt_pm, rows) -> str:
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
-def method_macros(em, root: pathlib.Path) -> None:
+def size_macros(em, fits: dict, fmt_int, index) -> None:
+    """Test, validation and largest training sizes of the probe tasks, from the fits (one value
+    across every model, or the build stops)."""
+    def one(ds, key, n=None):
+        vals = set()
+        for d in fits.values():
+            cells = d["cells"].get("init" if d["model"].startswith("init-") else PRIMARY, {}).get(ds, {})
+            if cells:
+                vals.add(cells[n or max(cells, key=int)][key])
+        if len(vals) != 1:
+            raise SystemExit(f"FATAL: {ds} {key} takes {sorted(vals)} across the fits")
+        return vals.pop()
+    for ds, w in (("jc1", "Jci"), ("top", "Top"), ("qg", "Qg")):
+        em.macro(f"LpNTest{w}", fmt_int(one(ds, "n_jets")), index, f"{ds} test jets the probes score")
+        em.macro(f"LpNTrainMax{w}", fmt_int(one(ds, "n_train")), index, f"{ds} largest training subset")
+    em.macro("LpNTestAucJci", fmt_int(one("jc1", "n_jets_auc")), index, "JetClass test jets of the macro AUC")
+    em.macro("LpNValJci", fmt_int(one("jc1", "n_val")), index, "JetClass probe validation jets")
+
+
+def composition_macros(em, data: pathlib.Path, root: pathlib.Path, missing: list) -> None:
+    """The class mix of the JetClass-II training subset at 10^6 and of the test jets: QCD and
+    two-prong shares (per cent), and the smallest class counts."""
+    src = data / "jc2_test/counts.json"
+    man = root / "experiments/FT/data/jc2_v2_manifest.json"
+    if not src.exists():
+        missing.append("JetClass-II test composition -- experiments/FIGS/data/v2/jc2_test/counts.json")
+        return
+    names = [r["class_name"] for r in csv.DictReader((root / "configs/labelmaps/rung_label_maps.v1.csv").open())]
+    fam = ["qcd" if n.startswith("label_QCD") else "multi" if n.startswith("label_X_YY") else "two" for n in names]
+    test = json.loads(src.read_text())
+    train = json.loads(man.read_text())["class_coverage"][f"train_N{PAIR_N}_s1.parquet"]["counts"]
+
+    def share(c, f):
+        return 100 * sum(x for x, g in zip(c, fam) if g == f) / sum(c)
+    for w, c, s in (("Test", test["counts"], src), ("Train", train, man)):
+        em.macro(f"LpJcii{w}QcdPercent", f"{share(c, 'qcd'):.1f}\\%", s, "QCD share of the jets, per cent")
+        em.macro(f"LpJcii{w}TwoProngPercent", f"{share(c, 'two'):.1f}\\%", s, "two-prong share of the jets, per cent")
+    em.macro("LpJciiTestMinAucJets", str(min(test["counts_auc"])), src, "fewest jets of a class among the macro-AUC rows")
+    em.macro("LpJciiTrainMinJets", str(min(train)), man, "fewest jets of a class in the 10^6 training subset")
+
+
+def method_macros(em, root: pathlib.Path, words=str) -> None:
     """Settings the methods text states, read from the scripts that use them."""
     sc = root / "experiments/EVAL/mass_sculpting.py"
     m = re.search(r"^WORKING_POINTS = \(([^)]*)\)", sc.read_text(), re.M)
@@ -769,6 +821,15 @@ def method_macros(em, root: pathlib.Path) -> None:
         raise SystemExit(f"FATAL: {sc} WORKING_POINTS {effs} are not the table's {SCULPT_EFFS}")
     for name, e in zip(("SculptEffHigh", "SculptEffLow"), effs):
         em.macro(name, f"{100 * e:g}\\%", sc, "WORKING_POINTS", "QCD efficiency of a sculpting cut")
+    pr = root / "experiments/EVAL/probe.py"
+    src = pr.read_text()
+    hidden = set(re.findall(r"torch\.nn\.Linear\(tr\.shape\[1\], (\d+)\)", src))
+    seeds = re.search(r"^MLP_SEEDS = \(([^)]*)\)", src, re.M)
+    if len(hidden) != 1 or not seeds:
+        raise SystemExit(f"FATAL: {pr}: the MLP probe's hidden width or seeds not found")
+    em.macro("LpMlpHidden", hidden.pop(), pr, "fit_mlp hidden layer", "units of the MLP probe's hidden layer")
+    em.macro("LpMlpSeedsWord", words(len([s for s in seeds.group(1).split(",") if s.strip()])), pr, "MLP_SEEDS",
+             "seeds of the MLP probe whose scores are averaged")
     mr = root / "experiments/EVAL/mass_resolution.py"
     m = re.search(r"^MIN_TRAIN_PER_CLASS = (\d+)", mr.read_text(), re.M)
     em.macro("MassMinTrainPerClass", m.group(1), mr, "MIN_TRAIN_PER_CLASS",
@@ -869,10 +930,10 @@ BOOT_COLS = (("JetClass-II", "probe", "jc2_188", "macro", "mtx-", "init-s{k}"),
              ("JetClass", "probe", "jc1", "macro", "mtx-", "init-s{k}"),
              ("top", "probe", "top", "auc", "mtx-", "init-s{k}"),
              ("q/g", "probe", "qg", "auc", "mtx-", "init-s{k}"),
-             ("JetClass-II", "jc2", "jc2_188", "macro", "", "scratch-v2-s1"),
-             ("JetClass", "ft", "jc1", "macro", "", "scratch-v2-s1"),
-             ("top", "ft", "top", "auc", "", "scratch-v2-s1"),
-             ("q/g", "ft", "qg", "auc", "", "scratch-v2-s1"))
+             ("JetClass-II", "jc2", "jc2_188", "macro", "", "scratch-s1-{k}"),
+             ("JetClass", "ft", "jc1", "macro", "", "scratch-s1-{k}"),
+             ("top", "ft", "top", "auc", "", "scratch-s1-{k}"),
+             ("q/g", "ft", "qg", "auc", "", "scratch-s1-{k}"))
 BOOT_ROWS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("L188", None))
 
 
@@ -964,7 +1025,9 @@ CAPTIONS = {
             "training set: $(1-\\mathrm{AUC})\\times10^{3}$, lower is better. " + SPREAD),
     "fill": ("tab:fill", "Linear probes on the \\Kfull-class JetClass-II task with \\FtSizeESix{} training jets: "
              "$(1-\\mathrm{AUC})\\times10^{3}$ on the features as computed, and with the input features "
-             "that the top-tagging and the quark/gluon data lack set to zero, as in those data. " + SPREAD),
+             "that the top-tagging and the quark/gluon data lack set to zero, as in those data. Mean $\\pm$ "
+             "standard deviation over the \\MlstNRunsWord{} pretraining runs of each level of the hierarchy and "
+             "the \\MlstNRunsWord{} randomly initialized networks."),
     "mass": ("tab:mass", "Mass resolution $\\sigma_{\\mathrm{eff}}$ of $\\ln(m_{\\mathrm{reg}}/"
              "m_{\\mathrm{SD}}^{\\mathrm{gen}})$ on the JetClass-II test jets with a generator-level match, "
              "on all, resonant and QCD jets, and the median $m_{\\mathrm{reg}}/m_{\\mathrm{SD}}^{\\mathrm{gen}}$; "
@@ -1052,6 +1115,10 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     em.macro("MlstProbeRunsDone", str(len(done)), index, "runs with a linear-probe fit (count)",
              "of the paper's runs")
     em.macro("MlstPaperRuns", str(n_paper), root / "configs/arms/v2_paper_runs.txt", "runs (count)")
+    n_main = len(runs["L188"])
+    em.macro("MlstSdRelUnc", f"{100 / math.sqrt(2 * (n_main - 1)):.0f}\\%", root / "configs/arms/v2_paper_runs.txt",
+             "relative standard error of a standard deviation from the runs of a hierarchy level, "
+             "1/sqrt(2(n-1)) for a normal sample")
     if len(done) < n_paper:
         missing.append(f"linear probes: {len(done)} of {n_paper} paper runs")
     status = merge_status(root)
@@ -1065,6 +1132,12 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
              "linear probes of pretrained models that did not converge (count)")
     em.macro("MlstProbeUnconvergedInit", str(len(UNCONVERGED_SEEN) - len(trained)), index,
              "linear probes of the randomly initialized networks that did not converge (count)")
+    cells = [c for m, d in fits.items() for c in _fit_cells(d["cells"].get("init" if m.startswith("init-") else PRIMARY, {}))]
+    edge = [c for m, d in fits.items() for c in _fit_cells(d["cells"].get("init" if m.startswith("init-") else PRIMARY, {}))
+            if c["C"] == max(d["c_grid"])]
+    em.macro("MlstProbeFits", str(len(cells)), index, "selected linear-probe fits of the reported checkpoints (count)")
+    em.macro("MlstProbeEdgeC", str(len(edge)), index,
+             "of these, fits whose selected C is the largest of the grid (count)")
     mlp = _load(data / MLP_FITS)
     if mlp:
         out["tables/mlst_mlp.tex"] = _float("mlp", table_mlp(mlp, runs, fmt_pm, MAIN + (INIT,)))
@@ -1101,7 +1174,9 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         missing.append("test-sample bootstrap -- experiments/FIGS/data/v2/bootstrap/")
         for k in ("MlstBootResamples", "MlstBootTestMaxProbe", "MlstBootTestMaxFt"):
             em.macro(k, r"\pending{bootstrap}", index, "no bootstrap pulled yet")
-    method_macros(em, root)
+    composition_macros(em, data, root, missing)
+    size_macros(em, fits, fmt_int, index)
+    method_macros(em, root, words)
     ft_recipe(em, data, {m[len("mtx-"):] for k, v in runs.items() if k != INIT for m in v}, fmt_int, missing, words)
     tag, per = load_ft(data)
     if tag is None:

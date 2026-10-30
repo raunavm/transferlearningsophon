@@ -71,9 +71,11 @@ def _cells(name, text):
 def test_the_v2_specs_on_disk_are_the_generators(v2):
     # the read-outs are --v2-readouts' (tests/test_ft_v2_readout_specs.py)
     # the read-outs are --v2-readouts', the V100 references --v2-ref-v100's (tests/test_ft_v2_ref_v100.py)
-    # and leg1_188's and the top recipe check's --v2-leg188's (tests/test_ft_v2_leg188.py)
+    # and leg1_188's and the top recipe check's --v2-leg188's (tests/test_ft_v2_leg188.py);
+    # the 50-epoch leg-2 check is --v2-extra's (tests/test_ft_v2_extra.py), as is ref-v100-s1
     on_disk = {p.name for p in K8S.glob("job-ft-v2-*.yaml") if not p.name.endswith("-metrics-raunav.yaml")
-               and not p.name.startswith(("job-ft-v2-ref-v100-", "job-ft-v2-leg188-", "job-ft-v2-topcheck-"))}
+               and not p.name.startswith(("job-ft-v2-ref-v100-", "job-ft-v2-leg188-", "job-ft-v2-topcheck-",
+                                          "job-ft-v2-leg2e50-"))}
     assert SCRATCH in on_disk and on_disk <= set(v2)
     for name in on_disk:
         assert (K8S / name).read_text() == v2[name], name

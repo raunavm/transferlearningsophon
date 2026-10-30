@@ -8,15 +8,17 @@ experiments/MTX/k8s/v2/status/.
   curves-jc2-raunav     ... on the 188-class JetClass-II trees (leg1_188)
   curves-probe-raunav   ft_curves.py probes on the probe refit's saved test outputs (fits_v3_probs)
   boot-ft-raunav        experiments/STATS/paired_bootstrap.py per task and training size on the 16
-                        runs reported for fine-tuning and the three from-scratch references
+                        runs reported for fine-tuning and the three from-scratch seeds on subset s1
   boot-jc2-raunav       ... on JetClass-II at 188 classes (macro AUC)
   boot-probe-raunav     ... on the 30 probes: top, q/g, Herwig at every size; JetClass and
                         JetClass-II (macro AUC) and the six pairs at the largest
   status-raunav         CronJob, experiments/MTX/status_v2.py every 30 min
 
 Ratios: each run over the 188-class run of its index, a mass-output run also over its run without
-the mass output, and each run over its baseline -- the from-scratch reference trained on the same
-subset (s1) for fine-tuning, the untrained trunk of its index for probes.
+the mass output, a flavour run over the runs of its index in FLAV_OVER, and each run over its
+baseline -- the from-scratch seed of its index trained on the pretrained fine-tunes' subset s1
+(scratch-s1-<k>) for fine-tuning, the untrained trunk of its index for probes. Every call of a job
+reports every ratio (the probe's Herwig and pair tasks, the fine-tunes' Herwig cells included).
 
 Each job polls every 30 min until all its inputs exist (the cells' DONE; a probe refit's
 <model>.json, written last), gives up after 6 days with exit 42 (the pod failure policy fails the
@@ -25,7 +27,7 @@ whole, so a retried pod skips the trees already written and does the rest; the b
 curves-probe refuse to start if their output exists, the bootstrap jobs writing a directory of their
 own under BOOT, moved into place whole.
 
-    python3 scripts/build_curve_jobs.py --pin-not-yet-tagged [--check-only]
+    python3 scripts/build_curve_jobs.py --pin-not-yet-tagged [--check-only] [--repin]
 """
 from __future__ import annotations
 
@@ -38,8 +40,10 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "FT" / "k8s" / "curves"
 STATUS_DIR = ROOT / "experiments" / "MTX" / "k8s" / "v2" / "status"
-# mtx-s2.18 (4f92021, the linear-probe refit) was tagged before this builder was committed
-PIN = "mtx-s2.19"
+# mtx-s2.18 (4f92021, the linear-probe refit) was tagged before this builder was committed;
+# mtx-s2.19 carried the first specs, none of the curves or bootstrap jobs launched at it
+PIN = "mtx-s2.20"
+STATUS_PIN = "mtx-s2.19"       # the status CronJob, launched at it (RUNS.csv status-raunav, 2026-10-30)
 NEEDED = {"experiments/FT/ft_curves.py": "def roc_points",
           "experiments/STATS/paired_bootstrap.py": "P.AucScorer",
           "experiments/MTX/status_v2.py": "def status"}
@@ -62,7 +66,12 @@ LP_ROOT = "/data/results/eval/v2_linprobe"            # scripts/build_linprobe_j
 FITS_V3, PROBS_V3 = f"{LP_ROOT}/fits_v3", f"{LP_ROOT}/fits_v3_probs"
 LEG1_188 = BF.LEG188_TREE                              # the 188-class leg's tree
 SCRATCH, SEEDS = BF.SCRATCH_REF, BF.INITS_LATER[BF.SCRATCH_REF][0][3]
-BASELINE = f"{SCRATCH}-s1"     # the from-scratch reference on the pretrained fine-tunes' subset
+# The fine-tunes' baseline: from-scratch seeds 1-3 on subset s1, the pretrained fine-tunes' subset,
+# named scratch-s1-<seed>. Seed 1 is the reference's own; seeds 2-3 are REF_S1's (the reference's
+# seed S trains on subset sS off JetClass-II) at the trees and sizes build_ft_jobs trains there
+# (REF_S1_TREES), else the reference's own (s1_tree).
+BASELINE = "scratch-s1"
+REF_S1, REF_S1_TREES = BF.V2_REF_S1_ROOT, BF.REF_S1_TREES   # scripts/build_ft_jobs.py --v2-extra
 FT_RUNS = list(BF.V2_LEG188_RUNS)                      # the 16 runs reported for fine-tuning
 PROBE_MODELS = [(r, "best70") for r in BF.v2_paper_runs()] + [(i, "init") for i, _ in BX.v2_init_refs()]
 _LPV = _load("linear_probe_v2", "experiments/EVAL/linear_probe_v2.py")
@@ -85,6 +94,8 @@ TREES = {
 FAMILIES = {"ft": (("best70_leg2", "ref_v100_jc1_leg2"), ("best70_leg_top", "ref_v100_bench_leg_top"),
                    ("best70_leg_qg", "ref_v100_bench_leg_qg")),
             "jc2": ((f"best70_{LEG1_188}", f"ref_v100_jc2_{LEG1_188}"),)}
+# a flavour run over these runs of its index
+FLAV_OVER = {"flavf0": ("r16q1",), "flavf1": ("flavf0",), "flavf1r": ("flavf1", "flavf0")}
 POLL_S, GIVE_UP_S = 1800, 6 * 86400
 
 
@@ -99,17 +110,35 @@ def done_markers(name: str) -> str:
     return f"{tree}/{_alt(inits)}/N{_alt(SIZES[TREES[name][1]])}/s{_alt(seeds)}/DONE"
 
 
+def s1_tree(ref: str, n: int) -> str:
+    """The tree of the from-scratch seeds 2-3 on subset s1 for reference tree ref at N=n: its twin
+    under REF_S1 where build_ft_jobs trains them (REF_S1_TREES), else the reference's own (on
+    JetClass-II every seed trains on s1; at the full top and q/g sets every subset is the same jets)."""
+    tree = TREES[ref][0]
+    part, leaf = tree.removeprefix(REF + "/").rsplit("/", 1)
+    if leaf in REF_S1_TREES and n in REF_S1_TREES[leaf][1]:
+        assert part == REF_S1_TREES[leaf][0], (tree, REF_S1_TREES[leaf])
+        return f"{REF_S1}/{part}/{leaf}"
+    return tree
+
+
+def s1_markers(ref: str) -> list[str]:
+    """The DONE markers of the REF_S1 cells reference tree ref's baseline reads."""
+    ns = [n for n in SIZES[TREES[ref][1]] if s1_tree(ref, n) != TREES[ref][0]]
+    return [f"{s1_tree(ref, ns[0])}/{SCRATCH}/N{_alt(ns)}/s{_alt(BF.REF_S1_SEEDS)}/DONE"] if ns else []
+
+
 def ratio_pairs(runs, prefix: str, baseline) -> list[str]:
     """A/B for each run: over the 188-class run of its index, a mass-output run also over its run
-    without the mass output, and over baseline(index)."""
+    without the mass output, a flavour run over its FLAV_OVER runs of its index, and over
+    baseline(index)."""
     out = []
     for r in runs:
         base, k = r.rsplit("-s", 1)
-        if base != "l188":
-            out.append(f"{prefix}{r}/{prefix}l188-s{k}")
-        if base.endswith("mass"):
-            out.append(f"{prefix}{r}/{prefix}{base.removesuffix('mass')}-s{k}")
-        out.append(f"{prefix}{r}/{baseline(k)}")
+        over = (([] if base == "l188" else ["l188"]) + ([base.removesuffix("mass")] if base.endswith("mass") else [])
+                + list(FLAV_OVER.get(base, ())))
+        assert all(f"{b}-s{k}" in runs for b in over), (r, over)
+        out += [f"{prefix}{r}/{prefix}{b}-s{k}" for b in over] + [f"{prefix}{r}/{baseline(k)}"]
     return out
 
 
@@ -138,12 +167,14 @@ def _boot(out: str, pairs: list[str], fn: str, calls: list[str]) -> str:
             f"          mv ${{TMP}} {out}\n          ls -la {out}\n")
 
 
-# boot TASK PRETRAINED_TREE REFERENCE_TREE N: the reported runs' cells and the references' at N
+# boot TASK PRETRAINED_TREE REFERENCE_TREE N S1_TREE: the reported runs' cells at N and the
+# from-scratch seeds on subset s1, seed 1 in REFERENCE_TREE and seeds 2-3 in S1_TREE (s1_tree)
 BOOT_FT = """          RUNS="{runs}"
           boot () {{
             local args=() r s
             for r in ${{RUNS}}; do args+=(--model "${{r}}=$2/${{r}}/N$4/s1"); done
-            for s in {seeds}; do args+=(--model "{scratch}-s${{s}}=$3/{scratch}/N$4/s${{s}}"); done
+            args+=(--model "{base}-1=$3/{scratch}/N$4/s1")
+            for s in {seeds}; do args+=(--model "{base}-${{s}}=$5/{scratch}/N$4/s${{s}}"); done
             python3 experiments/STATS/paired_bootstrap.py --task $1 "${{args[@]}}" "${{PAIRS[@]}}" \\
               --out ${{TMP}}/$1_N$4.json || halt
           }}
@@ -178,11 +209,13 @@ def curves_probe_body() -> str:
 
 def boot_ft_body(family: str) -> str:
     out = f"{BOOT}/{family}"
-    fn = BOOT_FT.format(runs=" ".join(FT_RUNS), seeds=" ".join(map(str, SEEDS)), scratch=SCRATCH)
-    calls = [f"boot {task} {TREES[pre][0]} {TREES[ref][0]} {n}"
+    assert SEEDS[0] == 1 and tuple(SEEDS[1:]) == BF.REF_S1_SEEDS, (SEEDS, BF.REF_S1_SEEDS)
+    fn = BOOT_FT.format(runs=" ".join(FT_RUNS), seeds=" ".join(map(str, SEEDS[1:])), scratch=SCRATCH, base=BASELINE)
+    calls = [f"boot {task} {TREES[pre][0]} {TREES[ref][0]} {n} {s1_tree(ref, n)}"
              for pre, ref in FAMILIES[family] for task in TREES[pre][2] for n in SIZES[task]]
     inputs = [done_markers(t) for pair in FAMILIES[family] for t in pair]
-    return _guard([out], inputs) + _boot(out, ratio_pairs(FT_RUNS, "", lambda k: BASELINE), fn, calls)
+    inputs += [m for _, ref in FAMILIES[family] for m in s1_markers(ref)]
+    return _guard([out], inputs) + _boot(out, ratio_pairs(FT_RUNS, "", lambda k: f"{BASELINE}-{k}"), fn, calls)
 
 
 def boot_probe_body() -> str:
@@ -239,7 +272,7 @@ def build(pin: str) -> dict[pathlib.Path, str]:
     }
     out = {OUT_DIR / f"job-{j}-raunav.yaml": cpu_job(f"{j}-raunav", body, what, pin)
            for j, (body, what) in jobs.items()}
-    out[STATUS_DIR / "cronjob-status-raunav.yaml"] = status_spec(pin)
+    out[STATUS_DIR / "cronjob-status-raunav.yaml"] = status_spec(STATUS_PIN)
     return out
 
 
@@ -258,15 +291,15 @@ def main() -> int:
     a = ap.parse_args()
     BF.verify_pin(a.pin, a.pin_not_yet_tagged, NEEDED)
     specs = build(a.pin)
-    moved = [f"  {p.relative_to(ROOT)}: {_pin_of(p.read_text())} -> {a.pin}" for p in specs
-             if p.exists() and _pin_of(p.read_text()) != a.pin]
+    moved = [f"  {p.relative_to(ROOT)}: {_pin_of(p.read_text())} -> {_pin_of(t)}" for p, t in specs.items()
+             if p.exists() and _pin_of(p.read_text()) != _pin_of(t)]
     if moved and not a.repin and not a.check_only:
         sys.exit("FATAL: this would move the pin of specs whose jobs may have run:\n" + "\n".join(moved))
     for p, text in specs.items():
         if not a.check_only:
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(text)
-        print(f"{p.relative_to(ROOT)} {'checked' if a.check_only else 'written'} (pin {a.pin})")
+        print(f"{p.relative_to(ROOT)} {'checked' if a.check_only else 'written'} (pin {_pin_of(text)})")
     return 0
 
 

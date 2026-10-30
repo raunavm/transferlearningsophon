@@ -12,8 +12,8 @@ keep their stored statistics are best70 (best_window_epoch.json) and the global 
 pretrain_v2 at the grid's tag does not write these models, so this entry point writes
 them after the run, with pretrain_v2's own functions, as finalize_v2 redoes the end
 step: the run's seeds and configuration from recipe.json, the trimmer counters of its
-last resume file, and the GPU product it trained on (the weight average's BatchNorm
-pass ran there). For each distinct epoch it writes
+last resume file, and a GPU if it trained on one (the job spec chooses the GPU product:
+the weight average's BatchNorm pass ran on the one it trained on). For each distinct epoch it writes
 
   net_epoch-<e>_bn_state.pt   the epoch's state file, BatchNorm statistics recomputed
   net_epoch-<e>_bn.json       the input's and the output's sha256, the BatchNorm sample,
@@ -25,11 +25,25 @@ net_wavg<F>-<L>.json). A twin already written is left alone.
 
 It refuses (EXIT_HALT) a run that is not DONE, one without its weight average's record,
 a state file or the last epoch's resume file, one whose training files on disk are not
-the ones the recipe counted, and a GPU product other than the one the run trained on.
+the ones the recipe counted, and a run that trained on a GPU where no GPU is usable.
+It does not check the GPU product; the job spec pins it.
+
+--init writes the twin of the untrained trunk the run started from (init_trunk.pt), so
+the random-network reference (build_extract_jobs.py v2_init_refs) is normalised as the
+pretrained twins are: the same model, trimmer counters and BatchNorm pass on the same
+sample, the run's best70 twin's (n_jets and rows_sha256 as recorded in its
+net_epoch-<e>_bn.json, which is the weight average's). It writes
+
+  init_bn_state.pt   {"trunk": ...} as init_trunk.pt, BatchNorm statistics recomputed
+  init_bn.json       the input's and the output's sha256, the BatchNorm sample, the
+                     best70 twin it matches (with that twin's device) and the code
+
+and refuses a run whose best70 twin is not written, and one that holds init_bn.json
+(a state file without its record is overwritten, through a temporary name).
 
 Run it as the training job runs pretrain_v2, from the repository root with the arm's
 reweighting sidecar beside its config:
-  python3 experiments/MTX/bn_twins_v2.py --out /data/results/mtx_v2/RUN
+  python3 experiments/MTX/bn_twins_v2.py --out /data/results/mtx_v2/RUN [--init]
 """
 from __future__ import annotations
 
@@ -47,6 +61,7 @@ import pretrain_v2 as pv  # noqa: E402
 
 DRIVER = "experiments/MTX/bn_twins_v2.py"
 TAGS = {"best70": "best_window_epoch.json", "bestval": "best_epoch.json"}
+INIT_FILE, INIT_TWIN, INIT_TWIN_JSON = "init_trunk.pt", "init_bn_state.pt", "init_bn.json"
 
 
 def twin_paths(out: pathlib.Path, epoch: int) -> tuple[pathlib.Path, pathlib.Path]:
@@ -111,28 +126,77 @@ def bn_recompute(a, model, ds_train, seeds, dev, amp: bool, loader_kw, input_nam
             "mode": "train, no gradient, cumulative average (momentum None)"}
 
 
+def write_init_twin(out: pathlib.Path, a, rec: dict, model, seeds, side, data_config, dev, amp: bool,
+                    code: dict, ref: pathlib.Path, want: dict) -> int:
+    """init_trunk.pt in the run's model, the BatchNorm pass on the best70 twin's sample,
+    and the trunk written in init_trunk.pt's format (extract_v2.load_headless reads it)."""
+    import torch
+    src = out / INIT_FILE
+    missing, unexpected = pv.part_of(model).load_state_dict(
+        torch.load(src, map_location="cpu", weights_only=True)["trunk"], strict=False)
+    if unexpected or any(not k.startswith("fc.") for k in missing):
+        print(f"FATAL: {src} does not fit the run's trunk: missing={missing} unexpected={unexpected}", flush=True)
+        return pv.EXIT_HALT
+    bn = bn_recompute(a, model, pv.train_stream(a, side, seeds), seeds, dev, amp,
+                      pv.loader_kwargs(a, dev), list(data_config.input_names))
+    if (bn["n_jets"], bn["rows_sha256"]) != (want["n_jets"], want["rows_sha256"]):
+        print(f"FATAL: the untrained trunk's BatchNorm sample ({bn['n_jets']} jets, rows "
+              f"{bn['rows_sha256'][:12]}) is not best70's twin's ({want['n_jets']}, "
+              f"{want['rows_sha256'][:12]})", flush=True)
+        return pv.EXIT_HALT
+    trunk = pv.trunk_state(model)
+    if sum(k.endswith("running_mean") for k in trunk) != bn["batchnorm_layers"]:
+        print(f"FATAL: {bn['batchnorm_layers']} BatchNorm layers, not all in the trunk the file keeps", flush=True)
+        return pv.EXIT_HALT
+    state = out / INIT_TWIN
+    pv.torch_save({"trunk": trunk}, state)  # a temporary name, then a rename: a stray file is replaced whole
+    pv.write_json(out / INIT_TWIN_JSON, {
+        "inputs": {"init": pv.sha256_file(src)}, "sha256": pv.sha256_file(state), "bn_recompute": bn,
+        "sample_of": {"tag": "best70", "record": ref.name, "n_jets": want["n_jets"],
+                      "rows_sha256": want["rows_sha256"], "device": json.loads(ref.read_text())["device"]},
+        "device": pv.device_name(dev.type), "trained_on": rec["device"], "code": code})
+    print(f"[bn_twins_v2] {out.name}: {state.name}, {bn['batchnorm_layers']} BatchNorm layers recomputed "
+          f"on {bn['n_jets']} jets, best70's twin's sample", flush=True)
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--out", required=True, help="run directory")
-    out = pathlib.Path(ap.parse_args(argv).out)
+    ap.add_argument("--init", action="store_true",
+                    help=f"the twin of the untrained trunk ({INIT_FILE}) only, on best70's twin's sample")
+    args = ap.parse_args(argv)
+    out = pathlib.Path(args.out)
     if not (out / "DONE").exists():
         print(f"FATAL: {out} is not DONE; its reported checkpoints are not final", flush=True)
         return pv.EXIT_HALT
     rec, a = run_args(out)
-    window = pv.last_epochs(a.num_epochs)
-    wavg_json = out / f"net_wavg{window[0]}-{window[-1]}.json"
     last = a.num_epochs - 1
-    by_epoch = tag_epochs(out)
-    missing = [str(p) for p in [wavg_json, out / f"net_epoch-{last}_resume.pt",
-                                *(out / f"net_epoch-{e}_state.pt" for e in by_epoch)] if not p.exists()]
+    if args.init:
+        # keyed on the record, written last: a state file without it is a write that died
+        if (out / INIT_TWIN_JSON).exists():
+            print(f"FATAL: {out} already holds {INIT_TWIN_JSON}; nothing is overwritten", flush=True)
+            return pv.EXIT_HALT
+        ref = twin_paths(out, int(json.loads((out / TAGS["best70"]).read_text())["epoch"]))[1]
+        needed = [out / INIT_FILE, ref, out / f"net_epoch-{last}_resume.pt"]
+    else:
+        window = pv.last_epochs(a.num_epochs)
+        wavg_json = out / f"net_wavg{window[0]}-{window[-1]}.json"
+        by_epoch = tag_epochs(out)
+        needed = [wavg_json, out / f"net_epoch-{last}_resume.pt",
+                  *(out / f"net_epoch-{e}_state.pt" for e in by_epoch)]
+    missing = [str(p) for p in needed if not p.exists()]
     if missing:
         print(f"FATAL: {out} lacks {missing}", flush=True)
         return pv.EXIT_HALT
-    todo = sorted(e for e in by_epoch if not twin_paths(out, e)[1].exists())
-    if not todo:
-        print(f"[bn_twins_v2] {out.name}: every twin is written ({sorted(by_epoch)})", flush=True)
-        return 0
-    want = json.loads(wavg_json.read_text())["bn_recompute"]
+    if args.init:
+        want = json.loads(ref.read_text())["bn_recompute"]
+    else:
+        todo = sorted(e for e in by_epoch if not twin_paths(out, e)[1].exists())
+        if not todo:
+            print(f"[bn_twins_v2] {out.name}: every twin is written ({sorted(by_epoch)})", flush=True)
+            return 0
+        want = json.loads(wavg_json.read_text())["bn_recompute"]
     counts = {k: len(v) for k, v in pv.to_file_dict(a.data_train).items()}
     if counts != rec["data_train_n"]:
         print(f"FATAL: training files on disk per family {counts}; the run read {rec['data_train_n']}", flush=True)
@@ -150,6 +214,8 @@ def main(argv=None) -> int:
     model, seeds, side, data_config = build(out, a, dev)
     code = {**pv.code_version(), "driver": DRIVER}
     amp = a.use_amp and dev.type == "cuda"
+    if args.init:
+        return write_init_twin(out, a, rec, model, seeds, side, data_config, dev, amp, code, ref, want)
     for e in todo:
         src = out / f"net_epoch-{e}_state.pt"
         model.load_state_dict(torch.load(src, map_location="cpu", weights_only=True))
