@@ -11,9 +11,10 @@ drawn: these are not CMS results.
 
 One change to the style: the text is set in Computer Modern, the font of the paper (LaTeX's
 default), instead of the style's TeX Gyre Heros, so that a figure reads like the text around
-it. Matplotlib ships Computer Modern (cmr10) and draws mathematics in it (mathtext 'cm'), so
-no LaTeX installation is needed on the laptop or in the cluster image. Mathematical symbols are
-italic, as in LaTeX, where the style sets them upright.
+it. Where a LaTeX installation exists (the figure job installs TeX Live in the pod), every
+label is typeset by LaTeX itself (text.usetex); otherwise matplotlib's own Computer Modern
+(cmr10, mathtext 'cm') stands in, for previews. Mathematical symbols are italic, as in LaTeX.
+Fonts are embedded as TrueType (pdf.fonttype 42), not Type 3.
 
 The encoding is fixed here: the label sets of the hierarchy take the first four colours of
 the sequence, finest first, and the randomly initialized network its grey. A panel is 6 in
@@ -37,6 +38,10 @@ PETROFF6 = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
 LEVEL_COLOURS = {188: PETROFF6[0], 162: PETROFF6[1], 43: PETROFF6[2], 17: PETROFF6[3]}
 LEVEL_MARKERS = {188: "o", 162: "s", 43: "^", 17: "v"}
 INIT_STYLE = {"color": PETROFF6[4], "marker": "X", "linestyle": "--"}
+# Random partitions: Paul Tol's teal (vibrant scheme), not Petroff's violet, which sits too
+# near the 17-class purple; from scratch: black, open markers, dotted
+RAND_COLOUR = "#009988"
+SCRATCH_STYLE = {"color": "black", "marker": "o", "markerfacecolor": "white", "linestyle": ":"}
 # The style's text is 26 pt and its tick labels and legend 21.7 pt ('small'). A figure is
 # printed at the text width (360 pt in the draft's 11-pt article class); with two panels of
 # 6 in that prints the axis labels at about 11 pt, the size of the text, and the tick labels
@@ -49,7 +54,14 @@ LINEWIDTH = 3
 
 def use_style() -> None:
     """mplhep's CMS style in Computer Modern. Called by the figure scripts, never on import."""
+    import shutil
     plt.style.use(hep.style.CMS)
+    plt.rcParams.update({"pdf.fonttype": 42, "ps.fonttype": 42})
+    if shutil.which("latex") and shutil.which("dvipng"):
+        plt.rcParams.update({"text.usetex": True, "font.family": "serif",
+                             "font.serif": ["Computer Modern Roman"],
+                             "text.latex.preamble": r"\usepackage{amsmath}"})
+        return
     plt.rcParams.update({"font.family": "serif", "font.serif": ["cmr10"], "mathtext.fontset": "cm",
                          # symbols in italic as in LaTeX (the style sets them upright)
                          "mathtext.default": "it",

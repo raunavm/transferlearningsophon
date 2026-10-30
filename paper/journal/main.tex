@@ -592,13 +592,26 @@ estimating a significance.
 % Sophon's Fig. 2 uses 200 GeV): if 125, the window moves and this text with it.
 
 \paragraph{Mass resolution.} The mass-correction target $y$ of Eq.~(\ref{eq:masstarget}) is
-regressed from the frozen features of JetClass-II test jets that have a generator-level match,
-by a small multilayer perceptron (MLP). The mean of each JetClass-II class is subtracted from
-the target, so that a better classifier is not credited as a better mass regressor. A linear
-(ridge) regression is not used: for every model pretrained without the mass regression, its
-residuals are wider than those of a constant prediction. The resolution is
-$\sigma_{\mathrm{eff}}$,
-half the smallest interval containing 68\% of the residuals~\cite[Sec.~8.2.2]{glopart}.
+evaluated on the JetClass-II test jets that have a generator-level match, split at random into
+disjoint parts for training, validation and evaluation. The reference is the uncorrected
+soft-drop mass, $y = 0$. For the models pretrained with the mass regression, the output of their
+mass node is the corrected mass. For every model, a small multilayer perceptron (MLP) also
+regresses $y$ from the frozen features. For this regression, the median of each JetClass-II
+class in the training part is subtracted from the target, so that a better classifier is not
+credited as a better mass regressor, and classes with fewer than \MassMinTrainPerClass{} training
+jets are left out. A linear (ridge) regression is not used: for every model pretrained without
+the mass regression, its residuals are wider than those of a constant prediction. The resolution
+is $\sigma_{\mathrm{eff}}$, half the smallest interval containing 68\% of the residuals
+$\ln(m_{\mathrm{reg}}/m_{\mathrm{SD}}^{\mathrm{gen}})$~\cite[Sec.~8.2.2]{glopart}, and the scale is
+the median of $m_{\mathrm{reg}}/m_{\mathrm{SD}}^{\mathrm{gen}}$, where $m_{\mathrm{reg}}$ is the
+corrected mass. Both are also given for resonant and QCD jets and in bins of $p_{\mathrm T}$ and of
+$m_{\mathrm{SD}}^{\mathrm{gen}}$.
+
+\paragraph{Mass sculpting.} A tagger that selects signal against QCD jets can distort the mass
+distribution of the QCD jets it accepts. For each model with an output layer, we cut on the score
+$1 - p_{\mathrm{QCD}}$, where $p_{\mathrm{QCD}}$ is the summed probability of its QCD classes, at
+QCD efficiencies of \SculptEffHigh{} and \SculptEffLow, and compare the $m_{\mathrm{SD}}$
+distribution of the accepted QCD jets with that of all QCD jets by their Jensen--Shannon divergence.
 
 \subsection{Uncertainties}\label{sec:stats}
 
