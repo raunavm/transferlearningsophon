@@ -16,7 +16,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone -q --depth 1 --branch mtx-s2.25 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+          git clone -q --depth 1 --branch mtx-s2.31 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
           cd /workspace/tls
           pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
           [ -f /data/finetune/jc2_bal/DONE ] || { echo "FATAL: /data/finetune/jc2_bal is not staged"; exit 42; }
