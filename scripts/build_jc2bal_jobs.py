@@ -16,6 +16,10 @@
   mlp      CPU, one model per index: the nonlinear probe on the balanced JetClass-II task and pairs, for
            the hierarchy levels, the three controlled partitions and the untrained trunks (PI scope;
            JetClass, top and quark/gluon are linprobe-mlp4's) -> .../fits_v4_mlp
+  kin      GPU (any but V100), one kinematic-only model per index (plan 3.7): top tagging only, its
+           splits extracted with configs/finetune/TopReference_kin.yaml into the downstream probes'
+           tree, the v4 linear probe (probe_bal.py --old-only top) and the nonlinear probe at the
+           largest training set -> .../fits_v4, .../fits_v4_mlp. Refuses a run without DONE.
 
     python3 scripts/build_jc2bal_jobs.py --tag mtx-s2.24 stage
 """
@@ -401,11 +405,54 @@ spec:
 """
 
 
+KIN_MODELS = (("mtx-l188kin-s1", "L188", 188), ("mtx-r16q1kin-s1", "R16_Q1", 17))
+TOP_SIZES = (1_000, 10_000, 100_000, 1_200_000)     # scripts/build_ft_jobs.py BENCH_SIZES["top"]
+LP_OLD = "/data/results/eval/v2_linprobe"           # experiments/EVAL/probe_bal.py OLD_ROOT
+
+
+def kin_spec(tag: str) -> tuple:
+    launch = _launch()
+    name = "jc2bal-kin-raunav"
+    cases = "".join(f"  {i}) MODEL={m}; RUNG={rung}; K={k};;\n" for i, (m, rung, k) in enumerate(KIN_MODELS))
+    top = "/data/finetune/top_sub"
+    script = f"""set -euo pipefail
+git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+cd /workspace/tls
+pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
+IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
+case ${{IDX}} in
+{cases}  *) echo "FATAL: no model for index ${{IDX}}"; exit 42;;
+esac
+RUN_DIR={launch.V2_ROOT}/${{MODEL}}
+[ -f ${{RUN_DIR}}/DONE ] || {{ echo "FATAL: ${{RUN_DIR}} has not finished"; exit 42; }}
+[ ! -f {LP_BAL}/fits_v4_mlp/${{MODEL}}.json ] || {{ echo "${{MODEL}} done"; exit 0; }}
+python3 experiments/FT/gpu_probe.py || exit 43
+extract () {{
+  OUT={LP_OLD}/${{MODEL}}/top/$1; FILE=$2
+  [ -f ${{OUT}}/best70/manifest.json ] && return 0
+  python3 experiments/EVAL/extract_v2.py --run-dir ${{RUN_DIR}} --rung ${{RUNG}} --num-classes ${{K}} \\
+    --num-reg 0 --checkpoints best70 --data-config configs/finetune/TopReference_kin.yaml --max-jets 0 \\
+    --observers --feature-classes --prefix-features 2000000000 --head-prefix 0 --no-anomaly-rows \\
+    --diag-stride 0 --no-pooled --data-test ${{FILE}} --out ${{OUT}} || exit 1
+}}
+for N in {" ".join(map(str, TOP_SIZES))}; do extract train_N${{N}} {top}/train_N${{N}}_s1.parquet; done
+extract val {top}/val.parquet
+extract test /data/finetune/top/top_test.parquet
+python3 experiments/EVAL/probe_bal.py --model ${{MODEL}} --checkpoints best70 --old-only top \\
+  --out {LP_BAL}/fits_v4 --probs-out {LP_BAL}/fits_v4_probs
+python3 experiments/EVAL/probe_bal.py --model ${{MODEL}} --checkpoints best70 --mlp --mlp-datasets top \\
+  --out {LP_BAL}/fits_v4_mlp
+echo "JC2BAL KIN ${{MODEL}} COMPLETE"
+"""
+    return name, _indexed(name, script, len(KIN_MODELS), len(KIN_MODELS), True, "48Gi", "4",
+                          "top-tagging probes of the kinematic-only models (plan 3.7)")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
     ap.add_argument("--parallelism", type=int, default=5)
-    ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "extract", "fit", "mlp", "masscurves"))
+    ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "extract", "fit", "mlp", "masscurves", "kin"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
@@ -413,7 +460,7 @@ def main(argv=None) -> int:
                       "extract": lambda: extract_spec(a.tag, a.parallelism),
                       "fit": lambda: fit_spec(a.tag, a.parallelism, False),
                       "mlp": lambda: fit_spec(a.tag, a.parallelism, True),
-                      "masscurves": lambda: masscurves_spec(a.tag)}[kind]()
+                      "masscurves": lambda: masscurves_spec(a.tag), "kin": lambda: kin_spec(a.tag)}[kind]()
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(text)
         print(p)

@@ -45,3 +45,19 @@ def test_logit_takes_inputs_wider_than_the_class_token():
     clf = pb.lp.Logit(np.unique(y), "cpu")
     clf.fit(x, y, 1.0)
     assert clf.coef_.shape == (1, 512) and (clf.predict_proba(x).argmax(1) == y).mean() > 0.9
+
+
+def test_the_kinematic_models_are_probed_on_top_only_with_their_own_inputs():
+    import yaml
+    spec = importlib.util.spec_from_file_location("build_jc2bal_jobs", ROOT / "scripts/build_jc2bal_jobs.py")
+    BJ = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(BJ)
+    name, text = BJ.kin_spec("mtx-s2.29")
+    d = yaml.safe_load(text)
+    assert d["metadata"]["name"] == name == "jc2bal-kin-raunav" and d["spec"]["completions"] == 2
+    a = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    assert "configs/finetune/TopReference_kin.yaml" in a and "--old-only top" in a and "--mlp-datasets top" in a
+    assert "0) MODEL=mtx-l188kin-s1; RUNG=L188; K=188;;" in a and "1) MODEL=mtx-r16q1kin-s1; RUNG=R16_Q1; K=17;;" in a
+    assert "${RUN_DIR}/DONE ] ||" in a and "/top_sub/train_N1200000_s1.parquet" not in a      # in the loop
+    assert "for N in 1000 10000 100000 1200000; do" in a
+    assert "TopReference_kin.yaml" in (ROOT / "configs/finetune/TopReference_kin.yaml").name

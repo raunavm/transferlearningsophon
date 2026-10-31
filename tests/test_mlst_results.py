@@ -369,7 +369,7 @@ def test_the_jetclass_table_has_parts_rows_and_ours_in_its_column_order():
     pre["l188-s1"]["N1000000"]["s1"]["jc1"]["per_class"]["label_Zqq"]["rejection"]["n_bkg_pass"] = 19
     tex = V4.table_jetclass(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, MT.fmt_pm, M._two)
     row = next(line for line in tex.splitlines() if line.startswith(M.LABEL["L188"]))
-    assert row.rstrip(r" \").endswith(r"$^\dagger$") and row.count(r"$^\dagger$") == 1
+    assert row.rstrip(" \\").endswith(r"$^\dagger$") and row.count(r"$^\dagger$") == 1
     ref[M.SCRATCH]["N1000000"]["s1"]["jc1"]["macro_auc_ovr"] = 0.5
     with pytest.raises(SystemExit, match="one-vs-rest"):
         V4.table_jetclass(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, MT.fmt_pm, M._two)

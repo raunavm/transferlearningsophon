@@ -11,6 +11,8 @@ What changes from linear_probe_v2.py's fits_v3, whose fitting and metrics this r
   * JetClass (jc1) is scored on all 2M test jets, with ParT's one-vs-one macro AUC beside ours;
   * the missing-feature variants (checkpoint tags <tag>.<variant>, input_variants.py) are probed on
     jc2bal at its largest training set;
+  * --old-only DATASET... fits only those of JetClass/top/quark-gluon (the kinematic-only models,
+    which are probed on top alone);
   * --hidden probes the head's 512-unit hidden layer, ReLU(W1 x + b1) of the class token x with the
     checkpoint's own first head layer, on jc2bal and quark/gluon at their largest training set.
 Top and quark/gluon (and Herwig) read the features linear_probe_v2.py read (--old-root). Every cell's
@@ -140,9 +142,9 @@ def pair_cells(model: str, ckpt: str, probe, save) -> dict:
     return cells
 
 
-def old_cells(model: str, ckpt: str, helpers, save) -> dict:
+def old_cells(model: str, ckpt: str, helpers, save, datasets=("jc1", "top", "qg")) -> dict:
     """JetClass, top and quark/gluon (with Herwig) on fits_v3's features, the v4 grid and stride."""
-    cells = lp.probe_cells(OLD_ROOT / model, ckpt, ["jc1", "top", "qg"], helpers, save,
+    cells = lp.probe_cells(OLD_ROOT / model, ckpt, list(datasets), helpers, save,
                            pathlib.Path(lp.JC2_PARQUET))
     for n, c in cells.get("jc1", {}).items():
         if save:
@@ -218,6 +220,8 @@ def main(argv=None) -> int:
     ap.add_argument("--mlp", action="store_true")
     ap.add_argument("--mlp-datasets", nargs="+", default=["jc2bal", "jc1", "top", "qg"])
     ap.add_argument("--skip-old", action="store_true", help="no JetClass/top/quark-gluon refit")
+    ap.add_argument("--old-only", nargs="+", metavar="DATASET",
+                    help="only these of jc1/top/qg, no balanced JetClass-II (the kinematic-only models: top)")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--probs-out", type=pathlib.Path, default=None)
     a = ap.parse_args(argv)
@@ -233,7 +237,8 @@ def main(argv=None) -> int:
     doc = {"model": a.model, "checkpoints": a.checkpoints, "variants": a.variants, "c_grid": list(C_GRID_V4),
            "auc_stride": 1, "selection": "validation cross-entropy", "max_iter": lp.MAX_ITER,
            "converged_grad": lp.CONVERGED_GRAD, "pair_val_fraction": PAIR_VAL_FRACTION,
-           "balanced_manifest_sha256": hashlib.sha256((BAL / "manifest.json").read_bytes()).hexdigest(),
+           "balanced_manifest_sha256": None if a.old_only else
+           hashlib.sha256((BAL / "manifest.json").read_bytes()).hexdigest(),
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(), "cells": {}}
     for ckpt in a.checkpoints:
         save = lp.saver(a.probs_out, a.model, ckpt)
@@ -242,6 +247,9 @@ def main(argv=None) -> int:
         if a.mlp:
             doc["probe"] = "mlp"
             doc["cells"][ckpt] = mlp_cells(a.model, ckpt, probe, a.mlp_datasets)
+            continue
+        if a.old_only:
+            doc["cells"][ckpt] = old_cells(a.model, ckpt, helpers, save, a.old_only)
             continue
         c = {"jc2bal": jc2bal_cells(a.model, ckpt, save), "jc2bal_pairs": pair_cells(a.model, ckpt, probe, save)}
         if not a.skip_old:
