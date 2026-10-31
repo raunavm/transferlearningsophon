@@ -645,7 +645,11 @@ def test_the_spread_is_rounded_by_the_pdg_rule(sd, want):
 
 def test_the_mean_is_printed_to_the_place_of_its_rounded_spread():
     assert M.fmt_pm(1377, 351) == "1{,}380\\,$\\pm$\\,350"
-    assert M.fmt_pm(0.997684, 0.0000745) == "0.99768\\,$\\pm$\\,0.00007"
+    assert M.fmt_pm(0.997684, 0.0000745) == "0.9977\\,$\\pm$\\,0.0001"   # four significant figures at most
+    assert M.fmt_pm(0.997684, 0.00003) == "0.9977\\,$\\pm$\\,$<$0.0001"   # a spread below the fourth figure
+    assert M.fmt_pm(0.98524, 0.00007) == "0.9852\\,$\\pm$\\,0.0001"
+    assert M.fmt_pm(0.98524, 0.00024) == "0.9852\\,$\\pm$\\,0.0002"   # a spread at the fourth figure prints
+    assert M.fmt_pm(57.705, 0.0013) == "57.70\\,$\\pm$\\,$<$0.01"
     assert M.fmt_pm(0.5, 0.97) == "0.5\\,$\\pm$\\,1.0"
     assert M.fmt_pm_sci(2.3213e-3, 0.0712e-3) == "$(2.32 \\pm 0.07)\\times10^{-3}$"
     assert M.fmt_pm(851.3, 0.0) == "851"                 # seeds that agree exactly

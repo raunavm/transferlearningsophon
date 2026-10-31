@@ -42,6 +42,22 @@ INIT_STYLE = {"color": PETROFF6[4], "marker": "X", "linestyle": "--"}
 # near the 17-class purple; from scratch: black, open markers, dotted
 RAND_COLOUR = "#009988"
 SCRATCH_STYLE = {"color": "black", "marker": "o", "markerfacecolor": "white", "linestyle": ":"}
+# The other configurations (2026-10-31), one colour each, the same in every figure and in the
+# design schematic (paper/journal/fig_design.tex defines the same colours for TikZ): the
+# flavor-controlled partitions Tol's cyan with a marker each, the mass-regression models
+# Petroff's violet, the kinematic-input models Tol's orange
+FLAV_COLOUR = "#33bbee"
+FLAV_MARKERS = {"F0": "D", "F1": "P", "F1R": "*"}
+MASS_COLOUR = PETROFF6[5]
+KIN_COLOUR = "#ee7733"
+TEX_COLOURS = {"c188": LEVEL_COLOURS[188], "c162": LEVEL_COLOURS[162], "c43": LEVEL_COLOURS[43],
+               "c17": LEVEL_COLOURS[17], "crand": RAND_COLOUR, "cflav": FLAV_COLOUR, "cmass": MASS_COLOUR,
+               "ckin": KIN_COLOUR, "cinit": PETROFF6[4]}
+
+
+def tex_colour_definitions() -> str:
+    """\\definecolor lines for the manuscript preamble, from the mapping above."""
+    return "".join(f"\\definecolor{{{k}}}{{HTML}}{{{v.lstrip('#').upper()}}}\n" for k, v in TEX_COLOURS.items())
 # The style's text is 26 pt and its tick labels and legend 21.7 pt ('small'). A figure is
 # printed at the text width (360 pt in the draft's 11-pt article class); with two panels of
 # 6 in that prints the axis labels at about 11 pt, the size of the text, and the tick labels

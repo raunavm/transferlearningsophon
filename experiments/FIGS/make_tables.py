@@ -300,11 +300,18 @@ def _fixed(x, place: int) -> str:
 
 def fmt_pm(mean, sd) -> str:
     """mean +- sd, sd PDG-rounded and the mean printed to the same place:
-    1377 +- 351 -> 1{,}380 +- 350; 0.997684 +- 0.0000745 -> 0.99768 +- 0.00007.
+    1377 +- 351 -> 1{,}380 +- 350. Never more than four significant figures (2026-10-31):
+    a spread below the fourth significant figure of the mean prints as an upper bound at
+    that figure, 0.997684 +- 0.0000745 -> 0.9977 +- <0.0001.
     Seeds that agree exactly (a spread of zero) print the common value alone."""
     if sd == 0:
         return fmt_one(mean)
     sd, place = pdg(sd)
+    cap = 3 - math.floor(math.log10(abs(float(mean)))) if mean else place
+    if place > cap:
+        if round(sd, cap) == 0:
+            return f"{_fixed(mean, cap)}\\,$\\pm$\\,$<${_fixed(10.0 ** -cap, cap)}"
+        return f"{_fixed(mean, cap)}\\,$\\pm$\\,{_fixed(sd, cap)}"
     return f"{_fixed(mean, place)}\\,$\\pm$\\,{_fixed(sd, place)}"
 
 
