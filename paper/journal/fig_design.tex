@@ -10,7 +10,7 @@
   ctl/.style={draw, rounded corners=2pt, fill=#1, minimum width=3.6cm, minimum height=0.9cm,
               align=center, inner sep=3pt},
   ctl/.default={black!4},
-  step/.style={draw, rounded corners=2pt, fill=black!3, align=center, inner sep=3pt,
+  stage/.style={draw, rounded corners=2pt, fill=black!3, align=center, inner sep=3pt,
                minimum height=0.85cm},
   merge/.style={-{Latex[length=2mm]}, thick},
   flow/.style={-{Latex[length=2mm]}, thick, black!70},
@@ -43,11 +43,11 @@
    the flavor-controlled partitions fix where the flavor boundaries lie.};
 % ---------------------------------------------------------------- (b) the pipeline
 \node[anchor=west, font=\bfseries] at (-0.2, -0.75) {(b) Pipeline};
-\node[step, text width=3.1cm] (seed) at (1.5, -1.95) {seed $s$: the same jets,\\ in the same order,\\ the same initial weights};
-\node[step, text width=3.0cm] (pre)  at (5.2, -1.95) {pretraining on\\ JetClass-II, one run\\ per label set and seed};
-\node[step, text width=3.1cm] (frz)  at (8.95, -1.35) {frozen class token:\\ linear and MLP probes};
-\node[step, text width=3.1cm] (ft)   at (8.95, -2.55) {full fine-tuning vs.\\ training from scratch};
-\node[step, text width=3.7cm] (task) at (13.0, -1.95)
+\node[stage, text width=3.1cm] (seed) at (1.5, -1.95) {seed $s$: the same jets,\\ in the same order,\\ the same initial weights};
+\node[stage, text width=3.0cm] (pre)  at (5.2, -1.95) {pretraining on\\ JetClass-II, one run\\ per label set and seed};
+\node[stage, text width=3.1cm] (frz)  at (8.95, -1.35) {frozen class token:\\ linear and MLP probes};
+\node[stage, text width=3.1cm] (ft)   at (8.95, -2.55) {full fine-tuning vs.\\ training from scratch};
+\node[stage, text width=3.7cm] (task) at (13.0, -1.95)
   {JetClass-II (\Kfull{} classes),\\ JetClass, top, quark/gluon\\ (Pythia, Herwig), class pairs,\\ jet mass, $X\to b\bar b$, $X\to bs$};
 \draw[flow] (seed) -- (pre);
 \draw[flow] (pre.east) -- ++(0.35,0) |- (frz.west);

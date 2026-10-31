@@ -30,6 +30,12 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
                                    test-sample spreads
                                    (scripts/build_curve_jobs.py)
   xbx/<signal>/<model>.json        X->bb / X->bs on the real samples (scripts/build_xbx_jobs.py)
+  linprobe/fits_v4/, fits_v4_mlp/  the v4 probes (experiments/EVAL/probe_bal.py, scripts/build_jc2bal_jobs.py)
+  jc2bal/{census,manifest}.json    the class-balanced JetClass-II sets (experiments/FT/stage_jc2_balanced.py)
+  head/curves_v2/<model>_{sculpting_v2,response}.json  sculpting curves and mass response histograms
+  budget/{budget,lrsweep}_metrics.json  the fixed-budget fine-tuning read-outs (experiments/FT/budget_metrics.py)
+  partrepro/<variant>.json         ParT's top-tagging script reproduced (scripts/build_partrepro_jobs.py)
+  dup_check/<file>.json            per-jet comparisons of near-identical results (experiments/EVAL/dup_check.py)
   index.json                       {path: sha256} of every file above: the single source the
                                    macros counted over many files cite (mlst_results.py checks it)
 
@@ -153,6 +159,22 @@ def main() -> int:
                 add(f"{name}/{f.relative_to(d)}", b)
         for f in sorted((EVAL / "xbx" / "fits_ihep").glob("*/*.json")):
             add(f"xbx/{f.parent.name}/{f.name}", f.read_bytes())
+        # v4 (2026-10-31): each file must parse, so one still being written stops the pull
+        bal = pathlib.Path("/data/finetune/jc2_bal")
+        v4 = ((EVAL / "v2_linprobe_bal" / "fits_v4", "linprobe/fits_v4", "*.json"),
+              (EVAL / "v2_linprobe_bal" / "fits_v4_mlp", "linprobe/fits_v4_mlp", "*.json"),
+              (bal, "jc2bal", "census.json"), (bal, "jc2bal", "manifest.json"),
+              (EVAL / "v2_head" / "curves_v2", "head/curves_v2", "*.json"),
+              (FT / "budget", "budget", "budget_metrics.json"),
+              (FT / "lrsweep", "budget", "lrsweep_metrics.json"),
+              (pathlib.Path("/data/results/partrepro"), "partrepro", "*/metrics.json"),
+              (EVAL / "dup_check", "dup_check", "*.json"))
+        for d, name, pattern in v4:
+            for f in sorted(d.glob(pattern)):
+                b = f.read_bytes()
+                json.loads(b)
+                rel = f"{f.parent.name}.json" if name == "partrepro" else f.name
+                add(f"{name}/{rel}", b)
         add("ft_mlst/manifests.json", (json.dumps(manifests(), indent=1) + "\n").encode())
         add("jc2_test/counts.json", (json.dumps(jc2_test_counts()) + "\n").encode())
         for run in sorted(MTX.glob("mtx-*")):
