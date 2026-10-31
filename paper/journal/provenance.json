@@ -3443,6 +3443,12 @@
     "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "0.914"
   },
+  "FtBudgetBatch": {
+    "json_path": "BATCH",
+    "sha256": "c7389c31d46719b356fa494729ce9dabbe1cd10dff24dbfc0d53dc7afafcf010",
+    "source_file": "scripts/build_ft_budget_jobs.py",
+    "value": "512"
+  },
   "FtBudgetEval": {
     "json_path": "STEPS",
     "sha256": "c7389c31d46719b356fa494729ce9dabbe1cd10dff24dbfc0d53dc7afafcf010",
@@ -3460,6 +3466,12 @@
     "sha256": "c7389c31d46719b356fa494729ce9dabbe1cd10dff24dbfc0d53dc7afafcf010",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "20{,}000"
+  },
+  "FtBudgetWeightDecay": {
+    "json_path": "--optimizer-option weight_decay (every cell)",
+    "sha256": "c7389c31d46719b356fa494729ce9dabbe1cd10dff24dbfc0d53dc7afafcf010",
+    "source_file": "scripts/build_ft_budget_jobs.py",
+    "value": "0.01"
   },
   "FtCoverageEFourNClasses": {
     "json_path": "class_coverage['train_N10000_s1.parquet'].n_classes_present",
@@ -3502,6 +3514,12 @@
     "sha256": "82652f57f708dc2320fa480e211973fb6c330070944694fa2802028ddf8ab848",
     "source_file": "experiments/FT/data/jc2_v1_coverage.json",
     "value": "25"
+  },
+  "FtHeadCap": {
+    "json_path": "HEAD_CAP",
+    "sha256": "c7389c31d46719b356fa494729ce9dabbe1cd10dff24dbfc0d53dc7afafcf010",
+    "source_file": "scripts/build_ft_budget_jobs.py",
+    "value": "\\ensuremath{5\\times10^{-3}}"
   },
   "FtHeadMult": {
     "json_path": "HEAD_MULT",
@@ -4469,7 +4487,43 @@
     "source_file": "experiments/FIGS/data/w2b_leg1_metrics_v2.json",
     "value": "\\ensuremath{10^{3}}"
   },
+  "FtSweepN": {
+    "json_path": "SWEEP_N",
+    "sha256": "c7389c31d46719b356fa494729ce9dabbe1cd10dff24dbfc0d53dc7afafcf010",
+    "source_file": "scripts/build_ft_budget_jobs.py",
+    "value": "10{,}000"
+  },
+  "FtSweepPre": {
+    "json_path": "SWEEP_PRE",
+    "sha256": "c7389c31d46719b356fa494729ce9dabbe1cd10dff24dbfc0d53dc7afafcf010",
+    "source_file": "scripts/build_ft_budget_jobs.py",
+    "value": "\\ensuremath{10^{-4}}, \\ensuremath{3\\times10^{-4}} and \\ensuremath{10^{-3}}"
+  },
+  "FtSweepScratch": {
+    "json_path": "SWEEP_SCRATCH",
+    "sha256": "c7389c31d46719b356fa494729ce9dabbe1cd10dff24dbfc0d53dc7afafcf010",
+    "source_file": "scripts/build_ft_budget_jobs.py",
+    "value": "\\ensuremath{3\\times10^{-4}}, \\ensuremath{10^{-3}} and \\ensuremath{3\\times10^{-3}}"
+  },
+  "FtValJets": {
+    "json_path": "VAL_N",
+    "sha256": "c7389c31d46719b356fa494729ce9dabbe1cd10dff24dbfc0d53dc7afafcf010",
+    "source_file": "scripts/build_ft_budget_jobs.py",
+    "value": "200{,}000"
+  },
+  "FtValJetsBal": {
+    "json_path": "VAL_SIZE[jc2b]",
+    "sha256": "c7389c31d46719b356fa494729ce9dabbe1cd10dff24dbfc0d53dc7afafcf010",
+    "source_file": "scripts/build_ft_budget_jobs.py",
+    "value": "20{,}480"
+  },
   "JcBalNShort": {
+    "json_path": "census not pulled yet",
+    "sha256": "0260341d5ed75fecb5c8c19a1714181b42ceae6207f4f2cc67d929acacefd13a",
+    "source_file": "experiments/FT/stage_jc2_balanced.py",
+    "value": "\\pending{census}"
+  },
+  "JcBalNTest": {
     "json_path": "census not pulled yet",
     "sha256": "0260341d5ed75fecb5c8c19a1714181b42ceae6207f4f2cc67d929acacefd13a",
     "source_file": "experiments/FT/stage_jc2_balanced.py",
@@ -5242,6 +5296,12 @@
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "302"
+  },
+  "LpVfourCMax": {
+    "json_path": "C_GRID_V4",
+    "sha256": "c321f6662f5fa4f7cd4475133bff4baef61f1e991aab3c642f70ee199ba49539",
+    "source_file": "experiments/EVAL/probe_bal.py",
+    "value": "\\ensuremath{10^{4}}"
   },
   "MassLossShareVtwoOnesevenMass": {
     "json_path": "SLOTS[MassLossShareVtwoOnesevenMass]",
@@ -7345,7 +7405,7 @@
   },
   "MlstFtCmpQgCoarseOverScratchEFour": {
     "json_path": "used in the text",
-    "sha256": "9c10f364a63e0c4cd9672a1cefd643d97253b16a26d9a091f1b36fda6dd26b09",
+    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
@@ -7357,13 +7417,13 @@
   },
   "MlstFtCmpQgFullOverScratchEFour": {
     "json_path": "used in the text",
-    "sha256": "9c10f364a63e0c4cd9672a1cefd643d97253b16a26d9a091f1b36fda6dd26b09",
+    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpQgFullOverScratchEThree": {
     "json_path": "used in the text",
-    "sha256": "9c10f364a63e0c4cd9672a1cefd643d97253b16a26d9a091f1b36fda6dd26b09",
+    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
@@ -7513,7 +7573,7 @@
   },
   "MlstFtCmpTopCoarseOverFullEFour": {
     "json_path": "used in the text",
-    "sha256": "9c10f364a63e0c4cd9672a1cefd643d97253b16a26d9a091f1b36fda6dd26b09",
+    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
@@ -7531,19 +7591,19 @@
   },
   "MlstFtCmpTopFullOverScratchEFive": {
     "json_path": "used in the text",
-    "sha256": "9c10f364a63e0c4cd9672a1cefd643d97253b16a26d9a091f1b36fda6dd26b09",
+    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopFullOverScratchEFour": {
     "json_path": "used in the text",
-    "sha256": "9c10f364a63e0c4cd9672a1cefd643d97253b16a26d9a091f1b36fda6dd26b09",
+    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopFullOverScratchEThree": {
     "json_path": "used in the text",
-    "sha256": "9c10f364a63e0c4cd9672a1cefd643d97253b16a26d9a091f1b36fda6dd26b09",
+    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
@@ -7567,13 +7627,13 @@
   },
   "MlstFtCmpTopRandOverCoarseEFour": {
     "json_path": "used in the text",
-    "sha256": "9c10f364a63e0c4cd9672a1cefd643d97253b16a26d9a091f1b36fda6dd26b09",
+    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopRandOverCoarseEThree": {
     "json_path": "used in the text",
-    "sha256": "9c10f364a63e0c4cd9672a1cefd643d97253b16a26d9a091f1b36fda6dd26b09",
+    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
@@ -7585,13 +7645,13 @@
   },
   "MlstFtCmpTopRandOverFullEFour": {
     "json_path": "used in the text",
-    "sha256": "9c10f364a63e0c4cd9672a1cefd643d97253b16a26d9a091f1b36fda6dd26b09",
+    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopRandOverFullEThree": {
     "json_path": "used in the text",
-    "sha256": "9c10f364a63e0c4cd9672a1cefd643d97253b16a26d9a091f1b36fda6dd26b09",
+    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },

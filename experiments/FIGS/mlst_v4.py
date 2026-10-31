@@ -87,6 +87,23 @@ def design_macros(em, root: pathlib.Path, data: pathlib.Path, missing: list, fmt
     em.macro("FtBudgetPatience", str(bfb.PATIENCE), src, "PATIENCE",
              "validation passes without improvement before training stops")
     em.macro("FtHeadMult", f"{bfb.HEAD_MULT:g}", src, "HEAD_MULT", "the head's learning-rate multiplier")
+    em.macro("FtHeadCap", _sci(repr(bfb.HEAD_CAP)), src, "HEAD_CAP", "the head's largest learning rate")
+    em.macro("FtBudgetBatch", str(bfb.BATCH), src, "BATCH")
+    import re
+    wd = set(re.findall(r"weight_decay[ =]([0-9.]+)", src.read_text()))
+    if len(wd) != 1:
+        raise SystemExit(f"FATAL: {src} sets the weight decay to {sorted(wd)}")
+    em.macro("FtBudgetWeightDecay", wd.pop(), src, "--optimizer-option weight_decay (every cell)")
+    grid = lambda xs: ", ".join(_sci(x) for x in xs[:-1]) + " and " + _sci(xs[-1])
+    em.macro("FtSweepPre", grid(bfb.SWEEP_PRE), src, "SWEEP_PRE", "backbone rates of the sweep")
+    em.macro("FtSweepScratch", grid(bfb.SWEEP_SCRATCH), src, "SWEEP_SCRATCH", "from-scratch rates of the sweep")
+    em.macro("FtSweepN", _int(fmt_int, bfb.SWEEP_N), src, "SWEEP_N", "training jets of the sweep")
+    em.macro("FtValJets", _int(fmt_int, bfb.VAL_N), src, "VAL_N", "the fixed validation set")
+    em.macro("FtValJetsBal", _int(fmt_int, bfb.VAL_SIZE["jc2b"]), src, "VAL_SIZE[jc2b]",
+             "the balanced JetClass-II validation set")
+    pb = _module("experiments/EVAL/probe_bal.py", "probe_bal")
+    em.macro("LpVfourCMax", _sci(repr(max(pb.C_GRID_V4))), root / "experiments/EVAL/probe_bal.py", "C_GRID_V4",
+             "largest inverse regularisation of the v4 probes")
     sjb = _module("experiments/FT/stage_jc2_balanced.py", "stage_jc2_balanced")
     src = root / "experiments/FT/stage_jc2_balanced.py"
     em.macro("JcBalTestPerClass", _int(fmt_int, sjb.TEST_PER_CLASS), src, "TEST_PER_CLASS")
@@ -105,9 +122,16 @@ def design_macros(em, root: pathlib.Path, data: pathlib.Path, missing: list, fmt
                  c["class_names"][int(test.argmin())])
         em.macro("JcBalShortTrainESix", str(int((held < max(sjb.SIZES) // 188).sum())), census,
                  "counts.ft_heldout", "classes with fewer held-out jets than the 1e6 quota")
+        man = data / "jc2bal" / "manifest.json"
+        if man.exists():
+            em.macro("JcBalNTest", _int(fmt_int, json.loads(man.read_text())["outputs"]["test.parquet"]["rows"]),
+                     man, "outputs[test.parquet].rows", "jets of the balanced test set")
+        else:
+            missing.append("balanced JetClass-II manifest -- experiments/FIGS/data/v2/jc2bal/manifest.json")
+            em.macro("JcBalNTest", r"\pending{manifest}", src, "manifest not pulled yet")
     else:
         missing.append("balanced JetClass-II census -- experiments/FIGS/data/v2/jc2bal/census.json")
-        for k in ("JcBalNShort", "JcBalRarestTest", "JcBalShortTrainESix"):
+        for k in ("JcBalNShort", "JcBalRarestTest", "JcBalShortTrainESix", "JcBalNTest"):
             em.macro(k, r"\pending{census}", src, "census not pulled yet")
     sweep = data / "budget" / "lrsweep_metrics.json"
     if sweep.exists():

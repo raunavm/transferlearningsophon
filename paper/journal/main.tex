@@ -986,77 +986,61 @@ flavor boundary; and the share of the training examples in each group stays with
 \section{Linear-probe and fine-tuning settings}\label{app:ftrecipe}
 % ============================================================================
 
-The inverse regularization strength of the linear probes is chosen from a logarithmic grid
-between \LpCMin{} and \LpCMax. Each probe is minimized by full-batch L-BFGS in double precision;
-a fit counts as converged when the largest component of its gradient ends below
-\LpConvergedGrad. Of the probes of pretrained models, \MlstProbeUnconverged{} did not converge,
-and of those of the randomly initialized networks \MlstProbeUnconvergedInit; \MlstProbeEdgeC{}
-of the \MlstProbeFits{} selected fits chose the largest value of the grid, so for these the
-best regularization on the validation jets may lie beyond it. The frozen features are stored in half precision. The JetClass-II
-probes and fine-tuned models are scored on the first \LpNTestJcii{} JetClass-II test jets, and
-their macro AUCs on every fourth of these, \LpNTestAucJcii{} jets, to bound the cost of
-\Kfull{} ROC curves per model; the binary probes of Table~\ref{tab:pairs} use every jet of both
-sides among the \LpNTestJcii. These jets come from the first files of the test split, which
-alternate between the decay families file by file, so they hold \LpJciiTestQcdPercent{} QCD and
-\LpJciiTestTwoProngPercent{} two-prong jets, against \LpJciiTrainQcdPercent{} and
-\LpJciiTrainTwoProngPercent{} in the largest training subset. A one-versus-rest AUC compares the
-jets of a class with all other jets and so depends on this mix only through the composition of
-the other jets. The rarest class has \LpJciiTrainMinJets{} jets in the largest training subset and
-\LpJciiTestMinAucJets{} among the jets of the macro AUC, so the AUCs of the rarest classes are
-noisy; the QCD pairs of Table~\ref{tab:pairs}, with many more jets, measure the QCD subdivision
-more precisely. JetClass models are scored on \LpNTestJci{} test jets, the first test files of
-each class with equal numbers of jets per class, and their macro AUC on \LpNTestAucJci{} of
-these; ParT used all of the JetClass test set~\cite{part}. The probes choose their
-regularization on \LpNValJci{} JetClass validation jets. The binary probes of
-Table~\ref{tab:pairs} choose theirs on the validation jets of both sides of the pair, between
-\LpPairNValMin{} and \LpPairNValMax{} jets, so the selected value is noisy and its effect is
-part of the spread between pretraining runs. The smallest JetClass-II
-training subset contains jets of \FtCoverageEThreeNClasses{} of the \Kfull{} classes, with a
-median of \FtCoverageEThreeMedian{} jets per class, and the next contains
-\FtCoverageEFourNClasses{}. In a linear probe, a class absent from training receives probability
-zero and the AUC of a random guess, which raises $\oma$ at these sizes for every model alike;
-Table~\ref{tab:probesn} also gives the average over the classes present in training.
+The inverse regularization strength of each linear probe is chosen on validation jets from a
+logarithmic grid between \LpCMin{} and \LpVfourCMax. Each probe is minimized by full-batch L-BFGS in
+double precision; a fit counts as converged when the largest component of its gradient ends below
+\LpConvergedGrad. Of the probes of pretrained models, \MlstProbeUnconverged{} did not converge, and
+of those of the randomly initialized networks \MlstProbeUnconvergedInit; \MlstProbeEdgeC{} of the
+\MlstProbeFits{} selected fits chose the largest value of the grid. The frozen features are stored
+in half precision.
 
-Every fine-tuning setting below, except the schedule of the head's learning rate, is read
-from the record that each fine-tuning run writes when it starts. The pretrained weights are
-trained at a constant learning rate of \MlstFtLr{} and the new head at \MlstFtHeadMult{} times
-that, the rates ParT uses for fine-tuning~\cite[Sec.~5.2]{part}, with weight decay
-\MlstFtWeightDecay{} and batches of \MlstFtBatch{} jets, with the Ranger optimizer of
-pretraining in mixed precision. The new head is the whole classification head, its hidden layer
-included, with dropout \MlstFtHeadDropout{} after the hidden layer. The hidden layer is
-initialized afresh as well, so that fine-tuning starts from the representation the probes
-evaluate, the class token, with the same head for every label set; a pretrained hidden layer was
-trained to serve its own label set's outputs. On top and quark/gluon tagging both rates stay constant; on
-JetClass-II and JetClass the learning rate of the head falls to \MlstFtHeadDecayTo{} of its value
-over the last \MlstFtHeadDecayShare{} of the epochs, the default schedule of the training
-framework. On JetClass-II and JetClass, a model is fine-tuned for \MlstFtEpochsEThree{},
-\MlstFtEpochsEFour{}, \MlstFtEpochsEFive{} and \MlstFtEpochsESix{} epochs at \FtSizeEThree{},
-\FtSizeEFour{}, \FtSizeEFive{} and \FtSizeESix{} training jets, and on top and quark/gluon
-tagging for \MlstFtBenchEpochs{} epochs at every size. An epoch draws at least
-\MlstFtMinEpochJets{} training jets, so at \FtSizeEThree{} jets it passes over the training set
-several times; on JetClass-II and JetClass an epoch is \FtRecipeStepsEThree, \FtRecipeStepsEFour,
-\FtRecipeStepsEFive{} and \FtRecipeStepsESix{} steps at these sizes. The pretrained models and
-the network trained from scratch get the same number of steps, so they are compared at equal
-training compute. This budget may be short: ParT, trained from scratch on
-\LitPartSmallSetPercent\% of JetClass, was trained for \LitPartSmallSetIters{} steps and was
-converged by then~\cite[Sec.~5.1]{part}, more steps than our largest JetClass subset receives.
-Section~\ref{sec:finetune} therefore repeats the largest JetClass size with
-longer training. The epoch with the highest validation accuracy is selected on the same
-\MlstFtValJcii{} jets in every epoch on JetClass-II, and on jets drawn anew in each epoch on the
-other tasks: \MlstFtValSmall{} on JetClass, and on top and quark/gluon tagging \MlstFtValSmall{}
-at \FtSizeEThree{} and \FtSizeEFour{} training jets and \MlstFtValLarge{} at the larger sizes.
-The new head is initialized afresh for every fine-tuning run, and the pretrained weights are
-loaded from the selected checkpoint, whose hash every run records. Each fine-tuning run is
-evaluated at its epoch of highest validation accuracy, the earliest in case of a tie; a run that
-resumed after an interruption takes that epoch over all of its epochs.
+JetClass-II is scored on a class-balanced test set of \JcBalNTest{} jets from the test files:
+\JcBalTestPerClass{} jets of each class, or all of them for the \JcBalNShort{} classes that have
+fewer, the rarest with \JcBalRarestTest. Each training set holds equal numbers of jets per class,
+drawn from files that no pretraining run trained or validated on, and each is contained in the next;
+at \FtSizeESix{} jets, \JcBalShortTrainESix{} classes have fewer jets than their share and contribute
+all they have. The probes choose their regularization on up to \JcBalValPerClass{} validation jets
+per class, and the macro AUC averages the one-versus-rest AUC over the \Kfull{} classes on every test
+jet. The class pairs of Table~\ref{tab:pairs} are trained on up to \JcBalPairTrainPerSide{} jets per
+side and tested on up to \JcBalPairTestPerSide, each side at its natural composition, with the
+regularization chosen on a tenth of the training jets. JetClass models are scored on \LpNTestJci{}
+test jets, the first test files of each class with equal numbers of jets per class, and their probes
+choose their regularization on \LpNValJci{} validation jets; ParT used all of the JetClass test
+set~\cite{part}.
 
-The reference trained from scratch follows ParT's recipe for training from
-scratch~\cite[Secs.~5.1 and~5.2]{part}: a learning rate of \MlstFtRefLr{} for every weight, held
-constant and then lowered to \MlstFtHeadDecayTo{} of its value over the last
+Every fine-tuning setting below is read from the record that each fine-tuning run writes when it
+starts. The pretrained weights are loaded from the selected checkpoint, whose hash every run records,
+and the whole classification head, its hidden layer included, is initialized afresh, with dropout
+\MlstFtHeadDropout{} after the hidden layer. Fine-tuning therefore starts from the representation the
+probes evaluate, the class token, with the same head for every label set; a pretrained hidden layer
+was trained to serve its own label set's outputs. The optimizer is Ranger, as in pretraining, in mixed
+precision.
+
+Below the full training sets, and on JetClass-II at every size, every model, pretrained or from
+scratch, is trained in batches of \FtBudgetBatch{} jets for at most \FtBudgetSteps{} steps. After
+every \FtBudgetEval{} steps it is evaluated on a fixed validation set of \FtValJets{} jets
+(\FtValJetsBal{} on JetClass-II, the balanced validation set); training stops once
+\FtBudgetPatience{} evaluations bring no improvement, and the checkpoint with the best validation
+metric is kept. The pretrained weights are trained at a constant learning rate of \FtLrPre{} and the
+head at \FtHeadMult{} times that rate, at most \FtHeadCap; a network from scratch is trained at
+\FtLrScratch{} for every weight, held constant and then lowered over the last part of training, the
+default schedule of the training framework. The weight decay is \FtBudgetWeightDecay{} throughout.
+The two learning rates were chosen on the validation metric at \FtSweepN{} top and quark/gluon jets,
+from \FtSweepPre{} for the pretrained weights and \FtSweepScratch{} from scratch. Every run uses the
+same training subset, so the seeds from scratch differ only in their training seed.
+
+On the full top, quark/gluon and JetClass training sets, the pretrained weights are trained at a
+constant learning rate of \MlstFtLr{} and the head at \MlstFtHeadMult{} times that, the rates ParT
+uses for fine-tuning~\cite[Sec.~5.2]{part}, with weight decay \MlstFtWeightDecay{} and batches of
+\MlstFtBatch{} jets, for \MlstFtBenchEpochs{} epochs on top and quark/gluon tagging and
+\MlstFtEpochsESix{} on JetClass; on JetClass the learning rate of the head falls to
+\MlstFtHeadDecayTo{} of its value over the last \MlstFtHeadDecayShare{} of the epochs. The epoch with
+the highest validation accuracy is kept, the earliest in case of a tie. The reference trained from
+scratch follows ParT's recipe~\cite[Secs.~5.1 and~5.2]{part}: a learning rate of \MlstFtRefLr{} for
+every weight, held constant and then lowered to \MlstFtHeadDecayTo{} of its value over the last
 \MlstFtHeadDecayShare{} of the epochs, with weight decay \MlstFtRefWeightDecayBench{} on top and
-quark/gluon tagging and none on JetClass-II and JetClass, and the same epochs and batches as
-fine-tuning. All fine-tuning, including the reference trained from scratch, ran on
-\MlstFtGpuTypes{} GPUs.
+quark/gluon tagging and none on JetClass, and the same epochs and batches as fine-tuning. All
+fine-tuning, including the reference trained from scratch, ran on \MlstFtGpuTypes{} GPUs.
 
 For $X\to b\bar b$ and $X\to bs$, Sophon's transfer classifier is trained on
 \LitSophonTransferSamplesMillion{} million jets with batch size \LitSophonTransferBatch{} and a

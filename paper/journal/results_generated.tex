@@ -1894,6 +1894,15 @@
 \newcommand{\FtBudgetEval}{500}  % scripts/build_ft_budget_jobs.py :: STEPS :: sha256 c7389c31d46719b3 :: steps between validation passes
 \newcommand{\FtBudgetPatience}{10}  % scripts/build_ft_budget_jobs.py :: PATIENCE :: sha256 c7389c31d46719b3 :: validation passes without improvement before training stops
 \newcommand{\FtHeadMult}{50}  % scripts/build_ft_budget_jobs.py :: HEAD_MULT :: sha256 c7389c31d46719b3 :: the head's learning-rate multiplier
+\newcommand{\FtHeadCap}{\ensuremath{5\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: HEAD_CAP :: sha256 c7389c31d46719b3 :: the head's largest learning rate
+\newcommand{\FtBudgetBatch}{512}  % scripts/build_ft_budget_jobs.py :: BATCH :: sha256 c7389c31d46719b3
+\newcommand{\FtBudgetWeightDecay}{0.01}  % scripts/build_ft_budget_jobs.py :: --optimizer-option weight_decay (every cell) :: sha256 c7389c31d46719b3
+\newcommand{\FtSweepPre}{\ensuremath{10^{-4}}, \ensuremath{3\times10^{-4}} and \ensuremath{10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_PRE :: sha256 c7389c31d46719b3 :: backbone rates of the sweep
+\newcommand{\FtSweepScratch}{\ensuremath{3\times10^{-4}}, \ensuremath{10^{-3}} and \ensuremath{3\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_SCRATCH :: sha256 c7389c31d46719b3 :: from-scratch rates of the sweep
+\newcommand{\FtSweepN}{10{,}000}  % scripts/build_ft_budget_jobs.py :: SWEEP_N :: sha256 c7389c31d46719b3 :: training jets of the sweep
+\newcommand{\FtValJets}{200{,}000}  % scripts/build_ft_budget_jobs.py :: VAL_N :: sha256 c7389c31d46719b3 :: the fixed validation set
+\newcommand{\FtValJetsBal}{20{,}480}  % scripts/build_ft_budget_jobs.py :: VAL_SIZE[jc2b] :: sha256 c7389c31d46719b3 :: the balanced JetClass-II validation set
+\newcommand{\LpVfourCMax}{\ensuremath{10^{4}}}  % experiments/EVAL/probe_bal.py :: C_GRID_V4 :: sha256 c321f6662f5fa4f7 :: largest inverse regularisation of the v4 probes
 \newcommand{\JcBalTestPerClass}{5{,}000}  % experiments/FT/stage_jc2_balanced.py :: TEST_PER_CLASS :: sha256 0260341d5ed75fec
 \newcommand{\JcBalValPerClass}{109}  % experiments/FT/stage_jc2_balanced.py :: VAL_PER_CLASS :: sha256 0260341d5ed75fec
 \newcommand{\JcBalPairTrainPerSide}{\ensuremath{10^{5}}}  % experiments/FT/stage_jc2_balanced.py :: PAIR_TRAIN_PER_SIDE :: sha256 0260341d5ed75fec
@@ -1901,6 +1910,7 @@
 \newcommand{\JcBalNShort}{\pending{census}}  % experiments/FT/stage_jc2_balanced.py :: census not pulled yet :: sha256 0260341d5ed75fec
 \newcommand{\JcBalRarestTest}{\pending{census}}  % experiments/FT/stage_jc2_balanced.py :: census not pulled yet :: sha256 0260341d5ed75fec
 \newcommand{\JcBalShortTrainESix}{\pending{census}}  % experiments/FT/stage_jc2_balanced.py :: census not pulled yet :: sha256 0260341d5ed75fec
+\newcommand{\JcBalNTest}{\pending{census}}  % experiments/FT/stage_jc2_balanced.py :: census not pulled yet :: sha256 0260341d5ed75fec
 \newcommand{\FtLrPre}{\pending{sweep}}  % experiments/FT/stage_jc2_balanced.py :: sweep not read out yet :: sha256 0260341d5ed75fec
 \newcommand{\FtLrScratch}{\pending{sweep}}  % experiments/FT/stage_jc2_balanced.py :: sweep not read out yet :: sha256 0260341d5ed75fec
 \newcommand{\MlstProbeRunsDone}{27}  % experiments/FIGS/data/v2/index.json :: runs with a linear-probe fit (count) :: sha256 f7e9b73de172aa37 :: of the paper's runs
@@ -2621,14 +2631,14 @@
 \newcommand{\ComputeMainGpuShareMax}{71\%}  % experiments/FIGS/data/v2/index.json :: highest share of a label set's GPU-hours on that type :: sha256 f7e9b73de172aa37
 \newcommand{\ComputeRunsDone}{27}  % experiments/FIGS/data/v2/index.json :: runs with a compute record (count) :: sha256 f7e9b73de172aa37
 \newcommand{\ComputeGpuTypes}{L4, RTX 3090 and V100}  % experiments/FIGS/data/v2/index.json :: GPU types any finished run trained on :: sha256 f7e9b73de172aa37
-\newcommand{\MlstFtCmpQgCoarseOverScratchEFour}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 9c10f364a63e0c4c :: a marker, not a number: its section reads the second grid, which has no such number
-\newcommand{\MlstFtCmpQgFullOverScratchEFour}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 9c10f364a63e0c4c :: a marker, not a number: its section reads the second grid, which has no such number
-\newcommand{\MlstFtCmpQgFullOverScratchEThree}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 9c10f364a63e0c4c :: a marker, not a number: its section reads the second grid, which has no such number
-\newcommand{\MlstFtCmpTopCoarseOverFullEFour}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 9c10f364a63e0c4c :: a marker, not a number: its section reads the second grid, which has no such number
-\newcommand{\MlstFtCmpTopFullOverScratchEFive}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 9c10f364a63e0c4c :: a marker, not a number: its section reads the second grid, which has no such number
-\newcommand{\MlstFtCmpTopFullOverScratchEFour}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 9c10f364a63e0c4c :: a marker, not a number: its section reads the second grid, which has no such number
-\newcommand{\MlstFtCmpTopFullOverScratchEThree}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 9c10f364a63e0c4c :: a marker, not a number: its section reads the second grid, which has no such number
-\newcommand{\MlstFtCmpTopRandOverCoarseEFour}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 9c10f364a63e0c4c :: a marker, not a number: its section reads the second grid, which has no such number
-\newcommand{\MlstFtCmpTopRandOverCoarseEThree}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 9c10f364a63e0c4c :: a marker, not a number: its section reads the second grid, which has no such number
-\newcommand{\MlstFtCmpTopRandOverFullEFour}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 9c10f364a63e0c4c :: a marker, not a number: its section reads the second grid, which has no such number
-\newcommand{\MlstFtCmpTopRandOverFullEThree}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 9c10f364a63e0c4c :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstFtCmpQgCoarseOverScratchEFour}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 68a0bcca0972cb03 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstFtCmpQgFullOverScratchEFour}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 68a0bcca0972cb03 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstFtCmpQgFullOverScratchEThree}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 68a0bcca0972cb03 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstFtCmpTopCoarseOverFullEFour}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 68a0bcca0972cb03 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstFtCmpTopFullOverScratchEFive}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 68a0bcca0972cb03 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstFtCmpTopFullOverScratchEFour}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 68a0bcca0972cb03 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstFtCmpTopFullOverScratchEThree}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 68a0bcca0972cb03 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstFtCmpTopRandOverCoarseEFour}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 68a0bcca0972cb03 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstFtCmpTopRandOverCoarseEThree}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 68a0bcca0972cb03 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstFtCmpTopRandOverFullEFour}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 68a0bcca0972cb03 :: a marker, not a number: its section reads the second grid, which has no such number
+\newcommand{\MlstFtCmpTopRandOverFullEThree}{\pending{no v2 number: rewrite this}}  % paper/journal/main.tex :: used in the text :: sha256 68a0bcca0972cb03 :: a marker, not a number: its section reads the second grid, which has no such number
