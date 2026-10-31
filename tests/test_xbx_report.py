@@ -43,7 +43,8 @@ def fits_dir(tmp_path):
     d.mkdir()
     for i, m in enumerate([m for ms in runs.values() for m in ms] + list(M.INIT_MODELS)):
         eff = 0.2 + 0.001 * i
-        sigs = {"xbb_jc2": _sig(eff, own=m in runs["L188"] + runs["L162"])}
+        # every model carries the key, as the stand-in fits did with a merged node below 162
+        sigs = {"xbb_jc2": _sig(eff, own=True)}
         if m.startswith("init-"):
             sigs = {"xbb_jc2": {k: v for k, v in sigs["xbb_jc2"].items() if k != "head"}}
         (d / f"{m}.json").write_text(json.dumps({"model": m, "signals": sigs}))
@@ -88,3 +89,10 @@ def test_mixed_windows_are_refused(fits_dir):
     f.write_text(json.dumps(d))
     with pytest.raises(SystemExit, match="mass windows"):
         XR.macros(MT.Emitter(pathlib.Path("/")), MT, XR.load(fits_dir), f.resolve())
+
+
+def test_the_curve_stops_where_too_few_qcd_jets_pass():
+    # 40 QCD jets pass at 1e-4 of 400,000, fewer than MIN_BKG_PASS; 400 at 1e-3
+    x, keep = XR._kept({"n_b": 400_000, "curve": {"eps_b": EPS_B}})
+    assert list(x) == EPS_B[1:] and keep.tolist() == [False, True, True, True]
+    assert XR._kept({"n_b": 500_000, "curve": {"eps_b": EPS_B}})[1].tolist() == [True] * 4

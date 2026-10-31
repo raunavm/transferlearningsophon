@@ -10,7 +10,8 @@ name it stands in for (xbb_jc2=xbb).
   figure   eps_S / sqrt(eps_B) against eps_B in the mass window, one panel per signal (Sophon,
            arXiv:2405.12972, Fig. 2, on our QCD background): Sophon's transfer classifier ("head",
            its seeds averaged per model) for every label set, mean over the pretraining runs with
-           the range of the runs; the direct discriminant (Sophon Eq. 4) dashed where it can be
+           the range of the runs, down to the QCD efficiency at which MIN_BKG_PASS QCD jets still
+           pass; the direct discriminant (Sophon Eq. 4) dashed where it can be
            formed; for X->bs the X->bq class's output (Sophon's control) dotted; the untrained
            network's linear probe.
   table    signal efficiency (%) at the fixed QCD efficiency eps_B* of each signal (A5: 1e-3 with
@@ -36,6 +37,8 @@ ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS", "R16_Q1_MASS", "RAND", 
         "FLAV_F1R", "INIT")
 CURVE_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND", "INIT")
 WORD = {"xbb": "Xbb", "xbs": "Xbs"}
+# the figure stops where fewer QCD jets than this pass (a relative uncertainty of about 14 %)
+MIN_BKG_PASS = 50
 
 
 def _module(rel: str, name: str):
@@ -78,7 +81,7 @@ def readout(sig: dict, name: str) -> dict | None:
     if isinstance(r, dict):
         return r
     curves = [x["curve"] for x in r]
-    return {"eps_s_at_star": float(np.mean([x["eps_s_at_star"] for x in r])),
+    return {"n_b": r[0]["n_b"], "eps_s_at_star": float(np.mean([x["eps_s_at_star"] for x in r])),
             "eps_b_star": r[0]["eps_b_star"], "auc": float(np.mean([x["auc"] for x in r])),
             "curve": {"eps_b": curves[0]["eps_b"],
                       "eps_s_over_sqrt_eps_b": np.mean([c["eps_s_over_sqrt_eps_b"] for c in curves], axis=0).tolist()}}
@@ -91,11 +94,25 @@ def model_readout(fits: dict, model: str, signal: str) -> dict | None:
     return readout(sig, "head") or readout(sig, "linear")
 
 
+def direct_ok(M, row: str) -> bool:
+    """Whether Sophon's direct discriminant (Eq. 4) exists for a configuration: X->bb is a class of
+    its own in every label set of the row (xbx.node_groups). Older fits scored a merged node under
+    the same key; it is a different discriminant and never reported as this one."""
+    if row == "INIT":
+        return False
+    xbx = _module("experiments/XBS/xbx.py", "xbx")
+    arms = list(M.RAND) if row == "RAND" else [row.removesuffix("_MASS")]
+    return all(xbx.node_groups(a)["xbb_own"] for a in arms)
+
+
 def efficiencies(M, runs, fits: dict, signal: str, name: str | None = None) -> dict:
     """{row: [eps_S at eps_B* of each run]}; name picks a readout, default the reported one."""
     out = {}
     for row in ROWS:
         vals = []
+        if name == "zero_shot_xbb" and not direct_ok(M, row):
+            out[row] = vals
+            continue
         for m in models_of(M, runs, row):
             r = model_readout(fits, m, signal) if name is None else readout(fits.get(m, {}).get(signal, {}), name)
             if r is not None:
@@ -163,6 +180,13 @@ def macros(em, MT, fits: dict, source: pathlib.Path) -> None:
         em.macro(f"{WORD[s]}NEvalQcd", MT.fmt_int(n_b), source, f"signals.{s}.linear.n_b")
 
 
+def _kept(r: dict) -> tuple:
+    """(eps_B, mask) of a readout's curve points with at least MIN_BKG_PASS QCD jets passing."""
+    x = np.asarray(r["curve"]["eps_b"])
+    keep = x * r["n_b"] >= MIN_BKG_PASS
+    return x[keep], keep
+
+
 def figure(M, style, runs, fits: dict, outdir: pathlib.Path) -> list:
     have = [(s, t) for s, t in SIGNALS if any(s in v for v in fits.values())]
     if not have:
@@ -178,28 +202,28 @@ def figure(M, style, runs, fits: dict, outdir: pathlib.Path) -> list:
     for ax, (s, title) in zip(axes[0], have):
         for row in CURVE_ROWS:
             c = colour.get(row) or style.LEVEL_COLOURS[level[row]]
-            curves = [r["curve"] for m in models_of(M, runs, row) if (r := model_readout(fits, m, s))]
-            if not curves:
+            rs = [r for m in models_of(M, runs, row) if (r := model_readout(fits, m, s))]
+            if not rs:
                 continue
-            x = np.asarray(curves[0]["eps_b"])
-            y = np.asarray([cv["eps_s_over_sqrt_eps_b"] for cv in curves])
+            x, keep = _kept(rs[0])
+            y = np.asarray([r["curve"]["eps_s_over_sqrt_eps_b"] for r in rs])[:, keep]
             ax.plot(x, y.mean(axis=0), color=c, linewidth=2, linestyle=":" if row == "INIT" else "-",
                     label=name[row])
             if len(y) > 1:
                 ax.fill_between(x, y.min(axis=0), y.max(axis=0), color=c, alpha=0.15, linewidth=0)
         extra = (("zero_shot_xbb", "--", "direct"),) if s == "xbb" else (("zero_shot_xbq", (0, (1, 1)), r"$X\to bq$ class"),)
         for key, ls, lab in extra:
-            for row in ("L188", "L162"):
-                curves = [r["curve"] for m in runs[row] if (r := readout(fits.get(m, {}).get(s, {}), key))]
-                if curves:
-                    x = np.asarray(curves[0]["eps_b"])
-                    ax.plot(x, np.mean([cv["eps_s_over_sqrt_eps_b"] for cv in curves], axis=0), linestyle=ls,
+            for row in [r for r in ("L188", "L162") if key != "zero_shot_xbb" or direct_ok(M, r)]:
+                rs = [r for m in runs[row] if (r := readout(fits.get(m, {}).get(s, {}), key))]
+                if rs:
+                    x, keep = _kept(rs[0])
+                    ax.plot(x, np.mean([r["curve"]["eps_s_over_sqrt_eps_b"] for r in rs], axis=0)[keep], linestyle=ls,
                             color=style.LEVEL_COLOURS[level[row]], linewidth=1.5, label=f"{name[row]}, {lab}")
         ax.set_xscale("log")
         ax.set_title(title, fontsize="small", loc="left")
         ax.set_xlabel(r"QCD efficiency $\varepsilon_B$")
     axes[0, 0].set_ylabel(r"$\varepsilon_S/\sqrt{\varepsilon_B}$")
-    axes[0, 0].legend(frameon=False, fontsize="xx-small")
+    axes[0, 0].legend(frameon=False, fontsize="xx-small", loc="upper right")
     fig.tight_layout()
     return style.save(fig, "xbx", outdir)
 
