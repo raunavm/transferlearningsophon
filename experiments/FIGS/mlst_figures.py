@@ -20,6 +20,7 @@ figure job, colour and marker per configuration fixed there).
                            network trained from scratch
   mass_response            mass resolution and scale in bins of pT and generated mass
   mass_response_hist       ln(m / m_gen), resonant and QCD: soft-drop mass and the mass node
+  xbx                      eps_S / sqrt(eps_B) for X->bb and X->bs (experiments/XBS/xbx_report.py)
   sculpting                QCD soft-drop mass before and after a cut on the tagger score, and the
                            Jensen-Shannon divergence against the QCD efficiency
 
@@ -832,6 +833,17 @@ def figure_mass_response_hist(root, outdir) -> list:
     return style.save(fig, "mass_response_hist", outdir)
 
 
+# ------------------------------------------------------------------ resonance tagging
+def figure_xbx(root, outdir) -> list:
+    """experiments/XBS/xbx_report.py's figure from the pulled fits (data/v2/xbx/), the code the dry
+    run drew on the stand-in."""
+    if not (DATA / "xbx").is_dir():
+        return []
+    XR = _module("experiments/XBS/xbx_report.py", "xbx_report")
+    M = _mlst()
+    return XR.figure(M, style, M._paper(root), XR.load(DATA / "xbx"), outdir)
+
+
 # ------------------------------------------------------------------ schematic
 def schematic_groups(root: pathlib.Path) -> dict:
     """{heading: [class of each schematic row]} read from the label maps."""
@@ -897,7 +909,7 @@ def figure_schematic(root: pathlib.Path, outdir: pathlib.Path) -> list:
 
 FIGURES = (figure_schematic, figure_label_sets, figure_sizes, figure_pairs, figure_per_class,
            figure_per_class_ranked, figure_missing_features, figure_roc_pairs, figure_roc_bench,
-           figure_finetune, figure_mass, figure_mass_response_hist, figure_sculpting)
+           figure_finetune, figure_mass, figure_mass_response_hist, figure_sculpting, figure_xbx)
 
 
 def main(argv=None) -> int:

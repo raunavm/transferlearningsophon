@@ -45,6 +45,8 @@
 % \pending{} renders in red, so a placeholder for a result that has not landed
 % cannot reach a compiled draft unnoticed.
 \newcommand{\pending}[1]{\textcolor{red}{\textbf{[#1]}}}
+% a figure the render job draws only once its data exist: a red marker until then
+\newcommand{\maybefigure}[2]{\IfFileExists{#2.pdf}{\includegraphics[width=#1]{#2.pdf}}{\pending{figure #2: data not in}}}
 
 % Every result number in this document comes from here.
 \input{results_generated}
@@ -465,7 +467,7 @@ tagging and JetClass; on JetClass-II, the levels of the hierarchy and the models
 regression are.
 
 \paragraph{Resonance tagging.}\label{sec:xbb} We follow Sophon's benchmark~\cite[Sec.~III]{sophon}: a
-spin-0 resonance decaying to $b\bar b$ or to $bs$, \pending{resonance mass and sample sizes}.
+spin-0 resonance of \XbxMx~GeV decaying to $b\bar b$ or to $bs$.
 Sophon's background was a sample of Standard Model processes after a trigger and a leading-jet
 selection, and its figure of merit the discovery significance at a fixed luminosity. We use the QCD
 jets of the JetClass-II test files, without trigger and without jets from $W$, $Z$ or top quarks,
@@ -815,9 +817,24 @@ it at \Kres{} and \Kcoarse{} classes.
 \pending{fine-tuning on JetClass-II at its \Kfull{} classes and on JetClass}
 
 \subsection{Resonance tagging}\label{sec:xbbres}
-\pending{signal efficiency at fixed QCD efficiency and $\epsilon_S/\sqrt{\epsilon_B}$ for every
-label set: direct tagging of $X\to b\bar b$, transfer to $X\to bs$, and the network trained from
-scratch}
+The transfer classifier is trained on \XbbNTrainPerClass{} jets of each class for $X\to b\bar b$ and
+\XbsNTrainPerClass{} for $X\to bs$, and every model is evaluated on the same \XbbNEvalSignal{} and
+\XbsNEvalSignal{} signal jets and \XbbNEvalQcd{} QCD jets in the window of
+\XbxWindowLo--\XbxWindowHi~GeV (Table~\ref{tab:xbx}, Fig.~\ref{fig:xbx}).
+\pending{the result for each label set once the samples are in}
+
+\input{tables/mlst_xbx}
+
+\begin{figure}[t]
+\centering
+\maybefigure{0.95\linewidth}{xbx}
+\caption{Resonance tagging: $\epsilon_S/\sqrt{\epsilon_B}$, proportional to the discovery
+significance for a small signal, against the QCD efficiency in the mass window. Solid: Sophon's
+transfer classifier on the frozen features, mean over the pretraining runs with their range shaded;
+dashed: the direct discriminant of the label sets in which $X\to b\bar b$ is a class of its own;
+dotted (right): the output for the class that contains $X\to bq$, Sophon's control for $X\to bs$.}
+\label{fig:xbx}
+\end{figure}
 
 \FloatBarrier
 % ============================================================================
@@ -1058,8 +1075,8 @@ For $X\to b\bar b$ and $X\to bs$, Sophon's transfer classifier is trained on
 constant learning rate of \LitSophonTransferLr~\cite[App.~B.5]{sophon}. Sophon does not state its
 optimizer or regularization; we use the optimizer of pretraining, dropout in the hidden layer, no
 weight decay and several seeds. When our training sample is smaller than these
-\LitSophonTransferSamplesMillion{} million jets, it is repeated \pending{repetition factor of the
-signal samples}. The network trained from scratch on the same jets follows Sophon's
+\LitSophonTransferSamplesMillion{} million jets, it is repeated: \XbbRepetition{} times for
+$X\to b\bar b$ and \XbsRepetition{} times for $X\to bs$. The network trained from scratch on the same jets follows Sophon's
 reference~\cite[App.~B.3]{sophon} in its number of epochs, \LitSophonScratchEpochs, and in the
 number of jets per epoch, but it is the Sophon network on our inputs, rather than ParT, and
 selects its epoch on our validation jets.
