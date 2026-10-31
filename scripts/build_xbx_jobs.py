@@ -33,6 +33,9 @@ explicitly (Sophon's 150-230 GeV at mX = 200, scaled by mX/200; 93.75-143.75 GeV
                          1.25 M jets per class), ranger, weaver's flat+decay; resumable
                          (cell_resume.py); scored by fit_xbx.py scratch with the examples it saw.
                          A5: X->bs only, three seeds.
+  xbx-report-dryrun, xbx-ihep-report
+                         CPU, at PIN_REPORT: experiments/XBS/xbx_report.py, the section's figure, table
+                         and macros, on the stand-in fits (as X->bb) and on the real ones.
   xbx-scratch-dryrun     the same chain for 2 epochs on the staged stand-in pair (xbb_jc2, window
                          150-230 GeV, 200,000 evaluation jets of each class), to prove it before the
                          samples arrive.
@@ -55,6 +58,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "XBS" / "k8s"
 PIN = "mtx-s2.17"     # the stand-in chain as it ran
+PIN_REPORT = "mtx-s2.27"   # experiments/XBS/xbx_report.py (2026-10-31)
 PIN_IHEP = "mtx-s2.20"   # NOT YET TAGGED; mtx-s2.18 is the 188-class probe refit (4f92021), without this code
 # mtx-s2.20: linear_probe_v2.py and probe.py changed after mtx-s2.19 (da6e0be); no IHEP spec had run
 # mtx-s2.16: the staged files carried the source's awkward description without xbx_class, which
@@ -75,6 +79,7 @@ NEEDED = {"experiments/XBS/extract_xbx.py": "FLAGS = ",
 # enforced, a branch map and inspect; the window and mX explicit and consistent; fits to fits_ihep,
 # never overwritten; Eq. 4 only where X->bb is a class of its own; the scratch fit records the
 # examples seen; xbx.json written once
+NEEDED_REPORT = {"experiments/XBS/xbx_report.py": "def macros("}
 NEEDED_IHEP = {**NEEDED,
                "experiments/XBS/extract_xbx.py": "records another vocabulary",
                "experiments/XBS/stage_xbx.py": "flagged_charged_without_charge",
@@ -393,6 +398,15 @@ def scratch_spec(sig: str, seed: int, name=None, pin=PIN, out_root=SCRATCH_ROOT,
         fit_args=f" {window_arg(mx)} --mx {mx:g} --ft-manifest ${{OUT}}/ft_manifest.json" if new else "")
 
 
+def report_spec(name: str, fits: str, out: str, alias: str = "") -> str:
+    """experiments/XBS/xbx_report.py: the section's figure, table and macros from the fit files;
+    an existing output is never overwritten."""
+    body = (f"          [ ! -e {out} ] || {{ echo \"FATAL: {out} exists\"; exit 42; }}\n"
+            "          pip install --no-cache-dir -q matplotlib==3.10.7 mplhep==0.4.1 || exit 1\n"
+            f"          python3 experiments/XBS/xbx_report.py --fits {fits}{alias} --out {out} || halt\n")
+    return _cpu(name, body, pin=PIN_REPORT)
+
+
 def window_arg(mx: float) -> str:
     """xbx.window_for(mx) as stage_xbx.py and fit_xbx.py take it."""
     lo, hi = X.window_for(mx)
@@ -427,6 +441,11 @@ def build(signals=SIGNALS, mx=MX) -> dict[str, str]:
     specs["job-xbx-scratch-dryrun-raunav.yaml"] = scratch_spec(
         "xbb_jc2", 1, name="xbx-scratch-dryrun-raunav", pin=PIN_IHEP, out_root=DRYRUN_ROOT, epochs=2,
         mx=X.SOPHON_MX, extract_args=" --max-jets 200000", gpus=DRYRUN_GPUS)
+    # the section's figure, table and macros: on the stand-in fits (dry run), then the real ones
+    specs["job-xbx-report-dryrun-raunav.yaml"] = report_spec(
+        "xbx-report-dryrun-raunav", FITS, f"/data/results/xbx_dryrun/report_{PIN_REPORT}", " --as xbb_jc2=xbb")
+    specs["job-xbx-ihep-report-raunav.yaml"] = report_spec("xbx-ihep-report-raunav", FITS_IHEP,
+                                                           f"{EX_ROOT}/report_ihep_{PIN_REPORT}")
     return specs
 
 
@@ -439,6 +458,7 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     BX.verify_pin(PIN, list(NEEDED), a.pin_not_yet_tagged, NEEDED)
     BX.verify_pin(PIN_IHEP, list(NEEDED_IHEP), a.pin_not_yet_tagged, NEEDED_IHEP)
+    BX.verify_pin(PIN_REPORT, list(NEEDED_REPORT), a.pin_not_yet_tagged, NEEDED_REPORT)
     specs = build(tuple(a.signals), a.mx)
     if not a.check_only:
         OUT_DIR.mkdir(parents=True, exist_ok=True)
