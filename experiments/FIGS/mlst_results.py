@@ -1291,13 +1291,16 @@ CAPTIONS = {
              "\\MlstBootResamples{} resamples, averaged over the runs). The baseline is the randomly "
              "initialized network of the same seed for the linear probes and the network trained from "
              "scratch on the same subset for fine-tuning. The macro AUC is used for JetClass-II and JetClass."),
-    "jetclass": ("tab:jetclass", "JetClass in the form of ParT's Table~1: accuracy, macro AUC one-vs-one "
-                 "(ParT's convention) and one-vs-rest, and for each signal class the rejection of QCD jets at "
+    "jetclass": ("tab:jetclass", "JetClass in the form of ParT's Table~1: accuracy, macro AUC (one-vs-one, "
+                 "ParT's convention, which on JetClass's equal class sizes equals the one-vs-rest macro AUC), and "
+                 "for each signal class the rejection of QCD jets at "
                  "50\\% signal efficiency (__WPHQQL__\\% for $H\\to\\ell\\nu qq'$, __WPTBL__\\% for $t\\to b\\ell\\nu$), on "
                  "the discriminant $p_c/(p_c+p_{\\mathrm{QCD}})$. The published rows were trained on the number of "
                  "jets given and scored on a \\LitPartJcTestMillion-million-jet test set; ours are fine-tuned on one million and "
                  "scored on two million (the AUCs on every fourth), mean $\\pm$ standard deviation over the "
-                 "pretraining runs (the network trained from scratch: three seeds)."),
+                 "pretraining runs (the network trained from scratch: three seeds). $^\\dagger$: fewer than "
+                 "__MINBKG__ QCD jets pass in at least one run, so the rejection of that run has a statistical "
+                 "uncertainty above __MINBKGPC__\\%."),
     "xbx": ("tab:xbx", "Resonance tagging in the soft-drop mass window, \\XbxWindowLo--\\XbxWindowHi~GeV: signal "
             "efficiency (\\%) at the QCD efficiency given, mean $\\pm$ standard deviation over the pretraining "
             "runs. Transfer: Sophon's classifier on the frozen features, its seeds averaged per run (the "
@@ -1314,7 +1317,8 @@ PLACEHOLDERS = (("mlp", "mlst_mlp", False, None), ("fill", "mlst_fill", False, N
                 ("sculpt", "mlst_sculpt", False, {"__SCULPT_BINS__": r"\pending{bins}"}), ("ft", "mlst_ft", True, None),
                 ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, None),
                 ("xbx", "mlst_xbx", False, None), ("jetclass", "mlst_jetclass", True,
-                 {"__WPHQQL__": r"\pending{n}", "__WPTBL__": r"\pending{n}"}))
+                 {"__WPHQQL__": r"\pending{n}", "__WPTBL__": r"\pending{n}", "__MINBKG__": r"\pending{n}",
+                  "__MINBKGPC__": r"\pending{n}"}))
 # the resonance-tagging section's sample macros (experiments/XBS/xbx_report.py macros)
 XBX_MACROS = ("XbxMx", "XbxWindowLo", "XbxWindowHi") + tuple(
     f"{s}{k}" for s in ("Xbb", "Xbs") for k in ("NTrainPerClass", "Repetition", "NEvalSignal", "NEvalQcd"))
@@ -1497,7 +1501,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         out["tables/mlst_jetclass.tex"] = _float("jetclass", V4.table_jetclass(
             pre, ref, pooled, MAIN + MASS + ("RAND",) + FLAV, {**LABEL, "RAND": "random partitions (all five)"},
             SCRATCH, 1_000_000, fmt_pm, _two), True,
-            fill={"__WPHQQL__": f"{100 * V4.LPV_EPS['label_Hqql']:g}", "__WPTBL__": f"{100 * V4.LPV_EPS['label_Tbl']:g}"})
+            fill={"__WPHQQL__": f"{100 * V4.LPV_EPS['label_Hqql']:g}", "__WPTBL__": f"{100 * V4.LPV_EPS['label_Tbl']:g}",
+                  "__MINBKG__": str(V4.JC1_MIN_BKG), "__MINBKGPC__": f"{100 / math.sqrt(V4.JC1_MIN_BKG):.0f}"})
     else:
         missing.append("JetClass per-class curves -- experiments/FIGS/data/v2/curves/full_*.json")
     if comp:

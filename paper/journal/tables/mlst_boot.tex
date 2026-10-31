@@ -4,6 +4,17 @@
 \caption{Relative uncertainty of the ratios of $(1-\mathrm{AUC})$ at the largest training set of each task, in per cent: the standard deviation of the logarithm of the ratio over the pretraining runs, then that from the finite test sample (a bootstrap of the test jets with \MlstBootResamples{} resamples, averaged over the runs). The baseline is the randomly initialized network of the same seed for the linear probes and the network trained from scratch on the same subset for fine-tuning. The macro AUC is used for JetClass-II and JetClass.}
 \label{tab:boot}
 \begin{adjustbox}{max width=\linewidth}
-\pending{no result yet}
+\begin{tabular}{lcccccccc}
+\toprule
+ & \multicolumn{4}{c}{linear probe} & \multicolumn{4}{c}{fine-tuning} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+ratio & JetClass-II & JetClass & top & q/g & JetClass-II & JetClass & top & q/g \\
+\midrule
+\Kres{} classes / \Kfull{} classes & 1.3 / 0.99 & 2.4 / 0.18 & 8.3 / 0.53 & 9.6 / 0.34 & -- / -- & -- / -- & -- / -- & -- / -- \\
+\Kmid{} classes / \Kfull{} classes & 2.1 / 1.5 & 3.1 / 0.20 & 17 / 0.54 & 8.2 / 0.33 & -- / -- & -- / -- & -- / -- & -- / -- \\
+\Kcoarse{} classes / \Kfull{} classes & 1.5 / 1.7 & 3.7 / 0.25 & 13 / 0.56 & 6.7 / 0.36 & -- / -- & -- / -- & -- / -- & -- / -- \\
+\Kfull{} classes / baseline & 0.99 / 1.4 & 2.3 / 0.37 & 14 / 0.53 & 5.7 / 0.34 & -- / -- & -- / -- & -- / -- & -- / -- \\
+\bottomrule
+\end{tabular}
 \end{adjustbox}
 \end{table*}

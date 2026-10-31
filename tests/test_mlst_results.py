@@ -351,16 +351,25 @@ def test_the_jetclass_table_has_parts_rows_and_ours_in_its_column_order():
     runs = M._paper(ROOT)
 
     def block(k):
-        return {"accuracy": 0.80 + k, "macro_auc_ovo": 0.98 + k, "macro_auc_ovr": 0.97 + k,
-                "per_class": {c: {"rejection": {"rejection": 1000.0 * (j + 1) + 10 * k}}
+        return {"accuracy": 0.80 + k, "macro_auc_ovo": 0.98 + k, "macro_auc_ovr": 0.98 + k,
+                "per_class": {c: {"rejection": {"rejection": 1000.0 * (j + 1) + 10 * k, "n_bkg_pass": 200 // (j + 1)}}
                               for j, (c, _) in enumerate(V4.JC1_COLS)}}
     pre = {m[len("mtx-"):]: {"N1000000": {"s1": {"jc1": block(1e-3 * i)}}} for i, m in enumerate(runs["L188"])}
     ref = {M.SCRATCH: {"N1000000": {f"s{k}": {"jc1": block(1e-3 * k)} for k in (1, 2, 3)}}}
     tex = V4.table_jetclass(pre, ref, runs, ("L188", "R16_Q1"), M.LABEL, M.SCRATCH, 1_000_000,
                             MT.fmt_pm, M._two)
-    assert r"ParT~\cite{part} & 100 M & 0.861 & 0.9877 & -- & 10{,}638 & 4{,}149" in tex
+    assert r"ParT~\cite{part} & 100 M & 0.861 & 0.9877 & 10{,}638 & 4{,}149" in tex
     assert r"ParT~\cite{part} & 2 M & 0.836 & 0.9834" in tex
     scratch = next(line for line in tex.splitlines() if line.startswith("from scratch"))
     assert MT.fmt_pm(0.802, 0.001) in scratch and " & 1 M & " in scratch
     assert r"$R_{99}$" in tex and r"$R_{99.5}$" in tex
     assert M.LABEL["R16_Q1"] not in tex          # no curves for it: no row
+    # 200 // 9 = 22 QCD jets pass for the last column: unmarked; 200 // 10 would be marked
+    assert scratch.count(r"$^\dagger$") == 0
+    pre["l188-s1"]["N1000000"]["s1"]["jc1"]["per_class"]["label_Zqq"]["rejection"]["n_bkg_pass"] = 19
+    tex = V4.table_jetclass(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, MT.fmt_pm, M._two)
+    row = next(line for line in tex.splitlines() if line.startswith(M.LABEL["L188"]))
+    assert row.rstrip(r" \").endswith(r"$^\dagger$") and row.count(r"$^\dagger$") == 1
+    ref[M.SCRATCH]["N1000000"]["s1"]["jc1"]["macro_auc_ovr"] = 0.5
+    with pytest.raises(SystemExit, match="one-vs-rest"):
+        V4.table_jetclass(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, MT.fmt_pm, M._two)

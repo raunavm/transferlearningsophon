@@ -266,6 +266,8 @@ JC1_COLS = (("label_Hbb", r"$H\to b\bar b$"), ("label_Hcc", r"$H\to c\bar c$"), 
             ("label_H4q", r"$H\to 4q$"), ("label_Hqql", r"$H\to \ell\nu qq'$"), ("label_Tbqq", r"$t\to bqq'$"),
             ("label_Tbl", r"$t\to b\ell\nu$"), ("label_Wqq", r"$W\to qq'$"), ("label_Zqq", r"$Z\to q\bar q$"))
 JC1_LIT_N = {"PFN": "100 M", "P-CNN": "100 M", "ParticleNet": "100 M", "ParT": "100 M"}
+# a rejection is marked when fewer background jets than this pass in any run (Poisson > 22 %)
+JC1_MIN_BKG = 20
 LPV_EPS = _module("experiments/EVAL/linear_probe_v2.py", "linear_probe_v2").JC1_EPS_S
 
 
@@ -276,26 +278,28 @@ def _jc1_cells(cells: dict, init: str, n: str, seeds) -> list:
 
 def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, scratch: str, nmax: int,
                    fmt_pm, two) -> str:
-    """JetClass in the form of ParT's Table 1: accuracy, macro AUC (one-vs-one, ParT's convention;
-    one-vs-rest beside it), and each signal class's rejection of QCD at ParT's working point. ParT's
+    """JetClass in the form of ParT's Table 1: accuracy, macro AUC (one-vs-one, ParT's convention,
+    which equals the one-vs-rest macro AUC on JetClass's equal class sizes, checked here), and each
+    signal class's rejection of QCD at ParT's working point, marked where fewer than JC1_MIN_BKG QCD
+    jets pass in any run. ParT's
     rows (100 M jets; Table 3's at 2 M) from literature_benchmarks.json, ours fine-tuned on nmax
     jets (curves files of experiments/FT/ft_curves.py cells: pre the pretrained runs' tree, ref
     the from-scratch reference's), mean +- SD over the runs."""
     lit = json.loads(LIT.read_text())["jetclass"]
     n = f"N{nmax}"
-    head = (r"\begin{tabular}{ll" + "c" * (3 + len(JC1_COLS)) + "}", r"\toprule",
-            r" & & & \multicolumn{2}{c}{AUC} & \multicolumn{" + str(len(JC1_COLS)) + r"}{c}{rejection of QCD} \\",
-            r"\cmidrule(lr){4-5}\cmidrule(lr){6-" + str(5 + len(JC1_COLS)) + "}",
-            r" & jets & accuracy & ovo & ovr & " + " & ".join(h for _, h in JC1_COLS) + r" \\",
-            r" & & & & & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",
+    head = (r"\begin{tabular}{ll" + "c" * (2 + len(JC1_COLS)) + "}", r"\toprule",
+            r" & & & & \multicolumn{" + str(len(JC1_COLS)) + r"}{c}{rejection of QCD} \\",
+            r"\cmidrule(lr){5-" + str(4 + len(JC1_COLS)) + "}",
+            r" & jets & accuracy & AUC & " + " & ".join(h for _, h in JC1_COLS) + r" \\",
+            r" & & & & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",
             r"\midrule")
     lines = list(head)
     for r in lit:
         name = r["method"].split(" (")[0]
         lines.append(rf"{name}~\cite{{{r['cite']}}} & {r.get('n_train', JC1_LIT_N.get(r['method'], ''))} & "
-                     f"{r['acc']} & {r['auc_ovo']} & -- & " + " & ".join(_sep_int(x) for x in r["rej"]) + r" \\")
+                     f"{r['acc']} & {r['auc_ovo']} & " + " & ".join(_sep_int(x) for x in r["rej"]) + r" \\")
     lines += [r"\midrule",
-              r"\multicolumn{" + str(5 + len(JC1_COLS)) + r"}{l}{\textit{this work (Sophon network, fine-tuned)}} \\"]
+              r"\multicolumn{" + str(4 + len(JC1_COLS)) + r"}{l}{\textit{this work (Sophon network, fine-tuned)}} \\"]
 
     def row(name, blocks):
         def cell(vals, place):
@@ -305,9 +309,15 @@ def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, s
             if len(v) == 2:
                 return two(v[0], v[1], ", ")
             return f"{v[0]:,.{place}f}".replace(",", "{,}") if v else "--"
-        cols = [cell([b["accuracy"] for b in blocks], 3), cell([b["macro_auc_ovo"] for b in blocks], 4),
-                cell([b["macro_auc_ovr"] for b in blocks], 4)]
-        cols += [cell([b["per_class"][c]["rejection"]["rejection"] for b in blocks], 0) for c, _ in JC1_COLS]
+        for b in blocks:
+            if abs(b["macro_auc_ovo"] - b["macro_auc_ovr"]) > 1e-9:
+                raise SystemExit("FATAL: JetClass one-vs-one and one-vs-rest macro AUCs differ; the test "
+                                 "set's classes are not of equal size and the table must show both")
+        cols = [cell([b["accuracy"] for b in blocks], 3), cell([b["macro_auc_ovo"] for b in blocks], 4)]
+        for c, _ in JC1_COLS:
+            wp = [b["per_class"][c]["rejection"] for b in blocks]
+            mark = r"$^\dagger$" if min(w["n_bkg_pass"] for w in wp) < JC1_MIN_BKG else ""
+            cols.append(cell([w["rejection"] for w in wp], 0) + mark)
         return f"{name} & {nmax / 1e6:g} M & " + " & ".join(cols) + r" \\"
     seeds = sorted({s for nn in ref.get(scratch, {}).values() for s in nn})
     blocks = _jc1_cells(ref, scratch, n, seeds)
