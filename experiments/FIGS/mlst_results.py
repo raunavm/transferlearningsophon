@@ -1265,6 +1265,13 @@ CAPTIONS = {
              "\\MlstBootResamples{} resamples, averaged over the runs). The baseline is the randomly "
              "initialized network of the same seed for the linear probes and the network trained from "
              "scratch on the same subset for fine-tuning. The macro AUC is used for JetClass-II and JetClass."),
+    "jetclass": ("tab:jetclass", "JetClass in the form of ParT's Table~1: accuracy, macro AUC one-vs-one "
+                 "(ParT's convention) and one-vs-rest, and for each signal class the rejection of QCD jets at "
+                 "50\\% signal efficiency (99\\% for $H\\to\\ell\\nu qq'$, 99.5\\% for $t\\to b\\ell\\nu$), on the "
+                 "discriminant $p_c/(p_c+p_{\\mathrm{QCD}})$. The published rows were trained on the number of "
+                 "jets given and scored on a 20-million-jet test set; ours are fine-tuned on one million and "
+                 "scored on two million (the AUCs on every fourth), mean $\\pm$ standard deviation over the "
+                 "pretraining runs (the network trained from scratch: three seeds)."),
     "xbx": ("tab:xbx", "Resonance tagging in the soft-drop mass window, \\XbxWindowLo--\\XbxWindowHi~GeV: signal "
             "efficiency (\\%) at the QCD efficiency given, mean $\\pm$ standard deviation over the pretraining "
             "runs. Transfer: Sophon's classifier on the frozen features, its seeds averaged per run (the "
@@ -1280,7 +1287,7 @@ PLACEHOLDERS = (("mlp", "mlst_mlp", False, None), ("fill", "mlst_fill", False, N
                 ("mass", "mlst_mass", False, {"__MLP_SEEDS__": r"\pending{n}"}),
                 ("sculpt", "mlst_sculpt", False, {"__SCULPT_BINS__": r"\pending{bins}"}), ("ft", "mlst_ft", True, None),
                 ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, None),
-                ("xbx", "mlst_xbx", False, None))
+                ("xbx", "mlst_xbx", False, None), ("jetclass", "mlst_jetclass", True, None))
 # the resonance-tagging section's sample macros (experiments/XBS/xbx_report.py macros)
 XBX_MACROS = ("XbxMx", "XbxWindowLo", "XbxWindowHi") + tuple(
     f"{s}{k}" for s in ("Xbb", "Xbs") for k in ("NTrainPerClass", "Repetition", "NEvalSignal", "NEvalQcd"))
@@ -1456,6 +1463,15 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         out["tables/mlst_bench_qg.tex"] = _float("bench_qg", V4.table_bench(
             "qg", per, runs, bench_rows, LABEL, SCRATCH, fmt_pm, _two), False)
     xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int)
+    full = [data / "curves" / f"full_{t}.json" for t in ("best70_leg2", "ref_v100_jc1_leg2")]
+    if all(f.exists() for f in full):
+        pre, ref = (json.loads(f.read_text())["cells"] for f in full)
+        pooled = {**runs, "RAND": [m for a in RAND for m in runs[a]]}
+        out["tables/mlst_jetclass.tex"] = _float("jetclass", V4.table_jetclass(
+            pre, ref, pooled, MAIN + MASS + ("RAND",) + FLAV, {**LABEL, "RAND": "random partitions (all five)"},
+            SCRATCH, 1_000_000, fmt_pm, _two, fmt_int), True)
+    else:
+        missing.append("JetClass per-class curves -- experiments/FIGS/data/v2/curves/full_*.json")
     if comp:
         body, hours = table_compute(comp, runs, fmt_int)
         out["tables/compute.tex"] = _float("compute", body)

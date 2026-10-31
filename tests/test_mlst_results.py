@@ -329,3 +329,23 @@ def test_the_batchnorm_check_reports_the_largest_change_and_needs_both_checkpoin
     del fits["mtx-l188-s2"]["cells"]["best70_bn"]["top"]
     with pytest.raises(SystemExit, match="best70_bn"):
         M.bn_macros(_Em(), fits, runs, None)
+
+
+def test_the_jetclass_table_has_parts_rows_and_ours_in_its_column_order():
+    V4 = M.V4
+    runs = M._paper(REPO)
+
+    def block(k):
+        return {"accuracy": 0.80 + k, "macro_auc_ovo": 0.98 + k, "macro_auc_ovr": 0.97 + k,
+                "per_class": {c: {"rejection": {"rejection": 1000.0 * (j + 1) + 10 * k}}
+                              for j, (c, _) in enumerate(V4.JC1_COLS)}}
+    pre = {m[len("mtx-"):]: {"N1000000": {"s1": {"jc1": block(1e-3 * i)}}} for i, m in enumerate(runs["L188"])}
+    ref = {M.SCRATCH: {"N1000000": {f"s{k}": {"jc1": block(1e-3 * k)} for k in (1, 2, 3)}}}
+    tex = V4.table_jetclass(pre, ref, runs, ("L188", "R16_Q1"), M.LABEL, M.SCRATCH, 1_000_000,
+                            MT.fmt_pm, M._two, MT.fmt_int)
+    assert r"ParT~\cite{part} & 100 M & 0.861 & 0.9877 & -- & 10{,}638 & 4{,}149" in tex
+    assert r"ParT~\cite{part} & 2 M & 0.836 & 0.9834" in tex
+    scratch = next(line for line in tex.splitlines() if line.startswith("from scratch"))
+    assert MT.fmt_pm(0.802, 0.001) in scratch and " & 1 M & " in scratch
+    assert r"$R_{99}$" in tex and r"$R_{99.5}$" in tex
+    assert M.LABEL["R16_Q1"] not in tex          # no curves for it: no row

@@ -235,3 +235,68 @@ def table_bench(task: str, per: dict, runs: dict, rows: tuple, label: dict, scra
     lines += [r"\midrule", r"\multicolumn{5}{l}{\textit{this work (Sophon network, fine-tuned)}} \\"]
     lines += [f"{n} & " + " & ".join(c) + r" \\" for n, c in allrows[len(lit_rows):]]
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
+
+
+# ParT's Table 1 columns: (our label, heading); the working point is linear_probe_v2.JC1_EPS_S's
+JC1_COLS = (("label_Hbb", r"$H\to b\bar b$"), ("label_Hcc", r"$H\to c\bar c$"), ("label_Hgg", r"$H\to gg$"),
+            ("label_H4q", r"$H\to 4q$"), ("label_Hqql", r"$H\to \ell\nu qq'$"), ("label_Tbqq", r"$t\to bqq'$"),
+            ("label_Tbl", r"$t\to b\ell\nu$"), ("label_Wqq", r"$W\to qq'$"), ("label_Zqq", r"$Z\to q\bar q$"))
+JC1_LIT_N = {"PFN": "100 M", "P-CNN": "100 M", "ParticleNet": "100 M", "ParT": "100 M"}
+LPV_EPS = _module("experiments/EVAL/linear_probe_v2.py", "linear_probe_v2").JC1_EPS_S
+
+
+def _jc1_cells(cells: dict, init: str, n: str, seeds) -> list:
+    """The jc1 blocks of one configuration's cells at size n (ft_curves.py cells)."""
+    return [cells[init][n][s]["jc1"] for s in seeds if s in cells.get(init, {}).get(n, {})]
+
+
+def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, scratch: str, nmax: int,
+                   fmt_pm, two, fmt_int) -> str:
+    """JetClass in the form of ParT's Table 1: accuracy, macro AUC (one-vs-one, ParT's convention;
+    one-vs-rest beside it), and each signal class's rejection of QCD at ParT's working point. ParT's
+    rows (100 M jets; Table 3's at 2 M) from literature_benchmarks.json, ours fine-tuned on nmax
+    jets (curves files of experiments/FT/ft_curves.py cells: pre the pretrained runs' tree, ref
+    the from-scratch reference's), mean +- SD over the runs."""
+    lit = json.loads(LIT.read_text())["jetclass"]
+    n = f"N{nmax}"
+    head = (r"\begin{tabular}{ll" + "c" * (3 + len(JC1_COLS)) + "}", r"\toprule",
+            r" & & & \multicolumn{2}{c}{AUC} & \multicolumn{" + str(len(JC1_COLS)) + r"}{c}{rejection of QCD} \\",
+            r"\cmidrule(lr){4-5}\cmidrule(lr){6-" + str(5 + len(JC1_COLS)) + "}",
+            r" & jets & accuracy & ovo & ovr & " + " & ".join(h for _, h in JC1_COLS) + r" \\",
+            r" & & & & & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",
+            r"\midrule")
+    lines = list(head)
+    for r in lit:
+        name = r["method"].split(" (")[0]
+        lines.append(rf"{name}~\cite{{{r['cite']}}} & {r.get('n_train', JC1_LIT_N.get(r['method'], ''))} & "
+                     f"{r['acc']} & {r['auc_ovo']} & -- & " + " & ".join(_sep_int(x) for x in r["rej"]) + r" \\")
+    lines += [r"\midrule",
+              r"\multicolumn{" + str(5 + len(JC1_COLS)) + r"}{l}{\textit{this work (Sophon network, fine-tuned)}} \\"]
+
+    def row(name, blocks):
+        def cell(vals, place):
+            v = [x for x in vals if x is not None]
+            if len(v) >= 3:
+                return fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1)))
+            if len(v) == 2:
+                return two(v[0], v[1], ", ")
+            return f"{v[0]:,.{place}f}".replace(",", "{,}") if v else "--"
+        cols = [cell([b["accuracy"] for b in blocks], 3), cell([b["macro_auc_ovo"] for b in blocks], 4),
+                cell([b["macro_auc_ovr"] for b in blocks], 4)]
+        cols += [cell([b["per_class"][c]["rejection"]["rejection"] for b in blocks], 0) for c, _ in JC1_COLS]
+        return f"{name} & {nmax / 1e6:g} M & " + " & ".join(cols) + r" \\"
+    seeds = sorted({s for nn in ref.get(scratch, {}).values() for s in nn})
+    blocks = _jc1_cells(ref, scratch, n, seeds)
+    if blocks:
+        lines.append(row("from scratch", blocks))
+    for arm in rows:
+        blocks = [b for m in runs[arm] for b in _jc1_cells(pre, m[len("mtx-"):], n, ["s1"])]
+        if blocks:
+            lines.append(row(label[arm], blocks))
+    return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
+
+
+def _sep_int(x) -> str:
+    """A printed integer with LaTeX's thousands separator ('10638' -> '10{,}638'), as the other tables."""
+    s = str(x)
+    return f"{int(s):,}".replace(",", "{,}") if s.isdigit() else s
