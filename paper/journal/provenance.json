@@ -5305,7 +5305,7 @@
   },
   "LpVfourCMax": {
     "json_path": "C_GRID_V4",
-    "sha256": "c321f6662f5fa4f7cd4475133bff4baef61f1e991aab3c642f70ee199ba49539",
+    "sha256": "d757338a923bd3493061c463ea4f623c5ef1e2a8e37ade1c9c34e50da0fdfdbf",
     "source_file": "experiments/EVAL/probe_bal.py",
     "value": "\\ensuremath{10^{4}}"
   },

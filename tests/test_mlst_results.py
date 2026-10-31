@@ -115,7 +115,9 @@ def test_the_index_covers_every_kind_of_pulled_file():
     assert {"compute", "linprobe/fits_v3"} <= kinds <= {
         "compute", "linprobe/fits3000", "linprobe/mass", "linprobe/fits_v3", "linprobe/fits_v3_mlp", "ft_mlst",
         "head", "fillcontrol", "curves", "bootstrap", "xbx", "jc2_test", "linprobe/fits_v3_mlp2",
-        "linprobe/fits_v3_mlp2_initbn", "linprobe/fits_v3_initbn"}
+        "linprobe/fits_v3_mlp2_initbn", "linprobe/fits_v3_initbn",
+        # 2026-10-31 (pull_mlst_data.py v4): the v4 probes and the outputs beside them
+        "linprobe/fits_v4", "linprobe/fits_v4_mlp", "jc2bal", "budget", "partrepro", "dup_check"}
 
 
 def _ft_tree(d, inits, n_seeds_scratch=3, bound=False, budget=True):
