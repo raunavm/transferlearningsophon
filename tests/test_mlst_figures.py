@@ -108,3 +108,42 @@ def test_the_schematic_is_read_from_the_label_maps(tmp_path):
     assert b[row["X_YY_bbqq"]] != b[row["X_YY_ccqq"]] == b[row["X_YY_qqqq"]]
     paths = F.figure_schematic(REPO, tmp_path)
     assert sorted(p.suffix for p in paths) == [".pdf", ".png"] and all(p.stat().st_size > 0 for p in paths)
+
+
+def test_the_ranked_classes_are_the_ones_a_merge_degrades_seed_by_seed(tmp_path, monkeypatch):
+    F = _mod("mlst_figures", "experiments/FIGS/mlst_figures.py")
+    M = F._mlst()
+    runs = M._paper(REPO)
+    rung, order = F._class_order(REPO)
+    hurt = order[7]
+    d = tmp_path / "linprobe/fits_v3"
+    d.mkdir(parents=True)
+    for m in (m for a in ("L188", "L162", "R42_Q1", "R16_Q1") for m in runs[a]):
+        seed = int(m.rsplit("-s", 1)[1])
+        # 1 - AUC = 0.01 * seed for every class; the 162-class runs make one class 3x (seed 1) or 5x worse
+        oma = {c: 0.01 * seed for c in order}
+        if m in runs["L162"]:
+            oma[hurt] *= 3.0 if seed == 1 else 5.0
+        cell = {"jc2_188": {M.PAIR_N: {"per_class_auc": {str(c): 1 - v for c, v in oma.items()}}}}
+        (d / f"{m}.json").write_text(json.dumps({"cells": {M.PRIMARY: cell}}))
+    monkeypatch.setattr(F, "DATA", tmp_path)
+    fits = F._fits(M)
+    ranked = F.ranked_merges(M, fits, runs, REPO)
+    name, mean, per = ranked[0][0]
+    assert name == rung[hurt]["class_name"]
+    n162 = len([m for m in runs["L162"] if m.rsplit("-s", 1)[1] in {r.rsplit("-s", 1)[1] for r in runs["L188"]}])
+    assert len(per) == n162 and sorted(per) == pytest.approx(sorted([3.0] + [5.0] * (n162 - 1)))
+    assert mean == pytest.approx(sum(per) / len(per))
+    # the 162 -> 43 merge undoes it, so the class is not among that merge's most degraded
+    assert name not in [r[0] for r in ranked[1]]
+    paths = F.figure_per_class_ranked(REPO, tmp_path / "out")
+    assert sorted(p.suffix for p in paths) == [".pdf", ".png"] and all(p.stat().st_size > 0 for p in paths)
+
+
+def test_every_class_name_is_typeset():
+    F = _mod("mlst_figures", "experiments/FIGS/mlst_figures.py")
+    rung, order = F._class_order(REPO)
+    tex = {F.class_tex(rung[c]["class_name"]) for c in order}
+    assert len(tex) == len(order)
+    assert F.class_tex("label_X_YY_bctauhv") == r"$X\to YY\to b c \tau_h \nu$"
+    assert F.class_tex("label_QCD_light") == "QCD (light)"

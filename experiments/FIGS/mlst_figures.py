@@ -11,6 +11,7 @@ figure job, colour and marker per configuration fixed there).
                            merges the pair, half filled where it merges part of it
   per_class_jc2            JetClass-II: each class's (1 - AUC) over the 188-class model's, run by
                            run, averaged; rows grouped by topology, flavor siblings adjacent
+  per_class_ranked         the fifteen classes each merge of the hierarchy hurts most
   finetune_vs_training_size  fine-tuning against the training-set size, with the ratio to the
                            network trained from scratch
   mass_response            mass resolution and scale in bins of pT and generated mass
@@ -74,7 +75,15 @@ SCHEMATIC_TINTS = ("#BBCCEE", "#EEEEBB", "#FFCCCC", "#CCDDAA", "#CCEEFF", "#DDDD
                    "#FFAABB", "#99DDFF", "#BBCC33")
 # per_class_jc2's columns: (configuration, heading)
 HEAT_COLUMNS = (("L162", "162"), ("R42_Q1", "43"), ("R16_Q1", "17"), ("RAND", "Random\npartitions"),
-                ("FLAV_F0", "No flavor\nboundary"))
+                ("FLAV_F0", "No flavor\nboundary"), ("FLAV_F1", "$b$-quark\nboundary"),
+                ("FLAV_F1R", "Random flavor\nboundary"))
+# per_class_ranked's panels: each merge of the hierarchy, (coarser, finer, title)
+MERGES = (("L162", "L188", "188 to 162 classes"), ("R42_Q1", "L162", "162 to 43 classes"),
+          ("R16_Q1", "R42_Q1", "43 to 17 classes"))
+RANKED_N = 15
+# decay-product tokens of a class name, longest first, and their typesetting
+DECAY_TOKENS = (("tauh", r"\tau_h"), ("taue", r"\tau_e"), ("taum", r"\tau_\mu"), ("b", "b"), ("c", "c"),
+                ("s", "s"), ("q", "q"), ("g", "g"), ("e", "e"), ("m", r"\mu"), ("v", r"\nu"))
 
 
 def _mlst():
@@ -82,6 +91,13 @@ def _mlst():
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     return m
+
+
+def _fits(M) -> dict:
+    """The linear probes: the v4 fits (balanced JetClass-II, the wider regularization grid) once
+    pulled, else fits_v3."""
+    v4 = M.V4.load_fits(DATA)[0]
+    return v4 or M._load(DATA / "linprobe/fits_v3")
 
 
 def _look(M, row: str) -> dict:
@@ -153,7 +169,7 @@ def _lines(ax, M, rows: dict, scale: float = 1.0) -> None:
 
 def figure_sizes(root, outdir) -> list:
     M = _mlst()
-    fits = M._load(DATA / "linprobe/fits_v3")
+    fits = _fits(M)
     if not fits:
         return []
     runs = M._paper(root)
@@ -269,7 +285,7 @@ def _dot_figure(M, panels, rows_of, pos, ncols, width, fill=lambda key, row: "fu
 def figure_label_sets(root, outdir) -> list:
     """Table tab:probes as a figure: every configuration on the largest training set of each task."""
     M = _mlst()
-    fits = M._load(DATA / "linprobe/fits_v3")
+    fits = _fits(M)
     if not fits:
         return []
     runs = M._paper(root)
@@ -283,7 +299,7 @@ def figure_label_sets(root, outdir) -> list:
 def figure_pairs(root, outdir) -> list:
     """Table tab:pairs as a figure; open markers where the label set merges the pair."""
     M = _mlst()
-    fits = M._load(DATA / "linprobe/fits_v3")
+    fits = _fits(M)
     if not fits:
         return []
     runs = M._paper(root)
@@ -296,35 +312,119 @@ def figure_pairs(root, outdir) -> list:
 
 
 # ------------------------------------------------------------------ per class
-def heat_matrix(M, fits, runs, root) -> tuple[list, list, np.ndarray]:
-    """(class names in row order, group label per row, (rows, columns) array of the mean over
-    runs of (1 - AUC of the class) / (1 - AUC of the same class, 188-class run of the same seed))
-    at the largest JetClass-II training set. Rows: the 17-class topology groups, and inside a
+def _class_order(root) -> tuple[dict, list]:
+    """(label-map rows by class, classes in row order): the 17-class topology groups, and inside a
     group the flavor orbits together (flavour_pair_map.v2.csv)."""
     maps = root / "configs/labelmaps"
     rung = {int(r["jet_label"]): r for r in csv.DictReader((maps / "rung_label_maps.v1.csv").open())}
     orbit = {int(r["jet_label"]): r["orbit"] for r in csv.DictReader((maps / "flavour_pair_map.v2.csv").open())}
-    order = sorted(rung, key=lambda c: (int(rung[c]["R16_Q1"]), orbit.get(c, rung[c]["class_name"]), c))
-    n = M.PAIR_N
+    return rung, sorted(rung, key=lambda c: (int(rung[c]["R16_Q1"]), orbit.get(c, rung[c]["class_name"]), c))
 
-    def oma(m):
-        ck = M._ck(m)
-        c = fits.get(m, {}).get("cells", {}).get(ck, {}).get("jc2_188", {}).get(n)
-        return None if c is None else {int(k): 1 - v for k, v in c["per_class_auc"].items()}
-    full = {m.rsplit("-s", 1)[1]: oma(m) for m in runs["L188"]}
+
+def _one_minus_auc(M, fits, model: str) -> dict | None:
+    """{class: 1 - AUC} of a model's linear probe at the largest JetClass-II training set."""
+    c = fits.get(model, {}).get("cells", {}).get(M._ck(model), {}).get("jc2_188", {}).get(M.PAIR_N)
+    return None if c is None else {int(k): 1 - v for k, v in c["per_class_auc"].items()}
+
+
+def _seed_ratios(M, fits, runs, num: list, den: str, classes: list) -> np.ndarray:
+    """(runs, classes) array of (1 - AUC) of each model in num over that of the same seed's den
+    model; rows only for seeds where both exist."""
+    base = {m.rsplit("-s", 1)[1]: _one_minus_auc(M, fits, m) for m in runs[den]}
+    rows = []
+    for m in num:
+        a, b = _one_minus_auc(M, fits, m), base.get(m.rsplit("-s", 1)[1])
+        if a is not None and b is not None:
+            rows.append([a[c] / b[c] for c in classes])
+    return np.array(rows).reshape(-1, len(classes))
+
+
+def heat_matrix(M, fits, runs, root) -> tuple[list, list, np.ndarray]:
+    """(class names in row order, group label per row, (rows, columns) array of the mean over
+    runs of (1 - AUC of the class) / (1 - AUC of the same class, 188-class run of the same seed))
+    at the largest JetClass-II training set, rows in _class_order."""
+    rung, order = _class_order(root)
     cols = []
     for key, _ in HEAT_COLUMNS:
         models = [m for a in M.RAND for m in runs[a]] if key == "RAND" else runs[key]
-        per = [(oma(m), full.get(m.rsplit("-s", 1)[1])) for m in models]
-        per = [(a, b) for a, b in per if a is not None and b is not None]
-        cols.append([float(np.mean([a[c] / b[c] for a, b in per])) if per else np.nan for c in order])
+        r = _seed_ratios(M, fits, runs, models, "L188", order)
+        cols.append(r.mean(axis=0) if len(r) else np.full(len(order), np.nan))
     return ([rung[c]["class_name"].removeprefix("label_") for c in order],
             [rung[c]["R16_Q1_name"] for c in order], np.array(cols).T)
 
 
+def class_tex(name: str) -> str:
+    """A class name of the label map typeset: X_YY_bbqq -> $X\\to YY\\to bbqq$, QCD_bb -> QCD ($bb$)."""
+    name = name.removeprefix("label_")
+    head, _, decay = name.partition("_")
+    if head == "QCD":
+        return "QCD" if not decay else f"QCD ({decay})" if decay == "light" else f"QCD (${decay}$)"
+    steps = decay.split("_")
+    out = []
+    for i, step in enumerate(steps):
+        if step == "YY" or i < len(steps) - 1:
+            out.append(step)
+            continue
+        toks, j = [], 0
+        while j < len(step):
+            t = next((tex for k, tex in DECAY_TOKENS if step.startswith(k, j)), None)
+            if t is None:
+                raise ValueError(f"unknown decay product in {name!r} at {step[j:]!r}")
+            toks.append(t)
+            j += next(len(k) for k, tex in DECAY_TOKENS if step.startswith(k, j))
+        out.append(" ".join(toks))
+    return "$" + r"\to ".join(["X", *out]) + "$"
+
+
+def ranked_merges(M, fits, runs, root) -> list:
+    """Per merge in MERGES: [(class name, mean ratio, ratio of each seed)] of the RANKED_N classes
+    whose (1 - AUC) grows most from the finer to the coarser label set, seed by seed."""
+    rung, order = _class_order(root)
+    out = []
+    for coarse, fine, _ in MERGES:
+        r = _seed_ratios(M, fits, runs, runs[coarse], fine, order)
+        if not len(r):
+            out.append([])
+            continue
+        mean = r.mean(axis=0)
+        top = np.argsort(-mean)[:RANKED_N]
+        out.append([(rung[order[i]]["class_name"], float(mean[i]), r[:, i].tolist()) for i in top])
+    return out
+
+
+def figure_per_class_ranked(root, outdir) -> list:
+    M = _mlst()
+    fits = _fits(M)
+    if not fits:
+        return []
+    ranked = ranked_merges(M, fits, M._paper(root), root)
+    if not any(ranked):
+        return []
+    style.use_style()
+    import matplotlib.pyplot as plt
+    fig, axes = plt.subplots(1, len(MERGES), figsize=(2 * style.PANEL, 0.9 * style.PANEL))
+    for ax, rows, (coarse, _, title) in zip(axes, ranked, MERGES):
+        ax.set_title(title, fontsize="small")
+        if not rows:
+            ax.set_axis_off()
+            continue
+        y = np.arange(len(rows))[::-1]
+        look = _look(M, coarse)
+        ax.barh(y, [m for _, m, _ in rows], color=look["color"], height=0.7, left=0.0)
+        for yi, (_, _, per) in zip(y, rows):
+            ax.plot(per, [yi] * len(per), "o", color="black", markersize=2, zorder=3)
+        ax.set_yticks(y)
+        ax.set_yticklabels([class_tex(n) for n, _, _ in rows], fontsize="xx-small")
+        ax.yaxis.set_minor_locator(ticker.NullLocator())
+        ax.axvline(1.0, color="black", linewidth=0.8, linestyle=":")
+        ax.set_xlabel(r"$(1-\mathrm{AUC})$, coarser over finer", fontsize="x-small")
+    fig.tight_layout()
+    return style.save(fig, "per_class_ranked", outdir)
+
+
 def figure_per_class(root, outdir) -> list:
     M = _mlst()
-    fits = M._load(DATA / "linprobe/fits_v3")
+    fits = _fits(M)
     if not fits:
         return []
     runs = M._paper(root)
@@ -334,7 +434,7 @@ def figure_per_class(root, outdir) -> list:
     style.use_style()
     import matplotlib.pyplot as plt
     from matplotlib.colors import TwoSlopeNorm
-    fig, ax = plt.subplots(figsize=(0.75 * style.PANEL, 1.9 * style.PANEL))
+    fig, ax = plt.subplots(figsize=(0.95 * style.PANEL, 1.9 * style.PANEL))
     L = np.log2(R)
     lim = float(np.nanmax(np.abs(L)))
     im = ax.imshow(L, aspect="auto", cmap="RdBu_r", norm=TwoSlopeNorm(0.0, -lim, lim), interpolation="none")
@@ -551,6 +651,7 @@ def figure_schematic(root: pathlib.Path, outdir: pathlib.Path) -> list:
 
 
 FIGURES = (figure_schematic, figure_label_sets, figure_sizes, figure_pairs, figure_per_class,
+           figure_per_class_ranked,
            figure_finetune, figure_mass, figure_sculpting)
 
 
