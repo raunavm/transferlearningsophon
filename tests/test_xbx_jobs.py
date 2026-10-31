@@ -42,8 +42,8 @@ def test_every_paper_model_and_untrained_network_has_an_extraction_and_a_fit():
             assert f"job-{pre}-x-{stem}-raunav.yaml" in SPECS and f"job-{pre}-fit-{stem}-raunav.yaml" in SPECS
     scratch = len(B.SCRATCH_SIGNALS) * len(B.SCRATCH_SEEDS)
     # the stand-in chain (and the two superseded IHEP specs) as written, the real samples (one
-    # extraction and one fit per sample and model), the dry run
-    assert len(SPECS) == (2 + 2 * len(models) + scratch) + (1 + 4 * len(models) + scratch) + 1
+    # extraction and one fit per sample and model), the dry run, the two report jobs
+    assert len(SPECS) == (2 + 2 * len(models) + scratch) + (1 + 4 * len(models) + scratch) + 1 + 2
 
 
 @pytest.mark.parametrize("model,run,arm,k,reg,ckpt", B.models())
@@ -73,7 +73,8 @@ def test_every_spec_is_ours_retries_only_what_a_retry_can_fix_and_parses_as_bash
         d = yaml.safe_load(text)
         assert d["metadata"]["name"].endswith("-raunav") and d["metadata"]["namespace"] == "cms-ml"
         new = name.startswith("job-xbx-ihep-") or "dryrun" in name
-        assert f"--branch \"{B.PIN_IHEP if new else B.PIN}\"" in text
+        pin = B.PIN_REPORT if "-report-" in name else B.PIN_IHEP if new else B.PIN
+        assert f"--branch \"{pin}\"" in text
         rules = d["spec"]["podFailurePolicy"]["rules"]
         assert {"action": "FailJob", "onExitCodes": {"containerName": "main", "operator": "In", "values": [42]}} in rules
         assert any(r["action"] == "Ignore" for r in rules)
@@ -84,7 +85,7 @@ def test_every_spec_is_ours_retries_only_what_a_retry_can_fix_and_parses_as_bash
 
 def test_the_gpu_jobs_stay_off_the_grids_and_the_fine_tunes_gpus_and_the_scratch_runs_on_v100():
     for name, text in SPECS.items():
-        if "-stage-" in name:
+        if "-stage-" in name or "-report-" in name:
             assert "nvidia.com/gpu" not in text
         elif "-scratch-dryrun-" in name:
             # the plumbing check only: any GPU but the fine-tunes' V100s and the grid's RTX 3090s
@@ -109,8 +110,9 @@ def test_the_from_scratch_baseline_is_sophons_recipe_and_resumes(name, out):
 
 
 def test_the_real_sample_jobs_have_their_own_names_and_write_somewhere_new():
+    # the report's dry run reads the stand-in fits by design
     old = {n for n in SPECS if not n.startswith("job-xbx-ihep-") and "dryrun" not in n}
-    new = set(SPECS) - old
+    new = set(SPECS) - old - {"job-xbx-report-dryrun-raunav.yaml"}
     names = lambda ns: {yaml.safe_load(SPECS[n])["metadata"]["name"] for n in ns}
     assert not names(old) & names(new) and all(n.startswith("xbx-ihep-") for n in names(new) - {"xbx-scratch-dryrun-raunav"})
     assert B.FITS_IHEP == "/data/results/eval/xbx/fits_ihep" != B.FITS
@@ -204,3 +206,13 @@ def test_the_staging_job_runs_the_xbx_tests_in_the_image_first_and_allows_no_ski
     i = s.index("python3 -m pytest")
     assert i < s.index("jc2-eval --name qcd") and all(t in s[i:i + 300] for t in B.SELF_TESTS)
     assert 'grep -q "skipped"' in s
+
+
+def test_the_report_jobs_read_the_fits_and_never_overwrite():
+    dry = _script(SPECS["job-xbx-report-dryrun-raunav.yaml"])
+    assert f"xbx_report.py --fits {B.FITS} --as xbb_jc2=xbb --out /data/results/xbx_dryrun/report_{B.PIN_REPORT}" in dry
+    real = _script(SPECS["job-xbx-ihep-report-raunav.yaml"])
+    assert f"xbx_report.py --fits {B.FITS_IHEP} --out " in real and "--as" not in real
+    for s in (dry, real):
+        out = s.split("--out ")[1].split()[0]
+        assert f"[ ! -e {out} ]" in s

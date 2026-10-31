@@ -1265,6 +1265,11 @@ CAPTIONS = {
              "\\MlstBootResamples{} resamples, averaged over the runs). The baseline is the randomly "
              "initialized network of the same seed for the linear probes and the network trained from "
              "scratch on the same subset for fine-tuning. The macro AUC is used for JetClass-II and JetClass."),
+    "xbx": ("tab:xbx", "Resonance tagging in the soft-drop mass window, \\XbxWindowLo--\\XbxWindowHi~GeV: signal "
+            "efficiency (\\%) at the QCD efficiency given, mean $\\pm$ standard deviation over the pretraining "
+            "runs. Transfer: Sophon's classifier on the frozen features, its seeds averaged per run (the "
+            "randomly initialized network: the linear probe). Direct: Sophon's discriminant from the output "
+            "scores, where $X\\to b\\bar b$ is a class of its own."),
     "compute": ("tab:compute", "GPU types and GPU-hours of every pretraining run, summed over the "
                 "training and validation passes of its completed epochs as each epoch recorded them."),
 }
@@ -1274,7 +1279,11 @@ CAPTIONS = {
 PLACEHOLDERS = (("mlp", "mlst_mlp", False, None), ("fill", "mlst_fill", False, None),
                 ("mass", "mlst_mass", False, {"__MLP_SEEDS__": r"\pending{n}"}),
                 ("sculpt", "mlst_sculpt", False, {"__SCULPT_BINS__": r"\pending{bins}"}), ("ft", "mlst_ft", True, None),
-                ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, None))
+                ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, None),
+                ("xbx", "mlst_xbx", False, None))
+# the resonance-tagging section's sample macros (experiments/XBS/xbx_report.py macros)
+XBX_MACROS = ("XbxMx", "XbxWindowLo", "XbxWindowHi") + tuple(
+    f"{s}{k}" for s in ("Xbb", "Xbs") for k in ("NTrainPerClass", "Repetition", "NEvalSignal", "NEvalQcd"))
 
 
 def _float(key: str, body: str, wide: bool = False, fill: dict | None = None) -> str:
@@ -1311,6 +1320,29 @@ def mlp_seeds(mass: dict) -> str:
     if len(n) != 1:
         raise SystemExit(f"FATAL: the mass MLPs average different numbers of seeds: {sorted(n)}")
     return str(n.pop())
+
+
+def xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int) -> None:
+    """X->bb and X->bs from the pulled fits (data/v2/xbx/<signal>/<model>.json) through
+    experiments/XBS/xbx_report.py, the code the dry run exercised; red markers until they exist."""
+    from types import SimpleNamespace
+    spec = importlib.util.spec_from_file_location("xbx_report", root / "experiments/XBS/xbx_report.py")
+    XR = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(XR)
+    xfits = XR.load(data / "xbx") if (data / "xbx").is_dir() else {}
+    MT = SimpleNamespace(fmt_pm=fmt_pm, fmt_int=fmt_int)
+    have = {n for sigs in xfits.values() for n in sigs}
+    if xfits:
+        XR.macros(em, MT, xfits, index)
+        out["tables/mlst_xbx.tex"] = _float("xbx", XR.table(
+            SimpleNamespace(LABEL=LABEL, _cell=_cell, RAND=RAND, INIT_MODELS=INIT_MODELS), MT, runs, xfits))
+    else:
+        missing.append("X->bb and X->bs fits -- experiments/FIGS/data/v2/xbx/")
+    for name in XBX_MACROS:
+        if name not in em.provenance:
+            sig = {"Xbb": "xbb", "Xbs": "xbs"}.get(name[:3])
+            why = "sample not in" if sig and xfits and sig not in have else "samples not in"
+            em.macro(name, r"\pending{" + why + "}", root / "experiments/XBS/xbx_report.py", "pending")
 
 
 def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict:
@@ -1423,6 +1455,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
             "top", per, runs, bench_rows, LABEL, SCRATCH, fmt_pm, _two), False)
         out["tables/mlst_bench_qg.tex"] = _float("bench_qg", V4.table_bench(
             "qg", per, runs, bench_rows, LABEL, SCRATCH, fmt_pm, _two), False)
+    xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int)
     if comp:
         body, hours = table_compute(comp, runs, fmt_int)
         out["tables/compute.tex"] = _float("compute", body)
