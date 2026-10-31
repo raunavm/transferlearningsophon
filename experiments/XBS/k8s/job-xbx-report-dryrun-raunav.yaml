@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: xbx-report-dryrun-raunav
+  name: xbx-report-dryrun-s228-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 6

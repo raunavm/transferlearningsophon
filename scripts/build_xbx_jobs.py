@@ -442,8 +442,10 @@ def build(signals=SIGNALS, mx=MX) -> dict[str, str]:
         "xbb_jc2", 1, name="xbx-scratch-dryrun-raunav", pin=PIN_IHEP, out_root=DRYRUN_ROOT, epochs=2,
         mx=X.SOPHON_MX, extract_args=" --max-jets 200000", gpus=DRYRUN_GPUS)
     # the section's figure, table and macros: on the stand-in fits (dry run), then the real ones
+    # the pin in the name: each tagged dry run is its own job (the first ran at mtx-s2.27)
+    tag = PIN_REPORT.removeprefix("mtx-s").replace(".", "")
     specs["job-xbx-report-dryrun-raunav.yaml"] = report_spec(
-        "xbx-report-dryrun-raunav", FITS, f"/data/results/xbx_dryrun/report_{PIN_REPORT}", " --as xbb_jc2=xbb")
+        f"xbx-report-dryrun-s{tag}-raunav", FITS, f"/data/results/xbx_dryrun/report_{PIN_REPORT}", " --as xbb_jc2=xbb")
     specs["job-xbx-ihep-report-raunav.yaml"] = report_spec("xbx-ihep-report-raunav", FITS_IHEP,
                                                            f"{EX_ROOT}/report_ihep_{PIN_REPORT}")
     return specs
