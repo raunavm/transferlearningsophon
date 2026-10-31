@@ -12,6 +12,8 @@ figure job, colour and marker per configuration fixed there).
   per_class_jc2            JetClass-II: each class's (1 - AUC) over the 188-class model's, run by
                            run, averaged; rows grouped by topology, flavor siblings adjacent
   per_class_ranked         the fifteen classes each merge of the hierarchy hurts most
+  roc_pairs, roc_bench      rejection against signal efficiency with the ratio to the 188-class
+                           model: flavor-sibling pairs; top and quark/gluon (linear probes)
   missing_features         balanced JetClass-II with the top or quark/gluon inputs zeroed (filled)
                            or imputed (open), over all features, same run
   finetune_vs_training_size  fine-tuning against the training-set size, with the ratio to the
@@ -122,7 +124,8 @@ def _look(M, row: str) -> dict:
     if row in M.RAND:
         return {"color": style.RAND_COLOUR, "marker": "o", "linestyle": "none"}
     if row in M.FLAV:
-        return {"color": "black", "marker": "D", "linestyle": "none"}
+        return {"color": style.FLAV_COLOUR, "marker": style.FLAV_MARKERS[row.removeprefix("FLAV_")],
+                "linestyle": "none"}
     if row == M.SCRATCH:
         return dict(style.SCRATCH_STYLE)
     return dict(style.INIT_STYLE)
@@ -320,6 +323,97 @@ def figure_pairs(root, outdir) -> list:
                       _positions(_groups(M, False)), ncols=3, width=0.62 * style.PANEL,
                       fill=lambda k, row: FILL[status.get(row, {}).get(k, "apart")])
     return style.save(fig, "pairs", outdir)
+
+
+# ------------------------------------------------------------------ ROC curves
+# (curves dataset, panel title); rows: the configurations drawn ("RAND" pools the five partitions)
+ROC_PAIRS = (("jc2bal_pairs.bb_vs_cc", r"$X\to b\bar b$ vs $c\bar c$"),
+             ("jc2bal_pairs.qcd_bb_vs_cc", r"QCD $bb$ vs $cc$"),
+             ("jc2bal_pairs.bc_vs_bq_cs", r"$X\to bc$ vs $bq$, $cs$"))
+ROC_BENCH = (("top", "Top tagging"), ("qg", "Quark/gluon tagging"), ("qg_herwig", "Quark/gluon, Herwig"))
+ROC_ROWS_PAIRS = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND", "FLAV_F0", "FLAV_F1")
+ROC_ROWS_BENCH = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND", "INIT")
+ROC_MIN_EPS = 0.1
+FLAV_DASHES = {"FLAV_F0": (0, (6, 2)), "FLAV_F1": (0, (2, 1.5)), "FLAV_F1R": (0, (6, 2, 2, 2))}
+
+
+def _probe_curves() -> dict:
+    """cells of the probes' ROC file: v4 once pulled, else v3 (experiments/FT/ft_curves.py probes)."""
+    for name in ("linprobe_fits_v4", "linprobe_fits_v3"):
+        f = DATA / "curves" / f"{name}.json"
+        if f.exists():
+            return json.loads(f.read_text())["cells"]
+    return {}
+
+
+def roc_rows(M, runs, cells, ds: str, rows) -> dict:
+    """{row: (eps_s, [rejection of each run])} of a dataset's ROC points, runs with the curve only."""
+    out = {}
+    for row in rows:
+        models = [m for a in M.RAND for m in runs[a]] if row == "RAND" else \
+            list(M.INIT_MODELS) if row == "INIT" else runs[row]
+        per, eps = [], None
+        for m in models:
+            r = cells.get(m, {}).get(M._ck(m), {}).get(ds, {}).get("roc")
+            if r:
+                eps, per = r["eps_s"], per + [r["rejection"]]
+        if per:
+            out[row] = (eps, per)
+    return out
+
+
+def _roc_figure(M, runs, cells, panels, rows, name, outdir) -> list:
+    got = [(ds, title, roc_rows(M, runs, cells, ds, rows)) for ds, title in panels]
+    got = [g for g in got if "L188" in g[2]]
+    if not got:
+        return []
+    style.use_style()
+    import matplotlib.pyplot as plt
+    fig, axes = plt.subplots(2, len(got), figsize=(0.75 * style.PANEL * len(got) + 0.5, 1.05 * style.PANEL),
+                             sharex=True, squeeze=False, gridspec_kw={"height_ratios": (3, 1.2)})
+    for j, (ds, title, rr) in enumerate(got):
+        top, bot = axes[0, j], axes[1, j]
+        eps_ref, ref = rr["L188"]
+        ref_mean = np.mean(ref, axis=0)
+        for row, (eps, per) in rr.items():
+            eps = np.asarray(eps)
+            keep = eps >= ROC_MIN_EPS
+            per = np.asarray(per)[:, keep]
+            mean = per.mean(axis=0)
+            look = {"color": style.RAND_COLOUR, "linestyle": "-"} if row == "RAND" else \
+                {"color": style.INIT_STYLE["color"], "linestyle": ":"} if row == "INIT" else \
+                {"color": style.FLAV_COLOUR, "linestyle": FLAV_DASHES[row]} if row in FLAV_DASHES else _look(M, row)
+            label = "Random partitions" if row == "RAND" else ROW_NAME[row]
+            ls = look["linestyle"]
+            top.plot(eps[keep], mean, color=look["color"], linestyle=ls, linewidth=2, label=label)
+            ratio = per / ref_mean[keep]
+            bot.plot(eps[keep], ratio.mean(axis=0), color=look["color"], linestyle=ls, linewidth=2)
+            if len(per) > 1:
+                top.fill_between(eps[keep], per.min(axis=0), per.max(axis=0), color=look["color"], alpha=0.15,
+                                 linewidth=0)
+                bot.fill_between(eps[keep], ratio.min(axis=0), ratio.max(axis=0), color=look["color"],
+                                 alpha=0.15, linewidth=0)
+        top.set_yscale("log")
+        top.set_title(title, fontsize="small", loc="left")
+        bot.axhline(1.0, color="black", linewidth=0.8)
+        bot.set_xlabel(r"Signal efficiency $\varepsilon_S$")
+    axes[0, 0].set_ylabel(r"Background rejection $1/\varepsilon_B$")
+    axes[1, 0].set_ylabel("Ratio to 188")
+    axes[0, 0].legend(frameon=False, fontsize="xx-small")
+    fig.tight_layout()
+    return style.save(fig, name, outdir)
+
+
+def figure_roc_pairs(root, outdir) -> list:
+    """Linear probes between flavor siblings on the balanced JetClass-II pairs."""
+    M = _mlst()
+    return _roc_figure(M, M._paper(root), _probe_curves(), ROC_PAIRS, ROC_ROWS_PAIRS, "roc_pairs", outdir)
+
+
+def figure_roc_bench(root, outdir) -> list:
+    """Linear probes on top and quark/gluon tagging (Pythia and Herwig test sets), largest training set."""
+    M = _mlst()
+    return _roc_figure(M, M._paper(root), _probe_curves(), ROC_BENCH, ROC_ROWS_BENCH, "roc_bench", outdir)
 
 
 # ------------------------------------------------------------------ missing features
@@ -802,7 +896,7 @@ def figure_schematic(root: pathlib.Path, outdir: pathlib.Path) -> list:
 
 
 FIGURES = (figure_schematic, figure_label_sets, figure_sizes, figure_pairs, figure_per_class,
-           figure_per_class_ranked, figure_missing_features,
+           figure_per_class_ranked, figure_missing_features, figure_roc_pairs, figure_roc_bench,
            figure_finetune, figure_mass, figure_mass_response_hist, figure_sculpting)
 
 

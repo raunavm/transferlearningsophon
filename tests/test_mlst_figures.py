@@ -212,3 +212,24 @@ def test_the_sculpting_and_response_figures_read_the_curve_files(tmp_path, monke
     for fig in (F.figure_sculpting, F.figure_mass_response_hist):
         paths = fig(REPO, tmp_path / "out")
         assert sorted(p.suffix for p in paths) == [".pdf", ".png"] and all(p.stat().st_size > 0 for p in paths)
+
+
+def test_the_roc_figures_pool_the_random_partitions_and_take_each_run(tmp_path, monkeypatch):
+    F = _mod("mlst_figures", "experiments/FIGS/mlst_figures.py")
+    M = F._mlst()
+    runs = M._paper(REPO)
+    eps = [0.05 * i for i in range(1, 20)]
+    cells = {}
+    models = [m for ms in runs.values() for m in ms] + list(M.INIT_MODELS)
+    for i, m in enumerate(models):
+        roc = {"eps_s": eps, "rejection": [(1 + 0.01 * i) / e for e in eps]}
+        cells[m] = {M._ck(m): {ds: {"roc": roc} for ds, _ in F.ROC_PAIRS + F.ROC_BENCH}}
+    (tmp_path / "curves").mkdir()
+    (tmp_path / "curves/linprobe_fits_v4.json").write_text(json.dumps({"cells": cells}))
+    monkeypatch.setattr(F, "DATA", tmp_path)
+    rr = F.roc_rows(M, runs, F._probe_curves(), "top", F.ROC_ROWS_BENCH)
+    assert len(rr["RAND"][1]) == sum(len(runs[a]) for a in M.RAND)
+    assert len(rr["INIT"][1]) == len(M.INIT_MODELS) and len(rr["L188"][1]) == len(runs["L188"])
+    for fig in (F.figure_roc_pairs, F.figure_roc_bench):
+        paths = fig(REPO, tmp_path / "out")
+        assert sorted(p.suffix for p in paths) == [".pdf", ".png"] and all(p.stat().st_size > 0 for p in paths)
