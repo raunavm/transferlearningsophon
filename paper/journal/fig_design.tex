@@ -1,11 +1,11 @@
 % Figure 1: the design of the study (TikZ; compiled with the paper, so its text is the paper's font).
 % Every count is a macro of the generated results (results_generated.tex) or of the preamble.
 % Drawn for the article class's 11pt text width (about 12.6 cm).
-\begin{figure*}[t]
+\begin{figure*}[!htb]
 \centering
 \begin{tikzpicture}[
   font=\footnotesize,
-  lvl/.style={draw, rounded corners=2pt, fill=#1, minimum width=3.0cm, minimum height=0.8cm,
+  lvl/.style={draw, rounded corners=2pt, fill=#1, minimum width=3.3cm, minimum height=0.8cm,
               align=center, inner sep=2pt},
   ctl/.style={draw, rounded corners=2pt, fill=#1, minimum width=4.3cm, minimum height=0.8cm,
               align=center, inner sep=2pt},
@@ -23,9 +23,9 @@
 \draw[merge] (l188) -- (l162);
 \draw[merge] (l162) -- (l43);
 \draw[merge] (l43)  -- (l17);
-\node[note] at (3.15, -0.65) {merge the \LitJetClassTwoNQcdClasses{} QCD classes};
-\node[note, text width=3.6cm] at (3.15, -1.95) {merge $g$ with $u,d,s$ and $e$ with $\mu$; keep only whether a $b$, else a $c$, is present};
-\node[note] at (3.15, -3.25) {remove quark flavor};
+\node[note] at (3.3, -0.65) {merge the \LitJetClassTwoNQcdClasses{} QCD classes};
+\node[note, text width=3.6cm] at (3.3, -1.95) {merge $g$ with $u,d,s$ and $e$ with $\mu$; keep only whether a $b$, else a $c$, is present};
+\node[note] at (3.3, -3.25) {remove quark flavor};
 \node[anchor=west, font=\small\bfseries] at (7.55, 0.85) {Controls};
 \node[ctl={crand!22}] (rand) at (10.35,  0.0) {random partitions\\{\scriptsize \Kcoarse{} groups, random members}};
 \node[ctl={cflav!22}] (flav) at (10.35, -1.3) {flavor-controlled partitions\\{\scriptsize no boundary, $b$ boundary, random boundary}};
@@ -35,10 +35,10 @@
 \node[anchor=west, font=\small\bfseries] at (-0.05, -5.0) {(b) Pipeline};
 \node[stage, text width=2.3cm] (seed) at (1.25, -6.3) {seed $s$: same jets, same order, same initial weights};
 \node[stage, text width=2.3cm] (pre)  at (4.3,  -6.3) {pretraining on JetClass-II, one run per label set and seed};
-\node[stage, text width=2.6cm] (frz)  at (7.55, -5.8) {frozen features: linear and MLP probes};
-\node[stage, text width=2.6cm] (ft)   at (7.55, -6.8) {full fine-tuning vs.\ training from scratch};
+\node[stage, text width=2.6cm] (frz)  at (7.55, -5.55) {frozen features: linear and MLP probes};
+\node[stage, text width=2.6cm] (ft)   at (7.55, -7.05) {full fine-tuning vs.\ training from scratch};
 \node[stage, text width=2.55cm] (task) at (11.1, -6.3)
-  {JetClass-II, JetClass, top, quark/gluon (Pythia, Herwig), class pairs, jet mass, $X\to b\bar b$, $X\to bs$};
+  {JetClass-II, JetClass, top, quark/gluon (Pythia, Herwig), class pairs, jet mass, \mbox{$X\to b\bar b$}, \mbox{$X\to bs$}};
 \draw[flow] (seed) -- (pre);
 \draw[flow] (pre.east) -- ++(0.3,0) |- (frz.west);
 \draw[flow] (pre.east) -- ++(0.3,0) |- (ft.west);
