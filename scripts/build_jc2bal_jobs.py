@@ -334,6 +334,33 @@ echo "JC2BAL {'MLP' if mlp else 'FIT'} ${{MODEL}} COMPLETE"
                           "8" if mlp else "4", what)
 
 
+HEAD_ROOT = "/data/results/eval/v2_head"
+HEAD_MODELS = ("l188", "l162", "r42q1", "r16q1", "l162mass", "r16q1mass")
+
+
+def masscurves_spec(tag: str) -> tuple:
+    """CPU: the mass-response histograms and the sculpting curve (JS distance on a grid of QCD
+    efficiencies) of every model with head outputs (the hierarchy and the mass-output runs)."""
+    launch = _launch()
+    name = "masscurves-raunav"
+    paper = [l.strip() for l in PAPER_RUNS.read_text().splitlines() if l.strip() and not l.startswith("#")]
+    models = [m for m in paper if m[len("mtx-"):].split("-")[0] in HEAD_MODELS]
+    script = f"""set -euo pipefail
+git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+cd /workspace/tls
+OUT={HEAD_ROOT}/curves_v2
+mkdir -p ${{OUT}}
+for M in {' '.join(models)}; do
+  H={HEAD_ROOT}/${{M}}/test/best70
+  [ -f ${{H}}/head_outputs.npz ] || {{ echo "FATAL: no head outputs for ${{M}}"; exit 42; }}
+  [ -f ${{OUT}}/${{M}}_sculpting_v2.json ] || python3 experiments/EVAL/mass_sculpting.py --head ${{H}} --out ${{OUT}}/${{M}}_sculpting_v2.json
+  [ -f ${{OUT}}/${{M}}_response.json ] || python3 experiments/EVAL/mass_response_hist.py --head ${{H}} --out ${{OUT}}/${{M}}_response.json
+done
+echo "MASSCURVES COMPLETE"
+"""
+    return name, _cpu_job(name, script, launch, "32Gi", "4", "mass-response histograms and sculpting curves")
+
+
 def _cpu_job(name: str, script: str, launch, mem: str, cpu: str, what: str) -> str:
     body = "\n".join(("          " + ln) if ln else "" for ln in script.splitlines())
     return f"""apiVersion: batch/v1
@@ -378,14 +405,15 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
     ap.add_argument("--parallelism", type=int, default=5)
-    ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "extract", "fit", "mlp"))
+    ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "extract", "fit", "mlp", "masscurves"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
         name, text = {"stage": lambda: stage_spec(a.tag), "ref": lambda: ref_spec(a.tag),
                       "extract": lambda: extract_spec(a.tag, a.parallelism),
                       "fit": lambda: fit_spec(a.tag, a.parallelism, False),
-                      "mlp": lambda: fit_spec(a.tag, a.parallelism, True)}[kind]()
+                      "mlp": lambda: fit_spec(a.tag, a.parallelism, True),
+                      "masscurves": lambda: masscurves_spec(a.tag)}[kind]()
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(text)
         print(p)

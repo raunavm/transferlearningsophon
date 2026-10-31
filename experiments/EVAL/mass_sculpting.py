@@ -30,6 +30,9 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 HEAD_FILE = "head_outputs.npz"
 QCD_LABELS = (161, 188)                      # native labels [161, 188)
 WORKING_POINTS = (0.1, 0.01)                 # QCD efficiency of the cut
+# 2026-10-31: the divergence and the Jensen-Shannon DISTANCE (its square root, the quantity CMS
+# reports, arXiv:2604.09809 Sec. 6.2 and Fig. 9) on a grid of QCD efficiencies, for the curve
+EFF_GRID = tuple(float(x) for x in np.round(np.logspace(-3, np.log10(0.5), 16), 6))
 BINS = np.arange(20, 501, 20)                # jet_sdmass, GeV: the selection's range
 
 
@@ -75,7 +78,14 @@ def sculpting(s: np.ndarray, msd: np.ndarray) -> dict:
         out[str(eff)] = {"threshold": cut, "n_pass": int(sel.sum()),
                          "eff_realised": float(sel.mean()), "hist_after": after.tolist(),
                          "jsd": jsd(before, after)}
-    return {"hist_before": before.tolist(), "working_points": out}
+    curve = []
+    for eff in EFF_GRID:
+        k = max(int(round(eff * s.size)), 1)
+        sel = s >= float(desc[k - 1])
+        d = jsd(before, hist(msd[sel]))
+        curve.append({"eff": eff, "eff_realised": float(sel.mean()), "n_pass": int(sel.sum()),
+                      "jsd": d, "js_distance": float(np.sqrt(d))})
+    return {"hist_before": before.tolist(), "working_points": out, "curve": curve}
 
 
 def main(argv=None) -> int:
@@ -104,7 +114,7 @@ def main(argv=None) -> int:
            "head_outputs_sha256": (man.get("head_outputs") or {}).get("sha256"),
            "qcd_nodes": qcd_nodes, "n_qcd": int(qcd.sum()), "n_jets": int(lab.size),
            "score": "1 - p_QCD, p_QCD = summed softmax probability of the QCD nodes",
-           "bins_jet_sdmass": BINS.tolist(), "divergence": "Jensen-Shannon, base 2",
+           "bins_jet_sdmass": BINS.tolist(), "divergence": "Jensen-Shannon, base 2; js_distance = its square root",
            **sculpting(s, msd),
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest()}
     a.out.parent.mkdir(parents=True, exist_ok=True)
