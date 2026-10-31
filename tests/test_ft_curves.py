@@ -245,10 +245,11 @@ def test_the_specs_on_disk_are_the_generators(specs):
 def test_every_job_is_ours_cpu_only_pinned_and_tried_once(specs):
     jobs = {p: yaml.safe_load(t) for p, t in specs.items() if p.parent == BC.OUT_DIR}
     assert {d["metadata"]["name"] for d in jobs.values()} == {
-        f"{w}-{x}-raunav" for w in ("curves", "boot") for x in ("ft", "jc2", "probe")} | {"curves-full-raunav"}
+        f"{w}-{x}-raunav" for w in ("curves", "boot") for x in ("ft", "jc2", "probe", "probe-v4")} | {"curves-full-raunav"}
     for p, d in jobs.items():
         c = d["spec"]["template"]["spec"]["containers"][0]
-        pin = BC.PIN_FULL if d["metadata"]["name"] == "curves-full-raunav" else BC.PIN
+        name = d["metadata"]["name"]
+        pin = BC.PIN_FULL if name == "curves-full-raunav" else BC.PIN_V4 if "-v4-" in name else BC.PIN
         assert d["spec"]["backoffLimit"] == 1 and "nvidia.com/gpu" not in c["resources"]["limits"]
         assert f'--branch "{pin}"' in c["args"][0] and "configmap" not in specs[p].lower()
 
@@ -313,3 +314,11 @@ def test_a_retried_curves_pod_skips_the_trees_already_written(tmp_path, monkeypa
     assert r.returncode == 0 and f"skip {tmp_path}/best70_leg2.json" in r.stdout
     calls = log.read_text().splitlines()
     assert len(calls) == 1 and calls[0].endswith(f"--out {tmp_path}/best70_leg_top.json")
+
+
+def test_the_v4_bootstrap_covers_every_task_and_waits_for_every_fit(specs):
+    text = specs[BC.OUT_DIR / "job-boot-probe-v4-raunav.yaml"]
+    calls = [ln.split()[1] for ln in text.splitlines() if ln.strip().startswith("bootf ") and "()" not in ln]
+    assert len(calls) == 3 * 4 + 1 + 1 + len(BC.PAIRS_188) and "jc2bal_N1000000" in calls and "jc1_N1000000" in calls
+    assert f"{BC.FITS_V4}/{{mtx-l188-s1," in text and f"--model \"${{m%%:*}}={BC.PROBS_V4}/" in text
+    assert "--pair mtx-r16q1-s1/mtx-l188-s1" in text and "--pair mtx-l188-s1/init-s1" in text
