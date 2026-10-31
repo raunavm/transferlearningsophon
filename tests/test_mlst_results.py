@@ -38,7 +38,8 @@ def test_a_cell_is_the_mean_and_sample_sd_with_missing_runs_marked():
 def test_two_runs_print_both_values_to_the_digit_of_their_difference():
     # never beyond four significant figures (2026-10-31), even where the difference is smaller
     assert M._cell([1.1661, 1.1652], 2, MT.fmt_pm) == "1.166, 1.165"
-    assert M._cell([22.515, 22.467], 2, MT.fmt_pm, sep=" and ") == "22.515 and 22.467"
+    assert M._cell([22.515, 22.467], 2, MT.fmt_pm, sep=" and ") == "22.52 and 22.47"
+    assert M._cell([0.4123, 0.4161], 2, MT.fmt_pm) == "0.4123, 0.4161"
     assert M._cell([0.5, 0.5], 2, MT.fmt_pm) == "0.500, 0.500"
 
 
