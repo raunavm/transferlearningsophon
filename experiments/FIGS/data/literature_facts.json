@@ -488,6 +488,210 @@
    "source": "arXiv:2202.03772",
    "location": "Sec. 5.1 (training dataset size)",
    "quote": "we perform additional trainings using only 2% and 10% of the JETCLASS dataset"
+  },
+  {
+   "macro": "LitSophonEtaMax",
+   "value": "2.5",
+   "source": "arXiv:2405.12972",
+   "location": "App. A",
+   "quote": "Selected jets must satisfy 200 < pT < 2500 GeV, 20 < mSD < 500 GeV, and |eta| < 2.5."
+  },
+  {
+   "macro": "LitBHadronLifetimePs",
+   "value": "1.5",
+   "source": "arXiv:1712.07158",
+   "location": "Sec. 4.1",
+   "quote": "the lifetime of hadrons containing b quarks is of the order of 1.5 ps, while the lifetime of c hadrons is 1 ps or less."
+  },
+  {
+   "macro": "LitCHadronLifetimePs",
+   "value": "1",
+   "source": "arXiv:1712.07158",
+   "location": "Sec. 4.1",
+   "quote": "the lifetime of c hadrons is 1 ps or less."
+  },
+  {
+   "macro": "LitOmnilearnPidDropProb",
+   "value": "0.2",
+   "source": "arXiv:2502.14652",
+   "location": "Sec. II.A",
+   "quote": "With a probability p = 0.2 we drop the PID information by replacing it with zeros."
+  },
+  {
+   "macro": "LitMahajanFtNineKLarge",
+   "value": "48.5",
+   "source": "arXiv:1805.00932",
+   "location": "Fig. 1 (IG-1B-17k, IN-9k, full fine-tuning)",
+   "quote": "48.4 48.2 48.5 49.0"
+  },
+  {
+   "macro": "LitMahajanFtNineKSmall",
+   "value": "48.4",
+   "source": "arXiv:1805.00932",
+   "location": "Fig. 1 (IG-940M-1.5k, IN-9k, full fine-tuning)",
+   "quote": "48.4 48.2 48.5 49.0"
+  },
+  {
+   "macro": "LitMahajanFtOneKSmall",
+   "value": "84.2",
+   "source": "arXiv:1805.00932",
+   "location": "Fig. 1 (IG-940M-1.5k, IN-1k, full fine-tuning)",
+   "quote": "84.2 83.4 83.6 84.2"
+  },
+  {
+   "macro": "LitMahajanFtOneKLarge",
+   "value": "83.6",
+   "source": "arXiv:1805.00932",
+   "location": "Fig. 1 (IG-1B-17k, IN-1k, full fine-tuning)",
+   "quote": "84.2 83.4 83.6 84.2"
+  },
+  {
+   "macro": "LitChenGainFifteen",
+   "value": "0.16",
+   "source": "arXiv:1901.07012",
+   "location": "Table VIII (15 coarse classes, CIFAR-100)",
+   "quote": "15 85.14 85.30 (+0.16)"
+  },
+  {
+   "macro": "LitChenGainTwenty",
+   "value": "0.01",
+   "source": "arXiv:1901.07012",
+   "location": "Table VIII (20 coarse classes, CIFAR-100)",
+   "quote": "20 85.04 85.05 (+0.01)"
+  },
+  {
+   "macro": "LitChenCoarseFifteen",
+   "value": "15",
+   "source": "arXiv:1901.07012",
+   "location": "Table VIII",
+   "quote": "15 85.14 85.30 (+0.16)"
+  },
+  {
+   "macro": "LitChenCoarseTwenty",
+   "value": "20",
+   "source": "arXiv:1901.07012",
+   "location": "Table VIII",
+   "quote": "20 85.04 85.05 (+0.01)"
+  },
+  {
+   "macro": "LitChenRandomMaxGain",
+   "value": "2.78",
+   "source": "arXiv:1901.07012",
+   "location": "Sec. VI-A, Table VI",
+   "quote": "fine-grain training achieves up to 2.78% improvement and always outperforms coarse-grain training under various customized coarse-grain classes."
+  },
+  {
+   "macro": "LitGlopartMassLambda",
+   "value": "5",
+   "source": "CERN-THESIS-2024-281",
+   "location": "Eq. (11.7), Sec. 11.2.1",
+   "quote": "The hyperparameter 𝜆 is tuned and adjusted to 5."
+  },
+  {
+   "macro": "LitGlopartAddedAucBase",
+   "value": "0.9555",
+   "source": "CERN-THESIS-2024-281",
+   "location": "Sec. 11.4.1, Fig. 11.19 (H->WW 4q vs QCD)",
+   "quote": "cat. study baseline (AUC : 0.9555)"
+  },
+  {
+   "macro": "LitGlopartAddedAucTop",
+   "value": "0.9593",
+   "source": "CERN-THESIS-2024-281",
+   "location": "Sec. 11.4.1, Fig. 11.19 (H->WW 4q vs QCD)",
+   "quote": "cat. study baseline (+2-prong +top) (AUC : 0.9593)"
+  },
+  {
+   "macro": "LitCmsSdZcut",
+   "value": "0.1",
+   "source": "arXiv:2004.08262",
+   "location": "Sec. 6.1",
+   "quote": "The values used in CMS are zcut = 0.1 and β = 0"
+  },
+  {
+   "macro": "LitCmsSdBeta",
+   "value": "0",
+   "source": "arXiv:2004.08262",
+   "location": "Sec. 6.1",
+   "quote": "The values used in CMS are zcut = 0.1 and β = 0"
+  },
+  {
+   "macro": "LitQgNJetsMillion",
+   "value": "2",
+   "source": "arXiv:2202.03772",
+   "location": "Sec. 5.2",
+   "quote": "This dataset also consists of 2 M jets, with a recommended train/validation/test splitting of 1.6/0.2/0.2 M."
+  },
+  {
+   "macro": "LitQgTrainMillion",
+   "value": "1.6",
+   "source": "arXiv:2202.03772",
+   "location": "Sec. 5.2",
+   "quote": "This dataset also consists of 2 M jets, with a recommended train/validation/test splitting of 1.6/0.2/0.2 M."
+  },
+  {
+   "macro": "LitQgValMillion",
+   "value": "0.2",
+   "source": "arXiv:2202.03772",
+   "location": "Sec. 5.2",
+   "quote": "This dataset also consists of 2 M jets, with a recommended train/validation/test splitting of 1.6/0.2/0.2 M."
+  },
+  {
+   "macro": "LitQgRapidityMax",
+   "value": "1.7",
+   "source": "Zenodo 10.5281/zenodo.3164691",
+   "location": "Zenodo record 3164691, description",
+   "quote": "p_T^jet in [500,550] GeV, |y^jet| < 1.7"
+  },
+  {
+   "macro": "LitHerwigVersion",
+   "value": "7.1.4",
+   "source": "Zenodo 10.5281/zenodo.3066475",
+   "location": "record description",
+   "quote": "Two datasets of quark and gluon jets generated with Herwig 7.1.4"
+  },
+  {
+   "macro": "LitObjectivesFewestJets",
+   "value": "103",
+   "source": "arXiv:2606.14870",
+   "location": "Table XVII (Micro model, Npt = 10^8: Classifier 136 vs MPM 218 at 10^3, 331 vs 539 at 10^4)",
+   "quote": "across fine-tuning sample sizes Nft ∈ {103 , 104 , 105 , 106 }",
+   "tex": "\\ensuremath{10^{3}}"
+  },
+  {
+   "macro": "LitPartTopNTrainMillion",
+   "value": "1.2",
+   "source": "arXiv:2202.03772",
+   "location": "Sec. 5.2",
+   "quote": "(1.2/0.4/0.4 M for train/validation/test) jets in two classes"
+  },
+  {
+   "macro": "LitLandscapeParticlenetEnsMean",
+   "value": "1412",
+   "source": "arXiv:1902.09914",
+   "location": "Table 1 (ParticleNet, ensemble mean of 1/eps_B at eps_S=0.3)",
+   "quote": "ParticleNet [47] 0.985 0.938 1298+-46 1412+-45 1393+-41 498k"
+  },
+  {
+   "macro": "LitPartFtHeadReinits",
+   "value": "9",
+   "source": "arXiv:2202.03772",
+   "location": "Sec. 5.2",
+   "quote": "We run a total of 9 experiments, starting from the same pre-trained model but different random initializations of the replaced MLP"
+  },
+  {
+   "macro": "LitSophonBlocksCode",
+   "value": "8",
+   "source": "github.com/jet-universe/sophon@9dd6dd6",
+   "location": "networks/example_ParticleTransformer_sophon.py line 67",
+   "quote": "num_layers=8"
+  },
+  {
+   "macro": "LitGrasHerwigVersion",
+   "value": "2.7.1",
+   "source": "arXiv:1704.03878",
+   "location": "Sec. 2 (list of generators)",
+   "quote": "Herwig++ 2.7.1 [40, 41]"
   }
  ]
 }

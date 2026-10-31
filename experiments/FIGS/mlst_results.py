@@ -38,6 +38,7 @@ and the macros the text quotes (Mlst*, Compute*).
 from __future__ import annotations
 
 import collections
+import importlib.util
 import csv
 import json
 import math
@@ -45,6 +46,10 @@ import pathlib
 import re
 
 import numpy as np
+
+_V4_SPEC = importlib.util.spec_from_file_location("mlst_v4", pathlib.Path(__file__).resolve().parent / "mlst_v4.py")
+V4 = importlib.util.module_from_spec(_V4_SPEC)
+_V4_SPEC.loader.exec_module(V4)
 
 MAIN = ("L188", "L162", "R42_Q1", "R16_Q1")
 MASS = ("L162_MASS", "R16_Q1_MASS")
@@ -166,12 +171,14 @@ def _lone(x: float) -> str:
 
 
 def _two(a: float, b: float, sep: str) -> str:
-    """Two runs: both values, to the decimal that shows their difference to two digits. A
-    standard deviation from two runs has one degree of freedom, so it is not printed."""
+    """Two runs: both values, to the decimal that shows their difference to two digits, but never
+    beyond four significant figures (2026-10-31). A standard deviation from two runs has one
+    degree of freedom, so it is not printed."""
     d = abs(a - b)
     if d == 0:
         return _lone(a) + sep + _lone(b)
-    dec = max(0, 1 - math.floor(math.log10(d)))
+    cap = 3 - math.floor(math.log10(max(abs(a), abs(b))))
+    dec = max(0, min(1 - math.floor(math.log10(d)), cap))
     return sep.join(_sep(f"{x:.{dec}f}") for x in (a, b))
 
 
@@ -1237,6 +1244,21 @@ CAPTIONS = {
                "30\\% signal efficiency) after full fine-tuning on the whole training set. " + SPREAD +
                " From scratch: over its seeds. Every value rests on at least __FEWEST__ background jets "
                "passing the cut."),
+    "bench_top": ("tab:benchtop", "Top tagging on the full training set, \\LitPartTopNTrainMillion{} million jets: accuracy, "
+                  "AUC and background rejection $1/\\epsilon_B$ at 50\\% and 30\\% signal efficiency. Published "
+                  "rows from the tables cited; f.t.\\ marks a model pretrained on JetClass and fine-tuned, and the "
+                  "kinematic-input rows were pretrained on the kinematic features only, as ParT-f.t.\\ was. "
+                  "Uncertainties: ours, the standard deviation over pretraining runs, one fine-tuning each (three "
+                  "runs; two runs print both values; one run, the value alone); ParT, the spread over "
+                  "\\LitPartFtHeadReinits{} fine-tunings of one pretrained model with different head initializations, "
+                  "quoted for the run of median accuracy; OmniLearn, OmniLearned and L-GATr, the standard deviation of "
+                  "five trainings. The best value of each column is in bold."),
+    "bench_qg": ("tab:benchqg", "Quark/gluon tagging on the full training set, \\LitQgTrainMillion{} million jets, with "
+                 "the particle type as five binary flags and the charge (ParT's exp scenario): accuracy, AUC and "
+                 "$1/\\epsilon_B$ at 50\\% and 30\\% quark efficiency. Published rows from the tables cited, all "
+                 "in the exp scenario; PFN-Ex's uncertainty is half the interquartile range of ten trainings, and the "
+                 "others are as in Table~\\ref{tab:benchtop}, with nine trainings for OmniLearn and OmniLearned. The "
+                 "best value of each column is in bold."),
     "boot": ("tab:boot", "Relative uncertainty of the ratios of $(1-\\mathrm{AUC})$ at the largest training "
              "set of each task, in per cent: the standard deviation of the logarithm of the ratio over the "
              "pretraining runs, then that from the finite test sample (a bootstrap of the test jets with "
@@ -1295,6 +1317,13 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     data = root / "experiments/FIGS/data/v2"
     fits, comp = _load(data / FITS), _load(data / "compute")
     fits.update({"initbn" + m.removeprefix("init"): d for m, d in _load(data / FITS_INITBN).items()})
+    # the v4 probes (class-balanced JetClass-II, v4 grid; mlst_v4.py) replace fits_v3 once pulled
+    fits_v4, raw_v4 = V4.load_fits(data)
+    if fits_v4:
+        fits = fits_v4
+    else:
+        missing.append("v4 linear probes -- experiments/FIGS/data/v2/linprobe/fits_v4/")
+    V4.design_macros(em, root, data, missing, fmt_int)
     if not fits:
         missing.append(f"linear probes -- experiments/FIGS/data/v2/{FITS}/")
         return {}
@@ -1318,6 +1347,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
            "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, runs, fmt_pm, status, MAIN + RAND + FLAV), True)}
     comparisons(em, fits, runs, status, index, fmt_pm)
     bn_macros(em, fits, runs, index)
+    V4.gpu_bound_macro(em, fits, runs, index)
     trained = {(m, ds, n) for (m, ds, n) in UNCONVERGED_SEEN if not m.startswith(("init-", "initbn-"))}
     em.macro("MlstProbeUnconverged", str(len(trained)), index,
              "linear probes of pretrained models that did not converge (count)")
@@ -1388,6 +1418,11 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         out["tables/mlst_ft_rej.tex"] = _float("ft_rej", body, True, fill={"__FEWEST__": fmt_int(fewest)})
         ft_macros(em, per, runs, index, fmt_pm)
         topcheck_macros(em, data, per, index, fmt_pm, missing)
+        bench_rows = MAIN + MASS + FLAV
+        out["tables/mlst_bench_top.tex"] = _float("bench_top", V4.table_bench(
+            "top", per, runs, bench_rows, LABEL, SCRATCH, fmt_pm, _two), False)
+        out["tables/mlst_bench_qg.tex"] = _float("bench_qg", V4.table_bench(
+            "qg", per, runs, bench_rows, LABEL, SCRATCH, fmt_pm, _two), False)
     if comp:
         body, hours = table_compute(comp, runs, fmt_int)
         out["tables/compute.tex"] = _float("compute", body)

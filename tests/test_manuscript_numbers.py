@@ -52,7 +52,7 @@ GENERATED = {"results_generated.tex",
              "tables/mlst_mass.tex", "tables/compute.tex",
              "tables/mlst_ft.tex", "tables/mlst_ft_rej.tex",
              "tables/mlst_mlp.tex", "tables/mlst_fill.tex", "tables/mlst_sculpt.tex",
-             "tables/mlst_boot.tex"}
+             "tables/mlst_boot.tex", "tables/mlst_bench_top.tex", "tables/mlst_bench_qg.tex"}
 
 # Numbers allowed in prose, each with the reason it is not a result.
 # A number earns a line here only if it cannot change when a job finishes.
@@ -66,6 +66,8 @@ ALLOWED = {
     "11": "font sizes",
     "12": "font sizes",
     "95": "the confidence level, fixed by docs/STATISTICS.md, not measured",
+    "50": "the signal efficiency of the standard working point R50 (ParT, the landscape paper)",
+    "30": "the signal efficiency of the standard working point R30 (ParT, the landscape paper)",
     "68": "the area inside sigma_eff, its definition, fixed by the PRESPEC S7 amendment",
 }
 
@@ -89,9 +91,12 @@ NUMBER = re.compile(r"(?<![A-Za-z\\])-?\d[\d,]*(?:\.\d+)?")
 # The generator emits the word forms the prose needs (\ProbeNSeedsWord,
 # \RandNDraws, ...). Macro names spell digits too (\VocabSizeLonesixtwo), but
 # inside one word, so the word boundaries never match there.
+# Relaxed 2026-10-31 (PI's brief, "macros only for computed results; ordinary words for counts
+# and structure: three seeds, two runs, the four levels"): the words one to twelve are prose
+# for counts of runs, levels and the like, which the design fixes. Larger number words and
+# fractions still read as results and must come from the generator.
 NUMBER_WORD = re.compile(
-    r"\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|"
-    r"fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|hundreds?|"
+    r"\b(?:thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|hundreds?|"
     r"thousands?|quarters?|half|halves|dozens?)\b", re.I)
 
 # Number words that are structure, not a count of anything run or measured, each
@@ -133,11 +138,16 @@ def number_words(line: str) -> list[str]:
 RATIO_OF_MEANS = re.compile(r"\\(\w*OmaRatio\w*|Rand(?:Sem)?CostFactor\w*|VcbFactor\w*)")
 
 
+# Drawings: their digits are TikZ coordinates and lengths, not numbers about data; every count
+# they print is a generated macro.
+DRAWINGS = {"fig_design.tex"}
+
+
 def manuscript_files() -> list[pathlib.Path]:
     if not JOURNAL.is_dir():
         return []
     return sorted(p for p in JOURNAL.rglob("*.tex")
-                  if p.relative_to(JOURNAL).as_posix() not in GENERATED)
+                  if p.relative_to(JOURNAL).as_posix() not in GENERATED | DRAWINGS)
 
 
 def prose_of(path: pathlib.Path) -> str:
@@ -223,14 +233,14 @@ def test_the_guard_would_catch_a_typed_number(tmp_path):
 
 
 def test_the_guard_would_catch_a_spelled_out_count(tmp_path):
-    """Number words are numbers; structure words are allowed only as phrases."""
+    """Large number words and fractions are numbers; small counts are prose (2026-10-31)."""
     f = tmp_path / "fake.tex"
     f.write_text("Each vocabulary is pretrained five times and saw a quarter of the jets.\n"
                  "The two-prong and three- and four-prong decays, a two-by-two design.\n"
-                 "\\VocabSizeLonesixtwo{} classes, \\ProbeNSeedsWord{} runs, two runs.\n")
+                 "Of the twenty pairs, half of them, \\ProbeNSeedsWord{} runs, two runs.\n")
     found = [w for line in without_allowed_words(prose_of(f)).splitlines()
              for w in number_words(line)]
-    assert found == ["five", "quarter", "two"], found
+    assert found == ["quarter", "twenty", "half"], found
 
 
 def test_the_guard_does_not_fire_on_a_macro_or_a_comment(tmp_path):
