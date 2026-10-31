@@ -118,19 +118,31 @@ def test_the_index_covers_every_kind_of_pulled_file():
         "linprobe/fits_v3_mlp2_initbn", "linprobe/fits_v3_initbn"}
 
 
-def _ft_tree(d, inits, n_seeds_scratch=3, bound=False):
+def _ft_tree(d, inits, n_seeds_scratch=3, bound=False, budget=True):
+    """The earlier read-outs (best70_*: every size, the natural-mix JetClass-II at 0.5 so that its
+    replacement shows) and the fixed-budget read-out below the full sets and for the balanced set."""
     rec = lambda v: {"macro_auc_ovr": v, "macro_auc_qcd": v, "auc": v, "r50": 100 * v, "r30": 300 * v,
                      "r50_is_bound": bound, "r30_is_bound": False, "r50_n_bkg_pass": 400, "r30_n_bkg_pass": 120}
-    def by_init(sizes):
-        out = {i: {f"N{n}": {"s1": rec(0.9 + 0.01 * k)} for n in sizes} for k, i in enumerate(inits)}
-        out[M.SCRATCH] = {f"N{n}": {f"s{s}": rec(0.8) for s in range(1, n_seeds_scratch + 1)} for n in sizes}
+    def by_init(sizes, base=0.9):
+        out = {i: {f"N{n}": {"s1": rec(base + 0.01 * k)} for n in sizes} for k, i in enumerate(inits)}
+        out[M.SCRATCH] = {f"N{n}": {f"s{s}": rec(base - 0.1) for s in range(1, n_seeds_scratch + 1)} for n in sizes}
         return out
     (d / "ft_mlst").mkdir(parents=True)
     w = lambda name, cells: (d / "ft_mlst" / f"best70_{name}.json").write_text(json.dumps({"cells": cells}))
-    w("leg188_leg1_metrics", by_init([1000, 1000000]))
+    w("leg188_leg1_metrics", by_init([1000, 1000000], base=0.5))
     w("leg2_metrics", by_init([1000, 1000000]))
     w("bench_metrics", {"top": by_init([1000, 1200000]), "qg": by_init([1000, 1600000])})
     w("bench_metrics_herwig", {"qg": by_init([1000, 1600000])})
+    if not budget:
+        return
+    cells = {}
+    for name, v, seeds in [(i, 0.9 + 0.01 * k, [1]) for k, i in enumerate(inits)] + \
+            [(M.BUDGET_SCRATCH, 0.8, range(1, n_seeds_scratch + 1))]:
+        for tree, n in (("leg_jc2b", 1000), ("leg_jc2b", 1000000), ("leg2", 1000), ("leg_top", 1000), ("leg_qg", 1000)):
+            for sd in seeds:
+                cells[f"{tree}/{name}/N{n}/s{sd}"] = {**rec(v), **({"herwig": rec(v)} if tree == "leg_qg" else {})}
+    (d / "budget").mkdir()
+    (d / "budget" / "budget_metrics.json").write_text(json.dumps({"cells": cells}))
 
 
 def test_the_fine_tuning_tables_read_one_seed_per_run_and_the_scratch_seeds(tmp_path):
@@ -138,6 +150,9 @@ def test_the_fine_tuning_tables_read_one_seed_per_run_and_the_scratch_seeds(tmp_
     tag, per, absent = M.load_ft(tmp_path)
     assert absent == []
     assert tag == "best70" and per["jc2"]["l188-s1"][1000][0]["macro_auc_ovr"] == 0.9
+    # the natural-mix JetClass-II cells (0.5) are gone at every size; the budget's replace them
+    assert per["jc2"]["l188-s1"][1000000][0]["macro_auc_ovr"] == 0.9 and len(per["jc2"][M.SCRATCH][1000]) == 3
+    assert per["top"]["l188-s2"][1000][0]["auc"] == 0.91 and per["qg_herwig"]["l188-s1"][1000][0]["auc"] == 0.9
     runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"]}
     t = M.table_ft(per, runs, MT.fmt_pm, ("L188",))
     assert t.count("%SPLIT%") == len(M.FT_TASKS) - 1 and r"\pending{2 of 3}" in t and "from scratch" in t
@@ -164,7 +179,7 @@ def test_no_fine_tuning_read_out_is_no_table(tmp_path):
 
 
 def test_a_task_not_yet_read_out_prints_a_marker_and_the_others_print(tmp_path):
-    _ft_tree(tmp_path, ["l188-s1"])
+    _ft_tree(tmp_path, ["l188-s1"], budget=False)
     (tmp_path / "ft_mlst" / "best70_leg2_metrics.json").unlink()
     tag, per, absent = M.load_ft(tmp_path)
     assert tag == "best70" and absent == ["jc1"] and per["jc1"] == {}

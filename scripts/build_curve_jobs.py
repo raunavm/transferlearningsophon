@@ -6,6 +6,8 @@ experiments/MTX/k8s/v2/status/.
   curves-ft-raunav      experiments/FT/ft_curves.py cells on the JetClass, top and q/g trees, the
                         pretrained fine-tunes (best70) and the V100 from-scratch references
   curves-jc2-raunav     ... on the 188-class JetClass-II trees (leg1_188)
+  boot-probe-v4-raunav, curves-probe-v4-raunav
+                        the same on the v4 probes (fits_v4, fits_v4_probs; PIN_V4)
   curves-full-raunav    ft_curves.py cells at the full training sets only, all 27 paper runs and the
                         from-scratch seeds (PIN_FULL)
   curves-probe-raunav   ft_curves.py probes on the probe refit's saved test outputs (fits_v3_probs)
@@ -46,6 +48,7 @@ STATUS_DIR = ROOT / "experiments" / "MTX" / "k8s" / "v2" / "status"
 # mtx-s2.19 carried the first specs, none of the curves or bootstrap jobs launched at it
 PIN = "mtx-s2.20"
 PIN_FULL = "mtx-s2.28"         # curves-full (2026-10-31): ft_curves.py --n
+PIN_V4 = "mtx-s2.29"           # boot-probe-v4 and curves-probe-v4 (2026-10-31)
 STATUS_PIN = "mtx-s2.19"       # the status CronJob, launched at it (RUNS.csv status-raunav, 2026-10-30)
 NEEDED = {"experiments/FT/ft_curves.py": "def roc_points",
           "experiments/STATS/paired_bootstrap.py": "P.AucScorer",
@@ -67,6 +70,9 @@ CURVES = f"{V2}/curves"
 BOOT = "/data/results/bootstrap"
 LP_ROOT = "/data/results/eval/v2_linprobe"            # scripts/build_linprobe_jobs.py LP_ROOT
 FITS_V3, PROBS_V3 = f"{LP_ROOT}/fits_v3", f"{LP_ROOT}/fits_v3_probs"
+# the v4 probes (experiments/EVAL/probe_bal.py; scripts/build_jc2bal_jobs.py LP_BAL)
+FITS_V4, PROBS_V4 = "/data/results/eval/v2_linprobe_bal/fits_v4", "/data/results/eval/v2_linprobe_bal/fits_v4_probs"
+JC2BAL_SIZES = (1_000, 10_000, 100_000, 1_000_000)     # experiments/FT/stage_jc2_balanced.py SIZES
 LEG1_188 = BF.LEG188_TREE                              # the 188-class leg's tree
 SCRATCH, SEEDS = BF.SCRATCH_REF, BF.INITS_LATER[BF.SCRATCH_REF][0][3]
 # The fine-tunes' baseline: from-scratch seeds 1-3 on subset s1, the pretrained fine-tunes' subset,
@@ -202,6 +208,38 @@ BOOT_PROBE = """          MODELS="{models}"
 """
 
 
+# bootf FILE: every probe's <probs>/<model>/<checkpoint>/FILE.npz, one output per file
+BOOT_PROBE_V4 = """          MODELS="{models}"
+          bootf () {{
+            local args=() m
+            for m in ${{MODELS}}; do args+=(--model "${{m%%:*}}={probs}/${{m%%:*}}/${{m##*:}}/$1.npz"); done
+            python3 experiments/STATS/paired_bootstrap.py --task npz "${{args[@]}}" "${{PAIRS[@]}}" \\
+              --out ${{TMP}}/$1.json || halt
+          }}
+"""
+
+
+def boot_probe_v4_body() -> str:
+    """The v4 probes: top, q/g and Herwig at every size, JetClass at the largest, balanced
+    JetClass-II at its largest size and its six pairs."""
+    out = f"{BOOT}/probe_v4"
+    pairs = ratio_pairs([m.removeprefix("mtx-") for m, _ in PROBE_MODELS if m.startswith("mtx-")],
+                        "mtx-", lambda k: f"init-s{k}")
+    fn = BOOT_PROBE_V4.format(models=" ".join(f"{m}:{ck}" for m, ck in PROBE_MODELS), probs=PROBS_V4)
+    files = [f"{ds}_N{n}" for ds in ("top", "qg", "qg_herwig") for n in SIZES[ds]] + [f"jc1_N{NMAX}"]
+    # balanced JetClass-II at its largest size only: 188 per-class AUCs per resample
+    files += [f"jc2bal_N{JC2BAL_SIZES[-1]}"] + [f"jc2bal_pairs_{p}" for p in PAIRS_188]
+    return _guard([out], [f"{FITS_V4}/{_alt([m for m, _ in PROBE_MODELS])}.json"]) + _boot(
+        out, pairs, fn, [f"bootf {f}" for f in files])
+
+
+def curves_probe_v4_body() -> str:
+    out = f"{CURVES}/linprobe_fits_v4.json"
+    return _guard([out], [f"{FITS_V4}/{_alt([m for m, _ in PROBE_MODELS])}.json"]) + (
+        f"          python3 experiments/FT/ft_curves.py probes --probs-root {PROBS_V4} \\\n"
+        f"            --models {' '.join(m for m, _ in PROBE_MODELS)} --out {out} || halt\n")
+
+
 def curves_body(names: list[str]) -> str:
     outs = [f"{CURVES}/{n}.json" for n in names]
     # no up-front refusal: each tree's JSON is written whole, so a pod retried after an eviction
@@ -293,6 +331,11 @@ def build(pin: str) -> dict[pathlib.Path, str]:
     }
     out = {OUT_DIR / f"job-{j}-raunav.yaml": cpu_job(f"{j}-raunav", body, what, pin)
            for j, (body, what) in jobs.items()}
+    out[OUT_DIR / "job-boot-probe-v4-raunav.yaml"] = cpu_job(
+        "boot-probe-v4-raunav", boot_probe_v4_body(), "Paired bootstrap over test jets, the v4 linear probes", PIN_V4)
+    out[OUT_DIR / "job-curves-probe-v4-raunav.yaml"] = cpu_job(
+        "curves-probe-v4-raunav", curves_probe_v4_body(), "ROC points and per-class tables, the v4 linear probes",
+        PIN_V4)
     out[OUT_DIR / "job-curves-full-raunav.yaml"] = cpu_job(
         "curves-full-raunav", curves_full_body(),
         "ROC points and per-class tables, JetClass, top and q/g fine-tunes on the full training sets", PIN_FULL)

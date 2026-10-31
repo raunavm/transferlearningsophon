@@ -223,8 +223,16 @@ def figure(M, style, runs, fits: dict, outdir: pathlib.Path) -> list:
         ax.set_title(title, fontsize="small", loc="left")
         ax.set_xlabel(r"QCD efficiency $\varepsilon_B$")
     axes[0, 0].set_ylabel(r"$\varepsilon_S/\sqrt{\varepsilon_B}$")
-    axes[0, 0].legend(frameon=False, fontsize="xx-small", loc="upper right")
-    fig.tight_layout()
+    # below the panels: the curves fill the upper left and the lower right of every panel
+    handles, labels = {}, []
+    for ax in axes[0]:
+        for h, lab in zip(*ax.get_legend_handles_labels()):
+            if lab not in handles:
+                handles[lab] = h
+                labels.append(lab)
+    fig.legend([handles[lab] for lab in labels], labels, loc="lower center", ncol=2, frameon=False,
+               fontsize="xx-small")
+    fig.tight_layout(rect=(0, 0.06 * (len(labels) + 1) / 2, 1, 1))
     return style.save(fig, "xbx", outdir)
 
 
