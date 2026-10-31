@@ -12,6 +12,8 @@ figure job, colour and marker per configuration fixed there).
   per_class_jc2            JetClass-II: each class's (1 - AUC) over the 188-class model's, run by
                            run, averaged; rows grouped by topology, flavor siblings adjacent
   per_class_ranked         the fifteen classes each merge of the hierarchy hurts most
+  missing_features         balanced JetClass-II with the top or quark/gluon inputs zeroed (filled)
+                           or imputed (open), over all features, same run
   finetune_vs_training_size  fine-tuning against the training-set size, with the ratio to the
                            network trained from scratch
   mass_response            mass resolution and scale in bins of pT and generated mass
@@ -309,6 +311,62 @@ def figure_pairs(root, outdir) -> list:
                       _positions(_groups(M, False)), ncols=3, width=0.62 * style.PANEL,
                       fill=lambda k, row: FILL[status.get(row, {}).get(k, "apart")])
     return style.save(fig, "pairs", outdir)
+
+
+# ------------------------------------------------------------------ missing features
+# (zeroed variant, imputed variant or None, panel title): input_variants.py
+MISSING_PANELS = (("mtop", "itop", "Top-tagging inputs (10 of 17 features zero)"),
+                  ("mqg", "iqg", "Quark/gluon inputs (4 displacement features zero)"))
+IMPUTED_ROWS = ("L188", "R16_Q1")
+
+
+def missing_rows(M, raw, runs, variant: str, rows) -> dict:
+    """{row: [(1 - AUC) with the variant's inputs over (1 - AUC) with all of them, per run]}: the
+    macro AUC of the linear probe on balanced JetClass-II at its largest training set (the only
+    size the variants are probed at)."""
+    out = {}
+    for row in rows:
+        vals = []
+        for m in runs[row]:
+            c = raw.get(m, {}).get("cells", {}).get(M._ck(m), {})
+            allf, var = c.get("jc2bal", {}), c.get(f"jc2bal.{variant}", {})
+            if not var:
+                continue
+            n = max(var, key=int)
+            if n in allf:
+                vals.append((1 - var[n]["macro_auc_ovr"]) / (1 - allf[n]["macro_auc_ovr"]))
+        out[row] = vals
+    return out
+
+
+def figure_missing_features(root, outdir) -> list:
+    M = _mlst()
+    raw = M.V4.load_fits(DATA)[1]
+    if not any("." in k for d in raw.values() for c in d["cells"].values() for k in c):
+        return []
+    runs = M._paper(root)
+    groups = _groups(M, True)
+    pos = _positions(groups)
+    rows = [r for g in groups for r in g]
+    style.use_style()
+    import matplotlib.pyplot as plt
+    fig, axes = plt.subplots(1, len(MISSING_PANELS), figsize=(2 * 0.62 * style.PANEL + 2.5, 0.95 * style.PANEL),
+                             sharey=True, squeeze=False)
+    for ax, (zero, imp, title) in zip(axes.flat, MISSING_PANELS):
+        _dots(ax, M, pos, missing_rows(M, raw, runs, zero, rows))
+        for row, v in missing_rows(M, raw, runs, imp, IMPUTED_ROWS).items():
+            if v:
+                look = _look(M, row)
+                mean, el, eh = _spread(v)
+                ax.errorbar(mean, pos[row] - 0.3, xerr=None if el is None else [[el], [eh]], marker=look["marker"],
+                            markersize=10, color=look["color"], markerfacecolor="white", linestyle="none",
+                            markeredgewidth=2, capsize=0)
+        ax.axvline(1.0, color="black", linewidth=0.8, linestyle=":")
+        ax.set_title(title, fontsize="small", loc="left")
+        ax.set_xlabel(r"$(1-\mathrm{AUC})$ over all features")
+    axes[0, 0].set_yticklabels([ROW_NAME[r] for r in pos])
+    fig.tight_layout()
+    return style.save(fig, "missing_features", outdir)
 
 
 # ------------------------------------------------------------------ per class
@@ -651,7 +709,7 @@ def figure_schematic(root: pathlib.Path, outdir: pathlib.Path) -> list:
 
 
 FIGURES = (figure_schematic, figure_label_sets, figure_sizes, figure_pairs, figure_per_class,
-           figure_per_class_ranked,
+           figure_per_class_ranked, figure_missing_features,
            figure_finetune, figure_mass, figure_sculpting)
 
 

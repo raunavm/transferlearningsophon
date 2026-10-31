@@ -147,3 +147,30 @@ def test_every_class_name_is_typeset():
     assert len(tex) == len(order)
     assert F.class_tex("label_X_YY_bctauhv") == r"$X\to YY\to b c \tau_h \nu$"
     assert F.class_tex("label_QCD_light") == "QCD (light)"
+
+
+def test_the_missing_feature_figure_draws_ratios_to_all_features(tmp_path, monkeypatch):
+    F = _mod("mlst_figures", "experiments/FIGS/mlst_figures.py")
+    M = F._mlst()
+    runs = M._paper(REPO)
+    d = tmp_path / "linprobe/fits_v4"
+    d.mkdir(parents=True)
+    n = "1000000"
+    for row, ms in runs.items():
+        for m in ms:
+            seed = int(m.rsplit("-s", 1)[1])
+            cell = {"jc2bal": {n: {"macro_auc_ovr": 1 - 0.01 * seed}},
+                    "jc2bal.mtop": {n: {"macro_auc_ovr": 1 - 0.03 * seed}},
+                    "jc2bal.mqg": {n: {"macro_auc_ovr": 1 - 0.015 * seed}}}
+            if row in F.IMPUTED_ROWS:
+                cell["jc2bal.itop"] = {n: {"macro_auc_ovr": 1 - 0.012 * seed}}
+            (d / f"{m}.json").write_text(json.dumps({"cells": {M._ck(m): cell}}))
+    monkeypatch.setattr(F, "DATA", tmp_path)
+    raw = M.V4.load_fits(tmp_path)[1]
+    rows = F.missing_rows(M, raw, runs, "mtop", ("L188", "R16_Q1", "RAND2_p1"))
+    assert rows["L188"] == pytest.approx([3.0] * len(runs["L188"]))
+    assert F.missing_rows(M, raw, runs, "mqg", ("R16_Q1",))["R16_Q1"] == pytest.approx([1.5] * len(runs["R16_Q1"]))
+    imp = F.missing_rows(M, raw, runs, "itop", ("L188", "L162"))
+    assert imp["L188"] == pytest.approx([1.2] * len(runs["L188"])) and imp["L162"] == []
+    paths = F.figure_missing_features(REPO, tmp_path / "out")
+    assert sorted(p.suffix for p in paths) == [".pdf", ".png"] and all(p.stat().st_size > 0 for p in paths)
