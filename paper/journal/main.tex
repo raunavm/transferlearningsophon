@@ -886,29 +886,16 @@ by less than a per cent. Whether a dataset needs it therefore depends on whether
 separate QCD jets by flavor. Both the \Kfull- and \Kres-class label sets form every discriminant
 of Table~\ref{tab:usecase}. \pending{implications of fine-tuning on JetClass-II}
 
-The study has several limitations. All pretraining and all evaluations except the Herwig
-quark/gluon sample use a single simulation family, so an effect of the label set that is
-specific to it cannot be excluded. A single architecture and model size is studied, and
-whether fine labels help can depend on how strongly a network is
-overparameterized~\cite{pirovano}, so a smaller or larger model may respond differently.
-The label sets are levels of a single hierarchy, and other groupings enter only through
-the random partitions, with and without controlled flavor boundaries. The models follow
-Sophon's architecture and training recipe but not its weight initialization, so their
-absolute performance need not match that of Sophon's published model. Every model is trained on the
-same number of examples, so the study does not determine whether a finer label set
-benefits from a longer schedule. With \MlstNRunsWord{} seeds per level of the hierarchy
-and fewer for the other configurations, the standard deviations are themselves uncertain,
-differences between label sets smaller than them are not resolved, and comparisons between
-random partitions are not paired by seed. The GPU type differs within most pairs of runs that
-are compared, and its effect on a trained model was not measured. The JetClass-II task uses the
-\Kfull{} pretraining classes themselves, which favors the finest label set; label sets with the
-same number of classes that keep more of its classes apart, flavor siblings included, share part
-of this advantage, which the other tasks do not give. On top and quark/gluon tagging, the features that the data lack are set to zero
-rather than learned without, as in ParT's reduced-input pretraining. Fine-tuning follows
-a single recipe per dataset, which is not tuned per label set, and its step budget at the smaller
-training sets is short. \pending{the $X\to b\bar b$ and $X\to bs$ samples, once they are in}
-% CHECK: re-read once every result is in; the pending part names the samples' mass and the
-% JetClass-II QCD background.
+The study has four limitations. First, all pretraining and every evaluation except the Herwig
+quark/gluon sample use one simulation family, so an effect of the label set that is specific to it
+cannot be excluded; the Herwig sample changes the event generator for one downstream task only. Second, one architecture and model size is studied, and whether fine labels help can
+depend on how strongly a network is overparameterized~\cite{pirovano}, so a smaller or larger model
+may respond differently. Third, each level of the hierarchy has \MlstNRunsWord{} pretraining runs and
+the other configurations fewer, so a standard deviation is known only to about \MlstSdRelUnc{} of its
+value, and differences between label sets smaller than it are not resolved. Fourth, the models follow
+Sophon's architecture and training recipe but not its weight initialization, so their absolute
+performance need not equal that of Sophon's published model; every comparison in this paper is between
+models trained here.
 
 \section*{Data and code availability}
 Pretrained checkpoints, label maps and evaluation code will be released on Zenodo at
