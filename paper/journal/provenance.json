@@ -2303,6 +2303,12 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "27"
   },
+  "ComputeTotalGpuHours": {
+    "json_path": "GPU-hours of every reported pretraining run, training and validation passes",
+    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "3{,}435"
+  },
   "DesignBatchSize": {
     "json_path": "--batch-size",
     "sha256": "96fef4b6337aaa27538d30778f8fe41f38e838cfb6faf2bf6fcdb7f0f0b5573b",
@@ -7405,7 +7411,7 @@
   },
   "MlstFtCmpQgCoarseOverScratchEFour": {
     "json_path": "used in the text",
-    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
+    "sha256": "f22d14849e6b69174e204d38dbba0bbbd65c98fd0f747ffbf54c0f3767e67531",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
@@ -7417,13 +7423,13 @@
   },
   "MlstFtCmpQgFullOverScratchEFour": {
     "json_path": "used in the text",
-    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
+    "sha256": "f22d14849e6b69174e204d38dbba0bbbd65c98fd0f747ffbf54c0f3767e67531",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpQgFullOverScratchEThree": {
     "json_path": "used in the text",
-    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
+    "sha256": "f22d14849e6b69174e204d38dbba0bbbd65c98fd0f747ffbf54c0f3767e67531",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
@@ -7573,7 +7579,7 @@
   },
   "MlstFtCmpTopCoarseOverFullEFour": {
     "json_path": "used in the text",
-    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
+    "sha256": "f22d14849e6b69174e204d38dbba0bbbd65c98fd0f747ffbf54c0f3767e67531",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
@@ -7591,19 +7597,19 @@
   },
   "MlstFtCmpTopFullOverScratchEFive": {
     "json_path": "used in the text",
-    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
+    "sha256": "f22d14849e6b69174e204d38dbba0bbbd65c98fd0f747ffbf54c0f3767e67531",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopFullOverScratchEFour": {
     "json_path": "used in the text",
-    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
+    "sha256": "f22d14849e6b69174e204d38dbba0bbbd65c98fd0f747ffbf54c0f3767e67531",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopFullOverScratchEThree": {
     "json_path": "used in the text",
-    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
+    "sha256": "f22d14849e6b69174e204d38dbba0bbbd65c98fd0f747ffbf54c0f3767e67531",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
@@ -7627,13 +7633,13 @@
   },
   "MlstFtCmpTopRandOverCoarseEFour": {
     "json_path": "used in the text",
-    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
+    "sha256": "f22d14849e6b69174e204d38dbba0bbbd65c98fd0f747ffbf54c0f3767e67531",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopRandOverCoarseEThree": {
     "json_path": "used in the text",
-    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
+    "sha256": "f22d14849e6b69174e204d38dbba0bbbd65c98fd0f747ffbf54c0f3767e67531",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
@@ -7645,13 +7651,13 @@
   },
   "MlstFtCmpTopRandOverFullEFour": {
     "json_path": "used in the text",
-    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
+    "sha256": "f22d14849e6b69174e204d38dbba0bbbd65c98fd0f747ffbf54c0f3767e67531",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopRandOverFullEThree": {
     "json_path": "used in the text",
-    "sha256": "68a0bcca0972cb03bb06bd93cba2931dfccdc26926eb703347b8cf12a3dff923",
+    "sha256": "f22d14849e6b69174e204d38dbba0bbbd65c98fd0f747ffbf54c0f3767e67531",
     "source_file": "paper/journal/main.tex",
     "value": "\\pending{no v2 number: rewrite this}"
   },

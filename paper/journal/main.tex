@@ -916,9 +916,8 @@ part of nearly every file. A row is therefore loaded in a single epoch per cycle
 that epoch the reweighting can draw it several times. The order of the training examples and
 the seeds of the dropout masks in each epoch are derived from the seed and the epoch number
 alone. Every run records, for each epoch, a hash of the identifiers of the jets it read, in
-order. We use this scheme because in our implementation of Sophon's loading scheme, which
-reads whole files, the fraction of QCD jets varied between epochs far more than random
-sampling would.
+order. The examples and their order are thus a function of the seed alone, so models of one seed
+read the same jets in the same order whatever their labels.
 
 \paragraph{Network.} The network is the ParticleTransformer of weaver-core
 \DesignWeaverVersion{}, the training framework of ParT and Sophon, in the configuration of Sophon's released code:
@@ -953,9 +952,9 @@ on \DesignBnJets{} training jets.
 % ============================================================================
 
 Table~\ref{tab:app-levels} lists the levels of the class hierarchy and the groups of the
-\Kcoarse-class label set, and Table~\ref{tab:app-vocabulary} gives the group of every
-JetClass-II class at each coarser level, in every random partition and in every random
-partition with controlled flavor boundaries. Both are generated from the label maps.
+\Kcoarse-class label set, generated from the label maps. The group of every JetClass-II class at
+each coarser level, in every random partition and in every partition with controlled flavor
+boundaries is given by the label maps of the code release.
 
 Candidate partitions are built as in Section~\ref{sec:controls} from consecutive seeds. Of
 \RandVtwoPoolDraws{} candidates, \RandVtwoPoolPass{} meet the rule on the realized shares below,
@@ -979,8 +978,6 @@ flavor boundary; and the share of the training examples in each group stays with
 \RandFlavFonerShareTol{} of that in the partition with a $b$-quark boundary.
 
 \input{tables/appendix_levels}
-\clearpage
-\input{tables/appendix_vocabulary}
 
 % ============================================================================
 \section{Linear-probe and fine-tuning settings}\label{app:ftrecipe}
@@ -1057,20 +1054,9 @@ selects its epoch on our validation jets.
 \section{Compute}\label{app:compute}
 % ============================================================================
 
-The pretraining runs started on a single GPU type. When that type became unavailable partway
-through the study, the runs still queued or interrupted were allowed to use any GPU type with
-enough memory, and a resumed run could continue on another type. Runs resumed on another type
-read the same training examples in the same order as the other runs of their seed, which each
-epoch's record of the examples it read confirms; the floating-point rounding and the dropout
-masks do change with the type, and the effect of the type on a trained model was not measured. Table~\ref{tab:compute} gives the GPU types and hours of every
-pretraining run, read from the record that each epoch keeps of its device. The hours count the
-training and validation passes of the epochs of the final runs and leave out restarted epochs
-and the computation of the BatchNorm statistics. The runs used \ComputeGpuTypes{} GPUs, and
-each level of the hierarchy spent between \ComputeMainGpuShareMin{} and
-\ComputeMainGpuShareMax{} of its GPU-hours on the \ComputeMainGpu, the type these levels used
-most.
-
-\input{tables/compute}
+The \ComputeRunsDone{} pretraining runs reported here used \ComputeTotalGpuHours{} GPU-hours on
+\ComputeGpuTypes{} GPUs, counting the training and validation passes of their epochs as each epoch
+recorded them.
 
 % ============================================================================
 \section{Linear probes against the training-set size}\label{app:probesn}

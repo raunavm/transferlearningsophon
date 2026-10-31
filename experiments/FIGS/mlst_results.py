@@ -1510,6 +1510,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
             total.update(hours.get(arm, {}))
         top = max(total, key=total.get)
         shares = [hours[a][top] / sum(hours[a].values()) for a in MAIN if a in hours]
+        em.macro("ComputeTotalGpuHours", fmt_int(round(sum(h for arm in hours.values() for h in arm.values()))),
+                 index, "GPU-hours of every reported pretraining run, training and validation passes")
         em.macro("ComputeMainGpu", top, index, "GPU type with the most hours over the four label sets")
         em.macro("ComputeMainGpuShareMin", f"{100 * min(shares):.0f}\\%", index,
                  "lowest share of a label set's GPU-hours on that type")
