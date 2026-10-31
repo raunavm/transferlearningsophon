@@ -21,12 +21,12 @@ spec:
           [ "${USED}" -le 85 ] || { echo "FATAL: /data at ${USED}%"; exit 42; }
           [ ! -f ${OUT}/metrics.json ] || { echo "${OUT} is done"; cat ${OUT}/metrics.json; exit 0; }
           mkdir -p ${OUT}
-          git clone -q --depth 1 --branch mtx-s2.22 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+          git clone -q --depth 1 --branch mtx-s2.30 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
           git clone -q https://github.com/jet-universe/particle_transformer.git /workspace/part && cd /workspace/part && git checkout -q 2925bdb
           git rev-parse HEAD | tee ${OUT}/part_commit.txt
           pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
           mkdir -p /workspace/data && cd /workspace/data
-          python3 -c "import urllib.request,sys; urllib.request.urlretrieve(sys.argv[1], 'TopLandscape.tar')" https://hqu.web.cern.ch/datasets/TopLandscape/TopLandscape.tar
+          cp /data/finetune/partrepro/TopLandscape.tar TopLandscape.tar
           echo "4fca2e47afbf321b0f201da6b804c404  TopLandscape.tar" | md5sum -c - || { echo "FATAL: TopLandscape.tar md5"; exit 42; }
           tar -xf TopLandscape.tar && rm TopLandscape.tar && find /workspace/data -name "*.parquet" | tee ${OUT}/files.txt
           D=$(dirname $(find /workspace/data -name train_file.parquet | head -1))

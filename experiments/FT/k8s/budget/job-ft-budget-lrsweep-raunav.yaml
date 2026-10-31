@@ -25,7 +25,7 @@ spec:
         command: ["/bin/bash", "-c"]
         env:
         - name: REPO_REF
-          value: "mtx-s2.23"
+          value: "mtx-s2.30"
         - name: NODE_NAME
           valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
         - name: POD_NAME
@@ -39,31 +39,34 @@ spec:
           HALT=42
           IDX=${JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}
           case ${IDX} in
-            0) TASK=top; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-4; MULT=50.0; CELL=/data/results/ft_v2/lrsweep/leg_top/l188-s1_lr1e-4/N10000/s1;;
-            1) TASK=top; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=3e-4; MULT=16.666666666666668; CELL=/data/results/ft_v2/lrsweep/leg_top/l188-s1_lr3e-4/N10000/s1;;
-            2) TASK=top; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-3; MULT=5.0; CELL=/data/results/ft_v2/lrsweep/leg_top/l188-s1_lr1e-3/N10000/s1;;
-            3) TASK=top; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-4; MULT=; CELL=/data/results/ft_v2/lrsweep/leg_top/scratch_lr3e-4/N10000/s1;;
-            4) TASK=top; INIT=; RUN_DIR=; N=10000; S=1; LR=1e-3; MULT=; CELL=/data/results/ft_v2/lrsweep/leg_top/scratch_lr1e-3/N10000/s1;;
-            5) TASK=top; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-3; MULT=; CELL=/data/results/ft_v2/lrsweep/leg_top/scratch_lr3e-3/N10000/s1;;
-            6) TASK=qg; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-4; MULT=50.0; CELL=/data/results/ft_v2/lrsweep/leg_qg/l188-s1_lr1e-4/N10000/s1;;
-            7) TASK=qg; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=3e-4; MULT=16.666666666666668; CELL=/data/results/ft_v2/lrsweep/leg_qg/l188-s1_lr3e-4/N10000/s1;;
-            8) TASK=qg; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-3; MULT=5.0; CELL=/data/results/ft_v2/lrsweep/leg_qg/l188-s1_lr1e-3/N10000/s1;;
-            9) TASK=qg; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-4; MULT=; CELL=/data/results/ft_v2/lrsweep/leg_qg/scratch_lr3e-4/N10000/s1;;
-            10) TASK=qg; INIT=; RUN_DIR=; N=10000; S=1; LR=1e-3; MULT=; CELL=/data/results/ft_v2/lrsweep/leg_qg/scratch_lr1e-3/N10000/s1;;
-            11) TASK=qg; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-3; MULT=; CELL=/data/results/ft_v2/lrsweep/leg_qg/scratch_lr3e-3/N10000/s1;;
+            0) TASK=top; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-4; MULT=50.0; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_top/l188-s1_lr1e-4/N10000/s1;;
+            1) TASK=top; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=3e-4; MULT=16.666666666666668; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_top/l188-s1_lr3e-4/N10000/s1;;
+            2) TASK=top; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-3; MULT=5.0; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_top/l188-s1_lr1e-3/N10000/s1;;
+            3) TASK=top; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-4; MULT=; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_top/scratch_lr3e-4/N10000/s1;;
+            4) TASK=top; INIT=; RUN_DIR=; N=10000; S=1; LR=1e-3; MULT=; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_top/scratch_lr1e-3/N10000/s1;;
+            5) TASK=top; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-3; MULT=; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_top/scratch_lr3e-3/N10000/s1;;
+            6) TASK=qg; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-4; MULT=50.0; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_qg/l188-s1_lr1e-4/N10000/s1;;
+            7) TASK=qg; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=3e-4; MULT=16.666666666666668; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_qg/l188-s1_lr3e-4/N10000/s1;;
+            8) TASK=qg; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-3; MULT=5.0; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_qg/l188-s1_lr1e-3/N10000/s1;;
+            9) TASK=qg; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-4; MULT=; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_qg/scratch_lr3e-4/N10000/s1;;
+            10) TASK=qg; INIT=; RUN_DIR=; N=10000; S=1; LR=1e-3; MULT=; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_qg/scratch_lr1e-3/N10000/s1;;
+            11) TASK=qg; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-3; MULT=; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_qg/scratch_lr3e-3/N10000/s1;;
             *) echo "FATAL: no cell for index ${IDX}"; exit ${HALT};;
           esac
           [ -f ${CELL}/DONE ] && { echo "skip ${CELL} (DONE)"; exit 0; }
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           [ "${USED}" -le 85 ] || { echo "FATAL: /data at ${USED}%"; exit ${HALT}; }
           case ${TASK} in
-            top) SUB=/data/finetune/top_sub; CFG=configs/finetune/TopReference.yaml; K=2; NET=experiments/MTX/ParT_sophon_arch_mtx.py; TEST="/data/finetune/top/top_test.parquet";;
-            qg) SUB=/data/finetune/qg_v2_sub; CFG=configs/finetune/EnergyFlowQG.yaml; K=2; NET=experiments/MTX/ParT_sophon_arch_mtx.py; TEST="/data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet";;
-            jc1) SUB=/data/finetune/jc1; CFG=configs/finetune/JetClassI_sophon_noweight.yaml; K=10; NET=experiments/E1/ParT_sophon_arch_10c.py; TEST=""; for C in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do for f in $(ls /data/JetClass/Pythia/test_20M/${C}_*.root | sort | head -2); do TEST="${TEST} ${f}"; done; done; [ "$(echo ${TEST} | wc -w)" -eq 20 ] || { echo "FATAL: JetClass test files"; exit ${HALT}; };;
+            top) SUB=/data/finetune/top_sub; CFG=configs/finetune/TopReference.yaml; TCFG=configs/finetune/TopReference.yaml; K=2; NET=experiments/MTX/ParT_sophon_arch_mtx.py; TEST="/data/finetune/top/top_test.parquet";;
+            topkin) SUB=/data/finetune/top_sub; CFG=configs/finetune/TopReference_kin.yaml; TCFG=configs/finetune/TopReference_kin.yaml; K=2; NET=experiments/MTX/ParT_sophon_arch_mtx.py; TEST="/data/finetune/top/top_test.parquet";;
+            qg) SUB=/data/finetune/qg_v2_sub; CFG=configs/finetune/EnergyFlowQG.yaml; TCFG=configs/finetune/EnergyFlowQG.yaml; K=2; NET=experiments/MTX/ParT_sophon_arch_mtx.py; TEST="/data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet";;
+            jc1) SUB=/data/finetune/jc1; CFG=configs/finetune/JetClassI_sophon_noweight.yaml; TCFG=configs/finetune/JetClassI_sophon_noweight.yaml; K=10; NET=experiments/E1/ParT_sophon_arch_10c.py; TEST=""; for C in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do for f in $(ls /data/JetClass/Pythia/test_20M/${C}_*.root | sort | head -2); do TEST="${TEST} ${f}"; done; done; [ "$(echo ${TEST} | wc -w)" -eq 20 ] || { echo "FATAL: JetClass test files"; exit ${HALT}; };;
+            jc2b) SUB=/data/finetune/jc2_bal; CFG=configs/finetune/JetClassII_L188_noweight.yaml; TCFG=configs/data/JetClassII_base.yaml; K=188; NET=experiments/MTX/ParT_sophon_arch_mtx.py; TEST="/data/finetune/jc2_bal/test.parquet";;
             *) echo "FATAL: task ${TASK}"; exit ${HALT};;
           esac
           python3 experiments/FT/gpu_probe.py || exit 43
           RUN=/workspace/run; rm -rf ${RUN}; mkdir -p ${RUN}
+          [ ! -f ${CELL}/DONE ] || { echo "${CELL} is done"; exit 0; }
           [ -d ${CELL} ] && mv ${CELL} ${CELL}.partial.$(date -u +%s)
           mkdir -p ${CELL}
           echo "$(date -u +%FT%TZ) pod=${POD_NAME} node=${NODE_NAME} ref=${REPO_REF}" >> ${CELL}/ATTEMPTS
@@ -77,26 +80,26 @@ spec:
             LOAD=(); MULTARG=(); SCHED=(); RECIPE="head_lr_mult=1 lr_schedule=flat+decay recipe=part-from-scratch"
           fi
           python3 experiments/FT/smoke_checks.py manifest --out ${CELL}/ft_manifest.json task=${TASK} \
-            init=${INIT:-scratch} checkpoint=${RUN_DIR} n_train=${N} ft_seed=${S} lr=${LR} ${RECIPE} weight_decay=0.01 \
+            init=${INIT:-scratch} run_dir=${RUN_DIR} checkpoint=${RUN_DIR:+/workspace/ckpt/${INIT}.pt} n_train=${N} ft_seed=${S} lr=${LR} ${RECIPE} weight_decay=0.01 \
             subset=${SUB}/train_N${N}_s1.parquet data_config=${CFG} num_classes=${K} batch_size=512 \
-            samples_per_epoch=$((500 * 512)) steps_per_epoch=500 max_epochs=40 \
-            samples_per_epoch_val=200000 early_stop_patience=10 val_rule=fixed-file budget=v3.1
+            samples_per_epoch=${SPE} steps_per_epoch=$((SPE / 512)) max_epochs=${EP} \
+            samples_per_epoch_val=${VAL} early_stop_patience=${PAT} val_rule=fixed-file budget=v3.1
           python3 experiments/FT/ft_weaver.py --seed ${S} --lean-val-metrics \
             --data-train ${SUB}/train_N${N}_s1.parquet --data-val ${SUB}/val.parquet --data-config ${CFG} \
             --network-config ${NET} -o num_classes ${K} -o fc_params '[(512,0.1)]' \
             --use-amp --batch-size 512 --num-workers 2 --fetch-by-files --fetch-step 1 --optimizer ranger \
             ${SCHED[@]+"${SCHED[@]}"} --optimizer-option weight_decay 0.01 ${MULTARG[@]+"${MULTARG[@]}"} \
-            --start-lr ${LR} --samples-per-epoch $((500 * 512)) --samples-per-epoch-val 200000 \
-            --num-epochs 40 ${LOAD[@]+"${LOAD[@]}"} --model-prefix ${RUN}/net --log ${RUN}/train.log \
+            --start-lr ${LR} --samples-per-epoch ${SPE} --samples-per-epoch-val ${VAL} \
+            --num-epochs ${EP} ${LOAD[@]+"${LOAD[@]}"} --model-prefix ${RUN}/net --log ${RUN}/train.log \
             > ${RUN}/stdout.log 2>&1 &
           PID=$!
           ES=0
-          python3 experiments/FT/early_stop.py watch --log ${RUN}/train.log --pid ${PID} --patience 10 \
-            --max-epochs 40 --out ${CELL}/early_stop.json || ES=$?
+          python3 experiments/FT/early_stop.py watch --log ${RUN}/train.log --pid ${PID} --patience ${PAT} \
+            --max-epochs ${EP} --out ${CELL}/early_stop.json || ES=$?
           wait ${PID} || true
           cp ${RUN}/train.log ${RUN}/stdout.log ${CELL}/
           [ "${ES}" -eq 0 ] || { echo "FATAL: ${CELL}: training did not finish (early_stop rc=${ES})"; tail -30 ${RUN}/stdout.log; exit 1; }
-          grep -q "('steps_per_epoch', 500)" ${RUN}/train.log || { echo "FATAL: weaver did not run 500 steps per epoch"; exit 1; }
+          grep -q "('steps_per_epoch', $((SPE / 512)))" ${RUN}/train.log || { echo "FATAL: weaver did not run $((SPE / 512)) steps per epoch"; exit 1; }
           if grep -q "AvgLoss: nan" ${RUN}/train.log; then echo "FATAL: ${CELL} diverged (NaN training loss)"; exit 1; fi
           if [ -n "${RUN_DIR}" ]; then
             python3 experiments/FT/smoke_checks.py load-log --log ${RUN}/stdout.log
@@ -116,7 +119,7 @@ spec:
               python3 experiments/FT/slim_outputs.py pred --file ${CELL}/pred.root;;
             *)
               python3 experiments/EVAL/extract_features.py --checkpoint ${CELL}/net_best_epoch_state.pt --num-classes ${K} \
-                --arm FTB_${TASK}_${INIT:-scratch}_N${N}_s${S} --data-config ${CFG} --data-test ${TEST} \
+                --arm FTB_${TASK}_${INIT:-scratch}_N${N}_s${S} --data-config ${TCFG} --data-test ${TEST} \
                 --observers jet_pt jet_energy --out ${CELL}/features --batch-size 512 --num-workers 1 --fetch-step 1 --save-logits
               if [ "${TASK}" = "qg" ]; then
                 python3 experiments/EVAL/extract_features.py --checkpoint ${CELL}/net_best_epoch_state.pt --num-classes ${K} \
