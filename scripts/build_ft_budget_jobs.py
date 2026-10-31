@@ -57,12 +57,24 @@ TASKS = {
     "top": ("/data/finetune/top_sub", "configs/finetune/TopReference.yaml", 2,
             "experiments/MTX/ParT_sophon_arch_mtx.py", "leg_top", (1_000, 10_000, 100_000),
             "/data/finetune/top/top_test.parquet", "48Gi"),
+    "topkin": ("/data/finetune/top_sub", "configs/finetune/TopReference_kin.yaml", 2,
+               "experiments/MTX/ParT_sophon_arch_mtx.py", "leg_top", (1_000, 10_000, 100_000),
+               "/data/finetune/top/top_test.parquet", "48Gi"),
     "qg": ("/data/finetune/qg_v2_sub", "configs/finetune/EnergyFlowQG.yaml", 2,
            "experiments/MTX/ParT_sophon_arch_mtx.py", "leg_qg", (1_000, 10_000, 100_000),
            "/data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet", "48Gi"),
     "jc1": ("/data/finetune/jc1", "configs/finetune/JetClassI_sophon_noweight.yaml", 10,
             "experiments/E1/ParT_sophon_arch_10c.py", "leg2", (10_000, 100_000), "JC1_TEST", "64Gi"),
+    # the class-balanced JetClass-II sets (stage_jc2_balanced.py): trained on the 188 native classes,
+    # scored on every jet of the balanced test set through the native-label config
+    "jc2b": ("/data/finetune/jc2_bal", "configs/finetune/JetClassII_L188_noweight.yaml", 188,
+             "experiments/MTX/ParT_sophon_arch_mtx.py", "leg_jc2b", (10_000, 100_000, 1_000_000),
+             "/data/finetune/jc2_bal/test.parquet", "64Gi"),
 }
+VAL_SIZE = {"jc2b": 20_480}        # the balanced validation file (188 x 109 at most); 200,000 elsewhere
+TEST_CFG = {"jc2b": "configs/data/JetClassII_base.yaml"}
+FULL = {"topkin": 1_200_000}        # the full training set: ParT's recipe, 20 epochs, no early stop
+KIN_RUNS = ("l188kin-s1", "r16q1kin-s1")
 
 
 def head_mult(lr: str) -> str:
@@ -76,12 +88,17 @@ def paper_runs() -> list:
 
 
 def cell(task: str, init: str, n: int, s: int, lr: str, root: str, sub: str = "") -> dict:
-    """One cell. init '' is from scratch; sub names the cell's directory under its init."""
+    """One cell. init '' is from scratch; sub names the cell's directory under its init. Below the
+    full set: 40 epochs of 500 steps, early stop after 10; at the full set (FULL): ParT's 20 epochs
+    of the whole set, kept to the end."""
     tree = TASKS[task][4]
     name = init or "scratch"
     leaf = f"{name}{sub}"
+    full = FULL.get(task) == n
     return {"task": task, "init": init, "run_dir": f"{MTX_V2}/mtx-{init}" if init else "", "n": n, "s": s,
-            "lr": lr, "mult": head_mult(lr) if init else "", "out": f"{root}/{tree}/{leaf}/N{n}/s{s}"}
+            "lr": lr, "mult": head_mult(lr) if init else "", "out": f"{root}/{tree}/{leaf}/N{n}/s{s}",
+            "epochs": 20 if full else EPOCHS, "spe": n if full else STEPS * BATCH,
+            "patience": 1000 if full else PATIENCE, "val": VAL_SIZE.get(task, VAL_N)}
 
 
 def lrsweep_cells() -> list:
@@ -99,6 +116,20 @@ def bench_cells(lr_pre: str, lr_scratch: str, tasks=("top", "qg"), runs=None) ->
         sizes = TASKS[task][5]
         out += [cell(task, r, n, 1, lr_pre, BUDGET_ROOT) for n in sizes for r in runs]
         out += [cell(task, "", n, s, lr_scratch, BUDGET_ROOT) for n in sizes for s in SCRATCH_SEEDS]
+    return out
+
+
+def jc2b_cells(lr_pre: str, lr_scratch: str) -> list:
+    """The hierarchy and the mass-output runs (the Methods' JetClass-II scope) and from scratch."""
+    runs = [r for r in paper_runs() if r.split("-")[0] in ("l188", "l162", "r42q1", "r16q1", "l162mass", "r16q1mass")]
+    return bench_cells(lr_pre, lr_scratch, ("jc2b",), runs)
+
+
+def kin_cells(lr_pre: str) -> list:
+    """The kinematic-only runs on top tagging: below the full set at the swept rate, and the full set
+    with ParT's fine-tuning recipe (1e-4, head x50)."""
+    out = [cell("topkin", r, n, 1, lr_pre, BUDGET_ROOT) for n in TASKS["topkin"][5] for r in KIN_RUNS]
+    out += [cell("topkin", r, FULL["topkin"], 1, "1e-4", BUDGET_ROOT) for r in KIN_RUNS]
     return out
 
 
@@ -138,24 +169,24 @@ fi
 python3 experiments/FT/smoke_checks.py manifest --out ${CELL}/ft_manifest.json task=${TASK} \
   init=${INIT:-scratch} checkpoint=${RUN_DIR} n_train=${N} ft_seed=${S} lr=${LR} ${RECIPE} weight_decay=0.01 \
   subset=${SUB}/train_N${N}_s1.parquet data_config=${CFG} num_classes=${K} batch_size=__BATCH__ \
-  samples_per_epoch=$((__STEPS__ * __BATCH__)) steps_per_epoch=__STEPS__ max_epochs=__EPOCHS__ \
-  samples_per_epoch_val=__VAL_N__ early_stop_patience=__PATIENCE__ val_rule=fixed-file budget=v3.1
+  samples_per_epoch=${SPE} steps_per_epoch=$((SPE / __BATCH__)) max_epochs=${EP} \
+  samples_per_epoch_val=${VAL} early_stop_patience=${PAT} val_rule=fixed-file budget=v3.1
 python3 experiments/FT/ft_weaver.py --seed ${S} --lean-val-metrics \
   --data-train ${SUB}/train_N${N}_s1.parquet --data-val ${SUB}/val.parquet --data-config ${CFG} \
   --network-config ${NET} -o num_classes ${K} -o fc_params '[(512,0.1)]' \
   --use-amp --batch-size __BATCH__ --num-workers 2 --fetch-by-files --fetch-step 1 --optimizer ranger \
   ${SCHED[@]+"${SCHED[@]}"} --optimizer-option weight_decay 0.01 ${MULTARG[@]+"${MULTARG[@]}"} \
-  --start-lr ${LR} --samples-per-epoch $((__STEPS__ * __BATCH__)) --samples-per-epoch-val __VAL_N__ \
-  --num-epochs __EPOCHS__ ${LOAD[@]+"${LOAD[@]}"} --model-prefix ${RUN}/net --log ${RUN}/train.log \
+  --start-lr ${LR} --samples-per-epoch ${SPE} --samples-per-epoch-val ${VAL} \
+  --num-epochs ${EP} ${LOAD[@]+"${LOAD[@]}"} --model-prefix ${RUN}/net --log ${RUN}/train.log \
   > ${RUN}/stdout.log 2>&1 &
 PID=$!
 ES=0
-python3 experiments/FT/early_stop.py watch --log ${RUN}/train.log --pid ${PID} --patience __PATIENCE__ \
-  --max-epochs __EPOCHS__ --out ${CELL}/early_stop.json || ES=$?
+python3 experiments/FT/early_stop.py watch --log ${RUN}/train.log --pid ${PID} --patience ${PAT} \
+  --max-epochs ${EP} --out ${CELL}/early_stop.json || ES=$?
 wait ${PID} || true
 cp ${RUN}/train.log ${RUN}/stdout.log ${CELL}/
 [ "${ES}" -eq 0 ] || { echo "FATAL: ${CELL}: training did not finish (early_stop rc=${ES})"; tail -30 ${RUN}/stdout.log; exit 1; }
-grep -q "('steps_per_epoch', __STEPS__)" ${RUN}/train.log || { echo "FATAL: weaver did not run __STEPS__ steps per epoch"; exit 1; }
+grep -q "('steps_per_epoch', $((SPE / __BATCH__)))" ${RUN}/train.log || { echo "FATAL: weaver did not run $((SPE / __BATCH__)) steps per epoch"; exit 1; }
 if grep -q "AvgLoss: nan" ${RUN}/train.log; then echo "FATAL: ${CELL} diverged (NaN training loss)"; exit 1; fi
 if [ -n "${RUN_DIR}" ]; then
   python3 experiments/FT/smoke_checks.py load-log --log ${RUN}/stdout.log
@@ -175,7 +206,7 @@ case ${TASK} in
     python3 experiments/FT/slim_outputs.py pred --file ${CELL}/pred.root;;
   *)
     python3 experiments/EVAL/extract_features.py --checkpoint ${CELL}/net_best_epoch_state.pt --num-classes ${K} \
-      --arm FTB_${TASK}_${INIT:-scratch}_N${N}_s${S} --data-config ${CFG} --data-test ${TEST} \
+      --arm FTB_${TASK}_${INIT:-scratch}_N${N}_s${S} --data-config ${TCFG} --data-test ${TEST} \
       --observers jet_pt jet_energy --out ${CELL}/features --batch-size 512 --num-workers 1 --fetch-step 1 --save-logits
     if [ "${TASK}" = "qg" ]; then
       python3 experiments/EVAL/extract_features.py --checkpoint ${CELL}/net_best_epoch_state.pt --num-classes ${K} \
@@ -199,21 +230,20 @@ def task_cases() -> str:
                           "[ \"$(echo ${TEST} | wc -w)\" -eq 20 ] || { echo \"FATAL: JetClass test files\"; exit ${HALT}; }")
         else:
             test_block = f'TEST="{test}"'
-        out.append(f"  {t}) SUB={sub}; CFG={cfg}; K={k}; NET={net}; {test_block};;\n")
+        out.append(f"  {t}) SUB={sub}; CFG={cfg}; TCFG={TEST_CFG.get(t, cfg)}; K={k}; NET={net}; {test_block};;\n")
     return "".join(out)
 
 
 def cell_cases(cells: list) -> str:
     return "".join(f"  {i}) TASK={c['task']}; INIT={c['init']}; RUN_DIR={c['run_dir']}; N={c['n']}; S={c['s']}; "
-                   f"LR={c['lr']}; MULT={c['mult']}; CELL={c['out']};;\n" for i, c in enumerate(cells))
+                   f"LR={c['lr']}; MULT={c['mult']}; EP={c['epochs']}; SPE={c['spe']}; PAT={c['patience']}; "
+                   f"VAL={c['val']}; CELL={c['out']};;\n" for i, c in enumerate(cells))
 
 
 def spec(name: str, cells: list, tag: str, parallelism: int, memory: str) -> str:
     launch = _launch()
     script = (CELL_SCRIPT.replace("__CASES__", cell_cases(cells)).replace("__TASKS__", task_cases())
-              .replace("__STEPS__", str(STEPS)).replace("__BATCH__", str(BATCH)).replace("__EPOCHS__", str(EPOCHS))
-              .replace("__VAL_N__", str(VAL_N)).replace("__PATIENCE__", str(PATIENCE))
-              .replace("__HERWIG__", " ".join(HERWIG_TEST)))
+              .replace("__BATCH__", str(BATCH)).replace("__HERWIG__", " ".join(HERWIG_TEST)))
     script = ("set -euo pipefail\n"
               'git clone -q --depth 1 --branch "${REPO_REF}" https://github.com/raunavm/transferlearningsophon.git '
               "/workspace/transferlearningsophon\ncd /workspace/transferlearningsophon\n"
@@ -294,7 +324,7 @@ def main(argv=None) -> int:
     ap.add_argument("--lr-pre", default=None)
     ap.add_argument("--lr-scratch", default=None)
     ap.add_argument("--parallelism", type=int, default=4)
-    ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1"))
+    ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
@@ -303,8 +333,11 @@ def main(argv=None) -> int:
         else:
             if not (a.lr_pre and a.lr_scratch):
                 ap.error(f"{kind} needs --lr-pre and --lr-scratch (from the sweep)")
-            cells = bench_cells(a.lr_pre, a.lr_scratch, ("top", "qg") if kind == "bench" else ("jc1",))
-            mem = "48Gi" if kind == "bench" else "64Gi"
+            cells = {"bench": lambda: bench_cells(a.lr_pre, a.lr_scratch, ("top", "qg")),
+                     "jc1": lambda: bench_cells(a.lr_pre, a.lr_scratch, ("jc1",)),
+                     "jc2b": lambda: jc2b_cells(a.lr_pre, a.lr_scratch),
+                     "kin": lambda: kin_cells(a.lr_pre)}[kind]()
+            mem = "48Gi" if kind in ("bench", "kin") else "64Gi"
         name = f"ft-budget-{kind}-raunav"
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(spec(name, cells, a.tag, a.parallelism, mem))

@@ -80,7 +80,7 @@ def test_bench_and_jc1_cells():
     assert len({c["out"] for c in bench + jc1}) == len(bench) + len(jc1)
 
 
-@pytest.mark.parametrize("kind", ["lrsweep", "bench", "jc1"])
+@pytest.mark.parametrize("kind", ["lrsweep", "bench", "jc1", "jc2b", "kin"])
 def test_spec_is_valid_bash_on_v100(kind, tmp_path, monkeypatch):
     monkeypatch.setattr(bfb, "OUT_DIR", tmp_path)
     bfb.main(["--tag", "mtx-test", "--lr-pre", "3e-4", "--lr-scratch", "1e-3", kind])
@@ -93,6 +93,19 @@ def test_spec_is_valid_bash_on_v100(kind, tmp_path, monkeypatch):
     gpus = spec["template"]["spec"]["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"][
         "nodeSelectorTerms"][0]["matchExpressions"][1]["values"]
     assert gpus == ["Tesla-V100-SXM2-32GB"]
-    assert "--samples-per-epoch $((500 * 512))" in script and "--num-epochs 40" in script
-    assert "--samples-per-epoch-val 200000" in script and "early_stop.py watch" in script
+    assert "--samples-per-epoch ${SPE}" in script and "--num-epochs ${EP}" in script
+    assert "--samples-per-epoch-val ${VAL}" in script and "early_stop.py watch" in script
+    assert ("EP=40; SPE=256000; PAT=10;" in script) or kind == "kin"
     assert "train_N${N}_s1.parquet" in script and "--model-prefix ${RUN}/net" in script
+
+
+def test_jc2b_and_kinematic_cells():
+    jc2b = bfb.jc2b_cells("3e-4", "1e-3")
+    assert len(jc2b) == (16 + 3) * 3 and {c["n"] for c in jc2b} == {10_000, 100_000, 1_000_000}
+    assert {c["val"] for c in jc2b} == {20_480} and all(c["epochs"] == 40 for c in jc2b)
+    kin = bfb.kin_cells("3e-4")
+    full = [c for c in kin if c["n"] == 1_200_000]
+    assert len(kin) == 8 and len(full) == 2
+    assert all(c["epochs"] == 20 and c["spe"] == 1_200_000 and c["patience"] == 1000 and c["lr"] == "1e-4"
+               for c in full)
+    assert {c["init"] for c in kin} == set(bfb.KIN_RUNS)
