@@ -300,7 +300,33 @@ def load_ft(data: pathlib.Path) -> tuple:
         per[key] = {init: {int(n[1:]): [rec for _, rec in sorted(seeds.items())]
                            for n, seeds in by_n.items() if re.fullmatch(r"N\d+", n)}
                     for init, by_n in cells.items()}
-    return tag, per, absent
+    return tag, merge_budget(per, data / "budget" / "budget_metrics.json"), absent
+
+
+# 2026-10-31 (plan 3.1, 3.4): below the full set every fine-tuning is the fixed-budget recipe
+# (experiments/FT/budget_metrics.py), which supersedes the earlier cells there; JetClass-II is the
+# class-balanced task at every size. (budget tree, sub-record or None) per task; the full sets.
+BUDGET_TREE = {"top": ("leg_top", None), "qg": ("leg_qg", None), "qg_herwig": ("leg_qg", "herwig"),
+               "jc1": ("leg2", None), "jc2": ("leg_jc2b", None), "jc2_qcd": ("leg_jc2b", None)}
+FULL_N = {"top": 1_200_000, "qg": 1_600_000, "qg_herwig": 1_600_000, "jc1": 1_000_000}
+BUDGET_SCRATCH = "scratch"          # build_ft_budget_jobs.cell's directory for a from-scratch cell
+
+
+def merge_budget(per: dict, budget: pathlib.Path) -> dict:
+    """per with the superseded cells removed (below FULL_N; every natural-mix JetClass-II cell) and
+    the fixed-budget cells added, the from-scratch ones under SCRATCH."""
+    out = {key: {init: {n: v for n, v in by_n.items() if key in FULL_N and n >= FULL_N[key]}
+                 for init, by_n in cells.items()} for key, cells in per.items()}
+    if not budget.exists():
+        return out
+    cells = json.loads(budget.read_text())["cells"]
+    for key, (tree, sub) in BUDGET_TREE.items():
+        for k in sorted(c for c in cells if c.startswith(tree + "/")):
+            _, init, n, seed = k.split("/")
+            rec = cells[k][sub] if sub else cells[k]
+            init = SCRATCH if init == BUDGET_SCRATCH else init
+            out.setdefault(key, {}).setdefault(init, {}).setdefault(int(n[1:]), []).append(rec)
+    return out
 
 
 def _ft(per: dict, key: str, model: str, n: int, metric: str):
@@ -1235,11 +1261,11 @@ CAPTIONS = {
                "divergence expected for a random selection of as many QCD jets, which a cut that does not "
                "sculpt the mass still shows because of the finite number of jets passing it. " + SPREAD_MASS),
     "ft": ("tab:ft", "Full fine-tuning against the training-set size: $(1-\\mathrm{AUC})\\times10^{3}$, "
-           "lower is better, with the macro AUC (one-versus-rest) on JetClass-II, over all and over its QCD "
-           "classes, and on JetClass, and the AUC on top and quark/gluon (q/g) tagging, q/g also on jets "
-           "generated with Herwig. " + SPREAD + " Each pretrained run is fine-tuned once. From scratch: mean "
-           "$\\pm$ standard deviation over \\MlstFtRefSeedsWord{} seeds, which below the largest training set "
-           "of JetClass, top and q/g tagging also use different training subsets."),
+           "lower is better, with the macro AUC (one-versus-rest) on the class-balanced JetClass-II test set, "
+           "over all and over its QCD classes, and on JetClass, and the AUC on top and quark/gluon (q/g) "
+           "tagging, q/g also on jets generated with Herwig. " + SPREAD + " Each pretrained run is fine-tuned "
+           "once. From scratch: mean $\\pm$ standard deviation over \\MlstFtRefSeedsWord{} training seeds on the "
+           "same jets."),
     "ft_rej": ("tab:ftrej", "Background rejection $R_{50}$ and $R_{30}$ ($1/\\epsilon_B$ at 50\\% and "
                "30\\% signal efficiency) after full fine-tuning on the whole training set. " + SPREAD +
                " From scratch: over its seeds. Every value rests on at least __FEWEST__ background jets "
@@ -1267,9 +1293,9 @@ CAPTIONS = {
              "scratch on the same subset for fine-tuning. The macro AUC is used for JetClass-II and JetClass."),
     "jetclass": ("tab:jetclass", "JetClass in the form of ParT's Table~1: accuracy, macro AUC one-vs-one "
                  "(ParT's convention) and one-vs-rest, and for each signal class the rejection of QCD jets at "
-                 "50\\% signal efficiency (99\\% for $H\\to\\ell\\nu qq'$, 99.5\\% for $t\\to b\\ell\\nu$), on the "
-                 "discriminant $p_c/(p_c+p_{\\mathrm{QCD}})$. The published rows were trained on the number of "
-                 "jets given and scored on a 20-million-jet test set; ours are fine-tuned on one million and "
+                 "50\\% signal efficiency (__WPHQQL__\\% for $H\\to\\ell\\nu qq'$, __WPTBL__\\% for $t\\to b\\ell\\nu$), on "
+                 "the discriminant $p_c/(p_c+p_{\\mathrm{QCD}})$. The published rows were trained on the number of "
+                 "jets given and scored on a \\LitPartJcTestMillion-million-jet test set; ours are fine-tuned on one million and "
                  "scored on two million (the AUCs on every fourth), mean $\\pm$ standard deviation over the "
                  "pretraining runs (the network trained from scratch: three seeds)."),
     "xbx": ("tab:xbx", "Resonance tagging in the soft-drop mass window, \\XbxWindowLo--\\XbxWindowHi~GeV: signal "
@@ -1287,7 +1313,8 @@ PLACEHOLDERS = (("mlp", "mlst_mlp", False, None), ("fill", "mlst_fill", False, N
                 ("mass", "mlst_mass", False, {"__MLP_SEEDS__": r"\pending{n}"}),
                 ("sculpt", "mlst_sculpt", False, {"__SCULPT_BINS__": r"\pending{bins}"}), ("ft", "mlst_ft", True, None),
                 ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, None),
-                ("xbx", "mlst_xbx", False, None), ("jetclass", "mlst_jetclass", True, None))
+                ("xbx", "mlst_xbx", False, None), ("jetclass", "mlst_jetclass", True,
+                 {"__WPHQQL__": r"\pending{n}", "__WPTBL__": r"\pending{n}"}))
 # the resonance-tagging section's sample macros (experiments/XBS/xbx_report.py macros)
 XBX_MACROS = ("XbxMx", "XbxWindowLo", "XbxWindowHi") + tuple(
     f"{s}{k}" for s in ("Xbb", "Xbs") for k in ("NTrainPerClass", "Repetition", "NEvalSignal", "NEvalQcd"))
@@ -1362,10 +1389,10 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         fits = fits_v4
     else:
         missing.append("v4 linear probes -- experiments/FIGS/data/v2/linprobe/fits_v4/")
-    V4.design_macros(em, root, data, missing, fmt_int)
     if not fits:
         missing.append(f"linear probes -- experiments/FIGS/data/v2/{FITS}/")
         return {}
+    V4.design_macros(em, root, data, missing, fmt_int)
     index = check_index(data)
     runs = _paper(root)
     n_paper = sum(len(v) for k, v in runs.items() if k not in (INIT, INIT_BN))
@@ -1469,7 +1496,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         pooled = {**runs, "RAND": [m for a in RAND for m in runs[a]]}
         out["tables/mlst_jetclass.tex"] = _float("jetclass", V4.table_jetclass(
             pre, ref, pooled, MAIN + MASS + ("RAND",) + FLAV, {**LABEL, "RAND": "random partitions (all five)"},
-            SCRATCH, 1_000_000, fmt_pm, _two, fmt_int), True)
+            SCRATCH, 1_000_000, fmt_pm, _two), True,
+            fill={"__WPHQQL__": f"{100 * V4.LPV_EPS['label_Hqql']:g}", "__WPTBL__": f"{100 * V4.LPV_EPS['label_Tbl']:g}"})
     else:
         missing.append("JetClass per-class curves -- experiments/FIGS/data/v2/curves/full_*.json")
     if comp:

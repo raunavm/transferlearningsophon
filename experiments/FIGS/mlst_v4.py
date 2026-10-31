@@ -251,7 +251,7 @@ def _jc1_cells(cells: dict, init: str, n: str, seeds) -> list:
 
 
 def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, scratch: str, nmax: int,
-                   fmt_pm, two, fmt_int) -> str:
+                   fmt_pm, two) -> str:
     """JetClass in the form of ParT's Table 1: accuracy, macro AUC (one-vs-one, ParT's convention;
     one-vs-rest beside it), and each signal class's rejection of QCD at ParT's working point. ParT's
     rows (100 M jets; Table 3's at 2 M) from literature_benchmarks.json, ours fine-tuned on nmax

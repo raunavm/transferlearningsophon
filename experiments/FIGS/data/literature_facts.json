@@ -469,6 +469,13 @@
    "quote": "ParT-f.t.exp 0.843 0.9151 42.4 ± 0.2 107.9 ± 0.5"
   },
   {
+   "macro": "LitPartJcTestMillion",
+   "value": "20",
+   "source": "arXiv:2202.03772",
+   "location": "Sec. 3",
+   "quote": "a separate test set with 2 M jets in each class (in total 20 M) is provided."
+  },
+  {
    "macro": "LitPartJcTwoMAcc",
    "value": "0.836",
    "source": "arXiv:2202.03772",

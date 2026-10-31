@@ -4513,589 +4513,595 @@
   },
   "LitAtlasUnifiedEffDropPercent": {
     "json_path": "facts[9].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "10"
   },
   "LitBHadronLifetimePs": {
-    "json_path": "facts[70].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[71].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "1.5"
   },
   "LitBukchinAncor": {
     "json_path": "facts[54].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "45.14"
   },
   "LitBukchinCoarse": {
     "json_path": "facts[49].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "33.83"
   },
   "LitBukchinFine": {
     "json_path": "facts[50].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "58.95"
   },
   "LitCHadronLifetimePs": {
-    "json_path": "facts[71].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[72].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "1"
   },
   "LitChenCoarseFifteen": {
-    "json_path": "facts[79].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[80].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "15"
   },
   "LitChenCoarseTwenty": {
-    "json_path": "facts[80].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[81].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "20"
   },
   "LitChenGainFifteen": {
-    "json_path": "facts[77].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[78].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.16"
   },
   "LitChenGainTwenty": {
-    "json_path": "facts[78].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[79].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.01"
   },
   "LitChenRandomMaxGain": {
-    "json_path": "facts[81].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[82].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.78"
   },
   "LitCmsPartMassLambda": {
     "json_path": "facts[24].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.05"
   },
   "LitCmsPartNClasses": {
     "json_path": "facts[23].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "37"
   },
   "LitCmsSdBeta": {
-    "json_path": "facts[86].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[87].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0"
   },
   "LitCmsSdZcut": {
-    "json_path": "facts[85].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[86].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.1"
   },
   "LitDelphesVersion": {
     "json_path": "facts[6].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "3"
   },
   "LitGlopartAddedAucBase": {
-    "json_path": "facts[83].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[84].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.9555"
   },
   "LitGlopartAddedAucTop": {
-    "json_path": "facts[84].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[85].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.9593"
   },
   "LitGlopartMassLambda": {
-    "json_path": "facts[82].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[83].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "5"
   },
   "LitGlopartNClasses": {
     "json_path": "facts[13].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "314"
   },
   "LitGlopartVoneNClasses": {
     "json_path": "facts[30].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "37"
   },
   "LitGlopartVthreeNClasses": {
     "json_path": "facts[25].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "374"
   },
   "LitGnTwoAuxRejectionDropPercent": {
     "json_path": "facts[22].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "30"
   },
   "LitGrasHerwigVersion": {
-    "json_path": "facts[97].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[98].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.7.1"
   },
   "LitHerwigVersion": {
-    "json_path": "facts[91].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[92].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "7.1.4"
   },
   "LitHongDeclineClasses": {
     "json_path": "facts[42].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "\\ensuremath{10^{3}}"
   },
   "LitHongPretrainRuns": {
     "json_path": "facts[16].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2"
   },
   "LitHongSuperclasses": {
     "json_path": "facts[41].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "11"
   },
   "LitHuhCoarseClasses": {
     "json_path": "facts[26].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "127"
   },
   "LitHuhFineClasses": {
     "json_path": "facts[39].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "1000"
   },
   "LitHuhKnnGapPercent": {
     "json_path": "facts[27].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "15"
   },
   "LitHuhPascalDropMap": {
     "json_path": "facts[40].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.8"
   },
   "LitJetClassTwoJetRadius": {
     "json_path": "facts[8].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.8"
   },
   "LitJetClassTwoMaxResonanceMass": {
     "json_path": "facts[3].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "500"
   },
   "LitJetClassTwoNJetsMillion": {
     "json_path": "facts[0].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "139"
   },
   "LitJetClassTwoNQcdClasses": {
     "json_path": "facts[2].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "27"
   },
   "LitJetClassTwoNResonantClasses": {
     "json_path": "facts[1].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "161"
   },
   "LitJetClassTwoPileupMean": {
     "json_path": "facts[7].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "50"
   },
   "LitKornblithRho": {
     "json_path": "facts[51].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "\\ensuremath{-0.93}"
   },
   "LitLandscapeParticlenetEnsMean": {
-    "json_path": "facts[94].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[95].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "1412"
   },
   "LitMadgraphVersion": {
     "json_path": "facts[4].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.9.18"
   },
   "LitMahajanFtGapPp": {
     "json_path": "facts[55].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.1"
   },
   "LitMahajanFtNineKLarge": {
-    "json_path": "facts[73].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[74].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "48.5"
   },
   "LitMahajanFtNineKSmall": {
-    "json_path": "facts[74].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[75].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "48.4"
   },
   "LitMahajanFtOneKLarge": {
-    "json_path": "facts[76].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[77].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "83.6"
   },
   "LitMahajanFtOneKSmall": {
-    "json_path": "facts[75].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[76].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "84.2"
   },
   "LitMahajanLinearGapPercent": {
     "json_path": "facts[48].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "7"
   },
   "LitMehtaNCategories": {
     "json_path": "facts[15].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "eight"
   },
   "LitMpmBenefitJets": {
     "json_path": "facts[45].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "10k"
   },
   "LitObjectivesFewJets": {
     "json_path": "facts[44].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "\\ensuremath{10^{4}}"
   },
   "LitObjectivesFewestJets": {
-    "json_path": "facts[92].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[93].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "\\ensuremath{10^{3}}"
   },
   "LitObjectivesFullJets": {
     "json_path": "facts[43].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "\\ensuremath{1.2\\times10^{6}}"
   },
   "LitOmnilearnPidDropProb": {
-    "json_path": "facts[72].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[73].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.2"
   },
   "LitPartFtEpochs": {
     "json_path": "facts[14].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "20"
   },
   "LitPartFtHeadReinits": {
-    "json_path": "facts[95].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[96].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "9"
   },
-  "LitPartJcTwoMAcc": {
+  "LitPartJcTestMillion": {
     "json_path": "facts[66].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
+    "source_file": "experiments/FIGS/data/literature_facts.json",
+    "value": "20"
+  },
+  "LitPartJcTwoMAcc": {
+    "json_path": "facts[67].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.836"
   },
   "LitPartQgAucFt": {
     "json_path": "facts[64].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.9151"
   },
   "LitPartQgAucScratch": {
     "json_path": "facts[62].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.9121"
   },
   "LitPartQgRejFt": {
     "json_path": "facts[65].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "107.9"
   },
   "LitPartQgRejScratch": {
     "json_path": "facts[63].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "101.2"
   },
   "LitPartSmallSetIters": {
-    "json_path": "facts[67].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[68].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "100 k"
   },
   "LitPartSmallSetPercent": {
-    "json_path": "facts[68].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[69].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2"
   },
   "LitPartTopAucFt": {
     "json_path": "facts[61].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.9877"
   },
   "LitPartTopAucScratch": {
     "json_path": "facts[60].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.9858"
   },
   "LitPartTopKinFeatures": {
     "json_path": "facts[53].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "7"
   },
   "LitPartTopNTrainMillion": {
-    "json_path": "facts[93].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[94].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "1.2"
   },
   "LitPartTopRejFt": {
     "json_path": "facts[47].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2766"
   },
   "LitPartTopRejScratch": {
     "json_path": "facts[46].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "1602"
   },
   "LitPartTopSigEffPercent": {
     "json_path": "facts[52].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "30"
   },
   "LitPythiaVersion": {
     "json_path": "facts[5].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "8.3"
   },
   "LitQgJetRadius": {
     "json_path": "facts[57].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.4"
   },
   "LitQgNJetsMillion": {
-    "json_path": "facts[87].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[88].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2"
   },
   "LitQgPtMax": {
     "json_path": "facts[59].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "550"
   },
   "LitQgPtMin": {
     "json_path": "facts[58].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "500"
   },
   "LitQgRapidityMax": {
-    "json_path": "facts[90].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[91].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "1.7"
   },
   "LitQgTrainMillion": {
-    "json_path": "facts[88].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[89].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "1.6"
   },
   "LitQgValMillion": {
-    "json_path": "facts[89].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[90].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.2"
   },
   "LitRsthreelRuns": {
     "json_path": "facts[28].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "3"
   },
   "LitSophonAblationNClasses": {
     "json_path": "facts[35].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "42"
   },
   "LitSophonBlocksCode": {
-    "json_path": "facts[96].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[97].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "8"
   },
   "LitSophonEtaMax": {
-    "json_path": "facts[69].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "json_path": "facts[70].value",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.5"
   },
   "LitSophonLookaheadAlpha": {
     "json_path": "facts[18].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.5"
   },
   "LitSophonLookaheadK": {
     "json_path": "facts[17].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "6"
   },
   "LitSophonPaperParticleBlocks": {
     "json_path": "facts[10].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "6"
   },
   "LitSophonParamsMillion": {
     "json_path": "facts[29].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.3"
   },
   "LitSophonRadamBetaOne": {
     "json_path": "facts[19].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.95"
   },
   "LitSophonRadamBetaTwo": {
     "json_path": "facts[20].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "0.999"
   },
   "LitSophonRadamEps": {
     "json_path": "facts[21].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "\\ensuremath{10^{-5}}"
   },
   "LitSophonSamplesPerEpochMillion": {
     "json_path": "facts[11].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "10"
   },
   "LitSophonScratchEpochs": {
     "json_path": "facts[38].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "50"
   },
   "LitSophonSubsetSamplesPerEpochMillion": {
     "json_path": "facts[12].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.5"
   },
   "LitSophonTransferBatch": {
     "json_path": "facts[37].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "1024"
   },
   "LitSophonTransferLr": {
     "json_path": "facts[56].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "5 \u00d7 10\u22124"
   },
   "LitSophonTransferSamplesMillion": {
     "json_path": "facts[36].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "2.5"
   },
   "LitSophonXLumi": {
     "json_path": "facts[32].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "40"
   },
   "LitSophonXMass": {
     "json_path": "facts[31].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "200"
   },
   "LitSophonXWindowHi": {
     "json_path": "facts[34].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "230"
   },
   "LitSophonXWindowLo": {
     "json_path": "facts[33].value",
-    "sha256": "ece697d9107aedd60553f2fe754edb33a91ad577d43db62c0a45ff2844834184",
+    "sha256": "713dba2a5e6e1dd127e8d1c3657aac08d3868561e41f1631054ff12f314c43b6",
     "source_file": "experiments/FIGS/data/literature_facts.json",
     "value": "150"
   },
@@ -7319,47 +7325,11 @@
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "436"
   },
-  "MlstFtCmpQgCoarseMassOverCoarseEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.004 and 1.011"
-  },
-  "MlstFtCmpQgCoarseMassOverCoarseEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9826 and 0.9756"
-  },
-  "MlstFtCmpQgCoarseMassOverCoarseEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.974 and 0.997"
-  },
   "MlstFtCmpQgCoarseMassOverCoarseMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.003 and 1.005"
-  },
-  "MlstFtCmpQgCoarseMassOverScratchEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9387 and 0.9467"
-  },
-  "MlstFtCmpQgCoarseMassOverScratchEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9732 and 0.9734"
-  },
-  "MlstFtCmpQgCoarseMassOverScratchEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.8931 and 0.8965"
   },
   "MlstFtCmpQgCoarseMassOverScratchMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
@@ -7367,47 +7337,17 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9766 and 0.9786"
   },
-  "MlstFtCmpQgCoarseOverFullEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of R16_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.013\\,\\ensuremath{\\pm}\\,0.002"
-  },
-  "MlstFtCmpQgCoarseOverFullEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of R16_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.021\\,\\ensuremath{\\pm}\\,0.012"
-  },
-  "MlstFtCmpQgCoarseOverFullEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of R16_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.021\\,\\ensuremath{\\pm}\\,0.013"
-  },
   "MlstFtCmpQgCoarseOverFullMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of R16_Q1 over L188, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.005\\,\\ensuremath{\\pm}\\,0.001"
   },
-  "MlstFtCmpQgCoarseOverScratchEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.935\\,\\ensuremath{\\pm}\\,0.005"
-  },
   "MlstFtCmpQgCoarseOverScratchEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.985\\,\\ensuremath{\\pm}\\,0.018"
-  },
-  "MlstFtCmpQgCoarseOverScratchEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.910\\,\\ensuremath{\\pm}\\,0.013"
+    "json_path": "used in the text",
+    "sha256": "902d92e763af947a9fee2c112f9a9c939b0ef8a31c4683780a87290ef48ea1f4",
+    "source_file": "paper/journal/main.tex",
+    "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpQgCoarseOverScratchMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
@@ -7415,23 +7355,17 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9741\\,\\ensuremath{\\pm}\\,0.0015"
   },
-  "MlstFtCmpQgFullOverScratchEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.923\\,\\ensuremath{\\pm}\\,0.005"
-  },
   "MlstFtCmpQgFullOverScratchEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.965\\,\\ensuremath{\\pm}\\,0.013"
+    "json_path": "used in the text",
+    "sha256": "902d92e763af947a9fee2c112f9a9c939b0ef8a31c4683780a87290ef48ea1f4",
+    "source_file": "paper/journal/main.tex",
+    "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpQgFullOverScratchEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.892\\,\\ensuremath{\\pm}\\,0.009"
+    "json_path": "used in the text",
+    "sha256": "902d92e763af947a9fee2c112f9a9c939b0ef8a31c4683780a87290ef48ea1f4",
+    "source_file": "paper/journal/main.tex",
+    "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpQgFullOverScratchMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
@@ -7439,47 +7373,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9693\\,\\ensuremath{\\pm}\\,0.0021"
   },
-  "MlstFtCmpQgHerwigCoarseMassOverCoarseEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9976 and 0.9978"
-  },
-  "MlstFtCmpQgHerwigCoarseMassOverCoarseEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.992 and 1.006"
-  },
-  "MlstFtCmpQgHerwigCoarseMassOverCoarseEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9838 and 0.9920"
-  },
   "MlstFtCmpQgHerwigCoarseMassOverCoarseMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.007 and 1.032"
-  },
-  "MlstFtCmpQgHerwigCoarseMassOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9774 and 0.9733"
-  },
-  "MlstFtCmpQgHerwigCoarseMassOverScratchEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9540 and 0.9635"
-  },
-  "MlstFtCmpQgHerwigCoarseMassOverScratchEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9328 and 0.9335"
   },
   "MlstFtCmpQgHerwigCoarseMassOverScratchMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
@@ -7487,47 +7385,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.980 and 1.005"
   },
-  "MlstFtCmpQgHerwigCoarseOverFullEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of R16_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.983\\,\\ensuremath{\\pm}\\,0.009"
-  },
-  "MlstFtCmpQgHerwigCoarseOverFullEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of R16_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.003\\,\\ensuremath{\\pm}\\,0.005"
-  },
-  "MlstFtCmpQgHerwigCoarseOverFullEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of R16_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.005\\,\\ensuremath{\\pm}\\,0.006"
-  },
   "MlstFtCmpQgHerwigCoarseOverFullMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of R16_Q1 over L188, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.987\\,\\ensuremath{\\pm}\\,0.013"
-  },
-  "MlstFtCmpQgHerwigCoarseOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.979\\,\\ensuremath{\\pm}\\,0.004"
-  },
-  "MlstFtCmpQgHerwigCoarseOverScratchEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9595\\,\\ensuremath{\\pm}\\,0.0032"
-  },
-  "MlstFtCmpQgHerwigCoarseOverScratchEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.947\\,\\ensuremath{\\pm}\\,0.013"
   },
   "MlstFtCmpQgHerwigCoarseOverScratchMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
@@ -7535,47 +7397,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.978\\,\\ensuremath{\\pm}\\,0.010"
   },
-  "MlstFtCmpQgHerwigFullOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.996\\,\\ensuremath{\\pm}\\,0.010"
-  },
-  "MlstFtCmpQgHerwigFullOverScratchEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.957\\,\\ensuremath{\\pm}\\,0.007"
-  },
-  "MlstFtCmpQgHerwigFullOverScratchEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.942\\,\\ensuremath{\\pm}\\,0.016"
-  },
   "MlstFtCmpQgHerwigFullOverScratchMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.991\\,\\ensuremath{\\pm}\\,0.012"
-  },
-  "MlstFtCmpQgHerwigMidOverFullEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of R42_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.005\\,\\ensuremath{\\pm}\\,0.012"
-  },
-  "MlstFtCmpQgHerwigMidOverFullEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of R42_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.008\\,\\ensuremath{\\pm}\\,0.007"
-  },
-  "MlstFtCmpQgHerwigMidOverFullEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of R42_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.995\\,\\ensuremath{\\pm}\\,0.014"
   },
   "MlstFtCmpQgHerwigMidOverFullMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of R42_Q1 over L188, run by run",
@@ -7583,47 +7409,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.996\\,\\ensuremath{\\pm}\\,0.019"
   },
-  "MlstFtCmpQgHerwigMidOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.001\\,\\ensuremath{\\pm}\\,0.002"
-  },
-  "MlstFtCmpQgHerwigMidOverScratchEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9645\\,\\ensuremath{\\pm}\\,0.0031"
-  },
-  "MlstFtCmpQgHerwigMidOverScratchEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.937\\,\\ensuremath{\\pm}\\,0.016"
-  },
   "MlstFtCmpQgHerwigMidOverScratchMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.987\\,\\ensuremath{\\pm}\\,0.024"
-  },
-  "MlstFtCmpQgHerwigRandOverCoarseEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.016\\,\\ensuremath{\\pm}\\,0.008"
-  },
-  "MlstFtCmpQgHerwigRandOverCoarseEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.012\\,\\ensuremath{\\pm}\\,0.015"
-  },
-  "MlstFtCmpQgHerwigRandOverCoarseEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.021\\,\\ensuremath{\\pm}\\,0.035"
   },
   "MlstFtCmpQgHerwigRandOverCoarseMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
@@ -7631,47 +7421,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.019\\,\\ensuremath{\\pm}\\,0.004"
   },
-  "MlstFtCmpQgHerwigRandOverFullEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.997\\,\\ensuremath{\\pm}\\,0.010"
-  },
-  "MlstFtCmpQgHerwigRandOverFullEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.016\\,\\ensuremath{\\pm}\\,0.016"
-  },
-  "MlstFtCmpQgHerwigRandOverFullEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.03\\,\\ensuremath{\\pm}\\,0.04"
-  },
   "MlstFtCmpQgHerwigRandOverFullMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.004\\,\\ensuremath{\\pm}\\,0.010"
-  },
-  "MlstFtCmpQgHerwigResMassOverResEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of L162_MASS over L162, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9928 and 0.9972"
-  },
-  "MlstFtCmpQgHerwigResMassOverResEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of L162_MASS over L162, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9997 and 0.9924"
-  },
-  "MlstFtCmpQgHerwigResMassOverResEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of L162_MASS over L162, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.983 and 0.997"
   },
   "MlstFtCmpQgHerwigResMassOverResMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of L162_MASS over L162, run by run",
@@ -7679,47 +7433,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.977 and 1.006"
   },
-  "MlstFtCmpQgHerwigResMassOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9881 and 0.9944"
-  },
-  "MlstFtCmpQgHerwigResMassOverScratchEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9522 and 0.9529"
-  },
-  "MlstFtCmpQgHerwigResMassOverScratchEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.929 and 0.942"
-  },
   "MlstFtCmpQgHerwigResMassOverScratchMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.975 and 0.993"
-  },
-  "MlstFtCmpQgHerwigResOverFullEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of L162 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.005\\,\\ensuremath{\\pm}\\,0.016"
-  },
-  "MlstFtCmpQgHerwigResOverFullEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of L162 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.999\\,\\ensuremath{\\pm}\\,0.011"
-  },
-  "MlstFtCmpQgHerwigResOverFullEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of L162 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.003\\,\\ensuremath{\\pm}\\,0.011"
   },
   "MlstFtCmpQgHerwigResOverFullMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of L162 over L188, run by run",
@@ -7727,47 +7445,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.002\\,\\ensuremath{\\pm}\\,0.006"
   },
-  "MlstFtCmpQgHerwigResOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.002\\,\\ensuremath{\\pm}\\,0.009"
-  },
-  "MlstFtCmpQgHerwigResOverScratchEFour": {
-    "json_path": "fine-tuning qg_herwig N=10000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.956\\,\\ensuremath{\\pm}\\,0.005"
-  },
-  "MlstFtCmpQgHerwigResOverScratchEThree": {
-    "json_path": "fine-tuning qg_herwig N=1000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.945\\,\\ensuremath{\\pm}\\,0.012"
-  },
   "MlstFtCmpQgHerwigResOverScratchMax": {
     "json_path": "fine-tuning qg_herwig N=1600000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.993\\,\\ensuremath{\\pm}\\,0.006"
-  },
-  "MlstFtCmpQgMidOverFullEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of R42_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.010\\,\\ensuremath{\\pm}\\,0.004"
-  },
-  "MlstFtCmpQgMidOverFullEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of R42_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.013\\,\\ensuremath{\\pm}\\,0.022"
-  },
-  "MlstFtCmpQgMidOverFullEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of R42_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.009\\,\\ensuremath{\\pm}\\,0.010"
   },
   "MlstFtCmpQgMidOverFullMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of R42_Q1 over L188, run by run",
@@ -7775,47 +7457,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.003\\,\\ensuremath{\\pm}\\,0.003"
   },
-  "MlstFtCmpQgMidOverScratchEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.932\\,\\ensuremath{\\pm}\\,0.006"
-  },
-  "MlstFtCmpQgMidOverScratchEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.977\\,\\ensuremath{\\pm}\\,0.013"
-  },
-  "MlstFtCmpQgMidOverScratchEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.900\\,\\ensuremath{\\pm}\\,0.010"
-  },
   "MlstFtCmpQgMidOverScratchMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.972\\,\\ensuremath{\\pm}\\,0.004"
-  },
-  "MlstFtCmpQgRandOverCoarseEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.000\\,\\ensuremath{\\pm}\\,0.006"
-  },
-  "MlstFtCmpQgRandOverCoarseEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.995\\,\\ensuremath{\\pm}\\,0.025"
-  },
-  "MlstFtCmpQgRandOverCoarseEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.036\\,\\ensuremath{\\pm}\\,0.029"
   },
   "MlstFtCmpQgRandOverCoarseMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
@@ -7823,47 +7469,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9980\\,\\ensuremath{\\pm}\\,0.0010"
   },
-  "MlstFtCmpQgRandOverFullEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.014\\,\\ensuremath{\\pm}\\,0.006"
-  },
-  "MlstFtCmpQgRandOverFullEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.021\\,\\ensuremath{\\pm}\\,0.026"
-  },
-  "MlstFtCmpQgRandOverFullEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.054\\,\\ensuremath{\\pm}\\,0.027"
-  },
   "MlstFtCmpQgRandOverFullMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.004\\,\\ensuremath{\\pm}\\,0.001"
-  },
-  "MlstFtCmpQgResMassOverResEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of L162_MASS over L162, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.008 and 1.002"
-  },
-  "MlstFtCmpQgResMassOverResEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of L162_MASS over L162, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.036 and 0.992"
-  },
-  "MlstFtCmpQgResMassOverResEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of L162_MASS over L162, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.996 and 1.003"
   },
   "MlstFtCmpQgResMassOverResMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of L162_MASS over L162, run by run",
@@ -7871,47 +7481,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.002 and 1.002"
   },
-  "MlstFtCmpQgResMassOverScratchEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9301 and 0.9328"
-  },
-  "MlstFtCmpQgResMassOverScratchEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.9633 and 0.9603"
-  },
-  "MlstFtCmpQgResMassOverScratchEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.877 and 0.889"
-  },
   "MlstFtCmpQgResMassOverScratchMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9707 and 0.9726"
-  },
-  "MlstFtCmpQgResOverFullEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of L162 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.003\\,\\ensuremath{\\pm}\\,0.006"
-  },
-  "MlstFtCmpQgResOverFullEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of L162 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.991\\,\\ensuremath{\\pm}\\,0.035"
-  },
-  "MlstFtCmpQgResOverFullEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of L162 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.995\\,\\ensuremath{\\pm}\\,0.004"
   },
   "MlstFtCmpQgResOverFullMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of L162 over L188, run by run",
@@ -7919,47 +7493,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.000\\,\\ensuremath{\\pm}\\,0.003"
   },
-  "MlstFtCmpQgResOverScratchEFive": {
-    "json_path": "fine-tuning qg N=100000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.926\\,\\ensuremath{\\pm}\\,0.007"
-  },
-  "MlstFtCmpQgResOverScratchEFour": {
-    "json_path": "fine-tuning qg N=10000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.956\\,\\ensuremath{\\pm}\\,0.023"
-  },
-  "MlstFtCmpQgResOverScratchEThree": {
-    "json_path": "fine-tuning qg N=1000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.887\\,\\ensuremath{\\pm}\\,0.011"
-  },
   "MlstFtCmpQgResOverScratchMax": {
     "json_path": "fine-tuning qg N=1600000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9697\\,\\ensuremath{\\pm}\\,0.0017"
-  },
-  "MlstFtCmpTopCoarseMassOverCoarseEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.022 and 1.075"
-  },
-  "MlstFtCmpTopCoarseMassOverCoarseEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.216 and 1.130"
-  },
-  "MlstFtCmpTopCoarseMassOverCoarseEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.23 and 1.03"
   },
   "MlstFtCmpTopCoarseMassOverCoarseMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of R16_Q1_MASS over R16_Q1, run by run",
@@ -7967,71 +7505,23 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.008 and 1.006"
   },
-  "MlstFtCmpTopCoarseMassOverScratchEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.970 and 0.994"
-  },
-  "MlstFtCmpTopCoarseMassOverScratchEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.493 and 1.404"
-  },
-  "MlstFtCmpTopCoarseMassOverScratchEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.944 and 0.855"
-  },
   "MlstFtCmpTopCoarseMassOverScratchMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of each R16_Q1_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9633 and 0.9569"
   },
-  "MlstFtCmpTopCoarseOverFullEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of R16_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.050\\,\\ensuremath{\\pm}\\,0.019"
-  },
   "MlstFtCmpTopCoarseOverFullEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of R16_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.19\\,\\ensuremath{\\pm}\\,0.07"
-  },
-  "MlstFtCmpTopCoarseOverFullEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of R16_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.10\\,\\ensuremath{\\pm}\\,0.08"
+    "json_path": "used in the text",
+    "sha256": "902d92e763af947a9fee2c112f9a9c939b0ef8a31c4683780a87290ef48ea1f4",
+    "source_file": "paper/journal/main.tex",
+    "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopCoarseOverFullMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of R16_Q1 over L188, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.012\\,\\ensuremath{\\pm}\\,0.002"
-  },
-  "MlstFtCmpTopCoarseOverScratchEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.944\\,\\ensuremath{\\pm}\\,0.020"
-  },
-  "MlstFtCmpTopCoarseOverScratchEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.29\\,\\ensuremath{\\pm}\\,0.13"
-  },
-  "MlstFtCmpTopCoarseOverScratchEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.80\\,\\ensuremath{\\pm}\\,0.08"
   },
   "MlstFtCmpTopCoarseOverScratchMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of each R16_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
@@ -8040,22 +7530,22 @@
     "value": "0.955\\,\\ensuremath{\\pm}\\,0.005"
   },
   "MlstFtCmpTopFullOverScratchEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.899\\,\\ensuremath{\\pm}\\,0.010"
+    "json_path": "used in the text",
+    "sha256": "902d92e763af947a9fee2c112f9a9c939b0ef8a31c4683780a87290ef48ea1f4",
+    "source_file": "paper/journal/main.tex",
+    "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopFullOverScratchEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.09\\,\\ensuremath{\\pm}\\,0.08"
+    "json_path": "used in the text",
+    "sha256": "902d92e763af947a9fee2c112f9a9c939b0ef8a31c4683780a87290ef48ea1f4",
+    "source_file": "paper/journal/main.tex",
+    "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopFullOverScratchEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.73\\,\\ensuremath{\\pm}\\,0.07"
+    "json_path": "used in the text",
+    "sha256": "902d92e763af947a9fee2c112f9a9c939b0ef8a31c4683780a87290ef48ea1f4",
+    "source_file": "paper/journal/main.tex",
+    "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopFullOverScratchMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of each L188 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
@@ -8063,47 +7553,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.944\\,\\ensuremath{\\pm}\\,0.006"
   },
-  "MlstFtCmpTopMidOverFullEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of R42_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.052\\,\\ensuremath{\\pm}\\,0.020"
-  },
-  "MlstFtCmpTopMidOverFullEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of R42_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.15\\,\\ensuremath{\\pm}\\,0.21"
-  },
-  "MlstFtCmpTopMidOverFullEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of R42_Q1 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.14\\,\\ensuremath{\\pm}\\,0.12"
-  },
   "MlstFtCmpTopMidOverFullMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of R42_Q1 over L188, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9975\\,\\ensuremath{\\pm}\\,0.0014"
-  },
-  "MlstFtCmpTopMidOverScratchEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.946\\,\\ensuremath{\\pm}\\,0.018"
-  },
-  "MlstFtCmpTopMidOverScratchEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.24\\,\\ensuremath{\\pm}\\,0.20"
-  },
-  "MlstFtCmpTopMidOverScratchEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.83\\,\\ensuremath{\\pm}\\,0.12"
   },
   "MlstFtCmpTopMidOverScratchMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of each R42_Q1 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
@@ -8111,23 +7565,17 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.942\\,\\ensuremath{\\pm}\\,0.005"
   },
-  "MlstFtCmpTopRandOverCoarseEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.019\\,\\ensuremath{\\pm}\\,0.020"
-  },
   "MlstFtCmpTopRandOverCoarseEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.16\\,\\ensuremath{\\pm}\\,0.12"
+    "json_path": "used in the text",
+    "sha256": "902d92e763af947a9fee2c112f9a9c939b0ef8a31c4683780a87290ef48ea1f4",
+    "source_file": "paper/journal/main.tex",
+    "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopRandOverCoarseEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.11\\,\\ensuremath{\\pm}\\,0.12"
+    "json_path": "used in the text",
+    "sha256": "902d92e763af947a9fee2c112f9a9c939b0ef8a31c4683780a87290ef48ea1f4",
+    "source_file": "paper/journal/main.tex",
+    "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopRandOverCoarseMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of each random partition over the R16_Q1 run of its run index, mean +- SD over the partitions",
@@ -8135,23 +7583,17 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.996\\,\\ensuremath{\\pm}\\,0.005"
   },
-  "MlstFtCmpTopRandOverFullEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.062\\,\\ensuremath{\\pm}\\,0.005"
-  },
   "MlstFtCmpTopRandOverFullEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.33\\,\\ensuremath{\\pm}\\,0.14"
+    "json_path": "used in the text",
+    "sha256": "902d92e763af947a9fee2c112f9a9c939b0ef8a31c4683780a87290ef48ea1f4",
+    "source_file": "paper/journal/main.tex",
+    "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopRandOverFullEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.26\\,\\ensuremath{\\pm}\\,0.11"
+    "json_path": "used in the text",
+    "sha256": "902d92e763af947a9fee2c112f9a9c939b0ef8a31c4683780a87290ef48ea1f4",
+    "source_file": "paper/journal/main.tex",
+    "value": "\\pending{no v2 number: rewrite this}"
   },
   "MlstFtCmpTopRandOverFullMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of each random partition over the 188-class run of its run index, mean +- SD over the partitions",
@@ -8159,47 +7601,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.009\\,\\ensuremath{\\pm}\\,0.005"
   },
-  "MlstFtCmpTopResMassOverResEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of L162_MASS over L162, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.049 and 1.010"
-  },
-  "MlstFtCmpTopResMassOverResEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of L162_MASS over L162, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.002 and 1.012"
-  },
-  "MlstFtCmpTopResMassOverResEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of L162_MASS over L162, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.09 and 0.93"
-  },
   "MlstFtCmpTopResMassOverResMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of L162_MASS over L162, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.008 and 1.009"
-  },
-  "MlstFtCmpTopResMassOverScratchEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.959 and 0.925"
-  },
-  "MlstFtCmpTopResMassOverScratchEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.176 and 1.111"
-  },
-  "MlstFtCmpTopResMassOverScratchEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.774 and 0.693"
   },
   "MlstFtCmpTopResMassOverScratchMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of each L162_MASS run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
@@ -8207,47 +7613,11 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9476 and 0.9451"
   },
-  "MlstFtCmpTopResOverFullEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of L162 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.026\\,\\ensuremath{\\pm}\\,0.008"
-  },
-  "MlstFtCmpTopResOverFullEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of L162 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.08\\,\\ensuremath{\\pm}\\,0.07"
-  },
-  "MlstFtCmpTopResOverFullEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of L162 over L188, run by run",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.02\\,\\ensuremath{\\pm}\\,0.06"
-  },
   "MlstFtCmpTopResOverFullMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of L162 over L188, run by run",
     "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9975\\,\\ensuremath{\\pm}\\,0.0007"
-  },
-  "MlstFtCmpTopResOverScratchEFive": {
-    "json_path": "fine-tuning top N=100000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.922\\,\\ensuremath{\\pm}\\,0.015"
-  },
-  "MlstFtCmpTopResOverScratchEFour": {
-    "json_path": "fine-tuning top N=10000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.17\\,\\ensuremath{\\pm}\\,0.11"
-  },
-  "MlstFtCmpTopResOverScratchEThree": {
-    "json_path": "fine-tuning top N=1000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",
-    "sha256": "f7e9b73de172aa376dc5585b0cb05891f3b187c07c939140df7d943ac6d06d03",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.74\\,\\ensuremath{\\pm}\\,0.07"
   },
   "MlstFtCmpTopResOverScratchMax": {
     "json_path": "fine-tuning top N=1200000: (1 - auc) of each L162 run over the from-scratch mean, SD over the runs and standard error of that mean in quadrature",

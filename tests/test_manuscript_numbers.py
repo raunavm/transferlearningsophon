@@ -52,7 +52,8 @@ GENERATED = {"results_generated.tex",
              "tables/mlst_mass.tex", "tables/compute.tex",
              "tables/mlst_ft.tex", "tables/mlst_ft_rej.tex",
              "tables/mlst_mlp.tex", "tables/mlst_fill.tex", "tables/mlst_sculpt.tex",
-             "tables/mlst_boot.tex", "tables/mlst_bench_top.tex", "tables/mlst_bench_qg.tex"}
+             "tables/mlst_boot.tex", "tables/mlst_bench_top.tex", "tables/mlst_bench_qg.tex",
+             "tables/mlst_jetclass.tex", "tables/mlst_xbx.tex"}
 
 # Numbers allowed in prose, each with the reason it is not a result.
 # A number earns a line here only if it cannot change when a job finishes.
@@ -76,7 +77,7 @@ STRIP = [
     (re.compile(r"(?<!\\)%.*$", re.M), ""),                 # comments
     (re.compile(r"\\(?:label|ref|eqref|cite[a-z]*|input|include|usepackage"
                 r"|documentclass|bibliographystyle|bibliography|url|href"
-                r"|includegraphics|newcommand|renewcommand|def)\s*"
+                r"|includegraphics|maybefigure|definecolor|newcommand|renewcommand|def)\s*"
                 r"(?:\[[^\]]*\])?\s*(?:\{[^{}]*\})+", re.S), " "),
     # a column spec may nest one level of braces: l p{0.45\linewidth}
     (re.compile(r"\\begin\{(?:tabular|array)\}\{(?:[^{}]|\{[^{}]*\})*\}"), " "),

@@ -456,8 +456,9 @@ seeds, is the reference. On the full training sets of top and quark/gluon taggin
 fine-tuning recipe~\cite[Sec.~5.2]{part}, \LitPartFtEpochs{} epochs at constant learning rates of \MlstFtLr{}
 for the pretrained weights and \FtHeadMult{} times that for the head, and ParT's from-scratch recipe for
 the reference.
-Below the full set, 20 epochs of a small training set amount to a few hundred optimizer steps, far
-from convergence, so every run---pretrained or from scratch---gets the same budget: at most
+% CHECK: "long enough to converge" -- confirm from the budget read-out's early_stop records
+Below the full set, every run---pretrained or from scratch---gets the same budget, long enough for
+the smallest training sets to converge: at most
 \FtBudgetSteps{} steps, a validation pass every \FtBudgetEval{} steps on a fixed validation set, and
 the best checkpoint, stopping once \FtBudgetPatience{} evaluations bring no improvement. The
 learning rate of the pretrained weights, \FtLrPre, and of the network from scratch, \FtLrScratch,

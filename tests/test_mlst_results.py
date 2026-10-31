@@ -333,7 +333,7 @@ def test_the_batchnorm_check_reports_the_largest_change_and_needs_both_checkpoin
 
 def test_the_jetclass_table_has_parts_rows_and_ours_in_its_column_order():
     V4 = M.V4
-    runs = M._paper(REPO)
+    runs = M._paper(ROOT)
 
     def block(k):
         return {"accuracy": 0.80 + k, "macro_auc_ovo": 0.98 + k, "macro_auc_ovr": 0.97 + k,
@@ -342,7 +342,7 @@ def test_the_jetclass_table_has_parts_rows_and_ours_in_its_column_order():
     pre = {m[len("mtx-"):]: {"N1000000": {"s1": {"jc1": block(1e-3 * i)}}} for i, m in enumerate(runs["L188"])}
     ref = {M.SCRATCH: {"N1000000": {f"s{k}": {"jc1": block(1e-3 * k)} for k in (1, 2, 3)}}}
     tex = V4.table_jetclass(pre, ref, runs, ("L188", "R16_Q1"), M.LABEL, M.SCRATCH, 1_000_000,
-                            MT.fmt_pm, M._two, MT.fmt_int)
+                            MT.fmt_pm, M._two)
     assert r"ParT~\cite{part} & 100 M & 0.861 & 0.9877 & -- & 10{,}638 & 4{,}149" in tex
     assert r"ParT~\cite{part} & 2 M & 0.836 & 0.9834" in tex
     scratch = next(line for line in tex.splitlines() if line.startswith("from scratch"))
