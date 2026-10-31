@@ -245,6 +245,7 @@ def main(argv=None) -> int:
     c = sub.add_parser("cells")
     c.add_argument("--tree", required=True, type=pathlib.Path, help="<tree>/<init>/N<N>/s<S>/")
     c.add_argument("--task", required=True, choices=TASKS)
+    c.add_argument("--n", type=int, nargs="+", help="only these training-set sizes (default: every one)")
     c.add_argument("--out", required=True, type=pathlib.Path)
     p = sub.add_parser("probes")
     p.add_argument("--probs-root", required=True, type=pathlib.Path)
@@ -260,6 +261,8 @@ def main(argv=None) -> int:
         if a.task in ("top", "qg"):
             BM.check_label_order(a.task)
         cells, skipped = discover(a.tree)
+        if a.n:
+            cells = [c for c in cells if int(str(c[1]).lstrip("N")) in a.n]
         if not cells:
             raise SystemExit(f"FATAL: no DONE cell under {a.tree}")
         res = {}

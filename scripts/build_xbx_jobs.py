@@ -58,7 +58,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "XBS" / "k8s"
 PIN = "mtx-s2.17"     # the stand-in chain as it ran
-PIN_REPORT = "mtx-s2.27"   # experiments/XBS/xbx_report.py (2026-10-31)
+PIN_REPORT = "mtx-s2.28"   # experiments/XBS/xbx_report.py (2026-10-31; s2.27 ran the first dry run)
 PIN_IHEP = "mtx-s2.20"   # NOT YET TAGGED; mtx-s2.18 is the 188-class probe refit (4f92021), without this code
 # mtx-s2.20: linear_probe_v2.py and probe.py changed after mtx-s2.19 (da6e0be); no IHEP spec had run
 # mtx-s2.16: the staged files carried the source's awkward description without xbx_class, which

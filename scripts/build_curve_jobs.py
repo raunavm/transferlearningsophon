@@ -6,6 +6,8 @@ experiments/MTX/k8s/v2/status/.
   curves-ft-raunav      experiments/FT/ft_curves.py cells on the JetClass, top and q/g trees, the
                         pretrained fine-tunes (best70) and the V100 from-scratch references
   curves-jc2-raunav     ... on the 188-class JetClass-II trees (leg1_188)
+  curves-full-raunav    ft_curves.py cells at the full training sets only, all 27 paper runs and the
+                        from-scratch seeds (PIN_FULL)
   curves-probe-raunav   ft_curves.py probes on the probe refit's saved test outputs (fits_v3_probs)
   boot-ft-raunav        experiments/STATS/paired_bootstrap.py per task and training size on the 16
                         runs reported for fine-tuning and the three from-scratch seeds on subset s1
@@ -43,6 +45,7 @@ STATUS_DIR = ROOT / "experiments" / "MTX" / "k8s" / "v2" / "status"
 # mtx-s2.18 (4f92021, the linear-probe refit) was tagged before this builder was committed;
 # mtx-s2.19 carried the first specs, none of the curves or bootstrap jobs launched at it
 PIN = "mtx-s2.20"
+PIN_FULL = "mtx-s2.28"         # curves-full (2026-10-31): ft_curves.py --n
 STATUS_PIN = "mtx-s2.19"       # the status CronJob, launched at it (RUNS.csv status-raunav, 2026-10-30)
 NEEDED = {"experiments/FT/ft_curves.py": "def roc_points",
           "experiments/STATS/paired_bootstrap.py": "P.AucScorer",
@@ -97,6 +100,15 @@ FAMILIES = {"ft": (("best70_leg2", "ref_v100_jc1_leg2"), ("best70_leg_top", "ref
 # a flavour run over these runs of its index
 FLAV_OVER = {"flavf0": ("r16q1",), "flavf1": ("flavf0",), "flavf1r": ("flavf1", "flavf0")}
 POLL_S, GIVE_UP_S = 1800, 6 * 86400
+# curves-full: the full training sets only (plan 2026-10-30: below them the fixed-budget recipe
+# replaces these trees), every paper run and the three from-scratch seeds; (tree, task, N)
+FULL_RUNS = [r.removeprefix("mtx-") for r in BF.v2_paper_runs()]
+FULL = {"best70_leg2": (f"{V2}/best70/leg2", "jc1", NMAX, FULL_RUNS, [1]),
+        "best70_leg_top": (f"{V2}/best70/leg_top", "top", BF.BENCH_SIZES["top"][-1], FULL_RUNS, [1]),
+        "best70_leg_qg": (f"{V2}/best70/leg_qg", "qg", BF.BENCH_SIZES["qg"][-1], FULL_RUNS, [1]),
+        "ref_v100_jc1_leg2": (f"{REF}/jc1/leg2", "jc1", NMAX, [SCRATCH], SEEDS),
+        "ref_v100_bench_leg_top": (f"{REF}/bench/leg_top", "top", BF.BENCH_SIZES["top"][-1], [SCRATCH], SEEDS),
+        "ref_v100_bench_leg_qg": (f"{REF}/bench/leg_qg", "qg", BF.BENCH_SIZES["qg"][-1], [SCRATCH], SEEDS)}
 
 
 def _alt(xs) -> str:
@@ -200,6 +212,15 @@ def curves_body(names: list[str]) -> str:
         f"              --out {o} || halt\n          fi\n" for n, o in zip(names, outs))
 
 
+def curves_full_body() -> str:
+    markers = [f"{t}/{_alt(inits)}/N{n}/s{_alt(seeds)}/DONE" for t, _, n, inits, seeds in FULL.values()]
+    return _guard([], markers) + "".join(
+        f'          if [ -e {CURVES}/full_{name}.json ]; then echo "skip full_{name}.json: exists"; else\n'
+        f"            python3 experiments/FT/ft_curves.py cells --tree {t} --task {task} --n {n} \\\n"
+        f"              --out {CURVES}/full_{name}.json || halt\n          fi\n"
+        for name, (t, task, n, _, _) in FULL.items())
+
+
 def curves_probe_body() -> str:
     out = f"{CURVES}/linprobe_fits_v3.json"
     return _guard([out], [f"{FITS_V3}/{_alt([m for m, _ in PROBE_MODELS])}.json"]) + (
@@ -272,6 +293,9 @@ def build(pin: str) -> dict[pathlib.Path, str]:
     }
     out = {OUT_DIR / f"job-{j}-raunav.yaml": cpu_job(f"{j}-raunav", body, what, pin)
            for j, (body, what) in jobs.items()}
+    out[OUT_DIR / "job-curves-full-raunav.yaml"] = cpu_job(
+        "curves-full-raunav", curves_full_body(),
+        "ROC points and per-class tables, JetClass, top and q/g fine-tunes on the full training sets", PIN_FULL)
     out[STATUS_DIR / "cronjob-status-raunav.yaml"] = status_spec(STATUS_PIN)
     return out
 

@@ -132,6 +132,15 @@ def test_cells_read_every_done_cell_and_list_the_rest(tmp_path):
         FC.main(["cells", "--tree", str(tree), "--task", "top", "--out", str(out)])
 
 
+def test_cells_can_be_limited_to_some_sizes(tmp_path):
+    tree = tmp_path / "leg_top"
+    _cell(tree, "l188-s1", 1000, 1)
+    _cell(tree, "l188-s1", 1200000, 1)
+    out = tmp_path / "full.json"
+    FC.main(["cells", "--tree", str(tree), "--task", "top", "--n", "1200000", "--out", str(out)])
+    assert list(json.loads(out.read_text())["cells"]["l188-s1"]) == ["N1200000"]
+
+
 def test_qg_cells_also_give_herwig(tmp_path):
     tree = tmp_path / "leg_qg"
     c, y, z = _cell(tree, "scratch-v2", 1000, 1)
@@ -236,11 +245,19 @@ def test_the_specs_on_disk_are_the_generators(specs):
 def test_every_job_is_ours_cpu_only_pinned_and_tried_once(specs):
     jobs = {p: yaml.safe_load(t) for p, t in specs.items() if p.parent == BC.OUT_DIR}
     assert {d["metadata"]["name"] for d in jobs.values()} == {
-        f"{w}-{x}-raunav" for w in ("curves", "boot") for x in ("ft", "jc2", "probe")}
+        f"{w}-{x}-raunav" for w in ("curves", "boot") for x in ("ft", "jc2", "probe")} | {"curves-full-raunav"}
     for p, d in jobs.items():
         c = d["spec"]["template"]["spec"]["containers"][0]
+        pin = BC.PIN_FULL if d["metadata"]["name"] == "curves-full-raunav" else BC.PIN
         assert d["spec"]["backoffLimit"] == 1 and "nvidia.com/gpu" not in c["resources"]["limits"]
-        assert f'--branch "{BC.PIN}"' in c["args"][0] and "configmap" not in specs[p].lower()
+        assert f'--branch "{pin}"' in c["args"][0] and "configmap" not in specs[p].lower()
+
+
+def test_the_full_set_curves_cover_every_paper_run_and_the_scratch_seeds(specs):
+    text = specs[BC.OUT_DIR / "job-curves-full-raunav.yaml"]
+    assert len(BC.FULL_RUNS) == 27 and "/best70/leg_qg/{" + ",".join(BC.FULL_RUNS) + "}/N1600000/s1/DONE" in text
+    assert "/ref_v100/jc1/leg2/scratch-v2/N1000000/s{1,2,3}/DONE" in text
+    assert "--task jc1 --n 1000000" in text and "--task top --n 1200000" in text and "--task qg --n 1600000" in text
 
 
 def test_the_curves_jobs_wait_for_the_reported_runs_and_write_one_file_per_tree(specs):

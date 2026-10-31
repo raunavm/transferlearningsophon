@@ -24,7 +24,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.27" \
+          git clone --depth 1 --branch "mtx-s2.28" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -36,9 +36,9 @@ spec:
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           echo "PVC used: ${USED}%"
           [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
-          [ ! -e /data/results/eval/xbx/report_ihep_mtx-s2.27 ] || { echo "FATAL: /data/results/eval/xbx/report_ihep_mtx-s2.27 exists"; exit 42; }
+          [ ! -e /data/results/eval/xbx/report_ihep_mtx-s2.28 ] || { echo "FATAL: /data/results/eval/xbx/report_ihep_mtx-s2.28 exists"; exit 42; }
           pip install --no-cache-dir -q matplotlib==3.10.7 mplhep==0.4.1 || exit 1
-          python3 experiments/XBS/xbx_report.py --fits /data/results/eval/xbx/fits_ihep --out /data/results/eval/xbx/report_ihep_mtx-s2.27 || halt
+          python3 experiments/XBS/xbx_report.py --fits /data/results/eval/xbx/fits_ihep --out /data/results/eval/xbx/report_ihep_mtx-s2.28 || halt
         volumeMounts:
         - { name: jc2,  mountPath: /jc2, readOnly: true }
         - { name: data, mountPath: /data }
