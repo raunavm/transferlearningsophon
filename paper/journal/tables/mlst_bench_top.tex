@@ -1,0 +1,37 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Top tagging on the full training set, \LitPartTopNTrainMillion{} million jets: accuracy, AUC and background rejection $1/\epsilon_B$ at 50\% and 30\% signal efficiency. Published rows from the tables cited; f.t.\ marks a model pretrained on JetClass and fine-tuned, and the kinematic-input rows were pretrained on the kinematic features only, as ParT-f.t.\ was. Uncertainties: ours, the standard deviation over pretraining runs, one fine-tuning each (three runs; two runs print both values; one run, the value alone); ParT, the spread over \LitPartFtHeadReinits{} fine-tunings of one pretrained model with different head initializations, quoted for the run of median accuracy; OmniLearn, OmniLearned and L-GATr, the standard deviation of five trainings. The best value of each column is in bold.}
+\label{tab:benchtop}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccc}
+\toprule
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+ParticleNet~\cite{particlenet} & 0.940 & 0.9858 & 397\,$\pm$\,7 & 1615\,$\pm$\,93 \\
+LorentzNet~\cite{lorentznet} & 0.942 & 0.9868 & 498\,$\pm$\,18 & 2195\,$\pm$\,173 \\
+ParT~\cite{part} & 0.940 & 0.9858 & 413\,$\pm$\,16 & 1602\,$\pm$\,81 \\
+ParticleNet-f.t.~\cite{part} & 0.942 & 0.9866 & 487\,$\pm$\,9 & 1771\,$\pm$\,80 \\
+ParT-f.t.~\cite{part} & 0.944 & 0.9877 & \textbf{691\,$\pm$\,15} & 2766\,$\pm$\,130 \\
+MIParT-L-f.t.~\cite{mipart} & 0.944 & 0.9878 & 640\,$\pm$\,10 & 2789\,$\pm$\,133 \\
+L-GATr-f.t.~\cite{lgatr} & \textbf{0.9446} & 0.9879 & 651\,$\pm$\,11 & 2894\,$\pm$\,84 \\
+OmniLearn~\cite{omnilearn} & 0.942 & 0.9872 & 568\,$\pm$\,9 & 2647\,$\pm$\,192 \\
+OmniLearned-s~\cite{omnilearned} & 0.944 & 0.9875 & 565\,$\pm$\,12 & 2637\,$\pm$\,128 \\
+OmniLearned-m~\cite{omnilearned} & 0.944 & \textbf{0.9880} & 656\,$\pm$\,12 & 3208\,$\pm$\,176 \\
+OmniLearned-l~\cite{omnilearned} & 0.944 & \textbf{0.9880} & 688\,$\pm$\,9 & \textbf{3486\,$\pm$\,157} \\
+\midrule
+\multicolumn{5}{l}{\textit{this work (Sophon network, fine-tuned)}} \\
+from scratch & 0.9387\,$\pm$\,0.0002 & 0.9852\,$\pm$\,0.0001 & 358\,$\pm$\,11 & 1{,}412\,$\pm$\,20 \\
+\Kfull{} classes & 0.9400\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 \\
+\Kres{} classes & 0.9401\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 \\
+\Kmid{} classes & 0.9402\,$\pm$\,0.0004 & 0.9861\,$\pm$\,0.0001 & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 \\
+\Kcoarse{} classes & 0.9398\,$\pm$\,0.0001 & 0.9859\,$\pm$\,0.0001 & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 \\
+\Kres{} classes, mass regression & 0.9406, 0.9402 & 0.9860, 0.9860 & 420, 436 & 1{,}941, 1{,}590 \\
+\Kcoarse{} classes, mass regression & 0.9397, 0.9399 & 0.9858, 0.9859 & 435, 421 & 1{,}683, 1{,}628 \\
+random partition, no flavor boundary & 0.9402, 0.9401 & 0.9860, 0.9861 & 427, 463 & 1{,}726, 1{,}852 \\
+random partition, $b$-quark boundary & 0.9401, 0.9405 & 0.9860, 0.9861 & 432, 444 & 1{,}590, 2{,}060 \\
+random partition, random flavor boundary & 0.9397, 0.9406 & 0.9858, 0.9861 & 394, 447 & 1{,}565, 1{,}655 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

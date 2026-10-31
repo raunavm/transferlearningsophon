@@ -1,0 +1,34 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Quark/gluon tagging on the full training set, \LitQgTrainMillion{} million jets, with the particle type as five binary flags and the charge (ParT's exp scenario): accuracy, AUC and $1/\epsilon_B$ at 50\% and 30\% quark efficiency. Published rows from the tables cited, all in the exp scenario; PFN-Ex's uncertainty is half the interquartile range of ten trainings, and the others are as in Table~\ref{tab:benchtop}, with nine trainings for OmniLearn and OmniLearned. The best value of each column is in bold.}
+\label{tab:benchqg}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccc}
+\toprule
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+PFN-Ex~\cite{efn} & -- & 0.9005 & 34.7\,$\pm$\,0.4 & -- \\
+ParticleNet~\cite{particlenet} & 0.840 & 0.9116 & 39.8\,$\pm$\,0.2 & 98.6\,$\pm$\,1.3 \\
+ParT~\cite{part} & 0.840 & 0.9121 & 41.3\,$\pm$\,0.3 & 101.2\,$\pm$\,1.1 \\
+ParticleNet-f.t.~\cite{part} & 0.839 & 0.9115 & 40.1\,$\pm$\,0.2 & 100.3\,$\pm$\,1.0 \\
+ParT-f.t.~\cite{part} & 0.843 & 0.9151 & 42.4\,$\pm$\,0.2 & 107.9\,$\pm$\,0.5 \\
+OmniLearn~\cite{omnilearn} & 0.844 & 0.9159 & \textbf{43.7\,$\pm$\,0.3} & 107.7\,$\pm$\,1.5 \\
+OmniLearned-s~\cite{omnilearned} & 0.844 & 0.9153 & 42.9\,$\pm$\,0.2 & 108.0\,$\pm$\,0.5 \\
+OmniLearned-m~\cite{omnilearned} & \textbf{0.845} & \textbf{0.9162} & 43.2\,$\pm$\,0.1 & \textbf{111.2\,$\pm$\,1.5} \\
+\midrule
+\multicolumn{5}{l}{\textit{this work (Sophon network, fine-tuned)}} \\
+from scratch & 0.8397\,$\pm$\,0.0007 & 0.9121\,$\pm$\,0.0002 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 \\
+\Kfull{} classes & 0.8433\,$\pm$\,0.0002 & 0.9148\,$\pm$\,0.0001 & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 \\
+\Kres{} classes & 0.8432\,$\pm$\,$<$0.0001 & 0.9148\,$\pm$\,0.0001 & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 \\
+\Kmid{} classes & 0.8430\,$\pm$\,0.0005 & 0.9146\,$\pm$\,0.0003 & 42.2\,$\pm$\,0.8 & 108.3\,$\pm$\,1.0 \\
+\Kcoarse{} classes & 0.8427\,$\pm$\,0.0003 & 0.9144\,$\pm$\,$<$0.0001 & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 \\
+\Kres{} classes, mass regression & 0.8425, 0.8427 & 0.9147, 0.9145 & 42.46, 42.21 & 107.0, 106.6 \\
+\Kcoarse{} classes, mass regression & 0.8425, 0.8424 & 0.9142, 0.9140 & 41.77, 41.39 & 104.9, 105.6 \\
+random partition, no flavor boundary & 0.8423, 0.8434 & 0.9144, 0.9146 & 41.67, 41.95 & 108.9, 109.2 \\
+random partition, $b$-quark boundary & 0.8430, 0.8431 & 0.9147, 0.9147 & 42.43, 42.77 & 106.5, 106.8 \\
+random partition, random flavor boundary & 0.8427, 0.8428 & 0.9145, 0.9147 & 42.12, 42.09 & 108.2, 104.4 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
