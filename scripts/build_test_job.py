@@ -77,6 +77,10 @@ spec:
               - key: topology.kubernetes.io/region
                 operator: In
                 values: ["us-west"]
+              # cannot resolve github.com (two test pods, 2026-10-31)
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["cph-dgx-node6.humboldt.edu"]
       volumes:
       - name: data
         persistentVolumeClaim:

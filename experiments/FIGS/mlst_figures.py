@@ -12,8 +12,9 @@ figure job, colour and marker per configuration fixed there).
   per_class_jc2            JetClass-II: each class's (1 - AUC) over the 188-class model's, run by
                            run, averaged; rows grouped by topology, flavor siblings adjacent
   per_class_ranked         the fifteen classes each merge of the hierarchy hurts most
-  roc_pairs, roc_bench      rejection against signal efficiency with the ratio to the 188-class
-                           model: flavor-sibling pairs; top and quark/gluon (linear probes)
+  roc_pairs, roc_bench(_ft)  rejection against signal efficiency with the ratio to the 188-class
+                           model: flavor-sibling pairs; top and quark/gluon (linear probes; full
+                           fine-tuning with the network trained from scratch)
   missing_features         balanced JetClass-II with the top or quark/gluon inputs zeroed (filled)
                            or imputed (open), over all features, same run
   finetune_vs_training_size  fine-tuning against the training-set size, with the ratio to the
@@ -334,6 +335,9 @@ ROC_PAIRS = (("jc2bal_pairs.bb_vs_cc", r"$X\to b\bar b$ vs $c\bar c$"),
 ROC_BENCH = (("top", "Top tagging"), ("qg", "Quark/gluon tagging"), ("qg_herwig", "Quark/gluon, Herwig"))
 ROC_ROWS_PAIRS = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND", "FLAV_F0", "FLAV_F1")
 ROC_ROWS_BENCH = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND", "INIT")
+ROC_ROWS_FT = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND", "SCRATCH")
+# the full training sets of the fine-tuning curves (experiments/FT/ft_curves.py cells, curves-full)
+FT_FULL = {"leg_top": 1_200_000, "leg_qg": 1_600_000}
 ROC_MIN_EPS = 0.1
 FLAV_DASHES = {"FLAV_F0": (0, (6, 2)), "FLAV_F1": (0, (2, 1.5)), "FLAV_F1R": (0, (6, 2, 2, 2))}
 
@@ -347,12 +351,29 @@ def _probe_curves() -> dict:
     return {}
 
 
+def _ft_curves() -> dict:
+    """The full-set fine-tuning curves in the probes' layout, {model: {checkpoint: {dataset: block}}},
+    the from-scratch seeds as scratch-v2-s<k>; empty until pulled."""
+    out = {}
+    for tree, n in FT_FULL.items():
+        for name in (f"full_best70_{tree}", f"full_ref_v100_bench_{tree}"):
+            f = DATA / "curves" / f"{name}.json"
+            if not f.exists():
+                return {}
+            for init, by_n in json.loads(f.read_text())["cells"].items():
+                for seed, blocks in by_n.get(f"N{n}", {}).items():
+                    key = f"{init}-{seed}" if init == "scratch-v2" else f"mtx-{init}"
+                    out.setdefault(key, {}).setdefault("best70", {}).update(blocks)
+    return out
+
+
 def roc_rows(M, runs, cells, ds: str, rows) -> dict:
     """{row: (eps_s, [rejection of each run])} of a dataset's ROC points, runs with the curve only."""
     out = {}
     for row in rows:
         models = [m for a in M.RAND for m in runs[a]] if row == "RAND" else \
-            list(M.INIT_MODELS) if row == "INIT" else runs[row]
+            list(M.INIT_MODELS) if row == "INIT" else \
+            sorted(m for m in cells if m.startswith("scratch-v2-")) if row == "SCRATCH" else runs[row]
         per, eps = [], None
         for m in models:
             r = cells.get(m, {}).get(M._ck(m), {}).get(ds, {}).get("roc")
@@ -383,8 +404,9 @@ def _roc_figure(M, runs, cells, panels, rows, name, outdir) -> list:
             mean = per.mean(axis=0)
             look = {"color": style.RAND_COLOUR, "linestyle": "-"} if row == "RAND" else \
                 {"color": style.INIT_STYLE["color"], "linestyle": ":"} if row == "INIT" else \
+                {"color": style.SCRATCH_STYLE["color"], "linestyle": style.SCRATCH_STYLE["linestyle"]} if row == "SCRATCH" else \
                 {"color": style.FLAV_COLOUR, "linestyle": FLAV_DASHES[row]} if row in FLAV_DASHES else _look(M, row)
-            label = "Random partitions" if row == "RAND" else ROW_NAME[row]
+            label = "Random partitions" if row == "RAND" else "From scratch" if row == "SCRATCH" else ROW_NAME[row]
             ls = look["linestyle"]
             top.plot(eps[keep], mean, color=look["color"], linestyle=ls, linewidth=2, label=label)
             ratio = per / ref_mean[keep]
@@ -409,6 +431,12 @@ def figure_roc_pairs(root, outdir) -> list:
     """Linear probes between flavor siblings on the balanced JetClass-II pairs."""
     M = _mlst()
     return _roc_figure(M, M._paper(root), _probe_curves(), ROC_PAIRS, ROC_ROWS_PAIRS, "roc_pairs", outdir)
+
+
+def figure_roc_bench_ft(root, outdir) -> list:
+    """Full fine-tuning on the full top and quark/gluon training sets, against training from scratch."""
+    M = _mlst()
+    return _roc_figure(M, M._paper(root), _ft_curves(), ROC_BENCH, ROC_ROWS_FT, "roc_bench_ft", outdir)
 
 
 def figure_roc_bench(root, outdir) -> list:
@@ -909,6 +937,7 @@ def figure_schematic(root: pathlib.Path, outdir: pathlib.Path) -> list:
 
 FIGURES = (figure_schematic, figure_label_sets, figure_sizes, figure_pairs, figure_per_class,
            figure_per_class_ranked, figure_missing_features, figure_roc_pairs, figure_roc_bench,
+           figure_roc_bench_ft,
            figure_finetune, figure_mass, figure_mass_response_hist, figure_sculpting, figure_xbx)
 
 

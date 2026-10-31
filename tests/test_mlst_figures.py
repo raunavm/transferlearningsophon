@@ -233,3 +233,24 @@ def test_the_roc_figures_pool_the_random_partitions_and_take_each_run(tmp_path, 
     for fig in (F.figure_roc_pairs, F.figure_roc_bench):
         paths = fig(REPO, tmp_path / "out")
         assert sorted(p.suffix for p in paths) == [".pdf", ".png"] and all(p.stat().st_size > 0 for p in paths)
+
+
+def test_the_fine_tuning_roc_reads_the_full_sets_and_each_scratch_seed(tmp_path, monkeypatch):
+    F = _mod("mlst_figures", "experiments/FIGS/mlst_figures.py")
+    M = F._mlst()
+    runs = M._paper(REPO)
+    roc = lambda k: {"roc": {"eps_s": [0.3, 0.5], "rejection": [100.0 * k, 50.0 * k]}}
+    (tmp_path / "curves").mkdir()
+    for tree, n in F.FT_FULL.items():
+        ds = ("top",) if tree == "leg_top" else ("qg", "qg_herwig")
+        pre = {m[len("mtx-"):]: {f"N{n}": {"s1": {d: roc(1) for d in ds}}, "N1000": {"s1": {d: roc(9) for d in ds}}}
+               for m in runs["L188"] + runs["R16_Q1"]}
+        ref = {"scratch-v2": {f"N{n}": {f"s{k}": {d: roc(0.5) for d in ds} for k in (1, 2, 3)}}}
+        (tmp_path / "curves" / f"full_best70_{tree}.json").write_text(json.dumps({"cells": pre}))
+        (tmp_path / "curves" / f"full_ref_v100_bench_{tree}.json").write_text(json.dumps({"cells": ref}))
+    monkeypatch.setattr(F, "DATA", tmp_path)
+    cells = F._ft_curves()
+    rr = F.roc_rows(M, runs, cells, "qg_herwig", F.ROC_ROWS_FT)
+    assert len(rr["SCRATCH"][1]) == 3 and rr["L188"][1][0] == [100.0, 50.0]      # the full set, not N1000
+    paths = F.figure_roc_bench_ft(REPO, tmp_path / "out")
+    assert sorted(p.suffix for p in paths) == [".pdf", ".png"]
