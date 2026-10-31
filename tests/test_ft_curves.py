@@ -204,6 +204,21 @@ def test_probes_are_read_at_their_largest_training_set(tmp_path):
         FC.main(["probes", "--probs-root", str(tmp_path), "--models", "init-s1", "--out", str(tmp_path / "x.json")])
 
 
+def test_the_v4_pairs_and_balanced_set_are_read(tmp_path):
+    d = tmp_path / "mtx-l188-s1" / "best70"
+    d.mkdir(parents=True)
+    y, s = _binary(800)
+    np.savez(d / "jc2bal_pairs_X_bb_vs_X_cc.npz", rows=np.arange(y.size), y=y.astype(np.int16),
+             s=s.astype(np.float32))
+    out = tmp_path / "probes.json"
+    FC.main(["probes", "--probs-root", str(tmp_path), "--out", str(out)])
+    cell = json.loads(out.read_text())["cells"]["mtx-l188-s1"]["best70"]
+    assert list(cell) == ["jc2bal_pairs.X_bb_vs_X_cc"]
+    assert cell["jc2bal_pairs.X_bb_vs_X_cc"]["auc"] == pytest.approx(roc_auc_score(y, s.astype(np.float32)))
+    assert len(cell["jc2bal_pairs.X_bb_vs_X_cc"]["roc"]["eps_s"]) == len(FC.EPS_GRID)
+    assert FC.PROBE_FILE.match("jc2bal_N1000000.npz").group(1) == "jc2bal"
+
+
 # ------------------------------------------------------------------ the curves jobs
 BC = _load("build_curve_jobs", "scripts/build_curve_jobs.py")
 

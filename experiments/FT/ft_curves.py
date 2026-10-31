@@ -15,7 +15,9 @@ linear probes (plan 2026-10-29, Step 1.7; the appendix ROC figure and the ParT-f
           every comparison also carries its ROC points (below).
   probes  the linear probes' saved test outputs (experiments/EVAL/linear_probe_v2.py --probs-out),
           <probs-root>/<model>/<checkpoint>/<dataset>_N<N>.npz, at each dataset's largest training
-          set: the same blocks, on the jets the probe saved (jc1 and jc2_188: every 4th test jet).
+          set: the same blocks, on the jets the probe saved (jc1 and jc2_188: every 4th test jet);
+          the v4 probes' balanced JetClass-II (jc2bal, as jc2_188, every test jet) and class pairs
+          (jc2bal_pairs.<pair>, as top).
 
 ROC POINTS. At each signal efficiency of EPS_GRID: eps_B by linear interpolation on the ROC, the
 rejection 1/eps_B capped at the number of background jets, n_bkg_pass = eps_B * N_bkg rounded, and
@@ -60,7 +62,9 @@ TASKS = ("jc1", "top", "qg", "jc2_188")
 JC2_CLASSES = 188
 JC1_AUC_STRIDE = 4               # leg2_metrics.py --auc-stride (its default), the tables' macro AUC
 FEATURES_188 = "features_v2"     # the 188-class leg's cache, as leg 1's
-PROBE_FILE = re.compile(r"^(jc1|jc2_188|top|qg|qg_herwig)_N(\d+)\.npz$")
+PROBE_FILE = re.compile(r"^(jc1|jc2_188|jc2bal|top|qg|qg_herwig)_N(\d+)\.npz$")
+# the v4 probes' class pairs on the balanced sets (experiments/EVAL/probe_bal.py), one size each
+PAIR_FILE = re.compile(r"^jc2bal_pairs_(.+)\.npz$")
 
 
 def roc_points(y: np.ndarray, score: np.ndarray, grid=EPS_GRID) -> dict:
@@ -213,12 +217,15 @@ def probe_blocks(npz: pathlib.Path, ds: str) -> dict:
 
 
 def largest(ckpt_dir: pathlib.Path) -> dict:
-    """{dataset: (largest N, file)} of one probe's saved outputs."""
+    """{dataset: (largest N, file)} of one probe's saved outputs; a v4 class pair is the dataset
+    jc2bal_pairs.<pair>, with N 0 (its training size is in the fit file)."""
     out = {}
     for f in ckpt_dir.glob("*.npz"):
         m = PROBE_FILE.match(f.name)
         if m and int(m.group(2)) > out.get(m.group(1), (0, None))[0]:
             out[m.group(1)] = (int(m.group(2)), f)
+        elif (m := PAIR_FILE.match(f.name)):
+            out[f"jc2bal_pairs.{m.group(1)}"] = (0, f)
     return out
 
 
