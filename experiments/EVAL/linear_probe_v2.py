@@ -171,6 +171,8 @@ class Logit:
         count alone does not show convergence)."""
         import torch
         dev, f64 = self.device, torch.float64
+        if self.coef_.shape[1] != x.shape[1]:          # inputs wider than the class token (the head's 512)
+            self.coef_ = np.zeros((self.coef_.shape[0], x.shape[1]))
         X = torch.as_tensor(x, dtype=f64, device=dev)
         idx = torch.as_tensor(np.searchsorted(self.classes_, y), device=dev)
         W = torch.tensor(self.coef_, dtype=f64, device=dev, requires_grad=True)

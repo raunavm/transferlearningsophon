@@ -1,8 +1,21 @@
 #!/usr/bin/env python3
 """Jobs of the class-balanced JetClass-II sets (plan 3.4, 2026-10-31).
 
-  stage   CPU: experiments/FT/stage_jc2_balanced.py -> /data/finetune/jc2_bal (census, balanced test,
-          nested balanced training sets, validation, the pair sets)
+  stage    CPU: experiments/FT/stage_jc2_balanced.py -> /data/finetune/jc2_bal (census, balanced test,
+           nested balanced training sets, validation, the pair sets)
+  ref      CPU: the imputation reference of the missing-feature control (input_variants.py ref) from
+           the balanced 1e5 training set -> /data/finetune/jc2_bal/impute_ref.npz
+  extract  GPU (any but V100), one Indexed Job, one model per index (the 27 paper runs and the three
+           untrained trunks): extract_v2.py on every balanced split (configs/data/JetClassII_massreg.yaml,
+           native labels, every row kept); at the 1e6 training set, validation and test also the input
+           variants mtop and mqg, and for the 188- and 17-class runs itop and iqg (plan 3.2) ->
+           /data/results/eval/v2_linprobe_bal/<model>/{jc2bal,jc2bal_pairs}/<split>/<checkpoint>[.<variant>]
+  fit      GPU (any but V100), one model per index: experiments/EVAL/probe_bal.py, the v4 linear probes
+           (balanced JetClass-II at every size, the pairs, the variants; JetClass, top and quark/gluon
+           refit on the v4 grid; the 512-unit hidden layer for the 188-class runs) -> .../fits_v4
+  mlp      CPU, one model per index: the nonlinear probe on the balanced JetClass-II task and pairs, for
+           the hierarchy levels, the three controlled partitions and the untrained trunks (PI scope;
+           JetClass, top and quark/gluon are linprobe-mlp4's) -> .../fits_v4_mlp
 
     python3 scripts/build_jc2bal_jobs.py --tag mtx-s2.24 stage
 """
@@ -82,14 +95,297 @@ spec:
 """
 
 
+LP_BAL = "/data/results/eval/v2_linprobe_bal"
+PAPER_RUNS = ROOT / "configs" / "arms" / "v2_paper_runs.txt"
+IMPUTE_ARMS = ("mtx-l188-", "mtx-r16q1-")          # imputed variants: 188- and 17-class runs only (PI)
+CFG = "configs/data/JetClassII_massreg.yaml"
+
+
+def _probe_builder():
+    spec = importlib.util.spec_from_file_location("build_linprobe_jobs", ROOT / "scripts" / "build_linprobe_jobs.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def models() -> list:
+    """(model, run directory, rung, classes, regression outputs, checkpoints, variants): the paper runs
+    and the untrained trunks (with their BatchNorm twin)."""
+    paper = {l.strip() for l in PAPER_RUNS.read_text().splitlines() if l.strip() and not l.startswith("#")}
+    out = []
+    for model, run, rung, k, reg, ckpts in _probe_builder().models():
+        if model.startswith("init-"):
+            out.append((model, run, rung, k, reg, ("init", "init_bn"), ("mtop", "mqg")))
+        elif model in paper:
+            v = ("mtop", "mqg", "itop", "iqg") if model.startswith(IMPUTE_ARMS) and "mass" not in model \
+                else ("mtop", "mqg")
+            out.append((model, run, rung, k, reg, ("best70",), v))
+    return out
+
+
+def ref_spec(tag: str) -> tuple:
+    launch = _launch()
+    name = "jc2bal-ref-raunav"
+    script = f"""set -euo pipefail
+git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+cd /workspace/tls
+pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
+[ -f {BAL}/DONE ] || {{ echo "FATAL: {BAL} is not staged"; exit 42; }}
+[ ! -f {BAL}/impute_ref.npz ] || {{ echo "{BAL}/impute_ref.npz exists"; exit 0; }}
+python3 experiments/EVAL/input_variants.py ref --data {BAL}/train_N100000_s1.parquet \\
+  --data-config configs/data/JetClassII_base.yaml --max-jets 100000 --out {BAL}/impute_ref.npz
+echo "JC2BAL REF COMPLETE"
+"""
+    return name, _cpu_job(name, script, launch, "32Gi", "4", "the imputation reference (plan 3.2)")
+
+
+def extract_spec(tag: str, parallelism: int) -> tuple:
+    launch = _launch()
+    ms = models()
+    name = "jc2bal-x-raunav"
+    cases = "".join(f"  {i}) MODEL={m}; RUN_DIR={launch.V2_ROOT}/{run}; RUNG={rung}; K={k}; REG={reg}; "
+                    f'CKPTS="{" ".join(c)}"; VARIANTS="{" ".join(v)}";;\n'
+                    for i, (m, run, rung, k, reg, c, v) in enumerate(ms))
+    script = f"""set -euo pipefail
+git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+cd /workspace/tls
+pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
+IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
+case ${{IDX}} in
+{cases}  *) echo "FATAL: no model for index ${{IDX}}"; exit 42;;
+esac
+[ -f {LP_BAL}/${{MODEL}}/DONE ] && {{ echo "${{MODEL}} done"; exit 0; }}
+[ -f {BAL}/DONE ] && [ -f {BAL}/impute_ref.npz ] || {{ echo "FATAL: {BAL} not staged"; exit 42; }}
+USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+[ "${{USED}}" -le 85 ] || {{ echo "FATAL: /data at ${{USED}}%"; exit 42; }}
+python3 experiments/FT/gpu_probe.py || exit 43
+# extract DATASET SPLIT FILE [variants]: one pass over the file, every checkpoint (and variant)
+extract () {{
+  OUT={LP_BAL}/${{MODEL}}/$1/$2; FILE=$3; shift 3
+  python3 experiments/EVAL/extract_v2.py --run-dir ${{RUN_DIR}} --rung ${{RUNG}} --num-classes ${{K}} \\
+    --num-reg ${{REG}} --checkpoints ${{CKPTS}} --data-config {CFG} --max-jets 0 \\
+    --observers --feature-classes --prefix-features 2000000000 --head-prefix 0 --no-anomaly-rows \\
+    --diag-stride 0 --no-pooled --data-test ${{FILE}} "$@" --out ${{OUT}} || exit 1
+}}
+for N in 1000 10000 100000; do extract jc2bal train_N${{N}} {BAL}/train_N${{N}}_s1.parquet; done
+for S in train_N1000000:train_N1000000_s1 val:val test:test; do
+  extract jc2bal ${{S%%:*}} {BAL}/${{S##*:}}.parquet --variants ${{VARIANTS}} --impute-ref {BAL}/impute_ref.npz
+done
+extract jc2bal_pairs train {BAL}/pairs_train.parquet
+extract jc2bal_pairs test {BAL}/pairs_test.parquet
+touch {LP_BAL}/${{MODEL}}/DONE
+echo "JC2BAL X ${{MODEL}} COMPLETE"
+"""
+    body = "\n".join(("          " + ln) if ln else "" for ln in script.splitlines())
+    exclude = ", ".join(f'"{n}"' for n in launch.V2_BAD_NODES)
+    gpus = ", ".join(f'"{g}"' for g in launch.V2_ANY_GPU if "V100" not in g)
+    return name, f"""apiVersion: batch/v1
+kind: Job
+metadata:
+  # GENERATED by scripts/build_jc2bal_jobs.py -- features on the class-balanced JetClass-II sets (plan 3.2, 3.4).
+  name: {name}
+  namespace: cms-ml
+spec:
+  completionMode: Indexed
+  completions: {len(ms)}
+  parallelism: {parallelism}
+  backoffLimitPerIndex: 3
+  podFailurePolicy:
+    rules:
+    - action: FailIndex
+      onExitCodes: {{ containerName: main, operator: In, values: [42] }}
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: {launch.V2_IMAGE}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+{body}
+        resources:
+          requests: {{ memory: "48Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
+          limits:   {{ memory: "48Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
+        volumeMounts:
+        - {{ name: data, mountPath: /data }}
+        - {{ name: dshm, mountPath: /dev/shm }}
+      tolerations:
+      - {{ key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [{gpus}]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: [{exclude}]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: {{ medium: Memory, sizeLimit: "8Gi" }}
+"""
+
+
+MLP_SCOPE = ("mtx-l188-", "mtx-l162-", "mtx-r42q1-", "mtx-r16q1-s", "mtx-flavf", "init-")
+HIDDEN = ("mtx-l188-",)
+
+
+def _indexed(name: str, script_body: str, n: int, parallelism: int, gpu: bool, mem: str, cpu: str, what: str) -> str:
+    launch = _launch()
+    body = "\n".join(("          " + ln) if ln else "" for ln in script_body.splitlines())
+    exclude = ", ".join(f'"{x}"' for x in launch.V2_BAD_NODES)
+    gpus = ", ".join(f'"{g}"' for g in launch.V2_ANY_GPU if "V100" not in g)
+    gpu_req = ', nvidia.com/gpu: "1"' if gpu else ""
+    gpu_aff = (f"""
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [{gpus}]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: [{exclude}]""" if gpu else "")
+    tol = ("""      tolerations:
+      - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
+""" if gpu else "")
+    return f"""apiVersion: batch/v1
+kind: Job
+metadata:
+  # GENERATED by scripts/build_jc2bal_jobs.py -- {what}.
+  name: {name}
+  namespace: cms-ml
+spec:
+  completionMode: Indexed
+  completions: {n}
+  parallelism: {parallelism}
+  backoffLimitPerIndex: 2
+  podFailurePolicy:
+    rules:
+    - action: FailIndex
+      onExitCodes: {{ containerName: main, operator: In, values: [42] }}
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: {launch.V2_IMAGE}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+{body}
+        resources:
+          requests: {{ memory: "{mem}", cpu: "{cpu}"{gpu_req}, ephemeral-storage: "20Gi" }}
+          limits:   {{ memory: "{mem}", cpu: "{cpu}"{gpu_req}, ephemeral-storage: "20Gi" }}
+        volumeMounts:
+        - {{ name: data, mountPath: /data }}
+{tol}      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]{gpu_aff}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+"""
+
+
+def fit_spec(tag: str, parallelism: int, mlp: bool) -> tuple:
+    ms = [m for m in models() if not mlp or m[0].startswith(MLP_SCOPE)]
+    out = "fits_v4_mlp" if mlp else "fits_v4"
+    cases = ""
+    for i, (m, run, rung, k, reg, c, v) in enumerate(ms):
+        extra = "--mlp --mlp-datasets jc2bal" if mlp else (
+            f"--variants {' '.join(v)} --probs-out {LP_BAL}/fits_v4_probs"
+            + (" --hidden" if m.startswith(HIDDEN) else ""))
+        cases += f'  {i}) MODEL={m}; CKPTS="{" ".join(c)}"; EXTRA="{extra}";;\n'
+    name = f"jc2bal-{'mlp' if mlp else 'fit'}-raunav"
+    script = f"""set -euo pipefail
+git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+cd /workspace/tls
+pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
+IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
+case ${{IDX}} in
+{cases}  *) echo "FATAL: no model for index ${{IDX}}"; exit 42;;
+esac
+[ -f {LP_BAL}/${{MODEL}}/DONE ] || {{ echo "FATAL: ${{MODEL}} is not extracted"; exit 42; }}
+python3 experiments/EVAL/probe_bal.py --model ${{MODEL}} --checkpoints ${{CKPTS}} ${{EXTRA}} --out {LP_BAL}/{out}
+echo "JC2BAL {'MLP' if mlp else 'FIT'} ${{MODEL}} COMPLETE"
+"""
+    what = ("nonlinear probes on the balanced JetClass-II task and pairs (plan 3.3). CPU" if mlp
+            else "v4 linear probes (plan 2.3, 3.2, 3.4, 3.5). GPU")
+    return name, _indexed(name, script, len(ms), parallelism, not mlp, "64Gi" if mlp else "48Gi",
+                          "8" if mlp else "4", what)
+
+
+def _cpu_job(name: str, script: str, launch, mem: str, cpu: str, what: str) -> str:
+    body = "\n".join(("          " + ln) if ln else "" for ln in script.splitlines())
+    return f"""apiVersion: batch/v1
+kind: Job
+metadata:
+  # GENERATED by scripts/build_jc2bal_jobs.py -- {what}. CPU.
+  name: {name}
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: {launch.V2_IMAGE}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+{body}
+        resources:
+          requests: {{ memory: "{mem}", cpu: "{cpu}", ephemeral-storage: "20Gi" }}
+          limits:   {{ memory: "{mem}", cpu: "{cpu}", ephemeral-storage: "20Gi" }}
+        volumeMounts:
+        - {{ name: data, mountPath: /data }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+"""
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
-    ap.add_argument("kinds", nargs="+", choices=("stage",))
+    ap.add_argument("--parallelism", type=int, default=5)
+    ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "extract", "fit", "mlp"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
-        name, text = stage_spec(a.tag)
+        name, text = {"stage": lambda: stage_spec(a.tag), "ref": lambda: ref_spec(a.tag),
+                      "extract": lambda: extract_spec(a.tag, a.parallelism),
+                      "fit": lambda: fit_spec(a.tag, a.parallelism, False),
+                      "mlp": lambda: fit_spec(a.tag, a.parallelism, True)}[kind]()
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(text)
         print(p)

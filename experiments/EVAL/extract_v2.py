@@ -610,6 +610,11 @@ def main(argv=None) -> int:
     ap.add_argument("--keep-head-outputs", action="store_true",
                     help="also keep every row's K class logits, regression column K and "
                          "HEAD_OBSERVERS (head_outputs.npz; needs JetClassII_massreg_obs.yaml)")
+    ap.add_argument("--variants", nargs="*", default=[],
+                    help="input variants of the missing-feature control (experiments/EVAL/input_variants.py: "
+                         "mtop mqg itop iqg), each extracted beside its checkpoint as <tag>.<variant>")
+    ap.add_argument("--impute-ref", type=pathlib.Path, default=None,
+                    help="the imputation reference (input_variants.py ref) the i* variants draw from")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     a = ap.parse_args(argv)
 
@@ -629,8 +634,9 @@ def main(argv=None) -> int:
     hcls = [] if a.no_anomaly_rows else qcd + list(signals.values())
     sel = Selector(fcls, a.prefix_features, hcls, a.head_prefix, a.diag_stride, windowed)
     ckpts = resolve_checkpoints(a.run_dir, a.checkpoints)
-    done = [t for t, _ in ckpts if (a.out / t / "manifest.json").exists()]
-    if len(done) == len(ckpts):
+    expected = [t for t, _ in ckpts] + [f"{t}.{v}" for t, _ in ckpts for v in a.variants]
+    done = [t for t in expected if (a.out / t / "manifest.json").exists()]
+    if len(done) == len(expected):
         print("every checkpoint already extracted")
         return 0
     alias = aliases(ckpts)
@@ -665,6 +671,18 @@ def main(argv=None) -> int:
         models[tag] = m.to(device).eval()
         meta["checkpoints"][tag] = {"checkpoint": str(path), "checkpoint_sha256": prov["sha256"],
                                     **({"checkpoint_format": prov["format"]} if tag in headless else {})}
+    if a.variants:
+        iv = _load("input_variants", "experiments/EVAL/input_variants.py")
+        s = iv.slots([v[0] for v in dc.input_dicts["pf_features"]])
+        ref = iv.load_ref(a.impute_ref) if any(v.startswith("i") for v in a.variants) else None
+        fidx = list(dc.input_names).index("pf_features")
+        meta["variants"] = {"names": list(a.variants), "slots": s, "impute_ref": str(a.impute_ref) if ref else None,
+                            "impute_ref_sha256": hashlib.sha256(a.impute_ref.read_bytes()).hexdigest() if ref else None}
+        for tag in list(models):
+            for v in a.variants:
+                models[f"{tag}.{v}"] = iv.wrap(models[tag], iv.Variant(v, s, ref), fidx)
+                meta["checkpoints"][f"{tag}.{v}"] = {**meta["checkpoints"][tag], "variant": v}
+        headless |= {f"{t}.{v}" for t in headless for v in a.variants}
     print(f"{len(models)} checkpoints on {device}: {list(models)}"
           f"{''.join(f', {t} = {s}' for t, s in alias.items() if t != s)}", flush=True)
 
