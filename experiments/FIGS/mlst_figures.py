@@ -420,10 +420,12 @@ def _roc_figure(M, runs, cells, panels, rows, name, outdir) -> list:
         top.set_title(title, fontsize="small", loc="left")
         bot.axhline(1.0, color="black", linewidth=0.8)
         bot.set_xlabel(r"Signal efficiency $\varepsilon_S$")
-    axes[0, 0].set_ylabel(r"Background rejection $1/\varepsilon_B$")
+    axes[0, 0].set_ylabel(r"$1/\varepsilon_B$")
     axes[1, 0].set_ylabel("Ratio to 188")
-    axes[0, 0].legend(frameon=False, fontsize="xx-small")
-    fig.tight_layout()
+    fig.align_ylabels(axes[:, 0])
+    hs, ls = axes[0, 0].get_legend_handles_labels()
+    fig.legend(hs, ls, loc="lower center", ncol=min(4, len(ls)), frameon=False, fontsize="x-small")
+    fig.tight_layout(rect=(0, 0.05 * ((len(ls) + 3) // 4) + 0.02, 1, 1))
     return style.save(fig, name, outdir)
 
 
@@ -807,7 +809,6 @@ def figure_sculpting(root, outdir) -> list:
         ax.set_title(title, fontsize="small", loc="left")
         ax.set_xlabel(r"$m_{\mathrm{SD}}$ [GeV]")
     axes[0].set_ylabel("Fraction of jets")
-    axes[0].legend(frameon=False, fontsize="x-small")
     ax = axes[2]
     pts = d0["curve"]
     ax.plot([c["eff"] for c in pts], jsd_floor(d0["hist_before"], [c["n_pass"] for c in pts]), color="grey",
@@ -819,9 +820,16 @@ def figure_sculpting(root, outdir) -> list:
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("QCD efficiency")
-    ax.set_ylabel("Jensen--Shannon divergence")
-    ax.legend(frameon=False, fontsize="xx-small")
-    fig.tight_layout()
+    ax.set_ylabel("JS divergence [bits]")
+    # one legend below the panels: the histograms' entries, then the curves'
+    hs, ls = [], []
+    for a in (axes[0], axes[2]):
+        for h, lab in zip(*a.get_legend_handles_labels()):
+            if lab not in ls:
+                hs.append(h)
+                ls.append(lab)
+    fig.legend(hs, ls, loc="lower center", ncol=4, frameon=False, fontsize="x-small")
+    fig.tight_layout(rect=(0, 0.06 * (len(ls) + 3) / 4, 1, 1))
     return style.save(fig, "sculpting", outdir)
 
 
@@ -839,25 +847,31 @@ def figure_mass_response_hist(root, outdir) -> list:
     fig, axes = plt.subplots(1, 2, figsize=(1.6 * style.PANEL, 0.75 * style.PANEL), sharey=True)
     ref = next(c for v in have.values() for c in v)
     edges = np.asarray(ref["bins"])
+    # mass_response_hist.py clips values outside the range into the two edge bins: only the
+    # interior is drawn, and each histogram's share in the edge bins is given in its label
+    inner = edges[1:-1]
 
     def norm(h):
         h = np.asarray(h, float)
-        return h / h.sum() / np.diff(edges)
+        return h[1:-1] / h.sum() / np.diff(inner), (h[0] + h[-1]) / h.sum()
     for ax, kind, title in ((axes[0], "resonant", "Resonant jets"), (axes[1], "qcd", "QCD jets")):
-        unc = np.mean([norm(c["hist"][f"uncorrected/{kind}"]) for v in have.values() for c in v], axis=0)
-        ax.stairs(unc, edges, color="grey", fill=True, alpha=0.3, label=r"Soft-drop mass")
+        unc = [norm(c["hist"][f"uncorrected/{kind}"]) for v in have.values() for c in v]
+        out = 100 * np.mean([o for _, o in unc])
+        ax.stairs(np.mean([d for d, _ in unc], axis=0), inner, color="grey", fill=True, alpha=0.3,
+                  label=rf"Soft-drop mass ({out:.1f}\% outside)")
         for arm, cs in have.items():
             if cs:
                 look = _look(M, arm)
-                ax.stairs(np.mean([norm(c["hist"][f"node/{kind}"]) for c in cs], axis=0), edges,
-                          color=look["color"], linewidth=2, linestyle=look["linestyle"],
-                          label=f"Mass node, {ROW_NAME[arm]}")
+                node = [norm(c["hist"][f"node/{kind}"]) for c in cs]
+                out = 100 * np.mean([o for _, o in node])
+                ax.stairs(np.mean([d for d, _ in node], axis=0), inner, color=look["color"], linewidth=2,
+                          linestyle=look["linestyle"], label=rf"Mass node, {ROW_NAME[arm]} ({out:.1f}\% outside)")
         ax.axvline(0.0, color="black", linestyle=":", linewidth=1)
         ax.set_title(title, fontsize="small", loc="left")
         ax.set_xlabel(r"$\ln(m / m^{\mathrm{gen}})$")
+        ax.legend(frameon=False, fontsize="xx-small", loc="upper left", bbox_to_anchor=(0, -0.28))
     axes[0].set_ylabel("Density")
-    axes[0].legend(frameon=False, fontsize="x-small")
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.12, 1, 1))
     return style.save(fig, "mass_response_hist", outdir)
 
 
