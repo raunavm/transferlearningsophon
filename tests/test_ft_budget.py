@@ -97,6 +97,9 @@ def test_spec_is_valid_bash_on_v100(kind, tmp_path, monkeypatch):
     assert "--samples-per-epoch-val ${VAL}" in script and "early_stop.py watch" in script
     assert ("EP=40; SPE=256000; PAT=10;" in script) or kind == "kin"
     assert "train_N${N}_s1.parquet" in script and "--model-prefix ${RUN}/net" in script
+    # the manifest hashes the resolved checkpoint file, never the run directory (lrsweep, 2026-10-31)
+    assert "checkpoint=${RUN_DIR:+/workspace/ckpt/${INIT}.pt}" in script and "checkpoint=${RUN_DIR} " not in script
+    assert script.index("${CELL}/DONE ] ||") < script.index("mv ${CELL} ${CELL}.partial")
 
 
 def test_jc2b_and_kinematic_cells():

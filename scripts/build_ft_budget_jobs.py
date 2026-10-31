@@ -154,6 +154,7 @@ __TASKS__  *) echo "FATAL: task ${TASK}"; exit ${HALT};;
 esac
 python3 experiments/FT/gpu_probe.py || exit 43
 RUN=/workspace/run; rm -rf ${RUN}; mkdir -p ${RUN}
+[ ! -f ${CELL}/DONE ] || { echo "${CELL} is done"; exit 0; }
 [ -d ${CELL} ] && mv ${CELL} ${CELL}.partial.$(date -u +%s)
 mkdir -p ${CELL}
 echo "$(date -u +%FT%TZ) pod=${POD_NAME} node=${NODE_NAME} ref=${REPO_REF}" >> ${CELL}/ATTEMPTS
@@ -167,7 +168,7 @@ else
   LOAD=(); MULTARG=(); SCHED=(); RECIPE="head_lr_mult=1 lr_schedule=flat+decay recipe=part-from-scratch"
 fi
 python3 experiments/FT/smoke_checks.py manifest --out ${CELL}/ft_manifest.json task=${TASK} \
-  init=${INIT:-scratch} checkpoint=${RUN_DIR} n_train=${N} ft_seed=${S} lr=${LR} ${RECIPE} weight_decay=0.01 \
+  init=${INIT:-scratch} run_dir=${RUN_DIR} checkpoint=${RUN_DIR:+/workspace/ckpt/${INIT}.pt} n_train=${N} ft_seed=${S} lr=${LR} ${RECIPE} weight_decay=0.01 \
   subset=${SUB}/train_N${N}_s1.parquet data_config=${CFG} num_classes=${K} batch_size=__BATCH__ \
   samples_per_epoch=${SPE} steps_per_epoch=$((SPE / __BATCH__)) max_epochs=${EP} \
   samples_per_epoch_val=${VAL} early_stop_patience=${PAT} val_rule=fixed-file budget=v3.1

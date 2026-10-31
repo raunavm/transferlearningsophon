@@ -29,6 +29,8 @@ PART_REPO = "https://github.com/jet-universe/particle_transformer.git"
 PART_COMMIT = "2925bdb"
 DATA_URL = "https://hqu.web.cern.ch/datasets/TopLandscape/TopLandscape.tar"
 DATA_MD5 = "4fca2e47afbf321b0f201da6b804c404"
+# One copy of DATA_URL on the PVC (2026-10-31), so a node with flaky DNS cannot fail the job.
+DATA_COPY = "/data/finetune/partrepro/TopLandscape.tar"
 GPU = "Tesla-V100-SXM2-32GB"
 PART_CFG = "data/TopLandscape/top_kin.yaml"
 VARIANTS = {
@@ -61,7 +63,7 @@ git clone -q {PART_REPO} /workspace/part && cd /workspace/part && git checkout -
 git rev-parse HEAD | tee ${{OUT}}/part_commit.txt
 pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
 mkdir -p /workspace/data && cd /workspace/data
-python3 -c "import urllib.request,sys; urllib.request.urlretrieve(sys.argv[1], 'TopLandscape.tar')" {DATA_URL}
+cp {DATA_COPY} TopLandscape.tar
 echo "{DATA_MD5}  TopLandscape.tar" | md5sum -c - || {{ echo "FATAL: TopLandscape.tar md5"; exit 42; }}
 tar -xf TopLandscape.tar && rm TopLandscape.tar && find /workspace/data -name "*.parquet" | tee ${{OUT}}/files.txt
 D=$(dirname $(find /workspace/data -name train_file.parquet | head -1))
