@@ -109,7 +109,9 @@ EXPECTED_MAP = {
 }
 NEW_CONFIGS = sorted([ROOT / "configs" / "arms" / "R63_Q1.yaml",
                       ROOT / "configs" / "arms" / "R29_Q1.yaml"]
-                     + list((ROOT / "configs" / "arms" / "v2").glob("*.yaml")))
+                     + [p for p in (ROOT / "configs" / "arms" / "v2").glob("*.yaml")
+                        # the kinematic-only arms are scripts/build_kin_arms.py's (test_kin_arms.py)
+                        if not p.stem.endswith("_KIN")])
 
 
 # ----------------------------------------------------------------- registry

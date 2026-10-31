@@ -1407,6 +1407,33 @@ def v2_anygpu_specs(jobs: list, tag: str) -> dict:
     return out
 
 
+# ------------------------------------------------ kinematic-only runs (PI, 2026-10-30)
+V2_KIN = ROOT / "configs" / "arms" / "v2_kin.json"
+V2_KIN_DIR = K8S / "v2" / "kin"
+
+
+def v2_kin_specs(tag: str) -> dict:
+    """{file name: spec}: run 1 of each kinematic-only arm (configs/arms/v2_kin.json,
+    scripts/build_kin_arms.py) on any of V2_ANY_GPU, at `tag`, not suspended. Before the run,
+    the pod derives the arm's reweighting sidecar from its parent's
+    (experiments/MTX/derive_kin_sidecar.py; a no-op once written), so the run reads the
+    parent's histograms and draws the parent's jet stream. Not on the V100s, which the
+    fine-tuning (V100 only) needs."""
+    import json
+    gpus = tuple(g for g in V2_ANY_GPU if "V100" not in g)
+    out = {}
+    for arm in json.loads(V2_KIN.read_text())["arms"]:
+        run_id, job = v2_run_id(arm["name"], 1), v2_job_name(arm["name"], 1)
+        pre = ("python3 experiments/MTX/derive_kin_sidecar.py"
+               f" --arm {arm['config']} --parent configs/arms/{arm['parent']}.yaml"
+               " --makeweight /data/results/mtx/makeweight || exit 42\n")
+        script = v2_script(arm, 1, run_id=run_id)
+        title = f"v2 PRETRAINING -- {arm['name']} (kinematic features only), run 1, any 24 GB+ GPU but V100."
+        out[f"job-{job}.yaml"] = v2_job(job, [script], gpus, tag, title,
+                                        cpu=V2_ANY_CPU, mem=V2_ANY_MEM, pre=pre)
+    return out
+
+
 # ------------------------------------------------ finishing a run whose end step failed
 V2_FINALIZE_DIR = K8S / "v2" / "finalize"
 
@@ -1568,6 +1595,9 @@ def main() -> int:
     ap.add_argument("--v2-anygpu", nargs="+", metavar="JOB", default=None,
                     help="write the named pretraining jobs on any 24 GB+ GPU (V2_ANY_GPU) into "
                          f"{V2_ANYGPU_DIR.relative_to(ROOT)}; needs --tag")
+    ap.add_argument("--v2-kin", action="store_true",
+                    help="write the kinematic-only pretraining jobs (configs/arms/v2_kin.json) into "
+                         f"{V2_KIN_DIR.relative_to(ROOT)}; needs --tag")
     ap.add_argument("--any-gpu", action="store_true",
                     help="--v2-bn-twins: on any 24 GB+ GPU, into bn_twins_anygpu/")
     ap.add_argument("--v2-dryrun", metavar="DIR", default=None,
@@ -1630,6 +1660,15 @@ def main() -> int:
                                           V2_ANY_GPU if args.any_gpu else None).items():
             (d / fn).write_text(spec)
             print(d / fn)
+        return 0
+
+    if args.v2_kin:
+        if not args.tag:
+            ap.error("--v2-kin needs --tag")
+        V2_KIN_DIR.mkdir(parents=True, exist_ok=True)
+        for fn, spec in v2_kin_specs(args.tag).items():
+            (V2_KIN_DIR / fn).write_text(spec)
+            print(V2_KIN_DIR / fn)
         return 0
 
     if args.v2_anygpu:

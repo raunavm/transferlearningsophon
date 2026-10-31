@@ -1,0 +1,44 @@
+{
+ "generated_by": "scripts/build_kin_arms.py",
+ "what": "kinematic-only pretraining arms (PI, 2026-10-30): seed 1 of the 188- and 17-class label sets with the seven kinematic particle features",
+ "arms": [
+  {
+   "name": "L188_KIN",
+   "config": "configs/arms/v2/L188_KIN.yaml",
+   "parent": "L188",
+   "num_classes": 188,
+   "mass_lambda": null,
+   "runs": 1,
+   "extra_selection": null,
+   "objective": "classification",
+   "features": [
+    "part_pt_scale_log",
+    "part_e_scale_log",
+    "part_logptrel",
+    "part_logerel",
+    "part_deltaR",
+    "part_deta",
+    "part_dphi"
+   ]
+  },
+  {
+   "name": "R16_Q1_KIN",
+   "config": "configs/arms/v2/R16_Q1_KIN.yaml",
+   "parent": "R16_Q1",
+   "num_classes": 17,
+   "mass_lambda": null,
+   "runs": 1,
+   "extra_selection": null,
+   "objective": "classification",
+   "features": [
+    "part_pt_scale_log",
+    "part_e_scale_log",
+    "part_logptrel",
+    "part_logerel",
+    "part_deltaR",
+    "part_deta",
+    "part_dphi"
+   ]
+  }
+ ]
+}
