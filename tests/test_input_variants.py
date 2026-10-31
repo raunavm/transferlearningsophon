@@ -97,3 +97,11 @@ def test_wrapped_model_exposes_mod_and_counts_batches():
     x, _ = _jets(4)
     out = w(torch.zeros(1), torch.tensor(x))
     assert (out[:, 5:15, :] == 0).all() and w.counter == 1 and isinstance(w.mod, torch.nn.Identity)
+
+
+def test_slots_from_the_real_data_configs():
+    # weaver's input_dicts holds names, not [name, ...] lists; v[0] took each name's first letter (2026-10-31)
+    DataConfig = pytest.importorskip("weaver.utils.data.config").DataConfig
+    for cfg in ("configs/data/JetClassII_base.yaml", "configs/finetune/JetClassII_L188_noweight.yaml"):
+        names = iv.pf_names(DataConfig.load(str(ROOT / cfg)))
+        assert names == NAMES and iv.slots(names) == S

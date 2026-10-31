@@ -45,6 +45,11 @@ SEED = 20261031
 POOL = 2_000_000
 
 
+def pf_names(dc) -> list:
+    """The pf_features variable names of a weaver DataConfig (input_dicts holds the names themselves)."""
+    return list(dc.input_dicts["pf_features"])
+
+
 def slots(names: list) -> dict:
     """Index of every relevant feature in the pf_features order of a data config."""
     idx = {n: i for i, n in enumerate(names)}
@@ -174,7 +179,7 @@ def main(argv=None) -> int:
     from weaver.utils.data.config import DataConfig
     from weaver.utils.dataset import SimpleIterDataset
     dc = DataConfig.load(a.data_config)
-    names = [v[0] for v in dc.input_dicts["pf_features"]]
+    names = pf_names(dc)
     s = slots(names)
     ds = SimpleIterDataset({"_": list(a.data)}, a.data_config, for_training=False, fetch_by_files=True,
                            fetch_step=1, name="impute_ref")

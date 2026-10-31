@@ -673,7 +673,7 @@ def main(argv=None) -> int:
                                     **({"checkpoint_format": prov["format"]} if tag in headless else {})}
     if a.variants:
         iv = _load("input_variants", "experiments/EVAL/input_variants.py")
-        s = iv.slots([v[0] for v in dc.input_dicts["pf_features"]])
+        s = iv.slots(iv.pf_names(dc))
         ref = iv.load_ref(a.impute_ref) if any(v.startswith("i") for v in a.variants) else None
         fidx = list(dc.input_names).index("pf_features")
         meta["variants"] = {"names": list(a.variants), "slots": s, "impute_ref": str(a.impute_ref) if ref else None,
