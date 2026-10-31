@@ -17,7 +17,9 @@ figure job, colour and marker per configuration fixed there).
   finetune_vs_training_size  fine-tuning against the training-set size, with the ratio to the
                            network trained from scratch
   mass_response            mass resolution and scale in bins of pT and generated mass
-  sculpting                QCD soft-drop mass before and after a cut on the tagger score
+  mass_response_hist       ln(m / m_gen), resonant and QCD: soft-drop mass and the mass node
+  sculpting                QCD soft-drop mass before and after a cut on the tagger score, and the
+                           Jensen-Shannon divergence against the QCD efficiency
 
 Every quantity compared in ratios is drawn on a logarithmic axis. Points are the mean over the
 pretraining runs present and error bars their standard deviation (two runs: their range); the
@@ -86,6 +88,13 @@ RANKED_N = 15
 # decay-product tokens of a class name, longest first, and their typesetting
 DECAY_TOKENS = (("tauh", r"\tau_h"), ("taue", r"\tau_e"), ("taum", r"\tau_\mu"), ("b", "b"), ("c", "c"),
                 ("s", "s"), ("q", "q"), ("g", "g"), ("e", "e"), ("m", r"\mu"), ("v", r"\nu"))
+
+
+def _module(rel: str, name: str):
+    spec = importlib.util.spec_from_file_location(name, REPO / rel)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
 
 
 def _mlst():
@@ -618,31 +627,115 @@ def figure_mass(root, outdir) -> list:
     return style.save(fig, "mass_response", outdir)
 
 
+def _curves(kind: str) -> dict:
+    """{model: curve file} of head/curves_v2 (scripts/build_jc2bal_jobs.py masscurves)."""
+    d = DATA / "head/curves_v2"
+    return {p.stem.removesuffix(f"_{kind}"): json.loads(p.read_text())
+            for p in sorted(d.glob(f"*_{kind}.json"))} if d.is_dir() else {}
+
+
+SCULPT_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS", "R16_Q1_MASS")
+FLOOR_DRAWS = 200
+
+
+def jsd_floor(before: list, n_pass: list, seed: int = 0) -> list:
+    """The mean JSD (mass_sculpting.jsd) between the QCD mass histogram and that of n random jets
+    drawn from it, for each n: what a cut that does not sculpt at all gives at that many jets."""
+    ms = _module("experiments/EVAL/mass_sculpting.py", "mass_sculpting")
+    p = np.asarray(before, float) / np.sum(before)
+    rng = np.random.default_rng(seed)
+    return [float(np.mean([ms.jsd(p, rng.multinomial(n, p) / n) for _ in range(FLOOR_DRAWS)])) for n in n_pass]
+
+
+def sculpting_curves(M, runs, curves) -> dict:
+    """{row: (target efficiencies, mean JSD over runs, [JSD of each run])} of the QCD soft-drop
+    mass after a cut on 1 - p_QCD, against the QCD efficiency the cut is set to."""
+    out = {}
+    for row in SCULPT_ROWS:
+        have = [curves[m]["curve"] for m in runs[row] if m in curves]
+        if have:
+            eff = [c["eff"] for c in have[0]]
+            per = [[c["jsd"] for c in h] for h in have]
+            out[row] = (eff, np.mean(per, axis=0).tolist(), per)
+    return out
+
+
 def figure_sculpting(root, outdir) -> list:
-    """The soft-drop mass of QCD test jets, all and passing a cut on 1 - p_QCD at 1% QCD
-    efficiency, for the hierarchy's runs of seed 1 and the mass-regression run of seed 1."""
+    """QCD soft-drop mass, all and after the cut at 10% and 1% QCD efficiency (seed 1 of 188, 17
+    and 17 + mass), and the Jensen-Shannon divergence against the efficiency, every level."""
     M = _mlst()
-    head = M._load(DATA / "head")
-    sculpt = {k.removesuffix("_sculpting"): v for k, v in head.items() if k.endswith("_sculpting")}
-    rows = [(a, f"mtx-{a.lower().replace('_', '')}-s1") for a in ("L188", "R16_Q1", "R16_Q1_MASS")]
-    rows = [(a, m) for a, m in rows if m in sculpt]
-    if not rows:
+    curves = _curves("sculpting_v2")
+    runs = M._paper(root)
+    seed1 = [(a, next((m for m in runs[a] if m.endswith("-s1")), None)) for a in ("L188", "R16_Q1", "R16_Q1_MASS")]
+    seed1 = [(a, m) for a, m in seed1 if m in curves]
+    if not seed1:
         return []
     style.use_style()
     import matplotlib.pyplot as plt
-    d0 = sculpt[rows[0][1]]
+    fig, axes = plt.subplots(1, 3, figsize=(2.1 * style.PANEL, 0.75 * style.PANEL))
+    d0 = curves[seed1[0][1]]
     edges = np.asarray(d0["bins_jet_sdmass"])
-    fig, ax = plt.subplots(figsize=(style.PANEL, 0.8 * style.PANEL))
-    ax.stairs(d0["hist_before"], edges, label="All QCD jets", color="grey", linewidth=2.5, fill=True, alpha=0.3)
-    for arm, m in rows:
-        look = _look(M, arm)
-        ax.stairs(sculpt[m]["working_points"]["0.01"]["hist_after"], edges, label=ROW_NAME[arm],
-                  color=look["color"], linewidth=2.5, linestyle="--" if arm in M.MASS else "-")
-    ax.set_xlabel(r"$m_{\mathrm{SD}}$ [GeV]")
-    ax.set_ylabel("Fraction of jets")
-    ax.legend(frameon=False, fontsize="small")
+    for ax, wp, title in ((axes[0], "0.1", "10\\% QCD efficiency"), (axes[1], "0.01", "1\\% QCD efficiency")):
+        ax.stairs(d0["hist_before"], edges, label="All QCD jets", color="grey", linewidth=2, fill=True, alpha=0.3)
+        for arm, m in seed1:
+            look = _look(M, arm)
+            ax.stairs(curves[m]["working_points"][wp]["hist_after"], edges, label=ROW_NAME[arm],
+                      color=look["color"], linewidth=2, linestyle="--" if arm in M.MASS else "-")
+        ax.set_title(title, fontsize="small", loc="left")
+        ax.set_xlabel(r"$m_{\mathrm{SD}}$ [GeV]")
+    axes[0].set_ylabel("Fraction of jets")
+    axes[0].legend(frameon=False, fontsize="x-small")
+    ax = axes[2]
+    pts = d0["curve"]
+    ax.plot([c["eff"] for c in pts], jsd_floor(d0["hist_before"], [c["n_pass"] for c in pts]), color="grey",
+            linestyle=":", linewidth=2, label="Random subset, same size")
+    for row, (eff, mean, per) in sculpting_curves(M, runs, curves).items():
+        look = _look(M, row)
+        ax.plot(eff, mean, color=look["color"], marker=look["marker"], markersize=5,
+                linestyle=look["linestyle"], linewidth=2, label=ROW_NAME[row])
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("QCD efficiency")
+    ax.set_ylabel("Jensen--Shannon divergence")
+    ax.legend(frameon=False, fontsize="xx-small")
     fig.tight_layout()
     return style.save(fig, "sculpting", outdir)
+
+
+def figure_mass_response_hist(root, outdir) -> list:
+    """ln(m / m_gen) of matched test jets, resonant and QCD: the uncorrected soft-drop mass and the
+    mass node, each the mean over the runs of a mass-regression model of its normalized histogram."""
+    M = _mlst()
+    curves = _curves("response")
+    runs = M._paper(root)
+    have = {a: [curves[m] for m in runs[a] if m in curves and "node/resonant" in curves[m]["hist"]] for a in M.MASS}
+    if not any(have.values()):
+        return []
+    style.use_style()
+    import matplotlib.pyplot as plt
+    fig, axes = plt.subplots(1, 2, figsize=(1.6 * style.PANEL, 0.75 * style.PANEL), sharey=True)
+    ref = next(c for v in have.values() for c in v)
+    edges = np.asarray(ref["bins"])
+
+    def norm(h):
+        h = np.asarray(h, float)
+        return h / h.sum() / np.diff(edges)
+    for ax, kind, title in ((axes[0], "resonant", "Resonant jets"), (axes[1], "qcd", "QCD jets")):
+        unc = np.mean([norm(c["hist"][f"uncorrected/{kind}"]) for v in have.values() for c in v], axis=0)
+        ax.stairs(unc, edges, color="grey", fill=True, alpha=0.3, label=r"Soft-drop mass")
+        for arm, cs in have.items():
+            if cs:
+                look = _look(M, arm)
+                ax.stairs(np.mean([norm(c["hist"][f"node/{kind}"]) for c in cs], axis=0), edges,
+                          color=look["color"], linewidth=2, linestyle=look["linestyle"],
+                          label=f"Mass node, {ROW_NAME[arm]}")
+        ax.axvline(0.0, color="black", linestyle=":", linewidth=1)
+        ax.set_title(title, fontsize="small", loc="left")
+        ax.set_xlabel(r"$\ln(m / m^{\mathrm{gen}})$")
+    axes[0].set_ylabel("Density")
+    axes[0].legend(frameon=False, fontsize="x-small")
+    fig.tight_layout()
+    return style.save(fig, "mass_response_hist", outdir)
 
 
 # ------------------------------------------------------------------ schematic
@@ -710,7 +803,7 @@ def figure_schematic(root: pathlib.Path, outdir: pathlib.Path) -> list:
 
 FIGURES = (figure_schematic, figure_label_sets, figure_sizes, figure_pairs, figure_per_class,
            figure_per_class_ranked, figure_missing_features,
-           figure_finetune, figure_mass, figure_sculpting)
+           figure_finetune, figure_mass, figure_mass_response_hist, figure_sculpting)
 
 
 def main(argv=None) -> int:

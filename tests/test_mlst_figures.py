@@ -174,3 +174,41 @@ def test_the_missing_feature_figure_draws_ratios_to_all_features(tmp_path, monke
     assert imp["L188"] == pytest.approx([1.2] * len(runs["L188"])) and imp["L162"] == []
     paths = F.figure_missing_features(REPO, tmp_path / "out")
     assert sorted(p.suffix for p in paths) == [".pdf", ".png"] and all(p.stat().st_size > 0 for p in paths)
+
+
+def test_the_unsculpted_floor_is_the_small_sample_bias_of_the_divergence():
+    F = _mod("mlst_figures", "experiments/FIGS/mlst_figures.py")
+    import numpy as np
+    before = np.linspace(1.0, 0.2, 24)
+    lo, hi = F.jsd_floor(before, [40_000, 4_000])
+    # for k bins and n jets the bias of the base-2 JSD is about (k - 1) / (8 n ln 2)
+    assert hi == pytest.approx(23 / (8 * 4_000 * np.log(2)), rel=0.15)
+    assert lo == pytest.approx(hi / 10, rel=0.2)
+
+
+def test_the_sculpting_and_response_figures_read_the_curve_files(tmp_path, monkeypatch):
+    F = _mod("mlst_figures", "experiments/FIGS/mlst_figures.py")
+    M = F._mlst()
+    runs = M._paper(REPO)
+    d = tmp_path / "head/curves_v2"
+    d.mkdir(parents=True)
+    before = [1.0 / 24] * 24
+    for row in F.SCULPT_ROWS:
+        for m in runs[row]:
+            k = 2.0 if row == "R16_Q1" else 1.0
+            curve = [{"eff": e, "n_pass": int(4e5 * e), "jsd": k * 1e-3 / e ** 0.5} for e in (0.01, 0.1)]
+            wps = {wp: {"hist_after": before} for wp in ("0.1", "0.01")}
+            (d / f"{m}_sculpting_v2.json").write_text(json.dumps(
+                {"bins_jet_sdmass": list(range(20, 501, 20)), "hist_before": before, "working_points": wps,
+                 "curve": curve}))
+            hist = {f"{h}/{kind}": [1] * 100 for h in ("uncorrected", "node") for kind in ("resonant", "qcd")}
+            (d / f"{m}_response.json").write_text(json.dumps({"bins": [-1 + 0.02 * i for i in range(101)],
+                                                              "hist": hist}))
+    monkeypatch.setattr(F, "DATA", tmp_path)
+    got = F.sculpting_curves(M, runs, F._curves("sculpting_v2"))
+    eff, mean, per = got["R16_Q1"]
+    assert eff == [0.01, 0.1] and mean == pytest.approx([2e-2, 2e-3 / 0.1 ** 0.5])
+    assert len(per) == len(runs["R16_Q1"])
+    for fig in (F.figure_sculpting, F.figure_mass_response_hist):
+        paths = fig(REPO, tmp_path / "out")
+        assert sorted(p.suffix for p in paths) == [".pdf", ".png"] and all(p.stat().st_size > 0 for p in paths)
