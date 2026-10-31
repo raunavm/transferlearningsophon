@@ -1,67 +1,59 @@
 % Figure 1: the design of the study (TikZ; compiled with the paper, so its text is the paper's font).
 % Every count is a macro of the generated results (results_generated.tex) or of the preamble.
+% Drawn for the article class's 11pt text width (about 12.6 cm).
 \begin{figure*}[t]
 \centering
 \begin{tikzpicture}[
-  font=\small,
-  lvl/.style={draw, rounded corners=2pt, fill=#1, minimum width=3.15cm, minimum height=1.05cm,
-              align=center, inner sep=3pt},
-  lvl/.default={black!4},
-  ctl/.style={draw, rounded corners=2pt, fill=#1, minimum width=3.6cm, minimum height=0.9cm,
-              align=center, inner sep=3pt},
-  ctl/.default={black!4},
-  stage/.style={draw, rounded corners=2pt, fill=black!3, align=center, inner sep=3pt,
-               minimum height=0.85cm},
-  merge/.style={-{Latex[length=2mm]}, thick},
-  flow/.style={-{Latex[length=2mm]}, thick, black!70},
-  note/.style={font=\footnotesize, align=left, text=black!75},
+  font=\footnotesize,
+  lvl/.style={draw, rounded corners=2pt, fill=#1, minimum width=3.0cm, minimum height=0.8cm,
+              align=center, inner sep=2pt},
+  ctl/.style={draw, rounded corners=2pt, fill=#1, minimum width=4.3cm, minimum height=0.8cm,
+              align=center, inner sep=2pt},
+  stage/.style={draw, rounded corners=2pt, fill=black!3, align=center, inner sep=3pt},
+  merge/.style={-{Latex[length=1.6mm]}, thick},
+  flow/.style={-{Latex[length=1.6mm]}, thick, black!70},
+  note/.style={font=\scriptsize, align=left, text=black!75, anchor=west},
 ]
 % ---------------------------------------------------------------- (a) the label sets
-\node[anchor=west, font=\bfseries] at (-0.2, 4.55) {(a) Label sets};
-\node[lvl={c188!25}] (l188) at (1.4, 3.55) {\Kfull{} classes\\[-1pt]{\footnotesize Sophon's labels}};
-\node[lvl={c162!25}] (l162) at (5.0, 3.55) {\Kres{} classes\\[-1pt]{\footnotesize one QCD class}};
-\node[lvl={c43!25}]  (l43)  at (8.6, 3.55) {\Kmid{} classes\\[-1pt]{\footnotesize topology $\times$ $b$/$c$/light}};
-\node[lvl={c17!25}]  (l17)  at (12.2, 3.55) {\Kcoarse{} classes\\[-1pt]{\footnotesize topology and prong types}};
-\draw[merge] (l188) -- node[above, note]{merge the}
-                       node[below, note]{\LitJetClassTwoNQcdClasses{} QCD classes} (l162);
-\draw[merge] (l162) -- node[above, note]{merge $g$ with $u,d,s$;}
-                       node[below, note]{$e$ with $\mu$; $b$/$c$ counts} (l43);
-\draw[merge] (l43)  -- node[above, note]{remove quark}
-                       node[below, note]{flavor} (l17);
-\node[note, anchor=north west, text width=13.8cm] at (-0.2, 2.75)
-  {Each level merges classes of the one before; every class holds only QCD jets, only decays into
-   quarks and gluons, or only decays with leptons. The \Kfull{} and \Kres{} classes keep every resonant
-   decay apart.};
-% controls
-\node[ctl={crand!22}] (rand) at (1.85, 1.35) {random partitions\\[-1pt]{\footnotesize \Kcoarse{} groups, random members}};
-\node[ctl={cflav!22}] (flav) at (6.25, 1.35) {flavor-controlled partitions\\[-1pt]{\footnotesize no boundary, $b$ boundary, random}};
-\node[ctl={cmass!22}] (mass) at (10.0, 1.35) {$+$ mass regression\\[-1pt]{\footnotesize \Kres{} and \Kcoarse{} classes}};
-\node[ctl={ckin!22}]  (kin)  at (13.3, 1.35) {kinematic inputs only\\[-1pt]{\footnotesize \Kfull{} and \Kcoarse{} classes}};
-\node[note, anchor=north west, text width=13.8cm] at (-0.2, 0.62)
-  {Random partitions hold the group shares of the \Kcoarse-class level, so they change what the
-   classes distinguish at a fixed number of classes: many flavor boundaries but no topological order;
-   the flavor-controlled partitions fix where the flavor boundaries lie.};
+\node[anchor=west, font=\small\bfseries] at (-0.05, 0.85) {(a) Label sets};
+\node[lvl={c188!25}] (l188) at (1.5,  0.0)  {\Kfull{} classes\\{\scriptsize Sophon's labels}};
+\node[lvl={c162!25}] (l162) at (1.5, -1.3)  {\Kres{} classes\\{\scriptsize one QCD class}};
+\node[lvl={c43!25}]  (l43)  at (1.5, -2.6)  {\Kmid{} classes\\{\scriptsize topology $\times$ $b$/$c$/light}};
+\node[lvl={c17!25}]  (l17)  at (1.5, -3.9)  {\Kcoarse{} classes\\{\scriptsize topology and prong types}};
+\draw[merge] (l188) -- (l162);
+\draw[merge] (l162) -- (l43);
+\draw[merge] (l43)  -- (l17);
+\node[note] at (3.15, -0.65) {merge the \LitJetClassTwoNQcdClasses{} QCD classes};
+\node[note, text width=3.6cm] at (3.15, -1.95) {merge $g$ with $u,d,s$ and $e$ with $\mu$; keep only whether a $b$, else a $c$, is present};
+\node[note] at (3.15, -3.25) {remove quark flavor};
+\node[anchor=west, font=\small\bfseries] at (7.55, 0.85) {Controls};
+\node[ctl={crand!22}] (rand) at (10.35,  0.0) {random partitions\\{\scriptsize \Kcoarse{} groups, random members}};
+\node[ctl={cflav!22}] (flav) at (10.35, -1.3) {flavor-controlled partitions\\{\scriptsize no boundary, $b$ boundary, random boundary}};
+\node[ctl={cmass!22}] (mass) at (10.35, -2.6) {$+$ mass regression\\{\scriptsize \Kres{} and \Kcoarse{} classes}};
+\node[ctl={ckin!22}]  (kin)  at (10.35, -3.9) {kinematic inputs only\\{\scriptsize \Kfull{} and \Kcoarse{} classes}};
 % ---------------------------------------------------------------- (b) the pipeline
-\node[anchor=west, font=\bfseries] at (-0.2, -0.75) {(b) Pipeline};
-\node[stage, text width=3.1cm] (seed) at (1.5, -1.95) {seed $s$: the same jets,\\ in the same order,\\ the same initial weights};
-\node[stage, text width=3.0cm] (pre)  at (5.2, -1.95) {pretraining on\\ JetClass-II, one run\\ per label set and seed};
-\node[stage, text width=3.1cm] (frz)  at (8.95, -1.35) {frozen class token:\\ linear and MLP probes};
-\node[stage, text width=3.1cm] (ft)   at (8.95, -2.55) {full fine-tuning vs.\\ training from scratch};
-\node[stage, text width=3.7cm] (task) at (13.0, -1.95)
-  {JetClass-II (\Kfull{} classes),\\ JetClass, top, quark/gluon\\ (Pythia, Herwig), class pairs,\\ jet mass, $X\to b\bar b$, $X\to bs$};
+\node[anchor=west, font=\small\bfseries] at (-0.05, -5.0) {(b) Pipeline};
+\node[stage, text width=2.3cm] (seed) at (1.25, -6.3) {seed $s$: same jets, same order, same initial weights};
+\node[stage, text width=2.3cm] (pre)  at (4.3,  -6.3) {pretraining on JetClass-II, one run per label set and seed};
+\node[stage, text width=2.6cm] (frz)  at (7.55, -5.8) {frozen features: linear and MLP probes};
+\node[stage, text width=2.6cm] (ft)   at (7.55, -6.8) {full fine-tuning vs.\ training from scratch};
+\node[stage, text width=2.55cm] (task) at (11.1, -6.3)
+  {JetClass-II, JetClass, top, quark/gluon (Pythia, Herwig), class pairs, jet mass, $X\to b\bar b$, $X\to bs$};
 \draw[flow] (seed) -- (pre);
-\draw[flow] (pre.east) -- ++(0.35,0) |- (frz.west);
-\draw[flow] (pre.east) -- ++(0.35,0) |- (ft.west);
-\draw[flow] (frz.east) -- ++(0.3,0) |- (task.west);
-\draw[flow] (ft.east) -- ++(0.3,0) |- (task.west);
+\draw[flow] (pre.east) -- ++(0.3,0) |- (frz.west);
+\draw[flow] (pre.east) -- ++(0.3,0) |- (ft.west);
+\draw[flow] (frz.east) -- ++(0.25,0) |- (task.west);
+\draw[flow] (ft.east) -- ++(0.25,0) |- (task.west);
 \end{tikzpicture}
-\caption{Design of the study. (a)~The label sets: four levels of one class hierarchy of the
-\Kfull{} JetClass-II classes, with what each merge removes, and the controls, which change what the
-classes distinguish without changing their number, add a mass-regression output, or remove the
-particle-type and track-displacement inputs. Figure~\ref{fig:labelsets} shows the classes of selected
-decays in each label set. (b)~Models with the same seed see the same training jets in the same order
-from the same initial weights, so two models of one seed differ only in their labels and output
-layer. Every model is evaluated with probes on its frozen features and with full fine-tuning on the
-same tasks.}
+\caption{Design of the study. (a)~Left: four levels of one class hierarchy of the \Kfull{}
+JetClass-II classes and what each merge removes. Every class holds only QCD jets, only decays into
+quarks and gluons, or only decays with leptons. Right: the controls. The random partitions keep the
+group sizes of the \Kcoarse-class level but assign the decays to the groups at random; they have
+many flavor boundaries and no topological order. The flavor-controlled partitions fix where the
+flavor boundaries lie. Two further variants add a mass-regression output or remove the particle-type
+and track-displacement inputs. Figure~\ref{fig:labelsets} shows the classes of selected decays in
+each label set. (b)~Models with the same seed see the same training jets in the same order from the
+same initial weights, so two models of one seed differ only in their labels and output layer. Every
+model is evaluated with probes on its frozen features and with full fine-tuning on the same tasks.}
 \label{fig:design}
 \end{figure*}
