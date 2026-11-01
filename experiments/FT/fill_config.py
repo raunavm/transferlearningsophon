@@ -55,7 +55,7 @@ def fill(text: str, mean: np.ndarray) -> tuple:
                                        and float(par[2]) <= v <= float(par[3]))
         if not identity:
             raise SystemExit(f"FATAL: {name} {par}: not the identity on {v}, the input would not be the mean")
-        line = re.compile(rf"^(\s*{name}: ak\.zeros_like\(part_energy\))\s*$", re.M)
+        line = re.compile(rf"^([ \t]*{name}: ak\.zeros_like\(part_energy\))[ \t]*$", re.M)
         if len(line.findall(text)) != 1:
             raise SystemExit(f"FATAL: {name} is not defined once as ak.zeros_like(part_energy)")
         text = line.sub(rf"\g<1> + {v!r}", text)
