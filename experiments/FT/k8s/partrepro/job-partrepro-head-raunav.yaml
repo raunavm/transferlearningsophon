@@ -21,9 +21,10 @@ spec:
           [ "${USED}" -le 85 ] || { echo "FATAL: /data at ${USED}%"; exit 42; }
           [ ! -f ${OUT}/metrics.json ] || { echo "${OUT} is done"; cat ${OUT}/metrics.json; exit 0; }
           mkdir -p ${OUT}
-          git clone -q --depth 1 --branch mtx-s2.30 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
-          git clone -q https://github.com/jet-universe/particle_transformer.git /workspace/part && cd /workspace/part && git checkout -q 2925bdb
-          git rev-parse HEAD | tee ${OUT}/part_commit.txt
+          git clone -q --depth 1 --branch mtx-s2.32 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+          cp -r /data/finetune/partrepro/particle_transformer /workspace/part && cd /workspace/part
+          git -c safe.directory=/workspace/part rev-parse HEAD | tee ${OUT}/part_commit.txt | grep -q "^2925bdb" || { echo "FATAL: /data/finetune/partrepro/particle_transformer is not at 2925bdb"; exit 42; }
+          git -c safe.directory=/workspace/part diff --quiet HEAD || { echo "FATAL: /data/finetune/partrepro/particle_transformer has local changes"; exit 42; }
           pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
           mkdir -p /workspace/data && cd /workspace/data
           cp /data/finetune/partrepro/TopLandscape.tar TopLandscape.tar
