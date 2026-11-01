@@ -21,7 +21,7 @@ spec:
           [ "${USED}" -le 85 ] || { echo "FATAL: /data at ${USED}%"; exit 42; }
           [ ! -f ${OUT}/metrics.json ] || { echo "${OUT} is done"; cat ${OUT}/metrics.json; exit 0; }
           mkdir -p ${OUT}
-          git clone -q --depth 1 --branch mtx-s2.32 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+          git clone -q --depth 1 --branch mtx-s2.37 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
           cp -r /data/finetune/partrepro/particle_transformer /workspace/part && cd /workspace/part
           git -c safe.directory=/workspace/part rev-parse HEAD | tee ${OUT}/part_commit.txt | grep -q "^2925bdb" || { echo "FATAL: /data/finetune/partrepro/particle_transformer is not at 2925bdb"; exit 42; }
           git -c safe.directory=/workspace/part diff --quiet HEAD || { echo "FATAL: /data/finetune/partrepro/particle_transformer has local changes"; exit 42; }
@@ -59,7 +59,7 @@ spec:
                 values: ["us-west"]
               - key: nvidia.com/gpu.product
                 operator: In
-                values: ["Tesla-V100-SXM2-32GB"]
+                values: ["NVIDIA-GeForce-RTX-3090", "NVIDIA-L40", "NVIDIA-L40S", "NVIDIA-RTX-A6000", "NVIDIA-A40", "NVIDIA-GeForce-RTX-4090", "NVIDIA-RTX-A5000", "Tesla-V100-SXM2-32GB", "NVIDIA-A10", "NVIDIA-RTX-5000-Ada-Generation", "NVIDIA-L4", "NVIDIA-TITAN-RTX", "Quadro-RTX-6000"]
               - key: kubernetes.io/hostname
                 operator: NotIn
                 values: ["ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org", "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-02.sdsc.optiputer.net", "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu"]
