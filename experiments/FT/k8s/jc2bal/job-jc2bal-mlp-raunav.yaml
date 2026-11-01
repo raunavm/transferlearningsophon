@@ -7,7 +7,7 @@ metadata:
 spec:
   completionMode: Indexed
   completions: 21
-  parallelism: 5
+  parallelism: 10
   backoffLimitPerIndex: 2
   podFailurePolicy:
     rules:
@@ -26,7 +26,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone -q --depth 1 --branch mtx-s2.31 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+          git clone -q --depth 1 --branch mtx-s2.33 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
           cd /workspace/tls
           pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
           IDX=${JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}
