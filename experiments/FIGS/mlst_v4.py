@@ -7,7 +7,7 @@ Inputs, under experiments/FIGS/data/v2/ (pulled by pull_mlst_data.py):
                                      JetClass/top/quark-gluon on the v4 grid, variants, hidden layer)
   linprobe/fits_v4_mlp/<model>.json  the nonlinear probes of the same script
   jc2bal/census.json, manifest.json  experiments/FT/stage_jc2_balanced.py
-  budget/lrsweep_metrics.json        experiments/FT/budget_metrics.py over /data/results/ft_v2/lrsweep
+  budget/lrsweep_metrics.json        experiments/FT/budget_metrics.py over /data/results/ft_v2/lrsweep_v2
   budget/budget_metrics.json         the same over /data/results/ft_v2/budget
 A missing input leaves its macros as red markers and is listed as missing.
 """

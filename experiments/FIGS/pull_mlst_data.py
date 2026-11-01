@@ -166,7 +166,7 @@ def main() -> int:
               (bal, "jc2bal", "census.json"), (bal, "jc2bal", "manifest.json"),
               (EVAL / "v2_head" / "curves_v2", "head/curves_v2", "*.json"),
               (FT / "budget", "budget", "budget_metrics.json"),
-              (FT / "lrsweep", "budget", "lrsweep_metrics.json"),
+              (FT / "lrsweep_v2", "budget", "lrsweep_metrics.json"),     # 50-step checks (2026-11-01)
               (pathlib.Path("/data/results/partrepro"), "partrepro", "*/metrics.json"),
               (EVAL / "dup_check", "dup_check", "*.json"))
         for d, name, pattern in v4:

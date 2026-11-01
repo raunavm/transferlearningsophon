@@ -61,6 +61,8 @@ def test_head_multiplier_is_capped_at_5e3():
 def test_sweep_cells():
     cells = bfb.lrsweep_cells()
     assert len(cells) == 12 and {c["n"] for c in cells} == {10_000} and {c["s"] for c in cells} == {1}
+    assert all(c["epochs"] == 400 and c["spe"] == 50 * 512 and c["patience"] == 10 for c in cells)
+    assert all(c["out"].startswith("/data/results/ft_v2/lrsweep_v2/") for c in cells)   # the first sweep is kept
     pre = [c for c in cells if c["init"]]
     assert {c["init"] for c in pre} == {"l188-s1"} and sorted({c["lr"] for c in pre}) == sorted(bfb.SWEEP_PRE)
     assert sorted({c["lr"] for c in cells if not c["init"]}) == sorted(bfb.SWEEP_SCRATCH)
@@ -95,7 +97,9 @@ def test_spec_is_valid_bash_on_v100(kind, tmp_path, monkeypatch):
     assert gpus == ["Tesla-V100-SXM2-32GB"]
     assert "--samples-per-epoch ${SPE}" in script and "--num-epochs ${EP}" in script
     assert "--samples-per-epoch-val ${VAL}" in script and "early_stop.py watch" in script
-    assert ("EP=40; SPE=256000; PAT=10;" in script) or kind == "kin"
+    # 500-step epochs at 1e5 and above, 50-step epochs below; both at most 20,000 steps
+    assert "EP=400; SPE=25600; PAT=10;" in script
+    assert ("EP=40; SPE=256000; PAT=10;" in script) == (kind != "lrsweep")
     assert "train_N${N}_s1.parquet" in script and "--model-prefix ${RUN}/net" in script
     # the manifest hashes the resolved checkpoint file, never the run directory (lrsweep, 2026-10-31)
     assert "checkpoint=${RUN_DIR:+/workspace/ckpt/${INIT}.pt}" in script and "checkpoint=${RUN_DIR} " not in script
@@ -105,7 +109,9 @@ def test_spec_is_valid_bash_on_v100(kind, tmp_path, monkeypatch):
 def test_jc2b_and_kinematic_cells():
     jc2b = bfb.jc2b_cells("3e-4", "1e-3")
     assert len(jc2b) == (16 + 3) * 3 and {c["n"] for c in jc2b} == {10_000, 100_000, 1_000_000}
-    assert {c["val"] for c in jc2b} == {20_480} and all(c["epochs"] == 40 for c in jc2b)
+    assert {c["val"] for c in jc2b} == {20_480}
+    assert all((c["epochs"], c["spe"]) == ((400, 25_600) if c["n"] < 100_000 else (40, 256_000)) for c in jc2b)
+    assert all(c["epochs"] * c["spe"] == 20_000 * 512 for c in jc2b)
     kin = bfb.kin_cells("3e-4")
     full = [c for c in kin if c["n"] == 1_200_000]
     assert len(kin) == 8 and len(full) == 2

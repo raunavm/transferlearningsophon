@@ -13,7 +13,7 @@ Every cell also carries its early_stop.json (best epoch, validation metric, epoc
 and its manifest's recipe. A cell without DONE is listed as missing; the read-out never fills it.
 
     python3 experiments/FT/budget_metrics.py --root /data/results/ft_v2/budget --out budget_metrics.json
-    python3 experiments/FT/budget_metrics.py --root /data/results/ft_v2/lrsweep --out lrsweep_metrics.json
+    python3 experiments/FT/budget_metrics.py --root /data/results/ft_v2/lrsweep_v2 --out lrsweep_metrics.json
 """
 from __future__ import annotations
 

@@ -6,7 +6,11 @@ and quark/gluon tagging and 50 x 19 = 950 on JetClass, far short of convergence 
 learning rate of 1e-4; every pretraining study we compare with trains small-data fine-tuning to
 convergence. Below the full set every run now gets the same budget, pretrained or from scratch:
 
-  * 40 weaver epochs of 500 steps (--samples-per-epoch 256,000): at most 20,000 steps at batch 512;
+  * at most 20,000 steps at batch 512: 40 weaver epochs of 500 steps (--samples-per-epoch 256,000)
+    at 1e5 jets and above, 400 epochs of 50 steps (25,600) below. The first sweep (500-step epochs,
+    2026-11-01) had its best validation at the first check in 11 of 12 cells: 500 steps are 25
+    passes over 1e4 jets, so the check came after the best and could not resolve it (PI: check
+    every 50 steps below 1e5);
   * a validation pass after each epoch over the whole fixed validation file (200,000 jets), so
     every evaluation sees the same jets;
   * the best-validation checkpoint (weaver's rule), with training stopped once 10 consecutive
@@ -40,11 +44,12 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "experiments" / "FT" / "k8s" / "budget"
 BUDGET_ROOT = "/data/results/ft_v2/budget"
-SWEEP_ROOT = "/data/results/ft_v2/lrsweep"
+SWEEP_ROOT = "/data/results/ft_v2/lrsweep_v2"     # the 500-step sweep stays in .../lrsweep (RUNS.csv)
 MTX_V2 = "/data/results/mtx_v2"
 PAPER_RUNS = ROOT / "configs" / "arms" / "v2_paper_runs.txt"
 GPU = "Tesla-V100-SXM2-32GB"
 EPOCHS, STEPS, BATCH, PATIENCE, VAL_N = 40, 500, 512, 10, 200_000
+SMALL_N, SMALL_STEPS = 100_000, 50       # below SMALL_N a check every 50 steps, same 20,000-step cap
 HEAD_MULT, HEAD_CAP = 50.0, 5e-3
 SWEEP_PRE, SWEEP_SCRATCH, SWEEP_N = ("1e-4", "3e-4", "1e-3"), ("3e-4", "1e-3", "3e-3"), 10_000
 SCRATCH_SEEDS = (1, 2, 3)
@@ -89,15 +94,16 @@ def paper_runs() -> list:
 
 def cell(task: str, init: str, n: int, s: int, lr: str, root: str, sub: str = "") -> dict:
     """One cell. init '' is from scratch; sub names the cell's directory under its init. Below the
-    full set: 40 epochs of 500 steps, early stop after 10; at the full set (FULL): ParT's 20 epochs
-    of the whole set, kept to the end."""
+    full set: 20,000 steps in epochs of 500 steps (50 below 1e5 jets), early stop after 10 epochs
+    without improvement; at the full set (FULL): ParT's 20 epochs of the whole set, kept to the end."""
     tree = TASKS[task][4]
     name = init or "scratch"
     leaf = f"{name}{sub}"
     full = FULL.get(task) == n
+    steps = SMALL_STEPS if n < SMALL_N else STEPS
     return {"task": task, "init": init, "run_dir": f"{MTX_V2}/mtx-{init}" if init else "", "n": n, "s": s,
             "lr": lr, "mult": head_mult(lr) if init else "", "out": f"{root}/{tree}/{leaf}/N{n}/s{s}",
-            "epochs": 20 if full else EPOCHS, "spe": n if full else STEPS * BATCH,
+            "epochs": 20 if full else EPOCHS * STEPS // steps, "spe": n if full else steps * BATCH,
             "patience": 1000 if full else PATIENCE, "val": VAL_SIZE.get(task, VAL_N)}
 
 
