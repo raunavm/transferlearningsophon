@@ -103,6 +103,9 @@ LP_BAL = "/data/results/eval/v2_linprobe_bal"
 PAPER_RUNS = ROOT / "configs" / "arms" / "v2_paper_runs.txt"
 IMPUTE_ARMS = ("mtx-l188-", "mtx-r16q1-")          # imputed variants: 188- and 17-class runs only (PI)
 CFG = "configs/data/JetClassII_massreg.yaml"
+# Any GPU product (us-west, minus V2_BAD_NODES) for the extraction and probe jobs: the extraction left an
+# L40 at 0% with one loader core at 100% (2026-11-01), so the GPU type does not set the speed; every
+# product on the cluster (Pascal and newer) is supported by the image's torch 2.5.1. Manifests record it.
 # pairs_test (2.1 M jets) read whole OOM-kills a 48Gi extraction pod; its three parts (split_spec) fit
 PAIRS_TEST_PARTS = tuple(f"pairs_test_part{i}.parquet" for i in range(3))
 
@@ -188,7 +191,6 @@ echo "JC2BAL X ${{MODEL}} COMPLETE"
 """
     body = "\n".join(("          " + ln) if ln else "" for ln in script.splitlines())
     exclude = ", ".join(f'"{n}"' for n in launch.V2_BAD_NODES)
-    gpus = ", ".join(f'"{g}"' for g in launch.V2_ANY_GPU if "V100" not in g)
     return name, f"""apiVersion: batch/v1
 kind: Job
 metadata:
@@ -218,8 +220,8 @@ spec:
         - |
 {body}
         resources:
-          requests: {{ memory: "48Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
-          limits:   {{ memory: "48Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
+          requests: {{ memory: "48Gi", cpu: "2", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
+          limits:   {{ memory: "48Gi", cpu: "2", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
         volumeMounts:
         - {{ name: data, mountPath: /data }}
         - {{ name: dshm, mountPath: /dev/shm }}
@@ -233,9 +235,6 @@ spec:
               - key: topology.kubernetes.io/region
                 operator: In
                 values: ["us-west"]
-              - key: nvidia.com/gpu.product
-                operator: In
-                values: [{gpus}]
               - key: kubernetes.io/hostname
                 operator: NotIn
                 values: [{exclude}]
@@ -256,12 +255,8 @@ def _indexed(name: str, script_body: str, n: int, parallelism: int, gpu: bool, m
     launch = _launch()
     body = "\n".join(("          " + ln) if ln else "" for ln in script_body.splitlines())
     exclude = ", ".join(f'"{x}"' for x in launch.V2_BAD_NODES)
-    gpus = ", ".join(f'"{g}"' for g in launch.V2_ANY_GPU if "V100" not in g)
     gpu_req = ', nvidia.com/gpu: "1"' if gpu else ""
     gpu_aff = (f"""
-              - key: nvidia.com/gpu.product
-                operator: In
-                values: [{gpus}]
               - key: kubernetes.io/hostname
                 operator: NotIn
                 values: [{exclude}]""" if gpu else "")

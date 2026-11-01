@@ -63,3 +63,15 @@ def test_split_job_writes_the_parts_the_extraction_requires():
     script = yaml.safe_load(bj.split_spec("t")[1])["spec"]["template"]["spec"]["containers"][0]["args"][0]
     assert f"split_parquet.py {bj.BAL}/pairs_test.parquet --parts {len(bj.PAIRS_TEST_PARTS)}" in script
     assert subprocess.run(["bash", "-n"], input=script, text=True).returncode == 0
+
+
+def test_extraction_and_probe_jobs_take_any_gpu_in_us_west_minus_bad_nodes():
+    # the extraction is loader-bound (an L40 at 0%, 2026-11-01), so no GPU product is required
+    bj = _load("build_jc2bal_jobs", "scripts/build_jc2bal_jobs.py")
+    for _, text in (bj.extract_spec("t", 5), bj.fit_spec("t", 5, False), bj.kin_spec("t")):
+        pod = yaml.safe_load(text)["spec"]["template"]["spec"]
+        exprs = pod["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
+        keys = {e["key"]: e for e in exprs}
+        assert "nvidia.com/gpu.product" not in keys and keys["topology.kubernetes.io/region"]["values"] == ["us-west"]
+        assert keys["kubernetes.io/hostname"]["operator"] == "NotIn" and keys["kubernetes.io/hostname"]["values"]
+        assert pod["containers"][0]["resources"]["requests"]["nvidia.com/gpu"] == "1"
