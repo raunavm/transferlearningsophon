@@ -22,7 +22,7 @@ backbone at --lr-pre with the head at 50x capped at 5e-3, constant rate, weight 
 From scratch: --lr-scratch with weaver's flat+decay, weight decay 0.01 (ParT's top recipe). One
 fine-tuning per pretraining run (seed 1); three training seeds from scratch.
 
-Kinds of job (each one Indexed Job, V100 only, one cell per index):
+Kinds of job (each one Indexed Job, any 24 GB+ GPU (build_mtx_launch.V2_FT_GPU), one cell per index):
   lrsweep   top and quark/gluon at 1e4 jets: 188-s1 at backbone {1e-4, 3e-4, 1e-3} and from
             scratch (seed 1) at {3e-4, 1e-3, 3e-3}; picked on the validation metric
   bench     top and quark/gluon at 1e3, 1e4, 1e5 for every paper run and from scratch
@@ -47,7 +47,6 @@ BUDGET_ROOT = "/data/results/ft_v2/budget"
 SWEEP_ROOT = "/data/results/ft_v2/lrsweep_v2"     # the 500-step sweep stays in .../lrsweep (RUNS.csv)
 MTX_V2 = "/data/results/mtx_v2"
 PAPER_RUNS = ROOT / "configs" / "arms" / "v2_paper_runs.txt"
-GPU = "Tesla-V100-SXM2-32GB"
 EPOCHS, STEPS, BATCH, PATIENCE, VAL_N = 40, 500, 512, 10, 200_000
 SMALL_N, SMALL_STEPS = 100_000, 50       # below SMALL_N a check every 50 steps, same 20,000-step cap
 HEAD_MULT, HEAD_CAP = 50.0, 5e-3
@@ -312,7 +311,7 @@ spec:
                 values: ["us-west"]
               - key: nvidia.com/gpu.product
                 operator: In
-                values: ["{GPU}"]
+                values: [{", ".join(f'"{g}"' for g in launch.V2_FT_GPU)}]
               - key: kubernetes.io/hostname
                 operator: NotIn
                 values: [{exclude}]

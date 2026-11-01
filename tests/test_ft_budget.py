@@ -83,7 +83,7 @@ def test_bench_and_jc1_cells():
 
 
 @pytest.mark.parametrize("kind", ["lrsweep", "bench", "jc1", "jc2b", "kin"])
-def test_spec_is_valid_bash_on_v100(kind, tmp_path, monkeypatch):
+def test_spec_is_valid_bash_on_any_24gb_gpu(kind, tmp_path, monkeypatch):
     monkeypatch.setattr(bfb, "OUT_DIR", tmp_path)
     bfb.main(["--tag", "mtx-test", "--lr-pre", "3e-4", "--lr-scratch", "1e-3", kind])
     text = (tmp_path / f"job-ft-budget-{kind}-raunav.yaml").read_text()
@@ -94,7 +94,7 @@ def test_spec_is_valid_bash_on_v100(kind, tmp_path, monkeypatch):
     assert subprocess.run(["bash", "-n"], input=script, text=True).returncode == 0
     gpus = spec["template"]["spec"]["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"][
         "nodeSelectorTerms"][0]["matchExpressions"][1]["values"]
-    assert gpus == ["Tesla-V100-SXM2-32GB"]
+    assert gpus == list(bfb._launch().V2_FT_GPU) and "Tesla-V100-SXM2-32GB" in gpus   # any GPU that fits (PI, 2026-11-01)
     assert "--samples-per-epoch ${SPE}" in script and "--num-epochs ${EP}" in script
     assert "--samples-per-epoch-val ${VAL}" in script and "early_stop.py watch" in script
     # 500-step epochs at 1e5 and above, 50-step epochs below; both at most 20,000 steps

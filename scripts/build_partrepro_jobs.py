@@ -13,7 +13,7 @@ on ParT's own data (TopLandscape.tar of ParT's get_datasets.py, md5-checked):
   rescale   ParT's config with Sophon's rescaling (experiments/FT/partrepro/top_kin_rescale.yaml)
   head      ParT's network with Sophon's head, -o fc_params '[(512,0.1)]'
 
-One V100 each, ~3 GPU-h. Output /data/results/partrepro/<variant>/{train.log, pred.root,
+One 24 GB+ GPU each (any of build_mtx_launch.V2_FT_GPU), ~3 V100-h. Output /data/results/partrepro/<variant>/{train.log, pred.root,
 metrics.json}; metrics from experiments/FT/partrepro_metrics.py.
 
     python3 scripts/build_partrepro_jobs.py --tag mtx-s2.22 part rescale head
@@ -33,7 +33,6 @@ DATA_MD5 = "4fca2e47afbf321b0f201da6b804c404"
 DATA_COPY = "/data/finetune/partrepro/TopLandscape.tar"
 # and of PART_REPO at PART_COMMIT (2026-11-01): the github.com clone failed on DNS the same way
 PART_COPY = "/data/finetune/partrepro/particle_transformer"
-GPU = "Tesla-V100-SXM2-32GB"
 PART_CFG = "data/TopLandscape/top_kin.yaml"
 VARIANTS = {
     "part": {"config": PART_CFG, "extra": ""},
@@ -118,7 +117,7 @@ spec:
                 values: ["us-west"]
               - key: nvidia.com/gpu.product
                 operator: In
-                values: ["{GPU}"]
+                values: [{", ".join(f'"{g}"' for g in launch.V2_FT_GPU)}]
               - key: kubernetes.io/hostname
                 operator: NotIn
                 values: [{exclude}]

@@ -76,5 +76,5 @@ def test_kin_specs():
         assert f"-o num_classes {k} " in s and "--mass-lambda" not in s
         assert s.index("python3 experiments/MTX/derive_kin_sidecar.py") < s.index("python3 experiments/MTX/pretrain_v2.py")
         assert "RUN_ID=mtx-" + arm.lower().replace("_", "") + "-s1" in s
-        assert "SEED=1" in s and "V100" not in s.split("nvidia.com/gpu.product", 1)[1].split("hostname")[0]
+        assert "SEED=1" in s and "Tesla-V100-SXM2-32GB" in s.split("nvidia.com/gpu.product", 1)[1].split("hostname")[0]
         assert '"NVIDIA-GeForce-RTX-3090"' in s and "raunav" in fn

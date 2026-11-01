@@ -599,6 +599,10 @@ V2_ANY_GPU = ("NVIDIA-GeForce-RTX-3090", "NVIDIA-L40", "NVIDIA-L40S", "NVIDIA-RT
 # four running pods: 2.6 cores, 21-25 GiB; the loader probe's peak anon was 29 GB), so they
 # fit beside other users' pods; 8 CPUs / 48Gi fit almost nowhere a GPU was free.
 V2_ANY_CPU, V2_ANY_MEM = "4", "40Gi"
+# Fine-tuning and the ParT reproduction (PI, 2026-11-01: "all runs are fine using whatever GPU is
+# available that fits"; the GPU effect on the 188-class seeds is 0.2%): any 24 GB+ card, the slow
+# ones included since a fine-tuning cell is short. Every cell's manifest records its GPU.
+V2_FT_GPU = V2_ANY_GPU + ("NVIDIA-L4", "NVIDIA-TITAN-RTX", "Quadro-RTX-6000")
 V2_CPU = "8"
 V2_MEM = "48Gi"
 # Retries (PI, 2026-10-01). Evictions are ignored; exit EXIT_HALT fails the Job at once;
@@ -1418,9 +1422,9 @@ def v2_kin_specs(tag: str) -> dict:
     the pod derives the arm's reweighting sidecar from its parent's
     (experiments/MTX/derive_kin_sidecar.py; a no-op once written), so the run reads the
     parent's histograms and draws the parent's jet stream. Not on the V100s, which the
-    fine-tuning (V100 only) needs."""
+    fine-tuning needed until 2026-11-01; since then any of V2_ANY_GPU (PI: any GPU that fits)."""
     import json
-    gpus = tuple(g for g in V2_ANY_GPU if "V100" not in g)
+    gpus = V2_ANY_GPU
     out = {}
     for arm in json.loads(V2_KIN.read_text())["arms"]:
         run_id, job = v2_run_id(arm["name"], 1), v2_job_name(arm["name"], 1)
@@ -1428,7 +1432,7 @@ def v2_kin_specs(tag: str) -> dict:
                f" --arm {arm['config']} --parent configs/arms/{arm['parent']}.yaml"
                " --makeweight /data/results/mtx/makeweight || exit 42\n")
         script = v2_script(arm, 1, run_id=run_id)
-        title = f"v2 PRETRAINING -- {arm['name']} (kinematic features only), run 1, any 24 GB+ GPU but V100."
+        title = f"v2 PRETRAINING -- {arm['name']} (kinematic features only), run 1, any 24 GB+ GPU."
         out[f"job-{job}.yaml"] = v2_job(job, [script], gpus, tag, title,
                                         cpu=V2_ANY_CPU, mem=V2_ANY_MEM, pre=pre)
     return out
