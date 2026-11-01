@@ -110,6 +110,20 @@ CFG = "configs/data/JetClassII_massreg.yaml"
 PAIRS_TEST_PARTS = tuple(f"pairs_test_part{i}.parquet" for i in range(3))
 
 
+# Start-up of the jobs that run on any GPU node. A node whose network or GPU is broken fails a pod in
+# seconds and takes the next one: 70 attempts in 16 minutes burned indices 1-13 of jc2bal-x (2026-11-01).
+# Clone and pip retry with pauses; a GPU that does not answer holds the pod two minutes before exit 43.
+def _start(tag: str) -> str:
+    return f"""retry () {{ for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }}
+clone () {{ mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git tls; }}
+retry clone || exit 1
+cd /workspace/tls
+retry pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1"""
+
+
+GPU_CHECK = "python3 experiments/FT/gpu_probe.py || { sleep 120; exit 43; }"
+
+
 def _probe_builder():
     spec = importlib.util.spec_from_file_location("build_linprobe_jobs", ROOT / "scripts" / "build_linprobe_jobs.py")
     m = importlib.util.module_from_spec(spec)
@@ -148,17 +162,16 @@ echo "JC2BAL REF COMPLETE"
     return name, _cpu_job(name, script, launch, "32Gi", "4", "the imputation reference (plan 3.2)")
 
 
-def extract_spec(tag: str, parallelism: int) -> tuple:
+def extract_spec(tag: str, parallelism: int, only: tuple = (), name: str = "jc2bal-x-raunav") -> tuple:
+    """only: the models (indices into models()) of this job, in order; all when empty."""
     launch = _launch()
     ms = models()
-    name = "jc2bal-x-raunav"
+    ms = [ms[i] for i in only] if only else ms
     cases = "".join(f"  {i}) MODEL={m}; RUN_DIR={launch.V2_ROOT}/{run}; RUNG={rung}; K={k}; REG={reg}; "
                     f'CKPTS="{" ".join(c)}"; VARIANTS="{" ".join(v)}";;\n'
                     for i, (m, run, rung, k, reg, c, v) in enumerate(ms))
     script = f"""set -euo pipefail
-git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
-cd /workspace/tls
-pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
+{_start(tag)}
 IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
 case ${{IDX}} in
 {cases}  *) echo "FATAL: no model for index ${{IDX}}"; exit 42;;
@@ -167,7 +180,7 @@ esac
 [ -f {BAL}/DONE ] && [ -f {BAL}/impute_ref.npz ] && [ -f {BAL}/{PAIRS_TEST_PARTS[-1]} ] || {{ echo "FATAL: {BAL} not staged"; exit 42; }}
 USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
 [ "${{USED}}" -le 85 ] || {{ echo "FATAL: /data at ${{USED}}%"; exit 42; }}
-python3 experiments/FT/gpu_probe.py || exit 43
+{GPU_CHECK}
 # extract DATASET SPLIT "FILES" [variants]: one pass over the files, every checkpoint (and variant);
 # a set whose every checkpoint directory has its manifest (written last) is done
 extract () {{
@@ -201,7 +214,7 @@ spec:
   completionMode: Indexed
   completions: {len(ms)}
   parallelism: {parallelism}
-  backoffLimitPerIndex: 3
+  backoffLimitPerIndex: 6
   podFailurePolicy:
     rules:
     - action: FailIndex
@@ -273,7 +286,7 @@ spec:
   completionMode: Indexed
   completions: {n}
   parallelism: {parallelism}
-  backoffLimitPerIndex: 2
+  backoffLimitPerIndex: 6
   podFailurePolicy:
     rules:
     - action: FailIndex
@@ -325,9 +338,7 @@ def fit_spec(tag: str, parallelism: int, mlp: bool) -> tuple:
         cases += f'  {i}) MODEL={m}; CKPTS="{" ".join(c)}"; EXTRA="{extra}";;\n'
     name = f"jc2bal-{'mlp' if mlp else 'fit'}-raunav"
     script = f"""set -euo pipefail
-git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
-cd /workspace/tls
-pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
+{_start(tag)}
 IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
 case ${{IDX}} in
 {cases}  *) echo "FATAL: no model for index ${{IDX}}"; exit 42;;
@@ -439,9 +450,7 @@ def kin_spec(tag: str) -> tuple:
     cases = "".join(f"  {i}) MODEL={m}; RUNG={rung}; K={k};;\n" for i, (m, rung, k) in enumerate(KIN_MODELS))
     top = "/data/finetune/top_sub"
     script = f"""set -euo pipefail
-git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
-cd /workspace/tls
-pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
+{_start(tag)}
 IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
 case ${{IDX}} in
 {cases}  *) echo "FATAL: no model for index ${{IDX}}"; exit 42;;
@@ -449,7 +458,7 @@ esac
 RUN_DIR={launch.V2_ROOT}/${{MODEL}}
 [ -f ${{RUN_DIR}}/DONE ] || {{ echo "FATAL: ${{RUN_DIR}} has not finished"; exit 42; }}
 [ ! -f {LP_BAL}/fits_v4_mlp/${{MODEL}}.json ] || {{ echo "${{MODEL}} done"; exit 0; }}
-python3 experiments/FT/gpu_probe.py || exit 43
+{GPU_CHECK}
 extract () {{
   OUT={LP_OLD}/${{MODEL}}/top/$1; FILE=$2
   [ -f ${{OUT}}/best70/manifest.json ] && return 0
@@ -471,16 +480,26 @@ echo "JC2BAL KIN ${{MODEL}} COMPLETE"
                           "top-tagging probes of the kinematic-only models (plan 3.7)")
 
 
+def _indices(spec: str) -> tuple:
+    out = []
+    for part in filter(None, spec.split(",")):
+        lo, _, hi = part.partition("-")
+        out += range(int(lo), int(hi or lo) + 1)
+    return tuple(out)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
     ap.add_argument("--parallelism", type=int, default=5)
+    ap.add_argument("--only", default="", help="extract: model indices, e.g. 1-13, for a job of that subset")
+    ap.add_argument("--name", default="jc2bal-x-raunav", help="extract: the job name (with --only)")
     ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "split", "extract", "fit", "mlp", "masscurves", "kin"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
         name, text = {"stage": lambda: stage_spec(a.tag), "ref": lambda: ref_spec(a.tag), "split": lambda: split_spec(a.tag),
-                      "extract": lambda: extract_spec(a.tag, a.parallelism),
+                      "extract": lambda: extract_spec(a.tag, a.parallelism, _indices(a.only), a.name),
                       "fit": lambda: fit_spec(a.tag, a.parallelism, False),
                       "mlp": lambda: fit_spec(a.tag, a.parallelism, True),
                       "masscurves": lambda: masscurves_spec(a.tag), "kin": lambda: kin_spec(a.tag)}[kind]()

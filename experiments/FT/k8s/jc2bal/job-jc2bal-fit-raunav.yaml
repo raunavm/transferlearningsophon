@@ -7,8 +7,8 @@ metadata:
 spec:
   completionMode: Indexed
   completions: 30
-  parallelism: 10
-  backoffLimitPerIndex: 2
+  parallelism: 5
+  backoffLimitPerIndex: 6
   podFailurePolicy:
     rules:
     - action: FailIndex
@@ -26,9 +26,11 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone -q --depth 1 --branch mtx-s2.33 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+          retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s2.34 https://github.com/raunavm/transferlearningsophon.git tls; }
+          retry clone || exit 1
           cd /workspace/tls
-          pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
+          retry pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
           IDX=${JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}
           case ${IDX} in
             0) MODEL=mtx-l188-s1; CKPTS="best70"; EXTRA="--variants mtop mqg itop iqg --probs-out /data/results/eval/v2_linprobe_bal/fits_v4_probs --hidden";;

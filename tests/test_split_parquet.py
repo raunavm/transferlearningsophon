@@ -75,3 +75,36 @@ def test_extraction_and_probe_jobs_take_any_gpu_in_us_west_minus_bad_nodes():
         assert "nvidia.com/gpu.product" not in keys and keys["topology.kubernetes.io/region"]["values"] == ["us-west"]
         assert keys["kubernetes.io/hostname"]["operator"] == "NotIn" and keys["kubernetes.io/hostname"]["values"]
         assert pod["containers"][0]["resources"]["requests"]["nvidia.com/gpu"] == "1"
+
+
+def test_subset_job_maps_its_indices_to_the_chosen_models():
+    bj = _load("build_jc2bal_jobs", "scripts/build_jc2bal_jobs.py")
+    allm = [m[0] for m in bj.models()]
+    _, text = bj.extract_spec("t", 4, bj._indices("1-3,7"), "jc2bal-x2-raunav")
+    job = yaml.safe_load(text)
+    script = job["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    assert job["metadata"]["name"] == "jc2bal-x2-raunav" and job["spec"]["completions"] == 4
+    for i, m in enumerate([allm[1], allm[2], allm[3], allm[7]]):
+        assert f"  {i}) MODEL={m};" in script
+    assert f"MODEL={allm[0]};" not in script and job["spec"]["backoffLimitPerIndex"] == 6
+
+
+def test_start_up_retries_a_flaky_clone_and_pip_and_holds_a_dead_gpu():
+    bj = _load("build_jc2bal_jobs", "scripts/build_jc2bal_jobs.py")
+    for _, text in (bj.extract_spec("t", 5), bj.fit_spec("t", 5, False), bj.fit_spec("t", 5, True), bj.kin_spec("t")):
+        script = yaml.safe_load(text)["spec"]["template"]["spec"]["containers"][0]["args"][0]
+        assert "retry clone || exit 1" in script and "retry pip install" in script
+        assert subprocess.run(["bash", "-n"], input=script, text=True).returncode == 0
+    assert "sleep 120; exit 43" in bj.GPU_CHECK
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        stubs = f"""N={d}/n; echo 0 > $N
+sleep () {{ :; }}
+git () {{ c=$(($(cat $N)+1)); echo $c > $N; [ $c -ge 3 ] && mkdir -p tls; [ $c -ge 3 ]; }}
+pip () {{ :; }}
+"""
+        start = bj._start("t").replace("/workspace", f"{d}/ws")
+        r = subprocess.run(["bash", "-c", "set -euo pipefail\n" + stubs + start + "\necho OK $(cat $N)"],
+                           capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert r.stdout.strip().endswith("OK 3") and r.stdout.count("attempt") == 2
