@@ -67,6 +67,8 @@ def test_fill_extraction_reads_the_downstream_probes_files_for_every_model():
         for split, (_m, files) in extra.items():
             assert f'extract {ds} {split} {cfg} "{bj.FILL_VARIANTS[ds]}" "{files}"' in script
     assert f"--impute-ref {bj.REF2}" in script and "--no-pooled" in script
+    mem = job["spec"]["template"]["spec"]["containers"][0]["resources"]["requests"]["memory"]
+    assert mem == lpj.X_MEM == "88Gi"                       # 48Gi OOM-killed on the 1.6M-jet q/g file
     _, fit = bj.fitfill_spec("t", 5)
     s = yaml.safe_load(fit)["spec"]["template"]["spec"]["containers"][0]["args"][0]
     assert "--fill" in s and "fits_v4_fill" in s and subprocess.run(["bash", "-n"], input=s, text=True).returncode == 0

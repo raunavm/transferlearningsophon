@@ -413,7 +413,9 @@ extract () {{
 {calls}touch {FILL_ROOT}/${{MODEL}}/DONE
 echo "JC2BAL XFILL ${{MODEL}} COMPLETE"
 """
-    return name, _indexed(name, script, len(ms), parallelism, True, "48Gi", "2",
+    # weaver holds a whole file per fetch: the 1.6M-jet quark/gluon training file OOM-killed a 48Gi pod
+    # (2026-11-01); the downstream extraction it reproduces ran at build_linprobe_jobs.X_MEM
+    return name, _indexed(name, script, len(ms), parallelism, True, _probe_builder().X_MEM, "2",
                           "the fills of the absent inputs, every model (PI 2026-11-01). GPU")
 
 
