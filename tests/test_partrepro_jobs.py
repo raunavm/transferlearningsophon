@@ -17,4 +17,6 @@ def test_every_variant_copies_the_pvc_tarball_and_checks_its_md5():
         script = yaml.safe_load(text)["spec"]["template"]["spec"]["containers"][0]["args"][0]
         assert "urlretrieve" not in script and f"cp {bpr.DATA_COPY} TopLandscape.tar" in script
         assert script.index("cp ") < script.index(f"{bpr.DATA_MD5}  TopLandscape.tar")
+        assert "git clone -q https://github.com/jet-universe" not in script and f"cp -r {bpr.PART_COPY} /workspace/part" in script
+        assert f'grep -q "^{bpr.PART_COMMIT}"' in script
         assert subprocess.run(["bash", "-n"], input=script, text=True).returncode == 0

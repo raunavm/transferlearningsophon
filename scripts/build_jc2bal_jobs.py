@@ -103,6 +103,8 @@ LP_BAL = "/data/results/eval/v2_linprobe_bal"
 PAPER_RUNS = ROOT / "configs" / "arms" / "v2_paper_runs.txt"
 IMPUTE_ARMS = ("mtx-l188-", "mtx-r16q1-")          # imputed variants: 188- and 17-class runs only (PI)
 CFG = "configs/data/JetClassII_massreg.yaml"
+# pairs_test (2.1 M jets) read whole OOM-kills a 48Gi extraction pod; its three parts (split_spec) fit
+PAIRS_TEST_PARTS = tuple(f"pairs_test_part{i}.parquet" for i in range(3))
 
 
 def _probe_builder():
@@ -159,24 +161,28 @@ case ${{IDX}} in
 {cases}  *) echo "FATAL: no model for index ${{IDX}}"; exit 42;;
 esac
 [ -f {LP_BAL}/${{MODEL}}/DONE ] && {{ echo "${{MODEL}} done"; exit 0; }}
-[ -f {BAL}/DONE ] && [ -f {BAL}/impute_ref.npz ] || {{ echo "FATAL: {BAL} not staged"; exit 42; }}
+[ -f {BAL}/DONE ] && [ -f {BAL}/impute_ref.npz ] && [ -f {BAL}/{PAIRS_TEST_PARTS[-1]} ] || {{ echo "FATAL: {BAL} not staged"; exit 42; }}
 USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
 [ "${{USED}}" -le 85 ] || {{ echo "FATAL: /data at ${{USED}}%"; exit 42; }}
 python3 experiments/FT/gpu_probe.py || exit 43
-# extract DATASET SPLIT FILE [variants]: one pass over the file, every checkpoint (and variant)
+# extract DATASET SPLIT "FILES" [variants]: one pass over the files, every checkpoint (and variant);
+# a set whose every checkpoint directory has its manifest (written last) is done
 extract () {{
-  OUT={LP_BAL}/${{MODEL}}/$1/$2; FILE=$3; shift 3
+  OUT={LP_BAL}/${{MODEL}}/$1/$2; FILES=$3; shift 3
+  TAGS=""; for C in ${{CKPTS}}; do TAGS="${{TAGS}} ${{C}}"; [ "${{1:-}}" != --variants ] || for V in ${{VARIANTS}}; do TAGS="${{TAGS}} ${{C}}.${{V}}"; done; done
+  ALL=1; for T in ${{TAGS}}; do [ -f ${{OUT}}/${{T}}/manifest.json ] || ALL=0; done
+  [ ${{ALL}} = 0 ] || {{ echo "${{OUT}} done"; return 0; }}
   python3 experiments/EVAL/extract_v2.py --run-dir ${{RUN_DIR}} --rung ${{RUNG}} --num-classes ${{K}} \\
     --num-reg ${{REG}} --checkpoints ${{CKPTS}} --data-config {CFG} --max-jets 0 \\
     --observers --feature-classes --prefix-features 2000000000 --head-prefix 0 --no-anomaly-rows \\
-    --diag-stride 0 --no-pooled --data-test ${{FILE}} "$@" --out ${{OUT}} || exit 1
+    --diag-stride 0 --no-pooled --data-test ${{FILES}} "$@" --out ${{OUT}} || exit 1
 }}
 for N in 1000 10000 100000; do extract jc2bal train_N${{N}} {BAL}/train_N${{N}}_s1.parquet; done
 for S in train_N1000000:train_N1000000_s1 val:val test:test; do
   extract jc2bal ${{S%%:*}} {BAL}/${{S##*:}}.parquet --variants ${{VARIANTS}} --impute-ref {BAL}/impute_ref.npz
 done
 extract jc2bal_pairs train {BAL}/pairs_train.parquet
-extract jc2bal_pairs test {BAL}/pairs_test.parquet
+extract jc2bal_pairs test "{" ".join(f"{BAL}/{p}" for p in PAIRS_TEST_PARTS)}"
 touch {LP_BAL}/${{MODEL}}/DONE
 echo "JC2BAL X ${{MODEL}} COMPLETE"
 """
@@ -417,6 +423,21 @@ TOP_SIZES = (1_000, 10_000, 100_000, 1_200_000)     # scripts/build_ft_jobs.py B
 LP_OLD = "/data/results/eval/v2_linprobe"           # experiments/EVAL/probe_bal.py OLD_ROOT
 
 
+def split_spec(tag: str) -> tuple:
+    launch = _launch()
+    name = "jc2bal-split-raunav"
+    script = f"""set -euo pipefail
+git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+cd /workspace/tls
+pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
+[ -f {BAL}/DONE ] || {{ echo "FATAL: {BAL} is not staged"; exit 42; }}
+[ ! -f {BAL}/{PAIRS_TEST_PARTS[-1]} ] || {{ echo "{BAL}/{PAIRS_TEST_PARTS[-1]} exists"; exit 0; }}
+python3 experiments/FT/split_parquet.py {BAL}/pairs_test.parquet --parts {len(PAIRS_TEST_PARTS)}
+echo "JC2BAL SPLIT COMPLETE"
+"""
+    return name, _cpu_job(name, script, launch, "16Gi", "2", "pairs_test in three parts for the extraction")
+
+
 def kin_spec(tag: str) -> tuple:
     launch = _launch()
     name = "jc2bal-kin-raunav"
@@ -459,11 +480,11 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
     ap.add_argument("--parallelism", type=int, default=5)
-    ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "extract", "fit", "mlp", "masscurves", "kin"))
+    ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "split", "extract", "fit", "mlp", "masscurves", "kin"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
-        name, text = {"stage": lambda: stage_spec(a.tag), "ref": lambda: ref_spec(a.tag),
+        name, text = {"stage": lambda: stage_spec(a.tag), "ref": lambda: ref_spec(a.tag), "split": lambda: split_spec(a.tag),
                       "extract": lambda: extract_spec(a.tag, a.parallelism),
                       "fit": lambda: fit_spec(a.tag, a.parallelism, False),
                       "mlp": lambda: fit_spec(a.tag, a.parallelism, True),

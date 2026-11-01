@@ -31,6 +31,8 @@ DATA_URL = "https://hqu.web.cern.ch/datasets/TopLandscape/TopLandscape.tar"
 DATA_MD5 = "4fca2e47afbf321b0f201da6b804c404"
 # One copy of DATA_URL on the PVC (2026-10-31), so a node with flaky DNS cannot fail the job.
 DATA_COPY = "/data/finetune/partrepro/TopLandscape.tar"
+# and of PART_REPO at PART_COMMIT (2026-11-01): the github.com clone failed on DNS the same way
+PART_COPY = "/data/finetune/partrepro/particle_transformer"
 GPU = "Tesla-V100-SXM2-32GB"
 PART_CFG = "data/TopLandscape/top_kin.yaml"
 VARIANTS = {
@@ -59,8 +61,9 @@ USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
 [ ! -f ${{OUT}}/metrics.json ] || {{ echo "${{OUT}} is done"; cat ${{OUT}}/metrics.json; exit 0; }}
 mkdir -p ${{OUT}}
 git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
-git clone -q {PART_REPO} /workspace/part && cd /workspace/part && git checkout -q {PART_COMMIT}
-git rev-parse HEAD | tee ${{OUT}}/part_commit.txt
+cp -r {PART_COPY} /workspace/part && cd /workspace/part
+git -c safe.directory=/workspace/part rev-parse HEAD | tee ${{OUT}}/part_commit.txt | grep -q "^{PART_COMMIT}" || {{ echo "FATAL: {PART_COPY} is not at {PART_COMMIT}"; exit 42; }}
+git -c safe.directory=/workspace/part diff --quiet HEAD || {{ echo "FATAL: {PART_COPY} has local changes"; exit 42; }}
 pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
 mkdir -p /workspace/data && cd /workspace/data
 cp {DATA_COPY} TopLandscape.tar
