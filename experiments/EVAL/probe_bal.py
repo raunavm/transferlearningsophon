@@ -146,10 +146,13 @@ def old_cells(model: str, ckpt: str, helpers, save, datasets=("jc1", "top", "qg"
     """JetClass, top and quark/gluon (with Herwig) on fits_v3's features, the v4 grid and stride."""
     cells = lp.probe_cells(OLD_ROOT / model, ckpt, list(datasets), helpers, save,
                            pathlib.Path(lp.JC2_PARQUET))
-    for n, c in cells.get("jc1", {}).items():
-        if save:
-            z = np.load(save.out / model / ckpt / f"jc1_N{n}.npz")
-            c["macro_auc_ovo"] = ovo_auc(z["p"].astype(np.float64), z["y"].astype(np.int64))
+    # probe_cells saves JetClass's probabilities at the largest training set only, so the one-vs-one
+    # macro AUC is computed there (the JetClass table's size)
+    jc1 = cells.get("jc1", {})
+    if save and jc1:
+        n = max(jc1, key=int)
+        z = np.load(save.out / model / ckpt / f"jc1_N{n}.npz")
+        jc1[n]["macro_auc_ovo"] = ovo_auc(z["p"].astype(np.float64), z["y"].astype(np.int64))
     return cells
 
 

@@ -25,6 +25,24 @@ def test_ovo_auc_is_sklearns_macro_one_vs_one():
     assert pb.ovo_auc(p, y) == pytest.approx(roc_auc_score(y, p / p.sum(1, keepdims=True), multi_class="ovo"))
 
 
+def test_jetclass_ovo_auc_only_at_the_size_whose_probabilities_are_saved(tmp_path, monkeypatch):
+    # probe_cells saves JetClass's probabilities at the largest size only; jc2bal-fit crashed reading
+    # jc1_N1000.npz (2026-11-01)
+    r = np.random.default_rng(2)
+    y = r.integers(0, 10, 500)
+    p = r.random((500, 10)) + np.eye(10)[y]
+    d = tmp_path / "m" / "best70"
+    d.mkdir(parents=True)
+    np.savez(d / "jc1_N1000000.npz", p=p.astype(np.float16), y=y)
+    cells = {"jc1": {str(n): {} for n in (1000, 10000, 100000, 1000000)}, "top": {"1000": {}}}
+    monkeypatch.setattr(pb.lp, "probe_cells", lambda *a, **k: cells)
+    save = lambda *a, **k: None
+    save.out = tmp_path
+    out = pb.old_cells("m", "best70", None, save)
+    assert out["jc1"]["1000000"]["macro_auc_ovo"] == pytest.approx(pb.ovo_auc(p.astype(np.float16).astype(np.float64), y))
+    assert all("macro_auc_ovo" not in out["jc1"][n] for n in ("1000", "10000", "100000"))
+
+
 def test_hidden_layer_is_relu_of_the_checkpoints_first_head_layer(tmp_path):
     r = np.random.default_rng(1)
     w, b = r.normal(size=(512, 128)), r.normal(size=512)
