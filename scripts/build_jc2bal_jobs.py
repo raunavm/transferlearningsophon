@@ -16,6 +16,15 @@
   mlp      CPU, one model per index: the nonlinear probe on the balanced JetClass-II task and pairs, for
            the hierarchy levels, the three controlled partitions and the untrained trunks (PI scope;
            JetClass, top and quark/gluon are linprobe-mlp4's) -> .../fits_v4_mlp
+  ref2     CPU: the version-2 imputation reference, with the displacement pools of each particle species
+           (input_variants.py, itop4/iqg4) -> /data/finetune/jc2_bal/impute_ref_v2.npz
+  xfill    GPU, one model per index (all 30): the fills of the absent inputs (PI 2026-11-01), extract_v2.py
+           with the zero fill of the downstream configs plus mean fill and four-draw imputation, on every
+           top and quark/gluon split the downstream probes read (configs, files and sizes from
+           build_linprobe_jobs.DATASETS) and on the balanced JetClass-II 1e6 / validation / test sets
+           -> /data/results/eval/v2_linprobe_fill/<model>/{top,qg,jc2bal}/<split>/<tag>[.<variant>]
+  fitfill  GPU, one model per index: probe_bal.py --fill (zero / mean / imputed side by side, and the
+           re-extracted zero fill checked against the stored features) -> .../fits_v4_fill
   kin      GPU (any but V100), one kinematic-only model per index (plan 3.7): top tagging only, its
            splits extracted with configs/finetune/TopReference_kin.yaml into the downstream probes'
            tree, the v4 linear probe (probe_bal.py --old-only top) and the nonlinear probe at the
@@ -146,17 +155,16 @@ def models() -> list:
     return out
 
 
-def ref_spec(tag: str) -> tuple:
+def ref_spec(tag: str, out: str = "impute_ref.npz", name: str = "jc2bal-ref-raunav") -> tuple:
     launch = _launch()
-    name = "jc2bal-ref-raunav"
     script = f"""set -euo pipefail
 git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
 cd /workspace/tls
 pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
 [ -f {BAL}/DONE ] || {{ echo "FATAL: {BAL} is not staged"; exit 42; }}
-[ ! -f {BAL}/impute_ref.npz ] || {{ echo "{BAL}/impute_ref.npz exists"; exit 0; }}
+[ ! -f {BAL}/{out} ] || {{ echo "{BAL}/{out} exists"; exit 0; }}
 python3 experiments/EVAL/input_variants.py ref --data {BAL}/train_N100000_s1.parquet \\
-  --data-config configs/data/JetClassII_base.yaml --max-jets 100000 --out {BAL}/impute_ref.npz
+  --data-config configs/data/JetClassII_base.yaml --max-jets 100000 --out {BAL}/{out}
 echo "JC2BAL REF COMPLETE"
 """
     return name, _cpu_job(name, script, launch, "32Gi", "4", "the imputation reference (plan 3.2)")
@@ -353,6 +361,81 @@ echo "JC2BAL {'MLP' if mlp else 'FIT'} ${{MODEL}} COMPLETE"
                           "8" if mlp else "4", what)
 
 
+FILL_ROOT = "/data/results/eval/v2_linprobe_fill"           # experiments/EVAL/probe_bal.py FILL_ROOT
+REF2 = f"{BAL}/impute_ref_v2.npz"
+FILL_VARIANTS = {"top": "ntop itop4", "qg": "nqg iqg4", "jc2bal": "ntop nqg itop4 iqg4"}   # probe_bal.FILLS
+
+
+def xfill_spec(tag: str, parallelism: int) -> tuple:
+    """Every model's fills of the absent inputs: the downstream probes' top and quark/gluon splits
+    (build_linprobe_jobs.DATASETS: same configs, files and sizes, so the zero fill reproduces the
+    stored features) and the balanced JetClass-II sets the missing-feature table reads."""
+    pb = _probe_builder()
+    ms = models()
+    cases = "".join(f"  {i}) MODEL={m}; RUN_DIR={_launch().V2_ROOT}/{run}; RUNG={rung}; K={k}; REG={reg}; "
+                    f'CKPTS="{" ".join(c)}";;\n' for i, (m, run, rung, k, reg, c, _v) in enumerate(ms))
+    calls = ""
+    for ds in ("top", "qg"):
+        sizes, cfg, extra = pb.DATASETS[ds]
+        for n in sizes:
+            calls += f'extract {ds} train_N{n} {cfg} "{FILL_VARIANTS[ds]}" "{pb.TRAIN_DIR[ds]}/train_N{n}_s1.parquet"\n'
+        for split, (maxj, files) in extra.items():
+            if maxj:
+                raise SystemExit(f"FATAL: {ds}/{split} is read with --max-jets {maxj}")
+            calls += f'extract {ds} {split} {cfg} "{FILL_VARIANTS[ds]}" "{files}"\n'
+    for split, f in (("train_N1000000", "train_N1000000_s1"), ("val", "val"), ("test", "test")):
+        calls += f'extract jc2bal {split} {CFG} "{FILL_VARIANTS["jc2bal"]}" "{BAL}/{f}.parquet"\n'
+    name = "jc2bal-xfill-raunav"
+    script = f"""set -euo pipefail
+{_start(tag)}
+IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
+case ${{IDX}} in
+{cases}  *) echo "FATAL: no model for index ${{IDX}}"; exit 42;;
+esac
+[ -f {FILL_ROOT}/${{MODEL}}/DONE ] && {{ echo "${{MODEL}} done"; exit 0; }}
+[ -f {REF2} ] || {{ echo "FATAL: {REF2} missing (ref2 job)"; exit 42; }}
+USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+[ "${{USED}}" -le 85 ] || {{ echo "FATAL: /data at ${{USED}}%"; exit 42; }}
+{GPU_CHECK}
+# extract DATASET SPLIT CONFIG "VARIANTS" "FILES": one pass, every checkpoint and its fills; a set whose
+# every directory has its manifest (written last) is done
+extract () {{
+  OUT={FILL_ROOT}/${{MODEL}}/$1/$2; CFGX=$3; VARS=$4; FILES=$5
+  ALL=1; for C in ${{CKPTS}}; do for T in ${{C}} $(for V in ${{VARS}}; do echo ${{C}}.${{V}}; done); do
+    [ -f ${{OUT}}/${{T}}/manifest.json ] || ALL=0; done; done
+  [ ${{ALL}} = 0 ] || {{ echo "${{OUT}} done"; return 0; }}
+  python3 experiments/EVAL/extract_v2.py --run-dir ${{RUN_DIR}} --rung ${{RUNG}} --num-classes ${{K}} \\
+    --num-reg ${{REG}} --checkpoints ${{CKPTS}} --data-config ${{CFGX}} --max-jets 0 \\
+    --observers --feature-classes --prefix-features 2000000000 --head-prefix 0 --no-anomaly-rows \\
+    --diag-stride 0 --no-pooled --data-test ${{FILES}} --variants ${{VARS}} --impute-ref {REF2} \\
+    --out ${{OUT}} || exit 1
+}}
+{calls}touch {FILL_ROOT}/${{MODEL}}/DONE
+echo "JC2BAL XFILL ${{MODEL}} COMPLETE"
+"""
+    return name, _indexed(name, script, len(ms), parallelism, True, "48Gi", "2",
+                          "the fills of the absent inputs, every model (PI 2026-11-01). GPU")
+
+
+def fitfill_spec(tag: str, parallelism: int) -> tuple:
+    ms = models()
+    cases = "".join(f'  {i}) MODEL={m}; CKPTS="{" ".join(c)}";;\n' for i, (m, _r, _g, _k, _e, c, _v) in enumerate(ms))
+    name = "jc2bal-fitfill-raunav"
+    script = f"""set -euo pipefail
+{_start(tag)}
+IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
+case ${{IDX}} in
+{cases}  *) echo "FATAL: no model for index ${{IDX}}"; exit 42;;
+esac
+[ -f {FILL_ROOT}/${{MODEL}}/DONE ] || {{ echo "FATAL: ${{MODEL}}'s fills are not extracted"; exit 42; }}
+python3 experiments/EVAL/probe_bal.py --model ${{MODEL}} --checkpoints ${{CKPTS}} --fill \\
+  --out {LP_BAL}/fits_v4_fill --probs-out {LP_BAL}/fits_v4_fill_probs
+echo "JC2BAL FITFILL ${{MODEL}} COMPLETE"
+"""
+    return name, _indexed(name, script, len(ms), parallelism, True, "48Gi", "4",
+                          "linear probes on the fills of the absent inputs (PI 2026-11-01). GPU")
+
+
 HEAD_ROOT = "/data/results/eval/v2_head"
 HEAD_MODELS = ("l188", "l162", "r42q1", "r16q1", "l162mass", "r16q1mass")
 
@@ -494,11 +577,15 @@ def main(argv=None) -> int:
     ap.add_argument("--parallelism", type=int, default=5)
     ap.add_argument("--only", default="", help="extract: model indices, e.g. 1-13, for a job of that subset")
     ap.add_argument("--name", default="jc2bal-x-raunav", help="extract: the job name (with --only)")
-    ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "split", "extract", "fit", "mlp", "masscurves", "kin"))
+    ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "ref2", "split", "extract", "fit", "mlp",
+                                                 "masscurves", "kin", "xfill", "fitfill"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
-        name, text = {"stage": lambda: stage_spec(a.tag), "ref": lambda: ref_spec(a.tag), "split": lambda: split_spec(a.tag),
+        name, text = {"stage": lambda: stage_spec(a.tag), "ref": lambda: ref_spec(a.tag),
+                      "ref2": lambda: ref_spec(a.tag, "impute_ref_v2.npz", "jc2bal-ref2-raunav"),
+                      "xfill": lambda: xfill_spec(a.tag, a.parallelism),
+                      "fitfill": lambda: fitfill_spec(a.tag, a.parallelism), "split": lambda: split_spec(a.tag),
                       "extract": lambda: extract_spec(a.tag, a.parallelism, _indices(a.only), a.name),
                       "fit": lambda: fit_spec(a.tag, a.parallelism, False),
                       "mlp": lambda: fit_spec(a.tag, a.parallelism, True),

@@ -20,6 +20,18 @@ Variants (applied to the standardized pf_features tensor, every slot, before the
         charged/neutral kind
   iqg   the four displacement slots imputed the same way, for the particle's own (kept) charge
 
+Added 2026-11-01 (PI: every model, zero / mean / imputed side by side):
+  ntop, nqg    the missing slots at the model's own input-BatchNorm running mean (fill=), so the
+               BatchNorm maps them to its bias: the centroid, not a real particle (no real particle
+               has a fractional type flag)
+  itop4, iqg4  multiple imputation: four draws (draw=0..3, extract_v2 averages the four feature
+               vectors). itop4 draws a species from JetClass-II's frequencies, a charge given it and
+               the displacement of a random JetClass-II particle of THAT species. iqg4 keeps every
+               flag and the charge as they are (the quark/gluon data have them) and draws only the
+               displacement, from the particles of the particle's actual species. Each draw is a
+               particle JetClass-II contains; the average of four is not. Needs the species pools
+               of a version-2 reference (reference(): pool_species0..4).
+
 The imputation draws depend only on the batch counter and the seed, so every model of a job, and
 every job over the same split, receives identical inputs. The reference distributions
 (reference(), saved by `python3 experiments/EVAL/input_variants.py ref`) are computed once from
@@ -40,7 +52,8 @@ CHARGED_SPECIES = (0, 3, 4)          # indices into FLAGS: charged hadron, elect
 DISP = ("part_d0", "part_d0err", "part_dz", "part_dzerr")
 TOP_MISSING = ("part_charge",) + FLAGS + DISP
 QG_MISSING = DISP
-VARIANTS = ("mtop", "mqg", "itop", "iqg")
+VARIANTS = ("mtop", "mqg", "itop", "iqg", "ntop", "nqg", "itop4", "iqg4")
+DRAWS = 4                            # itop4, iqg4: draws per jet, features averaged
 SEED = 20261031
 POOL = 2_000_000
 
@@ -51,8 +64,10 @@ def pf_names(dc) -> list:
 
 
 def slots(names: list) -> dict:
-    """Index of every relevant feature in the pf_features order of a data config."""
-    idx = {n: i for i, n in enumerate(names)}
+    """Index of every relevant feature in the pf_features order of a data config. A downstream
+    config's zero-filled slot part_zero_<feature> (TopReference.yaml, EnergyFlowQG.yaml) counts as
+    <feature>."""
+    idx = {n.replace("part_zero_", "part_", 1): i for i, n in enumerate(names)}
     missing = [n for n in TOP_MISSING if n not in idx]
     if missing:
         raise SystemExit(f"FATAL: pf_features lacks {missing}")
@@ -80,29 +95,42 @@ def reference(feats: np.ndarray, mask: np.ndarray, s: dict, rng: np.random.Gener
     for name, sel in (("charged", charged), ("neutral", ~charged)):
         d = disp[sel]
         pool[name] = d[rng.choice(d.shape[0], size=min(POOL, d.shape[0]), replace=False)].astype(np.float32)
+    for k in range(len(FLAGS)):
+        d = disp[species == k]
+        if d.shape[0] == 0:
+            raise SystemExit(f"FATAL: no {FLAGS[k]} particle in the reference sample")
+        pool[f"species{k}"] = d[rng.choice(d.shape[0], size=min(POOL, d.shape[0]), replace=False)].astype(np.float32)
     return {"species_p": counts / counts.sum(), "p_charge_pos": p_pos, "pool_charged": pool["charged"],
-            "pool_neutral": pool["neutral"], "n_particles": int(f.shape[0])}
+            "pool_neutral": pool["neutral"], "n_particles": int(f.shape[0]),
+            **{f"pool_species{k}": pool[f"species{k}"] for k in range(len(FLAGS))}}
 
 
 class Variant:
     """One input variant: transform(pf_features tensor, batch counter) -> new tensor."""
 
-    def __init__(self, name: str, s: dict, ref: dict | None = None, seed: int = SEED):
+    def __init__(self, name: str, s: dict, ref: dict | None = None, seed: int = SEED, fill=None, draw: int = 0):
         if name not in VARIANTS:
             raise SystemExit(f"FATAL: unknown variant {name}")
         if name.startswith("i") and ref is None:
             raise SystemExit(f"FATAL: variant {name} needs the imputation reference")
-        self.name, self.s, self.ref, self.seed = name, s, ref, seed
+        if name.endswith("4") and "pool_species0" not in ref:
+            raise SystemExit(f"FATAL: variant {name} needs a version-2 reference (species pools)")
+        if name.startswith("n") and fill is None:
+            raise SystemExit(f"FATAL: variant {name} needs the model's input-BatchNorm running mean")
+        if not 0 <= draw < (DRAWS if name.endswith("4") else 1):
+            raise SystemExit(f"FATAL: draw {draw} of variant {name}")
+        self.name, self.s, self.ref, self.seed, self.fill, self.draw = name, s, ref, seed, fill, draw
 
     def __call__(self, x, counter: int):
         import torch
         x = x.clone()
-        if self.name == "mtop":
-            x[:, self.s["top"], :] = 0
+        if self.name in ("mtop", "mqg", "ntop", "nqg"):
+            sl = self.s["top" if self.name.endswith("top") else "qg"]
+            for i in sl:
+                x[:, i, :] = 0 if self.name[0] == "m" else float(self.fill[i])
             return x
-        if self.name == "mqg":
-            x[:, self.s["qg"], :] = 0
-            return x
+        if self.name.endswith("4"):
+            return self._draw4(x, counter)
         g = torch.Generator(device="cpu").manual_seed(self.seed * 1_000_003 + counter)
         n, _, p = x.shape
         ref = self.ref
@@ -127,6 +155,47 @@ class Variant:
             for j, i in enumerate(self.s["disp"]):
                 x[:, i, :] = torch.where(m[:, 0, :], d[:, j, :], x[:, i, :])
         return x
+
+
+    def _draw4(self, x, counter: int):
+        """One draw of itop4 / iqg4: displacement from the pool of the particle's species."""
+        import torch
+        g = torch.Generator(device="cpu").manual_seed((self.seed + 7919 * (self.draw + 1)) * 1_000_003 + counter)
+        n, _, p = x.shape
+        ref = self.ref
+        if self.name == "itop4":
+            species = torch.multinomial(torch.as_tensor(ref["species_p"], dtype=torch.float64), n * p,
+                                        replacement=True, generator=g).view(n, p)
+            for k, i in enumerate(self.s["flags"]):
+                x[:, i, :] = (species == k).to(x.dtype).to(x.device)
+            pos = torch.as_tensor(ref["p_charge_pos"], dtype=torch.float64)[species]
+            sign = torch.where(torch.rand(n, p, generator=g, dtype=torch.float64) < pos, 1.0, -1.0)
+            charged = torch.zeros(n, p, dtype=torch.bool)
+            for k in CHARGED_SPECIES:
+                charged |= species == k
+            x[:, self.s["charge"], :] = (sign * charged).to(x.dtype).to(x.device)
+        else:
+            # iqg4: the real flags decide the species; flags and charge are left as they are
+            flags = x[:, self.s["flags"], :].cpu() > 0.5                         # (n, 5, p)
+            if not (flags.sum(1) == 1).all():
+                raise SystemExit("FATAL: iqg4 needs exactly one particle-type flag per particle")
+            species = flags.to(torch.int64).argmax(1)                            # (n, p)
+        for k in range(len(FLAGS)):
+            sel = species == k
+            if not sel.any():
+                continue
+            pool = torch.as_tensor(ref[f"pool_species{k}"])
+            draw = pool[torch.randint(0, pool.shape[0], (n, p), generator=g)].permute(0, 2, 1)  # (n, 4, p)
+            m = sel.to(x.device)
+            for j, i in enumerate(self.s["disp"]):
+                x[:, i, :] = torch.where(m, draw[:, j, :].to(x.dtype).to(x.device), x[:, i, :])
+        return x
+
+
+def input_bn_mean(model):
+    """The running mean of the model's input BatchNorm over pf_features (ParT's Embed.input_bn)."""
+    mod = getattr(model, "mod", model)
+    return mod.embed.input_bn.running_mean.detach().cpu().numpy().astype(np.float64)
 
 
 def wrap(model, variant: Variant, feature_index: int):

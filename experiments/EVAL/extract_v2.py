@@ -504,6 +504,27 @@ def run(batches, models: dict, selector: Selector, rung: str, k: int, signals: d
     return res
 
 
+def merge_draws(res: dict) -> None:
+    """Replace the draws <tag>~0..n-1 of a multiple-imputation variant by <tag>, the mean of their
+    features (and pooled embeddings). The draws are the same jets in the same order; no head."""
+    groups = {}
+    for t in list(res["checkpoints"]):
+        if "~" in t:
+            groups.setdefault(t.split("~")[0], []).append(t)
+    for tag, parts in groups.items():
+        parts.sort(key=lambda t: int(t.split("~")[1]))
+        cs = [res["checkpoints"].pop(t) for t in parts]
+        for c in cs[1:]:
+            if not (np.array_equal(c["rows"], cs[0]["rows"]) and np.array_equal(c["label188"], cs[0]["label188"])):
+                raise SystemExit(f"FATAL: the draws of {tag} hold different jets")
+        mean = lambda key: (None if cs[0].get(key) is None else
+                            np.mean([c[key].astype(np.float32) for c in cs], axis=0).astype(np.float16))
+        empty = np.zeros(0, np.int64)
+        res["checkpoints"][tag] = {**cs[0], "features": mean("features"), "pooled": mean("pooled"),
+                                   "has_head": False, "head": {}, "head_rows": empty,
+                                   "head_label188": empty.astype(np.int16), "head_outputs": None}
+
+
 def write(out: pathlib.Path, res: dict, meta: dict, alias: dict | None = None) -> dict:
     """One directory per checkpoint file; the manifest is written last, so a directory
     with a manifest is complete. `alias` ({tag: tag holding its files}, aliases())
@@ -612,7 +633,8 @@ def main(argv=None) -> int:
                          "HEAD_OBSERVERS (head_outputs.npz; needs JetClassII_massreg_obs.yaml)")
     ap.add_argument("--variants", nargs="*", default=[],
                     help="input variants of the missing-feature control (experiments/EVAL/input_variants.py: "
-                         "mtop mqg itop iqg), each extracted beside its checkpoint as <tag>.<variant>")
+                         "mtop mqg itop iqg ntop nqg itop4 iqg4), each extracted beside its checkpoint as "
+                         "<tag>.<variant>")
     ap.add_argument("--impute-ref", type=pathlib.Path, default=None,
                     help="the imputation reference (input_variants.py ref) the i* variants draw from")
     ap.add_argument("--out", required=True, type=pathlib.Path)
@@ -678,11 +700,22 @@ def main(argv=None) -> int:
         fidx = list(dc.input_names).index("pf_features")
         meta["variants"] = {"names": list(a.variants), "slots": s, "impute_ref": str(a.impute_ref) if ref else None,
                             "impute_ref_sha256": hashlib.sha256(a.impute_ref.read_bytes()).hexdigest() if ref else None}
+        draws = set()
         for tag in list(models):
+            fill = iv.input_bn_mean(models[tag]) if any(v.startswith("n") for v in a.variants) else None
             for v in a.variants:
-                models[f"{tag}.{v}"] = iv.wrap(models[tag], iv.Variant(v, s, ref), fidx)
-                meta["checkpoints"][f"{tag}.{v}"] = {**meta["checkpoints"][tag], "variant": v}
-        headless |= {f"{t}.{v}" for t in headless for v in a.variants}
+                mc = {**meta["checkpoints"][tag], "variant": v}
+                if v.endswith("4"):         # multiple imputation: one pass per draw, averaged in merge_draws
+                    for j in range(iv.DRAWS):
+                        models[f"{tag}.{v}~{j}"] = iv.wrap(models[tag], iv.Variant(v, s, ref, draw=j), fidx)
+                        draws.add(f"{tag}.{v}~{j}")
+                    mc["draws"] = iv.DRAWS
+                else:
+                    models[f"{tag}.{v}"] = iv.wrap(models[tag], iv.Variant(v, s, ref, fill=fill), fidx)
+                if v.startswith("n"):
+                    mc["fill"] = [float(fill[i]) for i in range(len(fill))]
+                meta["checkpoints"][f"{tag}.{v}"] = mc
+        headless |= {f"{t}.{v}" for t in headless for v in a.variants} | draws
     print(f"{len(models)} checkpoints on {device}: {list(models)}"
           f"{''.join(f', {t} = {s}' for t, s in alias.items() if t != s)}", flush=True)
 
@@ -728,6 +761,7 @@ def main(argv=None) -> int:
                              f"{a.align_with}; not the same jets in the same order")
         meta["aligned_with"] = {"cache": str(a.align_with), "n": int(v1.size),
                                 "label188_sha256": hashlib.sha256(v1.tobytes()).hexdigest()}
+    merge_draws(res)
     sizes = write(a.out, res, meta, alias)
     print(json.dumps({t: f"{s / 1e9:.3f} GB" for t, s in sizes.items()}))
     return 0

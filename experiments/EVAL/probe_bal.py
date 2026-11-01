@@ -14,7 +14,12 @@ What changes from linear_probe_v2.py's fits_v3, whose fitting and metrics this r
   * --old-only DATASET... fits only those of JetClass/top/quark-gluon (the kinematic-only models,
     which are probed on top alone);
   * --hidden probes the head's 512-unit hidden layer, ReLU(W1 x + b1) of the class token x with the
-    checkpoint's own first head layer, on jc2bal and quark/gluon at their largest training set.
+    checkpoint's own first head layer, on jc2bal and quark/gluon at their largest training set;
+  * --fill (2026-11-01) probes the fills of the absent inputs side by side, from --fill-root: top and
+    quark/gluon (with Herwig) at every training size with zero fill (the config's), mean fill
+    (ntop/nqg) and four-draw imputation (itop4/iqg4), and jc2bal at its largest training set with
+    the same fills of the top and quark/gluon slots; the zero-fill features re-extracted there are
+    checked against the stored ones (same jets, largest feature difference recorded).
 Top and quark/gluon (and Herwig) read the features linear_probe_v2.py read (--old-root). Every cell's
 fitted probe and test probabilities are saved (--probs-out), so per-class metrics and the bootstrap
 need no refit.
@@ -41,6 +46,8 @@ import numpy as np
 REPO = pathlib.Path(__file__).resolve().parents[2]
 NEW_ROOT = pathlib.Path("/data/results/eval/v2_linprobe_bal")
 OLD_ROOT = pathlib.Path("/data/results/eval/v2_linprobe")
+FILL_ROOT = pathlib.Path("/data/results/eval/v2_linprobe_fill")
+FILLS = {"top": ("ntop", "itop4"), "qg": ("nqg", "iqg4"), "jc2bal": ("ntop", "nqg", "itop4", "iqg4")}
 BAL = pathlib.Path("/data/finetune/jc2_bal")
 C_GRID_V4 = (0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0)
 PAIR_VAL_FRACTION = 0.1
@@ -85,14 +92,15 @@ def hidden(x: np.ndarray, manifest: dict) -> np.ndarray:
     return np.maximum(x.astype(np.float64) @ w.T + b, 0.0).astype(np.float32)
 
 
-def jc2bal_cells(model: str, ckpt: str, save, sizes=None, transform=None, name="jc2bal") -> dict:
-    xva, yva, _ = load(model, "jc2bal", "val", ckpt)
-    xte, yte, mte = load(model, "jc2bal", "test", ckpt)
+def jc2bal_cells(model: str, ckpt: str, save, sizes=None, transform=None, name="jc2bal",
+                 root: pathlib.Path = NEW_ROOT) -> dict:
+    xva, yva, _ = load(model, "jc2bal", "val", ckpt, root)
+    xte, yte, mte = load(model, "jc2bal", "test", ckpt, root)
     if transform:
         xva, xte = transform(xva, mte), transform(xte, mte)
     cells = {}
     for n in sizes or lp.train_sizes(NEW_ROOT / model, "jc2bal"):
-        xtr, ytr, _ = load(model, "jc2bal", f"train_N{n}", ckpt)
+        xtr, ytr, _ = load(model, "jc2bal", f"train_N{n}", ckpt, root)
         if transform:
             xtr = transform(xtr, mte)
         t0 = time.time()
@@ -153,6 +161,44 @@ def old_cells(model: str, ckpt: str, helpers, save, datasets=("jc1", "top", "qg"
         n = max(jc1, key=int)
         z = np.load(save.out / model / ckpt / f"jc1_N{n}.npz")
         jc1[n]["macro_auc_ovo"] = ovo_auc(z["p"].astype(np.float64), z["y"].astype(np.int64))
+    return cells
+
+
+def repro(model: str, ds: str, split: str, ckpt: str, stored: pathlib.Path) -> dict:
+    """The zero-fill features re-extracted under FILL_ROOT against the stored ones: same jets, and
+    the largest absolute feature difference (another GPU changes the last digits)."""
+    a = FILL_ROOT / model / ds / split / ckpt
+    b = stored / model / ds / split / ckpt
+    if not np.array_equal(np.load(a / "rows.npy"), np.load(b / "rows.npy")) or \
+            not np.array_equal(np.load(a / "label188.npy"), np.load(b / "label188.npy")):
+        raise SystemExit(f"FATAL: {a} and {b} hold different jets")
+    fa = np.load(a / "features.npy").astype(np.float32)
+    fb = np.load(b / "features.npy").astype(np.float32)
+    return {"n": int(fa.shape[0]), "max_abs_diff": float(np.abs(fa - fb).max()) if fa.size else 0.0}
+
+
+def fill_cells(model: str, ckpt: str, helpers, probs_out) -> dict:
+    """Zero / mean / four-draw imputation, side by side (FILLS)."""
+    cells, check = {}, {}
+    for ds in ("top", "qg"):
+        for v in ("",) + FILLS[ds]:
+            tag = f"{ckpt}.{v}" if v else ckpt
+            save = lp.saver(probs_out, model, tag)
+            if save:
+                save.out = probs_out
+            c = lp.probe_cells(FILL_ROOT / model, tag, [ds], helpers, save, pathlib.Path(lp.JC2_PARQUET))
+            sfx = f".{v}" if v else ""
+            cells[f"{ds}{sfx}"] = c[ds]
+            if "qg_herwig" in c:
+                cells[f"qg_herwig{sfx}"] = c["qg_herwig"]
+        check[ds] = repro(model, ds, "test", ckpt, OLD_ROOT)
+    nmax = max(lp.train_sizes(NEW_ROOT / model, "jc2bal"))
+    for v in ("",) + FILLS["jc2bal"]:
+        tag = f"{ckpt}.{v}" if v else ckpt
+        save = lp.saver(probs_out, model, tag)
+        cells[f"jc2bal.{v}" if v else "jc2bal"] = jc2bal_cells(model, tag, save, sizes=[nmax], root=FILL_ROOT)
+    check["jc2bal"] = repro(model, "jc2bal", "test", ckpt, NEW_ROOT)
+    cells["repro_zero_fill"] = check
     return cells
 
 
@@ -225,6 +271,7 @@ def main(argv=None) -> int:
     ap.add_argument("--skip-old", action="store_true", help="no JetClass/top/quark-gluon refit")
     ap.add_argument("--old-only", nargs="+", metavar="DATASET",
                     help="only these of jc1/top/qg, no balanced JetClass-II (the kinematic-only models: top)")
+    ap.add_argument("--fill", action="store_true", help="the fills of the absent inputs side by side (fill_cells)")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--probs-out", type=pathlib.Path, default=None)
     a = ap.parse_args(argv)
@@ -247,6 +294,11 @@ def main(argv=None) -> int:
         save = lp.saver(a.probs_out, a.model, ckpt)
         if save:
             save.out = a.probs_out
+        if a.fill:
+            doc["probe"] = "linear, fills of the absent inputs"
+            doc["fills"] = {k: list(v) for k, v in FILLS.items()}
+            doc["cells"][ckpt] = fill_cells(a.model, ckpt, helpers, a.probs_out)
+            continue
         if a.mlp:
             doc["probe"] = "mlp"
             doc["cells"][ckpt] = mlp_cells(a.model, ckpt, probe, a.mlp_datasets)

@@ -27,6 +27,9 @@ Kinds of job (each one Indexed Job, any 24 GB+ GPU (build_mtx_launch.V2_FT_GPU),
             scratch (seed 1) at {3e-4, 1e-3, 3e-3}; picked on the validation metric
   bench     top and quark/gluon at 1e3, 1e4, 1e5 for every paper run and from scratch
   jc1       JetClass at 1e4 and 1e5 (10^3 dropped, PI 2026-10-31)
+  fillcheck top at the full set from 188-s1, zero fill and mean fill (experiments/FT/fill_config.py),
+            ParT's recipe: does the fill move fine-tuning? (PI 2026-11-01: stays zero-fill if R30
+            moves by less than the seed spread)
 
 Output: /data/results/ft_v2/budget/<tree>/<init>/N<N>/s<S>/ (the sweep under .../lrsweep/),
 with early_stop.json, ft_manifest.json, net_best_epoch_state.pt, net_last_epoch_state.pt and the
@@ -44,12 +47,14 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "experiments" / "FT" / "k8s" / "budget"
 BUDGET_ROOT = "/data/results/ft_v2/budget"
+FILLCHECK_ROOT = "/data/results/ft_v2/fillcheck"
 SWEEP_ROOT = "/data/results/ft_v2/lrsweep_v2"     # the 500-step sweep stays in .../lrsweep (RUNS.csv)
 MTX_V2 = "/data/results/mtx_v2"
 PAPER_RUNS = ROOT / "configs" / "arms" / "v2_paper_runs.txt"
 EPOCHS, STEPS, BATCH, PATIENCE, VAL_N = 40, 500, 512, 10, 200_000
 SMALL_N, SMALL_STEPS = 100_000, 50       # below SMALL_N a check every 50 steps, same 20,000-step cap
 HEAD_MULT, HEAD_CAP = 50.0, 5e-3
+MEANFILL_TOP = "/workspace/meanfill/TopReference_meanfill.yaml"
 SWEEP_PRE, SWEEP_SCRATCH, SWEEP_N = ("1e-4", "3e-4", "1e-3"), ("3e-4", "1e-3", "3e-3"), 10_000
 SCRATCH_SEEDS = (1, 2, 3)
 HERWIG_TEST = ["/data/finetune/qg_herwig/qg_herwig_chunk0.parquet",
@@ -64,6 +69,11 @@ TASKS = {
     "topkin": ("/data/finetune/top_sub", "configs/finetune/TopReference_kin.yaml", 2,
                "experiments/MTX/ParT_sophon_arch_mtx.py", "leg_top", (1_000, 10_000, 100_000),
                "/data/finetune/top/top_test.parquet", "48Gi"),
+    # top with the ten absent slots at the model's input-BatchNorm mean: the config is written in the
+    # pod from the resolved checkpoint (experiments/FT/fill_config.py)
+    "topmean": ("/data/finetune/top_sub", MEANFILL_TOP, 2,
+                "experiments/MTX/ParT_sophon_arch_mtx.py", "leg_top", (1_200_000,),
+                "/data/finetune/top/top_test.parquet", "48Gi"),
     "qg": ("/data/finetune/qg_v2_sub", "configs/finetune/EnergyFlowQG.yaml", 2,
            "experiments/MTX/ParT_sophon_arch_mtx.py", "leg_qg", (1_000, 10_000, 100_000),
            "/data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet", "48Gi"),
@@ -77,7 +87,8 @@ TASKS = {
 }
 VAL_SIZE = {"jc2b": 20_480}        # the balanced validation file (188 x 109 at most); 200,000 elsewhere
 TEST_CFG = {"jc2b": "configs/data/JetClassII_base.yaml"}
-FULL = {"topkin": 1_200_000}        # the full training set: ParT's recipe, 20 epochs, no early stop
+FULL = {"topkin": 1_200_000, "top": 1_200_000, "topmean": 1_200_000}   # the full training set: ParT's
+# recipe, 20 epochs, no early stop (top's full set only in the fill check; bench stops at 1e5)
 KIN_RUNS = ("l188kin-s1", "r16q1kin-s1")
 
 
@@ -138,6 +149,12 @@ def kin_cells(lr_pre: str) -> list:
     return out
 
 
+def fillcheck_cells() -> list:
+    """Top at the full set from 188-s1 with ParT's recipe (1e-4, head x50), zero and mean fill."""
+    return [cell(task, "l188-s1", 1_200_000, 1, "1e-4", FILLCHECK_ROOT, sub)
+            for task, sub in (("top", "_zero"), ("topmean", "_mean"))]
+
+
 def _launch():
     spec = importlib.util.spec_from_file_location("build_mtx_launch", ROOT / "scripts" / "build_mtx_launch.py")
     m = importlib.util.module_from_spec(spec)
@@ -166,6 +183,11 @@ echo "$(date -u +%FT%TZ) pod=${POD_NAME} node=${NODE_NAME} ref=${REPO_REF}" >> $
 if [ -n "${RUN_DIR}" ]; then
   python3 experiments/FT/ft_v2.py resolve --run-dir ${RUN_DIR} --rule best70 --link /workspace/ckpt/${INIT}.pt || exit ${HALT}
   cp /workspace/ckpt/${INIT}.pt.json ${CELL}/init_checkpoint.json
+  if [ "${TASK}" = topmean ]; then
+    python3 experiments/FT/fill_config.py --checkpoint /workspace/ckpt/${INIT}.pt \
+      --src configs/finetune/TopReference.yaml --out ${CFG} || exit ${HALT}
+    cp ${CFG} ${CELL}/
+  fi
   LOAD=(--load-model-weights /workspace/ckpt/${INIT}.pt --exclude-model-weights "mod\.fc\..*")
   MULTARG=(--optimizer-option lr_mult "(r'mod\.fc\..*', ${MULT})")
   SCHED=(--lr-scheduler none); RECIPE="head_lr_mult=${MULT} lr_schedule=constant ckpt_rule=best70"
@@ -330,12 +352,14 @@ def main(argv=None) -> int:
     ap.add_argument("--lr-pre", default=None)
     ap.add_argument("--lr-scratch", default=None)
     ap.add_argument("--parallelism", type=int, default=4)
-    ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin"))
+    ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
         if kind == "lrsweep":
             cells, mem = lrsweep_cells(), "48Gi"
+        elif kind == "fillcheck":
+            cells, mem = fillcheck_cells(), "48Gi"
         else:
             if not (a.lr_pre and a.lr_scratch):
                 ap.error(f"{kind} needs --lr-pre and --lr-scratch (from the sweep)")
