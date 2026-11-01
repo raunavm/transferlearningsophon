@@ -7,7 +7,7 @@ metadata:
 spec:
   completionMode: Indexed
   completions: 12
-  parallelism: 6
+  parallelism: 4
   backoffLimitPerIndex: 3
   podFailurePolicy:
     rules:
@@ -25,7 +25,7 @@ spec:
         command: ["/bin/bash", "-c"]
         env:
         - name: REPO_REF
-          value: "mtx-s2.30"
+          value: "mtx-s2.35"
         - name: NODE_NAME
           valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
         - name: POD_NAME
@@ -39,18 +39,18 @@ spec:
           HALT=42
           IDX=${JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}
           case ${IDX} in
-            0) TASK=top; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-4; MULT=50.0; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_top/l188-s1_lr1e-4/N10000/s1;;
-            1) TASK=top; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=3e-4; MULT=16.666666666666668; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_top/l188-s1_lr3e-4/N10000/s1;;
-            2) TASK=top; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-3; MULT=5.0; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_top/l188-s1_lr1e-3/N10000/s1;;
-            3) TASK=top; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-4; MULT=; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_top/scratch_lr3e-4/N10000/s1;;
-            4) TASK=top; INIT=; RUN_DIR=; N=10000; S=1; LR=1e-3; MULT=; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_top/scratch_lr1e-3/N10000/s1;;
-            5) TASK=top; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-3; MULT=; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_top/scratch_lr3e-3/N10000/s1;;
-            6) TASK=qg; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-4; MULT=50.0; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_qg/l188-s1_lr1e-4/N10000/s1;;
-            7) TASK=qg; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=3e-4; MULT=16.666666666666668; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_qg/l188-s1_lr3e-4/N10000/s1;;
-            8) TASK=qg; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-3; MULT=5.0; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_qg/l188-s1_lr1e-3/N10000/s1;;
-            9) TASK=qg; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-4; MULT=; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_qg/scratch_lr3e-4/N10000/s1;;
-            10) TASK=qg; INIT=; RUN_DIR=; N=10000; S=1; LR=1e-3; MULT=; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_qg/scratch_lr1e-3/N10000/s1;;
-            11) TASK=qg; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-3; MULT=; EP=40; SPE=256000; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep/leg_qg/scratch_lr3e-3/N10000/s1;;
+            0) TASK=top; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-4; MULT=50.0; EP=400; SPE=25600; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep_v2/leg_top/l188-s1_lr1e-4/N10000/s1;;
+            1) TASK=top; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=3e-4; MULT=16.666666666666668; EP=400; SPE=25600; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep_v2/leg_top/l188-s1_lr3e-4/N10000/s1;;
+            2) TASK=top; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-3; MULT=5.0; EP=400; SPE=25600; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep_v2/leg_top/l188-s1_lr1e-3/N10000/s1;;
+            3) TASK=top; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-4; MULT=; EP=400; SPE=25600; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep_v2/leg_top/scratch_lr3e-4/N10000/s1;;
+            4) TASK=top; INIT=; RUN_DIR=; N=10000; S=1; LR=1e-3; MULT=; EP=400; SPE=25600; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep_v2/leg_top/scratch_lr1e-3/N10000/s1;;
+            5) TASK=top; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-3; MULT=; EP=400; SPE=25600; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep_v2/leg_top/scratch_lr3e-3/N10000/s1;;
+            6) TASK=qg; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-4; MULT=50.0; EP=400; SPE=25600; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep_v2/leg_qg/l188-s1_lr1e-4/N10000/s1;;
+            7) TASK=qg; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=3e-4; MULT=16.666666666666668; EP=400; SPE=25600; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep_v2/leg_qg/l188-s1_lr3e-4/N10000/s1;;
+            8) TASK=qg; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=10000; S=1; LR=1e-3; MULT=5.0; EP=400; SPE=25600; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep_v2/leg_qg/l188-s1_lr1e-3/N10000/s1;;
+            9) TASK=qg; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-4; MULT=; EP=400; SPE=25600; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep_v2/leg_qg/scratch_lr3e-4/N10000/s1;;
+            10) TASK=qg; INIT=; RUN_DIR=; N=10000; S=1; LR=1e-3; MULT=; EP=400; SPE=25600; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep_v2/leg_qg/scratch_lr1e-3/N10000/s1;;
+            11) TASK=qg; INIT=; RUN_DIR=; N=10000; S=1; LR=3e-3; MULT=; EP=400; SPE=25600; PAT=10; VAL=200000; CELL=/data/results/ft_v2/lrsweep_v2/leg_qg/scratch_lr3e-3/N10000/s1;;
             *) echo "FATAL: no cell for index ${IDX}"; exit ${HALT};;
           esac
           [ -f ${CELL}/DONE ] && { echo "skip ${CELL} (DONE)"; exit 0; }
