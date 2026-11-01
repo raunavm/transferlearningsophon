@@ -71,6 +71,7 @@ spec:
           limits:   { memory: "48Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
       tolerations:
       - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
       affinity:
@@ -91,3 +92,5 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }

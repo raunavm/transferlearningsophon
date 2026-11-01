@@ -62,6 +62,7 @@ spec:
           limits:   { memory: "64Gi", cpu: "8", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -74,3 +75,5 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }

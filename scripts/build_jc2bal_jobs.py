@@ -295,6 +295,7 @@ spec:
           limits:   {{ memory: "{mem}", cpu: "{cpu}"{gpu_req}, ephemeral-storage: "20Gi" }}
         volumeMounts:
         - {{ name: data, mountPath: /data }}
+        - {{ name: dshm, mountPath: /dev/shm }}
 {tol}      affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -307,6 +308,8 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: {{ medium: Memory, sizeLimit: "8Gi" }}
 """
 
 
@@ -390,6 +393,7 @@ spec:
           limits:   {{ memory: "{mem}", cpu: "{cpu}", ephemeral-storage: "20Gi" }}
         volumeMounts:
         - {{ name: data, mountPath: /data }}
+        - {{ name: dshm, mountPath: /dev/shm }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -402,6 +406,9 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: transfer-learning-vol
+      # weaver's DataLoader workers need more than the pod's default 64 MB of shared memory
+      - name: dshm
+        emptyDir: {{ medium: Memory, sizeLimit: "8Gi" }}
 """
 
 

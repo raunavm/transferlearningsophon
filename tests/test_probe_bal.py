@@ -61,3 +61,16 @@ def test_the_kinematic_models_are_probed_on_top_only_with_their_own_inputs():
     assert "${RUN_DIR}/DONE ] ||" in a and "/top_sub/train_N1200000_s1.parquet" not in a      # in the loop
     assert "for N in 1000 10000 100000 1200000; do" in a
     assert "TopReference_kin.yaml" in (ROOT / "configs/finetune/TopReference_kin.yaml").name
+
+
+def test_every_job_that_loads_data_with_weaver_has_shared_memory():
+    # the reference job's DataLoader worker died of a bus error in the default 64 MB /dev/shm (2026-11-01)
+    import yaml
+    spec = importlib.util.spec_from_file_location("build_jc2bal_jobs", ROOT / "scripts/build_jc2bal_jobs.py")
+    BJ = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(BJ)
+    for _, text in (BJ.ref_spec("t"), BJ.extract_spec("t", 5), BJ.fit_spec("t", 5, False), BJ.fit_spec("t", 5, True),
+                    BJ.kin_spec("t")):
+        pod = yaml.safe_load(text)["spec"]["template"]["spec"]
+        assert {"name": "dshm", "mountPath": "/dev/shm"} in pod["containers"][0]["volumeMounts"]
+        assert {"name": "dshm", "emptyDir": {"medium": "Memory", "sizeLimit": "8Gi"}} in pod["volumes"]
