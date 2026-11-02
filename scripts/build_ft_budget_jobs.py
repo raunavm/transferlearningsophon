@@ -126,13 +126,15 @@ def lrsweep_cells() -> list:
     return out
 
 
-def bench_cells(lr_pre: str, lr_scratch: str, tasks=("top", "qg"), runs=None) -> list:
+def bench_cells(lr_pre: str, lr_scratch: str, tasks=("top", "qg"), runs=None, lr_scratch_task=None) -> list:
+    """lr_scratch_task: {task: rate} where a task's own sweep chose another from-scratch rate."""
     runs = paper_runs() if runs is None else runs
     out = []
     for task in tasks:
         sizes = TASKS[task][5]
+        lr_s = (lr_scratch_task or {}).get(task, lr_scratch)
         out += [cell(task, r, n, 1, lr_pre, BUDGET_ROOT) for n in sizes for r in runs]
-        out += [cell(task, "", n, s, lr_scratch, BUDGET_ROOT) for n in sizes for s in SCRATCH_SEEDS]
+        out += [cell(task, "", n, s, lr_s, BUDGET_ROOT) for n in sizes for s in SCRATCH_SEEDS]
     return out
 
 
@@ -352,6 +354,7 @@ def main(argv=None) -> int:
     ap.add_argument("--tag", required=True)
     ap.add_argument("--lr-pre", default=None)
     ap.add_argument("--lr-scratch", default=None)
+    ap.add_argument("--lr-scratch-qg", default=None, help="quark/gluon's own from-scratch rate (its sweep)")
     ap.add_argument("--parallelism", type=int, default=4)
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck"))
     a = ap.parse_args(argv)
@@ -364,14 +367,15 @@ def main(argv=None) -> int:
         else:
             if not (a.lr_pre and a.lr_scratch):
                 ap.error(f"{kind} needs --lr-pre and --lr-scratch (from the sweep)")
-            cells = {"bench": lambda: bench_cells(a.lr_pre, a.lr_scratch, ("top", "qg")),
+            per_task = {"qg": a.lr_scratch_qg} if a.lr_scratch_qg else None
+            cells = {"bench": lambda: bench_cells(a.lr_pre, a.lr_scratch, ("top", "qg"), lr_scratch_task=per_task),
                      "jc1": lambda: bench_cells(a.lr_pre, a.lr_scratch, ("jc1",)),
                      "jc2b": lambda: jc2b_cells(a.lr_pre, a.lr_scratch),
                      "kin": lambda: kin_cells(a.lr_pre)}[kind]()
             mem = "48Gi" if kind in ("bench", "kin") else "64Gi"
-        if any(FULL.get(c["task"]) == c["n"] for c in cells):
-            # a cell on a whole training set holds it in memory: 48Gi OOM-killed the top fill check
-            # at 1.2M jets four times (2026-11-02); the old full-size top fine-tunings ran at 88Gi
+        if any(c["n"] >= 1_000_000 for c in cells):
+            # weaver holds a whole training file in memory: 48Gi OOM-killed the top fill check at
+            # 1.2M jets four times (2026-11-02); the old full-size top fine-tunings ran at 88Gi
             mem = FULL_MEM
         name = f"ft-budget-{kind}-raunav"
         p = OUT_DIR / f"job-{name}.yaml"

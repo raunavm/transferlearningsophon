@@ -80,6 +80,11 @@ def test_bench_and_jc1_cells():
     jc1 = bfb.bench_cells("3e-4", "1e-3", ("jc1",))
     assert len(jc1) == (27 + 3) * 2 and {c["n"] for c in jc1} == {10_000, 100_000}   # 10^3 dropped
     assert len({c["out"] for c in bench + jc1}) == len(bench) + len(jc1)
+    # quark/gluon's own sweep may choose another from-scratch rate; top and the pretrained cells keep theirs
+    per = bfb.bench_cells("1e-3", "1e-3", lr_scratch_task={"qg": "3e-3"})
+    assert {c["lr"] for c in per if not c["init"] and c["task"] == "qg"} == {"3e-3"}
+    assert {c["lr"] for c in per if not c["init"] and c["task"] == "top"} == {"1e-3"}
+    assert {c["lr"] for c in per if c["init"]} == {"1e-3"}
 
 
 @pytest.mark.parametrize("kind", ["lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck"])
@@ -100,7 +105,7 @@ def test_spec_is_valid_bash_on_any_24gb_gpu(kind, tmp_path, monkeypatch):
     # 500-step epochs at 1e5 and above, 50-step epochs below; both at most 20,000 steps
     # a job with a cell on a whole training set gets the old full-size memory, the rest their own
     mem = spec["template"]["spec"]["containers"][0]["resources"]["limits"]["memory"]
-    assert mem == {"fillcheck": "88Gi", "kin": "88Gi", "jc2b": "64Gi", "jc1": "64Gi"}.get(kind, "48Gi")
+    assert mem == {"fillcheck": "88Gi", "kin": "88Gi", "jc2b": "88Gi", "jc1": "64Gi"}.get(kind, "48Gi")
     if kind == "fillcheck":
         return
     assert "EP=400; SPE=25600; PAT=10;" in script
