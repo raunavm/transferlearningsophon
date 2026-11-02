@@ -687,3 +687,14 @@ def test_where_the_per_class_cost_sits_follows_the_label_maps():
     assert em.m["MlstPerClassCoarseTopClass"] in lepton and int(em.m["MlstPerClassCoarseLeptonN"]) > 0
     assert int(em.m["MlstPerClassCoarseQuarkN"]) > 0 and em.m["MlstPerClassCoarseQuarkMedian"] in ("3.00", "4.00", "5.00")
     assert em.m["MlstPerClassRandFlavMergedOverApart"].startswith(r"\pending")
+
+
+def test_the_groomed_mass_agrees_across_files_up_to_rounding_only():
+    # each file recomputes the groomed mass on the same jets; another node rounds the last digits differently
+    f = lambda r, v: {"estimators": {"groomed": {"all": {"inclusive": {"resolution": r}, "vs_pt": {"resolution": v}}}}}
+    atlas = {"a": f(0.21275067523827068, [0.2287, None]), "b": f(0.21275067523827057, [0.2287 * (1 + 1e-13), None])}
+    assert M._groomed(atlas, "all", "resolution") == 0.21275067523827068
+    assert M._groomed(atlas, "all", "resolution", "vs_pt") == [0.2287, None]
+    atlas["c"] = f(0.2128, [0.2287, None])
+    with pytest.raises(SystemExit, match="differs between atlas_res files"):
+        M._groomed(atlas, "all", "resolution")

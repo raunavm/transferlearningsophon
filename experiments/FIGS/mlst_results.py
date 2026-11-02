@@ -1098,12 +1098,21 @@ def _ares(atlas: dict, model: str, est: str, group: str, key: str = "resolution"
         return None
 
 
+GROOMED_TOL = 1e-9   # relative: quantiles and bootstraps rebuilt on another node differ in the last digits
+
+
 def _groomed(atlas: dict, group: str, key: str, axis: str = "inclusive"):
-    """The groomed mass's value: a property of the test jets, the same in every file, or the build stops."""
-    vals = {json.dumps(v) for m in atlas if (v := _ares(atlas, m, "groomed", group, key, axis)) is not None}
-    if len(vals) > 1:
-        raise SystemExit(f"FATAL: the groomed mass's {group} {key} ({axis}) differs between atlas_res files")
-    return json.loads(vals.pop()) if vals else None
+    """The groomed mass's value: a property of the test jets, the same in every file up to rounding
+    (GROOMED_TOL), or the build stops. The value of the first file in name order."""
+    vals = [v for m in sorted(atlas) if (v := _ares(atlas, m, "groomed", group, key, axis)) is not None]
+    if not vals:
+        return None
+    ref = np.array(vals[0], dtype=float)
+    for v in vals[1:]:
+        a = np.array(v, dtype=float)
+        if a.shape != ref.shape or not np.allclose(a, ref, rtol=GROOMED_TOL, atol=0, equal_nan=True):
+            raise SystemExit(f"FATAL: the groomed mass's {group} {key} ({axis}) differs between atlas_res files")
+    return vals[0]
 
 
 def table_mass(atlas, runs, fmt_pm) -> str:
