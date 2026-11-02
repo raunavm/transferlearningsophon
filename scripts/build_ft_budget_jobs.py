@@ -90,6 +90,7 @@ TEST_CFG = {"jc2b": "configs/data/JetClassII_base.yaml"}
 FULL = {"topkin": 1_200_000, "top": 1_200_000, "topmean": 1_200_000}   # the full training set: ParT's
 # recipe, 20 epochs, no early stop (top's full set only in the fill check; bench stops at 1e5)
 KIN_RUNS = ("l188kin-s1", "r16q1kin-s1")
+FULL_MEM = "88Gi"
 
 
 def head_mult(lr: str) -> str:
@@ -368,6 +369,10 @@ def main(argv=None) -> int:
                      "jc2b": lambda: jc2b_cells(a.lr_pre, a.lr_scratch),
                      "kin": lambda: kin_cells(a.lr_pre)}[kind]()
             mem = "48Gi" if kind in ("bench", "kin") else "64Gi"
+        if any(FULL.get(c["task"]) == c["n"] for c in cells):
+            # a cell on a whole training set holds it in memory: 48Gi OOM-killed the top fill check
+            # at 1.2M jets four times (2026-11-02); the old full-size top fine-tunings ran at 88Gi
+            mem = FULL_MEM
         name = f"ft-budget-{kind}-raunav"
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(spec(name, cells, a.tag, a.parallelism, mem))

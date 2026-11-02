@@ -82,7 +82,7 @@ def test_bench_and_jc1_cells():
     assert len({c["out"] for c in bench + jc1}) == len(bench) + len(jc1)
 
 
-@pytest.mark.parametrize("kind", ["lrsweep", "bench", "jc1", "jc2b", "kin"])
+@pytest.mark.parametrize("kind", ["lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck"])
 def test_spec_is_valid_bash_on_any_24gb_gpu(kind, tmp_path, monkeypatch):
     monkeypatch.setattr(bfb, "OUT_DIR", tmp_path)
     bfb.main(["--tag", "mtx-test", "--lr-pre", "3e-4", "--lr-scratch", "1e-3", kind])
@@ -98,6 +98,11 @@ def test_spec_is_valid_bash_on_any_24gb_gpu(kind, tmp_path, monkeypatch):
     assert "--samples-per-epoch ${SPE}" in script and "--num-epochs ${EP}" in script
     assert "--samples-per-epoch-val ${VAL}" in script and "early_stop.py watch" in script
     # 500-step epochs at 1e5 and above, 50-step epochs below; both at most 20,000 steps
+    # a job with a cell on a whole training set gets the old full-size memory, the rest their own
+    mem = spec["template"]["spec"]["containers"][0]["resources"]["limits"]["memory"]
+    assert mem == {"fillcheck": "88Gi", "kin": "88Gi", "jc2b": "64Gi", "jc1": "64Gi"}.get(kind, "48Gi")
+    if kind == "fillcheck":
+        return
     assert "EP=400; SPE=25600; PAT=10;" in script
     assert ("EP=40; SPE=256000; PAT=10;" in script) == (kind != "lrsweep")
     assert "train_N${N}_s1.parquet" in script and "--model-prefix ${RUN}/net" in script
