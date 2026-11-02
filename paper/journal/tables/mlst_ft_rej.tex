@@ -1,29 +1,30 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Background rejection $R_{50}$ and $R_{30}$ ($1/\epsilon_B$ at 50\% and 30\% signal efficiency) after full fine-tuning on the whole training set. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run. From scratch: over its seeds. Every value rests on at least 98 background jets passing the cut.}
+\caption{Fine-tuning on the full training sets of top and quark/gluon (also scored on Herwig jets), every configuration: accuracy, AUC and $1/\epsilon_B$ at 50\% and 30\% signal efficiency. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. Every rejection rests on at least 98 background jets passing the cut.}
 \label{tab:ftrej}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lcccccc}
+\begin{tabular}{lcccccccccccc}
 \toprule
-pretraining & \multicolumn{2}{c}{top} & \multicolumn{2}{c}{q/g} & \multicolumn{2}{c}{q/g, Herwig} \\
- & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ \\
+pretraining & \multicolumn{4}{c}{top} & \multicolumn{4}{c}{quark/gluon} & \multicolumn{4}{c}{quark/gluon, Herwig} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}\cmidrule(lr){10-13}
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ & accuracy & AUC & $R_{50}$ & $R_{30}$ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
-\Kfull{} classes & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 & 12.3\,$\pm$\,0.4 & 35.2\,$\pm$\,2.1 \\
-\Kres{} classes & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 & 12.33\,$\pm$\,0.28 & 34.6\,$\pm$\,2.0 \\
-\Kmid{} classes & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 & 42.2\,$\pm$\,0.8 & 108.3\,$\pm$\,1.0 & 12.5\,$\pm$\,0.6 & 36.1\,$\pm$\,2.7 \\
-\Kcoarse{} classes & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 & 12.79\,$\pm$\,0.20 & 36.9\,$\pm$\,0.9 \\
-\Kres{} classes, mass regression & 420, 436 & 1{,}941, 1{,}590 & 42.46, 42.21 & 107.0, 106.6 & 12.99, 12.21 & 37.8, 34.4 \\
-\Kcoarse{} classes, mass regression & 435, 421 & 1{,}683, 1{,}628 & 41.77, 41.39 & 104.9, 105.6 & 12.58, 11.96 & 37.7, 32.9 \\
-random partition 1, seed 1 & 432 & 1{,}660 & 42.1 & 107 & 12.2 & 33.4 \\
-random partition 2, seed 2 & 430 & 1{,}900 & 42.5 & 109 & 12.3 & 35.2 \\
-random partition 3, seed 1 & 421 & 1{,}640 & 42.1 & 106 & 12.2 & 34.8 \\
-random partition 4, seed 2 & 458 & 1{,}820 & 41.8 & 107 & 12.7 & 37.5 \\
-random partition 5, seed 2 & 431 & 1{,}740 & 42.1 & 106 & 12.2 & 35.3 \\
-random partition, no flavor boundary & 427, 463 & 1{,}726, 1{,}852 & 41.67, 41.95 & 108.9, 109.2 & 12.07, 12.92 & 34.1, 39.3 \\
-random partition, $b$-quark boundary & 432, 444 & 1{,}590, 2{,}060 & 42.43, 42.77 & 106.5, 106.8 & 12.93, 12.19 & 38.1, 34.7 \\
-random partition, random flavor boundary & 394, 447 & 1{,}565, 1{,}655 & 42.12, 42.09 & 108.2, 104.4 & 12.18, 12.76 & 34.9, 37.4 \\
-from scratch & 358\,$\pm$\,11 & 1{,}412\,$\pm$\,20 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 & 12.18\,$\pm$\,0.11 & 35.5\,$\pm$\,1.2 \\
+\Kfull{} classes & 0.9400\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 & 0.8433\,$\pm$\,0.0002 & 0.9148\,$\pm$\,0.0001 & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 & 0.712\,$\pm$\,0.005 & 0.8078\,$\pm$\,0.0023 & 12.3\,$\pm$\,0.4 & 35.2\,$\pm$\,2.1 \\
+\Kres{} classes & 0.9401\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 & 0.8432\,$\pm$\,$<$0.0001 & 0.9148\,$\pm$\,0.0001 & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 & 0.7100\,$\pm$\,0.0017 & 0.8074\,$\pm$\,0.0010 & 12.33\,$\pm$\,0.28 & 34.6\,$\pm$\,2.0 \\
+\Kmid{} classes & 0.9402\,$\pm$\,0.0004 & 0.9861\,$\pm$\,0.0001 & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 & 0.8430\,$\pm$\,0.0005 & 0.9146\,$\pm$\,0.0003 & 42.2\,$\pm$\,0.8 & 108.3\,$\pm$\,1.0 & 0.713\,$\pm$\,0.006 & 0.809\,$\pm$\,0.005 & 12.5\,$\pm$\,0.6 & 36.1\,$\pm$\,2.7 \\
+\Kcoarse{} classes & 0.9398\,$\pm$\,0.0001 & 0.9859\,$\pm$\,0.0001 & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 & 0.8427\,$\pm$\,0.0003 & 0.9144\,$\pm$\,$<$0.0001 & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 & 0.7175\,$\pm$\,0.0033 & 0.8103\,$\pm$\,0.0018 & 12.79\,$\pm$\,0.20 & 36.9\,$\pm$\,0.9 \\
+\Kres{} classes, mass regression & 0.9406, 0.9402 & 0.9860, 0.9860 & 420, 436 & 1{,}941, 1{,}590 & 0.8425, 0.8427 & 0.9147, 0.9145 & 42.46, 42.21 & 107.0, 106.6 & 0.7178, 0.7121 & 0.8109, 0.8074 & 12.99, 12.21 & 37.8, 34.4 \\
+\Kcoarse{} classes, mass regression & 0.9397, 0.9399 & 0.9858, 0.9859 & 435, 421 & 1{,}683, 1{,}628 & 0.8425, 0.8424 & 0.9142, 0.9140 & 41.77, 41.39 & 104.9, 105.6 & 0.7160, 0.7107 & 0.8101, 0.8052 & 12.58, 11.96 & 37.7, 32.9 \\
+random partition 1, seed 1 & 0.940 & 0.986 & 432 & 1{,}660 & 0.843 & 0.915 & 42.1 & 107 & 0.712 & 0.807 & 12.2 & 33.4 \\
+random partition 2, seed 2 & 0.940 & 0.986 & 430 & 1{,}900 & 0.843 & 0.915 & 42.5 & 109 & 0.712 & 0.808 & 12.3 & 35.2 \\
+random partition 3, seed 1 & 0.940 & 0.986 & 421 & 1{,}640 & 0.843 & 0.914 & 42.1 & 106 & 0.711 & 0.807 & 12.2 & 34.8 \\
+random partition 4, seed 2 & 0.940 & 0.986 & 458 & 1{,}820 & 0.843 & 0.915 & 41.8 & 107 & 0.714 & 0.809 & 12.7 & 37.5 \\
+random partition 5, seed 2 & 0.940 & 0.986 & 431 & 1{,}740 & 0.843 & 0.915 & 42.1 & 106 & 0.713 & 0.808 & 12.2 & 35.3 \\
+random partition, no flavor boundary & 0.9402, 0.9401 & 0.9860, 0.9861 & 427, 463 & 1{,}726, 1{,}852 & 0.8423, 0.8434 & 0.9144, 0.9146 & 41.67, 41.95 & 108.9, 109.2 & 0.7091, 0.7121 & 0.8045, 0.8094 & 12.07, 12.92 & 34.1, 39.3 \\
+random partition, $b$-quark boundary & 0.9401, 0.9405 & 0.9860, 0.9861 & 432, 444 & 1{,}590, 2{,}060 & 0.8430, 0.8431 & 0.9147, 0.9147 & 42.43, 42.77 & 106.5, 106.8 & 0.7153, 0.7110 & 0.8109, 0.8066 & 12.93, 12.19 & 38.1, 34.7 \\
+random partition, random flavor boundary & 0.9397, 0.9406 & 0.9858, 0.9861 & 394, 447 & 1{,}565, 1{,}655 & 0.8427, 0.8428 & 0.9145, 0.9147 & 42.12, 42.09 & 108.2, 104.4 & 0.7114, 0.7171 & 0.8047, 0.8106 & 12.18, 12.76 & 34.9, 37.4 \\
+from scratch & 0.9387\,$\pm$\,0.0002 & 0.9852\,$\pm$\,0.0001 & 358\,$\pm$\,11 & 1{,}412\,$\pm$\,20 & 0.8397\,$\pm$\,0.0007 & 0.9121\,$\pm$\,0.0002 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 & 0.7153\,$\pm$\,0.0024 & 0.8061\,$\pm$\,0.0007 & 12.18\,$\pm$\,0.11 & 35.5\,$\pm$\,1.2 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

@@ -1,30 +1,59 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Linear probes on the frozen class token at the largest training set of each task: $(1-\mathrm{AUC})\times10^{3}$, lower is better. JetClass-II: the macro AUC over its \Kfull{} classes, and over its resonant and QCD classes separately; JetClass: the macro AUC; top and quark/gluon (q/g) tagging: the AUC, q/g also on jets generated with Herwig. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run. $^{*}$: a probe that did not converge.}
+\caption{Linear probes on the frozen features at the largest training set of each task. Upper part: JetClass-II (class-balanced test set) accuracy and AUC averaged over its \Kfull{} classes each against the rest, over the classes with the full \JcBalTestPerClass{} test jets, over the resonant and over the QCD classes; JetClass accuracy and AUC. Lower part: top tagging and quark/gluon discrimination (also on Herwig jets) with the missing inputs substituted as chosen on validation for every model (\LpSubstitutionTop{} for top, \LpSubstitutionQg{} for quark/gluon; column headings): accuracy, AUC and the background rejection $1/\epsilon_B$ at 50\% and 30\% signal efficiency. The ratio column is $(1-\mathrm{AUC})$ over that of the \Kfull-class run of the same seed (a random partition: of its seed). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. AUC: area under the curve of signal efficiency against background efficiency. $^{*}$: a probe that did not converge.}
 \label{tab:probes}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lccccccc}
+\begin{tabular}{lcccccccc}
 \toprule
-pretraining & JetClass-II & resonant & QCD & JetClass & top & q/g & q/g, Herwig \\
- & 1{,}000{,}000 jets & 1{,}000{,}000 jets & 1{,}000{,}000 jets & 1{,}000{,}000 jets & 1{,}200{,}000 jets & 1{,}600{,}000 jets & 1{,}600{,}000 jets \\
+ & \multicolumn{6}{c}{JetClass-II} & \multicolumn{2}{c}{JetClass} \\
+\cmidrule(lr){2-7}\cmidrule(lr){8-9}
+pretraining & accuracy & AUC & AUC, full count & AUC, resonant & AUC, QCD & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ & accuracy & AUC \\
 \midrule
-\Kfull{} classes & 24.01\,$\pm$\,0.04 & 19.05\,$\pm$\,0.03 & 53.5\,$\pm$\,0.4 & 31.9\,$\pm$\,0.6 & 59\,$\pm$\,8 & 122\,$\pm$\,6 & 196.2\,$\pm$\,1.7 \\
-\Kres{} classes & 25.19\,$\pm$\,0.31 & 19.06\,$\pm$\,0.11 & 61.7\,$\pm$\,2.0 & 31.76\,$\pm$\,0.21 & 52\,$\pm$\,6 & 131\,$\pm$\,9 & 200\,$\pm$\,6 \\
-\Kmid{} classes & 28.1\,$\pm$\,0.6 & 21.69\,$\pm$\,0.08 & 66\,$\pm$\,4 & 32.0\,$\pm$\,0.4 & 62\,$\pm$\,9 & 129\,$\pm$\,6 & 199.6\,$\pm$\,2.7 \\
-\Kcoarse{} classes & 36.9\,$\pm$\,0.6 & 27.58\,$\pm$\,0.35 & 93\,$\pm$\,4 & 35.0\,$\pm$\,0.8 & 58\,$\pm$\,4 & 134\,$\pm$\,11 & 201\,$\pm$\,5 \\
-\Kres{} classes, mass regression & 26.51, 26.03 & 19.63, 19.29 & 67.6, 66.3 & 31.6, 30.4 & 50.9, 47.1 & 123.6, 125.2 & 194.5, 199.2 \\
-\Kcoarse{} classes, mass regression & 37.65, 36.80 & 28.27, 27.78 & 93.6, 90.6 & 34.46, 34.89 & 41.8, 51.8 & 126.5, 128.1 & 199.6, 199.2 \\
-random partition 1, seed 1 & 28.1 & 21.0 & 70.5 & 36.5 & 70.4 & 125 & 198 \\
-random partition 2, seed 2 & 28.1 & 20.9 & 70.7 & 36.0 & 57.4 & 131 & 201 \\
-random partition 3, seed 1 & 27.6 & 20.7 & 68.8 & 36.2 & 61.3 & 123 & 201 \\
-random partition 4, seed 2 & 27.7 & 20.7 & 69.1 & 36.5 & 81.6 & 140 & 204 \\
-random partition 5, seed 2 & 28.0 & 21.0 & 69.5 & 36.1 & 53.0 & 138 & 206 \\
-random partition, no flavor boundary & 34.3, 35.5 & 25.89, 26.54 & 84.7, 89.1 & 36.72, 37.71 & 58.0, 54.7 & 123.8, 125.2 & 195.9, 199.6 \\
-random partition, $b$-quark boundary & 30.20, 29.95 & 22.70, 22.58 & 74.9, 73.9 & 33.99, 33.50 & 51.6, 49.5 & 132.9, 125.6 & 202.1, 198.2 \\
-random partition, random flavor boundary & 30.18, 30.15 & 22.27, 22.25 & 77.32, 77.31 & 34.61, 35.51 & 59.7, 67.6 & 126.4, 133.4 & 196.2, 203.3 \\
-randomly initialized network & 194.2\,$\pm$\,1.8 & 180.9\,$\pm$\,1.7 & 273\,$\pm$\,4 & 172.2\,$\pm$\,1.0 & 61.1\,$\pm$\,0.5 & 138.8\,$\pm$\,1.6 & 203.5\,$\pm$\,0.9 \\
-randomly initialized network, BatchNorm recomputed & 147.5\,$\pm$\,1.9 & 130.6\,$\pm$\,2.9 & 248\,$\pm$\,4 & 135\,$\pm$\,4 & 60\,$\pm$\,4 & 138.4\,$\pm$\,1.1 & 201.0\,$\pm$\,2.2 \\
+\Kfull{} classes & 0.4348\,$\pm$\,0.0003 & 0.9801\,$\pm$\,$<$0.0001 & 0.9813\,$\pm$\,$<$0.0001 & 0.9830\,$\pm$\,$<$0.0001 & 0.9632\,$\pm$\,$<$0.0001 & 1.00 & 0.7709\,$\pm$\,0.0023 & 0.9682\,$\pm$\,0.0006 \\
+\Kres{} classes & 0.4328\,$\pm$\,0.0008 & 0.9796\,$\pm$\,0.0001 & 0.9810\,$\pm$\,0.0001 & 0.9829\,$\pm$\,0.0001 & 0.9600\,$\pm$\,0.0002 & 1.026\,$\pm$\,0.005 & 0.7709\,$\pm$\,0.0005 & 0.9683\,$\pm$\,0.0002 \\
+\Kmid{} classes & 0.361\,$\pm$\,0.005 & 0.9756\,$\pm$\,0.0002 & 0.9769\,$\pm$\,0.0002 & 0.9785\,$\pm$\,0.0002 & 0.9583\,$\pm$\,0.0003 & 1.227\,$\pm$\,0.009 & 0.7695\,$\pm$\,0.0014 & 0.9680\,$\pm$\,0.0004 \\
+\Kcoarse{} classes & 0.334\,$\pm$\,0.007 & 0.9691\,$\pm$\,0.0004 & 0.9708\,$\pm$\,0.0005 & 0.9729\,$\pm$\,0.0005 & 0.9460\,$\pm$\,0.0006 & 1.557\,$\pm$\,0.019 & 0.7605\,$\pm$\,0.0027 & 0.9650\,$\pm$\,0.0008 \\
+\Kres{} classes, mass regression & 0.4271, 0.4305 & 0.9791, 0.9794 & 0.9805, 0.9808 & 0.9824, 0.9827 & 0.9592, 0.9598 & 1.053, 1.037 & 0.7718, 0.7760 & 0.9684, 0.9697 \\
+\Kcoarse{} classes, mass regression & 0.312, 0.350 & 0.9679, 0.9696 & 0.9695, 0.9714 & 0.9716, 0.9737 & 0.9458, 0.9457 & 1.617, 1.528 & 0.7624, 0.7612 & 0.9655, 0.9651 \\
+random partition 1, seed 1 & 0.420 & 0.978 & 0.979 & 0.981 & 0.956 & 1.13 & 0.753 & 0.964 \\
+random partition 2, seed 2 & 0.421 & 0.978 & 0.979 & 0.981 & 0.956 & 1.13 & 0.755 & 0.964 \\
+random partition 3, seed 1 & 0.423 & 0.978 & 0.979 & 0.982 & 0.956 & 1.11 & 0.755 & 0.964 \\
+random partition 4, seed 2 & 0.423 & 0.978 & 0.979 & 0.981 & 0.956 & 1.12 & 0.754 & 0.964 \\
+random partition 5, seed 2 & 0.420 & 0.977 & 0.979 & 0.981 & 0.955 & 1.13 & 0.754 & 0.964 \\
+random partition, no flavor boundary & 0.3769, 0.3723 & 0.9717, 0.9710 & 0.9736, 0.9729 & 0.9760, 0.9753 & 0.9460, 0.9449 & 1.424, 1.462 & 0.7535, 0.7486 & 0.9633, 0.9622 \\
+random partition, $b$-quark boundary & 0.3945, 0.3963 & 0.9758, 0.9759 & 0.9774, 0.9775 & 0.9794, 0.9795 & 0.9543, 0.9545 & 1.218, 1.212 & 0.7615, 0.7644 & 0.9661, 0.9665 \\
+random partition, random flavor boundary & 0.4071, 0.4089 & 0.9760, 0.9760 & 0.9777, 0.9777 & 0.9798, 0.9798 & 0.9536, 0.9535 & 1.206, 1.208 & 0.7593, 0.7564 & 0.9654, 0.9645 \\
+randomly initialized network & 0.07183, 0.07119 \pending{2 of 3} & 0.8110, 0.8111 \pending{2 of 3} & 0.8113, 0.8108 \pending{2 of 3} & 0.8148, 0.8131 \pending{2 of 3} & 0.788, 0.799 \pending{2 of 3} & -- & 0.4062, 0.4087 \pending{2 of 3} & 0.8268, 0.8282 \pending{2 of 3} \\
+randomly initialized network, BatchNorm recomputed & 0.1019, 0.0999 \pending{2 of 3} & 0.8660, 0.8630 \pending{2 of 3} & 0.8685, 0.8650 \pending{2 of 3} & 0.8733, 0.8694 \pending{2 of 3} & 0.8223, 0.8246 \pending{2 of 3} & -- & 0.4764, 0.4691 \pending{2 of 3} & 0.8649, 0.8618 \pending{2 of 3} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccccccccccc}
+\toprule
+ & \multicolumn{4}{c}{top} & \multicolumn{4}{c}{quark/gluon} & \multicolumn{4}{c}{quark/gluon, Herwig} \\
+ & \multicolumn{4}{c}{missing inputs: zero \pending{choice on validation}} & \multicolumn{4}{c}{missing inputs: zero \pending{choice on validation}} & \multicolumn{4}{c}{missing inputs: zero \pending{choice on validation}} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}\cmidrule(lr){10-13}
+pretraining & accuracy & AUC & $R_{50}$ & $R_{30}$ & accuracy & AUC & $R_{50}$ & $R_{30}$ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+\Kfull{} classes & 0.883\,$\pm$\,0.008 & 0.941\,$\pm$\,0.008 & 28\,$\pm$\,6 & 60\,$\pm$\,12 & 0.803\,$\pm$\,0.006 & 0.878\,$\pm$\,0.006 & 23.5\,$\pm$\,2.4 & 66\,$\pm$\,7 & 0.7192\,$\pm$\,0.0020 & 0.8038\,$\pm$\,0.0017 & 11.18\,$\pm$\,0.14 & 32.8\,$\pm$\,1.0 \\
+\Kres{} classes & 0.889\,$\pm$\,0.009 & 0.948\,$\pm$\,0.006 & 33\,$\pm$\,7 & 76\,$\pm$\,17 & 0.796\,$\pm$\,0.008 & 0.869\,$\pm$\,0.009 & 21.0\,$\pm$\,2.6 & 58\,$\pm$\,9 & 0.7195\,$\pm$\,0.0020 & 0.800\,$\pm$\,0.006 & 10.5\,$\pm$\,0.7 & 30.4\,$\pm$\,3.2 \\
+\Kmid{} classes & 0.875\,$\pm$\,0.010 & 0.938\,$\pm$\,0.009 & 27\,$\pm$\,6 & 57\,$\pm$\,13 & 0.796\,$\pm$\,0.004 & 0.871\,$\pm$\,0.006 & 21.8\,$\pm$\,1.9 & 61\,$\pm$\,9 & 0.7189\,$\pm$\,0.0029 & 0.8004\,$\pm$\,0.0027 & 10.60\,$\pm$\,0.22 & 30.8\,$\pm$\,1.9 \\
+\Kcoarse{} classes & 0.886\,$\pm$\,0.006 & 0.942\,$\pm$\,0.004 & 26.9\,$\pm$\,2.8 & 55\,$\pm$\,5 & 0.793\,$\pm$\,0.010 & 0.866\,$\pm$\,0.011 & 21.6\,$\pm$\,2.6 & 62\,$\pm$\,7 & 0.718\,$\pm$\,0.004 & 0.799\,$\pm$\,0.005 & 11.0\,$\pm$\,0.5 & 33.4\,$\pm$\,1.4 \\
+\Kres{} classes, mass regression & 0.8918, 0.8944 & 0.9491, 0.9529 & 34.4, 39.9 & 77, 95 & 0.8010, 0.7998 & 0.8764, 0.8748 & 23.9, 22.7 & 65.4, 61.1 & 0.7233, 0.7210 & 0.8055, 0.8008 & 11.63, 10.97 & 34.6, 32.1 \\
+\Kcoarse{} classes, mass regression & 0.9026, 0.8944 & 0.9582, 0.9482 & 45, 32 & 103, 69 & 0.7978, 0.7959 & 0.8735, 0.8719 & 22.85, 22.64 & 66.01, 65.53 & 0.7171, 0.7194 & 0.8004, 0.8008 & 10.98, 11.17 & 32.7, 34.3 \\
+random partition 1, seed 1 & 0.868 & 0.930 & 21.0 & 44.2 & 0.798 & 0.875 & 22.6 & 66.0 & 0.718 & 0.802 & 11.0 & 32.8 \\
+random partition 2, seed 2 & 0.882 & 0.943 & 28.1 & 60.5 & 0.794 & 0.869 & 21.2 & 59.0 & 0.716 & 0.799 & 10.5 & 30.3 \\
+random partition 3, seed 1 & 0.879 & 0.939 & 24.4 & 50.0 & 0.800 & 0.877 & 22.8 & 65.2 & 0.717 & 0.799 & 10.4 & 29.8 \\
+random partition 4, seed 2 & 0.862 & 0.918 & 16.3 & 30.2 & 0.788 & 0.860 & 19.2 & 51.0 & 0.717 & 0.796 & 10.2 & 28.4 \\
+random partition 5, seed 2 & 0.887 & 0.947 & 32.2 & 73.9 & 0.787 & 0.862 & 19.8 & 54.9 & 0.718 & 0.794 & 10.1 & 27.8 \\
+random partition, no flavor boundary & 0.8806, 0.8862 & 0.9420, 0.9453 & 28.73, 29.14 & 69.67, 69.31 & 0.8015, 0.8006 & 0.8762, 0.8748 & 22.2, 23.3 & 63.1, 66.4 & 0.7210, 0.7154 & 0.8041, 0.8004 & 11.22, 11.03 & 32.9, 31.8 \\
+random partition, $b$-quark boundary & 0.8897, 0.8919 & 0.9484, 0.9505 & 33.5, 34.6 & 73.7, 80.7 & 0.7932, 0.7996 & 0.8671, 0.8744 & 20.6, 21.6 & 54.6, 59.4 & 0.7211, 0.7201 & 0.7979, 0.8018 & 10.61, 10.78 & 30.28, 30.65 \\
+random partition, random flavor boundary & 0.8775, 0.8751 & 0.9403, 0.9324 & 27.6, 20.9 & 65, 41 & 0.7969, 0.7932 & 0.8736, 0.8666 & 22.1, 20.0 & 66, 54 & 0.7207, 0.7147 & 0.8038, 0.7967 & 11.02, 10.32 & 33.2, 28.7 \\
+randomly initialized network & 0.8828, 0.8819 \pending{2 of 3} & 0.9395, 0.9385 \pending{2 of 3} & 25.42, 24.57 \pending{2 of 3} & 59.0, 57.3 \pending{2 of 3} & 0.7869, 0.7853 \pending{2 of 3} & 0.8628, 0.8610 \pending{2 of 3} & 19.68, 19.41 \pending{2 of 3} & 57.6, 55.8 \pending{2 of 3} & 0.7204, 0.7185 \pending{2 of 3} & 0.7969, 0.7955 \pending{2 of 3} & 10.66, 10.62 \pending{2 of 3} & 31.2, 32.5 \pending{2 of 3} \\
+randomly initialized network, BatchNorm recomputed & 0.8818, 0.8798 \pending{2 of 3} & 0.9371, 0.9389 \pending{2 of 3} & 22.9, 25.6 \pending{2 of 3} & 46, 57 \pending{2 of 3} & 0.7846, 0.7867 \pending{2 of 3} & 0.8609, 0.8611 \pending{2 of 3} & 18.83, 18.84 \pending{2 of 3} & 53.9, 52.0 \pending{2 of 3} & 0.7189, 0.7206 \pending{2 of 3} & 0.7971, 0.7985 \pending{2 of 3} & 10.36, 10.68 \pending{2 of 3} & 30.55, 31.14 \pending{2 of 3} \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

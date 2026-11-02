@@ -1,41 +1,42 @@
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
-\caption{GPU types and GPU-hours of every pretraining run, summed over the training and validation passes of its completed epochs as each epoch recorded them.}
+\caption{GPU types and GPU-hours of every pretraining run, summed over the training and validation passes of its epochs as each epoch recorded its device, and the GPU types its fine-tuning ran on.}
 \label{tab:compute}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{llr}
+\begin{tabular}{lllr}
 \toprule
-run & GPU types (hours) & GPU-hours \\
+run & GPU types (hours) & GPU-hours & fine-tuning GPU types \\
 \midrule
-\Kfull{} classes, seed 1 & V100 (135) & 135 \\
-\Kfull{} classes, seed 2 & V100 (145) & 145 \\
-\Kfull{} classes, seed 3 & RTX 3090 (116) & 116 \\
-\Kres{} classes, seed 1 & V100 (75), RTX 3090 (54) & 129 \\
-\Kres{} classes, seed 2 & V100 (86), RTX 3090 (40) & 126 \\
-\Kres{} classes, seed 3 & V100 (123), L4 (39) & 162 \\
-\Kmid{} classes, seed 1 & RTX 3090 (113) & 113 \\
-\Kmid{} classes, seed 2 & V100 (101), RTX 3090 (24) & 125 \\
-\Kmid{} classes, seed 3 & V100 (107), RTX 3090 (20) & 127 \\
-\Kcoarse{} classes, seed 1 & RTX 3090 (108), L4 (3) & 111 \\
-\Kcoarse{} classes, seed 2 & V100 (133) & 133 \\
-\Kcoarse{} classes, seed 3 & V100 (101), L4 (72) & 174 \\
-\Kres{} classes, mass regression, seed 1 & V100 (129), RTX 3090 (26) & 155 \\
-\Kres{} classes, mass regression, seed 2 & V100 (130), RTX 3090 (15) & 145 \\
-\Kcoarse{} classes, mass regression, seed 1 & V100 (126), RTX 3090 (16) & 142 \\
-\Kcoarse{} classes, mass regression, seed 2 & RTX 3090 (101) & 101 \\
-random partition 1, seed 1 & RTX 3090 (78), V100 (38) & 116 \\
-random partition 2, seed 2 & RTX 3090 (110) & 110 \\
-random partition 3, seed 1 & RTX 3090 (109) & 109 \\
-random partition 4, seed 2 & RTX 3090 (107) & 107 \\
-random partition 5, seed 2 & RTX 3090 (98) & 98 \\
-random partition, no flavor boundary, seed 1 & RTX 3090 (99) & 99 \\
-random partition, no flavor boundary, seed 2 & RTX 3090 (130) & 130 \\
-random partition, $b$-quark boundary, seed 1 & V100 (98), RTX 3090 (24) & 122 \\
-random partition, $b$-quark boundary, seed 2 & RTX 3090 (137) & 137 \\
-random partition, random flavor boundary, seed 1 & RTX 3090 (125) & 125 \\
-random partition, random flavor boundary, seed 2 & V100 (135), RTX 3090 (7) & 142 \\
+\Kfull{} classes, seed 1 & V100 (135) & 135 & V100 \\
+\Kfull{} classes, seed 2 & V100 (145) & 145 & V100 \\
+\Kfull{} classes, seed 3 & RTX 3090 (116) & 116 & V100 \\
+\Kres{} classes, seed 1 & V100 (75), RTX 3090 (54) & 129 & V100 \\
+\Kres{} classes, seed 2 & V100 (86), RTX 3090 (40) & 126 & V100 \\
+\Kres{} classes, seed 3 & V100 (123), L4 (39) & 162 & V100 \\
+\Kmid{} classes, seed 1 & RTX 3090 (113) & 113 & V100 \\
+\Kmid{} classes, seed 2 & V100 (101), RTX 3090 (24) & 125 & V100 \\
+\Kmid{} classes, seed 3 & V100 (107), RTX 3090 (20) & 127 & V100 \\
+\Kcoarse{} classes, seed 1 & RTX 3090 (108), L4 (3) & 111 & V100 \\
+\Kcoarse{} classes, seed 2 & V100 (133) & 133 & V100 \\
+\Kcoarse{} classes, seed 3 & V100 (101), L4 (72) & 174 & V100 \\
+\Kres{} classes, mass regression, seed 1 & V100 (129), RTX 3090 (26) & 155 & V100 \\
+\Kres{} classes, mass regression, seed 2 & V100 (130), RTX 3090 (15) & 145 & V100 \\
+\Kcoarse{} classes, mass regression, seed 1 & V100 (126), RTX 3090 (16) & 142 & V100 \\
+\Kcoarse{} classes, mass regression, seed 2 & RTX 3090 (101) & 101 & V100 \\
+random partition 1, seed 1 & RTX 3090 (78), V100 (38) & 116 & V100 \\
+random partition 2, seed 2 & RTX 3090 (110) & 110 & V100 \\
+random partition 3, seed 1 & RTX 3090 (109) & 109 & V100 \\
+random partition 4, seed 2 & RTX 3090 (107) & 107 & V100 \\
+random partition 5, seed 2 & RTX 3090 (98) & 98 & V100 \\
+random partition, no flavor boundary, seed 1 & RTX 3090 (99) & 99 & V100 \\
+random partition, no flavor boundary, seed 2 & RTX 3090 (130) & 130 & V100 \\
+random partition, $b$-quark boundary, seed 1 & V100 (98), RTX 3090 (24) & 122 & V100 \\
+random partition, $b$-quark boundary, seed 2 & RTX 3090 (137) & 137 & V100 \\
+random partition, random flavor boundary, seed 1 & RTX 3090 (125) & 125 & V100 \\
+random partition, random flavor boundary, seed 2 & V100 (135), RTX 3090 (7) & 142 & V100 \\
+\Kfull{} classes, kinematic inputs only & \pending{training} & & -- \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{table}
+\end{table*}

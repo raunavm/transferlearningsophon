@@ -1,7 +1,7 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Full fine-tuning against the training-set size: $(1-\mathrm{AUC})\times10^{3}$, lower is better, with the macro AUC (one-versus-rest) on the class-balanced JetClass-II test set, over all and over its QCD classes, and on JetClass, and the AUC on top and quark/gluon (q/g) tagging, q/g also on jets generated with Herwig. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run. Each pretrained run is fine-tuned once. From scratch: mean $\pm$ standard deviation over \MlstFtRefSeedsWord{} training seeds on the same jets.}
+\caption{Fine-tuning against the number of training jets (column headers), in each task's metric: AUC averaged over the classes on class-balanced JetClass-II (all classes and the QCD classes), accuracy on JetClass, and $R_{30}$ on top, quark/gluon and Herwig jets. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. Each pretrained run is fine-tuned once; from scratch: \MlstFtRefSeedsWord{} training seeds on the same jets.}
 \label{tab:ft}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lc}
@@ -22,23 +22,23 @@ JetClass-II, QCD classes & \pending{not yet read out} \\
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lc}
 \toprule
-JetClass & 1{,}000{,}000 \\
+JetClass, accuracy & 1{,}000{,}000 \\
 \midrule
-\Kfull{} classes & 14.11\,$\pm$\,0.06 \\
-\Kres{} classes & 14.06\,$\pm$\,0.04 \\
-\Kmid{} classes & 14.32\,$\pm$\,0.10 \\
-\Kcoarse{} classes & 15.08\,$\pm$\,0.06 \\
-\Kres{} classes, mass regression & 14.33, 14.13 \\
-\Kcoarse{} classes, mass regression & 15.31, 15.30 \\
-random partition 1, seed 1 & 14.8 \\
-random partition 2, seed 2 & 14.6 \\
-random partition 3, seed 1 & 14.4 \\
-random partition 4, seed 2 & 14.6 \\
-random partition 5, seed 2 & 14.7 \\
-random partition, no flavor boundary & 14.83, 14.90 \\
-random partition, $b$-quark boundary & 14.75, 14.51 \\
-random partition, random flavor boundary & 14.70, 14.70 \\
-from scratch & 17.89\,$\pm$\,0.15 \\
+\Kfull{} classes & 0.8491\,$\pm$\,0.0005 \\
+\Kres{} classes & 0.8495\,$\pm$\,0.0002 \\
+\Kmid{} classes & 0.8480\,$\pm$\,0.0006 \\
+\Kcoarse{} classes & 0.8434\,$\pm$\,0.0001 \\
+\Kres{} classes, mass regression & 0.8478, 0.8490 \\
+\Kcoarse{} classes, mass regression & 0.8420, 0.8419 \\
+random partition 1, seed 1 & 0.845 \\
+random partition 2, seed 2 & 0.846 \\
+random partition 3, seed 1 & 0.847 \\
+random partition 4, seed 2 & 0.846 \\
+random partition 5, seed 2 & 0.846 \\
+random partition, no flavor boundary & 0.8446, 0.8442 \\
+random partition, $b$-quark boundary & 0.8451, 0.8469 \\
+random partition, random flavor boundary & 0.8456, 0.8454 \\
+from scratch & 0.8269\,$\pm$\,0.0010 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -46,23 +46,23 @@ from scratch & 17.89\,$\pm$\,0.15 \\
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lc}
 \toprule
-top & 1{,}200{,}000 \\
+top, $R_{30}$ & 1{,}200{,}000 \\
 \midrule
-\Kfull{} classes & 13.94\,$\pm$\,0.07 \\
-\Kres{} classes & 13.90\,$\pm$\,0.08 \\
-\Kmid{} classes & 13.90\,$\pm$\,0.05 \\
-\Kcoarse{} classes & 14.10\,$\pm$\,0.06 \\
-\Kres{} classes, mass regression & 13.99, 13.95 \\
-\Kcoarse{} classes, mass regression & 14.22, 14.13 \\
-random partition 1, seed 1 & 14.1 \\
-random partition 2, seed 2 & 13.9 \\
-random partition 3, seed 1 & 14.0 \\
-random partition 4, seed 2 & 14.1 \\
-random partition 5, seed 2 & 14.0 \\
-random partition, no flavor boundary & 14.01, 13.91 \\
-random partition, $b$-quark boundary & 14.01, 13.91 \\
-random partition, random flavor boundary & 14.17, 13.89 \\
-from scratch & 14.76\,$\pm$\,0.08 \\
+\Kfull{} classes & 1{,}800\,$\pm$\,60 \\
+\Kres{} classes & 1{,}790\,$\pm$\,60 \\
+\Kmid{} classes & 1{,}780\,$\pm$\,150 \\
+\Kcoarse{} classes & 1{,}740\,$\pm$\,140 \\
+\Kres{} classes, mass regression & 1{,}941, 1{,}590 \\
+\Kcoarse{} classes, mass regression & 1{,}683, 1{,}628 \\
+random partition 1, seed 1 & 1{,}660 \\
+random partition 2, seed 2 & 1{,}900 \\
+random partition 3, seed 1 & 1{,}640 \\
+random partition 4, seed 2 & 1{,}820 \\
+random partition 5, seed 2 & 1{,}740 \\
+random partition, no flavor boundary & 1{,}726, 1{,}852 \\
+random partition, $b$-quark boundary & 1{,}590, 2{,}060 \\
+random partition, random flavor boundary & 1{,}565, 1{,}655 \\
+from scratch & 1{,}412\,$\pm$\,20 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -70,23 +70,23 @@ from scratch & 14.76\,$\pm$\,0.08 \\
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lc}
 \toprule
-q/g & 1{,}600{,}000 \\
+q/g, $R_{30}$ & 1{,}600{,}000 \\
 \midrule
-\Kfull{} classes & 85.18\,$\pm$\,0.14 \\
-\Kres{} classes & 85.22\,$\pm$\,0.08 \\
-\Kmid{} classes & 85.44\,$\pm$\,0.32 \\
-\Kcoarse{} classes & 85.60\,$\pm$\,0.03 \\
-\Kres{} classes, mass regression & 85.31, 85.47 \\
-\Kcoarse{} classes, mass regression & 85.82, 86.00 \\
-random partition 1, seed 1 & 85.4 \\
-random partition 2, seed 2 & 85.3 \\
-random partition 3, seed 1 & 85.5 \\
-random partition 4, seed 2 & 85.4 \\
-random partition 5, seed 2 & 85.4 \\
-random partition, no flavor boundary & 85.63, 85.45 \\
-random partition, $b$-quark boundary & 85.28, 85.28 \\
-random partition, random flavor boundary & 85.52, 85.29 \\
-from scratch & 87.88\,$\pm$\,0.22 \\
+\Kfull{} classes & 107.3\,$\pm$\,2.2 \\
+\Kres{} classes & 108.0\,$\pm$\,1.4 \\
+\Kmid{} classes & 108.3\,$\pm$\,1.0 \\
+\Kcoarse{} classes & 106.5\,$\pm$\,0.8 \\
+\Kres{} classes, mass regression & 107.0, 106.6 \\
+\Kcoarse{} classes, mass regression & 104.9, 105.6 \\
+random partition 1, seed 1 & 107 \\
+random partition 2, seed 2 & 109 \\
+random partition 3, seed 1 & 106 \\
+random partition 4, seed 2 & 107 \\
+random partition 5, seed 2 & 106 \\
+random partition, no flavor boundary & 108.9, 109.2 \\
+random partition, $b$-quark boundary & 106.5, 106.8 \\
+random partition, random flavor boundary & 108.2, 104.4 \\
+from scratch & 104.0\,$\pm$\,1.0 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -94,23 +94,23 @@ from scratch & 87.88\,$\pm$\,0.22 \\
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lc}
 \toprule
-q/g, Herwig & 1{,}600{,}000 \\
+q/g, Herwig, $R_{30}$ & 1{,}600{,}000 \\
 \midrule
-\Kfull{} classes & 192.2\,$\pm$\,2.3 \\
-\Kres{} classes & 192.6\,$\pm$\,1.0 \\
-\Kmid{} classes & 191\,$\pm$\,5 \\
-\Kcoarse{} classes & 189.7\,$\pm$\,1.8 \\
-\Kres{} classes, mass regression & 189.1, 192.6 \\
-\Kcoarse{} classes, mass regression & 189.9, 194.8 \\
-random partition 1, seed 1 & 193 \\
-random partition 2, seed 2 & 192 \\
-random partition 3, seed 1 & 193 \\
-random partition 4, seed 2 & 191 \\
-random partition 5, seed 2 & 192 \\
-random partition, no flavor boundary & 195.5, 190.6 \\
-random partition, $b$-quark boundary & 189.1, 193.4 \\
-random partition, random flavor boundary & 195.3, 189.4 \\
-from scratch & 193.9\,$\pm$\,0.7 \\
+\Kfull{} classes & 35.2\,$\pm$\,2.1 \\
+\Kres{} classes & 34.6\,$\pm$\,2.0 \\
+\Kmid{} classes & 36.1\,$\pm$\,2.7 \\
+\Kcoarse{} classes & 36.9\,$\pm$\,0.9 \\
+\Kres{} classes, mass regression & 37.8, 34.4 \\
+\Kcoarse{} classes, mass regression & 37.7, 32.9 \\
+random partition 1, seed 1 & 33.4 \\
+random partition 2, seed 2 & 35.2 \\
+random partition 3, seed 1 & 34.8 \\
+random partition 4, seed 2 & 37.5 \\
+random partition 5, seed 2 & 35.3 \\
+random partition, no flavor boundary & 34.1, 39.3 \\
+random partition, $b$-quark boundary & 38.1, 34.7 \\
+random partition, random flavor boundary & 34.9, 37.4 \\
+from scratch & 35.5\,$\pm$\,1.2 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

@@ -2,20 +2,20 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Published discriminants built from sums of Sophon's output scores, against the number of classes in the label set (columns, finest first). $\bullet$: the discriminant can be built exactly from that label set's outputs; ---: it cannot. This is a property of the label set (Section~\ref{sec:tree}), not of a trained model.}
+\caption{Discriminants analyses build by summing the output scores of a pretrained tagger, against the number of classes in the label set (columns, finest first): Sophon's and the boosted $|V_{cb}|$ measurement's, and a discriminant that weights each QCD subclass separately, as GN3X evaluates its rejection per QCD subclass. $\bullet$: the discriminant can be built exactly from that label set's outputs, because a merged class's score is the sum of the scores of the classes it merges; ---: it cannot. This is a property of the label set, not of a trained model.}
 \label{tab:usecase}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{l l cccccccc}
+\begin{tabular}{l l cccc}
 \toprule
-discriminant & source & 188 & 162 & 64 & 43 & 30 & 17 & 4 & 2 \\
+discriminant & source & 188 & 162 & 43 & 17 \\
 \midrule
-$X\to b\bar b$ vs QCD & \cite{sophon}, Eq.~(4) & $\bullet$ & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- \\
-$X\to c\bar s$ vs QCD (Sophon's $A_1$) & \cite{sophon}, Eqs.~(5)--(6) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
-three quarks, exactly one $b$, vs QCD (Sophon's $A_3$) & \cite{sophon}, Eqs.~(5)--(6) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
-$W'\to W\phi\to WWW$ event discriminant & \cite{sophon}, Eqs.~(7)--(9) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
-$D_{bc}$, boosted $|V_{cb}|$ measurement & \cite{vcbboosted}, Eq.~(1) & $\bullet$ & $\bullet$ & --- & --- & --- & --- & --- & --- \\
+$X\to b\bar b$ vs QCD & \cite{sophon}, Eq.~(4) & $\bullet$ & $\bullet$ & --- & --- \\
+$X\to c\bar s$ vs QCD (Sophon's $A_1$) & \cite{sophon}, Eqs.~(5)--(6) & $\bullet$ & $\bullet$ & --- & --- \\
+three quarks, exactly one $b$, vs QCD (Sophon's $A_3$) & \cite{sophon}, Eqs.~(5)--(6) & $\bullet$ & $\bullet$ & --- & --- \\
+$W'\to W\phi\to WWW$ event discriminant & \cite{sophon}, Eqs.~(7)--(9) & $\bullet$ & $\bullet$ & --- & --- \\
+$D_{bc}$, boosted $|V_{cb}|$ measurement & \cite{vcbboosted}, Eq.~(1) & $\bullet$ & $\bullet$ & --- & --- \\
+QCD subclasses weighted separately (GN3X-style) & \cite{atlasgnx}, Sec.~6 & $\bullet$ & --- & --- & --- \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\smallskip{\footnotesize Pretrained in this study: the 188-, 162-, 43- and 17-class label sets.}
 \end{table*}

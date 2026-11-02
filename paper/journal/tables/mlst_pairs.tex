@@ -1,25 +1,54 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Binary linear probes between JetClass-II classes on the largest training subset: $(1-\mathrm{AUC})\times10^{3}$, lower is better. $^{\dagger}$: the label set merges the two sides into one class; $^{\ddagger}$: it merges the first side with part of the second. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; for configurations with \RandFlavRuns{} runs both values are given, and a random partition has a single run. The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays $X\to YY\to QQQQ$; every label set but the \Kfull-class one merges all QCD classes.}
+\caption{Binary linear probes between pairs of JetClass-II classes: the AUC and the ratio of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed. $^{\dagger}$: the label set merges the two sides into one class; $^{\ddagger}$: it merges the first side with part of the second. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays; every label set but the \Kfull-class one merges all QCD classes.}
 \label{tab:pairs}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcccccc}
 \toprule
-pretraining & $X\to bc$ vs $bq$, $cs$ & $X\to b\bar b$ vs $c\bar c$ & $X\to YY\to bbqq$ vs $ccqq$ & QCD $bb$ vs $cc$ & QCD with $b$ vs light & QCD with $c$, no $b$, vs light \\
+pretraining & \multicolumn{2}{c}{$X\to bc$ vs $bq$, $cs$} & \multicolumn{2}{c}{$X\to b\bar b$ vs $c\bar c$} & \multicolumn{2}{c}{$X\to YY\to bbqq$ vs $ccqq$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+ & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ \\
 \midrule
-\Kfull{} classes & 59.46\,$\pm$\,0.17 & 2.59\,$\pm$\,0.07 & 6.30\,$\pm$\,0.13 & 14.88\,$\pm$\,0.23 & 11.72\,$\pm$\,0.20 & 68.71\,$\pm$\,0.28 \\
-\Kres{} classes & 59.49\,$\pm$\,0.15 & 2.634\,$\pm$\,0.018 & 6.44\,$\pm$\,0.27 & 17.1\,$\pm$\,0.6$^{\dagger}$ & 12.67\,$\pm$\,0.18$^{\dagger}$ & 73.05\,$\pm$\,0.31$^{\dagger}$ \\
-\Kmid{} classes & 68.7\,$\pm$\,1.5$^{\ddagger}$ & 2.810\,$\pm$\,0.018 & 6.90\,$\pm$\,0.09 & 17.69\,$\pm$\,0.04$^{\dagger}$ & 12.66\,$\pm$\,0.17$^{\dagger}$ & 73.60\,$\pm$\,0.30$^{\dagger}$ \\
-\Kcoarse{} classes & 118\,$\pm$\,4$^{\dagger}$ & 10.5\,$\pm$\,0.7$^{\dagger}$ & 29.7\,$\pm$\,3.3$^{\dagger}$ & 47.9\,$\pm$\,1.6$^{\dagger}$ & 18.5\,$\pm$\,1.1$^{\dagger}$ & 96.9\,$\pm$\,1.0$^{\dagger}$ \\
-random partition 1, seed 1 & 69.5$^{\dagger}$ & 3.93$^{\dagger}$ & 9.18$^{\dagger}$ & 22.4$^{\dagger}$ & 13.7$^{\dagger}$ & 79.5$^{\dagger}$ \\
-random partition 2, seed 2 & 71.3$^{\ddagger}$ & 4.22 & 9.10 & 23.9$^{\dagger}$ & 14.6$^{\dagger}$ & 80.6$^{\dagger}$ \\
-random partition 3, seed 1 & 63.8 & 4.12$^{\dagger}$ & 8.81$^{\dagger}$ & 22.0$^{\dagger}$ & 14.4$^{\dagger}$ & 78.3$^{\dagger}$ \\
-random partition 4, seed 2 & 64.2 & 3.48 & 8.27 & 21.4$^{\dagger}$ & 14.1$^{\dagger}$ & 77.4$^{\dagger}$ \\
-random partition 5, seed 2 & 73.6$^{\dagger}$ & 4.53$^{\dagger}$ & 9.58 & 23.9$^{\dagger}$ & 13.9$^{\dagger}$ & 79.0$^{\dagger}$ \\
-random partition, no flavor boundary & 120, 132$^{\dagger}$ & 16, 32$^{\dagger}$ & 41, 62$^{\dagger}$ & 60, 77$^{\dagger}$ & 18.78, 17.82$^{\dagger}$ & 92.4, 88.7$^{\dagger}$ \\
-random partition, $b$-quark boundary & 91.69, 92.52$^{\dagger}$ & 4.79, 4.49$^{\dagger}$ & 9.08, 8.98 & 22.78, 22.46$^{\dagger}$ & 13.99, 14.33$^{\dagger}$ & 85.12, 84.78$^{\dagger}$ \\
-random partition, random flavor boundary & 92.15, 91.55$^{\dagger}$ & 6.6, 8.4$^{\dagger}$ & 14.20, 14.70$^{\dagger}$ & 30.4, 32.3$^{\dagger}$ & 15.03, 15.54$^{\dagger}$ & 80.68, 80.67$^{\dagger}$ \\
+\Kfull{} classes & 0.9409\,$\pm$\,0.0003 & 1.00 & 0.9977\,$\pm$\,$<$0.0001 & 1.00 & 0.9939\,$\pm$\,$<$0.0001 & 1.00 \\
+\Kres{} classes & 0.9410\,$\pm$\,0.0002 & 0.998\,$\pm$\,0.007 & 0.9976\,$\pm$\,0.0001 & 1.015\,$\pm$\,0.027 & 0.9939\,$\pm$\,0.0002 & 1.005\,$\pm$\,0.032 \\
+\Kmid{} classes & 0.9319\,$\pm$\,0.0014$^{\ddagger}$ & 1.151\,$\pm$\,0.029 & 0.9974\,$\pm$\,$<$0.0001 & 1.102\,$\pm$\,0.013 & 0.9932\,$\pm$\,$<$0.0001 & 1.117\,$\pm$\,0.008 \\
+\Kcoarse{} classes & 0.885\,$\pm$\,0.004$^{\dagger}$ & 1.95\,$\pm$\,0.06 & 0.9902\,$\pm$\,0.0007$^{\dagger}$ & 4.22\,$\pm$\,0.29 & 0.9716\,$\pm$\,0.0033$^{\dagger}$ & 4.7\,$\pm$\,0.5 \\
+\Kres{} classes, mass regression & 0.9375, 0.9400 & 1.057, 1.010 & 0.9973, 0.9975 & 1.184, 1.087 & 0.9930, 0.9935 & 1.164, 1.070 \\
+\Kcoarse{} classes, mass regression & 0.8808, 0.8833$^{\dagger}$ & 2.018, 1.964 & 0.9891, 0.9904$^{\dagger}$ & 4.70, 4.13 & 0.9676, 0.9706$^{\dagger}$ & 5.36, 4.82 \\
+random partition 1, seed 1 & 0.931$^{\dagger}$ & 1.17 & 0.996$^{\dagger}$ & 1.51 & 0.991$^{\dagger}$ & 1.43 \\
+random partition 2, seed 2 & 0.930$^{\ddagger}$ & 1.18 & 0.996 & 1.54 & 0.991 & 1.46 \\
+random partition 3, seed 1 & 0.937 & 1.07 & 0.996$^{\dagger}$ & 1.53 & 0.991$^{\dagger}$ & 1.43 \\
+random partition 4, seed 2 & 0.936 & 1.08 & 0.997 & 1.37 & 0.992 & 1.32 \\
+random partition 5, seed 2 & 0.927$^{\dagger}$ & 1.24 & 0.996$^{\dagger}$ & 1.67 & 0.991 & 1.48 \\
+random partition, no flavor boundary & 0.882, 0.870$^{\dagger}$ & 2.00, 2.19 & 0.986, 0.969$^{\dagger}$ & 5.9, 13.4 & 0.961, 0.943$^{\dagger}$ & 6.4, 9.4 \\
+random partition, $b$-quark boundary & 0.9103, 0.9091$^{\dagger}$ & 1.518, 1.530 & 0.9957, 0.9959$^{\dagger}$ & 1.837, 1.748 & 0.9909, 0.9912 & 1.510, 1.447 \\
+random partition, random flavor boundary & 0.9096, 0.9100$^{\dagger}$ & 1.530, 1.515 & 0.9940, 0.9924$^{\dagger}$ & 2.58, 3.25 & 0.9863, 0.9860$^{\dagger}$ & 2.272, 2.281 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccccc}
+\toprule
+pretraining & \multicolumn{2}{c}{QCD $bb$ vs $cc$} & \multicolumn{2}{c}{QCD with $b$ vs light} & \multicolumn{2}{c}{QCD with $c$, no $b$, vs light} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+ & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ \\
+\midrule
+\Kfull{} classes & 0.9867\,$\pm$\,0.0001 & 1.00 & 0.9880\,$\pm$\,0.0001 & 1.00 & 0.9324\,$\pm$\,0.0003 & 1.00 \\
+\Kres{} classes & 0.9848\,$\pm$\,0.0004$^{\dagger}$ & 1.15\,$\pm$\,0.04 & 0.9870\,$\pm$\,0.0001$^{\dagger}$ & 1.085\,$\pm$\,0.004 & 0.9282\,$\pm$\,0.0001$^{\dagger}$ & 1.061\,$\pm$\,0.005 \\
+\Kmid{} classes & 0.9846\,$\pm$\,0.0001$^{\dagger}$ & 1.163\,$\pm$\,0.016 & 0.9870\,$\pm$\,0.0001$^{\dagger}$ & 1.081\,$\pm$\,0.008 & 0.9275\,$\pm$\,0.0003$^{\dagger}$ & 1.072\,$\pm$\,0.008 \\
+\Kcoarse{} classes & 0.9563\,$\pm$\,0.0003$^{\dagger}$ & 3.294\,$\pm$\,0.033 & 0.9815\,$\pm$\,0.0007$^{\dagger}$ & 1.54\,$\pm$\,0.07 & 0.9048\,$\pm$\,0.0010$^{\dagger}$ & 1.407\,$\pm$\,0.021 \\
+\Kres{} classes, mass regression & 0.9829, 0.9842$^{\dagger}$ & 1.30, 1.19 & 0.9868, 0.9870$^{\dagger}$ & 1.107, 1.078 & 0.9262, 0.9273$^{\dagger}$ & 1.093, 1.070 \\
+\Kcoarse{} classes, mass regression & 0.9481, 0.9531$^{\dagger}$ & 3.95, 3.51 & 0.9804, 0.9800$^{\dagger}$ & 1.638, 1.662 & 0.9046, 0.9002$^{\dagger}$ & 1.414, 1.470 \\
+random partition 1, seed 1 & 0.980$^{\dagger}$ & 1.56 & 0.986$^{\dagger}$ & 1.20 & 0.922$^{\dagger}$ & 1.16 \\
+random partition 2, seed 2 & 0.979$^{\dagger}$ & 1.58 & 0.985$^{\dagger}$ & 1.21 & 0.921$^{\dagger}$ & 1.16 \\
+random partition 3, seed 1 & 0.980$^{\dagger}$ & 1.51 & 0.986$^{\dagger}$ & 1.21 & 0.923$^{\dagger}$ & 1.14 \\
+random partition 4, seed 2 & 0.981$^{\dagger}$ & 1.43 & 0.986$^{\dagger}$ & 1.16 & 0.924$^{\dagger}$ & 1.12 \\
+random partition 5, seed 2 & 0.979$^{\dagger}$ & 1.60 & 0.986$^{\dagger}$ & 1.19 & 0.922$^{\dagger}$ & 1.14 \\
+random partition, no flavor boundary & 0.944, 0.930$^{\dagger}$ & 4.24, 5.21 & 0.9814, 0.9825$^{\dagger}$ & 1.56, 1.45 & 0.9088, 0.9122$^{\dagger}$ & 1.352, 1.293 \\
+random partition, $b$-quark boundary & 0.9795, 0.9795$^{\dagger}$ & 1.561, 1.532 & 0.9855, 0.9854$^{\dagger}$ & 1.212, 1.213 & 0.9166, 0.9171$^{\dagger}$ & 1.237, 1.220 \\
+random partition, random flavor boundary & 0.9721, 0.9707$^{\dagger}$ & 2.124, 2.189 & 0.9848, 0.9845$^{\dagger}$ & 1.277, 1.286 & 0.9204, 0.9211$^{\dagger}$ & 1.179, 1.162 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

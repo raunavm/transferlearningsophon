@@ -1,21 +1,21 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Mass sculpting: Jensen--Shannon divergence $\times10^{3}$ between the $m_{\mathrm{SD}}$ distributions (24 bins of 20~GeV from 20 to 500~GeV) of all QCD test jets and of those passing a cut on $1-p_{\mathrm{QCD}}$ at the QCD efficiency given; lower is less sculpting. The last row is the divergence expected for a random selection of as many QCD jets, which a cut that does not sculpt the mass still shows because of the finite number of jets passing it. Mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs; the models with the mass regression have \MlstMassNRunsWord{} runs, and both values are given.}
+\caption{Mass sculpting: Jensen--Shannon distance (base 2) $\times10^{2}$ between the $m_{\mathrm{SD}}$ distributions (24 bins of 20~GeV from 20 to 500~GeV) of all QCD test jets and of those passing a cut on $1-p_{\mathrm{QCD}}$ at the QCD efficiency given; lower is less sculpting. The last row is the distance expected for a random selection of as many of the QCD test jets (drawn without replacement). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs; the models with the mass regression have \MlstMassNRunsWord{} runs, and both values are given.}
 \label{tab:sculpt}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcc}
 \toprule
-pretraining & $\epsilon_{\mathrm{QCD}} = 0.1$ & $\epsilon_{\mathrm{QCD}} = 0.01$ \\
+pretraining & $\epsilon_{\mathrm{QCD}} = 10\%$ & $\epsilon_{\mathrm{QCD}} = 1\%$ \\
 \midrule
-\Kfull{} classes & 2.8\,$\pm$\,0.4 & 1.93\,$\pm$\,0.21 \\
-\Kres{} classes & 2.83\,$\pm$\,0.10 & 1.84\,$\pm$\,0.24 \\
-\Kmid{} classes & 3.14\,$\pm$\,0.30 & 2.6\,$\pm$\,0.7 \\
-\Kcoarse{} classes & 2.95\,$\pm$\,0.11 & 3.15\,$\pm$\,0.20 \\
-\Kres{} classes, mass regression & 1.78, 2.15 & 1.80, 1.95 \\
-\Kcoarse{} classes, mass regression & 2.72, 1.79 & 1.64, 2.04 \\
+\Kfull{} classes & 5.24\,$\pm$\,0.34 & 4.39\,$\pm$\,0.24 \\
+\Kres{} classes & 5.32\,$\pm$\,0.09 & 4.29\,$\pm$\,0.29 \\
+\Kmid{} classes & 5.60\,$\pm$\,0.27 & 5.1\,$\pm$\,0.7 \\
+\Kcoarse{} classes & 5.43\,$\pm$\,0.10 & 5.61\,$\pm$\,0.17 \\
+\Kres{} classes, mass regression & 4.22, 4.64 & 4.24, 4.42 \\
+\Kcoarse{} classes, mass regression & 5.22, 4.23 & 4.05, 4.52 \\
 \midrule
-random selection of as many QCD jets & 0.101 & 1.01 \\
+random selection of as many QCD jets & 0.944 & 3.13 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

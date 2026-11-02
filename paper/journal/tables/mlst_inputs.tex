@@ -1,0 +1,31 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{The per-particle inputs: which the top and the quark/gluon data provide ($\bullet$), where a zero lies after the network's input normalization (in standard deviations of the training particles), and what the mean and random-draw substitutions put in a missing slot. A random draw is averaged over four draws.}
+\label{tab:inputs}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lccccc}
+\toprule
+input & top & quark/gluon & zero after normalization & mean & random draws \\
+\midrule
+$\log p_{\mathrm{T}}$, rescaled & $\bullet$ & $\bullet$ & -- & -- & -- \\
+$\log E$, rescaled & $\bullet$ & $\bullet$ & -- & -- & -- \\
+$\log(p_{\mathrm{T}}/p_{\mathrm{T}}^{\mathrm{jet}})$ & $\bullet$ & $\bullet$ & -- & -- & -- \\
+$\log(E/E^{\mathrm{jet}})$ & $\bullet$ & $\bullet$ & -- & -- & -- \\
+$\Delta R$ & $\bullet$ & $\bullet$ & -- & -- & -- \\
+electric charge & --- & $\bullet$ & \pending{offsets} & running mean of the input normalization & drawn given the species (top) \\
+charged hadron & --- & $\bullet$ & \pending{offsets} & running mean of the input normalization & a species drawn from JetClass-II's frequencies (top) \\
+neutral hadron & --- & $\bullet$ & \pending{offsets} & running mean of the input normalization & a species drawn from JetClass-II's frequencies (top) \\
+photon & --- & $\bullet$ & \pending{offsets} & running mean of the input normalization & a species drawn from JetClass-II's frequencies (top) \\
+electron & --- & $\bullet$ & \pending{offsets} & running mean of the input normalization & a species drawn from JetClass-II's frequencies (top) \\
+muon & --- & $\bullet$ & \pending{offsets} & running mean of the input normalization & a species drawn from JetClass-II's frequencies (top) \\
+$d_0$ & --- & --- & \pending{offsets} & running mean of the input normalization & a JetClass-II particle of the same species \\
+$\sigma_{d_0}$ & --- & --- & \pending{offsets} & running mean of the input normalization & a JetClass-II particle of the same species \\
+$d_z$ & --- & --- & \pending{offsets} & running mean of the input normalization & a JetClass-II particle of the same species \\
+$\sigma_{d_z}$ & --- & --- & \pending{offsets} & running mean of the input normalization & a JetClass-II particle of the same species \\
+$\Delta\eta$ & $\bullet$ & $\bullet$ & -- & -- & -- \\
+$\Delta\phi$ & $\bullet$ & $\bullet$ & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}

@@ -431,7 +431,7 @@ def figure_f4(M, runs, I, outdir) -> list:
         raise Skip("class-balanced JetClass-II pair probes (linprobe/fits_v4)")
     status = M.merge_status(REPO)
     heading = {k: h for k, h, *_ in M.PAIRS}
-    fig = _fig(FULL, 7.4 * CM)
+    fig = _fig(FULL, 8.6 * CM)
     axes = fig.subplots(1, len(MK.PAIRS), sharey=True)
     ys_all = []
     for j, (ax, key) in enumerate(zip(axes, MK.PAIRS)):
@@ -477,7 +477,7 @@ def figure_f4(M, runs, I, outdir) -> list:
                  for f in ("full", "left", "none"))]
     labels = ["Hierarchy, linear probe", NAME["RAND"], *(NAME[a] for a in M.FLAV), "162 classes, MLP probe",
               "Pair kept apart", "Pair partly merged", "Pair merged"]
-    _legend(fig, handles, labels, ncol=5)
+    _legend(fig, handles, labels, ncol=3)
     return _save(fig, "F4_flavor_pairs", outdir)
 
 
@@ -518,13 +518,17 @@ def _bars(ax, M, groups: list, chosen) -> None:
             ax.plot(v, [y] * len(v), "o", color="black", markersize=1.8, zorder=4)
             if el is not None:
                 ax.errorbar(mean, y, xerr=[[el], [eh]], color="black", linewidth=0.8, capsize=0, zorder=4)
-            ends.append((max(max(v), mean + (eh or 0)), y, txt))
+            end = max(max(v), mean + (eh or 0))
             xs += v
             if s == "zero" and mlpv:
                 mm, ml, mh = F._spread(mlpv)
-                ax.errorbar(mm, y, xerr=None if ml is None else [[ml], [mh]], marker=lk["marker"], markersize=4.5,
+                ax.errorbar(mm, y, xerr=None if ml is None else [[ml], [mh]], marker="o", markersize=4.5,
                             color="black", markerfacecolor="white", linestyle="none", capsize=0, zorder=5)
                 xs += mlpv
+                # the number goes past the MLP marker when that lies beyond the bar
+                if mm >= mean:
+                    end = max(end, max(mlpv), mm + (mh or 0))
+            ends.append((end, y, txt))
         ticks.append((first + (slots - 1) / 2, label))
         y = first + slots + 0.5
     if not xs:
@@ -707,8 +711,15 @@ def figure_f7(M, runs, I, outdir) -> list:
         _line(ax, lp, kw_lp, "188 classes, linear probe")
         msc = _line(ax, sc, kw_sc, NAME[SCRATCH])
         ns = [n for n in sorted(mft) if n in msc]
-        if ns:
-            rx.plot(ns, [mft[n] / msc[n] for n in ns], markersize=3.5, **kw_ft)
+        r = [mft[n] / msc[n] for n in ns]
+        if r:
+            rx.plot(ns, r, markersize=3.5, **kw_ft)
+            lo, hi = min(r + [1.0]), max(r + [1.0])
+            pad = max(0.15 * (hi - lo), 0.02)
+            rx.set_ylim(lo - pad, hi + pad)
+        else:
+            rx.set_ylim(0.9, 1.1)
+            rx.tick_params(labelleft=False)
         rx.axhline(1.0, color="black", linewidth=0.8, linestyle=":")
         _size_axis(ax, met, _band_values([ft, lp, sc]))
         rx.set_xscale("log")
@@ -1053,8 +1064,8 @@ def figure_f8b(M, runs, I, outdir) -> list:
     lax.legend(handles, labels, loc="center left", frameon=False, fontsize="small")
     wp_handles = [Patch(facecolor="0.5", alpha=0.35)] + [Line2D([], [], color="black", linewidth=1.1, linestyle=ls)
                                                          for _, ls in WPS]
-    _legend(fig, wp_handles, ["All QCD jets", f"$\\varepsilon_{{\\mathrm{{QCD}}}} = 10{_pct()}$",
-                              f"$\\varepsilon_{{\\mathrm{{QCD}}}} = 1{_pct()}$"], ncol=3)
+    _legend(fig, wp_handles, ["All QCD jets", r"$\varepsilon_{\mathrm{QCD}} = 10\%$",
+                              r"$\varepsilon_{\mathrm{QCD}} = 1\%$"], ncol=3)
     return _save(fig, "F8b_sculpting", outdir)
 
 
