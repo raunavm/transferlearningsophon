@@ -100,6 +100,7 @@ def test_spec_is_valid_bash_on_any_24gb_gpu(kind, tmp_path, monkeypatch):
     gpus = spec["template"]["spec"]["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"][
         "nodeSelectorTerms"][0]["matchExpressions"][1]["values"]
     assert gpus == list(bfb._launch().V2_FT_GPU) and "Tesla-V100-SXM2-32GB" in gpus   # any GPU that fits (PI, 2026-11-01)
+    assert "k8s-haosu-10.sdsc.optiputer.net" in text                      # faulty since 2026-11-02
     assert "--samples-per-epoch ${SPE}" in script and "--num-epochs ${EP}" in script
     assert "--samples-per-epoch-val ${VAL}" in script and "early_stop.py watch" in script
     # 500-step epochs at 1e5 and above, 50-step epochs below; both at most 20,000 steps

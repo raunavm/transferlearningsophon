@@ -211,7 +211,7 @@ touch {LP_BAL}/${{MODEL}}/DONE
 echo "JC2BAL X ${{MODEL}} COMPLETE"
 """
     body = "\n".join(("          " + ln) if ln else "" for ln in script.splitlines())
-    exclude = ", ".join(f'"{n}"' for n in launch.V2_BAD_NODES)
+    exclude = ", ".join(f'"{n}"' for n in launch.V2_BAD_NODES + launch.V2_LATER_BAD_NODES)
     return name, f"""apiVersion: batch/v1
 kind: Job
 metadata:
@@ -275,7 +275,7 @@ HIDDEN = ("mtx-l188-",)
 def _indexed(name: str, script_body: str, n: int, parallelism: int, gpu: bool, mem: str, cpu: str, what: str) -> str:
     launch = _launch()
     body = "\n".join(("          " + ln) if ln else "" for ln in script_body.splitlines())
-    exclude = ", ".join(f'"{x}"' for x in launch.V2_BAD_NODES)
+    exclude = ", ".join(f'"{x}"' for x in launch.V2_BAD_NODES + launch.V2_LATER_BAD_NODES)
     gpu_req = ', nvidia.com/gpu: "1"' if gpu else ""
     gpu_aff = (f"""
               - key: kubernetes.io/hostname

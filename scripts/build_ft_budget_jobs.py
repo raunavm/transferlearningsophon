@@ -280,7 +280,7 @@ def spec(name: str, cells: list, tag: str, parallelism: int, memory: str) -> str
               "/workspace/transferlearningsophon\ncd /workspace/transferlearningsophon\n"
               "pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1\n" + script.lstrip("\n"))
     body = "\n".join(("          " + ln) if ln else "" for ln in script.splitlines())
-    exclude = ", ".join(f'"{n}"' for n in launch.V2_BAD_NODES)
+    exclude = ", ".join(f'"{n}"' for n in launch.V2_BAD_NODES + launch.V2_LATER_BAD_NODES)
     if len(name) > 63:
         raise SystemExit(f"{name}: too long")
     return f"""apiVersion: batch/v1

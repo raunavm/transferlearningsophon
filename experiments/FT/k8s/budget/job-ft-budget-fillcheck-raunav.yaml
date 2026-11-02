@@ -7,7 +7,7 @@ metadata:
 spec:
   completionMode: Indexed
   completions: 2
-  parallelism: 2
+  parallelism: 4
   backoffLimitPerIndex: 3
   podFailurePolicy:
     rules:
@@ -25,7 +25,7 @@ spec:
         command: ["/bin/bash", "-c"]
         env:
         - name: REPO_REF
-          value: "mtx-s2.39"
+          value: "mtx-s2.42"
         - name: NODE_NAME
           valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
         - name: POD_NAME
@@ -128,8 +128,8 @@ spec:
           touch ${CELL}/DONE
           echo "FT BUDGET CELL ${IDX} DONE: ${CELL}"
         resources:
-          requests: { memory: "48Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
-          limits:   { memory: "48Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          requests: { memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "88Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: data, mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
