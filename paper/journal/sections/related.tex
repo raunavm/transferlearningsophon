@@ -1,0 +1,76 @@
+\section{Related work}\label{sec:related}
+
+% P1. Supervised classification is competitive with or better than the other objectives at full
+% downstream data, and no study varies its labels. Run-in heads are italic (no bold in the body).
+\emph{Pretraining objectives for jets.} Supervised classification of simulated jets is the reference
+objective for jet foundation models~\cite{part,sophon}, and the alternatives are measured against it.
+The self-supervised families include masked particle modeling~\cite{mpm,mpmtok}, generative
+pretraining~\cite{omnijet}, contrastive learning on resimulated jets~\cite{rs3l} and joint-embedding
+predictive architectures~\cite{hepjepa,jpjepa}. Other models combine classification with a second
+objective: OmniLearn and OmniLearned with generation~\cite{omnilearn,omnilearned}, SuperJEPA with
+joint-embedding prediction~\cite{superjepa}. One study compares the objectives on the same
+pretraining jets, all from JetClass. It finds classification best or tied when the full top-tagging
+training set is used for fine-tuning, with masked-particle pretraining ahead only for its smallest
+model fine-tuned on \LitObjectivesFewJets{} jets, and concludes that the best objective is not a
+property of the model alone~\cite[Sec.~IV.A]{objectives}. A comparison on JetClass-II evaluates the
+objectives by fine-tuning alone, without linear probes~\cite{reprlearn}. Each of these studies keeps
+the classes of its supervised objective fixed, or changes them together with the jets. The label set
+of the objective that does best when labeled jets are plentiful has therefore not been varied on its
+own.
+
+% P2. Label granularity in vision: nearest precedent Chen Table VI; Hong's random per-image
+% identities; Pirovano's grouping dependence; Mahajan linear versus fine-tuned; how our design differs.
+\emph{Label granularity in vision.} The nearest precedent for our random partitions regroups whole
+CIFAR-10 classes at random into two coarse classes. Training on the fine labels beats training on the
+coarse ones for every grouping, by up to \LitChenRandomMaxGain{} percentage points of accuracy on the
+coarse task~\cite[Table~VI]{chen}, and in the same study the gain from fine labels on CIFAR-100
+becomes negligible once the coarse task has many classes~\cite[Table~VIII]{chen}. Both experiments
+train and test on one task, so neither measures transfer. Whether fine labels help also depends on
+how the classes are grouped. For cats and dogs against cars and trucks, training on the four fine
+classes never helps, while for a grouping that mixes animals and vehicles it consistently
+does~\cite[Fig.~3]{pirovano}. Class identities assigned at random to individual images, rather than
+to whole classes, do worse than every level of a species taxonomy~\cite{hong}. With a linear probe on
+frozen features, pretraining on a larger set of web hashtags leads by about
+\LitMahajanLinearGapPercent{} percentage points of accuracy on the ImageNet task with the most
+classes, and under full fine-tuning the lead nearly disappears~\cite{mahajan}.\footnote{After full
+fine-tuning, the larger label set leads on that task by a margin comparable to the difference the
+same study finds between two pretrainings on different random samples of images. The smaller label
+set, whose hashtags match the ImageNet classes, leads on the standard ImageNet task, and it was also
+pretrained on fewer images~\cite[Fig.~1, Sec.~3.1]{mahajan}.} With the labels fixed, losses that
+separate the training classes more give frozen features from which a linear probe transfers worse,
+while after fine-tuning the losses are indistinguishable~\cite{kornblith}. Our random partitions
+differ from these controls in three ways. They keep the number of classes of a physical level,
+\Kcoarse{} groups; they match each group's share of the training jets to that level; and they are
+pretraining label sets evaluated on fixed downstream tasks, not targets in their own right.
+
+% P3. Auxiliary physics targets: GN2, GloParT (argument, not measurement), CMS, GN3X; none measures
+% the effect on frozen features with the labels fixed.
+\emph{Auxiliary physics targets.} Production taggers add auxiliary targets to the classification,
+with effects that point both ways. The ATLAS flavor tagger GN2 has two auxiliary objectives, which
+predict the origin of each track and which tracks share a vertex. Removing both lowers its $c$- and
+light-jet rejection by up to \LitGnTwoAuxRejectionDropPercent\%, and keeping either one recovers most
+of the loss~\cite[Discussion]{gntwo}. GloParT adds two log-cosh regressions of the jet mass to its
+classification loss, with a weight tuned to the value our mass models also use. Its author argues
+that because the terms do not interact, the minimum of the combined loss is optimal for both
+tasks~\cite[Sec.~11.2.1]{glopart}; no measurement accompanies the argument. A CMS tagger of boosted
+Higgs bosons decaying to pairs of $W$ bosons regresses the mass in GeV, so its weight is on a
+different scale from ours~\cite{cmspart}. ATLAS measured a cost instead: a network for boosted Higgs
+bosons trained for classification and mass regression together was about
+\LitAtlasUnifiedEffDropPercent\% less efficient at classification than a dedicated classifier, and
+ATLAS regresses the mass in a separate network~\cite[Sec.~6.5]{atlasgnx}. These studies measure the
+tagger's outputs. None measures what an auxiliary target does to the frozen features while the labels
+stay fixed, which our \Kres- and \Kcoarse-class models, pretrained with and without the mass
+regression, do.
+
+% P4. Transfer from frozen features: Sophon's output discriminant and transfer head; Vigl's
+% fine-tuned versus frozen; neither varies the label set; Sophon reports no variation between runs.
+\emph{Transfer from frozen features.} Sophon used its label set downstream in two
+ways~\cite[Sec.~III]{sophon}. Its output scores form an $X\to b\bar b$ discriminant directly. A small
+network trained on its frozen features, with its first layer taken from the classification head,
+identifies $X\to bs$ decays, which no Sophon class contains. At low background efficiency this
+network does better than the Particle Transformer and ParticleNet trained on the task~\cite[Fig.~2,
+App.~B.5]{sophon}. Vigl et~al.\ compared frozen and fine-tuned use of a Particle Transformer backbone
+pretrained on $X\to b\bar b$ jets in a search for $G\to HH\to b\bar b b\bar b$, and fine-tuning was
+better for every architecture they tried~\cite{vigl}. Neither study varied the label set with the
+training jets fixed, and Sophon reports no variation between pretraining runs. We repeat Sophon's % CHECK: pending Xbx* (drop this sentence with section 4.7 if the samples are not staged by 12 Nov)
+benchmark at every level of the hierarchy.

@@ -1,0 +1,40 @@
+% End matter in the order of the iopjournal template: acknowledgments (conflicts of interest and the
+% AI statement inside them), funding, author contributions, data availability. iopjournal.cls defines
+% \ack, \funding, \roles and \data (each an unnumbered section, removed under [anonymous]); the
+% fallbacks below give the same headings when the document uses another class.
+\providecommand{\ack}[1]{\section*{Acknowledgments}#1}
+\providecommand{\funding}[1]{\section*{Funding}#1}
+\providecommand{\roles}[1]{\section*{Author contributions}#1}
+\providecommand{\data}[1]{\section*{Data availability}#1}
+
+\ack{We thank \pending{colleagues to acknowledge}. This work used the computing resources of the
+National Research Platform (Nautilus), \pending{the platform's acknowledgment text and award numbers}.
+
+The authors declare no conflicts of interest. % CHECK: PI to confirm
+
+We used Claude (Anthropic), through its Claude Code command-line tool, to write and test analysis,
+training and plotting code, to check statements about cited papers against their full texts, and to
+draft and edit the manuscript text under the authors' direction. The output was verified in three
+ways: every number in the paper is written by a script from the result files and none is typed by
+hand, the code is covered by automated tests that are run before every analysis, and every entry of
+the reference list was checked against its INSPIRE, arXiv or publisher record. The authors read and
+revised all text and take full responsibility for it.} % CHECK: PI to confirm the scope of AI use and that every reference entry was checked against its record
+
+\funding{\pending{funding agencies and grant numbers}}
+
+\roles{\pending{author list and each author's contributions in CRediT terms}}
+
+% The X->bb and X->bs sentence goes if section 4.7 is dropped (samples not staged by 2026-11-12).
+\data{The pretraining dataset JetClass-II~\cite{jetclasstwo} is public, as are the downstream
+datasets: JetClass~\cite{jetclassdata}, the top-quark tagging reference dataset~\cite{topdata}
+of the landscape study~\cite{toptag}, and the Pythia and Herwig quark/gluon
+samples~\cite{qgpythia,qgherwig}. The $X\to b\bar{b}$ and $X\to bs$ samples are held by
+\pending{holder of the X to bb and X to bs samples and how to obtain them}. The pretrained models, the
+per-jet scores of every evaluation and the result files behind every number are archived at
+\pending{DOI of the models and results archive}. The code, including the label maps of every label
+set, is archived at \pending{DOI of the code archive of the released version}; the network and its
+training follow Sophon's released code~\cite{sophoncode}. Every number in
+the paper is written from those result files by a script that records the hash of each input file
+beside the number. Pretraining every model reported here took \MlstComputeTotalGpuHours{} GPU-hours,
+training and validation passes included, on NVIDIA \MlstComputeGpuTypes{} GPUs; the GPU types and hours
+of each run are listed in table~\ref{tab:compute}.} % CHECK: pending MlstComputeTotalGpuHours must include the kinematic-only model (its compute record is not pulled)

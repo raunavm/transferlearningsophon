@@ -487,6 +487,16 @@ def test_the_sculpting_floor_distance_is_that_of_a_random_selection():
     assert M._floor_distance(24, 4103) == pytest.approx(float(np.mean(sims)), rel=0.05)
 
 
+def test_the_floor_sd_is_the_spread_of_random_selections():
+    import numpy as np
+    sc = _load("mass_sculpting_t4", "experiments/EVAL/mass_sculpting.py")
+    rng = np.random.default_rng(4)
+    p = rng.random(24)
+    p /= p.sum()
+    sims = [math.sqrt(sc.jsd(rng.multinomial(410, p) / 410, p)) for _ in range(4000)]
+    assert M._floor_sd(24, 410) == pytest.approx(float(np.std(sims)), rel=0.1)
+
+
 def test_the_floor_of_a_selection_drawn_from_the_reference_jets_is_smaller_by_the_finite_population_factor():
     import numpy as np
     sc = _load("mass_sculpting_t3", "experiments/EVAL/mass_sculpting.py")
@@ -515,7 +525,9 @@ def test_the_sculpting_window_and_the_floor_count_come_from_the_curves():
     em = _PEm()
     M.sculpt_macros(em, sculpt, v2, runs, None, MT.fmt_pm)
     assert em.m["MlstSculptDiffEffLo"] == em.m["MlstSculptDiffEffHi"] == r"1\%"
-    assert em.m["MlstSculptLowestEff"] == r"0.1\%" and em.m["MlstSculptNAtFloorLowest"] == "6"
+    assert em.m["MlstSculptLowestEff"] == r"0.1\%" and em.m["MlstSculptLowestNPass"] == "410"
+    # the two-run configurations sit 0.5 % below the floor: the largest distance from it, in floor SDs
+    assert em.m["MlstSculptLowestMaxFloorSd"] == f"{0.005 * floor / M._floor_sd(24, 410):.1f}"
     assert em.m["MlstSculptCoarseOverFullOnePr"] == "2.0 times the distance"
     assert em.m["MlstSculptFullOne"].startswith("0.020")
     assert "MlstSculptCoarseMassOverCoarseOnePrMax" in em.m

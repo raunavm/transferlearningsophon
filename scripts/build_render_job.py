@@ -1,12 +1,15 @@
 """The job that renders the paper's figures with LaTeX and compiles the paper, on the cluster
 (PI, 2026-10-29: no figure rendering or compiling on the laptop).
 
-At a pushed commit, in the v2 image: installs TeX Live (LaTeX, the Computer Modern Type 1
-fonts and dvipng, so matplotlib's text.usetex typesets every label), pins matplotlib and
-mplhep to the versions the figure code was written against, draws the paper's and the deck's
-figures (experiments/FIGS/mlst_figures.py, deck_figures.py) from the committed data, compiles
-paper/journal/main.tex with tectonic, and copies the figures, the PDF and the logs to
-/data/results/render/<commit>/. CPU only; backoffLimit 0 (a failure is read, not retried).
+At a pushed commit, in the v2 image: installs TeX Live (LaTeX, dvipng, the Type 1 fonts with
+Helvetica, and the helvet and sansmath packages, so matplotlib's text.usetex typesets every label
+in Helvetica: experiments/FIGS/mlst_style.py), pins matplotlib and mplhep to the versions the
+figure code was written against, writes the paper's numbers and tables from the committed data
+(experiments/FIGS/make_tables.py: paper/journal/results_generated.tex, provenance.json, tables/),
+draws the paper's figures (experiments/FIGS/paper_figures.py, into figures/mlst/), compiles
+paper/journal/main.tex with tectonic, and copies the generated files (at their paths in the
+repository), the PDF and the logs to /data/results/render/<commit>/. CPU only; backoffLimit 0 (a
+failure is read, not retried).
 
     python3 scripts/build_render_job.py            # the spec for HEAD, which must be pushed
     python3 scripts/build_render_job.py --mockups  # the figure mock-ups (experiments/FIGS/mockup_figures.py,
@@ -90,14 +93,17 @@ spec:
 """
 
 
+# the paper: its numbers and tables, then its figures, then main.tex; the generated files are
+# collected at their paths in the repository, so they copy back as they are
 PAPER = {"what": "paper", "suffix": "", "texdir": "paper/journal", "texfile": "main",
-         "draw": """          python3 experiments/FIGS/mlst_figures.py > ${OUT}/figures.txt 2>&1; echo "figures rc=$?"
-          python3 experiments/FIGS/deck_figures.py > ${OUT}/deck_figures.txt 2>&1; echo "deck figures rc=$?"
-          tail -5 ${OUT}/figures.txt ${OUT}/deck_figures.txt
+         "draw": """          python3 experiments/FIGS/make_tables.py > ${OUT}/tables.txt 2>&1; echo "tables rc=$?"
+          python3 experiments/FIGS/paper_figures.py > ${OUT}/figures.txt 2>&1; echo "figures rc=$?"
+          tail -15 ${OUT}/tables.txt ${OUT}/figures.txt
 """,
-         "collect": """          mkdir -p ${OUT}/figures ${OUT}/deck
-          cp -f figures/*.pdf figures/*.png ${OUT}/figures/ 2>/dev/null
-          cp -f figures/deck/* ${OUT}/deck/ 2>/dev/null
+         "collect": """          mkdir -p ${OUT}/figures/mlst ${OUT}/paper/journal
+          cp -f figures/mlst/*.pdf figures/mlst/*.png ${OUT}/figures/mlst/ 2>/dev/null
+          cp -f paper/journal/results_generated.tex paper/journal/provenance.json ${OUT}/paper/journal/ 2>/dev/null
+          cp -rf paper/journal/tables ${OUT}/paper/journal/ 2>/dev/null
           cp -f paper/journal/main.pdf ${OUT}/main.pdf 2>/dev/null
 """}
 # the X->bb/X->bs dry run on JetClass-II stand-in jets (RUNS.csv), the mock-up of the resonance figure

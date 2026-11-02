@@ -87,7 +87,7 @@ STRIP = [
     (re.compile(r"(?<!\\)%.*$", re.M), ""),                 # comments
     (re.compile(r"\\(?:label|ref|eqref|cite[a-z]*|input|include|usepackage"
                 r"|documentclass|bibliographystyle|bibliography|url|href"
-                r"|includegraphics|maybefigure|definecolor|newcommand|renewcommand|def)\s*"
+                r"|includegraphics|maybefigure|paperfig|setfigfile|definecolor|newcommand|renewcommand|def)\s*"
                 r"(?:\[[^\]]*\])?\s*(?:\{[^{}]*\})+", re.S), " "),
     # a column spec may nest one level of braces: l p{0.45\linewidth}
     (re.compile(r"\\begin\{(?:tabular|array)\}\{(?:[^{}]|\{[^{}]*\})*\}"), " "),

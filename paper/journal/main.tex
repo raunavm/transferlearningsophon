@@ -1,0 +1,157 @@
+% =====================================================================================================
+% main.tex -- skeleton of the MLST paper "Label granularity in supervised pretraining of jet
+% foundation models" (Phase B, written from scratch 2026-11-02). This file holds the preamble, the
+% front matter and the order of the parts; every word of text lives in sections/*.tex.
+%
+% Rules for every file this one \input's:
+% - Numbers. Every number in prose, captions and tables is a macro of results_generated.tex, which
+%   experiments/FIGS/make_tables.py writes (through mlst_results.py and mlst_v4.py) with its source
+%   file, the path inside it and a sha256 (provenance.json). tests/test_manuscript_numbers.py fails
+%   on any digit or number word that is not such a macro or is not listed in its ALLOWED /
+%   ALLOWED_WORDS. Label-set names use \Kfull, \Kres, \Kmid and \Kcoarse (defined below). A result
+%   whose input is not in yet is the generator's red \pending{...} marker, never a typed value.
+% - Text. docs/WRITING_GUIDE.md is the standard the auditors apply (paragraph method, numbers,
+%   glossary, banned vocabulary and phrases, section conventions, MLST format); the binding plan is
+%   the "PI decisions for Phase B" block of docs/PAPER_OUTLINE.md and docs/FIGURE_PLAN.md.
+% - Draft 89 is archived at archive/main_draft89.tex as a source of FACTS only (design, settings,
+%   label maps, macro names, bib keys). None of its sentences, structure or table layouts is reused.
+% - Claims to recheck carry "% CHECK: <macro> <what must hold>" on their line.
+% - Each sections/<name>.tex opens with its own \section{...}\label{sec:<name>}; sections/abstract.tex
+%   holds only the abstract text; sections/appendix.tex holds the lettered appendix sections;
+%   sections/endmatter.tex holds the unnumbered end-matter sections.
+% - Figures: \paperfig{<width>}{<FIGURE_PLAN id>} inside a figure environment; F1 is the TikZ
+%   drawing fig_f1.tex (\input where it is placed). Tables: \input{tables/<file>} as listed in the
+%   Phase B macro inventory; the generator writes their environments and captions.
+% - Cross-references: figure~\ref{...}, table~\ref{...}, section~\ref{...}, equation~(\ref{...}).
+%
+% Build: the render job runs make_tables.py and paper_figures.py (figures into ../../figures/mlst/)
+% and then `tectonic -X compile main.tex` in this directory. Tectonic is XeTeX-based (Unicode fonts,
+% TU encoding), which decides the sans-serif set-up below.
+%
+% Order (WRITING_GUIDE section 10): front matter, Introduction, Related work, Methods, Results,
+% Discussion and conclusion; end matter in the iopjournal template order (acknowledgements with
+% conflicts of interest and the AI disclosure, funding, author contributions, data availability);
+% appendices, kept before the references so that the pre-audit checks, which cut the PDF text at
+% the reference list, cover them; references (unsrt: Vancouver order).
+% =====================================================================================================
+\documentclass[12pt]{article}   % MLST review copy: at least 12 pt
+
+\usepackage[a4paper,textwidth=15cm,top=2.5cm,bottom=2.5cm]{geometry}   % 15 cm: MLST full width; fig_f1.tex is drawn at it
+\usepackage[utf8]{inputenc}     % a no-op under XeTeX, kept for pdfLaTeX
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}          % the per-run and per-class appendix tables
+\usepackage{adjustbox}          % every generated table sits in adjustbox{max width=\linewidth}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{placeins}           % \FloatBarrier
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}    % the only TikZ library fig_f1.tex uses
+% No siunitx: neither the generated tables nor the generators use it (checked 2026-11-02).
+
+% Helvetica for \sffamily only (figure text, MLST font list); the body keeps the default serif.
+% Unscaled, as fig_f1.tex requires: its font sizes are the printed sizes (8.5-10 pt).
+% Under XeTeX (tectonic) the helvet package alone does not work: the default TU encoding has no
+% phv font, so LaTeX substitutes the serif with only a warning. There the Helvetica clone of the
+% TeX distribution, TeX Gyre Heros, is loaded by file name through fontspec; helvet (URW Nimbus
+% Sans, also a Helvetica clone) is used under pdfLaTeX.
+\ifdefined\XeTeXrevision
+  \usepackage{fontspec}
+  \IfFontExistsTF{texgyreheros-regular.otf}{%
+    \setsansfont{texgyreheros}[Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
+                               ItalicFont=*-italic, BoldItalicFont=*-bolditalic]}{%
+    \typeout{main.tex: WARNING: texgyreheros-regular.otf not found; sans-serif text is not Helvetica}}
+\else
+  \usepackage{helvet}
+\fi
+
+\usepackage[hidelinks]{hyperref}
+\graphicspath{{../../figures/}{../../figures/mlst/}}
+
+% Configuration colours of experiments/FIGS/mlst_style.py, the ones fig_f1.tex uses.
+\definecolor{c188}{HTML}{5790FC}
+\definecolor{c162}{HTML}{F89C20}
+\definecolor{c43}{HTML}{E42536}
+\definecolor{c17}{HTML}{964A8B}
+\definecolor{crand}{HTML}{009988}
+\definecolor{cflav}{HTML}{33BBEE}
+
+% A result whose input is not in yet, or text the PI has still to supply: a red bold bracket.
+% Defined before results_generated.tex, whose pending macros print through it.
+\newcommand{\pending}[1]{\textcolor{red}{\textbf{[#1]}}}
+
+% Every number of the paper (written by experiments/FIGS/make_tables.py).
+\input{results_generated}
+
+% Label-set names, from the generator's class counts of the label maps (188, 162, 43, 17).
+% The generated tables use them, so they are defined here, before any table is input.
+\newcommand{\Kfull}{\VocabSizeLoneeighteight}
+\newcommand{\Kres}{\VocabSizeLonesixtwo}
+\newcommand{\Kmid}{\VocabSizeRfourtwoQone}
+\newcommand{\Kcoarse}{\VocabSizeRonesixQone}
+
+% Figures by their docs/FIGURE_PLAN.md id. \paperfig{<width>}{<id>} includes
+% ../../figures/mlst/<file>.pdf for the file name \setfigfile gives the id, and prints a \pending
+% marker when that file has not been rendered yet.
+\makeatletter
+\newcommand{\setfigfile}[2]{\@namedef{paperfig@file@#1}{#2}}
+\newcommand{\paperfig}[2]{%
+  \@ifundefined{paperfig@file@#2}%
+    {\pending{figure #2: no file name set}}%
+    {\IfFileExists{../../figures/mlst/\csname paperfig@file@#2\endcsname.pdf}%
+      {\includegraphics[width=#1]{../../figures/mlst/\csname paperfig@file@#2\endcsname.pdf}}%
+      {\pending{figure #2: not rendered yet}}}}
+\makeatother
+% File names: the names experiments/FIGS/paper_figures.py saves under (its _save calls).
+% The id A17 is spelled through \FigIdAseventeen because tests/test_manuscript_numbers.py reads the
+% "7" of a literal "A17" as a typed number (its NUMBER lookbehind checks one character); a figure id
+% is not a result. The \newcommand line itself is stripped by that test.
+\newcommand{\FigIdAseventeen}{A17}
+\setfigfile{F2}{F2_label_granularity}       % label granularity and the JetClass-II linear probe
+\setfigfile{F3}{F3_per_class}               % JetClass-II per-class heatmap
+\setfigfile{F4}{F4_flavor_pairs}            % class pairs that differ only in flavor
+\setfigfile{F5}{F5_missing_inputs}          % missing input features
+\setfigfile{F7}{F7_finetune_vs_size}        % fine-tuning against the number of training jets
+\setfigfile{F8a}{F8a_mass_regression}       % jet-mass regression with the auxiliary target
+\setfigfile{F8b}{F8b_sculpting}             % mass sculpting
+\setfigfile{F9}{F9_xbx}                     % X->bb and X->bs resonance tagging
+% appendix figures (FIGURE_PLAN section 3, and F6, moved to the appendix by decision P3)
+\setfigfile{F6}{A_roc_benchmarks}           % benchmark ROC curves, top and quark/gluon (Pythia, Herwig)
+\setfigfile{A10}{A10_probes_vs_size}        % linear probes against the number of training jets
+\setfigfile{\FigIdAseventeen}{\FigIdAseventeen _mass_response_groups}   % response histograms, resonant and QCD jets
+% paper_figures.py also draws A17_mass_bins_resonant and A17_mass_bins_qcd; their content is in
+% table tab:massdetail, so they are not placed.
+
+\title{Label granularity in supervised pretraining of jet foundation models}
+\author{\pending{author list and affiliations}\\[4pt] \pending{ORCIDs}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{sections/abstract}
+\par\medskip\noindent\textit{Keywords:} \pending{keywords: the PI chooses}
+\end{abstract}
+
+\input{sections/intro}
+\input{sections/related}
+\input{sections/methods}
+\input{sections/results_jc}
+\input{sections/results_bench}
+\input{sections/results_mass}
+\input{sections/discussion}
+
+\FloatBarrier
+\input{sections/endmatter}
+
+\FloatBarrier
+\appendix
+\input{sections/appendix}
+
+\FloatBarrier
+\bibliographystyle{unsrt}
+\bibliography{refs}
+
+\end{document}

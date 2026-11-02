@@ -1,0 +1,64 @@
+% Discussion and conclusion (outline section 5): four run-in paragraphs, no new numbers.
+\section{Discussion and conclusion}\label{sec:discussion}
+
+Frozen features keep what the pretraining labels separate, and the cost of a coarse label set sits
+where its merges remove flavor. On the pretraining classes a linear probe separates the \Kfull{} classes less
+well at every coarser level of the class hierarchy, and the step that removes quark flavor costs the most
+(figure~\ref{fig:f2}). % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes > MlstCmpJcTwoResOverFull > 1
+Merging the QCD classes costs only the QCD classes. Random partitions into \Kcoarse{} classes, built to
+cut across the physical groups, lose less than the physical \Kcoarse-class label set, so the class count alone does
+not set the cost. Per class, decays merged with their lepton-flavor counterparts pay the most, while
+decays merged with their quark-flavor counterparts carry the largest summed cost
+(figure~\ref{fig:f3}). % CHECK: MlstPerClassCoarseTopClass is a lepton-flavor class; MlstPerClassCoarseQuarkShare > MlstPerClassCoarseLeptonShare
+A single flavor boundary placed at random among the four-quark decays keeps flavor readable even for
+pairs it does not cut (figure~\ref{fig:f4}). Fine-tuning does not remove the effect where every input is present: on
+JetClass the \Kcoarse-class model still rejects less background than the \Kfull-class model in several
+signal classes (table~\ref{tab:jetclass}). % CHECK: MlstFtJcOneCoarseNRejDrop at least two (outline: five)
+There the random partitions recover only part of that loss: they come close to the \Kfull-class model on
+two-prong decays and stay near the \Kcoarse-class model on the three- and four-prong classes, whose
+prong-count boundaries they mix (table~\ref{tab:jetclassall}). % CHECK: as section 4.2 (results_jc.tex): partitions near 188 on H->cc, W, Z and near 17 on H->4q and the top classes (curves/full_best70_leg2.json); the writer's "no better than the 17-class label set" contradicted section 4.2 and was replaced
+On top tagging and quark/gluon
+discrimination, which lack some inputs, the fine-tuned label sets lie much closer together
+(tables~\ref{tab:benchtop} and~\ref{tab:benchqg}). % CHECK: MlstFtTopRthirtyCoarseOverFull and MlstFtQgRthirtyCoarseOverFull meet no difference criterion (raw R30 today: 17/188 paired 0.88-1.07 on top)
+Linear probes on their frozen features gain little over the randomly initialized network, and the
+substitutions for the missing inputs separate the part of that shortfall set by the zero value from
+the part set by the missing information (figure~\ref{fig:f5}). % CHECK: pending MlstLpTopRthirtyFullOverInitBn, MlstLpQgRthirtyFullOverInitBn, MlstLpTopRthirtyDrawOverZeroFull; name which substitution recovers the probe once known
+The two effects act on one part of the input. Flavor reaches the network through the displacement and
+particle-type inputs, because b and c hadrons travel a few millimeters before they decay and leptons are
+identified by type. These are the inputs the benchmarks lack, so a label-set difference that lives in
+flavor likely has little to act on there.
+
+The results translate into concrete choices for a pretraining label set. Keep every distinction that a
+downstream discriminant sums over, because a merge removes the discriminant from the output layer
+whatever the frozen features keep: Sophon's $X\to b\bar{b}$ discriminant cannot be formed from the
+\Kmid-class labels, and the $D_{bc}$ discriminant of the boosted $|V_{cb}|$ measurement exists only at
+\Kfull{} and \Kres{} classes (table~\ref{tab:usecase}). Keep the flavor boundaries, which the
+pretraining classes and JetClass both reward (figures~\ref{fig:f2}--\ref{fig:f4} and
+table~\ref{tab:jetclass}). Keep the QCD classes apart where a downstream task separates QCD jets by
+flavor: merging them leaves the resonant classes unchanged but costs the QCD pairs
+(table~\ref{tab:pairs}) and the one discriminant that sums QCD classes
+(table~\ref{tab:usecase}). % CHECK: MlstCmpJcTwoQcdResOverFull > 1 and the QCD pairs of tab:pairs show 162 above 188
+Add an auxiliary mass regression: it puts the jet mass into the frozen features and lowers the sculpting
+of the QCD mass distribution at a QCD efficiency of \SculptEffLow{} (table~\ref{tab:mass} and
+figures~\ref{fig:f8a} and~\ref{fig:f8b}). Its cost to the classification of the pretraining classes
+is small; after fine-tuning on top tagging the \Kres-class models with it show no consistent change and
+the \Kcoarse-class models lose some rejection, which \MlstMassNRunsWord{} runs per model do not yet
+resolve (section~\ref{sec:mass}). % CHECK: pending MlstCmpMlpResMassOverRes < 1; MlstSculptCoarseMassOverCoarseOne < 1 in both runs; MlstFtTopRthirtyResMassOverRes straddles 1 and MlstFtTopRthirtyCoarseMassOverCoarse below 1 in both runs (raw R30 today: 1.12 and 0.89; 0.90 and 0.92), as section 4.6 states; the writer's "changes by no more than the variation between pretraining runs" contradicted section 4.6 and was replaced
+For benchmarks with missing inputs, compare label sets by fine-tuning with the missing input features
+set to zero, which gives every label set identical inputs; input dropout during pretraining, which
+replaces some inputs with zeros, is the published alternative~\cite{omnilearn,jpjepa}. Report the variation between pretraining runs, because the
+label-set effects here are measured against it (section~\ref{sec:uncertainties}) and a single
+pretrained model cannot tell the two apart.
+
+The study has four limitations. First, all pretraining and every evaluation but one use a single
+simulation family; the Herwig quark/gluon sample changes the generator for one task only. Second, one
+architecture and one model size are studied. Third, each level of the class hierarchy has
+\MlstNRunsWord{} pretraining runs and every other configuration fewer. % the outline's wording "fewer for the controls" is widened: the mass models (two runs) and the kinematic-only model (one run) are not controls
+Fourth, the networks are initialized with a different scheme from Sophon's code, so their absolute
+performance need not match Sophon's published model; every comparison is between models trained here.
+
+Which distinctions a pretraining label set keeps, more than how many classes it has, shapes which
+discriminants an analysis can still form and how well frozen features separate decays by flavor. A
+label set built for transfer should therefore keep the classes that analyses sum into discriminants
+and its flavor boundaries, and an auxiliary target such as the jet mass can add to the frozen features a
+quantity that no classification label rewards, for little loss in classification.

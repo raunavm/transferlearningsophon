@@ -1,0 +1,204 @@
+% Results 4.3-4.5: top tagging, quark/gluon discrimination (Pythia and Herwig), fine-tuning with few
+% training jets. Outline: docs/PAPER_OUTLINE.md sections 4.3-4.5; figures F5, F7; tables T3, T4.
+% Every number is a macro from experiments/FIGS/make_tables.py (scratchpad phase_b/MACROS.md).
+
+\subsection{Top tagging}\label{sec:top}
+
+Top tagging uses the landscape dataset of hadronic top-quark jets and QCD jets~\cite{toptag} with its
+standard training, validation and test sets, whose sizes are given with table~\ref{tab:benchtop}. The
+dataset provides only the particle four-momenta, from which the kinematic inputs are computed. The
+charge, the five particle-type flags and the four displacement variables, \FillTopNZero{} of the
+\FillNFeatures{} inputs of the network, are therefore set to zero for every model. Published results are quoted
+as their authors report them. The background rejection against signal efficiency of every label set,
+on top tagging and on quark/gluon discrimination, is drawn in figure~\ref{fig:f6}.
+
+\input{tables/mlst_bench_top}
+
+Pretraining raises the background rejection on top tagging, and no label set changes it beyond what
+the test set resolves. Fine-tuned with the missing inputs set to zero, the \Kfull-class model reaches
+\MlstFtTopRthirtyFullOverScratchPr{} than the same network trained from scratch ($R_{30}$), and every % CHECK: MlstFtTopRthirtyFullOverScratch above 1 by more than 2 SD (today 1.27)
+label set improves on training from scratch in every run (table~\ref{tab:benchtop}). The % CHECK: MlstFtTopRthirty{Res,Mid,Coarse} every run above every from-scratch seed (today min 1,590 vs max 1,432)
+\Kcoarse-class model matches the \Kfull-class model (\MlstFtTopRthirtyCoarseOverFullPr{}), as do the % CHECK: MlstFtTopRthirtyCoarseOverFullPr must read "equal within" (today 0.97 +- 0.10)
+\Kres- and \Kmid-class models, so unlike the \Kcoarse-class labels on JetClass % CHECK: MlstFtTopRthirty{Res,Mid}OverFullPr must read "equal within"
+(section~\ref{sec:jetclass}), no label set differs on top tagging by the criterion of
+section~\ref{sec:uncertainties}. The test set limits this comparison: $R_{30}$ is set by the small
+number of QCD jets that pass at that working point, and their counting uncertainty is as large as the
+spread between runs (table~\ref{tab:boot}). The agreement has a physical reason. A top-quark jet
+differs from a QCD jet by its three-prong substructure and its mass, which every label set rewards
+because even the \Kcoarse-class labels separate decays by their number of prongs. The pairwise
+features of the network are computed from the four-momenta alone and do not depend on the missing
+inputs.
+
+Our network trained from scratch rejects less background than ParT trained from
+scratch~\cite{part}, and the difference comes from Sophon's preprocessing, which every pretrained
+model keeps. Run unchanged on our hardware, ParT's training script reproduces ParT's published
+accuracy and AUC, and replacing ParT's output head with Sophon's leaves the rejection within the
+published spread. Adding Sophon's rescaling of every jet's constituents to one fixed jet transverse
+momentum~\cite{sophoncode} gives \MlstPartreproRthirtyRescaleOverPartPr{} than the unchanged script
+(one run each; table~\ref{tab:partrepro}). We keep the rescaling in the network trained from scratch
+because the pretrained models use it, so the comparison of pretraining with training from scratch does
+not also change the preprocessing. The rescaling keeps the ratio of jet mass to transverse momentum but no longer the
+jet mass itself, so the spread of transverse momenta in the sample likely broadens the top-quark and
+W-boson mass peaks a top tagger relies on.
+
+ParT fine-tuned after pretraining on JetClass~\cite{part} rejects more background than any of our
+models, and the \Kfull-class model with kinematic inputs only measures how much of that gap the
+missing inputs cause. ParT pretrained a separate model on the kinematic features for top tagging, so
+nothing was missing for it. Our \Kfull-class model, with \FillTopNZero{} inputs set to zero, reaches % CHECK: MlstFtTopRthirtyFullOverPart below 1 (today 0.65)
+\MlstFtTopRthirtyFullOverPartPr{} than ParT. The \Kfull-class model with kinematic inputs only
+shares the data, the rescaling and the training settings of the \Kfull-class model and lacks no
+input. Fine-tuned on top tagging, it closes part of the gap to ParT (kinematic-only model over the % CHECK: pending MlstFtTopRthirtyKinOverFull (one run; "closes part of the gap" needs it above 1 by more than the spread of the three 188-class runs and below 1/MlstFtTopRthirtyFullOverPart)
+\Kfull-class model: \MlstFtTopRthirtyKinOverFullPr{}). It is one pretraining run, so it is read
+against the spread of the \MlstNRunsWord{} \Kfull-class runs rather than as a ratio paired by seed. The part of the gap it does not close comes from what else separates
+our models from ParT: the rescaling above, and pretraining on JetClass-II, with pileup, rather than
+on JetClass.
+
+On top tagging, frozen features from pretraining give a linear probe no more than the randomly
+initialized network gives it. With the missing inputs set to zero, the rejection of a linear probe on
+the frozen \Kfull-class features matches that of a linear probe on the randomly initialized network % CHECK: MlstLpTopRthirtyFullOverInitBnZeroPr must read "equal within" (today 1.04 and 1.08 with two init_bn seeds; init-s3 pending)
+(\MlstLpTopRthirtyFullOverInitBnZeroPr{}; the MLP probe gives the same result,
+\MlstMlpTopRthirtyFullOverInitBnPr{}), and both lie far below every fine-tuned model
+(figure~\ref{fig:f5}(c)). Fine-tuning the % CHECK: MlstMlpTopRthirtyFullOverInitBnPr must read "equal within" (today 1.00 +- 0.31)
+same backbone on the same zero-substituted jets gives the gain of table~\ref{tab:benchtop}, so the
+frozen features are limited by how they respond to the substituted inputs, not by what the backbone
+can represent.
+
+\begin{figure}
+\centering
+\paperfig{\linewidth}{F5}
+\caption{Linear probes on frozen features when the inputs a benchmark lacks are substituted. (a), (b)
+Relative drop in the accuracy of a linear probe on the \Kfull{} classes of the class-balanced
+JetClass-II test set when the \FillTopNZero{} inputs the top-tagging data lack (a) or the
+\FillQgNZero{} inputs the quark/gluon data lack (b) are substituted in the linear probe's training and test
+jets, against the same model with every input; the absolute accuracy is printed at each bar end. (c),
+(d) Background rejection at 30\% signal efficiency of a linear probe on top tagging (c) and on
+quark/gluon discrimination with the Pythia sample (d), trained on the full benchmark training set.
+Each group of bars is one model: the \Kfull-class model and the randomly initialized network with its
+BatchNorm statistics recomputed. Within a group the missing inputs are set to zero (solid), to the
+training mean (hatched) or to random draws of a real JetClass-II particle (dotted). Panel (c) adds
+the \Kfull-class model with kinematic inputs only (dash-dot outline), which lacks no input; it is one
+run, not paired by seed with the other models. Open markers on the zero bars of (c) and (d): a
+multilayer perceptron trained on the same frozen features. After the input normalization a zeroed
+type flag lies at most \MlstInputBnZeroSigmaMax{} standard deviations from the training mean of that
+flag. Bars are the mean, error bars the standard deviation and points the individual runs, over the
+\MlstNRunsWord{} pretraining runs of the \Kfull-class model and the randomly initialized networks of
+the same seeds.}
+\label{fig:f5}
+\end{figure}
+
+The same zeros cost the pretrained features on JetClass-II itself, more than they cost the randomly
+initialized network. With the inputs the top data lack set to zero in the training and test jets of
+the linear probe, the \Kfull-class model loses \MlstLpJcTwoTopZeroAccDropFullPr{} of its accuracy on
+the \Kfull{} classes and the randomly initialized network \MlstLpJcTwoTopZeroAccDropInitBnPr{}. Every % CHECK: MlstLpJcTwoTopZeroAccDrop{Res,Mid,Coarse,ResMass,CoarseMass,Fzero,Fone,Foner} each above MlstLpJcTwoTopZeroAccDropInitBn (today 85-90 vs 55-58)
+pretrained label set loses more than the randomly initialized network (figure~\ref{fig:f5}(a);
+table~\ref{tab:fill}). Two explanations predict this pattern. The zeroed inputs are states the
+pretrained network never saw, so its features respond to them in ways no training jet shaped.
+Alternatively, the type flags and displacements carry information that the pretrained features use and
+the random features do not, so the pretrained network has more to lose. The other two substitutions separate
+these explanations.
+
+The substitutions differ in how far they leave each particle from a real one, and that difference
+separates the two explanations. No JetClass-II particle has all of its type flags at zero, so the
+zeroed inputs put every particle of a top jet in a joint state the pretrained networks never saw. Each zeroed flag on its own still lies
+within the range of the training distribution after the input normalization (table~\ref{tab:inputs});
+it is the combination that no real particle has. The training mean is no closer to a real particle, since it is the centroid
+of the training particles and carries fractional flags; only each random draw is a state a real
+particle takes. Figure~\ref{fig:f5}(c) compares the linear probe on the \Kfull-class model with
+random draws and with zeros (draws over zeros: \MlstLpTopRthirtyDrawOverZeroFullPr{}), and the linear % CHECK: pending MlstLpTopRthirtyDrawOverZeroFull (fits_v4_fill)
+probe on the \Kfull-class model with kinematic inputs only, which lacks nothing, with the % CHECK: pending MlstLpTopRthirtyKinOverFull (kinematic-only probe)
+zero-substituted \Kfull-class model (\MlstLpTopRthirtyKinOverFullPr{}). A recovery with random % CHECK: pending -- replace these two conditional sentences by the outcome once the two macros above exist
+draws places the loss in the zero value rather than in the missing information; a linear probe that
+neither the draws nor the mean recover, beside a kinematic-only linear probe far above it, places the
+loss in the missing information. Fine-tuning escapes both, because it re-learns the input layer on
+the substituted jets, and a constant substitution used in training and testing is consistent for a
+model trained with it~\cite[Theorem~3]{josse}. JetParticle-JEPA, which saw zeroed inputs during pretraining through
+input dropout, sets the missing top-tagging inputs to zero in the same way and reports a rejection
+below that of ParT trained from scratch~\cite{jpjepa}; its result does not distinguish the two
+explanations either.
+
+\subsection{Quark/gluon discrimination, Pythia and Herwig}\label{sec:qg}
+
+Quark/gluon discrimination uses the Pythia sample of Komiske et al.~\cite{efn,qgpythia} with ParT's
+split into training, validation and test jets~\cite{part}, and the companion sample generated with
+Herwig with the same selection~\cite{herwigsevenone,qgherwig}; the sizes and cuts are given with
+table~\ref{tab:benchqg}. The jets carry the particle type as five binary flags and the charge, ParT's
+``exp'' inputs~\cite{part}, and only the \FillQgNZero{} displacement inputs are set to zero. Every
+model is fine-tuned on Pythia jets and tested on both samples. Published results are from the same
+input scenario.
+
+\input{tables/mlst_bench_qg}
+
+Fine-tuned on the Pythia sample, the pretrained models reach the rejection of ParT fine-tuned after
+pretraining on JetClass~\cite{part}, and the label sets do not differ. The \Kfull-class model
+matches ParT (\MlstFtQgRthirtyFullOverPartPr{}), and the \Kcoarse-class model matches the % CHECK: MlstFtQgRthirtyFullOverPartPr must read "equal within" (today 0.99 +- 0.02)
+\Kfull-class model (\MlstFtQgRthirtyCoarseOverFullPr{}; table~\ref{tab:benchqg}), although only the % CHECK: MlstFtQgRthirtyCoarseOverFullPr must read "equal within" (today 0.99 +- 0.03); also Res, Mid
+\Kfull- and \Kres-class labels separate resonance decays to gluons from decays to light quarks, the
+distinction quark/gluon discrimination asks for. Three differences between the tasks likely limit how
+much of that distinction transfers: the quark/gluon jets have a smaller radius than every pretraining jet; they
+are isolated jets from a single parton rather than prongs inside a resonance decay; and their
+displacement inputs are zero.
+
+The change of generator costs the pretrained and the from-scratch networks the same fraction of their
+rejection, so pretraining gives no protection against it. Tested on the Herwig sample, the fine-tuned
+\Kfull-class model keeps \MlstFtQgRthirtyHerwigOverPythiaFullPr{} it has on Pythia jets, and the % CHECK: MlstFtQgRthirtyHerwigOverPythiaFull vs ...Scratch must agree within 2 SD (today 0.33 +- 0.02 vs 0.34 +- 0.01)
+network trained from scratch \MlstFtQgRthirtyHerwigOverPythiaScratchPr{} (table~\ref{tab:benchqg}).
+Earlier generator comparisons found Herwig's quark and gluon jets less separable than
+Pythia's~\cite{gras}, which lowers the rejection of any tagger trained on Pythia jets. Pretraining
+does not offset this because JetClass-II is also showered and hadronized with
+Pythia~\cite{sophon,pythia}, so the pretrained network has seen no jet with Herwig's modeling.
+
+On quark/gluon discrimination, frozen features from pretraining give a linear probe more than the
+randomly initialized network gives it, but not much more. With the displacement inputs substituted as
+chosen on validation (\LpSubstitutionQg{}), a linear probe on the frozen \Kfull-class features
+rejects more background than one on the randomly initialized network % CHECK: pending MlstLpQgRthirtyFullOverInitBn (fits_v4_fill); with zero today 1.06 and 1.36 (two init_bn seeds)
+(\MlstLpQgRthirtyFullOverInitBnPr{}; figure~\ref{fig:f5}(d)). The frozen features likely do better
+here than on top tagging because the type flags and the charge are present. They gain little over the
+randomly initialized network because the missing displacements still leave every charged particle in
+a state no pretraining jet has, as the next paragraph explains.
+
+Setting only the displacement inputs to zero already costs the pretrained features most of their % CHECK: MlstLpJcTwoQgZeroAccDropFull above 50 ("most"; today 61)
+accuracy on JetClass-II, and the randomly initialized network little. With the \FillQgNZero{} inputs the
+quark/gluon data lack set to zero in the linear probe's training and test jets, the \Kfull-class
+model loses \MlstLpJcTwoQgZeroAccDropFullPr{} of its accuracy on the \Kfull{} classes and the
+randomly initialized network \MlstLpJcTwoQgZeroAccDropInitBnPr{} (figure~\ref{fig:f5}(b)). The % CHECK: MlstLpJcTwoQgZeroAccDropFull well above ...InitBn (today 61 vs 9.7-11)
+mismatch differs from top tagging in one respect: a zeroed impact parameter lies at the training mean,
+but no charged JetClass-II track has zero measurement uncertainty on its impact parameters, so a
+charged particle with zeroed uncertainties is a joint state the input layer never saw. As on top
+tagging, the pretrained network may also lose information it uses, since the displacements mark the
+b- and c-hadron decays of many JetClass-II classes~\cite{cmsbtag}.
+
+\subsection{Fine-tuning with few training jets}\label{sec:fewjets}
+
+\pending{How the gain of the fine-tuned \Kfull-class model over training from scratch on top tagging
+changes with the number of training jets, the data-efficiency equivalence of section~\ref{sec:evaluation},
+and the order of the label sets at the smaller training sets (table~\ref{tab:ft}) are written once the
+fine-tuning runs on the smaller training sets are evaluated.}
+% CHECK: pending MlstFtTopRthirtyFullOverScratchEThree, MlstFtTopDataEquivJets (PI 2026-11-02: nothing is written about the top-tagging gain against training-set size until the fixed-budget reruns read out; the writer's draft claimed "pretraining helps most with few jets", which needs EThree above the full-set MlstFtTopRthirtyFullOverScratch)
+% CHECK: pending -- the label-set order at 1e3-1e5 jets (table tab:ft, figure fig:a10) must match the full set; otherwise state the small-size difference with its ratio
+
+\begin{figure}
+\centering
+\paperfig{\linewidth}{F7}
+\caption{Fine-tuning against the number of training jets on (a) class-balanced JetClass-II with its
+\Kfull{} classes, (b) JetClass, (c) top tagging and (d) quark/gluon discrimination with the Pythia
+sample. Upper panels: accuracy (a, b) or background rejection at 30\% signal efficiency on a
+logarithmic scale (c, d) for the fine-tuned \Kfull-class model (solid line), a linear probe, a
+logistic regression on the frozen features of the same model (dashed line, same color), and the same
+network trained from scratch (black dashed line, open squares). Lower panels: fine-tuning over
+training from scratch at the same number of jets. The horizontal axes are logarithmic. Lines are the
+mean and bands the standard deviation over the \MlstNRunsWord{} pretraining runs, one fine-tuning or
+linear probe each, and over the \MlstFtRefSeedsWord{} training seeds from scratch. On top and
+quark/gluon discrimination the linear probe's missing inputs are substituted as chosen on validation
+(\LpSubstitutionTop{} and \LpSubstitutionQg{}), and fine-tuning sets them to zero. Every label set at
+every size is in table~\ref{tab:ft} (fine-tuning) and figure~\ref{fig:a10} (linear probes).}
+\label{fig:f7}
+\end{figure}
+
+Most of the gain from pretraining survives with the backbone frozen when no input is missing. On the
+smallest JetClass training set the linear probe on the \Kfull-class model keeps
+\MlstLpJcOneGapFracEFourPr{} of the gain of fine-tuning over training from scratch
+(section~\ref{sec:evaluation}), and on class-balanced % CHECK: pending MlstLpJcOneGapFracEFour (claim "most" needs it above 50%)
+JetClass-II \MlstLpJcTwoGapFracEFourPr{}. On top tagging and quark/gluon discrimination the linear % CHECK: pending MlstLpJcTwoGapFracEFour (claim "most" needs it above 50%)
+probe recovers little of the gain at any size (figure~\ref{fig:f7}(c, d)), because fine-tuning % CHECK: pending -- top/q-g linear probe far below fine-tuning at every size in F7
+re-learns the input layer on the substituted inputs, while the frozen features keep the mismatch
+described in section~\ref{sec:top}.

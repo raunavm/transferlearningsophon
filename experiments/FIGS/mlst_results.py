@@ -1280,6 +1280,13 @@ def _floor_distance(k: int, n: int, n_ref: int | None = None) -> float:
     return fpc * math.sqrt(2.0 / (8 * n * math.log(2))) * math.exp(math.lgamma(k / 2) - math.lgamma((k - 1) / 2))
 
 
+def _floor_sd(k: int, n: int, n_ref: int | None = None) -> float:
+    """The SD of that distance over random selections: the same chi distribution with k - 1 degrees of
+    freedom, SD = scale sqrt(k - 1 - (E/scale)^2), scale = sqrt(1 / (8 n ln 2)), finite-population corrected."""
+    scale = (math.sqrt(1 - n / n_ref) if n_ref else 1.0) * math.sqrt(1.0 / (8 * n * math.log(2)))
+    return scale * math.sqrt(max(k - 1 - (_floor_distance(k, n, n_ref) / scale) ** 2, 0.0))
+
+
 def _sculpt_floor(sculpt: dict, eff: str) -> float:
     """The divergence a cut that does not sculpt still shows: (k - 1) / (8 n ln 2) to leading order."""
     vals = {round((int(np.count_nonzero(d["hist_before"])) - 1)
@@ -1326,8 +1333,8 @@ def sculpt_macros(em, sculpt, sculpt_v2, runs, index, fmt_pm) -> None:
     """Distances at the two working points (MlstSculpt<arm><Ten|One>), the random-selection floor,
     run-by-run ratios between configurations and to the floor, and on the stored efficiency grid the
     window where the 17-class model sculpts more than the 188-class one (the paired ratio's mean minus
-    twice its SD above 1) and how many configurations sit within one SD of the floor at the lowest
-    stored efficiency (PI 2026-11-02)."""
+    twice its SD above 1) and, at the lowest stored efficiency, the largest excess over the floor in
+    units of the floor's SD."""
     for e, ew in zip(SCULPT_EFFS, ("Ten", "One")):
         n_pass = {d["working_points"][e]["n_pass"] for d in sculpt.values()}
         if len(n_pass) != 1:
@@ -1353,8 +1360,8 @@ def sculpt_macros(em, sculpt, sculpt_v2, runs, index, fmt_pm) -> None:
     curves = {m: _curve(sculpt_v2, m) for arm in MAIN + MASS for m in runs[arm]}
     effs = sorted(set.intersection(*(set(c) for c in curves.values()))) if all(curves.values()) else []
     if not effs:
-        for k in ("MlstSculptDiffEffLo", "MlstSculptDiffEffHi", "MlstSculptLowestEff", "MlstSculptNAtFloorLowest",
-                  "MlstSculptNConfigs"):
+        for k in ("MlstSculptDiffEffLo", "MlstSculptDiffEffHi", "MlstSculptLowestEff", "MlstSculptLowestNPass",
+                  "MlstSculptLowestMaxFloorSd", "MlstSculptNConfigs"):
             em.macro(k, r"\pending{sculpting curves}", index, "head/curves_v2 not complete")
         return
     diff = []
@@ -1367,15 +1374,22 @@ def sculpt_macros(em, sculpt, sculpt_v2, runs, index, fmt_pm) -> None:
     em.macro("MlstSculptDiffEffLo", pc(min(diff)) if diff else "none", index,
              "lowest stored QCD efficiency at which the 17/188 distance ratio exceeds 1 by twice its SD")
     em.macro("MlstSculptDiffEffHi", pc(max(diff)) if diff else "none", index, "highest such efficiency")
+    # At the lowest efficiency so few jets pass that a random selection shows a comparable distance: how
+    # far above that floor each configuration's mean lies, in units of the floor's own SD over random
+    # selections (not the seed SD, which measures the runs' agreement, not closeness to the floor).
     lo = effs[0]
-    at = 0
-    for arm in MAIN + MASS:
-        v = [curves[m][lo][0] for m in runs[arm]]
-        if len(v) > 1 and abs(np.mean(v) - curves[runs[arm][0]][lo][1]) <= np.std(v, ddof=1):
-            at += 1
+    d0 = sculpt_v2[runs[MAIN[0]][0]]
+    k0 = int(np.count_nonzero(d0["hist_before"]))
+    p0 = next(p for p in d0["curve"] if round(p["eff"], 9) == lo)
+    sd0 = _floor_sd(k0, p0["n_pass"], d0.get("n_qcd"))
+    excess = [(np.mean([curves[m][lo][0] for m in runs[arm]]) - curves[runs[arm][0]][lo][1]) / sd0
+              for arm in MAIN + MASS]
     em.macro("MlstSculptLowestEff", pc(lo), index, "lowest stored QCD efficiency of the sculpting curves")
-    em.macro("MlstSculptNAtFloorLowest", str(at), index,
-             "configurations whose mean distance there is within one SD of the random-selection floor (count)")
+    em.macro("MlstSculptLowestNPass", f"{p0['n_pass']:,}".replace(",", "{,}"), index,
+             "QCD test jets passing at the lowest stored efficiency")
+    em.macro("MlstSculptLowestMaxFloorSd", f"{max(abs(x) for x in excess):.1f}", index,
+             "largest distance of a configuration's mean from the random-selection floor at the lowest stored "
+             "efficiency, in SDs of the floor over random selections")
     em.macro("MlstSculptNConfigs", str(len(MAIN + MASS)), index, "configurations with a sculpting curve (count)")
 
 
@@ -2818,7 +2832,7 @@ REQUIRED = (
     ("MlstSculptFullOverFloorOne", "sculpting", "Pr"), ("MlstSculptCoarseOverFullOne", "sculpting", "Pr"),
     ("MlstSculptMidOne", "sculpting", ""), ("MlstSculptCoarseMassOverCoarseOne", "sculpting", "Pr PrMax"),
     ("MlstSculptDiffEffLo", "sculpting curves", ""), ("MlstSculptDiffEffHi", "sculpting curves", ""),
-    ("MlstSculptLowestEff", "sculpting curves", ""), ("MlstSculptNAtFloorLowest", "sculpting curves", ""),
+    ("MlstSculptLowestEff", "sculpting curves", ""), ("MlstSculptLowestNPass", "sculpting curves", ""), ("MlstSculptLowestMaxFloorSd", "sculpting curves", ""),
     ("XbsRthirtyFullOverScratch", "X->bs fits and from-scratch runs", "Pr"),
     ("XbsRthirtyCoarseOverFull", "X->bs fits", "Pr"), ("XbsRthirtyNodeOverTransferFull", "X->bs fits", "Pr"),
     ("XbbRthirtyDirectOverTransferFull", "X->bb fits", "Pr"), ("XbbRthirtyTransferCoarseOverFull", "X->bb fits", "Pr"),
