@@ -1,0 +1,11 @@
+{
+ "n_jets": 403999,
+ "n_signal": 202085,
+ "accuracy": 0.9385171745474618,
+ "auc": 0.9850371904993223,
+ "r50": 356.73851590106005,
+ "r50_n_bkg_pass": 566,
+ "r30": 1223.7212121212121,
+ "r30_n_bkg_pass": 165,
+ "pred": "/data/results/partrepro/rescale/pred.root"
+}
