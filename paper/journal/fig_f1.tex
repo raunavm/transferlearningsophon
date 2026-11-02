@@ -1,0 +1,268 @@
+% Figure 1 (F1 of docs/FIGURE_PLAN.md): the design of the study, in TikZ.
+% \input{fig_f1} from main.tex; this file holds one figure environment and nothing else.
+%
+% WHAT main.tex MUST LOAD (this file loads nothing itself):
+%   \usepackage{tikz}
+%   \usetikzlibrary{arrows.meta}          % the only TikZ library used (arrow tips)
+%   \usepackage{helvet}                   % Helvetica for \sffamily, UNSCALED: the font sizes
+%                                         % below are the printed sizes (8.5-10 pt, MLST 8-12 pt)
+%   \usepackage{sansmath}                 % optional: math in the figure in Helvetica too; without
+%                                         % it the figure's math falls back to the text math font
+%   \definecolor{c188}{HTML}{5790FC}      % the configuration colours of experiments/FIGS/
+%   \definecolor{c162}{HTML}{F89C20}      % mlst_style.py (TEX_COLOURS); cmass, ckin and cinit are
+%   \definecolor{c43}{HTML}{E42536}       % not used: the variants are drawn in their label set's
+%   \definecolor{c17}{HTML}{964A8B}       % colour with a dashed (mass) or dash-dotted
+%   \definecolor{crand}{HTML}{009988}     % (kinematic-only) border, FIGURE_PLAN section 1
+%   \definecolor{cflav}{HTML}{33BBEE}
+%   \input{results_generated}             % the counts below are its macros
+% Text width: 15 cm (MLST full width). The picture is 15.0 cm wide and is drawn at its final
+% size, never scaled, so the font sizes hold.
+% Optional: \def\FoneDropXbx{} before \input{fig_f1} removes X->bb/X->bs from panel (c)
+% (PI 2026-11-02: if the samples are not staged by 12 Nov, the X->bb/X->bs section goes).
+%
+% Every class box is drawn from the label maps (checked by hand, 2026-11-02):
+%   (a) configs/labelmaps/rung_label_maps.v1.csv, columns L188, L162, R42_Q1, R16_Q1. Rows: the ten
+%       decays X->QQ/gg in the order bb bc bq | cc cs cq | ss sq qq gg (the 43-class b / c / light
+%       groups are then contiguous), then ee mm | tauh-taue tauh-taum, then the 27 QCD classes.
+%   (b) column: configs/labelmaps/rand_label_map.v2.csv, RAND2_p1 on the same rows: groups
+%       0 0 0 0 0 9 9 9 0 3 | 11 11 | 15 4 | QCD, lettered A..F in order of first appearance.
+%       strips: configs/labelmaps/flavour_pair_map.v2.csv, the 22 classes of orbit X_YY_QQQQ.
+%       Order with a b quark: bbbb bbcc bbss bbqq qqqb bbcq ccbs ccbq qqbc qqbs bcsq;
+%       without: cccc ccss ccqq ssss ssqq qqqq qqqc qqqs ccsq sscq qqcs.
+%       FLAV_F0: all 22 in group 9. FLAV_F1: the 11 with a b in group 11, the rest 9.
+%       FLAV_F1R: group 11 = bbss bbqq qqqb bbcq ccbq qqbc (with b, positions 2-5, 7, 8 from 0)
+%       and ccss ccqq ssss qqqc sscq (without, positions 1-3, 6, 9); filled square = group 11.
+% Geometry (cm): row height 0.35 from y = -1.18, gaps of 0.14 between the quark/gluon, lepton
+% and QCD blocks, the QCD row 0.70; boxes inset 0.025 top and bottom; columns 1.45 wide with
+% left edges 1.75, 3.28, 4.81, 6.34 (hierarchy) and 8.25 (random partition).
+\providecommand{\Kfull}{\VocabSizeLoneeighteight}
+\providecommand{\Kres}{\VocabSizeLonesixtwo}
+\providecommand{\Kmid}{\VocabSizeRfourtwoQone}
+\providecommand{\Kcoarse}{\VocabSizeRonesixQone}
+\begin{figure}[tbp]
+\centering
+\ifdim\linewidth<14.99cm\typeout{fig_f1.tex: WARNING: the drawing is 15 cm wide but \string\linewidth\space
+  is \the\linewidth; set a 15 cm text width (it is not scaled, to keep its 8.5 pt text)}\fi
+\def\FoneText{\sffamily\fontsize{8.5}{9.5}\selectfont}%
+\def\FoneMain{\sffamily\fontsize{9}{10.5}\selectfont}%
+\def\FoneBold{\sffamily\bfseries\fontsize{9}{10.5}\selectfont}%
+\def\FoneTitle{\sffamily\bfseries\fontsize{10}{12}\selectfont}%
+\ifdefined\FoneDropXbx\def\FoneXbx{}\else\def\FoneXbx{\\$X\to b\bar b$, $X\to bs$}\fi
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  font=\FoneMain,
+  ttl/.style={anchor=base west, font=\FoneTitle, inner sep=0pt},
+  cls/.style={draw=black!75, line width=0.5pt},
+  hdr/.style={draw=#1!60!black, fill=#1!45, line width=0.6pt, align=center, font=\FoneText,
+              inner sep=0pt},
+  inbox/.style={align=center, font=\FoneText, inner sep=0pt},
+  letter/.style={font=\FoneBold, inner sep=0pt},
+  rowlab/.style={anchor=east, inner sep=0pt},
+  txt/.style={align=left, font=\FoneText, inner sep=0pt},
+  sq/.style={draw=black!75, line width=0.4pt},
+  chip/.style={draw=#1!60!black, fill=#1!45, line width=0.6pt, rounded corners=1.5pt,
+               align=center, font=\FoneText, inner sep=0pt, anchor=north west},
+  stage/.style={draw=black!60, line width=0.6pt, rounded corners=2pt, align=left,
+                font=\FoneText, inner sep=0.1cm},
+  flow/.style={-{Latex[length=1.8mm, width=1.4mm]}, line width=0.7pt, black!75},
+]
+\ifdefined\sansmath\sansmath\fi
+% ================================================================ (a) the class hierarchy
+\node[ttl] at (0,0) {(a) Class hierarchy};
+% faint bands on every other row, drawn first so the boxes sit on top
+\foreach \rowtop in {-1.53,-2.23,-2.93,-3.63,-4.33,-5.17,-5.87}
+  \fill[black!6] (0,\rowtop) rectangle (9.70,\rowtop-0.35);
+% column headers
+\node[rowlab, align=right, font=\FoneText] at (1.65,-0.68) {JetClass-II\\class};
+\node[hdr=c188, minimum width=1.45cm, minimum height=0.80cm, anchor=north west] at (1.75,-0.28) {\Kfull\\classes};
+\node[hdr=c162, minimum width=1.45cm, minimum height=0.80cm, anchor=north west] at (3.28,-0.28) {\Kres\\classes};
+\node[hdr=c43,  minimum width=1.45cm, minimum height=0.80cm, anchor=north west] at (4.81,-0.28) {\Kmid\\classes};
+\node[hdr=c17,  minimum width=1.45cm, minimum height=0.80cm, anchor=north west] at (6.34,-0.28) {\Kcoarse\\classes};
+% row labels
+\node[rowlab] at (1.65,-1.355) {$X\to b\bar b$};
+\node[rowlab] at (1.65,-1.705) {$X\to bc$};
+\node[rowlab] at (1.65,-2.055) {$X\to bq$};
+\node[rowlab] at (1.65,-2.405) {$X\to c\bar c$};
+\node[rowlab] at (1.65,-2.755) {$X\to cs$};
+\node[rowlab] at (1.65,-3.105) {$X\to cq$};
+\node[rowlab] at (1.65,-3.455) {$X\to s\bar s$};
+\node[rowlab] at (1.65,-3.805) {$X\to sq$};
+\node[rowlab] at (1.65,-4.155) {$X\to q\bar q$};
+\node[rowlab] at (1.65,-4.505) {$X\to gg$};
+\node[rowlab] at (1.65,-4.995) {$X\to ee$};
+\node[rowlab] at (1.65,-5.345) {$X\to\mu\mu$};
+\node[rowlab] at (1.65,-5.695) {$X\to\tau_h\tau_e$};
+\node[rowlab] at (1.65,-6.045) {$X\to\tau_h\tau_\mu$};
+\node[rowlab] at (1.65,-6.710) {QCD jets};
+% 188 and 162 classes: every resonant decay is its own class
+\foreach \rowtop in {-1.18,-1.53,-1.88,-2.23,-2.58,-2.93,-3.28,-3.63,-3.98,-4.33,-4.82,-5.17,-5.52,-5.87} {
+  \draw[cls, fill=c188!20] (1.75,\rowtop-0.025) rectangle (3.20,\rowtop-0.325);
+  \draw[cls, fill=c162!20] (3.28,\rowtop-0.025) rectangle (4.73,\rowtop-0.325);
+}
+\draw[cls, fill=c188!20] (1.75,-6.385) rectangle (3.20,-7.035);
+\node[inbox] at (2.475,-6.71) {\LitJetClassTwoNQcdClasses\\classes};
+\draw[cls, fill=c162!20] (3.28,-6.385) rectangle (4.73,-7.035);
+\node[inbox] at (4.005,-6.71) {1 class};
+% 43 classes: decay topology x {b, else c, else light quark or gluon}; e and mu merged
+\draw[cls, fill=c43!20] (4.81,-1.205) rectangle (6.26,-2.205);
+\node[inbox] at (5.535,-1.705) {with $b$};
+\draw[cls, fill=c43!20] (4.81,-2.255) rectangle (6.26,-3.255);
+\node[inbox] at (5.535,-2.755) {with $c$,\\no $b$};
+\draw[cls, fill=c43!20] (4.81,-3.305) rectangle (6.26,-4.655);
+\node[inbox] at (5.535,-3.980) {$u$, $d$, $s$\\or $g$};
+\draw[cls, fill=c43!20] (4.81,-4.845) rectangle (6.26,-5.495);
+\node[inbox] at (5.535,-5.170) {$\ell\ell$};
+\draw[cls, fill=c43!20] (4.81,-5.545) rectangle (6.26,-6.195);
+\node[inbox] at (5.535,-5.870) {$\tau_h\tau_\ell$};
+\draw[cls, fill=c43!20] (4.81,-6.385) rectangle (6.26,-7.035);
+\node[inbox] at (5.535,-6.710) {1 class};
+% 17 classes: number and type of prongs, no flavor
+\draw[cls, fill=c17!20] (6.34,-1.205) rectangle (7.79,-4.655);
+\node[inbox] at (7.065,-2.930) {two\\quarks\\or gluons};
+\draw[cls, fill=c17!20] (6.34,-4.845) rectangle (7.79,-5.495);
+\node[inbox] at (7.065,-5.170) {$\ell\ell$};
+\draw[cls, fill=c17!20] (6.34,-5.545) rectangle (7.79,-6.195);
+\node[inbox] at (7.065,-5.870) {$\tau_h\tau_\ell$};
+\draw[cls, fill=c17!20] (6.34,-6.385) rectangle (7.79,-7.035);
+\node[inbox] at (7.065,-6.710) {1 class};
+% what each merge removes
+\node[anchor=north west, font=\FoneBold, inner sep=0pt] at (0,-7.27) {What each merge removes};
+\node[txt, anchor=north west, text width=6.04cm] (m1) at (1.75,-7.65)
+  {the $b$, $c$ and $s$ content of the QCD jets};
+\node[txt, anchor=north west, text width=6.04cm] (m2) at ([yshift=-0.10cm]m1.south west)
+  {the number of $b$ and $c$ quarks, light-quark flavor, quark against gluon, and lepton
+   flavor ($e$ against $\mu$)};
+\node[txt, anchor=north west, text width=6.04cm] (m3) at ([yshift=-0.10cm]m2.south west)
+  {quark flavor ($b$, $c$ or light); the number and type of prongs remain};
+\node[txt, anchor=north east] at ([xshift=-0.10cm]m1.north west) {\Kfull\,$\to$\,\Kres};
+\node[txt, anchor=north east] at ([xshift=-0.10cm]m2.north west) {\Kres\,$\to$\,\Kmid};
+\node[txt, anchor=north east] at ([xshift=-0.10cm]m3.north west) {\Kmid\,$\to$\,\Kcoarse};
+% ================================================================ (b) the controls
+\node[ttl] at (8.25,0) {(b) Controls, \Kcoarse{} classes each};
+% the first random partition on the rows of (a); one letter = one class
+\node[hdr=crand, minimum width=1.45cm, minimum height=0.80cm, anchor=north west] at (8.25,-0.28) {random\\partition};
+\draw[cls, fill=crand!20] (8.25,-1.205) rectangle (9.70,-2.905);
+\node[letter] at (8.975,-2.055) {A};
+\draw[cls, fill=crand!20] (8.25,-2.955) rectangle (9.70,-3.955);
+\node[letter] at (8.975,-3.455) {B};
+\draw[cls, fill=crand!20] (8.25,-4.005) rectangle (9.70,-4.305);
+\node[letter] at (8.975,-4.155) {A};
+\draw[cls, fill=crand!20] (8.25,-4.355) rectangle (9.70,-4.655);
+\node[letter] at (8.975,-4.505) {C};
+\draw[cls, fill=crand!20] (8.25,-4.845) rectangle (9.70,-5.495);
+\node[letter] at (8.975,-5.170) {D};
+\draw[cls, fill=crand!20] (8.25,-5.545) rectangle (9.70,-5.845);
+\node[letter] at (8.975,-5.695) {E};
+\draw[cls, fill=crand!20] (8.25,-5.895) rectangle (9.70,-6.195);
+\node[letter] at (8.975,-6.045) {F};
+\draw[cls, fill=crand!20] (8.25,-6.385) rectangle (9.70,-7.035);
+\node[inbox] at (8.975,-6.710) {1 class};
+% how the random partitions are built
+\node[hdr=crand, anchor=north west, text width=4.75cm, inner sep=0.1cm, align=left, font=\FoneBold]
+  (rh) at (10.05,-0.28) {Random partitions (\RandVtwoNPartitions)};
+\node[txt, anchor=north west, text width=4.95cm] (rb) at ([yshift=-0.12cm]rh.south west)
+  {\textbullet\ groups of resonant classes drawn at random, plus one class of QCD jets\\[2pt]
+   \textbullet\ group shares of training jets within \RandVtwoShareTol{} of the \Kcoarse-class groups\\[2pt]
+   \textbullet\ best of \RandVtwoTrials{} draws: the fewest merges shared with the \Kcoarse-class level\\[2pt]
+   \textbullet\ left: the first partition; boxes with the same letter are one class};
+% how the random partitions with controlled flavor boundaries are built
+\node[hdr=cflav, anchor=north west, text width=4.75cm, inner sep=0.1cm, align=left, font=\FoneBold]
+  (fh) at ([yshift=-0.22cm]rb.south west) {Random partitions with controlled flavor boundaries};
+\node[txt, anchor=north west, text width=4.95cm] (fn) at ([yshift=-0.12cm]fh.south west)
+  {whole families of decays that differ only in quark flavor; two of them split one family,
+   the \RandFlavSplitOrbitClasses{} decays \RandFlavSplitOrbit:};
+\begin{scope}[shift={(fn.south west)}]
+  % brackets over the decays with and without a b quark (squares at a 0.2 cm pitch)
+  \node[txt, anchor=south] at (1.075,-0.45) {with $b$};
+  \node[txt, anchor=south] at (3.425,-0.45) {without $b$};
+  \draw[line width=0.5pt] (0,-0.54) -- (0,-0.47) -- (2.15,-0.47) -- (2.15,-0.54);
+  \draw[line width=0.5pt] (2.35,-0.54) -- (2.35,-0.47) -- (4.50,-0.47) -- (4.50,-0.54);
+  % no flavor boundary: all 22 in one class
+  \node[txt, anchor=north west] at (0,-0.62) {no flavor boundary};
+  \foreach \i in {0,...,10} {
+    \draw[sq, fill=white] (0.2*\i,-1.10) rectangle ++(0.15,0.15);
+    \draw[sq, fill=white] (2.35+0.2*\i,-1.10) rectangle ++(0.15,0.15);
+  }
+  % b-quark boundary: the decays with a b quark moved to another class
+  \node[txt, anchor=north west] at (0,-1.22) {$b$-quark boundary};
+  \foreach \i in {0,...,10} {
+    \draw[sq, fill=cflav!70!black] (0.2*\i,-1.70) rectangle ++(0.15,0.15);
+    \draw[sq, fill=white] (2.35+0.2*\i,-1.70) rectangle ++(0.15,0.15);
+  }
+  % random flavor boundary: the same number of decays, drawn at random
+  \node[txt, anchor=north west] at (0,-1.82) {random flavor boundary};
+  \foreach \i in {0,1,6,9,10}
+    \draw[sq, fill=white] (0.2*\i,-2.30) rectangle ++(0.15,0.15);
+  \foreach \i in {2,3,4,5,7,8}
+    \draw[sq, fill=cflav!70!black] (0.2*\i,-2.30) rectangle ++(0.15,0.15);
+  \foreach \i in {0,4,5,7,8,10}
+    \draw[sq, fill=white] (2.35+0.2*\i,-2.30) rectangle ++(0.15,0.15);
+  \foreach \i in {1,2,3,6,9}
+    \draw[sq, fill=cflav!70!black] (2.35+0.2*\i,-2.30) rectangle ++(0.15,0.15);
+  % key
+  \draw[sq, fill=cflav!70!black] (0,-2.62) rectangle ++(0.15,0.15);
+  \node[txt, anchor=west] (fkey) at (0.25,-2.545) {moved to another class};
+\end{scope}
+% ================================================================ (c) the pipeline
+% (c) starts below the lower of the two columns above, whatever their text heights
+\pgfpointanchor{m3}{south}\pgfgetlastxy{\FoneXa}{\FoneYa}%
+\pgfpointanchor{fkey}{south}\pgfgetlastxy{\FoneXb}{\FoneYb}%
+\pgfmathsetlengthmacro{\FoneYc}{min(\FoneYa,\FoneYb)-0.45cm}%
+\coordinate (ctop) at (0pt,\FoneYc);
+\begin{scope}[shift={(ctop)}]
+  \node[ttl, anchor=north west] at (0,0) {(c) Pretraining and evaluation};
+  % what every model of one seed shares
+  \node[stage, text width=2.15cm] (seed) at (1.175,-1.96)
+    {\textbf{Same for every model of one seed:} the training jets, their order and the
+     initial weights, except the output layer};
+  % one pretraining per label set: the configuration colours of every later figure
+  \node[draw=black!60, line width=0.6pt, rounded corners=2pt, minimum width=5.15cm,
+        minimum height=3.08cm, anchor=north west, inner sep=0pt] (pre) at (2.81,-0.42) {};
+  \node[anchor=north west, font=\FoneBold, inner sep=0pt] at (2.96,-0.52) {Pretraining on JetClass-II};
+  \node[chip=c188, minimum width=1.13cm, minimum height=0.42cm] at (2.96,-0.95) {\Kfull};
+  \node[chip=c162, minimum width=1.13cm, minimum height=0.42cm] at (4.20,-0.95) {\Kres};
+  \node[chip=c43,  minimum width=1.13cm, minimum height=0.42cm] at (5.44,-0.95) {\Kmid};
+  \node[chip=c17,  minimum width=1.13cm, minimum height=0.42cm] at (6.68,-0.95) {\Kcoarse};
+  \node[chip=crand, minimum width=1.70cm, minimum height=0.70cm] at (2.96,-1.47) {random\\partitions};
+  \node[chip=cflav, minimum width=3.04cm, minimum height=0.70cm] at (4.77,-1.47) {controlled flavor\\boundaries};
+  \node[chip=c162, dashed, minimum width=1.13cm, minimum height=0.42cm] at (2.96,-2.32) {\Kres};
+  \node[chip=c17,  dashed, minimum width=1.13cm, minimum height=0.42cm] at (4.20,-2.32) {\Kcoarse};
+  \node[txt, anchor=west] at (5.44,-2.53) {with auxiliary\\mass regression};
+  \node[chip=c188, dash dot, minimum width=1.13cm, minimum height=0.42cm] at (2.96,-2.94) {\Kfull};
+  \node[txt, anchor=west] at (4.20,-3.15) {kinematic inputs only};
+  % evaluation
+  \node[stage, text width=2.4cm] (fz) at (9.68,-0.95) {frozen features:\\linear probe,\\MLP probe};
+  \node[stage, text width=2.4cm] (ft) at (9.68,-2.05) {fine-tuning\\of all weights};
+  \node[stage, text width=2.4cm, draw=black, line width=1.1pt] (sc) at (9.68,-3.15) {trained from\\scratch};
+  \node[stage, text width=3.4cm, minimum height=3.2cm] (task) at (13.20,-2.00)
+    {\textbf{Downstream tasks}\\JetClass-II: all classes\\JetClass-II: class pairs\\\quad(both class-balanced)\\JetClass\\
+     top tagging\\quark/gluon, Pythia\\quark/gluon, Herwig\\jet mass\FoneXbx};
+  \draw[flow] (seed.east) -- (seed.east -| pre.west);
+  \draw[flow] (fz.west -| pre.east) -- (fz.west);
+  \draw[flow] (ft.west -| pre.east) -- (ft.west);
+  \draw[flow] (fz.east) -- (fz.east -| task.west);
+  \draw[flow] (ft.east) -- (ft.east -| task.west);
+  \draw[flow] (sc.east) -- (sc.east -| task.west);
+\end{scope}
+\end{tikzpicture}
+\caption{Design of the study.
+(a)~The class hierarchy on the decays of a heavy resonance~$X$ and on the jets from quantum
+chromodynamics (QCD); $q$ is a $u$ or $d$ quark, $\ell$ an electron or a muon, and $\tau_h$,
+$\tau_e$, $\tau_\mu$ a $\tau$ lepton decaying to hadrons, an electron or a muon. Each box is one
+class of the label set above its column, except the QCD box of the \Kfull-class column (Sophon's
+label set~\cite{sophon}), which stands for \LitJetClassTwoNQcdClasses{} classes. Each level merges
+classes of the level to its left; the lines below name what each merge removes.
+(b)~The controls: the first random partition, where boxes with the same letter are one class, and
+the random partitions with controlled flavor boundaries on the decays \RandFlavSplitOrbit{} (one
+square per decay; filled squares are moved to a second class).
+(c)~Models of one seed share the training jets, their order and the initial weights, except the
+output layer, the mass regression target, and the first layer and initial weights of the model with
+kinematic inputs only (the particle four-momenta). The hierarchy levels have \MlstNRunsWord{} seeds
+each, the models with the auxiliary mass regression \MlstMassNRunsWord{}, the random partitions with
+controlled flavor boundaries \RandFlavRuns{} and each random partition \RandVtwoRuns{}. Frozen
+features, the output of the backbone (the network below the output layer) with its weights held
+fixed, feed linear probes (logistic regressions) and multilayer perceptron (MLP) probes; fine-tuning
+trains all weights. Colors identify the configurations in every figure; dashed and dash-dotted
+borders mark the two variants.}
+\label{fig:design}
+\end{figure}

@@ -918,13 +918,12 @@ USECASE_ROWS = {
     "sophon_eq6_a3": "three quarks, exactly one $b$, vs QCD (Sophon's $A_3$)",
     "sophon_eq7_9": "$W'\\to W\\phi\\to WWW$ event discriminant",
     "vcb_eq1": "$D_{bc}$, boosted $|V_{cb}|$ measurement",
+    # PI 2026-11-02 (T1): GN3X reports the rejection of each QCD subclass (ATL-PHYS-PUB-2026-013
+    # Sec. 6.1, Figs. 6-7); a discriminant with its own weight per QCD subclass needs every QCD class
+    # as an output of its own, which only the 188-class label set has: the one row separating 188 from 162.
+    "gn3x_qcd_subclass": "QCD subclasses weighted separately (GN3X-style)",
 }
 USECASE_LEFT_OUT = {
-    # ATL-PHYS-PUB-2026-013 p.10 Eq. (1): D_s = log[p_s / (sum_b f_b p_b + ...)]
-    # with f_QCD "applied to all QCD classes". It needs only the QCD sum, so over
-    # these labels it is the X->bb row again; the per-subclass rejection the row
-    # encoded is an evaluation of the tagger, not a discriminant built from it.
-    "gn3x_qcd_subclass": "reads as the X->bb row: one QCD fraction for every subclass",
     # Not a published discriminant. W-vs-Z is never expressible over labels that
     # name decay products; the W-like score of Sophon Eq. (9) is, and the text
     # gives where it survives (UseWlike*, from wlike_survival below).
@@ -932,7 +931,7 @@ USECASE_LEFT_OUT = {
 }
 # Sophon Eq. (9): g_W(2) = g_{X->cs} + g_{X->qq}, the W-like two-prong score.
 WLIKE_CLASSES = ("label_X_cs", "label_X_qq")
-USECASE_CITE = {"arXiv:2405.12972": "sophon", "arXiv:2503.00118": "vcbboosted"}
+USECASE_CITE = {"arXiv:2405.12972": "sophon", "arXiv:2503.00118": "vcbboosted", "ATL-PHYS-PUB-2026-013": "atlasgnx"}
 
 
 def usecase_rows(surv: dict) -> list:
@@ -2802,26 +2801,27 @@ def _probe_notes(cells: str, tasks: list, nbkg: dict) -> list:
 
 
 def table_usecase(surv: dict, sizes: dict, pretrained: list) -> str:
-    """Table 1: which published discriminant is still constructible at each vocabulary."""
-    cols = [sizes[r] for r in RUNGS]
+    """Table 1: which published discriminant is still constructible at each label set pretrained
+    (PI decision b, 2026-11-02: the four trained label sets as columns, finest first)."""
+    rungs = [r for r in RUNGS if r in pretrained]
+    cols = [sizes[r] for r in rungs]
     head = ["discriminant & source & " + " & ".join(str(c) for c in cols) + " \\\\", "\\midrule"]
     rows = []
     for disc in usecase_rows(surv):
         row = surv[disc]
-        marks = " & ".join("$\\bullet$" if row["constructible"][r] else "---" for r in RUNGS)
+        marks = " & ".join("$\\bullet$" if row["constructible"][r] else "---" for r in rungs)
         ref, eq = row["source"].split(" ", 1)
-        eq = eq.replace("Eq. ", "Eqs.~" if ")-(" in eq else "Eq.~").replace(")-(", ")--(")
+        eq = eq.replace("Eq. ", "Eqs.~" if ")-(" in eq else "Eq.~").replace(")-(", ")--(").replace("Sec. ", "Sec.~")
         cite = f"\\cite{{{USECASE_CITE[ref]}}}" if ref in USECASE_CITE else tex(ref)
         rows.append(f"{USECASE_ROWS[disc]} & {cite}, {eq} & {marks} \\\\")
-    caption = ("Published discriminants built from sums of Sophon's output scores, against the "
-               "number of classes in the label set (columns, finest first). $\\bullet$: the "
-               "discriminant can be built exactly from that label set's outputs; ---: it cannot. "
-               "This is a property of the label set (Section~\\ref{sec:tree}), not of a trained model.")
-    notes = ["Pretrained in this study: the "
-             + ", ".join(f"{sizes[r]}-" for r in pretrained[:-1])
-             + f" and {sizes[pretrained[-1]]}-class label sets."]
-    return _table(head + rows, caption, "tab:usecase", "l l " + "c" * len(cols), notes,
-                  wide=True)
+    caption = ("Discriminants analyses build by summing the output scores of a pretrained tagger, against "
+               "the number of classes in the label set (columns, finest first): Sophon's and the boosted "
+               "$|V_{cb}|$ measurement's, and a discriminant that weights each QCD subclass separately, as "
+               "GN3X evaluates its rejection per QCD subclass. $\\bullet$: the discriminant can be built "
+               "exactly from that label set's outputs, because a merged class's score is the sum of the "
+               "scores of the classes it merges; ---: it cannot. This is a property of the label set, not of "
+               "a trained model.")
+    return _table(head + rows, caption, "tab:usecase", "l l " + "c" * len(cols), [], wide=True)
 
 
 def table_legs(legs: dict, sizes: dict) -> str:
@@ -4849,8 +4849,7 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     if "survival" in have:
         surv = json.loads(pathlib.Path(paths["survival"]).read_text())
         emit_usecase(em, surv, sizes, paths["survival"], paths["rung_map"])
-        pretrained = [r for r in RUNGS if r in ARM_RUNG.values()
-                      or (r in ("R63_Q1", "R29_Q1") and v2_present(root, "levels_64_30"))]
+        pretrained = [r for r in RUNGS if r in ARM_RUNG.values()]
         out["tables/usecase_survival.tex"] = table_usecase(surv, sizes, pretrained)
     else:
         missing.append(f"use-case survival -- {paths['survival']}")

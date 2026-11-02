@@ -83,7 +83,12 @@ def design_macros(em, root: pathlib.Path, data: pathlib.Path, missing: list, fmt
     src = root / "scripts/build_ft_budget_jobs.py"
     em.macro("FtBudgetSteps", _int(fmt_int, bfb.EPOCHS * bfb.STEPS), src, "EPOCHS * STEPS",
              "the largest number of optimizer steps below the full training set")
-    em.macro("FtBudgetEval", _int(fmt_int, bfb.STEPS), src, "STEPS", "steps between validation passes")
+    em.macro("FtBudgetEval", _int(fmt_int, bfb.STEPS), src, "STEPS",
+             "steps between validation passes at and above SMALL_N training jets")
+    em.macro("FtBudgetEvalSmall", _int(fmt_int, bfb.SMALL_STEPS), src, "SMALL_STEPS",
+             "steps between validation passes below SMALL_N training jets")
+    em.macro("FtBudgetEvalSmallBelow", _pow(bfb.SMALL_N), src, "SMALL_N",
+             "training jets below which the validation runs every SMALL_STEPS steps")
     em.macro("FtBudgetPatience", str(bfb.PATIENCE), src, "PATIENCE",
              "validation passes without improvement before training stops")
     em.macro("FtHeadMult", f"{bfb.HEAD_MULT:g}", src, "HEAD_MULT", "the head's learning-rate multiplier")
@@ -168,17 +173,49 @@ def choose_rates(doc: dict) -> tuple[str, str]:
     return pick["pre"], pick["scratch"]
 
 
-def gpu_bound_macro(em, fits: dict, runs: dict, index) -> None:
-    """MlstGpuTypeBound: the relative standard deviation of 1 - macro AUC on JetClass-II over the
-    three 188-class runs, which trained on two GPU types: the bound on the GPU type's effect."""
-    vals = [1 - fits[m]["cells"]["best70"]["jc2_188"][max(fits[m]["cells"]["best70"]["jc2_188"], key=int)][
-        "macro_auc_ovr"] for m in runs["L188"] if m in fits]
-    if len(vals) < 3:
-        em.macro("MlstGpuTypeBound", r"\pending{188-class probes}", index, "fewer than three runs")
+def _majority_gpu(comp: dict, m: str):
+    c = comp.get(m)
+    if not c:
+        return None
+    from collections import Counter
+    return Counter(e["device"] for e in c["epochs"]).most_common(1)[0][0]
+
+
+def gpu_bound_macro(em, fits: dict, runs: dict, comp: dict, index) -> None:
+    """MlstGpuTypeBound: how far the label-set ratios of the run index whose 188-class run trained on a
+    GPU type no other 188-class run used lie from those of the other indices. For each of the 162-, 43-
+    and 17-class label sets, the ratio of 1 - AUC to the 188-class run of the same index (AUC averaged
+    over the JetClass-II classes, largest training set of the fits the paper's ratios use); the bound is
+    the largest |ratio of that index / mean ratio of the others - 1|, in per cent. A ratio between
+    pretraining configurations on JetClass-II, the only form 1 - AUC takes in the paper (PI 2026-11-02);
+    it includes the seed-to-seed spread, so it bounds the GPU effect from above. An observation on one
+    run, not a test."""
+    def oma(m):
+        c = fits.get(m, {}).get("cells", {}).get("best70", {}).get("jc2_188", {})
+        return 1 - c[max(c, key=int)]["macro_auc_ovr"] if c else None
+    idx = lambda m: m.rsplit("-s", 1)[1]
+    gpu = {m: _majority_gpu(comp, m) for m in runs["L188"]}
+    odd = [m for m, g in gpu.items() if g is not None and list(gpu.values()).count(g) == 1]
+    if len(odd) != 1 or any(oma(m) is None for m in runs["L188"]):
+        em.macro("MlstGpuTypeBound", r"\pending{188-class probes}", index,
+                 "no single 188-class run on its own GPU type, or a fit missing")
         return
-    rel = 100 * float(np.std(vals, ddof=1) / np.mean(vals))
-    em.macro("MlstGpuTypeBound", f"{rel:.1f}\\%", index,
-             "relative SD of 1 - macro AUC (balanced JetClass-II, largest set) over the 188-class runs")
+    o = odd[0]
+    dev = {}
+    for arm in ("L162", "R42_Q1", "R16_Q1"):
+        by = {idx(m): m for m in runs.get(arm, [])}
+        r = {idx(m): oma(by[idx(m)]) / oma(m) for m in runs["L188"] if idx(m) in by and oma(by[idx(m)]) is not None}
+        others = [v for k, v in r.items() if k != idx(o)]
+        if idx(o) in r and len(others) >= 2:
+            dev[arm] = abs(r[idx(o)] / float(np.mean(others)) - 1)
+    if not dev:
+        em.macro("MlstGpuTypeBound", r"\pending{label-set probes}", index, "no label set has every ratio")
+        return
+    worst = max(dev, key=dev.get)
+    em.macro("MlstGpuTypeBound", f"{100 * dev[worst]:.1f}\\%", index,
+             f"largest |label-set ratio of 1 - AUC of index {idx(o)} / mean of the other indices - 1|, JetClass-II "
+             "largest set, per cent", f"{o} trained on {gpu[o]}; largest for {worst}; label sets "
+             + ", ".join(f"{a} {100 * v:.2f}%" for a, v in dev.items()))
 
 
 # ------------------------------------------------------------------ benchmark tables
@@ -214,50 +251,102 @@ def _value_cell(vals: list, col: str, task: str, fmt_pm, two) -> str:
     return f"{v[0]:,.{place}f}".replace(",", "{,}")
 
 
+def _num_sd(s):
+    """(value, SD) of a printed cell: 'm \\pm sd' -> (m, sd); 'a, b' (two runs) -> (larger, None)."""
+    import re
+    t = str(s).replace("{,}", "").replace(r"\textbf{", "")
+    m = re.match(r"\s*(?:\$\\geq\$)?(-?[\d.]+)\\,\$\\pm\$\\,(?:\$<\$)?([\d.]+)", t)
+    if m:
+        return float(m.group(1)), float(m.group(2))
+    two = re.match(r"\s*(-?[\d.]+), (-?[\d.]+)", t)
+    if two:
+        return max(float(two.group(1)), float(two.group(2))), None
+    return _num(t), None
+
+
 def _bold_best(rows: list, ncol: int) -> list:
-    """Bold the largest value of each column (higher is better for every benchmark metric)."""
+    """Bold the best value of each column (higher is better for every benchmark metric) and every value
+    within one standard deviation of it (C1.14)."""
     best = []
     for j in range(ncol):
-        vals = [_num(r[1][j]) for r in rows]
+        vals = [_num_sd(r[1][j])[0] for r in rows]
         best.append(max((x for x in vals if x is not None), default=None))
     out = []
     for name, cells in rows:
-        new = [rf"\textbf{{{c}}}" if best[j] is not None and _num(c) == best[j] else c
-               for j, c in enumerate(cells)]
+        new = []
+        for j, c in enumerate(cells):
+            v, sd = _num_sd(c)
+            hit = best[j] is not None and v is not None and (v == best[j] or (sd is not None and v + sd >= best[j]))
+            new.append(rf"\textbf{{{c}}}" if hit and c != "--" else c)
         out.append((name, new))
     return out
 
 
+# the published rows each benchmark table shows (FIGURE_PLAN T3, T4)
+LIT_ROWS = {"top": ("ParticleNet", "ParT", "ParT-f.t.", "MIParT-L-f.t.", "L-GATr-f.t.", "OmniLearned-l"),
+            "qg": ("PFN-Ex", "ParticleNet", "ParT", "ParticleNet-f.t.", "ParT-f.t.", "OmniLearned-m")}
+
+
+def _lit_cell(x) -> str:
+    """A published value as printed, with the table's thousands separator and plus-minus."""
+    if x is None:
+        return "--"
+    parts = str(x).replace("±", " ± ").split(" ± ")
+    parts = [_sep_int(p.strip()) if p.strip().isdigit() else p.strip() for p in parts]
+    return r"\,$\pm$\,".join(parts)
+
+
 def table_bench(task: str, per: dict, runs: dict, rows: tuple, label: dict, scratch: str, fmt_pm, two,
-                kin: dict | None = None) -> str:
-    """The published benchmark rows (literature_benchmarks.json) and ours, on the full training set:
-    accuracy, AUC, R50 and R30. task 'top' or 'qg' (the exp particle-ID scenario)."""
-    lit = json.loads(LIT.read_text())["top" if task == "top" else "qg_exp"]
+                kin: tuple | None = None, herwig: bool = False, zero: str | None = None) -> str:
+    """T3 (task 'top') and T4 ('qg', ParT's exp inputs; herwig=True adds the Herwig columns): the
+    published rows of LIT_ROWS, then ours on the full training set: from scratch, the label sets of
+    rows fine-tuned, and (kin = (row label, init)) the kinematic-only model. Columns: inputs set to
+    zero, accuracy, AUC, R50, R30; bold as _bold_best."""
+    lit_all = {r["method"]: r for r in json.loads(LIT.read_text())["top" if task == "top" else "qg_exp"]}
+    tasks = [task] + (["qg_herwig"] if herwig else [])
+    nc = len(BENCH_COLS) * len(tasks)
     lit_rows = []
-    for r in lit:
-        cite = rf"~\cite{{{r['cite']}}}"
-        lit_rows.append((METHOD_TEX.get(r["method"], r["method"]) + cite,
-                         [("--" if r[k] is None else str(r[k]).replace(" ± ", r"\,$\pm$\,").replace("±", r"\,$\pm$\,"))
-                          for k, _, _ in BENCH_COLS]))
-    by = per[task]
-    nmax = max(n for init, bn in by.items() for n in bn)
-    ours = []
-    ref = by.get(scratch, {}).get(nmax, [])
-    ours.append(("from scratch", [_value_cell([r[c] for r in ref], c, task, fmt_pm, two) for _, c, _ in BENCH_COLS]))
-    for arm in rows:
-        recs = [by.get(m[len("mtx-"):], {}).get(nmax) for m in runs[arm]]
-        if not any(recs):
+    for name in LIT_ROWS[task]:
+        if name not in lit_all:
             continue
-        cells = [_value_cell([r[0][c] if r else None for r in recs], c, task, fmt_pm, two) for _, c, _ in BENCH_COLS]
+        r = lit_all[name]
+        cells = [_lit_cell(r[k]) for k, _, _ in BENCH_COLS] + ["--"] * len(BENCH_COLS) * (len(tasks) - 1)
+        lit_rows.append((METHOD_TEX.get(name, name) + rf"~\cite{{{r['cite']}}}", cells))
+    ours = []
+
+    def recs_of(t, init):
+        by = per.get(t, {})
+        if not by:
+            return []
+        nmax = max(n for i, bn in by.items() for n in bn)
+        return by.get(init, {}).get(nmax, [])
+    ours.append(("from scratch", [_value_cell([r[c] for r in recs_of(t, scratch)], c, t, fmt_pm, two)
+                                  for t in tasks for _, c, _ in BENCH_COLS]))
+    for arm in rows:
+        cells = []
+        for t in tasks:
+            recs = [(recs_of(t, m[len("mtx-"):]) or [None])[0] for m in runs[arm]]
+            cells += [_value_cell([r[c] if r else None for r in recs], c, t, fmt_pm, two) for _, c, _ in BENCH_COLS]
         ours.append((label[arm], cells))
-    for name, rec in (kin or {}).items():
-        ours.append((name, [_value_cell([rec[c]], c, task, fmt_pm, two) for _, c, _ in BENCH_COLS]))
-    allrows = _bold_best(lit_rows + ours, len(BENCH_COLS))
-    lines = [r"\begin{tabular}{lcccc}", r"\toprule",
-             r" & accuracy & AUC & $R_{50}$ & $R_{30}$ \\", r"\midrule"]
-    lines += [f"{n} & " + " & ".join(c) + r" \\" for n, c in allrows[:len(lit_rows)]]
-    lines += [r"\midrule", r"\multicolumn{5}{l}{\textit{this work (Sophon network, fine-tuned)}} \\"]
-    lines += [f"{n} & " + " & ".join(c) + r" \\" for n, c in allrows[len(lit_rows):]]
+    kin_row = None
+    if kin:
+        recs = recs_of(task, kin[1])
+        kin_row = (kin[0], [_value_cell([recs[0][c]], c, task, fmt_pm, two) if recs else r"\pending{run}"
+                            for _, c, _ in BENCH_COLS] + ["--"] * len(BENCH_COLS) * (len(tasks) - 1))
+    allrows = _bold_best(lit_rows + ours + ([kin_row] if kin_row else []), nc)
+    zcol = {len(lit_rows) + i: (zero or "--") for i in range(len(ours))}
+    if kin_row:
+        zcol[len(lit_rows) + len(ours)] = "none"
+    head = [r"\begin{tabular}{ll" + "c" * nc + "}", r"\toprule"]
+    if herwig:
+        head += [r" & & \multicolumn{4}{c}{Pythia} & \multicolumn{4}{c}{Herwig} \\",
+                 r"\cmidrule(lr){3-6}\cmidrule(lr){7-10}"]
+    head += [r" & inputs set to zero & " + " & ".join(["accuracy & AUC & $R_{50}$ & $R_{30}$"] * len(tasks)) + r" \\",
+             r"\midrule"]
+    lines = head + [f"{n} & -- & " + " & ".join(c) + r" \\" for n, c in allrows[:len(lit_rows)]]
+    lines += [r"\midrule", r"\multicolumn{" + str(2 + nc) + r"}{l}{\textit{this work (Sophon's network)}} \\"]
+    lines += [f"{n} & {zcol[len(lit_rows) + i]} & " + " & ".join(c) + r" \\"
+              for i, (n, c) in enumerate(allrows[len(lit_rows):])]
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -268,7 +357,8 @@ JC1_COLS = (("label_Hbb", r"$H\to b\bar b$"), ("label_Hcc", r"$H\to c\bar c$"), 
 JC1_LIT_N = {"PFN": "100 M", "P-CNN": "100 M", "ParticleNet": "100 M", "ParT": "100 M"}
 # a rejection is marked when fewer background jets than this pass in any run (Poisson > 22 %)
 JC1_MIN_BKG = 20
-LPV_EPS = _module("experiments/EVAL/linear_probe_v2.py", "linear_probe_v2").JC1_EPS_S
+_LPV = _module("experiments/EVAL/linear_probe_v2.py", "linear_probe_v2")
+LPV_EPS, LPV_CLASSES = _LPV.JC1_EPS_S, _LPV.JC1_CLASSES
 
 
 def _jc1_cells(cells: dict, init: str, n: str, seeds) -> list:
@@ -276,16 +366,24 @@ def _jc1_cells(cells: dict, init: str, n: str, seeds) -> list:
     return [cells[init][n][s]["jc1"] for s in seeds if s in cells.get(init, {}).get(n, {})]
 
 
+def _jc_cell(vals, place, fmt_pm, two):
+    v = [x for x in vals if x is not None]
+    if len(v) >= 3:
+        return fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1)))
+    if len(v) == 2:
+        return two(v[0], v[1], ", ")
+    return f"{v[0]:,.{place}f}".replace(",", "{,}") if v else "--"
+
+
 def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, scratch: str, nmax: int,
-                   fmt_pm, two) -> str:
-    """JetClass in the form of ParT's Table 1: accuracy, macro AUC (one-vs-one, ParT's convention,
-    which equals the one-vs-rest macro AUC on JetClass's equal class sizes, checked here), and each
-    signal class's rejection of QCD at ParT's working point, marked where fewer than JC1_MIN_BKG QCD
-    jets pass in any run. ParT's
-    rows (100 M jets; Table 3's at 2 M) from literature_benchmarks.json, ours fine-tuned on nmax
-    jets (curves files of experiments/FT/ft_curves.py cells: pre the pretrained runs' tree, ref
-    the from-scratch reference's), mean +- SD over the runs."""
-    lit = json.loads(LIT.read_text())["jetclass"]
+                   fmt_pm, two, literature: bool = True) -> str:
+    """JetClass in the form of ParT's Table 1 (T2): accuracy, AUC averaged over class pairs (one-vs-one,
+    ParT's convention, which equals the one-vs-rest average on JetClass's equal class sizes, checked
+    here), and each signal class's rejection of QCD at ParT's working point, marked where fewer than
+    JC1_MIN_BKG QCD jets pass in any run. Published rows: those trained on 2 M jets (literature_benchmarks.json
+    entries with n_train; MIParT and L-GATr when the file has them), the training size beside each
+    row; ours fine-tuned on nmax jets (ft_curves.py cells: pre the pretrained runs' tree, ref the
+    from-scratch reference's), mean +- SD over the runs. Bold as _bold_best (C1.14), every row."""
     n = f"N{nmax}"
     head = (r"\begin{tabular}{ll" + "c" * (2 + len(JC1_COLS)) + "}", r"\toprule",
             r" & & & & \multicolumn{" + str(len(JC1_COLS)) + r"}{c}{rejection of QCD} \\",
@@ -294,31 +392,60 @@ def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, s
             r" & & & & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",
             r"\midrule")
     lines = list(head)
-    for r in lit:
-        name = r["method"].split(" (")[0]
-        lines.append(rf"{name}~\cite{{{r['cite']}}} & {r.get('n_train', JC1_LIT_N.get(r['method'], ''))} & "
-                     f"{r['acc']} & {r['auc_ovo']} & " + " & ".join(_sep_int(x) for x in r["rej"]) + r" \\")
-    lines += [r"\midrule",
-              r"\multicolumn{" + str(4 + len(JC1_COLS)) + r"}{l}{\textit{this work (Sophon network, fine-tuned)}} \\"]
+    ncol = 2 + len(JC1_COLS)
+    lit = []                                   # (row prefix, value cells, marks after the values)
+    if literature:
+        for r in json.loads(LIT.read_text())["jetclass"]:
+            if not r.get("n_train"):
+                continue           # the 100 M rows are context in the caption (FIGURE_PLAN T2)
+            name = r["method"].split(" (")[0]
+            lit.append((rf"{name}~\cite{{{r['cite']}}} & {r['n_train']}",
+                        [r["acc"], r["auc_ovo"]] + [_sep_int(x) for x in r["rej"]], [""] * ncol))
 
     def row(name, blocks):
-        def cell(vals, place):
-            v = [x for x in vals if x is not None]
-            if len(v) >= 3:
-                return fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1)))
-            if len(v) == 2:
-                return two(v[0], v[1], ", ")
-            return f"{v[0]:,.{place}f}".replace(",", "{,}") if v else "--"
         for b in blocks:
             if abs(b["macro_auc_ovo"] - b["macro_auc_ovr"]) > 1e-9:
                 raise SystemExit("FATAL: JetClass one-vs-one and one-vs-rest macro AUCs differ; the test "
                                  "set's classes are not of equal size and the table must show both")
-        cols = [cell([b["accuracy"] for b in blocks], 3), cell([b["macro_auc_ovo"] for b in blocks], 4)]
+        cols = [_jc_cell([b["accuracy"] for b in blocks], 3, fmt_pm, two),
+                _jc_cell([b["macro_auc_ovo"] for b in blocks], 4, fmt_pm, two)]
+        marks = ["", ""]
         for c, _ in JC1_COLS:
             wp = [b["per_class"][c]["rejection"] for b in blocks]
-            mark = r"$^\dagger$" if min(w["n_bkg_pass"] for w in wp) < JC1_MIN_BKG else ""
-            cols.append(cell([w["rejection"] for w in wp], 0) + mark)
-        return f"{name} & {nmax / 1e6:g} M & " + " & ".join(cols) + r" \\"
+            marks.append(r"$^\dagger$" if min(w["n_bkg_pass"] for w in wp) < JC1_MIN_BKG else "")
+            cols.append(_jc_cell([w["rejection"] for w in wp], 0, fmt_pm, two))
+        return f"{name} & {nmax / 1e6:g} M", cols, marks
+    ours = []
+    seeds = sorted({s for nn in ref.get(scratch, {}).values() for s in nn})
+    blocks = _jc1_cells(ref, scratch, n, seeds)
+    if blocks:
+        ours.append(row("from scratch", blocks))
+    for arm in rows:
+        blocks = [b for m in runs[arm] for b in _jc1_cells(pre, m[len("mtx-"):], n, ["s1"])]
+        if blocks:
+            ours.append(row(label[arm], blocks))
+    # C1.14: the best value of each column and every value within one SD of it in bold, the dagger
+    # outside the bold
+    bold = _bold_best([(p, c) for p, c, _ in lit + ours], ncol)
+    for i, ((prefix, cells), (_, _, marks)) in enumerate(zip(bold, lit + ours)):
+        if literature and i == len(lit):
+            lines += [r"\midrule", r"\multicolumn{" + str(2 + ncol)
+                      + r"}{l}{\textit{this work (Sophon's network, fine-tuned)}} \\"]
+        lines.append(prefix + " & " + " & ".join(c + mk for c, mk in zip(cells, marks)) + r" \\")
+    if literature and not ours:
+        lines += [r"\midrule", r"\multicolumn{" + str(2 + ncol) + r"}{l}{\textit{this work (Sophon's network, fine-tuned)}} \\"]
+    return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
+
+
+def table_jetclass_nbkg(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, scratch: str, nmax: int) -> str:
+    """A1: the QCD jets passing each signal class's working point, the fewest over a configuration's runs."""
+    n = f"N{nmax}"
+    lines = [r"\begin{tabular}{l" + "c" * len(JC1_COLS) + "}", r"\toprule",
+             r"fine-tuned from & " + " & ".join(h for _, h in JC1_COLS) + r" \\", r"\midrule"]
+
+    def row(name, blocks):
+        return name + " & " + " & ".join(str(min(b["per_class"][c]["rejection"]["n_bkg_pass"] for b in blocks))
+                                         for c, _ in JC1_COLS) + r" \\"
     seeds = sorted({s for nn in ref.get(scratch, {}).values() for s in nn})
     blocks = _jc1_cells(ref, scratch, n, seeds)
     if blocks:

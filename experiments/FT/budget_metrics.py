@@ -114,6 +114,7 @@ def main(argv=None) -> int:
             m["recipe"] = {k: man.get(k) for k in ("lr", "head_lr_mult", "lr_schedule", "weight_decay",
                                                    "max_epochs", "steps_per_epoch", "early_stop_patience",
                                                    "subset", "init", "checkpoint")}
+            m["gpu"] = man.get("gpu_device_name")       # every tree, for the compute table
             ic = cell / "init_checkpoint.json"
             if ic.exists():
                 m["init_checkpoint"] = json.loads(ic.read_text())

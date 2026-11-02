@@ -53,7 +53,17 @@ GENERATED = {"results_generated.tex",
              "tables/mlst_ft.tex", "tables/mlst_ft_rej.tex",
              "tables/mlst_mlp.tex", "tables/mlst_fill.tex", "tables/mlst_sculpt.tex",
              "tables/mlst_boot.tex", "tables/mlst_bench_top.tex", "tables/mlst_bench_qg.tex",
-             "tables/mlst_jetclass.tex", "tables/mlst_xbx.tex"}
+             "tables/mlst_jetclass.tex", "tables/mlst_xbx.tex",
+             # Phase B (2026-11-02): the new paper's main and appendix tables
+             "tables/mlst_balance.tex", "tables/mlst_bn.tex", "tables/mlst_per_class.tex",
+             "tables/mlst_mass_detail.tex", "tables/mlst_per_run.tex", "tables/mlst_xbx_rej.tex",
+             "tables/mlst_partrepro.tex", "tables/mlst_lrsweep.tex", "tables/mlst_inputs.tex",
+             "tables/mlst_jetclass_all.tex", "tables/mlst_jetclass_nbkg.tex", "tables/mlst_jetclass_probe.tex",
+             "tables/mlst_rand_prong.tex"}
+
+# Directories of paper/journal that hold no compiled manuscript: draft 89, kept as a source of facts
+# only (PI, 2026-11-02), is never compiled, so its typed numbers are not the paper's.
+NOT_COMPILED = ("archive/",)
 
 # Numbers allowed in prose, each with the reason it is not a result.
 # A number earns a line here only if it cannot change when a job finishes.
@@ -142,14 +152,15 @@ RATIO_OF_MEANS = re.compile(r"\\(\w*OmaRatio\w*|Rand(?:Sem)?CostFactor\w*|VcbFac
 
 # Drawings: their digits are TikZ coordinates and lengths, not numbers about data; every count
 # they print is a generated macro.
-DRAWINGS = {"fig_design.tex"}
+DRAWINGS = {"fig_design.tex", "fig_f1.tex"}   # TikZ coordinates are not results
 
 
 def manuscript_files() -> list[pathlib.Path]:
     if not JOURNAL.is_dir():
         return []
     return sorted(p for p in JOURNAL.rglob("*.tex")
-                  if p.relative_to(JOURNAL).as_posix() not in GENERATED | DRAWINGS)
+                  if p.relative_to(JOURNAL).as_posix() not in GENERATED | DRAWINGS
+                  and not p.relative_to(JOURNAL).as_posix().startswith(NOT_COMPILED))
 
 
 def prose_of(path: pathlib.Path) -> str:
@@ -254,3 +265,23 @@ def test_the_guard_does_not_fire_on_a_macro_or_a_comment(tmp_path):
     found = [m.group() for line in prose_of(f).splitlines()
              for m in NUMBER.finditer(line) if m.group().lstrip("-") not in ALLOWED]
     assert found == [], found
+
+
+def test_the_archived_draft_is_not_scanned_and_everything_else_is():
+    """draft 89 under archive/ is a source of facts, not compiled; a hand-written file anywhere else,
+    tables/ included, is scanned (only the exact generated paths are exempt)."""
+    rels = {p.relative_to(JOURNAL).as_posix() for p in manuscript_files()}
+    assert not any(r.startswith("archive/") for r in rels)
+    assert not rels & GENERATED
+    on_disk = {p.relative_to(JOURNAL).as_posix() for p in JOURNAL.rglob("*.tex")} if JOURNAL.is_dir() else set()
+    assert rels == {r for r in on_disk if r not in GENERATED | DRAWINGS and not r.startswith(NOT_COMPILED)}
+
+
+def test_every_table_the_generator_writes_is_listed_as_generated():
+    """GENERATED in sync with mlst_results.build's outputs: every table name the module can write."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("mlst_results_gen", REPO / "experiments/FIGS/mlst_results.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    names = {f"tables/{n}.tex" for _, n, _, _ in m.PLACEHOLDERS} | {f"tables/{n}.tex" for _, n in m.LONGTABLES}
+    assert names <= GENERATED, sorted(names - GENERATED)

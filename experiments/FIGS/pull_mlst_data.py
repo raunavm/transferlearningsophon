@@ -30,7 +30,13 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
                                    test-sample spreads
                                    (scripts/build_curve_jobs.py)
   xbx/<signal>/<model>.json        X->bb / X->bs on the real samples (scripts/build_xbx_jobs.py)
-  linprobe/fits_v4/, fits_v4_mlp/  the v4 probes (experiments/EVAL/probe_bal.py, scripts/build_jc2bal_jobs.py)
+  linprobe/fits_v4/, fits_v4_mlp/  the v4 probes (experiments/EVAL/probe_bal.py, scripts/build_jc2bal_jobs.py),
+                                   the kinematic-only model's top probe among them (jc2bal-kin)
+  linprobe/fits_v4_fill/           the three substitutions of the missing inputs side by side
+                                   (probe_bal.py --fill, scripts/build_jc2bal_jobs.py fitfill)
+  head/atlas_res/<model>.json      ATLAS mass resolution and median response (/data/results/eval/atlas_res)
+  xbx_scratch/<signal>/s<k>.json   X->bs from scratch, its finished cells' endpoints.json
+                                   (scripts/build_xbx_jobs.py SCRATCH_ROOT_IHEP/<signal>/s<k>/)
   jc2bal/{census,manifest}.json    the class-balanced JetClass-II sets (experiments/FT/stage_jc2_balanced.py)
   head/curves_v2/<model>_{sculpting_v2,response}.json  sculpting curves and mass response histograms
   budget/{budget,lrsweep}_metrics.json  the fixed-budget fine-tuning read-outs (experiments/FT/budget_metrics.py)
@@ -163,6 +169,8 @@ def main() -> int:
         bal = pathlib.Path("/data/finetune/jc2_bal")
         v4 = ((EVAL / "v2_linprobe_bal" / "fits_v4", "linprobe/fits_v4", "*.json"),
               (EVAL / "v2_linprobe_bal" / "fits_v4_mlp", "linprobe/fits_v4_mlp", "*.json"),
+              (EVAL / "v2_linprobe_bal" / "fits_v4_fill", "linprobe/fits_v4_fill", "*.json"),
+              (EVAL / "atlas_res", "head/atlas_res", "*.json"),
               (bal, "jc2bal", "census.json"), (bal, "jc2bal", "manifest.json"),
               (EVAL / "v2_head" / "curves_v2", "head/curves_v2", "*.json"),
               (FT / "budget", "budget", "budget_metrics.json"),
@@ -175,6 +183,12 @@ def main() -> int:
                 json.loads(b)
                 rel = f"{f.parent.name}.json" if name == "partrepro" else f.name
                 add(f"{name}/{rel}", b)
+        # X->bs from scratch (scripts/build_xbx_jobs.py SCRATCH_ROOT_IHEP): finished cells only
+        for f in sorted(pathlib.Path("/data/results/xbx/scratch_ihep").glob("*/s*/endpoints.json")):
+            if (f.parent / "DONE").exists():
+                b = f.read_bytes()
+                json.loads(b)
+                add(f"xbx_scratch/{f.parent.parent.name}/{f.parent.name}.json", b)
         add("ft_mlst/manifests.json", (json.dumps(manifests(), indent=1) + "\n").encode())
         add("jc2_test/counts.json", (json.dumps(jc2_test_counts()) + "\n").encode())
         for run in sorted(MTX.glob("mtx-*")):
