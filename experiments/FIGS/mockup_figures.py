@@ -421,12 +421,16 @@ def figure_f5(M, runs, outdir) -> list:
                             zorder=2, **kw)
                 ax.plot(mv, [y + 0.38] * len(mv), markersize=4, zorder=3, **kw)
         hi = max(vals + [e for e, _, _ in ends])
-        xmax = hi * 2.0 if log else hi * 1.32
+        xmax = hi * 2.0 if log else hi * 1.5
         for e, y, txt in ends:
             ax.text(e * 1.08 if log else e + 0.02 * xmax, y, txt, va="center", fontsize="x-small")
         ax.set_xlim(lo, xmax)
         if log:
-            F._log_axis(ax.xaxis, lo, xmax)
+            # a few decade-and-three ticks: 1-2-5 ticks run together on this short axis
+            ax.xaxis.set_major_locator(ticker.FixedLocator([t for t in (1, 3, 10, 30, 100, 300, 1000, 3000)
+                                                            if lo <= t <= xmax]))
+            ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}"))
+            ax.xaxis.set_minor_formatter(ticker.NullFormatter())
         else:
             ax.xaxis.set_major_locator(ticker.MaxNLocator(4))
         ax.set_yticks(range(len(rows)))
@@ -445,7 +449,7 @@ def figure_f5(M, runs, outdir) -> list:
                     drop.append(100 * (a - z) / a)
                     zero.append(z)
             name = "Randomly initialized" if row == "INIT" else F.ROW_NAME[row]
-            rows.append((name, _look(M, row), drop, f"{100 * np.mean(zero):.1f}\\%", None))
+            rows.append((name, _look(M, row), drop, f"acc. {np.mean(zero):.3f}", None))
         bars(ax, rows)
         ax.set_title(title, fontsize="small", loc="left")
         ax.set_xlabel("Relative drop in accuracy [\\%]\n($\\leftarrow$ smaller is better)", fontsize="small")
@@ -490,7 +494,7 @@ def figure_f7(M, runs, outdir) -> list:
     style.use_style()
     import matplotlib.pyplot as plt
     fig = plt.figure(figsize=(11.0, 9.0))
-    outer = fig.add_gridspec(2, 2, hspace=0.32, wspace=0.3)
+    outer = fig.add_gridspec(2, 2, hspace=0.5, wspace=0.3)
     look = _look(M, "L188")
     for k, (key, f, ds, met, pds, title, ylab, nmin) in enumerate(FT_PANELS):
         inner = outer[k // 2, k % 2].subgridspec(2, 1, height_ratios=(3, 1), hspace=0.0)
@@ -560,7 +564,7 @@ def figure_f8a(M, runs, outdir) -> list:
     style.use_style()
     import matplotlib.pyplot as plt
     fig, axes = plt.subplots(2, 3, figsize=(13.5, 5.6), sharex="col",
-                             gridspec_kw={"height_ratios": (3, 1), "hspace": 0.05, "wspace": 0.4})
+                             gridspec_kw={"height_ratios": (3, 1), "hspace": 0.05, "wspace": 0.55})
     # (a) response: fraction of jets per bin, resonant and QCD weighted by their jet counts (n of
     # binned.group in head/<model>_mass.json), mean over the runs of each model; the first and last
     # stored bins hold the clipped overflow and are not drawn
@@ -623,8 +627,8 @@ def figure_f8a(M, runs, outdir) -> list:
         rx.set_ylabel("Ratio", fontsize="small")
         rx.set_xlabel(xlabel, fontsize="small")
         ax.set_ylabel(r"Resolution $\sigma_{\mathrm{eff}}$", fontsize="small")
-        ax.set_title("(b) Resolution against jet $p_{\\mathrm{T}}$" if var == "jet_pt" else
-                     "(c) Resolution against generator mass", fontsize="small", loc="left")
+        ax.set_title("(b) Against jet $p_{\\mathrm{T}}$" if var == "jet_pt" else
+                     "(c) Against generator mass", fontsize="small", loc="left")
     handles = [Line2D([], [], color="black", linewidth=1.5)]
     for a in M.MASS:
         look = _look(M, a)
@@ -643,7 +647,7 @@ def figure_f8b(M, runs, outdir) -> list:
     style.use_style()
     import matplotlib.pyplot as plt
     fig = plt.figure(figsize=(13.5, 9.0))
-    outer = fig.add_gridspec(2, 1, height_ratios=(4, 3.4), hspace=0.3)
+    outer = fig.add_gridspec(2, 1, height_ratios=(4, 3.4), hspace=0.5)
     top = outer[0].subgridspec(2, 3, height_ratios=(3, 1), hspace=0.05, wspace=0.3)
     ratio_axes, hi = [], 0.0
     for j, a in enumerate(shown):
@@ -701,7 +705,7 @@ def figure_f8b(M, runs, outdir) -> list:
     ax.set_ylim(2e-2, 2e-1)
     F._log_axis(ax.yaxis, 2e-2, 2e-1)
     ax.set_xlabel(r"QCD efficiency $\varepsilon_{\mathrm{QCD}}$", fontsize="small")
-    ax.set_ylabel("Jensen--Shannon distance (base 2)", fontsize="small")
+    ax.set_ylabel("JS distance (base 2)", fontsize="small")
     ax.set_title("(d) Sculpting against the QCD efficiency", fontsize="small", loc="left")
     # the third column's space beside (d) is empty: the legend goes there
     ax.legend(frameon=False, fontsize="small", loc="center left", bbox_to_anchor=(1.02, 0.5))
