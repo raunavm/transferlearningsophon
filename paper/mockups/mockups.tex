@@ -13,6 +13,8 @@
 \graphicspath{{../../figures/mockups/}}
 \newcommand{\prelim}{\textcolor{red!70!black}{[preliminary data]}}
 \newcommand{\e}{$\cdot$}
+\newcommand{\pend}{\textcolor{red!70!black}{\textit{pending}}}
+\newcommand{\pmm}{\,$\pm$\,}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{4pt}
 
@@ -23,12 +25,11 @@
 \maketitle
 
 Each item is drawn in the layout the figure plan gives it, from the results committed today.
-Each caption gives the claim the item will carry once the final results are in. The note under each figure
-says what is a stand-in or old. Tables are skeletons: rows and columns as planned, with
-cells left empty (\e) until the final numbers are generated, except Table~1, which is final.
-Paper order: Figure~1, Table~1, Figures~2--4, Table~2, Figure~5, Tables~3--4, Figure~6 (F7),
-Figure~7 (F8a), Table~5, Figure~8 (F8b), Figure~9. The benchmark ROC figure (F6) is left out
-(decision P3).
+Each caption gives the claim the item will carry once the final results are in, and says what is
+a stand-in or old. Tables hold today's values, copied from the tables the generator emits today (checked cell by cell); cells marked \pend\ wait on runs or inputs.
+Table~1's content is final. Paper order: Figure~1, Table~1, Figures~2--4, Table~2, Figure~5,
+Tables~3--4, Figure~6 (F7), Figure~7 (F8a), Table~5, Figure~8 (F8b), Figure~9. The benchmark ROC
+figure (F6) is left out (decision P3).
 
 % ------------------------------------------------------------------ F1
 \begin{figure}[p]
@@ -39,25 +40,32 @@ Figure~7 (F8a), Table~5, Figure~8 (F8b), Figure~9. The benchmark ROC figure (F6)
 \end{minipage}\hfill
 \begin{minipage}[t]{0.42\linewidth}\vspace{0pt}
 \fbox{\parbox{0.95\linewidth}{\small (b) \textbf{Controls} (TikZ in the final figure).
-A random partition: resonant classes assigned at random to 16 groups plus QCD, group sizes
-matched to the 17-class groups. Three partitions that differ only in a flavor boundary: none,
-a $b$-quark boundary in four-quark decays, a random boundary of the same size.}}\\[6pt]
-\fbox{\parbox{0.95\linewidth}{\small (c) \textbf{Pipeline}. Same jets, order and initial weights
+A random partition: resonant classes assigned at random to 16 groups plus QCD, each group's
+share of the training jets within 5\% of the matching 17-class group's. Three partitions that
+differ only in a flavor boundary: none, a $b$-quark boundary in four-quark decays, a random
+boundary moving the same share (within 1\%).}}\\[6pt]
+\fbox{\parbox{0.95\linewidth}{\small (c) \textbf{Pipeline}. Same jets, order and trunk weights
 for every model of a seed $\to$ pretraining on one label set (optionally with the auxiliary
 mass regression) $\to$ frozen features $\to$ linear probe (MLP probe beside a null) or
 fine-tuning $\to$ JetClass-II, JetClass, top, quark/gluon (Pythia, Herwig), $X\to b\bar b$/$X\to bs$.}}
 \end{minipage}
-\caption{\prelim\ Design. Within a seed, models see the same jets in the same order from the same
-initial weights; only the label set changes, and each merge removes a named physics distinction.
-The random and flavor-controlled partitions separate the number of classes from which classes
-are merged. Panel (a) is today's schematic; (b) and (c) are placeholders.}
+\caption{\prelim\ Design. Within a seed, models see the same jets in the same order and start
+from the same trunk weights; only the label set, and with it the output layer, changes, except
+that the mass models add a regression target and the kinematic-only model has its own inputs and
+first layer. Each merge of the hierarchy removes a named physics distinction, and the random and
+flavor-controlled partitions separate the number of classes from which classes are merged.
+In (a), boxes of one tint within a column are one class; white boxes are classes of their own;
+the brackets at the left mark decays that differ only in quark flavor; QCD is 27 classes at 188
+(by quark content) and one class from 162 on. Panel (a) is today's schematic; (b) and (c) are
+placeholders.}
 \end{figure}
 
 % ------------------------------------------------------------------ T1
 \begin{table}[p]
 \centering
 \caption{Analysis discriminants built from sums of Sophon's output scores, and whether each label
-set can form them ($\checkmark$) or not (---). Final.}
+set can form them ($\checkmark$) or not (---). The content is final; the generator
+(make\_tables.table\_usecase) will emit this table in Phase B.}
 \begin{tabular}{llcccc}
 \toprule
 discriminant & source & 188 & 162 & 43 & 17 \\
@@ -74,25 +82,49 @@ $D_{bc}$, boosted $|V_{cb}|$ & Zhao et al., Eq.~(1) & $\checkmark$ & $\checkmark
 % ------------------------------------------------------------------ F2
 \begin{figure}[p]
 \centering
-\includegraphics[width=0.7\linewidth]{F2_label_granularity.pdf}
+\includegraphics[width=0.75\linewidth]{F2_label_granularity.pdf}
 \caption{\prelim\ Linear probe on the 188 JetClass-II classes: ratio of $1-\mathrm{AUC}$ (one class
-against the rest, averaged) to the 188-class model of the same seed, against the number of
-pretraining classes. Claim: coarser labels give features from which a linear probe separates
-the classes worse, and random partitions at 17 classes lose less than the 17-class level of the
-hierarchy, so the cost depends on which classes are merged. The final caption gives the
-absolute AUC of the 188-class model and of the randomly initialized network, and states that this
-is the 188-class model's own pretraining task. Form of Hong et al.\ Fig.~5.}
+against the rest, averaged over classes) to the 188-class model of the same seed, against the
+number of pretraining classes. Large markers: mean $\pm$ SD over three pretraining runs
+(hierarchy) or over the five random partitions (one run each, each divided by the 188-class run
+of its own seed: partitions 1 and 3 by seed 1, partitions 2, 4 and 5 by seed 2); small dots:
+single runs. Claim: coarser labels give features from which a linear probe separates the classes
+worse (17 over 188 classes: $1.538\pm0.025$), and the random partitions at 17 classes
+($1.161\pm0.009$, level with the 43-class model) lose far less than the 17-class level of the
+hierarchy, so the cost depends on which classes are merged. This task is the 188-class model's own
+pretraining task, so finer label sets are favoured by construction. Anchors: AUC $0.97599\pm0.00004$
+for the 188-class model, $0.8058\pm0.0018$ for the randomly initialized network ($0.8525\pm0.0019$
+with BatchNorm recomputed). Form of Hong et al.\ Fig.~5; departures: SD bars are drawn, and the
+controls are placed at the class count they match. Stand-ins: natural-composition JetClass-II test
+set (final: class-balanced); the fine-tuning line is absent until the class-balanced JetClass-II
+fine-tuning runs exist.}
 \end{figure}
 
 % ------------------------------------------------------------------ F3
 \begin{figure}[p]
 \centering
-\includegraphics[height=0.86\textheight]{F3_per_class.pdf}
-\caption{\prelim\ JetClass-II, class by class: ratio of a class's $1-\mathrm{AUC}$ under each label set
-to the 188-class model of the same seed (linear probe, mean over runs). Rows are grouped by the
-17-class parent; QCD forms the bottom block. Claim: the cost concentrates in classes whose label merges
-them with decays that differ only in flavor, and the controls move it to whichever classes
-they merge. New form; nearest precedents JP-JEPA Fig.~2f,g and CMS JME-25-001 Fig.~7.}
+\includegraphics[width=\linewidth,height=0.6\textheight,keepaspectratio]{F3_per_class.pdf}
+\caption{\prelim\ JetClass-II, class by class: ratio of a class's $1-\mathrm{AUC}$ (one against the
+rest, linear probe) under each label set to the 188-class model of the same seed. Mean over three
+runs for the label sets and two for the flavor-controlled partitions, one run per random
+partition; median per-class seed SD of the ratio 0.03 (162), 0.05 (43), 0.08 (17), 0.04--0.05
+(flavor-controlled). Rows are grouped by the 17-class parent (brackets; $YY\to$ stands for
+$X\to YY\to$; the three small two-prong leptonic groups share one label); the 27 QCD classes form
+the bottom block, after a gap. Colour clipped at 4 (no cell is below 1/4): 20 cells lie above 4,
+the largest 12.6 ($X\to\mu\mu$ at 17 classes). Dot: in that label set the class shares its group
+with a decay that differs only in quark or lepton flavor. Dash: ratio below 0.9 (33 cells), so
+that these light blue cells are not read as light red in greyscale. Hatched rows: fewer than 1,000
+jets in today's test subsample (81 of 188 classes). Claim: the cost concentrates in classes whose
+label merges them with decays that differ only in quark or lepton flavor (geometric-mean ratio at
+17 classes 1.89 for the 182 dotted classes against 1.25 for the 6 others; at 43 classes 1.52 for
+172 against 1.05 for 16); the largest costs are lepton-flavor merges ($X\to ee$ with
+$X\to\mu\mu$, $X\to\tau_h\tau_e$ with $X\to\tau_h\tau_\mu$), and the controls move the cost to
+whichever classes they merge. The three flavor-controlled partitions dot the same classes; on the
+22 four-quark classes ($X\to YY\to qqqq$ by flavor) the geometric-mean ratio with / without a $b$
+quark is 1.78 / 1.47 with no flavor boundary, 1.32 / 1.20 with the $b$-quark boundary and
+1.29 / 1.15 with the random one, so any flavor boundary helps, not specifically the $b$-quark one.
+New form; nearest precedents JP-JEPA Fig.~2f,g and CMS JME-25-001 Fig.~7. Stand-in:
+natural-composition test subsample (final: class-balanced set, all jets).}
 \end{figure}
 
 % ------------------------------------------------------------------ F4
@@ -100,22 +132,37 @@ they merge. New form; nearest precedents JP-JEPA Fig.~2f,g and CMS JME-25-001 Fi
 \centering
 \includegraphics[width=\linewidth]{F4_flavor_pairs.pdf}
 \caption{\prelim\ Decays that differ only in flavor: ratio of $1-\mathrm{AUC}$ on the pair to the
-188-class model of the same seed. Question answered: does a flavor boundary in the label set
-improve the linear separation of such pairs, including pairs the label set merges? Open
-markers in the right panel: MLP probe beside the 162-class linear null. The sentence is written
-from the final numbers; today's data do not support ``boundary, not count'' as phrased.}
+188-class model of the same seed (linear probe). Marker fill: filled, the label set keeps the pair
+apart; open, it merges the pair; left half filled, it merges part of it (the 43-class model and
+random partition~2 in panel (c)). The controls (all with 17 classes) are drawn beside $x=17$ and
+are read against the 17-class point. Hierarchy: mean $\pm$ SD over three runs, runs as small
+dots; random partitions: one run each, with no mean marker, because it would mix partitions that
+merge the pair with partitions that keep it apart; flavor-controlled partitions: both runs as
+dots, the bar showing their range. Panel (c), open square left of 162: the MLP probe of the
+162-class model beside its linear null, as a ratio to the 188-class MLP probe of the same seed
+($1.003\pm0.004$). Question answered: does a flavor boundary in the label set improve the linear
+separation of such pairs, including pairs the label set merges? Random partitions that merge a
+pair and those that keep it apart give about the same values on $X\to b\bar b$ vs $c\bar c$ and
+$X\to YY\to bbqq$ vs $ccqq$; on $X\to bc$ vs $bq$, $cs$ those that merge it are about 11\% worse
+($1-\mathrm{AUC}$ of 69.5 and $73.6\times10^{-3}$ against 63.8 and $64.2\times10^{-3}$). The
+claim sentence will be written from the final numbers; today's data do not support ``boundary,
+not count'' as phrased. Stand-in: natural-composition pair test sets (final: class-balanced pairs).}
 \end{figure}
 
 % ------------------------------------------------------------------ T2
 \begin{table}[p]
 \centering
 \small
-\caption{\prelim\ JetClass in the form of ParT's Table~1 (skeleton). Accuracy, AUC averaged over class pairs,
-and the rejection of QCD jets per signal class at ParT's working points. Literature rows at
-$2\times10^6$ training jets, from scratch; ours fine-tuned on $10^6$. Mean $\pm$ SD over three
-pretraining runs; $^\dagger$: fewer than 20 QCD jets pass. Claim: the 162-class model matches
-the 188-class model; at 17 classes rejection falls in most signal classes while $H\to b\bar b$
-is unchanged.}
+\caption{\prelim\ JetClass in the form of ParT's Table~1. Accuracy, AUC averaged over class pairs
+(one against one, as ParT), and the rejection of QCD jets per signal class at ParT's working
+points. Literature rows at $2\times10^6$ training jets, from scratch; ours fine-tuned on $10^6$
+and scored on $2\times10^6$ test jets, the AUC on every fourth one (500,000). Mean $\pm$ SD over
+three pretraining runs (from scratch: three seeds); $^\dagger$: fewer than 20 QCD jets pass in at
+least one run. Claim: the 162-class model matches the 188-class model within the seed spread; at
+17 classes accuracy falls by 0.006 and rejection by 7--16\% in $H\to c\bar c$, $H\to 4q$,
+$H\to\ell\nu qq'$, $W$ and $Z$ (and by 23--30\% in the dagger-marked top classes), while
+$H\to b\bar b$, whose rejection rests on about 30 QCD jets, is unchanged within counting noise.
+The MIParT and L-GATr rows wait on their entry in the literature file.}
 \setlength{\tabcolsep}{3pt}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{lccccccccccc}
@@ -123,16 +170,16 @@ is unchanged.}
  & Acc & AUC & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ & $H\to\ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
  & & & $R_{50}$ & $R_{50}$ & $R_{50}$ & $R_{50}$ & $R_{99}$ & $R_{50}$ & $R_{99.5}$ & $R_{50}$ & $R_{50}$ \\
 \midrule
-ParticleNet & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
-ParT & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
-MIParT & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
-L-GATr & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
+ParticleNet & 0.828 & 0.9820 & 5{,}540 & 1{,}681 & 90 & 662 & 1{,}654 & 4{,}049 & 4{,}673 & 260 & 215 \\
+ParT & 0.836 & 0.9834 & 5{,}587 & 1{,}982 & 93 & 761 & 1{,}609 & 6{,}061 & 4{,}474 & 307 & 236 \\
+MIParT & \pend & \pend & \pend & \pend & \pend & \pend & \pend & \pend & \pend & \pend & \pend \\
+L-GATr & \pend & \pend & \pend & \pend & \pend & \pend & \pend & \pend & \pend & \pend & \pend \\
 \midrule
-from scratch & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
-188 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
-162 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
-43 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
-17 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
+from scratch & 0.8269\pmm0.0010 & 0.9821\pmm0.0001 & 5{,}090\pmm200 & 1{,}540\pmm50 & 92.9\pmm1.0 & 680\pmm50 & 1{,}539\pmm24 & 5{,}300\pmm600 & 4{,}150\pmm270 & 282\pmm4 & 227.0\pmm2.8 \\
+188 classes, fine-tuned & 0.8491\pmm0.0005 & 0.9859\pmm0.0001 & 6{,}520\pmm120 & 3{,}015\pmm26 & 105.9\pmm3.3 & 1{,}205\pmm33 & 3{,}390\pmm270 & 16{,}900\pmm2{,}200$^\dagger$ & 11{,}400\pmm1{,}000$^\dagger$ & 413\pmm13 & 323\pmm5 \\
+162 classes, fine-tuned & 0.8495\pmm0.0002 & 0.9859\pmm$<$0.0001 & 6{,}600\pmm600 & 3{,}110\pmm150 & 104.3\pmm1.6 & 1{,}180\pmm50 & 3{,}600\pmm400 & 14{,}700\pmm3{,}200$^\dagger$ & 10{,}400\pmm1{,}200$^\dagger$ & 424\pmm13 & 318.7\pmm2.4 \\
+43 classes, fine-tuned & 0.8480\pmm0.0006 & 0.9857\pmm0.0001 & 6{,}900\pmm700 & 2{,}880\pmm230 & 106.6\pmm2.5 & 1{,}070\pmm50 & 3{,}210\pmm150 & 15{,}100\pmm1{,}400$^\dagger$ & 10{,}400\pmm800$^\dagger$ & 410\pmm9 & 320\pmm5 \\
+17 classes, fine-tuned & 0.8434\pmm0.0001 & 0.9849\pmm0.0001 & 6{,}600\pmm600 & 2{,}680\pmm130 & 103.7\pmm2.4 & 1{,}017\pmm22 & 3{,}100\pmm400 & 11{,}800\pmm2{,}000$^\dagger$ & 8{,}800\pmm1{,}100 & 382\pmm10 & 299.3\pmm2.6 \\
 \bottomrule
 \end{tabular}}
 \end{table}
@@ -141,41 +188,53 @@ from scratch & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
 \begin{figure}[p]
 \centering
 \includegraphics[width=\linewidth]{F5_missing_inputs.pdf}
-\caption{\prelim\ Missing input features. Top: relative drop in JetClass-II accuracy when the
-top-tagging or quark/gluon inputs are zero (and, when available, set to the training mean or to an
-average of random draws of real particles). Bottom: $R_{30}$ of the linear probe on top and
-quark/gluon, open circles the MLP probe. Claim: the weak frozen probes on top and quark/gluon
-come from zeroed inputs placing jets where no pretraining jet lies, not from lost information.
-Form of JP-JEPA Fig.~3a with Elsharkawy et al.\ Fig.~4 hatching.}
+\caption{\prelim\ Missing input features, linear probe. (a), (b): relative drop in JetClass-II
+accuracy when the top-tagging (10 of 17) or the quark/gluon inputs are zero, against the same
+model with all inputs; the number at each bar end is the accuracy with the inputs zero. The
+randomly initialized network in (a), (b) is without recomputed BatchNorm. (c), (d): $R_{30}$ of
+the linear probe on top and quark/gluon (inputs zero), value at each bar end; open markers just
+below a bar: the MLP probe of the same model (small: each run; large: mean $\pm$ SD), for the
+188-class model and the randomly initialized network with BatchNorm recomputed. Panel (c) has a
+logarithmic axis because the MLP probe there is about five times the linear one ($291\pm60$ and
+$299\pm47$ against about 60). Bars: mean over three runs with the SD bar, each run a dot. Claim:
+the weak frozen probes on top and quark/gluon come from zeroed inputs placing jets where no
+pretraining jet lies, not from lost information. The final figure adds, beside each zero bar, the
+bars with the missing inputs set to the training mean and to an average of random draws of real
+particles (fill probes jc2bal-xfill, then jc2bal-fitfill), uses the randomly initialized network
+with BatchNorm recomputed in (a), (b) as well, and adds to (c) the bar of the 188-class model
+pretrained on kinematic inputs only (run at epoch 36 of 80). Stand-in: natural-composition
+JetClass-II (final: class-balanced). Form of JP-JEPA Fig.~3a with Elsharkawy et al.\ Fig.~4
+hatching.}
 \end{figure}
 
 % ------------------------------------------------------------------ T3
 \begin{table}[p]
 \centering
 \small
-\caption{\prelim\ Top tagging (skeleton). Literature rows as published, cited by number; this work:
-fine-tuned with 10 of 17 inputs zero, mean $\pm$ SD over three pretraining runs. Best value per
-column in bold, with ours within one SD. Footnote: ParT's script on our cluster, then with
-Sophon's output head, then with Sophon's jet-$p_{\mathrm T}$ rescaling (appendix). Claim: the
-pretrained models improve on the same network trained from scratch and differ from each other
-by about the seed spread.}
+\caption{\prelim\ Top tagging on the full training set. Literature rows as published, cited by
+number; this work: fine-tuned with 10 of 17 inputs zero, mean $\pm$ SD over three pretraining
+runs (from scratch: three seeds). In the final table the best value per column is bold, with ours
+within one SD. Footnote: ParT's script on our cluster, then with Sophon's output head, then with
+Sophon's jet-$p_{\mathrm T}$ rescaling (appendix). Claim: the pretrained models improve on the
+same network trained from scratch ($R_{30}$ 1,800 against 1,412) and differ from each other by
+about the seed spread. The kinematic-only row waits on its run and fine-tuning.}
 \begin{tabular}{lccccc}
 \toprule
  & inputs zero & Acc & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
-ParticleNet & --- & \e & \e & \e & \e \\
-ParT & --- & \e & \e & \e & \e \\
-ParT-f.t. & --- & \e & \e & \e & \e \\
-MIParT-L-f.t. & --- & \e & \e & \e & \e \\
-L-GATr-f.t. & --- & \e & \e & \e & \e \\
-OmniLearned-l & --- & \e & \e & \e & \e \\
+ParticleNet & --- & 0.940 & 0.9858 & 397\pmm7 & 1615\pmm93 \\
+ParT & --- & 0.940 & 0.9858 & 413\pmm16 & 1602\pmm81 \\
+ParT-f.t. & --- & 0.944 & 0.9877 & 691\pmm15 & 2766\pmm130 \\
+MIParT-L-f.t. & --- & 0.944 & 0.9878 & 640\pmm10 & 2789\pmm133 \\
+L-GATr-f.t. & --- & 0.9446 & 0.9879 & 651\pmm11 & 2894\pmm84 \\
+OmniLearned-l & --- & 0.944 & 0.9880 & 688\pmm9 & 3486\pmm157 \\
 \midrule
-from scratch & 10 & \e & \e & \e & \e \\
-188 classes, fine-tuned & 10 & \e & \e & \e & \e \\
-162 classes, fine-tuned & 10 & \e & \e & \e & \e \\
-43 classes, fine-tuned & 10 & \e & \e & \e & \e \\
-17 classes, fine-tuned & 10 & \e & \e & \e & \e \\
-188 classes, kinematic inputs only (diagnostic) & 0 & \e & \e & \e & \e \\
+from scratch & 10 & 0.9387\pmm0.0002 & 0.9852\pmm0.0001 & 358\pmm11 & 1{,}412\pmm20 \\
+188 classes, fine-tuned & 10 & 0.9400\pmm0.0002 & 0.9861\pmm0.0001 & 461\pmm4 & 1{,}800\pmm60 \\
+162 classes, fine-tuned & 10 & 0.9401\pmm0.0002 & 0.9861\pmm0.0001 & 443\pmm17 & 1{,}790\pmm60 \\
+43 classes, fine-tuned & 10 & 0.9402\pmm0.0004 & 0.9861\pmm0.0001 & 450\pmm13 & 1{,}780\pmm150 \\
+17 classes, fine-tuned & 10 & 0.9398\pmm0.0001 & 0.9859\pmm0.0001 & 429\pmm10 & 1{,}740\pmm140 \\
+188 classes, kinematic inputs only (diagnostic) & 0 & \pend & \pend & \pend & \pend \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -184,10 +243,11 @@ from scratch & 10 & \e & \e & \e & \e \\
 \begin{table}[p]
 \centering
 \small
-\caption{\prelim\ Quark/gluon discrimination with ParT's ``exp'' inputs, Pythia and Herwig test sets
-(skeleton). This work: fine-tuned with the four displacement inputs zero. Claim: the pretrained
-models match ParT-f.t.\ on Pythia, differ from each other by about the seed spread, and lose the
-same on Herwig as the network trained from scratch.}
+\caption{\prelim\ Quark/gluon discrimination with ParT's ``exp'' inputs, Pythia and Herwig test
+sets, on the full training set. Literature rows as published; this work: fine-tuned with the
+four displacement inputs zero, mean $\pm$ SD over three pretraining runs (from scratch: three
+seeds). Claim: the pretrained models match ParT-f.t.\ on Pythia, differ from each other by about
+the seed spread, and lose the same on Herwig as the network trained from scratch.}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{lcccccccc}
 \toprule
@@ -195,62 +255,99 @@ same on Herwig as the network trained from scratch.}
 \cmidrule(lr){2-5}\cmidrule(lr){6-9}
  & Acc & AUC & $R_{50}$ & $R_{30}$ & Acc & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
-PFN-Ex & \e & \e & \e & \e & --- & --- & --- & --- \\
-ParticleNet & \e & \e & \e & \e & --- & --- & --- & --- \\
-ParT & \e & \e & \e & \e & --- & --- & --- & --- \\
-ParticleNet-f.t. & \e & \e & \e & \e & --- & --- & --- & --- \\
-ParT-f.t. & \e & \e & \e & \e & --- & --- & --- & --- \\
-OmniLearned-m & \e & \e & \e & \e & --- & --- & --- & --- \\
+PFN-Ex & --- & 0.9005 & 34.7\pmm0.4 & --- & --- & --- & --- & --- \\
+ParticleNet & 0.840 & 0.9116 & 39.8\pmm0.2 & 98.6\pmm1.3 & --- & --- & --- & --- \\
+ParT & 0.840 & 0.9121 & 41.3\pmm0.3 & 101.2\pmm1.1 & --- & --- & --- & --- \\
+ParticleNet-f.t. & 0.839 & 0.9115 & 40.1\pmm0.2 & 100.3\pmm1.0 & --- & --- & --- & --- \\
+ParT-f.t. & 0.843 & 0.9151 & 42.4\pmm0.2 & 107.9\pmm0.5 & --- & --- & --- & --- \\
+OmniLearned-m & 0.845 & 0.9162 & 43.2\pmm0.1 & 111.2\pmm1.5 & --- & --- & --- & --- \\
 \midrule
-from scratch & \e & \e & \e & \e & \e & \e & \e & \e \\
-188 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e \\
-162 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e \\
-43 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e \\
-17 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e \\
+from scratch & 0.8397\pmm0.0007 & 0.9121\pmm0.0002 & 41.47\pmm0.29 & 104.0\pmm1.0 & 0.7153\pmm0.0024 & 0.8061\pmm0.0007 & 12.18\pmm0.11 & 35.5\pmm1.2 \\
+188 classes, fine-tuned & 0.8433\pmm0.0002 & 0.9148\pmm0.0001 & 42.56\pmm0.10 & 107.3\pmm2.2 & 0.712\pmm0.005 & 0.8078\pmm0.0023 & 12.3\pmm0.4 & 35.2\pmm2.1 \\
+162 classes, fine-tuned & 0.8432\pmm$<$0.0001 & 0.9148\pmm0.0001 & 42.39\pmm0.22 & 108.0\pmm1.4 & 0.7100\pmm0.0017 & 0.8074\pmm0.0010 & 12.33\pmm0.28 & 34.6\pmm2.0 \\
+43 classes, fine-tuned & 0.8430\pmm0.0005 & 0.9146\pmm0.0003 & 42.2\pmm0.8 & 108.3\pmm1.0 & 0.713\pmm0.006 & 0.809\pmm0.005 & 12.5\pmm0.6 & 36.1\pmm2.7 \\
+17 classes, fine-tuned & 0.8427\pmm0.0003 & 0.9144\pmm$<$0.0001 & 41.97\pmm0.25 & 106.5\pmm0.8 & 0.7175\pmm0.0033 & 0.8103\pmm0.0018 & 12.79\pmm0.20 & 36.9\pmm0.9 \\
 \bottomrule
 \end{tabular}}
 \end{table}
+\FloatBarrier
 
 % ------------------------------------------------------------------ F7
 \begin{figure}[p]
 \centering
 \includegraphics[width=\linewidth]{F7_finetune_vs_size.pdf}
 \caption{\prelim\ Fine-tuning against the number of training jets: the 188-class model fine-tuned
-(solid) and probed linearly (dashed), and the same network trained from scratch, with the ratio
-to from scratch below. Claim: pretraining helps most with few training jets, and the gain
-shrinks toward the full set. Form of Golling et al.\ Fig.~3, OmniJet-$\alpha$ Fig.~7 and
-Vigl et al.\ Fig.~4. The other label sets are in the appendix.}
+(solid) and probed linearly (dashed; the linear probe is a logistic regression on frozen
+features), and the same network trained from scratch (black, open squares), with the ratio of
+fine-tuned to from scratch below each panel. Bands: $\pm1$ SD; pretrained: three pretraining runs
+on one training subset; from scratch: three seeds, on top and quark/gluon each on a different
+training subset, so that its band there also holds the subset variation. (a) JetClass-II:
+162-group accuracy on 500,000 test jets for both curves; no probe line, because the linear probe
+there is a 188-class read-out, a different task. (a), (b) start at $10^4$ jets (the $10^3$
+JetClass-II subset lacks 28 of the 188 classes). Claim from today's numbers: the relative gain
+falls monotonically on JetClass-II (1.64, 1.26, 1.11 from $10^4$ to $10^6$ jets) and JetClass
+(1.17, 1.07, 1.03); on quark/gluon it is 1.19 at $10^3$ and 1.03--1.07 above; on top tagging it is
+not monotonic (1.97, 0.88, 1.51, 1.27) with today's under-trained small-size cells.
+Data efficiency: on JetClass-II the model fine-tuned on $10^4$ jets (0.522) beats the network
+trained from scratch on $10^6$ (0.493); on JetClass, fine-tuned on $10^4$ (0.803) beats from
+scratch on $10^5$ (0.780). Stand-ins: below the full set, old fine-tuning settings (19 steps per
+epoch at $10^3$ and $10^4$ jets, 195 at $10^5$; under-trained; final: a fixed budget after the
+learning-rate sweep); full-set points valid. JetClass-II: natural composition (final:
+class-balanced). Probe: inputs zero on top and quark/gluon. Form of Golling et al.\ Fig.~3,
+OmniJet-$\alpha$ Fig.~7 and Vigl et al.\ Fig.~4. The other label sets are in the appendix.}
 \end{figure}
 
 % ------------------------------------------------------------------ F8a
 \begin{figure}[p]
 \centering
 \includegraphics[width=\linewidth]{F8a_mass_regression.pdf}
-\caption{\prelim\ Jet mass with the auxiliary regression target: response of all matched jets, and
-resolution against jet $p_{\mathrm T}$ and generator soft-drop mass, each with the ratio to the
-groomed mass. Claim: the regression narrows the response at every $p_{\mathrm T}$ and generator
-mass, equally at 162 and 17 classes. Form of ATL-PHYS-PUB-2024-015 Figs.~7--8.}
+\caption{\prelim\ Jet mass with the auxiliary regression target. (a) Response
+$\ln(m/m^{\mathrm{gen}}_{\mathrm{SD}})$ of the groomed mass and of the regression heads, as the
+fraction of jets per bin, resonant and QCD jets weighted by their counts (317,089 and 81,536, 79.6\%
+resonant); 8.6\% of the groomed jets and 3.2\% of each regression's lie in the two edge bins
+($|\ln(m/m^{\mathrm{gen}})|>0.98$, overflow included), which are not drawn. (b), (c) Resolution $\sigma_{\mathrm{eff}}$ (half the
+smallest interval holding 68\% of $\ln(m/m^{\mathrm{gen}})$, as stored; decision P7 may switch to
+the ATLAS inter-quantile definition) against jet $p_{\mathrm T}$ in four bins (200--400, 400--700,
+700--1000, 1000--2500~GeV) and against generator soft-drop mass. Lower panels: ratio to the
+groomed mass. Two runs per model, mean drawn; the band is their range per bin, narrower than the
+line because the runs agree within 1.5\%; the two models (162 classes filled, 17 classes open
+markers) are offset within each bin, and their resolutions agree to within 1\%. Samples: (a)
+1,993,321 matched jets; (b), (c) and the weights of (a), 398,625 jets. Claim: the regression narrows
+the response at every $p_{\mathrm T}$ and generator mass, equally at 162 and 17 classes. Form of
+ATL-PHYS-PUB-2024-015 Figs.~7--8; departures: $p_{\mathrm T}$ extends to 2500~GeV (our selection);
+the lower panels are the ratio to the groomed mass, not the root-square difference; the panel
+against generator mass is our addition; the response axis is $\ln(m/m^{\mathrm{gen}})$, not the
+linear $m/m^{\mathrm{gen}}$. No per-bin statistical bars yet.}
 \end{figure}
+\FloatBarrier
 
 % ------------------------------------------------------------------ T5
 \begin{table}[p]
 \centering
 \small
-\caption{\prelim\ Jet mass from frozen features (skeleton): resolution of an MLP regression on the
-frozen features. Claim: the auxiliary mass target makes the frozen features carry the jet mass,
-while the label sets without it differ little. Layout of CMS-DP-2026-104 Tables~1--2.}
+\caption{\prelim\ Jet mass from frozen features: resolution $\sigma_{\mathrm{eff}}$ of
+$\ln(m/m^{\mathrm{gen}}_{\mathrm{SD}})$ of an MLP regression on the frozen features (groomed mass:
+no regression). The regression target is centred on the training median of each of the 188
+classes, using each jet's true class, which the groomed-mass row does not; ridge values in the
+appendix.
+Mean $\pm$ SD over three runs; two runs: both values. Claim: the auxiliary mass target makes the
+frozen features carry the jet mass ($0.158$ against $0.21$--$0.22$); without it the 43- and 17-class
+models resolve the mass slightly better than the 188-class model (17 over 188 classes: $0.955\pm0.012$,
+lower in all three seeds); the class-median row is the reference for the MLP rows, which add the frozen features to the true class's median; and each of the four label sets without it is 9--13\% better than a randomly
+initialized network (0.244). Layout of CMS-DP-2026-104 Tables~1--2.}
 \begin{tabular}{lc}
 \toprule
- & resolution, MLP on frozen features \\
+ & $\sigma_{\mathrm{eff}}$ of $\ln(m/m^{\mathrm{gen}}_{\mathrm{SD}})$ \\
 \midrule
-groomed (soft-drop) mass & \e \\
-randomly initialized network & \e \\
-188 classes & \e \\
-162 classes & \e \\
-43 classes & \e \\
-17 classes & \e \\
-162 classes, mass regression & \e \\
-17 classes, mass regression & \e \\
+groomed (soft-drop) mass & 0.253 \\
+class median alone (no features) & 0.251 \\
+randomly initialized network & 0.2440\pmm0.0009 \\
+188 classes & 0.2212\pmm0.0008 \\
+162 classes & 0.2203\pmm0.0024 \\
+43 classes & 0.2161\pmm0.0025 \\
+17 classes & 0.2113\pmm0.0021 \\
+162 classes, mass regression & 0.1585, 0.1585 \\
+17 classes, mass regression & 0.1581, 0.1575 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -259,23 +356,43 @@ randomly initialized network & \e \\
 \begin{figure}[p]
 \centering
 \includegraphics[width=\linewidth]{F8b_sculpting.pdf}
-\caption{\prelim\ Mass sculpting: QCD soft-drop mass before and after a cut on the summed resonance
-score at 10\% and 1\% QCD efficiency, and the Jensen--Shannon distance against the QCD
-efficiency. Question answered: does selecting on the tagger make the background mass peak where
-a signal would? Claim: at tight selections coarser label sets reshape the QCD mass more, above
-what a random selection gives. Form of CMS JME-25-001 Figs.~8--9.}
+\caption{\prelim\ Mass sculpting by a cut on the summed resonance score $1-p_{\mathrm{QCD}}$.
+(a)--(c) QCD soft-drop mass of all jets (grey) and after the cut at 10\% (solid) and 1\% (dotted)
+QCD efficiency, seed 1 of each model, with the ratio to all jets below. (d) Jensen--Shannon
+distance (base 2, the quantity of CMS JME-25-001) between the QCD mass before and after the cut,
+against the QCD efficiency, mean over runs; bands: SD over three runs, the range of two runs for the
+mass models; points offset slightly in $\varepsilon$ so that markers do not overlap. Grey: a random
+selection of the same size, mean and $\pm1$ SD over 200 draws. Question answered: does selecting on
+the tagger make the background mass peak where a signal would? Claim from today's numbers: at
+$\varepsilon_{\mathrm{QCD}}\approx0.5$--2\% every model sculpts above a random selection, by at
+least two of its SDs (the 162-class model with the mass regression by 1.7 at 1.8\%), and above
+2\% the random selection falls further below every curve (below the axis from 2.8\%); at
+$\varepsilon_{\mathrm{QCD}}\approx0.5$--2\% there is a step between the 188- and 162-class models and the 43- and 17-class models (distance at the
+1\% working point $0.044\pm0.002$ and $0.043\pm0.003$ against $0.051\pm0.007$ and
+$0.056\pm0.002$; random selection about 0.03); between 1 and 3\% the two models with the mass
+regression lie lowest, and at 1\% the 17-class model with the mass regression (0.041, 0.045) is
+back at the 188-class level; at 10\% the label sets agree (0.052--0.056). At
+$\varepsilon_{\mathrm{QCD}}=0.1\%$ every curve is within about one SD of the random selection.
+Form of CMS JME-25-001 Figs.~8--9; departures: two working points (10\% and 1\%) instead of
+5/1/0.5\%, told apart by line style rather than markers; no $p_{\mathrm T}$ split; a continuous
+logarithmic $\varepsilon$ axis over the 16 stored efficiencies instead of five bins; no panel
+against $p_{\mathrm T}$; the random-selection band is our addition.}
 \end{figure}
 
 % ------------------------------------------------------------------ F9
 \begin{figure}[p]
 \centering
 \IfFileExists{../../figures/mockups/F9_xbx_standin.pdf}{%
-\includegraphics[width=\linewidth]{F9_xbx_standin.pdf}}{%
+\includegraphics[width=0.5\linewidth]{F9_xbx_standin.pdf}}{%
 \fbox{\parbox{0.8\linewidth}{\centering\vspace{2cm} Stand-in figure not found on /data at render time.\vspace{2cm}}}}
 \caption{\prelim\ $X\to b\bar b$ and $X\to bs$ tagging, the form of Sophon Fig.~2: $\varepsilon_S/\sqrt{\varepsilon_B}$
 against QCD efficiency. \textbf{Stand-in}: the dry run on JetClass-II jets as signal, not the
-$X\to b\bar b$/$X\to bs$ samples (expected 3 November). The final figure has one panel per
-signal, all four label sets, Sophon's direct discriminant on the 188- and 162-class models, the
+$X\to b\bar b$/$X\to bs$ samples (expected 3 November), from an older render (its legend lies
+over the curves; to be re-rendered with xbx\_report.py at HEAD). In the stand-in the bands are the
+min--max over runs (final: SD over three runs), the direct discriminant is dashed (final: dotted),
+and the random-partition and randomly initialized curves are drawn, which the final figure leaves
+out; it has no $\varepsilon_B=10^{-3}$ guide line, grid or watermark. The final figure has one panel
+per signal, all four label sets, Sophon's direct discriminant on the 188- and 162-class models, the
 from-scratch network on $X\to bs$, and the closest-output-node control.}
 \end{figure}
 
