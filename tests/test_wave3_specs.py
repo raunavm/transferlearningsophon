@@ -525,7 +525,7 @@ case "$*" in
       LOSS=0.5; [ -n "${NAN_IN:-}" ] && [[ "$P" == *"${NAN_IN}"* ]] && LOSS=nan
       echo "[t] INFO: Processed $((ST*512)) entries in total" >> "$L"
       echo "[t] INFO: Train AvgLoss: ${LOSS}, AvgAcc: 0.8" >> "$L"
-      for f in state optimizer; do rm -f ${P}_epoch-${e}_${f}.pt; echo "${f} ${e}" | zip -q ${P}_epoch-${e}_${f}.pt -; done
+      for f in state optimizer; do rm -f ${P}_epoch-${e}_${f}.pt; "__PY__" -c 'import sys, zipfile; zipfile.ZipFile(sys.argv[1], "w").writestr("-", sys.argv[2] + "\n")' ${P}_epoch-${e}_${f}.pt "${f} ${e}"; done   # a zip like torch.save writes; no zip binary in the test image
       echo "[t] INFO: Epoch #${e} validating" >> "$L"
       [ "${VAL}" -eq 0 ] || echo "[t] INFO: Processed ${VAL} entries in total" >> "$L"
       M=$(echo "${METRICS:-}" | awk -v e=${e} '{ if (e < NF) print $(e+1); else print 0.5 + e / 1000 }')
