@@ -1,0 +1,282 @@
+% Mock-ups of the MLST paper's main-text figures and tables, in the layouts of the figure plan
+% (docs/FIGURE_PLAN.md, local), on the data committed today. Not part of the paper: the figures
+% are drawn by experiments/FIGS/mockup_figures.py, and every one carries "[preliminary data]".
+% Compiled by the render job (scripts/build_render_job.py --mockups).
+\documentclass[11pt]{article}
+\usepackage[a4paper,textwidth=15cm,top=2.2cm,bottom=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{placeins}
+\usepackage[font=small,labelfont=bf]{caption}
+\graphicspath{{../../figures/mockups/}}
+\newcommand{\prelim}{\textcolor{red!70!black}{[preliminary data]}}
+\newcommand{\e}{$\cdot$}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+\title{Label granularity in supervised pretraining of jet foundation models\\[4pt]
+\large Main-text figure and table mock-ups \prelim}
+\date{2 November 2026}
+\begin{document}
+\maketitle
+
+Each item is drawn in the layout the figure plan gives it, from the results committed today.
+Each caption gives the claim the item will carry once the final results are in. The note under each figure
+says what is a stand-in or old. Tables are skeletons: rows and columns as planned, with
+cells left empty (\e) until the final numbers are generated, except Table~1, which is final.
+Paper order: Figure~1, Table~1, Figures~2--4, Table~2, Figure~5, Tables~3--4, Figure~6 (F7),
+Figure~7 (F8a), Table~5, Figure~8 (F8b), Figure~9. The benchmark ROC figure (F6) is left out
+(decision P3).
+
+% ------------------------------------------------------------------ F1
+\begin{figure}[p]
+\centering
+\begin{minipage}[t]{0.55\linewidth}\vspace{0pt}
+\includegraphics[width=\linewidth]{label_sets.pdf}\\
+\small (a) Class hierarchy, with a lineage of decays through the four levels and the controls.
+\end{minipage}\hfill
+\begin{minipage}[t]{0.42\linewidth}\vspace{0pt}
+\fbox{\parbox{0.95\linewidth}{\small (b) \textbf{Controls} (TikZ in the final figure).
+A random partition: resonant classes assigned at random to 16 groups plus QCD, group sizes
+matched to the 17-class groups. Three partitions that differ only in a flavor boundary: none,
+a $b$-quark boundary in four-quark decays, a random boundary of the same size.}}\\[6pt]
+\fbox{\parbox{0.95\linewidth}{\small (c) \textbf{Pipeline}. Same jets, order and initial weights
+for every model of a seed $\to$ pretraining on one label set (optionally with the auxiliary
+mass regression) $\to$ frozen features $\to$ linear probe (MLP probe beside a null) or
+fine-tuning $\to$ JetClass-II, JetClass, top, quark/gluon (Pythia, Herwig), $X\to b\bar b$/$X\to bs$.}}
+\end{minipage}
+\caption{\prelim\ Design. Within a seed, models see the same jets in the same order from the same
+initial weights; only the label set changes, and each merge removes a named physics distinction.
+The random and flavor-controlled partitions separate the number of classes from which classes
+are merged. Panel (a) is today's schematic; (b) and (c) are placeholders.}
+\end{figure}
+
+% ------------------------------------------------------------------ T1
+\begin{table}[p]
+\centering
+\caption{Analysis discriminants built from sums of Sophon's output scores, and whether each label
+set can form them ($\checkmark$) or not (---). Final.}
+\begin{tabular}{llcccc}
+\toprule
+discriminant & source & 188 & 162 & 43 & 17 \\
+\midrule
+$X\to b\bar b$ vs QCD & Sophon, Eq.~(4) & $\checkmark$ & $\checkmark$ & --- & --- \\
+$X\to c\bar s$ vs QCD (Sophon's $A_1$) & Sophon, Eqs.~(5)--(6) & $\checkmark$ & $\checkmark$ & --- & --- \\
+three quarks, exactly one $b$ (Sophon's $A_3$) & Sophon, Eqs.~(5)--(6) & $\checkmark$ & $\checkmark$ & --- & --- \\
+$W'\to W\phi\to WWW$ & Sophon, Eqs.~(7)--(9) & $\checkmark$ & $\checkmark$ & --- & --- \\
+$D_{bc}$, boosted $|V_{cb}|$ & Zhao et al., Eq.~(1) & $\checkmark$ & $\checkmark$ & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ------------------------------------------------------------------ F2
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.7\linewidth]{F2_label_granularity.pdf}
+\caption{\prelim\ Linear probe on the 188 JetClass-II classes: ratio of $1-\mathrm{AUC}$ (one class
+against the rest, averaged) to the 188-class model of the same seed, against the number of
+pretraining classes. Claim: coarser labels give features from which a linear probe separates
+the classes worse, and random partitions at 17 classes lose less than the 17-class level of the
+hierarchy, so the cost depends on which classes are merged. The final caption gives the
+absolute AUC of the 188-class model and of the randomly initialized network, and states that this
+is the 188-class model's own pretraining task. Form of Hong et al.\ Fig.~5.}
+\end{figure}
+
+% ------------------------------------------------------------------ F3
+\begin{figure}[p]
+\centering
+\includegraphics[height=0.86\textheight]{F3_per_class.pdf}
+\caption{\prelim\ JetClass-II, class by class: ratio of a class's $1-\mathrm{AUC}$ under each label set
+to the 188-class model of the same seed (linear probe, mean over runs). Rows are grouped by the
+17-class parent; QCD forms the bottom block. Claim: the cost concentrates in classes whose label merges
+them with decays that differ only in flavor, and the controls move it to whichever classes
+they merge. New form; nearest precedents JP-JEPA Fig.~2f,g and CMS JME-25-001 Fig.~7.}
+\end{figure}
+
+% ------------------------------------------------------------------ F4
+\begin{figure}[p]
+\centering
+\includegraphics[width=\linewidth]{F4_flavor_pairs.pdf}
+\caption{\prelim\ Decays that differ only in flavor: ratio of $1-\mathrm{AUC}$ on the pair to the
+188-class model of the same seed. Question answered: does a flavor boundary in the label set
+improve the linear separation of such pairs, including pairs the label set merges? Open
+markers in the right panel: MLP probe beside the 162-class linear null. The sentence is written
+from the final numbers; today's data do not support ``boundary, not count'' as phrased.}
+\end{figure}
+
+% ------------------------------------------------------------------ T2
+\begin{table}[p]
+\centering
+\small
+\caption{\prelim\ JetClass in the form of ParT's Table~1 (skeleton). Accuracy, AUC averaged over class pairs,
+and the rejection of QCD jets per signal class at ParT's working points. Literature rows at
+$2\times10^6$ training jets, from scratch; ours fine-tuned on $10^6$. Mean $\pm$ SD over three
+pretraining runs; $^\dagger$: fewer than 20 QCD jets pass. Claim: the 162-class model matches
+the 188-class model; at 17 classes rejection falls in most signal classes while $H\to b\bar b$
+is unchanged.}
+\setlength{\tabcolsep}{3pt}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccccccccccc}
+\toprule
+ & Acc & AUC & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ & $H\to\ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+ & & & $R_{50}$ & $R_{50}$ & $R_{50}$ & $R_{50}$ & $R_{99}$ & $R_{50}$ & $R_{99.5}$ & $R_{50}$ & $R_{50}$ \\
+\midrule
+ParticleNet & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
+ParT & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
+MIParT & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
+L-GATr & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
+\midrule
+from scratch & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
+188 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
+162 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
+43 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
+17 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e & \e \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+% ------------------------------------------------------------------ F5
+\begin{figure}[p]
+\centering
+\includegraphics[width=\linewidth]{F5_missing_inputs.pdf}
+\caption{\prelim\ Missing input features. Top: relative drop in JetClass-II accuracy when the
+top-tagging or quark/gluon inputs are zero (and, when available, set to the training mean or to an
+average of random draws of real particles). Bottom: $R_{30}$ of the linear probe on top and
+quark/gluon, open circles the MLP probe. Claim: the weak frozen probes on top and quark/gluon
+come from zeroed inputs placing jets where no pretraining jet lies, not from lost information.
+Form of JP-JEPA Fig.~3a with Elsharkawy et al.\ Fig.~4 hatching.}
+\end{figure}
+
+% ------------------------------------------------------------------ T3
+\begin{table}[p]
+\centering
+\small
+\caption{\prelim\ Top tagging (skeleton). Literature rows as published, cited by number; this work:
+fine-tuned with 10 of 17 inputs zero, mean $\pm$ SD over three pretraining runs. Best value per
+column in bold, with ours within one SD. Footnote: ParT's script on our cluster, then with
+Sophon's output head, then with Sophon's jet-$p_{\mathrm T}$ rescaling (appendix). Claim: the
+pretrained models improve on the same network trained from scratch and differ from each other
+by about the seed spread.}
+\begin{tabular}{lccccc}
+\toprule
+ & inputs zero & Acc & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+ParticleNet & --- & \e & \e & \e & \e \\
+ParT & --- & \e & \e & \e & \e \\
+ParT-f.t. & --- & \e & \e & \e & \e \\
+MIParT-L-f.t. & --- & \e & \e & \e & \e \\
+L-GATr-f.t. & --- & \e & \e & \e & \e \\
+OmniLearned-l & --- & \e & \e & \e & \e \\
+\midrule
+from scratch & 10 & \e & \e & \e & \e \\
+188 classes, fine-tuned & 10 & \e & \e & \e & \e \\
+162 classes, fine-tuned & 10 & \e & \e & \e & \e \\
+43 classes, fine-tuned & 10 & \e & \e & \e & \e \\
+17 classes, fine-tuned & 10 & \e & \e & \e & \e \\
+188 classes, kinematic inputs only (diagnostic) & 0 & \e & \e & \e & \e \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ------------------------------------------------------------------ T4
+\begin{table}[p]
+\centering
+\small
+\caption{\prelim\ Quark/gluon discrimination with ParT's ``exp'' inputs, Pythia and Herwig test sets
+(skeleton). This work: fine-tuned with the four displacement inputs zero. Claim: the pretrained
+models match ParT-f.t.\ on Pythia, differ from each other by about the seed spread, and lose the
+same on Herwig as the network trained from scratch.}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccccccc}
+\toprule
+ & \multicolumn{4}{c}{Pythia} & \multicolumn{4}{c}{Herwig} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+ & Acc & AUC & $R_{50}$ & $R_{30}$ & Acc & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+PFN-Ex & \e & \e & \e & \e & --- & --- & --- & --- \\
+ParticleNet & \e & \e & \e & \e & --- & --- & --- & --- \\
+ParT & \e & \e & \e & \e & --- & --- & --- & --- \\
+ParticleNet-f.t. & \e & \e & \e & \e & --- & --- & --- & --- \\
+ParT-f.t. & \e & \e & \e & \e & --- & --- & --- & --- \\
+OmniLearned-m & \e & \e & \e & \e & --- & --- & --- & --- \\
+\midrule
+from scratch & \e & \e & \e & \e & \e & \e & \e & \e \\
+188 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e \\
+162 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e \\
+43 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e \\
+17 classes, fine-tuned & \e & \e & \e & \e & \e & \e & \e & \e \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+% ------------------------------------------------------------------ F7
+\begin{figure}[p]
+\centering
+\includegraphics[width=\linewidth]{F7_finetune_vs_size.pdf}
+\caption{\prelim\ Fine-tuning against the number of training jets: the 188-class model fine-tuned
+(solid) and probed linearly (dashed), and the same network trained from scratch, with the ratio
+to from scratch below. Claim: pretraining helps most with few training jets, and the gain
+shrinks toward the full set. Form of Golling et al.\ Fig.~3, OmniJet-$\alpha$ Fig.~7 and
+Vigl et al.\ Fig.~4. The other label sets are in the appendix.}
+\end{figure}
+
+% ------------------------------------------------------------------ F8a
+\begin{figure}[p]
+\centering
+\includegraphics[width=\linewidth]{F8a_mass_regression.pdf}
+\caption{\prelim\ Jet mass with the auxiliary regression target: response of all matched jets, and
+resolution against jet $p_{\mathrm T}$ and generator soft-drop mass, each with the ratio to the
+groomed mass. Claim: the regression narrows the response at every $p_{\mathrm T}$ and generator
+mass, equally at 162 and 17 classes. Form of ATL-PHYS-PUB-2024-015 Figs.~7--8.}
+\end{figure}
+
+% ------------------------------------------------------------------ T5
+\begin{table}[p]
+\centering
+\small
+\caption{\prelim\ Jet mass from frozen features (skeleton): resolution of an MLP regression on the
+frozen features. Claim: the auxiliary mass target makes the frozen features carry the jet mass,
+while the label sets without it differ little. Layout of CMS-DP-2026-104 Tables~1--2.}
+\begin{tabular}{lc}
+\toprule
+ & resolution, MLP on frozen features \\
+\midrule
+groomed (soft-drop) mass & \e \\
+randomly initialized network & \e \\
+188 classes & \e \\
+162 classes & \e \\
+43 classes & \e \\
+17 classes & \e \\
+162 classes, mass regression & \e \\
+17 classes, mass regression & \e \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ------------------------------------------------------------------ F8b
+\begin{figure}[p]
+\centering
+\includegraphics[width=\linewidth]{F8b_sculpting.pdf}
+\caption{\prelim\ Mass sculpting: QCD soft-drop mass before and after a cut on the summed resonance
+score at 10\% and 1\% QCD efficiency, and the Jensen--Shannon distance against the QCD
+efficiency. Question answered: does selecting on the tagger make the background mass peak where
+a signal would? Claim: at tight selections coarser label sets reshape the QCD mass more, above
+what a random selection gives. Form of CMS JME-25-001 Figs.~8--9.}
+\end{figure}
+
+% ------------------------------------------------------------------ F9
+\begin{figure}[p]
+\centering
+\IfFileExists{../../figures/mockups/F9_xbx_standin.pdf}{%
+\includegraphics[width=\linewidth]{F9_xbx_standin.pdf}}{%
+\fbox{\parbox{0.8\linewidth}{\centering\vspace{2cm} Stand-in figure not found on /data at render time.\vspace{2cm}}}}
+\caption{\prelim\ $X\to b\bar b$ and $X\to bs$ tagging, the form of Sophon Fig.~2: $\varepsilon_S/\sqrt{\varepsilon_B}$
+against QCD efficiency. \textbf{Stand-in}: the dry run on JetClass-II jets as signal, not the
+$X\to b\bar b$/$X\to bs$ samples (expected 3 November). The final figure has one panel per
+signal, all four label sets, Sophon's direct discriminant on the 188- and 162-class models, the
+from-scratch network on $X\to bs$, and the closest-output-node control.}
+\end{figure}
+
+\end{document}
