@@ -423,7 +423,11 @@ def figure_f5(M, runs, outdir) -> list:
         hi = max(vals + [e for e, _, _ in ends])
         xmax = hi * 2.0 if log else hi * 1.5
         for e, y, txt in ends:
-            ax.text(e * 1.08 if log else e + 0.02 * xmax, y, txt, va="center", fontsize="x-small")
+            if not log and e > 0.55 * xmax:
+                # a long bar: the label inside its end, so it cannot cross the axis edge
+                ax.text(e - 0.04 * xmax, y, txt, va="center", ha="right", fontsize="x-small", color="white", zorder=4)
+            else:
+                ax.text(e * 1.08 if log else e + 0.02 * xmax, y, txt, va="center", fontsize="x-small")
         ax.set_xlim(lo, xmax)
         if log:
             # a few decade-and-three ticks: 1-2-5 ticks run together on this short axis
