@@ -335,8 +335,10 @@ spec:
 """
 
 
-def fit_spec(tag: str, parallelism: int, mlp: bool) -> tuple:
+def fit_spec(tag: str, parallelism: int, mlp: bool, only: tuple = (), name: str = "") -> tuple:
+    """only: the models (indices into the job's model list) of this job, in order; all when empty."""
     ms = [m for m in models() if not mlp or m[0].startswith(MLP_SCOPE)]
+    ms = [ms[i] for i in only] if only else ms
     out = "fits_v4_mlp" if mlp else "fits_v4"
     cases = ""
     for i, (m, run, rung, k, reg, c, v) in enumerate(ms):
@@ -344,7 +346,7 @@ def fit_spec(tag: str, parallelism: int, mlp: bool) -> tuple:
             f"--variants {' '.join(v)} --probs-out {LP_BAL}/fits_v4_probs"
             + (" --hidden" if m.startswith(HIDDEN) else ""))
         cases += f'  {i}) MODEL={m}; CKPTS="{" ".join(c)}"; EXTRA="{extra}";;\n'
-    name = f"jc2bal-{'mlp' if mlp else 'fit'}-raunav"
+    name = name or f"jc2bal-{'mlp' if mlp else 'fit'}-raunav"
     script = f"""set -euo pipefail
 {_start(tag)}
 IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
@@ -577,8 +579,8 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
     ap.add_argument("--parallelism", type=int, default=5)
-    ap.add_argument("--only", default="", help="extract: model indices, e.g. 1-13, for a job of that subset")
-    ap.add_argument("--name", default="jc2bal-x-raunav", help="extract: the job name (with --only)")
+    ap.add_argument("--only", default="", help="extract, fit: model indices, e.g. 1-13, for a job of that subset")
+    ap.add_argument("--name", default="jc2bal-x-raunav", help="extract, fit: the job name (with --only)")
     ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "ref2", "split", "extract", "fit", "mlp",
                                                  "masscurves", "kin", "xfill", "fitfill"))
     a = ap.parse_args(argv)
@@ -589,7 +591,8 @@ def main(argv=None) -> int:
                       "xfill": lambda: xfill_spec(a.tag, a.parallelism),
                       "fitfill": lambda: fitfill_spec(a.tag, a.parallelism), "split": lambda: split_spec(a.tag),
                       "extract": lambda: extract_spec(a.tag, a.parallelism, _indices(a.only), a.name),
-                      "fit": lambda: fit_spec(a.tag, a.parallelism, False),
+                      "fit": lambda: fit_spec(a.tag, a.parallelism, False, _indices(a.only),
+                                              a.name if a.only else ""),
                       "mlp": lambda: fit_spec(a.tag, a.parallelism, True),
                       "masscurves": lambda: masscurves_spec(a.tag), "kin": lambda: kin_spec(a.tag)}[kind]()
         p = OUT_DIR / f"job-{name}.yaml"

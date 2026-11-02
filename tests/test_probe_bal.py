@@ -92,3 +92,20 @@ def test_every_job_that_loads_data_with_weaver_has_shared_memory():
         pod = yaml.safe_load(text)["spec"]["template"]["spec"]
         assert {"name": "dshm", "mountPath": "/dev/shm"} in pod["containers"][0]["volumeMounts"]
         assert {"name": "dshm", "emptyDir": {"medium": "Memory", "sizeLimit": "8Gi"}} in pod["volumes"]
+
+
+def test_a_fit_job_of_one_model_keeps_its_model_and_avoids_the_bad_nodes():
+    # index 29 of jc2bal-fit failed on k8s-haosu-10 (CUDA launch failure, 2026-11-02): rerun alone
+    import yaml
+    spec = importlib.util.spec_from_file_location("build_jc2bal_jobs", ROOT / "scripts/build_jc2bal_jobs.py")
+    BJ = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(BJ)
+    whole = yaml.safe_load(BJ.fit_spec("t", 5, False)[1])
+    name, text = BJ.fit_spec("t", 5, False, (29,), "jc2bal-fit2-raunav")
+    one = yaml.safe_load(text)
+    assert name == "jc2bal-fit2-raunav" and one["spec"]["completions"] == 1
+    model = BJ.models()[29][0]
+    script = one["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    assert f"  0) MODEL={model};" in script and "  1) MODEL=" not in script
+    assert f"  29) MODEL={model};" in whole["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    assert "k8s-haosu-10.sdsc.optiputer.net" in text

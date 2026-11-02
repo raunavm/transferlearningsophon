@@ -633,7 +633,11 @@ V2_BAD_NODES = ("ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net",
                 # the same state did not repeat on suncave-10, and the node rejects GPU
                 # allocations at admission; ry-gpu-09 and nrp-01 go NotReady and refuse pods
                 # ("no healthy devices"), each refusal a counted failure (RUNS.csv).
-                "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu")
+                "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu",
+                # 2026-11-02: k8s-haosu-10 failed jc2bal-fit index 29 with "CUDA error: unspecified
+                # launch failure" mid-fit and refused two jc2bal-xfill pods at admission
+                # (UnexpectedAdmissionError) the same day.
+                "k8s-haosu-10.sdsc.optiputer.net")
 TRAIN_GLOBS = ("Res2P:/jc2/jet_data/Res2P_{0000..0199}.parquet",
                "Res34P:/jc2/jet_data/Res34P_{0000..0859}.parquet",
                "QCD:/jc2/jet_data/QCD_{0000..0279}.parquet")
