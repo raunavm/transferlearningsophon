@@ -104,6 +104,8 @@ def jc2(tmp_path, monkeypatch):
             p = d / f"{fam}_{i:04d}.parquet"
             _write_like_jc2(p, _jets(rng, 6000, lab))
             files.setdefault((role, "qcd" if fam == "QCD" else "xbb_jc2"), []).append(str(p))
+            if fam == "Res2P":
+                files.setdefault((role, "xbq_jc2"), []).append(str(p))
     monkeypatch.setattr(ST, "jc2_files", lambda role, cls: files[(role, cls)])
     # as the release's files are: non-nullable fields, awkward's description in the metadata
     s = pq.read_schema(files[("ft_test", "qcd")][0])
@@ -334,3 +336,13 @@ def test_inspect_lists_trees_branches_types_and_entries(tmp_path, capsys, ext):
     (tree, info), = r["trees"].items()
     assert info["entries"] == 500 and "jet_pt" in info["branches"] and "event_weight" in info["branches"]
     assert tree == ("parquet" if ext == "parquet" else "tree")
+
+
+def test_the_closure_reference_is_the_test_files_x_to_bq_jets_in_the_window(jc2, tmp_path):
+    """A5 gate 1 compares an outside sample with JetClass-II X->bq (label 6)."""
+    root = tmp_path / "xbx"
+    ST.jc2_eval("xbq_jc2", root)
+    t = pa.concat_tables([pq.read_table(p) for p in sorted((root / "xbq_jc2/eval").glob("*.parquet"))])
+    s = pa.concat_tables([pq.read_table(p) for p in jc2[("ft_test", "xbq_jc2")]]).to_pandas()
+    want = s[(s.jet_label == 6) & (s.jet_pt > 200) & (s.jet_pt < 2500) & (s.jet_sdmass > 50) & (s.jet_sdmass < 300)]
+    assert ST.XBQ_LABEL == 6 and t.num_rows == len(want) > 0 and set(np.asarray(t.column("xbx_class"))) == {1}

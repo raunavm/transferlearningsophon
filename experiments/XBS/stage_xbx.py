@@ -9,6 +9,8 @@ JetClass-II's types, plus xbx_class (1 signal, 0 QCD). Under --root (/data/xbx/v
   xbb_jc2/eval/    JetClass-II X->bb of the test files, in STAGE_WINDOW: the stand-in signal
                    that runs the chain end to end before the outside samples arrive, and the
                    X->bb sample if they hold none
+  xbq_jc2/eval/    JetClass-II X->bq of the test files, in STAGE_WINDOW: the reference of A5's
+                   input-distribution closure for the outside samples (experiments/AOJ/closure.py)
   <sig>/pool/, <sig>/eval/
                    an outside sample: checked against the config (check(): every branch, of
                    the right kind; no zero-filled input in any file; A5's floor of 10,000
@@ -26,7 +28,7 @@ stand-in X->bb likewise (pool from ft_heldout, evaluation from ft_test).
 
     python3 experiments/XBS/stage_xbx.py inspect --file F        (read only: trees, branches, types, entries)
     python3 experiments/XBS/stage_xbx.py check --window LO HI --files F...
-    python3 experiments/XBS/stage_xbx.py jc2-eval --name qcd|xbb_jc2
+    python3 experiments/XBS/stage_xbx.py jc2-eval --name qcd|xbb_jc2|xbq_jc2
     python3 experiments/XBS/stage_xbx.py convert --name xbs --window LO HI --files F...
     python3 experiments/XBS/stage_xbx.py pair --signal xbb_jc2|xbs|xbb
 
@@ -61,6 +63,7 @@ SHARD_ROWS = 500_000     # weaver loads a whole file per fetch
 EVAL_FRACTION = 0.2      # A5: a per-jet split, 80 % training pool, 20 % evaluation
 QCD_LABELS = (161, 188)  # jet_label 161..187
 XBB_LABEL = 0
+XBQ_LABEL = 6            # label_X_bq (configs/labelmaps/rung_label_maps.v1.csv)
 SALT = 20261028
 NAMESPACES = {"np", "ak", "math", "numpy", "awkward"}
 # an outside sample's branch names -> the config's, applied before the check; filled once the
@@ -263,7 +266,7 @@ def conform(t: pa.Table, schema: pa.Schema) -> pa.Table:
 
 
 def jc2_files(role: str, cls: str) -> list[str]:
-    fam = {"qcd": "QCD", "xbb_jc2": "Res2P"}[cls]
+    fam = {"qcd": "QCD", "xbb_jc2": "Res2P", "xbq_jc2": "Res2P"}[cls]
     return [f for f in MS.jc2_role_files(role, JC2) if pathlib.Path(f).name.startswith(fam + "_")]
 
 
@@ -271,7 +274,7 @@ def class_mask(t: pa.Table, cls: str) -> pa.ChunkedArray:
     lab = t.column("jet_label")
     if cls == "qcd":
         return pc.and_(pc.greater_equal(lab, QCD_LABELS[0]), pc.less(lab, QCD_LABELS[1]))
-    return pc.equal(lab, XBB_LABEL)
+    return pc.equal(lab, {"xbb_jc2": XBB_LABEL, "xbq_jc2": XBQ_LABEL}[cls])
 
 
 def jc2_eval(name: str, root: pathlib.Path) -> dict:
@@ -409,7 +412,7 @@ def main(argv=None) -> int:
     c.add_argument("--files", nargs="+", required=True)
     c.add_argument("--out", type=pathlib.Path, default=None)
     e = sub.add_parser("jc2-eval")
-    e.add_argument("--name", choices=("qcd", "xbb_jc2"), required=True)
+    e.add_argument("--name", choices=("qcd", "xbb_jc2", "xbq_jc2"), required=True)
     v = sub.add_parser("convert")
     v.add_argument("--name", required=True)
     v.add_argument("--files", nargs="+", required=True)

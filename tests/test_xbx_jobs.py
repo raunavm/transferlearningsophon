@@ -73,7 +73,8 @@ def test_every_spec_is_ours_retries_only_what_a_retry_can_fix_and_parses_as_bash
         d = yaml.safe_load(text)
         assert d["metadata"]["name"].endswith("-raunav") and d["metadata"]["namespace"] == "cms-ml"
         new = name.startswith("job-xbx-ihep-") or "dryrun" in name
-        pin = B.PIN_REPORT if "-report-" in name else B.PIN_IHEP if new else B.PIN
+        pin = (B.PIN_REPORT if "-report-" in name else B.PIN_DRYRUN if "-scratch-dryrun-" in name
+               else B.PIN_IHEP if new else B.PIN)
         assert f"--branch \"{pin}\"" in text
         rules = d["spec"]["podFailurePolicy"]["rules"]
         assert {"action": "FailJob", "onExitCodes": {"containerName": "main", "operator": "In", "values": [42]}} in rules
@@ -83,7 +84,7 @@ def test_every_spec_is_ours_retries_only_what_a_retry_can_fix_and_parses_as_bash
         assert subprocess.run(["bash", "-n", str(f)], capture_output=True).returncode == 0, name
 
 
-def test_the_gpu_jobs_stay_off_the_grids_and_the_fine_tunes_gpus_and_the_scratch_runs_on_v100():
+def test_the_gpu_jobs_stay_off_the_grids_and_the_fine_tunes_gpus_and_the_scratch_runs_on_any_gpu_that_fits():
     for name, text in SPECS.items():
         if "-stage-" in name or "-report-" in name:
             assert "nvidia.com/gpu" not in text
@@ -91,6 +92,9 @@ def test_the_gpu_jobs_stay_off_the_grids_and_the_fine_tunes_gpus_and_the_scratch
             # the plumbing check only: any GPU but the fine-tunes' V100s and the grid's RTX 3090s
             assert _products(text) == {("In", B.DRYRUN_GPUS)}
             assert not {B.SCRATCH_GPU, "NVIDIA-GeForce-RTX-3090"} & set(B.DRYRUN_GPUS)
+        elif "-ihep-scratch-" in name:
+            # any GPU that fits, as every fine-tune since 2026-11-01
+            assert _products(text) == {("In", B.LAUNCH.V2_FT_GPU)}
         elif "-scratch-" in name:
             assert _products(text) == {("In", (B.SCRATCH_GPU,))}
         else:
@@ -143,10 +147,10 @@ def test_the_real_sample_staging_inspects_and_checks_first():
         assert i < j < s.index(f"convert --name {sig}", j) < s.index(f"pair --signal {sig}", j)
 
 
-def _run_stage(tmp_path, present, failing=()):
+def _run_stage(tmp_path, present, failing=(), hard_flag=()):
     """The staging script from its first staging line, its paths moved under tmp_path and
-    stage_xbx.py replaced by a logger whose check fails for the samples in failing: (exit code,
-    logged calls)."""
+    stage_xbx.py replaced by a logger whose check fails for the samples in failing and whose
+    closure verdict fails for those in hard_flag: (exit code, logged calls)."""
     tmp_path.mkdir(parents=True)
     s = _script(SPECS["job-xbx-ihep-stage-raunav.yaml"])
     s = s[s.index(f"mkdir -p {B.STAGE}"):].replace("/data/xbx", str(tmp_path / "data/xbx"))
@@ -159,7 +163,7 @@ def _run_stage(tmp_path, present, failing=()):
     head = ("set -euo pipefail\n"
             "halt () { exit 42; }\n"
             "du () { :; }\n"
-            f"python3 () {{ echo \"$*\" >> {log}; case \"$*\" in {' | '.join(f'*check_{s}.json*' for s in failing) or '-'}) return 1;; esac; }}\n")
+            f"python3 () {{ echo \"$*\" >> {log}; case \"$*\" in {' | '.join([f'*check_{s}.json*' for s in failing] + [f'*closure/{s}/closure.json*' for s in hard_flag]) or '-'}) return 1;; esac; }}\n")
     f = tmp_path / "stage.sh"
     f.write_text(head + s)
     rc = subprocess.run(["bash", str(f)], capture_output=True, text=True).returncode
@@ -216,3 +220,29 @@ def test_the_report_jobs_read_the_fits_and_never_overwrite():
     for s in (dry, real):
         out = s.split("--out ")[1].split()[0]
         assert f"[ ! -e {out} ]" in s
+
+
+def test_no_score_runs_on_a_real_sample_before_its_input_closure_passes(tmp_path):
+    """A5 gate 1: each staged sample against JetClass-II X->bq in the scored mass window; PASS
+    only without a hard flag, and every extraction and from-scratch job of the sample needs it."""
+    s = _script(SPECS["job-xbx-ihep-stage-raunav.yaml"])
+    i = s.index("jc2-eval --name xbq_jc2")
+    assert max(s.index(f"pair --signal {sig}") for sig in B.SAMPLE_DIRS) < i < s.index("experiments/AOJ/closure.py")
+    lo, hi = X.window_for(B.MX)
+    assert f"--msd-window {lo:g} {hi:g} " in s and f"--config {B.CFG} --ref-config {B.CFG} " in s
+    rc, calls = _run_stage(tmp_path / "ok", ["xbb", "xbs"])
+    assert rc == 0 and "jc2-eval --name xbq_jc2" in calls and calls.count("AOJ/closure.py") == 2
+    assert all((tmp_path / f"ok/data/xbx/v2/closure/{sig}/PASS").exists() for sig in ("xbb", "xbs"))
+    rc, calls = _run_stage(tmp_path / "flag", ["xbb", "xbs"], hard_flag=["xbb"])
+    assert rc == 42 and (tmp_path / "flag/data/xbx/v2/closure/xbs/PASS").exists()
+    assert not (tmp_path / "flag/data/xbx/v2/closure/xbb/PASS").exists()
+    rc, calls = _run_stage(tmp_path / "none", [])
+    assert rc == 42 and "xbq_jc2" not in calls
+    for sig in B.IHEP_SIGNALS:
+        for model, *_ in B.models():
+            r = _script(SPECS[f"job-xbx-ihep-{sig}-x-{model.removeprefix('mtx-')}-raunav.yaml"])
+            assert f"[ -f {B.CLOSURE_ROOT}/{sig}/PASS ]" in r
+    for seed in B.SCRATCH_SEEDS:
+        text = SPECS[f"job-xbx-ihep-scratch-xbs-s{seed}-raunav.yaml"]
+        assert f"[ -f {B.CLOSURE_ROOT}/xbs/PASS ]" in _script(text) and _products(text) == {("In", B.LAUNCH.V2_FT_GPU)}
+    assert "closure" not in _script(SPECS["job-xbx-scratch-dryrun-raunav.yaml"])

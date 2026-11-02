@@ -17,8 +17,12 @@ explicitly (Sophon's 150-230 GeV at mX = 200, scaled by mX/200; 93.75-143.75 GeV
                          is inspected (trees, branches, types, entries) and checked (stage_xbx.py
                          check: branches after BRANCH_MAP, no zero-fill in any file, A5's floor of
                          10,000 evaluation jets in the window); one that passes is converted and its
-                         pair drawn against the held-out QCD. A sample that fails does not stop the
-                         other; the job exits 42 at the end if any failed.
+                         pair drawn against the held-out QCD. A5's gate 1 then compares each staged
+                         sample's inputs with JetClass-II X->bq in the same pT slice and mass window
+                         (experiments/AOJ/closure.py): CLOSURE_ROOT/<sig>/PASS only without a hard
+                         flag, and every extraction and from-scratch job of that sample needs it. A
+                         sample that fails does not stop the other; the job exits 42 at the end if
+                         any failed. (Gate 2, the producer's confirmation, is not a job.)
   xbx-ihep-<sig>-x-<model>
                          GPU, as xbx-x on one sample (the QCD evaluation jets, extracted for the
                          stand-in from the same staged files, are skipped). One job per sample, so
@@ -26,7 +30,8 @@ explicitly (Sophon's 150-230 GeV at mX = 200, scaled by mX/200; 93.75-143.75 GeV
   xbx-ihep-<sig>-fit-<model>
                          GPU, fit_xbx.py model into FITS_IHEP/<sig> (a fit never overwrites one).
   xbx-ihep-scratch-xbs-s<k>
-                         GPU, V100 as every fine-tune of the paper. From scratch as Sophon App. B.3
+                         GPU, any that fits (V2_FT_GPU, as every fine-tune since 2026-11-01). From
+                         scratch as Sophon App. B.3
                          in epochs, batch, LR and weight decay, but the Sophon network (our ParT with
                          Sophon's (512, 0.1) head) on scaled inputs, where Sophon's reference is ParT
                          on unscaled inputs: 50 epochs of the whole pair (50 x 2.5 M examples at
@@ -59,7 +64,9 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "XBS" / "k8s"
 PIN = "mtx-s2.17"     # the stand-in chain as it ran
 PIN_REPORT = "mtx-s2.28"   # experiments/XBS/xbx_report.py (2026-10-31; s2.27 ran the first dry run)
-PIN_IHEP = "mtx-s2.20"   # NOT YET TAGGED; mtx-s2.18 is the 188-class probe refit (4f92021), without this code
+PIN_IHEP = "mtx-s2.41"   # A5 gate 1 (input closure against JetClass-II X->bq) and any GPU for the scratch runs
+PIN_DRYRUN = "mtx-s2.20"   # the scratch dry run as it ran (complete 2026-10-31)
+# mtx-s2.20: the first IHEP pin; no IHEP spec ran at it
 # mtx-s2.20: linear_probe_v2.py and probe.py changed after mtx-s2.19 (da6e0be); no IHEP spec had run
 # mtx-s2.16: the staged files carried the source's awkward description without xbx_class, which
 # awkward (so weaver) refuses; both dry-run extractions failed on their first file
@@ -82,7 +89,8 @@ NEEDED = {"experiments/XBS/extract_xbx.py": "FLAGS = ",
 NEEDED_REPORT = {"experiments/XBS/xbx_report.py": "def macros("}
 NEEDED_IHEP = {**NEEDED,
                "experiments/XBS/extract_xbx.py": "records another vocabulary",
-               "experiments/XBS/stage_xbx.py": "flagged_charged_without_charge",
+               "experiments/XBS/stage_xbx.py": "XBQ_LABEL",
+               "experiments/AOJ/closure.py": "--msd-window",
                "experiments/XBS/fit_xbx.py": "X.window_for(a.mx)",
                "experiments/XBS/xbx.py": "def window_for(",
                "tests/test_xbx_stage.py": "test_a_partly_zero_filled_file_is_refused"}
@@ -97,6 +105,7 @@ DRYRUN_ROOT = "/data/results/xbx/scratch_dryrun"
 # where the PI's copy of the samples goes, one folder per sample as at the source (UAF
 # /ceph/cms/store/user/woodson/{Xbb,Xbs}_ntuple, 30 ROOT files each)
 SAMPLE_DIRS = {"xbb": "/data/xbx/ihep/Xbb_ntuple", "xbs": "/data/xbx/ihep/Xbs_ntuple"}
+CLOSURE_ROOT = f"{STAGE}/closure"   # A5 gate 1, one folder per sample
 IHEP_SIGNALS = ("xbb", "xbs")
 MX = 125.0     # the PI: "the SM (mX=125) Xbb and Xbs samples"; confirm on arrival (inspect, check's m_SD peak)
 # the stand-in until the samples come; then xbb and xbs (xbb_jc2 in xbb's place if the
@@ -124,6 +133,7 @@ def _load(name: str, rel: str):
 BX = _load("build_extract_jobs", "scripts/build_extract_jobs.py")
 LPJ = _load("build_linprobe_jobs", "scripts/build_linprobe_jobs.py")
 X = _load("xbx", "experiments/XBS/xbx.py")
+LAUNCH = _load("build_mtx_launch", "scripts/build_mtx_launch.py")
 
 
 def models() -> list[tuple[str, str, str, int, int, str]]:
@@ -148,10 +158,10 @@ def _need(*paths: str) -> str:
     return "".join(f'          [ -f {p} ] || {{ echo "FATAL: {p} absent: stage first"; exit 42; }}\n' for p in paths)
 
 
-def x_spec(model, run, arm, k, reg, ckpt, signals, prefix="xbx", pin=PIN) -> str:
+def x_spec(model, run, arm, k, reg, ckpt, signals, prefix="xbx", pin=PIN, gates=()) -> str:
     rung = BX.v2_rung(arm) if k else "none"
     body = (_need(*[f"{STAGE}/pairs/{s}/DONE" for s in signals], *[f"{STAGE}/{s}/eval/DONE" for s in signals],
-                  f"{STAGE}/qcd/eval/DONE")
+                  f"{STAGE}/qcd/eval/DONE", *gates)
             + "          extract () {\n"
             f"            OUT={EX_ROOT}/{model}/$1; shift\n"
             f"            python3 experiments/XBS/extract_xbx.py --arm {arm} --run-dir {BX.V2_ROOT}/{run} --rung {rung} \\\n"
@@ -217,8 +227,9 @@ def stage_ihep_spec() -> str:
 
 def ihep_stage_spec(window: str) -> str:
     """Whichever sample is present is inspected and checked; one that passes is converted and
-    paired. A failed check does not stop the other sample; the job exits 42 at the end if any
-    sample failed, or if none is present."""
+    paired, then compared with JetClass-II X->bq (A5 gate 1). A failed check or a hard closure
+    flag does not stop the other sample; the job exits 42 at the end if any sample failed, or if
+    none is present."""
     stage = lambda cmd: f"python3 experiments/XBS/stage_xbx.py --root {STAGE} {cmd} || halt"
     body = f"          mkdir -p {STAGE}\n          STAGED=\"\"; FAILED=\"\"\n"
     for s, d in SAMPLE_DIRS.items():
@@ -233,6 +244,21 @@ def ihep_stage_spec(window: str) -> str:
                  f"          else\n"
                  f"            echo \"{s} failed its inspection or check ({STAGE}/check_{s}.json): not staged\"; FAILED=\"${{FAILED}} {s}\"\n"
                  f"          fi\n")
+    msd = window.removeprefix("--window ")
+    body += (f'          if [ -n "${{STAGED}}" ]; then [ -f {STAGE}/xbq_jc2/eval/DONE ] || {stage("jc2-eval --name xbq_jc2")}; fi\n'
+             f"          PASSED=\"\"\n"
+             f"          for s in ${{STAGED}}; do\n"
+             f"            C={CLOSURE_ROOT}/${{s}}; mkdir -p ${{C}}\n"
+             f"            [ -f ${{C}}/closure.json ] || python3 experiments/AOJ/closure.py --config {CFG} --ref-config {CFG} \\\n"
+             f"              --aoj $(ls {STAGE}/${{s}}/eval/*.parquet | sort) --reference $(ls {STAGE}/xbq_jc2/eval/*.parquet | sort) \\\n"
+             f"              --msd-window {msd} --out ${{C}} || halt\n"
+             f"            if python3 -c \"import json, sys; sys.exit(1 if json.load(open('${{C}}/closure.json'))['hard_flags'] else 0)\"; then\n"
+             f"              touch ${{C}}/PASS; PASSED=\"${{PASSED}} ${{s}}\"\n"
+             f"            else\n"
+             f"              echo \"${{s}}: a hard flag in its input closure against JetClass-II X->bq (${{C}}/closure.json): no score runs\"; FAILED=\"${{FAILED}} ${{s}}\"\n"
+             f"            fi\n"
+             f"          done\n"
+             f'          echo "closure passed:${{PASSED}}"\n')
     body += (f'          [ -n "${{STAGED}}${{FAILED}}" ] || {{ echo "FATAL: no sample in {" or ".join(SAMPLE_DIRS.values())}"; exit 42; }}\n'
              f'          echo "staged:${{STAGED}}"\n'
              f"          du -sh {STAGE}/* || true\n"
@@ -383,7 +409,7 @@ spec:
 
 
 def scratch_spec(sig: str, seed: int, name=None, pin=PIN, out_root=SCRATCH_ROOT, epochs=B3["epochs"],
-                 mx=None, extract_args="", gpus=(SCRATCH_GPU,)) -> str:
+                 mx=None, extract_args="", gpus=(SCRATCH_GPU,), gates=()) -> str:
     """mx None: the superseded spec as it was written; else the window and mX are passed, the
     examples seen recorded, and an endpoints.json already written is not redone."""
     name = name or f"xbx-scratch-{sig.replace('_', '')}-s{seed}-raunav"
@@ -391,7 +417,7 @@ def scratch_spec(sig: str, seed: int, name=None, pin=PIN, out_root=SCRATCH_ROOT,
     return SCRATCH_TEMPLATE.format(
         sig=sig, seed=seed, name=name, image=BX.IMAGE, pin=pin, stage=STAGE, cfg=CFG, gpu=", ".join(f'"{g}"' for g in gpus),
         out=f"{out_root}/{sig}/s{seed}", lr=B3["lr"], wd=B3["weight_decay"], epochs=epochs,
-        need=_need(f"{STAGE}/pairs/{sig}/DONE", f"{STAGE}/{sig}/eval/DONE", f"{STAGE}/qcd/eval/DONE"),
+        need=_need(f"{STAGE}/pairs/{sig}/DONE", f"{STAGE}/{sig}/eval/DONE", f"{STAGE}/qcd/eval/DONE", *gates),
         bad_nodes=", ".join(f'"{n}"' for n in BX.V2_GPU_FAULT_NODES),
         what="the Sophon network (scaled inputs)" if new else "ParT", extract_args=extract_args,
         fit_guard="[ -f ${OUT}/endpoints.json ] || " if new else "",
@@ -429,17 +455,19 @@ def build(signals=SIGNALS, mx=MX) -> dict[str, str]:
         for model, run, arm, k, reg, ckpt in models():
             stem, pre = model.removeprefix("mtx-"), f"xbx-ihep-{sig}"
             specs[f"job-{pre}-x-{stem}-raunav.yaml"] = x_spec(model, run, arm, k, reg, ckpt, (sig,),
-                                                              prefix=pre, pin=PIN_IHEP)
+                                                              prefix=pre, pin=PIN_IHEP,
+                                                              gates=(f"{CLOSURE_ROOT}/{sig}/PASS",))
             specs[f"job-{pre}-fit-{stem}-raunav.yaml"] = fit_spec(model, ckpt, (sig,), prefix=pre, pin=PIN_IHEP,
                                                                   out=f"{FITS_IHEP}/{sig}",
                                                                   window=f" {window_arg(mx)} --mx {mx:g}")
     for s in SCRATCH_SIGNALS:
         for seed in SCRATCH_SEEDS:
             specs[f"job-xbx-ihep-scratch-{s}-s{seed}-raunav.yaml"] = scratch_spec(
-                s, seed, name=f"xbx-ihep-scratch-{s}-s{seed}-raunav", pin=PIN_IHEP, out_root=SCRATCH_ROOT_IHEP, mx=mx)
+                s, seed, name=f"xbx-ihep-scratch-{s}-s{seed}-raunav", pin=PIN_IHEP, out_root=SCRATCH_ROOT_IHEP, mx=mx,
+                gpus=LAUNCH.V2_FT_GPU, gates=(f"{CLOSURE_ROOT}/{s}/PASS",))
     # the from-scratch chain proven on the stand-in: Sophon's own window (mX = 200)
     specs["job-xbx-scratch-dryrun-raunav.yaml"] = scratch_spec(
-        "xbb_jc2", 1, name="xbx-scratch-dryrun-raunav", pin=PIN_IHEP, out_root=DRYRUN_ROOT, epochs=2,
+        "xbb_jc2", 1, name="xbx-scratch-dryrun-raunav", pin=PIN_DRYRUN, out_root=DRYRUN_ROOT, epochs=2,
         mx=X.SOPHON_MX, extract_args=" --max-jets 200000", gpus=DRYRUN_GPUS)
     # the section's figure, table and macros: on the stand-in fits (dry run), then the real ones
     # the pin in the name: each tagged dry run is its own job (the first ran at mtx-s2.27)

@@ -24,7 +24,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; gpu_ok || { echo "exit $rc with no working GPU on $(hostname): the node failed, not the code; retried elsewhere"; exit 137; }; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.20" \
+          git clone --depth 1 --branch "mtx-s2.41" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -41,6 +41,7 @@ spec:
           [ -f /data/xbx/v2/pairs/xbb/DONE ] || { echo "FATAL: /data/xbx/v2/pairs/xbb/DONE absent: stage first"; exit 42; }
           [ -f /data/xbx/v2/xbb/eval/DONE ] || { echo "FATAL: /data/xbx/v2/xbb/eval/DONE absent: stage first"; exit 42; }
           [ -f /data/xbx/v2/qcd/eval/DONE ] || { echo "FATAL: /data/xbx/v2/qcd/eval/DONE absent: stage first"; exit 42; }
+          [ -f /data/xbx/v2/closure/xbb/PASS ] || { echo "FATAL: /data/xbx/v2/closure/xbb/PASS absent: stage first"; exit 42; }
           extract () {
             OUT=/data/results/eval/xbx/mtx-flavf1-s2/$1; shift
             python3 experiments/XBS/extract_xbx.py --arm FLAV_F1 --run-dir /data/results/mtx_v2/mtx-flavf1-s2 --rung none \

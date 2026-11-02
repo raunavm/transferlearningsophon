@@ -34,7 +34,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s2.20" \
+          git clone --depth 1 --branch "mtx-s2.41" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -48,6 +48,7 @@ spec:
           [ -f /data/xbx/v2/pairs/xbs/DONE ] || { echo "FATAL: /data/xbx/v2/pairs/xbs/DONE absent: stage first"; exit 42; }
           [ -f /data/xbx/v2/xbs/eval/DONE ] || { echo "FATAL: /data/xbx/v2/xbs/eval/DONE absent: stage first"; exit 42; }
           [ -f /data/xbx/v2/qcd/eval/DONE ] || { echo "FATAL: /data/xbx/v2/qcd/eval/DONE absent: stage first"; exit 42; }
+          [ -f /data/xbx/v2/closure/xbs/PASS ] || { echo "FATAL: /data/xbx/v2/closure/xbs/PASS absent: stage first"; exit 42; }
           [ -f ${OUT}/DONE ] && { echo "${OUT} is DONE"; exit 0; }
           space_ok () { local p=$(df --output=pcent /data | tail -1 | tr -dc 0-9); echo "/data ${p}% used"; [ "$p" -lt 85 ] || { echo "FATAL: /data at ${p}%: stop and ask the PI"; exit ${HALT}; }; }
           FAIL_MARK=${OUT}.FAILED
@@ -130,7 +131,7 @@ spec:
                 values: ["us-west"]
               - key: nvidia.com/gpu.product
                 operator: In
-                values: ["Tesla-V100-SXM2-32GB"]
+                values: ["NVIDIA-GeForce-RTX-3090", "NVIDIA-L40", "NVIDIA-L40S", "NVIDIA-RTX-A6000", "NVIDIA-A40", "NVIDIA-GeForce-RTX-4090", "NVIDIA-RTX-A5000", "Tesla-V100-SXM2-32GB", "NVIDIA-A10", "NVIDIA-RTX-5000-Ada-Generation", "NVIDIA-L4", "NVIDIA-TITAN-RTX", "Quadro-RTX-6000"]
               - key: kubernetes.io/hostname
                 operator: NotIn
                 values: ["patternlab.calit2.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu", "k8s-chase-ci-01.calit2.optiputer.net", "k8s-haosu-15.sdsc.optiputer.net", "ucm-fiona01.ucmerced.edu"]

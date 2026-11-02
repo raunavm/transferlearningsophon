@@ -150,3 +150,30 @@ def test_pooling_refuses_shards_with_different_references_and_summarises_old_clo
            for c in (_closure(1), _closure(2))]
     p = cl.pool_shards(old)
     assert "pooled" not in p["features"]["part_d0"] and p["features"]["part_d0"]["iqr_ratio"]["mean"] > 0
+
+
+def test_the_loader_keeps_only_jets_in_both_the_pt_slice_and_the_mass_window(monkeypatch):
+    """--msd-window (X->bx, PRESPEC A5 gate 1) cuts on jet_sdmass beside the pT slice; without it
+    only the pT slice applies, as for AspenOpenJets. weaver and torch's loader are stubbed."""
+    import sys
+    import types
+    torch = pytest.importorskip("torch")
+    pt = np.array([450.0, 550.0, 600.0, 650.0, 800.0])
+    msd = np.array([120.0, 120.0, 60.0, 130.0, 120.0])
+    X = {"pf_features": torch.arange(5, dtype=torch.float32)[:, None, None].expand(5, 17, 2).clone(),
+         "pf_mask": torch.ones(5, 1, 2)}
+    Z = {"jet_pt": torch.tensor(pt), "jet_sdmass": torch.tensor(msd)}
+    dc = types.SimpleNamespace(input_dicts={"pf_features": NAMES})
+    cfg = types.ModuleType("weaver.utils.data.config")
+    cfg.DataConfig = types.SimpleNamespace(load=lambda *a, **k: dc)
+    ds = types.ModuleType("weaver.utils.dataset")
+    ds.SimpleIterDataset = lambda *a, **k: None
+    for name, mod in (("weaver", types.ModuleType("weaver")), ("weaver.utils", types.ModuleType("weaver.utils")),
+                      ("weaver.utils.data", types.ModuleType("weaver.utils.data")),
+                      ("weaver.utils.data.config", cfg), ("weaver.utils.dataset", ds)):
+        monkeypatch.setitem(sys.modules, name, mod)
+    monkeypatch.setattr(torch.utils.data, "DataLoader", lambda *a, **k: [(X, None, Z)])
+    f, m, names = cl.load_inputs("cfg.yaml", ["f.parquet"], (500.0, 700.0), 100)
+    assert f[:, 0, 0].tolist() == [1.0, 2.0, 3.0] and names == NAMES and m.shape == (3, 2)
+    f, _, _ = cl.load_inputs("cfg.yaml", ["f.parquet"], (500.0, 700.0), 100, msd_window=(93.75, 143.75))
+    assert f[:, 0, 0].tolist() == [1.0, 3.0]

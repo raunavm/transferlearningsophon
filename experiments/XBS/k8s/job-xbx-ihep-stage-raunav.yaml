@@ -24,7 +24,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.20" \
+          git clone --depth 1 --branch "mtx-s2.41" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -60,6 +60,20 @@ spec:
           else
             echo "xbs failed its inspection or check (/data/xbx/v2/check_xbs.json): not staged"; FAILED="${FAILED} xbs"
           fi
+          if [ -n "${STAGED}" ]; then [ -f /data/xbx/v2/xbq_jc2/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 jc2-eval --name xbq_jc2 || halt; fi
+          PASSED=""
+          for s in ${STAGED}; do
+            C=/data/xbx/v2/closure/${s}; mkdir -p ${C}
+            [ -f ${C}/closure.json ] || python3 experiments/AOJ/closure.py --config configs/xbx/JetClassII_xbx.yaml --ref-config configs/xbx/JetClassII_xbx.yaml \
+              --aoj $(ls /data/xbx/v2/${s}/eval/*.parquet | sort) --reference $(ls /data/xbx/v2/xbq_jc2/eval/*.parquet | sort) \
+              --msd-window 93.75 143.75 --out ${C} || halt
+            if python3 -c "import json, sys; sys.exit(1 if json.load(open('${C}/closure.json'))['hard_flags'] else 0)"; then
+              touch ${C}/PASS; PASSED="${PASSED} ${s}"
+            else
+              echo "${s}: a hard flag in its input closure against JetClass-II X->bq (${C}/closure.json): no score runs"; FAILED="${FAILED} ${s}"
+            fi
+          done
+          echo "closure passed:${PASSED}"
           [ -n "${STAGED}${FAILED}" ] || { echo "FATAL: no sample in /data/xbx/ihep/Xbb_ntuple or /data/xbx/ihep/Xbs_ntuple"; exit 42; }
           echo "staged:${STAGED}"
           du -sh /data/xbx/v2/* || true

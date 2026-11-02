@@ -49,6 +49,11 @@ Closures written before this (no quantiles) are summarised shard by shard.
 
 Run:  python3 experiments/AOJ/closure.py --aoj /scratch/staged/*.parquet \
           --reference /jc2/jet_data/QCD_035{0..3}.parquet --out /data/results/aoj/feasibility_v1
+
+X->bb AND X->bs (PRESPEC A5, gate 1, 2026-11-02): the same comparison of a staged outside sample
+against staged JetClass-II X->bq, both read with configs/xbx/JetClassII_xbx.yaml (--config,
+--ref-config) and both restricted to the evaluation mass window (--msd-window) as well as the pT
+slice; scripts/build_xbx_jobs.py runs it and lets no score run on a sample with a hard flag.
 """
 from __future__ import annotations
 
@@ -75,7 +80,7 @@ ASYM_SIGMA = 5.0
 QUANTILE_LEVELS = np.linspace(0.0, 1.0, 1001)
 
 
-def load_inputs(config, files, pt_window, max_jets):
+def load_inputs(config, files, pt_window, max_jets, msd_window=None):
     """(features (N, 17, P), mask (N, P), feature names) through weaver's loader."""
     import torch
     from weaver.utils.data.config import DataConfig
@@ -88,6 +93,9 @@ def load_inputs(config, files, pt_window, max_jets):
     for X, _y, Z in dl:
         pt = np.asarray(Z["jet_pt"])
         keep = (pt > pt_window[0]) & (pt < pt_window[1])
+        if msd_window is not None:
+            msd = np.asarray(Z["jet_sdmass"])
+            keep &= (msd > msd_window[0]) & (msd < msd_window[1])
         feats.append(X["pf_features"].numpy()[keep])
         masks.append(X["pf_mask"].numpy()[keep, 0].astype(bool))
         n += int(keep.sum())
@@ -287,10 +295,14 @@ def main() -> int:
     ap.add_argument("--pt-window", nargs=2, type=float, default=[500.0, 700.0],
                     help="model-facing jet_pt slice applied to BOTH samples")
     ap.add_argument("--max-jets", type=int, default=100_000)
+    ap.add_argument("--config", default=str(AOJ_CONFIG), help="data config of the --aoj files")
+    ap.add_argument("--ref-config", default=str(REF_CONFIG), help="data config of the --reference files")
+    ap.add_argument("--msd-window", nargs=2, type=float, default=None,
+                    help="jet_sdmass window applied to BOTH samples (both configs must observe jet_sdmass)")
     a = ap.parse_args()
 
-    f_aoj, m_aoj, names = load_inputs(AOJ_CONFIG, a.aoj, a.pt_window, a.max_jets)
-    f_ref, m_ref, names_ref = load_inputs(REF_CONFIG, a.reference, a.pt_window, a.max_jets)
+    f_aoj, m_aoj, names = load_inputs(a.config, a.aoj, a.pt_window, a.max_jets, a.msd_window)
+    f_ref, m_ref, names_ref = load_inputs(a.ref_config, a.reference, a.pt_window, a.max_jets, a.msd_window)
     if names != names_ref:
         raise SystemExit("FATAL: the two configs disagree on the pf_features slots")
     rows, hard, soft = compare(f_aoj, m_aoj, f_ref, m_ref, names)
@@ -302,6 +314,7 @@ def main() -> int:
         w = csv.DictWriter(fh, fieldnames=fields, extrasaction="ignore"); w.writeheader(); w.writerows(rows)
     (out / "closure.json").write_text(json.dumps(dict(
         n_jets_aoj=int(len(f_aoj)), n_jets_reference=int(len(f_ref)), pt_window=a.pt_window,
+        msd_window=a.msd_window, config=a.config, ref_config=a.ref_config,
         hard_flags=hard, soft_flags=soft, rows=rows), indent=2))
 
     for r in rows:
