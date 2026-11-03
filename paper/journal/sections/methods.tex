@@ -10,7 +10,7 @@
 We pretrain on JetClass-II~\cite{sophon,jetclasstwo}, the dataset of the published Sophon model, with its
 selection and its reweighting, so that every label set learns from the jet distribution Sophon learned from.
 JetClass-II holds about \LitJetClassTwoNJetsMillion{} million simulated jets, clustered with the
-anti-$k_{\mathrm T}$ algorithm~\cite{antikt} with $R = \LitJetClassTwoJetRadius$. They are labeled with the
+anti-$k_{\mathrm T}$ algorithm~\cite{antikt} with a distance parameter of \LitJetClassTwoJetRadius. They are labeled with the
 \LitJetClassTwoNResonantClasses{} resonant and \LitJetClassTwoNQcdClasses{} QCD classes of JetClass-II. In a
 resonant jet a spin-0 resonance $X$ decays either directly into a pair of quarks, gluons or leptons, or into a
 pair of intermediate resonances $Y$ that decay in turn. The masses of $X$, up to
@@ -100,7 +100,7 @@ of the \Kfull-class model,
 \end{equation}
 A coarse label set keeps the summed score of each of its groups and gives up the ratios of the scores within
 a group. A discriminant can therefore be formed exactly from
-a label set only when every set of classes it sums is a union of that label set's classes, and
+a label set, by equation~(\ref{eq:division}), only when every set of classes it sums is a union of that label set's classes, and
 table~\ref{tab:usecase} lists the outcome for published discriminants. Sophon's $X\to b\bar b$
 discriminant~\cite[Eq.~(4)]{sophon} can be formed at \Kfull{} and \Kres{} classes but not at \Kmid, where
 $X\to b\bar b$ shares a class with $X\to bc$ and $X\to bq$. Sophon's other

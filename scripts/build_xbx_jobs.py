@@ -64,6 +64,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "XBS" / "k8s"
 PIN = "mtx-s2.17"     # the stand-in chain as it ran
 PIN_REPORT = "mtx-s2.28"   # experiments/XBS/xbx_report.py (2026-10-31; s2.27 ran the first dry run)
+PIN_IHEP_REPORT = "mtx-s2.49"   # the real samples' report: xbx_report.py's 20-background-jet cut (811ff6c)
 PIN_IHEP = "mtx-s2.41"   # A5 gate 1 (input closure against JetClass-II X->bq) and any GPU for the scratch runs
 PIN_DRYRUN = "mtx-s2.20"   # the scratch dry run as it ran (complete 2026-10-31)
 # mtx-s2.20: the first IHEP pin; no IHEP spec ran at it
@@ -424,13 +425,13 @@ def scratch_spec(sig: str, seed: int, name=None, pin=PIN, out_root=SCRATCH_ROOT,
         fit_args=f" {window_arg(mx)} --mx {mx:g} --ft-manifest ${{OUT}}/ft_manifest.json" if new else "")
 
 
-def report_spec(name: str, fits: str, out: str, alias: str = "") -> str:
+def report_spec(name: str, fits: str, out: str, alias: str = "", pin: str = PIN_REPORT) -> str:
     """experiments/XBS/xbx_report.py: the section's figure, table and macros from the fit files;
     an existing output is never overwritten."""
     body = (f"          [ ! -e {out} ] || {{ echo \"FATAL: {out} exists\"; exit 42; }}\n"
             "          pip install --no-cache-dir -q matplotlib==3.10.7 mplhep==0.4.1 || exit 1\n"
             f"          python3 experiments/XBS/xbx_report.py --fits {fits}{alias} --out {out} || halt\n")
-    return _cpu(name, body, pin=PIN_REPORT)
+    return _cpu(name, body, pin=pin)
 
 
 def window_arg(mx: float) -> str:
@@ -475,7 +476,8 @@ def build(signals=SIGNALS, mx=MX) -> dict[str, str]:
     specs["job-xbx-report-dryrun-raunav.yaml"] = report_spec(
         f"xbx-report-dryrun-s{tag}-raunav", FITS, f"/data/results/xbx_dryrun/report_{PIN_REPORT}", " --as xbb_jc2=xbb")
     specs["job-xbx-ihep-report-raunav.yaml"] = report_spec("xbx-ihep-report-raunav", FITS_IHEP,
-                                                           f"{EX_ROOT}/report_ihep_{PIN_REPORT}")
+                                                           f"{EX_ROOT}/report_ihep_{PIN_IHEP_REPORT}",
+                                                           pin=PIN_IHEP_REPORT)
     return specs
 
 
@@ -489,6 +491,7 @@ def main(argv=None) -> int:
     BX.verify_pin(PIN, list(NEEDED), a.pin_not_yet_tagged, NEEDED)
     BX.verify_pin(PIN_IHEP, list(NEEDED_IHEP), a.pin_not_yet_tagged, NEEDED_IHEP)
     BX.verify_pin(PIN_REPORT, list(NEEDED_REPORT), a.pin_not_yet_tagged, NEEDED_REPORT)
+    BX.verify_pin(PIN_IHEP_REPORT, list(NEEDED_REPORT), a.pin_not_yet_tagged, NEEDED_REPORT)
     specs = build(tuple(a.signals), a.mx)
     if not a.check_only:
         OUT_DIR.mkdir(parents=True, exist_ok=True)

@@ -13,9 +13,10 @@ signal efficiency eps_S, from the curves_v2 files (mlst_v4.load_roc): each curve
 at least mlst_v4.JC1_MIN_BKG background jets pass (the black dashed line N_B / that number marks the
 limit), as the mean over the pretraining runs at fixed eps_S where every run survives, with the SD
 (range for two runs) as a band; below, the ratio to the 188-class model, run by run against the
-188-class run of the same index for the label sets, mass models and flavor partitions, and against
-the 188-class mean for training from scratch, the randomly initialized network and the
-kinematic-only model.
+188-class run of the same index for the label sets, mass models, flavor partitions and the randomly
+initialized network (it holds the initial weights of the 188-class run of its index), and against
+the 188-class mean for training from scratch (its seed k trains on subset k) and the kinematic-only
+model (one run).
 
 Main text
   F2   accuracy (JetClass-II 188-class task on the class-balanced test set; JetClass) and R30 (top;
@@ -57,8 +58,10 @@ Appendix
   A17  the mass regression on resonant and on QCD jets: response histograms, and resolution and
        median response against jet pT and generator mass
 
-A figure or panel whose input is not pulled yet is skipped with one line naming the input. main()
-prints what it drew and skipped and exits 0 when at least one figure was drawn.
+A figure or panel whose input is not pulled yet is skipped with one line naming the input; main()
+removes a skipped figure's older files from the output folder (FILES), so the paper prints its
+pending marker rather than a superseded render. main() prints what it drew and skipped and exits 0
+when at least one figure was drawn.
 
     python3 experiments/FIGS/paper_figures.py [--outdir figures/mlst]
 """
@@ -116,9 +119,11 @@ SIZE_PANELS = (("jc2", "jc2_188", "accuracy", "JetClass-II", "Accuracy"),
 F8B_SHOWN = ("L188", "R16_Q1", "R16_Q1_MASS")
 WPS = (("0.1", "-"), ("0.01", ":"))
 # ROC panels: main and ratio axes' heights; the configurations compared with the 188-class mean,
-# not run by run (no pretraining run of the same index)
+# not run by run: training from scratch (seed k is no pretraining run k) and the kinematic-only model
+# (one run). The randomly initialized network init(bn)-sK pairs with the 188-class run sK, whose
+# initial weights it holds (scripts/build_extract_jobs.py V2_INIT_RUNS)
 ROC_HEIGHTS = (3, 1.2)
-UNPAIRED = (SCRATCH, INIT_BN, "INIT", KIN)
+UNPAIRED = (SCRATCH, KIN)
 X_EPS = r"Signal efficiency ($\varepsilon_S$)"
 Y_REJ = r"Background rejection ($1/\varepsilon_B$)"
 Y_REJ_RATIO = "Ratio to\n188 classes"
@@ -254,9 +259,10 @@ def _controls(ax, M, runs, value, ft: bool, tag: str) -> list:
     return ys
 
 
-def _classes_axis(ax, ys: list, xlabel: bool = True) -> None:
+def _classes_axis(ax, ys: list, xlabel: bool = True, log: bool = False) -> None:
     """Number of pretraining classes on a log axis (ticks 17, 43, 162, 188); the metric on a linear
-    axis zoomed to the data (8 % of the range on either side)."""
+    axis zoomed to the data (8 % of the range on either side), or with log on a log axis (a rejection:
+    the probe and the fine-tuned models lie more than a decade apart on top tagging)."""
     ax.set_xscale("log")
     ax.set_xlim(12, 260)
     ax.xaxis.set_major_locator(ticker.FixedLocator([17, 43, 162, 188]))
@@ -266,9 +272,14 @@ def _classes_axis(ax, ys: list, xlabel: bool = True) -> None:
     for lab, ha in zip(ax.get_xticklabels(), ("center", "center", "right", "left")):
         lab.set_horizontalalignment(ha)
     lo, hi = min(ys), max(ys)
-    pad = 0.08 * (hi - lo) or 0.08 * abs(hi) or 0.1
-    ax.set_ylim(lo - pad, hi + pad)
-    ax.yaxis.set_major_locator(ticker.MaxNLocator(5))
+    if log and lo > 0:
+        ax.set_yscale("log")
+        ax.set_ylim(lo / 1.15, hi * 1.15)
+        _log_ticks(ax.yaxis, lo / 1.15, hi * 1.15)
+    else:
+        pad = 0.08 * (hi - lo) or 0.08 * abs(hi) or 0.1
+        ax.set_ylim(lo - pad, hi + pad)
+        ax.yaxis.set_major_locator(ticker.MaxNLocator(5))
     if xlabel:
         ax.set_xlabel(r"Number of classes in pretraining ($N_{\mathrm{out}}$)")
 
@@ -329,7 +340,7 @@ def figure_f2(M, runs, I, outdir) -> list:
         if not ys:
             ax.set_axis_off()
             continue
-        _classes_axis(ax, ys, xlabel=k >= 2)
+        _classes_axis(ax, ys, xlabel=k >= 2, log=met == "r30")
         if k % 2 == 0:
             ax.set_ylabel(ylab)
     grey = "0.45"
@@ -507,11 +518,11 @@ def _mean_band(ax, x, v, kw: dict, label: str | None) -> list:
 
 def _ratio(rx, M, eps, ref: dict, rows: list) -> bool:
     """The ratio panel below a ROC: ref {model: rejection} of the 188-class runs, rows [(configuration,
-    {model: rejection}, line style)]. Run by run against the 188-class run of the same index, except
-    the UNPAIRED configurations and a configuration of None against the 188-class mean; drawn where
-    every run and the reference survive, the reference flat at 1 in its colour, y from the data (5 %
-    padding, 1 included, no clipping). False, with nothing drawn, when the reference has no surviving
-    point."""
+    {model: rejection}, line style)]. Run by run against the 188-class run of the same index
+    (mlst_results._idx; the randomly initialized network included), except the UNPAIRED
+    configurations against the 188-class mean; drawn where every run and the reference survive, the
+    reference flat at 1 in its colour, y from the data (5 % padding, 1 included, no clipping). False,
+    with nothing drawn, when the reference has no surviving point."""
     if not ref:
         return False
     R = np.array(list(ref.values()))
@@ -524,7 +535,7 @@ def _ratio(rx, M, eps, ref: dict, rows: list) -> bool:
     for row, got, kw in rows:
         if row == "L188":
             continue
-        if row is None or row in UNPAIRED:
+        if row in UNPAIRED:
             Q = np.array([r / ref_mean for r in got.values()])
         else:
             Q = np.array([r / by_idx[M._idx(m)] for m, r in got.items() if M._idx(m) in by_idx])
@@ -548,6 +559,20 @@ def _rej_axis(ax, ys: list) -> None:
     ax.set_ylim(min(pos) / 1.3, max(pos) * 1.3)
     ax.yaxis.set_major_formatter(ticker.LogFormatterSciNotation())
     ax.set_xlim(0, 1)
+
+
+def _log_ticks(axis, lo: float, hi: float) -> None:
+    """Ticks of a log axis over [lo, hi]: 10^k labels (Sophon; matplotlib's log locator with
+    LogFormatterSciNotation, as _rej_axis) when a power of ten lies in the range; on a span inside one
+    decade with none, the round plain numbers of mlst_figures._log_axis, where 10^k would leave no
+    label."""
+    if math.floor(math.log10(hi)) < math.ceil(math.log10(lo)):
+        F._log_axis(axis, lo, hi)
+        return
+    axis.set_major_locator(ticker.LogLocator())
+    axis.set_major_formatter(ticker.LogFormatterSciNotation())
+    axis.set_minor_locator(ticker.LogLocator(subs="auto"))
+    axis.set_minor_formatter(ticker.LogFormatterSciNotation(labelOnlyBase=False))
 
 
 def roc_panel(ax, rx, M, fam: dict, key: str, configs: list) -> tuple[bool, list]:
@@ -617,9 +642,17 @@ def roc_figure(M, fig, panels: list, ncols: int, name: str, outdir, tag: str) ->
         import matplotlib.pyplot as plt
         plt.close(fig)
         raise Skip(f"{tag}: ROC curves (curves_v2)")
-    rows = [r for r in dict.fromkeys(r for p in panels for r, _ in p[3]) if r in shown]
-    handles = [Line2D([], [], color=look(M, r)["color"], linestyle=look(M, r)["linestyle"]) for r in rows]
-    handles.append(Line2D([], [], **style.LIMIT_STYLE))
+    # one shared legend above the panels for the configurations every panel is meant to show (also when
+    # a curve is cut away entirely, as on X->ee vs X->mumu); a configuration only some panels show (the
+    # kinematic-only model on top tagging) in a framed legend inside those panels (PI 2026-11-02)
+    line = lambda r: Line2D([], [], color=look(M, r)["color"], linestyle=look(M, r)["linestyle"])
+    everywhere = set.intersection(*(set(r for r, _ in p[3]) for p in panels))
+    rows = [r for r in dict.fromkeys(r for p in panels for r, _ in p[3]) if r in shown and r in everywhere]
+    for k, p in enumerate(panels):
+        own = [r for r, _ in p[3] if r not in everywhere and r in shown]
+        if own:
+            fig.axes[2 * k].legend([line(r) for r in own], [NAME[r].replace("\n", " ") for r in own], loc="best")
+    handles = [line(r) for r in rows] + [Line2D([], [], **style.LIMIT_STYLE)]
     labels = [NAME[r].replace("\n", " ") for r in rows] + [f"{M.V4.JC1_MIN_BKG} background jets pass"]
     _legend(fig, handles, labels, ncol=min(5, len(labels)))
     return _save(fig, name, outdir)
@@ -884,7 +917,7 @@ def _size_axis(ax, met: str, ys: list) -> None:
         lo, hi = min(ys) / 1.15, max(ys) * 1.15
         ax.set_yscale("log")
         ax.set_ylim(lo, hi)
-        F._log_axis(ax.yaxis, lo, hi)
+        _log_ticks(ax.yaxis, lo, hi)
     else:
         ax.yaxis.set_major_locator(ticker.MaxNLocator(5))
 
@@ -1044,7 +1077,7 @@ def mass_hist(ax, rx, M, runs, atlas, group: str, tag: str) -> bool:
     rx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3))
     ax.tick_params(labelbottom=False)
     ax.set_ylabel("Fraction of jets", loc="top")
-    rx.set_ylabel("Ratio to\ngroomed")
+    rx.set_ylabel("Ratio to\nsoft-drop mass")
     rx.set_xlabel(r"Response ($r$)")
     return True
 
@@ -1089,7 +1122,7 @@ def mass_bins(axs, M, runs, atlas, group: str, axis: str, xlabel: str, tag: str)
     for axx in (a0, a1):
         axx.tick_params(labelbottom=False)
     a0.set_ylabel(r"Resolution ($\sigma_r$)")
-    a1.set_ylabel("Ratio to\ngroomed")
+    a1.set_ylabel("Ratio to\nsoft-drop mass")
     a2.set_ylabel("Median\nresponse")
     a2.set_xlabel(xlabel)
     return True
@@ -1107,7 +1140,7 @@ def _mass_legend(fig, M) -> None:
         lk = look(M, a)
         handles.append(Line2D([], [], color=lk["color"], linewidth=1.1, linestyle=lk["linestyle"], marker="p",
                               markersize=4, markerfacecolor=MK.MASS_FACE[a] or lk["color"]))
-    _legend(fig, handles, ["Groomed (soft-drop) mass", *(NAME[a] for a in M.MASS)], ncol=3)
+    _legend(fig, handles, ["Reconstructed soft-drop mass", *(NAME[a] for a in M.MASS)], ncol=3)
 
 
 def _mass_bin_columns(fig, spec, M, runs, atlas, group, tag, k0) -> int:
@@ -1278,7 +1311,7 @@ def figure_f8b(M, runs, I, outdir) -> list:
     pos = [y for y in ys if y > 0]
     lo, hi_ = min(pos) / 1.3, max(pos) * 1.3
     ax.set_ylim(lo, hi_)
-    F._log_axis(ax.yaxis, lo, hi_)
+    _log_ticks(ax.yaxis, lo, hi_)
     ax.set_xlabel(r"QCD efficiency ($\varepsilon_B$)")
     ax.set_ylabel(r"Jensen-Shannon distance ($d_{\mathrm{JS}}$)")
     _panel(ax, 3)
@@ -1305,7 +1338,8 @@ def _kept(M, r: dict) -> tuple:
 
 def xbx_curves(M, rs: list) -> tuple:
     """(eps_B, eps_S/sqrt(eps_B) of each run) on the points _kept, and (eps_S grid, rejection 1/eps_B of
-    each run interpolated in ln there, NaN outside)."""
+    each run there, NaN outside), eps_B interpolated linearly between the points as for every ROC
+    (Methods)."""
     x, keep = _kept(M, rs[0])
     y = np.array([np.asarray(r["curve"]["eps_s_over_sqrt_eps_b"], float)[keep] for r in rs])
     rej = []
@@ -1313,7 +1347,7 @@ def xbx_curves(M, rs: list) -> tuple:
         xb, kp = _kept(M, r)
         es = np.asarray(r["curve"]["eps_s_over_sqrt_eps_b"], float)[kp] * np.sqrt(xb)
         o = np.argsort(es)
-        rej.append(np.exp(np.interp(EPS_S_GRID, es[o], -np.log(xb[o]), left=np.nan, right=np.nan)))
+        rej.append(1 / np.interp(EPS_S_GRID, es[o], xb[o], left=np.nan, right=np.nan))
     return x, y, np.array(rej)
 
 
@@ -1334,17 +1368,23 @@ def figure_f9(M, runs, I, outdir) -> list:
         rx = fig.add_subplot(inner[1], sharex=ax)
         sx = fig.add_subplot(outer[i, 1])
         got = lambda row, name, s=s: {m: r for m in runs[row] if (r := XR.readout(xfits.get(m, {}).get(s, {}), name))}
-        kw = lambda row, ls: dict(color=look(M, row)["color"], linestyle=ls)
+        kw = lambda row: dict(color=look(M, row)["color"], linestyle=look(M, row)["linestyle"])
         # (configuration for the ratio, {model: readout}, line, label): the transfer head of each label
         # set solid; Sophon's direct discriminant (Eq. 4) dotted where X->bb is a class of its own; for
-        # X->bs the X->bq output node grey dotted (Sophon's control) and training from scratch. None:
-        # compared with the 188-class mean in the ratio (_ratio)
-        series = [(row, got(row, "head"), kw(row, "-"), f"{NAME[row]}, transfer") for row in LEVELS]
+        # X->bs the X->bq output node grey dotted (Sophon's control) and training from scratch. The
+        # direct discriminant and the output node come from the pretraining runs themselves, so their
+        # keys (neither "L188" nor UNPAIRED) pair them in the ratio with the 188-class transfer head of
+        # the same run (_ratio); training from scratch against the 188-class mean
+        series = [(row, got(row, "head"), kw(row), f"{NAME[row]}, transfer") for row in LEVELS]
         if s == "xbb":
-            series += [(None, got(row, "zero_shot_xbb"), kw(row, ":"), f"{NAME[row]}, direct discriminant")
+            # the direct discriminant: its label set's line, thin, with open markers of that label set,
+            # so it stays apart from the transfer heads without colour
+            series += [(f"{row}:direct", got(row, "zero_shot_xbb"),
+                        dict(kw(row), linewidth=0.8, marker=look(M, row)["marker"], markersize=3,
+                             markerfacecolor="white", markevery=0.12), f"{NAME[row]}, direct discriminant")
                        for row in ("L188", "L162") if XR.direct_ok(M, row)]
         else:
-            series.append((None, got("L188", "zero_shot_xbq"), dict(style.NODE_CONTROL_STYLE),
+            series.append(("L188:node", got("L188", "zero_shot_xbq"), dict(style.NODE_CONTROL_STYLE),
                            r"188 classes, $X\to bq$ output node"))
             scr = I["xbx_scratch"].get(s, [])
             if not scr:
@@ -1377,9 +1417,6 @@ def figure_f9(M, runs, I, outdir) -> list:
             rx.set_ylabel(Y_REJ_RATIO)
         else:
             rx.set_axis_off()
-        for e in (0.3, 0.5):
-            ax.axvline(e, color="0.6", linewidth=0.7, linestyle="-.", zorder=0)
-        sx.axvline(1e-3, color="0.6", linewidth=0.7, linestyle="-.", zorder=0)
         sx.set_xscale("log")
         sx.set_xlim(1e-4, 1)
         sx.set_ylim(bottom=0)
@@ -1390,10 +1427,16 @@ def figure_f9(M, runs, I, outdir) -> list:
             sx.set_xlabel(r"QCD efficiency ($\varepsilon_B$)")
         ax.set_title(title)
         sx.set_title(title)
-    seen = {}
-    for a in fig.axes:
-        for h, lab in zip(*a.get_legend_handles_labels()):
-            seen.setdefault(lab, h)
+    # the transfer heads are in every row: one shared legend above; the curves of one row only (the
+    # direct discriminant for X->bb, the output node and from scratch for X->bs) in a framed legend
+    # inside that row's right panel (PI 2026-11-02)
+    per_row = [dict(zip(*a.get_legend_handles_labels()[::-1])) for a in fig.axes[2::3]]
+    common = set.intersection(*(set(d) for d in per_row)) if per_row else set()
+    for a, d in zip(fig.axes[2::3], per_row):
+        own = [lab for lab in d if lab not in common]
+        if own:
+            a.legend([d[lab] for lab in own], own, loc="best")
+    seen = {lab: h for d in per_row for lab, h in d.items() if lab in common}
     seen[f"{M.V4.JC1_MIN_BKG} background jets pass"] = Line2D([], [], **style.LIMIT_STYLE)
     _legend(fig, list(seen.values()), list(seen), ncol=4)
     return _save(fig, "F9_xbx", outdir)
@@ -1402,6 +1445,15 @@ def figure_f9(M, runs, I, outdir) -> list:
 FIGURES = (figure_f2, figure_f3, figure_f4, figure_f5, figure_f6j, figure_f6, figure_f7, figure_f8a, figure_f8b,
            figure_f9, figure_a6j, figure_a3r, figure_a10, figure_a17_response, figure_a17_bins_resonant,
            figure_a17_bins_qcd)
+# the files each figure saves (its _save names): removed from --outdir when the figure is skipped, so
+# that main.tex's \paperfig prints \pending instead of an older render
+FILES = {figure_f2: ("F2_label_granularity",), figure_f3: ("F3_per_class",), figure_f4: ("F4_flavor_pairs",),
+         figure_f5: ("F5_missing_inputs",), figure_f6j: ("F6J_roc_jetclass",), figure_f6: ("F6_roc_benchmarks",),
+         figure_f7: ("F7_finetune_vs_size",), figure_f8a: ("F8a_mass_regression",),
+         figure_f8b: ("F8b_sculpting",), figure_f9: ("F9_xbx",), figure_a6j: ("A6J_roc_jetclass_probe",),
+         figure_a3r: ("A3R_roc_jetclass2",), figure_a10: ("A10_probes_vs_size",),
+         figure_a17_response: ("A17_mass_response_groups",),
+         figure_a17_bins_resonant: ("A17_mass_bins_resonant",), figure_a17_bins_qcd: ("A17_mass_bins_qcd",)}
 
 
 def main(argv=None) -> int:
@@ -1418,6 +1470,12 @@ def main(argv=None) -> int:
         except Skip as e:
             print(f"{f.__name__}: skipped, no input: {e}")
             skipped.append(f.__name__)
+            for stem in FILES[f]:
+                for ext in ("pdf", "png"):
+                    old = a.outdir / f"{stem}.{ext}"
+                    if old.exists():
+                        old.unlink()
+                        print(f"  removed {old} (superseded)")
             continue
         except Exception as e:  # one broken figure must not hide the others
             traceback.print_exc()

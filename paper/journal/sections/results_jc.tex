@@ -61,8 +61,9 @@ fine-tuning; they are not fine-tuned on JetClass-II. The JetClass-II test set ho
 \JcBalTestPerClass{} jets per class and all jets of the \JcBalNShort{} classes with fewer, and its classes
 are the \Kfull-class model's own, so finer label sets are favored there by construction. On top tagging
 and quark/gluon discrimination the inputs the data lack are substituted for the linear probes as chosen on
-validation (\LpSubstitutionTop{} and \LpSubstitutionQg) and set to zero for fine-tuning. The vertical axes
-are linear and do not start at zero. For scale, a linear probe on the randomly initialized network with its
+validation (\LpSubstitutionTop{} and \LpSubstitutionQg) and set to zero for fine-tuning. The accuracy axes
+of (a) and (b) are linear and do not start at zero; the $R_{30}$ axes of (c) and (d) are logarithmic, because
+the linear probes and the fine-tuned models lie more than a decade apart on top tagging. For scale, a linear probe on the randomly initialized network with its
 BatchNorm statistics recomputed reaches an accuracy of \MlstLpJcTwoAccInitBn{} on JetClass-II. The AUC of
 every configuration is in tables~\ref{tab:probes}, \ref{tab:ft} and~\ref{tab:ftrej}.}
 \label{fig:f2}
@@ -216,8 +217,8 @@ that separates it from $X\to bq$. The \Kcoarse-class labels remove flavor altoge
 
 A merge in lepton flavor removes a distinction that the finer labels keep almost perfectly. On $X\to ee$
 against $X\to\mu\mu$, a linear probe on the frozen features of the configurations that keep the two apart
-(\MlstRocNoCurveEemm) separates the test jets so completely that in every run fewer than $\nmin$ $X\to\mu\mu$
-jets score above the lowest-scoring $X\to ee$ jet, so none of their curves can be drawn in
+(\MlstRocNoCurveEemm) separates the test jets so completely that in at least one run of each fewer than
+$\nmin$ $X\to\mu\mu$ jets pass at every signal efficiency of the curve, so their curves cannot be drawn in
 figure~\ref{fig:f4}(d). At \Kmid{} and \Kcoarse{} classes, where the two decays share a
 class, the AUC of a linear probe falls to \MlstLpEemmAucMid{} and \MlstLpEemmAucCoarse{}, against
 \MlstLpEemmAucFull{} at \Kfull{} classes (table~\ref{tab:pairs}). An electron and a muon differ in the inputs
@@ -235,9 +236,9 @@ separation; what the merge removes is the reward for keeping it complete.
 efficiency $\epsS$, equations~(\ref{eq:eff}) and~(\ref{eq:rej}), with the first decay of each pair as the
 signal. (a) $X\to b\bar b$ against $X\to c\bar c$; (b) $X\to YY\to bbqq$ against $X\to YY\to ccqq$; (c) $X\to bc$
 against $X\to bq$ and $X\to cs$ together, the classes in the denominator of the discriminant of the boosted
-$|V_{cb}|$ measurement; (d) $X\to ee$ against $X\to\mu\mu$. Solid lines: the \Kfull-, \Kres-, \Kmid- and
-\Kcoarse-class levels of the hierarchy; dashed lines: the random partitions with no, a $b$-quark and a random
-flavor boundary. Lines are the mean of the runs at fixed $\epsS$, with bands of one standard deviation over
+$|V_{cb}|$ measurement; (d) $X\to ee$ against $X\to\mu\mu$. Colored lines (solid, dashed, dash-dot and dotted): the \Kfull-, \Kres-, \Kmid- and
+\Kcoarse-class levels of the hierarchy; long-dashed, long-dash-dot and dash-dot-dot lines: the random partitions
+with no, a $b$-quark and a random flavor boundary. Lines are the mean of the runs at fixed $\epsS$, with bands of one standard deviation over
 \MlstNRunsWord{} pretraining runs, or the range of the \RandFlavRuns{} runs of a partition. Lower panels: ratio
 of the rejection to that of the \Kfull-class run of the same seed, drawn flat at one for that model. Each curve
 stops where fewer than $\nmin$ background jets pass, equation~(\ref{eq:cut}), marked by the dashed black line at
@@ -245,8 +246,8 @@ $N_B/\nmin$: a rejection of \MlstRocRejMaxBb{} in (a)--(c), whose test sets hold
 jets, and of \MlstRocRejMaxEemm{} in (d), whose test set holds \MlstRocNBkgEemm. The \Kfull-class curves
 therefore begin only at signal efficiencies of \MlstRocCutBbFull{} in (a), \MlstRocCutBbqqFull{} in (b)
 and \MlstRocCutBcFull{} in (c), and the ratio panels cover the signal efficiencies above these. In (d), the
-curves of \MlstRocNoCurveEemm{} cannot be drawn, because fewer than $\nmin$ background jets pass them at every
-signal efficiency; they are listed in the legend only, and (d) has no ratio panel. The random partitions, the models with the auxiliary
+curves of \MlstRocNoCurveEemm{} cannot be drawn, because in at least one of their runs fewer than $\nmin$ background jets pass at every
+signal efficiency of the curve; they are listed in the legend only, and (d) has no ratio panel. The random partitions, the models with the auxiliary
 mass regression and the multilayer perceptron probes are in tables~\ref{tab:pairs} and~\ref{tab:mlp}.}
 \label{fig:f4}
 \end{figure}
@@ -276,8 +277,8 @@ QCD jets pass, close to ParT's working points for these classes.
 \paperfig{\linewidth}{F6J}
 \caption{Fine-tuned models on JetClass: background rejection $1/\epsB$ against signal efficiency $\epsS$ for
 each signal class against the QCD background, with the two-class discriminant of equation~(\ref{eq:discr}).
-Solid colored lines: the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class models, each fine-tuned once on
-\FtSizeESix{} training jets; black: the same network trained from scratch on as many jets. Lines are the mean of
+Colored lines (solid, dashed, dash-dot and dotted): the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class models, each fine-tuned once on
+\FtSizeESix{} training jets; black dash-dot-dot: the same network trained from scratch on as many jets. Lines are the mean of
 the runs at fixed $\epsS$, with bands of one standard deviation over the \MlstNRunsWord{} pretraining runs and
 over the \MlstFtRefSeedsWord{} training seeds from scratch. Each seed of the network trained from scratch also
 trains on its own subset of the JetClass training files, whereas every pretrained model is fine-tuned on the

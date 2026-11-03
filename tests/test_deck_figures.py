@@ -57,15 +57,17 @@ def _tree(D, M, data: pathlib.Path) -> dict:
     rec = lambda bound=False: {"macro_auc_ovr": auc(), "macro_auc_qcd": auc(), "auc": auc(),  # noqa: E731
                                "r50": 50.0, "r30": 1e6 if bound else 120.0, "r50_n_bkg_pass": 400,
                                "r30_n_bkg_pass": 0 if bound else 150, "r50_is_bound": False, "r30_is_bound": bound}
-    cells = lambda: {**{i: {f"N{n}": {"s1": rec()} for n in SIZES} for i in inits},  # noqa: E731
-                     M.SCRATCH: {f"N{n}": {f"s{s}": rec(s == 3) for s in (1, 2, 3)} for n in SIZES}}
-    for _, f, ds, _, _ in M.FT_TASKS:
+    # the full training set too: below it the fixed-budget cells replace these (M.merge_budget)
+    cells = lambda ns: {**{i: {f"N{n}": {"s1": rec()} for n in ns} for i in inits},  # noqa: E731
+                        M.SCRATCH: {f"N{n}": {f"s{s}": rec(s == 3) for s in (1, 2, 3)} for n in ns}}
+    for key, f, ds, _, _ in M.FT_TASKS:
+        ns = SIZES + ((M.FULL_N[key],) if key in M.FULL_N else ())
         p = data / "ft_mlst" / f"{M.FT_TAGS[0]}_{f}.json"
         doc = json.loads(p.read_text()) if p.exists() else {"cells": {}}
         if ds is None:
-            doc["cells"] = doc["cells"] or cells()
+            doc["cells"] = doc["cells"] or cells(ns)
         else:
-            doc["cells"].setdefault(ds, cells())
+            doc["cells"].setdefault(ds, cells(ns))
         _write(p, doc)
     # manifests as pull_mlst_data writes them: the paper's legs at both sizes, and a decoy cell of
     # a leg the paper does not read (leg1, all JetClass-II classes merged), which must not count

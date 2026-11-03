@@ -37,11 +37,13 @@ same width.
 generator-level match. (a) Distribution of the response $r = m_{\mathrm{est}}/\mgen$ of
 equation~(\ref{eq:resolution}), the estimated over the generator-level soft-drop mass, over all these jets:
 the reconstructed soft-drop mass (black line, filled) and the regressed mass of the \Kres- and \Kcoarse-class
-models pretrained with the auxiliary mass regression (colored lines); the lower panel is the ratio to the
+models pretrained with the auxiliary mass regression (orange long dashes and red long dash-dot); the lower panel is the ratio to the
 reconstructed soft-drop mass, drawn only in bins that hold at least \MlstMassMinJets{} jets of the
 reconstructed soft-drop mass, because the ratio is undefined where that distribution is empty. (b) Resolution
 $\sigma_r$ of equation~(\ref{eq:resolution}) against the reconstructed jet $p_{\mathrm{T}}$ and (c) against
-$\mgen$, with the ratio to the reconstructed soft-drop mass below. Bands show the range of the
+$\mgen$, with the ratio to the reconstructed soft-drop mass below and, at the bottom, the median response
+$q_{50}$ in each bin; the regressed masses are drawn as markers at the mean of the runs, offset within the
+bin for legibility. Bands show the range of the
 \MlstMassNRunsWord{} pretraining runs of each model; vertical bars on the reconstructed soft-drop mass are
 statistical (resampling of the jets), horizontal bars the bin width; a bin with fewer than \MlstMassMinJets{}
 jets is not shown. The median response $q_{50}$ is \MlstMassUncorrectedResponse{} for the reconstructed
@@ -102,14 +104,15 @@ to reach the jets that the label sets rank differently.
 \centering
 \paperfig{\linewidth}{F8b}
 \caption{Mass sculpting by a cut on the summed score of the resonant classes, on the QCD jets
-(jets from light quarks and gluons) of the JetClass-II test set. (a)--(c) Soft-drop mass
+(jets from quarks and gluons that do not come from a resonance decay) of the JetClass-II test set. (a)--(c) Soft-drop mass
 distribution of all QCD jets (filled) and of the jets passing the cut at QCD efficiencies $\epsB$ of
 \SculptEffHigh{} (solid) and \SculptEffLow{} (dotted), which keep \MlstSculptNPassTen{} and
-\MlstSculptNPassOne{} jets, for the first pretraining run of the \Kfull-class model (a), the % CHECK: the final F8b histograms are the seed-1 runs (as in the mock-up)
+\MlstSculptNPassOne{} jets, as the mean over the pretraining runs of the \Kfull-class model (a), the
 \Kcoarse-class model (b) and the \Kcoarse-class model with the auxiliary mass regression (c); the lower
 panels give the ratio to all QCD jets. (d) Jensen--Shannon distance $\dJS$ of equation~(\ref{eq:djs}) between
-the distributions of the passing and of all QCD jets against the QCD efficiency $\epsB$, for the four levels of the class hierarchy and
-the two models with the auxiliary mass regression: mean over the pretraining runs, with bands of one
+the distributions of the passing and of all QCD jets against the QCD efficiency $\epsB$, for the four levels of the class hierarchy (solid, dashed, dash-dot and dotted) and
+the two models with the auxiliary mass regression (long dashes and long dash-dot in the color of their label set), offset horizontally by a few per cent for legibility:
+mean over the pretraining runs, with bands of one
 standard deviation over \MlstNRunsWord{} runs or the range of \MlstMassNRunsWord. The grey band is a random selection of the
 same number of jets (its expected distance and one standard deviation over random selections); at
 \MlstSculptLowestEff{} every configuration lies within \MlstSculptLowestMaxFloorSd{} standard % CHECK: MlstSculptLowestMaxFloorSd below 2
@@ -181,12 +184,14 @@ $X\to c\bar c$ (section~\ref{sec:jetclasstwo}).
 \paperfig{\linewidth}{F9}
 \caption{Resonance tagging of $X\to b\bar b$ (upper row) and $X\to bs$ (lower row), for jets in the soft-drop
 mass window \XbxWindowLo--\XbxWindowHi~GeV around a resonance mass of \XbxMx~GeV against QCD jets (jets from
-light quarks and gluons). Left: background rejection $1/\epsB$ against signal efficiency $\epsS$, with the ratio
+quarks and gluons that do not come from a resonance decay). Left: background rejection $1/\epsB$ against signal efficiency $\epsS$, with the ratio
 to the transfer head on the \Kfull-class features below. Right: $\epsS/\sqrt{\epsB}$ of
 equation~(\ref{eq:signif}), proportional to the discovery significance for a small signal, against $\epsB$.
-Solid: a transfer head on the frozen features of each label set. Upper row, dotted, same color: Sophon's direct
-discriminant, which only the \Kfull- and \Kres-class models can form. Lower row, black: the
-network trained from scratch on the $X\to bs$ training jets; grey dotted: the output class of the \Kfull-class
+Colored lines (solid, dashed, dash-dot and dotted, from the \Kfull- to the \Kcoarse-class model): a transfer head on
+the frozen features of each label set, in the legend above the panels. Upper row, thin lines with open markers in
+the color and line style of their label set: Sophon's direct discriminant, which only the \Kfull- and
+\Kres-class models can form. Lower row, black dash-dot-dot: the network trained from scratch on the $X\to bs$
+training jets; grey dotted: the output class of the \Kfull-class
 model that contains $X\to bq$, scored against the QCD classes, which tests whether the gain is already in a
 pretrained output. No network is trained from scratch for $X\to b\bar b$. Lines are the mean of the runs at fixed
 efficiency, with bands of one standard deviation over the \MlstNRunsWord{} pretraining runs (from scratch: three

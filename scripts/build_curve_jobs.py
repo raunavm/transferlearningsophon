@@ -62,6 +62,9 @@ STATUS_PIN = "mtx-s2.19"       # the status CronJob, launched at it (RUNS.csv st
 # curves-roc, curves-roc-kin (ROC redesign, 2026-11-02): the tag created on the commit carrying
 # experiments/FT/roc_points.py; set here before generating (--tag must equal it)
 PIN_ROC = "mtx-s2.49"
+# curves-ft, curves-jc2, boot-ft, boot-jc2 never launched at PIN; ft_curves.py and linear_probe_v2.py
+# changed after it (8a1ff68, 806ed97), so they are repinned with the ROC jobs (2026-11-02)
+UNLAUNCHED_AT_PIN = ("curves-ft", "curves-jc2", "boot-ft", "boot-jc2")
 NEEDED = {"experiments/FT/ft_curves.py": "def roc_points",
           "experiments/STATS/paired_bootstrap.py": "P.AucScorer",
           "experiments/MTX/status_v2.py": "def status"}
@@ -406,7 +409,8 @@ def build(pin: str) -> dict[pathlib.Path, str]:
         "boot-jc2": (boot_ft_body("jc2"), "Paired bootstrap over test jets, JetClass-II 188-class fine-tunes"),
         "boot-probe": (boot_probe_body(), "Paired bootstrap over test jets, the linear probes (fits_v3)"),
     }
-    out = {OUT_DIR / f"job-{j}-raunav.yaml": cpu_job(f"{j}-raunav", body, what, pin)
+    out = {OUT_DIR / f"job-{j}-raunav.yaml": cpu_job(f"{j}-raunav", body, what,
+                                                     PIN_ROC if j in UNLAUNCHED_AT_PIN else pin)
            for j, (body, what) in jobs.items()}
     out[OUT_DIR / "job-boot-probe-v4-raunav.yaml"] = cpu_job(
         "boot-probe-v4-raunav", boot_probe_v4_body(), "Paired bootstrap over test jets, the v4 linear probes", PIN_V4)
@@ -445,7 +449,7 @@ def main() -> int:
         sys.exit(f"FATAL: --tag {a.tag} is not PIN_ROC ({PIN_ROC}); set PIN_ROC in this file, so the specs on disk "
                  "stay the generator's")
     BF.verify_pin(a.pin, a.pin_not_yet_tagged, NEEDED)
-    BF.verify_pin(PIN_ROC, a.pin_not_yet_tagged, NEEDED_ROC)
+    BF.verify_pin(PIN_ROC, a.pin_not_yet_tagged, {**NEEDED, **NEEDED_ROC})
     specs = build(a.pin)
     moved = [f"  {p.relative_to(ROOT)}: {_pin_of(p.read_text())} -> {_pin_of(t)}" for p, t in specs.items()
              if p.exists() and _pin_of(p.read_text()) != _pin_of(t)]

@@ -250,8 +250,8 @@ def test_every_job_is_ours_cpu_only_pinned_and_tried_once(specs):
     for p, d in jobs.items():
         c = d["spec"]["template"]["spec"]["containers"][0]
         name = d["metadata"]["name"]
-        pin = (BC.PIN_ROC if name.startswith("curves-roc") else BC.PIN_FULL if name == "curves-full-raunav"
-               else BC.PIN_V4 if "-v4-" in name else BC.PIN)
+        pin = (BC.PIN_ROC if name.startswith("curves-roc") or name.removesuffix("-raunav") in BC.UNLAUNCHED_AT_PIN
+               else BC.PIN_FULL if name == "curves-full-raunav" else BC.PIN_V4 if "-v4-" in name else BC.PIN)
         assert d["spec"]["backoffLimit"] == 1 and "nvidia.com/gpu" not in c["resources"]["limits"]
         assert f'--branch "{pin}"' in c["args"][0] and "configmap" not in specs[p].lower()
 

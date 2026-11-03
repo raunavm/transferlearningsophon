@@ -48,12 +48,19 @@ TAB10 = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e37
          "#17becf"]
 LEVEL_COLOURS = {188: TAB10[0], 162: TAB10[1], 43: TAB10[2], 17: TAB10[3]}
 LEVEL_MARKERS = {188: "o", 162: "s", 43: "^", 17: "v"}
-# the randomly initialized network: grey dotted, Sophon's reference discriminant
-INIT_STYLE = {"color": TAB10[7], "marker": "X", "linestyle": ":"}
+# Line styles: every configuration a figure can show beside another has its own, so the curves are
+# told apart without colour (colour-vision deficiency, greyscale print; PI 2026-11-02). The four label
+# sets solid / dashed / dash-dot / dotted, fine to coarse; the rest long-dash patterns.
+LONG_DASH = (0, (8, 2))
+LONG_DASH_DOT = (0, (8, 2, 1.5, 2))
+DASH_DOT_DOT = (0, (4, 1.5, 1.5, 1.5, 1.5, 1.5))
+LEVEL_LINESTYLES = {188: "-", 162: (0, (5, 2)), 43: (0, (5, 1.5, 1.5, 1.5)), 17: (0, (1.5, 1.2))}
+# the randomly initialized network: grey, long dashes
+INIT_STYLE = {"color": TAB10[7], "marker": "X", "linestyle": LONG_DASH}
 RAND_COLOUR = TAB10[9]
-# trained from scratch: black, solid, open squares (the open square keeps it apart from the
+# trained from scratch: black, dash-dot-dot, open squares (the open square keeps it apart from the
 # open-circle markers of fine-tuning in greyscale)
-SCRATCH_STYLE = {"color": "black", "marker": "s", "markerfacecolor": "white", "linestyle": "-"}
+SCRATCH_STYLE = {"color": "black", "marker": "s", "markerfacecolor": "white", "linestyle": DASH_DOT_DOT}
 # the partitions with controlled flavor boundaries: one colour and marker each (mlst_figures._look
 # keeps FLAV_COLOUR for all three, as the deck draws them)
 FLAV_COLOUR = TAB10[4]
@@ -72,14 +79,16 @@ PASTEL = "#d4eef0"
 # Colour, ROC line style and point-plot marker of every configuration (keys: mlst_results' names;
 # "scratch-v2" is mlst_results.SCRATCH)
 CONFIG = {
-    "L188": {"color": TAB10[0], "linestyle": "-", "marker": "o"},
-    "L162": {"color": TAB10[1], "linestyle": "-", "marker": "s"},
-    "R42_Q1": {"color": TAB10[2], "linestyle": "-", "marker": "^"},
-    "R16_Q1": {"color": TAB10[3], "linestyle": "-", "marker": "v"},
-    "L162_MASS": {"color": TAB10[1], "linestyle": ":", "marker": "p"},
-    "R16_Q1_MASS": {"color": TAB10[3], "linestyle": ":", "marker": "p"},
-    "KIN": {"color": TAB10[0], "linestyle": ":", "marker": "h"},
-    **{f"FLAV_{k}": {"color": FLAV_COLOURS[k], "linestyle": "--", "marker": FLAV_MARKERS[k]} for k in FLAV_COLOURS},
+    "L188": {"color": TAB10[0], "linestyle": LEVEL_LINESTYLES[188], "marker": "o"},
+    "L162": {"color": TAB10[1], "linestyle": LEVEL_LINESTYLES[162], "marker": "s"},
+    "R42_Q1": {"color": TAB10[2], "linestyle": LEVEL_LINESTYLES[43], "marker": "^"},
+    "R16_Q1": {"color": TAB10[3], "linestyle": LEVEL_LINESTYLES[17], "marker": "v"},
+    "L162_MASS": {"color": TAB10[1], "linestyle": LONG_DASH, "marker": "p"},
+    "R16_Q1_MASS": {"color": TAB10[3], "linestyle": LONG_DASH_DOT, "marker": "8"},
+    "KIN": {"color": TAB10[0], "linestyle": LONG_DASH, "marker": "h"},
+    "FLAV_F0": {"color": FLAV_COLOURS["F0"], "linestyle": LONG_DASH, "marker": FLAV_MARKERS["F0"]},
+    "FLAV_F1": {"color": FLAV_COLOURS["F1"], "linestyle": LONG_DASH_DOT, "marker": FLAV_MARKERS["F1"]},
+    "FLAV_F1R": {"color": FLAV_COLOURS["F1R"], "linestyle": DASH_DOT_DOT, "marker": FLAV_MARKERS["F1R"]},
     "RAND": {"color": RAND_COLOUR, "linestyle": "none", "marker": "o"},
     "scratch-v2": dict(SCRATCH_STYLE),
     "INIT": dict(INIT_STYLE),

@@ -73,7 +73,8 @@ def test_every_spec_is_ours_retries_only_what_a_retry_can_fix_and_parses_as_bash
         d = yaml.safe_load(text)
         assert d["metadata"]["name"].endswith("-raunav") and d["metadata"]["namespace"] == "cms-ml"
         new = name.startswith("job-xbx-ihep-") or "dryrun" in name
-        pin = (B.PIN_REPORT if "-report-" in name else B.PIN_DRYRUN if "-scratch-dryrun-" in name
+        pin = (B.PIN_IHEP_REPORT if name == "job-xbx-ihep-report-raunav.yaml" else B.PIN_REPORT if "-report-" in name
+               else B.PIN_DRYRUN if "-scratch-dryrun-" in name
                else B.PIN_IHEP if new else B.PIN)
         assert f"--branch \"{pin}\"" in text
         rules = d["spec"]["podFailurePolicy"]["rules"]

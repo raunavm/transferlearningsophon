@@ -21,10 +21,10 @@ figure~\ref{fig:f2}(c) and~(d).
 \caption{Fine-tuned models on the public benchmarks: background rejection $1/\epsB$ against signal efficiency
 $\epsS$ on (a) top tagging, (b) quark/gluon discrimination on Pythia jets, with quark jets as the signal, and
 (c) the same networks scored on Herwig jets, each with the two-class output of the network as the
-discriminant, equation~(\ref{eq:discr}). Solid colored lines: the \Kfull-, \Kres-, \Kmid- and
-\Kcoarse-class models, fine-tuned on the full training sets with the missing inputs set to zero; black: the
-same network trained from scratch; dotted, in (a) only: the \Kfull-class model with kinematic inputs only,
-pretrained once. Lines are the mean of the runs at fixed $\epsS$, with bands of one standard deviation over the
+discriminant, equation~(\ref{eq:discr}). Colored lines (solid, dashed, dash-dot and dotted): the \Kfull-, \Kres-, \Kmid- and
+\Kcoarse-class models, fine-tuned on the full training sets with the missing inputs set to zero; black
+dash-dot-dot: the same network trained from scratch; blue long dashes, in (a) only and with its own legend: the
+\Kfull-class model with kinematic inputs only, pretrained once. Lines are the mean of the runs at fixed $\epsS$, with bands of one standard deviation over the
 \MlstNRunsWord{} pretraining runs, one fine-tuning each, and over the \MlstFtRefSeedsWord{} training seeds from
 scratch. Lower panels: ratio to the \Kfull-class model, run by run against the \Kfull-class run of the same
 seed, and for the network trained from scratch and the kinematic-only model against the mean of the
@@ -98,9 +98,10 @@ jets, against the same model with every input; the absolute accuracy is printed 
 quark/gluon discrimination with the Pythia sample (d), trained on the full benchmark training set.
 Each group of bars is one model: the \Kfull-class model and the randomly initialized network with its
 BatchNorm statistics recomputed. Within a group the missing inputs are set to zero (solid), to the
-training mean (hatched) or to random draws of a real JetClass-II particle (dotted). Panel (c) adds
-the \Kfull-class model with kinematic inputs only (dash-dot outline), which lacks no input; it is one
-run, not paired by seed with the other models. Open markers on the zero bars of (c) and (d): a
+training mean (hatched) or to random draws of a real JetClass-II particle (dot-hatched); the substitution
+chosen on validation is outlined in black, and in (c) and (d) the value of $R_{30}$ is printed at each bar
+end. Panels (c) and (d) add the \Kfull-class model with kinematic inputs only (dotted outline), which lacks
+no input; it is one run, not paired by seed with the other models. Open markers on the zero bars of (c) and (d): a
 multilayer perceptron trained on the same frozen features. After the input normalization a zeroed
 type flag lies at most \MlstInputBnZeroSigmaMax{} standard deviations from the training mean of that
 flag. Bars are the mean, error bars the standard deviation and points the individual runs, over the

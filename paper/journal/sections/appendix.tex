@@ -430,7 +430,7 @@ pretraining run's own values.
 \paperfig{\linewidth}{A10}
 \caption{Linear probes on frozen features against the number of training jets, for the \Kfull-,
 \Kres-, \Kmid- and \Kcoarse-class models and the randomly initialized network with BatchNorm statistics
-recomputed (grey dotted). Panels: (a) accuracy on class-balanced JetClass-II; (b) accuracy on JetClass;
+recomputed (grey, long dashes). Panels: (a) accuracy on class-balanced JetClass-II; (b) accuracy on JetClass;
 $R_{30}$ on (c) top tagging and (d) quark/gluon discrimination, with the
 missing inputs substituted as chosen on validation. Colors and axes as in figure~\ref{fig:f7}. Lines join
 the means; bands show the standard deviation over the \MlstNRunsWord{} pretraining runs of each label set.}
@@ -461,8 +461,8 @@ relative to the \Kfull-class model of its seed.
 \paperfig{\linewidth}{A6J}
 \caption{Linear probes on frozen features on JetClass, trained on \FtSizeESix{} jets: background rejection
 $1/\epsB$ against signal efficiency $\epsS$ for each signal class against the QCD background, with the
-two-class discriminant of equation~(\ref{eq:discr}). Solid colored lines: the \Kfull-, \Kres-, \Kmid- and
-\Kcoarse-class models; grey dotted: the randomly initialized network with its BatchNorm statistics recomputed,
+two-class discriminant of equation~(\ref{eq:discr}). Colored lines (solid, dashed, dash-dot and dotted): the \Kfull-, \Kres-, \Kmid- and
+\Kcoarse-class models; grey long dashes: the randomly initialized network with its BatchNorm statistics recomputed,
 the reference for what the architecture alone gives. Lines are the mean of the runs at fixed $\epsS$, with bands
 of one standard deviation over the \MlstNRunsWord{} pretraining runs and over the \MlstNRunsWord{} initial
 weights of the randomly initialized network. Lower panels: ratio to the \Kfull-class model, run by run against
@@ -502,7 +502,7 @@ which lose between \MlstRocJcTwoHurtMinDrop{} and \MlstRocJcTwoHurtMaxDrop{} per
 four classes whose AUC changes least at any level of the hierarchy, \MlstRocJcTwoStableList{}, by at most
 \MlstRocJcTwoStableMaxChange{} percentage points. Both sets are chosen from the AUCs of
 table~\ref{tab:perclass} by the figure code, among the classes not hatched in figure~\ref{fig:f3}, and each
-is ordered as in figure~\ref{fig:f3}. Lines: the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class models, the mean
+is ordered as in figure~\ref{fig:f3}. Lines (solid, dashed, dash-dot and dotted): the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class models, the mean
 of the runs at fixed $\epsS$ with bands of one standard deviation over \MlstNRunsWord{} pretraining runs.
 Lower panels: ratio to the \Kfull-class run of the same seed, drawn flat at one for that model. Each curve
 stops where fewer than $\nmin$ background jets pass, equation~(\ref{eq:cut}), marked by the dashed black line
@@ -527,7 +527,9 @@ the response for resonant and QCD jets.
 \caption{Distribution of the response $r = m_{\mathrm{est}}/\mgen$ of equation~(\ref{eq:resolution}), the
 estimated over the generator-level soft-drop mass, for (a) resonant jets and (b) QCD jets of the JetClass-II test set with a
 generator-level match: the reconstructed soft-drop mass (filled), and the regressed mass of the \Kres- and
-\Kcoarse-class models with the auxiliary mass regression (colored lines). Bands span the \MlstMassNRunsWord{}
+\Kcoarse-class models with the auxiliary mass regression (orange long dashes and red long dash-dot); the lower panels give the ratio to the
+reconstructed soft-drop mass, drawn only in bins that hold at least \MlstMassMinJets{} jets of the reconstructed
+soft-drop mass. Bands span the \MlstMassNRunsWord{}
 pretraining runs of each model with the auxiliary mass regression. The resolution and the median response in each group, and against jet transverse
 momentum and generator mass, are in table~\ref{tab:massdetail}.}
 \label{fig:a17}

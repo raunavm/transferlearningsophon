@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """The MLST paper's figures, from the same pulled data and the same selection functions as the
 tables (experiments/FIGS/mlst_results.py), so a figure and its table cannot show different
-numbers. The style is mlst_style.py's (mplhep's CMS style, LaTeX-set Computer Modern in the
-figure job, colour and marker per configuration fixed there).
+numbers. The style is mlst_style.py's (Sophon's figures in plain matplotlib: STIX text, tab10
+colours, colour and marker per configuration fixed there).
 
   label_sets               the class of a selection of decays in every label set (label maps)
   probes_vs_label_set      linear probes at the largest training set, every configuration

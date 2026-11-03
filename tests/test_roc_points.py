@@ -114,6 +114,57 @@ def test_jetclass_probe_discriminant_and_files(tmp_path):
     assert doc["eps_grid"] == list(RP.EPS_GRID) and doc["min_bkg_pass"] == 20 and doc["method"] == "linear probe"
 
 
+JC1_FILE_ORDER = ("QCD", "Hbb", "Hcc", "Hgg", "H4q", "Hqql", "Zqq", "Wqq", "Tbqq", "Tbl")   # pred.root columns
+
+
+def _jc1_probs(n=4000, seed=4):
+    """Random probabilities over the 10 JetClass columns, each jet boosted in its own class's column."""
+    rng = np.random.default_rng(seed)
+    y = rng.integers(0, 10, n)
+    z = rng.normal(size=(n, 10))
+    z[np.arange(n), y] += 1.5
+    p = np.exp(z)
+    return p / p.sum(1, keepdims=True), y
+
+
+def _assert_jc1_hand_aucs(curves, p, y):
+    """Each of the nine signals against QCD on D = p_c/(p_c+p_QCD), c the class's own file column
+    (Zqq and Wqq sit in the opposite order to the paper's)."""
+    q = p / p.sum(1, keepdims=True)
+    for s in RP.JC1_SIGNALS:
+        c = JC1_FILE_ORDER.index(s.removeprefix("label_"))
+        m = (y == c) | (y == 0)
+        want = roc_auc_score(y[m] == c, q[m, c] / (q[m, c] + q[m, 0]))
+        assert curves[s]["auc"] == pytest.approx(want, abs=1e-12), s
+
+
+def test_jetclass_probe_maps_every_class_to_its_own_column(tmp_path):
+    p, y = _jc1_probs()
+    d = tmp_path / "probs" / "mtx-l188-s1" / "best70"
+    d.mkdir(parents=True)
+    np.savez(d / "jc1_N1000000.npz", rows=np.arange(y.size), y=y.astype(np.int16), p=p.astype(np.float16))
+    RP.main(["probes", "--family", "jc1_probe", "--probs-root", str(tmp_path / "probs"), "--files", "jc1_N1000000",
+             "--out-dir", str(tmp_path / "jc1_probe"), "--allow-out", str(tmp_path)])
+    doc = json.loads((tmp_path / "jc1_probe" / "mtx-l188-s1.json").read_text())
+    _assert_jc1_hand_aucs(doc["curves"], p.astype(np.float16).astype(np.float64), y)
+
+
+def test_jetclass_fine_tuning_reads_pred_root_in_file_order(tmp_path, monkeypatch):
+    p, y = _jc1_probs(seed=6)
+    c = tmp_path / "leg2" / "l188-s1" / "N1000000" / "s1"
+    c.mkdir(parents=True)
+    (c / "pred.root").touch()                 # hashed as the curves' source; its contents come from the patch
+    (c / "DONE").touch()
+    monkeypatch.setattr(RP.FC.LEG2, "read_pred_root", lambda path: (list(JC1_FILE_ORDER), np.eye(10)[y], p))
+    out = tmp_path / "jc1_ft"
+    RP.main(["ft", "--family", "jc1_ft", "--tree", str(tmp_path / "leg2"), "--task", "jc1", "--n", "1000000",
+             "--out-dir", str(out), "--allow-out", str(tmp_path)])
+    doc = json.loads((out / "mtx-l188-s1.json").read_text())
+    assert list(doc["curves"]) == list(RP.JC1_SIGNALS) and doc["method"] == "fine-tuning"
+    assert doc["curves"]["label_Wqq"]["source"]["file"] == str(c / "pred.root")
+    _assert_jc1_hand_aucs(doc["curves"], p, y)
+
+
 def test_untrained_trunks_are_written_per_checkpoint(tmp_path):
     p, y = _jc1_rows()
     for ck in ("init", "init_bn"):
@@ -169,14 +220,17 @@ def _top_cell(tree, init, seed, n=500, rng_seed=0):
     c = tree / init / "N1200000" / f"s{seed}"
     (c / "features").mkdir(parents=True)
     y = (rng.random(n) < 0.5).astype(np.int16)
-    np.save(c / "features" / "logits.npy", np.c_[np.zeros(n), rng.normal(size=n) + 2 * y].astype(np.float32))
+    # both columns random: softmax(logits)[1] is then a monotone function of neither raw logit
+    logits = np.c_[rng.normal(size=n), rng.normal(size=n) + 2 * y].astype(np.float32)
+    np.save(c / "features" / "logits.npy", logits)
     np.save(c / "features" / "label188.npy", y)
     (c / "DONE").touch()
+    return y, logits
 
 
 def test_fine_tuning_names_one_file_per_run_and_from_scratch_seed(tmp_path):
     tree = tmp_path / "leg_top"
-    _top_cell(tree, "l188-s1", 1)
+    y, logits = _top_cell(tree, "l188-s1", 1)
     _top_cell(tree, "scratch-v2", 1)
     _top_cell(tree, "scratch-v2", 2, rng_seed=1)
     out = tmp_path / "top_ft"
@@ -187,10 +241,39 @@ def test_fine_tuning_names_one_file_per_run_and_from_scratch_seed(tmp_path):
     doc = json.loads((out / "mtx-l188-s1.json").read_text())
     assert list(doc["curves"]) == ["top"] and doc["method"] == "fine-tuning" and doc["checkpoint"] == "best70"
     assert doc["curves"]["top"]["signal"] == ["label_Top"] and doc["curves"]["top"]["n_train"] == 1_200_000
+    top, s = doc["curves"]["top"], RP.BM.softmax(logits)[:, 1]
+    assert top["auc"] == pytest.approx(roc_auc_score(y, s), abs=1e-12)
+    i = next(i for i, e in enumerate(RP.EPS_GRID) if e >= top["cut"]["eps_s"])
+    assert top["rejection"][i] == pytest.approx(RP.FC.roc_points(y, s, RP.EPS_GRID)["rejection"][i], rel=1e-12)
     assert json.loads((out / "scratch-v2-s2.json").read_text())["checkpoint"] is None
     _top_cell(tree, "l188-s1", 2)                               # a second fine-tuning of one run
     with pytest.raises(SystemExit, match="more than one fine-tuning"):
         RP.main(args)
+
+
+def test_quark_gluon_scores_pythia_and_herwig_from_their_own_files(tmp_path):
+    rng = np.random.default_rng(5)
+    tree = tmp_path / "leg_qg"
+    fd = tree / "l188-s1" / "N1600000" / "s1" / "features"
+    fd.mkdir(parents=True)
+    want = {}
+    for key, f_logits, f_labels, n, shift in (("qg", "logits.npy", "label188.npy", 600, 2.0),
+                                              ("qg_herwig", "logits_herwig.npy", "label_herwig.npy", 400, 0.7)):
+        y = (rng.random(n) < 0.5).astype(np.int16)
+        z = np.c_[rng.normal(size=n), rng.normal(size=n) + shift * y].astype(np.float32)
+        np.save(fd / f_logits, z)
+        np.save(fd / f_labels, y)
+        want[key] = (f_logits, y.size, roc_auc_score(y, RP.BM.softmax(z)[:, 1]))
+    (fd.parent / "DONE").touch()
+    out = tmp_path / "qg_ft"
+    RP.main(["ft", "--family", "qg_ft", "--tree", str(tree), "--task", "qg", "--n", "1600000",
+             "--out-dir", str(out), "--allow-out", str(tmp_path)])
+    cv = json.loads((out / "mtx-l188-s1.json").read_text())["curves"]
+    assert list(cv) == ["qg", "qg_herwig"]
+    for key, (f_logits, n, auc) in want.items():
+        assert cv[key]["auc"] == pytest.approx(auc, abs=1e-12) and cv[key]["n_signal"] + cv[key]["n_background"] == n
+        assert pathlib.Path(cv[key]["source"]["file"]).name == f_logits
+        assert cv[key]["signal"] == ["label_quark"] and cv[key]["background"] == ["label_gluon"]
 
 
 def test_an_existing_file_is_skipped_never_overwritten(tmp_path, capsys):

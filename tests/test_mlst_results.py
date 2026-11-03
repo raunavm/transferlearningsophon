@@ -764,15 +764,21 @@ def _roc_tree(d, curves: dict, family="pairs", min_bkg=20):
 
 def test_the_roc_curves_are_cut_where_fewer_than_twenty_background_jets_pass(tmp_path):
     runs = M._paper(ROOT)
-    keep = {"L188", "L162", "FLAV_F0", "FLAV_F1", "FLAV_F1R"}            # keep X->ee and X->mumu apart
+    keep = {"L188", "L162", "FLAV_F0", "FLAV_F1", "FLAV_F1R"}            # draw no X->ee vs X->mumu curve
+    # F4 draws a configuration only where every run survives the cut: one run without a cut, or cuts
+    # above the grid's last point (0.9), remove the curve as a null cut in every run does
+    odd = {"FLAV_F1": [0.95, 0.95], "FLAV_F1R": [None, 0.06]}
     cur = {}
     for arm in M.MAIN + M.FLAV:
         for k, m in enumerate(runs[arm]):
-            cur[m] = {"bb_vs_cc": _curve(0.4 + 0.1 * k),
-                      "ee_vs_mm": _curve(None if arm in keep else 0.06, n_bkg=5000, sha="e")}
+            cut = odd[arm][k] if arm in odd else None if arm in keep else 0.06
+            cur[m] = {"bb_vs_cc": _curve(0.4 + 0.1 * k), "ee_vs_mm": _curve(cut, n_bkg=5000, sha="e")}
     _roc_tree(tmp_path, cur)
+    _roc_tree(tmp_path, {m: {"label_Tbqq": _curve(0.2 + 0.1 * k, sha="t"), "label_Tbl": _curve(0.95, sha="l")}
+                         for k, m in enumerate(runs["L188"])}, family="jc1_ft")
     roc = M.V4.load_roc(tmp_path)
-    assert set(roc) == {"pairs"} and M.V4.JC1_MIN_BKG == 20
+    assert set(roc) == {"pairs", "jc1_ft"} and M.V4.JC1_MIN_BKG == 20
+    assert all(math.isnan(x) for x in M.V4.roc_series(roc["pairs"][runs["FLAV_F1"][0]], "ee_vs_mm")[1])
     first = roc["pairs"][runs["L188"][0]]                                 # cut at 0.4
     eps, rej = M.V4.roc_series(first, "bb_vs_cc")
     assert list(eps) == [0.1, 0.5, 0.9] and math.isnan(rej[0]) and list(rej[1:]) == [100.0, 5.0]
@@ -784,6 +790,9 @@ def test_the_roc_curves_are_cut_where_fewer_than_twenty_background_jets_pass(tmp
     n = len(runs["L188"])
     assert em.m["MlstRocCutBbFull"] == f"{0.4 + 0.1 * (n - 1):.2f}" and em.m["MlstRocCutEemmFull"] == "not reached"
     assert em.m["MlstRocCutEemmCoarse"] == "0.06"
+    assert em.m["MlstRocCutEemmFone"] == "not reached" and em.m["MlstRocCutEemmFoner"] == "not reached"
+    assert em.m["MlstRocCutJcOneTbqqFull"] == f"{0.2 + 0.1 * (n - 1):.2f}" and em.m["MlstRocCutJcOneTblFull"] == "not reached"
+    assert "MlstRocCutJcOneHbbFull" not in em.m                                       # no such curve: no macro
     assert em.m["MlstRocNBkgBb"] == "200{,}000" and em.m["MlstRocRejMaxBb"] == "10{,}000"
     assert em.m["MlstRocNBkgEemm"] == "5{,}000" and em.m["MlstRocRejMaxEemm"] == "250"
     assert em.m["MlstRocNoCurveEemm"] == M.no_curve_phrase(sorted(keep)) and not missing
@@ -796,7 +805,7 @@ def test_the_roc_curves_are_cut_where_fewer_than_twenty_background_jets_pass(tmp
     assert em.m["MlstRocNoCurveEemm"].startswith(r"\pending") and any("MlstRocNoCurveEemm" in x for x in missing)
 
 
-def test_curves_of_one_key_scored_on_different_jets_or_another_cut_stop_the_build(tmp_path):
+def test_curves_of_one_key_scored_on_different_jets_another_cut_or_another_grid_stop_the_build(tmp_path):
     _roc_tree(tmp_path, {"mtx-l188-s1": {"top": _curve(0.1, sha="a")}, "mtx-l188-s2": {"top": _curve(0.1, sha="b")}},
               family="top_ft")
     with pytest.raises(SystemExit, match="different jets"):
@@ -804,17 +813,29 @@ def test_curves_of_one_key_scored_on_different_jets_or_another_cut_stop_the_buil
     _roc_tree(tmp_path / "x", {"mtx-l188-s1": {"top": _curve(0.1)}}, family="top_ft", min_bkg=50)
     with pytest.raises(SystemExit, match="min_bkg_pass"):
         M.V4.load_roc(tmp_path / "x")
+    _roc_tree(tmp_path / "g", {"mtx-l188-s1": {"top": _curve(0.1)}}, family="top_ft")
+    (tmp_path / "g/curves_v2/top_ft/mtx-l188-s2.json").write_text(json.dumps(
+        {"eps_grid": [0.1, 0.5], "min_bkg_pass": 20, "curves": {"top": _curve(0.1)}}))
+    with pytest.raises(SystemExit, match="signal-efficiency grids"):
+        M.V4.load_roc(tmp_path / "g")
 
 
 def test_the_ee_mumu_probe_joins_the_v4_pairs_and_gives_its_macros(tmp_path):
     cell = lambda auc, ntr=9575: {"auc": auc, "n_train": ntr, "n_val": 1064, "n_test_signal": 5000,
                                   "n_test_background": 5000, "C": 1.0, "converged": True}
-    v4 = lambda cks: {"c_grid": [1.0], "cells": {ck: {"jc2bal": {"1000000": {}}, "jc2bal_pairs": {}} for ck in cks}}
+    jc2 = {"converged": True, **{k: 0.9 for k in ("macro_auc_ovr", "macro_auc_trained", "macro_auc_resonant",
+                                                    "macro_auc_qcd")}}
+    v4 = lambda cks: {"c_grid": [1.0], "cells": {ck: {"jc2bal": {"1000000": jc2}, "jc2bal_pairs": {}} for ck in cks}}
     sib = lambda cks, auc: {"cells": {ck: {"jc2bal_pairs": {"ee_vs_mm": cell(auc)}} for ck in cks}}
     (tmp_path / "linprobe/fits_v4").mkdir(parents=True)
     (tmp_path / "linprobe/fits_v4_sib").mkdir(parents=True)
+    # one random partition that merges the pair and one that keeps it apart, from the label maps
+    status = M.merge_status(ROOT)
+    merged, apart = (next(a for a in M.RAND if status[a]["ee_vs_mm"] == s) for s in ("merged", "apart"))
+    rand = {merged: f"mtx-{merged.lower().replace('_', '')}-s1", apart: f"mtx-{apart.lower().replace('_', '')}-s2"}
     for m, cks, auc in (("mtx-l188-s1", ["best70"], 1.0), ("mtx-r42q1-s1", ["best70"], 0.96),
-                        ("init-s1", ["init", "init_bn"], 0.7)):
+                        ("init-s1", ["init", "init_bn"], 0.7), (rand[merged], ["best70"], 0.9),
+                        (rand[apart], ["best70"], 1.0)):
         (tmp_path / "linprobe/fits_v4" / f"{m}.json").write_text(json.dumps(v4(cks)))
         (tmp_path / "linprobe/fits_v4_sib" / f"{m}.json").write_text(json.dumps(sib(cks, auc)))
     (tmp_path / "linprobe/fits_v4_sib" / "mtx-l162-s1.json").write_text(json.dumps(sib(["best70"], 0.99)))
@@ -827,6 +848,16 @@ def test_the_ee_mumu_probe_joins_the_v4_pairs_and_gives_its_macros(tmp_path):
     first = t.split("%SPLIT%")[0]
     assert r"$X\to ee$ vs $\mu\mu$" in first and first.count(r"\multicolumn{2}") == 4
     assert r"\Kmid{} classes & " in first and r"0.960$^{\dagger}$ & -- \\" in first   # no ratio to a perfect separation
+    assert M.ZERO_NOTE and M.ZERO_NOTE in M._float("pairs", t, True, fill={"__ZERO__": M.zero_note(fits, runs)})
+    # the comparisons the text quotes: a dash and words, never a division by zero
+    em = _PEm()
+    M.comparisons(em, fits, {**{a: [] for a in M.ALL_ROWS}, **runs, **{a: [m] for a, m in rand.items()}},
+                  status, None, MT.fmt_pm)
+    undefined = "undefined, since the reference separates the test jets completely"
+    assert em.m["MlstCmpEemmMidOverFull"] == "--" and em.m["MlstCmpEemmMidOverFullPr"] == undefined
+    assert em.m["MlstCmpEemmRandOverFull"] == "--" and em.m["MlstCmpEemmRandOverFullPr"] == undefined
+    assert em.m["MlstPairRandMergedOverApartEemm"] == "--" and em.m["MlstPairRandMergedOverApartEemmPr"] == undefined
+    assert em.m["MlstPairRandMergedEemmN"] == "1" and em.m["MlstPairRandApartEemmN"] == "1"
     em = _PEm()
     M.eemm_macros(em, fits, {**runs, **{a: [] for a in ("L162", "R16_Q1") + M.FLAV}, M.INIT: ["init-s1"],
                              M.INIT_BN: ["initbn-s1"]}, None, MT.fmt_pm, MT.fmt_int)
@@ -837,17 +868,26 @@ def test_the_ee_mumu_probe_joins_the_v4_pairs_and_gives_its_macros(tmp_path):
     M.eemm_macros(em, fits, {**runs, **{a: [] for a in ("L162", "R16_Q1") + M.FLAV}, M.INIT: [], M.INIT_BN: []},
                   None, MT.fmt_pm, MT.fmt_int)
     assert em.m["MlstPairEemmNTrain"] == "9{,}575--9{,}580" and "MlstLpEemmAucInit" not in em.m
+    # no 188-class run separates a pair completely: no note in the caption
+    fits["mtx-l188-s1"]["cells"]["best70"]["jc2_188_pairs"]["1000000"]["ee_vs_mm"]["auc"] = 0.99
+    assert M.ZERO_NOTE not in M._float("pairs", t, True, fill={"__ZERO__": M.zero_note(fits, runs)})
 
 
 def test_the_jetclass2_fine_tuning_block_has_the_ratio_column_at_one_million_jets(tmp_path):
-    _ft_tree(tmp_path, ["l188-s1", "r16q1-s1"])
+    _ft_tree(tmp_path, ["l188-s1", "r16q1-s1", "l188-s2"])
     _, per, _ = M.load_ft(tmp_path)
     t = M.table_ft(per, {"L188": ["mtx-l188-s1"], "R16_Q1": ["mtx-r16q1-s1"]}, MT.fmt_pm, ("L188", "R16_Q1"))
     jc2, jc1 = t.split("%SPLIT%")[0], t.split("%SPLIT%")[2]
-    assert r"$\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$, $10^{6}$ jets" in jc2 and "frac" not in jc1
+    assert r"$\rho$, $10^{6}$ jets" in jc2 and r"\rho" not in jc1
     # (1 - 0.91) / (1 - 0.90) run by run; the 188-class row 1; from scratch has none
     assert r"\Kcoarse{} classes & 0.910 & 0.910 & 0.900 \\" in jc2 and r"\Kfull{} classes & 0.900 & 0.900 & 1 \\" in jc2
     assert jc2.splitlines()[-3].endswith(r"& -- \\")
+    # a 188-class run without its 10^6 cell: the 188-class ratio cell says how many runs it rests on
+    del per["jc2"]["l188-s2"][1000000]
+    two = M.table_ft(per, {"L188": ["mtx-l188-s1", "mtx-l188-s2"]}, MT.fmt_pm, ("L188",)).split("%SPLIT%")[0]
+    assert r"\Kfull{} classes & 0.900, 0.920 & 0.900 \pending{1 of 2} & 1 \pending{1 of 2} \\" in two
+    none = M.table_ft(per, {"L188": ["mtx-l188-s3"]}, MT.fmt_pm, ("L188",)).split("%SPLIT%")[0]
+    assert r"\Kfull{} classes & " + " & ".join([r"\pending{no run yet}"] * 3) + r" \\" in none
 
 
 def test_the_new_paper_macros_wait_for_their_inputs_and_the_captions_use_the_methods_symbols():
@@ -858,6 +898,10 @@ def test_the_new_paper_macros_wait_for_their_inputs_and_the_captions_use_the_met
     assert M.MASS_MIN_JETS == 100 and M.THIN_TEST == 1000 and M.ROC_PAIRS[-1] == "ee_vs_mm"
     assert not any("epsilon" in cap for _, cap in M.CAPTIONS.values())
     assert "eq:resolution" in M.CAPTIONS["mass"][1] and r"m_{\mathrm{pred}}" not in M.CAPTIONS["mass"][1]
+    cap = {k: c for k, (_, c) in M.CAPTIONS.items()}
+    assert "eq:discr" in cap["jetclass"] and "p_c" not in cap["jetclass"] and r"1-g_{\mathrm{QCD}}" in cap["sculpt"]
+    assert r"\MlstMassMinJets" in cap["mass_detail"] and all(
+        r"$\nmin$" in cap[k] and "eq:cut" in cap[k] and "__MINBKG__ " not in cap[k] for k in ("jetclass", "rand_prong"))
     assert "ee_vs_mm" not in M.MLP_JC2 and [k for k, *_ in M.PAIRS[:4]][-1] == "ee_vs_mm"
 
 

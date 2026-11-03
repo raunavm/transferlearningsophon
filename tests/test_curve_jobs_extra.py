@@ -32,14 +32,14 @@ def _pairs(text):
     return re.search(r"PAIRS=\(([^)]*)\)", text).group(1).replace("--pair ", "").split()
 
 
-def test_the_curves_and_bootstrap_jobs_pin_mtx_s2_20_and_the_launched_status_job_keeps_its_pin(specs):
+def test_the_launched_curves_and_bootstrap_jobs_keep_mtx_s2_20_and_the_status_job_keeps_its_pin(specs):
     assert BC.PIN == "mtx-s2.20"
     for p, text in specs.items():
         c = yaml.safe_load(text)["spec"]
         if p.parent == BC.OUT_DIR:
             name = p.name.removeprefix("job-").removesuffix("-raunav.yaml")
-            pin = (BC.PIN_ROC if name.startswith("curves-roc") else BC.PIN_FULL if name == "curves-full"
-                   else BC.PIN_V4 if name.endswith("-v4") else "mtx-s2.20")
+            pin = (BC.PIN_ROC if name.startswith("curves-roc") or name in BC.UNLAUNCHED_AT_PIN
+                   else BC.PIN_FULL if name == "curves-full" else BC.PIN_V4 if name.endswith("-v4") else "mtx-s2.20")
             assert f'--branch "{pin}"' in c["template"]["spec"]["containers"][0]["args"][0]
         else:
             assert BC._pin_of(text) == "mtx-s2.19"
@@ -229,13 +229,13 @@ def test_the_kinematic_roc_job_waits_for_its_fine_tuning(specs):
             in script) and f"--out-dir {BC.ROC_OUT}/top_ft || halt" in script
 
 
-def test_the_roc_tag_is_checked_against_the_roc_script_only(monkeypatch):
+def test_the_roc_script_is_checked_at_the_roc_tag_only(monkeypatch):
     seen = []
     monkeypatch.setattr(BC.BF, "verify_pin", lambda pin, nyt, needed: seen.append((pin, dict(needed))))
     monkeypatch.setattr(BC, "build", lambda pin: {})
     monkeypatch.setattr("sys.argv", ["build_curve_jobs.py", "--pin-not-yet-tagged", "--check-only"])
     assert BC.main() == 0
-    assert seen == [(BC.PIN, BC.NEEDED), (BC.PIN_ROC, BC.NEEDED_ROC)]
+    assert seen == [(BC.PIN, BC.NEEDED), (BC.PIN_ROC, {**BC.NEEDED, **BC.NEEDED_ROC})]
     assert "experiments/FT/roc_points.py" not in BC.NEEDED
     monkeypatch.setattr("sys.argv", ["build_curve_jobs.py", "--tag", "mtx-s9.99"])
     with pytest.raises(SystemExit, match="is not PIN_ROC"):

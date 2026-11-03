@@ -184,14 +184,17 @@ MIN_BKG = 20
 
 def _curve(k: float, n_bkg: int, apart: bool = False) -> dict:
     """One curve of a curves_v2 file: rejection (1 + k/100) / eps_S^2, cut at the first grid point with
-    MIN_BKG background jets passing; apart: the test set separated completely (cut null)."""
+    MIN_BKG background jets passing; apart: the test set separated completely (cut null). The first two
+    grid points pass no background jet (eps_B = 0): rejection null, as roc_points.py writes it."""
     eps = np.array(EPS)
     rej = (1 + 0.01 * k) / eps ** 2
     nb = np.rint(n_bkg / rej).astype(int)
+    nb[:2] = 0
     i = int(np.argmax(nb >= MIN_BKG))
+    assert i >= 2
     cut = None if apart else {"eps_s": EPS[i], "eps_b": 1 / rej[i], "rejection": rej[i], "n_bkg_pass": int(nb[i])}
     return {"signal": ["s"], "background": ["b"], "discriminant": "synthetic", "n_signal": 1000,
-            "n_background": n_bkg, "n_train": 1000, "auc": 0.99, "rejection": rej.tolist(),
+            "n_background": n_bkg, "n_train": 1000, "auc": 0.99, "rejection": [None, None] + rej[2:].tolist(),
             "n_bkg_pass": nb.tolist(), "cut": cut, "n_bkg_pass_full_eff": n_bkg, "label_sha256": "0" * 64,
             "source": {"file": "synthetic", "sha256": "0" * 64}}
 
@@ -252,8 +255,12 @@ def seen(P, monkeypatch):
 
 def test_every_figure_draws_from_synthetic_inputs(P, M, runs, inputs, seen, tmp_path):
     out = tmp_path / "out"
+    assert set(P.FILES) == set(P.FIGURES)
     for f in P.FIGURES:
+        before = set(seen)
         paths = f(M, runs, inputs, out)
+        # FILES (what main removes on a skip) names exactly what the figure saves
+        assert set(seen) - before == set(P.FILES[f]), f.__name__
         assert sorted(p.suffix for p in paths) == [".pdf", ".png"], f.__name__
         assert all(p.stat().st_size > 0 for p in paths), f.__name__
         # vector PDF with the fonts embedded as TrueType, never as Type 3
@@ -296,9 +303,16 @@ def test_a_partial_input_drops_its_panel_or_series_and_draws_the_rest(P, M, runs
 def test_main_prints_what_it_drew_and_exits_zero_only_when_something_was_drawn(P, inputs, seen, monkeypatch,
                                                                                tmp_path, capsys):
     monkeypatch.setattr(P, "inputs", lambda M: _empty())
-    assert P.main(["--outdir", str(tmp_path / "none")]) == 1
+    # an older render of a skipped figure is removed, so main.tex prints its pending marker
+    stale = tmp_path / "none"
+    stale.mkdir()
+    old = [stale / f"F4_flavor_pairs.{ext}" for ext in ("pdf", "png")]
+    for p in old + [stale / "unrelated.pdf"]:
+        p.write_bytes(b"old")
+    assert P.main(["--outdir", str(stale)]) == 1
     out = capsys.readouterr().out
     assert out.count("skipped, no input") == len(P.FIGURES) and f"drawn 0, skipped {len(P.FIGURES)}" in out
+    assert not any(p.exists() for p in old) and (stale / "unrelated.pdf").exists()
     monkeypatch.setattr(P, "inputs", lambda M: inputs)
     assert P.main(["--outdir", str(tmp_path / "all")]) == 0
     assert f"drawn {len(P.FIGURES)}, skipped 0, failed 0" in capsys.readouterr().out
@@ -365,6 +379,56 @@ def test_a_roc_panel_follows_the_cut_and_pairs_its_ratio_by_index(P, M, runs, in
     fig, (ax, rx) = plt.subplots(2, 1)
     ratio, rows = P.roc_panel(ax, rx, M, fam, "ee_vs_mm", configs)
     assert not ratio and "L188" in rows and not rx.lines
+    plt.close(fig)
+
+
+def _scaled(doc: dict, key: str, f: float) -> dict:
+    """A copy of a curves_v2 doc with the rejection of curve key multiplied by f (cut unchanged)."""
+    d = json.loads(json.dumps(doc))
+    c = d["curves"][key]
+    c["rejection"] = [None if v is None else v * f for v in c["rejection"]]
+    return d
+
+
+def test_the_randomly_initialized_network_pairs_by_index_and_from_scratch_takes_the_mean(P, M, runs, inputs):
+    """The ratio of init(bn)-sK is to the 188-class run sK (its initial weights); training from scratch
+    is to the 188-class mean (seed k trains on subset k). The 188-class run of index k and the init
+    network of index k are scaled by the same factor, so pairing and the mean differ."""
+    import matplotlib.pyplot as plt
+    key = M.V4.JC1_COLS[0][0]
+    f = {"1": 1.0, "2": 2.0, "3": 4.0}
+    scale = lambda fam, models: {**fam, **{m: _scaled(fam[m], key, f.get(M._idx(m), 1.0)) for m in models}}
+    s = lambda fam, m: M.V4.roc_series(fam[m], key)[1]
+    for family, row, models in (("jc1_probe", P.INIT_BN, list(M.INIT_BN_MODELS)),
+                                ("jc1_ft", P.SCRATCH, P._scratch_models(inputs["roc"]["jc1_ft"]))):
+        fam = scale(inputs["roc"][family], list(runs["L188"]) + (models if row == P.INIT_BN else []))
+        configs = [(r, list(runs[r])) for r in P.LEVELS] + [(row, models)]
+        fig, (ax, rx) = plt.subplots(2, 1)
+        ratio, _ = P.roc_panel(ax, rx, M, fam, key, configs)
+        assert ratio
+        R = np.array([s(fam, m) for m in runs["L188"]])
+        ref = {M._idx(m): s(fam, m) for m in runs["L188"]}
+        paired = np.array([s(fam, m) / ref[M._idx(m)] for m in models])
+        mean = np.array([s(fam, m) / R.mean(axis=0) for m in models])
+        want, other = (paired, mean) if row == P.INIT_BN else (mean, paired)
+        ok = np.isfinite(want).all(axis=0) & np.isfinite(R).all(axis=0)
+        line = np.asarray(rx.lines[-1].get_ydata())        # the last configuration's ratio line
+        assert line == pytest.approx(want[:, ok].mean(axis=0)), row
+        assert not np.allclose(line, other[:, ok].mean(axis=0)), row
+        plt.close(fig)
+
+
+def test_the_mass_ratio_to_groomed_is_drawn_only_where_the_groomed_mass_has_enough_jets(P, M, runs, inputs):
+    import matplotlib.pyplot as plt
+    fig, (ax, rx) = plt.subplots(2, 1)
+    assert P.mass_hist(ax, rx, M, runs, inputs["atlas"], "all", "test")
+    counts = np.asarray(P._groomed(inputs["atlas"], "all")["hist"]["counts"])
+    low = counts < M.MASS_MIN_JETS
+    assert low.any() and (~low).any()
+    assert len(rx.patches) == len(M.MASS)                   # one ratio histogram per mass model
+    for patch in rx.patches:
+        v = np.asarray(patch.get_data().values, float)
+        assert np.isnan(v[low]).all() and np.isfinite(v[~low]).all()
     plt.close(fig)
 
 
@@ -437,3 +501,37 @@ def test_the_render_job_builds_the_paper_and_keeps_the_mockup_spec(tmp_path):
     spec = lambda X: X.SPEC.format(short=commit[:7], commit=commit, image=X.IMAGE, pins=X.PINS,
                                    tectonic=X.TECTONIC, **X.MOCKUPS)
     assert spec(R) == spec(O)
+
+
+def test_configurations_drawn_together_differ_in_line_style_and_marker(P, M):
+    # the figures must read without colour (colour-vision deficiency, greyscale print; PI 2026-11-02):
+    # every set of configurations one figure draws together has distinct line styles and markers
+    C = P.style.CONFIG
+    together = {"label sets with from scratch and the kinematic-only model (F6, F6J)": M.MAIN + (M.SCRATCH, "KIN"),
+                "label sets with the controlled-flavor partitions (F4)": M.MAIN + M.FLAV,
+                "label sets with the randomly initialized network (A6J)": M.MAIN + (M.INIT_BN,),
+                "label sets with the mass regression (F8b)": M.MAIN + M.MASS}
+    for what, rows in together.items():
+        styles = [str(C[r]["linestyle"]) for r in rows]
+        assert len(set(styles)) == len(rows), what
+    for rows in (M.MAIN + M.MASS + M.FLAV + ("KIN",),):
+        assert len({C[r]["marker"] for r in rows}) == len(rows)
+
+
+def test_a_curve_only_some_panels_show_gets_its_own_legend_in_those_panels(P, M, runs, inputs, tmp_path):
+    import matplotlib.pyplot as plt
+    seen = {}
+    real = P._save
+    P._save = lambda fig, name, outdir: seen.setdefault("fig", fig) and []
+    try:
+        P.figure_f6(M, runs, inputs, tmp_path)
+    finally:
+        P._save = real
+    fig = seen["fig"]
+    shared = [t.get_text() for t in fig.legends[0].get_texts()]
+    kin = P.NAME[P.KIN].replace("\n", " ")
+    assert kin not in shared and all(P.NAME[r].replace("\n", " ") in shared for r in P.LEVELS)
+    top = fig.axes[0].get_legend()
+    assert top is not None and [t.get_text() for t in top.get_texts()] == [kin]
+    assert fig.axes[2].get_legend() is None and fig.axes[4].get_legend() is None
+    plt.close(fig)

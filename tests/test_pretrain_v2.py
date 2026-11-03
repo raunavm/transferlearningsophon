@@ -1182,7 +1182,12 @@ def test_a_commit_allowed_to_resume_has_this_training_code():
         # on configs/arms/<ARM>.yaml): JetClassII_massreg_obs.yaml is the mass-head extraction's
         # (extract_v2.py --keep-head-outputs, scripts/build_head_jobs.py; 2026-10-29)
         eval_only = {"configs/data/JetClassII_massreg_obs.yaml"}
-        assert [f for f in out if f.endswith((".py", ".yaml", ".yml")) and f not in eval_only] == []
+        # arm configs added since: a run reads only its own arm's file, so a new arm (the
+        # kinematic-only pretraining, configs/arms/v2/*_KIN.yaml, plan 3.7) changes no grid run
+        new_arms = subprocess.run(["git", "-C", str(root), "diff", "--name-only", "--diff-filter=A", commit,
+                                   "--", "configs/arms"], capture_output=True, text=True, check=True).stdout.split()
+        assert [f for f in out if f.endswith((".py", ".yaml", ".yml"))
+                and f not in eval_only and f not in new_arms] == []
         diff = subprocess.run(["git", "-C", str(root), "diff", "-U0", commit, "--",
                                "experiments/MTX/pretrain_v2.py"], capture_output=True, text=True, check=True).stdout
         removed = [ln for ln in diff.splitlines() if ln.startswith("-") and not ln.startswith("---")]

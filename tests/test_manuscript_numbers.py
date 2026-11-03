@@ -97,6 +97,7 @@ STRIP = [
     (re.compile(r"\\[a-zA-Z]+\s*\{[^{}]*\}\s*=\s*[-0-9.]+\s*(?:pt|em|ex|cm|mm|in)"), " "),
     (re.compile(r"-?[0-9.]+\s*(?:pt|em|ex|cm|mm|in|bp|sp)\b"), " "),  # lengths
     (re.compile(r"\bCIFAR-\d+\b"), " "),                    # dataset names (CIFAR-10, CIFAR-100)
+    (re.compile(r"(?<![\d.])1,\s*\\[lc]?dots\b"), " "),         # index ranges, 1,\dots,N
 ]
 
 NUMBER = re.compile(r"(?<![A-Za-z\\])-?\d[\d,]*(?:\.\d+)?")
