@@ -1025,7 +1025,6 @@ def figure_f7(M, runs, I, outdir) -> list:
         for h, lab in zip(*a.get_legend_handles_labels()):
             seen.setdefault(lab, h)
     _legend(fig, list(seen.values()), list(seen), ncol=3)
-    fig.align_ylabels()   # the metric and the ratio label of a column on one vertical line
     return _save(fig, "F7_finetune_vs_size", outdir)
 
 
