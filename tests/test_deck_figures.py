@@ -69,6 +69,12 @@ def _tree(D, M, data: pathlib.Path) -> dict:
         else:
             doc["cells"].setdefault(ds, cells(ns))
         _write(p, doc)
+    # below the full sets, and on JetClass-II at every size, the fixed-budget read-out is the source
+    both = lambda bound=False: {**rec(bound), "herwig": rec(bound)}  # noqa: E731
+    budget = {f"{tree}/{i}/N{n}/s1": both() for tree, _ in M.BUDGET_TREE.values() for i in inits for n in SIZES}
+    budget.update({f"{tree}/{M.BUDGET_SCRATCH}/N{n}/s{s}": both(s == 3)
+                   for tree, _ in M.BUDGET_TREE.values() for n in SIZES for s in (1, 2, 3)})
+    _write(data / "budget" / "budget_metrics.json", {"cells": budget})
     # manifests as pull_mlst_data writes them: the paper's legs at both sizes, and a decoy cell of
     # a leg the paper does not read (leg1, all JetClass-II classes merged), which must not count
     man = {f"{M.PRIMARY}/{leg}/{i}/N{n}/s1": {"init": i, "gpu_device_name": GPU}

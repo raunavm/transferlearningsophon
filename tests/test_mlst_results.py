@@ -124,7 +124,9 @@ def test_the_index_covers_every_kind_of_pulled_file():
         # 2026-10-31 (pull_mlst_data.py v4): the v4 probes and the outputs beside them
         "linprobe/fits_v4", "linprobe/fits_v4_mlp", "jc2bal", "budget", "partrepro", "dup_check",
         # Phase B (2026-11-02): the substitution probes and the X->bs runs from scratch
-        "linprobe/fits_v4_fill", "xbx_scratch"}
+        "linprobe/fits_v4_fill", "xbx_scratch",
+        # the ROC redesign (2026-11-02): the per-class curves and the X->ee vs X->mumu probe
+        "curves_v2", "linprobe/fits_v4_sib"}
 
 
 def _ft_tree(d, inits, n_seeds_scratch=3, bound=False, budget=True):
