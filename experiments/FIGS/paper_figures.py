@@ -618,8 +618,8 @@ def roc_panel(ax, rx, M, fam: dict, key: str, configs: list) -> tuple[bool, list
         rows.append((row, c, kw))
     if not starts:      # no configuration reaches two grid points: say so, an empty axis reads as missing data
         ys.append(limit / 100)
-        ax.text(0.5, 0.45, f"No curve: fewer than {M.V4.JC1_MIN_BKG} background jets\npass at all but at most one\n"
-                r"$\varepsilon_S$ of the grid", transform=ax.transAxes, ha="center", va="center", fontsize=SMALL)
+        ax.text(0.5, 0.45, f"No curve: fewer than\n{M.V4.JC1_MIN_BKG} background jets pass\nat all but at most\n"
+                r"one $\varepsilon_S$ of the grid", transform=ax.transAxes, ha="center", va="center", fontsize=SMALL)
     _rej_axis(ax, ys)
     if starts and min(starts) >= ROC_ZOOM_FROM:
         ax.set_xlim(math.floor(min(starts) * 20) / 20, 1)
@@ -681,7 +681,6 @@ def roc_figure(M, fig, panels: list, ncols: int, name: str, outdir, tag: str, yl
     handles = [line(r) for r in rows] + [Line2D([], [], **style.LIMIT_STYLE)]
     labels = [NAME[r].replace("\n", " ") for r in rows] + [f"{M.V4.JC1_MIN_BKG} background jets pass"]
     _legend(fig, handles, labels, ncol=len(labels) if len(labels) <= 5 else 3)   # wider overflows the figure
-    fig.align_ylabels()
     return _save(fig, name, outdir)
 
 

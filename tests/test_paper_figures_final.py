@@ -603,7 +603,7 @@ def test_a_roc_panel_says_why_it_has_no_curve_and_zooms_when_all_curves_start_hi
         return fig, ax, ratio, rows
     fig, ax, ratio, rows = panel(0.993)          # one grid point left for every configuration
     assert not ratio and rows == [r for r, _ in configs]
-    assert [t.get_text() for t in ax.texts][0].startswith("No curve: fewer than 20 background jets")
+    assert [t.get_text() for t in ax.texts][0].startswith("No curve: fewer than\n20 background jets")
     assert ax.get_xlim() == (0, 1) and ax.get_ylim()[0] < 1e3 * ax.get_ylim()[1] / 1e3 / 10
     plt.close(fig)
     fig, ax, ratio, rows = panel(0.97)
