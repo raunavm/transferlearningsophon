@@ -1,7 +1,7 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Fine-tuning against the number of training jets (column headers), in each task's metric: AUC averaged over the classes on class-balanced JetClass-II (all classes and the QCD classes), accuracy on JetClass, and $R_{30}$ on top, quark/gluon and Herwig jets. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. Each pretrained run is fine-tuned once; from scratch: \MlstFtRefSeedsWord{} training seeds on the same jets. The last column of the JetClass-II block is $\rho$ of equation~(\ref{eq:ratio}) at $10^{6}$ training jets, $1-\mathrm{AUC}$ over that of the \Kfull-class run of the same seed.}
+\caption{Fine-tuning against the number of training jets (column headers), in each task's metric: AUC averaged over the classes on class-balanced JetClass-II (all classes and the QCD classes), accuracy on JetClass, and $R_{30}$ on top, quark/gluon and Herwig jets. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. Each pretrained run is fine-tuned once; from scratch: \MlstFtRefSeedsWord{} training seeds, on the same jets for top and quark/gluon and on JetClass each on its own training subset. The last column of the JetClass-II block is $\rho$ of equation~(\ref{eq:ratio}) at $10^{6}$ training jets, $1-\mathrm{AUC}$ over that of the \Kfull-class run of the same seed.}
 \label{tab:ft}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lc}

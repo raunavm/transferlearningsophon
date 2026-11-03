@@ -61,7 +61,7 @@ PIN_V4 = "mtx-s2.29"           # boot-probe-v4 and curves-probe-v4 (2026-10-31)
 STATUS_PIN = "mtx-s2.19"       # the status CronJob, launched at it (RUNS.csv status-raunav, 2026-10-30)
 # curves-roc, curves-roc-kin (ROC redesign, 2026-11-02): the tag created on the commit carrying
 # experiments/FT/roc_points.py; set here before generating (--tag must equal it)
-PIN_ROC = "mtx-s2.49"
+PIN_ROC = "mtx-s2.53"   # mtx-s2.49 ran first and halted: its PROBS_SIB named a folder no job writes
 # curves-ft, curves-jc2, boot-ft, boot-jc2 never launched at PIN; ft_curves.py and linear_probe_v2.py
 # changed after it (8a1ff68, 806ed97), so they are repinned with the ROC jobs (2026-11-02)
 UNLAUNCHED_AT_PIN = ("curves-ft", "curves-jc2", "boot-ft", "boot-jc2")
@@ -135,11 +135,17 @@ FULL = {"best70_leg2": (f"{V2}/best70/leg2", "jc1", NMAX, FULL_RUNS, [1]),
 # curves-roc: experiments/FT/roc_points.py OUT_ROOT, <family>/<model>.json and <family>/DONE
 ROC_OUT = f"{V2}/curves_v2"
 # the X->ee vs X->mumu probe (experiments/EVAL/probe_bal.py --sibling-pairs; build_jc2bal_jobs.py sib)
-FITS_SIB, PROBS_SIB = f"{FITS_V4}_sib", f"{PROBS_V4}_sib"
+# (its --probs-out is fits_v4_sib_probs; 2026-11-03: this read fits_v4_probs_sib, which no job writes)
+FITS_SIB, PROBS_SIB = f"{FITS_V4}_sib", f"{FITS_V4}_sib_probs"
+# every pair of the paper runs by name, so a missing one halts the job (roc_points.PAIR_SIDES)
+ROC_PAIR_FILES = tuple(f"jc2bal_pairs_{p}" for p in ("bb_vs_cc", "bbqq_vs_ccqq", "bc_vs_bq_cs", "qcd_b_vs_light",
+                                                      "qcd_bb_vs_cc", "qcd_c_vs_light", "ee_vs_mm"))
 # fine-tuning families: the pretrained tree and its from-scratch reference at the full set (FULL)
 ROC_FT = {"jc1_ft": ("best70_leg2", "ref_v100_jc1_leg2"), "top_ft": ("best70_leg_top", "ref_v100_bench_leg_top"),
           "qg_ft": ("best70_leg_qg", "ref_v100_bench_leg_qg")}
-ROC_ORDER = ("jc1_ft", "jc1_probe", "pairs", "top_ft", "qg_ft", "jc2_ovr")
+# pairs last (2026-11-03): its first run wrote the paper runs' files without X->ee vs X->mumu, which
+# roc_points now refuses until they are moved aside; the other families do not wait on that
+ROC_ORDER = ("jc1_ft", "jc1_probe", "top_ft", "qg_ft", "jc2_ovr", "pairs")
 # the one-vs-rest JetClass-II curves: the four label sets only (the figure draws only those)
 ROC_OVR_RUNS = [f"mtx-{r}" for r in FULL_RUNS if r.split("-")[0] in ("l188", "l162", "r42q1", "r16q1")]
 # curves-roc-kin: the kinematic-only model's top fine-tuning at the full set (scripts/build_ft_budget_jobs.py
@@ -302,19 +308,20 @@ def roc_calls() -> dict:
                 for t, task, n, i, _ in (FULL[name] for name in names)] for fam, names in ROC_FT.items()}
     return {"jc1_ft": ft["jc1_ft"],
             "jc1_probe": [f"probes --family jc1_probe --probs-root {PROBS_V4} --files jc1_N{NMAX} --models {' '.join(models)}"],
-            # the six pairs of the paper runs and X->ee vs X->mumu of every model (untrained trunks: that pair only)
-            "pairs": [f"probes --family pairs --probs-root {PROBS_V4} {PROBS_SIB} --fits-root {FITS_V4} {FITS_SIB} "
-                      f"--files 'jc2bal_pairs_*' --models {' '.join(runs)}",
-                      f"probes --family pairs --probs-root {PROBS_SIB} --fits-root {FITS_SIB} "
-                      f"--files jc2bal_pairs_ee_vs_mm --models {' '.join(inits)}"],
             "top_ft": ft["top_ft"], "qg_ft": ft["qg_ft"],
             "jc2_ovr": [f"probes --family jc2_ovr --probs-root {PROBS_V4} --files jc2bal_N{JC2BAL_SIZES[-1]} "
-                        f"--models {' '.join(ROC_OVR_RUNS)}"]}
+                        f"--models {' '.join(ROC_OVR_RUNS)}"],
+            # the six pairs of the paper runs and X->ee vs X->mumu of every model (untrained trunks: that pair only)
+            "pairs": [f"probes --family pairs --probs-root {PROBS_V4} {PROBS_SIB} --fits-root {FITS_V4} {FITS_SIB} "
+                      f"--files {' '.join(ROC_PAIR_FILES)} --models {' '.join(runs)}",
+                      f"probes --family pairs --probs-root {PROBS_SIB} --fits-root {FITS_SIB} "
+                      f"--files jc2bal_pairs_ee_vs_mm --models {' '.join(inits)}"]}
 
 
 def roc_body(pin: str) -> str:
     """Wait for the full-set fine-tuning cells and every probe's fit files (written last), then each
-    family in ROC_ORDER and its DONE. No up-front refusal: roc_points.py skips a file that exists."""
+    family in ROC_ORDER and its DONE. No up-front refusal: roc_points.py skips a file that exists, and
+    halts on one that lacks a curve its inputs now give."""
     models = [m for m, _ in PROBE_MODELS]
     inputs = [f"{t}/{_alt(i)}/N{n}/s{_alt(s)}/DONE" for t, _, n, i, s in FULL.values()]
     inputs += [f"{FITS_V4}/{_alt(models)}.json", f"{FITS_SIB}/{_alt(models)}.json"]

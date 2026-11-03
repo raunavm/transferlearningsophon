@@ -26,7 +26,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.49" \
+          git clone --depth 1 --branch "mtx-s2.53" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -46,33 +46,33 @@ spec:
             [ $(( $(date +%s) - T0 )) -lt 518400 ] || { echo "FATAL: ${M} inputs still missing after 6 days"; exit 42; }
             echo "$(date -u +%FT%TZ) waiting for ${M} inputs"; sleep 1800
           done
-          export REPO_REF="mtx-s2.49"
+          export REPO_REF="mtx-s2.53"
           python3 experiments/FT/roc_points.py ft --family jc1_ft --tree /data/results/ft_v2/best70/leg2 --task jc1 --n 1000000 --inits l188-s1 l188-s2 l188-s3 l162-s1 l162-s2 l162-s3 r42q1-s1 r42q1-s2 r42q1-s3 r16q1-s1 r16q1-s2 r16q1-s3 l162mass-s1 l162mass-s2 r16q1mass-s1 r16q1mass-s2 rand2p1-s1 rand2p2-s2 rand2p3-s1 rand2p4-s2 rand2p5-s2 flavf0-s1 flavf0-s2 flavf1-s1 flavf1-s2 flavf1r-s1 flavf1r-s2 \
             --out-dir /data/results/ft_v2/curves_v2/jc1_ft || halt
           python3 experiments/FT/roc_points.py ft --family jc1_ft --tree /data/results/ft_v2/ref_v100/jc1/leg2 --task jc1 --n 1000000 --inits scratch-v2 \
             --out-dir /data/results/ft_v2/curves_v2/jc1_ft || halt
-          [ -e /data/results/ft_v2/curves_v2/jc1_ft/DONE ] || echo "mtx-s2.49" > /data/results/ft_v2/curves_v2/jc1_ft/DONE
+          [ -e /data/results/ft_v2/curves_v2/jc1_ft/DONE ] || echo "mtx-s2.53" > /data/results/ft_v2/curves_v2/jc1_ft/DONE
           python3 experiments/FT/roc_points.py probes --family jc1_probe --probs-root /data/results/eval/v2_linprobe_bal/fits_v4_probs --files jc1_N1000000 --models mtx-l188-s1 mtx-l188-s2 mtx-l188-s3 mtx-l162-s1 mtx-l162-s2 mtx-l162-s3 mtx-r42q1-s1 mtx-r42q1-s2 mtx-r42q1-s3 mtx-r16q1-s1 mtx-r16q1-s2 mtx-r16q1-s3 mtx-l162mass-s1 mtx-l162mass-s2 mtx-r16q1mass-s1 mtx-r16q1mass-s2 mtx-rand2p1-s1 mtx-rand2p2-s2 mtx-rand2p3-s1 mtx-rand2p4-s2 mtx-rand2p5-s2 mtx-flavf0-s1 mtx-flavf0-s2 mtx-flavf1-s1 mtx-flavf1-s2 mtx-flavf1r-s1 mtx-flavf1r-s2 init-s1 init-s2 init-s3 \
             --out-dir /data/results/ft_v2/curves_v2/jc1_probe || halt
-          [ -e /data/results/ft_v2/curves_v2/jc1_probe/DONE ] || echo "mtx-s2.49" > /data/results/ft_v2/curves_v2/jc1_probe/DONE
-          python3 experiments/FT/roc_points.py probes --family pairs --probs-root /data/results/eval/v2_linprobe_bal/fits_v4_probs /data/results/eval/v2_linprobe_bal/fits_v4_probs_sib --fits-root /data/results/eval/v2_linprobe_bal/fits_v4 /data/results/eval/v2_linprobe_bal/fits_v4_sib --files 'jc2bal_pairs_*' --models mtx-l188-s1 mtx-l188-s2 mtx-l188-s3 mtx-l162-s1 mtx-l162-s2 mtx-l162-s3 mtx-r42q1-s1 mtx-r42q1-s2 mtx-r42q1-s3 mtx-r16q1-s1 mtx-r16q1-s2 mtx-r16q1-s3 mtx-l162mass-s1 mtx-l162mass-s2 mtx-r16q1mass-s1 mtx-r16q1mass-s2 mtx-rand2p1-s1 mtx-rand2p2-s2 mtx-rand2p3-s1 mtx-rand2p4-s2 mtx-rand2p5-s2 mtx-flavf0-s1 mtx-flavf0-s2 mtx-flavf1-s1 mtx-flavf1-s2 mtx-flavf1r-s1 mtx-flavf1r-s2 \
-            --out-dir /data/results/ft_v2/curves_v2/pairs || halt
-          python3 experiments/FT/roc_points.py probes --family pairs --probs-root /data/results/eval/v2_linprobe_bal/fits_v4_probs_sib --fits-root /data/results/eval/v2_linprobe_bal/fits_v4_sib --files jc2bal_pairs_ee_vs_mm --models init-s1 init-s2 init-s3 \
-            --out-dir /data/results/ft_v2/curves_v2/pairs || halt
-          [ -e /data/results/ft_v2/curves_v2/pairs/DONE ] || echo "mtx-s2.49" > /data/results/ft_v2/curves_v2/pairs/DONE
+          [ -e /data/results/ft_v2/curves_v2/jc1_probe/DONE ] || echo "mtx-s2.53" > /data/results/ft_v2/curves_v2/jc1_probe/DONE
           python3 experiments/FT/roc_points.py ft --family top_ft --tree /data/results/ft_v2/best70/leg_top --task top --n 1200000 --inits l188-s1 l188-s2 l188-s3 l162-s1 l162-s2 l162-s3 r42q1-s1 r42q1-s2 r42q1-s3 r16q1-s1 r16q1-s2 r16q1-s3 l162mass-s1 l162mass-s2 r16q1mass-s1 r16q1mass-s2 rand2p1-s1 rand2p2-s2 rand2p3-s1 rand2p4-s2 rand2p5-s2 flavf0-s1 flavf0-s2 flavf1-s1 flavf1-s2 flavf1r-s1 flavf1r-s2 \
             --out-dir /data/results/ft_v2/curves_v2/top_ft || halt
           python3 experiments/FT/roc_points.py ft --family top_ft --tree /data/results/ft_v2/ref_v100/bench/leg_top --task top --n 1200000 --inits scratch-v2 \
             --out-dir /data/results/ft_v2/curves_v2/top_ft || halt
-          [ -e /data/results/ft_v2/curves_v2/top_ft/DONE ] || echo "mtx-s2.49" > /data/results/ft_v2/curves_v2/top_ft/DONE
+          [ -e /data/results/ft_v2/curves_v2/top_ft/DONE ] || echo "mtx-s2.53" > /data/results/ft_v2/curves_v2/top_ft/DONE
           python3 experiments/FT/roc_points.py ft --family qg_ft --tree /data/results/ft_v2/best70/leg_qg --task qg --n 1600000 --inits l188-s1 l188-s2 l188-s3 l162-s1 l162-s2 l162-s3 r42q1-s1 r42q1-s2 r42q1-s3 r16q1-s1 r16q1-s2 r16q1-s3 l162mass-s1 l162mass-s2 r16q1mass-s1 r16q1mass-s2 rand2p1-s1 rand2p2-s2 rand2p3-s1 rand2p4-s2 rand2p5-s2 flavf0-s1 flavf0-s2 flavf1-s1 flavf1-s2 flavf1r-s1 flavf1r-s2 \
             --out-dir /data/results/ft_v2/curves_v2/qg_ft || halt
           python3 experiments/FT/roc_points.py ft --family qg_ft --tree /data/results/ft_v2/ref_v100/bench/leg_qg --task qg --n 1600000 --inits scratch-v2 \
             --out-dir /data/results/ft_v2/curves_v2/qg_ft || halt
-          [ -e /data/results/ft_v2/curves_v2/qg_ft/DONE ] || echo "mtx-s2.49" > /data/results/ft_v2/curves_v2/qg_ft/DONE
+          [ -e /data/results/ft_v2/curves_v2/qg_ft/DONE ] || echo "mtx-s2.53" > /data/results/ft_v2/curves_v2/qg_ft/DONE
           python3 experiments/FT/roc_points.py probes --family jc2_ovr --probs-root /data/results/eval/v2_linprobe_bal/fits_v4_probs --files jc2bal_N1000000 --models mtx-l188-s1 mtx-l188-s2 mtx-l188-s3 mtx-l162-s1 mtx-l162-s2 mtx-l162-s3 mtx-r42q1-s1 mtx-r42q1-s2 mtx-r42q1-s3 mtx-r16q1-s1 mtx-r16q1-s2 mtx-r16q1-s3 \
             --out-dir /data/results/ft_v2/curves_v2/jc2_ovr || halt
-          [ -e /data/results/ft_v2/curves_v2/jc2_ovr/DONE ] || echo "mtx-s2.49" > /data/results/ft_v2/curves_v2/jc2_ovr/DONE
+          [ -e /data/results/ft_v2/curves_v2/jc2_ovr/DONE ] || echo "mtx-s2.53" > /data/results/ft_v2/curves_v2/jc2_ovr/DONE
+          python3 experiments/FT/roc_points.py probes --family pairs --probs-root /data/results/eval/v2_linprobe_bal/fits_v4_probs /data/results/eval/v2_linprobe_bal/fits_v4_sib_probs --fits-root /data/results/eval/v2_linprobe_bal/fits_v4 /data/results/eval/v2_linprobe_bal/fits_v4_sib --files jc2bal_pairs_bb_vs_cc jc2bal_pairs_bbqq_vs_ccqq jc2bal_pairs_bc_vs_bq_cs jc2bal_pairs_qcd_b_vs_light jc2bal_pairs_qcd_bb_vs_cc jc2bal_pairs_qcd_c_vs_light jc2bal_pairs_ee_vs_mm --models mtx-l188-s1 mtx-l188-s2 mtx-l188-s3 mtx-l162-s1 mtx-l162-s2 mtx-l162-s3 mtx-r42q1-s1 mtx-r42q1-s2 mtx-r42q1-s3 mtx-r16q1-s1 mtx-r16q1-s2 mtx-r16q1-s3 mtx-l162mass-s1 mtx-l162mass-s2 mtx-r16q1mass-s1 mtx-r16q1mass-s2 mtx-rand2p1-s1 mtx-rand2p2-s2 mtx-rand2p3-s1 mtx-rand2p4-s2 mtx-rand2p5-s2 mtx-flavf0-s1 mtx-flavf0-s2 mtx-flavf1-s1 mtx-flavf1-s2 mtx-flavf1r-s1 mtx-flavf1r-s2 \
+            --out-dir /data/results/ft_v2/curves_v2/pairs || halt
+          python3 experiments/FT/roc_points.py probes --family pairs --probs-root /data/results/eval/v2_linprobe_bal/fits_v4_sib_probs --fits-root /data/results/eval/v2_linprobe_bal/fits_v4_sib --files jc2bal_pairs_ee_vs_mm --models init-s1 init-s2 init-s3 \
+            --out-dir /data/results/ft_v2/curves_v2/pairs || halt
+          [ -e /data/results/ft_v2/curves_v2/pairs/DONE ] || echo "mtx-s2.53" > /data/results/ft_v2/curves_v2/pairs/DONE
         volumeMounts:
         - { name: jc2,  mountPath: /jc2, readOnly: true }
         - { name: data, mountPath: /data }

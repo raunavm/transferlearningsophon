@@ -215,6 +215,43 @@ def test_pairs_read_their_training_size_from_the_fit_and_the_sibling_root(tmp_pa
     assert cv["bb_vs_cc"]["auc"] == pytest.approx(roc_auc_score(y, s.astype(np.float32)))
 
 
+def _pair_files(tmp_path, pairs):
+    y = np.r_[np.ones(50, int), np.zeros(50, int)]
+    s = np.r_[np.linspace(0.6, 1, 50), np.linspace(0, 0.7, 50)]
+    d = tmp_path / "probs" / "mtx-l188-s1" / "best70"
+    d.mkdir(parents=True, exist_ok=True)
+    (tmp_path / "fits").mkdir(exist_ok=True)
+    for pair in pairs:
+        np.savez(d / f"jc2bal_pairs_{pair}.npz", rows=np.arange(y.size), y=y.astype(np.int16), s=s.astype(np.float32))
+    (tmp_path / "fits" / "mtx-l188-s1.json").write_text(json.dumps(
+        {"cells": {"best70": {"jc2bal_pairs": {p: {"n_train": 1000} for p in pairs}}}}))
+
+
+def _pairs_main(tmp_path, *files):
+    return RP.main(["probes", "--family", "pairs", "--probs-root", str(tmp_path / "probs"), "--fits-root",
+                    str(tmp_path / "fits"), "--files", *files, "--models", "mtx-l188-s1",
+                    "--out-dir", str(tmp_path / "pairs"), "--allow-out", str(tmp_path)])
+
+
+def test_a_named_pair_missing_from_every_root_halts_instead_of_being_dropped(tmp_path):
+    _pair_files(tmp_path, ["bb_vs_cc"])
+    with pytest.raises(SystemExit, match=r"no \['jc2bal_pairs_ee_vs_mm'\] of mtx-l188-s1 best70"):
+        _pairs_main(tmp_path, "jc2bal_pairs_bb_vs_cc", "jc2bal_pairs_ee_vs_mm")
+    assert not (tmp_path / "pairs" / "mtx-l188-s1.json").exists()
+
+
+def test_an_existing_pair_file_without_a_curve_its_inputs_give_is_refused_not_skipped(tmp_path):
+    _pair_files(tmp_path, ["bb_vs_cc"])
+    _pairs_main(tmp_path, "jc2bal_pairs_bb_vs_cc")
+    out = tmp_path / "pairs" / "mtx-l188-s1.json"
+    before = out.read_text()
+    _pairs_main(tmp_path, "jc2bal_pairs_bb_vs_cc")          # the same inputs: skipped
+    _pair_files(tmp_path, ["bb_vs_cc", "ee_vs_mm"])
+    with pytest.raises(SystemExit, match=r"exists without the curves \['ee_vs_mm'\]; move it aside"):
+        _pairs_main(tmp_path, "jc2bal_pairs_bb_vs_cc", "jc2bal_pairs_ee_vs_mm")
+    assert out.read_text() == before
+
+
 def _top_cell(tree, init, seed, n=500, rng_seed=0):
     rng = np.random.default_rng(rng_seed)
     c = tree / init / "N1200000" / f"s{seed}"

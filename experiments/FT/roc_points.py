@@ -25,7 +25,9 @@ every eps_S the grid holds). The grid stops at 0.995: interpolating at eps_S = 1
 vertex, eps_B = 1.
 
 Every file is written whole (tmp + os.replace) and a file that exists is skipped, never
-overwritten, so a retried pod resumes. --out-dir must be OUT_ROOT/<family> (or <--allow-out>/<family>
+overwritten, so a retried pod resumes; one that lacks a curve its inputs now give is refused, since
+skipping it would leave the curve out silently. A --files name without a wildcard must exist for
+every model (2026-11-03: a pair missing from one --probs-root was dropped without a word). --out-dir must be OUT_ROOT/<family> (or <--allow-out>/<family>
 in tests).
 
     python3 experiments/FT/roc_points.py ft --family jc1_ft --tree /data/results/ft_v2/best70/leg2 \\
@@ -265,12 +267,18 @@ def run_probes(a, odir: pathlib.Path) -> None:
                         if f.name in files:
                             raise SystemExit(f"FATAL: {f.name} of {md} {ckpt} is in two --probs-roots")
                         files[f.name] = f
+            missing = [pat for pat in a.files if not any(c in pat for c in "*?[") and f"{pat}.npz" not in files]
+            if missing and (files or a.models):
+                raise SystemExit(f"FATAL: no {missing} of {md} {ckpt} under {[str(r) for r in a.probs_root]}")
             if not files:
                 if a.models:
                     raise SystemExit(f"FATAL: no {a.files} of {md} {ckpt} under {[str(r) for r in a.probs_root]}")
                 continue
             path = odir / f"{model}.json"
             if path.exists():
+                have = set(json.loads(path.read_text())["curves"])
+                if a.family == "pairs" and (lack := {f.stem.removeprefix("jc2bal_pairs_") for f in files.values()} - have):
+                    raise SystemExit(f"FATAL: {path} exists without the curves {sorted(lack)}; move it aside to rewrite it")
                 print(f"skip {path}: exists", flush=True)
                 continue
             curves = {}

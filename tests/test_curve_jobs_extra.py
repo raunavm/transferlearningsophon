@@ -211,7 +211,12 @@ def test_the_roc_job_waits_for_the_full_sets_and_every_fit_and_covers_every_fami
     assert sum(len(c) for c in calls.values()) == 2 + 1 + 2 + 2 + 2 + 1
     assert "--tree /data/results/ft_v2/ref_v100/jc1/leg2 --task jc1 --n 1000000 --inits scratch-v2" in calls["jc1_ft"][1]
     assert calls["qg_ft"][0].endswith("--inits " + " ".join(BC.FULL_RUNS)) and "--n 1600000" in calls["qg_ft"][0]
-    assert "--files 'jc2bal_pairs_*'" in calls["pairs"][0] and BC.PROBS_SIB in calls["pairs"][0]
+    assert f"--files {' '.join(BC.ROC_PAIR_FILES)} " in calls["pairs"][0] and BC.PROBS_SIB in calls["pairs"][0]
+    rp = _load("roc_points", "experiments/FT/roc_points.py")
+    assert {f.removeprefix("jc2bal_pairs_") for f in BC.ROC_PAIR_FILES} == set(rp.PAIR_SIDES)
+    # the folder the sibling-pair job writes (2026-11-03: the two builders had spelled it apart)
+    bj = _load("build_jc2bal_jobs", "scripts/build_jc2bal_jobs.py")
+    assert f"--probs-out {BC.PROBS_SIB}" in bj.sib_spec("mtx-s9.99", 5)[1] and f"--out {BC.FITS_SIB} " in bj.sib_spec("mtx-s9.99", 5)[1]
     assert calls["pairs"][1].endswith("--files jc2bal_pairs_ee_vs_mm --models init-s1 init-s2 init-s3")
     assert len(BC.ROC_OVR_RUNS) == 12 and calls["jc2_ovr"][0].endswith(" ".join(BC.ROC_OVR_RUNS))
     for c in (c for cs in calls.values() for c in cs):
