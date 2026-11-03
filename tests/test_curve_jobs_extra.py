@@ -37,7 +37,10 @@ def test_the_curves_and_bootstrap_jobs_pin_mtx_s2_20_and_the_launched_status_job
     for p, text in specs.items():
         c = yaml.safe_load(text)["spec"]
         if p.parent == BC.OUT_DIR:
-            assert '--branch "mtx-s2.20"' in c["template"]["spec"]["containers"][0]["args"][0]
+            name = p.name.removeprefix("job-").removesuffix("-raunav.yaml")
+            pin = (BC.PIN_ROC if name.startswith("curves-roc") else BC.PIN_FULL if name == "curves-full"
+                   else BC.PIN_V4 if name.endswith("-v4") else "mtx-s2.20")
+            assert f'--branch "{pin}"' in c["template"]["spec"]["containers"][0]["args"][0]
         else:
             assert BC._pin_of(text) == "mtx-s2.19"
 
@@ -150,3 +153,90 @@ def test_the_bootstrap_reads_and_waits_for_the_q_g_cells_build_ft_jobs_trains_on
     expanded = subprocess.run(["bash", "-c", f"printf '%s\\n' {waits[0]}"], capture_output=True, text=True,
                               check=True).stdout.split()
     assert set(expanded) == {f"{c}/DONE" for c in cells}
+
+
+# ------------------------------------------------------------------ the ROC curves jobs (2026-11-02)
+ROC_JOBS = ("job-curves-roc-raunav.yaml", "job-curves-roc-kin-raunav.yaml")
+
+
+def _script(text):
+    return yaml.safe_load(text)["spec"]["template"]["spec"]["containers"][0]["args"][0]
+
+
+def test_the_roc_jobs_are_pinned_cpu_tried_once_and_keep_off_the_bad_nodes(specs):
+    launch = BC.BF._mtx_launch()
+    for job in ROC_JOBS:
+        text = specs[BC.OUT_DIR / job]
+        d = yaml.safe_load(text)
+        c = d["spec"]["template"]["spec"]["containers"][0]
+        assert d["metadata"]["name"] == job.removeprefix("job-").removesuffix(".yaml") and "raunav" in job
+        assert d["spec"]["backoffLimit"] == 1 and "nvidia.com/gpu" not in c["resources"]["limits"]
+        assert f'--branch "{BC.PIN_ROC}"' in c["args"][0] and f'export REPO_REF="{BC.PIN_ROC}"' in c["args"][0]
+        assert "k8s-haosu-10.sdsc.optiputer.net" in text and "configmap" not in text.lower()
+        terms = d["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
+            "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
+        notin = [t["values"] for t in terms if t["operator"] == "NotIn"]
+        assert notin == [list(launch.V2_BAD_NODES + launch.V2_LATER_BAD_NODES)]
+    # the launched specs keep their exclusion text
+    assert "k8s-haosu-10" not in specs[BC.OUT_DIR / "job-curves-full-raunav.yaml"]
+
+
+def test_the_roc_jobs_write_only_new_files_under_curves_v2(specs):
+    assert BC.ROC_OUT == "/data/results/ft_v2/curves_v2" and BC.NEEDED_ROC == {"experiments/FT/roc_points.py": "def curve_doc"}
+    old = {f"{BC.CURVES}/", f"{BC.BOOT}/", f"{BC.FITS_V4}/", f"{BC.PROBS_V4}/"}
+    for job in ROC_JOBS:
+        script = _script(specs[BC.OUT_DIR / job])
+        outs = re.findall(r"--out-dir (\S+)", script) + re.findall(r"> (\S+)", script)
+        assert outs and all(o.startswith(BC.ROC_OUT + "/") for o in outs), outs
+        assert "--out " not in script and not any(f"--out-dir {o}" in script for o in old)
+        assert not re.search(r"\b(rm|mv)\s", script)
+    # a family's DONE is written once, after its calls
+    script = _script(specs[BC.OUT_DIR / "job-curves-roc-raunav.yaml"])
+    for fam in BC.ROC_ORDER:
+        done = f'[ -e {BC.ROC_OUT}/{fam}/DONE ] || echo "{BC.PIN_ROC}" > {BC.ROC_OUT}/{fam}/DONE'
+        assert script.count(done) == 1 and script.rindex(f"--out-dir {BC.ROC_OUT}/{fam} ") < script.index(done)
+    order = [script.index(f"--out-dir {BC.ROC_OUT}/{fam} ") for fam in BC.ROC_ORDER]
+    assert order == sorted(order)
+
+
+def test_the_roc_job_waits_for_the_full_sets_and_every_fit_and_covers_every_family(specs):
+    script = _script(specs[BC.OUT_DIR / "job-curves-roc-raunav.yaml"])
+    waited = script.split("missing () { local n=0 f; for f in ", 1)[1].split("; do\n", 1)[0].split()
+    models = [m for m, _ in BC.PROBE_MODELS]
+    assert len(models) == 30 and f"{BC.FITS_V4}/{BC._alt(models)}.json" in waited
+    assert f"{BC.FITS_SIB}/{BC._alt(models)}.json" in waited and BC.FITS_SIB.endswith("/fits_v4_sib")
+    assert f"{REF}/jc1/leg2/scratch-v2/N1000000/s{{1,2,3}}/DONE" in waited
+    assert f"{BC.V2}/best70/leg_qg/{{" + ",".join(BC.FULL_RUNS) + "}/N1600000/s1/DONE" in waited
+    calls = BC.roc_calls()
+    assert sum(len(c) for c in calls.values()) == 2 + 1 + 2 + 2 + 2 + 1
+    assert "--tree /data/results/ft_v2/ref_v100/jc1/leg2 --task jc1 --n 1000000 --inits scratch-v2" in calls["jc1_ft"][1]
+    assert calls["qg_ft"][0].endswith("--inits " + " ".join(BC.FULL_RUNS)) and "--n 1600000" in calls["qg_ft"][0]
+    assert "--files 'jc2bal_pairs_*'" in calls["pairs"][0] and BC.PROBS_SIB in calls["pairs"][0]
+    assert calls["pairs"][1].endswith("--files jc2bal_pairs_ee_vs_mm --models init-s1 init-s2 init-s3")
+    assert len(BC.ROC_OVR_RUNS) == 12 and calls["jc2_ovr"][0].endswith(" ".join(BC.ROC_OVR_RUNS))
+    for c in (c for cs in calls.values() for c in cs):
+        assert c.split()[0] in ("ft", "probes") and f"python3 experiments/FT/roc_points.py {c} \\\n" in script
+
+
+def test_the_kinematic_roc_job_waits_for_its_fine_tuning(specs):
+    bfb = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
+    assert BC.KIN_TREE == f"{bfb.BUDGET_ROOT}/{bfb.TASKS['topkin'][4]}"
+    assert (BC.KIN_INIT,) == bfb.KIN_RUNS and BC.KIN_N == bfb.FULL["topkin"]
+    script = _script(specs[BC.OUT_DIR / "job-curves-roc-kin-raunav.yaml"])
+    marker = f"{BC.KIN_TREE}/l188kin-s1/N1200000/s1/DONE"
+    assert f"for f in {marker}; do" in script and "after 6 days" in script and "exit 42" in script
+    assert (f"roc_points.py ft --family top_ft --tree {BC.KIN_TREE} --task top --n 1200000 --inits l188kin-s1"
+            in script) and f"--out-dir {BC.ROC_OUT}/top_ft || halt" in script
+
+
+def test_the_roc_tag_is_checked_against_the_roc_script_only(monkeypatch):
+    seen = []
+    monkeypatch.setattr(BC.BF, "verify_pin", lambda pin, nyt, needed: seen.append((pin, dict(needed))))
+    monkeypatch.setattr(BC, "build", lambda pin: {})
+    monkeypatch.setattr("sys.argv", ["build_curve_jobs.py", "--pin-not-yet-tagged", "--check-only"])
+    assert BC.main() == 0
+    assert seen == [(BC.PIN, BC.NEEDED), (BC.PIN_ROC, BC.NEEDED_ROC)]
+    assert "experiments/FT/roc_points.py" not in BC.NEEDED
+    monkeypatch.setattr("sys.argv", ["build_curve_jobs.py", "--tag", "mtx-s9.99"])
+    with pytest.raises(SystemExit, match="is not PIN_ROC"):
+        BC.main()

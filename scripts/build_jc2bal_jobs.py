@@ -29,6 +29,9 @@
            splits extracted with configs/finetune/TopReference_kin.yaml into the downstream probes'
            tree, the v4 linear probe (probe_bal.py --old-only top) and the nonlinear probe at the
            largest training set -> .../fits_v4, .../fits_v4_mlp. Refuses a run without DONE.
+  sib      CPU, one model per index (all 30), off the bad nodes: probe_bal.py --sibling-pairs, the
+           X->ee vs X->mumu linear probe on the stored balanced features -> .../fits_v4_sib,
+           .../fits_v4_sib_probs (new folders)
 
     python3 scripts/build_jc2bal_jobs.py --tag mtx-s2.24 stage
 """
@@ -272,15 +275,17 @@ MLP_SCOPE = ("mtx-l188-", "mtx-l162-", "mtx-r42q1-", "mtx-r16q1-s", "mtx-flavf",
 HIDDEN = ("mtx-l188-",)
 
 
-def _indexed(name: str, script_body: str, n: int, parallelism: int, gpu: bool, mem: str, cpu: str, what: str) -> str:
+def _indexed(name: str, script_body: str, n: int, parallelism: int, gpu: bool, mem: str, cpu: str, what: str,
+             exclude=None) -> str:
+    """exclude: keep off V2_BAD_NODES + V2_LATER_BAD_NODES (default: GPU jobs only, as launched)."""
     launch = _launch()
     body = "\n".join(("          " + ln) if ln else "" for ln in script_body.splitlines())
-    exclude = ", ".join(f'"{x}"' for x in launch.V2_BAD_NODES + launch.V2_LATER_BAD_NODES)
+    nodes = ", ".join(f'"{x}"' for x in launch.V2_BAD_NODES + launch.V2_LATER_BAD_NODES)
     gpu_req = ', nvidia.com/gpu: "1"' if gpu else ""
     gpu_aff = (f"""
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: [{exclude}]""" if gpu else "")
+                values: [{nodes}]""" if (gpu if exclude is None else exclude) else "")
     tol = ("""      tolerations:
       - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
 """ if gpu else "")
@@ -361,6 +366,28 @@ echo "JC2BAL {'MLP' if mlp else 'FIT'} ${{MODEL}} COMPLETE"
             else "v4 linear probes (plan 2.3, 3.2, 3.4, 3.5). GPU")
     return name, _indexed(name, script, len(ms), parallelism, not mlp, "64Gi" if mlp else "48Gi",
                           "8" if mlp else "4", what)
+
+
+def sib_spec(tag: str, parallelism: int) -> tuple:
+    """CPU, one model per index (all 30): probe_bal.py --sibling-pairs (X->ee vs X->mumu on the stored
+    balanced features) -> new folders fits_v4_sib, fits_v4_sib_probs. Kept off the bad nodes."""
+    ms = models()
+    cases = "".join(f'  {i}) MODEL={m}; CKPTS="{" ".join(c)}";;\n' for i, (m, _r, _g, _k, _e, c, _v) in enumerate(ms))
+    name = "jc2bal-sib-raunav"
+    script = f"""set -euo pipefail
+{_start(tag)}
+IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
+case ${{IDX}} in
+{cases}  *) echo "FATAL: no model for index ${{IDX}}"; exit 42;;
+esac
+[ -f {LP_BAL}/${{MODEL}}/DONE ] || {{ echo "FATAL: ${{MODEL}} is not extracted"; exit 42; }}
+python3 experiments/EVAL/probe_bal.py --model ${{MODEL}} --checkpoints ${{CKPTS}} --sibling-pairs \\
+  --out {LP_BAL}/fits_v4_sib --probs-out {LP_BAL}/fits_v4_sib_probs
+echo "JC2BAL SIB ${{MODEL}} COMPLETE"
+"""
+    return name, _indexed(name, script, len(ms), parallelism, False, "16Gi", "4",
+                          "linear probe on X->ee vs X->mumu, the balanced sets (ROC redesign 2026-11-02). CPU",
+                          exclude=True)
 
 
 FILL_ROOT = "/data/results/eval/v2_linprobe_fill"           # experiments/EVAL/probe_bal.py FILL_ROOT
@@ -582,7 +609,7 @@ def main(argv=None) -> int:
     ap.add_argument("--only", default="", help="extract, fit: model indices, e.g. 1-13, for a job of that subset")
     ap.add_argument("--name", default="jc2bal-x-raunav", help="extract, fit: the job name (with --only)")
     ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "ref2", "split", "extract", "fit", "mlp",
-                                                 "masscurves", "kin", "xfill", "fitfill"))
+                                                 "masscurves", "kin", "xfill", "fitfill", "sib"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
@@ -590,6 +617,7 @@ def main(argv=None) -> int:
                       "ref2": lambda: ref_spec(a.tag, "impute_ref_v2.npz", "jc2bal-ref2-raunav"),
                       "xfill": lambda: xfill_spec(a.tag, a.parallelism),
                       "fitfill": lambda: fitfill_spec(a.tag, a.parallelism), "split": lambda: split_spec(a.tag),
+                      "sib": lambda: sib_spec(a.tag, a.parallelism),
                       "extract": lambda: extract_spec(a.tag, a.parallelism, _indices(a.only), a.name),
                       "fit": lambda: fit_spec(a.tag, a.parallelism, False, _indices(a.only),
                                               a.name if a.only else ""),

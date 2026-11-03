@@ -3,13 +3,13 @@
 
 Frozen features keep what the pretraining labels separate, and the cost of a coarse label set sits
 where its merges remove flavor. On the pretraining classes a linear probe separates the \Kfull{} classes less
-well at every coarser level of the class hierarchy, and the step that removes quark flavor costs the most
-(figure~\ref{fig:f2}). % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes > MlstCmpJcTwoResOverFull > 1
+well at every coarser level of the class hierarchy (figure~\ref{fig:f2}(a)), and the step that removes
+quark flavor costs the most in wrongly ordered pairs of jets (table~\ref{tab:probes}). % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes > MlstCmpJcTwoResOverFull > 1
 Merging the QCD classes costs only the QCD classes. Random partitions into \Kcoarse{} classes, built to
 cut across the physical groups, lose less than the physical \Kcoarse-class label set, so the class count alone does
 not set the cost. Per class, decays merged with their lepton-flavor counterparts pay the most, while
 decays merged with their quark-flavor counterparts carry the largest summed cost
-(figure~\ref{fig:f3}). % CHECK: MlstPerClassCoarseTopClass is a lepton-flavor class; MlstPerClassCoarseQuarkShare > MlstPerClassCoarseLeptonShare
+(figure~\ref{fig:f3}; table~\ref{tab:perclass}). % CHECK: MlstPerClassCoarseTopClass is a lepton-flavor class; MlstPerClassCoarseQuarkShare > MlstPerClassCoarseLeptonShare
 A single flavor boundary placed at random among the four-quark decays keeps flavor readable even for
 pairs it does not cut (figure~\ref{fig:f4}). Fine-tuning does not remove the effect where every input is present: on
 JetClass the \Kcoarse-class model still rejects less background than the \Kfull-class model in several

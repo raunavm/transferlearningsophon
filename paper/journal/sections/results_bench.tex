@@ -9,10 +9,31 @@ standard training, validation and test sets, whose sizes are given with table~\r
 dataset provides only the particle four-momenta, from which the kinematic inputs are computed. The
 charge, the five particle-type flags and the four displacement variables, \FillTopNZero{} of the
 \FillNFeatures{} inputs of the network, are therefore set to zero for every model. Published results are quoted
-as their authors report them. The background rejection against signal efficiency of every label set,
-on top tagging and on quark/gluon discrimination, is drawn in figure~\ref{fig:f6}.
+as their authors report them. The ROC curve of every label set after fine-tuning, on top tagging and on
+quark/gluon discrimination, is drawn in figure~\ref{fig:f6}, and $R_{30}$ against the number of classes in
+figure~\ref{fig:f2}(c) and~(d).
 
 \input{tables/mlst_bench_top}
+
+\begin{figure}[t]
+\centering
+\paperfig{\linewidth}{F6}
+\caption{Fine-tuned models on the public benchmarks: background rejection $1/\epsB$ against signal efficiency
+$\epsS$ on (a) top tagging, (b) quark/gluon discrimination on Pythia jets, with quark jets as the signal, and
+(c) the same networks scored on Herwig jets, each with the two-class output of the network as the
+discriminant, equation~(\ref{eq:discr}). Solid colored lines: the \Kfull-, \Kres-, \Kmid- and
+\Kcoarse-class models, fine-tuned on the full training sets with the missing inputs set to zero; black: the
+same network trained from scratch; dotted, in (a) only: the \Kfull-class model with kinematic inputs only,
+pretrained once. Lines are the mean of the runs at fixed $\epsS$, with bands of one standard deviation over the
+\MlstNRunsWord{} pretraining runs, one fine-tuning each, and over the \MlstFtRefSeedsWord{} training seeds from
+scratch. Lower panels: ratio to the \Kfull-class model, run by run against the \Kfull-class run of the same
+seed, and for the network trained from scratch and the kinematic-only model against the mean of the
+\Kfull-class runs. Each curve stops where fewer than $\nmin$ background jets pass, equation~(\ref{eq:cut}),
+marked by the dashed black line at $N_B/\nmin$. The values at the working points are in
+tables~\ref{tab:benchtop} and~\ref{tab:benchqg}.}
+\label{fig:f6}
+\end{figure}
+% CHECK: pending the kinematic-only curve of F6(a) (mtx-l188kin-s1 top fine-tuning; drawn only once it exists).
 
 Pretraining raises the background rejection on top tagging, and no label set changes it beyond what
 the test set resolves. Fine-tuned with the missing inputs set to zero, the \Kfull-class model reaches
@@ -21,7 +42,9 @@ label set improves on training from scratch in every run (table~\ref{tab:benchto
 \Kcoarse-class model matches the \Kfull-class model (\MlstFtTopRthirtyCoarseOverFullPr{}), as do the % CHECK: MlstFtTopRthirtyCoarseOverFullPr must read "equal within" (today 0.97 +- 0.10)
 \Kres- and \Kmid-class models, so unlike the \Kcoarse-class labels on JetClass % CHECK: MlstFtTopRthirty{Res,Mid}OverFullPr must read "equal within"
 (section~\ref{sec:jetclass}), no label set differs on top tagging by the criterion of
-section~\ref{sec:uncertainties}. The test set limits this comparison: $R_{30}$ is set by the small
+section~\ref{sec:uncertainties} (figure~\ref{fig:f6}(a)).
+% CHECK: in F6(a) the ratio bands of 162/43/17 include one at every drawn eps_S
+The test set limits this comparison: $R_{30}$ is set by the small
 number of QCD jets that pass at that working point, and their counting uncertainty is as large as the
 spread between runs (table~\ref{tab:boot}). The agreement has a physical reason. A top-quark jet
 differs from a QCD jet by its three-prong substructure and its mass, which every label set rewards
@@ -131,7 +154,7 @@ input scenario.
 Fine-tuned on the Pythia sample, the pretrained models reach the rejection of ParT fine-tuned after
 pretraining on JetClass~\cite{part}, and the label sets do not differ. The \Kfull-class model
 matches ParT (\MlstFtQgRthirtyFullOverPartPr{}), and the \Kcoarse-class model matches the % CHECK: MlstFtQgRthirtyFullOverPartPr must read "equal within" (today 0.99 +- 0.02)
-\Kfull-class model (\MlstFtQgRthirtyCoarseOverFullPr{}; table~\ref{tab:benchqg}), although only the % CHECK: MlstFtQgRthirtyCoarseOverFullPr must read "equal within" (today 0.99 +- 0.03); also Res, Mid
+\Kfull-class model (\MlstFtQgRthirtyCoarseOverFullPr{}; table~\ref{tab:benchqg}; figure~\ref{fig:f6}(b)), although only the % CHECK: MlstFtQgRthirtyCoarseOverFullPr must read "equal within" (today 0.99 +- 0.03); also Res, Mid
 \Kfull- and \Kres-class labels separate resonance decays to gluons from decays to light quarks, the
 distinction quark/gluon discrimination asks for. Three differences between the tasks likely limit how
 much of that distinction transfers: the quark/gluon jets have a smaller radius than every pretraining jet; they
@@ -141,7 +164,8 @@ displacement inputs are zero.
 The change of generator costs the pretrained and the from-scratch networks the same fraction of their
 rejection, so pretraining gives no protection against it. Tested on the Herwig sample, the fine-tuned
 \Kfull-class model keeps \MlstFtQgRthirtyHerwigOverPythiaFullPr{} it has on Pythia jets, and the % CHECK: MlstFtQgRthirtyHerwigOverPythiaFull vs ...Scratch must agree within 2 SD (today 0.33 +- 0.02 vs 0.34 +- 0.01)
-network trained from scratch \MlstFtQgRthirtyHerwigOverPythiaScratchPr{} (table~\ref{tab:benchqg}).
+network trained from scratch \MlstFtQgRthirtyHerwigOverPythiaScratchPr{} (table~\ref{tab:benchqg};
+figure~\ref{fig:f6}(c)).
 Earlier generator comparisons found Herwig's quark and gluon jets less separable than
 Pythia's~\cite{gras}, which lowers the rejection of any tagger trained on Pythia jets. Pretraining
 does not offset this because JetClass-II is also showered and hadronized with
@@ -181,10 +205,10 @@ fine-tuning runs on the smaller training sets are evaluated.}
 \paperfig{\linewidth}{F7}
 \caption{Fine-tuning against the number of training jets on (a) class-balanced JetClass-II with its
 \Kfull{} classes, (b) JetClass, (c) top tagging and (d) quark/gluon discrimination with the Pythia
-sample. Upper panels: accuracy (a, b) or background rejection at 30\% signal efficiency on a
+sample. Upper panels: accuracy (a, b), equation~(\ref{eq:acc}), or $R_{30}$, equation~(\ref{eq:rej}), on a
 logarithmic scale (c, d) for the fine-tuned \Kfull-class model (solid line), a linear probe, a
 logistic regression on the frozen features of the same model (dashed line, same color), and the same
-network trained from scratch (black dashed line, open squares). Lower panels: fine-tuning over
+network trained from scratch (black, open squares). Lower panels: fine-tuning over
 training from scratch at the same number of jets. The horizontal axes are logarithmic. Lines are the
 mean and bands the standard deviation over the \MlstNRunsWord{} pretraining runs, one fine-tuning or
 linear probe each, and over the \MlstFtRefSeedsWord{} training seeds from scratch. On top and

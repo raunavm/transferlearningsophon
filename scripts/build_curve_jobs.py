@@ -16,6 +16,12 @@ experiments/MTX/k8s/v2/status/.
   boot-jc2-raunav       ... on JetClass-II at 188 classes (macro AUC)
   boot-probe-raunav     ... on the 30 probes: top, q/g, Herwig at every size; JetClass and
                         JetClass-II (macro AUC) and the six pairs at the largest
+  curves-roc-raunav     experiments/FT/roc_points.py: per-class ROC curves with the 20-background-jet
+                        cut for the paper's ROC figures, one file per family and model under ROC_OUT
+                        (JetClass fine-tuned and probed, the class pairs incl. X->ee vs X->mumu, top,
+                        q/g, JetClass-II one-vs-rest; PIN_ROC)
+  curves-roc-kin-raunav ... the kinematic-only model's top-tagging fine-tuning at the full set, once
+                        it exists (launched after that fine-tuning job)
   status-raunav         CronJob, experiments/MTX/status_v2.py every 30 min
 
 Ratios: each run over the 188-class run of its index, a mass-output run also over its run without
@@ -31,7 +37,10 @@ whole, so a retried pod skips the trees already written and does the rest; the b
 curves-probe refuse to start if their output exists, the bootstrap jobs writing a directory of their
 own under BOOT, moved into place whole.
 
-    python3 scripts/build_curve_jobs.py --pin-not-yet-tagged [--check-only] [--repin]
+The two ROC jobs keep off V2_BAD_NODES + V2_LATER_BAD_NODES (build_mtx_launch); the earlier specs keep
+build_extract_jobs' NODE_EXCLUDE, as launched.
+
+    python3 scripts/build_curve_jobs.py --pin-not-yet-tagged [--tag PIN_ROC] [--check-only] [--repin]
 """
 from __future__ import annotations
 
@@ -50,9 +59,14 @@ PIN = "mtx-s2.20"
 PIN_FULL = "mtx-s2.28"         # curves-full (2026-10-31): ft_curves.py --n
 PIN_V4 = "mtx-s2.29"           # boot-probe-v4 and curves-probe-v4 (2026-10-31)
 STATUS_PIN = "mtx-s2.19"       # the status CronJob, launched at it (RUNS.csv status-raunav, 2026-10-30)
+# curves-roc, curves-roc-kin (ROC redesign, 2026-11-02): the tag created on the commit carrying
+# experiments/FT/roc_points.py; set here before generating (--tag must equal it)
+PIN_ROC = "mtx-s2.49"
 NEEDED = {"experiments/FT/ft_curves.py": "def roc_points",
           "experiments/STATS/paired_bootstrap.py": "P.AucScorer",
           "experiments/MTX/status_v2.py": "def status"}
+# checked at PIN_ROC only: the earlier pins predate the file
+NEEDED_ROC = {"experiments/FT/roc_points.py": "def curve_doc"}
 
 
 def _load(name: str, rel: str):
@@ -115,6 +129,19 @@ FULL = {"best70_leg2": (f"{V2}/best70/leg2", "jc1", NMAX, FULL_RUNS, [1]),
         "ref_v100_jc1_leg2": (f"{REF}/jc1/leg2", "jc1", NMAX, [SCRATCH], SEEDS),
         "ref_v100_bench_leg_top": (f"{REF}/bench/leg_top", "top", BF.BENCH_SIZES["top"][-1], [SCRATCH], SEEDS),
         "ref_v100_bench_leg_qg": (f"{REF}/bench/leg_qg", "qg", BF.BENCH_SIZES["qg"][-1], [SCRATCH], SEEDS)}
+# curves-roc: experiments/FT/roc_points.py OUT_ROOT, <family>/<model>.json and <family>/DONE
+ROC_OUT = f"{V2}/curves_v2"
+# the X->ee vs X->mumu probe (experiments/EVAL/probe_bal.py --sibling-pairs; build_jc2bal_jobs.py sib)
+FITS_SIB, PROBS_SIB = f"{FITS_V4}_sib", f"{PROBS_V4}_sib"
+# fine-tuning families: the pretrained tree and its from-scratch reference at the full set (FULL)
+ROC_FT = {"jc1_ft": ("best70_leg2", "ref_v100_jc1_leg2"), "top_ft": ("best70_leg_top", "ref_v100_bench_leg_top"),
+          "qg_ft": ("best70_leg_qg", "ref_v100_bench_leg_qg")}
+ROC_ORDER = ("jc1_ft", "jc1_probe", "pairs", "top_ft", "qg_ft", "jc2_ovr")
+# the one-vs-rest JetClass-II curves: the four label sets only (the figure draws only those)
+ROC_OVR_RUNS = [f"mtx-{r}" for r in FULL_RUNS if r.split("-")[0] in ("l188", "l162", "r42q1", "r16q1")]
+# curves-roc-kin: the kinematic-only model's top fine-tuning at the full set (scripts/build_ft_budget_jobs.py
+# BUDGET_ROOT, TASKS["topkin"] tree, KIN_RUNS, FULL["topkin"])
+KIN_TREE, KIN_INIT, KIN_N = f"{V2}/budget/leg_top", "l188kin-s1", BF.BENCH_SIZES["top"][-1]
 
 
 def _alt(xs) -> str:
@@ -259,6 +286,56 @@ def curves_full_body() -> str:
         for name, (t, task, n, _, _) in FULL.items())
 
 
+def _roc_call(family: str, args: str) -> str:
+    return (f"          python3 experiments/FT/roc_points.py {args} \\\n"
+            f"            --out-dir {ROC_OUT}/{family} || halt\n")
+
+
+def roc_calls() -> dict:
+    """{family: [roc_points.py arguments]} in ROC_ORDER (ROC_INTERFACE 1.3, 1.6)."""
+    models = [m for m, _ in PROBE_MODELS]
+    runs, inits = [m for m in models if m.startswith("mtx-")], [m for m in models if m.startswith("init-")]
+    ft = {fam: [f"ft --family {fam} --tree {t} --task {task} --n {n} --inits {' '.join(i)}"
+                for t, task, n, i, _ in (FULL[name] for name in names)] for fam, names in ROC_FT.items()}
+    return {"jc1_ft": ft["jc1_ft"],
+            "jc1_probe": [f"probes --family jc1_probe --probs-root {PROBS_V4} --files jc1_N{NMAX} --models {' '.join(models)}"],
+            # the six pairs of the paper runs and X->ee vs X->mumu of every model (untrained trunks: that pair only)
+            "pairs": [f"probes --family pairs --probs-root {PROBS_V4} {PROBS_SIB} --fits-root {FITS_V4} {FITS_SIB} "
+                      f"--files 'jc2bal_pairs_*' --models {' '.join(runs)}",
+                      f"probes --family pairs --probs-root {PROBS_SIB} --fits-root {FITS_SIB} "
+                      f"--files jc2bal_pairs_ee_vs_mm --models {' '.join(inits)}"],
+            "top_ft": ft["top_ft"], "qg_ft": ft["qg_ft"],
+            "jc2_ovr": [f"probes --family jc2_ovr --probs-root {PROBS_V4} --files jc2bal_N{JC2BAL_SIZES[-1]} "
+                        f"--models {' '.join(ROC_OVR_RUNS)}"]}
+
+
+def roc_body(pin: str) -> str:
+    """Wait for the full-set fine-tuning cells and every probe's fit files (written last), then each
+    family in ROC_ORDER and its DONE. No up-front refusal: roc_points.py skips a file that exists."""
+    models = [m for m, _ in PROBE_MODELS]
+    inputs = [f"{t}/{_alt(i)}/N{n}/s{_alt(s)}/DONE" for t, _, n, i, s in FULL.values()]
+    inputs += [f"{FITS_V4}/{_alt(models)}.json", f"{FITS_SIB}/{_alt(models)}.json"]
+    calls = roc_calls()
+    assert tuple(calls) == ROC_ORDER, tuple(calls)
+    return _guard([], inputs) + f'          export REPO_REF="{pin}"\n' + "".join(
+        "".join(_roc_call(fam, c) for c in cs)
+        + f'          [ -e {ROC_OUT}/{fam}/DONE ] || echo "{pin}" > {ROC_OUT}/{fam}/DONE\n'
+        for fam, cs in calls.items())
+
+
+def roc_kin_body(pin: str) -> str:
+    """The kinematic-only model's top curve once its full-set fine-tuning is DONE."""
+    return (_guard([], [f"{KIN_TREE}/{KIN_INIT}/N{KIN_N}/s1/DONE"]) + f'          export REPO_REF="{pin}"\n'
+            + _roc_call("top_ft", f"ft --family top_ft --tree {KIN_TREE} --task top --n {KIN_N} --inits {KIN_INIT}"))
+
+
+def roc_node_exclude() -> str:
+    """BX.NODE_EXCLUDE's form over build_mtx_launch's V2_BAD_NODES + V2_LATER_BAD_NODES (k8s-haosu-10)."""
+    launch = BF._mtx_launch()
+    return ("\n              - key: kubernetes.io/hostname\n                operator: NotIn\n                values: ["
+            + ", ".join(f'"{n}"' for n in launch.V2_BAD_NODES + launch.V2_LATER_BAD_NODES) + "]")
+
+
 def curves_probe_body() -> str:
     out = f"{CURVES}/linprobe_fits_v3.json"
     return _guard([out], [f"{FITS_V3}/{_alt([m for m, _ in PROBE_MODELS])}.json"]) + (
@@ -287,10 +364,10 @@ def boot_probe_body() -> str:
     return _guard([out], [f"{FITS_V3}/{_alt([m for m, _ in PROBE_MODELS])}.json"]) + _boot(out, pairs, fn, calls)
 
 
-def cpu_job(name: str, body: str, what: str, pin: str) -> str:
+def cpu_job(name: str, body: str, what: str, pin: str, node_exclude: str = BX.NODE_EXCLUDE) -> str:
     """build_extract_jobs' CPU template (as build_linprobe_jobs' MLP probe jobs), backoffLimit 1."""
     text = BX.V1ERR_TEMPLATE.format(name=name, image=BX.IMAGE, pin=pin, body=body, mem="16Gi", cpu="4",
-                                    gpu_req="", gpu_check="", node_exclude=BX.NODE_EXCLUDE)
+                                    gpu_req="", gpu_check="", node_exclude=node_exclude)
     header = ("  # GENERATED by scripts/build_curve_jobs.py -- do not hand-edit. Regenerate.\n"
               f"  # {what}. CPU; waits in the pod for its inputs (30 min polls, 6 days, then exit 42).\n")
     return BF._derive(text, [("metadata:\n", "metadata:\n" + header, 1),
@@ -339,6 +416,13 @@ def build(pin: str) -> dict[pathlib.Path, str]:
     out[OUT_DIR / "job-curves-full-raunav.yaml"] = cpu_job(
         "curves-full-raunav", curves_full_body(),
         "ROC points and per-class tables, JetClass, top and q/g fine-tunes on the full training sets", PIN_FULL)
+    out[OUT_DIR / "job-curves-roc-raunav.yaml"] = cpu_job(
+        "curves-roc-raunav", roc_body(PIN_ROC),
+        "Per-class ROC curves with the 20-background-jet cut, the paper's ROC figures", PIN_ROC, roc_node_exclude())
+    out[OUT_DIR / "job-curves-roc-kin-raunav.yaml"] = cpu_job(
+        "curves-roc-kin-raunav", roc_kin_body(PIN_ROC),
+        "ROC curve of the kinematic-only model's top-tagging fine-tuning at the full set", PIN_ROC,
+        roc_node_exclude())
     out[STATUS_DIR / "cronjob-status-raunav.yaml"] = status_spec(STATUS_PIN)
     return out
 
@@ -355,8 +439,13 @@ def main() -> int:
                     help="the tag is created after the commit: check the working tree instead")
     ap.add_argument("--check-only", action="store_true")
     ap.add_argument("--repin", action="store_true", help="allow moving the pin of a spec on disk")
+    ap.add_argument("--tag", default=PIN_ROC, help="the ROC jobs' tag: must equal PIN_ROC (set it there first)")
     a = ap.parse_args()
+    if a.tag != PIN_ROC:
+        sys.exit(f"FATAL: --tag {a.tag} is not PIN_ROC ({PIN_ROC}); set PIN_ROC in this file, so the specs on disk "
+                 "stay the generator's")
     BF.verify_pin(a.pin, a.pin_not_yet_tagged, NEEDED)
+    BF.verify_pin(PIN_ROC, a.pin_not_yet_tagged, NEEDED_ROC)
     specs = build(a.pin)
     moved = [f"  {p.relative_to(ROOT)}: {_pin_of(p.read_text())} -> {_pin_of(t)}" for p, t in specs.items()
              if p.exists() and _pin_of(p.read_text()) != _pin_of(t)]

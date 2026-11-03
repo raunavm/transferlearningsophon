@@ -92,7 +92,7 @@ in Sophon~\cite[Sec.~II]{sophon}. The features first pass a BatchNorm layer whos
 variance are accumulated in pretraining; the substitutions of appendix~\ref{sec:app-inputs} are defined
 with respect to this normalization.
 
-The training jets are drawn with Sophon's reweighting in $(p_{\mathrm{T}}, m_{\mathrm{SD}})$ within each
+The training jets are drawn with Sophon's reweighting in $(p_{\mathrm{T}}, \msd)$ within each
 of its reweighting categories of the \Kfull{} classes~\cite[Sec.~II]{sophon}, with the same weights for
 every label set.
 
@@ -128,10 +128,10 @@ initialized network are treated the same way.
 \subsection{Auxiliary mass regression and kinematic inputs only}\label{sec:app-variants}
 
 The models with the auxiliary mass regression differ from the others by one output, which regresses the
-target $y$ of equation~(\ref{eq:masstarget}) with a log-cosh loss, and one loss term. A jet without a
+target $\theta$ of equation~(\ref{eq:masstarget}) with a log-cosh loss, and one loss term. A jet without a
 generator-level match has a stored generator mass of exactly zero and is left out of the regression term,
-though not out of the classification. The total loss is the classification loss plus
-$\lambda = \MlstMassLambda$ times the regression loss at both label sets. Every other setting is that of appendix~\ref{sec:app-pretrain}, and each of these
+though not out of the classification. The total loss is $L = \Lcls + \lambda\,\Lreg$ of
+equation~(\ref{eq:masstarget}) with $\lambda = \MlstMassLambda$ at both label sets. Every other setting is that of appendix~\ref{sec:app-pretrain}, and each of these
 models shares its initial weights, except the output layer, and its training examples with the model of
 the same label set and seed trained without the regression.
 
@@ -144,8 +144,8 @@ initial weights are its own.
 
 \subsection{Linear and MLP probes}\label{sec:app-probes}
 
-Each linear probe is fitted as a multinomial logistic regression on the standardized frozen features by
-full-batch L-BFGS in double precision. A fit counts as converged when the largest component of its
+Each linear probe, equation~(\ref{eq:probe}), is fitted as a multinomial logistic regression on the
+standardized frozen features by full-batch L-BFGS in double precision. A fit counts as converged when the largest component of its
 gradient falls below \LpConvergedGrad, and its inverse regularization strength is chosen on validation
 jets from a logarithmic grid between \LpCMin{} and \LpVfourCMax.
 The frozen features are stored in half precision.
@@ -164,7 +164,8 @@ classes with a full test sample and over the resonant and the QCD classes.
 
 The linear probes on class pairs are binary. They are trained on up to \JcBalPairTrainPerSide{} jets
 per side and tested on up to \JcBalPairTestPerSide, each side at its natural composition, and choose
-their regularization on \LpPairNValMin{} to \LpPairNValMax{} jets held out from the training jets.
+their regularization on \LpPairNValMin{} to \LpPairNValMax{} jets held out from the training jets. The pair
+$X\to ee$ against $X\to\mu\mu$ is the exception, with the sets of section~\ref{sec:evaluation}.
 
 On JetClass the linear probes are trained on up to \LpNTrainMaxJci{} jets, choose their regularization on
 \LpNValJci{} validation jets and are scored on \LpNTestJci{} test jets, taken from the first test files of
@@ -188,9 +189,12 @@ whose hash every fine-tuning run records. The whole head, hidden layer included,
 with dropout \MlstFtHeadDropout{} after the hidden layer. Every label set therefore starts fine-tuning
 from its class token with the same head, whereas a pretrained hidden layer was trained to serve its own
 label set's outputs. The optimizer is Ranger, as in pretraining, with mixed precision, and the missing
-input features of top and quark/gluon are set to zero. All runs of one task and size use the same
-training jets, so the \MlstFtRefSeedsWord{} networks trained from scratch differ only in their training
-seed.
+input features of top and quark/gluon are set to zero. On top tagging and quark/gluon discrimination all
+runs of one size use the same training jets, so the \MlstFtRefSeedsWord{} networks trained from scratch
+differ only in their training seed. On JetClass every pretrained model is fine-tuned on the first training
+subset of each size, and the network trained from scratch with seed $k$ trains on the $k$-th, so its spread
+includes that of the training subset.
+% CHECK: on JetClass the from-scratch seed k reads subset k at every size (ref_v100/jc1/leg2/scratch-v2/N*/s{1,2,3}; ROC_BRIEF 6 states it for 10^6)
 
 On the full training sets of top and quark/gluon, and on \FtSizeESix{} JetClass jets, fine-tuning uses
 ParT's settings~\cite[Sec.~5.2]{part}. The pretrained weights train at a constant learning rate of
@@ -248,7 +252,7 @@ constant learning rate of \LitSophonTransferLr. Sophon states neither an optimiz
 regularization; we use RAdam with the settings of pretraining, dropout after the hidden layer and no
 weight decay, and train several seeds per pretraining run, which the tables average.
 
-The signal and QCD training jets are drawn in matched bins of $(p_{\mathrm{T}}, m_{\mathrm{SD}})$,
+The signal and QCD training jets are drawn in matched bins of $(p_{\mathrm{T}}, \msd)$,
 \XbbNTrainPerClass{} per class for $X\to b\bar b$ and \XbsNTrainPerClass{} for $X\to bs$. They are kept
 in a fixed shuffled order, repeated \XbbRepetition{} and \XbsRepetition{} times to reach Sophon's number
 of samples. The training QCD jets come from JetClass-II files that no pretraining run read and the evaluation QCD jets
@@ -344,7 +348,7 @@ each model accumulated during pretraining. Every linear probe on natural-composi
 repeated on the copy of the selected checkpoint whose BatchNorm statistics were recomputed on
 \DesignBnJets{} training jets (table~\ref{tab:bn}); the class-balanced linear probes of the main text use
 the checkpoints as trained, which is why this check runs on the natural-composition test set. The ratio of
-$1-\mathrm{AUC}$ of a label set to the \Kfull-class model of its seed changes by at most \MlstBnMaxDev,
+$1-\AUC$ of a label set to the \Kfull-class model of its seed changes by at most \MlstBnMaxDev,
 less than the smallest difference between label sets that the main text reports, so no result rests on
 the statistics accumulated in pretraining.
 % CHECK: MlstBnMaxDev well below |MlstCmpJcTwoResOverFull - 1| (2.6% today); old value 0.5%
@@ -362,7 +366,7 @@ A bootstrap of the test jets shows whether the finite test set or the variation 
 is the larger uncertainty. Every model is scored on the same test jets, so the test sample moves all of
 them together, and much of its effect cancels in a ratio between models. On JetClass-II the test jets are
 resampled with replacement within each class \MlstBootResamples{} times, every model is scored on each
-resample, and the standard deviation of the logarithm of a label-set ratio of $1-\mathrm{AUC}$ over the
+resample, and the standard deviation of the logarithm of a label-set ratio of $1-\AUC$ over the
 resamples is its relative uncertainty from the test sample. On top and quark/gluon, the uncertainty of a
 ratio of $R_{30}$ follows from the number of background jets that pass the cut. Table~\ref{tab:boot} sets
 each beside the standard deviation over pretraining runs. The test sample contributes at most
@@ -426,8 +430,8 @@ pretraining run's own values.
 \paperfig{\linewidth}{A10}
 \caption{Linear probes on frozen features against the number of training jets, for the \Kfull-,
 \Kres-, \Kmid- and \Kcoarse-class models and the randomly initialized network with BatchNorm statistics
-recomputed. Panels: (a) accuracy on class-balanced JetClass-II; (b) accuracy on JetClass; background
-rejection at 30\% signal efficiency on (c) top tagging and (d) quark/gluon discrimination, with the
+recomputed (grey dotted). Panels: (a) accuracy on class-balanced JetClass-II; (b) accuracy on JetClass;
+$R_{30}$ on (c) top tagging and (d) quark/gluon discrimination, with the
 missing inputs substituted as chosen on validation. Colors and axes as in figure~\ref{fig:f7}. Lines join
 the means; bands show the standard deviation over the \MlstNRunsWord{} pretraining runs of each label set.}
 \label{fig:a10}
@@ -441,7 +445,8 @@ the means; bands show the standard deviation over the \MlstNRunsWord{} pretraini
 \subsection{JetClass}\label{sec:app-jetclass}
 
 Table~\ref{tab:jetclassall} extends table~\ref{tab:jetclass} to every configuration, and
-table~\ref{tab:jetclassprobe} gives the linear probes in the same columns. The rejection of every
+table~\ref{tab:jetclassprobe} gives the linear probes in the same columns; figure~\ref{fig:a6j} draws the
+ROC curves of these linear probes in the layout of figure~\ref{fig:f6j}. The rejection of every
 signal class rests on the QCD jets that pass its working point, and table~\ref{tab:jetclassnbkg} gives
 these counts, from which the daggers of both tables follow.
 
@@ -451,39 +456,59 @@ relative to the \Kfull-class model of its seed.
 
 \input{tables/mlst_jetclass_all}
 \input{tables/mlst_jetclass_probe}
+
+\begin{figure}[tbp]
+\paperfig{\linewidth}{A6J}
+\caption{Linear probes on frozen features on JetClass, trained on \FtSizeESix{} jets: background rejection
+$1/\epsB$ against signal efficiency $\epsS$ for each signal class against the QCD background, with the
+two-class discriminant of equation~(\ref{eq:discr}). Solid colored lines: the \Kfull-, \Kres-, \Kmid- and
+\Kcoarse-class models; grey dotted: the randomly initialized network with its BatchNorm statistics recomputed,
+the reference for what the architecture alone gives. Lines are the mean of the runs at fixed $\epsS$, with bands
+of one standard deviation over the \MlstNRunsWord{} pretraining runs and over the \MlstNRunsWord{} initial
+weights of the randomly initialized network. Lower panels: ratio to the \Kfull-class model, run by run against
+the \Kfull-class run of the same seed. Each curve stops where fewer than $\nmin$ QCD jets pass, equation~(\ref{eq:cut}), marked by
+the dashed black line at $N_B/\nmin$. The values at ParT's working points are in table~\ref{tab:jetclassprobe}.}
+\label{fig:a6j}
+\end{figure}
+% CHECK: pending init-s3 (randomly initialized network: two of three initial weights pulled today).
+
 \input{tables/mlst_jetclass_nbkg}
 \input{tables/mlst_rand_prong}
 
 \subsection{JetClass-II class pairs and classes}\label{sec:app-pairs}
 
-Table~\ref{tab:pairs} completes figure~\ref{fig:f4} with all six class pairs. Beside the three pairs of
-the main text it gives QCD $b\bar b$ against QCD $c\bar c$, QCD jets with a $b$ quark against QCD jets
-without $b$, $c$ or $s$ quarks, and QCD jets with a $c$ but no $b$ quark against the same light QCD jets.
-Each pair has its AUC and, in a separate column, the ratio of $1-\mathrm{AUC}$ to the \Kfull-class model.
-Table~\ref{tab:perclass} gives the numbers behind figure~\ref{fig:f3}, one row per JetClass-II class.
+Table~\ref{tab:pairs} completes figure~\ref{fig:f4} with every configuration and seven class pairs. Beside
+the four pairs of the main text it gives QCD $b\bar b$ against QCD $c\bar c$, QCD jets with a $b$ quark against
+QCD jets without $b$, $c$ or $s$ quarks, and QCD jets with a $c$ but no $b$ quark against the same light QCD
+jets. Each pair has its AUC and, in a separate column, the ratio $\rho$ of equation~(\ref{eq:ratio}) to the
+\Kfull-class model. Table~\ref{tab:perclass} gives the numbers behind figure~\ref{fig:f3}, one row per
+JetClass-II class.
+
+Figure~\ref{fig:a3r} draws the ROC curves of selected JetClass-II classes, each against every other class, to
+show at which signal efficiencies the per-class losses of figure~\ref{fig:f3} lie. The classes are chosen from
+the per-class AUCs by a fixed rule: the eight with the largest loss of AUC at \Kcoarse{} classes, and the four
+whose AUC changes least at any level of the hierarchy, among the classes not hatched in figure~\ref{fig:f3}.
 
 \input{tables/mlst_pairs}
 \input{tables/mlst_per_class}
 
-\subsection{Background rejection against signal efficiency on the benchmarks}\label{sec:app-roc}
-
-Tables~\ref{tab:benchtop} and~\ref{tab:benchqg} give the benchmark results at two working points.
-Figure~\ref{fig:f6} draws the whole receiver operating characteristic curve after fine-tuning, so that a
-difference between label sets at another signal efficiency would show.
-
 \begin{figure}[tbp]
-\paperfig{\linewidth}{F6}
-\caption{Background rejection $1/\epsilon_B$ against signal efficiency $\epsilon_S$ after fine-tuning on
-the full training sets: (a) top tagging, (b) quark/gluon discrimination on Pythia jets, with quark jets as
-the signal, and (c) the same networks scored on Herwig jets. Solid lines: the \Kfull-, \Kres-, \Kmid-
-and \Kcoarse-class models fine-tuned with the missing inputs set to zero; dashed: the network trained
-from scratch; dash-dotted, on top only: the \Kfull-class model with kinematic inputs only (one run).
-Lower panels: ratio to the network trained from scratch. Bands: standard deviation over the
-\MlstNRunsWord{} pretraining runs, one fine-tuning each, and for the network trained from scratch over
-\MlstFtRefSeedsWord{} training seeds.}
-\label{fig:f6}
+\paperfig{\linewidth}{A3R}
+\caption{Linear probes on JetClass-II, one class against the rest: background rejection $1/\epsB$ against
+signal efficiency $\epsS$ for selected classes, with the discriminant $D_S = g_S$ of equation~(\ref{eq:discr})
+and every other class of the class-balanced test set as the background, after training on \FtSizeESix{} jets.
+Upper two rows: the eight classes with the largest loss of AUC at \Kcoarse{} classes, \MlstRocJcTwoHurtList{},
+which lose between \MlstRocJcTwoHurtMinDrop{} and \MlstRocJcTwoHurtMaxDrop{} percentage points; lower row: the
+four classes whose AUC changes least at any level of the hierarchy, \MlstRocJcTwoStableList{}, by at most
+\MlstRocJcTwoStableMaxChange{} percentage points. Both sets are chosen from the AUCs of
+table~\ref{tab:perclass} by the figure code, among the classes not hatched in figure~\ref{fig:f3}, and each
+is ordered as in figure~\ref{fig:f3}. Lines: the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class models, the mean
+of the runs at fixed $\epsS$ with bands of one standard deviation over \MlstNRunsWord{} pretraining runs.
+Lower panels: ratio to the \Kfull-class run of the same seed, drawn flat at one for that model. Each curve
+stops where fewer than $\nmin$ background jets pass, equation~(\ref{eq:cut}), marked by the dashed black line
+at $N_B/\nmin$.}
+\label{fig:a3r}
 \end{figure}
-% CHECK: pending MlstFtTopRthirtyKin (the kinematic-only curve exists only once its top fine-tuning reads out)
 
 \subsection{Jet mass}\label{sec:app-mass}
 
@@ -491,7 +516,7 @@ Table~\ref{tab:massdetail} completes table~\ref{tab:mass} and figure~\ref{fig:f8
 resolution and the median response of the regressed mass and of ridge and MLP regressions on frozen
 features, over all test jets and over resonant and QCD jets separately, and against jet $p_{\mathrm{T}}$
 and generator soft-drop mass. The median response of the regressed mass lies close to one because its
-target, equation~(\ref{eq:masstarget}), is the logarithm of the mass ratio itself. Figure~\ref{fig:a17} shows the distributions of
+target $\theta$, equation~(\ref{eq:masstarget}), is the logarithm of the mass ratio itself. Figure~\ref{fig:a17} shows the distributions of
 the response for resonant and QCD jets.
 % CHECK: pending MlstMassHeadResMassResponse, MlstMassHeadCoarseMassResponse within a few per cent of 1 (0.995 and 1.003 in the older head files)
 
@@ -499,10 +524,10 @@ the response for resonant and QCD jets.
 
 \begin{figure}[tbp]
 \paperfig{\linewidth}{\FigIdAseventeen}
-\caption{Distribution of the response $m_{\mathrm{est}}/m_{\mathrm{gen}}$, the estimated over the
-generator-level soft-drop mass, for (a) resonant jets and (b) QCD jets of the JetClass-II test set with a
-generator-level match: the reconstructed soft-drop mass, and the regressed mass of the \Kres- and
-\Kcoarse-class models with the auxiliary mass regression (dashed). Bands span the \MlstMassNRunsWord{}
+\caption{Distribution of the response $r = m_{\mathrm{est}}/\mgen$ of equation~(\ref{eq:resolution}), the
+estimated over the generator-level soft-drop mass, for (a) resonant jets and (b) QCD jets of the JetClass-II test set with a
+generator-level match: the reconstructed soft-drop mass (filled), and the regressed mass of the \Kres- and
+\Kcoarse-class models with the auxiliary mass regression (colored lines). Bands span the \MlstMassNRunsWord{}
 pretraining runs of each model with the auxiliary mass regression. The resolution and the median response in each group, and against jet transverse
 momentum and generator mass, are in table~\ref{tab:massdetail}.}
 \label{fig:a17}

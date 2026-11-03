@@ -6,6 +6,9 @@ Inputs, under experiments/FIGS/data/v2/ (pulled by pull_mlst_data.py):
   linprobe/fits_v4/<model>.json      experiments/EVAL/probe_bal.py (balanced JetClass-II, pairs,
                                      JetClass/top/quark-gluon on the v4 grid, variants, hidden layer)
   linprobe/fits_v4_mlp/<model>.json  the nonlinear probes of the same script
+  linprobe/fits_v4_sib/<model>.json  the X->ee vs X->mumu probe (probe_bal.py --sibling-pairs), merged
+                                     into the v4 cells by load_fits
+  curves_v2/<family>/<model>.json    ROC curves on a fixed signal-efficiency grid (experiments/FT/roc_points.py)
   jc2bal/census.json, manifest.json  experiments/FT/stage_jc2_balanced.py
   budget/lrsweep_metrics.json        experiments/FT/budget_metrics.py over /data/results/ft_v2/lrsweep_v2
   budget/budget_metrics.json         the same over /data/results/ft_v2/budget
@@ -22,6 +25,9 @@ import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 FITS_V4, MLP_V4 = "linprobe/fits_v4", "linprobe/fits_v4_mlp"
+SIB_V4 = "linprobe/fits_v4_sib"
+ROC_DIR = "curves_v2"
+ROC_FAMILIES = ("jc1_ft", "jc1_probe", "pairs", "top_ft", "qg_ft", "jc2_ovr")
 
 
 def _module(rel: str, name: str):
@@ -51,8 +57,15 @@ def remap(doc: dict) -> dict:
 
 
 def load_fits(data: pathlib.Path) -> tuple[dict, dict]:
-    """({model: fits in v3 layout}, {model: the raw v4 file}) of the v4 probes, or ({}, {})."""
+    """({model: fits in v3 layout}, {model: the raw v4 file}) of the v4 probes, or ({}, {}). The
+    X->ee vs X->mumu probe of fits_v4_sib joins the raw cells as one more class-balanced pair
+    (cells[ckpt]["jc2bal_pairs"]["ee_vs_mm"]); a model without a v4 file is not merged."""
     raw = _load(data / FITS_V4)
+    for m, sib in _load(data / SIB_V4).items():
+        if m not in raw:
+            continue
+        for ck, c in sib["cells"].items():
+            raw[m]["cells"].setdefault(ck, {}).setdefault("jc2bal_pairs", {})["ee_vs_mm"] = c["jc2bal_pairs"]["ee_vs_mm"]
     out = {}
     for m, d in raw.items():
         r = remap(d)
@@ -359,6 +372,47 @@ JC1_LIT_N = {"PFN": "100 M", "P-CNN": "100 M", "ParticleNet": "100 M", "ParT": "
 JC1_MIN_BKG = 20
 _LPV = _module("experiments/EVAL/linear_probe_v2.py", "linear_probe_v2")
 LPV_EPS, LPV_CLASSES = _LPV.JC1_EPS_S, _LPV.JC1_CLASSES
+
+
+# ------------------------------------------------------------------ ROC curves (experiments/FT/roc_points.py)
+def load_roc(data: pathlib.Path) -> dict:
+    """{family: {model: doc}} of curves_v2/<family>/<model>.json; a family with no files has no key.
+    FATAL when the docs of a family differ in eps_grid, when a doc's min_bkg_pass is not JC1_MIN_BKG,
+    or when two models' curves of one key were scored on different jets (label_sha256)."""
+    out = {}
+    for fam in ROC_FAMILIES:
+        docs = _load(data / ROC_DIR / fam)
+        if not docs:
+            continue
+        grids = {tuple(d["eps_grid"]) for d in docs.values()}
+        if len(grids) != 1:
+            raise SystemExit(f"FATAL: the {fam} curves use {len(grids)} different signal-efficiency grids")
+        labels: dict = {}
+        for m, d in docs.items():
+            if d["min_bkg_pass"] != JC1_MIN_BKG:
+                raise SystemExit(f"FATAL: {fam}/{m}: min_bkg_pass {d['min_bkg_pass']}, the paper's is {JC1_MIN_BKG}")
+            for key, c in d["curves"].items():
+                if labels.setdefault(key, (m, c["label_sha256"]))[1] != c["label_sha256"]:
+                    raise SystemExit(f"FATAL: {fam} curve {key}: {m} and {labels[key][0]} were scored on different jets")
+        out[fam] = docs
+    return out
+
+
+def roc_series(doc: dict, key: str) -> tuple | None:
+    """(eps grid, rejection with NaN below the cut, i.e. where fewer than JC1_MIN_BKG background jets
+    pass; all NaN when cut is null), or None when doc has no curve key."""
+    c = doc["curves"].get(key)
+    if c is None:
+        return None
+    eps = np.asarray(doc["eps_grid"], float)
+    rej = np.array([np.nan if v is None else v for v in c["rejection"]], float)
+    rej[eps < c["cut"]["eps_s"] if c["cut"] else slice(None)] = np.nan
+    return eps, rej
+
+
+def roc_limit(doc: dict, key: str) -> float:
+    """n_background / JC1_MIN_BKG: the rejection at which every curve of that test set stops."""
+    return doc["curves"][key]["n_background"] / JC1_MIN_BKG
 
 
 def _jc1_cells(cells: dict, init: str, n: str, seeds) -> list:

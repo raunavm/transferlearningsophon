@@ -321,7 +321,7 @@ def figure_pairs(root, outdir) -> list:
     runs = M._paper(root)
     status = M.merge_status(root)
     style.use_style()
-    fig = _dot_figure(M, [(k, h) for k, h, _, _ in M.PAIRS], lambda k: pair_rows(M, fits, runs, k),
+    fig = _dot_figure(M, [(k, h) for k, h, _, _ in M.MLP_PAIRS], lambda k: pair_rows(M, fits, runs, k),
                       _positions(_groups(M, False)), ncols=3, width=0.62 * style.PANEL,
                       fill=lambda k, row: FILL[status.get(row, {}).get(k, "apart")])
     return style.save(fig, "pairs", outdir)

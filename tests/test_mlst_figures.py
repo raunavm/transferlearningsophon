@@ -31,7 +31,7 @@ def _fits_tree(M, runs, root: pathlib.Path) -> pathlib.Path:
             for k, n in enumerate(SIZES):
                 c = cell.setdefault(ds, {}).setdefault(n, {"C": 1.0, "converged": True})
                 c[metric] = base - 1e-2 * (len(SIZES) - 1 - k) - 1e-4 * len(c)
-        cell[M.PAIR_DS] = {M.PAIR_N: {key: {"auc": base - 2e-4 * j} for j, (key, _, _, _) in enumerate(M.PAIRS)}}
+        cell[M.PAIR_DS] = {M.PAIR_N: {key: {"auc": base - 2e-4 * j} for j, (key, _, _, _) in enumerate(M.MLP_PAIRS)}}
         ck = "init" if m.startswith("init-") else M.PRIMARY
         (d / f"{m}.json").write_text(json.dumps({"cells": {ck: cell}}))
     return d
@@ -83,7 +83,7 @@ def test_the_pairs_figure_draws_the_pairs_table_and_its_merge_marks(tmp_path, mo
     monkeypatch.setattr(F, "DATA", tmp_path)
     fits = M._load(_fits_tree(M, runs, tmp_path))
     status = M.merge_status(REPO)
-    for key, _, _, _ in M.PAIRS:
+    for key, _, _, _ in M.MLP_PAIRS:
         rows = F.pair_rows(M, fits, runs, key)
         assert M.INIT not in rows
         want = [1e3 * (1 - fits[m]["cells"][M.PRIMARY][M.PAIR_DS][M.PAIR_N][key]["auc"])

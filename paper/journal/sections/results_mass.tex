@@ -4,11 +4,11 @@
 \subsection{Jet mass: regression and sculpting}\label{sec:mass}
 
 The jet-mass results use the JetClass-II test jets that have a generator-level match, so that the
-generator-level soft-drop mass $m_{\mathrm{gen}}$ is defined for resonant and QCD jets alike; a jet
-without a match has no $m_{\mathrm{gen}}$ and is left out. Every mass estimate is scored on the same
+generator-level soft-drop mass $\mgen$ is defined for resonant and QCD jets alike; a jet
+without a match has no $\mgen$ and is left out. Every mass estimate is scored on the same
 jets through its response $r$ and the resolution of equation~(\ref{eq:resolution}), and the binned
 results use the reconstructed jet $p_{\mathrm{T}}$. The reference is the reconstructed soft-drop mass
-$m_{\mathrm{SD}}$, which no training changes. The networks give two further estimates: the regressed mass
+$\msd$, which no training changes. The networks give two further estimates: the regressed mass
 of the \Kres- and \Kcoarse-class models with the auxiliary mass regression, and an MLP regression on the
 frozen features of every label set. Each model with the auxiliary mass regression has
 \MlstMassNRunsWord{} pretraining runs; its tables give both values, and the text quotes the one less
@@ -18,15 +18,15 @@ class: the four levels of the class hierarchy and the two models with the auxili
 
 The auxiliary mass regression gives a narrower mass response than the reconstructed soft-drop mass.
 Over all test jets, the regressed mass of the \Kres-class model with the auxiliary mass regression % CHECK: pending MlstMassHeadResMassOverUncorr below 1 in both runs
-reaches \MlstMassHeadResMassOverUncorrPr{} of $m_{\mathrm{SD}}$, that of the \Kcoarse-class % CHECK: pending MlstMassHeadCoarseMassOverUncorr equal to MlstMassHeadResMassOverUncorr within the two runs' range
+reaches \MlstMassHeadResMassOverUncorrPr{} of $\msd$, that of the \Kcoarse-class % CHECK: pending MlstMassHeadCoarseMassOverUncorr equal to MlstMassHeadResMassOverUncorr within the two runs' range
 model is as narrow, and both stay narrower in every bin of jet $p_{\mathrm{T}}$ and of % CHECK: pending every pT and m_gen bin of A17 has head resolution below groomed
-$m_{\mathrm{gen}}$ (figure~\ref{fig:f8a}; table~\ref{tab:massdetail}). The regressed mass also reaches % CHECK: pending MlstMassHeadResMassOverMlpRes below 1 in both runs
+$\mgen$ (figure~\ref{fig:f8a}; table~\ref{tab:massdetail}). The regressed mass also reaches % CHECK: pending MlstMassHeadResMassOverMlpRes below 1 in both runs
 \MlstMassHeadResMassOverMlpResPr{} of an MLP regression on the frozen features of the \Kres-class
 model pretrained without it, although that regression adds back the median of each jet's true class
-and the auxiliary mass regression never sees the class. Because its target is
-$\ln(m_{\mathrm{gen}}/m_{\mathrm{SD}})$, the regression learns from the jet's constituents how detector
+and the auxiliary mass regression never sees the class. Because its target $\theta$ of
+equation~(\ref{eq:masstarget}) is $\ln(\mgen/\msd)$, the regression learns from the jet's constituents how detector
 response, pileup removal and grooming have moved the reconstructed mass away from the generator-level
-one, which is the spread that $m_{\mathrm{SD}}$ carries. That correction depends on the constituents
+one, which is the spread that $\msd$ carries. That correction depends on the constituents
 rather than on which classes the labels separate, which is likely why the two label sets reach the
 same width.
 
@@ -34,20 +34,23 @@ same width.
 \centering
 \paperfig{\linewidth}{F8a}
 \caption{Jet-mass regression with the auxiliary mass regression, on the JetClass-II test jets with a
-generator-level match. (a) Distribution of the response $m_{\mathrm{est}}/m_{\mathrm{gen}}$, the estimated over the
-generator-level soft-drop mass, over all these jets: reconstructed soft-drop mass (black) and the
-regressed mass of the \Kres- and \Kcoarse-class models pretrained with the auxiliary mass regression
-(colored, dashed); the lower panel is the ratio to the reconstructed soft-drop mass. (b) Resolution
-against the reconstructed jet $p_{\mathrm{T}}$ and (c) against the generator-level soft-drop mass, with
-the ratio to the reconstructed soft-drop mass below. Bands show the range of the \MlstMassNRunsWord{}
-pretraining runs of each model; vertical bars on the reconstructed soft-drop mass are statistical (resampling of the
-jets), horizontal bars the bin width. The median response is \MlstMassUncorrectedResponse{} for the
-reconstructed soft-drop mass, and \MlstMassHeadResMassResponse{} and
-\MlstMassHeadCoarseMassResponse{} for the two regressed masses (\MlstMassNRunsWord{} runs each). The layout follows
-ATLAS~\cite[figures~7 and~8]{atlasregression}, except that the jet $p_{\mathrm{T}}$ is the
-reconstructed one and extends to the upper limit of our selection, the lower panels show the ratio
-rather than the root-square difference, and the panel against the generator-level mass is our
-addition. Resonant and QCD jets separately: table~\ref{tab:massdetail}.}
+generator-level match. (a) Distribution of the response $r = m_{\mathrm{est}}/\mgen$ of
+equation~(\ref{eq:resolution}), the estimated over the generator-level soft-drop mass, over all these jets:
+the reconstructed soft-drop mass (black line, filled) and the regressed mass of the \Kres- and \Kcoarse-class
+models pretrained with the auxiliary mass regression (colored lines); the lower panel is the ratio to the
+reconstructed soft-drop mass, drawn only in bins that hold at least \MlstMassMinJets{} jets of the
+reconstructed soft-drop mass, because the ratio is undefined where that distribution is empty. (b) Resolution
+$\sigma_r$ of equation~(\ref{eq:resolution}) against the reconstructed jet $p_{\mathrm{T}}$ and (c) against
+$\mgen$, with the ratio to the reconstructed soft-drop mass below. Bands show the range of the
+\MlstMassNRunsWord{} pretraining runs of each model; vertical bars on the reconstructed soft-drop mass are
+statistical (resampling of the jets), horizontal bars the bin width; a bin with fewer than \MlstMassMinJets{}
+jets is not shown. The median response $q_{50}$ is \MlstMassUncorrectedResponse{} for the reconstructed
+soft-drop mass, and \MlstMassHeadResMassResponse{} and \MlstMassHeadCoarseMassResponse{} for the two
+regressed masses (\MlstMassNRunsWord{} runs each). The layout follows
+ATLAS~\cite[figures~7 and~8]{atlasregression}, except that the jet $p_{\mathrm{T}}$ is the reconstructed one
+and extends to the upper limit of our selection, the lower panels show the ratio rather than the root-square
+difference, and the panel against the generator-level mass is our addition. Resonant and QCD jets separately:
+table~\ref{tab:massdetail}.}
 \label{fig:f8a}
 \end{figure}
 
@@ -57,7 +60,7 @@ reaches \MlstCmpMlpResMassOverResPr{} of the same regression on the \Kres-class 
 and the \Kcoarse-class pair gains as much (table~\ref{tab:mass}). Without the auxiliary target the
 label sets differ far less (\Kcoarse- over \Kfull-class model, \MlstCmpMlpCoarseOverFullPr). The % CHECK: pending MlstCmpMlpCoarseOverFull much closer to 1 than MlstCmpMlpResMassOverRes
 reason lies in the training data: the reweighting flattens every reweighting category in
-$p_{\mathrm{T}}$ and $m_{\mathrm{SD}}$, so a jet's mass says little about its class, and no
+$p_{\mathrm{T}}$ and $\msd$, so a jet's mass says little about its class, and no
 classification label rewards features that keep the mass more precisely than the decay topology
 implies. The regression term does. The row of the randomly initialized network in
 table~\ref{tab:mass} shows how much of the mass a network that never trained already exposes, and % CHECK: pending MlstMassMlpInit above MlstMassMlpFull (pretrained features carry more mass than the random network)
@@ -100,12 +103,12 @@ to reach the jets that the label sets rank differently.
 \paperfig{\linewidth}{F8b}
 \caption{Mass sculpting by a cut on the summed score of the resonant classes, on the QCD jets
 (jets from light quarks and gluons) of the JetClass-II test set. (a)--(c) Soft-drop mass
-distribution of all QCD jets (grey, filled) and of the jets passing the cut at QCD efficiencies of
+distribution of all QCD jets (filled) and of the jets passing the cut at QCD efficiencies $\epsB$ of
 \SculptEffHigh{} (solid) and \SculptEffLow{} (dotted), which keep \MlstSculptNPassTen{} and
 \MlstSculptNPassOne{} jets, for the first pretraining run of the \Kfull-class model (a), the % CHECK: the final F8b histograms are the seed-1 runs (as in the mock-up)
 \Kcoarse-class model (b) and the \Kcoarse-class model with the auxiliary mass regression (c); the lower
-panels give the ratio to all QCD jets. (d) Jensen--Shannon distance between the distributions of the
-passing and of all QCD jets against the QCD efficiency, for the four levels of the class hierarchy and
+panels give the ratio to all QCD jets. (d) Jensen--Shannon distance $\dJS$ of equation~(\ref{eq:djs}) between
+the distributions of the passing and of all QCD jets against the QCD efficiency $\epsB$, for the four levels of the class hierarchy and
 the two models with the auxiliary mass regression: mean over the pretraining runs, with bands of one
 standard deviation over \MlstNRunsWord{} runs or the range of \MlstMassNRunsWord. The grey band is a random selection of the
 same number of jets (its expected distance and one standard deviation over random selections); at
@@ -121,9 +124,9 @@ its selection lies at \MlstSculptFullOverFloorOnePr{} of a random selection of t
 \Kcoarse-class model's at \MlstSculptCoarseOverFullOnePr{} of the \Kfull-class model's
 (figure~\ref{fig:f8b}(a), (b); table~\ref{tab:sculpt}). The difference does not come from the mass
 content of the labels: a class is defined by its decay products, so every class spans the whole mass
-range, and the reweighting flattens each category in $p_{\mathrm{T}}$ and $m_{\mathrm{SD}}$. It
+range, and the reweighting flattens each category in $p_{\mathrm{T}}$ and $\msd$. It
 lies instead in how each network rejects QCD jets. Without quark-flavor classes, the \Kcoarse-class model likely
-relies more on prong structure, which for QCD jets changes with $m_{\mathrm{SD}}/p_{\mathrm{T}}$, and
+relies more on prong structure, which for QCD jets changes with $\msd/p_{\mathrm{T}}$, and
 less on flavor and displaced vertices, which change little with the mass. The \Kmid-class model keeps
 the quark-flavor boundaries that the \Kcoarse-class level removes while merging other distinctions, so
 it tests this explanation: if flavor is the cause, it sculpts like the \Kfull-class model. Its % CHECK: MlstSculptMidOne between MlstSculptFullOne and MlstSculptCoarseOne with SD comparable to their difference (today 0.051 +- 0.007 vs 0.044 and 0.056); rewrite if it sides with either
@@ -145,15 +148,16 @@ The resonance benchmark repeats Sophon's~\cite[section~III]{sophon} at every lab
 a resonance $X$ decaying to $b\bar b$ or to $bs$, with the background, mass window and metrics of
 section~\ref{sec:evaluation}; figure~\ref{fig:f9} gives the resonance mass, the mass window and the
 numbers of jets. The transfer heads are trained on QCD jets from files that no pretraining run read,
-drawn to match the signal in $p_{\mathrm{T}}$ and $m_{\mathrm{SD}}$, so no jet seen in pretraining enters
-the benchmark, and every model is scored on the same signal and QCD jets. Figure~\ref{fig:f9} plots
-$\epsilon_S/\sqrt{\epsilon_B}$, the reach of a selection without event counts~\cite{cowan}, where Sophon
-plots the significance itself~\cite[figure~2]{sophon}; our curves rank the label sets on one background.
+drawn to match the signal in $p_{\mathrm{T}}$ and $\msd$, so no jet seen in pretraining enters
+the benchmark, and every model is scored on the same signal and QCD jets. Figure~\ref{fig:f9} draws
+the ROC curve and $\epsS/\sqrt{\epsB}$ of equation~(\ref{eq:signif}), the reach of a selection without event
+counts, where Sophon plots the significance $Z$ itself~\cite[figure~2]{sophon}; our curves rank the label
+sets on one background.
 
 Transfer from frozen features tags $X\to bs$ better than a network trained from scratch for the task, % CHECK: pending XbsRthirtyFullOverScratch above 1 at tight working points (F9 b)
 at tight working points. Measured by $R_{30}$, a transfer head on the frozen features of the
 \Kfull-class model gives \XbsRthirtyFullOverScratchPr{} than the network trained from scratch on the
-same jets (figure~\ref{fig:f9}(b)), and the gain depends on the label set: the \Kcoarse-class % CHECK: pending XbsRthirtyCoarseOverFull below 1
+same jets (the $X\to bs$ row of figure~\ref{fig:f9}; table~\ref{tab:xbxrej}), and the gain depends on the label set: the \Kcoarse-class % CHECK: pending XbsRthirtyCoarseOverFull below 1
 features give \XbsRthirtyCoarseOverFullPr{} than the \Kfull-class ones. The $X\to bq$ output node of the % CHECK: pending XbsRthirtyNodeOverTransferFull below 1 (closest node weaker than the transfer head)
 \Kfull-class model, scored against QCD, tags $X\to bs$ worse than the transfer head, so the gain sits
 in the frozen features rather than in an output the network already had (table~\ref{tab:xbxrej}).
@@ -165,7 +169,7 @@ needs.
 Sophon's direct discriminant needs no new training but exists only where $X\to b\bar b$ is a class of
 its own, at \Kfull{} and \Kres{} classes (table~\ref{tab:usecase}). On the \Kfull-class model it % CHECK: pending XbbRthirtyDirectOverTransferFull within 2 SD of 1; if not, state which is better
 reaches the rejection of a transfer head trained on the same frozen features
-(\XbbRthirtyDirectOverTransferFullPr; figure~\ref{fig:f9}(a)), so the output nodes already carry what
+(\XbbRthirtyDirectOverTransferFullPr; the $X\to b\bar b$ row of figure~\ref{fig:f9}), so the output nodes already carry what
 the head learns for this signal. The transfer head compares every label set, and the \Kcoarse-class % CHECK: pending XbbRthirtyTransferCoarseOverFull below 1
 features lose rejection against the \Kfull-class ones (\XbbRthirtyTransferCoarseOverFullPr). The
 \Kcoarse-class labels merge $X\to b\bar b$ with two-prong decays of other quark flavors, likely the
@@ -175,23 +179,25 @@ $X\to c\bar c$ (section~\ref{sec:jetclasstwo}).
 \begin{figure}
 \centering
 \paperfig{\linewidth}{F9}
-\caption{Resonance tagging of $X\to b\bar b$ (a) and $X\to bs$ (b):
-$\epsilon_S/\sqrt{\epsilon_B}$, proportional to the discovery significance
-for a small signal, against the efficiency $\epsilon_B$ for QCD jets (jets from light
-quarks and gluons), for jets in the soft-drop mass window \XbxWindowLo--\XbxWindowHi~GeV around a
-resonance mass of \XbxMx~GeV. Solid: a transfer head on the frozen features of each label set. (a)
-Dotted, same color: Sophon's direct discriminant, which only the \Kfull- and \Kres-class models can
-form. (b) Black dashed with open squares: the network trained from scratch on the $X\to bs$ training
-jets; grey dotted: the $X\to bq$ output node of the \Kfull-class model scored against QCD, which tests
-whether the gain is already in a pretrained output. No network is trained from scratch for
-$X\to b\bar b$. Bands show one standard deviation over the \MlstNRunsWord{} pretraining runs (from
-scratch: three training seeds). Every model is scored on the same \XbbNEvalSignal{} $X\to b\bar b$ and % CHECK: pending XbbNEvalQcd equals XbsNEvalQcd (one QCD evaluation set)
-\XbsNEvalSignal{} $X\to bs$ jets and \XbsNEvalQcd{} QCD jets; the heads are trained on
-\XbbNTrainPerClass{} ($X\to b\bar b$) and \XbsNTrainPerClass{} ($X\to bs$) jets per class, repeated
-\XbbRepetition{} and \XbsRepetition{} times to reach Sophon's training length. Compared with
-Sophon~\cite[figure~2]{sophon}, the vertical axis replaces the discovery significance at a
-fixed luminosity, the panels sit side by side, and the efficiency axis ends where too few QCD jets pass
-to draw a curve.}
+\caption{Resonance tagging of $X\to b\bar b$ (upper row) and $X\to bs$ (lower row), for jets in the soft-drop
+mass window \XbxWindowLo--\XbxWindowHi~GeV around a resonance mass of \XbxMx~GeV against QCD jets (jets from
+light quarks and gluons). Left: background rejection $1/\epsB$ against signal efficiency $\epsS$, with the ratio
+to the transfer head on the \Kfull-class features below. Right: $\epsS/\sqrt{\epsB}$ of
+equation~(\ref{eq:signif}), proportional to the discovery significance for a small signal, against $\epsB$.
+Solid: a transfer head on the frozen features of each label set. Upper row, dotted, same color: Sophon's direct
+discriminant, which only the \Kfull- and \Kres-class models can form. Lower row, black: the
+network trained from scratch on the $X\to bs$ training jets; grey dotted: the output class of the \Kfull-class
+model that contains $X\to bq$, scored against the QCD classes, which tests whether the gain is already in a
+pretrained output. No network is trained from scratch for $X\to b\bar b$. Lines are the mean of the runs at fixed
+efficiency, with bands of one standard deviation over the \MlstNRunsWord{} pretraining runs (from scratch: three
+training seeds); ratios are taken run by run against the \Kfull-class run of the same seed, and for the network
+trained from scratch against the mean of the \Kfull-class runs. Each curve stops where fewer than $\nmin$ QCD
+jets pass, equation~(\ref{eq:cut}). Every model is scored on the same \XbbNEvalSignal{} $X\to b\bar b$ and
+\XbsNEvalSignal{} $X\to bs$ jets and \XbsNEvalQcd{} QCD jets; the heads are trained on \XbbNTrainPerClass{}
+($X\to b\bar b$) and \XbsNTrainPerClass{} ($X\to bs$) jets per class, repeated \XbbRepetition{} and
+\XbsRepetition{} times to reach Sophon's training length. Compared with Sophon~\cite[figure~2]{sophon}, the
+right panels replace the discovery significance at a fixed luminosity by $\epsS/\sqrt{\epsB}$, the ROC panels
+are added, and the efficiency axes end where too few QCD jets pass to draw a curve.}
 \label{fig:f9}
 \end{figure}
 % END XBX

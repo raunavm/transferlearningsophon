@@ -80,6 +80,9 @@ ALLOWED = {
     "50": "the signal efficiency of the standard working point R50 (ParT, the landscape paper)",
     "30": "the signal efficiency of the standard working point R30 (ParT, the landscape paper)",
     "68": "the area inside sigma_eff, its definition, fixed by the PRESPEC S7 amendment",
+    "15.9": "a quantile level in the definition of the ATLAS resolution, (q84.1 - q15.9)/(2 q50) "
+            "(ATL-PHYS-PUB-2024-015), fixed by the definition, not measured",
+    "84.1": "a quantile level in the definition of the ATLAS resolution (as 15.9)",
 }
 
 # Contexts whose digits are never claims about data.

@@ -4,17 +4,16 @@
 % WHAT main.tex MUST LOAD (this file loads nothing itself):
 %   \usepackage{tikz}
 %   \usetikzlibrary{arrows.meta}          % the only TikZ library used (arrow tips)
-%   \usepackage{helvet}                   % Helvetica for \sffamily, UNSCALED: the font sizes
-%                                         % below are the printed sizes (8.5-10 pt, MLST 8-12 pt)
-%   \usepackage{sansmath}                 % optional: math in the figure in Helvetica too; without
-%                                         % it the figure's math falls back to the text math font
-%   \definecolor{c188}{HTML}{5790FC}      % the configuration colours of experiments/FIGS/
-%   \definecolor{c162}{HTML}{F89C20}      % mlst_style.py (TEX_COLOURS); cmass, ckin and cinit are
-%   \definecolor{c43}{HTML}{E42536}       % not used: the variants are drawn in their label set's
-%   \definecolor{c17}{HTML}{964A8B}       % colour with a dashed (mass) or dash-dotted
-%   \definecolor{crand}{HTML}{009988}     % (kinematic-only) border, FIGURE_PLAN section 1
-%   \definecolor{cflav}{HTML}{33BBEE}
+%   \definecolor{c188}{HTML}{1F77B4}      % the configuration colours of experiments/FIGS/
+%   \definecolor{c162}{HTML}{FF7F0E}      % mlst_style.py (matplotlib's tab10 in order, as in
+%   \definecolor{c43}{HTML}{2CA02C}       % Sophon's figures); the variants are drawn in their
+%   \definecolor{c17}{HTML}{D62728}       % label set's colour with a dotted border, as the
+%   \definecolor{crand}{HTML}{17BECF}     % plotted figures draw variants dotted
+%   \definecolor{cflav}{HTML}{9467BD}
 %   \input{results_generated}             % the counts below are its macros
+% Visual language: Sophon's Fig. 1 (arXiv:2405.12972): the document's serif font, light fills,
+% rounded boxes, light grey panels behind the stages (PI 2026-11-02). The text is set in the
+% document's font at the printed sizes 8.5-10 pt (MLST 8-12 pt), never scaled.
 % Text width: 15 cm (MLST full width). The picture is 15.0 cm wide and is drawn at its final
 % size, never scaled, so the font sizes hold.
 % Optional: \def\FoneDropXbx{} before \input{fig_f1} removes X->bb/X->bs from panel (c)
@@ -43,35 +42,34 @@
 \centering
 \ifdim\linewidth<14.99cm\typeout{fig_f1.tex: WARNING: the drawing is 15 cm wide but \string\linewidth\space
   is \the\linewidth; set a 15 cm text width (it is not scaled, to keep its 8.5 pt text)}\fi
-\def\FoneText{\sffamily\fontsize{8.5}{9.5}\selectfont}%
-\def\FoneMain{\sffamily\fontsize{9}{10.5}\selectfont}%
-\def\FoneBold{\sffamily\bfseries\fontsize{9}{10.5}\selectfont}%
-\def\FoneTitle{\sffamily\bfseries\fontsize{10}{12}\selectfont}%
+\def\FoneText{\rmfamily\fontsize{8.5}{9.5}\selectfont}%
+\def\FoneMain{\rmfamily\fontsize{9}{10.5}\selectfont}%
+\def\FoneBold{\rmfamily\bfseries\fontsize{9}{10.5}\selectfont}%
+\def\FoneTitle{\rmfamily\bfseries\fontsize{10}{12}\selectfont}%
 \ifdefined\FoneDropXbx\def\FoneXbx{}\else\def\FoneXbx{\\$X\to b\bar b$, $X\to bs$}\fi
 \begin{tikzpicture}[
   x=1cm, y=1cm,
   font=\FoneMain,
   ttl/.style={anchor=base west, font=\FoneTitle, inner sep=0pt},
-  cls/.style={draw=black!75, line width=0.5pt},
-  hdr/.style={draw=#1!60!black, fill=#1!45, line width=0.6pt, align=center, font=\FoneText,
-              inner sep=0pt},
+  cls/.style={draw=black!55, line width=0.45pt, rounded corners=1.2pt},
+  hdr/.style={draw=#1!70!black, fill=#1!22, line width=0.6pt, rounded corners=2.5pt, align=center,
+              font=\FoneText, inner sep=0pt},
   inbox/.style={align=center, font=\FoneText, inner sep=0pt},
   letter/.style={font=\FoneBold, inner sep=0pt},
   rowlab/.style={anchor=east, inner sep=0pt},
   txt/.style={align=left, font=\FoneText, inner sep=0pt},
-  sq/.style={draw=black!75, line width=0.4pt},
-  chip/.style={draw=#1!60!black, fill=#1!45, line width=0.6pt, rounded corners=1.5pt,
+  sq/.style={draw=black!65, line width=0.4pt},
+  chip/.style={draw=#1!70!black, fill=#1!22, line width=0.6pt, rounded corners=3pt,
                align=center, font=\FoneText, inner sep=0pt, anchor=north west},
-  stage/.style={draw=black!60, line width=0.6pt, rounded corners=2pt, align=left,
+  stage/.style={draw=black!45, fill=black!4, line width=0.6pt, rounded corners=3pt, align=left,
                 font=\FoneText, inner sep=0.1cm},
   flow/.style={-{Latex[length=1.8mm, width=1.4mm]}, line width=0.7pt, black!75},
 ]
-\ifdefined\sansmath\sansmath\fi
 % ================================================================ (a) the class hierarchy
 \node[ttl] at (0,0) {(a) Class hierarchy};
 % faint bands on every other row, drawn first so the boxes sit on top
 \foreach \rowtop in {-1.53,-2.23,-2.93,-3.63,-4.33,-5.17,-5.87}
-  \fill[black!6] (0,\rowtop) rectangle (9.70,\rowtop-0.35);
+  \fill[black!4] (0,\rowtop) rectangle (9.70,\rowtop-0.35);
 % column headers
 \node[rowlab, align=right, font=\FoneText] at (1.65,-0.68) {JetClass-II\\class};
 \node[hdr=c188, minimum width=1.45cm, minimum height=0.80cm, anchor=north west] at (1.75,-0.28) {\Kfull\\classes};
@@ -96,34 +94,34 @@
 \node[rowlab] at (1.65,-6.710) {QCD jets};
 % 188 and 162 classes: every resonant decay is its own class
 \foreach \rowtop in {-1.18,-1.53,-1.88,-2.23,-2.58,-2.93,-3.28,-3.63,-3.98,-4.33,-4.82,-5.17,-5.52,-5.87} {
-  \draw[cls, fill=c188!20] (1.75,\rowtop-0.025) rectangle (3.20,\rowtop-0.325);
-  \draw[cls, fill=c162!20] (3.28,\rowtop-0.025) rectangle (4.73,\rowtop-0.325);
+  \draw[cls, fill=c188!15] (1.75,\rowtop-0.025) rectangle (3.20,\rowtop-0.325);
+  \draw[cls, fill=c162!15] (3.28,\rowtop-0.025) rectangle (4.73,\rowtop-0.325);
 }
-\draw[cls, fill=c188!20] (1.75,-6.385) rectangle (3.20,-7.035);
+\draw[cls, fill=c188!15] (1.75,-6.385) rectangle (3.20,-7.035);
 \node[inbox] at (2.475,-6.71) {\LitJetClassTwoNQcdClasses\\classes};
-\draw[cls, fill=c162!20] (3.28,-6.385) rectangle (4.73,-7.035);
+\draw[cls, fill=c162!15] (3.28,-6.385) rectangle (4.73,-7.035);
 \node[inbox] at (4.005,-6.71) {1 class};
 % 43 classes: decay topology x {b, else c, else light quark or gluon}; e and mu merged
-\draw[cls, fill=c43!20] (4.81,-1.205) rectangle (6.26,-2.205);
+\draw[cls, fill=c43!15] (4.81,-1.205) rectangle (6.26,-2.205);
 \node[inbox] at (5.535,-1.705) {with $b$};
-\draw[cls, fill=c43!20] (4.81,-2.255) rectangle (6.26,-3.255);
+\draw[cls, fill=c43!15] (4.81,-2.255) rectangle (6.26,-3.255);
 \node[inbox] at (5.535,-2.755) {with $c$,\\no $b$};
-\draw[cls, fill=c43!20] (4.81,-3.305) rectangle (6.26,-4.655);
+\draw[cls, fill=c43!15] (4.81,-3.305) rectangle (6.26,-4.655);
 \node[inbox] at (5.535,-3.980) {$u$, $d$, $s$\\or $g$};
-\draw[cls, fill=c43!20] (4.81,-4.845) rectangle (6.26,-5.495);
+\draw[cls, fill=c43!15] (4.81,-4.845) rectangle (6.26,-5.495);
 \node[inbox] at (5.535,-5.170) {$\ell\ell$};
-\draw[cls, fill=c43!20] (4.81,-5.545) rectangle (6.26,-6.195);
+\draw[cls, fill=c43!15] (4.81,-5.545) rectangle (6.26,-6.195);
 \node[inbox] at (5.535,-5.870) {$\tau_h\tau_\ell$};
-\draw[cls, fill=c43!20] (4.81,-6.385) rectangle (6.26,-7.035);
+\draw[cls, fill=c43!15] (4.81,-6.385) rectangle (6.26,-7.035);
 \node[inbox] at (5.535,-6.710) {1 class};
 % 17 classes: number and type of prongs, no flavor
-\draw[cls, fill=c17!20] (6.34,-1.205) rectangle (7.79,-4.655);
+\draw[cls, fill=c17!15] (6.34,-1.205) rectangle (7.79,-4.655);
 \node[inbox] at (7.065,-2.930) {two\\quarks\\or gluons};
-\draw[cls, fill=c17!20] (6.34,-4.845) rectangle (7.79,-5.495);
+\draw[cls, fill=c17!15] (6.34,-4.845) rectangle (7.79,-5.495);
 \node[inbox] at (7.065,-5.170) {$\ell\ell$};
-\draw[cls, fill=c17!20] (6.34,-5.545) rectangle (7.79,-6.195);
+\draw[cls, fill=c17!15] (6.34,-5.545) rectangle (7.79,-6.195);
 \node[inbox] at (7.065,-5.870) {$\tau_h\tau_\ell$};
-\draw[cls, fill=c17!20] (6.34,-6.385) rectangle (7.79,-7.035);
+\draw[cls, fill=c17!15] (6.34,-6.385) rectangle (7.79,-7.035);
 \node[inbox] at (7.065,-6.710) {1 class};
 % what each merge removes
 \node[anchor=north west, font=\FoneBold, inner sep=0pt] at (0,-7.27) {What each merge removes};
@@ -141,21 +139,21 @@
 \node[ttl] at (8.25,0) {(b) Controls, \Kcoarse{} classes each};
 % the first random partition on the rows of (a); one letter = one class
 \node[hdr=crand, minimum width=1.45cm, minimum height=0.80cm, anchor=north west] at (8.25,-0.28) {random\\partition};
-\draw[cls, fill=crand!20] (8.25,-1.205) rectangle (9.70,-2.905);
+\draw[cls, fill=crand!15] (8.25,-1.205) rectangle (9.70,-2.905);
 \node[letter] at (8.975,-2.055) {A};
-\draw[cls, fill=crand!20] (8.25,-2.955) rectangle (9.70,-3.955);
+\draw[cls, fill=crand!15] (8.25,-2.955) rectangle (9.70,-3.955);
 \node[letter] at (8.975,-3.455) {B};
-\draw[cls, fill=crand!20] (8.25,-4.005) rectangle (9.70,-4.305);
+\draw[cls, fill=crand!15] (8.25,-4.005) rectangle (9.70,-4.305);
 \node[letter] at (8.975,-4.155) {A};
-\draw[cls, fill=crand!20] (8.25,-4.355) rectangle (9.70,-4.655);
+\draw[cls, fill=crand!15] (8.25,-4.355) rectangle (9.70,-4.655);
 \node[letter] at (8.975,-4.505) {C};
-\draw[cls, fill=crand!20] (8.25,-4.845) rectangle (9.70,-5.495);
+\draw[cls, fill=crand!15] (8.25,-4.845) rectangle (9.70,-5.495);
 \node[letter] at (8.975,-5.170) {D};
-\draw[cls, fill=crand!20] (8.25,-5.545) rectangle (9.70,-5.845);
+\draw[cls, fill=crand!15] (8.25,-5.545) rectangle (9.70,-5.845);
 \node[letter] at (8.975,-5.695) {E};
-\draw[cls, fill=crand!20] (8.25,-5.895) rectangle (9.70,-6.195);
+\draw[cls, fill=crand!15] (8.25,-5.895) rectangle (9.70,-6.195);
 \node[letter] at (8.975,-6.045) {F};
-\draw[cls, fill=crand!20] (8.25,-6.385) rectangle (9.70,-7.035);
+\draw[cls, fill=crand!15] (8.25,-6.385) rectangle (9.70,-7.035);
 \node[inbox] at (8.975,-6.710) {1 class};
 % how the random partitions are built
 \node[hdr=crand, anchor=north west, text width=4.75cm, inner sep=0.1cm, align=left, font=\FoneBold]
@@ -216,7 +214,7 @@
     {\textbf{Same for every model of one seed:} the training jets, their order and the
      initial weights, except the output layer};
   % one pretraining per label set: the configuration colours of every later figure
-  \node[draw=black!60, line width=0.6pt, rounded corners=2pt, minimum width=5.15cm,
+  \node[draw=black!45, fill=black!4, line width=0.6pt, rounded corners=3pt, minimum width=5.15cm,
         minimum height=3.08cm, anchor=north west, inner sep=0pt] (pre) at (2.81,-0.42) {};
   \node[anchor=north west, font=\FoneBold, inner sep=0pt] at (2.96,-0.52) {Pretraining on JetClass-II};
   \node[chip=c188, minimum width=1.13cm, minimum height=0.42cm] at (2.96,-0.95) {\Kfull};
@@ -225,15 +223,15 @@
   \node[chip=c17,  minimum width=1.13cm, minimum height=0.42cm] at (6.68,-0.95) {\Kcoarse};
   \node[chip=crand, minimum width=1.70cm, minimum height=0.70cm] at (2.96,-1.47) {random\\partitions};
   \node[chip=cflav, minimum width=3.04cm, minimum height=0.70cm] at (4.77,-1.47) {controlled flavor\\boundaries};
-  \node[chip=c162, dashed, minimum width=1.13cm, minimum height=0.42cm] at (2.96,-2.32) {\Kres};
-  \node[chip=c17,  dashed, minimum width=1.13cm, minimum height=0.42cm] at (4.20,-2.32) {\Kcoarse};
+  \node[chip=c162, densely dotted, minimum width=1.13cm, minimum height=0.42cm] at (2.96,-2.32) {\Kres};
+  \node[chip=c17,  densely dotted, minimum width=1.13cm, minimum height=0.42cm] at (4.20,-2.32) {\Kcoarse};
   \node[txt, anchor=west] at (5.44,-2.53) {with auxiliary\\mass regression};
-  \node[chip=c188, dash dot, minimum width=1.13cm, minimum height=0.42cm] at (2.96,-2.94) {\Kfull};
+  \node[chip=c188, densely dotted, minimum width=1.13cm, minimum height=0.42cm] at (2.96,-2.94) {\Kfull};
   \node[txt, anchor=west] at (4.20,-3.15) {kinematic inputs only};
   % evaluation
   \node[stage, text width=2.4cm] (fz) at (9.68,-0.95) {frozen features:\\linear probe,\\MLP probe};
   \node[stage, text width=2.4cm] (ft) at (9.68,-2.05) {fine-tuning\\of all weights};
-  \node[stage, text width=2.4cm, draw=black, line width=1.1pt] (sc) at (9.68,-3.15) {trained from\\scratch};
+  \node[stage, text width=2.4cm, draw=black, fill=white, line width=1.1pt] (sc) at (9.68,-3.15) {trained from\\scratch};
   \node[stage, text width=3.4cm, minimum height=3.2cm] (task) at (13.20,-2.00)
     {\textbf{Downstream tasks}\\JetClass-II: all classes\\JetClass-II: class pairs\\\quad(both class-balanced)\\JetClass\\
      top tagging\\quark/gluon, Pythia\\quark/gluon, Herwig\\jet mass\FoneXbx};
@@ -260,9 +258,10 @@ output layer, the mass regression target, and the first layer and initial weight
 kinematic inputs only (the particle four-momenta). The hierarchy levels have \MlstNRunsWord{} seeds
 each, the models with the auxiliary mass regression \MlstMassNRunsWord{}, the random partitions with
 controlled flavor boundaries \RandFlavRuns{} and each random partition \RandVtwoRuns{}. Frozen
-features, the output of the backbone (the network below the output layer) with its weights held
+features, the output of the backbone (the network below the classification head) with its weights held
 fixed, feed linear probes (logistic regressions) and multilayer perceptron (MLP) probes; fine-tuning
-trains all weights. Colors identify the configurations in every figure; dashed and dash-dotted
-borders mark the two variants.}
+trains all weights. Colors identify the label sets and controls in every figure; the plots give the three partitions with
+controlled flavor boundaries three shades; dotted borders mark the two
+variants, which the other figures draw as dotted lines in the color of their label set.}
 \label{fig:design}
 \end{figure}

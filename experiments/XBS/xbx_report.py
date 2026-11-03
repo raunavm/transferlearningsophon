@@ -38,7 +38,7 @@ ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS", "R16_Q1_MASS", "RAND", 
 CURVE_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND", "INIT")
 WORD = {"xbb": "Xbb", "xbs": "Xbs"}
 # the figure stops where fewer QCD jets than this pass (a relative uncertainty of about 14 %)
-MIN_BKG_PASS = 50
+MIN_BKG_PASS = 20   # the paper's one rule for every ROC (mlst_v4.JC1_MIN_BKG, Methods)
 
 
 def _module(rel: str, name: str):

@@ -125,7 +125,7 @@ def test_jc2b_and_kinematic_cells():
     assert all(c["epochs"] * c["spe"] == 20_000 * 512 for c in jc2b)
     kin = bfb.kin_cells("3e-4")
     full = [c for c in kin if c["n"] == 1_200_000]
-    assert len(kin) == 8 and len(full) == 2
+    assert bfb.KIN_RUNS == ("l188kin-s1",) and len(kin) == 4 and len(full) == 1
     assert all(c["epochs"] == 20 and c["spe"] == 1_200_000 and c["patience"] == 1000 and c["lr"] == "1e-4"
                for c in full)
     assert {c["init"] for c in kin} == set(bfb.KIN_RUNS)

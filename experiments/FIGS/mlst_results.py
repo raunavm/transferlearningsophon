@@ -24,6 +24,8 @@ Inputs, under experiments/FIGS/data/v2/ (experiments/FIGS/pull_mlst_data.py):
                                           BatchNorm check, which only these fits have)
   linprobe/fits_v4/, fits_v4_mlp/          class-balanced JetClass-II probes (replace fits_v3 once pulled)
   linprobe/fits_v4_fill/                   the three substitutions of the missing inputs
+  linprobe/fits_v4_sib/                    the X->ee vs X->mumu probe (joins the v4 pairs, mlst_v4.load_fits)
+  curves_v2/<family>/<model>.json          ROC curves (mlst_v4.load_roc): F4/F6J cut points, test-set sizes
   linprobe/fits_v3_mlp2/, ..._initbn/      nonlinear probes (top, quark/gluon, JetClass; JetClass-II
                                            until fits_v4_mlp is pulled)
   head/atlas_res/<model>.json              ATLAS mass resolution and median response
@@ -102,6 +104,7 @@ JC2_TASKS = (TASKS[0], TASKS_N[1], TASKS[1], TASKS[2])
 PAIRS = (("bc_vs_bq_cs", r"$X\to bc$ vs $bq$, $cs$", ("label_X_bc",), ("label_X_bq", "label_X_cs")),
          ("bb_vs_cc", r"$X\to b\bar b$ vs $c\bar c$", ("label_X_bb",), ("label_X_cc",)),
          ("bbqq_vs_ccqq", r"$X\to YY\to bbqq$ vs $ccqq$", ("label_X_YY_bbqq",), ("label_X_YY_ccqq",)),
+         ("ee_vs_mm", r"$X\to ee$ vs $\mu\mu$", ("label_X_ee",), ("label_X_mm",)),
          ("qcd_bb_vs_cc", r"QCD $bb$ vs $cc$", ("label_QCD_bb",), ("label_QCD_cc",)),
          ("qcd_b_vs_light", r"QCD with $b$ vs light", "qcd_with_b", ("label_QCD_light",)),
          ("qcd_c_vs_light", r"QCD with $c$, no $b$, vs light", "qcd_with_c_no_b", ("label_QCD_light",)))
@@ -113,7 +116,20 @@ MLP_TASKS = (("jc2_188", "JetClass-II", "macro_auc_ovr"), ("jc2_188_res", "reson
              ("bbqq_vs_ccqq", r"$X\to YY\to bbqq$ vs $ccqq$", "auc"), ("qcd_bb_vs_cc", r"QCD $bb$ vs $cc$", "auc"),
              ("qcd_b_vs_light", r"QCD with $b$ vs light", "auc"),
              ("qcd_c_vs_light", r"QCD with $c$, no $b$, vs light", "auc"))
-MLP_JC2 = ("jc2_188", "jc2_188_res", "jc2_188_qcd") + tuple(k for k, *_ in PAIRS)
+# the pairs with a nonlinear probe (no multilayer perceptron on X->ee vs X->mumu)
+MLP_PAIRS = tuple(p for p in PAIRS if p[0] in {t for t, *_ in MLP_TASKS})
+MLP_JC2 = ("jc2_188", "jc2_188_res", "jc2_188_qcd") + tuple(k for k, *_ in MLP_PAIRS)
+# the class pairs of F4, in panel order
+ROC_PAIRS = ("bb_vs_cc", "bbqq_vs_ccqq", "bc_vs_bq_cs", "ee_vs_mm")
+# fewest class-balanced test jets of a class that is not hatched in F3 (MlstJcBalNThin) and may be
+# selected for A3R; and how many classes A3R shows as most hurt and as least changed
+THIN_TEST = 1000
+NHURT, NSTABLE = 8, 4
+# jets below which a bin of the mass resolution is null (experiments/EVAL/atlas_resolution.py, read from
+# its source: importing it pulls the mass-regression code)
+MASS_MIN_JETS = int(re.search(r"^MIN_JETS = (\d+)$", (pathlib.Path(__file__).resolve().parents[2]
+                                                       / "experiments/EVAL/atlas_resolution.py").read_text(),
+                              re.M).group(1))
 # the zero-fill control's two masks (fillcontrol/<mask>/); the paper no longer reads them, the mock-up
 # figures (mockup_figures.figure_f5) still do
 MASKS = ("TopReference", "EnergyFlowQG")
@@ -138,7 +154,7 @@ WORD = {"L188": "Full", "L162": "Res", "R42_Q1": "Mid", "R16_Q1": "Coarse", "L16
         "FLAV_F1R": "Foner", SCRATCH: "Scratch", "KIN": "Kin"}
 TASK_WORD = {("jc2_188", "macro_auc_ovr"): "JcTwo", ("jc2_188", "macro_auc_resonant"): "JcTwoRes",
              ("jc2_188", "macro_auc_qcd"): "JcTwoQcd", ("jc2_188", "macro_auc_trained"): "JcTwoTrained"}
-PAIR_WORD = {"bc_vs_bq_cs": "Bc", "bb_vs_cc": "Bb", "bbqq_vs_ccqq": "Bbqq", "qcd_bb_vs_cc": "QcdBb",
+PAIR_WORD = {"bc_vs_bq_cs": "Bc", "bb_vs_cc": "Bb", "bbqq_vs_ccqq": "Bbqq", "ee_vs_mm": "Eemm", "qcd_bb_vs_cc": "QcdBb",
              "qcd_b_vs_light": "QcdB", "qcd_c_vs_light": "QcdC", "top": "Top", "qg": "Qg",
              "qg_herwig": "QgHerwig", "jc2_188": "JcTwo", "jc2_188_res": "JcTwoRes", "jc2_188_qcd": "JcTwoQcd",
              "jc1": "JcOne"}
@@ -386,6 +402,15 @@ def _emit_ratio(em, name: str, vals: list, n_expected: int, fmt_pm, src, path: s
                  "prose twin of the run farther from 1")
 
 
+def _undefined(em, name: str, src, path: str, two_run: bool = False) -> None:
+    """A ratio of 1 - AUC whose reference separates the test jets completely (1 - AUC = 0): a dash,
+    and prose twins that say so."""
+    em.macro(name, "--", src, path, "the reference's 1 - AUC is 0")
+    for t in ("Pr", "PrMax") if two_run else ("Pr",):
+        em.macro(name + t, "undefined, since the reference separates the test jets completely", src, path,
+                 "the reference's 1 - AUC is 0")
+
+
 def _emit_pct(em, name: str, vals: list, n_expected: int, fmt_pm, src, path: str) -> None:
     em.macro(name, _pct_cell(vals, n_expected, fmt_pm), src, path)
     em.macro(name + "Pr", _pct_prose(vals), src, path, "prose twin, two significant figures")
@@ -597,16 +622,23 @@ def table_probes_n(fits, runs, fmt_pm, rows, fill=None, chosen=None) -> str:
 
 
 def _pair(fits, m, key):
-    c = fits.get(m, {}).get("cells", {}).get(PRIMARY, {}).get(PAIR_DS, {}).get(PAIR_N, {}).get(key)
+    c = fits.get(m, {}).get("cells", {}).get(_ck(m), {}).get(PAIR_DS, {}).get(PAIR_N, {}).get(key)
     return None if c is None else c["auc"]
+
+
+def separated(fits, runs, key) -> set:
+    """Run indices whose 188-class probe separates the pair's test jets completely (1 - AUC = 0): no
+    ratio of 1 - AUC to that run exists."""
+    return {_idx(m) for m in runs["L188"] if _pair(fits, m, key) == 1}
 
 
 def table_pairs(fits, runs, fmt_pm, status, rows) -> str:
     """A11, binary probes between JetClass-II classes: the AUC, and the ratio of 1 - AUC to the
-    188-class run as a labelled column; a dagger marks a pair the label set merges."""
+    188-class run as a labelled column ('--' where that run separates the test jets completely);
+    a dagger marks a pair the label set merges."""
     mark = {"merged": r"$^{\dagger}$", "partly": r"$^{\ddagger}$", "apart": ""}
     out = []
-    for part in (PAIRS[:3], PAIRS[3:]):
+    for part in (PAIRS[:4], PAIRS[4:]):
         out += [r"\begin{tabular}{l" + "cc" * len(part) + "}", r"\toprule",
                 "pretraining & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{h}}}" for _, h, _, _ in part) + r" \\",
                 "".join(rf"\cmidrule(lr){{{2 + 2 * i}-{3 + 2 * i}}}" for i in range(len(part))),
@@ -618,7 +650,8 @@ def table_pairs(fits, runs, fmt_pm, status, rows) -> str:
                 cells.append(_cell([_pair(fits, m, key) for m in runs[arm]], len(runs[arm]), fmt_pm)
                              + mark[status.get(arm, {}).get(key, "apart")])
                 r, n = _ratio_to_full(fits, runs, arm, lambda m: _oma(_pair(fits, m, key)))
-                cells.append(_cell(r, n, fmt_pm) if n else "--")
+                sep = separated(fits, runs, key) & {_idx(m) for m in runs[arm]}
+                cells.append(_cell(r, n, fmt_pm) if n and not sep else "--")
             out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
         out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
     return "\n".join(out[:-1])
@@ -658,22 +691,33 @@ def comparisons(em, fits, runs, status, index, fmt_pm) -> None:
                         "of its seed, mean +- SD over the partitions", "errors")
     for key, _, _, _ in PAIRS:
         f = lambda m, key=key: _oma(_pair(fits, m, key))
+        zero = lambda ref, arms: {_idx(m) for m in runs[ref] if f(m) == 0} & {_idx(m) for a in arms for m in runs[a]}
         for arm, ref in CMP_PAIRS:
+            name, path = (f"MlstCmp{PAIR_WORD[key]}{WORD[arm]}Over{WORD[ref]}",
+                          f"binary probe {key}: (1 - AUC) of {arm} over {ref}, run by run")
+            if zero(ref, (arm,)):
+                _undefined(em, name, index, path, _two_run(runs, arm, ref))
+                continue
             r, k = _ratio_vals(runs, arm, ref, f)
-            _emit_ratio(em, f"MlstCmp{PAIR_WORD[key]}{WORD[arm]}Over{WORD[ref]}", r, k, fmt_pm, index,
-                        f"binary probe {key}: (1 - AUC) of {arm} over {ref}, run by run", "errors",
-                        _two_run(runs, arm, ref))
+            _emit_ratio(em, name, r, k, fmt_pm, index, path, "errors", _two_run(runs, arm, ref))
         if key.startswith("qcd_"):
             continue            # every partition merges the QCD classes
-        r = _rand_over(runs, "L188", f)
-        _emit_ratio(em, f"MlstCmp{PAIR_WORD[key]}RandOverFull", r, len(r), fmt_pm, index,
-                    f"binary probe {key}: (1 - AUC) of each random partition over the 188-class run of its seed",
-                    "errors")
+        name, path = (f"MlstCmp{PAIR_WORD[key]}RandOverFull",
+                      f"binary probe {key}: (1 - AUC) of each random partition over the 188-class run of its seed")
+        if zero("L188", RAND):
+            _undefined(em, name, index, path)
+        else:
+            r = _rand_over(runs, "L188", f)
+            _emit_ratio(em, name, r, len(r), fmt_pm, index, path, "errors")
         side = {s: [f(m) for arm in RAND if status[arm][key] == s for m in runs[arm]] for s in ("merged", "apart")}
         for s, v in side.items():
             em.macro(f"MlstPairRand{s.title()}{PAIR_WORD[key]}N", str(len(v)), index,
                      f"random partitions that {'merge' if s == 'merged' else 'keep apart'} {key} (count)")
         mv, av = ([x for x in side[s] if x is not None] for s in ("merged", "apart"))
+        if av and float(np.mean(av)) == 0:
+            _undefined(em, f"MlstPairRandMergedOverApart{PAIR_WORD[key]}", index,
+                       f"binary probe {key}: the partitions that keep it apart separate the test jets completely")
+            continue
         val = [float(np.mean(mv)) / float(np.mean(av))] if mv and av else []
         _emit_ratio(em, f"MlstPairRandMergedOverApart{PAIR_WORD[key]}", val, 1, fmt_pm, index,
                     f"binary probe {key}: mean (1 - AUC) of the partitions that merge it over that of those "
@@ -836,7 +880,7 @@ def table_mlp(mlp, runs, fmt_pm, rows, raw_v4=None) -> str:
                       _cell([_mlp_val(mlp, m, t, "r30") for m in ms], n, fmt_pm)]
         out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
     out += [r"\bottomrule", r"\end{tabular}"]
-    for part in (PAIRS[:3], PAIRS[3:]):
+    for part in (MLP_PAIRS[:3], MLP_PAIRS[3:]):
         out += ["%SPLIT%", r"\begin{tabular}{l" + "cc" * len(part) + "}", r"\toprule",
                 "pretraining & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{h}}}" for _, h, _, _ in part) + r" \\",
                 " & " + " & ".join([r"AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$"] * len(part)) + r" \\",
@@ -1318,7 +1362,7 @@ def table_sculpt(sculpt, runs, fmt_pm, rows) -> str:
     jets and of those passing a cut on 1 - p_QCD at the stated QCD efficiency, and below the runs the
     distance a random selection of as many QCD jets shows."""
     lines = [r"\begin{tabular}{lcc}", r"\toprule",
-             r"pretraining & " + " & ".join(rf"$\epsilon_{{\mathrm{{QCD}}}} = {100 * float(e):g}\%$" for e in SCULPT_EFFS)
+             r"pretraining & " + " & ".join(rf"$\epsB = {100 * float(e):g}\%$" for e in SCULPT_EFFS)
              + r" \\", r"\midrule"]
     for arm in rows:
         lines.append(LABEL[arm] + " & " + " & ".join(
@@ -1717,10 +1761,24 @@ def _sw(key: str, n: int) -> str:
     return SIZE_WORD.get(n, "Max")
 
 
+FT_RATIO_N = 1_000_000
+
+
+def _ft_ratio_cell(per, runs, arm, fmt_pm) -> str:
+    """Fine-tuned JetClass-II at FT_RATIO_N jets: 1 - AUC over that of the 188-class run of the same
+    index, run by run; the 188-class row prints 1."""
+    r, n = _ratio_to_full(None, runs, arm, lambda m: _oma(_ftv(per, "jc2", m, FT_RATIO_N, "macro_auc_ovr")))
+    if arm != "L188":
+        return _cell(r, n, fmt_pm) if n else "--"
+    have = sum(x is not None for x in r)
+    return ("1" + (rf" \pending{{{have} of {n}}}" if have < n else "")) if have else r"\pending{no run yet}"
+
+
 def table_ft(per, runs, fmt_pm, rows) -> str:
     """A1, fine-tuning against the training-set size, in each task's metric (FT_METRIC): the AUC
     averaged over the classes on class-balanced JetClass-II (and over its QCD classes), accuracy on
-    JetClass, R30 on top, quark/gluon and Herwig; the network trained from scratch last."""
+    JetClass, R30 on top, quark/gluon and Herwig; the network trained from scratch last. The
+    JetClass-II block adds one column: the ratio of 1 - AUC at FT_RATIO_N jets to the 188-class run."""
     out = []
     for key, _, _, _, title in FT_TASKS:
         met, mname = FT_METRIC[key]
@@ -1729,13 +1787,19 @@ def table_ft(per, runs, fmt_pm, rows) -> str:
             out += [r"\begin{tabular}{lc}", r"\toprule", rf"{title} & \pending{{not yet read out}} \\",
                     r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
             continue
-        out += [r"\begin{tabular}{l" + "c" * len(sizes) + "}", r"\toprule",
-                rf"{title}, {mname} & " + " & ".join(f"{n:,}".replace(",", "{,}") for n in sizes) + r" \\", r"\midrule"]
+        ratio = key == "jc2"          # the only fine-tuned ratio of 1 - AUC in the paper (ROC_INTERFACE 3.3)
+        out += [r"\begin{tabular}{l" + "c" * (len(sizes) + ratio) + "}", r"\toprule",
+                rf"{title}, {mname} & " + " & ".join(f"{n:,}".replace(",", "{,}") for n in sizes)
+                + (r" & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$, $10^{6}$ jets" if ratio else "") + r" \\",
+                r"\midrule"]
         for arm in _ft_rows(per, key, runs, rows):
-            out.append(_row(arm, runs) + " & " + " & ".join(
-                _cell([_ftv(per, key, m, n, met) for m in runs[arm]], len(runs[arm]), fmt_pm) for n in sizes) + r" \\")
+            cells = [_cell([_ftv(per, key, m, n, met) for m in runs[arm]], len(runs[arm]), fmt_pm) for n in sizes]
+            if ratio:
+                cells.append(_ft_ratio_cell(per, runs, arm, fmt_pm))
+            out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
         out.append("from scratch & " + " & ".join(
-            (_cell(v, len(v), fmt_pm) if (v := _scratch(per, key, n, met)) else "--") for n in sizes) + r" \\")
+            [(_cell(v, len(v), fmt_pm) if (v := _scratch(per, key, n, met)) else "--") for n in sizes]
+            + ["--"] * ratio) + r" \\")
         out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
     return "\n".join(out[:-1])
 
@@ -2093,6 +2157,173 @@ def per_class_ratios(fits, runs, arm) -> dict:
             if c in b and b[c] < 1:
                 out[c].append((1 - x) / (1 - b[c]))
     return out
+
+
+def per_class_auc_diff(fits, runs, arm) -> dict:
+    """{native label: [100 * (AUC_c of the run - AUC_c of the 188-class run of the same index), per index]}:
+    the per-class AUC difference of F3, in percentage points."""
+    out = collections.defaultdict(list)
+    full = {_idx(m): _per_class(fits, m) for m in runs["L188"]}
+    for m in runs[arm]:
+        a, b = _per_class(fits, m), full.get(_idx(m))
+        if a is None or b is None:
+            continue
+        for c, x in a.items():
+            if c in b:
+                out[c].append(100 * (x - b[c]))
+    return dict(out)
+
+
+def jc2_roc_classes(fits, runs, root, census) -> dict:
+    """The classes of A3R: {"hurt": [NHURT labels], "stable": [NSTABLE labels], "drop": {c: pp},
+    "change": {c: pp}}. drop_c = mean over indices of 100 (AUC_c^188 - AUC_c^17); change_c = max over
+    the 162-, 43- and 17-class label sets of |mean over indices of 100 (AUC_c^K - AUC_c^188)|.
+    Candidates: classes with at least THIN_TEST class-balanced test jets (census["counts"]["ft_test"];
+    every class when census is None). hurt = the NHURT largest drop_c; stable = the NSTABLE smallest
+    change_c among the rest. Each list in F3's row order (_class_rows, resonant before QCD)."""
+    mean = {a: {c: float(np.mean(v)) for c, v in per_class_auc_diff(fits, runs, a).items() if v}
+            for a in ("L162", "R42_Q1", "R16_Q1")}
+    drop = {c: -v for c, v in mean["R16_Q1"].items()}
+    change = {c: max(abs(mean[a][c]) for a in mean) for c in drop if all(c in mean[a] for a in mean)}
+    counts = census["counts"]["ft_test"] if census else None
+    order = {int(r["jet_label"]): i for i, r in enumerate(_class_rows(root))}
+    cand = sorted((c for c in change if counts is None or counts[c] >= THIN_TEST), key=order.get)
+    hurt = sorted(cand, key=lambda c: -drop[c])[:NHURT]
+    stable = sorted((c for c in cand if c not in hurt), key=lambda c: change[c])[:NSTABLE]
+    return {"hurt": sorted(hurt, key=order.get), "stable": sorted(stable, key=order.get), "drop": drop, "change": change}
+
+
+def _and(items: list) -> str:
+    """'a', 'a and b', 'a, b and c'; semicolons between items that hold a comma themselves."""
+    sep = "; " if any("," in x for x in items) else ", "
+    return items[0] if len(items) == 1 else sep.join(items[:-1]) + " and " + items[-1]
+
+
+def auc_diff_macros(em, fits, runs, root, census, index, native_tex) -> None:
+    """The per-class AUC differences of F3 and the class selection of A3R, in percentage points:
+    MlstPerClassAucDiff{W}SeedSdMedian (median over classes of the SD over indices), ...{W}Min and
+    ...{W}MinClass (the most negative mean difference and its class); MlstRocJcTwo{Hurt,Stable}List,
+    ...HurtMinDrop, ...HurtMaxDrop, ...StableMaxChange (jc2_roc_classes)."""
+    names = {int(r["jet_label"]): r["class_name"] for r in _class_rows(root)}
+    for arm in ("L162", "R42_Q1", "R16_Q1"):
+        w = WORD[arm]
+        d = per_class_auc_diff(fits, runs, arm)
+        sds = [float(np.std(v, ddof=1)) for v in d.values() if len(v) > 1]
+        if sds:
+            em.macro(f"MlstPerClassAucDiff{w}SeedSdMedian", _sig2(float(np.median(sds))), index,
+                     f"median over classes of the SD over indices of 100 (AUC_c of {arm} - AUC_c of 188), pp")
+        mean = {c: float(np.mean(v)) for c, v in d.items() if v}
+        if mean:
+            low = min(mean, key=mean.get)
+            em.macro(f"MlstPerClassAucDiff{w}Min", _sig2(mean[low]), index,
+                     f"most negative mean over indices of 100 (AUC_c of {arm} - AUC_c of 188), pp", names[low])
+            em.macro(f"MlstPerClassAucDiff{w}MinClass", native_tex(names[low]), index, f"its class, {arm}")
+    sel = jc2_roc_classes(fits, runs, root, census)
+    if not sel["hurt"]:
+        return
+    src = f"jc2_roc_classes on the class-balanced probes; candidates with at least {THIN_TEST} test jets"
+    for k, word in (("hurt", "Hurt"), ("stable", "Stable")):
+        em.macro(f"MlstRocJcTwo{word}List", _and([native_tex(names[c]) for c in sel[k]]), index, src,
+                 ", ".join(names[c] for c in sel[k]))
+    drops = [sel["drop"][c] for c in sel["hurt"]]
+    em.macro("MlstRocJcTwoHurtMinDrop", _sig2(min(drops)), index, src, "smallest AUC loss at 17 classes of the hurt, pp")
+    em.macro("MlstRocJcTwoHurtMaxDrop", _sig2(max(drops)), index, src, "largest AUC loss at 17 classes of the hurt, pp")
+    if sel["stable"]:
+        em.macro("MlstRocJcTwoStableMaxChange", _sig2(max(sel["change"][c] for c in sel["stable"])), index, src,
+                 "largest |AUC change| at any label set of the stable classes, pp")
+
+
+# ------------------------------------------------------------------ ROC curves (F4, F6J) and the X->ee vs X->mumu probe
+JC1_WORD = {"label_Hbb": "Hbb", "label_Hcc": "Hcc", "label_Hgg": "Hgg", "label_H4q": "Hfourq", "label_Hqql": "Hqql",
+            "label_Tbqq": "Tbqq", "label_Tbl": "Tbl", "label_Wqq": "Wqq", "label_Zqq": "Zqq"}
+LEVEL_TEX = {"L188": r"\Kfull", "L162": r"\Kres", "R42_Q1": r"\Kmid", "R16_Q1": r"\Kcoarse"}
+FLAV_PHRASE = {"FLAV_F0": "no flavor boundary", "FLAV_F1": r"a $b$-quark boundary", "FLAV_F1R": "a random flavor boundary"}
+
+
+def _roc_curves(fam: dict, ms: list, key: str) -> list:
+    """The curve of key of each model; None where the model has no file or no such curve."""
+    return [fam.get(m, {}).get("curves", {}).get(key) for m in ms]
+
+
+def _roc_cut(curves: list) -> str | None:
+    """The signal efficiency above which every run's curve is drawn: the largest cut.eps_s, two
+    decimals; 'not reached' when a run has no point with JC1_MIN_BKG background jets; None without curves."""
+    have = [c for c in curves if c is not None]
+    if not have:
+        return None
+    body = "not reached" if any(c["cut"] is None for c in have) else f"{max(c['cut']['eps_s'] for c in have):.2f}"
+    return body + (rf" \pending{{{len(have)} of {len(curves)}}}" if len(have) < len(curves) else "")
+
+
+def no_curve_phrase(arms: list) -> str:
+    """The configurations of F4 that draw no curve, as a plural noun phrase for prose and captions."""
+    lv = [LEVEL_TEX[a] for a in MAIN if a in arms]
+    fl = [a for a in FLAV if a in arms]
+    parts = []
+    if lv:
+        parts.append("the " + _and([x + "-" for x in lv[:-1]] + [lv[-1] + "-class model" + "s" * (len(lv) > 1)]))
+    if len(fl) == len(FLAV):
+        parts.append("the three random partitions with controlled flavor boundaries")
+    elif fl:
+        parts.append("the random partition" + "s" * (len(fl) > 1) + " with " + " and with ".join(FLAV_PHRASE[a] for a in fl))
+    return " and ".join(parts)
+
+
+def roc_macros(em, roc: dict, runs: dict, index, missing: list, fmt_int) -> None:
+    """From the ROC curves (mlst_v4.load_roc): MlstRocCut{pair}{W} and MlstRocCutJcOne{class}Full (_roc_cut
+    over a configuration's runs), MlstRocNBkg{pair} and MlstRocRejMax{pair} (the test set's background
+    jets and that over JC1_MIN_BKG, where every curve stops), MlstRocNoCurveEemm (the configurations
+    of F4 none of whose runs draws an X->ee vs X->mumu curve, a noun phrase)."""
+    pairs = roc.get("pairs", {})
+    for key in ROC_PAIRS:
+        p = PAIR_WORD[key]
+        for arm in MAIN + FLAV:
+            body = _roc_cut(_roc_curves(pairs, runs[arm], key))
+            if body is not None:
+                em.macro(f"MlstRocCut{p}{WORD[arm]}", body, index,
+                         f"curves_v2/pairs curve {key}: largest cut.eps_s over the {arm} runs")
+        c = next((d["curves"][key] for d in pairs.values() if key in d["curves"]), None)
+        if c is not None:
+            em.macro(f"MlstRocNBkg{p}", fmt_int(c["n_background"]), index, f"curves_v2/pairs curve {key}: n_background")
+            em.macro(f"MlstRocRejMax{p}", fmt_int(c["n_background"] / V4.JC1_MIN_BKG), index,
+                     f"curves_v2/pairs curve {key}: n_background / {V4.JC1_MIN_BKG}")
+    cur = {a: _roc_curves(pairs, runs[a], "ee_vs_mm") for a in MAIN + FLAV}
+    if pairs and all(c is not None for v in cur.values() for c in v):
+        none = [a for a, v in cur.items() if all(c["cut"] is None for c in v)]
+        if none:
+            em.macro("MlstRocNoCurveEemm", no_curve_phrase(none), index,
+                     "curves_v2/pairs curve ee_vs_mm: configurations of F4 with cut null in every run", ", ".join(none))
+        else:
+            em.macro("MlstRocNoCurveEemm", r"\pending{every configuration draws an ee/mumu curve: rewrite the "
+                     r"sentences that use this macro}", index, "curves_v2/pairs curve ee_vs_mm: every configuration "
+                     "of F4 has a run with a cut")
+            missing.append("MlstRocNoCurveEemm -- every configuration of F4 draws an X->ee vs X->mumu curve: the "
+                           "results text and the F4 caption that name those without one must be rewritten")
+    jc = roc.get("jc1_ft", {})
+    for c, _ in V4.JC1_COLS:
+        body = _roc_cut(_roc_curves(jc, runs["L188"], c))
+        if body is not None:
+            em.macro(f"MlstRocCutJcOne{JC1_WORD[c]}Full", body, index,
+                     f"curves_v2/jc1_ft curve {c}: largest cut.eps_s over the 188-class runs")
+
+
+def eemm_macros(em, fits: dict, runs: dict, index, fmt_pm, fmt_int) -> None:
+    """The X->ee vs X->mumu linear probe (fits_v4_sib, merged by mlst_v4.load_fits): MlstLpEemmAuc{W},
+    and its jets, MlstPairEemm{NTrain,NVal,NTestPerSide} (one value when every model agrees, else the range)."""
+    for arm in MAIN + FLAV + (INIT, INIT_BN):
+        v = [_pair(fits, m, "ee_vs_mm") for m in runs[arm]]
+        if any(x is not None for x in v):
+            em.macro(f"MlstLpEemmAuc{WORD[arm]}", _cell(v, len(v), fmt_pm, sep=TEXT_SEP), index,
+                     f"linear probe ee_vs_mm (fits_v4_sib): AUC, {arm}")
+    recs = [c for m, d in fits.items()
+            if (c := d["cells"].get(_ck(m), {}).get(PAIR_DS, {}).get(PAIR_N, {}).get("ee_vs_mm"))]
+    if not recs:
+        return
+    span = lambda xs: fmt_int(min(xs)) if min(xs) == max(xs) else f"{fmt_int(min(xs))}--{fmt_int(max(xs))}"
+    em.macro("MlstPairEemmNTrain", span([c["n_train"] for c in recs]), index, "fits_v4_sib ee_vs_mm: n_train")
+    em.macro("MlstPairEemmNVal", span([c["n_val"] for c in recs]), index, "fits_v4_sib ee_vs_mm: n_val")
+    em.macro("MlstPairEemmNTestPerSide", span([c[k] for c in recs for k in ("n_test_signal", "n_test_background")]),
+             index, "fits_v4_sib ee_vs_mm: n_test_signal and n_test_background")
 
 
 def table_per_class(fits, runs, fmt_pm, root, native_tex) -> str:
@@ -2631,9 +2862,12 @@ SPREAD = ("Mean $\\pm$ standard deviation over the \\MlstNRunsWord{} pretraining
 SPREAD3 = "Mean $\\pm$ standard deviation over the \\MlstNRunsWord{} pretraining runs."
 SPREAD_MASS = (SPREAD3[:-1] + "; the models with the mass regression have \\MlstMassNRunsWord{} runs, and both "
                "values are given.")
-RATIO_COL = ("The ratio column is $(1-\\mathrm{AUC})$ over that of the \\Kfull-class run of the same seed (a random "
-             "partition: of its seed).")
+RATIO_COL = ("The ratio column is $\\rho$ of equation~(\\ref{eq:ratio}), $(1-\\mathrm{AUC})$ over that of the "
+             "\\Kfull-class run of the same seed (a random partition: of its seed).")
 AUC_DEF = "AUC: area under the curve of signal efficiency against background efficiency."
+# the pairs caption's note where a 188-class run separates a pair's test jets completely (tab:pairs '--')
+ZERO_NOTE = (" A dash in a ratio column: the \\Kfull-class run of that seed separates the test jets completely "
+             "($1-\\mathrm{AUC} = 0$), so no ratio exists.")
 CAPTIONS = {
     "probes": ("tab:probes", "Linear probes on the frozen features at the largest training set of each task. "
                "Upper part: JetClass-II (class-balanced test set) accuracy and AUC averaged over its \\Kfull{} classes "
@@ -2641,18 +2875,20 @@ CAPTIONS = {
                "and over the QCD classes; JetClass accuracy and AUC. Lower part: top tagging and quark/gluon "
                "discrimination (also on Herwig jets) with the missing inputs substituted as chosen on validation for "
                "every model (\\LpSubstitutionTop{} for top, \\LpSubstitutionQg{} for quark/gluon; column headings): "
-               "accuracy, AUC and the background rejection $1/\\epsilon_B$ at 50\\% and 30\\% signal efficiency. "
+               "accuracy, AUC and the background rejection $1/\\epsB$ at 50\\% and 30\\% signal efficiency. "
                + RATIO_COL + " " + SPREAD
                + " " + AUC_DEF + " $^{*}$: a probe that did not converge."),
     "probes_n": ("tab:probesn", "Linear probes against the number of training jets (column headers): JetClass-II AUC "
                  "averaged over the classes, JetClass accuracy, and $R_{30}$ on top, quark/gluon and Herwig jets with "
                  "the missing inputs substituted as chosen on validation (\\LpSubstitutionTop{} for top, "
                  "\\LpSubstitutionQg{} for quark/gluon). " + SPREAD3 + " $^{*}$: a probe that did not converge."),
-    "pairs": ("tab:pairs", "Binary linear probes between pairs of JetClass-II classes: the AUC and the ratio of "
-              "$1-\\mathrm{AUC}$ to the \\Kfull-class run of the same seed. $^{\\dagger}$: the label set merges the two "
+    "pairs": ("tab:pairs", "Binary linear probes between pairs of JetClass-II classes: the AUC and the ratio $\\rho$ "
+              "of $1-\\mathrm{AUC}$, equation~(\\ref{eq:ratio}), to the \\Kfull-class run of the same seed. $^{\\dagger}$: the label set merges the two "
               "sides into one class; $^{\\ddagger}$: it merges the first side with part of the second. " + SPREAD
               + " The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays; every label "
-              "set but the \\Kfull-class one merges all QCD classes."),
+              "set but the \\Kfull-class one merges all QCD classes. The $X\\to ee$ vs $\\mu\\mu$ probe uses the jets of the "
+              "two classes in the class-balanced sets (\\MlstPairEemmNTrain{} training jets, \\MlstPairEemmNTestPerSide{} "
+              "test jets per side).__ZERO__"),
     "mlp": ("tab:mlp", "Nonlinear probes (a multilayer perceptron with one hidden layer of \\LpMlpHidden{} units, "
             "\\LpMlpSeedsWord{} seeds averaged) at the largest training set: JetClass-II AUC (all, resonant and QCD "
             "classes) with the ratio of $1-\\mathrm{AUC}$ to the \\Kfull-class run, JetClass AUC, and AUC and $R_{30}$ "
@@ -2674,8 +2910,9 @@ CAPTIONS = {
              "kinematic inputs only has nothing missing. The substitution chosen on validation is "
              "\\LpSubstitutionTop{} for top and \\LpSubstitutionQg{} for quark/gluon. " + SPREAD),
     "mass": ("tab:mass", "Jet mass from frozen features: a multilayer perceptron regresses the mass from the frozen "
-             "features of each configuration; the groomed (soft-drop) mass is the reference. Resolution: half the "
-             "15.9--84.1\\% inter-quantile range of $m_{\\mathrm{pred}}/m_{\\mathrm{gen}}$ divided by its median; "
+             "features of each configuration; the groomed (soft-drop) mass is the reference. Resolution: $\\sigma_r$ of "
+             "equation~(\\ref{eq:resolution}), half the 15.9--84.1\\% inter-quantile range of the response "
+             "$r = m_{\\mathrm{est}}/\\mgen$ divided by its median; "
              "and the median response, over all JetClass-II test jets with a generator match (resonant and QCD jets "
              "separately in table~\\ref{tab:massdetail}); lower resolution is better. The regression target is "
              "centred on the training median of each of the \\Kfull{} classes, a truth-label input the groomed-mass "
@@ -2693,18 +2930,20 @@ CAPTIONS = {
                     "soft-drop mass; bins with fewer than 100 jets are blank. " + SPREAD_MASS),
     "sculpt": ("tab:sculpt", "Mass sculpting: Jensen--Shannon distance (base 2) $\\times10^{2}$ between the "
                "$m_{\\mathrm{SD}}$ distributions (__SCULPT_BINS__) of all QCD test jets and of those passing a cut on "
-               "$1-p_{\\mathrm{QCD}}$ at the QCD efficiency given; lower is less sculpting. The last row is the "
+               "$1-p_{\\mathrm{QCD}}$ at the QCD efficiency $\\epsB$ given; lower is less sculpting. The last row is the "
                "distance expected for a random selection of as many of the QCD test jets (drawn without replacement). "
                + SPREAD_MASS),
     "ft": ("tab:ft", "Fine-tuning against the number of training jets (column headers), in each task's metric: AUC "
            "averaged over the classes on class-balanced JetClass-II (all classes and the QCD classes), accuracy on "
            "JetClass, and $R_{30}$ on top, quark/gluon and Herwig jets. " + SPREAD + " Each pretrained run is "
-           "fine-tuned once; from scratch: \\MlstFtRefSeedsWord{} training seeds on the same jets."),
+           "fine-tuned once; from scratch: \\MlstFtRefSeedsWord{} training seeds on the same jets. The last column of "
+           "the JetClass-II block is $\\rho$ of equation~(\\ref{eq:ratio}) at $10^{6}$ training jets, $1-\\mathrm{AUC}$ "
+           "over that of the \\Kfull-class run of the same seed."),
     "ft_rej": ("tab:ftrej", "Fine-tuning on the full training sets of top and quark/gluon (also scored on Herwig "
-               "jets), every configuration: accuracy, AUC and $1/\\epsilon_B$ at 50\\% and 30\\% signal efficiency. "
+               "jets), every configuration: accuracy, AUC and $1/\\epsB$ at 50\\% and 30\\% signal efficiency. "
                + SPREAD + " Every rejection rests on at least __FEWEST__ background jets passing the cut."),
     "bench_top": ("tab:benchtop", "Top tagging, fine-tuned on the full training set (\\LitPartTopNTrainMillion{} million "
-                  "jets): accuracy, AUC and background rejection $1/\\epsilon_B$ at 50\\% and 30\\% signal efficiency. "
+                  "jets): accuracy, AUC and background rejection $1/\\epsB$ at 50\\% and 30\\% signal efficiency. "
                   "Published rows from the tables cited; f.t.\\ marks a model pretrained on JetClass and fine-tuned. Our "
                   "pretrained models see the \\FillTopNZero{} inputs the top data lack set to zero; the model with "
                   "kinematic inputs only, a diagnostic of that mismatch, has none missing (one run). Uncertainties: "
@@ -2715,7 +2954,7 @@ CAPTIONS = {
                   "every value within one standard deviation of it."),
     "bench_qg": ("tab:benchqg", "Quark/gluon discrimination with the particle type as five flags and the charge "
                  "(ParT's exp inputs), fine-tuned on the full training set (\\LitQgTrainMillion{} million Pythia jets) "
-                 "and scored on Pythia and on Herwig jets: accuracy, AUC and $1/\\epsilon_B$ at 50\\% and 30\\% quark "
+                 "and scored on Pythia and on Herwig jets: accuracy, AUC and $1/\\epsB$ at 50\\% and 30\\% quark "
                  "efficiency. Our models see the \\FillQgNZero{} displacement inputs set to zero. Published rows (exp "
                  "inputs) from the tables cited; PFN-Ex's uncertainty is half the interquartile range of ten trainings, "
                  "the others as in table~\\ref{tab:benchtop}, with nine trainings for OmniLearned. Bold as in "
@@ -2734,7 +2973,7 @@ CAPTIONS = {
                  "ours fine-tuned on one million jets and scored on two million (the AUC on __AUCJETS__ of them). "
                  + SPREAD3 + " From scratch: three seeds. Bold: the best value of each column, and every value within "
                  "one standard deviation of it. $^\\dagger$: fewer than __MINBKG__ QCD jets pass in at least "
-                 "one run, so that run's rejection has a counting uncertainty above __MINBKGPC__\\%; these columns "
+                 "one run (equation~(\\ref{eq:cut})), so that run's rejection has a counting uncertainty above __MINBKGPC__\\%; these columns "
                  "carry no claim."),
     "jetclass_all": ("tab:jetclassall", "JetClass fine-tuning as table~\\ref{tab:jetclass}, every configuration. "
                      + SPREAD + " Bold and $^\\dagger$ as there."),
@@ -2773,7 +3012,7 @@ CAPTIONS = {
             "Transfer: a classifier on the frozen features, its seeds averaged per run (the randomly initialized "
             "network: the linear probe). Direct: Sophon's discriminant from the output scores, where $X\\to b\\bar b$ "
             "is a class of its own."),
-    "xbx_rej": ("tab:xbxrej", "Resonance tagging in the mass window: rejection $1/\\epsilon_B$ of QCD jets at 50\\% and "
+    "xbx_rej": ("tab:xbxrej", "Resonance tagging in the mass window: rejection $1/\\epsB$ of QCD jets at 50\\% and "
                 "30\\% signal efficiency. Transfer: the classifier on frozen features; direct: Sophon's discriminant "
                 "from the output scores; closest node: the pretrained $X\\to bq$ output against QCD. " + SPREAD),
     "compute": ("tab:compute", "GPU types and GPU-hours of every pretraining run, summed over the training and "
@@ -2782,7 +3021,7 @@ CAPTIONS = {
 }
 # (caption key, table file, wide, caption fill) of the tables written as placeholders until their data exist
 PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes_n", True, None),
-                ("pairs", "mlst_pairs", True, None), ("mlp", "mlst_mlp", True, None), ("bn", "mlst_bn", False, None),
+                ("pairs", "mlst_pairs", True, {"__ZERO__": ""}), ("mlp", "mlst_mlp", True, None), ("bn", "mlst_bn", False, None),
                 ("balance", "mlst_balance", False, None), ("fill", "mlst_fill", True, None),
                 ("mass", "mlst_mass", False, None), ("mass_detail", "mlst_mass_detail", True, None),
                 ("sculpt", "mlst_sculpt", False, {"__SCULPT_BINS__": r"\pending{bins}"}), ("ft", "mlst_ft", True, None),
@@ -2849,6 +3088,19 @@ REQUIRED = (
     ("MlstComputeTotalGpuHours", "compute records", ""), ("MlstGpuTypeBound", "probes", ""),
     ("MlstInputBnZeroSigmaMax", "a committed JSON of the input-normalization offsets of mtx-l188-s1 (A8)", ""),
     ("MlstBootTestMaxProbe", "bootstrap", ""), ("MlstBootTestMaxFt", "bootstrap of the balanced JetClass-II fine-tuning", ""),
+    # the ROC redesign (ROC_INTERFACE 3.2, 2026-11-02)
+    ("MlstMinBkgPass", "mlst_v4.JC1_MIN_BKG", ""), ("MlstMassMinJets", "atlas_resolution.MIN_JETS", ""),
+    *((f"MlstRocCut{p}Full", "ROC curves of the class pairs (curves_v2/pairs)", "") for p in ("Bb", "Bbqq", "Bc")),
+    ("MlstRocNoCurveEemm", "ROC curves of the class pairs (curves_v2/pairs)", ""),
+    *((f"MlstRoc{k}{p}", "ROC curves of the class pairs (curves_v2/pairs)", "")
+      for k in ("NBkg", "RejMax") for p in ("Bb", "Eemm")),
+    *((f"MlstRocCutJcOne{c}Full", "ROC curves of the JetClass fine-tuning (curves_v2/jc1_ft)", "") for c in ("Tbqq", "Tbl")),
+    *((f"MlstRocJcTwo{k}", "class-balanced per-class probes (fits_v4)", "")
+      for k in ("HurtList", "StableList", "HurtMinDrop", "HurtMaxDrop", "StableMaxChange")),
+    *((f"MlstPerClassAucDiff{k}", "class-balanced per-class probes (fits_v4)", "")
+      for k in ("CoarseSeedSdMedian", "MidMin", "MidMinClass")),
+    *((f"MlstLpEemmAuc{w}", "the ee/mumu probe (fits_v4_sib)", "") for w in ("Full", "Mid", "Coarse")),
+    *((f"MlstPairEemm{k}", "the ee/mumu probe (fits_v4_sib)", "") for k in ("NTrain", "NVal", "NTestPerSide")),
 )
 
 
@@ -2925,9 +3177,12 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                                                                    chosen), True),
            "tables/mlst_probes_n.tex": _float("probes_n", table_probes_n(fits, runs, fmt_pm, MAIN + MASS + (INIT, INIT_BN),
                                                                          fill, chosen), True),
-           "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, runs, fmt_pm, status, MAIN + MASS + RAND + FLAV), True),
+           "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, runs, fmt_pm, status, MAIN + MASS + RAND + FLAV), True,
+                                           fill={"__ZERO__": ZERO_NOTE if any(separated(fits, runs, k) for k, *_ in PAIRS)
+                                                 else ""}),
            "tables/mlst_balance.tex": _float("balance", table_balance(fits3, fits_v4, runs, fmt_pm, ALL_ROWS + (INIT_BN,)))}
     comparisons(em, fits, runs, status, index, fmt_pm)
+    eemm_macros(em, fits, runs, index, fmt_pm, fmt_int)
     probe_abs_macros(em, fits, runs, index, fmt_pm)
     if fits3:
         bn_macros(em, fits3, runs, index)
@@ -2935,12 +3190,23 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     V4.gpu_bound_macro(em, fits, runs, comp, index)
     per_class_macros(em, fits, runs, root, index, fmt_pm, native_tex)
     out["tables/mlst_per_class.tex"] = _longtable("per_class", table_per_class(fits, runs, fmt_pm, root, native_tex))
-    if fits_v4 and sjb:
-        census = data / "jc2bal" / "census.json"
-        if census.exists():
-            test = json.loads(census.read_text())["counts"]["ft_test"]
-            em.macro("MlstJcBalNThin", str(sum(min(c, sjb.TEST_PER_CLASS) < 1000 for c in test)), census,
-                     "counts.ft_test", "classes with fewer than 1,000 class-balanced test jets (F3 hatching)")
+    census = data / "jc2bal" / "census.json"
+    census_doc = json.loads(census.read_text()) if census.exists() else None
+    if fits_v4:
+        # the per-class AUC differences of F3 and the classes of A3R: class-balanced probes only
+        auc_diff_macros(em, fits, runs, root, census_doc, index, native_tex)
+        if census_doc:
+            test = census_doc["counts"]["ft_test"]
+            em.macro("MlstJcBalNThin", str(sum(min(c, sjb.TEST_PER_CLASS) < THIN_TEST for c in test)), census,
+                     "counts.ft_test", f"classes with fewer than {THIN_TEST} class-balanced test jets (F3 hatching)")
+    # the ROC figures: the background-jet cut, and the curves' cut points and test-set sizes (curves_v2)
+    em.macro("MlstMinBkgPass", str(V4.JC1_MIN_BKG), root / "experiments/FIGS/mlst_v4.py", "JC1_MIN_BKG",
+             "fewest background jets behind a drawn ROC point or a quoted rejection")
+    em.macro("MlstMassMinJets", str(MASS_MIN_JETS), root / "experiments/EVAL/atlas_resolution.py", "MIN_JETS",
+             "jets below which a mass bin is null")
+    roc = V4.load_roc(data)
+    missing += [f"ROC curves -- experiments/FIGS/data/v2/{V4.ROC_DIR}/{f}/" for f in V4.ROC_FAMILIES if f not in roc]
+    roc_macros(em, roc, runs, index, missing, fmt_int)
     trained = {(m, ds, n) for (m, ds, n) in UNCONVERGED_SEEN if not m.startswith(("init-", "initbn-"))}
     em.macro("MlstProbeUnconverged", str(len(trained)), index, "linear probes of pretrained models that did not converge (count)")
     em.macro("MlstProbeUnconvergedInit", str(len(UNCONVERGED_SEEN) - len(trained)), index,

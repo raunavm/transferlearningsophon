@@ -34,6 +34,9 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
                                    the kinematic-only model's top probe among them (jc2bal-kin)
   linprobe/fits_v4_fill/           the three substitutions of the missing inputs side by side
                                    (probe_bal.py --fill, scripts/build_jc2bal_jobs.py fitfill)
+  linprobe/fits_v4_sib/            the X->ee vs X->mumu probe (probe_bal.py --sibling-pairs, jc2bal-sib)
+  curves_v2/<family>/<model>.json  per-class ROC curves with the 20-background-jet cut
+                                   (experiments/FT/roc_points.py; families whose DONE exists, no npz)
   head/atlas_res/<model>.json      ATLAS mass resolution and median response (/data/results/eval/atlas_res)
   xbx_scratch/<signal>/s<k>.json   X->bs from scratch, its finished cells' endpoints.json
                                    (scripts/build_xbx_jobs.py SCRATCH_ROOT_IHEP/<signal>/s<k>/)
@@ -170,6 +173,7 @@ def main() -> int:
         v4 = ((EVAL / "v2_linprobe_bal" / "fits_v4", "linprobe/fits_v4", "*.json"),
               (EVAL / "v2_linprobe_bal" / "fits_v4_mlp", "linprobe/fits_v4_mlp", "*.json"),
               (EVAL / "v2_linprobe_bal" / "fits_v4_fill", "linprobe/fits_v4_fill", "*.json"),
+              (EVAL / "v2_linprobe_bal" / "fits_v4_sib", "linprobe/fits_v4_sib", "*.json"),
               (EVAL / "atlas_res", "head/atlas_res", "*.json"),
               (bal, "jc2bal", "census.json"), (bal, "jc2bal", "manifest.json"),
               (EVAL / "v2_head" / "curves_v2", "head/curves_v2", "*.json"),
@@ -183,6 +187,13 @@ def main() -> int:
                 json.loads(b)
                 rel = f"{f.parent.name}.json" if name == "partrepro" else f.name
                 add(f"{name}/{rel}", b)
+        # ROC curves (experiments/FT/roc_points.py): a family whose job finished it (DONE); each file
+        # must parse. Not head/curves_v2 (the mass response), a separate tree.
+        for fam in sorted(d for d in (FT / "curves_v2").glob("*") if (d / "DONE").exists()):
+            for f in sorted(fam.glob("*.json")):
+                b = f.read_bytes()
+                json.loads(b)
+                add(f"curves_v2/{fam.name}/{f.name}", b)
         # X->bs from scratch (scripts/build_xbx_jobs.py SCRATCH_ROOT_IHEP): finished cells only
         for f in sorted(pathlib.Path("/data/results/xbx/scratch_ihep").glob("*/s*/endpoints.json")):
             if (f.parent / "DONE").exists():

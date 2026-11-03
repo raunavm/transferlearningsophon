@@ -19,7 +19,10 @@ What changes from linear_probe_v2.py's fits_v3, whose fitting and metrics this r
     quark/gluon (with Herwig) at every training size with zero fill (the config's), mean fill
     (ntop/nqg) and four-draw imputation (itop4/iqg4), and jc2bal at its largest training set with
     the same fills of the top and quark/gluon slots; the zero-fill features re-extracted there are
-    checked against the stored ones (same jets, largest feature difference recorded).
+    checked against the stored ones (same jets, largest feature difference recorded);
+  * --sibling-pairs (2026-11-02) fits only SIBLING_PAIRS (X->ee vs X->mumu), merged at 43 and 17
+    classes and with no staged pair set: about 1e4 training jets from the balanced 1e6 set and the
+    5,000 + 5,000 jets of the balanced test set, the pairs' protocol otherwise.
 Top and quark/gluon (and Herwig) read the features linear_probe_v2.py read (--old-root). Every cell's
 fitted probe and test probabilities are saved (--probs-out), so per-class metrics and the bootstrap
 need no refit.
@@ -53,6 +56,12 @@ C_GRID_V4 = (0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0)
 PAIR_VAL_FRACTION = 0.1
 PAIR_SEED = 20261031
 N_NATIVE = 188
+# Sibling pairs the coarse label sets merge, with no pair set staged for them (ROC redesign, PI
+# 2026-11-02: the largest per-class costs are lepton merges): trained on the pair's jets of the
+# balanced 1e6 training set (a tenth held out for C, as the pairs) and scored on its jets of the
+# balanced test set, signal = the first side
+SIBLING_PAIRS = {"ee_vs_mm": (("label_X_ee",), ("label_X_mm",))}
+SIBLING_TRAIN, SIBLING_TEST = "train_N1000000", "test"
 
 
 def _load(name, rel):
@@ -147,6 +156,34 @@ def pair_cells(model: str, ckpt: str, probe, save) -> dict:
         if save:
             save(f"jc2bal_pairs_{pair}", sc, clf, rec, trow, yte, s=p[:, lp.SIGNAL_COLUMN])
         print(f"  {model} {ckpt} pair {pair}: auc={cells[pair]['auc']:.5f} C={rec['C']}", flush=True)
+    return cells
+
+
+def sibling_pair_cells(model: str, ckpt: str, probe, save, names: dict) -> dict:
+    """SIBLING_PAIRS on the balanced sets, pair_cells' protocol; names: native label -> class name.
+    The saved rows index the balanced test extraction."""
+    label = {v: k for k, v in names.items()}
+    xtr, ytr, _ = load(model, "jc2bal", SIBLING_TRAIN, ckpt)
+    xte, yte_all, _ = load(model, "jc2bal", SIBLING_TEST, ckpt)
+    cells = {}
+    for pair, (sig, bkg) in SIBLING_PAIRS.items():
+        s, b = [label[n] for n in sig], [label[n] for n in bkg]
+        rs, rb = np.flatnonzero(np.isin(ytr, s)), np.flatnonzero(np.isin(ytr, b))
+        rows = np.concatenate([rs, rb])
+        y = np.concatenate([np.ones(rs.size, np.int64), np.zeros(rb.size, np.int64)])
+        r = np.random.default_rng([PAIR_SEED, sum(map(ord, pair))])
+        isval = r.random(rows.size) < PAIR_VAL_FRACTION
+        ts, tb = np.flatnonzero(np.isin(yte_all, s)), np.flatnonzero(np.isin(yte_all, b))
+        trow = np.concatenate([ts, tb])
+        yte = np.concatenate([np.ones(ts.size, np.int64), np.zeros(tb.size, np.int64)])
+        sc, clf, rec = lp.fit(xtr[rows[~isval]], y[~isval], xtr[rows[isval]], y[isval], 2)
+        p = lp.full_proba(clf, sc.transform(xte[trow]), 2)
+        cells[pair] = {**lp.binary_metrics(p, yte, probe), **rec, "n_train": int((~isval).sum()),
+                       "n_val": int(isval.sum()), "n_test_signal": int(ts.size), "n_test_background": int(tb.size),
+                       "train_set": f"jc2bal/{SIBLING_TRAIN}", "test_set": f"jc2bal/{SIBLING_TEST}"}
+        if save:
+            save(f"jc2bal_pairs_{pair}", sc, clf, rec, trow, yte, s=p[:, lp.SIGNAL_COLUMN])
+        print(f"  {model} {ckpt} sibling pair {pair}: auc={cells[pair]['auc']:.5f} C={rec['C']}", flush=True)
     return cells
 
 
@@ -272,6 +309,7 @@ def main(argv=None) -> int:
     ap.add_argument("--old-only", nargs="+", metavar="DATASET",
                     help="only these of jc1/top/qg, no balanced JetClass-II (the kinematic-only models: top)")
     ap.add_argument("--fill", action="store_true", help="the fills of the absent inputs side by side (fill_cells)")
+    ap.add_argument("--sibling-pairs", action="store_true", help="SIBLING_PAIRS only (sibling_pair_cells)")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--probs-out", type=pathlib.Path, default=None)
     a = ap.parse_args(argv)
@@ -298,6 +336,10 @@ def main(argv=None) -> int:
             doc["probe"] = "linear, fills of the absent inputs"
             doc["fills"] = {k: list(v) for k, v in FILLS.items()}
             doc["cells"][ckpt] = fill_cells(a.model, ckpt, helpers, a.probs_out)
+            continue
+        if a.sibling_pairs:
+            doc["probe"] = "linear, sibling pairs on the class-balanced sets"
+            doc["cells"][ckpt] = {"jc2bal_pairs": sibling_pair_cells(a.model, ckpt, probe, save, names)}
             continue
         if a.mlp:
             doc["probe"] = "mlp"

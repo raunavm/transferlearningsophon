@@ -89,7 +89,7 @@ VAL_SIZE = {"jc2b": 20_480}        # the balanced validation file (188 x 109 at 
 TEST_CFG = {"jc2b": "configs/data/JetClassII_base.yaml"}
 FULL = {"topkin": 1_200_000, "top": 1_200_000, "topmean": 1_200_000}   # the full training set: ParT's
 # recipe, 20 epochs, no early stop (top's full set only in the fill check; bench stops at 1e5)
-KIN_RUNS = ("l188kin-s1", "r16q1kin-s1")
+KIN_RUNS = ("l188kin-s1",)          # the 17-class kinematic-only run was stopped for good (2026-11-01)
 FULL_MEM = "88Gi"
 
 

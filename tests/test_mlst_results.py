@@ -86,9 +86,13 @@ def test_the_merge_marks_follow_the_label_maps():
     assert set(s["L188"].values()) == {"apart"}
     assert {k for k, v in s["L162"].items() if v == "merged"} == qcd     # 162 classes merge only QCD
     assert s["R42_Q1"] == {"bc_vs_bq_cs": "partly", "bb_vs_cc": "apart", "bbqq_vs_ccqq": "apart",
-                           **{k: "merged" for k in qcd}}
+                           "ee_vs_mm": "merged", **{k: "merged" for k in qcd}}
     assert set(s["R16_Q1"].values()) == {"merged"}
     assert all(s[a][k] == "merged" for a in M.RAND + M.FLAV for k in qcd)
+    # X->ee vs X->mumu: merged at 43 and 17 classes and by random partitions 1, 2 and 4; kept apart by the
+    # flavour partitions (ee shares a group with the X->qq decays there)
+    assert {a for a in M.RAND if s[a]["ee_vs_mm"] == "merged"} == {"RAND2_p1", "RAND2_p2", "RAND2_p4"}
+    assert all(s[a]["ee_vs_mm"] == "apart" for a in M.FLAV)
     assert s["L162_MASS"] == s["L162"] and s["R16_Q1_MASS"] == s["R16_Q1"]
 
 
@@ -687,6 +691,174 @@ def test_where_the_per_class_cost_sits_follows_the_label_maps():
     assert em.m["MlstPerClassCoarseTopClass"] in lepton and int(em.m["MlstPerClassCoarseLeptonN"]) > 0
     assert int(em.m["MlstPerClassCoarseQuarkN"]) > 0 and em.m["MlstPerClassCoarseQuarkMedian"] in ("3.00", "4.00", "5.00")
     assert em.m["MlstPerClassRandFlavMergedOverApart"].startswith(r"\pending")
+
+
+def _pc(aucs: dict) -> dict:
+    """A v3-layout probe file with only the per-class AUCs of the largest JetClass-II set."""
+    return {"cells": {"best70": {"jc2_188": {"1000000": {"per_class_auc": {str(c): a for c, a in aucs.items()}}}}}}
+
+
+def test_the_per_class_auc_difference_is_taken_against_the_188_class_run_of_the_same_index():
+    runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2"], "R16_Q1": ["mtx-r16q1-s1", "mtx-r16q1-s3"]}
+    fits = {"mtx-l188-s1": _pc({0: 0.99, 1: 0.95}), "mtx-l188-s2": _pc({0: 0.98, 1: 0.96}),
+            "mtx-r16q1-s1": _pc({0: 0.97, 1: 0.95}), "mtx-r16q1-s3": _pc({0: 0.5, 1: 0.5})}
+    d = M.per_class_auc_diff(fits, runs, "R16_Q1")
+    # percentage points, 100 (0.97 - 0.99) and 100 (0.95 - 0.95); s3 has no 188-class partner
+    assert set(d) == {0, 1} and d[0] == pytest.approx([-2.0]) and d[1] == pytest.approx([0.0])
+    assert M.per_class_auc_diff(fits, runs, "L188") == {0: [0.0, 0.0], 1: [0.0, 0.0]}
+
+
+def test_the_jetclass2_roc_classes_are_the_largest_drops_and_the_least_changed_among_the_thick_classes():
+    runs = M._paper(ROOT)
+    big, quiet = list(range(9)), [40, 41, 42, 43]     # drops of 1..9 percentage points at 17; unchanged
+    def auc(arm, c):
+        if c in quiet or arm == "L188":
+            return 0.99
+        if c in big:
+            return 0.99 - 0.01 * (big.index(c) + 1) if arm == "R16_Q1" else 0.99
+        return 0.99 - 0.002                           # every other class: 0.2 points at every coarser level
+    fits = {m: _pc({c: auc(arm, c) for c in range(188)}) for arm in M.MAIN for m in runs[arm]}
+    counts = [5000] * 188
+    counts[big[8]] = 500                               # the largest drop is a thin class: not a candidate
+    order = [int(r["jet_label"]) for r in M._class_rows(ROOT)]
+    in_order = lambda cs: sorted(cs, key=order.index)
+    sel = M.jc2_roc_classes(fits, runs, ROOT, {"counts": {"ft_test": counts}})
+    assert sel["hurt"] == in_order(big[:8]) and sel["stable"] == in_order(quiet)
+    assert sel["drop"][big[3]] == pytest.approx(4.0) and sel["change"][big[3]] == pytest.approx(4.0)
+    assert sel["change"][quiet[0]] == 0 and sel["change"][100] == pytest.approx(0.2)
+    # without the census every class is a candidate
+    assert sel["hurt"] != M.jc2_roc_classes(fits, runs, ROOT, None)["hurt"]
+    assert big[8] in M.jc2_roc_classes(fits, runs, ROOT, None)["hurt"]
+    em = _PEm()
+    M.auc_diff_macros(em, fits, runs, ROOT, {"counts": {"ft_test": counts}}, None, lambda n: n)
+    names = {int(r["jet_label"]): r["class_name"] for r in M._class_rows(ROOT)}
+    assert em.m["MlstRocJcTwoHurtMinDrop"] == "1.0" and em.m["MlstRocJcTwoHurtMaxDrop"] == "8.0"
+    assert em.m["MlstRocJcTwoStableMaxChange"] == "0"
+    assert em.m["MlstRocJcTwoStableList"] == M._and([names[c] for c in in_order(quiet)])
+    assert em.m["MlstPerClassAucDiffCoarseMin"] == "-9.0" and em.m["MlstPerClassAucDiffCoarseMinClass"] == names[big[8]]
+    assert float(em.m["MlstPerClassAucDiffCoarseSeedSdMedian"]) < 1e-9     # equal runs (up to rounding of the mean)
+
+
+def test_the_list_of_configurations_without_a_curve_reads_as_a_noun_phrase():
+    assert M.no_curve_phrase(["L188"]) == r"the \Kfull-class model"
+    assert M.no_curve_phrase(["L188", "L162"] + list(M.FLAV)) == \
+        r"the \Kfull- and \Kres-class models and the three random partitions with controlled flavor boundaries"
+    assert M.no_curve_phrase(["R42_Q1", "R16_Q1", "FLAV_F1"]) == \
+        r"the \Kmid- and \Kcoarse-class models and the random partition with a $b$-quark boundary"
+    assert M._and(["a", "b", "c"]) == "a, b and c" and M._and(["QCD, $b$", "x"]) == "QCD, $b$ and x"
+
+
+def _curve(cut, n_bkg=200000, sha="s"):
+    """One curve of the roc_points.py schema on the grid of _roc_tree (cut None: no point has 20 background jets)."""
+    return {"rejection": [1e4, 100.0, 5.0], "n_background": n_bkg, "label_sha256": sha,
+            "cut": None if cut is None else {"eps_s": cut, "eps_b": 1e-4, "rejection": 1e4, "n_bkg_pass": 20}}
+
+
+def _roc_tree(d, curves: dict, family="pairs", min_bkg=20):
+    """curves_v2/<family>/<model>.json with {model: {key: curve}} on a three-point grid."""
+    (d / "curves_v2" / family).mkdir(parents=True, exist_ok=True)
+    for m, keys in curves.items():
+        (d / "curves_v2" / family / f"{m}.json").write_text(json.dumps(
+            {"eps_grid": [0.1, 0.5, 0.9], "min_bkg_pass": min_bkg, "curves": keys}))
+
+
+def test_the_roc_curves_are_cut_where_fewer_than_twenty_background_jets_pass(tmp_path):
+    runs = M._paper(ROOT)
+    keep = {"L188", "L162", "FLAV_F0", "FLAV_F1", "FLAV_F1R"}            # keep X->ee and X->mumu apart
+    cur = {}
+    for arm in M.MAIN + M.FLAV:
+        for k, m in enumerate(runs[arm]):
+            cur[m] = {"bb_vs_cc": _curve(0.4 + 0.1 * k),
+                      "ee_vs_mm": _curve(None if arm in keep else 0.06, n_bkg=5000, sha="e")}
+    _roc_tree(tmp_path, cur)
+    roc = M.V4.load_roc(tmp_path)
+    assert set(roc) == {"pairs"} and M.V4.JC1_MIN_BKG == 20
+    first = roc["pairs"][runs["L188"][0]]                                 # cut at 0.4
+    eps, rej = M.V4.roc_series(first, "bb_vs_cc")
+    assert list(eps) == [0.1, 0.5, 0.9] and math.isnan(rej[0]) and list(rej[1:]) == [100.0, 5.0]
+    assert all(math.isnan(x) for x in M.V4.roc_series(first, "ee_vs_mm")[1])           # cut null: nothing drawn
+    assert M.V4.roc_series(first, "qg") is None
+    assert M.V4.roc_limit(first, "ee_vs_mm") == 250
+    em, missing = _PEm(), []
+    M.roc_macros(em, roc, runs, None, missing, MT.fmt_int)
+    n = len(runs["L188"])
+    assert em.m["MlstRocCutBbFull"] == f"{0.4 + 0.1 * (n - 1):.2f}" and em.m["MlstRocCutEemmFull"] == "not reached"
+    assert em.m["MlstRocCutEemmCoarse"] == "0.06"
+    assert em.m["MlstRocNBkgBb"] == "200{,}000" and em.m["MlstRocRejMaxBb"] == "10{,}000"
+    assert em.m["MlstRocNBkgEemm"] == "5{,}000" and em.m["MlstRocRejMaxEemm"] == "250"
+    assert em.m["MlstRocNoCurveEemm"] == M.no_curve_phrase(sorted(keep)) and not missing
+    # every configuration drawing a curve leaves the sentences that name those without one false: a marker
+    for m in cur:
+        cur[m]["ee_vs_mm"] = _curve(0.06, n_bkg=5000, sha="e")
+    _roc_tree(tmp_path, cur)
+    em, missing = _PEm(), []
+    M.roc_macros(em, M.V4.load_roc(tmp_path), runs, None, missing, MT.fmt_int)
+    assert em.m["MlstRocNoCurveEemm"].startswith(r"\pending") and any("MlstRocNoCurveEemm" in x for x in missing)
+
+
+def test_curves_of_one_key_scored_on_different_jets_or_another_cut_stop_the_build(tmp_path):
+    _roc_tree(tmp_path, {"mtx-l188-s1": {"top": _curve(0.1, sha="a")}, "mtx-l188-s2": {"top": _curve(0.1, sha="b")}},
+              family="top_ft")
+    with pytest.raises(SystemExit, match="different jets"):
+        M.V4.load_roc(tmp_path)
+    _roc_tree(tmp_path / "x", {"mtx-l188-s1": {"top": _curve(0.1)}}, family="top_ft", min_bkg=50)
+    with pytest.raises(SystemExit, match="min_bkg_pass"):
+        M.V4.load_roc(tmp_path / "x")
+
+
+def test_the_ee_mumu_probe_joins_the_v4_pairs_and_gives_its_macros(tmp_path):
+    cell = lambda auc, ntr=9575: {"auc": auc, "n_train": ntr, "n_val": 1064, "n_test_signal": 5000,
+                                  "n_test_background": 5000, "C": 1.0, "converged": True}
+    v4 = lambda cks: {"c_grid": [1.0], "cells": {ck: {"jc2bal": {"1000000": {}}, "jc2bal_pairs": {}} for ck in cks}}
+    sib = lambda cks, auc: {"cells": {ck: {"jc2bal_pairs": {"ee_vs_mm": cell(auc)}} for ck in cks}}
+    (tmp_path / "linprobe/fits_v4").mkdir(parents=True)
+    (tmp_path / "linprobe/fits_v4_sib").mkdir(parents=True)
+    for m, cks, auc in (("mtx-l188-s1", ["best70"], 1.0), ("mtx-r42q1-s1", ["best70"], 0.96),
+                        ("init-s1", ["init", "init_bn"], 0.7)):
+        (tmp_path / "linprobe/fits_v4" / f"{m}.json").write_text(json.dumps(v4(cks)))
+        (tmp_path / "linprobe/fits_v4_sib" / f"{m}.json").write_text(json.dumps(sib(cks, auc)))
+    (tmp_path / "linprobe/fits_v4_sib" / "mtx-l162-s1.json").write_text(json.dumps(sib(["best70"], 0.99)))
+    fits, raw = M.V4.load_fits(tmp_path)
+    assert M._pair(fits, "mtx-r42q1-s1", "ee_vs_mm") == 0.96 and M._pair(fits, "initbn-s1", "ee_vs_mm") == 0.7
+    assert "mtx-l162-s1" not in fits                     # no v4 file: not merged
+    runs = {"L188": ["mtx-l188-s1"], "R42_Q1": ["mtx-r42q1-s1"]}
+    assert M.separated(fits, runs, "ee_vs_mm") == {"1"} and M.separated(fits, runs, "bb_vs_cc") == set()
+    t = M.table_pairs(fits, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188", "R42_Q1"))
+    first = t.split("%SPLIT%")[0]
+    assert r"$X\to ee$ vs $\mu\mu$" in first and first.count(r"\multicolumn{2}") == 4
+    assert r"\Kmid{} classes & " in first and r"0.960$^{\dagger}$ & -- \\" in first   # no ratio to a perfect separation
+    em = _PEm()
+    M.eemm_macros(em, fits, {**runs, **{a: [] for a in ("L162", "R16_Q1") + M.FLAV}, M.INIT: ["init-s1"],
+                             M.INIT_BN: ["initbn-s1"]}, None, MT.fmt_pm, MT.fmt_int)
+    assert em.m["MlstLpEemmAucMid"] == "0.960" and em.m["MlstLpEemmAucInitBn"] == "0.700"
+    assert em.m["MlstPairEemmNTrain"] == "9{,}575" and em.m["MlstPairEemmNTestPerSide"] == "5{,}000"
+    fits["mtx-r42q1-s1"]["cells"]["best70"]["jc2_188_pairs"]["1000000"]["ee_vs_mm"]["n_train"] = 9580
+    em = _PEm()
+    M.eemm_macros(em, fits, {**runs, **{a: [] for a in ("L162", "R16_Q1") + M.FLAV}, M.INIT: [], M.INIT_BN: []},
+                  None, MT.fmt_pm, MT.fmt_int)
+    assert em.m["MlstPairEemmNTrain"] == "9{,}575--9{,}580" and "MlstLpEemmAucInit" not in em.m
+
+
+def test_the_jetclass2_fine_tuning_block_has_the_ratio_column_at_one_million_jets(tmp_path):
+    _ft_tree(tmp_path, ["l188-s1", "r16q1-s1"])
+    _, per, _ = M.load_ft(tmp_path)
+    t = M.table_ft(per, {"L188": ["mtx-l188-s1"], "R16_Q1": ["mtx-r16q1-s1"]}, MT.fmt_pm, ("L188", "R16_Q1"))
+    jc2, jc1 = t.split("%SPLIT%")[0], t.split("%SPLIT%")[2]
+    assert r"$\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$, $10^{6}$ jets" in jc2 and "frac" not in jc1
+    # (1 - 0.91) / (1 - 0.90) run by run; the 188-class row 1; from scratch has none
+    assert r"\Kcoarse{} classes & 0.910 & 0.910 & 0.900 \\" in jc2 and r"\Kfull{} classes & 0.900 & 0.900 & 1 \\" in jc2
+    assert jc2.splitlines()[-3].endswith(r"& -- \\")
+
+
+def test_the_new_paper_macros_wait_for_their_inputs_and_the_captions_use_the_methods_symbols():
+    names = {n for n, _, _ in M.REQUIRED}
+    assert {"MlstMinBkgPass", "MlstMassMinJets", "MlstRocNoCurveEemm", "MlstRocCutBcFull", "MlstRocCutJcOneTblFull",
+            "MlstRocJcTwoStableMaxChange", "MlstPerClassAucDiffMidMinClass", "MlstLpEemmAucCoarse",
+            "MlstPairEemmNTestPerSide", "MlstRocRejMaxEemm"} <= names
+    assert M.MASS_MIN_JETS == 100 and M.THIN_TEST == 1000 and M.ROC_PAIRS[-1] == "ee_vs_mm"
+    assert not any("epsilon" in cap for _, cap in M.CAPTIONS.values())
+    assert "eq:resolution" in M.CAPTIONS["mass"][1] and r"m_{\mathrm{pred}}" not in M.CAPTIONS["mass"][1]
+    assert "ee_vs_mm" not in M.MLP_JC2 and [k for k, *_ in M.PAIRS[:4]][-1] == "ee_vs_mm"
 
 
 def test_the_groomed_mass_agrees_across_files_up_to_rounding_only():

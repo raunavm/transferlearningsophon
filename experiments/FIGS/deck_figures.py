@@ -270,12 +270,12 @@ def pairs(M, fits, runs, outdir, out):
     filled where it merges part of it."""
     if not fits:
         return None
-    rows = {k: {r: v for r, v in MF.pair_rows(M, fits, runs, k).items() if r in LEVELS} for k, _, _, _ in M.PAIRS}
+    rows = {k: {r: v for r, v in MF.pair_rows(M, fits, runs, k).items() if r in LEVELS} for k, _, _, _ in M.MLP_PAIRS}
     if not all(any(r.values()) for r in rows.values()):
         return None
     _start()
     status = M.merge_status(REPO)
-    fig = MF._dot_figure(M, [(k, h) for k, h, _, _ in M.PAIRS], lambda k: rows[k],
+    fig = MF._dot_figure(M, [(k, h) for k, h, _, _ in M.MLP_PAIRS], lambda k: rows[k],
                          MF._positions((LEVELS,)), ncols=3, width=0.6 * style.PANEL,
                          fill=lambda k, row: MF.FILL[status.get(row, {}).get(k, "apart")])
     w, h = fig.get_size_inches()

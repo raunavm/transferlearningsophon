@@ -109,3 +109,49 @@ def test_a_fit_job_of_one_model_keeps_its_model_and_avoids_the_bad_nodes():
     assert f"  0) MODEL={model};" in script and "  1) MODEL=" not in script
     assert f"  29) MODEL={model};" in whole["spec"]["template"]["spec"]["containers"][0]["args"][0]
     assert "k8s-haosu-10.sdsc.optiputer.net" in text
+
+
+def test_the_sibling_pair_separates_a_separable_pair_and_saves_consistent_rows(tmp_path, monkeypatch):
+    """X->ee vs X->mumu on the balanced sets: the other classes' jets are not used, the saved rows
+    index the test extraction, y = 1 on the electron side, and a separable pair gives AUC 1."""
+    probe = pb._load("probe", "experiments/EVAL/probe.py")
+    r = np.random.default_rng(4)
+    names = {0: "label_X_bb", 10: "label_X_ee", 11: "label_X_mm"}
+
+    def split(n):
+        y = r.choice([0, 10, 11], size=n)
+        x = r.normal(size=(n, 128)).astype(np.float32)
+        x[:, 0] += 6.0 * (y == 10) - 6.0 * (y == 11)
+        return x, y.astype(np.int64)
+    data = {"train_N1000000": split(900), "test": split(600)}
+    monkeypatch.setattr(pb, "load", lambda model, ds, sp, ck, root=pb.NEW_ROOT: (*data[sp], {}))
+    save = pb.lp.saver(tmp_path, "m", "best70")
+    cell = pb.sibling_pair_cells("m", "best70", probe, save, names)["ee_vs_mm"]
+    ytr, yte = data["train_N1000000"][1], data["test"][1]
+    assert cell["auc"] == pytest.approx(1.0, abs=1e-12) and cell["n_train"] + cell["n_val"] == int(np.isin(ytr, (10, 11)).sum())
+    assert (cell["n_test_signal"], cell["n_test_background"]) == (int((yte == 10).sum()), int((yte == 11).sum()))
+    assert cell["train_set"] == "jc2bal/train_N1000000" and cell["test_set"] == "jc2bal/test"
+    z = np.load(tmp_path / "m" / "best70" / "jc2bal_pairs_ee_vs_mm.npz")
+    assert np.array_equal(yte[z["rows"]], np.where(z["y"] == 1, 10, 11))
+    assert z["s"][z["y"] == 1].min() > z["s"][z["y"] == 0].max()
+    assert pb.SIBLING_PAIRS == {"ee_vs_mm": (("label_X_ee",), ("label_X_mm",))}
+
+
+def test_the_sibling_job_is_cpu_covers_every_model_and_avoids_the_bad_nodes():
+    import yaml
+    spec = importlib.util.spec_from_file_location("build_jc2bal_jobs", ROOT / "scripts/build_jc2bal_jobs.py")
+    BJ = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(BJ)
+    name, text = BJ.sib_spec("t", 5)
+    d = yaml.safe_load(text)
+    c = d["spec"]["template"]["spec"]["containers"][0]
+    assert name == d["metadata"]["name"] == "jc2bal-sib-raunav" and d["spec"]["completions"] == len(BJ.models()) == 30
+    assert d["spec"]["parallelism"] == 5 and "nvidia.com/gpu" not in c["resources"]["limits"]
+    assert c["resources"]["limits"]["memory"] == "16Gi" and c["resources"]["limits"]["cpu"] == "4"
+    assert "k8s-haosu-10.sdsc.optiputer.net" in text and "configmap" not in text.lower()
+    a = c["args"][0]
+    assert "--sibling-pairs" in a and f"--out {BJ.LP_BAL}/fits_v4_sib " in a and f"--probs-out {BJ.LP_BAL}/fits_v4_sib_probs" in a
+    assert '/${MODEL}/DONE ] || { echo "FATAL: ${MODEL} is not extracted"; exit 42; }' in a
+    assert 'MODEL=init-s1; CKPTS="init init_bn";;' in a and 'MODEL=mtx-l188-s1; CKPTS="best70";;' in a
+    # the CPU jobs launched before keep their text: no node exclusion unless asked
+    assert "k8s-haosu-10" not in BJ.fit_spec("t", 5, True)[1]

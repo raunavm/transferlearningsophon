@@ -24,9 +24,13 @@
 %   Phase B macro inventory; the generator writes their environments and captions.
 % - Cross-references: figure~\ref{...}, table~\ref{...}, section~\ref{...}, equation~(\ref{...}).
 %
+% - Notation: the symbols of the Methods equations are the macros defined below (\epsS, \epsB, \Nout,
+%   ...), so that every section, caption and table writes a quantity the same way. Sophon's symbols are
+%   kept where the quantity is Sophon's (g_i, N_out, N_latent, Z, eps_B; arXiv:2405.12972 Eqs. 1-5).
+%
 % Build: the render job runs make_tables.py and paper_figures.py (figures into ../../figures/mlst/)
 % and then `tectonic -X compile main.tex` in this directory. Tectonic is XeTeX-based (Unicode fonts,
-% TU encoding), which decides the sans-serif set-up below.
+% TU encoding).
 %
 % Order (WRITING_GUIDE section 10): front matter, Introduction, Related work, Methods, Results,
 % Discussion and conclusion; end matter in the iopjournal template order (acknowledgements with
@@ -50,32 +54,35 @@
 \usetikzlibrary{arrows.meta}    % the only TikZ library fig_f1.tex uses
 % No siunitx: neither the generated tables nor the generators use it (checked 2026-11-02).
 
-% Helvetica for \sffamily only (figure text, MLST font list); the body keeps the default serif.
-% Unscaled, as fig_f1.tex requires: its font sizes are the printed sizes (8.5-10 pt).
-% Under XeTeX (tectonic) the helvet package alone does not work: the default TU encoding has no
-% phv font, so LaTeX substitutes the serif with only a warning. There the Helvetica clone of the
-% TeX distribution, TeX Gyre Heros, is loaded by file name through fontspec; helvet (URW Nimbus
-% Sans, also a Helvetica clone) is used under pdfLaTeX.
-\ifdefined\XeTeXrevision
-  \usepackage{fontspec}
-  \IfFontExistsTF{texgyreheros-regular.otf}{%
-    \setsansfont{texgyreheros}[Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
-                               ItalicFont=*-italic, BoldItalicFont=*-bolditalic]}{%
-    \typeout{main.tex: WARNING: texgyreheros-regular.otf not found; sans-serif text is not Helvetica}}
-\else
-  \usepackage{helvet}
-\fi
+% Fonts: the document's serif throughout. The plotted figures are set in STIX (a Times-like serif,
+% Sophon's figure font, experiments/FIGS/mlst_style.py) and the TikZ figure fig_f1.tex in the text font,
+% as in Sophon's Fig. 1, so no sans-serif set-up is needed (PI 2026-11-02, figure style = Sophon's).
 
 \usepackage[hidelinks]{hyperref}
 \graphicspath{{../../figures/}{../../figures/mlst/}}
 
-% Configuration colours of experiments/FIGS/mlst_style.py, the ones fig_f1.tex uses.
-\definecolor{c188}{HTML}{5790FC}
-\definecolor{c162}{HTML}{F89C20}
-\definecolor{c43}{HTML}{E42536}
-\definecolor{c17}{HTML}{964A8B}
-\definecolor{crand}{HTML}{009988}
-\definecolor{cflav}{HTML}{33BBEE}
+% Configuration colours of experiments/FIGS/mlst_style.py (matplotlib's tab10 cycle in order, as in
+% Sophon's figures), the ones fig_f1.tex uses.
+\definecolor{c188}{HTML}{1F77B4}
+\definecolor{c162}{HTML}{FF7F0E}
+\definecolor{c43}{HTML}{2CA02C}
+\definecolor{c17}{HTML}{D62728}
+\definecolor{crand}{HTML}{17BECF}
+\definecolor{cflav}{HTML}{9467BD}
+\definecolor{cinit}{HTML}{7F7F7F}
+
+% Symbols of the Methods equations, written once here so that every section writes them the same way.
+\newcommand{\epsS}{\varepsilon_S}                 % signal efficiency, equation (eq:eff)
+\newcommand{\epsB}{\varepsilon_B}                 % background efficiency, equation (eq:eff)
+\newcommand{\Nout}{N_{\mathrm{out}}}              % classes of a label set (Sophon's N_out)
+\newcommand{\Nlat}{N_{\mathrm{latent}}}           % size of the frozen features (Sophon's N_latent)
+\newcommand{\msd}{m_{\mathrm{SD}}}                % reconstructed soft-drop mass
+\newcommand{\mgen}{m^{\mathrm{gen}}_{\mathrm{SD}}}% generator-level soft-drop mass
+\newcommand{\AUC}{\mathrm{AUC}}                   % area under the ROC curve, equation (eq:auc)
+\newcommand{\nmin}{n_{\min}}                      % fewest background jets behind a drawn ROC point
+\newcommand{\dJS}{d_{\mathrm{JS}}}                % Jensen-Shannon distance, equation (eq:djs)
+\newcommand{\Lcls}{L_{\mathrm{cls}}}              % classification loss
+\newcommand{\Lreg}{L_{\mathrm{reg}}}              % mass-regression loss, equation (eq:masstarget)
 
 % A result whose input is not in yet, or text the PI has still to supply: a red bold bracket.
 % Defined before results_generated.tex, whose pending macros print through it.
@@ -108,16 +115,19 @@
 % "7" of a literal "A17" as a typed number (its NUMBER lookbehind checks one character); a figure id
 % is not a result. The \newcommand line itself is stripped by that test.
 \newcommand{\FigIdAseventeen}{A17}
-\setfigfile{F2}{F2_label_granularity}       % label granularity and the JetClass-II linear probe
-\setfigfile{F3}{F3_per_class}               % JetClass-II per-class heatmap
-\setfigfile{F4}{F4_flavor_pairs}            % class pairs that differ only in flavor
+\setfigfile{F2}{F2_label_granularity}       % label granularity on the four downstream tasks
+\setfigfile{F3}{F3_per_class}               % JetClass-II per-class heatmap (AUC difference)
+\setfigfile{F4}{F4_flavor_pairs}            % class pairs that differ only in flavor, ROC
 \setfigfile{F5}{F5_missing_inputs}          % missing input features
+\setfigfile{F6J}{F6J_roc_jetclass}          % JetClass, fine-tuned, ROC per signal class
+\setfigfile{F6}{F6_roc_benchmarks}          % top and quark/gluon (Pythia, Herwig) ROC, main text
 \setfigfile{F7}{F7_finetune_vs_size}        % fine-tuning against the number of training jets
 \setfigfile{F8a}{F8a_mass_regression}       % jet-mass regression with the auxiliary target
 \setfigfile{F8b}{F8b_sculpting}             % mass sculpting
 \setfigfile{F9}{F9_xbx}                     % X->bb and X->bs resonance tagging
-% appendix figures (FIGURE_PLAN section 3, and F6, moved to the appendix by decision P3)
-\setfigfile{F6}{A_roc_benchmarks}           % benchmark ROC curves, top and quark/gluon (Pythia, Herwig)
+% appendix figures (FIGURE_PLAN section 3)
+\setfigfile{A6J}{A6J_roc_jetclass_probe}    % JetClass, linear probes, ROC per signal class
+\setfigfile{A3R}{A3R_roc_jetclass2}         % JetClass-II, selected classes, one-vs-rest ROC
 \setfigfile{A10}{A10_probes_vs_size}        % linear probes against the number of training jets
 \setfigfile{\FigIdAseventeen}{\FigIdAseventeen _mass_response_groups}   % response histograms, resonant and QCD jets
 % paper_figures.py also draws A17_mass_bins_resonant and A17_mass_bins_qcd; their content is in

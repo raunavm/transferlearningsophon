@@ -1,8 +1,9 @@
 """experiments/FIGS/paper_figures.py, the paper's final figures: every figure draws from a small
 synthetic set of inputs in the layouts the generator reads (the loaders are replaced, so the tests
 do not depend on how much has been pulled), a figure whose input is absent is skipped without
-failing, the style is Helvetica at the printed size with nothing but data drawn, and the render
-job runs the paper build while its mock-up spec stays as it was."""
+failing, the style is Sophon's at the printed size with nothing but data drawn, every ROC panel
+follows the curves_v2 files' cut and pairs its ratio run by run, and the render job runs the paper
+build while its mock-up spec stays as it was."""
 import importlib.util
 import json
 import pathlib
@@ -176,16 +177,45 @@ def _xbx(P, runs) -> dict:
     return out
 
 
-def _roc(k: float) -> dict:
-    eps = [0.05 * i for i in range(1, 20)]
-    return {"roc": {"eps_s": eps, "rejection": [(1 + 0.01 * k) / e ** 2 for e in eps]}}
+# the curves_v2 grid (ROC interface 1.5): 0.001 ... 0.010, then 0.015 ... 0.995
+EPS = [round(0.001 * k, 3) for k in range(1, 11)] + [round(0.005 * k, 3) for k in range(3, 200)]
+MIN_BKG = 20
 
 
-def _ft_curves(M, runs) -> dict:
-    dss = ("top", "qg", "qg_herwig")
-    out = {m: {"best70": {ds: _roc(i) for ds in dss}} for i, m in enumerate(m for a in M.MAIN for m in runs[a])}
-    out.update({f"{M.SCRATCH}-s{k}": {"best70": {ds: _roc(-k) for ds in dss}} for k in (1, 2, 3)})
-    out[M.KIN_MODEL] = {"best70": {"top": _roc(5)}}
+def _curve(k: float, n_bkg: int, apart: bool = False) -> dict:
+    """One curve of a curves_v2 file: rejection (1 + k/100) / eps_S^2, cut at the first grid point with
+    MIN_BKG background jets passing; apart: the test set separated completely (cut null)."""
+    eps = np.array(EPS)
+    rej = (1 + 0.01 * k) / eps ** 2
+    nb = np.rint(n_bkg / rej).astype(int)
+    i = int(np.argmax(nb >= MIN_BKG))
+    cut = None if apart else {"eps_s": EPS[i], "eps_b": 1 / rej[i], "rejection": rej[i], "n_bkg_pass": int(nb[i])}
+    return {"signal": ["s"], "background": ["b"], "discriminant": "synthetic", "n_signal": 1000,
+            "n_background": n_bkg, "n_train": 1000, "auc": 0.99, "rejection": rej.tolist(),
+            "n_bkg_pass": nb.tolist(), "cut": cut, "n_bkg_pass_full_eff": n_bkg, "label_sha256": "0" * 64,
+            "source": {"file": "synthetic", "sha256": "0" * 64}}
+
+
+def _roc_docs(M, runs) -> dict:
+    """I["roc"] (mlst_v4.load_roc's {family: {model: doc}}) for the six families, with the pair X->ee vs
+    X->mumu separated completely (cut null) by every configuration that keeps it apart."""
+    pre = _pretrained(M, runs)
+    scratch = [f"{M.SCRATCH}-s{k}" for k in (1, 2, 3)]
+    apart = {m for a in ("L188", "L162") + M.FLAV for m in runs[a]}
+    jc1 = [c for c, _ in M.V4.JC1_COLS]
+    fams = {"jc1_ft": (pre + scratch, {c: 200_000 for c in jc1}),
+            "jc1_probe": (pre + list(M.INIT_MODELS) + list(M.INIT_BN_MODELS), {c: 200_000 for c in jc1}),
+            "pairs": (pre, {**{k: 200_000 for k, *_ in M.PAIRS}, "ee_vs_mm": 5_000}),
+            "top_ft": (pre + scratch + [M.KIN_MODEL], {"top": 201_914}),
+            "qg_ft": (pre + scratch, {"qg": 100_000, "qg_herwig": 100_000}),
+            "jc2_ovr": ([m for a in M.MAIN for m in runs[a]], {str(c): 900_000 for c in range(188)})}
+    out = {}
+    for fam, (models, keys) in fams.items():
+        for i, m in enumerate(models):
+            curves = {key: _curve(i, nb, apart=key == "ee_vs_mm" and m in apart) for key, nb in keys.items()}
+            out.setdefault(fam, {})[m] = {"family": fam, "model": m, "seed": int(m.rsplit("-s", 1)[1]),
+                                          "method": "synthetic", "checkpoint": None, "ft_manifest": None,
+                                          "eps_grid": EPS, "min_bkg_pass": MIN_BKG, "curves": curves}
     return out
 
 
@@ -195,20 +225,19 @@ def inputs(P, M, runs, tmp_path):
     census = {"counts": {"ft_test": [5000] * 184 + [224, 600, 900, 3000]}}
     return {"fits": fits, "raw": raw, "mlp": _mlp(M, runs), "fill": _fill(M, runs), "per": _per(M, runs),
             "atlas": _atlas(M, runs), "sculpt": _sculpt(P, runs), "census": census, "xbx": _xbx(P, runs),
-            "xbx_scratch": {"xbs": [_endpoint(-k) for k in (1, 2, 3)]}, "ft_curves": _ft_curves(M, runs)}
+            "xbx_scratch": {"xbs": [_endpoint(-k) for k in (1, 2, 3)]}, "roc": _roc_docs(M, runs)}
 
 
 def _empty() -> dict:
     return {"fits": {}, "raw": {}, "mlp": {}, "fill": {}, "per": {}, "atlas": {}, "sculpt": {}, "census": None,
-            "xbx": {}, "xbx_scratch": {}, "ft_curves": {}}
+            "xbx": {}, "xbx_scratch": {}, "roc": {}}
 
 
 @pytest.fixture
 def seen(P, monkeypatch):
     """Every figure saved: its size and the strings and sizes of its visible texts, recorded before the
-    real save. LaTeX is switched off, so the tests do not depend on a TeX installation."""
+    real save."""
     from matplotlib.text import Text
-    monkeypatch.setattr(P.style, "latex_helvetica", lambda: False)
     got = {}
     real = P.style.save
 
@@ -230,9 +259,11 @@ def test_every_figure_draws_from_synthetic_inputs(P, M, runs, inputs, seen, tmp_
         # vector PDF with the fonts embedded as TrueType, never as Type 3
         assert b"/Type3" not in next(p for p in paths if p.suffix == ".pdf").read_bytes(), f.__name__
     assert len(seen) == len(P.FIGURES)
+    assert {"F6J_roc_jetclass", "F6_roc_benchmarks", "A6J_roc_jetclass_probe", "A3R_roc_jetclass2"} <= set(seen)
+    assert "A_roc_benchmarks" not in seen
     for name, rec in seen.items():
-        # MLST: 8.5 cm or 15 cm wide, saved at that size, text between 8 and 12 pt
-        assert rec["width"] in (pytest.approx(P.ONE), pytest.approx(P.FULL)), name
+        # MLST: 15 cm wide (every figure of the paper), saved at that size, text between 8 and 12 pt
+        assert rec["width"] == pytest.approx(P.FULL), name
         assert rec["tight"] is False, name
         for text, size in rec["texts"]:
             assert 8.0 <= size <= 12.0, (name, text, size)
@@ -274,20 +305,67 @@ def test_main_prints_what_it_drew_and_exits_zero_only_when_something_was_drawn(P
     assert len(list((tmp_path / "all").glob("*.pdf"))) == len(P.FIGURES)
 
 
-def test_the_label_set_figures_draw_the_generators_ratios(P, M, runs, inputs):
-    fits = inputs["fits"]
-    probe = P._jc2_probe(M, fits)
-    for arm in ("R16_Q1", "RAND2_p1", "FLAV_F1"):
-        want = [x for x in M._ratio_vals(runs, arm, "L188", probe)[0] if x is not None]
-        assert want and P._over_full(M, runs, arm, probe) == pytest.approx(want)
+def test_the_label_set_figures_draw_the_generators_values(P, M, runs, inputs):
+    fits, fill, per = inputs["fits"], inputs["fill"], inputs["per"]
+    chosen, _ = M.chosen_substitutions(fill, runs)
+    # F2: absolute values, the probe at the largest training set as the tables select it
+    n = M._largest(fits, "jc2_188")
+    probe = P._f2_probe(M, fits, fill, chosen, "jc2_188", "accuracy")
+    for arm in ("L188", "R16_Q1", "RAND2_p1", "FLAV_F1"):
+        want = [M._probe_rec(fits, m, "jc2_188", n)["accuracy"] for m in runs[arm]]
+        assert want and P._vals(runs, arm, probe) == pytest.approx(want)
+    top = P._f2_probe(M, fits, fill, chosen, "top", "r30")
+    m = runs["L188"][0]
+    nt = M._bench_sizes(fits, fill, chosen, "top")[-1]
+    assert top(m) == M._rej(M._bench_rec(fits, fill, chosen, m, "top", nt), "r30")
+    ft = P._f2_ft(M, per, "jc1", 1_000_000, "accuracy")
+    assert ft(m) == M._ft(per, "jc1", m, 1_000_000, "accuracy")
+    assert P._f2_ft(M, {}, "jc2", 1_000_000, "accuracy") is None
+    # F3: the mean over indices of the per-class AUC difference (percentage points)
     rows, R = P.heat(M, fits, runs, REPO)
     assert len(rows) == 188 and rows[-1]["class_name"].startswith("label_QCD")
     j = [a for a, _ in P.MK.HEAT].index("R16_Q1")
-    rat = M.per_class_ratios(fits, runs, "R16_Q1")
+    diff = M.per_class_auc_diff(fits, runs, "R16_Q1")
     c = int(rows[0]["jet_label"])
-    assert R[0, j] == pytest.approx(np.mean(rat[c]))
+    assert R[0, j] == pytest.approx(np.mean(diff[c]))
     merges = P.flavor_merges(M, REPO)
     assert merges["R16_Q1"]["label_X_bb"][0] and not merges["L188"]["label_X_bb"][0]
+    assert P._nice_up(0.31) == pytest.approx(0.5) and P._nice_up(2.0) == pytest.approx(2.0)
+
+
+def test_the_jetclass2_roc_figure_draws_the_generators_selection(P, M, runs, inputs, monkeypatch, tmp_path):
+    got = {}
+    monkeypatch.setattr(P, "roc_figure", lambda M, fig, panels, *a: got.setdefault("keys", [p[1] for p in panels]))
+    P.figure_a3r(M, runs, inputs, tmp_path)
+    sel = M.jc2_roc_classes(inputs["fits"], runs, REPO, inputs["census"])
+    want = [str(c) for c in list(sel["hurt"]) + list(sel["stable"])]
+    assert got["keys"] == want and len(want) == M.NHURT + M.NSTABLE
+
+
+def test_a_roc_panel_follows_the_cut_and_pairs_its_ratio_by_index(P, M, runs, inputs):
+    import matplotlib.pyplot as plt
+    fam = inputs["roc"]["pairs"]
+    configs = [(row, list(runs[row])) for row in P.LEVELS + M.FLAV]
+    fig, (ax, rx) = plt.subplots(2, 1)
+    ratio, rows = P.roc_panel(ax, rx, M, fam, "bb_vs_cc", configs)
+    assert ratio and rows == [r for r, _ in configs]
+    # the 162-class ratio: mean over indices of each run over the 188-class run of the same index,
+    # where every run survives the cut
+    s = lambda m: M.V4.roc_series(fam[m], "bb_vs_cc")[1]
+    ref = {M._idx(m): s(m) for m in runs["L188"]}
+    q = np.array([s(m) / ref[M._idx(m)] for m in runs["L162"]])
+    ok = np.isfinite(q).all(axis=0) & np.isfinite(np.array(list(ref.values()))).all(axis=0)
+    line = rx.lines[1]          # [0]: the 188-class reference flat at 1
+    assert np.asarray(line.get_ydata()) == pytest.approx(q[:, ok].mean(axis=0))
+    # the limit line N_B / 20 is drawn
+    assert any(np.allclose(ln.get_ydata(), M.V4.roc_limit(fam[runs["L188"][0]], "bb_vs_cc")) for ln in ax.lines)
+    plt.close(fig)
+    # X->ee vs X->mumu: the configurations that keep the pair apart separate the test set completely
+    # (cut null), so the 188-class reference has no point: no ratio panel, every configuration kept
+    fig, (ax, rx) = plt.subplots(2, 1)
+    ratio, rows = P.roc_panel(ax, rx, M, fam, "ee_vs_mm", configs)
+    assert not ratio and "L188" in rows and not rx.lines
+    plt.close(fig)
 
 
 def test_the_substitution_chosen_on_validation_is_the_generators(P, M, runs, inputs):
@@ -308,28 +386,34 @@ def test_the_sculpting_floor_is_the_generators_with_its_spread(P, M, inputs, run
     assert np.all(sd > 0) and np.all(sd < mean)
 
 
-def test_the_final_style_is_helvetica_at_the_printed_size(P, monkeypatch):
+def test_the_final_style_is_sophons_at_the_printed_size(P, M):
+    import matplotlib
     import matplotlib.pyplot as plt
     S = P.style
     rc = plt.rcParams
-    # rc_context: the LaTeX setting must not reach the figures of later tests
     with plt.rc_context():
-        monkeypatch.setattr(S, "latex_helvetica", lambda: True)
         S.use_style(final=True)
-        assert rc["text.usetex"] and rc["font.family"] == ["sans-serif"]
-        assert all(p in rc["text.latex.preamble"]
-                   for p in (r"\usepackage{helvet}", r"\usepackage{sansmath}", r"\sansmath"))
-        assert rc["pdf.fonttype"] == 42 and rc["font.size"] == 10.0
-        monkeypatch.setattr(S, "latex_helvetica", lambda: False)
-        S.use_style(final=True)
-        assert not rc["text.usetex"] and rc["font.sans-serif"][0] in S.SANS and rc["mathtext.fontset"] == "custom"
+        # plain matplotlib (no mplhep, no LaTeX): STIX text and mathematics, tab10 in order
+        assert not rc["text.usetex"] and rc["font.family"] == ["STIXGeneral"] and rc["mathtext.fontset"] == "stix"
+        tab10 = matplotlib.rcParamsDefault["axes.prop_cycle"].by_key()["color"]
+        assert rc["axes.prop_cycle"].by_key()["color"] == S.TAB10 == tab10
+        # dashed light-grey grid on major and minor ticks, outward ticks bottom and left, framed legend
+        assert rc["axes.grid"] and rc["axes.grid.which"] == "both" and rc["grid.linestyle"] == "--"
+        assert rc["xtick.direction"] == "out" and not rc["xtick.top"] and not rc["ytick.right"]
+        assert rc["legend.frameon"] and rc["xaxis.labellocation"] == "right" and rc["axes.titlelocation"] == "center"
+        # TrueType fonts, text between 8 and 12 pt at the printed size
+        assert rc["pdf.fonttype"] == 42
+        assert all(8.0 <= rc[k] <= 12.0 for k in ("font.size", "axes.labelsize", "xtick.labelsize", "legend.fontsize"))
         # the scaled layout of the mock-ups is not left at the printed size by an earlier final figure
         S.use_style()
         assert rc["font.size"] > 20
+    assert not hasattr(S, "hep") and not hasattr(S, "latex_helvetica")
     assert S.ONE_COLUMN == pytest.approx(8.5 / 2.54) and S.FULL_WIDTH == pytest.approx(15 / 2.54)
-    # the packages the LaTeX preamble needs come with the render job's TeX Live install
-    job = (REPO / "scripts/build_render_job.py").read_text()
-    assert all(p in job for p in ("texlive-latex-base", "texlive-latex-extra", "texlive-fonts-recommended", "dvipng"))
+    # one encoding for every configuration a figure draws; the TeX colours of the text are the same
+    for row in M.MAIN + M.MASS + M.FLAV + ("RAND", M.SCRATCH, M.INIT, M.INIT_BN, "KIN"):
+        assert {"color", "linestyle", "marker"} <= set(S.CONFIG[row]), row
+    assert S.CONFIG["L188"]["color"] == tab10[0] and S.CONFIG[M.SCRATCH]["color"] == "black"
+    assert "\\definecolor{c188}{HTML}{1F77B4}" in S.tex_colour_definitions()
 
 
 def test_the_render_job_builds_the_paper_and_keeps_the_mockup_spec(tmp_path):
