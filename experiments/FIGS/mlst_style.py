@@ -7,10 +7,10 @@ STIX mathematics (no LaTeX), titles centred above each panel, the x label at the
 axis, a framed legend inside the panel (upper right) or, for figures of three or more panels, one
 framed legend above them, a light-grey dashed grid on major and minor ticks (minor ticks, and so a
 minor grid, only on log axes), matplotlib's outward ticks on the bottom and left with all four
-spines, and matplotlib's default colour cycle tab10 in order. Variants of a model are dotted, a
-reference discriminant grey dotted, a limit line black dashed; error bars are round markers with
-capless bars. Heatmaps and histograms switch the grid off per axes. Fonts are embedded as TrueType
-(pdf.fonttype 42), never as Type 3.
+spines, and matplotlib's default colour cycle tab10 in order. Every configuration has its own line
+style (CONFIG below), a limit line is black dashed; error bars are round markers with capless bars.
+Heatmaps and histograms switch the grid off per axes. Fonts are embedded as TrueType (pdf.fonttype
+42), never as Type 3.
 
 Size. use_style(final=True) is the paper's (experiments/FIGS/paper_figures.py): the figure is
 drawn at its printed size, ONE_COLUMN (8.5 cm) or FULL_WIDTH (15 cm) wide, the two widths MLST
@@ -23,11 +23,13 @@ document (panels of PANEL = 6 in), which the mock-ups, the deck and xbx_report u
 
 The encoding is fixed here, one table (CONFIG, keyed by the generator's configuration names) that
 paper_figures.look reads: the four label sets take the first four tab10 colours, finest first,
-each with its own marker; a variant of a model (mass output, kinematic inputs only) keeps that
-model's colour, dotted; the partitions with controlled flavor boundaries C4, C5, C6, dashed; the
-random partitions C9; the network trained from scratch black, solid, open squares; the randomly
-initialized network C7, dotted (Sophon's reference style). Colour is never the only cue in point
-plots (markers); on ROC curves the label sets differ by colour only, as in Sophon.
+solid, dashed, dash-dot and dotted, each with its own marker; a variant of a model (mass output,
+kinematic inputs only) keeps that model's colour with a long-dash pattern (LONG_DASH, LONG_DASH_DOT);
+the partitions with controlled flavor boundaries C4, C5, C6 with LONG_DASH, LONG_DASH_DOT and
+DASH_DOT_DOT; the random partitions C9, markers only; the network trained from scratch black,
+dash-dot-dot, open squares; the randomly initialized network C7, long dashes. The closest-output-node
+control of F9 is C7 with a sparse dash-dot-dot and crosses, a pattern no other curve of that figure
+has. Colour is never the only cue: line styles on curves, markers in point plots.
 
 experiments/FIGS/style.py stays as it is: the earlier figure scripts and their tests use it.
 """
@@ -67,9 +69,11 @@ FLAV_COLOUR = TAB10[4]
 FLAV_COLOURS = {"F0": TAB10[4], "F1": TAB10[5], "F1R": TAB10[6]}
 FLAV_MARKERS = {"F0": "D", "F1": "P", "F1R": "d"}
 # the groomed (soft-drop) mass, the reference of the mass regression; the closest-output-node
-# control of the resonance tagging (Sophon Fig. 2: dotted grey)
+# control of the resonance tagging (Sophon Fig. 2 draws it grey dotted, but the 17-class label set is
+# dotted beside it and from scratch dash-dot-dot): grey, a sparse dash-dot-dot with crosses
 GROOMED_STYLE = {"color": "black", "linestyle": "-", "linewidth": 1.5}
-NODE_CONTROL_STYLE = {"color": TAB10[7], "linestyle": ":"}
+NODE_CONTROL_STYLE = {"color": TAB10[7], "linestyle": (0, (3, 1.5, 1, 1.5, 1, 4)), "marker": "x", "markersize": 3,
+                      "markevery": 0.12}
 # the limit line of every ROC panel (the rejection at which fewer than the minimum number of
 # background jets pass): black dashed, as Sophon's limit
 LIMIT_STYLE = {"color": "black", "linestyle": "--", "linewidth": 0.8}

@@ -429,11 +429,13 @@ pretraining run's own values.
 \begin{figure}[tbp]
 \paperfig{\linewidth}{A10}
 \caption{Linear probes on frozen features against the number of training jets, for the \Kfull-,
-\Kres-, \Kmid- and \Kcoarse-class models and the randomly initialized network with BatchNorm statistics
-recomputed (grey, long dashes). Panels: (a) accuracy on class-balanced JetClass-II; (b) accuracy on JetClass;
+\Kres-, \Kmid- and \Kcoarse-class models, each in its own color (solid, dashed, dash-dot and dotted lines with
+circles, squares, up- and down-pointing triangles), and the randomly initialized network with BatchNorm
+statistics recomputed (grey long dashes with crosses). Panels: (a) accuracy on class-balanced JetClass-II; (b) accuracy on JetClass;
 $R_{30}$ on (c) top tagging and (d) quark/gluon discrimination, with the
-missing inputs substituted as chosen on validation. Colors and axes as in figure~\ref{fig:f7}. Lines join
-the means; bands show the standard deviation over the \MlstNRunsWord{} pretraining runs of each label set.}
+missing inputs substituted as chosen on validation. Axes as in figure~\ref{fig:f7}. Lines join
+the means; bands show the standard deviation over the \MlstNRunsWord{} pretraining runs of each label set. The
+points of the configurations are offset slightly along the horizontal axis for legibility.}
 \label{fig:a10}
 \end{figure}
 % CHECK: A10 panel (a) metric is accuracy, as F7 (paper_figures.py A10); randomly initialized network: init-s3 not pulled yet

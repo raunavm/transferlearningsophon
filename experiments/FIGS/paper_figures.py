@@ -11,8 +11,9 @@ drawn: what a caption must say is said in the caption.
 Every ROC panel (F4, F6J, F6, A6J, A3R, F9 left) is background rejection 1/eps_B (log) against the
 signal efficiency eps_S, from the curves_v2 files (mlst_v4.load_roc): each curve is drawn only where
 at least mlst_v4.JC1_MIN_BKG background jets pass (the black dashed line N_B / that number marks the
-limit), as the mean over the pretraining runs at fixed eps_S where every run survives, with the SD
-(range for two runs) as a band; below, the ratio to the 188-class model, run by run against the
+limit) and only when at least mlst_results.ROC_MIN_POINTS points survive, as the mean over the
+pretraining runs at fixed eps_S where every run survives, with the SD (range for two runs) as a
+band; below, the ratio to the 188-class model, run by run against the
 188-class run of the same index for the label sets, mass models, flavor partitions and the randomly
 initialized network (it holds the initial weights of the 188-class run of its index), and against
 the 188-class mean for training from scratch (its seed k trains on subset k) and the kinematic-only
@@ -158,9 +159,10 @@ def _xr():
 # ------------------------------------------------------------------ drawing helpers
 def look(M, row: str) -> dict:
     """Colour, line style and marker of a configuration (style.CONFIG, the same in every figure): the
-    label sets solid, a variant of a model (mass output, kinematic inputs only) dotted in its colour,
-    the flavor partitions dashed, training from scratch black solid with open squares, the randomly
-    initialized network grey dotted; the random partitions pooled as "RAND"."""
+    label sets solid, dashed, dash-dot and dotted, a variant of a model (mass output, kinematic inputs
+    only) a long-dash pattern in its colour, the flavor partitions long dashes, long dash-dot and
+    dash-dot-dot, training from scratch black dash-dot-dot with open squares, the randomly initialized
+    network grey long dashes; the random partitions pooled as "RAND"."""
     return dict(style.CONFIG["RAND" if row in M.RAND else row])
 
 
@@ -520,14 +522,15 @@ def _ratio(rx, M, eps, ref: dict, rows: list) -> bool:
     """The ratio panel below a ROC: ref {model: rejection} of the 188-class runs, rows [(configuration,
     {model: rejection}, line style)]. Run by run against the 188-class run of the same index
     (mlst_results._idx; the randomly initialized network included), except the UNPAIRED
-    configurations against the 188-class mean; drawn where every run and the reference survive, the
+    configurations against the 188-class mean; drawn where every run and the reference survive and at
+    least mlst_results.ROC_MIN_POINTS points do (the generator's 'not reached' rule, _roc_cut), the
     reference flat at 1 in its colour, y from the data (5 % padding, 1 included, no clipping). False,
-    with nothing drawn, when the reference has no surviving point."""
+    with nothing drawn, when the reference has fewer surviving points."""
     if not ref:
         return False
     R = np.array(list(ref.values()))
     ref_ok = np.isfinite(R).all(axis=0)
-    if not ref_ok.any():
+    if ref_ok.sum() < M.ROC_MIN_POINTS:
         return False
     ref_mean, by_idx = R.mean(axis=0), {M._idx(m): r for m, r in ref.items()}
     rx.plot(eps[ref_ok], np.ones(ref_ok.sum()), color=look(M, "L188")["color"])
@@ -542,7 +545,7 @@ def _ratio(rx, M, eps, ref: dict, rows: list) -> bool:
         if not len(Q):
             continue
         ok = np.isfinite(Q).all(axis=0) & ref_ok
-        if ok.any():
+        if ok.sum() >= M.ROC_MIN_POINTS:
             ys += _mean_band(rx, eps[ok], Q[:, ok], kw, None)
     lo, hi = min(ys), max(ys)
     pad = 0.05 * (hi - lo) or 0.05
@@ -584,8 +587,11 @@ def _log_ticks(axis, lo: float, hi: float) -> None:
 
 def roc_panel(ax, rx, M, fam: dict, key: str, configs: list) -> tuple[bool, list]:
     """One ROC panel (module docstring) of the curve key in a curves_v2 family {model: doc}; configs
-    [(configuration, models)]. Returns (whether the ratio panel was drawn, the configurations with a
-    curve file, which keep their legend entry even when no point survives the cut)."""
+    [(configuration, models)]. A curve is drawn only where at least mlst_results.ROC_MIN_POINTS grid
+    points survive the cut in every run (fewer draw no visible line; the generator calls such a
+    configuration 'not reached', _roc_cut). Returns (whether the ratio panel was drawn, the
+    configurations with a curve file, which keep their legend entry even when no point survives the
+    cut)."""
     got = {}
     for row, models in configs:
         c = {m: s[1] for m in models if m in fam and (s := M.V4.roc_series(fam[m], key)) is not None}
@@ -604,7 +610,7 @@ def roc_panel(ax, rx, M, fam: dict, key: str, configs: list) -> tuple[bool, list
         c = {m: np.asarray(r, float) for m, r in c.items()}
         V = np.array(list(c.values()))
         ok = np.isfinite(V).all(axis=0)
-        if ok.any():
+        if ok.sum() >= M.ROC_MIN_POINTS:
             ys += _mean_band(ax, eps[ok], V[:, ok], kw, None)
         rows.append((row, c, kw))
     _rej_axis(ax, ys)
@@ -753,10 +759,11 @@ def _bench_r30(M, fits, fill, m, task, s):
 def _bars(ax, M, groups: list, chosen) -> None:
     """Horizontal bars, one group per model, one bar per substitution (colour per model, hatch per
     substitution), the mean with the SD (range for two runs) and each run a dot; the substitution
-    chosen on validation outlined in black; the MLP probe (open, black edge) on the zero bar; the
-    value of the bar at its end. groups: [(row, label, {substitution: (values, text)}, MLP values,
-    slots)]: a group takes `slots` rows and each substitution its own row of them whatever the group
-    holds, so panels sharing their rows align."""
+    chosen on validation outlined in black; the MLP probe (open, black edge) on the zero bar, its value
+    not printed; the value of the bar (the linear probe) at its end, or inside the bar, white, left of
+    its dots, where the MLP marker would lie under the number (LABEL_SPAN). groups: [(row, label,
+    {substitution: (values, text)}, MLP values, slots)]: a group takes `slots` rows and each
+    substitution its own row of them whatever the group holds, so panels sharing their rows align."""
     y, ticks, ends, xs = 0.0, [], [], []
     for row, label, vals, mlpv, slots in groups:
         lk, first = look(M, row), y
@@ -771,25 +778,34 @@ def _bars(ax, M, groups: list, chosen) -> None:
             ax.plot(v, [y] * len(v), "o", color="black", markersize=1.8, zorder=4)
             if el is not None:
                 ax.errorbar(mean, y, xerr=[[el], [eh]], color="black", linewidth=0.8, capsize=0, zorder=4)
-            end = max(max(v), mean + (eh or 0))
+            end, start, mlp = max(max(v), mean + (eh or 0)), min(min(v), mean - (el or 0)), None
             xs += v
             if s == "zero" and mlpv:
                 mm, ml, mh = F._spread(mlpv)
                 ax.errorbar(mm, y, xerr=None if ml is None else [[ml], [mh]], marker="o", markersize=4.5,
                             color="black", markerfacecolor="white", linestyle="none", capsize=0, zorder=5)
-                xs += mlpv
-                # the number goes past the MLP marker when that lies beyond the bar
-                if mm >= mean:
-                    end = max(end, max(mlpv), mm + (mh or 0))
-            ends.append((end, y, txt))
+                xs += mlpv + [mm + (mh or 0)]
+                mlp = (mm - (ml or 0), mm + (mh or 0))    # the marker with its bar
+            ends.append((end, start, mlp, y, txt))
         ticks.append((first + (slots - 1) / 2, label))
         y = first + slots + 0.5
     if not xs:
         ax.set_axis_off()
         return
-    xmax = 1.45 * max(xs + [e for e, _, _ in ends])
-    for e, yy, txt in ends:
-        if txt:
+    xmax = 1.45 * max(xs + [e for e, *_ in ends])
+    for e, start, mlp, yy, txt in ends:
+        if not txt:
+            continue
+        pad = 0.02 * xmax       # half the MLP marker
+        if mlp is not None and mlp[1] + pad >= e and mlp[0] - pad <= e + LABEL_SPAN * xmax:
+            if start - 0.015 * xmax >= LABEL_SPAN * xmax:
+                # the MLP marker would lie under the number: the number inside the (solid) zero bar
+                ax.text(start - 0.015 * xmax, yy, txt, va="center", ha="right", fontsize=SMALL, color="white",
+                        zorder=6)
+            else:
+                # a zero bar too short to hold it: the number past the marker and its error bar
+                ax.text(mlp[1] + pad + 0.015 * xmax, yy, txt, va="center", ha="left", fontsize=SMALL)
+        else:
             ax.text(e + 0.015 * xmax, yy, txt, va="center", ha="left", fontsize=SMALL)
     ax.set_xlim(0, xmax)
     ax.xaxis.set_major_locator(ticker.MaxNLocator(4))
@@ -799,6 +815,11 @@ def _bars(ax, M, groups: list, chosen) -> None:
     ax.tick_params(axis="y", length=0)
     ax.grid(False, axis="y")
     ax.set_ylim(y - 1.0, -0.6)
+
+
+# the width a bar-end number takes, as a fraction of the axis (five characters at 8 pt on a panel of
+# about 5 cm, with the gap before it)
+LABEL_SPAN = 0.16
 
 
 def figure_f5(M, runs, I, outdir) -> list:
@@ -904,24 +925,28 @@ def probe_series(M, I, runs, ds: str, met: str, row: str, chosen: dict) -> dict:
     return out
 
 
-def _line(ax, series: dict, kw: dict, label: str, dodge: float = 1.0) -> dict:
-    """Mean over runs with markers and a band of the SD (range for two runs); {N: mean}."""
+def _line(ax, series: dict, kw: dict, label: str, dodge: float = 1.0) -> tuple[dict, list]:
+    """Mean over runs with markers and a band of the SD (range for two runs); ({N: mean}, the values
+    the band reaches), the second for the axis limits, as _point's."""
     xs = sorted(series)
     if not xs:
-        return {}
+        return {}, []
     st = [F._spread(series[n]) for n in xs]
     mean = np.array([s[0] for s in st])
     lo, hi = mean - np.array([s[1] or 0 for s in st]), mean + np.array([s[2] or 0 for s in st])
     x = np.array(xs, float) * dodge
     ax.plot(x, mean, label=label, markersize=3.5, **kw)
     ax.fill_between(x, lo, hi, color=kw["color"], alpha=0.18, linewidth=0)
-    return dict(zip(xs, mean))
+    return dict(zip(xs, mean)), list(lo) + list(hi)
 
 
 def _size_axis(ax, met: str, ys: list) -> None:
+    """Log x; R30 on a log y over [min / 1.15, max x 1.15] of ys (the runs and the bands' extents; a
+    band reaching zero or below is cut at the axis), accuracy on a linear y."""
     ax.set_xscale("log")
-    if met == "r30" and ys and min(ys) > 0:
-        lo, hi = min(ys) / 1.15, max(ys) * 1.15
+    pos = [y for y in ys if y > 0]
+    if met == "r30" and pos:
+        lo, hi = min(pos) / 1.15, max(pos) * 1.15
         ax.set_yscale("log")
         ax.set_ylim(lo, hi)
         _log_ticks(ax.yaxis, lo, hi)
@@ -961,9 +986,9 @@ def figure_f7(M, runs, I, outdir) -> list:
             ax.set_axis_off()
             rx.set_axis_off()
             continue
-        mft = _line(ax, ft, kw_ft, "188 classes, fine-tuned")
-        _line(ax, lp, kw_lp, "188 classes, linear probe")
-        msc = _line(ax, sc, kw_sc, NAME[SCRATCH])
+        mft, eft = _line(ax, ft, kw_ft, "188 classes, fine-tuned")
+        _, elp = _line(ax, lp, kw_lp, "188 classes, linear probe")
+        msc, esc = _line(ax, sc, kw_sc, NAME[SCRATCH])
         ns = [n for n in sorted(mft) if n in msc]
         r = [mft[n] / msc[n] for n in ns]
         if r:
@@ -975,7 +1000,7 @@ def figure_f7(M, runs, I, outdir) -> list:
             rx.set_ylim(0.9, 1.1)
             rx.tick_params(labelleft=False)
         rx.axhline(1.0, color="black", linewidth=0.8, linestyle=":")
-        _size_axis(ax, met, _band_values([ft, lp, sc]))
+        _size_axis(ax, met, _band_values([ft, lp, sc]) + eft + elp + esc)
         rx.set_xscale("log")
         rx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3, steps=RATIO_STEPS))
         ax.tick_params(labelbottom=False)
@@ -987,6 +1012,7 @@ def figure_f7(M, runs, I, outdir) -> list:
         for h, lab in zip(*a.get_legend_handles_labels()):
             seen.setdefault(lab, h)
     _legend(fig, list(seen.values()), list(seen), ncol=3)
+    fig.align_ylabels()   # the metric and the ratio label of a column on one vertical line
     return _save(fig, "F7_finetune_vs_size", outdir)
 
 
@@ -1000,19 +1026,19 @@ def figure_a10(M, runs, I, outdir) -> list:
     axes = fig.subplots(2, 2)
     rows = LEVELS + (INIT_BN,)
     for k, (ax, (key, ds, met, title, ylab)) in enumerate(zip(axes.flat, SIZE_PANELS)):
-        ser = []
+        ser, ext = [], []
         for i, row in enumerate(rows):
             s = probe_series(M, I, runs, ds, met, row, chosen)
             lk = look(M, row)
-            _line(ax, s, dict(color=lk["color"], marker=lk["marker"], linestyle=lk["linestyle"]),
-                  NAME[row].replace("\n", " "), dodge=10 ** (0.02 * (i - 2)))
+            ext += _line(ax, s, dict(color=lk["color"], marker=lk["marker"], linestyle=lk["linestyle"]),
+                         NAME[row].replace("\n", " "), dodge=10 ** (0.02 * (i - 2)))[1]
             ser.append(s)
         _panel(ax, k, title)
         if not any(ser):
             absent(f"A10 {title}: linear probes")
             ax.set_axis_off()
             continue
-        _size_axis(ax, met, _band_values(ser))
+        _size_axis(ax, met, _band_values(ser) + ext)
         ax.set_ylabel(ylab)
         ax.set_xlabel("Number of training jets")
     seen = {}
@@ -1093,8 +1119,8 @@ def mass_bins(axs, M, runs, atlas, group: str, axis: str, xlabel: str, tag: str)
     """In bins of axis ("vs_pt", "vs_mgen"): the ATLAS resolution (top), its ratio to the groomed
     mass's (middle) and the median response (bottom). The groomed mass: one value per bin with its
     jet-level bootstrap SD (resolution_sd, median_sd) and the bin width; each mass model: the mean of
-    its runs (pentagon, offset within the bin) and the runs' range as a band. Bins below the jet
-    minimum carry null and are not drawn."""
+    its runs (its marker in style.CONFIG, filled or open as MK.MASS_FACE, offset within the bin) and the
+    runs' range as a band. Bins below the jet minimum carry null and are not drawn."""
     a0, a1, a2 = axs
     g = _groomed(atlas, group)
     if g is None or axis not in g:
@@ -1120,7 +1146,7 @@ def mass_bins(axs, M, runs, atlas, group: str, axis: str, xlabel: str, tag: str)
             if len(v) > 1:
                 for i in np.flatnonzero(np.isfinite(lo) & np.isfinite(hi)):
                     axx.fill_between([e[i], e[i + 1]], lo[i], hi[i], color=lk["color"], alpha=0.25, linewidth=0)
-            axx.plot(off, v.mean(axis=0), linestyle="none", marker="p", markersize=4, color=lk["color"],
+            axx.plot(off, v.mean(axis=0), linestyle="none", marker=lk["marker"], markersize=4, color=lk["color"],
                      markerfacecolor=MK.MASS_FACE[a] or lk["color"], zorder=3)
     for axx in (a1, a2):
         axx.axhline(1.0, color="black", linewidth=0.8, linestyle=":")
@@ -1145,8 +1171,8 @@ def _mass_legend(fig, M) -> None:
     handles = [Patch(facecolor=style.PASTEL, edgecolor="black", linewidth=0.5)]
     for a in M.MASS:
         lk = look(M, a)
-        handles.append(Line2D([], [], color=lk["color"], linewidth=1.1, linestyle=lk["linestyle"], marker="p",
-                              markersize=4, markerfacecolor=MK.MASS_FACE[a] or lk["color"]))
+        handles.append(Line2D([], [], color=lk["color"], linewidth=1.1, linestyle=lk["linestyle"],
+                              marker=lk["marker"], markersize=4, markerfacecolor=MK.MASS_FACE[a] or lk["color"]))
     _legend(fig, handles, ["Reconstructed soft-drop mass", *(NAME[a] for a in M.MASS)], ncol=3)
 
 
@@ -1345,8 +1371,10 @@ def _kept(M, r: dict) -> tuple:
 
 def xbx_curves(M, rs: list) -> tuple:
     """(eps_B, eps_S/sqrt(eps_B) of each run) on the points _kept, and (eps_S grid, rejection 1/eps_B of
-    each run there, NaN outside), eps_B interpolated linearly between the points as for every ROC
-    (Methods)."""
+    each run there, NaN outside), eps_B interpolated linearly between the kept points. The points are
+    xbx's eps_B grid (xbx.EPS_B_GRID, five per decade), not the ROC vertices of roc_points' curves, so a
+    curve ends at the last grid point with at least JC1_MIN_BKG QCD jets, up to a grid step (10^0.2)
+    below the limit line, not at the limit itself (the F9 caption says so)."""
     x, keep = _kept(M, rs[0])
     y = np.array([np.asarray(r["curve"]["eps_s_over_sqrt_eps_b"], float)[keep] for r in rs])
     rej = []
@@ -1377,8 +1405,9 @@ def figure_f9(M, runs, I, outdir) -> list:
         got = lambda row, name, s=s: {m: r for m in runs[row] if (r := XR.readout(xfits.get(m, {}).get(s, {}), name))}
         kw = lambda row: dict(color=look(M, row)["color"], linestyle=look(M, row)["linestyle"])
         # (configuration for the ratio, {model: readout}, line, label): the transfer head of each label
-        # set solid; Sophon's direct discriminant (Eq. 4) dotted where X->bb is a class of its own; for
-        # X->bs the X->bq output node grey dotted (Sophon's control) and training from scratch. The
+        # set in its line style; Sophon's direct discriminant (Eq. 4) where X->bb is a class of its own;
+        # for X->bs the X->bq output node (Sophon's control; style.NODE_CONTROL_STYLE, grey, a sparse
+        # dash-dot-dot with crosses) and training from scratch. The
         # direct discriminant and the output node come from the pretraining runs themselves, so their
         # keys (neither "L188" nor UNPAIRED) pair them in the ratio with the 188-class transfer head of
         # the same run (_ratio); training from scratch against the 188-class mean
@@ -1399,15 +1428,16 @@ def figure_f9(M, runs, I, outdir) -> list:
             lk = look(M, SCRATCH)
             series.append((SCRATCH, {f"{SCRATCH}-s{k + 1}": r for k, r in enumerate(scr)},
                            dict(color=lk["color"], linestyle=lk["linestyle"]), NAME[SCRATCH]))
-        ys, rows, ref, limit = [], [], {}, None
+        ys, rows, ref, limit, xlo = [], [], {}, None, []
         for row, rs, line, label in series:
             if not rs:
                 absent(f"F9 {s}: {label}")
                 continue
             x, y, rej = xbx_curves(M, list(rs.values()))
             _mean_band(sx, x, y, line, label)
+            xlo += [float(x.min())] if len(x) else []        # the smallest kept eps_B
             ok = np.isfinite(rej).all(axis=0)
-            if ok.any():
+            if ok.sum() >= M.ROC_MIN_POINTS:
                 ys += _mean_band(ax, EPS_S_GRID[ok], rej[:, ok], line, None)
             rows.append((row, dict(zip(rs, rej)), line))
             if row == "L188":
@@ -1425,7 +1455,8 @@ def figure_f9(M, runs, I, outdir) -> list:
         else:
             rx.set_axis_off()
         sx.set_xscale("log")
-        sx.set_xlim(1e-4, 1)
+        # from the smallest eps_B any curve of the row keeps (padded) to 1
+        sx.set_xlim(min(xlo) / 1.3 if xlo else 1e-4, 1)
         sx.set_ylim(bottom=0)
         ax.set_ylabel(Y_REJ)
         sx.set_ylabel(r"$\varepsilon_S/\sqrt{\varepsilon_B}$")

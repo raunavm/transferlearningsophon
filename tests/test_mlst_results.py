@@ -363,6 +363,43 @@ def test_two_runs_give_the_value_nearer_one_and_its_twin_the_other():
     assert "MlstYPrMax" not in em.m and em.m["MlstYPr"] == r"20\% more errors"
 
 
+def test_two_runs_state_a_direction_only_beyond_twice_the_hierarchy_sd():
+    # Methods: both runs must lie further from 1 than twice the SD of the same ratio between levels
+    assert M.prose([1.04, 1.08], "rejection", ref_sd=0.03) == r"equal within 8\%"
+    assert M.prose([1.04, 1.08], "rejection", farther=True, ref_sd=0.03) == r"equal within 8\%"
+    assert M.prose([1.04, 1.08], "rejection", ref_sd=0.01) == r"at least 4.0\% more rejection"
+    assert M.prose([0.90, 0.92], "rejection", ref_sd=0.05) == r"equal within 10\%"
+    assert M.prose([1.04, 1.08], "rejection", ref_sd=None) == r"at least 4.0\% more rejection"
+    assert M.prose([1.15, 1.2, 1.25], "errors", ref_sd=0.2) == r"20\% more errors"     # three runs: their own SD
+    em = _PEm()
+    M._emit_ratio(em, "MlstX", [1.04, 1.08], 2, MT.fmt_pm, None, "p", "rejection", two_run=True, ref_sd=0.03)
+    assert em.m["MlstXPr"] == em.m["MlstXPrMax"] == r"equal within 8\%" and em.m["MlstX"] == "1.040 and 1.080"
+
+
+def test_the_jetclass_accuracy_of_the_random_network_is_read_at_the_largest_training_set():
+    cell = lambda acc: {"accuracy": acc, "macro_auc_ovr": 0.6, "converged": True}
+    fits = {f"initbn-s{k}": {"cells": {"init_bn": {"jc2_188": {"1000000": cell(0.1)},
+                                                    "jc1": {"1000": cell(0.2), "1000000": cell(0.46 + 0.01 * k)}}}}
+            for k in (1, 2)}
+    runs = {a: [] for a in M.ALL_ROWS}
+    runs[M.INIT], runs[M.INIT_BN] = list(M.INIT_MODELS), list(M.INIT_BN_MODELS)
+    em = _PEm()
+    M.probe_abs_macros(em, fits, runs, None, MT.fmt_pm)
+    assert em.m["MlstLpJcOneAccInitBn"] == r"0.470 and 0.480 \pending{2 of 3}"
+    assert em.m["MlstLpJcTwoAccInitBn"] == r"0.100 and 0.100 \pending{2 of 3}"
+
+
+def test_the_hierarchy_sd_pools_the_levels_over_the_188_class_model_run_by_run():
+    runs = {"L188": ["a-s1", "a-s2", "a-s3"], "L162": ["b-s1", "b-s2", "b-s3"], "R42_Q1": ["c-s1", "c-s2"],
+            "R16_Q1": ["d-s1"]}
+    val = {"a-s1": 1.0, "a-s2": 2.0, "a-s3": 1.0, "b-s1": 1.1, "b-s2": 2.0, "b-s3": 0.9,
+           "c-s1": 1.2, "c-s2": 2.4, "d-s1": 5.0}
+    # in the logarithm: 162/188 ln 1.1, 0, ln 0.9; 42/188 ln 1.2 twice (variance 0); 16/188 one run, left out
+    assert M._level_sd(runs, val.get) == pytest.approx(math.sqrt(statistics.variance([math.log(1.1), 0, math.log(0.9)]) / 2))
+    assert M._level_sd(runs, lambda m: 10 * val[m] if m.startswith("b") else val[m]) == pytest.approx(M._level_sd(runs, val.get))
+    assert M._level_sd({"L188": ["a-s1"], "L162": ["b-s1"], "R42_Q1": [], "R16_Q1": []}, val.get) is None
+
+
 def test_a_macro_the_outline_names_is_a_marker_until_its_input_exists():
     em, missing = _PEm(), []
     em.macro("MlstGpuTypeBound", "0.2\\%")
@@ -528,13 +565,21 @@ def test_the_sculpting_window_and_the_floor_count_come_from_the_curves():
             sculpt[m] = v2[m] = doc
     em = _PEm()
     M.sculpt_macros(em, sculpt, v2, runs, None, MT.fmt_pm)
-    assert em.m["MlstSculptDiffEffLo"] == em.m["MlstSculptDiffEffHi"] == r"1\%"
-    assert em.m["MlstSculptLowestEff"] == r"0.1\%" and em.m["MlstSculptLowestNPass"] == "410"
+    assert em.m["MlstSculptDiffEffLo"] == em.m["MlstSculptDiffEffHi"] == r"1.0\%"      # two significant figures
+    assert em.m["MlstSculptDiffLoEdge"] == "above the lowest stored efficiency"
+    assert em.m["MlstSculptLowestEff"] == r"0.10\%" and em.m["MlstSculptLowestNPass"] == "410"
     # the two-run configurations sit 0.5 % below the floor: the largest distance from it, in floor SDs
     assert em.m["MlstSculptLowestMaxFloorSd"] == f"{0.005 * floor / M._floor_sd(24, 410):.1f}"
     assert em.m["MlstSculptCoarseOverFullOnePr"] == "2.0 times the distance"
     assert em.m["MlstSculptFullOne"].startswith("0.020")
     assert "MlstSculptCoarseMassOverCoarseOnePrMax" in em.m
+    # a 17/188 difference at the lowest stored efficiency puts the window's lower edge there, and says so
+    for m in runs["R16_Q1"]:
+        v2[m]["curve"][0]["js_distance"] *= 2
+    em = _PEm()
+    M.sculpt_macros(em, sculpt, v2, runs, None, MT.fmt_pm)
+    assert em.m["MlstSculptDiffEffLo"] == r"0.10\%" and em.m["MlstSculptDiffEffHi"] == r"1.0\%"
+    assert em.m["MlstSculptDiffLoEdge"] == "at the lowest stored efficiency"
 
 
 def _jc1_pre(runs, rej):
@@ -765,21 +810,23 @@ def _roc_tree(d, curves: dict, family="pairs", min_bkg=20):
 def test_the_roc_curves_are_cut_where_fewer_than_twenty_background_jets_pass(tmp_path):
     runs = M._paper(ROOT)
     keep = {"L188", "L162", "FLAV_F0", "FLAV_F1", "FLAV_F1R"}            # draw no X->ee vs X->mumu curve
-    # F4 draws a configuration only where every run survives the cut: one run without a cut, or cuts
-    # above the grid's last point (0.9), remove the curve as a null cut in every run does
-    odd = {"FLAV_F1": [0.95, 0.95], "FLAV_F1R": [None, 0.06]}
+    # F4 draws a configuration only where every run survives the cut: one run without a cut, or a cut
+    # that leaves fewer than ROC_MIN_POINTS grid points (above 0.9: none; above 0.5: one), remove the
+    # curve as a null cut in every run does
+    odd = {"FLAV_F1": [0.95, 0.95], "FLAV_F1R": [None, 0.06], "R42_Q1": [0.06, 0.7, 0.06]}
+    assert M.ROC_MIN_POINTS == 2
     cur = {}
     for arm in M.MAIN + M.FLAV:
         for k, m in enumerate(runs[arm]):
             cut = odd[arm][k] if arm in odd else None if arm in keep else 0.06
-            cur[m] = {"bb_vs_cc": _curve(0.4 + 0.1 * k), "ee_vs_mm": _curve(cut, n_bkg=5000, sha="e")}
+            cur[m] = {"bb_vs_cc": _curve(0.3 + 0.1 * k), "ee_vs_mm": _curve(cut, n_bkg=5000, sha="e")}
     _roc_tree(tmp_path, cur)
     _roc_tree(tmp_path, {m: {"label_Tbqq": _curve(0.2 + 0.1 * k, sha="t"), "label_Tbl": _curve(0.95, sha="l")}
                          for k, m in enumerate(runs["L188"])}, family="jc1_ft")
     roc = M.V4.load_roc(tmp_path)
     assert set(roc) == {"pairs", "jc1_ft"} and M.V4.JC1_MIN_BKG == 20
     assert all(math.isnan(x) for x in M.V4.roc_series(roc["pairs"][runs["FLAV_F1"][0]], "ee_vs_mm")[1])
-    first = roc["pairs"][runs["L188"][0]]                                 # cut at 0.4
+    first = roc["pairs"][runs["L188"][0]]                                 # cut at 0.3
     eps, rej = M.V4.roc_series(first, "bb_vs_cc")
     assert list(eps) == [0.1, 0.5, 0.9] and math.isnan(rej[0]) and list(rej[1:]) == [100.0, 5.0]
     assert all(math.isnan(x) for x in M.V4.roc_series(first, "ee_vs_mm")[1])           # cut null: nothing drawn
@@ -788,14 +835,14 @@ def test_the_roc_curves_are_cut_where_fewer_than_twenty_background_jets_pass(tmp
     em, missing = _PEm(), []
     M.roc_macros(em, roc, runs, None, missing, MT.fmt_int)
     n = len(runs["L188"])
-    assert em.m["MlstRocCutBbFull"] == f"{0.4 + 0.1 * (n - 1):.2f}" and em.m["MlstRocCutEemmFull"] == "not reached"
-    assert em.m["MlstRocCutEemmCoarse"] == "0.06"
+    assert em.m["MlstRocCutBbFull"] == f"{0.3 + 0.1 * (n - 1):.2f}" and em.m["MlstRocCutEemmFull"] == "not reached"
+    assert em.m["MlstRocCutEemmCoarse"] == "0.06" and em.m["MlstRocCutEemmMid"] == "not reached"
     assert em.m["MlstRocCutEemmFone"] == "not reached" and em.m["MlstRocCutEemmFoner"] == "not reached"
     assert em.m["MlstRocCutJcOneTbqqFull"] == f"{0.2 + 0.1 * (n - 1):.2f}" and em.m["MlstRocCutJcOneTblFull"] == "not reached"
     assert "MlstRocCutJcOneHbbFull" not in em.m                                       # no such curve: no macro
     assert em.m["MlstRocNBkgBb"] == "200{,}000" and em.m["MlstRocRejMaxBb"] == "10{,}000"
     assert em.m["MlstRocNBkgEemm"] == "5{,}000" and em.m["MlstRocRejMaxEemm"] == "250"
-    assert em.m["MlstRocNoCurveEemm"] == M.no_curve_phrase(sorted(keep)) and not missing
+    assert em.m["MlstRocNoCurveEemm"] == M.no_curve_phrase(sorted(keep | {"R42_Q1"})) and not missing
     # every configuration drawing a curve leaves the sentences that name those without one false: a marker
     for m in cur:
         cur[m]["ee_vs_mm"] = _curve(0.06, n_bkg=5000, sha="e")

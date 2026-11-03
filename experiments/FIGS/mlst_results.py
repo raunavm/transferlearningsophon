@@ -364,10 +364,12 @@ def _bounded(r: float, noun: str, nearer: bool) -> str:
     return ("at least " if nearer else "up to ") + ph
 
 
-def prose(vals: list, noun: str, farther: bool = False) -> str:
+def prose(vals: list, noun: str, farther: bool = False, ref_sd: float | None = None) -> str:
     """The prose twin of a ratio: three or more runs, the mean in words unless it lies within twice
-    the SD of 1 ('equal within X%'); two runs, the value nearer 1 (farther=True: the other); one run,
-    its value."""
+    the SD of 1 ('equal within X%'); two runs, the value nearer 1 (farther=True: the other), unless
+    they straddle 1 or, given ref_sd (the SD of the same ratio between levels of the class hierarchy,
+    _level_sd), either lies within twice ref_sd of 1 on the scale _level_sd uses, the logarithm (the
+    Methods rule for two runs); one run, its value."""
     v = [float(x) for x in vals if x is not None]
     if not v:
         return r"\pending{no run yet}"
@@ -376,7 +378,7 @@ def prose(vals: list, noun: str, farther: bool = False) -> str:
         return _within(max(abs(m - 1), sd)) if abs(m - 1) <= 2 * sd else _phrase(m, noun)
     if len(v) == 2:
         a, b = sorted(v, key=lambda x: abs(math.log(x)) if x > 0 else math.inf)
-        if (a - 1) * (b - 1) < 0:
+        if (a - 1) * (b - 1) < 0 or (ref_sd is not None and a > 0 and abs(math.log(a)) <= 2 * ref_sd):
             return _within(max(abs(a - 1), abs(b - 1)))
         return _bounded(b if farther else a, noun, not farther)
     return _phrase(v[0], noun)
@@ -393,12 +395,13 @@ def _pct_prose(vals: list) -> str:
 
 
 def _emit_ratio(em, name: str, vals: list, n_expected: int, fmt_pm, src, path: str, noun: str,
-                two_run: bool = False, body: str | None = None) -> None:
-    """A ratio macro, its prose twin and, for a two-run configuration, the twin of the other run."""
+                two_run: bool = False, body: str | None = None, ref_sd: float | None = None) -> None:
+    """A ratio macro, its prose twin and, for a two-run configuration, the twin of the other run;
+    ref_sd, when given, is the hierarchy-level SD the prose twins read two runs against (prose)."""
     em.macro(name, body if body is not None else _cell(vals, n_expected, fmt_pm, sep=TEXT_SEP), src, path)
-    em.macro(name + "Pr", prose(vals, noun), src, path, "prose twin: two significant figures, direction in words")
+    em.macro(name + "Pr", prose(vals, noun, ref_sd=ref_sd), src, path, "prose twin: two significant figures, direction in words")
     if two_run:
-        em.macro(name + "PrMax", prose(vals, noun, farther=True), src, path,
+        em.macro(name + "PrMax", prose(vals, noun, farther=True, ref_sd=ref_sd), src, path,
                  "prose twin of the run farther from 1")
 
 
@@ -451,6 +454,24 @@ def _rand_over(runs, ref: str, value) -> list:
 
 def _two_run(runs, *arms) -> bool:
     return any(len(runs.get(a, ())) == 2 for a in arms)
+
+
+# the ratios between levels of the class hierarchy whose SD a two-run configuration is read against
+LEVEL_RATIOS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"))
+
+
+def _level_sd(runs, value) -> float | None:
+    """The SD of a ratio between levels of the class hierarchy (Methods, the rule for two runs): of
+    value, each coarser level over the 188-class run of the same index, the SD over the runs of the
+    ratio's logarithm (its relative SD, so that a level whose ratio is far from 1 does not widen the
+    threshold of one near 1 by its scale alone), pooled over the three levels (root mean square);
+    None while no level has two runs."""
+    var = []
+    for arm, ref in LEVEL_RATIOS:
+        r = [math.log(x) for x in _ratio_vals(runs, arm, ref, value)[0] if x is not None and x > 0]
+        if len(r) >= 2:
+            var.append(float(np.var(r, ddof=1)))
+    return math.sqrt(float(np.mean(var))) if var else None
 
 
 def _over_scratch(v: list, n_expected: int, ref: list, fmt_pm) -> str:
@@ -679,11 +700,12 @@ def comparisons(em, fits, runs, status, index, fmt_pm) -> None:
         n = _largest(fits, ds)
         w = TASK_WORD[(ds, met)]
         f = lambda m, ds=ds, n=n, met=met: _oma(_probe(fits, m, ds, n, met))
+        sd = _level_sd(runs, f)
         for arm, ref in CMP_PROBES:
             r, k = _ratio_vals(runs, arm, ref, f)
             _emit_ratio(em, f"MlstCmp{w}{WORD[arm]}Over{WORD[ref]}", r, k, fmt_pm, index,
                         f"linear probe {ds} N={n}: (1 - {met}) of {arm} over {ref}, run by run", "errors",
-                        _two_run(runs, arm, ref))
+                        _two_run(runs, arm, ref), ref_sd=sd)
         for ref in ("L188", "R42_Q1", "R16_Q1"):
             r = _rand_over(runs, ref, f)
             _emit_ratio(em, f"MlstCmp{w}RandOver{WORD[ref]}", r, len(r), fmt_pm, index,
@@ -692,6 +714,7 @@ def comparisons(em, fits, runs, status, index, fmt_pm) -> None:
     for key, _, _, _ in PAIRS:
         f = lambda m, key=key: _oma(_pair(fits, m, key))
         zero = lambda ref, arms: {_idx(m) for m in runs[ref] if f(m) == 0} & {_idx(m) for a in arms for m in runs[a]}
+        sd = _level_sd(runs, f)
         for arm, ref in CMP_PAIRS:
             name, path = (f"MlstCmp{PAIR_WORD[key]}{WORD[arm]}Over{WORD[ref]}",
                           f"binary probe {key}: (1 - AUC) of {arm} over {ref}, run by run")
@@ -699,7 +722,7 @@ def comparisons(em, fits, runs, status, index, fmt_pm) -> None:
                 _undefined(em, name, index, path, _two_run(runs, arm, ref))
                 continue
             r, k = _ratio_vals(runs, arm, ref, f)
-            _emit_ratio(em, name, r, k, fmt_pm, index, path, "errors", _two_run(runs, arm, ref))
+            _emit_ratio(em, name, r, k, fmt_pm, index, path, "errors", _two_run(runs, arm, ref), ref_sd=sd)
         if key.startswith("qcd_"):
             continue            # every partition merges the QCD classes
         name, path = (f"MlstCmp{PAIR_WORD[key]}RandOverFull",
@@ -727,7 +750,8 @@ def comparisons(em, fits, runs, status, index, fmt_pm) -> None:
 
 def probe_abs_macros(em, fits, runs, index, fmt_pm) -> None:
     """Absolute JetClass-II values the captions anchor the ratios with: accuracy and AUC averaged over
-    the classes of each configuration and of the randomly initialized networks."""
+    the classes of each configuration and of the randomly initialized networks; and the JetClass
+    accuracy of the randomly initialized network with BatchNorm recomputed (F2(b), A10(b))."""
     n = _largest(fits, "jc2_188")
     for arm in MAIN + MASS + FLAV + (INIT, INIT_BN):
         ms = runs[arm]
@@ -740,6 +764,10 @@ def probe_abs_macros(em, fits, runs, index, fmt_pm) -> None:
     v = [_probe(fits, m, "jc2_188", n, "macro_auc_ovr") for a in RAND for m in runs[a]]
     em.macro("MlstLpJcTwoAucRand", _cell(v, len(v), fmt_pm, sep=TEXT_SEP), index,
              f"linear probe JetClass-II N={n}: AUC averaged over the classes, the random partitions")
+    n1, ms = _largest(fits, "jc1"), runs[INIT_BN]
+    em.macro("MlstLpJcOneAccInitBn", _cell([None if (r := _probe_rec(fits, m, "jc1", n1)) is None else r["accuracy"]
+                                            for m in ms], len(ms), fmt_pm, sep=TEXT_SEP),
+             index, f"linear probe JetClass N={n1}: accuracy, {INIT_BN}")
 
 
 def bn_macros(em, fits, runs, index) -> None:
@@ -926,19 +954,23 @@ def mlp_macros(em, mlp, runs, index, fmt_pm) -> None:
              "their plateau within the epoch cap (count)")
     for t in MLP_JC2:
         f = lambda m, t=t: _mlp(mlp, m, t)
+        sd = _level_sd(runs, f)
         for arm, ref in CMP_MLP:
             r, k = _ratio_vals(runs, arm, ref, f)
             _emit_ratio(em, f"MlstMlpCmp{PAIR_WORD[t]}{WORD[arm]}Over{WORD[ref]}", r, k, fmt_pm, index,
-                        f"nonlinear probe {t}: (1 - AUC) of {arm} over {ref}, run by run", "errors", _two_run(runs, arm, ref))
+                        f"nonlinear probe {t}: (1 - AUC) of {arm} over {ref}, run by run", "errors", _two_run(runs, arm, ref),
+                        ref_sd=sd)
         r = _rand_over(runs, "L188", f)
         _emit_ratio(em, f"MlstMlpCmp{PAIR_WORD[t]}RandOverFull", r, len(r), fmt_pm, index,
                     f"nonlinear probe {t}: (1 - AUC) of each random partition over the 188-class run of its seed", "errors")
     for t in ("top", "qg", "qg_herwig"):
+        f = lambda m, t=t: _mlp_val(mlp, m, t, "r30")
+        sd = _level_sd(runs, f)
         for arm in MAIN:
-            r, k = _ratio_vals(runs, arm, INIT_BN, lambda m, t=t: _mlp_val(mlp, m, t, "r30"))
+            r, k = _ratio_vals(runs, arm, INIT_BN, f)
             _emit_ratio(em, f"MlstMlp{PAIR_WORD[t]}Rthirty{WORD[arm]}OverInitBn", r, k, fmt_pm, index,
                         f"nonlinear probe {t}, missing inputs zero: R30 of {arm} over the BatchNorm-recomputed random "
-                        "network of the same index", "rejection")
+                        "network of the same index", "rejection", ref_sd=sd)
 
 
 # ------------------------------------------------------------------ missing inputs (A16, F5)
@@ -1082,13 +1114,14 @@ def fill_macros(em, raw_v4, fill, fits, runs, index, fmt_pm, missing: list) -> N
         s = chosen[task]
         sel = lambda m, task=task, s=s: _fill_r30(fill, m, task, s) if s else None
         zero = lambda m, task=task: _rej(_probe_rec(fits, m, task), "r30")
+        sds = {sfx: _level_sd(runs, f) for f, sfx in ((sel, ""), (zero, "Zero"))}
         for arm in MAIN + MASS:
             for f, sfx in ((sel, ""), (zero, "Zero")):
                 r, k = _ratio_vals(runs, arm, INIT_BN, f)
                 _emit_ratio(em, f"MlstLp{tw}Rthirty{WORD[arm]}OverInitBn{sfx}", r, k, fmt_pm, index,
                             f"linear probe {task}, largest set, {'chosen substitution' if not sfx else 'zero'}: R30 of {arm} "
                             "over the BatchNorm-recomputed random network of the same index", "rejection",
-                            _two_run(runs, arm))
+                            _two_run(runs, arm), ref_sd=sds[sfx])
         for arm in ("L162", "R42_Q1", "R16_Q1"):
             for f, sfx in ((sel, ""), (zero, "Zero")):
                 r, k = _ratio_vals(runs, arm, "L188", f)
@@ -1262,11 +1295,13 @@ def mass_macros(em, atlas, runs, index, fmt_pm) -> None:
             em.macro(f"MlstMassMlp{WORD[arm]}{gs}", _cell([_ares(atlas, m, "mlp", g) for m in ms], len(ms), fmt_pm,
                                                          sep=TEXT_SEP), index,
                      f"frozen-feature MLP of {arm}, {g} jets, ATLAS resolution")
+        f = lambda m, g=g: _ares(atlas, m, "mlp", g)
+        sd = _level_sd(runs, f)
         for arm, ref in CMP_MASS:
-            r, k = _ratio_vals(runs, arm, ref, lambda m: _ares(atlas, m, "mlp", g))
+            r, k = _ratio_vals(runs, arm, ref, f)
             _emit_ratio(em, f"MlstCmpMlp{WORD[arm]}Over{WORD[ref]}{gs}", r, k, fmt_pm, index,
                         f"frozen-feature MLP resolution of {arm} over {ref}, run by run, {g} jets", "resolution",
-                        _two_run(runs, arm, ref))
+                        _two_run(runs, arm, ref), ref_sd=sd)
 
 
 def loss_share_macros(em, comp, runs, index, fmt_pm, root: pathlib.Path | None = None) -> None:
@@ -1405,16 +1440,19 @@ def sculpt_macros(em, sculpt, sculpt_v2, runs, index, fmt_pm) -> None:
             r = [None if (x := _sculpt(sculpt, m, e)) is None else x / floor for m in ms]
             _emit_ratio(em, f"MlstSculpt{WORD[arm]}OverFloor{ew}", r, len(ms), fmt_pm, index,
                         f"distance at {e} over the random-selection floor, {arm}", "distance", _two_run(runs, arm))
+        f = lambda m, e=e: _sculpt(sculpt, m, e)
+        sd = _level_sd(runs, f)
         for arm, ref in (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"), ("R16_Q1", "L188"), ("L162", "L188"),
                          ("R42_Q1", "L188"), ("R16_Q1", "R42_Q1")):
-            r, k = _ratio_vals(runs, arm, ref, lambda m: _sculpt(sculpt, m, e))
+            r, k = _ratio_vals(runs, arm, ref, f)
             _emit_ratio(em, f"MlstSculpt{WORD[arm]}Over{WORD[ref]}{ew}", r, k, fmt_pm, index,
-                        f"distance at QCD efficiency {e}: {arm} over {ref}, run by run", "distance", _two_run(runs, arm, ref))
+                        f"distance at QCD efficiency {e}: {arm} over {ref}, run by run", "distance", _two_run(runs, arm, ref),
+                        ref_sd=sd)
     curves = {m: _curve(sculpt_v2, m) for arm in MAIN + MASS for m in runs[arm]}
     effs = sorted(set.intersection(*(set(c) for c in curves.values()))) if all(curves.values()) else []
     if not effs:
-        for k in ("MlstSculptDiffEffLo", "MlstSculptDiffEffHi", "MlstSculptLowestEff", "MlstSculptLowestNPass",
-                  "MlstSculptLowestMaxFloorSd", "MlstSculptNConfigs"):
+        for k in ("MlstSculptDiffEffLo", "MlstSculptDiffEffHi", "MlstSculptDiffLoEdge", "MlstSculptLowestEff",
+                  "MlstSculptLowestNPass", "MlstSculptLowestMaxFloorSd", "MlstSculptNConfigs"):
             em.macro(k, r"\pending{sculpting curves}", index, "head/curves_v2 not complete")
         return
     diff = []
@@ -1423,10 +1461,13 @@ def sculpt_macros(em, sculpt, sculpt_v2, runs, index, fmt_pm) -> None:
         v = [x for x in r if x is not None]
         if len(v) >= 3 and np.mean(v) - 2 * np.std(v, ddof=1) > 1:
             diff.append(e)
-    pc = lambda e: f"{100 * e:g}\\%"
+    pc = lambda e: f"{_sig2(100 * e)}\\%"
     em.macro("MlstSculptDiffEffLo", pc(min(diff)) if diff else "none", index,
              "lowest stored QCD efficiency at which the 17/188 distance ratio exceeds 1 by twice its SD")
     em.macro("MlstSculptDiffEffHi", pc(max(diff)) if diff else "none", index, "highest such efficiency")
+    em.macro("MlstSculptDiffLoEdge", ("at" if min(diff) == effs[0] else "above") + " the lowest stored efficiency"
+             if diff else "none", index, "where the window's lower edge lies: at the lowest stored QCD efficiency "
+             "(the 17/188 difference holds at the tightest cut stored) or above it")
     # At the lowest efficiency so few jets pass that a random selection shows a comparable distance: how
     # far above that floor each configuration's mean lies, in units of the floor's own SD over random
     # selections (not the seed SD, which measures the runs' agreement, not closeness to the floor).
@@ -1878,11 +1919,12 @@ def ft_macros(em, per, runs, index, fmt_pm) -> None:
         for n in _sizes(per, key):
             sw = SIZE_WORD.get(n, "Max")
             f = lambda m, key=key, n=n, met=met: _oma(_ftv(per, key, m, n, met))
+            sd = _level_sd(runs, f)
             for arm, ref in FT_R30_CMP:
                 r, k = _ratio_vals(runs, arm, ref, f)
                 _emit_ratio(em, f"MlstFtCmp{_name_over(FT_WORD[key], arm, ref)}{sw}", r, k, fmt_pm, index,
                             f"fine-tuning {key} N={n}: (1 - {met}) of {arm} over {ref}, run by run", "errors",
-                            _two_run(runs, arm, ref))
+                            _two_run(runs, arm, ref), ref_sd=sd)
     for key in ("jc2", "jc1"):
         for n in _sizes(per, key):
             sw = _sw(key, n) or SIZE_WORD.get(n, "Max")
@@ -1922,11 +1964,12 @@ def ft_macros(em, per, runs, index, fmt_pm) -> None:
                 _emit_over_ref(em, f"MlstFt{tw}Rthirty{WORD[arm]}OverScratch{sw}", v, len(v), ref, fmt_pm, index,
                                f"fine-tuning {key} N={n}: R30 of each {arm} run over the from-scratch mean, SD over runs "
                                "and standard error of that mean in quadrature", "rejection", _two_run(runs, arm))
+            sd = _level_sd(runs, f)
             for arm, rf in FT_R30_CMP:
                 r, k = _ratio_vals(runs, arm, rf, f)
                 _emit_ratio(em, f"MlstFt{_name_over(tw + 'Rthirty', arm, rf)}{sw}", r, k, fmt_pm, index,
                             f"fine-tuning {key} N={n}: R30 of {arm} over {rf}, run by run", "rejection",
-                            _two_run(runs, arm, rf))
+                            _two_run(runs, arm, rf), ref_sd=sd)
             for rf in ("L188", "R16_Q1"):
                 r = _rand_over(runs, rf, f)
                 if any(x is not None for x in r):
@@ -2063,11 +2106,12 @@ def jetclass_macros(em, pre: dict, runs: dict, src, fmt_pm, words) -> None:
     for c, _ in V4.JC1_COLS:
         cw = JC1_WORD[c]
         f = lambda m, c=c: None if (x := _jc1_rej(pre, m, c)) is None else x["rejection"]
+        sd = _level_sd(runs, f)
         for arm, ref in FT_R30_CMP:
             r, k = _ratio_vals(runs, arm, ref, f)
             _emit_ratio(em, f"MlstFtJcOneRej{cw}{WORD[arm]}Over{'Full' if ref == 'L188' else WORD[ref]}", r, k, fmt_pm,
                         src, f"cells.<run>.N1000000.s1.jc1.per_class.{c}: rejection of {arm} over {ref}, run by run",
-                        "rejection", _two_run(runs, arm, ref))
+                        "rejection", _two_run(runs, arm, ref), ref_sd=sd)
         r = _rand_over(runs, "L188", f)
         _emit_ratio(em, f"MlstFtJcOneRej{cw}RandOverFull", r, len(r), fmt_pm, src,
                     f"per_class.{c}: rejection of each random partition over the 188-class run of its seed", "rejection")
@@ -2245,15 +2289,21 @@ def _roc_curves(fam: dict, ms: list, key: str) -> list:
     return [fam.get(m, {}).get("curves", {}).get(key) for m in ms]
 
 
-def _roc_cut(curves: list, top: float) -> str | None:
+# grid points at or above its cut a run's ROC curve needs to be drawn (one point draws no line);
+# paper_figures reads it, so the figures and the 'not reached' of _roc_cut agree
+ROC_MIN_POINTS = 2
+
+
+def _roc_cut(curves: list, grid: list) -> str | None:
     """The signal efficiency above which every run's curve is drawn: the largest cut.eps_s, two
-    decimals; 'not reached' when a run has no grid point with JC1_MIN_BKG background jets, i.e. its cut
-    is null or above top, the grid's last signal efficiency (the figure's rule: a configuration is drawn
-    only where every run survives, so one such run removes its curve); None without curves."""
+    decimals; 'not reached' when a run has fewer than ROC_MIN_POINTS grid points with JC1_MIN_BKG
+    background jets, i.e. its cut is null or fewer grid signal efficiencies lie at or above it (the
+    figure's rule: a configuration is drawn only where every run survives, so one such run removes its
+    curve); None without curves."""
     have = [c for c in curves if c is not None]
     if not have:
         return None
-    gone = any(c["cut"] is None or c["cut"]["eps_s"] > top for c in have)
+    gone = any(c["cut"] is None or sum(e >= c["cut"]["eps_s"] for e in grid) < ROC_MIN_POINTS for c in have)
     body = "not reached" if gone else f"{max(c['cut']['eps_s'] for c in have):.2f}"
     return body + (rf" \pending{{{len(have)} of {len(curves)}}}" if len(have) < len(curves) else "")
 
@@ -2274,22 +2324,22 @@ def no_curve_phrase(arms: list) -> str:
 
 def roc_macros(em, roc: dict, runs: dict, index, missing: list, fmt_int) -> None:
     """From the ROC curves (mlst_v4.load_roc): MlstRocCut{pair}{W} and MlstRocCutJcOne{class}Full (_roc_cut
-    over a configuration's runs, against the top of the family's grid; load_roc requires one grid per
+    over a configuration's runs, against the family's grid; load_roc requires one grid per
     family), MlstRocNBkg{pair} and MlstRocRejMax{pair} (the test set's background jets and that over
     JC1_MIN_BKG, where every curve stops), MlstRocNoCurveEemm (the configurations of F4 that draw no
-    X->ee vs X->mumu curve, by F4's rule: _roc_cut 'not reached', i.e. some run has no grid point with
-    JC1_MIN_BKG background jets; a noun phrase). The all-runs-null rule of ROC_INTERFACE 3.2 was
+    X->ee vs X->mumu curve, by F4's rule: _roc_cut 'not reached', i.e. some run has fewer than
+    ROC_MIN_POINTS grid points with JC1_MIN_BKG background jets; a noun phrase). The all-runs-null rule of ROC_INTERFACE 3.2 was
     replaced by the figure's rule (2026-11-02, to be flagged to the PI)."""
     pairs = roc.get("pairs", {})
-    top = next(iter(pairs.values()))["eps_grid"][-1] if pairs else None
+    grid = next(iter(pairs.values()))["eps_grid"] if pairs else None
     for key in ROC_PAIRS:
         p = PAIR_WORD[key]
         for arm in MAIN + FLAV:
-            body = _roc_cut(_roc_curves(pairs, runs[arm], key), top)
+            body = _roc_cut(_roc_curves(pairs, runs[arm], key), grid)
             if body is not None:
                 em.macro(f"MlstRocCut{p}{WORD[arm]}", body, index,
                          f"curves_v2/pairs curve {key}: largest cut.eps_s over the {arm} runs "
-                         f"('not reached' when a run's cut is null or above the grid's last point {top})")
+                         f"('not reached' when a run's cut is null or leaves fewer than {ROC_MIN_POINTS} grid points)")
         c = next((d["curves"][key] for d in pairs.values() if key in d["curves"]), None)
         if c is not None:
             em.macro(f"MlstRocNBkg{p}", fmt_int(c["n_background"]), index, f"curves_v2/pairs curve {key}: n_background")
@@ -2297,11 +2347,11 @@ def roc_macros(em, roc: dict, runs: dict, index, missing: list, fmt_int) -> None
                      f"curves_v2/pairs curve {key}: n_background / {V4.JC1_MIN_BKG}")
     cur = {a: _roc_curves(pairs, runs[a], "ee_vs_mm") for a in MAIN + FLAV}
     if pairs and all(c is not None for v in cur.values() for c in v):
-        none = [a for a, v in cur.items() if _roc_cut(v, top).startswith("not reached")]
+        none = [a for a, v in cur.items() if _roc_cut(v, grid).startswith("not reached")]
         if none:
             em.macro("MlstRocNoCurveEemm", no_curve_phrase(none), index,
-                     "curves_v2/pairs curve ee_vs_mm: configurations of F4 with a run whose cut is null or above "
-                     f"the grid's last point {top} (F4 draws no curve for them)", ", ".join(none))
+                     "curves_v2/pairs curve ee_vs_mm: configurations of F4 with a run whose cut is null or leaves "
+                     f"fewer than {ROC_MIN_POINTS} grid points (F4 draws no curve for them)", ", ".join(none))
         else:
             em.macro("MlstRocNoCurveEemm", r"\pending{every configuration draws an ee/mumu curve: rewrite the "
                      r"sentences that use this macro}", index, "curves_v2/pairs curve ee_vs_mm: every configuration "
@@ -2309,13 +2359,13 @@ def roc_macros(em, roc: dict, runs: dict, index, missing: list, fmt_int) -> None
             missing.append("MlstRocNoCurveEemm -- every configuration of F4 draws an X->ee vs X->mumu curve: the "
                            "results text and the F4 caption that name those without one must be rewritten")
     jc = roc.get("jc1_ft", {})
-    jc_top = next(iter(jc.values()))["eps_grid"][-1] if jc else None
+    jc_grid = next(iter(jc.values()))["eps_grid"] if jc else None
     for c, _ in V4.JC1_COLS:
-        body = _roc_cut(_roc_curves(jc, runs["L188"], c), jc_top)
+        body = _roc_cut(_roc_curves(jc, runs["L188"], c), jc_grid)
         if body is not None:
             em.macro(f"MlstRocCutJcOne{JC1_WORD[c]}Full", body, index,
                      f"curves_v2/jc1_ft curve {c}: largest cut.eps_s over the 188-class runs "
-                     f"('not reached' when a run's cut is null or above the grid's last point {jc_top})")
+                     f"('not reached' when a run's cut is null or leaves fewer than {ROC_MIN_POINTS} grid points)")
 
 
 def eemm_macros(em, fits: dict, runs: dict, index, fmt_pm, fmt_int) -> None:
@@ -2954,7 +3004,8 @@ CAPTIONS = {
     "ft": ("tab:ft", "Fine-tuning against the number of training jets (column headers), in each task's metric: AUC "
            "averaged over the classes on class-balanced JetClass-II (all classes and the QCD classes), accuracy on "
            "JetClass, and $R_{30}$ on top, quark/gluon and Herwig jets. " + SPREAD + " Each pretrained run is "
-           "fine-tuned once; from scratch: \\MlstFtRefSeedsWord{} training seeds on the same jets. The last column of "
+           "fine-tuned once; from scratch: \\MlstFtRefSeedsWord{} training seeds, on the same jets for top and "
+           "quark/gluon and on JetClass each on its own training subset. The last column of "
            "the JetClass-II block is $\\rho$ of equation~(\\ref{eq:ratio}) at $10^{6}$ training jets, $1-\\mathrm{AUC}$ "
            "over that of the \\Kfull-class run of the same seed."),
     "ft_rej": ("tab:ftrej", "Fine-tuning on the full training sets of top and quark/gluon (also scored on Herwig "

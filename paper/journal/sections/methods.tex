@@ -264,7 +264,8 @@ as in MultiBERTs~\cite[App.~D]{multiberts}.
 
 Each task is scored with the discriminants and metrics its literature uses, in one notation. A signal $S$ and a
 background $B$ are each one class or a set of classes, with $g_S = \sum_{s\in S} g_s$ and $g_B$ formed in the
-same way from the output scores of equation~(\ref{eq:softmax}). The discriminant is
+same way from the output scores of the classifier being evaluated: the head, equation~(\ref{eq:softmax}), or a
+probe, such as the $g_k$ of a linear probe in equation~(\ref{eq:probe}). The discriminant is
 \begin{equation}\label{eq:discr}
   D_S(x) = \frac{g_S(x)}{g_S(x) + g_B(x)} ,
 \end{equation}
@@ -453,7 +454,8 @@ against the \Kfull-class run of the same seed, the randomly initialized network 
 run's initial weights; the network trained from scratch and the kinematic-only model, which have no such
 partner, are divided by the mean of the \Kfull-class runs. For a configuration with two runs, a ratio is a
 difference only when both runs lie further from one than twice the standard deviation of the same ratio between
-levels of the class hierarchy. The finite test set adds less to the uncertainty than the variation between
+levels of the class hierarchy (the relative standard deviation over seeds of each coarser level against the
+\Kfull-class model, pooled over the three levels). The finite test set adds less to the uncertainty than the variation between
 pretraining runs (appendix~\ref{sec:app-boot}). % CHECK: pending MlstBootTestMaxProbe (class-balanced bootstrap) and MlstBootTestMaxFt; the test-set SD must lie below the seed SD of the JetClass-II label-set ratios
 Training ran on several GPU types, and table~\ref{tab:compute} gives each run's types and GPU-hours. The \MlstNRunsWord{}
 \Kfull-class models trained on one GPU type each, one of them on a different type from the other two. The

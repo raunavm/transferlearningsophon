@@ -261,9 +261,12 @@ controlled flavor boundaries \RandFlavRuns{} and each random partition \RandVtwo
 features, the output of the backbone (the network below the classification head) with its weights held
 fixed, feed linear probes (logistic regressions) and multilayer perceptron (MLP) probes; fine-tuning
 trains all weights. Colors identify the label sets and controls in every figure; the plots give the three partitions with
-controlled flavor boundaries three further colors. Every figure also gives each label set its own
-line style (solid, dashed, dash-dot and dotted from the \Kfull- to the \Kcoarse-class model) and each
-control its own long-dash pattern, so the curves read without color; dotted borders mark the two
-variants, which the other figures draw in the color of their label set with long dashes and long dash-dot.}
+controlled flavor boundaries three further colors. In the line and ROC figures each label set also
+has its own line style (solid, dashed, dash-dot and dotted from the \Kfull- to the \Kcoarse-class model), and
+the controls are drawn with long dashes, long dash-dot and dash-dot-dot (the three partitions with controlled
+flavor boundaries), dash-dot-dot (training from scratch) or as points only (the random partitions), so the
+curves read without color. Dotted borders mark the three variants (two with the auxiliary mass regression,
+one with kinematic inputs only), which the other figures draw in the color of their label set with long
+dashes or long dash-dot.}
 \label{fig:design}
 \end{figure}

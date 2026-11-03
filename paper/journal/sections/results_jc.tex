@@ -53,10 +53,11 @@ tagging; (d) $R_{30}$ on quark/gluon discrimination with the Pythia sample. Dash
 linear probes on frozen features at the largest training set of each task; solid lines and open markers:
 fine-tuning on \FtSizeESix{} jets on JetClass-II and JetClass and on the full training sets of top tagging
 and quark/gluon discrimination. The lines join the four levels of the class hierarchy; markers are means with
-bars of one standard deviation over \MlstNRunsWord{} pretraining runs. At \Kcoarse{} classes sit the
+bars of one standard deviation over \MlstNRunsWord{} pretraining runs, and small dots on them the individual
+runs. At \Kcoarse{} classes sit the
 \RandVtwoNPartitions{} random partitions (\RandVtwoRuns{} run each, shown as points; the larger marker is
-their mean and standard deviation) and the random partitions with no, a $b$-quark and a random flavor
-boundary (\RandFlavRuns{} runs each, both shown), as linear probes and, where they were fine-tuned, after
+their mean and standard deviation) and the partitions with controlled flavor boundaries (none, a $b$-quark
+boundary, a random flavor boundary; \RandFlavRuns{} runs each, with bars of their range), as linear probes and, where they were fine-tuned, after
 fine-tuning; they are not fine-tuned on JetClass-II. The JetClass-II test set holds up to
 \JcBalTestPerClass{} jets per class and all jets of the \JcBalNShort{} classes with fewer, and its classes
 are the \Kfull-class model's own, so finer label sets are favored there by construction. On top tagging
@@ -64,7 +65,8 @@ and quark/gluon discrimination the inputs the data lack are substituted for the 
 validation (\LpSubstitutionTop{} and \LpSubstitutionQg) and set to zero for fine-tuning. The accuracy axes
 of (a) and (b) are linear and do not start at zero; the $R_{30}$ axes of (c) and (d) are logarithmic, because
 the linear probes and the fine-tuned models lie more than a decade apart on top tagging. For scale, a linear probe on the randomly initialized network with its
-BatchNorm statistics recomputed reaches an accuracy of \MlstLpJcTwoAccInitBn{} on JetClass-II. The AUC of
+BatchNorm statistics recomputed reaches an accuracy of \MlstLpJcTwoAccInitBn{} on JetClass-II (a) and
+\MlstLpJcOneAccInitBn{} on JetClass (b). The AUC of
 every configuration is in tables~\ref{tab:probes}, \ref{tab:ft} and~\ref{tab:ftrej}.}
 \label{fig:f2}
 \end{figure}
@@ -144,12 +146,15 @@ only in their quark flavors, and the \Kcoarse-class labels merge every such set 
 The \Kcoarse-class level alone cannot tell whether a class loses because it is merged with a flavor
 counterpart or because of the kind of decay it is, since it merges every such class. The random partitions
 separate the two, because each merges some flavor counterparts and keeps others apart. Across the
-\RandVtwoNPartitions{} partitions, the classes merged with a counterpart in quark flavor make
-\MlstPerClassRandFlavMergedOverApartPr{} at the median than those kept apart from all of theirs; for
-lepton flavor the same comparison gives \MlstPerClassRandLeptonMergedOverApartPr{}. The cost follows
-the merge rather than the kind of decay: a class loses the separation that a merged label no longer rewards.
-% CHECK: MlstPerClassRandFlavMergedOverApart and MlstPerClassRandLeptonMergedOverApart > 1 by more than
-% 2 SD; if either is a null, say that the cost follows the kind of decay for that flavor, not the merge.
+\RandVtwoNPartitions{} partitions, the median per-class ratio of the classes merged with a counterpart in
+quark flavor over that of the classes kept apart from all of theirs is
+\MlstPerClassRandFlavMergedOverApartPr{}; for lepton flavor it is \MlstPerClassRandLeptonMergedOverApartPr{}.
+Within the random partitions, merged and kept-apart classes thus lose alike: in a curve of one class against
+the rest, sharing a label with a flavor counterpart adds no cost beyond what the kind of decay brings. The
+merge itself shows in the separation of the merged pair, which the pair $X\to ee$ against $X\to\mu\mu$
+below tests.
+% CHECK: MlstPerClassRandFlavMergedOverApartPr and MlstPerClassRandLeptonMergedOverApartPr read "equal within"
+% (today 1% and 3%); if either states a direction, the cost follows the merge for that flavor: rewrite.
 
 \begin{figure}[p]
 \centering
@@ -218,7 +223,7 @@ that separates it from $X\to bq$. The \Kcoarse-class labels remove flavor altoge
 A merge in lepton flavor removes a distinction that the finer labels keep almost perfectly. On $X\to ee$
 against $X\to\mu\mu$, a linear probe on the frozen features of the configurations that keep the two apart
 (\MlstRocNoCurveEemm) separates the test jets so completely that in at least one run of each fewer than
-$\nmin$ $X\to\mu\mu$ jets pass at every signal efficiency of the curve, so their curves cannot be drawn in
+$\nmin$ $X\to\mu\mu$ jets pass at all but at most one signal efficiency of the curve, so their curves cannot be drawn in
 figure~\ref{fig:f4}(d). At \Kmid{} and \Kcoarse{} classes, where the two decays share a
 class, the AUC of a linear probe falls to \MlstLpEemmAucMid{} and \MlstLpEemmAucCoarse{}, against
 \MlstLpEemmAucFull{} at \Kfull{} classes (table~\ref{tab:pairs}). An electron and a muon differ in the inputs
@@ -237,8 +242,8 @@ efficiency $\epsS$, equations~(\ref{eq:eff}) and~(\ref{eq:rej}), with the first 
 signal. (a) $X\to b\bar b$ against $X\to c\bar c$; (b) $X\to YY\to bbqq$ against $X\to YY\to ccqq$; (c) $X\to bc$
 against $X\to bq$ and $X\to cs$ together, the classes in the denominator of the discriminant of the boosted
 $|V_{cb}|$ measurement; (d) $X\to ee$ against $X\to\mu\mu$. Colored lines (solid, dashed, dash-dot and dotted): the \Kfull-, \Kres-, \Kmid- and
-\Kcoarse-class levels of the hierarchy; long-dashed, long-dash-dot and dash-dot-dot lines: the random partitions
-with no, a $b$-quark and a random flavor boundary. Lines are the mean of the runs at fixed $\epsS$, with bands of one standard deviation over
+\Kcoarse-class levels of the hierarchy; long-dashed, long-dash-dot and dash-dot-dot lines: the partitions with controlled flavor
+boundaries (none, a $b$-quark boundary, a random flavor boundary). Lines are the mean of the runs at fixed $\epsS$, with bands of one standard deviation over
 \MlstNRunsWord{} pretraining runs, or the range of the \RandFlavRuns{} runs of a partition. Lower panels: ratio
 of the rejection to that of the \Kfull-class run of the same seed, drawn flat at one for that model. Each curve
 stops where fewer than $\nmin$ background jets pass, equation~(\ref{eq:cut}), marked by the dashed black line at
@@ -246,9 +251,9 @@ $N_B/\nmin$: a rejection of \MlstRocRejMaxBb{} in (a)--(c), whose test sets hold
 jets, and of \MlstRocRejMaxEemm{} in (d), whose test set holds \MlstRocNBkgEemm. The \Kfull-class curves
 therefore begin only at signal efficiencies of \MlstRocCutBbFull{} in (a), \MlstRocCutBbqqFull{} in (b)
 and \MlstRocCutBcFull{} in (c), and the ratio panels cover the signal efficiencies above these. In (d), the
-curves of \MlstRocNoCurveEemm{} cannot be drawn, because in at least one of their runs fewer than $\nmin$ background jets pass at every
-signal efficiency of the curve; they are listed in the legend only, and (d) has no ratio panel. The random partitions, the models with the auxiliary
-mass regression and the multilayer perceptron probes are in tables~\ref{tab:pairs} and~\ref{tab:mlp}.}
+curves of \MlstRocNoCurveEemm{} cannot be drawn, because in at least one of their runs fewer than $\nmin$ background jets pass at all but at most one
+signal efficiency of the curve, and a curve needs two; they are listed in the legend only, and (d) has no ratio panel. The random partitions without a controlled flavor
+boundary, the models with the auxiliary mass regression and the multilayer perceptron probes are in tables~\ref{tab:pairs} and~\ref{tab:mlp}.}
 \label{fig:f4}
 \end{figure}
 % CHECK: MlstRocNBkgBb equals MlstRocNBkgBbqq and MlstRocNBkgBc (one test-set size per side for the three
@@ -268,7 +273,8 @@ class against the QCD background. For $t\to bqq'$ and $t\to b\ell\nu$ the \Kfull
 signal efficiencies of \MlstRocCutJcOneTbqqFull{} and \MlstRocCutJcOneTblFull, below which fewer than $\nmin$
 QCD jets pass, close to ParT's working points for these classes.
 % CHECK: MlstRocCutJcOneTbqqFull and MlstRocCutJcOneTblFull lie near 0.5 and 0.995 (ROC_INTERFACE 3.2 [I]);
-% if not, drop "close to ParT's working points".
+% if not, drop "close to ParT's working points". If MlstRocCutJcOneTblFull reads "not reached" (fewer than
+% ROC_MIN_POINTS grid points keep nmin QCD jets, so F6J draws no t->blnu curve), rewrite the sentence to say so.
 
 \input{tables/mlst_jetclass}
 

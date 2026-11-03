@@ -535,3 +535,76 @@ def test_a_curve_only_some_panels_show_gets_its_own_legend_in_those_panels(P, M,
     assert top is not None and [t.get_text() for t in top.get_texts()] == [kin]
     assert fig.axes[2].get_legend() is None and fig.axes[4].get_legend() is None
     plt.close(fig)
+
+
+def test_the_two_mass_models_have_their_own_marker_shapes(P, M, runs, inputs):
+    # F8a and A17 draw each mass model with its marker in style.CONFIG (filled for 162 classes, open for
+    # 17), in the binned panels and in the shared legend, so the two read apart without colour
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import same_color
+    fig, axs = plt.subplots(3, 1)
+    assert P.mass_bins(axs, M, runs, inputs["atlas"], "all", "vs_pt", "pT", "test")
+    got = {}
+    for a in M.MASS:
+        lk = P.look(M, a)
+        lines = [ln for ln in axs[0].lines if same_color(ln.get_color(), lk["color"]) and ln.get_marker() != "None"]
+        assert len({ln.get_marker() for ln in lines}) == 1, a
+        got[a] = (lines[0].get_marker(), same_color(lines[0].get_markerfacecolor(), "white"))
+        assert got[a][0] == P.style.CONFIG[a]["marker"], a
+    assert len({m for m, _ in got.values()}) == len(M.MASS)
+    assert not got["L162_MASS"][1] and got["R16_Q1_MASS"][1]
+    leg = plt.figure()
+    P._mass_legend(leg, M)
+    handles = leg.legends[0].legend_handles[1:]
+    assert [h.get_marker() for h in handles] == [P.style.CONFIG[a]["marker"] for a in M.MASS]
+    plt.close(fig)
+    plt.close(leg)
+
+
+def _shape(ls) -> tuple:
+    """The look of a line style without colour: solid, or each on-segment of its dash pattern a dot
+    (at most 2 points) or a dash, as matplotlib draws the named styles."""
+    named = {"-": (), "solid": (), "--": ("dash",), ":": ("dot",), "-.": ("dash", "dot")}
+    if isinstance(ls, str):
+        return named[ls]
+    return tuple("dot" if on <= 2 else "dash" for on in ls[1][::2])
+
+
+def test_no_two_f9_curves_of_a_row_share_their_look_without_colour(P, M, runs, inputs, monkeypatch, tmp_path):
+    # every series of one F9 row (transfer heads, direct discriminant, output-node control, from scratch)
+    # must differ in line-style shape or marker, not by colour only (the 17-class head is dotted, so the
+    # output-node control may not be)
+    drawn = {}
+    real = P._mean_band
+
+    def record(ax, x, v, kw, label):
+        if label is not None:       # the right panels: one call per series
+            drawn.setdefault(id(ax), []).append((label, _shape(kw.get("linestyle", "-")), kw.get("marker")))
+        return real(ax, x, v, kw, label)
+    monkeypatch.setattr(P, "_mean_band", record)
+    assert P.figure_f9(M, runs, inputs, tmp_path)
+    assert len(drawn) == 2
+    for row in drawn.values():
+        looks = [(shape, marker) for _, shape, marker in row]
+        assert len(set(looks)) == len(looks), row
+    assert any("output node" in label for row in drawn.values() for label, *_ in row)
+
+
+def test_a_roc_curve_with_one_surviving_point_is_not_drawn(P, M, runs, inputs):
+    # a configuration whose cut leaves a single grid point (here 0.995, cut at 0.993) draws no visible
+    # line, so neither the ROC nor the ratio panel draws it, and the generator calls it 'not reached'
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import same_color
+    fam = json.loads(json.dumps(inputs["roc"]["pairs"]))
+    for m in runs["R16_Q1"]:
+        fam[m]["curves"]["bb_vs_cc"]["cut"]["eps_s"] = 0.993
+    assert sum(e >= 0.993 for e in EPS) == 1
+    configs = [(row, list(runs[row])) for row in P.LEVELS]
+    fig, (ax, rx) = plt.subplots(2, 1)
+    ratio, rows = P.roc_panel(ax, rx, M, fam, "bb_vs_cc", configs)
+    red = P.look(M, "R16_Q1")["color"]
+    assert ratio and "R16_Q1" in rows
+    assert not any(same_color(ln.get_color(), red) for ln in list(ax.lines) + list(rx.lines))
+    assert any(same_color(ln.get_color(), P.look(M, "R42_Q1")["color"]) for ln in ax.lines)
+    assert M._roc_cut([fam[m]["curves"]["bb_vs_cc"] for m in runs["R16_Q1"]], EPS) == "not reached"
+    plt.close(fig)

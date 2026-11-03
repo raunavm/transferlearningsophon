@@ -76,12 +76,12 @@ against the spread of the \MlstNRunsWord{} \Kfull-class runs rather than as a ra
 our models from ParT: the rescaling above, and pretraining on JetClass-II, with pileup, rather than
 on JetClass.
 
-On top tagging, frozen features from pretraining give a linear probe no more than the randomly
-initialized network gives it. With the missing inputs set to zero, the rejection of a linear probe on
-the frozen \Kfull-class features matches that of a linear probe on the randomly initialized network % CHECK: MlstLpTopRthirtyFullOverInitBnZeroPr must read "equal within" (today 1.04 and 1.08 with two init_bn seeds; init-s3 pending)
-(\MlstLpTopRthirtyFullOverInitBnZeroPr{}; the MLP probe gives the same result,
+On top tagging, frozen features from pretraining give a linear probe little more than the randomly
+initialized network gives it. With the missing inputs set to zero, a linear probe on the frozen
+\Kfull-class features and one on the randomly initialized network reach a similar rejection % CHECK: MlstLpTopRthirtyFullOverInitBnZeroPr reads "equal within" (two init_bn seeds: the Methods two-run rule; today 1.04 and 1.08) or a gain of a few per cent; a larger gain contradicts "little more"
+(figure~\ref{fig:f5}(c); \Kfull-class over randomly initialized network: \MlstLpTopRthirtyFullOverInitBnZeroPr{}; the MLP probe:
 \MlstMlpTopRthirtyFullOverInitBnPr{}), and both lie far below every fine-tuned model
-(figure~\ref{fig:f5}(c)). Fine-tuning the % CHECK: MlstMlpTopRthirtyFullOverInitBnPr must read "equal within" (today 1.00 +- 0.31)
+(figure~\ref{fig:f2}(c) and table~\ref{tab:benchtop}). Fine-tuning the % CHECK: MlstMlpTopRthirtyFullOverInitBnPr must read "equal within" (today 1.00 +- 0.31)
 same backbone on the same zero-substituted jets gives the gain of table~\ref{tab:benchtop}, so the
 frozen features are limited by how they respond to the substituted inputs, not by what the backbone
 can represent.
@@ -96,17 +96,18 @@ JetClass-II test set when the \FillTopNZero{} inputs the top-tagging data lack (
 jets, against the same model with every input; the absolute accuracy is printed at each bar end. (c),
 (d) Background rejection at 30\% signal efficiency of a linear probe on top tagging (c) and on
 quark/gluon discrimination with the Pythia sample (d), trained on the full benchmark training set.
-Each group of bars is one model: the \Kfull-class model and the randomly initialized network with its
-BatchNorm statistics recomputed. Within a group the missing inputs are set to zero (solid), to the
+Each group of bars is one model: the \Kfull- and \Kcoarse-class models and the randomly initialized network
+with its BatchNorm statistics recomputed. Within a group the missing inputs are set to zero (solid), to the
 training mean (hatched) or to random draws of a real JetClass-II particle (dot-hatched); the substitution
-chosen on validation is outlined in black, and in (c) and (d) the value of $R_{30}$ is printed at each bar
-end. Panels (c) and (d) add the \Kfull-class model with kinematic inputs only (dotted outline), which lacks
-no input; it is one run, not paired by seed with the other models. Open markers on the zero bars of (c) and (d): a
-multilayer perceptron trained on the same frozen features. After the input normalization a zeroed
+chosen on validation is outlined in black, and in (c) and (d) the $R_{30}$ of the linear probe is printed at
+each bar end, or, where the open marker would cover it, inside the bar or past the marker. Panels (c) and (d) add the \Kfull-class model with kinematic inputs only (dotted outline), which lacks
+no input; it is one run, not paired by seed with the other models. Open markers on the zero bars of the \Kfull-class
+model and the randomly initialized network in (c) and (d): a multilayer perceptron trained on the same frozen
+features; its value is not printed. After the input normalization a zeroed
 type flag lies at most \MlstInputBnZeroSigmaMax{} standard deviations from the training mean of that
 flag. Bars are the mean, error bars the standard deviation and points the individual runs, over the
-\MlstNRunsWord{} pretraining runs of the \Kfull-class model and the randomly initialized networks of
-the same seeds.}
+\MlstNRunsWord{} pretraining runs of the \Kfull- and \Kcoarse-class models and the randomly initialized
+networks of the same seeds.}
 \label{fig:f5}
 \end{figure}
 
@@ -175,7 +176,7 @@ Pythia~\cite{sophon,pythia}, so the pretrained network has seen no jet with Herw
 On quark/gluon discrimination, frozen features from pretraining give a linear probe more than the
 randomly initialized network gives it, but not much more. With the displacement inputs substituted as
 chosen on validation (\LpSubstitutionQg{}), a linear probe on the frozen \Kfull-class features
-rejects more background than one on the randomly initialized network % CHECK: pending MlstLpQgRthirtyFullOverInitBn (fits_v4_fill); with zero today 1.06 and 1.36 (two init_bn seeds)
+rejects more background than one on the randomly initialized network % CHECK: pending MlstLpQgRthirtyFullOverInitBn (fits_v4_fill); with zero today 1.06 and 1.36 (two init_bn seeds); with two seeds its Pr reads "equal within" unless both lie beyond twice the hierarchy-level SD (Methods): then rewrite "rejects more" and the two sentences after it
 (\MlstLpQgRthirtyFullOverInitBnPr{}; figure~\ref{fig:f5}(d)). The frozen features likely do better
 here than on top tagging because the type flags and the charge are present. They gain little over the
 randomly initialized network because the missing displacements still leave every charged particle in
@@ -209,8 +210,9 @@ fine-tuning runs on the smaller training sets are evaluated.}
 sample. Upper panels: accuracy (a, b), equation~(\ref{eq:acc}), or $R_{30}$, equation~(\ref{eq:rej}), on a
 logarithmic scale (c, d) for the fine-tuned \Kfull-class model (solid line), a linear probe, a
 logistic regression on the frozen features of the same model (dashed line, same color), and the same
-network trained from scratch (black, open squares). Lower panels: fine-tuning over
-training from scratch at the same number of jets. The horizontal axes are logarithmic. Lines are the
+network trained from scratch (black dash-dot-dot line with open squares). Lower panels: the mean of
+fine-tuning over that of training from scratch at the same number of jets, without a band, with a dotted
+line at one. The horizontal axes are logarithmic. In the upper panels, lines are the
 mean and bands the standard deviation over the \MlstNRunsWord{} pretraining runs, one fine-tuning or
 linear probe each, and over the \MlstFtRefSeedsWord{} training seeds from scratch. On top and
 quark/gluon discrimination the linear probe's missing inputs are substituted as chosen on validation

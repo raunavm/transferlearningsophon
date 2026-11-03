@@ -41,9 +41,9 @@ flavor: merging them leaves the resonant classes unchanged but costs the QCD pai
 Add an auxiliary mass regression: it puts the jet mass into the frozen features and lowers the sculpting
 of the QCD mass distribution at a QCD efficiency of \SculptEffLow{} (table~\ref{tab:mass} and
 figures~\ref{fig:f8a} and~\ref{fig:f8b}). Its cost to the classification of the pretraining classes
-is small; after fine-tuning on top tagging the \Kres-class models with it show no consistent change and
-the \Kcoarse-class models lose some rejection, which \MlstMassNRunsWord{} runs per model do not yet
-resolve (section~\ref{sec:mass}). % CHECK: pending MlstCmpMlpResMassOverRes < 1; MlstSculptCoarseMassOverCoarseOne < 1 in both runs; MlstFtTopRthirtyResMassOverRes straddles 1 and MlstFtTopRthirtyCoarseMassOverCoarse below 1 in both runs (raw R30 today: 1.12 and 0.89; 0.90 and 0.92), as section 4.6 states; the writer's "changes by no more than the variation between pretraining runs" contradicted section 4.6 and was replaced
+is small; after fine-tuning on top tagging neither label set with it shows a change beyond the uncertainty
+of $R_{30}$, and \MlstMassNRunsWord{} runs per model cannot exclude a modest one
+(section~\ref{sec:mass}). % CHECK: pending MlstCmpMlpResMassOverRes < 1; MlstSculptCoarseMassOverCoarseOne < 1 in both runs; as section 4.6 states, MlstFtTopRthirtyResMassOverResPr and MlstFtTopRthirtyCoarseMassOverCoarsePr read "equal within" under the Methods two-run rule (raw R30 today: 1.12 and 0.89; 0.90 and 0.92); if either states a direction beyond MlstBootTestMaxRthirtyFt, rewrite both sections
 For benchmarks with missing inputs, compare label sets by fine-tuning with the missing input features
 set to zero, which gives every label set identical inputs; input dropout during pretraining, which
 replaces some inputs with zeros, is the published alternative~\cite{omnilearn,jpjepa}. Report the variation between pretraining runs, because the
