@@ -2220,21 +2220,27 @@ def per_class_auc_diff(fits, runs, arm) -> dict:
 
 def jc2_roc_classes(fits, runs, root, census) -> dict:
     """The classes of A3R: {"hurt": [NHURT labels], "stable": [NSTABLE labels], "drop": {c: pp},
-    "change": {c: pp}}. drop_c = mean over indices of 100 (AUC_c^188 - AUC_c^17); change_c = max over
-    the 162-, 43- and 17-class label sets of |mean over indices of 100 (AUC_c^K - AUC_c^188)|.
-    Candidates: classes with at least THIN_TEST class-balanced test jets (census["counts"]["ft_test"];
-    every class when census is None). hurt = the NHURT largest drop_c; stable = the NSTABLE smallest
-    change_c among the rest. Each list in F3's row order (_class_rows, resonant before QCD)."""
+    "change": {c: pp}, "ratio_dev": {c: fraction}}. drop_c = mean over indices of 100 (AUC_c^188 -
+    AUC_c^17); change_c = max over the 162-, 43- and 17-class label sets of |mean over indices of
+    100 (AUC_c^K - AUC_c^188)|; ratio_dev_c = max over the same label sets of |mean over indices of
+    (1 - AUC_c^K) / (1 - AUC_c^188) - 1|. Candidates: classes with at least THIN_TEST class-balanced
+    test jets (census["counts"]["ft_test"]; every class when census is None). hurt = the NHURT largest
+    drop_c; stable = the NSTABLE smallest ratio_dev_c among the rest, not change_c: X->ee and X->mumu
+    change least in AUC, since theirs is near 1, while their rejection falls threefold (seen in the
+    first A3R, 2026-11-03). Each list in F3's row order (_class_rows, resonant before QCD)."""
     mean = {a: {c: float(np.mean(v)) for c, v in per_class_auc_diff(fits, runs, a).items() if v}
             for a in ("L162", "R42_Q1", "R16_Q1")}
     drop = {c: -v for c, v in mean["R16_Q1"].items()}
     change = {c: max(abs(mean[a][c]) for a in mean) for c in drop if all(c in mean[a] for a in mean)}
+    ratio = {a: {c: float(np.mean(v)) for c, v in per_class_ratios(fits, runs, a).items() if v} for a in mean}
+    dev = {c: max(abs(ratio[a][c] - 1) for a in ratio) for c in change if all(c in ratio[a] for a in ratio)}
     counts = census["counts"]["ft_test"] if census else None
     order = {int(r["jet_label"]): i for i, r in enumerate(_class_rows(root))}
-    cand = sorted((c for c in change if counts is None or counts[c] >= THIN_TEST), key=order.get)
+    cand = sorted((c for c in dev if counts is None or counts[c] >= THIN_TEST), key=order.get)
     hurt = sorted(cand, key=lambda c: -drop[c])[:NHURT]
-    stable = sorted((c for c in cand if c not in hurt), key=lambda c: change[c])[:NSTABLE]
-    return {"hurt": sorted(hurt, key=order.get), "stable": sorted(stable, key=order.get), "drop": drop, "change": change}
+    stable = sorted((c for c in cand if c not in hurt), key=lambda c: dev[c])[:NSTABLE]
+    return {"hurt": sorted(hurt, key=order.get), "stable": sorted(stable, key=order.get), "drop": drop, "change": change,
+            "ratio_dev": dev}
 
 
 def _and(items: list) -> str:
@@ -2273,8 +2279,8 @@ def auc_diff_macros(em, fits, runs, root, census, index, native_tex) -> None:
     em.macro("MlstRocJcTwoHurtMinDrop", _sig2(min(drops)), index, src, "smallest AUC loss at 17 classes of the hurt, pp")
     em.macro("MlstRocJcTwoHurtMaxDrop", _sig2(max(drops)), index, src, "largest AUC loss at 17 classes of the hurt, pp")
     if sel["stable"]:
-        em.macro("MlstRocJcTwoStableMaxChange", _sig2(max(sel["change"][c] for c in sel["stable"])), index, src,
-                 "largest |AUC change| at any label set of the stable classes, pp")
+        em.macro("MlstRocJcTwoStableMaxChange", _sig2(100 * max(sel["ratio_dev"][c] for c in sel["stable"])), index, src,
+                 "largest change of 1 - AUC at any label set of the stable classes, per cent of the 188-class value")
 
 
 # ------------------------------------------------------------------ ROC curves (F4, F6J) and the X->ee vs X->mumu probe

@@ -491,7 +491,9 @@ JetClass-II class.
 Figure~\ref{fig:a3r} draws the ROC curves of selected JetClass-II classes, each against every other class, to
 show at which signal efficiencies the per-class losses of figure~\ref{fig:f3} lie. The classes are chosen from
 the per-class AUCs by a fixed rule: the eight with the largest loss of AUC at \Kcoarse{} classes, and the four
-whose AUC changes least at any level of the hierarchy, among the classes not hatched in figure~\ref{fig:f3}.
+whose $1-\AUC$ stays closest to that of the \Kfull-class model at every level of the hierarchy, among the
+classes not hatched in figure~\ref{fig:f3}. The ratio decides the second set because a class whose AUC is
+already near one can lose much of its rejection with almost no change in AUC, as $X\to ee$ and $X\to\mu\mu$ do.
 
 \input{tables/mlst_pairs}
 \begin{landscape}   % wider than the 15 cm text block
@@ -505,8 +507,8 @@ signal efficiency $\epsS$ for selected classes, with the discriminant $D_S = g_S
 and every other class of the class-balanced test set as the background, after training on \FtSizeESix{} jets.
 Upper two rows: the eight classes with the largest loss of AUC at \Kcoarse{} classes, \MlstRocJcTwoHurtList{},
 which lose between \MlstRocJcTwoHurtMinDrop{} and \MlstRocJcTwoHurtMaxDrop{} percentage points; lower row: the
-four classes whose AUC changes least at any level of the hierarchy, \MlstRocJcTwoStableList{}, by at most
-\MlstRocJcTwoStableMaxChange{} percentage points. Both sets are chosen from the AUCs of
+four classes whose $1-\AUC$ stays closest to that of the \Kfull-class model at every level of the hierarchy,
+\MlstRocJcTwoStableList{}, within \MlstRocJcTwoStableMaxChange\%. Both sets are chosen from the AUCs of
 table~\ref{tab:perclass} by the figure code, among the classes not hatched in figure~\ref{fig:f3}, and each
 is ordered as in figure~\ref{fig:f3}. Lines (solid, dashed, dash-dot and dotted): the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class models, the mean
 of the runs at fixed $\epsS$ with bands of one standard deviation over \MlstNRunsWord{} pretraining runs.

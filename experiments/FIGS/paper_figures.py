@@ -128,6 +128,8 @@ UNPAIRED = (SCRATCH, KIN)
 X_EPS = r"Signal efficiency ($\varepsilon_S$)"
 Y_REJ = r"Background rejection ($1/\varepsilon_B$)"
 Y_REJ_RATIO = "Ratio to\n188 classes"
+Y_REJ_SHORT = r"Rejection ($1/\varepsilon_B$)"     # A3R's panels are shorter than Y_REJ
+ROC_ZOOM_FROM = 0.9     # every curve of a panel starts above this: the axis shows only what they reach
 
 
 class Skip(Exception):
@@ -603,7 +605,7 @@ def roc_panel(ax, rx, M, fam: dict, key: str, configs: list) -> tuple[bool, list
     eps = np.asarray(M.V4.roc_series(fam[first], key)[0], float)
     limit = M.V4.roc_limit(fam[first], key)
     ax.axhline(limit, **style.LIMIT_STYLE)
-    ys, rows = [limit], []
+    ys, rows, starts = [limit], [], []
     for row, c in got.items():
         lk = look(M, row)
         kw = dict(color=lk["color"], linestyle=lk["linestyle"])
@@ -612,13 +614,20 @@ def roc_panel(ax, rx, M, fam: dict, key: str, configs: list) -> tuple[bool, list
         ok = np.isfinite(V).all(axis=0)
         if ok.sum() >= M.ROC_MIN_POINTS:
             ys += _mean_band(ax, eps[ok], V[:, ok], kw, None)
+            starts.append(eps[ok][0])
         rows.append((row, c, kw))
+    if not starts:      # no configuration reaches two grid points: say so, an empty axis reads as missing data
+        ys.append(limit / 100)
+        ax.text(0.5, 0.45, f"No curve: fewer than {M.V4.JC1_MIN_BKG} background jets\npass at all but at most one\n"
+                r"$\varepsilon_S$ of the grid", transform=ax.transAxes, ha="center", va="center", fontsize=SMALL)
     _rej_axis(ax, ys)
+    if starts and min(starts) >= ROC_ZOOM_FROM:
+        ax.set_xlim(math.floor(min(starts) * 20) / 20, 1)
     ratio = _ratio(rx, M, eps, next((c for row, c, _ in rows if row == "L188"), {}), rows)
     return ratio, list(got)
 
 
-def roc_figure(M, fig, panels: list, ncols: int, name: str, outdir, tag: str) -> list:
+def roc_figure(M, fig, panels: list, ncols: int, name: str, outdir, tag: str, ylabel: str = Y_REJ) -> list:
     """panels [(family {model: doc}, curve key, title, configs)] in rows of ncols, each a ROC panel with
     its ratio panel below (ROC_HEIGHTS). Shared labels: x on the bottom row, y on the left column; a
     panel whose 188-class reference has no surviving point has no ratio axes and carries the x labels
@@ -645,10 +654,14 @@ def roc_figure(M, fig, panels: list, ncols: int, name: str, outdir, tag: str) ->
             ax.tick_params(labelbottom=False)
         else:
             rx.set_axis_off()
+        # the same ticks on every panel; a zoomed panel (roc_panel) in steps it can show
+        step = 0.02 if ax.get_xlim()[0] >= ROC_ZOOM_FROM else 0.5 if ncols >= 4 else 0.25
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(step))
+        ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}"))
         if k + ncols >= len(panels):
             low.set_xlabel(X_EPS)
         if k % ncols == 0:
-            ax.set_ylabel(Y_REJ)
+            ax.set_ylabel(ylabel)
             if ratio:
                 rx.set_ylabel(Y_REJ_RATIO)
     if not shown:
@@ -667,7 +680,8 @@ def roc_figure(M, fig, panels: list, ncols: int, name: str, outdir, tag: str) ->
             fig.axes[2 * k].legend([line(r) for r in own], [NAME[r].replace("\n", " ") for r in own], loc="best")
     handles = [line(r) for r in rows] + [Line2D([], [], **style.LIMIT_STYLE)]
     labels = [NAME[r].replace("\n", " ") for r in rows] + [f"{M.V4.JC1_MIN_BKG} background jets pass"]
-    _legend(fig, handles, labels, ncol=min(5, len(labels)))
+    _legend(fig, handles, labels, ncol=len(labels) if len(labels) <= 5 else 3)   # wider overflows the figure
+    fig.align_ylabels()
     return _save(fig, name, outdir)
 
 
@@ -736,8 +750,8 @@ def figure_a3r(M, runs, I, outdir) -> list:
     configs = [(row, list(runs[row])) for row in LEVELS]
     # the curve keys of jc2_ovr are the native labels as strings
     panels = [(fam, str(c), tex(names[c]), configs) for c in list(sel["hurt"]) + list(sel["stable"])]
-    fig = _fig(FULL, 17.5 * CM)
-    return roc_figure(M, fig, panels, 4, "A3R_roc_jetclass2", outdir, "A3R")
+    fig = _fig(FULL, 19.0 * CM)
+    return roc_figure(M, fig, panels, 4, "A3R_roc_jetclass2", outdir, "A3R", Y_REJ_SHORT)
 
 
 # ------------------------------------------------------------------ F5

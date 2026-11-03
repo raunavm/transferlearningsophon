@@ -590,6 +590,30 @@ def test_no_two_f9_curves_of_a_row_share_their_look_without_colour(P, M, runs, i
     assert any("output node" in label for row in drawn.values() for label, *_ in row)
 
 
+def test_a_roc_panel_says_why_it_has_no_curve_and_zooms_when_all_curves_start_high(P, M, runs, inputs):
+    import matplotlib.pyplot as plt
+    configs = [(row, list(runs[row])) for row in P.LEVELS]
+    def panel(cut):
+        fam = json.loads(json.dumps(inputs["roc"]["pairs"]))
+        for row, models in configs:
+            for m in models:
+                fam[m]["curves"]["bb_vs_cc"]["cut"]["eps_s"] = cut
+        fig, (ax, rx) = plt.subplots(2, 1)
+        ratio, rows = P.roc_panel(ax, rx, M, fam, "bb_vs_cc", configs)
+        return fig, ax, ratio, rows
+    fig, ax, ratio, rows = panel(0.993)          # one grid point left for every configuration
+    assert not ratio and rows == [r for r, _ in configs]
+    assert [t.get_text() for t in ax.texts][0].startswith("No curve: fewer than 20 background jets")
+    assert ax.get_xlim() == (0, 1) and ax.get_ylim()[0] < 1e3 * ax.get_ylim()[1] / 1e3 / 10
+    plt.close(fig)
+    fig, ax, ratio, rows = panel(0.97)
+    assert ax.get_xlim() == (0.95, 1) and not ax.texts
+    plt.close(fig)
+    fig, ax, ratio, rows = panel(0.5)
+    assert ax.get_xlim() == (0, 1) and not ax.texts
+    plt.close(fig)
+
+
 def test_a_roc_curve_with_one_surviving_point_is_not_drawn(P, M, runs, inputs):
     # a configuration whose cut leaves a single grid point (here 0.995, cut at 0.993) draws no visible
     # line, so neither the ROC nor the ratio panel draws it, and the generator calls it 'not reached'

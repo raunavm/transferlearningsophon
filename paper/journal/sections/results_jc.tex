@@ -269,12 +269,12 @@ trained from scratch, in the form of ParT's Table~1~\cite{part}: accuracy, the A
 pairs of classes, and the rejection of the background at ParT's working point for each signal class
 (table~\ref{tab:jetclass}). The caption of table~\ref{tab:jetclass} gives our training and test sizes,
 which differ from those of the published rows. Figure~\ref{fig:f6j} draws the whole ROC curve of each signal
-class against the QCD background. For $t\to bqq'$ and $t\to b\ell\nu$ the \Kfull-class curves stop at
-signal efficiencies of \MlstRocCutJcOneTbqqFull{} and \MlstRocCutJcOneTblFull, below which fewer than $\nmin$
-QCD jets pass, close to ParT's working points for these classes.
-% CHECK: MlstRocCutJcOneTbqqFull and MlstRocCutJcOneTblFull lie near 0.5 and 0.995 (ROC_INTERFACE 3.2 [I]);
-% if not, drop "close to ParT's working points". If MlstRocCutJcOneTblFull reads "not reached" (fewer than
-% ROC_MIN_POINTS grid points keep nmin QCD jets, so F6J draws no t->blnu curve), rewrite the sentence to say so.
+class against the QCD background. For $t\to bqq'$ the \Kfull-class curve stops at a signal efficiency of
+\MlstRocCutJcOneTbqqFull{}, below which fewer than $\nmin$ QCD jets pass, so its value at ParT's working point
+$R_{50}$ in the table rests on fewer jets than that. For $t\to b\ell\nu$ the models separate the test jets so
+completely that no configuration has a curve to draw (figure~\ref{fig:f6j}(g)).
+% CHECK: MlstRocCutJcOneTbqqFull > 0.5 (0.58 today); MlstRocCutJcOneTblFull reads "not reached", and every
+% configuration of F6J(g) has no curve (true of the 2026-11-03 render); if either changes, rewrite this.
 
 \input{tables/mlst_jetclass}
 
@@ -290,8 +290,9 @@ over the \MlstFtRefSeedsWord{} training seeds from scratch. Each seed of the net
 trains on its own subset of the JetClass training files, whereas every pretrained model is fine-tuned on the
 first. Lower panels: ratio to the \Kfull-class model, run by run against the \Kfull-class run of the same seed,
 and for the network trained from scratch against the mean of the \Kfull-class runs. Each curve stops where
-fewer than $\nmin$ QCD jets pass, equation~(\ref{eq:cut}), marked by the dashed black line at $N_B/\nmin$. The
-values at ParT's working points are in table~\ref{tab:jetclass}.}
+fewer than $\nmin$ QCD jets pass, equation~(\ref{eq:cut}), marked by the dashed black line at $N_B/\nmin$; in (g)
+no configuration keeps enough of them for a curve, and the horizontal axis of (e) shows only the high signal
+efficiencies its curves reach. The values at ParT's working points are in table~\ref{tab:jetclass}.}
 \label{fig:f6j}
 \end{figure}
 % CHECK: the from-scratch seed k trains on subset k (ref_v100/jc1/leg2/scratch-v2/N1000000/s{1,2,3}; ROC_BRIEF 6).

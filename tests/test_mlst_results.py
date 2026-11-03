@@ -753,6 +753,21 @@ def test_the_per_class_auc_difference_is_taken_against_the_188_class_run_of_the_
     assert M.per_class_auc_diff(fits, runs, "L188") == {0: [0.0, 0.0], 1: [0.0, 0.0]}
 
 
+def test_a_class_near_auc_one_that_keeps_its_auc_but_triples_its_errors_is_not_a_stable_class():
+    runs = M._paper(ROOT)
+    near_one, quiet = 50, [40, 41, 42, 43]
+    def auc(arm, c):
+        if c == near_one:                             # 0.03 points of AUC, three times the errors
+            return 0.9995 if arm == "L188" else 0.9985 if arm == "R16_Q1" else 0.9995
+        if c in quiet or arm == "L188":
+            return 0.9
+        return 0.89
+    fits = {m: _pc({c: auc(arm, c) for c in range(188)}) for arm in M.MAIN for m in runs[arm]}
+    sel = M.jc2_roc_classes(fits, runs, ROOT, None)
+    assert sel["change"][near_one] < sel["change"][100] and sel["ratio_dev"][near_one] == pytest.approx(2.0)
+    assert near_one not in sel["stable"] and set(sel["stable"]) == set(quiet)
+
+
 def test_the_jetclass2_roc_classes_are_the_largest_drops_and_the_least_changed_among_the_thick_classes():
     runs = M._paper(ROOT)
     big, quiet = list(range(9)), [40, 41, 42, 43]     # drops of 1..9 percentage points at 17; unchanged
@@ -771,6 +786,7 @@ def test_the_jetclass2_roc_classes_are_the_largest_drops_and_the_least_changed_a
     assert sel["hurt"] == in_order(big[:8]) and sel["stable"] == in_order(quiet)
     assert sel["drop"][big[3]] == pytest.approx(4.0) and sel["change"][big[3]] == pytest.approx(4.0)
     assert sel["change"][quiet[0]] == 0 and sel["change"][100] == pytest.approx(0.2)
+    assert sel["ratio_dev"][quiet[0]] == 0 and sel["ratio_dev"][100] == pytest.approx(0.2)
     # without the census every class is a candidate
     assert sel["hurt"] != M.jc2_roc_classes(fits, runs, ROOT, None)["hurt"]
     assert big[8] in M.jc2_roc_classes(fits, runs, ROOT, None)["hurt"]
