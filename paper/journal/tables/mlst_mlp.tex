@@ -1,14 +1,14 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Nonlinear probes (a multilayer perceptron with one hidden layer of \LpMlpHidden{} units, \LpMlpSeedsWord{} seeds averaged) at the largest training set: JetClass-II AUC (all, resonant and QCD classes) with the ratio of $1-\mathrm{AUC}$ to the \Kfull-class run, JetClass AUC, and AUC and $R_{30}$ on top, quark/gluon and Herwig jets (missing inputs set to zero); then the class pairs of table~\ref{tab:pairs}; last, the linear probe on the 512-unit hidden layer of the \Kfull-class models' pretraining head beside the one on the class token. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
+\caption{Nonlinear probes (a multilayer perceptron with one hidden layer of \LpMlpHidden{} units, \LpMlpSeedsWord{} seeds averaged) at the largest training set: JetClass-II AUC (all, resonant and QCD classes) with the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run, JetClass AUC, and AUC and $R_{30}$ on top, quark/gluon and Herwig jets (missing inputs set to zero); then the class pairs of table~\ref{tab:pairs}; last, the linear probe on the 512-unit hidden layer of the \Kfull-class models' pretraining head beside the one on the class token. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
 \label{tab:mlp}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lccccccccccc}
 \toprule
  & \multicolumn{4}{c}{JetClass-II} & JetClass & \multicolumn{2}{c}{top} & \multicolumn{2}{c}{quark/gluon} & \multicolumn{2}{c}{Herwig} \\
 \cmidrule(lr){2-5}\cmidrule(lr){7-8}\cmidrule(lr){9-10}\cmidrule(lr){11-12}
-pretraining & AUC & resonant & QCD & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ & AUC & AUC & $R_{30}$ & AUC & $R_{30}$ & AUC & $R_{30}$ \\
+pretraining & AUC & resonant & QCD & $\rho$ & AUC & AUC & $R_{30}$ & AUC & $R_{30}$ & AUC & $R_{30}$ \\
 \midrule
 \Kfull{} classes & 0.9806\,$\pm$\,$<$0.0001 & 0.9834\,$\pm$\,$<$0.0001 & 0.9643\,$\pm$\,0.0001 & 1.00 & 0.9786\,$\pm$\,0.0004 & 0.9713\,$\pm$\,0.0034 & 290\,$\pm$\,60 & 0.894\,$\pm$\,0.004 & 82.6\,$\pm$\,3.5 & 0.8077\,$\pm$\,0.0006 & 36.64\,$\pm$\,0.25 \\
 \Kres{} classes & 0.9802\,$\pm$\,0.0001 & 0.9833\,$\pm$\,0.0001 & 0.9618\,$\pm$\,0.0003 & 1.019\,$\pm$\,0.007 & 0.9786\,$\pm$\,0.0002 & 0.971\,$\pm$\,0.004 & 280\,$\pm$\,90 & 0.889\,$\pm$\,0.005 & 77.0\,$\pm$\,2.2 & 0.8060\,$\pm$\,0.0014 & 35.6\,$\pm$\,0.6 \\
@@ -34,7 +34,7 @@ randomly initialized network, BatchNorm recomputed & 0.8974\,$\pm$\,0.0018 & 0.9
 \begin{tabular}{lcccccc}
 \toprule
 pretraining & \multicolumn{2}{c}{$X\to bc$ vs $bq$, $cs$} & \multicolumn{2}{c}{$X\to b\bar b$ vs $c\bar c$} & \multicolumn{2}{c}{$X\to YY\to bbqq$ vs $ccqq$} \\
- & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ \\
+ & AUC & $\rho$ & AUC & $\rho$ & AUC & $\rho$ \\
 \midrule
 \Kfull{} classes & 0.9434\,$\pm$\,0.0001 & 1.00 & 0.9978\,$\pm$\,$<$0.0001 & 1.00 & 0.9941\,$\pm$\,0.0001 & 1.00 \\
 \Kres{} classes & 0.9432\,$\pm$\,0.0002 & 1.002\,$\pm$\,0.006 & 0.9977\,$\pm$\,$<$0.0001 & 1.023\,$\pm$\,0.021 & 0.9941\,$\pm$\,0.0001 & 1.011\,$\pm$\,0.030 \\
@@ -60,7 +60,7 @@ randomly initialized network, BatchNorm recomputed & 0.6865\,$\pm$\,0.0030 & -- 
 \begin{tabular}{lcccccc}
 \toprule
 pretraining & \multicolumn{2}{c}{QCD $bb$ vs $cc$} & \multicolumn{2}{c}{QCD with $b$ vs light} & \multicolumn{2}{c}{QCD with $c$, no $b$, vs light} \\
- & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ \\
+ & AUC & $\rho$ & AUC & $\rho$ & AUC & $\rho$ \\
 \midrule
 \Kfull{} classes & 0.9871\,$\pm$\,0.0001 & 1.00 & 0.9882\,$\pm$\,$<$0.0001 & 1.00 & 0.9329\,$\pm$\,0.0001 & 1.00 \\
 \Kres{} classes & 0.9860\,$\pm$\,0.0003 & 1.085\,$\pm$\,0.030 & 0.9876\,$\pm$\,0.0001 & 1.050\,$\pm$\,0.004 & 0.9303\,$\pm$\,0.0002 & 1.039\,$\pm$\,0.005 \\

@@ -30,6 +30,12 @@
 %   DesignVtwoSecondGpu, DesignVtwoSecondGpuRuns -- the grid's job specs put every run index on one product
 %   per-arm parameters and MACs -- flops_by_arm.json (see docs/RECORD.md 2.1)
 %   substitution probes -- experiments/FIGS/data/v2/linprobe/fits_v4_fill/
+%   ROC curves -- experiments/FIGS/data/v2/curves_v2/jc1_ft/
+%   ROC curves -- experiments/FIGS/data/v2/curves_v2/jc1_probe/
+%   ROC curves -- experiments/FIGS/data/v2/curves_v2/pairs/
+%   ROC curves -- experiments/FIGS/data/v2/curves_v2/top_ft/
+%   ROC curves -- experiments/FIGS/data/v2/curves_v2/qg_ft/
+%   ROC curves -- experiments/FIGS/data/v2/curves_v2/jc2_ovr/
 %   substitution fits for top -- experiments/FIGS/data/v2/linprobe/fits_v4_fill/ (every model)
 %   substitution fits for qg -- experiments/FIGS/data/v2/linprobe/fits_v4_fill/ (every model)
 %   fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/: jc2, jc2_qcd
@@ -58,6 +64,22 @@
 %   XbbRthirtyTransferCoarseOverFull -- waits on X->bb fits
 %   XbbRthirtyTransferCoarseOverFullPr -- waits on X->bb fits
 %   MlstInputBnZeroSigmaMax -- waits on a committed JSON of the input-normalization offsets of mtx-l188-s1 (A8)
+%   MlstRocCutBbFull -- waits on ROC curves of the class pairs (curves_v2/pairs)
+%   MlstRocCutBbqqFull -- waits on ROC curves of the class pairs (curves_v2/pairs)
+%   MlstRocCutBcFull -- waits on ROC curves of the class pairs (curves_v2/pairs)
+%   MlstRocNoCurveEemm -- waits on ROC curves of the class pairs (curves_v2/pairs)
+%   MlstRocNBkgBb -- waits on ROC curves of the class pairs (curves_v2/pairs)
+%   MlstRocNBkgEemm -- waits on ROC curves of the class pairs (curves_v2/pairs)
+%   MlstRocRejMaxBb -- waits on ROC curves of the class pairs (curves_v2/pairs)
+%   MlstRocRejMaxEemm -- waits on ROC curves of the class pairs (curves_v2/pairs)
+%   MlstRocCutJcOneTbqqFull -- waits on ROC curves of the JetClass fine-tuning (curves_v2/jc1_ft)
+%   MlstRocCutJcOneTblFull -- waits on ROC curves of the JetClass fine-tuning (curves_v2/jc1_ft)
+%   MlstLpEemmAucFull -- waits on the ee/mumu probe (fits_v4_sib)
+%   MlstLpEemmAucMid -- waits on the ee/mumu probe (fits_v4_sib)
+%   MlstLpEemmAucCoarse -- waits on the ee/mumu probe (fits_v4_sib)
+%   MlstPairEemmNTrain -- waits on the ee/mumu probe (fits_v4_sib)
+%   MlstPairEemmNVal -- waits on the ee/mumu probe (fits_v4_sib)
+%   MlstPairEemmNTestPerSide -- waits on the ee/mumu probe (fits_v4_sib)
 %
 % SKIPPED TABLES:
 %   T4 compute/parameters: no machine-readable source in the repository; docs/RECORD.md 2.1 names /data/results/mtx/flops/flops_by_arm.json, which is not committed
@@ -1902,21 +1924,21 @@
 \newcommand{\AccSdLegTwoSophonPublicEFive}{0.00049}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N100000.accuracy_sd :: sha256 701c58c3240274bb :: wave 1, superseded
 \newcommand{\AccLegTwoSophonPublicESix}{0.84632}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N1000000.accuracy_mean :: sha256 701c58c3240274bb :: wave 1, superseded; 3 fine-tuning seeds
 \newcommand{\AccSdLegTwoSophonPublicESix}{0.00031}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N1000000.accuracy_sd :: sha256 701c58c3240274bb :: wave 1, superseded
-\newcommand{\FtBudgetSteps}{20{,}000}  % scripts/build_ft_budget_jobs.py :: EPOCHS * STEPS :: sha256 96051e5c3d05c355 :: the largest number of optimizer steps below the full training set
-\newcommand{\FtBudgetEval}{500}  % scripts/build_ft_budget_jobs.py :: STEPS :: sha256 96051e5c3d05c355 :: steps between validation passes at and above SMALL_N training jets
-\newcommand{\FtBudgetEvalSmall}{50}  % scripts/build_ft_budget_jobs.py :: SMALL_STEPS :: sha256 96051e5c3d05c355 :: steps between validation passes below SMALL_N training jets
-\newcommand{\FtBudgetEvalSmallBelow}{\ensuremath{10^{5}}}  % scripts/build_ft_budget_jobs.py :: SMALL_N :: sha256 96051e5c3d05c355 :: training jets below which the validation runs every SMALL_STEPS steps
-\newcommand{\FtBudgetPatience}{10}  % scripts/build_ft_budget_jobs.py :: PATIENCE :: sha256 96051e5c3d05c355 :: validation passes without improvement before training stops
-\newcommand{\FtHeadMult}{50}  % scripts/build_ft_budget_jobs.py :: HEAD_MULT :: sha256 96051e5c3d05c355 :: the head's learning-rate multiplier
-\newcommand{\FtHeadCap}{\ensuremath{5\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: HEAD_CAP :: sha256 96051e5c3d05c355 :: the head's largest learning rate
-\newcommand{\FtBudgetBatch}{512}  % scripts/build_ft_budget_jobs.py :: BATCH :: sha256 96051e5c3d05c355
-\newcommand{\FtBudgetWeightDecay}{0.01}  % scripts/build_ft_budget_jobs.py :: --optimizer-option weight_decay (every cell) :: sha256 96051e5c3d05c355
-\newcommand{\FtSweepPre}{\ensuremath{10^{-4}}, \ensuremath{3\times10^{-4}} and \ensuremath{10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_PRE :: sha256 96051e5c3d05c355 :: backbone rates of the sweep
-\newcommand{\FtSweepScratch}{\ensuremath{3\times10^{-4}}, \ensuremath{10^{-3}} and \ensuremath{3\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_SCRATCH :: sha256 96051e5c3d05c355 :: from-scratch rates of the sweep
-\newcommand{\FtSweepN}{10{,}000}  % scripts/build_ft_budget_jobs.py :: SWEEP_N :: sha256 96051e5c3d05c355 :: training jets of the sweep
-\newcommand{\FtValJets}{200{,}000}  % scripts/build_ft_budget_jobs.py :: VAL_N :: sha256 96051e5c3d05c355 :: the fixed validation set
-\newcommand{\FtValJetsBal}{20{,}480}  % scripts/build_ft_budget_jobs.py :: VAL_SIZE[jc2b] :: sha256 96051e5c3d05c355 :: the balanced JetClass-II validation set
-\newcommand{\LpVfourCMax}{\ensuremath{10^{4}}}  % experiments/EVAL/probe_bal.py :: C_GRID_V4 :: sha256 e9efb4752e8ee1e5 :: largest inverse regularisation of the v4 probes
+\newcommand{\FtBudgetSteps}{20{,}000}  % scripts/build_ft_budget_jobs.py :: EPOCHS * STEPS :: sha256 f1fa681903ae59fa :: the largest number of optimizer steps below the full training set
+\newcommand{\FtBudgetEval}{500}  % scripts/build_ft_budget_jobs.py :: STEPS :: sha256 f1fa681903ae59fa :: steps between validation passes at and above SMALL_N training jets
+\newcommand{\FtBudgetEvalSmall}{50}  % scripts/build_ft_budget_jobs.py :: SMALL_STEPS :: sha256 f1fa681903ae59fa :: steps between validation passes below SMALL_N training jets
+\newcommand{\FtBudgetEvalSmallBelow}{\ensuremath{10^{5}}}  % scripts/build_ft_budget_jobs.py :: SMALL_N :: sha256 f1fa681903ae59fa :: training jets below which the validation runs every SMALL_STEPS steps
+\newcommand{\FtBudgetPatience}{10}  % scripts/build_ft_budget_jobs.py :: PATIENCE :: sha256 f1fa681903ae59fa :: validation passes without improvement before training stops
+\newcommand{\FtHeadMult}{50}  % scripts/build_ft_budget_jobs.py :: HEAD_MULT :: sha256 f1fa681903ae59fa :: the head's learning-rate multiplier
+\newcommand{\FtHeadCap}{\ensuremath{5\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: HEAD_CAP :: sha256 f1fa681903ae59fa :: the head's largest learning rate
+\newcommand{\FtBudgetBatch}{512}  % scripts/build_ft_budget_jobs.py :: BATCH :: sha256 f1fa681903ae59fa
+\newcommand{\FtBudgetWeightDecay}{0.01}  % scripts/build_ft_budget_jobs.py :: --optimizer-option weight_decay (every cell) :: sha256 f1fa681903ae59fa
+\newcommand{\FtSweepPre}{\ensuremath{10^{-4}}, \ensuremath{3\times10^{-4}} and \ensuremath{10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_PRE :: sha256 f1fa681903ae59fa :: backbone rates of the sweep
+\newcommand{\FtSweepScratch}{\ensuremath{3\times10^{-4}}, \ensuremath{10^{-3}} and \ensuremath{3\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_SCRATCH :: sha256 f1fa681903ae59fa :: from-scratch rates of the sweep
+\newcommand{\FtSweepN}{10{,}000}  % scripts/build_ft_budget_jobs.py :: SWEEP_N :: sha256 f1fa681903ae59fa :: training jets of the sweep
+\newcommand{\FtValJets}{200{,}000}  % scripts/build_ft_budget_jobs.py :: VAL_N :: sha256 f1fa681903ae59fa :: the fixed validation set
+\newcommand{\FtValJetsBal}{20{,}480}  % scripts/build_ft_budget_jobs.py :: VAL_SIZE[jc2b] :: sha256 f1fa681903ae59fa :: the balanced JetClass-II validation set
+\newcommand{\LpVfourCMax}{\ensuremath{10^{4}}}  % experiments/EVAL/probe_bal.py :: C_GRID_V4 :: sha256 6ced7e79e297772c :: largest inverse regularisation of the v4 probes
 \newcommand{\JcBalTestPerClass}{5{,}000}  % experiments/FT/stage_jc2_balanced.py :: TEST_PER_CLASS :: sha256 0260341d5ed75fec
 \newcommand{\JcBalValPerClass}{109}  % experiments/FT/stage_jc2_balanced.py :: VAL_PER_CLASS :: sha256 0260341d5ed75fec
 \newcommand{\JcBalPairTrainPerSide}{\ensuremath{10^{5}}}  % experiments/FT/stage_jc2_balanced.py :: PAIR_TRAIN_PER_SIDE :: sha256 0260341d5ed75fec
@@ -2275,6 +2297,45 @@
 \newcommand{\MlstPairRandApartBbqqN}{3}  % experiments/FIGS/data/v2/index.json :: random partitions that keep apart bbqq_vs_ccqq (count) :: sha256 125f55f6aaeba264
 \newcommand{\MlstPairRandMergedOverApartBbqq}{0.996}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: mean (1 - AUC) of the partitions that merge it over that of those that keep it apart (one run each) :: sha256 125f55f6aaeba264
 \newcommand{\MlstPairRandMergedOverApartBbqqPr}{0.44\% fewer errors}  % experiments/FIGS/data/v2/index.json :: binary probe bbqq_vs_ccqq: mean (1 - AUC) of the partitions that merge it over that of those that keep it apart (one run each) :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmResOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of L162 over L188, run by run :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmResOverFullPr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of L162 over L188, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmMidOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmMidOverFullPr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmCoarseOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmCoarseOverFullPr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of R16_Q1 over L188, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmFoneOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmFoneOverFzeroPr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmFoneOverFzeroPrMax}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1 over FLAV_F0, run by run :: sha256 125f55f6aaeba264 :: prose twin of the run farther from 1
+\newcommand{\MlstCmpEemmFonerOverFone}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmFonerOverFonePr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmFonerOverFonePrMax}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1R over FLAV_F1, run by run :: sha256 125f55f6aaeba264 :: prose twin of the run farther from 1
+\newcommand{\MlstCmpEemmFonerOverFzero}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmFonerOverFzeroPr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmFonerOverFzeroPrMax}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1R over FLAV_F0, run by run :: sha256 125f55f6aaeba264 :: prose twin of the run farther from 1
+\newcommand{\MlstCmpEemmFzeroOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F0 over R16_Q1, run by run :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmFzeroOverCoarsePr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F0 over R16_Q1, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmFzeroOverCoarsePrMax}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F0 over R16_Q1, run by run :: sha256 125f55f6aaeba264 :: prose twin of the run farther from 1
+\newcommand{\MlstCmpEemmFoneOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1 over R16_Q1, run by run :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmFoneOverCoarsePr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1 over R16_Q1, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmFoneOverCoarsePrMax}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1 over R16_Q1, run by run :: sha256 125f55f6aaeba264 :: prose twin of the run farther from 1
+\newcommand{\MlstCmpEemmFonerOverCoarse}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1R over R16_Q1, run by run :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmFonerOverCoarsePr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1R over R16_Q1, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmFonerOverCoarsePrMax}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1R over R16_Q1, run by run :: sha256 125f55f6aaeba264 :: prose twin of the run farther from 1
+\newcommand{\MlstCmpEemmFzeroOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F0 over L188, run by run :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmFzeroOverFullPr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F0 over L188, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmFzeroOverFullPrMax}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F0 over L188, run by run :: sha256 125f55f6aaeba264 :: prose twin of the run farther from 1
+\newcommand{\MlstCmpEemmFoneOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1 over L188, run by run :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmFoneOverFullPr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1 over L188, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmFoneOverFullPrMax}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1 over L188, run by run :: sha256 125f55f6aaeba264 :: prose twin of the run farther from 1
+\newcommand{\MlstCmpEemmFonerOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1R over L188, run by run :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmFonerOverFullPr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1R over L188, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstCmpEemmFonerOverFullPrMax}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of FLAV_F1R over L188, run by run :: sha256 125f55f6aaeba264 :: prose twin of the run farther from 1
+\newcommand{\MlstCmpEemmRandOverFull}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of each random partition over the 188-class run of its seed :: sha256 125f55f6aaeba264
+\newcommand{\MlstCmpEemmRandOverFullPr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: (1 - AUC) of each random partition over the 188-class run of its seed :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
+\newcommand{\MlstPairRandMergedEemmN}{3}  % experiments/FIGS/data/v2/index.json :: random partitions that merge ee_vs_mm (count) :: sha256 125f55f6aaeba264
+\newcommand{\MlstPairRandApartEemmN}{2}  % experiments/FIGS/data/v2/index.json :: random partitions that keep apart ee_vs_mm (count) :: sha256 125f55f6aaeba264
+\newcommand{\MlstPairRandMergedOverApartEemm}{\pending{partitions}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: mean (1 - AUC) of the partitions that merge it over that of those that keep it apart (one run each) :: sha256 125f55f6aaeba264
+\newcommand{\MlstPairRandMergedOverApartEemmPr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: binary probe ee_vs_mm: mean (1 - AUC) of the partitions that merge it over that of those that keep it apart (one run each) :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
 \newcommand{\MlstCmpQcdBbResOverFull}{1.15\,\ensuremath{\pm}\,0.04}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_bb_vs_cc: (1 - AUC) of L162 over L188, run by run :: sha256 125f55f6aaeba264
 \newcommand{\MlstCmpQcdBbResOverFullPr}{15\% more errors}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_bb_vs_cc: (1 - AUC) of L162 over L188, run by run :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
 \newcommand{\MlstCmpQcdBbMidOverFull}{1.163\,\ensuremath{\pm}\,0.016}  % experiments/FIGS/data/v2/index.json :: binary probe qcd_bb_vs_cc: (1 - AUC) of R42_Q1 over L188, run by run :: sha256 125f55f6aaeba264
@@ -2442,7 +2503,23 @@
 \newcommand{\MlstPerClassRandFlavMergedOverApartPr}{equal within 1\%}  % experiments/FIGS/data/v2/index.json :: random partitions: median per-class ratio of the classes merged with a decay that differs only in quark flavor over that of the classes kept apart from all of them, mean +- SD over the partitions :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
 \newcommand{\MlstPerClassRandLeptonMergedOverApart}{0.997\,\ensuremath{\pm}\,0.020}  % experiments/FIGS/data/v2/index.json :: random partitions: median per-class ratio of the classes merged with a decay that differs only in lepton flavor over that of the classes kept apart from all of them, mean +- SD over the partitions :: sha256 125f55f6aaeba264
 \newcommand{\MlstPerClassRandLeptonMergedOverApartPr}{equal within 3\%}  % experiments/FIGS/data/v2/index.json :: random partitions: median per-class ratio of the classes merged with a decay that differs only in lepton flavor over that of the classes kept apart from all of them, mean +- SD over the partitions :: sha256 125f55f6aaeba264 :: prose twin: two significant figures, direction in words
-\newcommand{\MlstJcBalNThin}{4}  % experiments/FIGS/data/v2/jc2bal/census.json :: counts.ft_test :: sha256 a4379ee0817254cf :: classes with fewer than 1,000 class-balanced test jets (F3 hatching)
+\newcommand{\MlstPerClassAucDiffResSeedSdMedian}{0.015}  % experiments/FIGS/data/v2/index.json :: median over classes of the SD over indices of 100 (AUC_c of L162 - AUC_c of 188), pp :: sha256 125f55f6aaeba264
+\newcommand{\MlstPerClassAucDiffResMin}{\ensuremath{-}0.73}  % experiments/FIGS/data/v2/index.json :: most negative mean over indices of 100 (AUC_c of L162 - AUC_c of 188), pp :: sha256 125f55f6aaeba264 :: label_QCD_bcss
+\newcommand{\MlstPerClassAucDiffResMinClass}{QCD, \ensuremath{bcss}}  % experiments/FIGS/data/v2/index.json :: its class, L162 :: sha256 125f55f6aaeba264
+\newcommand{\MlstPerClassAucDiffMidSeedSdMedian}{0.032}  % experiments/FIGS/data/v2/index.json :: median over classes of the SD over indices of 100 (AUC_c of R42_Q1 - AUC_c of 188), pp :: sha256 125f55f6aaeba264
+\newcommand{\MlstPerClassAucDiffMidMin}{\ensuremath{-}1.4}  % experiments/FIGS/data/v2/index.json :: most negative mean over indices of 100 (AUC_c of R42_Q1 - AUC_c of 188), pp :: sha256 125f55f6aaeba264 :: label_X_YY_cqtauev
+\newcommand{\MlstPerClassAucDiffMidMinClass}{\ensuremath{X\to YY\to cq\tau_e\nu}}  % experiments/FIGS/data/v2/index.json :: its class, R42_Q1 :: sha256 125f55f6aaeba264
+\newcommand{\MlstPerClassAucDiffCoarseSeedSdMedian}{0.077}  % experiments/FIGS/data/v2/index.json :: median over classes of the SD over indices of 100 (AUC_c of R16_Q1 - AUC_c of 188), pp :: sha256 125f55f6aaeba264
+\newcommand{\MlstPerClassAucDiffCoarseMin}{\ensuremath{-}3.1}  % experiments/FIGS/data/v2/index.json :: most negative mean over indices of 100 (AUC_c of R16_Q1 - AUC_c of 188), pp :: sha256 125f55f6aaeba264 :: label_QCD_bcss
+\newcommand{\MlstPerClassAucDiffCoarseMinClass}{QCD, \ensuremath{bcss}}  % experiments/FIGS/data/v2/index.json :: its class, R16_Q1 :: sha256 125f55f6aaeba264
+\newcommand{\MlstRocJcTwoHurtList}{\ensuremath{X\to YY\to ccq}; \ensuremath{X\to YY\to ssb}; \ensuremath{X\to YY\to ccss}; QCD, \ensuremath{bcc}; QCD, \ensuremath{bccss}; QCD, \ensuremath{bss}; QCD, \ensuremath{ccs} and QCD, \ensuremath{ccss}}  % experiments/FIGS/data/v2/index.json :: jc2_roc_classes on the class-balanced probes; candidates with at least 1000 test jets :: sha256 125f55f6aaeba264 :: label_X_YY_ccq, label_X_YY_ssb, label_X_YY_ccss, label_QCD_bcc, label_QCD_bccss, label_QCD_bss, label_QCD_ccs, label_QCD_ccss
+\newcommand{\MlstRocJcTwoStableList}{\ensuremath{X\to \tau_h\tau_h}, \ensuremath{X\to ee}, \ensuremath{X\to \mu\mu} and \ensuremath{X\to YY\to b\tau_h\tau_h}}  % experiments/FIGS/data/v2/index.json :: jc2_roc_classes on the class-balanced probes; candidates with at least 1000 test jets :: sha256 125f55f6aaeba264 :: label_X_tauhtauh, label_X_ee, label_X_mm, label_X_YY_btauhtauh
+\newcommand{\MlstRocJcTwoHurtMinDrop}{2.1}  % experiments/FIGS/data/v2/index.json :: jc2_roc_classes on the class-balanced probes; candidates with at least 1000 test jets :: sha256 125f55f6aaeba264 :: smallest AUC loss at 17 classes of the hurt, pp
+\newcommand{\MlstRocJcTwoHurtMaxDrop}{2.8}  % experiments/FIGS/data/v2/index.json :: jc2_roc_classes on the class-balanced probes; candidates with at least 1000 test jets :: sha256 125f55f6aaeba264 :: largest AUC loss at 17 classes of the hurt, pp
+\newcommand{\MlstRocJcTwoStableMaxChange}{0.13}  % experiments/FIGS/data/v2/index.json :: jc2_roc_classes on the class-balanced probes; candidates with at least 1000 test jets :: sha256 125f55f6aaeba264 :: largest |AUC change| at any label set of the stable classes, pp
+\newcommand{\MlstJcBalNThin}{4}  % experiments/FIGS/data/v2/jc2bal/census.json :: counts.ft_test :: sha256 a4379ee0817254cf :: classes with fewer than 1000 class-balanced test jets (F3 hatching)
+\newcommand{\MlstMinBkgPass}{20}  % experiments/FIGS/mlst_v4.py :: JC1_MIN_BKG :: sha256 c76fcb103599dbe8 :: fewest background jets behind a drawn ROC point or a quoted rejection
+\newcommand{\MlstMassMinJets}{100}  % experiments/EVAL/atlas_resolution.py :: MIN_JETS :: sha256 b82cc219f79f0f14 :: jets below which a mass bin is null
 \newcommand{\MlstProbeUnconverged}{0}  % experiments/FIGS/data/v2/index.json :: linear probes of pretrained models that did not converge (count) :: sha256 125f55f6aaeba264
 \newcommand{\MlstProbeUnconvergedInit}{0}  % experiments/FIGS/data/v2/index.json :: linear probes of the randomly initialized networks that did not converge (count) :: sha256 125f55f6aaeba264
 \newcommand{\MlstProbeFits}{806}  % experiments/FIGS/data/v2/index.json :: selected linear-probe fits of the reported checkpoints (count) :: sha256 125f55f6aaeba264
@@ -3419,17 +3496,17 @@
 \newcommand{\MlstLpJcTwoGapFracEFourPr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: jc2_188 N=10000: (probe - scratch) / (fine-tuned - scratch) accuracy, 188-class runs, per cent :: sha256 125f55f6aaeba264 :: prose twin, two significant figures
 \newcommand{\MlstLpJcTwoGapFracEFive}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: jc2_188 N=100000: (probe - scratch) / (fine-tuned - scratch) accuracy, 188-class runs, per cent :: sha256 125f55f6aaeba264
 \newcommand{\MlstLpJcTwoGapFracEFivePr}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: jc2_188 N=100000: (probe - scratch) / (fine-tuned - scratch) accuracy, 188-class runs, per cent :: sha256 125f55f6aaeba264 :: prose twin, two significant figures
-\newcommand{\XbxMx}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 1fd6b2ae95a68c54
-\newcommand{\XbxWindowLo}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 1fd6b2ae95a68c54
-\newcommand{\XbxWindowHi}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 1fd6b2ae95a68c54
-\newcommand{\XbbNTrainPerClass}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 1fd6b2ae95a68c54
-\newcommand{\XbbRepetition}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 1fd6b2ae95a68c54
-\newcommand{\XbbNEvalSignal}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 1fd6b2ae95a68c54
-\newcommand{\XbbNEvalQcd}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 1fd6b2ae95a68c54
-\newcommand{\XbsNTrainPerClass}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 1fd6b2ae95a68c54
-\newcommand{\XbsRepetition}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 1fd6b2ae95a68c54
-\newcommand{\XbsNEvalSignal}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 1fd6b2ae95a68c54
-\newcommand{\XbsNEvalQcd}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 1fd6b2ae95a68c54
+\newcommand{\XbxMx}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 cb6dffe774ff5b1e
+\newcommand{\XbxWindowLo}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 cb6dffe774ff5b1e
+\newcommand{\XbxWindowHi}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 cb6dffe774ff5b1e
+\newcommand{\XbbNTrainPerClass}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 cb6dffe774ff5b1e
+\newcommand{\XbbRepetition}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 cb6dffe774ff5b1e
+\newcommand{\XbbNEvalSignal}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 cb6dffe774ff5b1e
+\newcommand{\XbbNEvalQcd}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 cb6dffe774ff5b1e
+\newcommand{\XbsNTrainPerClass}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 cb6dffe774ff5b1e
+\newcommand{\XbsRepetition}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 cb6dffe774ff5b1e
+\newcommand{\XbsNEvalSignal}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 cb6dffe774ff5b1e
+\newcommand{\XbsNEvalQcd}{\pending{samples not in}}  % experiments/XBS/xbx_report.py :: pending :: sha256 cb6dffe774ff5b1e
 \newcommand{\MlstPartreproRthirtyPart}{1{,}711}  % experiments/FIGS/data/v2/partrepro/part.json :: r30 :: sha256 0d44b997af9e6448 :: ParT reproduction on top, part: R30 (one run)
 \newcommand{\MlstPartreproRthirtyHead}{1{,}577}  % experiments/FIGS/data/v2/partrepro/head.json :: r30 :: sha256 37b82ba0a0fe9299 :: ParT reproduction on top, head: R30 (one run)
 \newcommand{\MlstPartreproRthirtyRescale}{1{,}224}  % experiments/FIGS/data/v2/partrepro/rescale.json :: r30 :: sha256 0a9f1401047d07ff :: ParT reproduction on top, rescale: R30 (one run)
@@ -3611,3 +3688,19 @@
 \newcommand{\XbbRthirtyTransferCoarseOverFull}{\pending{X->bb fits}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on X->bb fits
 \newcommand{\XbbRthirtyTransferCoarseOverFullPr}{\pending{X->bb fits}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on X->bb fits
 \newcommand{\MlstInputBnZeroSigmaMax}{\pending{a committed JSON of the input-normalization offsets of mtx-l188-s1 (A8)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on a committed JSON of the input-normalization offsets of mtx-l188-s1 (A8)
+\newcommand{\MlstRocCutBbFull}{\pending{ROC curves of the class pairs (curves\_v2/pairs)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on ROC curves of the class pairs (curves_v2/pairs)
+\newcommand{\MlstRocCutBbqqFull}{\pending{ROC curves of the class pairs (curves\_v2/pairs)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on ROC curves of the class pairs (curves_v2/pairs)
+\newcommand{\MlstRocCutBcFull}{\pending{ROC curves of the class pairs (curves\_v2/pairs)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on ROC curves of the class pairs (curves_v2/pairs)
+\newcommand{\MlstRocNoCurveEemm}{\pending{ROC curves of the class pairs (curves\_v2/pairs)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on ROC curves of the class pairs (curves_v2/pairs)
+\newcommand{\MlstRocNBkgBb}{\pending{ROC curves of the class pairs (curves\_v2/pairs)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on ROC curves of the class pairs (curves_v2/pairs)
+\newcommand{\MlstRocNBkgEemm}{\pending{ROC curves of the class pairs (curves\_v2/pairs)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on ROC curves of the class pairs (curves_v2/pairs)
+\newcommand{\MlstRocRejMaxBb}{\pending{ROC curves of the class pairs (curves\_v2/pairs)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on ROC curves of the class pairs (curves_v2/pairs)
+\newcommand{\MlstRocRejMaxEemm}{\pending{ROC curves of the class pairs (curves\_v2/pairs)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on ROC curves of the class pairs (curves_v2/pairs)
+\newcommand{\MlstRocCutJcOneTbqqFull}{\pending{ROC curves of the JetClass fine-tuning (curves\_v2/jc1\_ft)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on ROC curves of the JetClass fine-tuning (curves_v2/jc1_ft)
+\newcommand{\MlstRocCutJcOneTblFull}{\pending{ROC curves of the JetClass fine-tuning (curves\_v2/jc1\_ft)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on ROC curves of the JetClass fine-tuning (curves_v2/jc1_ft)
+\newcommand{\MlstLpEemmAucFull}{\pending{the ee/mumu probe (fits\_v4\_sib)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on the ee/mumu probe (fits_v4_sib)
+\newcommand{\MlstLpEemmAucMid}{\pending{the ee/mumu probe (fits\_v4\_sib)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on the ee/mumu probe (fits_v4_sib)
+\newcommand{\MlstLpEemmAucCoarse}{\pending{the ee/mumu probe (fits\_v4\_sib)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on the ee/mumu probe (fits_v4_sib)
+\newcommand{\MlstPairEemmNTrain}{\pending{the ee/mumu probe (fits\_v4\_sib)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on the ee/mumu probe (fits_v4_sib)
+\newcommand{\MlstPairEemmNVal}{\pending{the ee/mumu probe (fits\_v4\_sib)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on the ee/mumu probe (fits_v4_sib)
+\newcommand{\MlstPairEemmNTestPerSide}{\pending{the ee/mumu probe (fits\_v4\_sib)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 125f55f6aaeba264 :: waits on the ee/mumu probe (fits_v4_sib)

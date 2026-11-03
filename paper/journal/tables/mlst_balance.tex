@@ -1,14 +1,14 @@
 \begin{table}[t]
 \centering
 \small
-\caption{JetClass-II linear probes with $10^{6}$ training jets on the natural-composition test set and on the class-balanced one: AUC averaged over the classes and the ratio of $1-\mathrm{AUC}$ to the \Kfull-class run. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
+\caption{JetClass-II linear probes with $10^{6}$ training jets on the natural-composition test set and on the class-balanced one: AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
 \label{tab:balance}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcccc}
 \toprule
  & \multicolumn{2}{c}{natural composition} & \multicolumn{2}{c}{class-balanced} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
-pretraining & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ & AUC & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ \\
+pretraining & AUC & $\rho$ & AUC & $\rho$ \\
 \midrule
 \Kfull{} classes & 0.9760\,$\pm$\,$<$0.0001 & 1.00 & 0.9801\,$\pm$\,$<$0.0001 & 1.00 \\
 \Kres{} classes & 0.9748\,$\pm$\,0.0003 & 1.049\,$\pm$\,0.014 & 0.9796\,$\pm$\,0.0001 & 1.026\,$\pm$\,0.005 \\

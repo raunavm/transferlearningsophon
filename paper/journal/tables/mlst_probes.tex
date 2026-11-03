@@ -1,14 +1,14 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Linear probes on the frozen features at the largest training set of each task. Upper part: JetClass-II (class-balanced test set) accuracy and AUC averaged over its \Kfull{} classes each against the rest, over the classes with the full \JcBalTestPerClass{} test jets, over the resonant and over the QCD classes; JetClass accuracy and AUC. Lower part: top tagging and quark/gluon discrimination (also on Herwig jets) with the missing inputs substituted as chosen on validation for every model (\LpSubstitutionTop{} for top, \LpSubstitutionQg{} for quark/gluon; column headings): accuracy, AUC and the background rejection $1/\epsilon_B$ at 50\% and 30\% signal efficiency. The ratio column is $(1-\mathrm{AUC})$ over that of the \Kfull-class run of the same seed (a random partition: of its seed). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. AUC: area under the curve of signal efficiency against background efficiency. $^{*}$: a probe that did not converge.}
+\caption{Linear probes on the frozen features at the largest training set of each task. Upper part: JetClass-II (class-balanced test set) accuracy and AUC averaged over its \Kfull{} classes each against the rest, over the classes with the full \JcBalTestPerClass{} test jets, over the resonant and over the QCD classes; JetClass accuracy and AUC. Lower part: top tagging and quark/gluon discrimination (also on Herwig jets) with the missing inputs substituted as chosen on validation for every model (\LpSubstitutionTop{} for top, \LpSubstitutionQg{} for quark/gluon; column headings): accuracy, AUC and the background rejection $1/\epsB$ at 50\% and 30\% signal efficiency. The ratio column is $\rho$ of equation~(\ref{eq:ratio}), $(1-\mathrm{AUC})$ over that of the \Kfull-class run of the same seed (a random partition: of its seed). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. AUC: area under the curve of signal efficiency against background efficiency. $^{*}$: a probe that did not converge.}
 \label{tab:probes}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcccccccc}
 \toprule
  & \multicolumn{6}{c}{JetClass-II} & \multicolumn{2}{c}{JetClass} \\
 \cmidrule(lr){2-7}\cmidrule(lr){8-9}
-pretraining & accuracy & AUC & AUC, full count & AUC, resonant & AUC, QCD & $\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$ & accuracy & AUC \\
+pretraining & accuracy & AUC & AUC, full count & AUC, resonant & AUC, QCD & $\rho$ & accuracy & AUC \\
 \midrule
 \Kfull{} classes & 0.4348\,$\pm$\,0.0003 & 0.9801\,$\pm$\,$<$0.0001 & 0.9813\,$\pm$\,$<$0.0001 & 0.9830\,$\pm$\,$<$0.0001 & 0.9632\,$\pm$\,$<$0.0001 & 1.00 & 0.7709\,$\pm$\,0.0023 & 0.9682\,$\pm$\,0.0006 \\
 \Kres{} classes & 0.4328\,$\pm$\,0.0008 & 0.9796\,$\pm$\,0.0001 & 0.9810\,$\pm$\,0.0001 & 0.9829\,$\pm$\,0.0001 & 0.9600\,$\pm$\,0.0002 & 1.026\,$\pm$\,0.005 & 0.7709\,$\pm$\,0.0005 & 0.9683\,$\pm$\,0.0002 \\

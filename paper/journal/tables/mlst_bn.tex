@@ -1,12 +1,12 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Linear probes on JetClass-II (natural composition, largest training set) with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes and the ratio of $1-\mathrm{AUC}$ to the \Kfull-class run. The class-balanced probes use the checkpoints as trained, so this check uses the natural-composition test set. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
+\caption{Linear probes on JetClass-II (natural composition, largest training set) with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run. The class-balanced probes use the checkpoints as trained, so this check uses the natural-composition test set. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
 \label{tab:bn}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcccc}
 \toprule
- & \multicolumn{2}{c}{AUC} & \multicolumn{2}{c}{$\frac{1-\mathrm{AUC}}{(1-\mathrm{AUC})_{188}}$} \\
+ & \multicolumn{2}{c}{AUC} & \multicolumn{2}{c}{$\rho$} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
 pretraining & as trained & recomputed & as trained & recomputed \\
 \midrule

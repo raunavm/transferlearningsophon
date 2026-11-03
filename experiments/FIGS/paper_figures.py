@@ -547,8 +547,13 @@ def _ratio(rx, M, eps, ref: dict, rows: list) -> bool:
     lo, hi = min(ys), max(ys)
     pad = 0.05 * (hi - lo) or 0.05
     rx.set_ylim(lo - pad, hi + pad)
-    rx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3))
+    rx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3, steps=RATIO_STEPS))
     return True
+
+
+# ratio-panel ticks at steps of 1, 2, 2.5 or 5 x 10^k (matplotlib's default steps include 1.5,
+# which gave 1.05 and 1.20 around a ratio of 1)
+RATIO_STEPS = (1, 2, 2.5, 5, 10)
 
 
 def _rej_axis(ax, ys: list) -> None:
@@ -562,17 +567,19 @@ def _rej_axis(ax, ys: list) -> None:
 
 
 def _log_ticks(axis, lo: float, hi: float) -> None:
-    """Ticks of a log axis over [lo, hi]: 10^k labels (Sophon; matplotlib's log locator with
-    LogFormatterSciNotation, as _rej_axis) when a power of ten lies in the range; on a span inside one
-    decade with none, the round plain numbers of mlst_figures._log_axis, where 10^k would leave no
-    label."""
-    if math.floor(math.log10(hi)) < math.ceil(math.log10(lo)):
-        F._log_axis(axis, lo, hi)
-        return
-    axis.set_major_locator(ticker.LogLocator())
-    axis.set_major_formatter(ticker.LogFormatterSciNotation())
+    """Ticks of a log axis over [lo, hi]: 10^k labels only (Sophon; matplotlib's log locator with
+    LogFormatterSciNotation, as _rej_axis) when two or more powers of ten lie in the range; on a
+    narrower span, a few round plain numbers (30, 40, 60, 100), where 10^k would leave one label or
+    none and labelled minor ticks would read 6x10^1. Minor ticks are never labelled."""
     axis.set_minor_locator(ticker.LogLocator(subs="auto"))
-    axis.set_minor_formatter(ticker.LogFormatterSciNotation(labelOnlyBase=False))
+    axis.set_minor_formatter(ticker.NullFormatter())
+    if math.floor(math.log10(hi)) - math.ceil(math.log10(lo)) >= 1:
+        axis.set_major_locator(ticker.LogLocator())
+        axis.set_major_formatter(ticker.LogFormatterSciNotation())
+        return
+    vals = ticker.MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10]).tick_values(lo, hi)
+    axis.set_major_locator(ticker.FixedLocator([v for v in vals if lo <= v <= hi]))
+    axis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}"))
 
 
 def roc_panel(ax, rx, M, fam: dict, key: str, configs: list) -> tuple[bool, list]:
@@ -970,7 +977,7 @@ def figure_f7(M, runs, I, outdir) -> list:
         rx.axhline(1.0, color="black", linewidth=0.8, linestyle=":")
         _size_axis(ax, met, _band_values([ft, lp, sc]))
         rx.set_xscale("log")
-        rx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3))
+        rx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3, steps=RATIO_STEPS))
         ax.tick_params(labelbottom=False)
         ax.set_ylabel(ylab)
         rx.set_ylabel("Fine-tuned /\nfrom scratch")
@@ -1074,7 +1081,7 @@ def mass_hist(ax, rx, M, runs, atlas, group: str, tag: str) -> bool:
     if len(on):
         ax.set_xlim(e[on[0]], e[on[-1] + 1])
     rx.set_ylim(bottom=0)
-    rx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3))
+    rx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3, steps=RATIO_STEPS))
     ax.tick_params(labelbottom=False)
     ax.set_ylabel("Fraction of jets", loc="top")
     rx.set_ylabel("Ratio to\nsoft-drop mass")
@@ -1117,7 +1124,7 @@ def mass_bins(axs, M, runs, atlas, group: str, axis: str, xlabel: str, tag: str)
                      markerfacecolor=MK.MASS_FACE[a] or lk["color"], zorder=3)
     for axx in (a1, a2):
         axx.axhline(1.0, color="black", linewidth=0.8, linestyle=":")
-        axx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3))
+        axx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3, steps=RATIO_STEPS))
     a0.set_xlim(e[0], e[-1])
     for axx in (a0, a1):
         axx.tick_params(labelbottom=False)
@@ -1277,7 +1284,7 @@ def figure_f8b(M, runs, I, outdir) -> list:
         ratio_axes.append(rx)
     for rx in ratio_axes:
         rx.set_ylim(0, 1.1 * hi)
-        rx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3))
+        rx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3, steps=RATIO_STEPS))
     bottom = outer[1].subgridspec(1, 3)
     ax = fig.add_subplot(bottom[0, :2])
     eff, fmean, fsd = sculpt_floor(M, sc[ref])
