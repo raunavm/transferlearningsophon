@@ -241,19 +241,19 @@ PAGES = [
                  "in flavor, from linear probes on frozen networks pretrained with 188, 162, 43 and 17 classes. The "
                  "first class named is the signal. Each curve is the mean over three pretraining runs and ends where "
                  "fewer than 20 background jets remain; the 188- and 162-class models separate the electron and muon "
-                 "pair completely, so they have no curve there.",
+                 "pair completely, so they have no curve there, and elsewhere nearly coincide.",
          differs="Four panels, not one, for four class pairs. Four solid curves, not fifteen in mixed line styles (PI "
                  "limit), at 1.5 pt, not 0.955 pt. The y axis starts at 1, not at the data, with its range set per "
                  "panel. x ticks every 0.2 over 0 to 1, not every 0.1 over about -0.01 to 1.02. Axis words at the axis "
                  "end, with the rejection written inline, not as a fraction. The legend is in the first panel only, "
-                 "lower left, as the curves fill the upper right; the series are the same in every panel. Sophon's "
+                 "lower left, as the curves fill the upper right; it holds for every panel. Sophon's "
                  "grid and fonts, and the plan's tab10 order.",
          data_note="X→ee vs X→μμ has 5,000 background test jets against 200,000, so a run's curve stops at a rejection of "
                    "250 against 10,000. It has no curve for 188 or 162 classes: all six runs separate the pair completely "
                    "(AUC 1.0), so fewer than 20 background jets remain at every efficiency on the grid. The 43-class "
                    "curve starts at 0.145 and the 17-class curve at 0.54, where the first of their runs drops below 20 "
                    "jets (the other two continue to about 0.02 to 0.04). 17 classes lie above 43 because of one run, "
-                   "mtx-r16q1-s2: at efficiency 0.8 the runs give 27.9, 131.6, 23.9 for 17 classes and 28.4, 29.2, 32.5 "
+                   "the second 17-class run: at efficiency 0.8 the runs give 27.9, 131.6, 23.9 for 17 classes and 28.4, 29.2, 32.5 "
                    "for 43. The gap is one run, not the label set.",
          draw=draw_f4),
     Page(id="F4-app", title="Flavor separation with random partitions with controlled flavor boundaries",

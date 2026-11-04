@@ -280,7 +280,7 @@ PAGES = [
                 "flatten the differences (PI to decide). Circles, not crosses, and a line "
                 "through the points, not a smoothed curve. x ticks only at the four class counts (they are the data), "
                 "no x minor ticks; x limits beyond the data, where Hong's end on the first and last points. Log y on "
-                "the R30 panels, as the PI decided, with y minor ticks Hong lacks. Ticks outward on left and bottom, "
+                "the R30 panels, our choice, with y minor ticks Hong lacks. Ticks outward on left and bottom, "
                 "not inward on four sides. Panel titles, where Hong has none. Sophon's font, sizes, 1.5 pt line, "
                 "dashed grid and framed 8 pt legend in place of Hong's bold sans-serif and heavy lines. "
                 "Legend in one panel only (Sophon Fig. 3). Our axis words, at the axis end, not centred.",
@@ -327,7 +327,7 @@ PAGES = [
         precedent=HEATMAPS,
         precedent_label="CMS Fig. 7, JetParticle-JEPA Fig. 12",
         caption="Difference in per-class AUC between each model and the 188-class model, in percentage points, for "
-                "the 188 JetClass-II classes, from linear probes. Columns are the 162-, 43- and 17-class label sets "
+                "the 188 classes of class-balanced JetClass-II, from linear probes. Columns are the 162-, 43- and 17-class label sets "
                 "and the three random partitions with controlled flavor boundaries. Rows are grouped by decay topology, "
                 "with the QCD classes at the bottom. Values are means over runs; red marks an AUC below that of "
                 "the 188-class model.",
@@ -347,7 +347,7 @@ PAGES = [
         precedent=HEATMAPS,
         precedent_label="CMS Fig. 7, JetParticle-JEPA Fig. 12",
         caption="Difference in per-class AUC between each of five random partitions into 17 classes and the 188-class "
-                "model, in percentage points, for the 188 JetClass-II classes, from linear probes. Rows are grouped "
+                "model, in percentage points, for the 188 classes of class-balanced JetClass-II, from linear probes. Rows are grouped "
                 "by decay topology as in the main-text figure, with the QCD classes at the bottom, and the color "
                 "scale is the same; red marks an AUC below that of the 188-class model. Each column is one run "
                 "against the 188-class run of the same index.",
@@ -372,7 +372,7 @@ PAGES = [
                 "Panels two and three show R30 itself, not a drop. Framed legend inside the first panel in one row, "
                 "untitled. Sophon's font. Our axis words.",
         draw=draw_f7,
-        data_note="Every bar is a mean over three runs. JetClass-II panel: the top-input variant only; the quark/gluon-input variant exists "
+        data_note="Every bar is a mean over three runs. JetClass-II panel: the features absent from top tagging only; the same fill for the features absent from quark/gluon exists "
                   "in the same data and has no panel, because the plan gives this figure one JetClass-II panel."),
     C.Page(
         id="F8",
@@ -396,7 +396,7 @@ PAGES = [
                   "fine-tuning and from scratch, so those curves start at 10,000 by design. Sizes below the full set use the fixed step budget with early "
                   "stopping; the full JetClass, top and quark/gluon points use the full-set recipe. JetClass-II at "
                   "1,000,000: all three from-scratch runs and 3 of 16 pretrained runs reached the 40-epoch limit, so "
-                  f"from scratch is still improving there. {SUBST_NOTE}"),
+                  f"from scratch is probably still improving there. {SUBST_NOTE}"),
     C.Page(
         id="A10",
         title="Linear probes against the number of training jets",

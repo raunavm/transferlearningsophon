@@ -5,16 +5,16 @@ approved the gallery (docs/figstyle/gallery.pdf); nothing in the paper uses it b
 
 The settings are Sophon's (arXiv:2405.12972), measured from the native PDFs of its arXiv source
 (docs/figstyle/sophon_native.json; no plotting script exists): matplotlib's defaults with STIX text
-and these non-default settings. Sophon's figures are 5 in wide at font size 10, printed at 0.74.
-MLST has one 15 cm column and asks for at least 8 pt, so ours print at 1.0: same proportions.
+and these non-default settings. Sophon's figures are 5 in wide at font size 10, printed at 0.72 to 0.75, so
+7.2 to 7.5 pt text. MLST allows figures 8.5 cm or 15 cm wide with text of at least 8 pt; ours use the 15 cm width and print at 1.0: same proportions.
 
 Not Sophon's. X_EPS and Y_REJ are the words of the landscape paper (arXiv:1902.09914), in Sophon's form and place.
 Our own choices: C4-C6 for the controlled partitions and black for from scratch (Sophon has neither model), and the
 marker sizes, MARKER in gallery_labelset.py and markersize in gallery_physics.py (Sophon Fig. 5 has 3, Golling's native
 size is 6; we copied neither).
 
-A kind of figure Sophon has no instance of follows the closest paper in docs/figstyle/CATALOGUE.md
-(section 1.2); each is named in docs/figstyle/PLAN.md.
+A kind of figure Sophon has no instance of follows the precedent named for it in docs/figstyle/PLAN.md;
+docs/figstyle/CATALOGUE.md section 1.2 lists the kinds and candidates.
 """
 from __future__ import annotations
 
@@ -32,11 +32,11 @@ LW, LW_THIN = 1.5, 1.0            # matplotlib default; Sophon Fig. 5's referenc
 TAB10 = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22",
          "#17becf"]
 
-# one colour per model across the paper: the label sets in tab10's order, the controlled partitions next
+# one colour per model across the paper, with the exceptions in PLAN.md's colours row: the label sets in tab10's order, the controlled partitions next
 SERIES = {"L188": TAB10[0], "L162": TAB10[1], "R42_Q1": TAB10[2], "R16_Q1": TAB10[3],
           "FLAV_F0": TAB10[4], "FLAV_F1": TAB10[5], "FLAV_F1R": TAB10[6], "SCRATCH": "#000000"}
 NAME = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes", "R16_Q1": "17 classes",
-        "FLAV_F0": "No flavor boundary", "FLAV_F1": "b-quark boundary", "FLAV_F1R": "Random boundary",
+        "FLAV_F0": "No flavor boundary", "FLAV_F1": "b-quark boundary", "FLAV_F1R": "Random flavor boundary",
         "SCRATCH": "From scratch", "INIT_BN": "Random network", "KIN": "188 classes, kinematic inputs"}
 REFERENCE = {"color": "#000000", "linestyle": "--", "linewidth": LW_THIN}     # Sophon Fig. 5's dashed line
 LEVELS = ("L188", "L162", "R42_Q1", "R16_Q1")
