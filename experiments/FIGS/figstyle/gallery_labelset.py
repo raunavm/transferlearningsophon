@@ -302,6 +302,70 @@ PAGES = [
                   f"{TWO_RUNS} Top and quark/gluon: every difference between label sets lies within the run-to-run SD "
                   "(top 56 to 151, quark/gluon 0.8 to 2.2 on the label sets), except the random boundary on top."),
     C.Page(
+        id="F2-app",
+        title="Random partitions beside the hierarchy",
+        precedent=HONG,
+        precedent_label="Hong Fig. 2",
+        caption="Linear probes against the number of pretraining classes, as in the main-text figure: accuracy on "
+                "class-balanced JetClass-II and on JetClass, and rejection R30, the background rejection at 30% "
+                "signal efficiency, on top tagging and quark/gluon tagging. The line joins the four nested label "
+                "sets; the five markers at 17 classes are random partitions of the 188 classes. Values are means "
+                "over runs.",
+        differs="As F2a, with the five random partitions as five markers of one colour (C7) at 17 classes in place "
+                "of the controlled partitions. An appendix figure, and Hong has no controls.",
+        draw=draw_f2_app,
+        data_note=f"Each random partition has one run, so a marker is that run, not a mean. {SUBST_NOTE}"),
+    C.Page(
+        id="F3",
+        title="Cost class by class",
+        precedent=HEATMAPS,
+        precedent_label="CMS Fig. 7, JetParticle-JEPA Fig. 12",
+        caption="Difference in per-class AUC between each model and the 188-class model, in percentage points, for "
+                "the 188 JetClass-II classes, from linear probes. Columns are the 162-, 43- and 17-class label sets "
+                "and the three partitions with controlled flavor boundaries. Rows are grouped by decay topology, "
+                "with the QCD classes at the bottom. Values are means over runs; red marks an AUC below that of "
+                "the 188-class model.",
+        differs="Signed values on a diverging RdBu scale symmetric about 0: Blues would hide the sign. Not a confusion "
+                "matrix: rows are classes, columns are models. No numbers in cells: 188 rows cannot hold them. Rows "
+                "named by 15 group labels, since a single class name cannot reach 8 pt at 188 rows; thin lines between "
+                "groups and a blank row before QCD in place of per-row labels. One panel as CMS, against "
+                "JetParticle-JEPA's three. Taller than either precedent. Column labels at 45 degrees as "
+                "JetParticle-JEPA, not CMS's 90. Sophon's font. No experiment label.",
+        draw=draw_f3,
+        data_note="The three controlled partitions are means over two runs, the label sets over three."),
+    C.Page(
+        id="F3-app",
+        title="Cost class by class, random partitions",
+        precedent=HEATMAPS,
+        precedent_label="CMS Fig. 7, JetParticle-JEPA Fig. 12",
+        caption="Difference in per-class AUC between each of five random partitions into 17 classes and the 188-class "
+                "model, in percentage points, for the 188 JetClass-II classes, from linear probes. Rows are grouped "
+                "by decay topology as in the main-text figure, with the QCD classes at the bottom, and the colour "
+                "scale is the same; red marks an AUC below that of the 188-class model.",
+        differs="As F3, with five columns, one per random partition. Same colour scale as F3, so the two can be read "
+                "together.",
+        draw=draw_f3_app,
+        data_note="Each random partition has one run; its column is that run against the 188-class run of the same "
+                  "index."),
+    C.Page(
+        id="F7",
+        title="Missing inputs",
+        precedent=["2606.14813/fig3.png"],
+        precedent_label="JetParticle-JEPA Fig. 3(b)",
+        caption="Filling the input features a data set lacks, for linear probes of the four label sets. Top: relative "
+                "drop in JetClass-II accuracy when the features absent from the top-tagging data are filled. Middle "
+                "and bottom: rejection R30, the background rejection at 30% signal efficiency, on top tagging and "
+                "quark/gluon tagging. Bars show means over runs, with the features set to zero, to the training "
+                "mean or to random draws.",
+        differs="Three stacked panels on a shared x (Sophon Fig. 3) against one panel of (b). Three bars per group "
+                "against two, coloured by substitution from tab10 C7-C9, against JetParticle-JEPA's two muted colours. "
+                "No printed value above the bars: the values live in the tables. No grid: bars take none in our style. "
+                "Panels two and three show R30 itself, not a drop. Framed legend inside the first panel in one row, "
+                "untitled. Sophon's font. Our axis words.",
+        draw=draw_f7,
+        data_note="Every bar is a mean over three runs. JetClass-II panel: the top-input variant only; the quark/gluon-input variant exists "
+                  "in the same data and has no panel, because the plan gives this figure one JetClass-II panel."),
+    C.Page(
         id="F8",
         title="Pretraining against the number of training jets",
         precedent=["2401.13537/fig3.png", "2401.13536/fig1.png"],
