@@ -154,11 +154,18 @@ def design_macros(em, root: pathlib.Path, data: pathlib.Path, missing: list, fmt
     sweep = data / "budget" / "lrsweep_metrics.json"
     if sweep.exists():
         pre, scr = choose_rates(json.loads(sweep.read_text()))
+        launched = launched_scratch_rates(root)
+        want = {"top": scr["leg_top"], "qg": scr["leg_qg"], "jc1": scr["leg_top"], "jc2b": scr["leg_top"]}
+        if launched != want:
+            raise SystemExit(f"FATAL: the launched from-scratch rates {launched} are not the sweep's {want}")
         em.macro("FtLrPre", _sci(pre), sweep, "argmax of the summed validation metric, pretrained")
-        em.macro("FtLrScratch", _sci(scr), sweep, "argmax of the summed validation metric, from scratch")
+        em.macro("FtLrScratchTop", _sci(scr["leg_top"]), sweep, "argmax of the validation metric on top, from scratch",
+                 "agrees with LR of the launched job-ft-budget-bench, -jc1 and -jc2b from-scratch cells")
+        em.macro("FtLrScratchQg", _sci(scr["leg_qg"]), sweep, "argmax of the validation metric on quark/gluon, from scratch",
+                 "agrees with LR of the launched job-ft-budget-bench from-scratch cells")
     else:
         missing.append("learning-rate sweep -- experiments/FIGS/data/v2/budget/lrsweep_metrics.json")
-        for k in ("FtLrPre", "FtLrScratch"):
+        for k in ("FtLrPre", "FtLrScratchTop", "FtLrScratchQg"):
             em.macro(k, r"\pending{sweep}", src, "sweep not read out yet")
 
 
@@ -167,23 +174,36 @@ def _sci(lr: str) -> str:
     return rf"\ensuremath{{10^{{{int(e)}}}}}" if m == "1" else rf"\ensuremath{{{m}\times10^{{{int(e)}}}}}"
 
 
-def choose_rates(doc: dict) -> tuple[str, str]:
-    """The backbone rate of the pretrained runs and the rate from scratch: each the one whose
-    best validation metric, summed over the swept tasks (top and quark/gluon at 1e4), is largest.
-    The test scores play no part in the choice."""
-    score: dict = {}
+def choose_rates(doc: dict) -> tuple[str, dict]:
+    """The backbone rate of the pretrained runs, the one whose best validation metric summed over
+    the swept tasks (top and quark/gluon at 1e4) is largest, and the rate from scratch of each task,
+    {sweep tree: the rate with its largest best validation metric}, as launched (RUNS.csv: each task
+    takes its own validation-best rate). The test scores play no part in the choice."""
+    score: dict = {"pre": {}, "scratch": {}}
     for key, m in doc["cells"].items():
-        leaf = key.split("/")[1]                         # l188-s1_lr3e-4 or scratch_lr1e-3
+        tree, leaf = key.split("/")[:2]                  # leg_top, l188-s1_lr3e-4 or scratch_lr1e-3
         init, lr = leaf.rsplit("_lr", 1)
         kind = "scratch" if init == "scratch" else "pre"
-        score.setdefault(kind, {}).setdefault(lr, []).append(m["early_stop"]["best_metric"])
-    pick = {}
+        score[kind].setdefault(lr, {})[tree] = m["early_stop"]["best_metric"]
     for kind, by_lr in score.items():
-        full = {lr: v for lr, v in by_lr.items() if len(v) == 2}          # both tasks read out
-        if len(full) != len(by_lr):
+        if any(len(v) != 2 for v in by_lr.values()):      # both tasks read out
             raise SystemExit(f"FATAL: the sweep's {kind} cells are incomplete: {by_lr}")
-        pick[kind] = max(full, key=lambda lr: sum(full[lr]))
-    return pick["pre"], pick["scratch"]
+    pre, scr = score["pre"], score["scratch"]
+    return max(pre, key=lambda lr: sum(pre[lr].values())), {t: max(scr, key=lambda lr: scr[lr][t]) for t in
+                                                            sorted({t for v in scr.values() for t in v})}
+
+
+def launched_scratch_rates(root: pathlib.Path) -> dict:
+    """{task: learning rate} of the from-scratch cells (INIT empty) of the launched fixed-budget
+    jobs; FATAL when one task ran at two rates."""
+    import re
+    out: dict = {}
+    for kind in ("bench", "jc1", "jc2b"):
+        text = (root / f"experiments/FT/k8s/budget/job-ft-budget-{kind}-raunav.yaml").read_text()
+        for task, lr in re.findall(r"TASK=(\w+); INIT=; [^\n]*?LR=([^;]+);", text):
+            if out.setdefault(task, lr) != lr:
+                raise SystemExit(f"FATAL: job-ft-budget-{kind}: from-scratch {task} ran at {lr} and {out[task]}")
+    return out
 
 
 def _majority_gpu(comp: dict, m: str):
@@ -202,7 +222,10 @@ def gpu_bound_macro(em, fits: dict, runs: dict, comp: dict, index) -> None:
     the largest |ratio of that index / mean ratio of the others - 1|, in per cent. A ratio between
     pretraining configurations on JetClass-II, the only form 1 - AUC takes in the paper (PI 2026-11-02);
     it includes the seed-to-seed spread, so it bounds the GPU effect from above. An observation on one
-    run, not a test."""
+    run, not a test. MlstGpuOtherSeedsDiff: the largest relative difference between the label-set ratios
+    of the other indices, the scale of the variation between seeds to read the bound against. Their
+    188-class runs share a GPU type, but the coarser models in the same ratios do not, so it is not a
+    same-GPU baseline."""
     def oma(m):
         c = fits.get(m, {}).get("cells", {}).get("best70", {}).get("jc2_188", {})
         return 1 - c[max(c, key=int)]["macro_auc_ovr"] if c else None
@@ -210,25 +233,30 @@ def gpu_bound_macro(em, fits: dict, runs: dict, comp: dict, index) -> None:
     gpu = {m: _majority_gpu(comp, m) for m in runs["L188"]}
     odd = [m for m, g in gpu.items() if g is not None and list(gpu.values()).count(g) == 1]
     if len(odd) != 1 or any(oma(m) is None for m in runs["L188"]):
-        em.macro("MlstGpuTypeBound", r"\pending{188-class probes}", index,
-                 "no single 188-class run on its own GPU type, or a fit missing")
+        for k in ("MlstGpuTypeBound", "MlstGpuOtherSeedsDiff"):
+            em.macro(k, r"\pending{188-class probes}", index, "no single 188-class run on its own GPU type, or a fit missing")
         return
     o = odd[0]
-    dev = {}
+    dev, pair = {}, {}
     for arm in ("L162", "R42_Q1", "R16_Q1"):
         by = {idx(m): m for m in runs.get(arm, [])}
         r = {idx(m): oma(by[idx(m)]) / oma(m) for m in runs["L188"] if idx(m) in by and oma(by[idx(m)]) is not None}
         others = [v for k, v in r.items() if k != idx(o)]
         if idx(o) in r and len(others) >= 2:
             dev[arm] = abs(r[idx(o)] / float(np.mean(others)) - 1)
+            pair[arm] = (max(others) - min(others)) / float(np.mean(others))
     if not dev:
-        em.macro("MlstGpuTypeBound", r"\pending{label-set probes}", index, "no label set has every ratio")
+        for k in ("MlstGpuTypeBound", "MlstGpuOtherSeedsDiff"):
+            em.macro(k, r"\pending{label-set probes}", index, "no label set has every ratio")
         return
     worst = max(dev, key=dev.get)
     em.macro("MlstGpuTypeBound", f"{100 * dev[worst]:.1f}\\%", index,
              f"largest |label-set ratio of 1 - AUC of index {idx(o)} / mean of the other indices - 1|, JetClass-II "
              "largest set, per cent", f"{o} trained on {gpu[o]}; largest for {worst}; label sets "
              + ", ".join(f"{a} {100 * v:.2f}%" for a, v in dev.items()))
+    em.macro("MlstGpuOtherSeedsDiff", f"{100 * max(pair.values()):.1f}\\%", index,
+             f"largest (max - min) / mean of a label-set ratio of 1 - AUC over the indices other than {idx(o)}, "
+             "JetClass-II largest set, per cent", "label sets " + ", ".join(f"{a} {100 * v:.2f}%" for a, v in pair.items()))
 
 
 # ------------------------------------------------------------------ benchmark tables

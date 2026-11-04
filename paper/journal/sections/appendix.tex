@@ -36,7 +36,6 @@ mix decays with different numbers of prongs and the partitions keep many flavor 
 table~\ref{tab:randprong} lists the prong-count boundaries each one keeps. Each partition is pretrained
 once, the first and third with the initial weights and training examples of seed one and the other three
 with those of seed two, and is compared with the \Kfull-class model of its seed.
-% CHECK: RandVtwoRuns = one; partitions p1, p3 at seed 1 and p2, p4, p5 at seed 2 (configs/arms/v2_paper_runs.txt:23-27)
 
 The three random partitions with controlled flavor boundaries share one grouping and differ only in where
 the four-quark decays \RandFlavSplitOrbit{} go. In the partition with no flavor boundary, all decays that
@@ -73,7 +72,6 @@ bias, then \DesignClassBlocks{} class-attention blocks, with \DesignEmbedDim-dim
 representations and \DesignHeads{} attention heads. The head has one hidden layer of \DesignHeadHidden{}
 units with a ReLU activation and dropout of \MlstFtHeadDropout{} after it, followed by an output layer as
 wide as the label set.
-% CHECK: MlstFtHeadDropout (fine-tuning spec) equals the pretraining head dropout, fc_params (512, 0.1); interface request DesignHeadDropout
 Where Sophon's paper and its released code differ, in the number of particle-attention blocks
 (section~\ref{sec:data}) and in the paper's GELU activation throughout~\cite[App.~B.1]{sophon}, we follow
 the code.
@@ -140,7 +138,6 @@ each particle and the pairwise features, and drops the charge, the type flags an
 features. It is trained once, on the training examples of seed one in their order and with the settings of
 appendix~\ref{sec:app-pretrain}. Its first layer is narrower than that of the other models, so its
 initial weights are its own.
-% CHECK: the kinematic-only run reads the seed-1 example order (mtx2-l188kin-s1, RUNS.csv:1200)
 
 \subsection{Linear and MLP probes}\label{sec:app-probes}
 
@@ -174,8 +171,6 @@ them. On top tagging the largest training set holds \LpNTrainMaxTop{} jets and t
 \LpNTestTop; on quark/gluon discrimination they hold \LpNTrainMaxQg{} Pythia jets and \LpNTestQg. The Herwig
 jets are only scored, by the linear probe trained on Pythia jets. On both benchmarks the missing input
 features are substituted as appendix~\ref{sec:app-inputs} describes.
-% CHECK: LpNTestTop (404,000 in fits_v3) against the landscape test split of 400,000 (inventory_facts 0.3)
-% CHECK: Herwig linear probes reuse the Pythia-trained probe (as fine-tuning does)
 
 The full-set linear probe on top is not limited by the number of training jets: for the \Kfull-class
 model, its rejection at 30\% signal efficiency with \FtSizeEFive{} training jets and with the full set
@@ -192,9 +187,10 @@ label set's outputs. The optimizer is Ranger, as in pretraining, with mixed prec
 input features of top and quark/gluon are set to zero. On top tagging and quark/gluon discrimination all
 runs of one size use the same training jets, so the \MlstFtRefSeedsWord{} networks trained from scratch
 differ only in their training seed. On JetClass every pretrained model is fine-tuned on the first training
-subset of each size, and the network trained from scratch with seed $k$ trains on the $k$-th, so its spread
-includes that of the training subset.
-% CHECK: on JetClass the from-scratch seed k reads subset k at every size (ref_v100/jc1/leg2/scratch-v2/N*/s{1,2,3}; ROC_BRIEF 6 states it for 10^6)
+subset of each size. With \FtSizeESix{} jets the network trained from scratch with seed $k$ trains on the
+$k$-th subset, so its spread at that size includes that of the training subset; at the smaller sizes all its
+seeds train on the first subset and differ only in their training seed.
+% CHECK: on JetClass the from-scratch seed k reads subset k at 10^6 only (job-ft-v2-ref-v100-jc1) and subset 1 below it (job-ft-budget-jc1)
 
 On the full training sets of top and quark/gluon, and on \FtSizeESix{} JetClass jets, fine-tuning uses
 ParT's settings~\cite[Sec.~5.2]{part}. The pretrained weights train at a constant learning rate of
@@ -217,7 +213,7 @@ validation set holds \FtValJets{} jets, or on JetClass-II the \FtValJetsBal{} je
 validation set. Training stops after \FtBudgetPatience{} evaluations without improvement, and the
 checkpoint with the best validation metric is kept. The pretrained weights train at a constant learning
 rate of \FtLrPre{} and the head at \FtHeadMult{} times that rate, at most \FtHeadCap. The networks trained
-from scratch train every weight at \FtLrScratch{} with the training framework's default schedule, which is
+from scratch train every weight at the rates given below with the training framework's default schedule, which is
 constant and lowered only near the end of the maximum training length. The weight decay is
 \FtBudgetWeightDecay{} throughout. Top and quark/gluon are fine-tuned on \FtSizeEThree, \FtSizeEFour{}
 and \FtSizeEFive{} jets below their full sets; JetClass on \FtSizeEFour{} and \FtSizeEFive{}; and
@@ -225,13 +221,15 @@ class-balanced JetClass-II on \FtSizeEFour, \FtSizeEFive{} and \FtSizeESix{}. On
 fine-tuned models are the levels of the class hierarchy and the models with the auxiliary mass
 regression.
 
-The two learning rates of these smaller sets were chosen on validation (table~\ref{tab:lrsweep}). The
+The learning rates of these smaller sets were chosen on validation (table~\ref{tab:lrsweep}). The
 \Kfull-class model of seed one was fine-tuned with its pretrained weights at \FtSweepPre{}, and the
 network trained from scratch at \FtSweepScratch{}, each on \FtSweepN{} jets of top and of quark/gluon.
-The rate with the largest best validation accuracy summed over the two tasks was kept; the test jets play
-no part. In both grids the chosen rate is the largest one swept, so the sweep does not bracket a
-maximum, and the summed accuracies of the three rates lie close together.
-% CHECK: FtLrPre and FtLrScratch are the largest values of FtSweepPre and FtSweepScratch (true in budget/lrsweep_metrics.json, 2026-11-02: sums 1.742/1.741/1.739 and 1.724/1.722/1.720)
+The pretrained weights take the rate with the largest best validation accuracy summed over the two tasks,
+the largest one swept. For the networks trained from scratch each task keeps its own best rate,
+\FtLrScratchTop{} on top, inside the grid, and \FtLrScratchQg{} on quark/gluon, the largest swept; JetClass
+and JetClass-II, which have no sweep, take the rate of top. The test jets play no part, and the accuracies
+of the three rates lie close together.
+% CHECK: FtLrPre is the largest value of FtSweepPre (sums 1.742/1.741/1.739); FtLrScratchTop inside FtSweepScratch (0.9152/0.9188/0.9177), FtLrScratchQg its largest (0.8052/0.8029/0.8059); the generator stops if the launched specs differ
 
 \input{tables/mlst_lrsweep}
 
@@ -239,7 +237,7 @@ Fine-tuning keeps the missing inputs at zero for every model. Replacing zero by 
 fine-tuning of the \Kfull-class model of seed one on the full top training set moves its rejection at
 30\% signal efficiency by less than the spread over pretraining runs, so the benchmark comparison does
 not depend on that choice.
-% CHECK: pending (no macro) fine-tuning zero-versus-mean check on top (188-class seed 1, full set): |R30 change| < seed SD of MlstFtTopRthirtyFull
+% CHECK: (no macro) fine-tuning zero-versus-mean check on top (188-class seed 1, full set): |R30 change| < seed SD of MlstFtTopRthirtyFull
 
 \subsection{Transfer to $X\to b\bar b$ and $X\to bs$}\label{sec:app-xbx}
 % CHECK: pending XbbNTrainPerClass, XbsNTrainPerClass, XbbRepetition, XbsRepetition (samples due 2026-11-03; drop with F9 if not staged by 2026-11-12)
@@ -327,10 +325,15 @@ figure~\ref{fig:f5}, which shows the \Kfull-class model and the randomly initial
 \subsection{MLP probes and the hidden layer of the head}\label{sec:app-mlp}
 
 MLP probes answer whether a linear null means that the information is absent or only that a linear
-classifier cannot read it. Wherever the main text reports that a linear probe finds no difference between
-label sets, table~\ref{tab:mlp} gives the MLP probe on the same frozen features at the largest training
-set of JetClass-II, JetClass and the class pairs, and of top and quark/gluon with the missing inputs set
-to zero.
+classifier cannot read it. Table~\ref{tab:mlp} gives the MLP probe on the same frozen features at the largest
+training set of JetClass-II, JetClass and the class pairs other than $X\to ee$ against $X\to\mu\mu$, and of
+top and quark/gluon with the missing inputs set to zero. On JetClass-II and the class pairs the MLP probes of
+the levels of the hierarchy, the partitions with controlled flavor boundaries and the randomly initialized
+network use the class-balanced test set of the linear probes. Those of the models with the auxiliary mass
+regression and the \RandVtwoNPartitions{} random partitions use the natural-composition test set, so the table
+gives them in a block of their own beside the levels of the hierarchy on that set, and no ratio crosses the
+two test sets.
+% CHECK: every linear null in the main text between the mass models or the random partitions has its natural-composition MLP value quoted (results_mass.tex, results_jc.tex); fits_v4_mlp still holds none of these nine models.
 
 The last rows of the same table address a second question: whether the hidden layer of the head, where
 Sophon's transfer head starts, holds information that a linear probe cannot read from the class
@@ -348,10 +351,14 @@ each model accumulated during pretraining. Every linear probe on natural-composi
 repeated on the copy of the selected checkpoint whose BatchNorm statistics were recomputed on
 \DesignBnJets{} training jets (table~\ref{tab:bn}); the class-balanced linear probes of the main text use
 the checkpoints as trained, which is why this check runs on the natural-composition test set. The ratio of
-$1-\AUC$ of a label set to the \Kfull-class model of its seed changes by at most \MlstBnMaxDev,
-less than the smallest difference between label sets that the main text reports, so no result rests on
-the statistics accumulated in pretraining.
-% CHECK: MlstBnMaxDev well below |MlstCmpJcTwoResOverFull - 1| (2.6% today); old value 0.5%
+the class-averaged $1-\AUC$ of a label set to the \Kfull-class model of its seed changes by at most
+\MlstBnMaxDev, less than the smallest difference between label sets that the main text reports. On the class
+pairs other than $X\to ee$ against $X\to\mu\mu$, whose probe ran only on the checkpoints as trained, the ratio
+moves by at most \MlstBnMaxDevPair{} for the levels of the hierarchy, the models with the
+auxiliary mass regression and the partitions with controlled flavor boundaries, and by more in one random
+partition, whose regularization, chosen on few validation jets, changes. No result checked here therefore rests
+on the statistics accumulated in pretraining.
+% CHECK: MlstBnMaxDev well below |MlstCmpJcTwoResOverFull - 1| (2.6% today); only one random-partition cell above MlstBnMaxDevPair (today rand2p4-s2 bb_vs_cc, 8.8%, C 0.1 to 0.01 on 510 validation jets)
 
 The randomly initialized network enters every comparison in its recomputed form, because its saved
 statistics are PyTorch's defaults, zero mean and unit variance, which do not normalize the inputs; a
@@ -371,10 +378,13 @@ resamples is its relative uncertainty from the test sample. On top and quark/glu
 ratio of $R_{30}$ follows from the number of background jets that pass the cut. Table~\ref{tab:boot} sets
 each beside the standard deviation over pretraining runs. The test sample contributes at most
 \MlstBootTestMaxProbe\% to a ratio from the linear probes on JetClass-II and \MlstBootTestMaxFt\% after
-fine-tuning there, and at most \MlstBootTestMaxRthirtyProbe\% and \MlstBootTestMaxRthirtyFt\% to a ratio
-of $R_{30}$ on top and quark/gluon from the linear probe and from fine-tuning; in each case this is below
-the standard deviation over pretraining runs of the same ratio.
-% CHECK: pending MlstBootTestMaxProbe, MlstBootTestMaxFt (class-balanced bootstraps); each test-sample SD below the seed SD in tab:boot
+fine-tuning there. It contributes at most \MlstBootTestMaxRthirtyProbe\% to a ratio of $R_{30}$ from the linear
+probe on top and quark/gluon, below the standard deviation over pretraining runs of the same ratio. After fine-tuning
+few background jets pass the cut on $R_{30}$, and the counting uncertainty, at most
+\MlstBootTestMaxRthirtyFt\% if the two counts are taken as independent, is larger than that standard
+deviation. The two counts come from the same test jets and are correlated, so this figure overestimates the
+uncertainty of a ratio, and we use it only as a conservative threshold (section~\ref{sec:uncertainties}).
+% CHECK: pending MlstBootTestMaxProbe, MlstBootTestMaxFt (class-balanced bootstraps); say how each JetClass-II test-sample SD compares with the seed SD once tab:boot has them. MlstBootTestMaxRthirtyProbe below the seed SD in all six R30 linear-probe cells (tightest today 3.6 against 9.8); MlstBootTestMaxRthirtyFt above the seed SD in the fine-tuned R30 cells (today 13 against 3.2, 7.3, 9.9; 4.6 against 2.6, 2.8, 2.6)
 
 \input{tables/mlst_boot}
 
@@ -474,7 +484,7 @@ the \Kfull-class run of the same seed. Each curve stops where fewer than $\nmin$
 the dashed black line at $N_B/\nmin$. The values at ParT's working points are in table~\ref{tab:jetclassprobe}.}
 \label{fig:a6j}
 \end{figure}
-% CHECK: pending init-s3 (randomly initialized network: two of three initial weights pulled today).
+% CHECK: init-s3 present (randomly initialized network: three of three initial weights pulled).
 
 \input{tables/mlst_jetclass_nbkg}
 \input{tables/mlst_rand_prong}
@@ -526,7 +536,7 @@ features, over all test jets and over resonant and QCD jets separately, and agai
 and generator soft-drop mass. The median response of the regressed mass lies close to one because its
 target $\theta$, equation~(\ref{eq:masstarget}), is the logarithm of the mass ratio itself. Figure~\ref{fig:a17} shows the distributions of
 the response for resonant and QCD jets.
-% CHECK: pending MlstMassHeadResMassResponse, MlstMassHeadCoarseMassResponse within a few per cent of 1 (0.995 and 1.003 in the older head files)
+% CHECK: MlstMassHeadResMassResponse, MlstMassHeadCoarseMassResponse within a few per cent of 1 (today 0.995, 1.003 and 1.005, 1.005)
 
 \input{tables/mlst_mass_detail}
 

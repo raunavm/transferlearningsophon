@@ -14,13 +14,15 @@ A single flavor boundary placed at random among the four-quark decays keeps flav
 pairs it does not cut (figure~\ref{fig:f4}). Fine-tuning does not remove the effect where every input is present: on
 JetClass the \Kcoarse-class model still rejects less background than the \Kfull-class model in several
 signal classes (table~\ref{tab:jetclass}). % CHECK: MlstFtJcOneCoarseNRejDrop at least two (outline: five)
-There the random partitions recover only part of that loss: they come close to the \Kfull-class model on
-two-prong decays and stay near the \Kcoarse-class model on the three- and four-prong classes, whose
-prong-count boundaries they mix (table~\ref{tab:jetclassall}). % CHECK: as section 4.2 (results_jc.tex): partitions near 188 on H->cc, W, Z and near 17 on H->4q and the top classes (curves/full_best70_leg2.json); the writer's "no better than the 17-class label set" contradicted section 4.2 and was replaced
+There the random partitions recover only part of that loss: \MlstFtJcOneRandGapShareWZ{} of it on
+$W\to qq'$ and $Z\to q\bar q$, and little on the Higgs decay to four quarks, which likely relies on the
+prong-count boundaries the partitions mix
+(table~\ref{tab:jetclassall}). % CHECK: as section 4.2 (results_jc.tex): share of the 17-to-188 rejection gap recovered, today 54 and 56% on W, Z and 20% on H->4q (curves/full_best70_leg2.json); the other classes have no gap by the rule
 On top tagging and quark/gluon
 discrimination, which lack some inputs, the fine-tuned label sets lie much closer together
 (tables~\ref{tab:benchtop} and~\ref{tab:benchqg}). % CHECK: MlstFtTopRthirtyCoarseOverFull and MlstFtQgRthirtyCoarseOverFull meet no difference criterion (raw R30 today: 17/188 paired 0.88-1.07 on top)
-Linear probes on their frozen features gain little over the randomly initialized network, and the
+Linear probes on the frozen features of the levels of the hierarchy do not clearly exceed the randomly
+initialized network there, and the
 substitutions for the missing inputs separate the part of that shortfall set by the zero value from
 the part set by the missing information (figure~\ref{fig:f5}). % CHECK: pending MlstLpTopRthirtyFullOverInitBn, MlstLpQgRthirtyFullOverInitBn, MlstLpTopRthirtyDrawOverZeroFull; name which substitution recovers the probe once known
 The two effects act on one part of the input. Flavor reaches the network through the displacement and
@@ -39,11 +41,12 @@ flavor: merging them leaves the resonant classes unchanged but costs the QCD pai
 (table~\ref{tab:pairs}) and the one discriminant that sums QCD classes
 (table~\ref{tab:usecase}). % CHECK: MlstCmpJcTwoQcdResOverFull > 1 and the QCD pairs of tab:pairs show 162 above 188
 Add an auxiliary mass regression: it puts the jet mass into the frozen features and lowers the sculpting
-of the QCD mass distribution at a QCD efficiency of \SculptEffLow{} (table~\ref{tab:mass} and
+of the QCD mass distribution, for the \Kcoarse-class model at a QCD efficiency of \SculptEffLow{} and for
+the \Kres-class model at \SculptEffHigh{} (tables~\ref{tab:mass} and~\ref{tab:sculpt} and
 figures~\ref{fig:f8a} and~\ref{fig:f8b}). Its cost to the classification of the pretraining classes
 is small; after fine-tuning on top tagging neither label set with it shows a change beyond the uncertainty
 of $R_{30}$, and \MlstMassNRunsWord{} runs per model cannot exclude a modest one
-(section~\ref{sec:mass}). % CHECK: pending MlstCmpMlpResMassOverRes < 1; MlstSculptCoarseMassOverCoarseOne < 1 in both runs; as section 4.6 states, MlstFtTopRthirtyResMassOverResPr and MlstFtTopRthirtyCoarseMassOverCoarsePr read "equal within" under the Methods two-run rule (raw R30 today: 1.12 and 0.89; 0.90 and 0.92); if either states a direction beyond MlstBootTestMaxRthirtyFt, rewrite both sections
+(section~\ref{sec:mass}). % CHECK: MlstCmpMlpResMassOverRes < 1; MlstSculptCoarseMassOverCoarseOnePr and MlstSculptResMassOverResTenPr state a reduction under the Methods two-run rule (today 0.697, 0.824 and 0.789, 0.860); as section 4.6 states, MlstFtTopRthirtyResMassOverResPr and MlstFtTopRthirtyCoarseMassOverCoarsePr read "equal within" under the Methods two-run rule (raw R30 today: 1.12 and 0.89; 0.90 and 0.92); if either states a direction beyond MlstBootTestMaxRthirtyFt, rewrite both sections
 For benchmarks with missing inputs, compare label sets by fine-tuning with the missing input features
 set to zero, which gives every label set identical inputs; input dropout during pretraining, which
 replaces some inputs with zeros, is the published alternative~\cite{omnilearn,jpjepa}. Report the variation between pretraining runs, because the

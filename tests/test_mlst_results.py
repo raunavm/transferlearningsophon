@@ -568,20 +568,45 @@ def test_the_sculpting_window_and_the_floor_count_come_from_the_curves():
     em = _PEm()
     M.sculpt_macros(em, sculpt, v2, runs, None, MT.fmt_pm)
     assert em.m["MlstSculptDiffEffLo"] == em.m["MlstSculptDiffEffHi"] == r"1.0\%"      # two significant figures
-    assert em.m["MlstSculptDiffLoEdge"] == "above the lowest stored efficiency"
     assert em.m["MlstSculptLowestEff"] == r"0.10\%" and em.m["MlstSculptLowestNPass"] == "410"
     # the two-run configurations sit 0.5 % below the floor: the largest distance from it, in floor SDs
     assert em.m["MlstSculptLowestMaxFloorSd"] == f"{0.005 * floor / M._floor_sd(24, 410):.1f}"
     assert em.m["MlstSculptCoarseOverFullOnePr"] == "2.0 times the distance"
     assert em.m["MlstSculptFullOne"].startswith("0.020")
     assert "MlstSculptCoarseMassOverCoarseOnePrMax" in em.m
-    # a 17/188 difference at the lowest stored efficiency puts the window's lower edge there, and says so
+    # a 17/188 difference at the lowest stored efficiency, next to the working point on this grid, joins the window
     for m in runs["R16_Q1"]:
         v2[m]["curve"][0]["js_distance"] *= 2
     em = _PEm()
     M.sculpt_macros(em, sculpt, v2, runs, None, MT.fmt_pm)
     assert em.m["MlstSculptDiffEffLo"] == r"0.10\%" and em.m["MlstSculptDiffEffHi"] == r"1.0\%"
-    assert em.m["MlstSculptDiffLoEdge"] == "at the lowest stored efficiency"
+
+
+def test_the_sculpting_window_is_the_unbroken_stretch_around_the_working_point():
+    grid = [0.001, 0.002, 0.005, 0.008, 0.012, 0.02, 0.05]
+    # a gap below and a passing point above the gap at 0.02: neither far point joins
+    assert M._window_around(grid, [0.001, 0.005, 0.008, 0.012, 0.05], 0.01) == (0.005, 0.012)
+    assert M._window_around(grid, grid, 0.01) == (0.001, 0.05)
+    assert M._window_around(grid, [0.012], 0.01) == (0.012, 0.012)
+    # the grid point nearest the working point fails, or nothing passes: no window
+    assert M._window_around(grid, [0.001, 0.05], 0.01) is None
+    assert M._window_around(grid, [], 0.01) is None
+
+
+@pytest.mark.parametrize("passing,lo,hi", [((0.001, 0.005, 0.01), r"0.50\%", r"1.0\%"), ((0.001,), "none", "none"), ((), "none", "none")])
+def test_the_sculpting_window_macros_skip_a_gap_and_say_when_no_point_passes(passing, lo, hi):
+    runs = M._paper(ROOT)
+    grid = [0.001, 0.003, 0.005, 0.01, 0.02]
+    sculpt, v2 = {}, {}
+    for arm in M.MAIN + M.MASS:
+        for m in runs[arm]:
+            curve = [{"eff": e, "n_pass": 400, "js_distance": 0.1 * (2 if arm == "R16_Q1" and e in passing else 1), "jsd": 0}
+                     for e in grid]
+            sculpt[m] = v2[m] = {"hist_before": [1.0 / 24] * 24, "bins_jet_sdmass": list(range(25)), "curve": curve,
+                                 "working_points": {"0.1": {"jsd": 1e-4, "n_pass": 41028}, "0.01": {"jsd": 1e-4, "n_pass": 4103}}}
+    em = _PEm()
+    M.sculpt_macros(em, sculpt, v2, runs, None, MT.fmt_pm)
+    assert em.m["MlstSculptDiffEffLo"] == lo and em.m["MlstSculptDiffEffHi"] == hi
 
 
 def _jc1_pre(runs, rej):
@@ -666,6 +691,8 @@ def test_the_gpu_type_bound_reads_the_one_run_on_its_own_gpu():
     # the 162- and 43-class runs have no fit here, so the 17-class ratio is the bound; never a ratio
     # within one configuration (PI 2026-11-02: 1 - AUC only between pretraining configurations)
     assert em.m["MlstGpuTypeBound"] == "9.3\\%" and "MlstGpuTypeBoundRatio" not in em.m
+    # the other two indices differ by (1.5 - 1.364) / 1.432
+    assert em.m["MlstGpuOtherSeedsDiff"] == "9.5\\%"
     fits.update({f"mtx-l162-s{k}": cell(c) for k, c in ((1, 0.020), (2, 0.022), (3, 0.0231 * 1.2))})
     em = _PEm()
     M.V4.gpu_bound_macro(em, fits, runs, comp, None)
@@ -673,7 +700,7 @@ def test_the_gpu_type_bound_reads_the_one_run_on_its_own_gpu():
     comp["mtx-l188-s3"] = dev("V100")
     em = _PEm()
     M.V4.gpu_bound_macro(em, fits, runs, comp, None)
-    assert em.m["MlstGpuTypeBound"].startswith(r"\pending")
+    assert em.m["MlstGpuTypeBound"].startswith(r"\pending") and em.m["MlstGpuOtherSeedsDiff"].startswith(r"\pending")
 
 
 def test_the_part_reproduction_table_and_macros(tmp_path):
@@ -700,6 +727,118 @@ def test_the_learning_rate_table_marks_the_chosen_rates():
     t = M.table_lrsweep({"cells": cells})
     chosen = [ln for ln in t.splitlines() if r"$^{\ast}$" in ln]
     assert len(chosen) == 2 and r"\ensuremath{10^{-3}}" in chosen[0] and r"\ensuremath{3\times10^{-3}}" in chosen[1]
+    # from scratch each task keeps its own best rate, starred on that task's accuracy, never on the sum
+    cells["leg_top/scratch_lr1e-3/N10000/s1"]["early_stop"]["best_metric"] = 0.92
+    assert M.V4.choose_rates({"cells": cells}) == ("1e-3", {"leg_qg": "3e-3", "leg_top": "1e-3"})
+    rows = M.table_lrsweep({"cells": cells}).splitlines()
+    assert [ln.count(r"$^{\ast}$") for ln in rows if ln.startswith("from scratch")] == [0, 1, 1]
+    assert next(ln for ln in rows if ln.startswith(r"from scratch & \ensuremath{10^{-3}}")).split(" & ")[2].endswith(r"$^{\ast}$")
+    assert not any(r"$^{\ast}$" in ln.split(" & ")[-1] for ln in rows if ln.startswith("from scratch"))
+
+
+def test_the_launched_from_scratch_rates_are_the_ones_the_paper_states():
+    assert M.V4.launched_scratch_rates(ROOT) == {"top": "1e-3", "qg": "3e-3", "jc1": "1e-3", "jc2b": "1e-3"}
+    sweep = DATA / "budget" / "lrsweep_metrics.json"
+    if sweep.exists():
+        assert M.V4.choose_rates(json.loads(sweep.read_text()))[1] == {"leg_qg": "3e-3", "leg_top": "1e-3"}
+
+
+def test_the_models_without_a_balanced_nonlinear_probe_read_natural_composition():
+    runs = {**{a: [f"mtx-{a.lower().replace('_', '')}-s{k}" for k in (1, 2, 3)] for a in M.MAIN},
+            "L162_MASS": ["mtx-l162mass-s1", "mtx-l162mass-s2"], "R16_Q1_MASS": ["mtx-r16q1mass-s1", "mtx-r16q1mass-s2"],
+            "RAND2_p1": ["mtx-rand2p1-s1"]}
+    rows = M.MAIN + ("L162_MASS", "RAND2_p1")
+
+    def cell(oma, jc2=True):
+        rec = {"auc": 1 - oma, "r30": 100.0}
+        tasks = {t: rec for t in ("top", "qg", "qg_herwig")}
+        tasks["jc1"] = {"macro_auc_ovr": 1 - oma}
+        if jc2:
+            tasks["jc2_188"] = {"macro_auc_ovr": 1 - oma, "macro_auc_resonant": 1 - oma, "macro_auc_qcd": 1 - oma,
+                                "per_class_auc": {"3": 1 - oma}}
+            tasks.update({k: {"auc": 1 - oma} for k, *_ in M.MLP_PAIRS})
+        return {"cells": {"best70": tasks}}
+    models = [m for ms in runs.values() for m in ms]
+    oma = lambda m: 0.04 if m.startswith("mtx-l188") else 0.042 if "mass" in m else 0.05
+    nat = {m: cell(oma(m)) for m in models}
+    mlp = {m: cell(0.03, jc2=any(m in runs[a] for a in M.MAIN)) for m in models}
+    t = M.table_mlp(mlp, runs, MT.fmt_pm, rows, nat=nat)
+    assert r"\pending" not in t
+    blocks = t.split("%SPLIT%")
+    assert len(blocks) == 4 and "natural-composition" in blocks[3]
+    assert next(ln for ln in blocks[0].splitlines() if ln.startswith(M.LABEL["L162_MASS"])).split(" & ")[1:5] == ["--"] * 4
+    assert not any(ln.startswith(M.LABEL["L162_MASS"]) for b in blocks[1:3] for ln in b.splitlines())
+    assert next(ln for ln in blocks[3].splitlines() if ln.startswith("random partition")).split(" & ")[2] == M._lone(1.25)
+    # no configuration lacks a balanced fit: no natural-composition block, whatever nat holds
+    assert "natural-composition" not in M.table_mlp(nat, runs, MT.fmt_pm, rows, nat=nat)
+    em = _PEm()
+    M.mlp_natural_macros(em, nat, runs, None, MT.fmt_pm)
+    assert em.m["MlstMlpNatJcTwoResMassOverRes"] == M._cell([0.84, 0.84], 2, MT.fmt_pm, sep=M.TEXT_SEP)
+    assert "MlstMlpNatJcTwoResMassOverResPr" in em.m and "MlstMlpNatJcTwoCoarseMassOverCoarsePrMax" in em.m
+    assert M._per_class(M._nat_as_fits(nat), "mtx-l188-s1") == {3: 0.96}
+
+
+def test_the_batchnorm_pair_bound_leaves_out_the_random_partitions():
+    def cell(best, bn):
+        one = lambda oma: {"jc2_188": {"1000000": {met: 0.98 for _, met, _ in M.JC2_TASKS}},
+                           "jc2_188_pairs": {"1000000": {"bb_vs_cc": {"auc": 1 - oma}}}}
+        return {"cells": {"best70": one(best), "best70_bn": one(bn)}}
+    runs = {"L188": ["mtx-l188-s1"], "R16_Q1": ["mtx-r16q1-s1"], "RAND2_p1": ["mtx-rand2p1-s1"]}
+    fits = {"mtx-l188-s1": cell(0.01, 0.01), "mtx-r16q1-s1": cell(0.02, 0.0202), "mtx-rand2p1-s1": cell(0.02, 0.03)}
+    em = _PEm()
+    M.bn_macros(em, fits, runs, None)
+    assert em.m["MlstBnMaxDevPair"] == "1.0\\%" and em.m["MlstBnMaxDev"] == "0.0\\%"
+    em = _PEm()
+    M.bn_macros(em, fits, {"L188": runs["L188"], "RAND2_p1": runs["RAND2_p1"]}, None)
+    assert em.m["MlstBnMaxDevPair"].startswith(r"\pending")
+
+
+def test_the_top_rejection_at_half_signal_efficiency_masks_a_curve_below_its_cut():
+    runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"], "R16_Q1": ["mtx-r16q1-s1", "mtx-r16q1-s2", "mtx-r16q1-s3"]}
+    doc = lambda rej, cut=0.1: {"eps_grid": [0.3, 0.5], "curves": {"top": {"rejection": [9999.0, rej], "cut": {"eps_s": cut}}}}
+    top = {**{m: doc(400.0) for m in runs["L188"]}, **{m: doc(r) for m, r in zip(runs["R16_Q1"], (368.0, 372.0, 376.0))}}
+    em = _PEm()
+    M.top_r50_macro(em, {"top_ft": top}, runs, None, MT.fmt_pm)
+    assert em.m["MlstFtTopRfiftyCoarseOverFull"] == MT.fmt_pm(0.93, 0.01) and em.m["MlstFtTopRfiftyCoarseOverFullPr"] == r"7.0\% less rejection"
+    top["mtx-r16q1-s1"] = doc(372.0, cut=0.6)
+    em = _PEm()
+    M.top_r50_macro(em, {"top_ft": top}, runs, None, MT.fmt_pm)
+    assert r"\pending{2 of 3}" in em.m["MlstFtTopRfiftyCoarseOverFull"]
+    em = _PEm()
+    M.top_r50_macro(em, {}, runs, None, MT.fmt_pm)
+    assert "MlstFtTopRfiftyCoarseOverFull" not in em.m and "MlstFtTopRfiftyCoarseOverFull" in {n for n, _, _ in M.REQUIRED}
+
+
+def test_the_share_of_the_jetclass_gap_the_partitions_recover():
+    runs = M._paper(ROOT)
+    rej = lambda m, c: (800.0 if "r16q1" in m else 900.0 if "rand2" in m else 1000.0, 200)
+    pre = _jc1_pre(runs, rej)
+    for arm in M.RAND:
+        for m in runs[arm]:
+            pc = {c: {"rejection": dict(zip(("rejection", "n_bkg_pass"), rej(m, c)))} for c, _ in M.V4.JC1_COLS}
+            pre[m[len("mtx-"):]] = {"N1000000": {"s1": {"jc1": {"accuracy": 0.84, "per_class": pc}}}}
+    em = _PEm()
+    M.jetclass_macros(em, pre, runs, None, MT.fmt_pm, MT.words)
+    assert em.m["MlstFtJcOneRandGapShareWZ"] == "about half"
+    assert M._gap_share([0.54, 0.56]) == "about half" and M._gap_share([0.2, 0.56]) == r"20--56\%"
+    assert M._gap_share([]).startswith(r"\pending")
+
+
+def test_the_ee_mumu_auc_over_the_partitions_that_merge_the_pair():
+    aucs = {"RAND2_p1": 0.99, "RAND2_p2": 0.98, "RAND2_p3": 0.5}
+    runs = {**{a: [] for a in M.MAIN + M.FLAV + (M.INIT, M.INIT_BN)}, **{a: [] for a in M.RAND},
+            **{a: [f"mtx-{a.lower().replace('_', '')}-s1"] for a in aucs}}
+    pair = lambda auc: {"cells": {"best70": {M.PAIR_DS: {M.PAIR_N: {"ee_vs_mm": {
+        "auc": auc, "n_train": 9575, "n_val": 510, "n_test_signal": 5000, "n_test_background": 5000}}}}}}
+    fits = {runs[a][0]: pair(x) for a, x in aucs.items()}
+    status = {a: {"ee_vs_mm": "apart" if a == "RAND2_p3" else "merged"} for a in M.RAND}
+    em = _PEm()
+    M.eemm_macros(em, fits, runs, None, MT.fmt_pm, MT.fmt_int, status)
+    assert em.m["MlstLpEemmAucRandMerged"] == M._cell([0.99, 0.98], 2, MT.fmt_pm, sep=M.TEXT_SEP)
+    em = _PEm()
+    M.eemm_macros(em, fits, runs, None, MT.fmt_pm, MT.fmt_int, {a: {"ee_vs_mm": "apart"} for a in M.RAND})
+    assert "MlstLpEemmAucRandMerged" not in em.m
+    assert "MlstLpEemmAucRandMerged" in {n for n, _, _ in M.REQUIRED}
 
 
 def test_the_inputs_table_reads_which_inputs_each_data_set_lacks():
@@ -737,6 +876,8 @@ def test_where_the_per_class_cost_sits_follows_the_label_maps():
     assert em.m["MlstPerClassCoarseNDoubled"] == "188" and em.m["MlstPerClassCoarseLeptonMedian"] == "5.00"
     assert em.m["MlstPerClassCoarseTopClass"] in lepton and int(em.m["MlstPerClassCoarseLeptonN"]) > 0
     assert int(em.m["MlstPerClassCoarseQuarkN"]) > 0 and em.m["MlstPerClassCoarseQuarkMedian"] in ("3.00", "4.00", "5.00")
+    # from the label maps alone: the classes merged with both a quark- and a lepton-flavor counterpart
+    assert em.m["MlstPerClassCoarseQuarkLeptonN"] == "64"
     assert em.m["MlstPerClassRandFlavMergedOverApart"].startswith(r"\pending")
 
 

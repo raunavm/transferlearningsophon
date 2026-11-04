@@ -77,7 +77,7 @@ to groups at random and chosen to cut across the \Kcoarse-class groups; they tes
 a coarse label set depends on which classes are merged. Random partitions with controlled flavor
 boundaries differ from one another only in their flavor boundary, a class boundary between decays
 that differ only in quark flavor, and test whether one such boundary changes what the frozen features
-carry. We evaluate every model with linear probes and with MLP probes, small multilayer perceptrons
+carry. We evaluate the models with linear probes and with MLP probes, small multilayer perceptrons
 (MLP) trained on the same frozen features, first on the JetClass-II classes themselves. The
 downstream tasks, on which we also fine-tune, are the JetClass dataset~\cite{part}, top
 tagging~\cite{toptag} and quark/gluon discrimination in Pythia and Herwig
@@ -94,8 +94,8 @@ flavor is the costliest step of the % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmp
 hierarchy. Class by class, the largest costs fall on decays that differ only in lepton flavor (an % CHECK: MlstPerClassCoarseTopClass is an e/mu or tau_e/tau_mu class
 electron or a muon, directly or through a $\tau$ lepton). Summed over classes, the largest cost falls % CHECK: MlstPerClassCoarseQuarkShare > MlstPerClassCoarseLeptonShare
 on decays that differ only in quark flavor (figure~\ref{fig:f3}). At the same number of classes, the
-random partitions lose less than the \Kcoarse-class level, so the cost is set by which classes are % CHECK: MlstCmpJcTwoRandOverCoarse < 1
-merged and not by how many remain. Any flavor boundary keeps flavor readable, and a boundary placed % CHECK: MlstCmpJcTwoF{one,oner}OverFzero < 1 (both runs); MlstCmpBbqqFonerOverFzero < 1 and MlstCmpBbqqFonerOverFone > 1 (both runs)
+random partitions lose less than the \Kcoarse-class level, so the cost depends on which classes are % CHECK: MlstCmpJcTwoRandOverCoarse < 1
+merged and not only on how many remain. Any flavor boundary keeps flavor readable, and a boundary placed % CHECK: MlstCmpJcTwoF{one,oner}OverFzero < 1 (both runs); MlstCmpBbqqFonerOverFzero < 1 and MlstCmpBbqqFonerOverFone > 1 (both runs)
 between the two decays of a pair separates that pair better still (figure~\ref{fig:f4}).
 
 % P6. Findings downstream and on the jet mass, then the roadmap (the only "section N" list).
@@ -108,7 +108,7 @@ zero on JetClass-II removes more of the pretrained features' accuracy than it re
 randomly initialized network. We compare three substitutions for the missing inputs to find where % CHECK: pending MlstLpTopRthirtyFullOverInitBn (substitution chosen on validation)
 the loss arises (figure~\ref{fig:f5}). Finally, the \Kres- and \Kcoarse-class models are also
 pretrained with an auxiliary regression of the jet mass, trained alongside the classification. The
-regression makes the frozen features carry the jet mass and reduces sculpting, the distortion of the % CHECK: pending MlstCmpMlpResMassOverRes < 1 and MlstCmpMlpCoarseMassOverCoarse < 1 (ATLAS resolution); MlstSculptCoarseMassOverCoarseOne < 1
+regression makes the frozen features carry the jet mass and reduces sculpting, the distortion of the % CHECK: MlstCmpMlpResMassOverRes < 1 and MlstCmpMlpCoarseMassOverCoarse < 1 (ATLAS resolution); MlstSculptCoarseMassOverCoarseOne < 1
 background mass distribution by a selection on the classifier score, at a small cost to the % CHECK: MlstCmpJcTwoResMassOverRes within a few per cent of one
 classification (figures~\ref{fig:f8a} and~\ref{fig:f8b}, table~\ref{tab:mass}).
 

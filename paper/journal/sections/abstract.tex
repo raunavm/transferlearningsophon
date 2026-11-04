@@ -15,7 +15,7 @@ most, and at a fixed number of classes the cost depends on which classes are mer
 fine-tuning, the \Kcoarse-class labels still lower the background rejection for several signal % CHECK: MlstFtJcOneCoarseNRejDrop >= two
 classes of JetClass, a separate simulation with every input present. On the public top-tagging and
 quark/gluon benchmarks, which lack some inputs, the label sets differ far less. % CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull and MlstFtQgRthirty{Res,Mid,Coarse}OverFull within a few per cent of one
-An auxiliary jet-mass regression makes the pretrained features carry the mass and reduces the % CHECK: pending MlstCmpMlpResMassOverRes < 1 (ATLAS resolution); MlstSculptCoarseMassOverCoarseOne < 1
+An auxiliary jet-mass regression makes the pretrained features carry the mass and reduces the % CHECK: MlstCmpMlpResMassOverRes < 1 (ATLAS resolution); MlstSculptCoarseMassOverCoarseOne < 1
 sculpting of the background mass distribution, at a small cost to the classification. A pretraining % CHECK: MlstCmpJcTwoResMassOverRes within a few per cent of one
 label set should keep every distinction that downstream discriminants sum over, and the boundaries
 between flavors.

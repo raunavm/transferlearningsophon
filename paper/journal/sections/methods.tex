@@ -223,8 +223,10 @@ from held-out files, with equal numbers of jets of each class where the data all
 weigh as much as common ones. The training sets are nested; their sizes and the fit settings are in
 appendix~\ref{sec:app-probes}. A linear probe reads only what a linear function of the features can. An MLP
 probe, a small multilayer perceptron with one hidden layer of \LpMlpHidden{} units trained on the same frozen
-features, therefore stands beside every linear probe that finds no difference, and tells whether the
-information is absent or only not linearly readable. The randomly initialized network is the saved initial
+features, therefore checks the linear probes, and tells whether the information is absent or only not linearly
+readable; for the models with the auxiliary mass regression and the \RandVtwoNPartitions{} random partitions it
+was run only on the natural-composition JetClass-II test set, whose class shares follow the selection
+(appendix~\ref{sec:app-mlp}). The randomly initialized network is the saved initial
 weights of a \Kfull-class model before any training, one for each seed. Evaluated in the same way, it gives
 the floor: what a linear probe on frozen features gets from the architecture alone. Its BatchNorm statistics
 are recomputed on \DesignBnJets{} training jets, so that it is compared with the pretrained networks under the
@@ -439,7 +441,7 @@ most published foundation-model results leave out by repeating only the downstre
 network; Sophon reports no variation between pretraining runs~\cite{sophon}. Three runs are given as the mean
 and standard deviation, rounded following the Particle Data Group~\cite{pdg}, two runs as both values and one
 run as its value. With three runs a standard deviation is itself uncertain by about \MlstSdRelUnc. The network
-trained from scratch varies its training seed, on JetClass also its training subset, and the randomly
+trained from scratch varies its training seed, on the largest JetClass training set also its training subset, and the randomly
 initialized network its initial weights. A ROC curve of a configuration is the mean over its runs of the
 rejection at each signal efficiency, with a band of one standard deviation, or the range of two runs, at the
 same signal efficiency.
@@ -448,16 +450,26 @@ Ratios are formed between models with the same seed, which share their training 
 then averaged over seeds; a control is paired with the models of the seed it was pretrained with. The task's
 metric is $1-\AUC$ on JetClass-II, $R_{30}$ on top tagging and quark/gluon discrimination, and the rejection of
 each signal class on JetClass. A paired ratio of it is a difference when it departs from one by more than twice
-its standard deviation and by more than its test-set uncertainty, which a bootstrap of the test jets gives
+its standard deviation and by more than its test-set uncertainty, which a bootstrap of the test jets or, for a
+rejection, the number of background jets passing the cut gives
 (appendix~\ref{sec:app-boot}). The ratio panels of the ROC figures are formed the same way, run by run
 against the \Kfull-class run of the same seed, the randomly initialized network included, since it holds that
 run's initial weights; the network trained from scratch and the kinematic-only model, which have no such
 partner, are divided by the mean of the \Kfull-class runs. For a configuration with two runs, a ratio is a
 difference only when both runs lie further from one than twice the standard deviation of the same ratio between
 levels of the class hierarchy (the relative standard deviation over seeds of each coarser level against the
-\Kfull-class model, pooled over the three levels). The finite test set adds less to the uncertainty than the variation between
-pretraining runs (appendix~\ref{sec:app-boot}). % CHECK: pending MlstBootTestMaxProbe (class-balanced bootstrap) and MlstBootTestMaxFt; the test-set SD must lie below the seed SD of the JetClass-II label-set ratios
+\Kfull-class model, pooled over the three levels). For $R_{30}$ from linear probes on top tagging and
+quark/gluon discrimination the counting uncertainty of the test jets lies below the variation between
+pretraining runs. After fine-tuning on these tasks few background jets pass the cut, and the counting
+uncertainty, if the two counts of a ratio are taken as independent, lies above that variation. Every model is
+scored on the same test jets, which correlates the two counts, so this figure overestimates the test-set
+uncertainty of a ratio; we use it as a conservative threshold, and a fine-tuned $R_{30}$ ratio between label sets
+must exceed it to count as a difference (appendix~\ref{sec:app-boot}).
+% CHECK: prose() reads the SD over runs only, so nothing enforces this threshold: no twin of a fine-tuned R30 ratio between label sets may state a direction below MlstBootTestMaxRthirtyFt (today all read "equal within").
+% CHECK: pending MlstBootTestMaxProbe (class-balanced bootstrap) and MlstBootTestMaxFt; add a JetClass-II clause here only if each test-set SD lies below the seed SD in tab:boot. Like with like on natural composition (bootstrap/probe/jc2_188_N1000000.json, mean over runs, against the seed SD of the same ratios) the 162- and 43-class cells pass (0.99 against 1.30, 1.47 against 2.05%) and the 17-class cell fails (1.72 against 1.51%); against the class-balanced seed SDs (0.455, 0.698, 1.247%) all three would fail, so the sentence waits for the class-balanced bootstraps.
 Training ran on several GPU types, and table~\ref{tab:compute} gives each run's types and GPU-hours. The \MlstNRunsWord{}
 \Kfull-class models trained on one GPU type each, one of them on a different type from the other two. The
-label-set ratios of that seed lie within \MlstGpuTypeBound{} of the mean of the other two seeds, no more than
-the variation between seeds, so the GPU type does not move a result beyond that variation. % CHECK: MlstGpuTypeBound (today 1.4%) must not exceed the seed SD of the 17/188 ratio (MlstCmpJcTwoCoarseOverFull, today 1.9%); it is NOT far below the 162/188 effect (2.6%), so do not write "far below the label-set effects"
+label-set ratios of that seed lie within \MlstGpuTypeBound{} of the mean of the other two seeds, which differ
+from each other by up to \MlstGpuOtherSeedsDiff. The coarser models in these ratios ran on varying GPU types,
+some on several within one run, so neither figure isolates the GPU type. This comparison shows no effect of the
+GPU type beyond the variation between seeds and cannot exclude a smaller one. % CHECK: MlstGpuTypeBound (today 1.4%) must not exceed MlstGpuOtherSeedsDiff (today 1.9%); the numerators' GPU types differ (compute/*.json), so never call the two other seeds a same-GPU baseline; the 0.019 of MlstCmpJcTwoCoarseOverFull is an absolute SD, not 1.9 per cent; the bound is NOT far below the 162/188 effect (2.6%), so do not write "far below the label-set effects"
