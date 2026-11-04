@@ -37,7 +37,7 @@ def main() -> int:
         except C.Absent as e:
             rec["drawn"], rec["absent"] = False, str(e)
             print(f"{page.id}: absent: {e}")
-        except Exception as e:
+        except (Exception, SystemExit) as e:      # the selection code exits on a fatal input (xbx_report.load)
             traceback.print_exc()
             rec["drawn"], rec["failed"] = False, f"{type(e).__name__}: {e}"
             failed.append(page.id)
