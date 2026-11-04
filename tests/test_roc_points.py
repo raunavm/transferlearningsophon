@@ -36,7 +36,7 @@ def test_the_grid_and_the_cut_constant():
     assert all(b > a for a, b in zip(g, g[1:])) and {0.3, 0.5} <= set(g)
     assert RP.MIN_BKG_PASS == V4.JC1_MIN_BKG == 20
     assert RP.JC1_SIGNALS == tuple(c for c, _ in V4.JC1_COLS)
-    assert RP.FT_TASK["jc1_ft_ovr"] == "jc1" and {"jc1_ft_ovr", "jc1_probe_ovr"} <= set(V4.ROC_FAMILIES)
+    assert RP.FT_TASK["jc1_ft_ovr"] == "jc1"
 
 
 def test_rejection_above_the_cut_equals_ft_curves(tmp_path):

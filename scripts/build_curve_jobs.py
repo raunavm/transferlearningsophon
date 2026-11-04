@@ -74,7 +74,7 @@ NEEDED = {"experiments/FT/ft_curves.py": "def roc_points",
           "experiments/MTX/status_v2.py": "def status"}
 # checked at PIN_ROC only: the earlier pins predate the file
 NEEDED_ROC = {"experiments/FT/roc_points.py": "def curve_doc"}
-# curves-roc-jc1ovr (2026-11-03): its own tag, so that curves-roc and curves-roc-kin keep PIN_ROC, as launched
+# curves-roc-jc1ovr (2026-11-03) and the unlaunched curves-roc-kin: curves-roc keeps PIN_ROC, as launched
 PIN_ROC_JC1OVR = "mtx-s2.57"
 NEEDED_ROC_JC1OVR = {"experiments/FT/roc_points.py": "def jc1_ovr_curves"}
 
@@ -456,8 +456,8 @@ def build(pin: str) -> dict[pathlib.Path, str]:
         "curves-roc-raunav", roc_body(PIN_ROC),
         "Per-class ROC curves with the 20-background-jet cut, the paper's ROC figures", PIN_ROC, roc_node_exclude())
     out[OUT_DIR / "job-curves-roc-kin-raunav.yaml"] = cpu_job(
-        "curves-roc-kin-raunav", roc_kin_body(PIN_ROC),
-        "ROC curve of the kinematic-only model's top-tagging fine-tuning at the full set", PIN_ROC,
+        "curves-roc-kin-raunav", roc_kin_body(PIN_ROC_JC1OVR),
+        "ROC curve of the kinematic-only model's top-tagging fine-tuning at the full set", PIN_ROC_JC1OVR,
         roc_node_exclude())
     out[OUT_DIR / "job-curves-roc-jc1ovr-raunav.yaml"] = cpu_job(
         "curves-roc-jc1ovr-raunav", roc_jc1ovr_body(PIN_ROC_JC1OVR),

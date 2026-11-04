@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+"""Draw the gallery's mock-ups and write pages.json beside them. One broken figure does not hide the others.
+
+    python3 experiments/FIGS/figstyle/gallery_figures.py --outdir figures/figstyle [--only ID ...]
+"""
+import argparse
+import dataclasses
+import json
+import pathlib
+import traceback
+
+import gallery_common as C
+import gallery_labelset
+import gallery_physics
+import gallery_roc
+import style_v3 as S
+
+MODULES = (gallery_physics, gallery_labelset, gallery_roc)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--outdir", type=pathlib.Path, default=pathlib.Path("figures/figstyle"))
+    ap.add_argument("--only", nargs="*")
+    a = ap.parse_args()
+    a.outdir.mkdir(parents=True, exist_ok=True)
+    pages, failed = [], []
+    for page in (p for m in MODULES for p in m.PAGES):
+        if a.only and page.id not in a.only:
+            continue
+        S.use_style()
+        rec = {k: v for k, v in dataclasses.asdict(page).items() if k != "draw"}
+        try:
+            page.draw(a.outdir / page.id)
+            rec["drawn"] = True
+            print(f"{page.id}: drawn")
+        except C.Absent as e:
+            rec["drawn"], rec["absent"] = False, str(e)
+            print(f"{page.id}: absent: {e}")
+        except Exception as e:
+            traceback.print_exc()
+            rec["drawn"], rec["failed"] = False, f"{type(e).__name__}: {e}"
+            failed.append(page.id)
+            print(f"{page.id}: FAILED {type(e).__name__}: {e}")
+        pages.append(rec)
+    (a.outdir / "pages.json").write_text(json.dumps(pages, indent=1))
+    print(f"\ndrawn {sum(r['drawn'] for r in pages)} of {len(pages)}; failed: {failed}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
