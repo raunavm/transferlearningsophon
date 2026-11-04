@@ -84,7 +84,7 @@ def image_rects(sizes: list, x: float, y: float, width: float, height: float) ->
     return best
 
 
-def left_column(page, rec: dict, warn: list) -> None:
+def left_column(page, rec: dict, warn: list, bottom: float) -> None:
     paths = [PRECEDENTS / p for p in rec.get("precedent", [])]
     missing = [p for p in paths if not p.exists()]
     label = "Precedent: " + rec.get("precedent_label", "")
@@ -98,12 +98,15 @@ def left_column(page, rec: dict, warn: list) -> None:
     if found:
         sizes = [(pm.width, pm.height) for pm in map(fitz.Pixmap, map(str, found))]
         y = max(TOP + height, FIG_TOP)
-        for path, rect in zip(found, image_rects(sizes, MARGIN, y, COL, BOTTOM - y)):
+        for path, rect in zip(found, image_rects(sizes, MARGIN, y, COL, bottom - y)):
             page.insert_image(rect, filename=str(path), keep_proportion=True)
 
 
-def right_column(page, rec: dict, figdir: pathlib.Path, warn: list) -> None:
+def right_column(page, rec: dict, figdir: pathlib.Path, warn: list) -> float:
+    """Ours at the top of the right column; the caption and notes below both figures, across the page, so that a
+    long note costs little figure. Returns where the figures end."""
     x = MARGIN + COL + GUTTER
+    wide = 2 * COL + GUTTER
     write(page, x, TOP, COL, LABEL, "Ours (mock-up)", SIZES[0])
     pdf = figdir / f"{rec['id']}.pdf"
     src = fitz.open(pdf) if rec.get("drawn") and pdf.exists() else None
@@ -129,7 +132,7 @@ def right_column(page, rec: dict, figdir: pathlib.Path, warn: list) -> None:
     # The largest text that leaves our figure its width, or at least FIG_FLOOR of height.
     full_h = COL * src[0].rect.height / src[0].rect.width if src else 0
     for size in SIZES:
-        heights = [text_height(t, COL, size) for t, _ in paragraphs]
+        heights = [text_height(t, wide, size) for t, _ in paragraphs]
         avail = BOTTOM - FIG_TOP - sum(h + GAP for h in heights)
         if avail >= min(full_h, FIG_FLOOR):
             break
@@ -142,10 +145,11 @@ def right_column(page, rec: dict, figdir: pathlib.Path, warn: list) -> None:
     y = FIG_TOP + fig_h
     for (text, color), height in zip(paragraphs, heights):
         y += GAP
-        if not write(page, x, y, COL, min(height, BOTTOM - y), text, size, color=color):
+        if not write(page, MARGIN, y, wide, min(height, BOTTOM - y), text, size, color=color):
             warn.append(f"text overflows at {size} pt and was cut")
             break
         y += height
+    return FIG_TOP + fig_h
 
 
 def missing_glyphs(rec: dict, font: fitz.Font) -> str:
@@ -168,8 +172,7 @@ def main() -> int:
         size = next((s for s in HEADING_SIZES if text_height(heading, PW - 2 * MARGIN, s, BOLD) == text_height("x", PW - 2 * MARGIN, s, BOLD)), HEADING_SIZES[-1])
         if not write(page, MARGIN, MARGIN, PW - 2 * MARGIN, text_height("x", PW - 2 * MARGIN, size, BOLD), heading, size, BOLD):
             warn.append("heading overflows and was cut")
-        left_column(page, rec, warn)
-        right_column(page, rec, figdir, warn)
+        left_column(page, rec, warn, right_column(page, rec, figdir, warn))
         if lost := missing_glyphs(rec, font):
             warn.append(f"characters the font does not have: {lost}")
         for w in warn:

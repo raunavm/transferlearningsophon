@@ -428,17 +428,7 @@ F11_CAPTION = (
     "discriminant of the 188-class model and a classifier on the frozen features of each label set, each the mean "
     "over runs; a curve ends where fewer than 20 background jets remain.")
 
-ATLAS_LOOK = ("ATLAS's Nimbus Sans at 6.2 pt labels and 5.2 pt ticks, ticks inward on four sides with minors, unframed "
-              "legend and experiment label block become Sophon's STIX at 10 and 8 pt, ticks outward on the left and "
-              "bottom, a framed legend and no label block, since the style is Sophon's and MLST asks for at least "
-              "8 pt; the figure is less wide for its height for the same reason")
-A17_DIFFERS = (
-    "As F9b, on one jet group and with a second row against generator mass, which ATLAS does not draw (its Fig. 9 has "
-    "pT response instead); the legend appears once, in the first panel, to keep four panels light. Eight axes in all, a lower axes under each "
-    "of four panels: within the limit of four panels only if lower axes do not count, for the PI to decide. 5.6 in high, not "
-    "the 4.8 in of a plain 2x2, because each panel carries a lower axes. " + ATLAS_LOOK + ".")
-MASS_RUNS_NOTE = ("Mean of two runs for each mass regression model (the third runs were cut on 2026-10-22); "
-                  "the groomed mass is the same in every file. Nothing else is absent.")
+ATLAS_LOOK = "Sophon's font, sizes, ticks and framed legend in place of ATLAS's; no experiment label"
 
 PAGES = [
     Page("SOPHON-FIG2", "Sophon Fig. 2 redrawn through style_v3 (validation)", ["2405.12972/fig2.png"], "Sophon Fig. 2",

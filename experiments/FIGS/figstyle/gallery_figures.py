@@ -16,6 +16,8 @@ import gallery_roc
 import style_v3 as S
 
 MODULES = (gallery_physics, gallery_labelset, gallery_roc)
+ORDER = ("SOPHON-FIG2", "F1", "F2a", "F2b", "F2-app", "F3", "F3-app", "FJ", "FJ-s", "FJ-app", "F4", "F4-app", "F6", "F7",
+         "F8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "F10a", "F10b", "F11", "A3R")     # the paper's order
 
 
 def main() -> int:
@@ -25,7 +27,7 @@ def main() -> int:
     a = ap.parse_args()
     a.outdir.mkdir(parents=True, exist_ok=True)
     pages, failed = [], []
-    for page in (p for m in MODULES for p in m.PAGES):
+    for page in sorted((p for m in MODULES for p in m.PAGES), key=lambda p: ORDER.index(p.id)):
         if a.only and page.id not in a.only:
             continue
         S.use_style()
