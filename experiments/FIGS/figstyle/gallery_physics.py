@@ -429,6 +429,13 @@ F11_CAPTION = (
     "over runs; a curve ends where fewer than 20 background jets remain.")
 
 ATLAS_LOOK = "Sophon's font, sizes, ticks and framed legend in place of ATLAS's; no experiment label"
+A17_DIFFERS = (
+    "As F9b, on one jet group and with a second row against generator mass, which ATLAS does not draw (its Fig. 9 has "
+    "pT response instead); the legend appears once, in the first panel, to keep four panels light. Eight axes in all, a lower axes under each "
+    "of four panels: within the limit of four panels only if lower axes do not count, for the PI to decide. 5.6 in high, not "
+    "the 4.8 in of a plain 2x2, because each panel carries a lower axes. " + ATLAS_LOOK + ".")
+MASS_RUNS_NOTE = ("Mean of two runs for each mass regression model (the third runs were cut on 2026-10-22); "
+                  "the groomed mass is the same in every file. Nothing else is absent.")
 
 PAGES = [
     Page("SOPHON-FIG2", "Sophon Fig. 2 redrawn through style_v3 (validation)", ["2405.12972/fig2.png"], "Sophon Fig. 2",
