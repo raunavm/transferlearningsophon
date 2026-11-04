@@ -3557,11 +3557,17 @@
     "source_file": "experiments/FIGS/data/v2/budget/lrsweep_metrics.json",
     "value": "\\ensuremath{10^{-3}}"
   },
-  "FtLrScratch": {
-    "json_path": "argmax of the summed validation metric, from scratch",
+  "FtLrScratchQg": {
+    "json_path": "argmax of the validation metric on quark/gluon, from scratch",
     "sha256": "7cdc148054ca902c21b1faa3ead772ed4a963a21cb2612e22d73c9eb85060a17",
     "source_file": "experiments/FIGS/data/v2/budget/lrsweep_metrics.json",
     "value": "\\ensuremath{3\\times10^{-3}}"
+  },
+  "FtLrScratchTop": {
+    "json_path": "argmax of the validation metric on top, from scratch",
+    "sha256": "7cdc148054ca902c21b1faa3ead772ed4a963a21cb2612e22d73c9eb85060a17",
+    "source_file": "experiments/FIGS/data/v2/budget/lrsweep_metrics.json",
+    "value": "\\ensuremath{10^{-3}}"
   },
   "FtNClassesJc": {
     "json_path": "cells.*.*.s1.n_classes_present",
@@ -5692,6 +5698,12 @@
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.2\\%"
+  },
+  "MlstBnMaxDevPair": {
+    "json_path": "largest |r(best70_bn) / r(best70) - 1| of a ratio of 1 - AUC on a class pair to the 188-class run, levels of the hierarchy, mass models and controlled partitions, per cent",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.7\\%"
   },
   "MlstBootResamples": {
     "json_path": "bootstrap resamples of the test jets",
@@ -8933,6 +8945,12 @@
     "source_file": "experiments/FIGS/data/v2/curves/full_best70_leg2.json",
     "value": "nine"
   },
+  "MlstFtJcOneRandGapShareWZ": {
+    "json_path": "per_class rejections",
+    "sha256": "6d5210e6c7244ec9854a61c9c0b91775876bc0637758a69fe2dfcd76a2ddf561",
+    "source_file": "experiments/FIGS/data/v2/curves/full_best70_leg2.json",
+    "value": "about half"
+  },
   "MlstFtJcOneRejHbbCoarseMassOverCoarse": {
     "json_path": "cells.<run>.N1000000.s1.jc1.per_class.label_Hbb: rejection of R16_Q1_MASS over R16_Q1, run by run",
     "sha256": "6d5210e6c7244ec9854a61c9c0b91775876bc0637758a69fe2dfcd76a2ddf561",
@@ -10379,6 +10397,18 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "\\pending{fixed-budget fine-tuning (budget\\_metrics.json)}"
   },
+  "MlstFtTopRfiftyCoarseOverFull": {
+    "json_path": "curves_v2/top_ft curve top: rejection at eps_S = 0.5 of R16_Q1 over L188, run by run",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.932\\,\\ensuremath{\\pm}\\,0.018"
+  },
+  "MlstFtTopRfiftyCoarseOverFullPr": {
+    "json_path": "curves_v2/top_ft curve top: rejection at eps_S = 0.5 of R16_Q1 over L188, run by run",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "6.8\\% less rejection"
+  },
   "MlstFtTopRthirtyCoarse": {
     "json_path": "fine-tuning top N=1200000: R30, R16_Q1",
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
@@ -10673,6 +10703,12 @@
     "source_file": "experiments/FIGS/data/v2/ft_mlst/manifests.json",
     "value": "0.01"
   },
+  "MlstGpuOtherSeedsDiff": {
+    "json_path": "largest (max - min) / mean of a label-set ratio of 1 - AUC over the indices other than 3, JetClass-II largest set, per cent",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.9\\%"
+  },
   "MlstGpuTypeBound": {
     "json_path": "largest |label-set ratio of 1 - AUC of index 3 / mean of the other indices - 1|, JetClass-II largest set, per cent",
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
@@ -10750,6 +10786,12 @@
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9613\\,\\ensuremath{\\pm}\\,0.0032"
+  },
+  "MlstLpEemmAucRandMerged": {
+    "json_path": "linear probe ee_vs_mm (fits_v4_sib): AUC, the random partitions that merge the pair",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.0000\\,\\ensuremath{\\pm}\\,\\ensuremath{<}0.0001"
   },
   "MlstLpEemmAucRes": {
     "json_path": "linear probe ee_vs_mm (fits_v4_sib): AUC, L162",
@@ -13141,7 +13183,7 @@
   },
   "MlstMinBkgPass": {
     "json_path": "JC1_MIN_BKG",
-    "sha256": "c76fcb103599dbe8e65f14a8ca988d190ba44558533fb9472b0266ee90a0c244",
+    "sha256": "1ea74ab0e8a0710afb0a9834f1618d9d4424e0334ff70efd898f9113599ec5a1",
     "source_file": "experiments/FIGS/mlst_v4.py",
     "value": "20"
   },
@@ -14711,6 +14753,66 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "3.9\\% more errors"
   },
+  "MlstMlpNatJcTwoCoarseMassOverCoarse": {
+    "json_path": "nonlinear probe, natural-composition JetClass-II (fits_v3_mlp2): (1 - AUC) of R16_Q1_MASS over R16_Q1, run by run",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.026 and 1.019"
+  },
+  "MlstMlpNatJcTwoCoarseMassOverCoarsePr": {
+    "json_path": "nonlinear probe, natural-composition JetClass-II (fits_v3_mlp2): (1 - AUC) of R16_Q1_MASS over R16_Q1, run by run",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "equal within 3\\%"
+  },
+  "MlstMlpNatJcTwoCoarseMassOverCoarsePrMax": {
+    "json_path": "nonlinear probe, natural-composition JetClass-II (fits_v3_mlp2): (1 - AUC) of R16_Q1_MASS over R16_Q1, run by run",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "equal within 3\\%"
+  },
+  "MlstMlpNatJcTwoResMassOverRes": {
+    "json_path": "nonlinear probe, natural-composition JetClass-II (fits_v3_mlp2): (1 - AUC) of L162_MASS over L162, run by run",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.016 and 1.009"
+  },
+  "MlstMlpNatJcTwoResMassOverResPr": {
+    "json_path": "nonlinear probe, natural-composition JetClass-II (fits_v3_mlp2): (1 - AUC) of L162_MASS over L162, run by run",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "equal within 2\\%"
+  },
+  "MlstMlpNatJcTwoResMassOverResPrMax": {
+    "json_path": "nonlinear probe, natural-composition JetClass-II (fits_v3_mlp2): (1 - AUC) of L162_MASS over L162, run by run",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "equal within 2\\%"
+  },
+  "MlstMlpNatPerClassRandFlavMergedOverApart": {
+    "json_path": "random partitions, nonlinear probe, natural composition: median per-class ratio of the classes merged with a decay that differs only in quark flavor over that of the classes kept apart from all of them, mean +- SD over the partitions",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.003\\,\\ensuremath{\\pm}\\,0.007"
+  },
+  "MlstMlpNatPerClassRandFlavMergedOverApartPr": {
+    "json_path": "random partitions, nonlinear probe, natural composition: median per-class ratio of the classes merged with a decay that differs only in quark flavor over that of the classes kept apart from all of them, mean +- SD over the partitions",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "equal within 1\\%"
+  },
+  "MlstMlpNatPerClassRandLeptonMergedOverApart": {
+    "json_path": "random partitions, nonlinear probe, natural composition: median per-class ratio of the classes merged with a decay that differs only in lepton flavor over that of the classes kept apart from all of them, mean +- SD over the partitions",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.01\\,\\ensuremath{\\pm}\\,0.07"
+  },
+  "MlstMlpNatPerClassRandLeptonMergedOverApartPr": {
+    "json_path": "random partitions, nonlinear probe, natural composition: median per-class ratio of the classes merged with a decay that differs only in lepton flavor over that of the classes kept apart from all of them, mean +- SD over the partitions",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "equal within 8\\%"
+  },
   "MlstMlpQgHerwigRthirtyCoarseOverInitBn": {
     "json_path": "nonlinear probe qg_herwig, missing inputs zero: R30 of R16_Q1 over the BatchNorm-recomputed random network of the same index",
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
@@ -15119,6 +15221,12 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "60"
   },
+  "MlstPerClassCoarseQuarkLeptonN": {
+    "json_path": "resonant classes counted in both the quark- and the lepton-flavor set, R16_Q1 (count)",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "64"
+  },
   "MlstPerClassCoarseQuarkMedian": {
     "json_path": "median over those classes of the mean per-class ratio, R16_Q1 over 188",
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
@@ -15197,6 +15305,12 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "40"
   },
+  "MlstPerClassMidQuarkLeptonN": {
+    "json_path": "resonant classes counted in both the quark- and the lepton-flavor set, R42_Q1 (count)",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "44"
+  },
   "MlstPerClassMidQuarkMedian": {
     "json_path": "median over those classes of the mean per-class ratio, R42_Q1 over 188",
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
@@ -15246,25 +15360,25 @@
     "value": "4.1 times the errors"
   },
   "MlstPerClassRandFlavMergedOverApart": {
-    "json_path": "random partitions: median per-class ratio of the classes merged with a decay that differs only in quark flavor over that of the classes kept apart from all of them, mean +- SD over the partitions",
+    "json_path": "random partitions, linear probe: median per-class ratio of the classes merged with a decay that differs only in quark flavor over that of the classes kept apart from all of them, mean +- SD over the partitions",
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.010\\,\\ensuremath{\\pm}\\,0.008"
   },
   "MlstPerClassRandFlavMergedOverApartPr": {
-    "json_path": "random partitions: median per-class ratio of the classes merged with a decay that differs only in quark flavor over that of the classes kept apart from all of them, mean +- SD over the partitions",
+    "json_path": "random partitions, linear probe: median per-class ratio of the classes merged with a decay that differs only in quark flavor over that of the classes kept apart from all of them, mean +- SD over the partitions",
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "equal within 1\\%"
   },
   "MlstPerClassRandLeptonMergedOverApart": {
-    "json_path": "random partitions: median per-class ratio of the classes merged with a decay that differs only in lepton flavor over that of the classes kept apart from all of them, mean +- SD over the partitions",
+    "json_path": "random partitions, linear probe: median per-class ratio of the classes merged with a decay that differs only in lepton flavor over that of the classes kept apart from all of them, mean +- SD over the partitions",
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.997\\,\\ensuremath{\\pm}\\,0.020"
   },
   "MlstPerClassRandLeptonMergedOverApartPr": {
-    "json_path": "random partitions: median per-class ratio of the classes merged with a decay that differs only in lepton flavor over that of the classes kept apart from all of them, mean +- SD over the partitions",
+    "json_path": "random partitions, linear probe: median per-class ratio of the classes merged with a decay that differs only in lepton flavor over that of the classes kept apart from all of them, mean +- SD over the partitions",
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "equal within 3\\%"
@@ -15295,6 +15409,12 @@
   },
   "MlstPerClassResNDoubled": {
     "json_path": "JetClass-II classes whose mean ratio of 1 - AUC (L162 over 188) is at least 2 (count)",
+    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0"
+  },
+  "MlstPerClassResQuarkLeptonN": {
+    "json_path": "resonant classes counted in both the quark- and the lepton-flavor set, L162 (count)",
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0"
@@ -15852,22 +15972,16 @@
     "value": "0.0543\\,\\ensuremath{\\pm}\\,0.0010"
   },
   "MlstSculptDiffEffHi": {
-    "json_path": "highest such efficiency",
+    "json_path": "highest efficiency of that stretch",
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.2\\%"
   },
   "MlstSculptDiffEffLo": {
-    "json_path": "lowest stored QCD efficiency at which the 17/188 distance ratio exceeds 1 by twice its SD",
+    "json_path": "lowest stored QCD efficiency of the unbroken stretch around the tighter working point at which the 17/188 distance ratio exceeds 1 by twice its SD",
     "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.10\\%"
-  },
-  "MlstSculptDiffLoEdge": {
-    "json_path": "where the window's lower edge lies: at the lowest stored QCD efficiency (the 17/188 difference holds at the tightest cut stored) or above it",
-    "sha256": "97468baca72249a4f7b59c324a267a50e6f827e03e5a6ac68659a45876e5aa47",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "at the lowest stored efficiency"
+    "value": "0.52\\%"
   },
   "MlstSculptFloorOne": {
     "json_path": "Jensen-Shannon distance expected for a random selection of as many QCD jets as pass at 0.01",

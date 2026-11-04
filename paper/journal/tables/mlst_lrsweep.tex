@@ -1,7 +1,7 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Learning-rate choice at $10^{4}$ training jets: the best validation accuracy of each rate on top and quark/gluon and their sum. $^{\ast}$: the rate chosen, the largest sum; the test jets play no part.}
+\caption{Learning-rate choice at $10^{4}$ training jets: the best validation accuracy of each rate on top and quark/gluon and their sum. $^{\ast}$: the rate chosen, on the sum for the pretrained weights and on each task's accuracy for the networks trained from scratch; the test jets play no part.}
 \label{tab:lrsweep}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{llccc}
@@ -12,8 +12,8 @@ pretrained, backbone & \ensuremath{10^{-4}} & 0.9204 & 0.8204 & 1.741 \\
 pretrained, backbone & \ensuremath{3\times10^{-4}} & 0.9192 & 0.8202 & 1.739 \\
 pretrained, backbone & \ensuremath{10^{-3}} & 0.9212 & 0.8211 & 1.742$^{\ast}$ \\
 from scratch & \ensuremath{3\times10^{-4}} & 0.9152 & 0.8052 & 1.720 \\
-from scratch & \ensuremath{10^{-3}} & 0.9188 & 0.8029 & 1.722 \\
-from scratch & \ensuremath{3\times10^{-3}} & 0.9177 & 0.8059 & 1.724$^{\ast}$ \\
+from scratch & \ensuremath{10^{-3}} & 0.9188$^{\ast}$ & 0.8029 & 1.722 \\
+from scratch & \ensuremath{3\times10^{-3}} & 0.9177 & 0.8059$^{\ast}$ & 1.724 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

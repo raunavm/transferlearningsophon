@@ -1,7 +1,7 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Nonlinear probes (a multilayer perceptron with one hidden layer of \LpMlpHidden{} units, \LpMlpSeedsWord{} seeds averaged) at the largest training set: JetClass-II AUC (all, resonant and QCD classes) with the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run, JetClass AUC, and AUC and $R_{30}$ on top, quark/gluon and Herwig jets (missing inputs set to zero); then the class pairs of table~\ref{tab:pairs}; last, the linear probe on the 512-unit hidden layer of the \Kfull-class models' pretraining head beside the one on the class token. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
+\caption{Nonlinear probes (a multilayer perceptron with one hidden layer of \LpMlpHidden{} units, \LpMlpSeedsWord{} seeds averaged) at the largest training set: class-balanced JetClass-II AUC (all, resonant and QCD classes) with the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run, JetClass AUC, and AUC and $R_{30}$ on top, quark/gluon and Herwig jets (missing inputs set to zero); then the class pairs of table~\ref{tab:pairs}, class-balanced, except $X\to ee$ vs $\mu\mu$, which has no nonlinear probe. The models with the mass regression and the numbered random partitions have no nonlinear probe on the class-balanced test set, so their cells there are dashes and they leave the pair blocks; the next block gives them on the natural-composition test set beside the levels of the hierarchy on that set, and no $\rho$ crosses the two test sets. Last, the linear probe on the 512-unit hidden layer of the \Kfull-class models' pretraining head beside the one on the class token. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
 \label{tab:mlp}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lccccccccccc}
@@ -14,13 +14,13 @@ pretraining & AUC & resonant & QCD & $\rho$ & AUC & AUC & $R_{30}$ & AUC & $R_{3
 \Kres{} classes & 0.9802\,$\pm$\,0.0001 & 0.9833\,$\pm$\,0.0001 & 0.9618\,$\pm$\,0.0003 & 1.019\,$\pm$\,0.007 & 0.9786\,$\pm$\,0.0002 & 0.971\,$\pm$\,0.004 & 280\,$\pm$\,90 & 0.889\,$\pm$\,0.005 & 77.0\,$\pm$\,2.2 & 0.8060\,$\pm$\,0.0014 & 35.6\,$\pm$\,0.6 \\
 \Kmid{} classes & 0.9773\,$\pm$\,0.0001 & 0.9802\,$\pm$\,0.0002 & 0.9605\,$\pm$\,0.0001 & 1.170\,$\pm$\,0.006 & 0.9782\,$\pm$\,0.0003 & 0.9688\,$\pm$\,0.0029 & 250\,$\pm$\,60 & 0.8904\,$\pm$\,0.0031 & 81\,$\pm$\,4 & 0.8071\,$\pm$\,0.0007 & 35.67\,$\pm$\,0.28 \\
 \Kcoarse{} classes & 0.9731\,$\pm$\,0.0004 & 0.9766\,$\pm$\,0.0004 & 0.9524\,$\pm$\,0.0004 & 1.388\,$\pm$\,0.021 & 0.9776\,$\pm$\,0.0005 & 0.9688\,$\pm$\,0.0018 & 224\,$\pm$\,24 & 0.887\,$\pm$\,0.005 & 78.9\,$\pm$\,1.7 & 0.8062\,$\pm$\,0.0024 & 36.2\,$\pm$\,0.5 \\
-\Kres{} classes, mass regression & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & 0.9794, 0.9799 & 0.9731, 0.9754 & 317, 376 & 0.8932, 0.8914 & 81.8, 78.4 & 0.8094, 0.8071 & 37.64, 36.83 \\
-\Kcoarse{} classes, mass regression & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & 0.9787, 0.9785 & 0.9747, 0.9704 & 356, 261 & 0.8933, 0.8927 & 80.91, 81.90 & 0.8079, 0.8084 & 35.95, 36.47 \\
-random partition 1, seed 1 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & 0.974 & 0.964 & 161 & 0.893 & 80.9 & 0.809 & 36.6 \\
-random partition 2, seed 2 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & 0.975 & 0.968 & 210 & 0.888 & 79.0 & 0.806 & 35.2 \\
-random partition 3, seed 1 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & 0.974 & 0.967 & 190 & 0.894 & 80.5 & 0.806 & 35.2 \\
-random partition 4, seed 2 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & 0.974 & 0.959 & 125 & 0.881 & 72.0 & 0.806 & 35.5 \\
-random partition 5, seed 2 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & 0.975 & 0.970 & 251 & 0.886 & 75.5 & 0.805 & 35.4 \\
+\Kres{} classes, mass regression & -- & -- & -- & -- & 0.9794, 0.9799 & 0.9731, 0.9754 & 317, 376 & 0.8932, 0.8914 & 81.8, 78.4 & 0.8094, 0.8071 & 37.64, 36.83 \\
+\Kcoarse{} classes, mass regression & -- & -- & -- & -- & 0.9787, 0.9785 & 0.9747, 0.9704 & 356, 261 & 0.8933, 0.8927 & 80.91, 81.90 & 0.8079, 0.8084 & 35.95, 36.47 \\
+random partition 1, seed 1 & -- & -- & -- & -- & 0.974 & 0.964 & 161 & 0.893 & 80.9 & 0.809 & 36.6 \\
+random partition 2, seed 2 & -- & -- & -- & -- & 0.975 & 0.968 & 210 & 0.888 & 79.0 & 0.806 & 35.2 \\
+random partition 3, seed 1 & -- & -- & -- & -- & 0.974 & 0.967 & 190 & 0.894 & 80.5 & 0.806 & 35.2 \\
+random partition 4, seed 2 & -- & -- & -- & -- & 0.974 & 0.959 & 125 & 0.881 & 72.0 & 0.806 & 35.5 \\
+random partition 5, seed 2 & -- & -- & -- & -- & 0.975 & 0.970 & 251 & 0.886 & 75.5 & 0.805 & 35.4 \\
 random partition, no flavor boundary & 0.9749, 0.9746 & 0.9786, 0.9783 & 0.9528, 0.9522 & 1.294, 1.310 & 0.9764, 0.9763 & 0.9668, 0.9682 & 210.1, 218.3 & 0.8912, 0.8921 & 77.5, 83.1 & 0.8073, 0.8071 & 35.27, 34.98 \\
 random partition, $b$-quark boundary & 0.9774, 0.9775 & 0.9806, 0.9807 & 0.9582, 0.9584 & 1.168, 1.159 & 0.9767, 0.9776 & 0.9718, 0.9724 & 304.1, 313.5 & 0.8887, 0.8911 & 80.8, 78.6 & 0.8069, 0.8067 & 36.08, 35.57 \\
 random partition, random flavor boundary & 0.9776, 0.9777 & 0.9810, 0.9811 & 0.9571, 0.9576 & 1.158, 1.150 & 0.9767, 0.9763 & 0.9670, 0.9626 & 215, 160 & 0.8906, 0.8870 & 80.6, 77.9 & 0.8074, 0.8052 & 35.31, 34.53 \\
@@ -40,13 +40,6 @@ pretraining & \multicolumn{2}{c}{$X\to bc$ vs $bq$, $cs$} & \multicolumn{2}{c}{$
 \Kres{} classes & 0.9432\,$\pm$\,0.0002 & 1.002\,$\pm$\,0.006 & 0.9977\,$\pm$\,$<$0.0001 & 1.023\,$\pm$\,0.021 & 0.9941\,$\pm$\,0.0001 & 1.011\,$\pm$\,0.030 \\
 \Kmid{} classes & 0.9375\,$\pm$\,0.0008 & 1.104\,$\pm$\,0.017 & 0.9975\,$\pm$\,$<$0.0001 & 1.125\,$\pm$\,0.011 & 0.9935\,$\pm$\,$<$0.0001 & 1.112\,$\pm$\,0.006 \\
 \Kcoarse{} classes & 0.9080\,$\pm$\,0.0013 & 1.624\,$\pm$\,0.022 & 0.9932\,$\pm$\,0.0002 & 3.04\,$\pm$\,0.09 & 0.9828\,$\pm$\,0.0011 & 2.93\,$\pm$\,0.17 \\
-\Kres{} classes, mass regression & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-\Kcoarse{} classes, mass regression & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-random partition 1, seed 1 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-random partition 2, seed 2 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-random partition 3, seed 1 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-random partition 4, seed 2 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-random partition 5, seed 2 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
 random partition, no flavor boundary & 0.9077, 0.9046 & 1.633, 1.679 & 0.9926, 0.9902 & 3.3, 4.3 & 0.9813, 0.9776 & 3.20, 3.78 \\
 random partition, $b$-quark boundary & 0.9216, 0.9227 & 1.385, 1.360 & 0.9961, 0.9963 & 1.74, 1.64 & 0.9916, 0.9919 & 1.442, 1.372 \\
 random partition, random flavor boundary & 0.9231, 0.9242 & 1.359, 1.335 & 0.9951, 0.9946 & 2.21, 2.37 & 0.9889, 0.9891 & 1.890, 1.843 \\
@@ -66,18 +59,33 @@ pretraining & \multicolumn{2}{c}{QCD $bb$ vs $cc$} & \multicolumn{2}{c}{QCD with
 \Kres{} classes & 0.9860\,$\pm$\,0.0003 & 1.085\,$\pm$\,0.030 & 0.9876\,$\pm$\,0.0001 & 1.050\,$\pm$\,0.004 & 0.9303\,$\pm$\,0.0002 & 1.039\,$\pm$\,0.005 \\
 \Kmid{} classes & 0.9855\,$\pm$\,0.0001 & 1.121\,$\pm$\,0.017 & 0.9875\,$\pm$\,0.0001 & 1.055\,$\pm$\,0.005 & 0.9292\,$\pm$\,0.0003 & 1.055\,$\pm$\,0.006 \\
 \Kcoarse{} classes & 0.9701\,$\pm$\,0.0008 & 2.31\,$\pm$\,0.04 & 0.9842\,$\pm$\,0.0002 & 1.337\,$\pm$\,0.021 & 0.9145\,$\pm$\,0.0004 & 1.274\,$\pm$\,0.008 \\
-\Kres{} classes, mass regression & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-\Kcoarse{} classes, mass regression & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-random partition 1, seed 1 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-random partition 2, seed 2 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-random partition 3, seed 1 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-random partition 4, seed 2 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
-random partition 5, seed 2 & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} & \pending{no run yet} \\
 random partition, no flavor boundary & 0.9680, 0.9647 & 2.50, 2.72 & 0.9845, 0.9847 & 1.315, 1.288 & 0.9174, 0.9186 & 1.234, 1.211 \\
 random partition, $b$-quark boundary & 0.9817, 0.9821 & 1.432, 1.372 & 0.9863, 0.9865 & 1.158, 1.140 & 0.9224, 0.9229 & 1.159, 1.147 \\
 random partition, random flavor boundary & 0.9776, 0.9775 & 1.745, 1.725 & 0.9858, 0.9859 & 1.201, 1.187 & 0.9236, 0.9247 & 1.141, 1.120 \\
 randomly initialized network & 0.7228\,$\pm$\,0.0031 & -- & 0.8185\,$\pm$\,0.0019 & -- & 0.682\,$\pm$\,0.005 & -- \\
 randomly initialized network, BatchNorm recomputed & 0.822\,$\pm$\,0.005 & -- & 0.8879\,$\pm$\,0.0033 & -- & 0.7143\,$\pm$\,0.0013 & -- \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccccccc}
+\toprule
+natural-composition & \multicolumn{2}{c}{JetClass-II} & \multicolumn{6}{c}{$\rho$ on the class pairs} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-9}
+test set & AUC & $\rho$ & $X\to bc$ vs $bq$, $cs$ & $X\to b\bar b$ vs $c\bar c$ & $X\to YY\to bbqq$ vs $ccqq$ & QCD $bb$ vs $cc$ & QCD with $b$ vs light & QCD with $c$, no $b$, vs light \\
+\midrule
+\Kfull{} classes & 0.9767\,$\pm$\,0.0002 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 \\
+\Kres{} classes & 0.9759\,$\pm$\,0.0003 & 1.033\,$\pm$\,0.016 & 1.003\,$\pm$\,0.004 & 1.00\,$\pm$\,0.09 & 0.97\,$\pm$\,0.08 & 1.08\,$\pm$\,0.09 & 1.06\,$\pm$\,0.06 & 1.041\,$\pm$\,0.021 \\
+\Kmid{} classes & 0.9736\,$\pm$\,0.0005 & 1.135\,$\pm$\,0.018 & 1.135\,$\pm$\,0.017 & 1.112\,$\pm$\,0.009 & 1.02\,$\pm$\,0.06 & 1.13\,$\pm$\,0.05 & 1.05\,$\pm$\,0.09 & 1.057\,$\pm$\,0.016 \\
+\Kcoarse{} classes & 0.9682\,$\pm$\,0.0003 & 1.364\,$\pm$\,0.008 & 1.76\,$\pm$\,0.04 & 3.26\,$\pm$\,0.10 & 3.34\,$\pm$\,0.29 & 2.71\,$\pm$\,0.13 & 1.32\,$\pm$\,0.18 & 1.303\,$\pm$\,0.032 \\
+\Kres{} classes, mass regression & 0.9752, 0.9757 & 1.061, 1.051 & 1.057, 1.018 & 1.21, 1.09 & 1.17, 1.04 & 1.30, 1.16 & 1.027, 0.938 & 1.071, 1.045 \\
+\Kcoarse{} classes, mass regression & 0.9674, 0.9679 & 1.393, 1.391 & 1.839, 1.797 & 3.65, 3.11 & 3.74, 3.34 & 3.26, 2.88 & 1.38, 1.26 & 1.326, 1.323 \\
+random partition 1, seed 1 & 0.974 & 1.13 & 1.20 & 1.44 & 1.35 & 1.53 & 1.05 & 1.13 \\
+random partition 2, seed 2 & 0.974 & 1.14 & 1.17 & 1.35 & 1.30 & 1.47 & 1.00 & 1.10 \\
+random partition 3, seed 1 & 0.974 & 1.12 & 1.10 & 1.44 & 1.32 & 1.45 & 1.16 & 1.12 \\
+random partition 4, seed 2 & 0.974 & 1.13 & 1.09 & 1.25 & 1.25 & 1.37 & 1.16 & 1.07 \\
+random partition 5, seed 2 & 0.974 & 1.15 & 1.21 & 1.56 & 1.30 & 1.53 & 1.16 & 1.10 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
