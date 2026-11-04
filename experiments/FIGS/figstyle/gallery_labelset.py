@@ -291,79 +291,16 @@ PAGES = [
         caption="Fine-tuned models against the number of pretraining classes: accuracy on class-balanced JetClass-II "
                 "and on JetClass, and rejection R30, the background rejection at 30% signal efficiency, on top "
                 "tagging and quark/gluon tagging. The line joins the four nested label sets; the markers at 17 "
-                "classes are partitions with controlled flavor boundaries. All values are means over runs.",
+                "classes are partitions with controlled flavor boundaries. All values are means over runs; on the two "
+                "benchmarks the differences lie within the spread between runs.",
         differs="As F2a: four panels, three partitions as markers, no baseline line, circles, ticks at the class "
                 "counts, log y on R30, Sophon's font and legend, legend in one panel. Hong's own figure is fine-tuned "
                 "too, so this page is the closer copy.",
         draw=draw_f2b,
-        data_note="JetClass-II panel empty: no fine-tuning on the class-balanced task at 1,000,000 jets "
-                  "(budget_metrics.json is not in data/v2/budget, and the paper's selection drops the natural-mix "
-                  "JetClass-II fine-tunings as superseded). JetClass at 1,000,000 jets, top at 1,200,000, "
-                  f"quark/gluon at 1,600,000. {TWO_RUNS}"),
-    C.Page(
-        id="F2-app",
-        title="Random partitions beside the hierarchy",
-        precedent=HONG,
-        precedent_label="Hong Fig. 2",
-        caption="Linear probes against the number of pretraining classes, as in the main-text figure: accuracy on "
-                "class-balanced JetClass-II and on JetClass, and rejection R30, the background rejection at 30% "
-                "signal efficiency, on top tagging and quark/gluon tagging. The line joins the four nested label "
-                "sets; the five markers at 17 classes are random partitions of the 188 classes. Values are means "
-                "over runs.",
-        differs="As F2a, with the five random partitions as five markers of one colour (C7) at 17 classes in place "
-                "of the controlled partitions. An appendix figure, and Hong has no controls.",
-        draw=draw_f2_app,
-        data_note=f"Each random partition has one run, so a marker is that run, not a mean. {SUBST_NOTE}"),
-    C.Page(
-        id="F3",
-        title="Cost class by class",
-        precedent=HEATMAPS,
-        precedent_label="CMS Fig. 7, JetParticle-JEPA Fig. 12",
-        caption="Difference in per-class AUC between each model and the 188-class model, in percentage points, for "
-                "the 188 JetClass-II classes, from linear probes. Columns are the 162-, 43- and 17-class label sets "
-                "and the three partitions with controlled flavor boundaries. Rows are grouped by decay topology, "
-                "with the QCD classes at the bottom. Values are means over runs; red marks an AUC below that of "
-                "the 188-class model.",
-        differs="Signed values on a diverging RdBu scale symmetric about 0: Blues would hide the sign. Not a confusion "
-                "matrix: rows are classes, columns are models. No numbers in cells: 188 rows cannot hold them. Rows "
-                "named by 15 group labels, since a single class name cannot reach 8 pt at 188 rows; thin lines between "
-                "groups and a blank row before QCD in place of per-row labels. One panel as CMS, against "
-                "JetParticle-JEPA's three. Taller than either precedent. Column labels at 45 degrees as "
-                "JetParticle-JEPA, not CMS's 90. Sophon's font. No experiment label.",
-        draw=draw_f3,
-        data_note="The three controlled partitions are means over two runs, the label sets over three."),
-    C.Page(
-        id="F3-app",
-        title="Cost class by class, random partitions",
-        precedent=HEATMAPS,
-        precedent_label="CMS Fig. 7, JetParticle-JEPA Fig. 12",
-        caption="Difference in per-class AUC between each of five random partitions into 17 classes and the 188-class "
-                "model, in percentage points, for the 188 JetClass-II classes, from linear probes. Rows are grouped "
-                "by decay topology as in the main-text figure, with the QCD classes at the bottom, and the colour "
-                "scale is the same; red marks an AUC below that of the 188-class model.",
-        differs="As F3, with five columns, one per random partition. Same colour scale as F3, so the two can be read "
-                "together.",
-        draw=draw_f3_app,
-        data_note="Each random partition has one run; its column is that run against the 188-class run of the same "
-                  "index."),
-    C.Page(
-        id="F7",
-        title="Missing inputs",
-        precedent=["2606.14813/fig3.png"],
-        precedent_label="JetParticle-JEPA Fig. 3(b)",
-        caption="Filling the input features a data set lacks, for linear probes of the four label sets. Top: relative "
-                "drop in JetClass-II accuracy when the features absent from the top-tagging data are filled. Middle "
-                "and bottom: rejection R30, the background rejection at 30% signal efficiency, on top tagging and "
-                "quark/gluon tagging. Bars show means over runs, with the features set to zero, to the training "
-                "mean or to random draws.",
-        differs="Three stacked panels on a shared x (Sophon Fig. 3) against one panel of (b). Three bars per group "
-                "against two, coloured by substitution from tab10 C7-C9, against JetParticle-JEPA's two muted colours. "
-                "No printed value above the bars: the values live in the tables. No grid: bars take none in our style. "
-                "Panels two and three show R30 itself, not a drop. Framed legend inside the first panel in one row, "
-                "untitled. Sophon's font. Our axis words.",
-        draw=draw_f7,
-        data_note="Every bar is a mean over three runs. JetClass-II panel: the top-input variant only; the quark/gluon-input variant exists "
-                  "in the same data and has no panel, because the plan gives this figure one JetClass-II panel."),
+        data_note="JetClass-II at 1,000,000 class-balanced jets, with no markers: the controlled partitions were not "
+                  "fine-tuned on this task. JetClass at 1,000,000 jets, top at 1,200,000, quark/gluon at 1,600,000. "
+                  f"{TWO_RUNS} Top and quark/gluon: every difference between label sets lies within the run-to-run SD "
+                  "(top 56 to 151, quark/gluon 0.8 to 2.2 on the label sets), except the random boundary on top."),
     C.Page(
         id="F8",
         title="Pretraining against the number of training jets",
@@ -380,10 +317,11 @@ PAGES = [
                 "same colour, alpha 0.2, no edge. Against Vigl Fig. 1: no ratio panel, no data-efficiency side panel, no dashed variant, no "
                 "second legend.",
         draw=draw_f8,
-        data_note="Only the linear probe is a curve today (1,000 to the full set, four sizes). Fine-tuned and from "
-                  "scratch are one point each with no band, at the full set: JetClass 1,000,000, top 1,200,000, "
-                  "quark/gluon 1,600,000. JetClass-II has neither: budget_metrics.json, the smaller-set and "
-                  f"class-balanced read-out, is not in data/v2/budget. {SUBST_NOTE}"),
+        data_note="Quark/gluon fine-tuned and from scratch are one point each until the running cells finish (the "
+                  "smaller sets have barely started). Sizes below the full set use the fixed step budget with early "
+                  "stopping; the full JetClass, top and quark/gluon points use the full-set recipe. JetClass-II at "
+                  "1,000,000: all three from-scratch runs and 3 of 16 pretrained runs reached the 40-epoch limit, so "
+                  f"from scratch is still improving there. {SUBST_NOTE}"),
     C.Page(
         id="A10",
         title="Linear probes against the number of training jets",
