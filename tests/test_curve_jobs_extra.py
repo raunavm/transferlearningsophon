@@ -38,7 +38,7 @@ def test_the_launched_curves_and_bootstrap_jobs_keep_mtx_s2_20_and_the_status_jo
         c = yaml.safe_load(text)["spec"]
         if p.parent == BC.OUT_DIR:
             name = p.name.removeprefix("job-").removesuffix("-raunav.yaml")
-            pin = (BC.PIN_ROC_JC1OVR if name == "curves-roc-jc1ovr"
+            pin = (BC.PIN_ROC_JC1OVR if name in ("curves-roc-jc1ovr", "curves-roc-kin")
                    else BC.PIN_ROC if name.startswith("curves-roc") or name in BC.UNLAUNCHED_AT_PIN
                    else BC.PIN_FULL if name == "curves-full" else BC.PIN_V4 if name.endswith("-v4") else "mtx-s2.20")
             assert f'--branch "{pin}"' in c["template"]["spec"]["containers"][0]["args"][0]
@@ -172,7 +172,8 @@ def test_the_roc_jobs_are_pinned_cpu_tried_once_and_keep_off_the_bad_nodes(specs
         c = d["spec"]["template"]["spec"]["containers"][0]
         assert d["metadata"]["name"] == job.removeprefix("job-").removesuffix(".yaml") and "raunav" in job
         assert d["spec"]["backoffLimit"] == 1 and "nvidia.com/gpu" not in c["resources"]["limits"]
-        assert f'--branch "{BC.PIN_ROC}"' in c["args"][0] and f'export REPO_REF="{BC.PIN_ROC}"' in c["args"][0]
+        pin = BC.PIN_ROC_JC1OVR if "-kin-" in job else BC.PIN_ROC     # the kinematic job was repinned before it ran
+        assert f'--branch "{pin}"' in c["args"][0] and f'export REPO_REF="{pin}"' in c["args"][0]
         assert "k8s-haosu-10.sdsc.optiputer.net" in text and "configmap" not in text.lower()
         terms = d["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
             "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
@@ -266,7 +267,8 @@ def test_the_class_against_the_rest_job_has_its_own_pin_and_the_launched_roc_job
         "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
     assert [t["values"] for t in terms if t["operator"] == "NotIn"] == [list(launch.V2_BAD_NODES + launch.V2_LATER_BAD_NODES)]
     for job in ROC_JOBS:
-        assert "_ovr" not in specs[BC.OUT_DIR / job].replace("jc2_ovr", "") and f'--branch "{BC.PIN_ROC}"' in specs[BC.OUT_DIR / job]
+        pin = BC.PIN_ROC_JC1OVR if "-kin-" in job else BC.PIN_ROC
+        assert "_ovr" not in specs[BC.OUT_DIR / job].replace("jc2_ovr", "") and f'--branch "{pin}"' in specs[BC.OUT_DIR / job]
 
 
 def test_the_class_against_the_rest_job_swaps_the_family_of_the_jc1_calls_and_writes_each_done(specs):
