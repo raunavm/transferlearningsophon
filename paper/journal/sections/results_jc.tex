@@ -228,7 +228,12 @@ figure~\ref{fig:f4}(d). At \Kmid{} and \Kcoarse{} classes, where the two decays 
 class, the AUC of a linear probe falls to \MlstLpEemmAucMid{} and \MlstLpEemmAucCoarse{}, against
 \MlstLpEemmAucFull{} at \Kfull{} classes (table~\ref{tab:pairs}). An electron and a muon differ in the inputs
 through their particle-type flags, which every model reads, so the merged features still carry part of the
-separation; what the merge removes is the reward for keeping it complete.
+separation; what the merge removes is the reward for keeping it complete. A randomly initialized network, which
+was never trained on any labels, reaches an AUC of \MlstLpEemmAucInit, so training on merged labels leaves
+less of this separation in the features than no training at all. The spread at \Kcoarse{} classes is large
+because one of the three runs keeps much more of the separation than the other two (figure~\ref{fig:f4}(d)).
+% CHECK: MlstLpEemmAucInit above MlstLpEemmAucMid and ...Coarse by more than their SDs (today 0.9994 against 0.9613 and 0.963);
+% one 17-class run far above the others (AUC 0.985 against 0.958 and 0.947).
 % CHECK: MlstRocNoCurveEemm names the 188- and 162-class levels and the three controlled-flavor partitions
 % (ROC_INTERFACE 2: cut = null expected for 188, 162, F0, F1, F1R); MlstLpEemmAucMid and ...Coarse well below
 % ...Full (stored 188-way outputs gave 0.960 and 0.957 against 1.00000 for seed 1). If a kept-apart run does
@@ -244,7 +249,7 @@ against $X\to bq$ and $X\to cs$ together, the classes in the denominator of the 
 $|V_{cb}|$ measurement; (d) $X\to ee$ against $X\to\mu\mu$. Colored lines (solid, dashed, dash-dot and dotted): the \Kfull-, \Kres-, \Kmid- and
 \Kcoarse-class levels of the hierarchy; long-dashed, long-dash-dot and dash-dot-dot lines: the partitions with controlled flavor
 boundaries (none, a $b$-quark boundary, a random flavor boundary). Lines are the mean of the runs at fixed $\epsS$, with bands of one standard deviation over
-\MlstNRunsWord{} pretraining runs, or the range of the \RandFlavRuns{} runs of a partition. Lower panels: ratio
+\MlstNRunsWord{} pretraining runs, or the range of the \RandFlavRuns{} runs of a partition; a band stops at a rejection of one, the lowest possible. Lower panels: ratio
 of the rejection to that of the \Kfull-class run of the same seed, drawn flat at one for that model. Each curve
 stops where fewer than $\nmin$ background jets pass, equation~(\ref{eq:cut}), marked by the dashed black line at
 $N_B/\nmin$: a rejection of \MlstRocRejMaxBb{} in (a)--(c), whose test sets hold \MlstRocNBkgBb{} background

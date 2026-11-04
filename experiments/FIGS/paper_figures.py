@@ -128,7 +128,7 @@ UNPAIRED = (SCRATCH, KIN)
 X_EPS = r"Signal efficiency ($\varepsilon_S$)"
 Y_REJ = r"Background rejection ($1/\varepsilon_B$)"
 Y_REJ_RATIO = "Ratio to\n188 classes"
-Y_REJ_SHORT = r"Rejection ($1/\varepsilon_B$)"     # A3R's panels are shorter than Y_REJ
+Y_REJ_SHORT = r"Rejection ($1/\varepsilon_B$)"     # A3R's and F4's panels are shorter than Y_REJ
 ROC_ZOOM_FROM = 0.9     # every curve of a panel starts above this: the axis shows only what they reach
 
 
@@ -510,12 +510,15 @@ def _band(V: np.ndarray) -> tuple:
     return mean, None, None
 
 
-def _mean_band(ax, x, v, kw: dict, label: str | None) -> list:
-    """Mean over runs as a line with _band as a band (alpha 0.2, no edge); returns the values drawn."""
+def _mean_band(ax, x, v, kw: dict, label: str | None, floor: float | None = None) -> list:
+    """Mean over runs as a line with _band as a band (alpha 0.2, no edge), the band cut at floor when
+    given; returns the values drawn."""
     mean, lo, hi = _band(np.asarray(v, float))
     ax.plot(x, mean, label=label, **kw)
     if lo is None:
         return list(mean)
+    if floor is not None:
+        lo = np.maximum(lo, floor)
     ax.fill_between(x, lo, hi, color=kw["color"], alpha=0.2, linewidth=0)
     return list(lo) + list(hi)
 
@@ -562,11 +565,11 @@ RATIO_STEPS = (1, 2, 2.5, 5, 10)
 
 
 def _rej_axis(ax, ys: list) -> None:
-    """Rejection on a log axis with 10^k labels over [min / 1.3, max x 1.3] of what is drawn; eps_S
-    from 0 to 1."""
+    """Rejection on a log axis with 10^k labels over [min / 1.3, max x 1.3] of what is drawn, never
+    below 1, the lowest rejection there is; eps_S from 0 to 1."""
     pos = [y for y in ys if np.isfinite(y) and y > 0]
     ax.set_yscale("log")
-    ax.set_ylim(min(pos) / 1.3, max(pos) * 1.3)
+    ax.set_ylim(max(min(pos) / 1.3, 1.0), max(pos) * 1.3)
     ax.yaxis.set_major_formatter(ticker.LogFormatterSciNotation())
     ax.set_xlim(0, 1)
 
@@ -613,7 +616,7 @@ def roc_panel(ax, rx, M, fam: dict, key: str, configs: list) -> tuple[bool, list
         V = np.array(list(c.values()))
         ok = np.isfinite(V).all(axis=0)
         if ok.sum() >= M.ROC_MIN_POINTS:
-            ys += _mean_band(ax, eps[ok], V[:, ok], kw, None)
+            ys += _mean_band(ax, eps[ok], V[:, ok], kw, None, floor=1.0)     # no rejection lies below 1
             starts.append(eps[ok][0])
         rows.append((row, c, kw))
     if not starts:      # no configuration reaches two grid points: say so, an empty axis reads as missing data
@@ -699,7 +702,7 @@ def figure_f4(M, runs, I, outdir) -> list:
     configs = [(row, list(runs[row])) for row in LEVELS + M.FLAV]
     fig = _fig(FULL, 13.0 * CM)
     return roc_figure(M, fig, [(fam, key, heading[key], configs) for key in M.ROC_PAIRS], 2, "F4_flavor_pairs",
-                      outdir, "F4")
+                      outdir, "F4", ylabel=Y_REJ_SHORT)
 
 
 # ------------------------------------------------------------------ F6J, A6J, F6, A3R
