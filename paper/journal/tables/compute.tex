@@ -8,34 +8,34 @@
 \toprule
 run & GPU types (hours) & GPU-hours & fine-tuning GPU types \\
 \midrule
-\Kfull{} classes, seed 1 & V100 (135) & 135 & V100 \\
-\Kfull{} classes, seed 2 & V100 (145) & 145 & V100 \\
-\Kfull{} classes, seed 3 & RTX 3090 (116) & 116 & V100 \\
-\Kres{} classes, seed 1 & V100 (75), RTX 3090 (54) & 129 & V100 \\
-\Kres{} classes, seed 2 & V100 (86), RTX 3090 (40) & 126 & V100 \\
-\Kres{} classes, seed 3 & V100 (123), L4 (39) & 162 & V100 \\
-\Kmid{} classes, seed 1 & RTX 3090 (113) & 113 & V100 \\
-\Kmid{} classes, seed 2 & V100 (101), RTX 3090 (24) & 125 & V100 \\
-\Kmid{} classes, seed 3 & V100 (107), RTX 3090 (20) & 127 & V100 \\
-\Kcoarse{} classes, seed 1 & RTX 3090 (108), L4 (3) & 111 & V100 \\
-\Kcoarse{} classes, seed 2 & V100 (133) & 133 & V100 \\
-\Kcoarse{} classes, seed 3 & V100 (101), L4 (72) & 174 & V100 \\
-\Kres{} classes, mass regression, seed 1 & V100 (129), RTX 3090 (26) & 155 & V100 \\
-\Kres{} classes, mass regression, seed 2 & V100 (130), RTX 3090 (15) & 145 & V100 \\
-\Kcoarse{} classes, mass regression, seed 1 & V100 (126), RTX 3090 (16) & 142 & V100 \\
-\Kcoarse{} classes, mass regression, seed 2 & RTX 3090 (101) & 101 & V100 \\
-random partition 1, seed 1 & RTX 3090 (78), V100 (38) & 116 & V100 \\
-random partition 2, seed 2 & RTX 3090 (110) & 110 & V100 \\
-random partition 3, seed 1 & RTX 3090 (109) & 109 & V100 \\
-random partition 4, seed 2 & RTX 3090 (107) & 107 & V100 \\
-random partition 5, seed 2 & RTX 3090 (98) & 98 & V100 \\
-random partition, no flavor boundary, seed 1 & RTX 3090 (99) & 99 & V100 \\
-random partition, no flavor boundary, seed 2 & RTX 3090 (130) & 130 & V100 \\
-random partition, $b$-quark boundary, seed 1 & V100 (98), RTX 3090 (24) & 122 & V100 \\
-random partition, $b$-quark boundary, seed 2 & RTX 3090 (137) & 137 & V100 \\
-random partition, random flavor boundary, seed 1 & RTX 3090 (125) & 125 & V100 \\
-random partition, random flavor boundary, seed 2 & V100 (135), RTX 3090 (7) & 142 & V100 \\
-\Kfull{} classes, kinematic inputs only & RTX 4090 (75) & 75 & -- \\
+\Kfull{} classes, seed 1 & V100 (135) & 135 & L4, RTX 3090, TITAN RTX, V100 \\
+\Kfull{} classes, seed 2 & V100 (145) & 145 & L4, RTX 4090, TITAN RTX, V100 \\
+\Kfull{} classes, seed 3 & RTX 3090 (116) & 116 & L4, L40, RTX 5000 Ada Generation, V100 \\
+\Kres{} classes, seed 1 & V100 (75), RTX 3090 (54) & 129 & L4, L40, RTX 3090, RTX 5000 Ada Generation, TITAN RTX, V100 \\
+\Kres{} classes, seed 2 & V100 (86), RTX 3090 (40) & 126 & L40, Quadro RTX 6000, V100 \\
+\Kres{} classes, seed 3 & V100 (123), L4 (39) & 162 & RTX 3090, V100 \\
+\Kmid{} classes, seed 1 & RTX 3090 (113) & 113 & L4, TITAN RTX, V100 \\
+\Kmid{} classes, seed 2 & V100 (101), RTX 3090 (24) & 125 & L4, L40, RTX 3090, V100 \\
+\Kmid{} classes, seed 3 & V100 (107), RTX 3090 (20) & 127 & L4, L40, RTX 3090, V100 \\
+\Kcoarse{} classes, seed 1 & RTX 3090 (108), L4 (3) & 111 & L4, L40, RTX 5000 Ada Generation, V100 \\
+\Kcoarse{} classes, seed 2 & V100 (133) & 133 & L4, TITAN RTX, V100 \\
+\Kcoarse{} classes, seed 3 & V100 (101), L4 (72) & 174 & L4, RTX 3090, RTX 4090, TITAN RTX, V100 \\
+\Kres{} classes, mass regression, seed 1 & V100 (129), RTX 3090 (26) & 155 & L4, Quadro RTX 6000, RTX 3090, RTX 4090, TITAN RTX, V100 \\
+\Kres{} classes, mass regression, seed 2 & V100 (130), RTX 3090 (15) & 145 & L4, Quadro RTX 6000, RTX 3090, RTX 5000 Ada Generation, V100 \\
+\Kcoarse{} classes, mass regression, seed 1 & V100 (126), RTX 3090 (16) & 142 & L40, RTX 3090, RTX 5000 Ada Generation, TITAN RTX, V100 \\
+\Kcoarse{} classes, mass regression, seed 2 & RTX 3090 (101) & 101 & L40, V100 \\
+random partition 1, seed 1 & RTX 3090 (78), V100 (38) & 116 & L4, L40, RTX 3090, TITAN RTX, V100 \\
+random partition 2, seed 2 & RTX 3090 (110) & 110 & TITAN RTX, V100 \\
+random partition 3, seed 1 & RTX 3090 (109) & 109 & L4, L40, RTX 3090, V100 \\
+random partition 4, seed 2 & RTX 3090 (107) & 107 & L40, RTX 3090, V100 \\
+random partition 5, seed 2 & RTX 3090 (98) & 98 & L4, L40, Quadro RTX 6000, V100 \\
+random partition, no flavor boundary, seed 1 & RTX 3090 (99) & 99 & L4, TITAN RTX, V100 \\
+random partition, no flavor boundary, seed 2 & RTX 3090 (130) & 130 & Quadro RTX 6000, RTX 4090, RTX 5000 Ada Generation, V100 \\
+random partition, $b$-quark boundary, seed 1 & V100 (98), RTX 3090 (24) & 122 & L4, Quadro RTX 6000, V100 \\
+random partition, $b$-quark boundary, seed 2 & RTX 3090 (137) & 137 & L40, Quadro RTX 6000, TITAN RTX, V100 \\
+random partition, random flavor boundary, seed 1 & RTX 3090 (125) & 125 & L4, RTX 3090, RTX 5000 Ada Generation, V100 \\
+random partition, random flavor boundary, seed 2 & V100 (135), RTX 3090 (7) & 142 & L40, Quadro RTX 6000, V100 \\
+\Kfull{} classes, kinematic inputs only & RTX 4090 (75) & 75 & L40, V100 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

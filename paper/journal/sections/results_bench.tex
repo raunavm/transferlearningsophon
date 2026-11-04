@@ -33,7 +33,6 @@ marked by the dashed black line at $N_B/\nmin$. The values at the working points
 tables~\ref{tab:benchtop} and~\ref{tab:benchqg}.}
 \label{fig:f6}
 \end{figure}
-% CHECK: pending the kinematic-only curve of F6(a) (mtx-l188kin-s1 top fine-tuning; drawn only once it exists).
 
 Pretraining raises the background rejection on top tagging, and no label set changes it beyond what
 the test set resolves. Fine-tuned with the missing inputs set to zero, the \Kfull-class model reaches
@@ -74,9 +73,9 @@ missing inputs cause. ParT pretrained a separate model on the kinematic features
 nothing was missing for it. Our \Kfull-class model, with \FillTopNZero{} inputs set to zero, reaches % CHECK: MlstFtTopRthirtyFullOverPart below 1 (today 0.65)
 \MlstFtTopRthirtyFullOverPartPr{} than ParT. The \Kfull-class model with kinematic inputs only
 shares the data, the rescaling and the training settings of the \Kfull-class model and lacks no
-input. Fine-tuned on top tagging, it closes part of the gap to ParT (kinematic-only model over the % CHECK: pending MlstFtTopRthirtyKinOverFull (one run; "closes part of the gap" needs it above 1 by more than the spread of the three 188-class runs and below 1/MlstFtTopRthirtyFullOverPart)
+input. Fine-tuned on top tagging, it leaves the gap to ParT as it is (kinematic-only model over the % CHECK: MlstFtTopRthirtyKinOverFull within the spread of the three 188-class runs
 \Kfull-class model: \MlstFtTopRthirtyKinOverFullPr{}). It is one pretraining run, so it is read
-against the spread of the \MlstNRunsWord{} \Kfull-class runs rather than as a ratio paired by seed. The part of the gap it does not close comes from what else separates
+against the spread of the \MlstNRunsWord{} \Kfull-class runs rather than as a ratio paired by seed. After fine-tuning the gap therefore lies in what else separates
 our models from ParT: the rescaling above, and pretraining on JetClass-II, with pileup, rather than
 on JetClass.
 
@@ -137,10 +136,9 @@ of the training particles and carries fractional flags; only each random draw is
 particle takes. Figure~\ref{fig:f5}(c) compares the linear probe on the \Kfull-class model with
 random draws and with zeros (draws over zeros: \MlstLpTopRthirtyDrawOverZeroFullPr{}), and the linear % CHECK: pending MlstLpTopRthirtyDrawOverZeroFull (fits_v4_fill)
 probe on the \Kfull-class model with kinematic inputs only, which lacks nothing, with the % CHECK: pending MlstLpTopRthirtyKinOverFull (kinematic-only probe)
-zero-substituted \Kfull-class model (\MlstLpTopRthirtyKinOverFullPr{}). A recovery with random % CHECK: pending -- replace these two conditional sentences by the outcome once the two macros above exist
-draws places the loss in the zero value rather than in the missing information; a linear probe that
-neither the draws nor the mean recover, beside a kinematic-only linear probe far above it, places the
-loss in the missing information. Fine-tuning escapes both, because it re-learns the input layer on
+zero-substituted \Kfull-class model (\MlstLpTopRthirtyKinOverFullPr{}). The draws bring the probe % CHECK: draws close to kinematic-only, one run (both ratios 3.9 at c0ce260); "close to", not "the same": the two agree on R30 and less exactly on AUC and R50
+close to the model that lacks nothing, which places the loss in the zero value rather than in the missing information.
+Fine-tuning escapes both, because it re-learns the input layer on
 the substituted jets, and a constant substitution used in training and testing is consistent for a
 model trained with it~\cite[Theorem~3]{josse}. JetParticle-JEPA, which saw zeroed inputs during pretraining through
 input dropout, sets the missing top-tagging inputs to zero in the same way and reports a rejection
