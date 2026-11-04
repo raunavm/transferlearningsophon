@@ -8,6 +8,9 @@ discriminants are reused here.
     jc1_ft     fine-tuning on JetClass at 10^6 jets (pred.root): each of the nine signal classes
                against QCD on D = p_S/(p_S+p_QCD), p renormalised over the 10 classes (ParT Eq. 2)
     jc1_probe  the linear probes on JetClass at 10^6 (jc1_N1000000.npz), the same nine curves
+    jc1_ft_ovr, jc1_probe_ovr  the same cells and probes, class against the rest (F6J, F6Jp, 2026-11-03): each
+               of the ten classes against every other class on p_c, p renormalised over the 10 classes
+               (keys: the class names, label_QCD first, then the nine signal classes)
     pairs      the linear probes on the class pairs of the balanced JetClass-II sets
                (jc2bal_pairs_<pair>.npz: P(signal), signal = the pair's first side)
     top_ft     fine-tuning on top tagging at the full set: softmax(logits)[1]
@@ -68,14 +71,16 @@ PB = _load("probe_bal", "experiments/EVAL/probe_bal.py")     # SIBLING_PAIRS
 OUT_ROOT = pathlib.Path("/data/results/ft_v2/curves_v2")
 EPS_GRID = tuple(round(0.001 * i, 3) for i in range(1, 11)) + tuple(round(0.015 + 0.005 * i, 3) for i in range(197))
 MIN_BKG_PASS = 20               # the fewest background jets behind a drawn point (mlst_v4.JC1_MIN_BKG)
-FT_TASK = {"jc1_ft": "jc1", "top_ft": "top", "qg_ft": "qg"}     # the fine-tuning families and their task
+FT_TASK = {"jc1_ft": "jc1", "jc1_ft_ovr": "jc1", "top_ft": "top", "qg_ft": "qg"}     # the fine-tuning families and their task
 # the nine JetClass signal classes in the paper table's order (mlst_v4.JC1_COLS)
 JC1_SIGNALS = ("label_Hbb", "label_Hcc", "label_Hgg", "label_H4q", "label_Hqql", "label_Tbqq", "label_Tbl",
                "label_Wqq", "label_Zqq")
+JC1_OVR = ("label_QCD",) + JC1_SIGNALS      # the ten curves of the class-against-the-rest families
 DISCR = {"jc1": "p_S/(p_S+p_QCD), p renormalised over the 10 classes (ParT Eq. 2)",
          "binary": "softmax(logits)[1]",
          "pairs": "binary linear probe P(signal)",
-         "jc2_ovr": "p_c, one-vs-rest: background = every other class of the balanced test set"}
+         "jc2_ovr": "p_c, one-vs-rest: background = every other class of the balanced test set",
+         "jc1_ovr": "p_c, p renormalised over the 10 classes, one-vs-rest: background = every other class"}
 FT_MANIFEST_KEYS = ("subset", "ft_seed", "lr", "head_lr_mult", "recipe", "gpu_device_name")
 PAIR_SIDES = {**LP.PAIRS, **LP.QCD_PAIRS, **PB.SIBLING_PAIRS}
 CKPTS = {"init": "init", "init_bn": "initbn"}   # an untrained trunk's checkpoint -> its model name prefix
@@ -126,12 +131,17 @@ def curve_doc(family: str, model: str, method: str, checkpoint, ft_manifest, cur
             "curves": curves}
 
 
-def jc1_curves(p: np.ndarray, y: np.ndarray, names, n_train, source: pathlib.Path) -> dict:
-    """The nine signal classes against QCD; p renormalised over the 10 classes."""
+def jc1_scores(p: np.ndarray, names, source: pathlib.Path) -> np.ndarray:
+    """p renormalised over the 10 classes, its columns checked against JetClass's order."""
     if list(names) != list(LP.JC1_CLASSES):
         raise SystemExit(f"FATAL: {source}: JetClass columns {list(names)} are not {list(LP.JC1_CLASSES)}")
     p = p.astype(np.float64)
-    p /= p.sum(1, keepdims=True)
+    return p / p.sum(1, keepdims=True)
+
+
+def jc1_curves(p: np.ndarray, y: np.ndarray, names, n_train, source: pathlib.Path) -> dict:
+    """The nine signal classes against QCD; p renormalised over the 10 classes."""
+    p = jc1_scores(p, names, source)
     qcd = list(names).index("label_QCD")
     bkg = FC.summed(p, y, (qcd,))
     out = {}
@@ -139,6 +149,14 @@ def jc1_curves(p: np.ndarray, y: np.ndarray, names, n_train, source: pathlib.Pat
         t, d = FC.versus(p, y, list(names).index(s), bkg)
         out[s] = curve(t, d, [s], ["label_QCD"], DISCR["jc1"], n_train, source)
     return out
+
+
+def jc1_ovr_curves(p: np.ndarray, y: np.ndarray, names, n_train, source: pathlib.Path) -> dict:
+    """Each of the ten classes against every other class, on p_c; p renormalised over the 10 classes."""
+    p = jc1_scores(p, names, source)
+    col = {c: list(names).index(c) for c in JC1_OVR}
+    return {c: curve(y == col[c], p[:, col[c]], [c], ["every other class"], DISCR["jc1_ovr"], n_train, source)
+            for c in JC1_OVR}
 
 
 def native_names() -> dict:
@@ -188,10 +206,10 @@ def ft_manifest(cell: pathlib.Path):
     return {k: m.get(k) for k in FT_MANIFEST_KEYS}
 
 
-def ft_cell_curves(task: str, cell: pathlib.Path, n: int) -> dict:
+def ft_cell_curves(task: str, cell: pathlib.Path, n: int, ovr: bool = False) -> dict:
     if task == "jc1":
         _, y, p, names = FC.cell_scores(cell, "jc1")
-        return jc1_curves(p, y, names, n, cell / "pred.root")
+        return (jc1_ovr_curves if ovr else jc1_curves)(p, y, names, n, cell / "pred.root")
     out = {}
     for test_set in ("pythia", "herwig") if task == "qg" else ("pythia",):
         _, y, s, _ = FC.cell_scores(cell, task, test_set)
@@ -222,7 +240,7 @@ def run_ft(a, odir: pathlib.Path) -> None:
             print(f"skip {path}: exists", flush=True)
             continue
         FC.write_json(path, curve_doc(a.family, model, "fine-tuning", None if init.startswith("scratch") else "best70",
-                                      ft_manifest(cell), ft_cell_curves(task, cell, a.n)))
+                                      ft_manifest(cell), ft_cell_curves(task, cell, a.n, a.family == "jc1_ft_ovr")))
 
 
 def pair_n_train(fits_roots, model_dir: str, ckpt: str, pair: str, cache: dict) -> int:
@@ -251,6 +269,8 @@ def probe_curves(family: str, f: pathlib.Path, model_dir: str, ckpt: str, fits_r
     n = int(SIZE.search(f.stem).group(1))
     if family == "jc1_probe":
         return jc1_curves(z["p"], y, LP.JC1_CLASSES, n, f)
+    if family == "jc1_probe_ovr":
+        return jc1_ovr_curves(z["p"], y, LP.JC1_CLASSES, n, f)
     return ovr_curves(z["p"], y, n, f)
 
 
@@ -298,7 +318,7 @@ def main(argv=None) -> int:
     f.add_argument("--n", required=True, type=int)
     f.add_argument("--inits", nargs="+", help="only these init directories (default: every one)")
     p = sub.add_parser("probes")
-    p.add_argument("--family", required=True, choices=("jc1_probe", "pairs", "jc2_ovr"))
+    p.add_argument("--family", required=True, choices=("jc1_probe", "jc1_probe_ovr", "pairs", "jc2_ovr"))
     p.add_argument("--probs-root", required=True, nargs="+", type=pathlib.Path)
     p.add_argument("--fits-root", nargs="*", default=[], type=pathlib.Path, help="pairs: the fit files' roots")
     p.add_argument("--files", required=True, nargs="+", help="file stems or globs, e.g. jc1_N1000000 'jc2bal_pairs_*'")

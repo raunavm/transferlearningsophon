@@ -38,7 +38,8 @@ def test_the_launched_curves_and_bootstrap_jobs_keep_mtx_s2_20_and_the_status_jo
         c = yaml.safe_load(text)["spec"]
         if p.parent == BC.OUT_DIR:
             name = p.name.removeprefix("job-").removesuffix("-raunav.yaml")
-            pin = (BC.PIN_ROC if name.startswith("curves-roc") or name in BC.UNLAUNCHED_AT_PIN
+            pin = (BC.PIN_ROC_JC1OVR if name == "curves-roc-jc1ovr"
+                   else BC.PIN_ROC if name.startswith("curves-roc") or name in BC.UNLAUNCHED_AT_PIN
                    else BC.PIN_FULL if name == "curves-full" else BC.PIN_V4 if name.endswith("-v4") else "mtx-s2.20")
             assert f'--branch "{pin}"' in c["template"]["spec"]["containers"][0]["args"][0]
         else:
@@ -240,8 +241,55 @@ def test_the_roc_script_is_checked_at_the_roc_tag_only(monkeypatch):
     monkeypatch.setattr(BC, "build", lambda pin: {})
     monkeypatch.setattr("sys.argv", ["build_curve_jobs.py", "--pin-not-yet-tagged", "--check-only"])
     assert BC.main() == 0
-    assert seen == [(BC.PIN, BC.NEEDED), (BC.PIN_ROC, {**BC.NEEDED, **BC.NEEDED_ROC})]
+    assert seen == [(BC.PIN, BC.NEEDED), (BC.PIN_ROC, {**BC.NEEDED, **BC.NEEDED_ROC}),
+                    (BC.PIN_ROC_JC1OVR, {**BC.NEEDED, **BC.NEEDED_ROC_JC1OVR})]
     assert "experiments/FT/roc_points.py" not in BC.NEEDED
     monkeypatch.setattr("sys.argv", ["build_curve_jobs.py", "--tag", "mtx-s9.99"])
     with pytest.raises(SystemExit, match="is not PIN_ROC"):
         BC.main()
+
+
+# ------------------------------------------------------------------ the class-against-the-rest job (2026-11-03)
+OVR_JOB = "job-curves-roc-jc1ovr-raunav.yaml"
+
+
+def test_the_class_against_the_rest_job_has_its_own_pin_and_the_launched_roc_jobs_keep_theirs(specs):
+    assert BC.PIN_ROC_JC1OVR == "mtx-s2.57" and BC.PIN_ROC == "mtx-s2.53"
+    launch = BC.BF._mtx_launch()
+    text = specs[BC.OUT_DIR / OVR_JOB]
+    d = yaml.safe_load(text)
+    c = d["spec"]["template"]["spec"]["containers"][0]
+    assert d["metadata"]["name"] == "curves-roc-jc1ovr-raunav" and d["spec"]["backoffLimit"] == 1
+    assert "nvidia.com/gpu" not in c["resources"]["limits"] and "configmap" not in text.lower()
+    assert f'--branch "{BC.PIN_ROC_JC1OVR}"' in c["args"][0] and f'export REPO_REF="{BC.PIN_ROC_JC1OVR}"' in c["args"][0]
+    terms = d["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
+        "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]
+    assert [t["values"] for t in terms if t["operator"] == "NotIn"] == [list(launch.V2_BAD_NODES + launch.V2_LATER_BAD_NODES)]
+    for job in ROC_JOBS:
+        assert "_ovr" not in specs[BC.OUT_DIR / job].replace("jc2_ovr", "") and f'--branch "{BC.PIN_ROC}"' in specs[BC.OUT_DIR / job]
+
+
+def test_the_class_against_the_rest_job_swaps_the_family_of_the_jc1_calls_and_writes_each_done(specs):
+    calls, old = BC.roc_jc1ovr_calls(), BC.roc_calls()
+    assert list(calls) == ["jc1_ft_ovr", "jc1_probe_ovr"]
+    for fam in ("jc1_ft", "jc1_probe"):
+        assert calls[f"{fam}_ovr"] == [c.replace(f"--family {fam} ", f"--family {fam}_ovr ") for c in old[fam]]
+        assert all(f"--family {fam}_ovr " in c for c in calls[f"{fam}_ovr"])
+    script = _script(specs[BC.OUT_DIR / OVR_JOB])
+    for fam, cs in calls.items():
+        done = f'[ -e {BC.ROC_OUT}/{fam}/DONE ] || echo "{BC.PIN_ROC_JC1OVR}" > {BC.ROC_OUT}/{fam}/DONE'
+        assert script.count(done) == 1 and script.rindex(f"--out-dir {BC.ROC_OUT}/{fam} ") < script.index(done)
+        for c in cs:
+            assert f"python3 experiments/FT/roc_points.py {c} \\\n" in script
+    outs = re.findall(r"--out-dir (\S+)", script) + re.findall(r"> (\S+)", script)
+    assert outs and all(o.startswith((f"{BC.ROC_OUT}/jc1_ft_ovr", f"{BC.ROC_OUT}/jc1_probe_ovr")) for o in outs), outs
+    assert "--out " not in script and not re.search(r"\b(rm|mv)\s", script)
+
+
+def test_the_class_against_the_rest_job_waits_for_the_jetclass_cells_and_the_fits(specs):
+    script = _script(specs[BC.OUT_DIR / OVR_JOB])
+    waited = script.split("missing () { local n=0 f; for f in ", 1)[1].split("; do\n", 1)[0].split()
+    models = [m for m, _ in BC.PROBE_MODELS]
+    assert f"{BC.FITS_V4}/{BC._alt(models)}.json" in waited and len(waited) == 3
+    assert f"{REF}/jc1/leg2/scratch-v2/N1000000/s{{1,2,3}}/DONE" in waited
+    assert f"{BC.V2}/best70/leg2/{{" + ",".join(BC.FULL_RUNS) + "}/N1000000/s1/DONE" in waited

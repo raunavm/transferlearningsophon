@@ -36,6 +36,7 @@ def test_the_grid_and_the_cut_constant():
     assert all(b > a for a, b in zip(g, g[1:])) and {0.3, 0.5} <= set(g)
     assert RP.MIN_BKG_PASS == V4.JC1_MIN_BKG == 20
     assert RP.JC1_SIGNALS == tuple(c for c, _ in V4.JC1_COLS)
+    assert RP.FT_TASK["jc1_ft_ovr"] == "jc1" and {"jc1_ft_ovr", "jc1_probe_ovr"} <= set(V4.ROC_FAMILIES)
 
 
 def test_rejection_above_the_cut_equals_ft_curves(tmp_path):
@@ -163,6 +164,70 @@ def test_jetclass_fine_tuning_reads_pred_root_in_file_order(tmp_path, monkeypatc
     assert list(doc["curves"]) == list(RP.JC1_SIGNALS) and doc["method"] == "fine-tuning"
     assert doc["curves"]["label_Wqq"]["source"]["file"] == str(c / "pred.root")
     _assert_jc1_hand_aucs(doc["curves"], p, y)
+
+
+def _assert_jc1_ovr_hand_aucs(doc, p, y):
+    """All ten classes, in the paper's order, each against all nine others on p_c renormalised over the
+    ten classes, c the class's own file column."""
+    assert list(doc["curves"]) == ["label_QCD", *RP.JC1_SIGNALS] and len(doc["curves"]) == 10
+    q = p / p.sum(1, keepdims=True)
+    for name, c in doc["curves"].items():
+        col = JC1_FILE_ORDER.index(name.removeprefix("label_"))
+        assert c["auc"] == pytest.approx(roc_auc_score(y == col, q[:, col]), abs=1e-12), name
+        assert (c["n_signal"], c["n_background"]) == ((y == col).sum(), (y != col).sum())
+        assert c["signal"] == [name] and c["background"] == ["every other class"]
+
+
+def test_jetclass_probes_one_class_against_all_the_others(tmp_path):
+    p, y = _jc1_probs(seed=7)
+    # a jet-by-jet scale changes the rank of raw p_c, so only the renormalised score passes
+    p = p * np.random.default_rng(8).uniform(0.2, 1.0, (y.size, 1))
+    d = tmp_path / "probs" / "mtx-l188-s1" / "best70"
+    d.mkdir(parents=True)
+    np.savez(d / "jc1_N1000000.npz", rows=np.arange(y.size), y=y.astype(np.int16), p=p.astype(np.float32))
+    RP.main(["probes", "--family", "jc1_probe_ovr", "--probs-root", str(tmp_path / "probs"), "--files", "jc1_N1000000",
+             "--out-dir", str(tmp_path / "jc1_probe_ovr"), "--allow-out", str(tmp_path)])
+    doc = json.loads((tmp_path / "jc1_probe_ovr" / "mtx-l188-s1.json").read_text())
+    assert doc["family"] == "jc1_probe_ovr" and doc["method"] == "linear probe" and doc["checkpoint"] == "best70"
+    assert doc["curves"]["label_QCD"]["n_train"] == 1_000_000 and doc["eps_grid"] == list(RP.EPS_GRID)
+    _assert_jc1_ovr_hand_aucs(doc, p.astype(np.float32).astype(np.float64), y)
+    raw = roc_auc_score(y == 1, p[:, 1])
+    assert doc["curves"]["label_Hbb"]["auc"] != pytest.approx(raw, abs=1e-6)
+
+
+def test_jetclass_fine_tuning_one_class_against_all_the_others_reads_pred_root(tmp_path, monkeypatch):
+    p, y = _jc1_probs(seed=9)
+    c = tmp_path / "leg2" / "l188-s1" / "N1000000" / "s1"
+    c.mkdir(parents=True)
+    (c / "pred.root").touch()
+    (c / "DONE").touch()
+    monkeypatch.setattr(RP.FC.LEG2, "read_pred_root", lambda path: (list(JC1_FILE_ORDER), np.eye(10)[y], p))
+    out = tmp_path / "jc1_ft_ovr"
+    RP.main(["ft", "--family", "jc1_ft_ovr", "--tree", str(tmp_path / "leg2"), "--task", "jc1", "--n", "1000000",
+             "--out-dir", str(out), "--allow-out", str(tmp_path)])
+    doc = json.loads((out / "mtx-l188-s1.json").read_text())
+    assert doc["method"] == "fine-tuning" and doc["curves"]["label_Wqq"]["source"]["file"] == str(c / "pred.root")
+    _assert_jc1_ovr_hand_aucs(doc, p, y)
+    # the signal-vs-QCD family is not touched by the switch
+    out = tmp_path / "jc1_ft"
+    RP.main(["ft", "--family", "jc1_ft", "--tree", str(tmp_path / "leg2"), "--task", "jc1", "--n", "1000000",
+             "--out-dir", str(out), "--allow-out", str(tmp_path)])
+    assert list(json.loads((out / "mtx-l188-s1.json").read_text())["curves"]) == list(RP.JC1_SIGNALS)
+
+
+def test_a_separable_jetclass_class_has_auc_one_and_no_cut(tmp_path):
+    rng = np.random.default_rng(10)
+    y = rng.integers(0, 10, 3000)
+    p = rng.uniform(0.01, 0.02, (y.size, 10))
+    p[y == 9, 9] = 10.0              # label_Tbl above every other jet's score
+    cv = RP.jc1_ovr_curves(p, y, RP.LP.JC1_CLASSES, 1, _src(tmp_path))
+    assert cv["label_Tbl"]["auc"] == pytest.approx(1.0) and cv["label_Tbl"]["cut"] is None
+    assert cv["label_QCD"]["auc"] < 0.9
+
+
+def test_a_jetclass_file_with_other_columns_is_refused(tmp_path):
+    with pytest.raises(SystemExit, match="JetClass columns"):
+        RP.jc1_ovr_curves(np.ones((4, 10)), np.arange(4), list(RP.LP.JC1_CLASSES)[::-1], 1, _src(tmp_path))
 
 
 def test_untrained_trunks_are_written_per_checkpoint(tmp_path):

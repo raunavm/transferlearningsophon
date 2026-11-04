@@ -22,6 +22,10 @@ experiments/MTX/k8s/v2/status/.
                         q/g, JetClass-II one-vs-rest; PIN_ROC)
   curves-roc-kin-raunav ... the kinematic-only model's top-tagging fine-tuning at the full set, once
                         it exists (launched after that fine-tuning job)
+  curves-roc-jc1ovr-raunav
+                        ... the ten JetClass classes, each against every other class (jc1_ft_ovr,
+                        jc1_probe_ovr: the cells and probes of jc1_ft and jc1_probe; F6J and F6Jp,
+                        2026-11-03; PIN_ROC_JC1OVR)
   status-raunav         CronJob, experiments/MTX/status_v2.py every 30 min
 
 Ratios: each run over the 188-class run of its index, a mass-output run also over its run without
@@ -37,7 +41,7 @@ whole, so a retried pod skips the trees already written and does the rest; the b
 curves-probe refuse to start if their output exists, the bootstrap jobs writing a directory of their
 own under BOOT, moved into place whole.
 
-The two ROC jobs keep off V2_BAD_NODES + V2_LATER_BAD_NODES (build_mtx_launch); the earlier specs keep
+The ROC jobs keep off V2_BAD_NODES + V2_LATER_BAD_NODES (build_mtx_launch); the earlier specs keep
 build_extract_jobs' NODE_EXCLUDE, as launched.
 
     python3 scripts/build_curve_jobs.py --pin-not-yet-tagged [--tag PIN_ROC] [--check-only] [--repin]
@@ -70,6 +74,9 @@ NEEDED = {"experiments/FT/ft_curves.py": "def roc_points",
           "experiments/MTX/status_v2.py": "def status"}
 # checked at PIN_ROC only: the earlier pins predate the file
 NEEDED_ROC = {"experiments/FT/roc_points.py": "def curve_doc"}
+# curves-roc-jc1ovr (2026-11-03): its own tag, so that curves-roc and curves-roc-kin keep PIN_ROC, as launched
+PIN_ROC_JC1OVR = "mtx-s2.57"
+NEEDED_ROC_JC1OVR = {"experiments/FT/roc_points.py": "def jc1_ovr_curves"}
 
 
 def _load(name: str, rel: str):
@@ -318,6 +325,14 @@ def roc_calls() -> dict:
                       f"--files jc2bal_pairs_ee_vs_mm --models {' '.join(inits)}"]}
 
 
+def _roc_families(pin: str, inputs: list[str], calls: dict) -> str:
+    """Wait for the inputs, then each family's calls and its DONE."""
+    return _guard([], inputs) + f'          export REPO_REF="{pin}"\n' + "".join(
+        "".join(_roc_call(fam, c) for c in cs)
+        + f'          [ -e {ROC_OUT}/{fam}/DONE ] || echo "{pin}" > {ROC_OUT}/{fam}/DONE\n'
+        for fam, cs in calls.items())
+
+
 def roc_body(pin: str) -> str:
     """Wait for the full-set fine-tuning cells and every probe's fit files (written last), then each
     family in ROC_ORDER and its DONE. No up-front refusal: roc_points.py skips a file that exists, and
@@ -327,10 +342,20 @@ def roc_body(pin: str) -> str:
     inputs += [f"{FITS_V4}/{_alt(models)}.json", f"{FITS_SIB}/{_alt(models)}.json"]
     calls = roc_calls()
     assert tuple(calls) == ROC_ORDER, tuple(calls)
-    return _guard([], inputs) + f'          export REPO_REF="{pin}"\n' + "".join(
-        "".join(_roc_call(fam, c) for c in cs)
-        + f'          [ -e {ROC_OUT}/{fam}/DONE ] || echo "{pin}" > {ROC_OUT}/{fam}/DONE\n'
-        for fam, cs in calls.items())
+    return _roc_families(pin, inputs, calls)
+
+
+def roc_jc1ovr_calls() -> dict:
+    """jc1_ft's and jc1_probe's roc_points.py arguments with the family swapped."""
+    calls = roc_calls()
+    return {f"{fam}_ovr": [c.replace(f"--family {fam} ", f"--family {fam}_ovr ") for c in calls[fam]]
+            for fam in ("jc1_ft", "jc1_probe")}
+
+
+def roc_jc1ovr_body(pin: str) -> str:
+    """As roc_body, on the JetClass cells and the probes' fit files only."""
+    inputs = [f"{t}/{_alt(i)}/N{n}/s{_alt(s)}/DONE" for t, _, n, i, s in (FULL[name] for name in ROC_FT["jc1_ft"])]
+    return _roc_families(pin, inputs + [f"{FITS_V4}/{_alt([m for m, _ in PROBE_MODELS])}.json"], roc_jc1ovr_calls())
 
 
 def roc_kin_body(pin: str) -> str:
@@ -434,6 +459,10 @@ def build(pin: str) -> dict[pathlib.Path, str]:
         "curves-roc-kin-raunav", roc_kin_body(PIN_ROC),
         "ROC curve of the kinematic-only model's top-tagging fine-tuning at the full set", PIN_ROC,
         roc_node_exclude())
+    out[OUT_DIR / "job-curves-roc-jc1ovr-raunav.yaml"] = cpu_job(
+        "curves-roc-jc1ovr-raunav", roc_jc1ovr_body(PIN_ROC_JC1OVR),
+        "ROC curves of the ten JetClass classes, each against every other class, fine-tuned and linear probes",
+        PIN_ROC_JC1OVR, roc_node_exclude())
     out[STATUS_DIR / "cronjob-status-raunav.yaml"] = status_spec(STATUS_PIN)
     return out
 
@@ -457,6 +486,7 @@ def main() -> int:
                  "stay the generator's")
     BF.verify_pin(a.pin, a.pin_not_yet_tagged, NEEDED)
     BF.verify_pin(PIN_ROC, a.pin_not_yet_tagged, {**NEEDED, **NEEDED_ROC})
+    BF.verify_pin(PIN_ROC_JC1OVR, a.pin_not_yet_tagged, {**NEEDED, **NEEDED_ROC_JC1OVR})
     specs = build(a.pin)
     moved = [f"  {p.relative_to(ROOT)}: {_pin_of(p.read_text())} -> {_pin_of(t)}" for p, t in specs.items()
              if p.exists() and _pin_of(p.read_text()) != _pin_of(t)]
