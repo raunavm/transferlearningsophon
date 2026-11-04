@@ -72,7 +72,7 @@ def test_the_kinematic_models_are_probed_on_top_only_with_their_own_inputs():
     spec.loader.exec_module(BJ)
     name, text = BJ.kin_spec("mtx-s2.29")
     d = yaml.safe_load(text)
-    assert d["metadata"]["name"] == name == "jc2bal-kin-raunav" and d["spec"]["completions"] == 2
+    assert d["metadata"]["name"] == name == "jc2bal-kin-raunav" and d["spec"]["completions"] == 1
     a = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
     assert "configs/finetune/TopReference_kin.yaml" in a and "--old-only top" in a and "--mlp-datasets top" in a
     assert "0) MODEL=mtx-l188kin-s1; RUNG=L188; K=188;;" in a and "r16q1kin" not in a
