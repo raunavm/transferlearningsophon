@@ -15,7 +15,7 @@ from matplotlib.lines import Line2D
 from gallery_common import Absent, M, P, Page, ROC, RUNS, mean_over_runs
 import style_v3 as S
 
-GRID = {"left": 0.1, "right": 0.98, "top": 0.95, "bottom": 0.09}
+GRID = {"left": 0.1, "right": 0.963, "top": 0.95, "bottom": 0.09}     # saved width: axes + 56.6 pt = 423.6 pt, under 15 cm
 JC1_HEIGHT = 7.0        # the ten-entry legends take the top quarter of a panel, not half
 STACKED = {"top": 0.98, "bottom": 0.06, "hspace": 0.35}     # 90 pt panels: Y_REJ, 116 pt, reaches into the gap only
 FAMILIES = ("QCD", "Two-prong quarks and gluons", "Two-prong leptons", "Three-prong", "Four-prong",
@@ -208,9 +208,11 @@ PAGES = [
                  "headroom, where the poster's sits lower right with none; the headroom holds no data. Four panels, "
                  "not two (one per label set). No random-classifier line: the plan names no reference here. No legend "
                  "heading 'class (AUC)'; the caption says it. One-line title. Sophon's grid, fonts and framed legend. "
-                 "Tab10 in the poster's order of classes, not its palette. Against landscape: only the panels, "
-                 "colours and line styles; the axes are its own. Ten curves per panel, as the plan asks, over the "
-                 "limit of six series whose only named exception is A3R: for the PI to decide.",
+                 "Tab10 in the poster's order of classes, not its palette. Axis words at the axis end, where the poster "
+                 "centers them; four spines, where it removes top and right. Decay formulas, not Hbb and Tbl. 1M jets, "
+                 "not 10M. Against landscape: the panels, colours and line styles, and the y range, 1 to about 2.6e8 "
+                 "against about 4 to 4e4; its axis quantities and scale types, in our word form at the axis end. Ten "
+                 "curves per panel: over the limit of six series, the exception the PI asked for.",
          draw=draw_fj),
     Page(id="FJ-s", title="JetClass trained from scratch",
          precedent=["map2026_poster/fig5.png", "1902.09914/fig5.png"],
@@ -226,36 +228,45 @@ PAGES = [
          precedent=["map2026_poster/fig5.png", "1902.09914/fig5.png"],
          precedent_label="MAP 2026 poster Fig. 5 (form), landscape Fig. 5 (axes)",
          caption="Background rejection against signal efficiency for the ten JetClass classes, each class against "
-                 "the other nine, from linear probes on frozen networks, trained on one million jets. One panel per "
-                 "pretraining label set: 188, 162, 43 and 17 classes. Each curve is the mean over three pretraining "
-                 "runs, and a curve ends where fewer than 20 background jets remain. The legend gives each class's "
-                 "area under the curve; the title gives their mean.",
+                 "the other nine, from linear probes, trained on one million jets, on frozen pretrained networks. One "
+                 "panel per pretraining label set: 188, 162, 43 and 17 classes. Each curve is the mean over three "
+                 "pretraining runs, and a curve ends where fewer than 20 background jets remain. The legend gives each "
+                 "class's area under the curve; the title gives their mean.",
          differs="As FJ. The poster's left panel is also a frozen network, with an MLP on it; here the probe is linear.",
          draw=draw_fj_app),
     Page(id="F4", title="Flavor separation for four class pairs",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
-         caption="Background rejection against signal efficiency for four pairs of classes that differ only in "
-                 "flavor, from linear probes on frozen networks pretrained with 188, 162, 43 and 17 classes. The "
+         caption="Background rejection against signal efficiency for four pairs of JetClass-II classes that differ only "
+                 "in flavor, from linear probes on frozen networks pretrained with 188, 162, 43 and 17 classes. The "
                  "first class named is the signal. Each curve is the mean over three pretraining runs and ends where "
-                 "fewer than 20 background jets remain, which leaves no 188- or 162-class curve in the electron and "
-                 "muon panel.",
+                 "fewer than 20 background jets remain; the 188- and 162-class models separate the electron and muon "
+                 "pair completely, so they have no curve there.",
          differs="Four panels, not one, for four class pairs. Four solid curves, not fifteen in mixed line styles (PI "
-                 "limit). The y axis starts at 1, not at the data. The legend is framed, in the first panel only, "
+                 "limit), at 1.5 pt, not 0.955 pt. The y axis starts at 1, not at the data, with its range set per "
+                 "panel. x ticks every 0.2 over 0 to 1, not every 0.1 over about -0.01 to 1.02. Axis words at the axis "
+                 "end, with the rejection written inline, not as a fraction. The legend is in the first panel only, "
                  "lower left, as the curves fill the upper right; the series are the same in every panel. Sophon's "
                  "grid and fonts, and the plan's tab10 order.",
-         data_note="X→ee vs X→μμ has no curve for 188 or 162 classes: in all three runs of each, fewer than 20 "
-                   "background jets remain at every efficiency on the grid. The 43-class curve starts at 0.145 and "
-                   "the 17-class curve at 0.54, where the last of their runs drops below 20 jets.",
+         data_note="X→ee vs X→μμ has 5,000 background test jets against 200,000, so a run's curve stops at a rejection of "
+                   "250 against 10,000. It has no curve for 188 or 162 classes: all six runs separate the pair completely "
+                   "(AUC 1.0), so fewer than 20 background jets remain at every efficiency on the grid. The 43-class "
+                   "curve starts at 0.145 and the 17-class curve at 0.54, where the first of their runs drops below 20 "
+                   "jets (the other two continue to about 0.02 to 0.04). 17 classes lie above 43 because of one run, "
+                   "mtx-r16q1-s2: at efficiency 0.8 the runs give 27.9, 131.6, 23.9 for 17 classes and 28.4, 29.2, 32.5 "
+                   "for 43. The gap is one run, not the label set.",
          draw=draw_f4),
-    Page(id="F4-app", title="Flavor separation with controlled partitions",
+    Page(id="F4-app", title="Flavor separation with random partitions with controlled flavor boundaries",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
-         caption="Background rejection against signal efficiency for four pairs of classes that differ only in "
-                 "flavor, three resonant and one of QCD jets, from linear probes on frozen networks pretrained with 17 classes under no flavor boundary, "
-                 "a b-quark boundary or a random boundary, with the 188-class model dashed. Curves are means over "
-                 "two runs, three for 188 classes, and end where fewer than 20 background jets remain.",
-         differs="As F4, plus one dashed reference, which landscape lacks: a single black 1.0 pt line (Sophon Fig. 5). "
+         caption="Background rejection against signal efficiency for four pairs of JetClass-II classes that differ only "
+                 "in flavor, three resonant and one of QCD jets, from linear probes on frozen networks pretrained on "
+                 "17-class random partitions with no flavor boundary, a b-quark boundary or a random flavor boundary, "
+                 "with the 188-class model dashed. The first class named is the signal. Curves are means over two "
+                 "runs, three for 188 classes, and end where fewer than 20 background jets remain.",
+         differs="As F4, with three solid curves (random partitions with controlled flavor boundaries) and one dashed "
+                 "reference in place of F4's four solid curves. Landscape has no such reference: a single black 1.0 pt "
+                 "line (Sophon Fig. 5). "
                  "One panel differs from F4's: QCD bb vs cc in place of X→ee vs X→μμ, which has no curve here.",
          data_note="QCD bb vs cc replaces F4's X→ee vs X→μμ here: neither run of any controlled partition, and no run "
                    "of the 188-class model, keeps 20 background jets at any efficiency on that pair's grid, so its panel "
@@ -265,14 +276,16 @@ PAGES = [
          precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
          precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
          caption="Background rejection against signal efficiency after fine-tuning on the full training sets: top "
-                 "tagging, and quark/gluon separation tested on Pythia and on Herwig jets. The curves are networks "
+                 "tagging, and quark/gluon separation tested on Pythia and Herwig jets. Curves are networks "
                  "pretrained with 188, 162, 43 and 17 classes and the network trained from scratch, each the mean "
-                 "over three runs. The dashed curve on top tagging is one run of the 188-class model with kinematic "
-                 "inputs only. A curve ends where fewer than 20 background jets remain.",
+                 "over three runs; on quark/gluon they overlap at this scale. The dashed curve on top tagging is "
+                 "one run of the 188-class model with kinematic inputs only. Curves end where fewer than 20 "
+                 "background jets remain.",
          differs="Three stacked panels on one x axis (Sophon Fig. 3's arrangement), as landscape and ParticleNet draw "
                  "one per figure. Rejection on y as landscape, not ParticleNet's background efficiency; no AUC in the "
-                 "legend, unlike ParticleNet (PI limit, numbers are in tables). Five solid curves, and on top tagging one "
-                 "black dashed 1.0 pt reference (Sophon Fig. 5), not landscape's fifteen in mixed line styles. Legend "
+                 "legend, unlike ParticleNet (PI limit, numbers are in tables). The y axis starts at 1, not at the data; "
+                 "Sophon's font, grid and 1.5 pt lines; tab10 in the plan's order. Five solid curves, and on top tagging "
+                 "one black dashed 1.0 pt reference (Sophon Fig. 5), not landscape's fifteen in mixed line styles. Legend "
                  "framed, first panel only, lower left in two columns for its six entries, as curves fill the other "
                  "corners of that panel. Stacked panels are taller than Sophon's at the same figsize, with less margin "
                  "and a wider gap: the y-axis words are longer than Sophon's 'Events' and repeat on each panel.",
@@ -283,11 +296,16 @@ PAGES = [
          precedent_label="MAP 2026 poster Fig. 5 (form)",
          caption="Background rejection against signal efficiency for each of the 188 JetClass-II classes against the "
                  "rest of the class-balanced test set, from linear probes on frozen networks pretrained with 188, 162, "
-                 "43 and 17 classes. Thin curves are means over three pretraining runs, coloured by decay family, and "
+                 "43 and 17 classes. Thin curves are means over three pretraining runs, colored by decay family, and "
                  "end where fewer than 20 background jets remain. Each title gives the mean area under the curve over "
                  "all classes.",
-         differs="Axes as FJ (PI). 188 thin curves in six family colours, not ten labelled classes; no AUC per curve, as "
-                 "there are too many. The family legend is in the first panel only, with lines of normal thickness. "
+         differs="Axes as FJ (PI). Linear probes on JetClass-II in all four panels (1M jets), where the poster has a "
+                 "frozen MLP and full fine-tuning on JetClass (10M). 188 thin curves in six family colours, not ten "
+                 "labelled classes; no AUC per curve, as there are too many. 0.4 pt lines at alpha 0.7: over the limit "
+                 "of six series and off the line convention (one colour per series, 1.5 pt), not named in this brief, for "
+                 "the PI to decide. No dashed diagonal. One-line titles, not two. Sophon's font and grid, not the "
+                 "poster's serif font and faint grid. The family legend is in the first panel only, upper right, framed, "
+                 "with no heading, not lower right, and with lines of normal thickness. "
                  "Four panels, not two. That legend covers some curves in the first panel: thin curves fill every "
                  "corner, and headroom on an axis shared across panels would take over half of each.",
          draw=draw_a3r),

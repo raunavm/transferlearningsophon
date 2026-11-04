@@ -30,7 +30,7 @@ def main() -> int:
     for page in sorted((p for m in MODULES for p in m.PAGES), key=lambda p: ORDER.index(p.id)):
         if a.only and page.id not in a.only:
             continue
-        S.use_style()
+        S.use_style(simplify=page.id != "SOPHON-FIG2")
         rec = {k: v for k, v in dataclasses.asdict(page).items() if k != "draw"}
         try:
             page.draw(a.outdir / page.id)

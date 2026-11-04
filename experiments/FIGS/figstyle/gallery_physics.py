@@ -24,6 +24,8 @@ SHOWN_FROM = 0.05       # a response axis covers the bins with this share of the
 HIST_ROOM = 1.45        # top of a histogram's y axis over its peak: room for the legend above the curves
 SELECTION_COLOUR = {1: S.TAB10[7], 2: S.TAB10[9]}     # F10a, as CMS Fig. 8's: black inclusive; not the label sets' colours
 MASS_17_COLOUR = S.TAB10[9]     # F10b: the 17-class model and its mass variant are on one axes
+F10A_TOP = 260.0        # GeV, F10a: the bin edge that covers CMS Fig. 8's 30 to 250 GeV
+F10B_FROM = 5e-3        # F10b: the first point is the 5.2e-3 grid point; CMS Fig. 9 left stops at 0.5%
 DIRECT_COLOUR = S.TAB10[7]      # F11: Sophon's grey for a discriminant built from the output scores
 FITS = pathlib.Path("/data/results/eval/xbx/fits")      # the dry-run fits on the stand-in jets: cluster only
 STANDIN = "xbb_jc2"
@@ -65,7 +67,8 @@ def draw_sophon_fig2(path: pathlib.Path) -> None:
 # Schematic rows of the four label sets, top to bottom, not to scale: each level's boxes are unions of the boxes
 # to its left, the last row group is the QCD jets
 BOXES = {"L188": (1,) * 14, "L162": (1,) * 11 + (3,), "R42_Q1": (2, 2, 2, 2, 2, 1, 3), "R16_Q1": (4, 4, 3, 3)}
-MERGES = ("QCD quark\ncontent", "quark counts,\ngluon vs quark,\n$e$ vs $\\mu$", "quark\nflavor")
+MERGES = ("QCD quark\ncontent", "flavor beyond the\nheaviest quark, $s$ vs $u,d$,\nquark counts, gluon\nvs quark, $e$ vs $\\mu$",
+          "$b$, $c$, light")
 TRAINED, FROZEN = "#cfe6f7", "#e6e6e6"
 FAN = "#cccccc"
 NEW_LAYER = "#9aa7e0"
@@ -99,7 +102,7 @@ def _use(ax, x: float, fill: str, word: str, action: str, name: str) -> None:
 
 
 def draw_f1(path: pathlib.Path) -> None:
-    w, h = S.FULL, 4.9     # inches: one data unit is one inch on the page
+    w, h = S.FULL - 0.2, 4.9     # inches: one data unit is one inch on the page; save adds 0.1 in a side (pad_inches)
     fig = plt.figure(figsize=(w, h))
     ax = fig.add_axes((0, 0, 1, 1))
     ax.set_xlim(0, w)
@@ -134,7 +137,7 @@ def draw_f1(path: pathlib.Path) -> None:
         for r in range(sum(BOXES["L188"])):
             ax.plot(*zip(a, (x0, top - (r + 0.5) * rows)), color=FAN, linewidth=0.3, zorder=1)
     # what each merge removes
-    ax.text(x0 + 0.18, 2.45, "Each merge\nremoves:", ha="right", va="center", fontsize=S.LEGEND_PT)
+    ax.text(2.12, 2.45, "Each merge\nremoves:", ha="left", va="center", fontsize=S.LEGEND_PT)
     for k, words in enumerate(MERGES):
         x = x0 + k * pitch + cw / 2
         ax.annotate("", xy=(x + pitch, 2.69), xytext=(x, 2.69),
@@ -272,10 +275,11 @@ def _sculpt() -> dict:
     return I["sculpt"]
 
 
-def _points(ax, x, y, half, marker: str, colour: str, hollow: bool, width: float, label: str | None = None) -> None:
+def _points(ax, x, y, half, marker: str, colour: str, hollow: bool, width: float, label: str | None = None,
+            zorder: float = 2) -> None:
     """CMS's points: a marker on the bin's centre and a horizontal bar across the bin, nothing joined."""
-    ax.errorbar(x, y, xerr=half, fmt=marker, color=colour, markerfacecolor="white" if hollow else colour,
-                markersize=3.5, elinewidth=width, capsize=0, label=label)
+    ax.errorbar(x, y, xerr=half, fmt=marker, color=colour, markerfacecolor="none" if hollow else colour,
+                markersize=2.5, elinewidth=width, capsize=0, label=label, zorder=zorder)
 
 
 def draw_f10a(path: pathlib.Path) -> None:
@@ -290,11 +294,12 @@ def draw_f10a(path: pathlib.Path) -> None:
     peak, ratios = 0.0, [[1.0]]
     for (ax, rx), (a, ms) in zip(axes.T, shown):
         e = np.asarray(sc[ms[0]]["bins_jet_sdmass"], float)
-        mid, half = (e[:-1] + e[1:]) / 2, np.diff(e) / 2
+        keep = e[1:] <= F10A_TOP
+        mid, half = ((e[:-1] + e[1:]) / 2)[keep], (np.diff(e) / 2)[keep]
         before = np.asarray(sc[ms[0]]["hist_before"], float)
         before = before / before.sum()
-        _points(ax, mid, before, half, looks[0][0], "#000000", looks[0][1], S.LW_THIN, "Inclusive")
-        peak = max(peak, before.max())
+        _points(ax, mid, before[keep], half, looks[0][0], "#000000", looks[0][1], S.LW_THIN, "Inclusive", zorder=2.1)
+        peak = max(peak, before[keep].max())
         rx.axhline(1.0, **S.REFERENCE)
         for k, (wp, _) in enumerate(P.WPS, start=1):
             after = np.mean([np.asarray(sc[m]["working_points"][wp]["hist_after"], float)
@@ -302,11 +307,11 @@ def draw_f10a(path: pathlib.Path) -> None:
             with np.errstate(divide="ignore", invalid="ignore"):
                 r = np.where(before > 0, after / before, np.nan)
             label = f"$\\varepsilon_B = {100 * float(wp):g}\\%$"
-            _points(ax, mid, after, half, looks[k][0], SELECTION_COLOUR[k], looks[k][1], S.LW_THIN, label)
-            _points(rx, mid, r, half, looks[k][0], SELECTION_COLOUR[k], looks[k][1], S.LW_THIN)
-            peak = max(peak, after.max())
-            ratios.append(r)
-        ax.set_xlim(e[0], e[-1])
+            _points(ax, mid, after[keep], half, looks[k][0], SELECTION_COLOUR[k], looks[k][1], S.LW_THIN, label)
+            _points(rx, mid, r[keep], half, looks[k][0], SELECTION_COLOUR[k], looks[k][1], S.LW_THIN)
+            peak = max(peak, after[keep].max())
+            ratios.append(r[keep])
+        ax.set_xlim(e[0], F10A_TOP)
         S.title(ax, NAMES[a])
         S.labels(rx, xlabel=r"Jet mass ($m_{\mathrm{SD}}$) [GeV]")
         S.legend(ax)
@@ -329,12 +334,14 @@ def draw_f10b(path: pathlib.Path) -> None:
             continue
         eff = np.array([c["eff"] for c in have[0]], float)
         mean = np.mean([[c["js_distance"] for c in h] for h in have], axis=0)
-        ax.plot(eff, mean, color=colour, linewidth=S.LW, marker="o", markersize=3.5, label=NAMES[row])
+        keep = eff >= F10B_FROM
+        ax.plot(eff[keep], mean[keep], color=colour, linewidth=S.LW, marker="o", markersize=3.5, label=NAMES[row])
         drawn += 1
     if not drawn:
         raise Absent("no mass sculpting curve of the models shown")
     ax.set_xscale("log")
     ax.set_yscale("log")
+    ax.yaxis.grid(True, which="minor")      # the y range is under a decade: its only ticks are minor ones
     S.labels(ax, r"QCD efficiency ($\varepsilon_B$)", r"Jensen-Shannon distance ($d_{\mathrm{JS}}$)")
     S.legend(ax)
     S.save(fig, path)
@@ -377,7 +384,7 @@ def draw_f11(path: pathlib.Path) -> None:
         S.grid(ax)
         ax.set_xscale("log")
         ax.set_xlim(1e-5, 1)
-        ax.set_ylim(0, 1.25 * top)
+        ax.set_ylim(0, 1.5 * top)
         S.title(ax, what)
         S.labels(ax, ylabel=r"Figure of merit ($\varepsilon_S/\sqrt{\varepsilon_B}$)")
     S.labels(axes[1], xlabel=r"QCD efficiency ($\varepsilon_B$)")
@@ -402,7 +409,8 @@ F1_CAPTION = (
 F9A_CAPTION = (
     "Distribution of the jet mass response, the ratio of a jet's mass to its generator-level mass, for resonant jets "
     "(left) and QCD jets (right): the groomed mass and the mass regression output of the models pretrained on 162 and "
-    "17 classes, each the mean over runs. The lower panels show the ratio of each distribution to the groomed mass.")
+    "17 classes, each the mean over runs; the axes hold 76 percent of the QCD groomed-mass jets. The lower panels show "
+    "the ratio of each distribution to the groomed mass.")
 F9B_CAPTION = (
     "Median jet mass response (left) and relative mass resolution (right) against the jet transverse momentum, for all "
     "jets: the groomed mass and the mass regression output of the models pretrained on 162 and 17 classes, each the "
@@ -411,11 +419,11 @@ F9B_CAPTION = (
 A17_CAPTION = (
     "Median jet mass response (left) and relative mass resolution (right) for {group} jets, against the jet transverse "
     "momentum (upper) and the generator-level jet mass (lower): the groomed mass and the mass regression output of the "
-    "models pretrained on 162 and 17 classes, each the mean over runs. Below each panel are the ratio of the median "
+    "models pretrained on 162 and 17 classes, each the mean over runs{last_bin}. Below each panel are the ratio of the median "
     "and the root square difference (RSD) of the resolution to the groomed mass.")
 F10A_CAPTION = (
     "Soft-drop mass distribution of QCD jets before any selection (inclusive) and after selections at QCD efficiencies "
-    "of 10 and 1 per cent on the score of the model pretrained on 188 classes (left), 17 classes (centre) and 17 "
+    "of 10 and 1 percent on the score of the model pretrained on 188 classes (left), 17 classes (center) and 17 "
     "classes with mass regression (right), each the mean over runs. Horizontal bars show the bin width. The lower "
     "panels show the ratio to the inclusive distribution.")
 F10B_CAPTION = (
@@ -428,12 +436,15 @@ F11_CAPTION = (
     "discriminant of the 188-class model and a classifier on the frozen features of each label set, each the mean "
     "over runs; a curve ends where fewer than 20 background jets remain.")
 
-ATLAS_LOOK = "Sophon's font, sizes, ticks and framed legend in place of ATLAS's; no experiment label"
+ATLAS_LOOK = ("Sophon's font, sizes, ticks and framed legend in place of ATLAS's; no experiment label, and ATLAS's text "
+              "block (sqrt(s), jet definition, pT and mass selection) is dropped, so our selection appears on no figure")
 A17_DIFFERS = (
     "As F9b, on one jet group and with a second row against generator mass, which ATLAS does not draw (its Fig. 9 has "
     "pT response instead); the legend appears once, in the first panel, to keep four panels light. Eight axes in all, a lower axes under each "
     "of four panels: within the limit of four panels only if lower axes do not count, for the PI to decide. 5.6 in high, not "
-    "the 4.8 in of a plain 2x2, because each panel carries a lower axes. " + ATLAS_LOOK + ".")
+    "the 4.8 in of a plain 2x2, because each panel carries a lower axes. The rows hold different jets: the lower covers "
+    "generator mass 20 to 500 GeV, so 24.5% of QCD and 4.7% of resonant jets are in the upper row only. No window on the "
+    "regressed mass, where ATLAS keeps 40 < m^Reg < 300 GeV. " + ATLAS_LOOK + ".")
 MASS_RUNS_NOTE = ("Mean of two runs for each mass regression model (the third runs were cut on 2026-10-22); "
                   "the groomed mass is the same in every file. Nothing else is absent.")
 
@@ -447,62 +458,81 @@ PAGES = [
          "The points are those of the native PDF after its path simplification; a curve starts where the PDF's does."),
     Page("F1", "Design of the study", ["2405.12972/fig1.png"], "Sophon Fig. 1", F1_CAPTION,
          "Our content in Sophon's shape: (a) above (b), jets into a network box with its feature column, grey fan, "
-         "shadowed card and callout. Four output columns instead of Sophon's one, with a merged class spanning the "
-         "rows it merges, to show the nesting; rows are schematic, not to scale. One card with two uses and one callout "
+         "shadowed card and callout. Panels named Pretraining and Use, not Pre-training and Usage. Four output columns "
+         "instead of Sophon's one, with a merged class spanning the rows it merges, to show the nesting; rows are "
+         "schematic, not to scale. A heading and merge arrows added. The hidden-layer column between latent and output "
+         "is removed, though the real network has that 512-d layer (for the PI to decide), so the fan runs straight from "
+         "the features, to the 188-class column only. Pill labels (resonant 2 prongs, resonant 3-4 prongs, QCD) removed; "
+         "QCD is marked in the columns. One card with two uses and one callout "
          "instead of two cards, because both uses start from the features (Sophon's discriminants start from the output "
          "layer). Drawn with matplotlib patches in STIX instead of a vector drawing with jet icons, and "
          "no latent or output size formulae, which belong to the methods.",
          draw_f1),
     Page("F9a", "Mass regression: response", ["ATL-PHYS-PUB-2024-015/fig7.png"], "ATLAS 2024-015 Fig. 7", F9A_CAPTION,
-         "Two jet groups instead of mass and pT responses, as we regress mass only. Three series instead of two: "
-         "black dashed reference and two solid colours, instead of purple dashed and green. Fraction of jets on the "
-         "y axis instead of a.u. x range from the data, per panel, instead of a fixed 0.7 to 1.3, because the groomed "
-         "mass here is far wider. No vertical dotted line at 1, a second reference the PI limit forbids. No bands: "
-         "ATLAS's are thinner than its lines. Same ratio height (0.44). " + ATLAS_LOOK + ".",
+         "Two jet groups instead of mass and pT responses, as we regress mass only, with panel titles ATLAS lacks. Three "
+         "series instead of two: black dashed reference and two solid colours, instead of purple dashed and green. "
+         "Fraction of jets on the y axis instead of a.u., Response (m/m_gen) on x instead of m_Reco/m_Truth. x range from "
+         "the data, per panel, instead of a fixed 0.7 to 1.3, because the groomed mass here is far wider. No vertical "
+         "dotted line at 1, a second reference the PI limit forbids. No bands: ATLAS's are thinner than its lines. Same "
+         "ratio height (0.44), but ratio ranges of about 0.1 to 2.6 and 0.2 to 3.1 against ATLAS's 0.35 to 1.55. "
+         + ATLAS_LOOK + ".",
          draw_f9a, MASS_RUNS_NOTE),
     Page("F9b", "Mass regression: across jet pT", ["ATL-PHYS-PUB-2024-015/fig8.png"], "ATLAS 2024-015 Fig. 8", F9B_CAPTION,
          "All jets on our bins: four unequal pT bins to 2500 GeV in reconstructed pT, instead of ATLAS's finer bins to 1500 "
          "GeV in truth pT. Connected steps instead of one disconnected segment per bin, and no bands (PI limit), though "
          "ATLAS draws them. Three series instead of two, colours as F9a. No dotted line at 1 in the median panel. Dashed "
-         "grid at the ticks, our rule for curve figures, where ATLAS has none. The lower panels keep ATLAS's ratio "
+         "grid at the ticks, our rule for curve figures, where ATLAS has none. Median response (r) and Resolution "
+         "(sigma_r) instead of ATLAS's longer axis words. The lower panels keep ATLAS's ratio "
          "and its RSD, sgn(s'-s) sqrt|s'^2-s^2|, at its height (0.44). " + ATLAS_LOOK + ".",
          draw_f9b, MASS_RUNS_NOTE),
     Page("A17-res", "Mass regression on resonant jets", ["ATL-PHYS-PUB-2024-015/fig8.png"], "ATLAS 2024-015 Fig. 8",
-         A17_CAPTION.format(group="resonant"), A17_DIFFERS, lambda path: _a17(path, "resonant"), MASS_RUNS_NOTE),
+         A17_CAPTION.format(group="resonant", last_bin=""), A17_DIFFERS, lambda path: _a17(path, "resonant"), MASS_RUNS_NOTE),
     Page("A17-qcd", "Mass regression on QCD jets", ["ATL-PHYS-PUB-2024-015/fig8.png"], "ATLAS 2024-015 Fig. 8",
-         A17_CAPTION.format(group="QCD"), A17_DIFFERS, lambda path: _a17(path, "qcd"), MASS_RUNS_NOTE),
+         A17_CAPTION.format(group="QCD", last_bin="; the groomed mass's last pT bin sets the upper right scale"),
+         A17_DIFFERS + " The groomed mass's last pT bin (resolution 3.6, regression 0.28) sets the scale of the upper right "
+         "panel; the axis is not clipped.", lambda path: _a17(path, "qcd"), MASS_RUNS_NOTE),
     Page("F10a", "Mass sculpting: QCD mass", ["2604.09809/fig8.png"], "CMS JME-25-001 Fig. 8", F10A_CAPTION,
          "Three panels side by side (three models, all jet pT) instead of CMS's six (two models, three pT ranges), with "
-         "one y axis across them. Two working points instead of three, because the files hold 10% and 1%. Mass from 20 "
-         "to 500 GeV in 20 GeV bins, the files' range, instead of CMS's 30 to 250 GeV. Colours are "
-         "black, grey and cyan instead of black, blue, red, orange (colours that mean no label set elsewhere in the paper). "
-         "Markers as CMS's first three. No vertical error bars, as the histograms are means over runs and seed spread "
-         "lives in tables. Bars at 1.0 pt instead of 0.4. Dashed reference at 1 instead of solid, and \"Ratio\" instead "
-         "of a stacked fraction. Same ratio height (0.33). Fraction of jets instead of A.U., titles instead of a label "
-         "block, STIX at 10 and 8 pt with outward ticks instead of Helvetica at 6.9 and 5.8 pt with inward ones.",
+         "one y axis across them. Six axes, three main and three lower: within the limit of four panels only if lower "
+         "axes do not count, for the PI to decide. Two working points instead of three, because the files hold 10% and "
+         "1%. Mass from 20 to 260 GeV in 20 GeV bins, the bins that cover CMS's 30 to 250 GeV; the files run to 500 GeV, "
+         "and the twelve bins cut hold 5.9% of the inclusive jets and 6.4 to 7.6% of the selected ones (fractions stay "
+         "those of all jets to 500 GeV). Colours are black, grey and cyan instead of black, blue, red, orange: no label "
+         "set's colour, though cyan is the 17-class mass regression model on F10b and grey the direct discriminant on F11. "
+         "Markers as CMS's first three, at 2.5 pt against 1.59 to 2.12 pt so that the bars show, inclusive on top. No "
+         "vertical error bars: the PI's limit, where CMS's are statistical. Bars at 1.0 pt instead of 0.4. Dashed reference "
+         "at 1 instead of solid, and \"Ratio\" instead of a stacked fraction. Same ratio height (0.33). Jet mass (m_SD) "
+         "instead of m_SD, fraction of jets instead of A.U., titles instead of a label block, framed legend where CMS has "
+         "none, STIX at 10 and 8 pt with outward ticks instead of Helvetica at 6.9 and 5.8 pt with inward ones.",
          draw_f10a,
          "Mean of two runs for the 17-class model with mass regression, three for the others. Nothing else is absent."),
     Page("F10b", "Mass sculpting: how much", ["2604.09809/fig9.png"], "CMS JME-25-001 Fig. 9 left", F10B_CAPTION,
-         "One panel: CMS's right panel (against pT) is not drawn, since our curves hold all jet pT. Sixteen efficiencies "
+         "One panel: CMS's right panel (against pT) is not drawn, since our curves hold all jet pT. Twelve efficiencies "
          "on a log axis rising to the right, the files' grid and the direction of the efficiency axis in Sophon Fig. 2 "
-         "and F11, instead of five categories falling to the right. Three series instead of two, one filled circle "
-         "in each colour instead of an open square and a filled circle. Markers joined by a 1.5 pt line, not the plan's "
-         "step markers: CMS's segments each span one column of a categorical axis, ours would span a bin that does not "
-         "exist, since each point is a cumulative selection at one efficiency (for the PI to decide). Dashed grid at the ticks (our rule for curve figures), where CMS has none. Limits from the "
-         "data instead of 0.007 to 1. No random-selection band or floor: CMS has none (plan). Framed legend and no "
-         "label block; STIX at 10 and 8 pt with outward ticks.",
+         "and F11, instead of five categories falling to the right. Starts at the 5.2e-3 grid point (0.5%), where CMS's "
+         "panel stops; the four tighter points are cut, because the distance there is mostly finite statistics (at 0.1%, "
+         "a random selection of as many jets gives 0.108 against the curves' 0.119 to 0.125). Distance over 20 to 500 GeV "
+         "and all pT instead of CMS's 30 to 250 GeV and 600 to 1000 GeV. Three series instead of two, a filled circle in "
+         "each colour instead of an open square and a filled circle. Colours C0, C3, C9 instead of CMS's blue and orange; "
+         "the 17-class mass regression model is cyan here because 17 classes is red on these axes, and red on F9 and A17. "
+         "Markers joined by a 1.5 pt line, not step markers: each point is a cumulative selection, so a segment would span "
+         "a bin that does not exist (for the PI to decide). Dashed grid at the ticks (our rule for curve figures), where "
+         "CMS has none. Jensen-Shannon distance (d_JS) and QCD efficiency instead of JSD and eps_B [%]; y limits from the "
+         "data instead of 0.007 to 1. No random-selection band or floor: CMS has none (plan). Framed legend and no label "
+         "block; STIX at 10 and 8 pt with outward ticks.",
          draw_f10b,
          "Mean of two runs for the 17-class model with mass regression, three for the others. Nothing else is absent."),
     Page("F11", "Resonance tagging", ["2405.12972/fig2.png"], "Sophon Fig. 2", F11_CAPTION,
          "Same layout, limits on x, grid, fonts and legend place. y axis eps_S/sqrt(eps_B), in words figure of merit, instead of the "
          "significance Z, and x axis QCD efficiency instead of SM background efficiency, because Z needs the SM backgrounds, which "
          "we do not have. Upper panel on stand-in jets from JetClass-II, not Sophon's samples. Lower panel empty, "
-         "not invented curves. Roles as far as the data have them: Sophon's direct discriminant "
-         "becomes the 188-class one, in Sophon's grey for a discriminant from the output scores; Sophon's 42-class curve "
-         "becomes the four label sets' transfer classifiers; ParT and ParticleNet, trained from scratch, have no "
-         "counterpart. Solid lines only (PI limit), where Sophon's are dotted for two series. y limits from the data, "
-         "not 0 to 5.4. Curves have 26 points or fewer (the fits' efficiency grid) and end at 20 background jets, so "
-         "they are coarser and shorter than Sophon's.",
+         "not invented curves. Roles: the 188-class direct discriminant is Sophon's direct curve, in Sophon's grey for a "
+         "discriminant from the output scores; the four classifiers on frozen features take Sophon's transfer role, moved "
+         "to X→bb on the stand-in because X→bs has no samples; Sophon* (42 classes, separately trained) has no counterpart; "
+         "from-scratch curves take the ParT and ParticleNet role and are not drawn yet. Five series against Sophon's four. "
+         "Solid lines only (PI limit), where Sophon's are dotted for two series. y limits from the data, with the top at "
+         "1.5 times the highest curve to clear the legend, not 0 to 5.4. Curves have 26 points or fewer (the fits' "
+         "efficiency grid) and end at 20 background jets, so they are coarser and shorter than Sophon's.",
          draw_f11,
          "Stand-in only: X→bb from JetClass-II jets, /data/results/eval/xbx/fits (cluster), so the page is absent off "
          "the cluster. X→bs: no samples exist, the panel is empty. The significance Z is not computed: it needs the SM "

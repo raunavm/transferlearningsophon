@@ -3,10 +3,15 @@
 2026-11-04). Draft: it becomes experiments/FIGS/mlst_style.py figure by figure once the PI has
 approved the gallery (docs/figstyle/gallery.pdf); nothing in the paper uses it before then.
 
-Every value is Sophon's (arXiv:2405.12972), measured from the native PDFs of its arXiv source
+The settings are Sophon's (arXiv:2405.12972), measured from the native PDFs of its arXiv source
 (docs/figstyle/sophon_native.json; no plotting script exists): matplotlib's defaults with STIX text
 and these non-default settings. Sophon's figures are 5 in wide at font size 10, printed at 0.74.
 MLST has one 15 cm column and asks for at least 8 pt, so ours print at 1.0: same proportions.
+
+Not Sophon's. X_EPS and Y_REJ are the words of the landscape paper (arXiv:1902.09914), in Sophon's form and place.
+Our own choices: C4-C6 for the controlled partitions and black for from scratch (Sophon has neither model), and the
+marker sizes, MARKER in gallery_labelset.py and markersize in gallery_physics.py (Sophon Fig. 5 has 3, Golling's native
+size is 6; we copied neither).
 
 A kind of figure Sophon has no instance of follows the closest paper in docs/figstyle/CATALOGUE.md
 (section 1.2); each is named in docs/figstyle/PLAN.md.
@@ -52,12 +57,13 @@ X_EPS_B = r"SM background efficiency ($\varepsilon_B$)"     # Sophon Fig. 2
 Y_Z = r"Significance ($Z$)"
 
 
-def use_style() -> None:
+def use_style(simplify: bool = False) -> None:
     """Sophon's rcParams; everything else stays matplotlib's default. pdf.fonttype 42 is the one change
-    of file encoding, for embedded TrueType."""
+    of file encoding, for embedded TrueType. simplify=False is not Sophon's: it draws every recorded vertex,
+    for the redraw of Sophon Fig. 2 and its pixel comparison; True is matplotlib's default, for any other figure."""
     plt.rcdefaults()
     plt.rcParams.update({"font.family": "STIXGeneral", "mathtext.fontset": "stix", "font.size": LABEL_PT,
-                         "figure.subplot.bottom": 0.125, "pdf.fonttype": 42, "path.simplify": False})
+                         "figure.subplot.bottom": 0.125, "pdf.fonttype": 42, "path.simplify": simplify})
 
 
 def grid(ax) -> None:

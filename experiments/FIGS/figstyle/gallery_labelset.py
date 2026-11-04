@@ -184,7 +184,7 @@ def draw_f7(path) -> None:
     fits, raw, fill = I["fits"], I["raw"], I["fill"]
     if not raw:
         raise C.Absent("no JetClass-II linear probes with the inputs set to zero (linprobe/fits_v4)")
-    panels = (("JetClass-II, top inputs", "Accuracy drop (%)", lambda m, s: M._jc2_drop(raw, fill, m, "top", s)),
+    panels = (("JetClass-II, features absent from top tagging filled", "Accuracy drop (%)", lambda m, s: M._jc2_drop(raw, fill, m, "top", s)),
               (TITLES["top"], Y_R30, lambda m, s: P._bench_r30(M, fits, fill, m, "top", s)),
               (TITLES["qg"], Y_R30, lambda m, s: P._bench_r30(M, fits, fill, m, "qg", s)))
     fig = plt.figure(figsize=(S.WIDTH, S.HEIGHT[3]))
@@ -274,13 +274,16 @@ PAGES = [
         caption="Linear probes against the number of pretraining classes: accuracy on class-balanced JetClass-II "
                 "and on JetClass, and rejection R30, the background rejection at 30% signal efficiency, on top "
                 "tagging and quark/gluon tagging. The line joins the four nested label sets; the markers at 17 "
-                "classes are partitions with controlled flavor boundaries. All values are means over runs.",
+                "classes are random partitions with controlled flavor boundaries. All values are means over runs.",
         differs="Four panels against Hong's one, for the four tasks. Three partitions as markers at 17 classes: Hong "
-                "has no controls. No baseline line: we have no single baseline. Circles, not crosses, and a line "
+                "has no controls. No baseline line: a random-network reference lies far below the plotted range and would "
+                "flatten the differences (PI to decide). Circles, not crosses, and a line "
                 "through the points, not a smoothed curve. x ticks only at the four class counts (they are the data), "
-                "no x minor ticks. Log y on the R30 panels, as the PI decided. Sophon's font, sizes, 1.5 pt line, "
+                "no x minor ticks; x limits beyond the data, where Hong's end on the first and last points. Log y on "
+                "the R30 panels, as the PI decided, with y minor ticks Hong lacks. Ticks outward on left and bottom, "
+                "not inward on four sides. Panel titles, where Hong has none. Sophon's font, sizes, 1.5 pt line, "
                 "dashed grid and framed 8 pt legend in place of Hong's bold sans-serif and heavy lines. "
-                "Legend in one panel only (Sophon Fig. 3). Our axis words.",
+                "Legend in one panel only (Sophon Fig. 3). Our axis words, at the axis end, not centred.",
         draw=draw_f2a,
         data_note=f"{TWO_RUNS} {SUBST_NOTE}"),
     C.Page(
@@ -291,16 +294,19 @@ PAGES = [
         caption="Fine-tuned models against the number of pretraining classes: accuracy on class-balanced JetClass-II "
                 "and on JetClass, and rejection R30, the background rejection at 30% signal efficiency, on top "
                 "tagging and quark/gluon tagging. The line joins the four nested label sets; the markers at 17 "
-                "classes are partitions with controlled flavor boundaries. All values are means over runs; on the two "
-                "benchmarks the differences lie within the spread between runs.",
-        differs="As F2a: four panels, three partitions as markers, no baseline line, circles, ticks at the class "
-                "counts, log y on R30, Sophon's font and legend, legend in one panel. Hong's own figure is fine-tuned "
-                "too, so this page is the closer copy.",
+                "classes (none on JetClass-II) are random partitions with controlled flavor boundaries. All values are "
+                "means over runs; on top tagging the four label sets differ by less than the spread between runs.",
+        differs="As F2a, except: markers on three panels, none on JetClass-II. No baseline line: a from-scratch "
+                "reference lies below the plotted range on every panel and would flatten the differences (PI to "
+                "decide). Hong's own figure is fine-tuned too, so this page is the closer copy.",
         draw=draw_f2b,
         data_note="JetClass-II at 1,000,000 class-balanced jets, with no markers: the controlled partitions were not "
                   "fine-tuned on this task. JetClass at 1,000,000 jets, top at 1,200,000, quark/gluon at 1,600,000. "
-                  f"{TWO_RUNS} Top and quark/gluon: every difference between label sets lies within the run-to-run SD "
-                  "(top 56 to 151, quark/gluon 0.8 to 2.2 on the label sets), except the random boundary on top."),
+                  f"{TWO_RUNS} Top: every difference between label sets lies within the run-to-run SD (56 to 151); the "
+                  "random-boundary marker lies 133 to 188 below the label sets. Quark/gluon: differences between label "
+                  "sets are comparable to the run spread (SD 0.8 to 2.2, up to 1.7 between 43 and 17 classes); the "
+                  "no-flavor-boundary marker lies 2.4 and 2.7 above the b-quark and random-boundary markers, more than "
+                  "any label-set SD."),
     C.Page(
         id="F2-app",
         title="Random partitions beside the hierarchy",
@@ -309,8 +315,8 @@ PAGES = [
         caption="Linear probes against the number of pretraining classes, as in the main-text figure: accuracy on "
                 "class-balanced JetClass-II and on JetClass, and rejection R30, the background rejection at 30% "
                 "signal efficiency, on top tagging and quark/gluon tagging. The line joins the four nested label "
-                "sets; the five markers at 17 classes are random partitions of the 188 classes. Values are means "
-                "over runs.",
+                "sets; the five markers at 17 classes are random partitions of the 188 classes. The line shows means "
+                "over runs; each marker is one run.",
         differs="As F2a, with the five random partitions as five markers of one colour (C7) at 17 classes in place "
                 "of the controlled partitions. An appendix figure, and Hong has no controls.",
         draw=draw_f2_app,
@@ -322,15 +328,17 @@ PAGES = [
         precedent_label="CMS Fig. 7, JetParticle-JEPA Fig. 12",
         caption="Difference in per-class AUC between each model and the 188-class model, in percentage points, for "
                 "the 188 JetClass-II classes, from linear probes. Columns are the 162-, 43- and 17-class label sets "
-                "and the three partitions with controlled flavor boundaries. Rows are grouped by decay topology, "
+                "and the three random partitions with controlled flavor boundaries. Rows are grouped by decay topology, "
                 "with the QCD classes at the bottom. Values are means over runs; red marks an AUC below that of "
                 "the 188-class model.",
         differs="Signed values on a diverging RdBu scale symmetric about 0: Blues would hide the sign. Not a confusion "
                 "matrix: rows are classes, columns are models. No numbers in cells: 188 rows cannot hold them. Rows "
                 "named by 15 group labels, since a single class name cannot reach 8 pt at 188 rows; thin lines between "
-                "groups and a blank row before QCD in place of per-row labels. One panel as CMS, against "
-                "JetParticle-JEPA's three. Taller than either precedent. Column labels at 45 degrees as "
-                "JetParticle-JEPA, not CMS's 90. Sophon's font. No experiment label.",
+                "groups and a blank row before QCD in place of per-row labels; no row tick marks. One panel as CMS, against "
+                "JetParticle-JEPA's three, and no titles where it has three and a heading. Taller than either "
+                "precedent, with wide cells, not square. Colour bar about 62% of the axes height, against the full "
+                "height in both. Column labels at 45 degrees as JetParticle-JEPA, not CMS's 90. Axis words at the "
+                "axis end as CMS, not JetParticle-JEPA. Sophon's font. No experiment label.",
         draw=draw_f3,
         data_note="The three controlled partitions are means over two runs, the label sets over three."),
     C.Page(
@@ -340,8 +348,9 @@ PAGES = [
         precedent_label="CMS Fig. 7, JetParticle-JEPA Fig. 12",
         caption="Difference in per-class AUC between each of five random partitions into 17 classes and the 188-class "
                 "model, in percentage points, for the 188 JetClass-II classes, from linear probes. Rows are grouped "
-                "by decay topology as in the main-text figure, with the QCD classes at the bottom, and the colour "
-                "scale is the same; red marks an AUC below that of the 188-class model.",
+                "by decay topology as in the main-text figure, with the QCD classes at the bottom, and the color "
+                "scale is the same; red marks an AUC below that of the 188-class model. Each column is one run "
+                "against the 188-class run of the same index.",
         differs="As F3, with five columns, one per random partition. Same colour scale as F3, so the two can be read "
                 "together.",
         draw=draw_f3_app,
@@ -353,7 +362,7 @@ PAGES = [
         precedent=["2606.14813/fig3.png"],
         precedent_label="JetParticle-JEPA Fig. 3(b)",
         caption="Filling the input features a data set lacks, for linear probes of the four label sets. Top: relative "
-                "drop in JetClass-II accuracy when the features absent from the top-tagging data are filled. Middle "
+                "drop in class-balanced JetClass-II accuracy when the features absent from the top-tagging data are filled. Middle "
                 "and bottom: rejection R30, the background rejection at 30% signal efficiency, on top tagging and "
                 "quark/gluon tagging. Bars show means over runs, with the features set to zero, to the training "
                 "mean or to random draws.",
@@ -370,10 +379,11 @@ PAGES = [
         title="Pretraining against the number of training jets",
         precedent=["2401.13537/fig3.png", "2401.13536/fig1.png"],
         precedent_label="Golling Fig. 3, Vigl Fig. 1 top",
-        caption="Accuracy on JetClass-II and JetClass, and rejection R30, the background rejection at 30% signal "
-                "efficiency, on top tagging and quark/gluon tagging, against the number of training jets. Series are "
-                "the 188-class model fine-tuned, the same model with a linear probe, and a network trained from "
-                "scratch. Points are means over runs; bands show the standard deviation over runs.",
+        caption="Accuracy on class-balanced JetClass-II and on JetClass, and rejection R30, the background rejection at "
+                "30% signal efficiency, on top tagging and quark/gluon tagging, against the number of training jets. "
+                "Series are the 188-class model fine-tuned, the same model with a linear probe, and a network trained "
+                "from scratch; fine-tuning and from scratch start at 10,000 jets on the two JetClass tasks. Points "
+                "are means over runs; bands show the standard deviation over runs.",
         differs="Four panels, one per task, against Golling's one. Fine-tuned in the 188-class colour, the linear probe "
                 "in tab10 C8 (C1 means 162 classes across our figures) and from scratch black, against Golling's green, "
                 "red and blue. Sophon's font, dashed grid and framed legend, "
@@ -381,8 +391,9 @@ PAGES = [
                 "same colour, alpha 0.2, no edge. Against Vigl Fig. 1: no ratio panel, no data-efficiency side panel, no dashed variant, no "
                 "second legend.",
         draw=draw_f8,
-        data_note="Quark/gluon fine-tuned and from scratch are one point each until the running cells finish (the "
-                  "smaller sets have barely started). Sizes below the full set use the fixed step budget with early "
+        data_note="Quark/gluon fine-tuned and from scratch are one point each: the 90 cells at the smaller sizes were "
+                  "unfinished at the read-out. On JetClass-II and JetClass the plan's sizes drop 1,000 jets for "
+                  "fine-tuning and from scratch, so those curves start at 10,000 by design. Sizes below the full set use the fixed step budget with early "
                   "stopping; the full JetClass, top and quark/gluon points use the full-set recipe. JetClass-II at "
                   "1,000,000: all three from-scratch runs and 3 of 16 pretrained runs reached the 40-epoch limit, so "
                   f"from scratch is still improving there. {SUBST_NOTE}"),
@@ -391,10 +402,11 @@ PAGES = [
         title="Linear probes against the number of training jets",
         precedent=["2401.13537/fig3.png"],
         precedent_label="Golling Fig. 3",
-        caption="Linear probes of the four label sets against the number of training jets: accuracy on JetClass-II "
-                "and JetClass, and rejection R30, the background rejection at 30% signal efficiency, on top tagging "
-                "and quark/gluon tagging. Points are means over runs. The colours are those of the label sets in the "
-                "other figures, from 188 classes down to 17 classes, and the spread over runs is given in the tables.",
+        caption="Linear probes of the four label sets against the number of training jets: accuracy on class-balanced "
+                "JetClass-II and on JetClass, and rejection R30, the background rejection at 30% signal efficiency, "
+                "on top tagging and quark/gluon tagging. Points are means over runs; most R30 gaps are comparable to "
+                "the spread between runs. The colors are those of the label sets in the other figures; the 188- and "
+                "162-class curves coincide on JetClass and nearly so on JetClass-II.",
         differs="Four panels against Golling's one; four label sets against three training modes. No bands, where "
                 "Golling has them: four would overlap (plan). tab10 in the order of the label sets. Sophon's font, "
                 "dashed grid and framed legend, where Golling has no grid and no frame. Log y on R30.",
