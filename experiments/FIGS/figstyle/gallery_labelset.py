@@ -75,7 +75,7 @@ def _mean(row: str, value):
     return float(np.mean(v)) if v else None
 
 
-def _draw_f2(path, value_of, groups, absent: str) -> None:
+def _draw_f2(path, value_of, groups, absent: str, legend_panel: int = LEGEND_PANEL) -> None:
     """value_of(key, n, ds, met): a run's value or None for the task; groups: (legend label, colour, rows) of
     the markers at 17 classes, one marker per row."""
     values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
@@ -99,7 +99,7 @@ def _draw_f2(path, value_of, groups, absent: str) -> None:
             if met == "r30":
                 _log_y(ax)
         _classes_axis(ax)
-    S.legend(axes.flat[LEGEND_PANEL], loc="lower right")
+    S.legend(axes.flat[legend_panel], loc="lower right")
     S.save(fig, path)
 
 
@@ -120,7 +120,7 @@ def draw_f2a(path) -> None:
 
 
 def draw_f2b(path) -> None:
-    _draw_f2(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)")
+    _draw_f2(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)", legend_panel=2)
 
 
 def draw_f2_app(path) -> None:
