@@ -61,8 +61,10 @@ def use_style() -> None:
 
 
 def grid(ax) -> None:
-    """Sophon Figs. 2, 5: dashed under the curves, at major and minor ticks, the default colour #b0b0b0."""
+    """Sophon Figs. 2, 5: dashed under the curves, the default colour #b0b0b0, at major and minor ticks on x and at
+    major ticks on y (Sophon has no y minor ticks; on a log y axis minor grid lines would come and go with the range)."""
     ax.grid(which="both", linestyle="--", linewidth=0.5)
+    ax.yaxis.grid(False, which="minor")
     ax.set_axisbelow(True)
 
 

@@ -16,6 +16,7 @@ from gallery_common import Absent, M, P, Page, ROC, RUNS, mean_over_runs
 import style_v3 as S
 
 GRID = {"left": 0.1, "right": 0.98, "top": 0.95, "bottom": 0.09}
+JC1_HEIGHT = 7.0        # the ten-entry legends take the top quarter of a panel, not half
 STACKED = {"top": 0.98, "bottom": 0.06, "hspace": 0.35}     # 90 pt panels: Y_REJ, 116 pt, reaches into the gap only
 FAMILIES = ("QCD", "Two-prong quarks and gluons", "Two-prong leptons", "Three-prong", "Four-prong",
             "Lepton-containing")
@@ -45,8 +46,8 @@ def _family(fam: str) -> dict:
     return docs
 
 
-def _axes_2x2(sharey: bool, wspace: float):
-    fig = plt.figure(figsize=(S.FULL, 4.8))
+def _axes_2x2(sharey: bool, wspace: float, height: float = 4.8):
+    fig = plt.figure(figsize=(S.FULL, height))
     axes = fig.subplots(2, 2, sharex=True, sharey=sharey, gridspec_kw={**GRID, "wspace": wspace})
     for ax in axes.flat:
         _roc_axes(ax)
@@ -100,7 +101,7 @@ def _jc1_panel(ax, docs: dict, models: list, name: str):
 
 def _jc1(path: pathlib.Path, family: str) -> None:
     docs = _family(family)
-    fig, axes = _axes_2x2(sharey=True, wspace=0.1)
+    fig, axes = _axes_2x2(sharey=True, wspace=0.1, height=JC1_HEIGHT)
     legends = [_jc1_panel(ax, docs, RUNS[level], S.NAME[level]) for ax, level in zip(axes.flat, S.LEVELS)]
     _headroom(list(axes.flat), legends)
     S.save(fig, path)
@@ -120,7 +121,7 @@ def draw_fj_s(path: pathlib.Path) -> None:
     models = P._scratch_models(docs)
     if not models:
         raise Absent("no from-scratch model in curves_v2/jc1_ft_ovr")
-    fig = plt.figure(figsize=(S.FULL, 4.8))
+    fig = plt.figure(figsize=(S.FULL, JC1_HEIGHT))
     ax = fig.add_subplot(fig.add_gridspec(2, 2, **GRID, wspace=0.1)[0, 0])
     _roc_axes(ax)
     S.labels(ax, S.X_EPS, S.Y_REJ)
@@ -128,13 +129,13 @@ def draw_fj_s(path: pathlib.Path) -> None:
     S.save(fig, path)
 
 
-def _pairs(path: pathlib.Path, series: list) -> None:
-    """Four class pairs in M.ROC_PAIRS's order; series [(models, plot keywords)]. The series are the same in
+def _pairs(path: pathlib.Path, series: list, keys: tuple) -> None:
+    """Four class pairs; series [(models, plot keywords)]. The series are the same in
     every panel, so the legend is in the first (the fourth may hold none of them)."""
     docs = _family("pairs")
     heading = {k: h for k, h, *_ in M.PAIRS}
     fig, axes = _axes_2x2(sharey=False, wspace=0.2)
-    for ax, key in zip(axes.flat, M.ROC_PAIRS):
+    for ax, key in zip(axes.flat, keys):
         for models, kw in series:
             _plot(ax, mean_over_runs(docs, models, key), **kw)
         _floor(ax, docs, series[0][0], key)
@@ -144,12 +145,13 @@ def _pairs(path: pathlib.Path, series: list) -> None:
 
 
 def draw_f4(path: pathlib.Path) -> None:
-    _pairs(path, [(RUNS[a], {"color": S.SERIES[a], "linewidth": S.LW, "label": S.NAME[a]}) for a in S.LEVELS])
+    _pairs(path, [(RUNS[a], {"color": S.SERIES[a], "linewidth": S.LW, "label": S.NAME[a]}) for a in S.LEVELS], M.ROC_PAIRS)
 
 
 def draw_f4_app(path: pathlib.Path) -> None:
     _pairs(path, [(RUNS[a], {"color": S.SERIES[a], "linewidth": S.LW, "label": S.NAME[a]}) for a in M.FLAV]
-           + [(RUNS["L188"], {**S.REFERENCE, "label": S.NAME["L188"]})])
+           + [(RUNS["L188"], {**S.REFERENCE, "label": S.NAME["L188"]})],
+           ("bb_vs_cc", "bbqq_vs_ccqq", "bc_vs_bq_cs", "qcd_bb_vs_cc"))     # X->ee vs mumu: no curve to draw here
 
 
 def draw_f6(path: pathlib.Path) -> None:
@@ -163,7 +165,7 @@ def draw_f6(path: pathlib.Path) -> None:
             _plot(ax, mean_over_runs(docs, RUNS[level], key), color=S.SERIES[level], linewidth=S.LW,
                   label=S.NAME[level])
         _plot(ax, mean_over_runs(docs, P._scratch_models(docs), key), color=S.SERIES["SCRATCH"], linewidth=S.LW,
-              label=S.NAME["SCRATCH"])
+              label=S.NAME["SCRATCH"], zorder=1.9)      # under the label sets, or it hides them where they agree
         if key == "top" and M.KIN_MODEL in docs:
             _plot(ax, mean_over_runs(docs, [M.KIN_MODEL], key), **S.REFERENCE, label=S.NAME["KIN"])
         ax.set_ylim(bottom=1)
@@ -250,14 +252,14 @@ PAGES = [
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
          caption="Background rejection against signal efficiency for four pairs of classes that differ only in "
-                 "flavor, from linear probes on frozen networks pretrained with 17 classes under no flavor boundary, "
+                 "flavor, three resonant and one of QCD jets, from linear probes on frozen networks pretrained with 17 classes under no flavor boundary, "
                  "a b-quark boundary or a random boundary, with the 188-class model dashed. Curves are means over "
-                 "two runs, three for 188 classes, and end where fewer than 20 background jets remain, which leaves "
-                 "the electron and muon panel empty.",
-         differs="As F4, plus one dashed reference, which landscape lacks: a single black 1.0 pt line (Sophon Fig. 5).",
-         data_note="X→ee vs X→μμ is an empty panel: neither run of any controlled partition, and no run of the "
-                   "188-class model, keeps 20 background jets at any efficiency on the grid. The title and axes stay; "
-                   "nothing else is drawn.",
+                 "two runs, three for 188 classes, and end where fewer than 20 background jets remain.",
+         differs="As F4, plus one dashed reference, which landscape lacks: a single black 1.0 pt line (Sophon Fig. 5). "
+                 "One panel differs from F4's: QCD bb vs cc in place of X→ee vs X→μμ, which has no curve here.",
+         data_note="QCD bb vs cc replaces F4's X→ee vs X→μμ here: neither run of any controlled partition, and no run "
+                   "of the 188-class model, keeps 20 background jets at any efficiency on that pair's grid, so its panel "
+                   "would be empty.",
          draw=draw_f4_app),
     Page(id="F6", title="Benchmarks after fine-tuning",
          precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],

@@ -22,6 +22,7 @@ RATIO_ATLAS, RATIO_CMS = 0.44, 0.33     # lower axes over main axes: ATLAS 2024-
 STACK_GAP, COLUMN_GAP = 0.08, 0.32      # a main and its lower axes; two columns with their own y axes
 SHOWN_FROM = 0.05       # a response axis covers the bins with this share of the largest bin of any series
 HIST_ROOM = 1.45        # top of a histogram's y axis over its peak: room for the legend above the curves
+SELECTION_COLOUR = {1: S.TAB10[7], 2: S.TAB10[9]}     # F10a, as CMS Fig. 8's: black inclusive; not the label sets' colours
 MASS_17_COLOUR = S.TAB10[9]     # F10b: the 17-class model and its mass variant are on one axes
 DIRECT_COLOUR = S.TAB10[7]      # F11: Sophon's grey for a discriminant built from the output scores
 FITS = pathlib.Path("/data/results/eval/xbx/fits")      # the dry-run fits on the stand-in jets: cluster only
@@ -133,7 +134,7 @@ def draw_f1(path: pathlib.Path) -> None:
         for r in range(sum(BOXES["L188"])):
             ax.plot(*zip(a, (x0, top - (r + 0.5) * rows)), color=FAN, linewidth=0.3, zorder=1)
     # what each merge removes
-    ax.text(x0 + 0.48, 2.45, "Each merge\nremoves:", ha="right", va="center", fontsize=S.LEGEND_PT)
+    ax.text(x0 + 0.18, 2.45, "Each merge\nremoves:", ha="right", va="center", fontsize=S.LEGEND_PT)
     for k, words in enumerate(MERGES):
         x = x0 + k * pitch + cw / 2
         ax.annotate("", xy=(x + pitch, 2.69), xytext=(x, 2.69),
@@ -292,7 +293,7 @@ def draw_f10a(path: pathlib.Path) -> None:
         mid, half = (e[:-1] + e[1:]) / 2, np.diff(e) / 2
         before = np.asarray(sc[ms[0]]["hist_before"], float)
         before = before / before.sum()
-        _points(ax, mid, before, half, looks[0][0], S.TAB10[0], looks[0][1], S.LW_THIN, "Inclusive")
+        _points(ax, mid, before, half, looks[0][0], "#000000", looks[0][1], S.LW_THIN, "Inclusive")
         peak = max(peak, before.max())
         rx.axhline(1.0, **S.REFERENCE)
         for k, (wp, _) in enumerate(P.WPS, start=1):
@@ -301,8 +302,8 @@ def draw_f10a(path: pathlib.Path) -> None:
             with np.errstate(divide="ignore", invalid="ignore"):
                 r = np.where(before > 0, after / before, np.nan)
             label = f"$\\varepsilon_B = {100 * float(wp):g}\\%$"
-            _points(ax, mid, after, half, looks[k][0], S.TAB10[k], looks[k][1], S.LW_THIN, label)
-            _points(rx, mid, r, half, looks[k][0], S.TAB10[k], looks[k][1], S.LW_THIN)
+            _points(ax, mid, after, half, looks[k][0], SELECTION_COLOUR[k], looks[k][1], S.LW_THIN, label)
+            _points(rx, mid, r, half, looks[k][0], SELECTION_COLOUR[k], looks[k][1], S.LW_THIN)
             peak = max(peak, after.max())
             ratios.append(r)
         ax.set_xlim(e[0], e[-1])
@@ -476,8 +477,8 @@ PAGES = [
     Page("F10a", "Mass sculpting: QCD mass", ["2604.09809/fig8.png"], "CMS JME-25-001 Fig. 8", F10A_CAPTION,
          "Three panels side by side (three models, all jet pT) instead of CMS's six (two models, three pT ranges), with "
          "one y axis across them. Two working points instead of three, because the files hold 10% and 1%. Mass from 20 "
-         "to 500 GeV in 20 GeV bins, the files' range, instead of CMS's 30 to 250 GeV. Colours are the first three of "
-         "tab10 instead of black, blue, red, orange (they mean the selections here, not the label sets, as elsewhere). "
+         "to 500 GeV in 20 GeV bins, the files' range, instead of CMS's 30 to 250 GeV. Colours are "
+         "black, grey and cyan instead of black, blue, red, orange (colours that mean no label set elsewhere in the paper). "
          "Markers as CMS's first three. No vertical error bars, as the histograms are means over runs and seed spread "
          "lives in tables. Bars at 1.0 pt instead of 0.4. Dashed reference at 1 instead of solid, and \"Ratio\" instead "
          "of a stacked fraction. Same ratio height (0.33). Fraction of jets instead of A.U., titles instead of a label "
