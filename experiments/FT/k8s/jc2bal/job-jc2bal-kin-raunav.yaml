@@ -6,8 +6,8 @@ metadata:
   namespace: cms-ml
 spec:
   completionMode: Indexed
-  completions: 2
-  parallelism: 2
+  completions: 1
+  parallelism: 1
   backoffLimitPerIndex: 6
   podFailurePolicy:
     rules:
@@ -34,7 +34,6 @@ spec:
           IDX=${JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}
           case ${IDX} in
             0) MODEL=mtx-l188kin-s1; RUNG=L188; K=188;;
-            1) MODEL=mtx-r16q1kin-s1; RUNG=R16_Q1; K=17;;
             *) echo "FATAL: no model for index ${IDX}"; exit 42;;
           esac
           RUN_DIR=/data/results/mtx_v2/${MODEL}

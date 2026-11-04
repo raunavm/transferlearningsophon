@@ -538,7 +538,7 @@ spec:
 """
 
 
-KIN_MODELS = (("mtx-l188kin-s1", "L188", 188), ("mtx-r16q1kin-s1", "R16_Q1", 17))
+KIN_MODELS = (("mtx-l188kin-s1", "L188", 188),)      # the 17-class kinematic-only run was stopped for good (2026-11-01)
 TOP_SIZES = (1_000, 10_000, 100_000, 1_200_000)     # scripts/build_ft_jobs.py BENCH_SIZES["top"]
 LP_OLD = "/data/results/eval/v2_linprobe"           # experiments/EVAL/probe_bal.py OLD_ROOT
 
