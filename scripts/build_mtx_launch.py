@@ -638,7 +638,8 @@ V2_BAD_NODES = ("ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net",
 # fixed-budget builders), so every launched grid spec stays its generator's. 2026-11-02: k8s-haosu-10
 # failed jc2bal-fit index 29 with "CUDA error: unspecified launch failure" mid-fit and refused two
 # jc2bal-xfill pods at admission (UnexpectedAdmissionError) the same day.
-V2_LATER_BAD_NODES = ("k8s-haosu-10.sdsc.optiputer.net",)
+# ry-gpu-08: five fine-tuning cells lost to GPU errors in one day, 2026-11-03 (CUDA error: unknown error)
+V2_LATER_BAD_NODES = ("k8s-haosu-10.sdsc.optiputer.net", "ry-gpu-08.sdsc.optiputer.net")
 TRAIN_GLOBS = ("Res2P:/jc2/jet_data/Res2P_{0000..0199}.parquet",
                "Res34P:/jc2/jet_data/Res34P_{0000..0859}.parquet",
                "QCD:/jc2/jet_data/QCD_{0000..0279}.parquet")

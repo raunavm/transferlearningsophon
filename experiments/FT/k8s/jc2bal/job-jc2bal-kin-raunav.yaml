@@ -27,7 +27,7 @@ spec:
         - |
           set -euo pipefail
           retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
-          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s2.49 https://github.com/raunavm/transferlearningsophon.git tls; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s2.55 https://github.com/raunavm/transferlearningsophon.git tls; }
           retry clone || exit 1
           cd /workspace/tls
           retry pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
@@ -75,7 +75,7 @@ spec:
                 values: ["us-west"]
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: ["ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org", "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-02.sdsc.optiputer.net", "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu", "k8s-haosu-10.sdsc.optiputer.net"]
+                values: ["ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org", "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-02.sdsc.optiputer.net", "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu", "k8s-haosu-10.sdsc.optiputer.net", "ry-gpu-08.sdsc.optiputer.net"]
       volumes:
       - name: data
         persistentVolumeClaim:

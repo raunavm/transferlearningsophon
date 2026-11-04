@@ -129,3 +129,25 @@ def test_jc2b_and_kinematic_cells():
     assert all(c["epochs"] == 20 and c["spe"] == 1_200_000 and c["patience"] == 1000 and c["lr"] == "1e-4"
                for c in full)
     assert {c["init"] for c in kin} == set(bfb.KIN_RUNS)
+
+
+def test_a_retry_job_holds_the_same_cells_and_a_failed_clone_waits(tmp_path, monkeypatch):
+    monkeypatch.setattr(bfb, "OUT_DIR", tmp_path)
+    bfb.main(["--tag", "t", "--lr-pre", "3e-4", "--lr-scratch", "1e-3", "--indices", "13,26", "bench"])
+    d = yaml.safe_load((tmp_path / "job-ft-budget-bench-retry-raunav.yaml").read_text())
+    assert d["metadata"]["name"] == "ft-budget-bench-retry-raunav" and d["spec"]["completions"] == 2
+    script = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    cells = bfb.bench_cells("3e-4", "1e-3", ("top", "qg"))
+    assert f"CELL={cells[13]['out']};;" in script and f"CELL={cells[26]['out']};;" in script
+    assert cells[0]["out"] not in script
+    # a host that cannot be resolved must not use up the index's attempts: 5 tries, a minute apart
+    assert 'retry git clone' in script and "for T in 1 2 3 4 5" in script and "sleep 60" in script
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    (fake / "sleep").write_text("#!/bin/sh\nexit 0\n")
+    (fake / "sleep").chmod(0o755)
+    head = script.split("retry git clone")[0]
+    probe = head + 'N=0; f () { N=$((N+1)); [ "$N" -ge 3 ]; }; retry f; echo "calls=$N"\n'
+    out = subprocess.run(["bash", "-c", probe], capture_output=True, text=True,
+                         env={"PATH": f"{fake}:/usr/bin:/bin"})
+    assert out.returncode == 0 and "calls=3" in out.stdout

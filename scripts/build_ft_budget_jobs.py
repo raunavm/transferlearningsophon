@@ -275,10 +275,13 @@ def spec(name: str, cells: list, tag: str, parallelism: int, memory: str) -> str
     launch = _launch()
     script = (CELL_SCRIPT.replace("__CASES__", cell_cases(cells)).replace("__TASKS__", task_cases())
               .replace("__BATCH__", str(BATCH)).replace("__HERWIG__", " ".join(HERWIG_TEST)))
+    # a node's DNS can fail for minutes (cph-dgx-node4/5/8, 2026-11-03): six cells used up their three
+    # attempts at the clone, in seconds, before reaching the training script
     script = ("set -euo pipefail\n"
-              'git clone -q --depth 1 --branch "${REPO_REF}" https://github.com/raunavm/transferlearningsophon.git '
-              "/workspace/transferlearningsophon\ncd /workspace/transferlearningsophon\n"
-              "pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1\n" + script.lstrip("\n"))
+              'retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt ${T} failed: $1"; sleep 60; done; return 1; }\n'
+              'retry git clone -q --depth 1 --branch "${REPO_REF}" https://github.com/raunavm/transferlearningsophon.git '
+              "/workspace/transferlearningsophon || exit 1\ncd /workspace/transferlearningsophon\n"
+              "retry pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1\n" + script.lstrip("\n"))
     body = "\n".join(("          " + ln) if ln else "" for ln in script.splitlines())
     exclude = ", ".join(f'"{n}"' for n in launch.V2_BAD_NODES + launch.V2_LATER_BAD_NODES)
     if len(name) > 63:
@@ -356,8 +359,12 @@ def main(argv=None) -> int:
     ap.add_argument("--lr-scratch", default=None)
     ap.add_argument("--lr-scratch-qg", default=None, help="quark/gluon's own from-scratch rate (its sweep)")
     ap.add_argument("--parallelism", type=int, default=4)
+    ap.add_argument("--indices", default=None,
+                    help="comma-separated indices of the full kind's job: a -retry job of those cells only")
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck"))
     a = ap.parse_args(argv)
+    if a.indices and len(a.kinds) != 1:
+        ap.error("--indices needs exactly one kind")
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
         if kind == "lrsweep":
@@ -378,6 +385,9 @@ def main(argv=None) -> int:
             # 1.2M jets four times (2026-11-02); the old full-size top fine-tunings ran at 88Gi
             mem = FULL_MEM
         name = f"ft-budget-{kind}-raunav"
+        if a.indices:
+            cells = [cells[int(i)] for i in a.indices.split(",")]
+            name = f"ft-budget-{kind}-retry-raunav"
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(spec(name, cells, a.tag, a.parallelism, mem))
         print(p, len(cells), "cells")
