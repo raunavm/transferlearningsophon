@@ -6,560 +6,640 @@
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3324.0,
    "val_seconds": 234.5,
-   "jets_per_s": 3080.7
+   "jets_per_s": 3080.7,
+   "val_acc": 0.24534252084223795
   },
   {
    "epoch": 1,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3085.2,
    "val_seconds": 235.4,
-   "jets_per_s": 3319.1
+   "jets_per_s": 3319.1,
+   "val_acc": 0.2513915461662821
   },
   {
    "epoch": 2,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3060.6,
    "val_seconds": 233.0,
-   "jets_per_s": 3345.8
+   "jets_per_s": 3345.8,
+   "val_acc": 0.2551333711545776
   },
   {
    "epoch": 3,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3114.4,
    "val_seconds": 235.1,
-   "jets_per_s": 3287.9
+   "jets_per_s": 3287.9,
+   "val_acc": 0.2590490044954272
   },
   {
    "epoch": 4,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3066.2,
    "val_seconds": 231.5,
-   "jets_per_s": 3339.7
+   "jets_per_s": 3339.7,
+   "val_acc": 0.2623888410390181
   },
   {
    "epoch": 5,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3237.8,
    "val_seconds": 237.7,
-   "jets_per_s": 3162.6
+   "jets_per_s": 3162.6,
+   "val_acc": 0.2638273615852176
   },
   {
    "epoch": 6,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3102.9,
    "val_seconds": 234.7,
-   "jets_per_s": 3300.1
+   "jets_per_s": 3300.1,
+   "val_acc": 0.2646485212317352
   },
   {
    "epoch": 7,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3288.1,
    "val_seconds": 236.5,
-   "jets_per_s": 3114.3
+   "jets_per_s": 3114.3,
+   "val_acc": 0.26548804182508656
   },
   {
    "epoch": 8,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3086.2,
    "val_seconds": 239.7,
-   "jets_per_s": 3318.0
+   "jets_per_s": 3318.0,
+   "val_acc": 0.266724217118087
   },
   {
    "epoch": 9,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3283.5,
    "val_seconds": 234.0,
-   "jets_per_s": 3118.7
+   "jets_per_s": 3118.7,
+   "val_acc": 0.2678094238724956
   },
   {
    "epoch": 10,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3118.9,
    "val_seconds": 236.1,
-   "jets_per_s": 3283.2
+   "jets_per_s": 3283.2,
+   "val_acc": 0.2686596055170004
   },
   {
    "epoch": 11,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3063.8,
    "val_seconds": 230.6,
-   "jets_per_s": 3342.2
+   "jets_per_s": 3342.2,
+   "val_acc": 0.2688674904514687
   },
   {
    "epoch": 12,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3050.2,
    "val_seconds": 232.9,
-   "jets_per_s": 3357.2
+   "jets_per_s": 3357.2,
+   "val_acc": 0.2692462892223999
   },
   {
    "epoch": 13,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3252.1,
    "val_seconds": 234.0,
-   "jets_per_s": 3148.7
+   "jets_per_s": 3148.7,
+   "val_acc": 0.26907684476562194
   },
   {
    "epoch": 14,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3050.0,
    "val_seconds": 234.5,
-   "jets_per_s": 3357.4
+   "jets_per_s": 3357.4,
+   "val_acc": 0.27012370890333065
   },
   {
    "epoch": 15,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3249.5,
    "val_seconds": 236.0,
-   "jets_per_s": 3151.3
+   "jets_per_s": 3151.3,
+   "val_acc": 0.26941159772018747
   },
   {
    "epoch": 16,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3034.6,
    "val_seconds": 232.0,
-   "jets_per_s": 3374.4
+   "jets_per_s": 3374.4,
+   "val_acc": 0.2705093179686303
   },
   {
    "epoch": 17,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3167.0,
    "val_seconds": 233.4,
-   "jets_per_s": 3233.3
+   "jets_per_s": 3233.3,
+   "val_acc": 0.2713998636559413
   },
   {
    "epoch": 18,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3035.9,
    "val_seconds": 234.0,
-   "jets_per_s": 3372.9
+   "jets_per_s": 3372.9,
+   "val_acc": 0.2721069498214521
   },
   {
    "epoch": 19,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3052.4,
    "val_seconds": 235.5,
-   "jets_per_s": 3354.8
+   "jets_per_s": 3354.8,
+   "val_acc": 0.27216288280421697
   },
   {
    "epoch": 20,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3046.7,
    "val_seconds": 238.4,
-   "jets_per_s": 3361.0
+   "jets_per_s": 3361.0,
+   "val_acc": 0.2714067819818415
   },
   {
    "epoch": 21,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3075.2,
    "val_seconds": 233.2,
-   "jets_per_s": 3329.9
+   "jets_per_s": 3329.9,
+   "val_acc": 0.27249505109322675
   },
   {
    "epoch": 22,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3106.8,
    "val_seconds": 232.0,
-   "jets_per_s": 3296.0
+   "jets_per_s": 3296.0,
+   "val_acc": 0.2720881522756948
   },
   {
    "epoch": 23,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3265.7,
    "val_seconds": 252.7,
-   "jets_per_s": 3135.6
+   "jets_per_s": 3135.6,
+   "val_acc": 0.27273169642108447
   },
   {
    "epoch": 24,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3127.2,
    "val_seconds": 236.8,
-   "jets_per_s": 3274.5
+   "jets_per_s": 3274.5,
+   "val_acc": 0.2730129120937226
   },
   {
    "epoch": 25,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3066.7,
    "val_seconds": 234.5,
-   "jets_per_s": 3339.1
+   "jets_per_s": 3339.1,
+   "val_acc": 0.2728249422002879
   },
   {
    "epoch": 26,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3100.7,
    "val_seconds": 235.0,
-   "jets_per_s": 3302.5
+   "jets_per_s": 3302.5,
+   "val_acc": 0.27366212342649243
   },
   {
    "epoch": 27,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3050.6,
    "val_seconds": 234.6,
-   "jets_per_s": 3356.8
+   "jets_per_s": 3356.8,
+   "val_acc": 0.27354252974196236
   },
   {
    "epoch": 28,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3133.8,
    "val_seconds": 234.0,
-   "jets_per_s": 3267.6
+   "jets_per_s": 3267.6,
+   "val_acc": 0.2742036488532818
   },
   {
    "epoch": 29,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3068.1,
    "val_seconds": 232.3,
-   "jets_per_s": 3337.6
+   "jets_per_s": 3337.6,
+   "val_acc": 0.2731115901706711
   },
   {
    "epoch": 30,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3157.3,
    "val_seconds": 235.6,
-   "jets_per_s": 3243.3
+   "jets_per_s": 3243.3,
+   "val_acc": 0.27381432532419425
   },
   {
    "epoch": 31,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3076.5,
    "val_seconds": 232.3,
-   "jets_per_s": 3328.5
+   "jets_per_s": 3328.5,
+   "val_acc": 0.27354320282926053
   },
   {
    "epoch": 32,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3398.1,
    "val_seconds": 231.8,
-   "jets_per_s": 3013.4
+   "jets_per_s": 3013.4,
+   "val_acc": 0.2738364409101263
   },
   {
    "epoch": 33,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3062.5,
    "val_seconds": 235.1,
-   "jets_per_s": 3343.7
+   "jets_per_s": 3343.7,
+   "val_acc": 0.2742088622579598
   },
   {
    "epoch": 34,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3273.2,
    "val_seconds": 230.2,
-   "jets_per_s": 3128.5
+   "jets_per_s": 3128.5,
+   "val_acc": 0.27527465006042057
   },
   {
    "epoch": 35,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3052.1,
    "val_seconds": 237.0,
-   "jets_per_s": 3355.1
+   "jets_per_s": 3355.1,
+   "val_acc": 0.27469375687890835
   },
   {
    "epoch": 36,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3158.2,
    "val_seconds": 231.6,
-   "jets_per_s": 3242.4
+   "jets_per_s": 3242.4,
+   "val_acc": 0.2739193033097964
   },
   {
    "epoch": 37,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3066.4,
    "val_seconds": 233.7,
-   "jets_per_s": 3339.4
+   "jets_per_s": 3339.4,
+   "val_acc": 0.27376342726923253
   },
   {
    "epoch": 38,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3298.5,
    "val_seconds": 234.9,
-   "jets_per_s": 3104.5
+   "jets_per_s": 3104.5,
+   "val_acc": 0.27562437500572556
   },
   {
    "epoch": 39,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3354.5,
    "val_seconds": 253.5,
-   "jets_per_s": 3052.6
+   "jets_per_s": 3052.6,
+   "val_acc": 0.2749560056369748
   },
   {
    "epoch": 40,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3306.1,
    "val_seconds": 233.9,
-   "jets_per_s": 3097.3
+   "jets_per_s": 3097.3,
+   "val_acc": 0.27417467125405065
   },
   {
    "epoch": 41,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3072.5,
    "val_seconds": 238.7,
-   "jets_per_s": 3332.8
+   "jets_per_s": 3332.8,
+   "val_acc": 0.2734944265355289
   },
   {
    "epoch": 42,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3365.3,
    "val_seconds": 235.6,
-   "jets_per_s": 3042.8
+   "jets_per_s": 3042.8,
+   "val_acc": 0.2749801902177776
   },
   {
    "epoch": 43,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3088.9,
    "val_seconds": 230.5,
-   "jets_per_s": 3315.1
+   "jets_per_s": 3315.1,
+   "val_acc": 0.2749560401752658
   },
   {
    "epoch": 44,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3042.1,
    "val_seconds": 232.4,
-   "jets_per_s": 3366.0
+   "jets_per_s": 3366.0,
+   "val_acc": 0.2756711704599878
   },
   {
    "epoch": 45,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3078.2,
    "val_seconds": 235.1,
-   "jets_per_s": 3326.6
+   "jets_per_s": 3326.6,
+   "val_acc": 0.27549435328215816
   },
   {
    "epoch": 46,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3501.2,
    "val_seconds": 235.7,
-   "jets_per_s": 2924.7
+   "jets_per_s": 2924.7,
+   "val_acc": 0.2752734507628707
   },
   {
    "epoch": 47,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3129.0,
    "val_seconds": 236.2,
-   "jets_per_s": 3272.7
+   "jets_per_s": 3272.7,
+   "val_acc": 0.2757149430401255
   },
   {
    "epoch": 48,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3239.7,
    "val_seconds": 235.4,
-   "jets_per_s": 3160.8
+   "jets_per_s": 3160.8,
+   "val_acc": 0.27588469000858934
   },
   {
    "epoch": 49,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3109.4,
    "val_seconds": 232.1,
-   "jets_per_s": 3293.2
+   "jets_per_s": 3293.2,
+   "val_acc": 0.27610763614662237
   },
   {
    "epoch": 50,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3095.4,
    "val_seconds": 263.4,
-   "jets_per_s": 3308.1
+   "jets_per_s": 3308.1,
+   "val_acc": 0.27586321707044936
   },
   {
    "epoch": 51,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3234.8,
    "val_seconds": 234.6,
-   "jets_per_s": 3165.5
+   "jets_per_s": 3165.5,
+   "val_acc": 0.27582179294737375
   },
   {
    "epoch": 52,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3085.3,
    "val_seconds": 236.3,
-   "jets_per_s": 3319.0
+   "jets_per_s": 3319.0,
+   "val_acc": 0.2755794833571363
   },
   {
    "epoch": 53,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3382.4,
    "val_seconds": 234.2,
-   "jets_per_s": 3027.4
+   "jets_per_s": 3027.4,
+   "val_acc": 0.27575321531983343
   },
   {
    "epoch": 54,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3025.2,
    "val_seconds": 235.2,
-   "jets_per_s": 3384.9
+   "jets_per_s": 3384.9,
+   "val_acc": 0.27650676443498035
   },
   {
    "epoch": 55,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3317.9,
    "val_seconds": 232.3,
-   "jets_per_s": 3086.3
+   "jets_per_s": 3086.3,
+   "val_acc": 0.27562507261309865
   },
   {
    "epoch": 56,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3069.9,
    "val_seconds": 230.2,
-   "jets_per_s": 3335.6
+   "jets_per_s": 3335.6,
+   "val_acc": 0.27666308267874357
   },
   {
    "epoch": 57,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3076.1,
    "val_seconds": 235.5,
-   "jets_per_s": 3328.9
+   "jets_per_s": 3328.9,
+   "val_acc": 0.2782650886738908
   },
   {
    "epoch": 58,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3124.4,
    "val_seconds": 236.3,
-   "jets_per_s": 3277.4
+   "jets_per_s": 3277.4,
+   "val_acc": 0.2773217419919825
   },
   {
    "epoch": 59,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3335.8,
    "val_seconds": 237.5,
-   "jets_per_s": 3069.7
+   "jets_per_s": 3069.7,
+   "val_acc": 0.27897773041492874
   },
   {
    "epoch": 60,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3073.7,
    "val_seconds": 232.1,
-   "jets_per_s": 3331.5
+   "jets_per_s": 3331.5,
+   "val_acc": 0.27841485912761355
   },
   {
    "epoch": 61,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3364.3,
    "val_seconds": 235.9,
-   "jets_per_s": 3043.7
+   "jets_per_s": 3043.7,
+   "val_acc": 0.278746682294051
   },
   {
    "epoch": 62,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3081.2,
    "val_seconds": 235.2,
-   "jets_per_s": 3323.4
+   "jets_per_s": 3323.4,
+   "val_acc": 0.2794020741286022
   },
   {
    "epoch": 63,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3064.1,
    "val_seconds": 236.2,
-   "jets_per_s": 3341.9
+   "jets_per_s": 3341.9,
+   "val_acc": 0.2794609283103516
   },
   {
    "epoch": 64,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3028.3,
    "val_seconds": 233.8,
-   "jets_per_s": 3381.5
+   "jets_per_s": 3381.5,
+   "val_acc": 0.2797973049900841
   },
   {
    "epoch": 65,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3096.9,
    "val_seconds": 231.9,
-   "jets_per_s": 3306.5
+   "jets_per_s": 3306.5,
+   "val_acc": 0.27963231902211594
   },
   {
    "epoch": 66,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3054.6,
    "val_seconds": 233.9,
-   "jets_per_s": 3352.4
+   "jets_per_s": 3352.4,
+   "val_acc": 0.27997704510337135
   },
   {
    "epoch": 67,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3377.1,
    "val_seconds": 235.5,
-   "jets_per_s": 3032.1
+   "jets_per_s": 3032.1,
+   "val_acc": 0.28023690722616423
   },
   {
    "epoch": 68,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3069.6,
    "val_seconds": 236.0,
-   "jets_per_s": 3335.9
+   "jets_per_s": 3335.9,
+   "val_acc": 0.28028093655994224
   },
   {
    "epoch": 69,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3283.1,
    "val_seconds": 278.9,
-   "jets_per_s": 3119.0
+   "jets_per_s": 3119.0,
+   "val_acc": 0.28079374073167507
   },
   {
    "epoch": 70,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3074.2,
    "val_seconds": 235.3,
-   "jets_per_s": 3330.9
+   "jets_per_s": 3330.9,
+   "val_acc": 0.28064232964271907
   },
   {
    "epoch": 71,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3074.6,
    "val_seconds": 269.8,
-   "jets_per_s": 3330.5
+   "jets_per_s": 3330.5,
+   "val_acc": 0.28021163869024435
   },
   {
    "epoch": 72,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3054.8,
    "val_seconds": 235.0,
-   "jets_per_s": 3352.1
+   "jets_per_s": 3352.1,
+   "val_acc": 0.280519974413462
   },
   {
    "epoch": 73,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3042.9,
    "val_seconds": 232.7,
-   "jets_per_s": 3365.2
+   "jets_per_s": 3365.2,
+   "val_acc": 0.2801867819912783
   },
   {
    "epoch": 74,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3117.3,
    "val_seconds": 234.5,
-   "jets_per_s": 3284.9
+   "jets_per_s": 3284.9,
+   "val_acc": 0.2810195418352308
   },
   {
    "epoch": 75,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3033.5,
    "val_seconds": 233.7,
-   "jets_per_s": 3375.6
+   "jets_per_s": 3375.6,
+   "val_acc": 0.2809842704627977
   },
   {
    "epoch": 76,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3020.9,
    "val_seconds": 231.7,
-   "jets_per_s": 3389.7
+   "jets_per_s": 3389.7,
+   "val_acc": 0.2807071708286026
   },
   {
    "epoch": 77,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3086.6,
    "val_seconds": 234.3,
-   "jets_per_s": 3317.5
+   "jets_per_s": 3317.5,
+   "val_acc": 0.28063338163954005
   },
   {
    "epoch": 78,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3040.0,
    "val_seconds": 234.7,
-   "jets_per_s": 3368.4
+   "jets_per_s": 3368.4,
+   "val_acc": 0.28060862146966065
   },
   {
    "epoch": 79,
    "device": "NVIDIA GeForce RTX 4090",
    "train_seconds": 3055.6,
    "val_seconds": 234.1,
-   "jets_per_s": 3351.2
+   "jets_per_s": 3351.2,
+   "val_acc": 0.28069112559106096
   }
  ]
 }
