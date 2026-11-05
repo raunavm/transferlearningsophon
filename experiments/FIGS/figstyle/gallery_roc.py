@@ -122,7 +122,9 @@ def _jc1_one(path: pathlib.Path, models: list, heading: str) -> None:
 def _jc1_four(path: pathlib.Path, family: str, heading: str, panels: list, legend: bool = True) -> None:
     """panels: (models, title). One legend, names only: with the AUCs it does not fit under the curves."""
     docs = _family(family)
-    fig, axes = _axes_2x2(sharey=True, wspace=0.1, heading=heading)
+    scratch = _family("jc1_ft_ovr")
+    reference = np.mean([mean_over_runs(scratch, P._scratch_models(scratch), c)[2] for c in S.JC1_CLASSES])
+    fig, axes = _axes_2x2(sharey=True, wspace=0.1, heading=f"{heading}; from scratch, macro AUC {reference:.3f}")
     for ax, (models, name) in zip(axes.flat, panels):
         auc = _jc1_curves(ax, docs, models, auc_in_legend=False)
         S.title(ax, f"{name}, macro AUC {auc:.3f}")
