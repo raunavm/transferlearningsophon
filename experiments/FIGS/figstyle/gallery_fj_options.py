@@ -44,8 +44,8 @@ def _curves(ax, docs: dict, level: str, auc_in_legend: bool, legend: bool, fonts
         _plot(ax, s, color=S.JC1_COLOUR[c], linewidth=1.1, label=name)
     if legend:
         S.legend(ax, loc="lower left", title="Signal class (AUC)" if auc_in_legend else "Signal class",
-                 title_fontsize=fontsize, fontsize=fontsize, ncol=ncol, handlelength=1.5, handletextpad=0.4,
-                 columnspacing=0.8)
+                 title_fontsize=fontsize, fontsize=fontsize, ncol=ncol, handlelength=1.2, handletextpad=0.4,
+                 columnspacing=0.6)
     return float(np.mean(aucs))
 
 
@@ -66,7 +66,7 @@ def draw_one(path: pathlib.Path) -> None:
     docs = _family("jc1_ft_ovr")
     fig, ax = plt.subplots(figsize=(14 * S.CM, 11.5 * S.CM))
     _axes(ax, 0.1)
-    auc = _curves(ax, docs, "L188", True, True, 9, 2)
+    auc = _curves(ax, docs, "L188", True, True, 8.5, 2)
     S.title(ax, f"Pretrained on 188 classes, fine-tuned on $10^6$ JetClass jets\nmacro AUC {auc:.3f}")
     S.labels(ax, S.X_EPS, S.Y_REJ)
     _report_overlap(fig, [ax])
@@ -80,7 +80,7 @@ def draw_four(path: pathlib.Path) -> None:
                                           "hspace": 0.1})
     for i, (ax, level) in enumerate(zip(axes.flat, S.LEVELS)):
         _axes(ax, 0.2)
-        auc = _curves(ax, docs, level, False, i == 0, 8, 2)
+        auc = _curves(ax, docs, level, False, i == 0, 7.5, 2)
         S.title(ax, f"Pretrained on {S.NAME[level]}, macro AUC {auc:.3f}")
     for ax in axes[1]:
         S.labels(ax, xlabel=S.X_EPS)
