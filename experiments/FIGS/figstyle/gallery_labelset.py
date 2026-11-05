@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""The gallery's label-set mock-ups: F2a, F2b, F2-app, F3, F3-app, F8, A10 (docs/figstyle/PLAN.md), in
+"""The gallery's label-set mock-ups: F2a, F2b, F3, F3-scatter, F3-app, F8, A10, TSNE, VAL (docs/figstyle/PLAN.md), in
 style_v3 only. The numbers come through the selection code of paper_figures and mlst_results; the drawing
 is written here. All work happens inside the draw functions."""
 from __future__ import annotations
 
+import json
 import math
 
 import matplotlib.pyplot as plt
@@ -27,7 +28,6 @@ LEGEND_PANEL = 1        # JetClass: its curves stay high on the right, so its lo
 TITLES = {key: title for key, _, _, _, title, _ in P.F2_PANELS}
 RANDOM_COLOUR = S.TAB10[7]
 HEAT_F3 = ("L162", "R42_Q1", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R")
-HEAT_APP = M.RAND
 PUBLISHED = {"jc1": (2_000_000, 0.836), "top": (1_200_000, 1602.0), "qg": (1_600_000, 101.2)}     # ParT's published values, as in the paper's benchmark tables
 PROBE_COLOUR = S.TAB10[8]   # F8: C1 means 162 classes in every other figure
 
@@ -78,8 +78,8 @@ def _mean(row: str, value):
 
 
 def _draw_f2(path, value_of, groups, absent: str, heading: str, legend_panel: int = LEGEND_PANEL) -> None:
-    """value_of(key, n, ds, met): a run's value or None for the task; groups: (legend label, colour, rows) of
-    the markers at 17 classes, one marker per row."""
+    """value_of(key, n, ds, met): a run's value or None for the task; groups: (legend label, colour, marker, rows)
+    of the markers at 17 classes, one marker per row."""
     values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
     if not any(values):
         raise C.Absent(absent)
@@ -93,10 +93,10 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, legend_panel: in
             S.fine_grid(ax)
             line = [(x, y) for row, x in P.X_OF.items() if (y := _mean(row, value)) is not None]
             ax.plot(*zip(*line), color=S.TAB10[0], linewidth=S.LW_CURVE, marker="o", markersize=MARKER, label="Hierarchy")
-            for label, colour, rows in groups:
+            for label, colour, marker, rows in groups:
                 ys = [y for row in rows if (y := _mean(row, value)) is not None]
                 if ys:
-                    ax.plot([P.X_OF["R16_Q1"]] * len(ys), ys, color=colour, linestyle="none", marker="o",
+                    ax.plot([P.X_OF["R16_Q1"]] * len(ys), ys, color=colour, linestyle="none", marker=marker,
                             markersize=MARKER, label=label)
             scratch = P.scratch_series(M, I["per"], key, met)
             if scratch:
@@ -105,6 +105,7 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, legend_panel: in
                 _log_y(ax)
         _classes_axis(ax)
     S.legend(axes.flat[legend_panel], loc="best")
+    S.letter_panels(axes.flat)
     S.heading(fig, heading)
     S.save(fig, path)
 
@@ -118,20 +119,16 @@ def _ft_value(key, n, ds, met):
 
 
 def _controlled():
-    return [(S.NAME[a], S.SERIES[a], [a]) for a in S.CONTROLS]
+    return [(S.NAME[a], S.SERIES[a], S.MARKERS[a], [a]) for a in S.CONTROLS]
 
 
 def draw_f2a(path) -> None:
-    _draw_f2(path, _probe_value, _controlled(), "no linear probes (linprobe/fits_v4)", "Linear probes")
+    _draw_f2(path, _probe_value, _controlled() + [("Random partitions", RANDOM_COLOUR, S.MARKERS["RAND"], M.RAND)],
+             "no linear probes (linprobe/fits_v4)", "Linear probes")
 
 
 def draw_f2b(path) -> None:
     _draw_f2(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)", "After fine-tuning", legend_panel=2)
-
-
-def draw_f2_app(path) -> None:
-    _draw_f2(path, _probe_value, [("Random partitions", RANDOM_COLOUR, M.RAND)], "no linear probes (linprobe/fits_v4)",
-             "Linear probes")
 
 
 # ------------------------------------------------------------------ F3: per-class heatmap
@@ -144,7 +141,7 @@ def _draw_heat(path, arms) -> None:
     D = R[:, [keys.index(a) for a in arms]]
     if np.isnan(D).all():
         raise C.Absent("no per-class linear probes for these columns (linprobe/fits_v4)")
-    limit = float(np.nanmax(np.abs(R)))      # the same scale for F3 and F3-app; nothing clips
+    limit = float(np.nanmax(np.abs(R)))      # nothing clips
     n_res = sum(not r["class_name"].startswith("label_QCD") for r in rows)
     row = lambda i: i + (i >= n_res)         # a blank row between the resonant and the QCD classes
 
@@ -183,66 +180,77 @@ def draw_f3(path) -> None:
     _draw_heat(path, HEAT_F3)
 
 
-def draw_f3_app(path) -> None:
-    _draw_heat(path, HEAT_APP)
-
-
-# ------------------------------------------------------------------ F3-alt: every class against the 188-class model
-def _one_minus_auc(models: list) -> dict:
-    """{class: 1 - AUC, the mean over the models that hold it}."""
+# ------------------------------------------------------------------ F3-scatter, F3-app: every class against the 188-class model
+def _class_auc(models: list) -> dict:
+    """{class: AUC, the mean over the models that hold it}."""
     per = [p for m in models if (p := M._per_class(I["fits"], m))]
-    return {c: 1 - float(np.mean([p[c] for p in per if c in p])) for c in set().union(*per)} if per else {}
+    return {c: float(np.mean([p[c] for p in per if c in p])) for c in set().union(*per)} if per else {}
 
 
-def _draw_scatter(path, panels: list) -> None:
-    """panels: (runs, title). One point per class; above the dashed line the class does worse than with 188 classes."""
-    full = _one_minus_auc(RUNS["L188"])
+def _draw_scatter(path, panels: list, ncols: int, height: float) -> None:
+    """panels: (runs, title). One point per class; below the dashed line the class does worse than with 188 classes.
+    Empty cells of the last row hold the legend."""
+    full = _class_auc(RUNS["L188"])
     if not full:
         raise C.Absent("no class-balanced JetClass-II linear probes (linprobe/fits_v4)")
     family = {int(r["jet_label"]): family_of(r["class_name"]) for r in M._class_rows(P.REPO)}
-    fig = plt.figure(figsize=S.FOUR_PANELS)
-    axes = fig.subplots(2, 2, sharex=True, sharey=True, gridspec_kw={**GRID_2X2, "wspace": 0.1, "hspace": 0.1})
-    pairs = [[(full[c], other[c], c) for c in full if c in other and full[c] > 0 and other[c] > 0]
-             for other in (_one_minus_auc(models) for models, _ in panels)]
-    values = [v for pts in pairs for x, y, _ in pts for v in (x, y)]
-    lim = (0.8 * min(values), 1.25 * max(values))
-    for k, (ax, pts, (_, title)) in enumerate(zip(axes.flat, pairs, panels)):
+    nrows = math.ceil(len(panels) / ncols)
+    fig = plt.figure(figsize=(S.FULL, height))
+    axes = fig.subplots(nrows, ncols, sharex=True, sharey=True, squeeze=False,
+                        gridspec_kw={"left": 0.1, "right": 0.965, "top": 1 - 1.3 / (height / S.CM), "bottom": 1.2 / (height / S.CM),
+                                     "wspace": 0.1, "hspace": 0.15})
+    pairs = [[(full[c], other[c], c) for c in full if c in other] for other in (_class_auc(models) for models, _ in panels)]
+    lim = (min(v for pts in pairs for x, y, _ in pts for v in (x, y)), 1.0)
+    cells = list(axes.flat)
+    for ax, pts, (_, title) in zip(cells, pairs, panels):
         S.fine_grid(ax)
-        ax.set_xscale("log")
-        ax.set_yscale("log")
         ax.plot(lim, lim, **S.REFERENCE, label="Same as 188 classes")
         for i, name in enumerate(FAMILIES):
             xy = [(x, y) for x, y, c in pts if family[c] == name]
             if xy:
-                ax.plot(*zip(*xy), color=S.TAB10[i], marker="o", markersize=3, linestyle="none", label=name)
+                ax.plot(*zip(*xy), color=S.TAB10[i], marker="o", markersize=3, linestyle="none", label=name, clip_on=False)
         S.title(ax, title)
-        S.labels(ax, "1 - AUC, 188 classes" if k >= 2 else None, "1 - AUC, this model" if k % 2 == 0 else None)
     axes[0, 0].set_xlim(lim)
     axes[0, 0].set_ylim(lim)
-    S.legend(axes[0, 0], loc="lower right", fontsize=7)
+    for ax in axes[:, 0]:
+        S.labels(ax, ylabel="AUC, this model")
+    used = cells[:len(panels)]
+    for k, ax in enumerate(used):       # the lowest panel of each column carries the x axis
+        if k + ncols >= len(panels):
+            ax.tick_params(labelbottom=True)
+            S.labels(ax, xlabel="AUC, 188 classes")
+    S.letter_panels(used)
+    if len(panels) < len(cells):
+        cells[-1].axis("off")
+        for ax in cells[len(panels):-1]:
+            ax.axis("off")
+        cells[-1].legend(*used[0].get_legend_handles_labels(), loc="center", fontsize=S.LEGEND_PT, borderpad=0.3, labelspacing=0.3)
+    else:
+        S.legend(used[0], loc="upper left", fontsize=7)
     S.heading(fig, "Linear probes on JetClass-II, class by class")
     S.save(fig, path)
 
 
-def draw_f3_alt(path) -> None:
-    _draw_scatter(path, [(RUNS[a], S.NAME[a]) for a in ("R42_Q1", "R16_Q1", "FLAV_F0", "FLAV_F1")])
+def draw_f3_scatter(path) -> None:
+    _draw_scatter(path, [(RUNS[a], S.NAME[a]) for a in ("R42_Q1", "R16_Q1")], 2, 9.5 * S.CM)
 
 
-def draw_f3_app_alt(path) -> None:
-    _draw_scatter(path, [(RUNS["L162"], S.NAME["L162"]), (RUNS["FLAV_F1R"], S.NAME["FLAV_F1R"]),
-                         ([m for r in M.RAND for m in RUNS[r]], "Five random partitions"),
-                         (RUNS["R16_Q1_MASS"], "17 classes, mass regression")])
+def draw_f3_app(path) -> None:
+    _draw_scatter(path, [(RUNS["L162"], S.NAME["L162"]), ([m for r in M.RAND for m in RUNS[r]], "Five random partitions")]
+                  + [(RUNS[a], S.NAME[a]) for a in S.CONTROLS]
+                  + [(RUNS[a], f"{S.NAME[b]}, mass regression") for a, b in (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))],
+                  3, 17 * S.CM)
 
 
 # ------------------------------------------------------------------ F8, A10: metric against the number of jets
-def _curve(ax, series: dict, colour: str, label: str, band: bool) -> None:
+def _curve(ax, series: dict, colour: str, label: str, band: bool, marker: str) -> None:
     """Mean over runs with filled circles; with band, Golling's: the SD (range for two runs), same colour, no edge."""
     xs = sorted(series)
     if not xs:
         return
     st = [P.F._spread(series[n]) for n in xs]
     mean = np.array([s[0] for s in st])
-    ax.plot(xs, mean, color=colour, linewidth=S.LW_CURVE, marker="o", markersize=MARKER, label=label)
+    ax.plot(xs, mean, color=colour, linewidth=S.LW_CURVE, marker=marker, markersize=MARKER, label=label)
     if band:
         ax.fill_between(xs, mean - np.array([s[1] or 0 for s in st]), mean + np.array([s[2] or 0 for s in st]),
                         color=colour, alpha=0.2, linewidth=0)
@@ -262,30 +270,80 @@ def _draw_size(path, series_of, band: bool, absent: str, heading: str) -> None:
             _empty_panel(ax)
             continue
         S.fine_grid(ax)
-        for series, colour, label in panel:
-            _curve(ax, series, colour, label, band)
+        for series, colour, label, marker in panel:
+            _curve(ax, series, colour, label, band, marker)
         if key in PUBLISHED:
             ax.plot(*PUBLISHED[key], color="#000000", marker="*", markersize=8, linestyle="none", label="ParT, published")
         if met == "r30":
             _log_y(ax)
     S.legend(axes.flat[LEGEND_PANEL], loc="lower right")
+    S.letter_panels(axes.flat)
     S.heading(fig, heading)
     S.save(fig, path)
 
 
 def draw_f8(path) -> None:
     chosen = _chosen()
-    series = lambda key, ds, met: [(P.ft_series(M, I["per"], RUNS, key, met, "L188"), S.TAB10[0], "Fine-tuned"),
-                                   (P.probe_series(M, I, RUNS, ds, met, "L188", chosen), PROBE_COLOUR, "Linear probe"),
-                                   (P.scratch_series(M, I["per"], key, met), S.SERIES["SCRATCH"], S.NAME["SCRATCH"])]
+    series = lambda key, ds, met: [(P.ft_series(M, I["per"], RUNS, key, met, "L188"), S.TAB10[0], "Fine-tuned", "o"),
+                                   (P.probe_series(M, I, RUNS, ds, met, "L188", chosen), PROBE_COLOUR, "Linear probe", "s"),
+                                   (P.scratch_series(M, I["per"], key, met), S.SERIES["SCRATCH"], S.NAME["SCRATCH"], S.MARKERS["SCRATCH"])]
     _draw_size(path, series, True, "no fine-tuning read-outs or linear probes", "Pretrained on 188 classes, against training from scratch")
 
 
 def draw_a10(path) -> None:
     chosen = _chosen()
-    series = lambda key, ds, met: [(P.probe_series(M, I, RUNS, ds, met, row, chosen), S.SERIES[row], S.NAME[row])
-                                   for row in S.LEVELS] + [(P.scratch_series(M, I["per"], key, met), S.SERIES["SCRATCH"], S.NAME["SCRATCH"])]
+    series = lambda key, ds, met: [(P.probe_series(M, I, RUNS, ds, met, row, chosen), S.SERIES[row], S.NAME[row], S.MARKERS[row])
+                                   for row in S.LEVELS] + [(P.scratch_series(M, I["per"], key, met), S.SERIES["SCRATCH"],
+                                                            S.NAME["SCRATCH"], S.MARKERS["SCRATCH"])]
     _draw_size(path, series, False, "no linear probes (linprobe/fits_v4)", "Linear probes, per pretraining label set")
+
+
+# ------------------------------------------------------------------ the t-SNE and the pretraining curve
+TSNE_NAMES = {"bb": r"$X\to b\bar{b}$", "cc": r"$X\to c\bar{c}$", "qq": r"$X\to q\bar{q}$", "QCD": "QCD",
+              "ee": r"$X\to ee$", "mm": r"$X\to \mu\mu$"}
+TSNE_MODELS = (("mtx-l188-s1", "L188"), ("mtx-r16q1-s1", "R16_Q1"))
+
+
+def draw_tsne(path) -> None:
+    """Rows: the two sets of jets; columns: the two models, the same jets in a row."""
+    root = P.DATA / "tsne"
+    sets = [s for s in ("two_prong", "leptons") if all((root / f"{s}_{m}.json").exists() for m, _ in TSNE_MODELS)]
+    if not sets:
+        raise C.Absent("no t-SNE of the class token (tsne/)")
+    fig = plt.figure(figsize=(S.FULL, 7.5 * S.CM * len(sets) + 1.5 * S.CM))
+    axes = fig.subplots(len(sets), 2, squeeze=False, gridspec_kw={"wspace": 0.05, "hspace": 0.12, "top": 0.92, "bottom": 0.02,
+                                                                  "left": 0.02, "right": 0.98})
+    for row, s in zip(axes, sets):
+        for ax, (m, level) in zip(row, TSNE_MODELS):
+            d = json.loads((root / f"{s}_{m}.json").read_text())
+            x, y, g = np.array(d["x"]), np.array(d["y"]), np.array(d["group"])
+            for k, name in enumerate(d["groups"]):
+                ax.plot(x[g == k], y[g == k], color=S.TAB10[k], marker="o", markersize=1.5, linestyle="none", alpha=0.5,
+                        markeredgewidth=0, label=TSNE_NAMES[name])
+            ax.set_xticks([])
+            ax.set_yticks([])
+            S.title(ax, f"Pretrained on {S.NAME[level]}")
+        leg = row[0].legend(loc="best", fontsize=S.LEGEND_PT, markerscale=3, borderpad=0.3, labelspacing=0.3)
+        for h in leg.get_lines():
+            h.set_alpha(1)
+    S.letter_panels(axes.flat)
+    S.heading(fig, "Frozen class token on JetClass-II jets")
+    S.save(fig, path)
+
+
+def draw_val(path) -> None:
+    docs = M._load(P.DATA / "compute")
+    fig, ax = plt.subplots(figsize=S.ONE_PANEL)
+    S.fine_grid(ax)
+    for level in S.LEVELS:
+        have = [[e["val_acc"] for e in docs[m]["epochs"]] for m in RUNS[level] if m in docs and "val_acc" in docs[m]["epochs"][0]]
+        if not have:
+            raise C.Absent("no validation accuracy per epoch (compute/)")
+        ax.plot(range(1, len(have[0]) + 1), np.mean(have, axis=0), color=S.SERIES[level], linewidth=S.LW_CURVE, label=S.NAME[level])
+    S.title(ax, "Pretraining on JetClass-II")
+    S.labels(ax, "Pretraining epoch", "Validation accuracy")
+    S.legend(ax, loc="lower right")
+    S.save(fig, path)
 
 
 # ------------------------------------------------------------------ the pages
@@ -302,20 +360,16 @@ PAGES = [
         precedent=HONG,
         precedent_label="Hong Fig. 2",
         caption="Linear probes against the number of pretraining classes: accuracy on class-balanced JetClass-II "
-                "and on JetClass, and rejection R30, the background rejection at 30% signal efficiency, on top "
-                "tagging and quark/gluon tagging. The line joins the four nested label sets; the markers at 17 "
-                "classes are random partitions with controlled flavor boundaries. The dashed line is a network trained from "
-                "scratch, with no pretraining. All values are means over runs.",
-        differs="Four panels against Hong's one, for the four tasks. Three partitions as markers at 17 classes: Hong "
-                "has no controls. From scratch is a dashed horizontal line, as Hong's baseline and Elsharkawy Fig. 7's, named in the legend as having no pretraining (PI, 2026-11-05). Circles, not crosses, and a line "
-                "through the points, not a smoothed curve. x ticks only at the four class counts (they are the data), "
-                "no x minor ticks; x limits beyond the data, where Hong's end on the first and last points. Log y on "
-                "the R30 panels, our choice, with y minor ticks Hong lacks. Ticks outward on left and bottom, "
-                "not inward on four sides. Panel titles, where Hong has none. Sophon's font and sizes, 1.1 pt line, "
-                "landscape's grid and framed 8 pt legend in place of Hong's bold sans-serif and heavy lines. "
-                "Legend in one panel only (Sophon Fig. 3). Our axis words, at the axis end, not centred.",
+                "and on JetClass, and rejection R30 at 30% signal efficiency on top and quark/gluon tagging. The line "
+                "joins the label sets; markers at 17 classes are random partitions, three with controlled flavor "
+                "boundaries and five plain (grey, one run each). The dashed line is a network trained from scratch, with "
+                "no pretraining. Values are means over runs.",
+        differs="Four panels against Hong's one, for the four tasks. Random partitions as markers at 17 classes: Hong "
+                "has no controls. From scratch dashed, as Hong's baseline and Elsharkawy Fig. 7's, named in the legend. "
+                "Marker shapes for greyscale (MLST). x ticks at the four class counts. Log y on R30, with y minor ticks "
+                "Hong lacks. Panel letters and titles, where Hong has none. Sophon's font, landscape's grid.",
         draw=draw_f2a,
-        data_note=f"{TWO_RUNS} {SUBST_NOTE}"),
+        data_note=f"{TWO_RUNS} Each plain random partition has one run. {SUBST_NOTE}"),
     C.Page(
         id="F2b",
         title="Label granularity, after fine-tuning",
@@ -338,20 +392,6 @@ PAGES = [
                   "no-flavor-boundary marker lies 2.4 and 2.7 above the b-quark and random-boundary markers, more than "
                   "any label-set SD."),
     C.Page(
-        id="F2-app",
-        title="Random partitions beside the hierarchy",
-        precedent=HONG,
-        precedent_label="Hong Fig. 2",
-        caption="Linear probes against the number of pretraining classes, as in the main-text figure: accuracy on "
-                "class-balanced JetClass-II and on JetClass, and rejection R30, the background rejection at 30% "
-                "signal efficiency, on top tagging and quark/gluon tagging. The line joins the four nested label "
-                "sets; the five markers at 17 classes are random partitions of the 188 classes. The dashed line is a "
-                "network trained from scratch, with no pretraining. The line shows means over runs; each marker is one run.",
-        differs="As F2a, with the five random partitions as five markers of one colour (C7) at 17 classes in place "
-                "of the controlled partitions. An appendix figure, and Hong has no controls.",
-        draw=draw_f2_app,
-        data_note=f"Each random partition has one run, so a marker is that run, not a mean. {SUBST_NOTE}"),
-    C.Page(
         id="F3",
         title="Cost class by class",
         precedent=HEATMAPS,
@@ -360,7 +400,7 @@ PAGES = [
                 "the 188 classes of class-balanced JetClass-II, from linear probes. Columns are the 162-, 43- and 17-class label sets "
                 "and the three random partitions with controlled flavor boundaries. Rows are grouped by decay topology, "
                 "with the QCD classes at the bottom. Values are means over runs; red marks an AUC below that of "
-                "the 188-class model.",
+                "the 188-class model. Every class's values are in the data release.",
         differs="Signed values on a diverging RdBu scale symmetric about 0: Blues would hide the sign. Not a confusion "
                 "matrix: rows are classes, columns are models. No numbers in cells: 188 rows cannot hold them. Rows "
                 "named by 15 group labels, since a single class name cannot reach 8 pt at 188 rows; thin lines between "
@@ -372,53 +412,38 @@ PAGES = [
         draw=draw_f3,
         data_note="The three controlled partitions are means over two runs, the label sets over three."),
     C.Page(
-        id="F3-app",
-        title="Cost class by class, random partitions",
+        id="F3-scatter",
+        title="Cost class by class, per-class AUC",
         precedent=HEATMAPS,
-        precedent_label="CMS Fig. 7, JetParticle-JEPA Fig. 12",
-        caption="Difference in per-class AUC between each of five random partitions into 17 classes and the 188-class "
-                "model, in percentage points, for the 188 classes of class-balanced JetClass-II, from linear probes. Rows are grouped "
-                "by decay topology as in the main-text figure, with the QCD classes at the bottom, and the color "
-                "scale is the same; red marks an AUC below that of the 188-class model. Each column is one run "
-                "against the 188-class run of the same index.",
-        differs="As F3, with five columns, one per random partition. Same colour scale as F3, so the two can be read "
-                "together.",
-        draw=draw_f3_app,
-        data_note="Each random partition has one run; its column is that run against the 188-class run of the same "
-                  "index."),
-    C.Page(
-        id="F3-alt",
-        title="Cost class by class: alternative to the heatmap",
-        precedent=["1902.09914/fig5.png"],
-        precedent_label="None for this form; shown beside landscape Fig. 5 for the theme",
-        caption="Each of the 188 classes of class-balanced JetClass-II, from linear probes: one minus the class's area "
-                "under the curve for a coarser label set, against the same for the 188-class model. On the dashed line "
-                "the two agree; above it the class does worse than with 188 classes. Colors are decay families. Values "
+        precedent_label="None for this form; CMS Fig. 7 and JetParticle-JEPA Fig. 12 are the heatmap's",
+        caption="Each of the 188 classes of class-balanced JetClass-II, from linear probes: the class's area under the "
+                "curve for the 43- and 17-class label sets, against the same for the 188-class model. On the dashed line "
+                "the two agree; below it the class does worse than with 188 classes. Colors are decay families. Values "
                 "are means over runs.",
-        differs="Replaces the heatmap's 188 rows with one point per class, so the 188-class model is drawn as the "
-                "reference line. Class names are not readable here; they are in the per-class appendix table.",
-        draw=draw_f3_alt),
+        differs="One point per class on linear axes, the same range on both, from the data minimum to 1 (PI). No 1 - AUC.",
+        draw=draw_f3_scatter),
     C.Page(
-        id="F3-app-alt",
-        title="Cost class by class: alternative, the other models (appendix)",
-        precedent=["1902.09914/fig5.png"],
-        precedent_label="None for this form; shown beside landscape Fig. 5 for the theme",
-        caption="As the main-text figure, for the 162-class label set, the random partition with a random flavor boundary, "
-                "the five plain random partitions averaged, and the 17-class model with mass regression: one minus the "
-                "class's area under the curve against the same for the 188-class model, for each of the 188 classes of "
+        id="F3-app",
+        title="Cost class by class, every other model (appendix)",
+        precedent=HEATMAPS,
+        precedent_label="None for this form; CMS Fig. 7 and JetParticle-JEPA Fig. 12 are the heatmap's",
+        caption="As the 43- and 17-class figure, for the 162-class label set, the five plain random partitions averaged, "
+                "the three random partitions with controlled flavor boundaries and both mass-regression models: each "
+                "class's area under the curve against the same for the 188-class model, for the 188 classes of "
                 "class-balanced JetClass-II, from linear probes.",
-        differs="As F3-alt.",
-        draw=draw_f3_app_alt),
+        differs="As F3-scatter. Seven panels, as the PI listed them, over the four-panel limit. The legend takes an empty "
+                "cell, outside the axes: a panel this small has no room for it.",
+        draw=draw_f3_app),
     C.Page(
         id="F8",
         title="Pretraining against the number of training jets",
         precedent=["2401.13537/fig3.png", "2401.13536/fig1.png"],
         precedent_label="Golling Fig. 3, Vigl Fig. 1 top",
-        caption="Accuracy on class-balanced JetClass-II and on JetClass, and rejection R30, the background rejection at "
-                "30% signal efficiency, on top tagging and quark/gluon tagging, against the number of training jets. "
-                "Series are the 188-class model fine-tuned, the same model with a linear probe, and a network trained "
-                "from scratch; fine-tuning and from scratch start at 10,000 jets on the two JetClass tasks. Points "
-                "are means over runs; bands show the standard deviation over runs. Stars mark published ParT.",
+        caption="Accuracy on class-balanced JetClass-II and on JetClass, and rejection R30 at 30% signal efficiency on "
+                "top and quark/gluon tagging, against the number of training jets: the 188-class model fine-tuned and "
+                "with a linear probe, and a network trained from scratch. Points are means; bands the standard deviation "
+                "over runs. Stars are published ParT: same inputs on JetClass, kinematic only on top, kinematic and "
+                "particle type on quark/gluon.",
         differs="Four panels, one per task, against Golling's one. Fine-tuned in the 188-class colour, the linear probe "
                 "in tab10 C8 (C1 means 162 classes across our figures) and from scratch black, against Golling's green, "
                 "red and blue. Sophon's font, landscape's grid and framed legend, "
@@ -438,13 +463,33 @@ PAGES = [
         precedent=["2401.13537/fig3.png"],
         precedent_label="Golling Fig. 3",
         caption="Linear probes of the four label sets against the number of training jets: accuracy on class-balanced "
-                "JetClass-II and on JetClass, and rejection R30, the background rejection at 30% signal efficiency, "
-                "on top tagging and quark/gluon tagging, with a network trained from scratch in black and published ParT as "
-                "stars. Points are means over runs. The colors are those of the label sets in the other figures; the 188- and "
-                "162-class curves coincide on JetClass and nearly so on JetClass-II.",
+                "JetClass-II and on JetClass, and rejection R30 at 30% signal efficiency on top and quark/gluon tagging, "
+                "with a network trained from scratch in black. Points are means over runs. Stars are published ParT: same "
+                "inputs on JetClass, kinematic only on top, kinematic and particle type on quark/gluon.",
         differs="Four panels against Golling's one; four label sets against three training modes. No bands, where "
                 "Golling has them: four would overlap (plan). tab10 in the order of the label sets. Sophon's font, "
                 "dashed grid and framed legend, where Golling has no grid and no frame. Log y on R30.",
         draw=draw_a10,
         data_note=SUBST_NOTE),
+    C.Page(
+        id="TSNE",
+        title="t-SNE of the frozen class token (appendix)",
+        precedent=["2610.36121/fig3.png", "2606.14813/fig2.png"],
+        precedent_label="SuperJEPA Fig. 3, JetParticle-JEPA Fig. 2",
+        caption="Two-dimensional t-SNE of the frozen class token of one network pretrained on 188 classes and one on 17 "
+                "classes, for 2,000 test jets of each of X to bb, cc and qq and QCD, and of X to ee and X to mu mu. A row has "
+                "the same jets in both panels. The axes of a t-SNE have no meaning, so they carry no scale.",
+        differs="Two label sets, not model sizes or modes; each row its own jets. Panel titles and letters as our theme. "
+                "PI: the lepton row stays only if it adds anything.",
+        draw=draw_tsne),
+    C.Page(
+        id="VAL",
+        title="Pretraining validation accuracy against epoch (appendix)",
+        precedent=["2404.16091/fig1.png"],
+        precedent_label="OmniLearn Fig. 1 (validation loss against epochs)",
+        caption="Validation accuracy of the pretraining against epoch for the 188-, 162-, 43- and 17-class label sets, each "
+                "on its own classes, as the mean over three runs. A coarser label set has fewer classes to tell apart, so "
+                "its accuracy is not comparable with a finer set's.",
+        differs="Accuracy, not loss; one curve per label set; no marker for 80 points; theme grid.",
+        draw=draw_val),
 ]

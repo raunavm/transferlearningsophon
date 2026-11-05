@@ -2528,6 +2528,44 @@ def eemm_macros(em, fits: dict, runs: dict, index, fmt_pm, fmt_int, status: dict
              index, "fits_v4_sib ee_vs_mm: n_test_signal and n_test_background")
 
 
+JC1_AUC_COLS = (("label_QCD", "QCD"), ("label_Hbb", r"$H\to b\bar b$"), ("label_Hcc", r"$H\to c\bar c$"), ("label_Hgg", r"$H\to gg$"),
+                ("label_H4q", r"$H\to 4q$"), ("label_Hqql", r"$H\to \ell\nu qq'$"), ("label_Zqq", r"$Z\to q\bar q$"),
+                ("label_Wqq", r"$W\to qq'$"), ("label_Tbqq", r"$t\to bqq'$"), ("label_Tbl", r"$t\to b\ell\nu$"))
+
+
+def table_jc1_class_auc(ft_docs: dict, probe_docs: dict, runs: dict, fmt_pm) -> str:
+    """Each JetClass class against the other nine, at 10^6 jets (curves_v2/jc1_ft_ovr, jc1_probe_ovr): every
+    configuration fine-tuned with the network from scratch, and probed with the BatchNorm-recomputed random network."""
+    scratch = [m for m in sorted(ft_docs) if m.startswith("scratch")]
+
+    def rows(docs: dict, extra: list) -> list:
+        out = []
+        for name, ms in [(_row(a, runs), runs[a]) for a in ALL_ROWS] + extra:
+            have = [m for m in ms if m in docs]
+            if have:
+                out.append(name + " & " + " & ".join(
+                    _cell([docs[m]["curves"][c]["auc"] for m in have], len(ms), fmt_pm) for c, _ in JC1_AUC_COLS) + r" \\")
+        return out
+
+    head = [r"\begin{tabular}{l" + "c" * len(JC1_AUC_COLS) + "}", r"\toprule",
+            "pretraining & " + " & ".join(t for _, t in JC1_AUC_COLS) + r" \\", r"\midrule"]
+    return "\n".join(head + rows(ft_docs, [("from scratch", scratch)]) + [r"\bottomrule", r"\end{tabular}", "%SPLIT%"] + head
+                     + rows(probe_docs, [(_row(INIT_BN, runs), runs[INIT_BN])]) + [r"\bottomrule", r"\end{tabular}", ""])
+
+
+def per_class_csv(fits, runs, root) -> str:
+    """The data release's per-class table of JetClass-II (class-balanced test set, largest training set): the
+    linear-probe AUC of each class against the rest, mean over the runs of each configuration."""
+    arms = MAIN + MASS + RAND + FLAV
+    per = {a: [p for m in runs[a] if (p := _per_class(fits, m))] for a in arms}
+    lines = ["jet_label,class_name," + ",".join(arms)]
+    for r in _class_rows(root):
+        c = int(r["jet_label"])
+        vals = [float(np.mean([p[c] for p in per[a] if c in p])) if any(c in p for p in per[a]) else "" for a in arms]
+        lines.append(f"{c},{r['class_name']}," + ",".join("" if v == "" else f"{v:.5f}" for v in vals))
+    return "\n".join(lines) + "\n"
+
+
 def table_per_class(fits, runs, fmt_pm, root, native_tex) -> str:
     """A12: per class of JetClass-II (class-balanced test set, largest training set), the AUC of the
     188-class model and the ratio of 1 - AUC to it of every configuration of F3."""
@@ -3124,6 +3162,10 @@ CAPTIONS = {
     "balance": ("tab:balance", "JetClass-II linear probes with $10^{6}$ training jets on the natural-composition test "
                 "set and on the class-balanced one: AUC averaged over the classes and the ratio $\\rho$ of $1-\\mathrm{AUC}$, equation~(\\ref{eq:ratio}), to "
                 "the \\Kfull-class run. " + SPREAD),
+    "jc1_class_auc": ("tab:jc1_class_auc", "Area under the curve of each JetClass class against the other nine at one "
+                      "million training jets, for every configuration. Upper part: after fine-tuning, with the network "
+                      "trained from scratch. Lower part: linear probes on the frozen network, with the randomly "
+                      "initialized network. " + SPREAD),
     "fill_main": ("tab:fill_main", "Linear probes of the four label sets with the missing inputs set to zero, to the "
                   "training mean or to random draws of a real particle, at the largest training set. Upper part: relative "
                   "drop in JetClass-II accuracy (per cent) when the slots the top or the quark/gluon data lack are "
@@ -3254,6 +3296,7 @@ CAPTIONS = {
 PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes_n", True, None),
                 ("pairs", "mlst_pairs", True, {"__ZERO__": ""}), ("mlp", "mlst_mlp", True, None), ("bn", "mlst_bn", False, None),
                 ("balance", "mlst_balance", False, None), ("fill", "mlst_fill", True, None), ("fill_main", "mlst_fill_main", True, None),
+                ("jc1_class_auc", "mlst_jc1_class_auc", True, None),
                 ("mass", "mlst_mass", False, None), ("mass_detail", "mlst_mass_detail", True, None),
                 ("sculpt", "mlst_sculpt", False, {"__SCULPT_BINS__": r"\pending{bins}"}), ("ft", "mlst_ft", True, None),
                 ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, {"__JC2COMP__": "class-balanced"}),
@@ -3430,6 +3473,10 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     V4.gpu_bound_macro(em, fits, runs, comp, index)
     mlp_nat = load_mlp_natural(data)
     per_class_macros(em, fits, runs, root, index, fmt_pm, native_tex, mlp_nat)
+    out["data_release/jetclass2_per_class.csv"] = per_class_csv(fits, runs, root)
+    jc1_ft_ovr, jc1_probe_ovr = _load(data / V4.ROC_DIR / "jc1_ft_ovr"), _load(data / V4.ROC_DIR / "jc1_probe_ovr")
+    if jc1_ft_ovr and jc1_probe_ovr:
+        out["tables/mlst_jc1_class_auc.tex"] = _float("jc1_class_auc", table_jc1_class_auc(jc1_ft_ovr, jc1_probe_ovr, runs, fmt_pm), True)
     out["tables/mlst_per_class.tex"] = _longtable("per_class", table_per_class(fits, runs, fmt_pm, root, native_tex))
     census = data / "jc2bal" / "census.json"
     census_doc = json.loads(census.read_text()) if census.exists() else None

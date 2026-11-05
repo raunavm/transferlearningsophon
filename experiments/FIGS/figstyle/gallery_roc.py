@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The gallery's ROC mock-ups (docs/figstyle/PLAN.md): FJ, FJ-ctrl, FJ-s, FJ-app, FJ-ctrl-app, F4, F4-app, F6, A3R. Every ROC is
+"""The gallery's ROC mock-ups (docs/figstyle/PLAN.md): FJ, FJ-ctrl, FJ-s, FJ-app, FJ-ctrl-app, F4, F4-app, F6, F6-app, A3R, A3R-ft. Every ROC is
 rejection (log, from 1) against signal efficiency (linear, 0 to 1), the mean over runs from
 gallery_common.mean_over_runs, on landscape Fig. 5's grid, with the y axis stopping where the curves stop so
 they come in from the top of the frame, and the legend in the free lower left."""
@@ -131,6 +131,7 @@ def _jc1_four(path: pathlib.Path, family: str, heading: str, panels: list, legen
     _y_range(list(axes.flat))
     if legend:
         _legend(axes[0, 0], title="Signal class", title_fontsize=7.5, fontsize=7.5, ncol=2)
+    S.letter_panels(axes.flat)
     S.save(fig, path)
 
 
@@ -180,6 +181,7 @@ def _pairs(path: pathlib.Path, series: list, keys: tuple) -> None:
         _floor(ax, docs, series[0][0], key)
         S.title(ax, heading[key])
     _legend(axes[0, 0], title="Pretrained on", title_fontsize=S.LEGEND_PT)
+    S.letter_panels(axes.flat)
     S.save(fig, path)
 
 
@@ -193,34 +195,43 @@ def draw_f4_app(path: pathlib.Path) -> None:
            ("bb_vs_cc", "bbqq_vs_ccqq", "bc_vs_bq_cs", "qcd_bb_vs_cc"))     # X->ee vs mumu: no curve to draw here
 
 
-def draw_f6(path: pathlib.Path) -> None:
-    top, qg = _family("top_ft"), _family("qg_ft")
+def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None:
+    """Three stacked panels: the label sets from top and qg, from scratch always from the fine-tuned families."""
+    top_ft, qg_ft = _family("top_ft"), _family("qg_ft")
     fig = plt.figure(figsize=S.STACKED)
     axes = fig.subplots(3, 1, sharex=True, gridspec_kw=STACKED_GRID)
-    panels = ((top, "top", "Top tagging, fine-tuned"), (qg, "qg", "Quark/gluon, Pythia, fine-tuned"),
-              (qg, "qg_herwig", "Quark/gluon, Herwig, fine-tuned"))
-    for ax, (docs, key, name) in zip(axes, panels):
+    panels = ((top, top_ft, "top", "Top tagging"), (qg, qg_ft, "qg", "Quark/gluon, Pythia"), (qg, qg_ft, "qg_herwig", "Quark/gluon, Herwig"))
+    for ax, (docs, ft, key, name) in zip(axes, panels):
         _roc_axes(ax, x_step=0.1)
         for level in S.LEVELS:
             _plot(ax, mean_over_runs(docs, RUNS[level], key), color=S.SERIES[level], linewidth=S.LW_CURVE,
                   label=S.NAME[level])
-        _plot(ax, mean_over_runs(docs, P._scratch_models(docs), key), color=S.SERIES["SCRATCH"], linewidth=S.LW_CURVE,
+        _plot(ax, mean_over_runs(ft, P._scratch_models(ft), key), color=S.SERIES["SCRATCH"], linewidth=S.LW_CURVE,
               label=S.NAME["SCRATCH"], zorder=1.9)      # under the label sets, or it hides them where they agree
-        if key == "top" and M.KIN_MODEL in docs:
+        if kinematic and key == "top" and M.KIN_MODEL in docs:
             _plot(ax, mean_over_runs(docs, [M.KIN_MODEL], key), **S.REFERENCE, label=S.NAME["KIN"])
         _y_range([ax])
-        S.title(ax, name)
+        S.title(ax, f"{name}, {word}")
         S.labels(ax, ylabel=S.Y_REJ)
     S.labels(axes[-1], xlabel=S.X_EPS)
-    _legend(axes[0], ncol=2 if M.KIN_MODEL in top else 1, fontsize=S.LEGEND_PT)
+    _legend(axes[0], ncol=2, fontsize=S.LEGEND_PT)
+    S.letter_panels(axes)
     S.save(fig, path)
 
 
-def draw_a3r(path: pathlib.Path) -> None:
-    docs = _family("jc2_ovr")
+def draw_f6(path: pathlib.Path) -> None:
+    _benchmarks(path, _family("top_ft"), _family("qg_ft"), "fine-tuned", True)
+
+
+def draw_f6_app(path: pathlib.Path) -> None:
+    _benchmarks(path, _family("top_probe"), _family("qg_probe"), "linear probes", False)
+
+
+def _jc2_every_class(path: pathlib.Path, family: str, heading: str) -> None:
+    docs = _family(family)
     names = {r["jet_label"]: r["class_name"] for r in M._class_rows(P.REPO)}
     colour = {label: S.TAB10[FAMILIES.index(family_of(name))] for label, name in names.items()}
-    fig, axes = _axes_2x2(sharey=True, wspace=0.1, heading="Linear probes on $10^6$ JetClass-II jets")
+    fig, axes = _axes_2x2(sharey=True, wspace=0.1, heading=heading)
     for ax, level in zip(axes.flat, S.LEVELS):
         aucs = []
         for label in names:
@@ -231,7 +242,16 @@ def draw_a3r(path: pathlib.Path) -> None:
     _y_range(list(axes.flat))
     _legend(axes[0, 0], handles=[Line2D([], [], color=S.TAB10[i], linewidth=S.LW_CURVE, label=f)
                                  for i, f in enumerate(FAMILIES)], fontsize=7)
+    S.letter_panels(axes.flat)
     S.save(fig, path)
+
+
+def draw_a3r(path: pathlib.Path) -> None:
+    _jc2_every_class(path, "jc2_ovr", "Linear probes on $10^6$ JetClass-II jets")
+
+
+def draw_a3r_ft(path: pathlib.Path) -> None:
+    _jc2_every_class(path, "jc2_ft_ovr", "Fine-tuned on $10^6$ JetClass-II jets")
 
 
 PAGES = [
@@ -343,6 +363,16 @@ PAGES = [
                  "are longer than Sophon's 'Events' and repeat on each panel.",
          data_note="The 188-class kinematic-inputs model has one run, so the dashed curve is that run, not a mean.",
          draw=draw_f6),
+    Page(id="F6-app", title="Benchmarks with linear probes (appendix)",
+         precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
+         precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
+         caption="Background rejection against signal efficiency from linear probes on the full training sets: top tagging, "
+                 "with the missing inputs filled by random draws, and quark/gluon separation tested on Pythia and Herwig "
+                 "jets, filled by the training mean. Curves are networks pretrained with 188, 162, 43 and 17 classes, each "
+                 "the mean over three runs, and a network trained from scratch. Curves end where fewer than 20 background "
+                 "jets remain.",
+         differs="As F6, with linear probes.",
+         draw=draw_f6_app),
     Page(id="A3R", title="Every JetClass-II class, per label set",
          precedent=["map2026_poster/fig5.png"],
          precedent_label="MAP 2026 poster Fig. 5 (form)",
@@ -359,4 +389,13 @@ PAGES = [
                  "poster's serif font and faint grid. The family legend is in the first panel only, lower left, framed, "
                  "with no heading, and with lines of normal thickness. Four panels, not two.",
          draw=draw_a3r),
+    Page(id="A3R-ft", title="Every JetClass-II class after fine-tuning, per label set",
+         precedent=["map2026_poster/fig5.png"],
+         precedent_label="MAP 2026 poster Fig. 5 (form)",
+         caption="Background rejection against signal efficiency for each of the 188 JetClass-II classes against the "
+                 "rest of the class-balanced test set, after fine-tuning on one million jets, for networks pretrained with "
+                 "188, 162, 43 and 17 classes. Thin curves are means over runs, colored by decay family, and end where "
+                 "fewer than 20 background jets remain. Each title gives the mean area under the curve over all classes.",
+         differs="As A3R, fine-tuned.",
+         draw=draw_a3r_ft),
 ]

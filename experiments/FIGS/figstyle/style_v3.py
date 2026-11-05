@@ -59,6 +59,10 @@ JC1_TEX = {"label_QCD": "QCD", "label_Hbb": r"$H\to b\bar{b}$", "label_Hcc": r"$
            "label_Tbl": r"$t\to b\ell\nu$"}
 JC1_COLOUR = dict(zip(JC1_CLASSES, TAB10))
 
+# marker shapes, for greyscale print on line plots (MLST; PI, 2026-11-05); ROC figures stay colour-only
+MARKERS = {"L188": "o", "L162": "s", "R42_Q1": "^", "R16_Q1": "D", "L162_MASS": "v", "R16_Q1_MASS": "P", "SCRATCH": "X",
+           "FLAV_F0": "s", "FLAV_F1": "^", "FLAV_F1R": "D", "RAND": "v"}
+
 X_EPS = r"Signal efficiency ($\varepsilon_S$)"
 Y_REJ = r"Background rejection ($1/\varepsilon_B$)"
 X_EPS_B = r"SM background efficiency ($\varepsilon_B$)"     # Sophon Fig. 2
@@ -92,6 +96,12 @@ def fine_grid(ax) -> None:
 def heading(fig, text: str) -> None:
     """What the whole figure shows, above the panel titles."""
     fig.suptitle(text, fontsize=TITLE_PT, y=0.975)
+
+
+def letter_panels(axes) -> None:
+    """(a), (b), ... in front of each panel's title (MLST)."""
+    for i, ax in enumerate(axes):
+        ax.set_title(f"({chr(97 + i)}) {ax.get_title()}".rstrip(), fontsize=TITLE_PT, pad=TITLE_PAD)
 
 
 def labels(ax, xlabel: str | None = None, ylabel: str | None = None) -> None:
