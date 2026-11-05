@@ -203,6 +203,8 @@ def draw_f7(path) -> None:
         S.labels(ax, X_CLASSES if k >= 2 else None, ylabel)
         if ylabel == Y_R30:
             _log_y(ax)
+        if k == 2:      # _log_y's round numbers leave the zero and mean lines, near 60, with no label
+            ax.yaxis.set_major_locator(ticker.FixedLocator([60, 80, 100, 150, 200, 250]))
         _classes_axis(ax)
     S.legend(axes[0, 0], loc="best")
     S.heading(fig, "Linear probes with missing inputs")
