@@ -44,7 +44,7 @@ def _curves(ax, docs: dict, level: str, auc_in_legend: bool, legend: bool, fonts
         _plot(ax, s, color=S.JC1_COLOUR[c], linewidth=1.1, label=name)
     if legend:
         S.legend(ax, loc="lower left", title="Signal class (AUC)" if auc_in_legend else "Signal class",
-                 title_fontsize=fontsize, fontsize=fontsize, handlelength=1.5, handletextpad=0.4, labelspacing=0.15)
+                 title_fontsize=fontsize, fontsize=fontsize, handlelength=1.5, handletextpad=0.4)
     return float(np.mean(aucs))
 
 
