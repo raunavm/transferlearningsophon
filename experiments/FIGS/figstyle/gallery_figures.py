@@ -10,14 +10,13 @@ import pathlib
 import traceback
 
 import gallery_common as C
-import gallery_fj_options
 import gallery_labelset
 import gallery_physics
 import gallery_roc
 import style_v3 as S
 
-MODULES = (gallery_physics, gallery_labelset, gallery_roc, gallery_fj_options)
-ORDER = ("SOPHON-FIG2", "F1", "F2a", "F2b", "F2-app", "F3", "F3-app", "FJ", "FJ-1", "FJ-2", "FJ-s", "FJ-app", "F4", "F4-app", "F6", "F7",
+MODULES = (gallery_physics, gallery_labelset, gallery_roc)
+ORDER = ("SOPHON-FIG2", "F1", "F2a", "F2b", "F2-app", "F3", "F3-app", "FJ", "FJ-s", "FJ-all", "FJ-app", "F4", "F4-app", "F6", "F7",
          "F8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "F10a", "F10b", "F11", "A3R")     # the paper's order
 
 
