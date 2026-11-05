@@ -8,6 +8,9 @@ The settings are Sophon's (arXiv:2405.12972), measured from the native PDFs of i
 and these non-default settings. Sophon's figures are 5 in wide at font size 10, printed at 0.72 to 0.75, so
 7.2 to 7.5 pt text. MLST allows figures 8.5 cm or 15 cm wide with text of at least 8 pt; ours use the 15 cm width and print at 1.0: same proportions.
 
+The theme on top of them (PI, 2026-11-05), for every figure but the redraw of Sophon Fig. 2: landscape Fig. 5's grid
+(fine_grid), thinner lines (LW_CURVE), the panel sizes below, and a heading saying what the figure shows.
+
 Not Sophon's. X_EPS and Y_REJ are the words of the landscape paper (arXiv:1902.09914), in Sophon's form and place.
 Our own choices: C4-C6 for the controlled partitions and black for from scratch (Sophon has neither model), and the
 marker sizes, MARKER in gallery_labelset.py and markersize in gallery_physics.py (Sophon Fig. 5 has 3, Golling's native
@@ -23,12 +26,17 @@ import pathlib
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 
 CM = 1 / 2.54
 WIDTH, FULL = 5.0, 15 * CM        # Sophon's figure width; the MLST column, for two panels side by side
 HEIGHT = {1: 3.0, 2: 4.0, 3: 5.0}  # Sophon Figs. 5, 2, 3: panels stacked on a shared x axis
 LABEL_PT, LEGEND_PT, TITLE_PT, TITLE_PAD = 10, 8, 10, 5      # Sophon Fig. 2
 LW, LW_THIN = 1.5, 1.0            # matplotlib default; Sophon Fig. 5's reference and its error bars
+LW_CURVE = 1.1
+ONE_PANEL = (14 * CM, 11.5 * CM)
+FOUR_PANELS = (FULL, 18 * CM)
+STACKED = (14 * CM, 17 * CM)      # three panels on one x axis
 TAB10 = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22",
          "#17becf"]
 
@@ -74,6 +82,18 @@ def grid(ax) -> None:
     ax.set_axisbelow(True)
 
 
+def fine_grid(ax) -> None:
+    """Landscape Fig. 5: dashed under the curves at major and minor ticks on both axes."""
+    ax.minorticks_on()
+    ax.grid(which="both", linestyle="--", linewidth=0.4)
+    ax.set_axisbelow(True)
+
+
+def heading(fig, text: str) -> None:
+    """What the whole figure shows, above the panel titles."""
+    fig.suptitle(text, fontsize=TITLE_PT, y=0.975)
+
+
 def labels(ax, xlabel: str | None = None, ylabel: str | None = None) -> None:
     """Word and symbol, at the end of the axis (all of Sophon's plots)."""
     if xlabel:
@@ -93,7 +113,13 @@ def legend(ax, **kw):
 
 
 def save(fig, path: pathlib.Path) -> list:
-    """bbox_inches='tight', as Sophon; vector PDF and a PNG for viewing."""
+    """bbox_inches='tight', as Sophon; vector PDF and a PNG for viewing. Prints how many line vertices lie under each legend."""
+    fig.canvas.draw()
+    for ax in fig.axes:
+        if (leg := ax.get_legend()) is not None:
+            box = leg.get_window_extent(fig.canvas.get_renderer())
+            n = sum(box.count_contains(ax.transData.transform(np.c_[ln.get_xdata(), ln.get_ydata()])) for ln in ax.lines)
+            print(f"{path.name}, {ax.get_title()!r}: {n} curve points under the legend")
     path.parent.mkdir(parents=True, exist_ok=True)
     out = []
     for suffix, kw in ((".pdf", {}), (".png", {"dpi": 200})):

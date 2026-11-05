@@ -16,11 +16,10 @@ import style_v3 as S
 
 P, M, RUNS, I = C.P, C.M, C.RUNS, C.I
 
-HEIGHT_2X2 = 4.8
-SPACING_2X2 = {"wspace": 0.35, "hspace": 0.3}     # defaults leave no room for repeated y labels, or tick labels and titles
+GRID_2X2 = {"left": 0.1, "right": 0.97, "top": 0.92, "bottom": 0.06, "wspace": 0.3, "hspace": 0.2}     # room for repeated y labels, tick labels and titles
 HEIGHT_HEAT = 8.0                                 # 188 rows; a 5-row group label at 10 pt still clears its neighbours
 LEFT_HEAT = 0.26                                  # the longest group label at 10 pt, so the saved width stays 15 cm
-MARKER = 5
+MARKER = 4
 Y_ACC, Y_R30 = "Accuracy", r"Rejection ($R_{30}$)"
 X_CLASSES, X_JETS = "Number of pretraining classes", "Number of training jets"
 LEGEND_PANEL = 1        # JetClass: its curves stay high on the right, so its lower right is empty in F2, F8 and A10
@@ -37,8 +36,8 @@ def _chosen() -> dict:
 
 
 def _panels_2x2():
-    fig = plt.figure(figsize=(S.FULL, HEIGHT_2X2))
-    return fig, fig.subplots(2, 2, gridspec_kw=SPACING_2X2)
+    fig = plt.figure(figsize=S.FOUR_PANELS)
+    return fig, fig.subplots(2, 2, gridspec_kw=GRID_2X2)
 
 
 def _log_y(ax) -> None:
@@ -75,7 +74,7 @@ def _mean(row: str, value):
     return float(np.mean(v)) if v else None
 
 
-def _draw_f2(path, value_of, groups, absent: str, legend_panel: int = LEGEND_PANEL) -> None:
+def _draw_f2(path, value_of, groups, absent: str, heading: str, legend_panel: int = LEGEND_PANEL) -> None:
     """value_of(key, n, ds, met): a run's value or None for the task; groups: (legend label, colour, rows) of
     the markers at 17 classes, one marker per row."""
     values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
@@ -88,9 +87,9 @@ def _draw_f2(path, value_of, groups, absent: str, legend_panel: int = LEGEND_PAN
         if value is None:
             _empty_panel(ax)
         else:
-            S.grid(ax)
+            S.fine_grid(ax)
             line = [(x, y) for row, x in P.X_OF.items() if (y := _mean(row, value)) is not None]
-            ax.plot(*zip(*line), color=S.TAB10[0], linewidth=S.LW, marker="o", markersize=MARKER, label="Hierarchy")
+            ax.plot(*zip(*line), color=S.TAB10[0], linewidth=S.LW_CURVE, marker="o", markersize=MARKER, label="Hierarchy")
             for label, colour, rows in groups:
                 ys = [y for row in rows if (y := _mean(row, value)) is not None]
                 if ys:
@@ -100,6 +99,7 @@ def _draw_f2(path, value_of, groups, absent: str, legend_panel: int = LEGEND_PAN
                 _log_y(ax)
         _classes_axis(ax)
     S.legend(axes.flat[legend_panel], loc="lower right")
+    S.heading(fig, heading)
     S.save(fig, path)
 
 
@@ -116,15 +116,16 @@ def _controlled():
 
 
 def draw_f2a(path) -> None:
-    _draw_f2(path, _probe_value, _controlled(), "no linear probes (linprobe/fits_v4)")
+    _draw_f2(path, _probe_value, _controlled(), "no linear probes (linprobe/fits_v4)", "Linear probes")
 
 
 def draw_f2b(path) -> None:
-    _draw_f2(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)", legend_panel=2)
+    _draw_f2(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)", "After fine-tuning", legend_panel=2)
 
 
 def draw_f2_app(path) -> None:
-    _draw_f2(path, _probe_value, [("Random partitions", RANDOM_COLOUR, M.RAND)], "no linear probes (linprobe/fits_v4)")
+    _draw_f2(path, _probe_value, [("Random partitions", RANDOM_COLOUR, M.RAND)], "no linear probes (linprobe/fits_v4)",
+             "Linear probes")
 
 
 # ------------------------------------------------------------------ F3: per-class heatmap
@@ -143,7 +144,7 @@ def _draw_heat(path, arms) -> None:
 
     fig = plt.figure(figsize=(S.FULL, HEIGHT_HEAT))
     ax = fig.subplots()
-    fig.subplots_adjust(left=LEFT_HEAT)
+    fig.subplots_adjust(left=LEFT_HEAT, top=0.95)
     cmap = colormaps["RdBu"].copy()
     cmap.set_bad("white")
     im = ax.imshow(np.insert(D, n_res, np.nan, axis=0), aspect="auto", cmap=cmap, norm=Normalize(-limit, limit),
@@ -164,6 +165,7 @@ def _draw_heat(path, arms) -> None:
 
     cb = fig.colorbar(im, ax=ax, fraction=0.05, pad=0.02)
     S.labels(cb.ax, ylabel="AUC difference to 188 classes (percentage points)")
+    S.heading(fig, "Linear probes on JetClass-II, class by class")
     S.save(fig, path)
 
 
@@ -187,8 +189,8 @@ def draw_f7(path) -> None:
     panels = (("JetClass-II, features absent from top tagging filled", "Accuracy drop (%)", lambda m, s: M._jc2_drop(raw, fill, m, "top", s)),
               (TITLES["top"], Y_R30, lambda m, s: P._bench_r30(M, fits, fill, m, "top", s)),
               (TITLES["qg"], Y_R30, lambda m, s: P._bench_r30(M, fits, fill, m, "qg", s)))
-    fig = plt.figure(figsize=(S.WIDTH, S.HEIGHT[3]))
-    axes = fig.subplots(3, 1, sharex=True)
+    fig = plt.figure(figsize=S.STACKED)
+    axes = fig.subplots(3, 1, sharex=True, gridspec_kw={"top": 0.92, "bottom": 0.07, "hspace": 0.3})
     x = np.arange(len(S.LEVELS))
     width = 0.27
     for ax, (title, ylabel, value) in zip(axes, panels):
@@ -198,12 +200,15 @@ def draw_f7(path) -> None:
                    linewidth=0, label=P.SUBST_NAME[s])
         S.title(ax, title)
         S.labels(ax, ylabel=ylabel)
-        ax.tick_params(axis="x", length=0)
+        S.fine_grid(ax)
+        ax.xaxis.grid(False, which="both")
+        ax.tick_params(axis="x", which="both", length=0)
     axes[0].set_ylim(top=1.4 * axes[0].get_ylim()[1])       # room for the one-row legend above the bars
     S.legend(axes[0], ncol=3)
     axes[-1].set_xticks(x)
     axes[-1].set_xticklabels([S.NAME[row] for row in S.LEVELS])
     S.labels(axes[-1], "Pretraining label set")
+    S.heading(fig, "Linear probes with inputs filled in")
     S.save(fig, path)
 
 
@@ -215,13 +220,13 @@ def _curve(ax, series: dict, colour: str, label: str, band: bool) -> None:
         return
     st = [P.F._spread(series[n]) for n in xs]
     mean = np.array([s[0] for s in st])
-    ax.plot(xs, mean, color=colour, linewidth=S.LW, marker="o", markersize=MARKER, label=label)
+    ax.plot(xs, mean, color=colour, linewidth=S.LW_CURVE, marker="o", markersize=MARKER, label=label)
     if band:
         ax.fill_between(xs, mean - np.array([s[1] or 0 for s in st]), mean + np.array([s[2] or 0 for s in st]),
                         color=colour, alpha=0.2, linewidth=0)
 
 
-def _draw_size(path, series_of, band: bool, absent: str) -> None:
+def _draw_size(path, series_of, band: bool, absent: str, heading: str) -> None:
     """series_of(key, ds, met): [(series, colour, label)] of a panel."""
     panels = [series_of(key, ds, met) for key, ds, met, *_ in P.SIZE_PANELS]
     if not any(s for p in panels for s, *_ in p):
@@ -234,12 +239,13 @@ def _draw_size(path, series_of, band: bool, absent: str) -> None:
         if not any(s for s, *_ in panel):
             _empty_panel(ax)
             continue
-        S.grid(ax)
+        S.fine_grid(ax)
         for series, colour, label in panel:
             _curve(ax, series, colour, label, band)
         if met == "r30":
             _log_y(ax)
     S.legend(axes.flat[LEGEND_PANEL], loc="lower right")
+    S.heading(fig, heading)
     S.save(fig, path)
 
 
@@ -248,14 +254,14 @@ def draw_f8(path) -> None:
     series = lambda key, ds, met: [(P.ft_series(M, I["per"], RUNS, key, met, "L188"), S.TAB10[0], "Fine-tuned"),
                                    (P.probe_series(M, I, RUNS, ds, met, "L188", chosen), PROBE_COLOUR, "Linear probe"),
                                    (P.scratch_series(M, I["per"], key, met), S.SERIES["SCRATCH"], S.NAME["SCRATCH"])]
-    _draw_size(path, series, True, "no fine-tuning read-outs or linear probes")
+    _draw_size(path, series, True, "no fine-tuning read-outs or linear probes", "Pretrained on 188 classes, against training from scratch")
 
 
 def draw_a10(path) -> None:
     chosen = _chosen()
     series = lambda key, ds, met: [(P.probe_series(M, I, RUNS, ds, met, row, chosen), S.SERIES[row], S.NAME[row])
                                    for row in S.LEVELS]
-    _draw_size(path, series, False, "no linear probes (linprobe/fits_v4)")
+    _draw_size(path, series, False, "no linear probes (linprobe/fits_v4)", "Linear probes, per pretraining label set")
 
 
 # ------------------------------------------------------------------ the pages
@@ -281,8 +287,8 @@ PAGES = [
                 "through the points, not a smoothed curve. x ticks only at the four class counts (they are the data), "
                 "no x minor ticks; x limits beyond the data, where Hong's end on the first and last points. Log y on "
                 "the R30 panels, our choice, with y minor ticks Hong lacks. Ticks outward on left and bottom, "
-                "not inward on four sides. Panel titles, where Hong has none. Sophon's font, sizes, 1.5 pt line, "
-                "dashed grid and framed 8 pt legend in place of Hong's bold sans-serif and heavy lines. "
+                "not inward on four sides. Panel titles, where Hong has none. Sophon's font and sizes, 1.1 pt line, "
+                "landscape's grid and framed 8 pt legend in place of Hong's bold sans-serif and heavy lines. "
                 "Legend in one panel only (Sophon Fig. 3). Our axis words, at the axis end, not centred.",
         draw=draw_f2a,
         data_note=f"{TWO_RUNS} {SUBST_NOTE}"),
@@ -368,7 +374,7 @@ PAGES = [
                 "mean or to random draws.",
         differs="Three stacked panels on a shared x (Sophon Fig. 3) against one panel of (b). Three bars per group "
                 "against two, coloured by substitution from tab10 C7-C9, against JetParticle-JEPA's two muted colours. "
-                "No printed value above the bars: the values live in the tables. No grid: bars take none in our style. "
+                "No printed value above the bars: the values live in the tables. Landscape's grid on y, for one look across the figures. "
                 "Panels two and three show R30 itself, not a drop. Framed legend inside the first panel in one row, "
                 "untitled. Sophon's font. Our axis words.",
         draw=draw_f7,
@@ -386,8 +392,8 @@ PAGES = [
                 "are means over runs; bands show the standard deviation over runs.",
         differs="Four panels, one per task, against Golling's one. Fine-tuned in the 188-class colour, the linear probe "
                 "in tab10 C8 (C1 means 162 classes across our figures) and from scratch black, against Golling's green, "
-                "red and blue. Sophon's font, dashed grid and framed legend, "
-                "where Golling has no grid and no frame. Lines 1.5 pt against about 0.75. Log y on R30. Band as Golling: "
+                "red and blue. Sophon's font, landscape's grid and framed legend, "
+                "where Golling has no grid and no frame. Lines 1.1 pt against about 0.75. Log y on R30. Band as Golling: "
                 "same colour, alpha 0.2, no edge. Against Vigl Fig. 1: no ratio panel, no data-efficiency side panel, no dashed variant, no "
                 "second legend.",
         draw=draw_f8,

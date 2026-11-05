@@ -178,8 +178,8 @@ def _response(ax, rx, atlas: dict, group: str, title: str) -> None:
         mean = np.mean(hs, axis=0)
         with np.errstate(divide="ignore", invalid="ignore"):
             r = np.where(enough, mean / gr, np.nan)
-        ax.stairs(mean, e, baseline=None, color=S.SERIES[base], linewidth=S.LW, label=NAMES[row])
-        rx.stairs(r, e, baseline=None, color=S.SERIES[base], linewidth=S.LW)
+        ax.stairs(mean, e, baseline=None, color=S.SERIES[base], linewidth=S.LW_CURVE, label=NAMES[row])
+        rx.stairs(r, e, baseline=None, color=S.SERIES[base], linewidth=S.LW_CURVE)
         shown.append(mean)
         ratios.append(r)
     on = np.flatnonzero(np.any([s >= SHOWN_FROM * s.max() for s in shown], axis=0))
@@ -190,14 +190,17 @@ def _response(ax, rx, atlas: dict, group: str, title: str) -> None:
     S.labels(ax, ylabel="Fraction of jets")
     S.labels(rx, xlabel=r"Response ($m/m_{\mathrm{gen}}$)", ylabel="Ratio")
     S.legend(ax)
+    S.fine_grid(ax)
+    S.fine_grid(rx)
 
 
 def draw_f9a(path: pathlib.Path) -> None:
     atlas = _atlas()
-    fig, axes = plt.subplots(2, 2, figsize=(S.FULL, 3.4), sharex="col",
+    fig, axes = plt.subplots(2, 2, figsize=(S.FULL, S.ONE_PANEL[1]), sharex="col",
                              gridspec_kw=dict(height_ratios=(1, RATIO_ATLAS), hspace=STACK_GAP, wspace=COLUMN_GAP))
     _response(axes[0, 0], axes[1, 0], atlas, "resonant", "Resonant jets")
     _response(axes[0, 1], axes[1, 1], atlas, "qcd", "QCD jets")
+    S.heading(fig, "Mass regression: response")
     S.save(fig, path)
 
 
@@ -221,7 +224,7 @@ def _binned(axes, atlas: dict, group: str, axis: str, xlabel: str, legends: tupl
         res = np.mean([P._arr(b["resolution"]) for b in bl], axis=0)
         ratio = med / med0
         rsd = np.sign(res - res0) * np.sqrt(np.abs(res ** 2 - res0 ** 2))   # ATLAS 2024-015's root square difference
-        kw = dict(baseline=None, color=S.SERIES[base], linewidth=S.LW)
+        kw = dict(baseline=None, color=S.SERIES[base], linewidth=S.LW_CURVE)
         a0.stairs(med, e, label=NAMES[row], **kw)
         a1.stairs(res, e, label=NAMES[row], **kw)
         r0.stairs(ratio, e, **kw)
@@ -237,7 +240,7 @@ def _binned(axes, atlas: dict, group: str, axis: str, xlabel: str, legends: tupl
     _fit_y(r0, ratios)
     _fit_y(r1, rsds)
     for ax in (a0, a1, r0, r1):
-        S.grid(ax)
+        S.fine_grid(ax)
     a0.set_xlim(e[0], e[-1])
     a1.set_xlim(e[0], e[-1])
     S.labels(a0, ylabel=r"Median response ($r$)")
@@ -251,20 +254,22 @@ X_PT, X_MGEN = r"Jet $p_{\mathrm{T}}$ [GeV]", r"Generator mass ($m_{\mathrm{gen}
 
 def draw_f9b(path: pathlib.Path) -> None:
     atlas = _atlas()
-    fig, axes = plt.subplots(2, 2, figsize=(S.FULL, 3.4), sharex="col",
+    fig, axes = plt.subplots(2, 2, figsize=(S.FULL, S.ONE_PANEL[1]), sharex="col",
                              gridspec_kw=dict(height_ratios=(1, RATIO_ATLAS), hspace=STACK_GAP, wspace=COLUMN_GAP))
     _binned(axes, atlas, "all", "vs_pt", X_PT, legends=(0, 1), room=0.55)
+    S.heading(fig, "Mass regression against jet $p_{\\mathrm{T}}$")
     S.save(fig, path)
 
 
 def _a17(path: pathlib.Path, group: str) -> None:
     """Median and resolution (columns) against jet pT and generator mass (rows); the legend once."""
     atlas = _atlas()
-    fig = plt.figure(figsize=(S.FULL, 5.6))
-    outer = fig.add_gridspec(2, 1, hspace=0.3)
+    fig = plt.figure(figsize=S.FOUR_PANELS)
+    outer = fig.add_gridspec(2, 1, hspace=0.25, top=0.94, bottom=0.07)
     for k, (axis, xlabel) in enumerate((("vs_pt", X_PT), ("vs_mgen", X_MGEN))):
         inner = outer[k].subgridspec(2, 2, height_ratios=(1, RATIO_ATLAS), hspace=STACK_GAP, wspace=COLUMN_GAP)
         _binned(inner.subplots(sharex="col"), atlas, group, axis, xlabel, legends=(0,) if k == 0 else (), room=0.8)
+    S.heading(fig, f"Mass regression on {'resonant' if group == 'resonant' else 'QCD'} jets")
     S.save(fig, path)
 
 
@@ -287,7 +292,7 @@ def draw_f10a(path: pathlib.Path) -> None:
     shown = [(a, ms) for a in P.F8B_SHOWN if (ms := [m for m in RUNS[a] if m in sc])]
     if not shown:
         raise Absent("no mass sculpting curve of the models shown")
-    fig, axes = plt.subplots(2, len(shown), figsize=(S.FULL, 3.4), sharex=True, sharey="row", squeeze=False,
+    fig, axes = plt.subplots(2, len(shown), figsize=(S.FULL, S.ONE_PANEL[1]), sharex=True, sharey="row", squeeze=False,
                              gridspec_kw=dict(height_ratios=(1, RATIO_CMS), hspace=STACK_GAP, wspace=0.08))
     # the markers of CMS Fig. 8: open circle before the selection, filled circle, open square
     looks = (("o", True), ("o", False), ("s", True))
@@ -315,17 +320,20 @@ def draw_f10a(path: pathlib.Path) -> None:
         S.title(ax, NAMES[a])
         S.labels(rx, xlabel=r"Jet mass ($m_{\mathrm{SD}}$) [GeV]")
         S.legend(ax)
+        S.fine_grid(ax)
+        S.fine_grid(rx)
     axes[0, 0].set_ylim(0, 1.1 * peak)
     _fit_y(axes[1, 0], ratios)
     S.labels(axes[0, 0], ylabel="Fraction of jets")
     S.labels(axes[1, 0], ylabel="Ratio")
+    S.heading(fig, "QCD jet mass before and after a selection on the tagger")
     S.save(fig, path)
 
 
 def draw_f10b(path: pathlib.Path) -> None:
     sc = _sculpt()
-    fig, ax = plt.subplots(figsize=(S.WIDTH, S.HEIGHT[1]))
-    S.grid(ax)
+    fig, ax = plt.subplots(figsize=S.ONE_PANEL)
+    S.fine_grid(ax)
     colours = (S.SERIES["L188"], S.SERIES["R16_Q1"], MASS_17_COLOUR)
     drawn = 0
     for row, colour in zip(P.F8B_SHOWN, colours):
@@ -335,13 +343,13 @@ def draw_f10b(path: pathlib.Path) -> None:
         eff = np.array([c["eff"] for c in have[0]], float)
         mean = np.mean([[c["js_distance"] for c in h] for h in have], axis=0)
         keep = eff >= F10B_FROM
-        ax.plot(eff[keep], mean[keep], color=colour, linewidth=S.LW, marker="o", markersize=3.5, label=NAMES[row])
+        ax.plot(eff[keep], mean[keep], color=colour, linewidth=S.LW_CURVE, marker="o", markersize=3.5, label=NAMES[row])
         drawn += 1
     if not drawn:
         raise Absent("no mass sculpting curve of the models shown")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.yaxis.grid(True, which="minor")      # the y range is under a decade: its only ticks are minor ones
+    S.title(ax, "Mass sculpting of QCD jets")
     S.labels(ax, r"QCD efficiency ($\varepsilon_B$)", r"Jensen-Shannon distance ($d_{\mathrm{JS}}$)")
     S.legend(ax)
     S.save(fig, path)
@@ -371,17 +379,17 @@ def draw_f11(path: pathlib.Path) -> None:
     series = _standin_series(XR, XR.load(FITS))
     if not series:
         raise Absent(f"no {STANDIN} readout of the label sets under {FITS}")
-    fig, axes = plt.subplots(2, 1, figsize=(S.WIDTH, S.HEIGHT[2]), sharex=True)
+    fig, axes = plt.subplots(2, 1, figsize=S.ONE_PANEL, sharex=True)
     top = 0.0
     for label, colour, rs in series:
         x, y, _ = P.xbx_curves(M, rs)
         mean = y.mean(axis=0)
-        axes[0].plot(x, mean, color=colour, linewidth=S.LW, label=label)
+        axes[0].plot(x, mean, color=colour, linewidth=S.LW_CURVE, label=label)
         top = max(top, float(np.nanmax(mean)))
     S.legend(axes[0])
     for ax, what in zip(axes, (r"$X\rightarrow bb$ tagging performance, stand-in jets",
                                r"$X\rightarrow bs$ tagging performance")):
-        S.grid(ax)
+        S.fine_grid(ax)
         ax.set_xscale("log")
         ax.set_xlim(1e-5, 1)
         ax.set_ylim(0, 1.5 * top)
@@ -515,7 +523,7 @@ PAGES = [
          "and all pT instead of CMS's 30 to 250 GeV and 600 to 1000 GeV. Three series instead of two, a filled circle in "
          "each colour instead of an open square and a filled circle. Colours C0, C3, C9 instead of CMS's blue and orange; "
          "the 17-class mass regression model is cyan here because 17 classes is red on these axes, and red on F9 and A17. "
-         "Markers joined by a 1.5 pt line, not step markers: each point is a cumulative selection, so a segment would span "
+         "Markers joined by a 1.1 pt line, not step markers: each point is a cumulative selection, so a segment would span "
          "a bin that does not exist (for the PI to decide). Dashed grid at the ticks (our rule for curve figures), where "
          "CMS has none. Jensen-Shannon distance (d_JS) and QCD efficiency instead of JSD and eps_B [%]; y limits from the "
          "data instead of 0.007 to 1. No random-selection band or floor: CMS has none (plan). Framed legend and no label "
