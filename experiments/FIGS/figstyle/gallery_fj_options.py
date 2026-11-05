@@ -57,8 +57,7 @@ def _report_overlap(fig, axes) -> None:
         if leg is None:
             continue
         box = leg.get_window_extent(r)
-        n = sum(int(box.contains_points(ax.transData.transform(np.c_[ln.get_xdata(), ln.get_ydata()])).sum())
-                for ln in ax.lines)
+        n = sum(box.count_contains(ax.transData.transform(np.c_[ln.get_xdata(), ln.get_ydata()])) for ln in ax.lines)
         print(f"{ax.get_title()!r}: {n} curve points under the legend")
 
 
