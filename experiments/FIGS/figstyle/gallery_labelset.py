@@ -23,6 +23,7 @@ LEFT_HEAT = 0.26                                  # the longest group label at 1
 MARKER = 4
 Y_ACC, Y_R30 = "Accuracy", r"Rejection ($R_{30}$)"
 X_CLASSES, X_JETS = "Number of pretraining classes", "Number of training jets"
+X_NONE = 8      # F2: where the network with no pretraining sits on the axis of classes
 LEGEND_PANEL = 1        # JetClass: its curves stay high on the right, so its lower right is empty in F2, F8 and A10
 TITLES = {key: title for key, _, _, _, title, _ in P.F2_PANELS}
 RANDOM_COLOUR = S.TAB10[7]
@@ -64,11 +65,11 @@ def _empty_panel(ax) -> None:
 # ------------------------------------------------------------------ F2: metric against the number of classes
 def _classes_axis(ax) -> None:
     ax.set_xscale("log")
-    ax.set_xlim(12, 260)
-    ax.xaxis.set_major_locator(ticker.FixedLocator([17, 43, 162, 188]))
-    ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}"))
+    ax.set_xlim(5.5, 260)
+    ax.xaxis.set_major_locator(ticker.FixedLocator([X_NONE, 17, 43, 162, 188]))
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: "None" if v == X_NONE else f"{v:g}"))
     ax.xaxis.set_minor_locator(ticker.NullLocator())
-    for lab, ha in zip(ax.get_xticklabels(), ("center", "center", "right", "left")):   # 162 and 188 lean apart
+    for lab, ha in zip(ax.get_xticklabels(), ("center", "center", "center", "right", "left")):   # 162 and 188 lean apart
         lab.set_horizontalalignment(ha)
 
 
@@ -100,7 +101,8 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, legend_panel: in
                             markersize=MARKER, label=label)
             scratch = P.scratch_series(M, I["per"], key, met)
             if scratch:
-                ax.axhline(float(np.mean(scratch[max(scratch)])), **S.REFERENCE, label=S.NAME["SCRATCH"])
+                ax.plot(X_NONE, float(np.mean(scratch[max(scratch)])), color=S.SERIES["SCRATCH"], marker="o",
+                        markersize=MARKER, linestyle="none", label=S.NAME["SCRATCH"])
             if met == "r30":
                 _log_y(ax)
         _classes_axis(ax)
@@ -304,10 +306,10 @@ PAGES = [
         caption="Linear probes against the number of pretraining classes: accuracy on class-balanced JetClass-II "
                 "and on JetClass, and rejection R30, the background rejection at 30% signal efficiency, on top "
                 "tagging and quark/gluon tagging. The line joins the four nested label sets; the markers at 17 "
-                "classes are random partitions with controlled flavor boundaries. The dashed line is the network trained from "
+                "classes are random partitions with controlled flavor boundaries. The black point is the network trained from "
                 "scratch. All values are means over runs.",
         differs="Four panels against Hong's one, for the four tasks. Three partitions as markers at 17 classes: Hong "
-                "has no controls. From scratch is the reference line (PI, 2026-11-05); a random-network reference would lie far below. Circles, not crosses, and a line "
+                "has no controls. From scratch is a black point at None on the x axis (PI, 2026-11-05), not Hong's horizontal line, which reads as a value at every class count. Circles, not crosses, and a line "
                 "through the points, not a smoothed curve. x ticks only at the four class counts (they are the data), "
                 "no x minor ticks; x limits beyond the data, where Hong's end on the first and last points. Log y on "
                 "the R30 panels, our choice, with y minor ticks Hong lacks. Ticks outward on left and bottom, "
@@ -324,10 +326,10 @@ PAGES = [
         caption="Fine-tuned models against the number of pretraining classes: accuracy on class-balanced JetClass-II "
                 "and on JetClass, and rejection R30 at 30% signal efficiency, on top "
                 "tagging and quark/gluon tagging. The line joins the label sets; the markers at 17 "
-                "classes (none on JetClass-II) are random partitions with controlled flavor boundaries. The dashed line is the "
+                "classes (none on JetClass-II) are random partitions with controlled flavor boundaries. The black point is the "
                 "network trained from scratch. Values are means over runs; on top tagging the label sets differ by less than the "
                 "spread between runs.",
-        differs="As F2a, except: markers on three panels, none on JetClass-II. From scratch is the reference line "
+        differs="As F2a, except: markers on three panels, none on JetClass-II. From scratch is a black point at None "
                 "(PI, 2026-11-05). Hong's own figure is fine-tuned too, so this page is the closer copy.",
         draw=draw_f2b,
         data_note="JetClass-II at 1,000,000 class-balanced jets, with no markers: the controlled partitions were not "
@@ -345,7 +347,7 @@ PAGES = [
         caption="Linear probes against the number of pretraining classes, as in the main-text figure: accuracy on "
                 "class-balanced JetClass-II and on JetClass, and rejection R30, the background rejection at 30% "
                 "signal efficiency, on top tagging and quark/gluon tagging. The line joins the four nested label "
-                "sets; the five markers at 17 classes are random partitions of the 188 classes. The dashed line is the "
+                "sets; the five markers at 17 classes are random partitions of the 188 classes. The black point is the "
                 "network trained from scratch. The line shows means over runs; each marker is one run.",
         differs="As F2a, with the five random partitions as five markers of one colour (C7) at 17 classes in place "
                 "of the controlled partitions. An appendix figure, and Hong has no controls.",
