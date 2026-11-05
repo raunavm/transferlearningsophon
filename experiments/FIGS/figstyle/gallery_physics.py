@@ -327,7 +327,7 @@ def draw_f10a(path: pathlib.Path) -> None:
             peak = max(peak, after[keep].max())
             ratios.append(r[keep])
         ax.set_xlim(e[0], F10A_TOP)
-        S.title(ax, NAMES[a])
+        S.title(ax, NAMES[a].replace(", mass regression", " + mass"))     # the full words collide at this width
         if k_panel >= 3:
             S.labels(rx, xlabel=r"Jet mass ($m_{\mathrm{SD}}$) [GeV]")
         S.fine_grid(ax)
@@ -445,7 +445,7 @@ A17_CAPTION = (
 F10A_CAPTION = (
     "Soft-drop mass distribution of QCD jets before any selection (inclusive) and after selections at QCD efficiencies "
     "of 10 and 1 percent on the score of the models pretrained on 188, 162, 43 and 17 classes and on 162 and 17 "
-    "classes with mass regression, each the mean over runs. Horizontal bars show the bin width. The lower "
+    "classes with mass regression (+ mass), each the mean over runs. Horizontal bars show the bin width. The lower "
     "panels show the ratio to the inclusive distribution.")
 F10B_CAPTION = (
     "Jensen-Shannon distance between the soft-drop mass distributions of QCD jets before and after a selection on the "

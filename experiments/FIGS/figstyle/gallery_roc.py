@@ -136,7 +136,7 @@ def _jc1_four(path: pathlib.Path, family: str, heading: str, panels: list, legen
 
 
 def _label_sets() -> list:
-    return [(RUNS[level], f"Pretrained on {S.NAME[level]}") for level in S.LEVELS]
+    return [(RUNS[level], S.NAME[level]) for level in S.LEVELS]
 
 
 def _controls() -> list:
@@ -145,11 +145,11 @@ def _controls() -> list:
 
 
 def draw_fj(path: pathlib.Path) -> None:
-    _jc1_four(path, "jc1_ft_ovr", "Fine-tuned on $10^6$ JetClass jets", _label_sets())
+    _jc1_four(path, "jc1_ft_ovr", "Fine-tuned on $10^6$ JetClass jets, per pretraining label set", _label_sets())
 
 
 def draw_fj_ctrl(path: pathlib.Path) -> None:
-    _jc1_four(path, "jc1_ft_ovr", "Fine-tuned on $10^6$ JetClass jets, pretrained on 17-class random partitions", _controls())
+    _jc1_four(path, "jc1_ft_ovr", "Fine-tuned on $10^6$ JetClass jets, 17-class random partitions", _controls())
 
 
 def draw_fj_s(path: pathlib.Path) -> None:
@@ -160,12 +160,12 @@ def draw_fj_s(path: pathlib.Path) -> None:
 
 
 def draw_fj_app(path: pathlib.Path) -> None:
-    _jc1_four(path, "jc1_probe_ovr", "Linear probes trained on $10^6$ JetClass jets", _label_sets(),
+    _jc1_four(path, "jc1_probe_ovr", "Linear probes on $10^6$ JetClass jets, per pretraining label set", _label_sets(),
               legend=False)     # probe curves lie lower: a legend would cover Z->qq
 
 
 def draw_fj_ctrl_app(path: pathlib.Path) -> None:
-    _jc1_four(path, "jc1_probe_ovr", "Linear probes on $10^6$ JetClass jets, pretrained on 17-class random partitions",
+    _jc1_four(path, "jc1_probe_ovr", "Linear probes on $10^6$ JetClass jets, 17-class random partitions",
               _controls(), legend=False)
 
 
@@ -238,7 +238,7 @@ def _jc2_every_class(path: pathlib.Path, family: str, heading: str) -> None:
             s = mean_over_runs(docs, RUNS[level], label)
             aucs.append(s[2])
             _plot(ax, s, color=colour[label], linewidth=0.4, alpha=0.7)
-        S.title(ax, f"Pretrained on {S.NAME[level]}, macro AUC {np.mean(aucs):.3f}")
+        S.title(ax, f"{S.NAME[level]}, macro AUC {np.mean(aucs):.3f}")
     _y_range(list(axes.flat))
     _legend(axes[0, 0], handles=[Line2D([], [], color=S.TAB10[i], linewidth=S.LW_CURVE, label=f)
                                  for i, f in enumerate(FAMILIES)], fontsize=7)
@@ -247,11 +247,11 @@ def _jc2_every_class(path: pathlib.Path, family: str, heading: str) -> None:
 
 
 def draw_a3r(path: pathlib.Path) -> None:
-    _jc2_every_class(path, "jc2_ovr", "Linear probes on $10^6$ JetClass-II jets")
+    _jc2_every_class(path, "jc2_ovr", "Linear probes on $10^6$ JetClass-II jets, per pretraining label set")
 
 
 def draw_a3r_ft(path: pathlib.Path) -> None:
-    _jc2_every_class(path, "jc2_ft_ovr", "Fine-tuned on $10^6$ JetClass-II jets")
+    _jc2_every_class(path, "jc2_ft_ovr", "Fine-tuned on $10^6$ JetClass-II jets, per pretraining label set")
 
 
 PAGES = [

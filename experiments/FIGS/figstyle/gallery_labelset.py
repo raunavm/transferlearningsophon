@@ -197,7 +197,7 @@ def _draw_scatter(path, panels: list, ncols: int, height: float) -> None:
     nrows = math.ceil(len(panels) / ncols)
     fig = plt.figure(figsize=(S.FULL, height))
     axes = fig.subplots(nrows, ncols, sharex=True, sharey=True, squeeze=False,
-                        gridspec_kw={"left": 0.1, "right": 0.965, "top": 1 - 1.3 / (height / S.CM), "bottom": 1.2 / (height / S.CM),
+                        gridspec_kw={"left": 0.1, "right": 0.955, "top": 1 - 1.5 / (height / S.CM), "bottom": 1.2 / (height / S.CM),
                                      "wspace": 0.1, "hspace": 0.15})
     pairs = [[(full[c], other[c], c) for c in full if c in other] for other in (_class_auc(models) for models, _ in panels)]
     lim = (min(v for pts in pairs for x, y, _ in pts for v in (x, y)), 1.0)
