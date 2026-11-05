@@ -117,8 +117,8 @@ def _name_reference(ax, y: float) -> None:
     """Names the line on the line, at the right, on the side with room: it is one network, with no pretraining,
     not a value at every number of classes."""
     above = ax.transAxes.inverted().transform(ax.transData.transform((1, y)))[1] < 0.5
-    ax.annotate("From scratch, no pretraining", xy=(0.98, y), xycoords=ax.get_yaxis_transform(), xytext=(0, 2 if above else -2),
-                textcoords="offset points", ha="right", va="bottom" if above else "top", fontsize=S.LEGEND_PT)
+    ax.annotate("From scratch,\nno pretraining", xy=(0.98, y), xycoords=ax.get_yaxis_transform(), xytext=(0, 2 if above else -2),
+                textcoords="offset points", ha="right", ma="right", va="bottom" if above else "top", fontsize=S.LEGEND_PT)
 
 
 def _probe_value(key, n, ds, met):
