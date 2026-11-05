@@ -1,0 +1,36 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Linear probes of the four label sets with the missing inputs set to zero, to the training mean or to random draws of a real particle, at the largest training set. Upper part: relative drop in JetClass-II accuracy (per cent) when the slots the top or the quark/gluon data lack are substituted, against the same model with every input. Lower part: $R_{30}$ on top and quark/gluon tagging. Mean and standard deviation over three runs. The best substitution of each row and data set is in bold. Every configuration is in table~\ref{tab:fill}.}
+\label{tab:fill_main}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{3}{c}{JetClass-II, top slots} & \multicolumn{3}{c}{JetClass-II, quark/gluon slots} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+pretraining & zero & mean & draws & zero & mean & draws \\
+\midrule
+\Kfull{} classes & 88.9\,$\pm$\,1.0\% & 87.9\,$\pm$\,1.1\% & \textbf{85.98\,$\pm$\,0.07\%} & 61.2\,$\pm$\,3.0\% & \textbf{48.8\,$\pm$\,1.1\%} & 54.30\,$\pm$\,0.21\% \\
+\Kres{} classes & 89.0\,$\pm$\,0.9\% & 87.8\,$\pm$\,0.7\% & \textbf{85.89\,$\pm$\,0.11\%} & 64\,$\pm$\,5\% & \textbf{49.5\,$\pm$\,0.5\%} & 54.6\,$\pm$\,0.6\% \\
+\Kmid{} classes & 87.81\,$\pm$\,0.28\% & 86.7\,$\pm$\,0.9\% & \textbf{83.17\,$\pm$\,0.29\%} & 68\,$\pm$\,5\% & \textbf{47.6\,$\pm$\,1.6\%} & 53.5\,$\pm$\,1.4\% \\
+\Kcoarse{} classes & 86.7\,$\pm$\,0.7\% & 86.1\,$\pm$\,0.8\% & \textbf{81.4\,$\pm$\,0.5\%} & 70.9\,$\pm$\,2.3\% & \textbf{50.0\,$\pm$\,1.0\%} & 51.7\,$\pm$\,0.4\% \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{3}{c}{top, $R_{30}$} & \multicolumn{3}{c}{quark/gluon, $R_{30}$} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+pretraining & zero & mean & draws & zero & mean & draws \\
+\midrule
+\Kfull{} classes & 60\,$\pm$\,12 & 73\,$\pm$\,15 & \textbf{228\,$\pm$\,25} & 66\,$\pm$\,7 & \textbf{72.7\,$\pm$\,2.4} & 68.1\,$\pm$\,1.8 \\
+\Kres{} classes & 76\,$\pm$\,17 & 64\,$\pm$\,11 & \textbf{199\,$\pm$\,25} & 58\,$\pm$\,9 & \textbf{70.99\,$\pm$\,0.31} & 66.8\,$\pm$\,0.4 \\
+\Kmid{} classes & 57\,$\pm$\,13 & 58\,$\pm$\,14 & \textbf{231\,$\pm$\,8} & 61\,$\pm$\,9 & \textbf{70.8\,$\pm$\,1.8} & 69.0\,$\pm$\,1.1 \\
+\Kcoarse{} classes & 55\,$\pm$\,5 & 55\,$\pm$\,5 & \textbf{255\,$\pm$\,17} & 62\,$\pm$\,7 & \textbf{74.3\,$\pm$\,1.9} & 71.6\,$\pm$\,2.8 \\
+\Kfull{} classes, kinematic inputs only & 231 & \multicolumn{2}{c}{nothing missing} & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
