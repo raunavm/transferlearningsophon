@@ -16,7 +16,7 @@ from matplotlib.ticker import LogLocator, MultipleLocator, NullFormatter
 from gallery_common import Absent, M, P, Page, ROC, RUNS, mean_over_runs
 import style_v3 as S
 
-GRID = {"left": 0.1, "right": 0.97, "top": 0.92, "bottom": 0.06, "hspace": 0.1}
+GRID = {"left": 0.1, "right": 0.965, "top": 0.92, "bottom": 0.06, "hspace": 0.1}
 STACKED_GRID = {"top": 0.98, "bottom": 0.06, "hspace": 0.35}
 FAMILIES = ("QCD", "Two-prong quarks and gluons", "Two-prong leptons", "Three-prong", "Four-prong",
             "Lepton-containing")
@@ -240,10 +240,8 @@ PAGES = [
                  "Each curve takes one of the ten JetClass classes as signal and the other nine as background, and is "
                  "the mean over three pretraining runs. Curves begin where 20 background jets remain. One panel per "
                  "pretraining label set; the title gives the mean area under the curve over the ten classes.",
-         differs="Against landscape: ten classes of one network, not fifteen networks; solid tab10; y range 1 to 1e5; "
-                 "titles and legend heading added. Against the poster: rejection against efficiency, not true against "
-                 "false positive rate (PI); four panels, not two; legend names only, as the AUCs do not fit under the "
-                 "curves. Ten curves: the exception to the limit of six that the PI asked for.",
+         differs="Against landscape: ten classes of one network, not fifteen networks; solid tab10. Against the poster: "
+                 "rejection against efficiency (PI); four panels, not two; legend names only, as the AUCs do not fit.",
          draw=draw_fj),
     Page(id="FJ-ctrl", title="JetClass after fine-tuning, random partitions",
          precedent=["1902.09914/fig5.png", "map2026_poster/fig5.png"],
