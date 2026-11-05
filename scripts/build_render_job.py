@@ -103,7 +103,7 @@ PAPER = {"what": "paper", "suffix": "", "texdir": "paper/journal", "texfile": "m
          "collect": """          mkdir -p ${OUT}/figures/mlst ${OUT}/paper/journal
           cp -f figures/mlst/*.pdf figures/mlst/*.png ${OUT}/figures/mlst/ 2>/dev/null
           cp -f paper/journal/results_generated.tex paper/journal/provenance.json ${OUT}/paper/journal/ 2>/dev/null
-          cp -rf paper/journal/tables ${OUT}/paper/journal/ 2>/dev/null
+          cp -rf paper/journal/tables paper/journal/data_release ${OUT}/paper/journal/ 2>/dev/null
           cp -f paper/journal/main.pdf ${OUT}/main.pdf 2>/dev/null
 """}
 # the X->bb/X->bs dry run on JetClass-II stand-in jets (RUNS.csv), the mock-up of the resonance figure
