@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Three layouts for FJ, to choose from: one panel, two panels, four panels. All three stop the y axis at the
+"""Two layouts for FJ, to choose from: one panel, four panels. Both stop the y axis at the
 test set's limit, so every curve comes in from the top of the frame, and put the legend in the free lower left."""
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ def _axes(ax, x_step: float) -> None:
     ax.set_axisbelow(True)
 
 
-def _curves(ax, docs: dict, level: str, auc_in_legend: bool, legend: bool, fontsize: float) -> float:
+def _curves(ax, docs: dict, level: str, auc_in_legend: bool, legend: bool, fontsize: float, ncol: int) -> float:
     """The ten curves and their legend; returns the macro AUC."""
     aucs = []
     for c in S.JC1_CLASSES:
@@ -44,7 +44,8 @@ def _curves(ax, docs: dict, level: str, auc_in_legend: bool, legend: bool, fonts
         _plot(ax, s, color=S.JC1_COLOUR[c], linewidth=1.1, label=name)
     if legend:
         S.legend(ax, loc="lower left", title="Signal class (AUC)" if auc_in_legend else "Signal class",
-                 title_fontsize=fontsize, fontsize=fontsize, handlelength=1.5, handletextpad=0.4)
+                 title_fontsize=fontsize, fontsize=fontsize, ncol=ncol, handlelength=1.5, handletextpad=0.4,
+                 columnspacing=0.8)
     return float(np.mean(aucs))
 
 
@@ -63,27 +64,12 @@ def _report_overlap(fig, axes) -> None:
 
 def draw_one(path: pathlib.Path) -> None:
     docs = _family("jc1_ft_ovr")
-    fig, ax = plt.subplots(figsize=(11.5 * S.CM, 10.5 * S.CM))
+    fig, ax = plt.subplots(figsize=(14 * S.CM, 11.5 * S.CM))
     _axes(ax, 0.1)
-    auc = _curves(ax, docs, "L188", True, True, 9)
-    S.title(ax, f"Fine-tuned on JetClass, pretrained on 188 classes\nmacro AUC {auc:.3f}")
+    auc = _curves(ax, docs, "L188", True, True, 9, 2)
+    S.title(ax, f"Pretrained on 188 classes, fine-tuned on $10^6$ JetClass jets\nmacro AUC {auc:.3f}")
     S.labels(ax, S.X_EPS, S.Y_REJ)
     _report_overlap(fig, [ax])
-    S.save(fig, path)
-
-
-def draw_two(path: pathlib.Path) -> None:
-    docs = _family("jc1_ft_ovr")
-    fig, axes = plt.subplots(1, 2, sharey=True, figsize=(S.FULL, 10 * S.CM),
-                             gridspec_kw={"left": 0.1, "right": 0.97, "top": 0.86, "bottom": 0.09, "wspace": 0.08})
-    for ax, level in zip(axes, ("L188", "R16_Q1")):
-        _axes(ax, 0.2)
-        auc = _curves(ax, docs, level, True, True, 7.5)
-        S.title(ax, f"Pretrained on {S.NAME[level]}, macro AUC {auc:.3f}")
-        S.labels(ax, S.X_EPS)
-    S.labels(axes[0], ylabel=S.Y_REJ)
-    fig.suptitle("Fine-tuned on JetClass", fontsize=S.TITLE_PT, y=0.97)
-    _report_overlap(fig, axes)
     S.save(fig, path)
 
 
@@ -94,13 +80,13 @@ def draw_four(path: pathlib.Path) -> None:
                                           "hspace": 0.1})
     for i, (ax, level) in enumerate(zip(axes.flat, S.LEVELS)):
         _axes(ax, 0.2)
-        auc = _curves(ax, docs, level, False, i == 0, 8)
+        auc = _curves(ax, docs, level, False, i == 0, 8, 2)
         S.title(ax, f"Pretrained on {S.NAME[level]}, macro AUC {auc:.3f}")
     for ax in axes[1]:
         S.labels(ax, xlabel=S.X_EPS)
     for ax in axes[:, 0]:
         S.labels(ax, ylabel=S.Y_REJ)
-    fig.suptitle("Fine-tuned on JetClass", fontsize=S.TITLE_PT, y=0.975)
+    fig.suptitle("Fine-tuned on $10^6$ JetClass jets", fontsize=S.TITLE_PT, y=0.975)
     _report_overlap(fig, axes.flat)
     S.save(fig, path)
 
@@ -109,18 +95,12 @@ PAGES = [
     Page(id="FJ-1", title="FJ option 1: one large panel", precedent=LANDSCAPE, precedent_label=LABEL,
          caption=CAPTION.format(extra="Pretraining on 188 classes; the other label sets are in the appendix. The legend "
                                       "gives each class's area under the curve; the title gives their mean."),
-         differs="One panel at about the landscape figure's printed size. The other three label sets move to the appendix.",
+         differs="One panel, larger than the landscape figure's printed size. The other three label sets move to the appendix.",
          draw=draw_one),
-    Page(id="FJ-2", title="FJ option 2: the two ends of the ladder", precedent=LANDSCAPE, precedent_label=LABEL,
-         caption=CAPTION.format(extra="Pretraining on 188 classes (left) and 17 classes (right); the other two are in the "
-                                      "appendix. The legend gives each class's area under the curve; the title gives "
-                                      "their mean."),
-         differs="Two tall panels at full width. 162 and 43 classes move to the appendix.",
-         draw=draw_two),
-    Page(id="FJ-3", title="FJ option 3: all four label sets", precedent=LANDSCAPE, precedent_label=LABEL,
+    Page(id="FJ-2", title="FJ option 2: all four label sets", precedent=LANDSCAPE, precedent_label=LABEL,
          caption=CAPTION.format(extra="One panel per pretraining label set; the title gives the mean area under the curve "
-                                      "over the ten classes, and the table gives each class's value."),
+                                      "over the ten classes."),
          differs="All four label sets, at full width and 18 cm tall. One legend, names only: with the class AUCs it "
-                 "does not fit under the curves at this panel width, so those go to the table.",
+                 "does not fit under the curves at this panel width, so the class AUCs need a table.",
          draw=draw_four),
 ]
