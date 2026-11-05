@@ -15,7 +15,7 @@ from matplotlib.patches import Circle, FancyBboxPatch, Polygon, Rectangle
 
 from gallery_common import HERE, RUNS, Absent, I, M, P, Page, S
 
-GROOMED = "Groomed mass"
+GROOMED = "Soft-drop mass"
 MASS_ROWS = (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))     # a mass model and its label set's colour, name
 NAMES = {**S.NAME, **{row: f"{S.NAME[base]}, mass regression" for row, base in MASS_ROWS}}
 RATIO_ATLAS, RATIO_CMS = 0.44, 0.33     # lower axes over main axes: ATLAS 2024-015 Figs. 7-8, CMS Fig. 8 (catalogue)
@@ -416,19 +416,19 @@ F1_CAPTION = (
     "network is then used in two ways: its frozen features feed a linear probe, or all of its weights are fine-tuned.")
 F9A_CAPTION = (
     "Distribution of the jet mass response, the ratio of a jet's mass to its generator-level mass, for resonant jets "
-    "(left) and QCD jets (right): the groomed mass and the mass regression output of the models pretrained on 162 and "
+    "(left) and QCD jets (right): the soft-drop mass and the mass regression output of the models pretrained on 162 and "
     "17 classes, each the mean over runs; the axes hold 76 percent of the QCD groomed-mass jets. The lower panels show "
-    "the ratio of each distribution to the groomed mass.")
+    "the ratio of each distribution to the soft-drop mass.")
 F9B_CAPTION = (
     "Median jet mass response (left) and relative mass resolution (right) against the jet transverse momentum, for all "
-    "jets: the groomed mass and the mass regression output of the models pretrained on 162 and 17 classes, each the "
-    "mean over runs. Below are the ratio of each median to the groomed mass and the root square difference (RSD) of "
-    "each resolution to the groomed mass.")
+    "jets: the soft-drop mass and the mass regression output of the models pretrained on 162 and 17 classes, each the "
+    "mean over runs. Below are the ratio of each median to the soft-drop mass and the root square difference (RSD) of "
+    "each resolution to the soft-drop mass.")
 A17_CAPTION = (
     "Median jet mass response (left) and relative mass resolution (right) for {group} jets, against the jet transverse "
-    "momentum (upper) and the generator-level jet mass (lower): the groomed mass and the mass regression output of the "
+    "momentum (upper) and the generator-level jet mass (lower): the soft-drop mass and the mass regression output of the "
     "models pretrained on 162 and 17 classes, each the mean over runs{last_bin}. Below each panel are the ratio of the median "
-    "and the root square difference (RSD) of the resolution to the groomed mass.")
+    "and the root square difference (RSD) of the resolution to the soft-drop mass.")
 F10A_CAPTION = (
     "Soft-drop mass distribution of QCD jets before any selection (inclusive) and after selections at QCD efficiencies "
     "of 10 and 1 percent on the score of the model pretrained on 188 classes (left), 17 classes (center) and 17 "
@@ -454,7 +454,7 @@ A17_DIFFERS = (
     "generator mass 20 to 500 GeV, so 24.5% of QCD and 4.7% of resonant jets are in the upper row only. No window on the "
     "regressed mass, where ATLAS keeps 40 < m^Reg < 300 GeV. " + ATLAS_LOOK + ".")
 MASS_RUNS_NOTE = ("Mean of two runs for each mass regression model (the third runs were cut on 2026-10-22); "
-                  "the groomed mass is the same in every file. Nothing else is absent.")
+                  "the soft-drop mass is the same in every file. Nothing else is absent.")
 
 PAGES = [
     Page("SOPHON-FIG2", "Sophon Fig. 2 redrawn through style_v3 (validation)", ["2405.12972/fig2.png"], "Sophon Fig. 2",
@@ -480,7 +480,7 @@ PAGES = [
          "Two jet groups instead of mass and pT responses, as we regress mass only, with panel titles ATLAS lacks. Three "
          "series instead of two: black dashed reference and two solid colours, instead of purple dashed and green. "
          "Fraction of jets on the y axis instead of a.u., Response (m/m_gen) on x instead of m_Reco/m_Truth. x range from "
-         "the data, per panel, instead of a fixed 0.7 to 1.3, because the groomed mass here is far wider. No vertical "
+         "the data, per panel, instead of a fixed 0.7 to 1.3, because the soft-drop mass here is far wider. No vertical "
          "dotted line at 1, a second reference the PI limit forbids. No bands: ATLAS's are thinner than its lines. Same "
          "ratio height (0.44), but ratio ranges of about 0.1 to 2.6 and 0.2 to 3.1 against ATLAS's 0.35 to 1.55. "
          + ATLAS_LOOK + ".",
@@ -496,8 +496,8 @@ PAGES = [
     Page("A17-res", "Mass regression on resonant jets", ["ATL-PHYS-PUB-2024-015/fig8.png"], "ATLAS 2024-015 Fig. 8",
          A17_CAPTION.format(group="resonant", last_bin=""), A17_DIFFERS, lambda path: _a17(path, "resonant"), MASS_RUNS_NOTE),
     Page("A17-qcd", "Mass regression on QCD jets", ["ATL-PHYS-PUB-2024-015/fig8.png"], "ATLAS 2024-015 Fig. 8",
-         A17_CAPTION.format(group="QCD", last_bin="; the groomed mass's last pT bin sets the upper right scale"),
-         A17_DIFFERS + " The groomed mass's last pT bin (resolution 3.6, regression 0.28) sets the scale of the upper right "
+         A17_CAPTION.format(group="QCD", last_bin="; the soft-drop mass's last pT bin sets the upper right scale"),
+         A17_DIFFERS + " The soft-drop mass's last pT bin (resolution 3.6, regression 0.28) sets the scale of the upper right "
          "panel; the axis is not clipped.", lambda path: _a17(path, "qcd"), MASS_RUNS_NOTE),
     Page("F10a", "Mass sculpting: QCD mass", ["2604.09809/fig8.png"], "CMS JME-25-001 Fig. 8", F10A_CAPTION,
          "Three panels side by side (three models, all jet pT) instead of CMS's six (two models, three pT ranges), with "

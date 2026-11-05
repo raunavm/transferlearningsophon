@@ -28,7 +28,7 @@ TITLES = {key: title for key, _, _, _, title, _ in P.F2_PANELS}
 RANDOM_COLOUR = S.TAB10[7]
 HEAT_F3 = ("L162", "R42_Q1", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R")
 HEAT_APP = M.RAND
-PUBLISHED = {"jc1": (2_000_000, 0.836), "top": (1_200_000, 1602.0), "qg": (1_600_000, 101.2)}     # ParT (arXiv:2202.03772), its Tables 2, 4, 5
+PUBLISHED = {"jc1": (2_000_000, 0.836), "top": (1_200_000, 1602.0), "qg": (1_600_000, 101.2)}     # ParT's published values, as in the paper's benchmark tables
 PROBE_COLOUR = S.TAB10[8]   # F8: C1 means 162 classes in every other figure
 
 
@@ -49,7 +49,9 @@ def _log_y(ax) -> None:
     ax.yaxis.set_minor_formatter(ticker.NullFormatter())
     if math.floor(math.log10(hi)) - math.ceil(math.log10(lo)) >= 1:
         return
-    vals = ticker.MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10]).tick_values(lo, hi)
+    vals = [m * 10.0 ** e for e in range(math.floor(math.log10(lo)), math.ceil(math.log10(hi))) for m in (1, 2, 5)]
+    if sum(lo <= v <= hi for v in vals) < 3:
+        vals = ticker.MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10]).tick_values(lo, hi)
     ax.yaxis.set_major_locator(ticker.FixedLocator([v for v in vals if lo <= v <= hi]))
     ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}"))
 
@@ -102,7 +104,7 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, legend_panel: in
             if met == "r30":
                 _log_y(ax)
         _classes_axis(ax)
-    S.legend(axes.flat[legend_panel], loc="lower right")
+    S.legend(axes.flat[legend_panel], loc="best")
     S.heading(fig, heading)
     S.save(fig, path)
 
@@ -325,9 +327,8 @@ PAGES = [
                 "classes (none on JetClass-II) are random partitions with controlled flavor boundaries. The dashed line is the "
                 "network trained from scratch. Values are means over runs; on top tagging the label sets differ by less than the "
                 "spread between runs.",
-        differs="As F2a, except: markers on three panels, none on JetClass-II. No baseline line: a from-scratch "
-                "reference lies below the plotted range on every panel and would flatten the differences (PI to "
-                "decide). Hong's own figure is fine-tuned too, so this page is the closer copy.",
+        differs="As F2a, except: markers on three panels, none on JetClass-II. From scratch is the reference line "
+                "(PI, 2026-11-05). Hong's own figure is fine-tuned too, so this page is the closer copy.",
         draw=draw_f2b,
         data_note="JetClass-II at 1,000,000 class-balanced jets, with no markers: the controlled partitions were not "
                   "fine-tuned on this task. JetClass at 1,000,000 jets, top at 1,200,000, quark/gluon at 1,600,000. "
