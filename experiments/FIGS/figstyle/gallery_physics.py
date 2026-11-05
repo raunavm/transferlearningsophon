@@ -417,7 +417,7 @@ F1_CAPTION = (
 F9A_CAPTION = (
     "Distribution of the jet mass response, the ratio of a jet's mass to its generator-level mass, for resonant jets "
     "(left) and QCD jets (right): the soft-drop mass and the mass regression output of the models pretrained on 162 and "
-    "17 classes, each the mean over runs; the axes hold 76 percent of the QCD groomed-mass jets. The lower panels show "
+    "17 classes, each the mean over runs; the axes hold 76 percent of the QCD soft-drop-mass jets. The lower panels show "
     "the ratio of each distribution to the soft-drop mass.")
 F9B_CAPTION = (
     "Median jet mass response (left) and relative mass resolution (right) against the jet transverse momentum, for all "
