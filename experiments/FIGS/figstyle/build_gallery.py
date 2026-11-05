@@ -145,7 +145,7 @@ def right_column(page, rec: dict, figdir: pathlib.Path, warn: list) -> float:
     y = FIG_TOP + fig_h
     for (text, color), height in zip(paragraphs, heights):
         y += GAP
-        if not write(page, MARGIN, y, wide, min(height, BOTTOM - y), text, size, color=color):
+        if not write(page, MARGIN, y, wide, min(height, BOTTOM - y + 1e-6), text, size, color=color):     # y is a sum of floats
             warn.append(f"text overflows at {size} pt and was cut")
             break
         y += height

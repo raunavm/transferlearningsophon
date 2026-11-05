@@ -79,7 +79,7 @@ def _y_range(axes) -> None:
 
 
 def _legend(ax, **kw):
-    return S.legend(ax, loc="lower left", handlelength=1.2, handletextpad=0.4, columnspacing=0.6, **kw)
+    return S.legend(ax, loc="lower left", handlelength=1.2, handletextpad=0.4, columnspacing=0.4, **kw)
 
 
 def _plot(ax, s, **kw) -> None:
