@@ -84,7 +84,6 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, legend_panel: in
     if not any(values):
         raise C.Absent(absent)
     fig, axes = _panels_2x2()
-    references = []
     for k, (ax, value, (key, _, _, met, *_)) in enumerate(zip(axes.flat, values, P.F2_PANELS)):
         S.title(ax, TITLES[key])
         S.labels(ax, X_CLASSES if k >= 2 else None, Y_R30 if met == "r30" else Y_ACC)
@@ -101,24 +100,13 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, legend_panel: in
                             markersize=MARKER, label=label)
             scratch = P.scratch_series(M, I["per"], key, met)
             if scratch:
-                references.append((ax, float(np.mean(scratch[max(scratch)]))))
-                ax.axhline(references[-1][1], **S.REFERENCE)
+                ax.axhline(float(np.mean(scratch[max(scratch)])), **S.REFERENCE, label="From scratch, no pretraining")
             if met == "r30":
                 _log_y(ax)
         _classes_axis(ax)
-    for ax, y in references:
-        _name_reference(ax, y)
     S.legend(axes.flat[legend_panel], loc="best")
     S.heading(fig, heading)
     S.save(fig, path)
-
-
-def _name_reference(ax, y: float) -> None:
-    """Names the line on the line, at the right, on the side with room: it is one network, with no pretraining,
-    not a value at every number of classes."""
-    above = ax.transAxes.inverted().transform(ax.transData.transform((1, y)))[1] < 0.5
-    ax.annotate("From scratch,\nno pretraining", xy=(0.98, y), xycoords=ax.get_yaxis_transform(), xytext=(0, 2 if above else -2),
-                textcoords="offset points", ha="right", ma="right", va="bottom" if above else "top", fontsize=S.LEGEND_PT)
 
 
 def _probe_value(key, n, ds, met):
@@ -319,7 +307,7 @@ PAGES = [
                 "classes are random partitions with controlled flavor boundaries. The dashed line is a network trained from "
                 "scratch, with no pretraining. All values are means over runs.",
         differs="Four panels against Hong's one, for the four tasks. Three partitions as markers at 17 classes: Hong "
-                "has no controls. From scratch is a dashed horizontal line, as Hong's baseline and Elsharkawy Fig. 7's, but named on the line (PI, 2026-11-05), so it does not read as a value at every class count. Circles, not crosses, and a line "
+                "has no controls. From scratch is a dashed horizontal line, as Hong's baseline and Elsharkawy Fig. 7's, named in the legend as having no pretraining (PI, 2026-11-05). Circles, not crosses, and a line "
                 "through the points, not a smoothed curve. x ticks only at the four class counts (they are the data), "
                 "no x minor ticks; x limits beyond the data, where Hong's end on the first and last points. Log y on "
                 "the R30 panels, our choice, with y minor ticks Hong lacks. Ticks outward on left and bottom, "
@@ -339,8 +327,8 @@ PAGES = [
                 "classes (none on JetClass-II) are random partitions with controlled flavor boundaries. The dashed line is a "
                 "network trained from scratch, with no pretraining. Values are means over runs; on top tagging the label sets differ by less than the "
                 "spread between runs.",
-        differs="As F2a, except: markers on three panels, none on JetClass-II. From scratch is a dashed line named on the "
-                "line (PI, 2026-11-05). Hong's own figure is fine-tuned too, so this page is the closer copy.",
+        differs="As F2a, except: markers on three panels, none on JetClass-II. From scratch is a dashed line, named in the "
+                "legend (PI, 2026-11-05). Hong's own figure is fine-tuned too, so this page is the closer copy.",
         draw=draw_f2b,
         data_note="JetClass-II at 1,000,000 class-balanced jets, with no markers: the controlled partitions were not "
                   "fine-tuned on this task. JetClass at 1,000,000 jets, top at 1,200,000, quark/gluon at 1,600,000. "
