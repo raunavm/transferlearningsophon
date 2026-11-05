@@ -16,7 +16,7 @@ import gallery_roc
 import style_v3 as S
 
 MODULES = (gallery_physics, gallery_labelset, gallery_roc)
-ORDER = ("SOPHON-FIG2", "F1", "F2a", "F2b", "F2-app", "F3", "F3-app", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F4", "F4-app", "F6", "F7",
+ORDER = ("SOPHON-FIG2", "F1", "F2a", "F2b", "F2-app", "F3", "F3-app", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F4", "F4-app", "F6",
          "F8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "F10a", "F10b", "F11", "A3R")     # the paper's order
 
 

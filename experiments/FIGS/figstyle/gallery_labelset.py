@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The gallery's label-set mock-ups: F2a, F2b, F2-app, F3, F3-app, F7, F8, A10 (docs/figstyle/PLAN.md), in
+"""The gallery's label-set mock-ups: F2a, F2b, F2-app, F3, F3-app, F8, A10 (docs/figstyle/PLAN.md), in
 style_v3 only. The numbers come through the selection code of paper_figures and mlst_results; the drawing
 is written here. All work happens inside the draw functions."""
 from __future__ import annotations
@@ -25,7 +25,6 @@ X_CLASSES, X_JETS = "Number of pretraining classes", "Number of training jets"
 LEGEND_PANEL = 1        # JetClass: its curves stay high on the right, so its lower right is empty in F2, F8 and A10
 TITLES = {key: title for key, _, _, _, title, _ in P.F2_PANELS}
 RANDOM_COLOUR = S.TAB10[7]
-SUBST_COLOUR = dict(zip(P.SUBST, S.TAB10[7:10]))
 HEAT_F3 = ("L162", "R42_Q1", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R")
 HEAT_APP = M.RAND
 PROBE_COLOUR = S.TAB10[8]   # F8: C1 means 162 classes in every other figure
@@ -181,36 +180,6 @@ def draw_f3_app(path) -> None:
     _draw_heat(path, HEAT_APP)
 
 
-# ------------------------------------------------------------------ F7: missing inputs
-def draw_f7(path) -> None:
-    """As F2: the metric against the number of classes, one line per way of filling the missing inputs."""
-    fits, raw, fill = I["fits"], I["raw"], I["fill"]
-    if not raw:
-        raise C.Absent("no JetClass-II linear probes with the inputs set to zero (linprobe/fits_v4)")
-    y_drop = "Accuracy drop (%)"
-    panels = (("JetClass-II, top tagging's inputs missing", y_drop, lambda m, s: M._jc2_drop(raw, fill, m, "top", s)),
-              ("JetClass-II, quark/gluon's inputs missing", y_drop, lambda m, s: M._jc2_drop(raw, fill, m, "qg", s)),
-              (TITLES["top"], Y_R30, lambda m, s: P._bench_r30(M, fits, fill, m, "top", s)),
-              (TITLES["qg"], Y_R30, lambda m, s: P._bench_r30(M, fits, fill, m, "qg", s)))
-    fig, axes = _panels_2x2()
-    for k, (ax, (title, ylabel, value)) in enumerate(zip(axes.flat, panels)):
-        S.fine_grid(ax)
-        for s in P.SUBST:
-            line = [(P.X_OF[row], y) for row in S.LEVELS if (y := _mean(row, lambda m: value(m, s))) is not None]
-            ax.plot(*zip(*line), color=SUBST_COLOUR[s], linewidth=S.LW_CURVE, marker="o", markersize=MARKER,
-                    label=P.SUBST_NAME[s])
-        S.title(ax, title)
-        S.labels(ax, X_CLASSES if k >= 2 else None, ylabel)
-        if ylabel == Y_R30:
-            _log_y(ax)
-        if k == 2:      # _log_y's round numbers leave the zero and mean lines, near 60, with no label
-            ax.yaxis.set_major_locator(ticker.FixedLocator([60, 80, 100, 150, 200, 250]))
-        _classes_axis(ax)
-    S.legend(axes[0, 0], loc="best")
-    S.heading(fig, "Linear probes with missing inputs")
-    S.save(fig, path)
-
-
 # ------------------------------------------------------------------ F8, A10: metric against the number of jets
 def _curve(ax, series: dict, colour: str, label: str, band: bool) -> None:
     """Mean over runs with filled circles; with band, Golling's: the SD (range for two runs), same colour, no edge."""
@@ -361,21 +330,6 @@ PAGES = [
         draw=draw_f3_app,
         data_note="Each random partition has one run; its column is that run against the 188-class run of the same "
                   "index."),
-    C.Page(
-        id="F7",
-        title="Missing inputs",
-        precedent=HONG,
-        precedent_label="Hong Fig. 2",
-        caption="Filling the input features a data set lacks, for linear probes of the four label sets, against the "
-                "number of pretraining classes. Top row: relative drop in class-balanced JetClass-II accuracy when the "
-                "features absent from the top-tagging or quark/gluon data are filled. Bottom row: rejection R30, the "
-                "background rejection at 30% signal efficiency. Points are means over three runs, with the features set "
-                "to zero, to the training mean or to random draws.",
-        differs="As F2: the metric against the number of classes, one line per way of filling the inputs, coloured by "
-                "tab10 C7-C9. Four panels, not Hong's one. Replaces the bar chart (PI). Adds the JetClass-II panel for "
-                "the features absent from quark/gluon, which the bars left out.",
-        draw=draw_f7,
-        data_note="Every point is a mean over three runs."),
     C.Page(
         id="F8",
         title="Pretraining against the number of training jets",

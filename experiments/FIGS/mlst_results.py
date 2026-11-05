@@ -1131,26 +1131,39 @@ def _fill_r30(fill, m, task, s):
     return _rej(_top_of(_raw_cells(fill, m), SUBST_KEY[task][s]), "r30")
 
 
+def _bold_best(values: list, cells: list, best) -> list:
+    """Bold the cell with the best mean, best = min or max; a cell with no value competes with nothing."""
+    means = [float(np.mean(ok)) if (ok := [v for v in vs if v is not None]) else None for vs in values]
+    have = [m for m in means if m is not None]
+    return [rf"\textbf{{{c}}}" if have and m == best(have) else c for c, m in zip(cells, means)]
+
+
 def table_fill(raw_v4, fill, fits, runs, fmt_pm, rows) -> str:
     """A16: every configuration with the missing inputs substituted by zero, the training mean or
     random draws. JetClass-II (largest training set): the relative drop in accuracy with the slots the
     top and the quark/gluon data lack substituted. Top and quark/gluon (largest training set): R30 of
-    the linear probe under each substitution; the kinematic-only model has nothing missing."""
+    the linear probe under each substitution; the kinematic-only model has nothing missing. The best
+    substitution of each row and data set is bold: the smallest drop, the largest R30."""
     out = [r"\begin{tabular}{l" + "c" * 6 + "}", r"\toprule",
            r" & \multicolumn{3}{c}{JetClass-II, top slots} & \multicolumn{3}{c}{JetClass-II, quark/gluon slots} \\",
            r"\cmidrule(lr){2-4}\cmidrule(lr){5-7}", "pretraining & " + " & ".join(SUBST * 2) + r" \\", r"\midrule"]
     for arm in rows:
         ms = runs[arm]
-        out.append(_row(arm, runs) + " & " + " & ".join(
-            _pct_cell([_jc2_drop(raw_v4, fill, m, t, s) for m in ms], len(ms), fmt_pm)
-            for t in ("top", "qg") for s in SUBST) + r" \\")
+        cells = []
+        for t in ("top", "qg"):
+            vals = [[_jc2_drop(raw_v4, fill, m, t, s) for m in ms] for s in SUBST]
+            cells += _bold_best(vals, [_pct_cell(v, len(ms), fmt_pm) for v in vals], min)
+        out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
     out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%", r"\begin{tabular}{l" + "c" * 6 + "}", r"\toprule",
             r" & \multicolumn{3}{c}{top, $R_{30}$} & \multicolumn{3}{c}{quark/gluon, $R_{30}$} \\",
             r"\cmidrule(lr){2-4}\cmidrule(lr){5-7}", "pretraining & " + " & ".join(SUBST * 2) + r" \\", r"\midrule"]
     for arm in rows:
         ms = runs[arm]
-        out.append(_row(arm, runs) + " & " + " & ".join(
-            _cell([_fill_r30(fill, m, t, s) for m in ms], len(ms), fmt_pm) for t in ("top", "qg") for s in SUBST) + r" \\")
+        cells = []
+        for t in ("top", "qg"):
+            vals = [[_fill_r30(fill, m, t, s) for m in ms] for s in SUBST]
+            cells += _bold_best(vals, [_cell(v, len(ms), fmt_pm) for v in vals], max)
+        out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
     kin = _rej(_probe_rec(fits, KIN_MODEL, "top"), "r30")
     out.append(LABEL["KIN"] + " & " + (_lone(kin) if kin is not None else r"\pending{run}")
                + r" & \multicolumn{2}{c}{nothing missing} & -- & -- & -- \\")
@@ -3111,13 +3124,20 @@ CAPTIONS = {
     "balance": ("tab:balance", "JetClass-II linear probes with $10^{6}$ training jets on the natural-composition test "
                 "set and on the class-balanced one: AUC averaged over the classes and the ratio $\\rho$ of $1-\\mathrm{AUC}$, equation~(\\ref{eq:ratio}), to "
                 "the \\Kfull-class run. " + SPREAD),
+    "fill_main": ("tab:fill_main", "Linear probes of the four label sets with the missing inputs set to zero, to the "
+                  "training mean or to random draws of a real particle, at the largest training set. Upper part: relative "
+                  "drop in JetClass-II accuracy (per cent) when the slots the top or the quark/gluon data lack are "
+                  "substituted, against the same model with every input. Lower part: $R_{30}$ on top and quark/gluon "
+                  "tagging. Mean and standard deviation over three runs. The best substitution of each row and data set is "
+                  "in bold. Every configuration is in table~\\ref{tab:fill}."),
     "fill": ("tab:fill", "The three substitutions of the missing inputs (zero, the training mean, random draws of a "
              "real particle) for every configuration, at the largest training set. Upper part: relative drop in "
              "JetClass-II accuracy (per cent) when the slots the top (\\FillTopNZero{}) or the quark/gluon "
              "(\\FillQgNZero{}) data lack are substituted, against the same model with every input. Lower part: "
              "$R_{30}$ of the linear probe on top and quark/gluon jets under each substitution; the model with "
              "kinematic inputs only has nothing missing. The substitution chosen on validation is "
-             "\\LpSubstitutionTop{} for top and \\LpSubstitutionQg{} for quark/gluon. " + SPREAD),
+             "\\LpSubstitutionTop{} for top and \\LpSubstitutionQg{} for quark/gluon. The best substitution of each row and "
+             "data set is in bold. " + SPREAD),
     "mass": ("tab:mass", "Jet mass from frozen features: a multilayer perceptron regresses the mass from the frozen "
              "features of each configuration; the groomed (soft-drop) mass is the reference. Resolution: $\\sigma_r$ of "
              "equation~(\\ref{eq:resolution}), half the 15.9--84.1\\% inter-quantile range of the response "
@@ -3233,7 +3253,7 @@ CAPTIONS = {
 # (caption key, table file, wide, caption fill) of the tables written as placeholders until their data exist
 PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes_n", True, None),
                 ("pairs", "mlst_pairs", True, {"__ZERO__": ""}), ("mlp", "mlst_mlp", True, None), ("bn", "mlst_bn", False, None),
-                ("balance", "mlst_balance", False, None), ("fill", "mlst_fill", True, None),
+                ("balance", "mlst_balance", False, None), ("fill", "mlst_fill", True, None), ("fill_main", "mlst_fill_main", True, None),
                 ("mass", "mlst_mass", False, None), ("mass_detail", "mlst_mass_detail", True, None),
                 ("sculpt", "mlst_sculpt", False, {"__SCULPT_BINS__": r"\pending{bins}"}), ("ft", "mlst_ft", True, None),
                 ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, {"__JC2COMP__": "class-balanced"}),
@@ -3445,6 +3465,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     else:
         missing.append(f"nonlinear probes -- experiments/FIGS/data/v2/{MLP_FITS_V4}/")
     out["tables/mlst_fill.tex"] = _float("fill", table_fill(raw_v4, fill, fits, runs, fmt_pm, ALL_ROWS + (INIT_BN,)), True)
+    out["tables/mlst_fill_main.tex"] = _float("fill_main", table_fill(raw_v4, fill, fits, runs, fmt_pm, MAIN), True)
     fill_macros(em, raw_v4, fill, fits, runs, index, fmt_pm, missing)
     loss_share_macros(em, comp, runs, index, fmt_pm, root)
     atlas = _load(data / "head" / "atlas_res")

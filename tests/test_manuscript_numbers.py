@@ -51,7 +51,7 @@ GENERATED = {"results_generated.tex",
              "tables/mlst_probes.tex", "tables/mlst_probes_n.tex", "tables/mlst_pairs.tex",
              "tables/mlst_mass.tex", "tables/compute.tex",
              "tables/mlst_ft.tex", "tables/mlst_ft_rej.tex",
-             "tables/mlst_mlp.tex", "tables/mlst_fill.tex", "tables/mlst_sculpt.tex",
+             "tables/mlst_mlp.tex", "tables/mlst_fill.tex", "tables/mlst_fill_main.tex", "tables/mlst_sculpt.tex",
              "tables/mlst_boot.tex", "tables/mlst_bench_top.tex", "tables/mlst_bench_qg.tex",
              "tables/mlst_jetclass.tex", "tables/mlst_xbx.tex",
              # Phase B (2026-11-02): the new paper's main and appendix tables
