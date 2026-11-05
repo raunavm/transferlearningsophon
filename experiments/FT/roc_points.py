@@ -17,6 +17,9 @@ discriminants are reused here.
     qg_ft      ... on quark/gluon at the full set, Pythia ("qg") and Herwig ("qg_herwig")
     jc2_ovr    the linear probes on the balanced JetClass-II test set at 10^6, one-vs-rest:
                p_c against every other class, all 188 native classes (keys "0" ... "187")
+    jc2_ft_ovr the same for fine-tuning at 10^6, softmax(logits) (2026-11-05)
+    top_probe, qg_probe  the linear probes at the full sets, the "s" each file stores, with --ckpt naming
+               the substitution of the missing inputs (2026-11-05); keys as top_ft and qg_ft
 
 ROC AND THE CUT. fpr, tpr = roc_curve(y, D, drop_intermediate=False) with fps = rint(fpr N_B);
 eps_B at each grid point by linear interpolation (ft_curves' convention), rejection 1/eps_B (null
@@ -71,7 +74,7 @@ PB = _load("probe_bal", "experiments/EVAL/probe_bal.py")     # SIBLING_PAIRS
 OUT_ROOT = pathlib.Path("/data/results/ft_v2/curves_v2")
 EPS_GRID = tuple(round(0.001 * i, 3) for i in range(1, 11)) + tuple(round(0.015 + 0.005 * i, 3) for i in range(197))
 MIN_BKG_PASS = 20               # the fewest background jets behind a drawn point (mlst_v4.JC1_MIN_BKG)
-FT_TASK = {"jc1_ft": "jc1", "jc1_ft_ovr": "jc1", "top_ft": "top", "qg_ft": "qg"}     # the fine-tuning families and their task
+FT_TASK = {"jc1_ft": "jc1", "jc1_ft_ovr": "jc1", "top_ft": "top", "qg_ft": "qg", "jc2_ft_ovr": "jc2b"}     # the fine-tuning families and their task
 # the nine JetClass signal classes in the paper table's order (mlst_v4.JC1_COLS)
 JC1_SIGNALS = ("label_Hbb", "label_Hcc", "label_Hgg", "label_H4q", "label_Hqql", "label_Tbqq", "label_Tbl",
                "label_Wqq", "label_Zqq")
@@ -207,6 +210,11 @@ def ft_manifest(cell: pathlib.Path):
 
 
 def ft_cell_curves(task: str, cell: pathlib.Path, n: int, ovr: bool = False) -> dict:
+    if task == "jc2b":
+        logits = np.load(cell / "features" / "logits.npy").astype(np.float64)
+        logits -= logits.max(1, keepdims=True)
+        return ovr_curves(np.exp(logits), np.load(cell / "features" / "label188.npy").astype(np.int64), n,
+                          cell / "features" / "logits.npy")
     if task == "jc1":
         _, y, p, names = FC.cell_scores(cell, "jc1")
         return (jc1_ovr_curves if ovr else jc1_curves)(p, y, names, n, cell / "pred.root")
@@ -271,6 +279,10 @@ def probe_curves(family: str, f: pathlib.Path, model_dir: str, ckpt: str, fits_r
         return jc1_curves(z["p"], y, LP.JC1_CLASSES, n, f)
     if family == "jc1_probe_ovr":
         return jc1_ovr_curves(z["p"], y, LP.JC1_CLASSES, n, f)
+    if family in ("top_probe", "qg_probe"):
+        task = "top" if family == "top_probe" else "qg"
+        return {f.stem.removesuffix(f"_N{n}"): curve(y.astype(np.int64), z["s"].astype(np.float64), [BM.SIGNAL[task][1][BM.SIGNAL_COLUMN]],
+                                                      [BM.SIGNAL[task][1][1 - BM.SIGNAL_COLUMN]], DISCR["pairs"], n, f)}
     return ovr_curves(z["p"], y, n, f)
 
 
@@ -278,7 +290,7 @@ def run_probes(a, odir: pathlib.Path) -> None:
     models = a.models or sorted({d.name for r in a.probs_root for d in r.iterdir() if d.is_dir()})
     cache = {}
     for md in models:
-        for ckpt in ("init", "init_bn") if md.startswith("init-") else ("best70",):
+        for ckpt in ("init", "init_bn") if md.startswith("init-") else (a.ckpt,):
             model = f"{CKPTS[ckpt]}-{md.removeprefix('init-')}" if ckpt in CKPTS else md
             files = {}
             for root in a.probs_root:
@@ -314,11 +326,12 @@ def main(argv=None) -> int:
     f = sub.add_parser("ft")
     f.add_argument("--family", required=True, choices=tuple(FT_TASK))
     f.add_argument("--tree", required=True, type=pathlib.Path, help="<tree>/<init>/N<N>/s<S>/")
-    f.add_argument("--task", required=True, choices=("jc1", "top", "qg"))
+    f.add_argument("--task", required=True, choices=("jc1", "top", "qg", "jc2b"))
     f.add_argument("--n", required=True, type=int)
     f.add_argument("--inits", nargs="+", help="only these init directories (default: every one)")
     p = sub.add_parser("probes")
-    p.add_argument("--family", required=True, choices=("jc1_probe", "jc1_probe_ovr", "pairs", "jc2_ovr"))
+    p.add_argument("--family", required=True, choices=("jc1_probe", "jc1_probe_ovr", "pairs", "jc2_ovr", "top_probe", "qg_probe"))
+    p.add_argument("--ckpt", default="best70", help="the checkpoint directory; best70.<fill> for a substitution")
     p.add_argument("--probs-root", required=True, nargs="+", type=pathlib.Path)
     p.add_argument("--fits-root", nargs="*", default=[], type=pathlib.Path, help="pairs: the fit files' roots")
     p.add_argument("--files", required=True, nargs="+", help="file stems or globs, e.g. jc1_N1000000 'jc2bal_pairs_*'")

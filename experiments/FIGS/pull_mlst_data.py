@@ -36,6 +36,7 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
                                    (probe_bal.py --fill, scripts/build_jc2bal_jobs.py fitfill)
   linprobe/fits_v4_sib/            the X->ee vs X->mumu probe (probe_bal.py --sibling-pairs, jc2bal-sib)
   curves_v2/<family>/<model>.json  per-class ROC curves with the 20-background-jet cut
+  tsne/<set>_<model>.json          t-SNE of the frozen class token (experiments/EVAL/tsne_class_token.py)
                                    (experiments/FT/roc_points.py; families whose DONE exists, no npz)
   head/atlas_res/<model>.json      ATLAS mass resolution and median response (/data/results/eval/atlas_res)
   xbx_scratch/<signal>/s<k>.json   X->bs from scratch, its finished cells' endpoints.json
@@ -111,7 +112,7 @@ def compute(run: pathlib.Path) -> dict:
         if d["epoch"] != e or "device" not in d:
             raise SystemExit(f"FATAL: {run.name} epoch {e}: no device record")
         rec = {"epoch": e, "device": d["device"], "train_seconds": d["train"]["seconds"],
-               "val_seconds": d["val"]["seconds"], "jets_per_s": d["train"]["jets_per_s"]}
+               "val_seconds": d["val"]["seconds"], "jets_per_s": d["train"]["jets_per_s"], "val_acc": d["val"]["acc"]}
         if "loss_reg" in d["train"]:
             # the mass term's share of the training loss: loss = loss_cls + lambda * loss_reg
             rec["loss_share_reg"] = (d["train"]["loss"] - d["train"]["loss_cls"]) / d["train"]["loss"]
@@ -180,7 +181,8 @@ def main() -> int:
               (FT / "budget", "budget", "budget_metrics.json"),
               (FT / "lrsweep_v2", "budget", "lrsweep_metrics.json"),     # 50-step checks (2026-11-01)
               (pathlib.Path("/data/results/partrepro"), "partrepro", "*/metrics.json"),
-              (EVAL / "dup_check", "dup_check", "*.json"))
+              (EVAL / "dup_check", "dup_check", "*.json"),
+              (EVAL / "tsne_v1", "tsne", "*.json"))
         for d, name, pattern in v4:
             for f in sorted(d.glob(pattern)):
                 b = f.read_bytes()
