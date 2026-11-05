@@ -136,15 +136,16 @@ def _jc1_one(path: pathlib.Path, models: list, heading: str) -> None:
     _save(fig, path)
 
 
-def _jc1_four(path: pathlib.Path, family: str, heading: str) -> None:
+def _jc1_four(path: pathlib.Path, family: str, heading: str, legend: bool = True) -> None:
     """One panel per label set; one legend, names only: with the AUCs it does not fit under the curves."""
     docs = _family(family)
-    fig, axes = _axes_2x2(sharey=True, wspace=0.08, heading=heading)
+    fig, axes = _axes_2x2(sharey=True, wspace=0.1, heading=heading)
     for ax, level in zip(axes.flat, S.LEVELS):
         auc = _jc1_curves(ax, docs, RUNS[level], auc_in_legend=False)
         S.title(ax, f"Pretrained on {S.NAME[level]}, macro AUC {auc:.3f}")
     _y_range(list(axes.flat))
-    _legend(axes[0, 0], title="Signal class", title_fontsize=7.5, fontsize=7.5, ncol=2)
+    if legend:
+        _legend(axes[0, 0], title="Signal class", title_fontsize=7.5, fontsize=7.5, ncol=2)
     _save(fig, path)
 
 
@@ -164,7 +165,7 @@ def draw_fj_all(path: pathlib.Path) -> None:
 
 
 def draw_fj_app(path: pathlib.Path) -> None:
-    _jc1_four(path, "jc1_probe_ovr", "Linear probes trained on $10^6$ JetClass jets")
+    _jc1_four(path, "jc1_probe_ovr", "Linear probes trained on $10^6$ JetClass jets", legend=False)     # probe curves lie lower: it would cover Z->qq
 
 
 def _pairs(path: pathlib.Path, series: list, keys: tuple) -> None:
@@ -219,7 +220,7 @@ def draw_a3r(path: pathlib.Path) -> None:
     docs = _family("jc2_ovr")
     names = {r["jet_label"]: r["class_name"] for r in M._class_rows(P.REPO)}
     colour = {label: S.TAB10[FAMILIES.index(family_of(name))] for label, name in names.items()}
-    fig, axes = _axes_2x2(sharey=True, wspace=0.08, heading="Linear probes on $10^6$ JetClass-II jets")
+    fig, axes = _axes_2x2(sharey=True, wspace=0.1, heading="Linear probes on $10^6$ JetClass-II jets")
     for ax, level in zip(axes.flat, S.LEVELS):
         aucs = []
         for label in names:
@@ -229,7 +230,7 @@ def draw_a3r(path: pathlib.Path) -> None:
         S.title(ax, f"Pretrained on {S.NAME[level]}, macro AUC {np.mean(aucs):.3f}")
     _y_range(list(axes.flat))
     _legend(axes[0, 0], handles=[Line2D([], [], color=S.TAB10[i], linewidth=S.LW, label=f)
-                                 for i, f in enumerate(FAMILIES)], fontsize=7.5)
+                                 for i, f in enumerate(FAMILIES)], fontsize=7)
     _save(fig, path)
 
 
@@ -274,9 +275,10 @@ PAGES = [
          caption="Background rejection against signal efficiency on JetClass from linear probes, trained on one million "
                  "jets, on frozen pretrained networks. Each curve takes one of the ten JetClass classes as signal and "
                  "the other nine as background, and is the mean over three pretraining runs. Curves begin where 20 "
-                 "background jets remain. One panel per pretraining label set; the title gives the mean area under the "
-                 "curve over the ten classes.",
-         differs="As FJ-all. The poster's left panel is also a frozen network, with an MLP on it; here the probe is linear.",
+                 "background jets remain. One panel per pretraining label set, colors as in the previous figure; the "
+                 "title gives the mean area under the curve over the ten classes.",
+         differs="As FJ-all, with no legend: probe curves lie lower, so it would cover Z to qq; the colors are FJ-all's. The "
+                 "poster's left panel is also a frozen network, with an MLP on it; here the probe is linear.",
          draw=draw_fj_app),
     Page(id="F4", title="Flavor separation for four class pairs",
          precedent=["1902.09914/fig5.png"],
