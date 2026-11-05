@@ -16,7 +16,7 @@ import style_v3 as S
 
 P, M, RUNS, I = C.P, C.M, C.RUNS, C.I
 
-GRID_2X2 = {"left": 0.1, "right": 0.97, "top": 0.92, "bottom": 0.06, "wspace": 0.3, "hspace": 0.2}     # room for repeated y labels, tick labels and titles
+GRID_2X2 = {"left": 0.1, "right": 0.96, "top": 0.92, "bottom": 0.06, "wspace": 0.3, "hspace": 0.2}     # room for repeated y labels, tick labels and titles
 HEIGHT_HEAT = 8.0                                 # 188 rows; a 5-row group label at 10 pt still clears its neighbours
 LEFT_HEAT = 0.26                                  # the longest group label at 10 pt, so the saved width stays 15 cm
 MARKER = 4
@@ -208,7 +208,7 @@ def draw_f7(path) -> None:
     axes[-1].set_xticks(x)
     axes[-1].set_xticklabels([S.NAME[row] for row in S.LEVELS])
     S.labels(axes[-1], "Pretraining label set")
-    S.heading(fig, "Linear probes with inputs filled in")
+    S.heading(fig, "Linear probes with missing inputs")
     S.save(fig, path)
 
 

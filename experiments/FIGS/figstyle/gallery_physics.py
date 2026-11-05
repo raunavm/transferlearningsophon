@@ -489,7 +489,7 @@ PAGES = [
          "All jets on our bins: four unequal pT bins to 2500 GeV in reconstructed pT, instead of ATLAS's finer bins to 1500 "
          "GeV in truth pT. Connected steps instead of one disconnected segment per bin, and no bands (PI limit), though "
          "ATLAS draws them. Three series instead of two, colours as F9a. No dotted line at 1 in the median panel. Dashed "
-         "grid at the ticks, our rule for curve figures, where ATLAS has none. Median response (r) and Resolution "
+         "grid at major and minor ticks, the theme for every figure, where ATLAS has none. Median response (r) and Resolution "
          "(sigma_r) instead of ATLAS's longer axis words. The lower panels keep ATLAS's ratio "
          "and its RSD, sgn(s'-s) sqrt|s'^2-s^2|, at its height (0.44). " + ATLAS_LOOK + ".",
          draw_f9b, MASS_RUNS_NOTE),
@@ -524,14 +524,14 @@ PAGES = [
          "each colour instead of an open square and a filled circle. Colours C0, C3, C9 instead of CMS's blue and orange; "
          "the 17-class mass regression model is cyan here because 17 classes is red on these axes, and red on F9 and A17. "
          "Markers joined by a 1.1 pt line, not step markers: each point is a cumulative selection, so a segment would span "
-         "a bin that does not exist (for the PI to decide). Dashed grid at the ticks (our rule for curve figures), where "
+         "a bin that does not exist (for the PI to decide). Dashed grid at major and minor ticks (the theme for every figure), where "
          "CMS has none. Jensen-Shannon distance (d_JS) and QCD efficiency instead of JSD and eps_B [%]; y limits from the "
          "data instead of 0.007 to 1. No random-selection band or floor: CMS has none (plan). Framed legend and no label "
          "block; STIX at 10 and 8 pt with outward ticks.",
          draw_f10b,
          "Mean of two runs for the 17-class model with mass regression, three for the others. Nothing else is absent."),
     Page("F11", "Resonance tagging", ["2405.12972/fig2.png"], "Sophon Fig. 2", F11_CAPTION,
-         "Same layout, limits on x, grid, fonts and legend place. y axis eps_S/sqrt(eps_B), in words figure of merit, instead of the "
+         "Same layout, limits on x, fonts and legend place; landscape's finer grid and thinner lines (the theme). y axis eps_S/sqrt(eps_B), in words figure of merit, instead of the "
          "significance Z, and x axis QCD efficiency instead of SM background efficiency, because Z needs the SM backgrounds, which "
          "we do not have. Upper panel on stand-in jets from JetClass-II, not Sophon's samples. Lower panel empty, "
          "not invented curves. Roles: the 188-class direct discriminant is Sophon's direct curve, in Sophon's grey for a "

@@ -240,12 +240,10 @@ PAGES = [
                  "Each curve takes one of the ten JetClass classes as signal and the other nine as background, and is "
                  "the mean over three pretraining runs. Curves begin where 20 background jets remain. One panel per "
                  "pretraining label set; the title gives the mean area under the curve over the ten classes.",
-         differs="Against landscape: ten classes of one network, not fifteen networks on one task; solid curves in "
-                 "tab10; y range 1 to 1e5 against about 4 to 4e4; axis words at the axis end, in our word form; titles "
-                 "and legend heading added, to say what the curves are. Against the poster: rejection against signal "
-                 "efficiency, not true against false positive rate (PI); four panels, not two; one legend, names only, "
-                 "because with the class AUCs it does not fit under the curves at this panel width. Ten curves: over "
-                 "the limit of six series, the exception the PI asked for.",
+         differs="Against landscape: ten classes of one network, not fifteen networks; solid tab10; y range 1 to 1e5; "
+                 "titles and legend heading added. Against the poster: rejection against efficiency, not true against "
+                 "false positive rate (PI); four panels, not two; legend names only, as the AUCs do not fit under the "
+                 "curves. Ten curves: the exception to the limit of six that the PI asked for.",
          draw=draw_fj),
     Page(id="FJ-ctrl", title="JetClass after fine-tuning, random partitions",
          precedent=["1902.09914/fig5.png", "map2026_poster/fig5.png"],
