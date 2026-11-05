@@ -51,15 +51,17 @@ def best_epoch(metrics: dict) -> tuple:
     return best_e, best_v
 
 
-def decide(metrics: dict, current: set, patience: int) -> tuple:
+def decide(metrics: dict, current: set, patience: int, patience_from: int = 0) -> tuple:
     """(stop?, last complete epoch, best epoch). An epoch is complete once its Current line is
-    logged; stop when the last complete epoch is `patience` or more epochs after the best."""
+    logged; stop when the last complete epoch is `patience` or more epochs after the best, counting
+    from patience_from at the earliest: a from-scratch run's learning rate decays only from there
+    on, so stopping on a plateau before it would give that run less than the fixed budget did."""
     done = sorted(e for e in metrics if e in current)
     if not done:
         return False, None, None
     last = done[-1]
     be, _ = best_epoch({e: metrics[e] for e in done})
-    return last - be >= patience, last, be
+    return last - max(be, patience_from) >= patience, last, be
 
 
 def alive(pid: int) -> bool:
@@ -75,7 +77,7 @@ def watch(a) -> int:
     while True:
         lines = open(a.log).readlines() if os.path.exists(a.log) else []
         metrics, current = scan(lines)
-        stop, last, be = decide(metrics, current, a.patience)
+        stop, last, be = decide(metrics, current, a.patience, a.patience_from)
         if stop:
             os.kill(a.pid, signal.SIGTERM)
             for _ in range(120):
@@ -94,7 +96,7 @@ def watch(a) -> int:
     be, bv = best_epoch(done)
     rec = {"rule": "best validation metric (weaver's, on ft_weaver.py's exact values); stop after "
                    f"{a.patience} epochs without improvement",
-           "patience": a.patience, "max_epochs": a.max_epochs, "epochs_completed": len(done),
+           "patience": a.patience, "patience_from": a.patience_from, "max_epochs": a.max_epochs, "epochs_completed": len(done),
            "last_epoch": max(done) if done else None, "best_epoch": be, "best_metric": bv,
            "stopped_early": stopped, "metrics": {str(e): done[e] for e in sorted(done)}}
     with open(a.out, "w") as f:
@@ -116,6 +118,7 @@ def main(argv=None) -> int:
     w.add_argument("--pid", required=True, type=int)
     w.add_argument("--patience", type=int, default=10)
     w.add_argument("--max-epochs", type=int, default=40)
+    w.add_argument("--patience-from", type=int, default=0)
     w.add_argument("--out", required=True)
     w.add_argument("--poll", type=float, default=10.0)
     a = ap.parse_args(argv)

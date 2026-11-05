@@ -27,6 +27,12 @@ Kinds of job (each one Indexed Job, any 24 GB+ GPU (build_mtx_launch.V2_FT_GPU),
             scratch (seed 1) at {3e-4, 1e-3, 3e-3}; picked on the validation metric
   bench     top and quark/gluon at 1e3, 1e4, 1e5 for every paper run and from scratch
   jc1       JetClass at 1e4 and 1e5 (10^3 dropped, PI 2026-10-31)
+  long      10^6 jets with four times the budget (80,000 steps, 160 epochs of 500; PI 2026-11-05, reversing
+            the figure plan's decision 18: the from-scratch runs were still improving at the limit). Under
+            /data/results/ft_v2/budget_long/. JetClass-II: from scratch and the three pretrained runs that
+            reached the limit; the others stopped early under the same rule and stand. JetClass: every run,
+            since all had the old fixed 10 epochs with no stopping rule, and one recipe per figure. From
+            scratch keeps flat+decay, whose decay starts at 70%, so patience counts from there
   fillcheck top at the full set from 188-s1, zero fill and mean fill (experiments/FT/fill_config.py),
             ParT's recipe: does the fill move fine-tuning? (PI 2026-11-01: stays zero-fill if R30
             moves by less than the seed spread)
@@ -38,6 +44,7 @@ test outputs the read-outs take: features/logits.npy (top, quark/gluon, plus Her
 
     python3 scripts/build_ft_budget_jobs.py --tag mtx-s2.23 lrsweep
     python3 scripts/build_ft_budget_jobs.py --tag mtx-s2.24 --lr-pre 3e-4 --lr-scratch 1e-3 bench jc1
+    python3 scripts/build_ft_budget_jobs.py --tag mtx-s2.60 --lr-pre 1e-3 --lr-scratch 1e-3 long-jc2b long-jc1
 """
 import argparse
 import importlib.util
@@ -48,6 +55,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "experiments" / "FT" / "k8s" / "budget"
 BUDGET_ROOT = "/data/results/ft_v2/budget"
 FILLCHECK_ROOT = "/data/results/ft_v2/fillcheck"
+LONG_ROOT = "/data/results/ft_v2/budget_long"
+LONG_EPOCHS, LONG_N, LONG_JC2B = 160, 1_000_000, ("r16q1-s1", "r16q1mass-s1", "r16q1mass-s2")
 SWEEP_ROOT = "/data/results/ft_v2/lrsweep_v2"     # the 500-step sweep stays in .../lrsweep (RUNS.csv)
 MTX_V2 = "/data/results/mtx_v2"
 PAPER_RUNS = ROOT / "configs" / "arms" / "v2_paper_runs.txt"
@@ -144,6 +153,14 @@ def jc2b_cells(lr_pre: str, lr_scratch: str) -> list:
     return bench_cells(lr_pre, lr_scratch, ("jc2b",), runs)
 
 
+def long_cells(task: str, lr_pre: str, lr_scratch: str) -> list:
+    inits = LONG_JC2B if task == "jc2b" else paper_runs()
+    out = [{**cell(task, "", LONG_N, s, lr_scratch, LONG_ROOT), "patience_from": LONG_EPOCHS - max(1, int(LONG_EPOCHS * 0.3))}
+           for s in SCRATCH_SEEDS]      # weaver's flat+decay: the last 30% of the epochs decay
+    out += [cell(task, r, LONG_N, 1, lr_pre, LONG_ROOT) for r in inits]
+    return [{**c, "epochs": LONG_EPOCHS} for c in out]
+
+
 def kin_cells(lr_pre: str) -> list:
     """The kinematic-only runs on top tagging: below the full set at the swept rate, and the full set
     with ParT's fine-tuning recipe (1e-4, head x50)."""
@@ -212,7 +229,7 @@ python3 experiments/FT/ft_weaver.py --seed ${S} --lean-val-metrics \
   > ${RUN}/stdout.log 2>&1 &
 PID=$!
 ES=0
-python3 experiments/FT/early_stop.py watch --log ${RUN}/train.log --pid ${PID} --patience ${PAT} \
+python3 experiments/FT/early_stop.py watch --log ${RUN}/train.log --pid ${PID} --patience ${PAT} --patience-from ${PATFROM} \
   --max-epochs ${EP} --out ${CELL}/early_stop.json || ES=$?
 wait ${PID} || true
 cp ${RUN}/train.log ${RUN}/stdout.log ${CELL}/
@@ -268,7 +285,7 @@ def task_cases() -> str:
 def cell_cases(cells: list) -> str:
     return "".join(f"  {i}) TASK={c['task']}; INIT={c['init']}; RUN_DIR={c['run_dir']}; N={c['n']}; S={c['s']}; "
                    f"LR={c['lr']}; MULT={c['mult']}; EP={c['epochs']}; SPE={c['spe']}; PAT={c['patience']}; "
-                   f"VAL={c['val']}; CELL={c['out']};;\n" for i, c in enumerate(cells))
+                   f"VAL={c['val']}; PATFROM={c.get('patience_from', 0)}; CELL={c['out']};;\n" for i, c in enumerate(cells))
 
 
 def spec(name: str, cells: list, tag: str, parallelism: int, memory: str) -> str:
@@ -361,7 +378,7 @@ def main(argv=None) -> int:
     ap.add_argument("--parallelism", type=int, default=4)
     ap.add_argument("--indices", default=None,
                     help="comma-separated indices of the full kind's job: a -retry job of those cells only")
-    ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck"))
+    ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1"))
     a = ap.parse_args(argv)
     if a.indices and len(a.kinds) != 1:
         ap.error("--indices needs exactly one kind")
@@ -378,7 +395,9 @@ def main(argv=None) -> int:
             cells = {"bench": lambda: bench_cells(a.lr_pre, a.lr_scratch, ("top", "qg"), lr_scratch_task=per_task),
                      "jc1": lambda: bench_cells(a.lr_pre, a.lr_scratch, ("jc1",)),
                      "jc2b": lambda: jc2b_cells(a.lr_pre, a.lr_scratch),
-                     "kin": lambda: kin_cells(a.lr_pre)}[kind]()
+                     "kin": lambda: kin_cells(a.lr_pre),
+                     "long-jc2b": lambda: long_cells("jc2b", a.lr_pre, a.lr_scratch),
+                     "long-jc1": lambda: long_cells("jc1", a.lr_pre, a.lr_scratch)}[kind]()
             mem = "48Gi" if kind in ("bench", "kin") else "64Gi"
         if any(c["n"] >= 1_000_000 for c in cells):
             # weaver holds a whole training file in memory: 48Gi OOM-killed the top fill check at

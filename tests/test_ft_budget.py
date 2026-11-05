@@ -151,3 +151,22 @@ def test_a_retry_job_holds_the_same_cells_and_a_failed_clone_waits(tmp_path, mon
     out = subprocess.run(["bash", "-c", probe], capture_output=True, text=True,
                          env={"PATH": f"{fake}:/usr/bin:/bin"})
     assert out.returncode == 0 and "calls=3" in out.stdout
+
+
+def test_patience_can_start_when_the_learning_rate_starts_to_decay():
+    metrics = {e: 0.5 for e in range(20)}       # best at epoch 0, nothing better since
+    assert es.decide(metrics, set(metrics), 10)[0] is True
+    assert es.decide(metrics, set(metrics), 10, 12)[0] is False
+    metrics[22] = 0.4
+    assert es.decide(metrics, set(metrics), 10, 12)[0] is True
+
+
+def test_long_cells_are_the_runs_at_the_limit_with_four_times_the_budget():
+    jc2 = bfb.long_cells("jc2b", "1e-3", "1e-3")
+    jc1 = bfb.long_cells("jc1", "1e-3", "1e-3")
+    assert sorted(c["init"] for c in jc2) == ["", "", "", "r16q1-s1", "r16q1mass-s1", "r16q1mass-s2"]
+    assert len(jc1) == len(bfb.paper_runs()) + 3
+    for c in jc2 + jc1:
+        assert c["n"] == 1_000_000 and c["epochs"] == 160 and c["spe"] == 256_000 and c["patience"] == 10
+        assert c["out"].startswith("/data/results/ft_v2/budget_long/")
+        assert c.get("patience_from", 0) == (0 if c["init"] else 112)
