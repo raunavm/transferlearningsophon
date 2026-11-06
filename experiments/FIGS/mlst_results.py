@@ -1385,13 +1385,13 @@ def mass_macros(em, atlas, runs, index, fmt_pm) -> None:
     # model's mean reaches SHOWN_FROM of its own largest bin: the share of QCD jets' groomed-mass response
     # inside that range (jets outside the histogram's edges count in the total, as in the figure).
     h = [atlas[m]["estimators"]["groomed"]["qcd"]["hist"] for m in sorted(atlas)
-         if "groomed" in atlas[m]["estimators"]]
+         if "hist" in atlas[m]["estimators"].get("groomed", {}).get("qcd", {})]
     if h:
         frac = lambda x: np.asarray(x["counts"], float) / (sum(x["counts"]) + x["underflow"] + x["overflow"])
         gr = frac(h[0])
         shown = [gr] + [np.mean(hs, axis=0) for arm in MASS
                         if (hs := [frac(atlas[m]["estimators"]["regressed"]["qcd"]["hist"]) for m in runs[arm]
-                                   if m in atlas and "regressed" in atlas[m]["estimators"]])]
+                                   if m in atlas and "hist" in atlas[m]["estimators"].get("regressed", {}).get("qcd", {})])]
         on = np.flatnonzero(np.any([s >= F9A_SHOWN_FROM * s.max() for s in shown], axis=0))
         em.macro("MlstMassRespAxesShareQcd", _pct_prose([100 * gr[on[0]:on[-1] + 1].sum()]), index,
                  "head/atlas_res: share of QCD jets whose groomed-mass response lies inside F9a(b)'s x axis")
