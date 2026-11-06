@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Interim read-out (2026-11-06) of the fixed-budget fine-tuning cells with DONE (experiments/FT/budget_metrics.py); a cell
+  # without DONE is listed as missing. CPU only. The final read-out runs again when the top and q/g cells end.
+  name: budget-readout-b-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          for T in 1 2 3 4 5; do git clone --depth 1 --branch "mtx-s2.65" https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
+          cd /workspace/repo
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          [ "${USED}" -le 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
+          OUT=/data/results/ft_v2/budget/budget_metrics.json
+          python3 experiments/FT/budget_metrics.py --root /data/results/ft_v2/budget --out ${OUT}.new
+          mv ${OUT}.new ${OUT}
+          python3 -c "import json;d=json.load(open('${OUT}'));print({k:(len(v) if hasattr(v,'__len__') else v) for k,v in d.items()})"
+          LONG=/data/results/ft_v2/budget_long/budget_long_metrics.json
+          python3 experiments/FT/budget_metrics.py --root /data/results/ft_v2/budget_long --trees leg2 leg_jc2b --out ${LONG}.new
+          mv ${LONG}.new ${LONG}
+          python3 -c "import json;d=json.load(open('${LONG}'));print({k:(len(v) if hasattr(v,'__len__') else v) for k,v in d.items()})"
+          echo "READOUT COMPLETE"
+        resources:
+          requests: { memory: "24Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "24Gi", cpu: "4", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

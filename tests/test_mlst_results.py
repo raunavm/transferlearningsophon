@@ -868,6 +868,30 @@ def test_the_inputs_table_reads_which_inputs_each_data_set_lacks():
     assert t.count(r" \\") == 17 + 1
 
 
+def test_the_inputs_table_and_macro_read_the_input_normalization_offsets(tmp_path):
+    off = {n: -0.1 for n in ("part_charge", *M.FLAGS, "part_d0", "part_d0err", "part_dz", "part_dzerr")}
+    off["part_isChargedHadron"] = -0.957
+    t = M.table_inputs(ROOT, off)
+    assert r"\pending{offsets}" not in t and "$-0.96$" in t
+    src = tmp_path / "input_bn_offsets.json"
+    src.write_text("{}")
+    em = _PEm()
+    M.input_bn_macros(em, off, src)
+    assert em.m["MlstInputBnZeroSigmaMax"] == "0.96"
+
+
+def test_input_bn_offsets_put_a_zero_at_minus_mean_over_sigma():
+    torch = pytest.importorskip("torch")
+    IB = _load("input_bn_offsets", "experiments/EVAL/input_bn_offsets.py")
+    names = IB.names()
+    assert len(names) == 17 and "part_isChargedHadron" in names and not any("zero" in n for n in names)
+    state = {"mod.embed.input_bn.running_mean": torch.full((17,), 0.5),
+             "mod.embed.input_bn.running_var": torch.full((17,), 4.0 - IB.EPS)}
+    assert IB.offsets(state, names)["part_charge"] == pytest.approx(-0.25)
+    with pytest.raises(SystemExit):
+        IB.offsets(state, names[:-1])
+
+
 def test_the_r30_counting_spread_of_a_label_set_ratio():
     runs = {"A": ["mtx-a-s1", "mtx-a-s2"], "B": ["mtx-b-s1", "mtx-b-s2"]}
     rec = {"mtx-a-s1": {"r30": 110, "r30_rel_stat": 0.1}, "mtx-a-s2": {"r30": 90, "r30_rel_stat": 0.1},

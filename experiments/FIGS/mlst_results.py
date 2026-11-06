@@ -2920,7 +2920,7 @@ def table_inputs(root: pathlib.Path, offsets: dict | None) -> str:
         missing_t, missing_q = ft.startswith("part_zero_"), fq.startswith("part_zero_")
         z = "--"
         if missing_t or missing_q:
-            z = _lone(offsets[name]) if offsets and name in offsets else r"\pending{offsets}"
+            z = f"${round(offsets[name], 2) + 0.0:.2f}$" if offsets and name in offsets else r"\pending{offsets}"
         mean = "running mean of the input normalization" if missing_t or missing_q else "--"
         draw = ("a species drawn from JetClass-II's frequencies (top)" if name in flags else
                 "drawn given the species (top)" if name == "part_charge" else
@@ -2928,6 +2928,15 @@ def table_inputs(root: pathlib.Path, offsets: dict | None) -> str:
         mt, mq = ("---" if missing_t else BULLET), ("---" if missing_q else BULLET)
         out.append(f"{FEATURE_TEX.get(name, name)} & {mt} & {mq} & {z} & {mean} & {draw}" + r" \\")
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
+
+
+FLAGS = ("part_isChargedHadron", "part_isNeutralHadron", "part_isPhoton", "part_isElectron", "part_isMuon")
+
+
+def input_bn_macros(em, offsets: dict, src: pathlib.Path) -> None:
+    """How far a zeroed type flag alone lies from the pretraining particles, in standard deviations."""
+    em.macro("MlstInputBnZeroSigmaMax", f"{max(abs(offsets[f]) for f in FLAGS):.2f}", src, "offsets",
+             "largest |offset| over the five type flags")
 
 
 # ------------------------------------------------------------------ X->bb and X->bs (F9, A15)
@@ -3595,6 +3604,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                                                                   if offsets.exists() else None), True)
     if not offsets.exists():
         missing.append("input-normalization offsets of mtx-l188-s1 -- experiments/FIGS/data/v2/head/input_bn_offsets.json")
+    else:
+        input_bn_macros(em, json.loads(offsets.read_text())["offsets"], offsets)
     full = [data / "curves" / f"full_{t}.json" for t in ("best70_leg2", "ref_v100_jc1_leg2")]
     if all(f.exists() for f in full):
         pre, ref = (json.loads(f.read_text())["cells"] for f in full)

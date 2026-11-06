@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # experiments/EVAL/input_bn_offsets.py on the 188-class seed-1 checkpoint that the linear probes use (its
+  # v2_linprobe manifest): where a zeroed input lies after the input BatchNorm (table tab:inputs). CPU only.
+  name: input-bn-offsets-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          for T in 1 2 3 4 5; do git clone --depth 1 --branch "mtx-s2.66" https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
+          cd /workspace/repo
+          CK=$(python3 -c "import json; print(json.load(open('/data/results/eval/v2_linprobe/mtx-l188-s1/jc1/test/best70/manifest.json'))['checkpoint'])")
+          python3 experiments/EVAL/input_bn_offsets.py --checkpoint ${CK} --model mtx-l188-s1 --out /data/results/eval/input_bn_offsets.json
+          echo "OFFSETS COMPLETE"
+        resources:
+          requests: { memory: "4Gi", cpu: "1", ephemeral-storage: "2Gi" }
+          limits:   { memory: "4Gi", cpu: "1", ephemeral-storage: "2Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

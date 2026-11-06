@@ -40,6 +40,7 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
   umap/, umap_preview/<set>_<panel>.json  UMAP of the class token (experiments/EVAL/umap_class_token.py;
                                    the preview from the old 10-epoch JetClass cells)
   head/atlas_res_fine/<model>.json the ATLAS resolution in ten pT bins (experiments/EVAL/atlas_rebin.py)
+  head/input_bn_offsets.json       where a zeroed input lies after the input BatchNorm (experiments/EVAL/input_bn_offsets.py)
   linprobe/fits_v4_sib2/<model>.json  X->ee vs X->mumu on every test jet of the pair
                                    (experiments/FT/roc_points.py; families whose DONE exists, no npz)
   head/atlas_res/<model>.json      ATLAS mass resolution and median response (/data/results/eval/atlas_res)
@@ -192,7 +193,8 @@ def main() -> int:
               (EVAL / "atlas_res_fine", "head/atlas_res_fine", "*.json"),
               (EVAL / "v2_linprobe_bal" / "fits_v4_sib2", "linprobe/fits_v4_sib2", "*.json"),
               (EVAL / "umap_preview", "umap_preview", "*.json"),
-              (EVAL / "umap_v1", "umap", "*.json"))
+              (EVAL / "umap_v1", "umap", "*.json"),
+              (EVAL, "head", "input_bn_offsets.json"))     # table tab:inputs (experiments/EVAL/input_bn_offsets.py)
         for d, name, pattern in v4:
             for f in sorted(d.glob(pattern)):
                 b = f.read_bytes()
