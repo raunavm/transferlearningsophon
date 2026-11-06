@@ -395,3 +395,6 @@ def test_an_output_outside_the_curves_tree_is_refused(tmp_path):
         with pytest.raises(SystemExit, match="FATAL: --out-dir"):
             RP.main(args + (["--allow-out", str(allow)] if allow else []))
     assert RP.out_dir(RP.OUT_ROOT / "jc2_ovr", "jc2_ovr", None) == RP.OUT_ROOT.resolve() / "jc2_ovr"
+    assert RP.out_dir(RP.OUT_ROOT / "pairs_sib2", "pairs", None) == RP.OUT_ROOT.resolve() / "pairs_sib2"
+    with pytest.raises(SystemExit):
+        RP.out_dir(RP.OUT_ROOT / "pairsx", "pairs", None)

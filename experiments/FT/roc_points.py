@@ -33,7 +33,7 @@ vertex, eps_B = 1.
 Every file is written whole (tmp + os.replace) and a file that exists is skipped, never
 overwritten, so a retried pod resumes; one that lacks a curve its inputs now give is refused, since
 skipping it would leave the curve out silently. A --files name without a wildcard must exist for
-every model (2026-11-03: a pair missing from one --probs-root was dropped without a word). --out-dir must be OUT_ROOT/<family> (or <--allow-out>/<family>
+every model (2026-11-03: a pair missing from one --probs-root was dropped without a word). --out-dir must be OUT_ROOT/<family>[_<variant>] (or <--allow-out>/<family>
 in tests).
 
     python3 experiments/FT/roc_points.py ft --family jc1_ft --tree /data/results/ft_v2/best70/leg2 \\
@@ -230,8 +230,9 @@ def ft_cell_curves(task: str, cell: pathlib.Path, n: int, ovr: bool = False) -> 
 def out_dir(path: pathlib.Path, family: str, allow) -> pathlib.Path:
     roots = [OUT_ROOT.resolve()] + ([allow.resolve()] if allow else [])
     p = path.resolve()
-    if p.name != family or p.parent not in roots:
-        raise SystemExit(f"FATAL: --out-dir {path} is not {OUT_ROOT}/{family}; this script writes there only")
+    # <family>_<variant> holds a second set of the same family (pairs_sib2, jc2_ft_ovr_long)
+    if not (p.name == family or p.name.startswith(family + "_")) or p.parent not in roots:
+        raise SystemExit(f"FATAL: --out-dir {path} is not {OUT_ROOT}/{family}[_<variant>]; this script writes there only")
     return p
 
 
