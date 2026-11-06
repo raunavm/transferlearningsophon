@@ -175,6 +175,13 @@ def cell_scores(cell: pathlib.Path, task: str, test_set: str = "pythia"):
         y = np.load(fd / "label188.npy").astype(np.int64)
         rows = np.arange(y.size)[::auc_stride]
         return rows * ext_stride, y[rows], BM.softmax(logits), None
+    if task == "jc2b":
+        # the fixed- and long-budget JetClass-II cells: 188 logits on every jet of the balanced test set
+        fd = cell / "features"
+        logits, y = np.load(fd / "logits.npy"), np.load(fd / "label188.npy").astype(np.int64)
+        if logits.shape != (y.size, JC2_CLASSES):
+            raise SystemExit(f"FATAL: {fd}/logits.npy is {logits.shape} for {y.size} labels")
+        return np.arange(y.size), y, BM.softmax(logits), None
     raise SystemExit(f"FATAL: unknown task {task}")
 
 

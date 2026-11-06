@@ -155,6 +155,19 @@ def test_jetclass_cells_are_bootstrapped_on_the_tables_jets(tmp_path, monkeypatc
     assert np.array_equal(yy, y[::4]) and np.allclose(pp, p[::4])
 
 
+def test_jetclass2_budget_cells_are_the_softmax_of_their_188_logits_on_every_jet(tmp_path):
+    rng = np.random.default_rng(6)
+    y = rng.integers(0, 188, 3000)
+    logits = rng.normal(size=(y.size, 188))
+    cell = _top_cell(tmp_path, y, logits)
+    rows, yy, pp = PB.load(cell, "jc2b")
+    assert np.array_equal(rows, np.arange(y.size)) and np.array_equal(yy, y)
+    assert pp.shape == (y.size, 188) and np.allclose(pp.sum(1), 1) and np.array_equal(pp.argmax(1), logits.argmax(1))
+    np.save(cell / "features" / "logits.npy", logits[:, :10].astype(np.float32))
+    with pytest.raises(SystemExit, match="188|logits"):
+        PB.load(cell, "jc2b")
+
+
 # ------------------------------------------------------------------ the bootstrap jobs
 BC = _load("build_curve_jobs_boot", "scripts/build_curve_jobs.py")
 

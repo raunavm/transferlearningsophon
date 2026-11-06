@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Paired test-jet bootstrap of the JetClass-II fine-tuning at 1e6 jets on the class-balanced test set
+  # (experiments/STATS/paired_bootstrap.py --task jc2b), the cells the paper reports: the long-budget
+  # cell where one exists (mlst_results.merge_budget), else the fixed-budget one. The 162-, 43- and
+  # 17-class runs against the 188-class run of the same seed (mlst_results.BOOT_ROWS). CPU only.
+  name: boot-jc2b-ft-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          for T in 1 2 3 4 5; do git clone --depth 1 --branch "mtx-s2.67" https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
+          cd /workspace/repo
+          export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          [ "${USED}" -le 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          OUT=/data/results/bootstrap/jc2bal_ft
+          [ ! -e ${OUT} ] || { echo "FATAL: ${OUT} exists; use a new output"; exit 42; }
+          ARGS=(); PAIRS=()
+          for S in 1 2 3; do
+            for L in l188 l162 r42q1 r16q1; do
+              C=/data/results/ft_v2/budget_long/leg_jc2b/${L}-s${S}/N1000000/s1
+              [ -f ${C}/DONE ] || C=/data/results/ft_v2/budget/leg_jc2b/${L}-s${S}/N1000000/s1
+              [ -f ${C}/DONE ] || { echo "FATAL: ${C} is not done"; exit 42; }
+              echo "mtx-${L}-s${S}: ${C}"
+              ARGS+=(--model mtx-${L}-s${S}=${C})
+              [ ${L} = l188 ] || PAIRS+=(--pair mtx-${L}-s${S}/mtx-l188-s${S})
+            done
+          done
+          TMP=${OUT}.staging.$(date -u +%s)
+          mkdir -p ${TMP}
+          python3 experiments/STATS/paired_bootstrap.py --task jc2b "${ARGS[@]}" "${PAIRS[@]}" --out ${TMP}/jc2bal_N1000000.json
+          mv ${TMP} ${OUT}
+          echo "BOOTSTRAP COMPLETE"
+        resources:
+          requests: { memory: "48Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "48Gi", cpu: "4", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

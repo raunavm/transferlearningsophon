@@ -45,7 +45,7 @@ from src.stats import paired as P  # noqa: E402
 
 B_DEFAULT = 200
 SEED_DEFAULT = 20261029
-TASKS = ("jc1", "top", "qg", "qg_herwig", "jc2_188", "npz")
+TASKS = ("jc1", "top", "qg", "qg_herwig", "jc2_188", "jc2b", "npz")
 
 
 @functools.cache
