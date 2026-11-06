@@ -66,7 +66,7 @@ PIN = "mtx-s2.17"     # the stand-in chain as it ran
 PIN_REPORT = "mtx-s2.28"   # experiments/XBS/xbx_report.py (2026-10-31; s2.27 ran the first dry run)
 # the real samples' report, never launched: after xbx_report.py's 20-background-jet cut (811ff6c) and the
 # figure and table code it imports (cd2cf4d)
-PIN_IHEP_REPORT = "mtx-s2.62"
+PIN_IHEP_REPORT = "mtx-s2.63"
 PIN_IHEP = "mtx-s2.41"   # A5 gate 1 (input closure against JetClass-II X->bq) and any GPU for the scratch runs
 PIN_DRYRUN = "mtx-s2.20"   # the scratch dry run as it ran (complete 2026-10-31)
 # mtx-s2.20: the first IHEP pin; no IHEP spec ran at it
