@@ -161,6 +161,13 @@ def long_cells(task: str, lr_pre: str, lr_scratch: str) -> list:
     return [{**c, "epochs": LONG_EPOCHS} for c in out]
 
 
+def long_ctrl_cells(lr_pre: str) -> list:
+    """The five random partitions and the three controlled ones on JetClass-II at 1e6 with the long
+    budget, so the JetClass-II fine-tuning figures carry the controls (PI, 2026-11-05)."""
+    runs = [r for r in paper_runs() if r.startswith(("rand", "flav"))]
+    return [{**cell("jc2b", r, LONG_N, 1, lr_pre, LONG_ROOT), "epochs": LONG_EPOCHS} for r in runs]
+
+
 def kin_cells(lr_pre: str) -> list:
     """The kinematic-only runs on top tagging: below the full set at the swept rate, and the full set
     with ParT's fine-tuning recipe (1e-4, head x50)."""
@@ -378,7 +385,7 @@ def main(argv=None) -> int:
     ap.add_argument("--parallelism", type=int, default=4)
     ap.add_argument("--indices", default=None,
                     help="comma-separated indices of the full kind's job: a -retry job of those cells only")
-    ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1"))
+    ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl"))
     a = ap.parse_args(argv)
     if a.indices and len(a.kinds) != 1:
         ap.error("--indices needs exactly one kind")
@@ -397,7 +404,8 @@ def main(argv=None) -> int:
                      "jc2b": lambda: jc2b_cells(a.lr_pre, a.lr_scratch),
                      "kin": lambda: kin_cells(a.lr_pre),
                      "long-jc2b": lambda: long_cells("jc2b", a.lr_pre, a.lr_scratch),
-                     "long-jc1": lambda: long_cells("jc1", a.lr_pre, a.lr_scratch)}[kind]()
+                     "long-jc1": lambda: long_cells("jc1", a.lr_pre, a.lr_scratch),
+                     "long-jc2b-ctrl": lambda: long_ctrl_cells(a.lr_pre)}[kind]()
             mem = "48Gi" if kind in ("bench", "kin") else "64Gi"
         if any(c["n"] >= 1_000_000 for c in cells):
             # weaver holds a whole training file in memory: 48Gi OOM-killed the top fill check at

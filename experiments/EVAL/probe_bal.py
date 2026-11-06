@@ -22,7 +22,10 @@ What changes from linear_probe_v2.py's fits_v3, whose fitting and metrics this r
     checked against the stored ones (same jets, largest feature difference recorded);
   * --sibling-pairs (2026-11-02) fits only SIBLING_PAIRS (X->ee vs X->mumu), merged at 43 and 17
     classes and with no staged pair set: about 1e4 training jets from the balanced 1e6 set and the
-    5,000 + 5,000 jets of the balanced test set, the pairs' protocol otherwise.
+    5,000 + 5,000 jets of the balanced test set, the pairs' protocol otherwise; with --sibling-test
+    (2026-11-05, PI: the curve must reach 1e4) the same training jets and EVERY test jet of the pair
+    (experiments/FT/stage_jc2_siblings.py, extracted as dataset jc2sib), so the 188- and 162-class
+    curves exist where 5,000 background jets gave none.
 Top and quark/gluon (and Herwig) read the features linear_probe_v2.py read (--old-root). Every cell's
 fitted probe and test probabilities are saved (--probs-out), so per-class metrics and the bootstrap
 need no refit.
@@ -62,6 +65,7 @@ N_NATIVE = 188
 # balanced test set, signal = the first side
 SIBLING_PAIRS = {"ee_vs_mm": (("label_X_ee",), ("label_X_mm",))}
 SIBLING_TRAIN, SIBLING_TEST = "train_N1000000", "test"
+SIBLING_ALL = "jc2sib"      # every test jet of the pair (stage_jc2_siblings.py), --sibling-test
 
 
 def _load(name, rel):
@@ -159,12 +163,12 @@ def pair_cells(model: str, ckpt: str, probe, save) -> dict:
     return cells
 
 
-def sibling_pair_cells(model: str, ckpt: str, probe, save, names: dict) -> dict:
+def sibling_pair_cells(model: str, ckpt: str, probe, save, names: dict, test=("jc2bal", SIBLING_TEST)) -> dict:
     """SIBLING_PAIRS on the balanced sets, pair_cells' protocol; names: native label -> class name.
-    The saved rows index the balanced test extraction."""
+    test: the (dataset, split) scored, whose extraction the saved rows index."""
     label = {v: k for k, v in names.items()}
     xtr, ytr, _ = load(model, "jc2bal", SIBLING_TRAIN, ckpt)
-    xte, yte_all, _ = load(model, "jc2bal", SIBLING_TEST, ckpt)
+    xte, yte_all, _ = load(model, *test, ckpt)
     cells = {}
     for pair, (sig, bkg) in SIBLING_PAIRS.items():
         s, b = [label[n] for n in sig], [label[n] for n in bkg]
@@ -180,7 +184,7 @@ def sibling_pair_cells(model: str, ckpt: str, probe, save, names: dict) -> dict:
         p = lp.full_proba(clf, sc.transform(xte[trow]), 2)
         cells[pair] = {**lp.binary_metrics(p, yte, probe), **rec, "n_train": int((~isval).sum()),
                        "n_val": int(isval.sum()), "n_test_signal": int(ts.size), "n_test_background": int(tb.size),
-                       "train_set": f"jc2bal/{SIBLING_TRAIN}", "test_set": f"jc2bal/{SIBLING_TEST}"}
+                       "train_set": f"jc2bal/{SIBLING_TRAIN}", "test_set": "/".join(test)}
         if save:
             save(f"jc2bal_pairs_{pair}", sc, clf, rec, trow, yte, s=p[:, lp.SIGNAL_COLUMN])
         print(f"  {model} {ckpt} sibling pair {pair}: auc={cells[pair]['auc']:.5f} C={rec['C']}", flush=True)
@@ -310,6 +314,8 @@ def main(argv=None) -> int:
                     help="only these of jc1/top/qg, no balanced JetClass-II (the kinematic-only models: top)")
     ap.add_argument("--fill", action="store_true", help="the fills of the absent inputs side by side (fill_cells)")
     ap.add_argument("--sibling-pairs", action="store_true", help="SIBLING_PAIRS only (sibling_pair_cells)")
+    ap.add_argument("--sibling-test", action="store_true",
+                    help="with --sibling-pairs: score every test jet of the pair (dataset jc2sib)")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--probs-out", type=pathlib.Path, default=None)
     a = ap.parse_args(argv)
@@ -338,8 +344,10 @@ def main(argv=None) -> int:
             doc["cells"][ckpt] = fill_cells(a.model, ckpt, helpers, a.probs_out)
             continue
         if a.sibling_pairs:
-            doc["probe"] = "linear, sibling pairs on the class-balanced sets"
-            doc["cells"][ckpt] = {"jc2bal_pairs": sibling_pair_cells(a.model, ckpt, probe, save, names)}
+            test = (SIBLING_ALL, "test") if a.sibling_test else ("jc2bal", SIBLING_TEST)
+            doc["probe"] = "linear, sibling pairs on the class-balanced sets" + \
+                (", every test jet of the pair" if a.sibling_test else "")
+            doc["cells"][ckpt] = {"jc2bal_pairs": sibling_pair_cells(a.model, ckpt, probe, save, names, test)}
             continue
         if a.mlp:
             doc["probe"] = "mlp"

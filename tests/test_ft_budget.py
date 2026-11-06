@@ -170,3 +170,13 @@ def test_long_cells_are_the_runs_at_the_limit_with_four_times_the_budget():
         assert c["n"] == 1_000_000 and c["epochs"] == 160 and c["spe"] == 256_000 and c["patience"] == 10
         assert c["out"].startswith("/data/results/ft_v2/budget_long/")
         assert c.get("patience_from", 0) == (0 if c["init"] else 112)
+
+
+def test_long_control_cells_are_the_eleven_partition_runs_on_jetclass2_with_the_long_budget():
+    ctrl = bfb.long_ctrl_cells("1e-3")
+    assert sorted(c["init"] for c in ctrl) == sorted(r for r in bfb.paper_runs() if r.startswith(("rand", "flav")))
+    assert len(ctrl) == 11
+    for c in ctrl:
+        assert (c["task"], c["n"], c["epochs"], c["spe"], c["patience"]) == ("jc2b", 1_000_000, 160, 256_000, 10)
+        assert c["out"] == f"/data/results/ft_v2/budget_long/leg_jc2b/{c['init']}/N1000000/s1"
+        assert c["lr"] == "1e-3" and c["mult"] == "5.0" and "patience_from" not in c

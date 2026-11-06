@@ -155,3 +155,46 @@ def test_the_sibling_job_is_cpu_covers_every_model_and_avoids_the_bad_nodes():
     assert 'MODEL=init-s1; CKPTS="init init_bn";;' in a and 'MODEL=mtx-l188-s1; CKPTS="best70";;' in a
     # the CPU jobs launched before keep their text: no node exclusion unless asked
     assert "k8s-haosu-10" not in BJ.fit_spec("t", 5, True)[1]
+
+
+def test_the_sibling_test_option_scores_the_jc2sib_extraction_with_the_same_training_jets(tmp_path, monkeypatch):
+    """--sibling-test: training jets from the balanced 1e6 set as before, the test from dataset jc2sib."""
+    probe = pb._load("probe", "experiments/EVAL/probe.py")
+    r = np.random.default_rng(5)
+    names = {0: "label_X_bb", 10: "label_X_ee", 11: "label_X_mm"}
+
+    def split(n, labels):
+        y = r.choice(labels, size=n)
+        x = r.normal(size=(n, 128)).astype(np.float32)
+        x[:, 0] += 3.0 * (y == 10) - 3.0 * (y == 11)
+        return x, y.astype(np.int64)
+    data = {("jc2bal", "train_N1000000"): split(900, [0, 10, 11]), (pb.SIBLING_ALL, "test"): split(4000, [10, 11])}
+    seen = []
+    monkeypatch.setattr(pb, "load", lambda model, ds, sp, ck, root=pb.NEW_ROOT: (seen.append((ds, sp)), (*data[(ds, sp)], {}))[1])
+    cell = pb.sibling_pair_cells("m", "best70", probe, None, names, (pb.SIBLING_ALL, "test"))["ee_vs_mm"]
+    yte = data[(pb.SIBLING_ALL, "test")][1]
+    assert seen == [("jc2bal", "train_N1000000"), ("jc2sib", "test")]
+    assert cell["n_test_signal"] + cell["n_test_background"] == yte.size == 4000
+    assert cell["test_set"] == "jc2sib/test" and cell["train_set"] == "jc2bal/train_N1000000"
+
+
+def test_the_sibling_staging_and_extraction_jobs():
+    import yaml
+    spec = importlib.util.spec_from_file_location("build_jc2bal_jobs", ROOT / "scripts/build_jc2bal_jobs.py")
+    BJ = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(BJ)
+    name, text = BJ.sibstage_spec("t")
+    a = yaml.safe_load(text)["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    assert name == "jc2sib-stage-raunav" and "stage_jc2_siblings.py --out /data/finetune/jc2_sib.staging" in a
+    assert "mv /data/finetune/jc2_sib.staging /data/finetune/jc2_sib" in a and "/data/finetune/jc2_bal" not in a
+    # the launched staging job keeps its text
+    assert "stage_jc2_balanced.py --out /data/finetune/jc2_bal.staging" in BJ.stage_spec("t")[1]
+    name, text = BJ.sibx_spec("t", 5)
+    d = yaml.safe_load(text)
+    c = d["spec"]["template"]["spec"]["containers"][0]
+    a = c["args"][0]
+    assert name == d["metadata"]["name"] == "jc2sib-x-raunav" and d["spec"]["completions"] == 30
+    assert c["resources"]["limits"]["nvidia.com/gpu"] == "1" and "k8s-haosu-10.sdsc.optiputer.net" in text
+    assert "--data-test /data/finetune/jc2_sib/test.parquet --out ${OUT}" in a and "OUT=/data/results/eval/v2_linprobe_bal/${MODEL}/jc2sib/test" in a
+    assert "--sibling-pairs --sibling-test" in a and f"--out {BJ.LP_BAL}/fits_v4_sib2 " in a and f"--probs-out {BJ.LP_BAL}/fits_v4_sib2_probs" in a
+    assert '[ -f /data/finetune/jc2_sib/DONE ]' in a and '-le 85 ]' in a and "configmap" not in text.lower()

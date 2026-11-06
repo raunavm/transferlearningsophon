@@ -32,6 +32,10 @@
   sib      CPU, one model per index (all 30), off the bad nodes: probe_bal.py --sibling-pairs, the
            X->ee vs X->mumu linear probe on the stored balanced features -> .../fits_v4_sib,
            .../fits_v4_sib_probs (new folders)
+  sibstage CPU: experiments/FT/stage_jc2_siblings.py -> /data/finetune/jc2_sib (every test jet of X->ee and
+           X->mumu, PI 2026-11-05: the balanced test set's 5,000 each stop the ROC at 250)
+  sibx     GPU, one model per index (all 30): their features (dataset jc2sib) and probe_bal.py
+           --sibling-pairs --sibling-test -> .../fits_v4_sib2, .../fits_v4_sib2_probs (new folders)
 
     python3 scripts/build_jc2bal_jobs.py --tag mtx-s2.24 stage
 """
@@ -52,19 +56,19 @@ def _launch():
     return m
 
 
-def stage_spec(tag: str) -> tuple:
+def stage_spec(tag: str, name: str = "jc2bal-stage-raunav", out: str = BAL,
+               stager: str = "experiments/FT/stage_jc2_balanced.py") -> tuple:
     launch = _launch()
-    name = "jc2bal-stage-raunav"
     script = f"""set -euo pipefail
 git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
 cd /workspace/tls
 pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
 USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
 [ "${{USED}}" -le 85 ] || {{ echo "FATAL: /data at ${{USED}}%"; exit 42; }}
-rm -rf {BAL}.staging
-python3 experiments/FT/stage_jc2_balanced.py --out {BAL}.staging --workers 8
-mv {BAL}.staging {BAL}
-du -sh {BAL}; ls -la {BAL}
+rm -rf {out}.staging
+python3 {stager} --out {out}.staging --workers 8
+mv {out}.staging {out}
+du -sh {out}; ls -la {out}
 echo "JC2BAL STAGE COMPLETE"
 """
     body = "\n".join(("          " + ln) if ln else "" for ln in script.splitlines())
@@ -390,6 +394,46 @@ echo "JC2BAL SIB ${{MODEL}} COMPLETE"
                           exclude=True)
 
 
+SIB = "/data/finetune/jc2_sib"      # every test jet of X->ee and X->mumu (stage_jc2_siblings.py)
+
+
+def sibstage_spec(tag: str) -> tuple:
+    return stage_spec(tag, "jc2sib-stage-raunav", SIB, "experiments/FT/stage_jc2_siblings.py")
+
+
+def sibx_spec(tag: str, parallelism: int) -> tuple:
+    """GPU, one model per index (all 30): the features of every test jet of X->ee and X->mumu, then
+    probe_bal.py --sibling-pairs --sibling-test -> new folders fits_v4_sib2, fits_v4_sib2_probs."""
+    launch = _launch()
+    ms = models()
+    cases = "".join(f"  {i}) MODEL={m}; RUN_DIR={launch.V2_ROOT}/{run}; RUNG={rung}; K={k}; REG={reg}; "
+                    f'CKPTS="{" ".join(c)}";;\n' for i, (m, run, rung, k, reg, c, _v) in enumerate(ms))
+    name = "jc2sib-x-raunav"
+    script = f"""set -euo pipefail
+{_start(tag)}
+IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
+case ${{IDX}} in
+{cases}  *) echo "FATAL: no model for index ${{IDX}}"; exit 42;;
+esac
+[ -f {LP_BAL}/fits_v4_sib2/${{MODEL}}.json ] && {{ echo "${{MODEL}} done"; exit 0; }}
+[ -f {SIB}/DONE ] && [ -f {LP_BAL}/${{MODEL}}/DONE ] || {{ echo "FATAL: {SIB} or ${{MODEL}}'s balanced features missing"; exit 42; }}
+USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+[ "${{USED}}" -le 85 ] || {{ echo "FATAL: /data at ${{USED}}%"; exit 42; }}
+{GPU_CHECK}
+OUT={LP_BAL}/${{MODEL}}/jc2sib/test
+ALL=1; for C in ${{CKPTS}}; do [ -f ${{OUT}}/${{C}}/manifest.json ] || ALL=0; done
+[ ${{ALL}} = 1 ] || python3 experiments/EVAL/extract_v2.py --run-dir ${{RUN_DIR}} --rung ${{RUNG}} --num-classes ${{K}} \\
+  --num-reg ${{REG}} --checkpoints ${{CKPTS}} --data-config {CFG} --max-jets 0 \\
+  --observers --feature-classes --prefix-features 2000000000 --head-prefix 0 --no-anomaly-rows \\
+  --diag-stride 0 --no-pooled --data-test {SIB}/test.parquet --out ${{OUT}} || exit 1
+python3 experiments/EVAL/probe_bal.py --model ${{MODEL}} --checkpoints ${{CKPTS}} --sibling-pairs --sibling-test \\
+  --out {LP_BAL}/fits_v4_sib2 --probs-out {LP_BAL}/fits_v4_sib2_probs
+echo "JC2SIB ${{MODEL}} COMPLETE"
+"""
+    return name, _indexed(name, script, len(ms), parallelism, True, "48Gi", "4",
+                          "every test jet of X->ee and X->mumu: features and the linear probe (PI 2026-11-05)")
+
+
 FILL_ROOT = "/data/results/eval/v2_linprobe_fill"           # experiments/EVAL/probe_bal.py FILL_ROOT
 REF2 = f"{BAL}/impute_ref_v2.npz"
 FILL_VARIANTS = {"top": "ntop itop4", "qg": "nqg iqg4", "jc2bal": "ntop nqg itop4 iqg4"}   # probe_bal.FILLS
@@ -609,7 +653,7 @@ def main(argv=None) -> int:
     ap.add_argument("--only", default="", help="extract, fit: model indices, e.g. 1-13, for a job of that subset")
     ap.add_argument("--name", default="jc2bal-x-raunav", help="extract, fit: the job name (with --only)")
     ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "ref2", "split", "extract", "fit", "mlp",
-                                                 "masscurves", "kin", "xfill", "fitfill", "sib"))
+                                                 "masscurves", "kin", "xfill", "fitfill", "sib", "sibstage", "sibx"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
@@ -618,6 +662,7 @@ def main(argv=None) -> int:
                       "xfill": lambda: xfill_spec(a.tag, a.parallelism),
                       "fitfill": lambda: fitfill_spec(a.tag, a.parallelism), "split": lambda: split_spec(a.tag),
                       "sib": lambda: sib_spec(a.tag, a.parallelism),
+                      "sibstage": lambda: sibstage_spec(a.tag), "sibx": lambda: sibx_spec(a.tag, a.parallelism),
                       "extract": lambda: extract_spec(a.tag, a.parallelism, _indices(a.only), a.name),
                       "fit": lambda: fit_spec(a.tag, a.parallelism, False, _indices(a.only),
                                               a.name if a.only else ""),
