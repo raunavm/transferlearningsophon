@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The gallery's label-set mock-ups: F2a, F2b, F3, F3-scatter, F3-app, F8, A10, TSNE, VAL (docs/figstyle/PLAN.md), in
+"""The gallery's label-set mock-ups: F2a, F2b, F3, F3-scatter, F3-app, F3-ft, F8, A8, A10, UMAP-jc1, UMAP-jc2, UMAP-bench, VAL (docs/figstyle/PLAN.md), in
 style_v3 only. The numbers come through the selection code of paper_figures and mlst_results; the drawing
 is written here. All work happens inside the draw functions."""
 from __future__ import annotations
@@ -168,7 +168,7 @@ def _draw_heat(path, arms) -> None:
 
     cb = fig.colorbar(im, ax=ax, fraction=0.05, pad=0.02)
     S.labels(cb.ax, ylabel="AUC difference to 188 classes (percentage points)")
-    S.heading(fig, "Linear probes on JetClass-II, class by class")
+    S.heading(fig, f"{word} on JetClass-II, class by class")
     S.save(fig, path)
 
 
@@ -187,23 +187,34 @@ def _class_auc(models: list) -> dict:
     return {c: float(np.mean([p[c] for p in per if c in p])) for c in set().union(*per)} if per else {}
 
 
-def _draw_scatter(path, panels: list, ncols: int, height: float) -> None:
+def _ft_class_auc(models: list) -> dict:
+    """{class: AUC} after fine-tuning on 1e6 balanced JetClass-II jets, the mean over the models that hold it
+    (curves_v2/jc2_ft_ovr)."""
+    docs = C.ROC.get("jc2_ft_ovr") or {}
+    per = [{int(c): v["auc"] for c, v in docs[m]["curves"].items()} for m in models if m in docs]
+    return {c: float(np.mean([p[c] for p in per if c in p])) for c in set().union(*per)} if per else {}
+
+
+def _draw_scatter(path, panels: list, ncols: int, height: float, auc_of=_class_auc, word: str = "Linear probes",
+                  absent: str = "no class-balanced JetClass-II linear probes (linprobe/fits_v4)") -> None:
     """panels: (runs, title). One point per class; below the dashed line the class does worse than with 188 classes.
-    Empty cells of the last row hold the legend."""
-    full = _class_auc(RUNS["L188"])
+    Empty cells of the last row hold the legend; a panel whose models have no values yet says so."""
+    full = auc_of(RUNS["L188"])
     if not full:
-        raise C.Absent("no class-balanced JetClass-II linear probes (linprobe/fits_v4)")
+        raise C.Absent(absent)
     family = {int(r["jet_label"]): family_of(r["class_name"]) for r in M._class_rows(P.REPO)}
     nrows = math.ceil(len(panels) / ncols)
     fig = plt.figure(figsize=(S.FULL, height))
     axes = fig.subplots(nrows, ncols, sharex=True, sharey=True, squeeze=False,
                         gridspec_kw={"left": 0.1, "right": 0.955, "top": 1 - 1.5 / (height / S.CM), "bottom": 1.2 / (height / S.CM),
                                      "wspace": 0.1, "hspace": 0.15})
-    pairs = [[(full[c], other[c], c) for c in full if c in other] for other in (_class_auc(models) for models, _ in panels)]
+    pairs = [[(full[c], other[c], c) for c in full if c in other] for other in (auc_of(models) for models, _ in panels)]
     lim = (min(v for pts in pairs for x, y, _ in pts for v in (x, y)), 1.0)
     cells = list(axes.flat)
     for ax, pts, (_, title) in zip(cells, pairs, panels):
         S.fine_grid(ax)
+        if not pts:
+            ax.text(0.5, 0.5, "not yet fine-tuned", transform=ax.transAxes, ha="center", va="center", fontsize=S.LEGEND_PT)
         ax.plot(lim, lim, **S.REFERENCE, label="Same as 188 classes")
         for i, name in enumerate(FAMILIES):
             xy = [(x, y) for x, y, c in pts if family[c] == name]
@@ -240,6 +251,14 @@ def draw_f3_app(path) -> None:
                   + [(RUNS[a], S.NAME[a]) for a in S.CONTROLS]
                   + [(RUNS[a], f"{S.NAME[b]}, mass regression") for a, b in (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))],
                   3, 17 * S.CM)
+
+
+def draw_f3_ft(path) -> None:
+    """F3-scatter's form after fine-tuning (curves_v2/jc2_ft_ovr): every model fine-tuned on JetClass-II."""
+    _draw_scatter(path, [(RUNS[a], S.NAME[a]) for a in ("L162", "R42_Q1", "R16_Q1")]
+                  + [([m for r in M.RAND for m in RUNS[r]], "Five random partitions")]
+                  + [(RUNS[a], S.NAME[a]) for a in S.CONTROLS], 3, 17 * S.CM, auc_of=_ft_class_auc, word="Fine-tuned",
+                  absent="no per-class curves after fine-tuning (curves_v2/jc2_ft_ovr)")
 
 
 # ------------------------------------------------------------------ F8, A10: metric against the number of jets
@@ -298,37 +317,77 @@ def draw_a10(path) -> None:
     _draw_size(path, series, False, "no linear probes (linprobe/fits_v4)", "Linear probes, per pretraining label set")
 
 
-# ------------------------------------------------------------------ the t-SNE and the pretraining curve
-TSNE_NAMES = {"bb": r"$X\to b\bar{b}$", "cc": r"$X\to c\bar{c}$", "qq": r"$X\to q\bar{q}$", "QCD": "QCD",
-              "ee": r"$X\to ee$", "mm": r"$X\to \mu\mu$"}
-TSNE_MODELS = (("mtx-l188-s1", "L188"), ("mtx-r16q1-s1", "R16_Q1"))
+def draw_a8(path) -> None:
+    """A10's form after fine-tuning: the four label sets and from scratch."""
+    series = lambda key, ds, met: [(P.ft_series(M, I["per"], RUNS, key, met, row), S.SERIES[row], S.NAME[row], S.MARKERS[row])
+                                   for row in S.LEVELS] + [(P.scratch_series(M, I["per"], key, met), S.SERIES["SCRATCH"],
+                                                            S.NAME["SCRATCH"], S.MARKERS["SCRATCH"])]
+    _draw_size(path, series, False, "no fine-tuning read-outs", "Fine-tuned, per pretraining label set")
 
 
-def draw_tsne(path) -> None:
-    """Rows: the two sets of jets; columns: the two models, the same jets in a row."""
-    root = P.DATA / "tsne"
-    sets = [s for s in ("two_prong", "leptons") if all((root / f"{s}_{m}.json").exists() for m, _ in TSNE_MODELS)]
-    if not sets:
-        raise C.Absent("no t-SNE of the class token (tsne/)")
-    fig = plt.figure(figsize=(S.FULL, 7.5 * S.CM * len(sets) + 1.5 * S.CM))
-    axes = fig.subplots(len(sets), 2, squeeze=False, gridspec_kw={"wspace": 0.05, "hspace": 0.12, "top": 0.92, "bottom": 0.02,
-                                                                  "left": 0.02, "right": 0.98})
-    for row, s in zip(axes, sets):
-        for ax, (m, level) in zip(row, TSNE_MODELS):
-            d = json.loads((root / f"{s}_{m}.json").read_text())
-            x, y, g = np.array(d["x"]), np.array(d["y"]), np.array(d["group"])
-            for k, name in enumerate(d["groups"]):
-                ax.plot(x[g == k], y[g == k], color=S.TAB10[k], marker="o", markersize=1.5, linestyle="none", alpha=0.5,
-                        markeredgewidth=0, label=TSNE_NAMES[name])
-            ax.set_xticks([])
-            ax.set_yticks([])
-            S.title(ax, f"Pretrained on {S.NAME[level]}")
-        leg = row[0].legend(loc="best", fontsize=S.LEGEND_PT, markerscale=3, borderpad=0.3, labelspacing=0.3)
-        for h in leg.get_lines():
-            h.set_alpha(1)
+# ------------------------------------------------------------------ the UMAP and the pretraining curve
+EMBED_NAMES = {"bb": r"$X\to b\bar{b}$", "cc": r"$X\to c\bar{c}$", "qq": r"$X\to q\bar{q}$", "QCD": "QCD",
+               "ee": r"$X\to ee$", "mm": r"$X\to \mu\mu$", "top": "Top", "gluon": "Gluon", "quark": "Quark",
+               **{c.removeprefix("label_"): S.JC1_TEX[c] for c in S.JC1_CLASSES if c != "label_QCD"}}
+EMBED_MODELS = (("mtx-l188-s1", "L188"), ("mtx-r16q1-s1", "R16_Q1"))
+
+
+def _umap_root():
+    """umap/ (from the long-budget cells) where pulled, else the preview from the old JetClass cells."""
+    for name in ("umap", "umap_preview"):
+        if any((P.DATA / name).glob("*.json")):
+            return P.DATA / name
+    raise C.Absent("no UMAP of the class token (umap/, umap_preview/)")
+
+
+def _embedding(ax, d: dict, colours: list) -> None:
+    x, y, g = np.array(d["x"]), np.array(d["y"]), np.array(d["group"])
+    for k, name in enumerate(d["groups"]):
+        ax.plot(x[g == k], y[g == k], color=colours[k], marker="o", markersize=1.2, linestyle="none", alpha=0.5,
+                markeredgewidth=0, label=EMBED_NAMES[name])
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+
+def _draw_embeddings(path, grid: list, heading: str, colours=None, legend_rows=None) -> None:
+    """grid: rows of (file stem, title); one legend per row in its first panel, or in legend_rows only."""
+    root = _umap_root()
+    docs = [[json.loads((root / f"{stem}.json").read_text()) for stem, _ in row] for row in grid]
+    ncols = len(grid[0])
+    fig = plt.figure(figsize=(S.FULL, 7.0 * S.CM * len(grid) + 1.5 * S.CM))
+    axes = fig.subplots(len(grid), ncols, squeeze=False, gridspec_kw={"wspace": 0.05, "hspace": 0.14, "top": 0.92,
+                                                                     "bottom": 0.02, "left": 0.02, "right": 0.98})
+    for r, (row, drow) in enumerate(zip(grid, docs)):
+        for ax, (_, title), d in zip(axes[r], row, drow):
+            _embedding(ax, d, colours or S.TAB10)
+            S.title(ax, title)
+        if legend_rows is None or r in legend_rows:
+            leg = axes[r, 0].legend(loc="best", fontsize=S.LEGEND_PT - 1, markerscale=4, borderpad=0.3, labelspacing=0.25,
+                                    ncol=2 if len(drow[0]["groups"]) > 5 else 1, handletextpad=0.2, columnspacing=0.6)
+            for h in leg.get_lines():
+                h.set_alpha(1)
     S.letter_panels(axes.flat)
-    S.heading(fig, "Frozen class token on JetClass-II jets")
+    S.heading(fig, heading)
     S.save(fig, path)
+
+
+def draw_umap_jc1(path) -> None:
+    """Rows: 188 and 17 classes; columns: frozen, fine-tuned on JetClass; the same jets in all four panels."""
+    grid = [[(f"jc1_{m}_{kind}", f"{S.NAME[level]}, {word}") for kind, word in (("frozen", "frozen"), ("ft", "fine-tuned"))]
+            for m, level in EMBED_MODELS]
+    _draw_embeddings(path, grid, "Class token on JetClass jets", colours=[S.JC1_COLOUR[c] for c in S.JC1_CLASSES],
+                     legend_rows=(0,))
+
+
+def draw_umap_jc2(path) -> None:
+    grid = [[(f"{s}_{m}", f"Pretrained on {S.NAME[level]}") for m, level in EMBED_MODELS] for s in ("two_prong", "leptons")]
+    _draw_embeddings(path, grid, "Frozen class token on JetClass-II jets")
+
+
+def draw_umap_bench(path) -> None:
+    grid = [[(f"{s}_{m}", f"{name}, {S.NAME[level]}") for m, level in EMBED_MODELS]
+            for s, name in (("top", "Top tagging"), ("qg", "Quark/gluon"))]
+    _draw_embeddings(path, grid, "Frozen class token on the benchmark jets")
 
 
 def draw_val(path) -> None:
@@ -413,7 +472,7 @@ PAGES = [
         data_note="The three controlled partitions are means over two runs, the label sets over three."),
     C.Page(
         id="F3-scatter",
-        title="Cost class by class, per-class AUC",
+        title="Cost class by class, per-class AUC (appendix)",
         precedent=HEATMAPS,
         precedent_label="None for this form; CMS Fig. 7 and JetParticle-JEPA Fig. 12 are the heatmap's",
         caption="Each of the 188 classes of class-balanced JetClass-II, from linear probes: the class's area under the "
@@ -434,6 +493,20 @@ PAGES = [
         differs="As F3-scatter. Seven panels, as the PI listed them, over the four-panel limit. The legend takes an empty "
                 "cell, outside the axes: a panel this small has no room for it.",
         draw=draw_f3_app),
+    C.Page(
+        id="F3-ft",
+        title="Cost class by class after fine-tuning (appendix)",
+        precedent=HEATMAPS,
+        precedent_label="None for this form; CMS Fig. 7 and JetParticle-JEPA Fig. 12 are the heatmap's",
+        caption="Each of the 188 classes of class-balanced JetClass-II after fine-tuning on one million jets: the class's "
+                "area under the curve for the 162-, 43- and 17-class label sets, the five plain random partitions averaged "
+                "and the three random partitions with controlled flavor boundaries, against the same for the 188-class "
+                "model. On the dashed line the two agree; below it the class does worse. Colors are decay families. "
+                "Values are means over runs.",
+        differs="F3-scatter's form after fine-tuning (PI), with the controls of F3-app.",
+        draw=draw_f3_ft,
+        data_note="The partitions are being fine-tuned on JetClass-II (ft-budget-long-jc2b-ctrl); their panels say so until "
+                  "then. The label sets' values are from the 1e6 read-out, three of whose cells the long budget reruns."),
     C.Page(
         id="F8",
         title="Pretraining against the number of training jets",
@@ -458,6 +531,19 @@ PAGES = [
                   "1,000,000: all three from-scratch runs and 3 of 16 pretrained runs reached the 40-epoch limit, so "
                   f"from scratch is probably still improving there. {SUBST_NOTE}"),
     C.Page(
+        id="A8",
+        title="Fine-tuned against the number of training jets (appendix)",
+        precedent=["2401.13537/fig3.png"],
+        precedent_label="Golling Fig. 3",
+        caption="Fine-tuned models of the four label sets against the number of training jets: accuracy on class-balanced "
+                "JetClass-II and on JetClass, and rejection R30 at 30% signal efficiency on top and quark/gluon tagging, "
+                "with a network trained from scratch in black. Points are means over runs. Stars are published ParT: same "
+                "inputs on JetClass, kinematic only on top, kinematic and particle type on quark/gluon.",
+        differs="A10's form, fine-tuned (PI: the task x model x mode grid).",
+        draw=draw_a8,
+        data_note="From the fine-tuning read-outs as they stand: the long-budget cells at 10^6 on JetClass and "
+                  "JetClass-II, and the small-size benchmark cells still running, replace their points when read out."),
+    C.Page(
         id="A10",
         title="Linear probes against the number of training jets",
         precedent=["2401.13537/fig3.png"],
@@ -472,16 +558,41 @@ PAGES = [
         draw=draw_a10,
         data_note=SUBST_NOTE),
     C.Page(
-        id="TSNE",
-        title="t-SNE of the frozen class token (appendix)",
+        id="UMAP-jc1",
+        title="UMAP of the class token on JetClass, frozen and fine-tuned (appendix)",
+        precedent=["map2026_poster/fig5.png", "2610.36121/fig3.png"],
+        precedent_label="MAP 2026 poster (frozen against fine-tuned), SuperJEPA Fig. 3",
+        caption="Two-dimensional UMAP of the class token of one network pretrained on 188 classes (upper) and one on 17 "
+                "classes (lower), frozen (left) and after fine-tuning on one million JetClass jets (right), for 1,000 test "
+                "jets of each of the ten JetClass classes, the same jets in all four panels. UMAP axes have no meaning, so "
+                "they carry no scale.",
+        differs="2x2 as the PI set it: rows label sets, columns frozen and fine-tuned, the poster's pairing. Ten class "
+                "colours, JetClass's fixed tab10. One legend, first panel, two columns. UMAP with 15 neighbours, min_dist "
+                "0.1, standardized features, seed 1.",
+        draw=draw_umap_jc1,
+        data_note="Preview: the fine-tuned column is from the old 10-epoch JetClass cells at 10^6 (the long-budget cells "
+                  "are still running); it is redrawn from them before the paper uses it."),
+    C.Page(
+        id="UMAP-jc2",
+        title="UMAP of the frozen class token on JetClass-II (appendix)",
         precedent=["2610.36121/fig3.png", "2606.14813/fig2.png"],
         precedent_label="SuperJEPA Fig. 3, JetParticle-JEPA Fig. 2",
-        caption="Two-dimensional t-SNE of the frozen class token of one network pretrained on 188 classes and one on 17 "
-                "classes, for 2,000 test jets of each of X to bb, cc and qq and QCD, and of X to ee and X to mu mu. A row has "
-                "the same jets in both panels. The axes of a t-SNE have no meaning, so they carry no scale.",
-        differs="Two label sets, not model sizes or modes; each row its own jets. Panel titles and letters as our theme. "
-                "PI: the lepton row stays only if it adds anything.",
-        draw=draw_tsne),
+        caption="Two-dimensional UMAP of the frozen class token of one network pretrained on 188 classes and one on 17 "
+                "classes, for 2,000 class-balanced test jets of each of X to bb, cc and qq and QCD (upper), and of X to ee "
+                "and X to mu mu (lower). A row has the same jets in both panels. UMAP axes have no meaning, so they carry "
+                "no scale.",
+        differs="As the t-SNE page it replaces (PI): two label sets, each row its own jets.",
+        draw=draw_umap_jc2),
+    C.Page(
+        id="UMAP-bench",
+        title="UMAP of the frozen class token on top and quark/gluon (for the PI: include only if it shows structure)",
+        precedent=["2610.36121/fig3.png"],
+        precedent_label="SuperJEPA Fig. 3",
+        caption="Two-dimensional UMAP of the frozen class token of one network pretrained on 188 classes and one on 17 "
+                "classes, for 2,000 test jets of each class of top tagging (upper) and quark/gluon tagging (lower), the "
+                "same jets in a row.",
+        differs="As UMAP-jc2, on the benchmark jets, with their absent inputs zero-filled as in every frozen probe.",
+        draw=draw_umap_bench),
     C.Page(
         id="VAL",
         title="Pretraining validation accuracy against epoch (appendix)",

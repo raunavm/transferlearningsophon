@@ -88,18 +88,37 @@ def _network(ax, x: float, y: float, w: float, h: float, fill: str, words: str, 
     return nodes
 
 
-def _use(ax, x: float, fill: str, word: str, action: str, name: str) -> None:
-    """One use of the features in (b): the network, a new layer of two outputs, what is trained, the name."""
+def _hidden(ax, x: float, y0: float, y1: float, fill: str) -> list:
+    """The head's hidden layer of 512 units (fc_params [(512, 0.1)], ReLU), drawn as a column of nodes."""
+    nodes = [(x, v) for v in np.linspace(y0, y1, 6)]
+    for xy in nodes:
+        ax.add_patch(Circle(xy, 0.04, fc=fill, ec="black", lw=0.4, zorder=4))
+    return nodes
+
+
+def _fan(ax, a: list, b: list, colour: str, width: float) -> None:
+    for p in a:
+        for q in b:
+            ax.plot(*zip(p, q), color=colour, linewidth=width, zorder=1.5)
+
+
+def _use(ax, x: float, fill: str, word: str, action: str, name: str, hidden: bool) -> None:
+    """One use of the features in (b): the network, a new head of two outputs (with a new 512-unit hidden layer
+    when fine-tuning, as the fine-tuned network has one; a linear probe is one layer), what is trained, the name."""
     nodes = _network(ax, x, 0.72, 0.92, 0.84, fill, word, S.LEGEND_PT)
     outs = [(x + 1.8, 0.92), (x + 1.8, 1.36)]
-    for a in nodes:
-        for b in outs:
-            ax.plot(*zip(a, b), color=NEW_LAYER, linewidth=0.4, zorder=1.5)
+    if hidden:
+        mid = _hidden(ax, x + 1.36, 0.84, 1.44, "white")
+        _fan(ax, nodes, mid, NEW_LAYER, 0.3)
+        _fan(ax, mid, outs, NEW_LAYER, 0.3)
+        ax.text(x + 1.36, 1.56, "512", ha="center", va="bottom", fontsize=S.LEGEND_PT, zorder=5)
+    else:
+        _fan(ax, nodes, outs, NEW_LAYER, 0.4)
     for xy in outs:
         ax.add_patch(Circle(xy, 0.05, fc="white", ec="black", lw=0.5, zorder=4))
-    ax.text(x + 1.36, 1.14, action, ha="center", va="center", fontsize=S.LEGEND_PT, zorder=5,
+    ax.text(x + 1.36, 0.6, action, ha="center", va="center", fontsize=S.LEGEND_PT, zorder=5,
             bbox=dict(boxstyle="square,pad=0.25", fc="white", ec="#808080", lw=0.5))
-    ax.text(x + 1.0, 0.36, name, ha="center", va="center", fontsize=S.LABEL_PT, zorder=5)
+    ax.text(x + 1.0, 0.3, name, ha="center", va="center", fontsize=S.LABEL_PT, zorder=5)
 
 
 def draw_f1(path: pathlib.Path) -> None:
@@ -121,7 +140,11 @@ def draw_f1(path: pathlib.Path) -> None:
     ax.text(0.72 + 0.51, 3.2, "same initial\nweights", ha="center", va="center", fontsize=S.LEGEND_PT, zorder=3)
     ax.text(1.79, 4.13, "features", ha="center", va="center", fontsize=S.LEGEND_PT)
     # the label sets: one column each, a merged class spans the rows it merges
-    top, bottom, cw, pitch, x0 = 4.35, 2.75, 0.62, 0.9, 2.24
+    # the head's hidden layer, between the features and every label set's outputs (fc_params [(512, 0.1)])
+    hid = _hidden(ax, 2.2, 3.06, 3.94, TRAINED)
+    ax.text(2.2, 4.13, "512 hidden", ha="center", va="center", fontsize=S.LEGEND_PT)
+    _fan(ax, nodes, hid, FAN, 0.3)
+    top, bottom, cw, pitch, x0 = 4.35, 2.75, 0.58, 0.84, 2.62
     rows = (top - bottom) / sum(BOXES["L188"])
     for k, (row, spans) in enumerate(BOXES.items()):
         x = x0 + k * pitch
@@ -134,11 +157,11 @@ def draw_f1(path: pathlib.Path) -> None:
         if spans[-1] > 1:
             ax.text(x + cw / 2, bottom + spans[-1] * rows / 2, "QCD", ha="center", va="center",
                     fontsize=S.LEGEND_PT, zorder=3)
-    for a in nodes:
+    for a in hid:
         for r in range(sum(BOXES["L188"])):
             ax.plot(*zip(a, (x0, top - (r + 0.5) * rows)), color=FAN, linewidth=0.3, zorder=1)
     # what each merge removes
-    ax.text(2.12, 2.45, "Each merge\nremoves:", ha="left", va="center", fontsize=S.LEGEND_PT)
+    ax.text(1.55, 2.45, "Each merge\nremoves:", ha="left", va="center", fontsize=S.LEGEND_PT)
     for k, words in enumerate(MERGES):
         x = x0 + k * pitch + cw / 2
         ax.annotate("", xy=(x + pitch, 2.69), xytext=(x, 2.69),
@@ -152,16 +175,19 @@ def draw_f1(path: pathlib.Path) -> None:
     ax.add_patch(Polygon([tip, a, b], fc="#f0f0f0", ec="none", zorder=0.6))
     for corner in (a, b):
         ax.plot(*zip(tip, corner), color="#808080", linewidth=0.6, zorder=0.7)
-    _use(ax, 0.45, FROZEN, "frozen", "Train a\nlinear layer", "Frozen features, linear probe")
-    _use(ax, 3.2, TRAINED, "trained", "Train all\nweights", "Fine-tuning")
+    _use(ax, 0.45, FROZEN, "frozen", "Train a linear layer", "Frozen features, linear probe", hidden=False)
+    _use(ax, 3.2, TRAINED, "trained", "Train all weights", "Fine-tuning", hidden=True)
     S.save(fig, path)
 
 
 # ------------------------------------------------------------------ F9a, F9b, A17
+ATLAS_FINE = M._load(P.DATA / "head" / "atlas_res_fine")     # ten pT bins (atlas_rebin.py); the same jets and inclusive values
+
+
 def _atlas() -> dict:
-    if not I["atlas"]:
+    if not (ATLAS_FINE or I["atlas"]):
         raise Absent("no mass resolution files (head/atlas_res)")
-    return I["atlas"]
+    return ATLAS_FINE or I["atlas"]
 
 
 def _response(ax, rx, atlas: dict, group: str, title: str) -> None:
@@ -206,9 +232,16 @@ def draw_f9a(path: pathlib.Path) -> None:
     S.save(fig, path)
 
 
-def _binned(axes, atlas: dict, group: str, axis: str, xlabel: str, legends: tuple, room: float = 0.0) -> None:
+def _mass_series() -> list:
+    """(runs, estimator, colour, label, marker) of the two mass-regression models' outputs."""
+    return [(RUNS[row], "regressed", S.SERIES[base], NAMES[row], None) for row, base in MASS_ROWS]
+
+
+def _binned(axes, atlas: dict, group: str, axis: str, xlabel: str, legends: tuple, room: float = 0.0,
+            series: list | None = None) -> None:
     """ATLAS Fig. 8's four axes: [[median, resolution], [its ratio, its root square difference]] to the groomed
-    mass, in the bins of axis. legends: the columns with a legend, room above the curves for it."""
+    mass, in the bins of axis. legends: the columns with a legend, room above the curves for it. series:
+    (runs, estimator, colour, label, marker), the mass models' outputs by default."""
     (a0, a1), (r0, r1) = axes
     g = P._groomed(atlas, group)[axis]
     e = np.asarray(g["edges"], float)
@@ -218,17 +251,21 @@ def _binned(axes, atlas: dict, group: str, axis: str, xlabel: str, legends: tupl
     r0.axhline(1.0, **S.REFERENCE)
     r1.axhline(0.0, **S.REFERENCE)
     meds, ress, ratios, rsds = [med0], [res0], [[1.0]], [[0.0]]
-    for row, base in MASS_ROWS:
-        bl = [b[axis] for m in RUNS[row] if (b := P._block(atlas, m, "regressed", group))]
+    for runs, est, colour, label, marker in (series or _mass_series()):
+        bl = [b[axis] for m in runs if (b := P._block(atlas, m, est, group))]
         if not bl:
             continue
         med = np.mean([P._arr(b["median"]) for b in bl], axis=0)
         res = np.mean([P._arr(b["resolution"]) for b in bl], axis=0)
         ratio = med / med0
         rsd = np.sign(res - res0) * np.sqrt(np.abs(res ** 2 - res0 ** 2))   # ATLAS 2024-015's root square difference
-        kw = dict(baseline=None, color=S.SERIES[base], linewidth=S.LW_CURVE)
-        a0.stairs(med, e, label=NAMES[row], **kw)
-        a1.stairs(res, e, label=NAMES[row], **kw)
+        kw = dict(baseline=None, color=colour, linewidth=S.LW_CURVE)
+        a0.stairs(med, e, label=label, **kw)
+        a1.stairs(res, e, label=label, **kw)
+        if marker:      # one marker per bin centre: six series, greyscale print (PI)
+            c = 0.5 * (e[1:] + e[:-1])
+            for ax, v in ((a0, med), (a1, res), (r0, ratio), (r1, rsd)):
+                ax.plot(c, v, color=colour, marker=marker, markersize=3, linestyle="none")
         r0.stairs(ratio, e, **kw)
         r1.stairs(rsd, e, **kw)
         meds.append(med)
@@ -277,6 +314,19 @@ def _a17(path: pathlib.Path, group: str) -> None:
         main += list(axes[0])
     S.letter_panels(main)
     S.heading(fig, f"Mass regression on {'resonant' if group == 'resonant' else 'QCD'} jets")
+    S.save(fig, path)
+
+
+def draw_a17_probe(path: pathlib.Path) -> None:
+    """F9b's form, six series: the MLP on the frozen features of the four label sets and the two mass outputs."""
+    atlas = _atlas()
+    series = [(RUNS[a], "mlp", S.SERIES[a], f"{S.NAME[a]}, MLP on frozen features", S.MARKERS[a]) for a in S.LEVELS]
+    series += [(RUNS[row], "regressed", SCULPT_COLOUR[row], NAMES[row], S.MARKERS[row]) for row, _ in MASS_ROWS]
+    fig, axes = plt.subplots(2, 2, figsize=(S.FULL, S.ONE_PANEL[1] + 2 * S.CM), sharex="col",
+                             gridspec_kw=dict(height_ratios=(1, RATIO_ATLAS), hspace=STACK_GAP, wspace=COLUMN_GAP))
+    _binned(axes, atlas, "all", "vs_pt", X_PT, legends=(1,), room=0.9, series=series)
+    S.letter_panels(axes[0])
+    S.heading(fig, "Mass from frozen features and from the mass output, against jet $p_{\\mathrm{T}}$")
     S.save(fig, path)
 
 
@@ -425,8 +475,9 @@ SOPHON_FIG2_CAPTION = (
     "own caption, verbatim.]")
 F1_CAPTION = (
     "Design of the study. (a) One network is pretrained on the same jets four times, once for each of four nested "
-    "label sets with 188, 162, 43 and 17 classes; below each merge is the distinction it removes. (b) The pretrained "
-    "network is then used in two ways: its frozen features feed a linear probe, or all of its weights are fine-tuned.")
+    "label sets with 188, 162, 43 and 17 classes, through a hidden layer of 512 units; below each merge is the "
+    "distinction it removes. (b) The pretrained network is then used in two ways: its frozen features feed a linear "
+    "probe, or a new head with its own 512-unit hidden layer is added and all weights are fine-tuned.")
 F9A_CAPTION = (
     "Distribution of the jet mass response, the ratio of a jet's mass to its generator-level mass, for resonant jets "
     "(left) and QCD jets (right): the soft-drop mass and the mass regression output of the models pretrained on 162 and "
@@ -481,9 +532,9 @@ PAGES = [
          "Our content in Sophon's shape: (a) above (b), jets into a network box with its feature column, grey fan, "
          "shadowed card and callout. Panels named Pretraining and Use, not Pre-training and Usage. Four output columns "
          "instead of Sophon's one, with a merged class spanning the rows it merges, to show the nesting; rows are "
-         "schematic, not to scale. A heading and merge arrows added. The hidden-layer column between latent and output "
-         "is removed, though the real network has that 512-d layer (for the PI to decide), so the fan runs straight from "
-         "the features, to the 188-class column only. Pill labels (resonant 2 prongs, resonant 3-4 prongs, QCD) removed; "
+         "schematic, not to scale. A heading and merge arrows added. The 512-unit hidden layer is drawn between the features and the "
+         "outputs, as the real network has it (PI), and in the fine-tuning head; the linear probe has none. The fan from "
+         "the hidden layer reaches the 188-class column only. Pill labels (resonant 2 prongs, resonant 3-4 prongs, QCD) removed; "
          "QCD is marked in the columns. One card with two uses and one callout "
          "instead of two cards, because both uses start from the features (Sophon's discriminants start from the output "
          "layer). Drawn with matplotlib patches in STIX instead of a vector drawing with jet icons, and "
@@ -499,8 +550,8 @@ PAGES = [
          + ATLAS_LOOK + ".",
          draw_f9a, MASS_RUNS_NOTE),
     Page("F9b", "Mass regression: across jet pT", ["ATL-PHYS-PUB-2024-015/fig8.png"], "ATLAS 2024-015 Fig. 8", F9B_CAPTION,
-         "All jets on our bins: four unequal pT bins to 2500 GeV in reconstructed pT, instead of ATLAS's finer bins to 1500 "
-         "GeV in truth pT. Connected steps instead of one disconnected segment per bin, and no bands (PI limit), though "
+         "All jets in ten pT bins to 2500 GeV in reconstructed pT (PI: at least eight, ATLAS's density), instead of "
+         "ATLAS's bins to 1500 GeV in truth pT. Connected steps instead of one disconnected segment per bin, and no bands (PI limit), though "
          "ATLAS draws them. Three series instead of two, colours as F9a. No dotted line at 1 in the median panel. Dashed "
          "grid at major and minor ticks, the theme for every figure, where ATLAS has none. Median response (r) and Resolution "
          "(sigma_r) instead of ATLAS's longer axis words. The lower panels keep ATLAS's ratio "
@@ -512,6 +563,17 @@ PAGES = [
          A17_CAPTION.format(group="QCD", last_bin="; the soft-drop mass's last pT bin sets the upper right scale"),
          A17_DIFFERS + " The soft-drop mass's last pT bin (resolution 3.6, regression 0.28) sets the scale of the upper right "
          "panel; the axis is not clipped.", lambda path: _a17(path, "qcd"), MASS_RUNS_NOTE),
+    Page("A17-probe", "Mass from frozen features and from the mass output (appendix)", ["ATL-PHYS-PUB-2024-015/fig8.png"],
+         "ATLAS 2024-015 Fig. 8",
+         "Median jet mass response (left) and relative mass resolution (right) against the jet transverse momentum, for all "
+         "jets: the soft-drop mass, a nonlinear probe (MLP) regressing the mass from the frozen features of the models "
+         "pretrained on 188, 162, 43 and 17 classes, and the mass regression output of the 162- and 17-class models, each "
+         "the mean over runs. Below are the ratio of each median and the root square difference (RSD) of each resolution "
+         "to the soft-drop mass.",
+         "As F9b, with six series and the soft-drop mass (PI): the four probes in the label sets' colours, the two mass "
+         "outputs in C8 and C9 as F10b, one marker shape per series at the bin centres. The legend is in the resolution "
+         "panel, with room above the curves. " + ATLAS_LOOK + ".",
+         draw_a17_probe, MASS_RUNS_NOTE),
     Page("F10a", "Mass sculpting: QCD mass", ["2604.09809/fig8.png"], "CMS JME-25-001 Fig. 8", F10A_CAPTION,
          "Six panels, one per model (PI), all jet pT, instead of CMS's six (two models, three pT ranges), with "
          "one y axis across them. Two working points instead of three, because the files hold 10% and "

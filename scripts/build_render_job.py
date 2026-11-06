@@ -6,7 +6,8 @@ Helvetica, and the helvet and sansmath packages, so matplotlib's text.usetex typ
 in Helvetica: experiments/FIGS/mlst_style.py), pins matplotlib and mplhep to the versions the
 figure code was written against, writes the paper's numbers and tables from the committed data
 (experiments/FIGS/make_tables.py: paper/journal/results_generated.tex, provenance.json, tables/),
-draws the paper's figures (experiments/FIGS/paper_figures.py, into figures/mlst/), compiles
+draws the paper's figures (experiments/FIGS/paper_figures.py, into figures/mlst/, and the approved
+gallery figures, experiments/FIGS/figstyle/gallery_figures.py --paper, into figures/mlst/gallery/), compiles
 paper/journal/main.tex with tectonic, and copies the generated files (at their paths in the
 repository), the PDF and the logs to /data/results/render/<commit>/. CPU only; backoffLimit 0 (a
 failure is read, not retried).
@@ -98,10 +99,12 @@ spec:
 PAPER = {"what": "paper", "suffix": "", "texdir": "paper/journal", "texfile": "main",
          "draw": """          python3 experiments/FIGS/make_tables.py > ${OUT}/tables.txt 2>&1; echo "tables rc=$?"
           python3 experiments/FIGS/paper_figures.py > ${OUT}/figures.txt 2>&1; echo "figures rc=$?"
-          tail -15 ${OUT}/tables.txt ${OUT}/figures.txt
+          python3 experiments/FIGS/figstyle/gallery_figures.py --paper --outdir figures/mlst/gallery > ${OUT}/gallery.txt 2>&1; echo "gallery rc=$?"
+          tail -15 ${OUT}/tables.txt ${OUT}/figures.txt ${OUT}/gallery.txt
 """,
          "collect": """          mkdir -p ${OUT}/figures/mlst ${OUT}/paper/journal
           cp -f figures/mlst/*.pdf figures/mlst/*.png ${OUT}/figures/mlst/ 2>/dev/null
+          mkdir -p ${OUT}/figures/mlst/gallery && cp -f figures/mlst/gallery/* ${OUT}/figures/mlst/gallery/ 2>/dev/null
           cp -f paper/journal/results_generated.tex paper/journal/provenance.json ${OUT}/paper/journal/ 2>/dev/null
           cp -rf paper/journal/tables paper/journal/data_release ${OUT}/paper/journal/ 2>/dev/null
           cp -f paper/journal/main.pdf ${OUT}/main.pdf 2>/dev/null

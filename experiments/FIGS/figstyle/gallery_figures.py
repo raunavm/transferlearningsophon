@@ -16,15 +16,24 @@ import gallery_roc
 import style_v3 as S
 
 MODULES = (gallery_physics, gallery_labelset, gallery_roc)
-ORDER = ("SOPHON-FIG2", "F1", "F2a", "F2b", "F3", "F3-scatter", "F3-app", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F4",
-         "F4-app", "F6", "F6-app", "F8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "F10a", "F10b", "F11", "A3R", "A3R-ft", "TSNE", "VAL")     # the paper's order
+ORDER = ("SOPHON-FIG2", "F1", "F2a", "F2b", "F3", "F3-scatter", "F3-app", "F3-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F4",
+         "F4-app", "F6", "F6-app", "F8", "A8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "F10a", "F10b", "F11", "A3R", "A3R-ft", "UMAP-jc1", "UMAP-jc2", "UMAP-bench", "VAL")     # the paper's order
+
+
+# the figures the PI approved page by page (2026-11-05), drawn into the paper by the render job (--paper);
+# F11 waits for its samples, and the pages still coming back through the gallery are not here
+PAPER = ("F2a", "F2b", "F3", "F3-scatter", "F3-app", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F4-app", "F8",
+         "A10", "F9a", "A17-res", "A17-qcd", "F10a", "F10b", "A3R", "A3R-ft", "VAL")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", type=pathlib.Path, default=pathlib.Path("figures/figstyle"))
     ap.add_argument("--only", nargs="*")
+    ap.add_argument("--paper", action="store_true", help="only the approved figures (PAPER)")
     a = ap.parse_args()
+    if a.paper:
+        a.only = list(PAPER)
     a.outdir.mkdir(parents=True, exist_ok=True)
     pages, failed = [], []
     for page in sorted((p for m in MODULES for p in m.PAGES), key=lambda p: ORDER.index(p.id)):

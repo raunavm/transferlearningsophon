@@ -20,7 +20,7 @@ import style_v3 as S  # noqa: E402
 M = P.F._mlst()
 RUNS = M._paper(P.REPO)
 I = P.inputs(M)
-ROC = {**I["roc"], **{fam: docs for fam in ("jc1_ft_ovr", "jc1_probe_ovr", "top_probe", "qg_probe", "jc2_ft_ovr")
+ROC = {**I["roc"], **{fam: docs for fam in ("jc1_ft_ovr", "jc1_probe_ovr", "top_probe", "qg_probe", "jc2_ft_ovr", "pairs_sib2")
                       if (docs := M._load(P.DATA / M.V4.ROC_DIR / fam))}}
 
 

@@ -37,6 +37,10 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
   linprobe/fits_v4_sib/            the X->ee vs X->mumu probe (probe_bal.py --sibling-pairs, jc2bal-sib)
   curves_v2/<family>/<model>.json  per-class ROC curves with the 20-background-jet cut
   tsne/<set>_<model>.json          t-SNE of the frozen class token (experiments/EVAL/tsne_class_token.py)
+  umap/, umap_preview/<set>_<panel>.json  UMAP of the class token (experiments/EVAL/umap_class_token.py;
+                                   the preview from the old 10-epoch JetClass cells)
+  head/atlas_res_fine/<model>.json the ATLAS resolution in ten pT bins (experiments/EVAL/atlas_rebin.py)
+  linprobe/fits_v4_sib2/<model>.json  X->ee vs X->mumu on every test jet of the pair
                                    (experiments/FT/roc_points.py; families whose DONE exists, no npz)
   head/atlas_res/<model>.json      ATLAS mass resolution and median response (/data/results/eval/atlas_res)
   xbx_scratch/<signal>/s<k>.json   X->bs from scratch, its finished cells' endpoints.json
@@ -179,10 +183,16 @@ def main() -> int:
               (bal, "jc2bal", "census.json"), (bal, "jc2bal", "manifest.json"),
               (EVAL / "v2_head" / "curves_v2", "head/curves_v2", "*.json"),
               (FT / "budget", "budget", "budget_metrics.json"),
+              (FT / "budget_long", "budget", "budget_long_metrics.json"),     # the long budget at 1e6 (2026-11-05)
               (FT / "lrsweep_v2", "budget", "lrsweep_metrics.json"),     # 50-step checks (2026-11-01)
               (pathlib.Path("/data/results/partrepro"), "partrepro", "*/metrics.json"),
               (EVAL / "dup_check", "dup_check", "*.json"),
-              (EVAL / "tsne_v1", "tsne", "*.json"))
+              (EVAL / "tsne_v1", "tsne", "*.json"),
+              # the gallery decisions of 2026-11-05: finer pT bins, every X->ee / X->mumu test jet, UMAP
+              (EVAL / "atlas_res_fine", "head/atlas_res_fine", "*.json"),
+              (EVAL / "v2_linprobe_bal" / "fits_v4_sib2", "linprobe/fits_v4_sib2", "*.json"),
+              (EVAL / "umap_preview", "umap_preview", "*.json"),
+              (EVAL / "umap_v1", "umap", "*.json"))
         for d, name, pattern in v4:
             for f in sorted(d.glob(pattern)):
                 b = f.read_bytes()

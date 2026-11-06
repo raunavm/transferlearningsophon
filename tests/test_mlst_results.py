@@ -127,8 +127,8 @@ def test_the_index_covers_every_kind_of_pulled_file():
         "linprobe/fits_v4_fill", "xbx_scratch",
         # the ROC redesign (2026-11-02): the per-class curves and the X->ee vs X->mumu probe
         "curves_v2", "linprobe/fits_v4_sib",
-        # the gallery decisions (2026-11-05): the class-token t-SNE
-        "tsne"}
+        # the gallery decisions (2026-11-05): the class-token t-SNE, then UMAP and every lepton-pair test jet
+        "tsne", "umap", "umap_preview", "linprobe/fits_v4_sib2"}
 
 
 def _ft_tree(d, inits, n_seeds_scratch=3, bound=False, budget=True):
@@ -178,6 +178,24 @@ def test_the_fine_tuning_tables_read_one_seed_per_run_and_the_scratch_seeds(tmp_
     per["jc2"]["l188-s1"][1000].append(per["jc2"]["l188-s1"][1000][0])
     with pytest.raises(SystemExit, match="fine-tuning seeds"):
         M.table_ft(per, runs, MT.fmt_pm, ("L188",))
+
+
+def test_the_long_budget_cells_replace_every_cell_of_their_task_model_and_size(tmp_path):
+    """budget_long (PI 2026-11-05): at 1e6 its cells replace the fixed-budget JetClass-II cells and the earlier
+    JetClass full-set cells of the same model; other sizes and models keep theirs; a model only it has is added."""
+    _ft_tree(tmp_path, ["l188-s1", "l188-s2"])
+    rec = lambda v: {"macro_auc_ovr": v, "macro_auc_qcd": v, "auc": v, "accuracy": v}
+    long = {"leg_jc2b/l188-s1/N1000000/s1": rec(0.97), "leg_jc2b/rand2p1-s1/N1000000/s1": rec(0.95),
+            "leg2/l188-s2/N1000000/s1": rec(0.96),
+            **{f"leg_jc2b/{M.BUDGET_SCRATCH}/N1000000/s{k}": rec(0.85) for k in (1, 2)}}
+    (tmp_path / "budget" / "budget_long_metrics.json").write_text(json.dumps({"cells": long}))
+    _, per, _ = M.load_ft(tmp_path)
+    assert [r["accuracy"] for r in per["jc2"]["l188-s1"][1000000]] == [0.97]
+    assert [r["accuracy"] for r in per["jc2"]["l188-s2"][1000000]] == [0.91]
+    assert per["jc2"]["l188-s1"][1000][0]["accuracy"] == 0.9
+    assert per["jc2"]["rand2p1-s1"][1000000][0]["accuracy"] == 0.95
+    assert [r["accuracy"] for r in per["jc2"][M.SCRATCH][1000000]] == [0.85, 0.85]
+    assert [r["accuracy"] for r in per["jc1"]["l188-s2"][1000000]] == [0.96]
 
 
 def test_a_rejection_that_is_only_a_bound_stops_the_table(tmp_path):

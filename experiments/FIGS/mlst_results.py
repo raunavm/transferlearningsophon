@@ -1597,7 +1597,8 @@ def load_ft(data: pathlib.Path) -> tuple:
         per[key] = {init: {int(n[1:]): [rec for _, rec in sorted(seeds.items())]
                            for n, seeds in by_n.items() if re.fullmatch(r"N\d+", n)}
                     for init, by_n in cells.items()}
-    return tag, merge_budget(per, data / "budget" / "budget_metrics.json"), absent
+    return tag, merge_budget(per, data / "budget" / "budget_metrics.json",
+                             data / "budget" / "budget_long_metrics.json"), absent
 
 
 # 2026-10-31 (plan 3.1, 3.4): below the full set every fine-tuning is the fixed-budget recipe
@@ -1608,20 +1609,32 @@ BUDGET_TREE = {"top": ("leg_top", None), "qg": ("leg_qg", None), "qg_herwig": ("
 BUDGET_SCRATCH = "scratch"          # build_ft_budget_jobs.cell's directory for a from-scratch cell
 
 
-def merge_budget(per: dict, budget: pathlib.Path) -> dict:
-    """per with the superseded cells removed (below FULL_N; every natural-mix JetClass-II cell) and
-    the fixed-budget cells added, the from-scratch ones under SCRATCH."""
-    out = {key: {init: {n: v for n, v in by_n.items() if key in FULL_N and n >= FULL_N[key]}
-                 for init, by_n in cells.items()} for key, cells in per.items()}
-    if not budget.exists():
+def _budget_cells(path: pathlib.Path) -> dict:
+    """{(task, init, N): [record per seed]} of a budget_metrics.py read-out, from-scratch under SCRATCH."""
+    out = {}
+    if not path.exists():
         return out
-    cells = json.loads(budget.read_text())["cells"]
+    cells = json.loads(path.read_text())["cells"]
     for key, (tree, sub) in BUDGET_TREE.items():
         for k in sorted(c for c in cells if c.startswith(tree + "/")):
-            _, init, n, seed = k.split("/")
+            _, init, n, _seed = k.split("/")
             rec = cells[k][sub] if sub else cells[k]
-            init = SCRATCH if init == BUDGET_SCRATCH else init
-            out.setdefault(key, {}).setdefault(init, {}).setdefault(int(n[1:]), []).append(rec)
+            out.setdefault((key, SCRATCH if init == BUDGET_SCRATCH else init, int(n[1:])), []).append(rec)
+    return out
+
+
+def merge_budget(per: dict, budget: pathlib.Path, long: pathlib.Path | None = None) -> dict:
+    """per with the superseded cells removed (below FULL_N; every natural-mix JetClass-II cell) and
+    the fixed-budget cells added, the from-scratch ones under SCRATCH. The long-budget cells at 1e6
+    (budget_long, PI 2026-11-05) then replace every cell of the same task, model and size, the
+    earlier fine-tuning and the fixed-budget alike: one recipe per (task, model, size)."""
+    out = {key: {init: {n: v for n, v in by_n.items() if key in FULL_N and n >= FULL_N[key]}
+                 for init, by_n in cells.items()} for key, cells in per.items()}
+    for src in (budget, long):
+        if src is None:
+            continue
+        for (key, init, n), recs in _budget_cells(src).items():
+            out.setdefault(key, {}).setdefault(init, {})[n] = recs
     return out
 
 
