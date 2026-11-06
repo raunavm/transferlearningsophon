@@ -116,23 +116,36 @@
 % "7" of a literal "A17" as a typed number (its NUMBER lookbehind checks one character); a figure id
 % is not a result. The \newcommand line itself is stripped by that test.
 \newcommand{\FigIdAseventeen}{A17}
-\setfigfile{F2}{F2_label_granularity}       % label granularity on the four downstream tasks
-\setfigfile{F3}{F3_per_class}               % JetClass-II per-class heatmap (AUC difference)
+% The approved gallery figures (experiments/FIGS/figstyle/gallery_{labelset,roc,physics}.py, their Page
+% records) are saved by the render job as figures/mlst/gallery/<id>.pdf. F4 and F6 keep their
+% paper_figures.py files until their gallery versions are approved. F9b has no file name yet (not
+% approved), so it prints its pending marker; F11 has one, but the render job does not draw it until the
+% X->bb and X->bs samples are in.
+\setfigfile{F2a}{gallery/F2a}               % linear probes against the number of pretraining classes
+\setfigfile{F2b}{gallery/F2b}               % the same after fine-tuning
+\setfigfile{F3}{gallery/F3}                 % JetClass-II per-class heatmap (AUC difference)
 \setfigfile{F4}{F4_flavor_pairs}            % class pairs that differ only in flavor, ROC
-\setfigfile{F5}{F5_missing_inputs}          % missing input features
-\setfigfile{F6J}{F6J_roc_jetclass}          % JetClass, fine-tuned, ROC per signal class
+\setfigfile{FJ}{gallery/FJ}                 % JetClass, fine-tuned, each class against the rest, per label set
+\setfigfile{FJ-ctrl}{gallery/FJ-ctrl}       % the same for the random partitions
 \setfigfile{F6}{F6_roc_benchmarks}          % top and quark/gluon (Pythia, Herwig) ROC, main text
-\setfigfile{F7}{F7_finetune_vs_size}        % fine-tuning against the number of training jets
-\setfigfile{F8a}{F8a_mass_regression}       % jet-mass regression with the auxiliary target
-\setfigfile{F8b}{F8b_sculpting}             % mass sculpting
-\setfigfile{F9}{F9_xbx}                     % X->bb and X->bs resonance tagging
-% appendix figures (FIGURE_PLAN section 3)
-\setfigfile{A6J}{A6J_roc_jetclass_probe}    % JetClass, linear probes, ROC per signal class
-\setfigfile{A3R}{A3R_roc_jetclass2}         % JetClass-II, selected classes, one-vs-rest ROC
-\setfigfile{A10}{A10_probes_vs_size}        % linear probes against the number of training jets
-\setfigfile{\FigIdAseventeen}{\FigIdAseventeen _mass_response_groups}   % response histograms, resonant and QCD jets
-% paper_figures.py also draws A17_mass_bins_resonant and A17_mass_bins_qcd; their content is in
-% table tab:massdetail, so they are not placed.
+\setfigfile{F8}{gallery/F8}                 % 188-class model fine-tuned, probed and from scratch against training jets
+\setfigfile{F9a}{gallery/F9a}               % mass regression: response histograms
+\setfigfile{F10a}{gallery/F10a}             % mass sculpting: QCD mass before and after selections
+\setfigfile{F10b}{gallery/F10b}             % mass sculpting: Jensen-Shannon distance against QCD efficiency
+\setfigfile{F11}{gallery/F11}               % X->bb and X->bs resonance tagging
+% appendix figures
+\setfigfile{VAL}{gallery/VAL}               % pretraining validation accuracy against epoch
+\setfigfile{A10}{gallery/A10}               % linear probes against the number of training jets
+\setfigfile{FJ-app}{gallery/FJ-app}         % JetClass, linear probes, as FJ
+\setfigfile{FJ-ctrl-app}{gallery/FJ-ctrl-app} % JetClass, linear probes, random partitions
+\setfigfile{FJ-s}{gallery/FJ-s}             % JetClass, trained from scratch
+\setfigfile{F4-app}{gallery/F4-app}         % class pairs, random partitions with controlled flavor boundaries
+\setfigfile{F3-scatter}{gallery/F3-scatter} % per-class AUC, 43 and 17 classes against 188
+\setfigfile{F3-app}{gallery/F3-app}         % per-class AUC, every other model against 188
+\setfigfile{A3R}{gallery/A3R}               % every JetClass-II class against the rest, linear probes
+\setfigfile{A3R-ft}{gallery/A3R-ft}         % the same after fine-tuning
+\setfigfile{\FigIdAseventeen-res}{gallery/\FigIdAseventeen-res}   % median and resolution, resonant jets
+\setfigfile{\FigIdAseventeen-qcd}{gallery/\FigIdAseventeen-qcd}   % median and resolution, QCD jets
 
 \title{Label granularity in supervised pretraining of jet foundation models}
 \author{\pending{author list and affiliations}\\[4pt] \pending{ORCIDs}}

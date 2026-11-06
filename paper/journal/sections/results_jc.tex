@@ -24,7 +24,7 @@ and resonance tagging follow.
 
 The first question is which distinctions the frozen features keep on the \Kfull{} classes the networks
 were pretrained on, scored by linear probes on the class-balanced samples of section~\ref{sec:evaluation}
-(sizes in the caption of figure~\ref{fig:f2} and in table~\ref{tab:probes}). Because this task favors
+(sizes in appendix~\ref{sec:app-probes} and in table~\ref{tab:probes}). Because this task favors
 finer label sets by construction, the claims below rest on comparisons that this bias cannot produce: the
 \Kres-class model, whose labels keep every resonant class of the \Kfull-class model, and the controls,
 which have as many classes as the \Kcoarse-class level.
@@ -37,7 +37,7 @@ the \Kfull-class model, and on the \Kcoarse-class model \MlstCmpJcTwoCoarseOverF
 to \Kmid{} classes, although it merges far fewer classes and removes one kind of distinction where the other
 removes three: the number of $b$ or $c$ quarks, gluons against light quarks, and electrons against muons. The
 accuracy, which counts only whether the highest score falls on the true class, falls at every coarser level
-too (figure~\ref{fig:f2}(a)), but most between \Kres{} and \Kmid{} classes.
+too (figure~\ref{fig:f2a}(a)), but most between \Kres{} and \Kmid{} classes.
 % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes (today 1.269 against 1.197).
 % CHECK: F2(a) accuracy steps (inventory 2026-11-02: 0.435, 0.433, 0.361, 0.334): the 162->43 step is the
 % larger in accuracy, the 43->17 step in 1-AUC. If the PI prefers one metric for this claim, rewrite; the
@@ -48,33 +48,35 @@ what the distinction is, not on how many classes the merge removes.
 
 \begin{figure}[t]
 \centering
-\paperfig{\linewidth}{F2}
-\caption{Label granularity on the four downstream tasks, against the number of classes in pretraining
-$\Nout$: (a) accuracy, equation~(\ref{eq:acc}), on the \Kfull{} classes of the class-balanced JetClass-II
-test set; (b) accuracy on JetClass; (c) $R_{30}$, the background rejection at 30\% signal efficiency, on top
-tagging; (d) $R_{30}$ on quark/gluon discrimination with the Pythia sample. Dashed lines and filled markers:
-linear probes on frozen features at the largest training set of each task; solid lines and open markers:
-fine-tuning on \FtSizeESix{} jets on JetClass-II and JetClass and on the full training sets of top tagging
-and quark/gluon discrimination. The lines join the four levels of the class hierarchy; markers are means with
-bars of one standard deviation over \MlstNRunsWord{} pretraining runs, and small dots on them the individual
-runs. At \Kcoarse{} classes sit the
-\RandVtwoNPartitions{} random partitions (\RandVtwoRuns{} run each, shown as points; the larger marker is
-their mean and standard deviation) and the partitions with controlled flavor boundaries (none, a $b$-quark
-boundary, a random flavor boundary; \RandFlavRuns{} runs each, with bars of their range), as linear probes and, where they were fine-tuned, after
-fine-tuning; they are not fine-tuned on JetClass-II. The JetClass-II test set holds up to
-\JcBalTestPerClass{} jets per class and all jets of the \JcBalNShort{} classes with fewer, and its classes
-are the \Kfull-class model's own, so finer label sets are favored there by construction. On top tagging
-and quark/gluon discrimination the inputs the data lack are substituted for the linear probes as chosen on
-validation (\LpSubstitutionTop{} and \LpSubstitutionQg) and set to zero for fine-tuning. The accuracy axes
-of (a) and (b) are linear and do not start at zero; the $R_{30}$ axes of (c) and (d) are logarithmic, because
-the linear probes and the fine-tuned models lie more than a decade apart on top tagging. For scale, a linear probe on the randomly initialized network with its
-BatchNorm statistics recomputed reaches an accuracy of \MlstLpJcTwoAccInitBn{} on JetClass-II (a) and
-\MlstLpJcOneAccInitBn{} on JetClass (b). The AUC of
-every configuration is in tables~\ref{tab:probes}, \ref{tab:ft} and~\ref{tab:ftrej}.}
-\label{fig:f2}
+\paperfig{\linewidth}{F2a}
+\caption{Linear probes on frozen features against the number of classes in pretraining $\Nout$, at the
+largest training set of each task: (a) accuracy, equation~(\ref{eq:acc}), on the \Kfull{} classes of the
+class-balanced JetClass-II test set; (b) accuracy on JetClass; (c) $R_{30}$, the background rejection at
+30\% signal efficiency, on top tagging and (d) on quark/gluon discrimination with the Pythia sample. The line
+joins the four levels of the class hierarchy. Markers at \Kcoarse{} classes are random partitions: the three
+with controlled flavor boundaries and, in grey, the \RandVtwoNPartitions{} others (\RandVtwoRuns{} run each).
+The dashed line is the same network trained from scratch, with no pretraining. Values are means over runs.
+On top and quark/gluon discrimination the missing inputs are substituted as chosen on validation
+(\LpSubstitutionTop{} and \LpSubstitutionQg). Every value with its spread is in table~\ref{tab:probes}.}
+\label{fig:f2a}
 \end{figure}
-% CHECK: pending MlstFtCmpJcTwoCoarseOverFullESix (the ratio column of tab:ft) and the fine-tuned JetClass-II line of F2(a) (budget_metrics.json).
-% CHECK: F2(a) random partitions above the 43-class accuracy (inventory 2026-11-02: 0.420-0.423 against 0.361).
+% CHECK: F2a(a) random partitions above the 43-class accuracy (inventory 2026-11-02: 0.420-0.423 against 0.361).
+
+\begin{figure}[t]
+\centering
+\paperfig{\linewidth}{F2b}
+\caption{Fine-tuned models against the number of classes in pretraining $\Nout$: (a) accuracy on the
+\Kfull{} classes of class-balanced JetClass-II and (b) on JetClass, after fine-tuning on \FtSizeESix{} jets;
+$R_{30}$, the background rejection at 30\% signal efficiency, on (c) top tagging and (d) quark/gluon
+discrimination with the Pythia sample, after fine-tuning on the full training sets with the missing inputs set
+to zero. The line joins the four levels of the class hierarchy; the markers at \Kcoarse{} classes (none on
+JetClass-II) are the random partitions with controlled flavor boundaries. The dashed line is the same network
+trained from scratch, with no pretraining. Values are means over runs; on top tagging the label sets differ by
+less than the spread between runs (tables~\ref{tab:ft} and~\ref{tab:ftrej}).}
+\label{fig:f2b}
+\end{figure}
+% CHECK: pending MlstFtCmpJcTwoCoarseOverFullESix (the ratio column of tab:ft) and the fine-tuned JetClass-II line of F2b(a) (budget_metrics.json).
+% CHECK: F2b(c) every difference between label sets on top tagging within the run-to-run SD (gallery data_note: SD 56 to 151).
 
 The \Kres-class model matches the \Kfull-class model on the resonant classes, under the linear probe
 (\MlstCmpJcTwoResResOverFullPr{}; table~\ref{tab:probes}) and under the MLP probe
@@ -91,7 +93,7 @@ At a fixed number of classes, which classes are merged decides the cost. A rando
 \Kcoarse{} classes makes \MlstCmpJcTwoRandOverCoarsePr{} than the \Kcoarse-class level of the
 hierarchy, and \MlstCmpJcTwoRandOverMidPr{} than the \Kmid-class level, which has more than twice as
 many classes (table~\ref{tab:probes}); in accuracy, too, the random partitions lie above the \Kmid-class
-level (figure~\ref{fig:f2}(a)).
+level (figure~\ref{fig:f2a}(a)).
 % CHECK: MlstCmpJcTwoRandOverMid < 1 by more than 2 SD (today 0.918 +- 0.007); if it straddles 1,
 % write "as few errors as the 43-class level".
 A random partition keeps the class count and the share of training jets of every \Kcoarse-class group
@@ -109,7 +111,7 @@ Fine-tuning tests whether the gap survives once every weight adapts to the \Kful
 fine-tuning on the largest class-balanced training set, the \Kcoarse-class model makes
 \MlstFtCmpJcTwoCoarseOverFullESixPr{} than the \Kfull-class model (the ratio column of
 table~\ref{tab:ft}), where a linear probe on its frozen features makes \MlstCmpJcTwoCoarseOverFullPr{}
-(table~\ref{tab:probes}); the accuracy after fine-tuning is the solid line of figure~\ref{fig:f2}(a).
+(table~\ref{tab:probes}); the accuracy after fine-tuning is drawn in figure~\ref{fig:f2b}(a).
 % CHECK: pending MlstFtCmpJcTwoCoarseOverFullESix; if it is a null ("equal within"), rewrite the first
 % clause as "matches the 188-class model (...)".
 Fine-tuning trains on all \Kfull{} classes, so every distinction the coarse labels removed is rewarded
@@ -118,13 +120,14 @@ training jets. The partitions are not fine-tuned on JetClass-II, so this compari
 the hierarchy only.
 
 Per class, the largest relative costs fall on decays that differ from another class only in lepton flavor
-(table~\ref{tab:perclass}). From the \Kmid-class level on, a decay with electrons shares its class with the
+(data release, \texttt{jetclass2\_per\_class.csv}). From the \Kmid-class level on, a decay with electrons shares its class with the
 same decay with muons, and the decays with a $\tau$ lepton that decays to an electron share theirs with
 those whose $\tau$ lepton decays to a muon. At that level the class with the largest ratio to the
 \Kfull-class model is \MlstPerClassMidTopClass{}, and the classes merged with a lepton-flavor
 counterpart are costly as a group (median \MlstPerClassMidLeptonMedianPr{}). In AUC, the largest loss at
 that level is that of \MlstPerClassAucDiffMidMinClass{}, a difference of \MlstPerClassAucDiffMidMin{}
-percentage points (figure~\ref{fig:f3}). By the ratio of $1-\AUC$ the lepton-flavor classes stay the costliest
+percentage points (figure~\ref{fig:f3}; figures~\ref{fig:f3scatter} and~\ref{fig:f3app} set every class's AUC
+against that of the \Kfull-class model). By the ratio of $1-\AUC$ the lepton-flavor classes stay the costliest
 at \Kcoarse{} classes, where the largest losses in AUC move to the QCD classes.
 % CHECK: MlstPerClassMidTopClass and MlstPerClassCoarseTopClass are lepton-flavor classes; the largest AUC losses
 % at 17 classes are QCD classes (today QCD bcss, bcc and bccs; the first lepton-flavor class ranks 26th).
@@ -133,9 +136,9 @@ at \Kcoarse{} classes, where the largest losses in AUC move to the QCD classes.
 Such a pair of decays differs in the inputs mainly through the particle-type flags of its leptons, so
 once the labels merge every such pair, nothing in the loss asks the backbone to carry which flag was set.
 Because the \Kfull-class model separates these classes from the rest with few errors
-(table~\ref{tab:perclass}), a modest absolute loss appears as a large ratio. The pair $X\to ee$ against
+(data release, \texttt{jetclass2\_per\_class.csv}), a modest absolute loss appears as a large ratio. The pair $X\to ee$ against
 $X\to\mu\mu$ below shows what these labels do directly, which a curve of one class against the rest cannot.
-% CHECK: the 188-class per-class AUC of the lepton-flavor classes in tab:perclass is high.
+% CHECK: the 188-class per-class AUC of the lepton-flavor classes in data_release/jetclass2_per_class.csv is high.
 
 Summed over classes, quark flavor carries most of the cost. At \Kcoarse{} classes,
 \MlstPerClassCoarseNDoubled{} of the \Kfull{} classes at least double their $1-\AUC$, and the
@@ -171,23 +174,13 @@ $X\to\mu\mu$ below loses separation only at the levels that merge every such pai
 \begin{figure}[p]
 \centering
 \paperfig{\linewidth}{F3}
-\caption{Where the cost of a coarser label set sits, class by class. Each row is one of the \Kfull{}
-JetClass-II classes, grouped by its \Kcoarse-class group (brackets on the left), with the classes of
-QCD jets (quarks and gluons that do not come from a resonance decay) in a separate block at the bottom. Each
-column is a configuration: the \Kres-, \Kmid- and \Kcoarse-class levels of the hierarchy, the
-\RandVtwoNPartitions{} random partitions, and the three partitions with controlled flavor boundaries (none, a
-$b$-quark boundary, a random flavor boundary). The color is $\Delta\AUC_c$ of equation~(\ref{eq:ratio}): the
-AUC of the class against the rest under a linear probe on frozen features, equation~(\ref{eq:auc}), minus the
-same AUC for the \Kfull-class model pretrained with that seed, in percentage points, averaged over the runs
-of the configuration (\MlstNRunsWord{} per level, \RandFlavRuns{} per partition with a controlled flavor
-boundary, \RandVtwoRuns{} per random partition). The scale is linear and centered at zero, red where the class
-loses AUC and blue where it gains; values beyond its ends take the end colors. A filled dot marks a class that shares
-its group with a decay differing from it only in quark flavor, a ring one differing only in lepton flavor
-(both where both apply); a dash marks a class whose AUC is above
-that of the \Kfull-class model; hatching marks the \MlstJcBalNThin{} classes with the fewest test jets. The
-median over classes of the standard deviation of the \Kcoarse-class difference over its runs is
-\MlstPerClassAucDiffCoarseSeedSdMedian{} percentage points. The per-class AUCs, with the ratio of
-$1-\AUC$, are in table~\ref{tab:perclass}.}
+\caption{Difference in per-class AUC between each model and the \Kfull-class model, $\Delta\AUC_c$ of
+equation~(\ref{eq:ratio}), in percentage points, for the \Kfull{} classes of class-balanced JetClass-II, from
+linear probes on frozen features. Columns are the \Kres-, \Kmid- and \Kcoarse-class label sets and the three
+random partitions with controlled flavor boundaries. Rows are grouped by their \Kcoarse-class group, which
+follows the decay topology, with the QCD classes at the bottom. Values are means over runs; red marks an AUC
+below that of the \Kfull-class model. Every class's values are in the data release
+(\texttt{jetclass2\_per\_class.csv}).}
 \label{fig:f3}
 \end{figure}
 
@@ -205,7 +198,8 @@ decays with neither within every decay topology, and the pair stays readable.
 At a fixed number of classes, a flavor boundary anywhere in the label set keeps quark flavor readable,
 even for a pair it does not cut. The three partitions with controlled flavor boundaries have
 \Kcoarse{} classes and the same group shares, and \RandFlavRuns{} pretraining runs each, so each comparison below
-quotes the value less favorable to a difference. On $X\to YY\to bbqq$ against $X\to YY\to ccqq$, the
+quotes the value less favorable to a difference. Figure~\ref{fig:f4app} draws their linear probes on
+four class pairs beside the \Kfull-class model. On $X\to YY\to bbqq$ against $X\to YY\to ccqq$, the
 partition with a random flavor boundary, which keeps every pair of four-quark decays related by
 exchanging $b$ and $c$ quarks in one group, has \MlstCmpBbqqFonerOverFzeroPr{} of the partition with no
 flavor boundary (table~\ref{tab:pairs}; figure~\ref{fig:f4}(b)). The partition with a $b$-quark boundary, the
@@ -288,37 +282,47 @@ pretrained model is fine-tuned once on a JetClass training subset and compared w
 trained from scratch, in the form of ParT's Table~1~\cite{part}: accuracy, the AUC averaged over all
 pairs of classes, and the rejection of the background at ParT's working point for each signal class
 (table~\ref{tab:jetclass}). The caption of table~\ref{tab:jetclass} gives our training and test sizes,
-which differ from those of the published rows. Figure~\ref{fig:f6j} draws the whole ROC curve of each signal
-class against the QCD background. For $t\to bqq'$ the \Kfull-class curve stops at a signal efficiency of
-\MlstRocCutJcOneTbqqFull{}, below which fewer than $\nmin$ QCD jets pass, so its value at ParT's working point
-$R_{50}$ in the table rests on fewer jets than that. For $t\to b\ell\nu$ the models separate the test jets so
-completely that no configuration has a curve to draw (figure~\ref{fig:f6j}(g)).
+which differ from those of the published rows. Figure~\ref{fig:fj} draws, for each label set, the ROC curve
+of each JetClass class against the other nine, figure~\ref{fig:fjs} the same for the network trained from
+scratch, and table~\ref{tab:jc1_class_auc} gives the AUC of each class. For $t\to bqq'$ fewer than $\nmin$
+QCD jets pass the \Kfull-class model below a signal efficiency of \MlstRocCutJcOneTbqqFull{}, so its value at
+ParT's working point $R_{50}$ in the table rests on fewer jets than that. For $t\to b\ell\nu$ the models
+separate the test jets so completely that fewer than $\nmin$ QCD jets pass in every configuration
+(table~\ref{tab:jetclass}).
 % CHECK: MlstRocCutJcOneTbqqFull > 0.5 (0.58 today); MlstRocCutJcOneTblFull reads "not reached", and every
-% configuration of F6J(g) has no curve (true of the 2026-11-03 render); if either changes, rewrite this.
+% configuration of the signal-against-QCD curves of t->blnu keeps fewer than n_min QCD jets (true of the
+% 2026-11-03 render of the old F6J(g), now not drawn; tab:jetclass must dagger t->blnu in every row); if either
+% changes, rewrite this.
 
 \input{tables/mlst_jetclass}
 
 \begin{figure}[p]
 \centering
-\paperfig{\linewidth}{F6J}
-\caption{Fine-tuned models on JetClass: background rejection $1/\epsB$ against signal efficiency $\epsS$ for
-each signal class against the QCD background, with the two-class discriminant of equation~(\ref{eq:discr}).
-Colored lines (solid, dashed, dash-dot and dotted): the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class models, each fine-tuned once on
-\FtSizeESix{} training jets; black dash-dot-dot: the same network trained from scratch on as many jets. Lines are the mean of
-the runs at fixed $\epsS$, with bands of one standard deviation over the \MlstNRunsWord{} pretraining runs and
-over the \MlstFtRefSeedsWord{} training seeds from scratch. Each seed of the network trained from scratch also
-trains on its own subset of the JetClass training files, whereas every pretrained model is fine-tuned on the
-first. Lower panels: ratio to the \Kfull-class model, run by run against the \Kfull-class run of the same seed,
-and for the network trained from scratch against the mean of the \Kfull-class runs. Each curve stops where
-fewer than $\nmin$ QCD jets pass, equation~(\ref{eq:cut}), marked by the dashed black line at $N_B/\nmin$; in (g)
-no configuration keeps enough of them for a curve, and the horizontal axis of (e) shows only the high signal
-efficiencies its curves reach. The values at ParT's working points are in table~\ref{tab:jetclass}.}
-\label{fig:f6j}
+\paperfig{\linewidth}{FJ}
+\caption{Background rejection $1/\epsB$ against signal efficiency $\epsS$ on JetClass after fine-tuning on
+\FtSizeESix{} jets, for the models pretrained with (a) \Kfull, (b) \Kres, (c) \Kmid{} and (d) \Kcoarse{}
+classes. Each curve takes one of the ten JetClass classes as signal and the other nine as background, and is
+the mean over the \MlstNRunsWord{} pretraining runs; curves begin where $\nmin$ background jets remain. Each
+panel title gives the AUC averaged over the ten classes, and the heading that of the network trained from
+scratch (figure~\ref{fig:fjs}). The values at ParT's working points are in table~\ref{tab:jetclass}.}
+\label{fig:fj}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\paperfig{\linewidth}{FJ-ctrl}
+\caption{Background rejection $1/\epsB$ against signal efficiency $\epsS$ on JetClass after fine-tuning on
+\FtSizeESix{} jets, for networks pretrained on \Kcoarse-class random partitions: with (a) no flavor boundary,
+(b) a $b$-quark boundary and (c) a random flavor boundary, each the mean over \RandFlavRuns{} runs, and (d)
+the \RandVtwoNPartitions{} random partitions without controlled flavor boundaries, \RandVtwoRuns{} run each,
+averaged. Each curve takes one of the ten JetClass classes as signal and the other nine as background, and
+begins where $\nmin$ background jets remain. Colors and titles as in figure~\ref{fig:fj}.}
+\label{fig:fjctrl}
 \end{figure}
 
 After fine-tuning, the \Kres- and \Kmid-class models match the \Kfull-class model on JetClass: neither
 differs from it in any signal class by the rule of section~\ref{sec:uncertainties}
-(table~\ref{tab:jetclass}; figures~\ref{fig:f2}(b) and~\ref{fig:f6j}).
+(table~\ref{tab:jetclass}; figures~\ref{fig:f2b}(b) and~\ref{fig:fj}).
 % CHECK: MlstFtJcOneResNRejDiff and MlstFtJcOneMidNRejDiff are zero (none).
 The \Kmid-class labels give up the number of $b$ and $c$ quarks, gluons against light quarks and
 electrons against muons, and none of these losses shows here. JetClass's signal classes differ from one
@@ -328,7 +332,7 @@ quarks, stays within twice its standard deviation over the runs (table~\ref{tab:
 % CHECK: the largest 43/188 departure is H->4q and does not meet the rule (today 0.885 +- 0.062).
 
 At \Kcoarse{} classes the rejection falls in several signal classes: \MlstFtJcOneCoarseRejDropClasses{}
-(table~\ref{tab:jetclass}; figure~\ref{fig:f6j}).
+(table~\ref{tab:jetclass}).
 The Higgs decay to four quarks loses the most, with \MlstFtJcOneRejHfourqCoarseOverFullPr{}. The loss
 is spread over classes rather than concentrated in a class defined by flavor, and $H\to b\bar b$ shows
 no drop, but its rejection rests on so few passing background jets that its counting uncertainty is
@@ -342,7 +346,8 @@ content that $W$, $Z$ and Higgs decays to quarks often have and that QCD jets ra
 
 On JetClass the random partitions recover part of the gap between the \Kcoarse- and \Kfull-class
 models, and how much depends on the signal class. With \RandVtwoRuns{} run per partition, we read
-these values descriptively. The partitions' fine-tuned accuracy exceeds that of the \Kcoarse-class model by
+these values descriptively. Figure~\ref{fig:fjctrl} draws the curves of each JetClass class against the rest for
+the random partitions and the partitions with controlled flavor boundaries. The partitions' fine-tuned accuracy exceeds that of the \Kcoarse-class model by
 \MlstFtJcOneAccRandMinusCoarse{} (absolute), which places them between the \Kcoarse- and \Kmid-class
 models, whereas on the pretraining classes they did better than the \Kmid-class level. Of the classes where
 the \Kcoarse-class model loses rejection by the rule of section~\ref{sec:uncertainties}, they recover

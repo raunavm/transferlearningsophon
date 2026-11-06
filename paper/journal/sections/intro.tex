@@ -87,7 +87,7 @@ them~\cite{sophon}.
 \input{fig_f1}
 
 % P5. Findings on frozen features (figures F2-F4). No numbers.
-Frozen features keep what the labels ask the network to separate (figure~\ref{fig:f2}). Merging the
+Frozen features keep what the labels ask the network to separate (figure~\ref{fig:f2a}). Merging the
 QCD classes leaves what a linear probe reads from the resonant classes unchanged and costs only on % CHECK: MlstCmpJcTwoResResOverFullPr reads "equal within" and MlstCmpJcTwoQcdResOverFull > 1 by more than its SD
 the QCD classes themselves. Counted in wrongly ordered pairs of jets, the merge that removes quark
 flavor is the costliest step of the % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes > MlstCmpJcTwoResOverFull
@@ -106,11 +106,11 @@ zero, and on them the label sets differ far less after fine-tuning (tables~\ref{
 and~\ref{tab:benchqg}). Linear probes do poorly on these benchmarks. Setting the inputs they lack to % CHECK: MlstLpTopRthirtyFullOverInitBnZero and MlstLpQgRthirtyFullOverInitBnZero near or below one
 zero on JetClass-II removes more of the pretrained features' accuracy than it removes from a % CHECK: MlstLpJcTwoTopZeroAccDropFull > MlstLpJcTwoTopZeroAccDropInitBn; MlstLpJcTwoQgZeroAccDropFull > MlstLpJcTwoQgZeroAccDropInitBn
 randomly initialized network. We compare three substitutions for the missing inputs to find where % CHECK: pending MlstLpTopRthirtyFullOverInitBn (substitution chosen on validation)
-the loss arises (figure~\ref{fig:f5}). Finally, the \Kres- and \Kcoarse-class models are also
+the loss arises (table~\ref{tab:fill_main}). Finally, the \Kres- and \Kcoarse-class models are also
 pretrained with an auxiliary regression of the jet mass, trained alongside the classification. The
 regression makes the frozen features carry the jet mass and reduces sculpting, the distortion of the % CHECK: MlstCmpMlpResMassOverRes < 1 and MlstCmpMlpCoarseMassOverCoarse < 1 (ATLAS resolution); MlstSculptCoarseMassOverCoarseOne < 1
 background mass distribution by a selection on the classifier score, at a small cost to the % CHECK: MlstCmpJcTwoResMassOverRes within a few per cent of one
-classification (figures~\ref{fig:f8a} and~\ref{fig:f8b}, table~\ref{tab:mass}).
+classification (figures~\ref{fig:f9a}, \ref{fig:f10a} and~\ref{fig:f10b}, table~\ref{tab:mass}).
 
 Section~\ref{sec:related} places the study among work on pretraining objectives, label granularity,
 auxiliary targets and transfer. Section~\ref{sec:methods} describes the data, the label sets and the

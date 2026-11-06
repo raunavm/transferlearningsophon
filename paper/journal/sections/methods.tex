@@ -57,7 +57,8 @@ the number of classes. Each model sees \DesignExamplesSeen{} training examples, 
 Ranger optimizer~\cite{lookahead,radam} and a learning rate that is constant at first and then decays
 exponentially; appendix~\ref{sec:app-pretrain} gives the values. The checkpoint rule is shared too: each model is
 evaluated at the first maximum of its validation accuracy within epochs
-\DesignWavgFirstEpoch--\DesignWavgLastEpoch, where the learning rate is lowest. For every run, the code release
+\DesignWavgFirstEpoch--\DesignWavgLastEpoch, where the learning rate is lowest (the validation accuracy
+against epoch is in figure~\ref{fig:val}). For every run, the code release
 records a hash of the jet identifiers read in each epoch, against which the training order of any two models
 can be checked.
 
@@ -206,7 +207,7 @@ training distribution recovers what zero loses, and the random draws ask whether
 can take recovers it. One substitution per task is applied to every model, the randomly initialized network
 included: the one whose linear probes have the lowest validation cross-entropy summed over all models. It is
 \LpSubstitutionTop{} for top tagging and \LpSubstitutionQg{} for quark/gluon discrimination, whose choice the
-Herwig jets share, and figure~\ref{fig:f5} shows the three substitutions side by side. % CHECK: pending LpSubstitutionTop, LpSubstitutionQg (substitution fits not pulled)
+Herwig jets share, and table~\ref{tab:fill_main} gives the three substitutions side by side. % CHECK: pending LpSubstitutionTop, LpSubstitutionQg (substitution fits not pulled)
 
 Linear probes are our main evaluation of what a label set puts into the frozen features, as linear evaluation
 is for transferable features in vision~\cite{kornblith} and a frozen backbone with a linear head is for masked
@@ -396,7 +397,7 @@ QCD test jets and $h_{\mathrm{QCD}}$ of all QCD test jets by their Jensen--Shann
 \end{equation}
 where $D_{\mathrm{KL}}$ is the Kullback--Leibler divergence with logarithms to base 2. $\dJS$ is the square root of
 the Jensen--Shannon divergence~\cite{lin}, a metric between distributions~\cite{endres}, and lies between 0 and 1;
-figure~\ref{fig:f8b} also traces it over a grid of QCD efficiencies $\epsB$. A random selection of as many QCD jets
+figure~\ref{fig:f10b} also traces it over a grid of QCD efficiencies $\epsB$. A random selection of as many QCD jets
 gives a distance above zero from the size of the sample alone. The expected distance of such a selection,
 drawn without replacement, is therefore the floor against which each distance is read: it asks whether a
 distance is larger than a random selection of the same size would give.
