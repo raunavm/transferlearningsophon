@@ -168,7 +168,7 @@ def _draw_heat(path, arms) -> None:
 
     cb = fig.colorbar(im, ax=ax, fraction=0.05, pad=0.02)
     S.labels(cb.ax, ylabel="AUC difference to 188 classes (percentage points)")
-    S.heading(fig, f"{word} on JetClass-II, class by class")
+    S.heading(fig, "Linear probes on JetClass-II, class by class")
     S.save(fig, path)
 
 
@@ -238,7 +238,7 @@ def _draw_scatter(path, panels: list, ncols: int, height: float, auc_of=_class_a
         cells[-1].legend(*used[0].get_legend_handles_labels(), loc="center", fontsize=S.LEGEND_PT, borderpad=0.3, labelspacing=0.3)
     else:
         S.legend(used[0], loc="upper left", fontsize=7)
-    S.heading(fig, "Linear probes on JetClass-II, class by class")
+    S.heading(fig, f"{word} on JetClass-II, class by class")
     S.save(fig, path)
 
 
