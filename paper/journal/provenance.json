@@ -3457,43 +3457,43 @@
   },
   "FtBudgetBatch": {
     "json_path": "BATCH",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "512"
   },
   "FtBudgetEval": {
     "json_path": "STEPS",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "500"
   },
   "FtBudgetEvalSmall": {
     "json_path": "SMALL_STEPS",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "50"
   },
   "FtBudgetEvalSmallBelow": {
     "json_path": "SMALL_N",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "\\ensuremath{10^{5}}"
   },
   "FtBudgetPatience": {
     "json_path": "PATIENCE",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "10"
   },
   "FtBudgetSteps": {
     "json_path": "EPOCHS * STEPS",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "20{,}000"
   },
   "FtBudgetWeightDecay": {
     "json_path": "--optimizer-option weight_decay (every cell)",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "0.01"
   },
@@ -3541,19 +3541,19 @@
   },
   "FtHeadCap": {
     "json_path": "HEAD_CAP",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "\\ensuremath{5\\times10^{-3}}"
   },
   "FtHeadMult": {
     "json_path": "HEAD_MULT",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "50"
   },
   "FtLongSteps": {
     "json_path": "LONG_EPOCHS * STEPS",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "80{,}000"
   },
@@ -4525,31 +4525,31 @@
   },
   "FtSweepN": {
     "json_path": "SWEEP_N",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "10{,}000"
   },
   "FtSweepPre": {
     "json_path": "SWEEP_PRE",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "\\ensuremath{10^{-4}}, \\ensuremath{3\\times10^{-4}} and \\ensuremath{10^{-3}}"
   },
   "FtSweepScratch": {
     "json_path": "SWEEP_SCRATCH",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "\\ensuremath{3\\times10^{-4}}, \\ensuremath{10^{-3}} and \\ensuremath{3\\times10^{-3}}"
   },
   "FtValJets": {
     "json_path": "VAL_N",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "200{,}000"
   },
   "FtValJetsBal": {
     "json_path": "VAL_SIZE[jc2b]",
-    "sha256": "8973c7715171dcc73bfad290700f87e748a9399701a7654069474b6d421996c2",
+    "sha256": "6019564e55d2f1c56b1829b771a1c83926636eae235c7f1ad7631e070bd9b19c",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "20{,}480"
   },

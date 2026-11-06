@@ -1890,22 +1890,22 @@
 \newcommand{\AccSdLegTwoSophonPublicEFive}{0.00049}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N100000.accuracy_sd :: sha256 701c58c3240274bb :: wave 1, superseded
 \newcommand{\AccLegTwoSophonPublicESix}{0.84632}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N1000000.accuracy_mean :: sha256 701c58c3240274bb :: wave 1, superseded; 3 fine-tuning seeds
 \newcommand{\AccSdLegTwoSophonPublicESix}{0.00031}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N1000000.accuracy_sd :: sha256 701c58c3240274bb :: wave 1, superseded
-\newcommand{\FtBudgetSteps}{20{,}000}  % scripts/build_ft_budget_jobs.py :: EPOCHS * STEPS :: sha256 8973c7715171dcc7 :: the largest number of optimizer steps below the full training set
-\newcommand{\FtLongSteps}{80{,}000}  % scripts/build_ft_budget_jobs.py :: LONG_EPOCHS * STEPS :: sha256 8973c7715171dcc7 :: the largest number of optimizer steps of the long budget at LONG_N jets (JetClass, JetClass-II)
+\newcommand{\FtBudgetSteps}{20{,}000}  % scripts/build_ft_budget_jobs.py :: EPOCHS * STEPS :: sha256 6019564e55d2f1c5 :: the largest number of optimizer steps below the full training set
+\newcommand{\FtLongSteps}{80{,}000}  % scripts/build_ft_budget_jobs.py :: LONG_EPOCHS * STEPS :: sha256 6019564e55d2f1c5 :: the largest number of optimizer steps of the long budget at LONG_N jets (JetClass, JetClass-II)
 \newcommand{\DesignNTrainSelected}{109{,}938{,}036}  % experiments/FIGS/data/v2/jc2_train/counts.json :: n_selected :: sha256 b0b5a8b63aa808c0 :: selected jets of the pretrain_train files (experiments/FT/count_jc2_train.py)
-\newcommand{\FtBudgetEval}{500}  % scripts/build_ft_budget_jobs.py :: STEPS :: sha256 8973c7715171dcc7 :: steps between validation passes at and above SMALL_N training jets
-\newcommand{\FtBudgetEvalSmall}{50}  % scripts/build_ft_budget_jobs.py :: SMALL_STEPS :: sha256 8973c7715171dcc7 :: steps between validation passes below SMALL_N training jets
-\newcommand{\FtBudgetEvalSmallBelow}{\ensuremath{10^{5}}}  % scripts/build_ft_budget_jobs.py :: SMALL_N :: sha256 8973c7715171dcc7 :: training jets below which the validation runs every SMALL_STEPS steps
-\newcommand{\FtBudgetPatience}{10}  % scripts/build_ft_budget_jobs.py :: PATIENCE :: sha256 8973c7715171dcc7 :: validation passes without improvement before training stops
-\newcommand{\FtHeadMult}{50}  % scripts/build_ft_budget_jobs.py :: HEAD_MULT :: sha256 8973c7715171dcc7 :: the head's learning-rate multiplier
-\newcommand{\FtHeadCap}{\ensuremath{5\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: HEAD_CAP :: sha256 8973c7715171dcc7 :: the head's largest learning rate
-\newcommand{\FtBudgetBatch}{512}  % scripts/build_ft_budget_jobs.py :: BATCH :: sha256 8973c7715171dcc7
-\newcommand{\FtBudgetWeightDecay}{0.01}  % scripts/build_ft_budget_jobs.py :: --optimizer-option weight_decay (every cell) :: sha256 8973c7715171dcc7
-\newcommand{\FtSweepPre}{\ensuremath{10^{-4}}, \ensuremath{3\times10^{-4}} and \ensuremath{10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_PRE :: sha256 8973c7715171dcc7 :: backbone rates of the sweep
-\newcommand{\FtSweepScratch}{\ensuremath{3\times10^{-4}}, \ensuremath{10^{-3}} and \ensuremath{3\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_SCRATCH :: sha256 8973c7715171dcc7 :: from-scratch rates of the sweep
-\newcommand{\FtSweepN}{10{,}000}  % scripts/build_ft_budget_jobs.py :: SWEEP_N :: sha256 8973c7715171dcc7 :: training jets of the sweep
-\newcommand{\FtValJets}{200{,}000}  % scripts/build_ft_budget_jobs.py :: VAL_N :: sha256 8973c7715171dcc7 :: the fixed validation set
-\newcommand{\FtValJetsBal}{20{,}480}  % scripts/build_ft_budget_jobs.py :: VAL_SIZE[jc2b] :: sha256 8973c7715171dcc7 :: the balanced JetClass-II validation set
+\newcommand{\FtBudgetEval}{500}  % scripts/build_ft_budget_jobs.py :: STEPS :: sha256 6019564e55d2f1c5 :: steps between validation passes at and above SMALL_N training jets
+\newcommand{\FtBudgetEvalSmall}{50}  % scripts/build_ft_budget_jobs.py :: SMALL_STEPS :: sha256 6019564e55d2f1c5 :: steps between validation passes below SMALL_N training jets
+\newcommand{\FtBudgetEvalSmallBelow}{\ensuremath{10^{5}}}  % scripts/build_ft_budget_jobs.py :: SMALL_N :: sha256 6019564e55d2f1c5 :: training jets below which the validation runs every SMALL_STEPS steps
+\newcommand{\FtBudgetPatience}{10}  % scripts/build_ft_budget_jobs.py :: PATIENCE :: sha256 6019564e55d2f1c5 :: validation passes without improvement before training stops
+\newcommand{\FtHeadMult}{50}  % scripts/build_ft_budget_jobs.py :: HEAD_MULT :: sha256 6019564e55d2f1c5 :: the head's learning-rate multiplier
+\newcommand{\FtHeadCap}{\ensuremath{5\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: HEAD_CAP :: sha256 6019564e55d2f1c5 :: the head's largest learning rate
+\newcommand{\FtBudgetBatch}{512}  % scripts/build_ft_budget_jobs.py :: BATCH :: sha256 6019564e55d2f1c5
+\newcommand{\FtBudgetWeightDecay}{0.01}  % scripts/build_ft_budget_jobs.py :: --optimizer-option weight_decay (every cell) :: sha256 6019564e55d2f1c5
+\newcommand{\FtSweepPre}{\ensuremath{10^{-4}}, \ensuremath{3\times10^{-4}} and \ensuremath{10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_PRE :: sha256 6019564e55d2f1c5 :: backbone rates of the sweep
+\newcommand{\FtSweepScratch}{\ensuremath{3\times10^{-4}}, \ensuremath{10^{-3}} and \ensuremath{3\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_SCRATCH :: sha256 6019564e55d2f1c5 :: from-scratch rates of the sweep
+\newcommand{\FtSweepN}{10{,}000}  % scripts/build_ft_budget_jobs.py :: SWEEP_N :: sha256 6019564e55d2f1c5 :: training jets of the sweep
+\newcommand{\FtValJets}{200{,}000}  % scripts/build_ft_budget_jobs.py :: VAL_N :: sha256 6019564e55d2f1c5 :: the fixed validation set
+\newcommand{\FtValJetsBal}{20{,}480}  % scripts/build_ft_budget_jobs.py :: VAL_SIZE[jc2b] :: sha256 6019564e55d2f1c5 :: the balanced JetClass-II validation set
 \newcommand{\LpVfourCMax}{\ensuremath{10^{4}}}  % experiments/EVAL/probe_bal.py :: C_GRID_V4 :: sha256 957a4749ab24429e :: largest inverse regularisation of the v4 probes
 \newcommand{\JcBalTestPerClass}{5{,}000}  % experiments/FT/stage_jc2_balanced.py :: TEST_PER_CLASS :: sha256 0260341d5ed75fec
 \newcommand{\JcBalValPerClass}{109}  % experiments/FT/stage_jc2_balanced.py :: VAL_PER_CLASS :: sha256 0260341d5ed75fec
