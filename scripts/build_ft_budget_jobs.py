@@ -295,7 +295,7 @@ def cell_cases(cells: list) -> str:
                    f"VAL={c['val']}; PATFROM={c.get('patience_from', 0)}; CELL={c['out']};;\n" for i, c in enumerate(cells))
 
 
-def spec(name: str, cells: list, tag: str, parallelism: int, memory: str) -> str:
+def spec(name: str, cells: list, tag: str, parallelism: int, memory: str, cpu: int = 4) -> str:
     launch = _launch()
     script = (CELL_SCRIPT.replace("__CASES__", cell_cases(cells)).replace("__TASKS__", task_cases())
               .replace("__BATCH__", str(BATCH)).replace("__HERWIG__", " ".join(HERWIG_TEST)))
@@ -346,8 +346,8 @@ spec:
         - |
 {body}
         resources:
-          requests: {{ memory: "{memory}", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
-          limits:   {{ memory: "{memory}", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
+          requests: {{ memory: "{memory}", cpu: "{cpu}", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
+          limits:   {{ memory: "{memory}", cpu: "{cpu}", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
         volumeMounts:
         - {{ name: data, mountPath: /data }}
         - {{ name: dshm, mountPath: /dev/shm }}
@@ -383,6 +383,8 @@ def main(argv=None) -> int:
     ap.add_argument("--lr-scratch", default=None)
     ap.add_argument("--lr-scratch-qg", default=None, help="quark/gluon's own from-scratch rate (its sweep)")
     ap.add_argument("--parallelism", type=int, default=4)
+    ap.add_argument("--cpu", type=int, default=4, help="CPUs per pod (3: fits CPU-starved nodes with a free GPU, PI 2026-11-06)")
+    ap.add_argument("--name-suffix", default="", help="a second job of the same cells, e.g. cpu3")
     ap.add_argument("--indices", default=None,
                     help="comma-separated indices of the full kind's job: a -retry job of those cells only")
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl"))
@@ -415,8 +417,10 @@ def main(argv=None) -> int:
         if a.indices:
             cells = [cells[int(i)] for i in a.indices.split(",")]
             name = f"ft-budget-{kind}-retry-raunav"
+        if a.name_suffix:
+            name = name.replace("-raunav", f"-{a.name_suffix}-raunav")
         p = OUT_DIR / f"job-{name}.yaml"
-        p.write_text(spec(name, cells, a.tag, a.parallelism, mem))
+        p.write_text(spec(name, cells, a.tag, a.parallelism, mem, a.cpu))
         print(p, len(cells), "cells")
     return 0
 

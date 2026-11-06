@@ -180,3 +180,13 @@ def test_long_control_cells_are_the_eleven_partition_runs_on_jetclass2_with_the_
         assert (c["task"], c["n"], c["epochs"], c["spe"], c["patience"]) == ("jc2b", 1_000_000, 160, 256_000, 10)
         assert c["out"] == f"/data/results/ft_v2/budget_long/leg_jc2b/{c['init']}/N1000000/s1"
         assert c["lr"] == "1e-3" and c["mult"] == "5.0" and "patience_from" not in c
+
+
+def test_a_job_can_request_three_cpus_under_its_own_name(tmp_path, monkeypatch):
+    """PI 2026-11-06: the unstarted long-budget JetClass cells move to a job requesting 3 CPUs."""
+    monkeypatch.setattr(bfb, "OUT_DIR", tmp_path)
+    bfb.main(["--tag", "mtx-s2.99", "--lr-pre", "1e-3", "--lr-scratch", "1e-3", "--cpu", "3",
+              "--name-suffix", "cpu3", "--indices", "0,5", "long-jc1"])
+    t = (tmp_path / "job-ft-budget-long-jc1-retry-cpu3-raunav.yaml").read_text()
+    assert "name: ft-budget-long-jc1-retry-cpu3-raunav" in t and t.count('cpu: "3"') == 2 and 'cpu: "4"' not in t
+    assert "completions: 2" in t
