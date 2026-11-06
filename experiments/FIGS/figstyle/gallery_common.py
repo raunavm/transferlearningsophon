@@ -22,6 +22,9 @@ RUNS = M._paper(P.REPO)
 I = P.inputs(M)
 ROC = {**I["roc"], **{fam: docs for fam in ("jc1_ft_ovr", "jc1_probe_ovr", "top_probe", "qg_probe", "jc2_ft_ovr", "pairs_sib2")
                       if (docs := M._load(P.DATA / M.V4.ROC_DIR / fam))}}
+# the long-budget JetClass-II cells at 1e6 replace the fixed-budget ones of the same model (one recipe per model)
+if (_long := M._load(P.DATA / M.V4.ROC_DIR / "jc2_ft_ovr_long")):
+    ROC["jc2_ft_ovr"] = {**ROC.get("jc2_ft_ovr", {}), **_long}
 
 
 class Absent(Exception):

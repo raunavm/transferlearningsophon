@@ -4,6 +4,8 @@
 (A3R-ft), and the t-SNE of the class token.
 
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.61
+    python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode sib2   # every X->ee / X->mumu test jet
+    python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode long   # the long-budget JetClass-II cells
 """
 import argparse
 import pathlib
@@ -85,13 +87,56 @@ spec:
 """
 
 
+SIB2 = "/data/results/eval/v2_linprobe_bal/fits_v4_sib2"      # build_jc2bal_jobs.sibx_spec
+LONG_JC2_TREE = "/data/results/ft_v2/budget_long/leg_jc2b"
+
+
+def calls_sib2() -> str:
+    """X->ee vs X->mumu on every test jet of the pair (PI 2026-11-05), every model, into curves_v2/pairs_sib2."""
+    models = " ".join(paper_models() + [f"init-s{k}" for k in (1, 2, 3)])
+    out = [f"python3 experiments/FT/roc_points.py probes --family pairs --probs-root {SIB2}_probs --fits-root {SIB2} "
+           f"--files jc2bal_pairs_ee_vs_mm --models {models} --out-dir {ROC}/pairs_sib2",
+           f"echo done > {ROC}/pairs_sib2/DONE"]
+    return "\n".join("          " + c for c in out)
+
+
+def calls_long() -> str:
+    """One-vs-rest curves of the long-budget JetClass-II cells at 1e6 (the reruns at the limit, from scratch and
+    the eight partitions) into curves_v2/jc2_ft_ovr_long; the figures let them replace jc2_ft_ovr's."""
+    inits = " ".join(sorted(d.split("/")[-1] for d in _long_inits()))
+    out = [f"python3 experiments/FT/roc_points.py ft --family jc2_ft_ovr --tree {LONG_JC2_TREE} --task jc2b --n {JC2_N} "
+           f"--inits {inits} --out-dir {ROC}/jc2_ft_ovr_long",
+           f"echo done > {ROC}/jc2_ft_ovr_long/DONE"]
+    return "\n".join("          " + c for c in out)
+
+
+def _long_inits() -> list:
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("build_ft_budget_jobs", ROOT / "scripts/build_ft_budget_jobs.py")
+    bfb = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bfb)
+    cells = bfb.long_cells("jc2b", "1e-3", "1e-3") + bfb.long_ctrl_cells("1e-3")
+    return sorted({c["init"] or "scratch" for c in cells if "mass" not in c["init"]})
+
+
+MODES = {"": (calls, "gallery-data-raunav", "top_probe qg_probe jc2_ft_ovr"),
+         "sib2": (calls_sib2, "gallery-data-sib2-raunav", "pairs_sib2"),
+         "long": (calls_long, "gallery-data-long-raunav", "jc2_ft_ovr_long")}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
+    ap.add_argument("--mode", default="", choices=tuple(MODES))
     a = ap.parse_args()
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(SPEC.format(image=IMAGE, tag=a.tag, roc=ROC, calls=calls()))
-    print(OUT)
+    fn, name, dirs = MODES[a.mode]
+    out = OUT.with_name(f"job-{name}.yaml")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    text = SPEC.format(image=IMAGE, tag=a.tag, roc=ROC, calls=fn())
+    text = text.replace("name: gallery-data-raunav", f"name: {name}").replace(
+        f"mkdir -p {ROC}/top_probe {ROC}/qg_probe {ROC}/jc2_ft_ovr", "mkdir -p " + " ".join(f"{ROC}/{d}" for d in dirs.split()))
+    out.write_text(text)
+    print(out)
     return 0
 
 
