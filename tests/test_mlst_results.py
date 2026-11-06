@@ -196,6 +196,12 @@ def test_the_long_budget_cells_replace_every_cell_of_their_task_model_and_size(t
     assert per["jc2"]["rand2p1-s1"][1000000][0]["accuracy"] == 0.95
     assert [r["accuracy"] for r in per["jc2"][M.SCRATCH][1000000]] == [0.85, 0.85]
     assert [r["accuracy"] for r in per["jc1"]["l188-s2"][1000000]] == [0.96]
+    # a tree with a cell still missing is not used at all: no figure mixes the two recipes
+    (tmp_path / "budget" / "budget_long_metrics.json").write_text(json.dumps(
+        {"cells": long, "missing": ["leg2/l188-s1/N1000000/s1"]}))
+    _, per, _ = M.load_ft(tmp_path)
+    assert per["jc1"]["l188-s2"][1000000][0]["accuracy"] != 0.96
+    assert [r["accuracy"] for r in per["jc2"]["l188-s1"][1000000]] == [0.97]
 
 
 def test_a_rejection_that_is_only_a_bound_stops_the_table(tmp_path):

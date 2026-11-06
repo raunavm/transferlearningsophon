@@ -1646,13 +1646,19 @@ def merge_budget(per: dict, budget: pathlib.Path, long: pathlib.Path | None = No
     """per with the superseded cells removed (below FULL_N; every natural-mix JetClass-II cell) and
     the fixed-budget cells added, the from-scratch ones under SCRATCH. The long-budget cells at 1e6
     (budget_long, PI 2026-11-05) then replace every cell of the same task, model and size, the
-    earlier fine-tuning and the fixed-budget alike: one recipe per (task, model, size)."""
+    earlier fine-tuning and the fixed-budget alike: one recipe per (task, model, size). A tree of the
+    long budget with any cell still missing is not used at all, so a figure never mixes the two recipes."""
     out = {key: {init: {n: v for n, v in by_n.items() if key in FULL_N and n >= FULL_N[key]}
                  for init, by_n in cells.items()} for key, cells in per.items()}
     for src in (budget, long):
         if src is None:
             continue
+        unfinished = set()
+        if src is long and src.exists():
+            unfinished = {c.split("/")[0] for c in json.loads(src.read_text()).get("missing", [])}
         for (key, init, n), recs in _budget_cells(src).items():
+            if BUDGET_TREE[key][0] in unfinished:
+                continue
             out.setdefault(key, {}).setdefault(init, {})[n] = recs
     return out
 
