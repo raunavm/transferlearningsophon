@@ -16,7 +16,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone -q --depth 1 --branch mtx-s2.63 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+          git clone -q --depth 1 --branch mtx-s2.64 https://github.com/raunavm/transferlearningsophon.git /workspace/tls
           cd /workspace/tls
           pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
