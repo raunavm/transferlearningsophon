@@ -23,3 +23,9 @@ def test_the_plan_takes_every_jet_of_the_labels_and_no_other():
     ids = ss.plan(src, lab, [10, 11])
     assert np.array_equal(ids, np.sort(src[np.isin(lab, [10, 11])]))
     assert ids.size == int(np.isin(lab, [10, 11]).sum())
+
+
+def test_the_census_function_pickles_for_the_worker_pool():
+    # jc2sib-stage failed: the loaded module was not in sys.modules, so ProcessPoolExecutor could not pickle it
+    import pickle
+    assert pickle.loads(pickle.dumps(ss.SB.census_file)) is ss.SB.census_file
