@@ -131,6 +131,11 @@ NHURT, NSTABLE = 8, 4
 MASS_MIN_JETS = int(re.search(r"^MIN_JETS = (\d+)$", (pathlib.Path(__file__).resolve().parents[2]
                                                        / "experiments/EVAL/atlas_resolution.py").read_text(),
                               re.M).group(1))
+# F9a's response axes cover the bins with this share of a series' largest bin (read from the figure's
+# source, which imports matplotlib)
+F9A_SHOWN_FROM = float(re.search(r"^SHOWN_FROM = ([0-9.]+)", (pathlib.Path(__file__).resolve().parent
+                                                               / "figstyle/gallery_physics.py").read_text(),
+                                 re.M).group(1))
 # the zero-fill control's two masks (fillcontrol/<mask>/); the paper no longer reads them, the mock-up
 # figures (mockup_figures.figure_f5) still do
 MASKS = ("TopReference", "EnergyFlowQG")
@@ -1376,6 +1381,20 @@ def mass_macros(em, atlas, runs, index, fmt_pm) -> None:
             _emit_ratio(em, f"MlstCmpMlp{WORD[arm]}Over{WORD[ref]}{gs}", r, k, fmt_pm, index,
                         f"frozen-feature MLP resolution of {arm} over {ref}, run by run, {g} jets", "resolution",
                         _two_run(runs, arm, ref), ref_sd=sd)
+    # F9a(b)'s x axis (figstyle/gallery_physics._response) covers the bins where the groomed mass or a mass
+    # model's mean reaches SHOWN_FROM of its own largest bin: the share of QCD jets' groomed-mass response
+    # inside that range (jets outside the histogram's edges count in the total, as in the figure).
+    h = [atlas[m]["estimators"]["groomed"]["qcd"]["hist"] for m in sorted(atlas)
+         if "groomed" in atlas[m]["estimators"]]
+    if h:
+        frac = lambda x: np.asarray(x["counts"], float) / (sum(x["counts"]) + x["underflow"] + x["overflow"])
+        gr = frac(h[0])
+        shown = [gr] + [np.mean(hs, axis=0) for arm in MASS
+                        if (hs := [frac(atlas[m]["estimators"]["regressed"]["qcd"]["hist"]) for m in runs[arm]
+                                   if m in atlas and "regressed" in atlas[m]["estimators"]])]
+        on = np.flatnonzero(np.any([s >= F9A_SHOWN_FROM * s.max() for s in shown], axis=0))
+        em.macro("MlstMassRespAxesShareQcd", _pct_prose([100 * gr[on[0]:on[-1] + 1].sum()]), index,
+                 "head/atlas_res: share of QCD jets whose groomed-mass response lies inside F9a(b)'s x axis")
 
 
 def loss_share_macros(em, comp, runs, index, fmt_pm, root: pathlib.Path | None = None) -> None:
@@ -2479,10 +2498,15 @@ def roc_macros(em, roc: dict, runs: dict, index, missing: list, fmt_int) -> None
     X->ee vs X->mumu curve, by F4's rule: _roc_cut 'not reached', i.e. some run has fewer than
     ROC_MIN_POINTS grid points with JC1_MIN_BKG background jets; a noun phrase). The all-runs-null rule of ROC_INTERFACE 3.2 was
     replaced by the figure's rule (2026-11-02, to be flagged to the PI)."""
-    pairs = roc.get("pairs", {})
-    grid = next(iter(pairs.values()))["eps_grid"] if pairs else None
+    def family(key):
+        """X->ee vs X->mumu from every test jet of the pair (pairs_sib2) once read out, else the balanced set."""
+        fam = roc.get("pairs_sib2", {}) if key == "ee_vs_mm" else {}
+        fam = fam or roc.get("pairs", {})
+        return fam, (next(iter(fam.values()))["eps_grid"] if fam else None)
+
     for key in ROC_PAIRS:
         p = PAIR_WORD[key]
+        pairs, grid = family(key)
         for arm in MAIN + FLAV:
             body = _roc_cut(_roc_curves(pairs, runs[arm], key), grid)
             if body is not None:
@@ -2494,6 +2518,7 @@ def roc_macros(em, roc: dict, runs: dict, index, missing: list, fmt_int) -> None
             em.macro(f"MlstRocNBkg{p}", fmt_int(c["n_background"]), index, f"curves_v2/pairs curve {key}: n_background")
             em.macro(f"MlstRocRejMax{p}", fmt_int(c["n_background"] / V4.JC1_MIN_BKG), index,
                      f"curves_v2/pairs curve {key}: n_background / {V4.JC1_MIN_BKG}")
+    pairs, grid = family("ee_vs_mm")
     cur = {a: _roc_curves(pairs, runs[a], "ee_vs_mm") for a in MAIN + FLAV}
     if pairs and all(c is not None for v in cur.values() for c in v):
         none = [a for a, v in cur.items() if _roc_cut(v, grid).startswith("not reached")]
@@ -3380,6 +3405,7 @@ REQUIRED = (
     ("MlstCmpMlpResMassOverRes", "head/atlas_res", "Pr PrMax"), ("MlstCmpMlpCoarseOverFull", "head/atlas_res", "Pr"),
     ("MlstMassHeadResMassResponse", "head/atlas_res", ""), ("MlstMassHeadCoarseMassResponse", "head/atlas_res", ""),
     ("MlstMassUncorrectedResponse", "head/atlas_res", ""),
+    ("MlstMassRespAxesShareQcd", "head/atlas_res", ""),
     ("MlstCmpJcTwoResMassOverRes", "probes", "Pr PrMax"),
     ("MlstSculptFullOverFloorOne", "sculpting", "Pr"), ("MlstSculptCoarseOverFullOne", "sculpting", "Pr"),
     ("MlstSculptMidOne", "sculpting", ""), ("MlstSculptCoarseMassOverCoarseOne", "sculpting", "Pr PrMax"),

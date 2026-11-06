@@ -172,7 +172,6 @@ After fine-tuning, it measures how much top-tagging rejection the missing inputs
 \Kfull-class model fine-tuned with those inputs set to zero, which shares its rescaling, data and settings.
 With frozen features and nothing missing, it shows whether a linear probe on top tagging is limited by the
 frozen features or by the missing inputs.
-% CHECK: pending the kinematic-only model (pretraining in progress; its linear probes and fine-tuning are not run yet)
 
 % ----------------------------------------------------------------------------
 \subsection{Evaluation}\label{sec:evaluation}
@@ -207,7 +206,7 @@ training distribution recovers what zero loses, and the random draws ask whether
 can take recovers it. One substitution per task is applied to every model, the randomly initialized network
 included: the one whose linear probes have the lowest validation cross-entropy summed over all models. It is
 \LpSubstitutionTop{} for top tagging and \LpSubstitutionQg{} for quark/gluon discrimination, whose choice the
-Herwig jets share, and table~\ref{tab:fill_main} gives the three substitutions side by side. % CHECK: pending LpSubstitutionTop, LpSubstitutionQg (substitution fits not pulled)
+Herwig jets share, and table~\ref{tab:fill_main} gives the three substitutions side by side.
 
 Linear probes are our main evaluation of what a label set puts into the frozen features, as linear evaluation
 is for transferable features in vision~\cite{kornblith} and a frozen backbone with a linear head is for masked
@@ -255,12 +254,15 @@ Fine-tuning asks what label-set effect remains once every weight adapts. Each pr
 whole head, hidden layer included, initialized anew. The same network trained on the downstream task alone,
 from random initial weights, is the reference for what pretraining adds over the downstream data; it is
 trained with \MlstFtRefSeedsWord{} seeds. On the full training sets of top tagging and quark/gluon
-discrimination and on the largest JetClass training set, fine-tuning uses ParT's fine-tuning settings, and the
-network trained from scratch uses ParT's from-scratch settings~\cite{part}. The smaller training sets use one
-rule, identical for pretrained and from-scratch networks: a fixed maximum number of steps, early stopping on
-the validation set and a learning rate chosen on validation (appendix~\ref{sec:app-ft}). Missing inputs are
-set to zero in every fine-tuning. On JetClass-II the levels of the hierarchy and the models with the auxiliary
-mass regression are fine-tuned, while the controls are evaluated with linear probes only. One fine-tuning per
+discrimination, fine-tuning uses ParT's fine-tuning settings, and the network trained from scratch uses ParT's
+from-scratch settings~\cite{part}. All other training sets, including every JetClass and JetClass-II set, use
+one rule, identical for pretrained and from-scratch networks: a fixed maximum number of steps, larger for
+\FtSizeESix{} jets, early stopping on the validation set and a learning rate chosen on validation
+(appendix~\ref{sec:app-ft}). Missing inputs are set to zero in every fine-tuning. On JetClass-II the levels of
+the hierarchy and the models with the auxiliary mass regression are fine-tuned, while the controls are
+evaluated with linear probes only.
+% CHECK: rewrite when ft-budget-long-jc2b-ctrl reads out
+One fine-tuning per
 pretraining run spends the compute on pretraining runs, whose variation this study must measure. Separating
 the variation of pretraining from that of fine-tuning would need several fine-tuning runs per pretraining run,
 as in MultiBERTs~\cite[App.~D]{multiberts}.
@@ -442,7 +444,8 @@ most published foundation-model results leave out by repeating only the downstre
 network; Sophon reports no variation between pretraining runs~\cite{sophon}. Three runs are given as the mean
 and standard deviation, rounded following the Particle Data Group~\cite{pdg}, two runs as both values and one
 run as its value. With three runs a standard deviation is itself uncertain by about \MlstSdRelUnc. The network
-trained from scratch varies its training seed, on the largest JetClass training set also its training subset, and the randomly
+trained from scratch varies its training seed, and the randomly
+% CHECK: every from-scratch fine-tuning cell reads train_N<N>_s1 (build_ft_budget_jobs.py); true for the JetClass 10^6 numbers once budget_long_metrics.json is pulled
 initialized network its initial weights. A ROC curve of a configuration is the mean over its runs of the
 rejection at each signal efficiency, with a band of one standard deviation, or the range of two runs, at the
 same signal efficiency.

@@ -380,9 +380,10 @@ PAGES = [
                  "end, with the rejection written inline, not as a fraction. The legend is in the first panel only, "
                  "lower left, as the curves fill the upper right; it holds for every panel. Landscape's grid, Sophon's "
                  "fonts, and the plan's tab10 order.",
-         data_note="X→ee vs X→μμ is read from every test jet of the pair (pairs_sib2, about 340,000 per class) where the "
-                   "job has run, so its curve reaches a rejection of about 17,000; before that, from the balanced test set's "
-                   "5,000 per class (a rejection of 250). All four panels run from 1 to 10^4 (PI).",
+         data_note="X→ee vs X→μμ is read from every test jet of the pair (pairs_sib2: 135,245 X→ee and 128,833 X→μμ "
+                   "jets), so a curve can reach a rejection of 6,442 (128,833 / 20). The 188- and 162-class models keep "
+                   "fewer than 20 X→μμ jets at every efficiency in some run even so, and are named as complete "
+                   "separation; the 43- and 17-class models draw full curves. All four panels run from 1 to 10^4 (PI).",
          draw=draw_f4),
     Page(id="F4-app", title="Flavor separation with random partitions with controlled flavor boundaries",
          precedent=["1902.09914/fig5.png"],

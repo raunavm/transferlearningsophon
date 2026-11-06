@@ -1053,6 +1053,14 @@ def test_the_roc_curves_are_cut_where_fewer_than_twenty_background_jets_pass(tmp
     em, missing = _PEm(), []
     M.roc_macros(em, M.V4.load_roc(tmp_path), runs, None, missing, MT.fmt_int)
     assert em.m["MlstRocNoCurveEemm"].startswith(r"\pending") and any("MlstRocNoCurveEemm" in x for x in missing)
+    # every test jet of the X->ee / X->mumu pair (pairs_sib2) replaces the balanced set for that pair only
+    _roc_tree(tmp_path, {m: {"ee_vs_mm": _curve(None if m in runs["L188"] else 0.06, n_bkg=132000, sha="s")}
+                         for m in cur}, family="pairs_sib2")
+    em, missing = _PEm(), []
+    M.roc_macros(em, M.V4.load_roc(tmp_path), runs, None, missing, MT.fmt_int)
+    assert em.m["MlstRocNBkgEemm"] == "132{,}000" and em.m["MlstRocRejMaxEemm"] == "6{,}600"
+    assert em.m["MlstRocNBkgBb"] == "200{,}000" and em.m["MlstRocCutEemmFull"] == "not reached"
+    assert em.m["MlstRocNoCurveEemm"] == M.no_curve_phrase(["L188"])
 
 
 def test_curves_of_one_key_scored_on_different_jets_another_cut_or_another_grid_stop_the_build(tmp_path):
@@ -1092,6 +1100,10 @@ def test_the_ee_mumu_probe_joins_the_v4_pairs_and_gives_its_macros(tmp_path):
     fits, raw = M.V4.load_fits(tmp_path)
     assert M._pair(fits, "mtx-r42q1-s1", "ee_vs_mm") == 0.96 and M._pair(fits, "initbn-s1", "ee_vs_mm") == 0.7
     assert "mtx-l162-s1" not in fits                     # no v4 file: not merged
+    (tmp_path / "linprobe/fits_v4_sib2").mkdir(parents=True)  # every test jet of the pair replaces the balanced set
+    (tmp_path / "linprobe/fits_v4_sib2" / "mtx-r42q1-s1.json").write_text(json.dumps(sib(["best70"], 0.955)))
+    assert M._pair(M.V4.load_fits(tmp_path)[0], "mtx-r42q1-s1", "ee_vs_mm") == 0.955
+    (tmp_path / "linprobe/fits_v4_sib2" / "mtx-r42q1-s1.json").unlink()
     runs = {"L188": ["mtx-l188-s1"], "R42_Q1": ["mtx-r42q1-s1"]}
     assert M.separated(fits, runs, "ee_vs_mm") == {"1"} and M.separated(fits, runs, "bb_vs_cc") == set()
     t = M.table_pairs(fits, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188", "R42_Q1"))

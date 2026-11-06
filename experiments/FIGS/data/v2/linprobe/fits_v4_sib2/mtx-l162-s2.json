@@ -1,0 +1,108 @@
+{
+ "auc_stride": 1,
+ "balanced_manifest_sha256": "9c7775be6ff56ac34da560369c5b3186142c9911741b91aa9da4a8c3abd2117e",
+ "c_grid": [
+  0.001,
+  0.01,
+  0.1,
+  1.0,
+  10.0,
+  100.0,
+  1000.0,
+  10000.0
+ ],
+ "cells": {
+  "best70": {
+   "jc2bal_pairs": {
+    "ee_vs_mm": {
+     "C": 1000.0,
+     "accuracy": 0.9999848529601103,
+     "auc": 0.9999999992539034,
+     "converged": true,
+     "device": "cuda",
+     "log1m_auc": -21.016165994725597,
+     "log1m_auc_censored": false,
+     "n_jets": 264078,
+     "n_signal": 135245,
+     "n_test_background": 128833,
+     "n_test_signal": 135245,
+     "n_train": 9571,
+     "n_val": 1068,
+     "r30": 128833.0,
+     "r30_eps_b": 0.0,
+     "r30_is_bound": true,
+     "r30_n_bkg_pass": 0,
+     "r30_rel_stat": null,
+     "r50": 128833.0,
+     "r50_eps_b": 0.0,
+     "r50_is_bound": true,
+     "r50_n_bkg_pass": 0,
+     "r50_rel_stat": null,
+     "search": {
+      "0.001": {
+       "converged": true,
+       "grad_max": 4.0788862323490327e-07,
+       "n_iter": 19,
+       "val_cross_entropy": 0.015827670208011346
+      },
+      "0.01": {
+       "converged": true,
+       "grad_max": 4.007631677831018e-07,
+       "n_iter": 18,
+       "val_cross_entropy": 0.002430414995800002
+      },
+      "0.1": {
+       "converged": true,
+       "grad_max": 8.263749884866799e-07,
+       "n_iter": 15,
+       "val_cross_entropy": 0.00035188448626894444
+      },
+      "1.0": {
+       "converged": true,
+       "grad_max": 6.879680645427637e-07,
+       "n_iter": 10,
+       "val_cross_entropy": 5.1083052143266076e-05
+      },
+      "10.0": {
+       "converged": true,
+       "grad_max": 3.61701678279067e-07,
+       "n_iter": 6,
+       "val_cross_entropy": 8.21246277382226e-06
+      },
+      "100.0": {
+       "converged": true,
+       "grad_max": 8.059460704704893e-07,
+       "n_iter": 4,
+       "val_cross_entropy": 1.803774839088465e-06
+      },
+      "1000.0": {
+       "converged": true,
+       "grad_max": 7.256323617798836e-07,
+       "n_iter": 1,
+       "val_cross_entropy": 1.6758971082642474e-06
+      },
+      "10000.0": {
+       "converged": true,
+       "grad_max": 7.632435443765648e-07,
+       "n_iter": 0,
+       "val_cross_entropy": 1.6758971082642474e-06
+      }
+     },
+     "test_set": "jc2sib/test",
+     "train_set": "jc2bal/train_N1000000"
+    }
+   }
+  }
+ },
+ "checkpoints": [
+  "best70"
+ ],
+ "converged_grad": 1e-05,
+ "max_iter": 10000,
+ "model": "mtx-l162-s2",
+ "pair_val_fraction": 0.1,
+ "probe": "linear, sibling pairs on the class-balanced sets, every test jet of the pair",
+ "script_sha256": "957a4749ab24429e4ada9c4f8622543f37c09515281e96e7fdd27752f829a89b",
+ "selection": "validation cross-entropy",
+ "variants": []
+}

@@ -26,8 +26,9 @@ import numpy as np
 REPO = pathlib.Path(__file__).resolve().parents[2]
 FITS_V4, MLP_V4 = "linprobe/fits_v4", "linprobe/fits_v4_mlp"
 SIB_V4 = "linprobe/fits_v4_sib"
+SIB2_V4 = "linprobe/fits_v4_sib2"     # the same probe scored on every X->ee / X->mumu test jet; replaces SIB_V4
 ROC_DIR = "curves_v2"
-ROC_FAMILIES = ("jc1_ft", "jc1_probe", "pairs", "top_ft", "qg_ft", "jc2_ovr")
+ROC_FAMILIES = ("jc1_ft", "jc1_probe", "pairs", "pairs_sib2", "top_ft", "qg_ft", "jc2_ovr")   # pairs_sib2: every X->ee / X->mumu test jet
 
 
 def _module(rel: str, name: str):
@@ -59,13 +60,15 @@ def remap(doc: dict) -> dict:
 def load_fits(data: pathlib.Path) -> tuple[dict, dict]:
     """({model: fits in v3 layout}, {model: the raw v4 file}) of the v4 probes, or ({}, {}). The
     X->ee vs X->mumu probe of fits_v4_sib joins the raw cells as one more class-balanced pair
-    (cells[ckpt]["jc2bal_pairs"]["ee_vs_mm"]); a model without a v4 file is not merged."""
+    (cells[ckpt]["jc2bal_pairs"]["ee_vs_mm"]); fits_v4_sib2, scored on every test jet of the pair,
+    replaces it where present; a model without a v4 file is not merged."""
     raw = _load(data / FITS_V4)
-    for m, sib in _load(data / SIB_V4).items():
-        if m not in raw:
-            continue
-        for ck, c in sib["cells"].items():
-            raw[m]["cells"].setdefault(ck, {}).setdefault("jc2bal_pairs", {})["ee_vs_mm"] = c["jc2bal_pairs"]["ee_vs_mm"]
+    for sibs in (_load(data / SIB_V4), _load(data / SIB2_V4)):
+        for m, sib in sibs.items():
+            if m not in raw:
+                continue
+            for ck, c in sib["cells"].items():
+                raw[m]["cells"].setdefault(ck, {}).setdefault("jc2bal_pairs", {})["ee_vs_mm"] = c["jc2bal_pairs"]["ee_vs_mm"]
     out = {}
     for m, d in raw.items():
         r = remap(d)
@@ -96,6 +99,12 @@ def design_macros(em, root: pathlib.Path, data: pathlib.Path, missing: list, fmt
     src = root / "scripts/build_ft_budget_jobs.py"
     em.macro("FtBudgetSteps", _int(fmt_int, bfb.EPOCHS * bfb.STEPS), src, "EPOCHS * STEPS",
              "the largest number of optimizer steps below the full training set")
+    em.macro("FtLongSteps", _int(fmt_int, bfb.LONG_EPOCHS * bfb.STEPS), src, "LONG_EPOCHS * STEPS",
+             "the largest number of optimizer steps of the long budget at LONG_N jets (JetClass, JetClass-II)")
+    counts = data / "jc2_train" / "counts.json"
+    if counts.exists():
+        em.macro("DesignNTrainSelected", _int(fmt_int, json.loads(counts.read_text())["n_selected"]), counts,
+                 "n_selected", "selected jets of the pretrain_train files (experiments/FT/count_jc2_train.py)")
     em.macro("FtBudgetEval", _int(fmt_int, bfb.STEPS), src, "STEPS",
              "steps between validation passes at and above SMALL_N training jets")
     em.macro("FtBudgetEvalSmall", _int(fmt_int, bfb.SMALL_STEPS), src, "SMALL_STEPS",

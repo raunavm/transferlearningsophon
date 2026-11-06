@@ -20,11 +20,13 @@ prong-count boundaries the partitions mix
 (table~\ref{tab:jetclassall}). % CHECK: as section 4.2 (results_jc.tex): share of the 17-to-188 rejection gap recovered, today 54 and 56% on W, Z and 20% on H->4q (curves/full_best70_leg2.json); the other classes have no gap by the rule
 On top tagging and quark/gluon
 discrimination, which lack some inputs, the fine-tuned label sets lie much closer together
-(tables~\ref{tab:benchtop} and~\ref{tab:benchqg}). % CHECK: MlstFtTopRthirtyCoarseOverFull and MlstFtQgRthirtyCoarseOverFull meet no difference criterion (raw R30 today: 17/188 paired 0.88-1.07 on top)
-Linear probes on the frozen features of the levels of the hierarchy do not clearly exceed the randomly
-initialized network there, and the
-substitutions for the missing inputs separate the part of that shortfall set by the zero value from
-the part set by the missing information (tables~\ref{tab:fill_main} and~\ref{tab:fill}). % CHECK: pending MlstLpTopRthirtyFullOverInitBn, MlstLpQgRthirtyFullOverInitBn, MlstLpTopRthirtyDrawOverZeroFull; name which substitution recovers the probe once known
+(tables~\ref{tab:benchtop} and~\ref{tab:benchqg}).
+With the missing inputs set to zero, a linear probe on the frozen features of the \Kfull-class model
+matches the randomly initialized network on top tagging (\MlstLpTopRthirtyFullOverInitBnZeroPr{}); with the
+substitution chosen on validation it reaches \MlstLpTopRthirtyFullOverInitBnPr{} of that network, and
+\MlstLpQgRthirtyFullOverInitBnPr{} on quark/gluon discrimination (tables~\ref{tab:fill_main}
+and~\ref{tab:fill}). On these benchmarks the zero value, more than the missing information, keeps the
+frozen features from doing better than a random network. % CHECK: ...FullOverInitBnZeroPr reads "equal within"; ...FullOverInitBn above 1 by more than 2 SD on both tasks
 The two effects act on one part of the input. Flavor reaches the network through the displacement and
 particle-type inputs, because b and c hadrons travel a few millimeters before they decay and leptons are
 identified by type. These are the inputs the benchmarks lack, so a label-set difference that lives in

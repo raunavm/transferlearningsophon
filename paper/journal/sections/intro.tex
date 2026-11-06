@@ -84,7 +84,18 @@ tagging~\cite{toptag} and quark/gluon discrimination in Pythia and Herwig
 samples~\cite{efn,qgpythia,qgherwig}; Sophon's $X\to b\bar b$ and $X\to bs$ benchmark completes % CHECK: pending Xbx* (drop this clause with section 4.7 if the samples are not staged by 12 Nov)
 them~\cite{sophon}.
 
-\input{fig_f1}
+\begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{F1}
+\caption{Design of the study. (a)~One network is pretrained on the same jets four times, once for each of
+four nested label sets with \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, through a hidden layer of
+\DesignHeadHidden{} units; each merged class spans the rows it merges, rows are schematic, and below each
+merge is the distinction it removes. (b)~The pretrained network is then used in two ways: its frozen
+features, the output of the backbone with its weights held fixed, feed a linear probe, or a new head with
+its own hidden layer of \DesignHeadHidden{} units is added and all weights are fine-tuned. The colors of
+the label sets are those of every later figure.}
+\label{fig:design}
+\end{figure}
 
 % P5. Findings on frozen features (figures F2-F4). No numbers.
 Frozen features keep what the labels ask the network to separate (figure~\ref{fig:f2a}). Merging the
@@ -94,7 +105,7 @@ flavor is the costliest step of the % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmp
 hierarchy. Class by class, the largest costs fall on decays that differ only in lepton flavor (an % CHECK: MlstPerClassCoarseTopClass is an e/mu or tau_e/tau_mu class
 electron or a muon, directly or through a $\tau$ lepton). Summed over classes, the largest cost falls % CHECK: MlstPerClassCoarseQuarkShare > MlstPerClassCoarseLeptonShare
 on decays that differ only in quark flavor (figure~\ref{fig:f3}). At the same number of classes, the
-random partitions lose less than the \Kcoarse-class level, so the cost depends on which classes are % CHECK: MlstCmpJcTwoRandOverCoarse < 1
+random partitions lose less than the \Kcoarse-class level, so the cost depends on which classes are
 merged and not only on how many remain. Any flavor boundary keeps flavor readable, and a boundary placed % CHECK: MlstCmpJcTwoF{one,oner}OverFzero < 1 (both runs); MlstCmpBbqqFonerOverFzero < 1 and MlstCmpBbqqFonerOverFone > 1 (both runs)
 between the two decays of a pair separates that pair better still (figure~\ref{fig:f4}).
 

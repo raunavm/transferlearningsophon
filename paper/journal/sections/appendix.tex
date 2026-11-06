@@ -185,7 +185,6 @@ features are substituted as appendix~\ref{sec:app-inputs} describes.
 The full-set linear probe on top is not limited by the number of training jets: for the \Kfull-class
 model, its rejection at 30\% signal efficiency with \FtSizeEFive{} training jets and with the full set
 agree within the spread over pretraining runs (table~\ref{tab:probesn}).
-% CHECK: pending (no macro) top R30 of the 188-class linear probe at 1e5 vs full set within one SD over runs, chosen substitution
 
 \subsection{Fine-tuning and training from scratch}\label{sec:app-ft}
 
@@ -194,44 +193,45 @@ whose hash every fine-tuning run records. The whole head, hidden layer included,
 with dropout \MlstFtHeadDropout{} after the hidden layer. Every label set therefore starts fine-tuning
 from its class token with the same head, whereas a pretrained hidden layer was trained to serve its own
 label set's outputs. The optimizer is Ranger, as in pretraining, with mixed precision, and the missing
-input features of top and quark/gluon are set to zero. On top tagging and quark/gluon discrimination all
-runs of one size use the same training jets, so the \MlstFtRefSeedsWord{} networks trained from scratch
-differ only in their training seed. On JetClass every pretrained model is fine-tuned on the first training
-subset of each size. With \FtSizeESix{} jets the network trained from scratch with seed $k$ trains on the
-$k$-th subset, so its spread at that size includes that of the training subset; at the smaller sizes all its
-seeds train on the first subset and differ only in their training seed.
-% CHECK: on JetClass the from-scratch seed k reads subset k at 10^6 only (job-ft-v2-ref-v100-jc1) and subset 1 below it (job-ft-budget-jc1)
+input features of top and quark/gluon are set to zero. On every task all runs of one size use the same
+training jets, on JetClass and JetClass-II the first training subset of that size, so the
+\MlstFtRefSeedsWord{} networks trained from scratch differ only in their training seed.
+% CHECK: every cell of job-ft-budget-* and job-ft-budget-long-* reads train_N<N>_s1 (build_ft_budget_jobs.py spec: subset=${SUB}/train_N${N}_s1.parquet); until budget_long_metrics.json is pulled the JetClass 10^6 numbers are still the old fixed-epoch cells, where from-scratch seed k read subset k (job-ft-v2-ref-v100-jc1)
 
-On the full training sets of top and quark/gluon, and on \FtSizeESix{} JetClass jets, fine-tuning uses
-ParT's settings~\cite[Sec.~5.2]{part}. The pretrained weights train at a constant learning rate of
-\MlstFtLr{} and the head at \MlstFtHeadMult{} times that rate, with weight decay \MlstFtWeightDecay{} and
-batches of \MlstFtBatch{} jets. Training lasts \MlstFtBenchEpochs{} epochs on top and quark/gluon and
-\MlstFtEpochsESix{} on JetClass, where the head's learning rate falls to \MlstFtHeadDecayTo{} of its
-value over the last \MlstFtHeadDecayShare{} of the epochs. The epoch with the highest validation accuracy
-is kept, the earliest in a tie. The networks trained from scratch on these sets follow ParT's settings
-for training from scratch~\cite[Secs.~5.1 and~5.2]{part}: a learning rate of \MlstFtRefLr{} for every
-weight, constant and then lowered to \MlstFtHeadDecayTo{} of its value over the last
-\MlstFtHeadDecayShare{} of the epochs; weight decay \MlstFtRefWeightDecayBench{} on top and quark/gluon
-and none on JetClass; and the epochs and batches of fine-tuning. The kinematic-only model is fine-tuned
+On the full training sets of top and quark/gluon, fine-tuning uses ParT's
+settings~\cite[Sec.~5.2]{part}. The pretrained weights train at a constant learning rate of \MlstFtLr{}
+and the head at \MlstFtHeadMult{} times that rate, with weight decay \MlstFtWeightDecay{} and batches of
+\MlstFtBatch{} jets, for \MlstFtBenchEpochs{} epochs. The epoch with the highest validation accuracy is
+kept, the earliest in a tie. The networks trained from scratch on these sets follow ParT's settings for
+training from scratch~\cite[Secs.~5.1 and~5.2]{part}: a learning rate of \MlstFtRefLr{} for every weight,
+constant and then lowered to \MlstFtHeadDecayTo{} of its value over the last \MlstFtHeadDecayShare{} of the
+epochs; weight decay \MlstFtRefWeightDecayBench; and the epochs and batches of fine-tuning. The kinematic-only model is fine-tuned
 on top with the same settings and has no missing input.
 
-Below the full training sets, and on JetClass-II at every size, pretrained networks and networks
-trained from scratch follow one rule. They train in batches of \FtBudgetBatch{} jets for at most
-\FtBudgetSteps{} steps and are evaluated on a fixed validation set every \FtBudgetEvalSmall{} steps below
+Below the full training sets of top and quark/gluon, and on JetClass and JetClass-II at every size,
+pretrained networks and networks trained from scratch follow one rule. They train in batches of
+\FtBudgetBatch{} jets for at most \FtBudgetSteps{} steps, or \FtLongSteps{} steps with \FtSizeESix{}
+training jets, and are evaluated on a fixed validation set every \FtBudgetEvalSmall{} steps below
 \FtBudgetEvalSmallBelow{} training jets and every \FtBudgetEval{} steps at and above that size. The
 validation set holds \FtValJets{} jets, or on JetClass-II the \FtValJetsBal{} jets of the class-balanced
 validation set. Training stops after \FtBudgetPatience{} evaluations without improvement, and the
 checkpoint with the best validation metric is kept. The pretrained weights train at a constant learning
 rate of \FtLrPre{} and the head at \FtHeadMult{} times that rate, at most \FtHeadCap. The networks trained
 from scratch train every weight at the rates given below with the training framework's default schedule, which is
-constant and lowered only near the end of the maximum training length. The weight decay is
-\FtBudgetWeightDecay{} throughout. Top and quark/gluon are fine-tuned on \FtSizeEThree, \FtSizeEFour{}
-and \FtSizeEFive{} jets below their full sets; JetClass on \FtSizeEFour{} and \FtSizeEFive{}; and
-class-balanced JetClass-II on \FtSizeEFour, \FtSizeEFive{} and \FtSizeESix{}. On JetClass-II the
-fine-tuned models are the levels of the class hierarchy and the models with the auxiliary mass
-regression.
+constant and lowered only near the end of the maximum training length; with \FtSizeESix{} training
+jets they count the evaluations without improvement only from the start of that decrease, so that a
+plateau before it cannot stop them. The weight decay is \FtBudgetWeightDecay{} throughout. Top and
+quark/gluon are fine-tuned on \FtSizeEThree, \FtSizeEFour{} and \FtSizeEFive{} jets below their full sets;
+JetClass on \FtSizeEFour, \FtSizeEFive{} and \FtSizeESix{}; and class-balanced JetClass-II on
+\FtSizeEFour, \FtSizeEFive{} and \FtSizeESix{}. The pretrained runs on \FtSizeESix{} JetClass-II jets that
+stopped before \FtBudgetSteps{} steps under the shorter limit were not repeated with the longer one: at a
+constant learning rate the stopping rule does not depend on the limit.
+% CHECK: long budget = build_ft_budget_jobs.py long_cells (LONG_EPOCHS 160 x STEPS 500, PATIENCE 10, patience_from 112 = start of flat+decay for scratch only, lr 1e-3, head x5 = HEAD_CAP/lr); JetClass-II reran scratch + r16q1-s1, r16q1mass-s1/s2 only (LONG_JC2B), the others stopped early under 20,000 steps and stand (DECISIONS_PENDING YELLOW 2026-11-05)
+On JetClass-II the fine-tuned models are the levels of the class hierarchy and the models with the auxiliary
+mass regression.
+% CHECK: rewrite when ft-budget-long-jc2b-ctrl reads out
 
-The learning rates of these smaller sets were chosen on validation (table~\ref{tab:lrsweep}). The
+The learning rates of these sets were chosen on validation (table~\ref{tab:lrsweep}). The
 \Kfull-class model of seed one was fine-tuned with its pretrained weights at \FtSweepPre{}, and the
 network trained from scratch at \FtSweepScratch{}, each on \FtSweepN{} jets of top and of quark/gluon.
 The pretrained weights take the rate with the largest best validation accuracy summed over the two tasks,
@@ -323,7 +323,6 @@ The substitution for each task is chosen on validation jets and applied to every
 initialized network included: \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon.
 Table~\ref{tab:fill} gives all three substitutions for every configuration and so completes
 table~\ref{tab:fill_main}, which shows the four levels of the class hierarchy.
-% CHECK: pending LpSubstitutionTop, LpSubstitutionQg (fits_v4_fill)
 
 \input{tables/mlst_inputs}
 \input{tables/mlst_fill}
@@ -458,6 +457,32 @@ substituted as chosen on validation.}
 \label{fig:a10}
 \end{figure}
 
+Figure~\ref{fig:a8} gives the same for the fine-tuned models, and figure~\ref{fig:f6app} the linear probes
+on the public benchmarks in the form of figure~\ref{fig:f6}.
+
+\begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{A8}
+\caption{Fine-tuned models of the four label sets against the number of training jets: (a) accuracy on the
+\Kfull{} classes of class-balanced JetClass-II and (b) on JetClass, and $R_{30}$, the background rejection at
+30\% signal efficiency, on (c) top tagging and (d) quark/gluon discrimination with the Pythia sample, with the
+network trained from scratch in black. Points are means over runs. Stars are ParT's published results, as in
+figure~\ref{fig:f8}. On top and quark/gluon discrimination the missing inputs are set to zero.}
+\label{fig:a8}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{F6-app}
+\caption{As figure~\ref{fig:f6}, from linear probes on the frozen features, trained on the full training
+sets with the missing inputs substituted as chosen on validation: background rejection $1/\epsB$ against
+signal efficiency $\epsS$ on (a) top tagging and quark/gluon discrimination on (b) Pythia and (c) Herwig
+jets, for the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class models, each the mean over its \MlstNRunsWord{}
+pretraining runs, and the network trained from scratch. Below each panel, each curve divided by the
+\Kfull-class probe's. Each curve stops where fewer than $\nmin$ background jets pass.}
+\label{fig:f6app}
+\end{figure}
+
 \input{tables/mlst_ft}
 \input{tables/mlst_ft_rej}
 \begin{landscape}   % wider than the 15 cm text block
@@ -530,7 +555,7 @@ jets. Each pair has its AUC and, in a separate column, the ratio $\rho$ of equat
 controlled flavor boundaries. The data release's per-class table (\texttt{jetclass2\_per\_class.csv}) gives the
 numbers behind figure~\ref{fig:f3}, one row per JetClass-II class. To show each class's cost on the AUC itself,
 figures~\ref{fig:f3scatter} and~\ref{fig:f3app} set the AUC of every class for each configuration against
-that for the \Kfull-class model.
+that for the \Kfull-class model, and figure~\ref{fig:f3ft} does so after fine-tuning.
 
 Figures~\ref{fig:a3r} and~\ref{fig:a3rft} draw the ROC curve of every JetClass-II class against the rest, from
 linear probes and after fine-tuning, to show at which signal efficiencies the per-class losses of
@@ -574,6 +599,17 @@ against the same for the \Kfull-class model. Values are means over runs.}
 
 \begin{figure}[tbp]
 \centering
+\paperfig{\linewidth}{F3-ft}
+\caption{As figure~\ref{fig:f3app}, after fine-tuning on \FtSizeESix{} class-balanced JetClass-II jets: the AUC
+of each of the \Kfull{} classes against the rest for the \Kres-, \Kmid- and \Kcoarse-class label sets, the
+\RandVtwoNPartitions{} random partitions averaged and the three random partitions with controlled flavor
+boundaries, against the same for the \Kfull-class model. On the dashed line the two agree; below it the class
+does worse. Colors are decay families. Values are means over runs.}
+\label{fig:f3ft}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
 \paperfig{\linewidth}{A3R}
 \caption{Background rejection $1/\epsB$ against signal efficiency $\epsS$ for each of the \Kfull{} JetClass-II
 classes against the rest of the class-balanced test set, from linear probes trained on \FtSizeESix{} jets on
@@ -593,6 +629,30 @@ rest, for the models pretrained with (a) \Kfull, (b) \Kres, (c) \Kmid{} and (d) 
 curves are means over runs, colored by decay family, and end where fewer than $\nmin$ background jets pass.
 Each panel title gives the AUC averaged over all classes.}
 \label{fig:a3rft}
+\end{figure}
+
+Figures~\ref{fig:umapjc1} and~\ref{fig:umapjc2} show the class token in two dimensions with UMAP~\cite{umap},
+at the default settings of its reference implementation on standardized features, for one run of the
+\Kfull- and one of the \Kcoarse-class model. Every panel of a row embeds the same test jets, so the panels
+differ only in the features. The axes of a UMAP embedding carry no meaning, and distances between clusters
+are not preserved; the figures show which classes the features keep apart, not by how much.
+
+\begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{UMAP-jc1}
+\caption{UMAP of the class token of the models pretrained with \Kfull{} (upper) and \Kcoarse{} classes
+(lower), frozen (left) and after fine-tuning on \FtSizeESix{} JetClass jets (right), for test jets of the ten
+JetClass classes, the same jets in all four panels.}
+\label{fig:umapjc1}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{UMAP-jc2}
+\caption{UMAP of the frozen class token of the models pretrained with \Kfull{} (left) and \Kcoarse{} classes
+(right), for class-balanced JetClass-II test jets of $X\to b\bar b$, $c\bar c$ and $q\bar q$ and QCD (upper)
+and of $X\to ee$ and $X\to\mu\mu$ (lower); a row has the same jets in both panels.}
+\label{fig:umapjc2}
 \end{figure}
 
 \subsection{Jet mass}\label{sec:app-mass}
@@ -629,6 +689,20 @@ d), for the reconstructed soft-drop mass and the regressed mass of the \Kres- an
 the auxiliary mass regression, each the mean over its \MlstMassNRunsWord{} pretraining runs. The last
 $p_{\mathrm{T}}$ bin of the soft-drop mass sets the scale of (b).}
 \label{fig:a17qcd}
+\end{figure}
+
+The mass that the frozen features carry is compared with the mass output in figure~\ref{fig:a17probe}.
+
+\begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{\FigIdAseventeen-probe}
+\caption{Median jet mass response (a) and relative mass resolution $\sigma_r$ (b) against the reconstructed jet
+$p_{\mathrm{T}}$, for all JetClass-II test jets with a generator-level match: the reconstructed soft-drop
+mass, an MLP regressing the mass from the frozen features of the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class
+models, and the regressed mass of the \Kres- and \Kcoarse-class models with the auxiliary mass regression,
+each the mean over runs. Below are the ratio of each median and the root-square difference of each
+resolution to those of the soft-drop mass.}
+\label{fig:a17probe}
 \end{figure}
 
 Table~\ref{tab:sculpt} gives the values behind figures~\ref{fig:f10a} and~\ref{fig:f10b} at QCD efficiencies of

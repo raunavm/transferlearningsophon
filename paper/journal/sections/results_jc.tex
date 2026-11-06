@@ -70,6 +70,7 @@ On top and quark/gluon discrimination the missing inputs are substituted as chos
 $R_{30}$, the background rejection at 30\% signal efficiency, on (c) top tagging and (d) quark/gluon
 discrimination with the Pythia sample, after fine-tuning on the full training sets with the missing inputs set
 to zero. The line joins the four levels of the class hierarchy; the markers at \Kcoarse{} classes (none on
+% CHECK: rewrite when ft-budget-long-jc2b-ctrl reads out
 JetClass-II) are the random partitions with controlled flavor boundaries. The dashed line is the same network
 trained from scratch, with no pretraining. Values are means over runs; on top tagging the label sets differ by
 less than the spread between runs (tables~\ref{tab:ft} and~\ref{tab:ftrej}).}
@@ -118,6 +119,7 @@ Fine-tuning trains on all \Kfull{} classes, so every distinction the coarse labe
 again, and what remains is the cost of starting from features that lack them, at this number of
 training jets. The partitions are not fine-tuned on JetClass-II, so this comparison is between levels of
 the hierarchy only.
+% CHECK: rewrite when ft-budget-long-jc2b-ctrl reads out
 
 Per class, the largest relative costs fall on decays that differ from another class only in lepton flavor
 (data release, \texttt{jetclass2\_per\_class.csv}). From the \Kmid-class level on, a decay with electrons shares its class with the
@@ -227,8 +229,8 @@ that separates it from $X\to bq$. The \Kcoarse-class labels remove flavor altoge
 Labels that merge every decay with its lepton-flavor counterpart remove a distinction that the finer labels keep almost perfectly. On $X\to ee$
 against $X\to\mu\mu$, a linear probe on the frozen features of the configurations that keep the two apart
 (\MlstRocNoCurveEemm) separates the test jets so completely that in at least one run of each fewer than
-$\nmin$ $X\to\mu\mu$ jets pass at all but at most one signal efficiency of the curve, so their curves cannot be drawn in
-figure~\ref{fig:f4}(d). At \Kmid{} and \Kcoarse{} classes, which merge every electron decay with its muon
+$\nmin$ of the \MlstRocNBkgEemm{} $X\to\mu\mu$ test jets pass at all but at most one signal efficiency, so
+figure~\ref{fig:f4}(d) names them as complete separation instead of drawing a curve. At \Kmid{} and \Kcoarse{} classes, which merge every electron decay with its muon
 counterpart, the AUC of a linear probe falls to \MlstLpEemmAucMid{} and \MlstLpEemmAucCoarse{}, against
 \MlstLpEemmAucFull{} at \Kfull{} classes (table~\ref{tab:pairs}). An electron and a muon differ in the inputs
 through their particle-type flags, which every model reads, so the merged features still carry part of the
@@ -247,27 +249,26 @@ because one of the three runs keeps much more of the separation than the other t
 % (ROC_INTERFACE 2: cut = null expected for 188, 162, F0, F1, F1R); MlstLpEemmAucMid and ...Coarse well below
 % ...Full (stored 188-way outputs gave 0.960 and 0.957 against 1.00000 for seed 1). If a kept-apart run does
 % draw a curve, rewrite "none of their curves".
+% CHECK: after pairs_sib2 (every X->ee/X->mumu test jet, about 130k per class) re-read MlstRocNoCurveEemm and the AUCs (fits_v4_sib2): with 26x more background jets a kept-apart model may now draw a curve.
 
 \begin{figure}[t]
 \centering
 \paperfig{\linewidth}{F4}
-\caption{Linear probes on pairs of JetClass-II classes: background rejection $1/\epsB$ against signal
-efficiency $\epsS$, equations~(\ref{eq:eff}) and~(\ref{eq:rej}), with the first decay of each pair as the
-signal. (a) $X\to b\bar b$ against $X\to c\bar c$; (b) $X\to YY\to bbqq$ against $X\to YY\to ccqq$; (c) $X\to bc$
-against $X\to bq$ and $X\to cs$ together, the classes in the denominator of the discriminant of the boosted
-$|V_{cb}|$ measurement; (d) $X\to ee$ against $X\to\mu\mu$. Colored lines (solid, dashed, dash-dot and dotted): the \Kfull-, \Kres-, \Kmid- and
-\Kcoarse-class levels of the hierarchy; long-dashed, long-dash-dot and dash-dot-dot lines: the partitions with controlled flavor
-boundaries (none, a $b$-quark boundary, a random flavor boundary). Lines are the mean of the runs at fixed $\epsS$, with bands of one standard deviation over
-\MlstNRunsWord{} pretraining runs, or the range of the \RandFlavRuns{} runs of a partition; a band stops at a rejection of one, the lowest possible. Lower panels: ratio
-of the rejection to that of the \Kfull-class run of the same seed, drawn flat at one for that model. Each curve
-stops where fewer than $\nmin$ background jets pass, equation~(\ref{eq:cut}), marked by the dashed black line at
-$N_B/\nmin$: a rejection of \MlstRocRejMaxBb{} in (a)--(c), whose test sets hold \MlstRocNBkgBb{} background
-jets, and of \MlstRocRejMaxEemm{} in (d), whose test set holds \MlstRocNBkgEemm. The \Kfull-class curves
-therefore begin only at signal efficiencies of \MlstRocCutBbFull{} in (a), \MlstRocCutBbqqFull{} in (b)
-and \MlstRocCutBcFull{} in (c), and the ratio panels cover the signal efficiencies above these. In (d), the
-curves of \MlstRocNoCurveEemm{} cannot be drawn, because in at least one of their runs fewer than $\nmin$ background jets pass at all but at most one
-signal efficiency of the curve, and a curve needs two; they are listed in the legend only, and (d) has no ratio panel. The random partitions without a controlled flavor
-boundary, the models with the auxiliary mass regression and the multilayer perceptron probes are in tables~\ref{tab:pairs} and~\ref{tab:mlp}.}
+\caption{Linear probes on pairs of JetClass-II classes that differ only in flavor: background rejection
+$1/\epsB$ against signal efficiency $\epsS$, equations~(\ref{eq:eff}) and~(\ref{eq:rej}), with the first decay
+of each pair as the signal. (a) $X\to b\bar b$ against $X\to c\bar c$; (b) $X\to YY\to bbqq$ against $X\to
+YY\to ccqq$; (c) $X\to bc$ against $X\to bq$ and $X\to cs$ together, the classes in the denominator of the
+discriminant of the boosted $|V_{cb}|$ measurement; (d) $X\to ee$ against $X\to\mu\mu$, scored on every
+test jet of the two classes. Lines: the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class models, each the mean of
+its \MlstNRunsWord{} pretraining runs at fixed $\epsS$. Each curve stops where fewer than $\nmin$ background
+jets pass, equation~(\ref{eq:cut}): at a rejection of \MlstRocRejMaxBb{} in (a)--(c), whose test sets hold
+\MlstRocNBkgBb{} background jets, and of \MlstRocRejMaxEemm{} in (d), whose test set holds
+\MlstRocNBkgEemm. The \Kfull-class curves therefore begin only at signal efficiencies of
+\MlstRocCutBbFull{} in (a), \MlstRocCutBbqqFull{} in (b) and \MlstRocCutBcFull{} in (c). In (d), a model
+that keeps fewer than $\nmin$ background jets at all but at most one signal efficiency in some run has no
+curve and is named in the panel as complete separation. The random partitions with controlled flavor
+boundaries are in figure~\ref{fig:f4app}; the plain random partitions, the models with the auxiliary mass
+regression and the multilayer perceptron probes are in tables~\ref{tab:pairs} and~\ref{tab:mlp}.}
 \label{fig:f4}
 \end{figure}
 % CHECK: MlstRocNBkgBb equals MlstRocNBkgBbqq and MlstRocNBkgBc (one test-set size per side for the three

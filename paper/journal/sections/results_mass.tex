@@ -39,11 +39,10 @@ the ratio of a jet's mass to its generator-level mass, for (a) resonant jets and
 JetClass-II test set with a generator-level match: the reconstructed soft-drop mass (dashed reference) and the
 regressed mass of the \Kres- and \Kcoarse-class models with the auxiliary mass regression, each the mean over
 its \MlstMassNRunsWord{} pretraining runs. The lower panels give the ratio of each distribution to that of the
-soft-drop mass. The resolution and the median response are in table~\ref{tab:massdetail}.}
+soft-drop mass. The horizontal axis of (b) holds the soft-drop mass response of \MlstMassRespAxesShareQcd{}
+of the QCD jets. The resolution and the median response are in table~\ref{tab:massdetail}.}
 \label{fig:f9a}
 \end{figure}
-% CHECK: number without a macro: the gallery's F9a caption gives the share of QCD soft-drop-mass jets inside
-% the axes ("76 percent"); it is left out until the generator writes it.
 
 \begin{figure}
 \centering
@@ -100,7 +99,9 @@ Coarser labels sculpt the QCD mass distribution more, but only for tight selecti
 Jensen--Shannon distance between the soft-drop mass distributions of the selected and of all QCD jets
 is larger for the \Kcoarse-class model than for the \Kfull-class model at QCD efficiencies from % CHECK: MlstSculptDiffEffLo and MlstSculptDiffEffHi bound the unbroken stretch of grid points around the 1% working point that pass the rule (today 0.52% and 1.2%; 1.8% fails, against the PI's note of 0.5 to 2 per cent)
 \MlstSculptDiffEffLo{} to \MlstSculptDiffEffHi{} (figure~\ref{fig:f10b}). At looser cuts these two % CHECK: MlstSculptCoarseOverFullTen within 2 SD of 1; 43/188 does exceed 2 SD at some looser cuts, so this sentence names only these two label sets
-label sets agree within their spread. Just below that window the mean ratio stays above one but within % CHECK: 17/188 within 2 SD at the grid points between the lowest stored efficiency and the window (today z 1.9, 0.9, 0.5); at the lowest stored efficiency the rule passes (1.051 +- 0.005), so nothing here may say the label sets agree there
+label sets agree within their spread. Below that window, outside the range of figure~\ref{fig:f10b}, the
+mean ratio stays above one but within % CHECK: the window's lower edge MlstSculptDiffEffLo must stay at F10b's first point (gallery_physics F10B_FROM = 5e-3, the 0.52% grid point), so that nothing below it is in the figure
+% CHECK: 17/188 within 2 SD at the grid points between the lowest stored efficiency and the window (today z 1.9, 0.9, 0.5); at the lowest stored efficiency the rule passes (1.051 +- 0.005), so nothing here may say the label sets agree there
 twice its standard deviation, and at the lowest stored efficiency, \MlstSculptLowestEff{}, only \MlstSculptLowestNPass{} QCD jets pass. That is so few that a random % CHECK: MlstSculptLowestMaxFloorSd below 2 (today about 1.7); the PI's 2026-11-02 wording "within one SD" came from an imprecise mock-up summary and is not what the data show
 selection of the same number of jets gives a distance almost as large: every configuration lies within
 \MlstSculptLowestMaxFloorSd{} standard deviations of a random selection there, so the distances at the

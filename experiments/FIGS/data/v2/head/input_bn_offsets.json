@@ -1,0 +1,26 @@
+{
+ "model": "mtx-l188-s1",
+ "checkpoint": "/data/results/mtx_v2/mtx-l188-s1/net_epoch-79_state.pt",
+ "checkpoint_sha256": "99595174e0300aac69e1f68889bd4f47f5f1aa902e14843572303526a45bac0f",
+ "config": "configs/finetune/TopReference.yaml",
+ "eps": 1e-05,
+ "offsets": {
+  "part_pt_scale_log": 0.3412750095105599,
+  "part_e_scale_log": 0.3626898155953814,
+  "part_logptrel": 0.21544817169480932,
+  "part_logerel": 0.21515672481075848,
+  "part_deltaR": -0.27321244098422476,
+  "part_charge": -0.0002300983197888622,
+  "part_isChargedHadron": -0.956483793790332,
+  "part_isNeutralHadron": -0.3452414247417409,
+  "part_isPhoton": -0.813674182658558,
+  "part_isElectron": -0.10251031130876721,
+  "part_isMuon": -0.08370169207597335,
+  "part_d0": -0.00013590407531131782,
+  "part_d0err": -0.4954028724684832,
+  "part_dz": -0.000571339554418025,
+  "part_dzerr": -0.4420436212351927,
+  "part_deta": -0.007422621797247526,
+  "part_dphi": -0.001897526853706953
+ }
+}
