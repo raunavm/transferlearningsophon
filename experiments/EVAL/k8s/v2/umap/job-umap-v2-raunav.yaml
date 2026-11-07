@@ -5,6 +5,9 @@ metadata:
   name: umap-v2-raunav
   namespace: cms-ml
 spec:
+  completionMode: Indexed
+  completions: 16
+  parallelism: 12
   backoffLimit: 1
   activeDeadlineSeconds: 43200
   template:
@@ -18,13 +21,13 @@ spec:
         - |
           set -euo pipefail
           retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
-          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s2.77 https://github.com/raunavm/transferlearningsophon.git tls; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s2.78 https://github.com/raunavm/transferlearningsophon.git tls; }
           retry clone || exit 1
           cd /workspace/tls
           git rev-parse HEAD
           retry pip install --no-cache-dir -q umap-learn==0.5.7 pyarrow==25.0.1 || exit 1
           python3 -c "import pyarrow" || { echo "FATAL: pyarrow does not import"; exit 1; }
-          export OMP_NUM_THREADS=14 MKL_NUM_THREADS=14      # torch would otherwise size its pool to the host
+          export OMP_NUM_THREADS=7 MKL_NUM_THREADS=7      # torch would otherwise size its pool to the host
           [ ! -f /data/results/eval/umap_v2/DONE ] || { echo "/data/results/eval/umap_v2 done"; exit 0; }
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           [ "${USED}" -le 85 ] || { echo "FATAL: /data at ${USED}%"; exit 42; }
@@ -53,28 +56,34 @@ spec:
           C_jc2_1=$(jc2_cell r16q1-s1) || { echo "FATAL: no JetClass-II cell of r16q1-s1 is done"; exit 42; }; done_cell ${C_jc2_1}
           C_top_1=/data/results/ft_v2/best70/leg_top/r16q1-s1/N1200000/s1; done_cell ${C_top_1}
           C_qg_1=/data/results/ft_v2/best70/leg_qg/r16q1-s1/N1600000/s1; done_cell ${C_qg_1}
-          x jc1 frozen mtx-l188-s1 ${CK0} 188 configs/finetune/JetClassI_sophon_noweight.yaml 10 ${JC1}
-          x jc1 ft mtx-l188-s1 ${C_jc1_0}/net_best_epoch_state.pt 10 configs/finetune/JetClassI_sophon_noweight.yaml 10 ${JC1}
-          x jc2 frozen mtx-l188-s1 ${CK0} 188 configs/data/JetClassII_base.yaml 1 /data/finetune/jc2_bal/test.parquet
-          x jc2 ft mtx-l188-s1 ${C_jc2_0}/net_best_epoch_state.pt 188 configs/data/JetClassII_base.yaml 1 /data/finetune/jc2_bal/test.parquet
-          x top frozen mtx-l188-s1 ${CK0} 188 configs/finetune/TopReference.yaml 20 /data/finetune/top/top_test.parquet
-          x top ft mtx-l188-s1 ${C_top_0}/net_best_epoch_state.pt 2 configs/finetune/TopReference.yaml 20 /data/finetune/top/top_test.parquet
-          x qg frozen mtx-l188-s1 ${CK0} 188 configs/finetune/EnergyFlowQG.yaml 10 /data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet
-          x qg ft mtx-l188-s1 ${C_qg_0}/net_best_epoch_state.pt 2 configs/finetune/EnergyFlowQG.yaml 10 /data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet
-          x jc1 frozen mtx-r16q1-s1 ${CK1} 17 configs/finetune/JetClassI_sophon_noweight.yaml 10 ${JC1}
-          x jc1 ft mtx-r16q1-s1 ${C_jc1_1}/net_best_epoch_state.pt 10 configs/finetune/JetClassI_sophon_noweight.yaml 10 ${JC1}
-          x jc2 frozen mtx-r16q1-s1 ${CK1} 17 configs/data/JetClassII_base.yaml 1 /data/finetune/jc2_bal/test.parquet
-          x jc2 ft mtx-r16q1-s1 ${C_jc2_1}/net_best_epoch_state.pt 188 configs/data/JetClassII_base.yaml 1 /data/finetune/jc2_bal/test.parquet
-          x top frozen mtx-r16q1-s1 ${CK1} 17 configs/finetune/TopReference.yaml 20 /data/finetune/top/top_test.parquet
-          x top ft mtx-r16q1-s1 ${C_top_1}/net_best_epoch_state.pt 2 configs/finetune/TopReference.yaml 20 /data/finetune/top/top_test.parquet
-          x qg frozen mtx-r16q1-s1 ${CK1} 17 configs/finetune/EnergyFlowQG.yaml 10 /data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet
-          x qg ft mtx-r16q1-s1 ${C_qg_1}/net_best_epoch_state.pt 2 configs/finetune/EnergyFlowQG.yaml 10 /data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet
-          python3 experiments/EVAL/umap_class_token.py --feat-dir /data/results/eval/umap_v2/features --out-dir /data/results/eval/umap_v2
+          case ${JOB_COMPLETION_INDEX} in
+            0) x jc1 frozen mtx-l188-s1 ${CK0} 188 configs/finetune/JetClassI_sophon_noweight.yaml 10 ${JC1} ;;
+            1) x jc1 ft mtx-l188-s1 ${C_jc1_0}/net_best_epoch_state.pt 10 configs/finetune/JetClassI_sophon_noweight.yaml 10 ${JC1} ;;
+            2) x jc2 frozen mtx-l188-s1 ${CK0} 188 configs/data/JetClassII_base.yaml 2 /data/finetune/jc2_bal/test.parquet ;;
+            3) x jc2 ft mtx-l188-s1 ${C_jc2_0}/net_best_epoch_state.pt 188 configs/data/JetClassII_base.yaml 2 /data/finetune/jc2_bal/test.parquet ;;
+            4) x top frozen mtx-l188-s1 ${CK0} 188 configs/finetune/TopReference.yaml 20 /data/finetune/top/top_test.parquet ;;
+            5) x top ft mtx-l188-s1 ${C_top_0}/net_best_epoch_state.pt 2 configs/finetune/TopReference.yaml 20 /data/finetune/top/top_test.parquet ;;
+            6) x qg frozen mtx-l188-s1 ${CK0} 188 configs/finetune/EnergyFlowQG.yaml 10 /data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet ;;
+            7) x qg ft mtx-l188-s1 ${C_qg_0}/net_best_epoch_state.pt 2 configs/finetune/EnergyFlowQG.yaml 10 /data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet ;;
+            8) x jc1 frozen mtx-r16q1-s1 ${CK1} 17 configs/finetune/JetClassI_sophon_noweight.yaml 10 ${JC1} ;;
+            9) x jc1 ft mtx-r16q1-s1 ${C_jc1_1}/net_best_epoch_state.pt 10 configs/finetune/JetClassI_sophon_noweight.yaml 10 ${JC1} ;;
+            10) x jc2 frozen mtx-r16q1-s1 ${CK1} 17 configs/data/JetClassII_base.yaml 2 /data/finetune/jc2_bal/test.parquet ;;
+            11) x jc2 ft mtx-r16q1-s1 ${C_jc2_1}/net_best_epoch_state.pt 188 configs/data/JetClassII_base.yaml 2 /data/finetune/jc2_bal/test.parquet ;;
+            12) x top frozen mtx-r16q1-s1 ${CK1} 17 configs/finetune/TopReference.yaml 20 /data/finetune/top/top_test.parquet ;;
+            13) x top ft mtx-r16q1-s1 ${C_top_1}/net_best_epoch_state.pt 2 configs/finetune/TopReference.yaml 20 /data/finetune/top/top_test.parquet ;;
+            14) x qg frozen mtx-r16q1-s1 ${CK1} 17 configs/finetune/EnergyFlowQG.yaml 10 /data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet ;;
+            15) x qg ft mtx-r16q1-s1 ${C_qg_1}/net_best_epoch_state.pt 2 configs/finetune/EnergyFlowQG.yaml 10 /data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet ;;
+            *) echo "FATAL: no extraction for index ${JOB_COMPLETION_INDEX}"; exit 42 ;;
+          esac
+          N=$(find /data/results/eval/umap_v2/features -mindepth 4 -maxdepth 4 -name extract_manifest.json | wc -l)
+          [ "${N}" -eq 16 ] || { echo "extraction ${JOB_COMPLETION_INDEX} in; ${N} of 16"; exit 0; }
+          mkdir /data/results/eval/umap_v2/fit.lock 2>/dev/null || { echo "another pod fits the UMAPs"; exit 0; }
+          python3 experiments/EVAL/umap_class_token.py --feat-dir /data/results/eval/umap_v2/features --out-dir /data/results/eval/umap_v2 || { rmdir /data/results/eval/umap_v2/fit.lock; exit 1; }
           touch /data/results/eval/umap_v2/DONE
           echo "UMAP COMPLETE"
         resources:
-          requests: { memory: "48Gi", cpu: "16", ephemeral-storage: "20Gi" }
-          limits:   { memory: "48Gi", cpu: "16", ephemeral-storage: "20Gi" }
+          requests: { memory: "48Gi", cpu: "8", ephemeral-storage: "20Gi" }
+          limits:   { memory: "48Gi", cpu: "8", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: data, mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
