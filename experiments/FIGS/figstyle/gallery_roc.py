@@ -83,7 +83,8 @@ def _y_range(axes) -> None:
 
 
 def _legend(ax, **kw):
-    return S.legend(ax, loc="lower left", handlelength=1.2, handletextpad=0.4, columnspacing=0.4, **kw)
+    kw.setdefault("loc", "lower left")
+    return S.legend(ax, handlelength=1.2, handletextpad=0.4, columnspacing=0.4, **kw)
 
 
 def _plot(ax, s, **kw) -> None:
@@ -123,10 +124,11 @@ def _auc(v: float) -> str:
 
 
 def _jc1_one(path: pathlib.Path, models: list, heading: str) -> None:
-    """One panel at its printed width (FJ-s: 9 cm), the class AUCs in a legend above it."""
+    """One panel at its printed width (FJ-s: 9 cm), the class AUCs in a legend inside it (PI, 2026-11-07): ten curves
+    leave no empty corner, so the y axis runs three decades above them and the legend sits in that band."""
     width, w = 9.0, 7.3
-    h = 0.85 * w
-    top = 3.9
+    h = 1.15 * w
+    top = 0.9
     fig = S.figure_cm(width, top + h + 1.0)
     ax = S.axes_cm(fig, 1.4, top, w, h)
     _roc_axes(ax, x_step=0.2)
@@ -134,9 +136,11 @@ def _jc1_one(path: pathlib.Path, models: list, heading: str) -> None:
     aucs = {c: mean_over_runs(docs, models, c)[2] for c in S.JC1_CLASSES}
     _jc1_curves(ax, docs, models, auc_in_legend=False)
     _y_range([ax])
+    ax.set_ylim(1, 1000 * ax.get_ylim()[1])           # the legend's band, clear of every curve
     S.labels(ax, S.X_EPS, S.Y_REJ)
     S.heading(fig, f"{heading}, macro AUC {np.mean(list(aucs.values())):.3f}")
-    S.fig_legend(fig, _class_handles(aucs), top_cm=0.6, ncol=2, title="Signal class (AUC)", title_fontsize=S.LEGEND_PT5)
+    _legend(ax, handles=_class_handles(aucs), ncol=2, title="Signal class (AUC)", title_fontsize=S.LEGEND_PT5,
+            loc="upper center")
     S.save(fig, path)
 
 
