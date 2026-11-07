@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The gallery's label-set mock-ups: F2a, F2b, F3, F3-scatter, F3-app, F3-ft, F8, A8, A10, UMAP-jc1, UMAP-jc2, UMAP-bench, VAL (docs/figstyle/PLAN.md), in
+"""The gallery's label-set mock-ups: F2a, F2b, F3, F3-scatter, F3-app, F3-ft, F8, A8, A10, UMAP-jc1, UMAP-jc2-had, UMAP-jc2-lep, UMAP-top, UMAP-qg, VAL (docs/figstyle/PLAN.md), in
 style_v3 only. The numbers come through the selection code of paper_figures and mlst_results; the drawing
 is written here. All work happens inside the draw functions."""
 from __future__ import annotations
@@ -332,12 +332,29 @@ EMBED_NAMES = {"bb": r"$X\to b\bar{b}$", "cc": r"$X\to c\bar{c}$", "qq": r"$X\to
 EMBED_MODELS = (("mtx-l188-s1", "L188"), ("mtx-r16q1-s1", "R16_Q1"))
 
 
-def _umap_root():
-    """umap/ (from the long-budget cells) where pulled, else the preview from the old JetClass cells."""
-    for name in ("umap", "umap_preview"):
-        if any((P.DATA / name).glob("*.json")):
+UMAP_DIRS = ("umap_v2", "umap", "umap_preview")     # round 3 (all four tasks); the long-budget jc1 run; the preview
+UMAP_SETTINGS = {"n_neighbors": 15, "min_dist": 0.1, "metric": "euclidean", "random_state": 1, "standardized": True}
+UMAP_LOOK = "LOOK: to be written after the embeddings are seen"
+# page -> (set, heading, the jets, what the network was fine-tuned on)
+UMAP_PAGES = {
+    "UMAP-jc1": ("jc1", "JetClass", "2,000 test jets of each JetClass class", "one million JetClass jets"),
+    "UMAP-jc2-had": ("two_prong", "JetClass-II, hadronic decays and QCD",
+                     "2,000 test jets each of X to bb, cc, qq and QCD (its 27 classes as one)",
+                     "one million class-balanced JetClass-II jets"),
+    "UMAP-jc2-lep": ("leptons", "JetClass-II, X to ee and X to mu mu",
+                     "2,000 test jets each of X to ee and X to mu mu", "one million class-balanced JetClass-II jets"),
+    "UMAP-top": ("top", "top tagging", "2,000 top and 2,000 QCD test jets", "the full top-tagging training set"),
+    "UMAP-qg": ("qg", "quark/gluon", "2,000 quark and 2,000 gluon test jets (Pythia)", "the full quark/gluon training set"),
+}
+
+
+def _umap_root(stems: list):
+    """The first of UMAP_DIRS holding every file of a figure: umap_v2/ where pulled, else (JetClass only) umap/ or
+    the preview."""
+    for name in UMAP_DIRS:
+        if all((P.DATA / name / f"{s}.json").exists() for s in stems):
             return P.DATA / name
-    raise C.Absent("no UMAP of the class token (umap/, umap_preview/)")
+    raise C.Absent(f"no UMAP of the class token for {stems[0]} ({', '.join(d + '/' for d in UMAP_DIRS)})")
 
 
 def _embedding(ax, d: dict, colours: list) -> None:
@@ -351,8 +368,10 @@ def _embedding(ax, d: dict, colours: list) -> None:
 
 def _draw_embeddings(path, grid: list, heading: str, colours=None, legend_rows=None) -> None:
     """grid: rows of (file stem, title); one legend per row in its first panel, or in legend_rows only."""
-    root = _umap_root()
+    root = _umap_root([stem for row in grid for stem, _ in row])
     docs = [[json.loads((root / f"{stem}.json").read_text()) for stem, _ in row] for row in grid]
+    if any(d.get("umap", UMAP_SETTINGS) != UMAP_SETTINGS for row in docs for d in row):
+        raise SystemExit(f"FATAL: {root}: UMAP settings other than the caption's {UMAP_SETTINGS}")
     ncols = len(grid[0])
     fig = plt.figure(figsize=(S.FULL, 7.0 * S.CM * len(grid) + 1.5 * S.CM))
     axes = fig.subplots(len(grid), ncols, squeeze=False, gridspec_kw={"wspace": 0.05, "hspace": 0.14, "top": 0.92,
@@ -371,23 +390,35 @@ def _draw_embeddings(path, grid: list, heading: str, colours=None, legend_rows=N
     S.save(fig, path)
 
 
-def draw_umap_jc1(path) -> None:
-    """Rows: 188 and 17 classes; columns: frozen, fine-tuned on JetClass; the same jets in all four panels."""
-    grid = [[(f"jc1_{m}_{kind}", f"{S.NAME[level]}, {word}") for kind, word in (("frozen", "frozen"), ("ft", "fine-tuned"))]
+def _draw_umap(path, page: str) -> None:
+    """Rows: 188 and 17 classes; columns: frozen, fine-tuned on the task; the same jets in all four panels."""
+    name, heading = UMAP_PAGES[page][:2]
+    heading = f"Class token: {heading}"
+    grid = [[(f"{name}_{m}_{kind}", f"{S.NAME[level]}, {word}") for kind, word in (("frozen", "frozen"), ("ft", "fine-tuned"))]
             for m, level in EMBED_MODELS]
-    _draw_embeddings(path, grid, "Class token on JetClass jets", colours=[S.JC1_COLOUR[c] for c in S.JC1_CLASSES],
-                     legend_rows=(0,))
+    colours = [S.JC1_COLOUR[c] for c in S.JC1_CLASSES] if name == "jc1" else None
+    _draw_embeddings(path, grid, heading, colours=colours, legend_rows=(0,))
 
 
-def draw_umap_jc2(path) -> None:
-    grid = [[(f"{s}_{m}", f"Pretrained on {S.NAME[level]}") for m, level in EMBED_MODELS] for s in ("two_prong", "leptons")]
-    _draw_embeddings(path, grid, "Frozen class token on JetClass-II jets")
-
-
-def draw_umap_bench(path) -> None:
-    grid = [[(f"{s}_{m}", f"{name}, {S.NAME[level]}") for m, level in EMBED_MODELS]
-            for s, name in (("top", "Top tagging"), ("qg", "Quark/gluon"))]
-    _draw_embeddings(path, grid, "Frozen class token on the benchmark jets")
+def _umap_page(page: str) -> C.Page:
+    _, heading, jets, ft = UMAP_PAGES[page]
+    u = UMAP_SETTINGS
+    return C.Page(
+        id=page,
+        title=f"UMAP of the class token, frozen and fine-tuned: {heading} (appendix)",
+        precedent=["map2026_poster/fig5.png", "2610.36121/fig3.png"],
+        precedent_label="MAP 2026 poster (frozen against fine-tuned), SuperJEPA Fig. 3",
+        caption=f"UMAP of the class token of a network pretrained on 188 classes (upper) and one on 17 (lower), frozen "
+                f"(left) and fine-tuned on {ft} (right), for {jets}, the same jets in every panel. The axes have no "
+                f"meaning and carry no scale. UMAP: {u['n_neighbors']} neighbours, minimum distance {u['min_dist']}, "
+                f"Euclidean metric, standardized features, seed {u['random_state']}. {UMAP_LOOK}",
+        differs="One 2x2 layout for every task (PI, round 3): rows label sets, columns frozen and fine-tuned, the "
+                "poster's pairing. " + ("Ten class colours, JetClass's fixed tab10. " if page == "UMAP-jc1" else "tab10 in group order. ")
+                + "One legend, first panel." + (" Absent inputs zero-filled, as in every frozen probe and fine-tuning."
+                                                 if page in ("UMAP-top", "UMAP-qg") else ""),
+        draw=lambda path: _draw_umap(path, page),
+        data_note="From umap_v2 (scripts/build_umap_jobs.py --out-name umap_v2) once pulled"
+                  + ("; until then the umap/ or preview files, with 1,000 jets per class." if page == "UMAP-jc1" else "."))
 
 
 def draw_val(path) -> None:
@@ -557,42 +588,7 @@ PAGES = [
                 "dashed grid and framed legend, where Golling has no grid and no frame. Log y on R30.",
         draw=draw_a10,
         data_note=SUBST_NOTE),
-    C.Page(
-        id="UMAP-jc1",
-        title="UMAP of the class token on JetClass, frozen and fine-tuned (appendix)",
-        precedent=["map2026_poster/fig5.png", "2610.36121/fig3.png"],
-        precedent_label="MAP 2026 poster (frozen against fine-tuned), SuperJEPA Fig. 3",
-        caption="Two-dimensional UMAP of the class token of one network pretrained on 188 classes (upper) and one on 17 "
-                "classes (lower), frozen (left) and after fine-tuning on one million JetClass jets (right), for 1,000 test "
-                "jets of each of the ten JetClass classes, the same jets in all four panels. UMAP axes have no meaning, so "
-                "they carry no scale.",
-        differs="2x2 as the PI set it: rows label sets, columns frozen and fine-tuned, the poster's pairing. Ten class "
-                "colours, JetClass's fixed tab10. One legend, first panel, two columns. UMAP with 15 neighbours, min_dist "
-                "0.1, standardized features, seed 1.",
-        draw=draw_umap_jc1,
-        data_note="Preview: the fine-tuned column is from the old 10-epoch JetClass cells at 10^6 (the long-budget cells "
-                  "are still running); it is redrawn from them before the paper uses it."),
-    C.Page(
-        id="UMAP-jc2",
-        title="UMAP of the frozen class token on JetClass-II (appendix)",
-        precedent=["2610.36121/fig3.png", "2606.14813/fig2.png"],
-        precedent_label="SuperJEPA Fig. 3, JetParticle-JEPA Fig. 2",
-        caption="Two-dimensional UMAP of the frozen class token of one network pretrained on 188 classes and one on 17 "
-                "classes, for 2,000 class-balanced test jets of each of X to bb, cc and qq and QCD (upper), and of X to ee "
-                "and X to mu mu (lower). A row has the same jets in both panels. UMAP axes have no meaning, so they carry "
-                "no scale.",
-        differs="As the t-SNE page it replaces (PI): two label sets, each row its own jets.",
-        draw=draw_umap_jc2),
-    C.Page(
-        id="UMAP-bench",
-        title="UMAP of the frozen class token on top and quark/gluon (for the PI: include only if it shows structure)",
-        precedent=["2610.36121/fig3.png"],
-        precedent_label="SuperJEPA Fig. 3",
-        caption="Two-dimensional UMAP of the frozen class token of one network pretrained on 188 classes and one on 17 "
-                "classes, for 2,000 test jets of each class of top tagging (upper) and quark/gluon tagging (lower), the "
-                "same jets in a row.",
-        differs="As UMAP-jc2, on the benchmark jets, with their absent inputs zero-filled as in every frozen probe.",
-        draw=draw_umap_bench),
+    *[_umap_page(page) for page in UMAP_PAGES],
     C.Page(
         id="VAL",
         title="Pretraining validation accuracy against epoch (appendix)",

@@ -194,6 +194,7 @@ def main() -> int:
               (EVAL / "v2_linprobe_bal" / "fits_v4_sib2", "linprobe/fits_v4_sib2", "*.json"),
               (EVAL / "umap_preview", "umap_preview", "*.json"),
               (EVAL / "umap_v1", "umap", "*.json"),
+              (EVAL / "umap_v2", "umap_v2", "*.json"),     # round 3: frozen and fine-tuned, four tasks
               (EVAL, "head", "input_bn_offsets.json"),
               (EVAL / "jc2_train", "jc2_train", "counts.json"))   # DesignNTrainSelected (experiments/FT/count_jc2_train.py)     # table tab:inputs (experiments/EVAL/input_bn_offsets.py)
         for d, name, pattern in v4:

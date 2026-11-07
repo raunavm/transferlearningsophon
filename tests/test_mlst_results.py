@@ -128,7 +128,9 @@ def test_the_index_covers_every_kind_of_pulled_file():
         # the ROC redesign (2026-11-02): the per-class curves and the X->ee vs X->mumu probe
         "curves_v2", "linprobe/fits_v4_sib",
         # the gallery decisions (2026-11-05): the class-token t-SNE, then UMAP and every lepton-pair test jet
-        "tsne", "umap", "umap_preview", "linprobe/fits_v4_sib2"}
+        "tsne", "umap", "umap_preview", "linprobe/fits_v4_sib2",
+        # 2026-11-06: the census of selected training jets; round 3 UMAP (frozen and fine-tuned, every task)
+        "jc2_train", "umap_v2"}
 
 
 def _ft_tree(d, inits, n_seeds_scratch=3, bound=False, budget=True):
