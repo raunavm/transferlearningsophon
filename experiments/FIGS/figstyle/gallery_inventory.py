@@ -41,6 +41,7 @@ ROWS = [
     ("F3-scatter", "appendix", "2", "188 classes per panel", "tab10 families, filled circles"),
     ("F3-app", "appendix", "4", "188 classes per panel", "tab10 families"),
     ("F3-app2", "appendix", "3", "188 classes per panel", "tab10 families"),
+    ("F3-app3", "appendix", "2", "188 classes per panel", "tab10 families"),
     ("F3-ft", "appendix", "4", "188 classes per panel", "tab10 families"),
     ("F3-ft2", "appendix", "3", "188 classes per panel", "tab10 families"),
     ("A3R", "appendix", "4 label sets", "188 classes", "tab10 families, thin; " + ROC),

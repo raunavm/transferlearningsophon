@@ -22,7 +22,7 @@ MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_roc, gall
 ORDER = ("SOPHON-FIG2", "PALETTE",       # gallery only; then the paper's order: main text, appendix
          "F1", "F2a", "F2b", "F3", "F4", "FJ", "FJ-ctrl", "PT", "F6", "F8", "F9a", "F9b", "F10a", "F10b", "F10c", "F11",
          "VAL", "A10", "A8", "F6-app", "FJ-app", "FJ-ctrl-app", "FJ-s", "CONF", "F4-app", "F3-scatter", "F3-app",
-         "F3-app2", "F3-ft", "F3-ft2", "A3R", "A3R-ft", "UMAP-jc1", "UMAP-jc2-had", "UMAP-jc2-lep", "UMAP-top",
+         "F3-app2", "F3-app3", "F3-ft", "F3-ft2", "A3R", "A3R-ft", "UMAP-jc1", "UMAP-jc2-had", "UMAP-jc2-lep", "UMAP-top",
          "UMAP-qg", "A17-res", "A17-qcd", "A17-probe", "F10a-mass", "INVENTORY")
 
 

@@ -312,12 +312,13 @@ def _draw_scatter(path, panels: list, auc_of=_class_auc, word: str = "Linear pro
 
 
 def _app_panels() -> list:
-    """F3-ft's order (PI, 2026-11-07): the label sets, here 162 classes and the two mass-regression models (43 and 17
-    classes are in F3-scatter), then the random partitions; the second figure the three flavor boundaries, as F3-ft2."""
-    return ([(RUNS["L162"], S.NAME["L162"])]
-            + [(RUNS[a], f"{S.NAME[b]} + mass") for a, b in (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))]
-            + [([m for r in M.RAND for m in RUNS[r]], "Five random partitions")]
-            + [(RUNS[a], S.NAME[a]) for a in S.CONTROLS])
+    """The probe pages in F3-ft's order (PI, 2026-11-07): 162, 43 and 17 classes and the random partitions, then the
+    three flavor boundaries as F3-ft2; the two mass-regression models, which have no fine-tuned page, on F3-app3."""
+    return _ft_panels()
+
+
+def _mass_panels() -> list:
+    return [(RUNS[a], f"{S.NAME[b]} + mass") for a, b in (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))]
 
 
 def _ft_panels() -> list:
@@ -338,6 +339,10 @@ def draw_f3_app(path) -> None:
 
 def draw_f3_app2(path) -> None:
     _draw_scatter(path, _app_panels()[4:], letters="efg", scope=_app_panels())
+
+
+def draw_f3_app3(path) -> None:
+    _draw_scatter(path, _mass_panels())
 
 
 def draw_f3_ft(path) -> None:
@@ -650,10 +655,10 @@ PAGES = [
         precedent=HEATMAPS,
         precedent_label="None for this form; CMS Fig. 7 and JetParticle-JEPA Fig. 12 are the heatmap's",
         caption="Linear probes on the frozen features of networks pretrained on JetClass-II, trained on one "
-                "million class-balanced JetClass-II jets: each class's area under the curve with (a) 162 classes, "
-                "(b) 162 and (c) 17 classes with an auxiliary mass regression, and (d) the five 17-class random "
-                "partitions averaged, against the same with 188 classes. Below the dashed line the class does "
-                "worse than with 188. Colors are decay families; values are means over pretraining runs.",
+                "million class-balanced JetClass-II jets: each class's area under the curve with (a) 162, (b) 43 and "
+                "(c) 17 pretraining classes and (d) the five 17-class random partitions averaged, against the same "
+                "with 188 classes. Below the dashed line the class does worse than with 188. Colors are decay "
+                "families; means over three pretraining runs, in (d) over the five partitions, one run each.",
         differs="As F3-scatter. Round 4: seven panels split 4+3 over two figures, so every panel is a 6.5 cm square.",
         draw=draw_f3_app),
     C.Page(
@@ -668,6 +673,19 @@ PAGES = [
                 "values are means over two pretraining runs.",
         differs="The second part of F3-app; the legend takes the empty fourth cell.",
         draw=draw_f3_app2),
+    C.Page(
+        id="F3-app3",
+        title="Cost class by class, mass-regression models (appendix)",
+        precedent=HEATMAPS,
+        precedent_label="None for this form; CMS Fig. 7 and JetParticle-JEPA Fig. 12 are the heatmap's",
+        caption="Linear probes on the frozen features of networks pretrained on JetClass-II with (a) 162 and (b) "
+                "17 classes plus an auxiliary mass regression, trained on one million class-balanced JetClass-II "
+                "jets: each class's area under the curve against the same with 188 classes and no mass "
+                "regression. Below the dashed line the class does worse than with 188. Colors are decay families; "
+                "values are means over two pretraining runs.",
+        differs="F3-scatter's form for the two mass-regression models, moved out of F3-app so that the probe and "
+                "fine-tuning pages share one panel order (PI, 2026-11-07).",
+        draw=draw_f3_app3),
     C.Page(
         id="F3-ft",
         title="Cost class by class after fine-tuning, first part (appendix)",
