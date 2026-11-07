@@ -1,0 +1,484 @@
+% =====================================================================================================
+% main.tex -- skeleton of the MLST paper "Label granularity in supervised pretraining of jet
+% foundation models" (Phase B, written from scratch 2026-11-02). This file holds the preamble, the
+% front matter and the order of the parts; every word of text lives in sections/*.tex.
+%
+% Rules for every file this one \input's:
+% - Numbers. Every number in prose, captions and tables is a macro of results_generated.tex, which
+%   experiments/FIGS/make_tables.py writes (through mlst_results.py and mlst_v4.py) with its source
+%   file, the path inside it and a sha256 (provenance.json). tests/test_manuscript_numbers.py fails
+%   on any digit or number word that is not such a macro or is not listed in its ALLOWED /
+%   ALLOWED_WORDS. Label-set names use \Kfull, \Kres, \Kmid and \Kcoarse (defined below). A result
+%   whose input is not in yet is the generator's red \pending{...} marker, never a typed value.
+% - Text. docs/WRITING_GUIDE.md is the standard the auditors apply (paragraph method, numbers,
+%   glossary, banned vocabulary and phrases, section conventions, MLST format); the binding plan is
+%   the "PI decisions for Phase B" block of docs/PAPER_OUTLINE.md and docs/FIGURE_PLAN.md.
+% - Draft 89 is archived at archive/main_draft89.tex as a source of FACTS only (design, settings,
+%   label maps, macro names, bib keys). None of its sentences, structure or table layouts is reused.
+% - Claims to recheck carry "% CHECK: <macro> <what must hold>" on their line.
+% - Each sections/<name>.tex opens with its own \section{...}\label{sec:<name>}; sections/abstract.tex
+%   holds only the abstract text; sections/appendix.tex holds the lettered appendix sections;
+%   sections/endmatter.tex holds the unnumbered end-matter sections.
+% - Figures: \paperfig{<width>}{<FIGURE_PLAN id>} inside a figure environment (F1 too; the TikZ
+%   drawing fig_f1.tex is no longer input). Tables: \input{tables/<file>} as listed in the
+%   Phase B macro inventory; the generator writes their environments and captions.
+% - Cross-references: figure~\ref{...}, table~\ref{...}, section~\ref{...}, equation~(\ref{...}).
+%
+% - Notation: the symbols of the Methods equations are the macros defined below (\epsS, \epsB, \Nout,
+%   ...), so that every section, caption and table writes a quantity the same way. Sophon's symbols are
+%   kept where the quantity is Sophon's (g_i, N_out, N_latent, Z, eps_B; arXiv:2405.12972 Eqs. 1-5).
+%
+% Build: the render job runs make_tables.py and paper_figures.py (figures into ../../figures/mlst/)
+% and then `tectonic -X compile main.tex` in this directory. Tectonic is XeTeX-based (Unicode fonts,
+% TU encoding).
+%
+% Order (WRITING_GUIDE section 10): front matter, Introduction, Related work, Methods, Results,
+% Discussion and conclusion; end matter in the iopjournal template order (acknowledgements with
+% conflicts of interest and the AI disclosure, funding, author contributions, data availability);
+% appendices, kept before the references so that the pre-audit checks, which cut the PDF text at
+% the reference list, cover them; references (unsrt: Vancouver order).
+% =====================================================================================================
+\documentclass[12pt]{article}   % MLST review copy: at least 12 pt
+
+\usepackage[a4paper,textwidth=15cm,top=2.5cm,bottom=2.5cm]{geometry}   % 15 cm: MLST full width; fig_f1.tex is drawn at it
+\usepackage[utf8]{inputenc}     % a no-op under XeTeX, kept for pdfLaTeX
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}          % the per-run and per-class appendix tables
+\usepackage{pdflscape}          % ... set in landscape: they are wider than the text block
+\usepackage{adjustbox}          % every generated table sits in adjustbox{max width=\linewidth}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{placeins}           % \FloatBarrier
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}    % the only TikZ library fig_f1.tex uses
+% No siunitx: neither the generated tables nor the generators use it (checked 2026-11-02).
+
+% Fonts: the document's serif throughout. The plotted figures are set in STIX (a Times-like serif,
+% Sophon's figure font, experiments/FIGS/mlst_style.py) and the TikZ figure fig_f1.tex in the text font,
+% as in Sophon's Fig. 1, so no sans-serif set-up is needed (PI 2026-11-02, figure style = Sophon's).
+
+\usepackage[hidelinks]{hyperref}
+\graphicspath{{../../figures/}{../../figures/mlst/}}
+
+% Configuration colours of experiments/FIGS/mlst_style.py (matplotlib's tab10 cycle in order, as in
+% Sophon's figures), the ones fig_f1.tex uses.
+\definecolor{c188}{HTML}{1F77B4}
+\definecolor{c162}{HTML}{FF7F0E}
+\definecolor{c43}{HTML}{2CA02C}
+\definecolor{c17}{HTML}{D62728}
+\definecolor{crand}{HTML}{17BECF}
+\definecolor{cflav}{HTML}{9467BD}
+\definecolor{cinit}{HTML}{7F7F7F}
+
+% Symbols of the Methods equations, written once here so that every section writes them the same way.
+\newcommand{\epsS}{\varepsilon_S}                 % signal efficiency, equation (eq:eff)
+\newcommand{\epsB}{\varepsilon_B}                 % background efficiency, equation (eq:eff)
+\newcommand{\Nout}{N_{\mathrm{out}}}              % classes of a label set (Sophon's N_out)
+\newcommand{\Nlat}{N_{\mathrm{latent}}}           % size of the frozen features (Sophon's N_latent)
+\newcommand{\msd}{m_{\mathrm{SD}}}                % reconstructed soft-drop mass
+\newcommand{\mgen}{m^{\mathrm{gen}}_{\mathrm{SD}}}% generator-level soft-drop mass
+\newcommand{\AUC}{\mathrm{AUC}}                   % area under the ROC curve, equation (eq:auc)
+\newcommand{\nmin}{n_{\min}}                      % fewest background jets behind a drawn ROC point
+\newcommand{\dJS}{d_{\mathrm{JS}}}                % Jensen-Shannon distance, equation (eq:djs)
+\newcommand{\Lcls}{L_{\mathrm{cls}}}              % classification loss
+\newcommand{\Lreg}{L_{\mathrm{reg}}}              % mass-regression loss, equation (eq:masstarget)
+
+% A result whose input is not in yet, or text the PI has still to supply: a red bold bracket.
+% Defined before results_generated.tex, whose pending macros print through it.
+\newcommand{\pending}[1]{\textcolor{red}{\textbf{[#1]}}}
+
+% Every number of the paper (written by experiments/FIGS/make_tables.py).
+\input{results_generated}
+
+% Label-set names, from the generator's class counts of the label maps (188, 162, 43, 17).
+% The generated tables use them, so they are defined here, before any table is input.
+\newcommand{\Kfull}{\VocabSizeLoneeighteight}
+\newcommand{\Kres}{\VocabSizeLonesixtwo}
+\newcommand{\Kmid}{\VocabSizeRfourtwoQone}
+\newcommand{\Kcoarse}{\VocabSizeRonesixQone}
+
+% Figures by their docs/FIGURE_PLAN.md id. \paperfig{<width>}{<id>} includes
+% ../../figures/mlst/<file>.pdf for the file name \setfigfile gives the id, and prints a \pending
+% marker when that file has not been rendered yet.
+\makeatletter
+\newcommand{\setfigfile}[2]{\@namedef{paperfig@file@#1}{#2}}
+\newcommand{\paperfig}[2]{%
+  \@ifundefined{paperfig@file@#2}%
+    {\pending{figure #2: no file name set}}%
+    {\IfFileExists{../../figures/mlst/\csname paperfig@file@#2\endcsname.pdf}%
+      {\includegraphics[width=#1]{../../figures/mlst/\csname paperfig@file@#2\endcsname.pdf}}%
+      {\pending{figure #2: not rendered yet}}}}
+\makeatother
+% File names: the names experiments/FIGS/paper_figures.py saves under (its _save calls).
+% The id A17 is spelled through \FigIdAseventeen because tests/test_manuscript_numbers.py reads the
+% "7" of a literal "A17" as a typed number (its NUMBER lookbehind checks one character); a figure id
+% is not a result. The \newcommand line itself is stripped by that test.
+\newcommand{\FigIdAseventeen}{A17}
+% The gallery figures (experiments/FIGS/figstyle/gallery_{labelset,roc,physics}.py, their Page records)
+% are saved by the render job as figures/mlst/gallery/<id>.pdf (gallery_figures.PAPER). F11 has a file
+% name, but the render job does not draw it until the X->bb and X->bs samples are in.
+\setfigfile{F2a}{gallery/F2a}               % linear probes against the number of pretraining classes
+\setfigfile{F2b}{gallery/F2b}               % the same after fine-tuning
+\setfigfile{F3}{gallery/F3}                 % JetClass-II per-class heatmap (AUC difference)
+\setfigfile{F1}{gallery/F1}                 % design of the study
+\setfigfile{F4}{gallery/F4}                 % class pairs that differ only in flavor, ROC
+\setfigfile{FJ}{gallery/FJ}                 % JetClass, fine-tuned, each class against the rest, per label set
+\setfigfile{FJ-ctrl}{gallery/FJ-ctrl}       % the same for the random partitions
+\setfigfile{F6}{gallery/F6}                 % top and quark/gluon (Pythia, Herwig) ROC, ratio to 188 classes
+\setfigfile{F8}{gallery/F8}                 % 188-class model fine-tuned, probed and from scratch against training jets
+\setfigfile{F9a}{gallery/F9a}               % mass regression: response histograms
+\setfigfile{F9b}{gallery/F9b}               % mass regression: median and resolution against jet pT
+\setfigfile{F10a}{gallery/F10a}             % mass sculpting: QCD mass before and after selections
+\setfigfile{F10b}{gallery/F10b}             % mass sculpting: Jensen-Shannon distance against QCD efficiency
+\setfigfile{F11}{gallery/F11}               % X->bb and X->bs resonance tagging
+% appendix figures
+\setfigfile{VAL}{gallery/VAL}               % pretraining validation accuracy against epoch
+\setfigfile{A10}{gallery/A10}               % linear probes against the number of training jets
+\setfigfile{A8}{gallery/A8}                 % fine-tuned against the number of training jets
+\setfigfile{F6-app}{gallery/F6-app}         % top and quark/gluon ROC, linear probes
+\setfigfile{FJ-app}{gallery/FJ-app}         % JetClass, linear probes, as FJ
+\setfigfile{FJ-ctrl-app}{gallery/FJ-ctrl-app} % JetClass, linear probes, random partitions
+\setfigfile{FJ-s}{gallery/FJ-s}             % JetClass, trained from scratch
+\setfigfile{F4-app}{gallery/F4-app}         % class pairs, random partitions with controlled flavor boundaries
+\setfigfile{F3-scatter}{gallery/F3-scatter} % per-class AUC, 43 and 17 classes against 188
+\setfigfile{F3-app}{gallery/F3-app}         % per-class AUC, every other model against 188
+\setfigfile{F3-ft}{gallery/F3-ft}           % per-class AUC after fine-tuning against 188
+\setfigfile{UMAP-jc1}{gallery/UMAP-jc1}     % UMAP of the class token on JetClass, frozen and fine-tuned
+\setfigfile{UMAP-jc2}{gallery/UMAP-jc2}     % UMAP of the frozen class token on JetClass-II
+\setfigfile{A3R}{gallery/A3R}               % every JetClass-II class against the rest, linear probes
+\setfigfile{A3R-ft}{gallery/A3R-ft}         % the same after fine-tuning
+\setfigfile{\FigIdAseventeen-res}{gallery/\FigIdAseventeen-res}   % median and resolution, resonant jets
+\setfigfile{\FigIdAseventeen-qcd}{gallery/\FigIdAseventeen-qcd}   % median and resolution, QCD jets
+\setfigfile{\FigIdAseventeen-probe}{gallery/\FigIdAseventeen-probe} % mass from frozen features and from the mass output
+
+\usepackage{float}
+\title{Results: figures and tables}
+\date{}
+\begin{document}
+\maketitle
+\section*{Main text}
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F1.pdf}
+\caption{Design of the study. (a) One network is pretrained on the same jets four times, once for each of four nested label sets with 188, 162, 43 and 17 classes, through a hidden layer of 512 units; below each merge is the distinction it removes. (b) The pretrained network is then used in two ways: its frozen features feed a linear probe, or a new head with its own 512-unit hidden layer is added and all weights are fine-tuned.}
+\end{figure}
+\FloatBarrier
+\input{tables/usecase_survival}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F2a.pdf}
+\caption{Linear probes on the frozen features against the number of pretraining classes: accuracy on class-balanced JetClass-II and on JetClass, and background rejection $R_{30}$ at 30\% signal efficiency on top and quark/gluon (Pythia) tagging, log axis. Markers are means over runs and the grey line (hierarchy) joins the four label sets. The 17-class random partitions, three with controlled flavor boundaries and five plain, are drawn just left of 17. The dashed line is the network trained from scratch.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F2b.pdf}
+\caption{Fine-tuned models against the number of pretraining classes: accuracy on class-balanced JetClass-II and on JetClass, and background rejection $R_{30}$ at 30\% signal efficiency on top and quark/gluon tagging. Log axes on (c, d). Markers are means over runs and the grey line (hierarchy) joins the four label sets. The three 17-class partitions with controlled flavor boundaries are drawn just left of 17. The dashed line is the network trained from scratch.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics[height=18.5cm]{../../figures/round4/F3.pdf}
+\caption{Difference in per-class AUC between each model and the 188-class model, in percentage points, for the 188 classes of class-balanced JetClass-II, from linear probes. Columns are the 162-, 43- and 17-class label sets and the three random partitions with controlled flavor boundaries. Rows are grouped by decay topology, with the QCD classes at the bottom. Values are means over runs; red marks an AUC below that of the 188-class model. Every class's values are in the data release.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F4.pdf}
+\caption{Background rejection against signal efficiency for four pairs of JetClass-II classes that differ only in flavor, from linear probes on networks pretrained with 188, 162, 43 and 17 classes. The first class named is the signal. Curves are means over three runs and end where fewer than 20 background jets remain; models with fewer at every efficiency are named in the panel. In (a, b) the three finest label sets nearly coincide.}
+\end{figure}
+\FloatBarrier
+\input{tables/mlst_jetclass}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/FJ.pdf}
+\caption{Background rejection against signal efficiency on JetClass after fine-tuning on one million jets. Each curve takes one of the ten JetClass classes as signal and the other nine as background, and is the mean over three pretraining runs. Curves begin where 20 background jets remain. One panel per pretraining label set; its title gives the mean area under the curve over the ten classes, and the heading that of the network trained from scratch.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/FJ-ctrl.pdf}
+\caption{Background rejection against signal efficiency on JetClass after fine-tuning on one million jets, for networks pretrained on 17-class random partitions: with no flavor boundary, a b-quark boundary or a random flavor boundary (two runs each), and five plain random partitions (averaged). Each curve takes one class as signal against the other nine and begins where 20 background jets remain. Titles give the mean area under the curve; the heading, from scratch.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/PT.pdf}
+\caption{Performance in bins of jet transverse momentum: (a) accuracy of linear probes on class-balanced JetClass-II test jets per pretraining label set; (b) the same for the 17-class random partitions with controlled flavor boundaries, with the 188- and 17-class models for reference; (c) accuracy on JetClass after fine-tuning on one million jets; (d) the probes' area under the curve of $X\to b\bar b$ against $X\to c\bar c$. Points are means over three runs (two per partition), bands the standard deviation.}
+\end{figure}
+\FloatBarrier
+\input{tables/mlst_bench_top}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics[height=18.5cm]{../../figures/round4/F6.pdf}
+\caption{Background rejection against signal efficiency after fine-tuning on the full training sets: top tagging, and quark/gluon separation tested on Pythia and Herwig jets. Curves are networks pretrained with 188, 162, 43 and 17 classes and the network trained from scratch, each the mean over three runs; in (a), dotted, one run of the 188-class model with kinematic inputs only. Curves end where fewer than 20 background jets remain. Lower panels: ratio to 188 classes.}
+\end{figure}
+\FloatBarrier
+\input{tables/mlst_fill_main}
+\FloatBarrier
+\input{tables/mlst_bench_qg}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F8.pdf}
+\caption{Accuracy on class-balanced JetClass-II and on JetClass, and rejection $R_{30}$ at 30\% signal efficiency on top and quark/gluon tagging, against the number of training jets: the 188-class model fine-tuned and with a linear probe, and a network trained from scratch. Points are means; bands the standard deviation over three runs. Fine-tuning on JetClass-II and JetClass starts at $10^{4}$ jets. Stars are published ParT: same inputs on JetClass, kinematic only on top, kinematic and particle type on quark/gluon.}
+\end{figure}
+\FloatBarrier
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F9a.pdf}
+\caption{Distribution of the jet mass response $r = m/m_{\mathrm{gen}}$, a jet's mass over its generator-level mass, for (a) resonant and (b) QCD jets of the JetClass-II test set: the soft-drop mass (solid black) and the mass regression outputs of the models pretrained on 162 and 17 classes, each the mean of two runs, which nearly coincide. Both panels share their axes.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F9b.pdf}
+\caption{Median mass response $r = m/m_{\mathrm{gen}}$ (a, b) and resolution $\sigma_r$, half the 16--84\% quantile range of r over its median (c, d), of JetClass-II test jets against transverse momentum (a, c; all jets) and generator mass (b, d; 20--500~GeV): mass regression of the models pretrained on 162 and 17 classes (two runs). Lower panels: ratio to the soft-drop mass (black where in range) and signed root square difference (RSD), negative where better. Unlabelled axes share the left ones.}
+\end{figure}
+\FloatBarrier
+\input{tables/mlst_mass}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F10a.pdf}
+\caption{Soft-drop mass distribution of QCD test jets of JetClass-II before any selection (inclusive) and after selections on $1-g_{\mathrm{QCD}}$, one minus the summed QCD score, at QCD efficiencies $\varepsilon_B$ of 10\% and 1\%, for the models pretrained on 188, 162, 43 and 17 classes (mean of three runs). Bars show the bin width; the axis stops at 260 GeV. Below each panel, the ratio to the inclusive distribution.}
+\end{figure}
+\FloatBarrier
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F10b.pdf}
+\caption{Jensen-Shannon distance (base 2) between the soft-drop mass distributions of QCD test jets of JetClass-II before and after a selection on $1-g_{\mathrm{QCD}}$, one minus the summed QCD score, against the QCD efficiency $\varepsilon_B$ of the selection (tighter to the left), for the models pretrained on 188, 162, 43 and 17 classes (solid, mean of three runs) and on 162 and 17 classes with mass regression (dashed, mean of two).}
+\end{figure}
+\FloatBarrier
+\section*{Appendix}
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/VAL.pdf}
+\caption{Validation accuracy of the pretraining against epoch for the 188-, 162-, 43- and 17-class label sets, each on its own classes, as the mean over three runs. A coarser label set has fewer classes to tell apart, so its accuracy is not comparable with a finer set's. The step near epoch 56 is where the learning rate starts to decay.}
+\end{figure}
+\FloatBarrier
+\input{tables/mlst_lrsweep}
+\FloatBarrier
+\input{tables/mlst_fill}
+\FloatBarrier
+\input{tables/mlst_mlp}
+\FloatBarrier
+\input{tables/mlst_bn}
+\FloatBarrier
+\input{tables/mlst_boot}
+\FloatBarrier
+\input{tables/mlst_balance}
+\FloatBarrier
+\input{tables/mlst_partrepro}
+\FloatBarrier
+\input{tables/mlst_probes}
+\FloatBarrier
+\input{tables/mlst_probes_n}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/A10.pdf}
+\caption{Linear probes of the four label sets against the number of training jets: accuracy on class-balanced JetClass-II and on JetClass, and rejection $R_{30}$ at 30\% signal efficiency on top and quark/gluon tagging, with a network trained from scratch dashed. Points are means over three runs; overlapping markers agree within their size. Stars are published ParT: same inputs on JetClass, kinematic only on top, kinematic and particle type on quark/gluon.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/A8.pdf}
+\caption{Fine-tuned models of the four label sets against the number of training jets: accuracy on class-balanced JetClass-II and on JetClass, and rejection $R_{30}$ at 30\% signal efficiency on top and quark/gluon tagging, with a network trained from scratch dashed. Points are means over three runs; overlapping markers agree within their size. Fine-tuning on JetClass-II and JetClass starts at $10^{4}$ jets. Stars are published ParT: same inputs on JetClass, kinematic only on top, kinematic and particle type on quark/gluon.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics[height=18.5cm]{../../figures/round4/F6-app.pdf}
+\caption{Background rejection against signal efficiency from linear probes on the full training sets (missing inputs filled by random draws on top tagging, by the training mean on quark/gluon), on networks pretrained with 188, 162, 43 and 17 classes, and for reference the network fully trained from scratch (three runs each). Curves end where fewer than 20 background jets remain. Lower panels: ratio to the 188-class probe; from scratch falls outside it in (a), (b) and partly (c).}
+\end{figure}
+\FloatBarrier
+\input{tables/mlst_ft}
+\FloatBarrier
+\input{tables/mlst_ft_rej}
+\FloatBarrier
+\begin{landscape}
+\input{tables/mlst_per_run}
+\end{landscape}
+\FloatBarrier
+\input{tables/mlst_jetclass_all}
+\FloatBarrier
+\input{tables/mlst_jetclass_probe}
+\FloatBarrier
+\input{tables/mlst_jc1_class_auc}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/FJ-app.pdf}
+\caption{Background rejection against signal efficiency on JetClass from linear probes, trained on one million jets, on frozen pretrained networks. Each curve takes one of the ten classes as signal and the other nine as background, and is the mean over three pretraining runs. Curves begin where 20 background jets remain. Titles give the mean area under the curve; the heading gives the fully trained network from scratch for reference.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/FJ-ctrl-app.pdf}
+\caption{Background rejection against signal efficiency on JetClass from linear probes trained on one million jets, on frozen networks pretrained on 17-class random partitions: with no flavor boundary, a b-quark boundary or a random flavor boundary (two runs each), and five plain ones (averaged). Each curve takes one class as signal against the other nine and begins where 20 background jets remain. Titles give the mean area under the curve; the heading, from scratch.}
+\end{figure}
+\FloatBarrier
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/FJ-s.pdf}
+\caption{Background rejection against signal efficiency on JetClass for the network trained from scratch on one million jets, with no pretraining. Each curve takes one of the ten JetClass classes as signal and the other nine as background, and is the mean over three trainings. Curves begin where 20 background jets remain. The legend gives each class's area under the curve; the heading gives their mean.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics[height=18.5cm]{../../figures/round4/CONF.pdf}
+\caption{Confusion matrices on JetClass after fine-tuning on one million jets: (a) the percentage of each true class assigned to each predicted class by the model pretrained on 188 classes; (b)--(d) the change in that percentage for the models pretrained on 162, 43 and 17 classes, each against the 188-class model of the same seed, printed where it reaches one percentage point, which no change in (c) does. Values are means over three runs.}
+\end{figure}
+\FloatBarrier
+\input{tables/mlst_jetclass_nbkg}
+\FloatBarrier
+\input{tables/mlst_rand_prong}
+\FloatBarrier
+\input{tables/mlst_pairs}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F4-app.pdf}
+\caption{Background rejection against signal efficiency for four pairs of JetClass-II classes that differ only in flavor, (d) of QCD jets, from linear probes on networks pretrained on 17-class random partitions with no flavor boundary, a b-quark boundary or a random flavor boundary, and on 188 classes for reference. The first class named is the signal. Curves are means over two runs (188 classes: three) and end where fewer than 20 background jets remain.}
+\end{figure}
+\FloatBarrier
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F3-scatter.pdf}
+\caption{Each of the 188 classes of class-balanced JetClass-II, from linear probes trained on one million jets: the class's area under the curve for the 43- and 17-class label sets, against the same for the 188-class model. On the dashed line the two agree; below it the class does worse than with 188 classes. Colors are decay families. Values are means over runs.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F3-app.pdf}
+\caption{Each class of class-balanced JetClass-II, from linear probes trained on one million jets: its area under the curve for (a) the 162-class label set, (b) the five plain random partitions averaged, (c) the no-flavor-boundary and (d) the b-quark-boundary partitions, against the same for the 188-class model. Below the dashed line the class does worse than with 188 classes. Colors are decay families; values are means over runs.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F3-app2.pdf}
+\caption{Continued from the previous figure: each class's area under the curve for (e) the random-flavor-boundary partition and the (f) 162- and (g) 17-class label sets pretrained with an auxiliary regression of the jet mass, against the same for the 188-class model, from linear probes trained on one million jets on class-balanced JetClass-II. Colors are decay families; values are means over runs.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F3-ft.pdf}
+\caption{Each class of class-balanced JetClass-II after fine-tuning on one million jets: its area under the curve for the (a) 162-, (b) 43- and (c) 17-class label sets and (d) the five plain random partitions averaged, against the same for the 188-class model. Below the dashed line the class does worse than with 188 classes. Colors are decay families; values are means over three runs, in (d) over the five partitions, one run each.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F3-ft2.pdf}
+\caption{Continued from the previous figure: each class's area under the curve after fine-tuning on one million class-balanced JetClass-II jets, for the partitions with (e) no flavor boundary, (f) a b-quark boundary and (g) a random flavor boundary, against the same for the 188-class model. Colors are decay families; values are means over two runs.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/A3R.pdf}
+\caption{Background rejection against signal efficiency for each of the 188 JetClass-II classes against the rest of the class-balanced test set, from linear probes on frozen networks pretrained with 188, 162, 43 and 17 classes. Thin curves are means over three pretraining runs, colored by decay family, and end where fewer than 20 background jets remain. Each title gives the mean area under the curve over all classes.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/A3R-ft.pdf}
+\caption{Background rejection against signal efficiency for each of the 188 JetClass-II classes against the rest of the class-balanced test set, after fine-tuning on one million jets, for networks pretrained with 188, 162, 43 and 17 classes. Thin curves are means over runs, colored by decay family, and end where fewer than 20 background jets remain. Each title gives the mean area under the curve over all classes.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/UMAP-jc1.pdf}
+\caption{UMAP of the class token of a network pretrained on 188 classes (upper) and one on 17 (lower), frozen (left) and fine-tuned on one million JetClass jets (right), for 2,000 test jets of each JetClass class in every panel; the axes carry no scale. Both models' frozen features set the leptonic decays apart, in two islands for 188 classes; fine-tuning separates most hadronic classes, $Z\to q\bar q$ partly mixed with $H\to b\bar b$ and $W\to qq'$.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/UMAP-jc2-had.pdf}
+\caption{UMAP of the class token of a network pretrained on 188 classes (upper) and one on 17 (lower), frozen (left) and fine-tuned on one million class-balanced JetClass-II jets (right), for 2,000 test jets each of $X\to b\bar b$, $X\to c\bar c$, $X\to q\bar q$ and QCD in every panel; the axes carry no scale. The 188-class frozen features separate the three decays; the 17-class ones only order them, $X\to b\bar b$ at one edge and $X\to q\bar q$ near QCD at the other; fine-tuning separates them.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/UMAP-jc2-lep.pdf}
+\caption{UMAP of the class token of a network pretrained on 188 classes (upper) and one on 17 (lower), frozen (left) and fine-tuned on one million class-balanced JetClass-II jets (right), for 2,000 test jets each of $X\to ee$ and $X\to\mu\mu$ in every panel; the axes carry no scale. Each class falls in two islands in every panel; the 188-class frozen features keep electrons and muons apart, the 17-class ones mix them, and fine-tuning separates them.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/UMAP-top.pdf}
+\caption{UMAP of the class token of a network pretrained on 188 classes (upper) and one on 17 (lower), frozen (left) and fine-tuned on the full top-tagging training set (right), for 2,000 top and 2,000 QCD test jets in every panel; the axes carry no scale. Top and QCD jets lie mostly apart in both models' frozen features; fine-tuned, the 17-class model gives two islands, some QCD jets in the top one; the 188-class model joins them by mixed jets.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/UMAP-qg.pdf}
+\caption{UMAP of the class token of a network pretrained on 188 classes (upper) and one on 17 (lower), frozen (left) and fine-tuned on the full quark/gluon training set (right), for 2,000 quark and 2,000 gluon test jets (Pythia) in every panel; the axes carry no scale. Quark and gluon jets overlap in the frozen features of both models, with only a gradient between them, and separate partly after fine-tuning.}
+\end{figure}
+\FloatBarrier
+\input{tables/mlst_mass_detail}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/A17-res.pdf}
+\caption{Median mass response r (a, b) and resolution $\sigma_r$ (c, d), as in the main-text figure, of resonant JetClass-II test jets against transverse momentum (a, c; all jets) and generator mass (b, d; 20--500~GeV): mass regression of the models pretrained on 162 and 17 classes (two runs). Lower panels: ratio to the soft-drop mass (black where in range) and signed root square difference (RSD), negative where better. Unlabelled axes share the left ones.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/A17-qcd.pdf}
+\caption{Median mass response r (a, b) and resolution $\sigma_r$ (c, d), as in the main-text figure, of QCD JetClass-II test jets against transverse momentum (a, c; all jets) and generator mass (b, d; 20--500~GeV): mass regression of the models pretrained on 162 and 17 classes (two runs). Lower panels: ratio to the soft-drop mass (black where in range) and signed root square difference (RSD), negative where better. Unlabelled axes share the left ones.}
+\end{figure}
+\FloatBarrier
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics[height=18.5cm]{../../figures/round4/A17-probe.pdf}
+\caption{Median mass response r (a, b) and resolution $\sigma_r$ (c, d) of JetClass-II test jets against transverse momentum (a, c; all jets) and generator mass (b, d; 20--500~GeV): an MLP regressing the mass from the frozen features of the models pretrained on 188, 162, 43 and 17 classes (solid, three runs), and the mass regression of the 162- and 17-class models (dashed, two runs). Sub-panels as in the main-text mass figure; overlapping markers agree within their size.}
+\end{figure}
+\FloatBarrier
+\begin{figure}[H]
+\centering
+\includegraphics{../../figures/round4/F10a-mass.pdf}
+\caption{The mass sculpting figure for the models pretrained on 162 and 17 classes with an auxiliary regression of the jet mass: soft-drop mass distribution of QCD test jets of JetClass-II before any selection and after selections on $1-g_{\mathrm{QCD}}$ at QCD efficiencies $\varepsilon_B$ of 10\% and 1\% (mean of two runs), with the ratio to the inclusive distribution below.}
+\end{figure}
+\FloatBarrier
+\input{tables/mlst_sculpt}
+\FloatBarrier
+\end{document}
