@@ -71,6 +71,18 @@ def test_the_macro_auc_per_bin_is_scikit_learns_one_vs_rest_macro():
     assert PV.macro_auc(p[m], y[m])[1] == 9
 
 
+def test_the_accuracy_per_bin_is_the_argmax_share_with_its_binomial_spread():
+    p, y, pt = _sample()
+    for block in (PV.jc1_block, PV.jc2_block(0, 1)):
+        doc = PV.binned(p, y, pt, PV.PT_EDGES["jc1"], block)
+        for b in doc["bins"] + [doc["inclusive"]]:
+            m = (pt >= b["lo"]) & (pt < b["hi"]) if "lo" in b else np.ones_like(y, bool)
+            acc = float(np.mean(p[m].argmax(1) == y[m]))
+            assert b["accuracy"] == pytest.approx(acc, abs=1e-12)
+            assert b["accuracy_stat"] == pytest.approx(np.sqrt(acc * (1 - acc) / m.sum()), abs=1e-12)
+    assert PV.accuracy(p[:0], y[:0]) == {"accuracy": None, "accuracy_stat": None}
+
+
 def test_bb_vs_cc_rejection_carries_its_passing_count():
     n = 1000
     d_sig = 0.5 + np.arange(1, n + 1) / (2 * n)              # signal median 0.75
@@ -292,12 +304,12 @@ def test_the_jetclass_part_waits_for_all_30_long_cells_and_the_jetclass_ii_part_
     assert len(cells) == 30 and len(set(cells)) == 30
     assert sum(c.startswith("/data/results/ft_v2/budget_long/leg2/scratch/N1000000/s") for c in cells) == 3
     _, _, s = _job(["jc2"])
-    assert "perf_vs_pt.py jc2 --out-dir /data/results/eval/perf_vs_pt/jc2" in s
+    assert "perf_vs_pt.py jc2 --out-dir /data/results/eval/perf_vs_pt_v2/jc2" in s
     assert "not DONE" not in s and "perf_vs_pt.py jc1" not in s and "pyarrow==25.0.1" in s
     _, _, s = _job(["jc1"])
     assert all(c in s for c in cells) and 'not DONE"; exit 42; }' in s
     assert s.index("not DONE") < s.index(
-        "perf_vs_pt.py jc1 --out-dir /data/results/eval/perf_vs_pt/jc1 --confusion-out /data/results/eval/confusion_jc1")
+        "perf_vs_pt.py jc1 --out-dir /data/results/eval/perf_vs_pt_v2/jc1 --confusion-out /data/results/eval/confusion_jc1")
     assert "perf_vs_pt.py jc2" not in s
     # both: nothing runs before every JetClass cell is DONE
     _, _, s = _job(["jc2", "jc1"])

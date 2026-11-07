@@ -21,7 +21,8 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "perf_pt"
-OUT_ROOT, CONF_ROOT = "/data/results/eval/perf_vs_pt", "/data/results/eval/confusion_jc1"
+OUT_ROOT, CONF_ROOT = "/data/results/eval/perf_vs_pt_v2", "/data/results/eval/confusion_jc1"   # v2: with accuracy per bin
+# (figure round 4); the files of round 3 stay in perf_vs_pt/, and confusion_jc1/ is complete, so jc1 skips it
 SCRIPT = "experiments/EVAL/perf_vs_pt.py"
 NEEDED = {SCRIPT: "def confusion"}
 PARTS = ("jc2", "jc1")

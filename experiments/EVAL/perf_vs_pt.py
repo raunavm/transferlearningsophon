@@ -9,8 +9,8 @@
        fetch by files, no shuffling at test time), so stream row i is the file's i-th selected row.
        The probe's labels must equal the file's selected labels and the extraction's label188.npy row
        for row (the staged rows are in random order, so a shifted or permuted row map fails this), or
-       the script stops. Per bin: the macro one-vs-rest AUC over the classes present
-       (linear_probe_v2.native_metrics' macro_auc_ovr), and X->bb against X->cc on p_bb / (p_bb + p_cc)
+       the script stops. Per bin: the accuracy (argmax over the 188 outputs) with its binomial spread, the
+       macro one-vs-rest AUC over the classes present (linear_probe_v2.native_metrics' macro_auc_ovr), and X->bb against X->cc on p_bb / (p_bb + p_cc)
        on those two classes' jets: its AUC and the rejection at 50% signal efficiency with the
        background jets behind it.
   jc1  JetClass, fine-tuned at 1e6 with the long budget (<tree>/<init>/N1000000/s<S>/pred.root). The
@@ -20,8 +20,8 @@
        in file order (no selection, no shuffling at test time), batches of PREDICT_BATCH taken from
        the workers in turn. The labels so rebuilt must equal pred.root's jet for jet (each file holds
        one class, so this fixes the batch size, the interleaving and every file boundary), or the
-       script stops. Five 100-GeV bins 500-1000. Per bin: the macro one-vs-rest AUC over the ten
-       classes and each signal class's rejection of QCD at ParT's working point on p_S / (p_S + p_QCD)
+       script stops. Five 100-GeV bins 500-1000. Per bin: the accuracy (argmax over the ten outputs) with
+       its binomial spread, the macro one-vs-rest AUC over the ten classes and each signal class's rejection of QCD at ParT's working point on p_S / (p_S + p_QCD)
        (ft_curves.jc1_block's discriminant and eps_S). Beside it, into --confusion-out, the 10x10
        confusion matrix: argmax of the ten outputs, rows the true class in linear_probe_v2.JC1_CLASSES
        order, counts and each row normalised to one.
@@ -109,6 +109,15 @@ def macro_auc(p: np.ndarray, y: np.ndarray) -> tuple[float | None, int]:
     if cs.size < 2:
         return None, int(cs.size)
     return float(np.mean([roc_auc_score(y == c, p[:, c]) for c in cs])), int(cs.size)
+
+
+def accuracy(p: np.ndarray, y: np.ndarray) -> dict:
+    """{"accuracy": share of jets whose argmax is the true class, "accuracy_stat": its binomial spread
+    sqrt(a (1 - a) / n)}; both None for no jets."""
+    if y.size == 0:
+        return {"accuracy": None, "accuracy_stat": None}
+    a = float(np.mean(p.argmax(1) == y))
+    return {"accuracy": a, "accuracy_stat": float(np.sqrt(a * (1.0 - a) / y.size))}
 
 
 def versus(p: np.ndarray, y: np.ndarray, sig: int, bkg, eps_s: float) -> dict | None:
@@ -208,7 +217,8 @@ def jc2_inputs(model: str, probs_root: pathlib.Path, extract_root: pathlib.Path,
 def jc2_block(bb: int, cc: int):
     def block(p, y):
         auc, k = macro_auc(p, y)
-        return {"macro_auc_ovr": auc, "n_classes_present": k, "class_counts": np.bincount(y, minlength=p.shape[1]).tolist(),
+        return {**accuracy(p, y), "macro_auc_ovr": auc, "n_classes_present": k,
+                "class_counts": np.bincount(y, minlength=p.shape[1]).tolist(),
                 "bb_vs_cc": versus(p, y, bb, (cc,), 0.5),
                 "n_bb": int((y == bb).sum()), "n_cc": int((y == cc).sum())}
     return block
@@ -330,7 +340,8 @@ def jc1_inputs(cell: pathlib.Path, cache: dict) -> tuple[np.ndarray, np.ndarray,
 
 def jc1_block(p, y):
     auc, k = macro_auc(p, y)
-    return {"macro_auc_ovr": auc, "n_classes_present": k, "class_counts": np.bincount(y, minlength=p.shape[1]).tolist(),
+    return {**accuracy(p, y), "macro_auc_ovr": auc, "n_classes_present": k,
+            "class_counts": np.bincount(y, minlength=p.shape[1]).tolist(),
             "vs_qcd": {LP.JC1_CLASSES[c]: versus(p, y, c, (0,), LP.JC1_EPS_S.get(LP.JC1_CLASSES[c], 0.5))
                        for c in range(1, len(LP.JC1_CLASSES))}}
 

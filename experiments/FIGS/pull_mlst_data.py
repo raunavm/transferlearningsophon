@@ -200,8 +200,8 @@ def main() -> int:
               (EVAL, "head", "input_bn_offsets.json"),
               (EVAL / "jc2_train", "jc2_train", "counts.json"),   # DesignNTrainSelected (experiments/FT/count_jc2_train.py)     # table tab:inputs (experiments/EVAL/input_bn_offsets.py)
               # round 3 (2026-11-06): performance against jet pT and the JetClass confusion matrices
-              (EVAL / "perf_vs_pt" / "jc2", "perf_vs_pt/jc2", "*.json"),
-              (EVAL / "perf_vs_pt" / "jc1", "perf_vs_pt/jc1", "*.json"),
+              (EVAL / "perf_vs_pt_v2" / "jc2", "perf_vs_pt/jc2", "*.json"),   # v2: accuracy per bin (round 4)
+              (EVAL / "perf_vs_pt_v2" / "jc1", "perf_vs_pt/jc1", "*.json"),
               (EVAL / "confusion_jc1", "confusion_jc1", "*.json"))
         for d, name, pattern in v4:
             for f in sorted(d.glob(pattern)):
