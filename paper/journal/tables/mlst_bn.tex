@@ -1,10 +1,10 @@
 \begin{center}
 \small
 \begin{minipage}{\linewidth}
-\captionof{table}{Linear probes on JetClass-II (natural composition, largest training set) with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run. The class-balanced probes use the checkpoints as trained, so this check uses the natural-composition test set. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
+\captionof{table}{Linear probes on JetClass-II (natural composition, largest training set) with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run of the same seed. The class-balanced probes of the pretrained networks use their checkpoints as trained, so this check uses the natural-composition test set. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, named by the pretraining seed it shares with the \Kfull-class run of that seed. The randomly initialized network: three initializations.}
 \label{tab:bn}
 \end{minipage}
-\par\nopagebreak
+\par\nopagebreak[3]
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cc}
 \toprule
@@ -30,7 +30,7 @@ randomly initialized network & 0.8058\,$\pm$\,0.0018 & 0.8525\,$\pm$\,0.0019 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cc}
 \toprule
@@ -42,16 +42,16 @@ pretraining & as trained & recomputed \\
 \Kres{} classes & 1.049\,$\pm$\,0.014 & 1.050\,$\pm$\,0.014 \\
 \Kmid{} classes & 1.171\,$\pm$\,0.024 & 1.172\,$\pm$\,0.025 \\
 \Kcoarse{} classes & 1.538\,$\pm$\,0.025 & 1.537\,$\pm$\,0.026 \\
-\Kres{} classes, mass regression & 1.106, 1.082 & 1.105, 1.083 \\
-\Kcoarse{} classes, mass regression & 1.571, 1.530 & 1.572, 1.530 \\
+\Kres{} classes, mass regression & 1.11, 1.08 & 1.11, 1.08 \\
+\Kcoarse{} classes, mass regression & 1.57, 1.53 & 1.57, 1.53 \\
 random partition 1, seed 1 & 1.17 & 1.17 \\
 random partition 2, seed 2 & 1.17 & 1.17 \\
 random partition 3, seed 1 & 1.15 & 1.15 \\
 random partition 4, seed 2 & 1.15 & 1.15 \\
 random partition 5, seed 2 & 1.16 & 1.16 \\
-random partition, no flavor boundary & 1.432, 1.477 & 1.432, 1.477 \\
-random partition, $b$-quark boundary & 1.260, 1.245 & 1.260, 1.245 \\
-random partition, random flavor boundary & 1.259, 1.254 & 1.260, 1.254 \\
+random partition, no flavor boundary & 1.43, 1.48 & 1.43, 1.48 \\
+random partition, $b$-quark boundary & 1.26, 1.25 & 1.26, 1.25 \\
+random partition, random flavor boundary & 1.26, 1.25 & 1.26, 1.25 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

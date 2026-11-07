@@ -1,7 +1,7 @@
-{\scriptsize
+{\footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{longtable}{>{\raggedright\arraybackslash}p{4cm}cccc}
-\caption{Linear probes against the number of training jets (column headers): JetClass-II AUC averaged over the classes, JetClass accuracy, and $R_{30}$ on top, quark/gluon and Herwig jets with the missing inputs substituted as chosen on validation (\LpSubstitutionTop{} for top, \LpSubstitutionQg{} for quark/gluon). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. Here the \RandVtwoNPartitions{} random partitions are pooled into one row, mean $\pm$ standard deviation over their runs. The \Kfull-class model with kinematic inputs only, a diagnostic of the missing inputs, has one run and no input missing, and is evaluated on top tagging only. $^{*}$: a probe that did not converge.}\label{tab:probesn}\\
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.9cm}cccc}
+\caption{Linear probes against the number of training jets (column headers): class-balanced JetClass-II AUC averaged over the classes, JetClass accuracy, and $R_{30}$ on top, quark/gluon and Herwig jets with the missing inputs substituted as chosen on validation (\LpSubstitutionTop{} for top, \LpSubstitutionQg{} for quark/gluon). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, named by the pretraining seed it shares with the \Kfull-class run of that seed. The randomly initialized network: three initializations. Here the \RandVtwoNPartitions{} random partitions are pooled into one row, mean $\pm$ standard deviation over their runs. The \Kfull-class model with kinematic inputs only, a diagnostic of the missing inputs, has one run and no input missing, and is evaluated on top tagging only.}\label{tab:probesn}\\
 \toprule
 \endfirsthead
 \multicolumn{5}{l}{\textit{continued}} \\
@@ -22,7 +22,7 @@ random partition, no flavor boundary & 0.9227, 0.9206 & 0.9562, 0.9544 & 0.9691,
 random partition, $b$-quark boundary & 0.9373, 0.9375 & 0.9647, 0.9648 & 0.9735, 0.9737 & 0.9758, 0.9759 \\
 random partition, random flavor boundary & 0.9346, 0.9338 & 0.9642, 0.9645 & 0.9737, 0.9737 & 0.9760, 0.9760 \\
 random partitions (all five) & 0.9401\,$\pm$\,0.0020 & 0.9669\,$\pm$\,0.0003 & 0.9757\,$\pm$\,0.0001 & 0.9777\,$\pm$\,0.0002 \\
-randomly initialized network & 0.618\,$\pm$\,0.004 & 0.718\,$\pm$\,0.004 & 0.7946\,$\pm$\,0.0023 & 0.8121\,$\pm$\,0.0019 \\
+randomly initialized network & 0.618\,$\pm$\,0.004 & 0.718\,$\pm$\,0.004 & 0.7946\,$\pm$\,0.0023 & 0.8121\,$\pm$\,0.0019 \\*
 randomly initialized network, BatchNorm recomputed & 0.67\,$\pm$\,0.04 & 0.800\,$\pm$\,0.013 & 0.855\,$\pm$\,0.004 & 0.866\,$\pm$\,0.004 \\
 \midrule[\heavyrulewidth]
 \multicolumn{5}{l}{JetClass, accuracy} \\*
@@ -38,7 +38,7 @@ random partition, no flavor boundary & 0.6795, 0.6738 & 0.7339, 0.7303 & 0.7517,
 random partition, $b$-quark boundary & 0.6995, 0.7020 & 0.7443, 0.7455 & 0.7597, 0.7628 & 0.7615, 0.7644 \\
 random partition, random flavor boundary & 0.6920, 0.6930 & 0.7404, 0.7391 & 0.7575, 0.7546 & 0.7593, 0.7564 \\
 random partitions (all five) & 0.6960\,$\pm$\,0.0027 & 0.7380\,$\pm$\,0.0006 & 0.7524\,$\pm$\,0.0010 & 0.7541\,$\pm$\,0.0009 \\
-randomly initialized network & 0.306\,$\pm$\,0.006 & 0.3854\,$\pm$\,0.0016 & 0.4049\,$\pm$\,0.0016 & 0.4077\,$\pm$\,0.0013 \\
+randomly initialized network & 0.306\,$\pm$\,0.006 & 0.3854\,$\pm$\,0.0016 & 0.4049\,$\pm$\,0.0016 & 0.4077\,$\pm$\,0.0013 \\*
 randomly initialized network, BatchNorm recomputed & 0.363\,$\pm$\,0.009 & 0.450\,$\pm$\,0.005 & 0.472\,$\pm$\,0.006 & 0.475\,$\pm$\,0.005 \\
 \midrule[\heavyrulewidth]
 \multicolumn{5}{l}{top, $R_{30}$ (missing inputs: random draws)} \\*
@@ -49,13 +49,13 @@ training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}200{,}000 \\*
 \Kmid{} classes & 146\,$\pm$\,32 & 233\,$\pm$\,18 & 236\,$\pm$\,10 & 231\,$\pm$\,8 \\
 \Kcoarse{} classes & 154\,$\pm$\,5 & 252\,$\pm$\,19 & 259\,$\pm$\,20 & 255\,$\pm$\,17 \\
 \Kres{} classes, mass regression & 199, 186 & 248, 306 & 266, 312 & 260, 306 \\
-\Kcoarse{} classes, mass regression & 193.0, 191.0 & 286, 341 & 306, 379 & 306, 378 \\
+\Kcoarse{} classes, mass regression & 193, 191 & 286, 341 & 306, 379 & 306, 378 \\
 random partition, no flavor boundary & 158, 138 & 265, 230 & 262, 248 & 262, 243 \\
-random partition, $b$-quark boundary & 139.3, 139.6 & 209.2, 218.0 & 204, 217 & 202.5, 211.6 \\
-random partition, random flavor boundary & 138.7, 148.5 & 204, 222 & 218, 242 & 214, 233 \\
+random partition, $b$-quark boundary & 139, 140 & 209, 218 & 204, 217 & 203, 212 \\
+random partition, random flavor boundary & 139, 148 & 204, 222 & 218, 242 & 214, 233 \\
 random partitions (all five) & 101\,$\pm$\,10 & 165\,$\pm$\,11 & 165\,$\pm$\,12 & 163\,$\pm$\,11 \\
 randomly initialized network & 43.1\,$\pm$\,1.1 & 55.3\,$\pm$\,3.1 & 57.5\,$\pm$\,3.0 & 56.8\,$\pm$\,2.7 \\
-randomly initialized network, BatchNorm recomputed & 36.9\,$\pm$\,2.6 & 49.0\,$\pm$\,3.3 & 49.2\,$\pm$\,3.1 & 48.6\,$\pm$\,3.0 \\
+randomly initialized network, BatchNorm recomputed & 36.9\,$\pm$\,2.6 & 49.0\,$\pm$\,3.3 & 49.2\,$\pm$\,3.1 & 48.6\,$\pm$\,3.0 \\*
 \Kfull{} classes, kinematic inputs only & 133 & 208 & 222 & 231 \\
 \midrule[\heavyrulewidth]
 \multicolumn{5}{l}{quark/gluon, $R_{30}$ (missing inputs: the training mean)} \\*
@@ -67,11 +67,11 @@ training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \Kcoarse{} classes & 62\,$\pm$\,4 & 72.0\,$\pm$\,1.8 & 74.6\,$\pm$\,1.5 & 74.3\,$\pm$\,1.9 \\
 \Kres{} classes, mass regression & 67.8, 60.6 & 70.1, 66.4 & 74.3, 71.9 & 73.9, 70.7 \\
 \Kcoarse{} classes, mass regression & 66.8, 60.7 & 64.6, 69.3 & 68.9, 70.9 & 68.4, 72.2 \\
-random partition, no flavor boundary & 57.2, 54.7 & 70.2, 69.1 & 72.52, 72.15 & 73.9, 71.7 \\
-random partition, $b$-quark boundary & 64.6, 56.4 & 68.6, 67.2 & 73.4, 70.8 & 72.52, 72.20 \\
+random partition, no flavor boundary & 57.2, 54.7 & 70.2, 69.1 & 72.5, 72.2 & 73.9, 71.7 \\
+random partition, $b$-quark boundary & 64.6, 56.4 & 68.6, 67.2 & 73.4, 70.8 & 72.5, 72.2 \\
 random partition, random flavor boundary & 59.3, 64.2 & 68.6, 70.4 & 71.5, 72.6 & 71.2, 72.8 \\
 random partitions (all five) & 55\,$\pm$\,5 & 64.8\,$\pm$\,2.3 & 68.3\,$\pm$\,2.2 & 68.3\,$\pm$\,2.1 \\
-randomly initialized network & 43.0\,$\pm$\,2.5 & 55.6\,$\pm$\,1.2 & 56.7\,$\pm$\,0.5 & 56.4\,$\pm$\,1.0 \\
+randomly initialized network & 43.0\,$\pm$\,2.5 & 55.6\,$\pm$\,1.2 & 56.7\,$\pm$\,0.5 & 56.4\,$\pm$\,1.0 \\*
 randomly initialized network, BatchNorm recomputed & 42.0\,$\pm$\,2.3 & 51.1\,$\pm$\,1.4 & 52.2\,$\pm$\,1.3 & 52.2\,$\pm$\,0.8 \\
 \midrule[\heavyrulewidth]
 \multicolumn{5}{l}{quark/gluon, Herwig, $R_{30}$ (missing inputs: the training mean)} \\*
@@ -81,13 +81,13 @@ training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \Kres{} classes & 31.3\,$\pm$\,2.5 & 35.0\,$\pm$\,2.2 & 35.8\,$\pm$\,1.9 & 35.9\,$\pm$\,1.7 \\
 \Kmid{} classes & 31.8\,$\pm$\,0.8 & 32.4\,$\pm$\,1.7 & 34.6\,$\pm$\,1.8 & 34.4\,$\pm$\,1.7 \\
 \Kcoarse{} classes & 31.0\,$\pm$\,2.8 & 34.5\,$\pm$\,1.1 & 35.3\,$\pm$\,1.0 & 35.5\,$\pm$\,1.0 \\
-\Kres{} classes, mass regression & 34.7, 31.7 & 33.98, 33.85 & 34.55, 35.47 & 34.93, 35.60 \\
-\Kcoarse{} classes, mass regression & 33.7, 32.4 & 33.46, 33.94 & 34.5, 35.6 & 34.7, 36.3 \\
-random partition, no flavor boundary & 26.39, 27.23 & 34.19, 34.20 & 34.01, 35.00 & 34.32, 34.93 \\
-random partition, $b$-quark boundary & 32.6, 28.3 & 33.68, 32.86 & 34.82, 34.11 & 35.27, 34.60 \\
-random partition, random flavor boundary & 29.8, 31.6 & 33.3, 34.8 & 34.79, 35.16 & 34.99, 35.51 \\
+\Kres{} classes, mass regression & 34.7, 31.7 & 34.0, 33.9 & 34.6, 35.5 & 34.9, 35.6 \\
+\Kcoarse{} classes, mass regression & 33.7, 32.4 & 33.5, 33.9 & 34.5, 35.6 & 34.7, 36.3 \\
+random partition, no flavor boundary & 26.4, 27.2 & 34.2, 34.2 & 34.0, 35.0 & 34.3, 34.9 \\
+random partition, $b$-quark boundary & 32.6, 28.3 & 33.7, 32.9 & 34.8, 34.1 & 35.3, 34.6 \\
+random partition, random flavor boundary & 29.8, 31.6 & 33.3, 34.8 & 34.8, 35.2 & 35.0, 35.5 \\
 random partitions (all five) & 28.9\,$\pm$\,1.8 & 33.0\,$\pm$\,1.4 & 33.7\,$\pm$\,1.5 & 34.0\,$\pm$\,1.4 \\
-randomly initialized network & 25.2\,$\pm$\,1.0 & 30.8\,$\pm$\,0.4 & 31.9\,$\pm$\,1.2 & 31.6\,$\pm$\,0.8 \\
+randomly initialized network & 25.2\,$\pm$\,1.0 & 30.8\,$\pm$\,0.4 & 31.9\,$\pm$\,1.2 & 31.6\,$\pm$\,0.8 \\*
 randomly initialized network, BatchNorm recomputed & 24.7\,$\pm$\,2.0 & 29.7\,$\pm$\,0.5 & 30.5\,$\pm$\,0.6 & 30.7\,$\pm$\,0.5 \\
 \end{longtable}
 }

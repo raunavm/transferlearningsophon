@@ -36,9 +36,10 @@ APPENDIX = ["VAL", "T:mlst_lrsweep", "T:mlst_fill", "T:mlst_mlp", "T:mlst_bn", "
             "F10a-mass", "T:mlst_sculpt"]
 
 # the gallery captions are plain text; typeset their physics notation
-TEX = [("X→bb̄", r"$X\to b\bar b$"), ("X→cc̄", r"$X\to c\bar c$"), ("X→qq̄", r"$X\to q\bar q$"),
+TEX = [("X→YY→bb̄qq", r"$X\to YY\to b\bar bqq$"), ("cc̄qq", r"$c\bar cqq$"), ("X→bc", r"$X\to bc$"),
+       ("Jensen-Shannon", "Jensen--Shannon"), ("X→bb̄", r"$X\to b\bar b$"), ("X→cc̄", r"$X\to c\bar c$"), ("X→qq̄", r"$X\to q\bar q$"),
        ("H→bb̄", r"$H\to b\bar b$"), ("Z→qq̄", r"$Z\to q\bar q$"), ("W→qq′", r"$W\to qq'$"), ("X→bs", r"$X\to bs$"),
-       ("X→ee", r"$X\to ee$"), ("X→μμ", r"$X\to\mu\mu$"), ("X→bb", r"$X\to b\bar b$"),
+       ("X→ee", r"$X\to ee$"), ("X→μμ", r"$X\to\mu\mu$"), ("μμ", r"$\mu\mu$"), ("X→bb", r"$X\to b\bar b$"),
        ("cc̄", r"$c\bar c$"), ("bb̄", r"$b\bar b$"),
        ("r = m/m_gen", r"$r = m/m_{\mathrm{gen}}$"), ("sigma_r", r"$\sigma_r$"), ("eps_B", r"$\varepsilon_B$"),
        ("1 - g_QCD", r"$1-g_{\mathrm{QCD}}$"), ("16-84%", r"16--84\%"), ("20-500 GeV", r"20--500~GeV"),
@@ -90,7 +91,8 @@ def figure(pid: str, rec: dict, src: pathlib.Path) -> str:
 NO_TEXT = [(", equation~(\\ref{eq:ratio}), to", " to"), (" of equation~(\\ref{eq:ratio}),", ","),
            (" of equation~(\\ref{eq:ratio}) at", " at"), (" of equation~(\\ref{eq:resolution}),", ","),
            (" of equation~(\\ref{eq:discr}).", "."), (" (equation~(\\ref{eq:cut}))", ""),
-           ("$\\nmin$", "\\MlstMinBkgPass{}")]
+           ("$\\nmin$", "\\MlstMinBkgPass{}"), ("Published rows from the tables cited", "Published rows from the original papers"),
+           ("Published rows (exp inputs) from the tables cited", "Published rows (exp inputs) from the original papers")]
 CITE = re.compile(r"~?\\cite(\[[^\]]*\])?\{[^}]*\}")
 
 

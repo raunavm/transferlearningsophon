@@ -1,10 +1,10 @@
 \begin{center}
 \small
 \begin{minipage}{\linewidth}
-\captionof{table}{Area under the curve of each JetClass class against the other nine at one million training jets, for every configuration. Upper part: after fine-tuning, with the network trained from scratch. Lower part: linear probes on the frozen network, with the randomly initialized network whose BatchNorm statistics are recomputed. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
+\captionof{table}{Area under the curve of each JetClass class against the other nine at one million training jets, for every configuration. Upper part: after fine-tuning, with the network trained from scratch. Lower part: linear probes on the frozen network, with the randomly initialized network whose BatchNorm statistics are recomputed. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, named by the pretraining seed it shares with the \Kfull-class run of that seed. The randomly initialized network: three initializations. From scratch: three training seeds.}
 \label{tab:jc1_class_auc}
 \end{minipage}
-\par\nopagebreak
+\par\nopagebreak[3]
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cc}
 \toprule
@@ -29,7 +29,7 @@ from scratch & 0.9714\,$\pm$\,0.0002 & 0.9939\,$\pm$\,0.0001 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
 \toprule
@@ -54,7 +54,7 @@ from scratch & 0.9780\,$\pm$\,0.0001 & 0.9727\,$\pm$\,0.0003 & 0.9822\,$\pm$\,0.
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cc}
 \toprule
@@ -79,7 +79,7 @@ from scratch & 0.9990\,$\pm$\,$<$0.0001 & 0.9965\,$\pm$\,0.0001 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
 \toprule
@@ -104,7 +104,7 @@ from scratch & 0.9996\,$\pm$\,$<$0.0001 & 0.9726\,$\pm$\,0.0005 & 0.9541\,$\pm$\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cc}
 \toprule
@@ -129,7 +129,7 @@ randomly initialized network, BatchNorm recomputed & 0.850\,$\pm$\,0.007 & 0.855
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
 \toprule
@@ -154,7 +154,7 @@ randomly initialized network, BatchNorm recomputed & 0.7793\,$\pm$\,0.0018 & 0.8
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cc}
 \toprule
@@ -179,7 +179,7 @@ randomly initialized network, BatchNorm recomputed & 0.906\,$\pm$\,0.017 & 0.929
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
 \toprule

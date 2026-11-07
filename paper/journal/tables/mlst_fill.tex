@@ -1,10 +1,10 @@
 \begin{center}
 \small
 \begin{minipage}{\linewidth}
-\captionof{table}{The three substitutions of the missing inputs (zero, the training mean, random draws of a real particle) for every configuration, at the largest training set. Upper part: relative drop in JetClass-II accuracy (per cent) when the slots the top (\FillTopNZero{}) or the quark/gluon (\FillQgNZero{}) data lack are substituted, against the same model with every input. Lower part: $R_{30}$ of the linear probe on top and quark/gluon jets under each substitution; the model with kinematic inputs only has nothing missing. The substitution chosen on validation is \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon. The best substitution of each row and data set is in bold. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
+\captionof{table}{The three substitutions of the missing inputs (zero, the training mean, random draws of a real particle) for every configuration, at the largest training set. Upper part: relative drop in JetClass-II accuracy (percent) when the slots the top (\FillTopNZero{}) or the quark/gluon (\FillQgNZero{}) data lack are substituted, against the same model with every input. Lower part: $R_{30}$ of the linear probe on top and quark/gluon jets under each substitution; the model with kinematic inputs only has nothing missing. The substitution chosen on validation is \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon. The best substitution of each row and data set is in bold. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, named by the pretraining seed it shares with the \Kfull-class run of that seed. The randomly initialized network: three initializations.}
 \label{tab:fill}
 \end{minipage}
-\par\nopagebreak
+\par\nopagebreak[3]
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
 \toprule
@@ -16,21 +16,21 @@ pretraining & zero & mean & draws \\
 \Kres{} classes & 89.0\,$\pm$\,0.9\% & 87.8\,$\pm$\,0.7\% & \textbf{85.89\,$\pm$\,0.11\%} \\
 \Kmid{} classes & 87.81\,$\pm$\,0.28\% & 86.7\,$\pm$\,0.9\% & \textbf{83.17\,$\pm$\,0.29\%} \\
 \Kcoarse{} classes & 86.7\,$\pm$\,0.7\% & 86.1\,$\pm$\,0.8\% & \textbf{81.4\,$\pm$\,0.5\%} \\
-\Kres{} classes, mass regression & 89.20, 88.29\% & 88.47, 87.78\% & \textbf{85.35, 85.37\%} \\
-\Kcoarse{} classes, mass regression & 84.8, 87.4\% & 85.93, 86.89\% & \textbf{79.1, 81.7\%} \\
+\Kres{} classes, mass regression & 89.2, 88.3\% & 88.5, 87.8\% & \textbf{85.4, 85.4\%} \\
+\Kcoarse{} classes, mass regression & 84.8, 87.4\% & 85.9, 86.9\% & \textbf{79.1, 81.7\%} \\
 random partition 1, seed 1 & 90.2\% & 88.6\% & \textbf{85.7\%} \\
 random partition 2, seed 2 & 90.4\% & 88.8\% & \textbf{85.9\%} \\
 random partition 3, seed 1 & 90.8\% & 89.5\% & \textbf{86.2\%} \\
 random partition 4, seed 2 & 89.9\% & 88.7\% & \textbf{87.1\%} \\
 random partition 5, seed 2 & 89.5\% & 89.7\% & \textbf{86.1\%} \\
-random partition, no flavor boundary & 88.88, 88.46\% & 88.3, 87.0\% & \textbf{83.26, 83.89\%} \\
-random partition, $b$-quark boundary & 87.80, 87.65\% & 88.9, 86.9\% & \textbf{84.44, 85.21\%} \\
-random partition, random flavor boundary & 89.58, 90.28\% & 89.44, 89.66\% & \textbf{84.94, 85.58\%} \\
+random partition, no flavor boundary & 88.9, 88.5\% & 88.3, 87.0\% & \textbf{83.3, 83.9\%} \\
+random partition, $b$-quark boundary & 87.8, 87.6\% & 88.9, 86.9\% & \textbf{84.4, 85.2\%} \\
+random partition, random flavor boundary & 89.6, 90.3\% & 89.4, 89.7\% & \textbf{84.9, 85.6\%} \\
 randomly initialized network, BatchNorm recomputed & \textbf{56.4\,$\pm$\,1.4\%} & 59.8\,$\pm$\,0.8\% & 59.8\,$\pm$\,1.2\% \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
 \toprule
@@ -42,21 +42,21 @@ pretraining & zero & mean & draws \\
 \Kres{} classes & 64\,$\pm$\,5\% & \textbf{49.5\,$\pm$\,0.5\%} & 54.6\,$\pm$\,0.6\% \\
 \Kmid{} classes & 68\,$\pm$\,5\% & \textbf{47.6\,$\pm$\,1.6\%} & 53.5\,$\pm$\,1.4\% \\
 \Kcoarse{} classes & 70.9\,$\pm$\,2.3\% & \textbf{50.0\,$\pm$\,1.0\%} & 51.7\,$\pm$\,0.4\% \\
-\Kres{} classes, mass regression & 61.8, 67.9\% & \textbf{49.7, 52.2\%} & 54.34, 55.13\% \\
-\Kcoarse{} classes, mass regression & 66.7, 65.4\% & \textbf{49.04, 49.64\%} & 50.77, 51.07\% \\
+\Kres{} classes, mass regression & 61.8, 67.9\% & \textbf{49.7, 52.2\%} & 54.3, 55.1\% \\
+\Kcoarse{} classes, mass regression & 66.7, 65.4\% & \textbf{49.0, 49.6\%} & 50.8, 51.1\% \\
 random partition 1, seed 1 & 66.5\% & \textbf{51.6\%} & 56.3\% \\
 random partition 2, seed 2 & 69.5\% & \textbf{52.4\%} & 56.3\% \\
 random partition 3, seed 1 & 63.7\% & \textbf{52.8\%} & 57.8\% \\
 random partition 4, seed 2 & 72.9\% & \textbf{53.4\%} & 55.5\% \\
 random partition 5, seed 2 & 69.5\% & \textbf{53.9\%} & 56.3\% \\
-random partition, no flavor boundary & 62.72, 62.24\% & \textbf{51.87, 51.28\%} & 53.92, 53.44\% \\
-random partition, $b$-quark boundary & 66.2, 62.8\% & \textbf{52.67, 52.80\%} & 55.58, 56.49\% \\
+random partition, no flavor boundary & 62.7, 62.2\% & \textbf{51.9, 51.3\%} & 53.9, 53.4\% \\
+random partition, $b$-quark boundary & 66.2, 62.8\% & \textbf{52.7, 52.8\%} & 55.6, 56.5\% \\
 random partition, random flavor boundary & 67.2, 69.0\% & \textbf{52.9, 51.8\%} & 57.2, 55.4\% \\
 randomly initialized network, BatchNorm recomputed & \textbf{8.7\,$\pm$\,2.6\%} & 10.4\,$\pm$\,1.4\% & 11.4\,$\pm$\,2.1\% \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
 \toprule
@@ -68,22 +68,22 @@ pretraining & zero & mean & draws \\
 \Kres{} classes & 76\,$\pm$\,17 & 64\,$\pm$\,11 & \textbf{199\,$\pm$\,25} \\
 \Kmid{} classes & 57\,$\pm$\,13 & 58\,$\pm$\,14 & \textbf{231\,$\pm$\,8} \\
 \Kcoarse{} classes & 55\,$\pm$\,5 & 55\,$\pm$\,5 & \textbf{255\,$\pm$\,17} \\
-\Kres{} classes, mass regression & 77, 95 & 57, 79 & \textbf{260, 306} \\
-\Kcoarse{} classes, mass regression & 103, 69 & 55, 81 & \textbf{306, 378} \\
+\Kres{} classes, mass regression & 76.5, 94.8 & 57.5, 79.2 & \textbf{260, 306} \\
+\Kcoarse{} classes, mass regression & 103, 68.5 & 55.4, 80.8 & \textbf{306, 378} \\
 random partition 1, seed 1 & 44.2 & 55.5 & \textbf{174} \\
 random partition 2, seed 2 & 60.5 & 53.6 & \textbf{151} \\
 random partition 3, seed 1 & 50.0 & 42.9 & \textbf{164} \\
 random partition 4, seed 2 & 30.2 & 56.5 & \textbf{152} \\
 random partition 5, seed 2 & 73.9 & 45.5 & \textbf{173} \\
-random partition, no flavor boundary & 69.65, 69.34 & 44, 65 & \textbf{262, 243} \\
-random partition, $b$-quark boundary & 73.7, 80.7 & 45, 68 & \textbf{202.5, 211.6} \\
-random partition, random flavor boundary & 65, 41 & 40.9, 33.2 & \textbf{214, 233} \\
+random partition, no flavor boundary & 69.6, 69.3 & 43.5, 65.1 & \textbf{262, 243} \\
+random partition, $b$-quark boundary & 73.7, 80.7 & 45.1, 68.2 & \textbf{203, 212} \\
+random partition, random flavor boundary & 64.5, 40.9 & 40.9, 33.2 & \textbf{214, 233} \\
 randomly initialized network, BatchNorm recomputed & 58\,$\pm$\,13 & \textbf{60.4\,$\pm$\,2.4} & 48.6\,$\pm$\,3.0 \\
 \Kfull{} classes, kinematic inputs only & \multicolumn{3}{c}{231 (nothing missing)} \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
 \toprule
@@ -96,15 +96,15 @@ pretraining & zero & mean & draws \\
 \Kmid{} classes & 61\,$\pm$\,9 & \textbf{70.8\,$\pm$\,1.8} & 69.0\,$\pm$\,1.1 \\
 \Kcoarse{} classes & 62\,$\pm$\,7 & \textbf{74.3\,$\pm$\,1.9} & 71.6\,$\pm$\,2.8 \\
 \Kres{} classes, mass regression & 65.4, 61.1 & \textbf{73.9, 70.7} & 70.4, 72.1 \\
-\Kcoarse{} classes, mass regression & 66.01, 65.57 & 68.4, 72.2 & \textbf{71.3, 75.3} \\
+\Kcoarse{} classes, mass regression & 66.0, 65.6 & 68.4, 72.2 & \textbf{71.3, 75.3} \\
 random partition 1, seed 1 & 65.9 & \textbf{69.6} & 66.9 \\
 random partition 2, seed 2 & 59.0 & \textbf{69.3} & 64.6 \\
 random partition 3, seed 1 & 65.2 & \textbf{68.4} & 62.3 \\
 random partition 4, seed 2 & 51.0 & \textbf{64.7} & 61.6 \\
 random partition 5, seed 2 & 54.9 & \textbf{69.6} & 68.2 \\
-random partition, no flavor boundary & 63.1, 66.4 & \textbf{73.9, 71.7} & 71.07, 71.48 \\
-random partition, $b$-quark boundary & 54.6, 59.4 & \textbf{72.52, 72.20} & 70.87, 70.47 \\
-random partition, random flavor boundary & 66, 54 & \textbf{71.2, 72.8} & 71.2, 69.8 \\
+random partition, no flavor boundary & 63.1, 66.4 & \textbf{73.9, 71.7} & 71.1, 71.5 \\
+random partition, $b$-quark boundary & 54.6, 59.4 & \textbf{72.5, 72.2} & 70.9, 70.5 \\
+random partition, random flavor boundary & 65.6, 54.3 & \textbf{71.2, 72.8} & 71.2, 69.8 \\
 randomly initialized network, BatchNorm recomputed & \textbf{54.2\,$\pm$\,2.4} & 52.2\,$\pm$\,0.8 & 52.4\,$\pm$\,0.4 \\
 \bottomrule
 \end{tabular}

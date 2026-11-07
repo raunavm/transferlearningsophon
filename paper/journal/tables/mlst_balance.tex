@@ -1,10 +1,10 @@
 \begin{center}
 \small
 \begin{minipage}{\linewidth}
-\captionof{table}{JetClass-II linear probes with $10^{6}$ training jets on the natural-composition test set and on the class-balanced one: AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
+\captionof{table}{JetClass-II linear probes with $10^{6}$ training jets on the natural-composition test set and on the class-balanced one: AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run of the same seed. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, named by the pretraining seed it shares with the \Kfull-class run of that seed. The randomly initialized network: three initializations.}
 \label{tab:balance}
 \end{minipage}
-\par\nopagebreak
+\par\nopagebreak[3]
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cc}
 \toprule
@@ -16,21 +16,21 @@ pretraining & AUC & $\rho$ \\
 \Kres{} classes & 0.9748\,$\pm$\,0.0003 & 1.049\,$\pm$\,0.014 \\
 \Kmid{} classes & 0.9719\,$\pm$\,0.0006 & 1.171\,$\pm$\,0.024 \\
 \Kcoarse{} classes & 0.9631\,$\pm$\,0.0006 & 1.538\,$\pm$\,0.025 \\
-\Kres{} classes, mass regression & 0.9735, 0.9740 & 1.106, 1.082 \\
-\Kcoarse{} classes, mass regression & 0.9623, 0.9632 & 1.571, 1.530 \\
+\Kres{} classes, mass regression & 0.9735, 0.9740 & 1.11, 1.08 \\
+\Kcoarse{} classes, mass regression & 0.9623, 0.9632 & 1.57, 1.53 \\
 random partition 1, seed 1 & 0.9719 & 1.17 \\
 random partition 2, seed 2 & 0.9719 & 1.17 \\
 random partition 3, seed 1 & 0.9724 & 1.15 \\
 random partition 4, seed 2 & 0.9723 & 1.15 \\
 random partition 5, seed 2 & 0.9720 & 1.16 \\
-random partition, no flavor boundary & 0.9657, 0.9645 & 1.432, 1.477 \\
-random partition, $b$-quark boundary & 0.9698, 0.9701 & 1.260, 1.245 \\
-random partition, random flavor boundary & 0.9698, 0.9698 & 1.259, 1.254 \\
+random partition, no flavor boundary & 0.9657, 0.9645 & 1.43, 1.48 \\
+random partition, $b$-quark boundary & 0.9698, 0.9701 & 1.26, 1.25 \\
+random partition, random flavor boundary & 0.9698, 0.9698 & 1.26, 1.25 \\
 randomly initialized network, BatchNorm recomputed & 0.8525\,$\pm$\,0.0019 & -- \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cc}
 \toprule
@@ -42,16 +42,16 @@ pretraining & AUC & $\rho$ \\
 \Kres{} classes & 0.9796\,$\pm$\,0.0001 & 1.026\,$\pm$\,0.005 \\
 \Kmid{} classes & 0.9756\,$\pm$\,0.0002 & 1.227\,$\pm$\,0.009 \\
 \Kcoarse{} classes & 0.9691\,$\pm$\,0.0004 & 1.557\,$\pm$\,0.019 \\
-\Kres{} classes, mass regression & 0.9791, 0.9794 & 1.053, 1.037 \\
-\Kcoarse{} classes, mass regression & 0.9679, 0.9696 & 1.617, 1.528 \\
+\Kres{} classes, mass regression & 0.9791, 0.9794 & 1.05, 1.04 \\
+\Kcoarse{} classes, mass regression & 0.9679, 0.9696 & 1.62, 1.53 \\
 random partition 1, seed 1 & 0.9776 & 1.13 \\
 random partition 2, seed 2 & 0.9776 & 1.13 \\
 random partition 3, seed 1 & 0.9779 & 1.11 \\
 random partition 4, seed 2 & 0.9778 & 1.12 \\
 random partition 5, seed 2 & 0.9775 & 1.13 \\
-random partition, no flavor boundary & 0.9717, 0.9710 & 1.424, 1.462 \\
-random partition, $b$-quark boundary & 0.9758, 0.9759 & 1.218, 1.212 \\
-random partition, random flavor boundary & 0.9760, 0.9760 & 1.206, 1.208 \\
+random partition, no flavor boundary & 0.9717, 0.9710 & 1.42, 1.46 \\
+random partition, $b$-quark boundary & 0.9758, 0.9759 & 1.22, 1.21 \\
+random partition, random flavor boundary & 0.9760, 0.9760 & 1.21, 1.21 \\
 randomly initialized network, BatchNorm recomputed & 0.866\,$\pm$\,0.004 & -- \\
 \bottomrule
 \end{tabular}

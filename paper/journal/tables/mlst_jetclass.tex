@@ -1,10 +1,10 @@
 \begin{center}
 \small
 \begin{minipage}{\linewidth}
-\captionof{table}{JetClass, in the form of ParT's Table~1: accuracy, AUC averaged over all pairs of classes (one against one, ParT's convention; on JetClass's equal class sizes it equals the one-against-rest average, checked), and for each signal class the rejection of QCD jets at 50\% signal efficiency (99\% for $H\to\ell\nu qq'$, 99.5\% for $t\to b\ell\nu$) on $D_S = g_S/(g_S+g_{\mathrm{QCD}})$ of equation~(\ref{eq:discr}). Published rows: trained from scratch on 2 million jets and scored on ParT's \LitPartJcTestMillion-million-jet test set (ParT on 100 million jets reaches an accuracy of 0.861 and an AUC of 0.9877); ours fine-tuned on one million jets and scored on two million (the AUC on 500{,}000 of them). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs. From scratch: three seeds. Bold: the best value of each column, and every value within one standard deviation of it (the larger of the two; two runs count with their mean). $^\dagger$: fewer than $\nmin$ QCD jets pass in at least one run (equation~(\ref{eq:cut})), so that run's rejection has a counting uncertainty above 22\%; these columns carry no claim.}
+\captionof{table}{JetClass, in the form of ParT's Table~1: accuracy, AUC averaged over all pairs of classes (one against one, ParT's convention; on JetClass's equal class sizes it equals the one-against-rest average, checked), and for each signal class the rejection of QCD jets at 50\% signal efficiency (99\% for $H\to\ell\nu qq'$, 99.5\% for $t\to b\ell\nu$) on $D_S = g_S/(g_S+g_{\mathrm{QCD}})$ of equation~(\ref{eq:discr}). Published rows: trained from scratch on 2 million jets and scored on ParT's \LitPartJcTestMillion-million-jet test set (ParT on 100 million jets reaches an accuracy of 0.861 and an AUC of 0.9877); ours fine-tuned on one million jets and scored on two million (the AUC on 500{,}000 of them). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs. From scratch: three seeds. Bold: the best value of each column, and every value within one standard deviation of it (the larger of the two values' standard deviations; a configuration with two runs is compared by their mean and standard deviation). $^\dagger$: fewer than $\nmin$ QCD jets pass in at least one run (equation~(\ref{eq:cut})), so that run's rejection has a counting uncertainty above 22\%; these values carry no claim and are not bold. $\pm\,0$: the three runs pass the same number of QCD jets.}
 \label{tab:jetclass}
 \end{minipage}
-\par\nopagebreak
+\par\nopagebreak[3]
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{llccc}
 \toprule
@@ -19,13 +19,13 @@ ParT~\cite{part} & 2 M & 0.836 & 0.9834 & 5{,}587 \\
 \multicolumn{5}{l}{\textit{this work (Sophon's network, fine-tuned)}} \\
 from scratch & 1 M & 0.8271\,$\pm$\,0.0012 & 0.9819\,$\pm$\,0.0002 & 4{,}920\,$\pm$\,190 \\
 \Kfull{} classes & 1 M & \textbf{0.8468\,$\pm$\,0.0006} & 0.9854\,$\pm$\,0.0001 & \textbf{6{,}600\,$\pm$\,330} \\
-\Kres{} classes & 1 M & \textbf{0.8475\,$\pm$\,0.0009} & \textbf{0.9856\,$\pm$\,$<$0.0001} & 6{,}060\,$\pm$\,0 \\
+\Kres{} classes & 1 M & \textbf{0.8475\,$\pm$\,0.0009} & \textbf{0.9856\,$\pm$\,$<$0.0001} & 6{,}061\,$\pm$\,0 \\
 \Kmid{} classes & 1 M & 0.8459\,$\pm$\,0.0002 & 0.9853\,$\pm$\,0.0001 & \textbf{6{,}500\,$\pm$\,500} \\
 \Kcoarse{} classes & 1 M & 0.8422\,$\pm$\,0.0005 & 0.9847\,$\pm$\,0.0001 & \textbf{6{,}670\,$\pm$\,220} \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{llcccc}
 \toprule
@@ -46,7 +46,7 @@ from scratch & 1 M & 1{,}580\,$\pm$\,60 & 88.3\,$\pm$\,3.2 & 670\,$\pm$\,40 & 1{
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{llcccc}
 \toprule

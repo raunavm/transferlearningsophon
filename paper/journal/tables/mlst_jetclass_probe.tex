@@ -1,10 +1,10 @@
 \begin{center}
 \small
 \begin{minipage}{\linewidth}
-\captionof{table}{JetClass linear probes on the frozen features, largest training set, in the columns of table~\ref{tab:jetclass} (AUC one against one where the fit records it). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
+\captionof{table}{JetClass linear probes on the frozen features, largest training set, in the columns of table~\ref{tab:jetclass} (AUC as there: on JetClass's equal class sizes the one-against-one and one-against-rest averages coincide). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, named by the pretraining seed it shares with the \Kfull-class run of that seed. The randomly initialized network: three initializations.}
 \label{tab:jetclassprobe}
 \end{minipage}
-\par\nopagebreak
+\par\nopagebreak[3]
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
 \toprule
@@ -32,7 +32,7 @@ randomly initialized network, BatchNorm recomputed & 0.475\,$\pm$\,0.005 & 0.866
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cccc}
 \toprule
@@ -46,21 +46,21 @@ pretraining & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ & $H\to \ell\nu qq'$ \\
 \Kmid{} classes & 440\,$\pm$\,31 & 20.8\,$\pm$\,0.7 & 207\,$\pm$\,13 & 920\,$\pm$\,70 \\
 \Kcoarse{} classes & 294\,$\pm$\,20 & 21.6\,$\pm$\,0.7 & 183\,$\pm$\,12 & 810\,$\pm$\,110 \\
 \Kres{} classes, mass regression & 377, 413 & 19.9, 22.5 & 210, 243 & 901, 957 \\
-\Kcoarse{} classes, mass regression & 287, 261 & 21.90, 22.58 & 169.6, 171.2 & 781, 800 \\
+\Kcoarse{} classes, mass regression & 287, 261 & 21.9, 22.6 & 170, 171 & 781, 800 \\
 random partition 1, seed 1 & 323 & 18.3 & 161 & 557 \\
 random partition 2, seed 2 & 357 & 18.7 & 186 & 667 \\
 random partition 3, seed 1 & 382 & 18.5 & 180 & 617 \\
 random partition 4, seed 2 & 348 & 17.7 & 154 & 662 \\
 random partition 5, seed 2 & 353 & 16.5 & 164 & 610 \\
-random partition, no flavor boundary & 233, 244 & 21.5, 19.2 & 157.4, 154.2 & 683, 712 \\
+random partition, no flavor boundary & 233, 244 & 21.5, 19.2 & 157, 154 & 683, 712 \\
 random partition, $b$-quark boundary & 398, 301 & 20.6, 18.0 & 205, 195 & 722, 690 \\
-random partition, random flavor boundary & 332, 318 & 18.86, 18.80 & 184.7, 174.7 & 660, 685 \\
+random partition, random flavor boundary & 332, 318 & 18.9, 18.8 & 185, 175 & 660, 685 \\
 randomly initialized network & 20.4\,$\pm$\,1.6 & 17.9\,$\pm$\,0.8 & 15.8\,$\pm$\,1.2 & 1.452\,$\pm$\,0.035 \\
 randomly initialized network, BatchNorm recomputed & 13.7\,$\pm$\,1.2 & 15.4\,$\pm$\,0.5 & 13.6\,$\pm$\,0.8 & 2.1\,$\pm$\,0.5 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\par\medskip
+\par\bigskip
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cccc}
 \toprule
@@ -75,14 +75,14 @@ pretraining & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
 \Kcoarse{} classes & 1{,}180\,$\pm$\,310 & 3{,}090\,$\pm$\,280 & 71\,$\pm$\,5 & 68.9\,$\pm$\,2.8 \\
 \Kres{} classes, mass regression & 980, 1{,}183 & 5{,}000, 4{,}878 & 77.9, 72.9 & 69.1, 67.6 \\
 \Kcoarse{} classes, mass regression & 873, 813 & 1{,}923, 2{,}381 & 69.7, 65.8 & 70.9, 68.1 \\
-random partition 1, seed 1 & 847 & 2{,}250 & 67.2 & 56.1 \\
+random partition 1, seed 1 & 847 & 2{,}247 & 67.2 & 56.1 \\
 random partition 2, seed 2 & 664 & 1{,}550 & 71.3 & 57.7 \\
-random partition 3, seed 1 & 1{,}120 & 2{,}020 & 72.4 & 58.7 \\
+random partition 3, seed 1 & 1{,}117 & 2{,}020 & 72.4 & 58.7 \\
 random partition 4, seed 2 & 858 & 2{,}500 & 70.1 & 56.5 \\
-random partition 5, seed 2 & 840 & 2{,}330 & 69.0 & 56.0 \\
+random partition 5, seed 2 & 840 & 2{,}326 & 69.0 & 56.0 \\
 random partition, no flavor boundary & 889, 909 & 1{,}449, 2{,}667 & 65.5, 69.2 & 69.2, 68.2 \\
 random partition, $b$-quark boundary & 837, 1{,}058 & 1{,}724, 2{,}222 & 75.0, 70.6 & 67.8, 66.1 \\
-random partition, random flavor boundary & 1{,}117, 758 & 2{,}083, 1{,}818 & 72.3, 75.0 & 66.29, 65.64 \\
+random partition, random flavor boundary & 1{,}117, 758 & 2{,}083, 1{,}818 & 72.3, 75.0 & 66.3, 65.6 \\
 randomly initialized network & 20.0\,$\pm$\,1.4 & 1.204\,$\pm$\,0.015 & 17.3\,$\pm$\,1.3 & 14.3\,$\pm$\,1.0 \\
 randomly initialized network, BatchNorm recomputed & 23.0\,$\pm$\,1.5 & 2.3\,$\pm$\,0.4 & 13.47\,$\pm$\,0.28 & 11.0\,$\pm$\,0.6 \\
 \bottomrule

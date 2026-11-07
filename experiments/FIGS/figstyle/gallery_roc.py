@@ -437,11 +437,11 @@ PAGES = [
     Page(id="F4", title="Flavor separation for four class pairs",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
-         caption="Background rejection against signal efficiency for four pairs of JetClass-II classes that differ "
-                 "only in flavor, from linear probes on networks pretrained with 188, 162, 43 and 17 classes. The "
-                 "first class named is the signal. Curves are means over three runs and end where fewer than 20 "
-                 "background jets remain; models with fewer at every efficiency are named in the panel. In (a, b) the "
-                 "three finest label sets nearly coincide.",
+         caption="Background rejection against signal efficiency for four pairs of JetClass-II classes differing only "
+                 "in flavor, (a) X→bb̄ vs cc̄, (b) X→YY→bb̄qq vs cc̄qq, (c) X→bc vs bq, cs, (d) X→ee vs μμ (signal "
+                 "first), from linear probes on networks pretrained with 188, 162, 43 and 17 classes. Means over "
+                 "three runs; curves end where fewer than 20 background jets remain; a model with no curve is named in "
+                 "its panel. In (a, b) the three finest label sets nearly coincide.",
          differs="Four panels, not one, for four class pairs. Four solid curves, not fifteen in mixed line styles (PI "
                  "limit), at 1.1 pt, not 0.955 pt. The y axis starts at 1, not at the data, with its range set per "
                  "panel. x ticks every 0.2 over 0 to 1, not every 0.1 over about -0.01 to 1.02. Axis words at the axis "
@@ -458,7 +458,7 @@ PAGES = [
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
          caption="Background rejection against signal efficiency for four pairs of JetClass-II classes that differ "
-                 "only in flavor, (d) of QCD jets, from linear probes on networks pretrained on 17-class random "
+                 "only in flavor, (d) QCD bb̄ vs cc̄ in place of X→ee vs X→μμ, from linear probes on networks pretrained on 17-class random "
                  "partitions with no flavor boundary, a b-quark boundary or a random flavor boundary, and on 188 "
                  "classes for reference. The first class named is the signal. Curves are means over two runs (188 "
                  "classes: three) and end where fewer than 20 background jets remain.",
@@ -473,7 +473,7 @@ PAGES = [
          precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
          precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
          caption="Background rejection against signal efficiency after fine-tuning on the full training sets: top "
-                 "tagging, and quark/gluon separation tested on Pythia and Herwig jets. Curves are networks pretrained "
+                 "tagging, and quark/gluon tagging tested on Pythia and Herwig jets. Curves are networks pretrained "
                  "with 188, 162, 43 and 17 classes and the network trained from scratch, each the mean over three "
                  "runs; in (a), dotted, one run of the 188-class model with kinematic inputs only. Curves end where "
                  "fewer than 20 background jets remain. Lower panels: ratio to 188 classes.",
@@ -494,9 +494,10 @@ PAGES = [
          precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
          caption="Background rejection against signal efficiency from linear probes on the full training sets (missing "
                  "inputs filled by random draws on top tagging, by the training mean on quark/gluon), on networks "
-                 "pretrained with 188, 162, 43 and 17 classes, and for reference the network fully trained from "
+                 "pretrained with 188, 162, 43 and 17 classes, and the network fully trained from "
                  "scratch (three runs each). Curves end where fewer than 20 background jets remain. Lower panels: "
-                 "ratio to the 188-class probe; from scratch falls outside it in (a), (b) and partly (c).",
+                 "ratio to the 188-class probe, which from scratch exceeds in (a) top, (b) quark/gluon Pythia and partly (c) "
+                 "Herwig.",
          differs="As F6, with linear probes; the ratio is to the 188-class probe.",
          draw=draw_f6_app),
     Page(id="A3R", title="Every JetClass-II class, per label set",

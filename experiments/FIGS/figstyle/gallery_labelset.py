@@ -563,12 +563,11 @@ PAGES = [
         title="Label granularity, linear probes",
         precedent=HONG,
         precedent_label="Hong Fig. 2",
-        caption="Linear probes on the frozen features against the number of pretraining classes: accuracy on "
-                "class-balanced JetClass-II and on JetClass, and background rejection R30 at 30% signal efficiency on top "
-                "and quark/gluon (Pythia) tagging; log x axes, log y in (c, d). Markers are means over runs; the grey "
-                "line (hierarchy) joins the four label sets. The 17-class random partitions, three with controlled "
-                "flavor boundaries and five plain, are drawn left of 17. The dashed line is training from "
-                "scratch.",
+        caption="Linear probes against the number of pretraining classes: accuracy on class-balanced JetClass-II "
+                "and JetClass, and rejection R30 at 30% signal efficiency on top and quark/gluon (Pythia) tagging, "
+                "missing inputs randomly drawn (top) or at the training mean (quark/gluon); log x axes, log y in (c, d). "
+                "Markers are run means; a grey line joins the label sets. The 17-class random partitions, three with controlled flavor boundaries and five plain, are "
+                "left of 17. The dashed line is training from scratch.",
         differs="Four panels against Hong's one, for the four tasks; Hong has no controls. Round 4: 6.5 cm panels in a "
                 "2x2, a figure legend above them that names every colour, filled markers (probes only in the figure) and a grey line "
                 "for the hierarchy, controls offset left of 17 with their own shapes, and each y range holding the "
@@ -603,7 +602,7 @@ PAGES = [
                 "the 188 classes of class-balanced JetClass-II, from linear probes. Columns are the 162-, 43- and 17-class label sets "
                 "and the three random partitions with controlled flavor boundaries. Rows are grouped by decay topology, "
                 "with the QCD classes at the bottom. Values are means over runs; red marks an AUC below that of "
-                "the 188-class model. Every class's values are in the data release.",
+                "the 188-class model.",
         differs="Signed values on a diverging RdBu scale symmetric about 0: Blues would hide the sign. Not a confusion "
                 "matrix: rows are classes, columns are models. No numbers in cells: 188 rows cannot hold them. Rows "
                 "named by 15 group labels, since a single class name cannot reach 8 pt at 188 rows; thin lines between "
@@ -675,11 +674,12 @@ PAGES = [
         title="Pretraining against the number of training jets",
         precedent=["2401.13537/fig3.png", "2401.13536/fig1.png"],
         precedent_label="Golling Fig. 3, Vigl Fig. 1 top",
-        caption="Accuracy on class-balanced JetClass-II and on JetClass, and rejection R30 at 30% signal efficiency on "
+        caption="Accuracy on class-balanced JetClass-II and JetClass, and rejection R30 at 30% signal efficiency on "
                 "top and quark/gluon tagging, against the number of training jets: the 188-class model fine-tuned and "
-                "with a linear probe, and a network trained from scratch. Points are means; bands the standard deviation "
-                "over three runs. Fine-tuning on JetClass-II and JetClass starts at 10^4 jets. Stars are published ParT: same "
-                "inputs on JetClass, kinematic only on top, kinematic and particle type on quark/gluon.",
+                "with a linear probe (missing inputs randomly drawn on top, at the training mean on quark/gluon), and from "
+                "scratch. Points are means; bands the standard deviation over three runs. Fine-tuning on JetClass-II and "
+                "JetClass starts at 10^4 jets. Stars: published ParT (JetClass: same inputs; top: kinematic; quark/gluon: "
+                "kinematic and particle type).",
         differs="Four panels, one per task, against Golling's one. Fine-tuned solid and the linear probe dash-dot, both in the "
                 "188-class colour (one model, two uses), and from scratch dark grey dashed, against Golling's green, "
                 "red and blue. Sophon's font; round 3's faint grid at major y ticks, where Golling has none; no legend "

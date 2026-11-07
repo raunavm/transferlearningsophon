@@ -42,14 +42,15 @@ def test_two_runs_print_both_values_to_the_digit_of_their_difference():
     assert M._cell([1.1661, 1.1652], 2, MT.fmt_pm) == "1.166, 1.165"
     assert M._cell([22.515, 22.467], 2, MT.fmt_pm, sep=" and ") == "22.52 and 22.47"
     assert M._cell([0.4123, 0.4161], 2, MT.fmt_pm) == "0.4123, 0.4161"
-    assert M._cell([0.5, 0.5], 2, MT.fmt_pm) == "0.500, 0.500"
+    assert M._cell([0.5, 0.5], 2, MT.fmt_pm) == "0.5000, 0.5000"      # a table column reads alike
 
 
 def test_a_lone_run_prints_three_significant_figures():
     assert M._cell([0.86300], 3, MT.fmt_pm) == r"0.863 \pending{1 of 3}"
     assert M._cell([0.96579654592], 1, MT.fmt_pm) == "0.966"
     assert M._cell([0.0593], 1, MT.fmt_pm, 1e3) == "59.3"
-    assert M._cell([1802.83], 1, MT.fmt_pm) == "1{,}800" and M._cell([42589.4], 1, MT.fmt_pm) == "42{,}600"
+    assert M._cell([1802.83], 1, MT.fmt_pm) == "1{,}803" and M._cell([42589.4], 1, MT.fmt_pm) == "42{,}590"
+    assert M._cell([0.96579654592], 1, MT.fmt_pm, frac=True) == "0.9658"      # an accuracy or AUC
 
 
 def test_an_unconverged_probe_is_marked_and_counted():
@@ -536,7 +537,7 @@ def test_the_mass_table_and_macros_use_the_atlas_resolution_over_all_jets():
     t = M.table_mass(atlas, runs, MT.fmt_pm)
     # T5: the overall resolution and median response (FIGURE_PLAN T5), not the groups
     assert "soft-drop mass & 0.200 & 1.05 \\\\" in t and "sigma" not in t and "0.300" not in t
-    assert M.LABEL["L162_MASS"] + " & 0.150, 0.150 & 1.00, 1.00" in t
+    assert M.LABEL["L162_MASS"] + " & 0.1500, 0.1500 & 1.00, 1.00" in t
     em = _PEm()
     M.mass_macros(em, atlas, runs, None, MT.fmt_pm)
     assert em.m["MlstMassHeadResMassOverUncorr"] == "0.580 and 0.590"
@@ -547,8 +548,8 @@ def test_the_mass_table_and_macros_use_the_atlas_resolution_over_all_jets():
     assert em.m["MlstMassUncorrectedQcd"] == "0.300" and em.m["MlstMassHeadResMassResponse"] == "0.995 and 0.995"
     assert em.m["MlstMassHeadResMassOverUncorrResonant"] == "0.3867 and 0.3933"      # 0.116 / 0.3, 0.118 / 0.3
     d = M.table_mass_detail(atlas, runs, MT.fmt_pm)
-    assert "200--400 & 400--2500" in d and "soft-drop mass & all & " in d and "soft-drop mass & QCD & " in d
-    assert "estimator & pretraining & all & resonant & QCD & all & resonant & QCD" in d
+    assert "200--400 & 400--2500" in d and r"\textit{QCD jets}" in d and "\nsoft-drop mass & " in d
+    assert "jets & all & resonant & QCD & all & resonant & QCD" in d and r"\textit{regression output}" in d
     atlas["mtx-l162-s1"] = _atlas(groomed=0.3, mlp=0.2)
     with pytest.raises(SystemExit, match="groomed"):
         M.table_mass(atlas, runs, MT.fmt_pm)
@@ -1267,9 +1268,9 @@ def test_the_probes_against_size_pool_the_random_partitions_and_add_the_controls
     jc2 = next(ln for ln in t.splitlines() if ln.startswith("random partitions (all five)"))
     assert jc2.split(" & ")[1].removesuffix(r" \\") == M._cell(pooled, 5, MT.fmt_pm)
     assert not any(ln.startswith("random partition 1") for ln in t.splitlines())     # pooled, not one by one
-    kin = [ln for ln in t.splitlines() if ln.startswith(M.KIN_ROW)]
-    assert kin == [M.KIN_ROW + " & 133 \\\\"]                                     # top only, three figures
-    assert M.table_probes_n(fits, M._pooled(runs), MT.fmt_pm, ("L188",)).count(M.KIN_ROW) == 0
+    kin = [ln for ln in t.splitlines() if ln.startswith(M.LABEL["KIN"])]
+    assert kin == [M.LABEL["KIN"] + " & 133 \\\\"]                                     # top only, three figures
+    assert M.table_probes_n(fits, M._pooled(runs), MT.fmt_pm, ("L188",)).count(M.LABEL["KIN"]) == 0
 
 
 def test_the_kinematic_model_joins_the_top_rows_of_the_probe_mlp_and_fine_tuning_tables(tmp_path):
@@ -1281,8 +1282,8 @@ def test_the_kinematic_model_joins_the_top_rows_of_the_probe_mlp_and_fine_tuning
     runs = {"L188": ["mtx-l188-s1"]}
     t = M.table_probes(fits, runs, MT.fmt_pm, ("L188",), kin=True)
     lower = t.split("%SPLIT%")[1]
-    assert lower.count(M.KIN_ROW) == 1 and t.split("%SPLIT%")[0].count(M.KIN_ROW) == 0
-    assert M.KIN_ROW + " & 0.916 & 0.971 & 94.2 & 231 & " + " & ".join(["--"] * 8) + r" \\" in lower
+    assert lower.count(M.LABEL["KIN"]) == 1 and t.split("%SPLIT%")[0].count(M.LABEL["KIN"]) == 0
+    assert M.LABEL["KIN"] + " & 0.9163 & 0.9713 & 94.2 & 231 & " + " & ".join(["--"] * 8) + r" \\" in lower
     # the MLP probe: the kinematic-only model is in fits_v4_mlp alone (top); a top cell there never replaces
     # fits_v3_mlp2's for a model that has one
     for d, m, cells in (("fits_v3_mlp2", "mtx-l188-s1", {"top": {"auc": 0.96, "r30": 200.0, "r30_is_bound": False}}),
@@ -1293,9 +1294,9 @@ def test_the_kinematic_model_joins_the_top_rows_of_the_probe_mlp_and_fine_tuning
     mlp = M.load_mlp(tmp_path)
     assert M._mlp_val(mlp, "mtx-l188-s1", "top") == 0.96 and M._mlp_val(mlp, M.KIN_MODEL, "top", "r30") == 716.0
     t = M.table_mlp(mlp, runs, MT.fmt_pm, ("L188",), kin=True)
-    row = next(ln for ln in t.splitlines() if ln.startswith(M.KIN_ROW))
-    assert row == M.KIN_ROW + " & " + " & ".join(["--"] * 5 + ["0.981", "716"] + ["--"] * 4) + r" \\"
-    assert t.count(M.KIN_ROW) == 1 and M.KIN_ROW not in M.table_mlp(mlp, runs, MT.fmt_pm, ("L188",))
+    row = next(ln for ln in t.splitlines() if ln.startswith(M.LABEL["KIN"]))
+    assert row == M.LABEL["KIN"] + " & " + " & ".join(["--"] * 5 + ["0.9811", "716"] + ["--"] * 4) + r" \\"
+    assert t.count(M.LABEL["KIN"]) == 1 and M.LABEL["KIN"] not in M.table_mlp(mlp, runs, MT.fmt_pm, ("L188",))
     # fine-tuning: a row after from scratch in the task where it has cells, top
     _ft_tree(tmp_path / "ft", ["l188-s1"])
     _, per, _ = M.load_ft(tmp_path / "ft")
@@ -1303,10 +1304,10 @@ def test_the_kinematic_model_joins_the_top_rows_of_the_probe_mlp_and_fine_tuning
     blocks = M.table_ft(per, runs, MT.fmt_pm, ("L188",)).split(M.BLOCK_SEP)
     topb = next(b for b in blocks if "top, " in b)
     lines = topb.splitlines()
-    assert lines.index(next(ln for ln in lines if ln.startswith(M.KIN_ROW))) == \
+    assert lines.index(next(ln for ln in lines if ln.startswith(M.LABEL["KIN"]))) == \
         lines.index(next(ln for ln in lines if ln.startswith("from scratch"))) + 1
-    assert M.KIN_ROW + " & 92.4 & 1{,}800 \\\\" in topb
-    assert sum(b.count(M.KIN_ROW) for b in blocks) == 1
+    assert M.LABEL["KIN"] + " & 92.4 & 1{,}800 \\\\" in topb
+    assert sum(b.count(M.LABEL["KIN"]) for b in blocks) == 1
 
 
 def test_the_pair_table_gives_the_random_network_both_ways_without_a_ratio():

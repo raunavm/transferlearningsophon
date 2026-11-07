@@ -293,7 +293,7 @@ def _rej_place(task: str) -> int:
 
 def _value_cell(vals: list, col: str, task: str, fmt_pm, two) -> str:
     """mean +- SD (three or more), both values (two) or the value alone (one), at the precision of
-    the field's tables: accuracy three decimals, AUC four, rejection integers (top) or one decimal."""
+    the field's tables: accuracy and AUC four decimals, rejection integers (top) or one decimal."""
     v = [x for x in vals if x is not None]
     if not v:
         return "--"
@@ -301,27 +301,28 @@ def _value_cell(vals: list, col: str, task: str, fmt_pm, two) -> str:
         return fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1)))
     if len(v) == 2:
         return two(v[0], v[1], ", ")
-    place = {"accuracy": 3, "auc": 4}.get(col, _rej_place(task))
+    place = {"accuracy": 4, "auc": 4}.get(col, _rej_place(task))
     return f"{v[0]:,.{place}f}".replace(",", "{,}")
 
 
 def _num_sd(s):
-    """(value, SD) of a printed cell: 'm \\pm sd' -> (m, sd); 'a, b' (two runs) -> (their mean, None)."""
+    """(value, SD) of a printed cell: 'm \\pm sd' -> (m, sd); 'a, b' (two runs) -> (their mean, their SD |a-b|/sqrt 2)."""
     import re
-    t = str(s).replace("{,}", "").replace(r"\textbf{", "")
+    t = str(s).replace("{,}", "").replace(r"\textbf{", "").replace(r"$\geq$", "")
     m = re.match(r"\s*(?:\$\\geq\$)?(-?[\d.]+)\\,\$\\pm\$\\,(?:\$<\$)?([\d.]+)", t)
     if m:
         return float(m.group(1)), float(m.group(2))
     two = re.match(r"\s*(-?[\d.]+), (-?[\d.]+)", t)
     if two:
-        return (float(two.group(1)) + float(two.group(2))) / 2, None
+        a, b = float(two.group(1)), float(two.group(2))
+        return (a + b) / 2, abs(a - b) / math.sqrt(2)
     return _num(t), None
 
 
 def _bold_best(rows: list, ncol: int) -> list:
     """Bold the best value of each column (higher is better for every benchmark metric) and every value
     within one standard deviation of it, the larger of its own and the best one's (C1.14); a
-    configuration with two runs competes with their mean (PI review of the results book, 2026-11-07)."""
+    configuration with two runs competes with their mean and SD (PI review of the results book, 2026-11-07)."""
     best = []
     for j in range(ncol):
         vals = [_num_sd(r[1][j]) for r in rows]
@@ -480,8 +481,9 @@ def _jc_cell(vals, place, fmt_pm, two):
     v = [x for x in vals if x is not None]
     if len(v) >= 3:
         sd = float(np.std(v, ddof=1))
-        body = fmt_pm(float(np.mean(v)), sd)
-        return body + (r"\,$\pm$\,0" if sd == 0 and "pm" not in body else "")   # runs that agree exactly say so
+        if sd == 0:     # runs that agree exactly: the value at the column's precision, and say so
+            return f"{v[0]:,.{place}f}".replace(",", "{,}") + r"\,$\pm$\,0"
+        return fmt_pm(float(np.mean(v)), sd)
     if len(v) == 2:
         return two(v[0], v[1], ", ")
     return f"{v[0]:,.{place}f}".replace(",", "{,}") if v else "--"

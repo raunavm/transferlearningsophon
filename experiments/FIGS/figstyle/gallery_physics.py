@@ -702,15 +702,15 @@ F9A_CAPTION = (
     "their axes.")
 F9B_CAPTION = (
     "Median mass response r = m/m_gen (a, b) and resolution sigma_r, half the 15.9-84.1% quantile range of r over its "
-    "median (c, d), of JetClass-II test jets against transverse momentum (a, c; all jets) and generator mass (b, d; "
+    "median (c, d), of JetClass-II test jets against transverse momentum (a, c; all generator masses) and generator mass (b, d; "
     "20-500 GeV): mass regression of the models pretrained on 162 and 17 classes (two runs). Lower panels: ratio to the "
-    "soft-drop mass (black where in range) and signed root square difference (RSD), negative where better. Unlabelled "
-    "axes share the left ones.")
+    "soft-drop mass (black where in range) and signed root square difference (RSD), negative where better. Unlabeled "
+    "axes share the left.")
 A17_CAPTION = (
     "Median mass response r (a, b) and resolution sigma_r (c, d), as in the main-text figure, of {group} JetClass-II "
-    "test jets against transverse momentum (a, c; all jets) and generator mass (b, d; 20-500 GeV): mass regression of "
+    "test jets against transverse momentum (a, c; all generator masses) and generator mass (b, d; 20-500 GeV): mass regression of "
     "the models pretrained on 162 and 17 classes (two runs). Lower panels: ratio to the soft-drop mass (black where in "
-    "range) and signed root square difference (RSD), negative where better. Unlabelled axes share the left ones.")
+    "range) and signed root square difference (RSD), negative where better. Unlabeled axes share the left ones.")
 F10A_CAPTION = (
     "Soft-drop mass distribution of QCD test jets of JetClass-II before any selection (inclusive) and after selections on "
     "1 - g_QCD, one minus the summed QCD score, at QCD efficiencies eps_B of 10% and 1%, for the models pretrained on "
@@ -812,7 +812,7 @@ PAGES = [
     Page("A17-probe", "Mass from frozen features and from the mass output (appendix)", ["ATL-PHYS-PUB-2024-015/fig8.png"],
          "ATLAS 2024-015 Fig. 8",
          "Median mass response r (a, b) and resolution sigma_r (c, d) of JetClass-II test jets against transverse "
-         "momentum (a, c; all jets) and generator mass (b, d; 20-500 GeV): an MLP regressing the mass from the frozen "
+         "momentum (a, c; all generator masses) and generator mass (b, d; 20-500 GeV): an MLP regressing the mass from the frozen "
          "features of the models pretrained on 188, 162, 43 and 17 classes (solid, three runs), and the mass regression "
          "of the 162- and 17-class models (dashed, two runs). Sub-panels as in the main-text mass figure; overlapping "
          "markers agree within their size.",
