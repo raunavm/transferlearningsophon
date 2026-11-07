@@ -12,7 +12,8 @@ extraction in place (an atomic mkdir decides between two) fits the UMAPs and wri
 
   jc1  one JetClass test file per class, every 10th jet; fine-tuned: budget_long/leg2/<m>/N1000000/s1 (K = 10)
   jc2  the class-balanced JetClass-II test set, every 2nd jet (2,458-2,519 of each single-class group, so 2,000
-       per group still holds; every jet would be 3.8M forward passes on the CPU); fine-tuned: the JetClass-II cell
+       per group still holds; extract_features.py runs every jet and keeps every STRIDE-th, so the stride
+       shrinks the cache, not the compute); fine-tuned: the JetClass-II cell
        at 1e6 the paper reports, budget_long/leg_jc2b/<m>/N1000000/s1 where it is DONE, else
        budget/leg_jc2b/<m>/N1000000/s1, chosen in the pod (K = 188); its test config
   top  the top-tagging test set, every 20th jet; fine-tuned: best70/leg_top/<m>/N1200000/s1 (K = 2)
