@@ -1,8 +1,30 @@
 \section{Introduction}\label{sec:intro}
 
+% P0a. Field (PI 2026-11-07: open broad, as EveNet and OmniJet do): pretrain once, adapt to many
+% tasks, across machine learning and the sciences; what transfers is set in pretraining.
+Pretraining a network once on a large dataset and adapting it to many tasks has become a standard way
+to build models in machine learning. Language models pretrained on large text
+corpora~\cite{bert,gptthree} and image networks pretrained on large image
+collections~\cite{mahajan,mae} adapt to new tasks from few labeled examples. The same approach now
+predicts the structure of proteins from their sequence~\cite{esmfold} and analyzes whole collision
+events at particle colliders~\cite{evenet}. Such networks are called foundation
+models~\cite{bommasani}. What a foundation model carries to a new task is decided during pretraining,
+by the data it sees and by what it is trained to predict.
+
+% P0b. Jets: self-supervised and supervised jet foundation models; simulated labels make the label set
+% a free choice on fixed jets.
+In particle physics, foundation models were built first for jets, the collimated sprays of particles
+that quarks and gluons produce at colliders. Some are pretrained without labels, by reconstructing
+masked particles or generating jets~\cite{mpm,omnijet,hepjepa}. Others are trained to classify
+simulated jets~\cite{part,omnilearn,sophon}, and this supervised classification is the reference
+against which the self-supervised objectives are measured~\cite{objectives}. Simulated labels leave a
+choice that labels in most other fields do not. The generator records the exact decay behind every
+jet, so the classes can be made as fine or as coarse as the designer wants, and the same jets can
+carry any of these label sets.
+
 % P1. Physics: boosted heavy particles are identified from their jets; taggers are pretrained on many
 % fine simulated classes that analyses sum into discriminants, and the label sets grow fast.
-A top quark, a $W$, $Z$ or Higgs boson, or a new resonance produced with large momentum at the Large
+The classes name the particle a jet comes from. A top quark, a $W$, $Z$ or Higgs boson, or a new resonance produced with large momentum at the Large
 Hadron Collider~\cite{lhc} decays into quarks or leptons whose showers merge into a single jet.
 Analyses identify the particle from the structure of that
 jet~\cite{larkoski,kogler,cmshbb,cmszprime}. Three properties of the jet carry the identification.
