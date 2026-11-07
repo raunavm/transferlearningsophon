@@ -51,6 +51,8 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
   budget/{budget,lrsweep}_metrics.json  the fixed-budget fine-tuning read-outs (experiments/FT/budget_metrics.py)
   partrepro/<variant>.json         ParT's top-tagging script reproduced (scripts/build_partrepro_jobs.py)
   dup_check/<file>.json            per-jet comparisons of near-identical results (experiments/EVAL/dup_check.py)
+  perf_vs_pt/<task>/<model>.json   performance against jet pT, jc2 (linear probe) and jc1 (fine-tuning)
+  confusion_jc1/<model>.json       the JetClass confusion matrices (experiments/EVAL/perf_vs_pt.py)
   index.json                       {path: sha256} of every file above: the single source the
                                    macros counted over many files cite (mlst_results.py checks it)
 
@@ -196,7 +198,11 @@ def main() -> int:
               (EVAL / "umap_v1", "umap", "*.json"),
               (EVAL / "umap_v2", "umap_v2", "*.json"),     # round 3: frozen and fine-tuned, four tasks
               (EVAL, "head", "input_bn_offsets.json"),
-              (EVAL / "jc2_train", "jc2_train", "counts.json"))   # DesignNTrainSelected (experiments/FT/count_jc2_train.py)     # table tab:inputs (experiments/EVAL/input_bn_offsets.py)
+              (EVAL / "jc2_train", "jc2_train", "counts.json"),   # DesignNTrainSelected (experiments/FT/count_jc2_train.py)     # table tab:inputs (experiments/EVAL/input_bn_offsets.py)
+              # round 3 (2026-11-06): performance against jet pT and the JetClass confusion matrices
+              (EVAL / "perf_vs_pt" / "jc2", "perf_vs_pt/jc2", "*.json"),
+              (EVAL / "perf_vs_pt" / "jc1", "perf_vs_pt/jc1", "*.json"),
+              (EVAL / "confusion_jc1", "confusion_jc1", "*.json"))
         for d, name, pattern in v4:
             for f in sorted(d.glob(pattern)):
                 b = f.read_bytes()
