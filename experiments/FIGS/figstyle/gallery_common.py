@@ -20,8 +20,9 @@ import style_v3 as S  # noqa: E402
 M = P.F._mlst()
 RUNS = M._paper(P.REPO)
 I = P.inputs(M)
+# jc1_ft_ovr: the long-budget JetClass cells once they hold every model (mlst_v4.load_family)
 ROC = {**I["roc"], **{fam: docs for fam in ("jc1_ft_ovr", "jc1_probe_ovr", "top_probe", "qg_probe", "jc2_ft_ovr", "pairs_sib2")
-                      if (docs := M._load(P.DATA / M.V4.ROC_DIR / fam))}}
+                      if (docs := M.V4.load_family(P.DATA, fam))}}
 # the long-budget JetClass-II cells at 1e6 replace the fixed-budget ones of the same model (one recipe per model)
 if (_long := M._load(P.DATA / M.V4.ROC_DIR / "jc2_ft_ovr_long")):
     ROC["jc2_ft_ovr"] = {**ROC.get("jc2_ft_ovr", {}), **_long}

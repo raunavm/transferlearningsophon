@@ -1182,3 +1182,58 @@ def test_the_groomed_mass_agrees_across_files_up_to_rounding_only():
     atlas["c"] = f(0.2128, [0.2287, None])
     with pytest.raises(SystemExit, match="differs between atlas_res files"):
         M._groomed(atlas, "all", "resolution")
+
+
+def test_the_long_budget_jetclass_curves_replace_the_old_ones_only_when_they_hold_every_model(tmp_path):
+    bfb = _load("build_ft_budget_jobs_t", "scripts/build_ft_budget_jobs.py")
+    assert M.V4.JC1_LONG_SCRATCH == tuple(f"s{k}" for k in bfb.SCRATCH_SEEDS)
+    runs = M._pretrained(M._paper(ROOT))
+    assert sorted(M.V4.paper_models()) == sorted(runs) and len(runs) == 27
+    old = {m: {"label_Tbqq": _curve(0.5, sha="o")} for m in runs + [f"scratch-v2-s{k}" for k in (1, 2, 3)]}
+    long = {m: {"label_Tbqq": _curve(0.2, sha="n")} for m in runs + [f"scratch-s{k}" for k in (1, 2, 3)]}
+    for fam in M.V4.JC1_LONG:
+        _roc_tree(tmp_path, old, family=fam)
+        # one model short (a from-scratch seed): the old curves, every one of them
+        _roc_tree(tmp_path, {m: v for m, v in long.items() if m != "scratch-s3"}, family=f"{fam}_long")
+        docs = M.V4.load_family(tmp_path, fam)
+        assert set(docs) == set(old) and all(d["curves"]["label_Tbqq"]["label_sha256"] == "o" for d in docs.values())
+    assert M.V4.load_roc(tmp_path)["jc1_ft"]["mtx-l188-s1"]["curves"]["label_Tbqq"]["cut"]["eps_s"] == 0.5
+    # complete: the long curves replace the old ones whole, the from-scratch seeds under the old reference's names
+    for fam in M.V4.JC1_LONG:
+        _roc_tree(tmp_path, {"scratch-s3": long["scratch-s3"]}, family=f"{fam}_long")
+        docs = M.V4.load_family(tmp_path, fam)
+        assert set(docs) == set(old) and all(d["curves"]["label_Tbqq"]["label_sha256"] == "n" for d in docs.values())
+    roc = M.V4.load_roc(tmp_path)
+    assert "jc1_ft_long" not in roc and roc["jc1_ft"]["scratch-v2-s3"]["curves"]["label_Tbqq"]["cut"]["eps_s"] == 0.2
+    # a family without a long counterpart is read as it is
+    _roc_tree(tmp_path, {"mtx-l188-s1": {"top": _curve(0.1)}}, family="top_ft")
+    _roc_tree(tmp_path, {"mtx-l188-s2": {"top": _curve(0.1)}}, family="top_ft_long")
+    assert set(M.V4.load_family(tmp_path, "top_ft")) == {"mtx-l188-s1"}
+
+
+def test_the_long_budget_jetclass_table_replaces_both_old_trees_only_when_it_holds_every_model(tmp_path):
+    runs = M._paper(ROOT)
+    blk = lambda acc: {"jc1": {"accuracy": acc}}
+    (tmp_path / "curves").mkdir()
+    assert M.jc1_full(tmp_path, runs) is None
+    pre = {m[len("mtx-"):]: {"N1000000": {"s1": blk(0.1)}} for m in M._pretrained(runs)}
+    ref = {M.SCRATCH: {"N1000000": {f"s{k}": blk(0.2) for k in (1, 2, 3)}}}
+    for name, cells in (("best70_leg2", pre), ("ref_v100_jc1_leg2", ref)):
+        (tmp_path / "curves" / f"full_{name}.json").write_text(json.dumps({"cells": cells}))
+    # one from-scratch seed short: the old trees, together
+    long = {**{i: {"N1000000": {"s1": blk(0.3)}} for i in pre},
+            "scratch": {"N1000000": {"s1": blk(0.4), "s2": blk(0.4)}}}
+    f = tmp_path / "curves" / "full_budget_long_leg2.json"
+    f.write_text(json.dumps({"cells": long}))
+    p, r, src = M.jc1_full(tmp_path, runs)
+    assert (p, r, src.name) == (pre, ref, "full_best70_leg2.json")
+    # one paper run short: the same
+    long["scratch"]["N1000000"]["s3"] = blk(0.4)
+    f.write_text(json.dumps({"cells": {k: v for k, v in long.items() if k != "l188-s1"}}))
+    assert M.jc1_full(tmp_path, runs)[2].name == "full_best70_leg2.json"
+    # complete: the long tree alone, its from-scratch cells under SCRATCH, the old reference not read
+    f.write_text(json.dumps({"cells": long}))
+    p, r, src = M.jc1_full(tmp_path, runs)
+    assert src == f and set(p) == set(pre) and p["l188-s1"]["N1000000"]["s1"]["jc1"]["accuracy"] == 0.3
+    assert set(r) == {M.SCRATCH} and set(r[M.SCRATCH]["N1000000"]) == {"s1", "s2", "s3"}
+    assert r[M.SCRATCH]["N1000000"]["s1"]["jc1"]["accuracy"] == 0.4

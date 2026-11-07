@@ -29,6 +29,10 @@ SIB_V4 = "linprobe/fits_v4_sib"
 SIB2_V4 = "linprobe/fits_v4_sib2"     # the same probe scored on every X->ee / X->mumu test jet; replaces SIB_V4
 ROC_DIR = "curves_v2"
 ROC_FAMILIES = ("jc1_ft", "jc1_probe", "pairs", "pairs_sib2", "top_ft", "qg_ft", "jc2_ovr")   # pairs_sib2: every X->ee / X->mumu test jet
+# the long-budget JetClass cells at 1e6 (scripts/build_gallery_data_job.py --mode long-jc1): <family>_long replaces
+# <family> whole once it holds every paper run and these from-scratch seeds (build_ft_budget_jobs.SCRATCH_SEEDS),
+# renamed to the old reference's scratch-v2-s<k>; one recipe per figure
+JC1_LONG, JC1_LONG_SCRATCH = ("jc1_ft", "jc1_ft_ovr"), ("s1", "s2", "s3")
 
 
 def _module(rel: str, name: str):
@@ -412,13 +416,30 @@ LPV_EPS, LPV_CLASSES = _LPV.JC1_EPS_S, _LPV.JC1_CLASSES
 
 
 # ------------------------------------------------------------------ ROC curves (experiments/FT/roc_points.py)
+def paper_models() -> list:
+    return [l.strip() for l in (REPO / "configs/arms/v2_paper_runs.txt").read_text().splitlines()
+            if l.strip() and not l.startswith("#")]
+
+
+def load_family(data: pathlib.Path, fam: str) -> dict:
+    """{model: doc} of curves_v2/<fam>; for a JC1_LONG family the long-budget docs (scratch-s<k> as
+    scratch-v2-s<k>) when they hold every paper run and every JC1_LONG_SCRATCH seed, else the old ones."""
+    docs = _load(data / ROC_DIR / fam)
+    if fam not in JC1_LONG:
+        return docs
+    long = {f"scratch-v2-{m.removeprefix('scratch-')}" if m.startswith("scratch-") else m: d
+            for m, d in _load(data / ROC_DIR / f"{fam}_long").items()}
+    need = set(paper_models()) | {f"scratch-v2-{s}" for s in JC1_LONG_SCRATCH}
+    return long if need <= set(long) else docs
+
+
 def load_roc(data: pathlib.Path) -> dict:
-    """{family: {model: doc}} of curves_v2/<family>/<model>.json; a family with no files has no key.
+    """{family: {model: doc}} of curves_v2/<family>/<model>.json (load_family); a family with no files has no key.
     FATAL when the docs of a family differ in eps_grid, when a doc's min_bkg_pass is not JC1_MIN_BKG,
     or when two models' curves of one key were scored on different jets (label_sha256)."""
     out = {}
     for fam in ROC_FAMILIES:
-        docs = _load(data / ROC_DIR / fam)
+        docs = load_family(data, fam)
         if not docs:
             continue
         grids = {tuple(d["eps_grid"]) for d in docs.values()}

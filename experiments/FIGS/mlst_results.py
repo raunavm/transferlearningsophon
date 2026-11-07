@@ -32,7 +32,7 @@ Inputs, under experiments/FIGS/data/v2/ (experiments/FIGS/pull_mlst_data.py):
   head/atlas_res/<model>.json              ATLAS mass resolution and median response
   head/curves_v2/<model>_sculpting_v2.json, head/<model>_sculpting.json   QCD mass sculpting
   compute/<run>.json                       per epoch: GPU and seconds
-  ft_mlst/*.json, budget/*.json            fine-tuning read-outs; curves/full_*.json  JetClass per class
+  ft_mlst/*.json, budget/*.json            fine-tuning read-outs; curves/full_*.json  JetClass per class (jc1_full)
   bootstrap/<family>/*.json                test-sample bootstrap; partrepro/<variant>.json  ParT on top
   xbx/<signal>/<model>.json, xbx_scratch/<signal>/s<k>.json   X->bb and X->bs
   jc2bal/census.json, jc2_test/counts.json class counts; index.json  {path: sha256}
@@ -2199,6 +2199,25 @@ def _jc1_block(pre: dict, m: str):
     return pre.get(m[len("mtx-"):], {}).get(JC1_N, {}).get("s1", {}).get("jc1")
 
 
+def jc1_full(data: pathlib.Path, runs: dict):
+    """(pre, ref, source) of ft_curves.py's JetClass cells at 1e6: the long-budget tree's
+    (curves/full_budget_long_leg2.json, its from-scratch cells under SCRATCH) once it holds every paper run
+    and every from-scratch seed of V4.JC1_LONG_SCRATCH, else the old pretrained and from-scratch trees
+    (one recipe per table); None when neither is pulled."""
+    f = data / "curves" / "full_budget_long_leg2.json"
+    if f.exists():
+        cells = json.loads(f.read_text())["cells"]
+        pre, ref = {i: v for i, v in cells.items() if i != "scratch"}, {SCRATCH: cells.get("scratch", {})}
+        if all(_jc1_block(pre, m) for m in _pretrained(runs)) and \
+                all(ref[SCRATCH].get(JC1_N, {}).get(s, {}).get("jc1") for s in V4.JC1_LONG_SCRATCH):
+            return pre, ref, f
+    full = [data / "curves" / f"full_{t}.json" for t in ("best70_leg2", "ref_v100_jc1_leg2")]
+    if not all(f.exists() for f in full):
+        return None
+    pre, ref = (json.loads(f.read_text())["cells"] for f in full)
+    return pre, ref, full[0]
+
+
 def _jc1_rej(pre: dict, m: str, c: str):
     b = _jc1_block(pre, m)
     return None if b is None else b["per_class"][c]["rejection"]
@@ -3528,7 +3547,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     mlp_nat = load_mlp_natural(data)
     per_class_macros(em, fits, runs, root, index, fmt_pm, native_tex, mlp_nat)
     out["data_release/jetclass2_per_class.csv"] = per_class_csv(fits, runs, root)
-    jc1_ft_ovr, jc1_probe_ovr = _load(data / V4.ROC_DIR / "jc1_ft_ovr"), _load(data / V4.ROC_DIR / "jc1_probe_ovr")
+    jc1_ft_ovr, jc1_probe_ovr = V4.load_family(data, "jc1_ft_ovr"), _load(data / V4.ROC_DIR / "jc1_probe_ovr")
     if jc1_ft_ovr and jc1_probe_ovr:
         out["tables/mlst_jc1_class_auc.tex"] = _float("jc1_class_auc", table_jc1_class_auc(jc1_ft_ovr, jc1_probe_ovr, runs, fmt_pm), True)
     out["tables/mlst_per_class.tex"] = _longtable("per_class", table_per_class(fits, runs, fmt_pm, root, native_tex))
@@ -3638,9 +3657,9 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         missing.append("input-normalization offsets of mtx-l188-s1 -- experiments/FIGS/data/v2/head/input_bn_offsets.json")
     else:
         input_bn_macros(em, json.loads(offsets.read_text())["offsets"], offsets)
-    full = [data / "curves" / f"full_{t}.json" for t in ("best70_leg2", "ref_v100_jc1_leg2")]
-    if all(f.exists() for f in full):
-        pre, ref = (json.loads(f.read_text())["cells"] for f in full)
+    full = jc1_full(data, runs)
+    if full:
+        pre, ref, src = full
         pooled = {**runs, "RAND": [m for a in RAND for m in runs[a]]}
         lab = {**LABEL, "RAND": "random partitions (all five)"}
         blk = next((b for c in pre.values() for b in [c.get(JC1_N, {}).get("s1", {}).get("jc1")] if b), None)
@@ -3655,7 +3674,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
             pre, ref, pooled, MAIN + MASS + ("RAND",) + FLAV, lab, SCRATCH, 1_000_000, fmt_pm, _two, literature=False), True)
         out["tables/mlst_jetclass_nbkg.tex"] = _float("jetclass_nbkg", V4.table_jetclass_nbkg(
             pre, ref, pooled, MAIN + MASS + ("RAND",) + FLAV, lab, SCRATCH, 1_000_000), True)
-        jetclass_macros(em, pre, runs, full[0], fmt_pm, words)
+        jetclass_macros(em, pre, runs, src, fmt_pm, words)
         out["tables/mlst_rand_prong.tex"] = _float("rand_prong", table_rand_prong(pre, runs, root, fmt_pm), True)
     else:
         missing.append("JetClass per-class curves -- experiments/FIGS/data/v2/curves/full_*.json")

@@ -6,6 +6,7 @@
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.61
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode sib2   # every X->ee / X->mumu test jet
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode long   # the long-budget JetClass-II cells
+    python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode long-jc1   # the long-budget JetClass cells
 """
 import argparse
 import pathlib
@@ -89,6 +90,8 @@ spec:
 
 SIB2 = "/data/results/eval/v2_linprobe_bal/fits_v4_sib2"      # build_jc2bal_jobs.sibx_spec
 LONG_JC2_TREE = "/data/results/ft_v2/budget_long/leg_jc2b"
+LONG_JC1_TREE = "/data/results/ft_v2/budget_long/leg2"
+LONG_JC1_FULL = "/data/results/ft_v2/curves/full_budget_long_leg2.json"   # beside ft_curves.py's full_best70_leg2.json
 
 
 def calls_sib2() -> str:
@@ -110,18 +113,43 @@ def calls_long() -> str:
     return "\n".join("          " + c for c in out)
 
 
-def _long_inits() -> list:
+def calls_long_jc1() -> str:
+    """The long-budget JetClass cells at 1e6 (every paper run and three seeds from scratch, one tree): ROC curves
+    into curves_v2/jc1_ft_long and jc1_ft_ovr_long, ParT's per-class table into curves/full_budget_long_leg2.json;
+    the readers let them replace the old cells' once they hold every model. Every cell must be DONE first, since
+    ft_curves.py writes its file once."""
+    bfb = _bfb()
+    cells, n = bfb.long_cells("jc1", "1e-3", "1e-3"), bfb.LONG_N
+    inits = " ".join(sorted({c["init"] or "scratch" for c in cells}))
+    out = ["for c in " + " ".join(c["out"] for c in cells)
+           + '; do [ -e "${c}/DONE" ] || { echo "FATAL: ${c} not DONE"; exit 42; }; done']
+    for fam in ("jc1_ft", "jc1_ft_ovr"):
+        out += [f"python3 experiments/FT/roc_points.py ft --family {fam} --tree {LONG_JC1_TREE} --task jc1 --n {n} "
+                f"--inits {inits} --out-dir {ROC}/{fam}_long",
+                f"echo done > {ROC}/{fam}_long/DONE"]
+    out.append(f"[ -e {LONG_JC1_FULL} ] || python3 experiments/FT/ft_curves.py cells --tree {LONG_JC1_TREE} --task jc1 "
+               f"--n {n} --out {LONG_JC1_FULL}")
+    return "\n".join("          " + c for c in out)
+
+
+def _bfb():
     import importlib.util
     spec = importlib.util.spec_from_file_location("build_ft_budget_jobs", ROOT / "scripts/build_ft_budget_jobs.py")
     bfb = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(bfb)
+    return bfb
+
+
+def _long_inits() -> list:
+    bfb = _bfb()
     cells = bfb.long_cells("jc2b", "1e-3", "1e-3") + bfb.long_ctrl_cells("1e-3")
     return sorted({c["init"] or "scratch" for c in cells if "mass" not in c["init"]})
 
 
 MODES = {"": (calls, "gallery-data-raunav", "top_probe qg_probe jc2_ft_ovr"),
          "sib2": (calls_sib2, "gallery-data-sib2-raunav", "pairs_sib2"),
-         "long": (calls_long, "gallery-data-long-raunav", "jc2_ft_ovr_long")}
+         "long": (calls_long, "gallery-data-long-raunav", "jc2_ft_ovr_long"),
+         "long-jc1": (calls_long_jc1, "gallery-data-long-jc1-raunav", "jc1_ft_long jc1_ft_ovr_long")}
 
 
 def main() -> int:

@@ -398,3 +398,29 @@ def test_an_output_outside_the_curves_tree_is_refused(tmp_path):
     assert RP.out_dir(RP.OUT_ROOT / "pairs_sib2", "pairs", None) == RP.OUT_ROOT.resolve() / "pairs_sib2"
     with pytest.raises(SystemExit):
         RP.out_dir(RP.OUT_ROOT / "pairsx", "pairs", None)
+
+
+def test_the_long_jetclass_job_writes_what_the_readers_prefer_once_every_cell_is_done():
+    """scripts/build_gallery_data_job.py --mode long-jc1: every long-budget JetClass cell DONE first, then the
+    curves of mlst_v4.JC1_LONG into <family>_long and ft_curves.py's table into a new file."""
+    GD = _load("build_gallery_data_job", "scripts/build_gallery_data_job.py")
+    fn, name, dirs = GD.MODES["long-jc1"]
+    assert name == "gallery-data-long-jc1-raunav" and dirs.split() == [f"{f}_long" for f in V4.JC1_LONG]
+    lines = [ln.strip() for ln in fn().splitlines()]
+    runs = [r.removeprefix("mtx-") for r in V4.paper_models()]
+    cells = lines[0].removeprefix("for c in ").split(";")[0].split()
+    assert sorted(cells) == sorted([f"{GD.LONG_JC1_TREE}/{r}/N1000000/s1" for r in runs]
+                                   + [f"{GD.LONG_JC1_TREE}/scratch/N1000000/s{k}" for k in (1, 2, 3)])
+    assert len(cells) == 30 and 'exit 42' in lines[0]
+    inits = " ".join(sorted(runs + ["scratch"]))
+    for i, fam in enumerate(V4.JC1_LONG):
+        call, done = lines[1 + 2 * i], lines[2 + 2 * i]
+        assert call == (f"python3 experiments/FT/roc_points.py ft --family {fam} --tree {GD.LONG_JC1_TREE} --task jc1 "
+                        f"--n 1000000 --inits {inits} --out-dir {GD.ROC}/{fam}_long")
+        assert done == f"echo done > {GD.ROC}/{fam}_long/DONE"
+        assert RP.out_dir(pathlib.Path(f"{GD.ROC}/{fam}_long"), fam, None).name == f"{fam}_long"
+        assert RP.FT_TASK[fam] == "jc1"
+    assert GD.LONG_JC1_FULL == "/data/results/ft_v2/curves/full_budget_long_leg2.json"
+    assert lines[-1] == (f"[ -e {GD.LONG_JC1_FULL} ] || python3 experiments/FT/ft_curves.py cells --tree "
+                         f"{GD.LONG_JC1_TREE} --task jc1 --n 1000000 --out {GD.LONG_JC1_FULL}")
+    assert len(lines) == 6
