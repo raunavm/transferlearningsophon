@@ -3,8 +3,8 @@
 class token of the 188- and 17-class models on each task's test jets, frozen and after fine-tuning on
 that task, with experiments/EVAL/extract_features.py (one loader worker; the frozen model reads the
 jets with the fine-tuned model's data config, so the rows align), then
-experiments/EVAL/umap_class_token.py, into /data/results/eval/<out-name>/. umap-learn is pinned here
-(the image has none).
+experiments/EVAL/umap_class_token.py, into /data/results/eval/<out-name>/. umap-learn and pyarrow are pinned
+here (the image has neither).
 
   jc1  one JetClass test file per class, every 10th jet; fine-tuned: budget_long/leg2/<m>/N1000000/s1 (K = 10)
   jc2  the class-balanced JetClass-II test set, every jet (5,000 per class); fine-tuned: the JetClass-II cell
@@ -26,6 +26,8 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "umap"
 UMAP_PIN = "umap-learn==0.5.7"
+PYARROW_PIN = "pyarrow==25.0.1"   # weaver reads the parquet test sets (JetClass-II, top, q/g) through it and the image
+# has none: umap-v2 died on it at the first JetClass-II read, 2026-11-06
 MODELS = (("l188-s1", 188), ("r16q1-s1", 17))
 FT = "/data/results/ft_v2"
 LP_OLD, LP_BAL = "/data/results/eval/v2_linprobe", "/data/results/eval/v2_linprobe_bal"
@@ -78,7 +80,8 @@ clone () {{ mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q -
 retry clone || exit 1
 cd /workspace/tls
 git rev-parse HEAD
-retry pip install --no-cache-dir -q {UMAP_PIN} || exit 1
+retry pip install --no-cache-dir -q {UMAP_PIN} {PYARROW_PIN} || exit 1
+python3 -c "import pyarrow" || {{ echo "FATAL: pyarrow does not import"; exit 1; }}
 python3 experiments/FT/gpu_probe.py || {{ sleep 120; exit 43; }}
 [ ! -f {out}/DONE ] || {{ echo "{out} done"; exit 0; }}
 USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)

@@ -97,7 +97,8 @@ def test_the_umap_job_reads_both_models_frozen_and_fine_tuned_on_every_task():
     c = d["spec"]["template"]["spec"]["containers"][0]
     a = c["args"][0]
     assert d["metadata"]["name"] == "umap-v2-raunav" and d["spec"]["backoffLimit"] == 1
-    assert c["resources"]["limits"]["nvidia.com/gpu"] == "1" and "pip install --no-cache-dir -q umap-learn==0.5.7" in a
+    assert c["resources"]["limits"]["nvidia.com/gpu"] == "1" and "pip install --no-cache-dir -q umap-learn==0.5.7 pyarrow==25.0.1" in a
+    assert 'python3 -c "import pyarrow" || ' in a        # weaver reads the parquet test sets through it
     assert '[ ! -f /data/results/eval/umap_v2/DONE ]' in a and '[ "${USED}" -le 85 ]' in a and "retry clone" in a
     assert "ry-gpu-04.sdsc.optiputer.net" in yaml.safe_dump(d["spec"]["template"]["spec"]["affinity"])
     jc2b = "configs/data/JetClassII_base.yaml 1 /data/finetune/jc2_bal/test.parquet"
