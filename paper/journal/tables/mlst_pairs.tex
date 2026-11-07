@@ -1,7 +1,7 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Binary linear probes between pairs of JetClass-II classes: the AUC and the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run of the same seed. $^{\dagger}$: the label set merges the two sides into one class; $^{\ddagger}$: it merges the first side with part of the second. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays; every label set but the \Kfull-class one merges all QCD classes. The $X\to ee$ vs $\mu\mu$ probe uses the jets of the two classes in the class-balanced sets (\MlstPairEemmNTrain{} training jets, \MlstPairEemmNTestPerSide{} test jets per side).}
+\caption{Binary linear probes between pairs of JetClass-II classes: the AUC and the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run of the same seed. $^{\dagger}$: the label set merges the two sides into one class; $^{\ddagger}$: it merges the first side with part of the second. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays; every label set but the \Kfull-class one merges all QCD classes. The randomly initialized network, as initialized and with its BatchNorm statistics recomputed, has no label set and no $\rho$. The $X\to ee$ vs $\mu\mu$ probe uses the jets of the two classes in the class-balanced sets (\MlstPairEemmNTrain{} training jets, \MlstPairEemmNTestPerSide{} test jets per side).}
 \label{tab:pairs}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcccccccc}
@@ -24,6 +24,8 @@ random partition 5, seed 2 & 0.927$^{\dagger}$ & 1.24 & 0.996$^{\dagger}$ & 1.67
 random partition, no flavor boundary & 0.882, 0.870$^{\dagger}$ & 2.00, 2.19 & 0.986, 0.969$^{\dagger}$ & 5.9, 13.4 & 0.961, 0.943$^{\dagger}$ & 6.4, 9.4 & 1.0000, 1.0000 & 0.097, 0.010 \\
 random partition, $b$-quark boundary & 0.9103, 0.9091$^{\dagger}$ & 1.518, 1.530 & 0.9957, 0.9959$^{\dagger}$ & 1.837, 1.748 & 0.9909, 0.9912 & 1.510, 1.447 & 1.0000, 1.0000 & 0.0, 1.1 \\
 random partition, random flavor boundary & 0.9096, 0.9100$^{\dagger}$ & 1.530, 1.515 & 0.9940, 0.9924$^{\dagger}$ & 2.58, 3.25 & 0.9863, 0.9860$^{\dagger}$ & 2.272, 2.281 & 1.0000, 1.0000 & 0.0024, 0.0049 \\
+randomly initialized network & 0.6011\,$\pm$\,0.0028 & -- & 0.701\,$\pm$\,0.012 & -- & 0.680\,$\pm$\,0.007 & -- & 0.9995\,$\pm$\,0.0003 & -- \\
+randomly initialized network, BatchNorm recomputed & 0.653\,$\pm$\,0.009 & -- & 0.817\,$\pm$\,0.020 & -- & 0.782\,$\pm$\,0.019 & -- & 1.0000\,$\pm$\,$<$0.0001 & -- \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -49,6 +51,8 @@ random partition 5, seed 2 & 0.979$^{\dagger}$ & 1.60 & 0.986$^{\dagger}$ & 1.19
 random partition, no flavor boundary & 0.944, 0.930$^{\dagger}$ & 4.24, 5.21 & 0.9814, 0.9825$^{\dagger}$ & 1.56, 1.45 & 0.9088, 0.9122$^{\dagger}$ & 1.352, 1.293 \\
 random partition, $b$-quark boundary & 0.9795, 0.9795$^{\dagger}$ & 1.561, 1.532 & 0.9855, 0.9854$^{\dagger}$ & 1.212, 1.213 & 0.9166, 0.9171$^{\dagger}$ & 1.237, 1.220 \\
 random partition, random flavor boundary & 0.9721, 0.9707$^{\dagger}$ & 2.124, 2.189 & 0.9848, 0.9845$^{\dagger}$ & 1.277, 1.286 & 0.9204, 0.9211$^{\dagger}$ & 1.179, 1.162 \\
+randomly initialized network & 0.655\,$\pm$\,0.005 & -- & 0.742\,$\pm$\,0.008 & -- & 0.656\,$\pm$\,0.005 & -- \\
+randomly initialized network, BatchNorm recomputed & 0.765\,$\pm$\,0.016 & -- & 0.829\,$\pm$\,0.012 & -- & 0.6821\,$\pm$\,0.0003 & -- \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

@@ -172,7 +172,8 @@ def test_the_fine_tuning_tables_read_one_seed_per_run_and_the_scratch_seeds(tmp_
     assert per["top"]["l188-s2"][1000][0]["auc"] == 0.91 and per["qg_herwig"]["l188-s1"][1000][0]["auc"] == 0.9
     runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"]}
     t = M.table_ft(per, runs, MT.fmt_pm, ("L188",))
-    assert t.count("%SPLIT%") == len(M.FT_TASKS) - 1 and r"\pending{2 of 3}" in t and "from scratch" in t
+    assert t.count(M.BLOCK_SEP) == len(M.FT_TASKS) - 1 and r"\pending{2 of 3}" in t and "from scratch" in t
+    assert r"\begin{longtable}" in t and r"\label{tab:ft}" in t and "%SPLIT%" not in t
     assert "1{,}200{,}000" in t and "1{,}600{,}000" in t
     # each task in its own metric (PI 2026-11-02, no 1 - AUC outside JetClass-II): JetClass-II the AUC
     # (0.90 and 0.91), top/q-g R30 (300 x AUC: 270 and 273)
@@ -225,7 +226,9 @@ def test_a_task_not_yet_read_out_prints_a_marker_and_the_others_print(tmp_path):
     tag, per, absent = M.load_ft(tmp_path)
     assert tag == "best70" and absent == ["jc1"] and per["jc1"] == {}
     t = M.table_ft(per, {"L188": ["mtx-l188-s1"]}, MT.fmt_pm, ("L188",))
-    assert "JetClass & \\pending{not yet read out}" in t and t.count("%SPLIT%") == len(M.FT_TASKS) - 1
+    jc1 = t.split(M.BLOCK_SEP)[2]
+    assert "{JetClass} \\\\" in jc1 and r"training jets & \pending{not yet read out}" in jc1
+    assert t.count(M.BLOCK_SEP) == len(M.FT_TASKS) - 1
     assert "from scratch" in t
 
 
@@ -1149,16 +1152,16 @@ def test_the_jetclass2_fine_tuning_block_has_the_ratio_column_at_one_million_jet
     _ft_tree(tmp_path, ["l188-s1", "r16q1-s1", "l188-s2"])
     _, per, _ = M.load_ft(tmp_path)
     t = M.table_ft(per, {"L188": ["mtx-l188-s1"], "R16_Q1": ["mtx-r16q1-s1"]}, MT.fmt_pm, ("L188", "R16_Q1"))
-    jc2, jc1 = t.split("%SPLIT%")[0], t.split("%SPLIT%")[2]
+    jc2, jc1 = t.split(M.BLOCK_SEP)[0], t.split(M.BLOCK_SEP)[2]
     assert r"$\rho$, $10^{6}$ jets" in jc2 and r"\rho" not in jc1
     # (1 - 0.91) / (1 - 0.90) run by run; the 188-class row 1; from scratch has none
     assert r"\Kcoarse{} classes & 0.910 & 0.910 & 0.900 \\" in jc2 and r"\Kfull{} classes & 0.900 & 0.900 & 1 \\" in jc2
-    assert jc2.splitlines()[-3].endswith(r"& -- \\")
+    assert jc2.splitlines()[-1].startswith("from scratch") and jc2.splitlines()[-1].endswith(r"& -- \\")
     # a 188-class run without its 10^6 cell: the 188-class ratio cell says how many runs it rests on
     del per["jc2"]["l188-s2"][1000000]
-    two = M.table_ft(per, {"L188": ["mtx-l188-s1", "mtx-l188-s2"]}, MT.fmt_pm, ("L188",)).split("%SPLIT%")[0]
+    two = M.table_ft(per, {"L188": ["mtx-l188-s1", "mtx-l188-s2"]}, MT.fmt_pm, ("L188",)).split(M.BLOCK_SEP)[0]
     assert r"\Kfull{} classes & 0.900, 0.920 & 0.900 \pending{1 of 2} & 1 \pending{1 of 2} \\" in two
-    none = M.table_ft(per, {"L188": ["mtx-l188-s3"]}, MT.fmt_pm, ("L188",)).split("%SPLIT%")[0]
+    none = M.table_ft(per, {"L188": ["mtx-l188-s3"]}, MT.fmt_pm, ("L188",)).split(M.BLOCK_SEP)[0]
     assert r"\Kfull{} classes & " + " & ".join([r"\pending{no run yet}"] * 3) + r" \\" in none
 
 
@@ -1241,3 +1244,99 @@ def test_the_long_budget_jetclass_table_replaces_both_old_trees_only_when_it_hol
     assert src == f and set(p) == set(pre) and p["l188-s1"]["N1000000"]["s1"]["jc1"]["accuracy"] == 0.3
     assert set(r) == {M.SCRATCH} and set(r[M.SCRATCH]["N1000000"]) == {"s1", "s2", "s3"}
     assert r[M.SCRATCH]["N1000000"]["s1"]["jc1"]["accuracy"] == 0.4
+
+
+def test_the_probes_against_size_pool_the_random_partitions_and_add_the_controls_and_the_kinematic_model():
+    """tab:probesn (2026-11-07): the flavour-controlled partitions (two runs, both values), the five random
+    partitions pooled into one row (mean +- SD over their runs) and the kinematic-only model on top only, in one
+    longtable with a block per task."""
+    rec = lambda a, r: {"macro_auc_ovr": a, "accuracy": a, "r30": r, "r30_is_bound": False, "converged": True}
+    runs = {"L188": [f"mtx-l188-s{k}" for k in (1, 2, 3)], "FLAV_F0": ["mtx-flavf0-s1", "mtx-flavf0-s2"],
+            **{a: [f"mtx-{a.lower().replace('_', '')}-s1"] for a in M.RAND}}
+    v = {m: 0.90 + 0.01 * i for i, m in enumerate(m for ms in runs.values() for m in ms)}
+    fits = {m: {"cells": {"best70": {"jc2_188": {"1000": rec(x, 0)}, "top": {"1000": rec(x, 100 * x)}}}}
+            for m, x in v.items()}
+    fits[M.KIN_MODEL] = {"cells": {"best70": {"top": {"1000": rec(0.9, 133.2)}}}}
+    t = M.table_probes_n(fits, M._pooled(runs), MT.fmt_pm, ("L188", "FLAV_F0", M.RAND_POOLED), kin=True)
+    assert r"\begin{longtable}" in t and r"\label{tab:probesn}" in t and "%SPLIT%" not in t
+    rows = [ln for ln in t.splitlines() if ln.startswith(M.LABEL["FLAV_F0"])]
+    assert [r.split(" & ")[1].removesuffix(r" \\") for r in rows] == [
+        M._cell([f(v["mtx-flavf0-s1"]), f(v["mtx-flavf0-s2"])], 2, MT.fmt_pm) for f in (lambda x: x, lambda x: 100 * x)]
+    pooled = [v[runs[a][0]] for a in M.RAND]
+    jc2 = next(ln for ln in t.splitlines() if ln.startswith("random partitions (all five)"))
+    assert jc2.split(" & ")[1].removesuffix(r" \\") == M._cell(pooled, 5, MT.fmt_pm)
+    assert not any(ln.startswith("random partition 1") for ln in t.splitlines())     # pooled, not one by one
+    kin = [ln for ln in t.splitlines() if ln.startswith(M.KIN_ROW)]
+    assert kin == [M.KIN_ROW + " & 133 \\\\"]                                     # top only, three figures
+    assert M.table_probes_n(fits, M._pooled(runs), MT.fmt_pm, ("L188",)).count(M.KIN_ROW) == 0
+
+
+def test_the_kinematic_model_joins_the_top_rows_of_the_probe_mlp_and_fine_tuning_tables(tmp_path):
+    jc2 = {"converged": True, "accuracy": 0.9, **{k: 0.95 for k in ("macro_auc_ovr", "macro_auc_resonant",
+                                                                     "macro_auc_qcd")}}
+    top = {"accuracy": 0.9163, "auc": 0.9713, "r50": 94.18, "r30": 231.02, "r50_is_bound": False, "r30_is_bound": False}
+    fits = {"mtx-l188-s1": {"cells": {"best70": {"jc2_188": {"1000": jc2}, "top": {"1000": top}}}},
+            M.KIN_MODEL: {"cells": {"best70": {"top": {"1200000": top}}}}}
+    runs = {"L188": ["mtx-l188-s1"]}
+    t = M.table_probes(fits, runs, MT.fmt_pm, ("L188",), kin=True)
+    lower = t.split("%SPLIT%")[1]
+    assert lower.count(M.KIN_ROW) == 1 and t.split("%SPLIT%")[0].count(M.KIN_ROW) == 0
+    assert M.KIN_ROW + " & 0.916 & 0.971 & 94.2 & 231 & " + " & ".join(["--"] * 8) + r" \\" in lower
+    # the MLP probe: the kinematic-only model is in fits_v4_mlp alone (top); a top cell there never replaces
+    # fits_v3_mlp2's for a model that has one
+    for d, m, cells in (("fits_v3_mlp2", "mtx-l188-s1", {"top": {"auc": 0.96, "r30": 200.0, "r30_is_bound": False}}),
+                        ("fits_v4_mlp", "mtx-l188-s1", {"jc2bal": jc2, "top": {"auc": 0.5, "r30": 1.0}}),
+                        ("fits_v4_mlp", M.KIN_MODEL, {"top": {"auc": 0.9811, "r30": 716.0, "r30_is_bound": False}})):
+        (tmp_path / "linprobe" / d).mkdir(parents=True, exist_ok=True)
+        (tmp_path / "linprobe" / d / f"{m}.json").write_text(json.dumps({"cells": {"best70": cells}}))
+    mlp = M.load_mlp(tmp_path)
+    assert M._mlp_val(mlp, "mtx-l188-s1", "top") == 0.96 and M._mlp_val(mlp, M.KIN_MODEL, "top", "r30") == 716.0
+    t = M.table_mlp(mlp, runs, MT.fmt_pm, ("L188",), kin=True)
+    row = next(ln for ln in t.splitlines() if ln.startswith(M.KIN_ROW))
+    assert row == M.KIN_ROW + " & " + " & ".join(["--"] * 5 + ["0.981", "716"] + ["--"] * 4) + r" \\"
+    assert t.count(M.KIN_ROW) == 1 and M.KIN_ROW not in M.table_mlp(mlp, runs, MT.fmt_pm, ("L188",))
+    # fine-tuning: a row after from scratch in the task where it has cells, top
+    _ft_tree(tmp_path / "ft", ["l188-s1"])
+    _, per, _ = M.load_ft(tmp_path / "ft")
+    per["top"][M.KIN_INIT] = {1000: [{"r30": 92.4, "r30_is_bound": False}], 1200000: [{"r30": 1802.8, "r30_is_bound": False}]}
+    blocks = M.table_ft(per, runs, MT.fmt_pm, ("L188",)).split(M.BLOCK_SEP)
+    topb = next(b for b in blocks if "top, " in b)
+    lines = topb.splitlines()
+    assert lines.index(next(ln for ln in lines if ln.startswith(M.KIN_ROW))) == \
+        lines.index(next(ln for ln in lines if ln.startswith("from scratch"))) + 1
+    assert M.KIN_ROW + " & 92.4 & 1{,}800 \\\\" in topb
+    assert sum(b.count(M.KIN_ROW) for b in blocks) == 1
+
+
+def test_the_pair_table_gives_the_random_network_both_ways_without_a_ratio():
+    cell = lambda auc: {"auc": auc}
+    pairs = lambda auc: {M.PAIR_N: {k: cell(auc) for k, *_ in M.PAIRS}}
+    fits = {"mtx-l188-s1": {"cells": {"best70": {M.PAIR_DS: pairs(0.95)}}},
+            **{m: {"cells": {"init": {M.PAIR_DS: pairs(0.6 + 0.01 * k)}}} for k, m in enumerate(M.INIT_MODELS)},
+            **{m: {"cells": {"init_bn": {M.PAIR_DS: pairs(0.7)}}} for m in M.INIT_BN_MODELS}}
+    runs = {"L188": ["mtx-l188-s1"], M.INIT: list(M.INIT_MODELS), M.INIT_BN: list(M.INIT_BN_MODELS)}
+    t = M.table_pairs(fits, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188", M.INIT, M.INIT_BN))
+    for part in t.split("%SPLIT%"):
+        init = next(ln for ln in part.splitlines() if ln.startswith(M.LABEL[M.INIT] + " & "))
+        bn = next(ln for ln in part.splitlines() if ln.startswith(M.LABEL[M.INIT_BN] + " & "))
+        assert init.split(" & ")[1] == M._cell([0.6 + 0.01 * k for k in range(3)], 3, MT.fmt_pm)
+        assert bn.split(" & ")[1] == M._cell([0.7] * 3, 3, MT.fmt_pm)
+        assert all(c.strip(" \\") == "--" for c in init.split(" & ")[2::2] + bn.split(" & ")[2::2])
+
+
+def test_the_task_longtables_keep_each_heading_with_its_first_row(tmp_path):
+    """tab:ft and tab:probesn (2026-11-07) are longtables: a block per task, its title and heading unbreakable
+    from its first row (\\* and a rule with no break around it), the rule spanning every column."""
+    _ft_tree(tmp_path, ["l188-s1"])
+    _, per, _ = M.load_ft(tmp_path)
+    t = M.table_ft(per, {"L188": ["mtx-l188-s1"]}, MT.fmt_pm, ("L188",))
+    lines = t.splitlines()
+    ncol = int(next(ln for ln in lines if ln.startswith(r"\multicolumn")).split("}")[0].split("{")[1])
+    assert r"\begin{longtable}{>{\raggedright\arraybackslash}p{4cm}" + "c" * (ncol - 1) + "}" in lines
+    titles = [i for i, ln in enumerate(lines) if ln.startswith(r"\multicolumn") and "continued" not in ln]
+    assert len(titles) == len(M.FT_TASKS)
+    for i in titles:
+        assert lines[i].endswith(r"\\*") and lines[i + 1].startswith("training jets") and lines[i + 1].endswith(r"\\*")
+        assert lines[i + 2] == M._head_rule(ncol) and r"\multispan{" + str(ncol) + "}" in lines[i + 2]
+    assert r"\noalign{\nobreak\vskip\belowrulesep\nobreak}" in M._head_rule(3) and r"\midrule" not in M._head_rule(3)
+    assert M._longtable("ft", t).count(r"\caption{") == 1 and "__CAPTION__" not in M._longtable("ft", t)

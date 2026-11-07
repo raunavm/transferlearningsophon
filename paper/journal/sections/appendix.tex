@@ -369,10 +369,14 @@ partition, whose regularization, chosen on few validation jets, changes. No resu
 on the statistics accumulated in pretraining.
 % CHECK: MlstBnMaxDev well below |MlstCmpJcTwoResOverFull - 1| (2.6% today); only one random-partition cell above MlstBnMaxDevPair (today rand2p4-s2 bb_vs_cc, 8.8%, C 0.1 to 0.01 on 510 validation jets)
 
-The randomly initialized network enters every comparison in its recomputed form, because its saved
-statistics are PyTorch's defaults, zero mean and unit variance, which do not normalize the inputs; a
-comparison with it would otherwise set a normalized network against an unnormalized one.
-Table~\ref{tab:bn} gives it both ways.
+The comparisons of the linear and MLP probes with the randomly initialized network use its recomputed
+form, because its saved statistics are PyTorch's defaults, zero mean and unit variance, which do not
+normalize the inputs; a comparison with it would otherwise set a normalized network against an
+unnormalized one. The probe tables give it both ways (tables~\ref{tab:probes}, \ref{tab:probesn},
+\ref{tab:mlp}, \ref{tab:pairs} and~\ref{tab:bn}). The jet-mass regression on frozen features
+(tables~\ref{tab:mass} and~\ref{tab:massdetail}) and the transfer to $X\to b\bar b$ and $X\to bs$
+(tables~\ref{tab:xbx} and~\ref{tab:xbxrej}) use only the network as initialized, with its saved
+statistics.
 
 \input{tables/mlst_bn}
 
@@ -436,7 +440,8 @@ shows both values.
 Table~\ref{tab:probes} gives the linear probes at the largest training set of every task for every
 configuration, each random partition included; on JetClass-II it gives the accuracy beside the averages
 of the AUC defined in appendix~\ref{sec:app-probes}. Table~\ref{tab:probesn} gives the linear probes
-against the number of training jets in each task's metric. Figure~\ref{fig:a10} draws the
+against the number of training jets in each task's metric, with the random partitions pooled into one row.
+Figure~\ref{fig:a10} draws the
 four label sets against the number of training jets, to show whether their order holds at every size.
 Fine-tuning is in table~\ref{tab:ft} against the number of training jets and in table~\ref{tab:ftrej} on
 the full top and quark/gluon training sets, for every configuration. Table~\ref{tab:perrun} gives each

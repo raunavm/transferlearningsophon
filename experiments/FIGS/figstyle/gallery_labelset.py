@@ -560,8 +560,8 @@ PAGES = [
                 "same colour, alpha 0.2, no edge. Against Vigl Fig. 1: no ratio panel, no data-efficiency side panel, no dashed variant, no "
                 "second legend.",
         draw=draw_f8,
-        data_note="Quark/gluon fine-tuned and from scratch are one point each: the 90 cells at the smaller sizes were "
-                  "unfinished at the read-out. On JetClass-II and JetClass the plan's sizes drop 1,000 jets for "
+        data_note="Quark/gluon fine-tuned: the pretrained runs have every size; from scratch has the full set only, its "
+                  "cells at 1,000 to 100,000 jets are finishing in the current job and join when read out. On JetClass-II and JetClass the plan's sizes drop 1,000 jets for "
                   "fine-tuning and from scratch, so those curves start at 10,000 by design. Sizes below the full set use the fixed step budget with early "
                   "stopping; the full JetClass, top and quark/gluon points use the full-set recipe. JetClass-II at "
                   "1,000,000: all three from-scratch runs and 3 of 16 pretrained runs reached the 40-epoch limit, so "

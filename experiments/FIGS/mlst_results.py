@@ -74,6 +74,8 @@ INIT_BN_MODELS = ("initbn-s1", "initbn-s2", "initbn-s3")
 # the 188-class model trained on the four-momenta only (plan 3.7): one run, not in the grid file
 KIN_MODEL = "mtx-l188kin-s1"
 KIN_INIT = KIN_MODEL[len("mtx-"):]
+# the five random partitions as one row, mean +- SD over their runs (one each), as tab:jetclassall pools them
+RAND_POOLED = "RAND"
 PRIMARY = "best70"
 
 
@@ -88,8 +90,10 @@ LABEL = {"L188": r"\Kfull{} classes", "L162": r"\Kres{} classes", "R42_Q1": r"\K
          "FLAV_F1": r"random partition, $b$-quark boundary",
          "FLAV_F1R": "random partition, random flavor boundary", INIT: "randomly initialized network",
          INIT_BN: "randomly initialized network, BatchNorm recomputed",
-         "KIN": r"\Kfull{} classes, kinematic inputs only",
+         "KIN": r"\Kfull{} classes, kinematic inputs only", RAND_POOLED: "random partitions (all five)",
          **{f"RAND2_p{k}": f"random partition {k}" for k in range(1, 6)}}
+# the kinematic-only model's row label wherever it appears beside the label sets (as in tab:benchtop)
+KIN_ROW = LABEL["KIN"] + " (diagnostic)"
 FITS, MLP_FITS = "linprobe/fits_v3", "linprobe/fits_v3_mlp"
 MLP_FITS_V4, FITS_INITBN, MLP_FITS_INITBN = ("linprobe/fits_v3_mlp2", "linprobe/fits_v3_initbn",
                                              "linprobe/fits_v3_mlp2_initbn")
@@ -184,6 +188,11 @@ def _paper(root: pathlib.Path) -> dict:
     out[INIT] = list(INIT_MODELS)
     out[INIT_BN] = list(INIT_BN_MODELS)
     return out
+
+
+def _pooled(runs: dict) -> dict:
+    """runs with the five random partitions also as one configuration, RAND_POOLED."""
+    return {**runs, RAND_POOLED: [m for a in RAND for m in runs.get(a, [])]}
 
 
 def _pretrained(runs: dict) -> list:
@@ -573,12 +582,13 @@ def _auc_over(rec, classes: set) -> float | None:
     return float(np.mean(v)) if v else None
 
 
-def table_probes(fits, runs, fmt_pm, rows, full_count=None, fill=None, chosen=None) -> str:
+def table_probes(fits, runs, fmt_pm, rows, full_count=None, fill=None, chosen=None, kin=False) -> str:
     """A1, linear probes at the largest training set: JetClass-II accuracy and AUC averaged over all
     classes, the classes at the full test count, the resonant and the QCD classes, with the ratio of
     1 - AUC to the 188-class run as a labelled column; JetClass accuracy and AUC; top, quark/gluon
     and Herwig: accuracy, AUC, R50 and R30 under the substitution chosen on validation (chosen, from
-    chosen_substitutions; zero, marked in the heading, while it is pending)."""
+    chosen_substitutions; zero, marked in the heading, while it is pending). kin=True adds the
+    kinematic-only model to the lower part, top only (nothing missing, one run)."""
     fill, chosen = fill or {}, chosen or {}
     n2 = _largest(fits, "jc2_188")
     out = [r"\begin{tabular}{l" + "c" * 8 + "}", r"\toprule",
@@ -616,14 +626,21 @@ def table_probes(fits, runs, fmt_pm, rows, full_count=None, fill=None, chosen=No
                 cells.append(_cell([_rej(r, k) if k.startswith("r") else (None if r is None else r[k]) for r in recs],
                                    n, fmt_pm))
         out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
+    rec = _probe_rec(fits, KIN_MODEL, "top") if kin else None
+    if rec is not None:
+        out.append(KIN_ROW + " & " + " & ".join([_cell([_rej(rec, k) if k.startswith("r") else rec[k]], 1, fmt_pm)
+                                                  for k, _ in BENCH4] + ["--"] * 2 * len(BENCH4)) + r" \\")
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
-def table_probes_n(fits, runs, fmt_pm, rows, fill=None, chosen=None) -> str:
+def table_probes_n(fits, runs, fmt_pm, rows, fill=None, chosen=None, kin=False) -> str:
     """A1, linear probes against the training-set size: JetClass-II AUC, JetClass accuracy, R30 on
-    top, quark/gluon and Herwig (under the substitution chosen on validation, as table_probes)."""
+    top, quark/gluon and Herwig (under the substitution chosen on validation, as table_probes); rows
+    may include RAND_POOLED (runs from _pooled); kin=True adds the kinematic-only model last wherever
+    it has fits (top). One longtable, a block per task with its own heading of sizes, so that every
+    configuration fits and the table breaks across pages."""
     fill, chosen = fill or {}, chosen or {}
-    out = []
+    blocks = []
     for ds, met, title in (("jc2_188", "macro_auc_ovr", "JetClass-II, AUC"), ("jc1", "accuracy", "JetClass, accuracy"),
                            ("top", "r30", r"top, $R_{30}$"), ("qg", "r30", r"quark/gluon, $R_{30}$"),
                            ("qg_herwig", "r30", r"quark/gluon, Herwig, $R_{30}$")):
@@ -634,8 +651,7 @@ def table_probes_n(fits, runs, fmt_pm, rows, fill=None, chosen=None) -> str:
             continue
         if bench:
             title += f" ({_subst_head(chosen, ds)})"
-        out += [r"\begin{tabular}{l" + "c" * len(sizes) + "}", r"\toprule",
-                rf"{title} & " + " & ".join(f"{int(n):,}".replace(",", "{,}") for n in sizes) + r" \\", r"\midrule"]
+        lines = [["training jets"] + [f"{int(n):,}".replace(",", "{,}") for n in sizes]]
         for arm in rows:
             vals = []
             for n in sizes:
@@ -643,9 +659,45 @@ def table_probes_n(fits, runs, fmt_pm, rows, fill=None, chosen=None) -> str:
                         for m in runs[arm]]
                 vals.append(_cell([_rej(r, met) if met == "r30" else (None if r is None else r[met]) for r in recs],
                                   len(runs[arm]), fmt_pm))
-            out.append(LABEL[arm] + " & " + " & ".join(vals) + r" \\")
-        out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
-    return "\n".join(out[:-1])
+            lines.append([LABEL[arm]] + vals)
+        recs = [_probe_rec(fits, KIN_MODEL, ds, n) for n in sizes] if kin else []
+        if any(recs):
+            lines.append([KIN_ROW] + ["--" if r is None else _cell([_rej(r, met) if met == "r30" else r[met]], 1, fmt_pm)
+                                      for r in recs])
+        blocks.append((title, lines))
+    return _task_longtable(blocks, "tab:probesn")
+
+
+# the rule between two task blocks of a longtable (_task_longtable)
+BLOCK_SEP = r"\midrule[\heavyrulewidth]"
+
+
+def _head_rule(ncols: int) -> str:
+    """A rule under a block's heading as booktabs draws a midrule in a longtable (a row of leaders across
+    the columns), with no page break on either side: booktabs' midrule leaves a legal break at the glue below
+    its rule, so a heading could end a page without its rows."""
+    return (r"\noalign{\vskip\aboverulesep\nobreak}\multispan{" + str(ncols)
+            + r"}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}")
+
+
+def _task_longtable(blocks: list, label: str) -> str:
+    """One longtable of task blocks [(title, [heading cells, row cells, ...])]: each block opens with
+    its title across the table and its own heading row; a row may have fewer cells than the widest
+    block (the rest stay empty). Small type and a first column of fixed width, whose long row labels
+    wrap, so that the table fits the text width; continuation pages say so. The caption is the
+    placeholder __CAPTION__ (_longtable)."""
+    ncol = max((len(c) - 1 for _, rows in blocks for c in rows), default=1)
+    row = lambda cells: " & ".join(cells) + r" \\"
+    body = []
+    for k, (title, (head, *rest)) in enumerate(blocks):
+        # \\* keeps a block's title and heading on the page of its first row
+        body += ([BLOCK_SEP] if k else []) + [r"\multicolumn{" + str(ncol + 1) + "}{l}{" + title + r"} \\*",
+                                              row(head) + "*", _head_rule(ncol + 1)] + [row(c) for c in rest]
+    return "\n".join(["{\\scriptsize", "\\setlength{\\tabcolsep}{3pt}",
+                      r"\begin{longtable}{>{\raggedright\arraybackslash}p{4cm}" + "c" * ncol + "}",
+                      rf"\caption{{__CAPTION__}}\label{{{label}}}\\", r"\toprule", r"\endfirsthead",
+                      r"\multicolumn{" + str(ncol + 1) + r"}{l}{\textit{continued}} \\", r"\toprule", r"\endhead",
+                      r"\bottomrule", r"\endlastfoot", *body, r"\end{longtable}", "}", ""])
 
 
 def _pair(fits, m, key):
@@ -880,7 +932,8 @@ def load_mlp_natural(data: pathlib.Path) -> dict:
 
 def load_mlp(data: pathlib.Path) -> dict:
     """The nonlinear probes: top, quark/gluon, Herwig and JetClass from fits_v3_mlp2 (their tasks do
-    not depend on the JetClass-II composition); JetClass-II and its pairs from fits_v4_mlp once
+    not depend on the JetClass-II composition), from fits_v4_mlp only where fits_v3_mlp2 has no such
+    cell (the kinematic-only model); JetClass-II and its pairs from fits_v4_mlp once
     pulled (class-balanced, as the linear probes), else from fits_v3_mlp2. JetClass-II values of the
     two versions are never mixed; the models fits_v4_mlp lacks keep theirs in load_mlp_natural."""
     mlp = load_mlp_natural(data)
@@ -900,7 +953,10 @@ def load_mlp(data: pathlib.Path) -> dict:
             if "jc2bal" in cells:
                 v["jc2_188"] = cells["jc2bal"]
             v.update({k.removeprefix("pair_"): c for k, c in cells.items() if k.startswith("pair_")})
-            mlp.setdefault(model, {"cells": {}})["cells"].setdefault(ck, {}).update(v)
+            have = mlp.setdefault(model, {"cells": {}})["cells"].setdefault(ck, {})
+            # a benchmark task fits_v3_mlp2 lacks (the kinematic-only model, fitted on top alone)
+            v.update({k: c for k, c in cells.items() if k in ("jc1", "top", "qg", "qg_herwig") and k not in have})
+            have.update(v)
     return mlp
 
 
@@ -918,14 +974,14 @@ def _mlp(mlp: dict, model: str, task: str):
     return None if v is None else 1 - v
 
 
-def table_mlp(mlp, runs, fmt_pm, rows, raw_v4=None, nat=None) -> str:
+def table_mlp(mlp, runs, fmt_pm, rows, raw_v4=None, nat=None, kin=False) -> str:
     """A5: the nonlinear probe (one hidden layer, three seeds averaged) at the largest training set:
     JetClass-II AUC (all, resonant, QCD) with the ratio of 1 - AUC to the 188-class run; JetClass AUC;
     top, quark/gluon and Herwig AUC and R30; the class pairs' AUC and ratio; for the configurations with
     no class-balanced fit (their cells above a dash), JetClass-II and the pairs' ratios on natural
     composition (nat, load_mlp_natural) beside the levels of the hierarchy on the same test set, so that no
     ratio crosses the two compositions; and the linear probe on the head's 512-unit hidden layer beside
-    the one on the class token."""
+    the one on the class token. kin=True adds the kinematic-only model to the first block (top only)."""
     nat_only = [arm for arm in rows if nat and all(_mlp_val(mlp, m, "jc2_188") is None for m in runs[arm])
                 and any(_mlp_val(nat, m, "jc2_188") is not None for m in runs[arm])]
     out = [r"\begin{tabular}{l" + "c" * 11 + "}", r"\toprule",
@@ -947,6 +1003,10 @@ def table_mlp(mlp, runs, fmt_pm, rows, raw_v4=None, nat=None) -> str:
             cells += [_cell([_mlp_val(mlp, m, t) for m in ms], n, fmt_pm),
                       _cell([_mlp_val(mlp, m, t, "r30") for m in ms], n, fmt_pm)]
         out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
+    if kin and _mlp_val(mlp, KIN_MODEL, "top") is not None:     # top only, nothing missing, one run
+        out.append(KIN_ROW + " & " + " & ".join(["--"] * 5 + [_cell([_mlp_val(mlp, KIN_MODEL, "top")], 1, fmt_pm),
+                                                            _cell([_mlp_val(mlp, KIN_MODEL, "top", "r30")], 1, fmt_pm)]
+                                                + ["--"] * 4) + r" \\")
     out += [r"\bottomrule", r"\end{tabular}"]
     for part in (MLP_PAIRS[:3], MLP_PAIRS[3:]):
         out += ["%SPLIT%", r"\begin{tabular}{l" + "cc" * len(part) + "}", r"\toprule",
@@ -1943,31 +2003,32 @@ def _ft_ratio_cell(per, runs, arm, fmt_pm) -> str:
 def table_ft(per, runs, fmt_pm, rows) -> str:
     """A1, fine-tuning against the training-set size, in each task's metric (FT_METRIC): the AUC
     averaged over the classes on class-balanced JetClass-II (and over its QCD classes), accuracy on
-    JetClass, R30 on top, quark/gluon and Herwig; the network trained from scratch last. The
-    JetClass-II block adds one column: the ratio of 1 - AUC at FT_RATIO_N jets to the 188-class run."""
-    out = []
+    JetClass, R30 on top, quark/gluon and Herwig; the network trained from scratch, then the
+    kinematic-only model in a task where it has cells (top). The
+    JetClass-II block adds one column: the ratio of 1 - AUC at FT_RATIO_N jets to the 188-class run.
+    One longtable (_task_longtable), a block per task."""
+    blocks = []
     for key, _, _, _, title in FT_TASKS:
         met, mname = FT_METRIC[key]
         sizes = _sizes(per, key)
         if not sizes:
-            out += [r"\begin{tabular}{lc}", r"\toprule", rf"{title} & \pending{{not yet read out}} \\",
-                    r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
+            blocks.append((title, [["training jets", r"\pending{not yet read out}"]]))
             continue
         ratio = key == "jc2"          # the only fine-tuned ratio of 1 - AUC in the paper (ROC_INTERFACE 3.3)
-        out += [r"\begin{tabular}{l" + "c" * (len(sizes) + ratio) + "}", r"\toprule",
-                rf"{title}, {mname} & " + " & ".join(f"{n:,}".replace(",", "{,}") for n in sizes)
-                + (r" & $\rho$, $10^{6}$ jets" if ratio else "") + r" \\",
-                r"\midrule"]
+        lines = [["training jets"] + [f"{n:,}".replace(",", "{,}") for n in sizes]
+                 + ([r"$\rho$, $10^{6}$ jets"] if ratio else [])]
         for arm in _ft_rows(per, key, runs, rows):
             cells = [_cell([_ftv(per, key, m, n, met) for m in runs[arm]], len(runs[arm]), fmt_pm) for n in sizes]
             if ratio:
                 cells.append(_ft_ratio_cell(per, runs, arm, fmt_pm))
-            out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
-        out.append("from scratch & " + " & ".join(
-            [(_cell(v, len(v), fmt_pm) if (v := _scratch(per, key, n, met)) else "--") for n in sizes]
-            + ["--"] * ratio) + r" \\")
-        out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
-    return "\n".join(out[:-1])
+            lines.append([_row(arm, runs)] + cells)
+        lines.append(["from scratch"] + [(_cell(v, len(v), fmt_pm) if (v := _scratch(per, key, n, met)) else "--")
+                                         for n in sizes] + ["--"] * ratio)
+        if per[key].get(KIN_INIT):        # the kinematic-only model, top only (one run, nothing missing)
+            lines.append([KIN_ROW] + [("--" if (v := _ftv(per, key, KIN_MODEL, n, met)) is None else _cell([v], 1, fmt_pm))
+                                      for n in sizes] + ["--"] * ratio)
+        blocks.append((f"{title}, {mname}", lines))
+    return _task_longtable(blocks, "tab:ft")
 
 
 def table_ft_rej(per, runs, fmt_pm, rows) -> tuple:
@@ -3186,6 +3247,8 @@ SPREAD_MASS = (SPREAD3[:-1] + "; the models with the mass regression have \\Mlst
 RATIO_COL = ("The ratio column is $\\rho$ of equation~(\\ref{eq:ratio}), $(1-\\mathrm{AUC})$ over that of the "
              "\\Kfull-class run of the same seed (a random partition: of its seed).")
 AUC_DEF = "AUC: area under the curve of signal efficiency against background efficiency."
+KIN_NOTE = ("The \\Kfull-class model with kinematic inputs only, a diagnostic of the missing inputs, has one run and "
+            "no input missing, and is evaluated on top tagging only.")
 # the pairs caption's note where a 188-class run separates a pair's test jets completely (tab:pairs '--')
 ZERO_NOTE = (" A dash in a ratio column: the \\Kfull-class run of that seed separates the test jets completely "
              "($1-\\mathrm{AUC} = 0$), so no ratio exists.")
@@ -3205,16 +3268,19 @@ CAPTIONS = {
                "every model (\\LpSubstitutionTop{} for top, \\LpSubstitutionQg{} for quark/gluon; column headings): "
                "accuracy, AUC and the background rejection $1/\\epsB$ at 50\\% and 30\\% signal efficiency. "
                + RATIO_COL + " " + SPREAD
-               + " " + AUC_DEF + " $^{*}$: a probe that did not converge."),
+               + " " + KIN_NOTE + " " + AUC_DEF + " $^{*}$: a probe that did not converge."),
     "probes_n": ("tab:probesn", "Linear probes against the number of training jets (column headers): JetClass-II AUC "
                  "averaged over the classes, JetClass accuracy, and $R_{30}$ on top, quark/gluon and Herwig jets with "
                  "the missing inputs substituted as chosen on validation (\\LpSubstitutionTop{} for top, "
-                 "\\LpSubstitutionQg{} for quark/gluon). " + SPREAD3 + " $^{*}$: a probe that did not converge."),
+                 "\\LpSubstitutionQg{} for quark/gluon). " + SPREAD + " Here the \\RandVtwoNPartitions{} random "
+                 "partitions are pooled into one row, mean $\\pm$ standard deviation over their runs. " + KIN_NOTE
+                 + " $^{*}$: a probe that did not converge."),
     "pairs": ("tab:pairs", "Binary linear probes between pairs of JetClass-II classes: the AUC and the ratio $\\rho$ "
               "of $1-\\mathrm{AUC}$, equation~(\\ref{eq:ratio}), to the \\Kfull-class run of the same seed. $^{\\dagger}$: the label set merges the two "
               "sides into one class; $^{\\ddagger}$: it merges the first side with part of the second. " + SPREAD
               + " The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays; every label "
-              "set but the \\Kfull-class one merges all QCD classes. The $X\\to ee$ vs $\\mu\\mu$ probe uses the jets of the "
+              "set but the \\Kfull-class one merges all QCD classes. The randomly initialized network, as initialized and "
+              "with its BatchNorm statistics recomputed, has no label set and no $\\rho$. The $X\\to ee$ vs $\\mu\\mu$ probe uses the jets of the "
               "two classes in the class-balanced sets (\\MlstPairEemmNTrain{} training jets, \\MlstPairEemmNTestPerSide{} "
               "test jets per side).__ZERO__"),
     "mlp": ("tab:mlp", "Nonlinear probes (a multilayer perceptron with one hidden layer of \\LpMlpHidden{} units, "
@@ -3226,7 +3292,7 @@ CAPTIONS = {
             "class-balanced test set, so their cells there are dashes and they leave the pair blocks; the next block gives "
             "them on the natural-composition test set beside the levels of the hierarchy on that set, and no $\\rho$ "
             "crosses the two test sets. Last, the linear probe on the 512-unit hidden layer of the \\Kfull-class models' "
-            "pretraining head beside the one on the class token. " + SPREAD),
+            "pretraining head beside the one on the class token. " + SPREAD + " " + KIN_NOTE),
     "bn": ("tab:bn", "Linear probes on JetClass-II (natural composition, largest training set) with the BatchNorm "
            "statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes "
            "and the ratio $\\rho$ of $1-\\mathrm{AUC}$, equation~(\\ref{eq:ratio}), to the \\Kfull-class run. The class-balanced probes use the checkpoints "
@@ -3283,7 +3349,7 @@ CAPTIONS = {
            "quark/gluon and for JetClass below $10^{6}$ jets, and on $10^{6}$ JetClass jets each on its own training "
            "subset. The last column of "
            "the JetClass-II block is $\\rho$ of equation~(\\ref{eq:ratio}) at $10^{6}$ training jets, $1-\\mathrm{AUC}$ "
-           "over that of the \\Kfull-class run of the same seed."),
+           "over that of the \\Kfull-class run of the same seed. " + KIN_NOTE),
     "ft_rej": ("tab:ftrej", "Fine-tuning on the full training sets of top and quark/gluon (also scored on Herwig "
                "jets), every configuration: accuracy, AUC and $1/\\epsB$ at 50\\% and 30\\% signal efficiency. "
                + SPREAD + " Every rejection rests on at least __FEWEST__ background jets passing the cut."),
@@ -3531,10 +3597,11 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         missing.append(f"substitution probes -- experiments/FIGS/data/v2/{FITS_FILL}/")
     chosen, _ = chosen_substitutions(fill, runs)
     out = {"tables/mlst_probes.tex": _float("probes", table_probes(fits, runs, fmt_pm, rows_init, full_count, fill,
-                                                                   chosen), True),
-           "tables/mlst_probes_n.tex": _float("probes_n", table_probes_n(fits, runs, fmt_pm, MAIN + MASS + (INIT, INIT_BN),
-                                                                         fill, chosen), True),
-           "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, runs, fmt_pm, status, MAIN + MASS + RAND + FLAV), True,
+                                                                   chosen, kin=True), True),
+           "tables/mlst_probes_n.tex": _longtable("probes_n", table_probes_n(
+               fits, _pooled(runs), fmt_pm, MAIN + MASS + FLAV + (RAND_POOLED, INIT, INIT_BN), fill, chosen, kin=True)),
+           "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, runs, fmt_pm, status,
+                                                                MAIN + MASS + RAND + FLAV + (INIT, INIT_BN)), True,
                                            fill={"__ZERO__": zero_note(fits, runs)}),
            "tables/mlst_balance.tex": _float("balance", table_balance(fits3, fits_v4, runs, fmt_pm, ALL_ROWS + (INIT_BN,)))}
     comparisons(em, fits, runs, status, index, fmt_pm)
@@ -3579,7 +3646,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     em.macro("MlstProbeEdgeC", str(len(edge)), index, "of these, fits whose selected C is the largest of the grid (count)")
     mlp = load_mlp(data)
     if mlp:
-        out["tables/mlst_mlp.tex"] = _float("mlp", table_mlp(mlp, runs, fmt_pm, rows_init, raw_v4, mlp_nat), True)
+        out["tables/mlst_mlp.tex"] = _float("mlp", table_mlp(mlp, runs, fmt_pm, rows_init, raw_v4, mlp_nat, kin=True), True)
         mlp_macros(em, mlp, runs, index, fmt_pm)
         mlp_natural_macros(em, mlp_nat, runs, index, fmt_pm)
     else:
@@ -3629,7 +3696,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                                                                    else "natural-composition"})
     boot_macros(em, boot, worst, index)
     if tag is not None:
-        out["tables/mlst_ft.tex"] = _float("ft", table_ft(per, runs, fmt_pm, ALL_ROWS), True)
+        out["tables/mlst_ft.tex"] = _longtable("ft", table_ft(per, runs, fmt_pm, ALL_ROWS))
         body, fewest = table_ft_rej(per, runs, fmt_pm, ALL_ROWS)
         out["tables/mlst_ft_rej.tex"] = _float("ft_rej", body, True,
                                                fill={"__FEWEST__": fmt_int(fewest) if fewest else "--"})

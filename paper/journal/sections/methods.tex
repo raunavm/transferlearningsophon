@@ -49,7 +49,7 @@ need not match Sophon's model, while every comparison in this paper is between m
 way.
 
 Every configuration is pretrained with the same settings, so that within a seed the label set is the only
-difference between two models (figure~\ref{fig:design}(c)). Models with the same seed share their initial
+difference between two models (figure~\ref{fig:design}(a); appendix~\ref{sec:app-pretrain}). Models with the same seed share their initial
 weights and see the same training examples in the same order. The order of the training jets depends only on
 the seed and the epoch, and every layer starts from the same weights except the output layer, whose width is
 the number of classes. Each model sees \DesignExamplesSeen{} training examples, \DesignEpochs{} epochs of
@@ -119,7 +119,7 @@ set depends on which classes are merged. A random partition is a label set with 
 jets the groups make \Kcoarse{} classes. Each group holds the share of the reweighted training jets of one
 \Kcoarse-class group to within \RandVtwoShareTol, so it carries the same weight in the loss. A random partition
 thus has the class count and the loss weights of the \Kcoarse-class level but not its physics
-(figure~\ref{fig:design}(b)). The partitions are selected rather than typical draws. Each of \RandVtwoTrials{}
+(its groups are in table~\ref{tab:app-vocabulary}). The partitions are selected rather than typical draws. Each of \RandVtwoTrials{}
 draws per partition is refined by a search that merges as few of the class pairs merged by the
 \Kcoarse-class level as the share rule allows, and the draw with the fewest such pairs is kept. The partitions are therefore
 built to cut across the \Kcoarse-class groups. They mix decays with different numbers of prongs and keep many
