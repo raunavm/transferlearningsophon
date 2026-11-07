@@ -1,47 +1,94 @@
+\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
 \begin{center}
 \small
-\begin{minipage}{\linewidth}
-\captionof{table}{QCD jets passing each signal class's working point after fine-tuning (50\% signal efficiency; 99\% for $H\to\ell\nu qq'$, 99.5\% for $t\to b\ell\nu$), the fewest over the runs of each configuration: the counts behind the rejections of tables~\ref{tab:jetclass} and~\ref{tab:jetclassall}.}
+\ifdefined\tablabw\else\newlength{\tablabw}\newlength{\tablabtmp}\newlength{\tablabcol}\newlength{\tablabnat}\newlength{\tablabatom}\fi
+\setlength{\tablabw}{\linewidth}\setlength{\tablabnat}{0pt}\setlength{\tablabatom}{0pt}
+\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$H\to b\bar b$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{26}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{27}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$H\to c\bar c$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{123}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{68}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$H\to gg$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1{,}851}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1{,}873}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
+\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$H\to 4q$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{166}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{170}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$H\to \ell\nu qq'$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{145}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{57}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$t\to bqq'$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{11}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{12}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
+\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$t\to b\ell\nu$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{18}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{19}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$W\to qq'$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{492}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{503}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$Z\to q\bar q$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{628}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{636}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi
+\settowidth{\tablabtmp}{pretrained on 17 classes (random flavor boundary),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{pretrained on 17 random classes (partitions 1--5),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{pretrained on 17 classes (no flavor boundary),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi
+\ifdim\tablabw>7cm\setlength{\tablabw}{7cm}\fi\ifdim\tablabnat<\tablabw\setlength{\tablabw}{\tablabnat}\fi\ifdim\tablabatom>\tablabw\setlength{\tablabw}{\tablabatom}\fi
+\begin{minipage}{\linewidth}\centering
+\captionof{table}{QCD jets passing each signal class's working point after fine-tuning networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and the controls on JetClass (50\% signal efficiency; 99\% for $H\to\ell\nu qq'$, 99.5\% for $t\to b\ell\nu$), the fewest over the runs of each row: the counts behind the rejections of tables~\ref{tab:jetclass} and~\ref{tab:jetclassall}.}
 \label{tab:jetclassnbkg}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}ccc}
+\toprule
+ & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ \\
+\midrule
+\mbox{no pretraining,} \mbox{trained from scratch} & 39 & 123 & 2{,}216 \\
+\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 29 & 68 & 1{,}884 \\
+\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 33 & 70 & 1{,}933 \\
+\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 29 & 72 & 1{,}914 \\
+\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 29 & 82 & 1{,}873 \\
+\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 30 & 79 & 1{,}899 \\
+\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 31 & 87 & 1{,}896 \\
+\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 26 & 71 & 1{,}921 \\
+\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 33 & 92 & 1{,}882 \\
+\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 27 & 83 & 1{,}851 \\
+\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 31 & 70 & 1{,}886 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
 \end{minipage}
-\par\nopagebreak[3]
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccccc}
-\toprule
-fine-tuned from & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ & $H\to \ell\nu qq'$ \\
-\midrule
-from scratch & 39 & 123 & 2{,}216 & 286 & 145 \\
-\Kfull{} classes & 29 & 68 & 1{,}884 & 181 & 57 \\
-\Kres{} classes & 33 & 70 & 1{,}933 & 166 & 58 \\
-\Kmid{} classes & 29 & 72 & 1{,}914 & 187 & 58 \\
-\Kcoarse{} classes & 29 & 82 & 1{,}873 & 188 & 66 \\
-\Kres{} classes, mass regression & 30 & 79 & 1{,}899 & 177 & 68 \\
-\Kcoarse{} classes, mass regression & 31 & 87 & 1{,}896 & 207 & 68 \\
-random partitions (all five) & 26 & 71 & 1{,}921 & 194 & 64 \\
-random partition, no flavor boundary & 33 & 92 & 1{,}882 & 170 & 71 \\
-random partition, $b$-quark boundary & 27 & 83 & 1{,}851 & 192 & 77 \\
-random partition, random flavor boundary & 31 & 70 & 1{,}886 & 191 & 71 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
 \par\bigskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cccc}
+\begin{minipage}{\linewidth}\centering
+\TableContinued{tab:jetclassnbkg}{tab:jetclassnbkg:2}
+\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
+\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}ccc}
 \toprule
-fine-tuned from & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+ & $H\to 4q$ & $H\to \ell\nu qq'$ & $t\to bqq'$ \\
 \midrule
-from scratch & 30 & 48 & 724 & 897 \\
-\Kfull{} classes & 14 & 19 & 524 & 628 \\
-\Kres{} classes & 11 & 25 & 508 & 648 \\
-\Kmid{} classes & 13 & 23 & 525 & 636 \\
-\Kcoarse{} classes & 15 & 21 & 503 & 679 \\
-\Kres{} classes, mass regression & 14 & 24 & 510 & 661 \\
-\Kcoarse{} classes, mass regression & 14 & 18 & 551 & 691 \\
-random partitions (all five) & 15 & 22 & 492 & 649 \\
-random partition, no flavor boundary & 12 & 28 & 569 & 685 \\
-random partition, $b$-quark boundary & 14 & 28 & 546 & 672 \\
-random partition, random flavor boundary & 15 & 27 & 538 & 664 \\
+\mbox{no pretraining,} \mbox{trained from scratch} & 286 & 145 & 30 \\
+\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 181 & 57 & 14 \\
+\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 166 & 58 & 11 \\
+\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 187 & 58 & 13 \\
+\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 188 & 66 & 15 \\
+\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 177 & 68 & 14 \\
+\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 207 & 68 & 14 \\
+\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 194 & 64 & 15 \\
+\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 170 & 71 & 12 \\
+\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 192 & 77 & 14 \\
+\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 191 & 71 & 15 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
+\end{minipage}
+\par\bigskip
+\begin{minipage}{\linewidth}\centering
+\TableContinued{tab:jetclassnbkg}{tab:jetclassnbkg:3}
+\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
+\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}ccc}
+\toprule
+ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+\midrule
+\mbox{no pretraining,} \mbox{trained from scratch} & 48 & 724 & 897 \\
+\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 19 & 524 & 628 \\
+\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 25 & 508 & 648 \\
+\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 23 & 525 & 636 \\
+\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 21 & 503 & 679 \\
+\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 24 & 510 & 661 \\
+\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 18 & 551 & 691 \\
+\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 22 & 492 & 649 \\
+\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 28 & 569 & 685 \\
+\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 28 & 546 & 672 \\
+\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 27 & 538 & 664 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{minipage}
 \end{center}

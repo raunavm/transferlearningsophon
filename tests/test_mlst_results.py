@@ -174,7 +174,8 @@ def test_the_fine_tuning_tables_read_one_seed_per_run_and_the_scratch_seeds(tmp_
     assert per["top"]["l188-s2"][1000][0]["auc"] == 0.91 and per["qg_herwig"]["l188-s1"][1000][0]["auc"] == 0.9
     runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"]}
     t = M.table_ft(per, runs, MT.fmt_pm, ("L188",))
-    assert t.count(M.BLOCK_SEP) == len(M.FT_TASKS) - 1 and r"\pending{2 of 3}" in t and "from scratch" in t
+    # one block per task, and the JetClass-II accuracy beside its AUC (2026-11-07)
+    assert t.count(M.BLOCK_SEP) == len(M.FT_TASKS) and r"\pending{2 of 3}" in t and M.SCRATCH_LABEL in t
     assert r"\begin{longtable}" in t and r"\label{tab:ft}" in t and "%SPLIT%" not in t
     assert "1{,}200{,}000" in t and "1{,}600{,}000" in t
     # each task in its own metric (PI 2026-11-02, no 1 - AUC outside JetClass-II): JetClass-II the AUC
@@ -228,10 +229,10 @@ def test_a_task_not_yet_read_out_prints_a_marker_and_the_others_print(tmp_path):
     tag, per, absent = M.load_ft(tmp_path)
     assert tag == "best70" and absent == ["jc1"] and per["jc1"] == {}
     t = M.table_ft(per, {"L188": ["mtx-l188-s1"]}, MT.fmt_pm, ("L188",))
-    jc1 = t.split(M.BLOCK_SEP)[2]
+    jc1 = t.split(M.BLOCK_SEP)[3]
     assert "{JetClass} \\\\" in jc1 and r"training jets & \pending{not yet read out}" in jc1
-    assert t.count(M.BLOCK_SEP) == len(M.FT_TASKS) - 1
-    assert "from scratch" in t
+    assert t.count(M.BLOCK_SEP) == len(M.FT_TASKS)
+    assert M.SCRATCH_LABEL in t
 
 
 class _Em:
@@ -347,9 +348,9 @@ def test_the_jetclass_table_has_parts_rows_and_ours_in_its_column_order():
                             MT.fmt_pm, M._two)
     # the 2 M published rows only (FIGURE_PLAN T2); the 100 M rows are caption context
     # bold: the best of each column (C1.14); here ParT's 2 M row has the best accuracy and AUC
-    assert r"ParT~\cite{part} & 2 M & \textbf{0.836} & \textbf{0.9834}" in tex and "& 100 M &" not in tex
-    scratch = next(line for line in tex.splitlines() if line.startswith("from scratch"))
-    assert MT.fmt_pm(0.802, 0.001) in scratch and " & 1 M & " in scratch
+    assert r"ParT~\cite{part} & 2 M & 2.14\,M & \textbf{0.836} & \textbf{0.9834}" in tex and "& 100 M &" not in tex
+    scratch = next(line for line in tex.splitlines() if line.startswith(M.SCRATCH_LABEL))
+    assert MT.fmt_pm(0.802, 0.001) in scratch and " & 1 M & 2.21\\,M & " in scratch       # ten outputs: 2,213,374
     assert r"$R_{99}$" in tex and r"$R_{99.5}$" in tex
     assert M.LABEL["R16_Q1"] not in tex          # no curves for it: no row
     # 200 // 9 = 22 QCD jets pass for the last column: unmarked; 200 // 10 would be marked
@@ -549,7 +550,7 @@ def test_the_mass_table_and_macros_use_the_atlas_resolution_over_all_jets():
     assert em.m["MlstMassHeadResMassOverUncorrResonant"] == "0.3867 and 0.3933"      # 0.116 / 0.3, 0.118 / 0.3
     d = M.table_mass_detail(atlas, runs, MT.fmt_pm)
     assert "200--400 & 400--2500" in d and r"\textit{QCD jets}" in d and "\nsoft-drop mass & " in d
-    assert "jets & all & resonant & QCD & all & resonant & QCD" in d and r"\textit{regression output}" in d
+    assert "jets & all & resonant & QCD & all & resonant & QCD" in d and r"\textit{this work, mass output}" in d
     atlas["mtx-l162-s1"] = _atlas(groomed=0.3, mlp=0.2)
     with pytest.raises(SystemExit, match="groomed"):
         M.table_mass(atlas, runs, MT.fmt_pm)
@@ -692,10 +693,16 @@ def test_the_benchmark_tables_show_the_planned_rows_and_bold_within_one_sd():
                          kin=("kin (diagnostic)", M.KIN_INIT))
     assert "LorentzNet" not in t and "OmniLearned-s" not in t and r"ParT-f.t.~\cite{part}" in t
     assert r"\textbf{3{,}486\,$\pm$\,157}" in t and r"1{,}615\,$\pm$\,93" in t
-    assert r"kin (diagnostic) & " in t and "inputs set to zero" not in t and r"from scratch & 0." in t
-    assert M.LABEL["R16_Q1"] + r" & --" in t        # no run read out: dashes
+    assert r"kin (diagnostic) & 2.21\,M & " in t and "inputs set to zero" not in t
+    assert M.SCRATCH_LABEL + r" & 2.21\,M & 0." in t
+    assert M.LABEL["R16_Q1"] + r" & 2.21\,M & --" in t        # no run read out: dashes
+    # the physics baselines (landscape Table 1, EFN Table 3) and the parameters of each paper's table
+    assert r"linear EFP~\cite{toptag} & 1\,k & 0.932 & 0.980 & -- & 384 \\" in t
+    assert r"OmniLearned-l~\cite{omnilearned} & 423\,M & " in t and r"ParticleNet~\cite{particlenet} & 366\,k & " in t
     q = M.V4.table_bench("qg", per, runs, M.MAIN, M.LABEL, M.SCRATCH, MT.fmt_pm, M._two, herwig=True)
-    assert r"\multicolumn{4}{c}{Herwig}" in q and "PFN-Ex" in q and q.count(r"\cite{") == 6
+    assert r"\multicolumn{4}{c}{Herwig}" in q and "PFN-Ex" in q and q.count(r"\cite{") == 8
+    assert r"linear EFP~\cite{efn} & -- & -- & 0.8919 & 29.7 & -- &" in q
+    assert r"constituent multiplicity~\cite{efn} & -- & -- & 0.8401 & 19.0 & -- &" in q
 
 
 def test_table_one_has_the_four_trained_label_sets_and_the_qcd_subclass_row():
@@ -766,9 +773,11 @@ def test_the_learning_rate_table_marks_the_chosen_rates():
     cells["leg_top/scratch_lr1e-3/N10000/s1"]["early_stop"]["best_metric"] = 0.92
     assert M.V4.choose_rates({"cells": cells}) == ("1e-3", {"leg_qg": "3e-3", "leg_top": "1e-3"})
     rows = M.table_lrsweep({"cells": cells}).splitlines()
-    assert [ln.count(r"$^{\ast}$") for ln in rows if ln.startswith("from scratch")] == [0, 1, 1]
-    assert next(ln for ln in rows if ln.startswith(r"from scratch & \ensuremath{10^{-3}}")).split(" & ")[2].endswith(r"$^{\ast}$")
-    assert not any(r"$^{\ast}$" in ln.split(" & ")[-1] for ln in rows if ln.startswith("from scratch"))
+    assert [ln.count(r"$^{\ast}$") for ln in rows if ln.startswith(M.SCRATCH_LABEL)] == [0, 1, 1]
+    assert next(ln for ln in rows if ln.startswith(M.SCRATCH_LABEL + r" & \ensuremath{10^{-3}}")).split(" & ")[2].endswith(r"$^{\ast}$")
+    assert not any(r"$^{\ast}$" in ln.split(" & ")[-1] for ln in rows if ln.startswith(M.SCRATCH_LABEL))
+    sums = [ln for ln in rows if ln.startswith((M.SCRATCH_LABEL, M.LABEL["L188"]))]
+    assert len(sums) == 6 and all(re.search(r"& \d\.\d{4}(\$\^\{\\ast\}\$)? \\\\$", ln) for ln in sums)   # the sum: four decimals
 
 
 def test_the_launched_from_scratch_rates_are_the_ones_the_paper_states():
@@ -803,7 +812,7 @@ def test_the_models_without_a_balanced_nonlinear_probe_read_natural_composition(
     assert len(blocks) == 4 and "natural-composition" in blocks[3]
     assert next(ln for ln in blocks[0].splitlines() if ln.startswith(M.LABEL["L162_MASS"])).split(" & ")[1:5] == ["--"] * 4
     assert not any(ln.startswith(M.LABEL["L162_MASS"]) for b in blocks[1:3] for ln in b.splitlines())
-    assert next(ln for ln in blocks[3].splitlines() if ln.startswith("random partition")).split(" & ")[2] == M._lone(1.25)
+    assert next(ln for ln in blocks[3].splitlines() if ln.startswith(M.LABEL["RAND2_p1"])).split(" & ")[2] == M._lone(1.25)
     # no configuration lacks a balanced fit: no natural-composition block, whatever nat holds
     assert "natural-composition" not in M.table_mlp(nat, runs, MT.fmt_pm, rows, nat=nat)
     em = _PEm()
@@ -1154,15 +1163,17 @@ def test_the_jetclass2_fine_tuning_block_has_the_ratio_column_at_one_million_jet
     _ft_tree(tmp_path, ["l188-s1", "r16q1-s1", "l188-s2"])
     _, per, _ = M.load_ft(tmp_path)
     t = M.table_ft(per, {"L188": ["mtx-l188-s1"], "R16_Q1": ["mtx-r16q1-s1"]}, MT.fmt_pm, ("L188", "R16_Q1"))
-    jc2, jc1 = t.split(M.BLOCK_SEP)[0], t.split(M.BLOCK_SEP)[2]
+    jc2, jc1 = t.split(M.BLOCK_SEP)[0], t.split(M.BLOCK_SEP)[3]
     assert r"$\rho$, $10^{6}$ jets" in jc2 and r"\rho" not in jc1
     # (1 - 0.91) / (1 - 0.90) run by run; the 188-class row 1; from scratch has none
-    assert r"\Kcoarse{} classes & 0.910 & 0.910 & 0.900 \\" in jc2 and r"\Kfull{} classes & 0.900 & 0.900 & 1 \\" in jc2
-    assert jc2.splitlines()[-1].startswith("from scratch") and jc2.splitlines()[-1].endswith(r"& -- \\")
+    assert r"\Kcoarse{} classes & 0.910 & 0.910 & 0.900 \\" in jc2 and r"\Kfull{} classes & 0.900 & 0.900 & 1.00 \\" in jc2
+    assert jc2.splitlines()[-1].startswith(M.SCRATCH_LABEL) and jc2.splitlines()[-1].endswith(r"& -- \\")
+    acc = t.split(M.BLOCK_SEP)[1]                                   # the JetClass-II accuracy, no ratio column
+    assert "{JetClass-II, accuracy}" in acc and r"\rho" not in acc
     # a 188-class run without its 10^6 cell: the 188-class ratio cell says how many runs it rests on
     del per["jc2"]["l188-s2"][1000000]
     two = M.table_ft(per, {"L188": ["mtx-l188-s1", "mtx-l188-s2"]}, MT.fmt_pm, ("L188",)).split(M.BLOCK_SEP)[0]
-    assert r"\Kfull{} classes & 0.900, 0.920 & 0.900 \pending{1 of 2} & 1 \pending{1 of 2} \\" in two
+    assert r"\Kfull{} classes & 0.900, 0.920 & 0.900 \pending{1 of 2} & 1.00 \pending{1 of 2} \\" in two
     none = M.table_ft(per, {"L188": ["mtx-l188-s3"]}, MT.fmt_pm, ("L188",)).split(M.BLOCK_SEP)[0]
     assert r"\Kfull{} classes & " + " & ".join([r"\pending{no run yet}"] * 3) + r" \\" in none
 
@@ -1265,9 +1276,9 @@ def test_the_probes_against_size_pool_the_random_partitions_and_add_the_controls
     assert [r.split(" & ")[1].removesuffix(r" \\") for r in rows] == [
         M._cell([f(v["mtx-flavf0-s1"]), f(v["mtx-flavf0-s2"])], 2, MT.fmt_pm) for f in (lambda x: x, lambda x: 100 * x)]
     pooled = [v[runs[a][0]] for a in M.RAND]
-    jc2 = next(ln for ln in t.splitlines() if ln.startswith("random partitions (all five)"))
+    jc2 = next(ln for ln in t.splitlines() if ln.startswith(M.LABEL[M.RAND_POOLED]))
     assert jc2.split(" & ")[1].removesuffix(r" \\") == M._cell(pooled, 5, MT.fmt_pm)
-    assert not any(ln.startswith("random partition 1") for ln in t.splitlines())     # pooled, not one by one
+    assert not any(ln.startswith(M.LABEL["RAND2_p1"]) for ln in t.splitlines())     # pooled, not one by one
     kin = [ln for ln in t.splitlines() if ln.startswith(M.LABEL["KIN"])]
     assert kin == [M.LABEL["KIN"] + " & 133 \\\\"]                                     # top only, three figures
     assert M.table_probes_n(fits, M._pooled(runs), MT.fmt_pm, ("L188",)).count(M.LABEL["KIN"]) == 0
@@ -1305,7 +1316,7 @@ def test_the_kinematic_model_joins_the_top_rows_of_the_probe_mlp_and_fine_tuning
     topb = next(b for b in blocks if "top, " in b)
     lines = topb.splitlines()
     assert lines.index(next(ln for ln in lines if ln.startswith(M.LABEL["KIN"]))) == \
-        lines.index(next(ln for ln in lines if ln.startswith("from scratch"))) + 1
+        lines.index(next(ln for ln in lines if ln.startswith(M.SCRATCH_LABEL))) + 1
     assert M.LABEL["KIN"] + " & 92.4 & 1{,}800 \\\\" in topb
     assert sum(b.count(M.LABEL["KIN"]) for b in blocks) == 1
 
@@ -1334,9 +1345,9 @@ def test_the_task_longtables_keep_each_heading_with_its_first_row(tmp_path):
     t = M.table_ft(per, {"L188": ["mtx-l188-s1"]}, MT.fmt_pm, ("L188",))
     lines = t.splitlines()
     ncol = int(next(ln for ln in lines if ln.startswith(r"\multicolumn")).split("}")[0].split("{")[1])
-    assert r"\begin{longtable}{>{\raggedright\arraybackslash}p{4cm}" + "c" * (ncol - 1) + "}" in lines
+    assert r"\begin{longtable}{>{\raggedright\arraybackslash}p{3.9cm}" + "c" * (ncol - 1) + "}" in lines
     titles = [i for i, ln in enumerate(lines) if ln.startswith(r"\multicolumn") and "continued" not in ln]
-    assert len(titles) == len(M.FT_TASKS)
+    assert len(titles) == len(M.FT_TASKS) + 1                  # JetClass-II: AUC and accuracy
     for i in titles:
         assert lines[i].endswith(r"\\*") and lines[i + 1].startswith("training jets") and lines[i + 1].endswith(r"\\*")
         assert lines[i + 2] == M._head_rule(ncol) and r"\multispan{" + str(ncol) + "}" in lines[i + 2]
@@ -1364,3 +1375,98 @@ def test_a_table_wider_than_the_text_is_split_into_stacked_blocks_that_keep_the_
     assert "ParT" not in blocks[0] and "ParT" in blocks[-1]       # only dashes there: the row is left out
     small = r"\begin{tabular}{lc}" + "\n" + r"a & b \\" + "\n" + r"\end{tabular}"
     assert M.split_wide(small) == [small]
+
+
+# ------------------------------------------------------------------ results-book audit (2026-11-07)
+def test_a_table_column_prints_at_one_precision_its_standard_deviations_included():
+    """uniform_columns: every cell of a column at one decimal place, the SD included; four decimals where the
+    column holds fractions; an exact agreement keeps its +-0, an SD below the place prints as an upper bound."""
+    T, tok = M.TAB, M.V4.tok
+    rows = [("x", T(312.4, 6.3), T(0.7153, 0.0024)), ("y", T(307.7, 1.2), T(0.712, 0.0049)),
+            ("z", tok("p", 301.0, 0.0), T.two(0.7101, 0.7202)), ("w", T(295.0, 7.0), tok("o", 0.7))]
+    t = M.uniform_columns("\n".join([r"\begin{tabular}{lcc}", r"\toprule", r" & a & b \\", r"\midrule",
+                                     *(f"{n} & {a} & {b} \\\\" for n, a, b in rows), r"\bottomrule", r"\end{tabular}"]))
+    assert M.V4.TOK_OPEN not in t
+    assert r"x & 312\,$\pm$\,6 & 0.7153\,$\pm$\,0.0024 \\" in t and r"y & 308\,$\pm$\,1 & 0.7120\,$\pm$\,0.0049 \\" in t
+    assert r"z & 301\,$\pm$\,0 & 0.7101, 0.7202 \\" in t and r"w & 295\,$\pm$\,7 & 0.7000 \\" in t
+    small = M.uniform_columns(r"a & " + T(0.9760, 0.00003) + r" \\")
+    assert small == r"a & 0.9760\,$\pm$\,$<$0.0001 \\"
+
+
+def test_the_jetclass_bold_is_chosen_among_the_values_without_a_dagger():
+    V4 = M.V4
+    runs = M._paper(ROOT)
+
+    def block(k, low):
+        return {"accuracy": 0.80, "macro_auc_ovo": 0.98, "macro_auc_ovr": 0.98,
+                "per_class": {c: {"rejection": {"rejection": (9000.0 if low else 5000.0) + k,
+                                                "n_bkg_pass": 5 if low and c == "label_Tbqq" else 200}}
+                              for c, _ in V4.JC1_COLS}}
+    pre = {m[len("mtx-"):]: {"N1000000": {"s1": {"jc1": block(i, True)}}} for i, m in enumerate(runs["L188"])}
+    ref = {M.SCRATCH: {"N1000000": {f"s{k}": {"jc1": block(k, False)} for k in (1, 2, 3)}}}
+    tex = V4.table_jetclass(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, MT.fmt_pm, M._two)
+    col = 5 + [c for c, _ in V4.JC1_COLS].index("label_Tbqq")
+    cell = lambda name: next(ln for ln in tex.splitlines() if ln.startswith(name)).split(" & ")[col]   # noqa: E731
+    assert r"$^\dagger$" in cell(M.LABEL["L188"]) and r"\textbf" not in cell(M.LABEL["L188"])
+    assert r"\textbf{6{,}061}" in tex                        # ParT's 2 M row, the best without a dagger
+
+
+def test_our_parameter_count_is_the_instantiated_networks():
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("weaver")
+    import types
+    import yaml
+    spec = importlib.util.spec_from_file_location("arch_t", ROOT / "experiments/E1/ParT_sophon_arch_10c.py")
+    arch = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(arch)
+    for cfg, n_in in (("TopReference.yaml", 17), ("TopReference_kin.yaml", 7)):
+        pf = yaml.safe_load((ROOT / "configs/finetune" / cfg).read_text())["inputs"]["pf_features"]["vars"]
+        assert len(pf) == n_in
+        for k in (2, 10, 188):
+            model, _ = arch.get_model(types.SimpleNamespace(input_dicts={"pf_features": pf}, input_names=[], input_shapes={}),
+                                      num_classes=k, fc_params=[(512, 0.1)])
+            assert sum(p.numel() for p in model.parameters() if p.requires_grad) == M.V4.our_params(k, n_in)
+    assert M.V4.our_params(188) == 2_304_688                  # docs/GROUND_TRUTH.md
+
+
+def test_the_published_rows_carry_their_papers_parameters_and_the_physics_baselines():
+    lit = json.loads(M.V4.LIT.read_text())
+    top = {r["method"]: r for r in lit["top"]}
+    qg = {r["method"]: r for r in lit["qg_exp"]}
+    assert (top["linear EFP"]["acc"], top["linear EFP"]["auc"], top["linear EFP"]["r50"], top["linear EFP"]["r30"],
+            top["linear EFP"]["params"], top["linear EFP"]["cite"]) == ("0.932", "0.980", None, "384", r"1\,k", "toptag")
+    assert (qg["linear EFP"]["auc"], qg["linear EFP"]["r50"], qg["linear EFP"]["acc"]) == ("0.8919", "29.7", None)
+    assert (qg["constituent multiplicity"]["auc"], qg["constituent multiplicity"]["r50"]) == ("0.8401", "19.0")
+    assert {m: top[m]["params"] for m in ("ParticleNet", "ParT", "ParT-f.t.", "MIParT-L-f.t.", "L-GATr-f.t.",
+                                          "OmniLearned-l")} == {
+        "ParticleNet": r"366\,k", "ParT": r"2.14\,M", "ParT-f.t.": r"2.14\,M", "MIParT-L-f.t.": r"2.38\,M",
+        "L-GATr-f.t.": r"1.1\,M", "OmniLearned-l": r"423\,M"}
+    assert qg["PFN-Ex"]["params"] is None and qg["ParticleNet-f.t."]["params"] == r"370\,k"
+    assert all(r.get("params_quote") for s in ("top", "qg_exp") for r in lit[s] if r.get("params"))
+
+
+def test_a_row_label_names_its_network_and_the_tables_mode_and_wraps_only_between_its_parts():
+    t = "\n".join([M.LABEL["RAND2_p1"] + r", run 1 & 1 \\", M.SCRATCH_LABEL + r" & 2 \\", M.LABEL["L188"] + r" & 3 \\",
+                   r"ParT~\cite{part} & 4 \\"])
+    out = M._labels(t, "linear probe").splitlines()
+    # it may wrap only at the ', ' after its network, never inside the network's name (2026-11-07)
+    assert out[0] == r"\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 1 \\"
+    assert out[1] == r"\mbox{no pretraining,} \mbox{trained from scratch} & 2 \\"      # says how it was trained
+    assert out[2] == r"\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 3 \\"
+    # a narrow longtable may break the network before its parenthesis, nowhere else
+    assert M._labels(t, "fine-tuned", paren=True).splitlines()[0].startswith(
+        r"\mbox{pretrained on 17 random classes} \mbox{(partition 1),} \mbox{fine-tuned,}")
+    assert out[3] == r"ParT~\cite{part} & 4 \\"                                         # published rows as named
+
+
+def test_a_breakable_table_keeps_its_caption_with_the_first_block_and_marks_the_others_continued():
+    rows = [M.LABEL[a] + " & " + " & ".join([M.TAB(0.9, 0.001)] * 14) + r" \\" for a in M.ALL_ROWS] * 3
+    body = "\n".join([r"\begin{tabular}{l" + "c" * 14 + "}", r"\toprule", " & " + " & ".join(f"c{i}" for i in range(14))
+                      + r" \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+    t = M._float("probes", body, True)
+    assert r"\captionof{table}" in t and M.V4.TOK_OPEN not in t and "pretraining &" not in t
+    first = t[t.index(r"\begin{minipage}"):t.index(r"\end{minipage}")]
+    assert r"\captionof{table}" in first and r"\begin{tabular}" in first        # one unbreakable unit
+    n = t.count(r"\begin{tabular}")
+    assert n > 1 and t.count(r"\TableContinued{tab:probes}{tab:probes:") == n - 1
+    assert t.count(r"\begin{tabular}{" + M.LABW_SPEC) == n and r"\settowidth{\tablabtmp}" in t   # one label width

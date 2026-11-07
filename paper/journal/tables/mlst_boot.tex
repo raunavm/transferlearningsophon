@@ -1,33 +1,92 @@
-\begin{table*}[t]
-\centering
+\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
+\begin{center}
 \small
-\caption{Uncertainty of the label-set comparisons at the largest training set, in percent: the standard deviation of the logarithm of the ratio over the pretraining runs, then that from the finite test sample. JetClass-II: the ratio of $1-\mathrm{AUC}$, the test-sample part from a bootstrap of the class-balanced test jets (\MlstBootResamples{} resamples within each class). Top and quark/gluon: the ratio of $R_{30}$, the test-sample part from the number of background jets passing the cut.}
+\ifdefined\tablabw\else\newlength{\tablabw}\newlength{\tablabtmp}\newlength{\tablabcol}\newlength{\tablabnat}\newlength{\tablabatom}\fi
+\setlength{\tablabw}{\linewidth}\setlength{\tablabnat}{0pt}\setlength{\tablabatom}{0pt}
+\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{JetClass-II, $1-\mathrm{AUC}$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.45 / 0.15}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.70 / 0.16}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
+\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{16 / 2.4}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{25 / 2.6}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{29 / 2.4}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{quark/gluon, $R_{30}$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{9.8 / 3.6}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{20 / 3.6}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
+\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{JetClass-II, $1-\mathrm{AUC}$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.20 / 0.13}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.29 / 0.15}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
+\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{3.2 / 13}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{7.3 / 13}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{9.9 / 13}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{quark/gluon, $R_{30}$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{2.6 / 4.6}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{2.8 / 4.6}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\mbox{pretrained on \Kres{} classes} / \mbox{pretrained on \Kfull{} classes}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{pretrained on \Kcoarse{} classes} / \mbox{pretrained on \Kfull{} classes}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{pretrained on \Kmid{} classes} / \mbox{pretrained on \Kfull{} classes}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi
+\settowidth{\tablabtmp}{pretrained on \Kfull{} classes}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{pretrained on \Kres{} classes}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{pretrained on \Kcoarse{} classes}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi
+\ifdim\tablabw>7cm\setlength{\tablabw}{7cm}\fi\ifdim\tablabnat<\tablabw\setlength{\tablabw}{\tablabnat}\fi\ifdim\tablabatom>\tablabw\setlength{\tablabw}{\tablabatom}\fi
+\begin{minipage}{\linewidth}\centering
+\captionof{table}{Linear probes on the frozen features and fine-tuning of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes: uncertainty of the comparisons between their label sets at the largest training set, in percent: the standard deviation of the logarithm of the ratio over the pretraining runs, then that from the finite test sample. JetClass-II: the ratio of $1-\mathrm{AUC}$, the test-sample part from a bootstrap of the class-balanced test jets (\MlstBootResamples{} resamples within each class). Top and quark/gluon: the ratio of $R_{30}$, the test-sample part from the number of background jets passing the cut.}
 \label{tab:boot}
+\par\medskip
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
 \toprule
- & \multicolumn{3}{c}{linear probe} \\
-\cmidrule(lr){2-4}
-ratio & JetClass-II, $1-\mathrm{AUC}$ & top, $R_{30}$ & quark/gluon, $R_{30}$ \\
+ & \multicolumn{1}{c}{linear probe on frozen features} \\
+\cmidrule(lr){2-2}
+ratio & JetClass-II, $1-\mathrm{AUC}$ \\
 \midrule
-\Kres{} classes / \Kfull{} classes & 0.45 / 0.15 & 25 / 2.6 & 24 / 3.5 \\
-\Kmid{} classes / \Kfull{} classes & 0.70 / 0.16 & 29 / 2.4 & 20 / 3.6 \\
-\Kcoarse{} classes / \Kfull{} classes & 1.3 / 0.21 & 16 / 2.4 & 9.8 / 3.6 \\
+\mbox{pretrained on \Kres{} classes} / \mbox{pretrained on \Kfull{} classes} & 0.45 / 0.15 \\
+\mbox{pretrained on \Kmid{} classes} / \mbox{pretrained on \Kfull{} classes} & 0.70 / 0.16 \\
+\mbox{pretrained on \Kcoarse{} classes} / \mbox{pretrained on \Kfull{} classes} & 1.3 / 0.21 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
+\end{minipage}
 \par\bigskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lccc}
+\begin{minipage}{\linewidth}\centering
+\TableContinued{tab:boot}{tab:boot:2}
+\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
+\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}cc}
 \toprule
- & \multicolumn{3}{c}{fine-tuning} \\
-\cmidrule(lr){2-4}
-ratio & JetClass-II, $1-\mathrm{AUC}$ & top, $R_{30}$ & quark/gluon, $R_{30}$ \\
+ & \multicolumn{2}{c}{linear probe on frozen features} \\
+\cmidrule(lr){2-3}
+ratio & top, $R_{30}$ & quark/gluon, $R_{30}$ \\
 \midrule
-\Kres{} classes / \Kfull{} classes & 1.1 / 0.13 & 3.2 / 13 & 2.6 / 4.6 \\
-\Kmid{} classes / \Kfull{} classes & 0.20 / 0.13 & 7.3 / 13 & 2.8 / 4.6 \\
-\Kcoarse{} classes / \Kfull{} classes & 0.29 / 0.15 & 9.9 / 13 & 2.6 / 4.6 \\
+\mbox{pretrained on \Kres{} classes} / \mbox{pretrained on \Kfull{} classes} & 25 / 2.6 & 24 / 3.5 \\
+\mbox{pretrained on \Kmid{} classes} / \mbox{pretrained on \Kfull{} classes} & 29 / 2.4 & 20 / 3.6 \\
+\mbox{pretrained on \Kcoarse{} classes} / \mbox{pretrained on \Kfull{} classes} & 16 / 2.4 & 9.8 / 3.6 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{table*}
+\end{minipage}
+\par\bigskip
+\begin{minipage}{\linewidth}\centering
+\TableContinued{tab:boot}{tab:boot:3}
+\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
+\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
+\toprule
+ & \multicolumn{1}{c}{Sophon's network, fine-tuned} \\
+\cmidrule(lr){2-2}
+ratio & JetClass-II, $1-\mathrm{AUC}$ \\
+\midrule
+\mbox{pretrained on \Kres{} classes} / \mbox{pretrained on \Kfull{} classes} & 1.1 / 0.13 \\
+\mbox{pretrained on \Kmid{} classes} / \mbox{pretrained on \Kfull{} classes} & 0.20 / 0.13 \\
+\mbox{pretrained on \Kcoarse{} classes} / \mbox{pretrained on \Kfull{} classes} & 0.29 / 0.15 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{minipage}
+\par\bigskip
+\begin{minipage}{\linewidth}\centering
+\TableContinued{tab:boot}{tab:boot:4}
+\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
+\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}cc}
+\toprule
+ & \multicolumn{2}{c}{Sophon's network, fine-tuned} \\
+\cmidrule(lr){2-3}
+ratio & top, $R_{30}$ & quark/gluon, $R_{30}$ \\
+\midrule
+\mbox{pretrained on \Kres{} classes} / \mbox{pretrained on \Kfull{} classes} & 3.2 / 13 & 2.6 / 4.6 \\
+\mbox{pretrained on \Kmid{} classes} / \mbox{pretrained on \Kfull{} classes} & 7.3 / 13 & 2.8 / 4.6 \\
+\mbox{pretrained on \Kcoarse{} classes} / \mbox{pretrained on \Kfull{} classes} & 9.9 / 13 & 2.6 / 4.6 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{minipage}
+\end{center}

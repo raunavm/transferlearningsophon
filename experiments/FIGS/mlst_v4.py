@@ -276,6 +276,43 @@ def gpu_bound_macro(em, fits: dict, runs: dict, comp: dict, index) -> None:
 LIT = REPO / "experiments/FIGS/data/literature_benchmarks.json"
 BENCH_COLS = (("acc", "accuracy", 3), ("auc", "auc", 4), ("r50", "r50", None), ("r30", "r30", None))
 METHOD_TEX = {"MIParT-L-f.t.": "MIParT-L-f.t.", "L-GATr-f.t.": "L-GATr-f.t."}
+# the heading over our rows: how the network was used downstream (PI, 2026-11-07)
+MODE_FT = "this work"      # the heading over our rows; each row names its network and how it was used
+SCRATCH_LABEL = "no pretraining, trained from scratch"
+PARAMS_HEAD = r"\# params"
+
+
+def our_params(k_out: int, n_inputs: int = 17) -> int:
+    """Trainable parameters of our network with k_out outputs and n_inputs particle features: docs/GROUND_TRUTH.md's
+    2,304,688 at the 188-class head on 17 inputs, less 513 per output (the last layer is 512 -> K) and 132 per input
+    feature (the input normalization and first embedding layer) fewer; checked against the instantiated network
+    (experiments/E1/ParT_sophon_arch_10c.py) by tests/test_mlst_results.py."""
+    return 2_304_688 - 513 * (188 - k_out) - 132 * (17 - n_inputs)
+
+
+def _params_cell(n: int) -> str:
+    return f"{n / 1e6:.2f}\\,M"
+
+
+# A cell of a generated table carries its runs' values as a token until mlst_results.uniform_columns prints the
+# whole column at one precision: kind p (mean, SD), t (two runs), o (one value).
+TOK_OPEN, TOK_CLOSE = "\x02", "\x03"
+
+
+def tok(kind: str, *vals) -> str:
+    return TOK_OPEN + kind + " " + " ".join(repr(float(v)) for v in vals) + TOK_CLOSE
+
+
+def untok(cell: str):
+    """(kind, values) of the first token in cell, or None."""
+    import re
+    m = re.search(TOK_OPEN + r"(\w) ([^" + TOK_CLOSE + "]*)" + TOK_CLOSE, str(cell))
+    return None if m is None else (m.group(1), [float(x) for x in m.group(2).split()])
+
+
+def tokens(fmt_pm) -> bool:
+    """fmt_pm is mlst_results' table formatter, which writes tokens."""
+    return getattr(fmt_pm, "tokens", False)
 
 
 def _num(s) -> float | None:
@@ -301,6 +338,8 @@ def _value_cell(vals: list, col: str, task: str, fmt_pm, two) -> str:
         return fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1)))
     if len(v) == 2:
         return two(v[0], v[1], ", ")
+    if tokens(fmt_pm):
+        return tok("o", v[0])
     place = {"accuracy": 4, "auc": 4}.get(col, _rej_place(task))
     return f"{v[0]:,.{place}f}".replace(",", "{,}")
 
@@ -308,6 +347,10 @@ def _value_cell(vals: list, col: str, task: str, fmt_pm, two) -> str:
 def _num_sd(s):
     """(value, SD) of a printed cell: 'm \\pm sd' -> (m, sd); 'a, b' (two runs) -> (their mean, their SD |a-b|/sqrt 2)."""
     import re
+    u = untok(s)
+    if u:
+        k, v = u
+        return (v[0], v[1]) if k == "p" else ((v[0] + v[1]) / 2, abs(v[0] - v[1]) / math.sqrt(2)) if k == "t" else (v[0], None)
     t = str(s).replace("{,}", "").replace(r"\textbf{", "").replace(r"$\geq$", "")
     m = re.match(r"\s*(?:\$\\geq\$)?(-?[\d.]+)\\,\$\\pm\$\\,(?:\$<\$)?([\d.]+)", t)
     if m:
@@ -340,8 +383,9 @@ def _bold_best(rows: list, ncol: int) -> list:
 
 
 # the published rows each benchmark table shows (FIGURE_PLAN T3, T4)
-LIT_ROWS = {"top": ("ParticleNet", "ParT", "ParT-f.t.", "MIParT-L-f.t.", "L-GATr-f.t.", "OmniLearned-l"),
-            "qg": ("PFN-Ex", "ParticleNet", "ParT", "ParticleNet-f.t.", "ParT-f.t.", "OmniLearned-m")}
+LIT_ROWS = {"top": ("linear EFP", "ParticleNet", "ParT", "ParT-f.t.", "MIParT-L-f.t.", "L-GATr-f.t.", "OmniLearned-l"),
+            "qg": ("constituent multiplicity", "linear EFP", "PFN-Ex", "ParticleNet", "ParT", "ParticleNet-f.t.",
+                   "ParT-f.t.", "OmniLearned-m")}
 
 
 def _lit_cell(x) -> str:
@@ -358,7 +402,9 @@ def table_bench(task: str, per: dict, runs: dict, rows: tuple, label: dict, scra
     """T3 (task 'top') and T4 ('qg', ParT's exp inputs; herwig=True adds the Herwig columns): the
     published rows of LIT_ROWS, then ours on the full training set: from scratch, the label sets of
     rows fine-tuned, and (kin = (row label, init)) the kinematic-only model. Columns: accuracy, AUC,
-    R50, R30 (the caption says which inputs are set to zero); bold as _bold_best."""
+    R50, R30 (the caption says which inputs are set to zero); bold as _bold_best. A first column gives the
+    trainable parameters: the published as the model's paper gives them, ours our_params (two outputs; the
+    kinematic-only model on 7 inputs); it takes no part in the bold."""
     lit_all = {r["method"]: r for r in json.loads(LIT.read_text())["top" if task == "top" else "qg_exp"]}
     tasks = [task] + (["qg_herwig"] if herwig else [])
     nc = len(BENCH_COLS) * len(tasks)
@@ -368,7 +414,7 @@ def table_bench(task: str, per: dict, runs: dict, rows: tuple, label: dict, scra
             continue
         r = lit_all[name]
         cells = [_lit_cell(r[k]) for k, _, _ in BENCH_COLS] + ["--"] * len(BENCH_COLS) * (len(tasks) - 1)
-        lit_rows.append((METHOD_TEX.get(name, name) + rf"~\cite{{{r['cite']}}}", cells))
+        lit_rows.append((METHOD_TEX.get(name, name) + rf"~\cite{{{r['cite']}}}", cells, r.get("params") or "--"))
     ours = []
 
     def recs_of(t, init):
@@ -377,28 +423,30 @@ def table_bench(task: str, per: dict, runs: dict, rows: tuple, label: dict, scra
             return []
         nmax = max(n for i, bn in by.items() for n in bn)
         return by.get(init, {}).get(nmax, [])
-    ours.append(("from scratch", [_value_cell([r[c] for r in recs_of(t, scratch)], c, t, fmt_pm, two)
-                                  for t in tasks for _, c, _ in BENCH_COLS]))
+    ours.append((SCRATCH_LABEL, [_value_cell([r[c] for r in recs_of(t, scratch)], c, t, fmt_pm, two)
+                                 for t in tasks for _, c, _ in BENCH_COLS], _params_cell(our_params(2))))
     for arm in rows:
         cells = []
         for t in tasks:
             recs = [(recs_of(t, m[len("mtx-"):]) or [None])[0] for m in runs[arm]]
             cells += [_value_cell([r[c] if r else None for r in recs], c, t, fmt_pm, two) for _, c, _ in BENCH_COLS]
-        ours.append((label[arm], cells))
+        ours.append((label[arm], cells, _params_cell(our_params(2))))
     kin_row = None
     if kin:
         recs = recs_of(task, kin[1])
         kin_row = (kin[0], [_value_cell([recs[0][c]], c, task, fmt_pm, two) if recs else r"\pending{run}"
-                            for _, c, _ in BENCH_COLS] + ["--"] * len(BENCH_COLS) * (len(tasks) - 1))
-    allrows = _bold_best(lit_rows + ours + ([kin_row] if kin_row else []), nc)
-    head = [r"\begin{tabular}{l" + "c" * nc + "}", r"\toprule"]
+                            for _, c, _ in BENCH_COLS] + ["--"] * len(BENCH_COLS) * (len(tasks) - 1),
+                   _params_cell(our_params(2, 7)))
+    every = lit_rows + ours + ([kin_row] if kin_row else [])
+    allrows = [(n, [p] + c) for (n, c), (_, _, p) in zip(_bold_best([(n, c) for n, c, _ in every], nc), every)]
+    head = [r"\begin{tabular}{lc" + "c" * nc + "}", r"\toprule"]
     if herwig:
-        head += [r" & \multicolumn{4}{c}{Pythia} & \multicolumn{4}{c}{Herwig} \\",
-                 r"\cmidrule(lr){2-5}\cmidrule(lr){6-9}"]
-    head += [r" & " + " & ".join(["accuracy & AUC & $R_{50}$ & $R_{30}$"] * len(tasks)) + r" \\",
+        head += [r" & & \multicolumn{4}{c}{Pythia} & \multicolumn{4}{c}{Herwig} \\",
+                 r"\cmidrule(lr){3-6}\cmidrule(lr){7-10}"]
+    head += [rf" & {PARAMS_HEAD} & " + " & ".join(["accuracy & AUC & $R_{50}$ & $R_{30}$"] * len(tasks)) + r" \\",
              r"\midrule"]
     lines = head + [f"{n} & " + " & ".join(c) + r" \\" for n, c in allrows[:len(lit_rows)]]
-    lines += [r"\midrule", r"\multicolumn{" + str(1 + nc) + r"}{l}{\textit{this work (Sophon's network)}} \\"]
+    lines += [r"\midrule", r"\multicolumn{" + str(2 + nc) + r"}{l}{\textit{" + MODE_FT + r"}} \\"]
     lines += [f"{n} & " + " & ".join(c) + r" \\" for n, c in allrows[len(lit_rows):]]
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
@@ -479,6 +527,9 @@ def _jc1_cells(cells: dict, init: str, n: str, seeds) -> list:
 
 def _jc_cell(vals, place, fmt_pm, two):
     v = [x for x in vals if x is not None]
+    if tokens(fmt_pm) and v:          # runs that agree exactly keep their "+- 0" (sd 0)
+        return (tok("p", float(np.mean(v)), float(np.std(v, ddof=1))) if len(v) >= 3
+                else tok("t", *v) if len(v) == 2 else tok("o", v[0]))
     if len(v) >= 3:
         sd = float(np.std(v, ddof=1))
         if sd == 0:     # runs that agree exactly: the value at the column's precision, and say so
@@ -499,11 +550,11 @@ def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, s
     row; ours fine-tuned on nmax jets (ft_curves.py cells: pre the pretrained runs' tree, ref the
     from-scratch reference's), mean +- SD over the runs. Bold as _bold_best (C1.14), every row."""
     n = f"N{nmax}"
-    head = (r"\begin{tabular}{ll" + "c" * (2 + len(JC1_COLS)) + "}", r"\toprule",
-            r" & & & & \multicolumn{" + str(len(JC1_COLS)) + r"}{c}{rejection of QCD} \\",
-            r"\cmidrule(lr){5-" + str(4 + len(JC1_COLS)) + "}",
-            r" & jets & accuracy & AUC & " + " & ".join(h for _, h in JC1_COLS) + r" \\",
-            r" & & & & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",
+    head = (r"\begin{tabular}{ll" + "c" * (3 + len(JC1_COLS)) + "}", r"\toprule",
+            r" & & & & & \multicolumn{" + str(len(JC1_COLS)) + r"}{c}{rejection of QCD} \\",
+            r"\cmidrule(lr){6-" + str(5 + len(JC1_COLS)) + "}",
+            rf" & jets & {PARAMS_HEAD} & accuracy & AUC & " + " & ".join(h for _, h in JC1_COLS) + r" \\",
+            r" & & & & & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",
             r"\midrule")
     lines = list(head)
     ncol = 2 + len(JC1_COLS)
@@ -513,7 +564,7 @@ def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, s
             if not r.get("n_train"):
                 continue           # the 100 M rows are context in the caption (FIGURE_PLAN T2)
             name = r["method"].split(" (")[0]
-            lit.append((rf"{name}~\cite{{{r['cite']}}} & {r['n_train']}",
+            lit.append((rf"{name}~\cite{{{r['cite']}}} & {r['n_train']} & {r.get('params') or '--'}",
                         [r["acc"], r["auc_ovo"]] + [_sep_int(x) for x in r["rej"]], [""] * ncol))
 
     def row(name, blocks):
@@ -528,30 +579,27 @@ def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, s
             wp = [b["per_class"][c]["rejection"] for b in blocks]
             marks.append(r"$^\dagger$" if min(w["n_bkg_pass"] for w in wp) < JC1_MIN_BKG else "")
             cols.append(_jc_cell([w["rejection"] for w in wp], 0, fmt_pm, two))
-        return f"{name} & {nmax / 1e6:g} M", cols, marks
+        return f"{name} & {nmax / 1e6:g} M & {_params_cell(our_params(len(JC1_COLS) + 1))}", cols, marks
     ours = []
     seeds = sorted({s for nn in ref.get(scratch, {}).values() for s in nn})
     blocks = _jc1_cells(ref, scratch, n, seeds)
     if blocks:
-        ours.append(row("from scratch", blocks))
+        ours.append(row(SCRATCH_LABEL, blocks))
     for arm in rows:
         blocks = [b for m in runs[arm] for b in _jc1_cells(pre, m[len("mtx-"):], n, ["s1"])]
         if blocks:
             ours.append(row(label[arm], blocks))
-    # C1.14: the best value of each column and every value within one SD of it in bold, the dagger
-    # outside the bold
-    bold = _bold_best([(p, c) for p, c, _ in lit + ours], ncol)
-    # a column with a dagger carries no claim (the caption), so nothing in it is bold
-    dag = {j for _, _, mk in lit + ours for j, m in enumerate(mk) if m}
-    bold = [(p, [c0 if j in dag else c for j, (c, c0) in enumerate(zip(cells, orig))])
-            for (p, cells), (_, orig, _) in zip(bold, lit + ours)]
+    # C1.14: the best value of each column and every value within one SD of it in bold, chosen among the
+    # values without a dagger (they carry no claim, the caption), which are never bold
+    bold = _bold_best([(p, ["--" if m else c for c, m in zip(cells, mk)]) for p, cells, mk in lit + ours], ncol)
+    bold = [(p, [c0 if m else c for c, c0, m in zip(cells, orig, mk)])
+            for (p, cells), (_, orig, mk) in zip(bold, lit + ours)]
     for i, ((prefix, cells), (_, _, marks)) in enumerate(zip(bold, lit + ours)):
         if literature and i == len(lit):
-            lines += [r"\midrule", r"\multicolumn{" + str(2 + ncol)
-                      + r"}{l}{\textit{this work (Sophon's network, fine-tuned)}} \\"]
+            lines += [r"\midrule", r"\multicolumn{" + str(3 + ncol) + r"}{l}{\textit{" + MODE_FT + r"}} \\"]
         lines.append(prefix + " & " + " & ".join(c + mk for c, mk in zip(cells, marks)) + r" \\")
     if literature and not ours:
-        lines += [r"\midrule", r"\multicolumn{" + str(2 + ncol) + r"}{l}{\textit{this work (Sophon's network, fine-tuned)}} \\"]
+        lines += [r"\midrule", r"\multicolumn{" + str(3 + ncol) + r"}{l}{\textit{" + MODE_FT + r"}} \\"]
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -559,7 +607,7 @@ def table_jetclass_nbkg(pre: dict, ref: dict, runs: dict, rows: tuple, label: di
     """A1: the QCD jets passing each signal class's working point, the fewest over a configuration's runs."""
     n = f"N{nmax}"
     lines = [r"\begin{tabular}{l" + "c" * len(JC1_COLS) + "}", r"\toprule",
-             r"fine-tuned from & " + " & ".join(h for _, h in JC1_COLS) + r" \\", r"\midrule"]
+             r" & " + " & ".join(h for _, h in JC1_COLS) + r" \\", r"\midrule"]
 
     def row(name, blocks):
         return name + " & " + " & ".join(_sep_int(min(b["per_class"][c]["rejection"]["n_bkg_pass"] for b in blocks))
@@ -567,7 +615,7 @@ def table_jetclass_nbkg(pre: dict, ref: dict, runs: dict, rows: tuple, label: di
     seeds = sorted({s for nn in ref.get(scratch, {}).values() for s in nn})
     blocks = _jc1_cells(ref, scratch, n, seeds)
     if blocks:
-        lines.append(row("from scratch", blocks))
+        lines.append(row(SCRATCH_LABEL, blocks))
     for arm in rows:
         blocks = [b for m in runs[arm] for b in _jc1_cells(pre, m[len("mtx-"):], n, ["s1"])]
         if blocks:

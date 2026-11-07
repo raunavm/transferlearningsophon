@@ -31,7 +31,7 @@ APPENDIX = ["VAL", "T:mlst_lrsweep", "T:mlst_fill", "T:mlst_mlp", "T:mlst_bn", "
             "T:mlst_partrepro", "T:mlst_probes", "T:mlst_probes_n", "A10", "A8", "F6-app", "T:mlst_ft", "T:mlst_ft_rej",
             "T:mlst_per_run", "T:mlst_jetclass_all", "T:mlst_jetclass_probe", "T:mlst_jc1_class_auc", "FJ-app",
             "FJ-ctrl-app", "FJ-s", "CONF", "T:mlst_jetclass_nbkg", "T:mlst_rand_prong", "T:mlst_pairs", "F4-app",
-            "F3-scatter", "F3-app", "F3-app2", "F3-ft", "F3-ft2", "A3R", "A3R-ft", "UMAP-jc1", "UMAP-jc2-had",
+            "F3-scatter", "F3-app", "F3-app2", "F3-app3", "F3-ft", "F3-ft2", "A3R", "A3R-ft", "UMAP-jc1", "UMAP-jc2-had",
             "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "T:mlst_mass_detail", "A17-res", "A17-qcd", "A17-probe",
             "F10a-mass", "T:mlst_sculpt"]
 

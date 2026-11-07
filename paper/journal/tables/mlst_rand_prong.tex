@@ -1,37 +1,102 @@
-\begin{table*}[t]
-\centering
+\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
+\begin{center}
 \small
-\caption{The random partitions on JetClass: none keeps a boundary between two, three and four prongs (for each pair of these prong counts, every partition has a group holding classes of both); the groups that mix prong counts, and each partition's fine-tuned rejection of QCD per signal class over that of the \Kfull-class run of the same seed. $^\dagger$: fewer than $\nmin$ QCD jets pass in the partition's run or in that \Kfull-class run (equation~(\ref{eq:cut})).}
+\ifdefined\tablabw\else\newlength{\tablabw}\newlength{\tablabtmp}\newlength{\tablabcol}\newlength{\tablabnat}\newlength{\tablabatom}\fi
+\setlength{\tablabw}{\linewidth}\setlength{\tablabnat}{0pt}\setlength{\tablabatom}{0pt}
+\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{mixed groups}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{11}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{12}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
+\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$H\to b\bar b$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.842}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.853}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$H\to c\bar c$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.940}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.963}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$H\to gg$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.944}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.966}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
+\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$H\to 4q$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.862}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.928}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$H\to \ell\nu qq'$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.793}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.908}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$t\to bqq'$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.636$^\dagger$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.652$^\dagger$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
+\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$t\to b\ell\nu$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.606}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.667}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$W\to qq'$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.934}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.991}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$Z\to q\bar q$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.929}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.939}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
+\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
+\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\mbox{pretrained on 17 random classes (partition 1),} \mbox{fine-tuned,} \mbox{run 1}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{pretrained on 17 random classes (partition 2),} \mbox{fine-tuned,} \mbox{run 2}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{pretrained on 17 random classes (partition 3),} \mbox{fine-tuned,} \mbox{run 1}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi
+\settowidth{\tablabtmp}{pretrained on 17 random classes (partition 1),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{pretrained on 17 random classes (partition 2),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{pretrained on 17 random classes (partition 3),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi
+\ifdim\tablabw>7cm\setlength{\tablabw}{7cm}\fi\ifdim\tablabnat<\tablabw\setlength{\tablabw}{\tablabnat}\fi\ifdim\tablabatom>\tablabw\setlength{\tablabw}{\tablabatom}\fi
+\begin{minipage}{\linewidth}\centering
+\captionof{table}{Networks pretrained on JetClass-II with random partitions into 17 classes, fine-tuned on JetClass: none keeps a boundary between two, three and four prongs (for each pair of these prong counts, every partition has a group holding classes of both); the groups that mix prong counts, and each partition's fine-tuned rejection of QCD per signal class over that of the \Kfull-class run of the same seed. $^\dagger$: fewer than $\nmin$ QCD jets pass in the partition's run or in that \Kfull-class run (equation~(\ref{eq:cut})).}
 \label{tab:randprong}
+\par\medskip
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lccccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
 \toprule
- &  & \multicolumn{4}{c}{rejection over \Kfull{} classes} \\
-\cmidrule(lr){3-6}
-partition & mixed groups & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ \\
+partition & mixed groups \\
 \midrule
-random partition 1, seed 1 & 12 & 0.842 & 1.04 & 0.984 & 0.862 \\
-random partition 2, seed 2 & 12 & 0.853 & 1.10 & 0.944 & 0.935 \\
-random partition 3, seed 1 & 13 & 0.889 & 1.09 & 0.966 & 0.928 \\
-random partition 4, seed 2 & 12 & 0.906 & 0.940 & 0.966 & 0.959 \\
-random partition 5, seed 2 & 11 & 1.12 & 0.963 & 0.981 & 0.944 \\
+\mbox{pretrained on 17 random classes (partition 1),} \mbox{fine-tuned,} \mbox{run 1} & 12 \\
+\mbox{pretrained on 17 random classes (partition 2),} \mbox{fine-tuned,} \mbox{run 2} & 12 \\
+\mbox{pretrained on 17 random classes (partition 3),} \mbox{fine-tuned,} \mbox{run 1} & 13 \\
+\mbox{pretrained on 17 random classes (partition 4),} \mbox{fine-tuned,} \mbox{run 2} & 12 \\
+\mbox{pretrained on 17 random classes (partition 5),} \mbox{fine-tuned,} \mbox{run 2} & 11 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
+\end{minipage}
 \par\bigskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lccccc}
+\begin{minipage}{\linewidth}\centering
+\TableContinued{tab:randprong}{tab:randprong:2}
+\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
+\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}ccc}
 \toprule
- & \multicolumn{5}{c}{rejection over \Kfull{} classes} \\
-\cmidrule(lr){2-6}
-partition & $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+ & \multicolumn{3}{c}{rejection over \Kfull{} classes} \\
+\cmidrule(lr){2-4}
+partition & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ \\
 \midrule
-random partition 1, seed 1 & 1.12 & 0.652$^\dagger$ & 1.13 & 0.991 & 0.929 \\
-random partition 2, seed 2 & 0.958 & 0.875$^\dagger$ & 0.606 & 1.03 & 0.929 \\
-random partition 3, seed 1 & 0.935 & 1.00$^\dagger$ & 1.18 & 0.934 & 0.939 \\
-random partition 4, seed 2 & 0.908 & 0.636$^\dagger$ & 0.667 & 1.11 & 0.971 \\
-random partition 5, seed 2 & 0.793 & 0.778$^\dagger$ & 0.800 & 1.03 & 0.991 \\
+\mbox{pretrained on 17 random classes (partition 1),} \mbox{fine-tuned,} \mbox{run 1} & 0.842 & 1.04 & 0.984 \\
+\mbox{pretrained on 17 random classes (partition 2),} \mbox{fine-tuned,} \mbox{run 2} & 0.853 & 1.10 & 0.944 \\
+\mbox{pretrained on 17 random classes (partition 3),} \mbox{fine-tuned,} \mbox{run 1} & 0.889 & 1.09 & 0.966 \\
+\mbox{pretrained on 17 random classes (partition 4),} \mbox{fine-tuned,} \mbox{run 2} & 0.906 & 0.940 & 0.966 \\
+\mbox{pretrained on 17 random classes (partition 5),} \mbox{fine-tuned,} \mbox{run 2} & 1.12 & 0.963 & 0.981 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{table*}
+\end{minipage}
+\par\bigskip
+\begin{minipage}{\linewidth}\centering
+\TableContinued{tab:randprong}{tab:randprong:3}
+\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
+\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}ccc}
+\toprule
+ & \multicolumn{3}{c}{rejection over \Kfull{} classes} \\
+\cmidrule(lr){2-4}
+partition & $H\to 4q$ & $H\to \ell\nu qq'$ & $t\to bqq'$ \\
+\midrule
+\mbox{pretrained on 17 random classes (partition 1),} \mbox{fine-tuned,} \mbox{run 1} & 0.862 & 1.12 & 0.652$^\dagger$ \\
+\mbox{pretrained on 17 random classes (partition 2),} \mbox{fine-tuned,} \mbox{run 2} & 0.935 & 0.958 & 0.875$^\dagger$ \\
+\mbox{pretrained on 17 random classes (partition 3),} \mbox{fine-tuned,} \mbox{run 1} & 0.928 & 0.935 & 1.00$^\dagger$ \\
+\mbox{pretrained on 17 random classes (partition 4),} \mbox{fine-tuned,} \mbox{run 2} & 0.959 & 0.908 & 0.636$^\dagger$ \\
+\mbox{pretrained on 17 random classes (partition 5),} \mbox{fine-tuned,} \mbox{run 2} & 0.944 & 0.793 & 0.778$^\dagger$ \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{minipage}
+\par\bigskip
+\begin{minipage}{\linewidth}\centering
+\TableContinued{tab:randprong}{tab:randprong:4}
+\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
+\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}ccc}
+\toprule
+ & \multicolumn{3}{c}{rejection over \Kfull{} classes} \\
+\cmidrule(lr){2-4}
+partition & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+\midrule
+\mbox{pretrained on 17 random classes (partition 1),} \mbox{fine-tuned,} \mbox{run 1} & 1.13 & 0.991 & 0.929 \\
+\mbox{pretrained on 17 random classes (partition 2),} \mbox{fine-tuned,} \mbox{run 2} & 0.606 & 1.03 & 0.929 \\
+\mbox{pretrained on 17 random classes (partition 3),} \mbox{fine-tuned,} \mbox{run 1} & 1.18 & 0.934 & 0.939 \\
+\mbox{pretrained on 17 random classes (partition 4),} \mbox{fine-tuned,} \mbox{run 2} & 0.667 & 1.11 & 0.971 \\
+\mbox{pretrained on 17 random classes (partition 5),} \mbox{fine-tuned,} \mbox{run 2} & 0.800 & 1.03 & 0.991 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{minipage}
+\end{center}
