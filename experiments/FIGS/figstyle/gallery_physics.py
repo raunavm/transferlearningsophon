@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Gallery mock-ups of the design schematic, the mass regression, the mass sculpting and the resonance
-tagging figures, in style_v4 only, with Sophon's Fig. 2 redrawn first as the check of that style. Layouts:
+"""Gallery mock-ups of the design schematic, the mass regression, the mass sculpting, the resonance
+tagging, performance against jet pT and the JetClass confusion figures, in style_v4 only, with Sophon's Fig. 2 redrawn first as the check of that style. Layouts:
 docs/figstyle/PLAN.md. Data come through paper_figures' selection code (gallery_common); nothing is drawn at
 import."""
 from __future__ import annotations
@@ -14,6 +14,7 @@ from matplotlib.colors import to_rgba
 from matplotlib.patches import Circle, FancyBboxPatch, Polygon, Rectangle
 
 from gallery_common import HERE, RUNS, Absent, I, M, P, Page, S
+from gallery_labelset import _log_y
 
 GROOMED = "Soft-drop mass"
 MASS_ROWS = (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))     # a mass model and its label set's name
@@ -474,6 +475,177 @@ def draw_f11(path: pathlib.Path) -> None:
     S.save(fig, path)
 
 
+# ------------------------------------------------------------------ PT, CONF (round 3, docs/figstyle/TAGGER_GAP.md)
+# experiments/EVAL/perf_vs_pt.py's files, pulled by pull_mlst_data.py
+PERF, CONF = P.DATA / "perf_vs_pt", P.DATA / "confusion_jc1"
+MIN_PASS = 20           # background jets passing the working point, below which a rejection is drawn hollow (curves_v2's cut)
+PT_MARKER = 3.5
+
+
+def _seed(model: str) -> str:
+    return model.rsplit("-s", 1)[1]
+
+
+def _by_seed(docs: dict, row: str) -> dict:
+    """{seed: doc} of the runs of row that have a file."""
+    return {_seed(m): docs[m] for m in RUNS[row] if m in docs}
+
+
+def _edges(docs: dict) -> np.ndarray:
+    edges = {tuple(d["pt_edges"]) for d in docs.values()}
+    if len(edges) != 1:
+        raise SystemExit(f"FATAL: the perf_vs_pt files hold {len(edges)} different pT binnings")
+    return np.asarray(edges.pop(), float)
+
+
+def _one_minus_auc(doc: dict) -> np.ndarray:
+    return np.array([np.nan if b["macro_auc_ovr"] is None else 1.0 - b["macro_auc_ovr"] for b in doc["bins"]])
+
+
+def _pt_series(ax, c, values: list, key: str, label: str, band: bool = True, hollow=None) -> None:
+    """Mean over runs at the bin centres, joined, the series' marker; band the SD (range for two runs), as F8.
+    hollow: bins drawn with an open marker."""
+    st = [P.F._spread(list(v)) for v in np.asarray(values).T]
+    mean = np.array([s[0] for s in st])
+    hollow = np.zeros(mean.size, bool) if hollow is None else hollow
+    style = S.look(key, linewidth=S.LW_CURVE)
+    ax.plot(c, np.where(hollow, np.nan, mean), **style)     # a hollow point is not joined: it may be a bound
+    for open_, k in ((False, ~hollow), (True, hollow)):
+        if k.any():
+            ax.plot(c[k], mean[k], color=style["color"], marker=S.MARKERS[key], markersize=PT_MARKER, linestyle="none",
+                    markerfacecolor="white" if open_ else style["color"])
+    ax.plot([], [], **style, marker=S.MARKERS[key], markersize=PT_MARKER, label=label)     # the legend key
+    if band and len(values) > 1:
+        ax.fill_between(c, mean - np.array([s[1] for s in st]), mean + np.array([s[2] for s in st]), where=~hollow,
+                        color=style["color"], alpha=0.2, linewidth=0)
+
+
+def _ratio_panel(ax, docs: dict, rows: tuple) -> None:
+    """Macro (1 - AUC) of each run over that of the 188-class run of the same seed. From scratch is left out: its
+    ratio (about 1.3 on JetClass) would squeeze the label sets' spread, which is what the figure asks about."""
+    e = _edges(docs)
+    c = 0.5 * (e[1:] + e[:-1])
+    ref = {s: _one_minus_auc(d) for s, d in _by_seed(docs, "L188").items()}
+    ax.axhline(1.0, **S.look("L188", linewidth=S.LW_CURVE), label=S.NAME["L188"])
+    for row in rows:
+        r = [_one_minus_auc(d) / ref[s] for s, d in _by_seed(docs, row).items() if s in ref]
+        if r:
+            _pt_series(ax, c, r, row, S.NAME[row])
+    ax.set_xlim(e[0], e[-1])
+    S.labels(ax, ylabel=r"Macro $(1-\mathrm{AUC})$ / 188 classes")
+
+
+def _bb_cc_panel(ax, docs: dict) -> None:
+    """X->bb against X->cc rejection at 50% signal efficiency; a bin is hollow where any run's value is a bound or
+    rests on fewer than MIN_PASS background jets."""
+    e = _edges(docs)
+    c = 0.5 * (e[1:] + e[:-1])
+    for row in S.LEVELS:
+        runs = list(_by_seed(docs, row).values())
+        if not runs:
+            continue
+        wps = [[b["bb_vs_cc"] for b in d["bins"]] for d in runs]
+        rej = [[np.nan if w is None else w["rejection"] for w in ws] for ws in wps]
+        weak = np.array([[w is None or w["is_bound"] or w["n_bkg_pass"] < MIN_PASS for w in ws] for ws in wps]).any(0)
+        _pt_series(ax, c, rej, row, S.NAME[row], hollow=weak)
+    ax.set_yscale("log")
+    _log_y(ax)
+    ax.set_xlim(e[0], e[-1])
+    S.labels(ax, ylabel=r"$X\to c\bar{c}$ rejection ($R_{50}$)")
+
+
+def draw_pt(path: pathlib.Path) -> None:
+    jc2, jc1 = M._load(PERF / "jc2"), M._load(PERF / "jc1")
+    if not (jc2 or jc1):
+        raise Absent("no performance against jet pT (perf_vs_pt/jc2, perf_vs_pt/jc1)")
+    fig = plt.figure(figsize=S.FOUR_PANELS)
+    axes = fig.subplots(2, 2, gridspec_kw={"left": 0.1, "right": 0.96, "top": 0.92, "bottom": 0.07, "wspace": 0.3,
+                                           "hspace": 0.25})
+    (a, b), (cx, d) = axes
+    panels = ((a, jc2, lambda ax: _ratio_panel(ax, jc2, S.LEVELS[1:]), "JetClass-II, linear probe"),
+              (b, jc2, lambda ax: _bb_cc_panel(ax, jc2), r"JetClass-II, linear probe: $X\to b\bar{b}$ vs $X\to c\bar{c}$"),
+              (cx, jc1, lambda ax: _ratio_panel(ax, jc1, S.LEVELS[1:]), "JetClass, fine-tuned on $10^6$ jets"),
+              (d, jc2, lambda ax: _ratio_panel(ax, jc2, S.CONTROLS), "JetClass-II, linear probe: controlled partitions"))
+    for ax, docs, draw, text in panels:
+        S.title(ax, text)
+        S.labels(ax, xlabel=X_PT)
+        if not docs:
+            ax.set_yticks([])
+            continue
+        S.fine_grid(ax)
+        draw(ax)
+        S.legend(ax, loc="best")
+    S.letter_panels(axes.flat)
+    S.heading(fig, "Performance against jet $p_{\\mathrm{T}}$")
+    S.save(fig, path)
+
+
+CONF_CELL_PT = 6.5      # numbers in the cells; 8 pt does not fit two decimals in a 10-column panel at 15 cm
+
+
+def _confusion(doc: dict) -> np.ndarray:
+    """Row-normalised [true][predicted] in S.JC1_CLASSES order."""
+    k = [doc["classes"].index(c) for c in S.JC1_CLASSES]
+    rows = doc["row_normalised"]
+    return np.array([[np.nan] * len(k) if rows[i] is None else [rows[i][j] for j in k] for i in k], float)
+
+
+def _cells(ax, values: np.ndarray, text: list, dark) -> None:
+    for (i, j), t in np.ndenumerate(np.asarray(text, dtype=object)):
+        if t:
+            ax.text(j, i, t, ha="center", va="center", fontsize=CONF_CELL_PT, color="white" if dark(values[i, j]) else "black")
+
+
+def draw_conf(path: pathlib.Path) -> None:
+    docs = M._load(CONF)
+    ref = {s: _confusion(d) for s, d in _by_seed(docs, "L188").items()}
+    if not ref:
+        raise Absent("no JetClass confusion matrices of the 188-class model (confusion_jc1)")
+    base = np.mean(list(ref.values()), axis=0)
+    diffs = {row: 100 * np.mean([_confusion(d) - ref[s] for s, d in _by_seed(docs, row).items() if s in ref], axis=0)
+             for row in S.LEVELS[1:] if set(_by_seed(docs, row)) & set(ref)}
+    limit = max([float(np.nanmax(np.abs(v))) for v in diffs.values()] or [1.0])
+    n = len(S.JC1_CLASSES)
+    names = [S.JC1_TEX[c] for c in S.JC1_CLASSES]
+
+    fig = plt.figure(figsize=(S.FULL, 13.5 * S.CM))
+    gs = fig.add_gridspec(2, 5, width_ratios=(1, 0.05, 0.3, 1, 0.05), left=0.17, right=0.9, top=0.895, bottom=0.18,
+                          wspace=0.05, hspace=0.2)
+    panels = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 3]), fig.add_subplot(gs[1, 0]), fig.add_subplot(gs[1, 3])]
+    bars = [(fig.add_subplot(gs[0, 1]), panels[0], panels[0], "Fraction of the true class")]
+    im = panels[0].imshow(base, cmap="Blues", vmin=0, vmax=1, interpolation="none")
+    _cells(panels[0], base, [[f"{v:.2f}" for v in r] for r in base], lambda v: v > 0.6)
+    S.title(panels[0], S.NAME["L188"])
+    images = [im]
+    for ax, row in zip(panels[1:], S.LEVELS[1:]):
+        S.title(ax, f"{S.NAME[row]} minus 188")
+        if row in diffs:
+            v = diffs[row]
+            images.append(ax.imshow(v, cmap="RdBu_r", vmin=-limit, vmax=limit, interpolation="none"))
+            _cells(ax, v, [[f"{x:.1f}".replace("-", "\u2212") if abs(x) >= 0.5 else "" for x in r] for r in v],
+                   lambda x: abs(x) > 0.6 * limit)
+    if diffs:
+        bars.append((fig.add_subplot(gs[:, 4]), panels[1], panels[3], "Difference to 188 classes (percentage points)"))
+    for k, ax in enumerate(panels):
+        ax.set_xticks(range(n))
+        ax.set_yticks(range(n))
+        ax.set_xticklabels(names if k >= 2 else [], rotation=90)
+        ax.set_yticklabels(names if k % 2 == 0 else [])
+        ax.tick_params(which="both", length=0, top=False, right=False)
+        ax.minorticks_off()
+        S.labels(ax, "Predicted class" if k >= 2 else None, "True class" if k % 2 == 0 else None)
+        ax.apply_aspect()
+    for (cax, top, bottom, word), image in zip(bars, (images[0], images[-1])):
+        x = cax.get_position()      # as tall as the square matrices beside it, not the grid cell
+        cax.set_position([x.x0, bottom.get_position().y0, x.width, top.get_position().y1 - bottom.get_position().y0])
+        cb = fig.colorbar(image, cax=cax)
+        S.labels(cb.ax, ylabel=word)
+        cb.ax.minorticks_off()
+    S.letter_panels(panels)
+    S.heading(fig, "JetClass after fine-tuning on $10^6$ jets: confusion matrices")
+    S.save(fig, path)
+
+
 # ------------------------------------------------------------------ the pages
 SOPHON_FIG2_CAPTION = (
     "FIG. 2. Benchmark of Sophon model’s performance in the X→bb and X→bs jet tagging tasks, with the signal "
@@ -519,6 +691,19 @@ F11_CAPTION = (
     "stand-in JetClass-II jets (upper) and for X→bs (lower), which has no samples yet. Curves show the direct "
     "discriminant of the 188-class model and a classifier on the frozen features of each label set, each the mean "
     "over runs; a curve ends where fewer than 20 background jets remain.")
+PT_CAPTION = (
+    "Performance against the jet transverse momentum. (a) JetClass-II linear probes: macro-averaged 1 - AUC of the "
+    "models pretrained on 162, 43 and 17 classes, each divided by that of the 188-class model of the same seed. (b) "
+    "Rejection of X→cc̄ at 50% X→bb̄ efficiency from the same probes; hollow markers are bounds or rest on fewer than 20 "
+    "background jets. (c) As (a), for JetClass fine-tuned on one million jets. (d) "
+    "As (a), for the controlled partitions. Points are means over runs, bands the standard deviation. "
+    "LOOK: to be written after the data are seen.")
+CONF_CAPTION = (
+    "Confusion matrices on JetClass after fine-tuning on one million jets: (a) the fraction of each true class assigned "
+    "to each predicted class by the model pretrained on 188 classes; (b)-(d) the change in that fraction, in percentage "
+    "points, for the models pretrained on 162, 43 and 17 classes, each against the 188-class model of the same seed. "
+    "Values are means over runs; differences under 0.5 points are not printed. "
+    "LOOK: to be written after the data are seen.")
 
 ATLAS_LOOK = ("Sophon's font and sizes in place of ATLAS's; inward ticks on four sides and no legend frame "
               "(2603.04084, round 3); no experiment label, and ATLAS's text block (sqrt(s), jet definition, pT and mass selection) is dropped, so our selection appears on no figure")
@@ -641,4 +826,31 @@ PAGES = [
          "Stand-in only: X→bb from JetClass-II jets, /data/results/eval/xbx/fits (cluster), so the page is absent off "
          "the cluster. X→bs: no samples exist, the panel is empty. The significance Z is not computed: it needs the SM "
          "backgrounds. From scratch is not drawn: only a two-epoch dry run exists."),
+    Page("PT", "Performance against jet pT", ["2004.08262/fig17.png", "1808.07858/fig2.png"],
+         "CMS DeepAK8 Fig. 17, ATLAS top/W Fig. 2", PT_CAPTION,
+         "Ratio panels (a), (c), (d) have no counterpart: the precedents plot one tagger's mistag rate or rejection per "
+         "series, where (a), (c) and (d) divide each run's macro (1 - AUC) by the 188-class run of the same seed (from "
+         "scratch, which has no pretraining seed, by the mean of the 188-class runs), so the label-set gap is read "
+         "directly. Panel (b) is the precedents' form, rejection on a log axis as ATLAS Fig. 2 (b), for X→bb against "
+         "X→cc instead of a signal against QCD. Markers at the bin centres joined by lines, with SD bands (range for two "
+         "runs), as F9b, A17 and F8, instead of the precedents' unjoined horizontal bin bars with no uncertainty; "
+         "hollow markers mark a bound or under 20 passing background jets, where CMS uses hollow markers for a "
+         "tagger family. Reconstructed jet pT in our ten (JetClass-II) or five (JetClass) bins, instead of generator "
+         "pT 300-2000 GeV (CMS) or true pT 200-2500 GeV (ATLAS). Panel titles and legends in place of the "
+         "precedents' text block (sqrt(s), jet definition, selection); no experiment label. Our palette, Sophon's font, "
+         "round 3's faint grid, frameless legends, inward ticks.",
+         draw_pt,
+         "Four label sets and from scratch have three runs, the controlled partitions two. Bins where a run's X→bb "
+         "against X→cc rejection is a bound or rests on fewer than 20 background jets are hollow."),
+    Page("CONF", "JetClass confusion matrices after fine-tuning (appendix)", ["2604.09809/fig7.png"],
+         "CMS JME-25-001 Fig. 7", CONF_CAPTION,
+         "Ten classes instead of 34. Four panels instead of one: the 188-class matrix and three differences to it, on "
+         "a diverging RdBu_r scale symmetric about 0 with one colour bar, which CMS does not have. The 188-class "
+         "matrix keeps CMS's Blues, as fractions to two decimals instead of integer percentages; differences in "
+         "percentage points to one decimal, signed by a minus only, printed where at least 0.5 in size. Cell numbers at 6.5 pt, below the 8 pt of "
+         "the other text, as CMS's are (about 5 pt): two decimals do not fit at 8 pt in a 15 cm wide figure. Class "
+         "names only on the outer axes (the four panels share them); x names at 90 degrees as CMS. Panel titles and a "
+         "heading in place of CMS's experiment label; Sophon's font; no tick marks.",
+         draw_conf,
+         "Means over three runs, each label set's run minus the 188-class run of the same seed."),
 ]

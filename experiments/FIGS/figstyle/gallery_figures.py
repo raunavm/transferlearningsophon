@@ -17,7 +17,7 @@ import style_v4 as S
 
 MODULES = (gallery_physics, gallery_labelset, gallery_roc)
 ORDER = ("SOPHON-FIG2", "F1", "F2a", "F2b", "F3", "F3-scatter", "F3-app", "F3-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F4",
-         "F4-app", "F6", "F6-app", "F8", "A8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "F10a", "F10b", "F11", "A3R", "A3R-ft", "UMAP-jc1", "UMAP-jc2-had", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "VAL")     # the paper's order
+         "F4-app", "F6", "F6-app", "F8", "A8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "F10a", "F10b", "F11", "PT", "CONF", "A3R", "A3R-ft", "UMAP-jc1", "UMAP-jc2-had", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "VAL")     # the paper's order
 
 
 # the figures the PI approved page by page (2026-11-05), drawn into the paper by the render job (--paper);
